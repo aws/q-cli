@@ -23,13 +23,18 @@ class ShellBridge {
     
     var previousFrontmostApplication: NSRunningApplication?
     var socket: WebSocketConnection?
+    var socketServer: Process?
     init() {
         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(setPreviousApplication(notification:)), name: NSWorkspace.didDeactivateApplicationNotification, object: nil)
         // start Python server script 
 //        "python3 /path/to/executable/fig.py utils:ws-start".runAsCommand()
-        self.socket = WebSocketTaskConnection.init(url: URL(string: "ws://localhost:8765")!)
-        self.socket?.delegate = self;
-        self.socket?.connect()
+        self.startWebSocketServer()
+
+        ShellBridge.delayWithSeconds(0.25) {
+            self.socket = WebSocketTaskConnection.init(url: URL(string: "ws://localhost:8765")!)
+            self.socket?.delegate = self;
+            self.socket?.connect()
+        }
     }
     
     @objc func setPreviousApplication(notification: NSNotification!) {
@@ -94,6 +99,29 @@ class ShellBridge {
         let loc = CGEventTapLocation.cghidEventTap
         keydown?.post(tap: loc)
         keyup?.post(tap: loc)
+    }
+    
+    func startWebSocketServer() {
+
+        if let path = Bundle.main.path(forResource: "websocket", ofType: "", inDirectory: "wsdist") {
+            print(path)
+            
+            self.socketServer = path.runInBackground {
+                  print("Closing the socket server")
+            }
+
+        } else {
+            print("couldn't start socket server")
+        }
+    }
+    
+    func stopWebSocketServer() {
+        if let server = self.socketServer {
+            server.terminate()
+            print("socket server process terminated")
+        } else {
+            print("socket server is not running")
+        }
     }
 }
 
@@ -203,6 +231,7 @@ extension NSRunningApplication {
 }
 
 extension ShellBridge {
+    // fig search hello there -url  -> https://withfig.com/web/hello/there?
     static func commandLineOptionsToURL(_ options: [String]) -> URL {
         var root = ""
         
@@ -234,6 +263,23 @@ extension ShellBridge {
         components.queryItems = query.map {
              URLQueryItem(name: $0, value: $1)
         }
+        return components.url!
+    }
+    
+    static func commandLineOptionsToRawURL(_ options: [String]) -> URL {
+        var cmd = ""
+        var raw:[String] = []
+        if (options.count > 0) {
+            cmd = options.first!
+            raw = Array(options.suffix(from: 1))
+        }
+        
+        let argv = raw.joined(separator: " ").addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        var components = URLComponents()
+        components.scheme = "https"
+        components.host = "withfig.com"
+        components.path = cmd
+        components.queryItems = [URLQueryItem(name: "argv", value: argv)]
         return components.url!
     }
 }

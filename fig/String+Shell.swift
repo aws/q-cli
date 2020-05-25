@@ -48,4 +48,19 @@ extension String {
 //        }
     }
     
+    func runInBackground(completion: (() -> Void)? ) -> Process {
+        let task = Process()
+        task.launchPath = "/bin/sh"
+        task.arguments = ["-c", self]
+        task.launch()
+        DispatchQueue.global(qos: .background).async {
+            task.waitUntilExit()
+            if let completion = completion {
+                completion()
+            }
+        }
+        
+        return task
+    }
+    
 }

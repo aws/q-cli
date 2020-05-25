@@ -2,6 +2,9 @@
 <Workspace
    version = "1.0">
    <FileRef
+      location = "group:/Users/mschrage/fig/research/fig/fig/wsdist">
+   </FileRef>
+   <FileRef
       location = "self:fig.xcodeproj">
    </FileRef>
 </Workspace>

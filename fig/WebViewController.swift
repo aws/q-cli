@@ -305,6 +305,8 @@ extension WebViewController: ShellBridgeEventListener {
                 case "home":
                       self.loadRemoteApp(at: URL(string:"https://app.withfig.com")!)
                 default:
+                    
+                    self.loadRemoteApp(at: ShellBridge.commandLineOptionsToRawURL(msg.options ?? []))
                     print("unrecognized option");
                 }
             } else {

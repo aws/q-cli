@@ -80,7 +80,10 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
          action: #selector(AppDelegate.updateOverlayStyle),
          keyEquivalent: "")
         
-
+        statusBarMenu.addItem(
+         withTitle: "Kill WebSocket Server",
+         action: #selector(AppDelegate.killSocketServer),
+         keyEquivalent: "")
         
         // Create the SwiftUI view that provides the window contents.
 //        let contentView = ContentView()
@@ -135,6 +138,10 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 //            event.postToPid()
 //        }
     }
+    
+    @objc func killSocketServer() {
+        ShellBridge.shared.stopWebSocketServer()
+    }
 
     @objc func spaceChanged() {
         print("spaceChanged!");
@@ -144,7 +151,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         print("newActiveApp!");
     }
     func applicationWillTerminate(_ aNotification: Notification) {
-        // Insert code here to tear down your application
+        ShellBridge.shared.stopWebSocketServer()
     }
     
     @objc func runScriptCmd() {
