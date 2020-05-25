@@ -1,0 +1,52 @@
+<html>
+    <script>
+        fig.stdin = (input) => {
+            console.log("getting started")
+            if (input) {
+                finder(input)
+            } else {
+                fig.execute('ls -1AF', (out, error) => {
+                    console.log(JSON.stringify(out))
+                    finder(out)
+                })
+            }
+
+   
+            console.log("Are we there yet?")
+        }
+
+
+    
+    let cd = function(dir) {
+        fig.execute(`cd ${dir} && ls -1aF`, (out, error) => {
+            finder(out)
+        })
+    }
+    
+    let openFile = function(path) {
+        fig.run(`cat "${path}" | fig editor`)
+    }
+    
+    let finder = function(input) {
+        let all = input.split("\n")
+        console.log(JSON.stringify(all))
+        var folders = all.filter( (path) => { return path.endsWith("/")}).map( (folder) => { return `<li role="button" tabindex="0" class = "folder"><a href = "#" onclick="javascript:cd('${folder}')" onkeydown="javascript:cd('${folder}')">${folder}</a></li>`});
+        console.log(JSON.stringify(folders))
+
+        let files = all.filter( (path) => { return !path.endsWith("/")})
+        .map( (file) => {return `<li role="button" tabindex="0" class = "file"><a href = "#" onclick="javascript:openFile('${file}')" onkeydown="javascript:openFile('${file}')">${file}</a></li>`})
+        console.log(JSON.stringify(files))
+
+        document.getElementById("view").innerHTML = folders.concat(files).join("")
+        console.log(document.body.innerHTML)
+    }
+    </script>
+    <style>
+
+    </style>
+    <body>
+        <ul  id = "view">
+        </ul>
+    </body>
+</html>
+

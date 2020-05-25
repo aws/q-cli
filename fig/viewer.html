@@ -1,0 +1,27 @@
+
+<html>
+    <script>
+        fig.stdin = (input) => {
+            let files = input.split('\n')
+            let pngs = files.filter(p => p.endsWith(".png"))
+            console.log(pngs)
+            let thumbnails = pngs.map(p => { return `<img draggable = "true" src = "file:///Users/mschrage/Desktop/${p}"></img>`}).join("")
+            console.log(thumbnails)
+
+            document.getElementById("view").innerHTML = thumbnails
+            console.log(document.body.innerHTML)
+        }
+    </script>
+    <style>
+        img {
+            height: 50px;
+            width: 50px;
+            object-fit: cover;
+        }
+
+    </style>
+    <body>
+        <div  id = "view">
+        </div>
+    </body>
+</html>

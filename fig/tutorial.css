@@ -1,0 +1,46 @@
+body {
+  margin: 10px;
+}
+
+code {
+  cursor: pointer;
+}
+
+pre {
+  cursor: pointer;
+}
+
+.buttonShow {
+  opacity: 1 !important;
+}
+
+.wrapper {
+  position: relative !important;
+  overflow: visible !important;
+}
+
+.pearButton {
+  cursor: pointer;
+  position: absolute;
+  font-size: 20px;
+  background: white;
+  border: none;
+  border-radius: 5px;
+  transition: all 0.1s ease-in-out;
+  opacity: 0;
+  z-index: 10;
+}
+
+.prePearButton {
+  right: 5px;
+  top: 5px;
+}
+
+.inlinePearButton {
+  right: -36px;
+  bottom: -7px;
+}
+
+button:focus {
+  outline:0;
+}
