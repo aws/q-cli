@@ -11,15 +11,12 @@ import WebKit
 protocol WebBridgeEventDelegate {
     func requestExecuteCLICommand(script: String)
     func requestInsertCLICommand(script: String)
-    func requestNextSection()
-    func requestPreviousSection()
-    func startTutorial(identifier: String)
 }
 
 class WebBridge : WKWebViewConfiguration {
     var eventDelegate: WebBridgeEventDelegate?
     
-    convenience init(eventDelegate: WebBridgeEventDelegate) {
+    convenience init(eventDelegate: WebBridgeEventDelegate?) {
         self.init()
         self.eventDelegate = eventDelegate;
     }
@@ -27,13 +24,27 @@ class WebBridge : WKWebViewConfiguration {
     override init() {
         super.init()
         let contentController = WebBridgeContentController()
+        
+        let eventHandlers: [WebBridgeEventHandler] = [.logHandler,
+                                                      .exceptionHandler,
+                                                      .insertHandler,
+                                                      .executeHandler,
+                                                      .executeInBackgroundHandler,
+                                                      .callbackHandler]
+        
         contentController.add(self, name: WebBridgeScript.executeCLIHandler.rawValue)
         contentController.add(self, name: WebBridgeScript.insertCLIHandler.rawValue)
         contentController.add(self, name: WebBridgeScript.callbackHandler.rawValue)
+        contentController.add(self, name: WebBridgeScript.fwriteHandler.rawValue)
+        contentController.add(self, name: WebBridgeScript.freadHandler.rawValue)
+        contentController.add(self, name: WebBridgeScript.focusHandler.rawValue)
+        contentController.add(self, name: WebBridgeScript.blurHandler.rawValue)
 
         contentController.add(self, name: WebBridgeScript.logging.rawValue)
+        contentController.add(self, name: WebBridgeScript.exceptions.rawValue)
+
         self.userContentController = contentController
-        self.setURLSchemeHandler(self, forURLScheme: "fig")
+//        self.setURLSchemeHandler(self, forURLScheme: "fig")
     }
     
     required init?(coder: NSCoder) {
@@ -42,332 +53,54 @@ class WebBridge : WKWebViewConfiguration {
     
 }
 
-extension WebBridge : WKURLSchemeHandler {
-    func webView(_ webView: WKWebView, start urlSchemeTask: WKURLSchemeTask) {
-        guard self.eventDelegate != nil else {
-            print("Event Delegate is nil")
-            return
-        }
-        // fig://start/mattschrage/tutorialname
-        // fig://insert?cmd=
-        if let url = urlSchemeTask.request.url {
-            let cmd = url.host ?? ""
-//            let path_components = url.path.split(separator: "/")
-//            guard let cmd = path_components.first else {
-//                print("No command in URL: \(url.absoluteString)")
-//                return
-//            }
-  
-            switch cmd {
-            case "next":
-                self.eventDelegate!.requestNextSection()
-                break
-            case "back":
-                self.eventDelegate!.requestPreviousSection()
-                break
-            case "start":
-                self.eventDelegate!.startTutorial(identifier: url.pathComponents.dropFirst().joined(separator: "/"))
-                break
-            case "insert":
-                guard let script = url.queryDictionary?["cmd"] else {
-                    print("No `cmd` parameter for command 'insert'\n\(url)")
-                    return
-                }
-                self.eventDelegate!.requestInsertCLICommand(script: script)
-                break
-            case "execute":
-                guard let script = url.queryDictionary?["cmd"] else {
-                    print("No `cmd` parameter for command 'insert'\n\(url)")
-                    return
-                }
-                self.eventDelegate!.requestInsertCLICommand(script: script)
-                break
 
-            default:
-                print("Unknown command '\(cmd)' triggered")
-            }
-            
-        }
-    }
-    
-    func webView(_ webView: WKWebView, stop urlSchemeTask: WKURLSchemeTask) { }
 
+enum WebBridgeEventHandler: String, CaseIterable {
+    case logHandler = "logHandler"
+    case exceptionHandler = "exceptionHandler"
+    case insertHandler = "insertHandler"
+    case executeHandler = "executeHandler"
+    case executeInBackgroundHandler = "executeInBackgroundHandler"
+    case callbackHandler = "callbackHandler"
 }
 
-enum WebBridgeScript: String {
+enum WebBridgeScript: String, CaseIterable {
+    case figJS = "js"
     case logging = "logHandler"
     case exceptions = "exceptionHandler"
     case insertFigTutorialCSS = "css"
-    case insertFigJS = "js"
     case insertFigTutorialJS = "tutorial"
     case insertCLIHandler = "insertHandler"
     case executeCLIHandler = "executeHandler"
     case callbackHandler = "callbackHandler"
+    case executeInBackgroundHandler = "executeInBackgroundHandler"
     case stdoutHandler = "stdoutHandler"
+    case fwriteHandler = "fwriteHandler"
+    case freadHandler = "freadHandler"
+    case focusHandler = "focusHandler"
+    case blurHandler = "blurHandler"
+
+    case enforceViewportSizing = "enforceViewportSizing"
 
 }
 
 class WebBridgeContentController : WKUserContentController {
     override init() {
         super.init()
+        
+//        let legacy: [WebBridgeScript]  = [ .insertFigTutorialCSS, .figJS ]
+//        let scripts: [WebBridgeScript] = [.logging, .exceptions, .figJS]
        
+        self.addWebBridgeScript(.exceptions)
         self.addWebBridgeScript(.logging);
         self.addWebBridgeScript(.insertFigTutorialCSS);
         self.addWebBridgeScript(.insertFigTutorialJS);
-//        self.addWebBridgeScript(.executeCLIHandler)
-        self.addWebBridgeScript(.insertFigJS, location: .atDocumentStart);
 
-
-
-
-
-//        let source = "function captureLog(msg) { window.webkit.messageHandlers.logHandler.postMessage(msg); } window.console.log = captureLog;"
-//        let script = WKUserScript(source: source, injectionTime: .atDocumentEnd, forMainFrameOnly: false)
-//        self.addUserScript(script)
-//        self.add(self, name: WebBridgeScript.logging.rawValue)
+        self.addWebBridgeScript(.figJS, location: .atDocumentStart);
     }
     
     func addWebBridgeScript(_ scriptType:WebBridgeScript,  location: WKUserScriptInjectionTime = .atDocumentEnd) {
-        var source: String = ""
-        switch scriptType {//window.onerror = function (errorMsg, url, lineNumber) {
-           // alert('Error: ' + errorMsg + ' Script: ' + url + ' Line: ' + lineNumber);
-        case .exceptions:
-            source = " function captureException(msg) { window.webkit.messageHandlers.exceptionHandler.postMessage(msg) } window.onerror = captureException;"
-            break
-        case .logging:
-            source = "function captureLog(msg) { window.webkit.messageHandlers.logHandler.postMessage(msg); } window.console.log = captureLog;"
-            break
-        case .insertFigJS:
-            source = File.contentsOfFile("fig", type: "js")!
-        case .insertFigTutorialJS:
-            source = File.contentsOfFile("tutorial", type: "js")!
-            source = """
-            //
-            function preFormatting(preNode) {
-
-                              var wrapperDiv = document.createElement('div');
-                              wrapperDiv.classList.add("wrapper");
-
-
-                              preNode.parentNode.insertBefore(wrapperDiv, preNode);
-                              wrapperDiv.appendChild(preNode);
-
-                              // Set up pear button
-                              var pearButton = document.createElement('button');
-                              pearButton.classList.add("pearButton");
-                              pearButton.classList.add("prePearButton");
-                              pearButton.innerHTML = '🍐';
-
-                              preNode.parentNode.insertBefore(pearButton, preNode);
-
-                              // #### Events ####
-
-                              // Show pear on mouse enter
-                              wrapperDiv.addEventListener('mouseenter', function (e) {
-                                pearButton.classList.add("buttonShow");
-                              });
-
-                              // Hide pear on mouse leave
-                              wrapperDiv.addEventListener('mouseleave', function (e) {
-                                pearButton.classList.remove("buttonShow");
-                              });
-
-                              // Add click event listener to pear
-                              pearButton.addEventListener('click', function (e) {
-                                //e.preventDefault();
-                                //e.stopPropagation();
-
-                                var deepLink = "fig://insert?cmd=" + preNode.innerText;
-                                console.log("Pear: " + deepLink);
-                                console.log(JSON.stringify(webkit))
-
-                                window.webkit.messageHandlers.executeHandler.postMessage(preNode.innerText)
-                                // This should insert and run the code
-                                //window.location.href = deeplink
-                              });
-
-                              // Add event listener to copy code on click (but not highlight)
-                              preNode.addEventListener('click', function (e) {
-                                //e.preventDefault();
-                                //e.stopPropagation();
-
-                                if (window.getSelection().toString() === "") {
-                                  var deepLink = "fig://insert?cmd=" + preNode.innerText;
-                                  console.log("Insert: " + deepLink);
-
-                                  // This should just insert the code, NOT run it
-                                window.webkit.messageHandlers.insertHandler.postMessage(preNode.innerText)
-
-                                  //window.location.href = deeplink
-                                }
-
-                                else {
-                                  console.log("Highlight: " + window.getSelection().toString())
-                                }
-
-
-                              });
-                            }
-
-
-
-
-                            // #### Apply formatting to <code> node
-
-                            function codeFormatting(codeNode) {
-
-                              var wrapperSpan = document.createElement('span');
-                              wrapperSpan.classList.add("wrapper");
-
-
-                              codeNode.parentNode.insertBefore(wrapperSpan, codeNode);
-                              wrapperSpan.appendChild(codeNode);
-
-                              // Set up pear button
-                              var pearButton = document.createElement('button');
-                              pearButton.classList.add("pearButton");
-                              pearButton.classList.add("inlinePearButton");
-                              pearButton.innerHTML = '🍐';
-
-                              codeNode.parentNode.insertBefore(pearButton, codeNode);
-
-                              // #### Events ####
-
-                              // Show pear on mouse enter
-                              wrapperSpan.addEventListener('mouseenter', function (e) {
-                                pearButton.classList.add("buttonShow");
-                              });
-
-                              // Hide pear on mouse leave
-                              wrapperSpan.addEventListener('mouseleave', function (e) {
-                                pearButton.classList.remove("buttonShow");
-                              });
-
-                              // Add click event listener to pear
-                              pearButton.addEventListener('click', function (e) {
-                                //e.preventDefault();
-                                //e.stopPropagation();
-
-                                var deepLink = "fig://insert?cmd=" + encodeURI(codeNode.innerText);
-                                console.log("Pear: " + deepLink);
-                                window.webkit.messageHandlers.executeHandler.postMessage(codeNode.innerText)
-
-
-                                // This should insert and run the code
-                                //window.location.href = deeplink
-                              });
-
-                              // Add event listener to copy code on click (but not highlight)
-                              codeNode.addEventListener('click', function (e) {
-                                //e.preventDefault();
-                                //e.stopPropagation();
-
-                                if (window.getSelection().toString() === "") {
-                                  var deepLink = "fig://insert?cmd=" + codeNode.innerText;
-                                  console.log("Insert: " + deepLink);
-
-                                  // This should just insert the code, NOT run it
-                                  //window.location.href = deeplink
-                                    window.webkit.messageHandlers.insertHandler.postMessage(codeNode.innerText)
-
-                                }
-
-                                else {
-                                  console.log("Highlight: " + window.getSelection().toString())
-                                }
-
-                              });
-                            }
-
-
-
-                            // #### Adds a 🍐on hover for <code> and <pre> tags
-                            function addATouchOfFig() {
-
-                              // Loop through <code> element
-                              // (and exclude code elements that have <pre> as a parent)
-                              var codes = document.querySelectorAll('code');
-                              codes.forEach(function (codeNode) {
-
-                                // Check if code is wrapped in <pre> or just <code>
-                                if (codeNode.parentNode.nodeName !== "PRE") {
-                                  codeFormatting(codeNode);
-                                }
-                              });
-
-                              // Loop through <pre> element
-                              var pres = document.querySelectorAll('pre');
-                              pres.forEach(function (preNode) {
-                                preFormatting(preNode);
-                              });
-
-                              console.log("finished adding fig touchups");
-                            }
-            addATouchOfFig()
-            console.log(JSON.stringify(window.webkit))
-
-            """
-        case .insertFigTutorialCSS:
-            var cssString = """
-            body {
-              margin: 10px;
-            }
-
-            code {
-              cursor: pointer;
-            }
-
-            pre {
-              cursor: pointer;
-            }
-
-            .buttonShow {
-              opacity: 1 !important;
-            }
-
-            .wrapper {
-              position: relative !important;
-              overflow: visible !important;
-            }
-
-            .pearButton {
-              cursor: pointer;
-              position: absolute;
-              font-size: 20px;
-              background: white;
-              border: none;
-              border-radius: 5px;
-              transition: all 0.1s ease-in-out;
-              opacity: 0;
-              z-index: 10;
-            }
-
-            .prePearButton {
-              right: 5px;
-              top: 5px;
-            }
-
-            .inlinePearButton {
-              right: -36px;
-              bottom: -7px;
-            }
-
-            button:focus {
-              outline:0;
-            }
-
-            """
-//            let cssString = " * { color: cyan; }"
-            cssString = File.contentsOfFile("tutorial", type: "css")!
-            source = """
-                  var style = document.createElement('style');
-                  style.innerHTML = `\(cssString)`;
-                  document.head.appendChild(style);
-               """
-            
-        default:
-            return
-        }
+        let source = scriptType.codeForScript()
         let script = WKUserScript(source: source, injectionTime: location, forMainFrameOnly: false)
         self.addUserScript(script)
     }
@@ -381,29 +114,126 @@ extension WebBridge : WKScriptMessageHandler {
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         let scriptType = WebBridgeScript.init(rawValue: message.name)
         switch scriptType {
-        case .logging:
-            print("JS Console: \(message.body)")
-            break
+        case .logging, .exceptions:
+            WebBridge.log(scope: message)
         case .insertCLIHandler:
-//            print("Insert: \(message.body)")
-            self.eventDelegate?.requestInsertCLICommand(script: message.body as! String)
-
-            break
+            WebBridge.insert(scope: message)
         case .executeCLIHandler:
-//            print("Execute: \(message.body)")
-            self.eventDelegate?.requestExecuteCLICommand(script: message.body as! String)
-            break
+            WebBridge.execute(scope: message)
         case .callbackHandler:
-            print(message.body)
-            let dict = message.body as! Dictionary<String, String>
-            let callback = WebBridgeJSCallback(type: dict["type"]!, cmd: dict["cmd"]!, handlerId: dict["handlerId"]!)
-            let figCLIPath = "fig"//"python3 /Users/mschrage/fig/research/pyfigcli/fig.py"
-            self.eventDelegate?.requestExecuteCLICommand(script: "\(callback.cmd) | \(figCLIPath) callback \(callback.handlerId)")
+            WebBridge.executeInBackground(scope: message)
+        case .fwriteHandler:
+            WebBridge.fwrite(scope: message)
+        case .freadHandler:
+            WebBridge.fread(scope: message)
+        case .focusHandler:
+            WebBridge.focus(scope: message)
+        case .blurHandler:
+            WebBridge.blur(scope: message)
         default:
             print("Unhandled WKScriptMessage type '\(message.name)'")
         }
       
     }
+}
+
+protocol WebBridgeEventListener {
+    func insertCommandInTerminal(_ notification: Notification)
+    func executeCommandInTerminal(_ notification: Notification)
+}
+
+extension Notification.Name {
+    static let insertCommandInTerminal = Notification.Name("insertCommandInTerminal")
+    static let executeCommandInTerminal = Notification.Name("executeCommandInTerminal")
+}
+
+
+extension WebBridge {
+    static func log(scope: WKScriptMessage) {
+        let body = scope.body as! String
+        print("JS Console: \(body)")
+        Logger.log(message: "\(scope.webView?.url?.absoluteString ?? "<none>"): \(body)\n")
+    }
+    
+    static func insert(scope: WKScriptMessage) {
+        NotificationCenter.default.post(name: .insertCommandInTerminal, object: scope.body as! String)
+    }
+    
+    static func execute(scope: WKScriptMessage) {
+        NotificationCenter.default.post(name: .executeCommandInTerminal, object: scope.body as! String)
+    }
+    
+    static func executeInBackground(scope: WKScriptMessage) {
+        if let params = scope.body as? Dictionary<String, String>,
+           let cmd = params["cmd"],
+           let handlerId = params["handlerId"],
+           let env = params["env"]?.jsonStringToDict(),
+           let pwd = env["PWD"] as? String {
+            
+            let output = cmd.runAsCommand(cwd: pwd)
+            print("\(cmd) -> \(output)")
+            let encoded = output.data(using: .utf8)!
+            scope.webView?.evaluateJavaScript("fig.callback(`\(handlerId)`,`\(encoded.base64EncodedString())`)", completionHandler: nil)
+
+        }
+
+    }
+    
+    static func executeWithCallback(scope: WKScriptMessage) {
+        if let params = scope.body as? Dictionary<String, String>,
+           let cmd = params["cmd"],
+           let handlerId = params["handlerId"] {
+            NotificationCenter.default.post(name: .executeCommandInTerminal, object:
+                "\(cmd) | fig callback \(handlerId)")
+        }
+    }
+    
+    static func fwrite(scope: WKScriptMessage) {
+        if let params = scope.body as? Dictionary<String, String>,
+           let path = params["path"],
+           let data = params["data"],
+           let handlerId = params["handlerId"],
+           let env = params["env"]?.jsonStringToDict(),
+           let pwd = env["PWD"] as? String {
+            let url = URL(fileURLWithPath: path, relativeTo: URL(fileURLWithPath: pwd))
+            do {
+                try data.write(to: url, atomically: true, encoding: String.Encoding.utf8)
+//                scope.webView?.evaluateJavaScript("fig.callback(`\(handlerId)`, null)", completionHandler: nil)
+            } catch {
+//  scope.webView?.evaluateJavaScript("fig.callback(`\(handlerId)`,{message:'Could not write file to disk.'})", completionHandler: nil)
+
+            }
+        }
+    }
+    
+    static func fread(scope: WKScriptMessage) {
+        if let params = scope.body as? Dictionary<String, String>,
+           let path = params["path"],
+           let handlerId = params["handlerId"],
+           let env = params["env"]?.jsonStringToDict(),
+           let pwd = env["PWD"] as? String {
+            
+            let url = URL(fileURLWithPath: path, relativeTo: URL(fileURLWithPath: pwd))
+            do {
+                let out = try String(contentsOf: url, encoding: String.Encoding.utf8)
+                let encoded = out.data(using: .utf8)!
+                
+                scope.webView?.evaluateJavaScript("fig.callback(`\(handlerId)`, `\(encoded.base64EncodedString())`)", completionHandler: nil)
+
+            } catch {
+                scope.webView?.evaluateJavaScript("fig.callback(`\(handlerId)`, null,{message:'Could not write file to disk.'})", completionHandler: nil)
+            }
+        }
+    }
+    
+    static func focus(scope: WKScriptMessage) {
+        NSRunningApplication.current.activate(options: .activateIgnoringOtherApps)
+    }
+    
+    static func blur(scope: WKScriptMessage) {
+        ShellBridge.shared.previousFrontmostApplication?.activate(options: .activateIgnoringOtherApps)
+    }
+
 }
 
 struct WebBridgeJSCallback : Codable {
@@ -432,3 +262,81 @@ extension URL {
         return queryStrings
     }
 }
+
+extension WebBridgeScript {
+    func codeForScript() -> String {
+        switch self {
+            case .exceptions:
+                return "function captureException(msg) { window.webkit.messageHandlers.exceptionHandler.postMessage(msg) } window.onerror = captureException;"
+            case .logging:
+                return "function captureLog(msg) { window.webkit.messageHandlers.logHandler.postMessage(msg); } window.console.log = captureLog;"
+            case .figJS:
+                return File.contentsOfFile("fig", type: "js")!
+            case .insertFigTutorialJS:
+                return File.contentsOfFile("tutorial", type: "js")!
+            case .insertFigTutorialCSS:
+                let cssString = File.contentsOfFile("tutorial", type: "css")!
+                return """
+                      var style = document.createElement('style');
+                      style.innerHTML = `\(cssString)`;
+                      document.head.appendChild(style);
+                   """
+            case .enforceViewportSizing:
+                return """
+                        var meta = document.createElement('meta');
+                        meta.setAttribute('name', 'viewport');
+                        meta.setAttribute('content', 'width=device-width');
+                        meta.setAttribute('initial-scale', '1.0');
+                        meta.setAttribute('maximum-scale', '1.0');
+                        meta.setAttribute('minimum-scale', '1.0');
+                        meta.setAttribute('user-scalable', 'no');
+                        document.getElementsByTagName('head')[0].appendChild(meta);
+                        """
+        default:
+            return ""
+        }
+    }
+}
+
+//extension WebBridge : WKURLSchemeHandler {
+//    func webView(_ webView: WKWebView, start urlSchemeTask: WKURLSchemeTask) {
+//        guard self.eventDelegate != nil else {
+//            print("Event Delegate is nil")
+//            return
+//        }
+//        // fig://start/mattschrage/tutorialname
+//        // fig://insert?cmd=
+//        if let url = urlSchemeTask.request.url {
+//            let cmd = url.host ?? ""
+////            let path_components = url.path.split(separator: "/")
+////            guard let cmd = path_components.first else {
+////                print("No command in URL: \(url.absoluteString)")
+////                return
+////            }
+//
+//            switch cmd {
+//            case "insert":
+//                guard let script = url.queryDictionary?["cmd"] else {
+//                    print("No `cmd` parameter for command 'insert'\n\(url)")
+//                    return
+//                }
+//                self.eventDelegate!.requestInsertCLICommand(script: script)
+//                break
+//            case "execute":
+//                guard let script = url.queryDictionary?["cmd"] else {
+//                    print("No `cmd` parameter for command 'insert'\n\(url)")
+//                    return
+//                }
+//                self.eventDelegate!.requestInsertCLICommand(script: script)
+//                break
+//
+//            default:
+//                print("Unknown command '\(cmd)' triggered")
+//            }
+//
+//        }
+//    }
+//
+//    func webView(_ webView: WKWebView, stop urlSchemeTask: WKURLSchemeTask) { }
+//
+//}

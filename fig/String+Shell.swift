@@ -8,12 +8,15 @@
 
 import Foundation
 extension String {
-    func runAsCommand(_ isVerbose: Bool = true) -> String {
+    func runAsCommand(_ isVerbose: Bool = true, cwd: String? = nil) -> String {
         let pipe = Pipe()
         let task = Process()
         task.launchPath = "/bin/sh"
         task.arguments = ["-c", String(format:"%@", self)]
         task.standardOutput = pipe
+        if let cwd = cwd {
+            task.currentDirectoryPath = cwd
+        }
         let outputHandler = pipe.fileHandleForReading
         outputHandler.waitForDataInBackgroundAndNotify()
         

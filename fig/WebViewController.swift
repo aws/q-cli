@@ -8,11 +8,12 @@
 
 import Cocoa
 import WebKit
+import AppKit
 
 class WebViewController: NSViewController, NSWindowDelegate {
     var mouseLocation: NSPoint? { self.view.window?.mouseLocationOutsideOfEventStream }
 
-    var webView: WKWebView? // = WKWebView(frame:.zero)
+    var webView: WebView? // = WKWebView(frame:.zero)
 
 //    override func loadView() {
 //        self.view = webView
@@ -49,26 +50,22 @@ class WebViewController: NSViewController, NSWindowDelegate {
         effect.material = .mediumLight
         effect.maskImage = _maskImage(cornerRadius: 15)
         self.view = effect;
+        self.view.postsFrameChangedNotifications = true
         
 
         
 
     }
-    
     override func viewDidAppear() {
 
 //        blur(view:self.view)
-        view.window?.delegate = self
-//        webView = WKWebView(frame: self.view.window?.frame ?? .zero)
-        webView?.frame = self.view.frame
-//        webView.ba
-        webView?.navigationDelegate = self
-        NotificationCenter.default.addObserver(self, selector: #selector(recievedDataFromPipe(_:)), name: .recievedDataFromPipe, object: nil)
 
+        
 
+//        webView?.autoresizingMask = self.view.autoresizingMask
+//        webView?.autoresizingMask = NSView.AutoresizingMask(rawValue: NSView.AutoresizingMask.width.rawValue | NSView.AutoresizingMask.height.rawValue);
 
 //        webView?.setValue(false, forKey: "drawsBackground")
-        self.view.addSubview(webView!)
         
         // add alpha when using NSVisualEffectView
         self.view.window?.alphaValue = 0.9
@@ -79,70 +76,89 @@ class WebViewController: NSViewController, NSWindowDelegate {
 //        self.webView.alphaValue = 0.75
 //        self.view.alphaValue = 0.5;
         
-        
-
-    
-
+        print("ViewDidAppear -- \( webView?.url?.absoluteString ?? "no url")")
+        if !((webView?.url) != nil) {
+            webView?.loadHomeScreen()
+        }
     }
 
 
+    override func viewDidLayout() {
+        super.viewDidLayout()
+//        self.webView!.frame = self.view.frame
+//        self.webView!.setNeedsDisplay(self.webView!.frame)
+        print("viewDidLayout")
+//        self.webView?.needsLayout
+//        self.webView?.frame = self.view.frame
+
+    }
 
 
     func windowDidResize(_ notification: Notification) {
         // This will print the window's size each time it is resized.
 //        self.view.frame = self.view.window?.frame ?? .zero
-        print(view.window?.frame.size ?? "<none>", self.webView!.frame.size)
-        self.webView!.frame = self.view.frame
-//        self.webView.reload()
+//        print(view.window?.frame.size ?? "<none>", self.webView!.frame.size)
+////        self.webView!.frame = self.view.frame
+//        print(view.window?.frame.size ?? "<none>", self.webView!.frame.size)
+//        print(view.frame.size, self.webView!.frame.size)
+        
+        print(view.window?.frame ?? .zero, view.frame, self.webView?.frame ?? .zero)
+
+//        self.webView?.reload()
+        print("resize")
     }
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
-      
+        print("viewDidLoad")
         
         
-        webView = WebView(frame: self.view.frame, configuration: WebBridge(eventDelegate: self))
-
-        // Do any additional setup after loading the view.
-//        webView.loadHTMLString("<html><body bgcolor = \"red\"><p>Hello, World!</p></body></html>", baseURL: nil)
+        webView = WebView(frame: .zero, configuration: WebBridge())
         
-        let url = Bundle.main.url(forResource: "finder", withExtension: "html")!
-        webView?.loadFileURL(url, allowingReadAccessTo: URL(string: "file://")!) // needed in order to load local files from anywhere
-//        NSURL *baseURL = [NSURL fileURLWithPath: resourcePath];
-
-//       let request = URLRequest(url: url)
-//       webView?.load(request)
+        NotificationCenter.default.addObserver(self, selector: #selector(recievedDataFromPipe(_:)), name: .recievedDataFromPipe, object: nil)
         
-        //URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true)
-//        do {
-//        //let path = try FileManager.default.url(for: .userDirectory, in: .allDomainsMask, appropriateFor: nil, create: false)
-//            let path = URL(string: "file://")!
-//        webView?.loadFileURL(url, allowingReadAccessTo: path) // needed in order to load local files from anywhere
-////        NSURL *baseURL = [NSURL fileURLWithPath: resourcePath];
-//
-//               let request = URLRequest(url: url)
-//               webView?.load(request)
-//        } catch {
-//            print("huh");
-//    }
-        //"https://medium.com/@dmytro.anokhin/command-line-tool-using-swift-package-manager-and-utility-package-e0984224fc04"
-//        webView?.load(URLRequest(url: URL(string: "https://app.withfig.com")!))
+        NotificationCenter.default.addObserver(self, selector: #selector(insertCommandInTerminal(_:)), name: .insertCommandInTerminal, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(executeCommandInTerminal(_:)), name: .executeCommandInTerminal, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(windowDidResize(_:)), name: NSWindow.didResizeNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(viewFrameResized), name:NSView.frameDidChangeNotification, object: self.view)
+        
+        
+        view.window?.delegate = self
+//        webView = WKWebView(frame: self.view.window?.frame ?? .zero)
+//        webView.ba
+        webView?.navigationDelegate = self
+        self.view.addSubview(webView!)
+//        webView?.bindFrameToSuperviewBounds()
+        
+    }
+    
+    @objc func viewFrameResized() {
+        print("viewResized")
+        self.webView?.frame = self.view.bounds
     }
     
     func loadHTMLString(_ html: String) {
         webView?.loadHTMLString(html, baseURL: nil)
     }
     
-    func loadLocalApp(_ app: String) {
-        let url = Bundle.main.url(forResource: app, withExtension: "html")!
-        webView?.loadFileURL(url, allowingReadAccessTo: URL(string: "file://")!) // needed in order to load local files from anywhere
-    }
+//    func loadBundleApp(_ app: String) {
+//        let url = Bundle.main.url(forResource: app, withExtension: "html")!
+//        webView?.loadFileURL(url, allowingReadAccessTo: URL(string: "file://")!) // needed in order to load local files from anywhere
+//    }
+//
+//    func loadLocalApp(_ appPath: String) {
+//        let localURL = URL(fileURLWithPath: appPath)
+//
+//        webView?.loadFileURL(localURL, allowingReadAccessTo: URL(string: "file://")!) // needed in order to load local files from anywhere
+//    }
+//
+//    //""
+//    func loadRemoteApp(at url: URL) {
+//        webView?.load(URLRequest(url: url))
+//    }
     
-    //"https://app.withfig.com"
-    func loadRemoteApp(at url: URL) {
-        webView?.load(URLRequest(url: url))
-    }
+
     
     //https://stackoverflow.com/a/29801359
     private func blur(view: NSView!) {
@@ -201,14 +217,11 @@ class SemiTransparentView: NSView {
 
 }
 
-
-extension WebViewController : WebBridgeEventDelegate {
-    func requestExecuteCLICommand(script: String) {
-        print(script)
-        //  NSRunningApplication.current.hide()
-        print(NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "<none>");
-       
-        ShellBridge.injectStringIntoTerminal(script, runImmediately: true, completion: {
+extension WebViewController: WebBridgeEventListener {
+    
+    
+    @objc func insertCommandInTerminal(_ notification: Notification) {
+        ShellBridge.injectStringIntoTerminal(notification.object as! String, runImmediately: false, completion: {
             if let currentMouseLocation = self.mouseLocation {
                print("mouseLocation:", currentMouseLocation)
                print("mouseInWindow", self.view.bounds.contains(currentMouseLocation))
@@ -217,107 +230,38 @@ extension WebViewController : WebBridgeEventDelegate {
                }
            }
         })
-    
-        
-       
-        
-//        self.view.window?.orderOut(nil)
-//        ShellBridge.shared.previousFrontmostApplication?.activate(options: .activateIgnoringOtherApps)
-//        ShellBridge.delayWithSeconds(0.3) {
-//               print(NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "<none>");
-//               ShellBridge.injectStringIntoTerminal(script, runImmediately: true)
-//
-//        }
-        
     }
     
-    func requestInsertCLICommand(script: String) {
-//        NSApp.preventWindowOrdering()
-//        NSApplication.shared.preventWindowOrdering()
-        print(script)
-//        NSRunningApplication.current.hide()
-        print(NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "<none>");
-//        self.view.window?.resignKey()
-//        self.view.window?.orderOut(nil)
-//        ShellBridge.shared.previousFrontmostApplication?.activate(options: .activateIgnoringOtherApps)
-//        ShellBridge.delayWithSeconds(0.05) {
-            ShellBridge.injectStringIntoTerminal(script, runImmediately: false)
-//        }
+    @objc func executeCommandInTerminal(_ notification: Notification) {
+        print("hello")
 
-        print(NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "<none>");
-//        ShellBridge.delayWithSeconds(0.5) {
-//            print(NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "<none>");
-//        }
-//        self.view.window?.orderOut(nil)
-
+        ShellBridge.injectStringIntoTerminal(notification.object as! String, runImmediately: true, completion: {
+            if let currentMouseLocation = self.mouseLocation {
+               print("mouseLocation:", currentMouseLocation)
+               print("mouseInWindow", self.view.bounds.contains(currentMouseLocation))
+               if (self.view.bounds.contains(currentMouseLocation)) {
+                   NSRunningApplication.current.activate(options: .activateIgnoringOtherApps)
+               }
+           }
+        })
     }
     
-    func requestNextSection() {
-        print("next")
-
-    }
-    
-    func requestPreviousSection() {
-        print("prev")
-    }
-    
-    func startTutorial(identifier: String) {
-        print(identifier)
-
-    }
     
 }
 
 extension WebViewController: ShellBridgeEventListener {
-//    func recievedDataFromPipe(_ notification: NSNotification) {
-//        <#code#>
-//    }
-    
-
     
     @objc func recievedDataFromPipe(_ notification: Notification) {
-        let msg = (notification.object as! ShellMessage)
-        let stdin = msg.data.replacingOccurrences(of: "`", with: "\\`")
-        print("stdin: \(stdin)")
-//        let trimmed = (notification.object as! String).trimmingCharacters(in:
-////            NSCharacterSet.whitespacesAndNewlines
-////        )
-//        print("Open URL \(trimmed)")
-        print(ShellBridge.commandLineOptionsToURL(msg.options ?? []))
+        //Bring FIG to front when triggered explictly from commandline
+        NSRunningApplication.current.activate(options: .activateIgnoringOtherApps)
         
+        let msg = (notification.object as! ShellMessage)
         DispatchQueue.main.async {
-            if let options = msg.options {
-                switch options[0] {
-                case "callback":
-                    self.webView?.evaluateJavaScript("fig.\(options[1])(`\(stdin)`)", completionHandler: nil)
-                    break;
-                case "editor", "finder","viewer":
-                    self.loadLocalApp(options[0])
-                    ShellBridge.delayWithSeconds(0.5) {
-                        self.webView?.evaluateJavaScript("fig.stdin(`\(stdin)`)", completionHandler: nil)
-                    }
-
-                    break
-                case "web":
-                    self.loadRemoteApp(at: URL(string: options[1]) ?? URL(string:"https://app.withfig.com")!)
-                case "google":
-                    self.loadRemoteApp(at: URL(string: "https://google.com/search?q=\(options.suffix(from: 1).joined(separator: " ").addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")") ?? URL(string:"https://app.withfig.com")!)
-                case "home":
-                      self.loadRemoteApp(at: URL(string:"https://app.withfig.com")!)
-                default:
-                    
-                    self.loadRemoteApp(at: ShellBridge.commandLineOptionsToRawURL(msg.options ?? []))
-                    print("unrecognized option");
-                }
-            } else {
-                self.webView?.evaluateJavaScript("fig.stdin(`\(stdin)`)", completionHandler: nil)
-            }
-
-//            self.webView?.load(URLRequest(url: URL(string: trimmed)!))
+            FigCLI.route(msg,
+                         webView: self.webView!,
+                         companionWindow: self.view.window as! CompanionWindow)
         }
     }
-    
-    
 }
 
 
@@ -325,26 +269,40 @@ extension WebViewController : WKNavigationDelegate {
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
         print(error.localizedDescription)
     }
+    
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        print("didFinishNavigation")
+        var scriptContent = "var meta = document.createElement('meta');"
+        scriptContent += "meta.name='viewport';"
+        scriptContent += "meta.content='width=device-width';"
+        scriptContent += "document.getElementsByTagName('head')[0].appendChild(meta);"
+
+        webView.evaluateJavaScript(scriptContent, completionHandler: nil)
         
 //        self.webView?.evaluateJavaScript("document.body.style = document.body.style.cssText + \";background: transparent !important;\";", completionHandler: nil)
 //        
         
-        self.webView?.evaluateJavaScript("document.readyState", completionHandler: { (complete, error) in
-            if complete != nil {
-                self.webView?.evaluateJavaScript("document.body.scrollHeight", completionHandler: { (height, error) in
-                    let h = height as! CGFloat
-                    print(h)
-                })
-                
-            }
-
-            })
+//        self.webView?.evaluateJavaScript("document.readyState", completionHandler: { (complete, error) in
+//            if complete != nil {
+//                self.webView?.evaluateJavaScript("document.body.scrollHeight", completionHandler: { (height, error) in
+//                    let h = height as! CGFloat
+//                    print(h)
+//                })
+//                
+//            }
+//
+//            })
     }
 }
 
 class WebView : WKWebView {
     var trackingArea : NSTrackingArea?
+    
+//    override var intrinsicContentSize: NSSize {
+//        get {
+//            return self.superview?.bounds.size ?? NSSize.zero
+//        }
+//    }
 
     override func shouldDelayWindowOrdering(for event: NSEvent) -> Bool {
         return true
@@ -353,6 +311,7 @@ class WebView : WKWebView {
     override init(frame: CGRect, configuration: WKWebViewConfiguration) {
         super.init(frame: frame, configuration: configuration)
         self.unregisterDraggedTypes()
+//        self.autoresizingMask = NSView.AutoresizingMask.init(arrayLiteral: [.height, .width])
 //        NSEvent.addLocalMonitorForEvents(matching: NSEvent.EventTypeMask.mouseEntered) { event -> NSEvent? in
 //            print(event)
 //            return event
@@ -381,17 +340,36 @@ class WebView : WKWebView {
     
     override func mouseEntered(with event: NSEvent) {
         print("mouse entered")
-//        self.window?.makeKeyAndOrderFront(nil)
-        NSRunningApplication.current.activate(options: .activateIgnoringOtherApps)
+        //NSRunningApplication.current.activate(options: .activateIgnoringOtherApps)
     }
     
     override func mouseExited(with event: NSEvent) {
         print("mouse exited")
-        ShellBridge.shared.previousFrontmostApplication?.activate(options: .activateIgnoringOtherApps)
-
-//        self.window?.orderOut(self)
+        //ShellBridge.shared.previousFrontmostApplication?.activate(options: .activateIgnoringOtherApps)
     }
     
+    func loadBundleApp(_ app: String) {
+        if let url = Bundle.main.url(forResource: app, withExtension: "html") {
+            self.loadFileURL(url, allowingReadAccessTo: URL(string: "file://")!) // needed in order to load local files from anywhere
+        } else {
+            print("Bundle app '\(app)' does not exist")
+        }
+    }
+    
+    func loadLocalApp(_ url: URL) {
+//        let localURL = URL(fileURLWithPath: appPath)
+        self.loadFileURL(url, allowingReadAccessTo: URL(string: "file://")!) // needed in order to load local files from anywhere
+    }
+    
+    func loadRemoteApp(at url: URL) {
+        print(url.absoluteString)
+        self.load(URLRequest(url: url))
+    }
+    
+    func loadHomeScreen() {
+        self.load(URLRequest(url: URL(string: "https://app.withfig.com")!))
+
+    }
 
     
 //    override func scrollWheel(with event: NSEvent) {
@@ -412,4 +390,23 @@ class WebView : WKWebView {
 //    }
     
     
+}
+
+
+extension NSView {
+    /// Adds constraints to this `UIView` instances `superview` object to make sure this always has the same size as the superview.
+    /// Please note that this has no effect if its `superview` is `nil` – add this `UIView` instance as a subview before calling this.
+    func bindFrameToSuperviewBounds() {
+        guard let superview = self.superview else {
+            print("Error! `superview` was nil – call `addSubview(view: UIView)` before calling `bindFrameToSuperviewBounds()` to fix this.")
+            return
+        }
+
+        self.translatesAutoresizingMaskIntoConstraints = false
+        self.topAnchor.constraint(equalTo: superview.topAnchor, constant: 0).isActive = true
+        self.bottomAnchor.constraint(equalTo: superview.bottomAnchor, constant: 0).isActive = true
+        self.leadingAnchor.constraint(equalTo: superview.leadingAnchor, constant: 0).isActive = true
+        self.trailingAnchor.constraint(equalTo: superview.trailingAnchor, constant: 0).isActive = true
+
+    }
 }

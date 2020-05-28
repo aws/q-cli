@@ -17,6 +17,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     var clicks:Int = 6;
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
+        let _ = ShellBridge.shared
         let statusBar = NSStatusBar.system
         statusBarItem = statusBar.statusItem(
                withLength: NSStatusItem.squareLength)
@@ -25,66 +26,78 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
            let statusBarMenu = NSMenu(title: "fig")
            statusBarItem.menu = statusBarMenu
            
-           statusBarMenu.addItem(
-               withTitle: "Send string",
-               action: #selector(AppDelegate.pasteStringToTerminal),
-               keyEquivalent: "")
-        
-            statusBarMenu.addItem(
-            withTitle: "Check Windows",
-            action: #selector(AppDelegate.checkWinows),
-            keyEquivalent: "")
-        
-            statusBarMenu.addItem(
-             withTitle: "Frontmost App",
-             action: #selector(AppDelegate.frontmostApplication),
-             keyEquivalent: "")
-        
-            statusBarMenu.addItem(
-             withTitle: "Send string if active",
-             action: #selector(AppDelegate.sendStringIfTerminalActive),
-             keyEquivalent: "")
-        
-            statusBarMenu.addItem(
-             withTitle: "Copy 'Helloworld' to Pastboard",
-             action: #selector(AppDelegate.copyToPasteboard),
-             keyEquivalent: "")
+//           statusBarMenu.addItem(
+//               withTitle: "Send string",
+//               action: #selector(AppDelegate.pasteStringToTerminal),
+//               keyEquivalent: "")
+//
+//            statusBarMenu.addItem(
+//            withTitle: "Check Windows",
+//            action: #selector(AppDelegate.checkWinows),
+//            keyEquivalent: "")
+//
+//            statusBarMenu.addItem(
+//             withTitle: "Frontmost App",
+//             action: #selector(AppDelegate.frontmostApplication),
+//             keyEquivalent: "")
+//
+//            statusBarMenu.addItem(
+//             withTitle: "Send string if active",
+//             action: #selector(AppDelegate.sendStringIfTerminalActive),
+//             keyEquivalent: "")
+//
+//            statusBarMenu.addItem(
+//             withTitle: "Copy 'Helloworld' to Pastboard",
+//             action: #selector(AppDelegate.copyToPasteboard),
+//             keyEquivalent: "")
+//
+//        statusBarMenu.addItem(
+//         withTitle: "Run 'script -q -t 0 <file>.fig' as User",
+//         action: #selector(AppDelegate.runScriptCmd),
+//         keyEquivalent: "")
+//
+//        statusBarMenu.addItem(
+//         withTitle: "Run 'tail -F <file>.fig' as App",
+//         action: #selector(AppDelegate.runTailCmd),
+//         keyEquivalent: "")
+//
+//        statusBarMenu.addItem(
+//         withTitle: "Run 'exit' as User",
+//         action: #selector(AppDelegate.runExitCmd),
+//         keyEquivalent: "")
+//
+//        statusBarMenu.addItem(
+//         withTitle: "Log all window",
+//         action: #selector(AppDelegate.allWindows),
+//         keyEquivalent: "")
+//
+//        statusBarMenu.addItem(
+//         withTitle: "Top Terminal Window Bounds",
+//         action: #selector(AppDelegate.getTopTerminalWindow),
+//         keyEquivalent: "")
+//
+//        statusBarMenu.addItem(
+//         withTitle: "Update Overlay Style",
+//         action: #selector(AppDelegate.updateOverlayStyle),
+//         keyEquivalent: "")
+//
+//        statusBarMenu.addItem(
+//         withTitle: "Kill WebSocket Server",
+//         action: #selector(AppDelegate.killSocketServer),
+//         keyEquivalent: "")
         
         statusBarMenu.addItem(
-         withTitle: "Run 'script -q -t 0 <file>.fig' as User",
-         action: #selector(AppDelegate.runScriptCmd),
+         withTitle: "Add CLI Tool",
+         action: #selector(AppDelegate.addCLI),
          keyEquivalent: "")
-        
         statusBarMenu.addItem(
-         withTitle: "Run 'tail -F <file>.fig' as App",
-         action: #selector(AppDelegate.runTailCmd),
+         withTitle: "Prompt for Accesibility Access",
+         action: #selector(AppDelegate.promptForAccesibilityAccess),
          keyEquivalent: "")
-        
         statusBarMenu.addItem(
-         withTitle: "Run 'exit' as User",
-         action: #selector(AppDelegate.runExitCmd),
+         withTitle: "Quit Fig",
+         action: #selector(AppDelegate.quit),
          keyEquivalent: "")
-        
-        statusBarMenu.addItem(
-         withTitle: "Log all window",
-         action: #selector(AppDelegate.allWindows),
-         keyEquivalent: "")
-        
-        statusBarMenu.addItem(
-         withTitle: "Top Terminal Window Bounds",
-         action: #selector(AppDelegate.getTopTerminalWindow),
-         keyEquivalent: "")
-        
-        statusBarMenu.addItem(
-         withTitle: "Update Overlay Style",
-         action: #selector(AppDelegate.updateOverlayStyle),
-         keyEquivalent: "")
-        
-        statusBarMenu.addItem(
-         withTitle: "Kill WebSocket Server",
-         action: #selector(AppDelegate.killSocketServer),
-         keyEquivalent: "")
-        
         // Create the SwiftUI view that provides the window contents.
 //        let contentView = ContentView()
 
@@ -137,6 +150,18 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 //            event.flags = .maskCommand
 //            event.postToPid()
 //        }
+    }
+    
+    @objc func quit() {
+        NSApp.terminate(self)
+    }
+    
+    @objc func promptForAccesibilityAccess() {
+        ShellBridge.promptForAccesibilityAccess()
+    }
+    
+    @objc func addCLI() {
+        ShellBridge.symlinkCLI()
     }
     
     @objc func killSocketServer() {
@@ -511,7 +536,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
                     self.simulate(keypress: .enter)
  
                 // need delay so that terminal responds
-                delayWithSeconds(1) {
+                Timer.delayWithSeconds(1) {
                     // restore pasteboard
                     NSPasteboard.general.clearContents()
                     pasteboard.setString(copiedString, forType: .string)
@@ -540,7 +565,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
                     self.simulate(keypress: .enter)
  
                 // need delay so that terminal responds
-                delayWithSeconds(1) {
+                Timer.delayWithSeconds(1) {
                     // restore pasteboard
                     NSPasteboard.general.clearContents()
                     pasteboard.setString(copiedString, forType: .string)

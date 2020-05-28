@@ -10,21 +10,20 @@
                     finder(out)
                 })
             }
-
-   
-            console.log("Are we there yet?")
+            
         }
 
 
     
     let cd = function(dir) {
-        fig.execute(`cd ${dir} && ls -1aF`, (out, error) => {
+        fig.run(`cd ${dir}`)
+        fig.execute(`ls ${fig.env.pwd}/${dir} -1aF`, (out, error) => {
             finder(out)
         })
     }
     
     let openFile = function(path) {
-        fig.run(`cat "${path}" | fig editor`)
+        fig.run(`cat "${path}" | fig bundle editor`)
     }
     
     let finder = function(input) {

@@ -13,7 +13,12 @@ let setup = function(window) {
  }
 
   var fig = {
+      insert : function(cmd) {
+          console.log(`Inserting command "${cmd}" as user`)
+          window.webkit.messageHandlers.insertHandler.postMessage(cmd);
+      },
       run : function(cmd) {
+          console.log(`Running command "${cmd}" as user`)
           window.webkit.messageHandlers.executeHandler.postMessage(cmd);
       },
       execute : function(cmd, handler) {
@@ -21,9 +26,8 @@ let setup = function(window) {
           let type = "execute"
           console.log(JSON.stringify({type, cmd,handlerId}))
           this[handlerId] = handler
-        console.log("test")
-            console.log(JSON.stringify(window.webkit))
-          window.webkit.messageHandlers.callbackHandler.postMessage({type, cmd, handlerId});
+          let env = JSON.stringify(fig.env)
+          window.webkit.messageHandlers.callbackHandler.postMessage({type, cmd, handlerId, env});
           console.log(`Added callback handler "${handlerId}" for command "${cmd}"`)
       },
       stdin : function(input) {
@@ -33,10 +37,33 @@ let setup = function(window) {
       stdout : function(out) {
           window.webkit.messageHandlers.stdoutHandler.postMessage(out);
       },
-      
+      fwrite : function(path, data, handler) {
+          let handlerId = random_identifier(5)
+          this[handlerId] = handler
+          let env = JSON.stringify(fig.env)
+          window.webkit.messageHandlers.fwriteHandler.postMessage({path, data, handlerId, env});
+      },
+      fread : function(path, handler) {
+          let handlerId = random_identifier(5)
+          this[handlerId] = handler
+          let env = JSON.stringify(fig.env)
+          window.webkit.messageHandlers.freadHandler.postMessage({path, handlerId, env});
+      },
+      focus : function () {
+          window.webkit.messageHandlers.focusHandler.postMessage("");
+      },
+      blur : function () {
+          window.webkit.messageHandlers.blurHandler.postMessage("");
+      },
       callback : function(handlerId, value, error) {
-          this[handlerId](value, error)
+          this[handlerId](atob(value), error)
           delete this[handlerId]
+      },
+      stdinb64 : function(data) {
+          fig.stdin(atob(data))
+      },
+      log : function(msg) {
+          console.log(JSON.stringify(msg))
       }
   }
 
@@ -50,4 +77,4 @@ let setup = function(window) {
 //})(window);
 
 setup(window)
-console.log(JSON.stringify(window))
+//console.log(JSON.stringify(window))

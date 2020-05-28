@@ -1,0 +1,19 @@
+<html>
+    <style>
+
+    </style>
+    <body>
+        <p>
+        <a  href = "#" onclick = "javascript: fig.run('rm -f ~/figjs.log && touch ~/figjs.log')">Create New Log</a>
+        <br>
+        <sub>This will overwrite previous logs</sub>
+        </p>
+        <p>
+        <a href = "#" onclick = "javascript: fig.run('tail -f ~/figjs.log')">View Live Log</a>
+        </p>
+        <p>
+        <a href = "#" onclick = "javascript: fig.run('cat ~/figjs.log | fig editor2')">Open Log in Fig</a>
+        </p>
+
+    </body>
+</html>

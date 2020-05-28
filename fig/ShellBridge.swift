@@ -30,7 +30,7 @@ class ShellBridge {
 //        "python3 /path/to/executable/fig.py utils:ws-start".runAsCommand()
         self.startWebSocketServer()
 
-        ShellBridge.delayWithSeconds(0.25) {
+        Timer.delayWithSeconds(0.5) {
             self.socket = WebSocketTaskConnection.init(url: URL(string: "ws://localhost:8765")!)
             self.socket?.delegate = self;
             self.socket?.connect()
@@ -39,12 +39,12 @@ class ShellBridge {
     
     @objc func setPreviousApplication(notification: NSNotification!) {
         self.previousFrontmostApplication = notification!.userInfo![NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
-        print(self.previousFrontmostApplication?.bundleIdentifier ?? "")
+        print("Deactivated:", self.previousFrontmostApplication?.bundleIdentifier ?? "")
     }
 
     static func injectStringIntoTerminal(_ cmd: String, runImmediately: Bool = false, completion: (() -> Void)? = nil) {
             ShellBridge.shared.previousFrontmostApplication?.activate(options: .activateIgnoringOtherApps)
-            ShellBridge.delayWithSeconds(0.3) {
+            Timer.delayWithSeconds(0.3) {
             if let currentApp = NSWorkspace.shared.frontmostApplication {
 //        if let currentApp = ShellBridge.shared.previousFrontmostApplication {
                if (currentApp.isTerminal) {
@@ -59,7 +59,7 @@ class ShellBridge {
                    print(pasteboard.string(forType: .string) ?? "")
                        // Be careful: in some apps, CMD-Enter toggles fullscreen
                        self.simulate(keypress: .cmdV)
-                        delayWithSeconds(0.10) {
+                Timer.delayWithSeconds(0.10) {
                             self.simulate(keypress: .rightArrow)
                             self.simulate(keypress: .enter)
                             if let completion = completion {
@@ -68,7 +68,7 @@ class ShellBridge {
                        }
     
                    // need delay so that terminal responds
-                   delayWithSeconds(1) {
+                Timer.delayWithSeconds(1) {
                        // restore pasteboard
                        NSPasteboard.general.clearContents()
                        pasteboard.setString(copiedString, forType: .string)
@@ -102,10 +102,21 @@ class ShellBridge {
     }
     
     func startWebSocketServer() {
+        
+        // check if websocket server is running -- this might happen if the app crashes
+        
+        let pid = "pgrep -f websocket".runAsCommand().trimmingCharacters(in: .whitespacesAndNewlines)
+        if (pid.count > 0) {
+            print("The websocket server is already running on \(pid) process.\n Shut it off with `pkill -f websocket`")
+            
+            let out = "pkill -f websocket".runAsCommand()
+            print("Killed websocket:\(out)")
 
+        }
+        
         if let path = Bundle.main.path(forResource: "websocket", ofType: "", inDirectory: "wsdist") {
             print(path)
-            
+            print("Starting socket server")
             self.socketServer = path.runInBackground {
                   print("Closing the socket server")
             }
@@ -128,9 +139,8 @@ class ShellBridge {
 extension ShellBridge: WebSocketConnectionDelegate {
     func onConnected(connection: WebSocketConnection) {
         print("connected")
-//        connection.send(text: "hello")
 
-        ShellBridge.delayWithSeconds(1) {
+        Timer.delayWithSeconds(1) {
             connection.send(text: "register_as_host")
 
         }
@@ -146,7 +156,6 @@ extension ShellBridge: WebSocketConnectionDelegate {
     }
     
     func onMessage(connection: WebSocketConnection, text: String) {
-//        print("msg:\(text)")
         let decoder = JSONDecoder()
         do {
             let msg = try decoder.decode(ShellMessage.self, from: text.data(using: .utf8)!)
@@ -177,6 +186,7 @@ struct ShellMessage: Codable {
     var type: String
     var source: String
     var session: String
+    var env: String?
     var io: String?
     var data: String
     var options: [String]?
@@ -197,7 +207,7 @@ class Integrations {
 //                    .union(Integrations.browsers)
 }
 
-extension ShellBridge {
+extension Timer {
     class func delayWithSeconds(_ seconds: Double, completion: @escaping () -> ()) {
         DispatchQueue.main.asyncAfter(deadline: .now() + seconds) {
             completion()
@@ -258,7 +268,7 @@ extension ShellBridge {
         
         var components = URLComponents()
         components.scheme = "https"
-        components.host = "withfig.com"
+        components.host = "app.withfig.com"
         components.path = root
         components.queryItems = query.map {
              URLQueryItem(name: $0, value: $1)
@@ -270,17 +280,17 @@ extension ShellBridge {
         var cmd = ""
         var raw:[String] = []
         if (options.count > 0) {
-            cmd = options.first!
+            cmd = "/\(options.first!)"
             raw = Array(options.suffix(from: 1))
         }
         
         let argv = raw.joined(separator: " ").addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
         var components = URLComponents()
         components.scheme = "https"
-        components.host = "withfig.com"
+        components.host = "app.withfig.com"
         components.path = cmd
-        components.queryItems = [URLQueryItem(name: "argv", value: argv)]
-        return components.url!
+        components.queryItems = [URLQueryItem(name: "input", value: argv)]
+        return components.url!//URL(string:"\(components.string!)?input=\(argv)")!
     }
 }
 
@@ -289,5 +299,39 @@ extension Array {
         return stride(from: 0, to: count, by: size).map {
             Array(self[$0 ..< Swift.min($0 + size, count)])
         }
+    }
+}
+
+extension ShellBridge {
+    static func symlinkCLI(){
+//        cmd="tell application \"Terminal\" to do script \"uptime\""
+//          osascript -e "$cmd"
+        
+        if let path = Bundle.main.path(forResource: "fig", ofType: "", inDirectory: "dist") {
+            print(path)
+            let script = "mkdir -p /usr/local/bin && ln -sf '\(path)' '/usr/local/bin/fig'"
+            
+            let out = "cmd=\"do shell script \\\"\(script)\\\" with administrator privileges\" && osascript -e \"$cmd\"".runAsCommand()
+            
+            print(out)
+            
+            let _ = "echo \"fig init #start fig pty\" >> ~/.profile".runAsCommand()
+   
+
+        } else {
+            print("couldn't find 'fig' cli executable")
+        }
+
+    }
+    
+    static func promptForAccesibilityAccess() {
+            //get the value for accesibility
+            let checkOptPrompt = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as NSString
+            //set the options: false means it wont ask
+            //true means it will popup and ask
+            let options = [checkOptPrompt: true]
+            //translate into boolean value
+            let accessEnabled = AXIsProcessTrustedWithOptions(options as CFDictionary?)
+            print(accessEnabled)
     }
 }
