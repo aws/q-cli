@@ -51,7 +51,8 @@ class WebViewController: NSViewController, NSWindowDelegate {
         effect.maskImage = _maskImage(cornerRadius: 15)
         self.view = effect;
         self.view.postsFrameChangedNotifications = true
-        
+        self.view.postsBoundsChangedNotifications = true
+
 
         
 
@@ -101,6 +102,9 @@ class WebViewController: NSViewController, NSWindowDelegate {
 ////        self.webView!.frame = self.view.frame
 //        print(view.window?.frame.size ?? "<none>", self.webView!.frame.size)
 //        print(view.frame.size, self.webView!.frame.size)
+//        if let window = self.view.window {
+//            self.view.frame = window.frame
+//        }
         
         print(view.window?.frame ?? .zero, view.frame, self.webView?.frame ?? .zero)
 
@@ -122,6 +126,9 @@ class WebViewController: NSViewController, NSWindowDelegate {
         NotificationCenter.default.addObserver(self, selector: #selector(executeCommandInTerminal(_:)), name: .executeCommandInTerminal, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(windowDidResize(_:)), name: NSWindow.didResizeNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(viewFrameResized), name:NSView.frameDidChangeNotification, object: self.view)
+        NotificationCenter.default.addObserver(self, selector: #selector(viewFrameResized), name:NSView.boundsDidChangeNotification, object: self.view)
+
+        // TIMER to UPDATE INNER VIEW EVERY x INTERVAL
         
         
         view.window?.delegate = self
@@ -278,6 +285,9 @@ extension WebViewController : WKNavigationDelegate {
         scriptContent += "document.getElementsByTagName('head')[0].appendChild(meta);"
 
         webView.evaluateJavaScript(scriptContent, completionHandler: nil)
+        
+//    webView.evaluateJavaScript("window.scrollTo(0,0)", completionHandler: nil)
+
         
 //        self.webView?.evaluateJavaScript("document.body.style = document.body.style.cssText + \";background: transparent !important;\";", completionHandler: nil)
 //        

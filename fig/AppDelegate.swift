@@ -197,135 +197,137 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
          injectStringIntoTerminal("exit")
      }
     
-    enum OverlayPositioning: Int {
-        case coveringTitlebar = 0
-        case insideRightFull = 1
-        case insideRightPartial = 2
-        case outsideRight = 3
-        case atPrompt = 4
-        case icon = 5
-        case notification = 6
-    
-    }
-    
-    var priorTargetFrame: NSRect = .zero
-    
-    @objc func positionWindow() {
-        repositionWindow(forceUpdate: true)
-    }
-    func repositionWindow( forceUpdate:Bool = false) {
-        let whitelistedBundleIds = Integrations.whitelist
-//                                    ["com.googlecode.iterm2",
-//                                    "com.google.Chrome",
-//                                    "com.sublimetext.3",
-//                                    "com.apple.dt.Xcode",
-//                                    "com.apple.Terminal"]
-        guard let app = NSWorkspace.shared.frontmostApplication,
-              let bundleId = app.bundleIdentifier else {
-                   return
-               }
-        
-        if (whitelistedBundleIds.contains(bundleId)) {
-            let targetFrame = topmostWindowFrameFor(app)
-
-            if (forceUpdate || !targetFrame.equalTo(priorTargetFrame)) {
-                priorTargetFrame = targetFrame
-                let frame = overlayFrame(OverlayPositioning.init(rawValue: self.clicks % 7)!,
-                                         terminalFrame: targetFrame,
-                                         screenBounds: .zero)
-                setOverlayFrame(frame)
-    
-            }
-            
-        } else if (bundleId == "com.mschrage.fig") {
-            print("fig window is active: previous: \(ShellBridge.shared.previousFrontmostApplication?.bundleIdentifier ?? "none" )");
-        } else {
-            window.orderOut(self)
-        }
-    }
-    
-    func setOverlayFrame(_ frame: NSRect) {
-        // no update if frame hasn't changed
-        self.window.windowController?.shouldCascadeWindows = false;
-        self.window.setFrame(frame, display: true)
-        self.window.setFrameTopLeftPoint(frame.origin)
-        
-        window.makeKeyAndOrderFront(self)
-//        NSApp.activate(ignoringOtherApps: true)
-    }
-    
-    func topmostWindowFrameFor(_ app: NSRunningApplication, includingTitleBar: Bool = false) -> NSRect {
-        let appRef = AXUIElementCreateApplication(app.processIdentifier)
-        
-        var window: AnyObject?
-        let result = AXUIElementCopyAttributeValue(appRef, kAXFocusedWindowAttribute as CFString, &window)
-        
-        if (result == .apiDisabled) {
-            print("Accesibility needs to be enabled.")
-            return .zero
-        }
-                
-        var position : AnyObject?
-        var size : AnyObject?
-        
-        guard (window != nil) else {
-            print("Window does not exist.")
-            return .zero
-        }
-
-        AXUIElementCopyAttributeValue(window as! AXUIElement, kAXPositionAttribute as CFString, &position)
-        AXUIElementCopyAttributeValue(window as! AXUIElement, kAXSizeAttribute as CFString, &size)
-        
-        if let position = position, let size = size {
-            let point = AXValueGetters.asCGPoint(value: position as! AXValue)
-            let bounds = AXValueGetters.asCGSize(value: size as! AXValue)
-            
-            let titleBarHeight:CGFloat = 23.0;
-                         
-            return NSRect.init(x: point.x,
-                               y: (NSScreen.main?.visibleFrame.height)! - point.y + ((includingTitleBar) ? titleBarHeight : 0),
-                               width:  bounds.width,
-                               height: bounds.height - ((includingTitleBar) ? 0 : titleBarHeight))
-        }
-        return .zero
-    }
-    
-    func overlayFrame( _ positioning: OverlayPositioning, terminalFrame: NSRect, screenBounds: NSRect) -> NSRect {
-        if terminalFrame.width < 100 || terminalFrame.height < 200 {
-            return .zero
-        }
-        let t_size = terminalFrame.size
-        switch positioning {
-        case .coveringTitlebar:
-            return NSRect(origin: terminalFrame.origin, size: CGSize.init(width: t_size.width, height: 100))
-        case .insideRightFull:
-            return terminalFrame.divided(atDistance: 300, from: .maxXEdge).slice
-        case .insideRightPartial:
-            return terminalFrame.divided(atDistance: 300, from: .maxXEdge).slice.divided(atDistance: t_size.height * ( 2 / 3 ), from: .maxYEdge).slice.offsetBy(dx: 0, dy: -t_size.height / 3)
-        case .atPrompt:
-        
-            let inner = terminalFrame.insetBy(dx: 30, dy: 45)
-            return NSRect(x: inner.origin.x, y: inner.origin.y - inner.height, width: inner.width, height: 100)
-        case .outsideRight:
-            return terminalFrame.insetBy(dx: -300, dy: 0).divided(atDistance: 300, from: .maxXEdge).slice
-        case .icon:
-            let i_size =  CGSize(width: 50, height: 50)
-            let i_padding = CGPoint(x: 12, y: -36);
-            return NSRect(origin: CGPoint.init(x:terminalFrame.maxX - i_size.width - i_padding.x,
-                                               y: terminalFrame.minY - i_size.height - i_padding.y), size: i_size)
-        case .notification:
-            let i_size =  CGSize(width: 300, height: 120)
-            let i_padding = CGPoint(x: 12, y: -120 + 12);
-            return NSRect(origin: CGPoint.init(x:terminalFrame.maxX - i_size.width - i_padding.x,
-                                               y: terminalFrame.minY - i_size.height - i_padding.y), size: i_size)
-        }
-  
-    }
-    
-    @objc func updateOverlayStyle() {
-        self.clicks += 1;
-        self.repositionWindow(forceUpdate: true)
-    }
+//    enum OverlayPositioning: Int {
+//        case coveringTitlebar = 0
+//        case insideRightFull = 1
+//        case insideRightPartial = 2
+//        case outsideRight = 3
+//        case atPrompt = 4
+//        case icon = 5
+//        case notification = 6
+//
+//    }
+//
+//    var priorTargetFrame: NSRect = .zero
+//
+//    @objc func positionWindow() {
+//        repositionWindow(forceUpdate: true)
+//    }
+//    func repositionWindow( forceUpdate:Bool = true) {
+//        let whitelistedBundleIds = Integrations.whitelist
+////                                    ["com.googlecode.iterm2",
+////                                    "com.google.Chrome",
+////                                    "com.sublimetext.3",
+////                                    "com.apple.dt.Xcode",
+////                                    "com.apple.Terminal"]
+//        guard let app = NSWorkspace.shared.frontmostApplication,
+//              let bundleId = app.bundleIdentifier else {
+//                   return
+//               }
+//
+//        if (whitelistedBundleIds.contains(bundleId)) {
+//            let targetFrame = topmostWindowFrameFor(app)
+//
+//            if (forceUpdate || !targetFrame.equalTo(priorTargetFrame)) {
+//                priorTargetFrame = targetFrame
+//                let frame = overlayFrame(OverlayPositioning.init(rawValue: self.clicks % 7)!,
+//                                         terminalFrame: targetFrame,
+//                                         screenBounds: .zero)
+//                setOverlayFrame(frame)
+//
+//            }
+//
+//        } else if (bundleId == "com.mschrage.fig") {
+//            print("fig window is active: previous: \(ShellBridge.shared.previousFrontmostApplication?.bundleIdentifier ?? "none" )");
+//        } else {
+//            window.orderOut(self)
+//        }
+//    }
+//
+//    func setOverlayFrame(_ frame: NSRect) {
+//        // no update if frame hasn't changed
+//        self.window.windowController?.shouldCascadeWindows = false;
+//        self.window.setFrame(frame, display: true)
+//        self.window.setFrameTopLeftPoint(frame.origin)
+//
+//        window.makeKeyAndOrderFront(self)
+////        NSApp.activate(ignoringOtherApps: true)
+//    }
+//
+//    func topmostWindowFrameFor(_ app: NSRunningApplication, includingTitleBar: Bool = false) -> NSRect {
+//        let appRef = AXUIElementCreateApplication(app.processIdentifier)
+//
+//        var window: AnyObject?
+//        let result = AXUIElementCopyAttributeValue(appRef, kAXFocusedWindowAttribute as CFString, &window)
+//
+//        if (result == .apiDisabled) {
+//            print("Accesibility needs to be enabled.")
+//            return .zero
+//        }
+//
+//        var position : AnyObject?
+//        var size : AnyObject?
+//
+//        guard (window != nil) else {
+//            print("Window does not exist.")
+//            return .zero
+//        }
+//
+//        AXUIElementCopyAttributeValue(window as! AXUIElement, kAXPositionAttribute as CFString, &position)
+//        AXUIElementCopyAttributeValue(window as! AXUIElement, kAXSizeAttribute as CFString, &size)
+//
+//        if let position = position, let size = size {
+//            let point = AXValueGetters.asCGPoint(value: position as! AXValue)
+//            let bounds = AXValueGetters.asCGSize(value: size as! AXValue)
+//
+//            let titleBarHeight:CGFloat = 23.0;
+//
+//            print("TopmostFrame for \(app.bundleIdentifier ?? "")", NSScreen.main!.frame, NSScreen.main!.visibleFrame, point, bounds)
+//
+//            return NSRect.init(x: point.x,
+//                               y: (NSScreen.main?.visibleFrame.height)! - point.y + ((includingTitleBar) ? titleBarHeight : 0),
+//                               width:  bounds.width,
+//                               height: bounds.height - ((includingTitleBar) ? 0 : titleBarHeight))
+//        }
+//        return .zero
+//    }
+//
+//    func overlayFrame( _ positioning: OverlayPositioning, terminalFrame: NSRect, screenBounds: NSRect) -> NSRect {
+//        if terminalFrame.width < 100 || terminalFrame.height < 200 {
+//            return .zero
+//        }
+//        let t_size = terminalFrame.size
+//        switch positioning {
+//        case .coveringTitlebar:
+//            return NSRect(origin: terminalFrame.origin, size: CGSize.init(width: t_size.width, height: 100))
+//        case .insideRightFull:
+//            return terminalFrame.divided(atDistance: 300, from: .maxXEdge).slice
+//        case .insideRightPartial:
+//            return terminalFrame.divided(atDistance: 300, from: .maxXEdge).slice.divided(atDistance: t_size.height * ( 2 / 3 ), from: .maxYEdge).slice.offsetBy(dx: 0, dy: -t_size.height / 3)
+//        case .atPrompt:
+//
+//            let inner = terminalFrame.insetBy(dx: 30, dy: 45)
+//            return NSRect(x: inner.origin.x, y: inner.origin.y - inner.height, width: inner.width, height: 100)
+//        case .outsideRight:
+//            return terminalFrame.insetBy(dx: -300, dy: 0).divided(atDistance: 300, from: .maxXEdge).slice
+//        case .icon:
+//            let i_size =  CGSize(width: 50, height: 50)
+//            let i_padding = CGPoint(x: 12, y: -36);
+//            return NSRect(origin: CGPoint.init(x:terminalFrame.maxX - i_size.width - i_padding.x,
+//                                               y: terminalFrame.minY - i_size.height - i_padding.y), size: i_size)
+//        case .notification:
+//            let i_size =  CGSize(width: 300, height: 120)
+//            let i_padding = CGPoint(x: 12, y: -120 + 12);
+//            return NSRect(origin: CGPoint.init(x:terminalFrame.maxX - i_size.width - i_padding.x,
+//                                               y: terminalFrame.minY - i_size.height - i_padding.y), size: i_size)
+//        }
+//
+//    }
+//
+//    @objc func updateOverlayStyle() {
+//        self.clicks += 1;
+//        self.repositionWindow(forceUpdate: true)
+//    }
     // > fig search
     @objc func getTopTerminalWindow() {
         guard let app = NSWorkspace.shared.frontmostApplication else {
@@ -420,12 +422,12 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 //                let terminalFrame = NSRectFromCGRect(terminalWindowFrame)
                 self.window.windowController?.shouldCascadeWindows = false;
                 
-                print("Before:", terminalWindowFrame)
-                let figWindow = overlayFrame(OverlayPositioning.init(rawValue: self.clicks % 7)!, terminalFrame: terminalWindowFrame, screenBounds: .zero)
-                print("After:", figWindow)
+//                print("Before:", terminalWindowFrame)
+//                let figWindow = overlayFrame(OverlayPositioning.init(rawValue: self.clicks % 7)!, terminalFrame: terminalWindowFrame, screenBounds: .zero)
+//                print("After:", figWindow)
 
-                self.window.setFrame(figWindow, display: true)
-                self.window.setFrameTopLeftPoint(figWindow.origin)
+//                self.window.setFrame(figWindow, display: true)
+//                self.window.setFrameTopLeftPoint(figWindow.origin)
                 self.clicks += 1;
 //                self.window.setFrameOrigin(NSPoint.init(x: point.x, y: (point.y < NSScreen.main!.frame.height/2) ? point.y + bounds.height : point.y - bounds.height) )
 ////                self.window.cascadeTopLeft(from: NSPointFromCGPoint(point))

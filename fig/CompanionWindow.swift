@@ -42,7 +42,7 @@ class CompanionWindow : NSWindow {
         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(deactivateApp), name: NSWorkspace.didDeactivateApplicationNotification, object: nil)
 
         
-        let _ = Timer.scheduledTimer(timeInterval: 0.1, target: self, selector: #selector(positionWindow), userInfo: nil, repeats: true)
+        let _ = Timer.scheduledTimer(timeInterval: 0.25, target: self, selector: #selector(positionWindow), userInfo: nil, repeats: true)
         
 //        let trackingArea = NSTrackingArea(rect: self.contentViewController!.view.frame,
 //                                                options: [NSTrackingArea.Options.activeAlways ,NSTrackingArea.Options.mouseEnteredAndExited],
@@ -77,7 +77,7 @@ class CompanionWindow : NSWindow {
     }
     
     @objc func positionWindow() {
-      repositionWindow(forceUpdate: false)
+      repositionWindow(forceUpdate: true)
     }
     
     
@@ -94,7 +94,7 @@ class CompanionWindow : NSWindow {
             if targetWindowFrame.width < 100 || targetWindowFrame.height < 200 {
                  return .zero
              }
-            
+
              let t_size = targetWindowFrame.size
              switch self {
              case .coveringTitlebar:
@@ -104,7 +104,7 @@ class CompanionWindow : NSWindow {
              case .insideRightPartial:
                  return targetWindowFrame.divided(atDistance: 300, from: .maxXEdge).slice.divided(atDistance: t_size.height * ( 2 / 3 ), from: .maxYEdge).slice.offsetBy(dx: 0, dy: -t_size.height / 3)
              case .atPrompt:
-             
+
                  let inner = targetWindowFrame.insetBy(dx: 30, dy: 45)
                  return NSRect(x: inner.origin.x, y: inner.origin.y - inner.height, width: inner.width, height: 100)
              case .outsideRight:
@@ -120,31 +120,36 @@ class CompanionWindow : NSWindow {
                  return NSRect(origin: CGPoint.init(x:targetWindowFrame.maxX - i_size.width - i_padding.x,
                                                     y: targetWindowFrame.minY - i_size.height - i_padding.y), size: i_size)
              }
-            
+
         }
-        
+
     }
     
     
-    func repositionWindow( forceUpdate:Bool = false) {
+    func repositionWindow( forceUpdate:Bool = true) {
         let whitelistedBundleIds = Integrations.whitelist
         guard let app = NSWorkspace.shared.frontmostApplication,
               let bundleId = app.bundleIdentifier else {
                    return
                }
-        
+
         if (whitelistedBundleIds.contains(bundleId)) {
             let targetFrame = topmostWindowFrameFor(app)
+            print("targetFrame:\(targetFrame)")
             if (forceUpdate || !targetFrame.equalTo(priorTargetFrame)) {
+                print("Update for topmostWindow")
                 priorTargetFrame = targetFrame
-                let frame = overlayFrame(self.positioning,
-                                         terminalFrame: targetFrame,
-                                         screenBounds: .zero)
+                let frame = self.positioning.frame(targetWindowFrame: targetFrame)
+//                let frame = overlayFrame(self.positioning,
+//                                         terminalFrame: targetFrame,
+//                                         screenBounds: .zero)
                 setOverlayFrame(frame)
     
             }
             
         } else if (app.isFig) {
+//            self.contentViewController?.view.frame = NSRect.init(origin: .zero, size: frame.size)
+
 //            print("fig window is active: previous: \(ShellBridge.shared.previousFrontmostApplication?.bundleIdentifier ?? "none" )");
         } else {
             self.orderOut(self)
@@ -153,13 +158,32 @@ class CompanionWindow : NSWindow {
     
         func setOverlayFrame(_ frame: NSRect) {
             // no update if frame hasn't changed
+            // this is a super ugly bugfix
+            // set an offset to cause the view to reload
+//            let randOffset = CGFloat(Double.random(in: 0...0.1))
+            let shouldAddOffset = Int.random(in: 0...5) == 0
             self.windowController?.shouldCascadeWindows = false;
             self.setFrame(frame, display: true)
             self.setFrameTopLeftPoint(frame.origin)
             
             self.makeKeyAndOrderFront(nil)
             // This line is essential
-            self.contentViewController?.view.frame = NSRect.init(origin: .zero, size: frame.size)
+//            self.contentViewController?.view.frame = NSRect.init(origin: .zero, size:frame.size)
+            
+            self.contentViewController?.view.frame = NSRect.init(origin: .zero, size: CGSize(width: frame.size.width, height: frame.size.height + (shouldAddOffset ? 0.01 : 0)))
+//
+            self.contentViewController?.view.setFrameSize(frame.size)
+            self.contentViewController?.view.needsDisplay = true
+            self.contentViewController?.view.needsLayout = true
+
+//
+//            self.contentViewController?.view.layout()
+//            self.contentViewController?.view.resizeSubviews(withOldSize: frame.size)
+//            self.contentViewController?.view.resize(withOldSuperviewSize: frame.size)
+//            self.contentViewController?.view.needsLayout = true
+//            (self.contentViewController as! WebViewController).viewFrameResized()
+            // maybe update webview frame explictly
+            
         }
     
       func topmostWindowFrameFor(_ app: NSRunningApplication, includingTitleBar: Bool = false) -> NSRect {
@@ -189,7 +213,9 @@ class CompanionWindow : NSWindow {
               let bounds = AXValueGetters.asCGSize(value: size as! AXValue)
               
               let titleBarHeight:CGFloat = 23.0;
-                           
+            
+//            print("TopmostFrame for \(app.bundleIdentifier ?? "")", NSScreen.main!.frame, NSScreen.main!.visibleFrame, point, bounds)
+
               // subtract screen.frame.origin.y to handle display edge case
               return NSRect.init(x: point.x,
                                  y: (NSScreen.main?.frame.height)! + NSScreen.main!.frame.origin.y - point.y - ((includingTitleBar) ? 0 : titleBarHeight),

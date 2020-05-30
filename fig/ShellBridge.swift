@@ -203,7 +203,7 @@ class Integrations {
                                  "com.sublimetext.3"]
     
     static let whitelist = Integrations.terminals
-                    .union(Integrations.editors)
+//                    .union(Integrations.editors)
 //                    .union(Integrations.browsers)
 }
 
@@ -314,8 +314,9 @@ extension ShellBridge {
             let out = "cmd=\"do shell script \\\"\(script)\\\" with administrator privileges\" && osascript -e \"$cmd\"".runAsCommand()
             
             print(out)
-            
-            let _ = "echo \"fig init #start fig pty\" >> ~/.profile".runAsCommand()
+            let _ = "test -f ~/.bash_profile && >> echo \"fig init #start fig pty\" ~/.bash_profile".runAsCommand()
+            let _ = "test -f ~/.zprofile && >> echo \"fig init #start fig pty\" ~/.zprofile".runAsCommand()
+            let _ = "test -f ~/.profile && echo \"fig init #start fig pty\" >> ~/.profile".runAsCommand()
    
 
         } else {
