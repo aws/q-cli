@@ -93,8 +93,8 @@ class WebBridgeContentController : WKUserContentController {
        
         self.addWebBridgeScript(.exceptions)
         self.addWebBridgeScript(.logging);
-        self.addWebBridgeScript(.insertFigTutorialCSS);
-        self.addWebBridgeScript(.insertFigTutorialJS);
+//        self.addWebBridgeScript(.insertFigTutorialCSS);
+//        self.addWebBridgeScript(.insertFigTutorialJS);
 
         self.addWebBridgeScript(.figJS, location: .atDocumentStart);
     }

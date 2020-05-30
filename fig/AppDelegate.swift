@@ -8,16 +8,24 @@
 
 import Cocoa
 import SwiftUI
-
+import HotKey
 @NSApplicationMain
 class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 
     var window: NSWindow!
     var statusBarItem: NSStatusItem!
     var clicks:Int = 6;
+    var hotkey = HotKey(key: .grave, modifiers: [.command])
+
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         let _ = ShellBridge.shared
+        
+        self.hotkey.keyDownHandler = {
+          print("Pressed at \(Date())")
+            self.toggleVisibility()
+        }
+
         let statusBar = NSStatusBar.system
         statusBarItem = statusBar.statusItem(
                withLength: NSStatusItem.squareLength)
@@ -85,6 +93,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 //         withTitle: "Kill WebSocket Server",
 //         action: #selector(AppDelegate.killSocketServer),
 //         keyEquivalent: "")
+    
         
         statusBarMenu.addItem(
          withTitle: "Add CLI Tool",
@@ -93,6 +102,10 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         statusBarMenu.addItem(
          withTitle: "Prompt for Accesibility Access",
          action: #selector(AppDelegate.promptForAccesibilityAccess),
+         keyEquivalent: "")
+        statusBarMenu.addItem(
+         withTitle: "Toggle Visibility (⌘~)",
+         action: #selector(AppDelegate.toggleVisibility),
          keyEquivalent: "")
         statusBarMenu.addItem(
          withTitle: "Quit Fig",
@@ -150,6 +163,25 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 //            event.flags = .maskCommand
 //            event.postToPid()
 //        }
+    }
+    
+    @objc func toggleVisibility() {
+        if let window = self.window {
+           let companion = window as! CompanionWindow
+           let position = companion.positioning
+           
+           if(NSWorkspace.shared.frontmostApplication?.isFig ?? false) {
+               ShellBridge.shared.previousFrontmostApplication?.activate(options: .activateIgnoringOtherApps)
+           }
+           
+           if position == .icon {
+               companion.positioning = .insideRightPartial
+                NSRunningApplication.current.activate(options: .activateIgnoringOtherApps)
+           } else {
+               companion.positioning = .icon
+//            ShellBridge.shared.previousFrontmostApplication?.activate(options: .activateIgnoringOtherApps)
+           }
+       }
     }
     
     @objc func quit() {

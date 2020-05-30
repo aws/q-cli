@@ -109,6 +109,8 @@ class FigCLI {
     static func route(_ message: ShellMessage, webView: WebView, companionWindow: CompanionWindow) {
         let stdin = message.data.replacingOccurrences(of: "`", with: "\\`")
         let env = message.env ?? ""
+        companionWindow.positioning = .insideRightPartial
+
         guard let options = message.options, options.count > 0 else {
             let scope = Scope(cmd: "", stdin: stdin, options: [], env: env, webView: webView, companionWindow: companionWindow)
             FigCLI.index(with: scope)

@@ -9,11 +9,23 @@
 import Foundation
 import Cocoa
 
+
+extension Notification.Name {
+    static let overlayDidBecomeIcon = Notification.Name("overlayDidBecomeIcon")
+    static let overlayDidBecomeMain = Notification.Name("overlayDidBecomeMain")
+
+}
+
 class CompanionWindow : NSWindow {
     var priorTargetFrame: NSRect = .zero
     var positioning: OverlayPositioning = .insideRightPartial {
         didSet {
             self.repositionWindow(forceUpdate: true)
+            if (positioning == .icon) {
+                NotificationCenter.default.post(name: .overlayDidBecomeIcon, object: nil)
+            } else {
+                NotificationCenter.default.post(name: .overlayDidBecomeMain, object: nil)
+            }
         }
     }
     override public var canBecomeKey: Bool {
@@ -42,7 +54,7 @@ class CompanionWindow : NSWindow {
         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(deactivateApp), name: NSWorkspace.didDeactivateApplicationNotification, object: nil)
 
         
-        let _ = Timer.scheduledTimer(timeInterval: 0.25, target: self, selector: #selector(positionWindow), userInfo: nil, repeats: true)
+        let _ = Timer.scheduledTimer(timeInterval: 0.15, target: self, selector: #selector(positionWindow), userInfo: nil, repeats: true)
         
 //        let trackingArea = NSTrackingArea(rect: self.contentViewController!.view.frame,
 //                                                options: [NSTrackingArea.Options.activeAlways ,NSTrackingArea.Options.mouseEnteredAndExited],

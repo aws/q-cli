@@ -14,7 +14,35 @@ class WebViewController: NSViewController, NSWindowDelegate {
     var mouseLocation: NSPoint? { self.view.window?.mouseLocationOutsideOfEventStream }
 
     var webView: WebView? // = WKWebView(frame:.zero)
+    
+    var icon: NSTextField = {
+        let label = NSTextField()
+        label.frame = CGRect(origin: .zero, size: CGSize(width: 50, height: 50))
+        label.stringValue = "🍐"
+        label.alignment = .center
+        label.font = NSFont(name: "AppleColorEmoji", size: 30)
+        label.backgroundColor = .white
+        label.isBezeled = false
+        label.isEditable = false
+        label.sizeToFit()
+//        label.isHidden = true
 
+        let gesture = NSClickGestureRecognizer()
+        gesture.buttonMask = 0x1 // left mouse
+        gesture.numberOfClicksRequired = 1
+        gesture.target = NSApp.delegate
+        gesture.action = #selector(AppDelegate.toggleVisibility)
+
+        label.addGestureRecognizer(gesture)
+        
+//        label.layer?.shadowColor = NSColor.black.cgColor
+//        label.layer?.shadowRadius = 3.0
+//        label.layer?.shadowOpacity = 1.0
+//        label.layer?.shadowOffset = CGSize(width: 4, height: 4)
+//        label.layer?.masksToBounds = false
+        
+        return label
+    }()
 //    override func loadView() {
 //        self.view = webView
 //    }
@@ -52,7 +80,7 @@ class WebViewController: NSViewController, NSWindowDelegate {
         self.view = effect;
         self.view.postsFrameChangedNotifications = true
         self.view.postsBoundsChangedNotifications = true
-
+        
 
         
 
@@ -117,7 +145,7 @@ class WebViewController: NSViewController, NSWindowDelegate {
         
         print("viewDidLoad")
         
-        
+
         webView = WebView(frame: .zero, configuration: WebBridge())
         
         NotificationCenter.default.addObserver(self, selector: #selector(recievedDataFromPipe(_:)), name: .recievedDataFromPipe, object: nil)
@@ -127,7 +155,8 @@ class WebViewController: NSViewController, NSWindowDelegate {
         NotificationCenter.default.addObserver(self, selector: #selector(windowDidResize(_:)), name: NSWindow.didResizeNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(viewFrameResized), name:NSView.frameDidChangeNotification, object: self.view)
         NotificationCenter.default.addObserver(self, selector: #selector(viewFrameResized), name:NSView.boundsDidChangeNotification, object: self.view)
-
+        NotificationCenter.default.addObserver(self, selector: #selector(overlayDidBecomeIcon), name:.overlayDidBecomeIcon, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(overlayDidBecomeMain), name:.overlayDidBecomeMain, object: nil)
         // TIMER to UPDATE INNER VIEW EVERY x INTERVAL
         
         
@@ -136,12 +165,32 @@ class WebViewController: NSViewController, NSWindowDelegate {
 //        webView.ba
         webView?.navigationDelegate = self
         self.view.addSubview(webView!)
+        
+//
+        self.view.addSubview(self.icon)
+        self.icon.isHidden = true;
+
 //        webView?.bindFrameToSuperviewBounds()
         
     }
     
+    @objc func overlayDidBecomeIcon() {
+        print("didBecomeIcon")
+        self.icon.isHidden = false;
+
+        self.icon.frame = NSRect(x: 0, y: -6, width: 50, height: 50)
+        (self.view as! NSVisualEffectView).maskImage = _maskImage(cornerRadius: 25)
+    }
+    
+    @objc func overlayDidBecomeMain() {
+        print("didBecomeMain")
+        self.icon.isHidden = true
+        (self.view as! NSVisualEffectView).maskImage = _maskImage(cornerRadius: 15)
+
+    }
+    
     @objc func viewFrameResized() {
-        print("viewResized")
+//        print("viewResized")
         self.webView?.frame = self.view.bounds
     }
     

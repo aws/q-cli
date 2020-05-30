@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 50;
+	objectVersion = 52;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -22,8 +22,11 @@
 		755D0DE0247DDE050074AB5C /* FigCLI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755D0DDF247DDE050074AB5C /* FigCLI.swift */; };
 		755D0DE2247EFAE10074AB5C /* Logging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755D0DE1247EFAE10074AB5C /* Logging.swift */; };
 		755D0DE4247F038B0074AB5C /* logs.html in Resources */ = {isa = PBXBuildFile; fileRef = 755D0DE3247F038B0074AB5C /* logs.html */; };
-		755D0F442481D0010074AB5C /* dist in Resources */ = {isa = PBXBuildFile; fileRef = 755D0F422481CFF20074AB5C /* dist */; };
-		755D0F472481D0200074AB5C /* wsdist in Resources */ = {isa = PBXBuildFile; fileRef = 755D0F452481D0150074AB5C /* wsdist */; };
+		755D0F4C2481E8A60074AB5C /* wsdist in Resources */ = {isa = PBXBuildFile; fileRef = 755D0F4B2481E8A60074AB5C /* wsdist */; };
+		755D0F4E2481E8EC0074AB5C /* wsdist in Sources */ = {isa = PBXBuildFile; fileRef = 755D0F4B2481E8A60074AB5C /* wsdist */; };
+		755D0F512482D4920074AB5C /* HotKey in Frameworks */ = {isa = PBXBuildFile; productRef = 755D0F502482D4920074AB5C /* HotKey */; };
+		755D0F53248317D90074AB5C /* dist in Resources */ = {isa = PBXBuildFile; fileRef = 755D0F52248317D90074AB5C /* dist */; };
+		755D0F542483182A0074AB5C /* dist in Sources */ = {isa = PBXBuildFile; fileRef = 755D0F52248317D90074AB5C /* dist */; };
 		75675955244634AD006AA988 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75675954244634AD006AA988 /* AppDelegate.swift */; };
 		75675957244634AD006AA988 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75675956244634AD006AA988 /* ContentView.swift */; };
 		75675959244634B2006AA988 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 75675958244634B2006AA988 /* Assets.xcassets */; };
@@ -85,8 +88,8 @@
 		755D0DDF247DDE050074AB5C /* FigCLI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FigCLI.swift; sourceTree = "<group>"; };
 		755D0DE1247EFAE10074AB5C /* Logging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logging.swift; sourceTree = "<group>"; };
 		755D0DE3247F038B0074AB5C /* logs.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = logs.html; sourceTree = "<group>"; };
-		755D0F422481CFF20074AB5C /* dist */ = {isa = PBXFileReference; lastKnownFileType = folder; path = dist; sourceTree = "<group>"; };
-		755D0F452481D0150074AB5C /* wsdist */ = {isa = PBXFileReference; lastKnownFileType = folder; path = wsdist; sourceTree = "<group>"; };
+		755D0F4B2481E8A60074AB5C /* wsdist */ = {isa = PBXFileReference; lastKnownFileType = folder; path = wsdist; sourceTree = "<group>"; };
+		755D0F52248317D90074AB5C /* dist */ = {isa = PBXFileReference; lastKnownFileType = folder; path = dist; sourceTree = "<group>"; };
 		75675951244634AD006AA988 /* fig.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = fig.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		75675954244634AD006AA988 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		75675956244634AD006AA988 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -121,6 +124,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				755D0F512482D4920074AB5C /* HotKey in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -174,8 +178,8 @@
 		75675953244634AD006AA988 /* fig */ = {
 			isa = PBXGroup;
 			children = (
-				755D0F452481D0150074AB5C /* wsdist */,
-				755D0F422481CFF20074AB5C /* dist */,
+				755D0F52248317D90074AB5C /* dist */,
+				755D0F4B2481E8A60074AB5C /* wsdist */,
 				75675954244634AD006AA988 /* AppDelegate.swift */,
 				756759962446C44C006AA988 /* String+Shell.swift */,
 				756759D324498CA0006AA988 /* WebViewController.swift */,
@@ -266,6 +270,9 @@
 			dependencies = (
 			);
 			name = fig;
+			packageProductDependencies = (
+				755D0F502482D4920074AB5C /* HotKey */,
+			);
 			productName = fig;
 			productReference = 75675951244634AD006AA988 /* fig.app */;
 			productType = "com.apple.product-type.application";
@@ -341,6 +348,9 @@
 				Base,
 			);
 			mainGroup = 75675948244634AD006AA988;
+			packageReferences = (
+				755D0F4F2482D4910074AB5C /* XCRemoteSwiftPackageReference "HotKey" */,
+			);
 			productRefGroup = 75675952244634AD006AA988 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -358,13 +368,13 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				755D0F472481D0200074AB5C /* wsdist in Resources */,
-				755D0F442481D0010074AB5C /* dist in Resources */,
 				752C0BE4247B44C60077E415 /* finder.html in Resources */,
 				752C0BDA2479F37B0077E415 /* fig.js in Resources */,
 				75C0711D244AC3B2002DF69F /* index.html in Resources */,
 				755D0DE4247F038B0074AB5C /* logs.html in Resources */,
 				7567595F244634B2006AA988 /* Main.storyboard in Resources */,
+				755D0F4C2481E8A60074AB5C /* wsdist in Resources */,
+				755D0F53248317D90074AB5C /* dist in Resources */,
 				752C0BDE2479F6AF0077E415 /* tutorial.js in Resources */,
 				752C0BE2247A33F20077E415 /* viewer.html in Resources */,
 				752C0BE6247C25290077E415 /* display.html in Resources */,
@@ -404,6 +414,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				755D0F542483182A0074AB5C /* dist in Sources */,
+				755D0F4E2481E8EC0074AB5C /* wsdist in Sources */,
 				756759972446C44C006AA988 /* String+Shell.swift in Sources */,
 				755D0DE2247EFAE10074AB5C /* Logging.swift in Sources */,
 				75C07120244BB441002DF69F /* CompanionViewController.swift in Sources */,
@@ -602,6 +614,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
+				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = fig/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -623,6 +636,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
+				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = fig/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -765,6 +779,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		755D0F4F2482D4910074AB5C /* XCRemoteSwiftPackageReference "HotKey" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/soffes/HotKey";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.1.3;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		755D0F502482D4920074AB5C /* HotKey */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 755D0F4F2482D4910074AB5C /* XCRemoteSwiftPackageReference "HotKey" */;
+			productName = HotKey;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 75675949244634AD006AA988 /* Project object */;
 }
