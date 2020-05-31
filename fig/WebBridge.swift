@@ -150,9 +150,15 @@ extension Notification.Name {
 
 extension WebBridge {
     static func log(scope: WKScriptMessage) {
-        let body = scope.body as! String
-        print("JS Console: \(body)")
-        Logger.log(message: "\(scope.webView?.url?.absoluteString ?? "<none>"): \(body)\n")
+        let body = scope.body as? String
+        if let body = body {
+            print("JS Console: \(body)")
+            Logger.log(message: "\(scope.webView?.url?.absoluteString ?? "<none>"): \(body)\n")
+        } else {
+            print("JS Console: Tried to write something that wasn't a string")
+            Logger.log(message: "\(scope.webView?.url?.absoluteString ?? "<none>"): Attempted to write something that wasn't a string to the fig log.\n\nUse `fig.log()` in the future to avoid this error or `JSON.stringify()` any input passed into `console.log`. \n")
+        }
+
     }
     
     static func insert(scope: WKScriptMessage) {
