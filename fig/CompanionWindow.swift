@@ -149,7 +149,6 @@ class CompanionWindow : NSWindow {
             let targetFrame = topmostWindowFrameFor(app)
             print("targetFrame:\(targetFrame)")
             if (forceUpdate || !targetFrame.equalTo(priorTargetFrame)) {
-                print("Update for topmostWindow")
                 priorTargetFrame = targetFrame
                 let frame = self.positioning.frame(targetWindowFrame: targetFrame)
 //                let frame = overlayFrame(self.positioning,
@@ -229,8 +228,14 @@ class CompanionWindow : NSWindow {
 //            print("TopmostFrame for \(app.bundleIdentifier ?? "")", NSScreen.main!.frame, NSScreen.main!.visibleFrame, point, bounds)
 
               // subtract screen.frame.origin.y to handle display edge case
+//            let pointOnScreen = yellowView.window?.convertToScreen(NSRect(origin: point, size: .zero)).origin ?? .zero
+//            let p2 = self.convertPoint(toScreen: point)
+//            let p3 = self.convertPoint(fromScreen: point)
+//            self
+
+            //https://stackoverflow.com/a/19887161/926887
               return NSRect.init(x: point.x,
-                                 y: (NSScreen.main?.frame.height)! + NSScreen.main!.frame.origin.y - point.y - ((includingTitleBar) ? 0 : titleBarHeight),
+                                 y: NSMaxY(NSScreen.screens[0].frame) - point.y - ((includingTitleBar) ? 0 : titleBarHeight),
                                  width:  bounds.width,
                                  height: bounds.height - ((includingTitleBar) ? 0 : titleBarHeight))
           }

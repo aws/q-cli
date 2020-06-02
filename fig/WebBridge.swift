@@ -39,6 +39,8 @@ class WebBridge : WKWebViewConfiguration {
         contentController.add(self, name: WebBridgeScript.freadHandler.rawValue)
         contentController.add(self, name: WebBridgeScript.focusHandler.rawValue)
         contentController.add(self, name: WebBridgeScript.blurHandler.rawValue)
+        contentController.add(self, name: WebBridgeScript.appwriteHandler.rawValue)
+        contentController.add(self, name: WebBridgeScript.appreadHandler.rawValue)
 
         contentController.add(self, name: WebBridgeScript.logging.rawValue)
         contentController.add(self, name: WebBridgeScript.exceptions.rawValue)
@@ -79,7 +81,9 @@ enum WebBridgeScript: String, CaseIterable {
     case freadHandler = "freadHandler"
     case focusHandler = "focusHandler"
     case blurHandler = "blurHandler"
-
+    case appwriteHandler = "appwriteHandler"
+    case appreadHandler = "appreadHandler"
+    
     case enforceViewportSizing = "enforceViewportSizing"
 
 }
@@ -91,10 +95,10 @@ class WebBridgeContentController : WKUserContentController {
 //        let legacy: [WebBridgeScript]  = [ .insertFigTutorialCSS, .figJS ]
 //        let scripts: [WebBridgeScript] = [.logging, .exceptions, .figJS]
        
-        self.addWebBridgeScript(.exceptions)
-        self.addWebBridgeScript(.logging);
-//        self.addWebBridgeScript(.insertFigTutorialCSS);
-//        self.addWebBridgeScript(.insertFigTutorialJS);
+        self.addWebBridgeScript(.exceptions, location: .atDocumentStart)
+        self.addWebBridgeScript(.logging, location: .atDocumentStart);
+        self.addWebBridgeScript(.insertFigTutorialCSS);
+        self.addWebBridgeScript(.insertFigTutorialJS);
 
         self.addWebBridgeScript(.figJS, location: .atDocumentStart);
     }
@@ -130,6 +134,10 @@ extension WebBridge : WKScriptMessageHandler {
             WebBridge.focus(scope: message)
         case .blurHandler:
             WebBridge.blur(scope: message)
+        case .appreadHandler:
+            WebBridge.appread(scope: message)
+        case .appwriteHandler:
+            WebBridge.appwrite(scope: message)
         default:
             print("Unhandled WKScriptMessage type '\(message.name)'")
         }
@@ -175,12 +183,14 @@ extension WebBridge {
            let handlerId = params["handlerId"],
            let env = params["env"]?.jsonStringToDict(),
            let pwd = env["PWD"] as? String {
-            
+            print("'\(cmd)' running in background...")
             let output = cmd.runAsCommand(cwd: pwd)
             print("\(cmd) -> \(output)")
             let encoded = output.data(using: .utf8)!
             scope.webView?.evaluateJavaScript("fig.callback(`\(handlerId)`,`\(encoded.base64EncodedString())`)", completionHandler: nil)
 
+        } else {
+            Logger.log(message: "Couldn't execute \(scope.body)")
         }
 
     }
@@ -239,6 +249,52 @@ extension WebBridge {
     static func blur(scope: WKScriptMessage) {
         ShellBridge.shared.previousFrontmostApplication?.activate(options: .activateIgnoringOtherApps)
     }
+    
+    static func appwrite(scope: WKScriptMessage) {
+        if let params = scope.body as? Dictionary<String, String>,
+               let path = params["path"],
+               let data = params["data"],
+               let handlerId = params["handlerId"],
+                let app = scope.webView?.url?.deletingPathExtension().pathComponents.last {
+                
+                let url = URL(fileURLWithPath: "\(app)/\(path)", relativeTo: WebBridge.appDirectory)
+            print(FileManager.default.fileExists(atPath: url.absoluteString))
+                do {
+                    var directory = url
+                    directory.deleteLastPathComponent()
+                    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: nil)
+                    try data.write(to: url, atomically: true, encoding: String.Encoding.utf8)
+
+                   
+    //                scope.webView?.evaluateJavaScript("fig.callback(`\(handlerId)`, null)", completionHandler: nil)
+                } catch {
+                    Logger.log(message: "Could not write file '\(path)' to disk.")
+//                    scope.webView?.evaluateJavaScript("fig.callback(`\(handlerId)`,btoa(`Could not write file to disk.`))", completionHandler: nil)
+
+                }
+            }
+        }
+        
+        static func appread(scope: WKScriptMessage) {
+            if let params = scope.body as? Dictionary<String, String>,
+               let path = params["path"],
+               let handlerId = params["handlerId"],
+               let app = scope.webView?.url?.deletingPathExtension().pathComponents.last {
+
+                let url = URL(fileURLWithPath: "\(app)/\(path)", relativeTo: WebBridge.appDirectory)
+                do {
+                    let out = try String(contentsOf: url, encoding: String.Encoding.utf8)
+                    let encoded = out.data(using: .utf8)!
+                    
+                    scope.webView?.evaluateJavaScript("fig.callback(`\(handlerId)`, `\(encoded.base64EncodedString())`)", completionHandler: nil)
+
+                } catch {
+                    scope.webView?.evaluateJavaScript("fig.callback(`\(handlerId)`, null,{message:'Could not read file from disk.'})", completionHandler: nil)
+                }
+            }
+        }
+    
+    static var appDirectory: URL = URL(fileURLWithPath: "\(NSHomeDirectory())/.fig/apps/")
 
 }
 

@@ -65,6 +65,7 @@ class FigCLI {
         if let path = scope.options[safe: 0], let pwd = scope.pwd  {
             let url = URL(fileURLWithPath: path, relativeTo: URL(fileURLWithPath: pwd))
             scope.webView.loadLocalApp(url)
+            FigCLI.env(with: scope)
             FigCLI.stdin(with: scope)
         }
 
@@ -72,11 +73,13 @@ class FigCLI {
     
     static func bundle(with scope: Scope) {
         scope.webView.loadBundleApp(scope.options[0])
+        FigCLI.env(with: scope)
         FigCLI.stdin(with: scope)
     }
     
     static func web(with scope: Scope) {
         scope.webView.loadRemoteApp(at: URL(string: scope.options[0]) ?? FigCLI.baseURL)
+        FigCLI.env(with: scope)
         FigCLI.stdin(with: scope)
     }
     
@@ -90,10 +93,19 @@ class FigCLI {
         scope.companionWindow.positioning = .icon
     }
     
-    static func stdin(with scope: Scope) {
-        Timer.delayWithSeconds(0.25) {
-            let encoded = scope.stdin.data(using: .utf8)!
+    static func env(with scope: Scope) {
+        scope.webView.configureEnvOnLoad = {
             scope.webView.evaluateJavaScript("fig.env = JSON.parse(`\(scope.env)`);", completionHandler: nil)
+        }
+    }
+    static func entry(with scope: Scope) {
+        scope.webView.onLoad.append {
+            scope.webView.evaluateJavaScript("fig.init()", completionHandler: nil)
+        }
+    }
+    static func stdin(with scope: Scope) {
+        scope.webView.onLoad.append {
+             let encoded = scope.stdin.data(using: .utf8)!
             scope.webView.evaluateJavaScript("fig.stdinb64(`\(encoded.base64EncodedString())`)", completionHandler: nil)
         }
     }
@@ -103,6 +115,7 @@ class FigCLI {
         all.insert(scope.cmd, at: 0)
         let url = ShellBridge.commandLineOptionsToRawURL(all)
         scope.webView.loadRemoteApp(at: url)
+        FigCLI.env(with: scope)
         FigCLI.stdin(with: scope)
     }
     

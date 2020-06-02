@@ -19,10 +19,11 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
+//        AppMover.moveIfNecessary()
         let _ = ShellBridge.shared
         
         self.hotkey.keyDownHandler = {
-          print("Pressed at \(Date())")
+//          print("Pressed at \(Date())")
             self.toggleVisibility()
         }
 
@@ -89,10 +90,16 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 //         action: #selector(AppDelegate.updateOverlayStyle),
 //         keyEquivalent: "")
 //
-//        statusBarMenu.addItem(
-//         withTitle: "Kill WebSocket Server",
-//         action: #selector(AppDelegate.killSocketServer),
-//         keyEquivalent: "")
+        
+        statusBarMenu.addItem(
+         withTitle: "Start WebSocket Server",
+         action: #selector(AppDelegate.startSocketServer),
+         keyEquivalent: "")
+        
+        statusBarMenu.addItem(
+         withTitle: "Kill WebSocket Server",
+         action: #selector(AppDelegate.killSocketServer),
+         keyEquivalent: "")
     
         
         statusBarMenu.addItem(
@@ -185,7 +192,11 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     }
     
     @objc func quit() {
-        NSApp.terminate(self)
+        ShellBridge.shared.stopWebSocketServer {
+            DispatchQueue.main.async {
+                NSApp.terminate(self)
+            }
+        }
     }
     
     @objc func promptForAccesibilityAccess() {
@@ -198,6 +209,10 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     
     @objc func killSocketServer() {
         ShellBridge.shared.stopWebSocketServer()
+    }
+    
+    @objc func startSocketServer() {
+        ShellBridge.shared.startWebSocketServer()
     }
 
     @objc func spaceChanged() {

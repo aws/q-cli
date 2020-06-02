@@ -18,8 +18,19 @@ class Logger {
             } else {
                 print("figjs.log does not exist. JS console logs will not be written.")
             }
-        
     }
+    
+//    static func setup() {
+//        FileManager.default.createDirectory(at: Logger.defaultLocation, withIntermediateDirectories: <#T##Bool#>, attributes: <#T##[FileAttributeKey : Any]?#>)
+//    }
 }
 
 
+import os.log
+
+extension OSLog {
+    private static var subsystem = Bundle.main.bundleIdentifier!
+
+    /// Logs the view cycles like viewDidLoad.
+    static let socketServer = OSLog(subsystem: subsystem, category: "socketServer")
+}

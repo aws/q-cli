@@ -24,16 +24,20 @@ let setup = function(window) {
       execute : function(cmd, handler) {
           let handlerId = random_identifier(5)
           let type = "execute"
-          console.log(JSON.stringify({type, cmd,handlerId}))
           this[handlerId] = handler
           let env = JSON.stringify(fig.env)
+          if (!env) {
+              console.log("Error: Attempting to call `fig.execute` before `fig.env` has loaded. To fix this error, move this code inside of either the `fig.stdin` or the `fig.init` callbacks.\n\nIf you don't need to run the shell script from the users working directory, use fig.executeInGlobalScope\n")
+              console.log(`Could not execute '${cmd}'...`)
+
+              return
+          }
           window.webkit.messageHandlers.callbackHandler.postMessage({type, cmd, handlerId, env});
           console.log(`Added callback handler "${handlerId}" for command "${cmd}"`)
       },
       stdin : function(input) {
           console.log("fig.stdin must be overwritten in order to recieve standard input.")
       },
-      
       stdout : function(out) {
           window.webkit.messageHandlers.stdoutHandler.postMessage(out);
       },
@@ -49,6 +53,18 @@ let setup = function(window) {
           let env = JSON.stringify(fig.env)
           window.webkit.messageHandlers.freadHandler.postMessage({path, handlerId, env});
       },
+      appwrite : function(path, data, handler) {
+          let handlerId = random_identifier(5)
+          this[handlerId] = handler
+          let env = JSON.stringify(fig.env)
+          window.webkit.messageHandlers.appwriteHandler.postMessage({path, data, handlerId, env});
+      },
+      appread : function(path, handler) {
+          let handlerId = random_identifier(5)
+          this[handlerId] = handler
+          let env = JSON.stringify(fig.env)
+          window.webkit.messageHandlers.appreadHandler.postMessage({path, handlerId, env});
+      },
       focus : function () {
           window.webkit.messageHandlers.focusHandler.postMessage("");
       },
@@ -60,10 +76,20 @@ let setup = function(window) {
           delete this[handlerId]
       },
       stdinb64 : function(data) {
-          fig.stdin(atob(data))
+          fig['_stdin'] = atob(data)
+//          fig.init(atob(data))
+//          fig.stdin(atob(data))
       },
       log : function(msg) {
           console.log(JSON.stringify(msg))
+      },
+      init : function(input) {
+          console.log("fig.init must be overwritten. The behavior of other fig functions is undefined if called prior to the fig.init entrypoint.")
+      },
+      callinit : function() {
+          let stdin = fig['_stdin']
+          fig.init(stdin)
+          fig.stdin(stdin)
       }
   }
 
@@ -77,4 +103,4 @@ let setup = function(window) {
 //})(window);
 
 setup(window)
-//console.log(JSON.stringify(window))
+fig.log("Loaded fig.js...")

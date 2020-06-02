@@ -8,14 +8,19 @@
 
 import Foundation
 import Cocoa
+import OSLog
 
 protocol ShellBridgeEventListener {
     func recievedDataFromPipe(_ notification: Notification)
-
+    func recievedUserInputFromTerminal(_ notification: Notification)
+    func recievedStdoutFromTerminal(_ notification: Notification)
 }
 
 extension Notification.Name {
     static let recievedDataFromPipe = Notification.Name("recievedDataFromPipe")
+    static let recievedUserInputFromTerminal = Notification.Name("recievedUserInputFromTerminal")
+    static let recievedStdoutFromTerminal = Notification.Name("recievedStdoutFromTerminal")
+
 }
 
 class ShellBridge {
@@ -30,11 +35,7 @@ class ShellBridge {
 //        "python3 /path/to/executable/fig.py utils:ws-start".runAsCommand()
         self.startWebSocketServer()
 
-        Timer.delayWithSeconds(0.5) {
-            self.socket = WebSocketTaskConnection.init(url: URL(string: "ws://localhost:8765")!)
-            self.socket?.delegate = self;
-            self.socket?.connect()
-        }
+
     }
     
     @objc func setPreviousApplication(notification: NSNotification!) {
@@ -117,22 +118,46 @@ class ShellBridge {
         if let path = Bundle.main.path(forResource: "websocket", ofType: "", inDirectory: "wsdist") {
             print(path)
             print("Starting socket server")
+            os_log("Starting socket server", log: OSLog.socketServer, type: .info)
+
             self.socketServer = path.runInBackground {
                   print("Closing the socket server")
             }
+            os_log("Socket Server succesfully started...", log: OSLog.socketServer, type: .info)
 
+            Timer.delayWithSeconds(0.5) {
+                self.attemptToConnectToSocketServer()
+            }
         } else {
+            os_log("Couldn't start socket server", log: OSLog.socketServer, type: .error)
             print("couldn't start socket server")
         }
     }
     
-    func stopWebSocketServer() {
+    func stopWebSocketServer( completion:(() -> Void)? = nil) {
         if let server = self.socketServer {
+            server.terminationHandler = { (proc) -> Void in
+                print("socket server process terminated")
+                os_log("socket server process terminated", log: OSLog.socketServer, type: .info)
+                if let completion = completion {
+                    completion()
+                }
+            }
+            print("Terminating socket server...")
+
             server.terminate()
-            print("socket server process terminated")
+
         } else {
             print("socket server is not running")
+            os_log("socket server is not running", log: OSLog.socketServer, type: .error)
+
         }
+    }
+    
+    func attemptToConnectToSocketServer() {
+        self.socket = WebSocketTaskConnection.init(url: URL(string: "ws://localhost:8765")!)
+        self.socket?.delegate = self;
+        self.socket?.connect()
     }
 }
 
@@ -144,16 +169,22 @@ extension ShellBridge: WebSocketConnectionDelegate {
             connection.send(text: "register_as_host")
 
         }
+        
     }
     
     func onDisconnected(connection: WebSocketConnection, error: Error?) {
         print("disconnected")
+        Timer.delayWithSeconds(5) {
+            self.attemptToConnectToSocketServer()
+        }
 
     }
     
     func onError(connection: WebSocketConnection, error: Error) {
         print(error)
+        self.socket?.disconnect()
     }
+    
     
     func onMessage(connection: WebSocketConnection, text: String) {
         let decoder = JSONDecoder()
@@ -161,6 +192,15 @@ extension ShellBridge: WebSocketConnectionDelegate {
             let msg = try decoder.decode(ShellMessage.self, from: text.data(using: .utf8)!)
 //            print(msg)
             
+//            switch msg.type {
+//            case "pipe":
+//                NotificationCenter.default.post(name: .recievedDataFromPipe, object: msg)
+//            case "pty":
+//                NotificationCenter.default.post(name: .recievedDataFromPipe, object: msg)
+//
+//                default:
+//                
+//            }
             if msg.type == "pipe" {
                 print(msg.data)
                 NotificationCenter.default.post(name: .recievedDataFromPipe, object: msg)
@@ -314,13 +354,15 @@ extension ShellBridge {
             let out = "cmd=\"do shell script \\\"\(script)\\\" with administrator privileges\" && osascript -e \"$cmd\"".runAsCommand()
             
             print(out)
-            let _ = "test -f ~/.bash_profile && echo \"fig init #start fig pty\" >> ~/.bash_profile".runAsCommand()
-            let _ = "test -f ~/.zprofile && echo \"fig init #start fig pty\" >> ~/.zprofile".runAsCommand()
-            let _ = "test -f ~/.profile && echo \"fig init #start fig pty\" >> ~/.profile".runAsCommand()
+            //let _ = "test -f ~/.bash_profile && echo \"fig init #start fig pty\" >> ~/.bash_profile".runAsCommand()
+            //let _ = "test -f ~/.zprofile && echo \"fig init #start fig pty\" >> ~/.zprofile".runAsCommand()
+            //let _ = "test -f ~/.profile && echo \"fig init #start fig pty\" >> ~/.profile".runAsCommand()
    
 
         } else {
             print("couldn't find 'fig' cli executable")
+            os_log("couldn't find 'fig' cli executable", log: OSLog.socketServer, type: .error)
+
         }
 
     }

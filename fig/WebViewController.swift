@@ -306,6 +306,14 @@ extension WebViewController: WebBridgeEventListener {
 }
 
 extension WebViewController: ShellBridgeEventListener {
+    func recievedUserInputFromTerminal(_ notification: Notification) {
+        
+    }
+    
+    func recievedStdoutFromTerminal(_ notification: Notification) {
+        
+    }
+    
     
     @objc func recievedDataFromPipe(_ notification: Notification) {
         //Bring FIG to front when triggered explictly from commandline
@@ -323,17 +331,32 @@ extension WebViewController: ShellBridgeEventListener {
 
 extension WebViewController : WKNavigationDelegate {
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
-        print(error.localizedDescription)
+        print("ERROR Loading URL: \(error.localizedDescription)")
     }
-    
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        print("didFinishNavigation")
+        print("Loaded URL \(webView.url?.absoluteString ?? "<none>")")
         var scriptContent = "var meta = document.createElement('meta');"
         scriptContent += "meta.name='viewport';"
         scriptContent += "meta.content='width=device-width';"
         scriptContent += "document.getElementsByTagName('head')[0].appendChild(meta);"
 
         webView.evaluateJavaScript(scriptContent, completionHandler: nil)
+        
+        
+        let webView = webView as! WebView
+        
+        if let configureEnv = webView.configureEnvOnLoad {
+            configureEnv()
+        }
+        
+        for onLoadCallback in webView.onLoad {
+            onLoadCallback()
+        }
+        webView.onLoad = []
+        
+        webView.evaluateJavaScript("fig.callinit()", completionHandler: nil)
+
+
         
 //    webView.evaluateJavaScript("window.scrollTo(0,0)", completionHandler: nil)
 
@@ -356,6 +379,8 @@ extension WebViewController : WKNavigationDelegate {
 
 class WebView : WKWebView {
     var trackingArea : NSTrackingArea?
+    var onLoad: [(() -> Void)] = []
+    var configureEnvOnLoad: (() -> Void)?
     
 //    override var intrinsicContentSize: NSSize {
 //        get {
