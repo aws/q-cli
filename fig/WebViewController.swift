@@ -149,9 +149,12 @@ class WebViewController: NSViewController, NSWindowDelegate {
         webView = WebView(frame: .zero, configuration: WebBridge())
         
         NotificationCenter.default.addObserver(self, selector: #selector(recievedDataFromPipe(_:)), name: .recievedDataFromPipe, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(recievedStdoutFromTerminal(_:)), name: .recievedStdoutFromTerminal, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(recievedUserInputFromTerminal(_:)), name: .recievedUserInputFromTerminal, object: nil)
         
         NotificationCenter.default.addObserver(self, selector: #selector(insertCommandInTerminal(_:)), name: .insertCommandInTerminal, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(executeCommandInTerminal(_:)), name: .executeCommandInTerminal, object: nil)
+        
         NotificationCenter.default.addObserver(self, selector: #selector(windowDidResize(_:)), name: NSWindow.didResizeNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(viewFrameResized), name:NSView.frameDidChangeNotification, object: self.view)
         NotificationCenter.default.addObserver(self, selector: #selector(viewFrameResized), name:NSView.boundsDidChangeNotification, object: self.view)
@@ -306,12 +309,15 @@ extension WebViewController: WebBridgeEventListener {
 }
 
 extension WebViewController: ShellBridgeEventListener {
-    func recievedUserInputFromTerminal(_ notification: Notification) {
-        
+    @objc func recievedUserInputFromTerminal(_ notification: Notification) {
+        // match against regex?
+        WebBridge.ttyin(webView: self.webView!, msg: notification.object as! ShellMessage)
     }
     
-    func recievedStdoutFromTerminal(_ notification: Notification) {
-        
+    @objc func recievedStdoutFromTerminal(_ notification: Notification) {
+        // match against regex?
+        WebBridge.ttyout(webView: self.webView!, msg: notification.object as! ShellMessage)
+
     }
     
     

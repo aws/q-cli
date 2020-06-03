@@ -101,6 +101,7 @@ class CompanionWindow : NSWindow {
         case atPrompt = 4
         case icon = 5
         case notification = 6
+        case sidebar = 7
 
         func frame(targetWindowFrame:NSRect) -> NSRect {
             if targetWindowFrame.width < 100 || targetWindowFrame.height < 200 {
@@ -131,7 +132,10 @@ class CompanionWindow : NSWindow {
                  let i_padding = CGPoint(x: 12, y: -120 + 12);
                  return NSRect(origin: CGPoint.init(x:targetWindowFrame.maxX - i_size.width - i_padding.x,
                                                     y: targetWindowFrame.minY - i_size.height - i_padding.y), size: i_size)
+             case .sidebar:
+                return targetWindowFrame.divided(atDistance: 50, from: .maxXEdge).slice
              }
+
 
         }
 
@@ -270,6 +274,9 @@ class CompanionWindow : NSWindow {
             let i_padding = CGPoint(x: 12, y: -36);
             return NSRect(origin: CGPoint.init(x: terminalFrame.maxX - i_size.width - i_padding.x,
                                                y: terminalFrame.minY - i_size.height - i_padding.y), size: i_size)
+          case .sidebar:
+            return terminalFrame.divided(atDistance: 50, from: .maxXEdge).slice
+
         }
     
       }

@@ -293,6 +293,19 @@ extension WebBridge {
                 }
             }
         }
+    static func ttyin(webView: WKWebView, msg: ShellMessage) {
+        DispatchQueue.main.async {
+            let encoded = msg.data.data(using: .utf8)!
+            webView.evaluateJavaScript("fig.ttyinb64(`\(encoded.base64EncodedString())`, '\(msg.session)')", completionHandler: nil)
+        }
+    }
+    
+    static func ttyout( webView: WKWebView, msg: ShellMessage) {
+        DispatchQueue.main.async {
+            let encoded = msg.data.data(using: .utf8)!
+            webView.evaluateJavaScript("fig.ttyoutb64(`\(encoded.base64EncodedString())`,'\(msg.session)')", completionHandler: nil)
+        }
+    }
     
     static var appDirectory: URL = URL(fileURLWithPath: "\(NSHomeDirectory())/.fig/apps/")
 

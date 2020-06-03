@@ -192,19 +192,25 @@ extension ShellBridge: WebSocketConnectionDelegate {
             let msg = try decoder.decode(ShellMessage.self, from: text.data(using: .utf8)!)
 //            print(msg)
             
-//            switch msg.type {
-//            case "pipe":
-//                NotificationCenter.default.post(name: .recievedDataFromPipe, object: msg)
-//            case "pty":
-//                NotificationCenter.default.post(name: .recievedDataFromPipe, object: msg)
-//
-//                default:
-//                
-//            }
-            if msg.type == "pipe" {
-                print(msg.data)
+            switch msg.type {
+            case "pipe":
                 NotificationCenter.default.post(name: .recievedDataFromPipe, object: msg)
+            case "pty":
+                if let io = msg.io {
+                    if io == "i" {
+                        NotificationCenter.default.post(name: .recievedUserInputFromTerminal, object: msg)
+                    } else if io == "o" {
+                        NotificationCenter.default.post(name: .recievedStdoutFromTerminal, object: msg)
+                    }
+                }
+                
+            default:
+                print("Unhandled match from Websocket Message")
             }
+//            if msg.type == "pipe" {
+//                print(msg.data)
+//                NotificationCenter.default.post(name: .recievedDataFromPipe, object: msg)
+//            }
             
             
 

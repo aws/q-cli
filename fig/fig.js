@@ -90,6 +90,20 @@ let setup = function(window) {
           let stdin = fig['_stdin']
           fig.init(stdin)
           fig.stdin(stdin)
+      },
+      ttyinb64 : function(input, session) {
+          fig.log(input)
+          fig.log(session)
+//          if ()
+//          fig.log(JSON.stringify(fig.env["TERMSESSION"]))
+//          if (fig.env["TERMSESSION"] == session) {
+              fig.ttyin(atob(input))
+//          }
+      },
+      ttyoutb64 : function(input, session) {
+//          if (fig.env["TERMSESSION"] == session) {
+              fig.ttyout(atob(input))
+//          }
       }
   }
 

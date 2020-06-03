@@ -35,6 +35,7 @@
 		757CA86724859461002A64A8 /* AppMover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757CA86624859461002A64A8 /* AppMover.swift */; };
 		757CA87E2485D23D002A64A8 /* dist in Resources */ = {isa = PBXBuildFile; fileRef = 757CA87C2485D23C002A64A8 /* dist */; };
 		757CA87F2485D23D002A64A8 /* wsdist in Resources */ = {isa = PBXBuildFile; fileRef = 757CA87D2485D23D002A64A8 /* wsdist */; };
+		757CA88124874E06002A64A8 /* ErrorMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757CA88024874E05002A64A8 /* ErrorMatcher.swift */; };
 		75C0711D244AC3B2002DF69F /* index.html in Resources */ = {isa = PBXBuildFile; fileRef = 75C0711C244AC3B2002DF69F /* index.html */; };
 		75C07120244BB441002DF69F /* CompanionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75C0711F244BB441002DF69F /* CompanionViewController.swift */; };
 		75C07122244BB65D002DF69F /* ShellBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75C07121244BB65D002DF69F /* ShellBridge.swift */; };
@@ -106,6 +107,7 @@
 		757CA86624859461002A64A8 /* AppMover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppMover.swift; sourceTree = "<group>"; };
 		757CA87C2485D23C002A64A8 /* dist */ = {isa = PBXFileReference; lastKnownFileType = folder; path = dist; sourceTree = "<group>"; };
 		757CA87D2485D23D002A64A8 /* wsdist */ = {isa = PBXFileReference; lastKnownFileType = folder; path = wsdist; sourceTree = "<group>"; };
+		757CA88024874E05002A64A8 /* ErrorMatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorMatcher.swift; sourceTree = "<group>"; };
 		75C0711C244AC3B2002DF69F /* index.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = index.html; sourceTree = "<group>"; };
 		75C0711F244BB441002DF69F /* CompanionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionViewController.swift; sourceTree = "<group>"; };
 		75C07121244BB65D002DF69F /* ShellBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellBridge.swift; sourceTree = "<group>"; };
@@ -188,6 +190,7 @@
 				75C07121244BB65D002DF69F /* ShellBridge.swift */,
 				752C0BD52478EBA90077E415 /* XTerm.swift */,
 				751F75972478571D00E083C8 /* WebSocket.swift */,
+				757CA88024874E05002A64A8 /* ErrorMatcher.swift */,
 				751F7588246D090100E083C8 /* WebBridge.swift */,
 				755D0DE1247EFAE10074AB5C /* Logging.swift */,
 				755D0DDF247DDE050074AB5C /* FigCLI.swift */,
@@ -425,6 +428,7 @@
 				755D0DE0247DDE050074AB5C /* FigCLI.swift in Sources */,
 				751F7589246D090100E083C8 /* WebBridge.swift in Sources */,
 				75675955244634AD006AA988 /* AppDelegate.swift in Sources */,
+				757CA88124874E06002A64A8 /* ErrorMatcher.swift in Sources */,
 				751F75982478571D00E083C8 /* WebSocket.swift in Sources */,
 				752C0BD62478EBA90077E415 /* XTerm.swift in Sources */,
 				752C0BD82479EEDB0077E415 /* File.swift in Sources */,

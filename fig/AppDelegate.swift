@@ -91,15 +91,11 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 //         keyEquivalent: "")
 //
         
-        statusBarMenu.addItem(
-         withTitle: "Start WebSocket Server",
-         action: #selector(AppDelegate.startSocketServer),
-         keyEquivalent: "")
         
-        statusBarMenu.addItem(
-         withTitle: "Kill WebSocket Server",
-         action: #selector(AppDelegate.killSocketServer),
-         keyEquivalent: "")
+//        statusBarMenu.addItem(
+//         withTitle: "Kill WebSocket Server",
+//         action: #selector(AppDelegate.killSocketServer),
+//         keyEquivalent: "")
     
         
         statusBarMenu.addItem(
@@ -110,6 +106,11 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
          withTitle: "Prompt for Accesibility Access",
          action: #selector(AppDelegate.promptForAccesibilityAccess),
          keyEquivalent: "")
+        statusBarMenu.addItem(
+         withTitle: "Restart WebSocket Server",
+         action: #selector(AppDelegate.startSocketServer),
+         keyEquivalent: "")
+        
         statusBarMenu.addItem(
          withTitle: "Toggle Visibility (⌘~)",
          action: #selector(AppDelegate.toggleVisibility),
