@@ -43,7 +43,16 @@ class WebViewController: NSViewController, NSWindowDelegate {
         
         return label
     }()
-//    override func loadView() {
+    
+    init(){
+        super.init(nibName: nil, bundle: nil)
+        webView = WebView(frame: .zero, configuration: WebBridge())
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    //    override func loadView() {
 //        self.view = webView
 //    }
     override func loadView() {
@@ -97,7 +106,8 @@ class WebViewController: NSViewController, NSWindowDelegate {
 //        webView?.setValue(false, forKey: "drawsBackground")
         
         // add alpha when using NSVisualEffectView
-        self.view.window?.alphaValue = 0.9
+        //ADD ALPHA TO WINDOW
+        //self.view.window?.alphaValue = 0.9
         
 //        self.view.wantsLayer = true
 //        self.view.layer?.cornerRadius = 15
@@ -145,8 +155,10 @@ class WebViewController: NSViewController, NSWindowDelegate {
         
         print("viewDidLoad")
         
+        if (self.webView == nil) {
+            webView = WebView(frame: .zero, configuration: WebBridge())
+        }
 
-        webView = WebView(frame: .zero, configuration: WebBridge())
         
         NotificationCenter.default.addObserver(self, selector: #selector(recievedDataFromPipe(_:)), name: .recievedDataFromPipe, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(recievedStdoutFromTerminal(_:)), name: .recievedStdoutFromTerminal, object: nil)
@@ -179,15 +191,18 @@ class WebViewController: NSViewController, NSWindowDelegate {
     
     @objc func overlayDidBecomeIcon() {
         print("didBecomeIcon")
-        self.icon.isHidden = false;
-
-        self.icon.frame = NSRect(x: 0, y: -6, width: 50, height: 50)
-        (self.view as! NSVisualEffectView).maskImage = _maskImage(cornerRadius: 25)
+//        self.icon.isHidden = false;
+//
+//        self.icon.frame = NSRect(x: 0, y: -6, width: 50, height: 50)
+//        self.webView?.loadBundleApp("sidebar")
+        self.webView?.loadSideBar()
+        (self.view as! NSVisualEffectView).maskImage = _maskImage(cornerRadius: 5)
     }
     
     @objc func overlayDidBecomeMain() {
         print("didBecomeMain")
-        self.icon.isHidden = true
+//        self.icon.isHidden = true
+        self.webView?.loadHomeScreen()
         (self.view as! NSVisualEffectView).maskImage = _maskImage(cornerRadius: 15)
 
     }
@@ -292,8 +307,6 @@ extension WebViewController: WebBridgeEventListener {
     }
     
     @objc func executeCommandInTerminal(_ notification: Notification) {
-        print("hello")
-
         ShellBridge.injectStringIntoTerminal(notification.object as! String, runImmediately: true, completion: {
             if let currentMouseLocation = self.mouseLocation {
                print("mouseLocation:", currentMouseLocation)
@@ -316,6 +329,20 @@ extension WebViewController: ShellBridgeEventListener {
     
     @objc func recievedStdoutFromTerminal(_ notification: Notification) {
         // match against regex?
+        if let msg = notification.object as? ShellMessage {
+            if (ErrorMatcher.shouldMatchOn(data: msg.data)) {
+                ErrorMatcher.matchOn(error: msg.data) { (data) in
+                    DispatchQueue.main.async {
+                        let companion = self.view.window as! CompanionWindow
+                        companion.positioning = .notification
+                        self.webView?.loadBundleApp("error")
+                        self.webView?.onLoad.append {
+                            self.webView?.evaluateJavaScript("fig.init(`\(data.base64EncodedString())`)", completionHandler: nil)
+                        }
+                    }
+                }
+            }
+        }
         WebBridge.ttyout(webView: self.webView!, msg: notification.object as! ShellMessage)
 
     }
@@ -336,6 +363,27 @@ extension WebViewController: ShellBridgeEventListener {
 
 
 extension WebViewController : WKNavigationDelegate {
+    func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+         let webView = webView as! WebView
+
+           for onNavigateCallback in webView.onNavigate {
+               onNavigateCallback()
+           }
+           webView.onNavigate = []
+    }
+    
+    func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+        
+        decisionHandler(.allow)
+        
+        let webView = webView as! WebView
+
+        for onNavigateCallback in webView.onNavigate {
+            onNavigateCallback()
+        }
+        webView.onNavigate = []
+    }
+    
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
         print("ERROR Loading URL: \(error.localizedDescription)")
     }
@@ -386,7 +434,9 @@ extension WebViewController : WKNavigationDelegate {
 class WebView : WKWebView {
     var trackingArea : NSTrackingArea?
     var onLoad: [(() -> Void)] = []
+    var onNavigate: [(() -> Void)] = []
     var configureEnvOnLoad: (() -> Void)?
+    private var dragShouldRepositionWindow = false
     
 //    override var intrinsicContentSize: NSSize {
 //        get {
@@ -400,7 +450,7 @@ class WebView : WKWebView {
 
     override init(frame: CGRect, configuration: WKWebViewConfiguration) {
         super.init(frame: frame, configuration: configuration)
-        self.unregisterDraggedTypes()
+//        self.unregisterDraggedTypes()
 //        self.autoresizingMask = NSView.AutoresizingMask.init(arrayLiteral: [.height, .width])
 //        NSEvent.addLocalMonitorForEvents(matching: NSEvent.EventTypeMask.mouseEntered) { event -> NSEvent? in
 //            print(event)
@@ -411,10 +461,7 @@ class WebView : WKWebView {
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    override func mouseDown(with event: NSEvent) {
-        NSApp.preventWindowOrdering()
-        super.mouseDown(with: event)
-    }
+   
     
     override func updateTrackingAreas() {
         if trackingArea != nil {
@@ -427,38 +474,90 @@ class WebView : WKWebView {
         self.addTrackingArea(trackingArea!)
 
     }
+    override func mouseDown(with event: NSEvent) {
+       NSApp.preventWindowOrdering()
+       super.mouseDown(with: event)
+        
+        let loc = event.locationInWindow;
+        let height = self.window!.frame.height;
+        if (loc.y > height - 28) {
+            self.dragShouldRepositionWindow = true;
+        }
+    }
+    
+    override func mouseUp(with event: NSEvent) {
+        super.mouseUp(with: event)
+        dragShouldRepositionWindow = false
+    }
+    
+    override func mouseDragged(with event: NSEvent) {
+        super.mouseDragged(with: event)
+        
+        if (self.dragShouldRepositionWindow) {
+            self.window?.performDrag(with: event)
+        }
+    }
     
     override func mouseEntered(with event: NSEvent) {
         print("mouse entered")
-        //NSRunningApplication.current.activate(options: .activateIgnoringOtherApps)
+        guard let w = self.window, let window = w as? CompanionWindow else {
+            return
+        }
+        if (window.positioning == CompanionWindow.defaultPassivePosition) {
+            NSRunningApplication.current.activate(options: .activateIgnoringOtherApps)
+        }
     }
     
     override func mouseExited(with event: NSEvent) {
         print("mouse exited")
-        //ShellBridge.shared.previousFrontmostApplication?.activate(options: .activateIgnoringOtherApps)
+        guard let w = self.window, let window = w as? CompanionWindow else {
+                  return
+            }
+        if (window.positioning == CompanionWindow.defaultPassivePosition) {
+            ShellBridge.shared.previousFrontmostApplication?.activate(options: .activateIgnoringOtherApps)
+    
+        }
     }
     
     func loadBundleApp(_ app: String) {
-        if let url = Bundle.main.url(forResource: app, withExtension: "html") {
-            self.loadFileURL(url, allowingReadAccessTo: URL(string: "file://")!) // needed in order to load local files from anywhere
-        } else {
-            print("Bundle app '\(app)' does not exist")
+        self.evaluateJavaScript("document.documentElement.remove()") { (_, _) in
+
+            if let url = Bundle.main.url(forResource: app, withExtension: "html") {
+                self.loadFileURL(url, allowingReadAccessTo: URL(string: "file://")!) // needed in order to load local files from anywhere
+            } else {
+                print("Bundle app '\(app)' does not exist")
+            }
         }
     }
     
     func loadLocalApp(_ url: URL) {
 //        let localURL = URL(fileURLWithPath: appPath)
-        self.loadFileURL(url, allowingReadAccessTo: URL(string: "file://")!) // needed in order to load local files from anywhere
+        self.evaluateJavaScript("document.documentElement.remove()") { (_, _) in
+
+            self.loadFileURL(url, allowingReadAccessTo: URL(string: "file://")!) // needed in order to load local files from anywhere
+        }
     }
     
     func loadRemoteApp(at url: URL) {
         print(url.absoluteString)
-        self.load(URLRequest(url: url))
+//        self.load(URLRequest(url: URL(string:"about:blank")!))
+        self.evaluateJavaScript("document.documentElement.remove()") { (_, _) in
+            self.load(URLRequest(url: url, cachePolicy: .returnCacheDataElseLoad))
+        }
     }
     
     func loadHomeScreen() {
-        self.load(URLRequest(url: URL(string: "https://app.withfig.com")!))
+        self.evaluateJavaScript("document.documentElement.remove()") { (_, _) in
 
+            self.load(URLRequest(url: URL(string: "https://app.withfig.com")!, cachePolicy: .returnCacheDataElseLoad))
+        }
+
+    }
+    
+    func loadSideBar() {
+        self.evaluateJavaScript("document.documentElement.remove()") { (_, _) in
+           self.load(URLRequest(url: URL(string: "https://app.withfig.com/sidebar")!, cachePolicy: .returnCacheDataElseLoad))
+       }
     }
 
     

@@ -1,0 +1,51 @@
+<html>
+    <script>
+        fig.init = (input) => {
+            fig.log("hi")
+
+            let serps = JSON.parse(atob(input))
+            fig.log("hello")
+            let meta = serps.searchInformation
+
+            let results = serps.items
+            fig.log("yo")
+
+            let first = results[0]
+            fig.log(first)
+
+            if (first) {
+                let topanswer = first.pagemap.answer[0]
+                fig.log(topanswer)
+                //  <sub>${first.formattedUrl}</sub>
+                let answer = `<h4>${first.pagemap.question[0].name}</h4>
+                <p><span style="color:green">+${topanswer.upvotecount}</span>${topanswer.text}</p>
+                <a href="#" onclick="javascript:expand('${topanswer.url}')">View Answer</a>
+                `
+                fig.log("Adding to view")
+
+                document.getElementById("view").innerHTML = answer
+            }
+            
+        }
+    
+    let expand = function(url) {
+        fig.reposition(1)
+        window.location.href = url
+    }
+
+    </script>
+    <style>
+        img {
+            height: 50px;
+            width: 50px;
+            object-fit: cover;
+        }
+    
+    ::-webkit-scrollbar {display:none;}
+
+    </style>
+    <body>
+        <div  id = "view">
+        </div>
+    </body>
+</html>

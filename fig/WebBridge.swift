@@ -23,6 +23,11 @@ class WebBridge : WKWebViewConfiguration {
     
     override init() {
         super.init()
+        self.preferences.setValue(true, forKey: "developerExtrasEnabled")
+//        self.webView.configuration.preferences
+        
+        self.setURLSchemeHandler(self, forURLScheme: "fig")
+
         let contentController = WebBridgeContentController()
         
         let eventHandlers: [WebBridgeEventHandler] = [.logHandler,
@@ -41,6 +46,11 @@ class WebBridge : WKWebViewConfiguration {
         contentController.add(self, name: WebBridgeScript.blurHandler.rawValue)
         contentController.add(self, name: WebBridgeScript.appwriteHandler.rawValue)
         contentController.add(self, name: WebBridgeScript.appreadHandler.rawValue)
+        contentController.add(self, name: WebBridgeScript.positionHandler.rawValue)
+        contentController.add(self, name: WebBridgeScript.openHandler.rawValue)
+        contentController.add(self, name: WebBridgeScript.streamHandler.rawValue)
+        
+        contentController.add(self, name: WebBridgeScript.onboardingHandler.rawValue)
 
         contentController.add(self, name: WebBridgeScript.logging.rawValue)
         contentController.add(self, name: WebBridgeScript.exceptions.rawValue)
@@ -83,20 +93,91 @@ enum WebBridgeScript: String, CaseIterable {
     case blurHandler = "blurHandler"
     case appwriteHandler = "appwriteHandler"
     case appreadHandler = "appreadHandler"
-    
+    case positionHandler = "positionHandler"
+    case openHandler = "openHandler"
+    case streamHandler = "streamHandler"
+
+    case onboardingHandler = "onboardingHandler"
+
     case enforceViewportSizing = "enforceViewportSizing"
 
+}
+
+extension WebBridge: WKURLSchemeHandler {
+    func webView(_ webView: WKWebView, start urlSchemeTask: WKURLSchemeTask) {
+        guard let url = urlSchemeTask.request.url else {
+            return
+        }
+        
+        var width = 32.0
+        var height = 32.0
+
+        if let qs = url.queryDictionary, let w = qs["w"], let wd = Double(w), let h = qs["h"], let hd = Double(h) {
+            width = wd
+            height = hd
+        }
+        
+        guard let specifier = (url as NSURL).resourceSpecifier else { return }
+        let resource = specifier.replacingOccurrences(of: "?\(url.query ?? "<none>")", with: "")
+        print(url.path)
+        guard let fileicon = NSWorkspace.shared.icon(forFile: resource).resized(to: NSSize(width: width, height: height)) else {
+            return
+        }
+        //Create a NSURLResponse with the correct mimetype.
+        
+        let response = URLResponse(url: url, mimeType: "image/png", expectedContentLength: -1, textEncodingName: nil)
+        
+        guard let tiffData = fileicon.tiffRepresentation else {
+              print("failed to get tiffRepresentation. url: \(url)")
+            return
+        }
+        let imageRep = NSBitmapImageRep(data: tiffData)
+        guard let imageData = imageRep?.representation(using: .png, properties: [:]) else {
+              print("failed to get PNG representation. url: \(url)")
+            return
+          }
+        urlSchemeTask.didReceive(response)
+        urlSchemeTask.didReceive(imageData)
+        urlSchemeTask.didFinish()
+    }
+    
+    func webView(_ webView: WKWebView, stop urlSchemeTask: WKURLSchemeTask) {
+        
+    }
+}
+
+extension NSImage {
+    func resized(to newSize: NSSize) -> NSImage? {
+        if let bitmapRep = NSBitmapImageRep(
+            bitmapDataPlanes: nil, pixelsWide: Int(newSize.width), pixelsHigh: Int(newSize.height),
+            bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+            colorSpaceName: .calibratedRGB, bytesPerRow: 0, bitsPerPixel: 0
+        ) {
+            bitmapRep.size = newSize
+            NSGraphicsContext.saveGraphicsState()
+            NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: bitmapRep)
+            draw(in: NSRect(x: 0, y: 0, width: newSize.width, height: newSize.height), from: .zero, operation: .copy, fraction: 1.0)
+            NSGraphicsContext.restoreGraphicsState()
+
+            let resizedImage = NSImage(size: newSize)
+            resizedImage.addRepresentation(bitmapRep)
+            return resizedImage
+        }
+
+        return nil
+    }
 }
 
 class WebBridgeContentController : WKUserContentController {
     override init() {
         super.init()
+    
         
 //        let legacy: [WebBridgeScript]  = [ .insertFigTutorialCSS, .figJS ]
 //        let scripts: [WebBridgeScript] = [.logging, .exceptions, .figJS]
        
-        self.addWebBridgeScript(.exceptions, location: .atDocumentStart)
-        self.addWebBridgeScript(.logging, location: .atDocumentStart);
+//        self.addWebBridgeScript(.exceptions, location: .atDocumentStart)
+//        self.addWebBridgeScript(.logging, location: .atDocumentStart);
         self.addWebBridgeScript(.insertFigTutorialCSS);
         self.addWebBridgeScript(.insertFigTutorialJS);
 
@@ -138,6 +219,14 @@ extension WebBridge : WKScriptMessageHandler {
             WebBridge.appread(scope: message)
         case .appwriteHandler:
             WebBridge.appwrite(scope: message)
+        case .positionHandler:
+            WebBridge.position(scope: message)
+        case .openHandler:
+            WebBridge.open(scope:message)
+        case .streamHandler:
+            WebBridge.stream(scope: message)
+        case .onboardingHandler:
+            WebBridge.onboarding(scope: message)
         default:
             print("Unhandled WKScriptMessage type '\(message.name)'")
         }
@@ -184,7 +273,7 @@ extension WebBridge {
            let env = params["env"]?.jsonStringToDict(),
            let pwd = env["PWD"] as? String {
             print("'\(cmd)' running in background...")
-            let output = cmd.runAsCommand(cwd: pwd)
+            let output = cmd.runAsCommand(cwd: pwd, with: env as? Dictionary<String, String>)
             print("\(cmd) -> \(output)")
             let encoded = output.data(using: .utf8)!
             scope.webView?.evaluateJavaScript("fig.callback(`\(handlerId)`,`\(encoded.base64EncodedString())`)", completionHandler: nil)
@@ -307,6 +396,80 @@ extension WebBridge {
         }
     }
     
+    static func position(scope: WKScriptMessage) {
+        if let companion = scope.webView?.window as? CompanionWindow,
+           let params = scope.body as? Dictionary<String, String>,
+           let position = params["position"]{
+            companion.positioning = CompanionWindow.OverlayPositioning(rawValue: Int(position) ?? 2) ?? .icon
+            companion.repositionWindow(forceUpdate: true)
+        }
+    }
+    
+    static func open(scope: WKScriptMessage) {
+        if let params = scope.body as? Dictionary<String, String>,
+           let urlString = params["url"],
+           let url = URL(string: urlString) {
+            NSWorkspace.shared.open(url)
+        }
+    }
+    
+    static func stream(scope: WKScriptMessage) {
+        if let params = scope.body as? Dictionary<String, String>,
+           let cmd = params["cmd"],
+           let handlerId = params["handlerId"],
+           let env = params["env"]?.jsonStringToDict(),
+           let pwd = env["PWD"] as? String {
+            print("'\(cmd)' streaming in background...")
+            let task = cmd.runInBackground(cwd:pwd, with: env as? Dictionary<String, String>, updateHandler: { (line, process) in
+                DispatchQueue.main.async {
+                    print("\(cmd) -> \(line)")
+                    let encoded = line.data(using: .utf8)!
+                scope.webView?.evaluateJavaScript("fig.callback(`\(handlerId)`,`\(encoded.base64EncodedString())`)", completionHandler: nil)
+                }
+
+            })
+            
+            (scope.webView as! WebView).onNavigate.append({
+                print("Terminating process that was streaming '\(cmd)'")
+                task.terminate()
+            })
+
+        } else {
+            Logger.log(message: "Couldn't stream \(scope.body)")
+        }
+
+    }
+    
+    static func onboarding(scope: WKScriptMessage) {
+        if let params = scope.body as? Dictionary<String, String>,
+           let action = params["action"],
+           let handlerId = params["handlerId"] {
+
+            switch (action) {
+                case "cli":
+                    ShellBridge.symlinkCLI {
+                        DispatchQueue.main.async {
+                            scope.webView?.evaluateJavaScript("fig.callback('\(handlerId)', '')", completionHandler: nil)
+                        }
+                    }
+                case "permissions":
+                    ShellBridge.promptForAccesibilityAccess()
+                case "ws":
+                    ShellBridge.shared.startWebSocketServer()
+                case "close":
+                    if let delegate = NSApplication.shared.delegate as? AppDelegate {
+                        delegate.setupCompanionWindow()
+                    }
+                    NSWorkspace.shared.launchApplication("Terminal")
+                    scope.webView?.window?.close()
+
+            default:
+                break;
+            }
+           
+        }
+    }
+    
     static var appDirectory: URL = URL(fileURLWithPath: "\(NSHomeDirectory())/.fig/apps/")
 
 }
@@ -342,7 +505,7 @@ extension WebBridgeScript {
     func codeForScript() -> String {
         switch self {
             case .exceptions:
-                return "function captureException(msg) { window.webkit.messageHandlers.exceptionHandler.postMessage(msg) } window.onerror = captureException;"
+                return "function captureException(msg, src, lineno, colno) { window.webkit.messageHandlers.exceptionHandler.postMessage(`${msg} at ${lineno}:${colno} in ${src}`) } window.onerror = captureException;"
             case .logging:
                 return "function captureLog(msg) { window.webkit.messageHandlers.logHandler.postMessage(msg); } window.console.log = captureLog;"
             case .figJS:

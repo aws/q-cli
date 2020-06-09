@@ -9,24 +9,89 @@
 import Cocoa
 import SwiftUI
 import HotKey
+import Carbon
+
 @NSApplicationMain
 class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 
     var window: NSWindow!
+    var onboardingWindow: OnboardingWindow!
     var statusBarItem: NSStatusItem!
     var clicks:Int = 6;
     var hotkey = HotKey(key: .grave, modifiers: [.command])
-
-
+    var shouldTab = false;
+    
     func applicationDidFinishLaunching(_ aNotification: Notification) {
 //        AppMover.moveIfNecessary()
         let _ = ShellBridge.shared
         
         self.hotkey.keyDownHandler = {
 //          print("Pressed at \(Date())")
-            self.toggleVisibility()
-        }
+            
+            guard let companion = self.window as? CompanionWindow else { return }
+            
+            if companion.positioning == CompanionWindow.defaultActivePosition {
+                self.toggleVisibility()
+                return
+            } else {
+                NSRunningApplication.current.activate(options: .activateIgnoringOtherApps)
+                if let controller = companion.contentViewController as? WebViewController,
+                   let webView = controller.webView {
+                   webView.evaluateJavaScript(
+                       """
+                       var next = document.activeElement.nextElementSibling
 
+                       if (next) {
+                           while (next.tabIndex && next.tabIndex == -1) {
+                               next = next.nextElementSibling
+                               if (!next) {
+                                   next = document.querySelector('.app')
+                                   break;
+                               }
+                           }
+                           console.log(next)
+                           next.focus()
+                       } else {
+                           document.querySelector('.app').focus()
+                       }
+                       """, completionHandler: nil)
+                }
+            }
+           
+        }
+        
+        self.hotkey.keyUpHandler = {
+            print("hotkey up")
+//            let commandHeld = CGEventSource.keyState(.hidSystemState, key: CGKeyCode(kVK_Command))
+//            print("CMD:\(commandHeld)")
+        }
+        
+        NSEvent.addLocalMonitorForEvents(matching: .flagsChanged) { (event) -> NSEvent? in
+            self.flagsChanged(event: event)
+            return event
+        }
+        NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged, handler: flagsChanged)
+
+        
+        let hasLaunched = UserDefaults.standard.bool(forKey: "hasLaunched")
+
+        if (!hasLaunched) {
+            let onboardingViewController = WebViewController()
+            onboardingViewController.webView?.loadBundleApp("landing")
+            onboardingWindow = OnboardingWindow(viewController: onboardingViewController)
+            onboardingWindow.makeKeyAndOrderFront(nil)
+            onboardingWindow.setFrame(NSRect(x: 0, y: 0, width: 590, height: 480), display: true, animate: false)
+            onboardingWindow.center()
+            onboardingWindow.makeKeyAndOrderFront(self)
+            
+            UserDefaults.standard.set(true, forKey: "hasLaunched")
+            UserDefaults.standard.synchronize()
+        } else {
+            window = CompanionWindow(viewController: WebViewController())
+            window.makeKeyAndOrderFront(nil)
+            (window as! CompanionWindow).repositionWindow(forceUpdate: true)
+        }
+        
         let statusBar = NSStatusBar.system
         statusBarItem = statusBar.statusItem(
                withLength: NSStatusItem.squareLength)
@@ -122,7 +187,8 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         // Create the SwiftUI view that provides the window contents.
 //        let contentView = ContentView()
 
-        window = CompanionWindow(viewController: WebViewController())
+
+
         // Create the window and set the content view.
 //        window = NSWindow(
 //            contentRect: NSRect(x: 0, y: 0, width: 480, height: 300),
@@ -139,7 +205,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 //        window.setFrameAutosaveName("Main Window")
 ////        window.contentView = NSHostingView(rootView: contentView)
 //        window.contentViewController = WebViewController()
-        window.makeKeyAndOrderFront(nil)
 //
 //        let timer = Timer.scheduledTimer(timeInterval: 0.1, target: self, selector: #selector(positionWindow), userInfo: nil, repeats: true)
 //
@@ -173,6 +238,47 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 //        }
     }
     
+    var commandHeld = false
+    var oldModifiers: NSEvent.ModifierFlags = .deviceIndependentFlagsMask
+    func flagsChanged(event : NSEvent) {
+        switch event.modifierFlags.intersection(.deviceIndependentFlagsMask) {
+        case .command:
+            print("command pressed")
+            self.commandHeld = true
+        default:
+            break
+        }
+        
+        switch oldModifiers.subtracting(event.modifierFlags.intersection(.deviceIndependentFlagsMask)) {
+            case .command:
+                print("command released")
+                self.commandHeld = false
+                self.shouldTab = false
+            if  let companion = window as? CompanionWindow,
+                let controller = companion.contentViewController as? WebViewController,
+                let webView = controller.webView {
+                   webView.evaluateJavaScript(
+                       """
+                       let target = document.activeElement
+                       let link = target.getElementsByTagName('a')[0]
+                       console.log(link)
+                       link.onclick()
+                       """, completionHandler: nil)
+                }
+            default:
+                break
+            
+        }
+        print(self.oldModifiers.description, event.modifierFlags.description)
+        self.oldModifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+
+    }
+    
+    func setupCompanionWindow() {
+        window = CompanionWindow(viewController: WebViewController())
+        window.makeKeyAndOrderFront(nil)
+    }
+    
     @objc func toggleVisibility() {
         if let window = self.window {
            let companion = window as! CompanionWindow
@@ -182,11 +288,11 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
                ShellBridge.shared.previousFrontmostApplication?.activate(options: .activateIgnoringOtherApps)
            }
            
-           if position == .icon {
-               companion.positioning = .insideRightPartial
+            if position == CompanionWindow.defaultPassivePosition {
+               companion.positioning = CompanionWindow.defaultActivePosition
                 NSRunningApplication.current.activate(options: .activateIgnoringOtherApps)
            } else {
-               companion.positioning = .icon
+               companion.positioning = CompanionWindow.defaultPassivePosition
 //            ShellBridge.shared.previousFrontmostApplication?.activate(options: .activateIgnoringOtherApps)
            }
        }

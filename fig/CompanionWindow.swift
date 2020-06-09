@@ -9,6 +9,9 @@
 import Foundation
 import Cocoa
 
+//protocol CompanionViewportHandler {
+//    <#requirements#>
+//}
 
 extension Notification.Name {
     static let overlayDidBecomeIcon = Notification.Name("overlayDidBecomeIcon")
@@ -17,11 +20,14 @@ extension Notification.Name {
 }
 
 class CompanionWindow : NSWindow {
+    static let defaultActivePosition: OverlayPositioning = .outsideRight
+    static let defaultPassivePosition: OverlayPositioning = .sidebar
+
     var priorTargetFrame: NSRect = .zero
-    var positioning: OverlayPositioning = .insideRightPartial {
+    var positioning: OverlayPositioning = CompanionWindow.defaultActivePosition {
         didSet {
-            self.repositionWindow(forceUpdate: true)
-            if (positioning == .icon) {
+            self.repositionWindow(forceUpdate: true, explicit: true)
+            if (positioning == CompanionWindow.defaultPassivePosition) {
                 NotificationCenter.default.post(name: .overlayDidBecomeIcon, object: nil)
             } else {
                 NotificationCenter.default.post(name: .overlayDidBecomeMain, object: nil)
@@ -47,6 +53,8 @@ class CompanionWindow : NSWindow {
         self.setFrameAutosaveName("Main Window")
 //        window.contentView = NSHostingView(rootView: contentView)
         self.contentViewController = viewController //WebViewController()
+        self.setFrame(NSRect(x: 400, y: 400, width: 300, height: 300), display: true)
+
         self.makeKeyAndOrderFront(nil)
         
         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(spaceChanged), name: NSWorkspace.activeSpaceDidChangeNotification, object: nil)
@@ -103,7 +111,7 @@ class CompanionWindow : NSWindow {
         case notification = 6
         case sidebar = 7
 
-        func frame(targetWindowFrame:NSRect) -> NSRect {
+        func frame(targetWindowFrame:NSRect, screen: NSRect = .zero) -> NSRect {
             if targetWindowFrame.width < 100 || targetWindowFrame.height < 200 {
                  return .zero
              }
@@ -121,7 +129,17 @@ class CompanionWindow : NSWindow {
                  let inner = targetWindowFrame.insetBy(dx: 30, dy: 45)
                  return NSRect(x: inner.origin.x, y: inner.origin.y - inner.height, width: inner.width, height: 100)
              case .outsideRight:
-                 return targetWindowFrame.insetBy(dx: -300, dy: 0).divided(atDistance: 300, from: .maxXEdge).slice
+                 let outerFrame = targetWindowFrame.insetBy(dx: -300, dy: 0).divided(atDistance: 300, from: .maxXEdge).slice
+                 
+                 // Reposition
+                 // TODO: fix on displays
+                 let intersection = screen.intersection(outerFrame)
+                 var x = outerFrame.origin.x
+                 if (intersection.width != outerFrame.width) {
+                    x -= outerFrame.width - intersection.width
+                 }
+                 
+                 return NSRect(origin: NSPoint(x: x, y: outerFrame.origin.y), size: outerFrame.size)
              case .icon:
                  let i_size =  CGSize(width: 50, height: 50)
                  let i_padding = CGPoint(x: 12, y: -36);
@@ -133,16 +151,23 @@ class CompanionWindow : NSWindow {
                  return NSRect(origin: CGPoint.init(x:targetWindowFrame.maxX - i_size.width - i_padding.x,
                                                     y: targetWindowFrame.minY - i_size.height - i_padding.y), size: i_size)
              case .sidebar:
-                return targetWindowFrame.divided(atDistance: 50, from: .maxXEdge).slice
+                let outerFrame =  targetWindowFrame.divided(atDistance: 50, from: .maxXEdge).slice.offsetBy(dx: 50, dy: 0)
+                // Reposition
+               // TODO: fix on displays
+               let intersection = screen.intersection(outerFrame)
+               var x = outerFrame.origin.x
+               if (intersection.width != outerFrame.width) {
+                  x -= outerFrame.width - intersection.width
+               }
+               
+               return NSRect(origin: NSPoint(x: x, y: outerFrame.origin.y), size: outerFrame.size)
              }
-
 
         }
 
     }
     
-    
-    func repositionWindow( forceUpdate:Bool = true) {
+    func repositionWindow( forceUpdate:Bool = true, explicit: Bool = false) {
         let whitelistedBundleIds = Integrations.whitelist
         guard let app = NSWorkspace.shared.frontmostApplication,
               let bundleId = app.bundleIdentifier else {
@@ -154,7 +179,8 @@ class CompanionWindow : NSWindow {
             print("targetFrame:\(targetFrame)")
             if (forceUpdate || !targetFrame.equalTo(priorTargetFrame)) {
                 priorTargetFrame = targetFrame
-                let frame = self.positioning.frame(targetWindowFrame: targetFrame)
+                let frame = self.positioning.frame(targetWindowFrame: targetFrame, screen: NSScreen.screens[0].frame)
+                
 //                let frame = overlayFrame(self.positioning,
 //                                         terminalFrame: targetFrame,
 //                                         screenBounds: .zero)
@@ -163,6 +189,19 @@ class CompanionWindow : NSWindow {
             }
             
         } else if (app.isFig) {
+            if (explicit) {
+                if let app = ShellBridge.shared.previousFrontmostApplication {
+                    guard forceUpdate else {
+                        return
+                    }
+                    let targetFrame = topmostWindowFrameFor(app)
+                    priorTargetFrame = targetFrame
+                    let frame = self.positioning.frame(targetWindowFrame: targetFrame, screen: NSScreen.screens[0].frame)
+                    setOverlayFrame(frame)
+    
+                }
+            }
+
 //            self.contentViewController?.view.frame = NSRect.init(origin: .zero, size: frame.size)
 
 //            print("fig window is active: previous: \(ShellBridge.shared.previousFrontmostApplication?.bundleIdentifier ?? "none" )");
@@ -285,3 +324,7 @@ class CompanionWindow : NSWindow {
 extension CompanionWindow : NSWindowDelegate {
     
 }
+
+//extension NSRect {
+//    func nonintersection() ->
+//}

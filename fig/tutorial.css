@@ -1,46 +1,57 @@
-body {
+/* Github CSS Styling */
+/* https://github.com/sindresorhus/github-markdown-css */
+
+/* body {
   margin: 10px;
-}
+} */
 
 code {
-  cursor: pointer;
+  cursor: pointer !important;
 }
 
 pre {
-  cursor: pointer;
+  cursor: pointer !important;
 }
 
-.buttonShow {
-  opacity: 1 !important;
-}
 
-.wrapper {
+.fig_wrapper {
   position: relative !important;
   overflow: visible !important;
 }
 
-.pearButton {
-  cursor: pointer;
-  position: absolute;
-  font-size: 20px;
-  background: white;
-  border: none;
-  border-radius: 5px;
-  transition: all 0.1s ease-in-out;
-  opacity: 0;
-  z-index: 10;
+.fig_pearButton {
+  all: unset !important;
+  cursor: pointer !important;
+  position: absolute !important;
+  font-size: 20px !important;
+  background-color: white !important;
+  border: none !important;
+  border-radius: 5px !important;
+  transition: all 0.1s ease-in-out !important;
+  opacity: 0  !important;
+  z-index: 10 !important;
+  padding: 2px 6px !important
 }
 
-.prePearButton {
-  right: 5px;
-  top: 5px;
+
+.fig_prePearButton {
+  right: 5px !important;
+  top: 5px !important;
 }
 
-.inlinePearButton {
-  right: -36px;
-  bottom: -7px;
+.fig_inlinePearButton {
+  right: -36px !important;
+  bottom: -7px !important;
 }
 
 button:focus {
-  outline:0;
+  outline:0 !important;
+}
+
+.fig_hidden {
+  display: none !important;
+}
+
+.fig_buttonShow {
+  opacity: 1 !important;
 }

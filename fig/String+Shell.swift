@@ -8,15 +8,23 @@
 
 import Foundation
 extension String {
-    func runAsCommand(_ isVerbose: Bool = true, cwd: String? = nil) -> String {
+    func runAsCommand(_ isVerbose: Bool = true, cwd: String? = nil, with env: Dictionary<String, String>? = nil) -> String {
         let pipe = Pipe()
+        let stderr = Pipe()
         let task = Process()
         task.launchPath = "/bin/sh"
         task.arguments = ["-c", String(format:"%@", self)]
         task.standardOutput = pipe
+        task.standardError = stderr
+
         if let cwd = cwd {
             task.currentDirectoryPath = cwd
         }
+        
+        if let env = env {
+            task.environment = env
+        }
+        
         let outputHandler = pipe.fileHandleForReading
         outputHandler.waitForDataInBackgroundAndNotify()
         
@@ -39,6 +47,24 @@ extension String {
             outputHandler.waitForDataInBackgroundAndNotify()
         }
         
+        let errorHandler = stderr.fileHandleForReading
+        errorHandler.waitForDataInBackgroundAndNotify()
+        var errorObserver: NSObjectProtocol!
+        errorObserver = notificationCenter.addObserver(forName: dataNotificationName, object: errorHandler, queue: nil) {  notification in
+            let data = errorHandler.availableData
+            guard data.count > 0 else {
+                notificationCenter.removeObserver(errorObserver!)
+                return
+            }
+            if let line = String(data: data, encoding: .utf8) {
+                if isVerbose {
+                    print(line)
+                }
+                output = output + line + "\n"
+            }
+            errorHandler.waitForDataInBackgroundAndNotify()
+        }
+        
         task.launch()
         task.waitUntilExit()
         
@@ -51,8 +77,51 @@ extension String {
 //        }
     }
     
-    func runInBackground(completion: (() -> Void)? ) -> Process {
+    fileprivate func addListener(_ listener: @escaping ((String) -> Void), to pipe: Pipe) {
+        let handler = pipe.fileHandleForReading
+        handler.waitForDataInBackgroundAndNotify()
+        var observer: NSObjectProtocol!
+        observer = NotificationCenter.default.addObserver(forName: .NSFileHandleDataAvailable, object: handler, queue: nil) {  notification in
+                  let data = handler.availableData
+                  guard data.count > 0 else {
+                      NotificationCenter.default.removeObserver(observer!)
+                      return
+                  }
+                  if let line = String(data: data, encoding: .utf8) {
+                      listener(line)
+                  }
+                  handler.waitForDataInBackgroundAndNotify()
+              }
+    }
+    
+    func runInBackground(cwd: String? = nil, with env: Dictionary<String, String>? = nil, updateHandler: ((String, Process) -> Void)? = nil, completion: (() -> Void)? = nil) -> Process {
+        
+        let stdin = Pipe()
+        let stderr = Pipe()
+        
         let task = Process()
+        task.standardOutput = stdin
+        task.standardError = stderr
+        
+        if let cwd = cwd {
+            task.currentDirectoryPath = cwd
+        }
+               
+        if let env = env {
+            task.environment = env
+        }
+        
+        if let updateHandler = updateHandler {
+            addListener({ (line) in
+                updateHandler(line, task)
+            }, to: stdin)
+            
+            addListener({ (line) in
+                updateHandler(line, task)
+            }, to: stderr)
+        }
+       
+        
         task.launchPath = "/bin/sh"
         task.arguments = ["-c", self]
         task.launch()

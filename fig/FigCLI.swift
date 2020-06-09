@@ -90,17 +90,17 @@ class FigCLI {
     }
 
     static func hide(with scope: Scope) {
-        scope.companionWindow.positioning = .icon
+        scope.companionWindow.positioning = CompanionWindow.defaultPassivePosition
     }
     
     static func env(with scope: Scope) {
         scope.webView.configureEnvOnLoad = {
-            scope.webView.evaluateJavaScript("fig.env = JSON.parse(`\(scope.env)`);", completionHandler: nil)
+            scope.webView.evaluateJavaScript("fig.env = JSON.parse(`\(scope.env.replacingOccurrences(of: "\\\"", with: "\\\\\\\""))`);", completionHandler: nil)
         }
     }
     static func entry(with scope: Scope) {
         scope.webView.onLoad.append {
-            scope.webView.evaluateJavaScript("fig.init()", completionHandler: nil)
+            scope.webView.evaluateJavaScript("fig.callinit()", completionHandler: nil)
         }
     }
     static func stdin(with scope: Scope) {
@@ -122,7 +122,7 @@ class FigCLI {
     static func route(_ message: ShellMessage, webView: WebView, companionWindow: CompanionWindow) {
         let stdin = message.data.replacingOccurrences(of: "`", with: "\\`")
         let env = message.env ?? ""
-        companionWindow.positioning = .insideRightPartial
+        companionWindow.positioning =  CompanionWindow.defaultActivePosition
 
         guard let options = message.options, options.count > 0 else {
             let scope = Scope(cmd: "", stdin: stdin, options: [], env: env, webView: webView, companionWindow: companionWindow)

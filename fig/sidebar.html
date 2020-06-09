@@ -1,0 +1,179 @@
+<html>
+<head>
+<style>
+	html {
+		background-color: white; /*#1c1f28;*/
+	}
+body {
+	margin:0;
+	padding:0;
+	width: 50px;
+
+	margin-top: 10px;
+	font-family: 'Avenir';
+}
+a {
+	text-decoration: none;
+	color:#7f8c8d;
+	font-size: 0.7em;
+}
+.app {
+	margin:0;
+	padding: 0;
+	height:50px;
+	width:50px;
+	padding-top: 10px;
+	text-align: center;
+	color: #7f8c8d;
+	border-radius: 15px;
+
+	/*background-color: #ccc;*/
+/*	border-bottom-color: #ddd;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;*/
+/*
+	border-top-color: #ddd;
+	border-top-width: 1px;
+	border-top-style: solid;*/
+	transition: all .2s ease-in-out; 
+	outline: none;
+
+
+}
+
+.app:hover {
+	transform: scale(0.9);
+}
+
+.app:focus {
+	transform: scale(0.9);
+	 /*box-shadow: inset 2px 2px rgba(21, 156, 228, 0.4);*/
+	background-color: #ecf0f1;
+  	box-shadow: inset 0 0 0 3px white;/*rgba(21, 156, 228, 0.4);*/
+ /*box-shadow:0 8px 6px -6px rgba(21, 156, 228, 0.4);*/
+}
+
+.app img {
+	width: 24px;
+		height: 24px;
+
+	margin-left: auto;
+	margin-right: auto;
+	transition: all .2s ease-in-out; 
+
+}
+
+.cli {
+	display: inline-block;
+	text-align: center;
+	margin-top: 3px;
+	padding: 7px;
+	/*width: 32;*/
+	border-radius: 5px;
+	color: white;
+	font-weight: 700;
+}
+
+.orange {
+	background-color: orange;
+}
+
+.purple {
+	background-color: #8c7ae6;
+}
+::-webkit-scrollbar { display: none; }
+
+hr {
+    width: 50%;
+    margin-left: auto;
+    margin-right: auto;
+}
+</style>
+
+</head>
+<body>
+<div tabindex="0" class="app">
+	<a href="#" onclick="javscript:fig.run('fig brew')" class="name"><img src = "https://brew.sh/assets/img/homebrew-256x256.png" width="32" height="32"><br>
+	brew</a>
+</div>
+<div tabindex="0"class="app">
+	<a href="#" onclick="javscript:fig.run('fig git')" class="name"><img src = "https://git-scm.com/images/logos/downloads/Git-Icon-1788C.png" width="32" height="32"><br>
+	git</a>
+</div>
+<div tabindex="0" class="app">
+	<a href="#" onclick="javscript:fig.run('fig heroku')" class="name"><img src = "https://www.herokucdn.com/favicons/favicon.ico" width="32" height="32"><br>
+	heroku</a>
+</div>
+<div tabindex="0" class="app">
+	<a href="#" onclick="javscript:fig.run('fig aws')" class="name"><img src = "https://docs.aws.amazon.com/favicon.ico" width="16" height="16"><br>
+	aws</a>
+</div>
+<div tabindex="0" class="app">
+	<a href="#" onclick="javscript:fig.run('fig npm')" class="name"><img src = "https://static.npmjs.com/58a19602036db1daee0d7863c94673a4.png" width="16" height="16"><br>
+	npm</a>
+</div>
+<div tabindex="0" class="app">
+	<a href="#" onclick="javscript:fig.run('fig repl')" class="name"><span class="cli orange">repl</span></a>
+</div>
+<div tabindex="0" class="app">
+	<a href="#" onclick="javscript:fig.run('fig curl')" class="name"><img src = "https://curl.haxx.se/apple-touch-icon-precomposed.png" width="16" height="16"><br>
+	curl</a>
+</div>
+<!--<div tabindex="0" class="app">-->
+<!--	<a href="#" onclick="javscript:fig.run('fig ffmpeg')" class="name"><img src = "https://ffmpeg.org/favicon.ico" width="16" height="16"><br>-->
+<!--	ffmpeg</a>-->
+<!--</div>-->
+<div tabindex="0" class="app">
+	<a href="#" onclick="javscript:fig.run('fig psql')" class="name"><img src = "https://www.postgresql.org/favicon.ico" width="16" height="16"><br>
+	psql</a>
+</div>
+<div tabindex="0" class="app">
+	<a href="#" onclick="javscript:fig.run('fig dir')" class="name"><span class="cli purple">dir</span></a>
+</div>
+<div tabindex="0" class="app">
+	<a href="#" onclick="javscript:fig.run('fig google')" class="name"><img src = "https://www.google.com/images/branding/product_ios/2x/gsa_ios_60dp.png" width="16" height="16"><br>
+	google</a>
+</div>
+<!--<div tabindex="0" class="app">-->
+<!--	<a href="#" onclick="javscript:fig.run('fig bundle finder')" class="name"><span class="cli orange">finder</span></a>-->
+<!--</div>-->
+<hr>
+<div tabindex="0" draggable="true" ondragstart="drag(event)" class="app">
+    <a href="#" onclick="javscript:fig.run('cd ~')" class="name">
+        <img src = "fig://Users/mschrage/?w=48&h=48"><br>
+        Home</span>
+    </a>
+</div>
+<div tabindex="0" draggable="true" ondragstart="drag(event)" class="app">
+    <a href="#" onclick="javscript:fig.run('cd ~/fig/research/figapps')" class="name">
+        <img src = "fig://Users/mschrage/fig/research/figapps/?w=48&h=48"><br>
+        figapps</span>
+    </a>
+</div>
+<script>
+	fig.init = () => {
+		//fig.reposition("7")
+		//fig.focus()
+	}
+
+	let git = () => {
+		fig.reposition("3")
+		window.location.href = "#"
+	}
+
+	document.querySelectorAll('.app').forEach(elm => { elm.addEventListener('keypress', function (e) {
+		console.log("hi")
+		console.log(e)
+		    if (e.key === 'Enter') {
+		    	let link = e.target.getElementsByTagName('a')[0]
+		    	console.log(link)
+		    	link.onclick()
+
+		      // code for enter
+		    }
+		})
+	});
+
+</script>
+</body>
+</html>

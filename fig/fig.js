@@ -73,7 +73,12 @@ let setup = function(window) {
       },
       callback : function(handlerId, value, error) {
           this[handlerId](atob(value), error)
-          delete this[handlerId]
+          let tokens = handlerId.split(':')
+          if (tokens.length == 1) {
+              delete this[handlerId]
+          } else {
+              console.log(`Continue streaming to callback '${handlerId}'`)
+          }
       },
       stdinb64 : function(data) {
           fig['_stdin'] = atob(data)
@@ -92,18 +97,48 @@ let setup = function(window) {
           fig.stdin(stdin)
       },
       ttyinb64 : function(input, session) {
-          fig.log(input)
-          fig.log(session)
 //          if ()
 //          fig.log(JSON.stringify(fig.env["TERMSESSION"]))
 //          if (fig.env["TERMSESSION"] == session) {
-              fig.ttyin(atob(input))
 //          }
+          if (fig.ttyin) {
+              fig.ttyin(atob(input))
+          }
       },
       ttyoutb64 : function(input, session) {
-//          if (fig.env["TERMSESSION"] == session) {
+          if (fig.ttyout) {
               fig.ttyout(atob(input))
+          }
+//          if (fig.env["TERMSESSION"] == session) {
 //          }
+      },
+      reposition : function(position) {
+          console.log("Repositioning")
+          window.webkit.messageHandlers.positionHandler.postMessage({position});
+
+      },
+      open : function(url) {
+          window.webkit.messageHandlers.openHandler.postMessage({url});
+      },
+      stream : function(cmd, handler) {
+          let handlerId = `${random_identifier(5)}:stream`
+          let type = "stream"
+          this[handlerId] = handler
+          let env = JSON.stringify(fig.env)
+          
+          if (!env) {
+              console.log("Error: Attempting to call `fig.stream` before `fig.env` has loaded. To fix this error, move this code inside of either the `fig.stdin` or the `fig.init` callbacks.\n\nIf you don't need to run the shell script from the users working directory, use fig.executeInGlobalScope\n")
+              console.log(`Could not stream '${cmd}'...`)
+
+              return
+          }
+          window.webkit.messageHandlers.streamHandler.postMessage({type, cmd, handlerId, env});
+          console.log(`Added callback handler "${handlerId}" for command "${cmd}"`)
+      },
+      onboarding : function(action, handler) {
+          let handlerId = random_identifier(5)
+          this[handlerId] = handler
+          window.webkit.messageHandlers.onboardingHandler.postMessage({action, handlerId});
       }
   }
 

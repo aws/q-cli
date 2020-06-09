@@ -125,7 +125,7 @@ class ShellBridge {
             }
             os_log("Socket Server succesfully started...", log: OSLog.socketServer, type: .info)
 
-            Timer.delayWithSeconds(0.5) {
+            Timer.delayWithSeconds(3) {
                 self.attemptToConnectToSocketServer()
             }
         } else {
@@ -181,7 +181,7 @@ extension ShellBridge: WebSocketConnectionDelegate {
     }
     
     func onError(connection: WebSocketConnection, error: Error) {
-        print(error)
+        print("socket error", error)
         self.socket?.disconnect()
     }
     
@@ -190,7 +190,7 @@ extension ShellBridge: WebSocketConnectionDelegate {
         let decoder = JSONDecoder()
         do {
             let msg = try decoder.decode(ShellMessage.self, from: text.data(using: .utf8)!)
-//            print(msg)
+            print(msg)
             
             switch msg.type {
             case "pipe":
@@ -243,10 +243,12 @@ class Integrations {
     static let terminals: Set = ["com.googlecode.iterm2",
                                  "com.apple.Terminal",
                                  "io.alacritty",
-                                 "co.zeit.hyper"]
+                                 "co.zeit.hyper",
+                                 "com.microsoft.VSCode"]
     static let browsers:  Set = ["com.google.Chrome"]
     static let editors:   Set = ["com.apple.dt.Xcode",
-                                 "com.sublimetext.3"]
+                                 "com.sublimetext.3",
+                                 "com.microsoft.VSCode"]
     
     static let whitelist = Integrations.terminals
 //                    .union(Integrations.editors)
@@ -349,7 +351,7 @@ extension Array {
 }
 
 extension ShellBridge {
-    static func symlinkCLI(){
+    static func symlinkCLI(completion: (()-> Void)? = nil){
 //        cmd="tell application \"Terminal\" to do script \"uptime\""
 //          osascript -e "$cmd"
         
@@ -357,7 +359,7 @@ extension ShellBridge {
             print(path)
             let script = "mkdir -p /usr/local/bin && ln -sf '\(path)' '/usr/local/bin/fig'"
             
-            let out = "cmd=\"do shell script \\\"\(script)\\\" with administrator privileges\" && osascript -e \"$cmd\"".runAsCommand()
+            let out = "cmd=\"do shell script \\\"\(script)\\\" with administrator privileges\" && osascript -e \"$cmd\"".runInBackground(completion: completion)
             
             print(out)
             //let _ = "test -f ~/.bash_profile && echo \"fig init #start fig pty\" >> ~/.bash_profile".runAsCommand()
