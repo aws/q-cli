@@ -470,6 +470,38 @@ extension WebBridge {
         }
     }
     
+    static func tabInSidebar(webView: WebView) {
+        webView.evaluateJavaScript(
+          """
+          var next = document.activeElement.nextElementSibling
+
+          if (next) {
+              while (next.tabIndex && next.tabIndex == -1) {
+                  next = next.nextElementSibling
+                  if (!next) {
+                      next = document.querySelector('.app')
+                      break;
+                  }
+              }
+              console.log(next)
+              next.focus()
+          } else {
+              document.querySelector('.app').focus()
+          }
+          """, completionHandler: nil)
+    }
+    
+    static func activateSelectedAppFromSidebar(webView: WebView) {
+        webView.evaluateJavaScript(
+            """
+            var target = document.activeElement
+            var link = target.getElementsByTagName('a')[0]
+            console.log(link)
+            link.onclick()
+            """, completionHandler: nil)
+    }
+
+    
     static var appDirectory: URL = URL(fileURLWithPath: "\(NSHomeDirectory())/.fig/apps/")
 
 }

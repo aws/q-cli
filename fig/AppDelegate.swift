@@ -7,9 +7,6 @@
 //
 
 import Cocoa
-import SwiftUI
-import HotKey
-import Carbon
 
 @NSApplicationMain
 class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
@@ -18,60 +15,11 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     var onboardingWindow: OnboardingWindow!
     var statusBarItem: NSStatusItem!
     var clicks:Int = 6;
-    var hotkey = HotKey(key: .grave, modifiers: [.command])
-    var shouldTab = false;
+    var hotKeyManager: HotKeyManager?
     
     func applicationDidFinishLaunching(_ aNotification: Notification) {
 //        AppMover.moveIfNecessary()
         let _ = ShellBridge.shared
-        
-        self.hotkey.keyDownHandler = {
-//          print("Pressed at \(Date())")
-            
-            guard let companion = self.window as? CompanionWindow else { return }
-            
-            if companion.positioning == CompanionWindow.defaultActivePosition {
-                self.toggleVisibility()
-                return
-            } else {
-                NSRunningApplication.current.activate(options: .activateIgnoringOtherApps)
-                if let controller = companion.contentViewController as? WebViewController,
-                   let webView = controller.webView {
-                   webView.evaluateJavaScript(
-                       """
-                       var next = document.activeElement.nextElementSibling
-
-                       if (next) {
-                           while (next.tabIndex && next.tabIndex == -1) {
-                               next = next.nextElementSibling
-                               if (!next) {
-                                   next = document.querySelector('.app')
-                                   break;
-                               }
-                           }
-                           console.log(next)
-                           next.focus()
-                       } else {
-                           document.querySelector('.app').focus()
-                       }
-                       """, completionHandler: nil)
-                }
-            }
-           
-        }
-        
-        self.hotkey.keyUpHandler = {
-            print("hotkey up")
-//            let commandHeld = CGEventSource.keyState(.hidSystemState, key: CGKeyCode(kVK_Command))
-//            print("CMD:\(commandHeld)")
-        }
-        
-        NSEvent.addLocalMonitorForEvents(matching: .flagsChanged) { (event) -> NSEvent? in
-            self.flagsChanged(event: event)
-            return event
-        }
-        NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged, handler: flagsChanged)
-
         
         let hasLaunched = UserDefaults.standard.bool(forKey: "hasLaunched")
 
@@ -87,9 +35,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             UserDefaults.standard.set(true, forKey: "hasLaunched")
             UserDefaults.standard.synchronize()
         } else {
-            window = CompanionWindow(viewController: WebViewController())
-            window.makeKeyAndOrderFront(nil)
-            (window as! CompanionWindow).repositionWindow(forceUpdate: true)
+            self.setupCompanionWindow()
         }
         
         let statusBar = NSStatusBar.system
@@ -184,99 +130,14 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
          withTitle: "Quit Fig",
          action: #selector(AppDelegate.quit),
          keyEquivalent: "")
-        // Create the SwiftUI view that provides the window contents.
-//        let contentView = ContentView()
-
-
-
-        // Create the window and set the content view.
-//        window = NSWindow(
-//            contentRect: NSRect(x: 0, y: 0, width: 480, height: 300),
-//            styleMask: [.fullSizeContentView ],
-//            backing: .buffered, defer: false)
-//        window.center()
-//        window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .transient]
-//        window.isMovableByWindowBackground = true
-//        window.isMovable = true
-//        window.isOpaque = false
-//        window.backgroundColor = .clear//NSColor.init(white: 1, alpha: 0.75)
-//        window.delegate = self
-//        window.level = .floating
-//        window.setFrameAutosaveName("Main Window")
-////        window.contentView = NSHostingView(rootView: contentView)
-//        window.contentViewController = WebViewController()
-//
-//        let timer = Timer.scheduledTimer(timeInterval: 0.1, target: self, selector: #selector(positionWindow), userInfo: nil, repeats: true)
-//
-//        NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(positionWindow), name: NSWorkspace.activeSpaceDidChangeNotification, object: nil)
-//        NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(positionWindow), name: NSWorkspace.didActivateApplicationNotification, object: nil)
-//
-//        let terminals = NSRunningApplication.runningApplications(withBundleIdentifier: "com.googlecode.iterm2")
-//
-//        terminals.forEach({ print("\($0.localizedName ?? "Anonymous") (\($0.processIdentifier)) -- \($0.isActive)") })
         
-//        if let activeTerminal = terminals.first {
-            // save current pasteboard
-//            let pasteboard = NSPasteboard.general
-//            let copiedString = pasteboard.string(forType: .string) ?? ""
-//            print(copiedString)
-//            NSPasteboard.general.clearContents()
-//
-//            NSPasteboard.general.setString("Hello there", forType: .string)
-//            let insertString = pasteboard.string(forType: .string) ?? "<none>"
-//            print(insertString)
-            
-//
-//            NSPasteboard.general.clearContents()
-//            pasteboard.setString(copiedString, forType: .string)
-//        }
-//        let src = CGEventSource(stateID: .hidSystemState)
-//        if let event = CGEvent(keyboardEventSource: src, virtualKey: 0x0f, keyDown: true)
-//        {
-//            event.flags = .maskCommand
-//            event.postToPid()
-//        }
-    }
-    
-    var commandHeld = false
-    var oldModifiers: NSEvent.ModifierFlags = .deviceIndependentFlagsMask
-    func flagsChanged(event : NSEvent) {
-        switch event.modifierFlags.intersection(.deviceIndependentFlagsMask) {
-        case .command:
-            print("command pressed")
-            self.commandHeld = true
-        default:
-            break
-        }
-        
-        switch oldModifiers.subtracting(event.modifierFlags.intersection(.deviceIndependentFlagsMask)) {
-            case .command:
-                print("command released")
-                self.commandHeld = false
-                self.shouldTab = false
-            if  let companion = window as? CompanionWindow,
-                let controller = companion.contentViewController as? WebViewController,
-                let webView = controller.webView {
-                   webView.evaluateJavaScript(
-                       """
-                       let target = document.activeElement
-                       let link = target.getElementsByTagName('a')[0]
-                       console.log(link)
-                       link.onclick()
-                       """, completionHandler: nil)
-                }
-            default:
-                break
-            
-        }
-        print(self.oldModifiers.description, event.modifierFlags.description)
-        self.oldModifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
-
     }
     
     func setupCompanionWindow() {
         window = CompanionWindow(viewController: WebViewController())
         window.makeKeyAndOrderFront(nil)
+        (window as! CompanionWindow).repositionWindow(forceUpdate: true)
+        self.hotKeyManager = HotKeyManager(companion: window as! CompanionWindow)
     }
     
     @objc func toggleVisibility() {
@@ -351,137 +212,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
          injectStringIntoTerminal("exit")
      }
     
-//    enum OverlayPositioning: Int {
-//        case coveringTitlebar = 0
-//        case insideRightFull = 1
-//        case insideRightPartial = 2
-//        case outsideRight = 3
-//        case atPrompt = 4
-//        case icon = 5
-//        case notification = 6
-//
-//    }
-//
-//    var priorTargetFrame: NSRect = .zero
-//
-//    @objc func positionWindow() {
-//        repositionWindow(forceUpdate: true)
-//    }
-//    func repositionWindow( forceUpdate:Bool = true) {
-//        let whitelistedBundleIds = Integrations.whitelist
-////                                    ["com.googlecode.iterm2",
-////                                    "com.google.Chrome",
-////                                    "com.sublimetext.3",
-////                                    "com.apple.dt.Xcode",
-////                                    "com.apple.Terminal"]
-//        guard let app = NSWorkspace.shared.frontmostApplication,
-//              let bundleId = app.bundleIdentifier else {
-//                   return
-//               }
-//
-//        if (whitelistedBundleIds.contains(bundleId)) {
-//            let targetFrame = topmostWindowFrameFor(app)
-//
-//            if (forceUpdate || !targetFrame.equalTo(priorTargetFrame)) {
-//                priorTargetFrame = targetFrame
-//                let frame = overlayFrame(OverlayPositioning.init(rawValue: self.clicks % 7)!,
-//                                         terminalFrame: targetFrame,
-//                                         screenBounds: .zero)
-//                setOverlayFrame(frame)
-//
-//            }
-//
-//        } else if (bundleId == "com.mschrage.fig") {
-//            print("fig window is active: previous: \(ShellBridge.shared.previousFrontmostApplication?.bundleIdentifier ?? "none" )");
-//        } else {
-//            window.orderOut(self)
-//        }
-//    }
-//
-//    func setOverlayFrame(_ frame: NSRect) {
-//        // no update if frame hasn't changed
-//        self.window.windowController?.shouldCascadeWindows = false;
-//        self.window.setFrame(frame, display: true)
-//        self.window.setFrameTopLeftPoint(frame.origin)
-//
-//        window.makeKeyAndOrderFront(self)
-////        NSApp.activate(ignoringOtherApps: true)
-//    }
-//
-//    func topmostWindowFrameFor(_ app: NSRunningApplication, includingTitleBar: Bool = false) -> NSRect {
-//        let appRef = AXUIElementCreateApplication(app.processIdentifier)
-//
-//        var window: AnyObject?
-//        let result = AXUIElementCopyAttributeValue(appRef, kAXFocusedWindowAttribute as CFString, &window)
-//
-//        if (result == .apiDisabled) {
-//            print("Accesibility needs to be enabled.")
-//            return .zero
-//        }
-//
-//        var position : AnyObject?
-//        var size : AnyObject?
-//
-//        guard (window != nil) else {
-//            print("Window does not exist.")
-//            return .zero
-//        }
-//
-//        AXUIElementCopyAttributeValue(window as! AXUIElement, kAXPositionAttribute as CFString, &position)
-//        AXUIElementCopyAttributeValue(window as! AXUIElement, kAXSizeAttribute as CFString, &size)
-//
-//        if let position = position, let size = size {
-//            let point = AXValueGetters.asCGPoint(value: position as! AXValue)
-//            let bounds = AXValueGetters.asCGSize(value: size as! AXValue)
-//
-//            let titleBarHeight:CGFloat = 23.0;
-//
-//            print("TopmostFrame for \(app.bundleIdentifier ?? "")", NSScreen.main!.frame, NSScreen.main!.visibleFrame, point, bounds)
-//
-//            return NSRect.init(x: point.x,
-//                               y: (NSScreen.main?.visibleFrame.height)! - point.y + ((includingTitleBar) ? titleBarHeight : 0),
-//                               width:  bounds.width,
-//                               height: bounds.height - ((includingTitleBar) ? 0 : titleBarHeight))
-//        }
-//        return .zero
-//    }
-//
-//    func overlayFrame( _ positioning: OverlayPositioning, terminalFrame: NSRect, screenBounds: NSRect) -> NSRect {
-//        if terminalFrame.width < 100 || terminalFrame.height < 200 {
-//            return .zero
-//        }
-//        let t_size = terminalFrame.size
-//        switch positioning {
-//        case .coveringTitlebar:
-//            return NSRect(origin: terminalFrame.origin, size: CGSize.init(width: t_size.width, height: 100))
-//        case .insideRightFull:
-//            return terminalFrame.divided(atDistance: 300, from: .maxXEdge).slice
-//        case .insideRightPartial:
-//            return terminalFrame.divided(atDistance: 300, from: .maxXEdge).slice.divided(atDistance: t_size.height * ( 2 / 3 ), from: .maxYEdge).slice.offsetBy(dx: 0, dy: -t_size.height / 3)
-//        case .atPrompt:
-//
-//            let inner = terminalFrame.insetBy(dx: 30, dy: 45)
-//            return NSRect(x: inner.origin.x, y: inner.origin.y - inner.height, width: inner.width, height: 100)
-//        case .outsideRight:
-//            return terminalFrame.insetBy(dx: -300, dy: 0).divided(atDistance: 300, from: .maxXEdge).slice
-//        case .icon:
-//            let i_size =  CGSize(width: 50, height: 50)
-//            let i_padding = CGPoint(x: 12, y: -36);
-//            return NSRect(origin: CGPoint.init(x:terminalFrame.maxX - i_size.width - i_padding.x,
-//                                               y: terminalFrame.minY - i_size.height - i_padding.y), size: i_size)
-//        case .notification:
-//            let i_size =  CGSize(width: 300, height: 120)
-//            let i_padding = CGPoint(x: 12, y: -120 + 12);
-//            return NSRect(origin: CGPoint.init(x:terminalFrame.maxX - i_size.width - i_padding.x,
-//                                               y: terminalFrame.minY - i_size.height - i_padding.y), size: i_size)
-//        }
-//
-//    }
-//
-//    @objc func updateOverlayStyle() {
-//        self.clicks += 1;
-//        self.repositionWindow(forceUpdate: true)
-//    }
+
     // > fig search
     @objc func getTopTerminalWindow() {
         guard let app = NSWorkspace.shared.frontmostApplication else {

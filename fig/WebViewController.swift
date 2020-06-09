@@ -311,9 +311,9 @@ extension WebViewController: WebBridgeEventListener {
             if let currentMouseLocation = self.mouseLocation {
                print("mouseLocation:", currentMouseLocation)
                print("mouseInWindow", self.view.bounds.contains(currentMouseLocation))
-               if (self.view.bounds.contains(currentMouseLocation)) {
-                   NSRunningApplication.current.activate(options: .activateIgnoringOtherApps)
-               }
+//               if (self.view.bounds.contains(currentMouseLocation)) {
+//                   NSRunningApplication.current.activate(options: .activateIgnoringOtherApps)
+//               }
            }
         })
     }
@@ -433,6 +433,7 @@ extension WebViewController : WKNavigationDelegate {
 
 class WebView : WKWebView {
     var trackingArea : NSTrackingArea?
+    var trackMouse = true
     var onLoad: [(() -> Void)] = []
     var onNavigate: [(() -> Void)] = []
     var configureEnvOnLoad: (() -> Void)?
@@ -503,7 +504,7 @@ class WebView : WKWebView {
         guard let w = self.window, let window = w as? CompanionWindow else {
             return
         }
-        if (window.positioning == CompanionWindow.defaultPassivePosition) {
+        if (trackMouse && window.positioning == CompanionWindow.defaultPassivePosition) {
             NSRunningApplication.current.activate(options: .activateIgnoringOtherApps)
         }
     }
@@ -513,9 +514,9 @@ class WebView : WKWebView {
         guard let w = self.window, let window = w as? CompanionWindow else {
                   return
             }
-        if (window.positioning == CompanionWindow.defaultPassivePosition) {
+        if (trackMouse && window.positioning == CompanionWindow.defaultPassivePosition) {
             ShellBridge.shared.previousFrontmostApplication?.activate(options: .activateIgnoringOtherApps)
-    
+
         }
     }
     

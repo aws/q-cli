@@ -50,6 +50,7 @@
 		757CA89B248C18F1002A64A8 /* done.html in Resources */ = {isa = PBXBuildFile; fileRef = 757CA89A248C18F0002A64A8 /* done.html */; };
 		757CA89D248C1F50002A64A8 /* demo4onboarding.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 757CA89C248C1F50002A64A8 /* demo4onboarding.mp4 */; };
 		757CA89F248D628F002A64A8 /* sidebar.html in Resources */ = {isa = PBXBuildFile; fileRef = 757CA89E248D628E002A64A8 /* sidebar.html */; };
+		757CA8E124903D3B002A64A8 /* HotKeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757CA8E024903D3A002A64A8 /* HotKeyManager.swift */; };
 		75C0711D244AC3B2002DF69F /* index.html in Resources */ = {isa = PBXBuildFile; fileRef = 75C0711C244AC3B2002DF69F /* index.html */; };
 		75C07120244BB441002DF69F /* CompanionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75C0711F244BB441002DF69F /* CompanionViewController.swift */; };
 		75C07122244BB65D002DF69F /* ShellBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75C07121244BB65D002DF69F /* ShellBridge.swift */; };
@@ -135,6 +136,7 @@
 		757CA89A248C18F0002A64A8 /* done.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = done.html; sourceTree = "<group>"; };
 		757CA89C248C1F50002A64A8 /* demo4onboarding.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = demo4onboarding.mp4; sourceTree = "<group>"; };
 		757CA89E248D628E002A64A8 /* sidebar.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = sidebar.html; sourceTree = "<group>"; };
+		757CA8E024903D3A002A64A8 /* HotKeyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotKeyManager.swift; sourceTree = "<group>"; };
 		75C0711C244AC3B2002DF69F /* index.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = index.html; sourceTree = "<group>"; };
 		75C0711F244BB441002DF69F /* CompanionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionViewController.swift; sourceTree = "<group>"; };
 		75C07121244BB65D002DF69F /* ShellBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellBridge.swift; sourceTree = "<group>"; };
@@ -211,6 +213,7 @@
 				757CA87C2485D23C002A64A8 /* dist */,
 				757CA87D2485D23D002A64A8 /* wsdist */,
 				75675954244634AD006AA988 /* AppDelegate.swift */,
+				757CA8E024903D3A002A64A8 /* HotKeyManager.swift */,
 				756759962446C44C006AA988 /* String+Shell.swift */,
 				756759D324498CA0006AA988 /* WebViewController.swift */,
 				75C0711F244BB441002DF69F /* CompanionViewController.swift */,
@@ -494,6 +497,7 @@
 				757CA88124874E06002A64A8 /* ErrorMatcher.swift in Sources */,
 				751F75982478571D00E083C8 /* WebSocket.swift in Sources */,
 				752C0BD62478EBA90077E415 /* XTerm.swift in Sources */,
+				757CA8E124903D3B002A64A8 /* HotKeyManager.swift in Sources */,
 				752C0BD82479EEDB0077E415 /* File.swift in Sources */,
 				757CA888248AD067002A64A8 /* OnboardingViewController.swift in Sources */,
 				756759D424498CA0006AA988 /* WebViewController.swift in Sources */,

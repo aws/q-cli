@@ -64,22 +64,35 @@ class CompanionWindow : NSWindow {
         
         let _ = Timer.scheduledTimer(timeInterval: 0.15, target: self, selector: #selector(positionWindow), userInfo: nil, repeats: true)
         
-//        let trackingArea = NSTrackingArea(rect: self.contentViewController!.view.frame,
-//                                                options: [NSTrackingArea.Options.activeAlways ,NSTrackingArea.Options.mouseEnteredAndExited],
-//                      owner: self, userInfo: nil)
-//        self.contentViewController!.view.addTrackingArea(trackingArea)
+        let trackingArea = NSTrackingArea(rect: self.contentViewController!.view.frame,
+                                                options: [NSTrackingArea.Options.activeAlways ,NSTrackingArea.Options.mouseEnteredAndExited],
+                      owner: self, userInfo: nil)
+
+        self.contentViewController!.view.addTrackingArea(trackingArea)
 
     }
+    
         
-//    override func mouseEntered(with event: NSEvent) {
-//        print("mouse entered")
-//    }
-//    
-//    override func mouseExited(with event: NSEvent) {
-//        print("mouse exited")
-//    }
+    override func mouseEntered(with event: NSEvent) {
+        print("mouse entered")
+    }
+    
+    override func mouseExited(with event: NSEvent) {
+        print("mouse exited")
+    }
+    
     @objc func spaceChanged() {
         print("spaceChanged", NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "<none>")
+        if let controller = self.contentViewController as? WebViewController,
+            let webview = controller.webView {
+            webview.trackMouse = false;
+            // wait for window reposition to take effect before handling mouse events
+            // This fixes a bug when the user changes spaces but their mouse remains in the companion window
+            Timer.delayWithSeconds(0.2) {
+                webview.trackMouse = true;
+
+            }
+        }
         forceReposition()
     }
     @objc func activateApp(){
