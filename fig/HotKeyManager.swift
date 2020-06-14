@@ -11,10 +11,12 @@ import Cocoa
 import HotKey
 
 class HotKeyManager {
-    var hotkey = HotKey(key: .grave, modifiers: [.command])
+//    var hotkey = HotKey(key: .grave, modifiers: [.command])
+    var hotkey = HotKey(key: .i, modifiers: [.command])
+
     let companionWindow: CompanionWindow
     let webview: WebView
-    init (companion: CompanionWindow){
+    init (companion: CompanionWindow) {
         companionWindow = companion
         webview = (companion.contentViewController as! WebViewController).webView!
         self.hotkey.keyDownHandler = {
@@ -35,6 +37,19 @@ class HotKeyManager {
             return event
         }
         NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged, handler: flagsChanged)
+        
+        NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(toggleHotkey), name: NSWorkspace.activeSpaceDidChangeNotification, object: nil)
+        NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(toggleHotkey), name: NSWorkspace.didActivateApplicationNotification, object: nil)
+        NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(toggleHotkey), name: NSWorkspace.didDeactivateApplicationNotification, object: nil)
+    }
+    
+    @objc func toggleHotkey() {
+        if let app = NSWorkspace.shared.frontmostApplication, let bundleId = app.bundleIdentifier {
+             self.hotkey.isPaused = !(Integrations.whitelist.contains(bundleId) || app.isFig)
+        } else {
+            self.hotkey.isPaused = true;
+        }
+        
     }
 
     var shouldTab = false;

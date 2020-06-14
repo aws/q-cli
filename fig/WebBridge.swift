@@ -24,9 +24,14 @@ class WebBridge : WKWebViewConfiguration {
     override init() {
         super.init()
         self.preferences.setValue(true, forKey: "developerExtrasEnabled")
+        self.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
+//        self.preferences.setValue(true, forKey: "mediaPreloadingEnabled")
+//        self.preferences.setValue(true, forKey: "linkPreloadEnabled")
+
 //        self.webView.configuration.preferences
         
         self.setURLSchemeHandler(self, forURLScheme: "fig")
+        self.setURLSchemeHandler(self, forURLScheme: "figbundle")
 
         let contentController = WebBridgeContentController()
         
@@ -427,6 +432,11 @@ extension WebBridge {
                 scope.webView?.evaluateJavaScript("fig.callback(`\(handlerId)`,`\(encoded.base64EncodedString())`)", completionHandler: nil)
                 }
 
+            }, completion: {
+                DispatchQueue.main.async {
+                      print("\(cmd) is complete!")
+                    scope.webView?.evaluateJavaScript("fig.callbackASCII(`\(handlerId)`, null)", completionHandler: nil)
+                  }
             })
             
             (scope.webView as! WebView).onNavigate.append({
@@ -462,7 +472,11 @@ extension WebBridge {
                     }
                     NSWorkspace.shared.launchApplication("Terminal")
                     scope.webView?.window?.close()
-
+                case "hello":
+                    Timer.delayWithSeconds(2) {
+                        NSApp.deactivate()
+                        ShellBridge.injectStringIntoTerminal("bash ~/.fig/hello.sh", runImmediately: true)
+                }
             default:
                 break;
             }
@@ -497,8 +511,18 @@ extension WebBridge {
             var target = document.activeElement
             var link = target.getElementsByTagName('a')[0]
             console.log(link)
-            link.onclick()
+            link.onmouseup()
             """, completionHandler: nil)
+    }
+    
+    static func declareAppVersion(webview: WebView) {
+        if let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String {
+            webview.evaluateJavaScript("fig.appversion = '\(appVersion)'", completionHandler: nil)
+        }
+    }
+    
+    static func initJS(webview: WebView) {
+        webview.evaluateJavaScript("fig.callinit()", completionHandler: nil)
     }
 
     

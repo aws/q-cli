@@ -80,6 +80,15 @@ let setup = function(window) {
               console.log(`Continue streaming to callback '${handlerId}'`)
           }
       },
+      callbackASCII : function(handlerId, value, error) {
+          this[handlerId](value, error)
+          let tokens = handlerId.split(':')
+          if (tokens.length == 1) {
+              delete this[handlerId]
+          } else {
+              console.log(`Continue streaming to callback '${handlerId}'`)
+          }
+      },
       stdinb64 : function(data) {
           fig['_stdin'] = atob(data)
 //          fig.init(atob(data))

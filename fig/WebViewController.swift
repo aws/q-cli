@@ -117,7 +117,7 @@ class WebViewController: NSViewController, NSWindowDelegate {
         
         print("ViewDidAppear -- \( webView?.url?.absoluteString ?? "no url")")
         if !((webView?.url) != nil) {
-            webView?.loadHomeScreen()
+            webView?.loadSideBar()
         }
     }
 
@@ -202,7 +202,7 @@ class WebViewController: NSViewController, NSWindowDelegate {
     @objc func overlayDidBecomeMain() {
         print("didBecomeMain")
 //        self.icon.isHidden = true
-        self.webView?.loadHomeScreen()
+//        self.webView?.loadHomeScreen()
         (self.view as! NSVisualEffectView).maskImage = _maskImage(cornerRadius: 15)
 
     }
@@ -215,22 +215,6 @@ class WebViewController: NSViewController, NSWindowDelegate {
     func loadHTMLString(_ html: String) {
         webView?.loadHTMLString(html, baseURL: nil)
     }
-    
-//    func loadBundleApp(_ app: String) {
-//        let url = Bundle.main.url(forResource: app, withExtension: "html")!
-//        webView?.loadFileURL(url, allowingReadAccessTo: URL(string: "file://")!) // needed in order to load local files from anywhere
-//    }
-//
-//    func loadLocalApp(_ appPath: String) {
-//        let localURL = URL(fileURLWithPath: appPath)
-//
-//        webView?.loadFileURL(localURL, allowingReadAccessTo: URL(string: "file://")!) // needed in order to load local files from anywhere
-//    }
-//
-//    //""
-//    func loadRemoteApp(at url: URL) {
-//        webView?.load(URLRequest(url: url))
-//    }
     
 
     
@@ -354,9 +338,11 @@ extension WebViewController: ShellBridgeEventListener {
         
         let msg = (notification.object as! ShellMessage)
         DispatchQueue.main.async {
+            if let companion = self.view.window as? CompanionWindow {
             FigCLI.route(msg,
                          webView: self.webView!,
-                         companionWindow: self.view.window as! CompanionWindow)
+                         companionWindow: companion)
+            }
         }
     }
 }
@@ -407,8 +393,9 @@ extension WebViewController : WKNavigationDelegate {
             onLoadCallback()
         }
         webView.onLoad = []
-        
-        webView.evaluateJavaScript("fig.callinit()", completionHandler: nil)
+        WebBridge.declareAppVersion(webview: webView)
+        WebBridge.initJS(webview: webView)
+//        webView.evaluateJavaScript("fig.callinit()", completionHandler: nil)
 
 
         
@@ -451,6 +438,9 @@ class WebView : WKWebView {
 
     override init(frame: CGRect, configuration: WKWebViewConfiguration) {
         super.init(frame: frame, configuration: configuration)
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(requestStopMonitoringMouseEvents(_:)), name: .requestStopMonitoringMouseEvents, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(requestStartMonitoringMouseEvents(_:)), name: .requestStartMonitoringMouseEvents, object: nil)
 //        self.unregisterDraggedTypes()
 //        self.autoresizingMask = NSView.AutoresizingMask.init(arrayLiteral: [.height, .width])
 //        NSEvent.addLocalMonitorForEvents(matching: NSEvent.EventTypeMask.mouseEntered) { event -> NSEvent? in
@@ -505,6 +495,7 @@ class WebView : WKWebView {
             return
         }
         if (trackMouse && window.positioning == CompanionWindow.defaultPassivePosition) {
+            print("Attempting to activate fig")
             NSRunningApplication.current.activate(options: .activateIgnoringOtherApps)
         }
     }
@@ -515,20 +506,19 @@ class WebView : WKWebView {
                   return
             }
         if (trackMouse && window.positioning == CompanionWindow.defaultPassivePosition) {
+            print("Attempting to activate previous app")
             ShellBridge.shared.previousFrontmostApplication?.activate(options: .activateIgnoringOtherApps)
 
         }
     }
     
     func loadBundleApp(_ app: String) {
-        self.evaluateJavaScript("document.documentElement.remove()") { (_, _) in
 
             if let url = Bundle.main.url(forResource: app, withExtension: "html") {
                 self.loadFileURL(url, allowingReadAccessTo: URL(string: "file://")!) // needed in order to load local files from anywhere
             } else {
                 print("Bundle app '\(app)' does not exist")
             }
-        }
     }
     
     func loadLocalApp(_ url: URL) {
@@ -543,21 +533,21 @@ class WebView : WKWebView {
         print(url.absoluteString)
 //        self.load(URLRequest(url: URL(string:"about:blank")!))
         self.evaluateJavaScript("document.documentElement.remove()") { (_, _) in
-            self.load(URLRequest(url: url, cachePolicy: .returnCacheDataElseLoad))
+            self.load(URLRequest(url: url, cachePolicy: .useProtocolCachePolicy))
         }
     }
     
     func loadHomeScreen() {
         self.evaluateJavaScript("document.documentElement.remove()") { (_, _) in
 
-            self.load(URLRequest(url: URL(string: "https://app.withfig.com")!, cachePolicy: .returnCacheDataElseLoad))
+            self.load(URLRequest(url: URL(string: "https://app.withfig.com")!, cachePolicy: .useProtocolCachePolicy))
         }
 
     }
     
     func loadSideBar() {
         self.evaluateJavaScript("document.documentElement.remove()") { (_, _) in
-           self.load(URLRequest(url: URL(string: "https://app.withfig.com/sidebar")!, cachePolicy: .returnCacheDataElseLoad))
+           self.load(URLRequest(url: URL(string: "https://app.withfig.com/sidebar")!, cachePolicy: .useProtocolCachePolicy))
        }
     }
 
@@ -578,6 +568,19 @@ class WebView : WKWebView {
 //        return nil
 //
 //    }
+    
+    
+}
+
+extension WebView : MouseMonitoring {
+    @objc func requestStopMonitoringMouseEvents(_ notification: Notification) {
+        self.trackMouse = false;
+    }
+    
+    @objc func requestStartMonitoringMouseEvents(_ notification: Notification) {
+        self.trackMouse = true;
+
+    }
     
     
 }

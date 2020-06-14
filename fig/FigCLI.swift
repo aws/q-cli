@@ -45,8 +45,13 @@ enum NativeCLICommand : String {
     case local = "local"
     case bundle = "bundle"
     case callback = "callback"
-    case hide = "hide"
+//    case hide = "hide"
     case position = "position"
+    case apps = "apps"
+    case store = "store"
+    case appstore = "appstore"
+    case blocks = "blocks"
+
 }
 
 class FigCLI {
@@ -151,8 +156,11 @@ class FigCLI {
                 FigCLI.web(with: scope)
             case .position:
                 FigCLI.position(with: scope)
-            case .hide:
-                FigCLI.hide(with: scope)
+//            case .hide:
+//                FigCLI.hide(with: scope)
+            case .apps, .store, .appstore, .blocks:
+                companionWindow.positioning = .fullscreenInset
+                FigCLI.url(with: scope)
             }
         } else {
             FigCLI.url(with: scope)

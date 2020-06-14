@@ -12,7 +12,6 @@ extension String {
         let pipe = Pipe()
         let stderr = Pipe()
         let task = Process()
-        task.launchPath = "/bin/sh"
         task.arguments = ["-c", String(format:"%@", self)]
         task.standardOutput = pipe
         task.standardError = stderr
@@ -23,6 +22,12 @@ extension String {
         
         if let env = env {
             task.environment = env
+        }
+        
+        if let env = env, let shell = env["SHELL"] {
+            task.launchPath = shell
+        } else {
+            task.launchPath = "/bin/sh"
         }
         
         let outputHandler = pipe.fileHandleForReading
@@ -111,6 +116,12 @@ extension String {
             task.environment = env
         }
         
+        if let env = env, let shell = env["SHELL"] {
+            task.launchPath = shell
+        } else {
+            task.launchPath = "/bin/sh"
+        }
+        
         if let updateHandler = updateHandler {
             addListener({ (line) in
                 updateHandler(line, task)
@@ -122,7 +133,6 @@ extension String {
         }
        
         
-        task.launchPath = "/bin/sh"
         task.arguments = ["-c", self]
         task.launch()
         DispatchQueue.global(qos: .background).async {

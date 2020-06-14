@@ -21,11 +21,17 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 //        AppMover.moveIfNecessary()
         let _ = ShellBridge.shared
         
+//        let domain = Bundle.main.bundleIdentifier!
+//        UserDefaults.standard.removePersistentDomain(forName: domain)
+//        UserDefaults.standard.synchronize()
+        
         let hasLaunched = UserDefaults.standard.bool(forKey: "hasLaunched")
 
-        if (!hasLaunched) {
+        if (!hasLaunched || !AXIsProcessTrustedWithOptions(nil) || !FileManager.default.fileExists(atPath: "/usr/local/bin/fig")) {
             let onboardingViewController = WebViewController()
             onboardingViewController.webView?.loadBundleApp("landing")
+//            onboardingViewController.webView?.loadRemoteApp(at: URL(string: "https://app.withfig.com/onboarding/landing.html")!)
+
             onboardingWindow = OnboardingWindow(viewController: onboardingViewController)
             onboardingWindow.makeKeyAndOrderFront(nil)
             onboardingWindow.setFrame(NSRect(x: 0, y: 0, width: 590, height: 480), display: true, animate: false)
@@ -118,12 +124,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
          action: #selector(AppDelegate.promptForAccesibilityAccess),
          keyEquivalent: "")
         statusBarMenu.addItem(
-         withTitle: "Restart WebSocket Server",
-         action: #selector(AppDelegate.startSocketServer),
-         keyEquivalent: "")
-        
-        statusBarMenu.addItem(
-         withTitle: "Toggle Visibility (⌘~)",
+         withTitle: "Toggle Visibility (⌘i)",
          action: #selector(AppDelegate.toggleVisibility),
          keyEquivalent: "")
         statusBarMenu.addItem(
@@ -131,10 +132,14 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
          action: #selector(AppDelegate.quit),
          keyEquivalent: "")
         
+        toggleLaunchAtStartup()
+        
     }
     
     func setupCompanionWindow() {
-        window = CompanionWindow(viewController: WebViewController())
+        let companion = CompanionWindow(viewController: WebViewController())
+        companion.positioning = CompanionWindow.defaultPassivePosition
+        window = companion
         window.makeKeyAndOrderFront(nil)
         (window as! CompanionWindow).repositionWindow(forceUpdate: true)
         self.hotKeyManager = HotKeyManager(companion: window as! CompanionWindow)
@@ -157,6 +162,80 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 //            ShellBridge.shared.previousFrontmostApplication?.activate(options: .activateIgnoringOtherApps)
            }
        }
+    }
+    
+    
+    @objc func applicationIsInStartUpItems() -> Bool {
+      return itemReferencesInLoginItems().existingReference != nil
+    }
+
+    func toggleLaunchAtStartup() {
+      let itemReferences = itemReferencesInLoginItems()
+      let shouldBeToggled = (itemReferences.existingReference == nil)
+      let loginItemsRef = LSSharedFileListCreate(
+        nil,
+        kLSSharedFileListSessionLoginItems.takeRetainedValue(),
+        nil
+      ).takeRetainedValue() as LSSharedFileList?
+      
+      if loginItemsRef != nil {
+        if shouldBeToggled {
+            let appUrl = NSURL.fileURL(withPath: Bundle.main.bundlePath) as CFURL
+            LSSharedFileListInsertItemURL(loginItemsRef, itemReferences.lastReference, nil, nil, appUrl, nil, nil)
+            print("Application was added to login items")
+        }
+//        else {
+//          if let itemRef = itemReferences.existingReference {
+//            LSSharedFileListItemRemove(loginItemsRef,itemRef);
+//            print("Application was removed from login items")
+//          }
+//        }
+      }
+    }
+
+    func itemReferencesInLoginItems() -> (existingReference: LSSharedFileListItem?, lastReference: LSSharedFileListItem?) {
+        
+        var itemUrl = UnsafeMutablePointer<Unmanaged<CFURL>?>.allocate(capacity: 1)
+
+        let appUrl = NSURL(fileURLWithPath: Bundle.main.bundlePath)
+        let loginItemsRef = LSSharedFileListCreate(
+          nil,
+          kLSSharedFileListSessionLoginItems.takeRetainedValue(),
+          nil
+        ).takeRetainedValue() as LSSharedFileList?
+        
+        if loginItemsRef != nil {
+          let loginItems = LSSharedFileListCopySnapshot(loginItemsRef, nil).takeRetainedValue() as NSArray
+          print("There are \(loginItems.count) login items")
+          
+          if(loginItems.count > 0) {
+            let lastItemRef = loginItems.lastObject as! LSSharedFileListItem
+        
+            for i in 0...loginItems.count-1 {
+                let currentItemRef = loginItems.object(at: i) as! LSSharedFileListItem
+              
+              if LSSharedFileListItemResolve(currentItemRef, 0, itemUrl, nil) == noErr {
+                if let urlRef: NSURL = itemUrl.pointee?.takeRetainedValue() {
+                    print("URL Ref: \(urlRef.lastPathComponent ?? "")")
+                  if urlRef.isEqual(appUrl) {
+                    return (currentItemRef, lastItemRef)
+                  }
+                }
+              }
+              else {
+                print("Unknown login application")
+              }
+            }
+            // The application was not found in the startup list
+            return (nil, lastItemRef)
+            
+          } else  {
+            let addatstart: LSSharedFileListItem = kLSSharedFileListItemBeforeFirst.takeRetainedValue()
+            return(nil,addatstart)
+          }
+      }
+      
+      return (nil, nil)
     }
     
     @objc func quit() {

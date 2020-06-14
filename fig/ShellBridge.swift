@@ -20,22 +20,48 @@ extension Notification.Name {
     static let recievedDataFromPipe = Notification.Name("recievedDataFromPipe")
     static let recievedUserInputFromTerminal = Notification.Name("recievedUserInputFromTerminal")
     static let recievedStdoutFromTerminal = Notification.Name("recievedStdoutFromTerminal")
+}
 
+protocol MouseMonitoring {
+    func requestStopMonitoringMouseEvents(_ notification: Notification)
+    func requestStartMonitoringMouseEvents(_ notification: Notification)
+}
+
+extension Notification.Name {
+    static let requestStopMonitoringMouseEvents = Notification.Name("requestStopMonitoringMouseEvents")
+    static let requestStartMonitoringMouseEvents = Notification.Name("requestStartMonitoringMouseEvents")
 }
 
 class ShellBridge {
     static let shared = ShellBridge()
     
     var previousFrontmostApplication: NSRunningApplication?
-    var socket: WebSocketConnection?
-    var socketServer: Process?
+//    var socket: WebSocketConnection?
+//    var socketServer: Process?
     init() {
         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(setPreviousApplication(notification:)), name: NSWorkspace.didDeactivateApplicationNotification, object: nil)
+        NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(spaceChanged), name: NSWorkspace.activeSpaceDidChangeNotification, object: nil)
+
         // start Python server script 
 //        "python3 /path/to/executable/fig.py utils:ws-start".runAsCommand()
         self.startWebSocketServer()
 
 
+    }
+    
+    func startWebSocketServer() {
+        let _ = WebSocketServer.bridge
+    }
+    
+    func stopWebSocketServer( completion:(() -> Void)? = nil) {
+        if let completion = completion {
+         completion()
+        }
+    }
+    
+    // This fixes an issue where focus would bounce to an application in the previous workspace. Essentially this resets previous application anytime the workspace is changed.
+    @objc func spaceChanged() {
+        self.previousFrontmostApplication = NSWorkspace.shared.frontmostApplication
     }
     
     @objc func setPreviousApplication(notification: NSNotification!) {
@@ -45,7 +71,10 @@ class ShellBridge {
 
     static func injectStringIntoTerminal(_ cmd: String, runImmediately: Bool = false, completion: (() -> Void)? = nil) {
             ShellBridge.shared.previousFrontmostApplication?.activate(options: .activateIgnoringOtherApps)
-            Timer.delayWithSeconds(0.3) {
+        NotificationCenter.default.post(name: .requestStopMonitoringMouseEvents, object: nil)
+        print("Stop monitoring mouse")
+//        NSApp.deactivate()
+            Timer.delayWithSeconds(0.2) {
             if let currentApp = NSWorkspace.shared.frontmostApplication {
 //        if let currentApp = ShellBridge.shared.previousFrontmostApplication {
                if (currentApp.isTerminal) {
@@ -60,16 +89,25 @@ class ShellBridge {
                    print(pasteboard.string(forType: .string) ?? "")
                        // Be careful: in some apps, CMD-Enter toggles fullscreen
                        self.simulate(keypress: .cmdV)
-                Timer.delayWithSeconds(0.10) {
+                print("CMD-V")
+                Timer.delayWithSeconds(0.1) {
 //                            self.simulate(keypress: .rightArrow)
                             self.simulate(keypress: .enter)
+                            print("ENTER")
+
+                            Timer.delayWithSeconds(0.10) {
+                                NotificationCenter.default.post(name: .requestStartMonitoringMouseEvents, object: nil)
+                                print("Start monitoring mouse")
+
+                            }
+
                             if let completion = completion {
                                 completion()
                             }
                        }
     
                    // need delay so that terminal responds
-                Timer.delayWithSeconds(1) {
+                Timer.delayWithSeconds(0.5) {
                        // restore pasteboard
                        NSPasteboard.general.clearContents()
                        pasteboard.setString(copiedString, forType: .string)
@@ -101,131 +139,6 @@ class ShellBridge {
         keydown?.post(tap: loc)
         keyup?.post(tap: loc)
     }
-    
-    func startWebSocketServer() {
-        
-        // check if websocket server is running -- this might happen if the app crashes
-        
-        let pid = "pgrep -f websocket".runAsCommand().trimmingCharacters(in: .whitespacesAndNewlines)
-        if (pid.count > 0) {
-            print("The websocket server is already running on \(pid) process.\n Shut it off with `pkill -f websocket`")
-            
-            let out = "pkill -f websocket".runAsCommand()
-            print("Killed websocket:\(out)")
-
-        }
-        
-        if let path = Bundle.main.path(forResource: "websocket", ofType: "", inDirectory: "wsdist") {
-            print(path)
-            print("Starting socket server")
-            os_log("Starting socket server", log: OSLog.socketServer, type: .info)
-
-            self.socketServer = path.runInBackground {
-                  print("Closing the socket server")
-            }
-            os_log("Socket Server succesfully started...", log: OSLog.socketServer, type: .info)
-
-            Timer.delayWithSeconds(3) {
-                self.attemptToConnectToSocketServer()
-            }
-        } else {
-            os_log("Couldn't start socket server", log: OSLog.socketServer, type: .error)
-            print("couldn't start socket server")
-        }
-    }
-    
-    func stopWebSocketServer( completion:(() -> Void)? = nil) {
-        if let server = self.socketServer {
-            server.terminationHandler = { (proc) -> Void in
-                print("socket server process terminated")
-                os_log("socket server process terminated", log: OSLog.socketServer, type: .info)
-                if let completion = completion {
-                    completion()
-                }
-            }
-            print("Terminating socket server...")
-
-            server.terminate()
-
-        } else {
-            print("socket server is not running")
-            os_log("socket server is not running", log: OSLog.socketServer, type: .error)
-
-        }
-    }
-    
-    func attemptToConnectToSocketServer() {
-        self.socket = WebSocketTaskConnection.init(url: URL(string: "ws://localhost:8765")!)
-        self.socket?.delegate = self;
-        self.socket?.connect()
-    }
-}
-
-extension ShellBridge: WebSocketConnectionDelegate {
-    func onConnected(connection: WebSocketConnection) {
-        print("connected")
-
-        Timer.delayWithSeconds(1) {
-            connection.send(text: "register_as_host")
-
-        }
-        
-    }
-    
-    func onDisconnected(connection: WebSocketConnection, error: Error?) {
-        print("disconnected")
-        Timer.delayWithSeconds(5) {
-            self.attemptToConnectToSocketServer()
-        }
-
-    }
-    
-    func onError(connection: WebSocketConnection, error: Error) {
-        print("socket error", error)
-        self.socket?.disconnect()
-    }
-    
-    
-    func onMessage(connection: WebSocketConnection, text: String) {
-        let decoder = JSONDecoder()
-        do {
-            let msg = try decoder.decode(ShellMessage.self, from: text.data(using: .utf8)!)
-            print(msg)
-            
-            switch msg.type {
-            case "pipe":
-                NotificationCenter.default.post(name: .recievedDataFromPipe, object: msg)
-            case "pty":
-                if let io = msg.io {
-                    if io == "i" {
-                        NotificationCenter.default.post(name: .recievedUserInputFromTerminal, object: msg)
-                    } else if io == "o" {
-                        NotificationCenter.default.post(name: .recievedStdoutFromTerminal, object: msg)
-                    }
-                }
-                
-            default:
-                print("Unhandled match from Websocket Message")
-            }
-//            if msg.type == "pipe" {
-//                print(msg.data)
-//                NotificationCenter.default.post(name: .recievedDataFromPipe, object: msg)
-//            }
-            
-            
-
-        } catch {
-            print("oops: couldn't parse '\(text)'")
-        }
-        
-
-    }
-    
-    func onMessage(connection: WebSocketConnection, data: Data) {
-        print("msg:\(data)")
-    }
-    
-    
 }
 
 struct ShellMessage: Codable {
@@ -243,8 +156,7 @@ class Integrations {
     static let terminals: Set = ["com.googlecode.iterm2",
                                  "com.apple.Terminal",
                                  "io.alacritty",
-                                 "co.zeit.hyper",
-                                 "com.microsoft.VSCode"]
+                                 "co.zeit.hyper"]
     static let browsers:  Set = ["com.google.Chrome"]
     static let editors:   Set = ["com.apple.dt.Xcode",
                                  "com.sublimetext.3",

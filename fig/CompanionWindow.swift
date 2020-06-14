@@ -123,6 +123,10 @@ class CompanionWindow : NSWindow {
         case icon = 5
         case notification = 6
         case sidebar = 7
+        case fullscreen = 8
+        case spotlight = 9
+        case fullscreenInset = 10
+        case hidden = 11
 
         func frame(targetWindowFrame:NSRect, screen: NSRect = .zero) -> NSRect {
             if targetWindowFrame.width < 100 || targetWindowFrame.height < 200 {
@@ -174,6 +178,16 @@ class CompanionWindow : NSWindow {
                }
                
                return NSRect(origin: NSPoint(x: x, y: outerFrame.origin.y), size: outerFrame.size)
+             case .fullscreen:
+                return targetWindowFrame
+             case .spotlight:
+                let quarter = t_size.width * 0.25
+                return NSRect(origin: NSPoint(x: targetWindowFrame.origin.x + quarter, y: targetWindowFrame.origin.y), size: CGSize.init(width: t_size.width * 0.5, height: t_size.height * 0.5))
+             case .fullscreenInset:
+                let inset: CGFloat = 30
+                return targetWindowFrame.insetBy(dx: inset, dy: inset).offsetBy(dx: 0, dy: -1 * inset - 24)
+            case .hidden:
+                return .zero
              }
 
         }
@@ -328,7 +342,14 @@ class CompanionWindow : NSWindow {
                                                y: terminalFrame.minY - i_size.height - i_padding.y), size: i_size)
           case .sidebar:
             return terminalFrame.divided(atDistance: 50, from: .maxXEdge).slice
-
+          case .fullscreen:
+            return .zero
+          case .spotlight:
+            return .zero
+          case .fullscreenInset:
+            return .zero
+          case .hidden:
+            return .zero
         }
     
       }
