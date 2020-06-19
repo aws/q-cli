@@ -7,6 +7,7 @@
 //
 
 import Cocoa
+import Sparkle
 
 @NSApplicationMain
 class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
@@ -16,10 +17,16 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     var statusBarItem: NSStatusItem!
     var clicks:Int = 6;
     var hotKeyManager: HotKeyManager?
+    let updater = SUUpdater.shared()
     
     func applicationDidFinishLaunching(_ aNotification: Notification) {
 //        AppMover.moveIfNecessary()
         let _ = ShellBridge.shared
+        
+        
+//        updater?.checkForUpdateInformation()
+        updater?.delegate = self as SUUpdaterDelegate;
+//        updater?.checkForUpdateInformation()
         
 //        let domain = Bundle.main.bundleIdentifier!
 //        UserDefaults.standard.removePersistentDomain(forName: domain)
@@ -27,7 +34,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         
         let hasLaunched = UserDefaults.standard.bool(forKey: "hasLaunched")
 
-        if (!hasLaunched || !AXIsProcessTrustedWithOptions(nil) || !FileManager.default.fileExists(atPath: "/usr/local/bin/fig")) {
+        if (!hasLaunched) {
             let onboardingViewController = WebViewController()
             onboardingViewController.webView?.loadBundleApp("landing")
 //            onboardingViewController.webView?.loadRemoteApp(at: URL(string: "https://app.withfig.com/onboarding/landing.html")!)
@@ -41,6 +48,23 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             UserDefaults.standard.set(true, forKey: "hasLaunched")
             UserDefaults.standard.synchronize()
         } else {
+            if (!AXIsProcessTrustedWithOptions(nil)) {
+                let enable = self.dialogOKCancel(question: "Enable Accesibility Permission?", text: "Fig needs this permission in order to find your topmost terminal window.\n\nYou may need to toggle the setting in order for OSX to update it.", prompt: "Enable")
+                
+                if (enable) {
+                    ShellBridge.promptForAccesibilityAccess()
+                }
+                
+            }
+            
+            if (!FileManager.default.fileExists(atPath: "/usr/local/bin/fig")) {
+                let enable = self.dialogOKCancel(question: "Install Fig CLI Tool?", text: "It looks like you haven't installed the Fig CLI tool. Fig doesn't work without it.")
+                              
+                  if (enable) {
+                      ShellBridge.symlinkCLI()
+                  }
+            }
+            updater?.installUpdatesIfAvailable()
             self.setupCompanionWindow()
         }
         
@@ -124,8 +148,17 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
          action: #selector(AppDelegate.promptForAccesibilityAccess),
          keyEquivalent: "")
         statusBarMenu.addItem(
-         withTitle: "Toggle Visibility (⌘i)",
+         withTitle: "Toggle Visibility                         ⌘i",
          action: #selector(AppDelegate.toggleVisibility),
+         keyEquivalent: "")
+        statusBarMenu.addItem(NSMenuItem.separator())
+        statusBarMenu.addItem(
+         withTitle: "Check for updates...",
+         action: #selector(AppDelegate.checkForUpdates),
+         keyEquivalent: "")
+        statusBarMenu.addItem(
+         withTitle: "Hide Fig",
+         action: #selector(AppDelegate.hide),
          keyEquivalent: "")
         statusBarMenu.addItem(
          withTitle: "Quit Fig",
@@ -136,6 +169,17 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         
     }
     
+    func dialogOKCancel(question: String, text: String, prompt:String = "OK") -> Bool {
+        let alert = NSAlert()
+        alert.messageText = question
+        alert.informativeText = text
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: prompt)
+        alert.addButton(withTitle: "Not now")
+        return alert.runModal() == .alertFirstButtonReturn
+    }
+
+    
     func setupCompanionWindow() {
         let companion = CompanionWindow(viewController: WebViewController())
         companion.positioning = CompanionWindow.defaultPassivePosition
@@ -145,6 +189,20 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         self.hotKeyManager = HotKeyManager(companion: window as! CompanionWindow)
     }
     
+    @objc func hide() {
+         if let companion = self.window as? CompanionWindow,
+            let vc = companion.contentViewController as? WebViewController,
+            let webView = vc.webView {
+            companion.positioning = .icon
+            webView.loadRemoteApp(at: URL(string: "https://app.withfig.com/hide")!)
+            
+        }
+    }
+    
+    @objc func checkForUpdates() {
+        print("Checking")
+        self.updater?.checkForUpdates(self)
+    }
     @objc func toggleVisibility() {
         if let window = self.window {
            let companion = window as! CompanionWindow
@@ -707,4 +765,23 @@ class AXValueGetters {
         return val
     }
 
+}
+
+extension AppDelegate : SUUpdaterDelegate {
+    func updater(_ updater: SUUpdater, didAbortWithError error: Error) {
+        
+    }
+    
+    func updaterDidNotFindUpdate(_ updater: SUUpdater) {
+        
+    }
+    
+    func updater(_ updater: SUUpdater, didFindValidUpdate item: SUAppcastItem) {
+        print("Found valid update")
+    }
+    
+    func updater(_ updater: SUUpdater, didFinishLoading appcast: SUAppcast) {
+//        let item = (appcast.items?.first! as! SUAppcastItem)
+//        item.
+    }
 }

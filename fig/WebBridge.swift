@@ -54,7 +54,8 @@ class WebBridge : WKWebViewConfiguration {
         contentController.add(self, name: WebBridgeScript.positionHandler.rawValue)
         contentController.add(self, name: WebBridgeScript.openHandler.rawValue)
         contentController.add(self, name: WebBridgeScript.streamHandler.rawValue)
-        
+        contentController.add(self, name: WebBridgeScript.defaultsHandler.rawValue)
+
         contentController.add(self, name: WebBridgeScript.onboardingHandler.rawValue)
 
         contentController.add(self, name: WebBridgeScript.logging.rawValue)
@@ -101,6 +102,8 @@ enum WebBridgeScript: String, CaseIterable {
     case positionHandler = "positionHandler"
     case openHandler = "openHandler"
     case streamHandler = "streamHandler"
+    case defaultsHandler = "defaultsHandler"
+    case injectTerminalCSS = "terminalCSS"
 
     case onboardingHandler = "onboardingHandler"
 
@@ -185,6 +188,8 @@ class WebBridgeContentController : WKUserContentController {
 //        self.addWebBridgeScript(.logging, location: .atDocumentStart);
         self.addWebBridgeScript(.insertFigTutorialCSS);
         self.addWebBridgeScript(.insertFigTutorialJS);
+        
+        self.addWebBridgeScript(.injectTerminalCSS);
 
         self.addWebBridgeScript(.figJS, location: .atDocumentStart);
     }
@@ -232,6 +237,8 @@ extension WebBridge : WKScriptMessageHandler {
             WebBridge.stream(scope: message)
         case .onboardingHandler:
             WebBridge.onboarding(scope: message)
+        case .defaultsHandler:
+            WebBridge.defaults(scope: message)
         default:
             print("Unhandled WKScriptMessage type '\(message.name)'")
         }
@@ -331,7 +338,7 @@ extension WebBridge {
                 scope.webView?.evaluateJavaScript("fig.callback(`\(handlerId)`, `\(encoded.base64EncodedString())`)", completionHandler: nil)
 
             } catch {
-                scope.webView?.evaluateJavaScript("fig.callback(`\(handlerId)`, null,{message:'Could not write file to disk.'})", completionHandler: nil)
+                scope.webView?.evaluateJavaScript("fig.callback(`\(handlerId)`, null,{message:'Could not read file from disk.'})", completionHandler: nil)
             }
         }
     }
@@ -346,25 +353,26 @@ extension WebBridge {
     
     static func appwrite(scope: WKScriptMessage) {
         if let params = scope.body as? Dictionary<String, String>,
-               let path = params["path"],
-               let data = params["data"],
-               let handlerId = params["handlerId"],
-                let app = scope.webView?.url?.deletingPathExtension().pathComponents.last {
-                
-                let url = URL(fileURLWithPath: "\(app)/\(path)", relativeTo: WebBridge.appDirectory)
-            print(FileManager.default.fileExists(atPath: url.absoluteString))
-                do {
-                    var directory = url
-                    directory.deleteLastPathComponent()
-                    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: nil)
-                    try data.write(to: url, atomically: true, encoding: String.Encoding.utf8)
+           let path = params["path"],
+           let data = params["data"],
+           let handlerId = params["handlerId"],
+           let webview = scope.webView as? WebView {
+                WebBridge.appname(webview: webview) { (app) in
+                  let url = URL(fileURLWithPath: "\(app ?? "tmp")/\(path)", relativeTo: WebBridge.appDirectory)
+                    print(FileManager.default.fileExists(atPath: url.absoluteString))
+                    do {
+                        var directory = url
+                        directory.deleteLastPathComponent()
+                        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: nil)
+                        try data.write(to: url, atomically: true, encoding: String.Encoding.utf8)
 
-                   
-    //                scope.webView?.evaluateJavaScript("fig.callback(`\(handlerId)`, null)", completionHandler: nil)
-                } catch {
-                    Logger.log(message: "Could not write file '\(path)' to disk.")
-//                    scope.webView?.evaluateJavaScript("fig.callback(`\(handlerId)`,btoa(`Could not write file to disk.`))", completionHandler: nil)
+                       
+                        webview.evaluateJavaScript("fig.callback(`\(handlerId)`, null)", completionHandler: nil)
+                    } catch {
+                        Logger.log(message: "Could not write file '\(path)' to disk.")
+                        scope.webView?.evaluateJavaScript("fig.callbackASCII(`\(handlerId)`,`Could not write file to disk.`)", completionHandler: nil)
 
+                    }
                 }
             }
         }
@@ -472,6 +480,10 @@ extension WebBridge {
                     }
                     NSWorkspace.shared.launchApplication("Terminal")
                     scope.webView?.window?.close()
+                case "forceUpdate":
+                    if let appDelegate = NSApp.delegate as? AppDelegate {
+                        appDelegate.updater?.installUpdatesIfAvailable()
+                    }
                 case "hello":
                     Timer.delayWithSeconds(2) {
                         NSApp.deactivate()
@@ -484,14 +496,35 @@ extension WebBridge {
         }
     }
     
-    static func tabInSidebar(webView: WebView) {
+    static func callback(handler: String, value: String, scope: WKScriptMessage) {
+        let encoded = value.data(using: .utf8)!
+        scope.webView?.evaluateJavaScript("fig.callback(`\(handler)`,`\(encoded.base64EncodedString())`)", completionHandler: nil)
+    }
+    
+    static func defaults(scope: WKScriptMessage) {
+        if let params = scope.body as? Dictionary<String, String>,
+            let key = params["key"] {
+            
+            if let handlerId = params["handlerId"] {
+                let value = UserDefaults.standard.string(forKey: key)
+                WebBridge.callback(handler: handlerId, value: value ?? "", scope: scope)
+                
+            } else if let value = params["value"] {
+                UserDefaults.standard.set(value, forKey: key)
+                UserDefaults.standard.synchronize()
+            }
+        }
+    }
+    
+    static func tabInSidebar(webView: WebView, shift: Bool = false) {
+        let sibling = shift ? "previousElementSibling" : "nextElementSibling";
         webView.evaluateJavaScript(
           """
-          var next = document.activeElement.nextElementSibling
+          var next = document.activeElement.\(sibling)
 
           if (next) {
               while (next.tabIndex && next.tabIndex == -1) {
-                  next = next.nextElementSibling
+                  next = next.\(sibling)
                   if (!next) {
                       next = document.querySelector('.app')
                       break;
@@ -500,7 +533,13 @@ extension WebBridge {
               console.log(next)
               next.focus()
           } else {
-              document.querySelector('.app').focus()
+            //document.querySelector('.app').focus()
+            
+            var nodes = document.querySelectorAll('.app');
+            var first = nodes[0];
+            var last = nodes[nodes.length-2];
+            
+            \(shift ? "last" : "first").focus()
           }
           """, completionHandler: nil)
     }
@@ -523,6 +562,13 @@ extension WebBridge {
     
     static func initJS(webview: WebView) {
         webview.evaluateJavaScript("fig.callinit()", completionHandler: nil)
+    }
+    
+    static func appname(webview: WebView, response: @escaping (String?) -> Void) {
+        webview.evaluateJavaScript("document.head.querySelector('meta[figapp]').getAttribute('figapp')") { (name, error) in
+            response(name as? String)
+            return
+        }
     }
 
     
@@ -586,8 +632,27 @@ extension WebBridgeScript {
                         meta.setAttribute('user-scalable', 'no');
                         document.getElementsByTagName('head')[0].appendChild(meta);
                         """
-        default:
-            return ""
+            case .injectTerminalCSS:
+                let bg = UserDefaults.standard.string(forKey: "terminal-bg-color")
+                let text = UserDefaults.standard.string(forKey: "terminal-text-color")
+                let cssString  = """
+                .terminal-bg-color {
+                    background-color: \(bg ?? "white") !important;
+                }
+
+                .terminal-text-color {
+                    color: \(text ?? "black") !important;
+                }
+                """
+                
+
+                  return """
+                        var style = document.createElement('style');
+                        style.innerHTML = `\(cssString)`;
+                        document.head.appendChild(style);
+                        """
+            default:
+                return ""
         }
     }
 }

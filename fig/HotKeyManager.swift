@@ -13,6 +13,7 @@ import HotKey
 class HotKeyManager {
 //    var hotkey = HotKey(key: .grave, modifiers: [.command])
     var hotkey = HotKey(key: .i, modifiers: [.command])
+    var focusKey = HotKey(key: .i, modifiers: [.command, .shift])
 
     let companionWindow: CompanionWindow
     let webview: WebView
@@ -32,6 +33,51 @@ class HotKeyManager {
             }
         }
         
+        self.focusKey.keyDownHandler = {
+            switch self.companionWindow.positioning {
+            case CompanionWindow.defaultPassivePosition:
+                self.shouldTab = true
+                NSRunningApplication.current.activate(options: .activateIgnoringOtherApps)
+                WebBridge.tabInSidebar(webView: self.webview, shift: true)
+            default:
+                if let app = NSWorkspace.shared.frontmostApplication, app.isFig {
+                    ShellBridge.shared.previousFrontmostApplication?.activate(options: .activateIgnoringOtherApps)
+                } else {
+                    NSRunningApplication.current.activate(options: .activateIgnoringOtherApps)
+                }
+            }
+        }
+        
+        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { (event) -> NSEvent? in
+            // ESC
+            if (event.keyCode == 53) {
+                self.shouldTab = false
+                self.webview.evaluateJavaScript("document.activeElement.blur();", completionHandler: nil)
+                if let app = NSWorkspace.shared.frontmostApplication, app.isFig {
+                   ShellBridge.shared.previousFrontmostApplication?.activate(options: .activateIgnoringOtherApps)
+                }
+                return nil
+            }
+            
+            if (event.keyCode == 3 && event.modifierFlags.contains(.command)) {
+                switch self.companionWindow.positioning {
+                case CompanionWindow.defaultPassivePosition:
+                    return nil
+                case .fullscreenInset:
+                    self.companionWindow.positioning = CompanionWindow.defaultActivePosition
+                    self.companionWindow.repositionWindow(forceUpdate: true, explicit: true)
+
+                    return nil
+                default:
+                    self.companionWindow.positioning = .fullscreenInset
+                    return nil
+                }
+
+            }
+            
+            return event;
+        }
+        
         NSEvent.addLocalMonitorForEvents(matching: .flagsChanged) { (event) -> NSEvent? in
             self.flagsChanged(event: event)
             return event
@@ -45,9 +91,13 @@ class HotKeyManager {
     
     @objc func toggleHotkey() {
         if let app = NSWorkspace.shared.frontmostApplication, let bundleId = app.bundleIdentifier {
-             self.hotkey.isPaused = !(Integrations.whitelist.contains(bundleId) || app.isFig)
+            self.hotkey.isPaused = !(Integrations.whitelist.contains(bundleId) || app.isFig)
+            self.focusKey.isPaused = !(Integrations.whitelist.contains(bundleId) || app.isFig)
+
         } else {
             self.hotkey.isPaused = true;
+            self.focusKey.isPaused = true;
+
         }
         
     }

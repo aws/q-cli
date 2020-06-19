@@ -179,8 +179,15 @@ class WebViewController: NSViewController, NSWindowDelegate {
 //        webView = WKWebView(frame: self.view.window?.frame ?? .zero)
 //        webView.ba
         webView?.navigationDelegate = self
+        webView?.translatesAutoresizingMaskIntoConstraints = false
+
         self.view.addSubview(webView!)
-        
+        NSLayoutConstraint.activate([
+            webView!.topAnchor.constraint(equalTo: view.topAnchor),
+            webView!.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            webView!.leftAnchor.constraint(equalTo: view.leftAnchor),
+            webView!.rightAnchor.constraint(equalTo: view.rightAnchor)
+        ])
 //
         self.view.addSubview(self.icon)
         self.icon.isHidden = true;
@@ -438,7 +445,7 @@ class WebView : WKWebView {
 
     override init(frame: CGRect, configuration: WKWebViewConfiguration) {
         super.init(frame: frame, configuration: configuration)
-        
+        //self.customUserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 13_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/83.0.4103.88 Mobile/15E148 Safari/604.1 FigBrowser/\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0")"
         NotificationCenter.default.addObserver(self, selector: #selector(requestStopMonitoringMouseEvents(_:)), name: .requestStopMonitoringMouseEvents, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(requestStartMonitoringMouseEvents(_:)), name: .requestStartMonitoringMouseEvents, object: nil)
 //        self.unregisterDraggedTypes()
@@ -505,8 +512,9 @@ class WebView : WKWebView {
         guard let w = self.window, let window = w as? CompanionWindow else {
                   return
             }
-        if (trackMouse && window.positioning == CompanionWindow.defaultPassivePosition) {
-            print("Attempting to activate previous app")
+        if (trackMouse && NSWorkspace.shared.frontmostApplication?.isFig ?? false && window.positioning == CompanionWindow.defaultPassivePosition) {
+            print("current frontmost application \(NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "")")
+            print("Attempting to activate previous app \( ShellBridge.shared.previousFrontmostApplication?.bundleIdentifier ?? "<none>")")
             ShellBridge.shared.previousFrontmostApplication?.activate(options: .activateIgnoringOtherApps)
 
         }

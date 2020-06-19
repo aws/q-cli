@@ -88,6 +88,9 @@ class ShellBridge {
                    NSPasteboard.general.setString(cmd, forType: .string)
                    print(pasteboard.string(forType: .string) ?? "")
                        // Be careful: in some apps, CMD-Enter toggles fullscreen
+                self.simulate(keypress: .ctrlE)
+                self.simulate(keypress: .ctrlU)
+
                        self.simulate(keypress: .cmdV)
                 print("CMD-V")
                 Timer.delayWithSeconds(0.1) {
@@ -122,6 +125,9 @@ class ShellBridge {
         case cmdV = 9
         case enter = 36
         case rightArrow = 124
+        case ctrlE = 14
+        case ctrlU = 32
+
     }
     
     static func simulate(keypress: Keypress) {
@@ -133,6 +139,10 @@ class ShellBridge {
         
         if (keypress == .cmdV){
             keydown?.flags = CGEventFlags.maskCommand;
+        }
+        
+        if (keypress == .ctrlE || keypress == .ctrlU) {
+            keydown?.flags = CGEventFlags.maskControl;
         }
         
         let loc = CGEventTapLocation.cghidEventTap
@@ -161,7 +171,25 @@ class Integrations {
     static let editors:   Set = ["com.apple.dt.Xcode",
                                  "com.sublimetext.3",
                                  "com.microsoft.VSCode"]
+    static var allowed: Set<String> {
+        get {
+            if let allowed = UserDefaults.standard.string(forKey: "allowedApps") {
+                return Set(allowed.split(separator: ",").map({ String($0)}))
+            } else {
+                return []
+            }
+        }
+    }
     
+    static var blocked: Set<String> {
+        get {
+           if let allowed = UserDefaults.standard.string(forKey: "blockedApps") {
+               return Set(allowed.split(separator: ",").map({ String($0)}))
+           } else {
+               return []
+           }
+       }
+    }
     static let whitelist = Integrations.terminals
 //                    .union(Integrations.editors)
 //                    .union(Integrations.browsers)

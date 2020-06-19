@@ -8,10 +8,11 @@
 
 import Foundation
 extension String {
-    func runAsCommand(_ isVerbose: Bool = true, cwd: String? = nil, with env: Dictionary<String, String>? = nil) -> String {
+    func runAsCommand(_ isVerbose: Bool = false, cwd: String? = nil, with env: Dictionary<String, String>? = nil) -> String {
         let pipe = Pipe()
         let stderr = Pipe()
         let task = Process()
+        //add "-li" to get closer to terminal behavior
         task.arguments = ["-c", String(format:"%@", self)]
         task.standardOutput = pipe
         task.standardError = stderr
@@ -72,7 +73,10 @@ extension String {
         
         task.launch()
         task.waitUntilExit()
-        
+
+        print("TerminationStatus:", task.terminationStatus)
+        print("TerminationReason:", task.terminationReason)
+
         return output
 //        if let result = NSString(data: file.readDataToEndOfFile(), encoding: String.Encoding.utf8.rawValue) {
 //            return result as String
@@ -132,7 +136,7 @@ extension String {
             }, to: stderr)
         }
        
-        
+        //add "-li" to get closer to terminal behavior
         task.arguments = ["-c", self]
         task.launch()
         DispatchQueue.global(qos: .background).async {

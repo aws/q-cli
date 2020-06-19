@@ -56,6 +56,9 @@
 		75C07120244BB441002DF69F /* CompanionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75C0711F244BB441002DF69F /* CompanionViewController.swift */; };
 		75C07122244BB65D002DF69F /* ShellBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75C07121244BB65D002DF69F /* ShellBridge.swift */; };
 		75C07124244BE45A002DF69F /* CompanionWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75C07123244BE45A002DF69F /* CompanionWindow.swift */; };
+		75CFF64A2496B43A00C6A6DE /* Sparkle.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 75CFF6482496B43600C6A6DE /* Sparkle.framework */; };
+		75CFF64B2496B43A00C6A6DE /* Sparkle.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 75CFF6482496B43600C6A6DE /* Sparkle.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		75D2E3CB249C1E7500607F66 /* terminal.css in Resources */ = {isa = PBXBuildFile; fileRef = 75D2E3CA249C1E7500607F66 /* terminal.css */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -84,6 +87,17 @@
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 1;
+		};
+		75CFF64C2496B43A00C6A6DE /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				75CFF64B2496B43A00C6A6DE /* Sparkle.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
 
@@ -142,6 +156,8 @@
 		75C0711F244BB441002DF69F /* CompanionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionViewController.swift; sourceTree = "<group>"; };
 		75C07121244BB65D002DF69F /* ShellBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellBridge.swift; sourceTree = "<group>"; };
 		75C07123244BE45A002DF69F /* CompanionWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionWindow.swift; sourceTree = "<group>"; };
+		75CFF6482496B43600C6A6DE /* Sparkle.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Sparkle.framework; sourceTree = "<group>"; };
+		75D2E3CA249C1E7500607F66 /* terminal.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = terminal.css; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -159,6 +175,7 @@
 				755D0F512482D4920074AB5C /* HotKey in Frameworks */,
 				757CA88424875907002A64A8 /* ANSITerminal in Frameworks */,
 				757CA8E424905B0E002A64A8 /* Kitura-WebSocket in Frameworks */,
+				75CFF64A2496B43A00C6A6DE /* Sparkle.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -195,6 +212,7 @@
 				75675974244634B2006AA988 /* figUITests */,
 				751F758F246E16D800E083C8 /* figcli */,
 				75675952244634AD006AA988 /* Products */,
+				75CFF6432496B3BA00C6A6DE /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -230,6 +248,7 @@
 				755D0DDF247DDE050074AB5C /* FigCLI.swift */,
 				752C0BDD2479F6AF0077E415 /* tutorial.js */,
 				752C0BDB2479F68C0077E415 /* tutorial.css */,
+				75D2E3CA249C1E7500607F66 /* terminal.css */,
 				752C0BD92479F37B0077E415 /* fig.js */,
 				752C0BD72479EEDA0077E415 /* File.swift */,
 				757CA88B248B08D7002A64A8 /* local */,
@@ -295,6 +314,14 @@
 			name = local;
 			sourceTree = "<group>";
 		};
+		75CFF6432496B3BA00C6A6DE /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				75CFF6482496B43600C6A6DE /* Sparkle.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -322,6 +349,7 @@
 				7567594D244634AD006AA988 /* Sources */,
 				7567594E244634AD006AA988 /* Frameworks */,
 				7567594F244634AD006AA988 /* Resources */,
+				75CFF64C2496B43A00C6A6DE /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -439,6 +467,7 @@
 				757CA897248C108E002A64A8 /* css in Resources */,
 				75C0711D244AC3B2002DF69F /* index.html in Resources */,
 				757CA895248B291E002A64A8 /* permissions.html in Resources */,
+				75D2E3CB249C1E7500607F66 /* terminal.css in Resources */,
 				757CA88A248AD58C002A64A8 /* onboarding.html in Resources */,
 				757CA89B248C18F1002A64A8 /* done.html in Resources */,
 				757CA899248C10AD002A64A8 /* fonts in Resources */,
@@ -687,17 +716,24 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = fig/fig.entitlements;
+				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1.0.3;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)",
+				);
 				INFOPLIST_FILE = fig/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MARKETING_VERSION = 1.0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mschrage.fig;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
@@ -709,17 +745,24 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = fig/fig.entitlements;
+				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1.0.3;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)",
+				);
 				INFOPLIST_FILE = fig/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MARKETING_VERSION = 1.0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mschrage.fig;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;

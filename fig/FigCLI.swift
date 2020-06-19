@@ -51,6 +51,7 @@ enum NativeCLICommand : String {
     case store = "store"
     case appstore = "appstore"
     case blocks = "blocks"
+    case home = "home"
 
 }
 
@@ -100,9 +101,26 @@ class FigCLI {
     
     static func env(with scope: Scope) {
         scope.webView.configureEnvOnLoad = {
-            scope.webView.evaluateJavaScript("fig.env = JSON.parse(`\(scope.env.replacingOccurrences(of: "\\\"", with: "\\\\\\\""))`);", completionHandler: nil)
+            let env = FigCLI.extract(keys: ["PWD","USER","HOME","SHELL", "OLDPWD", "TERM_PROGRAM", "TERM_SESSION_ID"], from: scope.env)
+            
+            if let json = try? JSONSerialization.data(withJSONObject: env, options: .fragmentsAllowed) {
+                scope.webView.evaluateJavaScript("fig.env = JSON.parse(b64DecodeUnicode(`\(json.base64EncodedString())`))", completionHandler: nil)
+                  
+            }
         }
     }
+    
+    private static func extract(keys:[String], from env: String) -> [String: String] {
+        var out: [String: String]  = [:]
+        for key in keys {
+            if let group = env.groups(for: "\"\(key)\": \"(.*?)\",").first, let value = group.last {
+                  out[key] = value
+              }
+        }
+        
+        return out
+    }
+    
     static func entry(with scope: Scope) {
         scope.webView.onLoad.append {
             scope.webView.evaluateJavaScript("fig.callinit()", completionHandler: nil)
@@ -110,7 +128,11 @@ class FigCLI {
     }
     static func stdin(with scope: Scope) {
         scope.webView.onLoad.append {
-             let encoded = scope.stdin.data(using: .utf8)!
+            print(scope.stdin.applyingTransform(StringTransform.toXMLHex, reverse: false)!)
+            print(scope.stdin.applyingTransform(StringTransform.toUnicodeName, reverse: false)!)
+            print(scope.stdin.applyingTransform(StringTransform.toLatin, reverse: false)!)
+            print(scope.stdin.data(using: .utf8)!)
+            let encoded = scope.stdin.data(using: .utf8)!
             scope.webView.evaluateJavaScript("fig.stdinb64(`\(encoded.base64EncodedString())`)", completionHandler: nil)
         }
     }
@@ -143,7 +165,18 @@ class FigCLI {
                           webView: webView,
                           companionWindow: companionWindow)
         print("ROUTING \(command)")
-
+        let data = env.data(using: .utf8)!
+        do {
+            if let jsonArray = try JSONSerialization.jsonObject(with: data, options : .allowFragments) as? [Dictionary<String,Any>]
+            {
+               print(jsonArray) // use the json here
+            } else {
+                print("bad json")
+            }
+        } catch let error as NSError {
+            print(error)
+        }
+        
         if let nativeCommand = NativeCLICommand(rawValue: command) {
             switch nativeCommand {
             case .callback:
@@ -158,7 +191,7 @@ class FigCLI {
                 FigCLI.position(with: scope)
 //            case .hide:
 //                FigCLI.hide(with: scope)
-            case .apps, .store, .appstore, .blocks:
+            case .apps, .store, .appstore, .blocks, .home:
                 companionWindow.positioning = .fullscreenInset
                 FigCLI.url(with: scope)
             }
@@ -212,5 +245,37 @@ extension URL {
         var relComponents = Array(repeating: "..", count: baseComponents.count - i)
         relComponents.append(contentsOf: destComponents[i...])
         return relComponents.joined(separator: "/")
+    }
+}
+
+extension String {
+    func groups(for regexPattern: String) -> [[String]] {
+    do {
+        let text = self
+        let regex = try NSRegularExpression(pattern: regexPattern)
+        let matches = regex.matches(in: text,
+                                    range: NSRange(text.startIndex..., in: text))
+        return matches.map { match in
+            return (0..<match.numberOfRanges).map {
+                let rangeBounds = match.range(at: $0)
+                guard let range = Range(rangeBounds, in: text) else {
+                    return ""
+                }
+                return String(text[range])
+            }
+        }
+    } catch let error {
+        print("invalid regex: \(error.localizedDescription)")
+        return []
+    }
+}
+}
+
+extension String {
+    var unescapingUnicodeCharacters: String {
+        let mutableString = NSMutableString(string: self)
+        CFStringTransform(mutableString, nil, "Any-Hex/Java" as NSString, true)
+
+        return mutableString as String
     }
 }

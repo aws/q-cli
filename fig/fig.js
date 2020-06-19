@@ -35,6 +35,16 @@ let setup = function(window) {
           window.webkit.messageHandlers.callbackHandler.postMessage({type, cmd, handlerId, env});
           console.log(`Added callback handler "${handlerId}" for command "${cmd}"`)
       },
+//      execute : function(cmd, handler) {
+//          var out = ""
+//          fig.stream(cmd, (data, error) => {
+//             if (data) {
+//               out += data + "\n"
+//             } else {
+//                handler(out)
+//             }
+//          })
+//      },
       stdin : function(input) {
           console.log("fig.stdin must be overwritten in order to recieve standard input.")
       },
@@ -72,9 +82,12 @@ let setup = function(window) {
           window.webkit.messageHandlers.blurHandler.postMessage("");
       },
       callback : function(handlerId, value, error) {
-          this[handlerId](atob(value), error)
+          let response = value ? b64DecodeUnicode(value) : null
+          this[handlerId](response, error)
           let tokens = handlerId.split(':')
           if (tokens.length == 1) {
+              delete this[handlerId]
+          } else if (!value) {
               delete this[handlerId]
           } else {
               console.log(`Continue streaming to callback '${handlerId}'`)
@@ -85,12 +98,13 @@ let setup = function(window) {
           let tokens = handlerId.split(':')
           if (tokens.length == 1) {
               delete this[handlerId]
+              console.log(`End of stream to callback '${handlerId}'`)
           } else {
               console.log(`Continue streaming to callback '${handlerId}'`)
           }
       },
       stdinb64 : function(data) {
-          fig['_stdin'] = atob(data)
+          fig['_stdin'] = b64DecodeUnicode(data)
 //          fig.init(atob(data))
 //          fig.stdin(atob(data))
       },
@@ -111,12 +125,12 @@ let setup = function(window) {
 //          if (fig.env["TERMSESSION"] == session) {
 //          }
           if (fig.ttyin) {
-              fig.ttyin(atob(input))
+              fig.ttyin(b64DecodeUnicode(input))
           }
       },
       ttyoutb64 : function(input, session) {
           if (fig.ttyout) {
-              fig.ttyout(atob(input))
+              fig.ttyout(b64DecodeUnicode(input))
           }
 //          if (fig.env["TERMSESSION"] == session) {
 //          }
@@ -148,6 +162,16 @@ let setup = function(window) {
           let handlerId = random_identifier(5)
           this[handlerId] = handler
           window.webkit.messageHandlers.onboardingHandler.postMessage({action, handlerId});
+      },
+      defaults : {
+          set: function(key, value) {
+            window.webkit.messageHandlers.defaultsHandler.postMessage({key, value});
+          },
+          get: function(key, handler) {
+            let handlerId = random_identifier(5)
+            fig[handlerId] = handler
+            window.webkit.messageHandlers.defaultsHandler.postMessage({key, handlerId});
+          }
       }
   }
 
@@ -162,3 +186,20 @@ let setup = function(window) {
 
 setup(window)
 fig.log("Loaded fig.js...")
+
+function b64EncodeUnicode(str) {
+    // first we use encodeURIComponent to get percent-encoded UTF-8,
+    // then we convert the percent encodings into raw bytes which
+    // can be fed into btoa.
+    return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,
+        function toSolidBytes(match, p1) {
+            return String.fromCharCode('0x' + p1);
+    }));
+}
+
+function b64DecodeUnicode(str) {
+    // Going backwards: from bytestream, to percent-encoding, to original string.
+    return decodeURIComponent(atob(str).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+}

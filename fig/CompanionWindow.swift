@@ -34,6 +34,8 @@ class CompanionWindow : NSWindow {
             }
         }
     }
+    var initialUntetheredFrame: NSRect?
+    
     override public var canBecomeKey: Bool {
         get { return true }
     }
@@ -41,7 +43,7 @@ class CompanionWindow : NSWindow {
     init(viewController: NSViewController) {
         super.init(
             contentRect: NSRect(x: 0, y: 0, width: 480, height: 300),
-            styleMask: [.fullSizeContentView, .resizable],
+            styleMask: [.fullSizeContentView],
             backing: .buffered, defer: false)
         self.center()
         self.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
@@ -62,7 +64,8 @@ class CompanionWindow : NSWindow {
         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(deactivateApp), name: NSWorkspace.didDeactivateApplicationNotification, object: nil)
 
         
-        let _ = Timer.scheduledTimer(timeInterval: 0.15, target: self, selector: #selector(positionWindow), userInfo: nil, repeats: true)
+        let interval = Double(UserDefaults.standard.string(forKey: "windowUpdateInterval") ?? "") ?? 0.15
+        let _ = Timer.scheduledTimer(timeInterval: interval, target: self, selector: #selector(positionWindow), userInfo: nil, repeats: true)
         
         let trackingArea = NSTrackingArea(rect: self.contentViewController!.view.frame,
                                                 options: [NSTrackingArea.Options.activeAlways ,NSTrackingArea.Options.mouseEnteredAndExited],
@@ -71,7 +74,6 @@ class CompanionWindow : NSWindow {
         self.contentViewController!.view.addTrackingArea(trackingArea)
 
     }
-    
         
     override func mouseEntered(with event: NSEvent) {
         print("mouse entered")
@@ -127,6 +129,7 @@ class CompanionWindow : NSWindow {
         case spotlight = 9
         case fullscreenInset = 10
         case hidden = 11
+        case untethered = 12
 
         func frame(targetWindowFrame:NSRect, screen: NSRect = .zero) -> NSRect {
             if targetWindowFrame.width < 100 || targetWindowFrame.height < 200 {
@@ -188,6 +191,8 @@ class CompanionWindow : NSWindow {
                 return targetWindowFrame.insetBy(dx: inset, dy: inset).offsetBy(dx: 0, dy: -1 * inset - 24)
             case .hidden:
                 return .zero
+             case .untethered:
+                return .zero
              }
 
         }
@@ -195,7 +200,26 @@ class CompanionWindow : NSWindow {
     }
     
     func repositionWindow( forceUpdate:Bool = true, explicit: Bool = false) {
-        let whitelistedBundleIds = Integrations.whitelist
+        
+        if (self.positioning == .untethered) {
+            self.collectionBehavior = [.managed]
+//            self.isMovableByWindowBackground = true
+//            self.standardWindowButton(NSWindow.ButtonType.zoomButton)
+            self.level = .floating
+            self.styleMask = [.resizable, .titled, .miniaturizable, .closable]
+            if let frame = self.initialUntetheredFrame {
+                setOverlayFrame(frame)
+            }
+
+            return
+        } else {
+            self.level = .floating
+            self.styleMask = [.fullSizeContentView]
+            self.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+
+        }
+        
+        let whitelistedBundleIds = Integrations.whitelist.union(Integrations.allowed).subtracting(Integrations.blocked)
         guard let app = NSWorkspace.shared.frontmostApplication,
               let bundleId = app.bundleIdentifier else {
                    return
@@ -206,7 +230,8 @@ class CompanionWindow : NSWindow {
             print("targetFrame:\(targetFrame)")
             if (forceUpdate || !targetFrame.equalTo(priorTargetFrame)) {
                 priorTargetFrame = targetFrame
-                let frame = self.positioning.frame(targetWindowFrame: targetFrame, screen: NSScreen.screens[0].frame)
+                let frame = self.positioning.frame(targetWindowFrame: targetFrame, screen: NSScreen.main!.frame)
+
                 
 //                let frame = overlayFrame(self.positioning,
 //                                         terminalFrame: targetFrame,
@@ -223,7 +248,7 @@ class CompanionWindow : NSWindow {
                     }
                     let targetFrame = topmostWindowFrameFor(app)
                     priorTargetFrame = targetFrame
-                    let frame = self.positioning.frame(targetWindowFrame: targetFrame, screen: NSScreen.screens[0].frame)
+                    let frame = self.positioning.frame(targetWindowFrame: targetFrame, screen: NSScreen.main!.frame)
                     setOverlayFrame(frame)
     
                 }
@@ -349,6 +374,8 @@ class CompanionWindow : NSWindow {
           case .fullscreenInset:
             return .zero
           case .hidden:
+            return .zero
+          case .untethered:
             return .zero
         }
     
