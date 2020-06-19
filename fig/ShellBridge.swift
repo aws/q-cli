@@ -191,6 +191,8 @@ class Integrations {
        }
     }
     static let whitelist = Integrations.terminals
+                    .union(Integrations.allowed)
+              .subtracting(Integrations.blocked)
 //                    .union(Integrations.editors)
 //                    .union(Integrations.browsers)
 }

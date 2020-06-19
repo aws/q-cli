@@ -178,9 +178,9 @@ class WebViewController: NSViewController, NSWindowDelegate {
         view.window?.delegate = self
 //        webView = WKWebView(frame: self.view.window?.frame ?? .zero)
 //        webView.ba
-        webView?.navigationDelegate = self
         webView?.translatesAutoresizingMaskIntoConstraints = false
 
+        webView?.navigationDelegate = self
         self.view.addSubview(webView!)
         NSLayoutConstraint.activate([
             webView!.topAnchor.constraint(equalTo: view.topAnchor),

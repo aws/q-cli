@@ -22,7 +22,8 @@ extension Notification.Name {
 class CompanionWindow : NSWindow {
     static let defaultActivePosition: OverlayPositioning = .outsideRight
     static let defaultPassivePosition: OverlayPositioning = .sidebar
-
+    var shouldTrackWindow = true;
+    
     var priorTargetFrame: NSRect = .zero
     var positioning: OverlayPositioning = CompanionWindow.defaultActivePosition {
         didSet {
@@ -112,7 +113,7 @@ class CompanionWindow : NSWindow {
     }
     
     @objc func positionWindow() {
-      repositionWindow(forceUpdate: true)
+      repositionWindow(forceUpdate: false)
     }
     
     
@@ -219,7 +220,7 @@ class CompanionWindow : NSWindow {
 
         }
         
-        let whitelistedBundleIds = Integrations.whitelist.union(Integrations.allowed).subtracting(Integrations.blocked)
+        let whitelistedBundleIds = Integrations.whitelist
         guard let app = NSWorkspace.shared.frontmostApplication,
               let bundleId = app.bundleIdentifier else {
                    return
@@ -227,6 +228,25 @@ class CompanionWindow : NSWindow {
 
         if (whitelistedBundleIds.contains(bundleId)) {
             let targetFrame = topmostWindowFrameFor(app)
+            let mouseDown = (NSEvent.pressedMouseButtons & (1 << 0)) != 0;
+
+            
+            guard shouldTrackWindow else { return }
+            if (!forceUpdate && !targetFrame.equalTo(priorTargetFrame) && mouseDown) {
+                print("Not equal")
+                self.animationBehavior = .utilityWindow
+                self.orderOut(self)
+                shouldTrackWindow = false;
+                NSEvent.addGlobalMonitorForEvents(matching: .leftMouseUp) { (event) -> Void in
+                    self.shouldTrackWindow = true;
+                     self.repositionWindow(forceUpdate: true)
+                }
+//                Timer.delayWithSeconds(0.15) {
+//
+//                }
+                return
+            }
+            
             print("targetFrame:\(targetFrame)")
             if (forceUpdate || !targetFrame.equalTo(priorTargetFrame)) {
                 priorTargetFrame = targetFrame
@@ -267,7 +287,7 @@ class CompanionWindow : NSWindow {
             // this is a super ugly bugfix
             // set an offset to cause the view to reload
 //            let randOffset = CGFloat(Double.random(in: 0...0.1))
-            let shouldAddOffset = Int.random(in: 0...5) == 0
+//            let shouldAddOffset = Int.random(in: 0...5) == 0
             self.windowController?.shouldCascadeWindows = false;
             self.setFrame(frame, display: true)
             self.setFrameTopLeftPoint(frame.origin)
@@ -276,7 +296,7 @@ class CompanionWindow : NSWindow {
             // This line is essential
 //            self.contentViewController?.view.frame = NSRect.init(origin: .zero, size:frame.size)
             
-            self.contentViewController?.view.frame = NSRect.init(origin: .zero, size: CGSize(width: frame.size.width, height: frame.size.height + (shouldAddOffset ? 0.01 : 0)))
+//            self.contentViewController?.view.frame = NSRect.init(origin: .zero, size: CGSize(width: frame.size.width, height: frame.size.height + (shouldAddOffset ? 0.01 : 0)))
 //
             self.contentViewController?.view.setFrameSize(frame.size)
             self.contentViewController?.view.needsDisplay = true

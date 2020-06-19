@@ -172,6 +172,11 @@ let setup = function(window) {
             fig[handlerId] = handler
             window.webkit.messageHandlers.defaultsHandler.postMessage({key, handlerId});
           }
+      },
+      normalizeFilePath(path, handler) {
+          let handlerId = random_identifier(5)
+          fig[handlerId] = handler
+          window.webkit.messageHandlers.filepathHandler.postMessage({path, handlerId});
       }
   }
 

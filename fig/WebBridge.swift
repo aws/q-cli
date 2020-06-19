@@ -55,6 +55,7 @@ class WebBridge : WKWebViewConfiguration {
         contentController.add(self, name: WebBridgeScript.openHandler.rawValue)
         contentController.add(self, name: WebBridgeScript.streamHandler.rawValue)
         contentController.add(self, name: WebBridgeScript.defaultsHandler.rawValue)
+        contentController.add(self, name: WebBridgeScript.normalizeFilePath.rawValue)
 
         contentController.add(self, name: WebBridgeScript.onboardingHandler.rawValue)
 
@@ -104,6 +105,7 @@ enum WebBridgeScript: String, CaseIterable {
     case streamHandler = "streamHandler"
     case defaultsHandler = "defaultsHandler"
     case injectTerminalCSS = "terminalCSS"
+    case normalizeFilePath = "filepathHandler"
 
     case onboardingHandler = "onboardingHandler"
 
@@ -239,6 +241,8 @@ extension WebBridge : WKScriptMessageHandler {
             WebBridge.onboarding(scope: message)
         case .defaultsHandler:
             WebBridge.defaults(scope: message)
+        case .normalizeFilePath:
+            WebBridge.normalizeFilePath(scope: message)
         default:
             print("Unhandled WKScriptMessage type '\(message.name)'")
         }
@@ -484,6 +488,10 @@ extension WebBridge {
                     if let appDelegate = NSApp.delegate as? AppDelegate {
                         appDelegate.updater?.installUpdatesIfAvailable()
                     }
+                case "promptUpdate":
+                    if let appDelegate = NSApp.delegate as? AppDelegate {
+                        appDelegate.updater?.checkForUpdates(self)
+                    }
                 case "hello":
                     Timer.delayWithSeconds(2) {
                         NSApp.deactivate()
@@ -516,7 +524,19 @@ extension WebBridge {
         }
     }
     
+    static func normalizeFilePath(scope: WKScriptMessage) {
+        if let params = scope.body as? Dictionary<String, String>,
+           let path = params["path"],
+           let handlerId = params["handlerId"] {
+            
+            WebBridge.callback(handler: handlerId, value: NSString(string: path).standardizingPath, scope: scope)
+            
+        }
+    }
+    
     static func tabInSidebar(webView: WebView, shift: Bool = false) {
+        webView.evaluateJavaScript(shift ? "tabBackward()" : "tabForward()", completionHandler: nil)
+
         let sibling = shift ? "previousElementSibling" : "nextElementSibling";
         webView.evaluateJavaScript(
           """
@@ -545,6 +565,8 @@ extension WebBridge {
     }
     
     static func activateSelectedAppFromSidebar(webView: WebView) {
+        webView.evaluateJavaScript("activateSelectedApp()", completionHandler: nil)
+
         webView.evaluateJavaScript(
             """
             var target = document.activeElement
