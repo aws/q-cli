@@ -209,7 +209,13 @@ class WebBridgeContentController : WKUserContentController {
 
 extension WebBridge : WKScriptMessageHandler {
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        
         let scriptType = WebBridgeScript.init(rawValue: message.name)
+
+        if !WebBridge.authorized(scope: message) && scriptType != .insertCLIHandler {
+            print("Attempted to call fig runtime from unauthorized domain")
+            return
+        }
         switch scriptType {
         case .logging, .exceptions:
             WebBridge.log(scope: message)
@@ -262,6 +268,14 @@ extension Notification.Name {
 
 
 extension WebBridge {
+    static func authorized(scope: WKScriptMessage) -> Bool {
+        if let webView = scope.webView, let url = webView.url, let scheme = url.scheme {
+            print(scheme)
+            return scheme == "file" || url.host ?? "" == "app.withfig.com"
+        }
+        return false
+    }
+    
     static func log(scope: WKScriptMessage) {
         let body = scope.body as? String
         if let body = body {
@@ -586,8 +600,26 @@ extension WebBridge {
         webview.evaluateJavaScript("fig.callinit()", completionHandler: nil)
     }
     
+    static func appinfo(webview: WebView, response: @escaping (Dictionary<String, String>) -> Void) {
+        webview.evaluateJavaScript("fig.appinfo()") { (info, error) in
+            
+            if let info = info as? Dictionary<String, String> {
+                  
+                   response(info)
+                   return
+            }
+        }
+    }
+    
     static func appname(webview: WebView, response: @escaping (String?) -> Void) {
         webview.evaluateJavaScript("document.head.querySelector('meta[figapp]').getAttribute('figapp')") { (name, error) in
+            response(name as? String)
+            return
+        }
+    }
+    
+    static func appicon(webview: WebView, response: @escaping (String?) -> Void) {
+        webview.evaluateJavaScript("document.head.querySelector('meta[figicon]').getAttribute('figicon')") { (name, error) in
             response(name as? String)
             return
         }

@@ -45,7 +45,7 @@ enum NativeCLICommand : String {
     case local = "local"
     case bundle = "bundle"
     case callback = "callback"
-//    case hide = "hide"
+    case hide = "hide"
     case position = "position"
     case apps = "apps"
     case store = "store"
@@ -72,6 +72,7 @@ class FigCLI {
             let url = URL(fileURLWithPath: path, relativeTo: URL(fileURLWithPath: pwd))
             scope.webView.loadLocalApp(url)
             FigCLI.env(with: scope)
+            FigCLI.options(with: scope)
             FigCLI.stdin(with: scope)
         }
 
@@ -80,12 +81,14 @@ class FigCLI {
     static func bundle(with scope: Scope) {
         scope.webView.loadBundleApp(scope.options[0])
         FigCLI.env(with: scope)
+        FigCLI.options(with: scope)
         FigCLI.stdin(with: scope)
     }
     
     static func web(with scope: Scope) {
-        scope.webView.loadRemoteApp(at: URL(string: scope.options[0]) ?? FigCLI.baseURL)
+        scope.webView.loadRemoteApp(at: URL(string: scope.options[safe: 0] ?? "") ?? FigCLI.baseURL)
         FigCLI.env(with: scope)
+        FigCLI.options(with: scope)
         FigCLI.stdin(with: scope)
     }
     
@@ -97,6 +100,16 @@ class FigCLI {
 
     static func hide(with scope: Scope) {
         scope.companionWindow.positioning = CompanionWindow.defaultPassivePosition
+    }
+    
+    static func options(with scope: Scope) {
+        scope.webView.onLoad.append {
+            let opts = scope.options
+            if let json = try? JSONSerialization.data(withJSONObject: opts, options: .fragmentsAllowed) {
+                scope.webView.evaluateJavaScript("fig.options = JSON.parse(b64DecodeUnicode(`\(json.base64EncodedString())`))", completionHandler: nil)
+                  
+            }
+        }
     }
     
     static func env(with scope: Scope) {
@@ -143,6 +156,7 @@ class FigCLI {
         let url = ShellBridge.commandLineOptionsToRawURL(all)
         scope.webView.loadRemoteApp(at: url)
         FigCLI.env(with: scope)
+        FigCLI.options(with: scope)
         FigCLI.stdin(with: scope)
     }
     
@@ -189,8 +203,9 @@ class FigCLI {
                 FigCLI.web(with: scope)
             case .position:
                 FigCLI.position(with: scope)
-//            case .hide:
-//                FigCLI.hide(with: scope)
+            case .hide:
+                companionWindow.positioning = .icon
+                FigCLI.url(with: scope)
             case .apps, .store, .appstore, .blocks, .home:
                 companionWindow.positioning = .fullscreenInset
                 FigCLI.url(with: scope)

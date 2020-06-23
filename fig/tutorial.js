@@ -44,7 +44,7 @@ function preFormatting(preNode) {
     e.preventDefault();
     e.stopPropagation();
 
-    fig.run(preNode.innerText)
+    fig.insert(preNode.innerText)
 
   });
 
@@ -110,7 +110,7 @@ function codeFormatting(codeNode) {
     e.preventDefault();
     e.stopPropagation();
 
-    fig.run(codeNode.innerText);
+    fig.insert(codeNode.innerText);
 
   });
 

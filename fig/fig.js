@@ -46,7 +46,7 @@ let setup = function(window) {
 //          })
 //      },
       stdin : function(input) {
-          console.log("fig.stdin must be overwritten in order to recieve standard input.")
+//          console.log("fig.stdin must be overwritten in order to recieve standard input.")
       },
       stdout : function(out) {
           window.webkit.messageHandlers.stdoutHandler.postMessage(out);
@@ -111,12 +111,13 @@ let setup = function(window) {
       log : function(msg) {
           console.log(JSON.stringify(msg))
       },
-      init : function(input) {
+      init : function(input, options) {
           console.log("fig.init must be overwritten. The behavior of other fig functions is undefined if called prior to the fig.init entrypoint.")
       },
       callinit : function() {
           let stdin = fig['_stdin']
-          fig.init(stdin)
+          let options = fig.options
+          fig.init(stdin, options)
           fig.stdin(stdin)
       },
       ttyinb64 : function(input, session) {
@@ -177,6 +178,21 @@ let setup = function(window) {
           let handlerId = random_identifier(5)
           fig[handlerId] = handler
           window.webkit.messageHandlers.filepathHandler.postMessage({path, handlerId});
+      },
+      appinfo() {
+          var name = null
+          let figapp = document.head.querySelector('meta[figapp]');
+          if (figapp){
+              name = figapp.getAttribute('figapp');
+          }
+          
+          var icon = null
+          let figicon = document.head.querySelector('meta[figicon]');
+          if (figicon){
+              icon = figicon.getAttribute('figicon');
+          }
+          
+          return {name, icon};
       }
   }
 

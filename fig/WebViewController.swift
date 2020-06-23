@@ -182,12 +182,15 @@ class WebViewController: NSViewController, NSWindowDelegate {
 
         webView?.navigationDelegate = self
         self.view.addSubview(webView!)
-        NSLayoutConstraint.activate([
-            webView!.topAnchor.constraint(equalTo: view.topAnchor),
-            webView!.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            webView!.leftAnchor.constraint(equalTo: view.leftAnchor),
-            webView!.rightAnchor.constraint(equalTo: view.rightAnchor)
-        ])
+        
+        if (UserDefaults.standard.string(forKey: "debugMode") != "enabled") {
+            NSLayoutConstraint.activate([
+                webView!.topAnchor.constraint(equalTo: view.topAnchor),
+                webView!.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+                webView!.leftAnchor.constraint(equalTo: view.leftAnchor),
+                webView!.rightAnchor.constraint(equalTo: view.rightAnchor)
+            ])
+        }
 //
         self.view.addSubview(self.icon)
         self.icon.isHidden = true;

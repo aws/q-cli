@@ -75,6 +75,22 @@ class HotKeyManager {
 
             }
             
+            if (event.keyCode == 2 && event.modifierFlags.contains(.command)) {
+                 switch self.companionWindow.positioning {
+                 case CompanionWindow.defaultPassivePosition:
+                     return nil
+                 case .untethered:
+                     self.companionWindow.positioning = CompanionWindow.defaultActivePosition
+                     self.companionWindow.repositionWindow(forceUpdate: true, explicit: true)
+
+                     return nil
+                 default:
+                     self.companionWindow.positioning = .untethered
+                     return nil
+                 }
+
+             }
+            
             return event;
         }
         

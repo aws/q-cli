@@ -26,7 +26,11 @@ class CompanionWindow : NSWindow {
     
     var priorTargetFrame: NSRect = .zero
     var positioning: OverlayPositioning = CompanionWindow.defaultActivePosition {
+        
         didSet {
+            if (positioning == .untethered) {
+                self.initialUntetheredFrame = self.frame
+            }
             self.repositionWindow(forceUpdate: true, explicit: true)
             if (positioning == CompanionWindow.defaultPassivePosition) {
                 NotificationCenter.default.post(name: .overlayDidBecomeIcon, object: nil)
@@ -131,6 +135,7 @@ class CompanionWindow : NSWindow {
         case fullscreenInset = 10
         case hidden = 11
         case untethered = 12
+        case fullwindow = 13
 
         func frame(targetWindowFrame:NSRect, screen: NSRect = .zero) -> NSRect {
             if targetWindowFrame.width < 100 || targetWindowFrame.height < 200 {
@@ -194,6 +199,9 @@ class CompanionWindow : NSWindow {
                 return .zero
              case .untethered:
                 return .zero
+             case .fullwindow:
+                let inset: CGPoint = CGPoint(x: 250, y: 150)
+                return screen.insetBy(dx: inset.x, dy: inset.y).offsetBy(dx: 0, dy: screen.height - (2 * inset.y))
              }
 
         }
@@ -207,16 +215,59 @@ class CompanionWindow : NSWindow {
 //            self.isMovableByWindowBackground = true
 //            self.standardWindowButton(NSWindow.ButtonType.zoomButton)
             self.level = .floating
-            self.styleMask = [.resizable, .titled, .miniaturizable, .closable]
-            if let frame = self.initialUntetheredFrame {
-                setOverlayFrame(frame)
+            self.styleMask = [.resizable, .titled]
+            self.standardWindowButton(NSWindow.ButtonType.closeButton)!.isHidden = true
+            self.standardWindowButton(NSWindow.ButtonType.miniaturizeButton)!.isHidden = true
+            self.standardWindowButton(NSWindow.ButtonType.zoomButton)!.isHidden = true
+
+            if let _ = self.initialUntetheredFrame {
+                self.initialUntetheredFrame = nil
+//                setOverlayFrame(frame)
+//                self.addViewToTitleBar(NSButton(title: "⬅", target: nil, action: nil), at: 10)
+//                let label = NSTextField()
+//                label.frame = CGRect(origin: .zero, size: CGSize(width: 50, height: 44))
+//                label.stringValue = "↗"
+//                label.font = NSFont.systemFont(ofSize: 20)
+//                label.alignment = .right
+//                label.backgroundColor = .clear
+//                label.isBezeled = false
+//                label.isEditable = false
+//                label.sizeToFit()
+//
+//                self.addViewToTitleBar(label, at: 280)
+
+                
+                if let content = self.contentViewController as? WebViewController,
+                      let webView = content.webView {
+                      
+                      WebBridge.appinfo(webview: webView) { (info) -> Void in
+
+                        self.title = info["name"] ?? "Fig"
+
+                        if let icon = info["icon"], let url = URL(string: icon ?? "", relativeTo: webView.url) {
+                            self.representedURL = url;
+
+                            DispatchQueue.global().async {
+                                guard let data = try? Data(contentsOf: url)  else { return }//make sure your image in this url does exist, otherwise unwrap in a if let check / try-catch
+                                   DispatchQueue.main.async {
+                                    self.standardWindowButton(.documentIconButton)?.image = NSImage(data: data)
+                                   }
+                               }
+                          }
+                      }
+                  }
             }
+            
+          
+            
+
 
             return
         } else {
             self.level = .floating
             self.styleMask = [.fullSizeContentView]
             self.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+            self.representedURL = nil
 
         }
         
@@ -397,6 +448,8 @@ class CompanionWindow : NSWindow {
             return .zero
           case .untethered:
             return .zero
+          case .fullwindow:
+            return .zero
         }
     
       }
@@ -409,3 +462,33 @@ extension CompanionWindow : NSWindowDelegate {
 //extension NSRect {
 //    func nonintersection() ->
 //}
+
+extension CompanionWindow {
+    func addViewToTitleBar(_ view: NSView, at x: CGFloat) {
+        view.frame = NSRect(x: x, y: (self.contentView?.frame.height)!, width: view.frame.width, height: self.heightOfTitleBar)
+        var mask: UInt = 0;
+              if( x > self.frame.size.width / 2.0 )
+              {
+                mask |= UInt(NSView.AutoresizingMask.minXMargin.rawValue);
+              }
+              else
+              {
+                mask |= UInt(NSView.AutoresizingMask.maxXMargin.rawValue);
+              }
+        
+        view.autoresizingMask = NSView.AutoresizingMask(rawValue: mask | UInt(NSView.AutoresizingMask.minYMargin.rawValue))
+            
+        self.contentView?.superview!.addSubview(view)
+    }
+    
+    var heightOfTitleBar: CGFloat {
+        get {
+            let outerFrame = self.contentView?.superview?.frame
+            let innerFrame = self.contentView?.frame
+               
+            return outerFrame!.size.height - innerFrame!.size.height
+        }
+        
+    }
+
+}

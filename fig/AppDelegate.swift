@@ -185,7 +185,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         companion.positioning = CompanionWindow.defaultPassivePosition
         window = companion
         window.makeKeyAndOrderFront(nil)
-        (window as! CompanionWindow).repositionWindow(forceUpdate: true)
+        (window as! CompanionWindow).repositionWindow(forceUpdate: true, explicit: true)
         self.hotKeyManager = HotKeyManager(companion: window as! CompanionWindow)
     }
     

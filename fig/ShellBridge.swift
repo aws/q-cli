@@ -94,9 +94,12 @@ class ShellBridge {
                        self.simulate(keypress: .cmdV)
                 print("CMD-V")
                 Timer.delayWithSeconds(0.1) {
-//                            self.simulate(keypress: .rightArrow)
-                            self.simulate(keypress: .enter)
-                            print("ENTER")
+                            if (runImmediately) {
+                                print("ENTER")
+                                self.simulate(keypress: .enter)
+                            } else {
+                                self.simulate(keypress: .rightArrow)
+                            }
 
                             Timer.delayWithSeconds(0.10) {
                                 NotificationCenter.default.post(name: .requestStartMonitoringMouseEvents, object: nil)
@@ -166,7 +169,8 @@ class Integrations {
     static let terminals: Set = ["com.googlecode.iterm2",
                                  "com.apple.Terminal",
                                  "io.alacritty",
-                                 "co.zeit.hyper"]
+                                 "co.zeit.hyper",
+                                "net.kovidgoyal.kitty"]
     static let browsers:  Set = ["com.google.Chrome"]
     static let editors:   Set = ["com.apple.dt.Xcode",
                                  "com.sublimetext.3",
@@ -190,9 +194,13 @@ class Integrations {
            }
        }
     }
-    static let whitelist = Integrations.terminals
-                    .union(Integrations.allowed)
-              .subtracting(Integrations.blocked)
+    static var whitelist: Set<String> {
+        get {
+            return Integrations.terminals
+            .union(Integrations.allowed)
+      .subtracting(Integrations.blocked)
+        }
+    }
 //                    .union(Integrations.editors)
 //                    .union(Integrations.browsers)
 }
