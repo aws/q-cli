@@ -271,7 +271,7 @@ extension WebBridge {
     static func authorized(scope: WKScriptMessage) -> Bool {
         if let webView = scope.webView, let url = webView.url, let scheme = url.scheme {
             print(scheme)
-            return scheme == "file" || url.host ?? "" == "app.withfig.com"
+            return scheme == "file" || scheme == "localhost" || url.host ?? "" == "app.withfig.com"
         }
         return false
     }
@@ -587,6 +587,7 @@ extension WebBridge {
             var link = target.getElementsByTagName('a')[0]
             console.log(link)
             link.onmouseup()
+            target.blur()
             """, completionHandler: nil)
     }
     
@@ -600,16 +601,44 @@ extension WebBridge {
         webview.evaluateJavaScript("fig.callinit()", completionHandler: nil)
     }
     
-    static func appinfo(webview: WebView, response: @escaping (Dictionary<String, String>) -> Void) {
+    static func appinfo(webview: WebView, response: @escaping (Dictionary<String, String?>) -> Void) {
         webview.evaluateJavaScript("fig.appinfo()") { (info, error) in
             
-            if let info = info as? Dictionary<String, String> {
+            if let info = info as? Dictionary<String, String?> {
                   
                    response(info)
                    return
             }
         }
     }
+    
+    static func updateTitlebar(webview: WebView) {
+        WebBridge.appinfo(webview: webview) { (info) -> Void in
+            if let window = webview.window, let c = window as? CompanionWindow {
+                if c.positioning == .untethered {
+                    c.setupToolbar()
+                }
+            }
+            
+          webview.window?.title = (info["name"] ?? "Fig") ?? webview.title ?? ""
+          
+          if let hexValue = info["color"], let hex = hexValue {
+              webview.window?.backgroundColor = NSColor(hex: hex)
+          }
+
+          if let icon = info["icon"], let url = URL(string: icon ?? "", relativeTo: webview.url) {
+              webview.window?.representedURL = url;
+
+              DispatchQueue.global().async {
+                  guard let data = try? Data(contentsOf: url)  else { return }//make sure your image in this url does exist, otherwise unwrap in a if let check / try-catch
+                     DispatchQueue.main.async {
+                      webview.window?.standardWindowButton(.documentIconButton)?.image = NSImage(data: data)
+                     }
+                 }
+            }
+        }
+    }
+    
     
     static func appname(webview: WebView, response: @escaping (String?) -> Void) {
         webview.evaluateJavaScript("document.head.querySelector('meta[figapp]').getAttribute('figapp')") { (name, error) in

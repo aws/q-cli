@@ -192,7 +192,13 @@ let setup = function(window) {
               icon = figicon.getAttribute('figicon');
           }
           
-          return {name, icon};
+          var color = null
+          let figcolor = document.head.querySelector('meta[figcolor]');
+          if (figicon){
+              color = figcolor.getAttribute('figcolor');
+          }
+          
+          return {name, icon, color};
       }
   }
 

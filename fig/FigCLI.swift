@@ -114,7 +114,7 @@ class FigCLI {
     
     static func env(with scope: Scope) {
         scope.webView.configureEnvOnLoad = {
-            let env = FigCLI.extract(keys: ["PWD","USER","HOME","SHELL", "OLDPWD", "TERM_PROGRAM", "TERM_SESSION_ID"], from: scope.env)
+            let env = FigCLI.extract(keys: ["PWD","USER","HOME","SHELL", "OLDPWD", "TERM_PROGRAM", "TERM_SESSION_ID", "HISTFILE"], from: scope.env)
             
             if let json = try? JSONSerialization.data(withJSONObject: env, options: .fragmentsAllowed) {
                 scope.webView.evaluateJavaScript("fig.env = JSON.parse(b64DecodeUnicode(`\(json.base64EncodedString())`))", completionHandler: nil)
@@ -164,7 +164,9 @@ class FigCLI {
         let stdin = message.data.replacingOccurrences(of: "`", with: "\\`")
         let env = message.env ?? ""
         companionWindow.positioning =  CompanionWindow.defaultActivePosition
-
+        webView.clearHistory()
+        webView.window?.representedURL = nil
+        
         guard let options = message.options, options.count > 0 else {
             let scope = Scope(cmd: "", stdin: stdin, options: [], env: env, webView: webView, companionWindow: companionWindow)
             FigCLI.index(with: scope)
@@ -180,16 +182,6 @@ class FigCLI {
                           companionWindow: companionWindow)
         print("ROUTING \(command)")
         let data = env.data(using: .utf8)!
-        do {
-            if let jsonArray = try JSONSerialization.jsonObject(with: data, options : .allowFragments) as? [Dictionary<String,Any>]
-            {
-               print(jsonArray) // use the json here
-            } else {
-                print("bad json")
-            }
-        } catch let error as NSError {
-            print(error)
-        }
         
         if let nativeCommand = NativeCLICommand(rawValue: command) {
             switch nativeCommand {

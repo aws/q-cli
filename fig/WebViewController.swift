@@ -382,6 +382,8 @@ extension WebViewController : WKNavigationDelegate {
     
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
         print("ERROR Loading URL: \(error.localizedDescription)")
+//        webView.evaluateJavaScript("document.body.innerText = 'An error occured when trying to load this URL.'", completionHandler: nil)
+        webView.window?.title = "Could not load URL..."
     }
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         print("Loaded URL \(webView.url?.absoluteString ?? "<none>")")
@@ -392,9 +394,9 @@ extension WebViewController : WKNavigationDelegate {
 
         webView.evaluateJavaScript(scriptContent, completionHandler: nil)
         
-        
         let webView = webView as! WebView
-        
+        WebBridge.updateTitlebar(webview: webView)
+
         if let configureEnv = webView.configureEnvOnLoad {
             configureEnv()
         }
@@ -441,6 +443,12 @@ class WebView : WKWebView {
 //            return self.superview?.bounds.size ?? NSSize.zero
 //        }
 //    }
+    
+    override var canGoBack: Bool {
+        get {
+            return !(super.backForwardList.backItem?.initialURL.absoluteString == "https://app.withfig.com/sidebar") && super.canGoBack
+        }
+    }
 
     override func shouldDelayWindowOrdering(for event: NSEvent) -> Bool {
         return true
@@ -560,6 +568,10 @@ class WebView : WKWebView {
         self.evaluateJavaScript("document.documentElement.remove()") { (_, _) in
            self.load(URLRequest(url: URL(string: "https://app.withfig.com/sidebar")!, cachePolicy: .useProtocolCachePolicy))
        }
+    }
+    
+    func clearHistory() {
+        self.backForwardList.perform(Selector(("_removeAllItems")))
     }
 
     

@@ -33,8 +33,9 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 //        UserDefaults.standard.synchronize()
         
         let hasLaunched = UserDefaults.standard.bool(forKey: "hasLaunched")
+        let email = UserDefaults.standard.string(forKey: "userEmail")
 
-        if (!hasLaunched) {
+        if (!hasLaunched || email == nil ) {
             let onboardingViewController = WebViewController()
             onboardingViewController.webView?.loadBundleApp("landing")
 //            onboardingViewController.webView?.loadRemoteApp(at: URL(string: "https://app.withfig.com/onboarding/landing.html")!)

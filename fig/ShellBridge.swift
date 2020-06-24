@@ -201,8 +201,6 @@ class Integrations {
       .subtracting(Integrations.blocked)
         }
     }
-//                    .union(Integrations.editors)
-//                    .union(Integrations.browsers)
 }
 
 extension Timer {

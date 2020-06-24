@@ -9,10 +9,6 @@
 import Foundation
 import Cocoa
 
-//protocol CompanionViewportHandler {
-//    <#requirements#>
-//}
-
 extension Notification.Name {
     static let overlayDidBecomeIcon = Notification.Name("overlayDidBecomeIcon")
     static let overlayDidBecomeMain = Notification.Name("overlayDidBecomeMain")
@@ -20,9 +16,13 @@ extension Notification.Name {
 }
 
 class CompanionWindow : NSWindow {
-    static let defaultActivePosition: OverlayPositioning = .outsideRight
+    static let defaultActivePosition: OverlayPositioning = .untethered
     static let defaultPassivePosition: OverlayPositioning = .sidebar
     var shouldTrackWindow = true;
+    
+    var isDocked = true;
+    
+    var closeBtn: NSButton?
     
     var priorTargetFrame: NSRect = .zero
     var positioning: OverlayPositioning = CompanionWindow.defaultActivePosition {
@@ -30,7 +30,12 @@ class CompanionWindow : NSWindow {
         didSet {
             if (positioning == .untethered) {
                 self.initialUntetheredFrame = self.frame
+            } else {
+                isDocked = true
+                closeBtn?.removeFromSuperview()
+
             }
+            
             self.repositionWindow(forceUpdate: true, explicit: true)
             if (positioning == CompanionWindow.defaultPassivePosition) {
                 NotificationCenter.default.post(name: .overlayDidBecomeIcon, object: nil)
@@ -58,9 +63,9 @@ class CompanionWindow : NSWindow {
         self.delegate = self
         self.level = .floating
         self.setFrameAutosaveName("Main Window")
-//        window.contentView = NSHostingView(rootView: contentView)
-        self.contentViewController = viewController //WebViewController()
+        self.contentViewController = viewController
         self.setFrame(NSRect(x: 400, y: 400, width: 300, height: 300), display: true)
+        self.appearance = NSAppearance(named:.aqua) // keeps window title text black
 
         self.makeKeyAndOrderFront(nil)
         
@@ -120,6 +125,10 @@ class CompanionWindow : NSWindow {
       repositionWindow(forceUpdate: false)
     }
     
+    enum Style: Int {
+        case tethered
+        case untethered
+    }
     
     enum OverlayPositioning: Int {
         case coveringTitlebar = 0
@@ -137,6 +146,15 @@ class CompanionWindow : NSWindow {
         case untethered = 12
         case fullwindow = 13
 
+        var includeTitleBar: Bool {
+            switch self {
+            case .untethered, .outsideRight:
+                return true;
+            default:
+                return false
+            }
+        }
+        
         func frame(targetWindowFrame:NSRect, screen: NSRect = .zero) -> NSRect {
             if targetWindowFrame.width < 100 || targetWindowFrame.height < 200 {
                  return .zero
@@ -157,8 +175,6 @@ class CompanionWindow : NSWindow {
              case .outsideRight:
                  let outerFrame = targetWindowFrame.insetBy(dx: -300, dy: 0).divided(atDistance: 300, from: .maxXEdge).slice
                  
-                 // Reposition
-                 // TODO: fix on displays
                  let intersection = screen.intersection(outerFrame)
                  var x = outerFrame.origin.x
                  if (intersection.width != outerFrame.width) {
@@ -178,8 +194,6 @@ class CompanionWindow : NSWindow {
                                                     y: targetWindowFrame.minY - i_size.height - i_padding.y), size: i_size)
              case .sidebar:
                 let outerFrame =  targetWindowFrame.divided(atDistance: 50, from: .maxXEdge).slice.offsetBy(dx: 50, dy: 0)
-                // Reposition
-               // TODO: fix on displays
                let intersection = screen.intersection(outerFrame)
                var x = outerFrame.origin.x
                if (intersection.width != outerFrame.width) {
@@ -198,7 +212,8 @@ class CompanionWindow : NSWindow {
             case .hidden:
                 return .zero
              case .untethered:
-                return .zero
+                return OverlayPositioning.outsideRight.frame(targetWindowFrame: targetWindowFrame,
+                    screen: screen)
              case .fullwindow:
                 let inset: CGPoint = CGPoint(x: 250, y: 150)
                 return screen.insetBy(dx: inset.x, dy: inset.y).offsetBy(dx: 0, dy: screen.height - (2 * inset.y))
@@ -207,23 +222,248 @@ class CompanionWindow : NSWindow {
         }
 
     }
+    func setupToolbar() {
+        self.backgroundColor = .white
+        self.isOpaque = false
+
+        //                Timer.delayWithSeconds(0.5) {
+        closeBtn = NSButton(title: "✕", target: self, action: #selector(toSidebar))
+        closeBtn?.font = NSFont.systemFont(ofSize: 14)
+        closeBtn?.bezelStyle = .circular
+        closeBtn?.frame = CGRect(x: 0, y: 0, width: 22, height: 20)
+        self.addViewToTitleBar(closeBtn!, at: 4, offset: 1)
+
+        let backLabel = NSTextField()
+        backLabel.frame = CGRect(origin: .zero, size: CGSize(width: 50, height: 44))
+        backLabel.stringValue = "←"
+        backLabel.font = NSFont.systemFont(ofSize: 18)
+        backLabel.alignment = .left
+        backLabel.backgroundColor = .clear
+        backLabel.isBezeled = false
+        backLabel.isEditable = false
+        backLabel.sizeToFit()
+        self.addViewToTitleBar(backLabel, at: 32, offset:1)
+
+        let backClick = NSClickGestureRecognizer(target: self, action: #selector(self.backButtonClicked))
+        backLabel.addGestureRecognizer(backClick)
+
+
+        let untetherToggle = NSTextField()
+        untetherToggle.frame = CGRect(origin: .zero, size: CGSize(width: 50, height: 44))
+        untetherToggle.stringValue = "↗"
+        untetherToggle.font = NSFont.systemFont(ofSize: 20)
+        untetherToggle.alignment = .right
+        untetherToggle.backgroundColor = .clear
+        untetherToggle.isBezeled = false
+        untetherToggle.isEditable = false
+        untetherToggle.sizeToFit()
+        self.addViewToTitleBar(untetherToggle, at: 276, offset:1)
+
+        let toggleClick = NSClickGestureRecognizer(target: self, action: #selector(self.toggleTether))
+        untetherToggle.addGestureRecognizer(toggleClick)
+    }
+    
+    func toolbarConfig() {
+        self.level = .floating
+        self.collectionBehavior = [.managed]
+        self.styleMask = [.titled, .resizable]
+        
+        if (positioning == .untethered) {
+            self.styleMask.insert(.resizable)
+        }
+        
+        if let closeButton = self.standardWindowButton(NSWindow.ButtonType.closeButton) {
+            closeButton.isHidden = true
+        }
+        
+        if let miniaturizeButton = self.standardWindowButton(NSWindow.ButtonType.miniaturizeButton) {
+            miniaturizeButton.isHidden = true
+        }
+        
+        if let zoomButton = self.standardWindowButton(NSWindow.ButtonType.zoomButton) {
+            zoomButton.isHidden = true
+        }
+
+        self.titlebarAppearsTransparent = true;
+    }
+    
+    func configureWindow(for state: OverlayPositioning, initial: Bool = false ) {
+        switch state {
+        case .untethered:
+            self.level = .floating
+            self.collectionBehavior = [.managed]
+            self.styleMask = [.titled]
+            
+            if (state == .untethered) {
+                self.styleMask.insert(.resizable)
+            }
+            
+            if let closeButton = self.standardWindowButton(NSWindow.ButtonType.closeButton) {
+                closeButton.isHidden = true
+            }
+            
+            if let miniaturizeButton = self.standardWindowButton(NSWindow.ButtonType.miniaturizeButton) {
+                miniaturizeButton.isHidden = true
+            }
+            
+            if let zoomButton = self.standardWindowButton(NSWindow.ButtonType.zoomButton) {
+                zoomButton.isHidden = true
+            }
+
+            self.titlebarAppearsTransparent = true;
+//            self.backgroundColor = .white
+//            self.isOpaque = false
+            
+            if (initial) {
+                self.setupToolbar()
+            }
+//                self.backgroundColor = .white
+//                self.isOpaque = false
+//
+////                Timer.delayWithSeconds(0.5) {
+//                      let closeBtn = NSButton(title: "✕", target: nil, action: nil)
+//                                  closeBtn.font = NSFont.systemFont(ofSize: 14)
+//                                  closeBtn.bezelStyle = .circular
+//                                  closeBtn.frame = CGRect(x: 0, y: 0, width: 22, height: 20)
+//                                  self.addViewToTitleBar(closeBtn, at: 4, offset: 1)
+//
+//                                  let backLabel = NSTextField()
+//                                  backLabel.frame = CGRect(origin: .zero, size: CGSize(width: 50, height: 44))
+//                                  backLabel.stringValue = "←"
+//                                  backLabel.font = NSFont.systemFont(ofSize: 18)
+//                                  backLabel.alignment = .left
+//                                  backLabel.backgroundColor = .clear
+//                                  backLabel.isBezeled = false
+//                                  backLabel.isEditable = false
+//                                  backLabel.sizeToFit()
+//                                  self.addViewToTitleBar(backLabel, at: 32, offset:1)
+//
+//                    let backClick = NSClickGestureRecognizer(target: self, action: #selector(self.backButtonClicked))
+//                                  backLabel.addGestureRecognizer(backClick)
+//
+//
+//                                  let untetherToggle = NSTextField()
+//                                  untetherToggle.frame = CGRect(origin: .zero, size: CGSize(width: 50, height: 44))
+//                                  untetherToggle.stringValue = "↗"
+//                                  untetherToggle.font = NSFont.systemFont(ofSize: 20)
+//                                  untetherToggle.alignment = .right
+//                                  untetherToggle.backgroundColor = .clear
+//                                  untetherToggle.isBezeled = false
+//                                  untetherToggle.isEditable = false
+//                                  untetherToggle.sizeToFit()
+//                                  self.addViewToTitleBar(untetherToggle, at: 32, offset:1)
+//
+//                    let toggleClick = NSClickGestureRecognizer(target: self, action: #selector(self.toggleTether))
+//                                  untetherToggle.addGestureRecognizer(toggleClick)
+////                }
+//
+//            }
+
+        default:
+            self.level = .floating
+            self.styleMask = [.fullSizeContentView]
+            self.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+            self.representedURL = nil
+        }
+    }
+    
+    @objc func toggleTether(recognizer: NSClickGestureRecognizer) {
+        print("toggleTether")
+        guard let view = recognizer.view, let text = view as? NSTextField else {
+            return
+        }
+
+//        self.positioning = CompanionWindow.defaultActivePosition
+        self.positioning = .untethered
+        self.isDocked = !self.isDocked;
+        
+        if (isDocked) {
+            repositionWindow(forceUpdate: true, explicit: true)
+            text.stringValue = "↗"
+        } else {
+            var newFrame = self.frame
+            newFrame.origin = CGPoint(x: newFrame.origin.x + 10, y: newFrame.origin.y)
+            self.setFrame(newFrame, display: true)
+            
+            text.stringValue = "↙"
+            
+        }
+    }
+    
+    override var isMovable: Bool {
+        get {
+            return !isDocked
+        }
+        set(value) {
+
+        }
+    }
+    @objc func toSidebar() {
+        self.positioning = .sidebar
+    }
+    
+    @objc func backButtonClicked() {
+        print("goBack")
+
+        if let webView = self.webView {
+            if (webView.canGoBack) {
+                webView.goBack()
+            } else {
+                toSidebar()
+            }
+        }
+    }
+    
+    var webView: WebView? {
+        get {
+            
+            if let content = self.contentViewController as? WebViewController, let webView = content.webView {
+                return webView
+            }
+            
+            return nil
+        }
+    }
     
     func repositionWindow( forceUpdate:Bool = true, explicit: Bool = false) {
-        
-        if (self.positioning == .untethered) {
-            self.collectionBehavior = [.managed]
-//            self.isMovableByWindowBackground = true
-//            self.standardWindowButton(NSWindow.ButtonType.zoomButton)
-            self.level = .floating
-            self.styleMask = [.resizable, .titled]
-            self.standardWindowButton(NSWindow.ButtonType.closeButton)!.isHidden = true
-            self.standardWindowButton(NSWindow.ButtonType.miniaturizeButton)!.isHidden = true
-            self.standardWindowButton(NSWindow.ButtonType.zoomButton)!.isHidden = true
-
-            if let _ = self.initialUntetheredFrame {
-                self.initialUntetheredFrame = nil
-//                setOverlayFrame(frame)
-//                self.addViewToTitleBar(NSButton(title: "⬅", target: nil, action: nil), at: 10)
+        configureWindow(for: self.positioning)
+        if (!isDocked) { return }
+//        if (configureWindow(for: self.positioning)) { return }
+//        if (self.positioning == .untethered) {
+//            self.collectionBehavior = [.managed]
+////            self.isMovableByWindowBackground = true
+////            self.standardWindowButton(NSWindow.ButtonType.zoomButton)
+//            self.level = .floating
+//            self.styleMask = [.resizable, .titled]
+//            self.standardWindowButton(NSWindow.ButtonType.closeButton)!.isHidden = true
+//            self.standardWindowButton(NSWindow.ButtonType.miniaturizeButton)!.isHidden = true
+//            self.standardWindowButton(NSWindow.ButtonType.zoomButton)!.isHidden = true
+//            self.titlebarAppearsTransparent = true;
+//            if let _ = self.initialUntetheredFrame {
+//                self.initialUntetheredFrame = nil
+//                self.backgroundColor = .white
+//                self.isOpaque = false
+//
+//                let closeBtn = NSButton(title: "✕", target: nil, action: nil)
+//                closeBtn.font = NSFont.systemFont(ofSize: 14)
+//                closeBtn.bezelStyle = .circular
+//                closeBtn.frame = CGRect(x: 0, y: 0, width: 22, height: 20)
+//
+//
+//                self.addViewToTitleBar(closeBtn, at: 4, offset: 1)
+//
+//                let label2 = NSTextField()
+//                label2.frame = CGRect(origin: .zero, size: CGSize(width: 50, height: 44))
+//                label2.stringValue = "←"
+//                label2.font = NSFont.systemFont(ofSize: 18)
+//                label2.alignment = .left
+//                label2.backgroundColor = .clear
+//                label2.isBezeled = false
+//                label2.isEditable = false
+//                label2.sizeToFit()
+//                self.addViewToTitleBar(label2, at: 32, offset:1)
+//
+//
 //                let label = NSTextField()
 //                label.frame = CGRect(origin: .zero, size: CGSize(width: 50, height: 44))
 //                label.stringValue = "↗"
@@ -234,42 +474,47 @@ class CompanionWindow : NSWindow {
 //                label.isEditable = false
 //                label.sizeToFit()
 //
-//                self.addViewToTitleBar(label, at: 280)
-
-                
-                if let content = self.contentViewController as? WebViewController,
-                      let webView = content.webView {
-                      
-                      WebBridge.appinfo(webview: webView) { (info) -> Void in
-
-                        self.title = info["name"] ?? "Fig"
-
-                        if let icon = info["icon"], let url = URL(string: icon ?? "", relativeTo: webView.url) {
-                            self.representedURL = url;
-
-                            DispatchQueue.global().async {
-                                guard let data = try? Data(contentsOf: url)  else { return }//make sure your image in this url does exist, otherwise unwrap in a if let check / try-catch
-                                   DispatchQueue.main.async {
-                                    self.standardWindowButton(.documentIconButton)?.image = NSImage(data: data)
-                                   }
-                               }
-                          }
-                      }
-                  }
-            }
-            
-          
-            
-
-
-            return
-        } else {
-            self.level = .floating
-            self.styleMask = [.fullSizeContentView]
-            self.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-            self.representedURL = nil
-
-        }
+//                self.addViewToTitleBar(label, at: 276, offset: 0)
+//
+//
+//
+//                if let content = self.contentViewController as? WebViewController,
+//                      let webView = content.webView {
+//
+//                      WebBridge.appinfo(webview: webView) { (info) -> Void in
+//
+//                        self.title = (info["name"] ?? "Fig") ?? "Fig"
+//
+//                        if let hexValue = info["color"], let hex = hexValue {
+//                            self.backgroundColor = NSColor(hex: hex)
+//                        }
+//
+//                        if let icon = info["icon"], let url = URL(string: icon ?? "", relativeTo: webView.url) {
+//                            self.representedURL = url;
+//
+//                            DispatchQueue.global().async {
+//                                guard let data = try? Data(contentsOf: url)  else { return }//make sure your image in this url does exist, otherwise unwrap in a if let check / try-catch
+//                                   DispatchQueue.main.async {
+//                                    self.standardWindowButton(.documentIconButton)?.image = NSImage(data: data)
+//                                   }
+//                               }
+//                          }
+//                      }
+//                  }
+//            }
+//
+//
+//
+//
+//
+//            return
+//        } else {
+//            self.level = .floating
+//            self.styleMask = [.fullSizeContentView]
+//            self.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+//            self.representedURL = nil
+//
+//        }
         
         let whitelistedBundleIds = Integrations.whitelist
         guard let app = NSWorkspace.shared.frontmostApplication,
@@ -284,7 +529,6 @@ class CompanionWindow : NSWindow {
             
             guard shouldTrackWindow else { return }
             if (!forceUpdate && !targetFrame.equalTo(priorTargetFrame) && mouseDown) {
-                print("Not equal")
                 self.animationBehavior = .utilityWindow
                 self.orderOut(self)
                 shouldTrackWindow = false;
@@ -292,9 +536,6 @@ class CompanionWindow : NSWindow {
                     self.shouldTrackWindow = true;
                      self.repositionWindow(forceUpdate: true)
                 }
-//                Timer.delayWithSeconds(0.15) {
-//
-//                }
                 return
             }
             
@@ -324,21 +565,12 @@ class CompanionWindow : NSWindow {
     
                 }
             }
-
-//            self.contentViewController?.view.frame = NSRect.init(origin: .zero, size: frame.size)
-
-//            print("fig window is active: previous: \(ShellBridge.shared.previousFrontmostApplication?.bundleIdentifier ?? "none" )");
         } else {
             self.orderOut(self)
         }
     }
     
         func setOverlayFrame(_ frame: NSRect) {
-            // no update if frame hasn't changed
-            // this is a super ugly bugfix
-            // set an offset to cause the view to reload
-//            let randOffset = CGFloat(Double.random(in: 0...0.1))
-//            let shouldAddOffset = Int.random(in: 0...5) == 0
             self.windowController?.shouldCascadeWindows = false;
             self.setFrame(frame, display: true)
             self.setFrameTopLeftPoint(frame.origin)
@@ -346,20 +578,12 @@ class CompanionWindow : NSWindow {
             self.makeKeyAndOrderFront(nil)
             // This line is essential
 //            self.contentViewController?.view.frame = NSRect.init(origin: .zero, size:frame.size)
-            
-//            self.contentViewController?.view.frame = NSRect.init(origin: .zero, size: CGSize(width: frame.size.width, height: frame.size.height + (shouldAddOffset ? 0.01 : 0)))
-//
+
             self.contentViewController?.view.setFrameSize(frame.size)
             self.contentViewController?.view.needsDisplay = true
             self.contentViewController?.view.needsLayout = true
+            configureWindow(for: self.positioning)
 
-//
-//            self.contentViewController?.view.layout()
-//            self.contentViewController?.view.resizeSubviews(withOldSize: frame.size)
-//            self.contentViewController?.view.resize(withOldSuperviewSize: frame.size)
-//            self.contentViewController?.view.needsLayout = true
-//            (self.contentViewController as! WebViewController).viewFrameResized()
-            // maybe update webview frame explictly
             
         }
     
@@ -464,8 +688,8 @@ extension CompanionWindow : NSWindowDelegate {
 //}
 
 extension CompanionWindow {
-    func addViewToTitleBar(_ view: NSView, at x: CGFloat) {
-        view.frame = NSRect(x: x, y: (self.contentView?.frame.height)!, width: view.frame.width, height: self.heightOfTitleBar)
+    func addViewToTitleBar(_ view: NSView, at x: CGFloat, offset: CGFloat) {
+        view.frame = NSRect(x: x, y: (self.contentView?.frame.height)! - offset, width: view.frame.width, height: self.heightOfTitleBar)
         var mask: UInt = 0;
               if( x > self.frame.size.width / 2.0 )
               {
@@ -491,4 +715,28 @@ extension CompanionWindow {
         
     }
 
+}
+
+extension NSColor {
+    public convenience init?(hex: String) {
+        var cString:String = hex.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+
+        if (cString.hasPrefix("#")) {
+            cString.remove(at: cString.startIndex)
+        }
+
+        if ((cString.count) != 6) {
+           return nil
+        }
+
+        var rgbValue:UInt64 = 0
+        Scanner(string: cString).scanHexInt64(&rgbValue)
+
+        self.init(
+            red: CGFloat((rgbValue & 0xFF0000) >> 16) / 255.0,
+            green: CGFloat((rgbValue & 0x00FF00) >> 8) / 255.0,
+            blue: CGFloat(rgbValue & 0x0000FF) / 255.0,
+            alpha: CGFloat(1.0)
+        )
+    }
 }
