@@ -15,28 +15,37 @@ extension Notification.Name {
 
 }
 
-class CompanionWindow : NSWindow {
-    static let defaultActivePosition: OverlayPositioning = .untethered
+class CompanionWindow : NSWindow, NSWindowDelegate {
+    static let defaultActivePosition: OverlayPositioning = .outsideRight
     static let defaultPassivePosition: OverlayPositioning = .sidebar
+    
+    //hides companion window when target is moving
     var shouldTrackWindow = true;
     
     var isDocked = true;
     
+    var oneTimeUse = false;
+        
     var closeBtn: NSButton?
-    
+    var backBtn: NSTextField?
+    var untetherBtn: NSTextField?
+
     var priorTargetFrame: NSRect = .zero
     var positioning: OverlayPositioning = CompanionWindow.defaultActivePosition {
         
         didSet {
-            if (positioning == .untethered) {
-                self.initialUntetheredFrame = self.frame
-            } else {
+            
+            if (oneTimeUse) { self.close() }
+
+            if (!positioning.hasTitleBar) {
                 isDocked = true
                 closeBtn?.removeFromSuperview()
-
+                backBtn?.removeFromSuperview()
+                untetherBtn?.removeFromSuperview()
             }
             
             self.repositionWindow(forceUpdate: true, explicit: true)
+            
             if (positioning == CompanionWindow.defaultPassivePosition) {
                 NotificationCenter.default.post(name: .overlayDidBecomeIcon, object: nil)
             } else {
@@ -48,6 +57,19 @@ class CompanionWindow : NSWindow {
     
     override public var canBecomeKey: Bool {
         get { return true }
+    }
+    
+    var timer: Timer?
+    
+    func windowWillClose(_ notification: Notification) {
+        if let timer = self.timer {
+            timer.invalidate()
+        }
+        
+        NSWorkspace.shared.notificationCenter.removeObserver(self)
+//         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(spaceChanged), name: NSWorkspace.activeSpaceDidChangeNotification, object: nil)
+//         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(activateApp), name: NSWorkspace.didActivateApplicationNotification, object: nil)
+//         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(deactivateApp), name: NSWorkspace.didDeactivateApplicationNotification, object: nil)
     }
     
     init(viewController: NSViewController) {
@@ -67,7 +89,10 @@ class CompanionWindow : NSWindow {
         self.setFrame(NSRect(x: 400, y: 400, width: 300, height: 300), display: true)
         self.appearance = NSAppearance(named:.aqua) // keeps window title text black
 
-        self.makeKeyAndOrderFront(nil)
+//        self.makeKeyAndOrderFront(nil)
+        
+        self.delegate = self
+
         
         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(spaceChanged), name: NSWorkspace.activeSpaceDidChangeNotification, object: nil)
         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(activateApp), name: NSWorkspace.didActivateApplicationNotification, object: nil)
@@ -75,22 +100,23 @@ class CompanionWindow : NSWindow {
 
         
         let interval = Double(UserDefaults.standard.string(forKey: "windowUpdateInterval") ?? "") ?? 0.15
-        let _ = Timer.scheduledTimer(timeInterval: interval, target: self, selector: #selector(positionWindow), userInfo: nil, repeats: true)
+        timer = Timer.scheduledTimer(timeInterval: interval, target: self, selector: #selector(positionWindow), userInfo: nil, repeats: true)
         
-        let trackingArea = NSTrackingArea(rect: self.contentViewController!.view.frame,
-                                                options: [NSTrackingArea.Options.activeAlways ,NSTrackingArea.Options.mouseEnteredAndExited],
-                      owner: self, userInfo: nil)
-
-        self.contentViewController!.view.addTrackingArea(trackingArea)
+//        let trackingArea = NSTrackingArea(rect: self.contentViewController!.view.frame,
+//                                                options: [NSTrackingArea.Options.activeAlways ,NSTrackingArea.Options.mouseEnteredAndExited],
+//                      owner: self, userInfo: nil)
+//
+//        self.contentViewController!.view.addTrackingArea(trackingArea)
 
     }
         
     override func mouseEntered(with event: NSEvent) {
-        print("mouse entered")
+        print("mouse entered...")
+
     }
     
     override func mouseExited(with event: NSEvent) {
-        print("mouse exited")
+        print("mouse exited...")
     }
     
     @objc func spaceChanged() {
@@ -105,7 +131,7 @@ class CompanionWindow : NSWindow {
 
             }
         }
-        forceReposition()
+        repositionWindow(forceUpdate: true, explicit: true)
     }
     @objc func activateApp(){
         print("didActivateApp", NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "<none>")
@@ -118,7 +144,7 @@ class CompanionWindow : NSWindow {
     }
     
     @objc func forceReposition(){
-        repositionWindow(forceUpdate: true)
+        repositionWindow(forceUpdate: true, explicit: false)
     }
     
     @objc func positionWindow() {
@@ -220,83 +246,90 @@ class CompanionWindow : NSWindow {
              }
 
         }
+        
+        var hasTitleBar: Bool {
+            get {
+                let titlebarStates: Set<OverlayPositioning> = [.outsideRight, .untethered, .fullscreenInset, .fullwindow]
+                return titlebarStates.contains(self)
+            }
+        }
 
     }
-    func setupToolbar() {
+    func setupTitleBar() {
         self.backgroundColor = .white
         self.isOpaque = false
+        
+        closeBtn?.removeFromSuperview()
+        backBtn?.removeFromSuperview()
+        untetherBtn?.removeFromSuperview()
 
-        //                Timer.delayWithSeconds(0.5) {
         closeBtn = NSButton(title: "✕", target: self, action: #selector(toSidebar))
         closeBtn?.font = NSFont.systemFont(ofSize: 14)
         closeBtn?.bezelStyle = .circular
         closeBtn?.frame = CGRect(x: 0, y: 0, width: 22, height: 20)
         self.addViewToTitleBar(closeBtn!, at: 4, offset: 1)
 
-        let backLabel = NSTextField()
-        backLabel.frame = CGRect(origin: .zero, size: CGSize(width: 50, height: 44))
-        backLabel.stringValue = "←"
-        backLabel.font = NSFont.systemFont(ofSize: 18)
-        backLabel.alignment = .left
-        backLabel.backgroundColor = .clear
-        backLabel.isBezeled = false
-        backLabel.isEditable = false
-        backLabel.sizeToFit()
-        self.addViewToTitleBar(backLabel, at: 32, offset:1)
+        backBtn = NSTextField()
+        backBtn?.frame = CGRect(origin: .zero, size: CGSize(width: 50, height: 44))
+        backBtn?.stringValue = "←"
+        backBtn?.font = NSFont.systemFont(ofSize: 18)
+        backBtn?.alignment = .left
+        backBtn?.backgroundColor = .clear
+        backBtn?.isBezeled = false
+        backBtn?.isEditable = false
+        backBtn?.sizeToFit()
+        self.addViewToTitleBar(backBtn!, at: 32, offset:1)
 
         let backClick = NSClickGestureRecognizer(target: self, action: #selector(self.backButtonClicked))
-        backLabel.addGestureRecognizer(backClick)
+        backBtn?.addGestureRecognizer(backClick)
 
 
-        let untetherToggle = NSTextField()
-        untetherToggle.frame = CGRect(origin: .zero, size: CGSize(width: 50, height: 44))
-        untetherToggle.stringValue = "↗"
-        untetherToggle.font = NSFont.systemFont(ofSize: 20)
-        untetherToggle.alignment = .right
-        untetherToggle.backgroundColor = .clear
-        untetherToggle.isBezeled = false
-        untetherToggle.isEditable = false
-        untetherToggle.sizeToFit()
-        self.addViewToTitleBar(untetherToggle, at: 276, offset:1)
+        untetherBtn = NSTextField()
+        untetherBtn?.frame = CGRect(origin: .zero, size: CGSize(width: 50, height: 44))
+        untetherBtn?.stringValue = "↗"
+        untetherBtn?.font = NSFont.systemFont(ofSize: 20)
+        untetherBtn?.alignment = .right
+        untetherBtn?.backgroundColor = .clear
+        untetherBtn?.isBezeled = false
+        untetherBtn?.isEditable = false
+        untetherBtn?.sizeToFit()
+        self.addViewToTitleBar(untetherBtn!, at: self.frame.width - 24, offset:1) //276
 
         let toggleClick = NSClickGestureRecognizer(target: self, action: #selector(self.toggleTether))
-        untetherToggle.addGestureRecognizer(toggleClick)
+        untetherBtn?.addGestureRecognizer(toggleClick)
     }
     
-    func toolbarConfig() {
-        self.level = .floating
-        self.collectionBehavior = [.managed]
-        self.styleMask = [.titled, .resizable]
-        
-        if (positioning == .untethered) {
-            self.styleMask.insert(.resizable)
-        }
-        
-        if let closeButton = self.standardWindowButton(NSWindow.ButtonType.closeButton) {
-            closeButton.isHidden = true
-        }
-        
-        if let miniaturizeButton = self.standardWindowButton(NSWindow.ButtonType.miniaturizeButton) {
-            miniaturizeButton.isHidden = true
-        }
-        
-        if let zoomButton = self.standardWindowButton(NSWindow.ButtonType.zoomButton) {
-            zoomButton.isHidden = true
-        }
-
-        self.titlebarAppearsTransparent = true;
-    }
+//    func toolbarConfig() {
+//        self.level = .floating
+//        self.collectionBehavior = [.managed]
+//        self.styleMask = [.titled, .resizable]
+//
+//        if (positioning == .untethered) {
+//            self.styleMask.insert(.resizable)
+//        }
+//
+//        if let closeButton = self.standardWindowButton(NSWindow.ButtonType.closeButton) {
+//            closeButton.isHidden = true
+//        }
+//
+//        if let miniaturizeButton = self.standardWindowButton(NSWindow.ButtonType.miniaturizeButton) {
+//            miniaturizeButton.isHidden = true
+//        }
+//
+//        if let zoomButton = self.standardWindowButton(NSWindow.ButtonType.zoomButton) {
+//            zoomButton.isHidden = true
+//        }
+//
+//        self.titlebarAppearsTransparent = true;
+//    }
     
     func configureWindow(for state: OverlayPositioning, initial: Bool = false ) {
-        switch state {
-        case .untethered:
+        if (state.hasTitleBar) {
             self.level = .floating
-            self.collectionBehavior = [.managed]
             self.styleMask = [.titled]
             
-            if (state == .untethered) {
-                self.styleMask.insert(.resizable)
-            }
+            // this must be explictly inserted... cannot be included in a styleMask array(?!)
+            self.styleMask.insert(.resizable)
             
             if let closeButton = self.standardWindowButton(NSWindow.ButtonType.closeButton) {
                 closeButton.isHidden = true
@@ -312,54 +345,7 @@ class CompanionWindow : NSWindow {
 
             self.titlebarAppearsTransparent = true;
 //            self.backgroundColor = .white
-//            self.isOpaque = false
-            
-            if (initial) {
-                self.setupToolbar()
-            }
-//                self.backgroundColor = .white
-//                self.isOpaque = false
-//
-////                Timer.delayWithSeconds(0.5) {
-//                      let closeBtn = NSButton(title: "✕", target: nil, action: nil)
-//                                  closeBtn.font = NSFont.systemFont(ofSize: 14)
-//                                  closeBtn.bezelStyle = .circular
-//                                  closeBtn.frame = CGRect(x: 0, y: 0, width: 22, height: 20)
-//                                  self.addViewToTitleBar(closeBtn, at: 4, offset: 1)
-//
-//                                  let backLabel = NSTextField()
-//                                  backLabel.frame = CGRect(origin: .zero, size: CGSize(width: 50, height: 44))
-//                                  backLabel.stringValue = "←"
-//                                  backLabel.font = NSFont.systemFont(ofSize: 18)
-//                                  backLabel.alignment = .left
-//                                  backLabel.backgroundColor = .clear
-//                                  backLabel.isBezeled = false
-//                                  backLabel.isEditable = false
-//                                  backLabel.sizeToFit()
-//                                  self.addViewToTitleBar(backLabel, at: 32, offset:1)
-//
-//                    let backClick = NSClickGestureRecognizer(target: self, action: #selector(self.backButtonClicked))
-//                                  backLabel.addGestureRecognizer(backClick)
-//
-//
-//                                  let untetherToggle = NSTextField()
-//                                  untetherToggle.frame = CGRect(origin: .zero, size: CGSize(width: 50, height: 44))
-//                                  untetherToggle.stringValue = "↗"
-//                                  untetherToggle.font = NSFont.systemFont(ofSize: 20)
-//                                  untetherToggle.alignment = .right
-//                                  untetherToggle.backgroundColor = .clear
-//                                  untetherToggle.isBezeled = false
-//                                  untetherToggle.isEditable = false
-//                                  untetherToggle.sizeToFit()
-//                                  self.addViewToTitleBar(untetherToggle, at: 32, offset:1)
-//
-//                    let toggleClick = NSClickGestureRecognizer(target: self, action: #selector(self.toggleTether))
-//                                  untetherToggle.addGestureRecognizer(toggleClick)
-////                }
-//
-//            }
-
-        default:
+        } else {
             self.level = .floating
             self.styleMask = [.fullSizeContentView]
             self.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
@@ -374,7 +360,7 @@ class CompanionWindow : NSWindow {
         }
 
 //        self.positioning = CompanionWindow.defaultActivePosition
-        self.positioning = .untethered
+//        self.positioning = .untethered
         self.isDocked = !self.isDocked;
         
         if (isDocked) {
@@ -398,8 +384,14 @@ class CompanionWindow : NSWindow {
 
         }
     }
+    
     @objc func toSidebar() {
-        self.positioning = .sidebar
+        if (self.oneTimeUse) {
+            self.orderOut(nil)
+//            self.close()
+        } else {
+            self.positioning = .sidebar
+        }
     }
     
     @objc func backButtonClicked() {
@@ -426,95 +418,11 @@ class CompanionWindow : NSWindow {
     }
     
     func repositionWindow( forceUpdate:Bool = true, explicit: Bool = false) {
-        configureWindow(for: self.positioning)
-        if (!isDocked) { return }
-//        if (configureWindow(for: self.positioning)) { return }
-//        if (self.positioning == .untethered) {
-//            self.collectionBehavior = [.managed]
-////            self.isMovableByWindowBackground = true
-////            self.standardWindowButton(NSWindow.ButtonType.zoomButton)
-//            self.level = .floating
-//            self.styleMask = [.resizable, .titled]
-//            self.standardWindowButton(NSWindow.ButtonType.closeButton)!.isHidden = true
-//            self.standardWindowButton(NSWindow.ButtonType.miniaturizeButton)!.isHidden = true
-//            self.standardWindowButton(NSWindow.ButtonType.zoomButton)!.isHidden = true
-//            self.titlebarAppearsTransparent = true;
-//            if let _ = self.initialUntetheredFrame {
-//                self.initialUntetheredFrame = nil
-//                self.backgroundColor = .white
-//                self.isOpaque = false
-//
-//                let closeBtn = NSButton(title: "✕", target: nil, action: nil)
-//                closeBtn.font = NSFont.systemFont(ofSize: 14)
-//                closeBtn.bezelStyle = .circular
-//                closeBtn.frame = CGRect(x: 0, y: 0, width: 22, height: 20)
-//
-//
-//                self.addViewToTitleBar(closeBtn, at: 4, offset: 1)
-//
-//                let label2 = NSTextField()
-//                label2.frame = CGRect(origin: .zero, size: CGSize(width: 50, height: 44))
-//                label2.stringValue = "←"
-//                label2.font = NSFont.systemFont(ofSize: 18)
-//                label2.alignment = .left
-//                label2.backgroundColor = .clear
-//                label2.isBezeled = false
-//                label2.isEditable = false
-//                label2.sizeToFit()
-//                self.addViewToTitleBar(label2, at: 32, offset:1)
-//
-//
-//                let label = NSTextField()
-//                label.frame = CGRect(origin: .zero, size: CGSize(width: 50, height: 44))
-//                label.stringValue = "↗"
-//                label.font = NSFont.systemFont(ofSize: 20)
-//                label.alignment = .right
-//                label.backgroundColor = .clear
-//                label.isBezeled = false
-//                label.isEditable = false
-//                label.sizeToFit()
-//
-//                self.addViewToTitleBar(label, at: 276, offset: 0)
-//
-//
-//
-//                if let content = self.contentViewController as? WebViewController,
-//                      let webView = content.webView {
-//
-//                      WebBridge.appinfo(webview: webView) { (info) -> Void in
-//
-//                        self.title = (info["name"] ?? "Fig") ?? "Fig"
-//
-//                        if let hexValue = info["color"], let hex = hexValue {
-//                            self.backgroundColor = NSColor(hex: hex)
-//                        }
-//
-//                        if let icon = info["icon"], let url = URL(string: icon ?? "", relativeTo: webView.url) {
-//                            self.representedURL = url;
-//
-//                            DispatchQueue.global().async {
-//                                guard let data = try? Data(contentsOf: url)  else { return }//make sure your image in this url does exist, otherwise unwrap in a if let check / try-catch
-//                                   DispatchQueue.main.async {
-//                                    self.standardWindowButton(.documentIconButton)?.image = NSImage(data: data)
-//                                   }
-//                               }
-//                          }
-//                      }
-//                  }
-//            }
-//
-//
-//
-//
-//
-//            return
-//        } else {
-//            self.level = .floating
-//            self.styleMask = [.fullSizeContentView]
-//            self.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-//            self.representedURL = nil
-//
-//        }
+        if (!isDocked) {
+            configureWindow(for: self.positioning)
+
+            return
+        }
         
         let whitelistedBundleIds = Integrations.whitelist
         guard let app = NSWorkspace.shared.frontmostApplication,
@@ -583,7 +491,6 @@ class CompanionWindow : NSWindow {
             self.contentViewController?.view.needsDisplay = true
             self.contentViewController?.view.needsLayout = true
             configureWindow(for: self.positioning)
-
             
         }
     
@@ -679,9 +586,9 @@ class CompanionWindow : NSWindow {
       }
 }
 
-extension CompanionWindow : NSWindowDelegate {
-    
-}
+//extension CompanionWindow : NSWindowDelegate {
+//    
+//}
 
 //extension NSRect {
 //    func nonintersection() ->
@@ -702,7 +609,7 @@ extension CompanionWindow {
         
         view.autoresizingMask = NSView.AutoresizingMask(rawValue: mask | UInt(NSView.AutoresizingMask.minYMargin.rawValue))
             
-        self.contentView?.superview!.addSubview(view)
+        self.contentView?.superview!.addSubview(view, positioned: .above, relativeTo: nil)
     }
     
     var heightOfTitleBar: CGFloat {

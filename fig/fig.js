@@ -199,13 +199,51 @@ let setup = function(window) {
           }
           
           return {name, icon, color};
+      },
+      close() {
+          fig.reposition = "7"
       }
   }
+    
+    let watchedProperties = [ "icon", "title", "color"]
+    watchedProperties.forEach(prop => {
+          Object.defineProperty(fig, prop, {
+              get : function () {
+                  return this[`_${prop}`];
+              },
+              set : function (value) {
+                  window.webkit.messageHandlers.propertyUpdateHandler.postMessage({prop, value});
+
+                  this[`_${prop}`] = value;
+              }
+          });
+    })
+//    for (prop of watchedProperties) {
+//        Object.defineProperty(fig, prop, {
+//            get : function () {
+//                return this[`_${prop}`];
+//            },
+//            set : function (value) {
+//                window.webkit.messageHandlers.propertyUpdateHandler.postMessage({prop, value});
+//
+//                this[`_${prop}`] = value;
+//            }
+//        });
+//    }
+    
 
   //fig.init((stdin, options) => {
 
   //})
   window.fig = fig;
+    
+    window.opener.postMessage = function(message, targetOrigin) {
+        console.log(message, targetOrigin)
+    }
+    
+    window.close = function() {
+        fig.close()
+    }
 }
 // console.log(Object.keys(fig));
 //

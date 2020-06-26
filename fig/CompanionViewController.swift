@@ -34,7 +34,7 @@ class CompanionViewController: NSViewController  {
     }
     
     override func viewDidLoad() {
-        self.webView = WKWebView(frame:.zero, configuration: WebBridge(eventDelegate: self))
+//        self.webView = WKWebView(frame:.zero, configuration: WebBridge(eventDelegate: self))
     }
     
     

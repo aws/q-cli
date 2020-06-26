@@ -8,6 +8,7 @@
 
 import Cocoa
 import Sparkle
+import WebKit
 
 @NSApplicationMain
 class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
@@ -18,11 +19,12 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     var clicks:Int = 6;
     var hotKeyManager: HotKeyManager?
     let updater = SUUpdater.shared()
+    let processPool = WKProcessPool()
     
     func applicationDidFinishLaunching(_ aNotification: Notification) {
 //        AppMover.moveIfNecessary()
         let _ = ShellBridge.shared
-        
+
         
 //        updater?.checkForUpdateInformation()
         updater?.delegate = self as SUUpdaterDelegate;
@@ -185,7 +187,9 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         let companion = CompanionWindow(viewController: WebViewController())
         companion.positioning = CompanionWindow.defaultPassivePosition
         window = companion
-        window.makeKeyAndOrderFront(nil)
+//        window.makeKeyAndOrderFront(nil)
+//        window.orderFront(nil)
+//        window.in
         (window as! CompanionWindow).repositionWindow(forceUpdate: true, explicit: true)
         self.hotKeyManager = HotKeyManager(companion: window as! CompanionWindow)
     }

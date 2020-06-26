@@ -13,62 +13,113 @@ protocol WebBridgeEventDelegate {
     func requestInsertCLICommand(script: String)
 }
 
-class WebBridge : WKWebViewConfiguration {
+class WebBridge : NSObject {
+    static let shared = WebBridge()
+    let processPool = WKProcessPool()
+
     var eventDelegate: WebBridgeEventDelegate?
     
-    convenience init(eventDelegate: WebBridgeEventDelegate?) {
-        self.init()
-        self.eventDelegate = eventDelegate;
-    }
+//    init(eventDelegate: WebBridgeEventDelegate?) {
+//        self.init()
+//        self.eventDelegate = eventDelegate;
+//    }
     
-    override init() {
-        super.init()
-        self.preferences.setValue(true, forKey: "developerExtrasEnabled")
-        self.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
-//        self.preferences.setValue(true, forKey: "mediaPreloadingEnabled")
-//        self.preferences.setValue(true, forKey: "linkPreloadEnabled")
+    func configure(_ configuration: WKWebViewConfiguration) -> WKWebViewConfiguration {
+                configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")
+                configuration.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
+                configuration.preferences.javaScriptEnabled = true
+                configuration.preferences.javaScriptCanOpenWindowsAutomatically = true
+        //        self.preferences.setValue(true, forKey: "mediaPreloadingEnabled")
+        //        self.preferences.setValue(true, forKey: "linkPreloadEnabled")
 
-//        self.webView.configuration.preferences
-        
-        self.setURLSchemeHandler(self, forURLScheme: "fig")
-        self.setURLSchemeHandler(self, forURLScheme: "figbundle")
+        //        self.webView.configuration.preferences
+                configuration.processPool = self.processPool
+                if configuration.urlSchemeHandler(forURLScheme: "fig") == nil {
+                    configuration.setURLSchemeHandler(self, forURLScheme: "fig")
+                }
+//                configuration.setURLSchemeHandler(self, forURLScheme: "figbundle")
 
-        let contentController = WebBridgeContentController()
-        
-        let eventHandlers: [WebBridgeEventHandler] = [.logHandler,
-                                                      .exceptionHandler,
-                                                      .insertHandler,
-                                                      .executeHandler,
-                                                      .executeInBackgroundHandler,
-                                                      .callbackHandler]
-        
-        contentController.add(self, name: WebBridgeScript.executeCLIHandler.rawValue)
-        contentController.add(self, name: WebBridgeScript.insertCLIHandler.rawValue)
-        contentController.add(self, name: WebBridgeScript.callbackHandler.rawValue)
-        contentController.add(self, name: WebBridgeScript.fwriteHandler.rawValue)
-        contentController.add(self, name: WebBridgeScript.freadHandler.rawValue)
-        contentController.add(self, name: WebBridgeScript.focusHandler.rawValue)
-        contentController.add(self, name: WebBridgeScript.blurHandler.rawValue)
-        contentController.add(self, name: WebBridgeScript.appwriteHandler.rawValue)
-        contentController.add(self, name: WebBridgeScript.appreadHandler.rawValue)
-        contentController.add(self, name: WebBridgeScript.positionHandler.rawValue)
-        contentController.add(self, name: WebBridgeScript.openHandler.rawValue)
-        contentController.add(self, name: WebBridgeScript.streamHandler.rawValue)
-        contentController.add(self, name: WebBridgeScript.defaultsHandler.rawValue)
-        contentController.add(self, name: WebBridgeScript.normalizeFilePath.rawValue)
+                let contentController = WebBridgeContentController()
+                
+                let eventHandlers: [WebBridgeEventHandler] = [.logHandler,
+                                                              .exceptionHandler,
+                                                              .insertHandler,
+                                                              .executeHandler,
+                                                              .executeInBackgroundHandler,
+                                                              .callbackHandler]
+                
+                contentController.add(self, name: WebBridgeScript.executeCLIHandler.rawValue)
+                contentController.add(self, name: WebBridgeScript.insertCLIHandler.rawValue)
+                contentController.add(self, name: WebBridgeScript.callbackHandler.rawValue)
+                contentController.add(self, name: WebBridgeScript.fwriteHandler.rawValue)
+                contentController.add(self, name: WebBridgeScript.freadHandler.rawValue)
+                contentController.add(self, name: WebBridgeScript.focusHandler.rawValue)
+                contentController.add(self, name: WebBridgeScript.blurHandler.rawValue)
+                contentController.add(self, name: WebBridgeScript.appwriteHandler.rawValue)
+                contentController.add(self, name: WebBridgeScript.appreadHandler.rawValue)
+                contentController.add(self, name: WebBridgeScript.positionHandler.rawValue)
+                contentController.add(self, name: WebBridgeScript.openHandler.rawValue)
+                contentController.add(self, name: WebBridgeScript.streamHandler.rawValue)
+                contentController.add(self, name: WebBridgeScript.defaultsHandler.rawValue)
+                contentController.add(self, name: WebBridgeScript.normalizeFilePath.rawValue)
+                contentController.add(self, name: WebBridgeScript.propertyUpdateHandler.rawValue)
 
-        contentController.add(self, name: WebBridgeScript.onboardingHandler.rawValue)
+                contentController.add(self, name: WebBridgeScript.onboardingHandler.rawValue)
 
-        contentController.add(self, name: WebBridgeScript.logging.rawValue)
-        contentController.add(self, name: WebBridgeScript.exceptions.rawValue)
+                contentController.add(self, name: WebBridgeScript.logging.rawValue)
+                contentController.add(self, name: WebBridgeScript.exceptions.rawValue)
 
-        self.userContentController = contentController
+                configuration.userContentController = contentController
+        return configuration;
+    }
+//
+//    override init() {
+//        super.init()
+//        self.preferences.setValue(true, forKey: "developerExtrasEnabled")
+//        self.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
+//        self.preferences.javaScriptEnabled = true
+//        self.preferences.javaScriptCanOpenWindowsAutomatically = true
+////        self.preferences.setValue(true, forKey: "mediaPreloadingEnabled")
+////        self.preferences.setValue(true, forKey: "linkPreloadEnabled")
+//
+////        self.webView.configuration.preferences
+//        self.processPool = (NSApp.delegate as! AppDelegate).processPool
 //        self.setURLSchemeHandler(self, forURLScheme: "fig")
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
+//        self.setURLSchemeHandler(self, forURLScheme: "figbundle")
+//
+//        let contentController = WebBridgeContentController()
+//
+//        let eventHandlers: [WebBridgeEventHandler] = [.logHandler,
+//                                                      .exceptionHandler,
+//                                                      .insertHandler,
+//                                                      .executeHandler,
+//                                                      .executeInBackgroundHandler,
+//                                                      .callbackHandler]
+//
+//        contentController.add(self, name: WebBridgeScript.executeCLIHandler.rawValue)
+//        contentController.add(self, name: WebBridgeScript.insertCLIHandler.rawValue)
+//        contentController.add(self, name: WebBridgeScript.callbackHandler.rawValue)
+//        contentController.add(self, name: WebBridgeScript.fwriteHandler.rawValue)
+//        contentController.add(self, name: WebBridgeScript.freadHandler.rawValue)
+//        contentController.add(self, name: WebBridgeScript.focusHandler.rawValue)
+//        contentController.add(self, name: WebBridgeScript.blurHandler.rawValue)
+//        contentController.add(self, name: WebBridgeScript.appwriteHandler.rawValue)
+//        contentController.add(self, name: WebBridgeScript.appreadHandler.rawValue)
+//        contentController.add(self, name: WebBridgeScript.positionHandler.rawValue)
+//        contentController.add(self, name: WebBridgeScript.openHandler.rawValue)
+//        contentController.add(self, name: WebBridgeScript.streamHandler.rawValue)
+//        contentController.add(self, name: WebBridgeScript.defaultsHandler.rawValue)
+//        contentController.add(self, name: WebBridgeScript.normalizeFilePath.rawValue)
+//        contentController.add(self, name: WebBridgeScript.propertyUpdateHandler.rawValue)
+//
+//        contentController.add(self, name: WebBridgeScript.onboardingHandler.rawValue)
+//
+//        contentController.add(self, name: WebBridgeScript.logging.rawValue)
+//        contentController.add(self, name: WebBridgeScript.exceptions.rawValue)
+//
+//        self.userContentController = contentController
+////        self.setURLSchemeHandler(self, forURLScheme: "fig")
+//    }
     
 }
 
@@ -106,6 +157,7 @@ enum WebBridgeScript: String, CaseIterable {
     case defaultsHandler = "defaultsHandler"
     case injectTerminalCSS = "terminalCSS"
     case normalizeFilePath = "filepathHandler"
+    case propertyUpdateHandler = "propertyUpdateHandler"
 
     case onboardingHandler = "onboardingHandler"
 
@@ -114,10 +166,7 @@ enum WebBridgeScript: String, CaseIterable {
 }
 
 extension WebBridge: WKURLSchemeHandler {
-    func webView(_ webView: WKWebView, start urlSchemeTask: WKURLSchemeTask) {
-        guard let url = urlSchemeTask.request.url else {
-            return
-        }
+    static func fileIcon(for url: URL) -> NSImage? {
         
         var width = 32.0
         var height = 32.0
@@ -127,12 +176,19 @@ extension WebBridge: WKURLSchemeHandler {
             height = hd
         }
         
-        guard let specifier = (url as NSURL).resourceSpecifier else { return }
+        guard let specifier = (url as NSURL).resourceSpecifier else { return nil }
         let resource = specifier.replacingOccurrences(of: "?\(url.query ?? "<none>")", with: "")
-        print(url.path)
-        guard let fileicon = NSWorkspace.shared.icon(forFile: resource).resized(to: NSSize(width: width, height: height)) else {
+        return NSWorkspace.shared.icon(forFile: resource.removingPercentEncoding ?? "").resized(to: NSSize(width: width, height: height))
+        
+    }
+    
+    func webView(_ webView: WKWebView, start urlSchemeTask: WKURLSchemeTask) {
+        guard let url = urlSchemeTask.request.url else {
             return
         }
+        
+        guard let fileicon = WebBridge.fileIcon(for: url) else { return }
+        
         //Create a NSURLResponse with the correct mimetype.
         
         let response = URLResponse(url: url, mimeType: "image/png", expectedContentLength: -1, textEncodingName: nil)
@@ -249,6 +305,8 @@ extension WebBridge : WKScriptMessageHandler {
             WebBridge.defaults(scope: message)
         case .normalizeFilePath:
             WebBridge.normalizeFilePath(scope: message)
+        case .propertyUpdateHandler:
+            WebBridge.propertyValueChanged(scope: message)
         default:
             print("Unhandled WKScriptMessage type '\(message.name)'")
         }
@@ -271,7 +329,7 @@ extension WebBridge {
     static func authorized(scope: WKScriptMessage) -> Bool {
         if let webView = scope.webView, let url = webView.url, let scheme = url.scheme {
             print(scheme)
-            return scheme == "file" || scheme == "localhost" || url.host ?? "" == "app.withfig.com"
+            return scheme == "file" || url.host ?? "" == "app.withfig.com" || url.host ?? "" == "localhost"
         }
         return false
     }
@@ -511,6 +569,8 @@ extension WebBridge {
                         NSApp.deactivate()
                         ShellBridge.injectStringIntoTerminal("bash ~/.fig/hello.sh", runImmediately: true)
                 }
+                case "deleteCache":
+                    (scope.webView as? WebView)?.deleteCache()
             default:
                 break;
             }
@@ -544,7 +604,44 @@ extension WebBridge {
            let handlerId = params["handlerId"] {
             
             WebBridge.callback(handler: handlerId, value: NSString(string: path).standardizingPath, scope: scope)
+//            NSURL(string: path)?.pathComponents
             
+        }
+    }
+    
+    static func propertyValueChanged(scope: WKScriptMessage) {
+        if let params = scope.body as? Dictionary<String, String>,
+           let webView = scope.webView,
+           let window = webView.window,
+           let prop = params["prop"],
+           let value = params["value"] {
+
+            switch prop {
+            case "title":
+                window.title = value.truncate(length: 15)
+            case "color":
+                window.backgroundColor = NSColor(hex: value) ?? .white
+            case "icon":
+                if let url = URL(string: value, relativeTo: webView.url) {
+                    window.representedURL = url;
+
+                    if (url.scheme == "fig") {
+                        guard let fileicon = WebBridge.fileIcon(for: url) else { return }
+                        window.standardWindowButton(.documentIconButton)?.image = fileicon
+
+                        return
+                    }
+
+                 DispatchQueue.global().async {
+                     guard let data = try? Data(contentsOf: url)  else { return }//make sure your image in this url does exist, otherwise unwrap in a if let check / try-catch
+                        DispatchQueue.main.async {
+                        window.standardWindowButton(.documentIconButton)?.image = NSImage(data: data)
+                        }
+                    }
+               }
+            default:
+                print("Unrecognized property value '\(prop)' updated with value: \(value)")
+            }
         }
     }
     
@@ -571,7 +668,7 @@ extension WebBridge {
             
             var nodes = document.querySelectorAll('.app');
             var first = nodes[0];
-            var last = nodes[nodes.length-2];
+            var last = nodes[nodes.length-3];
             
             \(shift ? "last" : "first").focus()
           }
@@ -615,12 +712,12 @@ extension WebBridge {
     static func updateTitlebar(webview: WebView) {
         WebBridge.appinfo(webview: webview) { (info) -> Void in
             if let window = webview.window, let c = window as? CompanionWindow {
-                if c.positioning == .untethered {
-                    c.setupToolbar()
+                if c.positioning.hasTitleBar {
+                    c.setupTitleBar()
                 }
             }
             
-          webview.window?.title = (info["name"] ?? "Fig") ?? webview.title ?? ""
+            webview.window?.title = (info["name"] ?? "Fig") ?? webview.title?.truncate(length: 25) ?? ""
           
           if let hexValue = info["color"], let hex = hexValue {
               webview.window?.backgroundColor = NSColor(hex: hex)
@@ -740,45 +837,16 @@ extension WebBridgeScript {
     }
 }
 
-//extension WebBridge : WKURLSchemeHandler {
-//    func webView(_ webView: WKWebView, start urlSchemeTask: WKURLSchemeTask) {
-//        guard self.eventDelegate != nil else {
-//            print("Event Delegate is nil")
-//            return
-//        }
-//        // fig://start/mattschrage/tutorialname
-//        // fig://insert?cmd=
-//        if let url = urlSchemeTask.request.url {
-//            let cmd = url.host ?? ""
-////            let path_components = url.path.split(separator: "/")
-////            guard let cmd = path_components.first else {
-////                print("No command in URL: \(url.absoluteString)")
-////                return
-////            }
-//
-//            switch cmd {
-//            case "insert":
-//                guard let script = url.queryDictionary?["cmd"] else {
-//                    print("No `cmd` parameter for command 'insert'\n\(url)")
-//                    return
-//                }
-//                self.eventDelegate!.requestInsertCLICommand(script: script)
-//                break
-//            case "execute":
-//                guard let script = url.queryDictionary?["cmd"] else {
-//                    print("No `cmd` parameter for command 'insert'\n\(url)")
-//                    return
-//                }
-//                self.eventDelegate!.requestInsertCLICommand(script: script)
-//                break
-//
-//            default:
-//                print("Unknown command '\(cmd)' triggered")
-//            }
-//
-//        }
-//    }
-//
-//    func webView(_ webView: WKWebView, stop urlSchemeTask: WKURLSchemeTask) { }
-//
-//}
+
+extension String {
+  /*
+   Truncates the string to the specified length number of characters and appends an optional trailing string if longer.
+   - Parameter length: Desired maximum lengths of a string
+   - Parameter trailing: A 'String' that will be appended after the truncation.
+    
+   - Returns: 'String' object.
+  */
+  func truncate(length: Int, trailing: String = "…") -> String {
+    return (self.count > length) ? self.prefix(length) + trailing : self
+  }
+}

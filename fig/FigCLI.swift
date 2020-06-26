@@ -52,7 +52,6 @@ enum NativeCLICommand : String {
     case appstore = "appstore"
     case blocks = "blocks"
     case home = "home"
-
 }
 
 class FigCLI {
@@ -192,6 +191,7 @@ class FigCLI {
             case .local:
                 FigCLI.local(with: scope)
             case .web:
+                companionWindow.positioning = .fullscreen
                 FigCLI.web(with: scope)
             case .position:
                 FigCLI.position(with: scope)
@@ -199,7 +199,7 @@ class FigCLI {
                 companionWindow.positioning = .icon
                 FigCLI.url(with: scope)
             case .apps, .store, .appstore, .blocks, .home:
-                companionWindow.positioning = .fullscreenInset
+                companionWindow.positioning = .fullwindow
                 FigCLI.url(with: scope)
             }
         } else {

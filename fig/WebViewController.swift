@@ -44,9 +44,10 @@ class WebViewController: NSViewController, NSWindowDelegate {
         return label
     }()
     
-    init(){
+    init(_ configuration: WKWebViewConfiguration = WKWebViewConfiguration()){
         super.init(nibName: nil, bundle: nil)
-        webView = WebView(frame: .zero, configuration: WebBridge())
+        let settings = WebBridge.shared.configure(configuration)
+        webView = WebView(frame: .zero, configuration: settings)
     }
     
     required init?(coder: NSCoder) {
@@ -156,7 +157,9 @@ class WebViewController: NSViewController, NSWindowDelegate {
         print("viewDidLoad")
         
         if (self.webView == nil) {
-            webView = WebView(frame: .zero, configuration: WebBridge())
+            let settings = WebBridge.shared.configure(WKWebViewConfiguration())
+
+            webView = WebView(frame: .zero, configuration: settings)
         }
 
         
@@ -180,6 +183,7 @@ class WebViewController: NSViewController, NSWindowDelegate {
 //        webView.ba
         webView?.translatesAutoresizingMaskIntoConstraints = false
 
+        webView?.uiDelegate = self
         webView?.navigationDelegate = self
         self.view.addSubview(webView!)
         
@@ -358,6 +362,46 @@ extension WebViewController: ShellBridgeEventListener {
 }
 
 
+extension WebViewController : WKUIDelegate {
+    func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
+        print("hello")
+        if navigationAction.targetFrame == nil {
+            
+            let popup = WebViewController(configuration)
+           popup.webView?.load(navigationAction.request)
+//            popup.webView?.loadRemoteApp(at: navigationAction.request.url!)
+            
+            
+//            let popup = CompanionViewController()
+//            let web = WKWebView(frame: NSRect(x: 0, y: 0, width: 200, height: 300), configuration: configuration)
+//            web.load(navigationAction.request)
+//            popup.webView = web
+    
+//            onboardingViewController.webView?.loadRemoteApp(at: URL(string: "https://app.withfig.com/onboarding/landing.html")!)
+
+            let popupWindow = CompanionWindow(viewController: popup)
+            popupWindow.makeKeyAndOrderFront(nil)
+            popupWindow.center()
+            popupWindow.makeKeyAndOrderFront(self)
+            popupWindow.isDocked = false
+            popupWindow.positioning = .untethered
+            let frame = CompanionWindow.OverlayPositioning.fullscreenInset.frame(targetWindowFrame: self.view.window?.frame ?? .zero)
+            popupWindow.setFrame(frame, display: true, animate: false)
+
+            popupWindow.oneTimeUse = true
+            
+//            popup.webView?.onLoad.append {
+//                popup.webView?.onNavigate.append {
+////                    popupWindow.positioning = .sidebar
+//                }
+//            }
+            return popup.webView
+            //webView.load(navigationAction.request)
+        }
+        return nil
+    }
+}
+
 extension WebViewController : WKNavigationDelegate {
     func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
          let webView = webView as! WebView
@@ -369,6 +413,8 @@ extension WebViewController : WKNavigationDelegate {
     }
     
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+        
+        print(navigationAction.navigationType)
         
         decisionHandler(.allow)
         
@@ -512,7 +558,9 @@ class WebView : WKWebView {
         guard let w = self.window, let window = w as? CompanionWindow else {
             return
         }
-        if (trackMouse && window.positioning == CompanionWindow.defaultPassivePosition) {
+        if (trackMouse && !NSWorkspace.shared.frontmostApplication!.isFig && window.positioning == CompanionWindow.defaultPassivePosition) {
+            print("current frontmost application \(NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "")")
+
             print("Attempting to activate fig")
             NSRunningApplication.current.activate(options: .activateIgnoringOtherApps)
         }
@@ -551,8 +599,9 @@ class WebView : WKWebView {
     func loadRemoteApp(at url: URL) {
         print(url.absoluteString)
 //        self.load(URLRequest(url: URL(string:"about:blank")!))
+        self.load(URLRequest(url: url, cachePolicy: .useProtocolCachePolicy))
+
         self.evaluateJavaScript("document.documentElement.remove()") { (_, _) in
-            self.load(URLRequest(url: url, cachePolicy: .useProtocolCachePolicy))
         }
     }
     
@@ -572,6 +621,12 @@ class WebView : WKWebView {
     
     func clearHistory() {
         self.backForwardList.perform(Selector(("_removeAllItems")))
+    }
+    
+    func deleteCache() {
+        let websiteDataTypes = NSSet(array: [WKWebsiteDataTypeDiskCache, WKWebsiteDataTypeMemoryCache, WKWebsiteDataTypeCookies, WKWebsiteDataTypeLocalStorage])
+        let date = Date(timeIntervalSince1970: 0)
+        WKWebsiteDataStore.default().removeData(ofTypes: websiteDataTypes as! Set<String>, modifiedSince: date, completionHandler:{ })
     }
 
     
