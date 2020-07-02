@@ -59,11 +59,24 @@ class FigCLI {
 
     static func index(with scope: Scope ) {
         scope.webView.loadRemoteApp(at: FigCLI.baseURL)
+        FigCLI.env(with: scope)
+        FigCLI.options(with: scope)
+        FigCLI.stdin(with: scope)
+        FigCLI.initialPosition(with: scope)
 //        FigCLI.stdin(with: scope)
     }
     
     static func callback(with scope: Scope) {
         scope.webView.evaluateJavaScript("fig.\(scope.options[0])(`\(scope.stdin)`)", completionHandler: nil)
+    }
+    
+    static func initialPosition(with scope: Scope) {
+        scope.webView.onLoad.append {
+              WebBridge.appInitialPosition(webview: scope.webView) { (position) in
+                scope.companionWindow.positioning = CompanionWindow.OverlayPositioning(rawValue:                     Int(position ?? "3")! )!
+              }
+          }
+        
     }
     
     static func local(with scope: Scope) {
@@ -73,6 +86,8 @@ class FigCLI {
             FigCLI.env(with: scope)
             FigCLI.options(with: scope)
             FigCLI.stdin(with: scope)
+            FigCLI.initialPosition(with: scope)
+
         }
 
     }
@@ -82,6 +97,8 @@ class FigCLI {
         FigCLI.env(with: scope)
         FigCLI.options(with: scope)
         FigCLI.stdin(with: scope)
+        FigCLI.initialPosition(with: scope)
+
     }
     
     static func web(with scope: Scope) {
@@ -89,6 +106,7 @@ class FigCLI {
         FigCLI.env(with: scope)
         FigCLI.options(with: scope)
         FigCLI.stdin(with: scope)
+//        FigCLI.initialPosition(with: scope)
     }
     
     static func position(with scope: Scope) {
@@ -159,15 +177,28 @@ class FigCLI {
         FigCLI.stdin(with: scope)
     }
     
+    static func storedInitialPosition(for command: String) -> CompanionWindow.OverlayPositioning? {
+        guard let initial = UserDefaults.standard.string(forKey: "\(command):position") else {
+            return nil
+        }
+        
+        guard let raw = Int(initial) else {
+            return nil
+        }
+        
+        return CompanionWindow.OverlayPositioning(rawValue: raw)
+    }
+    
     static func route(_ message: ShellMessage, webView: WebView, companionWindow: CompanionWindow) {
         let stdin = message.data.replacingOccurrences(of: "`", with: "\\`")
         let env = message.env ?? ""
-        companionWindow.positioning =  CompanionWindow.defaultActivePosition
         webView.clearHistory()
         webView.window?.representedURL = nil
-        
+        ShellBridge.shared.closePty()
+      
         guard let options = message.options, options.count > 0 else {
             let scope = Scope(cmd: "", stdin: stdin, options: [], env: env, webView: webView, companionWindow: companionWindow)
+            companionWindow.positioning =  CompanionWindow.defaultActivePosition
             FigCLI.index(with: scope)
             return
         }
@@ -180,7 +211,8 @@ class FigCLI {
                           webView: webView,
                           companionWindow: companionWindow)
         print("ROUTING \(command)")
-        let data = env.data(using: .utf8)!
+        
+         companionWindow.positioning = storedInitialPosition(for: command) ?? CompanionWindow.defaultActivePosition
         
         if let nativeCommand = NativeCLICommand(rawValue: command) {
             switch nativeCommand {
@@ -191,7 +223,7 @@ class FigCLI {
             case .local:
                 FigCLI.local(with: scope)
             case .web:
-                companionWindow.positioning = .fullscreen
+                companionWindow.positioning = .fullscreenInset
                 FigCLI.web(with: scope)
             case .position:
                 FigCLI.position(with: scope)

@@ -14,12 +14,17 @@ protocol ShellBridgeEventListener {
     func recievedDataFromPipe(_ notification: Notification)
     func recievedUserInputFromTerminal(_ notification: Notification)
     func recievedStdoutFromTerminal(_ notification: Notification)
+    
+    func recievedDataFromPty(_ notification: Notification)
+
 }
 
 extension Notification.Name {
     static let recievedDataFromPipe = Notification.Name("recievedDataFromPipe")
     static let recievedUserInputFromTerminal = Notification.Name("recievedUserInputFromTerminal")
     static let recievedStdoutFromTerminal = Notification.Name("recievedStdoutFromTerminal")
+    static let recievedDataFromPty = Notification.Name("recievedDataFromPty")
+
 }
 
 protocol MouseMonitoring {
@@ -35,18 +40,146 @@ extension Notification.Name {
 class ShellBridge {
     static let shared = ShellBridge()
     
+    var pty: HeadlessTerminal = HeadlessTerminal(onEnd: { (code) in
+        print("Exit")
+    })
+    var rawOutput = ""
+    var streamHandlers: Set<String> = []
+    var executeHandlers: Set<String> = []
+    
     var previousFrontmostApplication: NSRunningApplication?
 //    var socket: WebSocketConnection?
 //    var socketServer: Process?
     init() {
         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(setPreviousApplication(notification:)), name: NSWorkspace.didDeactivateApplicationNotification, object: nil)
         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(spaceChanged), name: NSWorkspace.activeSpaceDidChangeNotification, object: nil)
+        
+//        startPty(env: [:])
+//        streamInPty(command: "sftp mschrage_mschrage-static@ssh.phx.nearlyfreespeech.net", handlerId: "abcde")
+//        executeInPty(command: "ls -1aF", handlerId: "abcdef")
+//        let term = HeadlessTerminal { (exit) in
+//            print("Exit:\(exit)")
+//        }
+//        term.process.debugIO = true
+//
+//        term.process.startProcess(executable: "/bin/zsh", args: [], environment: nil)
+//
+//        term.send("ls -1aF\r\n")
+//        term.send("\n\n")
+//        term.send("ms\r")
+//        Timer.delayWithSeconds(1) {
+//            term.send("M@tthew1!\r")
+//            Timer.delayWithSeconds(10) {
+//                term.send("ls\r")
+//
+//            }
+//        }
+
+//        kill(term.process.shellPid, SIGTERM)
+
+//        term.send("pwd\r")
+//        term.send("cd ~\r")
+//        term.send("pwd\r")
+//        term.send(data: [0x3])
+//        term.send(data: [0x4])
+
+        
+
+//        term.process.processTerminated()
+//        signal(SIGTERM) { (<#Int32#>) in
+//            <#code#>
+//        }
+
+
+//        term.process.processTerminated()
+
+
 
         // start Python server script 
 //        "python3 /path/to/executable/fig.py utils:ws-start".runAsCommand()
         self.startWebSocketServer()
 
 
+    }
+    
+    func startPty(env: [String: String]) {
+//        if (pty.process.running) {
+//            print("Closing old PTY...")
+//            streamHandlers = []
+//            executeHandlers = []
+//            pty.send(data: [0x4])
+//            kill(pty.process.shellPid, SIGTERM)
+//            return
+//        }
+        print("Start PTY")
+
+        let shell = env["SHELL"] ?? "/bin/sh"
+        let rawEnv = env.reduce([]) { (acc, elm) -> [String] in
+            let (key, value) = elm
+            return acc + ["\(key)=\(value)"]
+        }
+        
+        pty.process.startProcess(executable: shell, args: [], environment: rawEnv.count == 0 ? nil : rawEnv)
+        pty.process.delegate = self
+    }
+    
+    let executeDelimeter = "-----------------"
+    func executeInPty(command: String, handlerId:String) {
+        executeHandlers.insert(handlerId)
+        let cmd = "printf \"<<<\" ; echo \"\(executeDelimeter)\(handlerId)\(executeDelimeter)\" ; \(command) ; echo \"\(executeDelimeter)\(handlerId)\(executeDelimeter)>>>\"\r"
+        pty.send(cmd)
+        print("Execute PTY command: \(command)")
+
+    }
+
+    let streamDelimeter = "================="
+    func streamInPty(command: String, handlerId:String) {
+//        streamHandlers.insert(handlerId)
+        let cmd = "printf \"<<<\" ; echo \"\(streamDelimeter)\(handlerId)\(streamDelimeter)\" ; \(command) ; echo \"\(streamDelimeter)\(handlerId)\(streamDelimeter)>>>\"\r"
+        pty.send(cmd)
+        print("Stream PTY command: \(command)")
+
+    }
+    
+    //http://www.physics.udel.edu/~watson/scen103/ascii.html
+    enum ControlCode : String {
+        typealias RawValue = String
+        case EOT = "^D"
+        case ETX = "^C"
+        
+    }
+    func writeInPty(command: String, control: ControlCode? = nil) {
+        
+        if let code = control {
+            print("Write PTY controlCode: \(code.rawValue)")
+            switch code {
+            case .EOT:
+                pty.send(data: [0x4])
+            case .ETX:
+                pty.send(data: [0x3])
+            }
+        } else {
+            print("Write PTY command: \(command)")
+            pty.send("\(command)\r")
+        }
+
+    }
+    
+    func closePty() {
+        streamHandlers = []
+        executeHandlers = []
+        if (pty.process.running) {
+            pty.send(data: [0x4])
+            pty.send(data: [0x4])
+            pty.send(data: [0x4])
+            pty.send(data: [0x4])
+            pty.send(data: [0x4])
+            pty.send(data: [0x4])
+            pty.send(data: [0x4])
+            pty.send(data: [0x4])
+
+            kill(pty.process.shellPid, SIGTERM)
+        }
     }
     
     func startWebSocketServer() {
@@ -60,8 +193,13 @@ class ShellBridge {
     }
     
     // This fixes an issue where focus would bounce to an application in the previous workspace. Essentially this resets previous application anytime the workspace is changed.
+    
     @objc func spaceChanged() {
         self.previousFrontmostApplication = NSWorkspace.shared.frontmostApplication
+//        let windowNumbers = NSWindow.windowNumbersWithOptions( NSWindowNumberListAllSpaces | NSWindowNumberListAllApplications as NSWindowNumberListOptions )
+        
+        let windows = NSWindow.windowNumbers(options: [.allApplications, .allSpaces])
+        print(windows)
     }
     
     @objc func setPreviousApplication(notification: NSNotification!) {
@@ -154,6 +292,12 @@ class ShellBridge {
     }
 }
 
+struct PtyMessage: Codable {
+    var type: String
+    var handleId: String
+    var output: String
+}
+
 struct ShellMessage: Codable {
     var type: String
     var source: String
@@ -163,6 +307,71 @@ struct ShellMessage: Codable {
     var data: String
     var options: [String]?
 
+}
+
+extension ShellBridge : LocalProcessDelegate {
+    func processTerminated(_ source: LocalProcess, exitCode: Int32?) {
+        print("Exited...\(exitCode ?? 0)")
+    }
+    
+    func dataReceived(slice: ArraySlice<UInt8>) {
+        let data = String(bytes: slice, encoding: .utf8) ?? ""
+        print(data)
+        
+        
+        for handle in streamHandlers {
+            var ping = ""
+            let header = data.components(separatedBy: "<<<\(streamDelimeter)\(handle)\(streamDelimeter)")
+            if header.count == 2 {
+                ping += header[1]
+            } else {
+                ping = data
+            }
+            
+            let tail = ping.components(separatedBy: "\(streamDelimeter)\(handle)\(streamDelimeter)>>>")
+            
+            if tail.count == 2 {
+                ping = tail[0]
+                streamHandlers.remove(handle)
+            }
+            
+            print(handle, ping)
+            let msg = PtyMessage(type: "stream", handleId: handle, output: ping)
+            NotificationCenter.default.post(name: .recievedDataFromPty, object: msg)
+            
+            
+        }
+        
+        if let streamCandidate = data.groups(for:"<<<\(streamDelimeter)(.*?)\(streamDelimeter)")[safe: 0] {
+            streamHandlers.insert(streamCandidate[1])
+        }
+        
+        rawOutput += data
+
+        for handle in executeHandlers {
+            let groups = rawOutput.groups(for: "(?s)<<<\(executeDelimeter)\(handle)\(executeDelimeter)(.*?)\(executeDelimeter)\(handle)\(executeDelimeter)>>>")
+            
+            if let group = groups[safe: 0], let output = group.last {
+                executeHandlers.remove(handle)
+                print(handle, output)
+                let msg = PtyMessage(type: "execute", handleId: handle, output: output)
+                NotificationCenter.default.post(name: .recievedDataFromPty, object: msg)
+
+            }
+
+        }
+        
+
+
+        
+//        print(data)
+    }
+        
+    func getWindowSize() -> winsize {
+        return winsize(ws_row: UInt16(60), ws_col: UInt16(50), ws_xpixel: UInt16 (16), ws_ypixel: UInt16 (16))
+    }
+    
+    
 }
 
 class Integrations {

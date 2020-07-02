@@ -15,11 +15,15 @@ class HotKeyManager {
     var hotkey = HotKey(key: .i, modifiers: [.command])
     var focusKey = HotKey(key: .i, modifiers: [.command, .shift])
 
-    let companionWindow: CompanionWindow
-    let webview: WebView
+    var companionWindow: CompanionWindow
+    var webview: WebView {
+        get {
+            return (self.companionWindow.contentViewController as! WebViewController).webView!
+        }
+    }
     init (companion: CompanionWindow) {
         companionWindow = companion
-        webview = (companion.contentViewController as! WebViewController).webView!
+//        webview = (companion.contentViewController as! WebViewController).webView!
         self.hotkey.keyDownHandler = {
             switch self.companionWindow.positioning {
             case CompanionWindow.defaultPassivePosition:
@@ -27,9 +31,11 @@ class HotKeyManager {
                 NSRunningApplication.current.activate(options: .activateIgnoringOtherApps)
                 WebBridge.tabInSidebar(webView: self.webview)
             case CompanionWindow.defaultActivePosition:
-                (NSApplication.shared.delegate as! AppDelegate).toggleVisibility()
+                self.companionWindow.toSidebar()
+                //(NSApplication.shared.delegate as! AppDelegate).toggleVisibility()
             default:
-                (NSApplication.shared.delegate as! AppDelegate).toggleVisibility()
+                self.companionWindow.toSidebar()
+                //(NSApplication.shared.delegate as! AppDelegate).toggleVisibility()
             }
         }
         
@@ -58,6 +64,31 @@ class HotKeyManager {
                 }
                 return nil
             }
+            
+            // control-d
+            if (event.keyCode == 2 && event.modifierFlags.contains(.control)) {
+                if (self.companionWindow.positioning != CompanionWindow.defaultPassivePosition) {
+                    self.companionWindow.toSidebar()
+                }
+                return nil
+            }
+            
+            // control-c
+            if (event.keyCode == 8 && event.modifierFlags.contains(.control)) {
+                if (self.companionWindow.positioning != CompanionWindow.defaultPassivePosition) {
+                    self.companionWindow.toSidebar()
+                }
+                return nil
+            }
+            
+            // control-z
+            if (event.keyCode == 6 && event.modifierFlags.contains(.control)) {
+                if (self.companionWindow.positioning != CompanionWindow.defaultPassivePosition) {
+                    self.companionWindow.toSidebar()
+                }
+                return nil
+            }
+
             
             if (event.keyCode == 3 && event.modifierFlags.contains(.command)) {
                 switch self.companionWindow.positioning {

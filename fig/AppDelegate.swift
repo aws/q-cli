@@ -24,7 +24,9 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     func applicationDidFinishLaunching(_ aNotification: Notification) {
 //        AppMover.moveIfNecessary()
         let _ = ShellBridge.shared
-
+        let _ = WindowManager.shared
+        
+        
         
 //        updater?.checkForUpdateInformation()
         updater?.delegate = self as SUUpdaterDelegate;
@@ -67,7 +69,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
                       ShellBridge.symlinkCLI()
                   }
             }
-            updater?.installUpdatesIfAvailable()
+//            updater?.installUpdatesIfAvailable()
             self.setupCompanionWindow()
         }
         
@@ -119,10 +121,10 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 //         action: #selector(AppDelegate.runExitCmd),
 //         keyEquivalent: "")
 //
-//        statusBarMenu.addItem(
-//         withTitle: "Log all window",
-//         action: #selector(AppDelegate.allWindows),
-//         keyEquivalent: "")
+        statusBarMenu.addItem(
+         withTitle: "Log all window",
+         action: #selector(AppDelegate.allWindows),
+         keyEquivalent: "")
 //
 //        statusBarMenu.addItem(
 //         withTitle: "Top Terminal Window Bounds",
@@ -184,14 +186,13 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 
     
     func setupCompanionWindow() {
-        let companion = CompanionWindow(viewController: WebViewController())
-        companion.positioning = CompanionWindow.defaultPassivePosition
-        window = companion
-//        window.makeKeyAndOrderFront(nil)
-//        window.orderFront(nil)
-//        window.in
-        (window as! CompanionWindow).repositionWindow(forceUpdate: true, explicit: true)
-        self.hotKeyManager = HotKeyManager(companion: window as! CompanionWindow)
+        WindowManager.shared.createSidebar()
+        //let companion = CompanionWindow(viewController: WebViewController())
+        //companion.positioning = CompanionWindow.defaultPassivePosition
+        //window = companion
+
+        //(window as! CompanionWindow).repositionWindow(forceUpdate: true, explicit: true)
+        //self.hotKeyManager = HotKeyManager(companion: window as! CompanionWindow)
     }
     
     @objc func hide() {
@@ -232,7 +233,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
       return itemReferencesInLoginItems().existingReference != nil
     }
 
-    func toggleLaunchAtStartup() {
+    func toggleLaunchAtStartup(shouldBeOff: Bool = false) {
       let itemReferences = itemReferencesInLoginItems()
       let shouldBeToggled = (itemReferences.existingReference == nil)
       let loginItemsRef = LSSharedFileListCreate(
@@ -247,12 +248,12 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             LSSharedFileListInsertItemURL(loginItemsRef, itemReferences.lastReference, nil, nil, appUrl, nil, nil)
             print("Application was added to login items")
         }
-//        else {
-//          if let itemRef = itemReferences.existingReference {
-//            LSSharedFileListItemRemove(loginItemsRef,itemRef);
-//            print("Application was removed from login items")
-//          }
-//        }
+        else if (shouldBeOff) {
+          if let itemRef = itemReferences.existingReference {
+            LSSharedFileListItemRemove(loginItemsRef,itemRef);
+            print("Application was removed from login items")
+          }
+        }
       }
     }
 
@@ -516,9 +517,9 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         let infos = jsons.compactMap({ WindowInfo(json: $0) })
         print (infos)
         
-        print (infos.filter ({
-            return $0.name == "iTerm2"
-        }))
+//        print (infos.filter ({
+//            return $0.name == "iTerm2"
+//        }))
 //        if let info = CGWindowListCopyWindowInfo(.optionOnScreenOnly, kCGNullWindowID) as? [[ String : Any]] {
 //            for dict in info {
 //                print(dict)
@@ -703,6 +704,7 @@ struct WindowInfo {
     let name: String
     let pid: Int
     let number: Int
+    let visible: Bool
 
     init?(json: [String: Any]) {
         guard let pid = json["kCGWindowOwnerPID"] as? Int else {
@@ -712,10 +714,14 @@ struct WindowInfo {
         guard let name = json["kCGWindowOwnerName"] as? String else {
             return nil
         }
-
-        guard let rect = json["kCGWindowBounds"] as? [String: Any] else {
+        
+        guard let onScreen = json["kCGWindowIsOnscreen"] as? Bool else {
             return nil
         }
+        
+        guard let rect = json["kCGWindowBounds"] as? [String: Any] else {
+                  return nil
+              }
 
         guard let x = rect["X"] as? CGFloat else {
             return nil
@@ -741,6 +747,7 @@ struct WindowInfo {
         self.name = name
         self.number = number
         self.frame = CGRect(x: x, y: y, width: width, height: height)
+        self.visible = onScreen
     }
 }
 

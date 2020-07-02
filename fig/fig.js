@@ -83,6 +83,7 @@ let setup = function(window) {
       },
       callback : function(handlerId, value, error) {
           let response = value ? b64DecodeUnicode(value) : null
+          console.log(handlerId)
           this[handlerId](response, error)
           let tokens = handlerId.split(':')
           if (tokens.length == 1) {
@@ -117,6 +118,7 @@ let setup = function(window) {
       callinit : function() {
           let stdin = fig['_stdin']
           let options = fig.options
+//          fig.pty.init()
           fig.init(stdin, options)
           fig.stdin(stdin)
       },
@@ -198,10 +200,45 @@ let setup = function(window) {
               color = figcolor.getAttribute('figcolor');
           }
           
-          return {name, icon, color};
+          var position = null
+          let figposition = document.head.querySelector('meta[initial-position]');
+          if (figposition){
+              position = figposition.getAttribute('initial-position');
+          }
+          
+          return {name, icon, color, position};
       },
       close() {
-          fig.reposition = "7"
+          fig.reposition("7")
+      },
+      notify(title, text) {
+          window.webkit.messageHandlers.notificationHandler.postMessage({title, text});
+      },
+      pty : {
+          init() {
+              let env = JSON.stringify(fig.env)
+              window.webkit.messageHandlers.ptyHandler.postMessage({env, type: 'init'});
+          },
+          execute(cmd, handler) {
+              let handlerId = `${random_identifier(5)}:pty`
+              fig[handlerId] = handler
+              window.webkit.messageHandlers.ptyHandler.postMessage({handlerId, cmd, type: 'execute'});
+
+          },
+          stream(cmd, handler) {
+              let handlerId = `${random_identifier(5)}:pty`
+              fig[handlerId] = handler
+              window.webkit.messageHandlers.ptyHandler.postMessage({handlerId, cmd, type: 'stream'});
+          },
+          write(cmd) {
+              window.webkit.messageHandlers.ptyHandler.postMessage({cmd, type: 'write'});
+          },
+
+          exit() {
+//              Object.keys(fig).filter(key => key.endsWith(":pty"))
+              console.log("Don't run `fig.pty.exit()` unless you know what you're doing.")
+              window.webkit.messageHandlers.ptyHandler.postMessage({type: 'exit'});
+          }
       }
   }
     
@@ -237,9 +274,9 @@ let setup = function(window) {
   //})
   window.fig = fig;
     
-    window.opener.postMessage = function(message, targetOrigin) {
-        console.log(message, targetOrigin)
-    }
+//    window.opener.postMessage = function(message, targetOrigin) {
+//        console.log(message, targetOrigin)
+//    }
     
     window.close = function() {
         fig.close()

@@ -86,7 +86,7 @@ class WebViewController: NSViewController, NSWindowDelegate {
         effect.blendingMode = .behindWindow
         effect.state = .active
         effect.material = .mediumLight
-        effect.maskImage = _maskImage(cornerRadius: 15)
+        effect.maskImage = _maskImage(cornerRadius: 5)
         self.view = effect;
         self.view.postsFrameChangedNotifications = true
         self.view.postsBoundsChangedNotifications = true
@@ -117,9 +117,13 @@ class WebViewController: NSViewController, NSWindowDelegate {
 //        self.view.alphaValue = 0.5;
         
         print("ViewDidAppear -- \( webView?.url?.absoluteString ?? "no url")")
-        if !((webView?.url) != nil) {
-            webView?.loadSideBar()
+        
+        if let url = webView?.defaultURL {
+            webView?.loadRemoteApp(at: url)
         }
+//        if !((webView?.url) != nil) {
+//            webView?.loadSideBar()
+//        }
     }
 
 
@@ -166,6 +170,7 @@ class WebViewController: NSViewController, NSWindowDelegate {
         NotificationCenter.default.addObserver(self, selector: #selector(recievedDataFromPipe(_:)), name: .recievedDataFromPipe, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(recievedStdoutFromTerminal(_:)), name: .recievedStdoutFromTerminal, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(recievedUserInputFromTerminal(_:)), name: .recievedUserInputFromTerminal, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(recievedDataFromPty(_:)), name: .recievedDataFromPty, object: nil)
         
         NotificationCenter.default.addObserver(self, selector: #selector(insertCommandInTerminal(_:)), name: .insertCommandInTerminal, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(executeCommandInTerminal(_:)), name: .executeCommandInTerminal, object: nil)
@@ -210,14 +215,14 @@ class WebViewController: NSViewController, NSWindowDelegate {
 //        self.icon.frame = NSRect(x: 0, y: -6, width: 50, height: 50)
 //        self.webView?.loadBundleApp("sidebar")
         self.webView?.loadSideBar()
-        (self.view as! NSVisualEffectView).maskImage = _maskImage(cornerRadius: 5)
+//        (self.view as! NSVisualEffectView).maskImage = _maskImage(cornerRadius: 5)
     }
     
     @objc func overlayDidBecomeMain() {
         print("didBecomeMain")
 //        self.icon.isHidden = true
 //        self.webView?.loadHomeScreen()
-        (self.view as! NSVisualEffectView).maskImage = _maskImage(cornerRadius: 15)
+        //(self.view as! NSVisualEffectView).maskImage = _maskImage(cornerRadius: 15)
 
     }
     
@@ -320,6 +325,12 @@ extension WebViewController: WebBridgeEventListener {
 }
 
 extension WebViewController: ShellBridgeEventListener {
+    @objc func recievedDataFromPty(_ notification: Notification) {
+        if let msg = notification.object as? PtyMessage {
+            WebBridge.callback(handler: msg.handleId, value: msg.output, webView: self.webView)
+        }
+    }
+    
     @objc func recievedUserInputFromTerminal(_ notification: Notification) {
         // match against regex?
         WebBridge.ttyin(webView: self.webView!, msg: notification.object as! ShellMessage)
@@ -353,9 +364,9 @@ extension WebViewController: ShellBridgeEventListener {
         let msg = (notification.object as! ShellMessage)
         DispatchQueue.main.async {
             if let companion = self.view.window as? CompanionWindow {
-            FigCLI.route(msg,
-                         webView: self.webView!,
-                         companionWindow: companion)
+//            FigCLI.route(msg,
+//                         webView: self.webView!,
+//                         companionWindow: companion)
             }
         }
     }
@@ -404,6 +415,7 @@ extension WebViewController : WKUIDelegate {
 
 extension WebViewController : WKNavigationDelegate {
     func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+        print(webView.url?.absoluteString)
          let webView = webView as! WebView
 
            for onNavigateCallback in webView.onNavigate {
@@ -412,12 +424,15 @@ extension WebViewController : WKNavigationDelegate {
            webView.onNavigate = []
     }
     
+    
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
         
-        print(navigationAction.navigationType)
         
+        //decisionHandler(.cancel)
+        //print(navigationAction.navigationType)
+
         decisionHandler(.allow)
-        
+
         let webView = webView as! WebView
 
         for onNavigateCallback in webView.onNavigate {
@@ -482,6 +497,7 @@ class WebView : WKWebView {
     var onLoad: [(() -> Void)] = []
     var onNavigate: [(() -> Void)] = []
     var configureEnvOnLoad: (() -> Void)?
+    var defaultURL: URL? = URL(string: "https://app.withfig.com/sidebar")
     private var dragShouldRepositionWindow = false
     
 //    override var intrinsicContentSize: NSSize {
@@ -562,6 +578,9 @@ class WebView : WKWebView {
             print("current frontmost application \(NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "")")
 
             print("Attempting to activate fig")
+//            self.window?.makeKey()
+//            self.window?.makeKeyAndOrderFront(nil)
+//            self.window?.orderFrontRegardless()
             NSRunningApplication.current.activate(options: .activateIgnoringOtherApps)
         }
     }
@@ -574,7 +593,7 @@ class WebView : WKWebView {
         if (trackMouse && NSWorkspace.shared.frontmostApplication?.isFig ?? false && window.positioning == CompanionWindow.defaultPassivePosition) {
             print("current frontmost application \(NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "")")
             print("Attempting to activate previous app \( ShellBridge.shared.previousFrontmostApplication?.bundleIdentifier ?? "<none>")")
-            ShellBridge.shared.previousFrontmostApplication?.activate(options: .activateIgnoringOtherApps)
+            ShellBridge.shared.previousFrontmostApplication?.activate(options: .init())
 
         }
     }
@@ -614,6 +633,7 @@ class WebView : WKWebView {
     }
     
     func loadSideBar() {
+        print("loadSidebar")
         self.evaluateJavaScript("document.documentElement.remove()") { (_, _) in
            self.load(URLRequest(url: URL(string: "https://app.withfig.com/sidebar")!, cachePolicy: .useProtocolCachePolicy))
        }

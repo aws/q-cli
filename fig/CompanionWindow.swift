@@ -25,31 +25,45 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
     var isDocked = true;
     
     var oneTimeUse = false;
-        
+
     var closeBtn: NSButton?
     var backBtn: NSTextField?
     var untetherBtn: NSTextField?
-
+    
+    var tetheredWindowId: CGWindowID?
+    var tetheredWindow: ExternalWindow?
+    
+    let windowManager: WindowManagementService
+    let windowServiceProvider: WindowService = WindowServer.shared
+    
     var priorTargetFrame: NSRect = .zero
     var positioning: OverlayPositioning = CompanionWindow.defaultActivePosition {
         
         didSet {
             
-            if (oneTimeUse) { self.close() }
+            if (oneTimeUse && positioning == .sidebar) {
+                self.windowManager.close(window: self)
+                return
+            }
 
             if (!positioning.hasTitleBar) {
                 isDocked = true
                 closeBtn?.removeFromSuperview()
                 backBtn?.removeFromSuperview()
                 untetherBtn?.removeFromSuperview()
+            } else {
+                setupTitleBar()
             }
             
             self.repositionWindow(forceUpdate: true, explicit: true)
-            
-            if (positioning == CompanionWindow.defaultPassivePosition) {
-                NotificationCenter.default.post(name: .overlayDidBecomeIcon, object: nil)
-            } else {
-                NotificationCenter.default.post(name: .overlayDidBecomeMain, object: nil)
+            if let webViewController = self.contentViewController as? WebViewController {
+                if (positioning == CompanionWindow.defaultPassivePosition) {
+                    webViewController.overlayDidBecomeIcon()
+                    //NotificationCenter.default.post(name: .overlayDidBecomeIcon, object: nil)
+                } else {
+                    webViewController.overlayDidBecomeMain()
+                    //NotificationCenter.default.post(name: .overlayDidBecomeMain, object: nil)
+                }
             }
         }
     }
@@ -66,13 +80,14 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
             timer.invalidate()
         }
         
-        NSWorkspace.shared.notificationCenter.removeObserver(self)
+       print("WindowWillClose") //NSWorkspace.shared.notificationCenter.removeObserver(self)
 //         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(spaceChanged), name: NSWorkspace.activeSpaceDidChangeNotification, object: nil)
 //         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(activateApp), name: NSWorkspace.didActivateApplicationNotification, object: nil)
 //         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(deactivateApp), name: NSWorkspace.didDeactivateApplicationNotification, object: nil)
     }
     
-    init(viewController: NSViewController) {
+    init(viewController: NSViewController, windowManager: WindowManagementService = WindowManager.shared) {
+        self.windowManager = windowManager
         super.init(
             contentRect: NSRect(x: 0, y: 0, width: 480, height: 300),
             styleMask: [.fullSizeContentView],
@@ -88,19 +103,19 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
         self.contentViewController = viewController
         self.setFrame(NSRect(x: 400, y: 400, width: 300, height: 300), display: true)
         self.appearance = NSAppearance(named:.aqua) // keeps window title text black
-
+        
 //        self.makeKeyAndOrderFront(nil)
         
         self.delegate = self
 
         
-        NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(spaceChanged), name: NSWorkspace.activeSpaceDidChangeNotification, object: nil)
-        NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(activateApp), name: NSWorkspace.didActivateApplicationNotification, object: nil)
-        NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(deactivateApp), name: NSWorkspace.didDeactivateApplicationNotification, object: nil)
-
-        
-        let interval = Double(UserDefaults.standard.string(forKey: "windowUpdateInterval") ?? "") ?? 0.15
-        timer = Timer.scheduledTimer(timeInterval: interval, target: self, selector: #selector(positionWindow), userInfo: nil, repeats: true)
+//        NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(spaceChanged), name: NSWorkspace.activeSpaceDidChangeNotification, object: nil)
+//        NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(activateApp), name: NSWorkspace.didActivateApplicationNotification, object: nil)
+//        NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(deactivateApp), name: NSWorkspace.didDeactivateApplicationNotification, object: nil)
+//
+//
+//        let interval = Double(UserDefaults.standard.string(forKey: "windowUpdateInterval") ?? "") ?? 0.15
+//        timer = Timer.scheduledTimer(timeInterval: interval, target: self, selector: #selector(positionWindow), userInfo: nil, repeats: true)
         
 //        let trackingArea = NSTrackingArea(rect: self.contentViewController!.view.frame,
 //                                                options: [NSTrackingArea.Options.activeAlways ,NSTrackingArea.Options.mouseEnteredAndExited],
@@ -171,15 +186,6 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
         case hidden = 11
         case untethered = 12
         case fullwindow = 13
-
-        var includeTitleBar: Bool {
-            switch self {
-            case .untethered, .outsideRight:
-                return true;
-            default:
-                return false
-            }
-        }
         
         func frame(targetWindowFrame:NSRect, screen: NSRect = .zero) -> NSRect {
             if targetWindowFrame.width < 100 || targetWindowFrame.height < 200 {
@@ -230,10 +236,20 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
              case .fullscreen:
                 return targetWindowFrame
              case .spotlight:
-                let quarter = t_size.width * 0.25
-                return NSRect(origin: NSPoint(x: targetWindowFrame.origin.x + quarter, y: targetWindowFrame.origin.y), size: CGSize.init(width: t_size.width * 0.5, height: t_size.height * 0.5))
+                let minWidth: CGFloat = 400.0
+                let minHeight: CGFloat = 300.0
+
+                let width = min(max(minWidth,  t_size.width * 0.5), t_size.width)
+                let height = min(max(minHeight, t_size.height * 0.5), t_size.width)
+                let offset = max((t_size.width - width) / 2, 0)
+                
+                let quarter = max(t_size.width * 0.25 - minWidth / 2.0, 0)
+                return NSRect(origin: NSPoint(x: targetWindowFrame.origin.x + offset, y: targetWindowFrame.origin.y), size: CGSize.init(width: width, height: height))
              case .fullscreenInset:
-                let inset: CGFloat = 30
+                let inset: CGFloat = 23
+                return targetWindowFrame.insetBy(dx: 0, dy: inset/2).offsetBy(dx: 0, dy: -1 * inset * 1.5)
+                
+//                let inset: CGFloat = 30
                 return targetWindowFrame.insetBy(dx: inset, dy: inset).offsetBy(dx: 0, dy: -1 * inset - 24)
             case .hidden:
                 return .zero
@@ -325,7 +341,9 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
     
     func configureWindow(for state: OverlayPositioning, initial: Bool = false ) {
         if (state.hasTitleBar) {
-            self.level = .floating
+            self.level = (self.isDocked) ? .floating : .normal
+            self.collectionBehavior = (self.isDocked) ? [.canJoinAllSpaces, .fullScreenAuxiliary] : []
+
             self.styleMask = [.titled]
             
             // this must be explictly inserted... cannot be included in a styleMask array(?!)
@@ -364,14 +382,18 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
         self.isDocked = !self.isDocked;
         
         if (isDocked) {
-            repositionWindow(forceUpdate: true, explicit: true)
+//            repositionWindow(forceUpdate: true, explicit: true)
             text.stringValue = "↗"
+            self.windowManager.tether(window: self)
+
         } else {
             var newFrame = self.frame
             newFrame.origin = CGPoint(x: newFrame.origin.x + 10, y: newFrame.origin.y)
             self.setFrame(newFrame, display: true)
-            
-            text.stringValue = "↙"
+            recognizer.isEnabled = false
+            text.stringValue = ""
+            //text.stringValue = "↙"
+            self.windowManager.untether(window: self)
             
         }
     }
@@ -387,7 +409,8 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
     
     @objc func toSidebar() {
         if (self.oneTimeUse) {
-            self.orderOut(nil)
+            self.windowManager.close(window: self)
+//            self.orderOut(nil)
 //            self.close()
         } else {
             self.positioning = .sidebar
@@ -418,11 +441,17 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
     }
     
     func repositionWindow( forceUpdate:Bool = true, explicit: Bool = false) {
-        if (!isDocked) {
-            configureWindow(for: self.positioning)
-
+        if !self.windowManager.shouldAppear(window: self, explicitlyRepositioned: explicit) {
+            self.orderOut(self)
+            print("Not showing window")
             return
         }
+        
+        if (!isDocked) {
+            configureWindow(for: self.positioning)
+            return
+        }
+
         
         let whitelistedBundleIds = Integrations.whitelist
         guard let app = NSWorkspace.shared.frontmostApplication,
@@ -433,29 +462,28 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
         if (whitelistedBundleIds.contains(bundleId)) {
             let targetFrame = topmostWindowFrameFor(app)
             let mouseDown = (NSEvent.pressedMouseButtons & (1 << 0)) != 0;
+            print("mouseDown \(mouseDown)")
 
-            
             guard shouldTrackWindow else { return }
             if (!forceUpdate && !targetFrame.equalTo(priorTargetFrame) && mouseDown) {
                 self.animationBehavior = .utilityWindow
                 self.orderOut(self)
                 shouldTrackWindow = false;
                 NSEvent.addGlobalMonitorForEvents(matching: .leftMouseUp) { (event) -> Void in
-                    self.shouldTrackWindow = true;
-                     self.repositionWindow(forceUpdate: true)
+                    // prevent memory access error
+                    if (self != nil){
+                        self.shouldTrackWindow = true;
+                        self.repositionWindow(forceUpdate: true)
+                    }
                 }
                 return
             }
             
-            print("targetFrame:\(targetFrame)")
             if (forceUpdate || !targetFrame.equalTo(priorTargetFrame)) {
                 priorTargetFrame = targetFrame
-                let frame = self.positioning.frame(targetWindowFrame: targetFrame, screen: NSScreen.main!.frame)
+                let frame = self.positioning.frame(targetWindowFrame: targetFrame,
+                                                   screen: NSScreen.main!.frame)
 
-                
-//                let frame = overlayFrame(self.positioning,
-//                                         terminalFrame: targetFrame,
-//                                         screenBounds: .zero)
                 setOverlayFrame(frame)
     
             }
@@ -468,7 +496,8 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
                     }
                     let targetFrame = topmostWindowFrameFor(app)
                     priorTargetFrame = targetFrame
-                    let frame = self.positioning.frame(targetWindowFrame: targetFrame, screen: NSScreen.main!.frame)
+                    let frame = self.positioning.frame(targetWindowFrame: targetFrame,
+                                                       screen: NSScreen.main!.frame)
                     setOverlayFrame(frame)
     
                 }
@@ -497,6 +526,7 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
       func topmostWindowFrameFor(_ app: NSRunningApplication, includingTitleBar: Bool = false) -> NSRect {
           let appRef = AXUIElementCreateApplication(app.processIdentifier)
           
+
           var window: AnyObject?
           let result = AXUIElementCopyAttributeValue(appRef, kAXFocusedWindowAttribute as CFString, &window)
           
@@ -512,6 +542,11 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
               print("Window does not exist.")
               return .zero
           }
+        
+        let windowId = PrivateWindow.getCGWindowID(fromRef: window as! AXUIElement)
+        print("windowId", windowId)
+
+//        AXUIElementCopyAttributeValue(window as! AXUIElement, kAXTitleAttribute as CFString, &position)
 
           AXUIElementCopyAttributeValue(window as! AXUIElement, kAXPositionAttribute as CFString, &position)
           AXUIElementCopyAttributeValue(window as! AXUIElement, kAXSizeAttribute as CFString, &size)

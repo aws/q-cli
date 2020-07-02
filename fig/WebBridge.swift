@@ -63,6 +63,8 @@ class WebBridge : NSObject {
                 contentController.add(self, name: WebBridgeScript.defaultsHandler.rawValue)
                 contentController.add(self, name: WebBridgeScript.normalizeFilePath.rawValue)
                 contentController.add(self, name: WebBridgeScript.propertyUpdateHandler.rawValue)
+                contentController.add(self, name: WebBridgeScript.ptyHandler.rawValue)
+                contentController.add(self, name: WebBridgeScript.notificationHandler.rawValue)
 
                 contentController.add(self, name: WebBridgeScript.onboardingHandler.rawValue)
 
@@ -158,6 +160,8 @@ enum WebBridgeScript: String, CaseIterable {
     case injectTerminalCSS = "terminalCSS"
     case normalizeFilePath = "filepathHandler"
     case propertyUpdateHandler = "propertyUpdateHandler"
+    case ptyHandler = "ptyHandler"
+    case notificationHandler = "notificationHandler"
 
     case onboardingHandler = "onboardingHandler"
 
@@ -165,6 +169,7 @@ enum WebBridgeScript: String, CaseIterable {
 
 }
 
+//fig:iconForType:zip
 extension WebBridge: WKURLSchemeHandler {
     static func fileIcon(for url: URL) -> NSImage? {
         
@@ -174,6 +179,16 @@ extension WebBridge: WKURLSchemeHandler {
         if let qs = url.queryDictionary, let w = qs["w"], let wd = Double(w), let h = qs["h"], let hd = Double(h) {
             width = wd
             height = hd
+        }
+        
+        // fig://icon?type=mp4
+        if let host = url.host, let qs = url.queryDictionary, let type = qs["type"], host == "icon" {
+            var t = type
+            if (type == "folder") {
+                t = NSFileTypeForHFSTypeCode(OSType(kGenericFolderIcon))
+            }
+            return NSWorkspace.shared.icon(forFileType: t).resized(to: NSSize(width: width, height: height))
+
         }
         
         guard let specifier = (url as NSURL).resourceSpecifier else { return nil }
@@ -307,6 +322,10 @@ extension WebBridge : WKScriptMessageHandler {
             WebBridge.normalizeFilePath(scope: message)
         case .propertyUpdateHandler:
             WebBridge.propertyValueChanged(scope: message)
+        case .ptyHandler:
+            WebBridge.pty(scope: message)
+        case .notificationHandler:
+            WebBridge.notification(scope: message)
         default:
             print("Unhandled WKScriptMessage type '\(message.name)'")
         }
@@ -347,11 +366,18 @@ extension WebBridge {
     }
     
     static func insert(scope: WKScriptMessage) {
-        NotificationCenter.default.post(name: .insertCommandInTerminal, object: scope.body as! String)
+        if let webview = scope.webView, let window = webview.window, let controller = window.contentViewController as? WebViewController {
+            let hack = Notification(name: .insertCommandInTerminal, object: scope.body as! String, userInfo: nil)
+            controller.executeCommandInTerminal(hack)
+        }
     }
     
     static func execute(scope: WKScriptMessage) {
-        NotificationCenter.default.post(name: .executeCommandInTerminal, object: scope.body as! String)
+//        NotificationCenter.default.post(name: .executeCommandInTerminal, object: scope.body as! String)
+        if let webview = scope.webView, let window = webview.window, let controller = window.contentViewController as? WebViewController {
+            let hack = Notification(name: .executeCommandInTerminal, object: scope.body as! String, userInfo: nil)
+            controller.executeCommandInTerminal(hack)
+        }
     }
     
     static func executeInBackground(scope: WKScriptMessage) {
@@ -490,7 +516,7 @@ extension WebBridge {
            let params = scope.body as? Dictionary<String, String>,
            let position = params["position"]{
             companion.positioning = CompanionWindow.OverlayPositioning(rawValue: Int(position) ?? 2) ?? .icon
-            companion.repositionWindow(forceUpdate: true)
+            //companion.repositionWindow(forceUpdate: true, explicit: true)
         }
     }
     
@@ -571,6 +597,10 @@ extension WebBridge {
                 }
                 case "deleteCache":
                     (scope.webView as? WebView)?.deleteCache()
+            case "openOnStartup:true":
+                (NSApp.delegate as? AppDelegate)?.toggleLaunchAtStartup(shouldBeOff: false)
+            case "openOnStartup:false":
+                (NSApp.delegate as? AppDelegate)?.toggleLaunchAtStartup(shouldBeOff: true)
             default:
                 break;
             }
@@ -578,9 +608,9 @@ extension WebBridge {
         }
     }
     
-    static func callback(handler: String, value: String, scope: WKScriptMessage) {
+    static func callback(handler: String, value: String, webView: WKWebView?) {
         let encoded = value.data(using: .utf8)!
-        scope.webView?.evaluateJavaScript("fig.callback(`\(handler)`,`\(encoded.base64EncodedString())`)", completionHandler: nil)
+        webView?.evaluateJavaScript("fig.callback(`\(handler)`,`\(encoded.base64EncodedString())`)", completionHandler: nil)
     }
     
     static func defaults(scope: WKScriptMessage) {
@@ -589,7 +619,7 @@ extension WebBridge {
             
             if let handlerId = params["handlerId"] {
                 let value = UserDefaults.standard.string(forKey: key)
-                WebBridge.callback(handler: handlerId, value: value ?? "", scope: scope)
+                WebBridge.callback(handler: handlerId, value: value ?? "", webView: scope.webView)
                 
             } else if let value = params["value"] {
                 UserDefaults.standard.set(value, forKey: key)
@@ -603,11 +633,24 @@ extension WebBridge {
            let path = params["path"],
            let handlerId = params["handlerId"] {
             
-            WebBridge.callback(handler: handlerId, value: NSString(string: path).standardizingPath, scope: scope)
+            WebBridge.callback(handler: handlerId, value: NSString(string: path).standardizingPath, webView: scope.webView)
 //            NSURL(string: path)?.pathComponents
             
         }
     }
+    
+      static func notification(scope: WKScriptMessage) {
+            if let params = scope.body as? Dictionary<String, String>,
+               let title = params["title"],
+               let text = params["text"] {
+                
+               let notification = NSUserNotification()
+               notification.title = title
+               notification.subtitle = text
+               notification.soundName = NSUserNotificationDefaultSoundName
+               NSUserNotificationCenter.default.deliver(notification)
+            }
+        }
     
     static func propertyValueChanged(scope: WKScriptMessage) {
         if let params = scope.body as? Dictionary<String, String>,
@@ -736,6 +779,13 @@ extension WebBridge {
         }
     }
     
+    static func appInitialPosition(webview: WebView, response: @escaping (String?) -> Void) {
+        webview.evaluateJavaScript("document.head.querySelector('meta[initial-position]').getAttribute('initial-position')") { (name, error) in
+            response(name as? String)
+            return
+        }
+    }
+    
     
     static func appname(webview: WebView, response: @escaping (String?) -> Void) {
         webview.evaluateJavaScript("document.head.querySelector('meta[figapp]').getAttribute('figapp')") { (name, error) in
@@ -751,6 +801,45 @@ extension WebBridge {
         }
     }
 
+    static func pty(scope: WKScriptMessage) {
+        if let params = scope.body as? Dictionary<String, String>,
+           let type = params["type"] {
+   
+
+            switch (type) {
+                case "init":
+                    if let env = params["env"]?.jsonStringToDict() as? [String: String], let webView = scope.webView as? WebView {
+                        ShellBridge.shared.startPty(env: env)
+                        
+                        // close pty on navigate?
+                        
+                    }
+                case "stream":
+                    if let cmd = params["cmd"],
+                        let handlerId = params["handlerId"] {
+                        ShellBridge.shared.streamInPty(command: cmd, handlerId: handlerId)
+                    }
+                case "execute":
+                    if let cmd = params["cmd"],
+                        let handlerId = params["handlerId"] {
+                        ShellBridge.shared.executeInPty(command: cmd, handlerId: handlerId)
+                    }
+                case "write":
+                    if let cmd = params["cmd"] {
+                        if let code = ShellBridge.ControlCode(rawValue:cmd) {
+                            ShellBridge.shared.writeInPty(command: "", control: code)
+                        } else {
+                            ShellBridge.shared.writeInPty(command: cmd)
+                        }
+                    }
+                case "exit":
+                    ShellBridge.shared.closePty()
+                default:
+                    break;
+            }
+           
+        }
+    }
     
     static var appDirectory: URL = URL(fileURLWithPath: "\(NSHomeDirectory())/.fig/apps/")
 
