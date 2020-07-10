@@ -7,12 +7,16 @@
 //
 
 import Cocoa
+import WebKit
 
 protocol WindowManagementService {
     func tether(window: CompanionWindow)
     func untether(window: CompanionWindow)
     func close(window: CompanionWindow)
     func shouldAppear(window: CompanionWindow, explicitlyRepositioned: Bool) -> Bool
+    func requestWindowUpdate()
+    func isSidebar(window: CompanionWindow) -> Bool
+
 //    func shouldReposition(window: CompanionWindow, explicitlyRepositioned: Bool) -> Bool
 
 }
@@ -68,7 +72,7 @@ class WindowManager : NSObject {
        }
     
     @objc func cleanup() {
-        let existingWindows = Set(self.windowServiceProvider.allWhitelistedWindows().map { $0.windowId })
+        let existingWindows = Set(self.windowServiceProvider.allWhitelistedWindows(onScreen: false).map { $0.windowId })
         
         print("Existing Windows:\(existingWindows.count), Tracked Windows: \(self.windows.count)")
                
@@ -91,6 +95,7 @@ class WindowManager : NSObject {
 
             }
         }
+        print("---\nSpaced Changed\n\n")
         updatePosition(for: .spaceChanged)
     }
     
@@ -141,6 +146,10 @@ class WindowManager : NSObject {
         }
     }
     
+    @objc func requestWindowUpdate() {
+        self.updatePosition(for: .explictlyTriggered)
+    }
+    
     @objc func updatePositionTimer() {
         updatePosition(for: .timer)
     }
@@ -156,25 +165,29 @@ class WindowManager : NSObject {
         //sidebar
         sidebar?.repositionWindow(forceUpdate: forceUpdate, explicit: explicit)
         
-        let visibleWindows = self.windows.filter { $0.value.isVisible }
-        print("Visible Fig windows: \(visibleWindows.count)")
+        let visibleWindows = self.windows.map { $0.value } .filter { $0.isVisible }
+        print("---\nAll Fig windows: \(allCompanionWindows.count)\nVisible Fig windows: \(visibleWindows.count)\nUntethered Windows: \(self.untetheredWindows.count)\n---")
         for w in visibleWindows {
-            print("\(w.value.title)", "\(w.value.positioning)")
+            print("\(w.title)", "\(w.positioning)")
         }
-        self.hotKeyManager?.companionWindow = visibleWindows.first?.value ?? self.sidebar!
+        
+        
+//        print(NSApp.keyWindow as? CompanionWindow)
+        
 
-//        if let keyWindow = NSApp.keyWindow as? CompanionWindow, untetheredWindows.contains(keyWindow) {
-//            
-//        } else {
-//            self.hotKeyManager?.companionWindow = visibleWindows.first?.value ?? self.sidebar!
-//        }
+        if let keyWindow = NSApp.keyWindow as? CompanionWindow, untetheredWindows.contains(keyWindow) {
+            self.hotKeyManager?.companionWindow = keyWindow
+
+        } else {
+            self.hotKeyManager?.companionWindow = visibleWindows.first ?? self.sidebar!
+        }
     
     }
     
     func createSidebar() {
         let web = WebViewController()
         web.webView?.defaultURL = nil
-        web.webView?.loadRemoteApp(at: URL(string: "https://app.withfig.com/sidebar")!)
+        web.webView?.loadRemoteApp(at: Remote.baseURL.appendingPathComponent("sidebar"))
         let companion = CompanionWindow(viewController: web)
         companion.positioning = CompanionWindow.defaultPassivePosition
         companion.repositionWindow(forceUpdate: true, explicit: true)
@@ -189,6 +202,17 @@ class WindowManager : NSObject {
         let window =  CompanionWindow(viewController: web)
         window.makeKeyAndOrderFront(nil)
         return window
+    }
+    
+    func bringTerminalWindowToFront() {
+        let terminalWindows = self.windowServiceProvider.allWhitelistedWindows(onScreen: true).filter { Integrations.terminals.contains($0.bundleId ?? "") }
+        
+        if (terminalWindows.count == 0) {
+            NSWorkspace.shared.launchApplication("Terminal")
+        } else {
+            let target = terminalWindows.first!
+            target.app.activate(options: .activateIgnoringOtherApps)
+        }
     }
 }
 
@@ -209,7 +233,13 @@ extension WindowManager : ShellBridgeEventListener {
         
         let msg = (notification.object as! ShellMessage)
         DispatchQueue.main.async {
+
             if let parent = self.windowServiceProvider.topmostWhitelistedWindow() {
+                
+//                if let nativeCommand = NativeCLICommand(rawValue: msg.options?.first ?? ""), !nativeCommand.openInNewWindow {
+//                    
+//                }
+
                 
                 if let companion = self.windows[parent], let web = companion.contentViewController as? WebViewController {
                     self.windows[parent] = companion
@@ -247,11 +277,88 @@ extension WindowManager : ShellBridgeEventListener {
     }
 }
 
+// Open WindowManager
+extension WindowManager {
+    func openCompanionWindow(from shell: ShellMessage) {
+        if let parent = self.windowServiceProvider.topmostWhitelistedWindow() {
+             
+             if let companion = self.windows[parent], let web = companion.contentViewController as? WebViewController {
+                 self.windows[parent] = companion
+                 companion.tetheredWindowId = parent.windowId
+                 companion.tetheredWindow = parent
+                 companion.delegate = self
+
+                 FigCLI.route(shell, webView: web.webView!, companionWindow: companion)
+                 companion.oneTimeUse = true
+
+             } else {
+                 let web = WebViewController()
+                 web.webView?.defaultURL = nil
+
+                 let companion = self.windows[parent] ?? CompanionWindow(viewController: web)
+                 self.windows[parent] = companion
+                 companion.tetheredWindowId = parent.windowId
+                 companion.tetheredWindow = parent
+                 companion.delegate = self
+
+                 companion.makeKeyAndOrderFront(nil)
+
+                 FigCLI.route(shell, webView: web.webView!, companionWindow: companion)
+                 companion.oneTimeUse = true
+
+                 
+             }
+        }
+    }
+    
+    func popupCompanionWindow(from navigationAction: WKNavigationAction, with configuration: WKWebViewConfiguration, frame: NSRect) -> WKWebView? {
+
+        
+        let web = WebViewController(configuration)
+        web.webView?.load(navigationAction.request)
+        web.webView?.defaultURL = nil
+
+        let companion = CompanionWindow(viewController: web)
+
+//        companion.tetheredWindowId = parent.windowId
+//        companion.tetheredWindow = parent
+
+        
+//        companion.setFrame(C, display: true, animate: false)
+        companion.oneTimeUse = true
+//        companion.isDocked = false
+        companion.configureWindow(for: CompanionWindow.defaultActivePosition)
+        companion.positioning = CompanionWindow.defaultActivePosition
+//        self.untether(window: companion)
+        companion.makeKeyAndOrderFront(nil)
+        companion.orderFrontRegardless()
+        companion.delegate = self
+
+        
+        return web.webView
+
+                    
+        
+    }
+
+}
+
 extension WindowManager : WindowManagementService {
+    func isSidebar(window: CompanionWindow) -> Bool {
+        guard let sidebar = self.sidebar else {
+            return false
+        }
+        return window == sidebar
+    }
     
     func shouldAppear(window: CompanionWindow, explicitlyRepositioned: Bool) -> Bool {
         window.configureWindow(for: window.positioning)
-
+        
+        if window.isSidebar && UserDefaults.standard.string(forKey: "sidebar") == "hidden" {
+            print("shouldAppear: Is sidebar and sidebar preference is hidden.")
+            return false
+        }
+        
         if !window.isDocked {
             print("shouldAppear: Is untethered")
             return true
@@ -306,6 +413,9 @@ extension WindowManager : WindowManagementService {
                 }
             }
             
+            // this keeps Fig windows open by default when Fig is the active apps,
+            // which makes sense most of the time
+            // but there are some issues here. Probably need a condition tying the current parentWindow id to previous whitelisted window.
             print("shouldAppear: [\(bundleId)] Fig active & not explicitly positioned")
             return true
         } else {
@@ -373,26 +483,28 @@ extension WindowManager : WindowManagementService {
         window.orderOut(nil)
         window.close()
         
-        if let parent = window.tetheredWindow, self.windows[parent] != nil {
+        if let parent = window.tetheredWindow, window.isDocked, self.windows[parent] != nil {
             self.windows.removeValue(forKey: parent)
             self.updatePosition(for: .figWindowClosed)
             
             if (NSWorkspace.shared.frontmostApplication?.isFig ?? false) {
                 self.windowServiceProvider.previousFrontmostApplication()?.activate(options: .activateIgnoringOtherApps)
             }
+        } else {
+            self.untetheredWindows = self.untetheredWindows.filter { $0 != window }
         }
         
-        self.untetheredWindows = self.untetheredWindows.filter { $0 != window }
         
     }
     
     func untether(window: CompanionWindow) {
         if let parent = window.tetheredWindow {
             self.windows.removeValue(forKey: parent)
-            self.untetheredWindows.append(window)
         }
         
-//        self.updatePosition(for: .figWindowUntethered)
+        self.untetheredWindows.append(window)
+        
+        self.updatePosition(for: .figWindowUntethered)
     }
     
     func tether(window: CompanionWindow) {

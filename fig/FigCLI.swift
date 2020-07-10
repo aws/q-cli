@@ -52,10 +52,17 @@ enum NativeCLICommand : String {
     case appstore = "appstore"
     case blocks = "blocks"
     case home = "home"
+    
+    var openInNewWindow: Bool {
+        get {
+            let popups: Set<NativeCLICommand> = [ .web, .local, .bundle, .apps, .appstore, .home, .appstore, .blocks]
+            return popups.contains(self)
+        }
+    }
 }
 
 class FigCLI {
-    static let baseURL = URL(string: "https://app.withfig.com/")!
+    static let baseURL = Remote.baseURL
 
     static func index(with scope: Scope ) {
         scope.webView.loadRemoteApp(at: FigCLI.baseURL)
@@ -66,6 +73,20 @@ class FigCLI {
 //        FigCLI.stdin(with: scope)
     }
     
+    
+    static func form(with scope: Scope, format: String) {
+        let url = ShellBridge.aliasToRawURL(format, options: scope.options)
+        scope.webView.loadRemoteApp(at: url)
+        FigCLI.prepareWebView(with: scope)
+    }
+    
+    static func prepareWebView(with scope: Scope) {
+        FigCLI.env(with: scope)
+        FigCLI.options(with: scope)
+        FigCLI.stdin(with: scope)
+        FigCLI.initialPosition(with: scope)
+    }
+    
     static func callback(with scope: Scope) {
         scope.webView.evaluateJavaScript("fig.\(scope.options[0])(`\(scope.stdin)`)", completionHandler: nil)
     }
@@ -73,7 +94,7 @@ class FigCLI {
     static func initialPosition(with scope: Scope) {
         scope.webView.onLoad.append {
               WebBridge.appInitialPosition(webview: scope.webView) { (position) in
-                scope.companionWindow.positioning = CompanionWindow.OverlayPositioning(rawValue:                     Int(position ?? "3")! )!
+                scope.companionWindow.positioning = CompanionWindow.OverlayPositioning(rawValue:                     Int(position ?? "-1")! ) ?? scope.companionWindow.positioning
               }
           }
         
@@ -195,10 +216,11 @@ class FigCLI {
         webView.clearHistory()
         webView.window?.representedURL = nil
         ShellBridge.shared.closePty()
+        
       
         guard let options = message.options, options.count > 0 else {
             let scope = Scope(cmd: "", stdin: stdin, options: [], env: env, webView: webView, companionWindow: companionWindow)
-            companionWindow.positioning =  CompanionWindow.defaultActivePosition
+            companionWindow.positioning =  .spotlight
             FigCLI.index(with: scope)
             return
         }
@@ -212,6 +234,8 @@ class FigCLI {
                           companionWindow: companionWindow)
         print("ROUTING \(command)")
         
+        let aliases = UserDefaults.standard.string(forKey: "aliases_dict")?.jsonStringToDict() ?? [:]
+        
          companionWindow.positioning = storedInitialPosition(for: command) ?? CompanionWindow.defaultActivePosition
         
         if let nativeCommand = NativeCLICommand(rawValue: command) {
@@ -224,6 +248,7 @@ class FigCLI {
                 FigCLI.local(with: scope)
             case .web:
                 companionWindow.positioning = .fullscreenInset
+                scope.webView.customUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36"
                 FigCLI.web(with: scope)
             case .position:
                 FigCLI.position(with: scope)
@@ -234,6 +259,26 @@ class FigCLI {
                 companionWindow.positioning = .fullwindow
                 FigCLI.url(with: scope)
             }
+        } else if (aliases.keys.contains(command)) { // user defined shortcuts
+            
+            if let meta = aliases[command] as? [String: Any],
+                let rawCommand = meta["raw"] as? String,
+                let popup = meta["popup"] as? Bool {
+                
+                if popup {
+                    FigCLI.form(with: scope, format: rawCommand)
+                    companionWindow.positioning = .spotlight
+                } else {
+                    Timer.delayWithSeconds(0.15) {
+                        ShellBridge.injectStringIntoTerminal(rawCommand, runImmediately: true)
+                    }
+                }
+            }
+            
+            
+            
+//            companionWindow.windowManager.close(window: companionWindow)
+            // get script for command
         } else {
             FigCLI.url(with: scope)
         }

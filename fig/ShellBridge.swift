@@ -472,8 +472,8 @@ extension ShellBridge {
         }
         
         var components = URLComponents()
-        components.scheme = "https"
-        components.host = "app.withfig.com"
+        components.scheme = Remote.baseURL.scheme ?? "https"
+        components.host = Remote.baseURL.host ?? "app.withfig.com"
         components.path = root
         components.queryItems = query.map {
              URLQueryItem(name: $0, value: $1)
@@ -491,11 +491,27 @@ extension ShellBridge {
         
         let argv = raw.joined(separator: " ").addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
         var components = URLComponents()
-        components.scheme = "https"
-        components.host = "app.withfig.com"
+        components.scheme = Remote.baseURL.scheme ?? "https"
+        components.host = Remote.baseURL.host ?? "app.withfig.com"
         components.path = cmd
         components.queryItems = [URLQueryItem(name: "input", value: argv)]
         return components.url!//URL(string:"\(components.string!)?input=\(argv)")!
+    }
+    
+    // https://app.withfig.com/alias?fmt=echo%20whoami&input=values,hello
+    static func aliasToRawURL(_ format: String, options: [String]) -> URL {
+        
+        let argv = options.joined(separator: " ").addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        let fmt = format.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        var components = URLComponents()
+        components.scheme = Remote.baseURL.scheme ?? "https"
+        components.host = Remote.baseURL.host ?? "app.withfig.com"
+        components.path = "/alias"
+        components.queryItems = [
+            URLQueryItem(name: "fmt", value: fmt),
+            URLQueryItem(name: "input", value: argv)
+        ]
+        return components.url!
     }
 }
 

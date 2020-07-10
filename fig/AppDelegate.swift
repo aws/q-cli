@@ -41,6 +41,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 
         if (!hasLaunched || email == nil ) {
             let onboardingViewController = WebViewController()
+            onboardingViewController.webView?.defaultURL = nil
             onboardingViewController.webView?.loadBundleApp("landing")
 //            onboardingViewController.webView?.loadRemoteApp(at: URL(string: "https://app.withfig.com/onboarding/landing.html")!)
 
@@ -54,7 +55,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             UserDefaults.standard.synchronize()
         } else {
             if (!AXIsProcessTrustedWithOptions(nil)) {
-                let enable = self.dialogOKCancel(question: "Enable Accesibility Permission?", text: "Fig needs this permission in order to find your topmost terminal window.\n\nYou may need to toggle the setting in order for OSX to update it.", prompt: "Enable")
+                let enable = self.dialogOKCancel(question: "Enable Accesibility Permission?", text: "Fig needs this permission in order to connect to your terminal window.\n\nYou may need to toggle the setting in order for MacOS to update it.\n\nThis can occur when Fig is updated. If you are seeing this more frequently, get in touch with matt@withfig.com.", prompt: "Enable")
                 
                 if (enable) {
                     ShellBridge.promptForAccesibilityAccess()
@@ -121,10 +122,10 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 //         action: #selector(AppDelegate.runExitCmd),
 //         keyEquivalent: "")
 //
-        statusBarMenu.addItem(
-         withTitle: "Log all window",
-         action: #selector(AppDelegate.allWindows),
-         keyEquivalent: "")
+//        statusBarMenu.addItem(
+//         withTitle: "Log all window",
+//         action: #selector(AppDelegate.allWindows),
+//         keyEquivalent: "")
 //
 //        statusBarMenu.addItem(
 //         withTitle: "Top Terminal Window Bounds",
@@ -143,7 +144,10 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 //         action: #selector(AppDelegate.killSocketServer),
 //         keyEquivalent: "")
     
-        
+//        statusBarMenu.addItem(
+//         withTitle: "Bring Terminal Window",
+//         action: #selector(AppDelegate.terminalWindowToFront),
+//         keyEquivalent: "")
         statusBarMenu.addItem(
          withTitle: "Add CLI Tool",
          action: #selector(AppDelegate.addCLI),
@@ -200,11 +204,16 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             let vc = companion.contentViewController as? WebViewController,
             let webView = vc.webView {
             companion.positioning = .icon
-            webView.loadRemoteApp(at: URL(string: "https://app.withfig.com/hide")!)
+            webView.loadRemoteApp(at: Remote.baseURL.appendingPathComponent("hide"))
             
         }
     }
     
+    @objc func terminalWindowToFront() {
+        WindowManager.shared.bringTerminalWindowToFront()
+    }
+    
+
     @objc func checkForUpdates() {
         print("Checking")
         self.updater?.checkForUpdates(self)

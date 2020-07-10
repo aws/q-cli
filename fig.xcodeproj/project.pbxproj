@@ -42,6 +42,8 @@
 		7510F8BD24A9861E00E86F7C /* PrivateWindow.m in Sources */ = {isa = PBXBuildFile; fileRef = 7510F8BC24A9861E00E86F7C /* PrivateWindow.m */; };
 		7510F8BF24A99A4B00E86F7C /* WindowService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F8BE24A99A4B00E86F7C /* WindowService.swift */; };
 		7510F8C124A9B32D00E86F7C /* WindowManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F8C024A9B32D00E86F7C /* WindowManager.swift */; };
+		751C3BEC24B6910800B5C7FD /* Remote.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751C3BEB24B6910800B5C7FD /* Remote.swift */; };
+		751C3BEE24B6915000B5C7FD /* Defaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751C3BED24B6915000B5C7FD /* Defaults.swift */; };
 		751F7589246D090100E083C8 /* WebBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751F7588246D090100E083C8 /* WebBridge.swift */; };
 		751F7591246E16D800E083C8 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751F7590246E16D800E083C8 /* main.swift */; };
 		751F75982478571D00E083C8 /* WebSocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751F75972478571D00E083C8 /* WebSocket.swift */; };
@@ -175,6 +177,8 @@
 		7510F8BC24A9861E00E86F7C /* PrivateWindow.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PrivateWindow.m; sourceTree = "<group>"; };
 		7510F8BE24A99A4B00E86F7C /* WindowService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowService.swift; sourceTree = "<group>"; };
 		7510F8C024A9B32D00E86F7C /* WindowManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowManager.swift; sourceTree = "<group>"; };
+		751C3BEB24B6910800B5C7FD /* Remote.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Remote.swift; sourceTree = "<group>"; };
+		751C3BED24B6915000B5C7FD /* Defaults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Defaults.swift; sourceTree = "<group>"; };
 		751F7588246D090100E083C8 /* WebBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebBridge.swift; sourceTree = "<group>"; };
 		751F758E246E16D800E083C8 /* figcli */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = figcli; sourceTree = BUILT_PRODUCTS_DIR; };
 		751F7590246E16D800E083C8 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
@@ -374,6 +378,8 @@
 				756759D324498CA0006AA988 /* WebViewController.swift */,
 				75C0711F244BB441002DF69F /* CompanionViewController.swift */,
 				75C07123244BE45A002DF69F /* CompanionWindow.swift */,
+				751C3BEB24B6910800B5C7FD /* Remote.swift */,
+				751C3BED24B6915000B5C7FD /* Defaults.swift */,
 				7510F8BE24A99A4B00E86F7C /* WindowService.swift */,
 				7510F8C024A9B32D00E86F7C /* WindowManager.swift */,
 				7510F8B924A9701000E86F7C /* Private.h */,
@@ -688,6 +694,7 @@
 				7510F89924A6910500E86F7C /* TerminalViewDelegate.swift in Sources */,
 				7510F8A424A6910500E86F7C /* iOSCaretView.swift in Sources */,
 				757CA88124874E06002A64A8 /* ErrorMatcher.swift in Sources */,
+				751C3BEE24B6915000B5C7FD /* Defaults.swift in Sources */,
 				7510F89A24A6910500E86F7C /* Extensions.swift in Sources */,
 				7510F8B524A6910500E86F7C /* SearchService.swift in Sources */,
 				7510F8A024A6910500E86F7C /* EscapeSequences.swift in Sources */,
@@ -699,6 +706,7 @@
 				7510F8B824A6910500E86F7C /* Pty.swift in Sources */,
 				7510F8A724A6910500E86F7C /* MacAccessibilityService.swift in Sources */,
 				7510F8AA24A6910500E86F7C /* MacCaretView.swift in Sources */,
+				751C3BEC24B6910800B5C7FD /* Remote.swift in Sources */,
 				7510F8A924A6910500E86F7C /* MacLocalTerminalView.swift in Sources */,
 				7510F89824A6910500E86F7C /* AppleTerminalView.swift in Sources */,
 				757CA8E124903D3B002A64A8 /* HotKeyManager.swift in Sources */,
@@ -899,7 +907,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1.0.9;
+				CURRENT_PROJECT_VERSION = 1.0.11;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
@@ -913,7 +921,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MARKETING_VERSION = 1.0.9;
+				MARKETING_VERSION = 1.0.11;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mschrage.fig;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "fig/fig-Bridging-Header.h";
@@ -931,7 +939,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1.0.9;
+				CURRENT_PROJECT_VERSION = 1.0.11;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
@@ -945,7 +953,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MARKETING_VERSION = 1.0.9;
+				MARKETING_VERSION = 1.0.11;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mschrage.fig;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "fig/fig-Bridging-Header.h";

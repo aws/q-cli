@@ -348,7 +348,7 @@ extension WebBridge {
     static func authorized(scope: WKScriptMessage) -> Bool {
         if let webView = scope.webView, let url = webView.url, let scheme = url.scheme {
             print(scheme)
-            return scheme == "file" || url.host ?? "" == "app.withfig.com" || url.host ?? "" == "localhost"
+            return scheme == "file" || url.host == Remote.baseURL.host || url.host ?? "" == "localhost"
         }
         return false
     }
@@ -580,7 +580,8 @@ extension WebBridge {
                     if let delegate = NSApplication.shared.delegate as? AppDelegate {
                         delegate.setupCompanionWindow()
                     }
-                    NSWorkspace.shared.launchApplication("Terminal")
+                    WindowManager.shared.bringTerminalWindowToFront()
+//                    NSWorkspace.shared.launchApplication("Terminal")
                     scope.webView?.window?.close()
                 case "forceUpdate":
                     if let appDelegate = NSApp.delegate as? AppDelegate {

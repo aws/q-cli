@@ -377,6 +377,8 @@ extension WebViewController : WKUIDelegate {
     func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
         print("hello")
         if navigationAction.targetFrame == nil {
+            return self.webView
+            return WindowManager.shared.popupCompanionWindow(from: navigationAction, with: configuration, frame: self.view.window!.frame)
             
             let popup = WebViewController(configuration)
            popup.webView?.load(navigationAction.request)
@@ -497,7 +499,7 @@ class WebView : WKWebView {
     var onLoad: [(() -> Void)] = []
     var onNavigate: [(() -> Void)] = []
     var configureEnvOnLoad: (() -> Void)?
-    var defaultURL: URL? = URL(string: "https://app.withfig.com/sidebar")
+    var defaultURL: URL? = Remote.baseURL.appendingPathComponent("sidebar")
     private var dragShouldRepositionWindow = false
     
 //    override var intrinsicContentSize: NSSize {
@@ -508,7 +510,7 @@ class WebView : WKWebView {
     
     override var canGoBack: Bool {
         get {
-            return !(super.backForwardList.backItem?.initialURL.absoluteString == "https://app.withfig.com/sidebar") && super.canGoBack
+            return !(super.backForwardList.backItem?.initialURL.absoluteString == Remote.baseURL.appendingPathComponent("sidebar").absoluteString) && super.canGoBack
         }
     }
 
@@ -518,7 +520,8 @@ class WebView : WKWebView {
 
     override init(frame: CGRect, configuration: WKWebViewConfiguration) {
         super.init(frame: frame, configuration: configuration)
-        //self.customUserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 13_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/83.0.4103.88 Mobile/15E148 Safari/604.1 FigBrowser/\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0")"
+        
+        //Mozilla/5.0 (iPhone; CPU iPhone OS 13_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/83.0.4103.88 Mobile/15E148 Safari/604.1 FigBrowser/\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0")"
         NotificationCenter.default.addObserver(self, selector: #selector(requestStopMonitoringMouseEvents(_:)), name: .requestStopMonitoringMouseEvents, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(requestStartMonitoringMouseEvents(_:)), name: .requestStartMonitoringMouseEvents, object: nil)
 //        self.unregisterDraggedTypes()
@@ -578,10 +581,9 @@ class WebView : WKWebView {
             print("current frontmost application \(NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "")")
 
             print("Attempting to activate fig")
-//            self.window?.makeKey()
-//            self.window?.makeKeyAndOrderFront(nil)
-//            self.window?.orderFrontRegardless()
-            NSRunningApplication.current.activate(options: .activateIgnoringOtherApps)
+            WindowManager.shared.windowServiceProvider.takeFocus()
+
+//            NSRunningApplication.current.activate(options: .activateIgnoringOtherApps)
         }
     }
     
@@ -590,10 +592,12 @@ class WebView : WKWebView {
         guard let w = self.window, let window = w as? CompanionWindow else {
                   return
             }
-        if (trackMouse && NSWorkspace.shared.frontmostApplication?.isFig ?? false && window.positioning == CompanionWindow.defaultPassivePosition) {
+        if (trackMouse && (NSWorkspace.shared.frontmostApplication?.isFig ?? false || WindowManager.shared.windowServiceProvider.isActivating) && window.positioning == CompanionWindow.defaultPassivePosition) {
             print("current frontmost application \(NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "")")
             print("Attempting to activate previous app \( ShellBridge.shared.previousFrontmostApplication?.bundleIdentifier ?? "<none>")")
-            ShellBridge.shared.previousFrontmostApplication?.activate(options: .init())
+//            ShellBridge.shared.previousFrontmostApplication?.activate(options: .init())
+            WindowManager.shared.windowServiceProvider.returnFocus()
+
 
         }
     }
@@ -627,7 +631,7 @@ class WebView : WKWebView {
     func loadHomeScreen() {
         self.evaluateJavaScript("document.documentElement.remove()") { (_, _) in
 
-            self.load(URLRequest(url: URL(string: "https://app.withfig.com")!, cachePolicy: .useProtocolCachePolicy))
+            self.load(URLRequest(url: Remote.baseURL, cachePolicy: .useProtocolCachePolicy))
         }
 
     }
@@ -635,7 +639,7 @@ class WebView : WKWebView {
     func loadSideBar() {
         print("loadSidebar")
         self.evaluateJavaScript("document.documentElement.remove()") { (_, _) in
-           self.load(URLRequest(url: URL(string: "https://app.withfig.com/sidebar")!, cachePolicy: .useProtocolCachePolicy))
+            self.load(URLRequest(url: Remote.baseURL.appendingPathComponent("sidebar"), cachePolicy: .useProtocolCachePolicy))
        }
     }
     

@@ -15,14 +15,49 @@ protocol WindowService {
     func topmostWindow(for app: NSRunningApplication) -> ExternalWindow?
     func previousFrontmostApplication() -> NSRunningApplication?
     func currentApplicationIsWhitelisted() -> Bool
-    func allWindows() -> [ExternalWindow]
-    func allWhitelistedWindows() -> [ExternalWindow]
+    func allWindows(onScreen: Bool) -> [ExternalWindow]
+    func allWhitelistedWindows(onScreen: Bool) -> [ExternalWindow]
     func previousWhitelistedWindow() -> ExternalWindow?
     func bringToFront(window: ExternalWindow)
+    func takeFocus()
+    func returnFocus()
+    
+    var isActivating: Bool { get }
+    var isDeactivating: Bool { get }
+
 }
 
 
 class WindowServer : WindowService {
+    var isActivating = false
+    var isDeactivating = false
+
+    func returnFocus() {
+        if let app = self.previousApplication  {
+            self.isDeactivating = true
+            if (self.isActivating) {
+                NSWorkspace.shared.frontmostApplication?.activate(options: .activateIgnoringOtherApps)
+            } else {
+                app.activate(options: .activateIgnoringOtherApps)
+            }
+        }
+    }
+    
+    @objc func didActivateApplication(notification: Notification) {
+        if let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication {
+            if (app.isFig) {
+                self.isActivating = false
+            } else if (self.isDeactivating) {
+                self.isDeactivating = false
+            }
+        }
+    }
+    
+    func takeFocus() {
+        self.isActivating = true
+        NSRunningApplication.current.activate(options: .activateIgnoringOtherApps)
+    }
+    
     func bringToFront(window: ExternalWindow) {
         
         let appRef = AXUIElementCreateApplication(window.app.processIdentifier)
@@ -54,22 +89,27 @@ class WindowServer : WindowService {
     }
     
     func topmostWhitelistedWindow() -> ExternalWindow? {
-        guard self.currentApplicationIsWhitelisted() else { return nil }
-        return topmostWindow(for: NSWorkspace.shared.frontmostApplication!)
+        return self.allWhitelistedWindows(onScreen: true).first
+// fixed the workspace bug!
+//        guard self.currentApplicationIsWhitelisted() else { return nil }
+//        return topmostWindow(for: NSWorkspace.shared.frontmostApplication!)
     }
     
     func currentApplicationIsWhitelisted() -> Bool{
         let whitelistedBundleIds = Integrations.whitelist
         if let app = NSWorkspace.shared.frontmostApplication,
             let bundleId = app.bundleIdentifier {
+            print("currentAppBundleId = \(bundleId)")
             return whitelistedBundleIds.contains(bundleId)
         }
         
         return false
     }
+
     
-    func allWindows() -> [ExternalWindow] {
-        guard let rawWindows = CGWindowListCopyWindowInfo(.optionAll, kCGNullWindowID) as? [[String: Any]] else {
+    func allWindows(onScreen:Bool = false) -> [ExternalWindow] {
+        let options: CGWindowListOption = onScreen ? CGWindowListOption.optionOnScreenOnly : .optionAll
+        guard let rawWindows = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]] else {
             return []
         }
         
@@ -83,8 +123,8 @@ class WindowServer : WindowService {
         return allWindows
     }
     
-    func allWhitelistedWindows() -> [ExternalWindow] {
-        return self.allWindows().filter { Integrations.whitelist.contains($0.bundleId ?? "") }
+    func allWhitelistedWindows(onScreen: Bool = false) -> [ExternalWindow] {
+        return self.allWindows(onScreen: onScreen).filter { Integrations.whitelist.contains($0.bundleId ?? "") }
     }
     
     static let shared = WindowServer()
@@ -105,6 +145,7 @@ class WindowServer : WindowService {
     }
     
     init() {
+        NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(didActivateApplication(notification:)), name: NSWorkspace.didActivateApplicationNotification, object: nil)
         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(setPreviousApplication(notification:)), name: NSWorkspace.didDeactivateApplicationNotification, object: nil)
         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(spaceChanged), name: NSWorkspace.activeSpaceDidChangeNotification, object: nil)
         _ = Timer.scheduledTimer(timeInterval: 0.15, target: self, selector: #selector(setPreviousWindow), userInfo: nil, repeats: true)
@@ -168,6 +209,7 @@ class WindowServer : WindowService {
 class ExternalWindow {
     let frame: NSRect
     let windowId: CGWindowID
+    let windowLevel: CGWindowLevel?
     let app: NSRunningApplication
     
     init?(raw: [String: Any]) {
@@ -204,6 +246,8 @@ class ExternalWindow {
             return nil
         }
         
+        
+        self.windowLevel = raw["kCGWindowLayer"] as? CGWindowLevel
         self.app = app
         self.windowId = id
         self.frame = CGRect(x: x, y: y, width: width, height: height)
@@ -213,6 +257,7 @@ class ExternalWindow {
         self.frame = frame
         self.windowId = windowId
         self.app = app
+        self.windowLevel = nil
     }
 
     var frameWithoutTitleBar: NSRect {

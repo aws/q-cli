@@ -54,6 +54,7 @@ class HotKeyManager {
             }
         }
         
+        //https://gist.github.com/swillits/df648e87016772c7f7e5dbed2b345066
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { (event) -> NSEvent? in
             // ESC
             if (event.keyCode == 53) {
@@ -88,35 +89,41 @@ class HotKeyManager {
                 }
                 return nil
             }
+            
+            // command-w
+            if (event.keyCode == 13 && event.modifierFlags.contains(.command)) {
+                if (self.companionWindow.positioning != CompanionWindow.defaultPassivePosition) {
+                    self.companionWindow.toSidebar()
+                }
+                return nil
+            }
+
 
             
-            if (event.keyCode == 3 && event.modifierFlags.contains(.command)) {
-                switch self.companionWindow.positioning {
-                case CompanionWindow.defaultPassivePosition:
-                    return nil
-                case .fullscreenInset:
-                    self.companionWindow.positioning = CompanionWindow.defaultActivePosition
-                    self.companionWindow.repositionWindow(forceUpdate: true, explicit: true)
-
-                    return nil
-                default:
-                    self.companionWindow.positioning = .fullscreenInset
-                    return nil
-                }
-
-            }
+//            if (event.keyCode == 3 && event.modifierFlags.contains(.command)) {
+//                switch self.companionWindow.positioning {
+//                case CompanionWindow.defaultPassivePosition:
+//                    return nil
+//                case .fullscreenInset:
+//                    self.companionWindow.positioning = CompanionWindow.defaultActivePosition
+//                    self.companionWindow.repositionWindow(forceUpdate: true, explicit: true)
+//
+//                    return nil
+//                default:
+//                    self.companionWindow.positioning = .fullscreenInset
+//                    return nil
+//                }
+//
+//            }
             
             if (event.keyCode == 2 && event.modifierFlags.contains(.command)) {
                  switch self.companionWindow.positioning {
                  case CompanionWindow.defaultPassivePosition:
                      return nil
                  case .untethered:
-                     self.companionWindow.positioning = CompanionWindow.defaultActivePosition
-                     self.companionWindow.repositionWindow(forceUpdate: true, explicit: true)
-
-                     return nil
+                    return nil
                  default:
-                     self.companionWindow.positioning = .untethered
+                     self.companionWindow.untether()
                      return nil
                  }
 
@@ -149,7 +156,32 @@ class HotKeyManager {
         
     }
 
-    var shouldTab = false;
+    var shouldTab = false {
+        // this is ugly. Just a hacky way of having an option to hide the status bar. Only visible when using CMD+I
+        didSet {
+            let sidebarState = UserDefaults.standard.string(forKey: "sidebar")
+            if (shouldTab) {
+                switch sidebarState {
+                case "hidden":
+                    UserDefaults.standard.set("hidden:tabbing", forKey: "sidebar")
+                    UserDefaults.standard.synchronize()
+                default:
+                    print(sidebarState ?? "")
+                    break;
+                }
+            } else {
+                switch sidebarState {
+                   case "hidden:tabbing":
+                       UserDefaults.standard.set("hidden", forKey: "sidebar")
+                       UserDefaults.standard.synchronize()
+                   default:
+                       print(sidebarState ?? "")
+                       break;
+                }
+            }
+            self.companionWindow.windowManager.requestWindowUpdate()
+        }
+    }
     var oldModifiers: NSEvent.ModifierFlags = .deviceIndependentFlagsMask
     func flagsChanged(event : NSEvent) {
        switch event.modifierFlags.intersection(.deviceIndependentFlagsMask) {

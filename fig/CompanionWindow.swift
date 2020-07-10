@@ -26,7 +26,7 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
     
     var oneTimeUse = false;
 
-    var closeBtn: NSButton?
+    var closeBtn: PointableButton?
     var backBtn: NSTextField?
     var untetherBtn: NSTextField?
     
@@ -45,6 +45,8 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
                 self.windowManager.close(window: self)
                 return
             }
+            
+            self.windowManager.requestWindowUpdate()
 
             if (!positioning.hasTitleBar) {
                 isDocked = true
@@ -103,7 +105,6 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
         self.contentViewController = viewController
         self.setFrame(NSRect(x: 400, y: 400, width: 300, height: 300), display: true)
         self.appearance = NSAppearance(named:.aqua) // keeps window title text black
-        
 //        self.makeKeyAndOrderFront(nil)
         
         self.delegate = self
@@ -124,7 +125,7 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
 //        self.contentViewController!.view.addTrackingArea(trackingArea)
 
     }
-        
+            
     override func mouseEntered(with event: NSEvent) {
         print("mouse entered...")
 
@@ -132,6 +133,13 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
     
     override func mouseExited(with event: NSEvent) {
         print("mouse exited...")
+    }
+    
+    // this was done to prevent untethered windows from jumping to the front when the application is activate (eg. when the user mouses over the sidebar)
+    override var canBecomeMain: Bool {
+        get {
+            return self.isDocked
+        }
     }
     
     @objc func spaceChanged() {
@@ -265,7 +273,7 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
         
         var hasTitleBar: Bool {
             get {
-                let titlebarStates: Set<OverlayPositioning> = [.outsideRight, .untethered, .fullscreenInset, .fullwindow]
+                let titlebarStates: Set<OverlayPositioning> = [.outsideRight, .untethered, .fullscreenInset, .fullwindow, .spotlight]
                 return titlebarStates.contains(self)
             }
         }
@@ -279,11 +287,13 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
         backBtn?.removeFromSuperview()
         untetherBtn?.removeFromSuperview()
 
-        closeBtn = NSButton(title: "✕", target: self, action: #selector(toSidebar))
+        closeBtn = PointableButton(title: "✕", target: self, action: #selector(toSidebar))
         closeBtn?.font = NSFont.systemFont(ofSize: 14)
         closeBtn?.bezelStyle = .circular
         closeBtn?.frame = CGRect(x: 0, y: 0, width: 22, height: 20)
+
         self.addViewToTitleBar(closeBtn!, at: 4, offset: 1)
+//        closeBtn?.addCursorRect(closeBtn?.bounds ?? .zero, cursor: NSCursor.pointingHand)
 
         backBtn = NSTextField()
         backBtn?.frame = CGRect(origin: .zero, size: CGSize(width: 50, height: 44))
@@ -295,6 +305,7 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
         backBtn?.isEditable = false
         backBtn?.sizeToFit()
         self.addViewToTitleBar(backBtn!, at: 32, offset:1)
+//        backBtn?.addCursorRect(backBtn?.bounds ?? .zero, cursor: NSCursor.pointingHand)
 
         let backClick = NSClickGestureRecognizer(target: self, action: #selector(self.backButtonClicked))
         backBtn?.addGestureRecognizer(backClick)
@@ -310,11 +321,15 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
         untetherBtn?.isEditable = false
         untetherBtn?.sizeToFit()
         self.addViewToTitleBar(untetherBtn!, at: self.frame.width - 24, offset:1) //276
+//        untetherBtn?.addCursorRect(untetherBtn?.bounds ?? .zero, cursor: NSCursor.pointingHand)
 
         let toggleClick = NSClickGestureRecognizer(target: self, action: #selector(self.toggleTether))
         untetherBtn?.addGestureRecognizer(toggleClick)
+        
+        self.invalidateCursorRects(for: self.closeBtn!)
     }
     
+
 //    func toolbarConfig() {
 //        self.level = .floating
 //        self.collectionBehavior = [.managed]
@@ -397,6 +412,18 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
             
         }
     }
+    func untether() {
+        self.isDocked = false
+        var newFrame = self.frame
+        newFrame.origin = CGPoint(x: newFrame.origin.x + 10, y: newFrame.origin.y)
+        self.setFrame(newFrame, display: true)
+        self.untetherBtn?.stringValue = ""
+        self.untetherBtn?.gestureRecognizers.forEach {
+            self.untetherBtn?.removeGestureRecognizer($0)
+        }
+                  //text.stringValue = "↙"
+        self.windowManager.untether(window: self)
+    }
     
     override var isMovable: Bool {
         get {
@@ -404,6 +431,12 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
         }
         set(value) {
 
+        }
+    }
+    
+    var isSidebar: Bool {
+        get {
+            return self.windowManager.isSidebar(window: self)
         }
     }
     
@@ -474,6 +507,9 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
                     if (self != nil){
                         self.shouldTrackWindow = true;
                         self.repositionWindow(forceUpdate: true)
+//                        if (self.positioning == .fullscreenInset && self.windowManager.shouldAppear(window: self, explicitlyRepositioned: false)) {
+//                            self.windowServiceProvider.takeFocus()
+//                        }
                     }
                 }
                 return
@@ -680,5 +716,11 @@ extension NSColor {
             blue: CGFloat(rgbValue & 0x0000FF) / 255.0,
             alpha: CGFloat(1.0)
         )
+    }
+}
+
+class PointableButton : NSButton {
+    override func resetCursorRects() {
+        self.addCursorRect(self.bounds, cursor: .pointingHand)
     }
 }
