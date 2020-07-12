@@ -432,6 +432,13 @@ extension WebViewController : WKNavigationDelegate {
         
         //decisionHandler(.cancel)
         //print(navigationAction.navigationType)
+        
+        if let url = navigationAction.request.url, navigationAction.modifierFlags.contains(.command) {
+            NSWorkspace.shared.open(url)
+
+            decisionHandler(.cancel)
+            return
+        }
 
         decisionHandler(.allow)
 

@@ -90,7 +90,7 @@ class WindowServer : WindowService {
     
     func topmostWhitelistedWindow() -> ExternalWindow? {
         return self.allWhitelistedWindows(onScreen: true).first
-// fixed the workspace bug!
+// fixed the workspace bug! -- unfortunately it introduced a new bug when window becomes fullscreen
 //        guard self.currentApplicationIsWhitelisted() else { return nil }
 //        return topmostWindow(for: NSWorkspace.shared.frontmostApplication!)
     }
@@ -119,7 +119,7 @@ class WindowServer : WindowService {
                 allWindows.append(window)
             }
         }
-        allWindows.forEach{ print($0.bundleId ?? "", $0.windowId)}
+//        allWindows.forEach{ print($0.bundleId ?? "", $0.windowId)}
         return allWindows
     }
     

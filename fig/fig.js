@@ -183,21 +183,21 @@ let setup = function(window) {
       },
       appinfo() {
           var name = null
-          let figapp = document.head.querySelector('meta[figapp]');
+          let figapp = document.head.querySelector('meta[fig\\:app]');
           if (figapp){
-              name = figapp.getAttribute('figapp');
+              name = figapp.getAttribute('fig:app');
           }
           
           var icon = null
-          let figicon = document.head.querySelector('meta[figicon]');
+          let figicon = document.head.querySelector('meta[fig\\:icon]');
           if (figicon){
-              icon = figicon.getAttribute('figicon');
+              icon = figicon.getAttribute('fig:icon');
           }
           
           var color = null
-          let figcolor = document.head.querySelector('meta[figcolor]');
-          if (figicon){
-              color = figcolor.getAttribute('figcolor');
+          let figcolor = document.head.querySelector('meta[fig\\:color]');
+          if (figcolor){
+              color = figcolor.getAttribute('fig:color');
           }
           
           var position = null

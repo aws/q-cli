@@ -368,7 +368,7 @@ extension WebBridge {
     static func insert(scope: WKScriptMessage) {
         if let webview = scope.webView, let window = webview.window, let controller = window.contentViewController as? WebViewController {
             let hack = Notification(name: .insertCommandInTerminal, object: scope.body as! String, userInfo: nil)
-            controller.executeCommandInTerminal(hack)
+            controller.insertCommandInTerminal(hack)
         }
     }
     
@@ -789,14 +789,14 @@ extension WebBridge {
     
     
     static func appname(webview: WebView, response: @escaping (String?) -> Void) {
-        webview.evaluateJavaScript("document.head.querySelector('meta[figapp]').getAttribute('figapp')") { (name, error) in
+        webview.evaluateJavaScript("document.head.querySelector('meta[fig\\:app]').getAttribute('fig:app')") { (name, error) in
             response(name as? String)
             return
         }
     }
     
     static func appicon(webview: WebView, response: @escaping (String?) -> Void) {
-        webview.evaluateJavaScript("document.head.querySelector('meta[figicon]').getAttribute('figicon')") { (name, error) in
+        webview.evaluateJavaScript("document.head.querySelector('meta[fig\\:icon]').getAttribute('fig:icon')") { (name, error) in
             response(name as? String)
             return
         }
@@ -809,12 +809,21 @@ extension WebBridge {
 
             switch (type) {
                 case "init":
-                    if let env = params["env"]?.jsonStringToDict() as? [String: String], let webView = scope.webView as? WebView {
-                        ShellBridge.shared.startPty(env: env)
-                        
-                        // close pty on navigate?
-                        
+                    
+                    if let env = params["env"]{
+                        let parsedEnv = env.jsonStringToDict() as? [String: String] ?? FigCLI.extract(keys: ["PWD","USER","HOME","SHELL", "OLDPWD", "TERM_PROGRAM", "TERM_SESSION_ID", "HISTFILE","FIG","FIGPATH"], from: env)
+                        ShellBridge.shared.startPty(env: parsedEnv)
+
+                    } else {
+                        ShellBridge.shared.startPty(env: [:])
                     }
+         
+//                    if let env = params["env"]?.jsonStringToDict() as? [String: String], let webView = scope.webView as? WebView {
+//                        ShellBridge.shared.startPty(env: env)
+//
+//                        // close pty on navigate?
+//
+//                    }
                 case "stream":
                     if let cmd = params["cmd"],
                         let handlerId = params["handlerId"] {

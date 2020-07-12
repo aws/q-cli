@@ -152,7 +152,7 @@ class FigCLI {
     
     static func env(with scope: Scope) {
         scope.webView.configureEnvOnLoad = {
-            let env = FigCLI.extract(keys: ["PWD","USER","HOME","SHELL", "OLDPWD", "TERM_PROGRAM", "TERM_SESSION_ID", "HISTFILE"], from: scope.env)
+            let env = FigCLI.extract(keys: ["PWD","USER","HOME","SHELL", "OLDPWD", "TERM_PROGRAM", "TERM_SESSION_ID", "HISTFILE","FIG","FIGPATH"], from: scope.env)
             
             if let json = try? JSONSerialization.data(withJSONObject: env, options: .fragmentsAllowed) {
                 scope.webView.evaluateJavaScript("fig.env = JSON.parse(b64DecodeUnicode(`\(json.base64EncodedString())`))", completionHandler: nil)
@@ -161,7 +161,7 @@ class FigCLI {
         }
     }
     
-    private static func extract(keys:[String], from env: String) -> [String: String] {
+    static func extract(keys:[String], from env: String) -> [String: String] {
         var out: [String: String]  = [:]
         for key in keys {
             if let group = env.groups(for: "\"\(key)\": \"(.*?)\",").first, let value = group.last {
@@ -234,7 +234,35 @@ class FigCLI {
                           companionWindow: companionWindow)
         print("ROUTING \(command)")
         
+        // get aliases from sidebar
         let aliases = UserDefaults.standard.string(forKey: "aliases_dict")?.jsonStringToDict() ?? [:]
+        
+        // get
+        let figPath = FigCLI.extract(keys: ["FIGPATH"], from: scope.env).first?.value.split(separator: ":") ?? []
+        
+        var appPath: String? = nil
+        for prefix in figPath {
+            let isRaw = FileManager.default.fileExists(atPath: "\(prefix)/\(command)")
+            if (isRaw) {
+                appPath = "\(prefix)/\(command)"
+                break
+            }
+            
+            let withPathExtension = FileManager.default.fileExists(atPath: "\(prefix)/\(command).html")
+            if (withPathExtension) {
+                appPath = "\(prefix)/\(command).html"
+                break
+            }
+            
+            var isDir : ObjCBool = false
+            let isDirectory = FileManager.default.fileExists(atPath: "\(prefix)/\(command)", isDirectory: &isDir)
+            if (isDirectory) {
+                appPath = "\(prefix)/\(command)/index.html"
+                break
+            }
+        }
+        
+        
         
          companionWindow.positioning = storedInitialPosition(for: command) ?? CompanionWindow.defaultActivePosition
         
@@ -267,7 +295,7 @@ class FigCLI {
                 
                 if popup {
                     FigCLI.form(with: scope, format: rawCommand)
-                    companionWindow.positioning = .spotlight
+                    companionWindow.positioning = .popover
                 } else {
                     Timer.delayWithSeconds(0.15) {
                         ShellBridge.injectStringIntoTerminal(rawCommand, runImmediately: true)
@@ -279,6 +307,14 @@ class FigCLI {
             
 //            companionWindow.windowManager.close(window: companionWindow)
             // get script for command
+        } else if let path = appPath { //fig path
+            let modified = Scope(cmd: "local",
+                              stdin: stdin,
+                              options: [path],
+                              env: env,
+                              webView: webView,
+                              companionWindow: companionWindow)
+            FigCLI.local(with: modified)
         } else {
             FigCLI.url(with: scope)
         }

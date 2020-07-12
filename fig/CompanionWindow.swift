@@ -194,7 +194,8 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
         case hidden = 11
         case untethered = 12
         case fullwindow = 13
-        
+        case popover = 14
+
         func frame(targetWindowFrame:NSRect, screen: NSRect = .zero) -> NSRect {
             if targetWindowFrame.width < 100 || targetWindowFrame.height < 200 {
                  return .zero
@@ -248,7 +249,7 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
                 let minHeight: CGFloat = 300.0
 
                 let width = min(max(minWidth,  t_size.width * 0.5), t_size.width)
-                let height = min(max(minHeight, t_size.height * 0.5), t_size.width)
+                let height = min(max(minHeight, t_size.height * 0.5), t_size.height)
                 let offset = max((t_size.width - width) / 2, 0)
                 
                 let quarter = max(t_size.width * 0.25 - minWidth / 2.0, 0)
@@ -267,13 +268,22 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
              case .fullwindow:
                 let inset: CGPoint = CGPoint(x: 250, y: 150)
                 return screen.insetBy(dx: inset.x, dy: inset.y).offsetBy(dx: 0, dy: screen.height - (2 * inset.y))
-             }
+             case .popover:
+                let minHeight: CGFloat = 300.0
+                let height = min(max(minHeight, t_size.height / 3), t_size.height)
+                let offset = t_size.height - height
+                
+                return NSRect(x: targetWindowFrame.origin.x, y: targetWindowFrame.origin.y - offset, width: targetWindowFrame.width, height: height)
+
+//                return targetWindowFrame.divided(atDistance: t_size.height / 3, from: .minYEdge).slice.offsetBy(dx: 0, dy: -2/3 * t_size.height)
+                
+            }
 
         }
         
         var hasTitleBar: Bool {
             get {
-                let titlebarStates: Set<OverlayPositioning> = [.outsideRight, .untethered, .fullscreenInset, .fullwindow, .spotlight]
+                let titlebarStates: Set<OverlayPositioning> = [.outsideRight, .untethered, .fullscreenInset, .fullwindow]
                 return titlebarStates.contains(self)
             }
         }
@@ -651,6 +661,8 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
           case .untethered:
             return .zero
           case .fullwindow:
+            return .zero
+          case .popover:
             return .zero
         }
     
