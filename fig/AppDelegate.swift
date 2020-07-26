@@ -35,6 +35,8 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 //        let domain = Bundle.main.bundleIdentifier!
 //        UserDefaults.standard.removePersistentDomain(forName: domain)
 //        UserDefaults.standard.synchronize()
+//        WebView.deleteCache()
+        Defaults.build = .production
         
         let hasLaunched = UserDefaults.standard.bool(forKey: "hasLaunched")
         let email = UserDefaults.standard.string(forKey: "userEmail")
@@ -166,7 +168,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
          action: #selector(AppDelegate.checkForUpdates),
          keyEquivalent: "")
         statusBarMenu.addItem(
-         withTitle: "Hide Fig",
+         withTitle: "Toggle Sidebar",
          action: #selector(AppDelegate.hide),
          keyEquivalent: "")
         statusBarMenu.addItem(
@@ -200,13 +202,17 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     }
     
     @objc func hide() {
-         if let companion = self.window as? CompanionWindow,
-            let vc = companion.contentViewController as? WebViewController,
-            let webView = vc.webView {
-            companion.positioning = .icon
-            webView.loadRemoteApp(at: Remote.baseURL.appendingPathComponent("hide"))
-            
-        }
+//         if let companion = self.window as? CompanionWindow,
+//            let vc = companion.contentViewController as? WebViewController,
+//            let webView = vc.webView {
+//            companion.positioning = .icon
+//            webView.loadRemoteApp(at: Remote.baseURL.appendingPathComponent("hide"))
+//
+//        }
+        
+        Defaults.showSidebar = !Defaults.showSidebar
+        WindowManager.shared.requestWindowUpdate()
+        
     }
     
     @objc func terminalWindowToFront() {

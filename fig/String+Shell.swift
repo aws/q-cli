@@ -17,9 +17,11 @@ extension String {
         task.standardOutput = pipe
         task.standardError = stderr
 
-        if let cwd = cwd {
-            task.currentDirectoryPath = cwd
-        }
+//        if let cwd = cwd {
+//            task.currentDirectoryPath = cwd
+//        }
+        task.currentDirectoryPath = cwd ?? NSHomeDirectory()
+
         
         if let env = env {
             task.environment = env

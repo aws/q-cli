@@ -77,6 +77,10 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
     
     var timer: Timer?
     
+    var webViewController: WebViewController? {
+        return self.contentViewController as? WebViewController
+    }
+    
     func windowWillClose(_ notification: Notification) {
         if let timer = self.timer {
             timer.invalidate()
@@ -195,6 +199,7 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
         case untethered = 12
         case fullwindow = 13
         case popover = 14
+        case popoverCentered = 15
 
         func frame(targetWindowFrame:NSRect, screen: NSRect = .zero) -> NSRect {
             if targetWindowFrame.width < 100 || targetWindowFrame.height < 200 {
@@ -277,20 +282,34 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
 
 //                return targetWindowFrame.divided(atDistance: t_size.height / 3, from: .minYEdge).slice.offsetBy(dx: 0, dy: -2/3 * t_size.height)
                 
+             case .popoverCentered:
+                let minWidth: CGFloat = 300.0
+                let minHeight: CGFloat = 200.0
+
+                let width: CGFloat =  min(max(minWidth, t_size.width * 2 / 3), t_size.width)
+                let height: CGFloat =  min(max(minHeight, t_size.height * 2 / 3), t_size.height)
+                let x = targetWindowFrame.origin.x + (( t_size.width - width) / 2);
+                let y = targetWindowFrame.origin.y - (( t_size.height - height) / 2);
+                
+                return NSRect(x: x, y: y, width: width, height: height)
+                
             }
 
         }
         
         var hasTitleBar: Bool {
             get {
-                let titlebarStates: Set<OverlayPositioning> = [.outsideRight, .untethered, .fullscreenInset, .fullwindow]
+                let titlebarStates: Set<OverlayPositioning> = [.outsideRight, .untethered, .fullscreenInset, .fullwindow, .popoverCentered]
                 return titlebarStates.contains(self)
             }
         }
 
     }
     func setupTitleBar() {
-        self.backgroundColor = .white
+        if (self.backgroundColor == .clear) {
+            self.backgroundColor = .white
+        }
+        
         self.isOpaque = false
         
         closeBtn?.removeFromSuperview()
@@ -663,6 +682,8 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
           case .fullwindow:
             return .zero
           case .popover:
+            return .zero
+          case .popoverCentered:
             return .zero
         }
     

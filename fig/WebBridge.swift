@@ -65,6 +65,8 @@ class WebBridge : NSObject {
                 contentController.add(self, name: WebBridgeScript.propertyUpdateHandler.rawValue)
                 contentController.add(self, name: WebBridgeScript.ptyHandler.rawValue)
                 contentController.add(self, name: WebBridgeScript.notificationHandler.rawValue)
+                contentController.add(self, name: WebBridgeScript.detachHandler.rawValue)
+                contentController.add(self, name: WebBridgeScript.globalExecuteHandler.rawValue)
 
                 contentController.add(self, name: WebBridgeScript.onboardingHandler.rawValue)
 
@@ -142,6 +144,8 @@ enum WebBridgeScript: String, CaseIterable {
     case exceptions = "exceptionHandler"
     case insertFigTutorialCSS = "css"
     case insertFigTutorialJS = "tutorial"
+    case insertableCodeTags = "insert-tutorial"
+    case runnableCodeTags = "run-tutorial"
     case insertCLIHandler = "insertHandler"
     case executeCLIHandler = "executeHandler"
     case callbackHandler = "callbackHandler"
@@ -162,6 +166,8 @@ enum WebBridgeScript: String, CaseIterable {
     case propertyUpdateHandler = "propertyUpdateHandler"
     case ptyHandler = "ptyHandler"
     case notificationHandler = "notificationHandler"
+    case detachHandler = "detachHandler"
+    case globalExecuteHandler = "globalExecuteHandler"
 
     case onboardingHandler = "onboardingHandler"
 
@@ -189,6 +195,11 @@ extension WebBridge: WKURLSchemeHandler {
             }
             return NSWorkspace.shared.icon(forFileType: t).resized(to: NSSize(width: width, height: height))
 
+        }
+        
+        if let host = url.host, let qs = url.queryDictionary, let pid = qs["pid"], host == "icon" {
+
+            return NSRunningApplication(processIdentifier: pid_t(pid) ?? -1)?.icon?.resized(to: NSSize(width: width, height: height))
         }
         
         guard let specifier = (url as NSURL).resourceSpecifier else { return nil }
@@ -260,7 +271,9 @@ class WebBridgeContentController : WKUserContentController {
 //        self.addWebBridgeScript(.exceptions, location: .atDocumentStart)
 //        self.addWebBridgeScript(.logging, location: .atDocumentStart);
         self.addWebBridgeScript(.insertFigTutorialCSS);
-        self.addWebBridgeScript(.insertFigTutorialJS);
+        
+        //this is now injected from the WebView
+        //self.addWebBridgeScript(.insertFigTutorialJS);
         
         self.addWebBridgeScript(.injectTerminalCSS);
 
@@ -283,7 +296,7 @@ extension WebBridge : WKScriptMessageHandler {
         
         let scriptType = WebBridgeScript.init(rawValue: message.name)
 
-        if !WebBridge.authorized(scope: message) && scriptType != .insertCLIHandler {
+        if !WebBridge.authorized(webView: message.webView) && scriptType != .insertCLIHandler {
             print("Attempted to call fig runtime from unauthorized domain")
             return
         }
@@ -326,6 +339,10 @@ extension WebBridge : WKScriptMessageHandler {
             WebBridge.pty(scope: message)
         case .notificationHandler:
             WebBridge.notification(scope: message)
+        case .detachHandler:
+            WebBridge.detach(scope: message)
+        case .globalExecuteHandler:
+            WebBridge.executeInGlobalScope(scope: message)
         default:
             print("Unhandled WKScriptMessage type '\(message.name)'")
         }
@@ -345,9 +362,9 @@ extension Notification.Name {
 
 
 extension WebBridge {
-    static func authorized(scope: WKScriptMessage) -> Bool {
-        if let webView = scope.webView, let url = webView.url, let scheme = url.scheme {
-            print(scheme)
+    static func authorized(webView: WKWebView?) -> Bool {
+        if let webView = webView, let url = webView.url, let scheme = url.scheme {
+            print("authorized for scheme?:", scheme)
             return scheme == "file" || url.host == Remote.baseURL.host || url.host ?? "" == "localhost"
         }
         return false
@@ -377,6 +394,11 @@ extension WebBridge {
         if let webview = scope.webView, let window = webview.window, let controller = window.contentViewController as? WebViewController {
             let hack = Notification(name: .executeCommandInTerminal, object: scope.body as! String, userInfo: nil)
             controller.executeCommandInTerminal(hack)
+            
+            // Check for sidebar shortcut
+            if let companion = window as? CompanionWindow, companion.isSidebar {
+                TelemetryProvider.post(event: .selectedShortcut, with: [:])
+            }
         }
     }
     
@@ -407,6 +429,15 @@ extension WebBridge {
         }
     }
     
+    static func executeInGlobalScope(scope: WKScriptMessage) {
+        if let params = scope.body as? Dictionary<String, String>,
+           let cmd = params["cmd"],
+           let handlerId = params["handlerId"] {
+            let result = cmd.runAsCommand()
+            WebBridge.callback(handler: handlerId, value: result, webView: scope.webView)
+        }
+    }
+    
     static func fwrite(scope: WKScriptMessage) {
         if let params = scope.body as? Dictionary<String, String>,
            let path = params["path"],
@@ -414,7 +445,8 @@ extension WebBridge {
            let handlerId = params["handlerId"],
            let env = params["env"]?.jsonStringToDict(),
            let pwd = env["PWD"] as? String {
-            let url = URL(fileURLWithPath: path, relativeTo: URL(fileURLWithPath: pwd))
+             
+            let url = URL(fileURLWithPath: NSString(string: path).standardizingPath, relativeTo: URL(fileURLWithPath: pwd))
             do {
                 try data.write(to: url, atomically: true, encoding: String.Encoding.utf8)
 //                scope.webView?.evaluateJavaScript("fig.callback(`\(handlerId)`, null)", completionHandler: nil)
@@ -432,7 +464,7 @@ extension WebBridge {
            let env = params["env"]?.jsonStringToDict(),
            let pwd = env["PWD"] as? String {
             
-            let url = URL(fileURLWithPath: path, relativeTo: URL(fileURLWithPath: pwd))
+            let url = URL(fileURLWithPath: NSString(string: path).standardizingPath, relativeTo: URL(fileURLWithPath: pwd))
             do {
                 let out = try String(contentsOf: url, encoding: String.Encoding.utf8)
                 let encoded = out.data(using: .utf8)!
@@ -653,6 +685,17 @@ extension WebBridge {
             }
         }
     
+    static func detach(scope: WKScriptMessage) {
+        if let webView = scope.webView,
+           let window = webView.window as? CompanionWindow {
+            if (window.isDocked) {
+                window.untether()
+            } else {
+                print("Cannot untether an undocked window")
+            }
+        }
+    }
+    
     static func propertyValueChanged(scope: WKScriptMessage) {
         if let params = scope.body as? Dictionary<String, String>,
            let webView = scope.webView,
@@ -738,6 +781,10 @@ extension WebBridge {
         }
     }
     
+    static func declareRemoteURL(webview: WebView) {
+        webview.evaluateJavaScript("fig.remoteURL = '\( Remote.baseURL.absoluteString)'", completionHandler: nil)
+    }
+    
     static func initJS(webview: WebView) {
         webview.evaluateJavaScript("fig.callinit()", completionHandler: nil)
     }
@@ -780,6 +827,12 @@ extension WebBridge {
         }
     }
     
+    static func enableInteractiveCodeTags(webview: WebView) {
+        let script: WebBridgeScript = WebBridge.authorized(webView: webview) ? .runnableCodeTags : WebBridgeScript.insertableCodeTags
+        
+        webview.evaluateJavaScript(script.codeForScript(), completionHandler: nil)
+    }
+    
     static func appInitialPosition(webview: WebView, response: @escaping (String?) -> Void) {
         webview.evaluateJavaScript("document.head.querySelector('meta[initial-position]').getAttribute('initial-position')") { (name, error) in
             response(name as? String)
@@ -804,46 +857,41 @@ extension WebBridge {
 
     static func pty(scope: WKScriptMessage) {
         if let params = scope.body as? Dictionary<String, String>,
-           let type = params["type"] {
-   
-
+           let type = params["type"],
+           let webview = scope.webView as? WebView,
+           let window = webview.window,
+           let controller = window.contentViewController as? WebViewController {
+            print("\(params) \(webview), \(controller.pty.pty.process.running), \(controller.pty.pty.process.delegate)")
             switch (type) {
                 case "init":
                     
                     if let env = params["env"]{
                         let parsedEnv = env.jsonStringToDict() as? [String: String] ?? FigCLI.extract(keys: ["PWD","USER","HOME","SHELL", "OLDPWD", "TERM_PROGRAM", "TERM_SESSION_ID", "HISTFILE","FIG","FIGPATH"], from: env)
-                        ShellBridge.shared.startPty(env: parsedEnv)
-
+                        controller.pty.start(with: parsedEnv)
                     } else {
-                        ShellBridge.shared.startPty(env: [:])
+                        controller.pty.start(with: [:])
                     }
          
-//                    if let env = params["env"]?.jsonStringToDict() as? [String: String], let webView = scope.webView as? WebView {
-//                        ShellBridge.shared.startPty(env: env)
-//
-//                        // close pty on navigate?
-//
-//                    }
                 case "stream":
                     if let cmd = params["cmd"],
                         let handlerId = params["handlerId"] {
-                        ShellBridge.shared.streamInPty(command: cmd, handlerId: handlerId)
+                        controller.pty.stream(command: cmd, handlerId: handlerId)
                     }
                 case "execute":
                     if let cmd = params["cmd"],
                         let handlerId = params["handlerId"] {
-                        ShellBridge.shared.executeInPty(command: cmd, handlerId: handlerId)
+                        controller.pty.execute(command: cmd, handlerId: handlerId)
                     }
                 case "write":
                     if let cmd = params["cmd"] {
-                        if let code = ShellBridge.ControlCode(rawValue:cmd) {
-                            ShellBridge.shared.writeInPty(command: "", control: code)
+                        if let code = ControlCode(rawValue:cmd) {
+                            controller.pty.write(command: "", control: code)
                         } else {
-                            ShellBridge.shared.writeInPty(command: cmd)
+                            controller.pty.write(command: cmd, control: nil)
                         }
                     }
                 case "exit":
-                    ShellBridge.shared.closePty()
+                    controller.pty.close()
                 default:
                     break;
             }
@@ -891,6 +939,10 @@ extension WebBridgeScript {
                 return "function captureLog(msg) { window.webkit.messageHandlers.logHandler.postMessage(msg); } window.console.log = captureLog;"
             case .figJS:
                 return File.contentsOfFile("fig", type: "js")!
+            case .insertableCodeTags:
+                return File.contentsOfFile("insert-tutorial", type: "js")!
+            case .runnableCodeTags:
+                return File.contentsOfFile("run-tutorial", type: "js")!
             case .insertFigTutorialJS:
                 return File.contentsOfFile("tutorial", type: "js")!
             case .insertFigTutorialCSS:

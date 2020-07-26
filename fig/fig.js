@@ -27,13 +27,21 @@ let setup = function(window) {
           this[handlerId] = handler
           let env = JSON.stringify(fig.env)
           if (!env) {
-              console.log("Error: Attempting to call `fig.execute` before `fig.env` has loaded. To fix this error, move this code inside of either the `fig.stdin` or the `fig.init` callbacks.\n\nIf you don't need to run the shell script from the users working directory, use fig.executeInGlobalScope\n")
+              console.log("Error: Attempting to call `fig.execute` before `fig.env` has loaded. To fix this error, move this code inside of either the `fig.stdin` or the `fig.init` callbacks.\n\nIf you don't need to run the shell script from the users working directory, use fig.executeInHomeDirectory\n")
               console.log(`Could not execute '${cmd}'...`)
 
               return
           }
           window.webkit.messageHandlers.callbackHandler.postMessage({type, cmd, handlerId, env});
           console.log(`Added callback handler "${handlerId}" for command "${cmd}"`)
+      },
+      executeInHomeDirectory : function(cmd, handler) {
+          let handlerId = random_identifier(5)
+          let type = "execute"
+          this[handlerId] = handler
+          window.webkit.messageHandlers.globalExecuteHandler.postMessage({type, cmd, handlerId});
+          console.log(`Added callback handler "${handlerId}" for command "${cmd}"`)
+
       },
 //      execute : function(cmd, handler) {
 //          var out = ""
@@ -153,7 +161,7 @@ let setup = function(window) {
           let env = JSON.stringify(fig.env)
           
           if (!env) {
-              console.log("Error: Attempting to call `fig.stream` before `fig.env` has loaded. To fix this error, move this code inside of either the `fig.stdin` or the `fig.init` callbacks.\n\nIf you don't need to run the shell script from the users working directory, use fig.executeInGlobalScope\n")
+              console.log("Error: Attempting to call `fig.stream` before `fig.env` has loaded. To fix this error, move this code inside of either the `fig.stdin` or the `fig.init` callbacks.\n\n")
               console.log(`Could not stream '${cmd}'...`)
 
               return
@@ -208,6 +216,9 @@ let setup = function(window) {
           
           return {name, icon, color, position};
       },
+      detatch() {
+          window.webkit.messageHandlers.detachHandler.postMessage("")
+      },
       close() {
           fig.reposition("7")
       },
@@ -255,23 +266,7 @@ let setup = function(window) {
               }
           });
     })
-//    for (prop of watchedProperties) {
-//        Object.defineProperty(fig, prop, {
-//            get : function () {
-//                return this[`_${prop}`];
-//            },
-//            set : function (value) {
-//                window.webkit.messageHandlers.propertyUpdateHandler.postMessage({prop, value});
-//
-//                this[`_${prop}`] = value;
-//            }
-//        });
-//    }
-    
 
-  //fig.init((stdin, options) => {
-
-  //})
   window.fig = fig;
     
 //    window.opener.postMessage = function(message, targetOrigin) {

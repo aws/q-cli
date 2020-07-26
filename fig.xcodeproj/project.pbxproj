@@ -47,11 +47,12 @@
 		751F7589246D090100E083C8 /* WebBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751F7588246D090100E083C8 /* WebBridge.swift */; };
 		751F7591246E16D800E083C8 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751F7590246E16D800E083C8 /* main.swift */; };
 		751F75982478571D00E083C8 /* WebSocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751F75972478571D00E083C8 /* WebSocket.swift */; };
+		75288EF924CCE72F002DF12A /* OnboardingWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757CA887248AD067002A64A8 /* OnboardingWindow.swift */; };
 		752C0BD62478EBA90077E415 /* XTerm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 752C0BD52478EBA90077E415 /* XTerm.swift */; };
 		752C0BD82479EEDB0077E415 /* File.swift in Sources */ = {isa = PBXBuildFile; fileRef = 752C0BD72479EEDA0077E415 /* File.swift */; };
 		752C0BDA2479F37B0077E415 /* fig.js in Resources */ = {isa = PBXBuildFile; fileRef = 752C0BD92479F37B0077E415 /* fig.js */; };
 		752C0BDC2479F68C0077E415 /* tutorial.css in Resources */ = {isa = PBXBuildFile; fileRef = 752C0BDB2479F68C0077E415 /* tutorial.css */; };
-		752C0BDE2479F6AF0077E415 /* tutorial.js in Resources */ = {isa = PBXBuildFile; fileRef = 752C0BDD2479F6AF0077E415 /* tutorial.js */; };
+		752C0BDE2479F6AF0077E415 /* insert-tutorial.js in Resources */ = {isa = PBXBuildFile; fileRef = 752C0BDD2479F6AF0077E415 /* insert-tutorial.js */; };
 		752C0BE0247A27790077E415 /* editor.html in Resources */ = {isa = PBXBuildFile; fileRef = 752C0BDF247A27790077E415 /* editor.html */; };
 		752C0BE2247A33F20077E415 /* viewer.html in Resources */ = {isa = PBXBuildFile; fileRef = 752C0BE1247A33F10077E415 /* viewer.html */; };
 		752C0BE4247B44C60077E415 /* finder.html in Resources */ = {isa = PBXBuildFile; fileRef = 752C0BE3247B44C50077E415 /* finder.html */; };
@@ -74,7 +75,6 @@
 		757CA88124874E06002A64A8 /* ErrorMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757CA88024874E05002A64A8 /* ErrorMatcher.swift */; };
 		757CA88424875907002A64A8 /* ANSITerminal in Frameworks */ = {isa = PBXBuildFile; productRef = 757CA88324875907002A64A8 /* ANSITerminal */; };
 		757CA88624876043002A64A8 /* error.html in Resources */ = {isa = PBXBuildFile; fileRef = 757CA88524876042002A64A8 /* error.html */; };
-		757CA888248AD067002A64A8 /* OnboardingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757CA887248AD067002A64A8 /* OnboardingViewController.swift */; };
 		757CA88A248AD58C002A64A8 /* onboarding.html in Resources */ = {isa = PBXBuildFile; fileRef = 757CA889248AD58C002A64A8 /* onboarding.html */; };
 		757CA88D248B091D002A64A8 /* permissions.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 757CA88C248B091D002A64A8 /* permissions.mp4 */; };
 		757CA88F248B0D31002A64A8 /* cli.png in Resources */ = {isa = PBXBuildFile; fileRef = 757CA88E248B0D31002A64A8 /* cli.png */; };
@@ -89,6 +89,9 @@
 		757CA8E124903D3B002A64A8 /* HotKeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757CA8E024903D3A002A64A8 /* HotKeyManager.swift */; };
 		757CA8E424905B0E002A64A8 /* Kitura-WebSocket in Frameworks */ = {isa = PBXBuildFile; productRef = 757CA8E324905B0E002A64A8 /* Kitura-WebSocket */; };
 		757CA8E624905B38002A64A8 /* SockerServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757CA8E524905B38002A64A8 /* SockerServer.swift */; };
+		75809B0E24BFA64D00BFFB3E /* TelemetryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75809B0D24BFA64D00BFFB3E /* TelemetryService.swift */; };
+		75809B1124C3876B00BFFB3E /* run-tutorial.js in Resources */ = {isa = PBXBuildFile; fileRef = 75809B1024C3876B00BFFB3E /* run-tutorial.js */; };
+		75B7931A24BB897F0073AAC6 /* PseudoTerminalService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B7931924BB897F0073AAC6 /* PseudoTerminalService.swift */; };
 		75C0711D244AC3B2002DF69F /* index.html in Resources */ = {isa = PBXBuildFile; fileRef = 75C0711C244AC3B2002DF69F /* index.html */; };
 		75C07120244BB441002DF69F /* CompanionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75C0711F244BB441002DF69F /* CompanionViewController.swift */; };
 		75C07122244BB65D002DF69F /* ShellBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75C07121244BB65D002DF69F /* ShellBridge.swift */; };
@@ -187,7 +190,7 @@
 		752C0BD72479EEDA0077E415 /* File.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = File.swift; sourceTree = "<group>"; };
 		752C0BD92479F37B0077E415 /* fig.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = fig.js; sourceTree = "<group>"; };
 		752C0BDB2479F68C0077E415 /* tutorial.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = tutorial.css; sourceTree = "<group>"; };
-		752C0BDD2479F6AF0077E415 /* tutorial.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = tutorial.js; sourceTree = "<group>"; };
+		752C0BDD2479F6AF0077E415 /* insert-tutorial.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = "insert-tutorial.js"; sourceTree = "<group>"; };
 		752C0BDF247A27790077E415 /* editor.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = editor.html; sourceTree = "<group>"; };
 		752C0BE1247A33F10077E415 /* viewer.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = viewer.html; sourceTree = "<group>"; };
 		752C0BE3247B44C50077E415 /* finder.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = finder.html; sourceTree = "<group>"; };
@@ -215,7 +218,7 @@
 		757CA87C2485D23C002A64A8 /* dist */ = {isa = PBXFileReference; lastKnownFileType = folder; path = dist; sourceTree = "<group>"; };
 		757CA88024874E05002A64A8 /* ErrorMatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorMatcher.swift; sourceTree = "<group>"; };
 		757CA88524876042002A64A8 /* error.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = error.html; sourceTree = "<group>"; };
-		757CA887248AD067002A64A8 /* OnboardingViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingViewController.swift; sourceTree = "<group>"; };
+		757CA887248AD067002A64A8 /* OnboardingWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingWindow.swift; sourceTree = "<group>"; };
 		757CA889248AD58C002A64A8 /* onboarding.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = onboarding.html; sourceTree = "<group>"; };
 		757CA88C248B091D002A64A8 /* permissions.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = permissions.mp4; sourceTree = "<group>"; };
 		757CA88E248B0D31002A64A8 /* cli.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = cli.png; sourceTree = "<group>"; };
@@ -229,6 +232,10 @@
 		757CA89E248D628E002A64A8 /* sidebar.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = sidebar.html; sourceTree = "<group>"; };
 		757CA8E024903D3A002A64A8 /* HotKeyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotKeyManager.swift; sourceTree = "<group>"; };
 		757CA8E524905B38002A64A8 /* SockerServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SockerServer.swift; sourceTree = "<group>"; };
+		75809B0D24BFA64D00BFFB3E /* TelemetryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetryService.swift; sourceTree = "<group>"; };
+		75809B0F24C2C66100BFFB3E /* WebView+Private.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "WebView+Private.h"; sourceTree = "<group>"; };
+		75809B1024C3876B00BFFB3E /* run-tutorial.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = "run-tutorial.js"; sourceTree = "<group>"; };
+		75B7931924BB897F0073AAC6 /* PseudoTerminalService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PseudoTerminalService.swift; sourceTree = "<group>"; };
 		75C0711C244AC3B2002DF69F /* index.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = index.html; sourceTree = "<group>"; };
 		75C0711F244BB441002DF69F /* CompanionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionViewController.swift; sourceTree = "<group>"; };
 		75C07121244BB65D002DF69F /* ShellBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellBridge.swift; sourceTree = "<group>"; };
@@ -386,7 +393,8 @@
 				7510F8BB24A9861E00E86F7C /* PrivateWindow.h */,
 				7510F8BC24A9861E00E86F7C /* PrivateWindow.m */,
 				75C07121244BB65D002DF69F /* ShellBridge.swift */,
-				757CA887248AD067002A64A8 /* OnboardingViewController.swift */,
+				75B7931924BB897F0073AAC6 /* PseudoTerminalService.swift */,
+				757CA887248AD067002A64A8 /* OnboardingWindow.swift */,
 				752C0BD52478EBA90077E415 /* XTerm.swift */,
 				751F75972478571D00E083C8 /* WebSocket.swift */,
 				757CA8E524905B38002A64A8 /* SockerServer.swift */,
@@ -394,7 +402,9 @@
 				751F7588246D090100E083C8 /* WebBridge.swift */,
 				755D0DE1247EFAE10074AB5C /* Logging.swift */,
 				755D0DDF247DDE050074AB5C /* FigCLI.swift */,
-				752C0BDD2479F6AF0077E415 /* tutorial.js */,
+				75809B0D24BFA64D00BFFB3E /* TelemetryService.swift */,
+				752C0BDD2479F6AF0077E415 /* insert-tutorial.js */,
+				75809B1024C3876B00BFFB3E /* run-tutorial.js */,
 				752C0BDB2479F68C0077E415 /* tutorial.css */,
 				75D2E3CA249C1E7500607F66 /* terminal.css */,
 				752C0BD92479F37B0077E415 /* fig.js */,
@@ -408,6 +418,7 @@
 				75675961244634B2006AA988 /* fig.entitlements */,
 				7567595A244634B2006AA988 /* Preview Content */,
 				7510F8BA24A9861E00E86F7C /* fig-Bridging-Header.h */,
+				75809B0F24C2C66100BFFB3E /* WebView+Private.h */,
 			);
 			path = fig;
 			sourceTree = "<group>";
@@ -620,13 +631,14 @@
 				75D2E3CB249C1E7500607F66 /* terminal.css in Resources */,
 				757CA88A248AD58C002A64A8 /* onboarding.html in Resources */,
 				757CA89B248C18F1002A64A8 /* done.html in Resources */,
+				75809B1124C3876B00BFFB3E /* run-tutorial.js in Resources */,
 				757CA899248C10AD002A64A8 /* fonts in Resources */,
 				757CA893248B28E3002A64A8 /* landing.html in Resources */,
 				755D0DE4247F038B0074AB5C /* logs.html in Resources */,
 				7510F8AB24A6910500E86F7C /* README.md in Resources */,
 				757CA89D248C1F50002A64A8 /* demo4onboarding.mp4 in Resources */,
 				7567595F244634B2006AA988 /* Main.storyboard in Resources */,
-				752C0BDE2479F6AF0077E415 /* tutorial.js in Resources */,
+				752C0BDE2479F6AF0077E415 /* insert-tutorial.js in Resources */,
 				752C0BE2247A33F20077E415 /* viewer.html in Resources */,
 				752C0BE6247C25290077E415 /* display.html in Resources */,
 				752C0BDC2479F68C0077E415 /* tutorial.css in Resources */,
@@ -667,10 +679,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				75288EF924CCE72F002DF12A /* OnboardingWindow.swift in Sources */,
 				757CA86724859461002A64A8 /* AppMover.swift in Sources */,
 				7510F89F24A6910500E86F7C /* Terminal.swift in Sources */,
 				756759972446C44C006AA988 /* String+Shell.swift in Sources */,
 				757CA8E624905B38002A64A8 /* SockerServer.swift in Sources */,
+				75B7931A24BB897F0073AAC6 /* PseudoTerminalService.swift in Sources */,
 				7510F8AC24A6910500E86F7C /* MacTerminalView.swift in Sources */,
 				755D0DE2247EFAE10074AB5C /* Logging.swift in Sources */,
 				7510F8A124A6910500E86F7C /* BufferLine.swift in Sources */,
@@ -687,6 +701,7 @@
 				7510F8C124A9B32D00E86F7C /* WindowManager.swift in Sources */,
 				7510F8AF24A6910500E86F7C /* HeadlessTerminal.swift in Sources */,
 				755D0DE0247DDE050074AB5C /* FigCLI.swift in Sources */,
+				75809B0E24BFA64D00BFFB3E /* TelemetryService.swift in Sources */,
 				7510F8B224A6910500E86F7C /* CharData.swift in Sources */,
 				751F7589246D090100E083C8 /* WebBridge.swift in Sources */,
 				7510F8A624A6910500E86F7C /* iOSAccessoryView.swift in Sources */,
@@ -715,7 +730,6 @@
 				7510F8BF24A99A4B00E86F7C /* WindowService.swift in Sources */,
 				7510F8A324A6910500E86F7C /* iOSTerminalView.swift in Sources */,
 				7510F8B124A6910500E86F7C /* Line.swift in Sources */,
-				757CA888248AD067002A64A8 /* OnboardingViewController.swift in Sources */,
 				7510F8AE24A6910500E86F7C /* SixelDcsHandler.swift in Sources */,
 				7510F89C24A6910500E86F7C /* Buffer.swift in Sources */,
 				7510F8BD24A9861E00E86F7C /* PrivateWindow.m in Sources */,
@@ -907,7 +921,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1.0.12;
+				CURRENT_PROJECT_VERSION = 1.0.13;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
@@ -921,7 +935,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MARKETING_VERSION = 1.0.12;
+				MARKETING_VERSION = 1.0.13;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mschrage.fig;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "fig/fig-Bridging-Header.h";
@@ -939,7 +953,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1.0.12;
+				CURRENT_PROJECT_VERSION = 1.0.13;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
@@ -953,7 +967,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MARKETING_VERSION = 1.0.12;
+				MARKETING_VERSION = 1.0.13;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mschrage.fig;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "fig/fig-Bridging-Header.h";

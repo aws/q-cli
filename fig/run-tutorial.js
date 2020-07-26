@@ -20,20 +20,30 @@ function preFormatting(preNode) {
   var pearButton = document.createElement('button');
   pearButton.classList.add("fig_pearButton");
   pearButton.classList.add("fig_prePearButton");
-  pearButton.innerHTML = '🍐';
+  pearButton.innerHTML = '▶';
+preNode.parentNode.insertBefore(pearButton, preNode);
 
-  preNode.parentNode.insertBefore(pearButton, preNode);
+var copyButton = document.createElement('button');
+copyButton.classList.add("fig_pearButton");
+copyButton.classList.add("fig_prePearButton");
+copyButton.innerHTML = 'copy';
+
+    //preNode.parentNode.insertBefore(copyButton, preNode);
 
   // #### Events ####
 
   // Show pear on mouse enter
   wrapperDiv.addEventListener('mouseenter', function(e) {
     pearButton.classList.add("fig_buttonShow");
+    copyButton.classList.add("fig_buttonShow");
+
   });
 
   // Hide pear on mouse leave
   wrapperDiv.addEventListener('mouseleave', function(e) {
     pearButton.classList.remove("fig_buttonShow");
+    copyButton.classList.remove("fig_buttonShow");
+
   });
 
   // Make tag content editable
@@ -44,9 +54,17 @@ function preFormatting(preNode) {
     e.preventDefault();
     e.stopPropagation();
 
-    fig.insert(preNode.innerText)
+    fig.run(preNode.innerText.trim())
 
   });
+    
+    copyButton.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      navigator.clipboard.writeText(preNode.innerText)
+
+    });
 
   // Add event listener to copy code on click (but not highlight)
   // preNode.addEventListener('click', function (e) {
@@ -87,7 +105,7 @@ function codeFormatting(codeNode) {
   var pearButton = document.createElement('button');
   pearButton.classList.add("fig_pearButton");
   pearButton.classList.add("fig_inlinePearButton");
-  pearButton.innerHTML = '🍐';
+  pearButton.innerHTML = '▶';
 
   codeNode.parentNode.insertBefore(pearButton, codeNode);
 
@@ -110,7 +128,7 @@ function codeFormatting(codeNode) {
     e.preventDefault();
     e.stopPropagation();
 
-    fig.insert(codeNode.innerText);
+    fig.run(codeNode.innerText.trim());
 
   });
 
@@ -153,7 +171,9 @@ function addATouchOfFig() {
   // Loop through <pre> element
   var pres = document.querySelectorAll('pre');
   pres.forEach(function(preNode) {
-    preFormatting(preNode);
+       if (!preNode.getAttribute('figdisabled')) {
+          preFormatting(preNode);
+       }
   });
 }
 
@@ -169,3 +189,4 @@ function removeAnnoyingSpellcheck() {
 
   });
 }
+

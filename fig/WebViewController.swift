@@ -14,6 +14,7 @@ class WebViewController: NSViewController, NSWindowDelegate {
     var mouseLocation: NSPoint? { self.view.window?.mouseLocationOutsideOfEventStream }
 
     var webView: WebView? // = WKWebView(frame:.zero)
+    let pty: PseudoTerminal
     
     var icon: NSTextField = {
         let label = NSTextField()
@@ -45,7 +46,9 @@ class WebViewController: NSViewController, NSWindowDelegate {
     }()
     
     init(_ configuration: WKWebViewConfiguration = WKWebViewConfiguration()){
+        self.pty = PseudoTerminal()
         super.init(nibName: nil, bundle: nil)
+        pty.delegate = self
         let settings = WebBridge.shared.configure(configuration)
         webView = WebView(frame: .zero, configuration: settings)
     }
@@ -324,7 +327,7 @@ extension WebViewController: WebBridgeEventListener {
     
 }
 
-extension WebViewController: ShellBridgeEventListener {
+extension WebViewController: ShellBridgeEventListener, PseudoTerminalEventDelegate {
     @objc func recievedDataFromPty(_ notification: Notification) {
         if let msg = notification.object as? PtyMessage {
             WebBridge.callback(handler: msg.handleId, value: msg.output, webView: self.webView)
@@ -448,6 +451,9 @@ extension WebViewController : WKNavigationDelegate {
             onNavigateCallback()
         }
         webView.onNavigate = []
+        webView.window?.backgroundColor = .white
+        webView.window?.title = ""
+        webView.window?.representedURL = nil
     }
     
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
@@ -475,7 +481,9 @@ extension WebViewController : WKNavigationDelegate {
             onLoadCallback()
         }
         webView.onLoad = []
+        WebBridge.enableInteractiveCodeTags(webview: webView)
         WebBridge.declareAppVersion(webview: webView)
+        WebBridge.declareRemoteURL(webview: webView)
         WebBridge.initJS(webview: webView)
 //        webView.evaluateJavaScript("fig.callinit()", completionHandler: nil)
 
@@ -655,9 +663,11 @@ class WebView : WKWebView {
     }
     
     func deleteCache() {
-        let websiteDataTypes = NSSet(array: [WKWebsiteDataTypeDiskCache, WKWebsiteDataTypeMemoryCache, WKWebsiteDataTypeCookies, WKWebsiteDataTypeLocalStorage])
-        let date = Date(timeIntervalSince1970: 0)
-        WKWebsiteDataStore.default().removeData(ofTypes: websiteDataTypes as! Set<String>, modifiedSince: date, completionHandler:{ })
+        WebView.deleteCache()
+    }
+    
+    func openWebInspector() {
+        //WKInspectorShowConsole(WKPageGetInspector((wkwebview.subviews.first as! WKView).pageRef))
     }
 
     
@@ -677,6 +687,12 @@ class WebView : WKWebView {
 //        return nil
 //
 //    }
+    
+    static func deleteCache() {
+        let websiteDataTypes = NSSet(array: [WKWebsiteDataTypeDiskCache, WKWebsiteDataTypeMemoryCache, WKWebsiteDataTypeCookies, WKWebsiteDataTypeLocalStorage])
+        let date = Date(timeIntervalSince1970: 0)
+        WKWebsiteDataStore.default().removeData(ofTypes: websiteDataTypes as! Set<String>, modifiedSince: date, completionHandler:{ })
+    }
     
     
 }

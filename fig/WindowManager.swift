@@ -174,10 +174,16 @@ class WindowManager : NSObject {
         
 //        print(NSApp.keyWindow as? CompanionWindow)
         
+        // this is needed to fix a bug when the the mouse is inside the sidebar when a fig window is closed (yes, I know this is also in the close() logic. -- Needs to be in both places to prevent flickering!)
+        if (reason == .figWindowClosed) {
+            if self.sidebar?.frame.contains(NSEvent.mouseLocation) ?? false {
+               print("sidebar contains mouse on Window close")
+                WindowManager.shared.windowServiceProvider.takeFocus()
+           }
+        }
 
         if let keyWindow = NSApp.keyWindow as? CompanionWindow, untetheredWindows.contains(keyWindow) {
             self.hotKeyManager?.companionWindow = keyWindow
-
         } else {
             self.hotKeyManager?.companionWindow = visibleWindows.first ?? self.sidebar!
         }
@@ -229,6 +235,11 @@ extension WindowManager : ShellBridgeEventListener {
     }
     
     @objc func recievedDataFromPipe(_ notification: Notification) {
+        // Prevent windows from being launched from CLI if the user hasn't signed in
+        guard Defaults.email != nil else {
+            return
+        }
+        
         NSRunningApplication.current.activate(options: .activateIgnoringOtherApps)
         
         let msg = (notification.object as! ShellMessage)
@@ -480,6 +491,7 @@ extension WindowManager : WindowManagementService {
 //    }
     
     func close(window: CompanionWindow) {
+        (window.contentViewController as? WebViewController)?.pty.close()
         window.orderOut(nil)
         window.close()
         
@@ -488,7 +500,14 @@ extension WindowManager : WindowManagementService {
             self.updatePosition(for: .figWindowClosed)
             
             if (NSWorkspace.shared.frontmostApplication?.isFig ?? false) {
-                self.windowServiceProvider.previousFrontmostApplication()?.activate(options: .activateIgnoringOtherApps)
+                // fixes bug where if fig window was closed and mouse was located over sidebar, sidebar did not become active.
+                if self.sidebar?.frame.contains(NSEvent.mouseLocation) ?? false {
+                    print("sidebar contains mouse on Window close")
+                  //WindowManager.shared.windowServiceProvider.takeFocus()
+                } else {
+                    self.windowServiceProvider.previousFrontmostApplication()?.activate(options: .activateIgnoringOtherApps)
+                }
+
             }
         } else {
             self.untetheredWindows = self.untetheredWindows.filter { $0 != window }

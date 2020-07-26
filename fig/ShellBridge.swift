@@ -121,6 +121,7 @@ class ShellBridge {
         
         pty.process.startProcess(executable: shell, args: [], environment: rawEnv.count == 0 ? nil : rawEnv)
         pty.process.delegate = self
+        pty.send("unset HISTFILE\r")
     }
     
     let executeDelimeter = "-----------------"
@@ -315,6 +316,7 @@ extension ShellBridge : LocalProcessDelegate {
     }
     
     func dataReceived(slice: ArraySlice<UInt8>) {
+        
         let data = String(bytes: slice, encoding: .utf8) ?? ""
         print(data)
         
@@ -333,6 +335,7 @@ extension ShellBridge : LocalProcessDelegate {
             if tail.count == 2 {
                 ping = tail[0]
                 streamHandlers.remove(handle)
+                rawOutput = ""
             }
             
             print(handle, ping)
@@ -353,6 +356,7 @@ extension ShellBridge : LocalProcessDelegate {
             
             if let group = groups[safe: 0], let output = group.last {
                 executeHandlers.remove(handle)
+                rawOutput = ""
                 print(handle, output)
                 let msg = PtyMessage(type: "execute", handleId: handle, output: output)
                 NotificationCenter.default.post(name: .recievedDataFromPty, object: msg)
@@ -474,6 +478,7 @@ extension ShellBridge {
         var components = URLComponents()
         components.scheme = Remote.baseURL.scheme ?? "https"
         components.host = Remote.baseURL.host ?? "app.withfig.com"
+        components.port = Remote.baseURL.port
         components.path = root
         components.queryItems = query.map {
              URLQueryItem(name: $0, value: $1)
@@ -493,6 +498,7 @@ extension ShellBridge {
         var components = URLComponents()
         components.scheme = Remote.baseURL.scheme ?? "https"
         components.host = Remote.baseURL.host ?? "app.withfig.com"
+        components.port = Remote.baseURL.port
         components.path = cmd
         components.queryItems = [URLQueryItem(name: "input", value: argv)]
         return components.url!//URL(string:"\(components.string!)?input=\(argv)")!
@@ -506,7 +512,8 @@ extension ShellBridge {
         var components = URLComponents()
         components.scheme = Remote.baseURL.scheme ?? "https"
         components.host = Remote.baseURL.host ?? "app.withfig.com"
-        components.path = "/alias"
+        components.port = Remote.baseURL.port
+        components.path = "/fig_template"
         components.queryItems = [
             URLQueryItem(name: "fmt", value: fmt),
             URLQueryItem(name: "input", value: argv)

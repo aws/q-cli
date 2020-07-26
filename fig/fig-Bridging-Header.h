@@ -3,3 +3,5 @@
 //
 
 #import "PrivateWindow.h"
+
+#import "WebView+Private.h"

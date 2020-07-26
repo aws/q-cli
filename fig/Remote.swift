@@ -11,8 +11,16 @@ import Cocoa
 class Remote {
     static var productionURL: URL = URL(string: "https://app.withfig.com")!
     static var stagingURL: URL = URL(string: "https://frozen-basin-27070.herokuapp.com")!
+    static var localhost: URL = URL(string: "http://localhost:3000")!
 
     static var baseURL: URL {
-        return Defaults.isStaging ? Remote.stagingURL : Remote.productionURL
+        switch Defaults.build {
+        case .production:
+            return productionURL
+        case .staging:
+            return stagingURL
+        case .dev:
+            return localhost
+        }
     }
 }

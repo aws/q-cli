@@ -54,8 +54,11 @@ class WindowServer : WindowService {
     }
     
     func takeFocus() {
-        self.isActivating = true
-        NSRunningApplication.current.activate(options: .activateIgnoringOtherApps)
+        if (NSWorkspace.shared.frontmostApplication?.isFig ?? false) { return }
+        if (!self.isActivating) {
+            self.isActivating = true
+            NSRunningApplication.current.activate(options: .activateIgnoringOtherApps)
+        }
     }
     
     func bringToFront(window: ExternalWindow) {
@@ -89,17 +92,21 @@ class WindowServer : WindowService {
     }
     
     func topmostWhitelistedWindow() -> ExternalWindow? {
-        return self.allWhitelistedWindows(onScreen: true).first
-// fixed the workspace bug! -- unfortunately it introduced a new bug when window becomes fullscreen
-//        guard self.currentApplicationIsWhitelisted() else { return nil }
-//        return topmostWindow(for: NSWorkspace.shared.frontmostApplication!)
+//        return self.allWhitelistedWindows(onScreen: true).first
+// fixed the workspace bug! -- unfortunately it introduced a new bug when window becomes fullscreen + other weirdness
+        guard self.currentApplicationIsWhitelisted() else { return nil }
+        guard self.allWhitelistedWindows(onScreen: true).first != nil else { return nil }
+//        print("topmostWhitelistedWindow", self.allWhitelistedWindows(onScreen: true).first?.frame)
+//        print("topmostWindow", topmostWindow(for: NSWorkspace.shared.frontmostApplication!)?.frame)
+//        print("screen", NSScreen.main?.frame)
+        return topmostWindow(for: NSWorkspace.shared.frontmostApplication!)
     }
     
     func currentApplicationIsWhitelisted() -> Bool{
         let whitelistedBundleIds = Integrations.whitelist
         if let app = NSWorkspace.shared.frontmostApplication,
             let bundleId = app.bundleIdentifier {
-            print("currentAppBundleId = \(bundleId)")
+//            print("currentAppBundleId = \(bundleId)")
             return whitelistedBundleIds.contains(bundleId)
         }
         
