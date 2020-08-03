@@ -32,6 +32,7 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
     
     var tetheredWindowId: CGWindowID?
     var tetheredWindow: ExternalWindow?
+    var sessionId: String?
     
     let windowManager: WindowManagementService
     let windowServiceProvider: WindowService = WindowServer.shared
@@ -268,8 +269,9 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
             case .hidden:
                 return .zero
              case .untethered:
-                return OverlayPositioning.outsideRight.frame(targetWindowFrame: targetWindowFrame,
-                    screen: screen)
+                let window: CGSize = CGSize(width: 715, height: 475)
+                let inset: CGPoint = CGPoint(x: (screen.width - window.width) / 2, y: (screen.height - window.height) / 2)
+                return screen.insetBy(dx: inset.x, dy: inset.y).offsetBy(dx: 0, dy: screen.height - (2 * inset.y))
              case .fullwindow:
                 let inset: CGPoint = CGPoint(x: 250, y: 150)
                 return screen.insetBy(dx: inset.x, dy: inset.y).offsetBy(dx: 0, dy: screen.height - (2 * inset.y))
@@ -339,21 +341,22 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
         let backClick = NSClickGestureRecognizer(target: self, action: #selector(self.backButtonClicked))
         backBtn?.addGestureRecognizer(backClick)
 
+        if (self.isDocked) {
+            untetherBtn = NSTextField()
+            untetherBtn?.frame = CGRect(origin: .zero, size: CGSize(width: 50, height: 44))
+            untetherBtn?.stringValue = "↗"
+            untetherBtn?.font = NSFont.systemFont(ofSize: 20)
+            untetherBtn?.alignment = .right
+            untetherBtn?.backgroundColor = .clear
+            untetherBtn?.isBezeled = false
+            untetherBtn?.isEditable = false
+            untetherBtn?.sizeToFit()
+            self.addViewToTitleBar(untetherBtn!, at: self.frame.width - 24, offset:1) //276
+    //        untetherBtn?.addCursorRect(untetherBtn?.bounds ?? .zero, cursor: NSCursor.pointingHand)
 
-        untetherBtn = NSTextField()
-        untetherBtn?.frame = CGRect(origin: .zero, size: CGSize(width: 50, height: 44))
-        untetherBtn?.stringValue = "↗"
-        untetherBtn?.font = NSFont.systemFont(ofSize: 20)
-        untetherBtn?.alignment = .right
-        untetherBtn?.backgroundColor = .clear
-        untetherBtn?.isBezeled = false
-        untetherBtn?.isEditable = false
-        untetherBtn?.sizeToFit()
-        self.addViewToTitleBar(untetherBtn!, at: self.frame.width - 24, offset:1) //276
-//        untetherBtn?.addCursorRect(untetherBtn?.bounds ?? .zero, cursor: NSCursor.pointingHand)
-
-        let toggleClick = NSClickGestureRecognizer(target: self, action: #selector(self.toggleTether))
-        untetherBtn?.addGestureRecognizer(toggleClick)
+            let toggleClick = NSClickGestureRecognizer(target: self, action: #selector(self.untether))
+            untetherBtn?.addGestureRecognizer(toggleClick)
+        }
         
         self.invalidateCursorRects(for: self.closeBtn!)
     }
@@ -431,9 +434,12 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
             self.windowManager.tether(window: self)
 
         } else {
-            var newFrame = self.frame
-            newFrame.origin = CGPoint(x: newFrame.origin.x + 10, y: newFrame.origin.y)
-            self.setFrame(newFrame, display: true)
+//            var newFrame = self.frame
+//            newFrame.origin = CGPoint(x: newFrame.origin.x + 10, y: newFrame.origin.y)
+//            self.setFrame(newFrame, display: true)
+            self.positioning = .untethered
+            
+
             recognizer.isEnabled = false
             text.stringValue = ""
             //text.stringValue = "↙"
@@ -441,11 +447,12 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
             
         }
     }
-    func untether() {
+    @objc func untether() {
+        self.positioning = .untethered
         self.isDocked = false
-        var newFrame = self.frame
-        newFrame.origin = CGPoint(x: newFrame.origin.x + 10, y: newFrame.origin.y)
-        self.setFrame(newFrame, display: true)
+//        var newFrame = self.frame
+//        newFrame.origin = CGPoint(x: newFrame.origin.x + 10, y: newFrame.origin.y)
+//        self.setFrame(newFrame, display: true)
         self.untetherBtn?.stringValue = ""
         self.untetherBtn?.gestureRecognizers.forEach {
             self.untetherBtn?.removeGestureRecognizer($0)

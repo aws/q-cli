@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import Cocoa
 
 import KituraNet
 import KituraWebSocket
@@ -17,10 +18,17 @@ class ShellBridgeServerDelegate: ServerDelegate {
 
 class WebSocketServer {
     static let bridge = WebSocketServer(port: 8765)
+    let service: ShellBridgeSocketService
     
+    var connections:[String: WebSocketConnection] {
+        get {
+            return service.connections
+        }
+    }
+
     init(port: Int) {
-        
-        WebSocket.register(service: ShellBridgeSocketService(), onPath: "/")
+        service = ShellBridgeSocketService()
+        WebSocket.register(service: service, onPath: "/")
 
         DispatchQueue.global(qos: .background).async {
             let server = HTTP.createServer()
@@ -34,11 +42,21 @@ class WebSocketServer {
         }
        
     }
+    
+    func send(sessionId: String, command: String) {
+        if let connection = self.service.connection(for: sessionId) {
+            connection.send(message: command)
+        }
+    }
 }
 
 class ShellBridgeSocketService: WebSocketService {
 
-    private var connections = [String: WebSocketConnection]()
+    var connections = [String: WebSocketConnection]()
+    var sessionIds: [String : String] = [:]
+    func connection(for sessionId: String) -> WebSocketConnection? {
+        return connections[sessionIds[sessionId] ?? ""]
+    }
     
     let connectionTimeout: Int? = 60
 
@@ -62,12 +80,47 @@ class ShellBridgeSocketService: WebSocketService {
         print("msg:", message)
           let decoder = JSONDecoder()
                 do {
+                    let firstPass = try decoder.decode(SocketMessage.self, from: message.data(using: .utf8)!)
+                    switch firstPass.type {
+                        case "request":
+                            guard let username = firstPass.username, let slug = firstPass.slug else {
+                                break;
+                            }
+                            DispatchQueue.main.async {
+
+                                let alert = NSAlert()
+                                alert.messageText = "Open @\(username)'s Runbook?"
+                                alert.informativeText = "Would you like to open @\(username)'s runbook '\(slug)'? It may execute shell scripts on your behalf."
+                                alert.alertStyle = .warning
+                                alert.addButton(withTitle: "Open")
+                                alert.addButton(withTitle: "Copy Command")
+                                alert.addButton(withTitle: "Not now")
+                                let res = alert.runModal()
+                                if (res == .alertFirstButtonReturn) {
+                                    WindowManager.shared.bringTerminalWindowToFront()
+                                    print("OPEN \(username)/\(slug)")
+                                    Timer.delayWithSeconds(0.5) {
+                                        ShellBridge.injectStringIntoTerminal("fig @\(username) \(slug)", runImmediately: true)
+
+                                    }
+                                } else if (res == .alertSecondButtonReturn) {
+                                    NSPasteboard.general.clearContents()
+                                    NSPasteboard.general.setString("fig @\(username) \(slug)", forType: .string)
+                                }
+                            }
+                    default:
+                        break;
+                    }
+
                     let msg = try decoder.decode(ShellMessage.self, from: message.data(using: .utf8)!)
                     print(msg)
                     
                     switch msg.type {
+                    case "hello":
+                        self.sessionIds[msg.session] = from.id
                     case "pipe":
                         NotificationCenter.default.post(name: .recievedDataFromPipe, object: msg)
+//                        from.send(message: "disconnect")
                     case "pty":
                         if let io = msg.io {
                             if io == "i" {
@@ -91,4 +144,11 @@ class ShellBridgeSocketService: WebSocketService {
                     print("oops: couldn't parse '\(message)'")
                 }
     }
+}
+
+struct SocketMessage: Codable {
+    var type: String
+    var username: String?
+    var slug: String?
+
 }

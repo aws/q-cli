@@ -305,9 +305,9 @@ extension WebViewController: WebBridgeEventListener {
             if let currentMouseLocation = self.mouseLocation {
                print("mouseLocation:", currentMouseLocation)
                print("mouseInWindow", self.view.bounds.contains(currentMouseLocation))
-               if (self.view.bounds.contains(currentMouseLocation)) {
-                   NSRunningApplication.current.activate(options: .activateIgnoringOtherApps)
-               }
+//               if (self.view.bounds.contains(currentMouseLocation)) {
+//                   NSRunningApplication.current.activate(options: .activateIgnoringOtherApps)
+//               }
            }
         })
     }
@@ -362,7 +362,7 @@ extension WebViewController: ShellBridgeEventListener, PseudoTerminalEventDelega
     
     @objc func recievedDataFromPipe(_ notification: Notification) {
         //Bring FIG to front when triggered explictly from commandline
-        NSRunningApplication.current.activate(options: .activateIgnoringOtherApps)
+//        NSRunningApplication.current.activate(options: .activateIgnoringOtherApps)
         
         let msg = (notification.object as! ShellMessage)
         DispatchQueue.main.async {

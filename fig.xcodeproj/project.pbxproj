@@ -91,6 +91,11 @@
 		757CA8E624905B38002A64A8 /* SockerServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757CA8E524905B38002A64A8 /* SockerServer.swift */; };
 		75809B0E24BFA64D00BFFB3E /* TelemetryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75809B0D24BFA64D00BFFB3E /* TelemetryService.swift */; };
 		75809B1124C3876B00BFFB3E /* run-tutorial.js in Resources */ = {isa = PBXBuildFile; fileRef = 75809B1024C3876B00BFFB3E /* run-tutorial.js */; };
+		758AEB5E24CD35D400A15EAF /* WebSocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 758AEB5D24CD35D400A15EAF /* WebSocket.swift */; };
+		758AEB6024CE529D00A15EAF /* String+Shell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 758AEB5F24CE529D00A15EAF /* String+Shell.swift */; };
+		758AEB6724CE8B8F00A15EAF /* figcli in Embed Command Line Tool */ = {isa = PBXBuildFile; fileRef = 751F758E246E16D800E083C8 /* figcli */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		758AEB6A24CEA4D000A15EAF /* Starscream in Frameworks */ = {isa = PBXBuildFile; productRef = 758AEB6924CEA4D000A15EAF /* Starscream */; };
+		758AEB6C24CEA54600A15EAF /* SocketServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 758AEB6B24CEA54600A15EAF /* SocketServer.swift */; };
 		75B7931A24BB897F0073AAC6 /* PseudoTerminalService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B7931924BB897F0073AAC6 /* PseudoTerminalService.swift */; };
 		75C0711D244AC3B2002DF69F /* index.html in Resources */ = {isa = PBXBuildFile; fileRef = 75C0711C244AC3B2002DF69F /* index.html */; };
 		75C07120244BB441002DF69F /* CompanionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75C0711F244BB441002DF69F /* CompanionViewController.swift */; };
@@ -116,6 +121,13 @@
 			remoteGlobalIDString = 75675950244634AD006AA988;
 			remoteInfo = fig;
 		};
+		758AEB6524CE8B8700A15EAF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 75675949244634AD006AA988 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 751F758D246E16D800E083C8;
+			remoteInfo = figcli;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -127,6 +139,17 @@
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 1;
+		};
+		758AEB6324CE8B2F00A15EAF /* Embed Command Line Tool */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 12;
+			dstPath = "";
+			dstSubfolderSpec = 6;
+			files = (
+				758AEB6724CE8B8F00A15EAF /* figcli in Embed Command Line Tool */,
+			);
+			name = "Embed Command Line Tool";
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 		75CFF64C2496B43A00C6A6DE /* Embed Frameworks */ = {
 			isa = PBXCopyFilesBuildPhase;
@@ -235,6 +258,9 @@
 		75809B0D24BFA64D00BFFB3E /* TelemetryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetryService.swift; sourceTree = "<group>"; };
 		75809B0F24C2C66100BFFB3E /* WebView+Private.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "WebView+Private.h"; sourceTree = "<group>"; };
 		75809B1024C3876B00BFFB3E /* run-tutorial.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = "run-tutorial.js"; sourceTree = "<group>"; };
+		758AEB5D24CD35D400A15EAF /* WebSocket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebSocket.swift; sourceTree = "<group>"; };
+		758AEB5F24CE529D00A15EAF /* String+Shell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+Shell.swift"; sourceTree = "<group>"; };
+		758AEB6B24CEA54600A15EAF /* SocketServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocketServer.swift; sourceTree = "<group>"; };
 		75B7931924BB897F0073AAC6 /* PseudoTerminalService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PseudoTerminalService.swift; sourceTree = "<group>"; };
 		75C0711C244AC3B2002DF69F /* index.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = index.html; sourceTree = "<group>"; };
 		75C0711F244BB441002DF69F /* CompanionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionViewController.swift; sourceTree = "<group>"; };
@@ -249,6 +275,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				758AEB6A24CEA4D000A15EAF /* Starscream in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -347,6 +374,9 @@
 			isa = PBXGroup;
 			children = (
 				751F7590246E16D800E083C8 /* main.swift */,
+				758AEB6B24CEA54600A15EAF /* SocketServer.swift */,
+				758AEB5F24CE529D00A15EAF /* String+Shell.swift */,
+				758AEB5D24CD35D400A15EAF /* WebSocket.swift */,
 			);
 			path = figcli;
 			sourceTree = "<group>";
@@ -498,6 +528,9 @@
 			dependencies = (
 			);
 			name = figcli;
+			packageProductDependencies = (
+				758AEB6924CEA4D000A15EAF /* Starscream */,
+			);
 			productName = figcli;
 			productReference = 751F758E246E16D800E083C8 /* figcli */;
 			productType = "com.apple.product-type.tool";
@@ -510,10 +543,12 @@
 				7567594E244634AD006AA988 /* Frameworks */,
 				7567594F244634AD006AA988 /* Resources */,
 				75CFF64C2496B43A00C6A6DE /* Embed Frameworks */,
+				758AEB6324CE8B2F00A15EAF /* Embed Command Line Tool */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				758AEB6624CE8B8700A15EAF /* PBXTargetDependency */,
 			);
 			name = fig;
 			packageProductDependencies = (
@@ -601,6 +636,7 @@
 				755D0F4F2482D4910074AB5C /* XCRemoteSwiftPackageReference "HotKey" */,
 				757CA88224875906002A64A8 /* XCRemoteSwiftPackageReference "ANSITerminal" */,
 				757CA8E224905B0E002A64A8 /* XCRemoteSwiftPackageReference "Kitura-WebSocket" */,
+				758AEB6824CEA4D000A15EAF /* XCRemoteSwiftPackageReference "Starscream" */,
 			);
 			productRefGroup = 75675952244634AD006AA988 /* Products */;
 			projectDirPath = "";
@@ -671,7 +707,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				758AEB6024CE529D00A15EAF /* String+Shell.swift in Sources */,
+				758AEB6C24CEA54600A15EAF /* SocketServer.swift in Sources */,
 				751F7591246E16D800E083C8 /* main.swift in Sources */,
+				758AEB5E24CD35D400A15EAF /* WebSocket.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -767,6 +806,11 @@
 			target = 75675950244634AD006AA988 /* fig */;
 			targetProxy = 75675972244634B2006AA988 /* PBXContainerItemProxy */;
 		};
+		758AEB6624CE8B8700A15EAF /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 751F758D246E16D800E083C8 /* figcli */;
+			targetProxy = 758AEB6524CE8B8700A15EAF /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
@@ -785,7 +829,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = "";
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
@@ -794,7 +841,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = "";
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
@@ -921,7 +971,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1.0.13;
+				CURRENT_PROJECT_VERSION = 1.0.15;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
@@ -935,7 +985,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MARKETING_VERSION = 1.0.13;
+				MARKETING_VERSION = 1.0.15;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mschrage.fig;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "fig/fig-Bridging-Header.h";
@@ -953,7 +1003,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1.0.13;
+				CURRENT_PROJECT_VERSION = 1.0.15;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
@@ -967,7 +1017,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MARKETING_VERSION = 1.0.13;
+				MARKETING_VERSION = 1.0.15;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mschrage.fig;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "fig/fig-Bridging-Header.h";
@@ -1130,6 +1180,14 @@
 				minimumVersion = 2.1.2;
 			};
 		};
+		758AEB6824CEA4D000A15EAF /* XCRemoteSwiftPackageReference "Starscream" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/daltoniam/Starscream";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.0.3;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -1147,6 +1205,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 757CA8E224905B0E002A64A8 /* XCRemoteSwiftPackageReference "Kitura-WebSocket" */;
 			productName = "Kitura-WebSocket";
+		};
+		758AEB6924CEA4D000A15EAF /* Starscream */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 758AEB6824CEA4D000A15EAF /* XCRemoteSwiftPackageReference "Starscream" */;
+			productName = Starscream;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

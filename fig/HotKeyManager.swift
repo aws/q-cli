@@ -28,7 +28,8 @@ class HotKeyManager {
             switch self.companionWindow.positioning {
             case CompanionWindow.defaultPassivePosition:
                 self.shouldTab = true
-                NSRunningApplication.current.activate(options: .activateIgnoringOtherApps)
+//                NSRunningApplication.current.activate(options: .activateIgnoringOtherApps)
+                companion.windowServiceProvider.takeFocus()
                 WebBridge.tabInSidebar(webView: self.webview)
             case CompanionWindow.defaultActivePosition:
                 self.companionWindow.toSidebar()
@@ -43,13 +44,17 @@ class HotKeyManager {
             switch self.companionWindow.positioning {
             case CompanionWindow.defaultPassivePosition:
                 self.shouldTab = true
-                NSRunningApplication.current.activate(options: .activateIgnoringOtherApps)
+//                NSRunningApplication.current.activate(options: .activateIgnoringOtherApps)
+                companion.windowServiceProvider.takeFocus()
+
                 WebBridge.tabInSidebar(webView: self.webview, shift: true)
             default:
                 if let app = NSWorkspace.shared.frontmostApplication, app.isFig {
                     ShellBridge.shared.previousFrontmostApplication?.activate(options: .activateIgnoringOtherApps)
                 } else {
-                    NSRunningApplication.current.activate(options: .activateIgnoringOtherApps)
+//                    NSRunningApplication.current.activate(options: .activateIgnoringOtherApps)
+                    companion.windowServiceProvider.takeFocus()
+
                 }
             }
         }

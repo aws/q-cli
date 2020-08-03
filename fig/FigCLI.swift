@@ -9,6 +9,7 @@
 import Foundation
 
 class Scope {
+    let session: String
     let cmd: String
     let env: String
     let stdin: String
@@ -28,13 +29,15 @@ class Scope {
          options: [String],
          env: String,
          webView: WebView,
-         companionWindow: CompanionWindow) {
+         companionWindow: CompanionWindow,
+         session: String) {
         self.cmd = cmd
         self.stdin = stdin
         self.options = options
         self.env = env
         self.webView = webView
         self.companionWindow = companionWindow
+        self.session = session
         
     }
     
@@ -132,6 +135,7 @@ class FigCLI {
         
         if (Defaults.automaticallyLaunchWebAppsInDetachedWindow) {
             scope.companionWindow.untether()
+            scope.companionWindow.makeKey()
         }
     }
     
@@ -162,7 +166,8 @@ class FigCLI {
     
     static func env(with scope: Scope) {
         scope.webView.configureEnvOnLoad = {
-            let env = FigCLI.extract(keys: ["PWD","USER","HOME","SHELL", "OLDPWD", "TERM_PROGRAM", "TERM_SESSION_ID", "HISTFILE","FIG","FIGPATH"], from: scope.env)
+            
+            let env = scope.env.jsonStringToDict() ?? FigCLI.extract(keys: ["PWD","USER","HOME","SHELL", "OLDPWD", "TERM_PROGRAM", "TERM_SESSION_ID", "HISTFILE","FIG","FIGPATH"], from: scope.env)
             if let json = try? JSONSerialization.data(withJSONObject: env, options: .fragmentsAllowed) {
                 scope.webView.evaluateJavaScript("fig.env = JSON.parse(b64DecodeUnicode(`\(json.base64EncodedString())`))", completionHandler: nil)
                   
@@ -199,13 +204,14 @@ class FigCLI {
     
 //    static func run() {}
 
-    static func run(scope: Scope) {
+    static func run(scope: Scope, path: String? = nil) {
         let modified = Scope(cmd: "run",
                              stdin: scope.stdin,
-                             options: scope.options,
+                             options: path != nil ? [path!] : scope.options,
                              env: scope.env,
                              webView: scope.webView,
-                             companionWindow: scope.companionWindow)
+                             companionWindow: scope.companionWindow,
+                             session: scope.session)
         FigCLI.url(with: modified)
     }
     static func openHelp(schema: CLICommandSchema, scope: Scope) {
@@ -269,14 +275,25 @@ class FigCLI {
             scope.companionWindow.windowManager.close(window:  scope.companionWindow)
             //run command on behalf of user
             let script =  "\(cmd.script!) \(flags.joined(separator: " "))"
-            Timer.delayWithSeconds(0.15) {
-                ShellBridge.injectStringIntoTerminal(script, runImmediately: true, completion: nil)
-            }
+            ShellBridge.shared.socketServer.send(sessionId: scope.session ?? "", command: script)
+//            Timer.delayWithSeconds(0.15) {
+//                ShellBridge.injectStringIntoTerminal(script, runImmediately: true, completion: nil)
+//            }
 //            "\(cmd.cmdToRun!) \(flags.joined(separator: " "))".runAsCommand(cwd: scope.pwd, with: scope.env.jsonStringToDict() as? Dictionary<String, String>)
             
         } catch {
             
         }
+    }
+    
+    static func runInTerminal(script: String, scope: Scope) {
+        // i have no idea why but if this isn't called, there is a memory leak that causes a crash when the window is closed
+        FigCLI.env(with: scope)
+        
+        scope.companionWindow.windowManager.close(window:  scope.companionWindow)
+
+        ShellBridge.shared.socketServer.send(sessionId: scope.session, command: "\(script) \(scope.options.joined(separator: " "))"
+)
     }
     
     struct CLICommandSchema: Codable {
@@ -348,12 +365,13 @@ class FigCLI {
         webView.window?.representedURL = nil        
       
         guard let options = message.options, options.count > 0 else {
-            let scope = Scope(cmd: "", stdin: stdin, options: [], env: env, webView: webView, companionWindow: companionWindow)
+            let scope = Scope(cmd: "", stdin: stdin, options: [], env: env, webView: webView, companionWindow: companionWindow, session: message.session)
             companionWindow.positioning =  .spotlight
             FigCLI.index(with: scope)
             TelemetryProvider.post(event: .ranCommand, with:
                                     ["cmd" : scope.cmd,
                                     "args" : scope.options.map { TelemetryProvider.obscure($0)}.joined(separator: " ") ])
+            ShellBridge.shared.socketServer.send(sessionId: scope.session, command: "disconnect")
             return
         }
         let command = options.first!
@@ -363,7 +381,8 @@ class FigCLI {
                           options: flags,
                           env: env,
                           webView: webView,
-                          companionWindow: companionWindow)
+                          companionWindow: companionWindow,
+                          session: message.session)
         print("ROUTING \(command)")
         
         TelemetryProvider.post(event: .ranCommand, with: ["cmd" : scope.cmd, "args" : scope.options.map { TelemetryProvider.obscure($0)}.joined(separator: " ") ])
@@ -372,9 +391,12 @@ class FigCLI {
         let aliases = UserDefaults.standard.string(forKey: "aliases_dict")?.jsonStringToDict() ?? [:]
         
         // get
-        let figPath = FigCLI.extract(keys: ["FIGPATH"], from: scope.env).first?.value.split(separator: ":") ?? []
+        let figPath = (scope.env.jsonStringToDict()?["FIGPATH"] as? String)?.split(separator: ":").map { NSString(string: String($0)).standardizingPath } ?? []
         
+        var isRundown = false
         var isCLI = false
+        var isExecutable = false
+
         var appPath: String? = nil
         for prefix in figPath {
             isCLI = FileManager.default.fileExists(atPath: "\(prefix)/\(command).fig")
@@ -400,6 +422,23 @@ class FigCLI {
             if (isDirectory) {
                 appPath = "\(prefix)/\(command)/index.html"
                 break
+            }
+            
+            isRundown = FileManager.default.fileExists(atPath: "\(prefix)/\(command).run")
+            if (isRundown) {
+                appPath = "\(prefix)/\(command)"
+                break
+            }
+            isExecutable = FileManager.default.fileExists(atPath: "\(prefix)/\(command).sh")
+            if (isExecutable) {
+                appPath = "\(prefix)/\(command).sh"
+                break
+            }
+            
+            isExecutable = FileManager.default.fileExists(atPath: "\(prefix)/\(command).py")
+            if (isExecutable) {
+                 appPath = "\(prefix)/\(command).py"
+                 break
             }
         }
         
@@ -446,19 +485,32 @@ class FigCLI {
             
 //            companionWindow.windowManager.close(window: companionWindow)
             // get script for command
+        } else if (scope.cmd.starts(with: "@") || scope.cmd.starts(with: "+")) {
+            // fig.run/@mschrage/document
+            scope.webView.loadRemoteApp(at: URL(string: "https://fig.run/\(scope.cmd)/\(scope.options.first ?? "")") ?? FigCLI.baseURL)
+            FigCLI.env(with: scope)
+            FigCLI.options(with: scope, removeFirstOption: true)
+            FigCLI.stdin(with: scope)
         } else if (isCLI) {
             FigCLI.dotfig(filePath: appPath!, scope: scope)
+        } else if (isRundown) {
+            FigCLI.run(scope: scope, path: appPath!)
+        } else if (isExecutable) {
+            FigCLI.runInTerminal(script: appPath!, scope: scope)
         } else if let path = appPath { //fig path
             let modified = Scope(cmd: "local",
                               stdin: stdin,
-                              options: [path],
+                              options: [path] + scope.options,
                               env: env,
                               webView: webView,
-                              companionWindow: companionWindow)
+                              companionWindow: companionWindow,
+                              session: message.session)
             FigCLI.local(with: modified)
         } else {
             FigCLI.url(with: scope)
         }
+        
+        ShellBridge.shared.socketServer.send(sessionId: scope.session, command: "disconnect")
     }
 }
 
@@ -538,5 +590,18 @@ extension String {
         CFStringTransform(mutableString, nil, "Any-Hex/Java" as NSString, true)
 
         return mutableString as String
+    }
+}
+
+extension String {
+    var unescaped: String {
+        let entities = ["\0", "\t", "\n", "\r", "\"", "\'", "\\"]
+        var current = self.replacingOccurrences(of: "\\/", with: "/")
+        for entity in entities {
+            let descriptionCharacters = entity.debugDescription.dropFirst().dropFirst().dropLast().dropLast()
+            let description = String(descriptionCharacters)
+            current = current.replacingOccurrences(of: description, with: entity)
+        }
+        return current
     }
 }

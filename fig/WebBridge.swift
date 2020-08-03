@@ -67,6 +67,8 @@ class WebBridge : NSObject {
                 contentController.add(self, name: WebBridgeScript.notificationHandler.rawValue)
                 contentController.add(self, name: WebBridgeScript.detachHandler.rawValue)
                 contentController.add(self, name: WebBridgeScript.globalExecuteHandler.rawValue)
+                contentController.add(self, name: WebBridgeScript.stdoutHandler.rawValue)
+                contentController.add(self, name: WebBridgeScript.privateHandler.rawValue)
 
                 contentController.add(self, name: WebBridgeScript.onboardingHandler.rawValue)
 
@@ -168,6 +170,7 @@ enum WebBridgeScript: String, CaseIterable {
     case notificationHandler = "notificationHandler"
     case detachHandler = "detachHandler"
     case globalExecuteHandler = "globalExecuteHandler"
+    case privateHandler = "privateHandler"
 
     case onboardingHandler = "onboardingHandler"
 
@@ -343,6 +346,10 @@ extension WebBridge : WKScriptMessageHandler {
             WebBridge.detach(scope: message)
         case .globalExecuteHandler:
             WebBridge.executeInGlobalScope(scope: message)
+        case .stdoutHandler:
+            WebBridge.stdout(scope: message)
+        case .privateHandler:
+            WebBridge.privateAPI(scope: message)
         default:
             print("Unhandled WKScriptMessage type '\(message.name)'")
         }
@@ -365,7 +372,7 @@ extension WebBridge {
     static func authorized(webView: WKWebView?) -> Bool {
         if let webView = webView, let url = webView.url, let scheme = url.scheme {
             print("authorized for scheme?:", scheme)
-            return scheme == "file" || url.host == Remote.baseURL.host || url.host ?? "" == "localhost"
+            return scheme == "file" || url.host == Remote.baseURL.host || url.host == "fig.run" || url.host ?? "" == "localhost"
         }
         return false
     }
@@ -478,11 +485,11 @@ extension WebBridge {
     }
     
     static func focus(scope: WKScriptMessage) {
-        NSRunningApplication.current.activate(options: .activateIgnoringOtherApps)
+        WindowServer.shared.takeFocus()
     }
     
     static func blur(scope: WKScriptMessage) {
-        ShellBridge.shared.previousFrontmostApplication?.activate(options: .activateIgnoringOtherApps)
+        WindowServer.shared.returnFocus()
     }
     
     static func appwrite(scope: WKScriptMessage) {
@@ -696,6 +703,31 @@ extension WebBridge {
         }
     }
     
+    static func stdout(scope: WKScriptMessage) {
+        if let params = scope.body as? Dictionary<String, String>,
+            let out = params["out"],
+            let companion = scope.getCompanionWindow(),
+            let sessionId = companion.sessionId {
+            ShellBridge.shared.socketServer.send(sessionId: sessionId, command: out)
+        }
+    }
+
+    
+    static func privateAPI(scope: WKScriptMessage) {
+        if let params = scope.body as? Dictionary<String, Any>,
+            let type = params["type"] as? String,
+            let data = params["data"] as? Dictionary<String, String> {
+                
+            switch(type) {
+                case "track":
+                    TelemetryProvider.post(event: .viaJS, with: data)
+                    break;
+                default:
+                    print("private command '\(type)' does not exist.")
+            }
+        }
+    }
+    
     static func propertyValueChanged(scope: WKScriptMessage) {
         if let params = scope.body as? Dictionary<String, String>,
            let webView = scope.webView,
@@ -834,7 +866,7 @@ extension WebBridge {
     }
     
     static func appInitialPosition(webview: WebView, response: @escaping (String?) -> Void) {
-        webview.evaluateJavaScript("document.head.querySelector('meta[initial-position]').getAttribute('initial-position')") { (name, error) in
+        webview.evaluateJavaScript("try { document.head.querySelector('meta[initial-position]').getAttribute('initial-position') } catch(e) {}") { (name, error) in
             response(name as? String)
             return
         }
@@ -842,7 +874,7 @@ extension WebBridge {
     
     
     static func appname(webview: WebView, response: @escaping (String?) -> Void) {
-        webview.evaluateJavaScript("document.head.querySelector('meta[fig\\:app]').getAttribute('fig:app')") { (name, error) in
+        webview.evaluateJavaScript("try { document.head.querySelector('meta[fig\\:app]').getAttribute('fig:app') } catch(e) {}") { (name, error) in
             response(name as? String)
             return
         }
@@ -988,6 +1020,19 @@ extension WebBridgeScript {
     }
 }
 
+extension WKScriptMessage {
+    func getFigWebView() -> WebView? {
+        return self.webView as? WebView
+    }
+    
+    func getCompanionWindow() -> CompanionWindow? {
+        return self.webView?.window as? CompanionWindow
+    }
+    
+    func getContentController() -> WebViewController? {
+        return self.webView?.window?.contentViewController as? WebViewController
+    }
+}
 
 extension String {
   /*

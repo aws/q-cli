@@ -57,7 +57,7 @@ let setup = function(window) {
 //          console.log("fig.stdin must be overwritten in order to recieve standard input.")
       },
       stdout : function(out) {
-          window.webkit.messageHandlers.stdoutHandler.postMessage(out);
+          window.webkit.messageHandlers.stdoutHandler.postMessage({out});
       },
       fwrite : function(path, data, handler) {
           let handlerId = random_identifier(5)
@@ -124,8 +124,15 @@ let setup = function(window) {
           console.log("fig.init must be overwritten. The behavior of other fig functions is undefined if called prior to the fig.init entrypoint.")
       },
       callinit : function() {
+          let urlParams = new URLSearchParams(window.location.search);
+          let inputParam = urlParams.get('input');
+          var opts = null
+          try {
+              opts = inputParam.split('%20')
+          } catch(e) {}
+          
           let stdin = fig['_stdin']
-          let options = fig.options
+          let options = fig.options //|| opts
 //          fig.pty.init()
           fig.init(stdin, options)
           fig.stdin(stdin)
@@ -250,6 +257,9 @@ let setup = function(window) {
               console.log("Don't run `fig.pty.exit()` unless you know what you're doing.")
               window.webkit.messageHandlers.ptyHandler.postMessage({type: 'exit'});
           }
+      },
+      private(func) {
+          window.webkit.messageHandlers.privateHandler.postMessage(func);
       }
   }
     

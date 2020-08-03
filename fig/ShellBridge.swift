@@ -39,6 +39,7 @@ extension Notification.Name {
 
 class ShellBridge {
     static let shared = ShellBridge()
+    let socketServer: WebSocketServer = WebSocketServer.bridge
     
     var pty: HeadlessTerminal = HeadlessTerminal(onEnd: { (code) in
         print("Exit")
@@ -184,7 +185,7 @@ class ShellBridge {
     }
     
     func startWebSocketServer() {
-        let _ = WebSocketServer.bridge
+//        self.socketServer = WebSocketServer.bridge
     }
     
     func stopWebSocketServer( completion:(() -> Void)? = nil) {
@@ -209,7 +210,10 @@ class ShellBridge {
     }
 
     static func injectStringIntoTerminal(_ cmd: String, runImmediately: Bool = false, completion: (() -> Void)? = nil) {
-            ShellBridge.shared.previousFrontmostApplication?.activate(options: .activateIgnoringOtherApps)
+        if (NSWorkspace.shared.frontmostApplication?.isFig ?? false) {
+            WindowServer.shared.returnFocus()
+        }
+//            ShellBridge.shared.previousFrontmostApplication?.activate(options: .activateIgnoringOtherApps)
         NotificationCenter.default.post(name: .requestStopMonitoringMouseEvents, object: nil)
         print("Stop monitoring mouse")
 //        NSApp.deactivate()
@@ -535,7 +539,12 @@ extension ShellBridge {
 //        cmd="tell application \"Terminal\" to do script \"uptime\""
 //          osascript -e "$cmd"
         
-        if let path = Bundle.main.path(forResource: "fig", ofType: "", inDirectory: "dist") {
+        if let path = Bundle.main.path(forAuxiliaryExecutable: "figcli") {
+            print(path)
+            let _ = "mkdir -p /usr/local/bin && ln -sf '\(path)' '/usr/local/bin/fig'".runWithElevatedPriviledgesFromAppleScript()
+            return
+        }
+        if let path = Bundle.main.path(forAuxiliaryExecutable: "figcli") {//Bundle.main.path(forResource: "fig", ofType: "", inDirectory: "dist") {
             print(path)
             let script = "mkdir -p /usr/local/bin && ln -sf '\(path)' '/usr/local/bin/fig'"
             

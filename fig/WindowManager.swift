@@ -50,6 +50,11 @@ class WindowManager : NSObject {
 //        _ = Timer.scheduledTimer(timeInterval: 0.25, target: self, selector: #selector(updatePositionTimer), userInfo: nil, repeats: true)
         
             //var mouseDownPolling: Timer?
+//            NSEvent.addGlobalMonitorForEvents(matching: .any) { (event) in
+//                //self.updatePosition(for: .mouseDown)
+//                print(event)
+//            }
+        
             NSEvent.addGlobalMonitorForEvents(matching: .leftMouseDown) { (event) in
                 self.updatePosition(for: .mouseDown)
             }
@@ -155,7 +160,7 @@ class WindowManager : NSObject {
     }
     
     func updatePosition(for reason: WindowUpdateReason) {
-//        if (reason == .timer) { return }
+//        if ([.mouseUp, .mouseDown].contains(reason) ) { return }
         // handle tracked windows; ideally be smarter about this.
         let allCompanionWindows = Set(self.windows.map { $0.value }).union(untetheredWindows)
 
@@ -187,6 +192,8 @@ class WindowManager : NSObject {
         } else {
             self.hotKeyManager?.companionWindow = visibleWindows.first ?? self.sidebar!
         }
+        
+        print(reason)
     
     }
     
@@ -240,7 +247,7 @@ extension WindowManager : ShellBridgeEventListener {
             return
         }
         
-        NSRunningApplication.current.activate(options: .activateIgnoringOtherApps)
+//        NSRunningApplication.current.activate(options: .activateIgnoringOtherApps)
         
         let msg = (notification.object as! ShellMessage)
         DispatchQueue.main.async {
@@ -257,9 +264,14 @@ extension WindowManager : ShellBridgeEventListener {
                     companion.tetheredWindowId = parent.windowId
                     companion.tetheredWindow = parent
                     companion.delegate = self
+                    companion.sessionId = msg.session
 
                     FigCLI.route(msg, webView: web.webView!, companionWindow: companion)
                     companion.oneTimeUse = true
+                    
+                    if (companion.isVisible) {
+                        WindowServer.shared.takeFocus()
+                    }
 
                 } else {
                     let web = WebViewController()
@@ -270,13 +282,16 @@ extension WindowManager : ShellBridgeEventListener {
                     companion.tetheredWindowId = parent.windowId
                     companion.tetheredWindow = parent
                     companion.delegate = self
-
+                    companion.sessionId = msg.session
+                    
                     companion.makeKeyAndOrderFront(nil)
 
                     FigCLI.route(msg, webView: web.webView!, companionWindow: companion)
                     companion.oneTimeUse = true 
-
                     
+                    if (companion.isVisible) {
+                        WindowServer.shared.takeFocus()
+                    }
                 }
             }
         }
@@ -406,10 +421,20 @@ extension WindowManager : WindowManagementService {
             }
             
         } else if (app.isFig) {
-            if (explicitlyRepositioned) {
+//            if (explicitlyRepositioned) {
                 guard let targetWindow = self.windowServiceProvider.previousWhitelistedWindow() else {
                     print("shouldAppear: [\(bundleId)] previousTargetWindow ??")
-                    return true
+                    // prevents sidebar from appearing in addition to other views
+//                    guard let key = NSApplication.shared.keyWindow as? CompanionWindow else {
+//                        return window.isKeyWindow
+//                     || (key.positioning == .outsideRight && window.isSidebar)
+//                    }
+//                    if let key = NSApplication.shared.keyWindow as? CompanionWindow, key.positioning == .outsideRight {
+//                        print("shouldAppear: [\(bundleId)] window is sidebar, and underneath pos3")
+//                        return window.isSidebar || window.isKeyWindow
+//                    }
+                    
+                    return true || window.isKeyWindow
                 }
                 
                 if window.tetheredWindow?.windowId == targetWindow.windowId {
@@ -422,13 +447,13 @@ extension WindowManager : WindowManagementService {
                     print("shouldAppear: [\(bundleId)] Hide")
                     return false
                 }
-            }
+//            }
             
             // this keeps Fig windows open by default when Fig is the active apps,
             // which makes sense most of the time
             // but there are some issues here. Probably need a condition tying the current parentWindow id to previous whitelisted window.
             print("shouldAppear: [\(bundleId)] Fig active & not explicitly positioned")
-            return true
+            return false
         } else {
             print("shouldAppear: [\(bundleId)] Not on whitelist")
             return false
@@ -517,6 +542,7 @@ extension WindowManager : WindowManagementService {
     }
     
     func untether(window: CompanionWindow) {
+        window.makeKeyAndOrderFront(self)
         if let parent = window.tetheredWindow {
             self.windows.removeValue(forKey: parent)
         }

@@ -8,26 +8,6 @@
 
 import Foundation
 extension String {
-    func runWithElevatedPrivileges() -> String? {
-        let myAppleScript = "do shell script \"\(self)\" with administrator privileges"
-        var error: NSDictionary?
-        guard let scriptObject = NSAppleScript(source: myAppleScript) else { return nil }
-    
-        let output: NSAppleEventDescriptor = scriptObject.executeAndReturnError(&error)
-        if (error != nil) {
-            print("error: \(error ?? [:])")
-            return nil
-        }
-        
-        return output.stringValue
-        
-    }
-    
-    func runWithElevatedPriviledgesFromAppleScript(completion: (()-> Void)? = nil) {
-        "cmd=\"do shell script \\\"\(self)\\\" with administrator privileges\" && osascript -e \"$cmd\"".runInBackground(completion: completion)
-
-    }
-    
     func runAsCommand(_ isVerbose: Bool = false, cwd: String? = nil, with env: Dictionary<String, String>? = nil) -> String {
         let pipe = Pipe()
         let stderr = Pipe()
@@ -96,8 +76,8 @@ extension String {
         task.launch()
         task.waitUntilExit()
 
-        print("TerminationStatus:", task.terminationStatus)
-        print("TerminationReason:", task.terminationReason)
+//        print("TerminationStatus:", task.terminationStatus)
+//        print("TerminationReason:", task.terminationReason)
 
         return output
 //        if let result = NSString(data: file.readDataToEndOfFile(), encoding: String.Encoding.utf8.rawValue) {

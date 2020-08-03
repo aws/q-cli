@@ -159,9 +159,9 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
          action: #selector(AppDelegate.promptForAccesibilityAccess),
          keyEquivalent: "")
         statusBarMenu.addItem(
-         withTitle: "Toggle Visibility                         ⌘i",
+         withTitle: "Toggle Visibility",
          action: #selector(AppDelegate.toggleVisibility),
-         keyEquivalent: "")
+         keyEquivalent: "i")
         statusBarMenu.addItem(NSMenuItem.separator())
         statusBarMenu.addItem(
          withTitle: "Check for updates...",
@@ -175,6 +175,10 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
          withTitle: "Quit Fig",
          action: #selector(AppDelegate.quit),
          keyEquivalent: "")
+//        statusBarMenu.addItem(
+//         withTitle: "Add Observer",
+//         action: #selector(AppDelegate.addAccesbilityObserver),
+//         keyEquivalent: "")
         
         toggleLaunchAtStartup()
         
@@ -199,6 +203,33 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 
         //(window as! CompanionWindow).repositionWindow(forceUpdate: true, explicit: true)
         //self.hotKeyManager = HotKeyManager(companion: window as! CompanionWindow)
+    }
+    var observer: AXObserver?
+
+    @objc func addAccesbilityObserver() {
+        let first = WindowServer.shared.topmostWindow(for: NSWorkspace.shared.frontmostApplication!)!
+        print(first.bundleId)
+        let axErr = AXObserverCreate(first.app.processIdentifier, { (observer: AXObserver, element: AXUIElement, notificationName: CFString, refcon: UnsafeMutableRawPointer?) -> Void in
+                print("yoyoyo")
+                print(notificationName)
+            WindowManager.shared.requestWindowUpdate()
+            
+        }, &observer)
+        
+        //kAXWindowMovedNotification
+        AXObserverAddNotification(observer!, first.accesibilityElement!, kAXWindowMovedNotification as CFString, nil)
+        AXObserverAddNotification(observer!, first.accesibilityElement!, kAXWindowResizedNotification as CFString, nil)
+//        _ element: AXUIElement,
+//        _ notification: CFString,
+//        _ refcon: UnsafeMutableRawPointer?)
+//        AXObserverAddNotification(observer,
+        
+        //[[NSRunLoop currentRunLoop] getCFRunLoop]
+        print(axErr)
+        print(observer)
+        CFRunLoopAddSource(CFRunLoopGetCurrent(), AXObserverGetRunLoopSource(observer!), CFRunLoopMode.defaultMode);
+
+//        CFRunLoopAddSource( RunLoop.current.getCFRunLoop()), AXObserverGetRunLoopSource(observer), kCFRunLoopDefaultMode );
     }
     
     @objc func hide() {

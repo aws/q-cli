@@ -143,6 +143,7 @@ class WindowServer : WindowService {
     var previousApplication: NSRunningApplication?
     var previousWindow: ExternalWindow? {
         willSet(value) {
+            print("app: \(value?.bundleId)")
             if (self.previousWindow != value) {
                 print("Old window \(self.previousWindow?.windowId ?? 0)")
                 print("New window \(value?.windowId ?? 0)")
@@ -160,7 +161,10 @@ class WindowServer : WindowService {
     }
     //https://stackoverflow.com/questions/853833/how-can-my-app-detect-a-change-to-another-apps-window
     @objc func setPreviousWindow() {
-        self.previousWindow = self.topmostWhitelistedWindow()
+        // don't set null when null
+        if let window = self.topmostWhitelistedWindow() {
+            self.previousWindow = window
+        }
     }
     
     @objc func spaceChanged() {
@@ -206,7 +210,7 @@ class WindowServer : WindowService {
                             width:  bounds.width,
                             height: bounds.height)
             
-            return ExternalWindow(windowFrame, windowId, app)
+            return ExternalWindow(windowFrame, windowId, app, window as! AXUIElement)
         }
         return nil
 
@@ -218,8 +222,9 @@ class ExternalWindow {
     let windowId: CGWindowID
     let windowLevel: CGWindowLevel?
     let app: NSRunningApplication
+    let accesibilityElement: AXUIElement?
     
-    init?(raw: [String: Any]) {
+    init?(raw: [String: Any], accesibilityElement: AXUIElement? = nil) {
         guard let pid = raw["kCGWindowOwnerPID"] as? pid_t else {
           return nil
         }
@@ -253,18 +258,20 @@ class ExternalWindow {
             return nil
         }
         
-        
+        self.accesibilityElement = accesibilityElement
         self.windowLevel = raw["kCGWindowLayer"] as? CGWindowLevel
         self.app = app
         self.windowId = id
         self.frame = CGRect(x: x, y: y, width: width, height: height)
     }
     
-    init(_ frame: NSRect, _ windowId: CGWindowID, _ app: NSRunningApplication) {
+    init(_ frame: NSRect, _ windowId: CGWindowID, _ app: NSRunningApplication,_ accesibilityElement: AXUIElement? = nil) {
         self.frame = frame
         self.windowId = windowId
         self.app = app
         self.windowLevel = nil
+        self.accesibilityElement = accesibilityElement
+
     }
 
     var frameWithoutTitleBar: NSRect {
