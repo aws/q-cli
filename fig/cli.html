@@ -83,6 +83,10 @@
         .section p {
             font-size: 0.85em;
         }
+    
+        .section details {
+           font-size: 0.85em;
+        }
 
         .video-mask {
             width: 300;
@@ -155,6 +159,11 @@
           .button:hover {
               filter: brightness(110%);
           }
+    
+    summary {
+        outline: none;
+        color: #bdbdbd;
+    }
 
         /* progress {
             -webkit-appearance: none;
@@ -202,17 +211,33 @@
                 <span class="title" href="javascript:cli()" id="cli">1. Add CLI Tool</span>
                 <p>You will be prompted for permission to create the symlink using
                     AppleScript (oascript).
+                    <details>
+                        <summary>Or set up manually</summary>
+                      <p></p>
+                      <p>Copy and run the following command to install the CLI tool.
+                            <br>
+                      </p>
+                      <pre id = "shell" figdisabled = "true">
+mkdir -p /usr/local/bin && sudo ln -sf '\(path)' '/usr/local/bin/fig'</pre>
+                      <p>When you're done, <a href = "./permissions.html">proceed to next step.</a></p>
+
+                    </details>
                 <p>
-                    <img src="./cli.png">
+                <img src="./cli.png">
                 <div class = "button">
                     <a href="javascript:cli()">Install</a>
                 </div>
+            
 <!--                    <span class="subtitle">Fig can also be installed directly in the terminal:<span>-->
 <!--                            <span class = "code">mkdir -p /usr/local/bin && ln -sf '\()' '/usr/local/bin/fig'</span>-->
             </div>
         </section>
     </div>
     <script>
+        fig.init = () => {
+            document.querySelector("#shell").innerText = `mkdir -p /usr/local/bin && sudo ln -sf '${fig.clipath}' '/usr/local/bin/fig'`
+
+        }
         let ws = function () {
             fig.onboarding("ws", () => {
 

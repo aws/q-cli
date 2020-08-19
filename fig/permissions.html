@@ -209,7 +209,7 @@
                     </video>
                 </div>
                 <div class = "button">
-                    <a href="javascript:permissions()">Enable</a>
+                    <a id = "enable" href="javascript:permissions()">Enable</a>
                 </div>
 
             </div>
@@ -232,8 +232,10 @@
         }
 
         let permissions = function () {
-            fig.onboarding("permissions")
-            window.location.href = `${fig.remoteURL}/onboarding/signin.html`
+            document.querySelector("#enable").innerText = "Waiting..."
+            fig.onboarding("permissions", (value) => {
+               window.location.href = `${fig.remoteURL}/onboarding/signin.html`
+            })
             //fig.onboarding("close")
 
         }

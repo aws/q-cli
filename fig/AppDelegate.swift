@@ -42,6 +42,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         let email = UserDefaults.standard.string(forKey: "userEmail")
 
         if (!hasLaunched || email == nil ) {
+            Defaults.loggedIn = false
             let onboardingViewController = WebViewController()
             onboardingViewController.webView?.defaultURL = nil
             onboardingViewController.webView?.loadBundleApp("landing")
@@ -155,7 +156,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
          action: #selector(AppDelegate.addCLI),
          keyEquivalent: "")
         statusBarMenu.addItem(
-         withTitle: "Prompt for Accesibility Access",
+         withTitle: "Prompt for Accessibility Access",
          action: #selector(AppDelegate.promptForAccesibilityAccess),
          keyEquivalent: "")
         statusBarMenu.addItem(
@@ -176,12 +177,19 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
          action: #selector(AppDelegate.quit),
          keyEquivalent: "")
 //        statusBarMenu.addItem(
+//         withTitle: "Setup",
+//         action: #selector(AppDelegate.newAccesibilityAPI),
+//         keyEquivalent: "")
+//        statusBarMenu.addItem(
+//         withTitle: "Get PID of Topmost Window",
+//         action: #selector(AppDelegate.pid),
+//         keyEquivalent: "")
+//        statusBarMenu.addItem(
 //         withTitle: "Add Observer",
 //         action: #selector(AppDelegate.addAccesbilityObserver),
 //         keyEquivalent: "")
         
         toggleLaunchAtStartup()
-        
     }
     
     func dialogOKCancel(question: String, text: String, prompt:String = "OK") -> Bool {
@@ -196,6 +204,8 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 
     
     func setupCompanionWindow() {
+        Defaults.loggedIn = true
+
         WindowManager.shared.createSidebar()
         //let companion = CompanionWindow(viewController: WebViewController())
         //companion.positioning = CompanionWindow.defaultPassivePosition
@@ -206,6 +216,13 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     }
     var observer: AXObserver?
 
+    @objc func newAccesibilityAPI() {
+        Onboarding.installation()
+//        "whoami".runWithElevatedPrivileges()
+//        ShellBridge.promptForAccesibilityAccess { (enabled) in
+//            print("AXCallback:", enabled)
+//        }
+    }
     @objc func addAccesbilityObserver() {
         let first = WindowServer.shared.topmostWindow(for: NSWorkspace.shared.frontmostApplication!)!
         print(first.bundleId)
@@ -251,6 +268,12 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     }
     
 
+    @objc func pid() {
+        if let window = WindowServer.shared.topmostWhitelistedWindow() {
+            print("\(window.bundleId ?? "") -  pid:\(window.app.processIdentifier) - \(window.windowId)")
+        }
+    }
+    
     @objc func checkForUpdates() {
         print("Checking")
         self.updater?.checkForUpdates(self)

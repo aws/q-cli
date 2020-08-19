@@ -324,6 +324,16 @@ extension WebViewController: WebBridgeEventListener {
         })
     }
     
+    func cleanUp() {
+        self.webView?.configuration.userContentController.removeAllUserScripts()
+        
+        for handler in WebBridgeScript.allCases {
+            self.webView?.configuration.userContentController.removeScriptMessageHandler(forName: handler.rawValue)
+
+        }
+
+    }
+    
     
 }
 
@@ -483,6 +493,7 @@ extension WebViewController : WKNavigationDelegate {
         webView.onLoad = []
         WebBridge.enableInteractiveCodeTags(webview: webView)
         WebBridge.declareAppVersion(webview: webView)
+        WebBridge.declareFigCLIPath(webview: webView)
         WebBridge.declareRemoteURL(webview: webView)
         WebBridge.initJS(webview: webView)
 //        webView.evaluateJavaScript("fig.callinit()", completionHandler: nil)

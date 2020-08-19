@@ -22,6 +22,28 @@ class Scope {
         }
         return nil
     }
+    
+    var shell: String? {
+        if let dict = self.env.jsonStringToDict() {
+            return dict["SHELL"] as? String
+        }
+        return nil
+    }
+    
+    var term: String? {
+        if let dict = self.env.jsonStringToDict() {
+            if let _ = dict["KITTY_WINDOW_ID"] {
+                return "kitty"
+            }
+            
+            if let _ = dict["ALACRITTY_LOG"] {
+                return "Alacritty"
+            }
+            
+            return dict["TERM_PROGRAM"] as? String
+        }
+        return nil
+    }
 
     
     init(cmd: String,
@@ -55,7 +77,13 @@ enum NativeCLICommand : String {
     case appstore = "appstore"
     case blocks = "blocks"
     case home = "home"
-    
+    case help = "--help"
+    case h = "-h"
+    case version = "--version"
+    case accesibility = "util:axprompt"
+    case logout = "util:logout"
+    case sidebar = "sidebar"
+
     var openInNewWindow: Bool {
         get {
             let popups: Set<NativeCLICommand> = [ .web, .local, .bundle, .apps, .appstore, .home, .appstore, .blocks]
@@ -68,7 +96,7 @@ class FigCLI {
     static let baseURL = Remote.baseURL
 
     static func index(with scope: Scope ) {
-        scope.webView.loadRemoteApp(at: FigCLI.baseURL)
+        scope.webView.loadRemoteApp(at: Remote.baseURL)
         FigCLI.env(with: scope)
         FigCLI.options(with: scope)
         FigCLI.stdin(with: scope)
@@ -112,6 +140,9 @@ class FigCLI {
             FigCLI.stdin(with: scope)
             FigCLI.initialPosition(with: scope)
 
+        } else {
+            let modified = Scope(cmd: "local", stdin: scope.stdin, options: scope.options, env: scope.env, webView: scope.webView, companionWindow: scope.companionWindow, session: scope.session)
+            FigCLI.url(with: modified)
         }
         FigCLI.env(with: scope)
 
@@ -127,7 +158,12 @@ class FigCLI {
     }
     
     static func web(with scope: Scope) {
-        scope.webView.loadRemoteApp(at: URL(string: scope.options[safe: 0] ?? "") ?? FigCLI.baseURL)
+        guard let url =  URL(string: scope.options[safe: 0] ?? "") else {
+            let modified = Scope(cmd: "web", stdin: scope.stdin, options: scope.options, env: scope.env, webView: scope.webView, companionWindow: scope.companionWindow, session: scope.session)
+            FigCLI.url(with: modified)
+            return
+        }
+        scope.webView.loadRemoteApp(at: url)
         FigCLI.env(with: scope)
         FigCLI.options(with: scope, removeFirstOption: true)
         FigCLI.stdin(with: scope)
@@ -207,7 +243,7 @@ class FigCLI {
     static func run(scope: Scope, path: String? = nil) {
         let modified = Scope(cmd: "run",
                              stdin: scope.stdin,
-                             options: path != nil ? [path!] : scope.options,
+                             options: path != nil ? [path!] + scope.options : scope.options,
                              env: scope.env,
                              webView: scope.webView,
                              companionWindow: scope.companionWindow,
@@ -357,6 +393,37 @@ class FigCLI {
         return CompanionWindow.OverlayPositioning(rawValue: raw)
     }
     
+    static func notifyAccessibilityError(_ message: ShellMessage) {
+        let checkOptPrompt = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as NSString
+               //set the options: false means it wont ask
+               //true means it will popup and ask
+               let opt = [checkOptPrompt: false]
+               //translate into boolean value
+               let accessEnabled = AXIsProcessTrustedWithOptions(opt as CFDictionary?)
+               guard accessEnabled else {
+                   
+                   let error =
+                   """
+
+                   › \u{001b}[31mCould not open fig.app.\u{001b}[0m
+
+                     \u{001b}[1mQUICK FIX\u{001b}[0m
+                     Fig does not have Accessibility Permissions enabled.
+
+                   → Click the 🍐 in your menu bar > \u{001b}[1mPrompt for Accessibility Access\u{001b}[0m
+
+                     Please email \u{001b}[1mhello@withfig.com\u{001b}[0m if this problem persists.
+
+                   """
+                   //            → Run \u{001b}[1mopen -b com.mschrage.fig\u{001b}[0m to prompt for access.
+
+                   ShellBridge.shared.socketServer.send(sessionId: message.session, command: "echo \"\(error)\"")
+                   ShellBridge.shared.socketServer.send(sessionId: message.session, command: "disconnect")
+                   
+                   return
+               }
+    }
+    
     static func route(_ message: ShellMessage, webView: WebView, companionWindow: CompanionWindow) {
         
         let stdin = message.data.replacingOccurrences(of: "`", with: "\\`")
@@ -370,7 +437,9 @@ class FigCLI {
             FigCLI.index(with: scope)
             TelemetryProvider.post(event: .ranCommand, with:
                                     ["cmd" : scope.cmd,
-                                    "args" : scope.options.map { TelemetryProvider.obscure($0)}.joined(separator: " ") ])
+                                    "args" : scope.options.map { TelemetryProvider.obscure($0)}.joined(separator: " "),
+                                    "shell" : scope.shell ?? "<unknown>",
+                                    "terminal" : scope.term ?? "<unknown>"])
             ShellBridge.shared.socketServer.send(sessionId: scope.session, command: "disconnect")
             return
         }
@@ -385,13 +454,21 @@ class FigCLI {
                           session: message.session)
         print("ROUTING \(command)")
         
-        TelemetryProvider.post(event: .ranCommand, with: ["cmd" : scope.cmd, "args" : scope.options.map { TelemetryProvider.obscure($0)}.joined(separator: " ") ])
+        TelemetryProvider.post(event: .ranCommand, with: ["cmd" : scope.cmd, "args" : scope.options.map { TelemetryProvider.obscure($0)}.joined(separator: " "), "shell" : scope.shell ?? "<unknown>", "terminal" : scope.term ?? "<unknown>"])
         
         // get aliases from sidebar
         let aliases = UserDefaults.standard.string(forKey: "aliases_dict")?.jsonStringToDict() ?? [:]
         
         // get
-        let figPath = (scope.env.jsonStringToDict()?["FIGPATH"] as? String)?.split(separator: ":").map { NSString(string: String($0)).standardizingPath } ?? []
+        var figPath = (scope.env.jsonStringToDict()?["FIGPATH"] as? String)?.split(separator: ":").map { NSString(string: String($0)).standardizingPath } ?? []
+        
+        if (!figPath.contains("~/run")) {
+            figPath.insert("~/run", at: 0)
+        }
+        
+        if (!figPath.contains("~/.fig/bin")) {
+            figPath.insert("~/.fig/bin", at: 0)
+        }
         
         var isRundown = false
         var isCLI = false
@@ -461,9 +538,65 @@ class FigCLI {
             case .hide:
                 companionWindow.positioning = .icon
                 FigCLI.url(with: scope)
-            case .apps, .store, .appstore, .blocks, .home:
+            case .apps, .store, .appstore, .blocks, .home, .sidebar:
                 companionWindow.positioning = .fullwindow
                 FigCLI.url(with: scope)
+            case .accesibility:
+                ShellBridge.promptForAccesibilityAccess()
+                FigCLI.runInTerminal(script: "echo \"  Requesting Accesibility Permission...\"", scope: scope)
+            case .logout:
+                Defaults.email = nil
+                Defaults.loggedIn = false
+                scope.webView.deleteCache()
+                let _ = "osascript -e 'quit app \"Fig\"' && open -b \"com.mschrage.fig\"".runAsCommand()
+            case .version:
+                FigCLI.runInTerminal(script: "echo \"\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "-1")\"", scope: scope)
+            case .help, .h:
+                scope.companionWindow.windowManager.close(window:  scope.companionWindow)
+
+                let localRunbooks = try? FileManager.default.contentsOfDirectory(at: URL(fileURLWithPath:  "\(NSHomeDirectory())/run/", isDirectory: true), includingPropertiesForKeys: nil, options: .skipsHiddenFiles).map { "  \($0.lastPathComponent.replacingOccurrences(of: ".\($0.pathExtension)", with: ""))" }.joined(separator: "\n")
+                // load file from disk
+                 let url = URL(fileURLWithPath: "~/.fig/cli.txt")
+                 let out = try? String(contentsOf: url, encoding: String.Encoding.utf8)
+                let helpMessage =
+"""
+CLI to interact with Fig
+
+\\u001b[1mUSAGE\\u001b[0m
+  $ fig [SUBCOMMAND]
+
+\\u001b[1mCOMMANDS\\u001b[0m
+  home            update your sidebar
+  apps            browse all availible apps
+  runbooks        view and edit your runbooks
+  settings        view settings for Fig
+  docs            open Fig documentation
+  web <URL>       access websites on the internet
+  local <PATH>    load local html files
+  run <PATH>      load local rundown file
+
+\\u001b[1mAPPS\\u001b[0m
+  dir             browse your file system
+  curl            build http requests
+  git             a lightweight UI for git
+  google <QUERY>  search using Google
+  psql            view and query Postgres databases
+  monitor         visualize CPU usage by process
+  sftp            browse files on remote servers
+  alias           create aliases for common commands
+  readme          preview Readme markdown documents
+  + more          (run \\u001b[1mfig apps\\u001b[0m to view App Store)
+  
+\\u001b[1mCOMMUNITY\\u001b[0m
+  @user           view a user's public runbooks
+  +team.com       view your team's shared runbooks
+  #chat           chat with others about a #topic
+
+\\u001b[1mLOCAL RUNBOOKS\\u001b[0m
+\(localRunbooks ?? "  (none)          no runbooks in ~/run")
+"""
+                
+                FigCLI.runInTerminal(script: "echo \"\(out ?? helpMessage)\"", scope: scope)
             }
         } else if (aliases.keys.contains(command)) { // user defined shortcuts
             
@@ -487,7 +620,8 @@ class FigCLI {
             // get script for command
         } else if (scope.cmd.starts(with: "@") || scope.cmd.starts(with: "+")) {
             // fig.run/@mschrage/document
-            scope.webView.loadRemoteApp(at: URL(string: "https://fig.run/\(scope.cmd)/\(scope.options.first ?? "")") ?? FigCLI.baseURL)
+            
+            scope.webView.loadRemoteApp(at: URL(string: "https://fig.run/\(scope.cmd)/\(scope.options.first ?? "")?token=\(Defaults.domainToken ?? "")") ?? FigCLI.baseURL)
             FigCLI.env(with: scope)
             FigCLI.options(with: scope, removeFirstOption: true)
             FigCLI.stdin(with: scope)

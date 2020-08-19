@@ -293,6 +293,9 @@ extension WindowManager : ShellBridgeEventListener {
                         WindowServer.shared.takeFocus()
                     }
                 }
+            } else {
+                // check accessibility permissions
+                FigCLI.notifyAccessibilityError(msg)
             }
         }
     }
@@ -517,6 +520,7 @@ extension WindowManager : WindowManagementService {
     
     func close(window: CompanionWindow) {
         (window.contentViewController as? WebViewController)?.pty.close()
+        (window.contentViewController as? WebViewController)?.cleanUp()
         window.orderOut(nil)
         window.close()
         

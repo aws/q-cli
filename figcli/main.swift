@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import Cocoa
 import Starscream
 let arguments = CommandLine.arguments
     
@@ -118,6 +119,9 @@ class CLI : WebSocketConnectionDelegate {
         // disconnect on acknowledgment...
 //        connection.disconnect()
         if (text == "disconnect") {
+//            guard !protected else {
+//                return
+//            }
             if (!busy) {
                 group.leave()
             } else {
@@ -159,6 +163,7 @@ var handler: CLI?
 //var socket: WebSocket!
 group.enter()
 //async operation 1
+
 DispatchQueue.global(qos: .default).async {
     handler = CLI(env: env, stdin: stdin, arguments: arguments, group: group)
     
@@ -166,9 +171,53 @@ DispatchQueue.global(qos: .default).async {
 
 }
 
-//delayWithSeconds(1) {
-//    group.leave()
-//}
+/// Timeout
+DispatchQueue.global().asyncAfter(deadline: .now() + 1.25) {
+    
+    guard let loggedIn = UserDefaults(suiteName: "com.mschrage.fig.shared")?.bool(forKey: "loggedIn"), loggedIn else {
+        
+        if let app = NSWorkspace.shared.runningApplications.filter({$0.bundleIdentifier == "com.mschrage.fig"}).first {
+            
+            let _ = "osascript -e 'quit app \"Fig\"' && open -b \"com.mschrage.fig\"".runAsCommand()
+//            app.terminate()
+//
+        } else {
+            let _ = "open -b \"com.mschrage.fig\"".runAsCommand()
+        }
+        
+      
+        let error =
+        """
+
+        › \u{001b}[31mNot logged in to Fig\u{001b}[0m
+
+          \u{001b}[1mQUICK FIX\u{001b}[0m
+          Opening Fig... Set up your account.
+          
+          Please email \u{001b}[1mhello@withfig.com\u{001b}[0m if this problem persists.
+
+        """
+        print(error)
+        group.leave()
+        return
+    }
+    
+    let error =
+"""
+
+› \u{001b}[31mCould not connect to fig.app.\u{001b}[0m
+
+  \u{001b}[1mQUICK FIX\u{001b}[0m
+  Check if Fig is active. (You should see a 🍐 in your menu bar).
+  
+→ If not, run \u{001b}[1mopen -b com.mschrage.fig\u{001b}[0m to relaunch the app.
+
+  Please email \u{001b}[1mhello@withfig.com\u{001b}[0m if this problem persists.
+
+"""
+    print(error)
+    group.leave()
+}
 
 group.wait()
 

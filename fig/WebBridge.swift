@@ -78,6 +78,7 @@ class WebBridge : NSObject {
                 configuration.userContentController = contentController
         return configuration;
     }
+    
 //
 //    override init() {
 //        super.init()
@@ -612,7 +613,13 @@ extension WebBridge {
                         }
                     }
                 case "permissions":
-                    ShellBridge.promptForAccesibilityAccess()
+                    scope.webView?.window?.level = .normal
+                    ShellBridge.promptForAccesibilityAccess { (value) in
+                        DispatchQueue.main.async {
+                            scope.webView?.window?.level = .floating
+                            scope.webView?.evaluateJavaScript("fig.callback('\(handlerId)', '')", completionHandler: nil)
+                        }
+                    }
                 case "ws":
                     ShellBridge.shared.startWebSocketServer()
                 case "close":
@@ -620,6 +627,7 @@ extension WebBridge {
                         delegate.setupCompanionWindow()
                     }
                     WindowManager.shared.bringTerminalWindowToFront()
+                    Defaults.loggedIn = true
 //                    NSWorkspace.shared.launchApplication("Terminal")
                     scope.webView?.window?.close()
                 case "forceUpdate":
@@ -812,6 +820,14 @@ extension WebBridge {
             webview.evaluateJavaScript("fig.appversion = '\(appVersion)'", completionHandler: nil)
         }
     }
+    
+    static func declareFigCLIPath(webview: WebView) {
+        if let cliPath = Bundle.main.path(forAuxiliaryExecutable: "figcli") {
+            webview.evaluateJavaScript("fig.clipath = '\(cliPath)'", completionHandler: nil)
+        }
+    }
+    
+    
     
     static func declareRemoteURL(webview: WebView) {
         webview.evaluateJavaScript("fig.remoteURL = '\( Remote.baseURL.absoluteString)'", completionHandler: nil)

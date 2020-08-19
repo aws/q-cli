@@ -274,7 +274,16 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
                 return screen.insetBy(dx: inset.x, dy: inset.y).offsetBy(dx: 0, dy: screen.height - (2 * inset.y))
              case .fullwindow:
                 let inset: CGPoint = CGPoint(x: 250, y: 150)
-                return screen.insetBy(dx: inset.x, dy: inset.y).offsetBy(dx: 0, dy: screen.height - (2 * inset.y))
+                let calculated = screen.insetBy(dx: inset.x, dy: inset.y).offsetBy(dx: 0, dy: screen.height - (2 * inset.y))
+                let maxWidth: CGFloat = 1100.0
+                let maxHeight: CGFloat = 900.0
+
+                let width: CGFloat =  min(maxWidth, calculated.width)
+                let height: CGFloat =  min(maxHeight, calculated.height)
+                let x = calculated.origin.x + (( calculated.width - width) / 2);
+                let y = calculated.origin.y - (( calculated.height - height) / 2);
+                
+                return NSRect(x: x, y: y, width: width, height: height)
              case .popover:
                 let minHeight: CGFloat = 300.0
                 let height = min(max(minHeight, t_size.height / 3), t_size.height)

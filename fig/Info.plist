@@ -39,6 +39,8 @@
 	<string>Copyright © 2020 Matt Schrage. All rights reserved.</string>
 	<key>NSMainStoryboardFile</key>
 	<string>Main</string>
+	<key>NSPrefPaneAllowsXAppleSystemPreferencesURLScheme</key>
+	<true/>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 	<key>NSSupportsAutomaticTermination</key>

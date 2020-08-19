@@ -539,11 +539,11 @@ extension ShellBridge {
 //        cmd="tell application \"Terminal\" to do script \"uptime\""
 //          osascript -e "$cmd"
         
-        if let path = Bundle.main.path(forAuxiliaryExecutable: "figcli") {
-            print(path)
-            let _ = "mkdir -p /usr/local/bin && ln -sf '\(path)' '/usr/local/bin/fig'".runWithElevatedPriviledgesFromAppleScript()
-            return
-        }
+//        if let path = Bundle.main.path(forAuxiliaryExecutable: "figcli") {
+//            print(path)
+//            let _ = "mkdir -p /usr/local/bin && ln -sf '\(path)' '/usr/local/bin/fig'".runWithElevatedPriviledgesFromAppleScript()
+//            return
+//        }
         if let path = Bundle.main.path(forAuxiliaryExecutable: "figcli") {//Bundle.main.path(forResource: "fig", ofType: "", inDirectory: "dist") {
             print(path)
             let script = "mkdir -p /usr/local/bin && ln -sf '\(path)' '/usr/local/bin/fig'"
@@ -573,5 +573,36 @@ extension ShellBridge {
             //translate into boolean value
             let accessEnabled = AXIsProcessTrustedWithOptions(options as CFDictionary?)
             print(accessEnabled)
+    }
+    
+    static func testAccesibilityAccess(withPrompt: Bool? = false) -> Bool {
+            let checkOptPrompt = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as NSString
+            let options = [checkOptPrompt: withPrompt]
+            return AXIsProcessTrustedWithOptions(options as CFDictionary?)
+    }
+    
+    static func promptForAccesibilityAccess( completion: @escaping (Bool)->Void){
+        guard testAccesibilityAccess(withPrompt: false) != true else {
+            completion(true)
+            return
+        }
+        
+        NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!)
+        
+        let center = DistributedNotificationCenter.default()
+        let accessibilityChangedNotification = NSNotification.Name("com.apple.accessibility.api")
+        var observer: NSObjectProtocol?
+        observer = center.addObserver(forName: accessibilityChangedNotification, object: nil, queue: nil) { _ in
+
+              DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                let value = ShellBridge.testAccesibilityAccess()
+                // only stop observing only when value is true
+                if (value) {
+                    completion(value)
+                    center.removeObserver(observer!)
+                }
+              }
+            
+        }
     }
 }

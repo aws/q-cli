@@ -80,4 +80,25 @@ class Defaults {
             UserDefaults.standard.synchronize()
         }
     }
+    
+    static var loggedIn: Bool {
+        get {
+            return UserDefaults(suiteName: "com.mschrage.fig.shared")?.bool(forKey: "loggedIn") ?? false
+        }
+
+        set(loggedIn) {
+            UserDefaults(suiteName: "com.mschrage.fig.shared")?.set(loggedIn, forKey: "loggedIn")
+            UserDefaults(suiteName: "com.mschrage.fig.shared")?.synchronize()
+        }
+    }
+    static var domainToken: String? {
+        get {
+            return UserDefaults.standard.string(forKey: "domainToken")
+        }
+        
+        set(token) {
+            UserDefaults.standard.set(token, forKey: "domainToken")
+            UserDefaults.standard.synchronize()
+        }
+    }
 }

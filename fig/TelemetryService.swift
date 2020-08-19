@@ -34,12 +34,14 @@ class TelemetryProvider: TelemetryService {
         
         let email = Defaults.email ?? ""
         let domain = String(email.split(separator: "@").last ?? "unregistered")
+        let os = ProcessInfo.processInfo.operatingSystemVersion
         // add UUID to dict (overwritting 'anonymized_id', 'questions?' and 'version', 'domain' in payload if they exist)
         let eventType = (event == .viaJS) ? payload["name"] ??  event.rawValue : event.rawValue
         let final = payload.merging(["anonymized_id" :  Defaults.uuid,
                                      "questions?" : "\n\nFig collects anonymized usage information - this is not tied to any personally identifiable data. \n\nIf you have more questions go to https://withfig.com/telemetry or email me at matt@withfig.com\n",
                                      "domain" : domain,
                                      "version" : Defaults.version,
+                                     "os" :  "\(os.majorVersion).\(os.minorVersion).\(os.patchVersion)",
                                      "event" : eventType ]) { $1 }
         
         guard let json = try? JSONSerialization.data(withJSONObject: final, options: .sortedKeys) else { return }

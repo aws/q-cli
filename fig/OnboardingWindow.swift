@@ -22,7 +22,7 @@ class OnboardingWindow : NSWindow {
             self.isMovableByWindowBackground = true
 //            self.isOpaque = false
             self.backgroundColor = NSColor.white//.clear//NSColor.init(white: 1, alpha: 0.75)
-//            self.level = .floating
+            self.level = .floating
             self.setFrameAutosaveName("Main Window")
             self.contentViewController = viewController //WebViewController()
             self.makeKeyAndOrderFront(nil)
