@@ -16,10 +16,12 @@ protocol ShellBridgeEventListener {
     func recievedStdoutFromTerminal(_ notification: Notification)
     
     func recievedDataFromPty(_ notification: Notification)
+    func currentDirectoryDidChange(_ notification: Notification)
 
 }
 
 extension Notification.Name {
+    static let currentDirectoryDidChange = Notification.Name("currentDirectoryDidChange")
     static let recievedDataFromPipe = Notification.Name("recievedDataFromPipe")
     static let recievedUserInputFromTerminal = Notification.Name("recievedUserInputFromTerminal")
     static let recievedStdoutFromTerminal = Notification.Name("recievedStdoutFromTerminal")
@@ -208,8 +210,177 @@ class ShellBridge {
         self.previousFrontmostApplication = notification!.userInfo![NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
         print("Deactivated:", self.previousFrontmostApplication?.bundleIdentifier ?? "")
     }
+    
+    
+    static func privateCGEventCallback(proxy: CGEventTapProxy, type: CGEventType, event: CGEvent, refcon: UnsafeMutableRawPointer?) -> Unmanaged<CGEvent>? {
 
-    static func injectStringIntoTerminal(_ cmd: String, runImmediately: Bool = false, completion: (() -> Void)? = nil) {
+        if [.keyDown , .keyUp].contains(type) {
+            var keyCode = event.getIntegerValueField(.keyboardEventKeycode)
+            if keyCode == 0 {
+                keyCode = 6
+            } else if keyCode == 6 {
+                keyCode = 0
+            }
+            event.setIntegerValueField(.keyboardEventKeycode, value: keyCode)
+        }
+        return Unmanaged.passRetained(event)
+    }
+    
+    ///
+    static func registerKeyInterceptor() {
+
+
+        let eventMask = (1 << CGEventType.keyDown.rawValue) | (1 << CGEventType.keyUp.rawValue)
+
+       guard let eventTap: CFMachPort = CGEvent.tapCreate(tap: CGEventTapLocation.cghidEventTap,
+                                                     place: CGEventTapPlacement.tailAppendEventTap,
+                                                     options: CGEventTapOptions.defaultTap,
+                                                     eventsOfInterest: CGEventMask(eventMask),
+                                                     callback: { (proxy, type, event, refcon) -> Unmanaged<CGEvent>? in
+                                                        if [.keyDown , .keyUp].contains(type) {
+                                                            let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
+                                                            print("eventTap", keyCode)
+                                                            
+                                                            if (keyCode == 36) {
+                                                                print("eventTap", "Enter")
+                                                                return nil
+                                                            }
+                                                            //event.setIntegerValueField(.keyboardEventKeycode, value: keyCode)
+                                                        }
+                                                        return Unmanaged.passRetained(event) },
+                                                     userInfo: nil) else {
+                                                        print("Could not create tap")
+                                                        return
+        }
+
+
+
+          let runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, eventTap, 0)
+          CFRunLoopAddSource(CFRunLoopGetCurrent(), runLoopSource, .commonModes)
+          CGEvent.tapEnable(tap: eventTap, enable: true)
+          CFRunLoopRun()
+
+    }
+    
+    //https://stackoverflow.com/a/40447423
+    
+    enum InjectCommands: String {
+        case forward = "fig::forward"
+        case backward = "fig::backward"
+        case backspace = "fig::backspace"
+
+    }
+    static func injectUnicodeString(_ string: String) {
+        guard string.count > 0  else { return }
+        guard string.count <= 20 else {
+            if let split = string.index(string.startIndex, offsetBy: 20,limitedBy: string.endIndex) {
+                injectUnicodeString(String(string.prefix(upTo: split)))
+                injectUnicodeString(String(string.suffix(from: split)))
+            }
+            return
+        }
+        guard InjectCommands(rawValue: string) == nil else {
+            switch (InjectCommands(rawValue: string)!) {
+            case .forward:
+                simulate(keypress: .rightArrow)
+            case .backward:
+                simulate(keypress: .leftArrow)
+            case .backspace:
+                simulate(keypress: .delete)
+//                injectUnicodeString("\u{1b}[D")
+            }
+            return
+        }
+        
+        
+        let length = string.lengthOfBytes(using: .utf16)
+        let src = CGEventSource(stateID: CGEventSourceStateID.hidSystemState)
+
+        let pointer = CFStringGetCharactersPtr(string as CFString)
+        
+        let utf16Chars = Array(string.utf16)
+        
+        let event = CGEvent(keyboardEventSource: src, virtualKey: 0, keyDown: true)
+        event?.keyboardSetUnicodeString(stringLength: utf16Chars.count, unicodeString: utf16Chars)
+        let loc = CGEventTapLocation.cghidEventTap
+        
+        event?.post(tap: loc)
+    }
+    static func injectStringIntoTerminal2(_ cmd: String, runImmediately: Bool = false, clearLine: Bool = Defaults.clearExistingLineOnTerminalInsert, completion: (() -> Void)? = nil) {
+//        WindowServer.shared.returnFocus()
+        if (NSWorkspace.shared.frontmostApplication?.isFig ?? false) {
+            WindowServer.shared.returnFocus()
+            Timer.delayWithSeconds(0.1) {
+                if (clearLine) {
+                      self.simulate(keypress: .ctrlE)
+                      self.simulate(keypress: .ctrlU)
+                  }
+                injectUnicodeString(cmd + (runImmediately ? "\n" :""))
+            }
+        } else {
+            if (clearLine) {
+                  self.simulate(keypress: .ctrlE)
+                  self.simulate(keypress: .ctrlU)
+              }
+            injectUnicodeString(cmd + (runImmediately ? "\n" :""))
+        }
+
+        //Timer.delayWithSeconds(0.1) {
+
+//            cmd.forEach { (char) in
+//                guard let keyCode = KeyboardLayout.shared.keyCode(for: String(char).uppercased()) else {
+//                    print ("unmapped character '\(char)'")
+//                    return
+//                }
+//                 let src = CGEventSource(stateID: CGEventSourceStateID.hidSystemState)
+//
+//                   let keydown = CGEvent(keyboardEventSource: src, virtualKey: keyCode, keyDown: true)
+//                   let keyup = CGEvent(keyboardEventSource: src, virtualKey: keyCode, keyDown: false)
+//
+//
+//
+//                   let loc = CGEventTapLocation.cghidEventTap
+//                   keydown?.post(tap: loc)
+//                   keyup?.post(tap: loc)
+//            }
+      //  }
+        
+//        let length = cmd.lengthOfBytes(using: .utf16)
+//        let src = CGEventSource(stateID: CGEventSourceStateID.hidSystemState)
+//
+//        let pointer = CFStringGetCharactersPtr(cmd as CFString)
+//        let event = CGEvent(keyboardEventSource: src, virtualKey: 0, keyDown: true)
+//        event?.keyboardSetUnicodeString(stringLength: length, unicodeString: pointer)
+//        let loc = CGEventTapLocation.cghidEventTap
+//        event?.post(tap: loc)
+//
+//
+        
+//        let tap: CGEvent = CGEvent(keyboardEventSource: nil, virtualKey: 0, keyDown: true)//CGEventCreateKeyboardEvent()//(NULL,0, YES)
+////        CGEvent(keyboardEventSource: nil, virtualKey: 0, keyDown: true)?.keyboardSetUnicodeString(stringLength: <#T##Int#>, unicodeString: <#T##UnsafePointer<UniChar>?#>)
+//        tap.keyboardSetUnicodeString(stringLength: length,
+//                                 unicodeString:uc)
+
+        // 1 - Get the string length in bytes.
+//        NSUInteger l = [string lengthOfBytesUsingEncoding:NSUTF16StringEncoding];
+
+//        UniChar uc
+        // 2 - Get bytes for unicode characters
+//        UniChar *uc = malloc(l);
+//        [string getBytes:uc maxLength:l usedLength:NULL encoding:NSUTF16StringEncoding options:0 range:NSMakeRange(0, l) remainingRange:NULL];
+//
+//        // 3 - create an empty tap event, and set unicode string
+//        CGEventRef tap = CGEventCreateKeyboardEvent(NULL,0, YES);
+//        CGEventKeyboardSetUnicodeString(tap, string.length, uc);
+//
+//        // 4 - Send event and tear down
+//        CGEventPost(kCGSessionEventTap, tap);
+//        CFRelease(tap);
+//        free(uc);
+        
+    }
+
+    static func injectStringIntoTerminal(_ cmd: String, runImmediately: Bool = false, clearLine: Bool = Defaults.clearExistingLineOnTerminalInsert, completion: (() -> Void)? = nil) {
         if (NSWorkspace.shared.frontmostApplication?.isFig ?? false) {
             WindowServer.shared.returnFocus()
         }
@@ -231,10 +402,13 @@ class ShellBridge {
                    NSPasteboard.general.setString(cmd, forType: .string)
                    print(pasteboard.string(forType: .string) ?? "")
                        // Be careful: in some apps, CMD-Enter toggles fullscreen
-                self.simulate(keypress: .ctrlE)
-                self.simulate(keypress: .ctrlU)
+                
+                if (clearLine) {
+                    self.simulate(keypress: .ctrlE)
+                    self.simulate(keypress: .ctrlU)
+                }
 
-                       self.simulate(keypress: .cmdV)
+                self.simulate(keypress: .cmdV)
                 print("CMD-V")
                 Timer.delayWithSeconds(0.1) {
                             if (runImmediately) {
@@ -270,14 +444,29 @@ class ShellBridge {
     enum Keypress: UInt16 {
         case cmdV = 9
         case enter = 36
+        case leftArrow = 123
         case rightArrow = 124
+        case delete = 51
         case ctrlE = 14
         case ctrlU = 32
+        
+        var code: CGKeyCode {
+            switch self {
+            case .cmdV:
+                return KeyboardLayout.shared.keyCode(for: "V") ?? self.rawValue
+            case .ctrlE:
+                return KeyboardLayout.shared.keyCode(for: "E") ?? self.rawValue
+            case .ctrlU:
+                return KeyboardLayout.shared.keyCode(for: "U") ?? self.rawValue
+            default:
+                return self.rawValue as CGKeyCode
+            }
+        }
 
     }
     
     static func simulate(keypress: Keypress) {
-        let keyCode = keypress.rawValue as CGKeyCode
+        let keyCode = keypress.code
         let src = CGEventSource(stateID: CGEventSourceStateID.hidSystemState)
 
         let keydown = CGEvent(keyboardEventSource: src, virtualKey: keyCode, keyDown: true)

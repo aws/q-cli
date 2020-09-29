@@ -47,6 +47,9 @@ extension String {
             task.environment = env
         }
         
+        task.environment?["HOME"] = NSHomeDirectory()
+
+        
         if let env = env, let shell = env["SHELL"] {
             task.launchPath = shell
         } else {
@@ -134,13 +137,14 @@ extension String {
         task.standardOutput = stdin
         task.standardError = stderr
         
-        if let cwd = cwd {
-            task.currentDirectoryPath = cwd
-        }
+        task.currentDirectoryPath = cwd ?? NSHomeDirectory()
+
                
         if let env = env {
             task.environment = env
         }
+        
+        task.environment?["HOME"] = NSHomeDirectory()
         
         if let env = env, let shell = env["SHELL"] {
             task.launchPath = shell

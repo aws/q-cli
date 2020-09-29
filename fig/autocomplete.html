@@ -1,0 +1,264 @@
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <script>
+        var commandHistory = []
+        var historyIdx = -1
+        let commands = {
+            'git': {
+                description: "Version control",
+                subcommands: {
+                    'commit': {
+                        description: "Add a commit"
+                    },
+                    'add': {
+                        description: "Stage files"
+                    },
+                    'branch': {
+                        description: "Switch branchs"
+                    },
+                    'status': {
+                        description: "View staged files"
+                    },
+                    'push': {
+                        description: "Upload changes"
+                    }
+                }
+            },
+            'heroku': {
+                description: "Deployment tool",
+                subcommands: {
+                    'logs': {
+                        description: "View server logs"
+                    },
+                    'addons': {
+                        description: "View addons"
+                    },
+                    'apps': {
+                        description: "List apps"
+                    },
+                    'config': {
+                        description: "View config env"
+                    }
+                }
+            },
+            'fig': {
+                   description: "New terminal interface",
+                   subcommands: {
+                       'dir': {
+                           description: "Browse files",
+                           icon: "📂"
+                       },
+                       'git': {
+                           description: "Git utilities",
+                           icon: "🔀"
+                       },
+                       'runbooks': {
+                           description: "View runbooks",
+                           icon: "👟"
+                       },
+                       'curl': {
+                           description: "Curl app",
+                           icon: "🦾"
+                       }
+                   }
+               }
+        }
+
+        var win2dir = {}
+        fig.directoryChanged = (dir, windowId) => {
+            console.log("directoryChanged", dir, windowId)
+            win2dir[windowId] = dir
+        }
+    
+        fig.keypress = (code) => {
+            console.log(code)
+            if (code == 36 || code == 48) { //enter & tab
+                if (document.querySelectorAll('#options .command').length == 1) {
+                    let suggestion = document.querySelectorAll('#options .command')[0].innerText
+                    let prefix = line.substring(0, cursor).split(' ').pop()
+                    console.log(prefix)
+                    let insert = suggestion.replace(prefix, '')
+                    console.log(suggestion, prefix, insert)
+                    fig.insert(insert)
+                    fig.maxheight = `0`
+                    document.querySelector('#options').innerHTML = ''
+                } else {
+                    let suggestion = document.querySelector('.option.selected .command').innerText
+                    let prefix = line.substring(0, cursor).split(' ').pop()
+                    console.log(prefix)
+                    let insert = suggestion.replace(prefix, '')
+                    console.log(suggestion, prefix, insert)
+                    fig.insert(insert)
+                    fig.maxheight = `0`
+                    document.querySelector('#options').innerHTML = ''
+
+                }
+            }
+            if (code == 126) { // up
+                let curr = document.querySelector('.option.selected')
+                  let next = curr.previousElementSibling
+
+                  
+                  if (next) {
+                      curr.classList.remove('selected')
+                      next.classList.add('selected')
+                      //next.scrollIntoView()
+
+                  } else {
+                      //fig.maxheight = `0`
+                  }
+            }
+            
+            if (code == 125) { // down
+                let curr = document.querySelector('.option.selected')
+                let next = curr.nextElementSibling
+
+                
+                if (next) {
+                    curr.classList.remove('selected')
+                    next.classList.add('selected')
+                    //next.scrollIntoView()
+
+                    var offset = next.offsetTop;
+                    //window.scrollTo({ top: offset, behavior: 'smooth'});
+                }
+            }
+            
+            if (code == 53) { //esc
+                fig.maxheight = `0`
+            }
+        }
+        var line;
+        var cursor;
+        fig.autocomplete = (buffer, idx, windowId) => {
+            console.log(buffer, idx, windowId, win2dir[windowId])
+            line = buffer
+            cursor = idx
+            let tokens = buffer.trim().split(' ')
+            let command = commands[tokens.shift()]
+            console.log(command)
+            if (command) {
+                let next = tokens.shift()
+                let prefix = (!next || next == " " || next == "") ? "" : next
+                let options = Object.keys(command.subcommands).filter(cmd => cmd.startsWith(prefix))
+                fig.maxheight = `${Math.min(options.length * 30, 120)}`
+                let html = options.map(opt => {
+                    let sub = command.subcommands[opt]
+                    return `<div class = "option"><a href = "#" onclick="suggest(this)"><span class = "icon">${sub.icon ? sub.icon : ''}</span><span class = "command">${opt.replace(prefix, "<u>"+prefix+"</u>")}</span> <span class = "description">${sub.description}</span></div>`
+                }).join('')
+
+                document.querySelector('#options').innerHTML = html
+                let selected = document.querySelector('.option') //fig.autocomplete_above ? [...document.querySelectorAll('.option')].reverse()[0] : document.querySelector('.option')
+                
+                console.log("selected", selected)
+                
+                if (selected && options.length > 1) {
+                    selected.classList.add('selected')
+                } else {
+                    let suggestion = document.querySelectorAll('#options .command')[0].innerText
+                    let prefix = line.substring(0, cursor).split(' ').pop()
+                    let insert = suggestion.replace(prefix, '')
+                    
+                    if (insert == "") {
+                        fig.maxheight = '0'
+                    }
+                }
+                
+
+            } else {
+                fig.maxheight = '0'
+                document.querySelector('#options').innerHTML = ''
+            }
+        }
+
+
+        let suggest = (opt) => {
+            let suggestion = opt.querySelector(".command").innerText
+            let prefix = line.substring(0, cursor).split(' ').pop()
+            console.log(prefix)
+            let insert = suggestion.replace(prefix, '')
+            console.log(suggestion, prefix, insert)
+            fig.insert(insert)
+            input.value = null
+            fig.maxheight = `0`
+            document.querySelector('#options').innerHTML = ''
+            //input.value = `${input.value.split(' ').shift().trim()} ${subcommand}`
+        }
+        
+        fig.maxheight = "0"
+    </script>
+    <style>
+        #cmd {
+            padding-top: 5px;
+            width: 100%;
+            border: none;
+            font-family: "Monaco";
+            font-size: 1em;
+            outline: none;
+        }
+
+        #cmd::selection {
+            color: white;
+            background-color: black;
+        }
+
+        .option {
+            height: 30px;
+            font-family: "Avenir";
+        }
+
+        .command {
+            font-family: "Monaco";
+            color: slategrey;
+        }
+
+        .description {
+            color: #dddddd;
+            float: right;
+        }
+    
+        a {
+            text-decoration: none;
+        }
+    #description {
+        background-color: #dddddd;
+        color: #aaa;
+        font-size: 0.85em;
+        font-family: "Monaco";
+        width: 100vw;
+        position: fixed;
+        left: 0;
+        bottom: 0;
+        padding: 3px;
+
+    }
+    .icon {
+        font-size: 0.7em;
+        padding-right: 4px;
+        alignment-baseline: middle;
+    }
+    .selected {
+        background-color: #dddddd;
+        width:100%;
+        margin-left: -8px;
+        margin-right: -8px;
+        padding-left: 8px;
+        padding-right: 8px;
+
+    }
+    
+    .selected .description {
+        color: #aaa;
+    }
+    body {
+        margin-top: 0px;
+        padding-top: 0px;
+    }
+    </style>
+</head>
+<div id="options"></div>
+<!--<div id="description">Hello there</div>-->
+</html>
+

@@ -53,7 +53,6 @@ class TelemetryProvider: TelemetryService {
 
         
         let task = URLSession.shared.dataTask(with: request)
-
         task.resume()
     }
     

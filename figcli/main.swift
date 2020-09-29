@@ -9,7 +9,14 @@
 import Foundation
 import Cocoa
 import Starscream
+
 let arguments = CommandLine.arguments
+
+// early exit if bg:* and fig is not active
+
+if (arguments.filter { $0.starts(with: "bg:")}.count == 1  && NSWorkspace.shared.runningApplications.filter { $0.bundleIdentifier == "com.mschrage.fig"}.count == 0) {
+    exit(1)
+}
     
 // get stdin
 var stdin = ""
@@ -176,7 +183,7 @@ DispatchQueue.global().asyncAfter(deadline: .now() + 1.25) {
     
     guard let loggedIn = UserDefaults(suiteName: "com.mschrage.fig.shared")?.bool(forKey: "loggedIn"), loggedIn else {
         
-        if let app = NSWorkspace.shared.runningApplications.filter({$0.bundleIdentifier == "com.mschrage.fig"}).first {
+        if let _ = NSWorkspace.shared.runningApplications.filter({$0.bundleIdentifier == "com.mschrage.fig"}).first {
             
             let _ = "osascript -e 'quit app \"Fig\"' && open -b \"com.mschrage.fig\"".runAsCommand()
 //            app.terminate()
@@ -208,7 +215,7 @@ DispatchQueue.global().asyncAfter(deadline: .now() + 1.25) {
 › \u{001b}[31mCould not connect to fig.app.\u{001b}[0m
 
   \u{001b}[1mQUICK FIX\u{001b}[0m
-  Check if Fig is active. (You should see a 🍐 in your menu bar).
+  Check if Fig is active. (You should see the Fig icon in your menu bar).
   
 → If not, run \u{001b}[1mopen -b com.mschrage.fig\u{001b}[0m to relaunch the app.
 

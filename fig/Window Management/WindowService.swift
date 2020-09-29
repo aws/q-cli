@@ -92,6 +92,7 @@ class WindowServer : WindowService {
     }
     
     func topmostWhitelistedWindow() -> ExternalWindow? {
+//        return AXWindowServer.shared.whitelistedWindow
 //        return self.allWhitelistedWindows(onScreen: true).first
 // fixed the workspace bug! -- unfortunately it introduced a new bug when window becomes fullscreen + other weirdness
         guard self.currentApplicationIsWhitelisted() else { return nil }
@@ -217,11 +218,31 @@ class WindowServer : WindowService {
     }
 }
 
+protocol App {
+    var bundleIdentifier: String? { get }
+    var localizedName: String? { get }
+    var processIdentifier: pid_t { get }
+}
+
+extension ExternalApplication : App {
+    var processIdentifier: pid_t {
+        return self.pid
+    }
+    
+    var bundleIdentifier: String? {
+        return self.bundleId
+    }
+    var localizedName: String? {
+        return self.title
+    }
+}
+extension NSRunningApplication : App {}
+
 class ExternalWindow {
     let frame: NSRect
     let windowId: CGWindowID
     let windowLevel: CGWindowLevel?
-    let app: NSRunningApplication
+    let app: App
     let accesibilityElement: AXUIElement?
     
     init?(raw: [String: Any], accesibilityElement: AXUIElement? = nil) {
@@ -263,6 +284,35 @@ class ExternalWindow {
         self.app = app
         self.windowId = id
         self.frame = CGRect(x: x, y: y, width: width, height: height)
+    }
+    
+    init?(backedBy axElementRef: AXUIElement, in app: ExternalApplication) {
+           let windowId = PrivateWindow.getCGWindowID(fromRef: axElementRef)
+
+            var position : AnyObject?
+            var size : AnyObject?
+           AXUIElementCopyAttributeValue(axElementRef, kAXPositionAttribute as CFString, &position)
+           AXUIElementCopyAttributeValue(axElementRef, kAXSizeAttribute as CFString, &size)
+        
+           if let position = position, let size = size {
+               let point = AXValueGetters.asCGPoint(value: position as! AXValue)
+               let bounds = AXValueGetters.asCGSize(value: size as! AXValue)
+
+               //https://stackoverflow.com/a/19887161/926887
+               let windowFrame = NSRect(x: point.x,
+                                        y: NSMaxY(NSScreen.screens[0].frame) - point.y,
+                                        width:  bounds.width,
+                                        height: bounds.height)
+            
+                self.frame = windowFrame
+                self.windowId = windowId
+                self.app = app
+                self.windowLevel = nil
+                self.accesibilityElement = axElementRef
+           } else {
+            return nil
+        }
+        
     }
     
     init(_ frame: NSRect, _ windowId: CGWindowID, _ app: NSRunningApplication,_ accesibilityElement: AXUIElement? = nil) {

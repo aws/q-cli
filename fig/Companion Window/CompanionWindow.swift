@@ -16,7 +16,7 @@ extension Notification.Name {
 }
 
 class CompanionWindow : NSWindow, NSWindowDelegate {
-    static let defaultActivePosition: OverlayPositioning = .outsideRight
+    static let defaultActivePosition: OverlayPositioning = Defaults.defaultActivePosition
     static let defaultPassivePosition: OverlayPositioning = .sidebar
     
     //hides companion window when target is moving
@@ -30,13 +30,24 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
     var backBtn: NSTextField?
     var untetherBtn: NSTextField?
     
-    var tetheredWindowId: CGWindowID?
-    var tetheredWindow: ExternalWindow?
+    var tetheredWindowId: CGWindowID? {
+        get {
+            return tetheredWindow?.windowId
+        }
+    }
+    var tetheredWindow: ExternalWindow? {
+        didSet {
+            if let id = tetheredWindowId {
+                self.webView?.evaluateJavaScript("fig.windowId = '\(id)'", completionHandler: nil)
+            }
+        }
+    }
     var sessionId: String?
     
     let windowManager: WindowManagementService
     let windowServiceProvider: WindowService = WindowServer.shared
     
+    var maxHeight: CGFloat?
     var priorTargetFrame: NSRect = .zero
     var positioning: OverlayPositioning = CompanionWindow.defaultActivePosition {
         
@@ -46,7 +57,7 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
                 self.windowManager.close(window: self)
                 return
             }
-            
+            self.maxHeight = nil
             self.windowManager.requestWindowUpdate()
 
             if (!positioning.hasTitleBar) {
@@ -113,6 +124,8 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
 //        self.makeKeyAndOrderFront(nil)
         
         self.delegate = self
+//        self.backgroundColor = .red
+//        self.backgroundColor = NSColor(red: 47/255, green: 47/255, blue: 47/255, alpha: 1)
 
         
 //        NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(spaceChanged), name: NSWorkspace.activeSpaceDidChangeNotification, object: nil)
@@ -201,6 +214,8 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
         case fullwindow = 13
         case popover = 14
         case popoverCentered = 15
+        case powerbar = 16
+
 
         func frame(targetWindowFrame:NSRect, screen: NSRect = .zero) -> NSRect {
             if targetWindowFrame.width < 100 || targetWindowFrame.height < 200 {
@@ -304,6 +319,15 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
                 
                 return NSRect(x: x, y: y, width: width, height: height)
                 
+             case .powerbar:
+                let bar = NSRect(x: targetWindowFrame.origin.x, y: targetWindowFrame.origin.y - targetWindowFrame.height, width: targetWindowFrame.width, height: 50)
+                let intersection = screen.intersection(bar)
+                var y = bar.origin.y
+                if (y - bar.height < 0) {
+                   y += (bar.height - y)
+                }
+                
+                return NSRect(origin: NSPoint(x: bar.origin.x, y: y), size: bar.size)
             }
 
         }
@@ -335,16 +359,18 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
         self.addViewToTitleBar(closeBtn!, at: 4, offset: 1)
 //        closeBtn?.addCursorRect(closeBtn?.bounds ?? .zero, cursor: NSCursor.pointingHand)
 
-        backBtn = NSTextField()
-        backBtn?.frame = CGRect(origin: .zero, size: CGSize(width: 50, height: 44))
-        backBtn?.stringValue = "←"
-        backBtn?.font = NSFont.systemFont(ofSize: 18)
-        backBtn?.alignment = .left
-        backBtn?.backgroundColor = .clear
-        backBtn?.isBezeled = false
-        backBtn?.isEditable = false
-        backBtn?.sizeToFit()
-        self.addViewToTitleBar(backBtn!, at: 32, offset:1)
+        if (self.webView?.canGoBack ?? false) {
+            backBtn = NSTextField()
+            backBtn?.frame = CGRect(origin: .zero, size: CGSize(width: 50, height: 44))
+            backBtn?.stringValue = "←"
+            backBtn?.font = NSFont.systemFont(ofSize: 18)
+            backBtn?.alignment = .left
+            backBtn?.backgroundColor = .clear
+            backBtn?.isBezeled = false
+            backBtn?.isEditable = false
+            backBtn?.sizeToFit()
+            self.addViewToTitleBar(backBtn!, at: 32, offset:1)
+        }
 //        backBtn?.addCursorRect(backBtn?.bounds ?? .zero, cursor: NSCursor.pointingHand)
 
         let backClick = NSClickGestureRecognizer(target: self, action: #selector(self.backButtonClicked))
@@ -485,6 +511,12 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
         }
     }
     
+    var isAutocompletePopup: Bool {
+        get {
+            return WindowManager.shared.autocomplete == self
+        }
+    }
+    
     @objc func toSidebar() {
         if (self.oneTimeUse) {
             self.windowManager.close(window: self)
@@ -542,22 +574,24 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
             let mouseDown = (NSEvent.pressedMouseButtons & (1 << 0)) != 0;
             print("mouseDown \(mouseDown)")
 
-            guard shouldTrackWindow else { return }
-            if (!forceUpdate && !targetFrame.equalTo(priorTargetFrame) && mouseDown) {
-                self.animationBehavior = .utilityWindow
-                self.orderOut(self)
-                shouldTrackWindow = false;
-                NSEvent.addGlobalMonitorForEvents(matching: .leftMouseUp) { (event) -> Void in
-                    // prevent memory access error
-                    if (self != nil){
-                        self.shouldTrackWindow = true;
-                        self.repositionWindow(forceUpdate: true)
-//                        if (self.positioning == .fullscreenInset && self.windowManager.shouldAppear(window: self, explicitlyRepositioned: false)) {
-//                            self.windowServiceProvider.takeFocus()
-//                        }
+            if (!Defaults.shouldTrackTargetWindow) {
+                guard shouldTrackWindow else { return }
+                if (!forceUpdate && !targetFrame.equalTo(priorTargetFrame) && mouseDown) {
+                    self.animationBehavior = .utilityWindow
+                    self.orderOut(self)
+                    shouldTrackWindow = false;
+                    NSEvent.addGlobalMonitorForEvents(matching: .leftMouseUp) { (event) -> Void in
+                        // prevent memory access error
+                        if (self != nil){
+                            self.shouldTrackWindow = true;
+                            self.repositionWindow(forceUpdate: true)
+    //                        if (self.positioning == .fullscreenInset && self.windowManager.shouldAppear(window: self, explicitlyRepositioned: false)) {
+    //                            self.windowServiceProvider.takeFocus()
+    //                        }
+                        }
                     }
+                    return
                 }
-                return
             }
             
             if (forceUpdate || !targetFrame.equalTo(priorTargetFrame)) {
@@ -588,21 +622,60 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
         }
     }
     
+    
         func setOverlayFrame(_ frame: NSRect) {
             self.windowController?.shouldCascadeWindows = false;
-            self.setFrame(frame, display: true)
-            self.setFrameTopLeftPoint(frame.origin)
+            var updated = frame
             
+            // todo: flesh out positioning API
+            if let height = self.maxHeight {
+                if (height > frame.height) {
+                    let diff = height - frame.height
+                    updated.origin = CGPoint(x: frame.origin.x, y: frame.origin.y + diff)
+                    updated.size = CGSize(width: frame.width, height: height)
+
+                } else {
+                    let height2 = abs(height)
+                    updated.size = CGSize(width: frame.width, height: min(frame.height, height2))
+                }
+            }
+            
+
+                                                                                                                                                                
+            self.setFrame(updated.offsetBy(dx: 0, dy: -1 * updated.height), display: false, animate: false)
+//            self.setFrame(frame.offsetBy(dx: 0, dy: -1 * frame.height), display: true, animate: true)
+                
+            // adding the offset made this no longer necessary
+//            self.setFrameTopLeftPoint(frame.origin)
+
+//            self.orderFront(nil)
             self.makeKeyAndOrderFront(nil)
             // This line is essential
 //            self.contentViewController?.view.frame = NSRect.init(origin: .zero, size:frame.size)
 
-            self.contentViewController?.view.setFrameSize(frame.size)
-            self.contentViewController?.view.needsDisplay = true
-            self.contentViewController?.view.needsLayout = true
+            // these don't seem to be needed?
+//            self.contentViewController?.view.setFrameSize(frame.size)
+//            self.contentViewController?.view.needsDisplay = true
+//            self.contentViewController?.view.needsLayout = true
             configureWindow(for: self.positioning)
             
         }
+    
+//    override func animationResizeTime(_ newFrame: NSRect) -> TimeInterval {
+//        return Double(rectIntersectionInPerc(r1: self.frame, r2: newFrame)) * 0.001//super.animationResizeTime(newFrame)
+//    }
+//
+//    //https://stackoverflow.com/a/31671990/926887
+//    func rectIntersectionInPerc(r1:CGRect, r2:CGRect) -> CGFloat {
+//        if (r1.intersects(r2)) {
+//
+//           //let interRect:CGRect = r1.rectByIntersecting(r2); //OLD
+//           let interRect:CGRect = r1.intersection(r2);
+//
+//           return ((interRect.width * interRect.height) / (((r1.width * r1.height) + (r2.width * r2.height))/2.0) * 100.0)
+//        }
+//        return 0;
+//    }
     
       func topmostWindowFrameFor(_ app: NSRunningApplication, includingTitleBar: Bool = false) -> NSRect {
           let appRef = AXUIElementCreateApplication(app.processIdentifier)
@@ -700,6 +773,8 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
           case .popover:
             return .zero
           case .popoverCentered:
+            return .zero
+          case .powerbar:
             return .zero
         }
     

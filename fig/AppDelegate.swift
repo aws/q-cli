@@ -9,6 +9,7 @@
 import Cocoa
 import Sparkle
 import WebKit
+import Sentry
 
 @NSApplicationMain
 class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
@@ -25,9 +26,19 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 //        AppMover.moveIfNecessary()
         let _ = ShellBridge.shared
         let _ = WindowManager.shared
-        
-        
-        
+        let _ = ShellHookManager.shared
+        let _ = KeypressProvider.shared
+        let _ = AXWindowServer.shared
+
+        SentrySDK.start { options in
+            options.dsn = "https://4544a50058a645f5a779ea0a78c9e7ec@o436453.ingest.sentry.io/5397687"
+            options.debug = false // Enabled debug when first installing is always helpful
+            options.logLevel = SentryLogLevel.verbose
+            options.enableAutoSessionTracking = true
+            options.attachStacktrace = true
+            options.sessionTrackingIntervalMillis = 5_000
+        }
+                
 //        updater?.checkForUpdateInformation()
         updater?.delegate = self as SUUpdaterDelegate;
 //        updater?.checkForUpdateInformation()
@@ -36,13 +47,17 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 //        UserDefaults.standard.removePersistentDomain(forName: domain)
 //        UserDefaults.standard.synchronize()
 //        WebView.deleteCache()
-        Defaults.build = .production
-        
+        Defaults.useAutocomplete = true
+            
         let hasLaunched = UserDefaults.standard.bool(forKey: "hasLaunched")
         let email = UserDefaults.standard.string(forKey: "userEmail")
 
         if (!hasLaunched || email == nil ) {
             Defaults.loggedIn = false
+            Defaults.build = .production
+            Defaults.clearExistingLineOnTerminalInsert = true
+//            Defaults.defaultActivePosition = .outsideRight
+            
             let onboardingViewController = WebViewController()
             onboardingViewController.webView?.defaultURL = nil
             onboardingViewController.webView?.loadBundleApp("landing")
@@ -58,15 +73,26 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             UserDefaults.standard.synchronize()
         } else {
             if (!AXIsProcessTrustedWithOptions(nil)) {
+                SentrySDK.capture(message: "Accesibility Not Enabled on Subsequent Launch")
+
                 let enable = self.dialogOKCancel(question: "Enable Accesibility Permission?", text: "Fig needs this permission in order to connect to your terminal window.\n\nYou may need to toggle the setting in order for MacOS to update it.\n\nThis can occur when Fig is updated. If you are seeing this more frequently, get in touch with matt@withfig.com.", prompt: "Enable")
                 
                 if (enable) {
-                    ShellBridge.promptForAccesibilityAccess()
+//                    ShellBridge.promptForAccesibilityAccess()
+                    ShellBridge.promptForAccesibilityAccess { (granted) in
+                        if (granted) {
+                            KeypressProvider.shared.registerKeystrokeHandler()
+                            AXWindowServer.shared.registerWindowTracking()
+                        }
+                    }
                 }
+                
                 
             }
             
             if (!FileManager.default.fileExists(atPath: "/usr/local/bin/fig")) {
+                SentrySDK.capture(message: "CLI Tool Not Installed on Subsequent Launch")
+
                 let enable = self.dialogOKCancel(question: "Install Fig CLI Tool?", text: "It looks like you haven't installed the Fig CLI tool. Fig doesn't work without it.")
                               
                   if (enable) {
@@ -81,7 +107,9 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         statusBarItem = statusBar.statusItem(
                withLength: NSStatusItem.squareLength)
            statusBarItem.button?.title = "🍐"
-           
+        statusBarItem.button?.image = NSImage(imageLiteralResourceName: "statusbar@2x.png")
+        statusBarItem.button?.image?.isTemplate = true
+
            let statusBarMenu = NSMenu(title: "fig")
            statusBarItem.menu = statusBarMenu
            
@@ -159,37 +187,55 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
          withTitle: "Prompt for Accessibility Access",
          action: #selector(AppDelegate.promptForAccesibilityAccess),
          keyEquivalent: "")
-        statusBarMenu.addItem(
-         withTitle: "Toggle Visibility",
-         action: #selector(AppDelegate.toggleVisibility),
-         keyEquivalent: "i")
+//        statusBarMenu.addItem(
+//         withTitle: "Toggle Visibility",
+//         action: #selector(AppDelegate.toggleVisibility),
+//         keyEquivalent: "i")
         statusBarMenu.addItem(NSMenuItem.separator())
+        let sidebar = statusBarMenu.addItem(
+         withTitle: "Sidebar",
+         action: #selector(AppDelegate.toggleSidebar(_:)),
+         keyEquivalent: "")
+        sidebar.state = Defaults.showSidebar ? .on : .off
+
+        let autocomplete = statusBarMenu.addItem(
+         withTitle: "Autocomplete",
+         action: #selector(AppDelegate.toggleAutocomplete(_:)),
+         keyEquivalent: "")
+        autocomplete.state = Defaults.useAutocomplete ? .on : .off
+        
+        statusBarMenu.addItem(NSMenuItem.separator())
+
+        if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String {
+            statusBarMenu.addItem(withTitle: "Version \(version)", action: nil, keyEquivalent: "")
+        }
         statusBarMenu.addItem(
-         withTitle: "Check for updates...",
+         withTitle: "Check for Updates...",
          action: #selector(AppDelegate.checkForUpdates),
          keyEquivalent: "")
-        statusBarMenu.addItem(
-         withTitle: "Toggle Sidebar",
-         action: #selector(AppDelegate.hide),
-         keyEquivalent: "")
+        statusBarMenu.addItem(NSMenuItem.separator())
         statusBarMenu.addItem(
          withTitle: "Quit Fig",
          action: #selector(AppDelegate.quit),
          keyEquivalent: "")
-//        statusBarMenu.addItem(
-//         withTitle: "Setup",
-//         action: #selector(AppDelegate.newAccesibilityAPI),
-//         keyEquivalent: "")
-//        statusBarMenu.addItem(
-//         withTitle: "Get PID of Topmost Window",
-//         action: #selector(AppDelegate.pid),
-//         keyEquivalent: "")
-//        statusBarMenu.addItem(
-//         withTitle: "Add Observer",
-//         action: #selector(AppDelegate.addAccesbilityObserver),
-//         keyEquivalent: "")
+
+        if (!Defaults.isProduction) {
+            statusBarMenu.addItem(
+             withTitle: "Keyboard",
+             action: #selector(AppDelegate.getKeyboardLayout),
+             keyEquivalent: "")
+            statusBarMenu.addItem(
+             withTitle: "AXObserver",
+             action: #selector(AppDelegate.addAccesbilityObserver),
+             keyEquivalent: "")
+            statusBarMenu.addItem(
+             withTitle: "Get Selected Text",
+             action: #selector(AppDelegate.getSelectedText),
+             keyEquivalent: "")
+        }
         
         toggleLaunchAtStartup()
+        
     }
     
     func dialogOKCancel(question: String, text: String, prompt:String = "OK") -> Bool {
@@ -202,11 +248,42 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         return alert.runModal() == .alertFirstButtonReturn
     }
 
+    func handleUpdateIfNeeded() {
+        guard let previous = Defaults.versionAtPreviousLaunch else {
+            print("First launch!")
+            return
+        }
+        
+        guard let current = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String else {
+            print("No version detected.")
+            return
+        }
+        
+        // upgrade path!
+        if (previous != current) {
+            // look for $BUNDLE/upgrade/$OLD-->$NEW
+            let specific = Bundle.main.path(forResource: "\(previous)-->\(current)", ofType: "sh", inDirectory: "upgrade")
+            // look for $BUNDLE/upgrade/$NEW
+            let general = Bundle.main.path(forResource: "\(current)", ofType: "sh", inDirectory: "upgrade")
+            
+            let script = specific ?? general ?? ""
+            
+            let out = "sh \(script)".runAsCommand()
+            print(out)
+        }
+        
+        Defaults.versionAtPreviousLaunch = current
+    }
     
     func setupCompanionWindow() {
         Defaults.loggedIn = true
 
         WindowManager.shared.createSidebar()
+        WindowManager.shared.createAutocomplete()
+        
+        KeypressProvider.shared.registerKeystrokeHandler()
+        AXWindowServer.shared.registerWindowTracking()
+        
         //let companion = CompanionWindow(viewController: WebViewController())
         //companion.positioning = CompanionWindow.defaultPassivePosition
         //window = companion
@@ -214,8 +291,112 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         //(window as! CompanionWindow).repositionWindow(forceUpdate: true, explicit: true)
         //self.hotKeyManager = HotKeyManager(companion: window as! CompanionWindow)
     }
-    var observer: AXObserver?
+    
+    //https://stackoverflow.com/a/35138823
+//    func keyName(scanCode: UInt16) -> String? {
+//        let maxNameLength = 4
+//        var nameBuffer = [UniChar](repeating: 0, count : maxNameLength)
+//        var nameLength = 0
+//
+//        let modifierKeys = UInt32(alphaLock >> 8) & 0xFF // Caps Lock
+//        var deadKeys: UInt32 = 0
+//        let keyboardType = UInt32(LMGetKbdType())
+//
+//        let source = TISCopyCurrentKeyboardLayoutInputSource().takeRetainedValue()
+//        guard let ptr = TISGetInputSourceProperty(source, kTISPropertyUnicodeKeyLayoutData) else {
+//            NSLog("Could not get keyboard layout data")
+//            return nil
+//        }
+//        let layoutData = Unmanaged<CFData>.fromOpaque(ptr).takeUnretainedValue() as Data
+//        let osStatus = layoutData.withUnsafeBytes {
+//            UCKeyTranslate($0.bindMemory(to: UCKeyboardLayout.self).baseAddress, scanCode, UInt16(kUCKeyActionDown),
+//                           modifierKeys, keyboardType, UInt32(kUCKeyTranslateNoDeadKeysMask),
+//                           &deadKeys, maxNameLength, &nameLength, &nameBuffer)
+//        }
+//        guard osStatus == noErr else {
+//            NSLog("Code: 0x%04X  Status: %+i", scanCode, osStatus);
+//            return nil
+//        }
+//
+//        return  String(utf16CodeUnits: nameBuffer, count: nameLength)
+//    }
+//
+    @objc func getKeyboardLayout() {
+        let v = KeyboardLayout.shared.keyCode(for: "V")
+        let e = KeyboardLayout.shared.keyCode(for: "E")
+        let u = KeyboardLayout.shared.keyCode(for: "U")
 
+        print("v=\(v); e=\(e); u=\(u)")
+//        for var i in 0...100 {
+//            print(i, keyName(scanCode: UInt16(i)))
+//        }
+
+    }
+    
+    @objc func toggleAutocomplete(_ sender: NSMenuItem) {
+        Defaults.useAutocomplete = !Defaults.useAutocomplete
+        sender.state = Defaults.useAutocomplete ? .on : .off
+//        KeypressProvider.shared.clean()
+        WindowManager.shared.createAutocomplete()
+        if (Defaults.useAutocomplete) {
+            KeypressProvider.shared.registerKeystrokeHandler()
+            KeypressProvider.shared.window = WindowServer.shared.topmostWhitelistedWindow()
+        }
+
+//        WindowManager.shared.autocomplete?.webView?.loadRemoteApp(at: URL(string:"http://localhost:3000/autocomplete/")!)
+    }
+
+    @objc func  getSelectedText() {
+        
+
+        ShellBridge.registerKeyInterceptor()
+        return
+            
+            (WindowManager.shared.sidebar?.webView?.loadBundleApp("autocomplete"))!
+
+        NSEvent.addGlobalMonitorForEvents(matching: .keyUp) { (event) in
+            print("keylogger:", event.characters, event.keyCode)
+        let touple = KeystrokeBuffer.shared.handleKeystroke(event: event)
+            guard touple != nil else {
+                WindowManager.shared.requestWindowUpdate()
+                return
+                
+            }
+        let systemWideElement = AXUIElementCreateSystemWide()
+        var focusedElement : AnyObject?
+
+        let error = AXUIElementCopyAttributeValue(systemWideElement, kAXFocusedUIElementAttribute as CFString, &focusedElement)
+        if (error != .success){
+            print("Couldn't get the focused element. Probably a webkit application")
+        } else {
+            var selectedRangeValue : AnyObject?
+            let selectedRangeError = AXUIElementCopyAttributeValue(focusedElement as! AXUIElement, kAXSelectedTextRangeAttribute as CFString, &selectedRangeValue)
+                        
+            if (selectedRangeError == .success){
+                var selectedRange : CFRange?
+                AXValueGetValue(selectedRangeValue as! AXValue, AXValueType(rawValue: kAXValueCFRangeType)!, &selectedRange)
+                var selectRect = CGRect()
+                var selectBounds : AnyObject?
+                
+                //kAXInsertionPointLineNumberAttribute
+                //kAXRangeForLineParameterizedAttribute
+
+                let selectedBoundsError = AXUIElementCopyParameterizedAttributeValue(focusedElement as! AXUIElement, kAXBoundsForRangeParameterizedAttribute as CFString, selectedRangeValue!, &selectBounds)
+                if (selectedBoundsError == .success){
+                    AXValueGetValue(selectBounds as! AXValue, .cgRect, &selectRect)
+                    //do whatever you want with your selectRect
+                    print("selected", selectRect)
+                    let height:CGFloat = 0 //140
+                    let translatedOrigin = NSPoint(x: selectRect.origin.x, y: (NSScreen.main?.frame.height)! - selectRect.origin.y /*- selectRect.height*/ + height + 5)
+                    if let (buffer, idx) = touple {
+                        WindowManager.shared.sidebar?.webView?.evaluateJavaScript("try{ fig.autocomplete(`\(buffer)`, -1) } catch(e){} ", completionHandler: nil)
+                    }
+                    WindowManager.shared.sidebar?.setOverlayFrame(NSRect(origin: translatedOrigin, size: CGSize(width: 200, height: height)))//140
+                }
+            }
+        }
+        }
+    }
     @objc func newAccesibilityAPI() {
         Onboarding.installation()
 //        "whoami".runWithElevatedPrivileges()
@@ -223,17 +404,37 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 //            print("AXCallback:", enabled)
 //        }
     }
+    var observer: AXObserver?
+
     @objc func addAccesbilityObserver() {
         let first = WindowServer.shared.topmostWindow(for: NSWorkspace.shared.frontmostApplication!)!
         print(first.bundleId)
         let axErr = AXObserverCreate(first.app.processIdentifier, { (observer: AXObserver, element: AXUIElement, notificationName: CFString, refcon: UnsafeMutableRawPointer?) -> Void in
-                print("yoyoyo")
-                print(notificationName)
-            WindowManager.shared.requestWindowUpdate()
+                print("axobserver:", notificationName)
+                print("axobserver:", element)
+                print("axobserver:", observer)
+                print("axobserver:", refcon)
+
+//            WindowManager.shared.requestWindowUpdate()
             
         }, &observer)
         
         //kAXWindowMovedNotification
+        let out = AXObserverAddNotification(observer!, AXUIElementCreateApplication(first.app.processIdentifier), kAXFocusedWindowChangedNotification as CFString, nil)
+        print("axobserver:", out)
+        let hi = AXObserverAddNotification(observer!, AXUIElementCreateApplication(first.app.processIdentifier), kAXMainWindowChangedNotification as CFString, nil)
+        print("axobserver:", hi)
+        
+        AXObserverAddNotification(observer!, AXUIElementCreateApplication(first.app.processIdentifier), kAXWindowCreatedNotification as CFString, nil)
+        AXObserverAddNotification(observer!, AXUIElementCreateApplication(first.app.processIdentifier), kAXWindowMiniaturizedNotification as CFString, nil)
+        AXObserverAddNotification(observer!, AXUIElementCreateApplication(first.app.processIdentifier), kAXWindowDeminiaturizedNotification as CFString, nil)
+        AXObserverAddNotification(observer!, AXUIElementCreateApplication(first.app.processIdentifier), kAXWindowCreatedNotification as CFString, nil)
+        AXObserverAddNotification(observer!, AXUIElementCreateApplication(first.app.processIdentifier), kAXWindowCreatedNotification as CFString, nil)
+        AXObserverAddNotification(observer!, AXUIElementCreateApplication(first.app.processIdentifier), kAXApplicationShownNotification as CFString, nil)
+        AXObserverAddNotification(observer!, AXUIElementCreateApplication(first.app.processIdentifier), kAXApplicationHiddenNotification as CFString, nil)
+        AXObserverAddNotification(observer!, AXUIElementCreateApplication(first.app.processIdentifier), kAXApplicationActivatedNotification as CFString, nil)
+        AXObserverAddNotification(observer!, AXUIElementCreateApplication(first.app.processIdentifier), kAXApplicationDeactivatedNotification as CFString, nil)
+        
         AXObserverAddNotification(observer!, first.accesibilityElement!, kAXWindowMovedNotification as CFString, nil)
         AXObserverAddNotification(observer!, first.accesibilityElement!, kAXWindowResizedNotification as CFString, nil)
 //        _ element: AXUIElement,
@@ -245,11 +446,12 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         print(axErr)
         print(observer)
         CFRunLoopAddSource(CFRunLoopGetCurrent(), AXObserverGetRunLoopSource(observer!), CFRunLoopMode.defaultMode);
+        
 
 //        CFRunLoopAddSource( RunLoop.current.getCFRunLoop()), AXObserverGetRunLoopSource(observer), kCFRunLoopDefaultMode );
     }
     
-    @objc func hide() {
+    @objc func toggleSidebar(_ sender: NSMenuItem) {
 //         if let companion = self.window as? CompanionWindow,
 //            let vc = companion.contentViewController as? WebViewController,
 //            let webView = vc.webView {
@@ -259,6 +461,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 //        }
         
         Defaults.showSidebar = !Defaults.showSidebar
+        sender.state = Defaults.showSidebar ? .on : .off
         WindowManager.shared.requestWindowUpdate()
         
     }

@@ -8,6 +8,7 @@
 
 import Cocoa
 import WebKit
+import Sentry
 
 protocol WindowManagementService {
     func tether(window: CompanionWindow)
@@ -26,6 +27,7 @@ class WindowManager : NSObject {
     var hotKeyManager: HotKeyManager?
 
     var sidebar: CompanionWindow?
+    var autocomplete: CompanionWindow?
     var windows: [ExternalWindow: CompanionWindow] = [:]
     var untetheredWindows: [CompanionWindow] = []
 
@@ -169,7 +171,8 @@ class WindowManager : NSObject {
        
         //sidebar
         sidebar?.repositionWindow(forceUpdate: forceUpdate, explicit: explicit)
-        
+        autocomplete?.repositionWindow(forceUpdate: forceUpdate, explicit: explicit)
+
         let visibleWindows = self.windows.map { $0.value } .filter { $0.isVisible }
         print("---\nAll Fig windows: \(allCompanionWindows.count)\nVisible Fig windows: \(visibleWindows.count)\nUntethered Windows: \(self.untetheredWindows.count)\n---")
         for w in visibleWindows {
@@ -209,6 +212,20 @@ class WindowManager : NSObject {
         
     }
     
+    func createAutocomplete() {
+        let web = WebViewController()
+        web.webView?.defaultURL = nil
+//        web.webView?.loadBundleApp("autocomplete")
+        
+        web.webView?.loadRemoteApp(at: Remote.baseURL.appendingPathComponent("autocomplete"))
+        let companion = CompanionWindow(viewController: web)
+        companion.positioning = .hidden
+        companion.repositionWindow(forceUpdate: true, explicit: true)
+        companion.maxHeight = 0
+        self.autocomplete = companion
+        
+    }
+    
     func newCompanionWindow() -> CompanionWindow {
         let web = WebViewController()
         web.webView?.defaultURL = nil
@@ -224,12 +241,16 @@ class WindowManager : NSObject {
             NSWorkspace.shared.launchApplication("Terminal")
         } else {
             let target = terminalWindows.first!
-            target.app.activate(options: .activateIgnoringOtherApps)
+            NSRunningApplication(processIdentifier: target.app.processIdentifier)?.activate(options: .activateIgnoringOtherApps)
         }
     }
 }
 
 extension WindowManager : ShellBridgeEventListener {
+    @objc func currentDirectoryDidChange(_ notification: Notification) {
+        
+    }
+    
     @objc func recievedDataFromPty(_ notification: Notification) {
       
     }
@@ -244,12 +265,21 @@ extension WindowManager : ShellBridgeEventListener {
     @objc func recievedDataFromPipe(_ notification: Notification) {
         // Prevent windows from being launched from CLI if the user hasn't signed in
         guard Defaults.email != nil else {
+            SentrySDK.capture(message: "Attempting to run CLI command before signup")
+
             return
         }
         
 //        NSRunningApplication.current.activate(options: .activateIgnoringOtherApps)
         
         let msg = (notification.object as! ShellMessage)
+        
+        // don't create new windows for background events
+        guard !(msg.options?.first ?? "").hasPrefix("bg:") else {
+            print("Handing background event elsewhere")
+            return
+        }
+        
         DispatchQueue.main.async {
 
             if let parent = self.windowServiceProvider.topmostWhitelistedWindow() {
@@ -261,7 +291,7 @@ extension WindowManager : ShellBridgeEventListener {
                 
                 if let companion = self.windows[parent], let web = companion.contentViewController as? WebViewController {
                     self.windows[parent] = companion
-                    companion.tetheredWindowId = parent.windowId
+//                    companion.tetheredWindowId = parent.windowId
                     companion.tetheredWindow = parent
                     companion.delegate = self
                     companion.sessionId = msg.session
@@ -279,7 +309,7 @@ extension WindowManager : ShellBridgeEventListener {
 
                     let companion = self.windows[parent] ?? CompanionWindow(viewController: web)
                     self.windows[parent] = companion
-                    companion.tetheredWindowId = parent.windowId
+//                    companion.tetheredWindowId = parent.windowId
                     companion.tetheredWindow = parent
                     companion.delegate = self
                     companion.sessionId = msg.session
@@ -295,6 +325,8 @@ extension WindowManager : ShellBridgeEventListener {
                 }
             } else {
                 // check accessibility permissions
+                SentrySDK.capture(message: "Notify Accesibility Error in CLI")
+
                 FigCLI.notifyAccessibilityError(msg)
             }
         }
@@ -313,7 +345,7 @@ extension WindowManager {
              
              if let companion = self.windows[parent], let web = companion.contentViewController as? WebViewController {
                  self.windows[parent] = companion
-                 companion.tetheredWindowId = parent.windowId
+//                 companion.tetheredWindowId = parent.windowId
                  companion.tetheredWindow = parent
                  companion.delegate = self
 
@@ -326,7 +358,7 @@ extension WindowManager {
 
                  let companion = self.windows[parent] ?? CompanionWindow(viewController: web)
                  self.windows[parent] = companion
-                 companion.tetheredWindowId = parent.windowId
+//                 companion.tetheredWindowId = parent.windowId
                  companion.tetheredWindow = parent
                  companion.delegate = self
 
@@ -567,6 +599,59 @@ extension WindowManager : WindowManagementService {
         
         self.windows[parent] = window
         self.updatePosition(for: .figWindowTethered)
+    }
+    
+    func positionAutocompletePopover(active: Bool = true) {
+        if let rect = KeypressProvider.shared.getTextRect(), let window = AXWindowServer.shared.whitelistedWindow {
+            print("autocomplete1:", window.frame.origin.y, window.frame.origin.y -
+                window.frame.height/2, window.frame.midY, rect.origin.y, ((NSScreen.main?.frame.height)! - rect.origin.y))
+            print("autocomplete2:", rect, (NSScreen.main?.frame)!)
+            
+            let isAbove = window.frame.origin.y - window.frame.height/2 > rect.origin.y
+//
+//
+
+            
+            let height:CGFloat = isAbove ? 0 : 140
+            let translatedOrigin = isAbove ? NSPoint(x: rect.origin.x, y: rect.origin.y + height + 5) :
+                                             NSPoint(x: rect.origin.x, y: rect.origin.y - rect.height - 5) //below
+            
+            
+            // Prevent arrow keys
+            if ((WindowManager.shared.autocomplete?.maxHeight != 0)) {
+                KeypressProvider.shared.addRedirect(for: Keycode.upArrow, in: window)
+                KeypressProvider.shared.addRedirect(for: Keycode.downArrow, in: window)
+                KeypressProvider.shared.addRedirect(for: Keycode.returnKey, in: window)
+                KeypressProvider.shared.addRedirect(for: Keycode.tab, in: window)
+                KeypressProvider.shared.addRedirect(for: Keycode.escape, in: window)
+
+
+            } else {
+                KeypressProvider.shared.removeRedirect(for: Keycode.upArrow, in: window)
+                KeypressProvider.shared.removeRedirect(for: Keycode.downArrow, in: window)
+                KeypressProvider.shared.removeRedirect(for: Keycode.returnKey, in: window)
+                KeypressProvider.shared.removeRedirect(for: Keycode.tab, in: window)
+                KeypressProvider.shared.removeRedirect(for: Keycode.escape, in: window)
+
+            }
+            
+            WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try { fig.autocomplete_above = \(isAbove)} catch(e) {}", completionHandler: nil)
+            
+            let popup = NSRect(origin: translatedOrigin, size: CGSize(width: 200, height: height))
+            let sidebarInsetBuffer:CGFloat = 0.0//60;
+            let w = (NSScreen.main!.frame.maxX - sidebarInsetBuffer) - popup.maxX
+            var x = popup.origin.x
+            print("edge",w, x, x + w)
+
+            if (w < 0) {
+               x += w
+            }
+            
+            WindowManager.shared.autocomplete?.setOverlayFrame(NSRect(x: x,
+                                                                      y: popup.origin.y,
+                                                                      width: popup.width,
+                                                                      height: height))//140
+        }
     }
 }
 

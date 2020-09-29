@@ -205,10 +205,11 @@ extension WebBridge: WKURLSchemeHandler {
 
             return NSRunningApplication(processIdentifier: pid_t(pid) ?? -1)?.icon?.resized(to: NSSize(width: width, height: height))
         }
-        
-        guard let specifier = (url as NSURL).resourceSpecifier else { return nil }
-        let resource = specifier.replacingOccurrences(of: "?\(url.query ?? "<none>")", with: "")
-        return NSWorkspace.shared.icon(forFile: resource.removingPercentEncoding ?? "").resized(to: NSSize(width: width, height: height))
+
+        guard var specifier = (url as NSURL).resourceSpecifier else { return nil }
+        if (specifier.prefix(2) == "//") { specifier = String(specifier.dropFirst(2)) }
+        let resource = specifier.replacingOccurrences(of: "?\(url.query ?? "<none>")", with: "") as NSString
+        return NSWorkspace.shared.icon(forFile: resource.expandingTildeInPath.removingPercentEncoding ?? "").resized(to: NSSize(width: width, height: height))
         
     }
     
@@ -468,11 +469,12 @@ extension WebBridge {
     static func fread(scope: WKScriptMessage) {
         if let params = scope.body as? Dictionary<String, String>,
            let path = params["path"],
-           let handlerId = params["handlerId"],
-           let env = params["env"]?.jsonStringToDict(),
-           let pwd = env["PWD"] as? String {
-            
-            let url = URL(fileURLWithPath: NSString(string: path).standardizingPath, relativeTo: URL(fileURLWithPath: pwd))
+           let handlerId = params["handlerId"]
+//           let env = params["env"]?.jsonStringToDict(),
+//           let pwd = env["PWD"] as? String
+            {
+            let relative: String? = params["env"]?.jsonStringToDict()?["PWD"]  as? String
+            let url = URL(fileURLWithPath: NSString(string: path).standardizingPath, relativeTo: URL(fileURLWithPath: relative ?? ""))
             do {
                 let out = try String(contentsOf: url, encoding: String.Encoding.utf8)
                 let encoded = out.data(using: .utf8)!
@@ -730,6 +732,25 @@ extension WebBridge {
                 case "track":
                     TelemetryProvider.post(event: .viaJS, with: data)
                     break;
+                case "keystroke":
+                    guard let keyCodeString = data["key"], let keyCode = UInt16(keyCodeString), let consumerString = data["consumer"] else {
+                        print("Missing params for keystroke")
+                        return
+                    }
+                    
+                    if (consumerString == "true") {
+                        KeypressProvider.shared.addRedirect(for: keyCode, in: (scope.getCompanionWindow()?.tetheredWindow)!)
+                    } else {
+                        KeypressProvider.shared.removeRedirect(for: keyCode, in: (scope.getCompanionWindow()?.tetheredWindow)!)
+
+                    }
+//                case "cursor":
+//                    guard let directionString = data["direction"], let direction = directionString == "forward" else {
+//                        print("Missing params for cursor")
+//                        return
+//                    }
+                    
+                    
                 default:
                     print("private command '\(type)' does not exist.")
             }
@@ -766,6 +787,27 @@ extension WebBridge {
                         }
                     }
                }
+            case "maxheight":
+                let companion = scope.getCompanionWindow()
+                if let number = NumberFormatter().number(from: value) {
+                   companion?.maxHeight = CGFloat(truncating: number)
+                } else {
+                   companion?.maxHeight = nil
+                }
+                
+                // testing
+                if(!(companion?.isAutocompletePopup ?? false)) {
+                    companion?.windowManager.requestWindowUpdate()
+                } else {
+                    WindowManager.shared.positionAutocompletePopover()
+
+//                    if let rect = KeypressProvider.shared.getTextRect() {
+//
+//                    let height:CGFloat = 0 //140
+//                   let translatedOrigin = NSPoint(x: rect.origin.x, y: (NSScreen.main?.frame.height)! - rect.origin.y /*- selectRect.height*/ + height + 5)
+//                   WindowManager.shared.autocomplete?.setOverlayFrame(NSRect(origin: translatedOrigin, size: CGSize(width: 200, height: height)))//140
+//                    }
+                }
             default:
                 print("Unrecognized property value '\(prop)' updated with value: \(value)")
             }

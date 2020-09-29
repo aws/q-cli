@@ -14,11 +14,11 @@ let setup = function(window) {
 
   var fig = {
       insert : function(cmd) {
-          console.log(`Inserting command "${cmd}" as user`)
+          if (fig.debug) { console.log(`Inserting command "${cmd}" as user`) }
           window.webkit.messageHandlers.insertHandler.postMessage(cmd);
       },
       run : function(cmd) {
-          console.log(`Running command "${cmd}" as user`)
+          if (fig.debug) { console.log(`Running command "${cmd}" as user`) }
           window.webkit.messageHandlers.executeHandler.postMessage(cmd);
       },
       execute : function(cmd, handler) {
@@ -33,14 +33,14 @@ let setup = function(window) {
               return
           }
           window.webkit.messageHandlers.callbackHandler.postMessage({type, cmd, handlerId, env});
-          console.log(`Added callback handler "${handlerId}" for command "${cmd}"`)
+          if (fig.debug) { console.log(`Added callback handler "${handlerId}" for command "${cmd}"`) }
       },
       executeInHomeDirectory : function(cmd, handler) {
           let handlerId = random_identifier(5)
           let type = "execute"
           this[handlerId] = handler
           window.webkit.messageHandlers.globalExecuteHandler.postMessage({type, cmd, handlerId});
-          console.log(`Added callback handler "${handlerId}" for command "${cmd}"`)
+          if (fig.debug) { console.log(`Added callback handler "${handlerId}" for command "${cmd}"`) }
 
       },
 //      execute : function(cmd, handler) {
@@ -91,7 +91,7 @@ let setup = function(window) {
       },
       callback : function(handlerId, value, error) {
           let response = value ? b64DecodeUnicode(value) : null
-          console.log(handlerId)
+          if (fig.debug) { console.log(handlerId) }
           this[handlerId](response, error)
           let tokens = handlerId.split(':')
           if (tokens.length == 1) {
@@ -99,7 +99,7 @@ let setup = function(window) {
           } else if (!value) {
               delete this[handlerId]
           } else {
-              console.log(`Continue streaming to callback '${handlerId}'`)
+              if (fig.debug) { console.log(`Continue streaming to callback '${handlerId}'`) }
           }
       },
       callbackASCII : function(handlerId, value, error) {
@@ -107,9 +107,9 @@ let setup = function(window) {
           let tokens = handlerId.split(':')
           if (tokens.length == 1) {
               delete this[handlerId]
-              console.log(`End of stream to callback '${handlerId}'`)
+              if (fig.debug) { console.log(`End of stream to callback '${handlerId}'`) }
           } else {
-              console.log(`Continue streaming to callback '${handlerId}'`)
+              if (fig.debug) { console.log(`Continue streaming to callback '${handlerId}'`) }
           }
       },
       stdinb64 : function(data) {
@@ -130,6 +130,17 @@ let setup = function(window) {
           try {
               opts = inputParam.split('%20')
           } catch(e) {}
+          
+          // if fig.env is not set, set pwd & home to HOME directory
+          if (!fig.env) {
+              fig.executeInHomeDirectory("pwd", (out) => {
+                 fig.env = {}
+                 //fig.env.PWD = out.trim()
+                 fig.env.HOME = out.trim()
+                 console.log("hello", fig.env)
+              })
+              
+          }
           
           let stdin = fig['_stdin']
           let options = fig.options //|| opts
@@ -154,7 +165,7 @@ let setup = function(window) {
 //          }
       },
       reposition : function(position) {
-          console.log("Repositioning")
+          if (fig.debug) { console.log("Repositioning") }
           window.webkit.messageHandlers.positionHandler.postMessage({position});
 
       },
@@ -174,7 +185,7 @@ let setup = function(window) {
               return
           }
           window.webkit.messageHandlers.streamHandler.postMessage({type, cmd, handlerId, env});
-          console.log(`Added callback handler "${handlerId}" for command "${cmd}"`)
+          if (fig.debug) { console.log(`Added callback handler "${handlerId}" for command "${cmd}"`) }
       },
       onboarding : function(action, handler) {
           let handlerId = random_identifier(5)
@@ -260,10 +271,21 @@ let setup = function(window) {
       },
       private(func) {
           window.webkit.messageHandlers.privateHandler.postMessage(func);
+      },
+      cursor : {
+          forward() {
+              fig.insert("fig::forward")
+          },
+          backward() {
+              fig.insert("fig::backward")
+          },
+          backspace() {
+              fig.insert("fig::backspace")
+          }
       }
   }
     
-    let watchedProperties = [ "icon", "title", "color"]
+    let watchedProperties = [ "icon", "title", "color", "maxheight"]
     watchedProperties.forEach(prop => {
           Object.defineProperty(fig, prop, {
               get : function () {
@@ -271,7 +293,7 @@ let setup = function(window) {
               },
               set : function (value) {
                   window.webkit.messageHandlers.propertyUpdateHandler.postMessage({prop, value});
-
+                  if (fig.debug) { console.log("SET:", prop, value) }
                   this[`_${prop}`] = value;
               }
           });
@@ -293,6 +315,8 @@ let setup = function(window) {
 
 setup(window)
 fig.log("Loaded fig.js...")
+fig.debug = false
+
 
 function b64EncodeUnicode(str) {
     // first we use encodeURIComponent to get percent-encoded UTF-8,

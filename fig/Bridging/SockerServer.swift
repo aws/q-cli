@@ -119,7 +119,13 @@ class ShellBridgeSocketService: WebSocketService {
                     case "hello":
                         self.sessionIds[msg.session] = from.id
                     case "pipe":
-                        NotificationCenter.default.post(name: .recievedDataFromPipe, object: msg)
+                        if (msg.options?.first?.hasPrefix("bg:") ?? false) {
+                            NotificationCenter.default.post(name: .currentDirectoryDidChange, object: msg)
+                            from.send(message: "disconnect")
+
+                        } else {
+                            NotificationCenter.default.post(name: .recievedDataFromPipe, object: msg)
+                        }
 //                        from.send(message: "disconnect")
                     case "pty":
                         if let io = msg.io {

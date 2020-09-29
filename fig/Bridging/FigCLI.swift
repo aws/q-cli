@@ -82,7 +82,10 @@ enum NativeCLICommand : String {
     case version = "--version"
     case accesibility = "util:axprompt"
     case logout = "util:logout"
+    case restart = "util:restart"
+    case build = "util:build"
     case sidebar = "sidebar"
+    case close = "close"
 
     var openInNewWindow: Bool {
         get {
@@ -125,7 +128,10 @@ class FigCLI {
     static func initialPosition(with scope: Scope) {
         scope.webView.onLoad.append {
               WebBridge.appInitialPosition(webview: scope.webView) { (position) in
-                scope.companionWindow.positioning = CompanionWindow.OverlayPositioning(rawValue:                     Int(position ?? "-1")! ) ?? scope.companionWindow.positioning
+                // there is a crash that occurs here and I don't know why...
+                if (scope.companionWindow != nil) {
+                    scope.companionWindow.positioning = CompanionWindow.OverlayPositioning(rawValue:                     Int(position ?? "-1")! ) ?? scope.companionWindow.positioning
+                }
               }
           }
         
@@ -328,8 +334,18 @@ class FigCLI {
         
         scope.companionWindow.windowManager.close(window:  scope.companionWindow)
 
-        ShellBridge.shared.socketServer.send(sessionId: scope.session, command: "\(script) \(scope.options.joined(separator: " "))"
-)
+        ShellBridge.shared.socketServer.send(sessionId: scope.session, command: "\(script) \(scope.options.joined(separator: " "))")
+    }
+    
+    static func printInTerminal(text: String, scope: Scope) {
+        var modified = Scope(cmd: scope.cmd,
+                             stdin: scope.stdin,
+                             options: [],
+                             env: scope.env,
+                             webView: scope.webView,
+                             companionWindow: scope.companionWindow,
+                             session: scope.session)
+        FigCLI.runInTerminal(script: "echo \"\(text)\"", scope: modified)
     }
     
     struct CLICommandSchema: Codable {
@@ -410,7 +426,7 @@ class FigCLI {
                      \u{001b}[1mQUICK FIX\u{001b}[0m
                      Fig does not have Accessibility Permissions enabled.
 
-                   → Click the 🍐 in your menu bar > \u{001b}[1mPrompt for Accessibility Access\u{001b}[0m
+                   → Click the Fig icon in your menu bar > \u{001b}[1mPrompt for Accessibility Access\u{001b}[0m
 
                      Please email \u{001b}[1mhello@withfig.com\u{001b}[0m if this problem persists.
 
@@ -428,7 +444,7 @@ class FigCLI {
         
         let stdin = message.data.replacingOccurrences(of: "`", with: "\\`")
         let env = message.env ?? ""
-        webView.clearHistory()
+        //webView.clearHistory()
         webView.window?.representedURL = nil        
       
         guard let options = message.options, options.count > 0 else {
@@ -460,7 +476,7 @@ class FigCLI {
         let aliases = UserDefaults.standard.string(forKey: "aliases_dict")?.jsonStringToDict() ?? [:]
         
         // get
-        var figPath = (scope.env.jsonStringToDict()?["FIGPATH"] as? String)?.split(separator: ":").map { NSString(string: String($0)).standardizingPath } ?? []
+        var figPath = (scope.env.jsonStringToDict()?["FIGPATH"] as? String)?.split(separator: ":").map { String($0) } ?? []
         
         if (!figPath.contains("~/run")) {
             figPath.insert("~/run", at: 0)
@@ -469,6 +485,8 @@ class FigCLI {
         if (!figPath.contains("~/.fig/bin")) {
             figPath.insert("~/.fig/bin", at: 0)
         }
+        
+        figPath = figPath.map { NSString(string: String($0)).standardizingPath }
         
         var isRundown = false
         var isCLI = false
@@ -481,13 +499,7 @@ class FigCLI {
                 appPath = "\(prefix)/\(command).fig"
                 break
             }
-            
-            let isRaw = FileManager.default.fileExists(atPath: "\(prefix)/\(command)")
-            if (isRaw) {
-                appPath = "\(prefix)/\(command)"
-                break
-            }
-            
+    
             let withPathExtension = FileManager.default.fileExists(atPath: "\(prefix)/\(command).html")
             if (withPathExtension) {
                 appPath = "\(prefix)/\(command).html"
@@ -498,6 +510,12 @@ class FigCLI {
             let isDirectory = FileManager.default.fileExists(atPath: "\(prefix)/\(command)", isDirectory: &isDir)
             if (isDirectory) {
                 appPath = "\(prefix)/\(command)/index.html"
+                break
+            }
+            
+            let isRaw = FileManager.default.fileExists(atPath: "\(prefix)/\(command)")
+            if (isRaw) {
+                appPath = "\(prefix)/\(command)"
                 break
             }
             
@@ -543,14 +561,37 @@ class FigCLI {
                 FigCLI.url(with: scope)
             case .accesibility:
                 ShellBridge.promptForAccesibilityAccess()
-                FigCLI.runInTerminal(script: "echo \"  Requesting Accesibility Permission...\"", scope: scope)
+                scope.companionWindow.windowManager.close(window:  scope.companionWindow)
+
             case .logout:
                 Defaults.email = nil
                 Defaults.loggedIn = false
                 scope.webView.deleteCache()
+                FigCLI.printInTerminal(text: "→ Logging out of Fig...", scope: scope)
+
                 let _ = "osascript -e 'quit app \"Fig\"' && open -b \"com.mschrage.fig\"".runAsCommand()
+            case .restart:
+                FigCLI.printInTerminal(text: "→ Restarting Fig...", scope: scope)
+
+                let _ = "osascript -e 'quit app \"Fig\"' && open -b \"com.mschrage.fig\"".runAsCommand()
+            case .build:
+                if let buildMode = Build(rawValue: scope.options.first ?? "") {
+                    let msg = "→ Setting build to \(buildMode.rawValue)"
+                    FigCLI.printInTerminal(text: msg, scope: scope)
+                    Defaults.build = buildMode
+                } else {
+                    let msg = "→ Current build is '\( Defaults.build .rawValue)'\n\n fig util:build [prod | staging | dev]"
+                    FigCLI.printInTerminal(text: msg, scope: scope)
+
+                    scope.companionWindow.windowManager.close(window:  scope.companionWindow)
+
+                }
+
             case .version:
                 FigCLI.runInTerminal(script: "echo \"\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "-1")\"", scope: scope)
+            case .close:
+                scope.companionWindow.windowManager.close(window:  scope.companionWindow)
+
             case .help, .h:
                 scope.companionWindow.windowManager.close(window:  scope.companionWindow)
 

@@ -46,9 +46,7 @@
 		751C3BEE24B6915000B5C7FD /* Defaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751C3BED24B6915000B5C7FD /* Defaults.swift */; };
 		751F7589246D090100E083C8 /* WebBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751F7588246D090100E083C8 /* WebBridge.swift */; };
 		751F7591246E16D800E083C8 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751F7590246E16D800E083C8 /* main.swift */; };
-		751F75982478571D00E083C8 /* WebSocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751F75972478571D00E083C8 /* WebSocket.swift */; };
 		75288EF924CCE72F002DF12A /* OnboardingWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757CA887248AD067002A64A8 /* OnboardingWindow.swift */; };
-		752C0BD62478EBA90077E415 /* XTerm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 752C0BD52478EBA90077E415 /* XTerm.swift */; };
 		752C0BD82479EEDB0077E415 /* File.swift in Sources */ = {isa = PBXBuildFile; fileRef = 752C0BD72479EEDA0077E415 /* File.swift */; };
 		752C0BDA2479F37B0077E415 /* fig.js in Resources */ = {isa = PBXBuildFile; fileRef = 752C0BD92479F37B0077E415 /* fig.js */; };
 		752C0BDC2479F68C0077E415 /* tutorial.css in Resources */ = {isa = PBXBuildFile; fileRef = 752C0BDB2479F68C0077E415 /* tutorial.css */; };
@@ -62,7 +60,6 @@
 		755D0DE4247F038B0074AB5C /* logs.html in Resources */ = {isa = PBXBuildFile; fileRef = 755D0DE3247F038B0074AB5C /* logs.html */; };
 		755D0F512482D4920074AB5C /* HotKey in Frameworks */ = {isa = PBXBuildFile; productRef = 755D0F502482D4920074AB5C /* HotKey */; };
 		75675955244634AD006AA988 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75675954244634AD006AA988 /* AppDelegate.swift */; };
-		75675957244634AD006AA988 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75675956244634AD006AA988 /* ContentView.swift */; };
 		75675959244634B2006AA988 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 75675958244634B2006AA988 /* Assets.xcassets */; };
 		7567595C244634B2006AA988 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7567595B244634B2006AA988 /* Preview Assets.xcassets */; };
 		7567595F244634B2006AA988 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 7567595D244634B2006AA988 /* Main.storyboard */; };
@@ -91,20 +88,29 @@
 		757CA8E624905B38002A64A8 /* SockerServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757CA8E524905B38002A64A8 /* SockerServer.swift */; };
 		75809B0E24BFA64D00BFFB3E /* TelemetryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75809B0D24BFA64D00BFFB3E /* TelemetryService.swift */; };
 		75809B1124C3876B00BFFB3E /* run-tutorial.js in Resources */ = {isa = PBXBuildFile; fileRef = 75809B1024C3876B00BFFB3E /* run-tutorial.js */; };
+		7587B4D824F97F9E00E355E4 /* ShellHooksManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7587B4D724F97F9E00E355E4 /* ShellHooksManager.swift */; };
 		758AEB5E24CD35D400A15EAF /* WebSocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 758AEB5D24CD35D400A15EAF /* WebSocket.swift */; };
 		758AEB6024CE529D00A15EAF /* String+Shell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 758AEB5F24CE529D00A15EAF /* String+Shell.swift */; };
 		758AEB6724CE8B8F00A15EAF /* figcli in Embed Command Line Tool */ = {isa = PBXBuildFile; fileRef = 751F758E246E16D800E083C8 /* figcli */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		758AEB6A24CEA4D000A15EAF /* Starscream in Frameworks */ = {isa = PBXBuildFile; productRef = 758AEB6924CEA4D000A15EAF /* Starscream */; };
 		758AEB6C24CEA54600A15EAF /* SocketServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 758AEB6B24CEA54600A15EAF /* SocketServer.swift */; };
+		75B199322501A3DA00F38EA8 /* KeyboardLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B199312501A3DA00F38EA8 /* KeyboardLayout.swift */; };
+		75B199342504190900F38EA8 /* Keycode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B199332504190900F38EA8 /* Keycode.swift */; };
+		75B1993625042B2C00F38EA8 /* autocomplete.html in Resources */ = {isa = PBXBuildFile; fileRef = 75B1993525042B2C00F38EA8 /* autocomplete.html */; };
+		75B1993825100E4E00F38EA8 /* KeypressService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B1993725100E4D00F38EA8 /* KeypressService.swift */; };
 		75B7931A24BB897F0073AAC6 /* PseudoTerminalService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B7931924BB897F0073AAC6 /* PseudoTerminalService.swift */; };
+		75C05C6C24FDEA2B001F0A52 /* XTerm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75C05C6B24FDEA2B001F0A52 /* XTerm.swift */; };
 		75C0711D244AC3B2002DF69F /* index.html in Resources */ = {isa = PBXBuildFile; fileRef = 75C0711C244AC3B2002DF69F /* index.html */; };
 		75C07120244BB441002DF69F /* CompanionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75C0711F244BB441002DF69F /* CompanionViewController.swift */; };
 		75C07122244BB65D002DF69F /* ShellBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75C07121244BB65D002DF69F /* ShellBridge.swift */; };
 		75C07124244BE45A002DF69F /* CompanionWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75C07123244BE45A002DF69F /* CompanionWindow.swift */; };
 		75CFDBDF24EDB2E900F00CAE /* Onboarding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75CFDBDE24EDB2E900F00CAE /* Onboarding.swift */; };
+		75CFDBE224EDE31800F00CAE /* Sentry in Frameworks */ = {isa = PBXBuildFile; productRef = 75CFDBE124EDE31800F00CAE /* Sentry */; };
 		75CFF64A2496B43A00C6A6DE /* Sparkle.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 75CFF6482496B43600C6A6DE /* Sparkle.framework */; };
 		75CFF64B2496B43A00C6A6DE /* Sparkle.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 75CFF6482496B43600C6A6DE /* Sparkle.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		75D2E3CB249C1E7500607F66 /* terminal.css in Resources */ = {isa = PBXBuildFile; fileRef = 75D2E3CA249C1E7500607F66 /* terminal.css */; };
+		75E993F22515A6DD000BE6BE /* statusbar@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 75E993F12515A6DD000BE6BE /* statusbar@2x.png */; };
+		75E993F52517E226000BE6BE /* AXWindowServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75E993F42517E226000BE6BE /* AXWindowServer.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -209,8 +215,6 @@
 		751F7588246D090100E083C8 /* WebBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebBridge.swift; sourceTree = "<group>"; };
 		751F758E246E16D800E083C8 /* figcli */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = figcli; sourceTree = BUILT_PRODUCTS_DIR; };
 		751F7590246E16D800E083C8 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
-		751F75972478571D00E083C8 /* WebSocket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebSocket.swift; sourceTree = "<group>"; };
-		752C0BD52478EBA90077E415 /* XTerm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XTerm.swift; sourceTree = "<group>"; };
 		752C0BD72479EEDA0077E415 /* File.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = File.swift; sourceTree = "<group>"; };
 		752C0BD92479F37B0077E415 /* fig.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = fig.js; sourceTree = "<group>"; };
 		752C0BDB2479F68C0077E415 /* tutorial.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = tutorial.css; sourceTree = "<group>"; };
@@ -224,7 +228,6 @@
 		755D0DE3247F038B0074AB5C /* logs.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = logs.html; sourceTree = "<group>"; };
 		75675951244634AD006AA988 /* fig.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = fig.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		75675954244634AD006AA988 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
-		75675956244634AD006AA988 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		75675958244634B2006AA988 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		7567595B244634B2006AA988 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		7567595E244634B2006AA988 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
@@ -259,10 +262,16 @@
 		75809B0D24BFA64D00BFFB3E /* TelemetryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetryService.swift; sourceTree = "<group>"; };
 		75809B0F24C2C66100BFFB3E /* WebView+Private.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "WebView+Private.h"; sourceTree = "<group>"; };
 		75809B1024C3876B00BFFB3E /* run-tutorial.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = "run-tutorial.js"; sourceTree = "<group>"; };
+		7587B4D724F97F9E00E355E4 /* ShellHooksManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellHooksManager.swift; sourceTree = "<group>"; };
 		758AEB5D24CD35D400A15EAF /* WebSocket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebSocket.swift; sourceTree = "<group>"; };
 		758AEB5F24CE529D00A15EAF /* String+Shell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+Shell.swift"; sourceTree = "<group>"; };
 		758AEB6B24CEA54600A15EAF /* SocketServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocketServer.swift; sourceTree = "<group>"; };
+		75B199312501A3DA00F38EA8 /* KeyboardLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardLayout.swift; sourceTree = "<group>"; };
+		75B199332504190900F38EA8 /* Keycode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Keycode.swift; sourceTree = "<group>"; };
+		75B1993525042B2C00F38EA8 /* autocomplete.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = autocomplete.html; sourceTree = "<group>"; };
+		75B1993725100E4D00F38EA8 /* KeypressService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeypressService.swift; sourceTree = "<group>"; };
 		75B7931924BB897F0073AAC6 /* PseudoTerminalService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PseudoTerminalService.swift; sourceTree = "<group>"; };
+		75C05C6B24FDEA2B001F0A52 /* XTerm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XTerm.swift; sourceTree = "<group>"; };
 		75C0711C244AC3B2002DF69F /* index.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = index.html; sourceTree = "<group>"; };
 		75C0711F244BB441002DF69F /* CompanionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionViewController.swift; sourceTree = "<group>"; };
 		75C07121244BB65D002DF69F /* ShellBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellBridge.swift; sourceTree = "<group>"; };
@@ -270,6 +279,8 @@
 		75CFDBDE24EDB2E900F00CAE /* Onboarding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Onboarding.swift; sourceTree = "<group>"; };
 		75CFF6482496B43600C6A6DE /* Sparkle.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Sparkle.framework; sourceTree = "<group>"; };
 		75D2E3CA249C1E7500607F66 /* terminal.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = terminal.css; sourceTree = "<group>"; };
+		75E993F12515A6DD000BE6BE /* statusbar@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "statusbar@2x.png"; sourceTree = "<group>"; };
+		75E993F42517E226000BE6BE /* AXWindowServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AXWindowServer.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -285,6 +296,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				75CFDBE224EDE31800F00CAE /* Sentry in Frameworks */,
 				755D0F512482D4920074AB5C /* HotKey in Frameworks */,
 				757CA88424875907002A64A8 /* ANSITerminal in Frameworks */,
 				757CA8E424905B0E002A64A8 /* Kitura-WebSocket in Frameworks */,
@@ -412,39 +424,22 @@
 				7510F87324A6910500E86F7C /* SwiftTerm */,
 				757CA87C2485D23C002A64A8 /* dist */,
 				75675954244634AD006AA988 /* AppDelegate.swift */,
-				757CA8E024903D3A002A64A8 /* HotKeyManager.swift */,
-				756759962446C44C006AA988 /* String+Shell.swift */,
-				756759D324498CA0006AA988 /* WebViewController.swift */,
-				75C0711F244BB441002DF69F /* CompanionViewController.swift */,
-				75C07123244BE45A002DF69F /* CompanionWindow.swift */,
+				75E993F32515C8D3000BE6BE /* Autocompletion */,
+				75B199332504190900F38EA8 /* Keycode.swift */,
 				751C3BEB24B6910800B5C7FD /* Remote.swift */,
 				751C3BED24B6915000B5C7FD /* Defaults.swift */,
-				7510F8BE24A99A4B00E86F7C /* WindowService.swift */,
-				7510F8C024A9B32D00E86F7C /* WindowManager.swift */,
-				7510F8B924A9701000E86F7C /* Private.h */,
-				7510F8BB24A9861E00E86F7C /* PrivateWindow.h */,
-				7510F8BC24A9861E00E86F7C /* PrivateWindow.m */,
-				75C07121244BB65D002DF69F /* ShellBridge.swift */,
-				75CFDBDE24EDB2E900F00CAE /* Onboarding.swift */,
-				75B7931924BB897F0073AAC6 /* PseudoTerminalService.swift */,
-				757CA887248AD067002A64A8 /* OnboardingWindow.swift */,
-				752C0BD52478EBA90077E415 /* XTerm.swift */,
-				751F75972478571D00E083C8 /* WebSocket.swift */,
-				757CA8E524905B38002A64A8 /* SockerServer.swift */,
-				757CA88024874E05002A64A8 /* ErrorMatcher.swift */,
-				751F7588246D090100E083C8 /* WebBridge.swift */,
+				75E993F12515A6DD000BE6BE /* statusbar@2x.png */,
 				755D0DE1247EFAE10074AB5C /* Logging.swift */,
-				755D0DDF247DDE050074AB5C /* FigCLI.swift */,
 				75809B0D24BFA64D00BFFB3E /* TelemetryService.swift */,
-				752C0BDD2479F6AF0077E415 /* insert-tutorial.js */,
-				75809B1024C3876B00BFFB3E /* run-tutorial.js */,
-				752C0BDB2479F68C0077E415 /* tutorial.css */,
-				75D2E3CA249C1E7500607F66 /* terminal.css */,
-				752C0BD92479F37B0077E415 /* fig.js */,
 				752C0BD72479EEDA0077E415 /* File.swift */,
+				75B1992A25019FDE00F38EA8 /* Companion Window */,
+				75B1992B25019FFE00F38EA8 /* Window Management */,
+				75B1992E2501A12C00F38EA8 /* Shell */,
+				75B1992F2501A17100F38EA8 /* Onboarding */,
+				75B1992C2501A02B00F38EA8 /* Bridging */,
+				75B1992D2501A0ED00F38EA8 /* Web Runtime */,
 				757CA88B248B08D7002A64A8 /* local */,
-				75675956244634AD006AA988 /* ContentView.swift */,
-				757CA86624859461002A64A8 /* AppMover.swift */,
+				75B199302501A1A200F38EA8 /* Legacy */,
 				75675958244634B2006AA988 /* Assets.xcassets */,
 				7567595D244634B2006AA988 /* Main.storyboard */,
 				75675960244634B2006AA988 /* Info.plist */,
@@ -503,8 +498,85 @@
 				752C0BE5247C25280077E415 /* display.html */,
 				755D0DE3247F038B0074AB5C /* logs.html */,
 				757CA889248AD58C002A64A8 /* onboarding.html */,
+				75B1993525042B2C00F38EA8 /* autocomplete.html */,
 			);
 			name = local;
+			sourceTree = "<group>";
+		};
+		75B1992A25019FDE00F38EA8 /* Companion Window */ = {
+			isa = PBXGroup;
+			children = (
+				756759D324498CA0006AA988 /* WebViewController.swift */,
+				75C0711F244BB441002DF69F /* CompanionViewController.swift */,
+				75C07123244BE45A002DF69F /* CompanionWindow.swift */,
+			);
+			path = "Companion Window";
+			sourceTree = "<group>";
+		};
+		75B1992B25019FFE00F38EA8 /* Window Management */ = {
+			isa = PBXGroup;
+			children = (
+				757CA8E024903D3A002A64A8 /* HotKeyManager.swift */,
+				7510F8BE24A99A4B00E86F7C /* WindowService.swift */,
+				75E993F42517E226000BE6BE /* AXWindowServer.swift */,
+				7510F8C024A9B32D00E86F7C /* WindowManager.swift */,
+				7510F8B924A9701000E86F7C /* Private.h */,
+				7510F8BB24A9861E00E86F7C /* PrivateWindow.h */,
+				7510F8BC24A9861E00E86F7C /* PrivateWindow.m */,
+			);
+			path = "Window Management";
+			sourceTree = "<group>";
+		};
+		75B1992C2501A02B00F38EA8 /* Bridging */ = {
+			isa = PBXGroup;
+			children = (
+				75C07121244BB65D002DF69F /* ShellBridge.swift */,
+				75B199312501A3DA00F38EA8 /* KeyboardLayout.swift */,
+				751F7588246D090100E083C8 /* WebBridge.swift */,
+				755D0DDF247DDE050074AB5C /* FigCLI.swift */,
+				757CA8E524905B38002A64A8 /* SockerServer.swift */,
+			);
+			path = Bridging;
+			sourceTree = "<group>";
+		};
+		75B1992D2501A0ED00F38EA8 /* Web Runtime */ = {
+			isa = PBXGroup;
+			children = (
+				752C0BDD2479F6AF0077E415 /* insert-tutorial.js */,
+				75809B1024C3876B00BFFB3E /* run-tutorial.js */,
+				752C0BDB2479F68C0077E415 /* tutorial.css */,
+				75D2E3CA249C1E7500607F66 /* terminal.css */,
+				752C0BD92479F37B0077E415 /* fig.js */,
+			);
+			path = "Web Runtime";
+			sourceTree = "<group>";
+		};
+		75B1992E2501A12C00F38EA8 /* Shell */ = {
+			isa = PBXGroup;
+			children = (
+				7587B4D724F97F9E00E355E4 /* ShellHooksManager.swift */,
+				75B7931924BB897F0073AAC6 /* PseudoTerminalService.swift */,
+				756759962446C44C006AA988 /* String+Shell.swift */,
+			);
+			path = Shell;
+			sourceTree = "<group>";
+		};
+		75B1992F2501A17100F38EA8 /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				757CA887248AD067002A64A8 /* OnboardingWindow.swift */,
+				75CFDBDE24EDB2E900F00CAE /* Onboarding.swift */,
+			);
+			path = Onboarding;
+			sourceTree = "<group>";
+		};
+		75B199302501A1A200F38EA8 /* Legacy */ = {
+			isa = PBXGroup;
+			children = (
+				757CA86624859461002A64A8 /* AppMover.swift */,
+				757CA88024874E05002A64A8 /* ErrorMatcher.swift */,
+			);
+			path = Legacy;
 			sourceTree = "<group>";
 		};
 		75CFF6432496B3BA00C6A6DE /* Frameworks */ = {
@@ -513,6 +585,15 @@
 				75CFF6482496B43600C6A6DE /* Sparkle.framework */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		75E993F32515C8D3000BE6BE /* Autocompletion */ = {
+			isa = PBXGroup;
+			children = (
+				75C05C6B24FDEA2B001F0A52 /* XTerm.swift */,
+				75B1993725100E4D00F38EA8 /* KeypressService.swift */,
+			);
+			path = Autocompletion;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -558,6 +639,7 @@
 				755D0F502482D4920074AB5C /* HotKey */,
 				757CA88324875907002A64A8 /* ANSITerminal */,
 				757CA8E324905B0E002A64A8 /* Kitura-WebSocket */,
+				75CFDBE124EDE31800F00CAE /* Sentry */,
 			);
 			productName = fig;
 			productReference = 75675951244634AD006AA988 /* fig.app */;
@@ -640,6 +722,7 @@
 				757CA88224875906002A64A8 /* XCRemoteSwiftPackageReference "ANSITerminal" */,
 				757CA8E224905B0E002A64A8 /* XCRemoteSwiftPackageReference "Kitura-WebSocket" */,
 				758AEB6824CEA4D000A15EAF /* XCRemoteSwiftPackageReference "Starscream" */,
+				75CFDBE024EDE31800F00CAE /* XCRemoteSwiftPackageReference "sentry-cocoa" */,
 			);
 			productRefGroup = 75675952244634AD006AA988 /* Products */;
 			projectDirPath = "";
@@ -677,6 +760,8 @@
 				7510F8AB24A6910500E86F7C /* README.md in Resources */,
 				757CA89D248C1F50002A64A8 /* demo4onboarding.mp4 in Resources */,
 				7567595F244634B2006AA988 /* Main.storyboard in Resources */,
+				75B1993625042B2C00F38EA8 /* autocomplete.html in Resources */,
+				75E993F22515A6DD000BE6BE /* statusbar@2x.png in Resources */,
 				752C0BDE2479F6AF0077E415 /* insert-tutorial.js in Resources */,
 				752C0BE2247A33F20077E415 /* viewer.html in Resources */,
 				752C0BE6247C25290077E415 /* display.html in Resources */,
@@ -724,21 +809,23 @@
 				75288EF924CCE72F002DF12A /* OnboardingWindow.swift in Sources */,
 				757CA86724859461002A64A8 /* AppMover.swift in Sources */,
 				7510F89F24A6910500E86F7C /* Terminal.swift in Sources */,
+				75B199322501A3DA00F38EA8 /* KeyboardLayout.swift in Sources */,
 				756759972446C44C006AA988 /* String+Shell.swift in Sources */,
 				757CA8E624905B38002A64A8 /* SockerServer.swift in Sources */,
 				75B7931A24BB897F0073AAC6 /* PseudoTerminalService.swift in Sources */,
 				75CFDBDF24EDB2E900F00CAE /* Onboarding.swift in Sources */,
+				75C05C6C24FDEA2B001F0A52 /* XTerm.swift in Sources */,
 				7510F8AC24A6910500E86F7C /* MacTerminalView.swift in Sources */,
 				755D0DE2247EFAE10074AB5C /* Logging.swift in Sources */,
 				7510F8A124A6910500E86F7C /* BufferLine.swift in Sources */,
 				7510F8A824A6910500E86F7C /* MacDebugView.swift in Sources */,
 				75C07120244BB441002DF69F /* CompanionViewController.swift in Sources */,
-				75675957244634AD006AA988 /* ContentView.swift in Sources */,
 				7510F89E24A6910500E86F7C /* BufferSet.swift in Sources */,
 				7510F8B724A6910500E86F7C /* EscapeSequenceParser.swift in Sources */,
 				7510F89D24A6910500E86F7C /* Utilities.swift in Sources */,
 				7510F8B424A6910500E86F7C /* Colors.swift in Sources */,
 				7510F8B624A6910500E86F7C /* Position.swift in Sources */,
+				75E993F52517E226000BE6BE /* AXWindowServer.swift in Sources */,
 				75C07124244BE45A002DF69F /* CompanionWindow.swift in Sources */,
 				75C07122244BB65D002DF69F /* ShellBridge.swift in Sources */,
 				7510F8C124A9B32D00E86F7C /* WindowManager.swift in Sources */,
@@ -757,23 +844,24 @@
 				7510F8B524A6910500E86F7C /* SearchService.swift in Sources */,
 				7510F8A024A6910500E86F7C /* EscapeSequences.swift in Sources */,
 				7510F8A224A6910500E86F7C /* CircularList.swift in Sources */,
-				751F75982478571D00E083C8 /* WebSocket.swift in Sources */,
-				752C0BD62478EBA90077E415 /* XTerm.swift in Sources */,
 				7510F8AD24A6910500E86F7C /* SelectionService.swift in Sources */,
 				7510F89B24A6910500E86F7C /* CharSets.swift in Sources */,
 				7510F8B824A6910500E86F7C /* Pty.swift in Sources */,
+				75B1993825100E4E00F38EA8 /* KeypressService.swift in Sources */,
 				7510F8A724A6910500E86F7C /* MacAccessibilityService.swift in Sources */,
 				7510F8AA24A6910500E86F7C /* MacCaretView.swift in Sources */,
 				751C3BEC24B6910800B5C7FD /* Remote.swift in Sources */,
 				7510F8A924A6910500E86F7C /* MacLocalTerminalView.swift in Sources */,
 				7510F89824A6910500E86F7C /* AppleTerminalView.swift in Sources */,
 				757CA8E124903D3B002A64A8 /* HotKeyManager.swift in Sources */,
+				75B199342504190900F38EA8 /* Keycode.swift in Sources */,
 				752C0BD82479EEDB0077E415 /* File.swift in Sources */,
 				7510F8B324A6910500E86F7C /* TerminalOptions.swift in Sources */,
 				7510F8BF24A99A4B00E86F7C /* WindowService.swift in Sources */,
 				7510F8A324A6910500E86F7C /* iOSTerminalView.swift in Sources */,
 				7510F8B124A6910500E86F7C /* Line.swift in Sources */,
 				7510F8AE24A6910500E86F7C /* SixelDcsHandler.swift in Sources */,
+				7587B4D824F97F9E00E355E4 /* ShellHooksManager.swift in Sources */,
 				7510F89C24A6910500E86F7C /* Buffer.swift in Sources */,
 				7510F8BD24A9861E00E86F7C /* PrivateWindow.m in Sources */,
 				756759D424498CA0006AA988 /* WebViewController.swift in Sources */,
@@ -980,7 +1068,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1.0.17;
+				CURRENT_PROJECT_VERSION = 1.0.19;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
@@ -994,7 +1082,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MARKETING_VERSION = 1.0.17;
+				MARKETING_VERSION = 1.0.19;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mschrage.fig;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "fig/fig-Bridging-Header.h";
@@ -1013,7 +1101,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1.0.17;
+				CURRENT_PROJECT_VERSION = 1.0.19;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
@@ -1027,7 +1115,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MARKETING_VERSION = 1.0.17;
+				MARKETING_VERSION = 1.0.19;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mschrage.fig;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "fig/fig-Bridging-Header.h";
@@ -1198,6 +1286,14 @@
 				minimumVersion = 4.0.3;
 			};
 		};
+		75CFDBE024EDE31800F00CAE /* XCRemoteSwiftPackageReference "sentry-cocoa" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/getsentry/sentry-cocoa.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.2.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -1220,6 +1316,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 758AEB6824CEA4D000A15EAF /* XCRemoteSwiftPackageReference "Starscream" */;
 			productName = Starscream;
+		};
+		75CFDBE124EDE31800F00CAE /* Sentry */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 75CFDBE024EDE31800F00CAE /* XCRemoteSwiftPackageReference "sentry-cocoa" */;
+			productName = Sentry;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

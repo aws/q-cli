@@ -90,7 +90,10 @@ class WebViewController: NSViewController, NSWindowDelegate {
         effect.state = .active
         effect.material = .mediumLight
         effect.maskImage = _maskImage(cornerRadius: 5)
-        self.view = effect;
+        
+        
+        self.view = effect// NSView(frame: .zero);
+//         view.setValue(false, forKey: "drawsBackground")
         self.view.postsFrameChangedNotifications = true
         self.view.postsBoundsChangedNotifications = true
         
@@ -99,7 +102,6 @@ class WebViewController: NSViewController, NSWindowDelegate {
 
     }
     override func viewDidAppear() {
-
 //        blur(view:self.view)
 
         
@@ -301,7 +303,7 @@ extension WebViewController: WebBridgeEventListener {
     
     
     @objc func insertCommandInTerminal(_ notification: Notification) {
-        ShellBridge.injectStringIntoTerminal(notification.object as! String, runImmediately: false, completion: {
+        ShellBridge.injectStringIntoTerminal2(notification.object as! String, runImmediately: false, clearLine: false, completion: {
             if let currentMouseLocation = self.mouseLocation {
                print("mouseLocation:", currentMouseLocation)
                print("mouseInWindow", self.view.bounds.contains(currentMouseLocation))
@@ -313,7 +315,7 @@ extension WebViewController: WebBridgeEventListener {
     }
     
     @objc func executeCommandInTerminal(_ notification: Notification) {
-        ShellBridge.injectStringIntoTerminal(notification.object as! String, runImmediately: true, completion: {
+        ShellBridge.injectStringIntoTerminal2(notification.object as! String, runImmediately: true, completion: {
             if let currentMouseLocation = self.mouseLocation {
                print("mouseLocation:", currentMouseLocation)
                print("mouseInWindow", self.view.bounds.contains(currentMouseLocation))
@@ -338,6 +340,10 @@ extension WebViewController: WebBridgeEventListener {
 }
 
 extension WebViewController: ShellBridgeEventListener, PseudoTerminalEventDelegate {
+    func currentDirectoryDidChange(_ notification: Notification) {
+        
+    }
+    
     @objc func recievedDataFromPty(_ notification: Notification) {
         if let msg = notification.object as? PtyMessage {
             WebBridge.callback(handler: msg.handleId, value: msg.output, webView: self.webView)
@@ -527,6 +533,11 @@ class WebView : WKWebView {
     var configureEnvOnLoad: (() -> Void)?
     var defaultURL: URL? = Remote.baseURL.appendingPathComponent("sidebar")
     private var dragShouldRepositionWindow = false
+    var drawsBackground: Bool = true {
+        didSet {
+            self.setValue(self.drawsBackground, forKey: "drawsBackground")
+        }
+    }
     
 //    override var intrinsicContentSize: NSSize {
 //        get {
@@ -540,12 +551,13 @@ class WebView : WKWebView {
         }
     }
 
-    override func shouldDelayWindowOrdering(for event: NSEvent) -> Bool {
-        return true
-    }
+//    override func shouldDelayWindowOrdering(for event: NSEvent) -> Bool {
+//        return true
+//    }
 
     override init(frame: CGRect, configuration: WKWebViewConfiguration) {
         super.init(frame: frame, configuration: configuration)
+//        self.setValue(false, forKey: "drawsBackground")
         
         //Mozilla/5.0 (iPhone; CPU iPhone OS 13_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/83.0.4103.88 Mobile/15E148 Safari/604.1 FigBrowser/\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0")"
         NotificationCenter.default.addObserver(self, selector: #selector(requestStopMonitoringMouseEvents(_:)), name: .requestStopMonitoringMouseEvents, object: nil)
@@ -577,7 +589,7 @@ class WebView : WKWebView {
     override func mouseDown(with event: NSEvent) {
        NSApp.preventWindowOrdering()
        super.mouseDown(with: event)
-        
+        return
         let loc = event.locationInWindow;
         let height = self.window!.frame.height;
         if (loc.y > height - 28) {
@@ -605,9 +617,12 @@ class WebView : WKWebView {
         }
         if (trackMouse && !NSWorkspace.shared.frontmostApplication!.isFig && window.positioning == CompanionWindow.defaultPassivePosition) {
             print("current frontmost application \(NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "")")
-
+            
+            self.evaluateJavaScript("fig.mouseEntered()", completionHandler: nil)
             print("Attempting to activate fig")
-            WindowManager.shared.windowServiceProvider.takeFocus()
+            if (Defaults.triggerSidebarWithMouse) {
+                WindowManager.shared.windowServiceProvider.takeFocus()
+            }
 
 //            NSRunningApplication.current.activate(options: .activateIgnoringOtherApps)
         }
@@ -622,8 +637,9 @@ class WebView : WKWebView {
             print("current frontmost application \(NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "")")
             print("Attempting to activate previous app \( ShellBridge.shared.previousFrontmostApplication?.bundleIdentifier ?? "<none>")")
 //            ShellBridge.shared.previousFrontmostApplication?.activate(options: .init())
-            WindowManager.shared.windowServiceProvider.returnFocus()
-
+            if (Defaults.triggerSidebarWithMouse) {
+                WindowManager.shared.windowServiceProvider.returnFocus()
+            }
 
         }
     }
@@ -705,6 +721,14 @@ class WebView : WKWebView {
         WKWebsiteDataStore.default().removeData(ofTypes: websiteDataTypes as! Set<String>, modifiedSince: date, completionHandler:{ })
     }
     
+    // click through https://stackoverflow.com/questions/128015/make-osx-application-respond-to-first-mouse-click-when-not-focused/129148
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+        return true
+    }
+    
+//    override func shouldDelayWindowOrdering(for event: NSEvent) -> Bool {
+//        return false
+//    }
     
 }
 

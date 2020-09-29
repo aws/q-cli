@@ -30,6 +30,9 @@ class Defaults {
         set(value) {
             UserDefaults.standard.set(value.rawValue, forKey: "build")
             UserDefaults.standard.synchronize()
+            WindowManager.shared.createSidebar()
+            WindowManager.shared.createAutocomplete()
+
         }
     }
     
@@ -98,6 +101,91 @@ class Defaults {
         
         set(token) {
             UserDefaults.standard.set(token, forKey: "domainToken")
+            UserDefaults.standard.synchronize()
+        }
+    }
+    
+    static var defaultActivePosition: CompanionWindow.OverlayPositioning {
+        get {
+             
+            return  UserDefaults.standard.bool(forKey: "updatedDefaultActivePosition") ? CompanionWindow.OverlayPositioning(rawValue: UserDefaults.standard.integer(forKey: "defaultActivePosition")) ?? .outsideRight :  .outsideRight
+        }
+        
+        set(id) {
+            UserDefaults.standard.set(id.rawValue, forKey: "defaultActivePosition")
+            UserDefaults.standard.synchronize()
+        }
+    }
+    
+    static var shouldTrackTargetWindow: Bool {
+        get {
+            return
+                UserDefaults.standard.bool(forKey: "shouldTrackTargetWindow")
+        }
+        
+        set(token) {
+            UserDefaults.standard.set(token, forKey: "shouldTrackTargetWindow")
+            UserDefaults.standard.synchronize()
+        }
+    }
+    
+    static var clearExistingLineOnTerminalInsert: Bool {
+        get {
+            return
+                UserDefaults.standard.bool(forKey: "clearExistingLineOnTerminalInsert")
+        }
+        
+        set(token) {
+            UserDefaults.standard.set(token, forKey: "clearExistingLineOnTerminalInsert")
+            UserDefaults.standard.synchronize()
+        }
+    }
+    
+    static var triggerSidebarWithMouse: Bool {
+        get {
+            return
+                UserDefaults.standard.bool(forKey: "triggerSidebarWithMouse")
+        }
+        
+        set(token) {
+            UserDefaults.standard.set(token, forKey: "triggerSidebarWithMouse")
+            UserDefaults.standard.synchronize()
+        }
+    }
+    
+    static var useAutocomplete: Bool {
+        get {
+            return
+                UserDefaults.standard.bool(forKey: "useAutocomplete")
+        }
+        
+        set(flag) {
+            UserDefaults.standard.set(flag, forKey: "useAutocomplete")
+            UserDefaults.standard.synchronize()
+        }
+
+    }
+    
+    static var playSoundWhenContextIsLost: Bool {
+           get {
+               return
+                   UserDefaults.standard.bool(forKey: "playSoundWhenContextIsLost")
+           }
+           
+           set(flag) {
+               UserDefaults.standard.set(flag, forKey: "playSoundWhenContextIsLost")
+               UserDefaults.standard.synchronize()
+           }
+
+       }
+    
+    static var versionAtPreviousLaunch: String? {
+        get {
+            return  UserDefaults.standard.string(forKey: "versionAtPreviousLaunch")
+        }
+        
+        set(version){
+            UserDefaults.standard.set(version, forKey: "playSoundWhenContextIsLost")
             UserDefaults.standard.synchronize()
         }
     }
