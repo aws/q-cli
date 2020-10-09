@@ -163,7 +163,8 @@ class WindowServer : WindowService {
     //https://stackoverflow.com/questions/853833/how-can-my-app-detect-a-change-to-another-apps-window
     @objc func setPreviousWindow() {
         // don't set null when null
-        if let window = self.topmostWhitelistedWindow() {
+        if let window = AXWindowServer.shared.whitelistedWindow
+        {//self.topmostWhitelistedWindow() {
             self.previousWindow = window
         }
     }
@@ -238,12 +239,19 @@ extension ExternalApplication : App {
 }
 extension NSRunningApplication : App {}
 
+typealias ExternalWindowHash = String
+
 class ExternalWindow {
     let frame: NSRect
     let windowId: CGWindowID
     let windowLevel: CGWindowLevel?
     let app: App
     let accesibilityElement: AXUIElement?
+    var lastTabId: String? {
+        get {
+            return ShellHookManager.shared.tabs[self.windowId];
+        }
+    }
     
     init?(raw: [String: Any], accesibilityElement: AXUIElement? = nil) {
         guard let pid = raw["kCGWindowOwnerPID"] as? pid_t else {
@@ -347,6 +355,10 @@ class ExternalWindow {
         }
     }
     
+    var hash: ExternalWindowHash {
+        return "\(self.windowId)/\(self.lastTabId ?? "")"
+    }
+    
 }
 
 extension ExternalWindow: Hashable {
@@ -355,7 +367,7 @@ extension ExternalWindow: Hashable {
        }
        
        static func ==(lhs: ExternalWindow, rhs: ExternalWindow) -> Bool {
-         return lhs.windowId == rhs.windowId
+        return lhs.windowId == rhs.windowId
        }
 }
 

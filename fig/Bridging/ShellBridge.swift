@@ -17,10 +17,14 @@ protocol ShellBridgeEventListener {
     
     func recievedDataFromPty(_ notification: Notification)
     func currentDirectoryDidChange(_ notification: Notification)
+    func currentTabDidChange(_ notification: Notification)
+    func startedNewTerminalSession(_ notification: Notification)
 
 }
 
 extension Notification.Name {
+    static let startedNewTerminalSession = Notification.Name("startedNewTerminalSession")
+    static let currentTabDidChange = Notification.Name("currentTabDidChange")
     static let currentDirectoryDidChange = Notification.Name("currentDirectoryDidChange")
     static let recievedDataFromPipe = Notification.Name("recievedDataFromPipe")
     static let recievedUserInputFromTerminal = Notification.Name("recievedUserInputFromTerminal")
@@ -310,7 +314,7 @@ class ShellBridge {
 //        WindowServer.shared.returnFocus()
         if (NSWorkspace.shared.frontmostApplication?.isFig ?? false) {
             WindowServer.shared.returnFocus()
-            Timer.delayWithSeconds(0.1) {
+            Timer.delayWithSeconds(0.15) {
                 if (clearLine) {
                       self.simulate(keypress: .ctrlE)
                       self.simulate(keypress: .ctrlU)
@@ -386,6 +390,8 @@ class ShellBridge {
         }
 //            ShellBridge.shared.previousFrontmostApplication?.activate(options: .activateIgnoringOtherApps)
         NotificationCenter.default.post(name: .requestStopMonitoringMouseEvents, object: nil)
+        let state = Defaults.useAutocomplete
+        Defaults.useAutocomplete = false
         print("Stop monitoring mouse")
 //        NSApp.deactivate()
             Timer.delayWithSeconds(0.2) {
@@ -411,6 +417,8 @@ class ShellBridge {
                 self.simulate(keypress: .cmdV)
                 print("CMD-V")
                 Timer.delayWithSeconds(0.1) {
+                            Defaults.useAutocomplete = state
+
                             if (runImmediately) {
                                 print("ENTER")
                                 self.simulate(keypress: .enter)
@@ -775,6 +783,12 @@ extension ShellBridge {
             completion(true)
             return
         }
+        
+        // move analytics off of hotpath
+//        DispatchQueue.global(qos: .background).async {
+//            TelemetryProvider.post(event: .promptedForAXPermission, with: [:])
+//        }
+
         
         NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!)
         

@@ -6,17 +6,22 @@
 //  Copyright © 2020 Matt Schrage. All rights reserved.
 //
 
-import Foundation
+import Cocoa
 
 protocol TelemetryService {
     static func obscure(_ input: String) -> String
-    static func post(event: TelemetryEvent, with payload: Dictionary<String, String>)
+    static func post(event: TelemetryEvent, with payload: Dictionary<String, String>, completion: (() -> Void)?)
 }
 
 enum TelemetryEvent: String {
     case ranCommand = "Ran CLI command"
     case selectedShortcut = "Selected a Shortcut"
     case viaJS = "Event via JS"
+    case updatedApp = "Updated App"
+    case promptedForAXPermission = "Prompted for AX Permission"
+    case toggledAutocomplete = "Toggled Autocomplete"
+    case toggledSidebar = "Toggled Sidebar"
+    case quitApp = "Quit App"
 
 }
 
@@ -25,7 +30,7 @@ class TelemetryProvider: TelemetryService {
         return String(input.map{ $0.isLetter ? "x" : $0 }.map{ $0.isNumber ? "0" : $0 })
     }
     
-    static func post(event: TelemetryEvent, with payload: Dictionary<String, String>) {
+    static func post(event: TelemetryEvent, with payload: Dictionary<String, String>, completion: (() -> Void)? = nil) {
         
         guard Defaults.isProduction else {
             print("Not logging CLI usage when not in production.")
@@ -51,9 +56,16 @@ class TelemetryProvider: TelemetryService {
         request.httpBody = json
         request.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
 
-        
-        let task = URLSession.shared.dataTask(with: request)
+        //URLSession.shared.dataTask(with: request)
+        let task = URLSession.shared.dataTask(with: request) { (data, res, err) in
+            if let handler = completion {
+                handler()
+            }
+        }
+
         task.resume()
+        
+       
     }
     
     

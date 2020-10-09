@@ -11,7 +11,7 @@ import Cocoa
 class KeystrokeBuffer : NSObject {
     static let shared = KeystrokeBuffer()
     
-    var hazy: Bool = true {
+    var hazy: Bool = false {
         didSet {
             cursor = 0
             index = nil
@@ -82,6 +82,12 @@ class KeystrokeBuffer : NSObject {
                     guard buffer != nil, index != nil else { break }
                     buffer!.insert(contentsOf: pasteboard, at: index!)
                     index = buffer!.index(index!, offsetBy: pasteboard.count, limitedBy: buffer!.endIndex)
+                    // Check if text is insert with Return key
+//                    if let tail = pasteboard.last, tail == "\n" {
+//                        buffer = nil
+//                        hazy = true
+//                        return nil
+//                    }
                 }
                 
                 exit = true
@@ -148,7 +154,7 @@ class KeystrokeBuffer : NSObject {
         case (Keycode.delete, withoutControl),
              (Keycode.h, withControl):
             guard buffer != nil, index != nil, index != buffer!.startIndex else { break }
-            print("xterm:", String(buffer!.split(separator: "\n").last!))
+//            print("xterm:", String(buffer!.split(separator: "\n").last!))
             index = buffer!.index(before: index!)
             buffer!.remove(at: index!)
             print("xterm: delete character")

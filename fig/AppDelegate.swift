@@ -47,6 +47,8 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 //        UserDefaults.standard.removePersistentDomain(forName: domain)
 //        UserDefaults.standard.synchronize()
 //        WebView.deleteCache()
+
+        handleUpdateIfNeeded()
         Defaults.useAutocomplete = true
             
         let hasLaunched = UserDefaults.standard.bool(forKey: "hasLaunched")
@@ -61,6 +63,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             let onboardingViewController = WebViewController()
             onboardingViewController.webView?.defaultURL = nil
             onboardingViewController.webView?.loadBundleApp("landing")
+            onboardingViewController.webView?.dragShouldRepositionWindow = true
 //            onboardingViewController.webView?.loadRemoteApp(at: URL(string: "https://app.withfig.com/onboarding/landing.html")!)
 
             onboardingWindow = OnboardingWindow(viewController: onboardingViewController)
@@ -106,103 +109,40 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         let statusBar = NSStatusBar.system
         statusBarItem = statusBar.statusItem(
                withLength: NSStatusItem.squareLength)
-           statusBarItem.button?.title = "🍐"
+        statusBarItem.button?.title = "🍐"
         statusBarItem.button?.image = NSImage(imageLiteralResourceName: "statusbar@2x.png")
         statusBarItem.button?.image?.isTemplate = true
 
-           let statusBarMenu = NSMenu(title: "fig")
-           statusBarItem.menu = statusBarMenu
-           
-//           statusBarMenu.addItem(
-//               withTitle: "Send string",
-//               action: #selector(AppDelegate.pasteStringToTerminal),
-//               keyEquivalent: "")
-//
-//            statusBarMenu.addItem(
-//            withTitle: "Check Windows",
-//            action: #selector(AppDelegate.checkWinows),
-//            keyEquivalent: "")
-//
-//            statusBarMenu.addItem(
-//             withTitle: "Frontmost App",
-//             action: #selector(AppDelegate.frontmostApplication),
-//             keyEquivalent: "")
-//
-//            statusBarMenu.addItem(
-//             withTitle: "Send string if active",
-//             action: #selector(AppDelegate.sendStringIfTerminalActive),
-//             keyEquivalent: "")
-//
-//            statusBarMenu.addItem(
-//             withTitle: "Copy 'Helloworld' to Pastboard",
-//             action: #selector(AppDelegate.copyToPasteboard),
-//             keyEquivalent: "")
-//
-//        statusBarMenu.addItem(
-//         withTitle: "Run 'script -q -t 0 <file>.fig' as User",
-//         action: #selector(AppDelegate.runScriptCmd),
-//         keyEquivalent: "")
-//
-//        statusBarMenu.addItem(
-//         withTitle: "Run 'tail -F <file>.fig' as App",
-//         action: #selector(AppDelegate.runTailCmd),
-//         keyEquivalent: "")
-//
-//        statusBarMenu.addItem(
-//         withTitle: "Run 'exit' as User",
-//         action: #selector(AppDelegate.runExitCmd),
-//         keyEquivalent: "")
-//
-//        statusBarMenu.addItem(
-//         withTitle: "Log all window",
-//         action: #selector(AppDelegate.allWindows),
-//         keyEquivalent: "")
-//
-//        statusBarMenu.addItem(
-//         withTitle: "Top Terminal Window Bounds",
-//         action: #selector(AppDelegate.getTopTerminalWindow),
-//         keyEquivalent: "")
-//
-//        statusBarMenu.addItem(
-//         withTitle: "Update Overlay Style",
-//         action: #selector(AppDelegate.updateOverlayStyle),
-//         keyEquivalent: "")
-//
-        
-        
-//        statusBarMenu.addItem(
-//         withTitle: "Kill WebSocket Server",
-//         action: #selector(AppDelegate.killSocketServer),
-//         keyEquivalent: "")
-    
-//        statusBarMenu.addItem(
-//         withTitle: "Bring Terminal Window",
-//         action: #selector(AppDelegate.terminalWindowToFront),
-//         keyEquivalent: "")
-        statusBarMenu.addItem(
-         withTitle: "Add CLI Tool",
-         action: #selector(AppDelegate.addCLI),
-         keyEquivalent: "")
-        statusBarMenu.addItem(
-         withTitle: "Prompt for Accessibility Access",
-         action: #selector(AppDelegate.promptForAccesibilityAccess),
-         keyEquivalent: "")
-//        statusBarMenu.addItem(
-//         withTitle: "Toggle Visibility",
-//         action: #selector(AppDelegate.toggleVisibility),
-//         keyEquivalent: "i")
+        let statusBarMenu = NSMenu(title: "fig")
+        statusBarItem.menu = statusBarMenu
+
+
         statusBarMenu.addItem(NSMenuItem.separator())
         let sidebar = statusBarMenu.addItem(
          withTitle: "Sidebar",
          action: #selector(AppDelegate.toggleSidebar(_:)),
          keyEquivalent: "")
+        sidebar.indentationLevel = 1
         sidebar.state = Defaults.showSidebar ? .on : .off
 
         let autocomplete = statusBarMenu.addItem(
-         withTitle: "Autocomplete",
+         withTitle: "Autocomplete (βeta)",
          action: #selector(AppDelegate.toggleAutocomplete(_:)),
          keyEquivalent: "")
         autocomplete.state = Defaults.useAutocomplete ? .on : .off
+        autocomplete.indentationLevel = 1
+        statusBarMenu.addItem(NSMenuItem.separator())
+        
+        statusBarMenu.addItem(
+         withTitle: "📖 Fig Docs",
+         action: #selector(AppDelegate.viewDocs),
+         keyEquivalent: "")
+        
+        let slack = statusBarMenu.addItem(
+         withTitle: "Join Fig Community",
+         action: #selector(AppDelegate.inviteToSlack),
+         keyEquivalent: "")
+        slack.image = NSImage(named: NSImage.Name("Slack"))//.resized(to: NSSize(width: 16, height: 16))
         
         statusBarMenu.addItem(NSMenuItem.separator())
 
@@ -214,30 +154,50 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
          action: #selector(AppDelegate.checkForUpdates),
          keyEquivalent: "")
         statusBarMenu.addItem(NSMenuItem.separator())
+        let debugMenu = NSMenu(title: "debug")
+        debugMenu.addItem(
+         withTitle: "Add CLI Tool",
+         action: #selector(AppDelegate.addCLI),
+         keyEquivalent: "")
+        debugMenu.addItem(
+         withTitle: "Prompt for Accessibility Access",
+         action: #selector(AppDelegate.promptForAccesibilityAccess),
+         keyEquivalent: "")
+        
+        if (!Defaults.isProduction) {
+               debugMenu.addItem(
+                withTitle: "Keyboard",
+                action: #selector(AppDelegate.getKeyboardLayout),
+                keyEquivalent: "")
+               debugMenu.addItem(
+                withTitle: "AXObserver",
+                action: #selector(AppDelegate.addAccesbilityObserver),
+                keyEquivalent: "")
+               debugMenu.addItem(
+                withTitle: "Get Selected Text",
+                action: #selector(AppDelegate.getSelectedText),
+                keyEquivalent: "")
+           }
+        
+        let debug = statusBarMenu.addItem(withTitle: "Debug", action: nil, keyEquivalent: "")
+        debug.submenu = debugMenu
+        
+        statusBarMenu.addItem(NSMenuItem.separator())
         statusBarMenu.addItem(
          withTitle: "Quit Fig",
          action: #selector(AppDelegate.quit),
          keyEquivalent: "")
 
-        if (!Defaults.isProduction) {
-            statusBarMenu.addItem(
-             withTitle: "Keyboard",
-             action: #selector(AppDelegate.getKeyboardLayout),
-             keyEquivalent: "")
-            statusBarMenu.addItem(
-             withTitle: "AXObserver",
-             action: #selector(AppDelegate.addAccesbilityObserver),
-             keyEquivalent: "")
-            statusBarMenu.addItem(
-             withTitle: "Get Selected Text",
-             action: #selector(AppDelegate.getSelectedText),
-             keyEquivalent: "")
-        }
+       
         
         toggleLaunchAtStartup()
         
     }
-    
+
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        return .terminateNow
+    }
+        
     func dialogOKCancel(question: String, text: String, prompt:String = "OK") -> Bool {
         let alert = NSAlert()
         alert.messageText = question
@@ -250,12 +210,13 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 
     func handleUpdateIfNeeded() {
         guard let previous = Defaults.versionAtPreviousLaunch else {
-            print("First launch!")
+            Defaults.versionAtPreviousLaunch = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
+            print("Update: First launch!")
             return
         }
         
         guard let current = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String else {
-            print("No version detected.")
+            print("Update: No version detected.")
             return
         }
         
@@ -266,10 +227,14 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             // look for $BUNDLE/upgrade/$NEW
             let general = Bundle.main.path(forResource: "\(current)", ofType: "sh", inDirectory: "upgrade")
             
-            let script = specific ?? general ?? ""
+            let script = specific ?? general
+            if let script = script {
+                print("Update: Running script '\(script)' to upgrade to version \(current)")
+                let _ = "sh \(script)".runAsCommand()
+            }
             
-            let out = "sh \(script)".runAsCommand()
-            print(out)
+            TelemetryProvider.post(event: .updatedApp, with: ["script": script ?? "<none>"])
+
         }
         
         Defaults.versionAtPreviousLaunch = current
@@ -321,6 +286,14 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 //        return  String(utf16CodeUnits: nameBuffer, count: nameLength)
 //    }
 //
+    @objc func inviteToSlack() {
+        NSWorkspace.shared.open(URL(string: "https://join.slack.com/t/figcommunity/shared_invite/zt-hhwnfen5-Mn1iWrcQAOSWQj87_K_Png")!)
+    }
+    
+    @objc func viewDocs() {
+          NSWorkspace.shared.open(URL(string: "https://docs.withfig.com")!)
+    }
+
     @objc func getKeyboardLayout() {
         let v = KeyboardLayout.shared.keyCode(for: "V")
         let e = KeyboardLayout.shared.keyCode(for: "E")
@@ -338,9 +311,15 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         sender.state = Defaults.useAutocomplete ? .on : .off
 //        KeypressProvider.shared.clean()
         WindowManager.shared.createAutocomplete()
+        TelemetryProvider.post(event: .toggledAutocomplete, with: ["status" : Defaults.useAutocomplete ? "on" : "off"])
+
         if (Defaults.useAutocomplete) {
             KeypressProvider.shared.registerKeystrokeHandler()
-            KeypressProvider.shared.window = WindowServer.shared.topmostWhitelistedWindow()
+            if let general = Bundle.main.path(forResource: "1.0.21", ofType: "sh", inDirectory: "upgrade") {
+                let _ = "sh \(general)".runAsCommand()
+            }
+
+
         }
 
 //        WindowManager.shared.autocomplete?.webView?.loadRemoteApp(at: URL(string:"http://localhost:3000/autocomplete/")!)
@@ -349,19 +328,19 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     @objc func  getSelectedText() {
         
 
-        ShellBridge.registerKeyInterceptor()
-        return
+//        ShellBridge.registerKeyInterceptor()
+//        return
             
             (WindowManager.shared.sidebar?.webView?.loadBundleApp("autocomplete"))!
 
         NSEvent.addGlobalMonitorForEvents(matching: .keyUp) { (event) in
             print("keylogger:", event.characters, event.keyCode)
-        let touple = KeystrokeBuffer.shared.handleKeystroke(event: event)
-            guard touple != nil else {
-                WindowManager.shared.requestWindowUpdate()
-                return
-                
-            }
+//        let touple = KeystrokeBuffer.shared.handleKeystroke(event: event)
+//            guard touple != nil else {
+//                WindowManager.shared.requestWindowUpdate()
+//                return
+//
+//            }
         let systemWideElement = AXUIElementCreateSystemWide()
         var focusedElement : AnyObject?
 
@@ -373,26 +352,31 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             let selectedRangeError = AXUIElementCopyAttributeValue(focusedElement as! AXUIElement, kAXSelectedTextRangeAttribute as CFString, &selectedRangeValue)
                         
             if (selectedRangeError == .success){
-                var selectedRange : CFRange?
-                AXValueGetValue(selectedRangeValue as! AXValue, AXValueType(rawValue: kAXValueCFRangeType)!, &selectedRange)
+                var selectedRange = CFRange()
+                AXValueGetValue(selectedRangeValue as! AXValue, .cfRange, &selectedRange)
                 var selectRect = CGRect()
                 var selectBounds : AnyObject?
+//                print("selected", selectedRange)
+//                print("selected", selectedRange.location, selectedRange.length)
+                var updatedRange = CFRangeMake(selectedRange.location, 1)
+                print("selected", selectedRange, updatedRange)
+
+                withUnsafeMutablePointer(to: &updatedRange) { (ptr) in
+                    let updatedRangeValue = AXValueCreate(AXValueType(rawValue: kAXValueCFRangeType)!, ptr)
+                    let selectedBoundsError = AXUIElementCopyParameterizedAttributeValue(focusedElement as! AXUIElement, kAXBoundsForRangeParameterizedAttribute as CFString, updatedRangeValue!, &selectBounds)
+                    if (selectedBoundsError == .success){
+                        AXValueGetValue(selectBounds as! AXValue, .cgRect, &selectRect)
+                        //do whatever you want with your selectRect
+                        print("selected", selectRect)
+                        WindowManager.shared.sidebar?.setOverlayFrame(selectRect)
+
+                    }
+                }
                 
                 //kAXInsertionPointLineNumberAttribute
                 //kAXRangeForLineParameterizedAttribute
 
-                let selectedBoundsError = AXUIElementCopyParameterizedAttributeValue(focusedElement as! AXUIElement, kAXBoundsForRangeParameterizedAttribute as CFString, selectedRangeValue!, &selectBounds)
-                if (selectedBoundsError == .success){
-                    AXValueGetValue(selectBounds as! AXValue, .cgRect, &selectRect)
-                    //do whatever you want with your selectRect
-                    print("selected", selectRect)
-                    let height:CGFloat = 0 //140
-                    let translatedOrigin = NSPoint(x: selectRect.origin.x, y: (NSScreen.main?.frame.height)! - selectRect.origin.y /*- selectRect.height*/ + height + 5)
-                    if let (buffer, idx) = touple {
-                        WindowManager.shared.sidebar?.webView?.evaluateJavaScript("try{ fig.autocomplete(`\(buffer)`, -1) } catch(e){} ", completionHandler: nil)
-                    }
-                    WindowManager.shared.sidebar?.setOverlayFrame(NSRect(origin: translatedOrigin, size: CGSize(width: 200, height: height)))//140
-                }
+
             }
         }
         }
@@ -464,6 +448,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         sender.state = Defaults.showSidebar ? .on : .off
         WindowManager.shared.requestWindowUpdate()
         
+        TelemetryProvider.post(event: .toggledSidebar, with: ["status" : Defaults.useAutocomplete ? "on" : "off"])
     }
     
     @objc func terminalWindowToFront() {
@@ -575,11 +560,12 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     }
     
     @objc func quit() {
-        ShellBridge.shared.stopWebSocketServer {
+        TelemetryProvider.post(event: .quitApp, with: [:]) {
             DispatchQueue.main.async {
-                NSApp.terminate(self)
-            }
+                 NSApp.terminate(self)
+             }
         }
+
     }
     
     @objc func promptForAccesibilityAccess() {

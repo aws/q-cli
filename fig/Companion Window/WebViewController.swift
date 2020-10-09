@@ -315,7 +315,7 @@ extension WebViewController: WebBridgeEventListener {
     }
     
     @objc func executeCommandInTerminal(_ notification: Notification) {
-        ShellBridge.injectStringIntoTerminal2(notification.object as! String, runImmediately: true, completion: {
+        ShellBridge.injectStringIntoTerminal(notification.object as! String, runImmediately: true, completion: {
             if let currentMouseLocation = self.mouseLocation {
                print("mouseLocation:", currentMouseLocation)
                print("mouseInWindow", self.view.bounds.contains(currentMouseLocation))
@@ -340,6 +340,14 @@ extension WebViewController: WebBridgeEventListener {
 }
 
 extension WebViewController: ShellBridgeEventListener, PseudoTerminalEventDelegate {
+    func startedNewTerminalSession(_ notification: Notification) {
+        
+    }
+    
+    func currentTabDidChange(_ notification: Notification) {
+        
+    }
+    
     func currentDirectoryDidChange(_ notification: Notification) {
         
     }
@@ -532,7 +540,8 @@ class WebView : WKWebView {
     var onNavigate: [(() -> Void)] = []
     var configureEnvOnLoad: (() -> Void)?
     var defaultURL: URL? = Remote.baseURL.appendingPathComponent("sidebar")
-    private var dragShouldRepositionWindow = false
+    var dragShouldRepositionWindow = false
+    private var dragging = false
     var drawsBackground: Bool = true {
         didSet {
             self.setValue(self.drawsBackground, forKey: "drawsBackground")
@@ -589,23 +598,25 @@ class WebView : WKWebView {
     override func mouseDown(with event: NSEvent) {
        NSApp.preventWindowOrdering()
        super.mouseDown(with: event)
-        return
+        
+        guard self.dragShouldRepositionWindow else { return }
+        
         let loc = event.locationInWindow;
         let height = self.window!.frame.height;
         if (loc.y > height - 28) {
-            self.dragShouldRepositionWindow = true;
+            self.dragging = true;
         }
     }
     
     override func mouseUp(with event: NSEvent) {
         super.mouseUp(with: event)
-        dragShouldRepositionWindow = false
+        dragging = false
     }
     
     override func mouseDragged(with event: NSEvent) {
         super.mouseDragged(with: event)
         
-        if (self.dragShouldRepositionWindow) {
+        if (self.dragging) {
             self.window?.performDrag(with: event)
         }
     }

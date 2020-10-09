@@ -185,7 +185,7 @@ class Defaults {
         }
         
         set(version){
-            UserDefaults.standard.set(version, forKey: "playSoundWhenContextIsLost")
+            UserDefaults.standard.set(version, forKey: "versionAtPreviousLaunch")
             UserDefaults.standard.synchronize()
         }
     }

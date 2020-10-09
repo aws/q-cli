@@ -71,7 +71,7 @@ class ShellBridgeSocketService: WebSocketService {
     }
 
     public func received(message: Data, from: WebSocketConnection) {
-        from.close(reason: .invalidDataType, description: "Chat-Server only accepts text messages")
+        from.close(reason: .invalidDataType, description: "Fig only accepts text messages")
 
         connections.removeValue(forKey: from.id)
     }
@@ -119,14 +119,27 @@ class ShellBridgeSocketService: WebSocketService {
                     case "hello":
                         self.sessionIds[msg.session] = from.id
                     case "pipe":
-                        if (msg.options?.first?.hasPrefix("bg:") ?? false) {
-                            NotificationCenter.default.post(name: .currentDirectoryDidChange, object: msg)
-                            from.send(message: "disconnect")
-
-                        } else {
-                            NotificationCenter.default.post(name: .recievedDataFromPipe, object: msg)
+                        
+                        if let subcommand = msg.options?.first {
+                            guard !subcommand.hasPrefix("bg:") else {
+                                switch subcommand {
+                                    case "bg:cd":
+                                        NotificationCenter.default.post(name: .currentDirectoryDidChange, object: msg)
+                                    case "bg:tab":
+                                        NotificationCenter.default.post(name: .currentTabDidChange, object: msg)
+                                    case "bg:init":
+                                        NotificationCenter.default.post(name: .startedNewTerminalSession, object: msg)
+                                    default:
+                                        print("Uknown background command 'fig \(subcommand)'")
+                                }
+                                    
+                                from.send(message: "disconnect")
+                                return
+                            }
                         }
-//                        from.send(message: "disconnect")
+                        
+                        NotificationCenter.default.post(name: .recievedDataFromPipe, object: msg)
+
                     case "pty":
                         if let io = msg.io {
                             if io == "i" {
@@ -139,13 +152,8 @@ class ShellBridgeSocketService: WebSocketService {
                     default:
                         print("Unhandled match from Websocket Message")
                     }
-        //            if msg.type == "pipe" {
-        //                print(msg.data)
-        //                NotificationCenter.default.post(name: .recievedDataFromPipe, object: msg)
-        //            }
                     
                     
-
                 } catch {
                     print("oops: couldn't parse '\(message)'")
                 }

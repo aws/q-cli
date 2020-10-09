@@ -282,6 +282,15 @@ let setup = function(window) {
           backspace() {
               fig.insert("fig::backspace")
           }
+      },
+      track(event, properties) {
+          var payload = { "name": event}
+          payload = Object.keys(properties).reduce((dict, key) => {
+               dict[`prop_${key}`] = JSON.stringify(properties[key])
+               return dict
+          }, payload)
+          
+          fig.private({ type: "track", data: payload})
       }
   }
     

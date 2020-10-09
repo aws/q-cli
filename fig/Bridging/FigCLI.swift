@@ -6,7 +6,7 @@
 //  Copyright © 2020 Matt Schrage. All rights reserved.
 //
 
-import Foundation
+import Cocoa
 
 class Scope {
     let session: String
@@ -568,12 +568,19 @@ class FigCLI {
                 Defaults.loggedIn = false
                 scope.webView.deleteCache()
                 FigCLI.printInTerminal(text: "→ Logging out of Fig...", scope: scope)
+                ShellBridge.shared.socketServer.send(sessionId: scope.session, command: "disconnect")
+                NSRunningApplication.current.terminate()
+                let _ = "open -b \"com.mschrage.fig\"".runAsCommand()
 
-                let _ = "osascript -e 'quit app \"Fig\"' && open -b \"com.mschrage.fig\"".runAsCommand()
+                            
+//                let _ = "open -b \"com.mschrage.fig\"".runAsCommand()
             case .restart:
                 FigCLI.printInTerminal(text: "→ Restarting Fig...", scope: scope)
+                ShellBridge.shared.socketServer.send(sessionId: scope.session, command: "disconnect")
 
-                let _ = "osascript -e 'quit app \"Fig\"' && open -b \"com.mschrage.fig\"".runAsCommand()
+                NSRunningApplication.current.terminate()
+                let _ = "open -b \"com.mschrage.fig\"".runAsCommand()
+//                let _ = "osascript -e 'quit app \"Fig\"'; open -b \"com.mschrage.fig\"".runAsCommand()
             case .build:
                 if let buildMode = Build(rawValue: scope.options.first ?? "") {
                     let msg = "→ Setting build to \(buildMode.rawValue)"
@@ -631,12 +638,12 @@ CLI to interact with Fig
 \\u001b[1mCOMMUNITY\\u001b[0m
   @user           view a user's public runbooks
   +team.com       view your team's shared runbooks
-  #chat           chat with others about a #topic
 
 \\u001b[1mLOCAL RUNBOOKS\\u001b[0m
 \(localRunbooks ?? "  (none)          no runbooks in ~/run")
 """
-                
+//  #chat           chat with others about a #topic
+
                 FigCLI.runInTerminal(script: "echo \"\(out ?? helpMessage)\"", scope: scope)
             }
         } else if (aliases.keys.contains(command)) { // user defined shortcuts

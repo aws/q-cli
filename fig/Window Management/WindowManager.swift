@@ -112,6 +112,12 @@ class WindowManager : NSObject {
     
     @objc func windowChanged(){
         updatePosition(for: .windowChanged)
+        self.autocomplete?.maxHeight = 0
+
+//        DispatchQueue.main.async {
+//            self.autocomplete?.orderOut(nil)
+//        }
+
     }
     
     @objc func deactivateApp(){
@@ -201,6 +207,12 @@ class WindowManager : NSObject {
     }
     
     func createSidebar() {
+        
+        if let sidebar = self.sidebar {
+            sidebar.close()
+            self.sidebar = nil
+        }
+        
         let web = WebViewController()
         web.webView?.defaultURL = nil
         web.webView?.loadRemoteApp(at: Remote.baseURL.appendingPathComponent("sidebar"))
@@ -213,6 +225,10 @@ class WindowManager : NSObject {
     }
     
     func createAutocomplete() {
+        if let autocomplete = self.autocomplete {
+            self.autocomplete = nil
+        }
+        
         let web = WebViewController()
         web.webView?.defaultURL = nil
 //        web.webView?.loadBundleApp("autocomplete")
@@ -247,6 +263,14 @@ class WindowManager : NSObject {
 }
 
 extension WindowManager : ShellBridgeEventListener {
+    func startedNewTerminalSession(_ notification: Notification) {
+        
+    }
+    
+    func currentTabDidChange(_ notification: Notification) {
+        
+    }
+    
     @objc func currentDirectoryDidChange(_ notification: Notification) {
         
     }
@@ -415,6 +439,11 @@ extension WindowManager : WindowManagementService {
     func shouldAppear(window: CompanionWindow, explicitlyRepositioned: Bool) -> Bool {
         window.configureWindow(for: window.positioning)
         
+        if !Defaults.loggedIn {
+            print("shouldAppear: Not logged in")
+            return false
+        }
+        
         if window.isSidebar && UserDefaults.standard.string(forKey: "sidebar") == "hidden" {
             print("shouldAppear: Is sidebar and sidebar preference is hidden.")
             return false
@@ -428,6 +457,17 @@ extension WindowManager : WindowManagementService {
         if let keyWindow = NSApp.keyWindow as? CompanionWindow, untetheredWindows.contains(keyWindow) {
             print("shouldAppear: current keywindow is undocked")
             return false
+        }
+
+        if window.isAutocompletePopup {
+            if let max = window.maxHeight, max == 0 {
+                print("shouldAppear: autocomplete should be hidden")
+                return false
+            } else {
+                print("shouldAppear: autocomplete should be shown")
+                return false
+            }
+
         }
         
         let whitelistedBundleIds = Integrations.whitelist

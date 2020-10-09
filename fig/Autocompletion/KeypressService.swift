@@ -14,7 +14,7 @@ protocol KeypressService {
     func keyBuffer(for window: ExternalWindow) -> KeystrokeBuffer
 //    func redirects(for window: ExternalWindow) -> Set<UInt16>
 
-    func getTextRect() -> CGRect?
+    func getTextRect(extendRange: Bool) -> CGRect?
     func clean()
     func addRedirect(for keycode: UInt16, in window: ExternalWindow)
     func removeRedirect(for keycode: UInt16, in window: ExternalWindow)
@@ -24,27 +24,26 @@ protocol KeypressService {
 class KeypressProvider : KeypressService {
     static let shared = KeypressProvider(windowServiceProvider: WindowServer.shared)
     let windowServiceProvider: WindowService
-    var window: ExternalWindow?
-    static let whitelist = ["com.googlecode.iterm2"]
-    var buffers: [ExternalWindow: KeystrokeBuffer] = [:]
+    static let whitelist = ["com.googlecode.iterm2", "com.apple.Terminal"]
+    var buffers: [ExternalWindowHash: KeystrokeBuffer] = [:]
     
     var handler: Any? = nil
     var tap: CFMachPort? = nil
 
     
 //    fileprivate var redirects: Set<UInt16> = []
-    var redirects: [ExternalWindow:  Set<UInt16>] = [:]
+    var redirects: [ExternalWindowHash:  Set<UInt16>] = [:]
 
     func addRedirect(for keycode: UInt16, in window: ExternalWindow) {
-        var set = redirects[window] ?? []
+        var set = redirects[window.hash] ?? []
         set.insert(keycode)
-        redirects[window] = set
+        redirects[window.hash] = set
     }
     
     func removeRedirect(for keycode: UInt16, in window: ExternalWindow) {
-        if var set = redirects[window] {
+        if var set = redirects[window.hash] {
             set.remove(keycode)
-            redirects[window] = set
+            redirects[window.hash] = set
         }
     }
     
@@ -99,7 +98,10 @@ class KeypressProvider : KeypressService {
                                                             }
                                                             return Unmanaged.passRetained(event)
                                                         }
-                                                        //WindowServer.shared.topmostWhitelistedWindow()
+                                                        // fixes slowdown when typing into Fig
+                                                        guard !(NSWorkspace.shared.frontmostApplication?.isFig ?? false) else {
+                                                            return Unmanaged.passRetained(event)
+                                                        }
                                                         guard Defaults.useAutocomplete, let window = AXWindowServer.shared.whitelistedWindow, KeypressProvider.whitelist.contains(window.bundleId ?? "") else {
                                                             return Unmanaged.passRetained(event)
                                                         }
@@ -108,21 +110,18 @@ class KeypressProvider : KeypressService {
                                                         if [.keyDown , .keyUp].contains(type) {
                                                             let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
                                                             print("eventTap", keyCode, event.getIntegerValueField(.eventTargetUnixProcessID))
-
-                                                            if (type == .keyDown && KeypressProvider.shared.redirects[window]?.contains(UInt16(keyCode)) ?? false) {
+                                                            print("eventTap", "\(window.hash)")
+                                                            if (type == .keyDown && KeypressProvider.shared.redirects[window.hash]?.contains(UInt16(keyCode)) ?? false &&
+                                                                !event.flags.contains(.maskCommand)
+) {
+                                                            
+                                                                
                                                                 print("eventTap", "Should redirect!")
-                                                            WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try{ fig.keypress(\"\(keyCode)\", \"\(window.windowId)\") } catch(e) {}", completionHandler: nil)
+                                                                WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try{ fig.keypress(\"\(keyCode)\", \"\(window.hash)\") } catch(e) {}", completionHandler: nil)
                                                                 return nil
                                                             } else {
                                                                 
                                                                 KeypressProvider.shared.handleKeystroke(event: NSEvent.init(cgEvent: event), in: window)
-//                                                                DispatchQueue.global(qos: .background).async {
-//                                                                    KeypressProvider.shared.handleKeystroke(event: NSEvent.init(cgEvent: event), in: window)
-//
-////                                                                    DispatchQueue.main.async {
-////                                                                        KeypressProvider.shared.handleKeystroke(event: NSEvent.init(cgEvent: event), in: window)
-////                                                                    }
-//                                                                }
                                                                
 
                                                             }
@@ -148,11 +147,11 @@ class KeypressProvider : KeypressService {
     }
     
     func keyBuffer(for window: ExternalWindow) -> KeystrokeBuffer {
-        if let buffer = self.buffers[window] {
+        if let buffer = self.buffers[window.hash] {
             return buffer
         } else {
             let buffer = KeystrokeBuffer()
-            self.buffers[window] = buffer
+            self.buffers[window.hash] = buffer
             return buffer
         }
     }
@@ -162,16 +161,21 @@ class KeypressProvider : KeypressService {
             let keyBuffer = self.keyBuffer(for: window)
             var active = false;
             if let event = event, event.type == NSEvent.EventType.keyDown {
-                
+                if let tty = ShellHookManager.shared.tty[window.hash] {
+                    guard tty.running?.isShell ?? true else {
+                        keyBuffer.buffer = nil
+                        return
+                    }
+                }
                 if let (buffer, index) = keyBuffer.handleKeystroke(event: event),
                     let b64 = buffer.data(using: .utf8)?.base64EncodedString() {
                     
                     
                     WindowManager.shared.autocomplete?.tetheredWindow = window
-                    WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try{ fig.autocomplete(b64DecodeUnicode(`\(b64)`), \(index), '\(window.windowId)') } catch(e){} ", completionHandler: nil)
+                    WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try{ fig.autocomplete(b64DecodeUnicode(`\(b64)`), \(index), '\(window.hash)') } catch(e){} ", completionHandler: nil)
                     active = true
                 } else {
-                    WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try{ fig.nocontext('\(window.windowId)') } catch(e){} ", completionHandler: nil)
+                    WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try{ fig.nocontext('\(window.hash)') } catch(e){} ", completionHandler: nil)
                 }
             }
             
@@ -190,7 +194,7 @@ class KeypressProvider : KeypressService {
         }
     }
     
-    func getTextRect() -> CGRect? {
+    func getTextRect(extendRange: Bool = true) -> CGRect? {
         let systemWideElement = AXUIElementCreateSystemWide()
         var focusedElement : AnyObject?
         
@@ -208,11 +212,19 @@ class KeypressProvider : KeypressService {
             return nil
         }
         
-        var selectedRange : CFRange?
-        AXValueGetValue(selectedRangeValue as! AXValue, AXValueType(rawValue: kAXValueCFRangeType)!, &selectedRange)
+        var selectedRange = CFRange()
+        AXValueGetValue(selectedRangeValue as! AXValue, .cfRange, &selectedRange)
         var selectRect = CGRect()
         var selectBounds : AnyObject?
-    
+        
+        // ensure selected text range is at least 1 - in order to find rect.
+        if (extendRange) {
+            var updatedRange = CFRangeMake(selectedRange.location, 1)
+            withUnsafeMutablePointer(to: &updatedRange) { (ptr) in
+                selectedRangeValue = AXValueCreate(.cfRange, ptr)
+            }
+        }
+
 
         let selectedBoundsError = AXUIElementCopyParameterizedAttributeValue(focusedElement as! AXUIElement, kAXBoundsForRangeParameterizedAttribute as CFString, selectedRangeValue!, &selectBounds)
         
@@ -221,11 +233,11 @@ class KeypressProvider : KeypressService {
         }
         
         AXValueGetValue(selectBounds as! AXValue, .cgRect, &selectRect)
-
-        // prevent spotlight search from recieving keypresses
-        guard selectRect.size != .zero else {
+        print("selected", selectRect)
+         //prevent spotlight search from recieving keypresses
+         guard selectRect.size.height != 30 else {
             return nil
-        }
+         }
         
         // convert Quartz coordinate system to Cocoa!
         return NSRect.init(x: selectRect.origin.x,

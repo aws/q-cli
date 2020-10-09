@@ -37,7 +37,7 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
     }
     var tetheredWindow: ExternalWindow? {
         didSet {
-            if let id = tetheredWindowId {
+            if let id = self.tetheredWindow?.hash {
                 self.webView?.evaluateJavaScript("fig.windowId = '\(id)'", completionHandler: nil)
             }
         }
@@ -235,8 +235,9 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
                  let inner = targetWindowFrame.insetBy(dx: 30, dy: 45)
                  return NSRect(x: inner.origin.x, y: inner.origin.y - inner.height, width: inner.width, height: 100)
              case .outsideRight:
-                 let outerFrame = targetWindowFrame.insetBy(dx: -300, dy: 0).divided(atDistance: 300, from: .maxXEdge).slice
-                 
+                let outerFrame = targetWindowFrame.insetBy(dx: -300, dy: 0).divided(atDistance: 300, from: .maxXEdge).slice
+                
+
                  let intersection = screen.intersection(outerFrame)
                  var x = outerFrame.origin.x
                  if (intersection.width != outerFrame.width) {
@@ -262,7 +263,7 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
                   x -= outerFrame.width - intersection.width
                }
                
-               return NSRect(origin: NSPoint(x: x, y: outerFrame.origin.y), size: outerFrame.size)
+                return NSRect(origin: NSPoint(x: x, y: outerFrame.origin.y), size: outerFrame.size)
              case .fullscreen:
                 return targetWindowFrame
              case .spotlight:
@@ -274,7 +275,7 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
                 let offset = max((t_size.width - width) / 2, 0)
                 
                 let quarter = max(t_size.width * 0.25 - minWidth / 2.0, 0)
-                return NSRect(origin: NSPoint(x: targetWindowFrame.origin.x + offset, y: targetWindowFrame.origin.y), size: CGSize.init(width: width, height: height))
+                return NSRect(origin: NSPoint(x: targetWindowFrame.origin.x + offset, y: targetWindowFrame.origin.y - 23), size: CGSize.init(width: width, height: height))
              case .fullscreenInset:
                 let inset: CGFloat = 23
                 return targetWindowFrame.insetBy(dx: 0, dy: inset/2).offsetBy(dx: 0, dy: -1 * inset * 1.5)
@@ -596,8 +597,14 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
             
             if (forceUpdate || !targetFrame.equalTo(priorTargetFrame)) {
                 priorTargetFrame = targetFrame
+                let candidates = NSScreen.screens.sorted { (a, b) -> Bool in
+                    let aSize = a.frame.intersection(targetFrame).size
+                    let bSize = b.frame.intersection(targetFrame).size
+                    return aSize.width * aSize.height >= bSize.width * bSize.height
+
+                }
                 let frame = self.positioning.frame(targetWindowFrame: targetFrame,
-                                                   screen: NSScreen.main!.frame)
+                                                   screen: candidates.first!.frame)
 
                 setOverlayFrame(frame)
     
@@ -611,6 +618,12 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
                     }
                     let targetFrame = topmostWindowFrameFor(app)
                     priorTargetFrame = targetFrame
+//                    let candidates = NSScreen.screens.sorted { (a, b) -> Bool in
+//                        let aSize = a.frame.intersection(targetFrame).size
+//                        let bSize = b.frame.intersection(targetFrame).size
+//                        return aSize.width * aSize.height >= bSize.width * bSize.height
+//
+//                    }
                     let frame = self.positioning.frame(targetWindowFrame: targetFrame,
                                                        screen: NSScreen.main!.frame)
                     setOverlayFrame(frame)
@@ -709,7 +722,7 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
               let point = AXValueGetters.asCGPoint(value: position as! AXValue)
               let bounds = AXValueGetters.asCGSize(value: size as! AXValue)
               
-              let titleBarHeight:CGFloat = 23.0;
+              let titleBarHeight:CGFloat = 0//23.0;
             
 //            print("TopmostFrame for \(app.bundleIdentifier ?? "")", NSScreen.main!.frame, NSScreen.main!.visibleFrame, point, bounds)
 

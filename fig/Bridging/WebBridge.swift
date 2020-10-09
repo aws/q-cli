@@ -732,6 +732,12 @@ extension WebBridge {
                 case "track":
                     TelemetryProvider.post(event: .viaJS, with: data)
                     break;
+                case "cwd":
+                    if let window = scope.getCompanionWindow()?.tetheredWindow,
+                       let tty = ShellHookManager.shared.tty[window.hash] {
+                        let running = tty.running
+                        print("tty: \(running?.cmd) \(running?.cwd)")
+                    }
                 case "keystroke":
                     guard let keyCodeString = data["key"], let keyCode = UInt16(keyCodeString), let consumerString = data["consumer"] else {
                         print("Missing params for keystroke")
@@ -744,11 +750,6 @@ extension WebBridge {
                         KeypressProvider.shared.removeRedirect(for: keyCode, in: (scope.getCompanionWindow()?.tetheredWindow)!)
 
                     }
-//                case "cursor":
-//                    guard let directionString = data["direction"], let direction = directionString == "forward" else {
-//                        print("Missing params for cursor")
-//                        return
-//                    }
                     
                     
                 default:
