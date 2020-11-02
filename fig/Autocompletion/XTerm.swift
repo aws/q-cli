@@ -9,9 +9,18 @@
 import Cocoa
 
 class KeystrokeBuffer : NSObject {
+    static let lineAcceptedInKeystrokeBufferNotification: NSNotification.Name = Notification.Name("lineAcceptedInXTermBufferNotification")
+    static let lineResetInKeyStrokeBufferNotification: NSNotification.Name = Notification.Name("lineResetInKeyStrokeBufferNotification")
+
     static let shared = KeystrokeBuffer()
     
-    var hazy: Bool = false {
+    override init() {
+        buffer = ""
+        index = buffer!.startIndex
+
+    }
+    
+    var hazy: Bool = true {
         didSet {
             cursor = 0
             index = nil
@@ -23,14 +32,42 @@ class KeystrokeBuffer : NSObject {
                 if (Defaults.playSoundWhenContextIsLost) { NSSound.beep() }
                 index = nil
             } else if (buffer == ""){
+                NotificationCenter.default.post(name: KeystrokeBuffer.lineResetInKeyStrokeBufferNotification, object: nil)
                 index = buffer!.startIndex
+                dropStash()
             }
         }
     }
     var cursor: Int = 0
-    
+    var historyIndex = 0
     var index: String.Index?
+    
+    var stashedIndex: String.Index?
+    var stashedBuffer: String?
+    func stash() {
+        print("xterm: stash")
 
+        stashedBuffer = buffer
+        stashedIndex = index
+        
+        buffer = nil
+    }
+    
+    func restore() {
+        print("xterm: restore")
+        buffer = stashedBuffer
+        index = stashedIndex
+        historyIndex = 0
+    }
+    
+    func dropStash() {
+        print("xterm: dropStash")
+        stashedBuffer = nil
+        stashedIndex = nil
+        historyIndex = 0
+    }
+    
+    
     func handleKeystroke(event: NSEvent) -> (String, Int)? {
         
         
@@ -124,17 +161,32 @@ class KeystrokeBuffer : NSObject {
             print("xterm: move cursor to the left by 1")
         case (Keycode.rightArrow, withoutControl),
              (Keycode.f, withControl):
+            // handles zsh greyed out text
+            if Defaults.zshAutosuggestionPlugin && buffer != nil && index == buffer!.endIndex {
+                buffer = nil
+                print("xterm: possible zsh autosuggest, break context")
+            }
+            
             guard buffer != nil, index != nil, index != buffer!.endIndex else { break }
             index = buffer!.index(after: index!)
-            
             print("xterm: move cursor to the right by 1")
         case (Keycode.upArrow, withoutControl),
              (Keycode.p, withControl):
+            if (historyIndex ==  0) {
+                stash()
+            }
+            historyIndex += 1
             buffer = nil
             print("xterm: previous history")
         case (Keycode.downArrow, withoutControl),
              (Keycode.n, withControl):
-            buffer = nil
+            if (historyIndex >= 0) {
+                historyIndex -= 1
+            }
+            
+            if (historyIndex == -1 && buffer == nil) {
+                restore()
+            }
             print("xterm: next history")
         case (Keycode.a, withControl):
             guard buffer != nil, index != nil else { break }
@@ -188,7 +240,7 @@ class KeystrokeBuffer : NSObject {
             print("xterm: transpose")
         case (Keycode.u, withControl):
             // C-k may also do this?
-            guard buffer != nil, index != nil else { break }
+//            guard buffer != nil, index != nil else { break }
 
             buffer = ""
             index = buffer!.startIndex
@@ -244,6 +296,7 @@ class KeystrokeBuffer : NSObject {
                 print("xterm: accept-line w/ newline")
             } else {
                 buffer = ""
+                NotificationCenter.default.post(name: KeystrokeBuffer.lineAcceptedInKeystrokeBufferNotification, object: nil)
                 print("xterm: accept-line") //clear buffer
             }
             
@@ -284,7 +337,7 @@ class KeystrokeBuffer : NSObject {
 
                         
                         print("xterm: delete character")
-                    case 27:
+                    case 27: // ESC
                         if let direction = characters.index(characters.startIndex, offsetBy: idx + 2, limitedBy: characters.endIndex) {
                             let esc = characters[direction]
                             print("char:",esc)
@@ -303,6 +356,16 @@ class KeystrokeBuffer : NSObject {
                             }
                         }
                         break
+                    case 10: // newline literal
+                        if buffer != nil, index != nil, buffer!.suffix(1) == "\\" {
+                            buffer = nil
+                            print("xterm: accept-line w/ newline")
+                        } else {
+                            buffer = ""
+                            print("xterm: accept-line") //clear buffer
+                            NotificationCenter.default.post(name: KeystrokeBuffer.lineAcceptedInKeystrokeBufferNotification, object: nil)
+                        }
+                        
                     default:
                         buffer!.insert(char, at: index!)
                         index = buffer!.index(index!, offsetBy: 1)
@@ -323,7 +386,8 @@ class KeystrokeBuffer : NSObject {
             break
         }
         
-        if var logging = buffer {
+        if var logging = buffer, index != nil {
+            // todo: check if index is within bounds
             logging.insert("|", at: index!)
             print("xterm-out: \(logging) ")
             
@@ -336,6 +400,17 @@ class KeystrokeBuffer : NSObject {
         
         
     }
+    
+    var representation: String {
+         if var logging = buffer, index != nil {
+               // todo: check if index is within bounds
+               logging.insert("|", at: index!)
+               return logging
+           } else {
+               return "<no context>"
+           }
+    }
+    
     func handleKeystroke2(event: NSEvent) -> (String, Int)? {
 
         if var characters = event.characters {

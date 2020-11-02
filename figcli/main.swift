@@ -79,7 +79,6 @@ class CLI : WebSocketConnectionDelegate {
             if let envJSON = try? JSONSerialization.data(withJSONObject: env, options: .fragmentsAllowed) {
                 envString = String(decoding: envJSON, as: UTF8.self)
             }
-            
            return ShellMessage(type: "pipe",
                                source: env["TERM_PROGRAM"] ?? "",
                                session: env["TERM_SESSION_ID"] ?? "",
@@ -140,7 +139,7 @@ class CLI : WebSocketConnectionDelegate {
 //        print("msg: '\(text)'")
         busy = true
         let out = text.runAsCommand(false, cwd: ProcessInfo.processInfo.environment["PWD"], with: ProcessInfo.processInfo.environment)
-        print(out)
+        print(out.trimmingCharacters(in: .whitespacesAndNewlines))
         busy = false
 
 //        print(out)
@@ -181,26 +180,21 @@ DispatchQueue.global(qos: .default).async {
 /// Timeout
 DispatchQueue.global().asyncAfter(deadline: .now() + 1.25) {
     
+    guard (arguments.filter { $0.starts(with: "bg:")}.count == 0) else {
+        group.leave()
+        return
+    }
+    
     guard let loggedIn = UserDefaults(suiteName: "com.mschrage.fig.shared")?.bool(forKey: "loggedIn"), loggedIn else {
         
-        if let _ = NSWorkspace.shared.runningApplications.filter({$0.bundleIdentifier == "com.mschrage.fig"}).first {
-            
-            let _ = "osascript -e 'quit app \"Fig\"' && open -b \"com.mschrage.fig\"".runAsCommand()
-//            app.terminate()
-//
-        } else {
-            let _ = "open -b \"com.mschrage.fig\"".runAsCommand()
-        }
-        
-      
         let error =
         """
 
         › \u{001b}[31mNot logged in to Fig\u{001b}[0m
 
           \u{001b}[1mQUICK FIX\u{001b}[0m
-          Opening Fig... Set up your account.
-          
+          Open Fig to set up your account.
+
           Please email \u{001b}[1mhello@withfig.com\u{001b}[0m if this problem persists.
 
         """
@@ -215,7 +209,7 @@ DispatchQueue.global().asyncAfter(deadline: .now() + 1.25) {
 › \u{001b}[31mCould not connect to fig.app.\u{001b}[0m
 
   \u{001b}[1mQUICK FIX\u{001b}[0m
-  Check if Fig is active. (You should see the Fig icon in your menu bar).
+  Check if Fig is active. (You should see the ◧ Fig icon in your menu bar).
   
 → If not, run \u{001b}[1mopen -b com.mschrage.fig\u{001b}[0m to relaunch the app.
 

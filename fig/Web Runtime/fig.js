@@ -118,7 +118,8 @@ let setup = function(window) {
 //          fig.stdin(atob(data))
       },
       log : function(msg) {
-          console.log(JSON.stringify(msg))
+          console.log(msg)
+          window.webkit.messageHandlers.logHandler.postMessage(JSON.stringify(msg));
       },
       init : function(input, options) {
           console.log("fig.init must be overwritten. The behavior of other fig functions is undefined if called prior to the fig.init entrypoint.")

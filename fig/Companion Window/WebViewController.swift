@@ -177,8 +177,8 @@ class WebViewController: NSViewController, NSWindowDelegate {
         NotificationCenter.default.addObserver(self, selector: #selector(recievedUserInputFromTerminal(_:)), name: .recievedUserInputFromTerminal, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(recievedDataFromPty(_:)), name: .recievedDataFromPty, object: nil)
         
-        NotificationCenter.default.addObserver(self, selector: #selector(insertCommandInTerminal(_:)), name: .insertCommandInTerminal, object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(executeCommandInTerminal(_:)), name: .executeCommandInTerminal, object: nil)
+//        NotificationCenter.default.addObserver(self, selector: #selector(insertCommandInTerminal(_:)), name: .insertCommandInTerminal, object: nil)
+//        NotificationCenter.default.addObserver(self, selector: #selector(executeCommandInTerminal(_:)), name: .executeCommandInTerminal, object: nil)
         
         NotificationCenter.default.addObserver(self, selector: #selector(windowDidResize(_:)), name: NSWindow.didResizeNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(viewFrameResized), name:NSView.frameDidChangeNotification, object: self.view)
@@ -340,6 +340,10 @@ extension WebViewController: WebBridgeEventListener {
 }
 
 extension WebViewController: ShellBridgeEventListener, PseudoTerminalEventDelegate {
+    func shellPromptWillReturn(_ notification: Notification) {
+        
+    }
+    
     func startedNewTerminalSession(_ notification: Notification) {
         
     }
@@ -694,6 +698,11 @@ class WebView : WKWebView {
         self.evaluateJavaScript("document.documentElement.remove()") { (_, _) in
             self.load(URLRequest(url: Remote.baseURL.appendingPathComponent("sidebar"), cachePolicy: .useProtocolCachePolicy))
        }
+    }
+    
+    func loadAutocomplete() {
+        print("loadAutocomplete")
+        self.load(URLRequest(url: Remote.baseURL.appendingPathComponent("autocomplete").appendingPathComponent(        Defaults.autocompleteVersion ?? ""), cachePolicy: .reloadIgnoringLocalAndRemoteCacheData))
     }
     
     func clearHistory() {

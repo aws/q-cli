@@ -27,7 +27,6 @@ protocol WindowService {
 
 }
 
-
 class WindowServer : WindowService {
     var isActivating = false
     var isDeactivating = false
@@ -125,7 +124,7 @@ class WindowServer : WindowService {
         for rawWindow in rawWindows {
             if let window = ExternalWindow(raw: rawWindow) {
                 allWindows.append(window)
-            }
+            } 
         }
 //        allWindows.forEach{ print($0.bundleId ?? "", $0.windowId)}
         return allWindows
@@ -250,6 +249,17 @@ class ExternalWindow {
     var lastTabId: String? {
         get {
             return ShellHookManager.shared.tabs[self.windowId];
+        }
+    }
+    var tty: TTY? {
+        get {
+            return ShellHookManager.shared.tty[self.hash];
+        }
+    }
+    
+    var session: String? {
+        get {
+           return ShellHookManager.shared.sessions[self.hash];
         }
     }
     

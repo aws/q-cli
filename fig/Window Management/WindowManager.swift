@@ -113,7 +113,7 @@ class WindowManager : NSObject {
     @objc func windowChanged(){
         updatePosition(for: .windowChanged)
         self.autocomplete?.maxHeight = 0
-
+//
 //        DispatchQueue.main.async {
 //            self.autocomplete?.orderOut(nil)
 //        }
@@ -177,8 +177,10 @@ class WindowManager : NSObject {
        
         //sidebar
         sidebar?.repositionWindow(forceUpdate: forceUpdate, explicit: explicit)
-        autocomplete?.repositionWindow(forceUpdate: forceUpdate, explicit: explicit)
-
+        if (reason != .flagsChanged) {
+            autocomplete?.repositionWindow(forceUpdate: forceUpdate, explicit: explicit)
+        }
+        
         let visibleWindows = self.windows.map { $0.value } .filter { $0.isVisible }
         print("---\nAll Fig windows: \(allCompanionWindows.count)\nVisible Fig windows: \(visibleWindows.count)\nUntethered Windows: \(self.untetheredWindows.count)\n---")
         for w in visibleWindows {
@@ -198,8 +200,8 @@ class WindowManager : NSObject {
 
         if let keyWindow = NSApp.keyWindow as? CompanionWindow, untetheredWindows.contains(keyWindow) {
             self.hotKeyManager?.companionWindow = keyWindow
-        } else {
-            self.hotKeyManager?.companionWindow = visibleWindows.first ?? self.sidebar!
+        } else if let sidebar = self.sidebar {
+            self.hotKeyManager?.companionWindow = visibleWindows.first ?? sidebar
         }
         
         print(reason)
@@ -226,6 +228,7 @@ class WindowManager : NSObject {
     
     func createAutocomplete() {
         if let autocomplete = self.autocomplete {
+            autocomplete.orderOut(nil)
             self.autocomplete = nil
         }
         
@@ -233,7 +236,7 @@ class WindowManager : NSObject {
         web.webView?.defaultURL = nil
 //        web.webView?.loadBundleApp("autocomplete")
         
-        web.webView?.loadRemoteApp(at: Remote.baseURL.appendingPathComponent("autocomplete"))
+        web.webView?.loadAutocomplete()
         let companion = CompanionWindow(viewController: web)
         companion.positioning = .hidden
         companion.repositionWindow(forceUpdate: true, explicit: true)
@@ -250,6 +253,57 @@ class WindowManager : NSObject {
         return window
     }
     
+    func newNativeTerminalSession(completion: (() -> Void)? = nil) {
+        // if the topmost application is a terminal, create new session
+        guard !Integrations.nativeTerminals.contains(NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "") else {
+            Logger.log(message: "New terminal session!")
+            ShellBridge.simulate(keypress: .cmdN)
+            if let completion = completion {
+                completion()
+            }
+            return
+        }
+        
+        let running = NSWorkspace.shared.runningApplications.filter { Integrations.nativeTerminals.contains($0.bundleIdentifier ?? "")}
+        
+        // launch terminal (detect if iTerm is installed?)
+        if (running.count == 0) {
+            Logger.log(message: "term: No terminal applications are running. Open iTerm or Terminal.app.")
+
+            if let iTerm = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.googlecode.iterm2") {
+                let app = try? NSWorkspace.shared.launchApplication(at: iTerm, options: .default, configuration: [:])
+                guard app == nil  else {
+                    Logger.log(message: "Opening iTerm!")
+                    print("Success!")
+                    if let completion = completion {
+                        completion()
+                    }
+                    return
+                }
+            }
+            Logger.log(message: "Opening Terminal.app!")
+            NSWorkspace.shared.launchApplication("Terminal")
+        } else {
+            Logger.log(message: "term: \(running.count) currently running terminal(s).")
+
+            let target = running.first!
+            target.activate(options: .activateIgnoringOtherApps)
+            Logger.log(message: "term: Activating \(target.bundleIdentifier ?? "<none>")")
+
+            var kvo: NSKeyValueObservation? = nil
+            kvo = NSWorkspace.shared.observe(\.frontmostApplication, options: [.new]) { (workspace, delta) in
+                if let app = delta.newValue, let bundleId = app?.bundleIdentifier, Integrations.nativeTerminals.contains(bundleId) {
+                    Logger.log(message: "term: Openning new window in \(target.bundleIdentifier ?? "<none>")")
+                    ShellBridge.simulate(keypress: .cmdN)
+                    kvo?.invalidate()
+                    if let completion = completion {
+                        completion()
+                    }
+                }
+            }
+        }
+    }
+
     func bringTerminalWindowToFront() {
         let terminalWindows = self.windowServiceProvider.allWhitelistedWindows(onScreen: true).filter { Integrations.terminals.contains($0.bundleId ?? "") }
         
@@ -263,6 +317,10 @@ class WindowManager : NSObject {
 }
 
 extension WindowManager : ShellBridgeEventListener {
+    func shellPromptWillReturn(_ notification: Notification) {
+        
+    }
+    
     func startedNewTerminalSession(_ notification: Notification) {
         
     }
@@ -290,7 +348,7 @@ extension WindowManager : ShellBridgeEventListener {
         // Prevent windows from being launched from CLI if the user hasn't signed in
         guard Defaults.email != nil else {
             SentrySDK.capture(message: "Attempting to run CLI command before signup")
-
+            Logger.log(message: "Attempting to run CLI command before signup")
             return
         }
         
@@ -460,11 +518,16 @@ extension WindowManager : WindowManagementService {
         }
 
         if window.isAutocompletePopup {
+            guard !Defaults.debugAutocomplete else {
+                return true
+            }
             if let max = window.maxHeight, max == 0 {
                 print("shouldAppear: autocomplete should be hidden")
                 return false
             } else {
                 print("shouldAppear: autocomplete should be shown")
+                // false (creates control + click disappearance)
+                // true introduces flicker
                 return false
             }
 
@@ -641,15 +704,11 @@ extension WindowManager : WindowManagementService {
         self.updatePosition(for: .figWindowTethered)
     }
     
-    func positionAutocompletePopover(active: Bool = true) {
-        if let rect = KeypressProvider.shared.getTextRect(), let window = AXWindowServer.shared.whitelistedWindow {
-            print("autocomplete1:", window.frame.origin.y, window.frame.origin.y -
-                window.frame.height/2, window.frame.midY, rect.origin.y, ((NSScreen.main?.frame.height)! - rect.origin.y))
-            print("autocomplete2:", rect, (NSScreen.main?.frame)!)
-            
+    func positionAutocompletePopover(textRect: CGRect?) {
+        if let rect = textRect, let window = AXWindowServer.shared.whitelistedWindow {
+
             let isAbove = window.frame.origin.y - window.frame.height/2 > rect.origin.y
-//
-//
+                && rect.origin.y + 140.0 <= NSScreen.main?.frame.maxY ?? 0.0 /*visor*/
 
             
             let height:CGFloat = isAbove ? 0 : 140
@@ -687,6 +746,9 @@ extension WindowManager : WindowManagementService {
                x += w
             }
             
+            if (Defaults.debugAutocomplete) {
+                WindowManager.shared.autocomplete?.maxHeight = 100
+            }
             WindowManager.shared.autocomplete?.setOverlayFrame(NSRect(x: x,
                                                                       y: popup.origin.y,
                                                                       width: popup.width,

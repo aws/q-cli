@@ -7,6 +7,17 @@
 //
 
 import Foundation
+
+extension NSAppleScript {
+    static func run(path: String) {
+        let task = Process()
+        task.launchPath = "/usr/bin/osascript"
+        task.arguments = [path]
+         
+        task.launch()
+    }
+}
+
 extension String {
     func runWithElevatedPrivileges() -> String? {
         let myAppleScript = "do shell script \"\(self)\" with administrator privileges"
@@ -24,7 +35,11 @@ extension String {
     }
     
     func runWithElevatedPriviledgesFromAppleScript(completion: (()-> Void)? = nil) {
-        "cmd=\"do shell script \\\"\(self)\\\" with administrator privileges\" && osascript -e \"$cmd\"".runInBackground(completion: completion)
+        "cmd=\"do shell script \\\"\(self)\\\" with administrator privileges\" && osascript -e \"$cmd\"".runInBackground(completion: { (out) in
+            if let completion = completion {
+                completion()
+            }
+        })
 
     }
     
@@ -128,7 +143,7 @@ extension String {
               }
     }
     
-    func runInBackground(cwd: String? = nil, with env: Dictionary<String, String>? = nil, updateHandler: ((String, Process) -> Void)? = nil, completion: (() -> Void)? = nil) -> Process {
+    func runInBackground(cwd: String? = nil, with env: Dictionary<String, String>? = nil, updateHandler: ((String, Process) -> Void)? = nil, completion: ((String) -> Void)? = nil) -> Process {
         
         let stdin = Pipe()
         let stderr = Pipe()
@@ -151,14 +166,16 @@ extension String {
         } else {
             task.launchPath = "/bin/sh"
         }
-        
+        var out: String = ""
         if let updateHandler = updateHandler {
             addListener({ (line) in
                 updateHandler(line, task)
+                out += line
             }, to: stdin)
             
             addListener({ (line) in
                 updateHandler(line, task)
+                out += line
             }, to: stderr)
         }
        
@@ -168,7 +185,7 @@ extension String {
         DispatchQueue.global(qos: .background).async {
             task.waitUntilExit()
             if let completion = completion {
-                completion()
+                completion(out)
             }
         }
         

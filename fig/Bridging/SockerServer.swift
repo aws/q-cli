@@ -83,6 +83,11 @@ class ShellBridgeSocketService: WebSocketService {
                     let firstPass = try decoder.decode(SocketMessage.self, from: message.data(using: .utf8)!)
                     switch firstPass.type {
                         case "request":
+                            guard Defaults.loggedIn else {
+                                from.send(message: "disconnect")
+                                return
+                            }
+                            
                             guard let username = firstPass.username, let slug = firstPass.slug else {
                                 break;
                             }
@@ -119,16 +124,37 @@ class ShellBridgeSocketService: WebSocketService {
                     case "hello":
                         self.sessionIds[msg.session] = from.id
                     case "pipe":
-                        
                         if let subcommand = msg.options?.first {
                             guard !subcommand.hasPrefix("bg:") else {
+                                guard Defaults.loggedIn else {
+                                    from.send(message: "disconnect")
+                                    return
+                                }
                                 switch subcommand {
+                                case "bg:event":
+                                    if let event = msg.options?[safe: 1] {
+                                        TelemetryProvider.post(event: .viaShell, with: ["name" : event])
+                                    } else {
+                                        print("No event")
+                                    }
                                     case "bg:cd":
                                         NotificationCenter.default.post(name: .currentDirectoryDidChange, object: msg)
                                     case "bg:tab":
                                         NotificationCenter.default.post(name: .currentTabDidChange, object: msg)
                                     case "bg:init":
                                         NotificationCenter.default.post(name: .startedNewTerminalSession, object: msg)
+                                    case "bg:prompt":
+                                        NotificationCenter.default.post(name: .shellPromptWillReturn, object: msg)
+                                    case "bg:alert":
+                                        if let title = msg.options?[safe: 1], let text = msg.options?[safe: 2]  {
+                                            DispatchQueue.main.async {
+                                                if let delegate =  NSApp.delegate as? AppDelegate {
+                                                    let _ = delegate.dialogOKCancel(question: title, text: text, noAction: true, icon: NSImage(imageLiteralResourceName: NSImage.applicationIconName))
+                                                }
+                                            }
+                                        } else {
+                                            Logger.log(message: "bg:alert requires <title> <text>")
+                                        }
                                     default:
                                         print("Uknown background command 'fig \(subcommand)'")
                                 }

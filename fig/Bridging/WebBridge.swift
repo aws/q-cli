@@ -185,10 +185,17 @@ extension WebBridge: WKURLSchemeHandler {
         
         var width = 32.0
         var height = 32.0
+        var color: NSColor?
+        var badge: String?
 
         if let qs = url.queryDictionary, let w = qs["w"], let wd = Double(w), let h = qs["h"], let hd = Double(h) {
             width = wd
             height = hd
+        }
+        
+        if let qs = url.queryDictionary {
+            color = NSColor(hex: qs["color"] ?? "")
+            badge = qs["badge"]
         }
         
         // fig://icon?type=mp4
@@ -197,19 +204,19 @@ extension WebBridge: WKURLSchemeHandler {
             if (type == "folder") {
                 t = NSFileTypeForHFSTypeCode(OSType(kGenericFolderIcon))
             }
-            return NSWorkspace.shared.icon(forFileType: t).resized(to: NSSize(width: width, height: height))
+            return NSWorkspace.shared.icon(forFileType: t).resized(to: NSSize(width: width, height: height))?.overlayBadge(color: color,  text: badge)
 
         }
         
         if let host = url.host, let qs = url.queryDictionary, let pid = qs["pid"], host == "icon" {
 
-            return NSRunningApplication(processIdentifier: pid_t(pid) ?? -1)?.icon?.resized(to: NSSize(width: width, height: height))
+            return NSRunningApplication(processIdentifier: pid_t(pid) ?? -1)?.icon?.resized(to: NSSize(width: width, height: height))?.overlayBadge(color: color,  text: badge)
         }
 
         guard var specifier = (url as NSURL).resourceSpecifier else { return nil }
         if (specifier.prefix(2) == "//") { specifier = String(specifier.dropFirst(2)) }
         let resource = specifier.replacingOccurrences(of: "?\(url.query ?? "<none>")", with: "") as NSString
-        return NSWorkspace.shared.icon(forFile: resource.expandingTildeInPath.removingPercentEncoding ?? "").resized(to: NSSize(width: width, height: height))
+        return NSWorkspace.shared.icon(forFile: resource.expandingTildeInPath.removingPercentEncoding ?? "").resized(to: NSSize(width: width, height: height))?.overlayBadge(color: color,  text: badge)
         
     }
     
@@ -245,23 +252,92 @@ extension WebBridge: WKURLSchemeHandler {
 
 extension NSImage {
     func resized(to newSize: NSSize) -> NSImage? {
-        if let bitmapRep = NSBitmapImageRep(
+        if let rep = self.bestRepresentation(for: NSRect(origin: .zero, size: newSize), context: NSGraphicsContext.current, hints: nil)/*NSBitmapImageRep(
             bitmapDataPlanes: nil, pixelsWide: Int(newSize.width), pixelsHigh: Int(newSize.height),
             bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
             colorSpaceName: .calibratedRGB, bytesPerRow: 0, bitsPerPixel: 0
-        ) {
-            bitmapRep.size = newSize
-            NSGraphicsContext.saveGraphicsState()
-            NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: bitmapRep)
-            draw(in: NSRect(x: 0, y: 0, width: newSize.width, height: newSize.height), from: .zero, operation: .copy, fraction: 1.0)
-            NSGraphicsContext.restoreGraphicsState()
+        ) */{
+//            bitmapRep.size = newSize
+//
+////            let screenScale = NSScreen.main?.backingScaleFactor ?? 1.0
+////            NSBitmapImageRep
+//
+////            float targetScaledWidth = sourceImage.size.width*scale/screenScale;
+////            float targetScaledHeight = sourceImage.size.height*scale/screenScale;
+//            NSGraphicsContext.saveGraphicsState()
+//            NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: bitmapRep)
+//            draw(in: NSRect(x: 0, y: 0, width: newSize.width, height: newSize.height), from: .zero, operation: .copy, fraction: 1.0)
+//            NSGraphicsContext.restoreGraphicsState()
 
             let resizedImage = NSImage(size: newSize)
-            resizedImage.addRepresentation(bitmapRep)
+            resizedImage.addRepresentation(rep)
             return resizedImage
         }
 
         return nil
+    }
+    
+    func overlayAppIcon() -> NSImage {
+        let background = self
+        let side:CGFloat = 32
+
+        let overlay = NSImage(imageLiteralResourceName: NSImage.applicationIconName)//.resized(to: NSSize(width:  background.size.width/2, height:  background.size.height/2))!
+        
+        let newImage = NSImage(size: background.size)
+        newImage.lockFocus()
+
+        var newImageRect: CGRect = .zero
+        newImageRect.size = newImage.size
+        
+        background.draw(in: newImageRect)
+        overlay.draw(in: NSRect(x: background.size.width/2, y: 0, width: background.size.width/2 - 4, height: background.size.height/2 - 4))
+
+        newImage.unlockFocus()
+        return newImage//.resized(to: NSSize(width: background.size.width * 1.5, height: background.size.height * 1.5))!
+    }
+    func overlayBadge(color: NSColor?, text: String?) -> NSImage {
+        guard color != nil || text != nil else {
+            return self
+        }
+        
+        if let bitmapRep = NSBitmapImageRep(
+            bitmapDataPlanes: nil, pixelsWide: Int(self.size.width), pixelsHigh: Int(self.size.height),
+            bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+            colorSpaceName: .calibratedRGB, bytesPerRow: 0, bitsPerPixel: 0
+        ) {
+            bitmapRep.size = self.size
+            NSGraphicsContext.saveGraphicsState()
+            NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: bitmapRep)
+            draw(in: NSRect(x: 0, y: 0, width: self.size.width, height: self.size.height), from: .zero, operation: .copy, fraction: 1.0)
+            NSGraphicsContext.restoreGraphicsState()
+
+            self.addRepresentation(bitmapRep)
+            self.lockFocus()
+
+             let rect = NSMakeRect(size.width/2, 0, size.width/2, size.height/2)
+             let ctx = NSGraphicsContext.current?.cgContext
+//             ctx!.clear(rect)
+            ctx!.setFillColor((color ?? NSColor.clear).cgColor)
+             ctx!.fillEllipse(in: rect)
+            
+            if let text = text {
+                let paragraphStyle: NSMutableParagraphStyle = NSMutableParagraphStyle()
+                paragraphStyle.alignment = NSTextAlignment.center
+                
+                let string = NSAttributedString(string: text,
+                                                attributes: [ NSAttributedString.Key.font : NSFont.systemFont(ofSize: rect.height * 0.9),
+                                                              NSAttributedString.Key.foregroundColor : NSColor.white,
+                                                              NSAttributedString.Key.paragraphStyle : paragraphStyle])
+
+                
+                string.draw(in: rect)
+            }
+
+            self.unlockFocus()
+            return self
+        }
+        
+        return self
     }
 }
 
@@ -302,6 +378,7 @@ extension WebBridge : WKScriptMessageHandler {
         let scriptType = WebBridgeScript.init(rawValue: message.name)
 
         if !WebBridge.authorized(webView: message.webView) && scriptType != .insertCLIHandler {
+            message.webView?.evaluateJavaScript("console.log(`Attempted to call fig runtime from unauthorized domain`)", completionHandler: nil)
             print("Attempted to call fig runtime from unauthorized domain")
             return
         }
@@ -383,10 +460,10 @@ extension WebBridge {
         let body = scope.body as? String
         if let body = body {
             print("JS Console: \(body)")
-            Logger.log(message: "\(scope.webView?.url?.absoluteString ?? "<none>"): \(body)\n")
+            Logger.log(message: "\(scope.webView?.url?.absoluteString ?? "<none>"): \(body)", subsystem: .javascript)
         } else {
             print("JS Console: Tried to write something that wasn't a string")
-            Logger.log(message: "\(scope.webView?.url?.absoluteString ?? "<none>"): Attempted to write something that wasn't a string to the fig log.\n\nUse `fig.log()` in the future to avoid this error or `JSON.stringify()` any input passed into `console.log`. \n")
+            Logger.log(message: "\(scope.webView?.url?.absoluteString ?? "<none>"): Attempted to write something that wasn't a string to the fig log.\n\nUse `fig.log()` in the future to avoid this error or `JSON.stringify()` any input passed into `console.log`.")
         }
 
     }
@@ -395,6 +472,7 @@ extension WebBridge {
         if let webview = scope.webView, let window = webview.window, let controller = window.contentViewController as? WebViewController {
             let hack = Notification(name: .insertCommandInTerminal, object: scope.body as! String, userInfo: nil)
             controller.insertCommandInTerminal(hack)
+            NotificationCenter.default.post(hack)
         }
     }
     
@@ -424,7 +502,7 @@ extension WebBridge {
             scope.webView?.evaluateJavaScript("fig.callback(`\(handlerId)`,`\(encoded.base64EncodedString())`)", completionHandler: nil)
 
         } else {
-            Logger.log(message: "Couldn't execute \(scope.body)")
+            Logger.log(message: "Couldn't execute \(scope.body)", subsystem: .javascript)
         }
 
     }
@@ -513,7 +591,7 @@ extension WebBridge {
                        
                         webview.evaluateJavaScript("fig.callback(`\(handlerId)`, null)", completionHandler: nil)
                     } catch {
-                        Logger.log(message: "Could not write file '\(path)' to disk.")
+                        Logger.log(message: "Could not write file '\(path)' to disk.", subsystem: .javascript)
                         scope.webView?.evaluateJavaScript("fig.callbackASCII(`\(handlerId)`,`Could not write file to disk.`)", completionHandler: nil)
 
                     }
@@ -584,7 +662,7 @@ extension WebBridge {
                 scope.webView?.evaluateJavaScript("fig.callback(`\(handlerId)`,`\(encoded.base64EncodedString())`)", completionHandler: nil)
                 }
 
-            }, completion: {
+            }, completion: { (out) in
                 DispatchQueue.main.async {
                       print("\(cmd) is complete!")
                     scope.webView?.evaluateJavaScript("fig.callbackASCII(`\(handlerId)`, null)", completionHandler: nil)
@@ -597,7 +675,7 @@ extension WebBridge {
             })
 
         } else {
-            Logger.log(message: "Couldn't stream \(scope.body)")
+            Logger.log(message: "Couldn't stream \(scope.body)", subsystem: .javascript)
         }
 
     }
@@ -621,14 +699,20 @@ extension WebBridge {
                             scope.webView?.window?.level = .floating
                             scope.webView?.evaluateJavaScript("fig.callback('\(handlerId)', '')", completionHandler: nil)
                         }
+                        
+                        KeypressProvider.shared.registerKeystrokeHandler()
+                        AXWindowServer.shared.registerWindowTracking()
                     }
                 case "ws":
                     ShellBridge.shared.startWebSocketServer()
                 case "close":
+                    
                     if let delegate = NSApplication.shared.delegate as? AppDelegate {
                         delegate.setupCompanionWindow()
                     }
-                    WindowManager.shared.bringTerminalWindowToFront()
+//                    WindowManager.shared.bringTerminalWindowToFront()
+                    WindowManager.shared.newNativeTerminalSession()
+                    
                     Defaults.loggedIn = true
 //                    NSWorkspace.shared.launchApplication("Terminal")
                     scope.webView?.window?.close()
@@ -647,6 +731,13 @@ extension WebBridge {
                 }
                 case "deleteCache":
                     (scope.webView as? WebView)?.deleteCache()
+                case "iterm":
+                    if let delegate = NSApplication.shared.delegate as? AppDelegate {
+                        delegate.iTermSetup()
+                    }
+                case "newTerminalWindow":
+                    let path = Bundle.main.path(forResource: "open_new_terminal_window", ofType: "scpt", inDirectory: "upgrade")
+                    NSAppleScript.run(path: path!)
             case "openOnStartup:true":
                 (NSApp.delegate as? AppDelegate)?.toggleLaunchAtStartup(shouldBeOff: false)
             case "openOnStartup:false":
@@ -790,6 +881,7 @@ extension WebBridge {
                }
             case "maxheight":
                 let companion = scope.getCompanionWindow()
+                let previousMax = companion?.maxHeight
                 if let number = NumberFormatter().number(from: value) {
                    companion?.maxHeight = CGFloat(truncating: number)
                 } else {
@@ -800,14 +892,18 @@ extension WebBridge {
                 if(!(companion?.isAutocompletePopup ?? false)) {
                     companion?.windowManager.requestWindowUpdate()
                 } else {
-                    WindowManager.shared.positionAutocompletePopover()
-
-//                    if let rect = KeypressProvider.shared.getTextRect() {
-//
-//                    let height:CGFloat = 0 //140
-//                   let translatedOrigin = NSPoint(x: rect.origin.x, y: (NSScreen.main?.frame.height)! - rect.origin.y /*- selectRect.height*/ + height + 5)
-//                   WindowManager.shared.autocomplete?.setOverlayFrame(NSRect(origin: translatedOrigin, size: CGSize(width: 200, height: height)))//140
-//                    }
+                    if companion?.maxHeight == 0 {
+                        companion?.orderOut(self)
+                    } else {
+                        if (previousMax == 0 || previousMax == nil) {
+                            NotificationCenter.default.post(name: NSNotification.Name("showAutocompletePopup"), object: nil)
+                        }
+                        companion?.orderFrontRegardless()
+                        let rect = KeypressProvider.shared.getTextRect()
+                        WindowManager.shared.positionAutocompletePopover(textRect: rect)
+                    }
+//                    let rect = KeypressProvider.shared.getTextRect()
+//                    WindowManager.shared.positionAutocompletePopover(textRect: rect)
                 }
             default:
                 print("Unrecognized property value '\(prop)' updated with value: \(value)")

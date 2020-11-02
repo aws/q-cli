@@ -92,6 +92,9 @@ class Defaults {
         set(loggedIn) {
             UserDefaults(suiteName: "com.mschrage.fig.shared")?.set(loggedIn, forKey: "loggedIn")
             UserDefaults(suiteName: "com.mschrage.fig.shared")?.synchronize()
+            if let delegate = NSApp.delegate as? AppDelegate {
+                delegate.configureStatusBarItem()
+            }
         }
     }
     static var domainToken: String? {
@@ -153,13 +156,20 @@ class Defaults {
         }
     }
     
+    fileprivate static var _useAutcomplete: Bool? = nil
     static var useAutocomplete: Bool {
         get {
-            return
-                UserDefaults.standard.bool(forKey: "useAutocomplete")
+            if let flag = _useAutcomplete {
+                return flag
+            } else {
+                let flag = UserDefaults.standard.bool(forKey: "useAutocomplete")
+                _useAutcomplete = flag
+                return flag
+            }
         }
         
         set(flag) {
+            _useAutcomplete = flag
             UserDefaults.standard.set(flag, forKey: "useAutocomplete")
             UserDefaults.standard.synchronize()
         }
@@ -179,6 +189,19 @@ class Defaults {
 
        }
     
+    static var zshAutosuggestionPlugin: Bool {
+           get {
+               return
+                   UserDefaults.standard.bool(forKey: "zshAutosuggestionPlugin")
+           }
+           
+           set(flag) {
+               UserDefaults.standard.set(flag, forKey: "zshAutosuggestionPlugin")
+               UserDefaults.standard.synchronize()
+           }
+
+       }
+    
     static var versionAtPreviousLaunch: String? {
         get {
             return  UserDefaults.standard.string(forKey: "versionAtPreviousLaunch")
@@ -189,4 +212,54 @@ class Defaults {
             UserDefaults.standard.synchronize()
         }
     }
+    
+    static var debugAutocomplete: Bool {
+        get {
+            return
+                UserDefaults.standard.bool(forKey: "debugAutocomplete")
+        }
+        
+        set(flag) {
+            UserDefaults.standard.set(flag, forKey: "debugAutocomplete")
+            UserDefaults.standard.synchronize()
+        }
+
+    }
+    
+    static var broadcastLogs: Bool {
+        get {
+            return
+                UserDefaults.standard.bool(forKey: "broadcastLogs")
+        }
+        
+        set(flag) {
+            UserDefaults.standard.set(flag, forKey: "broadcastLogs")
+            UserDefaults.standard.synchronize()
+        }
+
+    }
+    
+    static var broadcastLogsForSubsystem: Logger.Subsystem {
+        get {
+            return Logger.Subsystem(rawValue: UserDefaults.standard.string(forKey: "broadcastLogsForSubsystem") ?? "") ?? .global
+        }
+        
+        set(subsystem) {
+            UserDefaults.standard.set(subsystem.rawValue, forKey: "broadcastLogsForSubsystem")
+            UserDefaults.standard.synchronize()
+        }
+
+    }
+    
+    static var autocompleteVersion: String? {
+        get {
+            return  UserDefaults.standard.string(forKey: "autocompleteVersion")
+        }
+        
+        set(version){
+            UserDefaults.standard.set(version, forKey: "autocompleteVersion")
+            UserDefaults.standard.synchronize()
+        }
+    }
+    
 }

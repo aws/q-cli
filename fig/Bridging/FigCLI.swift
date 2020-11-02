@@ -86,7 +86,14 @@ enum NativeCLICommand : String {
     case build = "util:build"
     case sidebar = "sidebar"
     case close = "close"
-
+    case feedback = "feedback"
+    case invite = "invite"
+    case docs = "docs"
+    case update = "update"
+    case source = "source"
+    case resetCache = "util:reset-cache"
+    case list = "list"
+    
     var openInNewWindow: Bool {
         get {
             let popups: Set<NativeCLICommand> = [ .web, .local, .bundle, .apps, .appstore, .home, .appstore, .blocks]
@@ -126,6 +133,9 @@ class FigCLI {
     }
     
     static func initialPosition(with scope: Scope) {
+        // this causes crashes!
+        return;
+            
         scope.webView.onLoad.append {
               WebBridge.appInitialPosition(webview: scope.webView) { (position) in
                 // there is a crash that occurs here and I don't know why...
@@ -334,7 +344,7 @@ class FigCLI {
         
         scope.companionWindow.windowManager.close(window:  scope.companionWindow)
 
-        ShellBridge.shared.socketServer.send(sessionId: scope.session, command: "\(script) \(scope.options.joined(separator: " "))")
+        ShellBridge.shared.socketServer.send(sessionId: scope.session, command: "\(script) \(scope.options.map { $0.contains(" ") ? "\"\($0)\"" : $0 } .joined(separator: " "))")
     }
     
     static func printInTerminal(text: String, scope: Scope) {
@@ -426,7 +436,7 @@ class FigCLI {
                      \u{001b}[1mQUICK FIX\u{001b}[0m
                      Fig does not have Accessibility Permissions enabled.
 
-                   → Click the Fig icon in your menu bar > \u{001b}[1mPrompt for Accessibility Access\u{001b}[0m
+                   → Click the Fig icon in your menu bar \u{001b}[1mDebug > Request Accessibility Permission\u{001b}[0m
 
                      Please email \u{001b}[1mhello@withfig.com\u{001b}[0m if this problem persists.
 
@@ -537,10 +547,16 @@ class FigCLI {
             }
         }
         
-         companionWindow.positioning = storedInitialPosition(for: command) ?? CompanionWindow.defaultActivePosition
-        
+        //companionWindow.positioning = storedInitialPosition(for: command) ?? CompanionWindow.defaultActivePosition
+        companionWindow.positioning = CompanionWindow.defaultActivePosition
+
         if let nativeCommand = NativeCLICommand(rawValue: command) {
             switch nativeCommand {
+            case .docs:
+                if let delegate = NSApp.delegate as? AppDelegate {
+                    delegate.viewDocs()
+                }
+                FigCLI.printInTerminal(text: "→ Opening docs in browser...", scope: scope)
             case .callback:
                 FigCLI.callback(with: scope)
             case .bundle:
@@ -569,8 +585,9 @@ class FigCLI {
                 scope.webView.deleteCache()
                 FigCLI.printInTerminal(text: "→ Logging out of Fig...", scope: scope)
                 ShellBridge.shared.socketServer.send(sessionId: scope.session, command: "disconnect")
-                NSRunningApplication.current.terminate()
-                let _ = "open -b \"com.mschrage.fig\"".runAsCommand()
+                if let delegate = NSApp.delegate as? AppDelegate {
+                    delegate.restart()
+                }
 
                             
 //                let _ = "open -b \"com.mschrage.fig\"".runAsCommand()
@@ -578,8 +595,9 @@ class FigCLI {
                 FigCLI.printInTerminal(text: "→ Restarting Fig...", scope: scope)
                 ShellBridge.shared.socketServer.send(sessionId: scope.session, command: "disconnect")
 
-                NSRunningApplication.current.terminate()
-                let _ = "open -b \"com.mschrage.fig\"".runAsCommand()
+                if let delegate = NSApp.delegate as? AppDelegate {
+                    delegate.restart()
+                }
 //                let _ = "osascript -e 'quit app \"Fig\"'; open -b \"com.mschrage.fig\"".runAsCommand()
             case .build:
                 if let buildMode = Build(rawValue: scope.options.first ?? "") {
@@ -598,53 +616,112 @@ class FigCLI {
                 FigCLI.runInTerminal(script: "echo \"\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "-1")\"", scope: scope)
             case .close:
                 scope.companionWindow.windowManager.close(window:  scope.companionWindow)
+            case .resetCache:
+                WebView.deleteCache()
+                FigCLI.printInTerminal(text: "→ Resetting WebKit Cache", scope: scope)
+            case .source:
+                let path = Bundle.main.path(forResource: "source", ofType: "sh", inDirectory: "upgrade")
+                FigCLI.runInTerminal(script: "bash \(path!)", scope: scope)
+            case .list:
+                let specs = try? FileManager.default.contentsOfDirectory(at: URL(fileURLWithPath:  "\(NSHomeDirectory())/.fig/autocomplete", isDirectory: true), includingPropertiesForKeys: nil, options: .skipsHiddenFiles).map { "\($0.lastPathComponent.replacingOccurrences(of: ".\($0.pathExtension)", with: ""))" }.joined(separator: "\n")
+                FigCLI.printInTerminal(text: specs ?? "No completions found.\n  Try running fig update.", scope: scope)
+            case .feedback:
+                let path = Bundle.main.path(forResource: "feedback", ofType: "sh", inDirectory: "upgrade")
+                FigCLI.runInTerminal(script: "bash \(path!)", scope: scope)
+            case .update:
+                let path = Bundle.main.path(forResource: "update-autocomplete", ofType: "sh", inDirectory: "upgrade")
+                FigCLI.runInTerminal(script: "bash \(path!)", scope: scope)
+            case .invite:
+                let count = scope.options.count
+                let isPlural = count != 1
+                FigCLI.printInTerminal(text: "→ Sending invite\(isPlural ? "s" : "") to \(count) \(isPlural ? "people" :"person")!", scope: scope)
+                ShellBridge.shared.socketServer.send(sessionId: scope.session, command: "disconnect")
 
+
+                var request = URLRequest(url: URL(string:"https://fig-core-backend.herokuapp.com/waitlist/invite-friends?via=cli")!)
+                guard let json = try? JSONSerialization.data(withJSONObject: ["emails" : scope.options, "referrer" : Defaults.email ?? ""] , options: .sortedKeys) else {
+//                    ShellBridge.shared.socketServer.send(sessionId: scope.session, command: "disconnect")
+                    return
+                    
+                }
+
+                request.httpMethod = "POST"
+                request.httpBody = json
+                request.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
+                let task = URLSession.shared.dataTask(with: request) { (data, res, err) in
+//                    guard err == nil else {
+//                        ShellBridge.shared.socketServer.send(sessionId: scope.session, command: "disconnect")
+//                        return
+//                    }
+//
+//                    FigCLI.printInTerminal(text: "Sent invites!", scope: scope)
+//                    ShellBridge.shared.socketServer.send(sessionId: scope.session, command: "disconnect")
+                }
+
+                task.resume()
+                return
             case .help, .h:
                 scope.companionWindow.windowManager.close(window:  scope.companionWindow)
 
-                let localRunbooks = try? FileManager.default.contentsOfDirectory(at: URL(fileURLWithPath:  "\(NSHomeDirectory())/run/", isDirectory: true), includingPropertiesForKeys: nil, options: .skipsHiddenFiles).map { "  \($0.lastPathComponent.replacingOccurrences(of: ".\($0.pathExtension)", with: ""))" }.joined(separator: "\n")
-                // load file from disk
-                 let url = URL(fileURLWithPath: "~/.fig/cli.txt")
-                 let out = try? String(contentsOf: url, encoding: String.Encoding.utf8)
+//                let localRunbooks = try? FileManager.default.contentsOfDirectory(at: URL(fileURLWithPath:  "\(NSHomeDirectory())/run/", isDirectory: true), includingPropertiesForKeys: nil, options: .skipsHiddenFiles).map { "  \($0.lastPathComponent.replacingOccurrences(of: ".\($0.pathExtension)", with: ""))" }.joined(separator: "\n")
+//                // load file from disk
+//                 let url = URL(fileURLWithPath: "~/.fig/cli.txt")
+//                 let out = try? String(contentsOf: url, encoding: String.Encoding.utf8)
+//                let helpMessage =
+//"""
+//CLI to interact with Fig
+//
+//\\u001b[1mUSAGE\\u001b[0m
+//  $ fig [SUBCOMMAND]
+//
+//\\u001b[1mCOMMANDS\\u001b[0m
+//  home            update your sidebar
+//  apps            browse all availible apps
+//  runbooks        view and edit your runbooks
+//  settings        view settings for Fig
+//  docs            open Fig documentation
+//  web <URL>       access websites on the internet
+//  local <PATH>    load local html files
+//  run <PATH>      load local rundown file
+//
+//\\u001b[1mAPPS\\u001b[0m
+//  dir             browse your file system
+//  curl            build http requests
+//  git             a lightweight UI for git
+//  google <QUERY>  search using Google
+//  psql            view and query Postgres databases
+//  monitor         visualize CPU usage by process
+//  sftp            browse files on remote servers
+//  alias           create aliases for common commands
+//  readme          preview Readme markdown documents
+//  + more          (run \\u001b[1mfig apps\\u001b[0m to view App Store)
+//
+//\\u001b[1mCOMMUNITY\\u001b[0m
+//  @user           view a user's public runbooks
+//  +team.com       view your team's shared runbooks
+//
+//\\u001b[1mLOCAL RUNBOOKS\\u001b[0m
+//\(localRunbooks ?? "  (none)          no runbooks in ~/run")
+//"""
+//  #chat           chat with others about a #topic
+
                 let helpMessage =
 """
 CLI to interact with Fig
 
 \\u001b[1mUSAGE\\u001b[0m
-  $ fig [SUBCOMMAND]
+  $ fig [COMMAND]
 
 \\u001b[1mCOMMANDS\\u001b[0m
-  home            update your sidebar
-  apps            browse all availible apps
-  runbooks        view and edit your runbooks
-  settings        view settings for Fig
-  docs            open Fig documentation
-  web <URL>       access websites on the internet
-  local <PATH>    load local html files
-  run <PATH>      load local rundown file
-
-\\u001b[1mAPPS\\u001b[0m
-  dir             browse your file system
-  curl            build http requests
-  git             a lightweight UI for git
-  google <QUERY>  search using Google
-  psql            view and query Postgres databases
-  monitor         visualize CPU usage by process
-  sftp            browse files on remote servers
-  alias           create aliases for common commands
-  readme          preview Readme markdown documents
-  + more          (run \\u001b[1mfig apps\\u001b[0m to view App Store)
-  
-\\u001b[1mCOMMUNITY\\u001b[0m
-  @user           view a user's public runbooks
-  +team.com       view your team's shared runbooks
-
-\\u001b[1mLOCAL RUNBOOKS\\u001b[0m
-\(localRunbooks ?? "  (none)          no runbooks in ~/run")
+  fig invite        invite up to 5 friends & teammates to Fig
+  fig feedback      send feedback directly to the Fig founders
+  fig update        update repo of completion scripts
+  fig docs          documentation for building completion specs
+  fig source        (re)connect fig to the current shell session
+  fig list          print all commands with completion specs
+  fig --help        a summary of the Fig CLI commands
 """
-//  #chat           chat with others about a #topic
-
-                FigCLI.runInTerminal(script: "echo \"\(out ?? helpMessage)\"", scope: scope)
+                FigCLI.runInTerminal(script: "echo \"\(helpMessage)\"", scope: scope)
             }
         } else if (aliases.keys.contains(command)) { // user defined shortcuts
             

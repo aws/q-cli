@@ -26,5 +26,30 @@ class OnboardingWindow : NSWindow {
             self.setFrameAutosaveName("Main Window")
             self.contentViewController = viewController //WebViewController()
             self.makeKeyAndOrderFront(nil)
+        
+            self.delegate = self
+        
+        if let closeButton = self.standardWindowButton(.closeButton) {
+            closeButton.target = self
+            closeButton.action = #selector(closeViaButton)
+        }
+        
     }
+    
+    @objc func closeViaButton() {
+        self.close()
+        Logger.log(message: "Close via button press!")
+        if let delegate = NSApp.delegate as? AppDelegate {
+            delegate.quit()
+        }
+    }
+}
+
+extension OnboardingWindow : NSWindowDelegate {
+//    func windowShouldClose(_ sender: NSWindow) -> Bool {
+//        TelemetryProvider.post(event: .quitApp, with: [:]) {
+//              NSApp.terminate(nil)
+//          }
+//        return true
+//    }
 }

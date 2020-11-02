@@ -31,12 +31,13 @@ class ExternalApplication {
     }
     
     func registerObserver(_ handler: @escaping AXCallbackHandler ) -> Bool {
-        
+
         let error = AXObserverCreate(self.pid, axcallback, &observer)
 
         guard error == .success else {
             print("AXWindowServer: error when registering observer for ExternalApplication")
             self.handler = nil
+            self.observer = nil
             return false
         }
         
@@ -53,7 +54,10 @@ class ExternalApplication {
                                      kAXWindowResizedNotification,
                                      kAXWindowMovedNotification,
                                      kAXUIElementDestroyedNotification,
-                                     kAXApplicationDeactivatedNotification ]
+                                     kAXApplicationDeactivatedNotification,
+                                     kAXFocusedUIElementChangedNotification
+            
+                                   ]
 
         for notification in trackedNotifications {
             AXObserverAddNotification(observer!,
@@ -73,8 +77,9 @@ class ExternalApplication {
     }
     
     func deregisterObserver() {
-        guard self.handler != nil else { return }
+        print("AXWindowServer: Deregister observer for '\(self.bundleId ?? "<none>")'")
         self.handler = nil
+        guard observer != nil else { return }
         CFRunLoopRemoveSource(CFRunLoopGetCurrent(),
                               AXObserverGetRunLoopSource(observer!),
                               CFRunLoopMode.defaultMode)
@@ -107,11 +112,13 @@ extension ExternalApplication: Hashable {
 
 
 class AXWindowServer : WindowService {
+    static let windowDidChangeNotification = Notification.Name("AXWindowServerWindowDidChangeNotification")
     static let shared = AXWindowServer()
-    var tracked: [ExternalApplication] = []
+    var tracked: Set<ExternalApplication> = []
     var topWindow: ExternalWindow? = nil {
         didSet {
-           print("AXWindowServer: Window = \(self.topWindow?.windowId ?? 0); App = \(self.topWindow?.bundleId ?? "<none>")")
+            NotificationCenter.default.post(name: AXWindowServer.windowDidChangeNotification, object: self.topWindow)
+            print("AXWindowServer: Window = \(self.topWindow?.windowId ?? 0); App = \(self.topWindow?.bundleId ?? "<none>"); pid = \(self.topWindow?.app.processIdentifier ?? 0)")
        }
     }
     var whitelistedWindow: ExternalWindow? {
@@ -122,25 +129,62 @@ class AXWindowServer : WindowService {
     }
     
     func register(_ app: NSRunningApplication, fromActivation: Bool = false) {
+        guard AXIsProcessTrustedWithOptions(nil) else {
+            Logger.log(message: "AXWindowServer: cannot register to observe window events before accesibility permissions are enabled")
+            return
+        }
+
         let appRef  = ExternalApplication(from: app)
         
         // Cannot track fig windows... (too meta!)
         guard !app.isFig else {
-            print("AXWindowServer: cannot register to observe window events on Fig")
+            Logger.log(message: "AXWindowServer: cannot register to observe window events on Fig")
             return
         }
         
         // Cannot track spotlight window, because we don't recieve a notification when it is dismissed.
         // Spotlight is handled by checking height of selectionRect (which goes to 30 when in spotlight!)
-        guard app.bundleIdentifier != "com.apple.Spotlight" else {
-            print("AXWindowServer: cannot register to observe window events on com.apple.Spotlight")
+//        guard app.bundleIdentifier != "com.apple.Spotlight" else {
+//            print("AXWindowServer: cannot register to observe window events on com.apple.Spotlight")
+//            return
+//        }
+        
+        guard app.bundleIdentifier != "com.apple.ViewBridgeAuxiliary" else {
+            Logger.log(message: "AXWindowServer: cannot register to observe window events on com.apple.ViewBridgeAuxiliary")
             return
         }
         
-        // Check if application is already tracked
-        guard !self.tracked.contains(appRef) else {
-            print("AXWindowServer: app '\(appRef.bundleId ?? "<none>") is already registered")
+        guard app.bundleIdentifier != "com.apple.notificationcenterui" else {
+            Logger.log(message: "AXWindowServer: cannot register to observe window events on com.apple.notificationcenterui")
             return
+        }
+        
+        guard app.bundleIdentifier != nil else {
+           Logger.log(message: "AXWindowServer: cannot register to observe apps without Bundle Id")
+            return
+        }
+        
+        guard app.bundleIdentifier != "com.apple.WebKit.WebContent" else {
+            Logger.log(message: "AXWindowServer: cannot register to observe window events on com.apple.WebKit.WebContent")
+            return
+        }
+        
+        guard app.bundleIdentifier != "com.apple.WebKit.Networking" else {
+            Logger.log(message: "AXWindowServer: cannot register to observe window events on com.apple.WebKit.Networking")
+            return
+        }
+        
+//        if appRef.observer == nil || appRef.handler == nil {
+//            self.tracked = tracked.filter { $0 != appRef}
+//        }
+        
+        
+//        self.tracked.contains { return $0.bundleId == app.bundleIdentifier && $0.pid == app.processIdentifier}
+        // Check if application is already tracked
+        if self.tracked.contains(appRef)  {
+            Logger.log(message: "AXWindowServer: app '\(appRef.bundleId ?? "<none>") is already registered")
+            self.deregister(app: app)
+            //return
         }
         
         // If app is not tracked, then no event handlers are set up to capture top window
@@ -153,9 +197,9 @@ class AXWindowServer : WindowService {
                 guard window != nil else { return }
                 self.topWindow = ExternalWindow(backedBy: window as! AXUIElement, in: appRef)
 
-                print("AXWindowServer: Add window manually!")
+                Logger.log(message: "AXWindowServer: Add window manually!")
             }
-            print("AXWindowServer: fromActivation!")
+           Logger.log(message: "AXWindowServer: fromActivation!")
 
 
         }
@@ -164,11 +208,35 @@ class AXWindowServer : WindowService {
             switch (notification as String) {
             case kAXFocusedWindowChangedNotification:
                 print("AXWindowServer: \(appRef.bundleId!) kAXFocusedWindowChangedNotification")
-                self.topWindow = ExternalWindow(backedBy: element, in: appRef)
+                 self.topWindow = ExternalWindow(backedBy: element, in: appRef)
             case kAXMainWindowChangedNotification:
                 self.topWindow = ExternalWindow(backedBy: element, in: appRef)
                 print("AXWindowServer: \(appRef.bundleId!) kAXMainWindowChangedNotification")
             case kAXWindowCreatedNotification:
+                if (appRef.bundleId == "com.apple.Spotlight") {
+//                    Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { (timer) in
+//                        let spotlight = WindowServer.shared.allWindows().filter { $0.bundleId == "com.apple.Spotlight" }
+//                        print("spotlight: \(spotlight.count) count")
+//                        spotlight.forEach {
+//                            print("spotlight: \($0.frame)")
+//                        }
+//                        if (spotlight.count == 1) {
+//                            print("spotlight: dismissed")
+//                            timer.invalidate()
+//
+//                            if let app = NSWorkspace.shared.frontmostApplication {
+//                                self.register(app, fromActivation: true)
+//                            }
+//                        }
+//                    }
+                    var window: AnyObject?
+                    AXUIElementCopyAttributeValue(appRef.axAppRef, kAXFocusedWindowAttribute as CFString, &window)
+                    guard window != nil else { return }
+                    print("Spotlight", window)
+                    //AXObserverAddNotification(observer!, window, kAXWindowResizedNotification as CFString, nil)
+
+                    //self.topWindow = nil
+                }
                 print("AXWindowServer: \(appRef.bundleId!) kAXWindowCreatedNotification")
             case kAXWindowMiniaturizedNotification:
                 print("AXWindowServer: \(appRef.bundleId!) kAXWindowMiniaturizedNotification")
@@ -195,51 +263,109 @@ class AXWindowServer : WindowService {
                 print("AXWindowServer: \(appRef.bundleId!) \(element) kAXApplicationDeactivatedNotification")
             case kAXWindowMovedNotification:
                 print("AXWindowServer: \(appRef.bundleId!) \(element) kAXWindowMovedNotification")
+                //update window object so that origin is accurate
+                var window: AnyObject?
+                AXUIElementCopyAttributeValue(appRef.axAppRef, kAXFocusedWindowAttribute as CFString, &window)
+                guard window != nil else { return }
+                self.topWindow = ExternalWindow(backedBy: window as! AXUIElement, in: appRef)
             case kAXWindowResizedNotification:
                 print("AXWindowServer: \(appRef.bundleId!) \(element) kAXWindowResizedNotification")
+                //update window object so that bounds are accurate
+                var window: AnyObject?
+                AXUIElementCopyAttributeValue(appRef.axAppRef, kAXFocusedWindowAttribute as CFString, &window)
+                guard window != nil else { return }
+                self.topWindow = ExternalWindow(backedBy: window as! AXUIElement, in: appRef)
             case kAXUIElementDestroyedNotification:
-//                guard let app = NSWorkspace.shared.frontmostApplication else { return }
-//                
-//                let axAppRef = AXUIElementCreateApplication(app.processIdentifier)
-//                var window: AnyObject?
-//                AXUIElementCopyAttributeValue(axAppRef, kAXFocusedWindowAttribute as CFString, &window)
-//                guard window != nil else { return }
-//                self.topWindow = ExternalWindow(backedBy: window as! AXUIElement, in: appRef)
+                var pid: pid_t = 0
+                let err = AXUIElementGetPid(element, &pid)
+                
+                // determine if AXUIElement is window???
+              
+                let app = NSRunningApplication(processIdentifier: pid)
+                print("AXWindowServer: \(app?.bundleIdentifier)! \(element) kAXUIElementDestroyedNotification")
+                
+                // spotlight style app
+                if (Integrations.searchBarApps.contains(app?.bundleIdentifier ?? "") ) {
+                        guard let frontmost = NSWorkspace.shared.frontmostApplication else { return }
+                        print("AXWindowServer: frontmost = \(frontmost.bundleIdentifier ?? "<none>")")
+                        let axAppRef = AXUIElementCreateApplication(frontmost.processIdentifier)
+                        var window: AnyObject?
+                        AXUIElementCopyAttributeValue(axAppRef, kAXFocusedWindowAttribute as CFString, &window)
+                        guard window != nil else { return }
+                        self.topWindow = ExternalWindow(backedBy: window as! AXUIElement, in: ExternalApplication(from: frontmost))
+                }
+                
 
-                print("AXWindowServer: \(appRef.bundleId!) \(element) kAXUIElementDestroyedNotification")
+                
+            
+                break;
+
+
+//                print("AXWindowServer: \(appRef.bundleId!) \(element) kAXUIElementDestroyedNotification")
+            case kAXValueChangedNotification:
+                print("AXWindowServer: \(appRef.bundleId!) \(element) kAXValueChangedNotification")
             default:
                 print("AXWindowServer: unknown case")
             }
         }
         
         if (success) {
-            tracked.append(appRef)
+            Logger.log(message: "AXWindowServer: Began tracking '\(appRef.bundleId ?? "<none>")")
+            tracked.insert(appRef)
         } else {
-            print("AXWindowServer: Error setting up tracking for app '\(appRef.bundleId ?? "<none>")")
+            Logger.log(message: "AXWindowServer: Error setting up tracking for app '\(appRef.bundleId ?? "<none>")")
         }
     }
-        
+    
+    func deregister(app: NSRunningApplication) {
+        for trackedApp in self.tracked where trackedApp.bundleId == app.bundleIdentifier {
+            trackedApp.deregisterObserver()
+            tracked.remove(trackedApp)
+        }
+
+    }
+    
     init() {
         
        registerWindowTracking()
-        
-        print("AXWindowServer: Tracking \(self.tracked.count) applications...")
-        
+            
         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(didActivateApplication(notification:)), name: NSWorkspace.didActivateApplicationNotification, object: nil)
-//        NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(didDeactivateApplication(notification:)), name: NSWorkspace.didDeactivateApplicationNotification, object: nil)
+        NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(didTerminateApplication(notification:)), name: NSWorkspace.didTerminateApplicationNotification, object: nil)
+        NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(didLaunchApplicationNotification(notification:)), name: NSWorkspace.didLaunchApplicationNotification, object: nil)
+        NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(didDeactivateApplication(notification:)), name: NSWorkspace.didDeactivateApplicationNotification, object: nil)
 //        NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(activeSpaceDidChange), name: NSWorkspace.activeSpaceDidChangeNotification, object: nil)
+        
+//        NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged) { (event) in
+//            if let window = WindowServer.shared.allWindows(onScreen: false).first {
+//                print("AXWindowServer: flags changed; top window: \(window.bundleId ?? "<none>")")
+//
+//            }
+//            if let app = NSWorkspace.shared.frontmostApplication {
+//                print("AXWindowServer: flags changed; frontmost app \(app.bundleIdentifier ?? "<none>")")
+//                //self.register(app, fromActivation: true)
+//            }
+//        }
      
     }
-        
+    
     func registerWindowTracking() {
         for app in tracked {
             app.deregisterObserver()
+            tracked.remove(app)
         }
-        tracked = []
+//        tracked = []
+        
+        // capture topmost app's window
+        if let app = NSWorkspace.shared.frontmostApplication {
+            register(app, fromActivation: true)
+        }
         
         for app in NSWorkspace.shared.runningApplications {// where Integrations.whitelist.contains(app.bundleIdentifier ?? "")  {
-                   register(app)
+            register(app)
         }
+        
+        Logger.log(message: "AXWindowServer: Tracking \(self.tracked.count) applications...")
+
     }
     
     
@@ -250,7 +376,7 @@ class AXWindowServer : WindowService {
 
     @objc func didDeactivateApplication(notification: NSNotification!) {
         if let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication, Integrations.whitelist.contains(app.bundleIdentifier ?? "") {
-            print("AXWindowSever:", app.bundleIdentifier ?? "")
+            print("AXWindowServer:", app.bundleIdentifier ?? "")
         }
         
         //self.previousApplication = notification!.userInfo![NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
@@ -259,9 +385,36 @@ class AXWindowServer : WindowService {
     
     @objc func didActivateApplication(notification: Notification) {
         if let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication { //Integrations.whitelist.contains(app.bundleIdentifier ?? "") {
+//            self.tracked = self.tracked.filter { return $0.handler != nil && $0.observer != nil}
             print("AXWindowServer - register", app.bundleIdentifier ?? "")
             self.register(app, fromActivation: true)
         }
+    }
+    
+    @objc func didTerminateApplication(notification: Notification) {
+        if let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication { //Integrations.whitelist.contains(app.bundleIdentifier ?? "") {
+//            self.tracked = self.tracked.filter { return $0.handler != nil && $0.observer != nil}
+            print("AXWindowServer - terminate", app.bundleIdentifier ?? "")
+            self.deregister(app: app)
+        }
+    }
+    
+    @objc func didLaunchApplicationNotification(notification: Notification) {
+        if let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication { //Integrations.whitelist.contains(app.bundleIdentifier ?? "") {
+//            self.tracked = self.tracked.filter { return $0.handler != nil && $0.observer != nil}
+            print("AXWindowServer - launch", app.bundleIdentifier ?? "")
+//            self.register(app, fromActivation: true)
+        }
+    }
+    
+    
+    @objc func top() -> AXUIElement? {
+        let systemWideElement: AXUIElement = AXUIElementCreateSystemWide()
+
+        var window: AnyObject?
+        let result = AXUIElementCopyAttributeValue(systemWideElement, kAXFocusedWindowAttribute as CFString, &window)
+        print("hacky", result, window)
+        return nil
     }
     
     func topmostWhitelistedWindow() -> ExternalWindow? {

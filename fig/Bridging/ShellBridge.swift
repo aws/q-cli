@@ -19,13 +19,16 @@ protocol ShellBridgeEventListener {
     func currentDirectoryDidChange(_ notification: Notification)
     func currentTabDidChange(_ notification: Notification)
     func startedNewTerminalSession(_ notification: Notification)
+    func shellPromptWillReturn(_ notification: Notification)
 
 }
 
 extension Notification.Name {
+    static let shellPromptWillReturn = Notification.Name("shellPromptWillReturn")
     static let startedNewTerminalSession = Notification.Name("startedNewTerminalSession")
     static let currentTabDidChange = Notification.Name("currentTabDidChange")
     static let currentDirectoryDidChange = Notification.Name("currentDirectoryDidChange")
+    static let recievedShellTrackingEvent = Notification.Name("recievedShellTrackingEvent")
     static let recievedDataFromPipe = Notification.Name("recievedDataFromPipe")
     static let recievedUserInputFromTerminal = Notification.Name("recievedUserInputFromTerminal")
     static let recievedStdoutFromTerminal = Notification.Name("recievedStdoutFromTerminal")
@@ -274,12 +277,14 @@ class ShellBridge {
         case backspace = "fig::backspace"
 
     }
-    static func injectUnicodeString(_ string: String) {
+    static func injectUnicodeString(_ string: String, completion: (() -> Void)? = nil) {
         guard string.count > 0  else { return }
         guard string.count <= 20 else {
             if let split = string.index(string.startIndex, offsetBy: 20,limitedBy: string.endIndex) {
-                injectUnicodeString(String(string.prefix(upTo: split)))
-                injectUnicodeString(String(string.suffix(from: split)))
+                injectUnicodeString(String(string.prefix(upTo: split))) {
+                    
+                    injectUnicodeString(String(string.suffix(from: split)))
+                }
             }
             return
         }
@@ -309,6 +314,11 @@ class ShellBridge {
         let loc = CGEventTapLocation.cghidEventTap
         
         event?.post(tap: loc)
+        if let completion = completion {
+            Timer.delayWithSeconds(0.005) {
+                completion()
+            }
+        }
     }
     static func injectStringIntoTerminal2(_ cmd: String, runImmediately: Bool = false, clearLine: Bool = Defaults.clearExistingLineOnTerminalInsert, completion: (() -> Void)? = nil) {
 //        WindowServer.shared.returnFocus()
@@ -322,6 +332,18 @@ class ShellBridge {
                 injectUnicodeString(cmd + (runImmediately ? "\n" :""))
             }
         } else {
+            guard let jsons = CGWindowListCopyWindowInfo(.optionOnScreenOnly, kCGNullWindowID) as? [[String: Any]] else {
+                return
+            }
+            
+            let windows = jsons.map({ return WindowInfo(json: $0) }).filter({ $0?.name == "Spotlight" && $0?.frame.size != CGSize(width: 36, height: 22) })
+            if let spotlight = windows.first {
+                print("spotlight: ", NSScreen.main?.frame)
+                print("spotlight: ", spotlight?.frame)
+                return
+
+            }
+            print("inject: ", NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "<none>")
             if (clearLine) {
                   self.simulate(keypress: .ctrlE)
                   self.simulate(keypress: .ctrlU)
@@ -451,6 +473,7 @@ class ShellBridge {
     //https://gist.github.com/eegrok/949034
     enum Keypress: UInt16 {
         case cmdV = 9
+        case cmdN = 45
         case enter = 36
         case leftArrow = 123
         case rightArrow = 124
@@ -466,6 +489,8 @@ class ShellBridge {
                 return KeyboardLayout.shared.keyCode(for: "E") ?? self.rawValue
             case .ctrlU:
                 return KeyboardLayout.shared.keyCode(for: "U") ?? self.rawValue
+            case .cmdN:
+                return KeyboardLayout.shared.keyCode(for: "N") ?? self.rawValue
             default:
                 return self.rawValue as CGKeyCode
             }
@@ -480,7 +505,7 @@ class ShellBridge {
         let keydown = CGEvent(keyboardEventSource: src, virtualKey: keyCode, keyDown: true)
         let keyup = CGEvent(keyboardEventSource: src, virtualKey: keyCode, keyDown: false)
         
-        if (keypress == .cmdV){
+        if (keypress == .cmdV || keypress == .cmdN){
             keydown?.flags = CGEventFlags.maskCommand;
         }
         
@@ -589,7 +614,14 @@ class Integrations {
     static let editors:   Set = ["com.apple.dt.Xcode",
                                  "com.sublimetext.3",
                                  "com.microsoft.VSCode"]
+    static let nativeTerminals: Set = ["com.googlecode.iterm2",
+                                       "com.apple.Terminal" ]
+    static let searchBarApps: Set = ["com.apple.Spotlight",
+                                     "com.runningwithcrayons.Alfred",
+                                     "com.raycast.macos"]
+
     static var allowed: Set<String> {
+        
         get {
             if let allowed = UserDefaults.standard.string(forKey: "allowedApps") {
                 return Set(allowed.split(separator: ",").map({ String($0)}))
@@ -745,7 +777,10 @@ extension ShellBridge {
             print(path)
             let script = "mkdir -p /usr/local/bin && ln -sf '\(path)' '/usr/local/bin/fig'"
             
-            let out = "cmd=\"do shell script \\\"\(script)\\\" with administrator privileges\" && osascript -e \"$cmd\"".runInBackground(completion: completion)
+            let out = "cmd=\"do shell script \\\"\(script)\\\" with administrator privileges\" && osascript -e \"$cmd\"".runInBackground(completion: {
+                (out) in
+                completion?()
+            })
             
             print(out)
             //let _ = "test -f ~/.bash_profile && echo \"fig init #start fig pty\" >> ~/.bash_profile".runAsCommand()
@@ -778,20 +813,34 @@ extension ShellBridge {
             return AXIsProcessTrustedWithOptions(options as CFDictionary?)
     }
     
+    static func resetAccesibilityPermissions( completion: (()-> Void)? = nil) {
+        // reset permissions! (Make's sure check is toggled off!)
+        if let bundleId = NSRunningApplication.current.bundleIdentifier {
+            let _ = "tccutil reset Accessibility \(bundleId)".runInBackground { (out) in
+                if let completion = completion {
+                    completion()
+                }
+            }
+        }
+    }
+    
     static func promptForAccesibilityAccess( completion: @escaping (Bool)->Void){
         guard testAccesibilityAccess(withPrompt: false) != true else {
+            print("Accessibility Permission Granted!")
             completion(true)
             return
         }
         
         // move analytics off of hotpath
-//        DispatchQueue.global(qos: .background).async {
-//            TelemetryProvider.post(event: .promptedForAXPermission, with: [:])
-//        }
+        DispatchQueue.global(qos: .background).async {
+            TelemetryProvider.post(event: .promptedForAXPermission, with: [:])
+        }
+
 
         
         NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!)
-        
+//        let app = try? NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!, options: .default, configuration: [:])
+//        app?.activate(options: .activateIgnoringOtherApps)
         let center = DistributedNotificationCenter.default()
         let accessibilityChangedNotification = NSNotification.Name("com.apple.accessibility.api")
         var observer: NSObjectProtocol?
@@ -801,8 +850,12 @@ extension ShellBridge {
                 let value = ShellBridge.testAccesibilityAccess()
                 // only stop observing only when value is true
                 if (value) {
+                    print("Accessibility Permission Granted!!!")
                     completion(value)
                     center.removeObserver(observer!)
+                    DispatchQueue.global(qos: .background).async {
+                        TelemetryProvider.post(event: .grantedAXPermission, with: [:])
+                    }
                 }
               }
             
