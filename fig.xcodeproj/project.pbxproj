@@ -48,6 +48,7 @@
 		75186072255B2A0A0000A7C7 /* carrot@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7518606C255B2A090000A7C7 /* carrot@2x.png */; };
 		75186073255B2A0A0000A7C7 /* string@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7518606D255B2A090000A7C7 /* string@2x.png */; };
 		75186074255B2A0A0000A7C7 /* command@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7518606E255B2A0A0000A7C7 /* command@2x.png */; };
+		75186075255CAC730000A7C7 /* upgrade in Resources */ = {isa = PBXBuildFile; fileRef = 75AC552B2522C7710069635E /* upgrade */; };
 		751C3BEC24B6910800B5C7FD /* Remote.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751C3BEB24B6910800B5C7FD /* Remote.swift */; };
 		751C3BEE24B6915000B5C7FD /* Defaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751C3BED24B6915000B5C7FD /* Defaults.swift */; };
 		751F7589246D090100E083C8 /* WebBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751F7588246D090100E083C8 /* WebBridge.swift */; };
@@ -101,7 +102,6 @@
 		758AEB6724CE8B8F00A15EAF /* figcli in Embed Command Line Tool */ = {isa = PBXBuildFile; fileRef = 751F758E246E16D800E083C8 /* figcli */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		758AEB6A24CEA4D000A15EAF /* Starscream in Frameworks */ = {isa = PBXBuildFile; productRef = 758AEB6924CEA4D000A15EAF /* Starscream */; };
 		758AEB6C24CEA54600A15EAF /* SocketServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 758AEB6B24CEA54600A15EAF /* SocketServer.swift */; };
-		75AC552C2522C7710069635E /* upgrade in Resources */ = {isa = PBXBuildFile; fileRef = 75AC552B2522C7710069635E /* upgrade */; };
 		75B199322501A3DA00F38EA8 /* KeyboardLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B199312501A3DA00F38EA8 /* KeyboardLayout.swift */; };
 		75B199342504190900F38EA8 /* Keycode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B199332504190900F38EA8 /* Keycode.swift */; };
 		75B1993625042B2C00F38EA8 /* autocomplete.html in Resources */ = {isa = PBXBuildFile; fileRef = 75B1993525042B2C00F38EA8 /* autocomplete.html */; };
@@ -779,8 +779,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				75186075255CAC730000A7C7 /* upgrade in Resources */,
 				75186073255B2A0A0000A7C7 /* string@2x.png in Resources */,
-				75AC552C2522C7710069635E /* upgrade in Resources */,
 				757CA88624876043002A64A8 /* error.html in Resources */,
 				757CA88F248B0D31002A64A8 /* cli.png in Resources */,
 				752C0BE4247B44C60077E415 /* finder.html in Resources */,
