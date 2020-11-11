@@ -35,6 +35,9 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             NSApp.terminate(nil)
         }
         
+        TelemetryProvider.post(event: .launchedApp, with: ["crashed" : Defaults.launchedFollowingCrash ? "true" : "false"])
+        Defaults.launchedFollowingCrash = true //
+        
 //        AppMover.moveIfNecessary()
         let _ = ShellBridge.shared
         let _ = WindowManager.shared
@@ -64,7 +67,10 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 
         handleUpdateIfNeeded()
         Defaults.useAutocomplete = true
+        Defaults.deferToShellAutosuggestions = true
         Defaults.autocompleteVersion = "v2"
+        Defaults.autocompleteWidth = 250
+        
             
         let hasLaunched = UserDefaults.standard.bool(forKey: "hasLaunched")
         let email = UserDefaults.standard.string(forKey: "userEmail")
@@ -108,15 +114,15 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
                     }
                 }
             }
-            
-            if (!FileManager.default.fileExists(atPath: "/usr/local/bin/fig")) {
+            let installed = "fig cli:installed".runAsCommand().trimmingCharacters(in: .whitespacesAndNewlines)
+            if (!FileManager.default.fileExists(atPath: "/usr/local/bin/fig") || installed != "true") {
                 SentrySDK.capture(message: "CLI Tool Not Installed on Subsequent Launch")
 
                 let enable = self.dialogOKCancel(question: "Install Fig CLI Tool?", text: "It looks like you haven't installed the Fig CLI tool. Fig doesn't work without it.")
                               
                   if (enable) {
                       ShellBridge.symlinkCLI()
-                  }
+                  } 
             }
 //            updater?.installUpdatesIfAvailable()
             self.setupCompanionWindow()
@@ -139,6 +145,15 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         
         toggleLaunchAtStartup()
         
+    }
+    
+    func openMenu() {
+        if let menu = self.statusBarItem.menu {
+            self.statusBarItem.popUpMenu(menu)
+        }
+//        self.statusBarItem.menu?.popUp(positioning: ,
+//                                       at: self.statusBarItem.view?.frame.origin,
+//                                       in: self.statusBarItem.view)
     }
     
     func validateMenuItem(menuItem: NSMenuItem) -> Bool {
@@ -287,10 +302,10 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         
         
         let zshPlugin = debugMenu.addItem(
-         withTitle: "ZSH Autosuggest Plugin",
+         withTitle: "Defer to Shell Autosuggest",
          action: #selector(AppDelegate.toggleZshPlugin(_:)),
          keyEquivalent: "")
-        zshPlugin.state = Defaults.zshAutosuggestionPlugin ? .on : .off
+        zshPlugin.state = Defaults.deferToShellAutosuggestions ? .on : .off
         debugMenu.addItem(NSMenuItem.separator())
 
 
@@ -301,7 +316,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         logging.state = Defaults.broadcastLogs ? .on : .off
         debugMenu.addItem(NSMenuItem.separator())
         let debugAutocomplete = debugMenu.addItem(
-         withTitle: "Debug Autocomplete",
+         withTitle: "Debug Mode",
          action: #selector(AppDelegate.toggleDebugAutocomplete(_:)),
          keyEquivalent: "")
         debugAutocomplete.state = Defaults.debugAutocomplete ? .on : .off
@@ -794,8 +809,8 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         }
     
     @objc func toggleZshPlugin(_ sender: NSMenuItem) {
-        Defaults.zshAutosuggestionPlugin = !Defaults.zshAutosuggestionPlugin
-        sender.state = Defaults.zshAutosuggestionPlugin ? .on : .off
+        Defaults.deferToShellAutosuggestions = !Defaults.deferToShellAutosuggestions
+        sender.state = Defaults.deferToShellAutosuggestions ? .on : .off
     }
     
     @objc func toggleDebugAutocomplete(_ sender: NSMenuItem) {
@@ -920,7 +935,10 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     
     @objc func quit() {
         
-        NSStatusBar.system.removeStatusItem(self.statusBarItem)
+        if let statusbar = self.statusBarItem {
+            NSStatusBar.system.removeStatusItem(statusbar)
+        }
+        
         TelemetryProvider.post(event: .quitApp, with: [:]) { (_, _, _) in
             DispatchQueue.main.async {
                  NSApp.terminate(self)
@@ -965,6 +983,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     }
     func applicationWillTerminate(_ aNotification: Notification) {
         ShellBridge.shared.stopWebSocketServer()
+        Defaults.launchedFollowingCrash = false
     }
     
     @objc func runScriptCmd() {
@@ -1489,6 +1508,22 @@ extension AppDelegate : NSMenuDelegate {
         }
     }
     
+    @objc func addProcessToWhitelist() {
+        if let tty = AXWindowServer.shared.whitelistedWindow?.tty, let cmd = tty.cmd {
+            Defaults.processWhitelist = Defaults.processWhitelist + [cmd]
+            tty.update()
+        }
+    }
+    
+    @objc func resetWindowTracking() {
+        
+//        AXWindowServer.shared.registerWindowTracking()
+//        self.statusBarItem.menu?.cancelTracking()
+        if let app = NSWorkspace.shared.frontmostApplication {
+            AXWindowServer.shared.register(app, fromActivation: false)
+        }
+    }
+    
     func menuWillOpen(_ menu: NSMenu) {
         print("menuWillOpen")
         
@@ -1525,8 +1560,8 @@ extension AppDelegate : NSMenuDelegate {
                     color = .red
                     legend.addItem(NSMenuItem(title: "Window is not being tracked.", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem.separator())
-                    legend.addItem(NSMenuItem(title: "Try opening a new window.", action: nil, keyEquivalent: ""))
-                    legend.addItem(NSMenuItem(title: "Or restarting Fig", action: nil, keyEquivalent: ""))
+                    legend.addItem(NSMenuItem(title: "Reset Window Tracking", action: #selector(resetWindowTracking), keyEquivalent: ""))
+                    legend.addItem(NSMenuItem(title: "Restart Fig", action: #selector(restart), keyEquivalent: ""))
 
                 } else if (!hasContext) {
                     color = .orange
@@ -1548,6 +1583,7 @@ extension AppDelegate : NSMenuDelegate {
                     legend.addItem(NSMenuItem.separator())
                     legend.addItem(NSMenuItem(title: "Exit current process", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem(title: "Force Reset", action: #selector(forceUpdateTTY), keyEquivalent: ""))
+                    legend.addItem(NSMenuItem(title: "Add to whitelist", action: #selector(addProcessToWhitelist), keyEquivalent: ""))
                     legend.addItem(NSMenuItem.separator())
                     legend.addItem(NSMenuItem(title: "window: \(window?.hash ?? "???")", action: nil, keyEquivalent: ""))
                 } else {

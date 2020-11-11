@@ -200,6 +200,10 @@ extension WebBridge: WKURLSchemeHandler {
         
         // fig://icon?type=mp4
         if let host = url.host, let qs = url.queryDictionary, let type = qs["type"], host == "icon" {
+            if let icon = Bundle.main.image(forResource: type) {
+                return icon.resized(to: NSSize(width: width, height: height))?.overlayBadge(color: color,  text: badge)
+            }
+            
             var t = type
             if (type == "folder") {
                 t = NSFileTypeForHFSTypeCode(OSType(kGenericFolderIcon))
@@ -215,6 +219,7 @@ extension WebBridge: WKURLSchemeHandler {
 
         guard var specifier = (url as NSURL).resourceSpecifier else { return nil }
         if (specifier.prefix(2) == "//") { specifier = String(specifier.dropFirst(2)) }
+//        if (specifier.prefix(1) !=  "/") { specifier = "/" + specifier }
         let resource = specifier.replacingOccurrences(of: "?\(url.query ?? "<none>")", with: "") as NSString
         return NSWorkspace.shared.icon(forFile: resource.expandingTildeInPath.removingPercentEncoding ?? "").resized(to: NSSize(width: width, height: height))?.overlayBadge(color: color,  text: badge)
         
@@ -532,8 +537,17 @@ extension WebBridge {
            let handlerId = params["handlerId"],
            let env = params["env"]?.jsonStringToDict(),
            let pwd = env["PWD"] as? String {
-             
-            let url = URL(fileURLWithPath: NSString(string: path).standardizingPath, relativeTo: URL(fileURLWithPath: pwd))
+            
+            let relative = pwd
+            let url: URL = {
+                let filepath = NSString(string: path).standardizingPath
+                if (filepath.starts(with: "/")) {
+                    return URL(fileURLWithPath: filepath)
+                } else {
+                    return URL(fileURLWithPath: filepath, relativeTo: URL(fileURLWithPath: relative ?? ""))
+                }
+            }()
+
             do {
                 try data.write(to: url, atomically: true, encoding: String.Encoding.utf8)
 //                scope.webView?.evaluateJavaScript("fig.callback(`\(handlerId)`, null)", completionHandler: nil)
@@ -552,7 +566,16 @@ extension WebBridge {
 //           let pwd = env["PWD"] as? String
             {
             let relative: String? = params["env"]?.jsonStringToDict()?["PWD"]  as? String
-            let url = URL(fileURLWithPath: NSString(string: path).standardizingPath, relativeTo: URL(fileURLWithPath: relative ?? ""))
+            let url: URL = {
+                let filepath = NSString(string: path).standardizingPath
+                if (filepath.starts(with: "/")) {
+                    return URL(fileURLWithPath: filepath)
+                } else {
+                    return URL(fileURLWithPath: filepath, relativeTo: URL(fileURLWithPath: relative ?? ""))
+                }
+            }()
+                
+//            let url = URL(fileURLWithPath: NSString(string: path).standardizingPath, relativeTo: URL(fileURLWithPath: relative ?? ""))
             do {
                 let out = try String(contentsOf: url, encoding: String.Encoding.utf8)
                 let encoded = out.data(using: .utf8)!
@@ -966,6 +989,9 @@ extension WebBridge {
         }
     }
     
+    static func declareHomeDirectory(webview: WebView) {
+        webview.evaluateJavaScript("fig.home = '\(NSHomeDirectory())'", completionHandler: nil)
+    }
     
     
     static func declareRemoteURL(webview: WebView) {
@@ -1099,22 +1125,37 @@ struct WebBridgeJSCallback : Codable {
 
 extension URL {
     var queryDictionary: [String: String]? {
-        guard let query = self.query else { return nil}
+        var dict = [String:String]()
 
-        var queryStrings = [String: String]()
-        for pair in query.components(separatedBy: "&") {
-
-            let key = pair.components(separatedBy: "=")[0]
-
-            let value = pair
-                .components(separatedBy:"=")[1]
-                .replacingOccurrences(of: "+", with: " ")
-                .removingPercentEncoding ?? ""
-
-            queryStrings[key] = value
+        if let components = URLComponents(url: self, resolvingAgainstBaseURL: false) {
+          if let queryItems = components.queryItems {
+            for item in queryItems where item.value != nil {
+              dict[item.name] = item.value!
+            }
+          }
+          return dict
+        } else {
+          return [:]
         }
-        return queryStrings
     }
+//    var queryDictionary: [String: String]? {
+//
+//        guard let query = self.query else { return nil}
+//
+//        var queryStrings = [String: String]()
+//        for pair in query.components(separatedBy: "&") {
+//
+//            let key = pair.components(separatedBy: "=")[0]
+//
+//            let value = pair
+//                .components(separatedBy:"=")[1]
+//                .replacingOccurrences(of: "+", with: " ")
+//                .removingPercentEncoding ?? ""
+//
+//            queryStrings[key] = value
+//        }
+//        return queryStrings
+//    }
 }
 
 extension WebBridgeScript {

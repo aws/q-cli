@@ -162,7 +162,7 @@ class KeystrokeBuffer : NSObject {
         case (Keycode.rightArrow, withoutControl),
              (Keycode.f, withControl):
             // handles zsh greyed out text
-            if Defaults.zshAutosuggestionPlugin && buffer != nil && index == buffer!.endIndex {
+            if Defaults.deferToShellAutosuggestions && buffer != nil && index == buffer!.endIndex {
                 buffer = nil
                 print("xterm: possible zsh autosuggest, break context")
             }

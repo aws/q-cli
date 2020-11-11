@@ -46,6 +46,8 @@ enum TelemetryEvent: String {
     case viaShell = "Event via Shell"
     case uninstallApp = "Uninstall App"
     case iTermSetup = "iTerm Setup"
+    case launchedApp = "Launched App"
+
 
 }
 

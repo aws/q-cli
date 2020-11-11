@@ -12,12 +12,21 @@ import Starscream
 
 let arguments = CommandLine.arguments
 
+if arguments.count > 1 {
+    let command = arguments[1]
+    if command == "cli:installed" {
+        print("true")
+        exit(0)
+    }
+}
+
 // early exit if bg:* and fig is not active
 
 if (arguments.filter { $0.starts(with: "bg:")}.count == 1  && NSWorkspace.shared.runningApplications.filter { $0.bundleIdentifier == "com.mschrage.fig"}.count == 0) {
     exit(1)
 }
-    
+
+
 // get stdin
 var stdin = ""
 //var line: String? = nil
@@ -179,7 +188,7 @@ DispatchQueue.global(qos: .default).async {
 
 /// Timeout
 DispatchQueue.global().asyncAfter(deadline: .now() + 1.25) {
-    
+    if (handler?.busy ?? false) { return }
     guard (arguments.filter { $0.starts(with: "bg:")}.count == 0) else {
         group.leave()
         return

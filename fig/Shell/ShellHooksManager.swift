@@ -38,7 +38,7 @@ struct proc {
     
     /// Run cat /etc/shells
     var isShell: Bool {
-        return ["zsh","fish","bash", "csh","dash","ksh","tcsh", "ssh"].reduce(into: false) { (res, shell) in
+        return (Defaults.processWhitelist + ["zsh","fish","bash", "csh","dash","ksh","tcsh", "ssh"]).reduce(into: false) { (res, shell) in
             res = res || cmd.contains(shell)
         }
     }
@@ -121,6 +121,11 @@ extension ShellHookManager : ShellBridgeEventListener {
         // check if this
         let msg = (notification.object as! ShellMessage)
         Logger.log(message: "shellPromptWillReturn")
+        
+//        if let window = AXWindowServer.shared.whitelistedWindow {
+//            self.sessions[window.hash] = msg.session
+//        }
+
 
         if let windowHash = sessions.someKey(forValue: msg.session) {
             print("tty: shellPromptWillReturn for hash = \(windowHash)")
@@ -161,6 +166,8 @@ extension ShellHookManager : ShellBridgeEventListener {
                     print("tty: could not parse!")
                 }
             } else {
+                print("tty: Terminal created but window is not whitelisted.")
+
                 Logger.log(message: "Terminal created but window is not whitelisted.")
             }
         }

@@ -736,7 +736,8 @@ extension WindowManager : WindowManagementService {
             
             WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try { fig.autocomplete_above = \(isAbove)} catch(e) {}", completionHandler: nil)
             
-            let popup = NSRect(origin: translatedOrigin, size: CGSize(width: 200, height: height))
+            let popup = NSRect(origin: translatedOrigin, size: CGSize(width: Defaults.autocompleteWidth ?? 200
+                , height: height))
             let sidebarInsetBuffer:CGFloat = 0.0//60;
             let w = (NSScreen.main!.frame.maxX - sidebarInsetBuffer) - popup.maxX
             var x = popup.origin.x

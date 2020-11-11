@@ -118,7 +118,7 @@ class AXWindowServer : WindowService {
     var topWindow: ExternalWindow? = nil {
         didSet {
             NotificationCenter.default.post(name: AXWindowServer.windowDidChangeNotification, object: self.topWindow)
-            print("AXWindowServer: Window = \(self.topWindow?.windowId ?? 0); App = \(self.topWindow?.bundleId ?? "<none>"); pid = \(self.topWindow?.app.processIdentifier ?? 0)")
+            Logger.log(message: "AXWindowServer: Window = \(self.topWindow?.windowId ?? 0); App = \(self.topWindow?.bundleId ?? "<none>"); pid = \(self.topWindow?.app.processIdentifier ?? 0)")
        }
     }
     var whitelistedWindow: ExternalWindow? {
@@ -263,6 +263,12 @@ class AXWindowServer : WindowService {
                 print("AXWindowServer: \(appRef.bundleId!) \(element) kAXApplicationDeactivatedNotification")
             case kAXWindowMovedNotification:
                 print("AXWindowServer: \(appRef.bundleId!) \(element) kAXWindowMovedNotification")
+                // fixes issue where opening app from spotlight loses window tracking
+                guard let app = NSWorkspace.shared.frontmostApplication, app.bundleIdentifier == appRef.bundleIdentifier else {
+                    print("AXWindowServer: resized window of '\(appRef.bundleId!)' is not associated with frontmost application.")
+                    return
+                }
+                
                 //update window object so that origin is accurate
                 var window: AnyObject?
                 AXUIElementCopyAttributeValue(appRef.axAppRef, kAXFocusedWindowAttribute as CFString, &window)
@@ -270,6 +276,13 @@ class AXWindowServer : WindowService {
                 self.topWindow = ExternalWindow(backedBy: window as! AXUIElement, in: appRef)
             case kAXWindowResizedNotification:
                 print("AXWindowServer: \(appRef.bundleId!) \(element) kAXWindowResizedNotification")
+                
+                // fixes issue where opening app from spotlight loses window tracking
+                guard let app = NSWorkspace.shared.frontmostApplication, app.bundleIdentifier == appRef.bundleIdentifier else {
+                    print("AXWindowServer: resized window of '\(appRef.bundleId!)' is not associated with frontmost application.")
+                    return
+                }
+                
                 //update window object so that bounds are accurate
                 var window: AnyObject?
                 AXUIElementCopyAttributeValue(appRef.axAppRef, kAXFocusedWindowAttribute as CFString, &window)
@@ -333,7 +346,7 @@ class AXWindowServer : WindowService {
         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(didTerminateApplication(notification:)), name: NSWorkspace.didTerminateApplicationNotification, object: nil)
         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(didLaunchApplicationNotification(notification:)), name: NSWorkspace.didLaunchApplicationNotification, object: nil)
         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(didDeactivateApplication(notification:)), name: NSWorkspace.didDeactivateApplicationNotification, object: nil)
-//        NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(activeSpaceDidChange), name: NSWorkspace.activeSpaceDidChangeNotification, object: nil)
+        NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(activeSpaceDidChange), name: NSWorkspace.activeSpaceDidChangeNotification, object: nil)
         
 //        NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged) { (event) in
 //            if let window = WindowServer.shared.allWindows(onScreen: false).first {
@@ -371,7 +384,11 @@ class AXWindowServer : WindowService {
     
     @objc func activeSpaceDidChange() {
         // this is used to reset previous application when space is changed. Maybe should be nil.
-        //self.previousApplication = NSWorkspace.shared.frontmostApplication
+        //self.previousApplication =
+        if let app = NSWorkspace.shared.frontmostApplication {
+            print("AXWindowServer: space changed - \(app.bundleIdentifier ?? "<none>")")
+            //self.register(app, fromActivation: true)
+        }
     }
 
     @objc func didDeactivateApplication(notification: NSNotification!) {

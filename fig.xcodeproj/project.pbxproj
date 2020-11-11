@@ -42,6 +42,12 @@
 		7510F8BD24A9861E00E86F7C /* PrivateWindow.m in Sources */ = {isa = PBXBuildFile; fileRef = 7510F8BC24A9861E00E86F7C /* PrivateWindow.m */; };
 		7510F8BF24A99A4B00E86F7C /* WindowService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F8BE24A99A4B00E86F7C /* WindowService.swift */; };
 		7510F8C124A9B32D00E86F7C /* WindowManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F8C024A9B32D00E86F7C /* WindowManager.swift */; };
+		7518606F255B2A0A0000A7C7 /* flag@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 75186069255B2A090000A7C7 /* flag@2x.png */; };
+		75186070255B2A0A0000A7C7 /* astrix@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7518606A255B2A090000A7C7 /* astrix@2x.png */; };
+		75186071255B2A0A0000A7C7 /* option@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7518606B255B2A090000A7C7 /* option@2x.png */; };
+		75186072255B2A0A0000A7C7 /* carrot@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7518606C255B2A090000A7C7 /* carrot@2x.png */; };
+		75186073255B2A0A0000A7C7 /* string@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7518606D255B2A090000A7C7 /* string@2x.png */; };
+		75186074255B2A0A0000A7C7 /* command@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7518606E255B2A0A0000A7C7 /* command@2x.png */; };
 		751C3BEC24B6910800B5C7FD /* Remote.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751C3BEB24B6910800B5C7FD /* Remote.swift */; };
 		751C3BEE24B6915000B5C7FD /* Defaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751C3BED24B6915000B5C7FD /* Defaults.swift */; };
 		751F7589246D090100E083C8 /* WebBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751F7588246D090100E083C8 /* WebBridge.swift */; };
@@ -213,6 +219,12 @@
 		7510F8BC24A9861E00E86F7C /* PrivateWindow.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PrivateWindow.m; sourceTree = "<group>"; };
 		7510F8BE24A99A4B00E86F7C /* WindowService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowService.swift; sourceTree = "<group>"; };
 		7510F8C024A9B32D00E86F7C /* WindowManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowManager.swift; sourceTree = "<group>"; };
+		75186069255B2A090000A7C7 /* flag@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "flag@2x.png"; sourceTree = "<group>"; };
+		7518606A255B2A090000A7C7 /* astrix@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "astrix@2x.png"; sourceTree = "<group>"; };
+		7518606B255B2A090000A7C7 /* option@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "option@2x.png"; sourceTree = "<group>"; };
+		7518606C255B2A090000A7C7 /* carrot@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "carrot@2x.png"; sourceTree = "<group>"; };
+		7518606D255B2A090000A7C7 /* string@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "string@2x.png"; sourceTree = "<group>"; };
+		7518606E255B2A0A0000A7C7 /* command@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "command@2x.png"; sourceTree = "<group>"; };
 		751C3BEB24B6910800B5C7FD /* Remote.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Remote.swift; sourceTree = "<group>"; };
 		751C3BED24B6915000B5C7FD /* Defaults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Defaults.swift; sourceTree = "<group>"; };
 		751F7588246D090100E083C8 /* WebBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebBridge.swift; sourceTree = "<group>"; };
@@ -450,6 +462,12 @@
 				757CA88B248B08D7002A64A8 /* local */,
 				75B199302501A1A200F38EA8 /* Legacy */,
 				75675958244634B2006AA988 /* Assets.xcassets */,
+				7518606A255B2A090000A7C7 /* astrix@2x.png */,
+				7518606C255B2A090000A7C7 /* carrot@2x.png */,
+				7518606E255B2A0A0000A7C7 /* command@2x.png */,
+				75186069255B2A090000A7C7 /* flag@2x.png */,
+				7518606B255B2A090000A7C7 /* option@2x.png */,
+				7518606D255B2A090000A7C7 /* string@2x.png */,
 				7567595D244634B2006AA988 /* Main.storyboard */,
 				75675960244634B2006AA988 /* Info.plist */,
 				75675961244634B2006AA988 /* fig.entitlements */,
@@ -761,6 +779,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				75186073255B2A0A0000A7C7 /* string@2x.png in Resources */,
 				75AC552C2522C7710069635E /* upgrade in Resources */,
 				757CA88624876043002A64A8 /* error.html in Resources */,
 				757CA88F248B0D31002A64A8 /* cli.png in Resources */,
@@ -781,12 +800,17 @@
 				7510F8AB24A6910500E86F7C /* README.md in Resources */,
 				757CA89D248C1F50002A64A8 /* demo4onboarding.mp4 in Resources */,
 				7567595F244634B2006AA988 /* Main.storyboard in Resources */,
+				75186070255B2A0A0000A7C7 /* astrix@2x.png in Resources */,
 				75B1993625042B2C00F38EA8 /* autocomplete.html in Resources */,
+				7518606F255B2A0A0000A7C7 /* flag@2x.png in Resources */,
 				75E993F22515A6DD000BE6BE /* statusbar@2x.png in Resources */,
 				752C0BDE2479F6AF0077E415 /* insert-tutorial.js in Resources */,
 				752C0BE2247A33F20077E415 /* viewer.html in Resources */,
 				752C0BE6247C25290077E415 /* display.html in Resources */,
 				752C0BDC2479F68C0077E415 /* tutorial.css in Resources */,
+				75186072255B2A0A0000A7C7 /* carrot@2x.png in Resources */,
+				75186074255B2A0A0000A7C7 /* command@2x.png in Resources */,
+				75186071255B2A0A0000A7C7 /* option@2x.png in Resources */,
 				752C0BE0247A27790077E415 /* editor.html in Resources */,
 				757CA891248B2799002A64A8 /* cli.html in Resources */,
 				7567595C244634B2006AA988 /* Preview Assets.xcassets in Resources */,

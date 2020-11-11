@@ -189,7 +189,7 @@ class Defaults {
 
        }
     
-    static var zshAutosuggestionPlugin: Bool {
+    static var deferToShellAutosuggestions: Bool {
            get {
                return
                    UserDefaults.standard.bool(forKey: "zshAutosuggestionPlugin")
@@ -260,6 +260,47 @@ class Defaults {
             UserDefaults.standard.set(version, forKey: "autocompleteVersion")
             UserDefaults.standard.synchronize()
         }
+    }
+    
+    static var autocompleteWidth: CGFloat? {
+        get {
+            let string = UserDefaults.standard.string(forKey: "autocompleteWidth")
+            guard let str = string, let n = NumberFormatter().number(from: str) else { return nil }
+            return n as? CGFloat
+        }
+        
+        set(width){
+            guard let width = width else { return }
+            let str = NumberFormatter().string(from: NSNumber(floatLiteral: Double(width) ))
+            UserDefaults.standard.set(str, forKey: "autocompleteWidth")
+            UserDefaults.standard.synchronize()
+        }
+    }
+    
+    static var processWhitelist: [String] {
+        get {
+            let string = UserDefaults.standard.string(forKey: "processWhitelist")
+            return string?.split(separator: ",").map { String($0) } ?? []
+        }
+        
+        set(whitelist){
+            UserDefaults.standard.set(whitelist.joined(separator: ","), forKey: "processWhitelist")
+            UserDefaults.standard.synchronize()
+        }
+        
+    }
+
+    static var launchedFollowingCrash: Bool {
+        get {
+            return
+                UserDefaults.standard.bool(forKey: "launchedFollowingCrash")
+        }
+        
+        set(flag) {
+            UserDefaults.standard.set(flag, forKey: "launchedFollowingCrash")
+            UserDefaults.standard.synchronize()
+        }
+
     }
     
 }

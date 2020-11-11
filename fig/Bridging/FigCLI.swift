@@ -459,14 +459,22 @@ class FigCLI {
       
         guard let options = message.options, options.count > 0 else {
             let scope = Scope(cmd: "", stdin: stdin, options: [], env: env, webView: webView, companionWindow: companionWindow, session: message.session)
-            companionWindow.positioning =  .spotlight
-            FigCLI.index(with: scope)
+            FigCLI.env(with: scope)
+
+            ShellBridge.shared.socketServer.send(sessionId: scope.session, command: "disconnect")
+            scope.companionWindow.windowManager.close(window:  scope.companionWindow)
+
+            if let delegate = NSApp.delegate as? AppDelegate {
+                delegate.openMenu()
+            }
+            
+//            companionWindow.positioning =  .spotlight
+//            FigCLI.index(with: scope)
             TelemetryProvider.post(event: .ranCommand, with:
                                     ["cmd" : scope.cmd,
                                     "args" : scope.options.map { TelemetryProvider.obscure($0)}.joined(separator: " "),
                                     "shell" : scope.shell ?? "<unknown>",
                                     "terminal" : scope.term ?? "<unknown>"])
-            ShellBridge.shared.socketServer.send(sessionId: scope.session, command: "disconnect")
             return
         }
         let command = options.first!
