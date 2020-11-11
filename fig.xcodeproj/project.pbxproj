@@ -48,7 +48,6 @@
 		75186072255B2A0A0000A7C7 /* carrot@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7518606C255B2A090000A7C7 /* carrot@2x.png */; };
 		75186073255B2A0A0000A7C7 /* string@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7518606D255B2A090000A7C7 /* string@2x.png */; };
 		75186074255B2A0A0000A7C7 /* command@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7518606E255B2A0A0000A7C7 /* command@2x.png */; };
-		75186075255CAC730000A7C7 /* upgrade in Resources */ = {isa = PBXBuildFile; fileRef = 75AC552B2522C7710069635E /* upgrade */; };
 		751C3BEC24B6910800B5C7FD /* Remote.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751C3BEB24B6910800B5C7FD /* Remote.swift */; };
 		751C3BEE24B6915000B5C7FD /* Defaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751C3BED24B6915000B5C7FD /* Defaults.swift */; };
 		751F7589246D090100E083C8 /* WebBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751F7588246D090100E083C8 /* WebBridge.swift */; };
@@ -225,6 +224,18 @@
 		7518606C255B2A090000A7C7 /* carrot@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "carrot@2x.png"; sourceTree = "<group>"; };
 		7518606D255B2A090000A7C7 /* string@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "string@2x.png"; sourceTree = "<group>"; };
 		7518606E255B2A0A0000A7C7 /* command@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "command@2x.png"; sourceTree = "<group>"; };
+		75186077255CB0870000A7C7 /* iterm-integration.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "iterm-integration.sh"; sourceTree = "<group>"; };
+		75186078255CB0870000A7C7 /* 1.0.23.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = 1.0.23.sh; sourceTree = "<group>"; };
+		75186079255CB0870000A7C7 /* fig-iterm-integration.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = "fig-iterm-integration.py"; sourceTree = "<group>"; };
+		7518607A255CB0870000A7C7 /* update-autocomplete.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "update-autocomplete.sh"; sourceTree = "<group>"; };
+		7518607B255CB0870000A7C7 /* 1.0.22.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = 1.0.22.sh; sourceTree = "<group>"; };
+		7518607C255CB0870000A7C7 /* uninstall.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = uninstall.sh; sourceTree = "<group>"; };
+		7518607D255CB0870000A7C7 /* source.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = source.sh; sourceTree = "<group>"; };
+		7518607E255CB0870000A7C7 /* 1.0.21.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = 1.0.21.sh; sourceTree = "<group>"; };
+		7518607F255CB0870000A7C7 /* feedback.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = feedback.sh; sourceTree = "<group>"; };
+		75186080255CB0870000A7C7 /* 1.0.24.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = 1.0.24.sh; sourceTree = "<group>"; };
+		75186081255CB0870000A7C7 /* open_new_terminal_window.scpt */ = {isa = PBXFileReference; lastKnownFileType = file; path = open_new_terminal_window.scpt; sourceTree = "<group>"; };
+		75186082255CB0870000A7C7 /* 1.0.20.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = 1.0.20.sh; sourceTree = "<group>"; };
 		751C3BEB24B6910800B5C7FD /* Remote.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Remote.swift; sourceTree = "<group>"; };
 		751C3BED24B6915000B5C7FD /* Defaults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Defaults.swift; sourceTree = "<group>"; };
 		751F7588246D090100E083C8 /* WebBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebBridge.swift; sourceTree = "<group>"; };
@@ -403,6 +414,26 @@
 			path = Mac;
 			sourceTree = "<group>";
 		};
+		75186076255CB0870000A7C7 /* upgrade */ = {
+			isa = PBXGroup;
+			children = (
+				75186077255CB0870000A7C7 /* iterm-integration.sh */,
+				75186078255CB0870000A7C7 /* 1.0.23.sh */,
+				75186079255CB0870000A7C7 /* fig-iterm-integration.py */,
+				7518607A255CB0870000A7C7 /* update-autocomplete.sh */,
+				7518607B255CB0870000A7C7 /* 1.0.22.sh */,
+				7518607C255CB0870000A7C7 /* uninstall.sh */,
+				7518607D255CB0870000A7C7 /* source.sh */,
+				7518607E255CB0870000A7C7 /* 1.0.21.sh */,
+				7518607F255CB0870000A7C7 /* feedback.sh */,
+				75186080255CB0870000A7C7 /* 1.0.24.sh */,
+				75186081255CB0870000A7C7 /* open_new_terminal_window.scpt */,
+				75186082255CB0870000A7C7 /* 1.0.20.sh */,
+			);
+			name = upgrade;
+			path = fig/upgrade;
+			sourceTree = "<group>";
+		};
 		751F758F246E16D800E083C8 /* figcli */ = {
 			isa = PBXGroup;
 			children = (
@@ -418,6 +449,7 @@
 			isa = PBXGroup;
 			children = (
 				75AC552B2522C7710069635E /* upgrade */,
+				75186076255CB0870000A7C7 /* upgrade */,
 				75675953244634AD006AA988 /* fig */,
 				75675969244634B2006AA988 /* figTests */,
 				75675974244634B2006AA988 /* figUITests */,
@@ -779,7 +811,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				75186075255CAC730000A7C7 /* upgrade in Resources */,
 				75186073255B2A0A0000A7C7 /* string@2x.png in Resources */,
 				757CA88624876043002A64A8 /* error.html in Resources */,
 				757CA88F248B0D31002A64A8 /* cli.png in Resources */,
