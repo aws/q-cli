@@ -48,6 +48,18 @@
 		75186072255B2A0A0000A7C7 /* carrot@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7518606C255B2A090000A7C7 /* carrot@2x.png */; };
 		75186073255B2A0A0000A7C7 /* string@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7518606D255B2A090000A7C7 /* string@2x.png */; };
 		75186074255B2A0A0000A7C7 /* command@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7518606E255B2A0A0000A7C7 /* command@2x.png */; };
+		75186083255CB0C20000A7C7 /* iterm-integration.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75186077255CB0870000A7C7 /* iterm-integration.sh */; };
+		75186084255CB0C20000A7C7 /* 1.0.23.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75186078255CB0870000A7C7 /* 1.0.23.sh */; };
+		75186085255CB0C20000A7C7 /* fig-iterm-integration.py in Resources */ = {isa = PBXBuildFile; fileRef = 75186079255CB0870000A7C7 /* fig-iterm-integration.py */; };
+		75186086255CB0C20000A7C7 /* update-autocomplete.sh in Resources */ = {isa = PBXBuildFile; fileRef = 7518607A255CB0870000A7C7 /* update-autocomplete.sh */; };
+		75186087255CB0C20000A7C7 /* 1.0.22.sh in Resources */ = {isa = PBXBuildFile; fileRef = 7518607B255CB0870000A7C7 /* 1.0.22.sh */; };
+		75186088255CB0C20000A7C7 /* uninstall.sh in Resources */ = {isa = PBXBuildFile; fileRef = 7518607C255CB0870000A7C7 /* uninstall.sh */; };
+		75186089255CB0C20000A7C7 /* source.sh in Resources */ = {isa = PBXBuildFile; fileRef = 7518607D255CB0870000A7C7 /* source.sh */; };
+		7518608A255CB0C20000A7C7 /* 1.0.21.sh in Resources */ = {isa = PBXBuildFile; fileRef = 7518607E255CB0870000A7C7 /* 1.0.21.sh */; };
+		7518608B255CB0C20000A7C7 /* feedback.sh in Resources */ = {isa = PBXBuildFile; fileRef = 7518607F255CB0870000A7C7 /* feedback.sh */; };
+		7518608C255CB0C20000A7C7 /* 1.0.24.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75186080255CB0870000A7C7 /* 1.0.24.sh */; };
+		7518608D255CB0C20000A7C7 /* open_new_terminal_window.scpt in Resources */ = {isa = PBXBuildFile; fileRef = 75186081255CB0870000A7C7 /* open_new_terminal_window.scpt */; };
+		7518608E255CB0C20000A7C7 /* 1.0.20.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75186082255CB0870000A7C7 /* 1.0.20.sh */; };
 		751C3BEC24B6910800B5C7FD /* Remote.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751C3BEB24B6910800B5C7FD /* Remote.swift */; };
 		751C3BEE24B6915000B5C7FD /* Defaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751C3BED24B6915000B5C7FD /* Defaults.swift */; };
 		751F7589246D090100E083C8 /* WebBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751F7588246D090100E083C8 /* WebBridge.swift */; };
@@ -811,6 +823,18 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				75186083255CB0C20000A7C7 /* iterm-integration.sh in Resources */,
+				75186084255CB0C20000A7C7 /* 1.0.23.sh in Resources */,
+				75186085255CB0C20000A7C7 /* fig-iterm-integration.py in Resources */,
+				75186086255CB0C20000A7C7 /* update-autocomplete.sh in Resources */,
+				75186087255CB0C20000A7C7 /* 1.0.22.sh in Resources */,
+				75186088255CB0C20000A7C7 /* uninstall.sh in Resources */,
+				75186089255CB0C20000A7C7 /* source.sh in Resources */,
+				7518608A255CB0C20000A7C7 /* 1.0.21.sh in Resources */,
+				7518608B255CB0C20000A7C7 /* feedback.sh in Resources */,
+				7518608C255CB0C20000A7C7 /* 1.0.24.sh in Resources */,
+				7518608D255CB0C20000A7C7 /* open_new_terminal_window.scpt in Resources */,
+				7518608E255CB0C20000A7C7 /* 1.0.20.sh in Resources */,
 				75186073255B2A0A0000A7C7 /* string@2x.png in Resources */,
 				757CA88624876043002A64A8 /* error.html in Resources */,
 				757CA88F248B0D31002A64A8 /* cli.png in Resources */,
