@@ -67,6 +67,7 @@ class ShellBridgeSocketService: WebSocketService {
 
     public func disconnected(connection: WebSocketConnection, reason: WebSocketCloseReasonCode) {
         print("disconnected:",connection.id)
+        // exec bad access error occured here
         connections.removeValue(forKey: connection.id)
     }
 

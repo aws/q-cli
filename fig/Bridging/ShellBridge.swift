@@ -336,13 +336,13 @@ class ShellBridge {
                 return
             }
             
-            let windows = jsons.map({ return WindowInfo(json: $0) }).filter({ $0?.name == "Spotlight" && $0?.frame.size != CGSize(width: 36, height: 22) })
+            let windows = jsons.map({ return WindowInfo(json: $0) }).filter({ $0?.name == "Spotlight" && ($0?.frame.size != CGSize(width: 36, height: 22) && $0?.frame.size != CGSize(width: 32, height: 24)) })
             if let spotlight = windows.first {
-                print("spotlight: ", NSScreen.main?.frame)
-                print("spotlight: ", spotlight?.frame)
+                Logger.log(message: "spotlight: \(NSScreen.main?.frame ?? .zero)")
+                Logger.log(message: "spotlight: \(spotlight?.frame ?? .zero)")
                 return
-
             }
+            
             print("inject: ", NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "<none>")
             if (clearLine) {
                   self.simulate(keypress: .ctrlE)
@@ -856,6 +856,8 @@ extension ShellBridge {
                     DispatchQueue.global(qos: .background).async {
                         TelemetryProvider.post(event: .grantedAXPermission, with: [:])
                     }
+                    print("Accessibility Permission Granted!!!")
+
                 }
               }
             

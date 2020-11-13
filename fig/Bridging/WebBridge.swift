@@ -759,7 +759,7 @@ extension WebBridge {
                         delegate.iTermSetup()
                     }
                 case "newTerminalWindow":
-                    let path = Bundle.main.path(forResource: "open_new_terminal_window", ofType: "scpt", inDirectory: "upgrade")
+                    let path = Bundle.main.path(forResource: "open_new_terminal_window", ofType: "scpt")
                     NSAppleScript.run(path: path!)
             case "openOnStartup:true":
                 (NSApp.delegate as? AppDelegate)?.toggleLaunchAtStartup(shouldBeOff: false)

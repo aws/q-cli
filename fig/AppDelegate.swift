@@ -105,17 +105,18 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 //                Fig needs this permission in order to connect to your terminal window.\n\nYou may need to toggle the setting in order for MacOS to update it.\n\nThis can occur when Fig is updated. If you are seeing this more frequently, get in touch with matt@withfig.com.
                 
                 if (enable) {
+                    self.promptForAccesibilityAccess()
 //                    ShellBridge.promptForAccesibilityAccess()
-                    ShellBridge.promptForAccesibilityAccess { (granted) in
-                       if (granted) {
-                           KeypressProvider.shared.registerKeystrokeHandler()
-                           AXWindowServer.shared.registerWindowTracking()
-                       }
-                    }
+//                    ShellBridge.promptForAccesibilityAccess { (granted) in
+//                       if (granted) {
+//                           KeypressProvider.shared.registerKeystrokeHandler()
+//                           AXWindowServer.shared.registerWindowTracking()
+//                       }
+//                    }
                 }
             }
             let installed = "fig cli:installed".runAsCommand().trimmingCharacters(in: .whitespacesAndNewlines)
-            if (!FileManager.default.fileExists(atPath: "/usr/local/bin/fig") || installed != "true") {
+            if (!FileManager.default.fileExists(atPath: "/usr/local/bin/fig") && installed != "true") {
                 SentrySDK.capture(message: "CLI Tool Not Installed on Subsequent Launch")
 
                 let enable = self.dialogOKCancel(question: "Install Fig CLI Tool?", text: "It looks like you haven't installed the Fig CLI tool. Fig doesn't work without it.")
@@ -250,15 +251,9 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         
         let statusBarMenu = NSMenu(title: "fig")
         statusBarMenu.addItem(NSMenuItem.separator())
-        let sidebar = statusBarMenu.addItem(
-         withTitle: "Sidebar",
-         action: #selector(AppDelegate.toggleSidebar(_:)),
-         keyEquivalent: "")
-        sidebar.indentationLevel = 1
-        sidebar.state = Defaults.showSidebar ? .on : .off
-
+        
         let autocomplete = statusBarMenu.addItem(
-         withTitle: "Autocomplete (βeta)",
+         withTitle: "Autocomplete", //(βeta)
          action: #selector(AppDelegate.toggleAutocomplete(_:)),
          keyEquivalent: "")
         autocomplete.state = Defaults.useAutocomplete ? .on : .off
@@ -286,59 +281,70 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
          action: #selector(AppDelegate.checkForUpdates),
          keyEquivalent: "")
         statusBarMenu.addItem(NSMenuItem.separator())
+        
         let debugMenu = NSMenu(title: "debug")
-        
-        debugMenu.addItem(
-         withTitle: "Install CLI Tool",
-         action: #selector(AppDelegate.addCLI),
-         keyEquivalent: "")
-        
+        let sidebar = debugMenu.addItem(
+        withTitle: "Sidebar (Legacy)",
+        action: #selector(AppDelegate.toggleSidebar(_:)),
+        keyEquivalent: "")
+        //        sidebar.indentationLevel = 1
+        sidebar.state = Defaults.showSidebar ? .on : .off
         debugMenu.addItem(NSMenuItem.separator())
+        
+        debugMenu.addItem(withTitle: "Compatibility", action: nil, keyEquivalent: "")
+        
+        let zshPlugin = debugMenu.addItem(
+        withTitle: "Fish / Zsh Grey Autosuggest", //Defer to Shell Autosuggest
+        action: #selector(AppDelegate.toggleZshPlugin(_:)),
+        keyEquivalent: "")
+        zshPlugin.state = Defaults.deferToShellAutosuggestions ? .on : .off
         
         debugMenu.addItem(
         withTitle: "Setup iTerm Tab Integration",
         action: #selector(AppDelegate.iTermSetup),
         keyEquivalent: "")
         
-        
-        let zshPlugin = debugMenu.addItem(
-         withTitle: "Defer to Shell Autosuggest",
-         action: #selector(AppDelegate.toggleZshPlugin(_:)),
-         keyEquivalent: "")
-        zshPlugin.state = Defaults.deferToShellAutosuggestions ? .on : .off
         debugMenu.addItem(NSMenuItem.separator())
+        
+        let utilitiesMenu = NSMenu(title: "utilities")
+        
+        utilitiesMenu.addItem(
+         withTitle: "Install CLI Tool",
+         action: #selector(AppDelegate.addCLI),
+         keyEquivalent: "")
+        utilitiesMenu.addItem(
+         withTitle: "Request Accessibility Permission",
+         action: #selector(AppDelegate.promptForAccesibilityAccess),
+         keyEquivalent: "")
+        utilitiesMenu.addItem(NSMenuItem.separator())
 
-
-        let logging =  debugMenu.addItem(
+        let logging =  utilitiesMenu.addItem(
          withTitle: "Logging",
          action: #selector(AppDelegate.toggleLogging),
          keyEquivalent: "")
         logging.state = Defaults.broadcastLogs ? .on : .off
         debugMenu.addItem(NSMenuItem.separator())
-        let debugAutocomplete = debugMenu.addItem(
+        let debugAutocomplete = utilitiesMenu.addItem(
          withTitle: "Debug Mode",
          action: #selector(AppDelegate.toggleDebugAutocomplete(_:)),
          keyEquivalent: "")
         debugAutocomplete.state = Defaults.debugAutocomplete ? .on : .off
-        debugMenu.addItem(NSMenuItem.separator())
-        let utilitiesMenu = NSMenu(title: "utilities")
+//        utilitiesMenu.addItem(NSMenuItem.separator())
         utilitiesMenu.addItem(NSMenuItem.separator())
         utilitiesMenu.addItem(
-         withTitle: "Request Accesibility Permission",
-         action: #selector(AppDelegate.promptForAccesibilityAccess),
-         keyEquivalent: "")
-        utilitiesMenu.addItem(
-         withTitle: "Run Install Script",
+         withTitle: "Run Install/Update Script",
          action: #selector(AppDelegate.setupScript),
          keyEquivalent: "")
-        utilitiesMenu.addItem(NSMenuItem.separator())
-        utilitiesMenu.addItem(
-         withTitle: "Run Uninstall Script",
+        
+        let utilities = debugMenu.addItem(withTitle: "Developer", action: nil, keyEquivalent: "")
+        utilities.submenu = utilitiesMenu
+        
+        debugMenu.addItem(NSMenuItem.separator())
+        debugMenu.addItem(
+         withTitle: "Uninstall Fig",
          action: #selector(AppDelegate.uninstall),
          keyEquivalent: "")
         
-        let utilities = debugMenu.addItem(withTitle: "Scripts", action: nil, keyEquivalent: "")
-        utilities.submenu = utilitiesMenu
         debugMenu.addItem(NSMenuItem.separator())
 
 
@@ -374,14 +380,15 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
                 keyEquivalent: "")
            }
         
-        let debug = statusBarMenu.addItem(withTitle: "Utilities", action: nil, keyEquivalent: "")
+        let debug = statusBarMenu.addItem(withTitle: "Settings", action: nil, keyEquivalent: "")
         debug.submenu = debugMenu
         
         statusBarMenu.addItem(NSMenuItem.separator())
-        statusBarMenu.addItem(
-         withTitle: "✉️ Email Founders...",
+        let email = statusBarMenu.addItem(
+         withTitle: "Email Founders...", //✉️
          action: #selector(AppDelegate.sendFeedback),
          keyEquivalent: "")
+        //email.image = NSImage(imageLiteralResourceName: "founders")
         statusBarMenu.addItem(NSMenuItem.separator())
         statusBarMenu.addItem(
          withTitle: "Restart",
@@ -408,21 +415,25 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         
         let value = ShellBridge.testAccesibilityAccess()
         if (value) {
-           self.statusBarItem.button?.layer?.removeAnimation(forKey: "spring")
+            DispatchQueue.main.async {
+                self.statusBarItem.button?.layer?.removeAnimation(forKey: "spring")
+            }
+            
            self.statusBarItem.menu = self.defaultStatusBarMenu()
 
         } else {
-           
-           let spring = CASpringAnimation(keyPath: "position.y")
-           spring.initialVelocity = -100
-           spring.damping = 5
-           spring.mass = 0.5
-           spring.fromValue = 1
-           spring.toValue = 0
-           spring.repeatCount = .greatestFiniteMagnitude
-           spring.duration = spring.settlingDuration + 1.5
+            DispatchQueue.main.async {
+                let spring = CASpringAnimation(keyPath: "position.y")
+                spring.initialVelocity = -100
+                spring.damping = 5
+                spring.mass = 0.5
+                spring.fromValue = 1
+                spring.toValue = 0
+                spring.repeatCount = .greatestFiniteMagnitude
+                spring.duration = spring.settlingDuration + 1.5
 
-           self.statusBarItem.button?.layer?.add(spring, forKey: "spring")
+                self.statusBarItem.button?.layer?.add(spring, forKey: "spring")
+            }
            
            self.statusBarItem.menu = self.alertStatusBarMenu()
            
@@ -437,9 +448,12 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         let center = DistributedNotificationCenter.default()
         let accessibilityChangedNotification = NSNotification.Name("com.apple.accessibility.api")
         center.addObserver(forName: accessibilityChangedNotification, object: nil, queue: nil) { _ in
-
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            print("Accessibility status changed!")
+            DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + 0.1) {
+                print("Start configuring startbar item")
                 self.configureStatusBarItem()
+                print("Done configuring startbar item")
+
             }
         }
     }
@@ -458,12 +472,12 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     
     @objc func uninstall() {
         
-        let confirmed = self.dialogOKCancel(question: "Uninstall Fig?", text: "Are you sure you want to uninstall Fig?\n Running this script will remove all local runbooks, completion specs and quit the app.", icon: NSImage(imageLiteralResourceName: NSImage.applicationIconName))
+        let confirmed = self.dialogOKCancel(question: "Uninstall Fig?", text: "Are you sure you want to uninstall Fig?\n Running this script will remove all local runbooks, completion specs and quit the app.\nYou may move Fig to the Trash after it has completed.", icon: NSImage(imageLiteralResourceName: NSImage.applicationIconName))
         
         if confirmed {
             TelemetryProvider.post(event: .uninstallApp, with: [:])
 
-            if let general = Bundle.main.path(forResource: "uninstall", ofType: "sh", inDirectory: "upgrade") {
+            if let general = Bundle.main.path(forResource: "uninstall", ofType: "sh") {
                 let out = "bash \(general)".runAsCommand()
                 Logger.log(message: out)
                 self.quit()
@@ -493,7 +507,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         }
 
         TelemetryProvider.post(event: .iTermSetup, with: [:])
-        let _ = "sh \(Bundle.main.path(forResource: "iterm-integration", ofType: "sh", inDirectory: "upgrade") ?? "") \(Bundle.main.resourcePath ?? "")".runInBackground(cwd: nil, with: nil, updateHandler: nil, completion: { (out) in
+        let _ = "sh \(Bundle.main.path(forResource: "iterm-integration", ofType: "sh") ?? "") \(Bundle.main.resourcePath ?? "")".runInBackground(cwd: nil, with: nil, updateHandler: nil, completion: { (out) in
              if let app = NSWorkspace.shared.runningApplications.filter ({ return $0.bundleIdentifier == "com.googlecode.iterm2" }).first {
                 self.iTerm = app
                 self.iTerm!.terminate()
@@ -544,9 +558,9 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         // upgrade path!
         if (previous != current) {
             // look for $BUNDLE/upgrade/$OLD-->$NEW
-            let specific = Bundle.main.path(forResource: "\(previous)-->\(current)", ofType: "sh", inDirectory: "upgrade")
+            let specific = Bundle.main.path(forResource: "\(previous)-->\(current)", ofType: "sh")
             // look for $BUNDLE/upgrade/$NEW
-            let general = Bundle.main.path(forResource: "\(current)", ofType: "sh", inDirectory: "upgrade")
+            let general = Bundle.main.path(forResource: "\(current)", ofType: "sh")
             
             let script = specific ?? general
             if let script = script {
@@ -663,7 +677,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         if (Defaults.useAutocomplete) {
             KeypressProvider.shared.registerKeystrokeHandler()
             AXWindowServer.shared.registerWindowTracking()
-//            if let general = Bundle.main.path(forResource: "update-autocomplete", ofType: "sh", inDirectory: "upgrade") {
+//            if let general = Bundle.main.path(forResource: "update-autocomplete", ofType: "sh") {
 //                let out = "sh \(general)".runAsCommand()
 //                Logger.log(message: out)
 //            }
@@ -956,8 +970,15 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     @objc func promptForAccesibilityAccess() {
         ShellBridge.promptForAccesibilityAccess { (granted) in
            if (granted) {
-               KeypressProvider.shared.registerKeystrokeHandler()
-               AXWindowServer.shared.registerWindowTracking()
+                Logger.log(message: "Registering Keystroke Handler...")
+                KeypressProvider.shared.registerKeystrokeHandler()
+                Logger.log(message: "Done Setting up Keystroke Handler!")
+
+                DispatchQueue.global(qos: .userInitiated).async {
+                    Logger.log(message: "Registering window tracking")
+                    AXWindowServer.shared.registerWindowTracking()
+                    Logger.log(message: "Done setting up window tracking")
+                }
            }
         }
     }
@@ -1532,7 +1553,10 @@ extension AppDelegate : NSMenuDelegate {
         }
         
         if let frontmost = self.frontmost {
-            menu.removeItem(frontmost)
+            if menu.items.contains(frontmost) {
+                menu.removeItem(frontmost)
+            }
+            
             self.frontmost = nil
         }
         

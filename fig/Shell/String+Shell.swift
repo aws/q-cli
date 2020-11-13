@@ -44,6 +44,8 @@ extension String {
     }
     
     func runAsCommand(_ isVerbose: Bool = false, cwd: String? = nil, with env: Dictionary<String, String>? = nil) -> String {
+        
+        
         let pipe = Pipe()
         let stderr = Pipe()
         let task = Process()
@@ -71,9 +73,12 @@ extension String {
             task.launchPath = "/bin/sh"
         }
         
+//        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+//        let output = String(data: data, encoding: String.Encoding.utf8) ?? ""
+        
         let outputHandler = pipe.fileHandleForReading
         outputHandler.waitForDataInBackgroundAndNotify()
-        
+
         var output = ""
         var dataObserver: NSObjectProtocol!
         let notificationCenter = NotificationCenter.default
@@ -82,6 +87,7 @@ extension String {
             let data = outputHandler.availableData
             guard data.count > 0 else {
                 notificationCenter.removeObserver(dataObserver!)
+                outputHandler.closeFile()
                 return
             }
             if let line = String(data: data, encoding: .utf8) {
@@ -92,7 +98,7 @@ extension String {
             }
             outputHandler.waitForDataInBackgroundAndNotify()
         }
-        
+
         let errorHandler = stderr.fileHandleForReading
         errorHandler.waitForDataInBackgroundAndNotify()
         var errorObserver: NSObjectProtocol!
@@ -100,6 +106,7 @@ extension String {
             let data = errorHandler.availableData
             guard data.count > 0 else {
                 notificationCenter.removeObserver(errorObserver!)
+                errorHandler.closeFile()
                 return
             }
             if let line = String(data: data, encoding: .utf8) {
@@ -110,12 +117,18 @@ extension String {
             }
             errorHandler.waitForDataInBackgroundAndNotify()
         }
-        
+//        task.terminationHandler = { (process) in
+//            notificationCenter.removeObserver(dataObserver!)
+//            notificationCenter.removeObserver(errorObserver!)
+//            outputHandler.closeFile()
+//            errorHandler.closeFile()
+//        }
+            
         task.launch()
         task.waitUntilExit()
-
-        print("TerminationStatus:", task.terminationStatus)
-        print("TerminationReason:", task.terminationReason)
+//
+//        print("TerminationStatus:", task.terminationStatus)
+//        print("TerminationReason:", task.terminationReason)
 
         return output
 //        if let result = NSString(data: file.readDataToEndOfFile(), encoding: String.Encoding.utf8.rawValue) {
@@ -134,6 +147,7 @@ extension String {
                   let data = handler.availableData
                   guard data.count > 0 else {
                       NotificationCenter.default.removeObserver(observer!)
+                      handler.closeFile()
                       return
                   }
                   if let line = String(data: data, encoding: .utf8) {

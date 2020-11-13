@@ -446,6 +446,19 @@
 			path = fig/upgrade;
 			sourceTree = "<group>";
 		};
+		7518608F255CE49B0000A7C7 /* Icons */ = {
+			isa = PBXGroup;
+			children = (
+				7518606A255B2A090000A7C7 /* astrix@2x.png */,
+				7518606C255B2A090000A7C7 /* carrot@2x.png */,
+				7518606E255B2A0A0000A7C7 /* command@2x.png */,
+				75186069255B2A090000A7C7 /* flag@2x.png */,
+				7518606B255B2A090000A7C7 /* option@2x.png */,
+				7518606D255B2A090000A7C7 /* string@2x.png */,
+			);
+			name = Icons;
+			sourceTree = "<group>";
+		};
 		751F758F246E16D800E083C8 /* figcli */ = {
 			isa = PBXGroup;
 			children = (
@@ -506,12 +519,7 @@
 				757CA88B248B08D7002A64A8 /* local */,
 				75B199302501A1A200F38EA8 /* Legacy */,
 				75675958244634B2006AA988 /* Assets.xcassets */,
-				7518606A255B2A090000A7C7 /* astrix@2x.png */,
-				7518606C255B2A090000A7C7 /* carrot@2x.png */,
-				7518606E255B2A0A0000A7C7 /* command@2x.png */,
-				75186069255B2A090000A7C7 /* flag@2x.png */,
-				7518606B255B2A090000A7C7 /* option@2x.png */,
-				7518606D255B2A090000A7C7 /* string@2x.png */,
+				7518608F255CE49B0000A7C7 /* Icons */,
 				7567595D244634B2006AA988 /* Main.storyboard */,
 				75675960244634B2006AA988 /* Info.plist */,
 				75675961244634B2006AA988 /* fig.entitlements */,
@@ -1171,7 +1179,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1.0.27;
+				CURRENT_PROJECT_VERSION = 1.0.28;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
@@ -1185,7 +1193,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MARKETING_VERSION = 1.0.27;
+				MARKETING_VERSION = 1.0.28;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mschrage.fig;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "fig/fig-Bridging-Header.h";
@@ -1204,7 +1212,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1.0.27;
+				CURRENT_PROJECT_VERSION = 1.0.28;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
@@ -1218,7 +1226,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MARKETING_VERSION = 1.0.27;
+				MARKETING_VERSION = 1.0.28;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mschrage.fig;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "fig/fig-Bridging-Header.h";

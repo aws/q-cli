@@ -628,16 +628,16 @@ class FigCLI {
                 WebView.deleteCache()
                 FigCLI.printInTerminal(text: "→ Resetting WebKit Cache", scope: scope)
             case .source:
-                let path = Bundle.main.path(forResource: "source", ofType: "sh", inDirectory: "upgrade")
+                let path = Bundle.main.path(forResource: "source", ofType: "sh")
                 FigCLI.runInTerminal(script: "bash \(path!)", scope: scope)
             case .list:
                 let specs = try? FileManager.default.contentsOfDirectory(at: URL(fileURLWithPath:  "\(NSHomeDirectory())/.fig/autocomplete", isDirectory: true), includingPropertiesForKeys: nil, options: .skipsHiddenFiles).map { "\($0.lastPathComponent.replacingOccurrences(of: ".\($0.pathExtension)", with: ""))" }.joined(separator: "\n")
                 FigCLI.printInTerminal(text: specs ?? "No completions found.\n  Try running fig update.", scope: scope)
             case .feedback:
-                let path = Bundle.main.path(forResource: "feedback", ofType: "sh", inDirectory: "upgrade")
+                let path = Bundle.main.path(forResource: "feedback", ofType: "sh")
                 FigCLI.runInTerminal(script: "bash \(path!)", scope: scope)
             case .update:
-                let path = Bundle.main.path(forResource: "update-autocomplete", ofType: "sh", inDirectory: "upgrade")
+                let path = Bundle.main.path(forResource: "update-autocomplete", ofType: "sh")
                 FigCLI.runInTerminal(script: "bash \(path!)", scope: scope)
             case .invite:
                 let count = scope.options.count
