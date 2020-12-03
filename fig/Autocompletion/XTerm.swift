@@ -11,6 +11,7 @@ import Cocoa
 class KeystrokeBuffer : NSObject {
     static let lineAcceptedInKeystrokeBufferNotification: NSNotification.Name = Notification.Name("lineAcceptedInXTermBufferNotification")
     static let lineResetInKeyStrokeBufferNotification: NSNotification.Name = Notification.Name("lineResetInKeyStrokeBufferNotification")
+    static let firstCharacterInKeystrokeBufferNotification: NSNotification.Name = Notification.Name("firstCharacterInKeystrokeBufferNotification")
 
     static let shared = KeystrokeBuffer()
     
@@ -35,6 +36,9 @@ class KeystrokeBuffer : NSObject {
                 NotificationCenter.default.post(name: KeystrokeBuffer.lineResetInKeyStrokeBufferNotification, object: nil)
                 index = buffer!.startIndex
                 dropStash()
+            } else if (buffer?.count == 1) {
+                NotificationCenter.default.post(name: KeystrokeBuffer.firstCharacterInKeystrokeBufferNotification, object: nil)
+
             }
         }
     }

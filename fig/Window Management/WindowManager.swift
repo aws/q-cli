@@ -234,7 +234,7 @@ class WindowManager : NSObject {
         
         let web = WebViewController()
         web.webView?.defaultURL = nil
-//        web.webView?.loadBundleApp("autocomplete")
+//        web.webView?.loadBundleApp("tutorial")
         
         web.webView?.loadAutocomplete()
         let companion = CompanionWindow(viewController: web)
@@ -706,12 +706,12 @@ extension WindowManager : WindowManagementService {
     
     func positionAutocompletePopover(textRect: CGRect?) {
         if let rect = textRect, let window = AXWindowServer.shared.whitelistedWindow {
-
+            let heightLimit: CGFloat = 300.0//140.0
             let isAbove = window.frame.origin.y - window.frame.height/2 > rect.origin.y
-                && rect.origin.y + 140.0 <= NSScreen.main?.frame.maxY ?? 0.0 /*visor*/
+                && rect.origin.y + heightLimit <= NSScreen.main?.frame.maxY ?? 0.0 /*visor*/
 
             
-            let height:CGFloat = isAbove ? 0 : 140
+            let height:CGFloat = isAbove ? 0 : heightLimit
             let translatedOrigin = isAbove ? NSPoint(x: rect.origin.x, y: rect.origin.y + height + 5) :
                                              NSPoint(x: rect.origin.x, y: rect.origin.y - rect.height - 5) //below
             
@@ -720,9 +720,11 @@ extension WindowManager : WindowManagementService {
             if ((WindowManager.shared.autocomplete?.maxHeight != 0)) {
                 KeypressProvider.shared.addRedirect(for: Keycode.upArrow, in: window)
                 KeypressProvider.shared.addRedirect(for: Keycode.downArrow, in: window)
-                KeypressProvider.shared.addRedirect(for: Keycode.returnKey, in: window)
                 KeypressProvider.shared.addRedirect(for: Keycode.tab, in: window)
                 KeypressProvider.shared.addRedirect(for: Keycode.escape, in: window)
+                if (!Defaults.onlyInsertOnTab) {
+                    KeypressProvider.shared.addRedirect(for: Keycode.returnKey, in: window)
+                }
 
 
             } else {
@@ -748,7 +750,7 @@ extension WindowManager : WindowManagementService {
             }
             
             if (Defaults.debugAutocomplete) {
-                WindowManager.shared.autocomplete?.maxHeight = 100
+                WindowManager.shared.autocomplete?.maxHeight = 200//heightLimit//140
             }
             WindowManager.shared.autocomplete?.setOverlayFrame(NSRect(x: x,
                                                                       y: popup.origin.y,

@@ -525,8 +525,11 @@ extension WebBridge {
         if let params = scope.body as? Dictionary<String, String>,
            let cmd = params["cmd"],
            let handlerId = params["handlerId"] {
-            let result = cmd.runAsCommand()
-            WebBridge.callback(handler: handlerId, value: result, webView: scope.webView)
+            cmd.runInBackground { (result) in
+                DispatchQueue.main.async {
+                    WebBridge.callback(handler: handlerId, value: result, webView: scope.webView)
+                }
+            }
         }
     }
     
@@ -1079,10 +1082,11 @@ extension WebBridge {
                 case "init":
                     
                     if let env = params["env"]{
-                        let parsedEnv = env.jsonStringToDict() as? [String: String] ?? FigCLI.extract(keys: ["PWD","USER","HOME","SHELL", "OLDPWD", "TERM_PROGRAM", "TERM_SESSION_ID", "HISTFILE","FIG","FIGPATH"], from: env)
+                        var parsedEnv = env.jsonStringToDict() as? [String: String] ?? FigCLI.extract(keys: ["PWD","USER","HOME","SHELL", "OLDPWD", "TERM_PROGRAM", "TERM_SESSION_ID", "HISTFILE","FIG","FIGPATH"], from: env)
+                        parsedEnv["HOME"] = NSHomeDirectory()
                         controller.pty.start(with: parsedEnv)
                     } else {
-                        controller.pty.start(with: [:])
+                        controller.pty.start(with: ["HOME":NSHomeDirectory()])
                     }
          
                 case "stream":

@@ -62,6 +62,8 @@ extension String {
         
         if let env = env {
             task.environment = env
+        } else {
+            task.environment = [:]
         }
         
         task.environment?["HOME"] = NSHomeDirectory()
@@ -83,10 +85,11 @@ extension String {
         var dataObserver: NSObjectProtocol!
         let notificationCenter = NotificationCenter.default
         let dataNotificationName = NSNotification.Name.NSFileHandleDataAvailable
-        dataObserver = notificationCenter.addObserver(forName: dataNotificationName, object: outputHandler, queue: nil) {  notification in
+        dataObserver = notificationCenter.addObserver(forName: dataNotificationName, object: outputHandler, queue: nil) { [weak dataObserver]  notification in
+            guard let dataObserver = dataObserver else { return }
             let data = outputHandler.availableData
             guard data.count > 0 else {
-                notificationCenter.removeObserver(dataObserver!)
+                notificationCenter.removeObserver(dataObserver)
                 outputHandler.closeFile()
                 return
             }
@@ -102,10 +105,11 @@ extension String {
         let errorHandler = stderr.fileHandleForReading
         errorHandler.waitForDataInBackgroundAndNotify()
         var errorObserver: NSObjectProtocol!
-        errorObserver = notificationCenter.addObserver(forName: dataNotificationName, object: errorHandler, queue: nil) {  notification in
+        errorObserver = notificationCenter.addObserver(forName: dataNotificationName, object: errorHandler, queue: nil) { [weak errorObserver] notification in
+            guard let errorObserver = errorObserver else { return }
             let data = errorHandler.availableData
             guard data.count > 0 else {
-                notificationCenter.removeObserver(errorObserver!)
+                notificationCenter.removeObserver(errorObserver)
                 errorHandler.closeFile()
                 return
             }
@@ -139,14 +143,15 @@ extension String {
 //        }
     }
     
-    fileprivate func addListener(_ listener: @escaping ((String) -> Void), to pipe: Pipe) {
+    fileprivate func addListener(_ listener: @escaping ((String) -> Void), to pipe: Pipe) -> NSObjectProtocol {
         let handler = pipe.fileHandleForReading
         handler.waitForDataInBackgroundAndNotify()
         var observer: NSObjectProtocol!
-        observer = NotificationCenter.default.addObserver(forName: .NSFileHandleDataAvailable, object: handler, queue: nil) {  notification in
+        observer = NotificationCenter.default.addObserver(forName: .NSFileHandleDataAvailable, object: handler, queue: nil) { [weak handler] notification in
+                  guard let handler = handler else { return }
                   let data = handler.availableData
                   guard data.count > 0 else {
-                      NotificationCenter.default.removeObserver(observer!)
+//                      NotificationCenter.default.removeObserver(observer!)
                       handler.closeFile()
                       return
                   }
@@ -155,6 +160,7 @@ extension String {
                   }
                   handler.waitForDataInBackgroundAndNotify()
               }
+        return observer
     }
     
     func runInBackground(cwd: String? = nil, with env: Dictionary<String, String>? = nil, updateHandler: ((String, Process) -> Void)? = nil, completion: ((String) -> Void)? = nil) -> Process {
@@ -171,6 +177,8 @@ extension String {
                
         if let env = env {
             task.environment = env
+        } else {
+            task.environment = [:]
         }
         
         task.environment?["HOME"] = NSHomeDirectory()
@@ -181,16 +189,20 @@ extension String {
             task.launchPath = "/bin/sh"
         }
         var out: String = ""
+        var observers: [NSObjectProtocol] = []
         if let updateHandler = updateHandler {
-            addListener({ (line) in
+            let stdinObserver = addListener({ (line) in
                 updateHandler(line, task)
                 out += line
             }, to: stdin)
             
-            addListener({ (line) in
+            let stderrObserver = addListener({ (line) in
                 updateHandler(line, task)
                 out += line
             }, to: stderr)
+            
+            observers.append(stdinObserver)
+            observers.append(stderrObserver)
         }
        
         //add "-li" to get closer to terminal behavior
@@ -200,6 +212,10 @@ extension String {
             task.waitUntilExit()
             if let completion = completion {
                 completion(out)
+            }
+            
+            observers.forEach { (observer) in
+                NotificationCenter.default.removeObserver(observer)
             }
         }
         

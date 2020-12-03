@@ -58,8 +58,15 @@ class KeypressProvider : KeypressService {
         registerKeystrokeHandler()
         
         NotificationCenter.default.addObserver(self, selector:#selector(lineAcceptedInKeystrokeBuffer), name: KeystrokeBuffer.lineResetInKeyStrokeBufferNotification, object:nil)
+        NotificationCenter.default.addObserver(self, selector:#selector(firstCharacterInKeystrokeBuffer), name: KeystrokeBuffer.firstCharacterInKeystrokeBufferNotification, object:nil)
     }
     
+    @objc func firstCharacterInKeystrokeBuffer() {
+        if let window = AXWindowServer.shared.whitelistedWindow, let tty = window.tty {
+            tty.update()
+        }
+    }
+
     @objc func lineAcceptedInKeystrokeBuffer() {
         if let window = AXWindowServer.shared.whitelistedWindow, let tty = window.tty {
             Timer.delayWithSeconds(0.2) {
@@ -133,6 +140,7 @@ class KeypressProvider : KeypressService {
         }
         let eventMask = (1 << CGEventType.keyDown.rawValue) | (1 << CGEventType.keyUp.rawValue) | (1 << CGEventType.tapDisabledByTimeout.rawValue) | (1 << CGEventType.tapDisabledByUserInput.rawValue)
         
+        // not sure what the difference is between passRetained vs passUnretained?
         guard let eventTap: CFMachPort = CGEvent.tapCreate(tap: CGEventTapLocation.cghidEventTap,
                                                      place: CGEventTapPlacement.tailAppendEventTap,
                                                      options: CGEventTapOptions.defaultTap,
@@ -149,7 +157,7 @@ class KeypressProvider : KeypressService {
                                                                 SentrySDK.capture(message: "tapDisabledByTimeout")
 
                                                             }
-                                                            return Unmanaged.passRetained(event)
+                                                            return Unmanaged.passUnretained(event)
                                                         }
                                                         
                                                         guard event.type != .tapDisabledByUserInput else {
@@ -158,7 +166,7 @@ class KeypressProvider : KeypressService {
                                                                 SentrySDK.capture(message: "tapDisabledByUserInput")
 
                                                             }
-                                                            return Unmanaged.passRetained(event)
+                                                            return Unmanaged.passUnretained(event)
                                                         }
                                                         
 //                                                        let keyCode2 = event.getIntegerValueField(.keyboardEventKeycode)
@@ -168,19 +176,19 @@ class KeypressProvider : KeypressService {
                                                         
                                                         // fixes slowdown when typing into Fig
                                                         guard !(NSWorkspace.shared.frontmostApplication?.isFig ?? false) else {
-                                                            return Unmanaged.passRetained(event)
+                                                            return Unmanaged.passUnretained(event)
                                                         }
                                                         
                                                         guard Defaults.useAutocomplete, let window = AXWindowServer.shared.whitelistedWindow, KeypressProvider.whitelist.contains(window.bundleId ?? "") else {
                                                             print("eventTap window of \(AXWindowServer.shared.whitelistedWindow?.bundleId ?? "<none>") is not whitelisted")
-                                                            return Unmanaged.passRetained(event)
+                                                            return Unmanaged.passUnretained(event)
                                                         }
                                                         
                                                         print("tty: hash = \(window.hash) tty = \(window.tty?.descriptor) pwd = \(window.tty?.cwd ?? "<none>") \(window.tty?.isShell ?? true ? "shell!" : "not shell")")
                                                         
                                                         guard window.tty?.isShell ?? true else {
                                                             print("tty: Is not in a shell")
-                                                            return Unmanaged.passRetained(event)
+                                                            return Unmanaged.passUnretained(event)
                                                         }
                                                         
                                                         if [.keyDown , .keyUp].contains(type) {
@@ -205,7 +213,9 @@ class KeypressProvider : KeypressService {
 
                                                                 return nil
                                                             } else {
-                                                                KeypressProvider.shared.handleKeystroke(event: NSEvent(cgEvent: event), in: window)
+                                                                autoreleasepool {
+KeypressProvider.shared.handleKeystroke(event: NSEvent(cgEvent: event), in: window)
+                                                                }
 
 //                                                                DispatchQueue.global(qos: .background).async {
                                                                 //KeypressProvider.shared.handleKeystroke(event: NSEvent.init(cgEvent: event), in: window)
@@ -216,7 +226,7 @@ class KeypressProvider : KeypressService {
                                                             }
                                                             //event.setIntegerValueField(.keyboardEventKeycode, value: keyCode)
                                                         }
-                                                        return Unmanaged.passRetained(event) },
+                                                        return Unmanaged.passUnretained(event) },
                                                      userInfo: nil) else {
                                                         print("Could not create tap")
                                                         return nil
@@ -286,9 +296,10 @@ class KeypressProvider : KeypressService {
             } else {
                 KeypressProvider.shared.removeRedirect(for: Keycode.upArrow, in: window)
                 KeypressProvider.shared.removeRedirect(for: Keycode.downArrow, in: window)
-                KeypressProvider.shared.removeRedirect(for: Keycode.returnKey, in: window)
                 KeypressProvider.shared.removeRedirect(for: Keycode.tab, in: window)
                 KeypressProvider.shared.removeRedirect(for: Keycode.escape, in: window)
+                KeypressProvider.shared.removeRedirect(for: Keycode.returnKey, in: window)
+                
             }
         }
     }

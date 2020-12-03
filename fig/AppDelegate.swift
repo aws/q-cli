@@ -24,6 +24,9 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     let processPool = WKProcessPool()
     
     func applicationDidFinishLaunching(_ aNotification: Notification) {
+//        NSApp.setActivationPolicy(NSApplication.ActivationPolicy.accessory)
+        
+        
         // prevent multiple sessions
         let bundleID = Bundle.main.bundleIdentifier!
         if NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).count > 1 {
@@ -70,8 +73,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         Defaults.deferToShellAutosuggestions = true
         Defaults.autocompleteVersion = "v2"
         Defaults.autocompleteWidth = 250
-        
-            
+
         let hasLaunched = UserDefaults.standard.bool(forKey: "hasLaunched")
         let email = UserDefaults.standard.string(forKey: "userEmail")
 
@@ -145,6 +147,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         NotificationCenter.default.addObserver(self, selector: #selector(windowDidChange(_:)), name: AXWindowServer.windowDidChangeNotification, object: nil)
         
         toggleLaunchAtStartup()
+        
         
     }
     
@@ -289,12 +292,19 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         keyEquivalent: "")
         //        sidebar.indentationLevel = 1
         sidebar.state = Defaults.showSidebar ? .on : .off
+        
+        let tab = debugMenu.addItem(
+        withTitle: "Only Autocomplete on Tab ",
+        action: #selector(AppDelegate.toggleOnlyTab(_:)),
+        keyEquivalent: "")
+        //        sidebar.indentationLevel = 1
+        tab.state = Defaults.onlyInsertOnTab ? .on : .off
         debugMenu.addItem(NSMenuItem.separator())
         
         debugMenu.addItem(withTitle: "Compatibility", action: nil, keyEquivalent: "")
         
         let zshPlugin = debugMenu.addItem(
-        withTitle: "Fish / Zsh Grey Autosuggest", //Defer to Shell Autosuggest
+        withTitle: "Fish / Zsh Autosuggest", //Defer to Shell Autosuggest
         action: #selector(AppDelegate.toggleZshPlugin(_:)),
         keyEquivalent: "")
         zshPlugin.state = Defaults.deferToShellAutosuggestions ? .on : .off
@@ -378,6 +388,11 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
                 withTitle: "Get Selected Text",
                 action: #selector(AppDelegate.getSelectedText),
                 keyEquivalent: "")
+                debugMenu.addItem(
+                 withTitle: "Processes",
+                 action: #selector(AppDelegate.processes
+                    ),
+                 keyEquivalent: "")
            }
         
         let debug = statusBarMenu.addItem(withTitle: "Settings", action: nil, keyEquivalent: "")
@@ -385,7 +400,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         
         statusBarMenu.addItem(NSMenuItem.separator())
         let email = statusBarMenu.addItem(
-         withTitle: "Email Founders...", //✉️
+         withTitle: "Report a bug...", //✉️
          action: #selector(AppDelegate.sendFeedback),
          keyEquivalent: "")
         //email.image = NSImage(imageLiteralResourceName: "founders")
@@ -398,6 +413,15 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
          withTitle: "Quit Fig",
          action: #selector(AppDelegate.quit),
          keyEquivalent: "")
+        
+        if (!Defaults.isProduction) {
+            statusBarMenu.addItem(NSMenuItem.separator())
+            statusBarMenu.addItem(
+                withTitle: Defaults.build.rawValue,
+             action: nil,
+             keyEquivalent: "")
+        }
+
         
         return statusBarMenu
     }
@@ -472,12 +496,14 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     
     @objc func uninstall() {
         
-        let confirmed = self.dialogOKCancel(question: "Uninstall Fig?", text: "Are you sure you want to uninstall Fig?\n Running this script will remove all local runbooks, completion specs and quit the app.\nYou may move Fig to the Trash after it has completed.", icon: NSImage(imageLiteralResourceName: NSImage.applicationIconName))
+        let confirmed = self.dialogOKCancel(question: "Uninstall Fig?", text: "Are you sure you want to uninstall Fig?\nRunning this script will remove all local runbooks, completion specs and quit the app.\n\nYou may move Fig to the Trash after it has completed.", icon: NSImage(imageLiteralResourceName: NSImage.applicationIconName))
         
         if confirmed {
             TelemetryProvider.post(event: .uninstallApp, with: [:])
 
             if let general = Bundle.main.path(forResource: "uninstall", ofType: "sh") {
+                NSWorkspace.shared.open(URL(string: "https://withfig.com/uninstall?email=\(Defaults.email ?? "")")!)
+                toggleLaunchAtStartup(shouldBeOff: true)
                 let out = "bash \(general)".runAsCommand()
                 Logger.log(message: out)
                 self.quit()
@@ -508,6 +534,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 
         TelemetryProvider.post(event: .iTermSetup, with: [:])
         let _ = "sh \(Bundle.main.path(forResource: "iterm-integration", ofType: "sh") ?? "") \(Bundle.main.resourcePath ?? "")".runInBackground(cwd: nil, with: nil, updateHandler: nil, completion: { (out) in
+             print("iterm: ", out)
              if let app = NSWorkspace.shared.runningApplications.filter ({ return $0.bundleIdentifier == "com.googlecode.iterm2" }).first {
                 self.iTerm = app
                 self.iTerm!.terminate()
@@ -797,6 +824,11 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         
 
 //        CFRunLoopAddSource( RunLoop.current.getCFRunLoop()), AXObserverGetRunLoopSource(observer), kCFRunLoopDefaultMode );
+    }
+    
+    @objc func toggleOnlyTab(_ sender: NSMenuItem){
+        Defaults.onlyInsertOnTab = !Defaults.onlyInsertOnTab
+        sender.state = Defaults.onlyInsertOnTab ? .on : .off
     }
     
     @objc func toggleSidebar(_ sender: NSMenuItem) {
@@ -1179,7 +1211,41 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 //        }
     }
     
+    @objc func processes() {
+        let c = candidates("")
+        print(c)
+        printProcesses("")
+        var size: Int32 = 0
+        if let ptr = getProcessInfo("", &size) {
+            let buffer = UnsafeMutableBufferPointer<fig_proc_info>(start: ptr, count: Int(size))
+            
+            buffer.forEach { (process) in
+                var proc = process
+
+//            var proc = ptr.pointee
+//            String(cString: proc.tty),  String(cString: proc.cmd)
+            let cwd = withUnsafeBytes(of: &proc.cwd) { (rawPtr) -> String in
+                let ptr = rawPtr.baseAddress!.assumingMemoryBound(to: CChar.self)
+                return String(cString: ptr)
+            }
+            
+            let cmd = withUnsafeBytes(of: &proc.cmd) { (rawPtr) -> String in
+                let ptr = rawPtr.baseAddress!.assumingMemoryBound(to: CChar.self)
+                return String(cString: ptr)
+            }
+            
+            let tty = withUnsafeBytes(of: &proc.tty) { (rawPtr) -> String in
+                let ptr = rawPtr.baseAddress!.assumingMemoryBound(to: CChar.self)
+                return String(cString: ptr)
+            }
+            
+            print("proc: ",  proc.pid, cwd, cmd, tty)
+            }
+           free(ptr)
+        }
+    }
     @objc func allWindows() {
+        
         Timer.delayWithSeconds(3) {
             guard let jsons = CGWindowListCopyWindowInfo(.optionOnScreenOnly, kCGNullWindowID) as? [[String: Any]] else {
                 return
@@ -1536,6 +1602,13 @@ extension AppDelegate : NSMenuDelegate {
         }
     }
     
+    @objc func addProcessToIgnorelist() {
+        if let tty = AXWindowServer.shared.whitelistedWindow?.tty, let cmd = tty.cmd {
+            Defaults.ignoreProcessList = Defaults.ignoreProcessList + [cmd]
+            tty.update()
+        }
+    }
+    
     @objc func resetWindowTracking() {
         
 //        AXWindowServer.shared.registerWindowTracking()
@@ -1608,6 +1681,8 @@ extension AppDelegate : NSMenuDelegate {
                     legend.addItem(NSMenuItem(title: "Exit current process", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem(title: "Force Reset", action: #selector(forceUpdateTTY), keyEquivalent: ""))
                     legend.addItem(NSMenuItem(title: "Add to whitelist", action: #selector(addProcessToWhitelist), keyEquivalent: ""))
+                    legend.addItem(NSMenuItem.separator())
+                    legend.addItem(NSMenuItem(title: "Ignore", action: #selector(addProcessToIgnorelist), keyEquivalent: ""))
                     legend.addItem(NSMenuItem.separator())
                     legend.addItem(NSMenuItem(title: "window: \(window?.hash ?? "???")", action: nil, keyEquivalent: ""))
                 } else {

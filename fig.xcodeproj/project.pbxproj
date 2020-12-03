@@ -73,6 +73,7 @@
 		752C0BE2247A33F20077E415 /* viewer.html in Resources */ = {isa = PBXBuildFile; fileRef = 752C0BE1247A33F10077E415 /* viewer.html */; };
 		752C0BE4247B44C60077E415 /* finder.html in Resources */ = {isa = PBXBuildFile; fileRef = 752C0BE3247B44C50077E415 /* finder.html */; };
 		752C0BE6247C25290077E415 /* display.html in Resources */ = {isa = PBXBuildFile; fileRef = 752C0BE5247C25280077E415 /* display.html */; };
+		754D31B525759D900020CED4 /* tutorial.html in Resources */ = {isa = PBXBuildFile; fileRef = 754D31B425759D900020CED4 /* tutorial.html */; };
 		755D0DE0247DDE050074AB5C /* FigCLI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755D0DDF247DDE050074AB5C /* FigCLI.swift */; };
 		755D0DE2247EFAE10074AB5C /* Logging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755D0DE1247EFAE10074AB5C /* Logging.swift */; };
 		755D0DE4247F038B0074AB5C /* logs.html in Resources */ = {isa = PBXBuildFile; fileRef = 755D0DE3247F038B0074AB5C /* logs.html */; };
@@ -86,6 +87,8 @@
 		756759972446C44C006AA988 /* String+Shell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756759962446C44C006AA988 /* String+Shell.swift */; };
 		756759D424498CA0006AA988 /* WebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756759D324498CA0006AA988 /* WebViewController.swift */; };
 		756C4D832542A6D30035B467 /* Starscream in Frameworks */ = {isa = PBXBuildFile; productRef = 756C4D822542A6D30035B467 /* Starscream */; };
+		7577124725648DFB0011FF48 /* ps.c in Sources */ = {isa = PBXBuildFile; fileRef = 7577124625648DFB0011FF48 /* ps.c */; };
+		757712492564D94A0011FF48 /* ProcessStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757712482564D9490011FF48 /* ProcessStatus.swift */; };
 		757CA86724859461002A64A8 /* AppMover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757CA86624859461002A64A8 /* AppMover.swift */; };
 		757CA87E2485D23D002A64A8 /* dist in Resources */ = {isa = PBXBuildFile; fileRef = 757CA87C2485D23C002A64A8 /* dist */; };
 		757CA88124874E06002A64A8 /* ErrorMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757CA88024874E05002A64A8 /* ErrorMatcher.swift */; };
@@ -261,6 +264,7 @@
 		752C0BE1247A33F10077E415 /* viewer.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = viewer.html; sourceTree = "<group>"; };
 		752C0BE3247B44C50077E415 /* finder.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = finder.html; sourceTree = "<group>"; };
 		752C0BE5247C25280077E415 /* display.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = display.html; sourceTree = "<group>"; };
+		754D31B425759D900020CED4 /* tutorial.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = tutorial.html; sourceTree = "<group>"; };
 		755D0DDF247DDE050074AB5C /* FigCLI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FigCLI.swift; sourceTree = "<group>"; };
 		755D0DE1247EFAE10074AB5C /* Logging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logging.swift; sourceTree = "<group>"; };
 		755D0DE3247F038B0074AB5C /* logs.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = logs.html; sourceTree = "<group>"; };
@@ -279,6 +283,9 @@
 		75675977244634B2006AA988 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		756759962446C44C006AA988 /* String+Shell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+Shell.swift"; sourceTree = "<group>"; };
 		756759D324498CA0006AA988 /* WebViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewController.swift; sourceTree = "<group>"; };
+		7577124525648DCD0011FF48 /* ps.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ps.h; sourceTree = "<group>"; };
+		7577124625648DFB0011FF48 /* ps.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ps.c; sourceTree = "<group>"; };
+		757712482564D9490011FF48 /* ProcessStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessStatus.swift; sourceTree = "<group>"; };
 		757CA86624859461002A64A8 /* AppMover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppMover.swift; sourceTree = "<group>"; };
 		757CA87C2485D23C002A64A8 /* dist */ = {isa = PBXFileReference; lastKnownFileType = folder; path = dist; sourceTree = "<group>"; };
 		757CA88024874E05002A64A8 /* ErrorMatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorMatcher.swift; sourceTree = "<group>"; };
@@ -525,6 +532,8 @@
 				75675961244634B2006AA988 /* fig.entitlements */,
 				7567595A244634B2006AA988 /* Preview Content */,
 				7510F8BA24A9861E00E86F7C /* fig-Bridging-Header.h */,
+				7577124525648DCD0011FF48 /* ps.h */,
+				7577124625648DFB0011FF48 /* ps.c */,
 				75809B0F24C2C66100BFFB3E /* WebView+Private.h */,
 			);
 			path = fig;
@@ -578,6 +587,7 @@
 				755D0DE3247F038B0074AB5C /* logs.html */,
 				757CA889248AD58C002A64A8 /* onboarding.html */,
 				75B1993525042B2C00F38EA8 /* autocomplete.html */,
+				754D31B425759D900020CED4 /* tutorial.html */,
 			);
 			name = local;
 			sourceTree = "<group>";
@@ -642,6 +652,7 @@
 		75B1992E2501A12C00F38EA8 /* Shell */ = {
 			isa = PBXGroup;
 			children = (
+				757712482564D9490011FF48 /* ProcessStatus.swift */,
 				7587B4D724F97F9E00E355E4 /* ShellHooksManager.swift */,
 				75B7931924BB897F0073AAC6 /* PseudoTerminalService.swift */,
 				756759962446C44C006AA988 /* String+Shell.swift */,
@@ -717,6 +728,7 @@
 				7567594F244634AD006AA988 /* Resources */,
 				75CFF64C2496B43A00C6A6DE /* Embed Frameworks */,
 				758AEB6324CE8B2F00A15EAF /* Embed Command Line Tool */,
+				75AA9FAA256D9D6C00CEFAC8 /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -853,6 +865,7 @@
 				757CA897248C108E002A64A8 /* css in Resources */,
 				75C0711D244AC3B2002DF69F /* index.html in Resources */,
 				757CA895248B291E002A64A8 /* permissions.html in Resources */,
+				754D31B525759D900020CED4 /* tutorial.html in Resources */,
 				75D2E3CB249C1E7500607F66 /* terminal.css in Resources */,
 				757CA88A248AD58C002A64A8 /* onboarding.html in Resources */,
 				757CA89B248C18F1002A64A8 /* done.html in Resources */,
@@ -897,6 +910,27 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		75AA9FAA256D9D6C00CEFAC8 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${TARGET_NAME}",
+			);
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if which sentry-cli >/dev/null; then\nexport SENTRY_ORG=fig-op\nexport SENTRY_PROJECT=fig-op\nexport SENTRY_AUTH_TOKEN=39d2f0e340074f82aaa662967bef1de1b17ae67f7b204bfdb61d9005f4f6bf4b\nERROR=$(sentry-cli upload-dif \"$DWARF_DSYM_FOLDER_PATH\" 2>&1 >/dev/null)\nif [ ! $? -eq 0 ]; then\necho \"warning: sentry-cli - $ERROR\"\nfi\nelse\necho \"warning: sentry-cli not installed, download from https://github.com/getsentry/sentry-cli/releases\"\nfi\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		751F758A246E16D800E083C8 /* Sources */ = {
@@ -949,6 +983,7 @@
 				7510F8A424A6910500E86F7C /* iOSCaretView.swift in Sources */,
 				757CA88124874E06002A64A8 /* ErrorMatcher.swift in Sources */,
 				751C3BEE24B6915000B5C7FD /* Defaults.swift in Sources */,
+				757712492564D94A0011FF48 /* ProcessStatus.swift in Sources */,
 				7510F89A24A6910500E86F7C /* Extensions.swift in Sources */,
 				7510F8B524A6910500E86F7C /* SearchService.swift in Sources */,
 				7510F8A024A6910500E86F7C /* EscapeSequences.swift in Sources */,
@@ -956,6 +991,7 @@
 				7510F8AD24A6910500E86F7C /* SelectionService.swift in Sources */,
 				7510F89B24A6910500E86F7C /* CharSets.swift in Sources */,
 				7510F8B824A6910500E86F7C /* Pty.swift in Sources */,
+				7577124725648DFB0011FF48 /* ps.c in Sources */,
 				75B1993825100E4E00F38EA8 /* KeypressService.swift in Sources */,
 				7510F8A724A6910500E86F7C /* MacAccessibilityService.swift in Sources */,
 				7510F8AA24A6910500E86F7C /* MacCaretView.swift in Sources */,
@@ -1179,7 +1215,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1.0.28;
+				CURRENT_PROJECT_VERSION = 1.0.30;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
@@ -1193,7 +1229,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MARKETING_VERSION = 1.0.28;
+				MARKETING_VERSION = 1.0.30;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mschrage.fig;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "fig/fig-Bridging-Header.h";
@@ -1212,7 +1248,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1.0.28;
+				CURRENT_PROJECT_VERSION = 1.0.30;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
@@ -1226,7 +1262,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MARKETING_VERSION = 1.0.28;
+				MARKETING_VERSION = 1.0.30;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mschrage.fig;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "fig/fig-Bridging-Header.h";

@@ -324,6 +324,8 @@ class AXWindowServer : WindowService {
         
         if (success) {
             Logger.log(message: "AXWindowServer: Began tracking '\(appRef.bundleId ?? "<none>")")
+            //EXC_BAD_ACCESS (code=EXC_I386_GPFLT
+            // Duplicate elements of type 'ExternalApplication' were found in a Set
             tracked.insert(appRef)
         } else {
             Logger.log(message: "AXWindowServer: Error setting up tracking for app '\(appRef.bundleId ?? "<none>")")
@@ -332,8 +334,9 @@ class AXWindowServer : WindowService {
     
     func deregister(app: NSRunningApplication) {
         for trackedApp in self.tracked where trackedApp.bundleId == app.bundleIdentifier {
-            trackedApp.deregisterObserver()
+            // EXC_BAD_ACCESS (code=EXC_I386_GPFLT)
             tracked.remove(trackedApp)
+            trackedApp.deregisterObserver()
         }
 
     }

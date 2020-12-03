@@ -32,6 +32,7 @@ class Defaults {
             UserDefaults.standard.synchronize()
             WindowManager.shared.createSidebar()
             WindowManager.shared.createAutocomplete()
+            (NSApp.delegate as? AppDelegate)?.configureStatusBarItem()
 
         }
     }
@@ -289,6 +290,19 @@ class Defaults {
         }
         
     }
+    
+    static var ignoreProcessList: [String] {
+        get {
+            let string = UserDefaults.standard.string(forKey: "ignoreProcessList")
+            return string?.split(separator: ",").map { String($0) } ?? []
+        }
+        
+        set(whitelist){
+            UserDefaults.standard.set(whitelist.joined(separator: ","), forKey: "ignoreProcessList")
+            UserDefaults.standard.synchronize()
+        }
+        
+    }
 
     static var launchedFollowingCrash: Bool {
         get {
@@ -298,6 +312,18 @@ class Defaults {
         
         set(flag) {
             UserDefaults.standard.set(flag, forKey: "launchedFollowingCrash")
+            UserDefaults.standard.synchronize()
+        }
+
+    }
+    
+    static var onlyInsertOnTab: Bool {
+        get {
+            return UserDefaults.standard.bool(forKey: "onlyInsertOnTab")
+        }
+        
+        set(flag) {
+            UserDefaults.standard.set(flag, forKey: "onlyInsertOnTab")
             UserDefaults.standard.synchronize()
         }
 

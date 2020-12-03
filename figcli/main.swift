@@ -10,6 +10,39 @@ import Foundation
 import Cocoa
 import Starscream
 
+func withCStrings(_ strings: [String], scoped: ([UnsafeMutablePointer<CChar>?]) throws -> Void) rethrows {
+    let cStrings = strings.map { strdup($0) }
+    try scoped(cStrings + [nil])
+    cStrings.forEach { free($0) }
+}
+
+enum RunCommandError: Error {
+    case WaitPIDError
+    case POSIXSpawnError(Int32)
+}
+
+func runCommand(_ command: String, completion: ((Int32) -> Void)? = nil) throws {
+    var pid: pid_t = 0
+    let args = ["sh", "-c", command]
+    let envs = ProcessInfo().environment.map { k, v in "\(k)=\(v)" }
+    try withCStrings(args) { cArgs in
+        try withCStrings(envs) { cEnvs in
+            var status = posix_spawn(&pid, "/bin/sh", nil, nil, cArgs, cEnvs)
+            if status == 0 {
+                if (waitpid(pid, &status, 0) != -1) {
+//                    print("Hello there!")
+                    completion?(status)
+                } else {
+                    throw RunCommandError.WaitPIDError
+                }
+            } else {
+                throw RunCommandError.POSIXSpawnError(status)
+            }
+        }
+    }
+}
+
+
 let arguments = CommandLine.arguments
 
 if arguments.count > 1 {
@@ -75,7 +108,8 @@ class CLI : WebSocketConnectionDelegate {
     var busy: Bool = false {
         didSet {
             if (!busy && pendingDisconnection) {
-                group.leave()
+                connection.disconnect()
+//                group.leave()
             }
         }
     }
@@ -119,7 +153,7 @@ class CLI : WebSocketConnectionDelegate {
     }
     
     func onDisconnected(connection: WebSocketConnection, error: Error?) {
-        print("bye")
+//        print("bye")
         group.leave()
 
     }
@@ -138,18 +172,29 @@ class CLI : WebSocketConnectionDelegate {
 //                return
 //            }
             if (!busy) {
-                group.leave()
+                connection.disconnect()
+//                group.leave()
             } else {
                 pendingDisconnection = true
-                return
             }
+            return
         }
 
 //        print("msg: '\(text)'")
         busy = true
-        let out = text.runAsCommand(false, cwd: ProcessInfo.processInfo.environment["PWD"], with: ProcessInfo.processInfo.environment)
-        print(out.trimmingCharacters(in: .whitespacesAndNewlines))
-        busy = false
+//        let out = text.runAsCommand(false, cwd: ProcessInfo.processInfo.environment["PWD"], with: ProcessInfo.processInfo.environment)
+//        print(out.trimmingCharacters(in: .whitespacesAndNewlines))
+//        busy = false
+//
+//        let args = ["bash", "-c",
+//                    text]
+//        let cargs = args.map { strdup($0) } + [nil]
+//
+//        execv("/bin/bash", cargs)
+        
+        try? runCommand(text) { (status) in
+            self.busy = false
+        }
 
 //        print(out)
 //        text.runInBackground(cwd: ProcessInfo.processInfo.environment["PWD"], with: ProcessInfo.processInfo.environment, updateHandler: { (out, proc) in
@@ -230,6 +275,3 @@ DispatchQueue.global().asyncAfter(deadline: .now() + 1.25) {
 }
 
 group.wait()
-
-
-

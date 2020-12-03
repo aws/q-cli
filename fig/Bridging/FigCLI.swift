@@ -93,7 +93,15 @@ enum NativeCLICommand : String {
     case source = "source"
     case resetCache = "util:reset-cache"
     case list = "list"
-    
+    case onboarding = "onboarding"
+    case star = "star"
+    case tweet = "tweet"
+    case share = "share"
+    case slack = "slack"
+    case community = "community"
+    case contribute = "contribute"
+    case report = "report-issue"
+
     var openInNewWindow: Bool {
         get {
             let popups: Set<NativeCLICommand> = [ .web, .local, .bundle, .apps, .appstore, .home, .appstore, .blocks]
@@ -627,6 +635,23 @@ class FigCLI {
             case .resetCache:
                 WebView.deleteCache()
                 FigCLI.printInTerminal(text: "→ Resetting WebKit Cache", scope: scope)
+            case .onboarding:
+                if let path = NSURL(fileURLWithPath: NSString("~/.fig/tools/drip/fig_onboarding.sh").expandingTildeInPath).resourceSpecifier {
+                    print(path)//2>/dev/null
+                    FigCLI.runInTerminal(script: "\(path)", scope: scope)
+                }
+            case .slack, .community:
+                FigCLI.printInTerminal(text: "→ Joining Fig Community...", scope: scope)
+                (NSApp.delegate as? AppDelegate)?.inviteToSlack()
+            case .tweet, .share:
+                FigCLI.printInTerminal(text: "→ Opening Twitter...", scope: scope)
+            NSWorkspace.shared.open(URL(string:"https://twitter.com/intent/tweet?text=I%27ve%20added%20autocomplete%20to%20my%20terminal%20@withfig!%0a%0a%F0%9F%9B%A0%F0%9F%86%95%F0%9F%91%89%EF%B8%8F&url=https://withfig.com")!)
+            case .contribute, .star:
+                FigCLI.printInTerminal(text: "→ Opening Github repo...", scope: scope)
+                NSWorkspace.shared.open(URL(string:"https://github.com/withfig/autocomplete")!)
+            case .report:
+                FigCLI.printInTerminal(text: "→ Opening Github repo...", scope: scope)
+                NSWorkspace.shared.open(URL(string:"https://github.com/withfig/fig-issues/issues/new")!)
             case .source:
                 let path = Bundle.main.path(forResource: "source", ofType: "sh")
                 FigCLI.runInTerminal(script: "bash \(path!)", scope: scope)

@@ -5,3 +5,5 @@
 #import "PrivateWindow.h"
 
 #import "WebView+Private.h"
+
+#import "ps.h"

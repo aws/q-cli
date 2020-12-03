@@ -24,6 +24,7 @@ protocol ShellHookService {
 struct proc {
     let pid: pid_t
     let cmd: String
+    var _cwd: String?
     
     init(line: String) {
         let tokens = line.split(separator: " ")
@@ -31,8 +32,18 @@ struct proc {
         cmd = tokens.suffix(from: 2).joined(separator: " ")
     }
     
+    init(pid: pid_t, cmd: String, cwd: String) {
+        self.pid = pid
+        self.cmd = cmd
+        self._cwd = cwd
+    }
+    
     var cwd: String? {
-        return "/usr/sbin/lsof -an -p \(self.pid) -d cwd -F n | tail -1 | cut -c2-".runAsCommand().trimmingCharacters(in: .whitespaces)
+        guard let cwd = self._cwd else {
+            return "/usr/sbin/lsof -an -p \(self.pid) -d cwd -F n | tail -1 | cut -c2-".runAsCommand().trimmingCharacters(in: .whitespaces)
+        }
+        
+        return cwd
 //        return "/usr/sbin/lsof -p \(self.pid) | awk '$4==\"cwd\" { print $9 }'".runAsCommand().trimmingCharacters(in: .whitespaces)
     }
     
@@ -59,8 +70,13 @@ class TTY {
     
     var processes: [proc] {
         //let out = "ps -t \(self.descriptor) | awk '{ print $2, $1, $4 }'".runAsCommand()
-        let out = "ps | awk '$2==\"\(self.descriptor)\" { print $2, $1, $4 }'".runAsCommand()
-        return out.split(separator: "\n").map { return proc(line: String($0)) }
+        
+        // let out = "ps | awk '$2==\"\(self.descriptor)\" { print $2, $1, $4 }'".runAsCommand()
+        // return out.split(separator: "\n").map { return proc(line: String($0)) }
+        
+        return ProcessStatus.getProcesses(for: self.descriptor).filter({ (process) -> Bool in
+            return !Defaults.ignoreProcessList.contains(process.cmd)
+        }).reversed()
     }
     
     var running: proc? {
@@ -68,7 +84,9 @@ class TTY {
     }
     
     func update() {
-        guard let running = self.running else { return }
+        guard let running = self.running else { return
+            
+        }
         let cmd = running.cmd
         let cwd = running.cwd
         print("tty: running \(cmd) \(cwd ?? "<none>")")
@@ -89,6 +107,19 @@ extension TTY: Hashable {
     
     func hash(into hasher: inout Hasher) {
          hasher.combine(self.descriptor)
+    }
+}
+extension ExternalWindowHash {
+    func components() -> (windowId: CGWindowID, tab: String?)? {
+        let tokens = self.split(separator: "/")
+        guard let windowId = CGWindowID(tokens[0]) else { return nil }
+        let tabString = tokens[safe: 1]
+        var tab: String? = nil
+        if (tabString != nil) {
+            tab = String(tabString!)
+        }
+        
+        return (windowId: windowId, tab: tab)
     }
 }
 
@@ -116,9 +147,9 @@ extension Dictionary where Value: Equatable {
 }
 
 extension ShellHookManager : ShellBridgeEventListener {
+    // Note: shell prompt can return when window is not active window. This is why we get the windowHash using the session identifier.
     @objc func shellPromptWillReturn(_ notification: Notification) {
         
-        // check if this
         let msg = (notification.object as! ShellMessage)
         Logger.log(message: "shellPromptWillReturn")
         
@@ -127,16 +158,32 @@ extension ShellHookManager : ShellBridgeEventListener {
 //        }
 
 
+        // Be careful because an old window hash can be returned (eg. 1323/ instead of 1232/1)
         if let windowHash = sessions.someKey(forValue: msg.session) {
             print("tty: shellPromptWillReturn for hash = \(windowHash)")
 //            print("Updating tty")
-//            
-//            // if a tty exists, update it (with delay)
-            if let tty = self.tty[windowHash] {
-                Timer.delayWithSeconds(0.1) {
-                   tty.update()
+            
+            // check if valid window hash. (
+            guard let components = windowHash.components() else { return }
+            let windowHasNoTabs = (tabs[components.windowId] == nil && components.tab == nil)
+            let windowHasTabs = (tabs[components.windowId] != nil && components.tab != nil)
+            let validHash = windowHasNoTabs || windowHasTabs
+            
+            if (validHash) {
+                // if a tty exists, update it (with delay)
+                if let tty = self.tty[windowHash] {
+                    Timer.delayWithSeconds(0.1) {
+                       tty.update()
+                    }
                 }
+            } else {
+                // remove tty for hash (because the hash is invalid)
+                self.tty.removeValue(forKey: windowHash)
+                self.startedNewTerminalSession(notification)
+
             }
+            
+
         } else {
             print("tty: not working...")
             print("tty: in = \(msg.options?.joined(separator: " ") ?? "") ; keys=\(sessions.keys.joined(separator: ", ")).")
