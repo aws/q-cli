@@ -71,7 +71,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         handleUpdateIfNeeded()
         Defaults.useAutocomplete = true
         Defaults.deferToShellAutosuggestions = true
-        Defaults.autocompleteVersion = "v2"
+        Defaults.autocompleteVersion = "v3"
         Defaults.autocompleteWidth = 250
 
         let hasLaunched = UserDefaults.standard.bool(forKey: "hasLaunched")
@@ -309,11 +309,12 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         keyEquivalent: "")
         zshPlugin.state = Defaults.deferToShellAutosuggestions ? .on : .off
         
-        debugMenu.addItem(
+        let iTermIntegration = debugMenu.addItem(
         withTitle: "Setup iTerm Tab Integration",
         action: #selector(AppDelegate.iTermSetup),
         keyEquivalent: "")
-        
+        iTermIntegration.state = FileManager.default.fileExists(atPath: "\(NSHomeDirectory())/Library/'Application Support'/iTerm2/Scripts/AutoLaunch/fig-iterm-integration.py") ? .on : .off
+            
         debugMenu.addItem(NSMenuItem.separator())
         
         let utilitiesMenu = NSMenu(title: "utilities")
@@ -534,6 +535,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 
         TelemetryProvider.post(event: .iTermSetup, with: [:])
         let _ = "sh \(Bundle.main.path(forResource: "iterm-integration", ofType: "sh") ?? "") \(Bundle.main.resourcePath ?? "")".runInBackground(cwd: nil, with: nil, updateHandler: nil, completion: { (out) in
+             self.configureStatusBarItem() // So that "iTerm integration" check mark is toggled on
              print("iterm: ", out)
              if let app = NSWorkspace.shared.runningApplications.filter ({ return $0.bundleIdentifier == "com.googlecode.iterm2" }).first {
                 self.iTerm = app

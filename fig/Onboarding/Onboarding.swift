@@ -69,6 +69,7 @@ class Onboarding {
             } else {
                 Logger.log(message: "Could not download installation script")
                 SentrySDK.capture(message: "Could not download installation script")
+                // What should we do when this happens?
             }
         }
     }

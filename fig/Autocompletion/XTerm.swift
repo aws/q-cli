@@ -141,7 +141,7 @@ class KeystrokeBuffer : NSObject {
         }
         
         if (exit) {
-            if var logging = buffer {
+            if var logging = buffer, index != nil {
                  logging.insert("|", at: index!)
                  print("xterm-out: \(logging) ")
                  

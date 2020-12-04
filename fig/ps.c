@@ -40,8 +40,9 @@ int candidates(const char *tty) {
 
         // must have controlling tty
         if ((kp->kp_eproc.e_tdev == NODEV ||
-            (kp->kp_proc.p_flag & P_CONTROLT) == 0))
+             (kp->kp_proc.p_flag & P_CONTROLT) == 0)) {
           continue;
+        }
         
         // Incorrect checksum for freed object 0x7f92b0904c00: probably modified after being freed.
         if (strlen(tty) != 0 && strcmp(tty, devname(kp->kp_eproc.e_tdev, S_IFCHR)) != 0) {
@@ -104,8 +105,9 @@ fig_proc_info* getProcessInfo(const char * tty, int *size) {
 
          // must have controlling tty
          if ((kp->kp_eproc.e_tdev == NODEV ||
-             (kp->kp_proc.p_flag & P_CONTROLT) == 0))
+              (kp->kp_proc.p_flag & P_CONTROLT) == 0)) {
            continue;
+         }
          
          if (strlen(tty) != 0 && strcmp(tty, devname(kp->kp_eproc.e_tdev, S_IFCHR)) != 0) {
              continue;

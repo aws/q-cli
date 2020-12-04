@@ -823,14 +823,15 @@ extension ShellBridge {
             }
         }
     }
-    
+    static var hasBeenPrompted = false
     static func promptForAccesibilityAccess( completion: @escaping (Bool)->Void){
         guard testAccesibilityAccess(withPrompt: false) != true else {
             print("Accessibility Permission Granted!")
             completion(true)
             return
         }
-        
+        guard !hasBeenPrompted else { return }
+        hasBeenPrompted = true
         // move analytics off of hotpath
         DispatchQueue.global(qos: .background).async {
             TelemetryProvider.post(event: .promptedForAXPermission, with: [:])
@@ -857,7 +858,7 @@ extension ShellBridge {
                         TelemetryProvider.post(event: .grantedAXPermission, with: [:])
                     }
                     print("Accessibility Permission Granted!!!")
-
+                    ShellBridge.hasBeenPrompted = false
                 }
               }
             
