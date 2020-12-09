@@ -843,7 +843,8 @@ extension WebBridge {
     static func privateAPI(scope: WKScriptMessage) {
         if let params = scope.body as? Dictionary<String, Any>,
             let type = params["type"] as? String,
-            let data = params["data"] as? Dictionary<String, String> {
+            let data = params["data"] as? Dictionary<String, String>,
+            let handlerId = params["handlerId"] as? String? {
                 
             switch(type) {
                 case "track":
@@ -867,7 +868,36 @@ extension WebBridge {
                         KeypressProvider.shared.removeRedirect(for: keyCode, in: (scope.getCompanionWindow()?.tetheredWindow)!)
 
                     }
+                case "setAutocompleteHeight":
+                    guard let heightString = data["height"] else { return }
+                    let companion = scope.getCompanionWindow()
+                    let previousMax = companion?.maxHeight
+                    if let number = NumberFormatter().number(from: heightString) {
+                       companion?.maxHeight = CGFloat(truncating: number)
+                    } else {
+                       companion?.maxHeight = nil
+                    }
                     
+                    // testing
+                    if(!(companion?.isAutocompletePopup ?? false)) {
+                        companion?.windowManager.requestWindowUpdate()
+                    } else {
+                        if companion?.maxHeight == 0 {
+                            companion?.orderOut(self)
+                        } else {
+                            if (previousMax == 0 || previousMax == nil) {
+                                NotificationCenter.default.post(name: NSNotification.Name("showAutocompletePopup"), object: nil)
+                            }
+                            companion?.orderFrontRegardless()
+                            let rect = KeypressProvider.shared.getTextRect()
+                            WindowManager.shared.positionAutocompletePopover(textRect: rect)
+                        }
+                        
+                        if let handlerId = handlerId {
+                            WebBridge.callback(handler: handlerId, value: "", webView: scope.webView)
+                        }
+  
+                    }
                     
                 default:
                     print("private command '\(type)' does not exist.")
@@ -1084,9 +1114,13 @@ extension WebBridge {
                     if let env = params["env"]{
                         var parsedEnv = env.jsonStringToDict() as? [String: String] ?? FigCLI.extract(keys: ["PWD","USER","HOME","SHELL", "OLDPWD", "TERM_PROGRAM", "TERM_SESSION_ID", "HISTFILE","FIG","FIGPATH"], from: env)
                         parsedEnv["HOME"] = NSHomeDirectory()
+                        parsedEnv["TERM"] = "xterm"//-256color
+//                        parsedEnv["SHELL"] = "/bin/bash"
+//                        DispatchQueue.global(qos: .userInteractive).async {
                         controller.pty.start(with: parsedEnv)
+//                        }
                     } else {
-                        controller.pty.start(with: ["HOME":NSHomeDirectory()])
+                        controller.pty.start(with: ["HOME":NSHomeDirectory(), "TERM" : "xterm-256color", "SHELL":"/bin/bash"])
                     }
          
                 case "stream":

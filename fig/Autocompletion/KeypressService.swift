@@ -63,7 +63,9 @@ class KeypressProvider : KeypressService {
     
     @objc func firstCharacterInKeystrokeBuffer() {
         if let window = AXWindowServer.shared.whitelistedWindow, let tty = window.tty {
-            tty.update()
+            DispatchQueue.global(qos: .userInteractive).async {
+                tty.update()
+            }
         }
     }
 

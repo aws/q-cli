@@ -44,8 +44,14 @@ int candidates(const char *tty) {
           continue;
         }
         
+        char *dev = devname(kp->kp_eproc.e_tdev, S_IFCHR);
+        
+        
+        if (dev == NULL) {
+            continue;
+        }
         // Incorrect checksum for freed object 0x7f92b0904c00: probably modified after being freed.
-        if (strlen(tty) != 0 && strcmp(tty, devname(kp->kp_eproc.e_tdev, S_IFCHR)) != 0) {
+        if (strlen(tty) != 0 && strcmp(tty, dev) != 0) {
             continue;
         }
         
@@ -154,7 +160,7 @@ fig_proc_info* getProcessInfo(const char * tty, int *size) {
 int printProcesses(const char* tty) {
         
 
-    int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_ALL, 0 };
+    int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_TTY, 0 };
     size_t bufSize = 0;
 
     struct kinfo_proc *kp;
@@ -208,6 +214,9 @@ int printProcesses(const char* tty) {
 
 //fig_proc_info* getProcessInfo2(const char * tty, int *size) {
 //    // get number of procesess
-//    // get processes
+//
+//    // get processes (controlled by TTY)
+//    int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_TTY, 0 };
+//
 //    // filter processes + add to new pointer
 //}

@@ -174,6 +174,12 @@ class AXWindowServer : WindowService {
             return
         }
         
+        // prevents hanging on certain applications (like com.apple.AirDrop.send)
+        guard app.activationPolicy != .prohibited else {
+            Logger.log(message: "AXWindowServer: don't track application that are prohibited from launching windows by activation policy.")
+            return
+        }
+        
 //        if appRef.observer == nil || appRef.handler == nil {
 //            self.tracked = tracked.filter { $0 != appRef}
 //        }
@@ -323,7 +329,7 @@ class AXWindowServer : WindowService {
         }
         
         if (success) {
-            Logger.log(message: "AXWindowServer: Began tracking '\(appRef.bundleId ?? "<none>")")
+            Logger.log(message: "AXWindowServer: Began tracking '\(appRef.bundleId ?? "<none>")'")
             //EXC_BAD_ACCESS (code=EXC_I386_GPFLT
             // Duplicate elements of type 'ExternalApplication' were found in a Set
             tracked.insert(appRef)

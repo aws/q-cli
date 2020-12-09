@@ -270,7 +270,12 @@ let setup = function(window) {
               window.webkit.messageHandlers.ptyHandler.postMessage({type: 'exit'});
           }
       },
-      private(func) {
+      private(func, handler) {
+          if (handler) {
+              let handlerId = random_identifier(5)
+              this[handlerId] = handler
+              func.handlerId = handlerId
+          }
           window.webkit.messageHandlers.privateHandler.postMessage(func);
       },
       cursor : {
