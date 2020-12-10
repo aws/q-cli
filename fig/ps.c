@@ -115,9 +115,16 @@ fig_proc_info* getProcessInfo(const char * tty, int *size) {
            continue;
          }
          
-         if (strlen(tty) != 0 && strcmp(tty, devname(kp->kp_eproc.e_tdev, S_IFCHR)) != 0) {
+        char *dev = devname(kp->kp_eproc.e_tdev, S_IFCHR);
+                                
+        if (dev == NULL) {
+            continue;
+        }
+         
+         if (strlen(tty) != 0 && strcmp(tty, dev) != 0) {
              continue;
          }
+         
          int ret;
          char pathBuffer[PROC_PIDPATHINFO_MAXSIZE];
          bzero(pathBuffer, PROC_PIDPATHINFO_MAXSIZE);
@@ -139,7 +146,7 @@ fig_proc_info* getProcessInfo(const char * tty, int *size) {
          process = (fig_proc_info*)malloc( sizeof( fig_proc_info ) );
          process->pid = kp->kp_proc.p_pid;
          //  malloc: Incorrect checksum for freed object 0x10288f400: probably modified after being freed.
-         strncpy(process->tty, devname(kp->kp_eproc.e_tdev, S_IFCHR), FIG_TTY_MAXSIZE);
+         strncpy(process->tty, dev, FIG_TTY_MAXSIZE);
          strncpy(process->cmd, pathBuffer, PROC_PIDPATHINFO_MAXSIZE);
          strncpy(process->cwd, vpi.pvi_cdir.vip_path, PATH_MAX);
 

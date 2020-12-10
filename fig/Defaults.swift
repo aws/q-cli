@@ -7,6 +7,7 @@
 //
 
 import Cocoa
+import Sentry
 
 enum Build: String {
     case production = "prod"
@@ -65,6 +66,9 @@ class Defaults {
         }
         
         set(email) {
+            let user = User()
+            user.email = email
+            SentrySDK.setUser(user)
             UserDefaults.standard.set(email, forKey: "userEmail")
             UserDefaults.standard.synchronize()
         }

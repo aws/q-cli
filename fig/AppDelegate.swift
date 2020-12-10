@@ -99,6 +99,11 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             UserDefaults.standard.set(true, forKey: "hasLaunched")
             UserDefaults.standard.synchronize()
         } else {
+            // identify user for Sentry!
+            let user = User()
+            user.email = email
+            SentrySDK.setUser(user)
+            
             if (!AXIsProcessTrustedWithOptions(nil)) {
 
                 SentrySDK.capture(message: "Accesibility Not Enabled on Subsequent Launch")
@@ -1635,7 +1640,7 @@ extension AppDelegate : NSMenuDelegate {
             self.frontmost = nil
         }
         
-        if let app = NSWorkspace.shared.frontmostApplication {
+        if let app = NSWorkspace.shared.frontmostApplication, !app.isFig {
             if Integrations.nativeTerminals.contains(app.bundleIdentifier ?? "") {
                 let window = AXWindowServer.shared.whitelistedWindow
                 let tty = window?.tty
@@ -1661,6 +1666,29 @@ extension AppDelegate : NSMenuDelegate {
                     legend.addItem(NSMenuItem.separator())
                     legend.addItem(NSMenuItem(title: "Reset Window Tracking", action: #selector(resetWindowTracking), keyEquivalent: ""))
                     legend.addItem(NSMenuItem(title: "Restart Fig", action: #selector(restart), keyEquivalent: ""))
+
+
+                } else if (CGSIsSecureEventInputSet()) {
+                    var pid: pid_t = 0;
+                    secure_keyboard_entry_process_info(&pid)
+
+                    color = .systemPink
+                    legend.addItem(NSMenuItem(title: "'Secure Keyboard Input' Enabled", action: nil, keyEquivalent: ""))
+                    legend.addItem(NSMenuItem.separator())
+                    legend.addItem(NSMenuItem(title: "This prevents Fig from", action: nil, keyEquivalent: ""))
+                    legend.addItem(NSMenuItem(title: "processing keypress events. ", action: nil, keyEquivalent: ""))
+                    legend.addItem(NSMenuItem.separator())
+
+                    
+                    if let app = NSRunningApplication(processIdentifier: pid), let name = app.localizedName {
+                        legend.addItem(NSMenuItem(title: "Disable in '\(name)' (\(pid)).", action: nil, keyEquivalent: ""))
+
+                    } else {
+                        legend.addItem(NSMenuItem(title: "Run `ioreg -l -w 0 | grep SecureInput` to determine which app is responsible.", action: nil, keyEquivalent: ""))
+                    }
+
+
+
 
                 } else if (!hasContext) {
                     color = .orange
