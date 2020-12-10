@@ -1,1 +1,22 @@
-https://gist.githubusercontent.com/bacongravy/23385e523f6053dd6134e59707f9dfe2/raw/998484dcb0d2299c00f94fa54d9d5bdf8f0ec578/master_test.yml
+name: master_test
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  master_test:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v2
+
+      - name: Find first scheme of default project
+        run: |
+          echo "::set-env name=SCHEME::$(xcodebuild -list -json | jq -r '.project.schemes[0]')"
+
+      - name: Build and test app
+        shell: bash --noprofile --norc -eo pipefail {0}
+        run: |
+          xcodebuild -scheme "$SCHEME" build CODE_SIGN_IDENTITY=- | xcpretty
