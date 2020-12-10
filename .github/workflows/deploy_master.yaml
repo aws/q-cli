@@ -61,6 +61,13 @@ jobs:
         run: |
           xcodebuild -scheme "$SCHEME" install DSTROOT=build/root | xcpretty
 
+      - name: Notarize app
+        run: |
+          npx notarize-cli --file "build/root/$INSTALL_PATH/$FULL_PRODUCT_NAME"
+        env:
+          NOTARIZE_USERNAME: ${{ secrets.NOTARIZE_USERNAME }}
+          NOTARIZE_PASSWORD: ${{ secrets.NOTARIZE_PASSWORD }}
+
       - name: Package app
         run: |
           hdiutil create \
@@ -68,7 +75,7 @@ jobs:
                   -srcfolder "build/root/$INSTALL_PATH/$FULL_PRODUCT_NAME" \
                   -volname "$PRODUCT_NAME" "build/$PRODUCT_MODULE_NAME.dmg"
 
-      - name: Notarize app
+      - name: Notarize dmg
         run: |
           npx notarize-cli --file "build/$PRODUCT_MODULE_NAME.dmg"
         env:
