@@ -49,7 +49,6 @@ jobs:
         env:
           SIGNING_CERTIFICATE_P12_DATA: ${{ secrets.SIGNING_CERTIFICATE_P12_DATA }}
           SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.SIGNING_CERTIFICATE_PASSWORD }}
-          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
 
 
       - name: Build and test app
