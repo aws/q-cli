@@ -14,10 +14,14 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Find first scheme of default project
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
         run: |
           echo "::set-env name=SCHEME::$(xcodebuild -list -json | jq -r '.project.schemes[0]')"
           
       - name: Set environment variables from project settings
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
         run: |
           function set-env-from-proj { 
             echo "::set-env name=$1::$(xcodebuild -scheme "$SCHEME" -showBuildSettings | grep " $1 " | sed "s/[ ]*$1 = //")"
@@ -45,6 +49,8 @@ jobs:
         env:
           SIGNING_CERTIFICATE_P12_DATA: ${{ secrets.SIGNING_CERTIFICATE_P12_DATA }}
           SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.SIGNING_CERTIFICATE_PASSWORD }}
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+
 
       - name: Build and test app
         shell: bash --noprofile --norc -eo pipefail {0}
