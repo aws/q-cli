@@ -78,6 +78,7 @@ jobs:
         uses: devbotsxyz/xcode-notarize@v1
         with:
           product-path: "Export/Fig.app"
+          verbose: true
           appstore-connect-username: ${{ secrets.NOTARIZE_USERNAME }}
           appstore-connect-password: ${{ secrets.NOTARIZE_PASSWORD }}
 
