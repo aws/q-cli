@@ -14,6 +14,11 @@ jobs:
       - name: "Checkout Project"
         uses: actions/checkout@v2
 
+      - name: Get Release Version
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+        run: |
+          echo "::set-env name=VERSION::$(xcodebuild -showBuildSettings | grep MARKETING_VERSION | tr -d 'MARKETING_VERSION =')"      
       #
       # Setup
       #
@@ -97,7 +102,13 @@ jobs:
 
       - name: Create DMG
         run: create-dmg "Export/Fig.app"
-
+      - name: Rename DMG
+        run: mv "fig $VERSION.dmg" fig.dmg
+      - name: "Upload build artifact"
+        uses: actions/upload-artifact@v2
+        with:
+          name: build
+          path: fig.dmg
       # - name: Package for Distribution
       #   run: ditto -V -c -k --keepParent "Export/Rings.app" "Rings.zip"
 
