@@ -22,19 +22,13 @@ jobs:
         with:
           version: "12.0.0"
 
-      - name: "Import Certificate: Development"
+      - name: "Import Certificate"
         uses: devbotsxyz/import-signing-certificate@main
         with:
-          certificate-data: ${{ secrets.DEVELOPMENT_CERTIFICATE_DATA }}
-          certificate-passphrase: ${{ secrets.DEVELOPMENT_CERTIFICATE_PASSPHRASE }}
+          certificate-data: ${{ secrets.SIGNING_CERTIFICATE_P12_DATA }}
+          certificate-passphrase: ${{ secrets.SIGNING_CERTIFICATE_PASSWORD }}
           keychain-password: ${{ secrets.KEYCHAIN_PASSWORD }}
 
-      - name: "Import Certificate: Distribution"
-        uses: devbotsxyz/import-signing-certificate@main
-        with:
-          certificate-data: ${{ secrets.DISTRIBUTION_CERTIFICATE_DATA }}
-          certificate-passphrase: ${{ secrets.DISTRIBUTION_CERTIFICATE_PASSPHRASE }}
-          keychain-password: ${{ secrets.KEYCHAIN_PASSWORD }}
 
       #
       # Fail early on failing tests.
@@ -69,26 +63,26 @@ jobs:
       - name: "Notarize Release Build"
         uses: devbotsxyz/xcode-notarize@v1
         with:
-          product-path: "Export/Rings.app"
+          product-path: "Export/Fig.app"
           appstore-connect-username: ${{ secrets.NOTARIZATION_USERNAME }}
           appstore-connect-password: ${{ secrets.NOTARIZATION_PASSWORD }}
 
       - name: "Staple Release Build"
         uses: devbotsxyz/xcode-staple@v1
         with:
-          product-path: "Export/Rings.app"
+          product-path: "Export/Fig.app"
 
-      #
-      # Zip up the app and add it to the GitHub Release as a
-      # downloadable asset.
-      #
+      - name: Build and archive app
+        uses: actions/setup-node@v1
+        run: npm install --global create-dmg
+        run: create-dmg "Export/Fig.app"
 
-      - name: Package for Distribution
-        run: ditto -V -c -k --keepParent "Export/Rings.app" "Rings.zip"
+      # - name: Package for Distribution
+      #   run: ditto -V -c -k --keepParent "Export/Rings.app" "Rings.zip"
 
-      - name: Release app
-        uses: softprops/action-gh-release@v1
-        with:
-          files: Rings.zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # - name: Release app
+      #   uses: softprops/action-gh-release@v1
+      #   with:
+      #     files: Rings.zip
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
