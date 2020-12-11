@@ -72,9 +72,11 @@ jobs:
         with:
           product-path: "Export/Fig.app"
 
-      - name: Build and archive app
+      - name: Setup Node Environment
         uses: actions/setup-node@v1
+      - name: Install create-dmg
         run: npm install --global create-dmg
+      - name: Create DMG
         run: create-dmg "Export/Fig.app"
 
       # - name: Package for Distribution
