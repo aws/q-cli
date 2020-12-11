@@ -38,6 +38,10 @@ jobs:
       #- name: "Test"
       #  uses: devbotsxyz/xcode-test@v1
 
+      #https://stackoverflow.com/questions/39500634/use-xcodebuild-xcode-8-and-automatic-signing-in-ci-travis-jenkins-environmen/39559864#39559864
+      - name: "Switch to manual code signing"
+        run: sed -i '' 's/ProvisioningStyle = Automatic;/ProvisioningStyle = Manual;/' fig.xcodeproj/project.pbxproj
+
       #
       # First we do a developer build that we archive into an
       # .xcarchive.
