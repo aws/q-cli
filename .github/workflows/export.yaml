@@ -1,0 +1,94 @@
+name: Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags: [ v* ]
+
+jobs:
+  release:
+    runs-on: macos-10.15
+    timeout-minutes: 15
+    steps:
+      - name: "Checkout Project"
+        uses: actions/checkout@v2
+
+      #
+      # Setup
+      #
+
+      - name: "Select Xcode 12.0.0"
+        uses: devbotsxyz/xcode-select@master
+        with:
+          version: "12.0.0"
+
+      - name: "Import Certificate: Development"
+        uses: devbotsxyz/import-signing-certificate@main
+        with:
+          certificate-data: ${{ secrets.DEVELOPMENT_CERTIFICATE_DATA }}
+          certificate-passphrase: ${{ secrets.DEVELOPMENT_CERTIFICATE_PASSPHRASE }}
+          keychain-password: ${{ secrets.KEYCHAIN_PASSWORD }}
+
+      - name: "Import Certificate: Distribution"
+        uses: devbotsxyz/import-signing-certificate@main
+        with:
+          certificate-data: ${{ secrets.DISTRIBUTION_CERTIFICATE_DATA }}
+          certificate-passphrase: ${{ secrets.DISTRIBUTION_CERTIFICATE_PASSPHRASE }}
+          keychain-password: ${{ secrets.KEYCHAIN_PASSWORD }}
+
+      #
+      # Fail early on failing tests.
+      # Disabled because this project does not have tests. (TODO Add some example tests)
+      #
+
+      #- name: "Test"
+      #  uses: devbotsxyz/xcode-test@v1
+
+      #
+      # First we do a developer build that we archive into an
+      # .xcarchive.
+      #
+
+      - name: "Archive"
+        uses: devbotsxyz/xcode-archive@v1
+
+      #
+      # Next ask Xcode to export the product from the archived build
+      # we just created. This will also re-sign the application with
+      # the "Developer ID" certificate.
+      #
+
+      - name: "Export & Sign Release Build"
+        uses: devbotsxyz/xcode-export-archive@master
+
+      #
+      # Now send the product to Apple's notarization service and then
+      # staple it.
+      #
+
+      - name: "Notarize Release Build"
+        uses: devbotsxyz/xcode-notarize@v1
+        with:
+          product-path: "Export/Rings.app"
+          appstore-connect-username: ${{ secrets.NOTARIZATION_USERNAME }}
+          appstore-connect-password: ${{ secrets.NOTARIZATION_PASSWORD }}
+
+      - name: "Staple Release Build"
+        uses: devbotsxyz/xcode-staple@v1
+        with:
+          product-path: "Export/Rings.app"
+
+      #
+      # Zip up the app and add it to the GitHub Release as a
+      # downloadable asset.
+      #
+
+      - name: Package for Distribution
+        run: ditto -V -c -k --keepParent "Export/Rings.app" "Rings.zip"
+
+      - name: Release app
+        uses: softprops/action-gh-release@v1
+        with:
+          files: Rings.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
