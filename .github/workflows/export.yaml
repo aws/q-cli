@@ -68,8 +68,6 @@ jobs:
 
       - name: "Export & Sign Release Build"
         uses: mattschrage/xcode-export-archive@main
-        with:
-          export-method: "development"
 
       #
       # Now send the product to Apple's notarization service and then
@@ -80,8 +78,8 @@ jobs:
         uses: devbotsxyz/xcode-notarize@v1
         with:
           product-path: "Export/Fig.app"
-          appstore-connect-username: ${{ secrets.NOTARIZATION_USERNAME }}
-          appstore-connect-password: ${{ secrets.NOTARIZATION_PASSWORD }}
+          appstore-connect-username: ${{ secrets.NOTARIZE_USERNAME }}
+          appstore-connect-password: ${{ secrets.NOTARIZE_PASSWORD }}
 
       - name: "Staple Release Build"
         uses: devbotsxyz/xcode-staple@v1
