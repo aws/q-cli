@@ -14,11 +14,14 @@ jobs:
       - name: "Checkout Project"
         uses: actions/checkout@v2
 
-      - name: Get Release Version
+      - name: "Get Release Version"
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: true
         run: |
           echo "::set-env name=VERSION::$(xcodebuild -showBuildSettings | grep MARKETING_VERSION | tr -d 'MARKETING_VERSION =')"      
+      
+      - name: "Log Release Version"
+        run: echo $VERSION
       #
       # Setup
       #
