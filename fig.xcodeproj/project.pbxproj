@@ -90,7 +90,6 @@
 		7577124725648DFB0011FF48 /* ps.c in Sources */ = {isa = PBXBuildFile; fileRef = 7577124625648DFB0011FF48 /* ps.c */; };
 		757712492564D94A0011FF48 /* ProcessStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757712482564D9490011FF48 /* ProcessStatus.swift */; };
 		757CA86724859461002A64A8 /* AppMover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757CA86624859461002A64A8 /* AppMover.swift */; };
-		757CA87E2485D23D002A64A8 /* dist in Resources */ = {isa = PBXBuildFile; fileRef = 757CA87C2485D23C002A64A8 /* dist */; };
 		757CA88124874E06002A64A8 /* ErrorMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757CA88024874E05002A64A8 /* ErrorMatcher.swift */; };
 		757CA88424875907002A64A8 /* ANSITerminal in Frameworks */ = {isa = PBXBuildFile; productRef = 757CA88324875907002A64A8 /* ANSITerminal */; };
 		757CA88624876043002A64A8 /* error.html in Resources */ = {isa = PBXBuildFile; fileRef = 757CA88524876042002A64A8 /* error.html */; };
@@ -288,7 +287,6 @@
 		7577124625648DFB0011FF48 /* ps.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ps.c; sourceTree = "<group>"; };
 		757712482564D9490011FF48 /* ProcessStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessStatus.swift; sourceTree = "<group>"; };
 		757CA86624859461002A64A8 /* AppMover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppMover.swift; sourceTree = "<group>"; };
-		757CA87C2485D23C002A64A8 /* dist */ = {isa = PBXFileReference; lastKnownFileType = folder; path = dist; sourceTree = "<group>"; };
 		757CA88024874E05002A64A8 /* ErrorMatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorMatcher.swift; sourceTree = "<group>"; };
 		757CA88524876042002A64A8 /* error.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = error.html; sourceTree = "<group>"; };
 		757CA887248AD067002A64A8 /* OnboardingWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingWindow.swift; sourceTree = "<group>"; };
@@ -509,7 +507,6 @@
 			isa = PBXGroup;
 			children = (
 				7510F87324A6910500E86F7C /* SwiftTerm */,
-				757CA87C2485D23C002A64A8 /* dist */,
 				75675954244634AD006AA988 /* AppDelegate.swift */,
 				75E993F32515C8D3000BE6BE /* Autocompletion */,
 				75B199332504190900F38EA8 /* Keycode.swift */,
@@ -865,7 +862,6 @@
 				757CA88F248B0D31002A64A8 /* cli.png in Resources */,
 				752C0BE4247B44C60077E415 /* finder.html in Resources */,
 				752C0BDA2479F37B0077E415 /* fig.js in Resources */,
-				757CA87E2485D23D002A64A8 /* dist in Resources */,
 				757CA88D248B091D002A64A8 /* permissions.mp4 in Resources */,
 				757CA897248C108E002A64A8 /* css in Resources */,
 				75C0711D244AC3B2002DF69F /* index.html in Resources */,
