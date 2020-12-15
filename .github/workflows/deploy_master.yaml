@@ -2,8 +2,8 @@ name: master_deploy
 
 on:
   workflow_dispatch:
-  push:
-    tags: [ v* ]
+  # push:
+  #   tags: [ v* ]
 
 jobs:
   master_deploy:
@@ -33,6 +33,7 @@ jobs:
           set-env-from-proj PRODUCT_NAME
           set-env-from-proj PROJECT_NAME
 
+
       - name: Import signing certificate into keychain
         run: |
           KEYCHAIN_FILE=default.keychain
@@ -60,13 +61,6 @@ jobs:
         shell: bash --noprofile --norc -eo pipefail {0}
         run: |
           xcodebuild -scheme "$SCHEME" install DSTROOT=build/root | xcpretty
-
-      - name: Notarize app
-        run: |
-          npx notarize-cli --file "build/root/$INSTALL_PATH/$FULL_PRODUCT_NAME"
-        env:
-          NOTARIZE_USERNAME: ${{ secrets.NOTARIZE_USERNAME }}
-          NOTARIZE_PASSWORD: ${{ secrets.NOTARIZE_PASSWORD }}
 
       - name: Package app
         run: |
