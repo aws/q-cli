@@ -12,7 +12,7 @@ base_url='https://codeload.github.com/withfig/autocomplete/tar.gz/';
 # This is the current version of autocomplete
 # It should be 1 ahead of the most recent branch we have created on github
 # ie if we have a branch for v1 on withfig/autocomplete, make this v2
-current_version='v2';
+current_version=$(defaults read com.mschrage.fig "autocompleteVersion" 2>/dev/null) ;
 
 mkdir -p ~/.fig/autocomplete; cd $_
 

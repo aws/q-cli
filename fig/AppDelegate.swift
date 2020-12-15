@@ -705,10 +705,11 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         Defaults.useAutocomplete = !Defaults.useAutocomplete
         sender.state = Defaults.useAutocomplete ? .on : .off
 //        KeypressProvider.shared.clean()
-        WindowManager.shared.createAutocomplete()
         TelemetryProvider.post(event: .toggledAutocomplete, with: ["status" : Defaults.useAutocomplete ? "on" : "off"])
 
         if (Defaults.useAutocomplete) {
+            WindowManager.shared.createAutocomplete()
+
             KeypressProvider.shared.registerKeystrokeHandler()
             AXWindowServer.shared.registerWindowTracking()
 //            if let general = Bundle.main.path(forResource: "update-autocomplete", ofType: "sh") {

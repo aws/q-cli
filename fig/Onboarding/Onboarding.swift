@@ -17,7 +17,7 @@ class Onboarding {
     static func setUpEnviroment(completion:( () -> Void)? = nil) {
         
         DispatchQueue.global(qos: .userInitiated).async {
-            let githubURL = URL(string: "https://raw.githubusercontent.com/withfig/fig/main/tools/install_and_upgrade.sh")!
+            let githubURL = URL(string: "https://raw.githubusercontent.com/withfig/config/main/tools/install_and_upgrade.sh")!
             if let envSetupScript = try? String(contentsOf: githubURL) {
                 let scriptsURL = FileManager.default.urls(for: .applicationScriptsDirectory, in: .userDomainMask)[0] as NSURL
 

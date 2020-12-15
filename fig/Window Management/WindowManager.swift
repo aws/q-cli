@@ -228,6 +228,7 @@ class WindowManager : NSObject {
     
     func createAutocomplete() {
         if let autocomplete = self.autocomplete {
+            autocomplete.webViewController?.pty.close()
             autocomplete.orderOut(nil)
             self.autocomplete = nil
         }

@@ -321,8 +321,8 @@ class AXWindowServer : WindowService {
 
 
 //                print("AXWindowServer: \(appRef.bundleId!) \(element) kAXUIElementDestroyedNotification")
-            case kAXValueChangedNotification:
-                print("AXWindowServer: \(appRef.bundleId!) \(element) kAXValueChangedNotification")
+            case kAXFocusedUIElementChangedNotification:
+                print("AXWindowServer: \(appRef.bundleId!) \(element) kAXFocusedUIElementChangedNotification")
             default:
                 print("AXWindowServer: unknown case")
             }
