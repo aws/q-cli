@@ -1691,6 +1691,9 @@ extension AppDelegate : NSMenuDelegate {
 
 
 
+                } else if (!Defaults.useAutocomplete) {
+                    color = .systemPink
+                    legend.addItem(NSMenuItem(title: "Autocomplete is disabled", action: nil, keyEquivalent: ""))
                 } else if (!hasContext) {
                     color = .orange
                     legend.addItem(NSMenuItem(title: "Keybuffer context is lost.", action: nil, keyEquivalent: ""))
