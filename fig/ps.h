@@ -19,7 +19,7 @@
 #include <string.h>
 #include <time.h>
 #include <sys/syslimits.h>
-
+#include <dirent.h>
 
 #define FIG_TTY_MAXSIZE 20
 
