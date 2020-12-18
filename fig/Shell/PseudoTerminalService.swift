@@ -150,14 +150,14 @@ extension PseudoTerminal : LocalProcessDelegate {
 
         }
         
-        if let streamCandidate = data.groups(for:"<<<\(streamDelimeter)(.*?)\(streamDelimeter)")[safe: 0] {
+        if let streamCandidate = data.groups(for:"<<<\(streamDelimeter)\r\n(.*?)\r\n\(streamDelimeter)")[safe: 0] {
             streamHandlers.insert(streamCandidate[1])
         }
         
         rawOutput += data
 
         for handle in executeHandlers {
-            let groups = rawOutput.groups(for: "(?s)<<<\(executeDelimeter)\(handle)\(executeDelimeter)(.*?)\(executeDelimeter)\(handle)\(executeDelimeter)>>>")
+            let groups = rawOutput.groups(for: "(?s)<<<\(executeDelimeter)\(handle)\(executeDelimeter)\r\n(.*?)\r\n\(executeDelimeter)\(handle)\(executeDelimeter)>>>")
             
             if let group = groups[safe: 0], let output = group.last {
                 executeHandlers.remove(handle)
