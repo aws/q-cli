@@ -46,4 +46,24 @@ class ProcessStatus {
         return []
     }
     
+    static func getProcess(by pid: pid_t) -> proc? {
+        let cmdBuf = UnsafeMutablePointer<Int8>.allocate(capacity: 1024 * 4)
+        let cwdBuf = UnsafeMutablePointer<Int8>.allocate(capacity: 1024)
+
+        let err = getProcessInfoForPid(pid, cwdBuf, cmdBuf)
+        
+        guard err == 0 else {
+            return nil
+        }
+        
+        let cmd = String(cString: cmdBuf)
+        let cwd = String(cString: cwdBuf)
+        
+//        free(cmdBuf)
+//        free(cwdBuf)
+        
+        return proc(pid: pid, cmd: cmd, cwd: cwd)
+        
+    }
+    
 }

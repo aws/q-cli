@@ -83,21 +83,27 @@ class TTY {
         return processes.last
     }
     
-    func update() {
-        guard let running = self.running else { return
-            
+    func update(for pid: pid_t? = nil) {
+        var process: proc? = nil
+        if let pid = pid, let proc = ProcessStatus.getProcess(by: pid) {
+            process = proc
+        } else {
+            process = self.running
         }
-        let cmd = running.cmd
-        let cwd = running.cwd
+        
+        guard let runningProcess = process else { return }
+        let cmd = runningProcess.cmd
+        let cwd = runningProcess.cwd
         print("tty: running \(cmd) \(cwd ?? "<none>")")
         self.cwd = cwd
         self.cmd = cmd
-        self.isShell = running.isShell
+        self.isShell = runningProcess.isShell
     }
     
     var cwd: String?
     var cmd: String?
     var isShell: Bool?
+    var presumedShellPid: pid_t?
 }
 
 extension TTY: Hashable {
@@ -150,6 +156,7 @@ extension ShellHookManager : ShellBridgeEventListener {
     // Note: shell prompt can return when window is not active window. This is why we get the windowHash using the session identifier.
     @objc func shellPromptWillReturn(_ notification: Notification) {
         
+
         let msg = (notification.object as! ShellMessage)
         Logger.log(message: "shellPromptWillReturn")
         
@@ -172,9 +179,8 @@ extension ShellHookManager : ShellBridgeEventListener {
             if (validHash) {
                 // if a tty exists, update it (with delay)
                 if let tty = self.tty[windowHash] {
-                    Timer.delayWithSeconds(0.1) {
-                       tty.update()
-                    }
+                    guard let shellPidStr = msg.options?[safe: 1], let shellPid = Int32(shellPidStr) else { return }
+                    tty.update(for: shellPid)
                 }
             } else {
                 // remove tty for hash (because the hash is invalid)
@@ -196,7 +202,7 @@ extension ShellHookManager : ShellBridgeEventListener {
         let msg = (notification.object as! ShellMessage)
         Timer.delayWithSeconds(0.2) { // add delay so that window is active
             if let window = AXWindowServer.shared.whitelistedWindow {
-                if let ttyId = msg.options?.last?.split(separator: "/").last {
+                if let ttyId = msg.options?[safe: 2]?.split(separator: "/").last {
                     Logger.log(message: "tty: \(window.hash) = \(ttyId)")
                     Logger.log(message: "session: \(window.hash) = \(msg.session)")
 

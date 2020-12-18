@@ -36,4 +36,6 @@ fig_proc_info* getProcessInfo(const char *tty, int *size);
 int candidates(const char * tty);
 int printProcesses(const char * tty);
 
+int getProcessInfoForPid(pid_t pid, char *cwd, char *cmd);
+
 #endif /* ps_h */
