@@ -20,108 +20,6 @@ protocol ShellHookService {
 
 }
 
-
-struct proc {
-    let pid: pid_t
-    let cmd: String
-    var _cwd: String?
-    
-    init(line: String) {
-        let tokens = line.split(separator: " ")
-        pid = Int32(String(tokens[1])) ?? -1
-        cmd = tokens.suffix(from: 2).joined(separator: " ")
-    }
-    
-    init(pid: pid_t, cmd: String, cwd: String) {
-        self.pid = pid
-        self.cmd = cmd
-        self._cwd = cwd
-    }
-    
-    var cwd: String? {
-        guard let cwd = self._cwd else {
-            return "/usr/sbin/lsof -an -p \(self.pid) -d cwd -F n | tail -1 | cut -c2-".runAsCommand().trimmingCharacters(in: .whitespaces)
-        }
-        
-        return cwd
-//        return "/usr/sbin/lsof -p \(self.pid) | awk '$4==\"cwd\" { print $9 }'".runAsCommand().trimmingCharacters(in: .whitespaces)
-    }
-    
-    /// Run cat /etc/shells
-    var isShell: Bool {
-        return (Defaults.processWhitelist + ["zsh","fish","bash", "csh","dash","ksh","tcsh", "ssh"]).reduce(into: false) { (res, shell) in
-            res = res || cmd.contains(shell)
-        }
-    }
-}
-class TTY {
-    let descriptor: String
-    init(fd: String) {
-        descriptor = fd
-        self.update() // running this right away may cause fig to be the current process rather than the shell.
-    }
-    
-    var processes: [proc] {
-        
-        return ProcessStatus.getProcesses(for: self.descriptor).filter({ (process) -> Bool in
-            return !Defaults.ignoreProcessList.contains(process.cmd)
-        }).reversed()
-    }
-    
-    var running: proc? {
-        return processes.last
-    }
-    
-    func update(for pid: pid_t? = nil) {
-        let list = self.processes
-
-        var process: proc? = nil
-        if let pid = pid {
-//            let split = list.firstIndex { $0.pid == pid }
-            process = list.filter { $0.pid == pid }.first // there should only be one
-        } else {
-            process = list.last
-            
-        }
-        
-        guard let runningProcess = process else { return }
-        let cmd = runningProcess.cmd
-        let cwd = runningProcess.cwd
-        print("tty: running \(cmd) \(cwd ?? "<none>")")
-        self.cwd = cwd
-        self.cmd = cmd
-        self.isShell = runningProcess.isShell
-    }
-    
-    var cwd: String?
-    var cmd: String?
-    var isShell: Bool?
-    var shell: proc?
-    
-    func startedNewShellSession(for shellPid: pid_t) {
-        self.shell = self.processes.filter { $0.pid == shellPid }.first
-    }
-    
-    func returnedToShellPrompt(for shellPid: pid_t) {
-        if let shell = shell, shell.pid == shellPid {
-            Logger.log(message: "Returned to shell prompt", priority: .info, subsystem: .tty)
-            return
-        }
-        
-        self.update(for: shellPid)
-        // set self.shell equal to this process
-    }
-}
-
-extension TTY: Hashable {
-    static func == (lhs: TTY, rhs: TTY) -> Bool {
-        return lhs.descriptor == rhs.descriptor
-    }
-    
-    func hash(into hasher: inout Hasher) {
-         hasher.combine(self.descriptor)
-    }
-}
 extension ExternalWindowHash {
     func components() -> (windowId: CGWindowID, tab: String?)? {
         let tokens = self.split(separator: "/")
@@ -184,13 +82,7 @@ extension ShellHookManager : ShellBridgeEventListener {
         
         let device = TTY(fd: tty)
         device.startedNewShellSession(for: shellPid)
-        
-//        self.tty[window.hash] = device
-//        self.sessions[window.hash] = msg.session
-//        self.originalWindowHashBySessionId[msg.session] = window.hash
-
-
-        
+  
     }
     
     func beginTrackingTerminalSession() {
@@ -252,10 +144,11 @@ extension ShellHookManager : ShellBridgeEventListener {
      @objc func startedNewTerminalSession(_ notification: Notification) {
         let msg = (notification.object as! ShellMessage)
         let ttyId = msg.options?[safe: 2]?.split(separator: "/").last
-        
+        guard let shellPidStr = msg.options?[safe: 1], let shellPid = Int32(shellPidStr) else { return }
+
 //        self.beginTrackingShellSession(with: <#T##pid_t#>, in: ttyId)
         if let ttyId = ttyId {
-            self.startedNewShellSession(sessionId: msg.session, ttyDescriptor: String(ttyId), shellPid: 0)
+            self.startedNewShellSession(sessionId: msg.session, ttyDescriptor: String(ttyId), shellPid: shellPid)
 
         }
 //        Timer.delayWithSeconds(0.2) { // add delay so that window is active
@@ -401,7 +294,8 @@ extension ShellHookManager : ShellBridgeEventListener {
         tty.returnedToShellPrompt(for: shellPid)
         
         // if the user has returned to the shell, their keypress buffer must be reset (for instance, if they exited by pressing 'q' rather than return)
-        KeypressProvider.shared.keyBuffer(for: hash).buffer = ""
+        // This doesn't work because of timing issues. If the user types to quickly, the first keypress will be overwritten.
+        // KeypressProvider.shared.keyBuffer(for: hash).buffer = ""
     }
     
     func startedNewShellSession(sessionId: SessionId, ttyDescriptor: String, shellPid: pid_t) {
@@ -444,6 +338,21 @@ extension ShellHookManager : ShellBridgeEventListener {
 
 //        tty.startedNewShellSession(for: shellPid)
 
+    }
+    
+    func shellWillExecuteCommand(_ msg: ShellMessage) {
+
+        
+        guard let hash = attemptToLinkToAssociatedWindow(for: msg.session,
+                                                         currentTopmostWindow: AXWindowServer.shared.whitelistedWindow) else {
+            
+            Logger.log(message: "Could not link to window on new terminal session.", priority: .notify, subsystem: .tty)
+            return
+        }
+        
+        if let tty = self.tty[hash] {
+            tty.preexec()
+        }
     }
     
     func validWindowHash(_ hash: ExternalWindowHash) -> Bool {

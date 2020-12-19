@@ -131,6 +131,7 @@ class ShellBridgeSocketService: WebSocketService {
                                     from.send(message: "disconnect")
                                     return
                                 }
+                                print("Handle CLI command: fig \((msg.options ?? []).joined(separator: " "))")
                                 switch subcommand {
                                 case "bg:event":
                                     if let event = msg.options?[safe: 1] {
@@ -146,6 +147,8 @@ class ShellBridgeSocketService: WebSocketService {
                                         NotificationCenter.default.post(name: .startedNewTerminalSession, object: msg)
                                     case "bg:prompt":
                                         NotificationCenter.default.post(name: .shellPromptWillReturn, object: msg)
+                                    case "bg:exec":
+                                        ShellHookManager.shared.shellWillExecuteCommand(msg)
                                     case "bg:alert":
                                         if let title = msg.options?[safe: 1], let text = msg.options?[safe: 2]  {
                                             DispatchQueue.main.async {
