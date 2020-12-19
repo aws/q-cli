@@ -21,6 +21,7 @@ class Logger {
         case keypress = "keypress"
         case xterm = "xterm"
         case javascript = "javascript"
+        case tty = "tty"
 
     }
     

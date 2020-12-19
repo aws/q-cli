@@ -13,6 +13,8 @@ import Sentry
 
 protocol KeypressService {
     func keyBuffer(for window: ExternalWindow) -> KeystrokeBuffer
+    func keyBuffer(for windowHash: ExternalWindowHash) -> KeystrokeBuffer
+
 //    func redirects(for window: ExternalWindow) -> Set<UInt16>
 
     func getTextRect(extendRange: Bool) -> CGRect?
@@ -73,7 +75,7 @@ class KeypressProvider : KeypressService {
         if let window = AXWindowServer.shared.whitelistedWindow, let tty = window.tty {
             Timer.delayWithSeconds(0.2) {
                 DispatchQueue.global(qos: .userInteractive).async {
-                    tty.update()
+                    //tty.update()
                 }
             }
         }
@@ -105,7 +107,7 @@ class KeypressProvider : KeypressService {
             if let window = AXWindowServer.shared.whitelistedWindow, let tty = window.tty {
                 Timer.delayWithSeconds(0.2) {
                     DispatchQueue.global(qos: .userInteractive).async {
-                        tty.update()
+                        //tty.update()
                     }
                 }
 //                self.keyThrottler.throttle {
@@ -248,11 +250,15 @@ KeypressProvider.shared.handleKeystroke(event: NSEvent(cgEvent: event), in: wind
     }
     
     func keyBuffer(for window: ExternalWindow) -> KeystrokeBuffer {
-        if let buffer = self.buffers[window.hash] {
+        return self.keyBuffer(for: window.hash)
+    }
+    
+    func keyBuffer(for windowHash: ExternalWindowHash) -> KeystrokeBuffer {
+        if let buffer = self.buffers[windowHash] {
             return buffer
         } else {
             let buffer = KeystrokeBuffer()
-            self.buffers[window.hash] = buffer
+            self.buffers[windowHash] = buffer
             return buffer
         }
     }

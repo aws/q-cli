@@ -32,10 +32,11 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         if NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).count > 1 {
             SentrySDK.capture(message: "Multiple Fig instances running!")
             Logger.log(message: "Multiple Fig instances running! Terminating now!")
-            NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).forEach { (app) in
+            NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).filter{ $0.processIdentifier != NSRunningApplication.current.processIdentifier }.forEach { (app) in
                 Logger.log(message: "Existing Process Id = \(app.processIdentifier)")
+                app.forceTerminate()
             }
-            NSApp.terminate(nil)
+//            NSApp.terminate(nil)
         }
         
         TelemetryProvider.post(event: .launchedApp, with: ["crashed" : Defaults.launchedFollowingCrash ? "true" : "false"])
