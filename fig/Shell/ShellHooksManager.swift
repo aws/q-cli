@@ -252,6 +252,9 @@ extension ShellHookManager : ShellBridgeEventListener {
        Logger.log(message: "directoryDidChange:\(msg.session) -- \(msg.env?.jsonStringToDict()?["PWD"] ?? "")")
         
         DispatchQueue.main.async {
+            if let window = AXWindowServer.shared.whitelistedWindow {                WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("fig.directoryChanged(`\(msg.env?.jsonStringToDict()?["PWD"] ?? "")`,'\(window.hash)')", completionHandler: nil)
+
+            }
             WindowManager.shared.sidebar?.webView?.evaluateJavaScript("fig.directoryChanged(`\(msg.env?.jsonStringToDict()?["PWD"] ?? "")`)", completionHandler: nil)
         }
 

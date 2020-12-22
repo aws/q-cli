@@ -140,7 +140,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         statusBarItem = statusBar.statusItem(
                withLength: NSStatusItem.squareLength)
         statusBarItem.button?.title = "🍐"
-        statusBarItem.button?.image = #imageLiteral(resourceName: "StatusBarIcon") //.overlayBadge()
+        statusBarItem.button?.image = NSImage(imageLiteralResourceName: "statusbar@2x.png")//.overlayBadge()
         statusBarItem.button?.image?.isTemplate = true
         statusBarItem.button?.wantsLayer = true
 //        statusBarItem.target = self
@@ -1691,9 +1691,6 @@ extension AppDelegate : NSMenuDelegate {
 
 
 
-                } else if (!Defaults.useAutocomplete) {
-                    color = .systemPink
-                    legend.addItem(NSMenuItem(title: "Autocomplete is disabled", action: nil, keyEquivalent: ""))
                 } else if (!hasContext) {
                     color = .orange
                     legend.addItem(NSMenuItem(title: "Keybuffer context is lost.", action: nil, keyEquivalent: ""))
