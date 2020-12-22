@@ -47,7 +47,7 @@ int candidates(const char *tty) {
         
         char *dev = malloc(MAXNAMLEN);
         
-        // switch from using devname because it is implemented -- https://opensource.apple.com/source/Libc/Libc-498/gen/devname.c.auto.html -- with static char * and therefore is not threadsafe (see: https://stackoverflow.com/questions/572547/what-does-static-mean-in-c)
+        // https://linear.app/fig/issue/ENG-44/bugfixes-to-psc
         devname_r(kp->kp_eproc.e_tdev, S_IFCHR, dev, MAXNAMLEN);
         
         
@@ -123,7 +123,7 @@ fig_proc_info* getProcessInfo(const char * tty, int *size) {
          
         char *dev = malloc(MAXNAMLEN);
         
-        // switch from using devname because it is implemented -- https://opensource.apple.com/source/Libc/Libc-498/gen/devname.c.auto.html -- with static char * and therefore is not threadsafe (see: https://stackoverflow.com/questions/572547/what-does-static-mean-in-c)
+        // https://linear.app/fig/issue/ENG-44/bugfixes-to-psc
         devname_r(kp->kp_eproc.e_tdev, S_IFCHR, dev, MAXNAMLEN);
          
         if (dev == NULL) {
