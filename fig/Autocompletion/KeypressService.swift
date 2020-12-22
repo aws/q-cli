@@ -75,7 +75,7 @@ class KeypressProvider : KeypressService {
         if let window = AXWindowServer.shared.whitelistedWindow, let tty = window.tty {
             Timer.delayWithSeconds(0.2) {
                 DispatchQueue.global(qos: .userInteractive).async {
-                    //tty.update()
+                    tty.update()
                 }
             }
         }
@@ -107,7 +107,7 @@ class KeypressProvider : KeypressService {
             if let window = AXWindowServer.shared.whitelistedWindow, let tty = window.tty {
                 Timer.delayWithSeconds(0.2) {
                     DispatchQueue.global(qos: .userInteractive).async {
-                        //tty.update()
+                        tty.update()
                     }
                 }
 //                self.keyThrottler.throttle {

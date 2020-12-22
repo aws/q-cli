@@ -78,7 +78,6 @@ class ShellBridgeSocketService: WebSocketService {
     }
 
     public func received(message: String, from: WebSocketConnection) {
-//        print("msg:", message)
           let decoder = JSONDecoder()
                 do {
                     let firstPass = try decoder.decode(SocketMessage.self, from: message.data(using: .utf8)!)
@@ -140,13 +139,13 @@ class ShellBridgeSocketService: WebSocketService {
                                         print("No event")
                                     }
                                     case "bg:cd":
-                                        NotificationCenter.default.post(name: .currentDirectoryDidChange, object: msg)
+                                        ShellHookManager.shared.currentDirectoryDidChange(msg)
                                     case "bg:tab":
-                                        NotificationCenter.default.post(name: .currentTabDidChange, object: msg)
+                                        ShellHookManager.shared.currentTabDidChange(msg)
                                     case "bg:init":
-                                        NotificationCenter.default.post(name: .startedNewTerminalSession, object: msg)
+                                        ShellHookManager.shared.startedNewTerminalSession(msg)
                                     case "bg:prompt":
-                                        NotificationCenter.default.post(name: .shellPromptWillReturn, object: msg)
+                                        ShellHookManager.shared.shellPromptWillReturn(msg)
                                     case "bg:exec":
                                         ShellHookManager.shared.shellWillExecuteCommand(msg)
                                     case "bg:alert":
