@@ -961,6 +961,10 @@ extension WebBridge {
 //                    let rect = KeypressProvider.shared.getTextRect()
 //                    WindowManager.shared.positionAutocompletePopover(textRect: rect)
                 }
+            case "interceptKeystrokes":
+                let companion = scope.getCompanionWindow()
+                KeypressProvider.shared.setEnabled(value: value == "true")
+
             default:
                 print("Unrecognized property value '\(prop)' updated with value: \(value)")
             }
