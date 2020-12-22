@@ -19,7 +19,7 @@ protocol KeypressService {
     func clean()
     func addRedirect(for keycode: UInt16, in window: ExternalWindow)
     func removeRedirect(for keycode: UInt16, in window: ExternalWindow)
-
+    func setEnabled(value: Bool)
 }
 
 class KeypressProvider : KeypressService {
@@ -38,6 +38,7 @@ class KeypressProvider : KeypressService {
     
 //    fileprivate var redirects: Set<UInt16> = []
     var redirects: [ExternalWindowHash:  Set<UInt16>] = [:]
+    var enabled = true
 
     func addRedirect(for keycode: UInt16, in window: ExternalWindow) {
         var set = redirects[window.hash] ?? []
@@ -52,6 +53,11 @@ class KeypressProvider : KeypressService {
             redirects[window.hash] = set
         }
     }
+    
+    func setEnabled(value: Bool) {
+        self.enabled = value
+    }
+
     
     init(windowServiceProvider: WindowService) {
         self.windowServiceProvider = windowServiceProvider
@@ -197,26 +203,21 @@ class KeypressProvider : KeypressService {
                                                             let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
                                                             print("eventTap", keyCode, event.getIntegerValueField(.eventTargetUnixProcessID))
                                                             print("eventTap", "\(window.hash)")
-                                                            if (type == .keyDown && KeypressProvider.shared.redirects[window.hash]?.contains(UInt16(keyCode)) ?? false &&
+
+                                                            if (type == .keyDown && KeypressProvider.shared.enabled && KeypressProvider.shared.redirects[window.hash]?.contains(UInt16(keyCode)) ?? false &&
                                                                 !event.flags.contains(.maskCommand)
 ) {
                                                             
                                                                 
                                                                 print("eventTap", "Should redirect!")
-                                                                WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try{ fig.keypress(\"\(keyCode)\", \"\(window.hash)\") } catch(e) {}", completionHandler: { err, res in
-//                                                                    DispatchQueue.main.async { WindowManager.shared.positionAutocompletePopover(textRect:  KeypressProvider.shared.getTextRect())
-//                                                                    }
-                                                                })
+                                                                WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try{ fig.keypress(\"\(keyCode)\", \"\(window.hash)\") } catch(e) {}", completionHandler: nil)
                                                                 
                                                                 
                                                                 
-
-                                                                   
-
                                                                 return nil
                                                             } else {
                                                                 autoreleasepool {
-KeypressProvider.shared.handleKeystroke(event: NSEvent(cgEvent: event), in: window)
+                                                                    KeypressProvider.shared.handleKeystroke(event: NSEvent(cgEvent: event), in: window)
                                                                 }
 
 //                                                                DispatchQueue.global(qos: .background).async {
