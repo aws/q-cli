@@ -30,7 +30,6 @@ func runCommand(_ command: String, completion: ((Int32) -> Void)? = nil) throws 
             var status = posix_spawn(&pid, "/bin/sh", nil, nil, cArgs, cEnvs)
             if status == 0 {
                 if (waitpid(pid, &status, 0) != -1) {
-//                    print("Hello there!")
                     completion?(status)
                 } else {
                     throw RunCommandError.WaitPIDError
@@ -165,6 +164,7 @@ class CLI : WebSocketConnectionDelegate {
     }
     
     func onMessage(connection: WebSocketConnection, text: String) {
+//        print(text)
         // disconnect on acknowledgment...
 //        connection.disconnect()
         if (text == "disconnect") {
@@ -180,7 +180,7 @@ class CLI : WebSocketConnectionDelegate {
             return
         }
 
-//        print("msg: '\(text)'")
+        print("msg: '\(text)'")
         busy = true
 //        let out = text.runAsCommand(false, cwd: ProcessInfo.processInfo.environment["PWD"], with: ProcessInfo.processInfo.environment)
 //        print(out.trimmingCharacters(in: .whitespacesAndNewlines))
@@ -195,7 +195,6 @@ class CLI : WebSocketConnectionDelegate {
         try? runCommand(text) { (status) in
             self.busy = false
         }
-
 //        print(out)
 //        text.runInBackground(cwd: ProcessInfo.processInfo.environment["PWD"], with: ProcessInfo.processInfo.environment, updateHandler: { (out, proc) in
 //            print(out)

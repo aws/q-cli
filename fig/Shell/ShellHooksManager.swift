@@ -148,8 +148,10 @@ extension ShellHookManager : ShellBridgeEventListener {
 
 //        self.beginTrackingShellSession(with: <#T##pid_t#>, in: ttyId)
         if let ttyId = ttyId {
-            self.startedNewShellSession(sessionId: msg.session, ttyDescriptor: String(ttyId), shellPid: shellPid)
-
+            // This delay is added because when a new terminal window is created, we recieve this event before
+            Timer.delayWithSeconds(0.2) {
+                self.startedNewTerminalSession(sessionId: msg.session, ttyDescriptor: String(ttyId), shellPid: shellPid)
+            }
         }
 //        Timer.delayWithSeconds(0.2) { // add delay so that window is active
 //            if let window = AXWindowServer.shared.whitelistedWindow {
@@ -240,6 +242,7 @@ extension ShellHookManager : ShellBridgeEventListener {
         // so, lets see if the top window is a supported terminal
         guard let window = currentTopmostWindow else {
             // no terminal window found or passed in, don't link!
+            Logger.log(message: "No window included when attempting to link to TTY, don't link!", priority: .info, subsystem: .tty)
             return nil
         }
         
@@ -248,6 +251,7 @@ extension ShellHookManager : ShellBridgeEventListener {
         
         guard sessionIdForWindow == nil else {
             // a different session Id is already associated with window, don't link!
+            Logger.log(message: "A different session Id is already associated with window, don't link!", priority: .info, subsystem: .tty)
             return nil
         }
         
@@ -280,6 +284,7 @@ extension ShellHookManager : ShellBridgeEventListener {
     
     func shellPromptWillReturn(sessionId: SessionId, ttyDescriptor: String, shellPid: pid_t) {
 
+        // try to find associated window, but don't necessarily link with the topmost window! (prompt can return when window is in background)
         guard let hash = attemptToLinkToAssociatedWindow(for: sessionId,
                                                          currentTopmostWindow: AXWindowServer.shared.whitelistedWindow) else {
             Logger.log(message: "Could not link to window on shell prompt return.", priority: .notify, subsystem: .tty)
@@ -334,14 +339,16 @@ extension ShellHookManager : ShellBridgeEventListener {
             return
         }
         
-        let _ = link(sessionId, hash, ttyDescriptor)
+        let tty = link(sessionId, hash, ttyDescriptor)
 
-//        tty.startedNewShellSession(for: shellPid)
+        tty.startedNewShellSession(for: shellPid)
 
     }
     
     func shellWillExecuteCommand(_ msg: ShellMessage) {
 
+        guard let ttyId = msg.options?[safe: 2]?.split(separator: "/").last else { return }
+        guard let shellPidStr = msg.options?[safe: 1], let shellPid = Int32(shellPidStr) else { return }
         
         guard let hash = attemptToLinkToAssociatedWindow(for: msg.session,
                                                          currentTopmostWindow: AXWindowServer.shared.whitelistedWindow) else {
@@ -350,9 +357,9 @@ extension ShellHookManager : ShellBridgeEventListener {
             return
         }
         
-        if let tty = self.tty[hash] {
-            tty.preexec()
-        }
+        let tty = self.tty[hash] ?? link(msg.session, hash, String(ttyId))
+        
+        tty.preexec()
     }
     
     func validWindowHash(_ hash: ExternalWindowHash) -> Bool {

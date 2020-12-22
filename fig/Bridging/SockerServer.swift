@@ -78,7 +78,7 @@ class ShellBridgeSocketService: WebSocketService {
     }
 
     public func received(message: String, from: WebSocketConnection) {
-        print("msg:", message)
+//        print("msg:", message)
           let decoder = JSONDecoder()
                 do {
                     let firstPass = try decoder.decode(SocketMessage.self, from: message.data(using: .utf8)!)
