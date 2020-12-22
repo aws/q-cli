@@ -115,7 +115,6 @@ extension ShellHookManager {
         
         // window hash is valid, we should have an associated TTY (or we can create it)
         let tty = self.tty[hash] ?? link(sessionId, hash, ttyDescriptor)
-        
         tty.startedNewShellSession(for: shellPid)
 
     }
@@ -143,13 +142,6 @@ extension ShellHookManager {
             }
             
             let tty = self.link(sessionId, hash, ttyDescriptor)
-
-            guard shellPid != 0 else {
-                Logger.log(message: "ShellPid is 0. No explict shell for \(ttyDescriptor). Revert to old tty strategy.", subsystem: .tty)
-    //            tty.update()
-                return
-            }
-            
             tty.startedNewShellSession(for: shellPid)
         }
 
@@ -170,7 +162,6 @@ extension ShellHookManager {
         }
         
         let tty = self.tty[hash] ?? link(sessionId, hash, ttyDescriptor)
-        
         tty.preexec()
     }
     
