@@ -100,6 +100,10 @@ class TTY {
     
     func precmd() {
         guard let shell = self.shell else { return }
+        
+        // ignore the prexec update, if it hasn't already happened.
+        self.preexecWorkItem?.cancel()
+        
         let updatedShell = self.processes.filter { $0.pid == shell.pid }.first
         
         
@@ -112,15 +116,22 @@ class TTY {
         
     }
     
+    fileprivate var preexecWorkItem: DispatchWorkItem?
+    
     func preexec() {
-        Timer.delayWithSeconds(0.01) {
-            if let runningProcess = self.processes.last {
-                self.cwd = runningProcess.cwd
-                self.cmd = runningProcess.cmd
-                self.pid = runningProcess.pid
-                self.isShell = runningProcess.isShell
-            }
-        }
+        // this delay is a necessary hack, because if we run immediately upon recieving the preexec call
+        // the shell process is still active...
+        // Short lived processes can return control to shell before delay is over,
+        // so this closure is cancelled by the precmd function
+        self.preexecWorkItem = Timer.cancellableDelayWithSeconds(0.1, closure: {
+             if let runningProcess = self.processes.last {
+                   self.cwd = runningProcess.cwd
+                   self.cmd = runningProcess.cmd
+                   self.pid = runningProcess.pid
+                   self.isShell = runningProcess.isShell
+               }
+        })
+        
     }
     
     func returnedToShellPrompt(for shellPid: pid_t) {

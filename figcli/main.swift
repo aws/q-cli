@@ -24,9 +24,11 @@ enum RunCommandError: Error {
 func runCommand(_ command: String, completion: ((Int32) -> Void)? = nil) throws {
     var pid: pid_t = 0
     let args = ["sh", "-c", command]
-    let envs = ProcessInfo().environment.map { k, v in "\(k)=\(v)" }
+    var env = ProcessInfo().environment
+        env["SHELLPID"] = String(getppid())
+    let envStr = env.map { k, v in "\(k)=\(v)" }
     try withCStrings(args) { cArgs in
-        try withCStrings(envs) { cEnvs in
+        try withCStrings(envStr) { cEnvs in
             var status = posix_spawn(&pid, "/bin/sh", nil, nil, cArgs, cEnvs)
             if status == 0 {
                 if (waitpid(pid, &status, 0) != -1) {
@@ -40,7 +42,6 @@ func runCommand(_ command: String, completion: ((Int32) -> Void)? = nil) throws 
         }
     }
 }
-
 
 let arguments = CommandLine.arguments
 
@@ -142,9 +143,14 @@ class CLI : WebSocketConnectionDelegate {
         
         if let msg = self.command.jsonRepresentation(){
             
-            var hello = self.command
-            hello.type = "hello"
-            connection.send(text: hello.jsonRepresentation() ?? "")
+            // The hello message allows bidirectional communication based on sessionId
+            // it is unecessary for bg: commands (and can interfere with normal fig commands)
+            let isBG = self.command.options?.first?.contains("bg:") ?? false
+            if (!isBG) {
+                var hello = self.command
+                hello.type = "hello"
+                connection.send(text: hello.jsonRepresentation() ?? "")
+            }
             
             connection.send(text: msg)
             
@@ -180,32 +186,12 @@ class CLI : WebSocketConnectionDelegate {
             return
         }
 
-        print("msg: '\(text)'")
+//        print("msg: '\(text)'")
         busy = true
-//        let out = text.runAsCommand(false, cwd: ProcessInfo.processInfo.environment["PWD"], with: ProcessInfo.processInfo.environment)
-//        print(out.trimmingCharacters(in: .whitespacesAndNewlines))
-//        busy = false
-//
-//        let args = ["bash", "-c",
-//                    text]
-//        let cargs = args.map { strdup($0) } + [nil]
-//
-//        execv("/bin/bash", cargs)
         
         try? runCommand(text) { (status) in
             self.busy = false
         }
-//        print(out)
-//        text.runInBackground(cwd: ProcessInfo.processInfo.environment["PWD"], with: ProcessInfo.processInfo.environment, updateHandler: { (out, proc) in
-//            print(out)
-//        }) {
-//            print("done!")
-//        }
-        // stdout
-        
-        // run command without displaying
-        
-        // run / insert?
     }
     
     func onMessage(connection: WebSocketConnection, data: Data) {

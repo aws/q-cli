@@ -655,6 +655,17 @@ extension Timer {
             completion()
         }
     }
+    
+    @discardableResult
+    static func cancellableDelayWithSeconds(_ timeInterval: TimeInterval, closure: @escaping () -> Void) -> DispatchWorkItem {
+        let task = DispatchWorkItem {
+            closure()
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + timeInterval, execute: task)
+        
+        return task
+    }
 }
 
 extension NSRunningApplication {

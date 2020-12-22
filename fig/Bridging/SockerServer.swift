@@ -125,13 +125,13 @@ class ShellBridgeSocketService: WebSocketService {
                     case "hello":
                         self.sessionIds[msg.session] = from.id
                     case "pipe":
+                        print("Handle CLI command: fig \((msg.options ?? []).joined(separator: " "))")
                         if let subcommand = msg.options?.first {
                             guard !subcommand.hasPrefix("bg:") else {
                                 guard Defaults.loggedIn else {
                                     from.send(message: "disconnect")
                                     return
                                 }
-                                print("Handle CLI command: fig \((msg.options ?? []).joined(separator: " "))")
                                 switch subcommand {
                                 case "bg:event":
                                     if let event = msg.options?[safe: 1] {
