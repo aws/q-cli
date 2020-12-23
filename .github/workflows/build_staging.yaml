@@ -101,8 +101,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: Staging ${{ github.ref }}
-          release_name: Staging ${{ github.ref }}
+          tag_name: ${{ github.sha }}
+          release_name: Staging ${{ github.sha }}
           draft: false
           prerelease: true
       - name: Upload Release Asset
