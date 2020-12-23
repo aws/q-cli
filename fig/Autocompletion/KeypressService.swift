@@ -13,6 +13,8 @@ import Sentry
 
 protocol KeypressService {
     func keyBuffer(for window: ExternalWindow) -> KeystrokeBuffer
+    func keyBuffer(for windowHash: ExternalWindowHash) -> KeystrokeBuffer
+
 //    func redirects(for window: ExternalWindow) -> Set<UInt16>
 
     func getTextRect(extendRange: Bool) -> CGRect?
@@ -68,11 +70,11 @@ class KeypressProvider : KeypressService {
     }
     
     @objc func firstCharacterInKeystrokeBuffer() {
-        if let window = AXWindowServer.shared.whitelistedWindow, let tty = window.tty {
-            DispatchQueue.global(qos: .userInteractive).async {
-                tty.update()
-            }
-        }
+//        if let window = AXWindowServer.shared.whitelistedWindow, let tty = window.tty {
+//            DispatchQueue.global(qos: .userInteractive).async {
+//                tty.update()
+//            }
+//        }
     }
 
     @objc func lineAcceptedInKeystrokeBuffer() {
@@ -91,9 +93,9 @@ class KeypressProvider : KeypressService {
         }
 
         self.mouseHandler = NSEvent.addGlobalMonitorForEvents(matching: .leftMouseUp) { (event) in
-           // only handle keypresses if they are in iTerm
             if let window = self.windowServiceProvider.topmostWhitelistedWindow(), KeypressProvider.whitelist.contains(window.bundleId ?? "") {
                
+                // option click, moves cursor to unknown location
                 if (event.modifierFlags.contains(.option)) {
                     let keyBuffer = self.keyBuffer(for: window)
                     keyBuffer.buffer = nil
@@ -114,17 +116,6 @@ class KeypressProvider : KeypressService {
                         tty.update()
                     }
                 }
-//                self.keyThrottler.throttle {
-//                    DispatchQueue.global(qos: .userInteractive).async {
-//                        guard let running = tty.running else { return }
-//                        let cmd = running.cmd
-//                        let cwd = running.cwd
-//                        print("tty: running \(cmd) \(cwd ?? "<none>")")
-//                        ShellHookManager.shared.tty[window.hash]?.cwd = cwd
-//                        ShellHookManager.shared.tty[window.hash]?.cmd = cmd
-//                        ShellHookManager.shared.tty[window.hash]?.isShell = running.isShell
-//                    }
-//                }
             }
         })
         
@@ -249,11 +240,15 @@ class KeypressProvider : KeypressService {
     }
     
     func keyBuffer(for window: ExternalWindow) -> KeystrokeBuffer {
-        if let buffer = self.buffers[window.hash] {
+        return self.keyBuffer(for: window.hash)
+    }
+    
+    func keyBuffer(for windowHash: ExternalWindowHash) -> KeystrokeBuffer {
+        if let buffer = self.buffers[windowHash] {
             return buffer
         } else {
             let buffer = KeystrokeBuffer()
-            self.buffers[window.hash] = buffer
+            self.buffers[windowHash] = buffer
             return buffer
         }
     }

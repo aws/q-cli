@@ -21,12 +21,13 @@ class Logger {
         case keypress = "keypress"
         case xterm = "xterm"
         case javascript = "javascript"
+        case tty = "tty"
 
     }
     
     static var defaultLocation: URL = URL(fileURLWithPath: "\(NSHomeDirectory())/.fig/debug.log")
     static func log(message: String, priority: Priority = .info, subsystem: Subsystem = .global) {
-        print(message)
+        print("\(subsystem.rawValue): \(message)")
         
         let line = Logger.format(message, priority, subsystem)
         appendToLog(line)
