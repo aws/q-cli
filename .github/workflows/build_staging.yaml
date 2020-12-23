@@ -92,6 +92,9 @@ jobs:
         uses: devbotsxyz/xcode-staple@v1
         with:
           product-path: "Export/Fig.app"
+      - name: "Package .app as Zip"
+        run: zip -vr fig-staging.zip Export/Fig.app
+
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -109,8 +112,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
-          asset_path: ./Export/Fig.app
-          asset_name: fig.app
+          asset_path: ./fig-staging.zip
+          asset_name: fig-staging.zip
           asset_content_type: application/octet-stream
       # - name: "Upload build artifact"
       #   uses: actions/upload-artifact@v2
