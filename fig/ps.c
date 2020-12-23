@@ -228,24 +228,3 @@ int printProcesses(const char* tty) {
 //    // filter processes + add to new pointer
 //}
 
-int getProcessInfoForPid(pid_t pid, char *cwd, char *cmd) {
-     int ret;
-     char pathBuffer[PROC_PIDPATHINFO_MAXSIZE];
-     bzero(pathBuffer, PROC_PIDPATHINFO_MAXSIZE);
-     ret = proc_pidpath(pid, pathBuffer, sizeof(pathBuffer));
-     if (ret <= 0 ) {
-         return 1;
-     }
-
-     struct proc_vnodepathinfo vpi;
-     ret = proc_pidinfo(pid, PROC_PIDVNODEPATHINFO, 0, &vpi, sizeof(vpi));
-     
-     if (ret <= 0 ) {
-         return 2;
-     }
-    
-    strncpy(cwd, vpi.pvi_cdir.vip_path, PROC_PIDPATHINFO_MAXSIZE);
-    strncpy(cmd, pathBuffer, PATH_MAX);
-    
-    return 0;
-}

@@ -45,37 +45,4 @@ class ProcessStatus {
         
         return []
     }
-    
-    static func getProcess(by pid: pid_t) -> proc? {
-        var cmdBuf: [CChar] = Array(repeating: 0, count: 1024 * 4) //= UnsafeMutablePointer<Int8>.allocate(capacity: 1024 * 4)
-        var cwdBuf: [CChar] = Array(repeating: 0, count: 1024) //= UnsafeMutablePointer<Int8>.allocate(capacity: 1024)
-
-        let err = getProcessInfoForPid(pid, &cwdBuf, &cmdBuf)
-        
-        guard err == 0 else {
-            return nil
-        }
-        
-//        let cmd = withUnsafeBytes(of: cmdBuf) { (rawPtr) -> String in
-//            let ptr = rawPtr.baseAddress!.assumingMemoryBound(to: CChar.self)
-//            return String(cString: ptr)
-//        }
-//
-//        let cwd = withUnsafeBytes(of: cwdBuf) { (rawPtr) -> String in
-//            let ptr = rawPtr.baseAddress!.assumingMemoryBound(to: CChar.self)
-//            return String(cString: ptr)
-//        }
-        let cmd = String(cString: cmdBuf)
-        let cwd = String(cString: cwdBuf)
-        
-//        cmdBuf.deallocate()
-//        cwdBuf.deallocate()
-        
-//        free(cmdBuf)
-//        free(cwdBuf)
-        
-        return proc(pid: pid, cmd: cmd, cwd: cwd)
-        
-    }
-    
 }
