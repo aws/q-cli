@@ -301,7 +301,7 @@ class AXWindowServer : WindowService {
                 // determine if AXUIElement is window???
               
                 let app = NSRunningApplication(processIdentifier: pid)
-                print("AXWindowServer: \(app?.bundleIdentifier)! \(element) kAXUIElementDestroyedNotification")
+//                print("AXWindowServer: \(app?.bundleIdentifier)! \(element) kAXUIElementDestroyedNotification")
                 
                 // spotlight style app
                 if (Integrations.searchBarApps.contains(app?.bundleIdentifier ?? "") ) {
@@ -321,8 +321,8 @@ class AXWindowServer : WindowService {
 
 
 //                print("AXWindowServer: \(appRef.bundleId!) \(element) kAXUIElementDestroyedNotification")
-            case kAXFocusedUIElementChangedNotification:
-                print("AXWindowServer: \(appRef.bundleId!) \(element) kAXFocusedUIElementChangedNotification")
+//            case kAXFocusedUIElementChangedNotification:
+//                print("AXWindowServer: \(appRef.bundleId!) \(element) kAXFocusedUIElementChangedNotification")
             default:
                 print("AXWindowServer: unknown case")
             }
@@ -429,7 +429,8 @@ class AXWindowServer : WindowService {
         if let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication { //Integrations.whitelist.contains(app.bundleIdentifier ?? "") {
 //            self.tracked = self.tracked.filter { return $0.handler != nil && $0.observer != nil}
             print("AXWindowServer - launch", app.bundleIdentifier ?? "")
-//            self.register(app, fromActivation: true)
+            // This register function is required in order to track new windows when an app is launched!
+            self.register(app, fromActivation: true)
         }
     }
     
