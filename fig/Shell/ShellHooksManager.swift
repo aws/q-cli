@@ -51,19 +51,43 @@ extension ShellHookManager {
     
     func currentTabDidChange(_ info: ShellMessage) {
         Logger.log(message: "currentTabDidChange")
-        if let window = AXWindowServer.shared.whitelistedWindow {
-            // So far, only iTerm has a tab integration.
-            guard window.bundleId == "com.googlecode.iterm2" else { return }
-            if let id = info.options?.last {
-                Logger.log(message: "tab: \(window.windowId)/\(id)")
-                tabs[window.windowId] = id
-                DispatchQueue.main.async {
-                    WindowManager.shared.windowChanged()
+        
+        // Need time for whitelisted window to change
+        Timer.delayWithSeconds(0.1) {
+            if let window = AXWindowServer.shared.whitelistedWindow {
+                // So far, only iTerm has a tab integration.
+                guard window.bundleId == "com.googlecode.iterm2" else { return }
+                if let id = info.options?.last {
+                    Logger.log(message: "tab: \(window.windowId)/\(id)")
+                    self.tabs[window.windowId] = id
+                    
+                    self.updateHashMetadata(oldHash: "\(window.windowId)/", hash: window.hash)
+                    
+                    DispatchQueue.main.async {
+                        WindowManager.shared.windowChanged()
+                    }
                 }
             }
         }
     }
     
+    func updateHashMetadata(oldHash: ExternalWindowHash, hash: ExternalWindowHash) {
+        guard oldHash != hash else { return }
+        guard let device = self.tty[oldHash] else { return }
+        guard let sessionId = self.sessions[oldHash] else { return }
+        
+        // remove out-of-date values
+        self.tty.removeValue(forKey: oldHash)
+        self.sessions[oldHash] = nil
+        
+        // reassign tty to new hash
+        self.sessions[hash] = sessionId
+        self.tty[hash] = device
+        
+        Logger.log(message: "Transfering \(oldHash) metadata to \(hash).", priority: .info, subsystem: .tty)
+
+    }
+            
     func currentDirectoryDidChange(_ info: ShellMessage) {
         let workingDirectory = info.getWorkingDirectory() ?? ""
 
@@ -134,14 +158,7 @@ extension ShellHookManager {
                 return
             }
             
-            guard let hash = self.attemptToFindToAssociatedWindow(for: sessionId,
-                                                             currentTopmostWindow: window) else {
-                
-                Logger.log(message: "Could not link to window on new terminal session.", priority: .notify, subsystem: .tty)
-                return
-            }
-            
-            let tty = self.link(sessionId, hash, ttyDescriptor)
+            let tty = self.link(sessionId, window.hash, ttyDescriptor)
             tty.startedNewShellSession(for: shellPid)
         }
 
@@ -175,15 +192,23 @@ extension ShellHookManager {
         if let hash = getWindowHash(for: sessionId) {
             guard !validWindowHash(hash) else {
                 // the hash is valid and is linked to a session
+                Logger.log(message: "WindowHash '\(hash)' is valid", subsystem: .tty)
+                
+                
+                Logger.log(message: "WindowHash '\(hash)' is linked to sessionId '\(sessionId)'", subsystem: .tty)
                 return hash
+                
+
             }
             
             // hash exists, but is invalid (eg. should have tab component and it doesn't)
             
-            // clean up this out-of-date hash
-            self.tty.removeValue(forKey: hash)
-            self.sessions[hash] = nil
+            Logger.log(message: "\(hash) is not a valid window hash, attempting to find previous value", priority: .info, subsystem: .tty)
             
+//            // clean up this out-of-date hash
+            self.sessions[hash] = nil
+            self.tty.removeValue(forKey: hash)
+
         }
         
         // user had this terminal session up prior to launching Fig or has iTerm tab integration set up, which caused original hash to go stale (eg. 16356/ -> 16356/1)
@@ -205,7 +230,8 @@ extension ShellHookManager {
             Logger.log(message: "A different session Id is already associated with window, don't link!", priority: .info, subsystem: .tty)
             return nil
         }
-                
+        
+        Logger.log(message: "Found WindowHash '\(hash)' for sessionId '\(sessionId)'", subsystem: .tty)
         return hash
             
 
@@ -213,6 +239,7 @@ extension ShellHookManager {
     
     fileprivate func link(_ sessionId: SessionId, _ hash: ExternalWindowHash, _ ttyDescriptor: TTYDescriptor) -> TTY {
         let device = TTY(fd: ttyDescriptor)
+        
 
         // tie tty & sessionId to windowHash
         self.tty[hash] = device

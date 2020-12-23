@@ -46,7 +46,6 @@ class TTY {
     let descriptor: String
     init(fd: String) {
         descriptor = fd
-        self.update() // running this right away may cause fig to be the current process rather than the shell.
     }
     
     var processes: [proc] {
@@ -137,7 +136,7 @@ class TTY {
     func returnedToShellPrompt(for shellPid: pid_t) {
         if let shell = shell, shell.pid == shellPid {
             precmd()
-            Logger.log(message: "Returned to shell prompt", priority: .info, subsystem: .tty)
+            Logger.log(message: "Returned to shell prompt (\(shell.pid))", priority: .info, subsystem: .tty)
             return
         }
         

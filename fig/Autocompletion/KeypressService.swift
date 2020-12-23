@@ -87,9 +87,9 @@ class KeypressProvider : KeypressService {
         }
 
         self.mouseHandler = NSEvent.addGlobalMonitorForEvents(matching: .leftMouseUp) { (event) in
-           // only handle keypresses if they are in iTerm
             if let window = self.windowServiceProvider.topmostWhitelistedWindow(), KeypressProvider.whitelist.contains(window.bundleId ?? "") {
                
+                // option click, moves cursor to unknown location
                 if (event.modifierFlags.contains(.option)) {
                     let keyBuffer = self.keyBuffer(for: window)
                     keyBuffer.buffer = nil
@@ -110,17 +110,6 @@ class KeypressProvider : KeypressService {
                         tty.update()
                     }
                 }
-//                self.keyThrottler.throttle {
-//                    DispatchQueue.global(qos: .userInteractive).async {
-//                        guard let running = tty.running else { return }
-//                        let cmd = running.cmd
-//                        let cwd = running.cwd
-//                        print("tty: running \(cmd) \(cwd ?? "<none>")")
-//                        ShellHookManager.shared.tty[window.hash]?.cwd = cwd
-//                        ShellHookManager.shared.tty[window.hash]?.cmd = cmd
-//                        ShellHookManager.shared.tty[window.hash]?.isShell = running.isShell
-//                    }
-//                }
             }
         })
         
