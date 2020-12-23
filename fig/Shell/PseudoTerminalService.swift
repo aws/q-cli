@@ -52,8 +52,11 @@ class PseudoTerminal : PseudoTerminalService {
     
     func start(with env: [String : String]) {
         print("Starting PTY...")
-        let shell = env["SHELL"] ?? "/bin/sh"
-        let rawEnv = env.reduce([]) { (acc, elm) -> [String] in
+        let shell = env["SHELL"] ?? Defaults.userShell
+        
+        // don't add shell hooks to pty
+        var updatedEnv = env.merging(["FIG_ENV_VAR" : "1", "FIG_SHELL_VAR" : "1"]) { $1 }
+        let rawEnv = updatedEnv.reduce([]) { (acc, elm) -> [String] in
             let (key, value) = elm
             return acc + ["\(key)=\(value)"]
         }

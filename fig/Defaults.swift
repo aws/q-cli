@@ -333,4 +333,25 @@ class Defaults {
 
     }
     
+    // determined by running `dscl . -read ~/ UserShell`
+    // output: "UserShell: /bin/zsh"
+    static var userShell: String {
+        get {
+            let shell = UserDefaults.standard.string(forKey: "userShell")
+            return shell?.replacingOccurrences(of: "UserShell: ", with: "") ?? "/bin/sh"
+        }
+        
+        set(shell) {
+            var val: String?
+            if (shell.starts(with: "UserShell: ")) {
+                val = shell
+            } else {
+                val = "UserShell: \(shell)"
+            }
+            
+            UserDefaults.standard.set(val!, forKey: "userShell")
+            UserDefaults.standard.synchronize()
+        }
+    }
+    
 }
