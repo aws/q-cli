@@ -56,6 +56,7 @@ int candidates(const char *tty) {
         }
         // Incorrect checksum for freed object 0x7f92b0904c00: probably modified after being freed.
         if (strlen(tty) != 0 && strcmp(tty, dev) != 0) {
+            free(dev);
             continue;
         }
         
@@ -131,6 +132,7 @@ fig_proc_info* getProcessInfo(const char * tty, int *size) {
         }
          
          if (strlen(tty) != 0 && strcmp(tty, dev) != 0) {
+             free(dev);
              continue;
          }
          
