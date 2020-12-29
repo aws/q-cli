@@ -52,7 +52,7 @@ class PseudoTerminal : PseudoTerminalService {
     
     func start(with env: [String : String]) {
         print("Starting PTY...")
-        let shell = env["SHELL"] ?? Defaults.userShell
+        let shell = env["SHELL"] ?? "/bin/sh"
         
         // don't add shell hooks to pty
         var updatedEnv = env.merging(["FIG_ENV_VAR" : "1", "FIG_SHELL_VAR" : "1"]) { $1 }
@@ -65,6 +65,12 @@ class PseudoTerminal : PseudoTerminalService {
         pty.process.delegate = self
 
         pty.send("unset HISTFILE\r")
+        
+        // export path from userShell
+        pty.send("export PATH=$(\(Defaults.userShell) -i -c 'echo $PATH')\r")
+        
+        // Copy enviroment from userShell
+//        pty.send("export $(env -i '\(Defaults.userShell)' -li -c env | tr '\n' ' ')\r")
         print(pty.process.delegate)
     }
     
