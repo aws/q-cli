@@ -716,10 +716,11 @@ class FigCLI {
 """
 CLI to interact with Fig
 
-\\u001b[1mUSAGE\\u001b[0m
+\\033[1mUSAGE\\033[0m
   $ fig [COMMAND]
 
-\\u001b[1mCOMMANDS\\u001b[0m
+\\033[1mCOMMANDS\\033[0m
+
   fig invite        invite up to 5 friends & teammates to Fig
   fig feedback      send feedback directly to the Fig founders
   fig update        update repo of completion scripts
