@@ -320,7 +320,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         withTitle: "Setup iTerm Tab Integration",
         action: #selector(AppDelegate.iTermSetup),
         keyEquivalent: "")
-        iTermIntegration.state = FileManager.default.fileExists(atPath: "\(NSHomeDirectory())/Library/'Application Support'/iTerm2/Scripts/AutoLaunch/fig-iterm-integration.py") ? .on : .off
+        iTermIntegration.state = FileManager.default.fileExists(atPath: "\(NSHomeDirectory())/Library/Application Support/iTerm2/Scripts/AutoLaunch/fig-iterm-integration.py") ? .on : .off
             
         debugMenu.addItem(NSMenuItem.separator())
         
