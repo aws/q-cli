@@ -17,6 +17,7 @@ jobs:
           mkdir Sparkle
           cd Sparkle && tar xopf ../Sparkle-1.24.0.tar.xz
           ls
+          cd ..
 
       - name: "Checkout withfig/versions"
         run: git clone https://mattschrage:$(echo $PERSONAL_GITHUB_ACCESS_TOKEN)@github.com/withfig/versions.git
