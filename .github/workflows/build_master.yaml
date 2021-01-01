@@ -32,7 +32,9 @@ jobs:
         run: |
           ls
           pwd
-          ./Sparkle/bin/generate-appcast -s $SPARKLE_KEY versions
+          ls ./Sparkle/
+          ls ./Sparkle/bin/
+          ./Sparkle/bin/generate_appcast -s $SPARKLE_KEY versions
         env:
           SPARKLE_KEY: ${{ secrets.SPARKLE_SIGNING_KEY }}
 
