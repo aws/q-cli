@@ -152,7 +152,7 @@ jobs:
           cd versions
           git add .
           git commit -m "Deploy ${VERSION}"
-          git push origin master
+          git push origin main
           cd ..
 
       - name: Rename DMG
