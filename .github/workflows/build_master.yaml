@@ -35,21 +35,20 @@ jobs:
 
         env:
           PERSONAL_GITHUB_ACCESS_TOKEN: ${{ secrets.PERSONAL_GITHUB_ACCESS_TOKEN }}
-      - name: "Generate Appcast"
-        run: ./Sparkle/bin/generate_appcast -s $SPARKLE_KEY versions
-        env:
-          SPARKLE_KEY: ${{ secrets.SPARKLE_SIGNING_KEY }}
+      # - name: "Generate Appcast"
+      #   run: ./Sparkle/bin/generate_appcast -s $SPARKLE_KEY versions
+      #   env:
+      #     SPARKLE_KEY: ${{ secrets.SPARKLE_SIGNING_KEY }}
       # - name: Create fig@latest.dmg
       #   run: cp "./versions/fig ${VERSION}.dmg" ./versions/fig@latest.dmg
-      - name: Add test file
-        run: echo "Hello world" > ./versions/hello.txt
-      - name: Push Changes to withfig/versions
-        run: |
-          cd versions
-          git add .
-          git commit -m "Deploy ${VERSION}"
-          git push origin main
-          cd ..
+
+      # - name: Push Changes to withfig/versions
+      #   run: |
+      #     cd versions
+      #     git add .
+      #     git commit -m "Deploy ${VERSION}"
+      #     git push origin main
+      #     cd ..
 
       - name: "Install imagemagik for custom DMG image"
         run: brew install graphicsmagick imagemagick
