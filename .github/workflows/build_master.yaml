@@ -11,7 +11,10 @@ jobs:
     # timeout-minutes: 15
     steps:
       - name: "Install Sparkle"
-        run: git clone --recursive https://github.com/sparkle-project/Sparkle
+        run: |
+          curl -sOL https://github.com/sparkle-project/Sparkle/releases/download/1.24.0/Sparkle-1.24.0.tar.xz
+          tar xopf Sparkle-1.24.0.tar.xz
+          mv ./Sparkle-1.24.0 ./Sparkle
 
       - name: "Checkout withfig/versions"
         run: git clone https://mattschrage:$(echo $PERSONAL_GITHUB_ACCESS_TOKEN)@github.com/withfig/versions.git
