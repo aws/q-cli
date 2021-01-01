@@ -21,7 +21,7 @@ jobs:
     
       - name: "Log Release Version"
         run: echo $VERSION
-        
+
       - name: "Download Sparkle"
         run: curl -sOL https://github.com/sparkle-project/Sparkle/releases/download/1.24.0/Sparkle-1.24.0.tar.xz
       - name: "Unzip Sparkle"
@@ -39,14 +39,16 @@ jobs:
         run: ./Sparkle/bin/generate_appcast -s $SPARKLE_KEY versions
         env:
           SPARKLE_KEY: ${{ secrets.SPARKLE_SIGNING_KEY }}
-      - name: Create fig@latest.dmg
-        run: cp "./versions/fig ${VERSION}.dmg" ./versions/fig@latest.dmg
-      - name: Push Changes to withfig/releases
+      # - name: Create fig@latest.dmg
+      #   run: cp "./versions/fig ${VERSION}.dmg" ./versions/fig@latest.dmg
+      - name: Add test file
+        run: echo "Hello world" > ./versions/hello.txt
+      - name: Push Changes to withfig/versions
         run: |
           cd versions
           git add .
           git commit -m "Deploy ${VERSION}"
-          git push origin master
+          git push origin main
           cd ..
 
       - name: "Install imagemagik for custom DMG image"
