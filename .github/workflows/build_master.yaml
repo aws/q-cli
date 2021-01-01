@@ -139,7 +139,7 @@ jobs:
         run: |
           ls
           pwd
-          mv "fig $VERSION.dmg" ./versions
+          cp "fig $VERSION.dmg" ./versions
 
       - name: "Generate Appcast"
         run: ./Sparkle/bin/generate_appcast -s $SPARKLE_KEY versions
