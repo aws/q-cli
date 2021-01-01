@@ -14,13 +14,12 @@ jobs:
         run: git clone --recursive https://github.com/sparkle-project/Sparkle
 
       - name: "Checkout withfig/versions"
-        uses: actions/checkout@v2
-        with:
-          repository: withfig/versions
-          token: ${{ secrets.PERSONAL_GITHUB_ACCESS_TOKEN }}
+        run: git clone https://mattschrage:$(echo $PERSONAL_GITHUB_ACCESS_TOKEN)@github.com/withfig/versions.git
+        env:
+          PERSONAL_GITHUB_ACCESS_TOKEN: ${{ secrets.PERSONAL_GITHUB_ACCESS_TOKEN }}
 
       - name: "Generate Appcast"
-        run: ./bin/generate-appcast -s $SPARKLE_KEY .
+        run: ./Sparkle/bin/generate-appcast -s $SPARKLE_KEY versions
         env:
           SPARKLE_KEY: ${{ secrets.SPARKLE_SIGNING_KEY }}
 
