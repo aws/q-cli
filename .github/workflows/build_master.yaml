@@ -10,6 +10,18 @@ jobs:
     runs-on: macos-latest
     # timeout-minutes: 15
     steps:
+      - name: "Checkout Project"
+        uses: actions/checkout@v2
+
+      - name: "Get Release Version"
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+        run: |
+          echo "::set-env name=VERSION::$(xcodebuild -showBuildSettings | grep MARKETING_VERSION | tr -d 'MARKETING_VERSION =')"      
+    
+      - name: "Log Release Version"
+        run: echo $VERSION
+        
       - name: "Download Sparkle"
         run: curl -sOL https://github.com/sparkle-project/Sparkle/releases/download/1.24.0/Sparkle-1.24.0.tar.xz
       - name: "Unzip Sparkle"
@@ -23,20 +35,6 @@ jobs:
 
         env:
           PERSONAL_GITHUB_ACCESS_TOKEN: ${{ secrets.PERSONAL_GITHUB_ACCESS_TOKEN }}
-
-
-      - name: "Checkout Project"
-        uses: actions/checkout@v2
-
-      - name: "Get Release Version"
-        env:
-          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
-        run: |
-          echo "::set-env name=VERSION::$(xcodebuild -showBuildSettings | grep MARKETING_VERSION | tr -d 'MARKETING_VERSION =')"      
-    
-      - name: "Log Release Version"
-        run: echo $VERSION
-
       - name: "Generate Appcast"
         run: ./Sparkle/bin/generate_appcast -s $SPARKLE_KEY versions
         env:
