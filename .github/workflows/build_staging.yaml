@@ -110,7 +110,10 @@ jobs:
         run: create-dmg "Export/Fig.app"
       - name: Notarize DMG
         run: |
-          npx notarize-cli --file "fig $VERSION.dmg" --bundle-id com.mschrage.fig
+          npx notarize-cli --file "fig $VERSION.dmg" --bundle-id com.mschrage.fig --username $NOTARIZE_USERNAME --password $NOTARIZE_PASSWORD
+        env:
+          NOTARIZE_USERNAME: ${{ secrets.NOTARIZE_USERNAME }}
+          NOTARIZE_PASSWORD: ${{ secrets.NOTARIZE_PASSWORD }}
       - name: Rename DMG
         run: mv "fig $VERSION.dmg" fig.dmg
       - name: Create Release
