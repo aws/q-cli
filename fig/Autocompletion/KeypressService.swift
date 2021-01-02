@@ -178,7 +178,7 @@ class KeypressProvider : KeypressService {
                                                             return Unmanaged.passUnretained(event)
                                                         }
                                                         
-                                                        guard Defaults.useAutocomplete, let window = AXWindowServer.shared.whitelistedWindow, KeypressProvider.whitelist.contains(window.bundleId ?? "") else {
+                                                        guard Defaults.loggedIn, Defaults.useAutocomplete, let window = AXWindowServer.shared.whitelistedWindow, KeypressProvider.whitelist.contains(window.bundleId ?? "") else {
                                                             print("eventTap window of \(AXWindowServer.shared.whitelistedWindow?.bundleId ?? "<none>") is not whitelisted")
                                                             return Unmanaged.passUnretained(event)
                                                         }
