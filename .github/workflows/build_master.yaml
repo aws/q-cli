@@ -135,6 +135,17 @@ jobs:
 
       - name: Create DMG
         run: create-dmg "Export/Fig.app"
+
+      # we need to notarize DMGs
+
+
+      - name: Notarize DMG
+        run: |
+          npx notarize-cli --file "fig $VERSION.dmg"
+        env:
+          NOTARIZE_USERNAME: ${{ secrets.NOTARIZE_USERNAME }}
+          NOTARIZE_PASSWORD: ${{ secrets.NOTARIZE_PASSWORD }}
+
       - name: Add DMG to /releases
         run: |
           ls
