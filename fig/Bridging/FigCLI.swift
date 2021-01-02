@@ -596,9 +596,13 @@ class FigCLI {
                 scope.companionWindow.windowManager.close(window:  scope.companionWindow)
 
             case .logout:
-                Defaults.email = nil
-                Defaults.loggedIn = false
-                scope.webView.deleteCache()
+//                Defaults.email = nil
+//                Defaults.loggedIn = false
+                let domain = Bundle.main.bundleIdentifier!
+                UserDefaults.standard.removePersistentDomain(forName: domain)
+                UserDefaults.standard.synchronize()
+                WebView.deleteCache()
+                
                 FigCLI.printInTerminal(text: "→ Logging out of Fig...", scope: scope)
                 ShellBridge.shared.socketServer.send(sessionId: scope.session, command: "disconnect")
                 if let delegate = NSApp.delegate as? AppDelegate {
