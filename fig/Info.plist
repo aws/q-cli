@@ -52,7 +52,7 @@
 	<key>SUEnableAutomaticChecks</key>
 	<true/>
 	<key>SUFeedURL</key>
-	<string>https://withfig.com/beta/appcast.xml</string>
+	<string>https://versions.withfig.com/appcast.xml</string>
 	<key>SUPublicEDKey</key>
 	<string>5Mzvu9ARpu2fmUhnxCH3D7txwJYo7MmLqRv9ddSIbuA=</string>
 </dict>
