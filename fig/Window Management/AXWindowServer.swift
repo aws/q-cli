@@ -128,6 +128,14 @@ class AXWindowServer : WindowService {
        
     }
     
+    static let blocklist = [ "com.apple.ViewBridgeAuxiliary",
+                             "com.apple.notificationcenterui",
+                             "com.apple.WebKit.WebContent",
+                             "com.apple.WebKit.Networking",
+                             "com.apple.controlcenter",
+                             "com.mschrage.fig"
+    ]
+    
     func register(_ app: NSRunningApplication, fromActivation: Bool = false) {
         guard AXIsProcessTrustedWithOptions(nil) else {
             Logger.log(message: "AXWindowServer: cannot register to observe window events before accesibility permissions are enabled")
@@ -148,29 +156,13 @@ class AXWindowServer : WindowService {
 //            print("AXWindowServer: cannot register to observe window events on com.apple.Spotlight")
 //            return
 //        }
-        
-        guard app.bundleIdentifier != "com.apple.ViewBridgeAuxiliary" else {
-            Logger.log(message: "AXWindowServer: cannot register to observe window events on com.apple.ViewBridgeAuxiliary")
-            return
-        }
-        
-        guard app.bundleIdentifier != "com.apple.notificationcenterui" else {
-            Logger.log(message: "AXWindowServer: cannot register to observe window events on com.apple.notificationcenterui")
-            return
-        }
-        
         guard app.bundleIdentifier != nil else {
            Logger.log(message: "AXWindowServer: cannot register to observe apps without Bundle Id")
             return
         }
         
-        guard app.bundleIdentifier != "com.apple.WebKit.WebContent" else {
-            Logger.log(message: "AXWindowServer: cannot register to observe window events on com.apple.WebKit.WebContent")
-            return
-        }
-        
-        guard app.bundleIdentifier != "com.apple.WebKit.Networking" else {
-            Logger.log(message: "AXWindowServer: cannot register to observe window events on com.apple.WebKit.Networking")
+        guard !AXWindowServer.blocklist.contains(app.bundleIdentifier!) else {
+            Logger.log(message: "AXWindowServer: cannot register to observe window events on \(app.bundleIdentifier!)")
             return
         }
         
