@@ -961,8 +961,23 @@ extension WebBridge {
 //                    let rect = KeypressProvider.shared.getTextRect()
 //                    WindowManager.shared.positionAutocompletePopover(textRect: rect)
                 }
+            case "width":
+                
+                guard let companion = scope.getCompanionWindow(), companion.isAutocompletePopup else {
+                    return
+                }
+                
+                if let number = NumberFormatter().number(from: value) {
+                    companion.width = CGFloat(truncating: number)
+                } else {
+                    companion.width = nil
+                }
+                
+                let rect = KeypressProvider.shared.getTextRect()
+                WindowManager.shared.positionAutocompletePopover(textRect: rect)
+
+
             case "interceptKeystrokes":
-                let companion = scope.getCompanionWindow()
                 KeypressProvider.shared.setEnabled(value: value == "true")
 
             default:

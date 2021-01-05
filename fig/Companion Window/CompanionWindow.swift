@@ -46,7 +46,8 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
     
     let windowManager: WindowManagementService
     let windowServiceProvider: WindowService = WindowServer.shared
-    
+
+    var width: CGFloat?
     var maxHeight: CGFloat?
     var priorTargetFrame: NSRect = .zero
     var positioning: OverlayPositioning = CompanionWindow.defaultActivePosition {
