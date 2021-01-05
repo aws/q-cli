@@ -109,6 +109,7 @@
 		757CA8E624905B38002A64A8 /* SockerServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757CA8E524905B38002A64A8 /* SockerServer.swift */; };
 		75809B0E24BFA64D00BFFB3E /* TelemetryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75809B0D24BFA64D00BFFB3E /* TelemetryService.swift */; };
 		75809B1124C3876B00BFFB3E /* run-tutorial.js in Resources */ = {isa = PBXBuildFile; fileRef = 75809B1024C3876B00BFFB3E /* run-tutorial.js */; };
+		7585862625941A2700B76B4A /* invite.sh in Resources */ = {isa = PBXBuildFile; fileRef = 7585862525941A2700B76B4A /* invite.sh */; };
 		7587B4D824F97F9E00E355E4 /* ShellHooksManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7587B4D724F97F9E00E355E4 /* ShellHooksManager.swift */; };
 		758AEB5E24CD35D400A15EAF /* WebSocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 758AEB5D24CD35D400A15EAF /* WebSocket.swift */; };
 		758AEB6024CE529D00A15EAF /* String+Shell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 758AEB5F24CE529D00A15EAF /* String+Shell.swift */; };
@@ -134,6 +135,8 @@
 		75D2E3CB249C1E7500607F66 /* terminal.css in Resources */ = {isa = PBXBuildFile; fileRef = 75D2E3CA249C1E7500607F66 /* terminal.css */; };
 		75E993F22515A6DD000BE6BE /* statusbar@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 75E993F12515A6DD000BE6BE /* statusbar@2x.png */; };
 		75E993F52517E226000BE6BE /* AXWindowServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75E993F42517E226000BE6BE /* AXWindowServer.swift */; };
+		75EB592B258D98A7002915E7 /* BiMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75EB592A258D98A7002915E7 /* BiMap.swift */; };
+		75EB592D258DD771002915E7 /* TTY.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75EB592C258DD771002915E7 /* TTY.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -306,6 +309,7 @@
 		75809B0D24BFA64D00BFFB3E /* TelemetryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetryService.swift; sourceTree = "<group>"; };
 		75809B0F24C2C66100BFFB3E /* WebView+Private.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "WebView+Private.h"; sourceTree = "<group>"; };
 		75809B1024C3876B00BFFB3E /* run-tutorial.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = "run-tutorial.js"; sourceTree = "<group>"; };
+		7585862525941A2700B76B4A /* invite.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = invite.sh; sourceTree = "<group>"; };
 		7587B4D724F97F9E00E355E4 /* ShellHooksManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellHooksManager.swift; sourceTree = "<group>"; };
 		758AEB5D24CD35D400A15EAF /* WebSocket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebSocket.swift; sourceTree = "<group>"; };
 		758AEB5F24CE529D00A15EAF /* String+Shell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+Shell.swift"; sourceTree = "<group>"; };
@@ -330,6 +334,8 @@
 		75D2E3CA249C1E7500607F66 /* terminal.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = terminal.css; sourceTree = "<group>"; };
 		75E993F12515A6DD000BE6BE /* statusbar@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "statusbar@2x.png"; sourceTree = "<group>"; };
 		75E993F42517E226000BE6BE /* AXWindowServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AXWindowServer.swift; sourceTree = "<group>"; };
+		75EB592A258D98A7002915E7 /* BiMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiMap.swift; sourceTree = "<group>"; };
+		75EB592C258DD771002915E7 /* TTY.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TTY.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -437,6 +443,7 @@
 		75186076255CB0870000A7C7 /* upgrade */ = {
 			isa = PBXGroup;
 			children = (
+				7585862525941A2700B76B4A /* invite.sh */,
 				75186077255CB0870000A7C7 /* iterm-integration.sh */,
 				75186078255CB0870000A7C7 /* 1.0.23.sh */,
 				75186079255CB0870000A7C7 /* fig-iterm-integration.py */,
@@ -658,6 +665,8 @@
 				7587B4D724F97F9E00E355E4 /* ShellHooksManager.swift */,
 				75B7931924BB897F0073AAC6 /* PseudoTerminalService.swift */,
 				756759962446C44C006AA988 /* String+Shell.swift */,
+				75EB592A258D98A7002915E7 /* BiMap.swift */,
+				75EB592C258DD771002915E7 /* TTY.swift */,
 			);
 			path = Shell;
 			sourceTree = "<group>";
@@ -855,6 +864,7 @@
 				7518608A255CB0C20000A7C7 /* 1.0.21.sh in Resources */,
 				7518608B255CB0C20000A7C7 /* feedback.sh in Resources */,
 				7518608C255CB0C20000A7C7 /* 1.0.24.sh in Resources */,
+				7585862625941A2700B76B4A /* invite.sh in Resources */,
 				7518608D255CB0C20000A7C7 /* open_new_terminal_window.scpt in Resources */,
 				7518608E255CB0C20000A7C7 /* 1.0.20.sh in Resources */,
 				75186073255B2A0A0000A7C7 /* string@2x.png in Resources */,
@@ -977,6 +987,7 @@
 				755D0DE0247DDE050074AB5C /* FigCLI.swift in Sources */,
 				75809B0E24BFA64D00BFFB3E /* TelemetryService.swift in Sources */,
 				7510F8B224A6910500E86F7C /* CharData.swift in Sources */,
+				75EB592B258D98A7002915E7 /* BiMap.swift in Sources */,
 				751F7589246D090100E083C8 /* WebBridge.swift in Sources */,
 				7510F8A624A6910500E86F7C /* iOSAccessoryView.swift in Sources */,
 				75675955244634AD006AA988 /* AppDelegate.swift in Sources */,
@@ -1003,6 +1014,7 @@
 				757CA8E124903D3B002A64A8 /* HotKeyManager.swift in Sources */,
 				75B199342504190900F38EA8 /* Keycode.swift in Sources */,
 				752C0BD82479EEDB0077E415 /* File.swift in Sources */,
+				75EB592D258DD771002915E7 /* TTY.swift in Sources */,
 				7510F8B324A6910500E86F7C /* TerminalOptions.swift in Sources */,
 				7510F8BF24A99A4B00E86F7C /* WindowService.swift in Sources */,
 				7510F8A324A6910500E86F7C /* iOSTerminalView.swift in Sources */,
@@ -1223,7 +1235,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1.0.30;
+				CURRENT_PROJECT_VERSION = 1.0.31;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				DEVELOPMENT_TEAM = D93PPD94WK;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1239,7 +1251,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MARKETING_VERSION = 1.0.30;
+				MARKETING_VERSION = 1.0.31;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mschrage.fig;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1259,7 +1271,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1.0.30;
+				CURRENT_PROJECT_VERSION = 1.0.31;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				DEVELOPMENT_TEAM = D93PPD94WK;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1275,7 +1287,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MARKETING_VERSION = 1.0.30;
+				MARKETING_VERSION = 1.0.31;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mschrage.fig;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";

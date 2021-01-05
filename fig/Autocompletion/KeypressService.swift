@@ -13,13 +13,15 @@ import Sentry
 
 protocol KeypressService {
     func keyBuffer(for window: ExternalWindow) -> KeystrokeBuffer
+    func keyBuffer(for windowHash: ExternalWindowHash) -> KeystrokeBuffer
+
 //    func redirects(for window: ExternalWindow) -> Set<UInt16>
 
     func getTextRect(extendRange: Bool) -> CGRect?
     func clean()
     func addRedirect(for keycode: UInt16, in window: ExternalWindow)
     func removeRedirect(for keycode: UInt16, in window: ExternalWindow)
-
+    func setEnabled(value: Bool)
 }
 
 class KeypressProvider : KeypressService {
@@ -38,6 +40,7 @@ class KeypressProvider : KeypressService {
     
 //    fileprivate var redirects: Set<UInt16> = []
     var redirects: [ExternalWindowHash:  Set<UInt16>] = [:]
+    var enabled = true
 
     func addRedirect(for keycode: UInt16, in window: ExternalWindow) {
         var set = redirects[window.hash] ?? []
@@ -53,6 +56,11 @@ class KeypressProvider : KeypressService {
         }
     }
     
+    func setEnabled(value: Bool) {
+        self.enabled = value
+    }
+
+    
     init(windowServiceProvider: WindowService) {
         self.windowServiceProvider = windowServiceProvider
         registerKeystrokeHandler()
@@ -62,11 +70,11 @@ class KeypressProvider : KeypressService {
     }
     
     @objc func firstCharacterInKeystrokeBuffer() {
-        if let window = AXWindowServer.shared.whitelistedWindow, let tty = window.tty {
-            DispatchQueue.global(qos: .userInteractive).async {
-                tty.update()
-            }
-        }
+//        if let window = AXWindowServer.shared.whitelistedWindow, let tty = window.tty {
+//            DispatchQueue.global(qos: .userInteractive).async {
+//                tty.update()
+//            }
+//        }
     }
 
     @objc func lineAcceptedInKeystrokeBuffer() {
@@ -85,9 +93,9 @@ class KeypressProvider : KeypressService {
         }
 
         self.mouseHandler = NSEvent.addGlobalMonitorForEvents(matching: .leftMouseUp) { (event) in
-           // only handle keypresses if they are in iTerm
             if let window = self.windowServiceProvider.topmostWhitelistedWindow(), KeypressProvider.whitelist.contains(window.bundleId ?? "") {
                
+                // option click, moves cursor to unknown location
                 if (event.modifierFlags.contains(.option)) {
                     let keyBuffer = self.keyBuffer(for: window)
                     keyBuffer.buffer = nil
@@ -108,17 +116,6 @@ class KeypressProvider : KeypressService {
                         tty.update()
                     }
                 }
-//                self.keyThrottler.throttle {
-//                    DispatchQueue.global(qos: .userInteractive).async {
-//                        guard let running = tty.running else { return }
-//                        let cmd = running.cmd
-//                        let cwd = running.cwd
-//                        print("tty: running \(cmd) \(cwd ?? "<none>")")
-//                        ShellHookManager.shared.tty[window.hash]?.cwd = cwd
-//                        ShellHookManager.shared.tty[window.hash]?.cmd = cmd
-//                        ShellHookManager.shared.tty[window.hash]?.isShell = running.isShell
-//                    }
-//                }
             }
         })
         
@@ -181,7 +178,7 @@ class KeypressProvider : KeypressService {
                                                             return Unmanaged.passUnretained(event)
                                                         }
                                                         
-                                                        guard Defaults.useAutocomplete, let window = AXWindowServer.shared.whitelistedWindow, KeypressProvider.whitelist.contains(window.bundleId ?? "") else {
+                                                        guard Defaults.loggedIn, Defaults.useAutocomplete, let window = AXWindowServer.shared.whitelistedWindow, KeypressProvider.whitelist.contains(window.bundleId ?? "") else {
                                                             print("eventTap window of \(AXWindowServer.shared.whitelistedWindow?.bundleId ?? "<none>") is not whitelisted")
                                                             return Unmanaged.passUnretained(event)
                                                         }
@@ -197,26 +194,21 @@ class KeypressProvider : KeypressService {
                                                             let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
                                                             print("eventTap", keyCode, event.getIntegerValueField(.eventTargetUnixProcessID))
                                                             print("eventTap", "\(window.hash)")
-                                                            if (type == .keyDown && KeypressProvider.shared.redirects[window.hash]?.contains(UInt16(keyCode)) ?? false &&
+
+                                                            if (type == .keyDown && KeypressProvider.shared.enabled && KeypressProvider.shared.redirects[window.hash]?.contains(UInt16(keyCode)) ?? false &&
                                                                 !event.flags.contains(.maskCommand)
 ) {
                                                             
                                                                 
                                                                 print("eventTap", "Should redirect!")
-                                                                WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try{ fig.keypress(\"\(keyCode)\", \"\(window.hash)\") } catch(e) {}", completionHandler: { err, res in
-//                                                                    DispatchQueue.main.async { WindowManager.shared.positionAutocompletePopover(textRect:  KeypressProvider.shared.getTextRect())
-//                                                                    }
-                                                                })
+                                                                WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try{ fig.keypress(\"\(keyCode)\", \"\(window.hash)\") } catch(e) {}", completionHandler: nil)
                                                                 
                                                                 
                                                                 
-
-                                                                   
-
                                                                 return nil
                                                             } else {
                                                                 autoreleasepool {
-KeypressProvider.shared.handleKeystroke(event: NSEvent(cgEvent: event), in: window)
+                                                                    KeypressProvider.shared.handleKeystroke(event: NSEvent(cgEvent: event), in: window)
                                                                 }
 
 //                                                                DispatchQueue.global(qos: .background).async {
@@ -248,11 +240,15 @@ KeypressProvider.shared.handleKeystroke(event: NSEvent(cgEvent: event), in: wind
     }
     
     func keyBuffer(for window: ExternalWindow) -> KeystrokeBuffer {
-        if let buffer = self.buffers[window.hash] {
+        return self.keyBuffer(for: window.hash)
+    }
+    
+    func keyBuffer(for windowHash: ExternalWindowHash) -> KeystrokeBuffer {
+        if let buffer = self.buffers[windowHash] {
             return buffer
         } else {
             let buffer = KeystrokeBuffer()
-            self.buffers[window.hash] = buffer
+            self.buffers[windowHash] = buffer
             return buffer
         }
     }

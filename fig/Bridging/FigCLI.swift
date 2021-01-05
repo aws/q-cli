@@ -596,9 +596,13 @@ class FigCLI {
                 scope.companionWindow.windowManager.close(window:  scope.companionWindow)
 
             case .logout:
-                Defaults.email = nil
-                Defaults.loggedIn = false
-                scope.webView.deleteCache()
+//                Defaults.email = nil
+//                Defaults.loggedIn = false
+                let domain = Bundle.main.bundleIdentifier!
+                UserDefaults.standard.removePersistentDomain(forName: domain)
+                UserDefaults.standard.synchronize()
+                WebView.deleteCache()
+                
                 FigCLI.printInTerminal(text: "→ Logging out of Fig...", scope: scope)
                 ShellBridge.shared.socketServer.send(sessionId: scope.session, command: "disconnect")
                 if let delegate = NSApp.delegate as? AppDelegate {
@@ -665,34 +669,8 @@ class FigCLI {
                 let path = Bundle.main.path(forResource: "update-autocomplete", ofType: "sh")
                 FigCLI.runInTerminal(script: "bash \(path!)", scope: scope)
             case .invite:
-                let count = scope.options.count
-                let isPlural = count != 1
-                FigCLI.printInTerminal(text: "→ Sending invite\(isPlural ? "s" : "") to \(count) \(isPlural ? "people" :"person")!", scope: scope)
-                ShellBridge.shared.socketServer.send(sessionId: scope.session, command: "disconnect")
-
-
-                var request = URLRequest(url: URL(string:"https://fig-core-backend.herokuapp.com/waitlist/invite-friends?via=cli")!)
-                guard let json = try? JSONSerialization.data(withJSONObject: ["emails" : scope.options, "referrer" : Defaults.email ?? ""] , options: .sortedKeys) else {
-//                    ShellBridge.shared.socketServer.send(sessionId: scope.session, command: "disconnect")
-                    return
-                    
-                }
-
-                request.httpMethod = "POST"
-                request.httpBody = json
-                request.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
-                let task = URLSession.shared.dataTask(with: request) { (data, res, err) in
-//                    guard err == nil else {
-//                        ShellBridge.shared.socketServer.send(sessionId: scope.session, command: "disconnect")
-//                        return
-//                    }
-//
-//                    FigCLI.printInTerminal(text: "Sent invites!", scope: scope)
-//                    ShellBridge.shared.socketServer.send(sessionId: scope.session, command: "disconnect")
-                }
-
-                task.resume()
-                return
+                let path = Bundle.main.path(forResource: "invite", ofType: "sh")
+                FigCLI.runInTerminal(script: "bash \(path!)", scope: scope)
             case .help, .h:
                 scope.companionWindow.windowManager.close(window:  scope.companionWindow)
 
@@ -742,10 +720,11 @@ class FigCLI {
 """
 CLI to interact with Fig
 
-\\u001b[1mUSAGE\\u001b[0m
+\\033[1mUSAGE\\033[0m
   $ fig [COMMAND]
 
-\\u001b[1mCOMMANDS\\u001b[0m
+\\033[1mCOMMANDS\\033[0m
+
   fig invite        invite up to 5 friends & teammates to Fig
   fig feedback      send feedback directly to the Fig founders
   fig update        update repo of completion scripts

@@ -128,6 +128,14 @@ class AXWindowServer : WindowService {
        
     }
     
+    static let blocklist = [ "com.apple.ViewBridgeAuxiliary",
+                             "com.apple.notificationcenterui",
+                             "com.apple.WebKit.WebContent",
+                             "com.apple.WebKit.Networking",
+                             "com.apple.controlcenter",
+                             "com.mschrage.fig"
+    ]
+    
     func register(_ app: NSRunningApplication, fromActivation: Bool = false) {
         guard AXIsProcessTrustedWithOptions(nil) else {
             Logger.log(message: "AXWindowServer: cannot register to observe window events before accesibility permissions are enabled")
@@ -148,29 +156,13 @@ class AXWindowServer : WindowService {
 //            print("AXWindowServer: cannot register to observe window events on com.apple.Spotlight")
 //            return
 //        }
-        
-        guard app.bundleIdentifier != "com.apple.ViewBridgeAuxiliary" else {
-            Logger.log(message: "AXWindowServer: cannot register to observe window events on com.apple.ViewBridgeAuxiliary")
-            return
-        }
-        
-        guard app.bundleIdentifier != "com.apple.notificationcenterui" else {
-            Logger.log(message: "AXWindowServer: cannot register to observe window events on com.apple.notificationcenterui")
-            return
-        }
-        
         guard app.bundleIdentifier != nil else {
            Logger.log(message: "AXWindowServer: cannot register to observe apps without Bundle Id")
             return
         }
         
-        guard app.bundleIdentifier != "com.apple.WebKit.WebContent" else {
-            Logger.log(message: "AXWindowServer: cannot register to observe window events on com.apple.WebKit.WebContent")
-            return
-        }
-        
-        guard app.bundleIdentifier != "com.apple.WebKit.Networking" else {
-            Logger.log(message: "AXWindowServer: cannot register to observe window events on com.apple.WebKit.Networking")
+        guard !AXWindowServer.blocklist.contains(app.bundleIdentifier!) else {
+            Logger.log(message: "AXWindowServer: cannot register to observe window events on \(app.bundleIdentifier!)")
             return
         }
         
@@ -301,12 +293,12 @@ class AXWindowServer : WindowService {
                 // determine if AXUIElement is window???
               
                 let app = NSRunningApplication(processIdentifier: pid)
-                print("AXWindowServer: \(app?.bundleIdentifier)! \(element) kAXUIElementDestroyedNotification")
+//                print("AXWindowServer: \(app?.bundleIdentifier)! \(element) kAXUIElementDestroyedNotification")
                 
                 // spotlight style app
                 if (Integrations.searchBarApps.contains(app?.bundleIdentifier ?? "") ) {
                         guard let frontmost = NSWorkspace.shared.frontmostApplication else { return }
-                        print("AXWindowServer: frontmost = \(frontmost.bundleIdentifier ?? "<none>")")
+                        print("AXWindowServer: spotlightStyleAppDestroyed! frontmost = \(frontmost.bundleIdentifier ?? "<none>")")
                         let axAppRef = AXUIElementCreateApplication(frontmost.processIdentifier)
                         var window: AnyObject?
                         AXUIElementCopyAttributeValue(axAppRef, kAXFocusedWindowAttribute as CFString, &window)
@@ -321,8 +313,8 @@ class AXWindowServer : WindowService {
 
 
 //                print("AXWindowServer: \(appRef.bundleId!) \(element) kAXUIElementDestroyedNotification")
-            case kAXFocusedUIElementChangedNotification:
-                print("AXWindowServer: \(appRef.bundleId!) \(element) kAXFocusedUIElementChangedNotification")
+//            case kAXFocusedUIElementChangedNotification:
+//                print("AXWindowServer: \(appRef.bundleId!) \(element) kAXFocusedUIElementChangedNotification")
             default:
                 print("AXWindowServer: unknown case")
             }
@@ -429,7 +421,8 @@ class AXWindowServer : WindowService {
         if let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication { //Integrations.whitelist.contains(app.bundleIdentifier ?? "") {
 //            self.tracked = self.tracked.filter { return $0.handler != nil && $0.observer != nil}
             print("AXWindowServer - launch", app.bundleIdentifier ?? "")
-//            self.register(app, fromActivation: true)
+            // This register function is required in order to track new windows when an app is launched!
+            self.register(app, fromActivation: true)
         }
     }
     

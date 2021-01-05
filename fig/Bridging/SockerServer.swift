@@ -78,7 +78,6 @@ class ShellBridgeSocketService: WebSocketService {
     }
 
     public func received(message: String, from: WebSocketConnection) {
-        print("msg:", message)
           let decoder = JSONDecoder()
                 do {
                     let firstPass = try decoder.decode(SocketMessage.self, from: message.data(using: .utf8)!)
@@ -125,12 +124,13 @@ class ShellBridgeSocketService: WebSocketService {
                     case "hello":
                         self.sessionIds[msg.session] = from.id
                     case "pipe":
+                        print("Handle CLI command: fig \((msg.options ?? []).joined(separator: " "))")
+                        guard Defaults.loggedIn else {
+                            from.send(message: "disconnect")
+                            return
+                        }
                         if let subcommand = msg.options?.first {
                             guard !subcommand.hasPrefix("bg:") else {
-                                guard Defaults.loggedIn else {
-                                    from.send(message: "disconnect")
-                                    return
-                                }
                                 switch subcommand {
                                 case "bg:event":
                                     if let event = msg.options?[safe: 1] {
@@ -139,13 +139,15 @@ class ShellBridgeSocketService: WebSocketService {
                                         print("No event")
                                     }
                                     case "bg:cd":
-                                        NotificationCenter.default.post(name: .currentDirectoryDidChange, object: msg)
+                                        ShellHookManager.shared.currentDirectoryDidChange(msg)
                                     case "bg:tab":
-                                        NotificationCenter.default.post(name: .currentTabDidChange, object: msg)
+                                        ShellHookManager.shared.currentTabDidChange(msg)
                                     case "bg:init":
-                                        NotificationCenter.default.post(name: .startedNewTerminalSession, object: msg)
+                                        ShellHookManager.shared.startedNewTerminalSession(msg)
                                     case "bg:prompt":
-                                        NotificationCenter.default.post(name: .shellPromptWillReturn, object: msg)
+                                        ShellHookManager.shared.shellPromptWillReturn(msg)
+                                    case "bg:exec":
+                                        ShellHookManager.shared.shellWillExecuteCommand(msg)
                                     case "bg:alert":
                                         if let title = msg.options?[safe: 1], let text = msg.options?[safe: 2]  {
                                             DispatchQueue.main.async {

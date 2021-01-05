@@ -757,6 +757,9 @@ extension WindowManager : WindowManagementService {
                                                                       y: popup.origin.y,
                                                                       width: popup.width,
                                                                       height: height))//140
+        } else {
+            // workaround for
+            WindowManager.shared.autocomplete?.orderOut(nil)
         }
     }
 }

@@ -88,7 +88,7 @@ class TelemetryProvider: TelemetryService {
         
         guard let json = try? JSONSerialization.data(withJSONObject: final, options: .sortedKeys) else { return }
         print(json)
-        var request = URLRequest(url: Remote.baseURL.appendingPathComponent("anonymized_cli_usage"))
+        var request = URLRequest(url: Remote.telemetryURL.appendingPathComponent("anonymized_cli_usage"))
         request.httpMethod = "POST"
         request.httpBody = json
         request.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")

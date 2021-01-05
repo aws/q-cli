@@ -8,107 +8,6 @@
 
 import Foundation
 
-protocol ShellHookService {
-    func tether(window: CompanionWindow)
-    func untether(window: CompanionWindow)
-    func close(window: CompanionWindow)
-    func shouldAppear(window: CompanionWindow, explicitlyRepositioned: Bool) -> Bool
-    func requestWindowUpdate()
-    func isSidebar(window: CompanionWindow) -> Bool
-
-//    func shouldReposition(window: CompanionWindow, explicitlyRepositioned: Bool) -> Bool
-
-}
-
-
-struct proc {
-    let pid: pid_t
-    let cmd: String
-    var _cwd: String?
-    
-    init(line: String) {
-        let tokens = line.split(separator: " ")
-        pid = Int32(String(tokens[1])) ?? -1
-        cmd = tokens.suffix(from: 2).joined(separator: " ")
-    }
-    
-    init(pid: pid_t, cmd: String, cwd: String) {
-        self.pid = pid
-        self.cmd = cmd
-        self._cwd = cwd
-    }
-    
-    var cwd: String? {
-        guard let cwd = self._cwd else {
-            return "/usr/sbin/lsof -an -p \(self.pid) -d cwd -F n | tail -1 | cut -c2-".runAsCommand().trimmingCharacters(in: .whitespaces)
-        }
-        
-        return cwd
-//        return "/usr/sbin/lsof -p \(self.pid) | awk '$4==\"cwd\" { print $9 }'".runAsCommand().trimmingCharacters(in: .whitespaces)
-    }
-    
-    /// Run cat /etc/shells
-    var isShell: Bool {
-        return (Defaults.processWhitelist + ["zsh","fish","bash", "csh","dash","ksh","tcsh", "ssh"]).reduce(into: false) { (res, shell) in
-            res = res || cmd.contains(shell)
-        }
-    }
-}
-class TTY {
-    let descriptor: String
-    init(fd: String) {
-        descriptor = fd
-        self.update() // running this right away my cause fig to be the current process rather than the shell.
-    }
-    
-    func getProcesses() {
-        let _ = "ps | awk '$2==\"\(self.descriptor)\" { print $2, $1, $4 }'".runInBackground { (out) in
-//            self.processes = out.split(separator: "\n").map { return proc(line: String($0)) }
-        }
-
-    }
-    
-    var processes: [proc] {
-        //let out = "ps -t \(self.descriptor) | awk '{ print $2, $1, $4 }'".runAsCommand()
-        
-        // let out = "ps | awk '$2==\"\(self.descriptor)\" { print $2, $1, $4 }'".runAsCommand()
-        // return out.split(separator: "\n").map { return proc(line: String($0)) }
-        
-        return ProcessStatus.getProcesses(for: self.descriptor).filter({ (process) -> Bool in
-            return !Defaults.ignoreProcessList.contains(process.cmd)
-        }).reversed()
-    }
-    
-    var running: proc? {
-        return processes.last
-    }
-    
-    func update() {
-        guard let running = self.running else { return
-            
-        }
-        let cmd = running.cmd
-        let cwd = running.cwd
-        print("tty: running \(cmd) \(cwd ?? "<none>")")
-        self.cwd = cwd
-        self.cmd = cmd
-        self.isShell = running.isShell
-    }
-    
-    var cwd: String?
-    var cmd: String?
-    var isShell: Bool?
-}
-
-extension TTY: Hashable {
-    static func == (lhs: TTY, rhs: TTY) -> Bool {
-        return lhs.descriptor == rhs.descriptor
-    }
-    
-    func hash(into hasher: inout Hasher) {
-         hasher.combine(self.descriptor)
-    }
-}
 extension ExternalWindowHash {
     func components() -> (windowId: CGWindowID, tab: String?)? {
         let tokens = self.split(separator: "/")
@@ -123,20 +22,22 @@ extension ExternalWindowHash {
     }
 }
 
+typealias SessionId = String
+extension SessionId {
+    var isLinked: Bool {
+        return self.associatedWindowHash != nil
+    }
+    
+    var associatedWindowHash: ExternalWindowHash? {
+        return ShellHookManager.shared.sessions[self]
+    }
+}
+
 class ShellHookManager : NSObject {
     static let shared = ShellHookManager()
     var tabs: [CGWindowID: String] = [:]
     var tty: [ExternalWindowHash: TTY] = [:]
-    var sessions: [ExternalWindowHash: String] = [:]
-    fileprivate var originalWindowHashBySessionId: [String: ExternalWindowHash] = [:]
-    
-    override init() {
-        super.init()
-        NotificationCenter.default.addObserver(self, selector: #selector(currentDirectoryDidChange(_:)), name: .currentDirectoryDidChange, object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(currentTabDidChange(_:)), name: .currentTabDidChange, object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(startedNewTerminalSession(_:)), name: .startedNewTerminalSession, object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(shellPromptWillReturn(_:)), name: .shellPromptWillReturn, object: nil)
-    }
+    var sessions = BiMap<String>()
 
 }
 
@@ -146,116 +47,219 @@ extension Dictionary where Value: Equatable {
     }
 }
 
-extension ShellHookManager : ShellBridgeEventListener {
-    // Note: shell prompt can return when window is not active window. This is why we get the windowHash using the session identifier.
-    @objc func shellPromptWillReturn(_ notification: Notification) {
+extension ShellHookManager {
+    
+    func currentTabDidChange(_ info: ShellMessage) {
+        Logger.log(message: "currentTabDidChange")
         
-        let msg = (notification.object as! ShellMessage)
-        Logger.log(message: "shellPromptWillReturn")
-        
-//        if let window = AXWindowServer.shared.whitelistedWindow {
-//            self.sessions[window.hash] = msg.session
-//        }
-
-
-        // Be careful because an old window hash can be returned (eg. 1323/ instead of 1232/1)
-        if let windowHash = sessions.someKey(forValue: msg.session) {
-            print("tty: shellPromptWillReturn for hash = \(windowHash)")
-//            print("Updating tty")
-            
-            // check if valid window hash. (
-            guard let components = windowHash.components() else { return }
-            let windowHasNoTabs = (tabs[components.windowId] == nil && components.tab == nil)
-            let windowHasTabs = (tabs[components.windowId] != nil && components.tab != nil)
-            let validHash = windowHasNoTabs || windowHasTabs
-            
-            if (validHash) {
-                // if a tty exists, update it (with delay)
-                if let tty = self.tty[windowHash] {
-                    Timer.delayWithSeconds(0.1) {
-                       tty.update()
+        // Need time for whitelisted window to change
+        Timer.delayWithSeconds(0.1) {
+            if let window = AXWindowServer.shared.whitelistedWindow {
+                // So far, only iTerm has a tab integration.
+                guard window.bundleId == "com.googlecode.iterm2" else { return }
+                if let id = info.options?.last {
+                    Logger.log(message: "tab: \(window.windowId)/\(id)")
+                    self.tabs[window.windowId] = id
+                    
+                    self.updateHashMetadata(oldHash: "\(window.windowId)/", hash: window.hash)
+                    
+                    DispatchQueue.main.async {
+                        WindowManager.shared.windowChanged()
                     }
                 }
-            } else {
-                // remove tty for hash (because the hash is invalid)
-                self.tty.removeValue(forKey: windowHash)
-                self.startedNewTerminalSession(notification)
+            }
+        }
+    }
+    
+    func updateHashMetadata(oldHash: ExternalWindowHash, hash: ExternalWindowHash) {
+        guard oldHash != hash else { return }
+        guard let device = self.tty[oldHash] else { return }
+        guard let sessionId = self.sessions[oldHash] else { return }
+        
+        // remove out-of-date values
+        self.tty.removeValue(forKey: oldHash)
+        self.sessions[oldHash] = nil
+        
+        // reassign tty to new hash
+        self.sessions[hash] = sessionId
+        self.tty[hash] = device
+        
+        Logger.log(message: "Transfering \(oldHash) metadata to \(hash).", priority: .info, subsystem: .tty)
+
+    }
+            
+    func currentDirectoryDidChange(_ info: ShellMessage) {
+        let workingDirectory = info.getWorkingDirectory() ?? ""
+
+        Logger.log(message: "directoryDidChange:\(info.session) -- \(workingDirectory)")
+        
+        // We used to pass this to javascript. Now working directory is determined using tty/shellPid
+
+    }
+    
+    
+    func shellPromptWillReturn(_ info: ShellMessage) {
+
+        guard let (shellPid, ttyDescriptor, sessionId) = info.parseShellHook() else {
+            Logger.log(message: "Could not parse out shellHook metadata", priority: .notify, subsystem: .tty)
+            return
+        }
+        
+        // try to find associated window, but don't necessarily link with the topmost window! (prompt can return when window is in background)
+        guard let hash = attemptToFindToAssociatedWindow(for: sessionId,
+                                                         currentTopmostWindow: AXWindowServer.shared.whitelistedWindow) else {
+            Logger.log(message: "Could not link to window on shell prompt return.", priority: .notify, subsystem: .tty)
+            return
+        }
+        
+        // window hash is valid, we should have an associated TTY (or we can create it)
+        let tty = self.tty[hash] ?? link(sessionId, hash, ttyDescriptor)
+        
+        // Window is linked with TTY session
+        // update tty's active process to current shell
+        tty.returnedToShellPrompt(for: shellPid)
+        
+        // if the user has returned to the shell, their keypress buffer must be reset (for instance, if they exited by pressing 'q' rather than return)
+        // This doesn't work because of timing issues. If the user types too quickly, the first keypress will be overwritten.
+        // KeypressProvider.shared.keyBuffer(for: hash).buffer = ""
+    }
+    
+    func startedNewShellSession(_ info: ShellMessage) {
+        guard let (shellPid, ttyDescriptor, sessionId) = info.parseShellHook() else {
+            Logger.log(message: "Could not parse out shellHook metadata", priority: .notify, subsystem: .tty)
+            return
+        }
+
+        
+        guard let hash = attemptToFindToAssociatedWindow(for: sessionId) else {
+            Logger.log(message: "Could not link to window on new shell session.", priority: .notify, subsystem: .tty)
+            return
+        }
+        
+        
+        // window hash is valid, we should have an associated TTY (or we can create it)
+        let tty = self.tty[hash] ?? link(sessionId, hash, ttyDescriptor)
+        tty.startedNewShellSession(for: shellPid)
+
+    }
+    
+    func startedNewTerminalSession(_ info: ShellMessage) {
+
+        guard let (shellPid, ttyDescriptor, sessionId) = info.parseShellHook() else {
+            Logger.log(message: "Could not parse out shellHook metadata", priority: .notify, subsystem: .tty)
+            return
+        }
+        
+        // We need to wait for window to appear if the terminal emulator is being launched for the first time. Can this be handled more robustly?
+        Timer.delayWithSeconds(0.2) {
+            
+            guard let window = AXWindowServer.shared.whitelistedWindow else {
+                Logger.log(message: "Cannot track a new terminal session if topmost window isn't whitelisted.", priority: .notify, subsystem: .tty)
+                return
+            }
+            
+            let tty = self.link(sessionId, window.hash, ttyDescriptor)
+            tty.startedNewShellSession(for: shellPid)
+        }
+
+    }
+    
+    func shellWillExecuteCommand(_ info: ShellMessage) {
+
+        guard let (_, ttyDescriptor, sessionId) = info.parseShellHook() else {
+            Logger.log(message: "Could not parse out shellHook metadata", priority: .notify, subsystem: .tty)
+            return
+        }
+        
+        guard let hash = attemptToFindToAssociatedWindow(for: sessionId,
+                                                         currentTopmostWindow: AXWindowServer.shared.whitelistedWindow) else {
+            
+            Logger.log(message: "Could not link to window on new terminal session.", priority: .notify, subsystem: .tty)
+            return
+        }
+        
+        let tty = self.tty[hash] ?? link(sessionId, hash, ttyDescriptor)
+        tty.preexec()
+    }
+    
+}
+
+
+extension ShellHookManager {
+    
+    fileprivate func attemptToFindToAssociatedWindow(for sessionId: SessionId, currentTopmostWindow: ExternalWindow? = nil) -> ExternalWindowHash? {
+        
+        if let hash = getWindowHash(for: sessionId) {
+            guard !validWindowHash(hash) else {
+                // the hash is valid and is linked to a session
+                Logger.log(message: "WindowHash '\(hash)' is valid", subsystem: .tty)
+                
+                
+                Logger.log(message: "WindowHash '\(hash)' is linked to sessionId '\(sessionId)'", subsystem: .tty)
+                return hash
+                
 
             }
             
-
-        } else {
-            print("tty: not working...")
-            print("tty: in = \(msg.options?.joined(separator: " ") ?? "") ; keys=\(sessions.keys.joined(separator: ", ")).")
-            self.startedNewTerminalSession(notification)
-
-        }
-    }
-    
-     @objc func startedNewTerminalSession(_ notification: Notification) {
-        let msg = (notification.object as! ShellMessage)
-        Timer.delayWithSeconds(0.2) { // add delay so that window is active
-            if let window = AXWindowServer.shared.whitelistedWindow {
-                if let ttyId = msg.options?.last?.split(separator: "/").last {
-                    Logger.log(message: "tty: \(window.hash) = \(ttyId)")
-                    Logger.log(message: "session: \(window.hash) = \(msg.session)")
-
-                    let ttys = TTY(fd: String(ttyId))
-    //                print("tty: Running directory = ", ttys.running?.cwd)
-    //                print("tty: procs = ", ttys.processes.map { $0.cmd }.joined(separator: ", "))
-
-                    self.tty[window.hash] = ttys
-                    self.sessions[window.hash] = msg.session
-                    // the hash might be missing its tab component (windowId/tab)
-                    // so record original
-                    self.originalWindowHashBySessionId[msg.session] = window.hash
-                } else {
-                    print("tty: could not parse!")
-                }
-            } else {
-                print("tty: Terminal created but window is not whitelisted.")
-
-                Logger.log(message: "Terminal created but window is not whitelisted.")
-            }
-        }
-    }
-    
-    @objc func currentTabDidChange(_ notification: Notification) {
-        let msg = (notification.object as! ShellMessage)
-        Logger.log(message: "currentTabDidChange")
-        if let window = AXWindowServer.shared.whitelistedWindow {
-            guard window.bundleId == "com.googlecode.iterm2" else { return }
-            if let id = msg.options?.last {
-                Logger.log(message: "tab: \(window.windowId)/\(id)")
-                tabs[window.windowId] = id
-                DispatchQueue.main.async {
-                    WindowManager.shared.windowChanged()
-                }
-            }
+            // hash exists, but is invalid (eg. should have tab component and it doesn't)
             
-        }
+            Logger.log(message: "\(hash) is not a valid window hash, attempting to find previous value", priority: .info, subsystem: .tty)
+            
+//            // clean up this out-of-date hash
+            self.sessions[hash] = nil
+            self.tty.removeValue(forKey: hash)
 
+        }
         
+        // user had this terminal session up prior to launching Fig or has iTerm tab integration set up, which caused original hash to go stale (eg. 16356/ -> 16356/1)
+        
+        // hash does not exist
+        
+        // so, lets see if the top window is a supported terminal
+        guard let window = currentTopmostWindow else {
+            // no terminal window found or passed in, don't link!
+            Logger.log(message: "No window included when attempting to link to TTY, don't link!", priority: .info, subsystem: .tty)
+            return nil
+        }
+        
+        let hash = window.hash
+        let sessionIdForWindow = getSessionId(for: hash)
+        
+        guard sessionIdForWindow == nil else {
+            // a different session Id is already associated with window, don't link!
+            Logger.log(message: "A different session Id is already associated with window, don't link!", priority: .info, subsystem: .tty)
+            return nil
+        }
+        
+        Logger.log(message: "Found WindowHash '\(hash)' for sessionId '\(sessionId)'", subsystem: .tty)
+        return hash
+            
+
     }
     
-    @objc func recievedDataFromPipe(_ notification: Notification) { }
-    
-    @objc func recievedUserInputFromTerminal(_ notification: Notification) { }
-    
-    @objc func recievedStdoutFromTerminal(_ notification: Notification) { }
-    
-    @objc func recievedDataFromPty(_ notification: Notification) { }
-    
-    @objc func currentDirectoryDidChange(_ notification: Notification) {
-        let msg = (notification.object as! ShellMessage)
+    fileprivate func link(_ sessionId: SessionId, _ hash: ExternalWindowHash, _ ttyDescriptor: TTYDescriptor) -> TTY {
+        let device = TTY(fd: ttyDescriptor)
         
-       Logger.log(message: "directoryDidChange:\(msg.session) -- \(msg.env?.jsonStringToDict()?["PWD"] ?? "")")
-        
-        DispatchQueue.main.async {
-            WindowManager.shared.sidebar?.webView?.evaluateJavaScript("fig.directoryChanged(`\(msg.env?.jsonStringToDict()?["PWD"] ?? "")`)", completionHandler: nil)
-        }
 
+        // tie tty & sessionId to windowHash
+        self.tty[hash] = device
+        self.sessions[hash] = sessionId // sessions is bidirectional between sessionId and windowHash
+        
+        return device
     }
     
+    fileprivate func getSessionId(for windowHash: ExternalWindowHash) -> SessionId? {
+        return self.sessions[windowHash]
+    }
     
+    fileprivate func getWindowHash(for sessionId: SessionId) -> ExternalWindowHash? {
+        return self.sessions[sessionId]
+    }
+    
+    func validWindowHash(_ hash: ExternalWindowHash) -> Bool {
+        guard let components = hash.components() else { return false }
+        let windowHasNoTabs = (tabs[components.windowId] == nil && components.tab == nil)
+        let windowHasTabs = (tabs[components.windowId] != nil && components.tab != nil)
+        return windowHasNoTabs || windowHasTabs
+    }
 }
