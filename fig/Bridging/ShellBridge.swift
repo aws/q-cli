@@ -533,6 +533,17 @@ struct ShellMessage: Codable {
     var io: String?
     var data: String
     var options: [String]?
+    
+    func parseShellHook() -> (pid_t, TTYDescriptor, SessionId)? {
+        guard let ttyId = self.options?[safe: 2]?.split(separator: "/").last else { return nil }
+        guard let shellPidStr = self.options?[safe: 1], let shellPid = Int32(shellPidStr) else { return nil }
+        
+        return (shellPid, String(ttyId), self.session)
+    }
+    
+    func getWorkingDirectory() -> String? {
+        return self.env?.jsonStringToDict()?["PWD"] as? String
+    }
 
 }
 
@@ -654,6 +665,17 @@ extension Timer {
         DispatchQueue.main.asyncAfter(deadline: .now() + seconds) {
             completion()
         }
+    }
+    
+    @discardableResult
+    static func cancellableDelayWithSeconds(_ timeInterval: TimeInterval, closure: @escaping () -> Void) -> DispatchWorkItem {
+        let task = DispatchWorkItem {
+            closure()
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + timeInterval, execute: task)
+        
+        return task
     }
 }
 

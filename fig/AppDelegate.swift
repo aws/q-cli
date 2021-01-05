@@ -32,10 +32,11 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         if NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).count > 1 {
             SentrySDK.capture(message: "Multiple Fig instances running!")
             Logger.log(message: "Multiple Fig instances running! Terminating now!")
-            NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).forEach { (app) in
+            NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).filter{ $0.processIdentifier != NSRunningApplication.current.processIdentifier }.forEach { (app) in
                 Logger.log(message: "Existing Process Id = \(app.processIdentifier)")
+                app.forceTerminate()
             }
-            NSApp.terminate(nil)
+//            NSApp.terminate(nil)
         }
         
         TelemetryProvider.post(event: .launchedApp, with: ["crashed" : Defaults.launchedFollowingCrash ? "true" : "false"])
@@ -73,6 +74,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         Defaults.deferToShellAutosuggestions = true
         Defaults.autocompleteVersion = "v3"
         Defaults.autocompleteWidth = 250
+        Defaults.ignoreProcessList = ["figcli", "gitstatusd-darwin-x86_64"]
 
         let hasLaunched = UserDefaults.standard.bool(forKey: "hasLaunched")
         let email = UserDefaults.standard.string(forKey: "userEmail")
@@ -318,7 +320,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         withTitle: "Setup iTerm Tab Integration",
         action: #selector(AppDelegate.iTermSetup),
         keyEquivalent: "")
-        iTermIntegration.state = FileManager.default.fileExists(atPath: "\(NSHomeDirectory())/Library/'Application Support'/iTerm2/Scripts/AutoLaunch/fig-iterm-integration.py") ? .on : .off
+        iTermIntegration.state = FileManager.default.fileExists(atPath: "\(NSHomeDirectory())/Library/Application Support/iTerm2/Scripts/AutoLaunch/fig-iterm-integration.py") ? .on : .off
             
         debugMenu.addItem(NSMenuItem.separator())
         
@@ -1691,9 +1693,6 @@ extension AppDelegate : NSMenuDelegate {
 
 
 
-                } else if (!Defaults.useAutocomplete) {
-                    color = .systemPink
-                    legend.addItem(NSMenuItem(title: "Autocomplete is disabled", action: nil, keyEquivalent: ""))
                 } else if (!hasContext) {
                     color = .orange
                     legend.addItem(NSMenuItem(title: "Keybuffer context is lost.", action: nil, keyEquivalent: ""))
@@ -1726,6 +1725,7 @@ extension AppDelegate : NSMenuDelegate {
                     legend.addItem(NSMenuItem(title: "window: \(window?.hash ?? "???")", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem(title: "tty: \(tty?.descriptor ?? "???")", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem(title: "cwd: \(tty?.cwd ?? "???")", action: nil, keyEquivalent: ""))
+                    legend.addItem(NSMenuItem(title: "pid: \(tty?.pid ?? -1)", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem(title: "keybuffer: \(bufferDescription ?? "???")", action: nil, keyEquivalent: ""))
                     
                 }

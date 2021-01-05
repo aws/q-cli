@@ -44,7 +44,11 @@ int candidates(const char *tty) {
           continue;
         }
         
-        char *dev = devname(kp->kp_eproc.e_tdev, S_IFCHR);
+        
+        char *dev = malloc(MAXNAMLEN);
+        
+        // https://linear.app/fig/issue/ENG-44/bugfixes-to-psc
+        devname_r(kp->kp_eproc.e_tdev, S_IFCHR, dev, MAXNAMLEN);
         
         
         if (dev == NULL) {
@@ -52,8 +56,11 @@ int candidates(const char *tty) {
         }
         // Incorrect checksum for freed object 0x7f92b0904c00: probably modified after being freed.
         if (strlen(tty) != 0 && strcmp(tty, dev) != 0) {
+            free(dev);
             continue;
         }
+        
+        free(dev);
         
         struct proc_vnodepathinfo vpi;
         int ret;
@@ -115,13 +122,17 @@ fig_proc_info* getProcessInfo(const char * tty, int *size) {
            continue;
          }
          
-        char *dev = devname(kp->kp_eproc.e_tdev, S_IFCHR);
-                                
+        char *dev = malloc(MAXNAMLEN);
+        
+        // https://linear.app/fig/issue/ENG-44/bugfixes-to-psc
+        devname_r(kp->kp_eproc.e_tdev, S_IFCHR, dev, MAXNAMLEN);
+         
         if (dev == NULL) {
             continue;
         }
          
          if (strlen(tty) != 0 && strcmp(tty, dev) != 0) {
+             free(dev);
              continue;
          }
          
@@ -154,6 +165,8 @@ fig_proc_info* getProcessInfo(const char * tty, int *size) {
          // process->cmd = pathBuffer;
          // process->cwd = vpi.pvi_cdir.vip_path;
          items[total - j--] = *process;
+         free(dev);
+         
          free(process);
          // return process;
          // printf("pid = %d, tty = %s, CMD = %s, CWD = %s\n",kp->kp_proc.p_pid, devname(kp->kp_eproc.e_tdev, S_IFCHR), pathBuffer, vpi.pvi_cdir.vip_path);
@@ -227,3 +240,4 @@ int printProcesses(const char* tty) {
 //
 //    // filter processes + add to new pointer
 //}
+

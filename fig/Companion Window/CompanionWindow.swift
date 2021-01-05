@@ -128,7 +128,7 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
 //        self.backgroundColor = NSColor(red: 47/255, green: 47/255, blue: 47/255, alpha: 1)
 
         
-//        NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(spaceChanged), name: NSWorkspace.activeSpaceDidChangeNotification, object: nil)
+        NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(spaceChanged), name: NSWorkspace.activeSpaceDidChangeNotification, object: nil)
 //        NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(activateApp), name: NSWorkspace.didActivateApplicationNotification, object: nil)
 //        NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(deactivateApp), name: NSWorkspace.didDeactivateApplicationNotification, object: nil)
 //
@@ -160,20 +160,6 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
         }
     }
     
-    @objc func spaceChanged() {
-        print("spaceChanged", NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "<none>")
-        if let controller = self.contentViewController as? WebViewController,
-            let webview = controller.webView {
-            webview.trackMouse = false;
-            // wait for window reposition to take effect before handling mouse events
-            // This fixes a bug when the user changes spaces but their mouse remains in the companion window
-            Timer.delayWithSeconds(0.2) {
-                webview.trackMouse = true;
-
-            }
-        }
-        repositionWindow(forceUpdate: true, explicit: true)
-    }
     @objc func activateApp(){
         print("didActivateApp", NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "<none>")
         forceReposition()
@@ -859,5 +845,28 @@ extension NSColor {
 class PointableButton : NSButton {
     override func resetCursorRects() {
         self.addCursorRect(self.bounds, cursor: .pointingHand)
+    }
+}
+
+extension CompanionWindow {
+    
+    // https://linear.app/fig/issue/ENG-145/multitouch-swiping-between-workspaces-loses-window
+    // Imperfect workaround for when floating window disappears after multitouch swipe in exposé
+
+    func updateCollectionBehavior() {
+          // in exposé
+          if (self.isOnActiveSpace && !self.occlusionState.contains(.visible)) {
+              self.collectionBehavior = [ .managed ]
+          } else {
+              self.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary ]
+          }
+    }
+    
+    func windowDidChangeOcclusionState(_ notification: Notification) {
+        self.updateCollectionBehavior()
+    }
+    
+    @objc func spaceChanged() {
+        self.updateCollectionBehavior()
     }
 }
