@@ -298,7 +298,7 @@ class AXWindowServer : WindowService {
                 // spotlight style app
                 if (Integrations.searchBarApps.contains(app?.bundleIdentifier ?? "") ) {
                         guard let frontmost = NSWorkspace.shared.frontmostApplication else { return }
-                        print("AXWindowServer: frontmost = \(frontmost.bundleIdentifier ?? "<none>")")
+                        print("AXWindowServer: spotlightStyleAppDestroyed! frontmost = \(frontmost.bundleIdentifier ?? "<none>")")
                         let axAppRef = AXUIElementCreateApplication(frontmost.processIdentifier)
                         var window: AnyObject?
                         AXUIElementCopyAttributeValue(axAppRef, kAXFocusedWindowAttribute as CFString, &window)
