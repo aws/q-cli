@@ -300,7 +300,7 @@ let setup = function(window) {
       }
   }
     
-    let watchedProperties = [ "icon", "title", "color", "maxheight", "interceptKeystrokes"]
+    let watchedProperties = [ "icon", "title", "color", "maxheight", "width", "interceptKeystrokes"]
     watchedProperties.forEach(prop => {
           Object.defineProperty(fig, prop, {
               get : function () {
