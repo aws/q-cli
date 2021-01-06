@@ -1,4 +1,12 @@
-fig.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/
-fig.xcodeproj/project.xcworkspace/xcuserdata/
-fig.xcodeproj/xcshareddata/
-fig.xcodeproj/xcuserdata/mschrage.xcuserdatad/xcdebugger/
+## User settings
+xcuserdata/
+
+## gcc Patch
+/*.gcno
+
+# Swift Package Manager
+fig.xcodeproj/**
+!fig.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+
+# Misc
+.DS_Store
