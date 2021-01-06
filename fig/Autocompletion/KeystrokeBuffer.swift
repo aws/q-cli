@@ -70,7 +70,7 @@ class KeystrokeBuffer : NSObject {
   }
   
   func handleKeystroke(event: NSEvent) -> (String, Int)? {
-    let cleanedFlags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+    let cleanedFlags = event.modifierFlags.intersection([.command, .control, .option, .shift])
     let keystroke = Keystroke(modifierFlags: cleanedFlags, keyCode: event.keyCode)
     switch keyBindings[keystroke] {
     case .paste:
@@ -239,9 +239,9 @@ class KeystrokeBuffer : NSObject {
             }
           default:
             
-            // some umapped command - cmdc shouldn't insert a c into buffer
-            let isFigInsertion = keystroke.keyCode == 0
-            if (!isFigInsertion && !keystroke.modifierFlags.isEmpty) {
+            // some umapped command - cmdc shouldn't insert a c into buffer but shift P should
+            let shouldIgnore = keystroke.modifierFlags.contains(.command) || keystroke.modifierFlags.contains(.control)
+            if (shouldIgnore) {
               return nil
             }
             
