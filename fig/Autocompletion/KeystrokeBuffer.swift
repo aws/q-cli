@@ -70,7 +70,7 @@ class KeystrokeBuffer : NSObject {
   }
   
   func handleKeystroke(event: NSEvent) -> (String, Int)? {
-    let cleanedFlags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+    let cleanedFlags = event.modifierFlags.intersection([.command, .control, .option, .shift])
     let keystroke = Keystroke(modifierFlags: cleanedFlags, keyCode: event.keyCode)
     switch keyBindings[keystroke] {
     case .paste:
