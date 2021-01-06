@@ -39,7 +39,8 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 //            NSApp.terminate(nil)
         }
         
-        TelemetryProvider.post(event: .launchedApp, with: ["crashed" : Defaults.launchedFollowingCrash ? "true" : "false"])
+        TelemetryProvider.track(event: .launchedApp, with:
+                                ["crashed" : Defaults.launchedFollowingCrash ? "true" : "false"])
         Defaults.launchedFollowingCrash = true //
         
 //        AppMover.moveIfNecessary()
@@ -507,7 +508,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         let confirmed = self.dialogOKCancel(question: "Uninstall Fig?", text: "Are you sure you want to uninstall Fig?\nRunning this script will remove all local runbooks, completion specs and quit the app.\n\nYou may move Fig to the Trash after it has completed.", icon: NSImage(imageLiteralResourceName: NSImage.applicationIconName))
         
         if confirmed {
-            TelemetryProvider.post(event: .uninstallApp, with: [:])
+            TelemetryProvider.track(event: .uninstallApp, with: [:])
 
             if let general = Bundle.main.path(forResource: "uninstall", ofType: "sh") {
                 NSWorkspace.shared.open(URL(string: "https://withfig.com/uninstall?email=\(Defaults.email ?? "")")!)
@@ -521,7 +522,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     
     @objc func sendFeedback() {
         NSWorkspace.shared.open(URL(string:"mailto:hello@withfig.com")!)
-        TelemetryProvider.post(event: .sendFeedback, with: [:])
+        TelemetryProvider.track(event: .sendFeedback, with: [:])
     }
     
     @objc func setupScript() {
@@ -540,7 +541,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             return
         }
 
-        TelemetryProvider.post(event: .iTermSetup, with: [:])
+        TelemetryProvider.track(event: .iTermSetup, with: [:])
         let _ = "sh \(Bundle.main.path(forResource: "iterm-integration", ofType: "sh") ?? "") \(Bundle.main.resourcePath ?? "")".runInBackground(cwd: nil, with: nil, updateHandler: nil, completion: { (out) in
              self.configureStatusBarItem() // So that "iTerm integration" check mark is toggled on
              print("iterm: ", out)
@@ -581,7 +582,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             Defaults.versionAtPreviousLaunch = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
             print("Update: First launch!")
             Logger.log(message: "First launch!")
-            TelemetryProvider.post(event: .firstTimeUser, with: [:])
+            TelemetryProvider.track(event: .firstTimeUser, with: [:])
             Onboarding.setUpEnviroment()
             return
         }
@@ -606,7 +607,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             
             Onboarding.setUpEnviroment()
 
-            TelemetryProvider.post(event: .updatedApp, with: ["script": script ?? "<none>"])
+            TelemetryProvider.track(event: .updatedApp, with: ["script": script ?? "<none>"])
 
         }
         
@@ -688,7 +689,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     @objc func viewDocs() {
         
         NSWorkspace.shared.open(URL(string: "https://docs.withfig.com/autocomplete")!)
-        TelemetryProvider.post(event: .viewDocs, with: [:])
+        TelemetryProvider.track(event: .viewDocs, with: [:])
     }
 
     @objc func getKeyboardLayout() {
@@ -707,7 +708,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         Defaults.useAutocomplete = !Defaults.useAutocomplete
         sender.state = Defaults.useAutocomplete ? .on : .off
 //        KeypressProvider.shared.clean()
-        TelemetryProvider.post(event: .toggledAutocomplete, with: ["status" : Defaults.useAutocomplete ? "on" : "off"])
+        TelemetryProvider.track(event: .toggledAutocomplete, with: ["status" : Defaults.useAutocomplete ? "on" : "off"])
 
         if (Defaults.useAutocomplete) {
             WindowManager.shared.createAutocomplete()
@@ -854,7 +855,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         sender.state = Defaults.showSidebar ? .on : .off
         WindowManager.shared.requestWindowUpdate()
         
-        TelemetryProvider.post(event: .toggledSidebar, with: ["status" : Defaults.useAutocomplete ? "on" : "off"])
+        TelemetryProvider.track(event: .toggledSidebar, with: ["status" : Defaults.useAutocomplete ? "on" : "off"])
     }
     
         @objc func toggleLogging(_ sender: NSMenuItem) {
@@ -995,7 +996,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             NSStatusBar.system.removeStatusItem(statusbar)
         }
         
-        TelemetryProvider.post(event: .quitApp, with: [:]) { (_, _, _) in
+        TelemetryProvider.track(event: .quitApp, with: [:]) { (_, _, _) in
             DispatchQueue.main.async {
                  NSApp.terminate(self)
              }

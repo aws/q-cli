@@ -856,7 +856,7 @@ extension ShellBridge {
         hasBeenPrompted = true
         // move analytics off of hotpath
         DispatchQueue.global(qos: .background).async {
-            TelemetryProvider.post(event: .promptedForAXPermission, with: [:])
+            TelemetryProvider.track(event: .promptedForAXPermission, with: [:])
         }
 
 
@@ -877,7 +877,7 @@ extension ShellBridge {
                     completion(value)
                     center.removeObserver(observer!)
                     DispatchQueue.global(qos: .background).async {
-                        TelemetryProvider.post(event: .grantedAXPermission, with: [:])
+                        TelemetryProvider.track(event: .grantedAXPermission, with: [:])
                     }
                     print("Accessibility Permission Granted!!!")
                     ShellBridge.hasBeenPrompted = false

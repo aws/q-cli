@@ -289,14 +289,32 @@ let setup = function(window) {
               fig.insert("fig::backspace")
           }
       },
-      track(event, properties) {
-          var payload = { "name": event}
-          payload = Object.keys(properties).reduce((dict, key) => {
-               dict[`prop_${key}`] = JSON.stringify(properties[key])
-               return dict
-          }, payload)
+      
+      analytics : {
+          track(event, properties) {
+              var payload = { "event": event}
+              payload = Object.keys(properties).reduce((dict, key) => {
+                   dict[`prop_${key}`] = JSON.stringify(properties[key])
+                   return dict
+              }, payload)
+              
+              fig.private({ type: "track", data: payload})
+          },
           
-          fig.private({ type: "track", data: payload})
+          identify(userId, traits) {
+              var payload = { "userId": userId }
+              payload = Object.keys(traits).reduce((dict, key) => {
+                   dict[`trait_${key}`] = JSON.stringify(traits[key])
+                   return dict
+              }, payload)
+              
+              fig.private({ type: "identify", data: payload})
+          },
+          
+          alias(previousId, userId) {
+              var payload = { previousId, userId}
+              fig.private({ type: "alias", data: payload})
+          }
       }
   }
     
