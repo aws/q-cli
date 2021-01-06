@@ -18,12 +18,7 @@ struct Keystroke: Hashable {
   }
   
   static func == (lhs: Keystroke, rhs: Keystroke) -> Bool {
-    var isEqual = lhs.keyCode == rhs.keyCode
-    // ignore modifiers if none specified
-    if (!(lhs.modifierFlags.isEmpty || rhs.modifierFlags.isEmpty)) {
-      isEqual = isEqual && lhs.modifierFlags == rhs.modifierFlags
-    }
-    return isEqual
+    return lhs.keyCode == rhs.keyCode && lhs.modifierFlags == rhs.modifierFlags
   }
 }
 
