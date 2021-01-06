@@ -123,7 +123,9 @@ class TTY {
         // Short lived processes can return control to shell before delay is over,
         // so this closure is cancelled by the precmd function
         self.preexecWorkItem = Timer.cancellableDelayWithSeconds(0.1, closure: {
-             if let runningProcess = self.processes.last {
+            
+            // if the process is a shell, it will be handled by a precmd hook.
+            if let runningProcess = self.processes.last, runningProcess.isShell != true {
                    self.cwd = runningProcess.cwd
                    self.cmd = runningProcess.cmd
                    self.pid = runningProcess.pid
