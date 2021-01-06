@@ -682,7 +682,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 //
     @objc func inviteToSlack() {
         NSWorkspace.shared.open(URL(string: "https://fig-core-backend.herokuapp.com/community")!)
-        TelemetryProvider.post(event: .joinSlack, with: [:])
+        TelemetryProvider.track(event: .joinSlack, with: [:])
 
     }
     

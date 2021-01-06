@@ -25,7 +25,7 @@ protocol LocalTelemetryService {
 
 protocol TelemetryService {
     static func obscure(_ input: String) -> String
-    static func post(event: TelemetryEvent, with payload: Dictionary<String, String>, completion: ((Data?, URLResponse?, Error?) -> Void)?)
+    static func track(event: TelemetryEvent, with payload: Dictionary<String, String>, completion: ((Data?, URLResponse?, Error?) -> Void)?)
 }
 
 enum TelemetryEvent: String {
