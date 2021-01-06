@@ -489,7 +489,7 @@ extension WebBridge {
             
             // Check for sidebar shortcut
             if let companion = window as? CompanionWindow, companion.isSidebar {
-                TelemetryProvider.post(event: .selectedShortcut, with: [:])
+                TelemetryProvider.track(event: .selectedShortcut, with: [:])
             }
         }
     }
@@ -848,8 +848,21 @@ extension WebBridge {
                 
             switch(type) {
                 case "track":
-                    TelemetryProvider.post(event: .viaJS, with: data)
-                    break;
+                    var dict = data
+                    guard let event = dict["name"] else {
+                        return
+                    }
+                    dict.removeValue(forKey: "name")
+
+                    TelemetryProvider.track(event: event, with: dict, needsPrefix: nil)
+                case "identify":
+                    TelemetryProvider.identify(with: data, needsPrefix: nil)
+                case "alias":
+                    guard let newId = data["userId"] else {
+                        return
+                    }
+                    
+                    TelemetryProvider.alias(userId: newId)
                 case "cwd":
                     if let window = scope.getCompanionWindow()?.tetheredWindow,
                        let tty = ShellHookManager.shared.tty[window.hash] {

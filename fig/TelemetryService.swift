@@ -56,6 +56,85 @@ class TelemetryProvider: TelemetryService {
         return String(input.map{ $0.isLetter ? "x" : $0 }.map{ $0.isNumber ? "0" : $0 })
     }
     
+    static func track(event: TelemetryEvent, with properties: Dictionary<String, String>, completion: ((Data?, URLResponse?, Error?) -> Void)? = nil) {
+        
+        TelemetryProvider.track(event: event.rawValue, with: properties, completion: completion)
+        
+    }
+    
+    static func track(event: String, with properties: Dictionary<String, String>, needsPrefix prefix: String? = "prop_", completion: ((Data?, URLResponse?, Error?) -> Void)? = nil) {
+        var body: Dictionary<String, String> = [:]
+        
+        if let prefix = prefix {
+            body = TelemetryProvider.addPrefixToKeys(prefix: prefix, dict: properties)
+        } else {
+            body = properties
+        }
+        
+        body = TelemetryProvider.addDefaultProperties(to: body)
+        body["event"] = event
+        body["userId"] = Defaults.uuid
+        
+        upload(to: "track", with: body, completion: completion)
+    }
+    
+    static func identify(with traits: Dictionary<String, String>, needsPrefix prefix: String? = "trait_") {
+        var body: Dictionary<String, String> = [:]
+        if let prefix = prefix {
+            body = TelemetryProvider.addPrefixToKeys(prefix: prefix, dict: traits)
+        } else {
+            body = traits
+        }
+        
+        body["userId"] = Defaults.uuid
+
+        upload(to: "identify", with: body)
+    }
+    
+    static func alias(userId: String?) {
+        upload(to: "alias", with: ["previousId" : Defaults.uuid, "userId": userId ?? ""])
+    }
+    
+    fileprivate static func upload(to endpoint: String, with body:  Dictionary<String, String>, completion: ((Data?, URLResponse?, Error?) -> Void)? = nil) {
+        guard let json = try? JSONSerialization.data(withJSONObject: body, options: .sortedKeys) else { return }
+        print(json)
+        var request = URLRequest(url: Remote.telemetryURL.appendingPathComponent(endpoint))
+        request.httpMethod = "POST"
+        request.httpBody = json
+        request.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
+
+        let task = URLSession.shared.dataTask(with: request) { (data, res, err) in
+            if let handler = completion {
+                handler(data, res, err)
+            }
+        }
+
+        task.resume()
+    }
+    
+    fileprivate static func addPrefixToKeys(prefix: String, dict: Dictionary<String, String>) -> Dictionary<String, String> {
+        
+        return dict.reduce([:]) { (out, pair) -> Dictionary<String, String> in
+            var new = out
+            let (key, value) = pair
+            new["\(prefix)\(key)"] = value
+            return new
+        }
+    }
+    
+    fileprivate static func addDefaultProperties(to properties: Dictionary<String, String>, prefixedWith prefix: String = "prop_") -> Dictionary<String, String> {
+        let email = Defaults.email ?? ""
+        let domain = String(email.split(separator: "@").last ?? "unregistered")
+        let os = ProcessInfo.processInfo.operatingSystemVersion
+
+        return properties.merging([
+                                    "\(prefix)domain" : domain,
+                                    "\(prefix)email" : email,
+                                    "\(prefix)version" : Defaults.version,
+                                    "\(prefix)os" :  "\(os.majorVersion).\(os.minorVersion).\(os.patchVersion)",
+                                    ]) { $1 }
+    }
+    
     static func post(event: TelemetryEvent, with payload: Dictionary<String, String>, completion: ((Data?, URLResponse?, Error?) -> Void)? = nil) {
         
         guard Defaults.isProduction || Defaults.isStaging else {
@@ -201,7 +280,7 @@ extension TelemetryProvider : LocalTelemetryService {
         // todo: add completion handler for success and failure
         // clean cache on success
         // reschedule on failure
-        self.post(event: .dailyAggregates, with: payload
+        self.track(event: .dailyAggregates, with: payload
         ) { (data, res, error) in
           guard error == nil else {
               // Don't delete cached data, try to send later

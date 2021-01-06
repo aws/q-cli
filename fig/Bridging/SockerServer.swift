@@ -134,7 +134,7 @@ class ShellBridgeSocketService: WebSocketService {
                                 switch subcommand {
                                 case "bg:event":
                                     if let event = msg.options?[safe: 1] {
-                                        TelemetryProvider.post(event: .viaShell, with: ["name" : event])
+                                        TelemetryProvider.track(event: event, with: [:])
                                     } else {
                                         print("No event")
                                     }

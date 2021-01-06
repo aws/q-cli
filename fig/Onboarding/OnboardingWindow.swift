@@ -27,7 +27,7 @@ class OnboardingWindow : NSWindow {
             self.contentViewController = viewController //WebViewController()
             self.makeKeyAndOrderFront(nil)
         
-            self.delegate = self
+//            self.delegate = self
         
         if let closeButton = self.standardWindowButton(.closeButton) {
             closeButton.target = self
@@ -43,13 +43,4 @@ class OnboardingWindow : NSWindow {
             delegate.quit()
         }
     }
-}
-
-extension OnboardingWindow : NSWindowDelegate {
-//    func windowShouldClose(_ sender: NSWindow) -> Bool {
-//        TelemetryProvider.post(event: .quitApp, with: [:]) {
-//              NSApp.terminate(nil)
-//          }
-//        return true
-//    }
 }

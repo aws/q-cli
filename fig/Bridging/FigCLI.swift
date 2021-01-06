@@ -478,9 +478,9 @@ class FigCLI {
             
 //            companionWindow.positioning =  .spotlight
 //            FigCLI.index(with: scope)
-            TelemetryProvider.post(event: .ranCommand, with:
-                                    ["cmd" : scope.cmd,
-                                    "args" : scope.options.map { TelemetryProvider.obscure($0)}.joined(separator: " "),
+            TelemetryProvider.track(event: .ranCommand, with:
+                                    ["command" : scope.cmd,
+                                    "arguments" : scope.options.map { TelemetryProvider.obscure($0)}.joined(separator: " "),
                                     "shell" : scope.shell ?? "<unknown>",
                                     "terminal" : scope.term ?? "<unknown>"])
             return
@@ -496,7 +496,11 @@ class FigCLI {
                           session: message.session)
         print("ROUTING \(command)")
         
-        TelemetryProvider.post(event: .ranCommand, with: ["cmd" : scope.cmd, "args" : scope.options.map { TelemetryProvider.obscure($0)}.joined(separator: " "), "shell" : scope.shell ?? "<unknown>", "terminal" : scope.term ?? "<unknown>"])
+        TelemetryProvider.track(event: .ranCommand, with:
+                                ["command" : scope.cmd,
+                                 "arguments" : scope.options.map { TelemetryProvider.obscure($0) }.joined(separator: " "),
+                                 "shell" : scope.shell ?? "<unknown>",
+                                 "terminal" : scope.term ?? "<unknown>"])
         
         // get aliases from sidebar
         let aliases = UserDefaults.standard.string(forKey: "aliases_dict")?.jsonStringToDict() ?? [:]
