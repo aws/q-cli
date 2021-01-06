@@ -877,7 +877,7 @@ extension ShellBridge {
                     completion(value)
                     center.removeObserver(observer!)
                     DispatchQueue.global(qos: .background).async {
-                        TelemetryProvider.track(event: .promptedForAXPermission, with: [:])
+                        TelemetryProvider.track(event: .grantedAXPermission, with: [:])
                     }
                     print("Accessibility Permission Granted!!!")
                     ShellBridge.hasBeenPrompted = false
