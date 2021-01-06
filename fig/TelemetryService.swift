@@ -134,57 +134,6 @@ class TelemetryProvider: TelemetryService {
                                     "\(prefix)os" :  "\(os.majorVersion).\(os.minorVersion).\(os.patchVersion)",
                                     ]) { $1 }
     }
-    
-    static func post(event: TelemetryEvent, with payload: Dictionary<String, String>, completion: ((Data?, URLResponse?, Error?) -> Void)? = nil) {
-        
-        guard Defaults.isProduction || Defaults.isStaging else {
-            if let completion =  completion {
-                completion(nil,nil,nil)
-            }
-            print("Not logging CLI usage when not in production.")
-            return
-        }
-        
-        let email = Defaults.email ?? ""
-        let domain = String(email.split(separator: "@").last ?? "unregistered")
-        let os = ProcessInfo.processInfo.operatingSystemVersion
-        // add UUID to dict (overwritting 'anonymized_id', 'questions?' and 'version', 'domain' in payload if they exist)
-        let properties = payload.reduce(into: [:]) { (dict, pair) in
-            let (key, value) = pair
-            dict["prop_\(key)"] = value
-        }
-        
-        print("properties:", properties)
-        
-        let eventType = (event == .viaJS || event == .viaShell) ? payload["name"] ??  event.rawValue : event.rawValue
-        let final = properties.merging(["anonymized_id" :  Defaults.uuid,
-                                     "questions?" : "\n\nFig collects limited usage information to improve the product and detect bugs. \n\nIf you have more questions go to https://withfig.com/privacy or email the team at hello@withfig.com\n",
-                                     "domain" : domain,
-                                     "email" : email,
-                                     "version" : Defaults.version,
-                                     "os" :  "\(os.majorVersion).\(os.minorVersion).\(os.patchVersion)",
-                                     "event" : eventType ]) { $1 }
-        
-        guard let json = try? JSONSerialization.data(withJSONObject: final, options: .sortedKeys) else { return }
-        print(json)
-        var request = URLRequest(url: Remote.telemetryURL.appendingPathComponent("anonymized_cli_usage"))
-        request.httpMethod = "POST"
-        request.httpBody = json
-        request.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
-//        request.timeoutInterval = 15
-
-        //URLSession.shared.dataTask(with: request)
-        let task = URLSession.shared.dataTask(with: request) { (data, res, err) in
-            if let handler = completion {
-                handler(data, res, err)
-            }
-        }
-
-        task.resume()
-       
-    }
-    
-    
 }
 
 extension TelemetryProvider : LocalTelemetryService {
