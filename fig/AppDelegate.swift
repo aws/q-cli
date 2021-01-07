@@ -48,6 +48,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         let _ = ShellHookManager.shared
         let _ = KeypressProvider.shared
         let _ = AXWindowServer.shared
+        let _ = KeybindingsManager.shared
         
         TelemetryProvider.register()
 
@@ -323,6 +324,12 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         iTermIntegration.state = FileManager.default.fileExists(atPath: "\(NSHomeDirectory())/Library/Application Support/iTerm2/Scripts/AutoLaunch/fig-iterm-integration.py") ? .on : .off
             
         debugMenu.addItem(NSMenuItem.separator())
+      
+        let keyBindingsMenu = NSMenu(title: "Key Bindings")
+        keyBindingsMenu.addItem(NSMenuItem(title: "Edit", action: #selector(editKeybindingsFile), keyEquivalent: ""))
+        keyBindingsMenu.addItem(NSMenuItem(title: "Reset to Default", action: #selector(resetKeybindingsFile), keyEquivalent: ""))
+        let keyBindings = debugMenu.addItem(withTitle: "Key Bindings", action: nil, keyEquivalent: "")
+        keyBindings.submenu = keyBindingsMenu
         
         let utilitiesMenu = NSMenu(title: "utilities")
         
@@ -500,6 +507,23 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     
     @objc func newTerminalWindow() {
         WindowManager.shared.newNativeTerminalSession()
+    }
+  
+    @objc func editKeybindingsFile() {
+      NSWorkspace.shared.open(URL(fileURLWithPath: "\(NSHomeDirectory())/.fig/figkeymap.txt"))
+    }
+  
+    @objc func resetKeybindingsFile() {
+      print("reset keybindings")
+      let confirmation = NSAlert()
+      confirmation.messageText = "Reset Key bindings to default?"
+      confirmation.addButton(withTitle: "Ok")
+      confirmation.addButton(withTitle: "Cancel")
+      confirmation.alertStyle = .warning
+      let alert = confirmation.runModal()
+      if alert == .alertFirstButtonReturn {
+        KeybindingsManager.shared.resetToDefaults()
+      }
     }
     
     @objc func uninstall() {

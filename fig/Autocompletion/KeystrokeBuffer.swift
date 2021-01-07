@@ -72,7 +72,7 @@ class KeystrokeBuffer : NSObject {
   func handleKeystroke(event: NSEvent) -> (String, Int)? {
     let cleanedFlags = event.modifierFlags.intersection([.command, .control, .option, .shift])
     let keystroke = Keystroke(modifierFlags: cleanedFlags, keyCode: event.keyCode)
-    switch keyBindings[keystroke] {
+    switch KeybindingsManager.shared.keyBindings[keystroke] {
     case .paste:
       guard let pasteboard = NSPasteboard.general.string(forType: .string), buffer != nil, index != nil else { break }
       buffer!.insert(contentsOf: pasteboard, at: index!)
