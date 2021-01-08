@@ -41,6 +41,14 @@ struct proc {
             res = res || cmd.contains(shell)
         }
     }
+    
+    var isIntegratedShell: Bool {
+        guard let executable = cmd.split(separator: "/").last else {
+            return false
+        }
+        
+        return ["zsh", "bash", "fish" ].contains( String(executable) )
+    }
 }
 class TTY {
     let descriptor: String
@@ -48,6 +56,8 @@ class TTY {
         descriptor = fd
     }
     
+    var runUsingPrefix: String? = nil
+    var pty: PseudoTerminalHelper? = nil
     var processes: [proc] {
         
         return ProcessStatus.getProcesses(for: self.descriptor).filter({ (process) -> Bool in
@@ -80,10 +90,39 @@ class TTY {
         let cmd = runningProcess.cmd
         let cwd = runningProcess.cwd
         print("tty: running \(cmd) \(cwd ?? "<none>")")
+        guard runningProcess.name != "ssh" else {
+            let connection = lsof.arguments(fromPid: runningProcess.pid)
+            print("arguments:", connection)
+            
+//            let output = "\(connection) ls -1aF".runAsCommand()
+            let semaphore = DispatchSemaphore(value: 0)
+            if self.pty == nil {
+                self.pty = PseudoTerminalHelper()
+                self.pty?.start(with: [:])
+            }
+            
+            //ps -o tty,pid,comm=
+            let scriptPath = Bundle.main.path(forResource: "remote_cwd", ofType: "sh")!
+            let prefix = "ssh -o PasswordAuthentication=no -q \(connection.split(separator: " ").last!)"
+            // improve parsing of ssh connection credentials
+            self.pty!.execute("\(prefix) bash -s < \(scriptPath)") { output in
+                print("remote_machine:", output)
+                self.cwd = output
+                self.cmd = cmd
+                self.pid = runningProcess.pid
+                self.isShell = runningProcess.isShell
+                self.runUsingPrefix = prefix
+                semaphore.signal()
+            }
+            semaphore.wait()
+            return
+        }
+        
         self.cwd = cwd
         self.cmd = cmd
         self.pid = runningProcess.pid
         self.isShell = runningProcess.isShell
+
     }
     
     var cwd: String?
@@ -107,10 +146,11 @@ class TTY {
         
         
         if let runningProcess = updatedShell {
-           self.cwd = runningProcess.cwd
-           self.cmd = runningProcess.cmd
-           self.pid = runningProcess.pid
-           self.isShell = runningProcess.isShell
+            self.cwd = runningProcess.cwd
+            self.cmd = runningProcess.cmd
+            self.pid = runningProcess.pid
+            self.isShell = runningProcess.isShell
+            self.runUsingPrefix = nil
         }
         
     }
@@ -125,12 +165,24 @@ class TTY {
         self.preexecWorkItem = Timer.cancellableDelayWithSeconds(0.1, closure: {
             
             // if the process is a shell, it will be handled by a precmd hook.
-            if let runningProcess = self.processes.last, runningProcess.isShell != true {
-                   self.cwd = runningProcess.cwd
-                   self.cmd = runningProcess.cmd
-                   self.pid = runningProcess.pid
-                   self.isShell = runningProcess.isShell
-               }
+            if let runningProcess = self.processes.last, runningProcess.isIntegratedShell != true {
+                self.cwd = runningProcess.cwd
+                self.cmd = runningProcess.cmd
+                self.pid = runningProcess.pid
+                self.isShell = runningProcess.isShell
+                self.runUsingPrefix = nil
+                print("arguments:", lsof.arguments(fromPid: self.pid ?? 0))
+
+                if (runningProcess.name == "ssh") {
+                    self.shell = nil
+                    if self.pty == nil {
+                        self.pty = PseudoTerminalHelper()
+                        self.pty?.start(with: [:])
+                    }
+                   
+                }
+                
+            }
         })
         
     }
