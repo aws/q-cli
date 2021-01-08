@@ -15,8 +15,9 @@ class NativeCLI {
     enum Command: String {
         case help = "--help"
         case h = "-h"
+        case helpCommand =  "help"
         case version = "--version"
-        case accesibility = "util:axprompt"
+        case accessibility = "util:axprompt"
         case logout = "util:logout"
         case restart = "util:restart"
         case build = "util:build"
@@ -37,10 +38,12 @@ class NativeCLI {
         case report = "issue"
         case openMenuBar = " _fig" // leading space means this can never be run directly
         case uninstall = "uninstall"
+        case disable = "disable"
+        case remove = "remove"
 
         var isUtility: Bool {
             get {
-                let utilities: Set<Command> = [.resetCache, .build, .logout, .restart, .accesibility]
+                let utilities: Set<Command> = [.resetCache, .build, .logout, .restart, .accessibility]
                return utilities.contains(self)
             }
         }
@@ -51,10 +54,11 @@ class NativeCLI {
                                                            .build,
                                                            .logout,
                                                            .restart,
-                                                           .accesibility,
+                                                           .accessibility,
                                                            .openMenuBar,
                                                            .onboarding,
-                                                           .version]
+                                                           .version,
+                                                           .docs]
                return implementatedNatively.contains(self)
             }
         }
@@ -68,8 +72,8 @@ class NativeCLI {
             switch self {
             case .version:
                 NativeCLI.versionCommand(scope)
-            case .accesibility:
-                NativeCLI.accesibilityCommand(scope)
+            case .accessibility:
+                NativeCLI.accessibilityCommand(scope)
             case .restart:
                 NativeCLI.restartCommand(scope)
             case .resetCache:
@@ -82,6 +86,8 @@ class NativeCLI {
                 NativeCLI.buildCommand(scope)
             case .onboarding:
                 NativeCLI.onboardingCommand(scope)
+            case .docs:
+                NativeCLI.docsCommand(scope)
             default:
                 break;
             }
@@ -99,24 +105,24 @@ class NativeCLI {
             switch self {
             case .h, .help:
                 scriptName = "help"
-            case .uninstall:
+            case .uninstall, .disable, .remove:
                 scriptName = "uninstall_spec"
             case .star:
                 scriptName = "contribute"
+            case .share:
+                scriptName = "tweet"
             default:
                 break;
             }
             
             let script = scriptName ?? self.rawValue
             if let scriptPath = Bundle.main.path(forResource: script,
-                                                 ofType: "sh") {//,
-                                                 //inDirectory: "CLI Scripts") {
+                                                 ofType: "sh") {
                 NativeCLI.runShellScriptInTerminal(scriptPath, with: scope)
-                print("CLI: ", scriptPath)
+                Logger.log(message: "CLI: \(scriptPath)")
             } else {
-                print("CLI: Failed to find script")
-                NativeCLI.printError("Command does not exist.",
-                           details: "Could not find the associated script for '\(script)'.")
+                Logger.log(message: "CLI: Failed to find script")
+               
             }
         }
     }
@@ -173,7 +179,7 @@ extension NativeCLI {
         
     }
     
-    static func accesibilityCommand(_ scope: Scope) {
+    static func accessibilityCommand(_ scope: Scope) {
         ShellBridge.promptForAccesibilityAccess();
     }
     
@@ -210,6 +216,16 @@ extension NativeCLI {
 
         }
     }
+    
+    static func docsCommand(_ scope: Scope) {
+        let (_, connection) = scope
+
+        if let delegate = NSApp.delegate as? AppDelegate {
+            delegate.viewDocs()
+        }
+
+        NativeCLI.printInTerminal("→ Opening docs in browser...", using: connection)
+    }
 }
 
 extension NativeCLI {
@@ -220,25 +236,12 @@ extension NativeCLI {
         if let scriptPath = Bundle.main.path(forResource: script, ofType: "sh") {
             connection.send(message: "bash \(scriptPath)")
         } else {
-            printError("Command does not exist.",
-                       details: "Could not find the associated script for '\(script)'.")
+            Logger.log(message: "Script does not exisr for command '\(command.rawValue)'")
         }
         
         
     }
-    
-    static func printError(_ error: String, details: String) {
-        
-    }
-    
-    static func printNotice(_ heading: String, details: String) {
-        
-    }
-    
-    static func printUsage(_ heading: String, details: String) {
-        
-    }
-    
+
     static func printInTerminal(_ message: String, using connection: WebSocketConnection) {
         runInTerminal(command: "echo \"\(message)\"", over: connection)
     }
@@ -258,12 +261,12 @@ extension NativeCLI {
     static func trackCommandEvent(_ scope: Scope) {
         let (message, _) = scope
         
-        let obuscatedArgs = message.arguments.map { TelemetryProvider.obscure($0) }.joined(separator: " ")
+        let obfuscatedArgs = message.arguments.map { TelemetryProvider.obscure($0) }.joined(separator: " ")
         
         TelemetryProvider.track(event: .ranCommand,
                                 with:   [
                                         "command" : message.subcommand ?? "",
-                                        "arguments" : obuscatedArgs,
+                                        "arguments" : obfuscatedArgs,
                                         "shell" : message.shell ?? "<unknown>",
                                         "terminal" : message.terminal ?? "<unknown>"
                                         ])
