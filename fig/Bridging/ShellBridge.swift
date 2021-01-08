@@ -544,6 +544,44 @@ struct ShellMessage: Codable {
     func getWorkingDirectory() -> String? {
         return self.env?.jsonStringToDict()?["PWD"] as? String
     }
+    
+    var shell: String? {
+        if let dict = self.env?.jsonStringToDict() {
+            return dict["SHELL"] as? String
+        }
+        return nil
+    }
+    
+    var terminal: String? {
+        if let dict = self.env?.jsonStringToDict() {
+            if let _ = dict["KITTY_WINDOW_ID"] {
+                return "kitty"
+            }
+            
+            if let _ = dict["ALACRITTY_LOG"] {
+                return "Alacritty"
+            }
+            
+            return dict["TERM_PROGRAM"] as? String
+        }
+        return nil
+    }
+    
+    var subcommand: String? {
+        get {
+            return self.options?.first
+        }
+    }
+    
+    var arguments: [String] {
+        get {
+            guard let options = self.options, options.count > 1 else {
+                return []
+            }
+            
+            return Array(options.suffix(from: 1))
+        }
+    }
 
 }
 

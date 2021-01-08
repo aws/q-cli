@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1A1F160025A7A93E0074D541 /* KeyBindingsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1F15FF25A7A93E0074D541 /* KeyBindingsManager.swift */; };
 		1A63312125A4BE6D00CEA06A /* Keystroke.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A63312025A4BE6D00CEA06A /* Keystroke.swift */; };
 		7510F89824A6910500E86F7C /* AppleTerminalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F87524A6910500E86F7C /* AppleTerminalView.swift */; };
 		7510F89924A6910500E86F7C /* TerminalViewDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F87624A6910500E86F7C /* TerminalViewDelegate.swift */; };
@@ -52,7 +53,7 @@
 		75186083255CB0C20000A7C7 /* iterm-integration.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75186077255CB0870000A7C7 /* iterm-integration.sh */; };
 		75186084255CB0C20000A7C7 /* 1.0.23.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75186078255CB0870000A7C7 /* 1.0.23.sh */; };
 		75186085255CB0C20000A7C7 /* fig-iterm-integration.py in Resources */ = {isa = PBXBuildFile; fileRef = 75186079255CB0870000A7C7 /* fig-iterm-integration.py */; };
-		75186086255CB0C20000A7C7 /* update-autocomplete.sh in Resources */ = {isa = PBXBuildFile; fileRef = 7518607A255CB0870000A7C7 /* update-autocomplete.sh */; };
+		75186086255CB0C20000A7C7 /* update.sh in Resources */ = {isa = PBXBuildFile; fileRef = 7518607A255CB0870000A7C7 /* update.sh */; };
 		75186087255CB0C20000A7C7 /* 1.0.22.sh in Resources */ = {isa = PBXBuildFile; fileRef = 7518607B255CB0870000A7C7 /* 1.0.22.sh */; };
 		75186088255CB0C20000A7C7 /* uninstall.sh in Resources */ = {isa = PBXBuildFile; fileRef = 7518607C255CB0870000A7C7 /* uninstall.sh */; };
 		75186089255CB0C20000A7C7 /* source.sh in Resources */ = {isa = PBXBuildFile; fileRef = 7518607D255CB0870000A7C7 /* source.sh */; };
@@ -119,6 +120,13 @@
 		758AEB6C24CEA54600A15EAF /* SocketServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 758AEB6B24CEA54600A15EAF /* SocketServer.swift */; };
 		75A4521025A83E5600107D2C /* remote_cwd.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75A4520F25A839F500107D2C /* remote_cwd.sh */; };
 		75AA24DA25A7E8B000A51E9D /* lsof.m in Sources */ = {isa = PBXBuildFile; fileRef = 75AA24D925A7E8B000A51E9D /* lsof.m */; };
+		75AA24C125A656FA00A51E9D /* NativeCLI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75AA24C025A656FA00A51E9D /* NativeCLI.swift */; };
+		75AA24CA25A6F39800A51E9D /* list.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75AA24C325A6EA5000A51E9D /* list.sh */; };
+		75AA24CB25A6F39800A51E9D /* help.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75AA24C425A6EA5900A51E9D /* help.sh */; };
+		75AA24CD25A6F98400A51E9D /* uninstall_spec.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75AA24CC25A6F6F000A51E9D /* uninstall_spec.sh */; };
+		75AA24D125A79F3400A51E9D /* tweet.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75AA24CE25A79A2000A51E9D /* tweet.sh */; };
+		75AA24D225A79F3400A51E9D /* issue.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75AA24D025A79B4A00A51E9D /* issue.sh */; };
+		75AA24D325A79F3400A51E9D /* contribute.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75AA24CF25A79ACC00A51E9D /* contribute.sh */; };
 		75B199322501A3DA00F38EA8 /* KeyboardLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B199312501A3DA00F38EA8 /* KeyboardLayout.swift */; };
 		75B199342504190900F38EA8 /* Keycode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B199332504190900F38EA8 /* Keycode.swift */; };
 		75B1993625042B2C00F38EA8 /* autocomplete.html in Resources */ = {isa = PBXBuildFile; fileRef = 75B1993525042B2C00F38EA8 /* autocomplete.html */; };
@@ -201,6 +209,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		1A1F15FF25A7A93E0074D541 /* KeyBindingsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyBindingsManager.swift; sourceTree = "<group>"; };
 		1A63312025A4BE6D00CEA06A /* Keystroke.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Keystroke.swift; sourceTree = "<group>"; };
 		7510F87524A6910500E86F7C /* AppleTerminalView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppleTerminalView.swift; sourceTree = "<group>"; };
 		7510F87624A6910500E86F7C /* TerminalViewDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TerminalViewDelegate.swift; sourceTree = "<group>"; };
@@ -249,7 +258,7 @@
 		75186077255CB0870000A7C7 /* iterm-integration.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "iterm-integration.sh"; sourceTree = "<group>"; };
 		75186078255CB0870000A7C7 /* 1.0.23.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = 1.0.23.sh; sourceTree = "<group>"; };
 		75186079255CB0870000A7C7 /* fig-iterm-integration.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = "fig-iterm-integration.py"; sourceTree = "<group>"; };
-		7518607A255CB0870000A7C7 /* update-autocomplete.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "update-autocomplete.sh"; sourceTree = "<group>"; };
+		7518607A255CB0870000A7C7 /* update.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = update.sh; sourceTree = "<group>"; };
 		7518607B255CB0870000A7C7 /* 1.0.22.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = 1.0.22.sh; sourceTree = "<group>"; };
 		7518607C255CB0870000A7C7 /* uninstall.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = uninstall.sh; sourceTree = "<group>"; };
 		7518607D255CB0870000A7C7 /* source.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = source.sh; sourceTree = "<group>"; };
@@ -321,6 +330,13 @@
 		75A4520F25A839F500107D2C /* remote_cwd.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = remote_cwd.sh; sourceTree = "<group>"; };
 		75AA24D825A7E8B000A51E9D /* lsof.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = lsof.h; sourceTree = "<group>"; };
 		75AA24D925A7E8B000A51E9D /* lsof.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = lsof.m; sourceTree = "<group>"; };
+		75AA24C025A656FA00A51E9D /* NativeCLI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeCLI.swift; sourceTree = "<group>"; };
+		75AA24C325A6EA5000A51E9D /* list.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = list.sh; sourceTree = "<group>"; };
+		75AA24C425A6EA5900A51E9D /* help.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = help.sh; sourceTree = "<group>"; };
+		75AA24CC25A6F6F000A51E9D /* uninstall_spec.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = uninstall_spec.sh; sourceTree = "<group>"; };
+		75AA24CE25A79A2000A51E9D /* tweet.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = tweet.sh; sourceTree = "<group>"; };
+		75AA24CF25A79ACC00A51E9D /* contribute.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = contribute.sh; sourceTree = "<group>"; };
+		75AA24D025A79B4A00A51E9D /* issue.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = issue.sh; sourceTree = "<group>"; };
 		75AC552B2522C7710069635E /* upgrade */ = {isa = PBXFileReference; lastKnownFileType = folder; name = upgrade; path = ../upgrade; sourceTree = "<group>"; };
 		75AC55322522C8EB0069635E /* 1.0.20.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = 1.0.20.sh; sourceTree = "<group>"; };
 		75B199312501A3DA00F38EA8 /* KeyboardLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardLayout.swift; sourceTree = "<group>"; };
@@ -450,14 +466,11 @@
 		75186076255CB0870000A7C7 /* upgrade */ = {
 			isa = PBXGroup;
 			children = (
-				7585862525941A2700B76B4A /* invite.sh */,
+				7518607C255CB0870000A7C7 /* uninstall.sh */,
 				75186077255CB0870000A7C7 /* iterm-integration.sh */,
 				75186078255CB0870000A7C7 /* 1.0.23.sh */,
 				75186079255CB0870000A7C7 /* fig-iterm-integration.py */,
-				7518607A255CB0870000A7C7 /* update-autocomplete.sh */,
 				7518607B255CB0870000A7C7 /* 1.0.22.sh */,
-				7518607C255CB0870000A7C7 /* uninstall.sh */,
-				7518607D255CB0870000A7C7 /* source.sh */,
 				7518607E255CB0870000A7C7 /* 1.0.21.sh */,
 				7518607F255CB0870000A7C7 /* feedback.sh */,
 				75186080255CB0870000A7C7 /* 1.0.24.sh */,
@@ -553,6 +566,7 @@
 				75C57C122581C0700065741E /* ioreg.h */,
 				75C57C132581C0700065741E /* ioreg.c */,
 				75809B0F24C2C66100BFFB3E /* WebView+Private.h */,
+				75AA24C225A6E50000A51E9D /* CLI Scripts */,
 			);
 			path = fig;
 			sourceTree = "<group>";
@@ -610,6 +624,22 @@
 			name = local;
 			sourceTree = "<group>";
 		};
+		75AA24C225A6E50000A51E9D /* CLI Scripts */ = {
+			isa = PBXGroup;
+			children = (
+				7585862525941A2700B76B4A /* invite.sh */,
+				75AA24C325A6EA5000A51E9D /* list.sh */,
+				75AA24C425A6EA5900A51E9D /* help.sh */,
+				75AA24CE25A79A2000A51E9D /* tweet.sh */,
+				75AA24D025A79B4A00A51E9D /* issue.sh */,
+				75AA24CF25A79ACC00A51E9D /* contribute.sh */,
+				75AA24CC25A6F6F000A51E9D /* uninstall_spec.sh */,
+				7518607D255CB0870000A7C7 /* source.sh */,
+				7518607A255CB0870000A7C7 /* update.sh */,
+			);
+			path = "CLI Scripts";
+			sourceTree = "<group>";
+		};
 		75AC55312522C8EB0069635E /* upgrade */ = {
 			isa = PBXGroup;
 			children = (
@@ -650,6 +680,7 @@
 				75B199312501A3DA00F38EA8 /* KeyboardLayout.swift */,
 				751F7588246D090100E083C8 /* WebBridge.swift */,
 				755D0DDF247DDE050074AB5C /* FigCLI.swift */,
+				75AA24C025A656FA00A51E9D /* NativeCLI.swift */,
 				757CA8E524905B38002A64A8 /* SockerServer.swift */,
 			);
 			path = Bridging;
@@ -713,6 +744,7 @@
 			children = (
 				1A63312025A4BE6D00CEA06A /* Keystroke.swift */,
 				75C05C6B24FDEA2B001F0A52 /* KeystrokeBuffer.swift */,
+				1A1F15FF25A7A93E0074D541 /* KeyBindingsManager.swift */,
 				75B1993725100E4D00F38EA8 /* KeypressService.swift */,
 			);
 			path = Autocompletion;
@@ -866,10 +898,16 @@
 			buildActionMask = 2147483647;
 			files = (
 				75A4521025A83E5600107D2C /* remote_cwd.sh in Resources */,
+				75AA24D125A79F3400A51E9D /* tweet.sh in Resources */,
+				75AA24D225A79F3400A51E9D /* issue.sh in Resources */,
+				75AA24D325A79F3400A51E9D /* contribute.sh in Resources */,
+				75AA24CD25A6F98400A51E9D /* uninstall_spec.sh in Resources */,
+				75AA24CA25A6F39800A51E9D /* list.sh in Resources */,
+				75AA24CB25A6F39800A51E9D /* help.sh in Resources */,
 				75186083255CB0C20000A7C7 /* iterm-integration.sh in Resources */,
 				75186084255CB0C20000A7C7 /* 1.0.23.sh in Resources */,
 				75186085255CB0C20000A7C7 /* fig-iterm-integration.py in Resources */,
-				75186086255CB0C20000A7C7 /* update-autocomplete.sh in Resources */,
+				75186086255CB0C20000A7C7 /* update.sh in Resources */,
 				75186087255CB0C20000A7C7 /* 1.0.22.sh in Resources */,
 				75186088255CB0C20000A7C7 /* uninstall.sh in Resources */,
 				75186089255CB0C20000A7C7 /* source.sh in Resources */,
@@ -972,6 +1010,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				75288EF924CCE72F002DF12A /* OnboardingWindow.swift in Sources */,
+				75AA24C125A656FA00A51E9D /* NativeCLI.swift in Sources */,
 				757CA86724859461002A64A8 /* AppMover.swift in Sources */,
 				75C0EBD3253E336E001964DE /* TerminalUsageTelemetry.swift in Sources */,
 				7510F89F24A6910500E86F7C /* Terminal.swift in Sources */,
@@ -1033,6 +1072,7 @@
 				7510F8BF24A99A4B00E86F7C /* WindowService.swift in Sources */,
 				7510F8A324A6910500E86F7C /* iOSTerminalView.swift in Sources */,
 				7510F8B124A6910500E86F7C /* Line.swift in Sources */,
+				1A1F160025A7A93E0074D541 /* KeyBindingsManager.swift in Sources */,
 				7510F8AE24A6910500E86F7C /* SixelDcsHandler.swift in Sources */,
 				7587B4D824F97F9E00E355E4 /* ShellHooksManager.swift in Sources */,
 				7510F89C24A6910500E86F7C /* Buffer.swift in Sources */,

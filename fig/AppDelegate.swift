@@ -324,7 +324,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         iTermIntegration.state = FileManager.default.fileExists(atPath: "\(NSHomeDirectory())/Library/Application Support/iTerm2/Scripts/AutoLaunch/fig-iterm-integration.py") ? .on : .off
             
         debugMenu.addItem(NSMenuItem.separator())
-        
+      
         let utilitiesMenu = NSMenu(title: "utilities")
         
         utilitiesMenu.addItem(
@@ -355,6 +355,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
          action: #selector(AppDelegate.setupScript),
          keyEquivalent: "")
         
+        debugMenu.addItem(withTitle: "Edit Key Bindings", action: #selector(editKeybindingsFile), keyEquivalent: "")
         let utilities = debugMenu.addItem(withTitle: "Developer", action: nil, keyEquivalent: "")
         utilities.submenu = utilitiesMenu
         
@@ -501,6 +502,10 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     
     @objc func newTerminalWindow() {
         WindowManager.shared.newNativeTerminalSession()
+    }
+  
+    @objc func editKeybindingsFile() {
+      NSWorkspace.shared.open(KeyBindingsManager.keymapFilePath)
     }
     
     @objc func uninstall() {
