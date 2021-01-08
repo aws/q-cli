@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1A1F160025A7A93E0074D541 /* KeyBindingsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1F15FF25A7A93E0074D541 /* KeyBindingsManager.swift */; };
 		1A63312125A4BE6D00CEA06A /* Keystroke.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A63312025A4BE6D00CEA06A /* Keystroke.swift */; };
 		7510F89824A6910500E86F7C /* AppleTerminalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F87524A6910500E86F7C /* AppleTerminalView.swift */; };
 		7510F89924A6910500E86F7C /* TerminalViewDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F87624A6910500E86F7C /* TerminalViewDelegate.swift */; };
@@ -199,6 +200,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		1A1F15FF25A7A93E0074D541 /* KeyBindingsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyBindingsManager.swift; sourceTree = "<group>"; };
 		1A63312025A4BE6D00CEA06A /* Keystroke.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Keystroke.swift; sourceTree = "<group>"; };
 		7510F87524A6910500E86F7C /* AppleTerminalView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppleTerminalView.swift; sourceTree = "<group>"; };
 		7510F87624A6910500E86F7C /* TerminalViewDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TerminalViewDelegate.swift; sourceTree = "<group>"; };
@@ -705,6 +707,7 @@
 			children = (
 				1A63312025A4BE6D00CEA06A /* Keystroke.swift */,
 				75C05C6B24FDEA2B001F0A52 /* KeystrokeBuffer.swift */,
+				1A1F15FF25A7A93E0074D541 /* KeyBindingsManager.swift */,
 				75B1993725100E4D00F38EA8 /* KeypressService.swift */,
 			);
 			path = Autocompletion;
@@ -1023,6 +1026,7 @@
 				7510F8BF24A99A4B00E86F7C /* WindowService.swift in Sources */,
 				7510F8A324A6910500E86F7C /* iOSTerminalView.swift in Sources */,
 				7510F8B124A6910500E86F7C /* Line.swift in Sources */,
+				1A1F160025A7A93E0074D541 /* KeyBindingsManager.swift in Sources */,
 				7510F8AE24A6910500E86F7C /* SixelDcsHandler.swift in Sources */,
 				7587B4D824F97F9E00E355E4 /* ShellHooksManager.swift in Sources */,
 				7510F89C24A6910500E86F7C /* Buffer.swift in Sources */,
