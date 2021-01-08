@@ -48,7 +48,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         let _ = ShellHookManager.shared
         let _ = KeypressProvider.shared
         let _ = AXWindowServer.shared
-        let _ = KeybindingsManager.shared
         
         TelemetryProvider.register()
 
@@ -325,12 +324,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             
         debugMenu.addItem(NSMenuItem.separator())
       
-        let keyBindingsMenu = NSMenu(title: "Key Bindings")
-        keyBindingsMenu.addItem(NSMenuItem(title: "Edit", action: #selector(editKeybindingsFile), keyEquivalent: ""))
-        keyBindingsMenu.addItem(NSMenuItem(title: "Reset to Default", action: #selector(resetKeybindingsFile), keyEquivalent: ""))
-        let keyBindings = debugMenu.addItem(withTitle: "Key Bindings", action: nil, keyEquivalent: "")
-        keyBindings.submenu = keyBindingsMenu
-        
         let utilitiesMenu = NSMenu(title: "utilities")
         
         utilitiesMenu.addItem(
@@ -361,6 +354,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
          action: #selector(AppDelegate.setupScript),
          keyEquivalent: "")
         
+        debugMenu.addItem(withTitle: "Edit Key Bindings", action: #selector(editKeybindingsFile), keyEquivalent: "")
         let utilities = debugMenu.addItem(withTitle: "Developer", action: nil, keyEquivalent: "")
         utilities.submenu = utilitiesMenu
         
@@ -511,19 +505,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
   
     @objc func editKeybindingsFile() {
       NSWorkspace.shared.open(URL(fileURLWithPath: "\(NSHomeDirectory())/.fig/figkeymap.txt"))
-    }
-  
-    @objc func resetKeybindingsFile() {
-      print("reset keybindings")
-      let confirmation = NSAlert()
-      confirmation.messageText = "Reset Key bindings to default?"
-      confirmation.addButton(withTitle: "Ok")
-      confirmation.addButton(withTitle: "Cancel")
-      confirmation.alertStyle = .warning
-      let alert = confirmation.runModal()
-      if alert == .alertFirstButtonReturn {
-        KeybindingsManager.shared.resetToDefaults()
-      }
     }
     
     @objc func uninstall() {

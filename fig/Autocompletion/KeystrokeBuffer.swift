@@ -72,7 +72,7 @@ class KeystrokeBuffer : NSObject {
   func handleKeystroke(event: NSEvent) -> (String, Int)? {
     let cleanedFlags = event.modifierFlags.intersection([.command, .control, .option, .shift])
     let keystroke = Keystroke(modifierFlags: cleanedFlags, keyCode: event.keyCode)
-    switch KeybindingsManager.shared.keyBindings[keystroke] {
+    switch KeyBindingsManager.keyBindings[keystroke] {
     case .paste:
       guard let pasteboard = NSPasteboard.general.string(forType: .string), buffer != nil, index != nil else { break }
       buffer!.insert(contentsOf: pasteboard, at: index!)
@@ -188,7 +188,7 @@ class KeystrokeBuffer : NSObject {
         NotificationCenter.default.post(name: Self.lineAcceptedInKeystrokeBufferNotification, object: nil)
         print("xterm: accept-line") //clear buffer
       }
-    case .ctrlTwo:
+    case .setMarkCommand:
       buffer = nil
       print("xterm: set-mark") //lost context
     case .expandOrComplete:
