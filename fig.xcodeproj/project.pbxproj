@@ -117,6 +117,8 @@
 		758AEB6724CE8B8F00A15EAF /* figcli in Embed Command Line Tool */ = {isa = PBXBuildFile; fileRef = 751F758E246E16D800E083C8 /* figcli */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		758AEB6A24CEA4D000A15EAF /* Starscream in Frameworks */ = {isa = PBXBuildFile; productRef = 758AEB6924CEA4D000A15EAF /* Starscream */; };
 		758AEB6C24CEA54600A15EAF /* SocketServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 758AEB6B24CEA54600A15EAF /* SocketServer.swift */; };
+		75A4521025A83E5600107D2C /* remote_cwd.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75A4520F25A839F500107D2C /* remote_cwd.sh */; };
+		75AA24DA25A7E8B000A51E9D /* lsof.m in Sources */ = {isa = PBXBuildFile; fileRef = 75AA24D925A7E8B000A51E9D /* lsof.m */; };
 		75B199322501A3DA00F38EA8 /* KeyboardLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B199312501A3DA00F38EA8 /* KeyboardLayout.swift */; };
 		75B199342504190900F38EA8 /* Keycode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B199332504190900F38EA8 /* Keycode.swift */; };
 		75B1993625042B2C00F38EA8 /* autocomplete.html in Resources */ = {isa = PBXBuildFile; fileRef = 75B1993525042B2C00F38EA8 /* autocomplete.html */; };
@@ -316,6 +318,9 @@
 		758AEB5D24CD35D400A15EAF /* WebSocket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebSocket.swift; sourceTree = "<group>"; };
 		758AEB5F24CE529D00A15EAF /* String+Shell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+Shell.swift"; sourceTree = "<group>"; };
 		758AEB6B24CEA54600A15EAF /* SocketServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocketServer.swift; sourceTree = "<group>"; };
+		75A4520F25A839F500107D2C /* remote_cwd.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = remote_cwd.sh; sourceTree = "<group>"; };
+		75AA24D825A7E8B000A51E9D /* lsof.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = lsof.h; sourceTree = "<group>"; };
+		75AA24D925A7E8B000A51E9D /* lsof.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = lsof.m; sourceTree = "<group>"; };
 		75AC552B2522C7710069635E /* upgrade */ = {isa = PBXFileReference; lastKnownFileType = folder; name = upgrade; path = ../upgrade; sourceTree = "<group>"; };
 		75AC55322522C8EB0069635E /* 1.0.20.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = 1.0.20.sh; sourceTree = "<group>"; };
 		75B199312501A3DA00F38EA8 /* KeyboardLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardLayout.swift; sourceTree = "<group>"; };
@@ -541,6 +546,8 @@
 				75675961244634B2006AA988 /* fig.entitlements */,
 				7567595A244634B2006AA988 /* Preview Content */,
 				7510F8BA24A9861E00E86F7C /* fig-Bridging-Header.h */,
+				75AA24D825A7E8B000A51E9D /* lsof.h */,
+				75AA24D925A7E8B000A51E9D /* lsof.m */,
 				7577124525648DCD0011FF48 /* ps.h */,
 				7577124625648DFB0011FF48 /* ps.c */,
 				75C57C122581C0700065741E /* ioreg.h */,
@@ -669,6 +676,7 @@
 				756759962446C44C006AA988 /* String+Shell.swift */,
 				75EB592A258D98A7002915E7 /* BiMap.swift */,
 				75EB592C258DD771002915E7 /* TTY.swift */,
+				75A4520F25A839F500107D2C /* remote_cwd.sh */,
 			);
 			path = Shell;
 			sourceTree = "<group>";
@@ -857,6 +865,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				75A4521025A83E5600107D2C /* remote_cwd.sh in Resources */,
 				75186083255CB0C20000A7C7 /* iterm-integration.sh in Resources */,
 				75186084255CB0C20000A7C7 /* 1.0.23.sh in Resources */,
 				75186085255CB0C20000A7C7 /* fig-iterm-integration.py in Resources */,
@@ -991,6 +1000,7 @@
 				755D0DE0247DDE050074AB5C /* FigCLI.swift in Sources */,
 				75809B0E24BFA64D00BFFB3E /* TelemetryService.swift in Sources */,
 				7510F8B224A6910500E86F7C /* CharData.swift in Sources */,
+				75AA24DA25A7E8B000A51E9D /* lsof.m in Sources */,
 				75EB592B258D98A7002915E7 /* BiMap.swift in Sources */,
 				751F7589246D090100E083C8 /* WebBridge.swift in Sources */,
 				7510F8A624A6910500E86F7C /* iOSAccessoryView.swift in Sources */,

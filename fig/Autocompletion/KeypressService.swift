@@ -149,7 +149,11 @@ class KeypressProvider : KeypressService {
                                                         print("Keystroke event!")
                                                            print("eventTap", event.getIntegerValueField(.eventTargetUnixProcessID))
 
-
+//                                                        guard event.getIntegerValueField(.eventTargetUnixProcessID) != 0 else {
+//                                                            print("eventTap: target pid is zero")
+//                                                            return Unmanaged.passUnretained(event)
+//                                                        }
+                                                        
                                                         guard event.type != .tapDisabledByTimeout else {
                                                             if let tap = KeypressProvider.shared.tap {
                                                                 CGEvent.tapEnable(tap: tap, enable: true)
@@ -260,7 +264,7 @@ class KeypressProvider : KeypressService {
                     let tty = window.tty?.descriptor == nil ? "null" : "'\(window.tty!.descriptor)'"
                     let cmd = window.tty?.cmd == nil ? "null" : "'\(window.tty!.cmd!)'"
                     let cwd = window.tty?.cwd == nil ? "null" : "`\(window.tty!.cwd!.trimmingCharacters(in: .whitespacesAndNewlines))`"
-
+                    let prefix = window.tty?.runUsingPrefix == nil ? "null" : "`\(window.tty!.runUsingPrefix!)`"
 //                    let process: proc? = tty?.running
 //                       guard process?.isShell ?? true else {
 //                           //keyBuffer.buffer = nil
@@ -274,7 +278,7 @@ class KeypressProvider : KeypressService {
                         // error here!
                         // fig.autocomplete(bufferB64, index, windowHash, tty?, cwd, cmd)
                         print("fig.autocomplete(b64DecodeUnicode(`\(b64)`), \(index), '\(window.hash)', \(tty), \(cwd), \(cmd))")
-                        WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try{ fig.autocomplete(b64DecodeUnicode(`\(b64)`), \(index), '\(window.hash)', \(tty), \(cwd), \(cmd)) } catch(e){} ", completionHandler: nil)
+                        WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try{ fig.autocomplete(b64DecodeUnicode(`\(b64)`), \(index), '\(window.hash)', \(tty), \(cwd), \(cmd), \(prefix)) } catch(e){} ", completionHandler: nil)
 
                        
                     } else {

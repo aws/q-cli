@@ -37,6 +37,45 @@ protocol PseudoTerminalService {
     var delegate: PseudoTerminalEventDelegate? { get set }
 }
 
+class PseudoTerminalHelper {
+    var executeHandlers: [ String: (String) -> Void ] = [:]
+    let pty = PseudoTerminal()
+    let serialQueue = DispatchQueue(label: "com.withfig.pty.queue")
+    fileprivate let semaphore = DispatchSemaphore(value: 1)
+
+    // Because they ruin your punchline.
+    // Why should you never tell multithreaded programming jokes?
+    func execute(_ command: String, handler: @escaping (String) -> Void) {
+        let id = UUID().uuidString
+        executeHandlers[id] = handler
+        semaphore.wait()
+        pty.execute(command: command, handlerId: id)
+    }
+    
+    func start(with env: [String : String]) {
+        pty.start(with: env)
+        pty.delegate = self
+    }
+    
+    func close() {
+        pty.close()
+    }
+}
+
+extension PseudoTerminalHelper : PseudoTerminalEventDelegate {
+    func recievedDataFromPty(_ notification: Notification) {
+        if let msg = notification.object as? PtyMessage {
+            guard let handler = self.executeHandlers[msg.handleId] else {
+                return
+            }
+            
+            handler(msg.output)
+            semaphore.signal()
+        }
+    }
+    
+}
+
 class PseudoTerminal : PseudoTerminalService {
     
 //    init(eventDelegate: PseudoTerminalEventDelegate) {
