@@ -163,7 +163,7 @@ extension String {
         return observer
     }
     
-    func runInBackground(cwd: String? = nil, with env: Dictionary<String, String>? = nil, updateHandler: ((String, Process) -> Void)? = nil, completion: ((String) -> Void)? = nil) -> Process {
+    @discardableResult func runInBackground(cwd: String? = nil, with env: Dictionary<String, String>? = nil, updateHandler: ((String, Process) -> Void)? = nil, completion: ((String) -> Void)? = nil) -> Process {
         
         let stdin = Pipe()
         let stderr = Pipe()
