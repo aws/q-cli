@@ -6,8 +6,10 @@ fig util:reset-cache
 
 # delete defaults
 echo "Deleting fig defaults & preferences"
+saved_id="$(defaults read com.mschrage.fig 'uuid')"
 defaults delete com.mschrage.fig
 defaults delete com.mschrage.fig.shared
+defaults write com.mschrage.fig 'uuid' "$saved_id"
 
 echo "Remove iTerm integration (if set up)"
 rm ~/Library/Application\ Support/iTerm2/Scripts/AutoLaunch/fig-iterm-integration.py
