@@ -10,6 +10,18 @@ NORMAL=$(tput sgr0)
 
 SPEC=$1
 
+if [[ $# -ne 1 ]]; then
+
+cat <<EOF
+  ${BOLD}Usage${NORMAL}
+  fig uninstall <completion>
+
+EOF
+exit
+
+
+fi
+
 rm -rf ~/.fig/autocomplete/$SPEC.js
 
 cat <<EOF
