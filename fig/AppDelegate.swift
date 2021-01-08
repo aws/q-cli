@@ -504,7 +504,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     }
   
     @objc func editKeybindingsFile() {
-      NSWorkspace.shared.open(URL(fileURLWithPath: "\(NSHomeDirectory())/.fig/figkeymap.txt"))
+      NSWorkspace.shared.open(KeyBindingsManager.keymapFilePath)
     }
     
     @objc func uninstall() {
