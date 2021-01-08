@@ -70,9 +70,9 @@ class KeystrokeBuffer : NSObject {
   }
   
   func handleKeystroke(event: NSEvent) -> (String, Int)? {
-    let cleanedFlags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+    let cleanedFlags = event.modifierFlags.intersection([.command, .control, .option, .shift])
     let keystroke = Keystroke(modifierFlags: cleanedFlags, keyCode: event.keyCode)
-    switch keyBindings[keystroke] {
+    switch KeyBindingsManager.keyBindings[keystroke] {
     case .paste:
       guard let pasteboard = NSPasteboard.general.string(forType: .string), buffer != nil, index != nil else { break }
       buffer!.insert(contentsOf: pasteboard, at: index!)
@@ -188,7 +188,7 @@ class KeystrokeBuffer : NSObject {
         NotificationCenter.default.post(name: Self.lineAcceptedInKeystrokeBufferNotification, object: nil)
         print("xterm: accept-line") //clear buffer
       }
-    case .ctrlTwo:
+    case .setMarkCommand:
       buffer = nil
       print("xterm: set-mark") //lost context
     case .expandOrComplete:
@@ -199,6 +199,24 @@ class KeystrokeBuffer : NSObject {
       print("xterm: kill process")
     default:
       guard buffer != nil, index != nil else { break }
+      
+      // some umapped command - cmdc shouldn't insert a c into buffer but shift P should
+      guard keystroke.modifierFlags.intersection([.command, .control]).isEmpty else { break }
+      
+      if (event.modifierFlags.contains(.option)) {
+        var char = UniChar()
+        var length = 0
+        event.cgEvent?.keyboardGetUnicodeString(maxStringLength: 1, actualStringLength: &length, unicodeString: &char)
+        let string = String(UnicodeScalar(char)!)
+        print("unichar: \(string)")
+        // lost context
+        if (string.count == 0) {
+          buffer = nil
+          hazy = true
+          return nil
+        }
+      }
+      
       if let characters = event.characters {
         var skip = 0
         for (idx, char) in characters.enumerated() {
@@ -238,27 +256,6 @@ class KeystrokeBuffer : NSObject {
               NotificationCenter.default.post(name: Self.lineAcceptedInKeystrokeBufferNotification, object: nil)
             }
           default:
-            
-            // some umapped command - cmdc shouldn't insert a c into buffer
-            let isFigInsertion = keystroke.keyCode == 0
-            if (!isFigInsertion && !keystroke.modifierFlags.isEmpty) {
-              return nil
-            }
-            
-            if (event.modifierFlags.contains(.option)) {
-              var char = UniChar()
-              var length = 0
-              event.cgEvent?.keyboardGetUnicodeString(maxStringLength: 1, actualStringLength: &length, unicodeString: &char)
-              let string = String(UnicodeScalar(char)!)
-              print("unichar: \(string)")
-              // lost context
-              if (string.count == 0) {
-                buffer = nil
-                hazy = true
-                return nil
-              }
-            }
-            
             buffer!.insert(char, at: index!)
             index = buffer!.index(index!, offsetBy: 1)
             print("xterm: insert! (\(char))")
