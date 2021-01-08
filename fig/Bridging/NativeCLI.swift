@@ -32,8 +32,6 @@ class NativeCLI {
         case star = "star"
         case tweet = "tweet"
         case share = "share"
-        case slack = "slack"
-        case community = "community"
         case contribute = "contribute"
         case report = "issue"
         case openMenuBar = " _fig" // leading space means this can never be run directly
