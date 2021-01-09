@@ -33,14 +33,11 @@ jobs:
         uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: "12.0.1"
-      # - name: "Select Xcode 12.0.0"
-      #   uses: devbotsxyz/xcode-select@main
-      #   with:
-      #     version: "11.3.1"
+
       - name: "Get Build"
          env:
             ACTIONS_ALLOW_UNSECURE_COMMANDS: true
-          run: |
+        run: |
           echo "::set-env name=BUILD::$(agvtool what-version -terse)"
           echo $BUILD
       - name: "Bump Build number"
@@ -49,7 +46,7 @@ jobs:
           agvtool what-version -terse
       - name: "Commit Build number"
          run: git status
-         
+
       - name: "Import Certificate"
         uses: devbotsxyz/import-signing-certificate@main
         with:
