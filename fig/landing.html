@@ -207,7 +207,7 @@
             <p style="text-align: left; font-size: 0.9em;
             color: #5e5e5e; width: 275px; margin-left: auto; margin-right: auto;">Fig needs a few permissions to get started. </p>
             <div class="button">
-                <a href="javascript:ws()">Setup</a>
+                <a href="javascript:cli()">Setup</a>
             </div>
         </header>
     </div>
@@ -223,7 +223,8 @@
 
         let cli = function () {
             fig.onboarding("cli", () => {
-
+               fig.focus()
+               window.location.href = './permissions.html'
             })
         }
 
