@@ -825,14 +825,9 @@ extension Array {
 
 extension ShellBridge {
     static func symlinkCLI(completion: (()-> Void)? = nil){
-//        cmd="tell application \"Terminal\" to do script \"uptime\""
-//          osascript -e "$cmd"
-        
-//        if let path = Bundle.main.path(forAuxiliaryExecutable: "figcli") {
-//            print(path)
-//            let _ = "mkdir -p /usr/local/bin && ln -sf '\(path)' '/usr/local/bin/fig'".runWithElevatedPriviledgesFromAppleScript()
-//            return
-//        }
+        Onboarding.copyFigCLIExecutable(to:"~/.fig/bin/fig")
+        completion?()
+        return
         if let path = Bundle.main.path(forAuxiliaryExecutable: "figcli") {//Bundle.main.path(forResource: "fig", ofType: "", inDirectory: "dist") {
             print(path)
             let script = "mkdir -p /usr/local/bin && ln -sf '\(path)' '/usr/local/bin/fig'"
