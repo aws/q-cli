@@ -8,6 +8,7 @@ on:
 
 jobs:
   release:
+    if: "!contains(github.event.head_commit.message, 'skip ci')"
     runs-on: macos-latest
     # timeout-minutes: 15
     steps:
@@ -36,7 +37,19 @@ jobs:
       #   uses: devbotsxyz/xcode-select@main
       #   with:
       #     version: "11.3.1"
-
+      - name: "Get Build"
+         env:
+            ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+          run: |
+          echo "::set-env name=BUILD::$(agvtool what-version -terse)"
+          echo $BUILD
+      - name: "Bump Build number"
+         run: |
+          agvtool bump
+          agvtool what-version -terse
+      - name: "Commit Build number"
+         run: git status
+         
       - name: "Import Certificate"
         uses: devbotsxyz/import-signing-certificate@main
         with:
