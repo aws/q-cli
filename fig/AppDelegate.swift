@@ -284,8 +284,8 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         
         statusBarMenu.addItem(NSMenuItem.separator())
 
-        if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String {
-            statusBarMenu.addItem(withTitle: "Version \(version)", action: nil, keyEquivalent: "")
+        if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String, let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String {
+            statusBarMenu.addItem(withTitle: "Version \(version) (B\(build))", action: nil, keyEquivalent: "")
         }
         statusBarMenu.addItem(
          withTitle: "Check for Updates...",
