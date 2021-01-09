@@ -34,12 +34,12 @@ jobs:
         with:
           xcode-version: "12.0.1"
 
-      - name: "Get Build"
-         env:
-            ACTIONS_ALLOW_UNSECURE_COMMANDS: true
-        run: |
-          echo "::set-env name=BUILD::$(agvtool what-version -terse)"
-          echo $BUILD
+      # - name: "Get Build"
+      #    env:
+      #       ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+      #   run: |
+      #     echo "::set-env name=BUILD::$(agvtool what-version -terse)"
+      #     echo $BUILD
       - name: "Bump Build number"
          run: |
           agvtool bump
