@@ -16,7 +16,7 @@ jobs:
         uses: styfle/cancel-workflow-action@0.6.0
         with:
           access_token: ${{ github.token }}
-          
+
       - name: "Checkout Project"
         uses: actions/checkout@v2
 
@@ -139,8 +139,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.run_number }}
-          release_name: Staging - Build ${{ github.run_number }}
+          tag_name: ${{ env.BUILD }}
+          release_name: Staging - Build ${{ env.BUILD }}
           draft: false
           prerelease: true
       - name: Upload Release Asset
