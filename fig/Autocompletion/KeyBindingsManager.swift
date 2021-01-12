@@ -17,9 +17,9 @@ class KeyBindingsManager {
     var keyBindings: [Keystroke: TextTransformation] = [:]
     do {
       let content = try NSString(contentsOf: Self.keymapFilePath, encoding: String.Encoding.utf8.rawValue) as String
-      let lines = content.split(whereSeparator: \.isNewline)
+        let lines = content.split { $0.isNewline }
       for line in lines {
-        let entry = line.split(whereSeparator: \.isWhitespace)
+        let entry = line.split { $0.isWhitespace }
         if let action = TextTransformation(rawValue: String(entry[0])), let keystroke = Self.parsedKeystroke(from: entry[1]) {
           if (keyBindings[keystroke] == nil) {
             keyBindings[keystroke] = action
