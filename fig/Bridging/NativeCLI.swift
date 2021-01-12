@@ -159,6 +159,7 @@ extension NativeCLI {
         WebView.deleteCache()
         
         printInTerminal("→ Logging out of Fig...", using: connection)
+        connection.send(message: "disconnect")
 
         if let delegate = NSApp.delegate as? AppDelegate {
             delegate.restart()
@@ -170,6 +171,7 @@ extension NativeCLI {
         let (_, connection) = scope
 
         printInTerminal("→ Restarting Fig...", using: connection)
+        connection.send(message: "disconnect")
 
         if let delegate = NSApp.delegate as? AppDelegate {
             delegate.restart()
@@ -189,6 +191,9 @@ extension NativeCLI {
     }
     
     static func openMenuBarCommand(_ scope: Scope) {
+        let (_, connection) = scope
+        connection.send(message: "disconnect")
+
         if let delegate = NSApp.delegate as? AppDelegate {
             delegate.openMenu()
         }
