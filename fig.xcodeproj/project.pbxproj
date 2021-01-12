@@ -119,7 +119,7 @@
 		758AEB6A24CEA4D000A15EAF /* Starscream in Frameworks */ = {isa = PBXBuildFile; productRef = 758AEB6924CEA4D000A15EAF /* Starscream */; };
 		758AEB6C24CEA54600A15EAF /* SocketServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 758AEB6B24CEA54600A15EAF /* SocketServer.swift */; };
 		75A4521025A83E5600107D2C /* remote_cwd.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75A4520F25A839F500107D2C /* remote_cwd.sh */; };
-		75AA24DA25A7E8B000A51E9D /* lsof.m in Sources */ = {isa = PBXBuildFile; fileRef = 75AA24D925A7E8B000A51E9D /* lsof.m */; };
+		75A4521425AD367E00107D2C /* Feedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A4521325AD367E00107D2C /* Feedback.swift */; };
 		75AA24C125A656FA00A51E9D /* NativeCLI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75AA24C025A656FA00A51E9D /* NativeCLI.swift */; };
 		75AA24CA25A6F39800A51E9D /* list.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75AA24C325A6EA5000A51E9D /* list.sh */; };
 		75AA24CB25A6F39800A51E9D /* help.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75AA24C425A6EA5900A51E9D /* help.sh */; };
@@ -127,6 +127,7 @@
 		75AA24D125A79F3400A51E9D /* tweet.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75AA24CE25A79A2000A51E9D /* tweet.sh */; };
 		75AA24D225A79F3400A51E9D /* issue.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75AA24D025A79B4A00A51E9D /* issue.sh */; };
 		75AA24D325A79F3400A51E9D /* contribute.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75AA24CF25A79ACC00A51E9D /* contribute.sh */; };
+		75AA24DA25A7E8B000A51E9D /* lsof.m in Sources */ = {isa = PBXBuildFile; fileRef = 75AA24D925A7E8B000A51E9D /* lsof.m */; };
 		75B199322501A3DA00F38EA8 /* KeyboardLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B199312501A3DA00F38EA8 /* KeyboardLayout.swift */; };
 		75B199342504190900F38EA8 /* Keycode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B199332504190900F38EA8 /* Keycode.swift */; };
 		75B1993625042B2C00F38EA8 /* autocomplete.html in Resources */ = {isa = PBXBuildFile; fileRef = 75B1993525042B2C00F38EA8 /* autocomplete.html */; };
@@ -328,8 +329,7 @@
 		758AEB5F24CE529D00A15EAF /* String+Shell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+Shell.swift"; sourceTree = "<group>"; };
 		758AEB6B24CEA54600A15EAF /* SocketServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocketServer.swift; sourceTree = "<group>"; };
 		75A4520F25A839F500107D2C /* remote_cwd.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = remote_cwd.sh; sourceTree = "<group>"; };
-		75AA24D825A7E8B000A51E9D /* lsof.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = lsof.h; sourceTree = "<group>"; };
-		75AA24D925A7E8B000A51E9D /* lsof.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = lsof.m; sourceTree = "<group>"; };
+		75A4521325AD367E00107D2C /* Feedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Feedback.swift; sourceTree = "<group>"; };
 		75AA24C025A656FA00A51E9D /* NativeCLI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeCLI.swift; sourceTree = "<group>"; };
 		75AA24C325A6EA5000A51E9D /* list.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = list.sh; sourceTree = "<group>"; };
 		75AA24C425A6EA5900A51E9D /* help.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = help.sh; sourceTree = "<group>"; };
@@ -337,6 +337,8 @@
 		75AA24CE25A79A2000A51E9D /* tweet.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = tweet.sh; sourceTree = "<group>"; };
 		75AA24CF25A79ACC00A51E9D /* contribute.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = contribute.sh; sourceTree = "<group>"; };
 		75AA24D025A79B4A00A51E9D /* issue.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = issue.sh; sourceTree = "<group>"; };
+		75AA24D825A7E8B000A51E9D /* lsof.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = lsof.h; sourceTree = "<group>"; };
+		75AA24D925A7E8B000A51E9D /* lsof.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = lsof.m; sourceTree = "<group>"; };
 		75AC552B2522C7710069635E /* upgrade */ = {isa = PBXFileReference; lastKnownFileType = folder; name = upgrade; path = ../upgrade; sourceTree = "<group>"; };
 		75AC55322522C8EB0069635E /* 1.0.20.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = 1.0.20.sh; sourceTree = "<group>"; };
 		75B199312501A3DA00F38EA8 /* KeyboardLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardLayout.swift; sourceTree = "<group>"; };
@@ -544,6 +546,7 @@
 				75809B0D24BFA64D00BFFB3E /* TelemetryService.swift */,
 				75C0EBD2253E336E001964DE /* TerminalUsageTelemetry.swift */,
 				752C0BD72479EEDA0077E415 /* File.swift */,
+				75A4521325AD367E00107D2C /* Feedback.swift */,
 				75B1992A25019FDE00F38EA8 /* Companion Window */,
 				75B1992B25019FFE00F38EA8 /* Window Management */,
 				75B1992E2501A12C00F38EA8 /* Shell */,
@@ -1051,6 +1054,7 @@
 				757712492564D94A0011FF48 /* ProcessStatus.swift in Sources */,
 				7510F89A24A6910500E86F7C /* Extensions.swift in Sources */,
 				7510F8B524A6910500E86F7C /* SearchService.swift in Sources */,
+				75A4521425AD367E00107D2C /* Feedback.swift in Sources */,
 				7510F8A024A6910500E86F7C /* EscapeSequences.swift in Sources */,
 				7510F8A224A6910500E86F7C /* CircularList.swift in Sources */,
 				7510F8AD24A6910500E86F7C /* SelectionService.swift in Sources */,

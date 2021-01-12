@@ -33,11 +33,12 @@ class NativeCLI {
         case tweet = "tweet"
         case share = "share"
         case contribute = "contribute"
-        case report = "issue"
+        case issue = "issue"
         case openMenuBar = " _fig" // leading space means this can never be run directly
         case uninstall = "uninstall"
         case disable = "disable"
         case remove = "remove"
+        case report = "report"
 
         var isUtility: Bool {
             get {
@@ -56,6 +57,7 @@ class NativeCLI {
                                                            .openMenuBar,
                                                            .onboarding,
                                                            .version,
+                                                           .report,
                                                            .docs]
                return implementatedNatively.contains(self)
             }
@@ -86,6 +88,8 @@ class NativeCLI {
                 NativeCLI.onboardingCommand(scope)
             case .docs:
                 NativeCLI.docsCommand(scope)
+            case .report:
+                NativeCLI.reportCommand(scope)
             default:
                 break;
             }
@@ -218,6 +222,16 @@ extension NativeCLI {
             NativeCLI.printInTerminal(msg, using: connection)
 
         }
+    }
+    
+    static func reportCommand(_ scope: Scope) {
+        let (_, connection) = scope
+
+        NativeCLI.printInTerminal("→ Send any bugs or feedback directly to the Fig team!", using: connection)
+        connection.send(message: "disconnect")
+        
+        Feedback.getFeedback(source: "fig_report_cli")
+
     }
     
     static func docsCommand(_ scope: Scope) {

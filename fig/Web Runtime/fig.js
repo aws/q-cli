@@ -290,6 +290,10 @@ let setup = function(window) {
           }
       },
       
+      prompt(source) {
+          fig.private({ type: "prompt", data: {source}})
+      },
+      
       analytics : {
           track(event, properties) {
               var payload = { "event": event}
