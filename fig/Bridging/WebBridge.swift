@@ -913,7 +913,10 @@ extension WebBridge {
                         }
   
                     }
-                    
+                case "prompt":
+                    let source = data["source"]
+
+                    Feedback.getFeedback(source: source ?? "javascript")
                 default:
                     print("private command '\(type)' does not exist.")
             }

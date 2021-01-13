@@ -122,6 +122,7 @@
 		758AEB6A24CEA4D000A15EAF /* Starscream in Frameworks */ = {isa = PBXBuildFile; productRef = 758AEB6924CEA4D000A15EAF /* Starscream */; };
 		758AEB6C24CEA54600A15EAF /* SocketServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 758AEB6B24CEA54600A15EAF /* SocketServer.swift */; };
 		75A4521025A83E5600107D2C /* remote_cwd.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75A4520F25A839F500107D2C /* remote_cwd.sh */; };
+		75A4521425AD367E00107D2C /* Feedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A4521325AD367E00107D2C /* Feedback.swift */; };
 		75A4521A25AE2E6B00107D2C /* CommandIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A4521925AE2E6A00107D2C /* CommandIntegration.swift */; };
 		75AA24C125A656FA00A51E9D /* NativeCLI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75AA24C025A656FA00A51E9D /* NativeCLI.swift */; };
 		75AA24CA25A6F39800A51E9D /* list.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75AA24C325A6EA5000A51E9D /* list.sh */; };
@@ -335,6 +336,7 @@
 		758AEB5F24CE529D00A15EAF /* String+Shell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+Shell.swift"; sourceTree = "<group>"; };
 		758AEB6B24CEA54600A15EAF /* SocketServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocketServer.swift; sourceTree = "<group>"; };
 		75A4520F25A839F500107D2C /* remote_cwd.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = remote_cwd.sh; sourceTree = "<group>"; };
+		75A4521325AD367E00107D2C /* Feedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Feedback.swift; sourceTree = "<group>"; };
 		75A4521925AE2E6A00107D2C /* CommandIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandIntegration.swift; sourceTree = "<group>"; };
 		75AA24C025A656FA00A51E9D /* NativeCLI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeCLI.swift; sourceTree = "<group>"; };
 		75AA24C325A6EA5000A51E9D /* list.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = list.sh; sourceTree = "<group>"; };
@@ -559,6 +561,7 @@
 				75809B0D24BFA64D00BFFB3E /* TelemetryService.swift */,
 				75C0EBD2253E336E001964DE /* TerminalUsageTelemetry.swift */,
 				752C0BD72479EEDA0077E415 /* File.swift */,
+				75A4521325AD367E00107D2C /* Feedback.swift */,
 				75B1992A25019FDE00F38EA8 /* Companion Window */,
 				75B1992B25019FFE00F38EA8 /* Window Management */,
 				75B1992E2501A12C00F38EA8 /* Shell */,
@@ -1074,6 +1077,7 @@
 				757712492564D94A0011FF48 /* ProcessStatus.swift in Sources */,
 				7510F89A24A6910500E86F7C /* Extensions.swift in Sources */,
 				7510F8B524A6910500E86F7C /* SearchService.swift in Sources */,
+				75A4521425AD367E00107D2C /* Feedback.swift in Sources */,
 				7510F8A024A6910500E86F7C /* EscapeSequences.swift in Sources */,
 				7510F8A224A6910500E86F7C /* CircularList.swift in Sources */,
 				7510F8AD24A6910500E86F7C /* SelectionService.swift in Sources */,
