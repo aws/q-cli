@@ -337,7 +337,12 @@ class KeypressProvider : KeypressService {
                 selectedRangeValue = AXValueCreate(.cfRange, ptr)
             }
         }
-
+        
+        // https://linear.app/fig/issue/ENG-109/
+        // autocomplete-popup-shows-when-copying-and-pasting-in-terminal
+        if selectedRange.length > 1 {
+            return nil
+        }
 
         let selectedBoundsError = AXUIElementCopyParameterizedAttributeValue(focusedElement as! AXUIElement, kAXBoundsForRangeParameterizedAttribute as CFString, selectedRangeValue!, &selectBounds)
         
