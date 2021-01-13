@@ -33,7 +33,6 @@ typedef struct fig_proc_info {
 } fig_proc_info;
 
 fig_proc_info* getProcessInfo(const char *tty, int *size);
-int candidates(const char * tty);
 int printProcesses(const char * tty);
 
 #endif /* ps_h */

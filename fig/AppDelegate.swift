@@ -1255,8 +1255,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     }
     
     @objc func processes() {
-        let c = candidates("")
-        print(c)
         printProcesses("")
         var size: Int32 = 0
         if let ptr = getProcessInfo("", &size) {
