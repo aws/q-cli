@@ -76,6 +76,8 @@
 		752C0BE4247B44C60077E415 /* finder.html in Resources */ = {isa = PBXBuildFile; fileRef = 752C0BE3247B44C50077E415 /* finder.html */; };
 		752C0BE6247C25290077E415 /* display.html in Resources */ = {isa = PBXBuildFile; fileRef = 752C0BE5247C25280077E415 /* display.html */; };
 		752D71C225AE80CF00263527 /* ssh.sh in Resources */ = {isa = PBXBuildFile; fileRef = 752D71C125AE790200263527 /* ssh.sh */; };
+		752D71C525AE9B7200263527 /* ssh.html in Resources */ = {isa = PBXBuildFile; fileRef = 752D71C425AE9B7200263527 /* ssh.html */; };
+		752D71C725AECB4B00263527 /* ssh.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 752D71C625AECB4B00263527 /* ssh.mp4 */; };
 		754D31B525759D900020CED4 /* tutorial.html in Resources */ = {isa = PBXBuildFile; fileRef = 754D31B425759D900020CED4 /* tutorial.html */; };
 		755D0DE0247DDE050074AB5C /* FigCLI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755D0DDF247DDE050074AB5C /* FigCLI.swift */; };
 		755D0DE2247EFAE10074AB5C /* Logging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755D0DE1247EFAE10074AB5C /* Logging.swift */; };
@@ -283,6 +285,8 @@
 		752C0BE3247B44C50077E415 /* finder.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = finder.html; sourceTree = "<group>"; };
 		752C0BE5247C25280077E415 /* display.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = display.html; sourceTree = "<group>"; };
 		752D71C125AE790200263527 /* ssh.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = ssh.sh; sourceTree = "<group>"; };
+		752D71C425AE9B7200263527 /* ssh.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = ssh.html; sourceTree = "<group>"; };
+		752D71C625AECB4B00263527 /* ssh.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = ssh.mp4; sourceTree = "<group>"; };
 		754D31B425759D900020CED4 /* tutorial.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = tutorial.html; sourceTree = "<group>"; };
 		755D0DDF247DDE050074AB5C /* FigCLI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FigCLI.swift; sourceTree = "<group>"; };
 		755D0DE1247EFAE10074AB5C /* Logging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logging.swift; sourceTree = "<group>"; };
@@ -509,6 +513,13 @@
 			path = figcli;
 			sourceTree = "<group>";
 		};
+		752D71C325AE986B00263527 /* New Group */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = "New Group";
+			sourceTree = "<group>";
+		};
 		75675948244634AD006AA988 = {
 			isa = PBXGroup;
 			children = (
@@ -604,6 +615,7 @@
 		757CA88B248B08D7002A64A8 /* local */ = {
 			isa = PBXGroup;
 			children = (
+				752D71C325AE986B00263527 /* New Group */,
 				757CA89E248D628E002A64A8 /* sidebar.html */,
 				757CA89C248C1F50002A64A8 /* demo4onboarding.mp4 */,
 				757CA898248C10AD002A64A8 /* fonts */,
@@ -614,6 +626,7 @@
 				757CA89A248C18F0002A64A8 /* done.html */,
 				757CA88E248B0D31002A64A8 /* cli.png */,
 				757CA88C248B091D002A64A8 /* permissions.mp4 */,
+				752D71C625AECB4B00263527 /* ssh.mp4 */,
 				757CA88524876042002A64A8 /* error.html */,
 				75C0711C244AC3B2002DF69F /* index.html */,
 				752C0BDF247A27790077E415 /* editor.html */,
@@ -623,6 +636,7 @@
 				755D0DE3247F038B0074AB5C /* logs.html */,
 				757CA889248AD58C002A64A8 /* onboarding.html */,
 				75B1993525042B2C00F38EA8 /* autocomplete.html */,
+				752D71C425AE9B7200263527 /* ssh.html */,
 				754D31B425759D900020CED4 /* tutorial.html */,
 			);
 			name = local;
@@ -934,6 +948,7 @@
 				75C0711D244AC3B2002DF69F /* index.html in Resources */,
 				757CA895248B291E002A64A8 /* permissions.html in Resources */,
 				754D31B525759D900020CED4 /* tutorial.html in Resources */,
+				752D71C725AECB4B00263527 /* ssh.mp4 in Resources */,
 				75D2E3CB249C1E7500607F66 /* terminal.css in Resources */,
 				757CA88A248AD58C002A64A8 /* onboarding.html in Resources */,
 				757CA89B248C18F1002A64A8 /* done.html in Resources */,
@@ -942,6 +957,7 @@
 				757CA893248B28E3002A64A8 /* landing.html in Resources */,
 				755D0DE4247F038B0074AB5C /* logs.html in Resources */,
 				7510F8AB24A6910500E86F7C /* README.md in Resources */,
+				752D71C525AE9B7200263527 /* ssh.html in Resources */,
 				757CA89D248C1F50002A64A8 /* demo4onboarding.mp4 in Resources */,
 				7567595F244634B2006AA988 /* Main.storyboard in Resources */,
 				75186070255B2A0A0000A7C7 /* astrix@2x.png in Resources */,

@@ -150,9 +150,27 @@
 
         code {
             display: inline-block;
-            border-radius: 5px;
+            border-radius: 3px;
             background-color: #ddd;
-            color: #bdbdbd
+            color: gray;
+            padding-left: 3px;
+            padding-right: 3px;
+            padding-top: 1px;
+            padding-bottom: 1px;
+            margin-left: 2px;
+            margin-right: 2px;
+
+        }
+        
+        #skip {
+            color: #ccc;
+            margin: 5px;
+            font-size: 0.85em;
+            text-align: center;
+            width: 100px;
+            margin-left: auto;
+            margin-right: auto;
+            display:block;
         }
 
         /* progress {
@@ -199,18 +217,18 @@
     <div class="wrapper">
         <section>
             <div class="section">
-                <span class="title" href="javascript:permission()" id="permissions">Enable Accessibility
-                    Permission</span>
-                <p>Fig uses this permission to find your terminal window.</p>
+                <span class="title" href="javascript:permission()" id="permissions">Setup SSH Integration</span>
+                <p>Fig will make changes to your SSH config (stored in <code figdisabled = "true">~/.ssh/config</code>).</p>
                 <div class="video-mask">
-                    <video autoplay playsinline muted loop defaultPlaybackRate=1.5>
-                        <source src="./permissions.mp4" type="video/mp4" />
+                    <video autoplay playsinline muted loop defaultPlaybackRate=1.25>
+                        <source src="./ssh.mp4" type="video/mp4" />
                         Your browser does not support the video tag.
                     </video>
                 </div>
                 <div class = "button">
-                    <a id = "enable" href="javascript:permissions()">Enable</a>
+                    <a id = "enable" href="javascript:ssh()">Install</a>
                 </div>
+                <a id = "skip" href="javascript:skip()">Maybe later</a>
 
             </div>
         </section>
@@ -230,37 +248,24 @@
                 window.location.href = './cli.html'
             })
         }
+    
+        let skip = function() {
+            window.location.href = `${fig.remoteURL}/onboarding/signin.html`
+        }
+    
+        let ssh = function () {
+            fig.onboarding("ssh")
+            window.location.href = `${fig.remoteURL}/onboarding/signin.html`
+        }
 
         let permissions = function () {
             document.querySelector("#enable").innerText = "Waiting..."
             fig.onboarding("permissions", (value) => {
-               //window.location.href = `${fig.remoteURL}/onboarding/signin.html`
-               window.location.href = './ssh.html'
-
+               window.location.href = `${fig.remoteURL}/onboarding/signin.html`
             })
             //fig.onboarding("close")
 
         }
-        // const progressbar = document.querySelector('progress')
-        // const article = document.querySelector('body')
-
-        // let isScrolling = false
-
-        // document.addEventListener('scroll', (e) => isScrolling = true)
-
-        // render()
-
-        // function render() {
-
-        //     requestAnimationFrame(render)
-
-        //     if (!isScrolling) return
-
-        //     progressbar.value = window.scrollY / (article.offsetHeight - window.innerHeight) * 100
-
-        //     isScrolling = false
-
-        // }
     </script>
 </body>
 
