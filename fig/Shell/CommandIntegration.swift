@@ -42,6 +42,11 @@ class SSHIntegration: CommandIntegration {
         
         tty.pty!.execute("\(prefix) bash -s < \(scriptPath)") { output in
             print("remote_machine:", output)
+            guard tty.pid == process.pid else {
+                print("Process out of sync, abort update")
+                semaphore.signal()
+                return
+            }
             tty.cwd = output
             tty.cmd = process.cmd
             tty.pid = process.pid
