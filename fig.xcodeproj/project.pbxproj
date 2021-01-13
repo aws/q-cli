@@ -75,6 +75,7 @@
 		752C0BE2247A33F20077E415 /* viewer.html in Resources */ = {isa = PBXBuildFile; fileRef = 752C0BE1247A33F10077E415 /* viewer.html */; };
 		752C0BE4247B44C60077E415 /* finder.html in Resources */ = {isa = PBXBuildFile; fileRef = 752C0BE3247B44C50077E415 /* finder.html */; };
 		752C0BE6247C25290077E415 /* display.html in Resources */ = {isa = PBXBuildFile; fileRef = 752C0BE5247C25280077E415 /* display.html */; };
+		752D71C225AE80CF00263527 /* ssh.sh in Resources */ = {isa = PBXBuildFile; fileRef = 752D71C125AE790200263527 /* ssh.sh */; };
 		754D31B525759D900020CED4 /* tutorial.html in Resources */ = {isa = PBXBuildFile; fileRef = 754D31B425759D900020CED4 /* tutorial.html */; };
 		755D0DE0247DDE050074AB5C /* FigCLI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755D0DDF247DDE050074AB5C /* FigCLI.swift */; };
 		755D0DE2247EFAE10074AB5C /* Logging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755D0DE1247EFAE10074AB5C /* Logging.swift */; };
@@ -281,6 +282,7 @@
 		752C0BE1247A33F10077E415 /* viewer.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = viewer.html; sourceTree = "<group>"; };
 		752C0BE3247B44C50077E415 /* finder.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = finder.html; sourceTree = "<group>"; };
 		752C0BE5247C25280077E415 /* display.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = display.html; sourceTree = "<group>"; };
+		752D71C125AE790200263527 /* ssh.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = ssh.sh; sourceTree = "<group>"; };
 		754D31B425759D900020CED4 /* tutorial.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = tutorial.html; sourceTree = "<group>"; };
 		755D0DDF247DDE050074AB5C /* FigCLI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FigCLI.swift; sourceTree = "<group>"; };
 		755D0DE1247EFAE10074AB5C /* Logging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logging.swift; sourceTree = "<group>"; };
@@ -638,6 +640,7 @@
 				75AA24CC25A6F6F000A51E9D /* uninstall_spec.sh */,
 				7518607D255CB0870000A7C7 /* source.sh */,
 				7518607A255CB0870000A7C7 /* update.sh */,
+				752D71C125AE790200263527 /* ssh.sh */,
 			);
 			path = "CLI Scripts";
 			sourceTree = "<group>";
@@ -900,6 +903,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				752D71C225AE80CF00263527 /* ssh.sh in Resources */,
 				75A4521025A83E5600107D2C /* remote_cwd.sh in Resources */,
 				75AA24D125A79F3400A51E9D /* tweet.sh in Resources */,
 				75AA24D225A79F3400A51E9D /* issue.sh in Resources */,

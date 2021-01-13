@@ -18,6 +18,12 @@ protocol CommandIntegration {
 class SSHIntegration: CommandIntegration {
 
     static let command = "ssh"
+    static func install() {
+        if let scriptPath = Bundle.main.path(forResource: "ssh", ofType: "sh") {
+            let out = "/bin/bash '\(scriptPath)'".runAsCommand()
+            print(out)
+        }
+    }
     
     func runUsingPrefix() -> String? {
         if let controlPath = self.controlPath {
