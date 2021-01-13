@@ -90,46 +90,24 @@ class TTY {
         let cmd = runningProcess.cmd
         let cwd = runningProcess.cwd
         print("tty: running \(cmd) \(cwd ?? "<none>")")
-        guard runningProcess.name != "ssh" else {
-            let connection = lsof.arguments(fromPid: runningProcess.pid)
-            print("arguments:", connection)
-            
-//            let output = "\(connection) ls -1aF".runAsCommand()
-            let semaphore = DispatchSemaphore(value: 0)
-            if self.pty == nil {
-                self.pty = PseudoTerminalHelper()
-                self.pty?.start(with: [:])
-            }
-            
-            //ps -o tty,pid,comm=
-            let scriptPath = Bundle.main.path(forResource: "remote_cwd", ofType: "sh")!
-            let prefix = "ssh -o PasswordAuthentication=no -q \(connection.split(separator: " ").last!)"
-            // improve parsing of ssh connection credentials
-            self.pty!.execute("\(prefix) bash -s < \(scriptPath)") { output in
-                print("remote_machine:", output)
-                self.cwd = output
-                self.cmd = cmd
-                self.pid = runningProcess.pid
-                self.isShell = runningProcess.isShell
-                self.runUsingPrefix = prefix
-                semaphore.signal()
-            }
-            semaphore.wait()
-            return
-        }
         
-        self.cwd = cwd
-        self.cmd = cmd
-        self.pid = runningProcess.pid
-        self.isShell = runningProcess.isShell
-
+        if let integration = self.integrations[runningProcess.name] {
+            integration.update(tty: self, for: runningProcess)
+        } else {
+            self.cwd = cwd
+            self.cmd = cmd
+            self.pid = runningProcess.pid
+            self.isShell = runningProcess.isShell
+        }
     }
-    
+            
     var cwd: String?
     var cmd: String?
     var pid: pid_t?
     var isShell: Bool?
     var shell: proc?
+    let integrations: [ String : CommandIntegration] = [ SSHIntegration.command : SSHIntegration() ]
+
     
     func startedNewShellSession(for shellPid: pid_t) {
         self.shell = self.processes.filter { $0.pid == shellPid }.first
@@ -171,7 +149,6 @@ class TTY {
                 self.pid = runningProcess.pid
                 self.isShell = runningProcess.isShell
                 self.runUsingPrefix = nil
-                print("arguments:", lsof.arguments(fromPid: self.pid ?? 0))
 
                 if (runningProcess.name == "ssh") {
                     self.shell = nil

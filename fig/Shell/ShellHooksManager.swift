@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import Cocoa
 
 extension ExternalWindowHash {
     func components() -> (windowId: CGWindowID, tab: String?)? {
@@ -153,7 +154,9 @@ extension ShellHookManager {
         // We need to wait for window to appear if the terminal emulator is being launched for the first time. Can this be handled more robustly?
         Timer.delayWithSeconds(0.2) {
             
-            guard let window = AXWindowServer.shared.whitelistedWindow else {
+            // ensuring window bundleId & frontmostApp bundleId match fixes case where a slow launching application (eg. Hyper) will init shell before window is visible/tracked
+            guard let window = AXWindowServer.shared.whitelistedWindow, window.bundleId == NSWorkspace.shared.frontmostApplication?.bundleIdentifier
+                else {
                 Logger.log(message: "Cannot track a new terminal session if topmost window isn't whitelisted.", priority: .notify, subsystem: .tty)
                 return
             }
@@ -180,6 +183,23 @@ extension ShellHookManager {
         
         let tty = self.tty[hash] ?? link(sessionId, hash, ttyDescriptor)
         tty.preexec()
+    }
+    
+    func startedNewSSHConnection(_ info: ShellMessage) {
+        guard Defaults.SSHIntegrationEnabled else {
+            Logger.log(message: "SSH Integration is not enabled", priority: .notify)
+            return
+        }
+        
+        guard let hash = attemptToFindToAssociatedWindow(for: info.session) else {
+              Logger.log(message: "Could not link to window on new shell session.", priority: .notify, subsystem: .tty)
+              return
+          }
+        
+        guard let tty = self.tty[hash] else { return }
+        guard let sshIntegration = tty.integrations["ssh"] as? SSHIntegration else { return }
+        sshIntegration.newConnection(with: info, in: tty)
+
     }
     
 }

@@ -39,6 +39,7 @@ class NativeCLI {
         case disable = "disable"
         case remove = "remove"
         case report = "report"
+        case ssh = "integrations:ssh"
 
         var isUtility: Bool {
             get {
@@ -113,6 +114,8 @@ class NativeCLI {
                 scriptName = "contribute"
             case .share:
                 scriptName = "tweet"
+            case .ssh:
+                scriptName = "ssh"
             default:
                 break;
             }
