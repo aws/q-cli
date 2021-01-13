@@ -14,6 +14,9 @@ defaults write com.mschrage.fig 'uuid' "$saved_id"
 echo "Remove iTerm integration (if set up)"
 rm ~/Library/Application\ Support/iTerm2/Scripts/AutoLaunch/fig-iterm-integration.py
 
+echo "Remove fish integration..."
+rm ~/.config/fish/conf.d/fig.fish
+
 # remove from .profiles
 echo "Removing fig.sh setup from  .profile, .zprofile, .zshrc, .bash_profile, and .bashrc"
 

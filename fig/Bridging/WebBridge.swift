@@ -729,6 +729,8 @@ extension WebBridge {
                         KeypressProvider.shared.registerKeystrokeHandler()
                         AXWindowServer.shared.registerWindowTracking()
                     }
+                case "ssh":
+                    SSHIntegration.install()
                 case "ws":
                     ShellBridge.shared.startWebSocketServer()
                 case "close":

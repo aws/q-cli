@@ -322,7 +322,13 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         action: #selector(AppDelegate.iTermSetup),
         keyEquivalent: "")
         iTermIntegration.state = FileManager.default.fileExists(atPath: "\(NSHomeDirectory())/Library/Application Support/iTerm2/Scripts/AutoLaunch/fig-iterm-integration.py") ? .on : .off
-            
+        
+        let sshIntegration = debugMenu.addItem(
+        withTitle: "SSH Integration",
+        action: #selector(AppDelegate.toggleSSHIntegration(_:)),
+        keyEquivalent: "")
+        sshIntegration.state = Defaults.SSHIntegrationEnabled ? .on : .off
+        
         debugMenu.addItem(NSMenuItem.separator())
       
         let utilitiesMenu = NSMenu(title: "utilities")
@@ -873,6 +879,27 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     @objc func toggleZshPlugin(_ sender: NSMenuItem) {
         Defaults.deferToShellAutosuggestions = !Defaults.deferToShellAutosuggestions
         sender.state = Defaults.deferToShellAutosuggestions ? .on : .off
+    }
+    
+    @objc func toggleSSHIntegration(_ sender: NSMenuItem) {
+        
+        let SSHConfigFile = URL(fileURLWithPath:  "\(NSHomeDirectory())/.ssh/config")
+        let configuration = try? String(contentsOf: SSHConfigFile)
+        
+        // config file does not exist or fig hasn't been enabled
+        if (!(configuration?.contains("Fig SSH Integration: Enabled!") ?? false)) {
+            guard self.dialogOKCancel(question: "Install SSH integration?", text: "Fig will make changes to your SSH config (stored in ~/.ssh/config).") else {
+                return
+            }
+            
+            SSHIntegration.install()
+            sender.state = .on
+            let _ = self.dialogOKCancel(question: "SSH Integration Installed!", text: "When you connect to a remote machine using SSH, Fig will show relevant completions.\n\nIf you run into any issues, please email hello@withfig.com.", noAction: true, icon: NSImage.init(imageLiteralResourceName: NSImage.applicationIconName))
+            return
+        }
+        
+        Defaults.SSHIntegrationEnabled = !Defaults.SSHIntegrationEnabled
+        sender.state = Defaults.SSHIntegrationEnabled ? .on : .off
     }
     
     @objc func toggleDebugAutocomplete(_ sender: NSMenuItem) {

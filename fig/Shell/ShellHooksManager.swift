@@ -182,6 +182,23 @@ extension ShellHookManager {
         tty.preexec()
     }
     
+    func startedNewSSHConnection(_ info: ShellMessage) {
+        guard Defaults.SSHIntegrationEnabled else {
+            Logger.log(message: "SSH Integration is not enabled", priority: .notify)
+            return
+        }
+        
+        guard let hash = attemptToFindToAssociatedWindow(for: info.session) else {
+              Logger.log(message: "Could not link to window on new shell session.", priority: .notify, subsystem: .tty)
+              return
+          }
+        
+        guard let tty = self.tty[hash] else { return }
+        guard let sshIntegration = tty.integrations["ssh"] as? SSHIntegration else { return }
+        sshIntegration.newConnection(with: info, in: tty)
+
+    }
+    
 }
 
 

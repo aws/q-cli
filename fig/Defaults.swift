@@ -354,4 +354,14 @@ class Defaults {
         }
     }
     
+    static var SSHIntegrationEnabled: Bool {
+        get {
+              return UserDefaults.standard.bool(forKey: "SSHIntegrationEnabled")
+          }
+              
+          set(flag) {
+              UserDefaults.standard.set(flag, forKey: "SSHIntegrationEnabled")
+              UserDefaults.standard.synchronize()
+          }
+    }
 }
