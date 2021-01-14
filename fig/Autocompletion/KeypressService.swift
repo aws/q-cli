@@ -262,8 +262,7 @@ class KeypressProvider : KeypressService {
       }
     }
     
-    // https://linear.app/fig/issue/ENG-109/
-    // autocomplete-popup-shows-when-copying-and-pasting-in-terminal
+    // https://linear.app/fig/issue/ENG-109/ - autocomplete-popup-shows-when-copying-and-pasting-in-terminal
     if selectedRange.length > 1 {
       return nil
     }
@@ -297,7 +296,7 @@ class Throttler {
   private let queue: DispatchQueue
   private let minimumDelay: TimeInterval
   
-  init(minimumDelay: TimeInterval, queue: DispatchQueue = DispatchQueue.main) {
+  init(minimumDelay: TimeInterval, queue: DispatchQueue = DispatchQueue(label: "com.withfig.keyhandler", qos: .userInitiated)) {
     self.minimumDelay = minimumDelay
     self.queue = queue
   }
