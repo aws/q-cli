@@ -14,6 +14,7 @@ class KeystrokeBuffer : NSObject {
   var index: String.Index?
   var stashedBuffer: String?
   var stashedIndex: String.Index?
+  var writeOnly = false // update buffer, but don't return it (prevents keypress events from being sent to autocomplete)
   static let shared = KeystrokeBuffer()
   static let lineResetInKeyStrokeBufferNotification: NSNotification.Name = .init("lineResetInKeyStrokeBufferNotification")
   static let lineAcceptedInKeystrokeBufferNotification: NSNotification.Name = .init("lineAcceptedInXTermBufferNotification")
@@ -42,6 +43,7 @@ class KeystrokeBuffer : NSObject {
         NotificationCenter.default.post(name: Self.lineResetInKeyStrokeBufferNotification, object: nil)
         index = buffer!.startIndex
         dropStash()
+        writeOnly = false
       } else if (buffer?.count == 1) {
         NotificationCenter.default.post(name: Self.firstCharacterInKeystrokeBufferNotification, object: nil)
       }
@@ -96,14 +98,18 @@ class KeystrokeBuffer : NSObject {
         stash()
       }
       historyIndex += 1
-      buffer = nil
       print("xterm: previous history")
     case .historySearchForward:
       if (historyIndex >= 0) {
         historyIndex -= 1
       }
-      if (historyIndex == -1 && buffer == nil) {
+      if (historyIndex == 0 && buffer == nil) {
         restore()
+      }
+      
+      if (historyIndex <= -1) {
+        writeOnly = false
+        historyIndex = 0
       }
       print("xterm: next history")
     case .beginningOfLine:
@@ -265,7 +271,7 @@ class KeystrokeBuffer : NSObject {
       break
     }
     
-    if var logging = buffer, index != nil {
+    if var logging = buffer, index != nil, !writeOnly {
       // todo: check if index is within bounds
       logging.insert("|", at: index!)
       print("xterm-out: \(logging) ")

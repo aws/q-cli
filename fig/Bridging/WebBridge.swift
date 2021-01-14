@@ -883,6 +883,13 @@ extension WebBridge {
                         KeypressProvider.shared.removeRedirect(for: keyCode, in: (scope.getCompanionWindow()?.tetheredWindow)!)
 
                     }
+                case "autocomplete-hide":
+                    guard let companion = scope.getCompanionWindow(), companion.isAutocompletePopup else { return }
+                    
+                    if let hash = companion.tetheredWindow?.hash {
+                        KeypressProvider.shared.keyBuffer(for: hash).writeOnly = true
+                    }
+
                 case "setAutocompleteHeight":
                     guard let heightString = data["height"] else { return }
                     let companion = scope.getCompanionWindow()
