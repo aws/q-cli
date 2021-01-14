@@ -221,7 +221,20 @@ extension WebBridge: WKURLSchemeHandler {
         if (specifier.prefix(2) == "//") { specifier = String(specifier.dropFirst(2)) }
 //        if (specifier.prefix(1) !=  "/") { specifier = "/" + specifier }
         let resource = specifier.replacingOccurrences(of: "?\(url.query ?? "<none>")", with: "") as NSString
-        return NSWorkspace.shared.icon(forFile: resource.expandingTildeInPath.removingPercentEncoding ?? "").resized(to: NSSize(width: width, height: height))?.overlayBadge(color: color,  text: badge)
+        let fullPath = resource.expandingTildeInPath.removingPercentEncoding ?? ""
+        
+        var isDirectory : ObjCBool = false
+        let isFile = FileManager.default.fileExists(atPath: fullPath, isDirectory:&isDirectory)
+        guard isFile || isDirectory.boolValue else {
+            var t = NSString(string: fullPath).pathExtension
+            if (String(resource).last == "/") {
+                t = NSFileTypeForHFSTypeCode(OSType(kGenericFolderIcon))
+            }
+            
+            return NSWorkspace.shared.icon(forFileType: t).resized(to: NSSize(width: width, height: height))?.overlayBadge(color: color,  text: badge)
+        }
+        
+        return NSWorkspace.shared.icon(forFile: fullPath).resized(to: NSSize(width: width, height: height))?.overlayBadge(color: color,  text: badge)
         
     }
     
