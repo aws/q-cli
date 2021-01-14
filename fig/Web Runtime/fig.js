@@ -294,6 +294,12 @@ let setup = function(window) {
           fig.private({ type: "prompt", data: {source}})
       },
       
+      autocompletePopup : {
+          hide() {
+              fig.private({ type: "autocomplete-hide", data: {}})
+          }
+      },
+      
       analytics : {
           track(event, properties) {
               var payload = { "event": event}
