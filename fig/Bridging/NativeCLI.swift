@@ -40,6 +40,8 @@ class NativeCLI {
         case remove = "remove"
         case report = "report"
         case ssh = "integrations:ssh"
+        case teamUpload = "team:upload"
+        case teamDownload = "team:download"
 
         var isUtility: Bool {
             get {
@@ -47,7 +49,7 @@ class NativeCLI {
                return utilities.contains(self)
             }
         }
-        
+
         var implementatedNatively: Bool {
             get {
                 let implementatedNatively: Set<Command> = [.resetCache,
@@ -120,7 +122,7 @@ class NativeCLI {
                 break;
             }
             
-            let script = scriptName ?? self.rawValue
+            let script = scriptName ?? self.rawValue.split(separator: ":").joined(separator: "-")
             if let scriptPath = Bundle.main.path(forResource: script,
                                                  ofType: "sh") {
                 NativeCLI.runShellScriptInTerminal(scriptPath, with: scope)
