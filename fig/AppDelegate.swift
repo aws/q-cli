@@ -887,7 +887,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         let configuration = try? String(contentsOf: SSHConfigFile)
         
         // config file does not exist or fig hasn't been enabled
-        if (!(configuration?.contains("Fig SSH Integration: Enabled!") ?? false)) {
+        if (!(configuration?.contains("Fig SSH Integration: Enabled") ?? false)) {
             guard self.dialogOKCancel(question: "Install SSH integration?", text: "Fig will make changes to your SSH config (stored in ~/.ssh/config).") else {
                 return
             }
