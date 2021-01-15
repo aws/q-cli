@@ -270,6 +270,7 @@ class KeypressProvider : KeypressService {
 //                           //keyBuffer.buffer = nil
 //                           return
 //                       }
+            print("flicker: char=\(event.characters ?? "")")
 
                     if let (buffer, index) = keyBuffer.handleKeystroke(event: event),
                         let b64 = buffer.data(using: .utf8)?.base64EncodedString() {
@@ -289,8 +290,8 @@ class KeypressProvider : KeypressService {
 
             }
 
+        // this is throttled to improve choppiness when updated on each keydown and keyup
         self.throttler.throttle {
-
             if let rect = self.getTextRect() {
                 WindowManager.shared.positionAutocompletePopover(textRect: rect)
 
