@@ -301,8 +301,10 @@ let setup = function(window) {
       },
       
       analytics : {
-          track(event, properties) {
-              var payload = { "event": event}
+          track(obj) {
+              let { event, properties } = obj
+
+              var payload = { "name": event }
               payload = Object.keys(properties).reduce((dict, key) => {
                    dict[`prop_${key}`] = JSON.stringify(properties[key])
                    return dict
@@ -311,8 +313,9 @@ let setup = function(window) {
               fig.private({ type: "track", data: payload})
           },
           
-          identify(userId, traits) {
-              var payload = { "userId": userId }
+          identify(obj) {
+              let { traits } = obj
+              var payload = { }
               payload = Object.keys(traits).reduce((dict, key) => {
                    dict[`trait_${key}`] = JSON.stringify(traits[key])
                    return dict
@@ -321,8 +324,8 @@ let setup = function(window) {
               fig.private({ type: "identify", data: payload})
           },
           
-          alias(previousId, userId) {
-              var payload = { previousId, userId}
+          alias(userId) {
+              var payload = { userId }
               fig.private({ type: "alias", data: payload})
           }
       }
