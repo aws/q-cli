@@ -11,12 +11,13 @@ import Cocoa
 
 import KituraNet
 import KituraWebSocket
-
+import Sentry
 class ShellBridgeServerDelegate: ServerDelegate {
     public func handle(request: ServerRequest, response: ServerResponse) {}
 }
 
 class WebSocketServer {
+    //lsof -i tcp:8765
     static let bridge = WebSocketServer(port: 8765)
     let service: ShellBridgeSocketService
     
@@ -37,7 +38,13 @@ class WebSocketServer {
                        try server.listen(on: port, address: "localhost")
                        ListenerGroup.waitForListeners()
                    } catch {
-                       print("Error listening on port \(port): \(error).")
+                        SentrySDK.capture(message: "Error listening on port \(port): \(error).")
+
+                        DispatchQueue.main.async {
+                            if let delegate = NSApp.delegate as? AppDelegate {
+                                delegate.dialogOKCancel(question: "Could not link with terminal", text: "A process is already listening on port 8765.\nRun `lsof -i tcp:8765` to identify it.\n\nPlease email hello@withfig.com for help debugging.", prompt: "", noAction: true, icon: nil)
+                            }
+                        }
                    }
         }
        
