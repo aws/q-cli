@@ -7,11 +7,41 @@
 //
 
 import Cocoa
+import Sentry
 
 class KeyBindingsManager {
-  static let keymapFilePath = URL(fileURLWithPath: "\(NSHomeDirectory())/.fig/figkeymap.txt")
+  static let keymapFilePath = URL(fileURLWithPath: "\(NSHomeDirectory())/.fig/user/keybindings")
   static var keyBindings: [Keystroke: TextTransformation] = parseKeyBindings()
-  
+  static let defaultBindings =
+"""
+backwardChar ←
+backwardChar ⌃B
+forwardChar →
+forwardChar ⌃F
+backwardWord ⌥←
+forwardWord ⌥→
+historySearchBackward ↑
+historySearchBackward ⌃P
+historySearchForward ↓
+historySearchForward ⌃N
+beginningOfLine ⌃A
+beginningOfLine ⌘←
+endOfLine ⌃E
+endOfLine ⌘→
+historyIncrementalSearchBackward ⌃R
+historyIncrementalSearchForward ⌃S
+backwardDeleteChar ⌃H
+deleteCharOrList ⌃D
+transposeChars ⌃T
+killWholeLine ⌃U
+backwardKillWord ⌃W
+yank ⌃Y
+sendBreak ⌃G
+acceptLine ⌃J
+acceptLine ⌃M
+expandOrComplete ⌃I
+"""
+    
   private static func parseKeyBindings() -> [Keystroke: TextTransformation] {
     print("xterm: reparsing keybindings")
     var keyBindings: [Keystroke: TextTransformation] = [:]
@@ -38,13 +68,13 @@ class KeyBindingsManager {
       keyBindings[Keystroke(modifierFlags: [.control], keyCode: Keycode.forwardSlash)] = .forwardSlash // some very strange iterm command
     } catch {
       // recreate defaults file
-      let defaultKeybindingsContent = "backwardWord ←\nbackwardWord ⌃B\nforwardWord →\nforwardWord ⌃F\nhistorySearchBackward ↑\nhistorySearchBackward ⌃P\nhistorySearchForward ↓\nhistorySearchForward ⌃N\nbeginningOfLine ⌃A\nendOfLine ⌃E\nhistoryIncrementalSearchBackward ⌃R\nhistoryIncrementalSearchForward ⌃S\nbackwardDeleteChar ⌃H\ndeleteCharOrList ⌃D\ntransposeChars ⌃T\nkillWholeLine ⌃U\nbackwardKillWord ⌃W\nyank ⌃Y\nsendBreak ⌃G\nacceptLine ⌃J\nacceptLine ⌃M\nexpandOrComplete ⌃I"
       do {
         print("xterm: keybindings file default not found recreating")
-        try defaultKeybindingsContent.write(to: Self.keymapFilePath, atomically: true, encoding: String.Encoding.utf8)
+        try Self.defaultBindings.write(to: Self.keymapFilePath, atomically: true, encoding: String.Encoding.utf8)
         return parseKeyBindings()
       } catch {
-        print("xterm: failed to write file")
+        SentrySDK.capture(message: "xterm: failed to write keybindings file")
+        print("xterm: failed to write keybindings file")
       }
     }
     return keyBindings

@@ -80,11 +80,11 @@ class KeystrokeBuffer : NSObject {
       buffer!.insert(contentsOf: pasteboard, at: index!)
       index = buffer!.index(index!, offsetBy: pasteboard.count, limitedBy: buffer!.endIndex)
       print("xterm: Paste! (\(pasteboard))")
-    case .backwardWord:
+    case .backwardChar:
       guard buffer != nil, index != nil, index != buffer!.startIndex else { break }
       index = buffer!.index(before: index!)
       print("xterm: move cursor to the left by 1")
-    case .forwardWord:
+    case .forwardChar:
       // handles zsh greyed out text
       if Defaults.deferToShellAutosuggestions && buffer != nil && index == buffer!.endIndex {
         buffer = nil
