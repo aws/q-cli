@@ -163,9 +163,23 @@ extension NativeCLI {
     static func logoutCommand(_ scope: Scope) {
         let (_, connection) = scope
         let domain = Bundle.main.bundleIdentifier!
+        let uuid = Defaults.uuid
         UserDefaults.standard.removePersistentDomain(forName: domain)
+        UserDefaults.standard.removePersistentDomain(forName: "\(domain).shared")
+
         UserDefaults.standard.synchronize()
+                
+        UserDefaults.standard.set(uuid, forKey: "uuid")
+        UserDefaults.standard.synchronize()
+        
         WebView.deleteCache()
+
+
+        let _ = """
+        grep -q 'FIG_LOGGED_IN' ~/.fig/user/config || echo "\nFIG_LOGGED_IN=0" >> ~/.fig/user/config;
+
+        sed -i '' "s/FIG_LOGGED_IN=.*/FIG_LOGGED_IN=0/g" ~/.fig/user/config 2> /dev/null
+        """.runAsCommand()
         
         printInTerminal("→ Logging out of Fig...", using: connection)
         connection.send(message: "disconnect")
