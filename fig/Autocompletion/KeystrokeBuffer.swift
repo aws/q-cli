@@ -93,6 +93,44 @@ class KeystrokeBuffer : NSObject {
       guard buffer != nil, index != nil, index != buffer!.endIndex else { break }
       index = buffer!.index(after: index!)
       print("xterm: move cursor to the right by 1")
+    case .backwardWord:
+        guard buffer != nil, index != nil else { break }
+        
+        let prefix = String(buffer![..<index!])
+        
+        // strip leading whitespace
+        let stripWhitespace = prefix.trimTrailingCharacters(in: CharacterSet.whitespaces)
+        
+        // strip all-nonwhitespace characters
+        let notWhitespace = stripWhitespace.trimTrailingCharacters(in: CharacterSet.whitespaces.inverted)
+        
+        print("xterm: ", notWhitespace)
+        //prefix.distance(from: notWhitespace.endIndex, to: prefix.endIndex)
+        index = notWhitespace.endIndex
+        print("xterm: move cursor to the left by 1 word")
+
+    case .forwardWord:
+        guard buffer != nil, index != nil
+            else { break }
+        
+        let suffix = String(buffer!.suffix(from: index!))
+
+        // strip all-nonwhitespace characters
+        let notWhitespace = suffix.trimLeadingCharacters(in: CharacterSet.whitespaces.inverted)
+        
+        // strip leading whitespace
+        let stripWhitespace = notWhitespace.trimLeadingCharacters(in: CharacterSet.whitespaces)
+        
+        print("xterm: ", stripWhitespace)
+        // if the range can't be found, then we've reached the end of the string
+        guard let range = suffix.range(of: stripWhitespace) else {
+            index = buffer!.endIndex
+            break
+        }
+        let dist = suffix.distance(from: suffix.startIndex, to: range.lowerBound)
+        index = buffer!.index(index!, offsetBy: dist, limitedBy: buffer!.endIndex)
+        print("xterm: move cursor to the right by 1 word")
+
     case .historySearchBackward:
       if (historyIndex ==  0) {
         stash()
@@ -304,6 +342,13 @@ extension String {
   func trimTrailingCharacters(in characterSet : CharacterSet) -> String {
     if let range = rangeOfCharacter(from: characterSet, options: [.anchored, .backwards]) {
       return String(self[..<range.lowerBound]).trimTrailingCharacters(in: characterSet)
+    }
+    return self
+  }
+
+  func trimLeadingCharacters(in characterSet : CharacterSet) -> String {
+    if let range = rangeOfCharacter(from: characterSet, options: [.anchored]) {
+        return String(self.suffix(from: range.upperBound)).trimLeadingCharacters(in: characterSet)
     }
     return self
   }
