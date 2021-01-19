@@ -912,7 +912,11 @@ extension WebBridge {
                     } else {
                        companion?.maxHeight = nil
                     }
-                    
+                    print("flicker: set maxHeight = \(heightString)")
+                    guard previousMax != companion?.maxHeight else {
+                        print("flicker: heights matched")
+                        return
+                    }
                     // testing
                     if(!(companion?.isAutocompletePopup ?? false)) {
                         companion?.windowManager.requestWindowUpdate()
@@ -982,6 +986,11 @@ extension WebBridge {
                    companion?.maxHeight = nil
                 }
                 
+                guard previousMax != companion?.maxHeight else {
+                    print("flicker: heights matched")
+                    return
+                }
+                
                 // testing
                 if(!(companion?.isAutocompletePopup ?? false)) {
                     companion?.windowManager.requestWindowUpdate()
@@ -1004,11 +1013,16 @@ extension WebBridge {
                 guard let companion = scope.getCompanionWindow(), companion.isAutocompletePopup else {
                     return
                 }
-                
+                let previousWidth = companion.width
                 if let number = NumberFormatter().number(from: value) {
                     companion.width = CGFloat(truncating: number)
                 } else {
                     companion.width = nil
+                }
+                
+                guard previousWidth != companion.width else {
+                    print("flicker: widths matched")
+                    return
                 }
                 
                 let rect = KeypressProvider.shared.getTextRect()
