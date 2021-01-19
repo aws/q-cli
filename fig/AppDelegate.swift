@@ -516,7 +516,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     
     @objc func uninstall() {
         
-        let confirmed = self.dialogOKCancel(question: "Uninstall Fig?", text: "Are you sure you want to uninstall Fig?\nRunning this script will remove all local runbooks, completion specs and quit the app.\n\nYou may move Fig to the Trash after it has completed.", icon: NSImage(imageLiteralResourceName: NSImage.applicationIconName))
+        let confirmed = self.dialogOKCancel(question: "Uninstall Fig?", text: "Are you sure you want to uninstall Fig?\nRunning this script will remove all local runbooks, completion specs and delete the app.\n\n You will need to source your shell profile in any currently running terminal sessions for changes to register (or restart your terminal app to trigger this automatically).", icon: NSImage(imageLiteralResourceName: NSImage.applicationIconName))
         
         if confirmed {
             TelemetryProvider.track(event: .uninstallApp, with: [:])
