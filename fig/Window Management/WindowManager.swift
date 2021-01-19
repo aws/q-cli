@@ -737,7 +737,7 @@ extension WindowManager : WindowManagementService {
 
             }
             
-            WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try { fig.autocomplete_above = \(isAbove)} catch(e) {}", completionHandler: nil)
+//            WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try { fig.autocomplete_above = \(isAbove)} catch(e) {}", completionHandler: nil)
             
             let popup = NSRect(origin: translatedOrigin, size: CGSize(width: WindowManager.shared.autocomplete?.width ?? Defaults.autocompleteWidth ?? 200
                 , height: height))
@@ -753,10 +753,11 @@ extension WindowManager : WindowManagementService {
             if (Defaults.debugAutocomplete) {
                 WindowManager.shared.autocomplete?.maxHeight = 200//heightLimit//140
             }
-            WindowManager.shared.autocomplete?.setOverlayFrame(NSRect(x: x,
-                                                                      y: popup.origin.y,
-                                                                      width: popup.width,
-                                                                      height: height))//140
+          
+            DispatchQueue.main.async {
+              WindowManager.shared.autocomplete?.setOverlayFrame(NSRect(x: x, y: popup.origin.y, width: popup.width, height: height))//140
+            }
+            
         } else {
             // workaround for
             WindowManager.shared.autocomplete?.orderOut(nil)

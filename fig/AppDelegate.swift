@@ -73,7 +73,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         handleUpdateIfNeeded()
         Defaults.useAutocomplete = true
         Defaults.deferToShellAutosuggestions = true
-        Defaults.autocompleteVersion = "v3"
+        Defaults.autocompleteVersion = "v4"
         Defaults.autocompleteWidth = 250
         Defaults.ignoreProcessList = ["figcli", "gitstatusd-darwin-x86_64"]
 
@@ -619,6 +619,10 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             Onboarding.setUpEnviroment()
 
             TelemetryProvider.track(event: .updatedApp, with: ["script": script ?? "<none>"])
+            
+            // Any defaults that should be set for upgrading users
+            // For anyone upgrading, we are just going to assume that this is true
+            Defaults.hasShownAutocompletePopover = true
 
         }
         
@@ -887,7 +891,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         let configuration = try? String(contentsOf: SSHConfigFile)
         
         // config file does not exist or fig hasn't been enabled
-        if (!(configuration?.contains("Fig SSH Integration: Enabled!") ?? false)) {
+        if (!(configuration?.contains("Fig SSH Integration: Enabled") ?? false)) {
             guard self.dialogOKCancel(question: "Install SSH integration?", text: "Fig will make changes to your SSH config (stored in ~/.ssh/config).") else {
                 return
             }

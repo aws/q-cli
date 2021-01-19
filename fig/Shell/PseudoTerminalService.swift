@@ -94,7 +94,8 @@ class PseudoTerminal : PseudoTerminalService {
         let shell = env["SHELL"] ?? "/bin/sh"
         
         // don't add shell hooks to pty
-        var updatedEnv = env.merging(["FIG_ENV_VAR" : "1", "FIG_SHELL_VAR" : "1"]) { $1 }
+        // Add TERM variable to supress warning for ZSH
+        var updatedEnv = env.merging(["FIG_ENV_VAR" : "1", "FIG_SHELL_VAR" : "1", "TERM" : "xterm-256color"]) { $1 }
         let rawEnv = updatedEnv.reduce([]) { (acc, elm) -> [String] in
             let (key, value) = elm
             return acc + ["\(key)=\(value)"]

@@ -36,15 +36,16 @@ fig_proc_info* getProcessInfo(const char * tty, int *size) {
     if ((kp->kp_eproc.e_tdev == NODEV || (kp->kp_proc.p_flag & P_CONTROLT) == 0)) {
       continue;
     }
-    // https://linear.app/fig/issue/ENG-44/bugfixes-to-psc
-    char *dev = malloc(MAXNAMLEN);
     
-    devname_r(kp->kp_eproc.e_tdev, S_IFCHR, dev, MAXNAMLEN);
-    if (dev == NULL) {
+    // https://linear.app/fig/issue/ENG-195/devname-r-is-still-not-threadsafe-because-it-uses-readdir
+    char *ttysBuff = malloc(MAXNAMLEN);
+    dev_t did = kp->kp_eproc.e_tdev;
+    snprintf(ttysBuff, MAXNAMLEN, "ttys%03d", did & 0xff);
+    if (ttysBuff == NULL) {
       continue;
     }
-    if (strlen(tty) != 0 && strcmp(tty, dev) != 0) {
-      free(dev);
+    if (strlen(tty) != 0 && strcmp(tty, ttysBuff) != 0) {
+      free(ttysBuff);
       continue;
     }
     
@@ -66,7 +67,7 @@ fig_proc_info* getProcessInfo(const char * tty, int *size) {
     process = (fig_proc_info*)malloc( sizeof( fig_proc_info ) );
     process->pid = kp->kp_proc.p_pid;
     // malloc: Incorrect checksum for freed object 0x10288f400: probably modified after being freed.
-    strncpy(process->tty, dev, FIG_TTY_MAXSIZE);
+    strncpy(process->tty, ttysBuff, FIG_TTY_MAXSIZE);
     strncpy(process->cmd, pathBuffer, PROC_PIDPATHINFO_MAXSIZE);
     strncpy(process->cwd, vpi.pvi_cdir.vip_path, PATH_MAX);
     // append process to items array
@@ -86,7 +87,7 @@ fig_proc_info* getProcessInfo(const char * tty, int *size) {
       }
     }
     items[count++] = *process;
-    free(dev);
+    free(ttysBuff);
     free(process);
   }
   free(kprocbuf);
