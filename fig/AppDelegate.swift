@@ -524,6 +524,19 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             if let general = Bundle.main.path(forResource: "uninstall", ofType: "sh") {
                 NSWorkspace.shared.open(URL(string: "https://withfig.com/uninstall?email=\(Defaults.email ?? "")")!)
                 toggleLaunchAtStartup(shouldBeOff: true)
+                
+                let domain = Bundle.main.bundleIdentifier!
+                let uuid = Defaults.uuid
+                UserDefaults.standard.removePersistentDomain(forName: domain)
+                UserDefaults.standard.removePersistentDomain(forName: "\(domain).shared")
+
+                UserDefaults.standard.synchronize()
+                        
+                UserDefaults.standard.set(uuid, forKey: "uuid")
+                UserDefaults.standard.synchronize()
+                
+                WebView.deleteCache()
+                
                 let out = "bash \(general)".runAsCommand()
                 Logger.log(message: out)
                 self.quit()

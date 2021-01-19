@@ -23,7 +23,7 @@ Host *
 
 
 mkdir -p ~/.ssh
-touch SSH_CONFIG_PATH
+touch $SSH_CONFIG_PATH
 echo -e "$CONFIG\n\n$(cat $SSH_CONFIG_PATH)" > $SSH_CONFIG_PATH
 echo Added Fig Integration to $SSH_CONFIG_PATH!
 defaults write com.mschrage.fig SSHIntegrationEnabled -bool TRUE
