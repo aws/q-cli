@@ -47,6 +47,7 @@ enum TelemetryEvent: String {
     case uninstallApp = "Uninstall App"
     case iTermSetup = "iTerm Setup"
     case launchedApp = "Launched App"
+    case firstAutocompletePopup = "First Autocomplete Popup"
 
 
 }
@@ -171,6 +172,11 @@ extension TelemetryProvider : LocalTelemetryService {
     @objc fileprivate static func showAutocompletePopup() {
         Logger.log(message: "showAutocompletePopup")
         self.store(event: .showAutocompletePopup)
+        
+        if (!Defaults.hasShownAutocompletePopover) {
+            Defaults.hasShownAutocompletePopover = true
+            TelemetryProvider.track(event: .firstAutocompletePopup, with: [:])
+        }
     }
 
     @objc fileprivate static func logTerminalUsage(_ notification: Notification) {

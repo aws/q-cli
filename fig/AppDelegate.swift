@@ -619,6 +619,10 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             Onboarding.setUpEnviroment()
 
             TelemetryProvider.track(event: .updatedApp, with: ["script": script ?? "<none>"])
+            
+            // Any defaults that should be set for upgrading users
+            // For anyone upgrading, we are just going to assume that this is true
+            Defaults.hasShownAutocompletePopover = true
 
         }
         
