@@ -25,15 +25,14 @@ historySearchBackward ⌃P
 historySearchForward ↓
 historySearchForward ⌃N
 beginningOfLine ⌃A
-beginningOfLine ⌘←
 endOfLine ⌃E
-endOfLine ⌘→
 historyIncrementalSearchBackward ⌃R
 historyIncrementalSearchForward ⌃S
 backwardDeleteChar ⌃H
 deleteCharOrList ⌃D
 transposeChars ⌃T
 killWholeLine ⌃U
+killWholeLine ⌘⌫
 backwardKillWord ⌃W
 yank ⌃Y
 sendBreak ⌃G
@@ -41,6 +40,11 @@ acceptLine ⌃J
 acceptLine ⌃M
 expandOrComplete ⌃I
 """
+/* Common but not added by default
+endOfLine ⌘→
+beginningOfLine ⌘←
+ */
+
     
   private static func parseKeyBindings() -> [Keystroke: TextTransformation] {
     print("xterm: reparsing keybindings")
@@ -101,6 +105,8 @@ expandOrComplete ⌃I
         keyCode = Keycode.leftArrow
       } else if (char == "→") {
         keyCode = Keycode.rightArrow
+      } else if (char == "⌫") {
+        keyCode = Keycode.delete
       } else {
         // converts to US-ANSI Keyboard Positions, case-insensitive
         keyCode = KeyboardLayout.shared.keyCode(for: String(char))
