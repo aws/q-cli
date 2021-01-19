@@ -23,8 +23,6 @@
 
 #define FIG_TTY_MAXSIZE 20
 
-//#define FIG_CWD_MAXSIZE 255 PATH_MAX
-
 typedef struct fig_proc_info {
   pid_t pid;
   char tty[FIG_TTY_MAXSIZE];
