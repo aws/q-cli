@@ -78,10 +78,12 @@ class Onboarding {
         let fullPath = NSString(string: path).expandingTildeInPath
         if let cliPath = Bundle.main.path(forAuxiliaryExecutable: "figcli") {
             do {
-                try FileManager.default.createSymbolicLink(at: URL(fileURLWithPath: fullPath), withDestinationURL: URL(fileURLWithPath: cliPath))
+                let fullURL = URL(fileURLWithPath: fullPath)
+                try? FileManager.default.createDirectory(at: fullURL.deletingLastPathComponent(), withIntermediateDirectories: true, attributes: [:])
+                try FileManager.default.createSymbolicLink(at: fullURL, withDestinationURL: URL(fileURLWithPath: cliPath))
             } catch {
                 Logger.log(message: "Could not download copy CLI to ~/.fig/bin")
-                SentrySDK.capture(message: "Could not download installation script")
+                SentrySDK.capture(message: "Could not download copy CLI to ~/.fig/bin")
             }
         }
         
