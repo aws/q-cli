@@ -912,7 +912,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             }
             
             SSHIntegration.install()
-            sender.state = .on
             let _ = self.dialogOKCancel(question: "SSH Integration Installed!", text: "When you connect to a remote machine using SSH, Fig will show relevant completions.\n\nIf you run into any issues, please email hello@withfig.com.", noAction: true, icon: NSImage.init(imageLiteralResourceName: NSImage.applicationIconName))
             return
         }

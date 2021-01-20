@@ -367,11 +367,11 @@ class Defaults {
     
     static var hasShownAutocompletePopover: Bool {
         get {
-              return UserDefaults.standard.bool(forKey: "SSHIntegrationEnabled")
+              return UserDefaults.standard.bool(forKey: "hasShownAutocompletePopover")
           }
               
           set(flag) {
-              UserDefaults.standard.set(flag, forKey: "SSHIntegrationEnabled")
+              UserDefaults.standard.set(flag, forKey: "hasShownAutocompletePopover")
               UserDefaults.standard.synchronize()
           }
     }

@@ -20,13 +20,14 @@ class SSHIntegration: CommandIntegration {
     static let command = "ssh"
     static func install() {
         if let scriptPath = Bundle.main.path(forResource: "ssh", ofType: "sh") {
+            Defaults.SSHIntegrationEnabled = true
             let out = "/bin/bash '\(scriptPath)'".runAsCommand()
             print(out)
         }
     }
     
     func runUsingPrefix() -> String? {
-        if let controlPath = self.controlPath {
+        if let controlPath = self.controlPath, Defaults.SSHIntegrationEnabled {
             //-o KbdInteractiveAuthentication=no -o ChallengeResponseAuthentication=no -o BatchMode=yes
             return "ssh -o PasswordAuthentication=no -q -o 'ControlPath=\(controlPath)' dest "
         }
@@ -35,6 +36,16 @@ class SSHIntegration: CommandIntegration {
     }
     
     func update(tty: TTY, for process: proc) {
+        guard Defaults.SSHIntegrationEnabled else {
+            Logger.log(message: "SSH Integration is not enabled", priority: .notify)
+            tty.cwd = process.cwd
+            tty.cmd = process.cmd
+            tty.pid = process.pid
+            tty.isShell = process.isShell
+            tty.runUsingPrefix = nil
+            return
+        }
+        
         let semaphore = DispatchSemaphore(value: 0)
         if tty.pty == nil {
             tty.pty = PseudoTerminalHelper()
