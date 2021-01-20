@@ -81,6 +81,7 @@
 		752D71CA25AFD7B400263527 /* team-download.sh in Resources */ = {isa = PBXBuildFile; fileRef = 752D71C825AFD59B00263527 /* team-download.sh */; };
 		752D71CB25AFD7B400263527 /* team-upload.sh in Resources */ = {isa = PBXBuildFile; fileRef = 752D71C925AFD5B800263527 /* team-upload.sh */; };
 		752D71CD25B8A6B300263527 /* Restarter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 752D71CC25B8A6B200263527 /* Restarter.swift */; };
+		752D71CF25B8CA4000263527 /* iTermTabIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 752D71CE25B8CA4000263527 /* iTermTabIntegration.swift */; };
 		754D31B525759D900020CED4 /* tutorial.html in Resources */ = {isa = PBXBuildFile; fileRef = 754D31B425759D900020CED4 /* tutorial.html */; };
 		755D0DE0247DDE050074AB5C /* FigCLI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755D0DDF247DDE050074AB5C /* FigCLI.swift */; };
 		755D0DE2247EFAE10074AB5C /* Logging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755D0DE1247EFAE10074AB5C /* Logging.swift */; };
@@ -294,6 +295,7 @@
 		752D71C825AFD59B00263527 /* team-download.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "team-download.sh"; sourceTree = "<group>"; };
 		752D71C925AFD5B800263527 /* team-upload.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "team-upload.sh"; sourceTree = "<group>"; };
 		752D71CC25B8A6B200263527 /* Restarter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Restarter.swift; sourceTree = "<group>"; };
+		752D71CE25B8CA4000263527 /* iTermTabIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iTermTabIntegration.swift; sourceTree = "<group>"; };
 		754D31B425759D900020CED4 /* tutorial.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = tutorial.html; sourceTree = "<group>"; };
 		755D0DDF247DDE050074AB5C /* FigCLI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FigCLI.swift; sourceTree = "<group>"; };
 		755D0DE1247EFAE10074AB5C /* Logging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logging.swift; sourceTree = "<group>"; };
@@ -569,6 +571,7 @@
 				75C0EBD2253E336E001964DE /* TerminalUsageTelemetry.swift */,
 				752C0BD72479EEDA0077E415 /* File.swift */,
 				75A4521325AD367E00107D2C /* Feedback.swift */,
+				752D71CE25B8CA4000263527 /* iTermTabIntegration.swift */,
 				75B1992A25019FDE00F38EA8 /* Companion Window */,
 				75B1992B25019FFE00F38EA8 /* Window Management */,
 				75B1992E2501A12C00F38EA8 /* Shell */,
@@ -1078,6 +1081,7 @@
 				7510F8B224A6910500E86F7C /* CharData.swift in Sources */,
 				75AA24DA25A7E8B000A51E9D /* lsof.m in Sources */,
 				75EB592B258D98A7002915E7 /* BiMap.swift in Sources */,
+				752D71CF25B8CA4000263527 /* iTermTabIntegration.swift in Sources */,
 				751F7589246D090100E083C8 /* WebBridge.swift in Sources */,
 				7510F8A624A6910500E86F7C /* iOSAccessoryView.swift in Sources */,
 				75675955244634AD006AA988 /* AppDelegate.swift in Sources */,

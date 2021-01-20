@@ -158,6 +158,8 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         
         toggleLaunchAtStartup()
         
+        iTermTabIntegration.listenForHotKey()
+        
     }
     
     func remindToSourceFigInExistingTerminals() {
