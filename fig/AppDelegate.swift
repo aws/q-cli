@@ -638,7 +638,14 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             // Any defaults that should be set for upgrading users
             // For anyone upgrading, we are just going to assume that this is true
             Defaults.hasShownAutocompletePopover = true
-
+            
+            // if iTerm integration exists prior to update, reinstall because it should be symlinked
+            let iTermIntegrationPath = "\(NSHomeDirectory())/Library/Application Support/iTerm2/Scripts/AutoLaunch/fig-iterm-integration.py"
+            if (FileManager.default.fileExists(atPath: iTermIntegrationPath)) {
+                try? FileManager.default.removeItem(atPath: iTermIntegrationPath)
+                let localScript = Bundle.main.path(forResource: "fig-iterm-integration", ofType: "py")!
+                try? FileManager.default.createSymbolicLink(atPath: iTermIntegrationPath, withDestinationPath: localScript)
+            }
         }
         
         Defaults.versionAtPreviousLaunch = current
