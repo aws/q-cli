@@ -915,6 +915,11 @@ extension WebBridge {
                     print("flicker: set maxHeight = \(heightString)")
                     guard previousMax != companion?.maxHeight else {
                         print("flicker: heights matched")
+                        
+                        if let handlerId = handlerId {
+                            WebBridge.callback(handler: handlerId, value: "", webView: scope.webView)
+                        }
+
                         return
                     }
                     // testing
