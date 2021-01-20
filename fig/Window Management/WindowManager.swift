@@ -286,8 +286,9 @@ class WindowManager : NSObject {
             NSWorkspace.shared.launchApplication("Terminal")
         } else {
             Logger.log(message: "term: \(running.count) currently running terminal(s).")
-
-            let target = running.first!
+            let iTerm = running.filter { $0.bundleIdentifier == "com.googlecode.iterm2" }.first
+            let target = iTerm ?? running.first!
+            
             target.activate(options: .activateIgnoringOtherApps)
             Logger.log(message: "term: Activating \(target.bundleIdentifier ?? "<none>")")
 

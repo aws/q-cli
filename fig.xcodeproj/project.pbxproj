@@ -80,6 +80,7 @@
 		752D71C725AECB4B00263527 /* ssh.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 752D71C625AECB4B00263527 /* ssh.mp4 */; };
 		752D71CA25AFD7B400263527 /* team-download.sh in Resources */ = {isa = PBXBuildFile; fileRef = 752D71C825AFD59B00263527 /* team-download.sh */; };
 		752D71CB25AFD7B400263527 /* team-upload.sh in Resources */ = {isa = PBXBuildFile; fileRef = 752D71C925AFD5B800263527 /* team-upload.sh */; };
+		752D71CD25B8A6B300263527 /* Restarter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 752D71CC25B8A6B200263527 /* Restarter.swift */; };
 		754D31B525759D900020CED4 /* tutorial.html in Resources */ = {isa = PBXBuildFile; fileRef = 754D31B425759D900020CED4 /* tutorial.html */; };
 		755D0DE0247DDE050074AB5C /* FigCLI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755D0DDF247DDE050074AB5C /* FigCLI.swift */; };
 		755D0DE2247EFAE10074AB5C /* Logging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755D0DE1247EFAE10074AB5C /* Logging.swift */; };
@@ -292,6 +293,7 @@
 		752D71C625AECB4B00263527 /* ssh.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = ssh.mp4; sourceTree = "<group>"; };
 		752D71C825AFD59B00263527 /* team-download.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "team-download.sh"; sourceTree = "<group>"; };
 		752D71C925AFD5B800263527 /* team-upload.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "team-upload.sh"; sourceTree = "<group>"; };
+		752D71CC25B8A6B200263527 /* Restarter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Restarter.swift; sourceTree = "<group>"; };
 		754D31B425759D900020CED4 /* tutorial.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = tutorial.html; sourceTree = "<group>"; };
 		755D0DDF247DDE050074AB5C /* FigCLI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FigCLI.swift; sourceTree = "<group>"; };
 		755D0DE1247EFAE10074AB5C /* Logging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logging.swift; sourceTree = "<group>"; };
@@ -558,6 +560,7 @@
 				75675954244634AD006AA988 /* AppDelegate.swift */,
 				75E993F32515C8D3000BE6BE /* Autocompletion */,
 				75B199332504190900F38EA8 /* Keycode.swift */,
+				752D71CC25B8A6B200263527 /* Restarter.swift */,
 				751C3BEB24B6910800B5C7FD /* Remote.swift */,
 				751C3BED24B6915000B5C7FD /* Defaults.swift */,
 				75E993F12515A6DD000BE6BE /* statusbar@2x.png */,
@@ -1086,6 +1089,7 @@
 				7510F89A24A6910500E86F7C /* Extensions.swift in Sources */,
 				7510F8B524A6910500E86F7C /* SearchService.swift in Sources */,
 				75A4521425AD367E00107D2C /* Feedback.swift in Sources */,
+				752D71CD25B8A6B300263527 /* Restarter.swift in Sources */,
 				7510F8A024A6910500E86F7C /* EscapeSequences.swift in Sources */,
 				7510F8A224A6910500E86F7C /* CircularList.swift in Sources */,
 				7510F8AD24A6910500E86F7C /* SelectionService.swift in Sources */,

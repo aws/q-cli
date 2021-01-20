@@ -158,9 +158,45 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         
         toggleLaunchAtStartup()
         
-        
     }
     
+    func remindToSourceFigInExistingTerminals() {
+        
+        // filter for native terminal windows (with hueristic to avoid menubar items + other window types)
+        let nativeTerminalWindows = WindowServer.shared.allWindows().filter { Integrations.nativeTerminals.contains($0.bundleId ?? "") }.filter { $0.frame.height != 22 && $0.frame.height != 30 }
+        
+        let count = nativeTerminalWindows.count
+        guard count > 0 else { return }
+        let iTermOpen = nativeTerminalWindows.contains { $0.bundleId == "com.googlecode.iterm2" }
+        let terminalAppOpen = nativeTerminalWindows.contains { $0.bundleId == "com.apple.Terminal" }
+        
+        var emulators: [String] = []
+        
+        if (iTermOpen) {
+            emulators.append("iTerm")
+        }
+        
+        if (terminalAppOpen) {
+            emulators.append("Terminal")
+        }
+                
+        let restart = self.dialogOKCancel(question: "\(count) existing terminal session\(count == 1 ? "" : "s") ", text: "Any terminal sessions started before Fig are not tracked.\n\nRun `fig source` in each session to connect or restart your terminal\(emulators.count == 1 ? "" : "s").\n", prompt: "Restart \(emulators.joined(separator: " and "))", noAction: false, icon: NSImage.init(imageLiteralResourceName: NSImage.applicationIconName))
+        
+        if (restart) {
+            print("restart")
+            
+            if (iTermOpen) {
+                let iTerm = Restarter(with: "com.googlecode.iterm2")
+                iTerm.restart()
+            }
+            
+            if (terminalAppOpen) {
+                let terminalApp = Restarter(with: "com.apple.Terminal")
+                terminalApp.restart()
+            }
+        }
+    }
+        
     func openMenu() {
         if let menu = self.statusBarItem.menu {
             self.statusBarItem.popUpMenu(menu)
@@ -588,16 +624,17 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         })
     }
         
-    func dialogOKCancel(question: String, text: String, prompt:String = "OK", noAction:Bool = false, icon: NSImage? = nil) -> Bool {
+    func dialogOKCancel(question: String, text: String, prompt:String = "OK", noAction:Bool = false, icon: NSImage? = nil, noActionTitle: String? = nil) -> Bool {
         let alert = NSAlert() //NSImage.cautionName
         alert.icon = icon ?? NSImage(imageLiteralResourceName: "NSSecurity").overlayAppIcon()
         alert.icon.size = NSSize(width: 32, height: 32)
         alert.messageText = question
         alert.informativeText = text
         alert.alertStyle = .warning
-        alert.addButton(withTitle: prompt)
+        let button = alert.addButton(withTitle: prompt)
+        button.highlight(true)
         if (!noAction) {
-            alert.addButton(withTitle: "Not now")
+            alert.addButton(withTitle: noActionTitle ?? "Not now")
         }
         return alert.runModal() == .alertFirstButtonReturn
     }
@@ -646,6 +683,8 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
                 let localScript = Bundle.main.path(forResource: "fig-iterm-integration", ofType: "py")!
                 try? FileManager.default.createSymbolicLink(atPath: iTermIntegrationPath, withDestinationPath: localScript)
             }
+            
+            remindToSourceFigInExistingTerminals()
         }
         
         Defaults.versionAtPreviousLaunch = current

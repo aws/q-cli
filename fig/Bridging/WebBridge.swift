@@ -747,16 +747,18 @@ extension WebBridge {
                 case "ws":
                     ShellBridge.shared.startWebSocketServer()
                 case "close":
-                    
+//                    WindowManager.shared.bringTerminalWindowToFront()
+                    //WindowManager.shared.newNativeTerminalSession()
+                    scope.webView?.window?.close()
+                    Defaults.loggedIn = true
+
+                    Onboarding.setupTerminalsForShellOnboarding()
+                
                     if let delegate = NSApplication.shared.delegate as? AppDelegate {
                         delegate.setupCompanionWindow()
                     }
-//                    WindowManager.shared.bringTerminalWindowToFront()
-                    WindowManager.shared.newNativeTerminalSession()
-                    
-                    Defaults.loggedIn = true
+                
 //                    NSWorkspace.shared.launchApplication("Terminal")
-                    scope.webView?.window?.close()
                 case "forceUpdate":
                     if let appDelegate = NSApp.delegate as? AppDelegate {
                         appDelegate.updater?.installUpdatesIfAvailable()
