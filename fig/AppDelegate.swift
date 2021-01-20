@@ -766,7 +766,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     
     @objc func viewDocs() {
         
-        NSWorkspace.shared.open(URL(string: "https://docs.withfig.com/autocomplete")!)
+        NSWorkspace.shared.open(URL(string: "https://withfig.com/docs")!)
         TelemetryProvider.track(event: .viewDocs, with: [:])
     }
 
