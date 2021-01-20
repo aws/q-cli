@@ -126,7 +126,9 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
                 }
             }
             let installed = "fig cli:installed".runAsCommand().trimmingCharacters(in: .whitespacesAndNewlines)
-            if (!FileManager.default.fileExists(atPath: "/usr/local/bin/fig") && installed != "true") {
+            let hasLegacyInstallation = FileManager.default.fileExists(atPath: "/usr/local/bin/fig") && installed != "true"
+            let hasNewInstallation = FileManager.default.fileExists(atPath: "/usr/local/bin/fig")
+            if (!hasLegacyInstallation && !hasNewInstallation) {
                 SentrySDK.capture(message: "CLI Tool Not Installed on Subsequent Launch")
 
                 let enable = self.dialogOKCancel(question: "Install Fig CLI Tool?", text: "It looks like you haven't installed the Fig CLI tool. Fig doesn't work without it.")
