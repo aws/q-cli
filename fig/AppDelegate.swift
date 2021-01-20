@@ -127,7 +127,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             }
             let installed = "fig cli:installed".runAsCommand().trimmingCharacters(in: .whitespacesAndNewlines)
             let hasLegacyInstallation = FileManager.default.fileExists(atPath: "/usr/local/bin/fig") && installed != "true"
-            let hasNewInstallation = FileManager.default.fileExists(atPath: "/usr/local/bin/fig")
+            let hasNewInstallation = FileManager.default.fileExists(atPath: "\(NSHomeDirectory())/.fig/bin/fig")
             if (!hasLegacyInstallation && !hasNewInstallation) {
                 SentrySDK.capture(message: "CLI Tool Not Installed on Subsequent Launch")
 
