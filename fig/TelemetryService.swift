@@ -48,6 +48,8 @@ enum TelemetryEvent: String {
     case iTermSetup = "iTerm Setup"
     case launchedApp = "Launched App"
     case firstAutocompletePopup = "First Autocomplete Popup"
+    case restartForOnboarding = "Restart for Shell Onboarding"
+    case newWindowForOnboarding = "New Window for Shell Onboarding"
 
 
 }
