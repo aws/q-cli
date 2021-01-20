@@ -186,11 +186,6 @@ extension ShellHookManager {
     }
     
     func startedNewSSHConnection(_ info: ShellMessage) {
-        guard Defaults.SSHIntegrationEnabled else {
-            Logger.log(message: "SSH Integration is not enabled", priority: .notify)
-            return
-        }
-        
         guard let hash = attemptToFindToAssociatedWindow(for: info.session) else {
               Logger.log(message: "Could not link to window on new shell session.", priority: .notify, subsystem: .tty)
               return
