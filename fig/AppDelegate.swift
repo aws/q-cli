@@ -71,6 +71,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 //        WebView.deleteCache()
 
         handleUpdateIfNeeded()
+        warnToMoveToApplicationIfNecessary()
         Defaults.useAutocomplete = true
         Defaults.deferToShellAutosuggestions = true
         Defaults.autocompleteVersion = "v4"
@@ -160,6 +161,26 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         
         iTermTabIntegration.listenForHotKey()
         
+    }
+  
+    func warnToMoveToApplicationIfNecessary() {
+      let path = Bundle.main.bundlePath
+      if path.hasPrefix("Volumes/fig") {
+        //send a telemetry event
+        SentrySDK.capture(message: "Attempted to launch Fig from a DMG")
+        // warn and quit
+        let alert = NSAlert()
+        alert.messageText = "Attempting to Launch From a Removable Volume"
+        alert.informativeText = "Please move Fig to the /Applications folder and relaunch."
+        alert.alertStyle = .warning
+        let button = alert.addButton(withTitle: "Quit Fig")
+        button.highlight(true)
+        let response = alert.runModal()
+        if (response == .alertFirstButtonReturn) {
+          // TOOD: Move to Applications foler
+          exit(2)
+        }
+      }
     }
     
     func remindToSourceFigInExistingTerminals() {
