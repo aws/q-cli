@@ -77,30 +77,8 @@ enum NativeCLICommand : String {
     case appstore = "appstore"
     case blocks = "blocks"
     case home = "home"
-    case help = "--help"
-    case h = "-h"
-    case version = "--version"
-    case accesibility = "util:axprompt"
-    case logout = "util:logout"
-    case restart = "util:restart"
-    case build = "util:build"
-    case sidebar = "sidebar"
     case close = "close"
-    case feedback = "feedback"
-    case invite = "invite"
-    case docs = "docs"
-    case update = "update"
-    case source = "source"
-    case resetCache = "util:reset-cache"
-    case list = "list"
-    case onboarding = "onboarding"
-    case star = "star"
-    case tweet = "tweet"
-    case share = "share"
-    case slack = "slack"
-    case community = "community"
-    case contribute = "contribute"
-    case report = "report-issue"
+    case sidebar = "sidebar"
 
     var openInNewWindow: Bool {
         get {
@@ -478,9 +456,9 @@ class FigCLI {
             
 //            companionWindow.positioning =  .spotlight
 //            FigCLI.index(with: scope)
-            TelemetryProvider.post(event: .ranCommand, with:
-                                    ["cmd" : scope.cmd,
-                                    "args" : scope.options.map { TelemetryProvider.obscure($0)}.joined(separator: " "),
+            TelemetryProvider.track(event: .ranCommand, with:
+                                    ["command" : scope.cmd,
+                                    "arguments" : scope.options.map { TelemetryProvider.obscure($0)}.joined(separator: " "),
                                     "shell" : scope.shell ?? "<unknown>",
                                     "terminal" : scope.term ?? "<unknown>"])
             return
@@ -496,7 +474,11 @@ class FigCLI {
                           session: message.session)
         print("ROUTING \(command)")
         
-        TelemetryProvider.post(event: .ranCommand, with: ["cmd" : scope.cmd, "args" : scope.options.map { TelemetryProvider.obscure($0)}.joined(separator: " "), "shell" : scope.shell ?? "<unknown>", "terminal" : scope.term ?? "<unknown>"])
+        TelemetryProvider.track(event: .ranCommand, with:
+                                ["command" : scope.cmd,
+                                 "arguments" : scope.options.map { TelemetryProvider.obscure($0) }.joined(separator: " "),
+                                 "shell" : scope.shell ?? "<unknown>",
+                                 "terminal" : scope.term ?? "<unknown>"])
         
         // get aliases from sidebar
         let aliases = UserDefaults.standard.string(forKey: "aliases_dict")?.jsonStringToDict() ?? [:]
@@ -568,11 +550,6 @@ class FigCLI {
 
         if let nativeCommand = NativeCLICommand(rawValue: command) {
             switch nativeCommand {
-            case .docs:
-                if let delegate = NSApp.delegate as? AppDelegate {
-                    delegate.viewDocs()
-                }
-                FigCLI.printInTerminal(text: "→ Opening docs in browser...", scope: scope)
             case .callback:
                 FigCLI.callback(with: scope)
             case .bundle:
@@ -591,151 +568,12 @@ class FigCLI {
             case .apps, .store, .appstore, .blocks, .home, .sidebar:
                 companionWindow.positioning = .fullwindow
                 FigCLI.url(with: scope)
-            case .accesibility:
-                ShellBridge.promptForAccesibilityAccess()
-                scope.companionWindow.windowManager.close(window:  scope.companionWindow)
 
-            case .logout:
-//                Defaults.email = nil
-//                Defaults.loggedIn = false
-                let domain = Bundle.main.bundleIdentifier!
-                UserDefaults.standard.removePersistentDomain(forName: domain)
-                UserDefaults.standard.synchronize()
-                WebView.deleteCache()
-                
-                FigCLI.printInTerminal(text: "→ Logging out of Fig...", scope: scope)
-                ShellBridge.shared.socketServer.send(sessionId: scope.session, command: "disconnect")
-                if let delegate = NSApp.delegate as? AppDelegate {
-                    delegate.restart()
-                }
-
-                            
-//                let _ = "open -b \"com.mschrage.fig\"".runAsCommand()
-            case .restart:
-                FigCLI.printInTerminal(text: "→ Restarting Fig...", scope: scope)
-                ShellBridge.shared.socketServer.send(sessionId: scope.session, command: "disconnect")
-
-                if let delegate = NSApp.delegate as? AppDelegate {
-                    delegate.restart()
-                }
-//                let _ = "osascript -e 'quit app \"Fig\"'; open -b \"com.mschrage.fig\"".runAsCommand()
-            case .build:
-                if let buildMode = Build(rawValue: scope.options.first ?? "") {
-                    let msg = "→ Setting build to \(buildMode.rawValue)"
-                    FigCLI.printInTerminal(text: msg, scope: scope)
-                    Defaults.build = buildMode
-                } else {
-                    let msg = "→ Current build is '\( Defaults.build .rawValue)'\n\n fig util:build [prod | staging | dev]"
-                    FigCLI.printInTerminal(text: msg, scope: scope)
-
-                    scope.companionWindow.windowManager.close(window:  scope.companionWindow)
-
-                }
-
-            case .version:
-                FigCLI.runInTerminal(script: "echo \"\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "-1")\"", scope: scope)
             case .close:
                 scope.companionWindow.windowManager.close(window:  scope.companionWindow)
-            case .resetCache:
-                WebView.deleteCache()
-                FigCLI.printInTerminal(text: "→ Resetting WebKit Cache", scope: scope)
-            case .onboarding:
-                if let path = NSURL(fileURLWithPath: NSString("~/.fig/tools/drip/fig_onboarding.sh").expandingTildeInPath).resourceSpecifier {
-                    print(path)//2>/dev/null
-                    FigCLI.runInTerminal(script: "\(path)", scope: scope)
-                }
-            case .slack, .community:
-                FigCLI.printInTerminal(text: "→ Joining Fig Community...", scope: scope)
-                (NSApp.delegate as? AppDelegate)?.inviteToSlack()
-            case .tweet, .share:
-                FigCLI.printInTerminal(text: "→ Opening Twitter...", scope: scope)
-            NSWorkspace.shared.open(URL(string:"https://twitter.com/intent/tweet?text=I%27ve%20added%20autocomplete%20to%20my%20terminal%20@withfig!%0a%0a%F0%9F%9B%A0%F0%9F%86%95%F0%9F%91%89%EF%B8%8F&url=https://withfig.com")!)
-            case .contribute, .star:
-                FigCLI.printInTerminal(text: "→ Opening Github repo...", scope: scope)
-                NSWorkspace.shared.open(URL(string:"https://github.com/withfig/autocomplete")!)
-            case .report:
-                FigCLI.printInTerminal(text: "→ Opening Github repo...", scope: scope)
-                NSWorkspace.shared.open(URL(string:"https://github.com/withfig/fig-issues/issues/new")!)
-            case .source:
-                let path = Bundle.main.path(forResource: "source", ofType: "sh")
-                FigCLI.runInTerminal(script: "bash \(path!)", scope: scope)
-            case .list:
-                let specs = try? FileManager.default.contentsOfDirectory(at: URL(fileURLWithPath:  "\(NSHomeDirectory())/.fig/autocomplete", isDirectory: true), includingPropertiesForKeys: nil, options: .skipsHiddenFiles).map { "\($0.lastPathComponent.replacingOccurrences(of: ".\($0.pathExtension)", with: ""))" }.joined(separator: "\n")
-                FigCLI.printInTerminal(text: specs ?? "No completions found.\n  Try running fig update.", scope: scope)
-            case .feedback:
-                let path = Bundle.main.path(forResource: "feedback", ofType: "sh")
-                FigCLI.runInTerminal(script: "bash \(path!)", scope: scope)
-            case .update:
-                let path = Bundle.main.path(forResource: "update-autocomplete", ofType: "sh")
-                FigCLI.runInTerminal(script: "bash \(path!)", scope: scope)
-            case .invite:
-                let path = Bundle.main.path(forResource: "invite", ofType: "sh")
-                FigCLI.runInTerminal(script: "bash \(path!)", scope: scope)
-            case .help, .h:
-                scope.companionWindow.windowManager.close(window:  scope.companionWindow)
-
-//                let localRunbooks = try? FileManager.default.contentsOfDirectory(at: URL(fileURLWithPath:  "\(NSHomeDirectory())/run/", isDirectory: true), includingPropertiesForKeys: nil, options: .skipsHiddenFiles).map { "  \($0.lastPathComponent.replacingOccurrences(of: ".\($0.pathExtension)", with: ""))" }.joined(separator: "\n")
-//                // load file from disk
-//                 let url = URL(fileURLWithPath: "~/.fig/cli.txt")
-//                 let out = try? String(contentsOf: url, encoding: String.Encoding.utf8)
-//                let helpMessage =
-//"""
-//CLI to interact with Fig
-//
-//\\u001b[1mUSAGE\\u001b[0m
-//  $ fig [SUBCOMMAND]
-//
-//\\u001b[1mCOMMANDS\\u001b[0m
-//  home            update your sidebar
-//  apps            browse all availible apps
-//  runbooks        view and edit your runbooks
-//  settings        view settings for Fig
-//  docs            open Fig documentation
-//  web <URL>       access websites on the internet
-//  local <PATH>    load local html files
-//  run <PATH>      load local rundown file
-//
-//\\u001b[1mAPPS\\u001b[0m
-//  dir             browse your file system
-//  curl            build http requests
-//  git             a lightweight UI for git
-//  google <QUERY>  search using Google
-//  psql            view and query Postgres databases
-//  monitor         visualize CPU usage by process
-//  sftp            browse files on remote servers
-//  alias           create aliases for common commands
-//  readme          preview Readme markdown documents
-//  + more          (run \\u001b[1mfig apps\\u001b[0m to view App Store)
-//
-//\\u001b[1mCOMMUNITY\\u001b[0m
-//  @user           view a user's public runbooks
-//  +team.com       view your team's shared runbooks
-//
-//\\u001b[1mLOCAL RUNBOOKS\\u001b[0m
-//\(localRunbooks ?? "  (none)          no runbooks in ~/run")
-//"""
-//  #chat           chat with others about a #topic
-
-                let helpMessage =
-"""
-CLI to interact with Fig
-
-\\033[1mUSAGE\\033[0m
-  $ fig [COMMAND]
-
-\\033[1mCOMMANDS\\033[0m
-
-  fig invite        invite up to 5 friends & teammates to Fig
-  fig feedback      send feedback directly to the Fig founders
-  fig update        update repo of completion scripts
-  fig docs          documentation for building completion specs
-  fig source        (re)connect fig to the current shell session
-  fig list          print all commands with completion specs
-  fig --help        a summary of the Fig CLI commands
-"""
-                FigCLI.runInTerminal(script: "echo \"\(helpMessage)\"", scope: scope)
             }
-        } else if (aliases.keys.contains(command)) { // user defined shortcuts
+
+            } else if (aliases.keys.contains(command)) { // user defined shortcuts
             
             if let meta = aliases[command] as? [String: Any],
                 let rawCommand = meta["raw"] as? String,

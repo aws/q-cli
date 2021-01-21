@@ -74,39 +74,62 @@ class Onboarding {
         }
     }
 
-//    static func installation() {
-//        let userShell = "dscl . -read ~/ UserShell".runAsCommand().trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: "UserShell: ", with: "")
-//        var script = try? String(contentsOf: URL(string: "\(Remote.baseURL)/onboarding/install?shell=\(userShell)")!)
-//        var welcome = try? String(contentsOf: URL(string: "\(Remote.baseURL)/onboarding/welcome.run")!)
-//
-//        script = script ?? Onboarding.defaultInstallScript
-//        welcome = welcome ?? ""
-//
-//        let _ = script!.runInBackground(completion: {
-//            try? welcome!.write(to: URL(string:  NSHomeDirectory() + "/run/welcome.run")!, atomically: true, encoding: .utf8)
-//        })
-//    }
-//
-//    static let defaultInstallScript: String =
-//    """
-//    mkdir -p ~/.fig/exports/;
-//
-//    touch ~/.fig/exports/env.sh;
-//
-//    touch ~/.fig/exports/searchIndex.txt;
-//
-//    touch ~/.fig/exports/global.fig;
-//
-//    mkdir -p ~/run/;
-//
-//    echo 'export FIGPATH="~/.fig/bin:~/run:"\\nFIGPATH=$FIGPATH\\n\\n##Run aliases shell script\\nsource $(dirname "$0")/aliases.sh' > ~/.fig/exports/env.sh;
-//
-//    touch ~/.fig/exports/aliases.sh;
-//
-//    mkdir -p ~/.fig/bin;
-//
-//    touch ~/.fig/bin/installedApps.fig;
-//
-//    echo '\\n\\n#### FIG ENV VARIABLES ####\\n[ -f ~/.fig/exports/env.sh ] && source ~/.fig/exports/env.sh \\n#### END FIG ENV VARIABLES ####\\n\\n' | tee -a ~/.profile ~/.zprofile ~/.bash_profile;
-//    """
+    static func copyFigCLIExecutable(to path: String) {
+        let fullPath = NSString(string: path).expandingTildeInPath
+        if let cliPath = Bundle.main.path(forAuxiliaryExecutable: "figcli") {
+            do {
+                let fullURL = URL(fileURLWithPath: fullPath)
+                try? FileManager.default.createDirectory(at: fullURL.deletingLastPathComponent(), withIntermediateDirectories: true, attributes: [:])
+                try FileManager.default.createSymbolicLink(at: fullURL, withDestinationURL: URL(fileURLWithPath: cliPath))
+            } catch {
+                Logger.log(message: "Could not download copy CLI to ~/.fig/bin")
+                SentrySDK.capture(message: "Could not download copy CLI to ~/.fig/bin")
+            }
+        }
+        
+    }
+    
+    static func setupTerminalsForShellOnboarding(completion: (()->Void)? = nil) {
+        // filter for native terminal windows (with hueristic to avoid menubar items + other window types)
+        let nativeTerminalWindows = WindowServer.shared.allWindows().filter { Integrations.nativeTerminals.contains($0.bundleId ?? "") }.filter { $0.frame.height != 22 && $0.frame.height != 30 }
+        
+        let count = nativeTerminalWindows.count
+        guard count > 0 else {
+            WindowManager.shared.newNativeTerminalSession(completion: completion)
+            return
+        }
+        let iTermOpen = nativeTerminalWindows.contains { $0.bundleId == "com.googlecode.iterm2" }
+        let terminalAppOpen = nativeTerminalWindows.contains { $0.bundleId == "com.apple.Terminal" }
+        
+        var emulators: [String] = []
+        
+        if (iTermOpen) {
+            emulators.append("iTerm")
+        }
+        
+        if (terminalAppOpen) {
+            emulators.append("Terminal")
+        }
+                
+        let restart = (NSApp.delegate as! AppDelegate).dialogOKCancel(question: "Fig will not work in existing terminal sessions", text: "Restart \(count) existing terminal session\(count == 1 ? "" : "s").\n", prompt: "Restart \(emulators.joined(separator: " and "))", noAction: false, icon: NSImage.init(imageLiteralResourceName: NSImage.applicationIconName), noActionTitle: "Open new terminal window")
+        
+        // only restart one of the terminals, so that shell onboarding doesn't appear twice
+        if (restart) {
+            TelemetryProvider.track(event: .restartForOnboarding, with: [:])
+
+            guard !iTermOpen else {
+                let iTerm = Restarter(with: "com.googlecode.iterm2")
+                iTerm.restart(completion: completion)
+                return
+            }
+
+            
+            let terminalApp = Restarter(with: "com.apple.Terminal")
+            terminalApp.restart(completion: completion)
+        } else {
+            TelemetryProvider.track(event: .newWindowForOnboarding, with: [:])
+            // if the user doesn't want to restart their terminal, revert to previous approach of creating new window.
+            WindowManager.shared.newNativeTerminalSession(completion: completion)
+        }
+    }
 }

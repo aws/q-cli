@@ -46,7 +46,8 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
     
     let windowManager: WindowManagementService
     let windowServiceProvider: WindowService = WindowServer.shared
-    
+
+    var width: CGFloat?
     var maxHeight: CGFloat?
     var priorTargetFrame: NSRect = .zero
     var positioning: OverlayPositioning = CompanionWindow.defaultActivePosition {
@@ -623,6 +624,7 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
     
     
         func setOverlayFrame(_ frame: NSRect) {
+            print("flicker: calling setOverlay")
             self.windowController?.shouldCascadeWindows = false;
             var updated = frame
             
@@ -638,10 +640,19 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
                     updated.size = CGSize(width: frame.width, height: min(frame.height, height2))
                 }
             }
-            
 
-                                                                                                                                                                
-            self.setFrame(updated.offsetBy(dx: 0, dy: -1 * updated.height), display: false, animate: false)
+            let newFrame = updated.offsetBy(dx: 0, dy: -1 * updated.height)
+            print("flicker:", newFrame, self.frame)
+            guard newFrame != self.frame else {
+                print("flicker: same frame, aborting!")
+                return
+            }
+            self.setFrame(newFrame, display: false, animate: false)
+            
+            guard self.frame.height > 0 else {
+                self.orderOut(nil)
+                return
+            }
 //            self.setFrame(frame.offsetBy(dx: 0, dy: -1 * frame.height), display: true, animate: true)
                 
             // adding the offset made this no longer necessary

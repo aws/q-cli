@@ -11,12 +11,13 @@ import Cocoa
 
 import KituraNet
 import KituraWebSocket
-
+import Sentry
 class ShellBridgeServerDelegate: ServerDelegate {
     public func handle(request: ServerRequest, response: ServerResponse) {}
 }
 
 class WebSocketServer {
+    //lsof -i tcp:8765
     static let bridge = WebSocketServer(port: 8765)
     let service: ShellBridgeSocketService
     
@@ -37,7 +38,13 @@ class WebSocketServer {
                        try server.listen(on: port, address: "localhost")
                        ListenerGroup.waitForListeners()
                    } catch {
-                       print("Error listening on port \(port): \(error).")
+                        SentrySDK.capture(message: "Error listening on port \(port): \(error).")
+
+                        DispatchQueue.main.async {
+                            if let delegate = NSApp.delegate as? AppDelegate {
+                                delegate.dialogOKCancel(question: "Could not link with terminal", text: "A process is already listening on port 8765.\nRun `lsof -i tcp:8765` to identify it.\n\nPlease email hello@withfig.com for help debugging.", prompt: "", noAction: true, icon: nil)
+                            }
+                        }
                    }
         }
        
@@ -134,7 +141,7 @@ class ShellBridgeSocketService: WebSocketService {
                                 switch subcommand {
                                 case "bg:event":
                                     if let event = msg.options?[safe: 1] {
-                                        TelemetryProvider.post(event: .viaShell, with: ["name" : event])
+                                        TelemetryProvider.track(event: event, with: [:])
                                     } else {
                                         print("No event")
                                     }
@@ -148,6 +155,8 @@ class ShellBridgeSocketService: WebSocketService {
                                         ShellHookManager.shared.shellPromptWillReturn(msg)
                                     case "bg:exec":
                                         ShellHookManager.shared.shellWillExecuteCommand(msg)
+                                    case "bg:ssh":
+                                        ShellHookManager.shared.startedNewSSHConnection(msg)
                                     case "bg:alert":
                                         if let title = msg.options?[safe: 1], let text = msg.options?[safe: 2]  {
                                             DispatchQueue.main.async {
@@ -167,6 +176,13 @@ class ShellBridgeSocketService: WebSocketService {
                             }
                         }
                         
+                        // native fig CLI commands
+                        if let command = NativeCLI.Command(rawValue: msg.options?.first ?? NativeCLI.index) {
+                            NativeCLI.route(command, with: msg, from: from)
+                            return
+                        }
+                        
+                        // Legacy routing to fig apps
                         NotificationCenter.default.post(name: .recievedDataFromPipe, object: msg)
 
                     case "pty":

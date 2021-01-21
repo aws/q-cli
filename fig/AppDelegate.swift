@@ -39,7 +39,8 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 //            NSApp.terminate(nil)
         }
         
-        TelemetryProvider.post(event: .launchedApp, with: ["crashed" : Defaults.launchedFollowingCrash ? "true" : "false"])
+        TelemetryProvider.track(event: .launchedApp, with:
+                                ["crashed" : Defaults.launchedFollowingCrash ? "true" : "false"])
         Defaults.launchedFollowingCrash = true //
         
 //        AppMover.moveIfNecessary()
@@ -72,7 +73,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         handleUpdateIfNeeded()
         Defaults.useAutocomplete = true
         Defaults.deferToShellAutosuggestions = true
-        Defaults.autocompleteVersion = "v3"
+        Defaults.autocompleteVersion = "v4"
         Defaults.autocompleteWidth = 250
         Defaults.ignoreProcessList = ["figcli", "gitstatusd-darwin-x86_64"]
 
@@ -125,7 +126,9 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
                 }
             }
             let installed = "fig cli:installed".runAsCommand().trimmingCharacters(in: .whitespacesAndNewlines)
-            if (!FileManager.default.fileExists(atPath: "/usr/local/bin/fig") && installed != "true") {
+            let hasLegacyInstallation = FileManager.default.fileExists(atPath: "/usr/local/bin/fig") && installed != "true"
+            let hasNewInstallation = FileManager.default.fileExists(atPath: "\(NSHomeDirectory())/.fig/bin/fig")
+            if (!hasLegacyInstallation && !hasNewInstallation) {
                 SentrySDK.capture(message: "CLI Tool Not Installed on Subsequent Launch")
 
                 let enable = self.dialogOKCancel(question: "Install Fig CLI Tool?", text: "It looks like you haven't installed the Fig CLI tool. Fig doesn't work without it.")
@@ -155,9 +158,47 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         
         toggleLaunchAtStartup()
         
+        iTermTabIntegration.listenForHotKey()
         
     }
     
+    func remindToSourceFigInExistingTerminals() {
+        
+        // filter for native terminal windows (with hueristic to avoid menubar items + other window types)
+        let nativeTerminalWindows = WindowServer.shared.allWindows().filter { Integrations.nativeTerminals.contains($0.bundleId ?? "") }.filter { $0.frame.height != 22 && $0.frame.height != 30 }
+        
+        let count = nativeTerminalWindows.count
+        guard count > 0 else { return }
+        let iTermOpen = nativeTerminalWindows.contains { $0.bundleId == "com.googlecode.iterm2" }
+        let terminalAppOpen = nativeTerminalWindows.contains { $0.bundleId == "com.apple.Terminal" }
+        
+        var emulators: [String] = []
+        
+        if (iTermOpen) {
+            emulators.append("iTerm")
+        }
+        
+        if (terminalAppOpen) {
+            emulators.append("Terminal")
+        }
+                
+        let restart = self.dialogOKCancel(question: "\(count) existing terminal session\(count == 1 ? "" : "s") ", text: "Any terminal sessions started before Fig are not tracked.\n\nRun `fig source` in each session to connect or restart your terminal\(emulators.count == 1 ? "" : "s").\n", prompt: "Restart \(emulators.joined(separator: " and "))", noAction: false, icon: NSImage.init(imageLiteralResourceName: NSImage.applicationIconName))
+        
+        if (restart) {
+            print("restart")
+            
+            if (iTermOpen) {
+                let iTerm = Restarter(with: "com.googlecode.iterm2")
+                iTerm.restart()
+            }
+            
+            if (terminalAppOpen) {
+                let terminalApp = Restarter(with: "com.apple.Terminal")
+                terminalApp.restart()
+            }
+        }
+    }
+        
     func openMenu() {
         if let menu = self.statusBarItem.menu {
             self.statusBarItem.popUpMenu(menu)
@@ -283,8 +324,8 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         
         statusBarMenu.addItem(NSMenuItem.separator())
 
-        if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String {
-            statusBarMenu.addItem(withTitle: "Version \(version)", action: nil, keyEquivalent: "")
+        if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String, let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String {
+            statusBarMenu.addItem(withTitle: "Version \(version) (B\(build))", action: nil, keyEquivalent: "")
         }
         statusBarMenu.addItem(
          withTitle: "Check for Updates...",
@@ -321,9 +362,15 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         action: #selector(AppDelegate.iTermSetup),
         keyEquivalent: "")
         iTermIntegration.state = FileManager.default.fileExists(atPath: "\(NSHomeDirectory())/Library/Application Support/iTerm2/Scripts/AutoLaunch/fig-iterm-integration.py") ? .on : .off
-            
-        debugMenu.addItem(NSMenuItem.separator())
         
+        let sshIntegration = debugMenu.addItem(
+        withTitle: "SSH Integration",
+        action: #selector(AppDelegate.toggleSSHIntegration(_:)),
+        keyEquivalent: "")
+        sshIntegration.state = Defaults.SSHIntegrationEnabled ? .on : .off
+        
+        debugMenu.addItem(NSMenuItem.separator())
+      
         let utilitiesMenu = NSMenu(title: "utilities")
         
         utilitiesMenu.addItem(
@@ -354,6 +401,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
          action: #selector(AppDelegate.setupScript),
          keyEquivalent: "")
         
+        debugMenu.addItem(withTitle: "Edit Key Bindings", action: #selector(editKeybindingsFile), keyEquivalent: "")
         let utilities = debugMenu.addItem(withTitle: "Developer", action: nil, keyEquivalent: "")
         utilities.submenu = utilitiesMenu
         
@@ -501,17 +549,34 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     @objc func newTerminalWindow() {
         WindowManager.shared.newNativeTerminalSession()
     }
+  
+    @objc func editKeybindingsFile() {
+      NSWorkspace.shared.open(KeyBindingsManager.keymapFilePath)
+    }
     
     @objc func uninstall() {
         
-        let confirmed = self.dialogOKCancel(question: "Uninstall Fig?", text: "Are you sure you want to uninstall Fig?\nRunning this script will remove all local runbooks, completion specs and quit the app.\n\nYou may move Fig to the Trash after it has completed.", icon: NSImage(imageLiteralResourceName: NSImage.applicationIconName))
+        let confirmed = self.dialogOKCancel(question: "Uninstall Fig?", text: "Are you sure you want to uninstall Fig?\nRunning this script will remove all local runbooks, completion specs and delete the app.\n\n You will need to source your shell profile in any currently running terminal sessions for changes to register (or restart your terminal app to trigger this automatically).", icon: NSImage(imageLiteralResourceName: NSImage.applicationIconName))
         
         if confirmed {
-            TelemetryProvider.post(event: .uninstallApp, with: [:])
+            TelemetryProvider.track(event: .uninstallApp, with: [:])
 
             if let general = Bundle.main.path(forResource: "uninstall", ofType: "sh") {
                 NSWorkspace.shared.open(URL(string: "https://withfig.com/uninstall?email=\(Defaults.email ?? "")")!)
                 toggleLaunchAtStartup(shouldBeOff: true)
+                
+                let domain = Bundle.main.bundleIdentifier!
+                let uuid = Defaults.uuid
+                UserDefaults.standard.removePersistentDomain(forName: domain)
+                UserDefaults.standard.removePersistentDomain(forName: "\(domain).shared")
+
+                UserDefaults.standard.synchronize()
+                        
+                UserDefaults.standard.set(uuid, forKey: "uuid")
+                UserDefaults.standard.synchronize()
+                
+                WebView.deleteCache()
+                
                 let out = "bash \(general)".runAsCommand()
                 Logger.log(message: out)
                 self.quit()
@@ -521,7 +586,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     
     @objc func sendFeedback() {
         NSWorkspace.shared.open(URL(string:"mailto:hello@withfig.com")!)
-        TelemetryProvider.post(event: .sendFeedback, with: [:])
+        TelemetryProvider.track(event: .sendFeedback, with: [:])
     }
     
     @objc func setupScript() {
@@ -540,7 +605,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             return
         }
 
-        TelemetryProvider.post(event: .iTermSetup, with: [:])
+        TelemetryProvider.track(event: .iTermSetup, with: [:])
         let _ = "sh \(Bundle.main.path(forResource: "iterm-integration", ofType: "sh") ?? "") \(Bundle.main.resourcePath ?? "")".runInBackground(cwd: nil, with: nil, updateHandler: nil, completion: { (out) in
              self.configureStatusBarItem() // So that "iTerm integration" check mark is toggled on
              print("iterm: ", out)
@@ -561,16 +626,17 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         })
     }
         
-    func dialogOKCancel(question: String, text: String, prompt:String = "OK", noAction:Bool = false, icon: NSImage? = nil) -> Bool {
+    func dialogOKCancel(question: String, text: String, prompt:String = "OK", noAction:Bool = false, icon: NSImage? = nil, noActionTitle: String? = nil) -> Bool {
         let alert = NSAlert() //NSImage.cautionName
         alert.icon = icon ?? NSImage(imageLiteralResourceName: "NSSecurity").overlayAppIcon()
         alert.icon.size = NSSize(width: 32, height: 32)
         alert.messageText = question
         alert.informativeText = text
         alert.alertStyle = .warning
-        alert.addButton(withTitle: prompt)
+        let button = alert.addButton(withTitle: prompt)
+        button.highlight(true)
         if (!noAction) {
-            alert.addButton(withTitle: "Not now")
+            alert.addButton(withTitle: noActionTitle ?? "Not now")
         }
         return alert.runModal() == .alertFirstButtonReturn
     }
@@ -581,7 +647,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             Defaults.versionAtPreviousLaunch = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
             print("Update: First launch!")
             Logger.log(message: "First launch!")
-            TelemetryProvider.post(event: .firstTimeUser, with: [:])
+            TelemetryProvider.track(event: .firstTimeUser, with: [:])
             Onboarding.setUpEnviroment()
             return
         }
@@ -606,8 +672,21 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             
             Onboarding.setUpEnviroment()
 
-            TelemetryProvider.post(event: .updatedApp, with: ["script": script ?? "<none>"])
-
+            TelemetryProvider.track(event: .updatedApp, with: ["script": script ?? "<none>"])
+            
+            // Any defaults that should be set for upgrading users
+            // For anyone upgrading, we are just going to assume that this is true
+            Defaults.hasShownAutocompletePopover = true
+            
+            // if iTerm integration exists prior to update, reinstall because it should be symlinked
+            let iTermIntegrationPath = "\(NSHomeDirectory())/Library/Application Support/iTerm2/Scripts/AutoLaunch/fig-iterm-integration.py"
+            if (FileManager.default.fileExists(atPath: iTermIntegrationPath)) {
+                try? FileManager.default.removeItem(atPath: iTermIntegrationPath)
+                let localScript = Bundle.main.path(forResource: "fig-iterm-integration", ofType: "py")!
+                try? FileManager.default.createSymbolicLink(atPath: iTermIntegrationPath, withDestinationPath: localScript)
+            }
+            
+            remindToSourceFigInExistingTerminals()
         }
         
         Defaults.versionAtPreviousLaunch = current
@@ -681,14 +760,14 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 //
     @objc func inviteToSlack() {
         NSWorkspace.shared.open(URL(string: "https://fig-core-backend.herokuapp.com/community")!)
-        TelemetryProvider.post(event: .joinSlack, with: [:])
+        TelemetryProvider.track(event: .joinSlack, with: [:])
 
     }
     
     @objc func viewDocs() {
         
-        NSWorkspace.shared.open(URL(string: "https://docs.withfig.com/autocomplete")!)
-        TelemetryProvider.post(event: .viewDocs, with: [:])
+        NSWorkspace.shared.open(URL(string: "https://withfig.com/docs")!)
+        TelemetryProvider.track(event: .viewDocs, with: [:])
     }
 
     @objc func getKeyboardLayout() {
@@ -707,7 +786,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         Defaults.useAutocomplete = !Defaults.useAutocomplete
         sender.state = Defaults.useAutocomplete ? .on : .off
 //        KeypressProvider.shared.clean()
-        TelemetryProvider.post(event: .toggledAutocomplete, with: ["status" : Defaults.useAutocomplete ? "on" : "off"])
+        TelemetryProvider.track(event: .toggledAutocomplete, with: ["status" : Defaults.useAutocomplete ? "on" : "off"])
 
         if (Defaults.useAutocomplete) {
             WindowManager.shared.createAutocomplete()
@@ -854,7 +933,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         sender.state = Defaults.showSidebar ? .on : .off
         WindowManager.shared.requestWindowUpdate()
         
-        TelemetryProvider.post(event: .toggledSidebar, with: ["status" : Defaults.useAutocomplete ? "on" : "off"])
+        TelemetryProvider.track(event: .toggledSidebar, with: ["status" : Defaults.useAutocomplete ? "on" : "off"])
     }
     
         @objc func toggleLogging(_ sender: NSMenuItem) {
@@ -867,6 +946,26 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     @objc func toggleZshPlugin(_ sender: NSMenuItem) {
         Defaults.deferToShellAutosuggestions = !Defaults.deferToShellAutosuggestions
         sender.state = Defaults.deferToShellAutosuggestions ? .on : .off
+    }
+    
+    @objc func toggleSSHIntegration(_ sender: NSMenuItem) {
+        
+        let SSHConfigFile = URL(fileURLWithPath:  "\(NSHomeDirectory())/.ssh/config")
+        let configuration = try? String(contentsOf: SSHConfigFile)
+        
+        // config file does not exist or fig hasn't been enabled
+        if (!(configuration?.contains("Fig SSH Integration: Enabled") ?? false)) {
+            guard self.dialogOKCancel(question: "Install SSH integration?", text: "Fig will make changes to your SSH config (stored in ~/.ssh/config).") else {
+                return
+            }
+            
+            SSHIntegration.install()
+            let _ = self.dialogOKCancel(question: "SSH Integration Installed!", text: "When you connect to a remote machine using SSH, Fig will show relevant completions.\n\nIf you run into any issues, please email hello@withfig.com.", noAction: true, icon: NSImage.init(imageLiteralResourceName: NSImage.applicationIconName))
+            return
+        }
+        
+        Defaults.SSHIntegrationEnabled = !Defaults.SSHIntegrationEnabled
+        sender.state = Defaults.SSHIntegrationEnabled ? .on : .off
     }
     
     @objc func toggleDebugAutocomplete(_ sender: NSMenuItem) {
@@ -995,7 +1094,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             NSStatusBar.system.removeStatusItem(statusbar)
         }
         
-        TelemetryProvider.post(event: .quitApp, with: [:]) { (_, _, _) in
+        TelemetryProvider.track(event: .quitApp, with: [:]) { (_, _, _) in
             DispatchQueue.main.async {
                  NSApp.terminate(self)
              }
@@ -1222,8 +1321,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     }
     
     @objc func processes() {
-        let c = candidates("")
-        print(c)
         printProcesses("")
         var size: Int32 = 0
         if let ptr = getProcessInfo("", &size) {

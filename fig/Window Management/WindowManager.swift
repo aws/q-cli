@@ -286,8 +286,9 @@ class WindowManager : NSObject {
             NSWorkspace.shared.launchApplication("Terminal")
         } else {
             Logger.log(message: "term: \(running.count) currently running terminal(s).")
-
-            let target = running.first!
+            let iTerm = running.filter { $0.bundleIdentifier == "com.googlecode.iterm2" }.first
+            let target = iTerm ?? running.first!
+            
             target.activate(options: .activateIgnoringOtherApps)
             Logger.log(message: "term: Activating \(target.bundleIdentifier ?? "<none>")")
 
@@ -737,9 +738,9 @@ extension WindowManager : WindowManagementService {
 
             }
             
-            WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try { fig.autocomplete_above = \(isAbove)} catch(e) {}", completionHandler: nil)
+//            WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try { fig.autocomplete_above = \(isAbove)} catch(e) {}", completionHandler: nil)
             
-            let popup = NSRect(origin: translatedOrigin, size: CGSize(width: Defaults.autocompleteWidth ?? 200
+            let popup = NSRect(origin: translatedOrigin, size: CGSize(width: WindowManager.shared.autocomplete?.width ?? Defaults.autocompleteWidth ?? 200
                 , height: height))
             let sidebarInsetBuffer:CGFloat = 0.0//60;
             let w = (NSScreen.main!.frame.maxX - sidebarInsetBuffer) - popup.maxX
@@ -753,10 +754,11 @@ extension WindowManager : WindowManagementService {
             if (Defaults.debugAutocomplete) {
                 WindowManager.shared.autocomplete?.maxHeight = 200//heightLimit//140
             }
-            WindowManager.shared.autocomplete?.setOverlayFrame(NSRect(x: x,
-                                                                      y: popup.origin.y,
-                                                                      width: popup.width,
-                                                                      height: height))//140
+          
+            DispatchQueue.main.async {
+              WindowManager.shared.autocomplete?.setOverlayFrame(NSRect(x: x, y: popup.origin.y, width: popup.width, height: height))//140
+            }
+            
         } else {
             // workaround for
             WindowManager.shared.autocomplete?.orderOut(nil)

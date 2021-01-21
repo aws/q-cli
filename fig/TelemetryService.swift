@@ -25,7 +25,7 @@ protocol LocalTelemetryService {
 
 protocol TelemetryService {
     static func obscure(_ input: String) -> String
-    static func post(event: TelemetryEvent, with payload: Dictionary<String, String>, completion: ((Data?, URLResponse?, Error?) -> Void)?)
+    static func track(event: TelemetryEvent, with payload: Dictionary<String, String>, completion: ((Data?, URLResponse?, Error?) -> Void)?)
 }
 
 enum TelemetryEvent: String {
@@ -47,6 +47,9 @@ enum TelemetryEvent: String {
     case uninstallApp = "Uninstall App"
     case iTermSetup = "iTerm Setup"
     case launchedApp = "Launched App"
+    case firstAutocompletePopup = "First Autocomplete Popup"
+    case restartForOnboarding = "Restart for Shell Onboarding"
+    case newWindowForOnboarding = "New Window for Shell Onboarding"
 
 
 }
@@ -56,45 +59,53 @@ class TelemetryProvider: TelemetryService {
         return String(input.map{ $0.isLetter ? "x" : $0 }.map{ $0.isNumber ? "0" : $0 })
     }
     
-    static func post(event: TelemetryEvent, with payload: Dictionary<String, String>, completion: ((Data?, URLResponse?, Error?) -> Void)? = nil) {
+    static func track(event: TelemetryEvent, with properties: Dictionary<String, String>, completion: ((Data?, URLResponse?, Error?) -> Void)? = nil) {
         
-        guard Defaults.isProduction || Defaults.isStaging else {
-            if let completion =  completion {
-                completion(nil,nil,nil)
-            }
-            print("Not logging CLI usage when not in production.")
-            return
+        TelemetryProvider.track(event: event.rawValue, with: properties, completion: completion)
+        
+    }
+    
+    static func track(event: String, with properties: Dictionary<String, String>, needsPrefix prefix: String? = "prop_", completion: ((Data?, URLResponse?, Error?) -> Void)? = nil) {
+        var body: Dictionary<String, String> = [:]
+        
+        if let prefix = prefix {
+            body = TelemetryProvider.addPrefixToKeys(prefix: prefix, dict: properties)
+        } else {
+            body = properties
         }
         
-        let email = Defaults.email ?? ""
-        let domain = String(email.split(separator: "@").last ?? "unregistered")
-        let os = ProcessInfo.processInfo.operatingSystemVersion
-        // add UUID to dict (overwritting 'anonymized_id', 'questions?' and 'version', 'domain' in payload if they exist)
-        let properties = payload.reduce(into: [:]) { (dict, pair) in
-            let (key, value) = pair
-            dict["prop_\(key)"] = value
+        body = TelemetryProvider.addDefaultProperties(to: body)
+        body["event"] = event
+        body["userId"] = Defaults.uuid
+        
+        upload(to: "track", with: body, completion: completion)
+    }
+    
+    static func identify(with traits: Dictionary<String, String>, needsPrefix prefix: String? = "trait_") {
+        var body: Dictionary<String, String> = [:]
+        if let prefix = prefix {
+            body = TelemetryProvider.addPrefixToKeys(prefix: prefix, dict: traits)
+        } else {
+            body = traits
         }
         
-        print("properties:", properties)
-        
-        let eventType = (event == .viaJS || event == .viaShell) ? payload["name"] ??  event.rawValue : event.rawValue
-        let final = properties.merging(["anonymized_id" :  Defaults.uuid,
-                                     "questions?" : "\n\nFig collects limited usage information to improve the product and detect bugs. \n\nIf you have more questions go to https://withfig.com/privacy or email the team at hello@withfig.com\n",
-                                     "domain" : domain,
-                                     "email" : email,
-                                     "version" : Defaults.version,
-                                     "os" :  "\(os.majorVersion).\(os.minorVersion).\(os.patchVersion)",
-                                     "event" : eventType ]) { $1 }
-        
-        guard let json = try? JSONSerialization.data(withJSONObject: final, options: .sortedKeys) else { return }
+        body["userId"] = Defaults.uuid
+
+        upload(to: "identify", with: body)
+    }
+    
+    static func alias(userId: String?) {
+        upload(to: "alias", with: ["previousId" : Defaults.uuid, "userId": userId ?? ""])
+    }
+    
+    fileprivate static func upload(to endpoint: String, with body:  Dictionary<String, String>, completion: ((Data?, URLResponse?, Error?) -> Void)? = nil) {
+        guard let json = try? JSONSerialization.data(withJSONObject: body, options: .sortedKeys) else { return }
         print(json)
-        var request = URLRequest(url: Remote.telemetryURL.appendingPathComponent("anonymized_cli_usage"))
+        var request = URLRequest(url: Remote.telemetryURL.appendingPathComponent(endpoint))
         request.httpMethod = "POST"
         request.httpBody = json
         request.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
-//        request.timeoutInterval = 15
 
-        //URLSession.shared.dataTask(with: request)
         let task = URLSession.shared.dataTask(with: request) { (data, res, err) in
             if let handler = completion {
                 handler(data, res, err)
@@ -102,10 +113,30 @@ class TelemetryProvider: TelemetryService {
         }
 
         task.resume()
-       
     }
     
+    fileprivate static func addPrefixToKeys(prefix: String, dict: Dictionary<String, String>) -> Dictionary<String, String> {
+        
+        return dict.reduce([:]) { (out, pair) -> Dictionary<String, String> in
+            var new = out
+            let (key, value) = pair
+            new["\(prefix)\(key)"] = value
+            return new
+        }
+    }
     
+    fileprivate static func addDefaultProperties(to properties: Dictionary<String, String>, prefixedWith prefix: String = "prop_") -> Dictionary<String, String> {
+        let email = Defaults.email ?? ""
+        let domain = String(email.split(separator: "@").last ?? "unregistered")
+        let os = ProcessInfo.processInfo.operatingSystemVersion
+
+        return properties.merging([
+                                    "\(prefix)domain" : domain,
+                                    "\(prefix)email" : email,
+                                    "\(prefix)version" : Defaults.version,
+                                    "\(prefix)os" :  "\(os.majorVersion).\(os.minorVersion).\(os.patchVersion)",
+                                    ]) { $1 }
+    }
 }
 
 extension TelemetryProvider : LocalTelemetryService {
@@ -143,6 +174,11 @@ extension TelemetryProvider : LocalTelemetryService {
     @objc fileprivate static func showAutocompletePopup() {
         Logger.log(message: "showAutocompletePopup")
         self.store(event: .showAutocompletePopup)
+        
+        if (!Defaults.hasShownAutocompletePopover) {
+            Defaults.hasShownAutocompletePopover = true
+            TelemetryProvider.track(event: .firstAutocompletePopup, with: [:])
+        }
     }
 
     @objc fileprivate static func logTerminalUsage(_ notification: Notification) {
@@ -201,7 +237,7 @@ extension TelemetryProvider : LocalTelemetryService {
         // todo: add completion handler for success and failure
         // clean cache on success
         // reschedule on failure
-        self.post(event: .dailyAggregates, with: payload
+        self.track(event: .dailyAggregates, with: payload
         ) { (data, res, error) in
           guard error == nil else {
               // Don't delete cached data, try to send later

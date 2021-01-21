@@ -221,7 +221,20 @@ extension WebBridge: WKURLSchemeHandler {
         if (specifier.prefix(2) == "//") { specifier = String(specifier.dropFirst(2)) }
 //        if (specifier.prefix(1) !=  "/") { specifier = "/" + specifier }
         let resource = specifier.replacingOccurrences(of: "?\(url.query ?? "<none>")", with: "") as NSString
-        return NSWorkspace.shared.icon(forFile: resource.expandingTildeInPath.removingPercentEncoding ?? "").resized(to: NSSize(width: width, height: height))?.overlayBadge(color: color,  text: badge)
+        let fullPath = resource.expandingTildeInPath.removingPercentEncoding ?? ""
+        
+        var isDirectory : ObjCBool = false
+        let isFile = FileManager.default.fileExists(atPath: fullPath, isDirectory:&isDirectory)
+        guard isFile || isDirectory.boolValue else {
+            var t = NSString(string: fullPath).pathExtension
+            if (String(resource).last == "/") {
+                t = NSFileTypeForHFSTypeCode(OSType(kGenericFolderIcon))
+            }
+            
+            return NSWorkspace.shared.icon(forFileType: t).resized(to: NSSize(width: width, height: height))?.overlayBadge(color: color,  text: badge)
+        }
+        
+        return NSWorkspace.shared.icon(forFile: fullPath).resized(to: NSSize(width: width, height: height))?.overlayBadge(color: color,  text: badge)
         
     }
     
@@ -489,7 +502,7 @@ extension WebBridge {
             
             // Check for sidebar shortcut
             if let companion = window as? CompanionWindow, companion.isSidebar {
-                TelemetryProvider.post(event: .selectedShortcut, with: [:])
+                TelemetryProvider.track(event: .selectedShortcut, with: [:])
             }
         }
     }
@@ -729,19 +742,23 @@ extension WebBridge {
                         KeypressProvider.shared.registerKeystrokeHandler()
                         AXWindowServer.shared.registerWindowTracking()
                     }
+                case "ssh":
+                    SSHIntegration.install()
                 case "ws":
                     ShellBridge.shared.startWebSocketServer()
                 case "close":
-                    
+//                    WindowManager.shared.bringTerminalWindowToFront()
+                    //WindowManager.shared.newNativeTerminalSession()
+                    scope.webView?.window?.close()
+                    Defaults.loggedIn = true
+
+                    Onboarding.setupTerminalsForShellOnboarding()
+                
                     if let delegate = NSApplication.shared.delegate as? AppDelegate {
                         delegate.setupCompanionWindow()
                     }
-//                    WindowManager.shared.bringTerminalWindowToFront()
-                    WindowManager.shared.newNativeTerminalSession()
-                    
-                    Defaults.loggedIn = true
+                
 //                    NSWorkspace.shared.launchApplication("Terminal")
-                    scope.webView?.window?.close()
                 case "forceUpdate":
                     if let appDelegate = NSApp.delegate as? AppDelegate {
                         appDelegate.updater?.installUpdatesIfAvailable()
@@ -848,8 +865,21 @@ extension WebBridge {
                 
             switch(type) {
                 case "track":
-                    TelemetryProvider.post(event: .viaJS, with: data)
-                    break;
+                    var dict = data
+                    guard let event = dict["name"] else {
+                        return
+                    }
+                    dict.removeValue(forKey: "name")
+
+                    TelemetryProvider.track(event: event, with: dict, needsPrefix: nil)
+                case "identify":
+                    TelemetryProvider.identify(with: data, needsPrefix: nil)
+                case "alias":
+                    guard let newId = data["userId"] else {
+                        return
+                    }
+                    
+                    TelemetryProvider.alias(userId: newId)
                 case "cwd":
                     if let window = scope.getCompanionWindow()?.tetheredWindow,
                        let tty = ShellHookManager.shared.tty[window.hash] {
@@ -868,6 +898,13 @@ extension WebBridge {
                         KeypressProvider.shared.removeRedirect(for: keyCode, in: (scope.getCompanionWindow()?.tetheredWindow)!)
 
                     }
+                case "autocomplete-hide":
+                    guard let companion = scope.getCompanionWindow(), companion.isAutocompletePopup else { return }
+                    
+                    if let hash = companion.tetheredWindow?.hash {
+                        KeypressProvider.shared.keyBuffer(for: hash).writeOnly = true
+                    }
+
                 case "setAutocompleteHeight":
                     guard let heightString = data["height"] else { return }
                     let companion = scope.getCompanionWindow()
@@ -877,7 +914,16 @@ extension WebBridge {
                     } else {
                        companion?.maxHeight = nil
                     }
-                    
+                    print("flicker: set maxHeight = \(heightString)")
+                    guard previousMax != companion?.maxHeight else {
+                        print("flicker: heights matched")
+                        
+                        if let handlerId = handlerId {
+                            WebBridge.callback(handler: handlerId, value: "", webView: scope.webView)
+                        }
+
+                        return
+                    }
                     // testing
                     if(!(companion?.isAutocompletePopup ?? false)) {
                         companion?.windowManager.requestWindowUpdate()
@@ -898,7 +944,10 @@ extension WebBridge {
                         }
   
                     }
-                    
+                case "prompt":
+                    let source = data["source"]
+
+                    Feedback.getFeedback(source: source ?? "javascript")
                 default:
                     print("private command '\(type)' does not exist.")
             }
@@ -944,6 +993,11 @@ extension WebBridge {
                    companion?.maxHeight = nil
                 }
                 
+                guard previousMax != companion?.maxHeight else {
+                    print("flicker: heights matched")
+                    return
+                }
+                
                 // testing
                 if(!(companion?.isAutocompletePopup ?? false)) {
                     companion?.windowManager.requestWindowUpdate()
@@ -961,8 +1015,28 @@ extension WebBridge {
 //                    let rect = KeypressProvider.shared.getTextRect()
 //                    WindowManager.shared.positionAutocompletePopover(textRect: rect)
                 }
+            case "width":
+                
+                guard let companion = scope.getCompanionWindow(), companion.isAutocompletePopup else {
+                    return
+                }
+                let previousWidth = companion.width
+                if let number = NumberFormatter().number(from: value) {
+                    companion.width = CGFloat(truncating: number)
+                } else {
+                    companion.width = nil
+                }
+                
+                guard previousWidth != companion.width else {
+                    print("flicker: widths matched")
+                    return
+                }
+                
+                let rect = KeypressProvider.shared.getTextRect()
+                WindowManager.shared.positionAutocompletePopover(textRect: rect)
+
+
             case "interceptKeystrokes":
-                let companion = scope.getCompanionWindow()
                 KeypressProvider.shared.setEnabled(value: value == "true")
 
             default:

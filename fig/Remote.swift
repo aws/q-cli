@@ -13,7 +13,8 @@ class Remote {
     static var stagingURL: URL = URL(string: "https://staging.withfig.com")!
     static var localhost: URL = URL(string: "http://localhost:3000")!
     static var telemetryURL: URL = URL(string: "https://tel.withfig.com")!
-    
+    static var API: URL = URL(string: "https://waitlist.withfig.com")!
+
     static var baseURL: URL {
         switch Defaults.build {
         case .production:

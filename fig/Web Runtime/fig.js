@@ -289,18 +289,49 @@ let setup = function(window) {
               fig.insert("fig::backspace")
           }
       },
-      track(event, properties) {
-          var payload = { "name": event}
-          payload = Object.keys(properties).reduce((dict, key) => {
-               dict[`prop_${key}`] = JSON.stringify(properties[key])
-               return dict
-          }, payload)
+      
+      prompt(source) {
+          fig.private({ type: "prompt", data: {source}})
+      },
+      
+      autocompletePopup : {
+          hide() {
+              fig.private({ type: "autocomplete-hide", data: {}})
+          }
+      },
+      
+      analytics : {
+          track(obj) {
+              let { event, properties } = obj
+
+              var payload = { "name": event }
+              payload = Object.keys(properties).reduce((dict, key) => {
+                   dict[`prop_${key}`] = JSON.stringify(properties[key])
+                   return dict
+              }, payload)
+              
+              fig.private({ type: "track", data: payload})
+          },
           
-          fig.private({ type: "track", data: payload})
+          identify(obj) {
+              let { traits } = obj
+              var payload = { }
+              payload = Object.keys(traits).reduce((dict, key) => {
+                   dict[`trait_${key}`] = JSON.stringify(traits[key])
+                   return dict
+              }, payload)
+              
+              fig.private({ type: "identify", data: payload})
+          },
+          
+          alias(userId) {
+              var payload = { userId }
+              fig.private({ type: "alias", data: payload})
+          }
       }
   }
     
-    let watchedProperties = [ "icon", "title", "color", "maxheight", "interceptKeystrokes"]
+    let watchedProperties = [ "icon", "title", "color", "maxheight", "width", "interceptKeystrokes"]
     watchedProperties.forEach(prop => {
           Object.defineProperty(fig, prop, {
               get : function () {

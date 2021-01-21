@@ -8,9 +8,15 @@ on:
 
 jobs:
   release:
+    if: "!contains(github.event.head_commit.message, 'skip ci')"
     runs-on: macos-latest
     # timeout-minutes: 15
     steps:
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.6.0
+        with:
+          access_token: ${{ github.token }}
+
       - name: "Checkout Project"
         uses: actions/checkout@v2
 
@@ -18,7 +24,7 @@ jobs:
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: true
         run: |
-          echo "::set-env name=VERSION::$(xcodebuild -showBuildSettings | grep MARKETING_VERSION | tr -d 'MARKETING_VERSION =')"      
+          echo "::set-env name=VERSION::$(cat fig.xcodeproj/project.pbxproj | grep -m1 'MARKETING_VERSION' | cut -d'=' -f2 | tr -d ';' | tr -d ' ')"      
       
       - name: "Log Release Version"
         run: echo $VERSION
@@ -32,10 +38,21 @@ jobs:
         uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: "12.0.1"
-      # - name: "Select Xcode 12.0.0"
-      #   uses: devbotsxyz/xcode-select@main
-      #   with:
-      #     version: "11.3.1"
+
+      - name: "Bump Build number"
+        run: |
+          agvtool bump
+      - name: "Get Build"
+        env:
+            ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+        run: |
+          echo "::set-env name=BUILD::$(agvtool what-version -terse)"
+          echo $BUILD
+      - name: "Commit Build number"
+        run: |
+          git add .
+          git commit -m "Bump build to $BUILD [skip ci]"
+          git push origin staging
 
       - name: "Import Certificate"
         uses: devbotsxyz/import-signing-certificate@main
@@ -122,8 +139,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.run_number }}
-          release_name: Staging - Build ${{ github.run_number }}
+          tag_name: ${{ env.BUILD }}
+          release_name: Staging - Build ${{ env.BUILD }}
           draft: false
           prerelease: true
       - name: Upload Release Asset

@@ -544,6 +544,44 @@ struct ShellMessage: Codable {
     func getWorkingDirectory() -> String? {
         return self.env?.jsonStringToDict()?["PWD"] as? String
     }
+    
+    var shell: String? {
+        if let dict = self.env?.jsonStringToDict() {
+            return dict["SHELL"] as? String
+        }
+        return nil
+    }
+    
+    var terminal: String? {
+        if let dict = self.env?.jsonStringToDict() {
+            if let _ = dict["KITTY_WINDOW_ID"] {
+                return "kitty"
+            }
+            
+            if let _ = dict["ALACRITTY_LOG"] {
+                return "Alacritty"
+            }
+            
+            return dict["TERM_PROGRAM"] as? String
+        }
+        return nil
+    }
+    
+    var subcommand: String? {
+        get {
+            return self.options?.first
+        }
+    }
+    
+    var arguments: [String] {
+        get {
+            guard let options = self.options, options.count > 1 else {
+                return []
+            }
+            
+            return Array(options.suffix(from: 1))
+        }
+    }
 
 }
 
@@ -787,14 +825,9 @@ extension Array {
 
 extension ShellBridge {
     static func symlinkCLI(completion: (()-> Void)? = nil){
-//        cmd="tell application \"Terminal\" to do script \"uptime\""
-//          osascript -e "$cmd"
-        
-//        if let path = Bundle.main.path(forAuxiliaryExecutable: "figcli") {
-//            print(path)
-//            let _ = "mkdir -p /usr/local/bin && ln -sf '\(path)' '/usr/local/bin/fig'".runWithElevatedPriviledgesFromAppleScript()
-//            return
-//        }
+        Onboarding.copyFigCLIExecutable(to:"~/.fig/bin/fig")
+        completion?()
+        return
         if let path = Bundle.main.path(forAuxiliaryExecutable: "figcli") {//Bundle.main.path(forResource: "fig", ofType: "", inDirectory: "dist") {
             print(path)
             let script = "mkdir -p /usr/local/bin && ln -sf '\(path)' '/usr/local/bin/fig'"
@@ -856,7 +889,7 @@ extension ShellBridge {
         hasBeenPrompted = true
         // move analytics off of hotpath
         DispatchQueue.global(qos: .background).async {
-            TelemetryProvider.post(event: .promptedForAXPermission, with: [:])
+            TelemetryProvider.track(event: .promptedForAXPermission, with: [:])
         }
 
 
@@ -877,7 +910,7 @@ extension ShellBridge {
                     completion(value)
                     center.removeObserver(observer!)
                     DispatchQueue.global(qos: .background).async {
-                        TelemetryProvider.post(event: .grantedAXPermission, with: [:])
+                        TelemetryProvider.track(event: .grantedAXPermission, with: [:])
                     }
                     print("Accessibility Permission Granted!!!")
                     ShellBridge.hasBeenPrompted = false
