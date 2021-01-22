@@ -244,12 +244,67 @@ extension NativeCLI {
     }
     
     static func reportCommand(_ scope: Scope) {
-        let (_, connection) = scope
+        let (message, connection) = scope
 
         NativeCLI.printInTerminal("→ Send any bugs or feedback directly to the Fig team!", using: connection)
         connection.send(message: "disconnect")
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "-1"
+                
+        let tracked = KeypressProvider.shared.buffers.keys.map { (hash) -> (TTY?, String?) in
+            let proc = ShellHookManager.shared.tty[hash]
+            let buffer = KeypressProvider.shared.keyBuffer(for: hash).representation
+            return (proc, buffer)
+        }
+        let env = message.env?.jsonStringToDict()
+        let path = env?["PATH"] as? String
+        let figIntegratedWithShell = env?["FIG_ENV_VAR"] as? String
+        let config = try? String(contentsOfFile: "\(NSHomeDirectory())/.fig/user/config", encoding: String.Encoding.utf8)
+        let cliInstalled = FileManager.default.fileExists(atPath: "\(NSHomeDirectory())/.fig/bin/fig")
+        let specs = (try? FileManager.default.contentsOfDirectory(atPath: "\(NSHomeDirectory())/.fig/autocomplete").count) ?? 0
+        let placeholder =
+        """
+        \(message.arguments.joined(separator: " "))
         
-        Feedback.getFeedback(source: "fig_report_cli")
+        \(message.data)
+        
+
+        
+        
+        
+        
+        
+        
+        
+        
+        ---------------------------------------
+        DEFAULTS:
+        Version:\(version)
+        SSH Integration:\(Defaults.SSHIntegrationEnabled)
+        iTerm Tab Integration:\(iTermTabIntegration.isInstalled())
+        Only insert on tab:\(Defaults.onlyInsertOnTab)
+        Autocomplete:\(Defaults.useAutocomplete)
+        Usershell:\(Defaults.userShell)
+        ---------------------------------------
+        ENVIRONMENT:
+        CLI installed:\(cliInstalled)
+        Number of specs: \(specs)
+        PATH: \(path ?? "Not found")
+        FIG_ENV_VAR: \(figIntegratedWithShell ?? "Not found")
+        --------------------------------------
+        CONFIG
+        \(config ?? "?")
+        """
+        
+        /*
+         --------------------------------------
+         TERMINAL KEYBUFFERS:
+         \(tracked.map({ (pair) -> String in
+             let (proc, buffer) = pair
+         return "\(proc?.cmd ?? "(???)")  \(proc?.cwd ?? "?"): \(buffer ?? "<no context>")"
+         }).joined(separator: "\n"))
+         */
+        
+        Feedback.getFeedback(source: "fig_report_cli", placeholder: placeholder)
 
     }
     
