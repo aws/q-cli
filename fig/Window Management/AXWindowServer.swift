@@ -55,8 +55,8 @@ class ExternalApplication {
                                      kAXWindowMovedNotification,
                                      kAXUIElementDestroyedNotification,
                                      kAXApplicationDeactivatedNotification,
-                                     kAXFocusedUIElementChangedNotification
-            
+                                     kAXFocusedUIElementChangedNotification,
+                                     kAXTitleChangedNotification
                                    ]
 
         for notification in trackedNotifications {
@@ -112,6 +112,7 @@ extension ExternalApplication: Hashable {
 
 
 class AXWindowServer : WindowService {
+    static let windowTitleUpdatedNotification: NSNotification.Name = .init("windowTitleUpdatedNotification")
     static let windowDidChangeNotification = Notification.Name("AXWindowServerWindowDidChangeNotification")
     static let shared = AXWindowServer()
     var tracked: Set<ExternalApplication> = []
@@ -310,7 +311,14 @@ class AXWindowServer : WindowService {
                 
             
                 break;
-
+            case kAXTitleChangedNotification:
+              var window: AnyObject?
+              AXUIElementCopyAttributeValue(appRef.axAppRef, kAXFocusedWindowAttribute as CFString, &window)
+              guard window != nil else { return }
+              let topWindow = ExternalWindow(backedBy: window as! AXUIElement, in: appRef)
+              guard Integrations.nativeTerminals.contains(topWindow?.bundleId ?? "") else { return }
+              NotificationCenter.default.post(name: AXWindowServer.windowTitleUpdatedNotification, object: topWindow)
+              break;
 
 //                print("AXWindowServer: \(appRef.bundleId!) \(element) kAXUIElementDestroyedNotification")
 //            case kAXFocusedUIElementChangedNotification:

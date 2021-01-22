@@ -760,8 +760,10 @@ extension WindowManager : WindowManagementService {
             }
             
         } else {
-            // workaround for
-            WindowManager.shared.autocomplete?.orderOut(nil)
+            // workaround
+            DispatchQueue.main.async {
+                WindowManager.shared.autocomplete?.orderOut(nil)
+            }
         }
     }
 }
