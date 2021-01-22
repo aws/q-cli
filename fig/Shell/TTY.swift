@@ -49,6 +49,8 @@ struct proc {
 }
 
 class TTY {
+  static let processUpdated: NSNotification.Name = .init("processUpdated")
+
   let descriptor: String
   var runUsingPrefix: String? = nil
   var pty: PseudoTerminalHelper? = nil
@@ -64,6 +66,20 @@ class TTY {
   
   init(fd: String) {
     descriptor = fd
+  }
+  
+  func setTitle(_ title: String) {
+    // https://tldp.org/HOWTO/Xterm-Title-3.html
+    // ESC[2;titleBEL
+    let pattern = "\u{1B}]2;\(title)\u{007}"
+    
+    //https://pubs.opengroup.org/onlinepubs/007904875/functions/open.html
+    // writing escape sequence directly to STDIN to update title
+    // writeonly, don't take control of tty, append
+    let fd = open("/dev/\(self.descriptor)", O_WRONLY | O_NOCTTY | O_APPEND, 0o644)
+    let bytes: [UInt8] =  Array(pattern.utf8)
+    write(fd, UnsafePointer(bytes), bytes.count)
+
   }
   
   func update(for pid: pid_t? = nil) {
@@ -96,8 +112,16 @@ class TTY {
     }
   }
   
+  var name: String? {
+    guard let cmd = self.cmd else { return nil }
+    return String(cmd.split(separator: "/").last ?? "")
+  }
   var cwd: String?
-  var cmd: String?
+  var cmd: String? {
+    didSet {
+      NotificationCenter.default.post(name: TTY.processUpdated, object: nil)
+    }
+  }
   var pid: pid_t?
   var isShell: Bool?
   var shell: proc?
@@ -119,6 +143,7 @@ class TTY {
       self.pid = runningProcess.pid
       self.isShell = runningProcess.isShell
       self.runUsingPrefix = nil
+      NotificationCenter.default.post(name: TTY.processUpdated, object: nil)
     }
   }
   
@@ -137,6 +162,8 @@ class TTY {
         self.pid = runningProcess.pid
         self.isShell = runningProcess.isShell
         self.runUsingPrefix = nil
+        NotificationCenter.default.post(name: TTY.processUpdated, object: nil)
+
         if (runningProcess.name == "ssh") {
           self.shell = nil
           if self.pty == nil {
