@@ -369,6 +369,12 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         keyEquivalent: "")
         //        sidebar.indentationLevel = 1
         tab.state = Defaults.onlyInsertOnTab ? .on : .off
+      
+        let statusInTitle = debugMenu.addItem(
+        withTitle: "Show Fig context in Title",
+        action: #selector(AppDelegate.toggleFigIndicator(_:)),
+        keyEquivalent: "")
+        statusInTitle.state = AutocompleteContextNotifier.addIndicatorToTitlebar ? .on : .off
         debugMenu.addItem(NSMenuItem.separator())
         
         debugMenu.addItem(withTitle: "Compatibility", action: nil, keyEquivalent: "")
@@ -970,6 +976,11 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         sender.state = Defaults.deferToShellAutosuggestions ? .on : .off
     }
     
+    @objc func toggleFigIndicator(_ sender: NSMenuItem) {
+        AutocompleteContextNotifier.addIndicatorToTitlebar = !AutocompleteContextNotifier.addIndicatorToTitlebar
+        sender.state = AutocompleteContextNotifier.addIndicatorToTitlebar ? .on : .off
+    }
+  
     @objc func toggleSSHIntegration(_ sender: NSMenuItem) {
         
         let SSHConfigFile = URL(fileURLWithPath:  "\(NSHomeDirectory())/.ssh/config")
@@ -1168,6 +1179,8 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     func applicationWillTerminate(_ aNotification: Notification) {
         ShellBridge.shared.stopWebSocketServer()
         Defaults.launchedFollowingCrash = false
+        AutocompleteContextNotifier.clearFigContext()
+
     }
     
     @objc func runScriptCmd() {
