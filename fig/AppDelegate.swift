@@ -160,6 +160,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         toggleLaunchAtStartup()
         
         iTermTabIntegration.listenForHotKey()
+        AutocompleteContextNotifier.listenForUpdates()
         
     }
   

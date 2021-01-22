@@ -136,6 +136,7 @@
 		75AA24D225A79F3400A51E9D /* issue.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75AA24D025A79B4A00A51E9D /* issue.sh */; };
 		75AA24D325A79F3400A51E9D /* contribute.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75AA24CF25A79ACC00A51E9D /* contribute.sh */; };
 		75AA24DA25A7E8B000A51E9D /* lsof.m in Sources */ = {isa = PBXBuildFile; fileRef = 75AA24D925A7E8B000A51E9D /* lsof.m */; };
+		75B0A07C25BA64CC00FCD89A /* AutocompleteContextNotifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B0A07B25BA64CC00FCD89A /* AutocompleteContextNotifier.swift */; };
 		75B199322501A3DA00F38EA8 /* KeyboardLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B199312501A3DA00F38EA8 /* KeyboardLayout.swift */; };
 		75B199342504190900F38EA8 /* Keycode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B199332504190900F38EA8 /* Keycode.swift */; };
 		75B1993625042B2C00F38EA8 /* autocomplete.html in Resources */ = {isa = PBXBuildFile; fileRef = 75B1993525042B2C00F38EA8 /* autocomplete.html */; };
@@ -357,6 +358,7 @@
 		75AA24D925A7E8B000A51E9D /* lsof.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = lsof.m; sourceTree = "<group>"; };
 		75AC552B2522C7710069635E /* upgrade */ = {isa = PBXFileReference; lastKnownFileType = folder; name = upgrade; path = ../upgrade; sourceTree = "<group>"; };
 		75AC55322522C8EB0069635E /* 1.0.20.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = 1.0.20.sh; sourceTree = "<group>"; };
+		75B0A07B25BA64CC00FCD89A /* AutocompleteContextNotifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutocompleteContextNotifier.swift; sourceTree = "<group>"; };
 		75B199312501A3DA00F38EA8 /* KeyboardLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardLayout.swift; sourceTree = "<group>"; };
 		75B199332504190900F38EA8 /* Keycode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Keycode.swift; sourceTree = "<group>"; };
 		75B1993525042B2C00F38EA8 /* autocomplete.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = autocomplete.html; sourceTree = "<group>"; };
@@ -777,6 +779,7 @@
 		75E993F32515C8D3000BE6BE /* Autocompletion */ = {
 			isa = PBXGroup;
 			children = (
+				75B0A07B25BA64CC00FCD89A /* AutocompleteContextNotifier.swift */,
 				1A63312025A4BE6D00CEA06A /* Keystroke.swift */,
 				75C05C6B24FDEA2B001F0A52 /* KeystrokeBuffer.swift */,
 				1A1F15FF25A7A93E0074D541 /* KeyBindingsManager.swift */,
@@ -1104,6 +1107,7 @@
 				7510F8A724A6910500E86F7C /* MacAccessibilityService.swift in Sources */,
 				75C57C142581C0700065741E /* ioreg.c in Sources */,
 				7510F8AA24A6910500E86F7C /* MacCaretView.swift in Sources */,
+				75B0A07C25BA64CC00FCD89A /* AutocompleteContextNotifier.swift in Sources */,
 				751C3BEC24B6910800B5C7FD /* Remote.swift in Sources */,
 				7510F8A924A6910500E86F7C /* MacLocalTerminalView.swift in Sources */,
 				7510F89824A6910500E86F7C /* AppleTerminalView.swift in Sources */,

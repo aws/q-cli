@@ -15,11 +15,22 @@ class KeystrokeBuffer : NSObject {
   var stashedBuffer: String?
   var stashedIndex: String.Index?
   var writeOnly = false // update buffer, but don't return it (prevents keypress events from being sent to autocomplete)
-  static let shared = KeystrokeBuffer()
+    {
+    didSet {
+      if (writeOnly) {
+        NotificationCenter.default.post(name: Self.contextLostInKeystrokeBufferNotification, object: nil)
+      } else {
+        NotificationCenter.default.post(name: Self.contextRestoredInKeystrokeBufferNotification, object: nil)
+      }
+    }
+  }
+  
+  static let contextRestoredInKeystrokeBufferNotification: NSNotification.Name = .init("contextRestoredInKeystrokeBufferNotification")
   static let lineResetInKeyStrokeBufferNotification: NSNotification.Name = .init("lineResetInKeyStrokeBufferNotification")
+  static let contextLostInKeystrokeBufferNotification: NSNotification.Name = .init("contextLostInKeystrokeBufferNotification")
   static let lineAcceptedInKeystrokeBufferNotification: NSNotification.Name = .init("lineAcceptedInXTermBufferNotification")
   static let firstCharacterInKeystrokeBufferNotification: NSNotification.Name = .init("firstCharacterInKeystrokeBufferNotification")
-  
+
   override init() {
     buffer = ""
     index = buffer!.startIndex
@@ -39,6 +50,8 @@ class KeystrokeBuffer : NSObject {
           NSSound.beep()
         }
         index = nil
+        NotificationCenter.default.post(name: Self.contextLostInKeystrokeBufferNotification, object: nil)
+
       } else if (buffer == "") {
         NotificationCenter.default.post(name: Self.lineResetInKeyStrokeBufferNotification, object: nil)
         index = buffer!.startIndex

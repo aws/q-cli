@@ -369,6 +369,16 @@ class ExternalWindow {
         return "\(self.windowId)/\(self.lastTabId ?? "")"
     }
     
+    var windowTitle: String? {
+        guard let axref = self.accesibilityElement else { return nil }
+        var title : AnyObject?
+        let res = AXUIElementCopyAttributeValue(axref, kAXTitleAttribute as CFString, &title)
+        
+        guard res == .success else { return nil }
+        
+        return title as? String
+    }
+    
 }
 
 extension ExternalWindow: Hashable {
