@@ -32,7 +32,7 @@ sed -i '' -e "s/$INSTALLATION3//g" ~/.profile ~/.zprofile ~/.bash_profile ~/.bas
 echo "Removing fish integration"
 FISH_INSTALLATION='contains $HOME/.fig/bin $fish_user_paths; or set -Ua fish_user_paths $HOME/.fig/bin'
 
-sed -i '' -e "s/$FISH_INSTALLATION//g" ~/.config/fish/config.fish
+sed -i '' -e "s|$FISH_INSTALLATION||g" ~/.config/fish/config.fish
 rm ~/.config/fish/conf.d/fig.fish
 
 echo "Removing SSH integration"
