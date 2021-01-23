@@ -1,4 +1,3 @@
-
 <html>
 
 <head>
@@ -115,6 +114,7 @@
 
         .section p {
             font-size: 0.85em;
+            color: #5e5e5e;
         }
 
         .video-mask {
@@ -130,18 +130,24 @@
 
         video {
             width: 100%;
-        }
-
-        img {
-            width: 300;
-            /* margin-left: -20px; */
+            position:absolute;
+            top: 0px;
+            padding-top: 2px;
+            background-color: #f0f0f0;
         }
 
         section {
+            position: absolute;
+            top: 30%;
+            left: 50%;
+            transform: translate(-50%, -30%);
             width: 275px;
+            z-index: 100;
 
-            margin-left: auto;
-            margin-right: auto;
+            /*
+             
+             margin-left: auto;
+            margin-right: auto;*/
         }
 
         .emoji {
@@ -150,10 +156,30 @@
 
         code {
             display: inline-block;
-            border-radius: 5px;
+            border-radius: 3px;
             background-color: #ddd;
-            color: #bdbdbd
+            color: gray;
+            padding-left: 3px;
+            padding-right: 3px;
+            padding-top: 1px;
+            padding-bottom: 1px;
+            margin-left: 2px;
+            margin-right: 2px;
+
         }
+    
+    .term {
+      position: absolute;
+      bottom: 0px;
+      left: 0px;
+      z-index: -1;
+    }
+    
+    .icon {
+      vertical-align: middle;
+      width: 16px;
+      height: 16px;
+    }
 
         /* progress {
             -webkit-appearance: none;
@@ -192,75 +218,88 @@
         from { opacity: 0; }
         to   { opacity: 1; }
     }
+    
+    summary {
+        outline: none;
+        color: #bdbdbd;
+    }
+    
+    .code {
+            display: inline-block;
+            border-radius: 3px;
+            background-color: #ddd;
+            color: gray;
+            padding-left: 3px;
+            padding-right: 3px;
+            padding-top: 1px;
+            padding-bottom: 1px;
+            margin-left: 2px;
+            margin-right: 2px;
+
+        }
+    
     </style>
 </head>
 
 <body>
+
     <div class="wrapper">
         <section>
             <div class="section">
-                <span class="title" href="javascript:permission()" id="permissions">Enable Accessibility
-                    Permission</span>
-                <p style = " color: #5e5e5e">Fig uses this permission to insert text on your behalf and read the current keybuffer.</p>
-                <div class="video-mask">
-                    <video autoplay playsinline muted loop defaultPlaybackRate=1.5>
-                        <source src="./permissions.mp4" type="video/mp4" />
-                        Your browser does not support the video tag.
-                    </video>
-                </div>
+                <span class="title" href="javascript:next()" id="permissions">Privacy & Security</span>
+                <p>The terminal is a sensitive enviroment.</p>
+                <p>All processing happens locally on your device. None of your keystrokes are ever transmitted or stored.</p>
+
+                <p style = " color: #5e5e5e">While in beta, Fig gathers limited usage data in order to detect bugs and improve the app.</p>
+                <br>
+                <details>
+                <p><summary>What information does Fig collect?</summary></p>
+                <b>CLI Usage</b>
+                <p>Each time you run a fig CLI command (like <span class ="code">fig update</span> or <span class ="code">fig docs</span>) we send a ping. The CLI is an important part of the Fig app. If commands like <span class ="code">fig update</span> stop working, up to date completion specs won't be downloaded for users, meaning Fig will break.</p>
+
+                <b>Autocomplete Usage</b>
+                <p>We send a ping each time you select an autocomplete suggestion. The ping contains the root command you used (e.g. git, cd, aws, etc) and nothing else (ie if you select "commit" in "git commit", all we see is git).</p>
+
+                <b>Terminal Usage</b>
+                <p>Once a day, Fig sends a single ping with aggregated metrics on how long you used the Terminal, how many times Fig popped up, and how many times you used Fig.</p>
+
+                <b>App Usage</b>
+                <p>Fig sends a ping for basic app events like login, quit, and turning autocomplete on/off.</p>
+
+                <b>Crash Reporting</b>
+                <p>Fig uses Sentry for crash reporting.</p>
+
+                <p>For more details, go to <a href="javascript:fig.open('https://withfig.com/privacy/')">https://withfig.com/privacy/</a>.</p>
+                </details>
+
+<!--                <center>-->
+<!--                <p style = " color: #5e5e5e">-->
+<!--                <input type="checkbox" id="status" name="status">-->
+<!--                <label for="status">I understand</label>-->
+<!--                </p>-->
+<!--                </center>-->
+                <br>
+                <br>
                 <div class = "button">
-                    <a id = "enable" href="javascript:permissions()">Enable</a>
+                    <a id = "enable" href="javascript:next()">Continue</a>
                 </div>
+                <br>
+              
 
             </div>
         </section>
 
     </div>
+
     <script>
-        document.querySelector('video').playbackRate = 1.8;
+      //document.querySelector('video').playbackRate = 0.8;
 
-        let ws = function () {
-            fig.onboarding("ws", () => {
-
-            })
-        }
-
-        let cli = function () {
-            fig.onboarding("cli", () => {
-                window.location.href = './cli.html'
-            })
-        }
-
-        let permissions = function () {
-            document.querySelector("#enable").innerText = "Waiting..."
-            fig.onboarding("permissions", (value) => {
-               //window.location.href = `${fig.remoteURL}/onboarding/signin.html`
-               window.location.href = './ssh.html'
-
-            })
-            //fig.onboarding("close")
+        let next = function () {
+            window.location.href = `${fig.remoteURL}/onboarding/signin.html`
 
         }
-        // const progressbar = document.querySelector('progress')
-        // const article = document.querySelector('body')
 
-        // let isScrolling = false
 
-        // document.addEventListener('scroll', (e) => isScrolling = true)
-
-        // render()
-
-        // function render() {
-
-        //     requestAnimationFrame(render)
-
-        //     if (!isScrolling) return
-
-        //     progressbar.value = window.scrollY / (article.offsetHeight - window.innerHeight) * 100
-
-        //     isScrolling = false
-
-        // }
     </script>
 </body>
 

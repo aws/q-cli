@@ -133,7 +133,9 @@
         }
 
         video {
-            width: 100%;
+            width: 50%;
+           /* position: absolute;
+            top: -50px;*/
         }
 
         img {
@@ -196,22 +198,38 @@
         from { opacity: 0; }
         to   { opacity: 1; }
     }
+    
+    .icon {
+      /*vertical-align: bottom;*/
+      width: 16px;
+      height: 16px;
+      padding-right: 3px;
+    }
+    
     </style>
 </head>
 
 <body>
+<!--  <video autoplay playsinline muted loop defaultPlaybackRate=1.5>-->
+<!--      <source src="./autoc.mp4" type="video/mp4" />-->
+<!--      Your browser does not support the video tag.-->
+<!--  </video>-->
     <div class="wrapper">
         <header>
-            <span class="title"><span class="emoji">◧</span>Welcome to Fig</span>
+            <span class="title"><img class = "icon" src="fig://icon?type=statusbar">Welcome to Fig</span>
             <span class="subtitle">Upgrade your terminal for the 21<sup>st</sup> century</span>
             <p style="text-align: left; font-size: 0.9em;
             color: #5e5e5e; width: 275px; margin-left: auto; margin-right: auto;">Fig needs a few permissions to get started. </p>
             <div class="button">
                 <a href="javascript:cli()">Setup</a>
             </div>
+<!--            <span style="text-align: left; font-size: 0.75em;-->
+<!--              color: #5e5e5e; width: 275px; margin-left: auto; margin-right: auto;">Fig will append to your .profile, .zshrc, .bashrc and others.</span>-->
         </header>
     </div>
     <script>
+      //document.querySelector('video').playbackRate = 1.4;
+
         fig.init = () => {
             fig.focus()
         }
