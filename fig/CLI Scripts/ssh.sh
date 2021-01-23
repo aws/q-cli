@@ -19,7 +19,7 @@ Host *
     ControlMaster auto
     ControlPersist 1
     PermitLocalCommand yes
-    LocalCommand (fig bg:ssh ~/.ssh/%r@%h:%p &)"
+    LocalCommand fig bg:ssh ~/.ssh/%r@%h:%p &"
 
 
 mkdir -p ~/.ssh
