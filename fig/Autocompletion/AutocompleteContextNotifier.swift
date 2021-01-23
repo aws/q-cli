@@ -78,9 +78,9 @@ class AutocompleteContextNotifier {
     let keybuffer = KeypressProvider.shared.keyBuffer(for: window)
     
     if (keybuffer.buffer != nil && !keybuffer.writeOnly) {
-      setContextIndicator(.hasContext, overwriteExistingTitle: false)
+      setContextIndicator(.hasContext)
     } else {
-      setContextIndicator(.noContext, overwriteExistingTitle: false)
+      setContextIndicator(.noContext)
     }
     
   }

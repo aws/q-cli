@@ -19,7 +19,7 @@ class KeystrokeBuffer : NSObject {
     didSet {
       if (writeOnly) {
         NotificationCenter.default.post(name: Self.contextLostInKeystrokeBufferNotification, object: nil)
-      } else {
+      } else if self.buffer != nil {
         NotificationCenter.default.post(name: Self.contextRestoredInKeystrokeBufferNotification, object: nil)
       }
     }
