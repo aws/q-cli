@@ -137,6 +137,12 @@
 		75AA24D325A79F3400A51E9D /* contribute.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75AA24CF25A79ACC00A51E9D /* contribute.sh */; };
 		75AA24DA25A7E8B000A51E9D /* lsof.m in Sources */ = {isa = PBXBuildFile; fileRef = 75AA24D925A7E8B000A51E9D /* lsof.m */; };
 		75B0A07C25BA64CC00FCD89A /* AutocompleteContextNotifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B0A07B25BA64CC00FCD89A /* AutocompleteContextNotifier.swift */; };
+		75B0A07E25BB746600FCD89A /* debugger.html in Resources */ = {isa = PBXBuildFile; fileRef = 75B0A07D25BB746600FCD89A /* debugger.html */; };
+		75B0A08025BB74C700FCD89A /* fig-context-indicator.png in Resources */ = {isa = PBXBuildFile; fileRef = 75B0A07F25BB74C700FCD89A /* fig-context-indicator.png */; };
+		75B0A08425BB759E00FCD89A /* trimmed-debugger.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 75B0A08325BB759E00FCD89A /* trimmed-debugger.mp4 */; };
+		75B0A08625BB94DF00FCD89A /* debugger-only.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 75B0A08525BB94DE00FCD89A /* debugger-only.mp4 */; };
+		75B0A08C25BBC7A300FCD89A /* autoc.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 75B0A08B25BBC7A300FCD89A /* autoc.mp4 */; };
+		75B0A08E25BBC9B800FCD89A /* privacy.html in Resources */ = {isa = PBXBuildFile; fileRef = 75B0A08D25BBC9B800FCD89A /* privacy.html */; };
 		75B199322501A3DA00F38EA8 /* KeyboardLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B199312501A3DA00F38EA8 /* KeyboardLayout.swift */; };
 		75B199342504190900F38EA8 /* Keycode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B199332504190900F38EA8 /* Keycode.swift */; };
 		75B1993625042B2C00F38EA8 /* autocomplete.html in Resources */ = {isa = PBXBuildFile; fileRef = 75B1993525042B2C00F38EA8 /* autocomplete.html */; };
@@ -359,6 +365,12 @@
 		75AC552B2522C7710069635E /* upgrade */ = {isa = PBXFileReference; lastKnownFileType = folder; name = upgrade; path = ../upgrade; sourceTree = "<group>"; };
 		75AC55322522C8EB0069635E /* 1.0.20.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = 1.0.20.sh; sourceTree = "<group>"; };
 		75B0A07B25BA64CC00FCD89A /* AutocompleteContextNotifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutocompleteContextNotifier.swift; sourceTree = "<group>"; };
+		75B0A07D25BB746600FCD89A /* debugger.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = debugger.html; sourceTree = "<group>"; };
+		75B0A07F25BB74C700FCD89A /* fig-context-indicator.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "fig-context-indicator.png"; sourceTree = "<group>"; };
+		75B0A08325BB759E00FCD89A /* trimmed-debugger.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "trimmed-debugger.mp4"; sourceTree = "<group>"; };
+		75B0A08525BB94DE00FCD89A /* debugger-only.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "debugger-only.mp4"; sourceTree = "<group>"; };
+		75B0A08B25BBC7A300FCD89A /* autoc.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = autoc.mp4; sourceTree = "<group>"; };
+		75B0A08D25BBC9B800FCD89A /* privacy.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = privacy.html; sourceTree = "<group>"; };
 		75B199312501A3DA00F38EA8 /* KeyboardLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardLayout.swift; sourceTree = "<group>"; };
 		75B199332504190900F38EA8 /* Keycode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Keycode.swift; sourceTree = "<group>"; };
 		75B1993525042B2C00F38EA8 /* autocomplete.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = autocomplete.html; sourceTree = "<group>"; };
@@ -638,10 +650,17 @@
 				757CA890248B2798002A64A8 /* cli.html */,
 				757CA892248B28E3002A64A8 /* landing.html */,
 				757CA894248B291E002A64A8 /* permissions.html */,
+				752D71C425AE9B7200263527 /* ssh.html */,
+				75B0A07D25BB746600FCD89A /* debugger.html */,
+				75B0A08D25BBC9B800FCD89A /* privacy.html */,
+				75B0A07F25BB74C700FCD89A /* fig-context-indicator.png */,
+				75B0A08325BB759E00FCD89A /* trimmed-debugger.mp4 */,
+				75B0A08525BB94DE00FCD89A /* debugger-only.mp4 */,
 				757CA89A248C18F0002A64A8 /* done.html */,
 				757CA88E248B0D31002A64A8 /* cli.png */,
 				757CA88C248B091D002A64A8 /* permissions.mp4 */,
 				752D71C625AECB4B00263527 /* ssh.mp4 */,
+				75B0A08B25BBC7A300FCD89A /* autoc.mp4 */,
 				757CA88524876042002A64A8 /* error.html */,
 				75C0711C244AC3B2002DF69F /* index.html */,
 				752C0BDF247A27790077E415 /* editor.html */,
@@ -651,7 +670,6 @@
 				755D0DE3247F038B0074AB5C /* logs.html */,
 				757CA889248AD58C002A64A8 /* onboarding.html */,
 				75B1993525042B2C00F38EA8 /* autocomplete.html */,
-				752D71C425AE9B7200263527 /* ssh.html */,
 				754D31B425759D900020CED4 /* tutorial.html */,
 			);
 			name = local;
@@ -948,6 +966,7 @@
 				75186083255CB0C20000A7C7 /* iterm-integration.sh in Resources */,
 				75186084255CB0C20000A7C7 /* 1.0.23.sh in Resources */,
 				75186085255CB0C20000A7C7 /* fig-iterm-integration.py in Resources */,
+				75B0A08025BB74C700FCD89A /* fig-context-indicator.png in Resources */,
 				75186086255CB0C20000A7C7 /* update.sh in Resources */,
 				75186087255CB0C20000A7C7 /* 1.0.22.sh in Resources */,
 				75186088255CB0C20000A7C7 /* uninstall.sh in Resources */,
@@ -962,6 +981,7 @@
 				757CA88624876043002A64A8 /* error.html in Resources */,
 				757CA88F248B0D31002A64A8 /* cli.png in Resources */,
 				752C0BE4247B44C60077E415 /* finder.html in Resources */,
+				75B0A08C25BBC7A300FCD89A /* autoc.mp4 in Resources */,
 				752C0BDA2479F37B0077E415 /* fig.js in Resources */,
 				757CA88D248B091D002A64A8 /* permissions.mp4 in Resources */,
 				757CA897248C108E002A64A8 /* css in Resources */,
@@ -975,11 +995,13 @@
 				75809B1124C3876B00BFFB3E /* run-tutorial.js in Resources */,
 				757CA899248C10AD002A64A8 /* fonts in Resources */,
 				757CA893248B28E3002A64A8 /* landing.html in Resources */,
+				75B0A08625BB94DF00FCD89A /* debugger-only.mp4 in Resources */,
 				755D0DE4247F038B0074AB5C /* logs.html in Resources */,
 				7510F8AB24A6910500E86F7C /* README.md in Resources */,
 				752D71C525AE9B7200263527 /* ssh.html in Resources */,
 				757CA89D248C1F50002A64A8 /* demo4onboarding.mp4 in Resources */,
 				7567595F244634B2006AA988 /* Main.storyboard in Resources */,
+				75B0A07E25BB746600FCD89A /* debugger.html in Resources */,
 				75186070255B2A0A0000A7C7 /* astrix@2x.png in Resources */,
 				75B1993625042B2C00F38EA8 /* autocomplete.html in Resources */,
 				7518606F255B2A0A0000A7C7 /* flag@2x.png in Resources */,
@@ -988,6 +1010,8 @@
 				752C0BE2247A33F20077E415 /* viewer.html in Resources */,
 				752C0BE6247C25290077E415 /* display.html in Resources */,
 				752C0BDC2479F68C0077E415 /* tutorial.css in Resources */,
+				75B0A08E25BBC9B800FCD89A /* privacy.html in Resources */,
+				75B0A08425BB759E00FCD89A /* trimmed-debugger.mp4 in Resources */,
 				75186072255B2A0A0000A7C7 /* carrot@2x.png in Resources */,
 				75186074255B2A0A0000A7C7 /* command@2x.png in Resources */,
 				75186071255B2A0A0000A7C7 /* option@2x.png in Resources */,

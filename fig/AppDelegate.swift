@@ -721,6 +721,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     }
     
     @objc func restart() {
+        Defaults.launchedFollowingCrash = false
         Logger.log(message: "Restarting Fig...")
         let url = URL(fileURLWithPath: Bundle.main.resourcePath!)
         let path = url.deletingLastPathComponent().deletingLastPathComponent().absoluteString

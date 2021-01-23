@@ -781,6 +781,11 @@ extension WebBridge {
                 case "newTerminalWindow":
                     let path = Bundle.main.path(forResource: "open_new_terminal_window", ofType: "scpt")
                     NSAppleScript.run(path: path!)
+                case "terminaltitle:true":
+                    AutocompleteContextNotifier.addIndicatorToTitlebar = true
+                case "terminaltitle:false":
+                    AutocompleteContextNotifier.addIndicatorToTitlebar = false
+
             case "openOnStartup:true":
                 (NSApp.delegate as? AppDelegate)?.toggleLaunchAtStartup(shouldBeOff: false)
             case "openOnStartup:false":
