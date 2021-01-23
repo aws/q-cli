@@ -242,25 +242,23 @@ extension WebBridge: WKURLSchemeHandler {
         guard let url = urlSchemeTask.request.url else {
             return
         }
-        
-        guard let fileicon = WebBridge.fileIcon(for: url) else { return }
-        
-        //Create a NSURLResponse with the correct mimetype.
-        
-        let response = URLResponse(url: url, mimeType: "image/png", expectedContentLength: -1, textEncodingName: nil)
-        
-        guard let tiffData = fileicon.tiffRepresentation else {
-              print("failed to get tiffRepresentation. url: \(url)")
-            return
-        }
-        let imageRep = NSBitmapImageRep(data: tiffData)
-        guard let imageData = imageRep?.representation(using: .png, properties: [:]) else {
-              print("failed to get PNG representation. url: \(url)")
-            return
+        DispatchQueue(label: "com.withfig.icon-fetcher", qos: .userInitiated, attributes: .concurrent).async {
+          guard let fileicon = WebBridge.fileIcon(for: url) else { return }
+          //Create a NSURLResponse with the correct mimetype.
+          let response = URLResponse(url: url, mimeType: "image/png", expectedContentLength: -1, textEncodingName: nil)
+          guard let tiffData = fileicon.tiffRepresentation else {
+                print("failed to get tiffRepresentation. url: \(url)")
+              return
           }
-        urlSchemeTask.didReceive(response)
-        urlSchemeTask.didReceive(imageData)
-        urlSchemeTask.didFinish()
+          let imageRep = NSBitmapImageRep(data: tiffData)
+          guard let imageData = imageRep?.representation(using: .png, properties: [:]) else {
+                print("failed to get PNG representation. url: \(url)")
+              return
+            }
+          urlSchemeTask.didReceive(response)
+          urlSchemeTask.didReceive(imageData)
+          urlSchemeTask.didFinish()
+        }
     }
     
     func webView(_ webView: WKWebView, stop urlSchemeTask: WKURLSchemeTask) {
