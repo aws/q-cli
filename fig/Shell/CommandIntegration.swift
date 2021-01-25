@@ -36,7 +36,7 @@ class SSHIntegration: CommandIntegration {
     }
     
     func update(tty: TTY, for process: proc) {
-        guard Defaults.SSHIntegrationEnabled else {
+       guard Defaults.SSHIntegrationEnabled else {
             Logger.log(message: "SSH Integration is not enabled", priority: .notify)
             tty.cwd = process.cwd
             tty.cmd = process.cmd
@@ -45,12 +45,16 @@ class SSHIntegration: CommandIntegration {
             tty.runUsingPrefix = nil
             return
         }
-        
-        let semaphore = DispatchSemaphore(value: 0)
+      
         if tty.pty == nil {
+            print("Starting PTY...!")
             tty.pty = PseudoTerminalHelper()
             tty.pty?.start(with: [:])
+            return
         }
+        
+        let semaphore = DispatchSemaphore(value: 0)
+
         
         let scriptPath = Bundle.main.path(forResource: "remote_cwd", ofType: "sh")!
         guard let prefix = self.runUsingPrefix() else {
