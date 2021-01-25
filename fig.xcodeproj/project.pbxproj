@@ -99,8 +99,6 @@
 		7577124725648DFB0011FF48 /* ps.c in Sources */ = {isa = PBXBuildFile; fileRef = 7577124625648DFB0011FF48 /* ps.c */; };
 		757712492564D94A0011FF48 /* ProcessStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757712482564D9490011FF48 /* ProcessStatus.swift */; };
 		757CA86724859461002A64A8 /* AppMover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757CA86624859461002A64A8 /* AppMover.swift */; };
-		757CA88124874E06002A64A8 /* ErrorMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757CA88024874E05002A64A8 /* ErrorMatcher.swift */; };
-		757CA88424875907002A64A8 /* ANSITerminal in Frameworks */ = {isa = PBXBuildFile; productRef = 757CA88324875907002A64A8 /* ANSITerminal */; };
 		757CA88624876043002A64A8 /* error.html in Resources */ = {isa = PBXBuildFile; fileRef = 757CA88524876042002A64A8 /* error.html */; };
 		757CA88A248AD58C002A64A8 /* onboarding.html in Resources */ = {isa = PBXBuildFile; fileRef = 757CA889248AD58C002A64A8 /* onboarding.html */; };
 		757CA88D248B091D002A64A8 /* permissions.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 757CA88C248B091D002A64A8 /* permissions.mp4 */; };
@@ -326,7 +324,6 @@
 		7577124625648DFB0011FF48 /* ps.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ps.c; sourceTree = "<group>"; };
 		757712482564D9490011FF48 /* ProcessStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessStatus.swift; sourceTree = "<group>"; };
 		757CA86624859461002A64A8 /* AppMover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppMover.swift; sourceTree = "<group>"; };
-		757CA88024874E05002A64A8 /* ErrorMatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorMatcher.swift; sourceTree = "<group>"; };
 		757CA88524876042002A64A8 /* error.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = error.html; sourceTree = "<group>"; };
 		757CA887248AD067002A64A8 /* OnboardingWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingWindow.swift; sourceTree = "<group>"; };
 		757CA889248AD58C002A64A8 /* onboarding.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = onboarding.html; sourceTree = "<group>"; };
@@ -408,7 +405,6 @@
 			files = (
 				75CFDBE224EDE31800F00CAE /* Sentry in Frameworks */,
 				755D0F512482D4920074AB5C /* HotKey in Frameworks */,
-				757CA88424875907002A64A8 /* ANSITerminal in Frameworks */,
 				757CA8E424905B0E002A64A8 /* Kitura-WebSocket in Frameworks */,
 				75CFF64A2496B43A00C6A6DE /* Sparkle.framework in Frameworks */,
 				756C4D832542A6D30035B467 /* Starscream in Frameworks */,
@@ -780,7 +776,6 @@
 			isa = PBXGroup;
 			children = (
 				757CA86624859461002A64A8 /* AppMover.swift */,
-				757CA88024874E05002A64A8 /* ErrorMatcher.swift */,
 			);
 			path = Legacy;
 			sourceTree = "<group>";
@@ -848,7 +843,6 @@
 			name = fig;
 			packageProductDependencies = (
 				755D0F502482D4920074AB5C /* HotKey */,
-				757CA88324875907002A64A8 /* ANSITerminal */,
 				757CA8E324905B0E002A64A8 /* Kitura-WebSocket */,
 				75CFDBE124EDE31800F00CAE /* Sentry */,
 				756C4D822542A6D30035B467 /* Starscream */,
@@ -931,7 +925,6 @@
 			mainGroup = 75675948244634AD006AA988;
 			packageReferences = (
 				755D0F4F2482D4910074AB5C /* XCRemoteSwiftPackageReference "HotKey" */,
-				757CA88224875906002A64A8 /* XCRemoteSwiftPackageReference "ANSITerminal" */,
 				757CA8E224905B0E002A64A8 /* XCRemoteSwiftPackageReference "Kitura-WebSocket" */,
 				758AEB6824CEA4D000A15EAF /* XCRemoteSwiftPackageReference "Starscream" */,
 				75CFDBE024EDE31800F00CAE /* XCRemoteSwiftPackageReference "sentry-cocoa" */,
@@ -1114,7 +1107,6 @@
 				75675955244634AD006AA988 /* AppDelegate.swift in Sources */,
 				7510F89924A6910500E86F7C /* TerminalViewDelegate.swift in Sources */,
 				7510F8A424A6910500E86F7C /* iOSCaretView.swift in Sources */,
-				757CA88124874E06002A64A8 /* ErrorMatcher.swift in Sources */,
 				751C3BEE24B6915000B5C7FD /* Defaults.swift in Sources */,
 				757712492564D94A0011FF48 /* ProcessStatus.swift in Sources */,
 				7510F89A24A6910500E86F7C /* Extensions.swift in Sources */,
@@ -1561,14 +1553,6 @@
 				minimumVersion = 0.1.3;
 			};
 		};
-		757CA88224875906002A64A8 /* XCRemoteSwiftPackageReference "ANSITerminal" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/pakLebah/ANSITerminal";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 0.0.3;
-			};
-		};
 		757CA8E224905B0E002A64A8 /* XCRemoteSwiftPackageReference "Kitura-WebSocket" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/IBM-Swift/Kitura-WebSocket.git";
@@ -1605,11 +1589,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 758AEB6824CEA4D000A15EAF /* XCRemoteSwiftPackageReference "Starscream" */;
 			productName = Starscream;
-		};
-		757CA88324875907002A64A8 /* ANSITerminal */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 757CA88224875906002A64A8 /* XCRemoteSwiftPackageReference "ANSITerminal" */;
-			productName = ANSITerminal;
 		};
 		757CA8E324905B0E002A64A8 /* Kitura-WebSocket */ = {
 			isa = XCSwiftPackageProductDependency;
