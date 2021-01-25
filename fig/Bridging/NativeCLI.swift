@@ -261,6 +261,19 @@ extension NativeCLI {
         let config = try? String(contentsOfFile: "\(NSHomeDirectory())/.fig/user/config", encoding: String.Encoding.utf8)
         let cliInstalled = FileManager.default.fileExists(atPath: "\(NSHomeDirectory())/.fig/bin/fig")
         let specs = (try? FileManager.default.contentsOfDirectory(atPath: "\(NSHomeDirectory())/.fig/autocomplete").count) ?? 0
+        let secureInput = CGSIsSecureEventInputSet()
+        var blockingProcess: String? = nil
+        if secureInput {
+          var pid: pid_t = 0;
+          secure_keyboard_entry_process_info(&pid)
+          if let app = NSRunningApplication(processIdentifier: pid) {
+            blockingProcess = "\(app.localizedName ?? "") - \(app.bundleIdentifier ?? "")"
+          } else {
+            blockingProcess = "no app for pid"
+          }
+        }
+  
+
         let placeholder =
         """
         \(message.arguments.joined(separator: " "))
@@ -288,6 +301,9 @@ extension NativeCLI {
         ENVIRONMENT:
         CLI installed:\(cliInstalled)
         Number of specs: \(specs)
+        Accessibility: \(AXIsProcessTrusted())
+        SecureKeyboardInput: \(secureInput)
+        SecureKeyboardProcess: \(blockingProcess ?? "<none>")
         PATH: \(path ?? "Not found")
         FIG_ENV_VAR: \(figIntegratedWithShell ?? "Not found")
         --------------------------------------
