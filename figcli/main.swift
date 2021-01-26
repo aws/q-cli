@@ -134,7 +134,9 @@ class CLI : WebSocketConnectionDelegate {
 
     init(env: [String : String], stdin: String, arguments: [String], group: DispatchGroup) {
         self.group = group
-        connection = WebSocketStarscreamConnection(url: URL(string: "ws://localhost:8765")!)
+        var port = UserDefaults(suiteName: "com.mschrage.fig.shared")?.integer(forKey: "port") ?? 8765
+        port = port == 0 ? 8765 : port
+        connection = WebSocketStarscreamConnection(url: URL(string: "ws://localhost:\(port)")!)
         connection.delegate = self
         connection.connect()
     }

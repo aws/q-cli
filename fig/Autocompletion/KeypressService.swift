@@ -9,6 +9,7 @@
 import Cocoa
 import Carbon
 import Sentry
+import Foundation
 
 protocol KeypressService {
   func keyBuffer(for window: ExternalWindow) -> KeystrokeBuffer
@@ -40,20 +41,35 @@ class KeypressProvider : KeypressService {
   init(windowServiceProvider: WindowService) {
     self.windowServiceProvider = windowServiceProvider
     registerKeystrokeHandler()
-    NotificationCenter.default.addObserver(self, selector:#selector(lineAcceptedInKeystrokeBuffer), name: KeystrokeBuffer.lineResetInKeyStrokeBufferNotification, object:nil)
+    NotificationCenter.default.addObserver(self,
+                                           selector:#selector(lineAcceptedInKeystrokeBuffer),
+                                           name: KeystrokeBuffer.lineResetInKeyStrokeBufferNotification,
+                                           object:nil)
+    
+    NotificationCenter.default.addObserver(self,
+                                           selector:#selector(accesibilityPermissionsUpdated),
+                                           name: Accessibility.permissionDidUpdate,
+                                           object:nil)
   }
   
   func addRedirect(for keycode: Keystroke, in window: ExternalWindow) {
+    var lock = os_unfair_lock_s()
+    os_unfair_lock_lock(&lock)
     var set = redirects[window.hash] ?? []
     set.insert(keycode)
     redirects[window.hash] = set
+    os_unfair_lock_unlock(&lock)
   }
   
   func removeRedirect(for keycode: Keystroke, in window: ExternalWindow) {
+    var lock = os_unfair_lock_s()
+    os_unfair_lock_lock(&lock)
     if var set = redirects[window.hash] {
       set.remove(keycode)
       redirects[window.hash] = set
     }
+    os_unfair_lock_unlock(&lock)
+
   }
   
   func addRedirect(for keycode: UInt16, in window: ExternalWindow) {
@@ -75,6 +91,16 @@ class KeypressProvider : KeypressService {
           tty.update()
         }
       }
+    }
+  }
+  
+  @objc func accesibilityPermissionsUpdated(_ notification: Notification) {
+    guard let granted = notification.object as? Bool else { return }
+    
+    if (granted) {
+      self.registerKeystrokeHandler()
+    } else {
+      self.deregisterKeystrokeHandler()
     }
   }
   
@@ -121,6 +147,25 @@ class KeypressProvider : KeypressService {
     }
   }
   
+  func deregisterKeystrokeHandler() {
+    if let handler = self.mouseHandler {
+      NSEvent.removeMonitor(handler)
+      self.mouseHandler = nil
+    }
+    
+    if let handler = self.keyHandler {
+      NSEvent.removeMonitor(handler)
+      self.keyHandler = nil
+    }
+    
+    self.clean()
+    
+    if let tap = self.tap {
+      CFMachPortInvalidate(tap)
+      self.tap = nil
+    }
+  }
+    
   func registerKeyInterceptor() -> CFMachPort? {
     guard AXIsProcessTrustedWithOptions(nil) else {
       print("KeypressService: Could not register without accesibility permissions")

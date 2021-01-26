@@ -18,13 +18,65 @@ class ShellBridgeServerDelegate: ServerDelegate {
 
 class WebSocketServer {
     //lsof -i tcp:8765
-    static let bridge = WebSocketServer(port: 8765)
+  static let bridge = { () -> WebSocketServer in
+      var port = 0
+      for i in 50000..<65000 {
+        let (isFree, _) = WebSocketServer.checkPortForListener(port: UInt16(i))
+          if isFree == true {
+              port = i
+              break;
+          }
+      }
+      
+      Defaults.port = port == 0 ? 8765 : port
+      return WebSocketServer(port: Defaults.port)
+    }
     let service: ShellBridgeSocketService
     
     var connections:[String: WebSocketConnection] {
         get {
             return service.connections
         }
+    }
+  
+    static func checkPortForListener(port: in_port_t) -> (Bool, descr: String) {
+
+        let socketFileDescriptor = socket(AF_INET, SOCK_STREAM, 0)
+        if socketFileDescriptor == -1 {
+            return (false, "SocketCreationFailed, \(descriptionOfLastError())")
+        }
+
+        var addr = sockaddr_in()
+        let sizeOfSockkAddr = MemoryLayout<sockaddr_in>.size
+        addr.sin_len = __uint8_t(sizeOfSockkAddr)
+        addr.sin_family = sa_family_t(AF_INET)
+        addr.sin_port = Int(OSHostByteOrder()) == OSLittleEndian ? _OSSwapInt16(port) : port
+        addr.sin_addr = in_addr(s_addr: inet_addr("0.0.0.0"))
+        addr.sin_zero = (0, 0, 0, 0, 0, 0, 0, 0)
+        var bind_addr = sockaddr()
+        memcpy(&bind_addr, &addr, Int(sizeOfSockkAddr))
+
+        if Darwin.bind(socketFileDescriptor, &bind_addr, socklen_t(sizeOfSockkAddr)) == -1 {
+            let details = descriptionOfLastError()
+            release(socket: socketFileDescriptor)
+            return (false, "\(port), BindFailed, \(details)")
+        }
+        if listen(socketFileDescriptor, SOMAXCONN ) == -1 {
+            let details = descriptionOfLastError()
+            release(socket: socketFileDescriptor)
+            return (false, "\(port), ListenFailed, \(details)")
+        }
+        release(socket: socketFileDescriptor)
+        return (true, "\(port) is free for use")
+    }
+
+    fileprivate static func release(socket: Int32) {
+        Darwin.shutdown(socket, SHUT_RDWR)
+        close(socket)
+    }
+
+    fileprivate static func descriptionOfLastError() -> String {
+        return String.init(cString: (UnsafePointer(strerror(errno))))
     }
 
     init(port: Int) {
@@ -42,7 +94,7 @@ class WebSocketServer {
 
                         DispatchQueue.main.async {
                             if let delegate = NSApp.delegate as? AppDelegate {
-                                delegate.dialogOKCancel(question: "Could not link with terminal", text: "A process is already listening on port 8765.\nRun `lsof -i tcp:8765` to identify it.\n\nPlease email hello@withfig.com for help debugging.", prompt: "", noAction: true, icon: nil)
+                              let _ = delegate.dialogOKCancel(question: "Could not link with terminal", text: "A process is already listening on port \(Defaults.port).\nRun `lsof -i tcp:\(Defaults.port)` to identify it.\n\nPlease email hello@withfig.com for help debugging.", prompt: "", noAction: true, icon: nil)
                             }
                         }
                    }
@@ -69,7 +121,11 @@ class ShellBridgeSocketService: WebSocketService {
 
     public func connected(connection: WebSocketConnection) {
         print("connected:",connection.id)
+      
+        var lock = os_unfair_lock_s()
+        os_unfair_lock_lock(&lock)
         connections[connection.id] = connection
+        os_unfair_lock_unlock(&lock)
     }
 
     public func disconnected(connection: WebSocketConnection, reason: WebSocketCloseReasonCode) {
@@ -81,7 +137,11 @@ class ShellBridgeSocketService: WebSocketService {
     public func received(message: Data, from: WebSocketConnection) {
         from.close(reason: .invalidDataType, description: "Fig only accepts text messages")
 
+        var lock = os_unfair_lock_s()
+        os_unfair_lock_lock(&lock)
         connections.removeValue(forKey: from.id)
+        os_unfair_lock_unlock(&lock)
+
     }
 
     public func received(message: String, from: WebSocketConnection) {

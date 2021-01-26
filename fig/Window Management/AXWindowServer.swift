@@ -332,7 +332,11 @@ class AXWindowServer : WindowService {
             Logger.log(message: "AXWindowServer: Began tracking '\(appRef.bundleId ?? "<none>")'")
             //EXC_BAD_ACCESS (code=EXC_I386_GPFLT
             // Duplicate elements of type 'ExternalApplication' were found in a Set
+            var lock = os_unfair_lock_s()
+            os_unfair_lock_lock(&lock)
             tracked.insert(appRef)
+            os_unfair_lock_unlock(&lock)
+
         } else {
             Logger.log(message: "AXWindowServer: Error setting up tracking for app '\(appRef.bundleId ?? "<none>")")
         }
@@ -341,7 +345,10 @@ class AXWindowServer : WindowService {
     func deregister(app: NSRunningApplication) {
         for trackedApp in self.tracked where trackedApp.bundleId == app.bundleIdentifier {
             // EXC_BAD_ACCESS (code=EXC_I386_GPFLT)
+            var lock = os_unfair_lock_s()
+            os_unfair_lock_lock(&lock)
             tracked.remove(trackedApp)
+            os_unfair_lock_unlock(&lock)
             trackedApp.deregisterObserver()
         }
 
@@ -351,11 +358,36 @@ class AXWindowServer : WindowService {
         
        registerWindowTracking()
             
-        NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(didActivateApplication(notification:)), name: NSWorkspace.didActivateApplicationNotification, object: nil)
-        NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(didTerminateApplication(notification:)), name: NSWorkspace.didTerminateApplicationNotification, object: nil)
-        NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(didLaunchApplicationNotification(notification:)), name: NSWorkspace.didLaunchApplicationNotification, object: nil)
-        NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(didDeactivateApplication(notification:)), name: NSWorkspace.didDeactivateApplicationNotification, object: nil)
-        NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(activeSpaceDidChange), name: NSWorkspace.activeSpaceDidChangeNotification, object: nil)
+        NSWorkspace.shared.notificationCenter.addObserver(self,
+                                                          selector: #selector(didActivateApplication(notification:)),
+                                                          name: NSWorkspace.didActivateApplicationNotification,
+                                                          object: nil)
+      
+        NSWorkspace.shared.notificationCenter.addObserver(self,
+                                                          selector: #selector(didTerminateApplication(notification:)),
+                                                          name: NSWorkspace.didTerminateApplicationNotification,
+                                                          object: nil)
+      
+        NSWorkspace.shared.notificationCenter.addObserver(self,
+                                                          selector: #selector(didLaunchApplicationNotification(notification:)),
+                                                          name: NSWorkspace.didLaunchApplicationNotification,
+                                                          object: nil)
+      
+        NSWorkspace.shared.notificationCenter.addObserver(self,
+                                                          selector: #selector(didDeactivateApplication(notification:)),
+                                                          name: NSWorkspace.didDeactivateApplicationNotification,
+                                                          object: nil)
+      
+        NSWorkspace.shared.notificationCenter.addObserver(self,
+                                                          selector: #selector(activeSpaceDidChange),
+                                                          name: NSWorkspace.activeSpaceDidChangeNotification,
+                                                          object: nil)
+      
+        NotificationCenter.default.addObserver(self,
+                                                 selector:#selector(accesibilityPermissionsUpdated),
+                                                 name: Accessibility.permissionDidUpdate,
+                                                 object:nil)
+      
         
 //        NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged) { (event) in
 //            if let window = WindowServer.shared.allWindows(onScreen: false).first {
@@ -369,11 +401,25 @@ class AXWindowServer : WindowService {
 //        }
      
     }
+  
+    @objc func accesibilityPermissionsUpdated(_ notification: Notification) {
+      guard let granted = notification.object as? Bool else { return }
+      
+      if (granted) {
+        self.registerWindowTracking()
+      } else {
+        self.deregisterWindowTracking()
+      }
+    }
     
     func registerWindowTracking() {
         for app in tracked {
             app.deregisterObserver()
+            var lock = os_unfair_lock_s()
+            os_unfair_lock_lock(&lock)
             tracked.remove(app)
+            os_unfair_lock_unlock(&lock)
+
         }
 //        tracked = []
         
@@ -388,6 +434,18 @@ class AXWindowServer : WindowService {
         
         Logger.log(message: "AXWindowServer: Tracking \(self.tracked.count) applications...")
 
+    }
+  
+    func deregisterWindowTracking() {
+        for app in tracked {
+            app.deregisterObserver()
+            var lock = os_unfair_lock_s()
+            os_unfair_lock_lock(&lock)
+            tracked.remove(app)
+            os_unfair_lock_unlock(&lock)
+        }
+        
+        self.topWindow = nil
     }
     
     

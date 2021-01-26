@@ -48,7 +48,7 @@ extension Notification.Name {
 
 class ShellBridge {
     static let shared = ShellBridge()
-    let socketServer: WebSocketServer = WebSocketServer.bridge
+  let socketServer: WebSocketServer = WebSocketServer.bridge()
     
     var pty: HeadlessTerminal = HeadlessTerminal(onEnd: { (code) in
         print("Exit")
@@ -78,7 +78,7 @@ class ShellBridge {
 //        term.send("\n\n")
 //        term.send("ms\r")
 //        Timer.delayWithSeconds(1) {
-//            term.send("M@tthew1!\r")
+//           
 //            Timer.delayWithSeconds(10) {
 //                term.send("ls\r")
 //

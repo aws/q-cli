@@ -138,6 +138,10 @@ class NativeCLI {
         let scope = (message, connection)
         
         DispatchQueue.main.async {
+            if !Accessibility.enabled {
+                printAccessibilityWarning(scope)
+            }
+          
             if command.implementatedNatively {
                 command.run(scope)
             } else {
@@ -154,6 +158,12 @@ class NativeCLI {
 
 // CLI command functions go here
 extension NativeCLI {
+    static func printAccessibilityWarning(_ scope: Scope) {
+      let (_, connection) = scope
+
+      NativeCLI.printInTerminal("›  Fig does not have Accessibility Permissions enabled.", using: connection)
+    }
+  
     static func versionCommand(_ scope: Scope)  {
         let (_, connection) = scope
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "-1"
@@ -203,7 +213,7 @@ extension NativeCLI {
     }
     
     static func accessibilityCommand(_ scope: Scope) {
-        ShellBridge.promptForAccesibilityAccess();
+        Accessibility.promptForPermission()
     }
     
     static func resetCacheCommand(_ scope: Scope) {

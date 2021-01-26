@@ -123,6 +123,16 @@
 		758AEB6724CE8B8F00A15EAF /* figcli in Embed Command Line Tool */ = {isa = PBXBuildFile; fileRef = 751F758E246E16D800E083C8 /* figcli */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		758AEB6A24CEA4D000A15EAF /* Starscream in Frameworks */ = {isa = PBXBuildFile; productRef = 758AEB6924CEA4D000A15EAF /* Starscream */; };
 		758AEB6C24CEA54600A15EAF /* SocketServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 758AEB6B24CEA54600A15EAF /* SocketServer.swift */; };
+		759F987C25BF903900EC3407 /* Accessibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 759F987B25BF903900EC3407 /* Accessibility.swift */; };
+		759F988125BFF0FF00EC3407 /* box@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 759F987D25BFF0FD00EC3407 /* box@2x.png */; };
+		759F988225BFF0FF00EC3407 /* commandkey@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 759F987E25BFF0FE00EC3407 /* commandkey@2x.png */; };
+		759F988325BFF0FF00EC3407 /* database@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 759F987F25BFF0FE00EC3407 /* database@2x.png */; };
+		759F988425BFF0FF00EC3407 /* package@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 759F988025BFF0FE00EC3407 /* package@2x.png */; };
+		759F988925BFF8B000EC3407 /* npm@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 759F988525BFF8B000EC3407 /* npm@2x.png */; };
+		759F988A25BFF8B000EC3407 /* kubernetes@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 759F988625BFF8B000EC3407 /* kubernetes@2x.png */; };
+		759F988B25BFF8B000EC3407 /* twitter@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 759F988725BFF8B000EC3407 /* twitter@2x.png */; };
+		759F988C25BFF8B000EC3407 /* docker@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 759F988825BFF8B000EC3407 /* docker@2x.png */; };
+		759F988E25BFFAE500EC3407 /* heroku@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 759F988D25BFFAE500EC3407 /* heroku@2x.png */; };
 		75A4521025A83E5600107D2C /* remote_cwd.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75A4520F25A839F500107D2C /* remote_cwd.sh */; };
 		75A4521425AD367E00107D2C /* Feedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A4521325AD367E00107D2C /* Feedback.swift */; };
 		75A4521A25AE2E6B00107D2C /* CommandIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A4521925AE2E6A00107D2C /* CommandIntegration.swift */; };
@@ -347,6 +357,16 @@
 		758AEB5D24CD35D400A15EAF /* WebSocket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebSocket.swift; sourceTree = "<group>"; };
 		758AEB5F24CE529D00A15EAF /* String+Shell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+Shell.swift"; sourceTree = "<group>"; };
 		758AEB6B24CEA54600A15EAF /* SocketServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocketServer.swift; sourceTree = "<group>"; };
+		759F987B25BF903900EC3407 /* Accessibility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Accessibility.swift; sourceTree = "<group>"; };
+		759F987D25BFF0FD00EC3407 /* box@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "box@2x.png"; sourceTree = "<group>"; };
+		759F987E25BFF0FE00EC3407 /* commandkey@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "commandkey@2x.png"; sourceTree = "<group>"; };
+		759F987F25BFF0FE00EC3407 /* database@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "database@2x.png"; sourceTree = "<group>"; };
+		759F988025BFF0FE00EC3407 /* package@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "package@2x.png"; sourceTree = "<group>"; };
+		759F988525BFF8B000EC3407 /* npm@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "npm@2x.png"; sourceTree = "<group>"; };
+		759F988625BFF8B000EC3407 /* kubernetes@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "kubernetes@2x.png"; sourceTree = "<group>"; };
+		759F988725BFF8B000EC3407 /* twitter@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "twitter@2x.png"; sourceTree = "<group>"; };
+		759F988825BFF8B000EC3407 /* docker@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "docker@2x.png"; sourceTree = "<group>"; };
+		759F988D25BFFAE500EC3407 /* heroku@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "heroku@2x.png"; sourceTree = "<group>"; };
 		75A4520F25A839F500107D2C /* remote_cwd.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = remote_cwd.sh; sourceTree = "<group>"; };
 		75A4521325AD367E00107D2C /* Feedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Feedback.swift; sourceTree = "<group>"; };
 		75A4521925AE2E6A00107D2C /* CommandIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandIntegration.swift; sourceTree = "<group>"; };
@@ -512,6 +532,15 @@
 		7518608F255CE49B0000A7C7 /* Icons */ = {
 			isa = PBXGroup;
 			children = (
+				759F987D25BFF0FD00EC3407 /* box@2x.png */,
+				759F988825BFF8B000EC3407 /* docker@2x.png */,
+				759F988D25BFFAE500EC3407 /* heroku@2x.png */,
+				759F988625BFF8B000EC3407 /* kubernetes@2x.png */,
+				759F988525BFF8B000EC3407 /* npm@2x.png */,
+				759F988725BFF8B000EC3407 /* twitter@2x.png */,
+				759F987E25BFF0FE00EC3407 /* commandkey@2x.png */,
+				759F987F25BFF0FE00EC3407 /* database@2x.png */,
+				759F988025BFF0FE00EC3407 /* package@2x.png */,
 				7518606A255B2A090000A7C7 /* astrix@2x.png */,
 				7518606C255B2A090000A7C7 /* carrot@2x.png */,
 				7518606E255B2A0A0000A7C7 /* command@2x.png */,
@@ -573,6 +602,7 @@
 				75E993F32515C8D3000BE6BE /* Autocompletion */,
 				75B199332504190900F38EA8 /* Keycode.swift */,
 				752D71CC25B8A6B200263527 /* Restarter.swift */,
+				759F987B25BF903900EC3407 /* Accessibility.swift */,
 				751C3BEB24B6910800B5C7FD /* Remote.swift */,
 				751C3BED24B6915000B5C7FD /* Defaults.swift */,
 				75E993F12515A6DD000BE6BE /* statusbar@2x.png */,
@@ -954,9 +984,11 @@
 				75AA24D225A79F3400A51E9D /* issue.sh in Resources */,
 				75AA24D325A79F3400A51E9D /* contribute.sh in Resources */,
 				75AA24CD25A6F98400A51E9D /* uninstall_spec.sh in Resources */,
+				759F988225BFF0FF00EC3407 /* commandkey@2x.png in Resources */,
 				75AA24CA25A6F39800A51E9D /* list.sh in Resources */,
 				75AA24CB25A6F39800A51E9D /* help.sh in Resources */,
 				75186083255CB0C20000A7C7 /* iterm-integration.sh in Resources */,
+				759F988325BFF0FF00EC3407 /* database@2x.png in Resources */,
 				75186084255CB0C20000A7C7 /* 1.0.23.sh in Resources */,
 				75186085255CB0C20000A7C7 /* fig-iterm-integration.py in Resources */,
 				75B0A08025BB74C700FCD89A /* fig-context-indicator.png in Resources */,
@@ -965,16 +997,21 @@
 				75186088255CB0C20000A7C7 /* uninstall.sh in Resources */,
 				75186089255CB0C20000A7C7 /* source.sh in Resources */,
 				7518608A255CB0C20000A7C7 /* 1.0.21.sh in Resources */,
+				759F988925BFF8B000EC3407 /* npm@2x.png in Resources */,
+				759F988A25BFF8B000EC3407 /* kubernetes@2x.png in Resources */,
 				7518608B255CB0C20000A7C7 /* feedback.sh in Resources */,
 				7518608C255CB0C20000A7C7 /* 1.0.24.sh in Resources */,
 				7585862625941A2700B76B4A /* invite.sh in Resources */,
 				7518608D255CB0C20000A7C7 /* open_new_terminal_window.scpt in Resources */,
+				759F988125BFF0FF00EC3407 /* box@2x.png in Resources */,
 				7518608E255CB0C20000A7C7 /* 1.0.20.sh in Resources */,
+				759F988B25BFF8B000EC3407 /* twitter@2x.png in Resources */,
 				75186073255B2A0A0000A7C7 /* string@2x.png in Resources */,
 				757CA88624876043002A64A8 /* error.html in Resources */,
 				757CA88F248B0D31002A64A8 /* cli.png in Resources */,
 				752C0BE4247B44C60077E415 /* finder.html in Resources */,
 				75B0A08C25BBC7A300FCD89A /* autoc.mp4 in Resources */,
+				759F988425BFF0FF00EC3407 /* package@2x.png in Resources */,
 				752C0BDA2479F37B0077E415 /* fig.js in Resources */,
 				757CA88D248B091D002A64A8 /* permissions.mp4 in Resources */,
 				757CA897248C108E002A64A8 /* css in Resources */,
@@ -1009,10 +1046,12 @@
 				75186074255B2A0A0000A7C7 /* command@2x.png in Resources */,
 				75186071255B2A0A0000A7C7 /* option@2x.png in Resources */,
 				752C0BE0247A27790077E415 /* editor.html in Resources */,
+				759F988C25BFF8B000EC3407 /* docker@2x.png in Resources */,
 				757CA891248B2799002A64A8 /* cli.html in Resources */,
 				7567595C244634B2006AA988 /* Preview Assets.xcassets in Resources */,
 				75675959244634B2006AA988 /* Assets.xcassets in Resources */,
 				757CA89F248D628F002A64A8 /* sidebar.html in Resources */,
+				759F988E25BFFAE500EC3407 /* heroku@2x.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1106,6 +1145,7 @@
 				7510F8A624A6910500E86F7C /* iOSAccessoryView.swift in Sources */,
 				75675955244634AD006AA988 /* AppDelegate.swift in Sources */,
 				7510F89924A6910500E86F7C /* TerminalViewDelegate.swift in Sources */,
+				759F987C25BF903900EC3407 /* Accessibility.swift in Sources */,
 				7510F8A424A6910500E86F7C /* iOSCaretView.swift in Sources */,
 				751C3BEE24B6915000B5C7FD /* Defaults.swift in Sources */,
 				757712492564D94A0011FF48 /* ProcessStatus.swift in Sources */,

@@ -161,6 +161,7 @@ class Defaults {
         }
     }
     
+    static let autocompletePreferenceUpdated = Notification.Name("autocompletePreferenceUpdated")
     fileprivate static var _useAutcomplete: Bool? = nil
     static var useAutocomplete: Bool {
         get {
@@ -175,6 +176,7 @@ class Defaults {
         
         set(flag) {
             _useAutcomplete = flag
+            NotificationCenter.default.post(name: Defaults.autocompletePreferenceUpdated, object: flag)
             UserDefaults.standard.set(flag, forKey: "useAutocomplete")
             UserDefaults.standard.synchronize()
         }
@@ -374,5 +376,17 @@ class Defaults {
               UserDefaults.standard.set(flag, forKey: "hasShownAutocompletePopover")
               UserDefaults.standard.synchronize()
           }
+    }
+  
+    static var port: Int {
+      get {
+        return UserDefaults(suiteName: "com.mschrage.fig.shared")?.integer(forKey: "port") ?? 8765
+      }
+      
+      set (port) {
+        UserDefaults(suiteName: "com.mschrage.fig.shared")?.set(port, forKey: "port")
+        UserDefaults(suiteName: "com.mschrage.fig.shared")?.synchronize()
+      }
+      
     }
 }

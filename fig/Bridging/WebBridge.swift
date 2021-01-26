@@ -731,15 +731,13 @@ extension WebBridge {
                     }
                 case "permissions":
                     scope.webView?.window?.level = .normal
-                    ShellBridge.promptForAccesibilityAccess { (value) in
-                        DispatchQueue.main.async {
-                            scope.webView?.window?.level = .floating
-                            scope.webView?.evaluateJavaScript("fig.callback('\(handlerId)', '')", completionHandler: nil)
-                        }
-                        
-                        KeypressProvider.shared.registerKeystrokeHandler()
-                        AXWindowServer.shared.registerWindowTracking()
+                    Accessibility.promptForPermission { (granted) in
+                      DispatchQueue.main.async {
+                          scope.webView?.window?.level = .floating
+                          scope.webView?.evaluateJavaScript("fig.callback('\(handlerId)', '')", completionHandler: nil)
+                      }
                     }
+
                 case "ssh":
                     SSHIntegration.install()
                 case "ws":

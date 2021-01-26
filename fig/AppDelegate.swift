@@ -51,7 +51,8 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         let _ = AXWindowServer.shared
         
         TelemetryProvider.register()
-
+        Accessibility.listen()
+      
         SentrySDK.start { options in
             options.dsn = "https://4544a50058a645f5a779ea0a78c9e7ec@o436453.ingest.sentry.io/5397687"
             options.debug = false // Enabled debug when first installing is always helpful
@@ -117,13 +118,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
                 
                 if (enable) {
                     self.promptForAccesibilityAccess()
-//                    ShellBridge.promptForAccesibilityAccess()
-//                    ShellBridge.promptForAccesibilityAccess { (granted) in
-//                       if (granted) {
-//                           KeypressProvider.shared.registerKeystrokeHandler()
-//                           AXWindowServer.shared.registerWindowTracking()
-//                       }
-//                    }
                 }
             }
             let installed = "fig cli:installed".runAsCommand().trimmingCharacters(in: .whitespacesAndNewlines)
@@ -371,7 +365,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         tab.state = Defaults.onlyInsertOnTab ? .on : .off
       
         let statusInTitle = debugMenu.addItem(
-        withTitle: "Show Fig context in Title",
+        withTitle: "Show fig status in title",
         action: #selector(AppDelegate.toggleFigIndicator(_:)),
         keyEquivalent: "")
         statusInTitle.state = AutocompleteContextNotifier.addIndicatorToTitlebar ? .on : .off
@@ -521,8 +515,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             return
         }
         
-        let value = ShellBridge.testAccesibilityAccess()
-        if (value) {
+        if (Accessibility.enabled) {
             DispatchQueue.main.async {
                 self.statusBarItem.button?.layer?.removeAnimation(forKey: "spring")
             }
@@ -822,12 +815,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 
             KeypressProvider.shared.registerKeystrokeHandler()
             AXWindowServer.shared.registerWindowTracking()
-//            if let general = Bundle.main.path(forResource: "update-autocomplete", ofType: "sh") {
-//                let out = "sh \(general)".runAsCommand()
-//                Logger.log(message: out)
-//            }
-
-
         }
 
         Logger.log(message: "Toggle autocomplete \(Defaults.useAutocomplete ? "on" : "off")")
@@ -1143,19 +1130,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     }
     
     @objc func promptForAccesibilityAccess() {
-        ShellBridge.promptForAccesibilityAccess { (granted) in
-           if (granted) {
-                Logger.log(message: "Registering Keystroke Handler...")
-                KeypressProvider.shared.registerKeystrokeHandler()
-                Logger.log(message: "Done Setting up Keystroke Handler!")
-
-                DispatchQueue.global(qos: .userInitiated).async {
-                    Logger.log(message: "Registering window tracking")
-                    AXWindowServer.shared.registerWindowTracking()
-                    Logger.log(message: "Done setting up window tracking")
-                }
-           }
-        }
+        Accessibility.promptForPermission()
     }
     
     @objc func addCLI() {
@@ -1764,7 +1739,7 @@ extension AppDelegate : NSMenuDelegate {
     func menuWillOpen(_ menu: NSMenu) {
         print("menuWillOpen")
         
-        guard Defaults.loggedIn, ShellBridge.testAccesibilityAccess() else {
+        guard Defaults.loggedIn, Accessibility.enabled else {
             return
         }
         

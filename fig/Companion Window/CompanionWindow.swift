@@ -19,6 +19,9 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
     static let defaultActivePosition: OverlayPositioning = Defaults.defaultActivePosition
     static let defaultPassivePosition: OverlayPositioning = .sidebar
     
+    // .statusBar level is required in order to appear above iTerm in Quake mode
+    static let floatingWindowLevel: NSWindow.Level = .statusBar
+    
     //hides companion window when target is moving
     var shouldTrackWindow = true;
     
@@ -117,7 +120,7 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
         self.isOpaque = false
         self.backgroundColor = .clear//NSColor.init(white: 1, alpha: 0.75)
         self.delegate = self
-        self.level = .floating
+        self.level = CompanionWindow.floatingWindowLevel
         self.setFrameAutosaveName("Main Window")
         self.contentViewController = viewController
         self.setFrame(NSRect(x: 400, y: 400, width: 300, height: 300), display: true)
@@ -411,7 +414,7 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
     
     func configureWindow(for state: OverlayPositioning, initial: Bool = false ) {
         if (state.hasTitleBar) {
-            self.level = (self.isDocked) ? .floating : .normal
+            self.level = (self.isDocked) ? CompanionWindow.floatingWindowLevel : .normal
             self.collectionBehavior = (self.isDocked) ? [.canJoinAllSpaces, .fullScreenAuxiliary] : []
 
             self.styleMask = [.titled]
@@ -434,7 +437,7 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
             self.titlebarAppearsTransparent = true;
 //            self.backgroundColor = .white
         } else {
-            self.level = .floating
+            self.level = CompanionWindow.floatingWindowLevel
             self.styleMask = [.fullSizeContentView]
             self.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
             self.representedURL = nil

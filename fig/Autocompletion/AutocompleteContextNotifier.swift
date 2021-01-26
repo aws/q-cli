@@ -35,6 +35,21 @@ class AutocompleteContextNotifier {
                                            selector: #selector(windowTitleUpdated(_ :)),
                                            name: AXWindowServer.windowTitleUpdatedNotification,
                                            object: nil)
+    
+    NotificationCenter.default.addObserver(self,
+                                           selector: #selector(permissionDidUpdate(_ :)),
+                                           name: Accessibility.permissionDidUpdate,
+                                           object: nil)
+    
+    NotificationCenter.default.addObserver(self,
+                                           selector: #selector(applicationWillTerminate),
+                                           name: NSApplication.willTerminateNotification,
+                                           object: nil)
+    
+    NotificationCenter.default.addObserver(self,
+                                           selector: #selector(autocompletePreferenceUpdated(_ :)),
+                                           name: Defaults.autocompletePreferenceUpdated,
+                                           object: nil)
 
   }
   
@@ -45,10 +60,52 @@ class AutocompleteContextNotifier {
     
     func message(for bundleId: String? = nil) -> String {
       var message = "\(self.rawValue) fig"
-      if (bundleId == "com.googlecode.iterm2") {
+      if (bundleId != "com.apple.Terminal") {
         message += " — "
       }
       return message
+    }
+  }
+  
+  @objc static func autocompletePreferenceUpdated(_ notification: Notification) {
+    guard let enabled = notification.object as? Bool else { return }
+    
+    guard addIndicatorToTitlebar else { return }
+    
+    
+    batchUpdate { (window, tty) -> AutocompleteContextNotifier.ContextIndicator in
+      return enabled ? indicator(for: window, tty) : .noContext
+    }
+    
+  }
+  
+  @objc static func applicationWillTerminate() {
+    guard addIndicatorToTitlebar else { return }
+    
+    clearFigContext()
+  }
+  
+  @objc static func permissionDidUpdate(_ notification: Notification) {
+    guard let granted = notification.object as? Bool else { return }
+    
+    guard addIndicatorToTitlebar else { return }
+    
+    // set all to noContext if accesibility is disabled
+    batchUpdate { (window, tty) -> AutocompleteContextNotifier.ContextIndicator in
+      return granted ? indicator(for: window, tty) : .noContext
+    }
+    
+  }
+  
+  static func indicator(for window: ExternalWindowHash, _ tty: TTY ) -> ContextIndicator {
+    let keybuffer = KeypressProvider.shared.keyBuffer(for: window)
+    
+    if (!(tty.isShell ?? false)) {
+      return .processIsNotShell
+    } else if (keybuffer.buffer != nil && !keybuffer.writeOnly) {
+      return .hasContext
+    } else {
+      return .noContext
     }
   }
   
@@ -130,22 +187,17 @@ class AutocompleteContextNotifier {
     }
   }
   
-  static func setFigContext() {
+  static func batchUpdate(update: (ExternalWindowHash, TTY) -> ContextIndicator) {
     ShellHookManager.shared.tty.forEach { (pair) in
       let (hash, tty) = pair
-      let keybuffer = KeypressProvider.shared.keyBuffer(for: hash)
-
-      var indicator: ContextIndicator?
-      if (!(tty.isShell ?? false)) {
-        indicator = .processIsNotShell
-      } else if (keybuffer.buffer != nil && !keybuffer.writeOnly) {
-        indicator = .hasContext
-      } else {
-        indicator = .noContext
-      }
-      
-      let message = indicator!.message()
-      tty.setTitle(message + (tty.name ?? ""))
+      let indicator = update(hash, tty)
+      tty.setTitle(indicator.message() + (tty.name ?? ""))
+    }
+  }
+  
+  static func setFigContext() {
+    batchUpdate { (hash, tty) -> ContextIndicator in
+      return indicator(for: hash, tty)
     }
   }
   
