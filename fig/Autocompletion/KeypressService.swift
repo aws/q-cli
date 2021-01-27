@@ -32,6 +32,7 @@ class KeypressProvider : KeypressService {
   var mouseHandler: Any? = nil
   let windowServiceProvider: WindowService
   let throttler = Throttler(minimumDelay: 0.05)
+  private let queue = DispatchQueue(label: "com.withfig.keypress.redirects", attributes: .concurrent)
   var redirects: [ExternalWindowHash:  Set<Keystroke>] = [:]
   var buffers: [ExternalWindowHash: KeystrokeBuffer] = [:]
   
@@ -51,25 +52,39 @@ class KeypressProvider : KeypressService {
                                            name: Accessibility.permissionDidUpdate,
                                            object:nil)
   }
+  func shouldRedirect(event: CGEvent, in window: ExternalWindow) -> Bool {
+    guard event.type == .keyDown else {
+      return false
+    }
+    
+    guard KeypressProvider.shared.enabled else {
+      return false
+    }
+    
+    let keystroke = Keystroke.from(event: event)
+    var windowHasRedirect: Bool!
+    queue.sync {
+      windowHasRedirect = self.redirects[window.hash]?.contains(keystroke) ?? false
+    }
+    
+    return windowHasRedirect
+  }
   
   func addRedirect(for keycode: Keystroke, in window: ExternalWindow) {
-    var lock = os_unfair_lock_s()
-    os_unfair_lock_lock(&lock)
-    var set = redirects[window.hash] ?? []
-    set.insert(keycode)
-    redirects[window.hash] = set
-    os_unfair_lock_unlock(&lock)
+    queue.async(flags: .barrier) {
+      var set = self.redirects[window.hash] ?? []
+      set.insert(keycode)
+      self.redirects[window.hash] = set
+    }
   }
   
   func removeRedirect(for keycode: Keystroke, in window: ExternalWindow) {
-    var lock = os_unfair_lock_s()
-    os_unfair_lock_lock(&lock)
-    if var set = redirects[window.hash] {
-      set.remove(keycode)
-      redirects[window.hash] = set
+    queue.async(flags: .barrier) {
+      if var set = self.redirects[window.hash] {
+        set.remove(keycode)
+        self.redirects[window.hash] = set
+      }
     }
-    os_unfair_lock_unlock(&lock)
-
   }
   
   func addRedirect(for keycode: UInt16, in window: ExternalWindow) {
@@ -216,8 +231,7 @@ class KeypressProvider : KeypressService {
         var keyCode = UInt16(event.getIntegerValueField(.keyboardEventKeycode))
         print("eventTap", keyCode, event.getIntegerValueField(.eventTargetUnixProcessID))
         print("eventTap", "\(window.hash)")
-        let keystroke = Keystroke.from(event: event)
-        if (type == .keyDown && KeypressProvider.shared.enabled && KeypressProvider.shared.redirects[window.hash]?.contains(keystroke) ?? false && !event.flags.contains(.maskCommand)) {
+        if KeypressProvider.shared.shouldRedirect(event: event, in: window) {
           print("eventTap", "Should redirect!")
           
           if (keyCode == Keycode.n) {
@@ -239,8 +253,13 @@ class KeypressProvider : KeypressService {
       return Unmanaged.passUnretained(event)
     }
     
-    guard let eventTap: CFMachPort = CGEvent.tapCreate(tap: CGEventTapLocation.cghidEventTap, place: CGEventTapPlacement.tailAppendEventTap, options: CGEventTapOptions.defaultTap, eventsOfInterest: CGEventMask(eventMask), callback: eventCallBack, userInfo: nil) else {
+    guard let eventTap: CFMachPort = CGEvent.tapCreate(tap: CGEventTapLocation.cghidEventTap,
+                                                       place: CGEventTapPlacement.tailAppendEventTap,
+                                                       options: CGEventTapOptions.defaultTap,
+                                                       eventsOfInterest: CGEventMask(eventMask),
+                                                       callback: eventCallBack, userInfo: nil) else {
       print("Could not create tap")
+      SentrySDK.capture(message: "Could not create event tap")
       return nil
     }
     

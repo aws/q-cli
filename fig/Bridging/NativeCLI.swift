@@ -261,7 +261,7 @@ extension NativeCLI {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "-1"
                 
         let tracked = KeypressProvider.shared.buffers.keys.map { (hash) -> (TTY?, String?) in
-            let proc = ShellHookManager.shared.tty[hash]
+            let proc = ShellHookManager.shared.tty(for: hash)
             let buffer = KeypressProvider.shared.keyBuffer(for: hash).representation
             return (proc, buffer)
         }
