@@ -76,7 +76,9 @@ class Onboarding {
 
     static func copyFigCLIExecutable(to path: String) {
         let fullPath = NSString(string: path).expandingTildeInPath
-        if let cliPath = Bundle.main.path(forAuxiliaryExecutable: "figcli") {
+        let existingSymlink = try? FileManager.default.destinationOfSymbolicLink(atPath: fullPath)
+
+        if let cliPath = Bundle.main.path(forAuxiliaryExecutable: "figcli"), existingSymlink != cliPath {
             do {
                 let fullURL = URL(fileURLWithPath: fullPath)
                 try? FileManager.default.createDirectory(at: fullURL.deletingLastPathComponent(), withIntermediateDirectories: true, attributes: [:])

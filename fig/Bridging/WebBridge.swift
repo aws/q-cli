@@ -242,7 +242,7 @@ extension WebBridge: WKURLSchemeHandler {
         guard let url = urlSchemeTask.request.url else {
             return
         }
-        DispatchQueue(label: "com.withfig.icon-fetcher", qos: .userInitiated, attributes: .concurrent).async {
+//        DispatchQueue(label: "com.withfig.icon-fetcher", qos: .userInitiated, attributes: .concurrent).async {
           guard let fileicon = WebBridge.fileIcon(for: url) else { return }
           //Create a NSURLResponse with the correct mimetype.
           let response = URLResponse(url: url, mimeType: "image/png", expectedContentLength: -1, textEncodingName: nil)
@@ -258,7 +258,7 @@ extension WebBridge: WKURLSchemeHandler {
           urlSchemeTask.didReceive(response)
           urlSchemeTask.didReceive(imageData)
           urlSchemeTask.didFinish()
-        }
+//        }
     }
     
     func webView(_ webView: WKWebView, stop urlSchemeTask: WKURLSchemeTask) {
@@ -883,7 +883,7 @@ extension WebBridge {
                     TelemetryProvider.alias(userId: newId)
                 case "cwd":
                     if let window = scope.getCompanionWindow()?.tetheredWindow,
-                       let tty = ShellHookManager.shared.tty[window.hash] {
+                        let tty = ShellHookManager.shared.tty(for: window.hash) {
                         let running = tty.running
                         print("tty: \(running?.cmd) \(running?.cwd)")
                     }
