@@ -248,18 +248,18 @@ class ExternalWindow {
     let accesibilityElement: AXUIElement?
     var lastTabId: String? {
         get {
-            return ShellHookManager.shared.tabs[self.windowId];
+          return ShellHookManager.shared.tab(for: self.windowId)
         }
     }
     var tty: TTY? {
         get {
-            return ShellHookManager.shared.tty[self.hash];
+          return ShellHookManager.shared.tty(for: self.hash)
         }
     }
     
     var session: String? {
         get {
-           return ShellHookManager.shared.sessions[self.hash];
+          return ShellHookManager.shared.getSessionId(for: self.hash)
         }
     }
     
@@ -367,6 +367,16 @@ class ExternalWindow {
     
     var hash: ExternalWindowHash {
         return "\(self.windowId)/\(self.lastTabId ?? "")"
+    }
+    
+    var windowTitle: String? {
+        guard let axref = self.accesibilityElement else { return nil }
+        var title : AnyObject?
+        let res = AXUIElementCopyAttributeValue(axref, kAXTitleAttribute as CFString, &title)
+        
+        guard res == .success else { return nil }
+        
+        return title as? String
     }
     
 }

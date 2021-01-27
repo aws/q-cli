@@ -148,7 +148,7 @@
             padding-right: 5px;
         }
 
-        code {
+    .code {
             display: inline-block;
             border-radius: 3px;
             background-color: #ddd;
@@ -206,6 +206,11 @@
         display: none !important;
     }
     
+    summary {
+        outline: none;
+        color: #bdbdbd;
+    }
+    
     @keyframes fadein {
         from { opacity: 0; }
         to   { opacity: 1; }
@@ -217,8 +222,26 @@
     <div class="wrapper">
         <section>
             <div class="section">
-                <span class="title" href="javascript:permission()" id="permissions">Setup SSH Integration</span>
-                <p>Fig will make changes to your SSH config (stored in <code figdisabled = "true">~/.ssh/config</code>).</p>
+                <span class="title" href="javascript:ssh()" id="permissions">Setup SSH Integration</span>
+                <p style = " color: #5e5e5e">Fig will make changes to your SSH config (stored in <span class = "code" figdisabled = "true">~/.ssh/config</span>).</p>
+                <details>
+                <summary>How does it work?</summary>
+                  <p></p>
+                  <p>Fig prepends the following text to the start of <span class = "code" figdisabled = "true">~/.ssh/config</span>.
+                  This sends Fig a signal whenever a new SSH session begins and allows Fig to use the same connection.
+                      <br>
+                  </p>
+<pre id = "shell" figdisabled = "true">
+Host *
+    ControlPath ~/.ssh/%r@%h:%p
+    ControlMaster auto
+    ControlPersist 1
+    PermitLocalCommand yes
+    LocalCommand fig bg:ssh ~/.ssh/%r@%h:%p &
+</pre>
+
+                </details>
+                <br>
                 <div class="video-mask">
                     <video autoplay playsinline muted loop defaultPlaybackRate=1.25>
                         <source src="./ssh.mp4" type="video/mp4" />
@@ -250,22 +273,14 @@
         }
     
         let skip = function() {
-            window.location.href = `${fig.remoteURL}/onboarding/signin.html`
+            window.location.href = './debugger.html'//`${fig.remoteURL}/onboarding/signin.html`
         }
     
         let ssh = function () {
             fig.onboarding("ssh")
-            window.location.href = `${fig.remoteURL}/onboarding/signin.html`
+            window.location.href = './debugger.html'//`${fig.remoteURL}/onboarding/signin.html`
         }
 
-        let permissions = function () {
-            document.querySelector("#enable").innerText = "Waiting..."
-            fig.onboarding("permissions", (value) => {
-               window.location.href = `${fig.remoteURL}/onboarding/signin.html`
-            })
-            //fig.onboarding("close")
-
-        }
     </script>
 </body>
 

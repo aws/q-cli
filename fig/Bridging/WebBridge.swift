@@ -242,25 +242,23 @@ extension WebBridge: WKURLSchemeHandler {
         guard let url = urlSchemeTask.request.url else {
             return
         }
-        
-        guard let fileicon = WebBridge.fileIcon(for: url) else { return }
-        
-        //Create a NSURLResponse with the correct mimetype.
-        
-        let response = URLResponse(url: url, mimeType: "image/png", expectedContentLength: -1, textEncodingName: nil)
-        
-        guard let tiffData = fileicon.tiffRepresentation else {
-              print("failed to get tiffRepresentation. url: \(url)")
-            return
-        }
-        let imageRep = NSBitmapImageRep(data: tiffData)
-        guard let imageData = imageRep?.representation(using: .png, properties: [:]) else {
-              print("failed to get PNG representation. url: \(url)")
-            return
+//        DispatchQueue(label: "com.withfig.icon-fetcher", qos: .userInitiated, attributes: .concurrent).async {
+          guard let fileicon = WebBridge.fileIcon(for: url) else { return }
+          //Create a NSURLResponse with the correct mimetype.
+          let response = URLResponse(url: url, mimeType: "image/png", expectedContentLength: -1, textEncodingName: nil)
+          guard let tiffData = fileicon.tiffRepresentation else {
+                print("failed to get tiffRepresentation. url: \(url)")
+              return
           }
-        urlSchemeTask.didReceive(response)
-        urlSchemeTask.didReceive(imageData)
-        urlSchemeTask.didFinish()
+          let imageRep = NSBitmapImageRep(data: tiffData)
+          guard let imageData = imageRep?.representation(using: .png, properties: [:]) else {
+                print("failed to get PNG representation. url: \(url)")
+              return
+            }
+          urlSchemeTask.didReceive(response)
+          urlSchemeTask.didReceive(imageData)
+          urlSchemeTask.didFinish()
+//        }
     }
     
     func webView(_ webView: WKWebView, stop urlSchemeTask: WKURLSchemeTask) {
@@ -733,15 +731,13 @@ extension WebBridge {
                     }
                 case "permissions":
                     scope.webView?.window?.level = .normal
-                    ShellBridge.promptForAccesibilityAccess { (value) in
-                        DispatchQueue.main.async {
-                            scope.webView?.window?.level = .floating
-                            scope.webView?.evaluateJavaScript("fig.callback('\(handlerId)', '')", completionHandler: nil)
-                        }
-                        
-                        KeypressProvider.shared.registerKeystrokeHandler()
-                        AXWindowServer.shared.registerWindowTracking()
+                    Accessibility.promptForPermission { (granted) in
+                      DispatchQueue.main.async {
+                          scope.webView?.window?.level = .floating
+                          scope.webView?.evaluateJavaScript("fig.callback('\(handlerId)', '')", completionHandler: nil)
+                      }
                     }
+
                 case "ssh":
                     SSHIntegration.install()
                 case "ws":
@@ -781,6 +777,11 @@ extension WebBridge {
                 case "newTerminalWindow":
                     let path = Bundle.main.path(forResource: "open_new_terminal_window", ofType: "scpt")
                     NSAppleScript.run(path: path!)
+                case "terminaltitle:true":
+                    AutocompleteContextNotifier.addIndicatorToTitlebar = true
+                case "terminaltitle:false":
+                    AutocompleteContextNotifier.addIndicatorToTitlebar = false
+
             case "openOnStartup:true":
                 (NSApp.delegate as? AppDelegate)?.toggleLaunchAtStartup(shouldBeOff: false)
             case "openOnStartup:false":
@@ -882,7 +883,7 @@ extension WebBridge {
                     TelemetryProvider.alias(userId: newId)
                 case "cwd":
                     if let window = scope.getCompanionWindow()?.tetheredWindow,
-                       let tty = ShellHookManager.shared.tty[window.hash] {
+                        let tty = ShellHookManager.shared.tty(for: window.hash) {
                         let running = tty.running
                         print("tty: \(running?.cmd) \(running?.cwd)")
                     }

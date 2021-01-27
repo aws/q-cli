@@ -51,7 +51,8 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         let _ = AXWindowServer.shared
         
         TelemetryProvider.register()
-
+        Accessibility.listen()
+      
         SentrySDK.start { options in
             options.dsn = "https://4544a50058a645f5a779ea0a78c9e7ec@o436453.ingest.sentry.io/5397687"
             options.debug = false // Enabled debug when first installing is always helpful
@@ -71,6 +72,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 //        WebView.deleteCache()
 
         handleUpdateIfNeeded()
+        warnToMoveToApplicationIfNecessary()
         Defaults.useAutocomplete = true
         Defaults.deferToShellAutosuggestions = true
         Defaults.autocompleteVersion = "v4"
@@ -106,23 +108,16 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             let user = User()
             user.email = email
             SentrySDK.setUser(user)
+            ShellBridge.symlinkCLI()
+
             
-            if (!AXIsProcessTrustedWithOptions(nil)) {
+          if (!Accessibility.enabled) {
 
                 SentrySDK.capture(message: "Accesibility Not Enabled on Subsequent Launch")
                 let enable = self.dialogOKCancel(question: "Turn on accessibility", text: "To add Fig to your terminal, select the Fig checkbox in Security & Privacy > Accessibility.", prompt: "Turn On Accessibility")
                 
-//                Fig needs this permission in order to connect to your terminal window.\n\nYou may need to toggle the setting in order for MacOS to update it.\n\nThis can occur when Fig is updated. If you are seeing this more frequently, get in touch with matt@withfig.com.
-                
                 if (enable) {
                     self.promptForAccesibilityAccess()
-//                    ShellBridge.promptForAccesibilityAccess()
-//                    ShellBridge.promptForAccesibilityAccess { (granted) in
-//                       if (granted) {
-//                           KeypressProvider.shared.registerKeystrokeHandler()
-//                           AXWindowServer.shared.registerWindowTracking()
-//                       }
-//                    }
                 }
             }
             let installed = "fig cli:installed".runAsCommand().trimmingCharacters(in: .whitespacesAndNewlines)
@@ -159,7 +154,28 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         toggleLaunchAtStartup()
         
         iTermTabIntegration.listenForHotKey()
+        AutocompleteContextNotifier.listenForUpdates()
         
+    }
+  
+    func warnToMoveToApplicationIfNecessary() {
+      let path = Bundle.main.bundlePath
+      if path.hasPrefix("Volumes/fig") {
+        //send a telemetry event
+        SentrySDK.capture(message: "Attempted to launch Fig from a DMG")
+        // warn and quit
+        let alert = NSAlert()
+        alert.messageText = "Attempting to Launch From a Removable Volume"
+        alert.informativeText = "Please move Fig to the /Applications folder and relaunch."
+        alert.alertStyle = .warning
+        let button = alert.addButton(withTitle: "Quit Fig")
+        button.highlight(true)
+        let response = alert.runModal()
+        if (response == .alertFirstButtonReturn) {
+          // TOOD: Move to Applications foler
+          exit(2)
+        }
+      }
     }
     
     func remindToSourceFigInExistingTerminals() {
@@ -347,6 +363,12 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         keyEquivalent: "")
         //        sidebar.indentationLevel = 1
         tab.state = Defaults.onlyInsertOnTab ? .on : .off
+      
+        let statusInTitle = debugMenu.addItem(
+        withTitle: "Show fig status in title",
+        action: #selector(AppDelegate.toggleFigIndicator(_:)),
+        keyEquivalent: "")
+        statusInTitle.state = AutocompleteContextNotifier.addIndicatorToTitlebar ? .on : .off
         debugMenu.addItem(NSMenuItem.separator())
         
         debugMenu.addItem(withTitle: "Compatibility", action: nil, keyEquivalent: "")
@@ -493,8 +515,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             return
         }
         
-        let value = ShellBridge.testAccesibilityAccess()
-        if (value) {
+        if (Accessibility.enabled) {
             DispatchQueue.main.async {
                 self.statusBarItem.button?.layer?.removeAnimation(forKey: "spring")
             }
@@ -693,6 +714,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     }
     
     @objc func restart() {
+        Defaults.launchedFollowingCrash = false
         Logger.log(message: "Restarting Fig...")
         let url = URL(fileURLWithPath: Bundle.main.resourcePath!)
         let path = url.deletingLastPathComponent().deletingLastPathComponent().absoluteString
@@ -715,11 +737,11 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         WindowManager.shared.createSidebar()
         WindowManager.shared.createAutocomplete()
         
-        Logger.log(message: "Registering keystrokeHandler...")
-        KeypressProvider.shared.registerKeystrokeHandler()
-        
-        Logger.log(message: "Registering window tracking...")
-        AXWindowServer.shared.registerWindowTracking()
+//        Logger.log(message: "Registering keystrokeHandler...")
+//        KeypressProvider.shared.registerKeystrokeHandler()
+//        
+//        Logger.log(message: "Registering window tracking...")
+//        AXWindowServer.shared.registerWindowTracking()
         
         //let companion = CompanionWindow(viewController: WebViewController())
         //companion.positioning = CompanionWindow.defaultPassivePosition
@@ -793,12 +815,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 
             KeypressProvider.shared.registerKeystrokeHandler()
             AXWindowServer.shared.registerWindowTracking()
-//            if let general = Bundle.main.path(forResource: "update-autocomplete", ofType: "sh") {
-//                let out = "sh \(general)".runAsCommand()
-//                Logger.log(message: out)
-//            }
-
-
         }
 
         Logger.log(message: "Toggle autocomplete \(Defaults.useAutocomplete ? "on" : "off")")
@@ -948,6 +964,11 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         sender.state = Defaults.deferToShellAutosuggestions ? .on : .off
     }
     
+    @objc func toggleFigIndicator(_ sender: NSMenuItem) {
+        AutocompleteContextNotifier.addIndicatorToTitlebar = !AutocompleteContextNotifier.addIndicatorToTitlebar
+        sender.state = AutocompleteContextNotifier.addIndicatorToTitlebar ? .on : .off
+    }
+  
     @objc func toggleSSHIntegration(_ sender: NSMenuItem) {
         
         let SSHConfigFile = URL(fileURLWithPath:  "\(NSHomeDirectory())/.ssh/config")
@@ -1109,19 +1130,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     }
     
     @objc func promptForAccesibilityAccess() {
-        ShellBridge.promptForAccesibilityAccess { (granted) in
-           if (granted) {
-                Logger.log(message: "Registering Keystroke Handler...")
-                KeypressProvider.shared.registerKeystrokeHandler()
-                Logger.log(message: "Done Setting up Keystroke Handler!")
-
-                DispatchQueue.global(qos: .userInitiated).async {
-                    Logger.log(message: "Registering window tracking")
-                    AXWindowServer.shared.registerWindowTracking()
-                    Logger.log(message: "Done setting up window tracking")
-                }
-           }
-        }
+        Accessibility.promptForPermission()
     }
     
     @objc func addCLI() {
@@ -1146,6 +1155,8 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     func applicationWillTerminate(_ aNotification: Notification) {
         ShellBridge.shared.stopWebSocketServer()
         Defaults.launchedFollowingCrash = false
+        AutocompleteContextNotifier.clearFigContext()
+
     }
     
     @objc func runScriptCmd() {
@@ -1728,7 +1739,7 @@ extension AppDelegate : NSMenuDelegate {
     func menuWillOpen(_ menu: NSMenu) {
         print("menuWillOpen")
         
-        guard Defaults.loggedIn, ShellBridge.testAccesibilityAccess() else {
+        guard Defaults.loggedIn, Accessibility.enabled else {
             return
         }
         

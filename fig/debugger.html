@@ -1,4 +1,3 @@
-
 <html>
 
 <head>
@@ -130,18 +129,25 @@
 
         video {
             width: 100%;
-        }
-
-        img {
-            width: 300;
-            /* margin-left: -20px; */
+            position:absolute;
+            top: 0px;
+            padding-top: 2px;
+            background-color: #f0f0f0;
+            left: 0px;
         }
 
         section {
+            position: absolute;
+            top: 30%;
+            left: 50%;
+            transform: translate(-50%, -30%);
             width: 275px;
+            z-index: 100;
 
-            margin-left: auto;
-            margin-right: auto;
+            /*
+             
+             margin-left: auto;
+            margin-right: auto;*/
         }
 
         .emoji {
@@ -150,10 +156,30 @@
 
         code {
             display: inline-block;
-            border-radius: 5px;
+            border-radius: 3px;
             background-color: #ddd;
-            color: #bdbdbd
+            color: gray;
+            padding-left: 3px;
+            padding-right: 3px;
+            padding-top: 1px;
+            padding-bottom: 1px;
+            margin-left: 2px;
+            margin-right: 2px;
+
         }
+    
+    .term {
+      position: absolute;
+      bottom: 0px;
+      left: 0px;
+      z-index: -1;
+    }
+    
+    .icon {
+      vertical-align: middle;
+      width: 16px;
+      height: 16px;
+    }
 
         /* progress {
             -webkit-appearance: none;
@@ -196,71 +222,49 @@
 </head>
 
 <body>
+
     <div class="wrapper">
+      <video autoplay playsinline muted loop>
+          <source src="./debugger-only.mp4" type="video/mp4" />
+          Your browser does not support the video tag.
+      </video>
         <section>
             <div class="section">
-                <span class="title" href="javascript:permission()" id="permissions">Enable Accessibility
-                    Permission</span>
-                <p style = " color: #5e5e5e">Fig uses this permission to insert text on your behalf and read the current keybuffer.</p>
-                <div class="video-mask">
-                    <video autoplay playsinline muted loop defaultPlaybackRate=1.5>
-                        <source src="./permissions.mp4" type="video/mp4" />
-                        Your browser does not support the video tag.
-                    </video>
-                </div>
+                <span class="title" href="javascript:next()" id="permissions">Tips for Troubleshooting</span>
+                <p style = " color: #5e5e5e">If autocomplete isn't appearing, click the <img class = "icon" src = "fig://icon?type=statusbar"> icon to view the built-in debugger.</p>
+                <br>
+                <!-- or you see <code figdisabled="true">☒ fig</code>-->
                 <div class = "button">
-                    <a id = "enable" href="javascript:permissions()">Enable</a>
+                    <a id = "enable" href="javascript:next()">Continue</a>
                 </div>
+                
+                <center>
+                <p style = " color: #5e5e5e">
+                <input type="checkbox" id="status" name="status"
+                       checked>
+                <label for="status">Show Fig status in terminal title</label>
+                </p>
+                </center>
 
             </div>
         </section>
-
+        <center>
+        <img class = "term" width = "100%" src = "./fig-context-indicator.png">
+        </center>
+        </center>
     </div>
+
     <script>
-        document.querySelector('video').playbackRate = 1.8;
+      //document.querySelector('video').playbackRate = 0.8;
 
-        let ws = function () {
-            fig.onboarding("ws", () => {
-
-            })
-        }
-
-        let cli = function () {
-            fig.onboarding("cli", () => {
-                window.location.href = './cli.html'
-            })
-        }
-
-        let permissions = function () {
-            document.querySelector("#enable").innerText = "Waiting..."
-            fig.onboarding("permissions", (value) => {
-               //window.location.href = `${fig.remoteURL}/onboarding/signin.html`
-               window.location.href = './ssh.html'
-
-            })
-            //fig.onboarding("close")
+        let next = function () {
+            var addToTerminalTitle = document.getElementById("status").checked
+            fig.onboarding('terminaltitle:' + addToTerminalTitle)
+            window.location.href = './privacy.html'//`${fig.remoteURL}/onboarding/signin.html`
 
         }
-        // const progressbar = document.querySelector('progress')
-        // const article = document.querySelector('body')
 
-        // let isScrolling = false
 
-        // document.addEventListener('scroll', (e) => isScrolling = true)
-
-        // render()
-
-        // function render() {
-
-        //     requestAnimationFrame(render)
-
-        //     if (!isScrolling) return
-
-        //     progressbar.value = window.scrollY / (article.offsetHeight - window.innerHeight) * 100
-
-        //     isScrolling = false
-
-        // }
     </script>
 </body>
 

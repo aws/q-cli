@@ -9,6 +9,7 @@
 import Cocoa
 import Carbon
 import Sentry
+import Foundation
 
 protocol KeypressService {
   func keyBuffer(for window: ExternalWindow) -> KeystrokeBuffer
@@ -17,6 +18,10 @@ protocol KeypressService {
   func clean()
   func addRedirect(for keycode: UInt16, in window: ExternalWindow)
   func removeRedirect(for keycode: UInt16, in window: ExternalWindow)
+  
+  func addRedirect(for keycode: Keystroke, in window: ExternalWindow)
+  func removeRedirect(for keycode: Keystroke, in window: ExternalWindow)
+
   func setEnabled(value: Bool)
 }
 
@@ -27,7 +32,8 @@ class KeypressProvider : KeypressService {
   var mouseHandler: Any? = nil
   let windowServiceProvider: WindowService
   let throttler = Throttler(minimumDelay: 0.05)
-  var redirects: [ExternalWindowHash:  Set<UInt16>] = [:]
+  private let queue = DispatchQueue(label: "com.withfig.keypress.redirects", attributes: .concurrent)
+  var redirects: [ExternalWindowHash:  Set<Keystroke>] = [:]
   var buffers: [ExternalWindowHash: KeystrokeBuffer] = [:]
   
   static let whitelist = Integrations.nativeTerminals
@@ -36,20 +42,57 @@ class KeypressProvider : KeypressService {
   init(windowServiceProvider: WindowService) {
     self.windowServiceProvider = windowServiceProvider
     registerKeystrokeHandler()
-    NotificationCenter.default.addObserver(self, selector:#selector(lineAcceptedInKeystrokeBuffer), name: KeystrokeBuffer.lineResetInKeyStrokeBufferNotification, object:nil)
+    NotificationCenter.default.addObserver(self,
+                                           selector:#selector(lineAcceptedInKeystrokeBuffer),
+                                           name: KeystrokeBuffer.lineResetInKeyStrokeBufferNotification,
+                                           object:nil)
+    
+    NotificationCenter.default.addObserver(self,
+                                           selector:#selector(accesibilityPermissionsUpdated),
+                                           name: Accessibility.permissionDidUpdate,
+                                           object:nil)
+  }
+  func shouldRedirect(event: CGEvent, in window: ExternalWindow) -> Bool {
+    guard event.type == .keyDown else {
+      return false
+    }
+    
+    guard KeypressProvider.shared.enabled else {
+      return false
+    }
+    
+    let keystroke = Keystroke.from(event: event)
+    var windowHasRedirect: Bool!
+    queue.sync {
+      windowHasRedirect = self.redirects[window.hash]?.contains(keystroke) ?? false
+    }
+    
+    return windowHasRedirect
+  }
+  
+  func addRedirect(for keycode: Keystroke, in window: ExternalWindow) {
+    queue.async(flags: .barrier) {
+      var set = self.redirects[window.hash] ?? []
+      set.insert(keycode)
+      self.redirects[window.hash] = set
+    }
+  }
+  
+  func removeRedirect(for keycode: Keystroke, in window: ExternalWindow) {
+    queue.async(flags: .barrier) {
+      if var set = self.redirects[window.hash] {
+        set.remove(keycode)
+        self.redirects[window.hash] = set
+      }
+    }
   }
   
   func addRedirect(for keycode: UInt16, in window: ExternalWindow) {
-    var set = redirects[window.hash] ?? []
-    set.insert(keycode)
-    redirects[window.hash] = set
+    self.addRedirect(for: Keystroke(keyCode: keycode), in: window)
   }
   
   func removeRedirect(for keycode: UInt16, in window: ExternalWindow) {
-    if var set = redirects[window.hash] {
-      set.remove(keycode)
-      redirects[window.hash] = set
-    }
+    self.removeRedirect(for: Keystroke(keyCode: keycode), in: window)
   }
   
   func setEnabled(value: Bool) {
@@ -63,6 +106,16 @@ class KeypressProvider : KeypressService {
           tty.update()
         }
       }
+    }
+  }
+  
+  @objc func accesibilityPermissionsUpdated(_ notification: Notification) {
+    guard let granted = notification.object as? Bool else { return }
+    
+    if (granted) {
+      self.registerKeystrokeHandler()
+    } else {
+      self.deregisterKeystrokeHandler()
     }
   }
   
@@ -109,6 +162,25 @@ class KeypressProvider : KeypressService {
     }
   }
   
+  func deregisterKeystrokeHandler() {
+    if let handler = self.mouseHandler {
+      NSEvent.removeMonitor(handler)
+      self.mouseHandler = nil
+    }
+    
+    if let handler = self.keyHandler {
+      NSEvent.removeMonitor(handler)
+      self.keyHandler = nil
+    }
+    
+    self.clean()
+    
+    if let tap = self.tap {
+      CFMachPortInvalidate(tap)
+      self.tap = nil
+    }
+  }
+    
   func registerKeyInterceptor() -> CFMachPort? {
     guard AXIsProcessTrustedWithOptions(nil) else {
       print("KeypressService: Could not register without accesibility permissions")
@@ -156,11 +228,20 @@ class KeypressProvider : KeypressService {
       }
       
       if [.keyDown , .keyUp].contains(type) {
-        let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
+        var keyCode = UInt16(event.getIntegerValueField(.keyboardEventKeycode))
         print("eventTap", keyCode, event.getIntegerValueField(.eventTargetUnixProcessID))
         print("eventTap", "\(window.hash)")
-        if (type == .keyDown && KeypressProvider.shared.enabled && KeypressProvider.shared.redirects[window.hash]?.contains(UInt16(keyCode)) ?? false && !event.flags.contains(.maskCommand)) {
+        if KeypressProvider.shared.shouldRedirect(event: event, in: window) {
           print("eventTap", "Should redirect!")
+          
+          if (keyCode == Keycode.n) {
+            keyCode = Keycode.downArrow
+          }
+          
+          if (keyCode == Keycode.p) {
+            keyCode = Keycode.upArrow
+          }
+          
           WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try{ fig.keypress(\"\(keyCode)\", \"\(window.hash)\") } catch(e) {}", completionHandler: nil)
           return nil
         } else {
@@ -172,8 +253,13 @@ class KeypressProvider : KeypressService {
       return Unmanaged.passUnretained(event)
     }
     
-    guard let eventTap: CFMachPort = CGEvent.tapCreate(tap: CGEventTapLocation.cghidEventTap, place: CGEventTapPlacement.tailAppendEventTap, options: CGEventTapOptions.defaultTap, eventsOfInterest: CGEventMask(eventMask), callback: eventCallBack, userInfo: nil) else {
+    guard let eventTap: CFMachPort = CGEvent.tapCreate(tap: CGEventTapLocation.cghidEventTap,
+                                                       place: CGEventTapPlacement.tailAppendEventTap,
+                                                       options: CGEventTapOptions.defaultTap,
+                                                       eventsOfInterest: CGEventMask(eventMask),
+                                                       callback: eventCallBack, userInfo: nil) else {
       print("Could not create tap")
+      SentrySDK.capture(message: "Could not create event tap")
       return nil
     }
     
@@ -229,6 +315,9 @@ class KeypressProvider : KeypressService {
         KeypressProvider.shared.removeRedirect(for: Keycode.tab, in: window)
         KeypressProvider.shared.removeRedirect(for: Keycode.escape, in: window)
         KeypressProvider.shared.removeRedirect(for: Keycode.returnKey, in: window)
+        KeypressProvider.shared.removeRedirect(for: Keystroke(modifierFlags: [.control], keyCode: Keycode.n), in: window)
+        KeypressProvider.shared.removeRedirect(for: Keystroke(modifierFlags: [.control], keyCode: Keycode.p), in: window)
+
       }
     }
   }
@@ -238,7 +327,7 @@ class KeypressProvider : KeypressService {
     var focusedElement : AnyObject?
     let error = AXUIElementCopyAttributeValue(systemWideElement, kAXFocusedUIElementAttribute as CFString, &focusedElement)
     guard error == .success else {
-      print("Couldn't get the focused element. Probably a webkit application")
+      print("cursor: Couldn't get the focused element. Probably a webkit application")
       return nil
     }
     
@@ -246,6 +335,7 @@ class KeypressProvider : KeypressService {
     let selectedRangeError = AXUIElementCopyAttributeValue(focusedElement as! AXUIElement, kAXSelectedTextRangeAttribute as CFString, &selectedRangeValue)
     
     guard selectedRangeError == .success else {
+      print("cursor: couldn't get selected range")
       return nil
     }
     
@@ -264,12 +354,14 @@ class KeypressProvider : KeypressService {
     
     // https://linear.app/fig/issue/ENG-109/ - autocomplete-popup-shows-when-copying-and-pasting-in-terminal
     if selectedRange.length > 1 {
+      print("cursor: selectedRange length > 1")
       return nil
     }
     
     let selectedBoundsError = AXUIElementCopyParameterizedAttributeValue(focusedElement as! AXUIElement, kAXBoundsForRangeParameterizedAttribute as CFString, selectedRangeValue!, &selectBounds)
     
     guard selectedBoundsError == .success else {
+      print("cursor: selectedBoundsError")
       return nil
     }
     
@@ -277,11 +369,13 @@ class KeypressProvider : KeypressService {
     print("selected", selectRect)
     //prevent spotlight search from recieving keypresses, this is sooo hacky
     guard selectRect.size.height != 30 else {
+      print("cursor: prevent spotlight search from recieving keypresses, this is sooo hacky")
       return nil
     }
     
     // Sanity check: prevents flashing autocomplete in bottom corner
     guard selectRect.size != .zero else {
+      print("cursor: prevents flashing autocomplete in bottom corner")
       return nil
     }
     

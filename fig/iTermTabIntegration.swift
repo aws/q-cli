@@ -20,6 +20,7 @@ class iTermTabIntegration {
         }
         
         Self.keyHandler = NSEvent.addGlobalMonitorForEvents(matching: [ .keyUp], handler: { (event) in
+          guard Defaults.loggedIn else { return }
           guard event.keyCode == Keycode.t && event.modifierFlags.contains(.command) else { return }
           guard NSWorkspace.shared.frontmostApplication?.bundleIdentifier == "com.googlecode.iterm2" else { return }
           guard !iTermTabIntegration.isInstalled() else { return }

@@ -369,20 +369,6 @@ extension WebViewController: ShellBridgeEventListener, PseudoTerminalEventDelega
     
     @objc func recievedStdoutFromTerminal(_ notification: Notification) {
         // match against regex?
-        if let msg = notification.object as? ShellMessage {
-            if (ErrorMatcher.shouldMatchOn(data: msg.data)) {
-                ErrorMatcher.matchOn(error: msg.data) { (data) in
-                    DispatchQueue.main.async {
-                        let companion = self.view.window as! CompanionWindow
-                        companion.positioning = .notification
-                        self.webView?.loadBundleApp("error")
-                        self.webView?.onLoad.append {
-                            self.webView?.evaluateJavaScript("fig.init(`\(data.base64EncodedString())`)", completionHandler: nil)
-                        }
-                    }
-                }
-            }
-        }
         WebBridge.ttyout(webView: self.webView!, msg: notification.object as! ShellMessage)
 
     }

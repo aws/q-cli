@@ -22,6 +22,9 @@ jobs:
       - name: "Log Release Version"
         run: echo $VERSION
 
+      - name: Install Sentry
+        run: curl -sL https://sentry.io/get-cli/ | bash
+
       - name: "Download Sparkle"
         run: curl -sOL https://github.com/sparkle-project/Sparkle/releases/download/1.24.0/Sparkle-1.24.0.tar.xz
       - name: "Unzip Sparkle"
@@ -100,6 +103,11 @@ jobs:
         run: security find-identity -v -p codesigning
       - name: "Archive"
         uses: devbotsxyz/xcode-archive@v1
+
+      - name: Upload dSYM files to Sentry
+        run: sentry-cli upload-dif --org fig-op --project fig-op --derived-data
+        env: 
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
 
       #
       # Next ask Xcode to export the product from the archived build

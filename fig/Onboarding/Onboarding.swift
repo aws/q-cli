@@ -18,7 +18,15 @@ class Onboarding {
         
         DispatchQueue.global(qos: .userInitiated).async {
             let githubURL = URL(string: "https://raw.githubusercontent.com/withfig/config/main/tools/install_and_upgrade.sh")!
-            if let envSetupScript = try? String(contentsOf: githubURL) {
+            let fallbackURL = Bundle.main.url(forResource: "install_and_upgrade_fallback", withExtension: "sh")!
+            
+            var script = try? String(contentsOf: githubURL)
+            
+            if (script == nil) {
+              script = try? String(contentsOf: fallbackURL)
+            }
+          
+            if let envSetupScript = script {
                 let scriptsURL = FileManager.default.urls(for: .applicationScriptsDirectory, in: .userDomainMask)[0] as NSURL
 
                 guard let folderPath = scriptsURL.path else {
@@ -76,7 +84,9 @@ class Onboarding {
 
     static func copyFigCLIExecutable(to path: String) {
         let fullPath = NSString(string: path).expandingTildeInPath
-        if let cliPath = Bundle.main.path(forAuxiliaryExecutable: "figcli") {
+        let existingSymlink = try? FileManager.default.destinationOfSymbolicLink(atPath: fullPath)
+
+        if let cliPath = Bundle.main.path(forAuxiliaryExecutable: "figcli"), existingSymlink != cliPath {
             do {
                 let fullURL = URL(fileURLWithPath: fullPath)
                 try? FileManager.default.createDirectory(at: fullURL.deletingLastPathComponent(), withIntermediateDirectories: true, attributes: [:])
