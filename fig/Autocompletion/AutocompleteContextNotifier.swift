@@ -188,7 +188,7 @@ class AutocompleteContextNotifier {
   }
   
   static func batchUpdate(update: (ExternalWindowHash, TTY) -> ContextIndicator) {
-    ShellHookManager.shared.tty.forEach { (pair) in
+    ShellHookManager.shared.ttys().forEach { (pair) in
       let (hash, tty) = pair
       let indicator = update(hash, tty)
       tty.setTitle(indicator.message() + (tty.name ?? ""))
@@ -203,7 +203,7 @@ class AutocompleteContextNotifier {
   
   static func clearFigContext() {
     guard AutocompleteContextNotifier.addIndicatorToTitlebar else { return }
-    ShellHookManager.shared.tty.forEach { (pair) in
+    ShellHookManager.shared.ttys().forEach { (pair) in
       let (_, tty) = pair
       tty.setTitle(tty.name ?? "")
     }

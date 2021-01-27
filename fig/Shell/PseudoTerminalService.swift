@@ -40,7 +40,6 @@ protocol PseudoTerminalService {
 class PseudoTerminalHelper {
     var executeHandlers: [ String: (String) -> Void ] = [:]
     let pty = PseudoTerminal()
-    let serialQueue = DispatchQueue(label: "com.withfig.pty.queue")
     fileprivate let semaphore = DispatchSemaphore(value: 1)
 
     // Because they ruin your punchline.

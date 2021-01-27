@@ -115,6 +115,7 @@ class AXWindowServer : WindowService {
     static let windowTitleUpdatedNotification: NSNotification.Name = .init("windowTitleUpdatedNotification")
     static let windowDidChangeNotification = Notification.Name("AXWindowServerWindowDidChangeNotification")
     static let shared = AXWindowServer()
+    private let queue = DispatchQueue(label: "com.withfig.windowserver", attributes: .concurrent)
     var tracked: Set<ExternalApplication> = []
     var topWindow: ExternalWindow? = nil {
         didSet {
@@ -180,7 +181,7 @@ class AXWindowServer : WindowService {
         
 //        self.tracked.contains { return $0.bundleId == app.bundleIdentifier && $0.pid == app.processIdentifier}
         // Check if application is already tracked
-        if self.tracked.contains(appRef)  {
+        if self.trackedApplications().contains(appRef)  {
             Logger.log(message: "AXWindowServer: app '\(appRef.bundleId ?? "<none>") is already registered")
             self.deregister(app: app)
             //return
@@ -332,10 +333,7 @@ class AXWindowServer : WindowService {
             Logger.log(message: "AXWindowServer: Began tracking '\(appRef.bundleId ?? "<none>")'")
             //EXC_BAD_ACCESS (code=EXC_I386_GPFLT
             // Duplicate elements of type 'ExternalApplication' were found in a Set
-            var lock = os_unfair_lock_s()
-            os_unfair_lock_lock(&lock)
-            tracked.insert(appRef)
-            os_unfair_lock_unlock(&lock)
+            startTracking(app: appRef)
 
         } else {
             Logger.log(message: "AXWindowServer: Error setting up tracking for app '\(appRef.bundleId ?? "<none>")")
@@ -343,15 +341,21 @@ class AXWindowServer : WindowService {
     }
     
     func deregister(app: NSRunningApplication) {
-        for trackedApp in self.tracked where trackedApp.bundleId == app.bundleIdentifier {
+        for trackedApp in self.trackedApplications() where trackedApp.bundleId == app.bundleIdentifier {
             // EXC_BAD_ACCESS (code=EXC_I386_GPFLT)
-            var lock = os_unfair_lock_s()
-            os_unfair_lock_lock(&lock)
-            tracked.remove(trackedApp)
-            os_unfair_lock_unlock(&lock)
-            trackedApp.deregisterObserver()
+            stopTracking(app: trackedApp)
         }
 
+    }
+  
+    func trackedApplications() -> Set<ExternalApplication> {
+      var trackedApplications: Set<ExternalApplication>!
+      
+      queue.sync {
+        trackedApplications = self.tracked
+      }
+      
+      return trackedApplications
     }
     
     init() {
@@ -413,15 +417,7 @@ class AXWindowServer : WindowService {
     }
     
     func registerWindowTracking() {
-        for app in tracked {
-            app.deregisterObserver()
-            var lock = os_unfair_lock_s()
-            os_unfair_lock_lock(&lock)
-            tracked.remove(app)
-            os_unfair_lock_unlock(&lock)
-
-        }
-//        tracked = []
+        deregisterWindowTracking()
         
         // capture topmost app's window
         if let app = NSWorkspace.shared.frontmostApplication {
@@ -437,15 +433,26 @@ class AXWindowServer : WindowService {
     }
   
     func deregisterWindowTracking() {
-        for app in tracked {
-            app.deregisterObserver()
-            var lock = os_unfair_lock_s()
-            os_unfair_lock_lock(&lock)
-            tracked.remove(app)
-            os_unfair_lock_unlock(&lock)
+      for app in self.trackedApplications() {
+            stopTracking(app: app)
         }
         
         self.topWindow = nil
+    }
+  
+    func startTracking(app: ExternalApplication) {
+      queue.async(flags: [.barrier]) {
+        self.tracked.insert(app)
+      }
+    }
+  
+    func stopTracking(app: ExternalApplication) {
+      app.deregisterObserver()
+      
+      queue.async(flags: [.barrier]) {
+        self.tracked.remove(app)
+      }
+
     }
     
     

@@ -108,13 +108,13 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             let user = User()
             user.email = email
             SentrySDK.setUser(user)
+            ShellBridge.symlinkCLI()
+
             
-            if (!AXIsProcessTrustedWithOptions(nil)) {
+          if (!Accessibility.enabled) {
 
                 SentrySDK.capture(message: "Accesibility Not Enabled on Subsequent Launch")
                 let enable = self.dialogOKCancel(question: "Turn on accessibility", text: "To add Fig to your terminal, select the Fig checkbox in Security & Privacy > Accessibility.", prompt: "Turn On Accessibility")
-                
-//                Fig needs this permission in order to connect to your terminal window.\n\nYou may need to toggle the setting in order for MacOS to update it.\n\nThis can occur when Fig is updated. If you are seeing this more frequently, get in touch with matt@withfig.com.
                 
                 if (enable) {
                     self.promptForAccesibilityAccess()
@@ -737,11 +737,11 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         WindowManager.shared.createSidebar()
         WindowManager.shared.createAutocomplete()
         
-        Logger.log(message: "Registering keystrokeHandler...")
-        KeypressProvider.shared.registerKeystrokeHandler()
-        
-        Logger.log(message: "Registering window tracking...")
-        AXWindowServer.shared.registerWindowTracking()
+//        Logger.log(message: "Registering keystrokeHandler...")
+//        KeypressProvider.shared.registerKeystrokeHandler()
+//        
+//        Logger.log(message: "Registering window tracking...")
+//        AXWindowServer.shared.registerWindowTracking()
         
         //let companion = CompanionWindow(viewController: WebViewController())
         //companion.positioning = CompanionWindow.defaultPassivePosition

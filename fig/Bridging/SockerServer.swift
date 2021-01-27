@@ -35,7 +35,7 @@ class WebSocketServer {
     
     var connections:[String: WebSocketConnection] {
         get {
-            return service.connections
+            return service.allConnections()
         }
     }
   
@@ -110,37 +110,47 @@ class WebSocketServer {
 }
 
 class ShellBridgeSocketService: WebSocketService {
+    private let queue = DispatchQueue(label: "com.withfig.socket", attributes: .concurrent)
 
     var connections = [String: WebSocketConnection]()
     var sessionIds: [String : String] = [:]
     func connection(for sessionId: String) -> WebSocketConnection? {
         return connections[sessionIds[sessionId] ?? ""]
     }
+  
+    func allConnections() -> [String: WebSocketConnection] {
+      var allConnections: [String: WebSocketConnection]!
+      queue.sync {
+        allConnections = self.connections
+      }
+      
+      return allConnections
+  }
     
     let connectionTimeout: Int? = 60
 
     public func connected(connection: WebSocketConnection) {
         print("connected:",connection.id)
       
-        var lock = os_unfair_lock_s()
-        os_unfair_lock_lock(&lock)
-        connections[connection.id] = connection
-        os_unfair_lock_unlock(&lock)
+        queue.async(flags: [.barrier]) {
+          self.connections[connection.id] = connection
+        }
     }
 
     public func disconnected(connection: WebSocketConnection, reason: WebSocketCloseReasonCode) {
         print("disconnected:",connection.id)
         // exec bad access error occured here
-        connections.removeValue(forKey: connection.id)
+        queue.async(flags: [.barrier]) {
+          self.connections.removeValue(forKey: connection.id)
+        }
     }
 
     public func received(message: Data, from: WebSocketConnection) {
         from.close(reason: .invalidDataType, description: "Fig only accepts text messages")
 
-        var lock = os_unfair_lock_s()
-        os_unfair_lock_lock(&lock)
-        connections.removeValue(forKey: from.id)
-        os_unfair_lock_unlock(&lock)
+        queue.async(flags: [.barrier]) {
+          self.connections.removeValue(forKey: from.id)
+        }
 
     }
 
