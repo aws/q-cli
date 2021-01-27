@@ -171,7 +171,7 @@ cat <<EOF
 
     Your completion spec was successfully uploaded to your team's private repo.
 
-    Tell your team to run ${BOLD}fig team download${NORMAL} to install/update your private completion specs
+    Tell your team to run ${BOLD}fig team:download${NORMAL} to install/update your private completion specs
 
 EOF
 
