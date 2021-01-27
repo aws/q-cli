@@ -48,6 +48,7 @@ class ShellHookManager : NSObject {
 extension ShellHookManager {
 
   func tab(for windowID: CGWindowID) -> String? {
+    return self.tabs[windowID]
     var tab: String?
     queue.sync {
       tab = self.tabs[windowID]
@@ -56,12 +57,15 @@ extension ShellHookManager {
   }
   
   func setActiveTab(_ tab: String, for windowID: CGWindowID) {
+    self.tabs[windowID] = tab
+    return
     queue.async(flags: [.barrier]) {
       self.tabs[windowID] = tab
     }
   }
   
   func ttys() -> [ExternalWindowHash: TTY] {
+    return self.tty
     var ttys: [ExternalWindowHash: TTY]!
     queue.sync {
       ttys = self.tty
@@ -70,6 +74,7 @@ extension ShellHookManager {
   }
   
   func tty(for windowHash: ExternalWindowHash) -> TTY? {
+    return self.tty[windowHash]
     var tty: TTY?
     queue.sync {
       tty = self.tty[windowHash]
@@ -78,6 +83,8 @@ extension ShellHookManager {
   }
   
   func setTTY(_ tty:TTY, for window: ExternalWindowHash) {
+    self.tty[window] = tty
+    return
     queue.sync(flags: [.barrier]) {
       self.tty[window] = tty
     }
@@ -117,7 +124,7 @@ extension ShellHookManager {
     
     func updateHashMetadata(oldHash: ExternalWindowHash, hash: ExternalWindowHash) {
         
-        queue.async(flags: [.barrier]) {
+        //queue.async(flags: [.barrier]) {
             guard oldHash != hash else { return }
             guard let device = self.tty[oldHash] else { return }
             guard let sessionId = self.sessions[oldHash] else { return }
@@ -129,7 +136,7 @@ extension ShellHookManager {
             // reassign tty to new hash
             self.sessions[hash] = sessionId
             self.tty[hash] = device
-        }
+        //}
         Logger.log(message: "Transfering \(oldHash) metadata to \(hash).", priority: .info, subsystem: .tty)
 
     }
@@ -266,10 +273,10 @@ extension ShellHookManager {
             Logger.log(message: "\(hash) is not a valid window hash, attempting to find previous value", priority: .info, subsystem: .tty)
             
 //            // clean up this out-of-date hash
-            queue.async(flags:[.barrier]) {
+            //queue.async(flags:[.barrier]) {
                 self.sessions[hash] = nil
                 self.tty.removeValue(forKey: hash)
-            }
+            //}
 
 
         }
@@ -305,27 +312,27 @@ extension ShellHookManager {
         
 
         // tie tty & sessionId to windowHash
-        queue.async(flags: [.barrier]) {
+        //queue.async(flags: [.barrier]) {
             self.tty[hash] = device
             self.sessions[hash] = sessionId // sessions is bidirectional between sessionId and windowHash
-        }
+        //}
         return device
     }
     
     func getSessionId(for windowHash: ExternalWindowHash) -> SessionId? {
         var id: SessionId?
-        queue.sync {
+        //queue.sync {
             id = self.sessions[windowHash]
-        }
+        //}
       
         return id
     }
     
     fileprivate func getWindowHash(for sessionId: SessionId) -> ExternalWindowHash? {
         var hash: ExternalWindowHash?
-        queue.sync {
+        //queue.sync {
             hash = self.sessions[sessionId]
-        }
+        //}
       
         return hash
     }
