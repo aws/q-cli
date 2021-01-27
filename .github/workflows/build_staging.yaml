@@ -16,6 +16,8 @@ jobs:
         uses: styfle/cancel-workflow-action@0.6.0
         with:
           access_token: ${{ github.token }}
+      - name: Install Sentry
+        run: curl -sL https://sentry.io/get-cli/ | bash
 
       - name: "Checkout Project"
         uses: actions/checkout@v2
@@ -90,6 +92,11 @@ jobs:
         run: security find-identity -v -p codesigning
       - name: "Archive"
         uses: devbotsxyz/xcode-archive@v1
+
+      - name: Upload dSYM files to Sentry
+        run: sentry-cli upload-dif --org fig-op --project fig-op --derived-data
+        env: 
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
 
       #
       # Next ask Xcode to export the product from the archived build
