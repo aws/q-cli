@@ -282,7 +282,8 @@ extension NativeCLI {
             blockingProcess = "no app for pid"
           }
         }
-  
+        let terminal = message.terminal ?? "<unknown>"
+        let pathToBundle = Bundle.main.bundleURL.path
 
         let placeholder =
         """
@@ -307,8 +308,10 @@ extension NativeCLI {
         Only insert on tab:\(Defaults.onlyInsertOnTab)
         Autocomplete:\(Defaults.useAutocomplete)
         Usershell:\(Defaults.userShell)
+        Bundle:\(pathToBundle)
         ---------------------------------------
         ENVIRONMENT:
+        Terminal: \(terminal)
         CLI installed:\(cliInstalled)
         Number of specs: \(specs)
         Accessibility: \(AXIsProcessTrusted())
