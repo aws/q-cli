@@ -325,7 +325,7 @@ class ExternalWindow {
                 self.frame = windowFrame
                 self.windowId = windowId
                 self.app = app
-                self.windowLevel = nil
+                self.windowLevel = ExternalWindow.getWindowLevel(for: windowId)
                 self.accesibilityElement = axElementRef
            } else {
             return nil
@@ -333,11 +333,20 @@ class ExternalWindow {
         
     }
     
+    // This might be expensive, should be profiled
+    static func getWindowLevel(for windowId: CGWindowID) -> CGWindowLevel? {
+      guard let matchingWindow = (WindowServer.shared.allWindows().filter { $0.windowId == windowId }).first else {
+        return nil
+      }
+      
+      return matchingWindow.windowLevel
+    }
+  
     init(_ frame: NSRect, _ windowId: CGWindowID, _ app: NSRunningApplication,_ accesibilityElement: AXUIElement? = nil) {
         self.frame = frame
         self.windowId = windowId
         self.app = app
-        self.windowLevel = nil
+        self.windowLevel = ExternalWindow.getWindowLevel(for: windowId)
         self.accesibilityElement = accesibilityElement
 
     }
