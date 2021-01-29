@@ -42,6 +42,7 @@ class NativeCLI {
         case ssh = "integrations:ssh"
         case teamUpload = "team:upload"
         case teamDownload = "team:download"
+        case diagnostic = "diagnostic"
         case pty = "debug:pty"
 
         var isUtility: Bool {
@@ -69,6 +70,7 @@ class NativeCLI {
                                                            .onboarding,
                                                            .version,
                                                            .report,
+                                                           .diagnostic,
                                                            .pty,
                                                            .docs]
                return implementatedNatively.contains(self)
@@ -102,6 +104,8 @@ class NativeCLI {
                 NativeCLI.docsCommand(scope)
             case .report:
                 NativeCLI.reportCommand(scope)
+            case .diagnostic:
+                NativeCLI.diagnosticCommand(scope)
             case .pty:
                 NativeCLI.ptyCommand(scope)
             default:
@@ -265,6 +269,12 @@ extension NativeCLI {
 
         }
     }
+  
+    static func diagnosticCommand(_ scope: Scope) {
+        let (_
+      , connection) = scope
+        NativeCLI.printInTerminal(Diagnostic.summary, using: connection)
+    }
     
     static func ptyCommand(_ scope: Scope) {
         let (message, connection) = scope
@@ -295,22 +305,6 @@ extension NativeCLI {
         let env = message.env?.jsonStringToDict()
         let path = env?["PATH"] as? String
         let figIntegratedWithShell = env?["FIG_ENV_VAR"] as? String
-        let config = try? String(contentsOfFile: "\(NSHomeDirectory())/.fig/user/config", encoding: String.Encoding.utf8)
-        let cliInstalled = FileManager.default.fileExists(atPath: "\(NSHomeDirectory())/.fig/bin/fig")
-        let specs = (try? FileManager.default.contentsOfDirectory(atPath: "\(NSHomeDirectory())/.fig/autocomplete").count) ?? 0
-        let secureInput = CGSIsSecureEventInputSet()
-        var blockingProcess: String? = nil
-        if secureInput {
-          var pid: pid_t = 0;
-          secure_keyboard_entry_process_info(&pid)
-          if let app = NSRunningApplication(processIdentifier: pid) {
-            blockingProcess = "\(app.localizedName ?? "") - \(app.bundleIdentifier ?? "")"
-          } else {
-            blockingProcess = "no app for pid"
-          }
-        }
-        let terminal = message.terminal ?? "<unknown>"
-        let pathToBundle = Bundle.main.bundleURL.path
 
         let placeholder =
         """
@@ -338,17 +332,16 @@ extension NativeCLI {
         Bundle:\(pathToBundle)
         ---------------------------------------
         ENVIRONMENT:
-        Terminal: \(terminal)
-        CLI installed:\(cliInstalled)
-        Number of specs: \(specs)
-        Accessibility: \(AXIsProcessTrusted())
-        SecureKeyboardInput: \(secureInput)
-        SecureKeyboardProcess: \(blockingProcess ?? "<none>")
+        CLI installed:\(Diagnostic.installedCLI)
+        Number of specs: \(Diagnostic.numberOfCompletionSpecs)
+        Accessibility: \(Accessibility.enabled)
+        SecureKeyboardInput: \(Diagnostic.secureKeyboardInput)
+        SecureKeyboardProcess: \(Diagnostic.blockingProcess ?? "<none>")
         PATH: \(path ?? "Not found")
         FIG_ENV_VAR: \(figIntegratedWithShell ?? "Not found")
         --------------------------------------
         CONFIG
-        \(config ?? "?")
+        \(Diagnostic.userConfig ?? "?")
         """
         
         /*
