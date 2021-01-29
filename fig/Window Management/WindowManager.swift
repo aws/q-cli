@@ -708,9 +708,12 @@ extension WindowManager : WindowManagementService {
     
     func positionAutocompletePopover(textRect: CGRect?) {
         if let rect = textRect, let window = AXWindowServer.shared.whitelistedWindow {
-            let heightLimit: CGFloat = 300.0//140.0
-            let isAbove = window.frame.origin.y - window.frame.height/2 > rect.origin.y
-                && rect.origin.y + heightLimit <= NSScreen.main?.frame.maxY ?? 0.0 /*visor*/
+            let heightLimit: CGFloat = 140.0 //300.0//
+            
+          let isAbove = window.frame.height < window.frame.origin.y - rect.origin.y + rect.height + heightLimit
+                        && rect.origin.y + heightLimit <= NSScreen.main?.frame.maxY ?? 0.0
+                        // *visor* I'm not sure what the second conditional is for...
+
 
             
             let height:CGFloat = isAbove ? 0 : heightLimit
@@ -756,7 +759,7 @@ extension WindowManager : WindowManagementService {
             }
             
             if (Defaults.debugAutocomplete) {
-                WindowManager.shared.autocomplete?.maxHeight = 200//heightLimit//140
+                WindowManager.shared.autocomplete?.maxHeight = heightLimit//140
             }
           
             DispatchQueue.main.async {
