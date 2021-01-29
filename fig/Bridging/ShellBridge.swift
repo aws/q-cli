@@ -270,17 +270,11 @@ class ShellBridge {
     }
     
     //https://stackoverflow.com/a/40447423
-    
-    enum InjectCommands: String {
-        case forward = "fig::forward"
-        case backward = "fig::backward"
-        case backspace = "fig::backspace"
-
-    }
     static func injectUnicodeString(_ string: String, completion: (() -> Void)? = nil) {
+        let maxCharacters = 20
         guard string.count > 0  else { return }
-        guard string.count <= 20 else {
-            if let split = string.index(string.startIndex, offsetBy: 20,limitedBy: string.endIndex) {
+        guard string.count <= maxCharacters else {
+            if let split = string.index(string.startIndex, offsetBy: maxCharacters, limitedBy: string.endIndex) {
                 injectUnicodeString(String(string.prefix(upTo: split))) {
                     
                     injectUnicodeString(String(string.suffix(from: split)))
@@ -288,188 +282,46 @@ class ShellBridge {
             }
             return
         }
-        guard InjectCommands(rawValue: string) == nil else {
-            switch (InjectCommands(rawValue: string)!) {
-            case .forward:
-                simulate(keypress: .rightArrow)
-            case .backward:
-                simulate(keypress: .leftArrow)
-            case .backspace:
-                simulate(keypress: .delete)
-//                injectUnicodeString("\u{1b}[D")
-            }
-            return
-        }
         
-        
-        let length = string.lengthOfBytes(using: .utf16)
         let src = CGEventSource(stateID: CGEventSourceStateID.hidSystemState)
-
-        let pointer = CFStringGetCharactersPtr(string as CFString)
         
         let utf16Chars = Array(string.utf16)
         
-        let event = CGEvent(keyboardEventSource: src, virtualKey: 0, keyDown: true)
-        event?.keyboardSetUnicodeString(stringLength: utf16Chars.count, unicodeString: utf16Chars)
+        let downEvent = CGEvent(keyboardEventSource: src, virtualKey: 0, keyDown: true)
+        downEvent?.keyboardSetUnicodeString(stringLength: utf16Chars.count, unicodeString: utf16Chars)
+        let upEvent = CGEvent(keyboardEventSource: src, virtualKey: 0, keyDown: false)
+
         let loc = CGEventTapLocation.cghidEventTap
         
-        event?.post(tap: loc)
-        if let completion = completion {
-            Timer.delayWithSeconds(0.005) {
-                completion()
-            }
-        }
+        downEvent?.post(tap: loc)
+        upEvent?.post(tap: loc)
+        
+        completion?()
     }
-    static func injectStringIntoTerminal2(_ cmd: String, runImmediately: Bool = false, clearLine: Bool = Defaults.clearExistingLineOnTerminalInsert, completion: (() -> Void)? = nil) {
+    static func injectStringIntoTerminal(_ cmd: String, runImmediately: Bool = false, clearLine: Bool = Defaults.clearExistingLineOnTerminalInsert, completion: (() -> Void)? = nil) {
 //        WindowServer.shared.returnFocus()
         if (NSWorkspace.shared.frontmostApplication?.isFig ?? false) {
+            print("Fig is the active window. Sending focus back to previous applications.")
             WindowServer.shared.returnFocus()
             Timer.delayWithSeconds(0.15) {
                 if (clearLine) {
                       self.simulate(keypress: .ctrlE)
                       self.simulate(keypress: .ctrlU)
                   }
+                print("Insert '\(cmd)' into ", NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "<none>")
                 injectUnicodeString(cmd + (runImmediately ? "\n" :""))
             }
         } else {
-            guard let jsons = CGWindowListCopyWindowInfo(.optionOnScreenOnly, kCGNullWindowID) as? [[String: Any]] else {
-                return
-            }
-            
-            let windows = jsons.map({ return WindowInfo(json: $0) }).filter({ $0?.name == "Spotlight" && ($0?.frame.size != CGSize(width: 36, height: 22) && $0?.frame.size != CGSize(width: 32, height: 24)) })
-            if let spotlight = windows.first {
-                Logger.log(message: "spotlight: \(NSScreen.main?.frame ?? .zero)")
-                Logger.log(message: "spotlight: \(spotlight?.frame ?? .zero)")
-                return
-            }
-            
-            print("inject: ", NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "<none>")
+            // There used to be a check here to determine if Spotlight was active. It seems like this is no longer needed.
+            print("Insert '\(cmd)' into ", NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "<none>")
             if (clearLine) {
                   self.simulate(keypress: .ctrlE)
                   self.simulate(keypress: .ctrlU)
               }
             injectUnicodeString(cmd + (runImmediately ? "\n" :""))
         }
-
-        //Timer.delayWithSeconds(0.1) {
-
-//            cmd.forEach { (char) in
-//                guard let keyCode = KeyboardLayout.shared.keyCode(for: String(char).uppercased()) else {
-//                    print ("unmapped character '\(char)'")
-//                    return
-//                }
-//                 let src = CGEventSource(stateID: CGEventSourceStateID.hidSystemState)
-//
-//                   let keydown = CGEvent(keyboardEventSource: src, virtualKey: keyCode, keyDown: true)
-//                   let keyup = CGEvent(keyboardEventSource: src, virtualKey: keyCode, keyDown: false)
-//
-//
-//
-//                   let loc = CGEventTapLocation.cghidEventTap
-//                   keydown?.post(tap: loc)
-//                   keyup?.post(tap: loc)
-//            }
-      //  }
-        
-//        let length = cmd.lengthOfBytes(using: .utf16)
-//        let src = CGEventSource(stateID: CGEventSourceStateID.hidSystemState)
-//
-//        let pointer = CFStringGetCharactersPtr(cmd as CFString)
-//        let event = CGEvent(keyboardEventSource: src, virtualKey: 0, keyDown: true)
-//        event?.keyboardSetUnicodeString(stringLength: length, unicodeString: pointer)
-//        let loc = CGEventTapLocation.cghidEventTap
-//        event?.post(tap: loc)
-//
-//
-        
-//        let tap: CGEvent = CGEvent(keyboardEventSource: nil, virtualKey: 0, keyDown: true)//CGEventCreateKeyboardEvent()//(NULL,0, YES)
-////        CGEvent(keyboardEventSource: nil, virtualKey: 0, keyDown: true)?.keyboardSetUnicodeString(stringLength: <#T##Int#>, unicodeString: <#T##UnsafePointer<UniChar>?#>)
-//        tap.keyboardSetUnicodeString(stringLength: length,
-//                                 unicodeString:uc)
-
-        // 1 - Get the string length in bytes.
-//        NSUInteger l = [string lengthOfBytesUsingEncoding:NSUTF16StringEncoding];
-
-//        UniChar uc
-        // 2 - Get bytes for unicode characters
-//        UniChar *uc = malloc(l);
-//        [string getBytes:uc maxLength:l usedLength:NULL encoding:NSUTF16StringEncoding options:0 range:NSMakeRange(0, l) remainingRange:NULL];
-//
-//        // 3 - create an empty tap event, and set unicode string
-//        CGEventRef tap = CGEventCreateKeyboardEvent(NULL,0, YES);
-//        CGEventKeyboardSetUnicodeString(tap, string.length, uc);
-//
-//        // 4 - Send event and tear down
-//        CGEventPost(kCGSessionEventTap, tap);
-//        CFRelease(tap);
-//        free(uc);
-        
     }
 
-    static func injectStringIntoTerminal(_ cmd: String, runImmediately: Bool = false, clearLine: Bool = Defaults.clearExistingLineOnTerminalInsert, completion: (() -> Void)? = nil) {
-        if (NSWorkspace.shared.frontmostApplication?.isFig ?? false) {
-            WindowServer.shared.returnFocus()
-        }
-//            ShellBridge.shared.previousFrontmostApplication?.activate(options: .activateIgnoringOtherApps)
-        NotificationCenter.default.post(name: .requestStopMonitoringMouseEvents, object: nil)
-        let state = Defaults.useAutocomplete
-        Defaults.useAutocomplete = false
-        print("Stop monitoring mouse")
-//        NSApp.deactivate()
-            Timer.delayWithSeconds(0.2) {
-            if let currentApp = NSWorkspace.shared.frontmostApplication {
-//        if let currentApp = ShellBridge.shared.previousFrontmostApplication {
-               if (currentApp.isTerminal) {
-                   // save current pasteboard
-//                   currentApp.activate(options: .activateIgnoringOtherApps)
-                   let pasteboard = NSPasteboard.general
-                   let copiedString = pasteboard.string(forType: .string) ?? ""
-                   
-                   // add our script to pasteboard
-                   NSPasteboard.general.clearContents()
-                   NSPasteboard.general.setString(cmd, forType: .string)
-                   print(pasteboard.string(forType: .string) ?? "")
-                       // Be careful: in some apps, CMD-Enter toggles fullscreen
-                
-                if (clearLine) {
-                    self.simulate(keypress: .ctrlE)
-                    self.simulate(keypress: .ctrlU)
-                }
-
-                self.simulate(keypress: .cmdV)
-                print("CMD-V")
-                Timer.delayWithSeconds(0.1) {
-                            Defaults.useAutocomplete = state
-
-                            if (runImmediately) {
-                                print("ENTER")
-                                self.simulate(keypress: .enter)
-                            } else {
-                                self.simulate(keypress: .rightArrow)
-                            }
-
-                            Timer.delayWithSeconds(0.10) {
-                                NotificationCenter.default.post(name: .requestStartMonitoringMouseEvents, object: nil)
-                                print("Start monitoring mouse")
-
-                            }
-
-                            if let completion = completion {
-                                completion()
-                            }
-                       }
-    
-                   // need delay so that terminal responds
-                Timer.delayWithSeconds(0.5) {
-                       // restore pasteboard
-                       NSPasteboard.general.clearContents()
-                       pasteboard.setString(copiedString, forType: .string)
-                   }
-               }
-           }
-        }
-    }
-    
     //https://gist.github.com/eegrok/949034
     enum Keypress: UInt16 {
         case cmdV = 9
