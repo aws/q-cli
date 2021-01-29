@@ -9,17 +9,22 @@
 #
 SSH_CONFIG_PATH=~/.ssh/config
 # If this comment is changed, it must also be updated in the Swift app
-# when checking if integration is already setup.
-COMMENT="# Fig SSH Integration: Enabled"
-grep -q "$COMMENT" $SSH_CONFIG_PATH && echo "Fig is already integrated with SSH." && exit
+# when checking if integration is already setup
+# and in the uninstall script.
+START="# Fig SSH Integration: Enabled"
+END="# End of Fig SSH Integration"
 
-CONFIG="$COMMENT
+grep -q "$START" $SSH_CONFIG_PATH && echo "Fig is already integrated with SSH." && exit
+
+# When this is updated, make sure ssh.html reflects these changes
+CONFIG="$START
 Host *
-    ControlPath ~/.ssh/%r@%h:%p
+    ControlPath ~/.ssh/%C
     ControlMaster auto
     ControlPersist 1
     PermitLocalCommand yes
-    LocalCommand fig bg:ssh ~/.ssh/%r@%h:%p &"
+    LocalCommand fig bg:ssh ~/.ssh/%C &
+$END"
 
 
 mkdir -p ~/.ssh

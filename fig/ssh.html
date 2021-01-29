@@ -233,11 +233,11 @@
                   </p>
 <pre id = "shell" figdisabled = "true">
 Host *
-    ControlPath ~/.ssh/%r@%h:%p
+    ControlPath ~/.ssh/%C
     ControlMaster auto
     ControlPersist 1
     PermitLocalCommand yes
-    LocalCommand fig bg:ssh ~/.ssh/%r@%h:%p &
+    LocalCommand fig bg:ssh ~/.ssh/%C &
 </pre>
 
                 </details>
