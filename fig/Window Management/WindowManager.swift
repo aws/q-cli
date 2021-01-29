@@ -711,7 +711,8 @@ extension WindowManager : WindowManagementService {
             let heightLimit: CGFloat = 140.0 //300.0//
             
           let isAbove = window.frame.height < window.frame.origin.y - rect.origin.y + rect.height + heightLimit
-//                        && rect.origin.y + heightLimit <= NSScreen.main?.frame.maxY ?? 0.0 /*visor*/
+                        && rect.origin.y + heightLimit <= NSScreen.main?.frame.maxY ?? 0.0
+                        // *visor* I'm not sure what the second conditional is for...
 
 
             
