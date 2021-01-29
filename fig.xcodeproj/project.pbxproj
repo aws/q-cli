@@ -145,6 +145,8 @@
 		75AA24D225A79F3400A51E9D /* issue.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75AA24D025A79B4A00A51E9D /* issue.sh */; };
 		75AA24D325A79F3400A51E9D /* contribute.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75AA24CF25A79ACC00A51E9D /* contribute.sh */; };
 		75AA24DA25A7E8B000A51E9D /* lsof.m in Sources */ = {isa = PBXBuildFile; fileRef = 75AA24D925A7E8B000A51E9D /* lsof.m */; };
+		75AEF2E625C3DEAF00D78431 /* DockerIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75AEF2E525C3DEAF00D78431 /* DockerIntegration.swift */; };
+		75AEF2E825C3DEC600D78431 /* SSHIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75AEF2E725C3DEC600D78431 /* SSHIntegration.swift */; };
 		75B0A07C25BA64CC00FCD89A /* AutocompleteContextNotifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B0A07B25BA64CC00FCD89A /* AutocompleteContextNotifier.swift */; };
 		75B0A07E25BB746600FCD89A /* debugger.html in Resources */ = {isa = PBXBuildFile; fileRef = 75B0A07D25BB746600FCD89A /* debugger.html */; };
 		75B0A08025BB74C700FCD89A /* fig-context-indicator.png in Resources */ = {isa = PBXBuildFile; fileRef = 75B0A07F25BB74C700FCD89A /* fig-context-indicator.png */; };
@@ -383,6 +385,8 @@
 		75AA24D925A7E8B000A51E9D /* lsof.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = lsof.m; sourceTree = "<group>"; };
 		75AC552B2522C7710069635E /* upgrade */ = {isa = PBXFileReference; lastKnownFileType = folder; name = upgrade; path = ../upgrade; sourceTree = "<group>"; };
 		75AC55322522C8EB0069635E /* 1.0.20.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = 1.0.20.sh; sourceTree = "<group>"; };
+		75AEF2E525C3DEAF00D78431 /* DockerIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DockerIntegration.swift; sourceTree = "<group>"; };
+		75AEF2E725C3DEC600D78431 /* SSHIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSHIntegration.swift; sourceTree = "<group>"; };
 		75B0A07B25BA64CC00FCD89A /* AutocompleteContextNotifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutocompleteContextNotifier.swift; sourceTree = "<group>"; };
 		75B0A07D25BB746600FCD89A /* debugger.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = debugger.html; sourceTree = "<group>"; };
 		75B0A07F25BB74C700FCD89A /* fig-context-indicator.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "fig-context-indicator.png"; sourceTree = "<group>"; };
@@ -791,6 +795,8 @@
 				75EB592A258D98A7002915E7 /* BiMap.swift */,
 				75EB592C258DD771002915E7 /* TTY.swift */,
 				75A4521925AE2E6A00107D2C /* CommandIntegration.swift */,
+				75AEF2E525C3DEAF00D78431 /* DockerIntegration.swift */,
+				75AEF2E725C3DEC600D78431 /* SSHIntegration.swift */,
 				75A4520F25A839F500107D2C /* remote_cwd.sh */,
 			);
 			path = Shell;
@@ -1113,6 +1119,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				75288EF924CCE72F002DF12A /* OnboardingWindow.swift in Sources */,
+				75AEF2E825C3DEC600D78431 /* SSHIntegration.swift in Sources */,
 				75AA24C125A656FA00A51E9D /* NativeCLI.swift in Sources */,
 				757CA86724859461002A64A8 /* AppMover.swift in Sources */,
 				75C0EBD3253E336E001964DE /* TerminalUsageTelemetry.swift in Sources */,
@@ -1146,6 +1153,7 @@
 				75EB592B258D98A7002915E7 /* BiMap.swift in Sources */,
 				752D71CF25B8CA4000263527 /* iTermTabIntegration.swift in Sources */,
 				751F7589246D090100E083C8 /* WebBridge.swift in Sources */,
+				75AEF2E625C3DEAF00D78431 /* DockerIntegration.swift in Sources */,
 				7510F8A624A6910500E86F7C /* iOSAccessoryView.swift in Sources */,
 				75675955244634AD006AA988 /* AppDelegate.swift in Sources */,
 				7510F89924A6910500E86F7C /* TerminalViewDelegate.swift in Sources */,
