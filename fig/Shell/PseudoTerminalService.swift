@@ -105,8 +105,9 @@ class PseudoTerminal : PseudoTerminalService {
 
         pty.send("unset HISTFILE\r")
         
+      
         // export path from userShell
-        pty.send("export PATH=$(\(Defaults.userShell) -i -c 'echo $PATH')\r")
+        pty.send("export PATH=$(\(Defaults.userShell) -li -c \"/usr/bin/env | /usr/bin/grep '^PATH=' | /bin/cat | /usr/bin/sed 's|PATH=||g'\")\r")
         
         // Copy enviroment from userShell
 //        pty.send("export $(env -i '\(Defaults.userShell)' -li -c env | tr '\n' ' ')\r")

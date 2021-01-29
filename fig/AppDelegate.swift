@@ -181,12 +181,12 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     func remindToSourceFigInExistingTerminals() {
         
         // filter for native terminal windows (with hueristic to avoid menubar items + other window types)
-        let nativeTerminalWindows = WindowServer.shared.allWindows().filter { Integrations.nativeTerminals.contains($0.bundleId ?? "") }.filter { $0.frame.height != 22 && $0.frame.height != 30 }
+        let nativeTerminals = NSWorkspace.shared.runningApplications.filter { Integrations.nativeTerminals.contains($0.bundleIdentifier ?? "")}
         
-        let count = nativeTerminalWindows.count
+        let count = nativeTerminals.count
         guard count > 0 else { return }
-        let iTermOpen = nativeTerminalWindows.contains { $0.bundleId == "com.googlecode.iterm2" }
-        let terminalAppOpen = nativeTerminalWindows.contains { $0.bundleId == "com.apple.Terminal" }
+        let iTermOpen = nativeTerminals.contains { $0.bundleIdentifier == "com.googlecode.iterm2" }
+        let terminalAppOpen = nativeTerminals.contains { $0.bundleIdentifier == "com.apple.Terminal" }
         
         var emulators: [String] = []
         
@@ -198,7 +198,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             emulators.append("Terminal")
         }
                 
-        let restart = self.dialogOKCancel(question: "\(count) existing terminal session\(count == 1 ? "" : "s") ", text: "Any terminal sessions started before Fig are not tracked.\n\nRun `fig source` in each session to connect or restart your terminal\(emulators.count == 1 ? "" : "s").\n", prompt: "Restart \(emulators.joined(separator: " and "))", noAction: false, icon: NSImage.init(imageLiteralResourceName: NSImage.applicationIconName))
+        let restart = self.dialogOKCancel(question: "Restart existing terminal sessions?", text: "Any terminal sessions started before Fig are not tracked.\n\nRun `fig source` in each session to connect or restart your terminal\(emulators.count == 1 ? "" : "s").\n", prompt: "Restart \(emulators.joined(separator: " and "))", noAction: false, icon: NSImage.init(imageLiteralResourceName: NSImage.applicationIconName))
         
         if (restart) {
             print("restart")
@@ -707,7 +707,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
                 try? FileManager.default.createSymbolicLink(atPath: iTermIntegrationPath, withDestinationPath: localScript)
             }
             
-            remindToSourceFigInExistingTerminals()
+            //remindToSourceFigInExistingTerminals()
         }
         
         Defaults.versionAtPreviousLaunch = current

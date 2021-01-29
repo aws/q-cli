@@ -43,11 +43,19 @@ class NativeCLI {
         case teamUpload = "team:upload"
         case teamDownload = "team:download"
         case diagnostic = "diagnostic"
+        case pty = "debug:pty"
 
         var isUtility: Bool {
             get {
                 let utilities: Set<Command> = [.resetCache, .build, .logout, .restart, .accessibility]
                return utilities.contains(self)
+            }
+        }
+      
+        var handlesDisconnect: Bool {
+            get {
+                let handlesDisconnection: Set<Command> = [.pty ]
+                return handlesDisconnection.contains(self)
             }
         }
 
@@ -63,6 +71,7 @@ class NativeCLI {
                                                            .version,
                                                            .report,
                                                            .diagnostic,
+                                                           .pty,
                                                            .docs]
                return implementatedNatively.contains(self)
             }
@@ -97,6 +106,8 @@ class NativeCLI {
                 NativeCLI.reportCommand(scope)
             case .diagnostic:
                 NativeCLI.diagnosticCommand(scope)
+            case .pty:
+                NativeCLI.ptyCommand(scope)
             default:
                 break;
             }
@@ -152,7 +163,9 @@ class NativeCLI {
                 command.runFromScript(scope)
             }
             
-            connection.send(message: "disconnect")
+            if (!command.handlesDisconnect) {
+                connection.send(message: "disconnect")
+            }
         }
         
         trackCommandEvent(scope)
@@ -263,6 +276,20 @@ extension NativeCLI {
         NativeCLI.printInTerminal(Diagnostic.summary, using: connection)
     }
     
+    static func ptyCommand(_ scope: Scope) {
+        let (message, connection) = scope
+//        message.
+        let command = message.arguments.joined(separator: " ")
+        let pty = PseudoTerminalHelper()
+        pty.start(with: [:])
+        pty.execute(command) { (out) in
+          NativeCLI.printInTerminal(out, using: connection)
+          pty.close()
+          connection.send(message: "disconnect")
+        }
+
+    }
+    
     static func reportCommand(_ scope: Scope) {
         let (message, connection) = scope
 
@@ -278,7 +305,6 @@ extension NativeCLI {
         let env = message.env?.jsonStringToDict()
         let path = env?["PATH"] as? String
         let figIntegratedWithShell = env?["FIG_ENV_VAR"] as? String
-  
 
         let placeholder =
         """
@@ -303,6 +329,7 @@ extension NativeCLI {
         Only insert on tab:\(Defaults.onlyInsertOnTab)
         Autocomplete:\(Defaults.useAutocomplete)
         Usershell:\(Defaults.userShell)
+        Bundle:\(pathToBundle)
         ---------------------------------------
         ENVIRONMENT:
         CLI installed:\(Diagnostic.installedCLI)
