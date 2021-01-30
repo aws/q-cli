@@ -108,8 +108,8 @@ class Onboarding {
             WindowManager.shared.newNativeTerminalSession(completion: completion)
             return
         }
-        let iTermOpen = nativeTerminals.contains { $0.bundleId == "com.googlecode.iterm2" }
-        let terminalAppOpen = nativeTerminals.contains { $0.bundleId == "com.apple.Terminal" }
+        let iTermOpen = nativeTerminals.contains { $0.bundleIdentifier == "com.googlecode.iterm2" }
+        let terminalAppOpen = nativeTerminals.contains { $0.bundleIdentifier == "com.apple.Terminal" }
         
         var emulators: [String] = []
         

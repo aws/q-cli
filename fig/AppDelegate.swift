@@ -23,6 +23,9 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     let updater = SUUpdater.shared()
     let processPool = WKProcessPool()
     
+    let iTermObserver = WindowObserver(with: "com.googlecode.iterm2")
+    let TerminalObserver = WindowObserver(with: "com.apple.Terminal")
+  
     func applicationDidFinishLaunching(_ aNotification: Notification) {
 //        NSApp.setActivationPolicy(NSApplication.ActivationPolicy.accessory)
         
@@ -155,6 +158,15 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         
         iTermTabIntegration.listenForHotKey()
         AutocompleteContextNotifier.listenForUpdates()
+        SecureKeyboardInput.listen()
+      
+        iTermObserver?.windowDidAppear {
+          SecureKeyboardInput.notifyIfEnabled()
+        }
+      
+        TerminalObserver?.windowDidAppear {
+          SecureKeyboardInput.notifyIfEnabled()
+        }
         
     }
   
@@ -1779,10 +1791,8 @@ extension AppDelegate : NSMenuDelegate {
                     legend.addItem(NSMenuItem(title: "Restart Fig", action: #selector(restart), keyEquivalent: ""))
 
 
-                } else if (CGSIsSecureEventInputSet()) {
-                    var pid: pid_t = 0;
-                    secure_keyboard_entry_process_info(&pid)
-
+                } else if (SecureKeyboardInput.enabled) {
+                    
                     color = .systemPink
                     legend.addItem(NSMenuItem(title: "'Secure Keyboard Input' Enabled", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem.separator())
@@ -1791,7 +1801,9 @@ extension AppDelegate : NSMenuDelegate {
                     legend.addItem(NSMenuItem.separator())
 
                     
-                    if let app = NSRunningApplication(processIdentifier: pid), let name = app.localizedName {
+                  if let app = SecureKeyboardInput.responsibleApplication,
+                    let name = app.localizedName,
+                    let pid = SecureKeyboardInput.responsibleProcessId {
                         legend.addItem(NSMenuItem(title: "Disable in '\(name)' (\(pid)).", action: nil, keyEquivalent: ""))
 
                     } else {
@@ -1863,4 +1875,10 @@ extension AppDelegate : NSMenuDelegate {
             }
         }
     }
+}
+
+extension NSApplication {
+  var appDelegate: AppDelegate {
+    return NSApp.delegate as! AppDelegate
+  }
 }
