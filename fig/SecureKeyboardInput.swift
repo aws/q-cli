@@ -66,10 +66,18 @@ class SecureKeyboardInput {
     button.highlight(true)
     alert.addButton(withTitle: "Not now")
     
+    let payload = [ "responsibleApp" : SecureKeyboardInput.responsibleApplication?.bundleIdentifier ?? "unknown"]
+    DispatchQueue.global(qos: .background).async {
+      TelemetryProvider.track(event: .showSecureInputEnabledAlert, with: payload)
+    }
+    
     let openSupport = alert.runModal() == .alertFirstButtonReturn
     
     if (openSupport) {
       NSWorkspace.shared.open(supportURL)
+      DispatchQueue.global(qos: .background).async {
+        TelemetryProvider.track(event: .openSecureInputSupportPage, with: payload)
+      }
     }
   }
 }

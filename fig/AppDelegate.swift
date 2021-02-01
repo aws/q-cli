@@ -1750,7 +1750,9 @@ extension AppDelegate : NSMenuDelegate {
     
     func menuWillOpen(_ menu: NSMenu) {
         print("menuWillOpen")
-        
+        DispatchQueue.global(qos: .background).async {
+          TelemetryProvider.track(event: .openedFigMenuIcon, with: [:])
+        }
         guard Defaults.loggedIn, Accessibility.enabled else {
             return
         }
