@@ -146,6 +146,8 @@
 		75AA24D325A79F3400A51E9D /* contribute.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75AA24CF25A79ACC00A51E9D /* contribute.sh */; };
 		75AA24DA25A7E8B000A51E9D /* lsof.m in Sources */ = {isa = PBXBuildFile; fileRef = 75AA24D925A7E8B000A51E9D /* lsof.m */; };
 		75AEF2E425C3C34A00D78431 /* Diagnostic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75AEF2E325C3C34A00D78431 /* Diagnostic.swift */; };
+		75AEF2EA25C4C34D00D78431 /* SecureKeyboardInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75AEF2E925C4C34D00D78431 /* SecureKeyboardInput.swift */; };
+		75AEF2EE25C5062E00D78431 /* WindowObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75AEF2ED25C5062E00D78431 /* WindowObserver.swift */; };
 		75B0A07C25BA64CC00FCD89A /* AutocompleteContextNotifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B0A07B25BA64CC00FCD89A /* AutocompleteContextNotifier.swift */; };
 		75B0A07E25BB746600FCD89A /* debugger.html in Resources */ = {isa = PBXBuildFile; fileRef = 75B0A07D25BB746600FCD89A /* debugger.html */; };
 		75B0A08025BB74C700FCD89A /* fig-context-indicator.png in Resources */ = {isa = PBXBuildFile; fileRef = 75B0A07F25BB74C700FCD89A /* fig-context-indicator.png */; };
@@ -385,6 +387,8 @@
 		75AC552B2522C7710069635E /* upgrade */ = {isa = PBXFileReference; lastKnownFileType = folder; name = upgrade; path = ../upgrade; sourceTree = "<group>"; };
 		75AC55322522C8EB0069635E /* 1.0.20.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = 1.0.20.sh; sourceTree = "<group>"; };
 		75AEF2E325C3C34A00D78431 /* Diagnostic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Diagnostic.swift; sourceTree = "<group>"; };
+		75AEF2E925C4C34D00D78431 /* SecureKeyboardInput.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureKeyboardInput.swift; sourceTree = "<group>"; };
+		75AEF2ED25C5062E00D78431 /* WindowObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowObserver.swift; sourceTree = "<group>"; };
 		75B0A07B25BA64CC00FCD89A /* AutocompleteContextNotifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutocompleteContextNotifier.swift; sourceTree = "<group>"; };
 		75B0A07D25BB746600FCD89A /* debugger.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = debugger.html; sourceTree = "<group>"; };
 		75B0A07F25BB74C700FCD89A /* fig-context-indicator.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "fig-context-indicator.png"; sourceTree = "<group>"; };
@@ -617,6 +621,7 @@
 				752C0BD72479EEDA0077E415 /* File.swift */,
 				75A4521325AD367E00107D2C /* Feedback.swift */,
 				75AEF2E325C3C34A00D78431 /* Diagnostic.swift */,
+				75AEF2E925C4C34D00D78431 /* SecureKeyboardInput.swift */,
 				752D71CE25B8CA4000263527 /* iTermTabIntegration.swift */,
 				75B1992A25019FDE00F38EA8 /* Companion Window */,
 				75B1992B25019FFE00F38EA8 /* Window Management */,
@@ -751,6 +756,7 @@
 				757CA8E024903D3A002A64A8 /* HotKeyManager.swift */,
 				7510F8BE24A99A4B00E86F7C /* WindowService.swift */,
 				75E993F42517E226000BE6BE /* AXWindowServer.swift */,
+				75AEF2ED25C5062E00D78431 /* WindowObserver.swift */,
 				7510F8C024A9B32D00E86F7C /* WindowManager.swift */,
 				7510F8B924A9701000E86F7C /* Private.h */,
 				7510F8BB24A9861E00E86F7C /* PrivateWindow.h */,
@@ -1150,6 +1156,7 @@
 				752D71CF25B8CA4000263527 /* iTermTabIntegration.swift in Sources */,
 				751F7589246D090100E083C8 /* WebBridge.swift in Sources */,
 				7510F8A624A6910500E86F7C /* iOSAccessoryView.swift in Sources */,
+				75AEF2EE25C5062E00D78431 /* WindowObserver.swift in Sources */,
 				75675955244634AD006AA988 /* AppDelegate.swift in Sources */,
 				75AEF2E425C3C34A00D78431 /* Diagnostic.swift in Sources */,
 				7510F89924A6910500E86F7C /* TerminalViewDelegate.swift in Sources */,
@@ -1175,6 +1182,7 @@
 				751C3BEC24B6910800B5C7FD /* Remote.swift in Sources */,
 				7510F8A924A6910500E86F7C /* MacLocalTerminalView.swift in Sources */,
 				7510F89824A6910500E86F7C /* AppleTerminalView.swift in Sources */,
+				75AEF2EA25C4C34D00D78431 /* SecureKeyboardInput.swift in Sources */,
 				757CA8E124903D3B002A64A8 /* HotKeyManager.swift in Sources */,
 				75B199342504190900F38EA8 /* Keycode.swift in Sources */,
 				752C0BD82479EEDB0077E415 /* File.swift in Sources */,

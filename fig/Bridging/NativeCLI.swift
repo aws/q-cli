@@ -323,16 +323,17 @@ extension NativeCLI {
         
         ---------------------------------------
         DEFAULTS:
-        Version:\(version)
-        SSH Integration:\(Defaults.SSHIntegrationEnabled)
-        iTerm Tab Integration:\(iTermTabIntegration.isInstalled())
-        Only insert on tab:\(Defaults.onlyInsertOnTab)
-        Autocomplete:\(Defaults.useAutocomplete)
-        Usershell:\(Defaults.userShell)
-        Bundle:\(pathToBundle)
+        Version: \(version)
+        SSH Integration: \(Defaults.SSHIntegrationEnabled)
+        iTerm Tab Integration: \(iTermTabIntegration.isInstalled())
+        Only insert on tab: \(Defaults.onlyInsertOnTab)
+        Autocomplete: \(Defaults.useAutocomplete)
+        Usershell: \(Defaults.userShell)
+        Bundle: \(Diagnostic.pathToBundle)
         ---------------------------------------
         ENVIRONMENT:
-        CLI installed:\(Diagnostic.installedCLI)
+        CLI installed: \(Diagnostic.installedCLI)
+        CLI Path: \(Diagnostic.installedCLI)
         Number of specs: \(Diagnostic.numberOfCompletionSpecs)
         Accessibility: \(Accessibility.enabled)
         SecureKeyboardInput: \(Diagnostic.secureKeyboardInput)

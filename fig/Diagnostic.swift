@@ -17,20 +17,18 @@ class Diagnostic {
   
   static var secureKeyboardInput: Bool {
     get {
-      return CGSIsSecureEventInputSet()
+      return SecureKeyboardInput.enabled
     }
   }
   
   static var blockingProcess: String? {
     get {
-      guard Diagnostic.secureKeyboardInput else { return nil }
-      
-      var pid: pid_t = 0;
-      secure_keyboard_entry_process_info(&pid)
-      if let app = NSRunningApplication(processIdentifier: pid) {
+      guard SecureKeyboardInput.enabled else { return nil }
+
+      if let app = SecureKeyboardInput.responsibleApplication {
         return "\(app.localizedName ?? "") - \(app.bundleIdentifier ?? "")"
       } else {
-        return "no app for pid"
+        return "no app for pid '\(SecureKeyboardInput.responsibleProcessId ?? -1)'"
       }
     }
   }
@@ -45,6 +43,14 @@ class Diagnostic {
     get {
       return FileManager.default.fileExists(atPath: "\(NSHomeDirectory())/.fig/bin/fig")
     }
+  }
+  
+  static var pathOfCLI: String? {
+    return try? FileManager.default.destinationOfSymbolicLink(atPath: "\(NSHomeDirectory())/.fig/bin/fig")
+  }
+  
+  static var pathToBundle: String {
+      return Bundle.main.bundlePath
   }
   
   static var numberOfCompletionSpecs: Int {
@@ -151,6 +157,7 @@ class Diagnostic {
       Usershell: \(Defaults.userShell)
       Autocomplete: \(Defaults.useAutocomplete)
       CLI installed: \(Diagnostic.installedCLI)
+      CLI tool path: \(Diagnostic.pathOfCLI)
       Accessibility: \(Accessibility.enabled)
       Number of specs: \(Diagnostic.numberOfCompletionSpecs)
       SSH Integration: \(Defaults.SSHIntegrationEnabled)

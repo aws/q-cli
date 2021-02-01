@@ -748,7 +748,9 @@ extension WebBridge {
                     scope.webView?.window?.close()
                     Defaults.loggedIn = true
 
-                    Onboarding.setupTerminalsForShellOnboarding()
+                    Onboarding.setupTerminalsForShellOnboarding {
+                      SecureKeyboardInput.notifyIfEnabled()
+                    }
                 
                     if let delegate = NSApplication.shared.delegate as? AppDelegate {
                         delegate.setupCompanionWindow()
