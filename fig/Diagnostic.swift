@@ -121,6 +121,18 @@ class Diagnostic {
     }
   }
   
+  static var descriptionOfTopmostWindow: String {
+    get {
+      guard let app = NSWorkspace.shared.frontmostApplication, Integrations.nativeTerminals.contains(app.bundleIdentifier ?? ""),
+            let window = AXWindowServer.shared.whitelistedWindow
+      else {
+        return "???"
+      }
+
+      return "\(window.hash) (\(window.bundleId ?? "???"))"
+    }
+  }
+  
   static var keybufferHasContextForTopmostWindow: Bool {
     get {
       guard let app = NSWorkspace.shared.frontmostApplication, Integrations.nativeTerminals.contains(app.bundleIdentifier ?? ""),
@@ -165,7 +177,7 @@ class Diagnostic {
       
       \(Diagnostic.distribution)
       UserShell: \(Defaults.userShell)
-      Bundle Path: \(Diagnostic.pathToBundle)
+      Bundle path: \(Diagnostic.pathToBundle)
       Autocomplete: \(Defaults.useAutocomplete)
       CLI installed: \(Diagnostic.installedCLI)
       CLI tool path: \(Diagnostic.pathOfCLI ?? "<none>")
@@ -176,9 +188,9 @@ class Diagnostic {
       SecureKeyboardInput: \(Diagnostic.secureKeyboardInput)
       SecureKeyboardProcess: \(Diagnostic.blockingProcess ?? "<none>")
       iTerm Tab Integration: \(iTermTabIntegration.isInstalled())
-      Current active process: \(processForTopmostWindow)
-      Current working directory: \(workingDirectoryForTopmostWindow)
-      Current window identifier: \(AXWindowServer.shared.whitelistedWindow?.hash ?? "<none>")
+      Current active process: \(Diagnostic.processForTopmostWindow)
+      Current working directory: \(Diagnostic.workingDirectoryForTopmostWindow)
+      Current window identifier: \(Diagnostic.descriptionOfTopmostWindow)
 
       """
     }
