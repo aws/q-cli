@@ -322,22 +322,11 @@ extension NativeCLI {
         
         
         ---------------------------------------
-        DEFAULTS:
-        Version: \(version)
-        SSH Integration: \(Defaults.SSHIntegrationEnabled)
-        iTerm Tab Integration: \(iTermTabIntegration.isInstalled())
-        Only insert on tab: \(Defaults.onlyInsertOnTab)
-        Autocomplete: \(Defaults.useAutocomplete)
-        Usershell: \(Defaults.userShell)
-        Bundle: \(Diagnostic.pathToBundle)
+        DIAGNOSTIC
+        \(Diagnostic.summary)
         ---------------------------------------
-        ENVIRONMENT:
-        CLI installed: \(Diagnostic.installedCLI)
-        CLI Path: \(Diagnostic.installedCLI)
-        Number of specs: \(Diagnostic.numberOfCompletionSpecs)
-        Accessibility: \(Accessibility.enabled)
-        SecureKeyboardInput: \(Diagnostic.secureKeyboardInput)
-        SecureKeyboardProcess: \(Diagnostic.blockingProcess ?? "<none>")
+        ENVIRONMENT
+        Terminal: \(message.terminal ?? "<unknown>")
         PATH: \(path ?? "Not found")
         FIG_ENV_VAR: \(figIntegratedWithShell ?? "Not found")
         --------------------------------------

@@ -41,14 +41,24 @@ class Diagnostic {
   
   static var installedCLI: Bool {
     get {
-      return FileManager.default.fileExists(atPath: "\(NSHomeDirectory())/.fig/bin/fig")
+      guard let path = Diagnostic.pathOfCLI, let symlink = try? FileManager.default.destinationOfSymbolicLink(atPath: path) else { return false }
+      
+      return FileManager.default.fileExists(atPath: path) && FileManager.default.fileExists(atPath: symlink)
     }
   }
   
   static var pathOfCLI: String? {
-    return try? FileManager.default.destinationOfSymbolicLink(atPath: "\(NSHomeDirectory())/.fig/bin/fig")
+    var location: String? = nil
+    
+    if (FileManager.default.fileExists(atPath: "\(NSHomeDirectory())/.fig/bin/fig")) {
+      location = "\(NSHomeDirectory())/.fig/bin/fig"
+    } else if (FileManager.default.fileExists(atPath: "/usr/local/bin/fig")) {
+      location = "/usr/local/bin/fig"
+    }
+    
+    return location
   }
-  
+    
   static var pathToBundle: String {
       return Bundle.main.bundlePath
   }
@@ -154,10 +164,11 @@ class Diagnostic {
       """
       
       \(Diagnostic.distribution)
-      Usershell: \(Defaults.userShell)
+      UserShell: \(Defaults.userShell)
+      Bundle Path: \(Diagnostic.pathToBundle)
       Autocomplete: \(Defaults.useAutocomplete)
       CLI installed: \(Diagnostic.installedCLI)
-      CLI tool path: \(Diagnostic.pathOfCLI)
+      CLI tool path: \(Diagnostic.pathOfCLI ?? "<none>")
       Accessibility: \(Accessibility.enabled)
       Number of specs: \(Diagnostic.numberOfCompletionSpecs)
       SSH Integration: \(Defaults.SSHIntegrationEnabled)
@@ -167,7 +178,8 @@ class Diagnostic {
       iTerm Tab Integration: \(iTermTabIntegration.isInstalled())
       Current active process: \(processForTopmostWindow)
       Current working directory: \(workingDirectoryForTopmostWindow)
-      
+      Current window identifier: \(AXWindowServer.shared.whitelistedWindow?.hash ?? "<none>")
+
       """
     }
   }
