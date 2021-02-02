@@ -137,6 +137,10 @@
 		75A4521025A83E5600107D2C /* remote_cwd.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75A4520F25A839F500107D2C /* remote_cwd.sh */; };
 		75A4521425AD367E00107D2C /* Feedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A4521325AD367E00107D2C /* Feedback.swift */; };
 		75A4521A25AE2E6B00107D2C /* CommandIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A4521925AE2E6A00107D2C /* CommandIntegration.swift */; };
+		75A4A29825C8D855002EFD6B /* node@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 75A4A29525C8D855002EFD6B /* node@2x.png */; };
+		75A4A29925C8D855002EFD6B /* git@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 75A4A29625C8D855002EFD6B /* git@2x.png */; };
+		75A4A29A25C8D855002EFD6B /* commit@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 75A4A29725C8D855002EFD6B /* commit@2x.png */; };
+		75A4A29E25C91471002EFD6B /* debugger-2-trimmed.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 75A4A29D25C91471002EFD6B /* debugger-2-trimmed.mp4 */; };
 		75AA24C125A656FA00A51E9D /* NativeCLI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75AA24C025A656FA00A51E9D /* NativeCLI.swift */; };
 		75AA24CA25A6F39800A51E9D /* list.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75AA24C325A6EA5000A51E9D /* list.sh */; };
 		75AA24CB25A6F39800A51E9D /* help.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75AA24C425A6EA5900A51E9D /* help.sh */; };
@@ -145,6 +149,9 @@
 		75AA24D225A79F3400A51E9D /* issue.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75AA24D025A79B4A00A51E9D /* issue.sh */; };
 		75AA24D325A79F3400A51E9D /* contribute.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75AA24CF25A79ACC00A51E9D /* contribute.sh */; };
 		75AA24DA25A7E8B000A51E9D /* lsof.m in Sources */ = {isa = PBXBuildFile; fileRef = 75AA24D925A7E8B000A51E9D /* lsof.m */; };
+		75AEF2E425C3C34A00D78431 /* Diagnostic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75AEF2E325C3C34A00D78431 /* Diagnostic.swift */; };
+		75AEF2EA25C4C34D00D78431 /* SecureKeyboardInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75AEF2E925C4C34D00D78431 /* SecureKeyboardInput.swift */; };
+		75AEF2EE25C5062E00D78431 /* WindowObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75AEF2ED25C5062E00D78431 /* WindowObserver.swift */; };
 		75B0A07C25BA64CC00FCD89A /* AutocompleteContextNotifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B0A07B25BA64CC00FCD89A /* AutocompleteContextNotifier.swift */; };
 		75B0A07E25BB746600FCD89A /* debugger.html in Resources */ = {isa = PBXBuildFile; fileRef = 75B0A07D25BB746600FCD89A /* debugger.html */; };
 		75B0A08025BB74C700FCD89A /* fig-context-indicator.png in Resources */ = {isa = PBXBuildFile; fileRef = 75B0A07F25BB74C700FCD89A /* fig-context-indicator.png */; };
@@ -372,6 +379,10 @@
 		75A4520F25A839F500107D2C /* remote_cwd.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = remote_cwd.sh; sourceTree = "<group>"; };
 		75A4521325AD367E00107D2C /* Feedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Feedback.swift; sourceTree = "<group>"; };
 		75A4521925AE2E6A00107D2C /* CommandIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandIntegration.swift; sourceTree = "<group>"; };
+		75A4A29525C8D855002EFD6B /* node@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "node@2x.png"; sourceTree = "<group>"; };
+		75A4A29625C8D855002EFD6B /* git@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "git@2x.png"; sourceTree = "<group>"; };
+		75A4A29725C8D855002EFD6B /* commit@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "commit@2x.png"; sourceTree = "<group>"; };
+		75A4A29D25C91471002EFD6B /* debugger-2-trimmed.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "debugger-2-trimmed.mp4"; sourceTree = "<group>"; };
 		75AA24C025A656FA00A51E9D /* NativeCLI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeCLI.swift; sourceTree = "<group>"; };
 		75AA24C325A6EA5000A51E9D /* list.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = list.sh; sourceTree = "<group>"; };
 		75AA24C425A6EA5900A51E9D /* help.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = help.sh; sourceTree = "<group>"; };
@@ -383,6 +394,9 @@
 		75AA24D925A7E8B000A51E9D /* lsof.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = lsof.m; sourceTree = "<group>"; };
 		75AC552B2522C7710069635E /* upgrade */ = {isa = PBXFileReference; lastKnownFileType = folder; name = upgrade; path = ../upgrade; sourceTree = "<group>"; };
 		75AC55322522C8EB0069635E /* 1.0.20.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = 1.0.20.sh; sourceTree = "<group>"; };
+		75AEF2E325C3C34A00D78431 /* Diagnostic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Diagnostic.swift; sourceTree = "<group>"; };
+		75AEF2E925C4C34D00D78431 /* SecureKeyboardInput.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureKeyboardInput.swift; sourceTree = "<group>"; };
+		75AEF2ED25C5062E00D78431 /* WindowObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowObserver.swift; sourceTree = "<group>"; };
 		75B0A07B25BA64CC00FCD89A /* AutocompleteContextNotifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutocompleteContextNotifier.swift; sourceTree = "<group>"; };
 		75B0A07D25BB746600FCD89A /* debugger.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = debugger.html; sourceTree = "<group>"; };
 		75B0A07F25BB74C700FCD89A /* fig-context-indicator.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "fig-context-indicator.png"; sourceTree = "<group>"; };
@@ -535,6 +549,9 @@
 		7518608F255CE49B0000A7C7 /* Icons */ = {
 			isa = PBXGroup;
 			children = (
+				75A4A29725C8D855002EFD6B /* commit@2x.png */,
+				75A4A29625C8D855002EFD6B /* git@2x.png */,
+				75A4A29525C8D855002EFD6B /* node@2x.png */,
 				759F987D25BFF0FD00EC3407 /* box@2x.png */,
 				759F988825BFF8B000EC3407 /* docker@2x.png */,
 				759F988D25BFFAE500EC3407 /* heroku@2x.png */,
@@ -614,6 +631,8 @@
 				75C0EBD2253E336E001964DE /* TerminalUsageTelemetry.swift */,
 				752C0BD72479EEDA0077E415 /* File.swift */,
 				75A4521325AD367E00107D2C /* Feedback.swift */,
+				75AEF2E325C3C34A00D78431 /* Diagnostic.swift */,
+				75AEF2E925C4C34D00D78431 /* SecureKeyboardInput.swift */,
 				752D71CE25B8CA4000263527 /* iTermTabIntegration.swift */,
 				75B1992A25019FDE00F38EA8 /* Companion Window */,
 				75B1992B25019FFE00F38EA8 /* Window Management */,
@@ -685,6 +704,7 @@
 				75B0A07F25BB74C700FCD89A /* fig-context-indicator.png */,
 				75B0A08325BB759E00FCD89A /* trimmed-debugger.mp4 */,
 				75B0A08525BB94DE00FCD89A /* debugger-only.mp4 */,
+				75A4A29D25C91471002EFD6B /* debugger-2-trimmed.mp4 */,
 				757CA89A248C18F0002A64A8 /* done.html */,
 				757CA88E248B0D31002A64A8 /* cli.png */,
 				757CA88C248B091D002A64A8 /* permissions.mp4 */,
@@ -748,6 +768,7 @@
 				757CA8E024903D3A002A64A8 /* HotKeyManager.swift */,
 				7510F8BE24A99A4B00E86F7C /* WindowService.swift */,
 				75E993F42517E226000BE6BE /* AXWindowServer.swift */,
+				75AEF2ED25C5062E00D78431 /* WindowObserver.swift */,
 				7510F8C024A9B32D00E86F7C /* WindowManager.swift */,
 				7510F8B924A9701000E86F7C /* Private.h */,
 				7510F8BB24A9861E00E86F7C /* PrivateWindow.h */,
@@ -990,6 +1011,7 @@
 				75AA24CD25A6F98400A51E9D /* uninstall_spec.sh in Resources */,
 				759F988225BFF0FF00EC3407 /* commandkey@2x.png in Resources */,
 				75AA24CA25A6F39800A51E9D /* list.sh in Resources */,
+				75A4A29825C8D855002EFD6B /* node@2x.png in Resources */,
 				75AA24CB25A6F39800A51E9D /* help.sh in Resources */,
 				75186083255CB0C20000A7C7 /* iterm-integration.sh in Resources */,
 				759F988325BFF0FF00EC3407 /* database@2x.png in Resources */,
@@ -1012,11 +1034,13 @@
 				759F988B25BFF8B000EC3407 /* twitter@2x.png in Resources */,
 				75186073255B2A0A0000A7C7 /* string@2x.png in Resources */,
 				757CA88624876043002A64A8 /* error.html in Resources */,
+				75A4A29E25C91471002EFD6B /* debugger-2-trimmed.mp4 in Resources */,
 				757CA88F248B0D31002A64A8 /* cli.png in Resources */,
 				752C0BE4247B44C60077E415 /* finder.html in Resources */,
 				75B0A08C25BBC7A300FCD89A /* autoc.mp4 in Resources */,
 				759F988425BFF0FF00EC3407 /* package@2x.png in Resources */,
 				752C0BDA2479F37B0077E415 /* fig.js in Resources */,
+				75A4A29925C8D855002EFD6B /* git@2x.png in Resources */,
 				757CA88D248B091D002A64A8 /* permissions.mp4 in Resources */,
 				757CA897248C108E002A64A8 /* css in Resources */,
 				75C0711D244AC3B2002DF69F /* index.html in Resources */,
@@ -1031,6 +1055,7 @@
 				757CA893248B28E3002A64A8 /* landing.html in Resources */,
 				75B0A08625BB94DF00FCD89A /* debugger-only.mp4 in Resources */,
 				755D0DE4247F038B0074AB5C /* logs.html in Resources */,
+				75A4A29A25C8D855002EFD6B /* commit@2x.png in Resources */,
 				7510F8AB24A6910500E86F7C /* README.md in Resources */,
 				752D71C525AE9B7200263527 /* ssh.html in Resources */,
 				757CA89D248C1F50002A64A8 /* demo4onboarding.mp4 in Resources */,
@@ -1147,7 +1172,9 @@
 				752D71CF25B8CA4000263527 /* iTermTabIntegration.swift in Sources */,
 				751F7589246D090100E083C8 /* WebBridge.swift in Sources */,
 				7510F8A624A6910500E86F7C /* iOSAccessoryView.swift in Sources */,
+				75AEF2EE25C5062E00D78431 /* WindowObserver.swift in Sources */,
 				75675955244634AD006AA988 /* AppDelegate.swift in Sources */,
+				75AEF2E425C3C34A00D78431 /* Diagnostic.swift in Sources */,
 				7510F89924A6910500E86F7C /* TerminalViewDelegate.swift in Sources */,
 				759F987C25BF903900EC3407 /* Accessibility.swift in Sources */,
 				7510F8A424A6910500E86F7C /* iOSCaretView.swift in Sources */,
@@ -1171,6 +1198,7 @@
 				751C3BEC24B6910800B5C7FD /* Remote.swift in Sources */,
 				7510F8A924A6910500E86F7C /* MacLocalTerminalView.swift in Sources */,
 				7510F89824A6910500E86F7C /* AppleTerminalView.swift in Sources */,
+				75AEF2EA25C4C34D00D78431 /* SecureKeyboardInput.swift in Sources */,
 				757CA8E124903D3B002A64A8 /* HotKeyManager.swift in Sources */,
 				75B199342504190900F38EA8 /* Keycode.swift in Sources */,
 				752C0BD82479EEDB0077E415 /* File.swift in Sources */,
@@ -1397,7 +1425,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 92;
+				CURRENT_PROJECT_VERSION = 100;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				DEVELOPMENT_TEAM = D93PPD94WK;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1413,7 +1441,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MARKETING_VERSION = 1.0.33;
+				MARKETING_VERSION = 1.0.34;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mschrage.fig;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1433,7 +1461,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 92;
+				CURRENT_PROJECT_VERSION = 100;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				DEVELOPMENT_TEAM = D93PPD94WK;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1449,7 +1477,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MARKETING_VERSION = 1.0.33;
+				MARKETING_VERSION = 1.0.34;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mschrage.fig;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";

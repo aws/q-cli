@@ -37,6 +37,11 @@ class AutocompleteContextNotifier {
                                            object: nil)
     
     NotificationCenter.default.addObserver(self,
+                                           selector: #selector(windowDidChange),
+                                           name: AXWindowServer.windowDidChangeNotification,
+                                           object: nil)
+    
+    NotificationCenter.default.addObserver(self,
                                            selector: #selector(permissionDidUpdate(_ :)),
                                            name: Accessibility.permissionDidUpdate,
                                            object: nil)
@@ -64,6 +69,12 @@ class AutocompleteContextNotifier {
         message += " — "
       }
       return message
+    }
+  }
+  
+  @objc static func windowDidChange() {
+    if SecureKeyboardInput.enabled {
+      setContextIndicator(.noContext)
     }
   }
   
@@ -173,6 +184,10 @@ class AutocompleteContextNotifier {
     var indicator = indicatorUpdate
     if (!(window.tty?.isShell ?? false)) {
       indicator = .processIsNotShell
+    }
+    
+    if (SecureKeyboardInput.enabled) {
+      indicator = .noContext
     }
     
     let update = windowTitleStrippedOfFigContext(using: window)

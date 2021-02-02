@@ -303,7 +303,7 @@ extension WebViewController: WebBridgeEventListener {
     
     
     @objc func insertCommandInTerminal(_ notification: Notification) {
-        ShellBridge.injectStringIntoTerminal2(notification.object as! String, runImmediately: false, clearLine: false, completion: {
+        ShellBridge.injectStringIntoTerminal(notification.object as! String, runImmediately: false, clearLine: false, completion: {
             if let currentMouseLocation = self.mouseLocation {
                print("mouseLocation:", currentMouseLocation)
                print("mouseInWindow", self.view.bounds.contains(currentMouseLocation))
