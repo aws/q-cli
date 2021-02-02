@@ -137,6 +137,9 @@
 		75A4521025A83E5600107D2C /* remote_cwd.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75A4520F25A839F500107D2C /* remote_cwd.sh */; };
 		75A4521425AD367E00107D2C /* Feedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A4521325AD367E00107D2C /* Feedback.swift */; };
 		75A4521A25AE2E6B00107D2C /* CommandIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A4521925AE2E6A00107D2C /* CommandIntegration.swift */; };
+		75A4A29825C8D855002EFD6B /* node@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 75A4A29525C8D855002EFD6B /* node@2x.png */; };
+		75A4A29925C8D855002EFD6B /* git@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 75A4A29625C8D855002EFD6B /* git@2x.png */; };
+		75A4A29A25C8D855002EFD6B /* commit@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 75A4A29725C8D855002EFD6B /* commit@2x.png */; };
 		75AA24C125A656FA00A51E9D /* NativeCLI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75AA24C025A656FA00A51E9D /* NativeCLI.swift */; };
 		75AA24CA25A6F39800A51E9D /* list.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75AA24C325A6EA5000A51E9D /* list.sh */; };
 		75AA24CB25A6F39800A51E9D /* help.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75AA24C425A6EA5900A51E9D /* help.sh */; };
@@ -375,6 +378,9 @@
 		75A4520F25A839F500107D2C /* remote_cwd.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = remote_cwd.sh; sourceTree = "<group>"; };
 		75A4521325AD367E00107D2C /* Feedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Feedback.swift; sourceTree = "<group>"; };
 		75A4521925AE2E6A00107D2C /* CommandIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandIntegration.swift; sourceTree = "<group>"; };
+		75A4A29525C8D855002EFD6B /* node@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "node@2x.png"; sourceTree = "<group>"; };
+		75A4A29625C8D855002EFD6B /* git@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "git@2x.png"; sourceTree = "<group>"; };
+		75A4A29725C8D855002EFD6B /* commit@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "commit@2x.png"; sourceTree = "<group>"; };
 		75AA24C025A656FA00A51E9D /* NativeCLI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeCLI.swift; sourceTree = "<group>"; };
 		75AA24C325A6EA5000A51E9D /* list.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = list.sh; sourceTree = "<group>"; };
 		75AA24C425A6EA5900A51E9D /* help.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = help.sh; sourceTree = "<group>"; };
@@ -541,6 +547,9 @@
 		7518608F255CE49B0000A7C7 /* Icons */ = {
 			isa = PBXGroup;
 			children = (
+				75A4A29725C8D855002EFD6B /* commit@2x.png */,
+				75A4A29625C8D855002EFD6B /* git@2x.png */,
+				75A4A29525C8D855002EFD6B /* node@2x.png */,
 				759F987D25BFF0FD00EC3407 /* box@2x.png */,
 				759F988825BFF8B000EC3407 /* docker@2x.png */,
 				759F988D25BFFAE500EC3407 /* heroku@2x.png */,
@@ -999,6 +1008,7 @@
 				75AA24CD25A6F98400A51E9D /* uninstall_spec.sh in Resources */,
 				759F988225BFF0FF00EC3407 /* commandkey@2x.png in Resources */,
 				75AA24CA25A6F39800A51E9D /* list.sh in Resources */,
+				75A4A29825C8D855002EFD6B /* node@2x.png in Resources */,
 				75AA24CB25A6F39800A51E9D /* help.sh in Resources */,
 				75186083255CB0C20000A7C7 /* iterm-integration.sh in Resources */,
 				759F988325BFF0FF00EC3407 /* database@2x.png in Resources */,
@@ -1026,6 +1036,7 @@
 				75B0A08C25BBC7A300FCD89A /* autoc.mp4 in Resources */,
 				759F988425BFF0FF00EC3407 /* package@2x.png in Resources */,
 				752C0BDA2479F37B0077E415 /* fig.js in Resources */,
+				75A4A29925C8D855002EFD6B /* git@2x.png in Resources */,
 				757CA88D248B091D002A64A8 /* permissions.mp4 in Resources */,
 				757CA897248C108E002A64A8 /* css in Resources */,
 				75C0711D244AC3B2002DF69F /* index.html in Resources */,
@@ -1040,6 +1051,7 @@
 				757CA893248B28E3002A64A8 /* landing.html in Resources */,
 				75B0A08625BB94DF00FCD89A /* debugger-only.mp4 in Resources */,
 				755D0DE4247F038B0074AB5C /* logs.html in Resources */,
+				75A4A29A25C8D855002EFD6B /* commit@2x.png in Resources */,
 				7510F8AB24A6910500E86F7C /* README.md in Resources */,
 				752D71C525AE9B7200263527 /* ssh.html in Resources */,
 				757CA89D248C1F50002A64A8 /* demo4onboarding.mp4 in Resources */,
@@ -1425,7 +1437,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MARKETING_VERSION = 1.0.33;
+				MARKETING_VERSION = 1.0.34;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mschrage.fig;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1461,7 +1473,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MARKETING_VERSION = 1.0.33;
+				MARKETING_VERSION = 1.0.34;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mschrage.fig;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
