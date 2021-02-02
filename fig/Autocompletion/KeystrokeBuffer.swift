@@ -24,7 +24,10 @@ class KeystrokeBuffer : NSObject {
       }
     }
   }
-  
+  // updates are recieved directly from ZLE when this is true,
+  // so no need to process keypress events directly
+  var backedByZLE = false
+  var zleCursor: Int = 0
   static let contextRestoredInKeystrokeBufferNotification: NSNotification.Name = .init("contextRestoredInKeystrokeBufferNotification")
   static let lineResetInKeyStrokeBufferNotification: NSNotification.Name = .init("lineResetInKeyStrokeBufferNotification")
   static let contextLostInKeystrokeBufferNotification: NSNotification.Name = .init("contextLostInKeystrokeBufferNotification")
@@ -85,6 +88,7 @@ class KeystrokeBuffer : NSObject {
   }
   
   func handleKeystroke(event: NSEvent) -> (String, Int)? {
+    guard !backedByZLE else { return (buffer, zleCursor) }
     let cleanedFlags = event.modifierFlags.intersection([.command, .control, .option, .shift])
     let keystroke = Keystroke(modifierFlags: cleanedFlags, keyCode: event.keyCode)
     switch KeyBindingsManager.keyBindings[keystroke] {

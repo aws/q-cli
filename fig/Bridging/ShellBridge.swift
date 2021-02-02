@@ -392,6 +392,13 @@ struct ShellMessage: Codable {
         
         return (shellPid, String(ttyId), self.session)
     }
+  
+    func parseKeybuffer() -> (String, Int)? {
+        guard let buffer = self.options?[safe: 2] else { return nil }
+        guard let cursorStr = self.options?[safe: 1], let cursor = Int(cursorStr) else { return nil }
+        
+        return (buffer, cursor)
+    }
     
     func getWorkingDirectory() -> String? {
         return self.env?.jsonStringToDict()?["PWD"] as? String

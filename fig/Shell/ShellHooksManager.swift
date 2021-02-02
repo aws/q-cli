@@ -248,6 +248,23 @@ extension ShellHookManager {
         sshIntegration.newConnection(with: info, in: tty)
 
     }
+  
+    func updateKeybuffer(_ info: ShellMessage) {
+        guard let hash = attemptToFindToAssociatedWindow(for: info.session) else {
+              Logger.log(message: "Could not link to window on new shell session.", priority: .notify, subsystem: .tty)
+              return
+          }
+        
+      let keybuffer = KeypressProvider.shared.keyBuffer(for: hash)
+      if let (buffer, cursor) = info.parseKeybuffer() {
+          keybuffer.backByZLE = true
+          keybuffer.buffer = buffer
+          keybuffer.zleCursor = cursor
+          print("ZLE: \(buffer) \(cursor)")
+//          keybuffer.
+        }
+
+    }
     
 }
 
