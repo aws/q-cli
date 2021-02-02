@@ -140,6 +140,7 @@
 		75A4A29825C8D855002EFD6B /* node@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 75A4A29525C8D855002EFD6B /* node@2x.png */; };
 		75A4A29925C8D855002EFD6B /* git@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 75A4A29625C8D855002EFD6B /* git@2x.png */; };
 		75A4A29A25C8D855002EFD6B /* commit@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 75A4A29725C8D855002EFD6B /* commit@2x.png */; };
+		75A4A29E25C91471002EFD6B /* debugger-2-trimmed.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 75A4A29D25C91471002EFD6B /* debugger-2-trimmed.mp4 */; };
 		75AA24C125A656FA00A51E9D /* NativeCLI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75AA24C025A656FA00A51E9D /* NativeCLI.swift */; };
 		75AA24CA25A6F39800A51E9D /* list.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75AA24C325A6EA5000A51E9D /* list.sh */; };
 		75AA24CB25A6F39800A51E9D /* help.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75AA24C425A6EA5900A51E9D /* help.sh */; };
@@ -381,6 +382,7 @@
 		75A4A29525C8D855002EFD6B /* node@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "node@2x.png"; sourceTree = "<group>"; };
 		75A4A29625C8D855002EFD6B /* git@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "git@2x.png"; sourceTree = "<group>"; };
 		75A4A29725C8D855002EFD6B /* commit@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "commit@2x.png"; sourceTree = "<group>"; };
+		75A4A29D25C91471002EFD6B /* debugger-2-trimmed.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "debugger-2-trimmed.mp4"; sourceTree = "<group>"; };
 		75AA24C025A656FA00A51E9D /* NativeCLI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeCLI.swift; sourceTree = "<group>"; };
 		75AA24C325A6EA5000A51E9D /* list.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = list.sh; sourceTree = "<group>"; };
 		75AA24C425A6EA5900A51E9D /* help.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = help.sh; sourceTree = "<group>"; };
@@ -702,6 +704,7 @@
 				75B0A07F25BB74C700FCD89A /* fig-context-indicator.png */,
 				75B0A08325BB759E00FCD89A /* trimmed-debugger.mp4 */,
 				75B0A08525BB94DE00FCD89A /* debugger-only.mp4 */,
+				75A4A29D25C91471002EFD6B /* debugger-2-trimmed.mp4 */,
 				757CA89A248C18F0002A64A8 /* done.html */,
 				757CA88E248B0D31002A64A8 /* cli.png */,
 				757CA88C248B091D002A64A8 /* permissions.mp4 */,
@@ -1031,6 +1034,7 @@
 				759F988B25BFF8B000EC3407 /* twitter@2x.png in Resources */,
 				75186073255B2A0A0000A7C7 /* string@2x.png in Resources */,
 				757CA88624876043002A64A8 /* error.html in Resources */,
+				75A4A29E25C91471002EFD6B /* debugger-2-trimmed.mp4 in Resources */,
 				757CA88F248B0D31002A64A8 /* cli.png in Resources */,
 				752C0BE4247B44C60077E415 /* finder.html in Resources */,
 				75B0A08C25BBC7A300FCD89A /* autoc.mp4 in Resources */,

@@ -74,6 +74,8 @@ beginningOfLine ⌘←
       // recreate defaults file
       do {
         print("xterm: keybindings file default not found recreating")
+        let fullURL = keymapFilePath
+        try? FileManager.default.createDirectory(at: fullURL.deletingLastPathComponent(), withIntermediateDirectories: true, attributes: [:])
         try Self.defaultBindings.write(to: Self.keymapFilePath, atomically: true, encoding: String.Encoding.utf8)
         return parseKeyBindings()
       } catch {

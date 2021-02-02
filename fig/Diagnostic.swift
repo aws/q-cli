@@ -39,6 +39,14 @@ class Diagnostic {
     }
   }
   
+  static var keybindingsPath: String? {
+    get {
+      let path = KeyBindingsManager.keymapFilePath.path
+      
+      return FileManager.default.fileExists(atPath: path) ? path : nil
+    }
+  }
+  
   static var installedCLI: Bool {
     get {
       guard let path = Diagnostic.pathOfCLI, let symlink = try? FileManager.default.destinationOfSymbolicLink(atPath: path) else { return false }
@@ -184,6 +192,7 @@ class Diagnostic {
       Accessibility: \(Accessibility.enabled)
       Number of specs: \(Diagnostic.numberOfCompletionSpecs)
       SSH Integration: \(Defaults.SSHIntegrationEnabled)
+      Keybindings path: \(Diagnostic.keybindingsPath ?? "<none>")
       Only insert on tab: \(Defaults.onlyInsertOnTab)
       SecureKeyboardInput: \(Diagnostic.secureKeyboardInput)
       SecureKeyboardProcess: \(Diagnostic.blockingProcess ?? "<none>")

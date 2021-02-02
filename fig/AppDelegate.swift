@@ -339,10 +339,11 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         autocomplete.indentationLevel = 1
         statusBarMenu.addItem(NSMenuItem.separator())
         
-        statusBarMenu.addItem(
-         withTitle: "📖 Fig Docs",
+        let manual = statusBarMenu.addItem(
+         withTitle: "User Manual",
          action: #selector(AppDelegate.viewDocs),
          keyEquivalent: "")
+        manual.image = NSImage(named: NSImage.Name("commandkey"))
         
         let slack = statusBarMenu.addItem(
          withTitle: "Join Fig Community",
@@ -1853,7 +1854,7 @@ extension AppDelegate : NSMenuDelegate {
                 }
                 
                 
-                let title = "\(app.localizedName ?? "Unknown") \(cmd)"
+                let title = "Debugger \(cmd)"//"\(app.localizedName ?? "Unknown") \(cmd)"
                 let icon = app.icon?.resized(to: NSSize(width: 16, height: 16))?.overlayBadge(color: color, text: "")
                 
                 let app = NSMenuItem(title: title, action: nil, keyEquivalent: "")
