@@ -140,6 +140,8 @@
 		75A4A29825C8D855002EFD6B /* node@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 75A4A29525C8D855002EFD6B /* node@2x.png */; };
 		75A4A29925C8D855002EFD6B /* git@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 75A4A29625C8D855002EFD6B /* git@2x.png */; };
 		75A4A29A25C8D855002EFD6B /* commit@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 75A4A29725C8D855002EFD6B /* commit@2x.png */; };
+		75A4A2A025CA0D46002EFD6B /* Autocomplete.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A4A29F25CA0D46002EFD6B /* Autocomplete.swift */; };
+		75A4A2A225CA2190002EFD6B /* ZLEIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A4A2A125CA218F002EFD6B /* ZLEIntegration.swift */; };
 		75AA24C125A656FA00A51E9D /* NativeCLI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75AA24C025A656FA00A51E9D /* NativeCLI.swift */; };
 		75AA24CA25A6F39800A51E9D /* list.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75AA24C325A6EA5000A51E9D /* list.sh */; };
 		75AA24CB25A6F39800A51E9D /* help.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75AA24C425A6EA5900A51E9D /* help.sh */; };
@@ -381,6 +383,8 @@
 		75A4A29525C8D855002EFD6B /* node@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "node@2x.png"; sourceTree = "<group>"; };
 		75A4A29625C8D855002EFD6B /* git@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "git@2x.png"; sourceTree = "<group>"; };
 		75A4A29725C8D855002EFD6B /* commit@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "commit@2x.png"; sourceTree = "<group>"; };
+		75A4A29F25CA0D46002EFD6B /* Autocomplete.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Autocomplete.swift; sourceTree = "<group>"; };
+		75A4A2A125CA218F002EFD6B /* ZLEIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZLEIntegration.swift; sourceTree = "<group>"; };
 		75AA24C025A656FA00A51E9D /* NativeCLI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeCLI.swift; sourceTree = "<group>"; };
 		75AA24C325A6EA5000A51E9D /* list.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = list.sh; sourceTree = "<group>"; };
 		75AA24C425A6EA5900A51E9D /* help.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = help.sh; sourceTree = "<group>"; };
@@ -848,6 +852,8 @@
 				75C05C6B24FDEA2B001F0A52 /* KeystrokeBuffer.swift */,
 				1A1F15FF25A7A93E0074D541 /* KeyBindingsManager.swift */,
 				75B1993725100E4D00F38EA8 /* KeypressService.swift */,
+				75A4A29F25CA0D46002EFD6B /* Autocomplete.swift */,
+				75A4A2A125CA218F002EFD6B /* ZLEIntegration.swift */,
 			);
 			path = Autocompletion;
 			sourceTree = "<group>";
@@ -1163,6 +1169,7 @@
 				755D0DE0247DDE050074AB5C /* FigCLI.swift in Sources */,
 				75809B0E24BFA64D00BFFB3E /* TelemetryService.swift in Sources */,
 				7510F8B224A6910500E86F7C /* CharData.swift in Sources */,
+				75A4A2A225CA2190002EFD6B /* ZLEIntegration.swift in Sources */,
 				75AA24DA25A7E8B000A51E9D /* lsof.m in Sources */,
 				75EB592B258D98A7002915E7 /* BiMap.swift in Sources */,
 				752D71CF25B8CA4000263527 /* iTermTabIntegration.swift in Sources */,
@@ -1171,6 +1178,7 @@
 				75AEF2EE25C5062E00D78431 /* WindowObserver.swift in Sources */,
 				75675955244634AD006AA988 /* AppDelegate.swift in Sources */,
 				75AEF2E425C3C34A00D78431 /* Diagnostic.swift in Sources */,
+				75A4A2A025CA0D46002EFD6B /* Autocomplete.swift in Sources */,
 				7510F89924A6910500E86F7C /* TerminalViewDelegate.swift in Sources */,
 				759F987C25BF903900EC3407 /* Accessibility.swift in Sources */,
 				7510F8A424A6910500E86F7C /* iOSCaretView.swift in Sources */,
