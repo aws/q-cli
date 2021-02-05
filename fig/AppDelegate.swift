@@ -167,6 +167,10 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         TerminalObserver?.windowDidAppear {
           SecureKeyboardInput.notifyIfEnabled()
         }
+      
+        if !VSCodeIntegration.isInstalled {
+            VSCodeIntegration.install(withRestart: false)
+        }
         
     }
   
@@ -398,6 +402,12 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         keyEquivalent: "")
         iTermIntegration.state = FileManager.default.fileExists(atPath: "\(NSHomeDirectory())/Library/Application Support/iTerm2/Scripts/AutoLaunch/fig-iterm-integration.py") ? .on : .off
         
+        let vscodeIntegration = debugMenu.addItem(
+        withTitle: "VSCode Integration",
+        action: #selector(AppDelegate.toggleVSCodeIntegration(_:)),
+        keyEquivalent: "")
+        vscodeIntegration.state = VSCodeIntegration.isInstalled ? .on : .off
+      
         let sshIntegration = debugMenu.addItem(
         withTitle: "SSH Integration",
         action: #selector(AppDelegate.toggleSSHIntegration(_:)),
@@ -1029,6 +1039,14 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         Defaults.SSHIntegrationEnabled = !Defaults.SSHIntegrationEnabled
         sender.state = Defaults.SSHIntegrationEnabled ? .on : .off
     }
+  
+    @objc func toggleVSCodeIntegration(_ sender: NSMenuItem) {
+        
+      VSCodeIntegration.promptToInstall {
+        sender.state = VSCodeIntegration.isInstalled ? .on : .off
+      }
+        
+    }
     
     @objc func toggleDebugAutocomplete(_ sender: NSMenuItem) {
         Defaults.debugAutocomplete = !Defaults.debugAutocomplete
@@ -1404,11 +1422,13 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         }
     }
     @objc func triggerScreenReader() {
-      if let app = AXWindowServer.shared.topApplication, let window = AXWindowServer.shared.topWindow {
-        print("Triggering ScreenreaderMode in \(app.bundleIdentifier ?? "<unknown>")")
-        Accessibility.triggerScreenReaderModeInChromiumApplication(app)
-        let cursor = Accessibility.findXTermCursorInElectronWindow(window)
-        print("Detect cursor:", cursor ?? .zero)
+      VSCodeIntegration.install {
+        self.dialogOKCancel(question: "VSCode Integration Installed!", text: "The Fig extension was successfully added to VSCode.", noAction: true)
+//      if let app = AXWindowServer.shared.topApplication, let window = AXWindowServer.shared.topWindow {
+//        print("Triggering ScreenreaderMode in \(app.bundleIdentifier ?? "<unknown>")")
+//        Accessibility.triggerScreenReaderModeInChromiumApplication(app)
+//        let cursor = Accessibility.findXTermCursorInElectronWindow(window)
+//        print("Detect cursor:", cursor ?? .zero)
       }
     }
     @objc func allWindows() {

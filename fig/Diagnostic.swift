@@ -196,7 +196,7 @@ class Diagnostic {
       Only insert on tab: \(Defaults.onlyInsertOnTab)
       SecureKeyboardInput: \(Diagnostic.secureKeyboardInput)
       SecureKeyboardProcess: \(Diagnostic.blockingProcess ?? "<none>")
-      iTerm Tab Integration: \(iTermTabIntegration.isInstalled())
+      iTerm Tab Integration: \(iTermTabIntegration.isInstalled)
       Current active process: \(Diagnostic.processForTopmostWindow)
       Current working directory: \(Diagnostic.workingDirectoryForTopmostWindow)
       Current window identifier: \(Diagnostic.descriptionOfTopmostWindow)
