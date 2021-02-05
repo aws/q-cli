@@ -67,6 +67,8 @@
 		751F7589246D090100E083C8 /* WebBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751F7588246D090100E083C8 /* WebBridge.swift */; };
 		751F7591246E16D800E083C8 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751F7590246E16D800E083C8 /* main.swift */; };
 		75288EF924CCE72F002DF12A /* OnboardingWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757CA887248AD067002A64A8 /* OnboardingWindow.swift */; };
+		752A398325CD024C00B1AC40 /* VSCodeIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 752A398225CD024C00B1AC40 /* VSCodeIntegration.swift */; };
+		752A398625CD0FE800B1AC40 /* fig-0.0.1.vsix in Resources */ = {isa = PBXBuildFile; fileRef = 752A398525CD0FE800B1AC40 /* fig-0.0.1.vsix */; };
 		752C0BD82479EEDB0077E415 /* File.swift in Sources */ = {isa = PBXBuildFile; fileRef = 752C0BD72479EEDA0077E415 /* File.swift */; };
 		752C0BDA2479F37B0077E415 /* fig.js in Resources */ = {isa = PBXBuildFile; fileRef = 752C0BD92479F37B0077E415 /* fig.js */; };
 		752C0BDC2479F68C0077E415 /* tutorial.css in Resources */ = {isa = PBXBuildFile; fileRef = 752C0BDB2479F68C0077E415 /* tutorial.css */; };
@@ -306,6 +308,8 @@
 		751F7588246D090100E083C8 /* WebBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebBridge.swift; sourceTree = "<group>"; };
 		751F758E246E16D800E083C8 /* figcli */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = figcli; sourceTree = BUILT_PRODUCTS_DIR; };
 		751F7590246E16D800E083C8 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		752A398225CD024C00B1AC40 /* VSCodeIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VSCodeIntegration.swift; sourceTree = "<group>"; };
+		752A398525CD0FE800B1AC40 /* fig-0.0.1.vsix */ = {isa = PBXFileReference; lastKnownFileType = file; path = "fig-0.0.1.vsix"; sourceTree = "<group>"; };
 		752C0BD72479EEDA0077E415 /* File.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = File.swift; sourceTree = "<group>"; };
 		752C0BD92479F37B0077E415 /* fig.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = fig.js; sourceTree = "<group>"; };
 		752C0BDB2479F68C0077E415 /* tutorial.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = tutorial.css; sourceTree = "<group>"; };
@@ -586,6 +590,30 @@
 			path = figcli;
 			sourceTree = "<group>";
 		};
+		752A398725CD0FFB00B1AC40 /* VSCode */ = {
+			isa = PBXGroup;
+			children = (
+				752A398525CD0FE800B1AC40 /* fig-0.0.1.vsix */,
+				752A398225CD024C00B1AC40 /* VSCodeIntegration.swift */,
+			);
+			path = VSCode;
+			sourceTree = "<group>";
+		};
+		752A398825CD11F000B1AC40 /* System */ = {
+			isa = PBXGroup;
+			children = (
+				7510F8BA24A9861E00E86F7C /* fig-Bridging-Header.h */,
+				75AA24D825A7E8B000A51E9D /* lsof.h */,
+				75AA24D925A7E8B000A51E9D /* lsof.m */,
+				7577124525648DCD0011FF48 /* ps.h */,
+				7577124625648DFB0011FF48 /* ps.c */,
+				75C57C122581C0700065741E /* ioreg.h */,
+				75C57C132581C0700065741E /* ioreg.c */,
+				75809B0F24C2C66100BFFB3E /* WebView+Private.h */,
+			);
+			name = System;
+			sourceTree = "<group>";
+		};
 		752D71C325AE986B00263527 /* New Group */ = {
 			isa = PBXGroup;
 			children = (
@@ -638,6 +666,7 @@
 				75AEF2E325C3C34A00D78431 /* Diagnostic.swift */,
 				75AEF2E925C4C34D00D78431 /* SecureKeyboardInput.swift */,
 				752D71CE25B8CA4000263527 /* iTermTabIntegration.swift */,
+				752A398725CD0FFB00B1AC40 /* VSCode */,
 				75B1992A25019FDE00F38EA8 /* Companion Window */,
 				75B1992B25019FFE00F38EA8 /* Window Management */,
 				75B1992E2501A12C00F38EA8 /* Shell */,
@@ -652,14 +681,7 @@
 				75675960244634B2006AA988 /* Info.plist */,
 				75675961244634B2006AA988 /* fig.entitlements */,
 				7567595A244634B2006AA988 /* Preview Content */,
-				7510F8BA24A9861E00E86F7C /* fig-Bridging-Header.h */,
-				75AA24D825A7E8B000A51E9D /* lsof.h */,
-				75AA24D925A7E8B000A51E9D /* lsof.m */,
-				7577124525648DCD0011FF48 /* ps.h */,
-				7577124625648DFB0011FF48 /* ps.c */,
-				75C57C122581C0700065741E /* ioreg.h */,
-				75C57C132581C0700065741E /* ioreg.c */,
-				75809B0F24C2C66100BFFB3E /* WebView+Private.h */,
+				752A398825CD11F000B1AC40 /* System */,
 				75AA24C225A6E50000A51E9D /* CLI Scripts */,
 			);
 			path = fig;
@@ -1067,6 +1089,7 @@
 				752D71C525AE9B7200263527 /* ssh.html in Resources */,
 				757CA89D248C1F50002A64A8 /* demo4onboarding.mp4 in Resources */,
 				7567595F244634B2006AA988 /* Main.storyboard in Resources */,
+				752A398625CD0FE800B1AC40 /* fig-0.0.1.vsix in Resources */,
 				75B0A07E25BB746600FCD89A /* debugger.html in Resources */,
 				75186070255B2A0A0000A7C7 /* astrix@2x.png in Resources */,
 				75B1993625042B2C00F38EA8 /* autocomplete.html in Resources */,
@@ -1154,6 +1177,7 @@
 				757CA8E624905B38002A64A8 /* SockerServer.swift in Sources */,
 				75B7931A24BB897F0073AAC6 /* PseudoTerminalService.swift in Sources */,
 				75CFDBDF24EDB2E900F00CAE /* Onboarding.swift in Sources */,
+				752A398325CD024C00B1AC40 /* VSCodeIntegration.swift in Sources */,
 				75C05C6C24FDEA2B001F0A52 /* KeystrokeBuffer.swift in Sources */,
 				7510F8AC24A6910500E86F7C /* MacTerminalView.swift in Sources */,
 				755D0DE2247EFAE10074AB5C /* Logging.swift in Sources */,

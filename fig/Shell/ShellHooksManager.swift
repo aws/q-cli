@@ -329,8 +329,10 @@ extension ShellHookManager {
 
         // tie tty & sessionId to windowHash
         //queue.async(flags: [.barrier]) {
+        // semaphore.wait()
             self.tty[hash] = device
             self.sessions[hash] = sessionId // sessions is bidirectional between sessionId and windowHash
+        // semaphore.signal()
         //}
         return device
     }
