@@ -227,6 +227,8 @@ class ShellBridgeSocketService: WebSocketService {
                                         ShellHookManager.shared.shellWillExecuteCommand(msg)
                                     case "bg:ssh":
                                         ShellHookManager.shared.startedNewSSHConnection(msg)
+                                    case "bg:vscode":
+                                        ShellHookManager.shared.currentTabDidChange(msg)
                                     case "bg:alert":
                                         if let title = msg.options?[safe: 1], let text = msg.options?[safe: 2]  {
                                             DispatchQueue.main.async {

@@ -479,10 +479,13 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
                 withTitle: "Get Selected Text",
                 action: #selector(AppDelegate.getSelectedText),
                 keyEquivalent: "")
-                debugMenu.addItem(
+               debugMenu.addItem(
                  withTitle: "Processes",
-                 action: #selector(AppDelegate.processes
-                    ),
+                 action: #selector(AppDelegate.processes),
+                 keyEquivalent: "")
+               debugMenu.addItem(
+                 withTitle: "Trigger ScreenReader mode in topmost app",
+                 action: #selector(AppDelegate.triggerScreenReader),
                  keyEquivalent: "")
            }
         
@@ -840,7 +843,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 //        ShellBridge.registerKeyInterceptor()
 //        return
             
-            (WindowManager.shared.sidebar?.webView?.loadBundleApp("autocomplete"))!
 
         NSEvent.addGlobalMonitorForEvents(matching: .keyUp) { (event) in
             print("keylogger:", event.characters, event.keyCode)
@@ -857,36 +859,62 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         if (error != .success){
             print("Couldn't get the focused element. Probably a webkit application")
         } else {
-            var selectedRangeValue : AnyObject?
-            let selectedRangeError = AXUIElementCopyAttributeValue(focusedElement as! AXUIElement, kAXSelectedTextRangeAttribute as CFString, &selectedRangeValue)
-                        
-            if (selectedRangeError == .success){
-                var selectedRange = CFRange()
-                AXValueGetValue(selectedRangeValue as! AXValue, .cfRange, &selectedRange)
-                var selectRect = CGRect()
-                var selectBounds : AnyObject?
-//                print("selected", selectedRange)
-//                print("selected", selectedRange.location, selectedRange.length)
-                var updatedRange = CFRangeMake(selectedRange.location, 1)
-                print("selected", selectedRange, updatedRange)
+//            AXUIElement
+          var names: CFArray?
+          let namesError = AXUIElementCopyAttributeNames(focusedElement as! AXUIElement, &names)
+          print(names)
 
-                withUnsafeMutablePointer(to: &updatedRange) { (ptr) in
-                    let updatedRangeValue = AXValueCreate(AXValueType(rawValue: kAXValueCFRangeType)!, ptr)
-                    let selectedBoundsError = AXUIElementCopyParameterizedAttributeValue(focusedElement as! AXUIElement, kAXBoundsForRangeParameterizedAttribute as CFString, updatedRangeValue!, &selectBounds)
-                    if (selectedBoundsError == .success){
-                        AXValueGetValue(selectBounds as! AXValue, .cgRect, &selectRect)
-                        //do whatever you want with your selectRect
-                        print("selected", selectRect)
-                        WindowManager.shared.sidebar?.setOverlayFrame(selectRect)
-
-                    }
-                }
-                
-                //kAXInsertionPointLineNumberAttribute
-                //kAXRangeForLineParameterizedAttribute
-
-
-            }
+          var parametrizedNames: CFArray?
+          let parametrizedNamesError = AXUIElementCopyParameterizedAttributeNames(focusedElement as! AXUIElement, &parametrizedNames)
+          print(parametrizedNames)
+          KeypressProvider.shared.getTextRect()
+//          var markerRange : AnyObject?
+//          let markerError = AXUIElementCopyAttributeValue(focusedElement as! AXUIElement, "AXSelectedTextMarkerRange" as CFString, &markerRange)
+////          var markerRangeValue : AnyObject?
+////          AXValueGetValue(markerRange as! AXValue, .cfRange, &markerRangeValue)
+////          print(markerRangeValue)
+//          guard markerRange != nil else {
+//            print("selectedRect: markerRange is nil")
+//            return
+//          }
+//          var selectBoundsForTextMarkerRange : AnyObject?
+//          let err = AXUIElementCopyParameterizedAttributeValue(focusedElement as! AXUIElement, "AXBoundsForTextMarkerRange" as CFString, markerRange!, &selectBoundsForTextMarkerRange)
+//          var selectRect = CGRect()
+//          AXValueGetValue(selectBoundsForTextMarkerRange as! AXValue, .cgRect, &selectRect)
+//          print("selectedRect: ", selectRect)
+          
+          //AXBoundsForTextMarkerRange
+          
+//            var selectedRangeValue : AnyObject?
+//            let selectedRangeError = AXUIElementCopyAttributeValue(focusedElement as! AXUIElement, kAXSelectedTextRangeAttribute as CFString, &selectedRangeValue)
+//
+//            if (selectedRangeError == .success){
+//                var selectedRange = CFRange()
+//                AXValueGetValue(selectedRangeValue as! AXValue, .cfRange, &selectedRange)
+//                var selectRect = CGRect()
+//                var selectBounds : AnyObject?
+////                print("selected", selectedRange)
+////                print("selected", selectedRange.location, selectedRange.length)
+//                var updatedRange = CFRangeMake(selectedRange.location, 1)
+//                print("selected", selectedRange, updatedRange)
+//
+//                withUnsafeMutablePointer(to: &updatedRange) { (ptr) in
+//                    let updatedRangeValue = AXValueCreate(AXValueType(rawValue: kAXValueCFRangeType)!, ptr)
+//                    let selectedBoundsError = AXUIElementCopyParameterizedAttributeValue(focusedElement as! AXUIElement, kAXBoundsForRangeParameterizedAttribute as CFString, updatedRangeValue!, &selectBounds)
+//                    if (selectedBoundsError == .success){
+//                        AXValueGetValue(selectBounds as! AXValue, .cgRect, &selectRect)
+//                        //do whatever you want with your selectRect
+//                        print("selected", selectRect)
+//                        WindowManager.shared.sidebar?.setOverlayFrame(selectRect)
+//
+//                    }
+//                }
+//
+//                //kAXInsertionPointLineNumberAttribute
+//                //kAXRangeForLineParameterizedAttribute
+//
+//
+//            }
         }
         }
     }
@@ -1375,6 +1403,14 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
            free(ptr)
         }
     }
+    @objc func triggerScreenReader() {
+      if let app = AXWindowServer.shared.topApplication, let window = AXWindowServer.shared.topWindow {
+        print("Triggering ScreenreaderMode in \(app.bundleIdentifier ?? "<unknown>")")
+        Accessibility.triggerScreenReaderModeInChromiumApplication(app)
+        let cursor = Accessibility.findXTermCursorInElectronWindow(window)
+        print("Detect cursor:", cursor ?? .zero)
+      }
+    }
     @objc func allWindows() {
         
         Timer.delayWithSeconds(3) {
@@ -1767,7 +1803,7 @@ extension AppDelegate : NSMenuDelegate {
         }
         
         if let app = NSWorkspace.shared.frontmostApplication, !app.isFig {
-            if Integrations.nativeTerminals.contains(app.bundleIdentifier ?? "") {
+            if Integrations.terminalsWhereAutocompleteShouldAppear.contains(app.bundleIdentifier ?? "") {
                 let window = AXWindowServer.shared.whitelistedWindow
                 let tty = window?.tty
                 var hasContext = false

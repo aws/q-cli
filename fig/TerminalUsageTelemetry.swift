@@ -21,7 +21,7 @@ class TerminalUsageObserver {
                 let now = Date(timeIntervalSinceNow: 0)
                 let delta = now.timeIntervalSince(self.start)
                 Logger.log(message: "Application changed from \(app?.bundleIdentifier ?? "<none>") after \(delta) seconds")
-                if Integrations.nativeTerminals.contains(app?.bundleIdentifier ?? "")  {
+                if Integrations.terminalsWhereAutocompleteShouldAppear.contains(app?.bundleIdentifier ?? "")  {
                     NotificationCenter.default.post(name: TerminalUsageObserver.terminalApplicationLostFocusNotification, object: delta)
                 }
                 self.start = now

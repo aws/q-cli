@@ -105,9 +105,10 @@ extension ShellHookManager {
         // Need time for whitelisted window to change
         Timer.delayWithSeconds(0.1) {
             if let window = AXWindowServer.shared.whitelistedWindow {
-                // So far, only iTerm has a tab integration.
-                guard window.bundleId == "com.googlecode.iterm2" else { return }
                 if let id = info.options?.last {
+                  let VSCodeTerminal = window.bundleId == "com.microsoft.VSCode" && id.hasPrefix("code:")
+                  let iTermTab = window.bundleId == "com.googlecode.iterm2" &&  !id.hasPrefix("code:")
+                  guard VSCodeTerminal || iTermTab else { return }
                     Logger.log(message: "tab: \(window.windowId)/\(id)")
 //                    self.tabs[window.windowId] = id
                     self.setActiveTab(id, for: window.windowId)
@@ -115,6 +116,12 @@ extension ShellHookManager {
                     self.updateHashMetadata(oldHash: "\(window.windowId)/", hash: window.hash)
                     
                     DispatchQueue.main.async {
+                      
+                        // If leaving visor mode in iTerm, we need to manually check which window is on top
+//                        if let app = NSWorkspace.shared.frontmostApplication {
+//                            AXWindowServer.shared.register(app, fromActivation: true)
+//                        }
+
                         WindowManager.shared.windowChanged()
                     }
                 }
@@ -202,9 +209,18 @@ extension ShellHookManager {
             Logger.log(message: "Could not parse out shellHook metadata", priority: .notify, subsystem: .tty)
             return
         }
+      
+        guard let bundleId = NSWorkspace.shared.frontmostApplication?.bundleIdentifier else {
+          Logger.log(message: "Could not parse out shellHook metadata", priority: .notify, subsystem: .tty)
+          return
+        }
         
+        var delay = 0.2
+        if (Integrations.electronTerminals.contains(bundleId)) {
+            delay = 0.5
+        }
         // We need to wait for window to appear if the terminal emulator is being launched for the first time. Can this be handled more robustly?
-        Timer.delayWithSeconds(0.2) {
+        Timer.delayWithSeconds(delay) {
             
             // ensuring window bundleId & frontmostApp bundleId match fixes case where a slow launching application (eg. Hyper) will init shell before window is visible/tracked
             guard let window = AXWindowServer.shared.whitelistedWindow, window.bundleId == NSWorkspace.shared.frontmostApplication?.bundleIdentifier
