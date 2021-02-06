@@ -1823,21 +1823,23 @@ extension AppDelegate : NSMenuDelegate {
         }
         
         if let app = NSWorkspace.shared.frontmostApplication, !app.isFig {
-            if Integrations.terminalsWhereAutocompleteShouldAppear.contains(app.bundleIdentifier ?? "") {
-                let window = AXWindowServer.shared.whitelistedWindow
+            let window = AXWindowServer.shared.whitelistedWindow
+            if Integrations.terminalsWhereAutocompleteShouldAppear.contains(window?.bundleId ?? "") {
                 let tty = window?.tty
                 var hasContext = false
                 var bufferDescription: String? = nil
+                var backedByZLE = false
                 if let window = window {
                     let keybuffer = KeypressProvider.shared.keyBuffer(for: window)
                     hasContext = keybuffer.buffer != nil
                     bufferDescription = keybuffer.representation
+                    backedByZLE = keybuffer.backedByZLE
                 }
 
                 let hasWindow = window != nil
                 let hasCommand = tty?.cmd != nil
                 let isShell = tty?.isShell ?? true
-                
+                let runUsingPrefix = tty?.runUsingPrefix ?? nil
                 let cmd = tty?.cmd != nil ? "(\(tty?.cmd ?? ""))" : "(???)"
                 
                 var color: NSColor = .clear
@@ -1906,12 +1908,28 @@ extension AppDelegate : NSMenuDelegate {
                     legend.addItem(NSMenuItem(title: "cwd: \(tty?.cwd ?? "???")", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem(title: "pid: \(tty?.pid ?? -1)", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem(title: "keybuffer: \(bufferDescription ?? "???")", action: nil, keyEquivalent: ""))
-                    
+                  
+                    if runUsingPrefix != nil {
+                      legend.addItem(NSMenuItem.separator())
+                      legend.addItem(NSMenuItem(title: "In SSH session or Docker container", action: nil, keyEquivalent: ""))
+                    }
+                  
+                    if backedByZLE {
+                      legend.addItem(NSMenuItem.separator())
+                      legend.addItem(NSMenuItem(title: "Backed by ZSH Line Editor", action: nil, keyEquivalent: ""))
+                    }
                 }
                 
                 
                 let title = "Debugger \(cmd)"//"\(app.localizedName ?? "Unknown") \(cmd)"
-                let icon = app.icon?.resized(to: NSSize(width: 16, height: 16))?.overlayBadge(color: color, text: "")
+                var image: NSImage?
+                if let pid = window?.app.processIdentifier, let windowApp = NSRunningApplication(processIdentifier: pid) {
+                  image = windowApp.icon
+                } else {
+                  image = app.icon
+                }
+
+                let icon = image?.resized(to: NSSize(width: 16, height: 16))?.overlayBadge(color: color, text: "")
                 
                 let app = NSMenuItem(title: title, action: nil, keyEquivalent: "")
                 app.image = icon
