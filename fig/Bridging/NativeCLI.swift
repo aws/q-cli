@@ -279,8 +279,7 @@ extension NativeCLI {
     }
   
     static func diagnosticCommand(_ scope: Scope) {
-        let (_
-      , connection) = scope
+        let (_, connection) = scope
         NativeCLI.printInTerminal(Diagnostic.summary, using: connection)
     }
     

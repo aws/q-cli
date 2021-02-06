@@ -348,6 +348,8 @@ class ShellBridge {
         case enter = 36
         case leftArrow = 123
         case rightArrow = 124
+        case downArrow = 125
+        case upArrow = 126
         case delete = 51
         case ctrlE = 14
         case ctrlU = 32
