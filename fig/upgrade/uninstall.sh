@@ -1,6 +1,9 @@
 echo "Deleting .fig folder & completion specs"
 rm -rf ~/.fig
 
+echo "Delete backup Fig CLI"
+rm /usr/local/bin/fig
+
 echo "Deleting WKWebViewCache"
 fig util:reset-cache
 

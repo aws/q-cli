@@ -708,6 +708,8 @@ extension Array {
 extension ShellBridge {
     static func symlinkCLI(completion: (()-> Void)? = nil){
         Onboarding.copyFigCLIExecutable(to:"~/.fig/bin/fig")
+        Onboarding.copyFigCLIExecutable(to:"/usr/local/bin/fig")
+
         completion?()
         return
         if let path = Bundle.main.path(forAuxiliaryExecutable: "figcli") {//Bundle.main.path(forResource: "fig", ofType: "", inDirectory: "dist") {
