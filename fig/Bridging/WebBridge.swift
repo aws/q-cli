@@ -922,21 +922,13 @@ extension WebBridge {
 
                     }
                 case "autocomplete-hide":
-                    guard let companion = scope.getCompanionWindow(), companion.isAutocompletePopup else { return }
-                    
-                    if let window = companion.tetheredWindow {
-                        let hash = window.hash
-                        KeypressProvider.shared.keyBuffer(for: hash).writeOnly = true
-                      
-                        KeypressProvider.shared.removeRedirect(for: Keycode.upArrow, in: window)
-                        KeypressProvider.shared.removeRedirect(for: Keycode.downArrow, in: window)
-                        KeypressProvider.shared.removeRedirect(for: Keycode.tab, in: window)
-                        KeypressProvider.shared.removeRedirect(for: Keycode.escape, in: window)
-                        KeypressProvider.shared.removeRedirect(for: Keycode.returnKey, in: window)
-                        KeypressProvider.shared.removeRedirect(for: Keystroke(modifierFlags: [.control], keyCode: Keycode.n), in: window)
-                        KeypressProvider.shared.removeRedirect(for: Keystroke(modifierFlags: [.control], keyCode: Keycode.p), in: window)
+                    guard let companion = scope.getCompanionWindow(), companion.isAutocompletePopup, let window = AXWindowServer.shared.whitelistedWindow  else { return }
+                    KeypressProvider.shared.keyBuffer(for: window.hash).writeOnly = true
+                    Autocomplete.position {
+                      // Cause up arrow to immediately start scrolling through history
+                      ShellBridge.simulate(keypress: .upArrow)
                     }
-
+                    
                 case "setAutocompleteHeight":
                     guard let heightString = data["height"] else { return }
                     let companion = scope.getCompanionWindow()
