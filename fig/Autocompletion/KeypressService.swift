@@ -36,7 +36,7 @@ class KeypressProvider : KeypressService {
   var redirects: [ExternalWindowHash:  Set<Keystroke>] = [:]
   var buffers: [ExternalWindowHash: KeystrokeBuffer] = [:]
   
-  static let whitelist = Integrations.nativeTerminals
+  static let whitelist = Integrations.terminalsWhereAutocompleteShouldAppear
   static let shared = KeypressProvider(windowServiceProvider: WindowServer.shared)
   
   init(windowServiceProvider: WindowService) {
@@ -233,7 +233,11 @@ class KeypressProvider : KeypressService {
         print("eventTap", "\(window.hash)")
         if KeypressProvider.shared.shouldRedirect(event: event, in: window) {
           print("eventTap", "Should redirect!")
-          
+          // prevent redirects when typing in VSCode editor
+          if Integrations.electronTerminals.contains(window.bundleId ?? "") && Accessibility.findXTermCursorInElectronWindow(window) == nil {
+            return Unmanaged.passUnretained(event)
+          }
+
           if (keyCode == Keycode.n) {
             keyCode = Keycode.downArrow
           }
@@ -289,6 +293,12 @@ class KeypressProvider : KeypressService {
   }
   
   func handleKeystroke(event: NSEvent?, in window: ExternalWindow) {
+    
+    // handle keystrokes in VSCode editor
+    if Integrations.electronTerminals.contains(window.bundleId ?? "") && self.getTextRect() == nil {
+        return
+    }
+    
     let keyBuffer = self.keyBuffer(for: window)
     guard !keyBuffer.backedByZLE else { return }
 
@@ -297,10 +307,15 @@ class KeypressProvider : KeypressService {
     }
     
     Autocomplete.position()
-    
+ 
   }
   
   func getTextRect(extendRange: Bool = true) -> CGRect? {
+    
+    if let window = AXWindowServer.shared.whitelistedWindow, Integrations.electronTerminals.contains(window.bundleId ?? "") {
+      return Accessibility.findXTermCursorInElectronWindow(window)
+    }
+    
     let systemWideElement = AXUIElementCreateSystemWide()
     var focusedElement : AnyObject?
     let error = AXUIElementCopyAttributeValue(systemWideElement, kAXFocusedUIElementAttribute as CFString, &focusedElement)

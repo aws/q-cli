@@ -117,6 +117,7 @@ class AXWindowServer : WindowService {
     static let shared = AXWindowServer()
     private let queue = DispatchQueue(label: "com.withfig.windowserver", attributes: .concurrent)
     var tracked: Set<ExternalApplication> = []
+    var topApplication: ExternalApplication? = nil
     var topWindow: ExternalWindow? = nil {
         didSet {
             NotificationCenter.default.post(name: AXWindowServer.windowDidChangeNotification, object: self.topWindow)
@@ -125,7 +126,7 @@ class AXWindowServer : WindowService {
     }
     var whitelistedWindow: ExternalWindow? {
         get {
-            return Integrations.whitelist.contains(self.topWindow?.bundleId ?? "") ? self.topWindow : nil
+            return Integrations.terminalsWhereAutocompleteShouldAppear.contains(self.topWindow?.bundleId ?? "") ? self.topWindow : nil
         }
        
     }
@@ -145,6 +146,11 @@ class AXWindowServer : WindowService {
         }
 
         let appRef  = ExternalApplication(from: app)
+      
+      // Trigger screenReaderMode for supported electron terminals (probably should be moved somewhere else)
+      if (Integrations.electronTerminals.contains(app.bundleIdentifier ?? "")) {
+          Accessibility.triggerScreenReaderModeInChromiumApplication(appRef)
+      }
         
         // Cannot track fig windows... (too meta!)
         guard !app.isFig else {
@@ -158,6 +164,7 @@ class AXWindowServer : WindowService {
 //            print("AXWindowServer: cannot register to observe window events on com.apple.Spotlight")
 //            return
 //        }
+        
         guard app.bundleIdentifier != nil else {
            Logger.log(message: "AXWindowServer: cannot register to observe apps without Bundle Id")
             return
@@ -195,6 +202,7 @@ class AXWindowServer : WindowService {
 
                 AXUIElementCopyAttributeValue(appRef.axAppRef, kAXFocusedWindowAttribute as CFString, &window)
                 guard window != nil else { return }
+                self.topApplication = appRef
                 self.topWindow = ExternalWindow(backedBy: window as! AXUIElement, in: appRef)
 
                 Logger.log(message: "AXWindowServer: Add window manually!")
@@ -208,6 +216,7 @@ class AXWindowServer : WindowService {
             switch (notification as String) {
             case kAXFocusedWindowChangedNotification:
                 print("AXWindowServer: \(appRef.bundleId!) kAXFocusedWindowChangedNotification")
+                 self.topApplication = appRef
                  self.topWindow = ExternalWindow(backedBy: element, in: appRef)
             case kAXMainWindowChangedNotification:
                 self.topWindow = ExternalWindow(backedBy: element, in: appRef)
@@ -248,6 +257,7 @@ class AXWindowServer : WindowService {
                 var window: AnyObject?
                 AXUIElementCopyAttributeValue(appRef.axAppRef, kAXFocusedWindowAttribute as CFString, &window)
                 guard window != nil else { return }
+                self.topApplication = appRef
                 self.topWindow = ExternalWindow(backedBy: window as! AXUIElement, in: appRef)
             case kAXApplicationHiddenNotification:
                 print("AXWindowServer: \(appRef.bundleId!) \(element) kAXApplicationHiddenNotification")
@@ -256,6 +266,7 @@ class AXWindowServer : WindowService {
                 var window: AnyObject?
                 AXUIElementCopyAttributeValue(appRef.axAppRef, kAXFocusedWindowAttribute as CFString, &window)
                 guard window != nil else { return }
+                self.topApplication = appRef
                 self.topWindow = ExternalWindow(backedBy: window as! AXUIElement, in: appRef)
 
             case kAXApplicationDeactivatedNotification:
@@ -273,6 +284,7 @@ class AXWindowServer : WindowService {
                 var window: AnyObject?
                 AXUIElementCopyAttributeValue(appRef.axAppRef, kAXFocusedWindowAttribute as CFString, &window)
                 guard window != nil else { return }
+                self.topApplication = appRef
                 self.topWindow = ExternalWindow(backedBy: window as! AXUIElement, in: appRef)
             case kAXWindowResizedNotification:
                 print("AXWindowServer: \(appRef.bundleId!) \(element) kAXWindowResizedNotification")
@@ -287,6 +299,7 @@ class AXWindowServer : WindowService {
                 var window: AnyObject?
                 AXUIElementCopyAttributeValue(appRef.axAppRef, kAXFocusedWindowAttribute as CFString, &window)
                 guard window != nil else { return }
+                self.topApplication = appRef
                 self.topWindow = ExternalWindow(backedBy: window as! AXUIElement, in: appRef)
             case kAXUIElementDestroyedNotification:
                 var pid: pid_t = 0
@@ -300,11 +313,12 @@ class AXWindowServer : WindowService {
                 // spotlight style app
                 if (Integrations.searchBarApps.contains(app?.bundleIdentifier ?? "") ) {
                         guard let frontmost = NSWorkspace.shared.frontmostApplication else { return }
-                        print("AXWindowServer: spotlightStyleAppDestroyed! frontmost = \(frontmost.bundleIdentifier ?? "<none>")")
+                  print("AXWindowServer: spotlightStyleAppDestroyed! frontmost = \(frontmost.bundleIdentifier ?? "<none>")")
                         let axAppRef = AXUIElementCreateApplication(frontmost.processIdentifier)
                         var window: AnyObject?
                         AXUIElementCopyAttributeValue(axAppRef, kAXFocusedWindowAttribute as CFString, &window)
                         guard window != nil else { return }
+                        self.topApplication = appRef
                         self.topWindow = ExternalWindow(backedBy: window as! AXUIElement, in: ExternalApplication(from: frontmost))
                 }
                 
@@ -317,7 +331,7 @@ class AXWindowServer : WindowService {
               AXUIElementCopyAttributeValue(appRef.axAppRef, kAXFocusedWindowAttribute as CFString, &window)
               guard window != nil else { return }
               let topWindow = ExternalWindow(backedBy: window as! AXUIElement, in: appRef)
-              guard Integrations.nativeTerminals.contains(topWindow?.bundleId ?? "") else { return }
+              guard Integrations.terminalsWhereAutocompleteShouldAppear.contains(topWindow?.bundleId ?? "") else { return }
               NotificationCenter.default.post(name: AXWindowServer.windowTitleUpdatedNotification, object: topWindow)
               break;
 
@@ -437,6 +451,7 @@ class AXWindowServer : WindowService {
             stopTracking(app: app)
         }
         
+        self.topApplication = nil
         self.topWindow = nil
     }
   

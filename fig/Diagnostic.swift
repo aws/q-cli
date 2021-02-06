@@ -39,6 +39,14 @@ class Diagnostic {
     }
   }
   
+  static var keybindingsPath: String? {
+    get {
+      let path = KeyBindingsManager.keymapFilePath.path
+      
+      return FileManager.default.fileExists(atPath: path) ? path : nil
+    }
+  }
+  
   static var installedCLI: Bool {
     get {
       guard let path = Diagnostic.pathOfCLI, let symlink = try? FileManager.default.destinationOfSymbolicLink(atPath: path) else { return false }
@@ -71,7 +79,7 @@ class Diagnostic {
   
   static var processForTopmostWindow: String {
     get {
-      guard let app = NSWorkspace.shared.frontmostApplication, Integrations.nativeTerminals.contains(app.bundleIdentifier ?? ""),
+      guard let app = NSWorkspace.shared.frontmostApplication, Integrations.terminalsWhereAutocompleteShouldAppear.contains(app.bundleIdentifier ?? ""),
             let window = AXWindowServer.shared.whitelistedWindow,
             let tty = window.tty
       else {
@@ -84,7 +92,7 @@ class Diagnostic {
   
   static var workingDirectoryForTopmostWindow: String {
     get {
-      guard let app = NSWorkspace.shared.frontmostApplication, Integrations.nativeTerminals.contains(app.bundleIdentifier ?? ""),
+      guard let app = NSWorkspace.shared.frontmostApplication, Integrations.terminalsWhereAutocompleteShouldAppear.contains(app.bundleIdentifier ?? ""),
             let window = AXWindowServer.shared.whitelistedWindow,
             let tty = window.tty
       else {
@@ -97,7 +105,7 @@ class Diagnostic {
   
   static var processIsShellInTopmostWindow: Bool {
     get {
-      guard let app = NSWorkspace.shared.frontmostApplication, Integrations.nativeTerminals.contains(app.bundleIdentifier ?? ""),
+      guard let app = NSWorkspace.shared.frontmostApplication, Integrations.terminalsWhereAutocompleteShouldAppear.contains(app.bundleIdentifier ?? ""),
             let window = AXWindowServer.shared.whitelistedWindow,
             let tty = window.tty
       else {
@@ -110,7 +118,7 @@ class Diagnostic {
   
   static var ttyDescriptorForTopmostWindow: String {
     get {
-      guard let app = NSWorkspace.shared.frontmostApplication, Integrations.nativeTerminals.contains(app.bundleIdentifier ?? ""),
+      guard let app = NSWorkspace.shared.frontmostApplication, Integrations.terminalsWhereAutocompleteShouldAppear.contains(app.bundleIdentifier ?? ""),
             let window = AXWindowServer.shared.whitelistedWindow,
             let tty = window.tty
       else {
@@ -123,7 +131,7 @@ class Diagnostic {
   
   static var descriptionOfTopmostWindow: String {
     get {
-      guard let app = NSWorkspace.shared.frontmostApplication, Integrations.nativeTerminals.contains(app.bundleIdentifier ?? ""),
+      guard let app = NSWorkspace.shared.frontmostApplication, Integrations.terminalsWhereAutocompleteShouldAppear.contains(app.bundleIdentifier ?? ""),
             let window = AXWindowServer.shared.whitelistedWindow
       else {
         return "???"
@@ -135,7 +143,7 @@ class Diagnostic {
   
   static var keybufferHasContextForTopmostWindow: Bool {
     get {
-      guard let app = NSWorkspace.shared.frontmostApplication, Integrations.nativeTerminals.contains(app.bundleIdentifier ?? ""),
+      guard let app = NSWorkspace.shared.frontmostApplication, Integrations.terminalsWhereAutocompleteShouldAppear.contains(app.bundleIdentifier ?? ""),
             let window = AXWindowServer.shared.whitelistedWindow
       else {
         return false
@@ -148,7 +156,7 @@ class Diagnostic {
   
   static var keybufferRepresentationForTopmostWindow: String {
     get {
-      guard let app = NSWorkspace.shared.frontmostApplication, Integrations.nativeTerminals.contains(app.bundleIdentifier ?? ""),
+      guard let app = NSWorkspace.shared.frontmostApplication, Integrations.terminalsWhereAutocompleteShouldAppear.contains(app.bundleIdentifier ?? ""),
             let window = AXWindowServer.shared.whitelistedWindow
       else {
         return "<no context>"
@@ -184,10 +192,11 @@ class Diagnostic {
       Accessibility: \(Accessibility.enabled)
       Number of specs: \(Diagnostic.numberOfCompletionSpecs)
       SSH Integration: \(Defaults.SSHIntegrationEnabled)
+      Keybindings path: \(Diagnostic.keybindingsPath ?? "<none>")
       Only insert on tab: \(Defaults.onlyInsertOnTab)
       SecureKeyboardInput: \(Diagnostic.secureKeyboardInput)
       SecureKeyboardProcess: \(Diagnostic.blockingProcess ?? "<none>")
-      iTerm Tab Integration: \(iTermTabIntegration.isInstalled())
+      iTerm Tab Integration: \(iTermTabIntegration.isInstalled)
       Current active process: \(Diagnostic.processForTopmostWindow)
       Current working directory: \(Diagnostic.workingDirectoryForTopmostWindow)
       Current window identifier: \(Diagnostic.descriptionOfTopmostWindow)

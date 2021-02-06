@@ -167,6 +167,10 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         TerminalObserver?.windowDidAppear {
           SecureKeyboardInput.notifyIfEnabled()
         }
+      
+        if !VSCodeIntegration.isInstalled {
+            VSCodeIntegration.install(withRestart: false)
+        }
         
     }
   
@@ -339,10 +343,11 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         autocomplete.indentationLevel = 1
         statusBarMenu.addItem(NSMenuItem.separator())
         
-        statusBarMenu.addItem(
-         withTitle: "📖 Fig Docs",
+        let manual = statusBarMenu.addItem(
+         withTitle: "User Manual",
          action: #selector(AppDelegate.viewDocs),
          keyEquivalent: "")
+        manual.image = NSImage(named: NSImage.Name("commandkey"))
         
         let slack = statusBarMenu.addItem(
          withTitle: "Join Fig Community",
@@ -397,6 +402,12 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         keyEquivalent: "")
         iTermIntegration.state = FileManager.default.fileExists(atPath: "\(NSHomeDirectory())/Library/Application Support/iTerm2/Scripts/AutoLaunch/fig-iterm-integration.py") ? .on : .off
         
+        let vscodeIntegration = debugMenu.addItem(
+        withTitle: "VSCode Integration",
+        action: #selector(AppDelegate.toggleVSCodeIntegration(_:)),
+        keyEquivalent: "")
+        vscodeIntegration.state = VSCodeIntegration.isInstalled ? .on : .off
+      
         let sshIntegration = debugMenu.addItem(
         withTitle: "SSH Integration",
         action: #selector(AppDelegate.toggleSSHIntegration(_:)),
@@ -478,10 +489,13 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
                 withTitle: "Get Selected Text",
                 action: #selector(AppDelegate.getSelectedText),
                 keyEquivalent: "")
-                debugMenu.addItem(
+               debugMenu.addItem(
                  withTitle: "Processes",
-                 action: #selector(AppDelegate.processes
-                    ),
+                 action: #selector(AppDelegate.processes),
+                 keyEquivalent: "")
+               debugMenu.addItem(
+                 withTitle: "Trigger ScreenReader mode in topmost app",
+                 action: #selector(AppDelegate.triggerScreenReader),
                  keyEquivalent: "")
            }
         
@@ -839,7 +853,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 //        ShellBridge.registerKeyInterceptor()
 //        return
             
-            (WindowManager.shared.sidebar?.webView?.loadBundleApp("autocomplete"))!
 
         NSEvent.addGlobalMonitorForEvents(matching: .keyUp) { (event) in
             print("keylogger:", event.characters, event.keyCode)
@@ -856,36 +869,62 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         if (error != .success){
             print("Couldn't get the focused element. Probably a webkit application")
         } else {
-            var selectedRangeValue : AnyObject?
-            let selectedRangeError = AXUIElementCopyAttributeValue(focusedElement as! AXUIElement, kAXSelectedTextRangeAttribute as CFString, &selectedRangeValue)
-                        
-            if (selectedRangeError == .success){
-                var selectedRange = CFRange()
-                AXValueGetValue(selectedRangeValue as! AXValue, .cfRange, &selectedRange)
-                var selectRect = CGRect()
-                var selectBounds : AnyObject?
-//                print("selected", selectedRange)
-//                print("selected", selectedRange.location, selectedRange.length)
-                var updatedRange = CFRangeMake(selectedRange.location, 1)
-                print("selected", selectedRange, updatedRange)
+//            AXUIElement
+          var names: CFArray?
+          let namesError = AXUIElementCopyAttributeNames(focusedElement as! AXUIElement, &names)
+          print(names)
 
-                withUnsafeMutablePointer(to: &updatedRange) { (ptr) in
-                    let updatedRangeValue = AXValueCreate(AXValueType(rawValue: kAXValueCFRangeType)!, ptr)
-                    let selectedBoundsError = AXUIElementCopyParameterizedAttributeValue(focusedElement as! AXUIElement, kAXBoundsForRangeParameterizedAttribute as CFString, updatedRangeValue!, &selectBounds)
-                    if (selectedBoundsError == .success){
-                        AXValueGetValue(selectBounds as! AXValue, .cgRect, &selectRect)
-                        //do whatever you want with your selectRect
-                        print("selected", selectRect)
-                        WindowManager.shared.sidebar?.setOverlayFrame(selectRect)
-
-                    }
-                }
-                
-                //kAXInsertionPointLineNumberAttribute
-                //kAXRangeForLineParameterizedAttribute
-
-
-            }
+          var parametrizedNames: CFArray?
+          let parametrizedNamesError = AXUIElementCopyParameterizedAttributeNames(focusedElement as! AXUIElement, &parametrizedNames)
+          print(parametrizedNames)
+          KeypressProvider.shared.getTextRect()
+//          var markerRange : AnyObject?
+//          let markerError = AXUIElementCopyAttributeValue(focusedElement as! AXUIElement, "AXSelectedTextMarkerRange" as CFString, &markerRange)
+////          var markerRangeValue : AnyObject?
+////          AXValueGetValue(markerRange as! AXValue, .cfRange, &markerRangeValue)
+////          print(markerRangeValue)
+//          guard markerRange != nil else {
+//            print("selectedRect: markerRange is nil")
+//            return
+//          }
+//          var selectBoundsForTextMarkerRange : AnyObject?
+//          let err = AXUIElementCopyParameterizedAttributeValue(focusedElement as! AXUIElement, "AXBoundsForTextMarkerRange" as CFString, markerRange!, &selectBoundsForTextMarkerRange)
+//          var selectRect = CGRect()
+//          AXValueGetValue(selectBoundsForTextMarkerRange as! AXValue, .cgRect, &selectRect)
+//          print("selectedRect: ", selectRect)
+          
+          //AXBoundsForTextMarkerRange
+          
+//            var selectedRangeValue : AnyObject?
+//            let selectedRangeError = AXUIElementCopyAttributeValue(focusedElement as! AXUIElement, kAXSelectedTextRangeAttribute as CFString, &selectedRangeValue)
+//
+//            if (selectedRangeError == .success){
+//                var selectedRange = CFRange()
+//                AXValueGetValue(selectedRangeValue as! AXValue, .cfRange, &selectedRange)
+//                var selectRect = CGRect()
+//                var selectBounds : AnyObject?
+////                print("selected", selectedRange)
+////                print("selected", selectedRange.location, selectedRange.length)
+//                var updatedRange = CFRangeMake(selectedRange.location, 1)
+//                print("selected", selectedRange, updatedRange)
+//
+//                withUnsafeMutablePointer(to: &updatedRange) { (ptr) in
+//                    let updatedRangeValue = AXValueCreate(AXValueType(rawValue: kAXValueCFRangeType)!, ptr)
+//                    let selectedBoundsError = AXUIElementCopyParameterizedAttributeValue(focusedElement as! AXUIElement, kAXBoundsForRangeParameterizedAttribute as CFString, updatedRangeValue!, &selectBounds)
+//                    if (selectedBoundsError == .success){
+//                        AXValueGetValue(selectBounds as! AXValue, .cgRect, &selectRect)
+//                        //do whatever you want with your selectRect
+//                        print("selected", selectRect)
+//                        WindowManager.shared.sidebar?.setOverlayFrame(selectRect)
+//
+//                    }
+//                }
+//
+//                //kAXInsertionPointLineNumberAttribute
+//                //kAXRangeForLineParameterizedAttribute
+//
+//
+//            }
         }
         }
     }
@@ -999,6 +1038,14 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         
         Defaults.SSHIntegrationEnabled = !Defaults.SSHIntegrationEnabled
         sender.state = Defaults.SSHIntegrationEnabled ? .on : .off
+    }
+  
+    @objc func toggleVSCodeIntegration(_ sender: NSMenuItem) {
+        
+      VSCodeIntegration.promptToInstall {
+        sender.state = VSCodeIntegration.isInstalled ? .on : .off
+      }
+        
     }
     
     @objc func toggleDebugAutocomplete(_ sender: NSMenuItem) {
@@ -1373,6 +1420,16 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             }
            free(ptr)
         }
+    }
+    @objc func triggerScreenReader() {
+      VSCodeIntegration.install {
+        self.dialogOKCancel(question: "VSCode Integration Installed!", text: "The Fig extension was successfully added to VSCode.", noAction: true)
+//      if let app = AXWindowServer.shared.topApplication, let window = AXWindowServer.shared.topWindow {
+//        print("Triggering ScreenreaderMode in \(app.bundleIdentifier ?? "<unknown>")")
+//        Accessibility.triggerScreenReaderModeInChromiumApplication(app)
+//        let cursor = Accessibility.findXTermCursorInElectronWindow(window)
+//        print("Detect cursor:", cursor ?? .zero)
+      }
     }
     @objc func allWindows() {
         
@@ -1766,7 +1823,7 @@ extension AppDelegate : NSMenuDelegate {
         }
         
         if let app = NSWorkspace.shared.frontmostApplication, !app.isFig {
-            if Integrations.nativeTerminals.contains(app.bundleIdentifier ?? "") {
+            if Integrations.terminalsWhereAutocompleteShouldAppear.contains(app.bundleIdentifier ?? "") {
                 let window = AXWindowServer.shared.whitelistedWindow
                 let tty = window?.tty
                 var hasContext = false
@@ -1853,7 +1910,7 @@ extension AppDelegate : NSMenuDelegate {
                 }
                 
                 
-                let title = "\(app.localizedName ?? "Unknown") \(cmd)"
+                let title = "Debugger \(cmd)"//"\(app.localizedName ?? "Unknown") \(cmd)"
                 let icon = app.icon?.resized(to: NSSize(width: 16, height: 16))?.overlayBadge(color: color, text: "")
                 
                 let app = NSMenuItem(title: title, action: nil, keyEquivalent: "")

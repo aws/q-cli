@@ -40,6 +40,8 @@ class NativeCLI {
         case remove = "remove"
         case report = "report"
         case ssh = "integrations:ssh"
+        case vscode = "integrations:vscode"
+        case iterm = "integrations:iterm"
         case teamUpload = "team:upload"
         case teamDownload = "team:download"
         case diagnostic = "diagnostic"
@@ -71,6 +73,8 @@ class NativeCLI {
                                                            .version,
                                                            .report,
                                                            .diagnostic,
+                                                           .vscode,
+                                                           .iterm,
                                                            .pty,
                                                            .docs]
                return implementatedNatively.contains(self)
@@ -108,6 +112,10 @@ class NativeCLI {
                 NativeCLI.diagnosticCommand(scope)
             case .pty:
                 NativeCLI.ptyCommand(scope)
+            case .vscode:
+                NativeCLI.VSCodeCommand(scope)
+            case .iterm:
+                NativeCLI.iTermCommand(scope)
             default:
                 break;
             }
@@ -355,6 +363,30 @@ extension NativeCLI {
         }
 
         NativeCLI.printInTerminal("→ Opening docs in browser...", using: connection)
+    }
+  
+    static func VSCodeCommand(_ scope: Scope) {
+        let (_, connection) = scope
+
+        if VSCodeIntegration.isInstalled {
+            NativeCLI.printInTerminal("\n› VSCode Integration is already installed.\n  You may need to restart VSCode for the changes to take effect.\n  If you are having issues, please use fig report.\n", using: connection)
+        } else {
+            NativeCLI.printInTerminal("→ Prompting VSCode Integration...", using: connection)
+            VSCodeIntegration.promptToInstall()
+        }
+
+    }
+  
+    static func iTermCommand(_ scope: Scope) {
+        let (_, connection) = scope
+
+        if iTermTabIntegration.isInstalled {
+            NativeCLI.printInTerminal("\n› iTerm Tab Integration is already installed.\n  If you are having issues, please use fig report.\n", using: connection)
+        } else {
+            NativeCLI.printInTerminal("→ Prompting iTerm Tab Integration...", using: connection)
+            iTermTabIntegration.promptToInstall()
+        }
+
     }
 }
 

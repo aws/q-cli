@@ -546,7 +546,11 @@ class Integrations {
     static let searchBarApps: Set = ["com.apple.Spotlight",
                                      "com.runningwithcrayons.Alfred",
                                      "com.raycast.macos"]
-
+  
+    static let electronTerminals: Set = ["co.zeit.hyper",
+                                        "com.microsoft.VSCode"]
+    static let terminalsWhereAutocompleteShouldAppear: Set = nativeTerminals.union(electronTerminals)
+  
     static var allowed: Set<String> {
         
         get {

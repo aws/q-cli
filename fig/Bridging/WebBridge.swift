@@ -311,6 +311,26 @@ extension NSImage {
         newImage.unlockFocus()
         return newImage//.resized(to: NSSize(width: background.size.width * 1.5, height: background.size.height * 1.5))!
     }
+  
+  func overlayImage(_ image: NSImage) -> NSImage {
+        let background = self
+        let side:CGFloat = 32
+
+        let overlay = image//.resized(to: NSSize(width:  background.size.width/2, height:  background.size.height/2))!
+        
+        let newImage = NSImage(size: background.size)
+        newImage.lockFocus()
+
+        var newImageRect: CGRect = .zero
+        newImageRect.size = newImage.size
+        
+        background.draw(in: newImageRect)
+        overlay.draw(in: NSRect(x: background.size.width/2, y: 0, width: background.size.width/2 - 4, height: background.size.height/2 - 4))
+
+        newImage.unlockFocus()
+        return newImage//.resized(to: NSSize(width: background.size.width * 1.5, height: background.size.height * 1.5))!
+    }
+  
     func overlayBadge(color: NSColor?, text: String?) -> NSImage {
         guard color != nil || text != nil else {
             return self
