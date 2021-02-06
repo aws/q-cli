@@ -706,7 +706,7 @@ extension WindowManager : WindowManagementService {
         self.updatePosition(for: .figWindowTethered)
     }
     
-    func positionAutocompletePopover(textRect: CGRect?) {
+  func positionAutocompletePopover(textRect: CGRect?, completion: (() -> Void)? = nil) {
         if let rect = textRect, let window = AXWindowServer.shared.whitelistedWindow {
             let heightLimit: CGFloat = 140.0 //300.0//
             
@@ -763,13 +763,17 @@ extension WindowManager : WindowManagementService {
             }
           
             DispatchQueue.main.async {
+              WindowManager.shared.autocomplete?.tetheredWindow = window
               WindowManager.shared.autocomplete?.setOverlayFrame(NSRect(x: x, y: popup.origin.y, width: popup.width, height: height))//140
+              completion?()
+ 
             }
             
         } else {
             // workaround
             DispatchQueue.main.async {
                 WindowManager.shared.autocomplete?.orderOut(nil)
+                completion?()
             }
         }
     }

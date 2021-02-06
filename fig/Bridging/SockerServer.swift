@@ -225,6 +225,8 @@ class ShellBridgeSocketService: WebSocketService {
                                         ShellHookManager.shared.shellPromptWillReturn(msg)
                                     case "bg:exec":
                                         ShellHookManager.shared.shellWillExecuteCommand(msg)
+                                    case "bg:zsh-keybuffer":
+                                        ShellHookManager.shared.updateKeybuffer(msg)
                                     case "bg:ssh":
                                         ShellHookManager.shared.startedNewSSHConnection(msg)
                                     case "bg:vscode":

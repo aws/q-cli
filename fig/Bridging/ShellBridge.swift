@@ -272,12 +272,15 @@ class ShellBridge {
     //https://stackoverflow.com/a/40447423
     static func injectUnicodeString(_ string: String, completion: (() -> Void)? = nil) {
         let maxCharacters = 20
-        guard string.count > 0  else { return }
+        guard string.count > 0  else {
+          completion?()
+          return
+      }
         guard string.count <= maxCharacters else {
             if let split = string.index(string.startIndex, offsetBy: maxCharacters, limitedBy: string.endIndex) {
                 injectUnicodeString(String(string.prefix(upTo: split))) {
                     
-                    injectUnicodeString(String(string.suffix(from: split)))
+                  injectUnicodeString(String(string.suffix(from: split)), completion: completion)
                 }
             }
             return
@@ -295,30 +298,46 @@ class ShellBridge {
         
         downEvent?.post(tap: loc)
         upEvent?.post(tap: loc)
-        
         completion?()
     }
-    static func injectStringIntoTerminal(_ cmd: String, runImmediately: Bool = false, clearLine: Bool = Defaults.clearExistingLineOnTerminalInsert, completion: (() -> Void)? = nil) {
-//        WindowServer.shared.returnFocus()
+    
+    fileprivate static func inject(_ cmd: String,
+                            runImmediately: Bool = false,
+                            clearLine: Bool = Defaults.clearExistingLineOnTerminalInsert,
+                            completion: (() -> Void)? = nil) {
+        // Frontmost application will recieve the keystrokes, make sure it's the appropriate app!
+      
+        // There used to be a check here to determine if Spotlight was active. It seems like this is no longer needed.
+
+        print("Insert '\(cmd)' into ", NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "<none>")
+        if (clearLine) {
+            self.simulate(keypress: .ctrlE)
+            self.simulate(keypress: .ctrlU)
+        }
+        
+        let insertion = cmd + (runImmediately ? "\n" :"")
+
+        // The existence of the insertion-lock file prevents latency in ZLE integration when inserting text
+        // See the `self-insert` function in zle.sh
+        ZLEIntegration.insertLock()
+        injectUnicodeString(insertion) {
+          ZLEIntegration.insertUnlock(with: insertion)
+        }
+    }
+  
+    static func injectStringIntoTerminal(_ cmd: String,
+                                         runImmediately: Bool = false,
+                                         clearLine: Bool = Defaults.clearExistingLineOnTerminalInsert,
+                                         completion: (() -> Void)? = nil) {
+        
         if (NSWorkspace.shared.frontmostApplication?.isFig ?? false) {
             print("Fig is the active window. Sending focus back to previous applications.")
             WindowServer.shared.returnFocus()
             Timer.delayWithSeconds(0.15) {
-                if (clearLine) {
-                      self.simulate(keypress: .ctrlE)
-                      self.simulate(keypress: .ctrlU)
-                  }
-                print("Insert '\(cmd)' into ", NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "<none>")
-                injectUnicodeString(cmd + (runImmediately ? "\n" :""))
+              inject(cmd, runImmediately: runImmediately, clearLine: clearLine, completion: completion)
             }
         } else {
-            // There used to be a check here to determine if Spotlight was active. It seems like this is no longer needed.
-            print("Insert '\(cmd)' into ", NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "<none>")
-            if (clearLine) {
-                  self.simulate(keypress: .ctrlE)
-                  self.simulate(keypress: .ctrlU)
-              }
-            injectUnicodeString(cmd + (runImmediately ? "\n" :""))
+            inject(cmd, runImmediately: runImmediately, clearLine: clearLine, completion: completion)
         }
     }
 
@@ -391,6 +410,13 @@ struct ShellMessage: Codable {
         guard let shellPidStr = self.options?[safe: 1], let shellPid = Int32(shellPidStr) else { return nil }
         
         return (shellPid, String(ttyId), self.session)
+    }
+  
+    func parseKeybuffer() -> (String, Int)? {
+        guard let buffer = self.options?[safe: 2] else { return nil }
+        guard let cursorStr = self.options?[safe: 1], let cursor = Int(cursorStr) else { return nil }
+        
+        return (buffer, cursor)
     }
     
     func getWorkingDirectory() -> String? {

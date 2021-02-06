@@ -924,8 +924,17 @@ extension WebBridge {
                 case "autocomplete-hide":
                     guard let companion = scope.getCompanionWindow(), companion.isAutocompletePopup else { return }
                     
-                    if let hash = companion.tetheredWindow?.hash {
+                    if let window = companion.tetheredWindow {
+                        let hash = window.hash
                         KeypressProvider.shared.keyBuffer(for: hash).writeOnly = true
+                      
+                        KeypressProvider.shared.removeRedirect(for: Keycode.upArrow, in: window)
+                        KeypressProvider.shared.removeRedirect(for: Keycode.downArrow, in: window)
+                        KeypressProvider.shared.removeRedirect(for: Keycode.tab, in: window)
+                        KeypressProvider.shared.removeRedirect(for: Keycode.escape, in: window)
+                        KeypressProvider.shared.removeRedirect(for: Keycode.returnKey, in: window)
+                        KeypressProvider.shared.removeRedirect(for: Keystroke(modifierFlags: [.control], keyCode: Keycode.n), in: window)
+                        KeypressProvider.shared.removeRedirect(for: Keystroke(modifierFlags: [.control], keyCode: Keycode.p), in: window)
                     }
 
                 case "setAutocompleteHeight":
@@ -1032,8 +1041,9 @@ extension WebBridge {
                             NotificationCenter.default.post(name: NSNotification.Name("showAutocompletePopup"), object: nil)
                         }
                         companion?.orderFrontRegardless()
-                        let rect = KeypressProvider.shared.getTextRect()
-                        WindowManager.shared.positionAutocompletePopover(textRect: rect)
+                        //let rect = KeypressProvider.shared.getTextRect()
+                        //WindowManager.shared.positionAutocompletePopover(textRect: rect)
+                        Autocomplete.position()
                     }
 //                    let rect = KeypressProvider.shared.getTextRect()
 //                    WindowManager.shared.positionAutocompletePopover(textRect: rect)
@@ -1055,8 +1065,9 @@ extension WebBridge {
                     return
                 }
                 
-                let rect = KeypressProvider.shared.getTextRect()
-                WindowManager.shared.positionAutocompletePopover(textRect: rect)
+                //let rect = KeypressProvider.shared.getTextRect()
+                //WindowManager.shared.positionAutocompletePopover(textRect: rect)
+                Autocomplete.position()
 
 
             case "interceptKeystrokes":
