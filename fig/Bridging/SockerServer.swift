@@ -195,7 +195,7 @@ class ShellBridgeSocketService: WebSocketService {
                     }
 
                     let msg = try decoder.decode(ShellMessage.self, from: message.data(using: .utf8)!)
-                    print(msg)
+//                    print(msg)
                     
                     switch msg.type {
                     case "hello":
