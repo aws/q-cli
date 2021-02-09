@@ -90,6 +90,19 @@ class Diagnostic {
     }
   }
   
+  static var processIdForTopmostWindow: String {
+    get {
+      guard let app = NSWorkspace.shared.frontmostApplication, Integrations.terminalsWhereAutocompleteShouldAppear.contains(app.bundleIdentifier ?? ""),
+            let window = AXWindowServer.shared.whitelistedWindow,
+            let tty = window.tty
+      else {
+        return "???"
+      }
+
+      return tty.pid != nil ? "\(tty.pid ?? -1)" : "???"
+    }
+  }
+  
   static var workingDirectoryForTopmostWindow: String {
     get {
       guard let app = NSWorkspace.shared.frontmostApplication, Integrations.terminalsWhereAutocompleteShouldAppear.contains(app.bundleIdentifier ?? ""),
@@ -197,7 +210,7 @@ class Diagnostic {
       SecureKeyboardInput: \(Diagnostic.secureKeyboardInput)
       SecureKeyboardProcess: \(Diagnostic.blockingProcess ?? "<none>")
       iTerm Tab Integration: \(iTermTabIntegration.isInstalled)
-      Current active process: \(Diagnostic.processForTopmostWindow)
+      Current active process: \(Diagnostic.processForTopmostWindow) (\(Diagnostic.processIdForTopmostWindow))
       Current working directory: \(Diagnostic.workingDirectoryForTopmostWindow)
       Current window identifier: \(Diagnostic.descriptionOfTopmostWindow)
 

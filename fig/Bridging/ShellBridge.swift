@@ -534,6 +534,11 @@ extension ShellBridge : LocalProcessDelegate {
 }
 
 class Integrations {
+    static let iTerm = "com.googlecode.iterm2"
+    static let Terminal = "com.apple.Terminal"
+    static let Hyper = "co.zeit.hyper"
+    static let VSCode = "com.microsoft.VSCode"
+  
     static let terminals: Set = ["com.googlecode.iterm2",
                                  "com.apple.Terminal",
                                  "io.alacritty",

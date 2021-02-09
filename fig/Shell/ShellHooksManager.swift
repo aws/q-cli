@@ -41,6 +41,8 @@ class ShellHookManager : NSObject {
     fileprivate var sessions = BiMap<String>()
   
     private let queue = DispatchQueue(label: "com.withfig.shellhooks", attributes: .concurrent)
+  
+    fileprivate var observer: WindowObserver?
 
 }
 
@@ -218,27 +220,34 @@ extension ShellHookManager {
         }
       
         guard let bundleId = NSWorkspace.shared.frontmostApplication?.bundleIdentifier else {
-          Logger.log(message: "Could not parse out shellHook metadata", priority: .notify, subsystem: .tty)
+          Logger.log(message: "Could not get bundle id", priority: .notify, subsystem: .tty)
           return
         }
         
-        var delay = 0.2
-        if (Integrations.electronTerminals.contains(bundleId)) {
-            delay = 0.5
+        var delay:TimeInterval? = 0.2
+      
+        if Integrations.Hyper == bundleId {
+            delay = 2
         }
+      
+        observer = WindowObserver(with: bundleId)
+      
         // We need to wait for window to appear if the terminal emulator is being launched for the first time. Can this be handled more robustly?
-        Timer.delayWithSeconds(delay) {
-            
+        observer?.windowDidAppear(timeoutAfter: delay, completion: {
             // ensuring window bundleId & frontmostApp bundleId match fixes case where a slow launching application (eg. Hyper) will init shell before window is visible/tracked
+            Logger.log(message: "Awaited window did appear", priority: .notify, subsystem: .tty)
+
             guard let window = AXWindowServer.shared.whitelistedWindow, window.bundleId == NSWorkspace.shared.frontmostApplication?.bundleIdentifier
                 else {
                 Logger.log(message: "Cannot track a new terminal session if topmost window isn't whitelisted.", priority: .notify, subsystem: .tty)
                 return
             }
-            
+          
+            Logger.log(message: "Linking \(ttyDescriptor) with \(window.hash) for \(sessionId)", priority: .notify, subsystem: .tty)
+
             let tty = self.link(sessionId, window.hash, ttyDescriptor)
             tty.startedNewShellSession(for: shellPid)
-        }
+        })
 
     }
     
