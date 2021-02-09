@@ -109,8 +109,9 @@ extension ShellHookManager {
             if let window = AXWindowServer.shared.whitelistedWindow {
                 if let id = info.options?.last {
                   let VSCodeTerminal = window.bundleId == "com.microsoft.VSCode" && id.hasPrefix("code:")
-                  let iTermTab = window.bundleId == "com.googlecode.iterm2" &&  !id.hasPrefix("code:")
-                  guard VSCodeTerminal || iTermTab else { return }
+                  let HyperTab = window.bundleId == "co.zeit.hyper" &&  id.hasPrefix("hyper:")
+                  let iTermTab = window.bundleId == "com.googlecode.iterm2" && !id.hasPrefix("code:") && !id.hasPrefix("hyper:")
+                  guard VSCodeTerminal || iTermTab || HyperTab else { return }
                     Logger.log(message: "tab: \(window.windowId)/\(id)")
 //                    self.tabs[window.windowId] = id
                     self.setActiveTab(id, for: window.windowId)

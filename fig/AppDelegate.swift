@@ -171,6 +171,10 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         if !VSCodeIntegration.isInstalled {
             VSCodeIntegration.install(withRestart: false)
         }
+      
+        if !HyperIntegration.isInstalled {
+            HyperIntegration.install(withRestart: false)
+        }
         
     }
   
@@ -407,6 +411,12 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         action: #selector(AppDelegate.toggleVSCodeIntegration(_:)),
         keyEquivalent: "")
         vscodeIntegration.state = VSCodeIntegration.isInstalled ? .on : .off
+      
+        let hyperIntegration = debugMenu.addItem(
+        withTitle: "Hyper Integration",
+        action: #selector(AppDelegate.toggleHyperIntegration(_:)),
+        keyEquivalent: "")
+        hyperIntegration.state = HyperIntegration.isInstalled ? .on : .off
       
         let sshIntegration = debugMenu.addItem(
         withTitle: "SSH Integration",
@@ -1044,6 +1054,14 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         
       VSCodeIntegration.promptToInstall {
         sender.state = VSCodeIntegration.isInstalled ? .on : .off
+      }
+        
+    }
+  
+    @objc func toggleHyperIntegration(_ sender: NSMenuItem) {
+        
+      HyperIntegration.promptToInstall {
+        sender.state = HyperIntegration.isInstalled ? .on : .off
       }
         
     }

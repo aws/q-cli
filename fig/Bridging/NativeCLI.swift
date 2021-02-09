@@ -42,6 +42,7 @@ class NativeCLI {
         case ssh = "integrations:ssh"
         case vscode = "integrations:vscode"
         case iterm = "integrations:iterm"
+        case hyper = "integrations:hyper"
         case teamUpload = "team:upload"
         case teamDownload = "team:download"
         case diagnostic = "diagnostic"
@@ -56,7 +57,7 @@ class NativeCLI {
       
         var handlesDisconnect: Bool {
             get {
-                let handlesDisconnection: Set<Command> = [.pty ]
+              let handlesDisconnection: Set<Command> = [.pty, .hyper, .iterm, .vscode ]
                 return handlesDisconnection.contains(self)
             }
         }
@@ -75,6 +76,7 @@ class NativeCLI {
                                                            .diagnostic,
                                                            .vscode,
                                                            .iterm,
+                                                           .hyper,
                                                            .pty,
                                                            .docs]
                return implementatedNatively.contains(self)
@@ -116,6 +118,8 @@ class NativeCLI {
                 NativeCLI.VSCodeCommand(scope)
             case .iterm:
                 NativeCLI.iTermCommand(scope)
+            case .hyper:
+                NativeCLI.HyperCommand(scope)
             default:
                 break;
             }
@@ -369,8 +373,11 @@ extension NativeCLI {
 
         if VSCodeIntegration.isInstalled {
             NativeCLI.printInTerminal("\n› VSCode Integration is already installed.\n  You may need to restart VSCode for the changes to take effect.\n  If you are having issues, please use fig report.\n", using: connection)
+            connection.send(message: "disconnect")
         } else {
             NativeCLI.printInTerminal("→ Prompting VSCode Integration...", using: connection)
+            connection.send(message: "disconnect")
+
             VSCodeIntegration.promptToInstall()
         }
 
@@ -381,9 +388,26 @@ extension NativeCLI {
 
         if iTermTabIntegration.isInstalled {
             NativeCLI.printInTerminal("\n› iTerm Tab Integration is already installed.\n  If you are having issues, please use fig report.\n", using: connection)
+            connection.send(message: "disconnect")
+
         } else {
             NativeCLI.printInTerminal("→ Prompting iTerm Tab Integration...", using: connection)
+            connection.send(message: "disconnect")
             iTermTabIntegration.promptToInstall()
+        }
+
+    }
+  
+    static func HyperCommand(_ scope: Scope) {
+        let (_, connection) = scope
+
+        if HyperIntegration.isInstalled {
+            NativeCLI.printInTerminal("\n› Hyper Integration is already installed.\n  If you are having issues, please use fig report.\n", using: connection)
+            connection.send(message: "disconnect")
+        } else {
+            NativeCLI.printInTerminal("→ Prompting Hyper Integration...", using: connection)
+            connection.send(message: "disconnect")
+            HyperIntegration.promptToInstall()
         }
 
     }
