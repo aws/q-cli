@@ -187,7 +187,16 @@ extension ShellHookManager {
         // KeypressProvider.shared.keyBuffer(for: hash).buffer = ""
         
         // update keybuffer backing
-        KeypressProvider.shared.keyBuffer(for: hash).backedByZLE = false//info.zleIntegration
+      if (KeypressProvider.shared.keyBuffer(for: hash).backedByZLE) {
+        
+          // ZLE doesn't handle signals sent to shell, like control+c
+          // So we need to manually force an update when the line changes
+          DispatchQueue.main.async {
+             Autocomplete.update(with: ("", 0), for: hash)
+             Autocomplete.position()
+          }
+          KeypressProvider.shared.keyBuffer(for: hash).backedByZLE = false
+      }
 
       
     }

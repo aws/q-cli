@@ -233,6 +233,8 @@ class ShellBridgeSocketService: WebSocketService {
                                         ShellHookManager.shared.currentTabDidChange(msg)
                                     case "bg:hyper":
                                         ShellHookManager.shared.currentTabDidChange(msg)
+                                    case "bg:hide":
+                                        WindowManager.shared.positionAutocompletePopover(textRect: nil)
                                     case "bg:alert":
                                         if let title = msg.options?[safe: 1], let text = msg.options?[safe: 2]  {
                                             DispatchQueue.main.async {
