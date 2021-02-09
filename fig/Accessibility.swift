@@ -112,15 +112,42 @@ class Accessibility {
 //    CFBooleanRef value = enable ? kCFBooleanTrue : kCFBooleanFalse;
     AXUIElementSetAttributeValue(app.axAppRef, kAXManualAccessibility, kCFBooleanTrue);
   }
-  
+  fileprivate static var cursorCache: [ExternalWindowHash: [UIElement]] = [:]
   static func findXTermCursorInElectronWindow(_ window: ExternalWindow) -> CGRect? {
     guard let axElement = window.accesibilityElement else { return nil }
-    let root = UIElement(axElement)
-    guard let cursor = findXTermCursor(root) else {
+    
+    var cursor: UIElement? = cursorCache[window.hash]?.reduce(nil, { (existing, cache) -> UIElement? in
+      guard existing == nil else {
+        return existing
+      }
+      
+      return findXTermCursor(cache)
+    })
+    
+    if cursor == nil {
+      let root = UIElement(axElement)
+      cursor = findXTermCursor(root)
+    } else {
+      print("Cursor Cache hit!")
+    }
+    
+    guard let currentCursor = cursor else {
       return nil
     }
+    
+    // create cache if it doesn't exist
+    if cursorCache[window.hash] == nil {
+      cursorCache[window.hash] = []
+    }
+    
+    // Add cursor to cache if not there
+    if !cursorCache[window.hash]!.contains(currentCursor) {
+      cursorCache[window.hash]!.append(currentCursor)
+    }
+
+    
    
-    guard let frame: CGRect = try? cursor.attribute(.frame) else {
+    guard let frame: CGRect = try? currentCursor.attribute(.frame) else {
       return nil
     }
     

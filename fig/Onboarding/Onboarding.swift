@@ -88,6 +88,7 @@ class Onboarding {
 
         if let cliPath = Bundle.main.path(forAuxiliaryExecutable: "figcli"), existingSymlink != cliPath {
             do {
+                try? FileManager.default.removeItem(atPath: fullPath)
                 let fullURL = URL(fileURLWithPath: fullPath)
                 try? FileManager.default.createDirectory(at: fullURL.deletingLastPathComponent(), withIntermediateDirectories: true, attributes: [:])
                 try FileManager.default.createSymbolicLink(at: fullURL, withDestinationURL: URL(fileURLWithPath: cliPath))
