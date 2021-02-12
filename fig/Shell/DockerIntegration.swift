@@ -7,7 +7,6 @@
 //
 
 import Cocoa
-import DockerClient
 
 class DockerIntegration: CommandIntegration {
     static var command = "com.docker.cli"
@@ -31,11 +30,8 @@ class DockerIntegration: CommandIntegration {
             return
         }
       
-        // Ideally we would only do this once.
         if container == nil {
           return
-          //attachToMostRecentlyActiveContainerId()
-
         }
       
 
@@ -45,8 +41,6 @@ class DockerIntegration: CommandIntegration {
             return
         }
       
-//        let semaphore = DispatchSemaphore(value: 0)
-
         tty.pty!.execute("\(prefix) 'readlink /proc/1/cwd'") { output in
             print("Docker: working directory = ", output)
             guard tty.pid == process.pid else {

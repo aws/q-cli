@@ -175,7 +175,6 @@
 		75E993F52517E226000BE6BE /* AXWindowServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75E993F42517E226000BE6BE /* AXWindowServer.swift */; };
 		75EB592B258D98A7002915E7 /* BiMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75EB592A258D98A7002915E7 /* BiMap.swift */; };
 		75EB592D258DD771002915E7 /* TTY.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75EB592C258DD771002915E7 /* TTY.swift */; };
-		75EDDC5425D3AE21003AECC6 /* DockerClient in Frameworks */ = {isa = PBXBuildFile; productRef = 75EDDC5325D3AE21003AECC6 /* DockerClient */; };
 		75EDDC5B25D4BC54003AECC6 /* UnixSocketClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75EDDC5A25D4BC53003AECC6 /* UnixSocketClient.swift */; };
 /* End PBXBuildFile section */
 
@@ -437,7 +436,6 @@
 				757CA8E424905B0E002A64A8 /* Kitura-WebSocket in Frameworks */,
 				75CFF64A2496B43A00C6A6DE /* Sparkle.framework in Frameworks */,
 				756C4D832542A6D30035B467 /* Starscream in Frameworks */,
-				75EDDC5425D3AE21003AECC6 /* DockerClient in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -890,7 +888,6 @@
 				757CA8E324905B0E002A64A8 /* Kitura-WebSocket */,
 				75CFDBE124EDE31800F00CAE /* Sentry */,
 				756C4D822542A6D30035B467 /* Starscream */,
-				75EDDC5325D3AE21003AECC6 /* DockerClient */,
 			);
 			productName = fig;
 			productReference = 75675951244634AD006AA988 /* fig.app */;
@@ -973,7 +970,6 @@
 				757CA8E224905B0E002A64A8 /* XCRemoteSwiftPackageReference "Kitura-WebSocket" */,
 				758AEB6824CEA4D000A15EAF /* XCRemoteSwiftPackageReference "Starscream" */,
 				75CFDBE024EDE31800F00CAE /* XCRemoteSwiftPackageReference "sentry-cocoa" */,
-				75EDDC5225D3AE21003AECC6 /* XCRemoteSwiftPackageReference "docker-client-swift" */,
 			);
 			productRefGroup = 75675952244634AD006AA988 /* Products */;
 			projectDirPath = "";
@@ -1637,14 +1633,6 @@
 				minimumVersion = 5.2.0;
 			};
 		};
-		75EDDC5225D3AE21003AECC6 /* XCRemoteSwiftPackageReference "docker-client-swift" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/valeriomazzeo/docker-client-swift.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.0.0;
-			};
-		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -1672,11 +1660,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 75CFDBE024EDE31800F00CAE /* XCRemoteSwiftPackageReference "sentry-cocoa" */;
 			productName = Sentry;
-		};
-		75EDDC5325D3AE21003AECC6 /* DockerClient */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 75EDDC5225D3AE21003AECC6 /* XCRemoteSwiftPackageReference "docker-client-swift" */;
-			productName = DockerClient;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

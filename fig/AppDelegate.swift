@@ -11,15 +11,6 @@ import Sparkle
 import WebKit
 import Sentry
 
-//extension AppDelegate: UnixSocketDelegate {
-//    func socket(_ socket: UnixSocketClient, didReceive message: String) {
-//        print("Socket:", message)
-//    }
-//    func socketDidClose(_ socket: UnixSocketClient) {
-//        print("Socket: close socket")
-//    }
-//}
-
 @NSApplicationMain
 class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 
@@ -36,9 +27,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     func applicationDidFinishLaunching(_ aNotification: Notification) {
 //        NSApp.setActivationPolicy(NSApplication.ActivationPolicy.accessory)
         
-        //docker.delegate = self
-        //docker.connect()
-        let _ = DockerEventStream.shared
         // prevent multiple sessions
         let bundleID = Bundle.main.bundleIdentifier!
         if NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).count > 1 {
@@ -61,6 +49,8 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         let _ = ShellHookManager.shared
         let _ = KeypressProvider.shared
         let _ = AXWindowServer.shared
+        let _ = DockerEventStream.shared
+
         
         TelemetryProvider.register()
         Accessibility.listen()
