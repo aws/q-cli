@@ -195,7 +195,7 @@ class ShellBridgeSocketService: WebSocketService {
                     }
 
                     let msg = try decoder.decode(ShellMessage.self, from: message.data(using: .utf8)!)
-                    print(msg)
+//                    print(msg)
                     
                     switch msg.type {
                     case "hello":
@@ -225,8 +225,16 @@ class ShellBridgeSocketService: WebSocketService {
                                         ShellHookManager.shared.shellPromptWillReturn(msg)
                                     case "bg:exec":
                                         ShellHookManager.shared.shellWillExecuteCommand(msg)
+                                    case "bg:zsh-keybuffer":
+                                        ShellHookManager.shared.updateKeybuffer(msg)
                                     case "bg:ssh":
                                         ShellHookManager.shared.startedNewSSHConnection(msg)
+                                    case "bg:vscode":
+                                        ShellHookManager.shared.currentTabDidChange(msg)
+                                    case "bg:hyper":
+                                        ShellHookManager.shared.currentTabDidChange(msg)
+                                    case "bg:hide":
+                                        WindowManager.shared.positionAutocompletePopover(textRect: nil)
                                     case "bg:alert":
                                         if let title = msg.options?[safe: 1], let text = msg.options?[safe: 2]  {
                                             DispatchQueue.main.async {

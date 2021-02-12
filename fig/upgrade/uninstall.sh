@@ -1,6 +1,9 @@
 echo "Deleting .fig folder & completion specs"
 rm -rf ~/.fig
 
+echo "Delete backup Fig CLI"
+rm /usr/local/bin/fig
+
 echo "Deleting WKWebViewCache"
 fig util:reset-cache
 
@@ -13,6 +16,9 @@ defaults write com.mschrage.fig 'uuid' "$saved_id"
 
 echo "Remove iTerm integration (if set up)"
 rm ~/Library/Application\ Support/iTerm2/Scripts/AutoLaunch/fig-iterm-integration.py
+
+echo "Remove VSCode integration (if set up)"
+rm -rf ~/.vscode/extensions/withfig.fig-0.0.1/
 
 echo "Remove fish integration..."
 rm ~/.config/fish/conf.d/fig.fish
@@ -37,8 +43,31 @@ rm ~/.config/fish/conf.d/fig.fish
 
 echo "Removing SSH integration"
 SSH_CONFIG_PATH=~/.ssh/config
-cat $SSH_CONFIG_PATH | sed '\|# Fig SSH Integration: Enabled|,\|(fig bg:ssh ~/.ssh/%r@%h:%p &)|d' > $SSH_CONFIG_PATH'.tmp'
-mv $SSH_CONFIG_PATH'.tmp' $SSH_CONFIG_PATH
+SSH_TMP_PATH=$SSH_CONFIG_PATH'.tmp'
+# make backup?
+cp $SSH_CONFIG_PATH $SSH_CONFIG_PATH'.backup'
+
+# remove all three implementation
+START="# Fig SSH Integration: Enabled"
+
+END1="(fig bg:ssh ~/.ssh/%r@%h:%p &)"
+END2="fig bg:ssh ~/.ssh/%r@%h:%p &"
+END3="# End of Fig SSH Integration"
+
+if grep -q "$END1" $SSH_CONFIG_PATH
+  then
+  cat $SSH_CONFIG_PATH | sed -e '\|'"$START"'|,\|'"$END1"'|d' > $SSH_TMP_PATH
+elif grep -q "$END2" $SSH_CONFIG_PATH
+  then
+  cat $SSH_CONFIG_PATH | sed -e '\|'"$START"'|,\|'"$END2"'|d' > $SSH_TMP_PATH
+elif grep -q "$END3" $SSH_CONFIG_PATH
+  then
+  cat $SSH_CONFIG_PATH | sed -e '\|'"$START"'|,\|'"$END3"'|d' > $SSH_TMP_PATH
+else
+  echo "SSH Integration appears not to be installed. Ignoring."
+fi
+
+mv $SSH_TMP_PATH $SSH_CONFIG_PATH
 
 #fig bg:event "Uninstall App"
 echo "Finished removing fig resources. You may now delete the Fig app by moving it to the Trash."
