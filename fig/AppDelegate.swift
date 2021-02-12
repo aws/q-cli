@@ -29,7 +29,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     func applicationDidFinishLaunching(_ aNotification: Notification) {
 //        NSApp.setActivationPolicy(NSApplication.ActivationPolicy.accessory)
         
-        
         // prevent multiple sessions
         let bundleID = Bundle.main.bundleIdentifier!
         if NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).count > 1 {
@@ -52,6 +51,8 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         let _ = ShellHookManager.shared
         let _ = KeypressProvider.shared
         let _ = AXWindowServer.shared
+        let _ = DockerEventStream.shared
+
         
         TelemetryProvider.register()
         Accessibility.listen()
@@ -1857,8 +1858,8 @@ extension AppDelegate : NSMenuDelegate {
                 let hasWindow = window != nil
                 let hasCommand = tty?.cmd != nil
                 let isShell = tty?.isShell ?? true
-                let runUsingPrefix = tty?.runUsingPrefix ?? nil
-                let cmd = tty?.cmd != nil ? "(\(tty?.cmd ?? ""))" : "(???)"
+              
+                let cmd = tty?.cmd != nil ? "(\(tty?.name ?? tty!.cmd!))" : "(???)"
                 
                 var color: NSColor = .clear
                 let legend = NSMenu(title: "legend")
