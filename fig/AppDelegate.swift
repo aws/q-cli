@@ -1848,16 +1848,19 @@ extension AppDelegate : NSMenuDelegate {
                 var hasContext = false
                 var bufferDescription: String? = nil
                 var backedByZLE = false
+
                 if let window = window {
                     let keybuffer = KeypressProvider.shared.keyBuffer(for: window)
                     hasContext = keybuffer.buffer != nil
                     bufferDescription = keybuffer.representation
                     backedByZLE = keybuffer.backedByZLE
+                  
                 }
 
                 let hasWindow = window != nil
                 let hasCommand = tty?.cmd != nil
                 let isShell = tty?.isShell ?? true
+                let runUsingPrefix = tty?.runUsingPrefix
               
                 let cmd = tty?.cmd != nil ? "(\(tty?.name ?? tty!.cmd!))" : "(???)"
                 
