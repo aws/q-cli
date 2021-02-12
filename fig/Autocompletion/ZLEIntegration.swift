@@ -21,7 +21,7 @@ class ZLEIntegration {
   static func insertUnlock(with insertionText: String) {
       // remove lock after keystrokes have been processes (requires delay)
       Timer.delayWithSeconds(0.1) {
-          try! FileManager.default.removeItem(atPath: insertionLock)
+          try? FileManager.default.removeItem(atPath: insertionLock)
           Autocomplete.position()
 
       }
