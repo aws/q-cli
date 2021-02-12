@@ -11,5 +11,7 @@ import Foundation
 protocol CommandIntegration {
     func update(tty: TTY, for process: proc)
     func runUsingPrefix() -> String?
+    func initialize(tty: TTY)
     static var command: String { get }
+    func shouldHandleProcess(_ process: proc) -> Bool
 }

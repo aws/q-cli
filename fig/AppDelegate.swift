@@ -11,6 +11,15 @@ import Sparkle
 import WebKit
 import Sentry
 
+//extension AppDelegate: UnixSocketDelegate {
+//    func socket(_ socket: UnixSocketClient, didReceive message: String) {
+//        print("Socket:", message)
+//    }
+//    func socketDidClose(_ socket: UnixSocketClient) {
+//        print("Socket: close socket")
+//    }
+//}
+
 @NSApplicationMain
 class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 
@@ -22,11 +31,14 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     var hotKeyManager: HotKeyManager?
     let updater = SUUpdater.shared()
     let processPool = WKProcessPool()
-    
+    //let docker = UnixSocketClient(path: "/var/run/docker.sock")
+
     func applicationDidFinishLaunching(_ aNotification: Notification) {
 //        NSApp.setActivationPolicy(NSApplication.ActivationPolicy.accessory)
         
-        
+        //docker.delegate = self
+        //docker.connect()
+        let _ = DockerEventStream.shared
         // prevent multiple sessions
         let bundleID = Bundle.main.bundleIdentifier!
         if NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).count > 1 {
@@ -1767,7 +1779,7 @@ extension AppDelegate : NSMenuDelegate {
                 let hasCommand = tty?.cmd != nil
                 let isShell = tty?.isShell ?? true
                 
-                let cmd = tty?.cmd != nil ? "(\(tty?.cmd ?? ""))" : "(???)"
+                let cmd = tty?.cmd != nil ? "(\(tty?.name ?? tty!.cmd!))" : "(???)"
                 
                 var color: NSColor = .clear
                 let legend = NSMenu(title: "legend")

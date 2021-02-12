@@ -42,6 +42,7 @@ class NativeCLI {
         case ssh = "integrations:ssh"
         case teamUpload = "team:upload"
         case teamDownload = "team:download"
+        case unixSocket = "unix"
 
         var isUtility: Bool {
             get {
@@ -61,6 +62,7 @@ class NativeCLI {
                                                            .onboarding,
                                                            .version,
                                                            .report,
+                                                           .unixSocket,
                                                            .docs]
                return implementatedNatively.contains(self)
             }
@@ -93,6 +95,9 @@ class NativeCLI {
                 NativeCLI.docsCommand(scope)
             case .report:
                 NativeCLI.reportCommand(scope)
+            case .unixSocket:
+              break;
+              //(NSApp.delegate as! AppDelegate).docker.send(message: scope.0.arguments.first?.replacingOccurrences(of: "\\n", with: "\n").replacingOccurrences(of: "\\r", with: "\r") ?? "")
             default:
                 break;
             }
