@@ -35,7 +35,7 @@ class DockerIntegration: CommandIntegration {
         }
       
 
-        
+//        let semaphore = DispatchSemaphore(value: 0)
 //        let scriptPath = Bundle.main.path(forResource: "remote_cwd", ofType: "sh")!
         guard let prefix = self.runUsingPrefix() else {
             return
@@ -43,17 +43,23 @@ class DockerIntegration: CommandIntegration {
       
         tty.pty!.execute("\(prefix) 'readlink /proc/1/cwd'") { output in
             print("Docker: working directory = ", output)
-            guard tty.pid == process.pid else {
-                print("Process out of sync, abort update")
-                return
-            }
+//            guard tty.pid == process.pid else {
+//                print("Docker: Process out of sync, abort update - \(tty.pid) != \(process.pid)")
+////                semaphore.signal()
+//                return
+//            }
           
-            tty.cwd = output
+            // do some error checking - does output match a directory regex.
+            tty.cwd = output.trimmingCharacters(in: .whitespacesAndNewlines)
             tty.cmd = process.cmd
             tty.pid = process.pid
             tty.isShell = process.isShell
             tty.runUsingPrefix = prefix
+//            semaphore.signal()
+
         }
+      
+//        semaphore.wait()
 
     }
 

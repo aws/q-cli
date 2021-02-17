@@ -47,7 +47,7 @@ class SSHIntegration: CommandIntegration {
             return
         }
         
-        //let semaphore = DispatchSemaphore(value: 0)
+        let semaphore = DispatchSemaphore(value: 0)
 
         
         let scriptPath = Bundle.main.path(forResource: "remote_cwd", ofType: "sh")!
@@ -59,7 +59,7 @@ class SSHIntegration: CommandIntegration {
             print("remote_machine:", output)
             guard tty.pid == process.pid else {
                 print("Process out of sync, abort update")
-                //semaphore.signal()
+                semaphore.signal()
                 return
             }
             tty.cwd = output
@@ -67,9 +67,9 @@ class SSHIntegration: CommandIntegration {
             tty.pid = process.pid
             tty.isShell = process.isShell
             tty.runUsingPrefix = prefix
-            //semaphore.signal()
+            semaphore.signal()
         }
-        //semaphore.wait()
+        semaphore.wait()
     }
   
     func initialize(tty: TTY) {

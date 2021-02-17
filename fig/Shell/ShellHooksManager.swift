@@ -278,6 +278,8 @@ extension ShellHookManager {
         
         let tty = self.tty(for: hash) ?? link(sessionId, hash, ttyDescriptor)
         tty.preexec()
+      
+        KeypressProvider.shared.keyBuffer(for: hash).backedByZLE = false
     }
     
     func startedNewSSHConnection(_ info: ShellMessage) {

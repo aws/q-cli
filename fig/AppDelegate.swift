@@ -79,7 +79,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         warnToMoveToApplicationIfNecessary()
         Defaults.useAutocomplete = true
         Defaults.deferToShellAutosuggestions = true
-        Defaults.autocompleteVersion = "v4"
+        Defaults.autocompleteVersion = "v5"
         Defaults.autocompleteWidth = 250
         Defaults.ignoreProcessList = ["figcli", "gitstatusd-darwin-x86_64"]
 
