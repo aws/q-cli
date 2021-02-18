@@ -109,8 +109,7 @@ class DockerEventStream {
     }
     socket.delegate = self
     
-    if daemonIsRunning {
-      socket.connect()
+    if daemonIsRunning, socket.connect() {
       
       // can we get a callback from connect?
       Timer.delayWithSeconds(1) {
@@ -130,7 +129,7 @@ class DockerEventStream {
   }
   
   var daemonIsRunning: Bool {
-    return true
+    return FileManager.default.fileExists(atPath: socket.path)
   }
   
   typealias DockerEventHandler = (ContainerEvent) -> Void

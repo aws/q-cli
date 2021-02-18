@@ -40,9 +40,9 @@ final class UnixSocketClient: NSObject, StreamDelegate {
   
   // MARK: - Public API
     /// Instructs the socket to connect to the server
-  func connect() {
+  func connect() -> Bool {
     guard !isConnected else {
-      return
+      return false
     }
 
     var cfReadStream : Unmanaged<CFReadStream>?
@@ -60,7 +60,7 @@ final class UnixSocketClient: NSObject, StreamDelegate {
     // Validate the length...
     guard lengthOfPath < MemoryLayout.size(ofValue: addr.sun_path) else {
       print("Pathname supplied is too long.");
-      return
+      return false
     }
 
     // Copy the path to the remote address...
@@ -70,15 +70,20 @@ final class UnixSocketClient: NSObject, StreamDelegate {
       }
     }
 
+      var error = false
       withUnsafeMutablePointer(to: &addr) {
           $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
             guard Darwin.connect(socketFileDescriptor, $0, socklen_t(MemoryLayout<sockaddr_un>.stride)) != -1 else {
               print("Socket: Error connecting to socket, \(errno)")
+              error = true
               return
             }
           }
       }
 
+    guard !error else {
+      return false
+    }
 
     CFStreamCreatePairWithSocket(kCFAllocatorDefault, socketFileDescriptor, &cfReadStream, &cfWriteStream)
     
@@ -89,7 +94,7 @@ final class UnixSocketClient: NSObject, StreamDelegate {
     
     guard let inputStream = inputStream, let outputStream = outputStream else {
       print("Failed to get input & output streams")
-      return
+      return false
     }
     
     inputStream.delegate = self
@@ -100,6 +105,8 @@ final class UnixSocketClient: NSObject, StreamDelegate {
     
     inputStream.open()
     outputStream.open()
+    
+    return true
   }
 
     /// Instructs the socket to disconnect to the server
