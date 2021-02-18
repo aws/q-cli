@@ -186,18 +186,6 @@ extension ShellHookManager {
         // if the user has returned to the shell, their keypress buffer must be reset (for instance, if they exited by pressing 'q' rather than return)
         // This doesn't work because of timing issues. If the user types too quickly, the first keypress will be overwritten.
         // KeypressProvider.shared.keyBuffer(for: hash).buffer = ""
-        
-        // update keybuffer backing
-      if (KeypressProvider.shared.keyBuffer(for: hash).backedByZLE) {
-        
-          // ZLE doesn't handle signals sent to shell, like control+c
-          // So we need to manually force an update when the line changes
-          DispatchQueue.main.async {
-             Autocomplete.update(with: ("", 0), for: hash)
-             Autocomplete.position()
-          }
-          KeypressProvider.shared.keyBuffer(for: hash).backedByZLE = false
-      }
 
       
     }
@@ -279,7 +267,17 @@ extension ShellHookManager {
         let tty = self.tty(for: hash) ?? link(sessionId, hash, ttyDescriptor)
         tty.preexec()
       
-        KeypressProvider.shared.keyBuffer(for: hash).backedByZLE = false
+        // update keybuffer backing
+        if (KeypressProvider.shared.keyBuffer(for: hash).backedByZLE) {
+          
+            // ZLE doesn't handle signals sent to shell, like control+c
+            // So we need to manually force an update when the line changes
+            DispatchQueue.main.async {
+               Autocomplete.update(with: ("", 0), for: hash)
+               Autocomplete.position()
+            }
+            KeypressProvider.shared.keyBuffer(for: hash).backedByZLE = false
+        }
     }
     
     func startedNewSSHConnection(_ info: ShellMessage) {
@@ -303,11 +301,22 @@ extension ShellHookManager {
           }
         
       let keybuffer = KeypressProvider.shared.keyBuffer(for: hash)
-      if let (buffer, cursor) = info.parseKeybuffer() {
+      if let (buffer, cursor, histno) = info.parseKeybuffer() {
+          let previousHistoryNumber = keybuffer.zleHistoryNumber
+
           keybuffer.backedByZLE = true
           keybuffer.buffer = buffer
           keybuffer.zleCursor = cursor
-          print("ZLE: \(buffer) \(cursor)")
+          keybuffer.zleHistoryNumber = histno
+        
+          // Prevent Fig from immediately when the user navigates through history
+          // Note that Fig is hidden in response to the "history-line-set" zle hook
+          guard previousHistoryNumber == histno else {
+            return
+          }
+          
+          
+          print("ZLE: \(buffer) \(cursor) \(histno)")
 
         DispatchQueue.main.async {
            Autocomplete.update(with: (buffer, cursor), for: hash)

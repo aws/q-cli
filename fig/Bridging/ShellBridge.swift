@@ -414,11 +414,12 @@ struct ShellMessage: Codable {
         return (shellPid, String(ttyId), self.session)
     }
   
-    func parseKeybuffer() -> (String, Int)? {
+    func parseKeybuffer() -> (String, Int, Int)? {
         guard let buffer = self.options?[safe: 2] else { return nil }
         guard let cursorStr = self.options?[safe: 1], let cursor = Int(cursorStr) else { return nil }
-        
-        return (buffer, cursor)
+        guard let histStr = self.options?[safe: 3], let histno = Int(histStr) else { return nil }
+
+        return (buffer, cursor, histno)
     }
     
     func getWorkingDirectory() -> String? {

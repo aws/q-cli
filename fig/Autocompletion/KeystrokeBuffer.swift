@@ -34,6 +34,8 @@ class KeystrokeBuffer : NSObject {
     }
   }
   var zleCursor: Int = 0
+  var zleHistoryNumber: Int?
+
   static let contextRestoredInKeystrokeBufferNotification: NSNotification.Name = .init("contextRestoredInKeystrokeBufferNotification")
   static let lineResetInKeyStrokeBufferNotification: NSNotification.Name = .init("lineResetInKeyStrokeBufferNotification")
   static let contextLostInKeystrokeBufferNotification: NSNotification.Name = .init("contextLostInKeystrokeBufferNotification")
