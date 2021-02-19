@@ -50,6 +50,17 @@ if arguments.count > 1 {
     if command == "cli:installed" {
         print("true")
         exit(0)
+    } else if command == "launch" {
+        let appIsRunning = NSWorkspace.shared.runningApplications.filter { $0.bundleIdentifier == "com.mschrage.fig"}.count >= 1
+        
+        if appIsRunning {
+            print("\n› It seems like the Fig app is already running.\n")
+        } else {
+            print("\n› Launching Fig...\n")
+            NSWorkspace.shared.launchApplication(withBundleIdentifier: "com.mschrage.fig", options: .default, additionalEventParamDescriptor: nil, launchIdentifier: nil)
+        }
+        
+        exit(0)
     }
 }
 
@@ -252,7 +263,7 @@ DispatchQueue.global().asyncAfter(deadline: .now() + 1.25) {
   \u{001b}[1mQUICK FIX\u{001b}[0m
   Check if Fig is active. (You should see the ◧ Fig icon in your menu bar).
   
-→ If not, run \u{001b}[1mopen -b com.mschrage.fig\u{001b}[0m to relaunch the app.
+→ If not, run \u{001b}[1mfig launch\u{001b}[0m to relaunch the app.
 
   Please email \u{001b}[1mhello@withfig.com\u{001b}[0m if this problem persists.
 
