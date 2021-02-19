@@ -35,7 +35,7 @@ struct proc {
   
   // Run cat /etc/shells
   var isShell: Bool {
-    return (Defaults.processWhitelist + ["zsh","fish","bash", "csh","dash","ksh","tcsh", "ssh"]).reduce(into: false) { (res, shell) in
+    return (Defaults.processWhitelist + ["zsh","fish","bash", "csh","dash","ksh","tcsh", "ssh", "docker"]).reduce(into: false) { (res, shell) in
       res = res || cmd.contains(shell)
     }
   }
@@ -83,7 +83,7 @@ class TTY {
   }
   
   func update(for pid: pid_t? = nil) {
-    guard self.shell == nil else {
+   guard self.shell == nil else {
       // if shell is set, then updating the list of processes is handled through the integration!
       return
     }
@@ -94,6 +94,7 @@ class TTY {
     if let pid = pid {
       process = list.filter { $0.pid == pid }.first // there should only be one
     } else {
+      
       process = list.last
     }
     
@@ -102,7 +103,7 @@ class TTY {
     let cwd = runningProcess.cwd
     print("tty: running \(cmd) \(cwd ?? "<none>")")
     
-    if let integration = self.integrations[runningProcess.name] {
+    if let integration = self.integrationForProcess(runningProcess) {
       integration.update(tty: self, for: runningProcess)
     } else {
       self.cwd = cwd
@@ -125,8 +126,24 @@ class TTY {
   var pid: pid_t?
   var isShell: Bool?
   var shell: proc?
-  let integrations: [ String : CommandIntegration] = [ SSHIntegration.command : SSHIntegration() ]
+  let integrations: [ String : CommandIntegration] = [
+                                                      SSHIntegration.command : SSHIntegration(),
+                                                      DockerIntegration.command : DockerIntegration()
+                                                     ]
   
+  func integrationForProcess(_ process: proc) -> CommandIntegration? {
+    return integrations.reduce(nil) { (handler, kv) -> CommandIntegration? in
+      guard handler == nil else { return handler }
+      
+      let (_, integration) = kv
+      
+      if integration.shouldHandleProcess(process) {
+        return integration
+      } else {
+        return nil
+      }
+    }
+  }
   func startedNewShellSession(for shellPid: pid_t) {
     self.shell = self.processes.filter { $0.pid == shellPid }.first
     precmd()
@@ -164,12 +181,13 @@ class TTY {
         self.runUsingPrefix = nil
         NotificationCenter.default.post(name: TTY.processUpdated, object: nil)
 
-        if (runningProcess.name == "ssh") {
+        if let integration = self.integrationForProcess(runningProcess) {
           self.shell = nil
           if self.pty == nil {
             self.pty = PseudoTerminalHelper()
             self.pty?.start(with: [:])
           }
+          integration.initialize(tty: self)
         }
       }
     })

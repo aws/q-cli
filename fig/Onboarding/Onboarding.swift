@@ -88,6 +88,7 @@ class Onboarding {
 
         if let cliPath = Bundle.main.path(forAuxiliaryExecutable: "figcli"), existingSymlink != cliPath {
             do {
+                try? FileManager.default.removeItem(atPath: fullPath)
                 let fullURL = URL(fileURLWithPath: fullPath)
                 try? FileManager.default.createDirectory(at: fullURL.deletingLastPathComponent(), withIntermediateDirectories: true, attributes: [:])
                 try FileManager.default.createSymbolicLink(at: fullURL, withDestinationURL: URL(fileURLWithPath: cliPath))
@@ -101,15 +102,15 @@ class Onboarding {
     
     static func setupTerminalsForShellOnboarding(completion: (()->Void)? = nil) {
         // filter for native terminal windows (with hueristic to avoid menubar items + other window types)
-        let nativeTerminalWindows = WindowServer.shared.allWindows().filter { Integrations.nativeTerminals.contains($0.bundleId ?? "") }.filter { $0.frame.height != 22 && $0.frame.height != 30 }
+        let nativeTerminals = NSWorkspace.shared.runningApplications.filter { Integrations.nativeTerminals.contains($0.bundleIdentifier ?? "")}
         
-        let count = nativeTerminalWindows.count
+        let count = nativeTerminals.count
         guard count > 0 else {
             WindowManager.shared.newNativeTerminalSession(completion: completion)
             return
         }
-        let iTermOpen = nativeTerminalWindows.contains { $0.bundleId == "com.googlecode.iterm2" }
-        let terminalAppOpen = nativeTerminalWindows.contains { $0.bundleId == "com.apple.Terminal" }
+        let iTermOpen = nativeTerminals.contains { $0.bundleIdentifier == "com.googlecode.iterm2" }
+        let terminalAppOpen = nativeTerminals.contains { $0.bundleIdentifier == "com.apple.Terminal" }
         
         var emulators: [String] = []
         
@@ -121,7 +122,7 @@ class Onboarding {
             emulators.append("Terminal")
         }
                 
-        let restart = (NSApp.delegate as! AppDelegate).dialogOKCancel(question: "Fig will not work in existing terminal sessions", text: "Restart \(count) existing terminal session\(count == 1 ? "" : "s").\n", prompt: "Restart \(emulators.joined(separator: " and "))", noAction: false, icon: NSImage.init(imageLiteralResourceName: NSImage.applicationIconName), noActionTitle: "Open new terminal window")
+        let restart = (NSApp.delegate as! AppDelegate).dialogOKCancel(question: "Fig will not work in existing terminal sessions", text: "Restart existing terminal sessions.\n", prompt: "Restart \(emulators.joined(separator: " and "))", noAction: false, icon: NSImage.init(imageLiteralResourceName: NSImage.applicationIconName), noActionTitle: "Open new terminal window")
         
         // only restart one of the terminals, so that shell onboarding doesn't appear twice
         if (restart) {

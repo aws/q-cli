@@ -40,13 +40,25 @@ class NativeCLI {
         case remove = "remove"
         case report = "report"
         case ssh = "integrations:ssh"
+        case vscode = "integrations:vscode"
+        case iterm = "integrations:iterm"
+        case hyper = "integrations:hyper"
         case teamUpload = "team:upload"
         case teamDownload = "team:download"
+        case diagnostic = "diagnostic"
+        case pty = "debug:pty"
 
         var isUtility: Bool {
             get {
                 let utilities: Set<Command> = [.resetCache, .build, .logout, .restart, .accessibility]
                return utilities.contains(self)
+            }
+        }
+      
+        var handlesDisconnect: Bool {
+            get {
+              let handlesDisconnection: Set<Command> = [.pty, .hyper, .iterm, .vscode ]
+                return handlesDisconnection.contains(self)
             }
         }
 
@@ -61,6 +73,11 @@ class NativeCLI {
                                                            .onboarding,
                                                            .version,
                                                            .report,
+                                                           .diagnostic,
+                                                           .vscode,
+                                                           .iterm,
+                                                           .hyper,
+                                                           .pty,
                                                            .docs]
                return implementatedNatively.contains(self)
             }
@@ -93,6 +110,16 @@ class NativeCLI {
                 NativeCLI.docsCommand(scope)
             case .report:
                 NativeCLI.reportCommand(scope)
+            case .diagnostic:
+                NativeCLI.diagnosticCommand(scope)
+            case .pty:
+                NativeCLI.ptyCommand(scope)
+            case .vscode:
+                NativeCLI.VSCodeCommand(scope)
+            case .iterm:
+                NativeCLI.iTermCommand(scope)
+            case .hyper:
+                NativeCLI.HyperCommand(scope)
             default:
                 break;
             }
@@ -148,7 +175,9 @@ class NativeCLI {
                 command.runFromScript(scope)
             }
             
-            connection.send(message: "disconnect")
+            if (!command.handlesDisconnect) {
+                connection.send(message: "disconnect")
+            }
         }
         
         trackCommandEvent(scope)
@@ -252,6 +281,25 @@ extension NativeCLI {
 
         }
     }
+  
+    static func diagnosticCommand(_ scope: Scope) {
+        let (_, connection) = scope
+        NativeCLI.printInTerminal(Diagnostic.summary, using: connection)
+    }
+    
+    static func ptyCommand(_ scope: Scope) {
+        let (message, connection) = scope
+//        message.
+        let command = message.arguments.joined(separator: " ")
+        let pty = PseudoTerminalHelper()
+        pty.start(with: [:])
+        pty.execute(command) { (out) in
+          NativeCLI.printInTerminal(out, using: connection)
+          pty.close()
+          connection.send(message: "disconnect")
+        }
+
+    }
     
     static func reportCommand(_ scope: Scope) {
         let (message, connection) = scope
@@ -268,21 +316,6 @@ extension NativeCLI {
         let env = message.env?.jsonStringToDict()
         let path = env?["PATH"] as? String
         let figIntegratedWithShell = env?["FIG_ENV_VAR"] as? String
-        let config = try? String(contentsOfFile: "\(NSHomeDirectory())/.fig/user/config", encoding: String.Encoding.utf8)
-        let cliInstalled = FileManager.default.fileExists(atPath: "\(NSHomeDirectory())/.fig/bin/fig")
-        let specs = (try? FileManager.default.contentsOfDirectory(atPath: "\(NSHomeDirectory())/.fig/autocomplete").count) ?? 0
-        let secureInput = CGSIsSecureEventInputSet()
-        var blockingProcess: String? = nil
-        if secureInput {
-          var pid: pid_t = 0;
-          secure_keyboard_entry_process_info(&pid)
-          if let app = NSRunningApplication(processIdentifier: pid) {
-            blockingProcess = "\(app.localizedName ?? "") - \(app.bundleIdentifier ?? "")"
-          } else {
-            blockingProcess = "no app for pid"
-          }
-        }
-  
 
         let placeholder =
         """
@@ -300,25 +333,16 @@ extension NativeCLI {
         
         
         ---------------------------------------
-        DEFAULTS:
-        Version:\(version)
-        SSH Integration:\(Defaults.SSHIntegrationEnabled)
-        iTerm Tab Integration:\(iTermTabIntegration.isInstalled())
-        Only insert on tab:\(Defaults.onlyInsertOnTab)
-        Autocomplete:\(Defaults.useAutocomplete)
-        Usershell:\(Defaults.userShell)
+        DIAGNOSTIC
+        \(Diagnostic.summary)
         ---------------------------------------
-        ENVIRONMENT:
-        CLI installed:\(cliInstalled)
-        Number of specs: \(specs)
-        Accessibility: \(AXIsProcessTrusted())
-        SecureKeyboardInput: \(secureInput)
-        SecureKeyboardProcess: \(blockingProcess ?? "<none>")
+        ENVIRONMENT
+        Terminal: \(message.terminal ?? "<unknown>")
         PATH: \(path ?? "Not found")
         FIG_ENV_VAR: \(figIntegratedWithShell ?? "Not found")
         --------------------------------------
         CONFIG
-        \(config ?? "?")
+        \(Diagnostic.userConfig ?? "?")
         """
         
         /*
@@ -342,6 +366,50 @@ extension NativeCLI {
         }
 
         NativeCLI.printInTerminal("→ Opening docs in browser...", using: connection)
+    }
+  
+    static func VSCodeCommand(_ scope: Scope) {
+        let (_, connection) = scope
+
+        if VSCodeIntegration.isInstalled {
+            NativeCLI.printInTerminal("\n› VSCode Integration is already installed.\n  You may need to restart VSCode for the changes to take effect.\n  If you are having issues, please use fig report.\n", using: connection)
+            connection.send(message: "disconnect")
+        } else {
+            NativeCLI.printInTerminal("→ Prompting VSCode Integration...", using: connection)
+            connection.send(message: "disconnect")
+
+            VSCodeIntegration.promptToInstall()
+        }
+
+    }
+  
+    static func iTermCommand(_ scope: Scope) {
+        let (_, connection) = scope
+
+        if iTermTabIntegration.isInstalled {
+            NativeCLI.printInTerminal("\n› iTerm Tab Integration is already installed.\n  If you are having issues, please use fig report.\n", using: connection)
+            connection.send(message: "disconnect")
+
+        } else {
+            NativeCLI.printInTerminal("→ Prompting iTerm Tab Integration...", using: connection)
+            connection.send(message: "disconnect")
+            iTermTabIntegration.promptToInstall()
+        }
+
+    }
+  
+    static func HyperCommand(_ scope: Scope) {
+        let (_, connection) = scope
+
+        if HyperIntegration.isInstalled {
+            NativeCLI.printInTerminal("\n› Hyper Integration is already installed.\n  If you are having issues, please use fig report.\n", using: connection)
+            connection.send(message: "disconnect")
+        } else {
+            NativeCLI.printInTerminal("→ Prompting Hyper Integration...", using: connection)
+            connection.send(message: "disconnect")
+            HyperIntegration.promptToInstall()
+        }
+
     }
 }
 

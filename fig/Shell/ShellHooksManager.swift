@@ -41,6 +41,9 @@ class ShellHookManager : NSObject {
     fileprivate var sessions = BiMap<String>()
   
     private let queue = DispatchQueue(label: "com.withfig.shellhooks", attributes: .concurrent)
+  
+    fileprivate var observer: WindowObserver?
+    fileprivate let semaphore = DispatchSemaphore(value: 1)
 
 }
 
@@ -105,9 +108,11 @@ extension ShellHookManager {
         // Need time for whitelisted window to change
         Timer.delayWithSeconds(0.1) {
             if let window = AXWindowServer.shared.whitelistedWindow {
-                // So far, only iTerm has a tab integration.
-                guard window.bundleId == "com.googlecode.iterm2" else { return }
                 if let id = info.options?.last {
+                  let VSCodeTerminal = window.bundleId == "com.microsoft.VSCode" && id.hasPrefix("code:")
+                  let HyperTab = window.bundleId == "co.zeit.hyper" &&  id.hasPrefix("hyper:")
+                  let iTermTab = window.bundleId == "com.googlecode.iterm2" && !id.hasPrefix("code:") && !id.hasPrefix("hyper:")
+                  guard VSCodeTerminal || iTermTab || HyperTab else { return }
                     Logger.log(message: "tab: \(window.windowId)/\(id)")
 //                    self.tabs[window.windowId] = id
                     self.setActiveTab(id, for: window.windowId)
@@ -115,6 +120,12 @@ extension ShellHookManager {
                     self.updateHashMetadata(oldHash: "\(window.windowId)/", hash: window.hash)
                     
                     DispatchQueue.main.async {
+                      
+                        // If leaving visor mode in iTerm, we need to manually check which window is on top
+//                        if let app = NSWorkspace.shared.frontmostApplication {
+//                            AXWindowServer.shared.register(app, fromActivation: true)
+//                        }
+
                         WindowManager.shared.windowChanged()
                     }
                 }
@@ -175,6 +186,8 @@ extension ShellHookManager {
         // if the user has returned to the shell, their keypress buffer must be reset (for instance, if they exited by pressing 'q' rather than return)
         // This doesn't work because of timing issues. If the user types too quickly, the first keypress will be overwritten.
         // KeypressProvider.shared.keyBuffer(for: hash).buffer = ""
+
+      
     }
     
     func startedNewShellSession(_ info: ShellMessage) {
@@ -193,6 +206,8 @@ extension ShellHookManager {
         // window hash is valid, we should have an associated TTY (or we can create it)
         let tty = self.tty(for: hash) ?? link(sessionId, hash, ttyDescriptor)
         tty.startedNewShellSession(for: shellPid)
+            
+        KeypressProvider.shared.keyBuffer(for: hash).backedByZLE = false
 
     }
     
@@ -202,20 +217,36 @@ extension ShellHookManager {
             Logger.log(message: "Could not parse out shellHook metadata", priority: .notify, subsystem: .tty)
             return
         }
+      
+        guard let bundleId = NSWorkspace.shared.frontmostApplication?.bundleIdentifier else {
+          Logger.log(message: "Could not get bundle id", priority: .notify, subsystem: .tty)
+          return
+        }
         
+        var delay:TimeInterval? = 0.2
+      
+        if Integrations.Hyper == bundleId {
+            delay = 2
+        }
+      
+        observer = WindowObserver(with: bundleId)
+      
         // We need to wait for window to appear if the terminal emulator is being launched for the first time. Can this be handled more robustly?
-        Timer.delayWithSeconds(0.2) {
-            
+        observer?.windowDidAppear(timeoutAfter: delay, completion: {
             // ensuring window bundleId & frontmostApp bundleId match fixes case where a slow launching application (eg. Hyper) will init shell before window is visible/tracked
+            Logger.log(message: "Awaited window did appear", priority: .notify, subsystem: .tty)
+
             guard let window = AXWindowServer.shared.whitelistedWindow, window.bundleId == NSWorkspace.shared.frontmostApplication?.bundleIdentifier
                 else {
                 Logger.log(message: "Cannot track a new terminal session if topmost window isn't whitelisted.", priority: .notify, subsystem: .tty)
                 return
             }
-            
+          
+            Logger.log(message: "Linking \(ttyDescriptor) with \(window.hash) for \(sessionId)", priority: .notify, subsystem: .tty)
+
             let tty = self.link(sessionId, window.hash, ttyDescriptor)
             tty.startedNewShellSession(for: shellPid)
-        }
+        })
 
     }
     
@@ -235,6 +266,18 @@ extension ShellHookManager {
         
         let tty = self.tty(for: hash) ?? link(sessionId, hash, ttyDescriptor)
         tty.preexec()
+      
+        // update keybuffer backing
+        if (KeypressProvider.shared.keyBuffer(for: hash).backedByZLE) {
+          
+            // ZLE doesn't handle signals sent to shell, like control+c
+            // So we need to manually force an update when the line changes
+            DispatchQueue.main.async {
+               Autocomplete.update(with: ("", 0), for: hash)
+               Autocomplete.position()
+            }
+            KeypressProvider.shared.keyBuffer(for: hash).backedByZLE = false
+        }
     }
     
     func startedNewSSHConnection(_ info: ShellMessage) {
@@ -246,8 +289,43 @@ extension ShellHookManager {
         guard let tty = self.tty(for: hash) else { return }
         guard let sshIntegration = tty.integrations["ssh"] as? SSHIntegration else { return }
         sshIntegration.newConnection(with: info, in: tty)
+      
+        KeypressProvider.shared.keyBuffer(for: hash).backedByZLE = false
 
     }
+  
+    func updateKeybuffer(_ info: ShellMessage) {
+        guard let hash = attemptToFindToAssociatedWindow(for: info.session) else {
+              Logger.log(message: "Could not link to window on new shell session.", priority: .notify, subsystem: .tty)
+              return
+          }
+        
+      let keybuffer = KeypressProvider.shared.keyBuffer(for: hash)
+      if let (buffer, cursor, histno) = info.parseKeybuffer() {
+          let previousHistoryNumber = keybuffer.zleHistoryNumber
+
+          keybuffer.backedByZLE = true
+          keybuffer.buffer = buffer
+          keybuffer.zleCursor = cursor
+          keybuffer.zleHistoryNumber = histno
+        
+          // Prevent Fig from immediately when the user navigates through history
+          // Note that Fig is hidden in response to the "history-line-set" zle hook
+          guard previousHistoryNumber == histno else {
+            return
+          }
+          
+          
+          print("ZLE: \(buffer) \(cursor) \(histno)")
+
+        DispatchQueue.main.async {
+           Autocomplete.update(with: (buffer, cursor), for: hash)
+           Autocomplete.position()
+//          keybuffer.
+        }
+
+    }
+  }
     
 }
 
@@ -313,8 +391,10 @@ extension ShellHookManager {
 
         // tie tty & sessionId to windowHash
         //queue.async(flags: [.barrier]) {
+         semaphore.wait()
             self.tty[hash] = device
             self.sessions[hash] = sessionId // sessions is bidirectional between sessionId and windowHash
+         semaphore.signal()
         //}
         return device
     }

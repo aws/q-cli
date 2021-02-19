@@ -7,6 +7,7 @@
 //
 
 import Cocoa
+import AXSwift
 
 class Accessibility {
   static let permissionDidUpdate = Notification.Name("accessibilityPermissionDidUpdate")
@@ -84,6 +85,103 @@ class Accessibility {
   
       }
     }
+  }
+  
+  static func listAttributes(for element: AXUIElement) {
+    var names: CFArray?
+    AXUIElementCopyAttributeNames(element, &names)
+    print(names as Any)
+
+    var parametrizedNames: CFArray?
+    AXUIElementCopyParameterizedAttributeNames(element, &parametrizedNames)
+    print(parametrizedNames as Any)
+  }
+  
+  // https://github.com/chromium/chromium/blob/99314be8152e688bafbbf9a615536bdbb289ea87/chrome/browser/chrome_browser_application_mac.mm
+  // https://github.com/electron/electron/blob/462de5f97a302987dc5fa5c222781ceed040f390/docs/tutorial/accessibility.md
+  static let kAXManualAccessibility = "AXManualAccessibility" as CFString
+  static func triggerScreenReaderModeInChromiumApplication(_ app: ExternalApplication) {
+//    var one: NSInteger = 1;
+//    let cfOne: CFNumber = CFNumberCreate(kCFAllocatorDefault, .nsIntegerType, &one);
+//    AXUIElementSetAttributeValue(app.axAppRef, "AXEnhancedUserInterface" as CFString, cfOne)
+//
+//    var role : AnyObject?
+//    let roleError = AXUIElementCopyAttributeValue(app.axAppRef, kAXRoleAttribute as CFString, &role)
+//    print(roleError)
+    
+//    CFBooleanRef value = enable ? kCFBooleanTrue : kCFBooleanFalse;
+    AXUIElementSetAttributeValue(app.axAppRef, kAXManualAccessibility, kCFBooleanTrue);
+  }
+  fileprivate static var cursorCache: [ExternalWindowHash: [UIElement]] = [:]
+  static func findXTermCursorInElectronWindow(_ window: ExternalWindow) -> CGRect? {
+    guard let axElement = window.accesibilityElement else { return nil }
+    
+    var cursor: UIElement? = cursorCache[window.hash]?.reduce(nil, { (existing, cache) -> UIElement? in
+      guard existing == nil else {
+        return existing
+      }
+      
+      return findXTermCursor(cache)
+    })
+    
+    if cursor == nil {
+      let root = UIElement(axElement)
+      cursor = findXTermCursor(root)
+    } else {
+      print("Cursor Cache hit!")
+    }
+    
+    guard let currentCursor = cursor else {
+      return nil
+    }
+    
+    // create cache if it doesn't exist
+    if cursorCache[window.hash] == nil {
+      cursorCache[window.hash] = []
+    }
+    
+    // Add cursor to cache if not there
+    if !cursorCache[window.hash]!.contains(currentCursor) {
+      cursorCache[window.hash]!.append(currentCursor)
+    }
+
+    
+   
+    guard let frame: CGRect = try? currentCursor.attribute(.frame) else {
+      return nil
+    }
+    
+    return  NSRect(x: frame.origin.x, y: NSMaxY(NSScreen.screens[0].frame) - frame.origin.y, width:  frame.width, height: frame.height)
+  }
+  
+  fileprivate static func findXTermCursor(_ root: UIElement) -> UIElement? {
+    if let role = try? root.role(), role == .textField, let hasKeyboardFocus: Bool = try? root.attribute(.focused), hasKeyboardFocus == true {
+      return root
+    }
+    
+    
+    let children: [UIElement] = (try? root.arrayAttribute(.children)) ?? []
+    
+    let roles: Set<Role> = [.scrollArea, .group, .textField, .application, .browser]
+    let candidates = children.map { (element) -> UIElement? in
+      // optimize which elements are checked
+      if let role = try? element.role(), !roles.contains(role) {
+        print("role: ", role)
+        return nil
+      }
+      return findXTermCursor(element)
+    }.filter { $0 != nil }
+    
+    guard let candidate = candidates.first else {
+      return nil
+    }
+    
+    if (candidates.count != 1) {
+      print("xterm-cursor: There were two candidates!")
+    }
+    
+    return candidate
+
   }
   
 }

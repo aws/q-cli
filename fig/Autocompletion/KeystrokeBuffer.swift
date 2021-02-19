@@ -24,7 +24,18 @@ class KeystrokeBuffer : NSObject {
       }
     }
   }
-  
+  // updates are recieved directly from ZLE when this is true,
+  // so no need to process keypress events directly
+  var backedByZLE = false {
+    didSet {
+      if (!backedByZLE) {
+        buffer = ""
+      }
+    }
+  }
+  var zleCursor: Int = 0
+  var zleHistoryNumber: Int?
+
   static let contextRestoredInKeystrokeBufferNotification: NSNotification.Name = .init("contextRestoredInKeystrokeBufferNotification")
   static let lineResetInKeyStrokeBufferNotification: NSNotification.Name = .init("lineResetInKeyStrokeBufferNotification")
   static let contextLostInKeystrokeBufferNotification: NSNotification.Name = .init("contextLostInKeystrokeBufferNotification")
@@ -84,7 +95,17 @@ class KeystrokeBuffer : NSObject {
     historyIndex = 0
   }
   
+  func insert(text: String) -> (String, Int)? {
+    guard backedByZLE, buffer != nil else { return nil }
+    let index = buffer!.index(buffer!.startIndex, offsetBy: zleCursor)
+    buffer!.insert(contentsOf: text, at: index)
+    let updatedIndex = buffer!.index(index, offsetBy: text.count)
+    zleCursor = updatedIndex.utf16Offset(in: buffer!)
+     return (buffer ?? "", zleCursor)
+  }
+  
   func handleKeystroke(event: NSEvent) -> (String, Int)? {
+    guard !backedByZLE else { return (buffer ?? "", zleCursor) }
     let cleanedFlags = event.modifierFlags.intersection([.command, .control, .option, .shift])
     let keystroke = Keystroke(modifierFlags: cleanedFlags, keyCode: event.keyCode)
     switch KeyBindingsManager.keyBindings[keystroke] {
@@ -334,6 +355,16 @@ class KeystrokeBuffer : NSObject {
   }
   
   var representation: String {
+    guard !backedByZLE else {
+      if var logging = buffer {
+        let index = logging.index(logging.startIndex, offsetBy: zleCursor)
+        logging.insert("|", at: index)
+        return logging
+      }
+      
+      return "<no context>"
+    }
+    
     if var logging = buffer, index != nil {
       // todo: check if index is within bounds
       logging.insert("|", at: index!)

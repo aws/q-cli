@@ -278,17 +278,6 @@ let setup = function(window) {
           }
           window.webkit.messageHandlers.privateHandler.postMessage(func);
       },
-      cursor : {
-          forward() {
-              fig.insert("fig::forward")
-          },
-          backward() {
-              fig.insert("fig::backward")
-          },
-          backspace() {
-              fig.insert("fig::backspace")
-          }
-      },
       
       prompt(source) {
           fig.private({ type: "prompt", data: {source}})

@@ -250,7 +250,8 @@
                 <p>The terminal is a sensitive enviroment.</p>
                 <p>All processing happens locally on your device. None of your keystrokes are ever transmitted or stored.</p>
 
-                <p style = " color: #5e5e5e">While in beta, Fig gathers limited usage data in order to detect bugs and improve the app.</p>
+                <p style = "color: #5e5e5e">While in beta, Fig gathers limited usage data in order to detect bugs, provide support and improve the app. </p>
+                <p><em>This information is associated with your email address.</em></p>
                 <br>
                 <details>
                 <p><summary>What information does Fig collect?</summary></p>
@@ -258,18 +259,18 @@
                 <p>Each time you run a fig CLI command (like <span class ="code">fig update</span> or <span class ="code">fig docs</span>) we send a ping. The CLI is an important part of the Fig app. If commands like <span class ="code">fig update</span> stop working, up to date completion specs won't be downloaded for users, meaning Fig will break.</p>
 
                 <b>Autocomplete Usage</b>
-                <p>We send a ping each time you select an autocomplete suggestion. The ping contains the root command you used (e.g. git, cd, aws, etc) and nothing else (ie if you select "commit" in "git commit", all we see is git).</p>
+                <p>We send a ping each time you select an autocomplete suggestion. The ping contains the root command you used (e.g. git, cd, aws, etc) and nothing else (ie. if you select "commit" in "git commit", all we see is git).</p>
 
                 <b>Terminal Usage</b>
                 <p>Once a day, Fig sends a single ping with aggregated metrics on how long you used the Terminal, how many times Fig popped up, and how many times you used Fig.</p>
 
                 <b>App Usage</b>
-                <p>Fig sends a ping for basic app events like login, quit, and turning autocomplete on/off.</p>
+                <p>Fig sends a ping for basic app events like login, quit, completing the onboarding and turning autocomplete on/off.</p>
 
                 <b>Crash Reporting</b>
                 <p>Fig uses Sentry for crash reporting.</p>
+                <p>For more details, go to <a href="javascript:fig.open('https://withfig.com/privacy/')">withfig.com/privacy/</a>.</p>
 
-                <p>For more details, go to <a href="javascript:fig.open('https://withfig.com/privacy/')">https://withfig.com/privacy/</a>.</p>
                 </details>
 
 <!--                <center>-->
@@ -283,6 +284,7 @@
                 <div class = "button">
                     <a id = "enable" href="javascript:next()">Continue</a>
                 </div>
+
                 <br>
               
 

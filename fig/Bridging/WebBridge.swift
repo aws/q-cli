@@ -311,6 +311,26 @@ extension NSImage {
         newImage.unlockFocus()
         return newImage//.resized(to: NSSize(width: background.size.width * 1.5, height: background.size.height * 1.5))!
     }
+  
+  func overlayImage(_ image: NSImage) -> NSImage {
+        let background = self
+        let side:CGFloat = 32
+
+        let overlay = image//.resized(to: NSSize(width:  background.size.width/2, height:  background.size.height/2))!
+        
+        let newImage = NSImage(size: background.size)
+        newImage.lockFocus()
+
+        var newImageRect: CGRect = .zero
+        newImageRect.size = newImage.size
+        
+        background.draw(in: newImageRect)
+        overlay.draw(in: NSRect(x: background.size.width/2, y: 0, width: background.size.width/2 - 4, height: background.size.height/2 - 4))
+
+        newImage.unlockFocus()
+        return newImage//.resized(to: NSSize(width: background.size.width * 1.5, height: background.size.height * 1.5))!
+    }
+  
     func overlayBadge(color: NSColor?, text: String?) -> NSImage {
         guard color != nil || text != nil else {
             return self
@@ -748,7 +768,9 @@ extension WebBridge {
                     scope.webView?.window?.close()
                     Defaults.loggedIn = true
 
-                    Onboarding.setupTerminalsForShellOnboarding()
+                    Onboarding.setupTerminalsForShellOnboarding {
+                      SecureKeyboardInput.notifyIfEnabled()
+                    }
                 
                     if let delegate = NSApplication.shared.delegate as? AppDelegate {
                         delegate.setupCompanionWindow()
@@ -900,12 +922,13 @@ extension WebBridge {
 
                     }
                 case "autocomplete-hide":
-                    guard let companion = scope.getCompanionWindow(), companion.isAutocompletePopup else { return }
-                    
-                    if let hash = companion.tetheredWindow?.hash {
-                        KeypressProvider.shared.keyBuffer(for: hash).writeOnly = true
+                    guard let companion = scope.getCompanionWindow(), companion.isAutocompletePopup, let window = AXWindowServer.shared.whitelistedWindow  else { return }
+                    KeypressProvider.shared.keyBuffer(for: window.hash).writeOnly = true
+                    Autocomplete.position {
+                      // Cause up arrow to immediately start scrolling through history
+                      ShellBridge.simulate(keypress: .upArrow)
                     }
-
+                    
                 case "setAutocompleteHeight":
                     guard let heightString = data["height"] else { return }
                     let companion = scope.getCompanionWindow()
@@ -1010,8 +1033,9 @@ extension WebBridge {
                             NotificationCenter.default.post(name: NSNotification.Name("showAutocompletePopup"), object: nil)
                         }
                         companion?.orderFrontRegardless()
-                        let rect = KeypressProvider.shared.getTextRect()
-                        WindowManager.shared.positionAutocompletePopover(textRect: rect)
+                        //let rect = KeypressProvider.shared.getTextRect()
+                        //WindowManager.shared.positionAutocompletePopover(textRect: rect)
+                        Autocomplete.position()
                     }
 //                    let rect = KeypressProvider.shared.getTextRect()
 //                    WindowManager.shared.positionAutocompletePopover(textRect: rect)
@@ -1033,8 +1057,9 @@ extension WebBridge {
                     return
                 }
                 
-                let rect = KeypressProvider.shared.getTextRect()
-                WindowManager.shared.positionAutocompletePopover(textRect: rect)
+                //let rect = KeypressProvider.shared.getTextRect()
+                //WindowManager.shared.positionAutocompletePopover(textRect: rect)
+                Autocomplete.position()
 
 
             case "interceptKeystrokes":

@@ -40,6 +40,7 @@ protocol PseudoTerminalService {
 class PseudoTerminalHelper {
     var executeHandlers: [ String: (String) -> Void ] = [:]
     let pty = PseudoTerminal()
+    let debug = false
     fileprivate let semaphore = DispatchSemaphore(value: 1)
 
     // Because they ruin your punchline.
@@ -47,13 +48,20 @@ class PseudoTerminalHelper {
     func execute(_ command: String, handler: @escaping (String) -> Void) {
         let id = UUID().uuidString
         executeHandlers[id] = handler
-        semaphore.wait()
+      print("pty: Executing command with PTY Service '\(command)'. Output Id = \(id).")
+        // timeout prevents deadlocks
+        let _ = semaphore.wait(timeout: .now())
         pty.execute(command: command, handlerId: id)
     }
     
     func start(with env: [String : String]) {
         pty.start(with: env)
         pty.delegate = self
+      if debug {
+        let path = "\(NSHomeDirectory())/.fig/\(UUID().uuidString).session"
+        pty.write(command:"script -q -t 0 \(path)", control: nil)
+        print("pty: Debug mode is on. Writting all logs to \(path). Can be read with tail -f \(path).")
+      }
     }
     
     func close() {
@@ -64,12 +72,14 @@ class PseudoTerminalHelper {
 extension PseudoTerminalHelper : PseudoTerminalEventDelegate {
     func recievedDataFromPty(_ notification: Notification) {
         if let msg = notification.object as? PtyMessage {
+            print("pty: is anything happening here?")
             guard let handler = self.executeHandlers[msg.handleId] else {
                 return
             }
-            
-            handler(msg.output)
+          
+            print("pty: Finished executing command for id = \(msg.handleId)")
             semaphore.signal()
+            handler(msg.output)
         }
     }
     
@@ -94,7 +104,7 @@ class PseudoTerminal : PseudoTerminalService {
         
         // don't add shell hooks to pty
         // Add TERM variable to supress warning for ZSH
-        var updatedEnv = env.merging(["FIG_ENV_VAR" : "1", "FIG_SHELL_VAR" : "1", "TERM" : "xterm-256color"]) { $1 }
+        let updatedEnv = env.merging(["FIG_ENV_VAR" : "1", "FIG_SHELL_VAR" : "1", "TERM" : "xterm-256color"]) { $1 }
         let rawEnv = updatedEnv.reduce([]) { (acc, elm) -> [String] in
             let (key, value) = elm
             return acc + ["\(key)=\(value)"]
@@ -105,9 +115,10 @@ class PseudoTerminal : PseudoTerminalService {
 
         pty.send("unset HISTFILE\r")
         
+      
         // export path from userShell
-        pty.send("export PATH=$(\(Defaults.userShell) -i -c 'echo $PATH')\r")
-        
+        pty.send("export PATH=$(\(Defaults.userShell) -li -c \"/usr/bin/env | /usr/bin/grep '^PATH=' | /bin/cat | /usr/bin/sed 's|PATH=||g'\")\r")
+
         // Copy enviroment from userShell
 //        pty.send("export $(env -i '\(Defaults.userShell)' -li -c env | tr '\n' ' ')\r")
         print(pty.process.delegate)
