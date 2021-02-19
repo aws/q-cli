@@ -27,6 +27,20 @@ class Autocomplete {
     
   }
   
+  static func hide() {
+    guard let window = AXWindowServer.shared.whitelistedWindow else { return }
+    
+    WindowManager.shared.positionAutocompletePopover(textRect: nil)
+    
+    KeypressProvider.shared.removeRedirect(for: Keycode.upArrow, in: window)
+    KeypressProvider.shared.removeRedirect(for: Keycode.downArrow, in: window)
+    KeypressProvider.shared.removeRedirect(for: Keycode.tab, in: window)
+    KeypressProvider.shared.removeRedirect(for: Keycode.escape, in: window)
+    KeypressProvider.shared.removeRedirect(for: Keycode.returnKey, in: window)
+    KeypressProvider.shared.removeRedirect(for: Keystroke(modifierFlags: [.control], keyCode: Keycode.n), in: window)
+    KeypressProvider.shared.removeRedirect(for: Keystroke(modifierFlags: [.control], keyCode: Keycode.p), in: window)
+  }
+  
   static func position(completion:(() -> Void)? = nil) {
     guard let window = AXWindowServer.shared.whitelistedWindow else {
       completion?()

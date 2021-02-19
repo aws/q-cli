@@ -299,8 +299,24 @@ class KeypressProvider : KeypressService {
         return
     }
     
+
     let keyBuffer = self.keyBuffer(for: window)
-    guard !keyBuffer.backedByZLE else { return }
+    guard !keyBuffer.backedByZLE else {
+      
+      
+      // trigger positioning updates for hotkeys, like cmd+w, cmd+t, cmd+n, or Scpectacle
+      if let event = event {
+        
+        if event.keyCode == KeyboardLayout.shared.keyCode(for: "W") && event.modifierFlags.contains(.command) {
+          Autocomplete.hide()
+        } else if event.modifierFlags.contains(.command) || event.modifierFlags.contains(.option) {
+          Autocomplete.position()
+
+        }
+      }
+      
+      return
+    }
 
     if let event = event, event.type == NSEvent.EventType.keyDown {
       Autocomplete.update(with: keyBuffer.handleKeystroke(event: event), for: window.hash)
