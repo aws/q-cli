@@ -83,7 +83,7 @@ class WebSocketServer {
         service = ShellBridgeSocketService()
         WebSocket.register(service: service, onPath: "/")
 
-        DispatchQueue.global(qos: .background).async {
+        DispatchQueue.global(qos: .userInteractive).async {
             let server = HTTP.createServer()
                    server.delegate = ShellBridgeServerDelegate()
                    do {

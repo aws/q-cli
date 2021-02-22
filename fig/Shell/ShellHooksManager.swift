@@ -317,7 +317,11 @@ extension ShellHookManager {
           
           
           print("ZLE: \(buffer) \(cursor) \(histno)")
-
+        
+        guard Defaults.loggedIn, Defaults.useAutocomplete else {
+          return
+        }
+        
         DispatchQueue.main.async {
            Autocomplete.update(with: (buffer, cursor), for: hash)
            Autocomplete.position()
