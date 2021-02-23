@@ -30,7 +30,8 @@ class Logger {
         print("\(subsystem.rawValue): \(message)")
         
         let line = Logger.format(message, priority, subsystem)
-        appendToLog(line)
+        print(line)
+//        appendToLog(line)
         
         //|| Defaults.broadcastLogsForSubsystem == subsystem
         if Defaults.broadcastLogs {

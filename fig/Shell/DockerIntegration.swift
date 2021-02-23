@@ -100,7 +100,15 @@ class DockerIntegration: CommandIntegration {
 class DockerEventStream {
   static let shared = DockerEventStream()
   let socket = UnixSocketClient(path: "/var/run/docker.sock")
+  static let dockerBundleId = "com.docker.docker"
   var activeContainers: [String] = []
+  
+  
+  
+  fileprivate var observer: NSKeyValueObservation? = nil
+  fileprivate var timer: Timer? = nil
+  fileprivate let pollingInterval: TimeInterval = 20
+  
   init() {
     
     guard self.appIsInstalled else {
@@ -109,23 +117,82 @@ class DockerEventStream {
     }
     socket.delegate = self
     
-    if daemonIsRunning, socket.connect() {
-      
-      // can we get a callback from connect?
-      Timer.delayWithSeconds(1) {
-        self.socket.send(message: "GET /events HTTP/1.0\r\n\r\n")
+    self.attemptToConnectToDocker()
+//    self.waitForDockerToTerminate {
+//      print("Docker: terminating...")
+//      self.socket.disconnect()
+//    }
+    
+    self.timer = Timer.scheduledTimer(withTimeInterval: self.pollingInterval, repeats: true) { _ in
+      print("Docker: should attempt to connect?")
+      guard NSWorkspace.shared.runningApplications.contains(where: { (app) -> Bool in
+        return app.bundleIdentifier == DockerEventStream.dockerBundleId
+      }) else {
+        print("Docker: desktop app is not running, so disconnecting from socket.")
+        self.socket.disconnect()
+        return
+      }
+      guard !self.socket.isConnected else {
+        print("Docker: Socket is already connected")
+        return
       }
       
-    } else {
-      // if docker is installed, periodically check if docker is running
-
-      // schedule timer to periodically check
+      self.attemptToConnectToDocker()
     }
+    
     
   }
   
+  fileprivate func attemptToConnectToDocker() {
+    print("Docker: attempting to connect!")
+    if daemonIsRunning, socket.connect() {
+        print("Docker: connected to socket")
+       // can we get a callback from connect?
+       Timer.delayWithSeconds(1) {
+         self.socket.send(message: "GET /events HTTP/1.0\r\n\r\n")
+       }
+       
+     } else {
+      print("Docker: could not connect... Waiting \(self.pollingInterval) seconds to retry.")
+       // if docker is installed, periodically check if docker is running
+
+     }
+  }
+  
+  // Can't use workspace notifications to see when Docker quits
+  // because it is a daemon application
+  // https://developer.apple.com/documentation/appkit/nsworkspace/1534081-didterminateapplicationnotificat
+//  func waitForDockerToTerminate(completion: @escaping (() -> Void)) {
+//    if let app = NSWorkspace.shared.runningApplications.filter ({ return $0.bundleIdentifier == DockerEventStream.dockerBundleId }).first {
+//      self.observer = app.observe(\.isTerminated, options: .new) { (app, terminated) in
+//        if terminated.newValue == true {
+//          self.observer?.invalidate()
+//          completion()
+//        }
+//      }
+//    }
+//
+//    return
+      
+//    NSWorkspace.shared.observe(\.runningApplications, options: [.old, .new ]) { (workspace, delta) in
+//      print("Docker: observe")
+//      if let oldValue = delta.oldValue {
+//        let newValue = workspace.runningApplications
+//        let diff = Set(oldValue).subtracting(Set(newValue)) // symetricDifference
+//        print("Docker: \(diff)")
+//        if diff.filter({ app in
+//          return app.bundleIdentifier == DockerEventStream.dockerBundleId
+//        }).count == 1 {
+//          self.observer?.invalidate()
+//          self.observer = nil
+//          completion()
+//        }
+//      }
+//    }
+//  }
+  
   var appIsInstalled: Bool {
-    return NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.docker.docker") != nil
+    return NSWorkspace.shared.urlForApplication(withBundleIdentifier: DockerEventStream.dockerBundleId) != nil
   }
   
   var daemonIsRunning: Bool {
@@ -166,6 +233,13 @@ class DockerEventStream {
 extension DockerEventStream: UnixSocketDelegate {
   func socket(_ socket: UnixSocketClient, didReceive message: String) {
     print("Docker: recieved message")
+    
+    //
+    guard !message.contains("connection refused") else {
+      print("Docker: disconnecting because connection refused")
+      socket.disconnect()
+      return
+    }
 
     message.split(separator:"\n").forEach { (item) in
       processEvent(String(item))
@@ -178,6 +252,7 @@ extension DockerEventStream: UnixSocketDelegate {
   
   func socketDidClose(_ socket: UnixSocketClient) {
     // schedule attempts to reconnnect
+    //attemptToConnectToDocker()
   }
 }
 
