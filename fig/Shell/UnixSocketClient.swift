@@ -30,7 +30,7 @@ final class UnixSocketClient: NSObject, StreamDelegate {
   
   private let messageBuffer = NSMutableData(capacity: 256)!
   
-  private var isConnected: Bool { return inputStream != nil && outputStream != nil }
+  var isConnected: Bool { return inputStream != nil && outputStream != nil }
   
   // MARK: - Lifecycle
   
@@ -90,8 +90,10 @@ final class UnixSocketClient: NSObject, StreamDelegate {
     inputStream = cfReadStream!.takeRetainedValue()
     outputStream = cfWriteStream!.takeRetainedValue()
 
+    // causes socket to close automatically (no need to use POSIX `shutdown` API)
+    inputStream?.setProperty(kCFBooleanTrue, forKey:  kCFStreamPropertyShouldCloseNativeSocket as Stream.PropertyKey)
+    outputStream?.setProperty(kCFBooleanTrue, forKey:  kCFStreamPropertyShouldCloseNativeSocket as Stream.PropertyKey)
 
-    
     guard let inputStream = inputStream, let outputStream = outputStream else {
       print("Failed to get input & output streams")
       return false

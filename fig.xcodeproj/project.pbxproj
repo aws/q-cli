@@ -155,9 +155,9 @@
 		75AA24D225A79F3400A51E9D /* issue.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75AA24D025A79B4A00A51E9D /* issue.sh */; };
 		75AA24D325A79F3400A51E9D /* contribute.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75AA24CF25A79ACC00A51E9D /* contribute.sh */; };
 		75AA24DA25A7E8B000A51E9D /* lsof.m in Sources */ = {isa = PBXBuildFile; fileRef = 75AA24D925A7E8B000A51E9D /* lsof.m */; };
+		75AEF2E425C3C34A00D78431 /* Diagnostic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75AEF2E325C3C34A00D78431 /* Diagnostic.swift */; };
 		75AEF2E625C3DEAF00D78431 /* DockerIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75AEF2E525C3DEAF00D78431 /* DockerIntegration.swift */; };
 		75AEF2E825C3DEC600D78431 /* SSHIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75AEF2E725C3DEC600D78431 /* SSHIntegration.swift */; };
-		75AEF2E425C3C34A00D78431 /* Diagnostic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75AEF2E325C3C34A00D78431 /* Diagnostic.swift */; };
 		75AEF2EA25C4C34D00D78431 /* SecureKeyboardInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75AEF2E925C4C34D00D78431 /* SecureKeyboardInput.swift */; };
 		75AEF2EE25C5062E00D78431 /* WindowObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75AEF2ED25C5062E00D78431 /* WindowObserver.swift */; };
 		75B0A07C25BA64CC00FCD89A /* AutocompleteContextNotifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B0A07B25BA64CC00FCD89A /* AutocompleteContextNotifier.swift */; };
@@ -188,9 +188,9 @@
 		75E993F52517E226000BE6BE /* AXWindowServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75E993F42517E226000BE6BE /* AXWindowServer.swift */; };
 		75EB592B258D98A7002915E7 /* BiMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75EB592A258D98A7002915E7 /* BiMap.swift */; };
 		75EB592D258DD771002915E7 /* TTY.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75EB592C258DD771002915E7 /* TTY.swift */; };
-		75EDDC5B25D4BC54003AECC6 /* UnixSocketClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75EDDC5A25D4BC53003AECC6 /* UnixSocketClient.swift */; };
 		75EDDC4E25D23773003AECC6 /* HyperIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75EDDC4D25D23773003AECC6 /* HyperIntegration.swift */; };
 		75EDDC5125D24755003AECC6 /* hyper-integration.js in Resources */ = {isa = PBXBuildFile; fileRef = 75EDDC5025D24755003AECC6 /* hyper-integration.js */; };
+		75EDDC5B25D4BC54003AECC6 /* UnixSocketClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75EDDC5A25D4BC53003AECC6 /* UnixSocketClient.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -410,9 +410,9 @@
 		75AA24D925A7E8B000A51E9D /* lsof.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = lsof.m; sourceTree = "<group>"; };
 		75AC552B2522C7710069635E /* upgrade */ = {isa = PBXFileReference; lastKnownFileType = folder; name = upgrade; path = ../upgrade; sourceTree = "<group>"; };
 		75AC55322522C8EB0069635E /* 1.0.20.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = 1.0.20.sh; sourceTree = "<group>"; };
+		75AEF2E325C3C34A00D78431 /* Diagnostic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Diagnostic.swift; sourceTree = "<group>"; };
 		75AEF2E525C3DEAF00D78431 /* DockerIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DockerIntegration.swift; sourceTree = "<group>"; };
 		75AEF2E725C3DEC600D78431 /* SSHIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSHIntegration.swift; sourceTree = "<group>"; };
-		75AEF2E325C3C34A00D78431 /* Diagnostic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Diagnostic.swift; sourceTree = "<group>"; };
 		75AEF2E925C4C34D00D78431 /* SecureKeyboardInput.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureKeyboardInput.swift; sourceTree = "<group>"; };
 		75AEF2ED25C5062E00D78431 /* WindowObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowObserver.swift; sourceTree = "<group>"; };
 		75B0A07B25BA64CC00FCD89A /* AutocompleteContextNotifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutocompleteContextNotifier.swift; sourceTree = "<group>"; };
@@ -442,9 +442,9 @@
 		75E993F42517E226000BE6BE /* AXWindowServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AXWindowServer.swift; sourceTree = "<group>"; };
 		75EB592A258D98A7002915E7 /* BiMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiMap.swift; sourceTree = "<group>"; };
 		75EB592C258DD771002915E7 /* TTY.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TTY.swift; sourceTree = "<group>"; };
-		75EDDC5A25D4BC53003AECC6 /* UnixSocketClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnixSocketClient.swift; sourceTree = "<group>"; };
 		75EDDC4D25D23773003AECC6 /* HyperIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HyperIntegration.swift; sourceTree = "<group>"; };
 		75EDDC5025D24755003AECC6 /* hyper-integration.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = "hyper-integration.js"; sourceTree = "<group>"; };
+		75EDDC5A25D4BC53003AECC6 /* UnixSocketClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnixSocketClient.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
