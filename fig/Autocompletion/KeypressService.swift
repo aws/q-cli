@@ -227,6 +227,24 @@ class KeypressProvider : KeypressService {
         return Unmanaged.passUnretained(event)
       }
       
+      // Toggle autocomplete on and off
+      if UInt16(event.getIntegerValueField(.keyboardEventKeycode)) == Keycode.escape, [.keyDown].contains(type) {
+        let buffer = KeypressProvider.shared.keyBuffer(for: window)
+        
+        buffer.writeOnly = !buffer.writeOnly
+
+        if buffer.writeOnly {
+            Autocomplete.hide()
+            WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try{ fig.keypress(\"\(Keycode.escape)\", \"\(window.hash)\") } catch(e) {}", completionHandler: nil)
+        } else {
+            Autocomplete.update(with: buffer.currentState, for: window.hash)
+            Autocomplete.position()
+        }
+        
+        return nil
+        
+      }
+      
       if [.keyDown , .keyUp].contains(type) {
         var keyCode = UInt16(event.getIntegerValueField(.keyboardEventKeycode))
         print("eventTap", keyCode, event.getIntegerValueField(.eventTargetUnixProcessID))

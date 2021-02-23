@@ -9,7 +9,20 @@
 import Cocoa
 
 class KeystrokeBuffer : NSObject {
-  var cursor: Int = 0
+  
+  var currentState: (String, Int)? {
+    guard !writeOnly else {
+      return nil
+    }
+    
+    if self.backedByZLE {
+      return (buffer ?? "", zleCursor)
+    } else {
+      guard buffer != nil, index != nil else { return nil }
+      return (buffer!, index!.utf16Offset(in: buffer!))
+    }
+  }
+  
   var historyIndex = 0
   var index: String.Index?
   var stashedBuffer: String?
@@ -17,6 +30,7 @@ class KeystrokeBuffer : NSObject {
   var writeOnly = false // update buffer, but don't return it (prevents keypress events from being sent to autocomplete)
     {
     didSet {
+      print("writeOnly: \(writeOnly)")
       if (writeOnly) {
         NotificationCenter.default.post(name: Self.contextLostInKeystrokeBufferNotification, object: nil)
       } else if self.buffer != nil {
@@ -34,7 +48,18 @@ class KeystrokeBuffer : NSObject {
     }
   }
   var zleCursor: Int = 0
-  var zleHistoryNumber: Int?
+  var zleHistoryNumber: Int? {
+    didSet {
+      
+      // reset writeOnly value when line number changes
+      // so that even if escape has been pressed previous
+      // the autocomplete window will reappear
+      if (zleHistoryNumber != oldValue) {
+        writeOnly = false
+      }
+      
+    }
+  }
 
   static let contextRestoredInKeystrokeBufferNotification: NSNotification.Name = .init("contextRestoredInKeystrokeBufferNotification")
   static let lineResetInKeyStrokeBufferNotification: NSNotification.Name = .init("lineResetInKeyStrokeBufferNotification")
@@ -49,7 +74,6 @@ class KeystrokeBuffer : NSObject {
   
   var hazy: Bool = true {
     didSet {
-      cursor = 0
       index = nil
     }
   }
@@ -153,7 +177,9 @@ class KeystrokeBuffer : NSObject {
   }
   
   func handleKeystroke(event: NSEvent) -> (String, Int)? {
-    guard !backedByZLE else { return (buffer ?? "", zleCursor) }
+    guard !backedByZLE else {
+      return writeOnly ? nil : (buffer ?? "", zleCursor)
+    }
     let cleanedFlags = event.modifierFlags.intersection([.command, .control, .option, .shift])
     let keystroke = Keystroke(modifierFlags: cleanedFlags, keyCode: event.keyCode)
     switch KeyBindingsManager.keyBindings[keystroke] {
