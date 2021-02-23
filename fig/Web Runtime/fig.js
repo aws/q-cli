@@ -317,6 +317,27 @@ let setup = function(window) {
               var payload = { userId }
               fig.private({ type: "alias", data: payload})
           }
+      },
+    
+      keys : {
+        upArrow: function() {
+          fig.private({ type: "key", data: {code: "126" }})
+        },
+        downArrow: function() {
+          fig.private({ type: "key", data: {code: "125"}})
+        },
+        leftArrow: function() {
+          fig.private({ type: "key", data: {code: "123"}})
+        },
+        rightArrow: function() {
+          fig.private({ type: "key", data: {code: "124"}})
+        },
+        enter: function() {
+          fig.private({ type: "key", data: {code: "36"}})
+        },
+        backspace: function() {
+          fig.private({ type: "key", data: {code: "51"}})
+        }
       }
   }
     

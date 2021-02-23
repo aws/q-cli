@@ -922,8 +922,9 @@ extension WebBridge {
 
                     }
                 case "autocomplete-hide":
+//                  break;
                     guard let companion = scope.getCompanionWindow(), companion.isAutocompletePopup, let window = AXWindowServer.shared.whitelistedWindow  else { return }
-                    KeypressProvider.shared.keyBuffer(for: window.hash).writeOnly = true
+                    //KeypressProvider.shared.keyBuffer(for: window.hash).writeOnly = true
                     Autocomplete.position {
                       // Cause up arrow to immediately start scrolling through history
                       ShellBridge.simulate(keypress: .upArrow)
@@ -972,6 +973,13 @@ extension WebBridge {
                     let source = data["source"]
 
                     Feedback.getFeedback(source: source ?? "javascript")
+                case "key":
+                  guard let codeString = data["code"], let keycode = UInt16(codeString), let keypress = ShellBridge.Keypress(rawValue: keycode) else {
+                      return
+                  }
+              
+                  ShellBridge.simulate(keypress: keypress)
+
                 default:
                     print("private command '\(type)' does not exist.")
             }

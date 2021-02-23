@@ -726,7 +726,6 @@ extension WindowManager : WindowManagementService {
                 KeypressProvider.shared.addRedirect(for: Keycode.upArrow, in: window)
                 KeypressProvider.shared.addRedirect(for: Keycode.downArrow, in: window)
                 KeypressProvider.shared.addRedirect(for: Keycode.tab, in: window)
-                KeypressProvider.shared.addRedirect(for: Keycode.escape, in: window)
                 if (!Defaults.onlyInsertOnTab) {
                     KeypressProvider.shared.addRedirect(for: Keycode.returnKey, in: window)
                 }
@@ -739,7 +738,6 @@ extension WindowManager : WindowManagementService {
                 KeypressProvider.shared.removeRedirect(for: Keycode.downArrow, in: window)
                 KeypressProvider.shared.removeRedirect(for: Keycode.returnKey, in: window)
                 KeypressProvider.shared.removeRedirect(for: Keycode.tab, in: window)
-                KeypressProvider.shared.removeRedirect(for: Keycode.escape, in: window)
                 KeypressProvider.shared.removeRedirect(for: Keystroke(modifierFlags: [.control], keyCode: Keycode.n), in: window)
                 KeypressProvider.shared.removeRedirect(for: Keystroke(modifierFlags: [.control], keyCode: Keycode.p), in: window)
 

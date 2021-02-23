@@ -62,35 +62,37 @@ extension ShellHookManager {
   func setActiveTab(_ tab: String, for windowID: CGWindowID) {
     self.tabs[windowID] = tab
     return
-    queue.async(flags: [.barrier]) {
-      self.tabs[windowID] = tab
-    }
+    
+//    queue.async(flags: [.barrier]) {
+//      self.tabs[windowID] = tab
+//    }
   }
   
   func ttys() -> [ExternalWindowHash: TTY] {
     return self.tty
-    var ttys: [ExternalWindowHash: TTY]!
-    queue.sync {
-      ttys = self.tty
-    }
-    return ttys
+//    var ttys: [ExternalWindowHash: TTY]!
+//    queue.sync {
+//      ttys = self.tty
+//    }
+//    return ttys
   }
   
   func tty(for windowHash: ExternalWindowHash) -> TTY? {
     return self.tty[windowHash]
-    var tty: TTY?
-    queue.sync {
-      tty = self.tty[windowHash]
-    }
-    return tty
+//    var tty: TTY?
+//    queue.sync {
+//      tty = self.tty[windowHash]
+//    }
+//    return tty
   }
   
   func setTTY(_ tty:TTY, for window: ExternalWindowHash) {
     self.tty[window] = tty
     return
-    queue.sync(flags: [.barrier]) {
-      self.tty[window] = tty
-    }
+    
+//    queue.sync(flags: [.barrier]) {
+//      self.tty[window] = tty
+//    }
   }
 }
 
@@ -315,6 +317,10 @@ extension ShellHookManager {
             return
           }
           
+          // write only prevents autocomplete from recieving keypresses
+          guard !keybuffer.writeOnly else {
+            return
+          }
           
           print("ZLE: \(buffer) \(cursor) \(histno)")
 
