@@ -140,6 +140,12 @@ class KeypressProvider : KeypressService {
     
     self.keyHandler = NSEvent.addGlobalMonitorForEvents(matching: [ .keyUp], handler: { (event) in
       guard Defaults.useAutocomplete else { return }
+      
+      // Watch for Cmd+V and manually update ZLE buffer (because we don't recieve an event until the following keystroke)
+      if AXWindowServer.shared.whitelistedWindow != nil, event.keyCode == Keycode.v && event.modifierFlags.contains(.command) {
+        ZLEIntegration.insertUnlock(with: NSPasteboard.general.string(forType: .string) ?? "")
+      }
+      
       guard event.keyCode == Keycode.returnKey || event.modifierFlags.contains(.control) else { return }
       if let window = AXWindowServer.shared.whitelistedWindow, let tty = window.tty {
         Timer.delayWithSeconds(0.2) {
