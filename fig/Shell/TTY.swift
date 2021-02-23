@@ -78,8 +78,7 @@ class TTY {
     // writeonly, don't take control of tty, append
     let fd = Darwin.open("/dev/\(self.descriptor)", O_WRONLY | O_NOCTTY | O_APPEND, 0o644)
     let bytes: [UInt8] =  Array(pattern.utf8)
-    Darwin.
-    write(fd, UnsafePointer(bytes), bytes.count)
+    Darwin.write(fd, UnsafePointer(bytes), bytes.count)
     
     //remember to close file descriptor
     Darwin.close(fd)
