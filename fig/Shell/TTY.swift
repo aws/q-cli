@@ -76,9 +76,13 @@ class TTY {
     //https://pubs.opengroup.org/onlinepubs/007904875/functions/open.html
     // writing escape sequence directly to STDIN to update title
     // writeonly, don't take control of tty, append
-    let fd = open("/dev/\(self.descriptor)", O_WRONLY | O_NOCTTY | O_APPEND, 0o644)
+    let fd = Darwin.open("/dev/\(self.descriptor)", O_WRONLY | O_NOCTTY | O_APPEND, 0o644)
     let bytes: [UInt8] =  Array(pattern.utf8)
+    Darwin.
     write(fd, UnsafePointer(bytes), bytes.count)
+    
+    //remember to close file descriptor
+    Darwin.close(fd)
 
   }
   
