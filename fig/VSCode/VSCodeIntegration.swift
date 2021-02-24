@@ -102,6 +102,9 @@ class VSCodeIntegration {
     if (install) {
       VSCodeIntegration.install {
         print("Installation completed!")
+        if let app = AXWindowServer.shared.topApplication, Integrations.VSCode == app.bundleIdentifier {
+          Accessibility.triggerScreenReaderModeInChromiumApplication(app)
+        }
         completion?()
       }
     } else {

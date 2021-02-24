@@ -115,6 +115,9 @@ class HyperIntegration {
     if (install) {
       HyperIntegration.install(withRestart: true) {
         print("Installation completed!")
+        if let app = AXWindowServer.shared.topApplication, Integrations.Hyper == app.bundleIdentifier {
+          Accessibility.triggerScreenReaderModeInChromiumApplication(app)
+        }
         completion?()
       }
     } else {

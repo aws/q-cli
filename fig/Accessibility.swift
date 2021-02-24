@@ -112,6 +112,13 @@ class Accessibility {
 //    CFBooleanRef value = enable ? kCFBooleanTrue : kCFBooleanFalse;
     AXUIElementSetAttributeValue(app.axAppRef, kAXManualAccessibility, kCFBooleanTrue);
   }
+  
+  static func triggerScreenReaderModeInFrontmostApplication() {
+    if let app = AXWindowServer.shared.topApplication {
+      triggerScreenReaderModeInChromiumApplication(app)
+    }
+  }
+  
   fileprivate static var cursorCache: [ExternalWindowHash: [UIElement]] = [:]
   static func findXTermCursorInElectronWindow(_ window: ExternalWindow) -> CGRect? {
     guard let axElement = window.accesibilityElement else { return nil }
