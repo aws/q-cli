@@ -104,7 +104,8 @@ class PseudoTerminal : PseudoTerminalService {
         
         // don't add shell hooks to pty
         // Add TERM variable to supress warning for ZSH
-        let updatedEnv = env.merging(["FIG_ENV_VAR" : "1", "FIG_SHELL_VAR" : "1", "TERM" : "xterm-256color"]) { $1 }
+        // Set INPUTRC variable to prevent using a misconfigured inputrc file (https://linear.app/fig/issue/ENG-500)
+        let updatedEnv = env.merging(["FIG_ENV_VAR" : "1", "FIG_SHELL_VAR" : "1", "TERM" : "xterm-256color", "INPUTRC" : "~/.fig/nop"]) { $1 }
         let rawEnv = updatedEnv.reduce([]) { (acc, elm) -> [String] in
             let (key, value) = elm
             return acc + ["\(key)=\(value)"]
