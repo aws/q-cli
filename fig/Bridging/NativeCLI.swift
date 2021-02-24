@@ -47,6 +47,7 @@ class NativeCLI {
         case teamDownload = "team:download"
         case diagnostic = "diagnostic"
         case pty = "debug:pty"
+        case debugApp = "debug:app"
 
         var isUtility: Bool {
             get {
@@ -78,6 +79,7 @@ class NativeCLI {
                                                            .iterm,
                                                            .hyper,
                                                            .pty,
+                                                           .debugApp,
                                                            .docs]
                return implementatedNatively.contains(self)
             }
@@ -120,6 +122,8 @@ class NativeCLI {
                 NativeCLI.iTermCommand(scope)
             case .hyper:
                 NativeCLI.HyperCommand(scope)
+            case .debugApp:
+                NativeCLI.debugAppCommand(scope)
             default:
                 break;
             }
@@ -410,6 +414,12 @@ extension NativeCLI {
             HyperIntegration.promptToInstall()
         }
 
+    }
+  
+    static func debugAppCommand(_ scope: Scope) {
+        let (_, connection) = scope
+
+        NativeCLI.printInTerminal("\n› Run Fig from executable to view logs...\n\n  \(Bundle.main.executablePath ?? "")\n\n  Make sure to Quit the existing instance\n  of Fig before running this command.\n", using: connection)
     }
 }
 

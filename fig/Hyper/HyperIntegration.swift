@@ -21,7 +21,7 @@ class HyperIntegration {
   }
   
   // If the extension path changes make sure to update the uninstall script!
-  static let pluginPath: URL = URL(string: "\(NSHomeDirectory())/.hyper_plugins/local/fig-hyper-integration/index.js")!
+  static let pluginPath: URL = URL(fileURLWithPath:"\(NSHomeDirectory())/.hyper_plugins/local/fig-hyper-integration/index.js")
 
   static func install(withRestart:Bool = false, completion: (() -> Void)? = nil) {
     guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: Integrations.Hyper) else {
@@ -66,7 +66,7 @@ class HyperIntegration {
     
     do {
       try FileManager.default.createDirectory(atPath: pluginPath.deletingLastPathComponent().path, withIntermediateDirectories: true)
-      try FileManager.default.createSymbolicLink(at: Bundle.main.url(forResource: "hyper-integration", withExtension: "js")!, withDestinationURL: pluginPath)
+      try FileManager.default.createSymbolicLink(at: pluginPath, withDestinationURL: Bundle.main.url(forResource: "hyper-integration", withExtension: "js")!)
     } catch {
       print("Could not add Hyper plugin")
     }
