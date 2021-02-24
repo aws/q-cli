@@ -77,6 +77,11 @@ class VSCodeIntegration {
   }
     
   static func promptToInstall(completion: (()->Void)? = nil) {
+    guard Defaults.loggedIn else {
+      completion?()
+      return
+    }
+
     guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.microsoft.VSCode") else {
       // application not installed
       completion?()

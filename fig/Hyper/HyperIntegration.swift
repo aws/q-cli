@@ -90,6 +90,10 @@ class HyperIntegration {
   }
     
   static func promptToInstall(completion: (()->Void)? = nil) {
+    guard Defaults.loggedIn else {
+      completion?()
+      return
+    }
     guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: Integrations.Hyper) else {
       // application not installed
       completion?()
