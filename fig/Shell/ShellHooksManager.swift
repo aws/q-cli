@@ -313,12 +313,16 @@ extension ShellHookManager {
         
           // Prevent Fig from immediately when the user navigates through history
           // Note that Fig is hidden in response to the "history-line-set" zle hook
-          guard previousHistoryNumber == histno else {
+        
+          // If buffer is empty, line is being reset (eg. ctrl+c) and event should be processed :/
+          guard buffer == "" || previousHistoryNumber == histno else {
+            print("ZLE: history numbers do not match")
             return
           }
           
           // write only prevents autocomplete from recieving keypresses
           guard !keybuffer.writeOnly else {
+            print("ZLE: keybuffer is write only")
             return
           }
           
