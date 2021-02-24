@@ -146,6 +146,11 @@ class KeypressProvider : KeypressService {
         ZLEIntegration.insertUnlock(with: NSPasteboard.general.string(forType: .string) ?? "")
       }
       
+      // Handle Control+R searching -- this is needed for ZLE + fzf, normal history search is handled by integration.
+      if AXWindowServer.shared.whitelistedWindow != nil, event.keyCode == Keycode.r && event.modifierFlags.contains(.control) {
+        Autocomplete.hide()
+      }
+      
       guard event.keyCode == Keycode.returnKey || event.modifierFlags.contains(.control) else { return }
       if let window = AXWindowServer.shared.whitelistedWindow, let tty = window.tty {
         Timer.delayWithSeconds(0.2) {
