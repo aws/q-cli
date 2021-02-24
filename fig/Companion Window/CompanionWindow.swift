@@ -631,7 +631,7 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
     }
     
     
-        func setOverlayFrame(_ frame: NSRect) {
+    func setOverlayFrame(_ frame: NSRect, makeVisible: Bool = true) {
             print("flicker: calling setOverlay")
             self.windowController?.shouldCascadeWindows = false;
             var updated = frame
@@ -667,7 +667,12 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
 //            self.setFrameTopLeftPoint(frame.origin)
 
 //            self.orderFront(nil)
-            self.makeKeyAndOrderFront(nil)
+      
+            // sometimes we might want to move the window without showing it visible
+            // to make future updates less jaring.
+            if (makeVisible) {
+              self.makeKeyAndOrderFront(nil)
+            }
             // This line is essential
 //            self.contentViewController?.view.frame = NSRect.init(origin: .zero, size:frame.size)
 

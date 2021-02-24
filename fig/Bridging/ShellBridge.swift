@@ -279,8 +279,10 @@ class ShellBridge {
         guard string.count <= maxCharacters else {
             if let split = string.index(string.startIndex, offsetBy: maxCharacters, limitedBy: string.endIndex) {
                 injectUnicodeString(String(string.prefix(upTo: split))) {
-                    
-                  injectUnicodeString(String(string.suffix(from: split)), completion: completion)
+                  // A somewhat arbitrarily-chosen delay that solves issues with Hyper and VSCode
+                  Timer.delayWithSeconds(0.01) {
+                    injectUnicodeString(String(string.suffix(from: split)), completion: completion)
+                  }
                 }
             }
             return
