@@ -174,26 +174,26 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         VSCodeObserver?.windowDidAppear {
           SecureKeyboardInput.notifyIfEnabled()
           Accessibility.triggerScreenReaderModeInFrontmostApplication()
-          if !VSCodeIntegration.isInstalled {
-            VSCodeIntegration.promptToInstall()
-          }
+//          if !VSCodeIntegration.isInstalled {
+//            VSCodeIntegration.promptToInstall()
+//          }
         }
       
         HyperObserver?.windowDidAppear {
           SecureKeyboardInput.notifyIfEnabled()
           Accessibility.triggerScreenReaderModeInFrontmostApplication()
-          if !HyperIntegration.isInstalled {
-            HyperIntegration.promptToInstall()
-          }
+//          if !HyperIntegration.isInstalled {
+//            HyperIntegration.promptToInstall()
+//          }
         }
       
-//        if !VSCodeIntegration.isInstalled {
-//            VSCodeIntegration.install(withRestart: false)
-//        }
-//
-//        if !HyperIntegration.isInstalled {
-//            HyperIntegration.install(withRestart: false)
-//        }
+        if !VSCodeIntegration.isInstalled {//}, !NSWorkspace.shared.runningApplications.contains { $0.bundleIdentifier == Integrations.VSCode } {
+            VSCodeIntegration.install(withRestart: false)
+        }
+
+        if !HyperIntegration.isInstalled {//}, !NSWorkspace.shared.runningApplications.contains { $0.bundleIdentifier == Integrations.Hyper } {
+            HyperIntegration.install(withRestart: false)
+        }
         
     }
   
