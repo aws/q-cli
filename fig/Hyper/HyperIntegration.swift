@@ -90,6 +90,10 @@ class HyperIntegration {
   }
     
   static func promptToInstall(completion: (()->Void)? = nil) {
+    guard Defaults.loggedIn else {
+      completion?()
+      return
+    }
     guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: Integrations.Hyper) else {
       // application not installed
       completion?()
@@ -115,6 +119,9 @@ class HyperIntegration {
     if (install) {
       HyperIntegration.install(withRestart: true) {
         print("Installation completed!")
+        if let app = AXWindowServer.shared.topApplication, Integrations.Hyper == app.bundleIdentifier {
+          Accessibility.triggerScreenReaderModeInChromiumApplication(app)
+        }
         completion?()
       }
     } else {
