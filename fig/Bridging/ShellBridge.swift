@@ -270,7 +270,7 @@ class ShellBridge {
     }
     
     //https://stackoverflow.com/a/40447423
-    static func injectUnicodeString(_ string: String, completion: (() -> Void)? = nil) {
+  static func injectUnicodeString(_ string: String, delay: TimeInterval? = nil, completion: (() -> Void)? = nil) {
         let maxCharacters = 20
         guard string.count > 0  else {
           completion?()
@@ -278,9 +278,15 @@ class ShellBridge {
       }
         guard string.count <= maxCharacters else {
             if let split = string.index(string.startIndex, offsetBy: maxCharacters, limitedBy: string.endIndex) {
-                injectUnicodeString(String(string.prefix(upTo: split))) {
-                    
-                  injectUnicodeString(String(string.suffix(from: split)), completion: completion)
+                injectUnicodeString(String(string.prefix(upTo: split)), delay: delay) {
+                  // A somewhat arbitrarily-chosen delay that solves issues with Hyper and VSCode (0.01 was too fast)
+                  if let delay = delay {
+                    Timer.delayWithSeconds(delay) {
+                      injectUnicodeString(String(string.suffix(from: split)), delay: delay, completion: completion)
+                    }
+                  } else {
+                    injectUnicodeString(String(string.suffix(from: split)), delay: delay, completion: completion)
+                  }
                 }
             }
             return
@@ -308,19 +314,22 @@ class ShellBridge {
         // Frontmost application will recieve the keystrokes, make sure it's the appropriate app!
       
         // There used to be a check here to determine if Spotlight was active. It seems like this is no longer needed.
-
-        print("Insert '\(cmd)' into ", NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "<none>")
+        let app = NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "<none>"
+        print("Insert '\(cmd)' into ", app)
         if (clearLine) {
             self.simulate(keypress: .ctrlE)
             self.simulate(keypress: .ctrlU)
         }
+      
+        // Add delay for Electron terminals
+        let delay: TimeInterval? = Integrations.electronTerminals.contains(app) ? 0.05 : nil
         
         let insertion = cmd + (runImmediately ? "\n" :"")
 
         // The existence of the insertion-lock file prevents latency in ZLE integration when inserting text
         // See the `self-insert` function in zle.sh
         ZLEIntegration.insertLock()
-        injectUnicodeString(insertion) {
+        injectUnicodeString(insertion, delay: delay) {
           ZLEIntegration.insertUnlock(with: insertion)
         }
     }

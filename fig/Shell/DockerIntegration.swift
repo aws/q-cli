@@ -42,14 +42,23 @@ class DockerIntegration: CommandIntegration {
         }
       
         tty.pty!.execute("\(prefix) 'readlink /proc/1/cwd'") { output in
-            print("Docker: working directory = ", output)
-//            guard tty.pid == process.pid else {
-//                print("Docker: Process out of sync, abort update - \(tty.pid) != \(process.pid)")
+            print("Docker: working directory = ", output.trimmingCharacters(in: .whitespacesAndNewlines))
+            
+            // cmd is better for comparison that pid
+            guard tty.cmd?.contains("docker") ?? false else {
+              print("Docker: Process out of sync, abort update - \(tty.cmd ?? "") != \(process.cmd)")
 ////                semaphore.signal()
-//                return
-//            }
+                return
+            }
           
-            // do some error checking - does output match a directory regex.
+            // This is a bugfix because sometimes the output of the PTY is the command
+            // when we are executing commands very quickly
+            guard !output.contains("printf \"<<<\"") else {
+              print("Docker: something has gone wrong. Ignoring this update.")
+              return
+            }
+          
+            // do some error checking - does output match a directory regex?
             tty.cwd = output.trimmingCharacters(in: .whitespacesAndNewlines)
             tty.cmd = process.cmd
             tty.pid = process.pid

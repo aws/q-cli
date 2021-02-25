@@ -77,6 +77,11 @@ class VSCodeIntegration {
   }
     
   static func promptToInstall(completion: (()->Void)? = nil) {
+    guard Defaults.loggedIn else {
+      completion?()
+      return
+    }
+
     guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.microsoft.VSCode") else {
       // application not installed
       completion?()
@@ -102,6 +107,9 @@ class VSCodeIntegration {
     if (install) {
       VSCodeIntegration.install {
         print("Installation completed!")
+        if let app = AXWindowServer.shared.topApplication, Integrations.VSCode == app.bundleIdentifier {
+          Accessibility.triggerScreenReaderModeInChromiumApplication(app)
+        }
         completion?()
       }
     } else {

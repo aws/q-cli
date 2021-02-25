@@ -25,10 +25,13 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     
     let iTermObserver = WindowObserver(with: "com.googlecode.iterm2")
     let TerminalObserver = WindowObserver(with: "com.apple.Terminal")
-  
+    let HyperObserver = WindowObserver(with: Integrations.Hyper)
+    let VSCodeObserver = WindowObserver(with: Integrations.VSCode)
+
     func applicationDidFinishLaunching(_ aNotification: Notification) {
+        warnToMoveToApplicationIfNecessary()
+
 //        NSApp.setActivationPolicy(NSApplication.ActivationPolicy.accessory)
-        
         // prevent multiple sessions
         let bundleID = Bundle.main.bundleIdentifier!
         if NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).count > 1 {
@@ -76,7 +79,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 //        WebView.deleteCache()
 
         handleUpdateIfNeeded()
-        warnToMoveToApplicationIfNecessary()
         Defaults.useAutocomplete = true
         Defaults.deferToShellAutosuggestions = true
         Defaults.autocompleteVersion = "v5"
@@ -169,10 +171,26 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
           SecureKeyboardInput.notifyIfEnabled()
         }
       
+        VSCodeObserver?.windowDidAppear {
+          SecureKeyboardInput.notifyIfEnabled()
+          Accessibility.triggerScreenReaderModeInFrontmostApplication()
+//          if !VSCodeIntegration.isInstalled {
+//            VSCodeIntegration.promptToInstall()
+//          }
+        }
+      
+        HyperObserver?.windowDidAppear {
+          SecureKeyboardInput.notifyIfEnabled()
+          Accessibility.triggerScreenReaderModeInFrontmostApplication()
+//          if !HyperIntegration.isInstalled {
+//            HyperIntegration.promptToInstall()
+//          }
+        }
+      
         if !VSCodeIntegration.isInstalled {
             VSCodeIntegration.install(withRestart: false)
         }
-      
+
         if !HyperIntegration.isInstalled {
             HyperIntegration.install(withRestart: false)
         }

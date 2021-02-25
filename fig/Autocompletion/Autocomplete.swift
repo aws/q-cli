@@ -40,7 +40,7 @@ class Autocomplete {
     KeypressProvider.shared.removeRedirect(for: Keystroke(modifierFlags: [.control], keyCode: Keycode.p), in: window)
   }
   
-  static func position(completion:(() -> Void)? = nil) {
+  static func position(makeVisibleImmediately: Bool = true, completion:(() -> Void)? = nil) {
     guard let window = AXWindowServer.shared.whitelistedWindow else {
       completion?()
       return
@@ -49,7 +49,7 @@ class Autocomplete {
     throttler.throttle {
       let keybuffer = KeypressProvider.shared.keyBuffer(for: window)
       if let rect = KeypressProvider.shared.getTextRect(), !keybuffer.writeOnly {//, keybuffer.buffer?.count != 0 {
-        WindowManager.shared.positionAutocompletePopover(textRect: rect, completion: completion)
+        WindowManager.shared.positionAutocompletePopover(textRect: rect, makeVisibleImmediately: makeVisibleImmediately, completion: completion)
       } else {
         KeypressProvider.shared.removeRedirect(for: Keycode.upArrow, in: window)
         KeypressProvider.shared.removeRedirect(for: Keycode.downArrow, in: window)
