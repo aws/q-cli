@@ -117,7 +117,16 @@ class AXWindowServer : WindowService {
     static let shared = AXWindowServer()
     private let queue = DispatchQueue(label: "com.withfig.windowserver", attributes: .concurrent)
     var tracked: Set<ExternalApplication> = []
-    var topApplication: ExternalApplication? = nil
+    var topApplication: ExternalApplication? = nil {
+      didSet {
+        
+        // Trigger screenreader mode in electron apps. This is probably overkill, but doing it once at launch was brittle.
+        if let app = self.topApplication, Integrations.electronTerminals.contains(app.bundleIdentifier ?? "") {
+          Accessibility.triggerScreenReaderModeInChromiumApplication(app)
+        }
+      }
+    }
+  
     var topWindow: ExternalWindow? = nil {
         didSet {
             NotificationCenter.default.post(name: AXWindowServer.windowDidChangeNotification, object: self.topWindow)
