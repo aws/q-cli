@@ -9,7 +9,20 @@
 import Cocoa
 
 class KeystrokeBuffer : NSObject {
-  var cursor: Int = 0
+  
+  var currentState: (String, Int)? {
+    guard !writeOnly else {
+      return nil
+    }
+    
+    if self.backedByZLE {
+      return (buffer ?? "", zleCursor)
+    } else {
+      guard buffer != nil, index != nil else { return nil }
+      return (buffer!, index!.utf16Offset(in: buffer!))
+    }
+  }
+  
   var historyIndex = 0
   var index: String.Index?
   var stashedBuffer: String?
@@ -17,6 +30,7 @@ class KeystrokeBuffer : NSObject {
   var writeOnly = false // update buffer, but don't return it (prevents keypress events from being sent to autocomplete)
     {
     didSet {
+      print("writeOnly: \(writeOnly)")
       if (writeOnly) {
         NotificationCenter.default.post(name: Self.contextLostInKeystrokeBufferNotification, object: nil)
       } else if self.buffer != nil {
@@ -24,7 +38,29 @@ class KeystrokeBuffer : NSObject {
       }
     }
   }
-  
+  // updates are recieved directly from ZLE when this is true,
+  // so no need to process keypress events directly
+  var backedByZLE = false {
+    didSet {
+      if (!backedByZLE) {
+        buffer = ""
+      }
+    }
+  }
+  var zleCursor: Int = 0
+  var zleHistoryNumber: Int? {
+    didSet {
+      
+      // reset writeOnly value when line number changes
+      // so that even if escape has been pressed previous
+      // the autocomplete window will reappear
+      if (zleHistoryNumber != oldValue) {
+        writeOnly = false
+      }
+      
+    }
+  }
+
   static let contextRestoredInKeystrokeBufferNotification: NSNotification.Name = .init("contextRestoredInKeystrokeBufferNotification")
   static let lineResetInKeyStrokeBufferNotification: NSNotification.Name = .init("lineResetInKeyStrokeBufferNotification")
   static let contextLostInKeystrokeBufferNotification: NSNotification.Name = .init("contextLostInKeystrokeBufferNotification")
@@ -38,7 +74,6 @@ class KeystrokeBuffer : NSObject {
   
   var hazy: Bool = true {
     didSet {
-      cursor = 0
       index = nil
     }
   }
@@ -84,7 +119,67 @@ class KeystrokeBuffer : NSObject {
     historyIndex = 0
   }
   
+  func insert(text: String) -> (String, Int)? {
+    guard backedByZLE, buffer != nil else { return nil }
+    self.index = buffer!.index(buffer!.startIndex, offsetBy: zleCursor)
+    mutatingInsert(text: text)
+    //buffer!.insert(contentsOf: text, at: index)
+    //let updatedIndex = buffer!.index(index, offsetBy: text.count)
+    guard index != nil else { return nil }
+    zleCursor = index!.utf16Offset(in: buffer!)
+    return (buffer ?? "", zleCursor)
+  }
+  
+  fileprivate func mutatingInsert(text: String) {
+      var skip = 0
+      for (idx, char) in text.enumerated() {
+          guard char.asciiValue != nil else { break }
+          guard skip == 0 else { skip -= 1; break}
+          print("char:",char, char.utf16, char.asciiValue ?? 0)
+          switch char.asciiValue! {
+          case 8: //backspace literal
+            guard buffer != nil, index != nil, index != buffer!.startIndex else { break }
+            index = buffer!.index(before: index!)
+            buffer!.remove(at: index!)
+            print("xterm: delete character")
+          case 27: // ESC
+            if let direction = text.index(text.startIndex, offsetBy: idx + 2, limitedBy: text.endIndex) {
+              let esc = text[direction]
+              print("char:",esc)
+              if (esc == "D") { //backward one
+                guard buffer != nil, index != nil,  index != buffer!.startIndex else { break }
+                index = buffer!.index(before: index!)
+                print("xterm: move cursor to the left by 1 (ESC[D)")
+                skip = 2
+              } else if (esc == "C") { // forward one
+                guard buffer != nil, index != nil, index != buffer!.endIndex else { break }
+                index = buffer!.index(after: index!)
+                print("xterm: move cursor to the right by 1 (ESC[C)")
+                skip = 2
+              }
+            }
+            break
+          case 10: // newline literal
+            if buffer != nil, index != nil, buffer!.suffix(1) == "\\" {
+              buffer = nil
+              print("xterm: accept-line w/ newline")
+            } else {
+              buffer = ""
+              print("xterm: accept-line") //clear buffer
+              NotificationCenter.default.post(name: Self.lineAcceptedInKeystrokeBufferNotification, object: nil)
+            }
+          default:
+            buffer!.insert(char, at: index!)
+            index = buffer!.index(index!, offsetBy: 1)
+            print("xterm: insert! (\(char))")
+          }
+      }
+  }
+  
   func handleKeystroke(event: NSEvent) -> (String, Int)? {
+    guard !backedByZLE else {
+      return writeOnly ? nil : (buffer ?? "", zleCursor)
+    }
     let cleanedFlags = event.modifierFlags.intersection([.command, .control, .option, .shift])
     let keystroke = Keystroke(modifierFlags: cleanedFlags, keyCode: event.keyCode)
     switch KeyBindingsManager.keyBindings[keystroke] {
@@ -275,49 +370,7 @@ class KeystrokeBuffer : NSObject {
       }
       
       if let characters = event.characters {
-        var skip = 0
-        for (idx, char) in characters.enumerated() {
-          guard char.asciiValue != nil else { break }
-          guard skip == 0 else { skip -= 1; break}
-          print("char:",char, char.utf16, char.asciiValue ?? 0)
-          switch char.asciiValue! {
-          case 8: //backspace literal
-            guard buffer != nil, index != nil, index != buffer!.startIndex else { break }
-            index = buffer!.index(before: index!)
-            buffer!.remove(at: index!)
-            print("xterm: delete character")
-          case 27: // ESC
-            if let direction = characters.index(characters.startIndex, offsetBy: idx + 2, limitedBy: characters.endIndex) {
-              let esc = characters[direction]
-              print("char:",esc)
-              if (esc == "D") { //backward one
-                guard buffer != nil, index != nil,  index != buffer!.startIndex else { break }
-                index = buffer!.index(before: index!)
-                print("xterm: move cursor to the left by 1 (ESC[D)")
-                skip = 2
-              } else if (esc == "C") { // forward one
-                guard buffer != nil, index != nil, index != buffer!.endIndex else { break }
-                index = buffer!.index(after: index!)
-                print("xterm: move cursor to the right by 1 (ESC[C)")
-                skip = 2
-              }
-            }
-            break
-          case 10: // newline literal
-            if buffer != nil, index != nil, buffer!.suffix(1) == "\\" {
-              buffer = nil
-              print("xterm: accept-line w/ newline")
-            } else {
-              buffer = ""
-              print("xterm: accept-line") //clear buffer
-              NotificationCenter.default.post(name: Self.lineAcceptedInKeystrokeBufferNotification, object: nil)
-            }
-          default:
-            buffer!.insert(char, at: index!)
-            index = buffer!.index(index!, offsetBy: 1)
-            print("xterm: insert! (\(char))")
-          }
-        }
+        mutatingInsert(text: characters)
       }
       break
     }
@@ -334,6 +387,16 @@ class KeystrokeBuffer : NSObject {
   }
   
   var representation: String {
+    guard !backedByZLE else {
+      if var logging = buffer {
+        let index = logging.index(logging.startIndex, offsetBy: zleCursor)
+        logging.insert("|", at: index)
+        return logging
+      }
+      
+      return "<no context>"
+    }
+    
     if var logging = buffer, index != nil {
       // todo: check if index is within bounds
       logging.insert("|", at: index!)

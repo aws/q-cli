@@ -21,12 +21,20 @@ class WindowObserver {
   }
   
   var completion: (()-> Void)?
-  func windowDidAppear(completion: @escaping (()-> Void)) {
+  var timer: DispatchWorkItem?
+  func windowDidAppear(timeoutAfter interval: TimeInterval? = nil, completion: @escaping (()-> Void)) {
     NotificationCenter.default.addObserver(self,
                                            selector: #selector(windowDidChange(_ :)),
                                            name: AXWindowServer.windowDidChangeNotification,
                                            object: nil)
     self.completion = completion
+
+    if let timeout = interval {
+      timer = Timer.cancellableDelayWithSeconds(timeout) {
+        completion()
+        NotificationCenter.default.removeObserver(self)
+      }
+    }
     
   }
   
@@ -34,6 +42,7 @@ class WindowObserver {
     guard let window = notification.object as? ExternalWindow else { return }
     
     if (self.bundleIdentifier == window.bundleId) {
+      timer?.cancel()
       completion?()
       NotificationCenter.default.removeObserver(self)
     }

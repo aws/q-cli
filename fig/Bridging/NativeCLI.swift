@@ -40,10 +40,15 @@ class NativeCLI {
         case remove = "remove"
         case report = "report"
         case ssh = "integrations:ssh"
+        case vscode = "integrations:vscode"
+        case iterm = "integrations:iterm"
+        case hyper = "integrations:hyper"
         case teamUpload = "team:upload"
         case teamDownload = "team:download"
         case diagnostic = "diagnostic"
         case pty = "debug:pty"
+        case debugApp = "debug:app"
+        case electronAccessibility = "util:axelectron"
 
         var isUtility: Bool {
             get {
@@ -54,7 +59,7 @@ class NativeCLI {
       
         var handlesDisconnect: Bool {
             get {
-                let handlesDisconnection: Set<Command> = [.pty ]
+              let handlesDisconnection: Set<Command> = [.pty, .hyper, .iterm, .vscode ]
                 return handlesDisconnection.contains(self)
             }
         }
@@ -71,7 +76,12 @@ class NativeCLI {
                                                            .version,
                                                            .report,
                                                            .diagnostic,
+                                                           .vscode,
+                                                           .iterm,
+                                                           .hyper,
                                                            .pty,
+                                                           .debugApp,
+                                                           .electronAccessibility,
                                                            .docs]
                return implementatedNatively.contains(self)
             }
@@ -108,6 +118,16 @@ class NativeCLI {
                 NativeCLI.diagnosticCommand(scope)
             case .pty:
                 NativeCLI.ptyCommand(scope)
+            case .vscode:
+                NativeCLI.VSCodeCommand(scope)
+            case .iterm:
+                NativeCLI.iTermCommand(scope)
+            case .hyper:
+                NativeCLI.HyperCommand(scope)
+            case .debugApp:
+                NativeCLI.debugAppCommand(scope)
+            case .electronAccessibility:
+                NativeCLI.electronAccessibilityCommand(scope)
             default:
                 break;
             }
@@ -271,8 +291,7 @@ extension NativeCLI {
     }
   
     static func diagnosticCommand(_ scope: Scope) {
-        let (_
-      , connection) = scope
+        let (_, connection) = scope
         NativeCLI.printInTerminal(Diagnostic.summary, using: connection)
     }
     
@@ -355,6 +374,66 @@ extension NativeCLI {
         }
 
         NativeCLI.printInTerminal("→ Opening docs in browser...", using: connection)
+    }
+  
+    static func VSCodeCommand(_ scope: Scope) {
+        let (_, connection) = scope
+
+        if VSCodeIntegration.isInstalled {
+            NativeCLI.printInTerminal("\n› VSCode Integration is already installed.\n  You may need to restart VSCode for the changes to take effect.\n  If you are having issues, please use fig report.\n", using: connection)
+            connection.send(message: "disconnect")
+        } else {
+            NativeCLI.printInTerminal("→ Prompting VSCode Integration...", using: connection)
+            connection.send(message: "disconnect")
+
+            VSCodeIntegration.promptToInstall()
+        }
+
+    }
+  
+    static func iTermCommand(_ scope: Scope) {
+        let (_, connection) = scope
+
+        if iTermTabIntegration.isInstalled {
+            NativeCLI.printInTerminal("\n› iTerm Tab Integration is already installed.\n  If you are having issues, please use fig report.\n", using: connection)
+            connection.send(message: "disconnect")
+
+        } else {
+            NativeCLI.printInTerminal("→ Prompting iTerm Tab Integration...", using: connection)
+            connection.send(message: "disconnect")
+            iTermTabIntegration.promptToInstall()
+        }
+
+    }
+  
+    static func HyperCommand(_ scope: Scope) {
+        let (_, connection) = scope
+
+        if HyperIntegration.isInstalled {
+            NativeCLI.printInTerminal("\n› Hyper Integration is already installed.\n  You may need to restart Hyper for the changes to take effect.\n  If you are having issues, please use fig report.\n", using: connection)
+            connection.send(message: "disconnect")
+        } else {
+            NativeCLI.printInTerminal("→ Prompting Hyper Integration...", using: connection)
+            connection.send(message: "disconnect")
+            HyperIntegration.promptToInstall()
+        }
+
+    }
+  
+    static func debugAppCommand(_ scope: Scope) {
+        let (_, connection) = scope
+
+        NativeCLI.printInTerminal("\n› Run Fig from executable to view logs...\n\n  \(Bundle.main.executablePath ?? "")\n\n  Make sure to Quit the existing instance\n  of Fig before running this command.\n", using: connection)
+    }
+  
+    static func electronAccessibilityCommand(_ scope: Scope) {
+        let (_, connection) = scope
+        if let app = AXWindowServer.shared.topApplication, let name = app.localizedName {
+          NativeCLI.printInTerminal("\n› Enabling DOM Accessibility in '\(name)'...\n", using: connection)
+          Accessibility.triggerScreenReaderModeInChromiumApplication(app)
+        } else {
+          NativeCLI.printInTerminal("\n› Could not find Electron app!\n", using: connection)
+        }
     }
 }
 

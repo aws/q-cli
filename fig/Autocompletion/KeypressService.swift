@@ -36,7 +36,7 @@ class KeypressProvider : KeypressService {
   var redirects: [ExternalWindowHash:  Set<Keystroke>] = [:]
   var buffers: [ExternalWindowHash: KeystrokeBuffer] = [:]
   
-  static let whitelist = Integrations.nativeTerminals
+  static let whitelist = Integrations.terminalsWhereAutocompleteShouldAppear
   static let shared = KeypressProvider(windowServiceProvider: WindowServer.shared)
   
   init(windowServiceProvider: WindowService) {
@@ -140,6 +140,17 @@ class KeypressProvider : KeypressService {
     
     self.keyHandler = NSEvent.addGlobalMonitorForEvents(matching: [ .keyUp], handler: { (event) in
       guard Defaults.useAutocomplete else { return }
+      
+      // Watch for Cmd+V and manually update ZLE buffer (because we don't recieve an event until the following keystroke)
+      if AXWindowServer.shared.whitelistedWindow != nil, event.keyCode == Keycode.v && event.modifierFlags.contains(.command) {
+        ZLEIntegration.insertUnlock(with: NSPasteboard.general.string(forType: .string) ?? "")
+      }
+      
+      // Handle Control+R searching -- this is needed for ZLE + fzf, normal history search is handled by integration.
+      if AXWindowServer.shared.whitelistedWindow != nil, event.keyCode == Keycode.r && event.modifierFlags.contains(.control) {
+        Autocomplete.hide()
+      }
+      
       guard event.keyCode == Keycode.returnKey || event.modifierFlags.contains(.control) else { return }
       if let window = AXWindowServer.shared.whitelistedWindow, let tty = window.tty {
         Timer.delayWithSeconds(0.2) {
@@ -227,13 +238,35 @@ class KeypressProvider : KeypressService {
         return Unmanaged.passUnretained(event)
       }
       
+      // Toggle autocomplete on and off
+      if UInt16(event.getIntegerValueField(.keyboardEventKeycode)) == Keycode.escape, [.keyDown].contains(type) {
+        let buffer = KeypressProvider.shared.keyBuffer(for: window)
+        
+        buffer.writeOnly = !buffer.writeOnly
+
+        if buffer.writeOnly {
+            Autocomplete.hide()
+            WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try{ fig.keypress(\"\(Keycode.escape)\", \"\(window.hash)\") } catch(e) {}", completionHandler: nil)
+        } else {
+            Autocomplete.update(with: buffer.currentState, for: window.hash)
+            Autocomplete.position()
+        }
+        
+        return nil
+        
+      }
+      
       if [.keyDown , .keyUp].contains(type) {
         var keyCode = UInt16(event.getIntegerValueField(.keyboardEventKeycode))
         print("eventTap", keyCode, event.getIntegerValueField(.eventTargetUnixProcessID))
         print("eventTap", "\(window.hash)")
         if KeypressProvider.shared.shouldRedirect(event: event, in: window) {
           print("eventTap", "Should redirect!")
-          
+          // prevent redirects when typing in VSCode editor
+          if Integrations.electronTerminals.contains(window.bundleId ?? "") && Accessibility.findXTermCursorInElectronWindow(window) == nil {
+            return Unmanaged.passUnretained(event)
+          }
+
           if (keyCode == Keycode.n) {
             keyCode = Keycode.downArrow
           }
@@ -289,40 +322,45 @@ class KeypressProvider : KeypressService {
   }
   
   func handleKeystroke(event: NSEvent?, in window: ExternalWindow) {
-    let keyBuffer = self.keyBuffer(for: window)
-    if let event = event, event.type == NSEvent.EventType.keyDown {
-      let tty = window.tty?.descriptor == nil ? "null" : "'\(window.tty!.descriptor)'"
-      let cmd = window.tty?.cmd == nil ? "null" : "'\(window.tty!.cmd!)'"
-      let cwd = window.tty?.cwd == nil ? "null" : "`\(window.tty!.cwd!.trimmingCharacters(in: .whitespacesAndNewlines))`"
-      let prefix = window.tty?.runUsingPrefix == nil ? "null" : "`\(window.tty!.runUsingPrefix!)`"
-      if let (buffer, index) = keyBuffer.handleKeystroke(event: event), let b64 = buffer.data(using: .utf8)?.base64EncodedString() {
-        WindowManager.shared.autocomplete?.tetheredWindow = window
-        // error here!
-        // fig.autocomplete(bufferB64, index, windowHash, tty?, cwd, cmd)
-        print("fig.autocomplete(b64DecodeUnicode(`\(b64)`), \(index), '\(window.hash)', \(tty), \(cwd), \(cmd))")
-        WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try{ fig.autocomplete(b64DecodeUnicode(`\(b64)`), \(index), '\(window.hash)', \(tty), \(cwd), \(cmd), \(prefix)) } catch(e){} ", completionHandler: nil)
-      } else {
-        WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try{ fig.nocontext('\(window.hash)') } catch(e){} ", completionHandler: nil)
-      }
+    
+    // handle keystrokes in VSCode editor
+    if Integrations.electronTerminals.contains(window.bundleId ?? "") && self.getTextRect() == nil {
+        return
     }
     
-    self.throttler.throttle {
-      if let rect = self.getTextRect() {
-        WindowManager.shared.positionAutocompletePopover(textRect: rect)
-      } else {
-        KeypressProvider.shared.removeRedirect(for: Keycode.upArrow, in: window)
-        KeypressProvider.shared.removeRedirect(for: Keycode.downArrow, in: window)
-        KeypressProvider.shared.removeRedirect(for: Keycode.tab, in: window)
-        KeypressProvider.shared.removeRedirect(for: Keycode.escape, in: window)
-        KeypressProvider.shared.removeRedirect(for: Keycode.returnKey, in: window)
-        KeypressProvider.shared.removeRedirect(for: Keystroke(modifierFlags: [.control], keyCode: Keycode.n), in: window)
-        KeypressProvider.shared.removeRedirect(for: Keystroke(modifierFlags: [.control], keyCode: Keycode.p), in: window)
 
+    let keyBuffer = self.keyBuffer(for: window)
+    guard !keyBuffer.backedByZLE else {
+      
+      
+      // trigger positioning updates for hotkeys, like cmd+w, cmd+t, cmd+n, or Scpectacle
+      if let event = event {
+        
+        if event.keyCode == KeyboardLayout.shared.keyCode(for: "W") && event.modifierFlags.contains(.command) {
+          Autocomplete.hide()
+        } else if event.modifierFlags.contains(.command) || event.modifierFlags.contains(.option) {
+          Autocomplete.position()
+
+        }
       }
+      
+      return
     }
+
+    if let event = event, event.type == NSEvent.EventType.keyDown {
+      Autocomplete.update(with: keyBuffer.handleKeystroke(event: event), for: window.hash)
+    }
+    
+    Autocomplete.position()
+ 
   }
   
   func getTextRect(extendRange: Bool = true) -> CGRect? {
+    
+    if let window = AXWindowServer.shared.whitelistedWindow, Integrations.electronTerminals.contains(window.bundleId ?? "") {
+      return Accessibility.findXTermCursorInElectronWindow(window)
+    }
+    
     let systemWideElement = AXUIElementCreateSystemWide()
     var focusedElement : AnyObject?
     let error = AXUIElementCopyAttributeValue(systemWideElement, kAXFocusedUIElementAttribute as CFString, &focusedElement)

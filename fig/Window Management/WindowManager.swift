@@ -706,7 +706,7 @@ extension WindowManager : WindowManagementService {
         self.updatePosition(for: .figWindowTethered)
     }
     
-    func positionAutocompletePopover(textRect: CGRect?) {
+  func positionAutocompletePopover(textRect: CGRect?, makeVisibleImmediately: Bool = true, completion: (() -> Void)? = nil) {
         if let rect = textRect, let window = AXWindowServer.shared.whitelistedWindow {
             let heightLimit: CGFloat = 140.0 //300.0//
             
@@ -726,7 +726,6 @@ extension WindowManager : WindowManagementService {
                 KeypressProvider.shared.addRedirect(for: Keycode.upArrow, in: window)
                 KeypressProvider.shared.addRedirect(for: Keycode.downArrow, in: window)
                 KeypressProvider.shared.addRedirect(for: Keycode.tab, in: window)
-                KeypressProvider.shared.addRedirect(for: Keycode.escape, in: window)
                 if (!Defaults.onlyInsertOnTab) {
                     KeypressProvider.shared.addRedirect(for: Keycode.returnKey, in: window)
                 }
@@ -739,7 +738,6 @@ extension WindowManager : WindowManagementService {
                 KeypressProvider.shared.removeRedirect(for: Keycode.downArrow, in: window)
                 KeypressProvider.shared.removeRedirect(for: Keycode.returnKey, in: window)
                 KeypressProvider.shared.removeRedirect(for: Keycode.tab, in: window)
-                KeypressProvider.shared.removeRedirect(for: Keycode.escape, in: window)
                 KeypressProvider.shared.removeRedirect(for: Keystroke(modifierFlags: [.control], keyCode: Keycode.n), in: window)
                 KeypressProvider.shared.removeRedirect(for: Keystroke(modifierFlags: [.control], keyCode: Keycode.p), in: window)
 
@@ -763,13 +761,17 @@ extension WindowManager : WindowManagementService {
             }
           
             DispatchQueue.main.async {
-              WindowManager.shared.autocomplete?.setOverlayFrame(NSRect(x: x, y: popup.origin.y, width: popup.width, height: height))//140
+              WindowManager.shared.autocomplete?.tetheredWindow = window
+              WindowManager.shared.autocomplete?.setOverlayFrame(NSRect(x: x, y: popup.origin.y, width: popup.width, height: height), makeVisible: makeVisibleImmediately)//140
+              completion?()
+ 
             }
             
         } else {
             // workaround
             DispatchQueue.main.async {
                 WindowManager.shared.autocomplete?.orderOut(nil)
+                completion?()
             }
         }
     }

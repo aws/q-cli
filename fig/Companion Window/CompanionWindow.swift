@@ -18,10 +18,15 @@ extension Notification.Name {
 class CompanionWindow : NSWindow, NSWindowDelegate {
     static let defaultActivePosition: OverlayPositioning = Defaults.defaultActivePosition
     static let defaultPassivePosition: OverlayPositioning = .sidebar
-    
-    // .statusBar level is required in order to appear above iTerm in Quake mode
-    static let floatingWindowLevel: NSWindow.Level = .statusBar
-    
+        
+    var floatingWindowLevel: NSWindow.Level {
+        // .statusBar level is required in order to appear above iTerm in Quake mode
+        if let level = tetheredWindow?.windowLevel, level == kCGStatusWindowLevel {
+            return .statusBar
+        } else {
+            return .floating
+        }
+    }
     //hides companion window when target is moving
     var shouldTrackWindow = true;
     
@@ -120,7 +125,7 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
         self.isOpaque = false
         self.backgroundColor = .clear//NSColor.init(white: 1, alpha: 0.75)
         self.delegate = self
-        self.level = CompanionWindow.floatingWindowLevel
+        self.level = self.floatingWindowLevel
         self.setFrameAutosaveName("Main Window")
         self.contentViewController = viewController
         self.setFrame(NSRect(x: 400, y: 400, width: 300, height: 300), display: true)
@@ -414,7 +419,7 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
     
     func configureWindow(for state: OverlayPositioning, initial: Bool = false ) {
         if (state.hasTitleBar) {
-            self.level = (self.isDocked) ? CompanionWindow.floatingWindowLevel : .normal
+            self.level = (self.isDocked) ? self.floatingWindowLevel : .normal
             self.collectionBehavior = (self.isDocked) ? [.canJoinAllSpaces, .fullScreenAuxiliary] : []
 
             self.styleMask = [.titled]
@@ -437,7 +442,7 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
             self.titlebarAppearsTransparent = true;
 //            self.backgroundColor = .white
         } else {
-            self.level = CompanionWindow.floatingWindowLevel
+            self.level = self.floatingWindowLevel
             self.styleMask = [.fullSizeContentView]
             self.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
             self.representedURL = nil
@@ -626,7 +631,7 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
     }
     
     
-        func setOverlayFrame(_ frame: NSRect) {
+    func setOverlayFrame(_ frame: NSRect, makeVisible: Bool = true) {
             print("flicker: calling setOverlay")
             self.windowController?.shouldCascadeWindows = false;
             var updated = frame
@@ -662,7 +667,12 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
 //            self.setFrameTopLeftPoint(frame.origin)
 
 //            self.orderFront(nil)
-            self.makeKeyAndOrderFront(nil)
+      
+            // sometimes we might want to move the window without showing it visible
+            // to make future updates less jaring.
+            if (makeVisible) {
+              self.makeKeyAndOrderFront(nil)
+            }
             // This line is essential
 //            self.contentViewController?.view.frame = NSRect.init(origin: .zero, size:frame.size)
 

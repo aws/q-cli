@@ -270,14 +270,23 @@ class ShellBridge {
     }
     
     //https://stackoverflow.com/a/40447423
-    static func injectUnicodeString(_ string: String, completion: (() -> Void)? = nil) {
+  static func injectUnicodeString(_ string: String, delay: TimeInterval? = nil, completion: (() -> Void)? = nil) {
         let maxCharacters = 20
-        guard string.count > 0  else { return }
+        guard string.count > 0  else {
+          completion?()
+          return
+      }
         guard string.count <= maxCharacters else {
             if let split = string.index(string.startIndex, offsetBy: maxCharacters, limitedBy: string.endIndex) {
-                injectUnicodeString(String(string.prefix(upTo: split))) {
-                    
-                    injectUnicodeString(String(string.suffix(from: split)))
+                injectUnicodeString(String(string.prefix(upTo: split)), delay: delay) {
+                  // A somewhat arbitrarily-chosen delay that solves issues with Hyper and VSCode (0.01 was too fast)
+                  if let delay = delay {
+                    Timer.delayWithSeconds(delay) {
+                      injectUnicodeString(String(string.suffix(from: split)), delay: delay, completion: completion)
+                    }
+                  } else {
+                    injectUnicodeString(String(string.suffix(from: split)), delay: delay, completion: completion)
+                  }
                 }
             }
             return
@@ -295,30 +304,49 @@ class ShellBridge {
         
         downEvent?.post(tap: loc)
         upEvent?.post(tap: loc)
-        
         completion?()
     }
-    static func injectStringIntoTerminal(_ cmd: String, runImmediately: Bool = false, clearLine: Bool = Defaults.clearExistingLineOnTerminalInsert, completion: (() -> Void)? = nil) {
-//        WindowServer.shared.returnFocus()
+    
+    fileprivate static func inject(_ cmd: String,
+                            runImmediately: Bool = false,
+                            clearLine: Bool = Defaults.clearExistingLineOnTerminalInsert,
+                            completion: (() -> Void)? = nil) {
+        // Frontmost application will recieve the keystrokes, make sure it's the appropriate app!
+      
+        // There used to be a check here to determine if Spotlight was active. It seems like this is no longer needed.
+        let app = NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "<none>"
+        print("Insert '\(cmd)' into ", app)
+        if (clearLine) {
+            self.simulate(keypress: .ctrlE)
+            self.simulate(keypress: .ctrlU)
+        }
+      
+        // Add delay for Electron terminals
+        let delay: TimeInterval? = Integrations.electronTerminals.contains(app) ? 0.05 : nil
+        
+        let insertion = cmd + (runImmediately ? "\n" :"")
+
+        // The existence of the insertion-lock file prevents latency in ZLE integration when inserting text
+        // See the `self-insert` function in zle.sh
+        ZLEIntegration.insertLock()
+        injectUnicodeString(insertion, delay: delay) {
+          ZLEIntegration.insertUnlock(with: insertion)
+        }
+    }
+  
+    static func injectStringIntoTerminal(_ cmd: String,
+                                         runImmediately: Bool = false,
+                                         clearLine: Bool = Defaults.clearExistingLineOnTerminalInsert,
+                                         completion: (() -> Void)? = nil) {
+        
         if (NSWorkspace.shared.frontmostApplication?.isFig ?? false) {
             print("Fig is the active window. Sending focus back to previous applications.")
             WindowServer.shared.returnFocus()
             Timer.delayWithSeconds(0.15) {
-                if (clearLine) {
-                      self.simulate(keypress: .ctrlE)
-                      self.simulate(keypress: .ctrlU)
-                  }
-                print("Insert '\(cmd)' into ", NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "<none>")
-                injectUnicodeString(cmd + (runImmediately ? "\n" :""))
+              inject(cmd, runImmediately: runImmediately, clearLine: clearLine, completion: completion)
             }
         } else {
-            // There used to be a check here to determine if Spotlight was active. It seems like this is no longer needed.
-            print("Insert '\(cmd)' into ", NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "<none>")
-            if (clearLine) {
-                  self.simulate(keypress: .ctrlE)
-                  self.simulate(keypress: .ctrlU)
-              }
-            injectUnicodeString(cmd + (runImmediately ? "\n" :""))
+            inject(cmd, runImmediately: runImmediately, clearLine: clearLine, completion: completion)
         }
     }
 
@@ -329,6 +357,8 @@ class ShellBridge {
         case enter = 36
         case leftArrow = 123
         case rightArrow = 124
+        case downArrow = 125
+        case upArrow = 126
         case delete = 51
         case ctrlE = 14
         case ctrlU = 32
@@ -391,6 +421,14 @@ struct ShellMessage: Codable {
         guard let shellPidStr = self.options?[safe: 1], let shellPid = Int32(shellPidStr) else { return nil }
         
         return (shellPid, String(ttyId), self.session)
+    }
+  
+    func parseKeybuffer() -> (String, Int, Int)? {
+        guard let buffer = self.options?[safe: 2] else { return nil }
+        guard let cursorStr = self.options?[safe: 1], let cursor = Int(cursorStr) else { return nil }
+        guard let histStr = self.options?[safe: 3], let histno = Int(histStr) else { return nil }
+
+        return (buffer, cursor, histno)
     }
     
     func getWorkingDirectory() -> String? {
@@ -506,6 +544,11 @@ extension ShellBridge : LocalProcessDelegate {
 }
 
 class Integrations {
+    static let iTerm = "com.googlecode.iterm2"
+    static let Terminal = "com.apple.Terminal"
+    static let Hyper = "co.zeit.hyper"
+    static let VSCode = "com.microsoft.VSCode"
+  
     static let terminals: Set = ["com.googlecode.iterm2",
                                  "com.apple.Terminal",
                                  "io.alacritty",
@@ -520,7 +563,11 @@ class Integrations {
     static let searchBarApps: Set = ["com.apple.Spotlight",
                                      "com.runningwithcrayons.Alfred",
                                      "com.raycast.macos"]
-
+  
+    static let electronTerminals: Set = ["co.zeit.hyper",
+                                        "com.microsoft.VSCode"]
+    static let terminalsWhereAutocompleteShouldAppear: Set = nativeTerminals.union(electronTerminals)
+  
     static var allowed: Set<String> {
         
         get {
@@ -678,6 +725,8 @@ extension Array {
 extension ShellBridge {
     static func symlinkCLI(completion: (()-> Void)? = nil){
         Onboarding.copyFigCLIExecutable(to:"~/.fig/bin/fig")
+        Onboarding.copyFigCLIExecutable(to:"/usr/local/bin/fig")
+
         completion?()
         return
         if let path = Bundle.main.path(forAuxiliaryExecutable: "figcli") {//Bundle.main.path(forResource: "fig", ofType: "", inDirectory: "dist") {
