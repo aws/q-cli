@@ -15,13 +15,6 @@ class ZLEIntegration {
     // The existence of the insertion-lock file prevents latency in ZLE integration when inserting text
     // See the `self-insert` function in zle.sh
     FileManager.default.createFile(atPath: insertionLock, contents: nil, attributes: nil)
-    
-    // Hide autocomplete window if backed by ZLE
-    if let window = AXWindowServer.shared.whitelistedWindow,
-      KeypressProvider.shared.keyBuffer(for: window).backedByZLE {
-      
-      Autocomplete.hide()
-    }
 
   }
   
@@ -29,7 +22,8 @@ class ZLEIntegration {
       // remove lock after keystrokes have been processes
       // requires delay proportional to number of character inserted
       // unfortunately, we don't really know how long this will take - it varies significantly between native and Electron terminals.
-      let delay = min(0.1 * ceil(Double(insertionText.count) / 20.0), 0.5)
+      // We can probably be smarter about this and modulate delay based on terminal.
+      let delay = min(0.01 * Double(insertionText.count), 0.5)
       Timer.delayWithSeconds(delay) {
           try? FileManager.default.removeItem(atPath: insertionLock)
           // If ZLE, manually update keybuffer
