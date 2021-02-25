@@ -242,6 +242,11 @@ class KeypressProvider : KeypressService {
       if UInt16(event.getIntegerValueField(.keyboardEventKeycode)) == Keycode.escape, [.keyDown].contains(type) {
         let buffer = KeypressProvider.shared.keyBuffer(for: window)
         
+        // Don't intercept escape key when in VSCode editor
+        if Integrations.electronTerminals.contains(window.bundleId ?? "") && Accessibility.findXTermCursorInElectronWindow(window) == nil {
+          return Unmanaged.passUnretained(event)
+        }
+        
         buffer.writeOnly = !buffer.writeOnly
 
         if buffer.writeOnly {

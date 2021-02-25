@@ -7,6 +7,7 @@
 //
 
 import Cocoa
+import Sentry
 
 class HyperIntegration {
   static let settingsPath = "\(NSHomeDirectory())/.hyper.js"
@@ -35,6 +36,7 @@ class HyperIntegration {
     
     guard let settings = try? String(contentsOfFile: settingsPath) else {
       print("Could not read Hyper settings")
+      SentrySDK.capture(message: "Could not read Hyper settings")
       return
     }
     
@@ -62,6 +64,9 @@ class HyperIntegration {
       updatedSettings = settings.replacingOccurrences(of: "localPlugins: [\n", with: existingPlugins)
     } else {
       print("User will need to update the file manually")
+      SentrySDK.capture(message: "User will need to update the file manually")
+
+      return
     }
     
     do {
@@ -69,6 +74,7 @@ class HyperIntegration {
       try FileManager.default.createSymbolicLink(at: pluginPath, withDestinationURL: Bundle.main.url(forResource: "hyper-integration", withExtension: "js")!)
     } catch {
       print("Could not add Hyper plugin")
+      SentrySDK.capture(message: "Could not add Hyper plugin")
     }
     
     try? updatedSettings.write(toFile: settingsPath, atomically: true, encoding: .utf8)

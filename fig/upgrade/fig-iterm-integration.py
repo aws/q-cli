@@ -15,15 +15,18 @@ async def main(connection):
                 continue
             current_tab = window.current_tab
             if current_tab is None:
-            	continue
-
+              continue
+            current_session = current_tab.current_session
+            if current_session is None:
+                continue
             if update.selected_tab_changed:
                 print("The active tab is now {}, ({})".
                 format(update.selected_tab_changed.tab_id, current_tab.tab_id))
-                os.system('~/.fig/bin/fig bg:tab {}'.format(current_tab.tab_id))
+                os.system('~/.fig/bin/fig bg:tab {}{}'.format(current_tab.tab_id, current_session.session_id))
             elif update.window_changed and update.window_changed.event == iterm2.FocusUpdateWindowChanged.Reason.TERMINAL_WINDOW_BECAME_KEY:
-                print("The active tab is now {} ".
-                format(current_tab.tab_id))
-                os.system('~/.fig/bin/fig bg:tab {}'.format(current_tab.tab_id))
+                print("The active tab is now {}{} ".format(current_tab.tab_id, current_session.session_id))
+                os.system('~/.fig/bin/fig bg:tab {}{}'.format(current_tab.tab_id, current_session.session_id))
+            elif update.active_session_changed:
+                os.system('~/.fig/bin/fig bg:tab {}{}'.format(current_tab.tab_id, current_session.session_id))
 
 iterm2.run_forever(main)
