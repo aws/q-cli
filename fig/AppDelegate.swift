@@ -187,11 +187,11 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 //          }
         }
       
-        if !VSCodeIntegration.isInstalled {//}, !NSWorkspace.shared.runningApplications.contains { $0.bundleIdentifier == Integrations.VSCode } {
+        if !VSCodeIntegration.isInstalled {
             VSCodeIntegration.install(withRestart: false)
         }
 
-        if !HyperIntegration.isInstalled {//}, !NSWorkspace.shared.runningApplications.contains { $0.bundleIdentifier == Integrations.Hyper } {
+        if !HyperIntegration.isInstalled {
             HyperIntegration.install(withRestart: false)
         }
         

@@ -410,7 +410,7 @@ extension NativeCLI {
         let (_, connection) = scope
 
         if HyperIntegration.isInstalled {
-            NativeCLI.printInTerminal("\n› Hyper Integration is already installed.\n  If you are having issues, please use fig report.\n", using: connection)
+            NativeCLI.printInTerminal("\n› Hyper Integration is already installed.\n  You may need to restart Hyper for the changes to take effect.\n  If you are having issues, please use fig report.\n", using: connection)
             connection.send(message: "disconnect")
         } else {
             NativeCLI.printInTerminal("→ Prompting Hyper Integration...", using: connection)
