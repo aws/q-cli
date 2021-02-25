@@ -943,6 +943,11 @@ extension WebBridge {
                     guard previousMax != companion?.maxHeight else {
                         print("flicker: heights matched")
                         
+                        // still may need to make window visible
+                        if companion?.maxHeight != 0 {
+                            companion?.orderFrontRegardless()
+                        }
+
                         if let handlerId = handlerId {
                             WebBridge.callback(handler: handlerId, value: "", webView: scope.webView)
                         }
