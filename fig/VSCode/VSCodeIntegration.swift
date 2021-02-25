@@ -7,20 +7,49 @@
 //
 
 import Cocoa
+import Sentry
 
 class VSCodeIntegration {
-  static let settingsPath = "\(NSHomeDirectory())/Library/Application Support/Code/User/settings.json"
+  static var settingsPath: String {
+    let defaultPath = "\(NSHomeDirectory())/Library/Application Support/Code/User/settings.json"
+    return (try? FileManager.default.destinationOfSymbolicLink(atPath: defaultPath)) ?? defaultPath
+  }
 
-  static var settings: [String: Any]? {
-    guard let settings = try? String(contentsOfFile: settingsPath),
-    let json = settings.jsonStringToDict() else {
+  enum InstallationError: Error {
+      case couldNotParseSettingsJSON
+      case couldNotReadContentsOfSettingsFile
+  }
+  
+  static func settings() throws -> [String: Any]? {
+    guard FileManager.default.fileExists(atPath: settingsPath) else {
+      // file does not exist
+      print("VSCode: settings file does not exist")
+      SentrySDK.capture(message: "VSCode: settings file does not exist")
+
       return nil
+    }
+    
+    guard let settings = try? String(contentsOfFile: settingsPath) else {
+      print("VSCode: settings file is empty")
+      SentrySDK.capture(message: "VSCode: settings file is empty or could not be read")
+
+      throw InstallationError.couldNotReadContentsOfSettingsFile
+    }
+    
+    guard settings.count > 0 else {
+      return nil
+    }
+    
+    guard let json = settings.jsonStringToDict() else {
+      throw InstallationError.couldNotParseSettingsJSON
     }
     
     return json
   }
   
   static let inheritEnvKey = "terminal.integrated.inheritEnv"
+  static let accessibilitySupportKey = "editor.accessibilitySupport"
+
   // If the extension path changes make sure to update the uninstall script!
   static let extensionPath = "\(NSHomeDirectory())/.vscode/extensions/withfig.fig-0.0.1/extension.js"
 
@@ -33,24 +62,41 @@ class VSCodeIntegration {
     print(url)
     
     var updatedSettings: String!
-    if var json = VSCodeIntegration.settings {
-      
-      json[inheritEnvKey] = false
-      guard let data = try? JSONSerialization.data(withJSONObject: json, options: .prettyPrinted) else {
-        print("Could not serialize VSCode settings")
-        return
+    do {
+      if var json = try VSCodeIntegration.settings() {
+        
+        json[inheritEnvKey] = false
+        if let accessibilitySupport = json[accessibilitySupportKey] as? String?, accessibilitySupport != "on" {
+          json[accessibilitySupportKey] = "off"
+        }
+        
+        guard let data = try? JSONSerialization.data(withJSONObject: json, options: .prettyPrinted) else {
+          print("Could not serialize VSCode settings")
+          return
+        }
+        updatedSettings = String(decoding: data, as: UTF8.self)
+        
+      } else {
+        updatedSettings =
+        """
+        {
+          "\(inheritEnvKey)": false,
+          "\(accessibilitySupportKey)": "off"
+        }
+        """
       }
-      updatedSettings = String(decoding: data, as: UTF8.self)
+    
+    } catch {
+      //NSApp.appDelegate.dialogOKCancel(question: "Fig could not install the VSCode Integration",
+      //                                 text: "An error occured when attempting to parse settings.json")
       
-    } else {
-      updatedSettings =
-      """
-      {
-        "\(inheritEnvKey)": false
-      }
-      """
+      print("VSCode: An error occured when attempting to parse settings.json")
+      SentrySDK.capture(message: "VSCode: An error occured when attempting to parse settings.json")
       
+      completion?()
+      return
     }
+    
     try? updatedSettings.write(toFile: settingsPath, atomically: true, encoding: .utf8)
 
     let cli = url.appendingPathComponent("Contents/Resources/app/bin/code")
@@ -68,8 +114,9 @@ class VSCodeIntegration {
   }
   
   static var isInstalled: Bool {
-    guard let settings = VSCodeIntegration.settings,
-      let inheritEnv = settings[inheritEnvKey] as? Bool else {
+    guard let settings = try? VSCodeIntegration.settings(),
+      let inheritEnv = settings[inheritEnvKey] as? Bool,
+      settings[accessibilitySupportKey] != nil else {
         return false
     }
     
