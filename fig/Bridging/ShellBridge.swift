@@ -326,12 +326,13 @@ class ShellBridge {
         
         let insertion = cmd + (runImmediately ? "\n" :"")
 
-        // The existence of the insertion-lock file prevents latency in ZLE integration when inserting text
-        // See the `self-insert` function in zle.sh
-        ZLEIntegration.insertLock()
-        injectUnicodeString(insertion, delay: delay) {
-          ZLEIntegration.insertUnlock(with: insertion)
+        if let window = AXWindowServer.shared.whitelistedWindow,
+          KeypressProvider.shared.keyBuffer(for: window).backedByZLE {
+          ZLEIntegration.insert(with: insertion)
+          return
         }
+      
+        injectUnicodeString(insertion, delay: delay)
     }
   
     static func injectStringIntoTerminal(_ cmd: String,
@@ -362,7 +363,11 @@ class ShellBridge {
         case delete = 51
         case ctrlE = 14
         case ctrlU = 32
-        
+        case ctrlPipe = 42
+        case fn13 = 105
+        case fn19 = 80
+        case fn20 = 90
+
         var code: CGKeyCode {
             switch self {
             case .cmdV:
@@ -373,6 +378,8 @@ class ShellBridge {
                 return KeyboardLayout.shared.keyCode(for: "U") ?? self.rawValue
             case .cmdN:
                 return KeyboardLayout.shared.keyCode(for: "N") ?? self.rawValue
+            case .ctrlPipe:
+                return KeyboardLayout.shared.keyCode(for: "|") ?? self.rawValue
             default:
                 return self.rawValue as CGKeyCode
             }
@@ -380,6 +387,26 @@ class ShellBridge {
 
     }
     
+  static func simulate(keystroke: Keystroke) {
+      let keyCode = keystroke.keyCode
+      let src = CGEventSource(stateID: CGEventSourceStateID.hidSystemState)
+
+      let keydown = CGEvent(keyboardEventSource: src, virtualKey: keyCode, keyDown: true)
+      let keyup = CGEvent(keyboardEventSource: src, virtualKey: keyCode, keyDown: false)
+      
+      if (keystroke.modifierFlags.contains(.command)){
+          keydown?.flags = CGEventFlags.maskCommand;
+      }
+      
+      if (keystroke.modifierFlags.contains(.control)) {
+          keydown?.flags = CGEventFlags.maskControl;
+      }
+      
+      let loc = CGEventTapLocation.cghidEventTap
+      keydown?.post(tap: loc)
+      keyup?.post(tap: loc)
+  }
+  
     static func simulate(keypress: Keypress) {
         let keyCode = keypress.code
         let src = CGEventSource(stateID: CGEventSourceStateID.hidSystemState)
@@ -391,7 +418,7 @@ class ShellBridge {
             keydown?.flags = CGEventFlags.maskCommand;
         }
         
-        if (keypress == .ctrlE || keypress == .ctrlU) {
+      if (keypress == .ctrlE || keypress == .ctrlU || keypress == .ctrlPipe) {
             keydown?.flags = CGEventFlags.maskControl;
         }
         

@@ -10,6 +10,10 @@ import Foundation
 
 class ZLEIntegration {
   static let insertionLock = "\(NSHomeDirectory())/.fig/insertion-lock"
+  static let insertionFile = "\(NSHomeDirectory())/.fig/zle/insert"
+  static let deletionFile = "\(NSHomeDirectory())/.fig/zle/delete"
+  static let offsetFile = "\(NSHomeDirectory())/.fig/zle/offset"
+  static let immediateFile = "\(NSHomeDirectory())/.fig/zle/immediate"
 
   static func insertLock() {
     // The existence of the insertion-lock file prevents latency in ZLE integration when inserting text
@@ -46,5 +50,79 @@ class ZLEIntegration {
     
 
   }
+  
+  static func insert(with insertionText: String) {
+    let backspaceLiteral = Character("\u{8}")
+    let cursorLeftLiteral = String("\u{1b}[D")
+    let cursorLeftPlaceholder =  Character("\u{0}")
+    
+    var cleaned = insertionText
+    
+    // handle
+    if insertionText.starts(with: " \u{8}") {
+      cleaned = String(insertionText.dropFirst(2))
+    }
+    
+    let isImmediate = insertionText.hasSuffix("\n")
+    
+    if isImmediate {
+      cleaned = String(cleaned.dropLast())
+    }
+
+    
+    // "\b\b\bText to insert^[[D^[[D"
+    print("ZLE: inserting \(cleaned)")
+    let (numberOfCharactersToRemove, _) = cleaned.reduce((0, true)) { (acc, char) -> (Int, Bool) in
+      let (length, stillSearching) = acc
+      
+      guard stillSearching else {
+        return acc
+      }
+      
+      if char == backspaceLiteral {
+        return (length + 1, true)
+      } else {
+        return (length, false)
+      }
+    }
+    
+    cleaned = String(cleaned.dropFirst(numberOfCharactersToRemove))
+    
+    let replacingMultiCharacterSequence = cleaned.replacingOccurrences(of: cursorLeftLiteral, with: String(cursorLeftPlaceholder))
+    
+    let (cursorOffset, _) = replacingMultiCharacterSequence.reversed().reduce((0, true)) { (acc, char) -> (Int, Bool) in
+      let (length, stillSearching) = acc
+      
+      guard stillSearching else {
+        return acc
+      }
+      
+      if char == cursorLeftPlaceholder {
+        return (length + 1, true)
+      } else {
+        return (length, false)
+      }
+    }
+    
+    cleaned = String(cleaned.dropLast(cursorOffset * cursorLeftLiteral.count))
+    
+    print("ZLE: delete \(numberOfCharactersToRemove)")
+    print("ZLE: insert cleaned string '\(cleaned)'")
+    print("ZLE: offset -\(cursorOffset)")
+    
+    FileManager.default.createFile(atPath: insertionFile, contents: cleaned.data(using: .utf8), attributes: nil)
+    FileManager.default.createFile(atPath: deletionFile, contents: String(numberOfCharactersToRemove).data(using: .utf8), attributes: nil)
+    FileManager.default.createFile(atPath: offsetFile, contents: String(cursorOffset).data(using: .utf8), attributes: nil)
+    FileManager.default.createFile(atPath: immediateFile, contents: String(isImmediate ? 1 : 0).data(using: .utf8), attributes: nil)
+  
+      // Hide autocomplete to avoid jank
+//      Autocomplete.hide()
+
+    // Make sure this key is bound to a widget in fig.sh.
+    // Use `read -r` to determine appropriate keycode.
+      ShellBridge.simulate(keystroke: Keystroke(keyCode: Keycode.f12))
+    
+  }
+
   
 }
