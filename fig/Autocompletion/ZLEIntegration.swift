@@ -10,10 +10,10 @@ import Foundation
 
 class ZLEIntegration {
   static let insertionLock = "\(NSHomeDirectory())/.fig/insertion-lock"
-  static let insertionFile = "\(NSHomeDirectory())/.fig/insert"
-  static let deletionFile = "\(NSHomeDirectory())/.fig/delete"
-  static let offsetFile = "\(NSHomeDirectory())/.fig/offset"
-  static let immediateFile = "\(NSHomeDirectory())/.fig/immediate"
+  static let insertionFile = "\(NSHomeDirectory())/.fig/zle/insert"
+  static let deletionFile = "\(NSHomeDirectory())/.fig/zle/delete"
+  static let offsetFile = "\(NSHomeDirectory())/.fig/zle/offset"
+  static let immediateFile = "\(NSHomeDirectory())/.fig/zle/immediate"
 
   static func insertLock() {
     // The existence of the insertion-lock file prevents latency in ZLE integration when inserting text

@@ -332,12 +332,7 @@ class ShellBridge {
           return
         }
       
-        // The existence of the insertion-lock file prevents latency in ZLE integration when inserting text
-        // See the `self-insert` function in zle.sh
-        ZLEIntegration.insertLock()
-        injectUnicodeString(insertion, delay: delay) {
-          ZLEIntegration.insertUnlock(with: insertion)
-        }
+        injectUnicodeString(insertion, delay: delay)
     }
   
     static func injectStringIntoTerminal(_ cmd: String,
