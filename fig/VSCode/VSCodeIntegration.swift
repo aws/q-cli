@@ -9,7 +9,7 @@
 import Cocoa
 import Sentry
 
-class VSCodeIntegration {
+class VSCodeIntegration: IntegrationProvider {
   static var settingsPath: String {
     let defaultPath = "\(NSHomeDirectory())/Library/Application Support/Code/User/settings.json"
     return (try? FileManager.default.destinationOfSymbolicLink(atPath: defaultPath)) ?? defaultPath
