@@ -239,8 +239,11 @@ class KeypressProvider : KeypressService {
       }
       
       // Toggle autocomplete on and off
-      if UInt16(event.getIntegerValueField(.keyboardEventKeycode)) == Keycode.escape, [.keyDown].contains(type) {
+      if UInt16(event.getIntegerValueField(.keyboardEventKeycode)) == Keycode.grave,
+        event.flags.contains(.maskCommand),
+        [.keyDown].contains(type) {
         let buffer = KeypressProvider.shared.keyBuffer(for: window)
+        
         
         // Don't intercept escape key when in VSCode editor
         if Integrations.electronTerminals.contains(window.bundleId ?? "") && Accessibility.findXTermCursorInElectronWindow(window) == nil {
@@ -257,7 +260,7 @@ class KeypressProvider : KeypressService {
             Autocomplete.position()
         }
         
-        return nil
+        return Unmanaged.passUnretained(event) //WindowManager.shared.autocomplete?.isVisible ?? false ? nil : Unmanaged.passUnretained(event)
         
       }
       

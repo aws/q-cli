@@ -332,7 +332,12 @@ class ShellBridge {
           return
         }
       
-        injectUnicodeString(insertion, delay: delay)
+        // Keep the ZLE insertion lock to speed up "fig source"
+        // when run from no context popup
+        ZLEIntegration.insertLock()
+        injectUnicodeString(insertion, delay: delay) {
+          ZLEIntegration.insertUnlock(with: insertion)
+        }
     }
   
     static func injectStringIntoTerminal(_ cmd: String,
