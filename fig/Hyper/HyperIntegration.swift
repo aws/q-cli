@@ -9,7 +9,7 @@
 import Cocoa
 import Sentry
 
-class HyperIntegration {
+class HyperIntegration: IntegrationProvider {
   static let settingsPath = "\(NSHomeDirectory())/.hyper.js"
 
   static var settings: [String: Any]? {

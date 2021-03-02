@@ -18,6 +18,8 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     var onboardingWindow: OnboardingWindow!
     var statusBarItem: NSStatusItem!
     var frontmost: NSMenuItem?
+    var integrationPrompt: NSMenuItem?
+
     var clicks:Int = 6;
     var hotKeyManager: HotKeyManager?
     let updater = SUUpdater.shared()
@@ -1991,7 +1993,51 @@ extension AppDelegate : NSMenuDelegate {
 
             }
         }
+      
+        if let integrations = self.integrationPrompt {
+            if menu.items.contains(integrations) {
+                menu.removeItem(integrations)
+            }
+            
+            self.integrationPrompt = nil
+        }
+      
+      if let app = NSWorkspace.shared.frontmostApplication,
+        !app.isFig,
+        let provider = Integrations.providers[app.bundleIdentifier ?? ""] as? IntegrationProvider.Type,
+        !provider.isInstalled {
+    
+        
+        
+          let name: String!
+          
+          switch app.bundleIdentifier {
+          case Integrations.iTerm:
+            name = "iTerm"
+          case Integrations.Hyper:
+            name = "Hyper"
+          case Integrations.VSCode:
+            name = "VSCode"
+          default:
+            name = "Unknown"
+          }
+
+        let item = NSMenuItem(title: "Install \(name!) Integration", action: #selector(AppDelegate.installIntegrationForFrontmostApp) , keyEquivalent: "")
+        item.image = NSImage(named: NSImage.Name("carrot"))
+           menu.insertItem(item, at: 1)
+           self.integrationPrompt = item
+        }
+
+        
     }
+  
+  @objc func installIntegrationForFrontmostApp() {
+    if let app = NSWorkspace.shared.frontmostApplication, let provider = Integrations.providers[app.bundleIdentifier ?? ""] as? IntegrationProvider.Type, !provider.isInstalled {
+      
+        provider.promptToInstall(completion: nil)
+      
+    }
+  }
 }
 
 extension NSApplication {
