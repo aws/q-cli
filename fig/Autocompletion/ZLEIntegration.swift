@@ -6,7 +6,7 @@
 //  Copyright © 2021 Matt Schrage. All rights reserved.
 //
 
-import Foundation
+import Cocoa
 
 class ZLEIntegration {
   static let insertionLock = "\(NSHomeDirectory())/.fig/insertion-lock"
@@ -46,9 +46,16 @@ class ZLEIntegration {
         
         Autocomplete.position(makeVisibleImmediately: false, completion: nil)
       }
-    
-    
 
+  }
+  
+  static func paste() {
+    if let window = AXWindowServer.shared.whitelistedWindow,
+        let pastedText = NSPasteboard.general.string(forType: .string),
+        let context = KeypressProvider.shared.keyBuffer(for: window).insert(text: pastedText) {
+         print("ZLE: paste! (Hiding popup window)")
+         Autocomplete.update(with: context, for: window.hash)
+     }
   }
   
   static func insert(with insertionText: String) {
