@@ -48,6 +48,7 @@ class NativeCLI {
         case diagnostic = "diagnostic"
         case pty = "debug:pty"
         case debugApp = "debug:app"
+        case debugSSH = "debug:ssh"
         case electronAccessibility = "util:axelectron"
 
         var isUtility: Bool {

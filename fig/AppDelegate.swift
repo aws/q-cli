@@ -1871,7 +1871,7 @@ extension AppDelegate : NSMenuDelegate {
 
                 if let window = window {
                     let keybuffer = KeypressProvider.shared.keyBuffer(for: window)
-                    hasContext = keybuffer.buffer != nil
+                    hasContext = keybuffer.buffer != nil && !keybuffer.writeOnly
                     bufferDescription = keybuffer.representation
                     backedByZLE = keybuffer.backedByZLE
                   
@@ -1945,7 +1945,7 @@ extension AppDelegate : NSMenuDelegate {
                     color = .green
                     legend.addItem(NSMenuItem(title: "Everything should be working.", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem.separator())
-                    legend.addItem(NSMenuItem(title: "window: \(window?.hash ?? "???")", action: nil, keyEquivalent: ""))
+                    legend.addItem(NSMenuItem(title: "window: \(window?.hash.truncate(length: 15, trailing: "...") ?? "???")", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem(title: "tty: \(tty?.descriptor ?? "???")", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem(title: "cwd: \(tty?.cwd ?? "???")", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem(title: "pid: \(tty?.pid ?? -1)", action: nil, keyEquivalent: ""))

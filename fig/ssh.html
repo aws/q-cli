@@ -227,12 +227,11 @@
                 <details>
                 <summary>How does it work?</summary>
                   <p></p>
-                  <p>Fig prepends the following text to the start of <span class = "code" figdisabled = "true">~/.ssh/config</span>.
+                  <p>Fig prepends the following text to the start of <span class = "code" figdisabled = "true">~/.ssh/config</span> using the <span class = "code" figdisabled = "true">Include</span> directive.
                   This sends Fig a signal whenever a new SSH session begins and allows Fig to use the same connection.
                       <br>
                   </p>
 <pre id = "shell" figdisabled = "true">
-Host *
     ControlPath ~/.ssh/%C
     ControlMaster auto
     ControlPersist 1

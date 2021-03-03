@@ -138,26 +138,32 @@ class KeypressProvider : KeypressService {
       NSEvent.removeMonitor(handler)
     }
     
-    self.keyHandler = NSEvent.addGlobalMonitorForEvents(matching: [ .keyUp], handler: { (event) in
+    self.keyHandler = NSEvent.addGlobalMonitorForEvents(matching: [ .keyDown, .keyUp], handler: { (event) in
       guard Defaults.useAutocomplete else { return }
       
-      // Watch for Cmd+V and manually update ZLE buffer (because we don't recieve an event until the following keystroke)
-      if AXWindowServer.shared.whitelistedWindow != nil, event.keyCode == Keycode.v && event.modifierFlags.contains(.command) {
-        ZLEIntegration.insertUnlock(with: NSPasteboard.general.string(forType: .string) ?? "")
-      }
-      
-      // Handle Control+R searching -- this is needed for ZLE + fzf, normal history search is handled by integration.
-      if AXWindowServer.shared.whitelistedWindow != nil, event.keyCode == Keycode.r && event.modifierFlags.contains(.control) {
-        Autocomplete.hide()
-      }
-      
-      guard event.keyCode == Keycode.returnKey || event.modifierFlags.contains(.control) else { return }
-      if let window = AXWindowServer.shared.whitelistedWindow, let tty = window.tty {
-        Timer.delayWithSeconds(0.2) {
-          DispatchQueue.global(qos: .userInteractive).async {
-            tty.update()
+      switch event.type {
+        case .keyDown:
+          // Watch for Cmd+V and manually update ZLE buffer (because we don't recieve an event until the following keystroke)
+          if AXWindowServer.shared.whitelistedWindow != nil, event.keyCode == Keycode.v && event.modifierFlags.contains(.command) {
+              print("ZLE: Command+V")
+              ZLEIntegration.paste()
           }
-        }
+          
+          // Handle Control+R searching -- this is needed for ZLE + fzf, normal history search is handled by integration.
+          if AXWindowServer.shared.whitelistedWindow != nil, event.keyCode == Keycode.r && event.modifierFlags.contains(.control) {
+            Autocomplete.hide()
+          }
+        case .keyUp:
+          guard event.keyCode == Keycode.returnKey || event.modifierFlags.contains(.control) else { return }
+          if let window = AXWindowServer.shared.whitelistedWindow, let tty = window.tty {
+            Timer.delayWithSeconds(0.2) {
+              DispatchQueue.global(qos: .userInteractive).async {
+                tty.update()
+              }
+            }
+          }
+        default:
+          print("Unknown keypress event")
       }
     })
     
@@ -239,8 +245,11 @@ class KeypressProvider : KeypressService {
       }
       
       // Toggle autocomplete on and off
-      if UInt16(event.getIntegerValueField(.keyboardEventKeycode)) == Keycode.escape, [.keyDown].contains(type) {
+      if UInt16(event.getIntegerValueField(.keyboardEventKeycode)) == Keycode.grave,
+        event.flags.contains(.maskCommand),
+        [.keyDown].contains(type) {
         let buffer = KeypressProvider.shared.keyBuffer(for: window)
+        
         
         // Don't intercept escape key when in VSCode editor
         if Integrations.electronTerminals.contains(window.bundleId ?? "") && Accessibility.findXTermCursorInElectronWindow(window) == nil {
@@ -257,7 +266,7 @@ class KeypressProvider : KeypressService {
             Autocomplete.position()
         }
         
-        return nil
+        return Unmanaged.passUnretained(event) //WindowManager.shared.autocomplete?.isVisible ?? false ? nil : Unmanaged.passUnretained(event)
         
       }
       
@@ -269,6 +278,10 @@ class KeypressProvider : KeypressService {
           print("eventTap", "Should redirect!")
           // prevent redirects when typing in VSCode editor
           if Integrations.electronTerminals.contains(window.bundleId ?? "") && Accessibility.findXTermCursorInElectronWindow(window) == nil {
+            return Unmanaged.passUnretained(event)
+          }
+          
+          guard WindowManager.shared.autocomplete?.isVisible ?? true else {
             return Unmanaged.passUnretained(event)
           }
 
