@@ -190,11 +190,11 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         }
       
         if !VSCodeIntegration.isInstalled {
-            VSCodeIntegration.install(withRestart: false)
+            VSCodeIntegration.install(withRestart: false, inBackground: true)
         }
 
         if !HyperIntegration.isInstalled {
-            HyperIntegration.install(withRestart: false)
+            HyperIntegration.install(withRestart: false, inBackground: true)
         }
         
     }
@@ -1461,7 +1461,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         }
     }
     @objc func triggerScreenReader() {
-      VSCodeIntegration.install {
+      VSCodeIntegration.install(inBackground: true) {
         self.dialogOKCancel(question: "VSCode Integration Installed!", text: "The Fig extension was successfully added to VSCode.", noAction: true)
 //      if let app = AXWindowServer.shared.topApplication, let window = AXWindowServer.shared.topWindow {
 //        print("Triggering ScreenreaderMode in \(app.bundleIdentifier ?? "<unknown>")")
