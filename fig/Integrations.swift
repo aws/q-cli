@@ -60,14 +60,14 @@ class Integrations {
       .subtracting(Integrations.blocked)
         }
     }
-  static let providers: [String: Any] =
+  static let providers: [String: IntegrationProvider.Type] =
                         [Integrations.iTerm : iTermTabIntegration.self,
                           Integrations.Hyper : HyperIntegration.self,
                           Integrations.VSCode : VSCodeIntegration.self]
 }
 
 protocol IntegrationProvider {
-  static func install(withRestart: Bool, completion: (() -> Void)?)
+  static func install(withRestart: Bool, inBackground: Bool, completion: (() -> Void)?)
   static var isInstalled: Bool { get }
   static func promptToInstall(completion: (()->Void)?)
 }

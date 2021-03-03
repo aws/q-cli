@@ -169,6 +169,7 @@ class KeystrokeBuffer : NSObject {
               NotificationCenter.default.post(name: Self.lineAcceptedInKeystrokeBufferNotification, object: nil)
             }
           default:
+            guard buffer != nil, index != nil else { return }
             buffer!.insert(char, at: index!)
             index = buffer!.index(index!, offsetBy: 1)
             print("xterm: insert! (\(char))")

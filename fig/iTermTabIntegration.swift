@@ -9,7 +9,8 @@
 import Cocoa
 
 class iTermTabIntegration: IntegrationProvider {
-    static func install(withRestart: Bool, completion: (() -> Void)?) {
+  static func install(withRestart: Bool, inBackground: Bool, completion: (() -> Void)?) {
+        guard !inBackground else { return }
         NSApp.appDelegate.iTermSetup()
     }
     
