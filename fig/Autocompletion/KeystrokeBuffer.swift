@@ -387,6 +387,10 @@ class KeystrokeBuffer : NSObject {
   }
   
   var representation: String {
+    guard !writeOnly else {
+      return "<hidden>"
+    }
+    
     guard !backedByZLE else {
       if var logging = buffer {
         let index = logging.index(logging.startIndex, offsetBy: zleCursor)
