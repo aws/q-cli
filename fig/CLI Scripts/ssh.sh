@@ -18,12 +18,7 @@ grep -q "$START" $SSH_CONFIG_PATH && echo "Fig is already integrated with SSH." 
 
 # When this is updated, make sure ssh.html reflects these changes
 CONFIG="$START
-Host *
-    ControlPath ~/.ssh/%C
-    ControlMaster auto
-    ControlPersist 1
-    PermitLocalCommand yes
-    LocalCommand fig bg:ssh ~/.ssh/%C &
+Include ~/.fig/ssh
 $END"
 
 
