@@ -205,6 +205,7 @@ class Diagnostic {
       Accessibility: \(Accessibility.enabled)
       Number of specs: \(Diagnostic.numberOfCompletionSpecs)
       SSH Integration: \(Defaults.SSHIntegrationEnabled)
+      Tmux Integration: \(TmuxIntegration.isInstalled)
       Keybindings path: \(Diagnostic.keybindingsPath ?? "<none>")
       iTerm Integration: \(iTermTabIntegration.isInstalled)
       Hyper Integration: \(HyperIntegration.isInstalled)
@@ -213,7 +214,7 @@ class Diagnostic {
       Only insert on tab: \(Defaults.onlyInsertOnTab)
       SecureKeyboardInput: \(Diagnostic.secureKeyboardInput)
       SecureKeyboardProcess: \(Diagnostic.blockingProcess ?? "<none>")
-      Current active process: \(Diagnostic.processForTopmostWindow) (\(Diagnostic.processIdForTopmostWindow))
+      Current active process: \(Diagnostic.processForTopmostWindow) (\(Diagnostic.processIdForTopmostWindow)) - \(Diagnostic.ttyDescriptorForTopmostWindow)
       Current working directory: \(Diagnostic.workingDirectoryForTopmostWindow)
       Current window identifier: \(Diagnostic.descriptionOfTopmostWindow)
 
