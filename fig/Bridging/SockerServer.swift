@@ -233,6 +233,8 @@ class ShellBridgeSocketService: WebSocketService {
                                         ShellHookManager.shared.currentTabDidChange(msg)
                                     case "bg:hyper":
                                         ShellHookManager.shared.currentTabDidChange(msg)
+                                    case "bg:tmux":
+                                        ShellHookManager.shared.tmuxPaneChanged(msg)
                                     case "bg:hide":
                                         Autocomplete.hide()
                                     case "bg:alert":

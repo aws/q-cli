@@ -186,6 +186,7 @@
 		75DA86A325EDB05100722F1D /* Integrations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DA86A225EDB05100722F1D /* Integrations.swift */; };
 		75DA86A525EEBD7500722F1D /* Alert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DA86A425EEBD7400722F1D /* Alert.swift */; };
 		75DA86A725EF08F900722F1D /* debug-ssh.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75DA86A625EF085500722F1D /* debug-ssh.sh */; };
+		75DA86A925EF145E00722F1D /* TmuxIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DA86A825EF145E00722F1D /* TmuxIntegration.swift */; };
 		75E993F22515A6DD000BE6BE /* statusbar@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 75E993F12515A6DD000BE6BE /* statusbar@2x.png */; };
 		75E993F52517E226000BE6BE /* AXWindowServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75E993F42517E226000BE6BE /* AXWindowServer.swift */; };
 		75EB592B258D98A7002915E7 /* BiMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75EB592A258D98A7002915E7 /* BiMap.swift */; };
@@ -443,6 +444,7 @@
 		75DA86A225EDB05100722F1D /* Integrations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Integrations.swift; sourceTree = "<group>"; };
 		75DA86A425EEBD7400722F1D /* Alert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Alert.swift; sourceTree = "<group>"; };
 		75DA86A625EF085500722F1D /* debug-ssh.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "debug-ssh.sh"; sourceTree = "<group>"; };
+		75DA86A825EF145E00722F1D /* TmuxIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TmuxIntegration.swift; sourceTree = "<group>"; };
 		75E993F12515A6DD000BE6BE /* statusbar@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "statusbar@2x.png"; sourceTree = "<group>"; };
 		75E993F42517E226000BE6BE /* AXWindowServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AXWindowServer.swift; sourceTree = "<group>"; };
 		75EB592A258D98A7002915E7 /* BiMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiMap.swift; sourceTree = "<group>"; };
@@ -865,6 +867,7 @@
 				75AEF2E525C3DEAF00D78431 /* DockerIntegration.swift */,
 				75EDDC5A25D4BC53003AECC6 /* UnixSocketClient.swift */,
 				75AEF2E725C3DEC600D78431 /* SSHIntegration.swift */,
+				75DA86A825EF145E00722F1D /* TmuxIntegration.swift */,
 				75A4520F25A839F500107D2C /* remote_cwd.sh */,
 			);
 			path = Shell;
@@ -1265,6 +1268,7 @@
 				7510F8AD24A6910500E86F7C /* SelectionService.swift in Sources */,
 				7510F89B24A6910500E86F7C /* CharSets.swift in Sources */,
 				7510F8B824A6910500E86F7C /* Pty.swift in Sources */,
+				75DA86A925EF145E00722F1D /* TmuxIntegration.swift in Sources */,
 				7577124725648DFB0011FF48 /* ps.c in Sources */,
 				75B1993825100E4E00F38EA8 /* KeypressService.swift in Sources */,
 				7510F8A724A6910500E86F7C /* MacAccessibilityService.swift in Sources */,

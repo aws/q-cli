@@ -69,6 +69,18 @@ fi
 
 mv $SSH_TMP_PATH $SSH_CONFIG_PATH
 
+echo "Removing TMUX integration"
+TMUX_CONFIG_PATH=~/.tmux.conf
+TMUX_TMP_PATH=$TMUX_CONFIG_PATH'.tmp'
+
+TMUX_START="# Fig Tmux Integration: Enabled"
+TMUX_END="# End of Fig Tmux Integration"
+
+cat $TMUX_CONFIG_PATH | sed -e '\|'"$TMUX_START"'|,\|'"$TMUX_END"'|d' > $TMUX_TMP_PATH
+
+mv $TMUX_TMP_PATH $TMUX_CONFIG_PATH
+
+
 #fig bg:event "Uninstall App"
 echo "Finished removing fig resources. You may now delete the Fig app by moving it to the Trash."
 #fig bg:alert "Done removing Fig resources." "You may now delete the Fig app by moving it to the Trash."

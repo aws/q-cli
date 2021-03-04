@@ -35,7 +35,8 @@ struct proc {
   
   // Run cat /etc/shells
   var isShell: Bool {
-    return (Defaults.processWhitelist + ["zsh","fish","bash", "csh","dash","ksh","tcsh", "ssh", "docker"]).reduce(into: false) { (res, shell) in
+    
+    return (Defaults.processWhitelist + ["zsh","fish","bash", "csh","dash","ksh","tcsh", "ssh", "docker", "tmux"]).reduce(into: false) { (res, shell) in
       res = res || cmd.contains(shell)
     }
   }
