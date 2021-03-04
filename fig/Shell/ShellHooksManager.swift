@@ -141,7 +141,9 @@ extension ShellHookManager {
 //                    self.tabs[window.windowId] = id
                     self.setActiveTab(id, for: window.windowId)
                   
-                    self.updateHashMetadata(oldHash: "\(window.windowId)/", hash: window.hash)
+                    // Manually ensuring that values set prior to tab are updated
+                    // Make sure oldHash is equal to whatever the default value of the hash would be
+                    self.updateHashMetadata(oldHash: "\(window.windowId)/%", hash: window.hash)
                     
                     DispatchQueue.main.async {
                       
@@ -376,9 +378,6 @@ extension ShellHookManager {
         } else {
           print("tmux: user is switching between panes \(oldPane!) -> \(newPane)")
         }
-        
-        //setActivePane(newPane, for: windowId)
-        //self.updateHashMetadata(oldHash: oldHash, hash: window.hash)
 
       } else {
         print("tmux: launched new session")
