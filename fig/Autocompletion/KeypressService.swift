@@ -245,8 +245,7 @@ class KeypressProvider : KeypressService {
       }
       
       // Toggle autocomplete on and off
-      if UInt16(event.getIntegerValueField(.keyboardEventKeycode)) == Keycode.grave,
-        event.flags.contains(.maskCommand),
+      if UInt16(event.getIntegerValueField(.keyboardEventKeycode)) == Keycode.escape,
         [.keyDown].contains(type) {
         let buffer = KeypressProvider.shared.keyBuffer(for: window)
         
@@ -256,6 +255,12 @@ class KeypressProvider : KeypressService {
           return Unmanaged.passUnretained(event)
         }
         
+        let escapeKeyPressedWhenFigIsVisible = WindowManager.shared.autocomplete?.isVisible ?? false && !event.flags.contains(.maskControl)
+        guard escapeKeyPressedWhenFigIsVisible || event.flags.contains(.maskControl) else {
+          // send <esc> key event directly to underlying app
+          return Unmanaged.passUnretained(event)
+        }
+       
         buffer.writeOnly = !buffer.writeOnly
 
         if buffer.writeOnly {
@@ -266,7 +271,7 @@ class KeypressProvider : KeypressService {
             Autocomplete.position()
         }
         
-        return Unmanaged.passUnretained(event) //WindowManager.shared.autocomplete?.isVisible ?? false ? nil : Unmanaged.passUnretained(event)
+        return WindowManager.shared.autocomplete?.isVisible ?? false ? nil : Unmanaged.passUnretained(event)
         
       }
       
