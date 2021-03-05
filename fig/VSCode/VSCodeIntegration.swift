@@ -105,12 +105,14 @@ class VSCodeIntegration: IntegrationProvider {
       print(out)
       guard successfullyUpdatedSettings else {
         if (!inBackground) {
-          let openSupportPage = Alert.show(title: "Could not install VSCode integration automatically",
-                                           message: "Fig could not parse VSCode's settings.json file.\nTo finish the installation, you will need to update a few preferences manually.",
-                                           okText: "Learn more",
-                                           hasSecondaryOption: true)
-          if (openSupportPage) {
-            NSWorkspace.shared.open(VSCodeIntegration.supportURL)
+          DispatchQueue.main.async {
+            let openSupportPage = Alert.show(title: "Could not install VSCode integration automatically",
+                                       message: "Fig could not parse VSCode's settings.json file.\nTo finish the installation, you will need to update a few preferences manually.",
+                                       okText: "Learn more",
+                                       hasSecondaryOption: true)
+            if (openSupportPage) {
+              NSWorkspace.shared.open(VSCodeIntegration.supportURL)
+            }
           }
         }
         
