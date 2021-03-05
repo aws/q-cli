@@ -9,7 +9,8 @@
 import Cocoa
 import Sentry
 
-class VSCodeIntegration {
+class VSCodeIntegration: IntegrationProvider {
+  static let supportURL: URL = URL(string: "https://withfig.com/docs/support/vscode-integration")!
   static var settingsPath: String {
     let defaultPath = "\(NSHomeDirectory())/Library/Application Support/Code/User/settings.json"
     return (try? FileManager.default.destinationOfSymbolicLink(atPath: defaultPath)) ?? defaultPath
@@ -53,14 +54,14 @@ class VSCodeIntegration {
   // If the extension path changes make sure to update the uninstall script!
   static let extensionPath = "\(NSHomeDirectory())/.vscode/extensions/withfig.fig-0.0.1/extension.js"
 
-  static func install(withRestart:Bool = true, completion: (() -> Void)? = nil) {
+  static func install(withRestart:Bool = true, inBackground: Bool, completion: (() -> Void)? = nil) {
     guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.microsoft.VSCode") else {
         print("VSCode not installed")
         return
     }
     
     print(url)
-    
+    var successfullyUpdatedSettings = false
     var updatedSettings: String!
     do {
       if var json = try VSCodeIntegration.settings() {
@@ -85,7 +86,9 @@ class VSCodeIntegration {
         }
         """
       }
-    
+      
+      try updatedSettings.write(toFile: settingsPath, atomically: true, encoding: .utf8)
+      successfullyUpdatedSettings = true
     } catch {
       //NSApp.appDelegate.dialogOKCancel(question: "Fig could not install the VSCode Integration",
       //                                 text: "An error occured when attempting to parse settings.json")
@@ -93,17 +96,29 @@ class VSCodeIntegration {
       print("VSCode: An error occured when attempting to parse settings.json")
       SentrySDK.capture(message: "VSCode: An error occured when attempting to parse settings.json")
       
-      completion?()
-      return
     }
     
-    try? updatedSettings.write(toFile: settingsPath, atomically: true, encoding: .utf8)
-
     let cli = url.appendingPathComponent("Contents/Resources/app/bin/code")
     let vsix = Bundle.main.path(forResource: "fig-0.0.1", ofType: "vsix")!
     print("\(cli.path.replacingOccurrences(of: " ", with: "\\ ")) --install-extension \(vsix)")
     "\(cli.path.replacingOccurrences(of: " ", with: "\\ ")) --install-extension \(vsix)".runInBackground { (out) in
       print(out)
+      guard successfullyUpdatedSettings else {
+        if (!inBackground) {
+          DispatchQueue.main.async {
+            let openSupportPage = Alert.show(title: "Could not install VSCode integration automatically",
+                                       message: "Fig could not parse VSCode's settings.json file.\nTo finish the installation, you will need to update a few preferences manually.",
+                                       okText: "Learn more",
+                                       hasSecondaryOption: true)
+            if (openSupportPage) {
+              NSWorkspace.shared.open(VSCodeIntegration.supportURL)
+            }
+          }
+        }
+        
+        return
+      }
+      
       if (withRestart) {
         let VSCode = Restarter(with: "com.microsoft.VSCode")
         VSCode.restart(launchingIfInactive: false, completion: completion)
@@ -152,7 +167,7 @@ class VSCodeIntegration {
     let install = alert.runModal() == .alertFirstButtonReturn
     
     if (install) {
-      VSCodeIntegration.install {
+      VSCodeIntegration.install(inBackground: false) {
         print("Installation completed!")
         if let app = AXWindowServer.shared.topApplication, Integrations.VSCode == app.bundleIdentifier {
           Accessibility.triggerScreenReaderModeInChromiumApplication(app)

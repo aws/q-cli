@@ -10,16 +10,23 @@ import Foundation
 import Cocoa
 
 extension ExternalWindowHash {
-    func components() -> (windowId: CGWindowID, tab: String?)? {
-        let tokens = self.split(separator: "/")
+    func components() -> (windowId: CGWindowID, tab: String?, pane: String?)? {
+      
+        let tokens = self.components(separatedBy: CharacterSet(charactersIn: "/%"))
         guard let windowId = CGWindowID(tokens[0]) else { return nil }
         let tabString = tokens[safe: 1]
         var tab: String? = nil
-        if (tabString != nil) {
+        if (tabString != nil && tabString!.count > 0) {
             tab = String(tabString!)
         }
+      
+        let paneString = tokens[safe: 2]
+        var pane: String? = nil
+        if (paneString != nil && paneString!.count > 0) {
+            pane = String(paneString!)
+        }
         
-        return (windowId: windowId, tab: tab)
+        return (windowId: windowId, tab: tab, pane: pane)
     }
 }
 
@@ -36,6 +43,7 @@ extension SessionId {
 
 class ShellHookManager : NSObject {
     static let shared = ShellHookManager()
+    fileprivate var panes: [ExternalWindowHash: String] = [:]
     fileprivate var tabs: [CGWindowID: String] = [:]
     fileprivate var tty: [ExternalWindowHash: TTY] = [:]
     fileprivate var sessions = BiMap<String>()
@@ -49,6 +57,15 @@ class ShellHookManager : NSObject {
 
 // handle concurrency
 extension ShellHookManager {
+  func hashFor(_ windowId: CGWindowID) -> ExternalWindowHash {
+    let tab = self.tabs[windowId]
+    let pane = self.panes["\(windowId)/\(tab ?? "")"]
+    return "\(windowId)/\(tab ?? "")\(pane ?? "%")"
+  }
+  
+  func pane(for windowHash: ExternalWindowHash) -> String? {
+      return self.panes[windowHash]
+  }
 
   func tab(for windowID: CGWindowID) -> String? {
     return self.tabs[windowID]
@@ -57,6 +74,16 @@ extension ShellHookManager {
       tab = self.tabs[windowID]
     }
     return tab
+  }
+  
+  func setActivePane(_ pane: String, for windowID: CGWindowID) {
+    let tab = self.tab(for: windowID)
+    let key = "\(windowID)/\(tab ?? "")"
+    if pane == "%" {
+      self.panes.removeValue(forKey: key)
+    } else {
+      self.panes[key] = pane
+    }
   }
   
   func setActiveTab(_ tab: String, for windowID: CGWindowID) {
@@ -119,7 +146,9 @@ extension ShellHookManager {
 //                    self.tabs[window.windowId] = id
                     self.setActiveTab(id, for: window.windowId)
                   
-                    self.updateHashMetadata(oldHash: "\(window.windowId)/", hash: window.hash)
+                    // Manually ensuring that values set prior to tab are updated
+                    // Make sure oldHash is equal to whatever the default value of the hash would be
+                    self.updateHashMetadata(oldHash: "\(window.windowId)/%", hash: window.hash)
                     
                     DispatchQueue.main.async {
                       
@@ -301,6 +330,11 @@ extension ShellHookManager {
               Logger.log(message: "Could not link to window on new shell session.", priority: .notify, subsystem: .tty)
               return
           }
+      
+      // prevents fig window from popping up if we don't have an associated process
+      guard tty[hash] != nil else {
+        return
+      }
         
       let keybuffer = KeypressProvider.shared.keyBuffer(for: hash)
       if let (buffer, cursor, histno) = info.parseKeybuffer() {
@@ -339,6 +373,37 @@ extension ShellHookManager {
         }
 
     }
+  }
+  
+  func tmuxPaneChanged(_ info: ShellMessage) {
+    guard let window = AXWindowServer.shared.whitelistedWindow else { return }
+    let oldHash =  window.hash
+    
+    if let newPane = info.arguments[safe: 0], let (windowId, _, oldPane) = oldHash.components() {
+        
+      if oldPane != nil {
+        // user is switching between panes in tmux
+        if newPane == "%" {
+          print("tmux: closing tmux session")
+        } else {
+          print("tmux: user is switching between panes %\(oldPane!) -> \(newPane)")
+        }
+
+      } else {
+        print("tmux: launched new session")
+      }
+      
+      setActivePane(newPane, for: windowId)
+
+      // trigger updates elsewhere (this is cribbed from the tabs logic)
+      DispatchQueue.main.async {
+        WindowManager.shared.windowChanged()
+      }
+
+    }
+      
+      
+    
   }
     
 }
@@ -435,6 +500,9 @@ extension ShellHookManager {
         guard let components = hash.components() else { return false }
         let windowHasNoTabs = (tabs[components.windowId] == nil && components.tab == nil)
         let windowHasTabs = (tabs[components.windowId] != nil && components.tab != nil)
-        return windowHasNoTabs || windowHasTabs
+        let windowHasNoPanes = (panes["\(components.windowId)/\(components.tab ?? "")"] == nil && components.pane == nil)
+        let windowHasPanes = (panes["\(components.windowId)/\(components.tab ?? "")"] != nil && components.pane != nil)
+        return (windowHasNoTabs && (windowHasNoPanes || windowHasPanes))
+            || (windowHasTabs   && (windowHasNoPanes || windowHasPanes))
     }
 }

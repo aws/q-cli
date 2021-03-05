@@ -9,7 +9,7 @@
 import Cocoa
 import Sentry
 
-class HyperIntegration {
+class HyperIntegration: IntegrationProvider {
   static let settingsPath = "\(NSHomeDirectory())/.hyper.js"
 
   static var settings: [String: Any]? {
@@ -24,7 +24,7 @@ class HyperIntegration {
   // If the extension path changes make sure to update the uninstall script!
   static let pluginPath: URL = URL(fileURLWithPath:"\(NSHomeDirectory())/.hyper_plugins/local/fig-hyper-integration/index.js")
 
-  static func install(withRestart:Bool = false, completion: (() -> Void)? = nil) {
+  static func install(withRestart:Bool = false, inBackground: Bool, completion: (() -> Void)? = nil) {
     guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: Integrations.Hyper) else {
         print("Hyper not installed")
         return
@@ -123,7 +123,7 @@ class HyperIntegration {
     let install = alert.runModal() == .alertFirstButtonReturn
     
     if (install) {
-      HyperIntegration.install(withRestart: true) {
+      HyperIntegration.install(withRestart: true, inBackground: false) {
         print("Installation completed!")
         if let app = AXWindowServer.shared.topApplication, Integrations.Hyper == app.bundleIdentifier {
           Accessibility.triggerScreenReaderModeInChromiumApplication(app)

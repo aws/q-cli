@@ -18,6 +18,8 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     var onboardingWindow: OnboardingWindow!
     var statusBarItem: NSStatusItem!
     var frontmost: NSMenuItem?
+    var integrationPrompt: NSMenuItem?
+
     var clicks:Int = 6;
     var hotKeyManager: HotKeyManager?
     let updater = SUUpdater.shared()
@@ -188,11 +190,11 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         }
       
         if !VSCodeIntegration.isInstalled {
-            VSCodeIntegration.install(withRestart: false)
+            VSCodeIntegration.install(withRestart: false, inBackground: true)
         }
 
         if !HyperIntegration.isInstalled {
-            HyperIntegration.install(withRestart: false)
+            HyperIntegration.install(withRestart: false, inBackground: true)
         }
         
     }
@@ -1459,7 +1461,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         }
     }
     @objc func triggerScreenReader() {
-      VSCodeIntegration.install {
+      VSCodeIntegration.install(inBackground: true) {
         self.dialogOKCancel(question: "VSCode Integration Installed!", text: "The Fig extension was successfully added to VSCode.", noAction: true)
 //      if let app = AXWindowServer.shared.topApplication, let window = AXWindowServer.shared.topWindow {
 //        print("Triggering ScreenreaderMode in \(app.bundleIdentifier ?? "<unknown>")")
@@ -1869,7 +1871,7 @@ extension AppDelegate : NSMenuDelegate {
 
                 if let window = window {
                     let keybuffer = KeypressProvider.shared.keyBuffer(for: window)
-                    hasContext = keybuffer.buffer != nil
+                    hasContext = keybuffer.buffer != nil && !keybuffer.writeOnly
                     bufferDescription = keybuffer.representation
                     backedByZLE = keybuffer.backedByZLE
                   
@@ -1943,7 +1945,7 @@ extension AppDelegate : NSMenuDelegate {
                     color = .green
                     legend.addItem(NSMenuItem(title: "Everything should be working.", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem.separator())
-                    legend.addItem(NSMenuItem(title: "window: \(window?.hash ?? "???")", action: nil, keyEquivalent: ""))
+                    legend.addItem(NSMenuItem(title: "window: \(window?.hash.truncate(length: 15, trailing: "...") ?? "???")", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem(title: "tty: \(tty?.descriptor ?? "???")", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem(title: "cwd: \(tty?.cwd ?? "???")", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem(title: "pid: \(tty?.pid ?? -1)", action: nil, keyEquivalent: ""))
@@ -1991,7 +1993,51 @@ extension AppDelegate : NSMenuDelegate {
 
             }
         }
+      
+        if let integrations = self.integrationPrompt {
+            if menu.items.contains(integrations) {
+                menu.removeItem(integrations)
+            }
+            
+            self.integrationPrompt = nil
+        }
+      
+      if let app = NSWorkspace.shared.frontmostApplication,
+        !app.isFig,
+        let provider = Integrations.providers[app.bundleIdentifier ?? ""] as? IntegrationProvider.Type,
+        !provider.isInstalled {
+    
+        
+        
+          let name: String!
+          
+          switch app.bundleIdentifier {
+          case Integrations.iTerm:
+            name = "iTerm"
+          case Integrations.Hyper:
+            name = "Hyper"
+          case Integrations.VSCode:
+            name = "VSCode"
+          default:
+            name = "Unknown"
+          }
+
+        let item = NSMenuItem(title: "Install \(name!) Integration", action: #selector(AppDelegate.installIntegrationForFrontmostApp) , keyEquivalent: "")
+        item.image = NSImage(named: NSImage.Name("carrot"))
+           menu.insertItem(item, at: 1)
+           self.integrationPrompt = item
+        }
+
+        
     }
+  
+  @objc func installIntegrationForFrontmostApp() {
+    if let app = NSWorkspace.shared.frontmostApplication, let provider = Integrations.providers[app.bundleIdentifier ?? ""] as? IntegrationProvider.Type, !provider.isInstalled {
+      
+        provider.promptToInstall(completion: nil)
+      
+    }
+  }
 }
 
 extension NSApplication {

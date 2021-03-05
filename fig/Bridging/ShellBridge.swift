@@ -326,8 +326,14 @@ class ShellBridge {
         
         let insertion = cmd + (runImmediately ? "\n" :"")
 
-        // The existence of the insertion-lock file prevents latency in ZLE integration when inserting text
-        // See the `self-insert` function in zle.sh
+        if let window = AXWindowServer.shared.whitelistedWindow,
+          KeypressProvider.shared.keyBuffer(for: window).backedByZLE {
+          ZLEIntegration.insert(with: insertion)
+          return
+        }
+      
+        // Keep the ZLE insertion lock to speed up "fig source"
+        // when run from no context popup
         ZLEIntegration.insertLock()
         injectUnicodeString(insertion, delay: delay) {
           ZLEIntegration.insertUnlock(with: insertion)
@@ -362,7 +368,11 @@ class ShellBridge {
         case delete = 51
         case ctrlE = 14
         case ctrlU = 32
-        
+        case ctrlPipe = 42
+        case fn13 = 105
+        case fn19 = 80
+        case fn20 = 90
+
         var code: CGKeyCode {
             switch self {
             case .cmdV:
@@ -373,6 +383,8 @@ class ShellBridge {
                 return KeyboardLayout.shared.keyCode(for: "U") ?? self.rawValue
             case .cmdN:
                 return KeyboardLayout.shared.keyCode(for: "N") ?? self.rawValue
+            case .ctrlPipe:
+                return KeyboardLayout.shared.keyCode(for: "|") ?? self.rawValue
             default:
                 return self.rawValue as CGKeyCode
             }
@@ -380,6 +392,26 @@ class ShellBridge {
 
     }
     
+  static func simulate(keystroke: Keystroke) {
+      let keyCode = keystroke.keyCode
+      let src = CGEventSource(stateID: CGEventSourceStateID.hidSystemState)
+
+      let keydown = CGEvent(keyboardEventSource: src, virtualKey: keyCode, keyDown: true)
+      let keyup = CGEvent(keyboardEventSource: src, virtualKey: keyCode, keyDown: false)
+      
+      if (keystroke.modifierFlags.contains(.command)){
+          keydown?.flags = CGEventFlags.maskCommand;
+      }
+      
+      if (keystroke.modifierFlags.contains(.control)) {
+          keydown?.flags = CGEventFlags.maskControl;
+      }
+      
+      let loc = CGEventTapLocation.cghidEventTap
+      keydown?.post(tap: loc)
+      keyup?.post(tap: loc)
+  }
+  
     static func simulate(keypress: Keypress) {
         let keyCode = keypress.code
         let src = CGEventSource(stateID: CGEventSourceStateID.hidSystemState)
@@ -391,7 +423,7 @@ class ShellBridge {
             keydown?.flags = CGEventFlags.maskCommand;
         }
         
-        if (keypress == .ctrlE || keypress == .ctrlU) {
+      if (keypress == .ctrlE || keypress == .ctrlU || keypress == .ctrlPipe) {
             keydown?.flags = CGEventFlags.maskControl;
         }
         
@@ -541,60 +573,6 @@ extension ShellBridge : LocalProcessDelegate {
     }
     
     
-}
-
-class Integrations {
-    static let iTerm = "com.googlecode.iterm2"
-    static let Terminal = "com.apple.Terminal"
-    static let Hyper = "co.zeit.hyper"
-    static let VSCode = "com.microsoft.VSCode"
-  
-    static let terminals: Set = ["com.googlecode.iterm2",
-                                 "com.apple.Terminal",
-                                 "io.alacritty",
-                                 "co.zeit.hyper",
-                                "net.kovidgoyal.kitty"]
-    static let browsers:  Set = ["com.google.Chrome"]
-    static let editors:   Set = ["com.apple.dt.Xcode",
-                                 "com.sublimetext.3",
-                                 "com.microsoft.VSCode"]
-    static let nativeTerminals: Set = ["com.googlecode.iterm2",
-                                       "com.apple.Terminal" ]
-    static let searchBarApps: Set = ["com.apple.Spotlight",
-                                     "com.runningwithcrayons.Alfred",
-                                     "com.raycast.macos"]
-  
-    static let electronTerminals: Set = ["co.zeit.hyper",
-                                        "com.microsoft.VSCode"]
-    static let terminalsWhereAutocompleteShouldAppear: Set = nativeTerminals.union(electronTerminals)
-  
-    static var allowed: Set<String> {
-        
-        get {
-            if let allowed = UserDefaults.standard.string(forKey: "allowedApps") {
-                return Set(allowed.split(separator: ",").map({ String($0)}))
-            } else {
-                return []
-            }
-        }
-    }
-    
-    static var blocked: Set<String> {
-        get {
-           if let allowed = UserDefaults.standard.string(forKey: "blockedApps") {
-               return Set(allowed.split(separator: ",").map({ String($0)}))
-           } else {
-               return []
-           }
-       }
-    }
-    static var whitelist: Set<String> {
-        get {
-            return Integrations.terminals
-            .union(Integrations.allowed)
-      .subtracting(Integrations.blocked)
-        }
-    }
 }
 
 extension Timer {

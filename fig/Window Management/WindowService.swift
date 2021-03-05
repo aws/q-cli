@@ -251,6 +251,13 @@ class ExternalWindow {
           return ShellHookManager.shared.tab(for: self.windowId)
         }
     }
+  
+    var lastPaneId: String? {
+        get {
+          return ShellHookManager.shared.pane(for: "\(self.windowId)/\(self.lastTabId ?? "")")
+        }
+    }
+  
     var tty: TTY? {
         get {
           return ShellHookManager.shared.tty(for: self.hash)
@@ -375,7 +382,7 @@ class ExternalWindow {
     }
     
     var hash: ExternalWindowHash {
-        return "\(self.windowId)/\(self.lastTabId ?? "")"
+      return ShellHookManager.shared.hashFor(self.windowId)//"\(self.windowId)/\(self.lastTabId ?? "")\(self.lastPaneId ?? "%")"
     }
     
     var windowTitle: String? {

@@ -8,7 +8,16 @@
 
 import Cocoa
 
-class iTermTabIntegration {
+class iTermTabIntegration: IntegrationProvider {
+  static func install(withRestart: Bool, inBackground: Bool, completion: (() -> Void)?) {
+        guard !inBackground else { return }
+        NSApp.appDelegate.iTermSetup()
+    }
+    
+    static func promptToInstall(completion: (() -> Void)?) {
+        NSApp.appDelegate.iTermSetup()
+    }
+  
     static var keyHandler: Any? = nil
     static let path = "\(NSHomeDirectory())/Library/Application Support/iTerm2/Scripts/AutoLaunch/fig-iterm-integration.py"
     static func listenForHotKey() {

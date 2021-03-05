@@ -169,6 +169,7 @@ class KeystrokeBuffer : NSObject {
               NotificationCenter.default.post(name: Self.lineAcceptedInKeystrokeBufferNotification, object: nil)
             }
           default:
+            guard buffer != nil, index != nil else { return }
             buffer!.insert(char, at: index!)
             index = buffer!.index(index!, offsetBy: 1)
             print("xterm: insert! (\(char))")
@@ -387,6 +388,10 @@ class KeystrokeBuffer : NSObject {
   }
   
   var representation: String {
+    guard !writeOnly else {
+      return "<hidden>"
+    }
+    
     guard !backedByZLE else {
       if var logging = buffer {
         let index = logging.index(logging.startIndex, offsetBy: zleCursor)
