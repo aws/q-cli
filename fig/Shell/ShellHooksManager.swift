@@ -78,7 +78,12 @@ extension ShellHookManager {
   
   func setActivePane(_ pane: String, for windowID: CGWindowID) {
     let tab = self.tab(for: windowID)
-    self.panes["\(windowID)/\(tab ?? "")"] = pane
+    let key = "\(windowID)/\(tab ?? "")"
+    if pane == "%" {
+      self.panes.removeValue(forKey: key)
+    } else {
+      self.panes[key] = pane
+    }
   }
   
   func setActiveTab(_ tab: String, for windowID: CGWindowID) {
@@ -325,6 +330,11 @@ extension ShellHookManager {
               Logger.log(message: "Could not link to window on new shell session.", priority: .notify, subsystem: .tty)
               return
           }
+      
+      // prevents fig window from popping up if we don't have an associated process
+      guard tty[hash] != nil else {
+        return
+      }
         
       let keybuffer = KeypressProvider.shared.keyBuffer(for: hash)
       if let (buffer, cursor, histno) = info.parseKeybuffer() {
@@ -376,7 +386,7 @@ extension ShellHookManager {
         if newPane == "%" {
           print("tmux: closing tmux session")
         } else {
-          print("tmux: user is switching between panes \(oldPane!) -> \(newPane)")
+          print("tmux: user is switching between panes %\(oldPane!) -> \(newPane)")
         }
 
       } else {
@@ -490,6 +500,9 @@ extension ShellHookManager {
         guard let components = hash.components() else { return false }
         let windowHasNoTabs = (tabs[components.windowId] == nil && components.tab == nil)
         let windowHasTabs = (tabs[components.windowId] != nil && components.tab != nil)
-        return windowHasNoTabs || windowHasTabs
+        let windowHasNoPanes = (panes["\(components.windowId)/\(components.tab ?? "")"] == nil && components.pane == nil)
+        let windowHasPanes = (panes["\(components.windowId)/\(components.tab ?? "")"] != nil && components.pane != nil)
+        return (windowHasNoTabs && (windowHasNoPanes || windowHasPanes))
+            || (windowHasTabs   && (windowHasNoPanes || windowHasPanes))
     }
 }
