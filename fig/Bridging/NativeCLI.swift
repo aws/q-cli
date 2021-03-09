@@ -49,6 +49,7 @@ class NativeCLI {
         case pty = "debug:pty"
         case debugApp = "debug:app"
         case debugSSH = "debug:ssh"
+        case debugProcesses = "debug:ps"
         case electronAccessibility = "util:axelectron"
 
         var isUtility: Bool {
@@ -82,6 +83,7 @@ class NativeCLI {
                                                            .hyper,
                                                            .pty,
                                                            .debugApp,
+                                                           .debugProcesses,
                                                            .electronAccessibility,
                                                            .docs]
                return implementatedNatively.contains(self)
@@ -129,6 +131,8 @@ class NativeCLI {
                 NativeCLI.debugAppCommand(scope)
             case .electronAccessibility:
                 NativeCLI.electronAccessibilityCommand(scope)
+            case .debugProcesses:
+                NativeCLI.debugProcessCommand(scope)
             default:
                 break;
             }
@@ -435,6 +439,14 @@ extension NativeCLI {
         } else {
           NativeCLI.printInTerminal("\n› Could not find Electron app!\n", using: connection)
         }
+    }
+  
+    static func debugProcessCommand(_ scope: Scope) {
+        let (message, connection) = scope
+      let ps = ProcessStatus.getProcesses(for: String(message.arguments[safe: 0]?.split(separator:"/").last ?? "")).map { return "\($0.pid) \($0.tty ?? "?")   \($0.cmd) \($0._cwd ?? "?")" }.joined(separator: "\n")
+      
+        
+        NativeCLI.printInTerminal(ps, using: connection)
     }
 }
 

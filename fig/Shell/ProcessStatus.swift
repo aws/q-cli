@@ -31,7 +31,7 @@ class ProcessStatus {
           return String(cString: ptr)
         }
         print("proc: ",  process.pid, cwd, cmd, tty)
-        return proc(pid: process.pid, cmd: cmd, cwd: cwd)
+        return proc(pid: process.pid, cmd: cmd, cwd: cwd, tty: tty)
       }
       free(ptr)
       return processes
