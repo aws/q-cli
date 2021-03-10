@@ -331,8 +331,13 @@ extension ShellHookManager {
               return
           }
       
-      // prevents fig window from popping up if we don't have an associated process
-      guard tty[hash] != nil else {
+      // prevents fig window from popping up if we don't have an associated shell process
+      guard let tty = tty[hash], tty.isShell ?? false else {
+        return
+      }
+      
+      // ignore events if secure keyboard is enabled
+      guard !SecureKeyboardInput.enabled else {
         return
       }
         

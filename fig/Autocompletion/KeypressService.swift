@@ -309,7 +309,8 @@ class KeypressProvider : KeypressService {
       return Unmanaged.passUnretained(event)
     }
     
-    guard let eventTap: CFMachPort = CGEvent.tapCreate(tap: CGEventTapLocation.cghidEventTap,
+    // Switching to CGEventTapLocation.cgAnnotatedSessionEventTap allows virtual keystrokes to be detected
+    guard let eventTap: CFMachPort = CGEvent.tapCreate(tap: CGEventTapLocation.cgAnnotatedSessionEventTap,
                                                        place: CGEventTapPlacement.tailAppendEventTap,
                                                        options: CGEventTapOptions.defaultTap,
                                                        eventsOfInterest: CGEventMask(eventMask),
