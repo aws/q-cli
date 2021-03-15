@@ -54,7 +54,10 @@ struct proc {
 
 class TTY {
   static let processUpdated: NSNotification.Name = .init("processUpdated")
-
+  
+  // set from $FIG_INTEGRATION_VERSION
+  var shellIntegrationVersion: Int?
+  
   let descriptor: String
   var runUsingPrefix: String? = nil
   var pty: PseudoTerminalHelper? = nil
