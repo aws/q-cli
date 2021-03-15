@@ -328,7 +328,8 @@ class ShellBridge {
 
         if let window = AXWindowServer.shared.whitelistedWindow,
           KeypressProvider.shared.keyBuffer(for: window).backedByZLE {
-          ZLEIntegration.insert(with: insertion)
+          ZLEIntegration.insert(with: insertion,
+                                version: window.tty?.shellIntegrationVersion)
           return
         }
       
@@ -503,6 +504,16 @@ struct ShellMessage: Codable {
             
             return Array(options.suffix(from: 1))
         }
+    }
+  
+    var shellIntegrationVersion: Int? {
+      guard let dict = self.env?.jsonStringToDict(),
+            let versionString = dict["FIG_INTEGRATION_VERSION"] as? String,
+            let version = Int(versionString) else {
+               return nil
+           }
+      
+       return version
     }
 
 }
