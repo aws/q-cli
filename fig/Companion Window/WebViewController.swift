@@ -187,6 +187,8 @@ class WebViewController: NSViewController, NSWindowDelegate {
         NotificationCenter.default.addObserver(self, selector: #selector(overlayDidBecomeMain), name:.overlayDidBecomeMain, object: nil)
         // TIMER to UPDATE INNER VIEW EVERY x INTERVAL
         
+        NotificationCenter.default.addObserver(self, selector: #selector(settingsUpdated), name: Settings.settingsUpdatedNotification, object: nil)
+
         
         view.window?.delegate = self
 //        webView = WKWebView(frame: self.view.window?.frame ?? .zero)
@@ -389,6 +391,15 @@ extension WebViewController: ShellBridgeEventListener, PseudoTerminalEventDelega
     }
 }
 
+extension WebViewController {
+  @objc func settingsUpdated() {
+    DispatchQueue.main.async {
+      if let webView = self.webView {
+        WebBridge.declareSettings(webview: webView)
+      }
+    }
+  }
+}
 
 extension WebViewController : WKUIDelegate {
     func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
@@ -500,6 +511,7 @@ extension WebViewController : WKNavigationDelegate {
         WebBridge.declareFigCLIPath(webview: webView)
         WebBridge.declareRemoteURL(webview: webView)
         WebBridge.declareHomeDirectory(webview: webView)
+        WebBridge.declareSettings(webview:webView)
         WebBridge.initJS(webview: webView)
 //        webView.evaluateJavaScript("fig.callinit()", completionHandler: nil)
 

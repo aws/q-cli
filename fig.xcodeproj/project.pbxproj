@@ -96,7 +96,9 @@
 		75675976244634B2006AA988 /* figUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75675975244634B2006AA988 /* figUITests.swift */; };
 		756759972446C44C006AA988 /* String+Shell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756759962446C44C006AA988 /* String+Shell.swift */; };
 		756759D424498CA0006AA988 /* WebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756759D324498CA0006AA988 /* WebViewController.swift */; };
+		7568203126003BDF0006FE78 /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7568203026003BDF0006FE78 /* Settings.swift */; };
 		756C4D832542A6D30035B467 /* Starscream in Frameworks */ = {isa = PBXBuildFile; productRef = 756C4D822542A6D30035B467 /* Starscream */; };
+		7573F1582601927200C833FA /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7573F1572601927200C833FA /* Settings.swift */; };
 		7577124725648DFB0011FF48 /* ps.c in Sources */ = {isa = PBXBuildFile; fileRef = 7577124625648DFB0011FF48 /* ps.c */; };
 		757712492564D94A0011FF48 /* ProcessStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757712482564D9490011FF48 /* ProcessStatus.swift */; };
 		757CA86724859461002A64A8 /* AppMover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757CA86624859461002A64A8 /* AppMover.swift */; };
@@ -354,6 +356,8 @@
 		75675977244634B2006AA988 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		756759962446C44C006AA988 /* String+Shell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+Shell.swift"; sourceTree = "<group>"; };
 		756759D324498CA0006AA988 /* WebViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewController.swift; sourceTree = "<group>"; };
+		7568203026003BDF0006FE78 /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
+		7573F1572601927200C833FA /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
 		7577124525648DCD0011FF48 /* ps.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ps.h; sourceTree = "<group>"; };
 		7577124625648DFB0011FF48 /* ps.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ps.c; sourceTree = "<group>"; };
 		757712482564D9490011FF48 /* ProcessStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessStatus.swift; sourceTree = "<group>"; };
@@ -607,6 +611,7 @@
 				758AEB6B24CEA54600A15EAF /* SocketServer.swift */,
 				758AEB5F24CE529D00A15EAF /* String+Shell.swift */,
 				758AEB5D24CD35D400A15EAF /* WebSocket.swift */,
+				7573F1572601927200C833FA /* Settings.swift */,
 			);
 			path = figcli;
 			sourceTree = "<group>";
@@ -678,6 +683,7 @@
 				759F987B25BF903900EC3407 /* Accessibility.swift */,
 				751C3BEB24B6910800B5C7FD /* Remote.swift */,
 				751C3BED24B6915000B5C7FD /* Defaults.swift */,
+				7568203026003BDF0006FE78 /* Settings.swift */,
 				75E993F12515A6DD000BE6BE /* statusbar@2x.png */,
 				755D0DE1247EFAE10074AB5C /* Logging.swift */,
 				75809B0D24BFA64D00BFFB3E /* TelemetryService.swift */,
@@ -1201,6 +1207,7 @@
 				758AEB6C24CEA54600A15EAF /* SocketServer.swift in Sources */,
 				751F7591246E16D800E083C8 /* main.swift in Sources */,
 				758AEB5E24CD35D400A15EAF /* WebSocket.swift in Sources */,
+				7573F1582601927200C833FA /* Settings.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1232,6 +1239,7 @@
 				7510F89D24A6910500E86F7C /* Utilities.swift in Sources */,
 				7510F8B424A6910500E86F7C /* Colors.swift in Sources */,
 				7510F8B624A6910500E86F7C /* Position.swift in Sources */,
+				7568203126003BDF0006FE78 /* Settings.swift in Sources */,
 				75E993F52517E226000BE6BE /* AXWindowServer.swift in Sources */,
 				75C07124244BE45A002DF69F /* CompanionWindow.swift in Sources */,
 				75C07122244BB65D002DF69F /* ShellBridge.swift in Sources */,

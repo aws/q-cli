@@ -57,6 +57,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         let _ = KeypressProvider.shared
         let _ = AXWindowServer.shared
         let _ = DockerEventStream.shared
+        let _ = Settings.shared
 
         
         TelemetryProvider.register()
