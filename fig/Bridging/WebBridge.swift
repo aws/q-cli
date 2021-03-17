@@ -984,7 +984,15 @@ extension WebBridge {
                   }
               
                   ShellBridge.simulate(keypress: keypress)
-
+                case "settings":
+                  guard let key = data["key"],
+                    let valueString = data["value"],
+                    let valueData = valueString.data(using: .utf8),
+                    let value = try? JSONSerialization.jsonObject(with: valueData, options: .allowFragments) else {
+                    return
+                  }
+                  
+                  Settings.shared.set(value: value, forKey: key)
                 default:
                     print("private command '\(type)' does not exist.")
             }
@@ -1142,6 +1150,11 @@ extension WebBridge {
     static func declareHomeDirectory(webview: WebView) {
         webview.evaluateJavaScript("fig.home = '\(NSHomeDirectory())'", completionHandler: nil)
     }
+  
+    static func declareSettings(webview: WebView) {
+        guard let settings = Settings.shared.jsonRepresentation(), let b64 = settings.data(using: .utf8)?.base64EncodedString() else { return }
+        webview.evaluateJavaScript("fig.updateSettings(b64DecodeUnicode(`\(b64)`))", completionHandler: nil)
+      }
     
     
     static func declareRemoteURL(webview: WebView) {
