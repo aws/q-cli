@@ -24,7 +24,7 @@ class Alert {
     
   }
   
-  static func show(title: String,
+  @discardableResult static func show(title: String,
                    message: String,
                    okText: String = "OK",
                    icon: NSImage = lockWithAppIcon,

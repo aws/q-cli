@@ -99,6 +99,8 @@
 		7568203126003BDF0006FE78 /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7568203026003BDF0006FE78 /* Settings.swift */; };
 		756C4D832542A6D30035B467 /* Starscream in Frameworks */ = {isa = PBXBuildFile; productRef = 756C4D822542A6D30035B467 /* Starscream */; };
 		7573F1582601927200C833FA /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7573F1572601927200C833FA /* Settings.swift */; };
+		7573F15B2602B4E000C833FA /* alert@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7573F1592602B4E000C833FA /* alert@2x.png */; };
+		7573F15C2602B4E000C833FA /* invite@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7573F15A2602B4E000C833FA /* invite@2x.png */; };
 		7577124725648DFB0011FF48 /* ps.c in Sources */ = {isa = PBXBuildFile; fileRef = 7577124625648DFB0011FF48 /* ps.c */; };
 		757712492564D94A0011FF48 /* ProcessStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757712482564D9490011FF48 /* ProcessStatus.swift */; };
 		757CA86724859461002A64A8 /* AppMover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757CA86624859461002A64A8 /* AppMover.swift */; };
@@ -358,6 +360,8 @@
 		756759D324498CA0006AA988 /* WebViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewController.swift; sourceTree = "<group>"; };
 		7568203026003BDF0006FE78 /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
 		7573F1572601927200C833FA /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
+		7573F1592602B4E000C833FA /* alert@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "alert@2x.png"; sourceTree = "<group>"; };
+		7573F15A2602B4E000C833FA /* invite@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "invite@2x.png"; sourceTree = "<group>"; };
 		7577124525648DCD0011FF48 /* ps.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ps.h; sourceTree = "<group>"; };
 		7577124625648DFB0011FF48 /* ps.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ps.c; sourceTree = "<group>"; };
 		757712482564D9490011FF48 /* ProcessStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessStatus.swift; sourceTree = "<group>"; };
@@ -583,6 +587,8 @@
 			isa = PBXGroup;
 			children = (
 				75A4A29725C8D855002EFD6B /* commit@2x.png */,
+				7573F1592602B4E000C833FA /* alert@2x.png */,
+				7573F15A2602B4E000C833FA /* invite@2x.png */,
 				75A4A29625C8D855002EFD6B /* git@2x.png */,
 				75A4A29525C8D855002EFD6B /* node@2x.png */,
 				759F987D25BFF0FD00EC3407 /* box@2x.png */,
@@ -1124,6 +1130,7 @@
 				757CA895248B291E002A64A8 /* permissions.html in Resources */,
 				754D31B525759D900020CED4 /* tutorial.html in Resources */,
 				752D71C725AECB4B00263527 /* ssh.mp4 in Resources */,
+				7573F15C2602B4E000C833FA /* invite@2x.png in Resources */,
 				75D2E3CB249C1E7500607F66 /* terminal.css in Resources */,
 				757CA88A248AD58C002A64A8 /* onboarding.html in Resources */,
 				757CA89B248C18F1002A64A8 /* done.html in Resources */,
@@ -1131,6 +1138,7 @@
 				757CA899248C10AD002A64A8 /* fonts in Resources */,
 				757CA893248B28E3002A64A8 /* landing.html in Resources */,
 				75B0A08625BB94DF00FCD89A /* debugger-only.mp4 in Resources */,
+				7573F15B2602B4E000C833FA /* alert@2x.png in Resources */,
 				755D0DE4247F038B0074AB5C /* logs.html in Resources */,
 				75A4A29A25C8D855002EFD6B /* commit@2x.png in Resources */,
 				752D71C525AE9B7200263527 /* ssh.html in Resources */,

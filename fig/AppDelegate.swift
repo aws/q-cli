@@ -380,7 +380,13 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
          action: #selector(AppDelegate.inviteToSlack),
          keyEquivalent: "")
         slack.image = NSImage(named: NSImage.Name("Slack"))//.resized(to: NSSize(width: 16, height: 16))
-        
+        statusBarMenu.addItem(NSMenuItem.separator())
+    
+        let invite = statusBarMenu.addItem(
+         withTitle: "Invite a friend...",
+         action: #selector(AppDelegate.inviteAFriend),
+         keyEquivalent: "")
+        invite.image = NSImage(named: NSImage.Name("invite"))
         statusBarMenu.addItem(NSMenuItem.separator())
 
         if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String, let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String {
@@ -535,7 +541,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         debug.submenu = debugMenu
         
         statusBarMenu.addItem(NSMenuItem.separator())
-        let email = statusBarMenu.addItem(
+        statusBarMenu.addItem(
          withTitle: "Report a bug...", //✉️
          action: #selector(AppDelegate.sendFeedback),
          keyEquivalent: "")
@@ -841,6 +847,47 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     @objc func inviteToSlack() {
         NSWorkspace.shared.open(URL(string: "https://fig-core-backend.herokuapp.com/community")!)
         TelemetryProvider.track(event: .joinSlack, with: [:])
+
+    }
+  
+    @objc func inviteAFriend() {
+      
+      guard let email = Defaults.email else {
+        Alert.show(title: "You are not logged in!", message: "Run `fig util:logout` and try again.", icon: Alert.appIcon)
+        return
+      }
+      
+      TelemetryProvider.track(event: .inviteAFriend, with: [:])
+      
+      let request = URLRequest(url: Remote.API.appendingPathComponent("/waitlist/get-referral-link-from-email/\(email)"))
+      let task = URLSession.shared.dataTask(with: request) { (data, res, err) in
+        DispatchQueue.main.async {
+
+          guard let data = data else {
+              Alert.show(title: "Could not retrieve referral link!",
+                         message: "Please contact hello@withfig.com and we will get you a working referral link.",
+                         icon: Alert.appIcon)
+              return
+          }
+        
+          let link = String(decoding: data, as: UTF8.self)
+          
+          NSPasteboard.general.clearContents()
+          NSPasteboard.general.setString(link, forType: .string)
+
+          let openInBrowser = Alert.show(title: "Thank you for sharing Fig!",
+                                         message: "Your invite link has been copied to your clipboard!\n\n\(link)",
+                                         okText: "Open in browser...",
+                                         icon: Alert.appIcon,
+                                         hasSecondaryOption: true)
+          
+          if openInBrowser, let url = URL(string: link) {
+            NSWorkspace.shared.open(url)
+          }
+        }
+      }
+
+      task.resume()
 
     }
     
