@@ -46,6 +46,7 @@ class PseudoTerminalHelper {
     // Because they ruin your punchline.
     // Why should you never tell multithreaded programming jokes?
     func execute(_ command: String, handler: @escaping (String) -> Void) {
+        // Move all of this behind the semaphore!
         let id = UUID().uuidString
         executeHandlers[id] = handler
         print("pty: Executing command with PTY Service '\(command)'. Output Id = \(id).")
