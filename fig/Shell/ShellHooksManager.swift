@@ -339,6 +339,16 @@ extension ShellHookManager {
         KeypressProvider.shared.keyBuffer(for: hash).backedByZLE = false
 
     }
+    
+    func clearKeybuffer(_ info: ShellMessage) {
+        guard let hash = attemptToFindToAssociatedWindow(for: info.session) else {
+             Logger.log(message: "Could not link to window on new shell session.", priority: .notify, subsystem: .tty)
+             return
+        }
+      
+        let keybuffer = KeypressProvider.shared.keyBuffer(for: hash)
+        keybuffer.buffer = ""
+    }
   
     func updateKeybuffer(_ info: ShellMessage) {
         guard let hash = attemptToFindToAssociatedWindow(for: info.session) else {
