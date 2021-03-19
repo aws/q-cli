@@ -675,6 +675,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     }
     
     @objc func setupScript() {
+        TelemetryProvider.track(event: .runInstallationScript, with: [:])
         Onboarding.setUpEnviroment()
     }
     
@@ -1942,6 +1943,12 @@ extension AppDelegate : NSMenuDelegate {
                     legend.addItem(NSMenuItem(title: "Restart Fig", action: #selector(restart), keyEquivalent: ""))
 
 
+                } else if (!Diagnostic.installationScriptRan) {
+                    color = .red
+                    legend.addItem(NSMenuItem(title: "~/.fig directory is misconfigured", action: nil, keyEquivalent: ""))
+                    legend.addItem(NSMenuItem.separator())
+                    legend.addItem(NSMenuItem(title: "Re-run Install Script", action: #selector(setupScript), keyEquivalent: ""))
+                  
                 } else if (SecureKeyboardInput.enabled) {
                     
                     color = .systemPink
@@ -2050,9 +2057,17 @@ extension AppDelegate : NSMenuDelegate {
             self.integrationPrompt = nil
         }
       
+      if !Diagnostic.installationScriptRan {
+        let item = NSMenuItem(title: "Rerun Install Script", action: #selector(AppDelegate.setupScript) , keyEquivalent: "")
+         item.image = NSImage(named: NSImage.Name("alert"))
+            menu.insertItem(item, at: 1)
+            self.integrationPrompt = item
+          return
+       }
+      
       if let app = NSWorkspace.shared.frontmostApplication,
         !app.isFig,
-        let provider = Integrations.providers[app.bundleIdentifier ?? ""] as? IntegrationProvider.Type,
+        let provider = Integrations.providers[app.bundleIdentifier ?? ""],
         !provider.isInstalled {
     
         

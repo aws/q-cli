@@ -81,7 +81,7 @@ install_fig() {
     {
         curl https://codeload.github.com/withfig/autocomplete/tar.gz/master | \
         tar -xz --strip-components=2
-        
+
     } || {
         error "pulling latest autocomplete files failed"
     }
@@ -89,6 +89,7 @@ install_fig() {
 
     # Make files and folders that the user can edit (that aren't overridden by above)
     mkdir -p ~/.fig/bin
+    mkdir -p ~/.fig/zle
     mkdir -p ~/.fig/user/aliases
     mkdir -p ~/.fig/user/apps
     mkdir -p ~/.fig/user/autocomplete
@@ -100,7 +101,8 @@ install_fig() {
     touch ~/.fig/user/figpath.sh
 
     # Determine user's login shell
-    defaults write com.mschrage.fig userShell "$(dscl . -read ~/ UserShell)"
+    # Explicitly reading from "/Users/$(whoami)" rather than ~ to handle rare cases where these are different
+    defaults write com.mschrage.fig userShell "$(dscl . -read /Users/$(whoami) UserShell)"
 
     # Old
     # FIG_FIGPATH='export FIGPATH="~/.fig/apps:~/.fig/user/apps:~/run:"'
@@ -123,22 +125,21 @@ append_to_profiles() {
     OLDSOURCEVAR='[ -s ~/.fig/exports/env.sh ] && source ~/.fig/exports/env.sh'
     FIG_SOURCEVAR='[ -s ~/.fig/fig.sh ] && source ~/.fig/fig.sh'
     FIG_FULLSOURCEVAR=$'\n\n#### FIG ENV VARIABLES ####\n'$FIG_SOURCEVAR$'\n#### END FIG ENV VARIABLES ####\n\n'
-    
 
-    
+
+
     # Replace old sourcing in profiles
     [ -e ~/.profile ] && sed -i '' 's/~\/.fig\/exports\/env.sh/~\/.fig\/fig.sh/g' ~/.profile 2> /dev/null
     [ -e ~/.zprofile ] && sed -i '' 's/~\/.fig\/exports\/env.sh/~\/.fig\/fig.sh/g' ~/.zprofile 2> /dev/null
     [ -e ~/.bash_profile ] && sed -i '' 's/~\/.fig\/exports\/env.sh/~\/.fig\/fig.sh/g' ~/.bash_profile 2> /dev/null
 
-    
+
     # Check that new sourcing exists. If it doesn't, add it
     grep -q 'source ~/.fig/fig.sh' ~/.profile || echo "$FIG_FULLSOURCEVAR" >> ~/.profile
     grep -q 'source ~/.fig/fig.sh' ~/.zprofile || echo "$FIG_FULLSOURCEVAR" >> ~/.zprofile
     grep -q 'source ~/.fig/fig.sh' ~/.bash_profile || echo "$FIG_FULLSOURCEVAR" >> ~/.bash_profile
     grep -q 'source ~/.fig/fig.sh' ~/.bashrc || echo "$FIG_FULLSOURCEVAR" >> ~/.bashrc
     grep -q 'source ~/.fig/fig.sh' ~/.zshrc || echo "$FIG_FULLSOURCEVAR" >> ~/.zshrc
-
 
 }
 
@@ -173,16 +174,26 @@ setup_onboarding() {
 
 }
 
-function install_fish_integration() {
-    # Add precommit and post-commit hooks
+install_fish_integration() {
+
+
+    # Special set up for Fish
+
+    # if [[ -d ~/.config/fish ]];
+    # then
     mkdir -p ~/.config/fish/conf.d
+    touch ~/.config/fish/conf.d/fig.fish
     cp ~/.fig/fig.fish ~/.config/fish/conf.d/fig.fish
 
-    FISH_ADD_TO_PATH=$'\ncontains $HOME/.fig/bin $fish_user_paths; or set -Ua fish_user_paths $HOME/.fig/bin\n'
+    # fi
 
-    # Add ~/.fig/bin to PATH
-    touch ~/.config/fish/config.fish
-    grep -q '/.fig/bin' ~/.config/fish/config.fish || echo "$FISH_ADD_TO_PATH" >> ~/.config/fish/config.fish
+}
+
+install_tmux_integration() {
+  TMUX_INTEGRATION=$'# Fig Tmux Integration: Enabled\nsource-file ~/.fig/tmux\n# End of Fig Tmux Integration'
+
+  # todo: check if ~/.tmux.conf exists before appending to it
+  grep -q 'source-file ~/.fig/tmux' ~/.tmux.conf || echo "$TMUX_INTEGRATION" >> ~/.tmux.conf
 
 }
 
@@ -202,6 +213,7 @@ main() {
     append_to_profiles
     setup_onboarding
     install_fish_integration
+    install_tmux_integration
     # setup_welcome
 
     echo success

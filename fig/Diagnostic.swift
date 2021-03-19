@@ -66,6 +66,23 @@ class Diagnostic {
     
     return location
   }
+  
+  static var installationScriptRan: Bool {
+    let dotfig = "\(NSHomeDirectory())/.fig"
+    let filesAndFolders = [
+                           "tmux", "ssh", // Integration setup files
+                           "fig.bash", "fig.fish", "fig.sh", "fig.zsh", // Shell Hooks
+                           "zle.zsh", "zle", // ZLE integration
+                           "tools", "tools/drip", "tools/drip/fig_onboarding.sh", "user/config", // Onboarding
+                           "autocomplete" // Autocomplete folder
+                          ]
+    
+    return filesAndFolders.reduce(true) { (exists, path) -> Bool in
+      var isDir : ObjCBool = false
+      return exists && FileManager.default.fileExists(atPath: "\(dotfig)/\(path)", isDirectory:&isDir)
+
+    }
+  }
     
   static var pathToBundle: String {
       return Bundle.main.bundlePath
@@ -212,6 +229,7 @@ class Diagnostic {
       VSCode Integration: \(VSCodeIntegration.isInstalled)
       Docker Integration: \(DockerEventStream.shared.socket.isConnected)
       Only insert on tab: \(Defaults.onlyInsertOnTab)
+      Installation Script: \(Diagnostic.installationScriptRan)
       SecureKeyboardInput: \(Diagnostic.secureKeyboardInput)
       SecureKeyboardProcess: \(Diagnostic.blockingProcess ?? "<none>")
       Current active process: \(Diagnostic.processForTopmostWindow) (\(Diagnostic.processIdForTopmostWindow)) - \(Diagnostic.ttyDescriptorForTopmostWindow)
