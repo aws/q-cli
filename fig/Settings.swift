@@ -9,6 +9,9 @@
 import Foundation
 
 class Settings {
+  static let ptyPathKey = "PATH"
+  static let developerModeKey = "developerMode"
+  
   static let filePath = NSHomeDirectory() + "/.fig/settings.json"
   static let shared = Settings()
   
@@ -35,6 +38,7 @@ class Settings {
     } else {
       print("Settings: could not load settings!")
       currentSettings = [:]
+      serialize()
     }
     
     setUpFileSystemListeners()
@@ -80,7 +84,7 @@ class Settings {
     return json
   }
 
-  var haveValidFormat: Bool {
+  static var haveValidFormat: Bool {
     return Settings.loadFromFile() != nil
   }
   

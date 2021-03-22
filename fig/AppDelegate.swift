@@ -406,30 +406,30 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         //        sidebar.indentationLevel = 1
         sidebar.state = Defaults.showSidebar ? .on : .off
         
-        let tab = debugMenu.addItem(
-        withTitle: "Only Autocomplete on Tab ",
-        action: #selector(AppDelegate.toggleOnlyTab(_:)),
-        keyEquivalent: "")
-        //        sidebar.indentationLevel = 1
-        tab.state = Defaults.onlyInsertOnTab ? .on : .off
+//        let tab = debugMenu.addItem(
+//        withTitle: "Only Autocomplete on Tab ",
+//        action: #selector(AppDelegate.toggleOnlyTab(_:)),
+//        keyEquivalent: "")
+//        //        sidebar.indentationLevel = 1
+//        tab.state = Defaults.onlyInsertOnTab ? .on : .off
       
         let statusInTitle = debugMenu.addItem(
-        withTitle: "Show fig status in title",
+        withTitle: "Show '☑ fig' in Terminal",
         action: #selector(AppDelegate.toggleFigIndicator(_:)),
         keyEquivalent: "")
         statusInTitle.state = AutocompleteContextNotifier.addIndicatorToTitlebar ? .on : .off
         debugMenu.addItem(NSMenuItem.separator())
         
-        debugMenu.addItem(withTitle: "Compatibility", action: nil, keyEquivalent: "")
+        debugMenu.addItem(withTitle: "Integrations", action: nil, keyEquivalent: "")
         
         let zshPlugin = debugMenu.addItem(
-        withTitle: "Fish / Zsh Autosuggest", //Defer to Shell Autosuggest
+        withTitle: "Fish Autosuggest", //Defer to Shell Autosuggest
         action: #selector(AppDelegate.toggleZshPlugin(_:)),
         keyEquivalent: "")
         zshPlugin.state = Defaults.deferToShellAutosuggestions ? .on : .off
         
         let iTermIntegration = debugMenu.addItem(
-        withTitle: "Setup iTerm Tab Integration",
+        withTitle: "iTerm Integration",
         action: #selector(AppDelegate.iTermSetup),
         keyEquivalent: "")
         iTermIntegration.state = FileManager.default.fileExists(atPath: "\(NSHomeDirectory())/Library/Application Support/iTerm2/Scripts/AutoLaunch/fig-iterm-integration.py") ? .on : .off
@@ -1989,15 +1989,19 @@ extension AppDelegate : NSMenuDelegate {
                     color = .cyan
                     legend.addItem(NSMenuItem(title: "Running proccess (\(tty?.cmd ?? "(???)")) is not a shell.", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem.separator())
-                    legend.addItem(NSMenuItem(title: "Exit current process", action: nil, keyEquivalent: ""))
+                    legend.addItem(NSMenuItem(title: "Fix: exit current process", action: nil, keyEquivalent: ""))
+                    legend.addItem(NSMenuItem.separator())
                     legend.addItem(NSMenuItem(title: "Force Reset", action: #selector(forceUpdateTTY), keyEquivalent: ""))
-                    legend.addItem(NSMenuItem(title: "Add to whitelist", action: #selector(addProcessToWhitelist), keyEquivalent: ""))
+                    legend.addItem(NSMenuItem(title: "Add as Shell", action: #selector(addProcessToWhitelist), keyEquivalent: ""))
                     legend.addItem(NSMenuItem.separator())
                     legend.addItem(NSMenuItem(title: "Ignore", action: #selector(addProcessToIgnorelist), keyEquivalent: ""))
                     legend.addItem(NSMenuItem.separator())
                     legend.addItem(NSMenuItem(title: "window: \(window?.hash ?? "???")", action: nil, keyEquivalent: ""))
                 } else {
                     color = .green
+                  
+                    let path = Diagnostic.pseudoTerminalPathAppearsValid
+                  
                     legend.addItem(NSMenuItem(title: "Everything should be working.", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem.separator())
                     legend.addItem(NSMenuItem(title: "window: \(window?.hash.truncate(length: 15, trailing: "...") ?? "???")", action: nil, keyEquivalent: ""))
@@ -2005,7 +2009,8 @@ extension AppDelegate : NSMenuDelegate {
                     legend.addItem(NSMenuItem(title: "cwd: \(tty?.cwd ?? "???")", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem(title: "pid: \(tty?.pid ?? -1)", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem(title: "keybuffer: \(bufferDescription ?? "???")", action: nil, keyEquivalent: ""))
-                  
+                    legend.addItem(NSMenuItem(title: "path: \( path != nil ? (path! ? "☑" : "☒ ") : "<generated dynamically>")", action: nil, keyEquivalent: ""))
+
                     if runUsingPrefix != nil {
                       legend.addItem(NSMenuItem.separator())
                       legend.addItem(NSMenuItem(title: "In SSH session or Docker container", action: nil, keyEquivalent: ""))
