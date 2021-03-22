@@ -192,6 +192,22 @@ class Diagnostic {
     return "Version \(Diagnostic.version) (B\(Diagnostic.build))"
   }
   
+  static var pseudoTerminalPath: String? {
+    return Settings.shared.getValue(forKey: Settings.ptyPathKey) as? String
+  }
+  
+  static var pseudoTerminalPathAppearsValid: Bool? {
+    guard let path = Diagnostic.pseudoTerminalPath else {
+      return nil
+    }
+    
+    return path.contains("/usr/bin")
+  }
+  
+  static var settingsExistAndHaveValidFormat: Bool {
+    return Settings.haveValidFormat
+  }
+  
   static var summary: String {
     get {
       """
@@ -200,6 +216,7 @@ class Diagnostic {
       UserShell: \(Defaults.userShell)
       Bundle path: \(Diagnostic.pathToBundle)
       Autocomplete: \(Defaults.useAutocomplete)
+      Settings.json: \(Diagnostic.settingsExistAndHaveValidFormat)
       CLI installed: \(Diagnostic.installedCLI)
       CLI tool path: \(Diagnostic.pathOfCLI ?? "<none>")
       Accessibility: \(Accessibility.enabled)
@@ -212,6 +229,7 @@ class Diagnostic {
       VSCode Integration: \(VSCodeIntegration.isInstalled)
       Docker Integration: \(DockerEventStream.shared.socket.isConnected)
       Only insert on tab: \(Defaults.onlyInsertOnTab)
+      PseudoTerminal Path: \(Diagnostic.pseudoTerminalPath ?? "<generated dynamically>")
       SecureKeyboardInput: \(Diagnostic.secureKeyboardInput)
       SecureKeyboardProcess: \(Diagnostic.blockingProcess ?? "<none>")
       Current active process: \(Diagnostic.processForTopmostWindow) (\(Diagnostic.processIdForTopmostWindow)) - \(Diagnostic.ttyDescriptorForTopmostWindow)

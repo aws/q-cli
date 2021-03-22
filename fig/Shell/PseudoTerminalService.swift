@@ -118,9 +118,12 @@ class PseudoTerminal : PseudoTerminalService {
 
         pty.send("unset HISTFILE\r")
         
-      
-        // export path from userShell
-        pty.send("export PATH=$(\(Defaults.userShell) -li -c \"/usr/bin/env | /usr/bin/grep '^PATH=' | /bin/cat | /usr/bin/sed 's|PATH=||g'\")\r")
+        // Retrieve PATH from settings if it exists
+        if let path = Settings.shared.getValue(forKey: Settings.ptyPathKey) as? String {
+          pty.send("export PATH='\(path)'")
+        } else { // export PATH from userShell
+          pty.send("export PATH=$(\(Defaults.userShell) -li -c \"/usr/bin/env | /usr/bin/grep '^PATH=' | /bin/cat | /usr/bin/sed 's|PATH=||g'\")\r")
+        }
 
         // Copy enviroment from userShell
 //        pty.send("export $(env -i '\(Defaults.userShell)' -li -c env | tr '\n' ' ')\r")

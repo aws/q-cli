@@ -1982,15 +1982,19 @@ extension AppDelegate : NSMenuDelegate {
                     color = .cyan
                     legend.addItem(NSMenuItem(title: "Running proccess (\(tty?.cmd ?? "(???)")) is not a shell.", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem.separator())
-                    legend.addItem(NSMenuItem(title: "Exit current process", action: nil, keyEquivalent: ""))
+                    legend.addItem(NSMenuItem(title: "Fix: exit current process", action: nil, keyEquivalent: ""))
+                    legend.addItem(NSMenuItem.separator())
                     legend.addItem(NSMenuItem(title: "Force Reset", action: #selector(forceUpdateTTY), keyEquivalent: ""))
-                    legend.addItem(NSMenuItem(title: "Add to whitelist", action: #selector(addProcessToWhitelist), keyEquivalent: ""))
+                    legend.addItem(NSMenuItem(title: "Add as Shell", action: #selector(addProcessToWhitelist), keyEquivalent: ""))
                     legend.addItem(NSMenuItem.separator())
                     legend.addItem(NSMenuItem(title: "Ignore", action: #selector(addProcessToIgnorelist), keyEquivalent: ""))
                     legend.addItem(NSMenuItem.separator())
                     legend.addItem(NSMenuItem(title: "window: \(window?.hash ?? "???")", action: nil, keyEquivalent: ""))
                 } else {
                     color = .green
+                  
+                    let path = Diagnostic.pseudoTerminalPathAppearsValid
+                  
                     legend.addItem(NSMenuItem(title: "Everything should be working.", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem.separator())
                     legend.addItem(NSMenuItem(title: "window: \(window?.hash.truncate(length: 15, trailing: "...") ?? "???")", action: nil, keyEquivalent: ""))
@@ -1998,7 +2002,8 @@ extension AppDelegate : NSMenuDelegate {
                     legend.addItem(NSMenuItem(title: "cwd: \(tty?.cwd ?? "???")", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem(title: "pid: \(tty?.pid ?? -1)", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem(title: "keybuffer: \(bufferDescription ?? "???")", action: nil, keyEquivalent: ""))
-                  
+                    legend.addItem(NSMenuItem(title: "path: \( path != nil ? (path! ? "☑" : "☒ ") : "<generated dynamically>")", action: nil, keyEquivalent: ""))
+
                     if runUsingPrefix != nil {
                       legend.addItem(NSMenuItem.separator())
                       legend.addItem(NSMenuItem(title: "In SSH session or Docker container", action: nil, keyEquivalent: ""))
