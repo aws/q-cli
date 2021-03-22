@@ -406,30 +406,30 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         //        sidebar.indentationLevel = 1
         sidebar.state = Defaults.showSidebar ? .on : .off
         
-        let tab = debugMenu.addItem(
-        withTitle: "Only Autocomplete on Tab ",
-        action: #selector(AppDelegate.toggleOnlyTab(_:)),
-        keyEquivalent: "")
-        //        sidebar.indentationLevel = 1
-        tab.state = Defaults.onlyInsertOnTab ? .on : .off
+//        let tab = debugMenu.addItem(
+//        withTitle: "Only Autocomplete on Tab ",
+//        action: #selector(AppDelegate.toggleOnlyTab(_:)),
+//        keyEquivalent: "")
+//        //        sidebar.indentationLevel = 1
+//        tab.state = Defaults.onlyInsertOnTab ? .on : .off
       
         let statusInTitle = debugMenu.addItem(
-        withTitle: "Show fig status in title",
+        withTitle: "Show '☑ fig' in Terminal",
         action: #selector(AppDelegate.toggleFigIndicator(_:)),
         keyEquivalent: "")
         statusInTitle.state = AutocompleteContextNotifier.addIndicatorToTitlebar ? .on : .off
         debugMenu.addItem(NSMenuItem.separator())
         
-        debugMenu.addItem(withTitle: "Compatibility", action: nil, keyEquivalent: "")
+        debugMenu.addItem(withTitle: "Integrations", action: nil, keyEquivalent: "")
         
         let zshPlugin = debugMenu.addItem(
-        withTitle: "Fish / Zsh Autosuggest", //Defer to Shell Autosuggest
+        withTitle: "Fish Autosuggest", //Defer to Shell Autosuggest
         action: #selector(AppDelegate.toggleZshPlugin(_:)),
         keyEquivalent: "")
         zshPlugin.state = Defaults.deferToShellAutosuggestions ? .on : .off
         
         let iTermIntegration = debugMenu.addItem(
-        withTitle: "Setup iTerm Tab Integration",
+        withTitle: "iTerm Integration",
         action: #selector(AppDelegate.iTermSetup),
         keyEquivalent: "")
         iTermIntegration.state = FileManager.default.fileExists(atPath: "\(NSHomeDirectory())/Library/Application Support/iTerm2/Scripts/AutoLaunch/fig-iterm-integration.py") ? .on : .off

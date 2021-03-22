@@ -39,9 +39,14 @@ class iTermTabIntegration: IntegrationProvider {
         })
     }
     
-    static var isInstalled: Bool {
-        return FileManager.default.fileExists(atPath: iTermTabIntegration.path)
+    fileprivate static var pythonRuntimeIsInstalled: Bool {
+      let contents = try? FileManager.default.contentsOfDirectory(atPath: "\(NSHomeDirectory())/Library/Application Support/iTerm2/iterm2env/versions/")
+      return contents?.count ?? 0 > 0
     }
+    static var isInstalled: Bool {
+        return FileManager.default.fileExists(atPath: iTermTabIntegration.path) && pythonRuntimeIsInstalled
+    }
+  
     static func promptToInstall() {
         iTermTabIntegration.hasBeenPromptedBefore = true
       
