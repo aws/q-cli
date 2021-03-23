@@ -225,6 +225,18 @@ class Diagnostic {
     return Settings.haveValidFormat
   }
   
+  static var dotfilesAreSymlinked: Bool {
+    let dotfiles = [".profile", ".bashrc", ".bash_profile", ".zshrc", ".zprofile", ".config/fish/config.fish", ".tmux.conf", ".ssh/config"]
+    
+    return dotfiles.reduce(false) { (existingSymlink, path) -> Bool in
+      guard !existingSymlink else {
+        return existingSymlink
+      }
+      
+      return (try? FileManager.default.destinationOfSymbolicLink(atPath: "\(NSHomeDirectory())/\(path)")) != nil
+    }
+  }
+  
   static var summary: String {
     get {
       """
@@ -245,6 +257,7 @@ class Diagnostic {
       Hyper Integration: \(HyperIntegration.isInstalled)
       VSCode Integration: \(VSCodeIntegration.isInstalled)
       Docker Integration: \(DockerEventStream.shared.socket.isConnected)
+      Symlinked dotfiles: \(Diagnostic.dotfilesAreSymlinked)
       Only insert on tab: \(Defaults.onlyInsertOnTab)
       Installation Script: \(Diagnostic.installationScriptRan)
       PseudoTerminal Path: \(Diagnostic.pseudoTerminalPath ?? "<generated dynamically>")
