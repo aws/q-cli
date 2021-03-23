@@ -50,6 +50,7 @@ class NativeCLI {
         case debugApp = "debug:app"
         case debugSSH = "debug:ssh"
         case debugProcesses = "debug:ps"
+        case debugDotfiles = "debug:dotfiles"
         case electronAccessibility = "util:axelectron"
 
         var isUtility: Bool {
@@ -84,6 +85,7 @@ class NativeCLI {
                                                            .pty,
                                                            .debugApp,
                                                            .debugProcesses,
+                                                           .debugDotfiles,
                                                            .electronAccessibility,
                                                            .docs]
                return implementatedNatively.contains(self)
@@ -133,6 +135,8 @@ class NativeCLI {
                 NativeCLI.electronAccessibilityCommand(scope)
             case .debugProcesses:
                 NativeCLI.debugProcessCommand(scope)
+            case .debugDotfiles:
+                NativeCLI.debugDotfilesCommand(scope)
             default:
                 break;
             }
@@ -447,6 +451,24 @@ extension NativeCLI {
       
         
         NativeCLI.printInTerminal(ps, using: connection)
+    }
+  
+    static func debugDotfilesCommand(_ scope: Scope) {
+        let (_, connection) = scope
+      
+        let dotfiles = [".profile", ".bashrc", ".bash_profile", ".zshrc", ".zprofile", ".config/fish/config.fish", ".tmux.conf", ".ssh/config"]
+
+        let print = dotfiles.map({ (path) -> String in
+          let fullPath = "\(NSHomeDirectory())/\(path)"
+          let exists = FileManager.default.fileExists(atPath: fullPath)
+          let symlink = (try? FileManager.default.destinationOfSymbolicLink(atPath: fullPath))
+          let contents = try? String(contentsOf: URL(fileURLWithPath:symlink ?? fullPath))
+          
+          return "\(exists ? (contents?.contains("~/.fig") ?? false ? "✅" : "❌") : "❔") ~/\(path)\(symlink != nil ? " -> \(symlink!)" : "")"
+        }).joined(separator: "\n")
+
+
+        NativeCLI.printInTerminal(print, using: connection)
     }
 }
 
