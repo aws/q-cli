@@ -46,12 +46,12 @@ class PseudoTerminalHelper {
     // Because they ruin your punchline.
     // Why should you never tell multithreaded programming jokes?
     func execute(_ command: String, handler: @escaping (String) -> Void) {
+        // timeout prevents deadlocks
+        let _ = semaphore.wait(timeout: .now())
         // Move all of this behind the semaphore!
         let id = UUID().uuidString
         executeHandlers[id] = handler
         print("pty: Executing command with PTY Service '\(command)'. Output Id = \(id).")
-        // timeout prevents deadlocks
-        let _ = semaphore.wait(timeout: .now())
         pty.execute(command: command, handlerId: id)
     }
     
@@ -120,9 +120,15 @@ class PseudoTerminal : PseudoTerminalService {
         
         // Retrieve PATH from settings if it exists
         if let path = Settings.shared.getValue(forKey: Settings.ptyPathKey) as? String {
-          pty.send("export PATH='\(path)'")
+          pty.send("export PATH='\(path)'\r")
         } else { // export PATH from userShell
           pty.send("export PATH=$(\(Defaults.userShell) -li -c \"/usr/bin/env | /usr/bin/grep '^PATH=' | /bin/cat | /usr/bin/sed 's|PATH=||g'\")\r")
+        }
+      
+        if let filePath = Settings.shared.getValue(forKey: Settings.ptyInitFile) as? NSString {
+          let expandedFilePath = filePath.expandingTildeInPath
+          print("pty: sourcing \(expandedFilePath)")
+          pty.send("source \(expandedFilePath)\r")
         }
 
         // Copy enviroment from userShell

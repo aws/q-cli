@@ -44,6 +44,7 @@ class KeystrokeBuffer : NSObject {
     didSet {
       if (!backedByZLE) {
         buffer = ""
+        zleHistoryNumber = nil
       }
     }
   }

@@ -9,8 +9,9 @@
 import Foundation
 
 class Settings {
-  static let ptyPathKey = "PATH"
-  static let developerModeKey = "developerMode"
+  static let ptyInitFile = "pty.rc"
+  static let ptyPathKey = "pty.path"
+  static let developerModeKey = "autocomplete.developerMode"
   
   static let filePath = NSHomeDirectory() + "/.fig/settings.json"
   static let shared = Settings()

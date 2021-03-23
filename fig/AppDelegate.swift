@@ -84,7 +84,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         handleUpdateIfNeeded()
         Defaults.useAutocomplete = true
         Defaults.deferToShellAutosuggestions = true
-        Defaults.autocompleteVersion = "v5"
+        Defaults.autocompleteVersion = "v6"
         Defaults.autocompleteWidth = 250
         Defaults.ignoreProcessList = ["figcli", "gitstatusd-darwin-x86_64"]
 
