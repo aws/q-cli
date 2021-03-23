@@ -301,6 +301,12 @@ class KeypressProvider : KeypressService {
           WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try{ fig.keypress(\"\(keyCode)\", \"\(window.hash)\") } catch(e) {}", completionHandler: nil)
           return nil
         } else {
+          if let pid = window.tty?.pid, window.tty?.name == "fish" {
+            print("Send signal SIGUSR1 to \(pid)")
+            Darwin.kill(pid, SIGUSR1)
+            return Unmanaged.passUnretained(event)
+          }
+          
           autoreleasepool {
             KeypressProvider.shared.handleKeystroke(event: NSEvent(cgEvent: event), in: window)
           }
