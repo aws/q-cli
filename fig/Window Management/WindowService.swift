@@ -143,7 +143,7 @@ class WindowServer : WindowService {
     var previousApplication: NSRunningApplication?
     var previousWindow: ExternalWindow? {
         willSet(value) {
-            print("app: \(value?.bundleId)")
+            print("app: \(value?.bundleId ?? "<none>")")
             if (self.previousWindow != value) {
                 print("Old window \(self.previousWindow?.windowId ?? 0)")
                 print("New window \(value?.windowId ?? 0)")
@@ -211,7 +211,7 @@ class WindowServer : WindowService {
                             width:  bounds.width,
                             height: bounds.height)
             
-            return ExternalWindow(windowFrame, windowId, app, window as! AXUIElement)
+          return ExternalWindow(windowFrame, windowId, app, (window as! AXUIElement))
         }
         return nil
 

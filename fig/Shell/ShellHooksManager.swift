@@ -69,11 +69,6 @@ extension ShellHookManager {
 
   func tab(for windowID: CGWindowID) -> String? {
     return self.tabs[windowID]
-    var tab: String?
-    queue.sync {
-      tab = self.tabs[windowID]
-    }
-    return tab
   }
   
   func setActivePane(_ pane: String, for windowID: CGWindowID) {
