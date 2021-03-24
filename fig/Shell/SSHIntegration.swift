@@ -22,7 +22,11 @@ class SSHIntegration: CommandIntegration {
     func runUsingPrefix() -> String? {
         if let controlPath = self.controlPath, Defaults.SSHIntegrationEnabled {
             //-o KbdInteractiveAuthentication=no -o ChallengeResponseAuthentication=no -o BatchMode=yes
+          if let prefix = Settings.shared.getValue(forKey: Settings.sshCommand) as? String {
+            return prefix.replacingOccurrences(of: "%C", with: controlPath)
+          } else {
             return "ssh -o PasswordAuthentication=no -q -o 'ControlPath=\(controlPath)' dest "
+          }
         }
         
         return nil
@@ -47,8 +51,6 @@ class SSHIntegration: CommandIntegration {
             return
         }
         
-        let semaphore = DispatchSemaphore(value: 0)
-
         
         let scriptPath = Bundle.main.path(forResource: "remote_cwd", ofType: "sh")!
         guard let prefix = self.runUsingPrefix() else {
@@ -59,17 +61,22 @@ class SSHIntegration: CommandIntegration {
             print("remote_machine:", output)
             guard tty.pid == process.pid else {
                 print("Process out of sync, abort update")
-                semaphore.signal()
                 return
             }
+          
+            // This is a bugfix because sometimes the output of the PTY is the command
+            // when we are executing commands very quickly
+            guard !output.contains("printf \"<<<\"") else {
+              print("ssh: something has gone wrong. Ignoring this update.")
+              return
+            }
+          
             tty.cwd = output
             tty.cmd = process.cmd
             tty.pid = process.pid
             tty.isShell = process.isShell
             tty.runUsingPrefix = prefix
-            semaphore.signal()
         }
-        semaphore.wait()
     }
   
     func initialize(tty: TTY) {

@@ -323,13 +323,13 @@ extension NativeCLI {
 
         NativeCLI.printInTerminal("→ Send any bugs or feedback directly to the Fig team!", using: connection)
         connection.send(message: "disconnect")
-        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "-1"
+        // let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "-1"
                 
-        let tracked = KeypressProvider.shared.buffers.keys.map { (hash) -> (TTY?, String?) in
-            let proc = ShellHookManager.shared.tty(for: hash)
-            let buffer = KeypressProvider.shared.keyBuffer(for: hash).representation
-            return (proc, buffer)
-        }
+        // let tracked = KeypressProvider.shared.buffers.keys.map { (hash) -> (TTY?, String?) in
+        //    let proc = ShellHookManager.shared.tty(for: hash)
+        //    let buffer = KeypressProvider.shared.keyBuffer(for: hash).representation
+        //    return (proc, buffer)
+        // }
         let env = message.env?.jsonStringToDict()
         let path = env?["PATH"] as? String
         let figIntegratedWithShell = env?["FIG_ENV_VAR"] as? String

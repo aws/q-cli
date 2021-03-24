@@ -12,7 +12,8 @@ class Settings {
   static let ptyInitFile = "pty.rc"
   static let ptyPathKey = "pty.path"
   static let developerModeKey = "autocomplete.developerMode"
-  
+  static let sshCommand = "ssh.commandPrefix"
+
   static let filePath = NSHomeDirectory() + "/.fig/settings.json"
   static let shared = Settings()
   

@@ -269,14 +269,14 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
                 let height = min(max(minHeight, t_size.height * 0.5), t_size.height)
                 let offset = max((t_size.width - width) / 2, 0)
                 
-                let quarter = max(t_size.width * 0.25 - minWidth / 2.0, 0)
+                //let quarter = max(t_size.width * 0.25 - minWidth / 2.0, 0)
                 return NSRect(origin: NSPoint(x: targetWindowFrame.origin.x + offset, y: targetWindowFrame.origin.y - 23), size: CGSize.init(width: width, height: height))
              case .fullscreenInset:
                 let inset: CGFloat = 23
                 return targetWindowFrame.insetBy(dx: 0, dy: inset/2).offsetBy(dx: 0, dy: -1 * inset * 1.5)
                 
 //                let inset: CGFloat = 30
-                return targetWindowFrame.insetBy(dx: inset, dy: inset).offsetBy(dx: 0, dy: -1 * inset - 24)
+                //return targetWindowFrame.insetBy(dx: inset, dy: inset).offsetBy(dx: 0, dy: -1 * inset - 24)
             case .hidden:
                 return .zero
              case .untethered:
@@ -317,7 +317,7 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
                 
              case .powerbar:
                 let bar = NSRect(x: targetWindowFrame.origin.x, y: targetWindowFrame.origin.y - targetWindowFrame.height, width: targetWindowFrame.width, height: 50)
-                let intersection = screen.intersection(bar)
+                //let intersection = screen.intersection(bar)
                 var y = bar.origin.y
                 if (y - bar.height < 0) {
                    y += (bar.height - y)
@@ -578,13 +578,11 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
                     shouldTrackWindow = false;
                     NSEvent.addGlobalMonitorForEvents(matching: .leftMouseUp) { (event) -> Void in
                         // prevent memory access error
-                        if (self != nil){
                             self.shouldTrackWindow = true;
                             self.repositionWindow(forceUpdate: true)
     //                        if (self.positioning == .fullscreenInset && self.windowManager.shouldAppear(window: self, explicitlyRepositioned: false)) {
     //                            self.windowServiceProvider.takeFocus()
     //                        }
-                        }
                     }
                     return
                 }

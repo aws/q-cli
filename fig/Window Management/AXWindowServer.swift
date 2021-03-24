@@ -250,7 +250,7 @@ class AXWindowServer : WindowService {
                     var window: AnyObject?
                     AXUIElementCopyAttributeValue(appRef.axAppRef, kAXFocusedWindowAttribute as CFString, &window)
                     guard window != nil else { return }
-                    print("Spotlight", window)
+                    print("Spotlight", window!)
                     //AXObserverAddNotification(observer!, window, kAXWindowResizedNotification as CFString, nil)
 
                     //self.topWindow = nil
@@ -312,7 +312,7 @@ class AXWindowServer : WindowService {
                 self.topWindow = ExternalWindow(backedBy: window as! AXUIElement, in: appRef)
             case kAXUIElementDestroyedNotification:
                 var pid: pid_t = 0
-                let err = AXUIElementGetPid(element, &pid)
+                let _ = AXUIElementGetPid(element, &pid)
                 
                 // determine if AXUIElement is window???
               
@@ -528,8 +528,8 @@ class AXWindowServer : WindowService {
         let systemWideElement: AXUIElement = AXUIElementCreateSystemWide()
 
         var window: AnyObject?
-        let result = AXUIElementCopyAttributeValue(systemWideElement, kAXFocusedWindowAttribute as CFString, &window)
-        print("hacky", result, window)
+        let _ = AXUIElementCopyAttributeValue(systemWideElement, kAXFocusedWindowAttribute as CFString, &window)
+        //print("hacky", result, window)
         return nil
     }
     

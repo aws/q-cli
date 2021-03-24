@@ -41,7 +41,7 @@ class WebBridge : NSObject {
 
                 let contentController = WebBridgeContentController()
                 
-                let eventHandlers: [WebBridgeEventHandler] = [.logHandler,
+                let _: [WebBridgeEventHandler] = [.logHandler,
                                                               .exceptionHandler,
                                                               .insertHandler,
                                                               .executeHandler,
@@ -295,7 +295,7 @@ extension NSImage {
     
     func overlayAppIcon() -> NSImage {
         let background = self
-        let side:CGFloat = 32
+        // let side:CGFloat = 32
 
         let overlay = NSImage(imageLiteralResourceName: NSImage.applicationIconName)//.resized(to: NSSize(width:  background.size.width/2, height:  background.size.height/2))!
         
@@ -314,7 +314,7 @@ extension NSImage {
   
   func overlayImage(_ image: NSImage) -> NSImage {
         let background = self
-        let side:CGFloat = 32
+        // let side:CGFloat = 32
 
         let overlay = image//.resized(to: NSSize(width:  background.size.width/2, height:  background.size.height/2))!
         
@@ -568,7 +568,7 @@ extension WebBridge {
         if let params = scope.body as? Dictionary<String, String>,
            let path = params["path"],
            let data = params["data"],
-           let handlerId = params["handlerId"],
+           //let handlerId = params["handlerId"],
            let env = params["env"]?.jsonStringToDict(),
            let pwd = env["PWD"] as? String {
             
@@ -578,7 +578,7 @@ extension WebBridge {
                 if (filepath.starts(with: "/")) {
                     return URL(fileURLWithPath: filepath)
                 } else {
-                    return URL(fileURLWithPath: filepath, relativeTo: URL(fileURLWithPath: relative ?? ""))
+                  return URL(fileURLWithPath: filepath, relativeTo: URL(fileURLWithPath: relative))
                 }
             }()
 
@@ -805,9 +805,9 @@ extension WebBridge {
                     AutocompleteContextNotifier.addIndicatorToTitlebar = false
 
             case "openOnStartup:true":
-                (NSApp.delegate as? AppDelegate)?.toggleLaunchAtStartup(shouldBeOff: false)
+                LoginItems.shared.currentApplicationShouldLaunchOnStartup = true
             case "openOnStartup:false":
-                (NSApp.delegate as? AppDelegate)?.toggleLaunchAtStartup(shouldBeOff: true)
+                LoginItems.shared.currentApplicationShouldLaunchOnStartup = false
             default:
                 break;
             }
@@ -907,7 +907,7 @@ extension WebBridge {
                     if let window = scope.getCompanionWindow()?.tetheredWindow,
                         let tty = ShellHookManager.shared.tty(for: window.hash) {
                         let running = tty.running
-                        print("tty: \(running?.cmd) \(running?.cwd)")
+                        print("tty: \(running?.cmd ?? "?") \(running?.cwd ?? "cwd")")
                     }
                 case "keystroke":
                     guard let keyCodeString = data["key"], let keyCode = UInt16(keyCodeString), let consumerString = data["consumer"] else {
@@ -923,7 +923,7 @@ extension WebBridge {
                     }
                 case "autocomplete-hide":
 //                  break;
-                    guard let companion = scope.getCompanionWindow(), companion.isAutocompletePopup, let window = AXWindowServer.shared.whitelistedWindow  else { return }
+                    guard let companion = scope.getCompanionWindow(), companion.isAutocompletePopup else { return }//, let window = AXWindowServer.shared.whitelistedWindow  else { return }
                     //KeypressProvider.shared.keyBuffer(for: window.hash).writeOnly = true
                     Autocomplete.position {
                       // Cause up arrow to immediately start scrolling through history

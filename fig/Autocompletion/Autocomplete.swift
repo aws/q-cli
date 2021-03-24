@@ -47,18 +47,18 @@ class Autocomplete {
     }
     
     throttler.throttle {
-      let keybuffer = KeypressProvider.shared.keyBuffer(for: window)
-      if let rect = KeypressProvider.shared.getTextRect(), !keybuffer.writeOnly {//, keybuffer.buffer?.count != 0 {
-        WindowManager.shared.positionAutocompletePopover(textRect: rect, makeVisibleImmediately: makeVisibleImmediately, completion: completion)
-      } else {
-        KeypressProvider.shared.removeRedirect(for: Keycode.upArrow, in: window)
-        KeypressProvider.shared.removeRedirect(for: Keycode.downArrow, in: window)
-        KeypressProvider.shared.removeRedirect(for: Keycode.tab, in: window)
-        KeypressProvider.shared.removeRedirect(for: Keycode.returnKey, in: window)
-        KeypressProvider.shared.removeRedirect(for: Keystroke(modifierFlags: [.control], keyCode: Keycode.n), in: window)
-        KeypressProvider.shared.removeRedirect(for: Keystroke(modifierFlags: [.control], keyCode: Keycode.p), in: window)
-        
-        DispatchQueue.main.async {
+      DispatchQueue.main.async {
+        let keybuffer = KeypressProvider.shared.keyBuffer(for: window)
+        if let rect = KeypressProvider.shared.getTextRect(), !keybuffer.writeOnly {//, keybuffer.buffer?.count != 0 {
+          WindowManager.shared.positionAutocompletePopover(textRect: rect, makeVisibleImmediately: makeVisibleImmediately, completion: completion)
+        } else {
+          KeypressProvider.shared.removeRedirect(for: Keycode.upArrow, in: window)
+          KeypressProvider.shared.removeRedirect(for: Keycode.downArrow, in: window)
+          KeypressProvider.shared.removeRedirect(for: Keycode.tab, in: window)
+          KeypressProvider.shared.removeRedirect(for: Keycode.returnKey, in: window)
+          KeypressProvider.shared.removeRedirect(for: Keystroke(modifierFlags: [.control], keyCode: Keycode.n), in: window)
+          KeypressProvider.shared.removeRedirect(for: Keystroke(modifierFlags: [.control], keyCode: Keycode.p), in: window)
+          
           completion?()
         }
       }
