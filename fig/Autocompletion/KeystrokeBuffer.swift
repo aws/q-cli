@@ -170,7 +170,7 @@ class KeystrokeBuffer : NSObject {
               NotificationCenter.default.post(name: Self.lineAcceptedInKeystrokeBufferNotification, object: nil)
             }
           default:
-            guard buffer != nil, index != nil else { return }
+            guard buffer != nil, index != nil, buffer!.endIndex >= index! else { return }
             buffer!.insert(char, at: index!)
             index = buffer!.index(index!, offsetBy: 1)
             print("xterm: insert! (\(char))")
@@ -377,7 +377,7 @@ class KeystrokeBuffer : NSObject {
       break
     }
     
-    if var logging = buffer, index != nil, !writeOnly {
+    if var logging = buffer, index != nil, logging.endIndex >= index!, !writeOnly {
       // todo: check if index is within bounds
       logging.insert("|", at: index!)
       print("xterm-out: \(logging) ")
@@ -403,7 +403,7 @@ class KeystrokeBuffer : NSObject {
       return "<no context>"
     }
     
-    if var logging = buffer, index != nil {
+    if var logging = buffer, index != nil, buffer!.endIndex >= index! {
       // todo: check if index is within bounds
       logging.insert("|", at: index!)
       return logging
