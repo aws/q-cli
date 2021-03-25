@@ -309,6 +309,8 @@ class KeypressProvider : KeypressService {
       return Unmanaged.passUnretained(event)
     }
     
+    // Switching to CGEventTapLocation.cgAnnotatedSessionEventTap allows virtual keystrokes to be detected
+    // But prevents us from seeing keypresses handled by other apps (like Spectacle)
     guard let eventTap: CFMachPort = CGEvent.tapCreate(tap: CGEventTapLocation.cghidEventTap,
                                                        place: CGEventTapPlacement.tailAppendEventTap,
                                                        options: CGEventTapOptions.defaultTap,
@@ -356,7 +358,7 @@ class KeypressProvider : KeypressService {
     guard !keyBuffer.backedByZLE else {
       
       
-      // trigger positioning updates for hotkeys, like cmd+w, cmd+t, cmd+n, or Scpectacle
+      // trigger positioning updates for hotkeys, like cmd+w, cmd+t, cmd+n, or Spectacle
       if let event = event {
         
         if event.keyCode == KeyboardLayout.shared.keyCode(for: "W") && event.modifierFlags.contains(.command) {

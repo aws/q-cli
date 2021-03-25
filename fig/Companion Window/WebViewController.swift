@@ -187,6 +187,8 @@ class WebViewController: NSViewController, NSWindowDelegate {
         NotificationCenter.default.addObserver(self, selector: #selector(overlayDidBecomeMain), name:.overlayDidBecomeMain, object: nil)
         // TIMER to UPDATE INNER VIEW EVERY x INTERVAL
         
+        NotificationCenter.default.addObserver(self, selector: #selector(settingsUpdated), name: Settings.settingsUpdatedNotification, object: nil)
+
         
         view.window?.delegate = self
 //        webView = WKWebView(frame: self.view.window?.frame ?? .zero)
@@ -378,55 +380,32 @@ extension WebViewController: ShellBridgeEventListener, PseudoTerminalEventDelega
         //Bring FIG to front when triggered explictly from commandline
 //        NSRunningApplication.current.activate(options: .activateIgnoringOtherApps)
         
-        let msg = (notification.object as! ShellMessage)
-        DispatchQueue.main.async {
-            if let companion = self.view.window as? CompanionWindow {
-//            FigCLI.route(msg,
-//                         webView: self.webView!,
-//                         companionWindow: companion)
-            }
-        }
+//        let msg = (notification.object as! ShellMessage)
+//        DispatchQueue.main.async {
+//            if let companion = self.view.window as? CompanionWindow {
+////            FigCLI.route(msg,
+////                         webView: self.webView!,
+////                         companionWindow: companion)
+//            }
+//        }
     }
 }
 
+extension WebViewController {
+  @objc func settingsUpdated() {
+    DispatchQueue.main.async {
+      if let webView = self.webView {
+        WebBridge.declareSettings(webview: webView)
+      }
+    }
+  }
+}
 
 extension WebViewController : WKUIDelegate {
     func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
         print("hello")
         if navigationAction.targetFrame == nil {
             return self.webView
-            return WindowManager.shared.popupCompanionWindow(from: navigationAction, with: configuration, frame: self.view.window!.frame)
-            
-            let popup = WebViewController(configuration)
-           popup.webView?.load(navigationAction.request)
-//            popup.webView?.loadRemoteApp(at: navigationAction.request.url!)
-            
-            
-//            let popup = CompanionViewController()
-//            let web = WKWebView(frame: NSRect(x: 0, y: 0, width: 200, height: 300), configuration: configuration)
-//            web.load(navigationAction.request)
-//            popup.webView = web
-    
-//            onboardingViewController.webView?.loadRemoteApp(at: URL(string: "https://app.withfig.com/onboarding/landing.html")!)
-
-            let popupWindow = CompanionWindow(viewController: popup)
-            popupWindow.makeKeyAndOrderFront(nil)
-            popupWindow.center()
-            popupWindow.makeKeyAndOrderFront(self)
-            popupWindow.isDocked = false
-            popupWindow.positioning = .untethered
-            let frame = CompanionWindow.OverlayPositioning.fullscreenInset.frame(targetWindowFrame: self.view.window?.frame ?? .zero)
-            popupWindow.setFrame(frame, display: true, animate: false)
-
-            popupWindow.oneTimeUse = true
-            
-//            popup.webView?.onLoad.append {
-//                popup.webView?.onNavigate.append {
-////                    popupWindow.positioning = .sidebar
-//                }
-//            }
-            return popup.webView
-            //webView.load(navigationAction.request)
         }
         return nil
     }
@@ -434,7 +413,7 @@ extension WebViewController : WKUIDelegate {
 
 extension WebViewController : WKNavigationDelegate {
     func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
-        print(webView.url?.absoluteString)
+        print(webView.url?.absoluteString ?? "?")
          let webView = webView as! WebView
 
            for onNavigateCallback in webView.onNavigate {
@@ -500,6 +479,7 @@ extension WebViewController : WKNavigationDelegate {
         WebBridge.declareFigCLIPath(webview: webView)
         WebBridge.declareRemoteURL(webview: webView)
         WebBridge.declareHomeDirectory(webview: webView)
+        WebBridge.declareSettings(webview:webView)
         WebBridge.initJS(webview: webView)
 //        webView.evaluateJavaScript("fig.callinit()", completionHandler: nil)
 

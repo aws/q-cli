@@ -58,7 +58,7 @@ class ZLEIntegration {
      }
   }
   
-  static func insert(with insertionText: String) {
+  static func insert(with insertionText: String, version: Int?) {
     let backspaceLiteral = Character("\u{8}")
     let cursorLeftLiteral = String("\u{1b}[D")
     let cursorLeftPlaceholder =  Character("\u{0}")
@@ -127,7 +127,13 @@ class ZLEIntegration {
 
     // Make sure this key is bound to a widget in fig.sh.
     // Use `read -r` to determine appropriate keycode.
-      ShellBridge.simulate(keystroke: Keystroke(keyCode: Keycode.f12))
+      
+      switch version {
+        case nil:
+          ShellBridge.simulate(keystroke: Keystroke(keyCode: Keycode.f12))
+        default: // > 1
+          ShellBridge.injectUnicodeString("◧")
+      }
     
   }
 

@@ -46,11 +46,12 @@ class PseudoTerminalHelper {
     // Because they ruin your punchline.
     // Why should you never tell multithreaded programming jokes?
     func execute(_ command: String, handler: @escaping (String) -> Void) {
-        let id = UUID().uuidString
-        executeHandlers[id] = handler
-      print("pty: Executing command with PTY Service '\(command)'. Output Id = \(id).")
         // timeout prevents deadlocks
         let _ = semaphore.wait(timeout: .now())
+        // Move all of this behind the semaphore!
+        let id = UUID().uuidString
+        executeHandlers[id] = handler
+        print("pty: Executing command with PTY Service '\(command)'. Output Id = \(id).")
         pty.execute(command: command, handlerId: id)
     }
     
@@ -105,7 +106,8 @@ class PseudoTerminal : PseudoTerminalService {
         // don't add shell hooks to pty
         // Add TERM variable to supress warning for ZSH
         // Set INPUTRC variable to prevent using a misconfigured inputrc file (https://linear.app/fig/issue/ENG-500)
-        let updatedEnv = env.merging(["FIG_ENV_VAR" : "1", "FIG_SHELL_VAR" : "1", "TERM" : "xterm-256color", "INPUTRC" : "~/.fig/nop"]) { $1 }
+        // Set FIG_PTY so that dotfiles can detect when they are being run in fig.pty
+        let updatedEnv = env.merging(["FIG_ENV_VAR" : "1", "FIG_SHELL_VAR" : "1", "TERM" : "xterm-256color", "INPUTRC" : "~/.fig/nop", "FIG_PTY" : "1"]) { $1 }
         let rawEnv = updatedEnv.reduce([]) { (acc, elm) -> [String] in
             let (key, value) = elm
             return acc + ["\(key)=\(value)"]
@@ -116,9 +118,18 @@ class PseudoTerminal : PseudoTerminalService {
 
         pty.send("unset HISTFILE\r")
         
+        // Retrieve PATH from settings if it exists
+        if let path = Settings.shared.getValue(forKey: Settings.ptyPathKey) as? String {
+          pty.send("export PATH='\(path)'\r")
+        } else { // export PATH from userShell
+          pty.send("export PATH=$(\(Defaults.userShell) -li -c \"/usr/bin/env | /usr/bin/grep '^PATH=' | /bin/cat | /usr/bin/sed 's|PATH=||g'\")\r")
+        }
       
-        // export path from userShell
-        pty.send("export PATH=$(\(Defaults.userShell) -li -c \"/usr/bin/env | /usr/bin/grep '^PATH=' | /bin/cat | /usr/bin/sed 's|PATH=||g'\")\r")
+        if let filePath = Settings.shared.getValue(forKey: Settings.ptyInitFile) as? NSString {
+          let expandedFilePath = filePath.expandingTildeInPath
+          print("pty: sourcing \(expandedFilePath)")
+          pty.send("source \(expandedFilePath)\r")
+        }
 
         // Copy enviroment from userShell
 //        pty.send("export $(env -i '\(Defaults.userShell)' -li -c env | tr '\n' ' ')\r")

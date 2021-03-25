@@ -69,11 +69,6 @@ extension ShellHookManager {
 
   func tab(for windowID: CGWindowID) -> String? {
     return self.tabs[windowID]
-    var tab: String?
-    queue.sync {
-      tab = self.tabs[windowID]
-    }
-    return tab
   }
   
   func setActivePane(_ pane: String, for windowID: CGWindowID) {
@@ -213,6 +208,9 @@ extension ShellHookManager {
         // Window is linked with TTY session
         // update tty's active process to current shell
         tty.returnedToShellPrompt(for: shellPid)
+      
+        // Set version (used for checking compatibility)
+        tty.shellIntegrationVersion = info.shellIntegrationVersion
         
         // if the user has returned to the shell, their keypress buffer must be reset (for instance, if they exited by pressing 'q' rather than return)
         // This doesn't work because of timing issues. If the user types too quickly, the first keypress will be overwritten.
@@ -237,6 +235,9 @@ extension ShellHookManager {
         // window hash is valid, we should have an associated TTY (or we can create it)
         let tty = self.tty(for: hash) ?? link(sessionId, hash, ttyDescriptor)
         tty.startedNewShellSession(for: shellPid)
+      
+        // Set version (used for checking compatibility)
+        tty.shellIntegrationVersion = info.shellIntegrationVersion
             
         KeypressProvider.shared.keyBuffer(for: hash).backedByZLE = false
 
@@ -277,6 +278,9 @@ extension ShellHookManager {
 
             let tty = self.link(sessionId, window.hash, ttyDescriptor)
             tty.startedNewShellSession(for: shellPid)
+          
+            // Set version (used for checking compatibility)
+            tty.shellIntegrationVersion = info.shellIntegrationVersion
         })
 
     }
@@ -297,6 +301,9 @@ extension ShellHookManager {
         
         let tty = self.tty(for: hash) ?? link(sessionId, hash, ttyDescriptor)
         tty.preexec()
+      
+        // Set version (used for checking compatibility)
+        tty.shellIntegrationVersion = info.shellIntegrationVersion
       
         // update keybuffer backing
         if (KeypressProvider.shared.keyBuffer(for: hash).backedByZLE) {
@@ -321,8 +328,21 @@ extension ShellHookManager {
         guard let sshIntegration = tty.integrations["ssh"] as? SSHIntegration else { return }
         sshIntegration.newConnection(with: info, in: tty)
       
+        // Set version (used for checking compatibility)
+        tty.shellIntegrationVersion = info.shellIntegrationVersion
+      
         KeypressProvider.shared.keyBuffer(for: hash).backedByZLE = false
 
+    }
+    
+    func clearKeybuffer(_ info: ShellMessage) {
+        guard let hash = attemptToFindToAssociatedWindow(for: info.session) else {
+             Logger.log(message: "Could not link to window on new shell session.", priority: .notify, subsystem: .tty)
+             return
+        }
+      
+        let keybuffer = KeypressProvider.shared.keyBuffer(for: hash)
+        keybuffer.buffer = ""
     }
   
     func updateKeybuffer(_ info: ShellMessage) {
@@ -331,8 +351,16 @@ extension ShellHookManager {
               return
           }
       
-      // prevents fig window from popping up if we don't have an associated process
-      guard tty[hash] != nil else {
+      // prevents fig window from popping up if we don't have an associated shell process
+      guard let tty = tty[hash], tty.isShell ?? false else {
+        return
+      }
+      
+      // Set version (used for checking compatibility)
+      tty.shellIntegrationVersion = info.shellIntegrationVersion
+      
+      // ignore events if secure keyboard is enabled
+      guard !SecureKeyboardInput.enabled else {
         return
       }
         

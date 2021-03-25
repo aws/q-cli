@@ -66,6 +66,23 @@ class Diagnostic {
     
     return location
   }
+  
+  static var installationScriptRan: Bool {
+    let dotfig = "\(NSHomeDirectory())/.fig"
+    let filesAndFolders = [
+                           "tmux", "ssh", // Integration setup files
+                           "fig.bash", "fig.fish", "fig.sh", "fig.zsh", // Shell Hooks
+                           "zle.zsh", "zle", // ZLE integration
+                           "tools", "tools/drip", "tools/drip/fig_onboarding.sh", "user/config", // Onboarding
+                           "autocomplete" // Autocomplete folder
+                          ]
+    
+    return filesAndFolders.reduce(true) { (exists, path) -> Bool in
+      var isDir : ObjCBool = false
+      return exists && FileManager.default.fileExists(atPath: "\(dotfig)/\(path)", isDirectory:&isDir)
+
+    }
+  }
     
   static var pathToBundle: String {
       return Bundle.main.bundlePath
@@ -192,6 +209,34 @@ class Diagnostic {
     return "Version \(Diagnostic.version) (B\(Diagnostic.build))"
   }
   
+  static var pseudoTerminalPath: String? {
+    return Settings.shared.getValue(forKey: Settings.ptyPathKey) as? String
+  }
+  
+  static var pseudoTerminalPathAppearsValid: Bool? {
+    guard let path = Diagnostic.pseudoTerminalPath else {
+      return nil
+    }
+    
+    return path.contains("/usr/bin")
+  }
+  
+  static var settingsExistAndHaveValidFormat: Bool {
+    return Settings.haveValidFormat
+  }
+  
+  static var dotfilesAreSymlinked: Bool {
+    let dotfiles = [".profile", ".bashrc", ".bash_profile", ".zshrc", ".zprofile", ".config/fish/config.fish", ".tmux.conf", ".ssh/config"]
+    
+    return dotfiles.reduce(false) { (existingSymlink, path) -> Bool in
+      guard !existingSymlink else {
+        return existingSymlink
+      }
+      
+      return (try? FileManager.default.destinationOfSymbolicLink(atPath: "\(NSHomeDirectory())/\(path)")) != nil
+    }
+  }
+  
   static var summary: String {
     get {
       """
@@ -200,6 +245,7 @@ class Diagnostic {
       UserShell: \(Defaults.userShell)
       Bundle path: \(Diagnostic.pathToBundle)
       Autocomplete: \(Defaults.useAutocomplete)
+      Settings.json: \(Diagnostic.settingsExistAndHaveValidFormat)
       CLI installed: \(Diagnostic.installedCLI)
       CLI tool path: \(Diagnostic.pathOfCLI ?? "<none>")
       Accessibility: \(Accessibility.enabled)
@@ -211,7 +257,10 @@ class Diagnostic {
       Hyper Integration: \(HyperIntegration.isInstalled)
       VSCode Integration: \(VSCodeIntegration.isInstalled)
       Docker Integration: \(DockerEventStream.shared.socket.isConnected)
+      Symlinked dotfiles: \(Diagnostic.dotfilesAreSymlinked)
       Only insert on tab: \(Defaults.onlyInsertOnTab)
+      Installation Script: \(Diagnostic.installationScriptRan)
+      PseudoTerminal Path: \(Diagnostic.pseudoTerminalPath ?? "<generated dynamically>")
       SecureKeyboardInput: \(Diagnostic.secureKeyboardInput)
       SecureKeyboardProcess: \(Diagnostic.blockingProcess ?? "<none>")
       Current active process: \(Diagnostic.processForTopmostWindow) (\(Diagnostic.processIdForTopmostWindow)) - \(Diagnostic.ttyDescriptorForTopmostWindow)

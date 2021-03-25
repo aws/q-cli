@@ -121,15 +121,15 @@ class FigCLI {
     static func initialPosition(with scope: Scope) {
         // this causes crashes!
         return;
-            
-        scope.webView.onLoad.append {
-              WebBridge.appInitialPosition(webview: scope.webView) { (position) in
-                // there is a crash that occurs here and I don't know why...
-                if (scope.companionWindow != nil) {
-                    scope.companionWindow.positioning = CompanionWindow.OverlayPositioning(rawValue:                     Int(position ?? "-1")! ) ?? scope.companionWindow.positioning
-                }
-              }
-          }
+//            
+//        scope.webView.onLoad.append {
+//              WebBridge.appInitialPosition(webview: scope.webView) { (position) in
+//                // there is a crash that occurs here and I don't know why...
+//                if (scope.companionWindow != nil) {
+//                    scope.companionWindow.positioning = CompanionWindow.OverlayPositioning(rawValue:                     Int(position ?? "-1")! ) ?? scope.companionWindow.positioning
+//                }
+//              }
+//          }
         
     }
     
@@ -313,7 +313,7 @@ class FigCLI {
             scope.companionWindow.windowManager.close(window:  scope.companionWindow)
             //run command on behalf of user
             let script =  "\(cmd.script!) \(flags.joined(separator: " "))"
-            ShellBridge.shared.socketServer.send(sessionId: scope.session ?? "", command: script)
+            ShellBridge.shared.socketServer.send(sessionId: scope.session, command: script)
 //            Timer.delayWithSeconds(0.15) {
 //                ShellBridge.injectStringIntoTerminal(script, runImmediately: true, completion: nil)
 //            }
@@ -334,7 +334,7 @@ class FigCLI {
     }
     
     static func printInTerminal(text: String, scope: Scope) {
-        var modified = Scope(cmd: scope.cmd,
+        let modified = Scope(cmd: scope.cmd,
                              stdin: scope.stdin,
                              options: [],
                              env: scope.env,

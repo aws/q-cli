@@ -208,6 +208,9 @@ class ShellBridgeSocketService: WebSocketService {
                         }
                         if let subcommand = msg.options?.first {
                             guard !subcommand.hasPrefix("bg:") else {
+                              // Move processing on to mainThread to fix large class of concurrency bugs
+                              DispatchQueue.main.async {
+
                                 switch subcommand {
                                 case "bg:event":
                                     if let event = msg.options?[safe: 1] {
@@ -237,6 +240,8 @@ class ShellBridgeSocketService: WebSocketService {
                                         ShellHookManager.shared.tmuxPaneChanged(msg)
                                     case "bg:hide":
                                         Autocomplete.hide()
+                                    case "bg:clear-keybuffer":
+                                        ShellHookManager.shared.clearKeybuffer(msg)
                                     case "bg:alert":
                                         if let title = msg.options?[safe: 1], let text = msg.options?[safe: 2]  {
                                             DispatchQueue.main.async {
@@ -248,8 +253,9 @@ class ShellBridgeSocketService: WebSocketService {
                                             Logger.log(message: "bg:alert requires <title> <text>")
                                         }
                                     default:
-                                        print("Uknown background command 'fig \(subcommand)'")
+                                        print("Unknown background command 'fig \(subcommand)'")
                                 }
+                              }
                                     
                                 from.send(message: "disconnect")
                                 return

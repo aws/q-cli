@@ -57,6 +57,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         let _ = KeypressProvider.shared
         let _ = AXWindowServer.shared
         let _ = DockerEventStream.shared
+        let _ = Settings.shared
 
         
         TelemetryProvider.register()
@@ -83,7 +84,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         handleUpdateIfNeeded()
         Defaults.useAutocomplete = true
         Defaults.deferToShellAutosuggestions = true
-        Defaults.autocompleteVersion = "v5"
+        Defaults.autocompleteVersion = "v6"
         Defaults.autocompleteWidth = 250
         Defaults.ignoreProcessList = ["figcli", "gitstatusd-darwin-x86_64"]
 
@@ -159,7 +160,11 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         setUpAccesibilityObserver()
         NotificationCenter.default.addObserver(self, selector: #selector(windowDidChange(_:)), name: AXWindowServer.windowDidChangeNotification, object: nil)
         
-        toggleLaunchAtStartup()
+        if let shouldLaunchOnStartup = Settings.shared.getValue(forKey: Settings.launchOnStartupKey) as? Bool {
+          LoginItems.shared.currentApplicationShouldLaunchOnStartup = shouldLaunchOnStartup
+        } else {
+          LoginItems.shared.currentApplicationShouldLaunchOnStartup = true
+        }
         
         iTermTabIntegration.listenForHotKey()
         AutocompleteContextNotifier.listenForUpdates()
@@ -379,7 +384,13 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
          action: #selector(AppDelegate.inviteToSlack),
          keyEquivalent: "")
         slack.image = NSImage(named: NSImage.Name("Slack"))//.resized(to: NSSize(width: 16, height: 16))
-        
+        statusBarMenu.addItem(NSMenuItem.separator())
+    
+        let invite = statusBarMenu.addItem(
+         withTitle: "Invite a friend...",
+         action: #selector(AppDelegate.inviteAFriend),
+         keyEquivalent: "")
+        invite.image = NSImage(named: NSImage.Name("invite"))
         statusBarMenu.addItem(NSMenuItem.separator())
 
         if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String, let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String {
@@ -399,30 +410,30 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         //        sidebar.indentationLevel = 1
         sidebar.state = Defaults.showSidebar ? .on : .off
         
-        let tab = debugMenu.addItem(
-        withTitle: "Only Autocomplete on Tab ",
-        action: #selector(AppDelegate.toggleOnlyTab(_:)),
-        keyEquivalent: "")
-        //        sidebar.indentationLevel = 1
-        tab.state = Defaults.onlyInsertOnTab ? .on : .off
+//        let tab = debugMenu.addItem(
+//        withTitle: "Only Autocomplete on Tab ",
+//        action: #selector(AppDelegate.toggleOnlyTab(_:)),
+//        keyEquivalent: "")
+//        //        sidebar.indentationLevel = 1
+//        tab.state = Defaults.onlyInsertOnTab ? .on : .off
       
         let statusInTitle = debugMenu.addItem(
-        withTitle: "Show fig status in title",
+        withTitle: "Show '☑ fig' in Terminal",
         action: #selector(AppDelegate.toggleFigIndicator(_:)),
         keyEquivalent: "")
         statusInTitle.state = AutocompleteContextNotifier.addIndicatorToTitlebar ? .on : .off
         debugMenu.addItem(NSMenuItem.separator())
         
-        debugMenu.addItem(withTitle: "Compatibility", action: nil, keyEquivalent: "")
+        debugMenu.addItem(withTitle: "Integrations", action: nil, keyEquivalent: "")
         
         let zshPlugin = debugMenu.addItem(
-        withTitle: "Fish / Zsh Autosuggest", //Defer to Shell Autosuggest
+        withTitle: "Fish Autosuggest", //Defer to Shell Autosuggest
         action: #selector(AppDelegate.toggleZshPlugin(_:)),
         keyEquivalent: "")
         zshPlugin.state = Defaults.deferToShellAutosuggestions ? .on : .off
         
         let iTermIntegration = debugMenu.addItem(
-        withTitle: "Setup iTerm Tab Integration",
+        withTitle: "iTerm Integration",
         action: #selector(AppDelegate.iTermSetup),
         keyEquivalent: "")
         iTermIntegration.state = FileManager.default.fileExists(atPath: "\(NSHomeDirectory())/Library/Application Support/iTerm2/Scripts/AutoLaunch/fig-iterm-integration.py") ? .on : .off
@@ -534,7 +545,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         debug.submenu = debugMenu
         
         statusBarMenu.addItem(NSMenuItem.separator())
-        let email = statusBarMenu.addItem(
+        statusBarMenu.addItem(
          withTitle: "Report a bug...", //✉️
          action: #selector(AppDelegate.sendFeedback),
          keyEquivalent: "")
@@ -634,14 +645,19 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     
     @objc func uninstall() {
         
-        let confirmed = self.dialogOKCancel(question: "Uninstall Fig?", text: "Are you sure you want to uninstall Fig?\nRunning this script will remove all local runbooks, completion specs and delete the app.\n\n You will need to source your shell profile in any currently running terminal sessions for changes to register (or restart your terminal app to trigger this automatically).", icon: NSImage(imageLiteralResourceName: NSImage.applicationIconName))
+        let confirmed = self.dialogOKCancel(question: "Uninstall Fig?", text: "You will need to restart any currently running terminal sessions.", icon: NSImage(imageLiteralResourceName: NSImage.applicationIconName))
         
         if confirmed {
             TelemetryProvider.track(event: .uninstallApp, with: [:])
+          
+            ShellHookManager.shared.ttys().forEach { (pair) in
+               let (_, tty) = pair
+               tty.setTitle("Restart this terminal to finish uninstalling Fig...")
+            }
 
             if let general = Bundle.main.path(forResource: "uninstall", ofType: "sh") {
                 NSWorkspace.shared.open(URL(string: "https://withfig.com/uninstall?email=\(Defaults.email ?? "")")!)
-                toggleLaunchAtStartup(shouldBeOff: true)
+                LoginItems.shared.currentApplicationShouldLaunchOnStartup = false
                 
                 let domain = Bundle.main.bundleIdentifier!
                 let uuid = Defaults.uuid
@@ -668,6 +684,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     }
     
     @objc func setupScript() {
+        TelemetryProvider.track(event: .runInstallationScript, with: [:])
         Onboarding.setUpEnviroment()
     }
     
@@ -842,6 +859,47 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         TelemetryProvider.track(event: .joinSlack, with: [:])
 
     }
+  
+    @objc func inviteAFriend() {
+      
+      guard let email = Defaults.email else {
+        Alert.show(title: "You are not logged in!", message: "Run `fig util:logout` and try again.", icon: Alert.appIcon)
+        return
+      }
+      
+      TelemetryProvider.track(event: .inviteAFriend, with: [:])
+      
+      let request = URLRequest(url: Remote.API.appendingPathComponent("/waitlist/get-referral-link-from-email/\(email)"))
+      let task = URLSession.shared.dataTask(with: request) { (data, res, err) in
+        DispatchQueue.main.async {
+
+          guard let data = data else {
+              Alert.show(title: "Could not retrieve referral link!",
+                         message: "Please contact hello@withfig.com and we will get you a working referral link.",
+                         icon: Alert.appIcon)
+              return
+          }
+        
+          let link = String(decoding: data, as: UTF8.self)
+          
+          NSPasteboard.general.clearContents()
+          NSPasteboard.general.setString(link, forType: .string)
+
+          let openInBrowser = Alert.show(title: "Thank you for sharing Fig!",
+                                         message: "Your invite link has been copied to your clipboard!\n\n\(link)",
+                                         okText: "Open in browser...",
+                                         icon: Alert.appIcon,
+                                         hasSecondaryOption: true)
+          
+          if openInBrowser, let url = URL(string: link) {
+            NSWorkspace.shared.open(url)
+          }
+        }
+      }
+
+      task.resume()
+
+    }
     
     @objc func viewDocs() {
         
@@ -850,9 +908,11 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     }
 
     @objc func getKeyboardLayout() {
-        let v = KeyboardLayout.shared.keyCode(for: "V")
-        let e = KeyboardLayout.shared.keyCode(for: "E")
-        let u = KeyboardLayout.shared.keyCode(for: "U")
+        guard let v = KeyboardLayout.shared.keyCode(for: "V"),
+          let e = KeyboardLayout.shared.keyCode(for: "E"),
+          let u = KeyboardLayout.shared.keyCode(for: "U") else {
+            return
+      }
 
         print("v=\(v); e=\(e); u=\(u)")
 //        for var i in 0...100 {
@@ -886,7 +946,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             
 
         NSEvent.addGlobalMonitorForEvents(matching: .keyUp) { (event) in
-            print("keylogger:", event.characters, event.keyCode)
+            print("keylogger:", event.characters ?? "", event.keyCode)
 //        let touple = KeystrokeBuffer.shared.handleKeystroke(event: event)
 //            guard touple != nil else {
 //                WindowManager.shared.requestWindowUpdate()
@@ -902,13 +962,13 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         } else {
 //            AXUIElement
           var names: CFArray?
-          let namesError = AXUIElementCopyAttributeNames(focusedElement as! AXUIElement, &names)
-          print(names)
+          _ = AXUIElementCopyAttributeNames(focusedElement as! AXUIElement, &names)
+          print(names as Any)
 
           var parametrizedNames: CFArray?
-          let parametrizedNamesError = AXUIElementCopyParameterizedAttributeNames(focusedElement as! AXUIElement, &parametrizedNames)
-          print(parametrizedNames)
-          KeypressProvider.shared.getTextRect()
+          _ = AXUIElementCopyParameterizedAttributeNames(focusedElement as! AXUIElement, &parametrizedNames)
+          print(parametrizedNames as Any)
+          //KeypressProvider.shared.getTextRect()
 //          var markerRange : AnyObject?
 //          let markerError = AXUIElementCopyAttributeValue(focusedElement as! AXUIElement, "AXSelectedTextMarkerRange" as CFString, &markerRange)
 ////          var markerRangeValue : AnyObject?
@@ -970,12 +1030,12 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 
     @objc func addAccesbilityObserver() {
         let first = WindowServer.shared.topmostWindow(for: NSWorkspace.shared.frontmostApplication!)!
-        print(first.bundleId)
+        print(first.bundleId ?? "?")
         let axErr = AXObserverCreate(first.app.processIdentifier, { (observer: AXObserver, element: AXUIElement, notificationName: CFString, refcon: UnsafeMutableRawPointer?) -> Void in
                 print("axobserver:", notificationName)
                 print("axobserver:", element)
                 print("axobserver:", observer)
-                print("axobserver:", refcon)
+                print("axobserver:", refcon as Any)
 
 //            WindowManager.shared.requestWindowUpdate()
             
@@ -1006,7 +1066,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         
         //[[NSRunLoop currentRunLoop] getCFRunLoop]
         print(axErr)
-        print(observer)
+        print(observer as Any)
         CFRunLoopAddSource(CFRunLoopGetCurrent(), AXObserverGetRunLoopSource(observer!), CFRunLoopMode.defaultMode);
         
 
@@ -1133,79 +1193,11 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
        }
     }
     
-    
+    @available(macOS, deprecated: 10.11)
     @objc func applicationIsInStartUpItems() -> Bool {
-      return itemReferencesInLoginItems().existingReference != nil
+      return LoginItems.shared.includesCurrentApplication
     }
 
-    func toggleLaunchAtStartup(shouldBeOff: Bool = false) {
-      let itemReferences = itemReferencesInLoginItems()
-      let shouldBeToggled = (itemReferences.existingReference == nil)
-      let loginItemsRef = LSSharedFileListCreate(
-        nil,
-        kLSSharedFileListSessionLoginItems.takeRetainedValue(),
-        nil
-      ).takeRetainedValue() as LSSharedFileList?
-      
-      if loginItemsRef != nil {
-        if shouldBeToggled {
-            let appUrl = NSURL.fileURL(withPath: Bundle.main.bundlePath) as CFURL
-            LSSharedFileListInsertItemURL(loginItemsRef, itemReferences.lastReference, nil, nil, appUrl, nil, nil)
-            print("Application was added to login items")
-        }
-        else if (shouldBeOff) {
-          if let itemRef = itemReferences.existingReference {
-            LSSharedFileListItemRemove(loginItemsRef,itemRef);
-            print("Application was removed from login items")
-          }
-        }
-      }
-    }
-
-    func itemReferencesInLoginItems() -> (existingReference: LSSharedFileListItem?, lastReference: LSSharedFileListItem?) {
-        
-        var itemUrl = UnsafeMutablePointer<Unmanaged<CFURL>?>.allocate(capacity: 1)
-
-        let appUrl = NSURL(fileURLWithPath: Bundle.main.bundlePath)
-        let loginItemsRef = LSSharedFileListCreate(
-          nil,
-          kLSSharedFileListSessionLoginItems.takeRetainedValue(),
-          nil
-        ).takeRetainedValue() as LSSharedFileList?
-        
-        if loginItemsRef != nil {
-          let loginItems = LSSharedFileListCopySnapshot(loginItemsRef, nil).takeRetainedValue() as NSArray
-          print("There are \(loginItems.count) login items")
-          
-          if(loginItems.count > 0) {
-            let lastItemRef = loginItems.lastObject as! LSSharedFileListItem
-        
-            for i in 0...loginItems.count-1 {
-                let currentItemRef = loginItems.object(at: i) as! LSSharedFileListItem
-              
-              if LSSharedFileListItemResolve(currentItemRef, 0, itemUrl, nil) == noErr {
-                if let urlRef: NSURL = itemUrl.pointee?.takeRetainedValue() {
-                    print("URL Ref: \(urlRef.lastPathComponent ?? "")")
-                  if urlRef.isEqual(appUrl) {
-                    return (currentItemRef, lastItemRef)
-                  }
-                }
-              }
-              else {
-                print("Unknown login application")
-              }
-            }
-            // The application was not found in the startup list
-            return (nil, lastItemRef)
-            
-          } else  {
-            let addatstart: LSSharedFileListItem = kLSSharedFileListItemBeforeFirst.takeRetainedValue()
-            return(nil,addatstart)
-          }
-      }
-      
-      return (nil, nil)
-    }
     
     @objc func quit() {
         
@@ -1462,7 +1454,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     }
     @objc func triggerScreenReader() {
       VSCodeIntegration.install(inBackground: true) {
-        self.dialogOKCancel(question: "VSCode Integration Installed!", text: "The Fig extension was successfully added to VSCode.", noAction: true)
+        Alert.show(title: "VSCode Integration Installed!", message: "The Fig extension was successfully added to VSCode.", hasSecondaryOption: false)
 //      if let app = AXWindowServer.shared.topApplication, let window = AXWindowServer.shared.topWindow {
 //        print("Triggering ScreenreaderMode in \(app.bundleIdentifier ?? "<unknown>")")
 //        Accessibility.triggerScreenReaderModeInChromiumApplication(app)
@@ -1894,6 +1886,12 @@ extension AppDelegate : NSMenuDelegate {
                     legend.addItem(NSMenuItem(title: "Restart Fig", action: #selector(restart), keyEquivalent: ""))
 
 
+                } else if (!Diagnostic.installationScriptRan) {
+                    color = .red
+                    legend.addItem(NSMenuItem(title: "~/.fig directory is misconfigured", action: nil, keyEquivalent: ""))
+                    legend.addItem(NSMenuItem.separator())
+                    legend.addItem(NSMenuItem(title: "Re-run Install Script", action: #selector(setupScript), keyEquivalent: ""))
+                  
                 } else if (SecureKeyboardInput.enabled) {
                     
                     color = .systemPink
@@ -1934,15 +1932,19 @@ extension AppDelegate : NSMenuDelegate {
                     color = .cyan
                     legend.addItem(NSMenuItem(title: "Running proccess (\(tty?.cmd ?? "(???)")) is not a shell.", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem.separator())
-                    legend.addItem(NSMenuItem(title: "Exit current process", action: nil, keyEquivalent: ""))
+                    legend.addItem(NSMenuItem(title: "Fix: exit current process", action: nil, keyEquivalent: ""))
+                    legend.addItem(NSMenuItem.separator())
                     legend.addItem(NSMenuItem(title: "Force Reset", action: #selector(forceUpdateTTY), keyEquivalent: ""))
-                    legend.addItem(NSMenuItem(title: "Add to whitelist", action: #selector(addProcessToWhitelist), keyEquivalent: ""))
+                    legend.addItem(NSMenuItem(title: "Add as Shell", action: #selector(addProcessToWhitelist), keyEquivalent: ""))
                     legend.addItem(NSMenuItem.separator())
                     legend.addItem(NSMenuItem(title: "Ignore", action: #selector(addProcessToIgnorelist), keyEquivalent: ""))
                     legend.addItem(NSMenuItem.separator())
                     legend.addItem(NSMenuItem(title: "window: \(window?.hash ?? "???")", action: nil, keyEquivalent: ""))
                 } else {
                     color = .green
+                  
+                    let path = Diagnostic.pseudoTerminalPathAppearsValid
+                  
                     legend.addItem(NSMenuItem(title: "Everything should be working.", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem.separator())
                     legend.addItem(NSMenuItem(title: "window: \(window?.hash.truncate(length: 15, trailing: "...") ?? "???")", action: nil, keyEquivalent: ""))
@@ -1950,7 +1952,8 @@ extension AppDelegate : NSMenuDelegate {
                     legend.addItem(NSMenuItem(title: "cwd: \(tty?.cwd ?? "???")", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem(title: "pid: \(tty?.pid ?? -1)", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem(title: "keybuffer: \(bufferDescription ?? "???")", action: nil, keyEquivalent: ""))
-                  
+                    legend.addItem(NSMenuItem(title: "path: \( path != nil ? (path! ? "☑" : "☒ ") : "<generated dynamically>")", action: nil, keyEquivalent: ""))
+
                     if runUsingPrefix != nil {
                       legend.addItem(NSMenuItem.separator())
                       legend.addItem(NSMenuItem(title: "In SSH session or Docker container", action: nil, keyEquivalent: ""))
@@ -2002,9 +2005,17 @@ extension AppDelegate : NSMenuDelegate {
             self.integrationPrompt = nil
         }
       
+      if !Diagnostic.installationScriptRan {
+        let item = NSMenuItem(title: "Rerun Install Script", action: #selector(AppDelegate.setupScript) , keyEquivalent: "")
+         item.image = NSImage(named: NSImage.Name("alert"))
+            menu.insertItem(item, at: 1)
+            self.integrationPrompt = item
+          return
+       }
+      
       if let app = NSWorkspace.shared.frontmostApplication,
         !app.isFig,
-        let provider = Integrations.providers[app.bundleIdentifier ?? ""] as? IntegrationProvider.Type,
+        let provider = Integrations.providers[app.bundleIdentifier ?? ""],
         !provider.isInstalled {
     
         
@@ -2032,7 +2043,7 @@ extension AppDelegate : NSMenuDelegate {
     }
   
   @objc func installIntegrationForFrontmostApp() {
-    if let app = NSWorkspace.shared.frontmostApplication, let provider = Integrations.providers[app.bundleIdentifier ?? ""] as? IntegrationProvider.Type, !provider.isInstalled {
+    if let app = NSWorkspace.shared.frontmostApplication, let provider = Integrations.providers[app.bundleIdentifier ?? ""], !provider.isInstalled {
       
         provider.promptToInstall(completion: nil)
       

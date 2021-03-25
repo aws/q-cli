@@ -338,6 +338,29 @@ let setup = function(window) {
         backspace: function() {
           fig.private({ type: "key", data: {code: "51"}})
         }
+      },
+      
+      updateSettings(settingsStr) {
+        let settings = JSON.parse(settingsStr)
+        fig["_settings"] = settings
+        fig.settings = {}
+        let keys = Object.keys(settings)
+        keys.forEach(key => {
+            Object.defineProperty(fig.settings, key, {
+              get : function () {
+                  return fig[`_settings`][key];
+              },
+              set : function (value) {
+                  var val =  JSON.stringify(value) //typeof a === "object" ? JSON.stringify(value) : `${value}`
+                  fig.private({ type: "settings", data: { key, value: val } })
+                  if (fig.debug) { console.log("SET:", key, value) }
+                  fig[`_settings`][key] = value;
+              }
+            })
+        })
+                     
+        // provide fig hook
+        try { fig.settingsDidChange(settings) } catch (e) {}
       }
   }
     

@@ -61,6 +61,59 @@ if arguments.count > 1 {
         }
         
         exit(0)
+    } else if command == "settings" {
+      guard var settings = Settings.loadFromFile() else {
+        exit(0)
+      }
+      
+      if (arguments.count == 2) {
+        settings.keys.forEach { (key) in
+          print(key)
+        }
+        exit(0)
+      }
+
+      
+      let key = arguments[2]
+      if arguments.count == 3 { // fig settings key --> Read value
+        guard let value = settings[key] else {
+          print("No value associated with '\(key)'.")
+          exit(0)
+        }
+        // todo: better formatting for dicts, recursive objects
+        switch value {
+        case is NSArray:
+          (value as! NSArray).forEach { (item) in
+            print(item)
+          }
+        case is Bool:
+          print( (value as! Bool) ? "true" : "false" )
+        default:
+            print(value)
+        }
+      } else { // fig settings key value --> Write value to key
+          let value = arguments[3]
+          
+          guard var data = value.data(using: .utf8) else { exit(1) }
+          var json = try? JSONSerialization.jsonObject(with: data, options: .allowFragments)
+          let isSerializable = json != nil
+          
+          if !isSerializable {
+              data = "\"\(value)\"".data(using: .utf8)!
+              json = try? JSONSerialization.jsonObject(with: data, options: .allowFragments)
+          }
+          
+          if json != nil {
+              settings[key] = json
+              Settings.serialize(settings: settings)
+          } else {
+              print("Could not write '\(arguments[3])' to key '\(key)'")
+          }
+        
+      }
+      
+      exit(0)
+
     }
 }
 

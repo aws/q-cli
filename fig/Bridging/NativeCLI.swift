@@ -49,6 +49,8 @@ class NativeCLI {
         case pty = "debug:pty"
         case debugApp = "debug:app"
         case debugSSH = "debug:ssh"
+        case debugProcesses = "debug:ps"
+        case debugDotfiles = "debug:dotfiles"
         case electronAccessibility = "util:axelectron"
 
         var isUtility: Bool {
@@ -82,6 +84,8 @@ class NativeCLI {
                                                            .hyper,
                                                            .pty,
                                                            .debugApp,
+                                                           .debugProcesses,
+                                                           .debugDotfiles,
                                                            .electronAccessibility,
                                                            .docs]
                return implementatedNatively.contains(self)
@@ -129,6 +133,10 @@ class NativeCLI {
                 NativeCLI.debugAppCommand(scope)
             case .electronAccessibility:
                 NativeCLI.electronAccessibilityCommand(scope)
+            case .debugProcesses:
+                NativeCLI.debugProcessCommand(scope)
+            case .debugDotfiles:
+                NativeCLI.debugDotfilesCommand(scope)
             default:
                 break;
             }
@@ -315,13 +323,13 @@ extension NativeCLI {
 
         NativeCLI.printInTerminal("→ Send any bugs or feedback directly to the Fig team!", using: connection)
         connection.send(message: "disconnect")
-        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "-1"
+        // let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "-1"
                 
-        let tracked = KeypressProvider.shared.buffers.keys.map { (hash) -> (TTY?, String?) in
-            let proc = ShellHookManager.shared.tty(for: hash)
-            let buffer = KeypressProvider.shared.keyBuffer(for: hash).representation
-            return (proc, buffer)
-        }
+        // let tracked = KeypressProvider.shared.buffers.keys.map { (hash) -> (TTY?, String?) in
+        //    let proc = ShellHookManager.shared.tty(for: hash)
+        //    let buffer = KeypressProvider.shared.keyBuffer(for: hash).representation
+        //    return (proc, buffer)
+        // }
         let env = message.env?.jsonStringToDict()
         let path = env?["PATH"] as? String
         let figIntegratedWithShell = env?["FIG_ENV_VAR"] as? String
@@ -435,6 +443,32 @@ extension NativeCLI {
         } else {
           NativeCLI.printInTerminal("\n› Could not find Electron app!\n", using: connection)
         }
+    }
+  
+    static func debugProcessCommand(_ scope: Scope) {
+        let (message, connection) = scope
+      let ps = ProcessStatus.getProcesses(for: String(message.arguments[safe: 0]?.split(separator:"/").last ?? "")).map { return "\($0.pid) \($0.tty ?? "?")   \($0.cmd) \($0._cwd ?? "?")" }.joined(separator: "\n")
+      
+        
+        NativeCLI.printInTerminal(ps, using: connection)
+    }
+  
+    static func debugDotfilesCommand(_ scope: Scope) {
+        let (_, connection) = scope
+      
+        let dotfiles = [".profile", ".bashrc", ".bash_profile", ".zshrc", ".zprofile", ".config/fish/config.fish", ".tmux.conf", ".ssh/config"]
+
+        let print = dotfiles.map({ (path) -> String in
+          let fullPath = "\(NSHomeDirectory())/\(path)"
+          let exists = FileManager.default.fileExists(atPath: fullPath)
+          let symlink = (try? FileManager.default.destinationOfSymbolicLink(atPath: fullPath))
+          let contents = try? String(contentsOf: URL(fileURLWithPath:symlink ?? fullPath))
+          
+          return "\(exists ? (contents?.contains("~/.fig") ?? false ? "✅" : "❌") : "❔") ~/\(path)\(symlink != nil ? " -> \(symlink!)" : "")"
+        }).joined(separator: "\n")
+
+
+        NativeCLI.printInTerminal(print, using: connection)
     }
 }
 

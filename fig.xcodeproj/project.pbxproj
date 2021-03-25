@@ -96,7 +96,12 @@
 		75675976244634B2006AA988 /* figUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75675975244634B2006AA988 /* figUITests.swift */; };
 		756759972446C44C006AA988 /* String+Shell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756759962446C44C006AA988 /* String+Shell.swift */; };
 		756759D424498CA0006AA988 /* WebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756759D324498CA0006AA988 /* WebViewController.swift */; };
+		7568203126003BDF0006FE78 /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7568203026003BDF0006FE78 /* Settings.swift */; };
 		756C4D832542A6D30035B467 /* Starscream in Frameworks */ = {isa = PBXBuildFile; productRef = 756C4D822542A6D30035B467 /* Starscream */; };
+		7573F1582601927200C833FA /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7573F1572601927200C833FA /* Settings.swift */; };
+		7573F15B2602B4E000C833FA /* alert@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7573F1592602B4E000C833FA /* alert@2x.png */; };
+		7573F15C2602B4E000C833FA /* invite@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7573F15A2602B4E000C833FA /* invite@2x.png */; };
+		7573F160260BC71000C833FA /* LoginItems.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7573F15F260BC70F00C833FA /* LoginItems.swift */; };
 		7577124725648DFB0011FF48 /* ps.c in Sources */ = {isa = PBXBuildFile; fileRef = 7577124625648DFB0011FF48 /* ps.c */; };
 		757712492564D94A0011FF48 /* ProcessStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757712482564D9490011FF48 /* ProcessStatus.swift */; };
 		757CA86724859461002A64A8 /* AppMover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757CA86624859461002A64A8 /* AppMover.swift */; };
@@ -354,6 +359,12 @@
 		75675977244634B2006AA988 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		756759962446C44C006AA988 /* String+Shell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+Shell.swift"; sourceTree = "<group>"; };
 		756759D324498CA0006AA988 /* WebViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewController.swift; sourceTree = "<group>"; };
+		7568203026003BDF0006FE78 /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
+		7573F1572601927200C833FA /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
+		7573F1592602B4E000C833FA /* alert@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "alert@2x.png"; sourceTree = "<group>"; };
+		7573F15A2602B4E000C833FA /* invite@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "invite@2x.png"; sourceTree = "<group>"; };
+		7573F15F260BC70F00C833FA /* LoginItems.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginItems.swift; sourceTree = "<group>"; };
+		7573F161260BEF7F00C833FA /* figRelease.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = figRelease.entitlements; sourceTree = "<group>"; };
 		7577124525648DCD0011FF48 /* ps.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ps.h; sourceTree = "<group>"; };
 		7577124625648DFB0011FF48 /* ps.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ps.c; sourceTree = "<group>"; };
 		757712482564D9490011FF48 /* ProcessStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessStatus.swift; sourceTree = "<group>"; };
@@ -579,6 +590,8 @@
 			isa = PBXGroup;
 			children = (
 				75A4A29725C8D855002EFD6B /* commit@2x.png */,
+				7573F1592602B4E000C833FA /* alert@2x.png */,
+				7573F15A2602B4E000C833FA /* invite@2x.png */,
 				75A4A29625C8D855002EFD6B /* git@2x.png */,
 				75A4A29525C8D855002EFD6B /* node@2x.png */,
 				759F987D25BFF0FD00EC3407 /* box@2x.png */,
@@ -607,6 +620,7 @@
 				758AEB6B24CEA54600A15EAF /* SocketServer.swift */,
 				758AEB5F24CE529D00A15EAF /* String+Shell.swift */,
 				758AEB5D24CD35D400A15EAF /* WebSocket.swift */,
+				7573F1572601927200C833FA /* Settings.swift */,
 			);
 			path = figcli;
 			sourceTree = "<group>";
@@ -678,6 +692,7 @@
 				759F987B25BF903900EC3407 /* Accessibility.swift */,
 				751C3BEB24B6910800B5C7FD /* Remote.swift */,
 				751C3BED24B6915000B5C7FD /* Defaults.swift */,
+				7568203026003BDF0006FE78 /* Settings.swift */,
 				75E993F12515A6DD000BE6BE /* statusbar@2x.png */,
 				755D0DE1247EFAE10074AB5C /* Logging.swift */,
 				75809B0D24BFA64D00BFFB3E /* TelemetryService.swift */,
@@ -688,6 +703,7 @@
 				75AEF2E925C4C34D00D78431 /* SecureKeyboardInput.swift */,
 				752D71CE25B8CA4000263527 /* iTermTabIntegration.swift */,
 				75DA86A225EDB05100722F1D /* Integrations.swift */,
+				7573F15F260BC70F00C833FA /* LoginItems.swift */,
 				75DA86A425EEBD7400722F1D /* Alert.swift */,
 				75EDDC4F25D2473C003AECC6 /* Hyper */,
 				752A398725CD0FFB00B1AC40 /* VSCode */,
@@ -704,6 +720,7 @@
 				7567595D244634B2006AA988 /* Main.storyboard */,
 				75675960244634B2006AA988 /* Info.plist */,
 				75675961244634B2006AA988 /* fig.entitlements */,
+				7573F161260BEF7F00C833FA /* figRelease.entitlements */,
 				7567595A244634B2006AA988 /* Preview Content */,
 				752A398825CD11F000B1AC40 /* System */,
 				75AA24C225A6E50000A51E9D /* CLI Scripts */,
@@ -1118,6 +1135,7 @@
 				757CA895248B291E002A64A8 /* permissions.html in Resources */,
 				754D31B525759D900020CED4 /* tutorial.html in Resources */,
 				752D71C725AECB4B00263527 /* ssh.mp4 in Resources */,
+				7573F15C2602B4E000C833FA /* invite@2x.png in Resources */,
 				75D2E3CB249C1E7500607F66 /* terminal.css in Resources */,
 				757CA88A248AD58C002A64A8 /* onboarding.html in Resources */,
 				757CA89B248C18F1002A64A8 /* done.html in Resources */,
@@ -1125,6 +1143,7 @@
 				757CA899248C10AD002A64A8 /* fonts in Resources */,
 				757CA893248B28E3002A64A8 /* landing.html in Resources */,
 				75B0A08625BB94DF00FCD89A /* debugger-only.mp4 in Resources */,
+				7573F15B2602B4E000C833FA /* alert@2x.png in Resources */,
 				755D0DE4247F038B0074AB5C /* logs.html in Resources */,
 				75A4A29A25C8D855002EFD6B /* commit@2x.png in Resources */,
 				752D71C525AE9B7200263527 /* ssh.html in Resources */,
@@ -1201,6 +1220,7 @@
 				758AEB6C24CEA54600A15EAF /* SocketServer.swift in Sources */,
 				751F7591246E16D800E083C8 /* main.swift in Sources */,
 				758AEB5E24CD35D400A15EAF /* WebSocket.swift in Sources */,
+				7573F1582601927200C833FA /* Settings.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1232,6 +1252,7 @@
 				7510F89D24A6910500E86F7C /* Utilities.swift in Sources */,
 				7510F8B424A6910500E86F7C /* Colors.swift in Sources */,
 				7510F8B624A6910500E86F7C /* Position.swift in Sources */,
+				7568203126003BDF0006FE78 /* Settings.swift in Sources */,
 				75E993F52517E226000BE6BE /* AXWindowServer.swift in Sources */,
 				75C07124244BE45A002DF69F /* CompanionWindow.swift in Sources */,
 				75C07122244BB65D002DF69F /* ShellBridge.swift in Sources */,
@@ -1252,6 +1273,7 @@
 				7510F8A624A6910500E86F7C /* iOSAccessoryView.swift in Sources */,
 				75AEF2EE25C5062E00D78431 /* WindowObserver.swift in Sources */,
 				75675955244634AD006AA988 /* AppDelegate.swift in Sources */,
+				7573F160260BC71000C833FA /* LoginItems.swift in Sources */,
 				75AEF2E425C3C34A00D78431 /* Diagnostic.swift in Sources */,
 				75A4A2A025CA0D46002EFD6B /* Autocomplete.swift in Sources */,
 				7510F89924A6910500E86F7C /* TerminalViewDelegate.swift in Sources */,
@@ -1351,9 +1373,9 @@
 		751F7593246E16D800E083C8 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
 				DEVELOPMENT_TEAM = D93PPD94WK;
 				EMBED_ASSET_PACKS_IN_PRODUCT_BUNDLE = NO;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
@@ -1368,9 +1390,9 @@
 		751F7594246E16D800E083C8 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
-				CODE_SIGN_IDENTITY = "-";
-				CODE_SIGN_STYLE = Automatic;
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
+				CODE_SIGN_IDENTITY = "Developer ID Application";
+				CODE_SIGN_STYLE = Manual;
 				DEVELOPMENT_TEAM = D93PPD94WK;
 				EMBED_ASSET_PACKS_IN_PRODUCT_BUNDLE = NO;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
@@ -1505,9 +1527,10 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = fig/fig.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = YES;
+				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 149;
+				CURRENT_PROJECT_VERSION = 162;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				DEVELOPMENT_TEAM = D93PPD94WK;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1523,7 +1546,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MARKETING_VERSION = 1.0.37;
+				MARKETING_VERSION = 1.0.38;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mschrage.fig;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1539,11 +1562,11 @@
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = fig/fig.entitlements;
-				CODE_SIGN_IDENTITY = "-";
-				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_ENTITLEMENTS = fig/figRelease.entitlements;
+				CODE_SIGN_IDENTITY = "Developer ID Application";
+				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 149;
+				CURRENT_PROJECT_VERSION = 162;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				DEVELOPMENT_TEAM = D93PPD94WK;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1559,7 +1582,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MARKETING_VERSION = 1.0.37;
+				MARKETING_VERSION = 1.0.38;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mschrage.fig;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";

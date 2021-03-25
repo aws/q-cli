@@ -592,8 +592,8 @@ extension WindowManager : WindowManagementService {
             // this keeps Fig windows open by default when Fig is the active apps,
             // which makes sense most of the time
             // but there are some issues here. Probably need a condition tying the current parentWindow id to previous whitelisted window.
-            print("shouldAppear: [\(bundleId)] Fig active & not explicitly positioned")
-            return false
+            //print("shouldAppear: [\(bundleId)] Fig active & not explicitly positioned")
+            //return false
         } else {
             print("shouldAppear: [\(bundleId)] Not on whitelist")
             return false

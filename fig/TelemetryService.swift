@@ -54,6 +54,8 @@ enum TelemetryEvent: String {
     case showSecureInputEnabledAlert = "Show Secure Input Enabled Alert"
     case openSecureInputSupportPage = "Open Secure Input Support Page"
     case openedFigMenuIcon = "Opened Fig Menu Icon"
+    case inviteAFriend = "Prompt to Invite"
+    case runInstallationScript = "Running Installation Script"
 
 
 }

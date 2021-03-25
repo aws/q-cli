@@ -9,6 +9,7 @@
 struct proc {
   let pid: pid_t
   let cmd: String
+  let tty: String?
   var name: String {
     return String(cmd.split(separator: "/").last ?? "")
   }
@@ -18,12 +19,14 @@ struct proc {
     let tokens = line.split(separator: " ")
     pid = Int32(String(tokens[1])) ?? -1
     cmd = tokens.suffix(from: 2).joined(separator: " ")
+    tty = nil
   }
   
-  init(pid: pid_t, cmd: String, cwd: String) {
+  init(pid: pid_t, cmd: String, cwd: String, tty: String) {
     self.pid = pid
     self.cmd = cmd
     self._cwd = cwd
+    self.tty = tty
   }
   
   var cwd: String? {
@@ -51,7 +54,10 @@ struct proc {
 
 class TTY {
   static let processUpdated: NSNotification.Name = .init("processUpdated")
-
+  
+  // set from $FIG_INTEGRATION_VERSION
+  var shellIntegrationVersion: Int?
+  
   let descriptor: String
   var runUsingPrefix: String? = nil
   var pty: PseudoTerminalHelper? = nil
