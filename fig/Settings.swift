@@ -97,6 +97,9 @@ class Settings {
        currentSettings = settings
        NotificationCenter.default.post(Notification(name: Settings.settingsUpdatedNotification))
     } else {
+      
+      // Don't show prompt if file is deleted, mainly because it is confusing in the uninstall flow
+      guard FileManager.default.fileExists(atPath: Settings.filePath) else { return }
       DispatchQueue.main.async {
           let _ = Alert.show(title: "Fig's settings can not be parsed.",
                              message: "An error occured while reading the Fig settings file stored at ~/.fig/settings.json\n\nPlease make sure this file is valid JSON.",
