@@ -80,6 +80,10 @@ cat $TMUX_CONFIG_PATH | sed -e '\|'"$TMUX_START"'|,\|'"$TMUX_END"'|d' > $TMUX_TM
 
 mv $TMUX_TMP_PATH $TMUX_CONFIG_PATH
 
+echo "Remove Hyper plugin, if it exists"
+HYPER_CONFIG=~/.hyper.js
+test -f $HYPER_CONFIG && sed -i '' -e 's/"fig-hyper-integration",//g' $HYPER_CONFIG
+test -f $HYPER_CONFIG && sed -i '' -e 's/"fig-hyper-integration"//g' $HYPER_CONFIG
 
 #fig bg:event "Uninstall App"
 echo "Finished removing fig resources. You may now delete the Fig app by moving it to the Trash."
