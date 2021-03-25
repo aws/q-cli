@@ -160,7 +160,11 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         setUpAccesibilityObserver()
         NotificationCenter.default.addObserver(self, selector: #selector(windowDidChange(_:)), name: AXWindowServer.windowDidChangeNotification, object: nil)
         
-         LoginItems.shared.currentApplicationShouldLaunchOnStartup = true
+        if let shouldLaunchOnStartup = Settings.shared.getValue(forKey: Settings.launchOnStartupKey) as? Bool {
+          LoginItems.shared.currentApplicationShouldLaunchOnStartup = shouldLaunchOnStartup
+        } else {
+          LoginItems.shared.currentApplicationShouldLaunchOnStartup = true
+        }
         
         iTermTabIntegration.listenForHotKey()
         AutocompleteContextNotifier.listenForUpdates()
