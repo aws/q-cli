@@ -15,6 +15,8 @@ class Settings {
   static let sshCommand = "ssh.commandPrefix"
   static let launchOnStartupKey = "app.launchOnStartup"
   static let telemetryDisabledKey = "app.disableTelemetry"
+  static let autocompleteWidth = "autocomplete.width"
+  static let autocompleteHeight = "autocomplete.height"
 
   static let filePath = NSHomeDirectory() + "/.fig/settings.json"
   static let shared = Settings()
