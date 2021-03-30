@@ -30,10 +30,10 @@ INSTALLATION1="#### FIG ENV VARIABLES ####"
 INSTALLATION2="\[ -s ~/.fig/fig.sh \] && source ~/.fig/fig.sh"
 INSTALLATION3="#### END FIG ENV VARIABLES ####"
 
-sed -i '' -e "s/$INSTALLATION1//g" ~/.profile ~/.zprofile ~/.bash_profile ~/.bashrc ~/.zshrc
+/usr/bin/sed -i '' -e "s/$INSTALLATION1//g" ~/.profile ~/.zprofile ~/.bash_profile ~/.bashrc ~/.zshrc
 # change delimeter to '#' in order to escape '/'
-sed -i '' -e "s#$INSTALLATION2##g" ~/.profile ~/.zprofile ~/.bash_profile ~/.bashrc ~/.zshrc
-sed -i '' -e "s/$INSTALLATION3//g" ~/.profile ~/.zprofile ~/.bash_profile ~/.bashrc ~/.zshrc
+/usr/bin/sed -i '' -e "s#$INSTALLATION2##g" ~/.profile ~/.zprofile ~/.bash_profile ~/.bashrc ~/.zshrc
+/usr/bin/sed -i '' -e "s/$INSTALLATION3//g" ~/.profile ~/.zprofile ~/.bash_profile ~/.bashrc ~/.zshrc
 
 echo "Removing fish integration"
 FISH_INSTALLATION='contains $HOME/.fig/bin $fish_user_paths; or set -Ua fish_user_paths $HOME/.fig/bin'
@@ -56,13 +56,13 @@ END3="# End of Fig SSH Integration"
 
 if grep -q "$END1" $SSH_CONFIG_PATH
   then
-  cat $SSH_CONFIG_PATH | sed -e '\|'"$START"'|,\|'"$END1"'|d' > $SSH_TMP_PATH
+  cat $SSH_CONFIG_PATH | /usr/bin/sed -e '\|'"$START"'|,\|'"$END1"'|d' > $SSH_TMP_PATH
 elif grep -q "$END2" $SSH_CONFIG_PATH
   then
-  cat $SSH_CONFIG_PATH | sed -e '\|'"$START"'|,\|'"$END2"'|d' > $SSH_TMP_PATH
+  cat $SSH_CONFIG_PATH | /usr/bin/sed -e '\|'"$START"'|,\|'"$END2"'|d' > $SSH_TMP_PATH
 elif grep -q "$END3" $SSH_CONFIG_PATH
   then
-  cat $SSH_CONFIG_PATH | sed -e '\|'"$START"'|,\|'"$END3"'|d' > $SSH_TMP_PATH
+  cat $SSH_CONFIG_PATH | /usr/bin/sed -e '\|'"$START"'|,\|'"$END3"'|d' > $SSH_TMP_PATH
 else
   echo "SSH Integration appears not to be installed. Ignoring."
 fi
@@ -76,7 +76,7 @@ TMUX_TMP_PATH=$TMUX_CONFIG_PATH'.tmp'
 TMUX_START="# Fig Tmux Integration: Enabled"
 TMUX_END="# End of Fig Tmux Integration"
 
-cat $TMUX_CONFIG_PATH | sed -e '\|'"$TMUX_START"'|,\|'"$TMUX_END"'|d' > $TMUX_TMP_PATH
+cat $TMUX_CONFIG_PATH | /usr/bin/sed -e '\|'"$TMUX_START"'|,\|'"$TMUX_END"'|d' > $TMUX_TMP_PATH
 
 mv $TMUX_TMP_PATH $TMUX_CONFIG_PATH
 
