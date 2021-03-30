@@ -83,6 +83,20 @@ class TelemetryProvider: TelemetryService {
         body = TelemetryProvider.addDefaultProperties(to: body)
         body["event"] = event
         body["userId"] = Defaults.uuid
+      
+        if let telemetryDisabled = Settings.shared.getValue(forKey: Settings.telemetryDisabledKey) as? Bool, telemetryDisabled {
+          let eventsToSendEvenWhenDisabled: [TelemetryEvent] = [.dailyAggregates]
+          let sendEvent = eventsToSendEvenWhenDisabled.reduce(false, { (ignore, whitelistedEvent) -> Bool in
+            return ignore || whitelistedEvent.rawValue == event
+          })
+          
+          guard sendEvent else {
+            print("telemetry: no sending event because of \(Settings.telemetryDisabledKey)")
+            completion?(nil, nil, nil)
+            return
+          }
+          
+        }
         
         upload(to: "track", with: body, completion: completion)
     }
@@ -96,6 +110,11 @@ class TelemetryProvider: TelemetryService {
         }
         
         body["userId"] = Defaults.uuid
+      
+        if let telemetryDisabled = Settings.shared.getValue(forKey: Settings.telemetryDisabledKey) as? Bool, telemetryDisabled {
+            print("telemetry: no sending identification event because of \(Settings.telemetryDisabledKey)")
+           return
+        }
 
         upload(to: "identify", with: body)
     }
