@@ -17,6 +17,7 @@ class Settings {
   static let telemetryDisabledKey = "app.disableTelemetry"
   static let autocompleteWidth = "autocomplete.width"
   static let autocompleteHeight = "autocomplete.height"
+  static let enterKeyBehavior = "autocomplete.enter"
 
   static let filePath = NSHomeDirectory() + "/.fig/settings.json"
   static let shared = Settings()
