@@ -49,6 +49,7 @@ class NativeCLI {
         case pty = "debug:pty"
         case debugApp = "debug:app"
         case debugSSH = "debug:ssh"
+        case debugSSHSession = "debug:ssh-session"
         case debugProcesses = "debug:ps"
         case debugDotfiles = "debug:dotfiles"
         case electronAccessibility = "util:axelectron"
@@ -86,6 +87,7 @@ class NativeCLI {
                                                            .debugApp,
                                                            .debugProcesses,
                                                            .debugDotfiles,
+                                                           .debugSSHSession,
                                                            .electronAccessibility,
                                                            .docs]
                return implementatedNatively.contains(self)
@@ -137,6 +139,8 @@ class NativeCLI {
                 NativeCLI.debugProcessCommand(scope)
             case .debugDotfiles:
                 NativeCLI.debugDotfilesCommand(scope)
+            case .debugSSHSession:
+                NativeCLI.debugSSHSessionCommand(scope)
             default:
                 break;
             }
@@ -469,6 +473,41 @@ extension NativeCLI {
 
 
         NativeCLI.printInTerminal(print, using: connection)
+    }
+  
+    static func debugSSHSessionCommand(_ scope: Scope) {
+        let (_, connection) = scope
+      let prefixes: [String] = ShellHookManager.shared.ttys().values.map { (tty) -> String? in
+          guard let ssh = tty.integrations[SSHIntegration.command] as? SSHIntegration else {
+            return nil
+          }
+          
+          guard let controlPath = ssh.runUsingPrefix() else {
+            return nil
+          }
+          
+          return controlPath + "\n"
+      }.filter { $0 != nil } as! [String]
+      
+      let remote_cwd_script = Settings.shared.getValue(forKey: Settings.sshRemoteDirectoryScript) as? String ?? Bundle.main.path(forResource: "remote_cwd", ofType: "sh")!
+      
+      let out =
+      """
+        
+      Run commands in SSH Session using PREFIX:
+      ---
+      \(prefixes.count == 0 ? "no sessions found..." : prefixes.joined(separator: "\n"))
+      ---
+      
+      Remove -q and add -v flags for additional logging.
+      
+      To simulate getting remote working directory run:
+      
+      PREFIX bash -s < \(remote_cwd_script)
+      
+      """
+      
+      NativeCLI.printInTerminal(out, using: connection)
     }
 }
 

@@ -13,6 +13,7 @@ class Settings {
   static let ptyPathKey = "pty.path"
   static let developerModeKey = "autocomplete.developerMode"
   static let sshCommand = "ssh.commandPrefix"
+  static let sshRemoteDirectoryScript = "ssh.remoteDirectoryScript"
   static let launchOnStartupKey = "app.launchOnStartup"
 
   static let filePath = NSHomeDirectory() + "/.fig/settings.json"
