@@ -19,6 +19,8 @@ class Settings {
   static let autocompleteWidth = "autocomplete.width"
   static let autocompleteHeight = "autocomplete.height"
   static let enterKeyBehavior = "autocomplete.enter"
+  static let hyperDelayKey = "integrations.hyper.delay"
+  static let vscodeDelayKey = "integrations.vscode.delay"
 
   static let filePath = NSHomeDirectory() + "/.fig/settings.json"
   static let shared = Settings()
