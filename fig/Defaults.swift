@@ -325,12 +325,25 @@ class Defaults {
     
     static var onlyInsertOnTab: Bool {
         get {
+            if let behavior = Settings.shared.getValue(forKey: Settings.enterKeyBehavior) as? String {
+              switch behavior {
+                case "ignore":
+                  return true
+                case "insert":
+                  return false
+                default:
+                  return false
+              }
+            }
+          
             return UserDefaults.standard.bool(forKey: "onlyInsertOnTab")
         }
         
         set(flag) {
             UserDefaults.standard.set(flag, forKey: "onlyInsertOnTab")
             UserDefaults.standard.synchronize()
+          
+            Settings.shared.set(value: flag ? "ignore" : "insert", forKey: Settings.enterKeyBehavior)
         }
 
     }
