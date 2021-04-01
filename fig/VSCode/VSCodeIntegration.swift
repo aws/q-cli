@@ -66,7 +66,6 @@ class VSCodeIntegration: IntegrationProvider {
     do {
       if var json = try VSCodeIntegration.settings() {
         
-        json[inheritEnvKey] = false
         if let accessibilitySupport = json[accessibilitySupportKey] as? String?, accessibilitySupport != "on" {
           json[accessibilitySupportKey] = "off"
         }
@@ -81,7 +80,6 @@ class VSCodeIntegration: IntegrationProvider {
         updatedSettings =
         """
         {
-          "\(inheritEnvKey)": false,
           "\(accessibilitySupportKey)": "off"
         }
         """
@@ -109,6 +107,7 @@ class VSCodeIntegration: IntegrationProvider {
             let openSupportPage = Alert.show(title: "Could not install VSCode integration automatically",
                                        message: "Fig could not parse VSCode's settings.json file.\nTo finish the installation, you will need to update a few preferences manually.",
                                        okText: "Learn more",
+                                       icon: Alert.appIcon,
                                        hasSecondaryOption: true)
             if (openSupportPage) {
               NSWorkspace.shared.open(VSCodeIntegration.supportURL)
@@ -130,12 +129,11 @@ class VSCodeIntegration: IntegrationProvider {
   
   static var isInstalled: Bool {
     guard let settings = try? VSCodeIntegration.settings(),
-      let inheritEnv = settings[inheritEnvKey] as? Bool,
       settings[accessibilitySupportKey] != nil else {
         return false
     }
     
-    return FileManager.default.fileExists(atPath: extensionPath) && inheritEnv == false
+    return FileManager.default.fileExists(atPath: extensionPath)
   }
     
   static func promptToInstall(completion: (()->Void)? = nil) {
