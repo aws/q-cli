@@ -311,7 +311,8 @@ class KeypressProvider : KeypressService {
     
     // Switching to CGEventTapLocation.cgAnnotatedSessionEventTap allows virtual keystrokes to be detected
     // But prevents us from seeing keypresses handled by other apps (like Spectacle)
-    guard let eventTap: CFMachPort = CGEvent.tapCreate(tap: CGEventTapLocation.cghidEventTap,
+    let tapLocation = Settings.shared.getValue(forKey: Settings.eventTapLocation) as? String == "session" ? CGEventTapLocation.cgAnnotatedSessionEventTap : CGEventTapLocation.cghidEventTap
+    guard let eventTap: CFMachPort = CGEvent.tapCreate(tap: tapLocation,
                                                        place: CGEventTapPlacement.tailAppendEventTap,
                                                        options: CGEventTapOptions.defaultTap,
                                                        eventsOfInterest: CGEventMask(eventMask),
