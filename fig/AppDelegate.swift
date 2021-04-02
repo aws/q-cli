@@ -403,6 +403,8 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         statusBarMenu.addItem(NSMenuItem.separator())
         
         let debugMenu = NSMenu(title: "debug")
+        debugMenu.addItem(withTitle: "View All Settings...", action: #selector(openSettingsDocs), keyEquivalent: "")
+        debugMenu.addItem(NSMenuItem.separator())
         let sidebar = debugMenu.addItem(
         withTitle: "Sidebar (Legacy)",
         action: #selector(AppDelegate.toggleSidebar(_:)),
@@ -487,7 +489,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
          withTitle: "Run Install/Update Script",
          action: #selector(AppDelegate.setupScript),
          keyEquivalent: "")
-        
         debugMenu.addItem(withTitle: "Edit Key Bindings", action: #selector(editKeybindingsFile), keyEquivalent: "")
         let utilities = debugMenu.addItem(withTitle: "Developer", action: nil, keyEquivalent: "")
         utilities.submenu = utilitiesMenu
@@ -637,6 +638,10 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     
     @objc func newTerminalWindow() {
         WindowManager.shared.newNativeTerminalSession()
+    }
+  
+    @objc func openSettingsDocs() {
+      NSWorkspace.shared.open(URL(string: "https://withfig.com/docs/support/settings")!)
     }
   
     @objc func editKeybindingsFile() {
