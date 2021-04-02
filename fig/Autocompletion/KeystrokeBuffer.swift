@@ -122,7 +122,7 @@ class KeystrokeBuffer : NSObject {
   
   func insert(text: String) -> (String, Int)? {
     guard backedByZLE, buffer != nil else { return nil }
-    self.index = buffer!.index(buffer!.startIndex, offsetBy: zleCursor)
+    self.index = buffer!.index(buffer!.startIndex, offsetBy: zleCursor, limitedBy: buffer!.endIndex) ?? buffer!.endIndex
     mutatingInsert(text: text)
     //buffer!.insert(contentsOf: text, at: index)
     //let updatedIndex = buffer!.index(index, offsetBy: text.count)
@@ -172,7 +172,7 @@ class KeystrokeBuffer : NSObject {
           default:
             guard buffer != nil, index != nil, buffer!.endIndex >= index! else { return }
             buffer!.insert(char, at: index!)
-            index = buffer!.index(index!, offsetBy: 1)
+            index = buffer!.index(index!, offsetBy: 1, limitedBy: buffer!.endIndex)
             print("xterm: insert! (\(char))")
           }
       }
@@ -395,7 +395,7 @@ class KeystrokeBuffer : NSObject {
     
     guard !backedByZLE else {
       if var logging = buffer {
-        let index = logging.index(logging.startIndex, offsetBy: zleCursor)
+        let index = logging.index(logging.startIndex, offsetBy: zleCursor, limitedBy: buffer!.endIndex) ?? buffer!.endIndex
         logging.insert("|", at: index)
         return logging
       }

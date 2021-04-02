@@ -52,7 +52,7 @@ class SSHIntegration: CommandIntegration {
         }
         
         
-        let scriptPath = Bundle.main.path(forResource: "remote_cwd", ofType: "sh")!
+        let scriptPath = Settings.shared.getValue(forKey: Settings.sshRemoteDirectoryScript) as? String ?? Bundle.main.path(forResource: "remote_cwd", ofType: "sh")!
         guard let prefix = self.runUsingPrefix() else {
             return
         }

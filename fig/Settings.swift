@@ -13,7 +13,14 @@ class Settings {
   static let ptyPathKey = "pty.path"
   static let developerModeKey = "autocomplete.developerMode"
   static let sshCommand = "ssh.commandPrefix"
+  static let sshRemoteDirectoryScript = "ssh.remoteDirectoryScript"
   static let launchOnStartupKey = "app.launchOnStartup"
+  static let telemetryDisabledKey = "app.disableTelemetry"
+  static let autocompleteWidth = "autocomplete.width"
+  static let autocompleteHeight = "autocomplete.height"
+  static let enterKeyBehavior = "autocomplete.enter"
+  static let hyperDelayKey = "integrations.hyper.delay"
+  static let vscodeDelayKey = "integrations.vscode.delay"
 
   static let filePath = NSHomeDirectory() + "/.fig/settings.json"
   static let shared = Settings()
