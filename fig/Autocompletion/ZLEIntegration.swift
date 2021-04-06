@@ -32,6 +32,7 @@ class ZLEIntegration {
           try? FileManager.default.removeItem(atPath: insertionLock)
           // If ZLE, manually update keybuffer
           if let window = AXWindowServer.shared.whitelistedWindow,
+             window.tty?.name != "fish",
              let context = KeypressProvider.shared.keyBuffer(for: window).insert(text: insertionText) {
               // trigger an update!
               print("update: \(context.0)")

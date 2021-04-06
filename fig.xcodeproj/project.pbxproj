@@ -181,6 +181,7 @@
 		75C07122244BB65D002DF69F /* ShellBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75C07121244BB65D002DF69F /* ShellBridge.swift */; };
 		75C07124244BE45A002DF69F /* CompanionWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75C07123244BE45A002DF69F /* CompanionWindow.swift */; };
 		75C0EBD3253E336E001964DE /* TerminalUsageTelemetry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75C0EBD2253E336E001964DE /* TerminalUsageTelemetry.swift */; };
+		75C3B7FF261BC9D0007FA3A7 /* FishIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75C3B7FE261BC9D0007FA3A7 /* FishIntegration.swift */; };
 		75C57C142581C0700065741E /* ioreg.c in Sources */ = {isa = PBXBuildFile; fileRef = 75C57C132581C0700065741E /* ioreg.c */; };
 		75CFDBDF24EDB2E900F00CAE /* Onboarding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75CFDBDE24EDB2E900F00CAE /* Onboarding.swift */; };
 		75CFDBE224EDE31800F00CAE /* Sentry in Frameworks */ = {isa = PBXBuildFile; productRef = 75CFDBE124EDE31800F00CAE /* Sentry */; };
@@ -444,6 +445,7 @@
 		75C07121244BB65D002DF69F /* ShellBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellBridge.swift; sourceTree = "<group>"; };
 		75C07123244BE45A002DF69F /* CompanionWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionWindow.swift; sourceTree = "<group>"; };
 		75C0EBD2253E336E001964DE /* TerminalUsageTelemetry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalUsageTelemetry.swift; sourceTree = "<group>"; };
+		75C3B7FE261BC9D0007FA3A7 /* FishIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FishIntegration.swift; sourceTree = "<group>"; };
 		75C57C122581C0700065741E /* ioreg.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ioreg.h; sourceTree = "<group>"; };
 		75C57C132581C0700065741E /* ioreg.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ioreg.c; sourceTree = "<group>"; };
 		75CFDBDE24EDB2E900F00CAE /* Onboarding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Onboarding.swift; sourceTree = "<group>"; };
@@ -921,6 +923,7 @@
 				75B1993725100E4D00F38EA8 /* KeypressService.swift */,
 				75A4A29F25CA0D46002EFD6B /* Autocomplete.swift */,
 				75A4A2A125CA218F002EFD6B /* ZLEIntegration.swift */,
+				75C3B7FE261BC9D0007FA3A7 /* FishIntegration.swift */,
 			);
 			path = Autocompletion;
 			sourceTree = "<group>";
@@ -1225,6 +1228,7 @@
 			files = (
 				75288EF924CCE72F002DF12A /* OnboardingWindow.swift in Sources */,
 				75AEF2E825C3DEC600D78431 /* SSHIntegration.swift in Sources */,
+				75C3B7FF261BC9D0007FA3A7 /* FishIntegration.swift in Sources */,
 				75AA24C125A656FA00A51E9D /* NativeCLI.swift in Sources */,
 				757CA86724859461002A64A8 /* AppMover.swift in Sources */,
 				75C0EBD3253E336E001964DE /* TerminalUsageTelemetry.swift in Sources */,
@@ -1539,7 +1543,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MARKETING_VERSION = 1.0.38;
+				MARKETING_VERSION = 1.0.40;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mschrage.fig;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1575,7 +1579,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MARKETING_VERSION = 1.0.38;
+				MARKETING_VERSION = 1.0.40;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mschrage.fig;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";

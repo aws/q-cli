@@ -327,6 +327,7 @@ class ShellBridge {
         let insertion = cmd + (runImmediately ? "\n" :"")
 
         if let window = AXWindowServer.shared.whitelistedWindow,
+          window.tty?.name != "fish",
           KeypressProvider.shared.keyBuffer(for: window).backedByZLE {
           ZLEIntegration.insert(with: insertion,
                                 version: window.tty?.shellIntegrationVersion)
