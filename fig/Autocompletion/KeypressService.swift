@@ -301,6 +301,11 @@ class KeypressProvider : KeypressService {
           WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try{ fig.keypress(\"\(keyCode)\", \"\(window.hash)\") } catch(e) {}", completionHandler: nil)
           return nil
         } else {
+          
+          guard !FishIntegration.handleKeystroke(event: NSEvent(cgEvent: event), in: window) else {
+            return Unmanaged.passUnretained(event)
+          }
+          
           autoreleasepool {
             KeypressProvider.shared.handleKeystroke(event: NSEvent(cgEvent: event), in: window)
           }
@@ -356,7 +361,7 @@ class KeypressProvider : KeypressService {
     
 
     let keyBuffer = self.keyBuffer(for: window)
-    guard !keyBuffer.backedByZLE else {
+    guard !keyBuffer.backedByShell else {
       
       
       // trigger positioning updates for hotkeys, like cmd+w, cmd+t, cmd+n, or Spectacle

@@ -239,7 +239,7 @@ extension ShellHookManager {
         // Set version (used for checking compatibility)
         tty.shellIntegrationVersion = info.shellIntegrationVersion
             
-        KeypressProvider.shared.keyBuffer(for: hash).backedByZLE = false
+        KeypressProvider.shared.keyBuffer(for: hash).backedByShell = false
 
     }
     
@@ -311,7 +311,7 @@ extension ShellHookManager {
         tty.shellIntegrationVersion = info.shellIntegrationVersion
       
         // update keybuffer backing
-        if (KeypressProvider.shared.keyBuffer(for: hash).backedByZLE) {
+        if (KeypressProvider.shared.keyBuffer(for: hash).backedByShell) {
           
             // ZLE doesn't handle signals sent to shell, like control+c
             // So we need to manually force an update when the line changes
@@ -319,7 +319,7 @@ extension ShellHookManager {
                Autocomplete.update(with: ("", 0), for: hash)
                Autocomplete.position()
             }
-            KeypressProvider.shared.keyBuffer(for: hash).backedByZLE = false
+            KeypressProvider.shared.keyBuffer(for: hash).backedByShell = false
         }
     }
     
@@ -336,7 +336,7 @@ extension ShellHookManager {
         // Set version (used for checking compatibility)
         tty.shellIntegrationVersion = info.shellIntegrationVersion
       
-        KeypressProvider.shared.keyBuffer(for: hash).backedByZLE = false
+        KeypressProvider.shared.keyBuffer(for: hash).backedByShell = false
 
     }
     
@@ -350,7 +350,7 @@ extension ShellHookManager {
         keybuffer.buffer = ""
     }
   
-    func updateKeybuffer(_ info: ShellMessage) {
+    func updateKeybuffer(_ info: ShellMessage, backing: KeystrokeBuffer.Backing) {
         guard let hash = attemptToFindToAssociatedWindow(for: info.session) else {
               Logger.log(message: "Could not link to window on new shell session.", priority: .notify, subsystem: .tty)
               return
@@ -371,12 +371,13 @@ extension ShellHookManager {
         
       let keybuffer = KeypressProvider.shared.keyBuffer(for: hash)
       if let (buffer, cursor, histno) = info.parseKeybuffer() {
-          let previousHistoryNumber = keybuffer.zleHistoryNumber
+          let previousHistoryNumber = keybuffer.shellHistoryNumber
 
-          keybuffer.backedByZLE = true
+          keybuffer.backedByShell = true
+          keybuffer.backing = backing
           keybuffer.buffer = buffer
-          keybuffer.zleCursor = cursor
-          keybuffer.zleHistoryNumber = histno
+          keybuffer.shellCursor = cursor
+          keybuffer.shellHistoryNumber = histno
         
           // Prevent Fig from immediately when the user navigates through history
           // Note that Fig is hidden in response to the "history-line-set" zle hook
