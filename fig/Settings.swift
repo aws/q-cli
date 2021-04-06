@@ -22,6 +22,7 @@ class Settings {
   static let hyperDelayKey = "integrations.hyper.delay"
   static let vscodeDelayKey = "integrations.vscode.delay"
   static let eventTapLocation = "developer.eventTapLocation"
+  static let addStatusToTerminalTitle = "autocomplete.addStatusToTerminalTitle"
   
   static let filePath = NSHomeDirectory() + "/.fig/settings.json"
   static let shared = Settings()
