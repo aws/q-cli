@@ -12,6 +12,16 @@ class Settings {
   static let ptyInitFile = "pty.rc"
   static let ptyPathKey = "pty.path"
   static let developerModeKey = "autocomplete.developerMode"
+  static let sshCommand = "ssh.commandPrefix"
+  static let sshRemoteDirectoryScript = "ssh.remoteDirectoryScript"
+  static let launchOnStartupKey = "app.launchOnStartup"
+  static let telemetryDisabledKey = "app.disableTelemetry"
+  static let autocompleteWidth = "autocomplete.width"
+  static let autocompleteHeight = "autocomplete.height"
+  static let enterKeyBehavior = "autocomplete.enter"
+  static let hyperDelayKey = "integrations.hyper.delay"
+  static let vscodeDelayKey = "integrations.vscode.delay"
+  static let eventTapLocation = "developer.eventTapLocation"
   
   static let filePath = NSHomeDirectory() + "/.fig/settings.json"
   static let shared = Settings()
@@ -95,6 +105,9 @@ class Settings {
        currentSettings = settings
        NotificationCenter.default.post(Notification(name: Settings.settingsUpdatedNotification))
     } else {
+      
+      // Don't show prompt if file is deleted, mainly because it is confusing in the uninstall flow
+      guard FileManager.default.fileExists(atPath: Settings.filePath) else { return }
       DispatchQueue.main.async {
           let _ = Alert.show(title: "Fig's settings can not be parsed.",
                              message: "An error occured while reading the Fig settings file stored at ~/.fig/settings.json\n\nPlease make sure this file is valid JSON.",

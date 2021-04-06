@@ -82,7 +82,7 @@ class SelectionService {
      * Sets the selection, this is validated against the
      */
     public func setSelection (start: Position, end: Position) {
-        let buffer = terminal.buffer
+        let _ = terminal.buffer
         let sclamped = clamp (start)
         let eclamped = clamp (end)
         

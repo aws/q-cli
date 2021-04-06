@@ -592,8 +592,8 @@ extension WindowManager : WindowManagementService {
             // this keeps Fig windows open by default when Fig is the active apps,
             // which makes sense most of the time
             // but there are some issues here. Probably need a condition tying the current parentWindow id to previous whitelisted window.
-            print("shouldAppear: [\(bundleId)] Fig active & not explicitly positioned")
-            return false
+            //print("shouldAppear: [\(bundleId)] Fig active & not explicitly positioned")
+            //return false
         } else {
             print("shouldAppear: [\(bundleId)] Not on whitelist")
             return false
@@ -708,7 +708,7 @@ extension WindowManager : WindowManagementService {
     
   func positionAutocompletePopover(textRect: CGRect?, makeVisibleImmediately: Bool = true, completion: (() -> Void)? = nil) {
         if let rect = textRect, let window = AXWindowServer.shared.whitelistedWindow {
-            let heightLimit: CGFloat = 140.0 //300.0//
+          let heightLimit: CGFloat = Settings.shared.getValue(forKey: Settings.autocompleteHeight) as? CGFloat ?? 140.0 //300.0//
             
           let isAbove = window.frame.height < window.frame.origin.y - rect.origin.y + rect.height + heightLimit
                         && rect.origin.y + heightLimit <= NSScreen.main?.frame.maxY ?? 0.0
@@ -744,8 +744,8 @@ extension WindowManager : WindowManagementService {
             }
             
 //            WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try { fig.autocomplete_above = \(isAbove)} catch(e) {}", completionHandler: nil)
-            
-            let popup = NSRect(origin: translatedOrigin, size: CGSize(width: WindowManager.shared.autocomplete?.width ?? Defaults.autocompleteWidth ?? 200
+            let maxWidth =  Settings.shared.getValue(forKey: Settings.autocompleteWidth) as? CGFloat
+            let popup = NSRect(origin: translatedOrigin, size: CGSize(width: WindowManager.shared.autocomplete?.width ?? maxWidth ?? Defaults.autocompleteWidth ?? 200
                 , height: height))
             let sidebarInsetBuffer:CGFloat = 0.0//60;
             let w = (NSScreen.main!.frame.maxX - sidebarInsetBuffer) - popup.maxX

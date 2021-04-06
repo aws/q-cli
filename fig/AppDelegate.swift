@@ -160,7 +160,11 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         setUpAccesibilityObserver()
         NotificationCenter.default.addObserver(self, selector: #selector(windowDidChange(_:)), name: AXWindowServer.windowDidChangeNotification, object: nil)
         
-        toggleLaunchAtStartup()
+        if let shouldLaunchOnStartup = Settings.shared.getValue(forKey: Settings.launchOnStartupKey) as? Bool {
+          LoginItems.shared.currentApplicationShouldLaunchOnStartup = shouldLaunchOnStartup
+        } else {
+          LoginItems.shared.currentApplicationShouldLaunchOnStartup = true
+        }
         
         iTermTabIntegration.listenForHotKey()
         AutocompleteContextNotifier.listenForUpdates()
@@ -399,6 +403,8 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         statusBarMenu.addItem(NSMenuItem.separator())
         
         let debugMenu = NSMenu(title: "debug")
+        debugMenu.addItem(withTitle: "View All Settings...", action: #selector(openSettingsDocs), keyEquivalent: "")
+        debugMenu.addItem(NSMenuItem.separator())
         let sidebar = debugMenu.addItem(
         withTitle: "Sidebar (Legacy)",
         action: #selector(AppDelegate.toggleSidebar(_:)),
@@ -483,7 +489,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
          withTitle: "Run Install/Update Script",
          action: #selector(AppDelegate.setupScript),
          keyEquivalent: "")
-        
         debugMenu.addItem(withTitle: "Edit Key Bindings", action: #selector(editKeybindingsFile), keyEquivalent: "")
         let utilities = debugMenu.addItem(withTitle: "Developer", action: nil, keyEquivalent: "")
         utilities.submenu = utilitiesMenu
@@ -635,20 +640,29 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         WindowManager.shared.newNativeTerminalSession()
     }
   
+    @objc func openSettingsDocs() {
+      NSWorkspace.shared.open(URL(string: "https://withfig.com/docs/support/settings")!)
+    }
+  
     @objc func editKeybindingsFile() {
       NSWorkspace.shared.open(KeyBindingsManager.keymapFilePath)
     }
     
     @objc func uninstall() {
         
-        let confirmed = self.dialogOKCancel(question: "Uninstall Fig?", text: "Are you sure you want to uninstall Fig?\nRunning this script will remove all local runbooks, completion specs and delete the app.\n\n You will need to source your shell profile in any currently running terminal sessions for changes to register (or restart your terminal app to trigger this automatically).", icon: NSImage(imageLiteralResourceName: NSImage.applicationIconName))
+        let confirmed = self.dialogOKCancel(question: "Uninstall Fig?", text: "You will need to restart any currently running terminal sessions.", icon: NSImage(imageLiteralResourceName: NSImage.applicationIconName))
         
         if confirmed {
             TelemetryProvider.track(event: .uninstallApp, with: [:])
+          
+            ShellHookManager.shared.ttys().forEach { (pair) in
+               let (_, tty) = pair
+               tty.setTitle("Restart this terminal to finish uninstalling Fig...")
+            }
 
             if let general = Bundle.main.path(forResource: "uninstall", ofType: "sh") {
                 NSWorkspace.shared.open(URL(string: "https://withfig.com/uninstall?email=\(Defaults.email ?? "")")!)
-                toggleLaunchAtStartup(shouldBeOff: true)
+                LoginItems.shared.currentApplicationShouldLaunchOnStartup = false
                 
                 let domain = Bundle.main.bundleIdentifier!
                 let uuid = Defaults.uuid
@@ -899,9 +913,11 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     }
 
     @objc func getKeyboardLayout() {
-        let v = KeyboardLayout.shared.keyCode(for: "V")
-        let e = KeyboardLayout.shared.keyCode(for: "E")
-        let u = KeyboardLayout.shared.keyCode(for: "U")
+        guard let v = KeyboardLayout.shared.keyCode(for: "V"),
+          let e = KeyboardLayout.shared.keyCode(for: "E"),
+          let u = KeyboardLayout.shared.keyCode(for: "U") else {
+            return
+      }
 
         print("v=\(v); e=\(e); u=\(u)")
 //        for var i in 0...100 {
@@ -935,7 +951,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             
 
         NSEvent.addGlobalMonitorForEvents(matching: .keyUp) { (event) in
-            print("keylogger:", event.characters, event.keyCode)
+            print("keylogger:", event.characters ?? "", event.keyCode)
 //        let touple = KeystrokeBuffer.shared.handleKeystroke(event: event)
 //            guard touple != nil else {
 //                WindowManager.shared.requestWindowUpdate()
@@ -951,13 +967,13 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         } else {
 //            AXUIElement
           var names: CFArray?
-          let namesError = AXUIElementCopyAttributeNames(focusedElement as! AXUIElement, &names)
-          print(names)
+          _ = AXUIElementCopyAttributeNames(focusedElement as! AXUIElement, &names)
+          print(names as Any)
 
           var parametrizedNames: CFArray?
-          let parametrizedNamesError = AXUIElementCopyParameterizedAttributeNames(focusedElement as! AXUIElement, &parametrizedNames)
-          print(parametrizedNames)
-          KeypressProvider.shared.getTextRect()
+          _ = AXUIElementCopyParameterizedAttributeNames(focusedElement as! AXUIElement, &parametrizedNames)
+          print(parametrizedNames as Any)
+          //KeypressProvider.shared.getTextRect()
 //          var markerRange : AnyObject?
 //          let markerError = AXUIElementCopyAttributeValue(focusedElement as! AXUIElement, "AXSelectedTextMarkerRange" as CFString, &markerRange)
 ////          var markerRangeValue : AnyObject?
@@ -1019,12 +1035,12 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 
     @objc func addAccesbilityObserver() {
         let first = WindowServer.shared.topmostWindow(for: NSWorkspace.shared.frontmostApplication!)!
-        print(first.bundleId)
+        print(first.bundleId ?? "?")
         let axErr = AXObserverCreate(first.app.processIdentifier, { (observer: AXObserver, element: AXUIElement, notificationName: CFString, refcon: UnsafeMutableRawPointer?) -> Void in
                 print("axobserver:", notificationName)
                 print("axobserver:", element)
                 print("axobserver:", observer)
-                print("axobserver:", refcon)
+                print("axobserver:", refcon as Any)
 
 //            WindowManager.shared.requestWindowUpdate()
             
@@ -1055,7 +1071,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         
         //[[NSRunLoop currentRunLoop] getCFRunLoop]
         print(axErr)
-        print(observer)
+        print(observer as Any)
         CFRunLoopAddSource(CFRunLoopGetCurrent(), AXObserverGetRunLoopSource(observer!), CFRunLoopMode.defaultMode);
         
 
@@ -1182,79 +1198,11 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
        }
     }
     
-    
+    @available(macOS, deprecated: 10.11)
     @objc func applicationIsInStartUpItems() -> Bool {
-      return itemReferencesInLoginItems().existingReference != nil
+      return LoginItems.shared.includesCurrentApplication
     }
 
-    func toggleLaunchAtStartup(shouldBeOff: Bool = false) {
-      let itemReferences = itemReferencesInLoginItems()
-      let shouldBeToggled = (itemReferences.existingReference == nil)
-      let loginItemsRef = LSSharedFileListCreate(
-        nil,
-        kLSSharedFileListSessionLoginItems.takeRetainedValue(),
-        nil
-      ).takeRetainedValue() as LSSharedFileList?
-      
-      if loginItemsRef != nil {
-        if shouldBeToggled {
-            let appUrl = NSURL.fileURL(withPath: Bundle.main.bundlePath) as CFURL
-            LSSharedFileListInsertItemURL(loginItemsRef, itemReferences.lastReference, nil, nil, appUrl, nil, nil)
-            print("Application was added to login items")
-        }
-        else if (shouldBeOff) {
-          if let itemRef = itemReferences.existingReference {
-            LSSharedFileListItemRemove(loginItemsRef,itemRef);
-            print("Application was removed from login items")
-          }
-        }
-      }
-    }
-
-    func itemReferencesInLoginItems() -> (existingReference: LSSharedFileListItem?, lastReference: LSSharedFileListItem?) {
-        
-        var itemUrl = UnsafeMutablePointer<Unmanaged<CFURL>?>.allocate(capacity: 1)
-
-        let appUrl = NSURL(fileURLWithPath: Bundle.main.bundlePath)
-        let loginItemsRef = LSSharedFileListCreate(
-          nil,
-          kLSSharedFileListSessionLoginItems.takeRetainedValue(),
-          nil
-        ).takeRetainedValue() as LSSharedFileList?
-        
-        if loginItemsRef != nil {
-          let loginItems = LSSharedFileListCopySnapshot(loginItemsRef, nil).takeRetainedValue() as NSArray
-          print("There are \(loginItems.count) login items")
-          
-          if(loginItems.count > 0) {
-            let lastItemRef = loginItems.lastObject as! LSSharedFileListItem
-        
-            for i in 0...loginItems.count-1 {
-                let currentItemRef = loginItems.object(at: i) as! LSSharedFileListItem
-              
-              if LSSharedFileListItemResolve(currentItemRef, 0, itemUrl, nil) == noErr {
-                if let urlRef: NSURL = itemUrl.pointee?.takeRetainedValue() {
-                    print("URL Ref: \(urlRef.lastPathComponent ?? "")")
-                  if urlRef.isEqual(appUrl) {
-                    return (currentItemRef, lastItemRef)
-                  }
-                }
-              }
-              else {
-                print("Unknown login application")
-              }
-            }
-            // The application was not found in the startup list
-            return (nil, lastItemRef)
-            
-          } else  {
-            let addatstart: LSSharedFileListItem = kLSSharedFileListItemBeforeFirst.takeRetainedValue()
-            return(nil,addatstart)
-          }
-      }
-      
-      return (nil, nil)
-    }
     
     @objc func quit() {
         
@@ -1511,7 +1459,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     }
     @objc func triggerScreenReader() {
       VSCodeIntegration.install(inBackground: true) {
-        self.dialogOKCancel(question: "VSCode Integration Installed!", text: "The Fig extension was successfully added to VSCode.", noAction: true)
+        Alert.show(title: "VSCode Integration Installed!", message: "The Fig extension was successfully added to VSCode.", hasSecondaryOption: false)
 //      if let app = AXWindowServer.shared.topApplication, let window = AXWindowServer.shared.topWindow {
 //        print("Triggering ScreenreaderMode in \(app.bundleIdentifier ?? "<unknown>")")
 //        Accessibility.triggerScreenReaderModeInChromiumApplication(app)
@@ -2112,7 +2060,7 @@ extension AppDelegate : NSMenuDelegate {
     }
   
   @objc func installIntegrationForFrontmostApp() {
-    if let app = NSWorkspace.shared.frontmostApplication, let provider = Integrations.providers[app.bundleIdentifier ?? ""] as? IntegrationProvider.Type, !provider.isInstalled {
+    if let app = NSWorkspace.shared.frontmostApplication, let provider = Integrations.providers[app.bundleIdentifier ?? ""], !provider.isInstalled {
       
         provider.promptToInstall(completion: nil)
       

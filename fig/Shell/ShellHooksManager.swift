@@ -69,11 +69,6 @@ extension ShellHookManager {
 
   func tab(for windowID: CGWindowID) -> String? {
     return self.tabs[windowID]
-    var tab: String?
-    queue.sync {
-      tab = self.tabs[windowID]
-    }
-    return tab
   }
   
   func setActivePane(_ pane: String, for windowID: CGWindowID) {
@@ -260,10 +255,15 @@ extension ShellHookManager {
           return
         }
         
-        var delay:TimeInterval? = 0.2
-      
-        if Integrations.Hyper == bundleId {
-            delay = 2
+        var delay:TimeInterval!
+        
+        switch bundleId {
+          case Integrations.Hyper:
+            delay = Settings.shared.getValue(forKey: Settings.hyperDelayKey) as? TimeInterval ?? 2
+          case Integrations.VSCode:
+            delay = Settings.shared.getValue(forKey: Settings.vscodeDelayKey) as? TimeInterval ?? 1
+          default:
+            delay = 0.2
         }
       
         observer = WindowObserver(with: bundleId)

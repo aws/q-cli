@@ -210,7 +210,7 @@ class ShellBridge {
 //        let windowNumbers = NSWindow.windowNumbersWithOptions( NSWindowNumberListAllSpaces | NSWindowNumberListAllApplications as NSWindowNumberListOptions )
         
         let windows = NSWindow.windowNumbers(options: [.allApplications, .allSpaces])
-        print(windows)
+        print(windows as Any)
     }
     
     @objc func setPreviousApplication(notification: NSNotification!) {
@@ -718,27 +718,27 @@ extension ShellBridge {
         Onboarding.copyFigCLIExecutable(to:"/usr/local/bin/fig")
 
         completion?()
-        return
-        if let path = Bundle.main.path(forAuxiliaryExecutable: "figcli") {//Bundle.main.path(forResource: "fig", ofType: "", inDirectory: "dist") {
-            print(path)
-            let script = "mkdir -p /usr/local/bin && ln -sf '\(path)' '/usr/local/bin/fig'"
-            
-            let out = "cmd=\"do shell script \\\"\(script)\\\" with administrator privileges\" && osascript -e \"$cmd\"".runInBackground(completion: {
-                (out) in
-                completion?()
-            })
-            
-            print(out)
-            //let _ = "test -f ~/.bash_profile && echo \"fig init #start fig pty\" >> ~/.bash_profile".runAsCommand()
-            //let _ = "test -f ~/.zprofile && echo \"fig init #start fig pty\" >> ~/.zprofile".runAsCommand()
-            //let _ = "test -f ~/.profile && echo \"fig init #start fig pty\" >> ~/.profile".runAsCommand()
-   
-
-        } else {
-            print("couldn't find 'fig' cli executable")
-            os_log("couldn't find 'fig' cli executable", log: OSLog.socketServer, type: .error)
-
-        }
+//        return
+//        if let path = Bundle.main.path(forAuxiliaryExecutable: "figcli") {//Bundle.main.path(forResource: "fig", ofType: "", inDirectory: "dist") {
+//            print(path)
+//            let script = "mkdir -p /usr/local/bin && ln -sf '\(path)' '/usr/local/bin/fig'"
+//
+//            let out = "cmd=\"do shell script \\\"\(script)\\\" with administrator privileges\" && osascript -e \"$cmd\"".runInBackground(completion: {
+//                (out) in
+//                completion?()
+//            })
+//
+//            print(out)
+//            //let _ = "test -f ~/.bash_profile && echo \"fig init #start fig pty\" >> ~/.bash_profile".runAsCommand()
+//            //let _ = "test -f ~/.zprofile && echo \"fig init #start fig pty\" >> ~/.zprofile".runAsCommand()
+//            //let _ = "test -f ~/.profile && echo \"fig init #start fig pty\" >> ~/.profile".runAsCommand()
+//
+//
+//        } else {
+//            print("couldn't find 'fig' cli executable")
+//            os_log("couldn't find 'fig' cli executable", log: OSLog.socketServer, type: .error)
+//
+//        }
 
     }
     

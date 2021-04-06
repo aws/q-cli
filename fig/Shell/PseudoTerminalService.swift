@@ -39,6 +39,8 @@ protocol PseudoTerminalService {
 
 class PseudoTerminalHelper {
     var executeHandlers: [ String: (String) -> Void ] = [:]
+    let queue = DispatchQueue(label: "com.withfig.ptyhelper", attributes: .concurrent)
+
     let pty = PseudoTerminal()
     let debug = false
     fileprivate let semaphore = DispatchSemaphore(value: 1)
@@ -50,7 +52,9 @@ class PseudoTerminalHelper {
         let _ = semaphore.wait(timeout: .now())
         // Move all of this behind the semaphore!
         let id = UUID().uuidString
-        executeHandlers[id] = handler
+        queue.async(flags: .barrier) {
+          self.executeHandlers[id] = handler
+        }
         print("pty: Executing command with PTY Service '\(command)'. Output Id = \(id).")
         pty.execute(command: command, handlerId: id)
     }
@@ -73,14 +77,22 @@ class PseudoTerminalHelper {
 extension PseudoTerminalHelper : PseudoTerminalEventDelegate {
     func recievedDataFromPty(_ notification: Notification) {
         if let msg = notification.object as? PtyMessage {
-            print("pty: is anything happening here?")
-            guard let handler = self.executeHandlers[msg.handleId] else {
+            var handlerOption: ((String) -> Void)?
+            queue.sync {
+              handlerOption = self.executeHandlers[msg.handleId]
+            }
+          
+            guard let handler = handlerOption else {
                 return
             }
           
             print("pty: Finished executing command for id = \(msg.handleId)")
             semaphore.signal()
             handler(msg.output)
+          
+            queue.async(flags: .barrier) {
+              self.executeHandlers.removeValue(forKey: msg.handleId)
+            }
         }
     }
     

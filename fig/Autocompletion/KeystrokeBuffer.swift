@@ -125,7 +125,7 @@ class KeystrokeBuffer : NSObject {
   
   func insert(text: String) -> (String, Int)? {
     guard backedByShell, buffer != nil else { return nil }
-    self.index = buffer!.index(buffer!.startIndex, offsetBy: shellCursor)
+    self.index = buffer!.index(buffer!.startIndex, offsetBy: shellCursor, limitedBy: buffer!.endIndex) ?? buffer!.endIndex
     mutatingInsert(text: text)
     //buffer!.insert(contentsOf: text, at: index)
     //let updatedIndex = buffer!.index(index, offsetBy: text.count)
@@ -173,9 +173,9 @@ class KeystrokeBuffer : NSObject {
               NotificationCenter.default.post(name: Self.lineAcceptedInKeystrokeBufferNotification, object: nil)
             }
           default:
-            guard buffer != nil, index != nil else { return }
+            guard buffer != nil, index != nil, buffer!.endIndex >= index! else { return }
             buffer!.insert(char, at: index!)
-            index = buffer!.index(index!, offsetBy: 1)
+            index = buffer!.index(index!, offsetBy: 1, limitedBy: buffer!.endIndex)
             print("xterm: insert! (\(char))")
           }
       }
@@ -380,7 +380,7 @@ class KeystrokeBuffer : NSObject {
       break
     }
     
-    if var logging = buffer, index != nil, !writeOnly {
+    if var logging = buffer, index != nil, logging.endIndex >= index!, !writeOnly {
       // todo: check if index is within bounds
       logging.insert("|", at: index!)
       print("xterm-out: \(logging) ")
@@ -398,7 +398,7 @@ class KeystrokeBuffer : NSObject {
     
     guard !backedByShell else {
       if var logging = buffer {
-        let index = logging.index(logging.startIndex, offsetBy: shellCursor)
+        let index = logging.index(logging.startIndex, offsetBy: shellCursor, limitedBy: buffer!.endIndex) ?? buffer!.endIndex
         logging.insert("|", at: index)
         return logging
       }
@@ -406,7 +406,7 @@ class KeystrokeBuffer : NSObject {
       return "<no context>"
     }
     
-    if var logging = buffer, index != nil {
+    if var logging = buffer, index != nil, buffer!.endIndex >= index! {
       // todo: check if index is within bounds
       logging.insert("|", at: index!)
       return logging
