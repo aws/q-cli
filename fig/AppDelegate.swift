@@ -1916,13 +1916,25 @@ extension AppDelegate : NSMenuDelegate {
                 let tty = window?.tty
                 var hasContext = false
                 var bufferDescription: String? = nil
-                var backedByZLE = false
+                var backedByShell = false
+                var backing: String?
+
 
                 if let window = window {
                     let keybuffer = KeypressProvider.shared.keyBuffer(for: window)
                     hasContext = keybuffer.buffer != nil && !keybuffer.writeOnly
                     bufferDescription = keybuffer.representation
-                    backedByZLE = keybuffer.backedByZLE
+                    backedByShell = keybuffer.backedByShell
+                   
+                  switch keybuffer.backing {
+                  case .zle:
+                    backing = "ZSH Line Editor"
+                    break;
+                  case .fish:
+                    backing = "Fish Command Line"
+                  default:
+                    backing = nil
+                  }
                   
                 }
 
@@ -2016,9 +2028,9 @@ extension AppDelegate : NSMenuDelegate {
                       legend.addItem(NSMenuItem(title: "In SSH session or Docker container", action: nil, keyEquivalent: ""))
                     }
                   
-                    if backedByZLE {
+                    if backedByShell {
                       legend.addItem(NSMenuItem.separator())
-                      legend.addItem(NSMenuItem(title: "Backed by ZSH Line Editor", action: nil, keyEquivalent: ""))
+                      legend.addItem(NSMenuItem(title: "Backed by \(backing ?? "???")", action: nil, keyEquivalent: ""))
                     }
                 }
                 

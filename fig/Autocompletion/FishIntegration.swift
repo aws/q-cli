@@ -15,7 +15,7 @@ class FishIntegration {
       return false
     }
     
-    guard let version = tty.shellIntegrationVersion, version >= 1 else {
+    guard let version = tty.shellIntegrationVersion, version >= 2 else {
       return false
     }
 
@@ -47,8 +47,8 @@ class FishIntegration {
     // Only send signal on key up
     // because we don't want to run updates twice per keystroke
     if event.type == .keyUp,  !(event.keyCode == KeyboardLayout.shared.keyCode(for: "R") &&  event.modifierFlags.contains(.control))  {
-      print("fish: Send signal SIGUSR1 to \(pid)")
-      Darwin.kill(pid, SIGUSR1)
+      print("fish: Send signal SIGUSR1 to \(pid) on '\(event.characters ?? "?")' (\(event.keyCode))")
+      requestUpdate(from: pid)
     } else if shouldReposition {
       // Reposition on keyDown to make motion less jerky
       // But not when modifier keys are pressed
@@ -57,5 +57,23 @@ class FishIntegration {
     }
     
     return true
+  }
+  
+  static func requestUpdate(from pid: pid_t) {
+    Darwin.kill(pid, SIGUSR1)
+  }
+  
+  static func finishedInserting() {
+    Timer.delayWithSeconds(0.15) {
+
+      guard let window = AXWindowServer.shared.whitelistedWindow,
+            let tty = window.tty,
+            KeypressProvider.shared.keyBuffer(for: window).backing == .fish else { return }
+      
+      guard FishIntegration.enabledFor(tty), let pid = tty.pid else { return }
+      
+      // Request an update after inserting with delay to handle large insertions
+      requestUpdate(from:pid)
+    }
   }
 }

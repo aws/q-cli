@@ -359,7 +359,7 @@ class KeypressProvider : KeypressService {
     
 
     let keyBuffer = self.keyBuffer(for: window)
-    guard !keyBuffer.backedByZLE else {
+    guard !keyBuffer.backedByShell else {
       
       
       // trigger positioning updates for hotkeys, like cmd+w, cmd+t, cmd+n, or Scpectacle
