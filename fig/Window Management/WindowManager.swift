@@ -242,6 +242,7 @@ class WindowManager : NSObject {
         companion.positioning = .hidden
         companion.repositionWindow(forceUpdate: true, explicit: true)
         companion.maxHeight = 0
+        companion.loaded = false
         self.autocomplete = companion
         
     }

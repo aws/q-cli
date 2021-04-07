@@ -1895,7 +1895,29 @@ extension AppDelegate : NSMenuDelegate {
                 
                 var color: NSColor = .clear
                 let legend = NSMenu(title: "legend")
-                if (!hasWindow) {
+                
+                let companionWindow = WindowManager.shared.autocomplete
+                if let (message, hexString, shouldDisplay) = companionWindow?.status, shouldDisplay {
+                    color = hexString != nil ? (NSColor(hex: hexString!) ?? .red) : .red
+                  
+                  message.split(separator: "\n").forEach { (str) in
+                    if str == "---" {
+                      legend.addItem(NSMenuItem.separator())
+                    } else {
+                      legend.addItem(NSMenuItem(title: String(str), action: nil, keyEquivalent: ""))
+                    }
+                  }
+                    
+                } else if let loaded = companionWindow?.loaded, !loaded {
+                    color = .red
+                    legend.addItem(NSMenuItem(title: "Autocomplete could not be loaded.", action: nil, keyEquivalent: ""))
+                    legend.addItem(NSMenuItem.separator())
+                    legend.addItem(NSMenuItem(title: "Make sure you're connected to", action: nil, keyEquivalent: ""))
+                    legend.addItem(NSMenuItem(title: "the internet and try again.", action: nil, keyEquivalent: ""))
+                    legend.addItem(NSMenuItem.separator())
+                    legend.addItem(NSMenuItem(title: "Reload Autocomplete", action: #selector(restart), keyEquivalent: ""))
+
+                } else if (!hasWindow) {
                     color = .red
                     legend.addItem(NSMenuItem(title: "Window is not being tracked.", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem.separator())
