@@ -17,5 +17,5 @@ current_version=$(defaults read com.mschrage.fig "autocompleteVersion" 2>/dev/nu
 mkdir -p ~/.fig/autocomplete; cd $_
 
 curl -s $base_url$current_version --fail --silent --head > /dev/null 2>/dev/null \
-&& curl -s $base_url$current_version | tar -xz  --strip-components=2 \
-|| curl -s $base_url'master' | tar -xz --strip-components=2
+&& curl -s $base_url$current_version | tar -xz  --strip-components=2 autocomplete-master/specs \
+|| curl -s $base_url'master' | tar -xz --strip-components=2 autocomplete-master/specs
