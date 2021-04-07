@@ -993,6 +993,11 @@ extension WebBridge {
                   }
                   
                   Settings.shared.set(value: value, forKey: key)
+                case "status":
+
+                  let companion = scope.getCompanionWindow()              
+                  companion?.status = (data["message"] ?? "", data["color"], data["display"] == "true")
+
                 default:
                     print("private command '\(type)' does not exist.")
             }
@@ -1029,6 +1034,9 @@ extension WebBridge {
                         }
                     }
                }
+            case "loaded":
+              let companion = scope.getCompanionWindow()
+              companion?.loaded = value == "true"
             case "maxheight":
                 let companion = scope.getCompanionWindow()
                 let previousMax = companion?.maxHeight
