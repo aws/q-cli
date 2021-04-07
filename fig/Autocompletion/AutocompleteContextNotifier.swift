@@ -225,6 +225,10 @@ class AutocompleteContextNotifier {
   }
   static var addIndicatorToTitlebar: Bool {
     get {
+      if let status = Settings.shared.getValue(forKey: Settings.addStatusToTerminalTitle) as? Bool {
+        return status
+      }
+      
       return UserDefaults.standard.bool(forKey: "addIndicatorToTitlebar")
     }
 
@@ -237,6 +241,8 @@ class AutocompleteContextNotifier {
       
       UserDefaults.standard.set(flag, forKey: "addIndicatorToTitlebar")
       UserDefaults.standard.synchronize()
+      
+      Settings.shared.set(value: flag, forKey: Settings.addStatusToTerminalTitle)
       
     }
   }
