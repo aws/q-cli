@@ -336,9 +336,10 @@ class ShellBridge {
         // Keep the ZLE insertion lock to speed up "fig source"
         // when run from no context popup
         ZLEIntegration.insertLock()
+        FishIntegration.insertLock()
         injectUnicodeString(insertion, delay: delay) {
           ZLEIntegration.insertUnlock(with: insertion)
-          FishIntegration.finishedInserting()
+          FishIntegration.insertUnlock(with: insertion)
         }
     }
   
