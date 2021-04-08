@@ -154,6 +154,17 @@
             background-color: #ddd;
             color: #bdbdbd
         }
+    
+        #skip {
+            color: #ccc;
+            margin: 5px;
+            font-size: 0.85em;
+            text-align: center;
+            width: 300px;
+            margin-left: auto;
+            margin-right: auto;
+            display:block;
+        }
 
         /* progress {
             -webkit-appearance: none;
@@ -211,6 +222,7 @@
                 <div class = "button">
                     <a id = "enable" href="javascript:permissions()">Enable</a>
                 </div>
+                <a id = "skip" style="display:none;" href="javascript:next()">Continue to next step manually</a>
 
             </div>
         </section>
@@ -238,8 +250,17 @@
                window.location.href = './ssh.html'
 
             })
+            
+            setTimeout(() => {
+               document.querySelector("#skip").style.display = "block";
+                
+            },1000 * 10)
             //fig.onboarding("close")
 
+        }
+    
+        let next = function() {
+          window.location.href = './ssh.html'
         }
         // const progressbar = document.querySelector('progress')
         // const article = document.querySelector('body')
