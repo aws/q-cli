@@ -32,6 +32,19 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         warnToMoveToApplicationIfNecessary()
+      
+        let statusBar = NSStatusBar.system
+        statusBarItem = statusBar.statusItem(
+               withLength: NSStatusItem.squareLength)
+        statusBarItem.button?.title = "🍐"
+        statusBarItem.button?.image = NSImage(imageLiteralResourceName: "statusbar@2x.png")//.overlayBadge()
+        statusBarItem.button?.image?.isTemplate = true
+        statusBarItem.button?.wantsLayer = true
+//        statusBarItem.target = self
+//        statusBarItem.action = #selector(self.statusBarButtonClicked(sender:))
+//        statusBarItem.sendAction(on: [.leftMouseUp, .rightMouseUp])
+        
+        configureStatusBarItem()
 
 //        NSApp.setActivationPolicy(NSApplication.ActivationPolicy.accessory)
         // prevent multiple sessions
@@ -55,7 +68,11 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         let _ = WindowManager.shared
         let _ = ShellHookManager.shared
         let _ = KeypressProvider.shared
-        let _ = AXWindowServer.shared
+      
+        DispatchQueue.global(qos: .userInitiated).async {
+          let _ = AXWindowServer.shared
+        }
+      
         let _ = DockerEventStream.shared
         let _ = Settings.shared
 
@@ -144,17 +161,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 //            updater?.installUpdatesIfAvailable()
             self.setupCompanionWindow()
         }
-        
-        let statusBar = NSStatusBar.system
-        statusBarItem = statusBar.statusItem(
-               withLength: NSStatusItem.squareLength)
-        statusBarItem.button?.title = "🍐"
-        statusBarItem.button?.image = NSImage(imageLiteralResourceName: "statusbar@2x.png")//.overlayBadge()
-        statusBarItem.button?.image?.isTemplate = true
-        statusBarItem.button?.wantsLayer = true
-//        statusBarItem.target = self
-//        statusBarItem.action = #selector(self.statusBarButtonClicked(sender:))
-//        statusBarItem.sendAction(on: [.leftMouseUp, .rightMouseUp])
         
         configureStatusBarItem()
         setUpAccesibilityObserver()
@@ -1860,7 +1866,7 @@ extension AppDelegate : NSMenuDelegate {
         
         if let app = NSWorkspace.shared.frontmostApplication, !app.isFig {
             let window = AXWindowServer.shared.whitelistedWindow
-            if Integrations.terminalsWhereAutocompleteShouldAppear.contains(window?.bundleId ?? "") {
+          if Integrations.terminalsWhereAutocompleteShouldAppear.contains(window?.bundleId ?? "") ||  Integrations.terminalsWhereAutocompleteShouldAppear.contains(app.bundleIdentifier ?? "") {
                 let tty = window?.tty
                 var hasContext = false
                 var bufferDescription: String? = nil
@@ -1908,6 +1914,13 @@ extension AppDelegate : NSMenuDelegate {
                     }
                   }
                     
+                } else if !Integrations.terminalsWhereAutocompleteShouldAppear.contains(window?.bundleId ?? "") {
+                  color = .orange
+                  legend.addItem(NSMenuItem(title: "Registering with Window Server...", action: nil, keyEquivalent: ""))
+                  
+                  legend.addItem(NSMenuItem.separator())
+                  legend.addItem(NSMenuItem(title: "This may take up to 10 seconds", action: nil, keyEquivalent: ""))
+                  
                 } else if let loaded = companionWindow?.loaded, !loaded {
                     color = .red
                     legend.addItem(NSMenuItem(title: "Autocomplete could not be loaded.", action: nil, keyEquivalent: ""))
