@@ -9,6 +9,7 @@
 import Cocoa
 
 class FishIntegration {
+  static let throttler = Throttler(minimumDelay: 0.005, queue: DispatchQueue(label: "com.withfig.fish"))
   static func enabledFor(_ tty: TTY) -> Bool {
     
     guard tty.name == "fish" else {
@@ -46,7 +47,8 @@ class FishIntegration {
     
     // Only send signal on key up
     // because we don't want to run updates twice per keystroke
-    if event.type == .keyUp,  !(event.keyCode == KeyboardLayout.shared.keyCode(for: "R") &&  event.modifierFlags.contains(.control))  {
+    // Don't send signal on enter key (avoids killing new process when execing and multiple phantom keypresses when inserting)
+    if event.type == .keyUp, event.keyCode != Keycode.returnKey, !(event.keyCode == KeyboardLayout.shared.keyCode(for: "R") &&  event.modifierFlags.contains(.control))  {
       print("fish: Send signal SIGUSR1 to \(pid) on '\(event.characters ?? "?")' (\(event.keyCode))")
       requestUpdate(from: pid)
     } else if shouldReposition {
@@ -60,20 +62,30 @@ class FishIntegration {
   }
   
   static func requestUpdate(from pid: pid_t) {
-    Darwin.kill(pid, SIGUSR1)
+    throttler.throttle {
+      guard !inserting else { return }
+      Darwin.kill(pid, SIGUSR1)
+    }
   }
   
-  static func finishedInserting() {
-    Timer.delayWithSeconds(0.15) {
+  static var inserting = false
+  static func insertLock() {
+    inserting = true
+  }
+  
+  static func insertUnlock(with insertionText: String) {
+    
+    // Delay helps avoid jank (caused by positioning window on old cursor location)
+    Timer.delayWithSeconds(0.1) {
+      inserting = false
+      
+      if let window = AXWindowServer.shared.whitelistedWindow,
+          KeypressProvider.shared.keyBuffer(for: window).backing == .fish,
+         let context = KeypressProvider.shared.keyBuffer(for: window).insert(text: insertionText) {
 
-      guard let window = AXWindowServer.shared.whitelistedWindow,
-            let tty = window.tty,
-            KeypressProvider.shared.keyBuffer(for: window).backing == .fish else { return }
-      
-      guard FishIntegration.enabledFor(tty), let pid = tty.pid else { return }
-      
-      // Request an update after inserting with delay to handle large insertions
-      requestUpdate(from:pid)
+          Autocomplete.update(with: context, for: window.hash)
+
+      }
     }
   }
 }
