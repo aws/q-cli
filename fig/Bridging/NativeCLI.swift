@@ -39,6 +39,7 @@ class NativeCLI {
         case disable = "disable"
         case remove = "remove"
         case report = "report"
+        case quit = "quit"
         case ssh = "integrations:ssh"
         case vscode = "integrations:vscode"
         case iterm = "integrations:iterm"
@@ -63,7 +64,7 @@ class NativeCLI {
       
         var handlesDisconnect: Bool {
             get {
-              let handlesDisconnection: Set<Command> = [.pty, .hyper, .iterm, .vscode ]
+              let handlesDisconnection: Set<Command> = [.pty, .hyper, .iterm, .vscode, .quit ]
                 return handlesDisconnection.contains(self)
             }
         }
@@ -89,6 +90,7 @@ class NativeCLI {
                                                            .debugDotfiles,
                                                            .debugSSHSession,
                                                            .electronAccessibility,
+                                                           .quit,
                                                            .docs]
                return implementatedNatively.contains(self)
             }
@@ -141,6 +143,8 @@ class NativeCLI {
                 NativeCLI.debugDotfilesCommand(scope)
             case .debugSSHSession:
                 NativeCLI.debugSSHSessionCommand(scope)
+            case .quit:
+                NativeCLI.quitCommand(scope)
             default:
                 break;
             }
@@ -306,6 +310,13 @@ extension NativeCLI {
     static func diagnosticCommand(_ scope: Scope) {
         let (_, connection) = scope
         NativeCLI.printInTerminal(Diagnostic.summary, using: connection)
+    }
+  
+    static func quitCommand(_ scope: Scope) {
+        let (_, connection) = scope
+        NativeCLI.printInTerminal("\nQuitting Fig...\n", using: connection)
+        connection.send(message: "disconnect")
+        NSApp.terminate(nil)
     }
     
     static func ptyCommand(_ scope: Scope) {
