@@ -33,16 +33,19 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         warnToMoveToApplicationIfNecessary()
       
-        let statusBar = NSStatusBar.system
-        statusBarItem = statusBar.statusItem(
-               withLength: NSStatusItem.squareLength)
-        statusBarItem.button?.title = "🍐"
-        statusBarItem.button?.image = NSImage(imageLiteralResourceName: "statusbar@2x.png")//.overlayBadge()
-        statusBarItem.button?.image?.isTemplate = true
-        statusBarItem.button?.wantsLayer = true
-//        statusBarItem.target = self
-//        statusBarItem.action = #selector(self.statusBarButtonClicked(sender:))
-//        statusBarItem.sendAction(on: [.leftMouseUp, .rightMouseUp])
+
+      
+        if let hideMenuBar = Settings.shared.getValue(forKey: Settings.hideMenubarIcon) as? Bool, hideMenuBar {
+          print("Not showing menubarIcon because of \(Settings.hideMenubarIcon)")
+        } else {
+          let statusBar = NSStatusBar.system
+          statusBarItem = statusBar.statusItem(
+                 withLength: NSStatusItem.squareLength)
+          statusBarItem.button?.title = "🍐"
+          statusBarItem.button?.image = NSImage(imageLiteralResourceName: "statusbar@2x.png")//.overlayBadge()
+          statusBarItem.button?.image?.isTemplate = true
+          statusBarItem.button?.wantsLayer = true
+        }
         
         configureStatusBarItem()
 
@@ -165,7 +168,16 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         
         configureStatusBarItem()
         setUpAccesibilityObserver()
-        NotificationCenter.default.addObserver(self, selector: #selector(windowDidChange(_:)), name: AXWindowServer.windowDidChangeNotification, object: nil)
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(windowDidChange(_:)),
+                                               name: AXWindowServer.windowDidChangeNotification,
+                                               object: nil)
+      
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(settingsUpdated),
+                                               name: Settings.settingsUpdatedNotification,
+                                               object: nil)
+
         
         if let shouldLaunchOnStartup = Settings.shared.getValue(forKey: Settings.launchOnStartupKey) as? Bool {
           LoginItems.shared.currentApplicationShouldLaunchOnStartup = shouldLaunchOnStartup
@@ -618,6 +630,28 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         
         self.statusBarItem.menu?.delegate = self
 
+    }
+  
+    @objc func settingsUpdated() {
+      print("Settings updated!!!!")
+      if let hideMenuBar = Settings.shared.getValue(forKey: Settings.hideMenubarIcon) as? Bool {
+        if hideMenuBar {
+//          self.statusBarItem.image = nil
+          self.statusBarItem = nil
+//          NSStatusBar.system.removeStatusItem(statusBarItem)
+        } else {
+          let statusBar = NSStatusBar.system
+          statusBarItem = statusBar.statusItem(
+                 withLength: NSStatusItem.squareLength)
+          statusBarItem.button?.title = "🍐"
+          statusBarItem.button?.image = NSImage(imageLiteralResourceName: "statusbar@2x.png")//.overlayBadge()
+          statusBarItem.button?.image?.isTemplate = true
+          statusBarItem.button?.wantsLayer = true
+          
+          configureStatusBarItem()
+        }
+      }
+      
     }
     
     func setUpAccesibilityObserver(){

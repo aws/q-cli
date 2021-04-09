@@ -23,7 +23,8 @@ class Settings {
   static let vscodeDelayKey = "integrations.vscode.delay"
   static let eventTapLocation = "developer.eventTapLocation"
   static let addStatusToTerminalTitle = "autocomplete.addStatusToTerminalTitle"
-  
+  static let hideMenubarIcon = "app.hideMenubarIcon"
+
   static let filePath = NSHomeDirectory() + "/.fig/settings.json"
   static let shared = Settings()
   
