@@ -450,6 +450,7 @@ struct ShellMessage: Codable {
     var io: String?
     var data: String
     var options: [String]?
+    var hook: String?
     
     func parseShellHook() -> (pid_t, TTYDescriptor, SessionId)? {
         guard let ttyId = self.options?[safe: 2]?.split(separator: "/").last else { return nil }
