@@ -68,6 +68,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         let _ = WindowManager.shared
         let _ = ShellHookManager.shared
         let _ = KeypressProvider.shared
+        let _ = ShellHookTransport.shared
       
         DispatchQueue.global(qos: .userInitiated).async {
           let _ = AXWindowServer.shared
