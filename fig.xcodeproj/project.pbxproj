@@ -83,6 +83,22 @@
 		752D71CB25AFD7B400263527 /* team-upload.sh in Resources */ = {isa = PBXBuildFile; fileRef = 752D71C925AFD5B800263527 /* team-upload.sh */; };
 		752D71CD25B8A6B300263527 /* Restarter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 752D71CC25B8A6B200263527 /* Restarter.swift */; };
 		752D71CF25B8CA4000263527 /* iTermTabIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 752D71CE25B8CA4000263527 /* iTermTabIntegration.swift */; };
+		752E68DD2620F868009E9A7E /* gradle@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752E68DA2620F868009E9A7E /* gradle@2x.png */; };
+		752E68DE2620F868009E9A7E /* slack@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752E68DB2620F868009E9A7E /* slack@2x.png */; };
+		752E68DF2620F868009E9A7E /* yarn@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752E68DC2620F868009E9A7E /* yarn@2x.png */; };
+		752E68ED2620F885009E9A7E /* azure@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752E68E02620F882009E9A7E /* azure@2x.png */; };
+		752E68EE2620F885009E9A7E /* box@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752E68E12620F883009E9A7E /* box@2x.png */; };
+		752E68EF2620F885009E9A7E /* gitlab@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752E68E22620F883009E9A7E /* gitlab@2x.png */; };
+		752E68F02620F885009E9A7E /* template@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752E68E32620F883009E9A7E /* template@2x.png */; };
+		752E68F12620F885009E9A7E /* firebase@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752E68E42620F883009E9A7E /* firebase@2x.png */; };
+		752E68F22620F885009E9A7E /* android@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752E68E52620F884009E9A7E /* android@2x.png */; };
+		752E68F32620F885009E9A7E /* aws@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752E68E62620F884009E9A7E /* aws@2x.png */; };
+		752E68F42620F885009E9A7E /* characters@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752E68E72620F884009E9A7E /* characters@2x.png */; };
+		752E68F52620F885009E9A7E /* gcloud@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752E68E82620F884009E9A7E /* gcloud@2x.png */; };
+		752E68F62620F885009E9A7E /* netlify@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752E68E92620F884009E9A7E /* netlify@2x.png */; };
+		752E68F72620F885009E9A7E /* vercel@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752E68EA2620F884009E9A7E /* vercel@2x.png */; };
+		752E68F82620F885009E9A7E /* github@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752E68EB2620F884009E9A7E /* github@2x.png */; };
+		752E68F92620F885009E9A7E /* apple@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752E68EC2620F884009E9A7E /* apple@2x.png */; };
 		754D31B525759D900020CED4 /* tutorial.html in Resources */ = {isa = PBXBuildFile; fileRef = 754D31B425759D900020CED4 /* tutorial.html */; };
 		755D0DE0247DDE050074AB5C /* FigCLI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755D0DDF247DDE050074AB5C /* FigCLI.swift */; };
 		755D0DE2247EFAE10074AB5C /* Logging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755D0DE1247EFAE10074AB5C /* Logging.swift */; };
@@ -130,7 +146,6 @@
 		758AEB6A24CEA4D000A15EAF /* Starscream in Frameworks */ = {isa = PBXBuildFile; productRef = 758AEB6924CEA4D000A15EAF /* Starscream */; };
 		758AEB6C24CEA54600A15EAF /* SocketServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 758AEB6B24CEA54600A15EAF /* SocketServer.swift */; };
 		759F987C25BF903900EC3407 /* Accessibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 759F987B25BF903900EC3407 /* Accessibility.swift */; };
-		759F988125BFF0FF00EC3407 /* box@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 759F987D25BFF0FD00EC3407 /* box@2x.png */; };
 		759F988225BFF0FF00EC3407 /* commandkey@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 759F987E25BFF0FE00EC3407 /* commandkey@2x.png */; };
 		759F988325BFF0FF00EC3407 /* database@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 759F987F25BFF0FE00EC3407 /* database@2x.png */; };
 		759F988425BFF0FF00EC3407 /* package@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 759F988025BFF0FE00EC3407 /* package@2x.png */; };
@@ -341,6 +356,22 @@
 		752D71C925AFD5B800263527 /* team-upload.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "team-upload.sh"; sourceTree = "<group>"; };
 		752D71CC25B8A6B200263527 /* Restarter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Restarter.swift; sourceTree = "<group>"; };
 		752D71CE25B8CA4000263527 /* iTermTabIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iTermTabIntegration.swift; sourceTree = "<group>"; };
+		752E68DA2620F868009E9A7E /* gradle@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "gradle@2x.png"; sourceTree = "<group>"; };
+		752E68DB2620F868009E9A7E /* slack@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "slack@2x.png"; sourceTree = "<group>"; };
+		752E68DC2620F868009E9A7E /* yarn@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "yarn@2x.png"; sourceTree = "<group>"; };
+		752E68E02620F882009E9A7E /* azure@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "azure@2x.png"; sourceTree = "<group>"; };
+		752E68E12620F883009E9A7E /* box@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "box@2x.png"; sourceTree = "<group>"; };
+		752E68E22620F883009E9A7E /* gitlab@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "gitlab@2x.png"; sourceTree = "<group>"; };
+		752E68E32620F883009E9A7E /* template@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "template@2x.png"; sourceTree = "<group>"; };
+		752E68E42620F883009E9A7E /* firebase@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "firebase@2x.png"; sourceTree = "<group>"; };
+		752E68E52620F884009E9A7E /* android@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "android@2x.png"; sourceTree = "<group>"; };
+		752E68E62620F884009E9A7E /* aws@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "aws@2x.png"; sourceTree = "<group>"; };
+		752E68E72620F884009E9A7E /* characters@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "characters@2x.png"; sourceTree = "<group>"; };
+		752E68E82620F884009E9A7E /* gcloud@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "gcloud@2x.png"; sourceTree = "<group>"; };
+		752E68E92620F884009E9A7E /* netlify@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "netlify@2x.png"; sourceTree = "<group>"; };
+		752E68EA2620F884009E9A7E /* vercel@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "vercel@2x.png"; sourceTree = "<group>"; };
+		752E68EB2620F884009E9A7E /* github@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "github@2x.png"; sourceTree = "<group>"; };
+		752E68EC2620F884009E9A7E /* apple@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "apple@2x.png"; sourceTree = "<group>"; };
 		754D31B425759D900020CED4 /* tutorial.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = tutorial.html; sourceTree = "<group>"; };
 		755D0DDF247DDE050074AB5C /* FigCLI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FigCLI.swift; sourceTree = "<group>"; };
 		755D0DE1247EFAE10074AB5C /* Logging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logging.swift; sourceTree = "<group>"; };
@@ -394,7 +425,6 @@
 		758AEB5F24CE529D00A15EAF /* String+Shell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+Shell.swift"; sourceTree = "<group>"; };
 		758AEB6B24CEA54600A15EAF /* SocketServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocketServer.swift; sourceTree = "<group>"; };
 		759F987B25BF903900EC3407 /* Accessibility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Accessibility.swift; sourceTree = "<group>"; };
-		759F987D25BFF0FD00EC3407 /* box@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "box@2x.png"; sourceTree = "<group>"; };
 		759F987E25BFF0FE00EC3407 /* commandkey@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "commandkey@2x.png"; sourceTree = "<group>"; };
 		759F987F25BFF0FE00EC3407 /* database@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "database@2x.png"; sourceTree = "<group>"; };
 		759F988025BFF0FE00EC3407 /* package@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "package@2x.png"; sourceTree = "<group>"; };
@@ -591,12 +621,27 @@
 		7518608F255CE49B0000A7C7 /* Icons */ = {
 			isa = PBXGroup;
 			children = (
+				752E68E52620F884009E9A7E /* android@2x.png */,
+				752E68EC2620F884009E9A7E /* apple@2x.png */,
+				752E68E62620F884009E9A7E /* aws@2x.png */,
+				752E68E02620F882009E9A7E /* azure@2x.png */,
+				752E68E12620F883009E9A7E /* box@2x.png */,
+				752E68E72620F884009E9A7E /* characters@2x.png */,
+				752E68E42620F883009E9A7E /* firebase@2x.png */,
+				752E68E82620F884009E9A7E /* gcloud@2x.png */,
+				752E68EB2620F884009E9A7E /* github@2x.png */,
+				752E68E22620F883009E9A7E /* gitlab@2x.png */,
+				752E68E92620F884009E9A7E /* netlify@2x.png */,
+				752E68E32620F883009E9A7E /* template@2x.png */,
+				752E68EA2620F884009E9A7E /* vercel@2x.png */,
+				752E68DA2620F868009E9A7E /* gradle@2x.png */,
+				752E68DB2620F868009E9A7E /* slack@2x.png */,
+				752E68DC2620F868009E9A7E /* yarn@2x.png */,
 				75A4A29725C8D855002EFD6B /* commit@2x.png */,
 				7573F1592602B4E000C833FA /* alert@2x.png */,
 				7573F15A2602B4E000C833FA /* invite@2x.png */,
 				75A4A29625C8D855002EFD6B /* git@2x.png */,
 				75A4A29525C8D855002EFD6B /* node@2x.png */,
-				759F987D25BFF0FD00EC3407 /* box@2x.png */,
 				759F988825BFF8B000EC3407 /* docker@2x.png */,
 				759F988D25BFFAE500EC3407 /* heroku@2x.png */,
 				759F988625BFF8B000EC3407 /* kubernetes@2x.png */,
@@ -1094,6 +1139,7 @@
 				752D71CA25AFD7B400263527 /* team-download.sh in Resources */,
 				752D71CB25AFD7B400263527 /* team-upload.sh in Resources */,
 				752D71C225AE80CF00263527 /* ssh.sh in Resources */,
+				752E68DF2620F868009E9A7E /* yarn@2x.png in Resources */,
 				75A4521025A83E5600107D2C /* remote_cwd.sh in Resources */,
 				75AA24D125A79F3400A51E9D /* tweet.sh in Resources */,
 				75AA24D225A79F3400A51E9D /* issue.sh in Resources */,
@@ -1101,8 +1147,10 @@
 				75AA24CD25A6F98400A51E9D /* uninstall_spec.sh in Resources */,
 				759F988225BFF0FF00EC3407 /* commandkey@2x.png in Resources */,
 				75AA24CA25A6F39800A51E9D /* list.sh in Resources */,
+				752E68F12620F885009E9A7E /* firebase@2x.png in Resources */,
 				75A4A29825C8D855002EFD6B /* node@2x.png in Resources */,
 				75AA24CB25A6F39800A51E9D /* help.sh in Resources */,
+				752E68F82620F885009E9A7E /* github@2x.png in Resources */,
 				75186083255CB0C20000A7C7 /* iterm-integration.sh in Resources */,
 				75EDDC5125D24755003AECC6 /* hyper-integration.js in Resources */,
 				759F988325BFF0FF00EC3407 /* database@2x.png in Resources */,
@@ -1111,23 +1159,28 @@
 				75B0A08025BB74C700FCD89A /* fig-context-indicator.png in Resources */,
 				75186086255CB0C20000A7C7 /* update.sh in Resources */,
 				75186087255CB0C20000A7C7 /* 1.0.22.sh in Resources */,
+				752E68F02620F885009E9A7E /* template@2x.png in Resources */,
 				75186088255CB0C20000A7C7 /* uninstall.sh in Resources */,
+				752E68EF2620F885009E9A7E /* gitlab@2x.png in Resources */,
 				75186089255CB0C20000A7C7 /* source.sh in Resources */,
 				7518608A255CB0C20000A7C7 /* 1.0.21.sh in Resources */,
 				759F988925BFF8B000EC3407 /* npm@2x.png in Resources */,
+				752E68F32620F885009E9A7E /* aws@2x.png in Resources */,
 				759F988A25BFF8B000EC3407 /* kubernetes@2x.png in Resources */,
 				7518608B255CB0C20000A7C7 /* feedback.sh in Resources */,
+				752E68DE2620F868009E9A7E /* slack@2x.png in Resources */,
 				7518608C255CB0C20000A7C7 /* 1.0.24.sh in Resources */,
 				7585862625941A2700B76B4A /* invite.sh in Resources */,
 				7518608D255CB0C20000A7C7 /* open_new_terminal_window.scpt in Resources */,
-				759F988125BFF0FF00EC3407 /* box@2x.png in Resources */,
 				7518608E255CB0C20000A7C7 /* 1.0.20.sh in Resources */,
 				759F988B25BFF8B000EC3407 /* twitter@2x.png in Resources */,
 				75186073255B2A0A0000A7C7 /* string@2x.png in Resources */,
 				757CA88624876043002A64A8 /* error.html in Resources */,
+				752E68DD2620F868009E9A7E /* gradle@2x.png in Resources */,
 				75A4A29E25C91471002EFD6B /* debugger-2-trimmed.mp4 in Resources */,
 				757CA88F248B0D31002A64A8 /* cli.png in Resources */,
 				752C0BE4247B44C60077E415 /* finder.html in Resources */,
+				752E68F22620F885009E9A7E /* android@2x.png in Resources */,
 				75B0A08C25BBC7A300FCD89A /* autoc.mp4 in Resources */,
 				759F988425BFF0FF00EC3407 /* package@2x.png in Resources */,
 				752C0BDA2479F37B0077E415 /* fig.js in Resources */,
@@ -1141,13 +1194,19 @@
 				7573F15C2602B4E000C833FA /* invite@2x.png in Resources */,
 				75D2E3CB249C1E7500607F66 /* terminal.css in Resources */,
 				757CA88A248AD58C002A64A8 /* onboarding.html in Resources */,
+				752E68F72620F885009E9A7E /* vercel@2x.png in Resources */,
 				757CA89B248C18F1002A64A8 /* done.html in Resources */,
+				752E68EE2620F885009E9A7E /* box@2x.png in Resources */,
 				75809B1124C3876B00BFFB3E /* run-tutorial.js in Resources */,
 				757CA899248C10AD002A64A8 /* fonts in Resources */,
 				757CA893248B28E3002A64A8 /* landing.html in Resources */,
+				752E68F42620F885009E9A7E /* characters@2x.png in Resources */,
 				75B0A08625BB94DF00FCD89A /* debugger-only.mp4 in Resources */,
+				752E68F62620F885009E9A7E /* netlify@2x.png in Resources */,
 				7573F15B2602B4E000C833FA /* alert@2x.png in Resources */,
 				755D0DE4247F038B0074AB5C /* logs.html in Resources */,
+				752E68F52620F885009E9A7E /* gcloud@2x.png in Resources */,
+				752E68F92620F885009E9A7E /* apple@2x.png in Resources */,
 				75A4A29A25C8D855002EFD6B /* commit@2x.png in Resources */,
 				752D71C525AE9B7200263527 /* ssh.html in Resources */,
 				757CA89D248C1F50002A64A8 /* demo4onboarding.mp4 in Resources */,
@@ -1165,6 +1224,7 @@
 				75B0A08E25BBC9B800FCD89A /* privacy.html in Resources */,
 				75B0A08425BB759E00FCD89A /* trimmed-debugger.mp4 in Resources */,
 				75186072255B2A0A0000A7C7 /* carrot@2x.png in Resources */,
+				752E68ED2620F885009E9A7E /* azure@2x.png in Resources */,
 				75186074255B2A0A0000A7C7 /* command@2x.png in Resources */,
 				75186071255B2A0A0000A7C7 /* option@2x.png in Resources */,
 				752C0BE0247A27790077E415 /* editor.html in Resources */,
