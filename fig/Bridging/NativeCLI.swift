@@ -279,7 +279,11 @@ extension NativeCLI {
     
     static func openMenuBarCommand(_ scope: Scope) {
         let (_, connection) = scope
-        connection.send(message: "disconnect")
+        if NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.surteesstudios.Bartender") != nil {
+            NativeCLI.printInTerminal("\nLooks like you might be using Bartender?\n\n→ Fig can't automatically open the menu, but you can click it manually.\n", using: connection)
+        }
+
+      connection.send(message: "disconnect")
 
         if let delegate = NSApp.delegate as? AppDelegate {
             delegate.openMenu()
