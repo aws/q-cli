@@ -200,6 +200,8 @@
 		75EDDC4E25D23773003AECC6 /* HyperIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75EDDC4D25D23773003AECC6 /* HyperIntegration.swift */; };
 		75EDDC5125D24755003AECC6 /* hyper-integration.js in Resources */ = {isa = PBXBuildFile; fileRef = 75EDDC5025D24755003AECC6 /* hyper-integration.js */; };
 		75EDDC5B25D4BC54003AECC6 /* UnixSocketClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75EDDC5A25D4BC53003AECC6 /* UnixSocketClient.swift */; };
+		75F7F952261FBDC30005E215 /* UnixSocketServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75F7F951261FBDC30005E215 /* UnixSocketServer.swift */; };
+		75F7F954262007170005E215 /* ShellHooksTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75F7F953262007170005E215 /* ShellHooksTransport.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -465,6 +467,8 @@
 		75EDDC4D25D23773003AECC6 /* HyperIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HyperIntegration.swift; sourceTree = "<group>"; };
 		75EDDC5025D24755003AECC6 /* hyper-integration.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = "hyper-integration.js"; sourceTree = "<group>"; };
 		75EDDC5A25D4BC53003AECC6 /* UnixSocketClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnixSocketClient.swift; sourceTree = "<group>"; };
+		75F7F951261FBDC30005E215 /* UnixSocketServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnixSocketServer.swift; sourceTree = "<group>"; };
+		75F7F953262007170005E215 /* ShellHooksTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellHooksTransport.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -857,6 +861,8 @@
 				755D0DDF247DDE050074AB5C /* FigCLI.swift */,
 				75AA24C025A656FA00A51E9D /* NativeCLI.swift */,
 				757CA8E524905B38002A64A8 /* SockerServer.swift */,
+				75F7F953262007170005E215 /* ShellHooksTransport.swift */,
+				75F7F951261FBDC30005E215 /* UnixSocketServer.swift */,
 			);
 			path = Bridging;
 			sourceTree = "<group>";
@@ -1240,6 +1246,7 @@
 				7510F89F24A6910500E86F7C /* Terminal.swift in Sources */,
 				75B199322501A3DA00F38EA8 /* KeyboardLayout.swift in Sources */,
 				756759972446C44C006AA988 /* String+Shell.swift in Sources */,
+				75F7F952261FBDC30005E215 /* UnixSocketServer.swift in Sources */,
 				757CA8E624905B38002A64A8 /* SockerServer.swift in Sources */,
 				75B7931A24BB897F0073AAC6 /* PseudoTerminalService.swift in Sources */,
 				75CFDBDF24EDB2E900F00CAE /* Onboarding.swift in Sources */,
@@ -1251,6 +1258,7 @@
 				7510F8A824A6910500E86F7C /* MacDebugView.swift in Sources */,
 				75C07120244BB441002DF69F /* CompanionViewController.swift in Sources */,
 				7510F89E24A6910500E86F7C /* BufferSet.swift in Sources */,
+				75F7F954262007170005E215 /* ShellHooksTransport.swift in Sources */,
 				75DA86A325EDB05100722F1D /* Integrations.swift in Sources */,
 				7510F8B724A6910500E86F7C /* EscapeSequenceParser.swift in Sources */,
 				7510F89D24A6910500E86F7C /* Utilities.swift in Sources */,
@@ -1534,7 +1542,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = YES;
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 174;
+				CURRENT_PROJECT_VERSION = 176;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				DEVELOPMENT_TEAM = D93PPD94WK;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1570,7 +1578,7 @@
 				CODE_SIGN_IDENTITY = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 174;
+				CURRENT_PROJECT_VERSION = 176;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				DEVELOPMENT_TEAM = D93PPD94WK;
 				ENABLE_HARDENED_RUNTIME = YES;

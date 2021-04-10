@@ -24,6 +24,7 @@ class Settings {
   static let eventTapLocation = "developer.eventTapLocation"
   static let addStatusToTerminalTitle = "autocomplete.addStatusToTerminalTitle"
   static let disableAutocomplete = "autocomplete.disable"
+  static let hideMenubarIcon = "app.hideMenubarIcon"
 
   static let filePath = NSHomeDirectory() + "/.fig/settings.json"
   static let shared = Settings()
