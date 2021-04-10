@@ -23,6 +23,7 @@ class Settings {
   static let vscodeDelayKey = "integrations.vscode.delay"
   static let eventTapLocation = "developer.eventTapLocation"
   static let addStatusToTerminalTitle = "autocomplete.addStatusToTerminalTitle"
+  static let disableAutocomplete = "autocomplete.disable"
   static let hideMenubarIcon = "app.hideMenubarIcon"
 
   static let filePath = NSHomeDirectory() + "/.fig/settings.json"
@@ -101,10 +102,17 @@ class Settings {
     return Settings.loadFromFile() != nil
   }
   
+  fileprivate func processSettingsUpdatesToLegacyDefaults() {
+    if let disabled = currentSettings[Settings.disableAutocomplete] as? Bool {
+      Defaults.useAutocomplete = !disabled
+    }
+  }
+  
   static let settingsUpdatedNotification = Notification.Name("settingsUpdated")
   func settingsUpdated() {
     if let settings = Settings.loadFromFile() {
        currentSettings = settings
+       processSettingsUpdatesToLegacyDefaults()
        NotificationCenter.default.post(Notification(name: Settings.settingsUpdatedNotification))
     } else {
       

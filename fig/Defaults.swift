@@ -175,10 +175,16 @@ class Defaults {
         }
         
         set(flag) {
+            guard _useAutcomplete != flag else { return }
+          
             _useAutcomplete = flag
             NotificationCenter.default.post(name: Defaults.autocompletePreferenceUpdated, object: flag)
             UserDefaults.standard.set(flag, forKey: "useAutocomplete")
             UserDefaults.standard.synchronize()
+            
+            Settings.shared.set(value: !flag, forKey: Settings.disableAutocomplete)
+            
+            NSApp.appDelegate.configureStatusBarItem()
         }
 
     }
