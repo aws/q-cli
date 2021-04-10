@@ -112,7 +112,19 @@ extension ShellMessage {
         guard let histno = tokens[safe: 4],
               let cursor = tokens[safe: 5] else { return nil }
         // "this is the buffer"\n -- drop quotes and newline
-        let buffer = tokens.suffix(from: 6).joined(separator: " ").dropFirst().dropLast().dropLast()
+        var buffer = tokens.suffix(from: 6).joined(separator: " ")
+        if buffer.first == "\"" {
+          buffer.removeFirst()
+        }
+        
+        if buffer.last == "\n" {
+          buffer.removeLast()
+        }
+        
+        if buffer.last == "\"" {
+          buffer.removeLast()
+        }
+        
         return ShellMessage(type: "pipe",
                             source: "",
                             session: String(session),
