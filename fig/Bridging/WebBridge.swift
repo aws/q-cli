@@ -198,6 +198,14 @@ extension WebBridge: WKURLSchemeHandler {
             badge = qs["badge"]
         }
         
+        // fig://template?background-color=ccc&icon=box
+        if let host = url.host, let qs = url.queryDictionary, host == "template" {
+          guard let icon = Bundle.main.image(forResource: "template") else { return nil }
+          return icon.overlayColor(color).overlayText(badge).resized(to: NSSize(width: width, height: height))//?.overlayBadge(color: color,  text: badge)
+
+
+        }
+      
         // fig://icon?type=mp4
         if let host = url.host, let qs = url.queryDictionary, let type = qs["type"], host == "icon" {
             if let icon = Bundle.main.image(forResource: type) {
@@ -330,6 +338,77 @@ extension NSImage {
         newImage.unlockFocus()
         return newImage//.resized(to: NSSize(width: background.size.width * 1.5, height: background.size.height * 1.5))!
     }
+  
+    func overlayColor(_ color: NSColor?) -> NSImage {
+      guard let color = color, let bitmapRep = NSBitmapImageRep(bitmapDataPlanes: nil,
+                                                           pixelsWide: Int(self.size.width),
+                                                           pixelsHigh: Int(self.size.height),
+                                                           bitsPerSample: 8,
+                                                           samplesPerPixel: 4,
+                                                           hasAlpha: true,
+                                                           isPlanar: false,
+                                                           colorSpaceName: .calibratedRGB,
+                                                           bytesPerRow: 0,
+                                                           bitsPerPixel: 0) else { return self }
+      bitmapRep.size = self.size
+      NSGraphicsContext.saveGraphicsState()
+      NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: bitmapRep)
+      draw(in: NSRect(x: 0, y: 0, width: self.size.width, height: self.size.height), from: .zero, operation: .copy, fraction: 1.0)
+      NSGraphicsContext.restoreGraphicsState()
+
+      self.addRepresentation(bitmapRep)
+      
+      guard let cgImage = self.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return self }
+
+      self.lockFocus()
+      color.set()
+      
+      guard let context = NSGraphicsContext.current?.cgContext else { return self }
+      let imageRect = NSRect(origin: NSZeroPoint, size: self.size)
+
+      context.clip(to: imageRect, mask: cgImage)
+      imageRect.fill(using: .darken)
+      self.unlockFocus()
+
+      
+      return self
+    }
+  
+  func overlayText(_ text: String?) -> NSImage {
+    guard let text = text, let bitmapRep = NSBitmapImageRep(bitmapDataPlanes: nil,
+                                                         pixelsWide: Int(self.size.width),
+                                                         pixelsHigh: Int(self.size.height),
+                                                         bitsPerSample: 8,
+                                                         samplesPerPixel: 4,
+                                                         hasAlpha: true,
+                                                         isPlanar: false,
+                                                         colorSpaceName: .calibratedRGB,
+                                                         bytesPerRow: 0,
+                                                         bitsPerPixel: 0) else { return self }
+    bitmapRep.size = self.size
+    NSGraphicsContext.saveGraphicsState()
+    NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: bitmapRep)
+    draw(in: NSRect(x: 0, y: 0, width: self.size.width, height: self.size.height), from: .zero, operation: .copy, fraction: 1.0)
+    NSGraphicsContext.restoreGraphicsState()
+
+    self.addRepresentation(bitmapRep)
+    
+    self.lockFocus()
+    
+    let imageRect = NSRect(origin: NSZeroPoint, size: self.size)
+    let paragraphStyle: NSMutableParagraphStyle = NSMutableParagraphStyle()
+    paragraphStyle.alignment = NSTextAlignment.center
+    
+    let string = NSAttributedString(string: text,
+                                    attributes: [ NSAttributedString.Key.font : NSFont.systemFont(ofSize: floor(imageRect.height * 0.65)),
+                                                  NSAttributedString.Key.foregroundColor : NSColor.white,
+                                                  NSAttributedString.Key.paragraphStyle : paragraphStyle])
+
+    
+    string.draw(in: imageRect.insetBy(dx: 0, dy: imageRect.height * 0.1))
+    self.unlockFocus()
+    return self
+  }
   
     func overlayBadge(color: NSColor?, text: String?) -> NSImage {
         guard color != nil || text != nil else {
