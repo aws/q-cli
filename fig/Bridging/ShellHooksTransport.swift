@@ -101,7 +101,7 @@ extension ShellMessage {
   static func from(raw: String) -> ShellMessage? {
     guard let decodedData = Data(base64Encoded: raw, options: .ignoreUnknownCharacters) else { return nil }
     let decodedString = String(data: decodedData, encoding: .utf8)!
-    print("unix:", decodedString)
+    print("unix: '\(decodedString)'")
     let tokens: [String] = decodedString.split(separator: " ").map(String.init)
     
     guard let subcommand = tokens[safe: 1],  let session = tokens[safe: 2], let integration = tokens[safe: 3] else { return nil }
@@ -111,7 +111,8 @@ extension ShellMessage {
       case .keypress:
         guard let histno = tokens[safe: 4],
               let cursor = tokens[safe: 5] else { return nil }
-        let buffer = tokens.suffix(from: 6).joined(separator: " ").dropFirst().dropLast()
+        // "this is the buffer"\n -- drop quotes and newline
+        let buffer = tokens.suffix(from: 6).joined(separator: " ").dropFirst().dropLast().dropLast()
         return ShellMessage(type: "pipe",
                             source: "",
                             session: String(session),
