@@ -44,7 +44,7 @@
 		7510F8BF24A99A4B00E86F7C /* WindowService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F8BE24A99A4B00E86F7C /* WindowService.swift */; };
 		7510F8C124A9B32D00E86F7C /* WindowManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F8C024A9B32D00E86F7C /* WindowManager.swift */; };
 		7518606F255B2A0A0000A7C7 /* flag@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 75186069255B2A090000A7C7 /* flag@2x.png */; };
-		75186070255B2A0A0000A7C7 /* astrix@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7518606A255B2A090000A7C7 /* astrix@2x.png */; };
+		75186070255B2A0A0000A7C7 /* astrisk@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7518606A255B2A090000A7C7 /* astrisk@2x.png */; };
 		75186071255B2A0A0000A7C7 /* option@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7518606B255B2A090000A7C7 /* option@2x.png */; };
 		75186072255B2A0A0000A7C7 /* carrot@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7518606C255B2A090000A7C7 /* carrot@2x.png */; };
 		75186073255B2A0A0000A7C7 /* string@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7518606D255B2A090000A7C7 /* string@2x.png */; };
@@ -319,7 +319,7 @@
 		7510F8BE24A99A4B00E86F7C /* WindowService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowService.swift; sourceTree = "<group>"; };
 		7510F8C024A9B32D00E86F7C /* WindowManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowManager.swift; sourceTree = "<group>"; };
 		75186069255B2A090000A7C7 /* flag@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "flag@2x.png"; sourceTree = "<group>"; };
-		7518606A255B2A090000A7C7 /* astrix@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "astrix@2x.png"; sourceTree = "<group>"; };
+		7518606A255B2A090000A7C7 /* astrisk@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "astrisk@2x.png"; sourceTree = "<group>"; };
 		7518606B255B2A090000A7C7 /* option@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "option@2x.png"; sourceTree = "<group>"; };
 		7518606C255B2A090000A7C7 /* carrot@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "carrot@2x.png"; sourceTree = "<group>"; };
 		7518606D255B2A090000A7C7 /* string@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "string@2x.png"; sourceTree = "<group>"; };
@@ -654,7 +654,7 @@
 				759F987E25BFF0FE00EC3407 /* commandkey@2x.png */,
 				759F987F25BFF0FE00EC3407 /* database@2x.png */,
 				759F988025BFF0FE00EC3407 /* package@2x.png */,
-				7518606A255B2A090000A7C7 /* astrix@2x.png */,
+				7518606A255B2A090000A7C7 /* astrisk@2x.png */,
 				7518606C255B2A090000A7C7 /* carrot@2x.png */,
 				7518606E255B2A0A0000A7C7 /* command@2x.png */,
 				75186069255B2A090000A7C7 /* flag@2x.png */,
@@ -1219,7 +1219,7 @@
 				7567595F244634B2006AA988 /* Main.storyboard in Resources */,
 				752A398625CD0FE800B1AC40 /* fig-0.0.1.vsix in Resources */,
 				75B0A07E25BB746600FCD89A /* debugger.html in Resources */,
-				75186070255B2A0A0000A7C7 /* astrix@2x.png in Resources */,
+				75186070255B2A0A0000A7C7 /* astrisk@2x.png in Resources */,
 				75B1993625042B2C00F38EA8 /* autocomplete.html in Resources */,
 				7518606F255B2A0A0000A7C7 /* flag@2x.png in Resources */,
 				75E993F22515A6DD000BE6BE /* statusbar@2x.png in Resources */,
