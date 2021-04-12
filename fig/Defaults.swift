@@ -408,4 +408,32 @@ class Defaults {
       }
       
     }
+  
+    static var developerModeEnabled: Bool {
+      get {
+        if let mode = Settings.shared.getValue(forKey: Settings.developerModeKey) as? Bool {
+          return mode
+        }
+        
+        if let mode = Settings.shared.getValue(forKey: Settings.developerModeNPMKey) as? Bool {
+          return mode
+        }
+        
+        return false
+      }
+      
+      set (enabled) {
+        if Settings.shared.getValue(forKey: Settings.developerModeKey) as? Bool != nil {
+          Settings.shared.set(value: enabled, forKey: Settings.developerModeKey)
+        }
+        
+        if Settings.shared.getValue(forKey: Settings.developerModeNPMKey) as? Bool != nil {
+          Settings.shared.set(value: enabled, forKey: Settings.developerModeNPMKey)
+        }
+      }
+    }
+  
+    @objc static func toggleDeveloperMode() {
+      Defaults.developerModeEnabled = !Defaults.developerModeEnabled
+    }
 }

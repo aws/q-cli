@@ -587,6 +587,21 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
              action: nil,
              keyEquivalent: "")
         }
+      
+      if let devMode = Settings.shared.getValue(forKey: Settings.developerModeKey) as? Bool, devMode {
+        statusBarMenu.addItem(NSMenuItem.separator())
+        let devMode = statusBarMenu.addItem(withTitle: "Developer mode", action: #selector(toggleDeveloperMode), keyEquivalent: "")
+        devMode.state = .on
+        devMode.indentationLevel = 1
+
+      } else if let devModeCLI = Settings.shared.getValue(forKey: Settings.developerModeNPMKey) as? Bool, devModeCLI {
+        statusBarMenu.addItem(NSMenuItem.separator())
+        let devMode = statusBarMenu.addItem(withTitle: "Developer mode", action: #selector(toggleDeveloperMode), keyEquivalent: "")
+        devMode.state = .on
+        devMode.indentationLevel = 1
+
+
+      }
 
         
         return statusBarMenu
@@ -636,9 +651,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
       print("Settings updated!!!!")
       if let hideMenuBar = Settings.shared.getValue(forKey: Settings.hideMenubarIcon) as? Bool {
         if hideMenuBar {
-//          self.statusBarItem.image = nil
           self.statusBarItem = nil
-//          NSStatusBar.system.removeStatusItem(statusBarItem)
         } else {
           let statusBar = NSStatusBar.system
           statusBarItem = statusBar.statusItem(
@@ -648,10 +661,10 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
           statusBarItem.button?.image?.isTemplate = true
           statusBarItem.button?.wantsLayer = true
           
-          configureStatusBarItem()
         }
       }
       
+      configureStatusBarItem()
     }
     
     func setUpAccesibilityObserver(){
@@ -1263,6 +1276,10 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 //             }
 //        }
 
+    }
+  
+    @objc func toggleDeveloperMode() {
+        Defaults.toggleDeveloperMode()
     }
     
     @objc func promptForAccesibilityAccess() {
