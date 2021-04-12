@@ -391,18 +391,18 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         autocomplete.state = Defaults.useAutocomplete ? .on : .off
         autocomplete.indentationLevel = 1
         statusBarMenu.addItem(NSMenuItem.separator())
-        
-        let manual = statusBarMenu.addItem(
-         withTitle: "User Manual",
-         action: #selector(AppDelegate.viewDocs),
+      
+        let forum = statusBarMenu.addItem(
+         withTitle: "Support Forum",
+         action: #selector(AppDelegate.viewSupportForum),
          keyEquivalent: "")
-        manual.image = NSImage(named: NSImage.Name("commandkey"))
-        
+        forum.image = NSImage(named: NSImage.Name("commandkey"))
+      
         let slack = statusBarMenu.addItem(
          withTitle: "Join Fig Community",
          action: #selector(AppDelegate.inviteToSlack),
          keyEquivalent: "")
-        slack.image = NSImage(named: NSImage.Name("Slack"))//.resized(to: NSSize(width: 16, height: 16))
+        slack.image = NSImage(named: NSImage.Name("slack"))//.resized(to: NSSize(width: 16, height: 16))
         statusBarMenu.addItem(NSMenuItem.separator())
     
         let invite = statusBarMenu.addItem(
@@ -951,6 +951,12 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         
         NSWorkspace.shared.open(URL(string: "https://withfig.com/docs")!)
         TelemetryProvider.track(event: .viewDocs, with: [:])
+    }
+  
+    @objc func viewSupportForum() {
+        
+        NSWorkspace.shared.open(URL(string: "https://forum.withfig.com/")!)
+        TelemetryProvider.track(event: .viewSupportForum, with: [:])
     }
 
     @objc func getKeyboardLayout() {

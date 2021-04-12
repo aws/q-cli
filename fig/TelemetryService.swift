@@ -39,6 +39,7 @@ enum TelemetryEvent: String {
     case toggledSidebar = "Toggled Sidebar"
     case quitApp = "Quit App"
     case viewDocs = "View Docs"
+    case viewSupportForum = "View Support Forum"
     case joinSlack = "Join Slack"
     case sendFeedback = "Send Feedback"
     case dailyAggregates = "Aggregates"
