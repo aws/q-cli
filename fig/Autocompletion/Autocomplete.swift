@@ -35,6 +35,7 @@ class Autocomplete {
     KeypressProvider.shared.removeRedirect(for: Keycode.upArrow, in: window)
     KeypressProvider.shared.removeRedirect(for: Keycode.downArrow, in: window)
     KeypressProvider.shared.removeRedirect(for: Keycode.tab, in: window)
+    KeypressProvider.shared.removeRedirect(for: Keystroke(modifierFlags: [.shift], keyCode: Keycode.tab), in: window)
     KeypressProvider.shared.removeRedirect(for: Keycode.returnKey, in: window)
     KeypressProvider.shared.removeRedirect(for: Keystroke(modifierFlags: [.control], keyCode: Keycode.n), in: window)
     KeypressProvider.shared.removeRedirect(for: Keystroke(modifierFlags: [.control], keyCode: Keycode.p), in: window)
