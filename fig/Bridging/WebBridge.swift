@@ -206,6 +206,12 @@ extension WebBridge: WKURLSchemeHandler {
 
         }
       
+        // fig://icon?asset=git
+        if let host = url.host, let qs = url.queryDictionary, let type = qs["asset"], host == "icon" {
+            let icon = Bundle.main.image(forResource: type) ?? Bundle.main.image(forResource: "box")!
+            return icon.resized(to: NSSize(width: width, height: height))?.overlayBadge(color: color,  text: badge)
+        }
+
         // fig://icon?type=mp4
         if let host = url.host, let qs = url.queryDictionary, let type = qs["type"], host == "icon" {
             if let icon = Bundle.main.image(forResource: type) {
