@@ -25,6 +25,7 @@ class Settings {
   static let addStatusToTerminalTitle = "autocomplete.addStatusToTerminalTitle"
   static let disableAutocomplete = "autocomplete.disable"
   static let hideMenubarIcon = "app.hideMenubarIcon"
+  static let debugModeKey = "developer.debugMode"
 
   static let filePath = NSHomeDirectory() + "/.fig/settings.json"
   static let shared = Settings()
@@ -105,6 +106,10 @@ class Settings {
   fileprivate func processSettingsUpdatesToLegacyDefaults() {
     if let disabled = currentSettings[Settings.disableAutocomplete] as? Bool {
       Defaults.useAutocomplete = !disabled
+    }
+    
+    if let debugMode = currentSettings[Settings.debugModeKey] as? Bool {
+      Defaults.debugAutocomplete = debugMode
     }
   }
   
