@@ -180,6 +180,7 @@ class Accessibility {
     }.filter { $0 != nil }
     
     guard let candidate = candidates.first else {
+      print("xterm-cursor: no candidates")
       return nil
     }
     
