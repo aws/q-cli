@@ -492,6 +492,21 @@ struct ShellMessage: Codable {
         }
         return nil
     }
+  
+    var potentialBundleId: String? {
+      switch self.terminal {
+        case "vscode":
+          return Integrations.VSCode
+        case "Apple_Terminal":
+          return Integrations.Terminal
+        case "Hyper":
+          return Integrations.Hyper
+        case "iTerm.app":
+          return Integrations.iTerm
+        default:
+          return nil
+      }
+    }
     
     var subcommand: String? {
         get {
