@@ -67,9 +67,12 @@ if arguments.count > 1 {
       }
       
       if (arguments.count == 2) {
-        settings.keys.forEach { (key) in
-          print(key)
+        if let raw = Settings.rawFromFile() {
+          print(raw)
         }
+//        settings.keys.forEach { (key) in
+//          print(key)
+//        }
         exit(0)
       }
 
