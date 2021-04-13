@@ -102,7 +102,7 @@ extension ShellMessage {
     guard let decodedData = Data(base64Encoded: raw, options: .ignoreUnknownCharacters) else { return nil }
     let decodedString = String(data: decodedData, encoding: .utf8)!
     print("unix: '\(decodedString)'")
-    let tokens: [String] = decodedString.split(separator: " ", maxSplits: Int.max, omittingEmptySubsequences: false).map(String.init)
+    let tokens: [String] = decodedString.split(separator: " ", maxSplits: Int.miax, omittingEmptySubsequences: false).map(String.init)
     
     guard let subcommand = tokens[safe: 1],  let session = tokens[safe: 2], let integration = tokens[safe: 3] else { return nil }
   
