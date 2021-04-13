@@ -8,6 +8,7 @@
 
 import Cocoa
 import AXSwift
+import Sentry
 
 class Accessibility {
   static let permissionDidUpdate = Notification.Name("accessibilityPermissionDidUpdate")
@@ -23,6 +24,30 @@ class Accessibility {
       DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
         NotificationCenter.default.post(name: Accessibility.permissionDidUpdate, object: Accessibility.enabled)
       }
+    }
+  }
+  
+  static func checkIfPermissionRevoked() {
+    let previousPermissions = Defaults.accessibilityEnabledOnPreviousLaunch
+    let currentPermissions = Accessibility.enabled
+    Defaults.accessibilityEnabledOnPreviousLaunch = currentPermissions
+
+    switch (previous: previousPermissions, current: currentPermissions) {
+    case (previous: true, current: true):
+      print("Accessibility: permission remains enabled.")
+    case (previous: false, current: true):
+      print("Accessibility: permission was granted during previous session.")
+    case (previous: true, current: false):
+      print("Accessibility: permission was LOST since previous session.")
+      SentrySDK.capture(message: "Accessibility: permission was LOST since previous session.")
+    case (previous: false, current: false):
+      print("Accessibility: permission has not been granted.")
+    case (previous: nil, current: _):
+      print("Accessibility: previous permission status not recorded.")
+    default:
+      print("Accessibility: unexpected state")
+      
+
     }
   }
   

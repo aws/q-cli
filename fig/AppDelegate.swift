@@ -65,7 +65,8 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         TelemetryProvider.track(event: .launchedApp, with:
                                 ["crashed" : Defaults.launchedFollowingCrash ? "true" : "false"])
         Defaults.launchedFollowingCrash = true //
-        
+        Accessibility.checkIfPermissionRevoked()
+      
 //        AppMover.moveIfNecessary()
         let _ = ShellBridge.shared
         let _ = WindowManager.shared

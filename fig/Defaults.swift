@@ -443,4 +443,15 @@ class Defaults {
     @objc static func toggleDeveloperMode() {
       Defaults.developerModeEnabled = !Defaults.developerModeEnabled
     }
+  
+    static var accessibilityEnabledOnPreviousLaunch: Bool? {
+        get {
+            return  UserDefaults.standard.bool(forKey: "accessibilityEnabledOnPreviousLaunch")
+        }
+        
+        set(version){
+            UserDefaults.standard.set(version, forKey: "accessibilityEnabledOnPreviousLaunch")
+            UserDefaults.standard.synchronize()
+        }
+    }
 }
