@@ -12,6 +12,7 @@ class Settings {
   static let ptyInitFile = "pty.rc"
   static let ptyPathKey = "pty.path"
   static let developerModeKey = "autocomplete.developerMode"
+  static let developerModeNPMKey = "autocomplete.developerModeNPM"
   static let sshCommand = "ssh.commandPrefix"
   static let sshRemoteDirectoryScript = "ssh.remoteDirectoryScript"
   static let launchOnStartupKey = "app.launchOnStartup"
