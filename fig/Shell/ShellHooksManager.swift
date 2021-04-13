@@ -268,6 +268,8 @@ extension ShellHookManager {
       
         observer = WindowObserver(with: bundleId)
       
+        let bundleIdBasedOnTermProgram = info.potentialBundleId
+      
         // We need to wait for window to appear if the terminal emulator is being launched for the first time. Can this be handled more robustly?
         observer?.windowDidAppear(timeoutAfter: delay, completion: {
             // ensuring window bundleId & frontmostApp bundleId match fixes case where a slow launching application (eg. Hyper) will init shell before window is visible/tracked
@@ -276,6 +278,11 @@ extension ShellHookManager {
             guard let window = AXWindowServer.shared.whitelistedWindow, window.bundleId == NSWorkspace.shared.frontmostApplication?.bundleIdentifier
                 else {
                 Logger.log(message: "Cannot track a new terminal session if topmost window isn't whitelisted.", priority: .notify, subsystem: .tty)
+                return
+            }
+          
+            guard window.bundleId == bundleIdBasedOnTermProgram else {
+              Logger.log(message: "Cannot track a new terminal session if topmost window '\(window.bundleId ?? "?")' doesn't correspond to $TERM_PROGRAM '\(bundleIdBasedOnTermProgram ?? "?")'", priority: .notify, subsystem: .tty)
                 return
             }
           
