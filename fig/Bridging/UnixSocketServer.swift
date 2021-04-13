@@ -50,7 +50,7 @@ class UnixSocketServer {
   
   func run() {
     
-    let queue = DispatchQueue.global(qos: .userInteractive)
+    let queue = DispatchQueue.global(qos: .userInitiated)
     
     queue.async { [unowned self] in
       
