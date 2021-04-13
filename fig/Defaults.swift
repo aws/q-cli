@@ -233,8 +233,15 @@ class Defaults {
         }
         
         set(flag) {
+            guard debugAutocomplete != flag else {
+              return
+            }
+          
             UserDefaults.standard.set(flag, forKey: "debugAutocomplete")
             UserDefaults.standard.synchronize()
+          
+            Settings.shared.set(value: flag, forKey: Settings.debugModeKey)
+
         }
 
     }
