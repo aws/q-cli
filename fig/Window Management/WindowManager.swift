@@ -746,14 +746,21 @@ extension WindowManager : WindowManagementService {
 
             }
             
+            // get 'true' main screen (accounting for the fact that fullScreen workspaces default to laptop screen)
+            let currentScreen = NSScreen.screens.filter { (screen) -> Bool in
+              return screen.frame.contains(rect)
+            }.first
+          
+          
 //            WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try { fig.autocomplete_above = \(isAbove)} catch(e) {}", completionHandler: nil)
             let maxWidth =  Settings.shared.getValue(forKey: Settings.autocompleteWidth) as? CGFloat
             let popup = NSRect(origin: translatedOrigin, size: CGSize(width: WindowManager.shared.autocomplete?.width ?? maxWidth ?? Defaults.autocompleteWidth ?? 200
                 , height: height))
             let sidebarInsetBuffer:CGFloat = 0.0//60;
-            let w = (NSScreen.main!.frame.maxX - sidebarInsetBuffer) - popup.maxX
+            let w = (currentScreen!.frame.maxX - sidebarInsetBuffer) - popup.maxX
             var x = popup.origin.x
             print("edge",w, x, x + w)
+            print("main:",currentScreen!.frame)
 
             if (w < 0) {
                x += w
