@@ -100,6 +100,12 @@ class Settings {
     return json
   }
 
+  func restartListener() {
+    self.eventSource?.cancel()
+    self.setUpFileSystemListeners()
+    self.settingsUpdated()
+  }
+  
   static var haveValidFormat: Bool {
     return Settings.loadFromFile() != nil
   }
@@ -137,6 +143,7 @@ class Settings {
   fileprivate func setUpFileSystemListeners() {
     // set up file observers
     guard FileManager.default.fileExists(atPath: Settings.filePath) else {
+      print("Settings: file does not exist. Not setting up listeners")
       return
     }
 
