@@ -45,6 +45,12 @@ class SecureKeyboardInput {
   }
   
   static let supportURL = URL(string:"https://withfig.com/docs/support/secure-keyboard-input")!
+  @objc class func openSupportPage() {
+    NSWorkspace.shared.open(supportURL)
+    DispatchQueue.global(qos: .background).async {
+      TelemetryProvider.track(event: .openSecureInputSupportPage, with: [:])
+    }
+  }
   static func notifyIfEnabled() {
     guard SecureKeyboardInput.enabled else { return }
     
@@ -74,10 +80,7 @@ class SecureKeyboardInput {
     let openSupport = alert.runModal() == .alertFirstButtonReturn
     
     if (openSupport) {
-      NSWorkspace.shared.open(supportURL)
-      DispatchQueue.global(qos: .background).async {
-        TelemetryProvider.track(event: .openSecureInputSupportPage, with: payload)
-      }
+      SecureKeyboardInput.openSupportPage()
     }
   }
 }

@@ -2021,9 +2021,11 @@ extension AppDelegate : NSMenuDelegate {
                     } else {
                         legend.addItem(NSMenuItem(title: "Run `ioreg -l -w 0 | grep SecureInput` to determine which app is responsible.", action: nil, keyEquivalent: ""))
                     }
-
-
-
+                  
+                    legend.addItem(NSMenuItem.separator())
+                    let support = NSMenuItem(title: "Learn more", action: #selector(SecureKeyboardInput.openSupportPage), keyEquivalent: "")
+                    support.target = SecureKeyboardInput.self
+                    legend.addItem(support)
 
                 } else if (!hasContext) {
                     color = .orange
