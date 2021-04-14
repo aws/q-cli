@@ -15,7 +15,7 @@ class Github {
         let body =
         """
         ### Description:
-        > Please include a detailed description of the issue (and an image, if applicable)
+        > Please include a detailed description of the issue (and an image or screen recording, if applicable)
         
         \(body ?? "")
         
