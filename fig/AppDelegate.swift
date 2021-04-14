@@ -566,10 +566,11 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         debug.submenu = debugMenu
         
         statusBarMenu.addItem(NSMenuItem.separator())
-        statusBarMenu.addItem(
+        let issue = statusBarMenu.addItem(
          withTitle: "Report a bug...", //✉️
          action: #selector(AppDelegate.sendFeedback),
          keyEquivalent: "")
+        issue.image = NSImage(imageLiteralResourceName: "github")
         //email.image = NSImage(imageLiteralResourceName: "founders")
         statusBarMenu.addItem(NSMenuItem.separator())
         statusBarMenu.addItem(
@@ -739,7 +740,9 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     }
     
     @objc func sendFeedback() {
-        NSWorkspace.shared.open(URL(string:"mailto:hello@withfig.com")!)
+//        NSWorkspace.shared.open(URL(string:"mailto:hello@withfig.com")!)
+      
+        Github.openIssue()
         TelemetryProvider.track(event: .sendFeedback, with: [:])
     }
     

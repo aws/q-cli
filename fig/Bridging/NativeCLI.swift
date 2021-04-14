@@ -90,6 +90,7 @@ class NativeCLI {
                                                            .debugDotfiles,
                                                            .debugSSHSession,
                                                            .electronAccessibility,
+                                                           .issue,
                                                            .quit,
                                                            .docs]
                return implementatedNatively.contains(self)
@@ -145,6 +146,8 @@ class NativeCLI {
                 NativeCLI.debugSSHSessionCommand(scope)
             case .quit:
                 NativeCLI.quitCommand(scope)
+            case .issue:
+                NativeCLI.issueCommand(scope)
             default:
                 break;
             }
@@ -452,6 +455,14 @@ extension NativeCLI {
         let (_, connection) = scope
 
         NativeCLI.printInTerminal("\n› Run Fig from executable to view logs...\n\n  \(Bundle.main.executablePath ?? "")\n\n  Make sure to Quit the existing instance\n  of Fig before running this command.\n", using: connection)
+    }
+  
+    static func issueCommand(_ scope: Scope) {
+        let (message, connection) = scope
+        NativeCLI.printInTerminal("\n→ Opening Github...\n", using: connection)
+
+        Github.openIssue(with: message.arguments.joined(separator: " "))
+      
     }
   
     static func electronAccessibilityCommand(_ scope: Scope) {
