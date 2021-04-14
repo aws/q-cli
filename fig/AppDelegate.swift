@@ -566,10 +566,11 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         debug.submenu = debugMenu
         
         statusBarMenu.addItem(NSMenuItem.separator())
-        statusBarMenu.addItem(
+        let issue = statusBarMenu.addItem(
          withTitle: "Report a bug...", //✉️
          action: #selector(AppDelegate.sendFeedback),
          keyEquivalent: "")
+        issue.image = NSImage(imageLiteralResourceName: "github")
         //email.image = NSImage(imageLiteralResourceName: "founders")
         statusBarMenu.addItem(NSMenuItem.separator())
         statusBarMenu.addItem(
@@ -739,7 +740,31 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     }
     
     @objc func sendFeedback() {
-        NSWorkspace.shared.open(URL(string:"mailto:hello@withfig.com")!)
+//        NSWorkspace.shared.open(URL(string:"mailto:hello@withfig.com")!)
+      
+        let os = ProcessInfo.processInfo.operatingSystemVersion
+
+        let body =
+        """
+        ### Description:
+        > Please include a detailed description of the issue (and an image, if applicable)
+        
+        
+        
+        
+         
+        ### Details:
+        |macOS|Fig|Shell|
+        |-|-|-|
+        |\(os.majorVersion).\(os.minorVersion).\(os.patchVersion)|\(Diagnostic.distribution)|\(Defaults.userShell)|
+        <details><summary><code>fig diagnostic</code></summary>
+        <p>
+        <pre>\(Diagnostic.summary.trimmingCharacters(in: .whitespacesAndNewlines))</pre>
+        </p>
+        </details>
+        """
+    NSWorkspace.shared.open(URL(string:"https://github.com/withfig/fig/issues/new?labels=bug&assignees=mattschrage&body=\(body.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed)!)")!
+      )
         TelemetryProvider.track(event: .sendFeedback, with: [:])
     }
     
