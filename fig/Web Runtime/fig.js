@@ -142,6 +142,8 @@ let setup = function(window) {
               })
               
           }
+        
+          fig.loaded = "true"
           
           let stdin = fig['_stdin']
           let options = fig.options //|| opts
@@ -318,7 +320,16 @@ let setup = function(window) {
               fig.private({ type: "alias", data: payload})
           }
       },
-    
+      set status (value) {
+          let data = {
+            ...fig["_status"],
+            ...value
+          }
+          data["display"] = data["display"] == true ? "true" : "false"
+          console.log(data)
+          fig.private({ type: "status", data })
+          fig["_status"] = data
+      },
       keys : {
         upArrow: function() {
           fig.private({ type: "key", data: {code: "126" }})
@@ -364,7 +375,7 @@ let setup = function(window) {
       }
   }
     
-    let watchedProperties = [ "icon", "title", "color", "maxheight", "width", "interceptKeystrokes"]
+    let watchedProperties = [ "icon", "title", "color", "maxheight", "width", "interceptKeystrokes", "loaded" ]
     watchedProperties.forEach(prop => {
           Object.defineProperty(fig, prop, {
               get : function () {

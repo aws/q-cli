@@ -10,6 +10,24 @@ import Cocoa
 
 class Settings {
   static let filePath = NSHomeDirectory() + "/.fig/settings.json"
+  static func rawFromFile() -> String? {
+    guard FileManager.default.fileExists(atPath: Settings.filePath) else {
+      print("Settings: settings file does not exist")
+      return nil
+    }
+    
+    guard let settings = try? String(contentsOfFile: Settings.filePath) else {
+      print("Settings: settings file is empty")
+      return nil
+    }
+    
+    guard settings.count > 0 else {
+      return nil
+    }
+    
+    return settings
+  }
+  
   static func loadFromFile() ->  [String: Any]? {
     guard FileManager.default.fileExists(atPath: Settings.filePath) else {
       print("Settings: settings file does not exist")

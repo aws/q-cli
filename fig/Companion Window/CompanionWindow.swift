@@ -90,6 +90,10 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
             }
         }
     }
+    
+    var status: (String, String?, Bool)?
+    var loaded: Bool = false
+
     var initialUntetheredFrame: NSRect?
     
     override public var canBecomeKey: Bool {

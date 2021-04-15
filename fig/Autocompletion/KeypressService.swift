@@ -298,9 +298,14 @@ class KeypressProvider : KeypressService {
             keyCode = Keycode.upArrow
           }
           
-          WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try{ fig.keypress(\"\(keyCode)\", \"\(window.hash)\") } catch(e) {}", completionHandler: nil)
+          WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try{ fig.keypress(\"\(keyCode)\", \"\(window.hash)\", { command: \(event.flags.contains(.maskCommand)), control: \(event.flags.contains(.maskControl)), shift: \(event.flags.contains(.maskShift)) }) } catch(e) {}", completionHandler: nil)
           return nil
         } else {
+          
+          guard !FishIntegration.handleKeystroke(event: NSEvent(cgEvent: event), in: window) else {
+            return Unmanaged.passUnretained(event)
+          }
+          
           autoreleasepool {
             KeypressProvider.shared.handleKeystroke(event: NSEvent(cgEvent: event), in: window)
           }
@@ -311,7 +316,8 @@ class KeypressProvider : KeypressService {
     
     // Switching to CGEventTapLocation.cgAnnotatedSessionEventTap allows virtual keystrokes to be detected
     // But prevents us from seeing keypresses handled by other apps (like Spectacle)
-    guard let eventTap: CFMachPort = CGEvent.tapCreate(tap: CGEventTapLocation.cghidEventTap,
+    let tapLocation = Settings.shared.getValue(forKey: Settings.eventTapLocation) as? String == "session" ? CGEventTapLocation.cgAnnotatedSessionEventTap : CGEventTapLocation.cghidEventTap
+    guard let eventTap: CFMachPort = CGEvent.tapCreate(tap: tapLocation,
                                                        place: CGEventTapPlacement.tailAppendEventTap,
                                                        options: CGEventTapOptions.defaultTap,
                                                        eventsOfInterest: CGEventMask(eventMask),
@@ -355,7 +361,7 @@ class KeypressProvider : KeypressService {
     
 
     let keyBuffer = self.keyBuffer(for: window)
-    guard !keyBuffer.backedByZLE else {
+    guard !keyBuffer.backedByShell else {
       
       
       // trigger positioning updates for hotkeys, like cmd+w, cmd+t, cmd+n, or Spectacle

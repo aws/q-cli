@@ -175,10 +175,16 @@ class Defaults {
         }
         
         set(flag) {
+            guard _useAutcomplete != flag else { return }
+          
             _useAutcomplete = flag
             NotificationCenter.default.post(name: Defaults.autocompletePreferenceUpdated, object: flag)
             UserDefaults.standard.set(flag, forKey: "useAutocomplete")
             UserDefaults.standard.synchronize()
+            
+            Settings.shared.set(value: !flag, forKey: Settings.disableAutocomplete)
+            
+            NSApp.appDelegate.configureStatusBarItem()
         }
 
     }
@@ -227,8 +233,15 @@ class Defaults {
         }
         
         set(flag) {
+            guard debugAutocomplete != flag else {
+              return
+            }
+          
             UserDefaults.standard.set(flag, forKey: "debugAutocomplete")
             UserDefaults.standard.synchronize()
+          
+            Settings.shared.set(value: flag, forKey: Settings.debugModeKey)
+
         }
 
     }
@@ -401,5 +414,44 @@ class Defaults {
         UserDefaults(suiteName: "com.mschrage.fig.shared")?.synchronize()
       }
       
+    }
+  
+    static var developerModeEnabled: Bool {
+      get {
+        if let mode = Settings.shared.getValue(forKey: Settings.developerModeKey) as? Bool {
+          return mode
+        }
+        
+        if let mode = Settings.shared.getValue(forKey: Settings.developerModeNPMKey) as? Bool {
+          return mode
+        }
+        
+        return false
+      }
+      
+      set (enabled) {
+        if Settings.shared.getValue(forKey: Settings.developerModeKey) as? Bool != nil {
+          Settings.shared.set(value: enabled, forKey: Settings.developerModeKey)
+        }
+        
+        if Settings.shared.getValue(forKey: Settings.developerModeNPMKey) as? Bool != nil {
+          Settings.shared.set(value: enabled, forKey: Settings.developerModeNPMKey)
+        }
+      }
+    }
+  
+    @objc static func toggleDeveloperMode() {
+      Defaults.developerModeEnabled = !Defaults.developerModeEnabled
+    }
+  
+    static var accessibilityEnabledOnPreviousLaunch: Bool? {
+        get {
+            return  UserDefaults.standard.bool(forKey: "accessibilityEnabledOnPreviousLaunch")
+        }
+        
+        set(version){
+            UserDefaults.standard.set(version, forKey: "accessibilityEnabledOnPreviousLaunch")
+            UserDefaults.standard.synchronize()
+        }
     }
 }

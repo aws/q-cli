@@ -44,7 +44,7 @@
 		7510F8BF24A99A4B00E86F7C /* WindowService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F8BE24A99A4B00E86F7C /* WindowService.swift */; };
 		7510F8C124A9B32D00E86F7C /* WindowManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F8C024A9B32D00E86F7C /* WindowManager.swift */; };
 		7518606F255B2A0A0000A7C7 /* flag@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 75186069255B2A090000A7C7 /* flag@2x.png */; };
-		75186070255B2A0A0000A7C7 /* astrix@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7518606A255B2A090000A7C7 /* astrix@2x.png */; };
+		75186070255B2A0A0000A7C7 /* astrisk@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7518606A255B2A090000A7C7 /* astrisk@2x.png */; };
 		75186071255B2A0A0000A7C7 /* option@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7518606B255B2A090000A7C7 /* option@2x.png */; };
 		75186072255B2A0A0000A7C7 /* carrot@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7518606C255B2A090000A7C7 /* carrot@2x.png */; };
 		75186073255B2A0A0000A7C7 /* string@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7518606D255B2A090000A7C7 /* string@2x.png */; };
@@ -83,6 +83,22 @@
 		752D71CB25AFD7B400263527 /* team-upload.sh in Resources */ = {isa = PBXBuildFile; fileRef = 752D71C925AFD5B800263527 /* team-upload.sh */; };
 		752D71CD25B8A6B300263527 /* Restarter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 752D71CC25B8A6B200263527 /* Restarter.swift */; };
 		752D71CF25B8CA4000263527 /* iTermTabIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 752D71CE25B8CA4000263527 /* iTermTabIntegration.swift */; };
+		752E68DD2620F868009E9A7E /* gradle@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752E68DA2620F868009E9A7E /* gradle@2x.png */; };
+		752E68DE2620F868009E9A7E /* slack@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752E68DB2620F868009E9A7E /* slack@2x.png */; };
+		752E68DF2620F868009E9A7E /* yarn@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752E68DC2620F868009E9A7E /* yarn@2x.png */; };
+		752E68ED2620F885009E9A7E /* azure@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752E68E02620F882009E9A7E /* azure@2x.png */; };
+		752E68EE2620F885009E9A7E /* box@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752E68E12620F883009E9A7E /* box@2x.png */; };
+		752E68EF2620F885009E9A7E /* gitlab@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752E68E22620F883009E9A7E /* gitlab@2x.png */; };
+		752E68F02620F885009E9A7E /* template@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752E68E32620F883009E9A7E /* template@2x.png */; };
+		752E68F12620F885009E9A7E /* firebase@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752E68E42620F883009E9A7E /* firebase@2x.png */; };
+		752E68F22620F885009E9A7E /* android@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752E68E52620F884009E9A7E /* android@2x.png */; };
+		752E68F32620F885009E9A7E /* aws@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752E68E62620F884009E9A7E /* aws@2x.png */; };
+		752E68F42620F885009E9A7E /* characters@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752E68E72620F884009E9A7E /* characters@2x.png */; };
+		752E68F52620F885009E9A7E /* gcloud@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752E68E82620F884009E9A7E /* gcloud@2x.png */; };
+		752E68F62620F885009E9A7E /* netlify@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752E68E92620F884009E9A7E /* netlify@2x.png */; };
+		752E68F72620F885009E9A7E /* vercel@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752E68EA2620F884009E9A7E /* vercel@2x.png */; };
+		752E68F82620F885009E9A7E /* github@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752E68EB2620F884009E9A7E /* github@2x.png */; };
+		752E68F92620F885009E9A7E /* apple@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752E68EC2620F884009E9A7E /* apple@2x.png */; };
 		754D31B525759D900020CED4 /* tutorial.html in Resources */ = {isa = PBXBuildFile; fileRef = 754D31B425759D900020CED4 /* tutorial.html */; };
 		755D0DE0247DDE050074AB5C /* FigCLI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755D0DDF247DDE050074AB5C /* FigCLI.swift */; };
 		755D0DE2247EFAE10074AB5C /* Logging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755D0DE1247EFAE10074AB5C /* Logging.swift */; };
@@ -130,7 +146,6 @@
 		758AEB6A24CEA4D000A15EAF /* Starscream in Frameworks */ = {isa = PBXBuildFile; productRef = 758AEB6924CEA4D000A15EAF /* Starscream */; };
 		758AEB6C24CEA54600A15EAF /* SocketServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 758AEB6B24CEA54600A15EAF /* SocketServer.swift */; };
 		759F987C25BF903900EC3407 /* Accessibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 759F987B25BF903900EC3407 /* Accessibility.swift */; };
-		759F988125BFF0FF00EC3407 /* box@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 759F987D25BFF0FD00EC3407 /* box@2x.png */; };
 		759F988225BFF0FF00EC3407 /* commandkey@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 759F987E25BFF0FE00EC3407 /* commandkey@2x.png */; };
 		759F988325BFF0FF00EC3407 /* database@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 759F987F25BFF0FE00EC3407 /* database@2x.png */; };
 		759F988425BFF0FF00EC3407 /* package@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 759F988025BFF0FE00EC3407 /* package@2x.png */; };
@@ -182,6 +197,7 @@
 		75C07122244BB65D002DF69F /* ShellBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75C07121244BB65D002DF69F /* ShellBridge.swift */; };
 		75C07124244BE45A002DF69F /* CompanionWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75C07123244BE45A002DF69F /* CompanionWindow.swift */; };
 		75C0EBD3253E336E001964DE /* TerminalUsageTelemetry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75C0EBD2253E336E001964DE /* TerminalUsageTelemetry.swift */; };
+		75C3B7FF261BC9D0007FA3A7 /* FishIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75C3B7FE261BC9D0007FA3A7 /* FishIntegration.swift */; };
 		75C57C142581C0700065741E /* ioreg.c in Sources */ = {isa = PBXBuildFile; fileRef = 75C57C132581C0700065741E /* ioreg.c */; };
 		75CFDBDF24EDB2E900F00CAE /* Onboarding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75CFDBDE24EDB2E900F00CAE /* Onboarding.swift */; };
 		75CFDBE224EDE31800F00CAE /* Sentry in Frameworks */ = {isa = PBXBuildFile; productRef = 75CFDBE124EDE31800F00CAE /* Sentry */; };
@@ -199,6 +215,9 @@
 		75EDDC4E25D23773003AECC6 /* HyperIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75EDDC4D25D23773003AECC6 /* HyperIntegration.swift */; };
 		75EDDC5125D24755003AECC6 /* hyper-integration.js in Resources */ = {isa = PBXBuildFile; fileRef = 75EDDC5025D24755003AECC6 /* hyper-integration.js */; };
 		75EDDC5B25D4BC54003AECC6 /* UnixSocketClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75EDDC5A25D4BC53003AECC6 /* UnixSocketClient.swift */; };
+		75F7F952261FBDC30005E215 /* UnixSocketServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75F7F951261FBDC30005E215 /* UnixSocketServer.swift */; };
+		75F7F954262007170005E215 /* ShellHooksTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75F7F953262007170005E215 /* ShellHooksTransport.swift */; };
+		75FE40002626A4BD00AC8414 /* Github.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75FE3FFF2626A4BD00AC8414 /* Github.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -301,7 +320,7 @@
 		7510F8BE24A99A4B00E86F7C /* WindowService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowService.swift; sourceTree = "<group>"; };
 		7510F8C024A9B32D00E86F7C /* WindowManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowManager.swift; sourceTree = "<group>"; };
 		75186069255B2A090000A7C7 /* flag@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "flag@2x.png"; sourceTree = "<group>"; };
-		7518606A255B2A090000A7C7 /* astrix@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "astrix@2x.png"; sourceTree = "<group>"; };
+		7518606A255B2A090000A7C7 /* astrisk@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "astrisk@2x.png"; sourceTree = "<group>"; };
 		7518606B255B2A090000A7C7 /* option@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "option@2x.png"; sourceTree = "<group>"; };
 		7518606C255B2A090000A7C7 /* carrot@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "carrot@2x.png"; sourceTree = "<group>"; };
 		7518606D255B2A090000A7C7 /* string@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "string@2x.png"; sourceTree = "<group>"; };
@@ -340,6 +359,22 @@
 		752D71C925AFD5B800263527 /* team-upload.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "team-upload.sh"; sourceTree = "<group>"; };
 		752D71CC25B8A6B200263527 /* Restarter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Restarter.swift; sourceTree = "<group>"; };
 		752D71CE25B8CA4000263527 /* iTermTabIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iTermTabIntegration.swift; sourceTree = "<group>"; };
+		752E68DA2620F868009E9A7E /* gradle@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "gradle@2x.png"; sourceTree = "<group>"; };
+		752E68DB2620F868009E9A7E /* slack@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "slack@2x.png"; sourceTree = "<group>"; };
+		752E68DC2620F868009E9A7E /* yarn@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "yarn@2x.png"; sourceTree = "<group>"; };
+		752E68E02620F882009E9A7E /* azure@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "azure@2x.png"; sourceTree = "<group>"; };
+		752E68E12620F883009E9A7E /* box@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "box@2x.png"; sourceTree = "<group>"; };
+		752E68E22620F883009E9A7E /* gitlab@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "gitlab@2x.png"; sourceTree = "<group>"; };
+		752E68E32620F883009E9A7E /* template@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "template@2x.png"; sourceTree = "<group>"; };
+		752E68E42620F883009E9A7E /* firebase@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "firebase@2x.png"; sourceTree = "<group>"; };
+		752E68E52620F884009E9A7E /* android@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "android@2x.png"; sourceTree = "<group>"; };
+		752E68E62620F884009E9A7E /* aws@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "aws@2x.png"; sourceTree = "<group>"; };
+		752E68E72620F884009E9A7E /* characters@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "characters@2x.png"; sourceTree = "<group>"; };
+		752E68E82620F884009E9A7E /* gcloud@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "gcloud@2x.png"; sourceTree = "<group>"; };
+		752E68E92620F884009E9A7E /* netlify@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "netlify@2x.png"; sourceTree = "<group>"; };
+		752E68EA2620F884009E9A7E /* vercel@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "vercel@2x.png"; sourceTree = "<group>"; };
+		752E68EB2620F884009E9A7E /* github@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "github@2x.png"; sourceTree = "<group>"; };
+		752E68EC2620F884009E9A7E /* apple@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "apple@2x.png"; sourceTree = "<group>"; };
 		754D31B425759D900020CED4 /* tutorial.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = tutorial.html; sourceTree = "<group>"; };
 		755D0DDF247DDE050074AB5C /* FigCLI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FigCLI.swift; sourceTree = "<group>"; };
 		755D0DE1247EFAE10074AB5C /* Logging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logging.swift; sourceTree = "<group>"; };
@@ -393,7 +428,6 @@
 		758AEB5F24CE529D00A15EAF /* String+Shell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+Shell.swift"; sourceTree = "<group>"; };
 		758AEB6B24CEA54600A15EAF /* SocketServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocketServer.swift; sourceTree = "<group>"; };
 		759F987B25BF903900EC3407 /* Accessibility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Accessibility.swift; sourceTree = "<group>"; };
-		759F987D25BFF0FD00EC3407 /* box@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "box@2x.png"; sourceTree = "<group>"; };
 		759F987E25BFF0FE00EC3407 /* commandkey@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "commandkey@2x.png"; sourceTree = "<group>"; };
 		759F987F25BFF0FE00EC3407 /* database@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "database@2x.png"; sourceTree = "<group>"; };
 		759F988025BFF0FE00EC3407 /* package@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "package@2x.png"; sourceTree = "<group>"; };
@@ -447,6 +481,7 @@
 		75C07121244BB65D002DF69F /* ShellBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellBridge.swift; sourceTree = "<group>"; };
 		75C07123244BE45A002DF69F /* CompanionWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionWindow.swift; sourceTree = "<group>"; };
 		75C0EBD2253E336E001964DE /* TerminalUsageTelemetry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalUsageTelemetry.swift; sourceTree = "<group>"; };
+		75C3B7FE261BC9D0007FA3A7 /* FishIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FishIntegration.swift; sourceTree = "<group>"; };
 		75C57C122581C0700065741E /* ioreg.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ioreg.h; sourceTree = "<group>"; };
 		75C57C132581C0700065741E /* ioreg.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ioreg.c; sourceTree = "<group>"; };
 		75CFDBDE24EDB2E900F00CAE /* Onboarding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Onboarding.swift; sourceTree = "<group>"; };
@@ -463,6 +498,9 @@
 		75EDDC4D25D23773003AECC6 /* HyperIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HyperIntegration.swift; sourceTree = "<group>"; };
 		75EDDC5025D24755003AECC6 /* hyper-integration.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = "hyper-integration.js"; sourceTree = "<group>"; };
 		75EDDC5A25D4BC53003AECC6 /* UnixSocketClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnixSocketClient.swift; sourceTree = "<group>"; };
+		75F7F951261FBDC30005E215 /* UnixSocketServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnixSocketServer.swift; sourceTree = "<group>"; };
+		75F7F953262007170005E215 /* ShellHooksTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellHooksTransport.swift; sourceTree = "<group>"; };
+		75FE3FFF2626A4BD00AC8414 /* Github.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Github.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -589,12 +627,27 @@
 		7518608F255CE49B0000A7C7 /* Icons */ = {
 			isa = PBXGroup;
 			children = (
+				752E68E52620F884009E9A7E /* android@2x.png */,
+				752E68EC2620F884009E9A7E /* apple@2x.png */,
+				752E68E62620F884009E9A7E /* aws@2x.png */,
+				752E68E02620F882009E9A7E /* azure@2x.png */,
+				752E68E12620F883009E9A7E /* box@2x.png */,
+				752E68E72620F884009E9A7E /* characters@2x.png */,
+				752E68E42620F883009E9A7E /* firebase@2x.png */,
+				752E68E82620F884009E9A7E /* gcloud@2x.png */,
+				752E68EB2620F884009E9A7E /* github@2x.png */,
+				752E68E22620F883009E9A7E /* gitlab@2x.png */,
+				752E68E92620F884009E9A7E /* netlify@2x.png */,
+				752E68E32620F883009E9A7E /* template@2x.png */,
+				752E68EA2620F884009E9A7E /* vercel@2x.png */,
+				752E68DA2620F868009E9A7E /* gradle@2x.png */,
+				752E68DB2620F868009E9A7E /* slack@2x.png */,
+				752E68DC2620F868009E9A7E /* yarn@2x.png */,
 				75A4A29725C8D855002EFD6B /* commit@2x.png */,
 				7573F1592602B4E000C833FA /* alert@2x.png */,
 				7573F15A2602B4E000C833FA /* invite@2x.png */,
 				75A4A29625C8D855002EFD6B /* git@2x.png */,
 				75A4A29525C8D855002EFD6B /* node@2x.png */,
-				759F987D25BFF0FD00EC3407 /* box@2x.png */,
 				759F988825BFF8B000EC3407 /* docker@2x.png */,
 				759F988D25BFFAE500EC3407 /* heroku@2x.png */,
 				759F988625BFF8B000EC3407 /* kubernetes@2x.png */,
@@ -603,7 +656,7 @@
 				759F987E25BFF0FE00EC3407 /* commandkey@2x.png */,
 				759F987F25BFF0FE00EC3407 /* database@2x.png */,
 				759F988025BFF0FE00EC3407 /* package@2x.png */,
-				7518606A255B2A090000A7C7 /* astrix@2x.png */,
+				7518606A255B2A090000A7C7 /* astrisk@2x.png */,
 				7518606C255B2A090000A7C7 /* carrot@2x.png */,
 				7518606E255B2A0A0000A7C7 /* command@2x.png */,
 				75186069255B2A090000A7C7 /* flag@2x.png */,
@@ -705,6 +758,7 @@
 				75DA86A225EDB05100722F1D /* Integrations.swift */,
 				7573F15F260BC70F00C833FA /* LoginItems.swift */,
 				75DA86A425EEBD7400722F1D /* Alert.swift */,
+				75FE3FFF2626A4BD00AC8414 /* Github.swift */,
 				75EDDC4F25D2473C003AECC6 /* Hyper */,
 				752A398725CD0FFB00B1AC40 /* VSCode */,
 				75B1992A25019FDE00F38EA8 /* Companion Window */,
@@ -855,6 +909,8 @@
 				755D0DDF247DDE050074AB5C /* FigCLI.swift */,
 				75AA24C025A656FA00A51E9D /* NativeCLI.swift */,
 				757CA8E524905B38002A64A8 /* SockerServer.swift */,
+				75F7F953262007170005E215 /* ShellHooksTransport.swift */,
+				75F7F951261FBDC30005E215 /* UnixSocketServer.swift */,
 			);
 			path = Bridging;
 			sourceTree = "<group>";
@@ -926,6 +982,7 @@
 				75B1993725100E4D00F38EA8 /* KeypressService.swift */,
 				75A4A29F25CA0D46002EFD6B /* Autocomplete.swift */,
 				75A4A2A125CA218F002EFD6B /* ZLEIntegration.swift */,
+				75C3B7FE261BC9D0007FA3A7 /* FishIntegration.swift */,
 			);
 			path = Autocompletion;
 			sourceTree = "<group>";
@@ -1091,6 +1148,7 @@
 				752D71CA25AFD7B400263527 /* team-download.sh in Resources */,
 				752D71CB25AFD7B400263527 /* team-upload.sh in Resources */,
 				752D71C225AE80CF00263527 /* ssh.sh in Resources */,
+				752E68DF2620F868009E9A7E /* yarn@2x.png in Resources */,
 				75A4521025A83E5600107D2C /* remote_cwd.sh in Resources */,
 				75AA24D125A79F3400A51E9D /* tweet.sh in Resources */,
 				75AA24D225A79F3400A51E9D /* issue.sh in Resources */,
@@ -1098,8 +1156,10 @@
 				75AA24CD25A6F98400A51E9D /* uninstall_spec.sh in Resources */,
 				759F988225BFF0FF00EC3407 /* commandkey@2x.png in Resources */,
 				75AA24CA25A6F39800A51E9D /* list.sh in Resources */,
+				752E68F12620F885009E9A7E /* firebase@2x.png in Resources */,
 				75A4A29825C8D855002EFD6B /* node@2x.png in Resources */,
 				75AA24CB25A6F39800A51E9D /* help.sh in Resources */,
+				752E68F82620F885009E9A7E /* github@2x.png in Resources */,
 				75186083255CB0C20000A7C7 /* iterm-integration.sh in Resources */,
 				75EDDC5125D24755003AECC6 /* hyper-integration.js in Resources */,
 				759F988325BFF0FF00EC3407 /* database@2x.png in Resources */,
@@ -1108,23 +1168,28 @@
 				75B0A08025BB74C700FCD89A /* fig-context-indicator.png in Resources */,
 				75186086255CB0C20000A7C7 /* update.sh in Resources */,
 				75186087255CB0C20000A7C7 /* 1.0.22.sh in Resources */,
+				752E68F02620F885009E9A7E /* template@2x.png in Resources */,
 				75186088255CB0C20000A7C7 /* uninstall.sh in Resources */,
+				752E68EF2620F885009E9A7E /* gitlab@2x.png in Resources */,
 				75186089255CB0C20000A7C7 /* source.sh in Resources */,
 				7518608A255CB0C20000A7C7 /* 1.0.21.sh in Resources */,
 				759F988925BFF8B000EC3407 /* npm@2x.png in Resources */,
+				752E68F32620F885009E9A7E /* aws@2x.png in Resources */,
 				759F988A25BFF8B000EC3407 /* kubernetes@2x.png in Resources */,
 				7518608B255CB0C20000A7C7 /* feedback.sh in Resources */,
+				752E68DE2620F868009E9A7E /* slack@2x.png in Resources */,
 				7518608C255CB0C20000A7C7 /* 1.0.24.sh in Resources */,
 				7585862625941A2700B76B4A /* invite.sh in Resources */,
 				7518608D255CB0C20000A7C7 /* open_new_terminal_window.scpt in Resources */,
-				759F988125BFF0FF00EC3407 /* box@2x.png in Resources */,
 				7518608E255CB0C20000A7C7 /* 1.0.20.sh in Resources */,
 				759F988B25BFF8B000EC3407 /* twitter@2x.png in Resources */,
 				75186073255B2A0A0000A7C7 /* string@2x.png in Resources */,
 				757CA88624876043002A64A8 /* error.html in Resources */,
+				752E68DD2620F868009E9A7E /* gradle@2x.png in Resources */,
 				75A4A29E25C91471002EFD6B /* debugger-2-trimmed.mp4 in Resources */,
 				757CA88F248B0D31002A64A8 /* cli.png in Resources */,
 				752C0BE4247B44C60077E415 /* finder.html in Resources */,
+				752E68F22620F885009E9A7E /* android@2x.png in Resources */,
 				75B0A08C25BBC7A300FCD89A /* autoc.mp4 in Resources */,
 				759F988425BFF0FF00EC3407 /* package@2x.png in Resources */,
 				752C0BDA2479F37B0077E415 /* fig.js in Resources */,
@@ -1138,20 +1203,26 @@
 				7573F15C2602B4E000C833FA /* invite@2x.png in Resources */,
 				75D2E3CB249C1E7500607F66 /* terminal.css in Resources */,
 				757CA88A248AD58C002A64A8 /* onboarding.html in Resources */,
+				752E68F72620F885009E9A7E /* vercel@2x.png in Resources */,
 				757CA89B248C18F1002A64A8 /* done.html in Resources */,
+				752E68EE2620F885009E9A7E /* box@2x.png in Resources */,
 				75809B1124C3876B00BFFB3E /* run-tutorial.js in Resources */,
 				757CA899248C10AD002A64A8 /* fonts in Resources */,
 				757CA893248B28E3002A64A8 /* landing.html in Resources */,
+				752E68F42620F885009E9A7E /* characters@2x.png in Resources */,
 				75B0A08625BB94DF00FCD89A /* debugger-only.mp4 in Resources */,
+				752E68F62620F885009E9A7E /* netlify@2x.png in Resources */,
 				7573F15B2602B4E000C833FA /* alert@2x.png in Resources */,
 				755D0DE4247F038B0074AB5C /* logs.html in Resources */,
+				752E68F52620F885009E9A7E /* gcloud@2x.png in Resources */,
+				752E68F92620F885009E9A7E /* apple@2x.png in Resources */,
 				75A4A29A25C8D855002EFD6B /* commit@2x.png in Resources */,
 				752D71C525AE9B7200263527 /* ssh.html in Resources */,
 				757CA89D248C1F50002A64A8 /* demo4onboarding.mp4 in Resources */,
 				7567595F244634B2006AA988 /* Main.storyboard in Resources */,
 				752A398625CD0FE800B1AC40 /* fig-0.0.1.vsix in Resources */,
 				75B0A07E25BB746600FCD89A /* debugger.html in Resources */,
-				75186070255B2A0A0000A7C7 /* astrix@2x.png in Resources */,
+				75186070255B2A0A0000A7C7 /* astrisk@2x.png in Resources */,
 				75B1993625042B2C00F38EA8 /* autocomplete.html in Resources */,
 				7518606F255B2A0A0000A7C7 /* flag@2x.png in Resources */,
 				75E993F22515A6DD000BE6BE /* statusbar@2x.png in Resources */,
@@ -1162,6 +1233,7 @@
 				75B0A08E25BBC9B800FCD89A /* privacy.html in Resources */,
 				75B0A08425BB759E00FCD89A /* trimmed-debugger.mp4 in Resources */,
 				75186072255B2A0A0000A7C7 /* carrot@2x.png in Resources */,
+				752E68ED2620F885009E9A7E /* azure@2x.png in Resources */,
 				75186074255B2A0A0000A7C7 /* command@2x.png in Resources */,
 				75186071255B2A0A0000A7C7 /* option@2x.png in Resources */,
 				752C0BE0247A27790077E415 /* editor.html in Resources */,
@@ -1230,12 +1302,14 @@
 			files = (
 				75288EF924CCE72F002DF12A /* OnboardingWindow.swift in Sources */,
 				75AEF2E825C3DEC600D78431 /* SSHIntegration.swift in Sources */,
+				75C3B7FF261BC9D0007FA3A7 /* FishIntegration.swift in Sources */,
 				75AA24C125A656FA00A51E9D /* NativeCLI.swift in Sources */,
 				757CA86724859461002A64A8 /* AppMover.swift in Sources */,
 				75C0EBD3253E336E001964DE /* TerminalUsageTelemetry.swift in Sources */,
 				7510F89F24A6910500E86F7C /* Terminal.swift in Sources */,
 				75B199322501A3DA00F38EA8 /* KeyboardLayout.swift in Sources */,
 				756759972446C44C006AA988 /* String+Shell.swift in Sources */,
+				75F7F952261FBDC30005E215 /* UnixSocketServer.swift in Sources */,
 				757CA8E624905B38002A64A8 /* SockerServer.swift in Sources */,
 				75B7931A24BB897F0073AAC6 /* PseudoTerminalService.swift in Sources */,
 				75CFDBDF24EDB2E900F00CAE /* Onboarding.swift in Sources */,
@@ -1247,6 +1321,7 @@
 				7510F8A824A6910500E86F7C /* MacDebugView.swift in Sources */,
 				75C07120244BB441002DF69F /* CompanionViewController.swift in Sources */,
 				7510F89E24A6910500E86F7C /* BufferSet.swift in Sources */,
+				75F7F954262007170005E215 /* ShellHooksTransport.swift in Sources */,
 				75DA86A325EDB05100722F1D /* Integrations.swift in Sources */,
 				7510F8B724A6910500E86F7C /* EscapeSequenceParser.swift in Sources */,
 				7510F89D24A6910500E86F7C /* Utilities.swift in Sources */,
@@ -1297,6 +1372,7 @@
 				75C57C142581C0700065741E /* ioreg.c in Sources */,
 				7510F8AA24A6910500E86F7C /* MacCaretView.swift in Sources */,
 				75B0A07C25BA64CC00FCD89A /* AutocompleteContextNotifier.swift in Sources */,
+				75FE40002626A4BD00AC8414 /* Github.swift in Sources */,
 				751C3BEC24B6910800B5C7FD /* Remote.swift in Sources */,
 				75EDDC4E25D23773003AECC6 /* HyperIntegration.swift in Sources */,
 				7510F8A924A6910500E86F7C /* MacLocalTerminalView.swift in Sources */,
@@ -1530,7 +1606,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = YES;
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 168;
+				CURRENT_PROJECT_VERSION = 188;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				DEVELOPMENT_TEAM = D93PPD94WK;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1546,7 +1622,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MARKETING_VERSION = 1.0.39;
+				MARKETING_VERSION = 1.0.40;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mschrage.fig;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1566,7 +1642,7 @@
 				CODE_SIGN_IDENTITY = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 168;
+				CURRENT_PROJECT_VERSION = 188;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				DEVELOPMENT_TEAM = D93PPD94WK;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1582,7 +1658,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MARKETING_VERSION = 1.0.39;
+				MARKETING_VERSION = 1.0.40;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mschrage.fig;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";

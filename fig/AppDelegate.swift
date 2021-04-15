@@ -32,6 +32,22 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         warnToMoveToApplicationIfNecessary()
+      
+
+      
+        if let hideMenuBar = Settings.shared.getValue(forKey: Settings.hideMenubarIcon) as? Bool, hideMenuBar {
+          print("Not showing menubarIcon because of \(Settings.hideMenubarIcon)")
+        } else {
+          let statusBar = NSStatusBar.system
+          statusBarItem = statusBar.statusItem(
+                 withLength: NSStatusItem.squareLength)
+          statusBarItem.button?.title = "🍐"
+          statusBarItem.button?.image = NSImage(imageLiteralResourceName: "statusbar@2x.png")//.overlayBadge()
+          statusBarItem.button?.image?.isTemplate = true
+          statusBarItem.button?.wantsLayer = true
+        }
+        
+        configureStatusBarItem()
 
 //        NSApp.setActivationPolicy(NSApplication.ActivationPolicy.accessory)
         // prevent multiple sessions
@@ -49,13 +65,19 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         TelemetryProvider.track(event: .launchedApp, with:
                                 ["crashed" : Defaults.launchedFollowingCrash ? "true" : "false"])
         Defaults.launchedFollowingCrash = true //
-        
+        Accessibility.checkIfPermissionRevoked()
+      
 //        AppMover.moveIfNecessary()
         let _ = ShellBridge.shared
         let _ = WindowManager.shared
         let _ = ShellHookManager.shared
         let _ = KeypressProvider.shared
-        let _ = AXWindowServer.shared
+        let _ = ShellHookTransport.shared
+      
+        DispatchQueue.global(qos: .userInitiated).async {
+          let _ = AXWindowServer.shared
+        }
+      
         let _ = DockerEventStream.shared
         let _ = Settings.shared
 
@@ -86,7 +108,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         Defaults.deferToShellAutosuggestions = true
         Defaults.autocompleteVersion = "v6"
         Defaults.autocompleteWidth = 250
-        Defaults.ignoreProcessList = ["figcli", "gitstatusd-darwin-x86_64"]
+        Defaults.ignoreProcessList = ["figcli", "gitstatusd-darwin-x86_64", "nc"]
 
         let hasLaunched = UserDefaults.standard.bool(forKey: "hasLaunched")
         let email = UserDefaults.standard.string(forKey: "userEmail")
@@ -145,20 +167,18 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             self.setupCompanionWindow()
         }
         
-        let statusBar = NSStatusBar.system
-        statusBarItem = statusBar.statusItem(
-               withLength: NSStatusItem.squareLength)
-        statusBarItem.button?.title = "🍐"
-        statusBarItem.button?.image = NSImage(imageLiteralResourceName: "statusbar@2x.png")//.overlayBadge()
-        statusBarItem.button?.image?.isTemplate = true
-        statusBarItem.button?.wantsLayer = true
-//        statusBarItem.target = self
-//        statusBarItem.action = #selector(self.statusBarButtonClicked(sender:))
-//        statusBarItem.sendAction(on: [.leftMouseUp, .rightMouseUp])
-        
         configureStatusBarItem()
         setUpAccesibilityObserver()
-        NotificationCenter.default.addObserver(self, selector: #selector(windowDidChange(_:)), name: AXWindowServer.windowDidChangeNotification, object: nil)
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(windowDidChange(_:)),
+                                               name: AXWindowServer.windowDidChangeNotification,
+                                               object: nil)
+      
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(settingsUpdated),
+                                               name: Settings.settingsUpdatedNotification,
+                                               object: nil)
+
         
         if let shouldLaunchOnStartup = Settings.shared.getValue(forKey: Settings.launchOnStartupKey) as? Bool {
           LoginItems.shared.currentApplicationShouldLaunchOnStartup = shouldLaunchOnStartup
@@ -372,18 +392,18 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         autocomplete.state = Defaults.useAutocomplete ? .on : .off
         autocomplete.indentationLevel = 1
         statusBarMenu.addItem(NSMenuItem.separator())
-        
-        let manual = statusBarMenu.addItem(
-         withTitle: "User Manual",
-         action: #selector(AppDelegate.viewDocs),
+      
+        let forum = statusBarMenu.addItem(
+         withTitle: "Support Forum",
+         action: #selector(AppDelegate.viewSupportForum),
          keyEquivalent: "")
-        manual.image = NSImage(named: NSImage.Name("commandkey"))
-        
+        forum.image = NSImage(named: NSImage.Name("commandkey"))
+      
         let slack = statusBarMenu.addItem(
          withTitle: "Join Fig Community",
          action: #selector(AppDelegate.inviteToSlack),
          keyEquivalent: "")
-        slack.image = NSImage(named: NSImage.Name("Slack"))//.resized(to: NSSize(width: 16, height: 16))
+        slack.image = NSImage(named: NSImage.Name("slack"))//.resized(to: NSSize(width: 16, height: 16))
         statusBarMenu.addItem(NSMenuItem.separator())
     
         let invite = statusBarMenu.addItem(
@@ -546,10 +566,11 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         debug.submenu = debugMenu
         
         statusBarMenu.addItem(NSMenuItem.separator())
-        statusBarMenu.addItem(
+        let issue = statusBarMenu.addItem(
          withTitle: "Report a bug...", //✉️
          action: #selector(AppDelegate.sendFeedback),
          keyEquivalent: "")
+        issue.image = NSImage(imageLiteralResourceName: "github")
         //email.image = NSImage(imageLiteralResourceName: "founders")
         statusBarMenu.addItem(NSMenuItem.separator())
         statusBarMenu.addItem(
@@ -568,6 +589,21 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
              action: nil,
              keyEquivalent: "")
         }
+      
+      if let devMode = Settings.shared.getValue(forKey: Settings.developerModeKey) as? Bool, devMode {
+        statusBarMenu.addItem(NSMenuItem.separator())
+        let devMode = statusBarMenu.addItem(withTitle: "Developer mode", action: #selector(toggleDeveloperMode), keyEquivalent: "")
+        devMode.state = .on
+        devMode.indentationLevel = 1
+
+      } else if let devModeCLI = Settings.shared.getValue(forKey: Settings.developerModeNPMKey) as? Bool, devModeCLI {
+        statusBarMenu.addItem(NSMenuItem.separator())
+        let devMode = statusBarMenu.addItem(withTitle: "Developer mode", action: #selector(toggleDeveloperMode), keyEquivalent: "")
+        devMode.state = .on
+        devMode.indentationLevel = 1
+
+
+      }
 
         
         return statusBarMenu
@@ -611,6 +647,26 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         
         self.statusBarItem.menu?.delegate = self
 
+    }
+  
+    @objc func settingsUpdated() {
+      print("Settings updated!!!!")
+      if let hideMenuBar = Settings.shared.getValue(forKey: Settings.hideMenubarIcon) as? Bool {
+        if hideMenuBar {
+          self.statusBarItem = nil
+        } else {
+          let statusBar = NSStatusBar.system
+          statusBarItem = statusBar.statusItem(
+                 withLength: NSStatusItem.squareLength)
+          statusBarItem.button?.title = "🍐"
+          statusBarItem.button?.image = NSImage(imageLiteralResourceName: "statusbar@2x.png")//.overlayBadge()
+          statusBarItem.button?.image?.isTemplate = true
+          statusBarItem.button?.wantsLayer = true
+          
+        }
+      }
+      
+      configureStatusBarItem()
     }
     
     func setUpAccesibilityObserver(){
@@ -684,7 +740,9 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     }
     
     @objc func sendFeedback() {
-        NSWorkspace.shared.open(URL(string:"mailto:hello@withfig.com")!)
+//        NSWorkspace.shared.open(URL(string:"mailto:hello@withfig.com")!)
+      
+        Github.openIssue()
         TelemetryProvider.track(event: .sendFeedback, with: [:])
     }
     
@@ -910,6 +968,12 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         
         NSWorkspace.shared.open(URL(string: "https://withfig.com/docs")!)
         TelemetryProvider.track(event: .viewDocs, with: [:])
+    }
+  
+    @objc func viewSupportForum() {
+        
+        NSWorkspace.shared.open(URL(string: "https://forum.withfig.com/")!)
+        TelemetryProvider.track(event: .viewSupportForum, with: [:])
     }
 
     @objc func getKeyboardLayout() {
@@ -1222,6 +1286,10 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 //             }
 //        }
 
+    }
+  
+    @objc func toggleDeveloperMode() {
+        Defaults.toggleDeveloperMode()
     }
     
     @objc func promptForAccesibilityAccess() {
@@ -1860,17 +1928,29 @@ extension AppDelegate : NSMenuDelegate {
         
         if let app = NSWorkspace.shared.frontmostApplication, !app.isFig {
             let window = AXWindowServer.shared.whitelistedWindow
-            if Integrations.terminalsWhereAutocompleteShouldAppear.contains(window?.bundleId ?? "") {
+          if Integrations.terminalsWhereAutocompleteShouldAppear.contains(window?.bundleId ?? "") ||  Integrations.terminalsWhereAutocompleteShouldAppear.contains(app.bundleIdentifier ?? "") {
                 let tty = window?.tty
                 var hasContext = false
                 var bufferDescription: String? = nil
-                var backedByZLE = false
+                var backedByShell = false
+                var backing: String?
+
 
                 if let window = window {
                     let keybuffer = KeypressProvider.shared.keyBuffer(for: window)
                     hasContext = keybuffer.buffer != nil && !keybuffer.writeOnly
                     bufferDescription = keybuffer.representation
-                    backedByZLE = keybuffer.backedByZLE
+                    backedByShell = keybuffer.backedByShell
+                   
+                  switch keybuffer.backing {
+                  case .zle:
+                    backing = "ZSH Line Editor"
+                    break;
+                  case .fish:
+                    backing = "Fish Command Line"
+                  default:
+                    backing = nil
+                  }
                   
                 }
 
@@ -1883,7 +1963,36 @@ extension AppDelegate : NSMenuDelegate {
                 
                 var color: NSColor = .clear
                 let legend = NSMenu(title: "legend")
-                if (!hasWindow) {
+                
+                let companionWindow = WindowManager.shared.autocomplete
+                if let (message, hexString, shouldDisplay) = companionWindow?.status, shouldDisplay {
+                    color = hexString != nil ? (NSColor(hex: hexString!) ?? .red) : .red
+                  
+                  message.split(separator: "\n").forEach { (str) in
+                    if str == "---" {
+                      legend.addItem(NSMenuItem.separator())
+                    } else {
+                      legend.addItem(NSMenuItem(title: String(str), action: nil, keyEquivalent: ""))
+                    }
+                  }
+                    
+                } else if !Integrations.terminalsWhereAutocompleteShouldAppear.contains(window?.bundleId ?? "") {
+                  color = .orange
+                  legend.addItem(NSMenuItem(title: "Registering with Window Server...", action: nil, keyEquivalent: ""))
+                  
+                  legend.addItem(NSMenuItem.separator())
+                  legend.addItem(NSMenuItem(title: "This may take up to 10 seconds", action: nil, keyEquivalent: ""))
+                  
+                } else if let loaded = companionWindow?.loaded, !loaded {
+                    color = .red
+                    legend.addItem(NSMenuItem(title: "Autocomplete could not be loaded.", action: nil, keyEquivalent: ""))
+                    legend.addItem(NSMenuItem.separator())
+                    legend.addItem(NSMenuItem(title: "Make sure you're connected to", action: nil, keyEquivalent: ""))
+                    legend.addItem(NSMenuItem(title: "the internet and try again.", action: nil, keyEquivalent: ""))
+                    legend.addItem(NSMenuItem.separator())
+                    legend.addItem(NSMenuItem(title: "Reload Autocomplete", action: #selector(restart), keyEquivalent: ""))
+
+                } else if (!hasWindow) {
                     color = .red
                     legend.addItem(NSMenuItem(title: "Window is not being tracked.", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem.separator())
@@ -1915,9 +2024,11 @@ extension AppDelegate : NSMenuDelegate {
                     } else {
                         legend.addItem(NSMenuItem(title: "Run `ioreg -l -w 0 | grep SecureInput` to determine which app is responsible.", action: nil, keyEquivalent: ""))
                     }
-
-
-
+                  
+                    legend.addItem(NSMenuItem.separator())
+                    let support = NSMenuItem(title: "Learn more", action: #selector(SecureKeyboardInput.openSupportPage), keyEquivalent: "")
+                    support.target = SecureKeyboardInput.self
+                    legend.addItem(support)
 
                 } else if (!hasContext) {
                     color = .orange
@@ -1964,9 +2075,9 @@ extension AppDelegate : NSMenuDelegate {
                       legend.addItem(NSMenuItem(title: "In SSH session or Docker container", action: nil, keyEquivalent: ""))
                     }
                   
-                    if backedByZLE {
+                    if backedByShell {
                       legend.addItem(NSMenuItem.separator())
-                      legend.addItem(NSMenuItem(title: "Backed by ZSH Line Editor", action: nil, keyEquivalent: ""))
+                      legend.addItem(NSMenuItem(title: "Backed by \(backing ?? "???")", action: nil, keyEquivalent: ""))
                     }
                 }
                 
