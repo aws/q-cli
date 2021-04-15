@@ -39,6 +39,7 @@ class NativeCLI {
         case disable = "disable"
         case remove = "remove"
         case report = "report"
+        case quit = "quit"
         case ssh = "integrations:ssh"
         case vscode = "integrations:vscode"
         case iterm = "integrations:iterm"
@@ -53,6 +54,7 @@ class NativeCLI {
         case debugProcesses = "debug:ps"
         case debugDotfiles = "debug:dotfiles"
         case electronAccessibility = "util:axelectron"
+        case restartSettingsListener = "settings:init"
 
         var isUtility: Bool {
             get {
@@ -63,7 +65,7 @@ class NativeCLI {
       
         var handlesDisconnect: Bool {
             get {
-              let handlesDisconnection: Set<Command> = [.pty, .hyper, .iterm, .vscode ]
+              let handlesDisconnection: Set<Command> = [.pty, .hyper, .iterm, .vscode, .quit ]
                 return handlesDisconnection.contains(self)
             }
         }
@@ -89,6 +91,9 @@ class NativeCLI {
                                                            .debugDotfiles,
                                                            .debugSSHSession,
                                                            .electronAccessibility,
+                                                           .issue,
+                                                           .restartSettingsListener,
+                                                           .quit,
                                                            .docs]
                return implementatedNatively.contains(self)
             }
@@ -141,6 +146,12 @@ class NativeCLI {
                 NativeCLI.debugDotfilesCommand(scope)
             case .debugSSHSession:
                 NativeCLI.debugSSHSessionCommand(scope)
+            case .quit:
+                NativeCLI.quitCommand(scope)
+            case .issue:
+                NativeCLI.issueCommand(scope)
+            case .restartSettingsListener:
+                NativeCLI.initSettingsCommand(scope)
             default:
                 break;
             }
@@ -275,7 +286,11 @@ extension NativeCLI {
     
     static func openMenuBarCommand(_ scope: Scope) {
         let (_, connection) = scope
-        connection.send(message: "disconnect")
+        if NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.surteesstudios.Bartender") != nil {
+            NativeCLI.printInTerminal("\nLooks like you might be using Bartender?\n\n→ Fig can't automatically open the menu, but you can click it manually.\n", using: connection)
+        }
+
+      connection.send(message: "disconnect")
 
         if let delegate = NSApp.delegate as? AppDelegate {
             delegate.openMenu()
@@ -306,6 +321,13 @@ extension NativeCLI {
     static func diagnosticCommand(_ scope: Scope) {
         let (_, connection) = scope
         NativeCLI.printInTerminal(Diagnostic.summary, using: connection)
+    }
+  
+    static func quitCommand(_ scope: Scope) {
+        let (_, connection) = scope
+        NativeCLI.printInTerminal("\nQuitting Fig...\n", using: connection)
+        connection.send(message: "disconnect")
+        NSApp.terminate(nil)
     }
     
     static func ptyCommand(_ scope: Scope) {
@@ -433,10 +455,24 @@ extension NativeCLI {
 
     }
   
+    static func initSettingsCommand(_ scope: Scope) {
+        let (_, connection) = scope
+        NativeCLI.printInTerminal("\n› Restarting ~/.fig/settings.json file watcher.. \n", using: connection)
+        Settings.shared.restartListener()
+    }
+  
     static func debugAppCommand(_ scope: Scope) {
         let (_, connection) = scope
 
         NativeCLI.printInTerminal("\n› Run Fig from executable to view logs...\n\n  \(Bundle.main.executablePath ?? "")\n\n  Make sure to Quit the existing instance\n  of Fig before running this command.\n", using: connection)
+    }
+  
+    static func issueCommand(_ scope: Scope) {
+        let (message, connection) = scope
+        NativeCLI.printInTerminal("\n→ Opening Github...\n", using: connection)
+
+        Github.openIssue(with: message.arguments.joined(separator: " "))
+      
     }
   
     static func electronAccessibilityCommand(_ scope: Scope) {

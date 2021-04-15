@@ -12,6 +12,7 @@ class Settings {
   static let ptyInitFile = "pty.rc"
   static let ptyPathKey = "pty.path"
   static let developerModeKey = "autocomplete.developerMode"
+  static let developerModeNPMKey = "autocomplete.developerModeNPM"
   static let sshCommand = "ssh.commandPrefix"
   static let sshRemoteDirectoryScript = "ssh.remoteDirectoryScript"
   static let launchOnStartupKey = "app.launchOnStartup"
@@ -21,6 +22,11 @@ class Settings {
   static let enterKeyBehavior = "autocomplete.enter"
   static let hyperDelayKey = "integrations.hyper.delay"
   static let vscodeDelayKey = "integrations.vscode.delay"
+  static let eventTapLocation = "developer.eventTapLocation"
+  static let addStatusToTerminalTitle = "autocomplete.addStatusToTerminalTitle"
+  static let disableAutocomplete = "autocomplete.disable"
+  static let hideMenubarIcon = "app.hideMenubarIcon"
+  static let debugModeKey = "developer.debugMode"
 
   static let filePath = NSHomeDirectory() + "/.fig/settings.json"
   static let shared = Settings()
@@ -94,14 +100,31 @@ class Settings {
     return json
   }
 
+  func restartListener() {
+    self.eventSource?.cancel()
+    self.setUpFileSystemListeners()
+    self.settingsUpdated()
+  }
+  
   static var haveValidFormat: Bool {
     return Settings.loadFromFile() != nil
+  }
+  
+  fileprivate func processSettingsUpdatesToLegacyDefaults() {
+    if let disabled = currentSettings[Settings.disableAutocomplete] as? Bool {
+      Defaults.useAutocomplete = !disabled
+    }
+    
+    if let debugMode = currentSettings[Settings.debugModeKey] as? Bool {
+      Defaults.debugAutocomplete = debugMode
+    }
   }
   
   static let settingsUpdatedNotification = Notification.Name("settingsUpdated")
   func settingsUpdated() {
     if let settings = Settings.loadFromFile() {
        currentSettings = settings
+       processSettingsUpdatesToLegacyDefaults()
        NotificationCenter.default.post(Notification(name: Settings.settingsUpdatedNotification))
     } else {
       
@@ -120,6 +143,7 @@ class Settings {
   fileprivate func setUpFileSystemListeners() {
     // set up file observers
     guard FileManager.default.fileExists(atPath: Settings.filePath) else {
+      print("Settings: file does not exist. Not setting up listeners")
       return
     }
 

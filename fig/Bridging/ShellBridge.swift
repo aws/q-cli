@@ -327,7 +327,7 @@ class ShellBridge {
         let insertion = cmd + (runImmediately ? "\n" :"")
 
         if let window = AXWindowServer.shared.whitelistedWindow,
-          KeypressProvider.shared.keyBuffer(for: window).backedByZLE {
+          KeypressProvider.shared.keyBuffer(for: window).backing == .zle {
           ZLEIntegration.insert(with: insertion,
                                 version: window.tty?.shellIntegrationVersion)
           return
@@ -336,8 +336,10 @@ class ShellBridge {
         // Keep the ZLE insertion lock to speed up "fig source"
         // when run from no context popup
         ZLEIntegration.insertLock()
+        FishIntegration.insertLock()
         injectUnicodeString(insertion, delay: delay) {
           ZLEIntegration.insertUnlock(with: insertion)
+          FishIntegration.insertUnlock(with: insertion)
         }
     }
   
@@ -448,6 +450,7 @@ struct ShellMessage: Codable {
     var io: String?
     var data: String
     var options: [String]?
+    var hook: String?
     
     func parseShellHook() -> (pid_t, TTYDescriptor, SessionId)? {
         guard let ttyId = self.options?[safe: 2]?.split(separator: "/").last else { return nil }
@@ -488,6 +491,21 @@ struct ShellMessage: Codable {
             return dict["TERM_PROGRAM"] as? String
         }
         return nil
+    }
+  
+    var potentialBundleId: String? {
+      switch self.terminal {
+        case "vscode":
+          return Integrations.VSCode
+        case "Apple_Terminal":
+          return Integrations.Terminal
+        case "Hyper":
+          return Integrations.Hyper
+        case "iTerm.app":
+          return Integrations.iTerm
+        default:
+          return nil
+      }
     }
     
     var subcommand: String? {

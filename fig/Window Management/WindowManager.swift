@@ -242,6 +242,7 @@ class WindowManager : NSObject {
         companion.positioning = .hidden
         companion.repositionWindow(forceUpdate: true, explicit: true)
         companion.maxHeight = 0
+        companion.loaded = false
         self.autocomplete = companion
         
     }
@@ -726,6 +727,7 @@ extension WindowManager : WindowManagementService {
                 KeypressProvider.shared.addRedirect(for: Keycode.upArrow, in: window)
                 KeypressProvider.shared.addRedirect(for: Keycode.downArrow, in: window)
                 KeypressProvider.shared.addRedirect(for: Keycode.tab, in: window)
+                KeypressProvider.shared.addRedirect(for:  Keystroke(modifierFlags: [.shift], keyCode: Keycode.tab), in: window)
                 if (!Defaults.onlyInsertOnTab) {
                     KeypressProvider.shared.addRedirect(for: Keycode.returnKey, in: window)
                 }
@@ -738,19 +740,27 @@ extension WindowManager : WindowManagementService {
                 KeypressProvider.shared.removeRedirect(for: Keycode.downArrow, in: window)
                 KeypressProvider.shared.removeRedirect(for: Keycode.returnKey, in: window)
                 KeypressProvider.shared.removeRedirect(for: Keycode.tab, in: window)
+                KeypressProvider.shared.removeRedirect(for:  Keystroke(modifierFlags: [.shift], keyCode: Keycode.tab), in: window)
                 KeypressProvider.shared.removeRedirect(for: Keystroke(modifierFlags: [.control], keyCode: Keycode.n), in: window)
                 KeypressProvider.shared.removeRedirect(for: Keystroke(modifierFlags: [.control], keyCode: Keycode.p), in: window)
 
             }
             
+            // get 'true' main screen (accounting for the fact that fullScreen workspaces default to laptop screen)
+            let currentScreen = NSScreen.screens.filter { (screen) -> Bool in
+              return screen.frame.contains(rect)
+            }.first
+          
+          
 //            WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try { fig.autocomplete_above = \(isAbove)} catch(e) {}", completionHandler: nil)
             let maxWidth =  Settings.shared.getValue(forKey: Settings.autocompleteWidth) as? CGFloat
             let popup = NSRect(origin: translatedOrigin, size: CGSize(width: WindowManager.shared.autocomplete?.width ?? maxWidth ?? Defaults.autocompleteWidth ?? 200
                 , height: height))
             let sidebarInsetBuffer:CGFloat = 0.0//60;
-            let w = (NSScreen.main!.frame.maxX - sidebarInsetBuffer) - popup.maxX
+            let w = (currentScreen!.frame.maxX - sidebarInsetBuffer) - popup.maxX
             var x = popup.origin.x
             print("edge",w, x, x + w)
+            print("main:",currentScreen!.frame)
 
             if (w < 0) {
                x += w

@@ -15,8 +15,8 @@ class KeystrokeBuffer : NSObject {
       return nil
     }
     
-    if self.backedByZLE {
-      return (buffer ?? "", zleCursor)
+    if self.backedByShell {
+      return (buffer ?? "", shellCursor)
     } else {
       guard buffer != nil, index != nil else { return nil }
       return (buffer!, index!.utf16Offset(in: buffer!))
@@ -40,22 +40,25 @@ class KeystrokeBuffer : NSObject {
   }
   // updates are recieved directly from ZLE when this is true,
   // so no need to process keypress events directly
-  var backedByZLE = false {
+  var backedByShell = false {
     didSet {
-      if (!backedByZLE) {
+      if (!backedByShell) {
         buffer = ""
-        zleHistoryNumber = nil
+        shellHistoryNumber = nil
+        backing = nil
       }
     }
   }
-  var zleCursor: Int = 0
-  var zleHistoryNumber: Int? {
+  
+  var backing: Backing?
+  var shellCursor: Int = 0
+  var shellHistoryNumber: Int? {
     didSet {
       
       // reset writeOnly value when line number changes
       // so that even if escape has been pressed previous
       // the autocomplete window will reappear
-      if (zleHistoryNumber != oldValue) {
+      if (shellHistoryNumber != oldValue) {
         writeOnly = false
       }
       
@@ -121,14 +124,14 @@ class KeystrokeBuffer : NSObject {
   }
   
   func insert(text: String) -> (String, Int)? {
-    guard backedByZLE, buffer != nil else { return nil }
-    self.index = buffer!.index(buffer!.startIndex, offsetBy: zleCursor, limitedBy: buffer!.endIndex) ?? buffer!.endIndex
+    guard backedByShell, buffer != nil else { return nil }
+    self.index = buffer!.index(buffer!.startIndex, offsetBy: shellCursor, limitedBy: buffer!.endIndex) ?? buffer!.endIndex
     mutatingInsert(text: text)
     //buffer!.insert(contentsOf: text, at: index)
     //let updatedIndex = buffer!.index(index, offsetBy: text.count)
     guard index != nil else { return nil }
-    zleCursor = index!.utf16Offset(in: buffer!)
-    return (buffer ?? "", zleCursor)
+    shellCursor = index!.utf16Offset(in: buffer!)
+    return (buffer ?? "", shellCursor)
   }
   
   fileprivate func mutatingInsert(text: String) {
@@ -179,8 +182,8 @@ class KeystrokeBuffer : NSObject {
   }
   
   func handleKeystroke(event: NSEvent) -> (String, Int)? {
-    guard !backedByZLE else {
-      return writeOnly ? nil : (buffer ?? "", zleCursor)
+    guard !backedByShell else {
+      return writeOnly ? nil : (buffer ?? "", shellCursor)
     }
     let cleanedFlags = event.modifierFlags.intersection([.command, .control, .option, .shift])
     let keystroke = Keystroke(modifierFlags: cleanedFlags, keyCode: event.keyCode)
@@ -393,9 +396,9 @@ class KeystrokeBuffer : NSObject {
       return "<hidden>"
     }
     
-    guard !backedByZLE else {
+    guard !backedByShell else {
       if var logging = buffer {
-        let index = logging.index(logging.startIndex, offsetBy: zleCursor, limitedBy: buffer!.endIndex) ?? buffer!.endIndex
+        let index = logging.index(logging.startIndex, offsetBy: shellCursor, limitedBy: buffer!.endIndex) ?? buffer!.endIndex
         logging.insert("|", at: index)
         return logging
       }
@@ -433,5 +436,12 @@ extension String {
         return String(self.suffix(from: range.upperBound)).trimLeadingCharacters(in: characterSet)
     }
     return self
+  }
+}
+
+extension KeystrokeBuffer {
+  enum Backing: String {
+    case zle = "zle"
+    case fish = "fish"
   }
 }
