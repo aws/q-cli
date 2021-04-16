@@ -54,6 +54,7 @@ class NativeCLI {
         case debugProcesses = "debug:ps"
         case debugDotfiles = "debug:dotfiles"
         case electronAccessibility = "util:axelectron"
+        case restartSettingsListener = "settings:init"
 
         var isUtility: Bool {
             get {
@@ -91,6 +92,7 @@ class NativeCLI {
                                                            .debugSSHSession,
                                                            .electronAccessibility,
                                                            .issue,
+                                                           .restartSettingsListener,
                                                            .quit,
                                                            .docs]
                return implementatedNatively.contains(self)
@@ -148,6 +150,8 @@ class NativeCLI {
                 NativeCLI.quitCommand(scope)
             case .issue:
                 NativeCLI.issueCommand(scope)
+            case .restartSettingsListener:
+                NativeCLI.initSettingsCommand(scope)
             default:
                 break;
             }
@@ -449,6 +453,12 @@ extension NativeCLI {
             HyperIntegration.promptToInstall()
         }
 
+    }
+  
+    static func initSettingsCommand(_ scope: Scope) {
+        let (_, connection) = scope
+        NativeCLI.printInTerminal("\n› Restarting ~/.fig/settings.json file watcher.. \n", using: connection)
+        Settings.shared.restartListener()
     }
   
     static func debugAppCommand(_ scope: Scope) {
