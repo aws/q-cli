@@ -400,6 +400,14 @@ class KeypressProvider : KeypressService {
       return nil
     }
     
+    var subrole : AnyObject?
+    AXUIElementCopyAttributeValue(focusedElement as! AXUIElement, kAXSubroleAttribute as CFString, &subrole)
+    
+    if subrole as? String == kAXSearchFieldSubrole {
+      print("cursor: prevent spotlight search from recieving keypresses, due to subrole = \(kAXSearchFieldSubrole)")
+      return nil
+    }
+    
     var selectedRangeValue : AnyObject?
     let selectedRangeError = AXUIElementCopyAttributeValue(focusedElement as! AXUIElement, kAXSelectedTextRangeAttribute as CFString, &selectedRangeValue)
     
@@ -437,10 +445,10 @@ class KeypressProvider : KeypressService {
     AXValueGetValue(selectBounds as! AXValue, .cgRect, &selectRect)
     print("selected", selectRect)
     //prevent spotlight search from recieving keypresses, this is sooo hacky
-    guard selectRect.size.height != 30 else {
-      print("cursor: prevent spotlight search from recieving keypresses, this is sooo hacky")
-      return nil
-    }
+//    guard selectRect.size.height != 30 else {
+//      print("cursor: prevent spotlight search from recieving keypresses, this is sooo hacky")
+//      return nil
+//    }
     
     // Sanity check: prevents flashing autocomplete in bottom corner
     guard selectRect.size != .zero else {
