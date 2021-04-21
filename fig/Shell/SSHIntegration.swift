@@ -10,10 +10,10 @@ import Foundation
 
 class SSHIntegration: CommandIntegration {
   static func pathToRemoteWorkingDirectoryScript() -> String {
-      let path = NSHomeDirectory() + "/.fig/ssh/remote_cwd.sh"
+      let path = NSHomeDirectory() + "/.fig/tools/remote_cwd.sh"
     
       guard FileManager.default.fileExists(atPath: path) else {
-        return DirectoryScript) as? String ?? pathToRemoteWorkingDirectoryScript //??
+        return Bundle.main.path(forResource: "remote_cwd", ofType: "sh")!
       }
     
       return path
@@ -60,7 +60,7 @@ class SSHIntegration: CommandIntegration {
         }
         
         
-        let scriptPath = Settings.shared.getValue(forKey: Settings.sshRemoteDirectoryScript) as? String ?? pathToRemoteWorkingDirectoryScript()
+        let scriptPath = Settings.shared.getValue(forKey: Settings.sshRemoteDirectoryScript) as? String ?? SSHIntegration.pathToRemoteWorkingDirectoryScript()
       
         let sshEnvKeys = Settings.shared.keys().filter { $0.hasPrefix("ssh.env.") }
           
