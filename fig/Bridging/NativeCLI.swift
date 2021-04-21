@@ -525,7 +525,7 @@ extension NativeCLI {
           return controlPath + "\n"
       }.filter { $0 != nil } as! [String]
       
-      let remote_cwd_script = Settings.shared.getValue(forKey: Settings.sshRemoteDirectoryScript) as? String ?? Bundle.main.path(forResource: "remote_cwd", ofType: "sh")!
+      let remote_cwd_script = SSHIntegration.pathToRemoteWorkingDirectoryScript()
       
       let out =
       """

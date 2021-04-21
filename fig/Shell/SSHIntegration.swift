@@ -9,7 +9,15 @@
 import Foundation
 
 class SSHIntegration: CommandIntegration {
-
+  static func pathToRemoteWorkingDirectoryScript() -> String {
+      let path = NSHomeDirectory() + "/.fig/tools/remote_cwd.sh"
+    
+      guard FileManager.default.fileExists(atPath: path) else {
+        return Bundle.main.path(forResource: "remote_cwd", ofType: "sh")!
+      }
+    
+      return path
+  }
     static let command = "ssh"
     static func install() {
         if let scriptPath = Bundle.main.path(forResource: "ssh", ofType: "sh") {
@@ -52,12 +60,30 @@ class SSHIntegration: CommandIntegration {
         }
         
         
-        let scriptPath = Settings.shared.getValue(forKey: Settings.sshRemoteDirectoryScript) as? String ?? Bundle.main.path(forResource: "remote_cwd", ofType: "sh")!
+        let scriptPath = Settings.shared.getValue(forKey: Settings.sshRemoteDirectoryScript) as? String ?? SSHIntegration.pathToRemoteWorkingDirectoryScript()
+      
+        let sshEnvKeys = Settings.shared.keys().filter { $0.hasPrefix("ssh.env.") }
+          
+        let env = sshEnvKeys.map { "\($0.replacingOccurrences(of: "ssh.env.", with: "").uppercased())=\"\(Settings.shared.getValue(forKey: $0) as? String ?? "")\"" }.joined(separator: "\n")
+
+        var modifiedScriptPath: String!
+        do {
+          let script = try String(contentsOf: URL(fileURLWithPath: scriptPath))
+          let scriptWithEnv = script.replacingOccurrences(of: "# FIG_SETTINGS", with: env)
+          let path = NSURL.fileURL(withPath: NSTemporaryDirectory(), isDirectory: true).appendingPathComponent("remote_cwd.sh")
+          
+          try scriptWithEnv.write(to: path, atomically: true, encoding: String.Encoding.utf8)
+          modifiedScriptPath = path.path
+        } catch {
+          
+          modifiedScriptPath = scriptPath
+        }
+      
         guard let prefix = self.runUsingPrefix() else {
             return
         }
         
-        tty.pty!.execute("\(prefix) bash -s < \(scriptPath)") { output in
+        tty.pty!.execute("\(prefix) bash -s < \(modifiedScriptPath ?? scriptPath)") { output in
             print("remote_machine:", output)
             guard tty.pid == process.pid else {
                 print("Process out of sync, abort update")
