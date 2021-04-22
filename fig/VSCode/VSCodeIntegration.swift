@@ -52,7 +52,8 @@ class VSCodeIntegration: IntegrationProvider {
   static let accessibilitySupportKey = "editor.accessibilitySupport"
 
   // If the extension path changes make sure to update the uninstall script!
-  static let extensionPath = "\(NSHomeDirectory())/.vscode/extensions/withfig.fig-0.0.1/extension.js"
+  static let extensionVersion = "0.0.2"
+  static let extensionPath = "\(NSHomeDirectory())/.vscode/extensions/withfig.fig-\(extensionVersion)/extension.js"
 
   static func install(withRestart:Bool = true, inBackground: Bool, completion: (() -> Void)? = nil) {
     guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.microsoft.VSCode") else {
@@ -97,7 +98,7 @@ class VSCodeIntegration: IntegrationProvider {
     }
     
     let cli = url.appendingPathComponent("Contents/Resources/app/bin/code")
-    let vsix = Bundle.main.path(forResource: "fig-0.0.1", ofType: "vsix")!
+    let vsix = Bundle.main.path(forResource: "fig-\(extensionVersion)", ofType: "vsix")!
     print("\(cli.path.replacingOccurrences(of: " ", with: "\\ ")) --install-extension \(vsix)")
     "\(cli.path.replacingOccurrences(of: " ", with: "\\ ")) --install-extension \(vsix)".runInBackground { (out) in
       print(out)

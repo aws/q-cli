@@ -143,7 +143,14 @@ extension ShellHookManager {
                   
                     // Manually ensuring that values set prior to tab are updated
                     // Make sure oldHash is equal to whatever the default value of the hash would be
-                    self.updateHashMetadata(oldHash: "\(window.windowId)/%", hash: window.hash)
+                    if (!VSCodeTerminal) {
+                      self.updateHashMetadata(oldHash: "\(window.windowId)/%", hash: window.hash)
+                    }
+                  
+                    // refresh cache
+                    if Integrations.electronTerminals.contains(window.bundleId ?? "") {
+                        let _ = Accessibility.findXTermCursorInElectronWindow(window, skipCache: true)
+                    }
                     
                     DispatchQueue.main.async {
                       
@@ -513,6 +520,7 @@ extension ShellHookManager {
         //queue.async(flags: [.barrier]) {
          semaphore.wait()
             self.tty[hash] = device
+            self.sessions[sessionId] = nil // unlink sessionId from any previous windowHash
             self.sessions[hash] = sessionId // sessions is bidirectional between sessionId and windowHash
          semaphore.signal()
         //}

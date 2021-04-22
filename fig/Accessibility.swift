@@ -145,22 +145,30 @@ class Accessibility {
   }
   
   fileprivate static var cursorCache: [ExternalWindowHash: [UIElement]] = [:]
-  static func findXTermCursorInElectronWindow(_ window: ExternalWindow) -> CGRect? {
+  static func findXTermCursorInElectronWindow(_ window: ExternalWindow, skipCache: Bool = false) -> CGRect? {
     guard let axElement = window.accesibilityElement else { return nil }
     
-    var cursor: UIElement? = cursorCache[window.hash]?.reduce(nil, { (existing, cache) -> UIElement? in
+    var cursor: UIElement? = cursorCache[window.hash]?.filter { cursorIsActive($0) }.reduce(nil, { (existing, cache) -> UIElement? in
       guard existing == nil else {
         return existing
       }
       
-      return findXTermCursor(cache)
+//      print("cursor: elementIsCursor", elementIsCursor(cache))
+      return cache //cursorIsActive(cache)// ? cache : nil //findXTermCursor(cache)
     })
     
-    if cursor == nil {
+    if skipCache {
+      print("cursor: skip cache")
+      cursor = nil
+    }
+    
+    if !skipCache && cursor == nil && (cursorCache[window.hash]?.count ?? 0) > 0 {
+      print("xterm-cursor: exists but is disabled (\(cursorCache[window.hash]?.count ?? 0))")
+    } else if cursor == nil {
       let root = UIElement(axElement)
       cursor = findXTermCursor(root)
     } else {
-      print("Cursor Cache hit!")
+      print("xterm-cursor: Cursor Cache hit!")
     }
     
     guard let currentCursor = cursor else {
@@ -184,6 +192,18 @@ class Accessibility {
     }
     
     return  NSRect(x: frame.origin.x, y: NSMaxY(NSScreen.screens[0].frame) - frame.origin.y, width:  frame.width, height: frame.height)
+  }
+  
+  fileprivate static func cursorIsActive(_ elm: UIElement?) -> Bool {
+    if let elm = elm, let role = try? elm.role(),
+      role == .textField,
+      let hasKeyboardFocus: Bool = try? elm.attribute(.focused),
+      hasKeyboardFocus == true {
+      
+      return true
+    } else {
+      return false
+    }
   }
   
   fileprivate static func findXTermCursor(_ root: UIElement) -> UIElement? {

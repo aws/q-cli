@@ -19,7 +19,7 @@ rm ~/Library/Application\ Support/iTerm2/Scripts/AutoLaunch/fig-iterm-integratio
 rm ~/.config/iterm2/AppSupport/Scripts/AutoLaunch/fig-iterm-integration.py
 
 echo "Remove VSCode integration (if set up)"
-rm -rf ~/.vscode/extensions/withfig.fig-0.0.1/
+rm -rf ~/.vscode/extensions/withfig.fig-*
 
 echo "Remove fish integration..."
 rm ~/.config/fish/conf.d/fig.fish
