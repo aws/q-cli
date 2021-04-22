@@ -2103,8 +2103,10 @@ extension AppDelegate : NSMenuDelegate {
             } else {
 //                let title = "\(app.localizedName ?? "Unknown") \(cmd)"
                 let icon = app.icon?.resized(to: NSSize(width: 16, height: 16))//?.overlayBadge(color: .red, text: "")
-
-                let item = NSMenuItem(title: "is not supported.", action: nil, keyEquivalent: "")
+                
+                let text = Integrations.autocompleteBlocklist.contains(app.bundleIdentifier ?? "") ? "has been disabled." : "is not supported."
+            
+                let item = NSMenuItem(title: text, action: nil, keyEquivalent: "")
                 item.image = icon
 
                 menu.insertItem(item, at: 0)

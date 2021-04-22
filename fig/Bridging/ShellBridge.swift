@@ -488,6 +488,10 @@ struct ShellMessage: Codable {
                 return "Alacritty"
             }
             
+            if let version = dict["TERM_PROGRAM_VERSION"] as? String, version.contains("insiders") {
+                return "vscode-insiders"
+            }
+          
             return dict["TERM_PROGRAM"] as? String
         }
         return nil
@@ -495,6 +499,8 @@ struct ShellMessage: Codable {
   
     var potentialBundleId: String? {
       switch self.terminal {
+        case "vscode-insiders":
+          return Integrations.VSCodeInsiders
         case "vscode":
           return Integrations.VSCode
         case "Apple_Terminal":
