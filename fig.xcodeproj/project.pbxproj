@@ -43,6 +43,7 @@
 		7510F8BD24A9861E00E86F7C /* PrivateWindow.m in Sources */ = {isa = PBXBuildFile; fileRef = 7510F8BC24A9861E00E86F7C /* PrivateWindow.m */; };
 		7510F8BF24A99A4B00E86F7C /* WindowService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F8BE24A99A4B00E86F7C /* WindowService.swift */; };
 		7510F8C124A9B32D00E86F7C /* WindowManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F8C024A9B32D00E86F7C /* WindowManager.swift */; };
+		7512A48B263252EF00CDE824 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 7512A48A263252EF00CDE824 /* Sparkle */; };
 		7518606F255B2A0A0000A7C7 /* flag@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 75186069255B2A090000A7C7 /* flag@2x.png */; };
 		75186070255B2A0A0000A7C7 /* asterisk@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7518606A255B2A090000A7C7 /* asterisk@2x.png */; };
 		75186071255B2A0A0000A7C7 /* option@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7518606B255B2A090000A7C7 /* option@2x.png */; };
@@ -201,8 +202,6 @@
 		75C57C142581C0700065741E /* ioreg.c in Sources */ = {isa = PBXBuildFile; fileRef = 75C57C132581C0700065741E /* ioreg.c */; };
 		75CFDBDF24EDB2E900F00CAE /* Onboarding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75CFDBDE24EDB2E900F00CAE /* Onboarding.swift */; };
 		75CFDBE224EDE31800F00CAE /* Sentry in Frameworks */ = {isa = PBXBuildFile; productRef = 75CFDBE124EDE31800F00CAE /* Sentry */; };
-		75CFF64A2496B43A00C6A6DE /* Sparkle.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 75CFF6482496B43600C6A6DE /* Sparkle.framework */; };
-		75CFF64B2496B43A00C6A6DE /* Sparkle.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 75CFF6482496B43600C6A6DE /* Sparkle.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		75D2E3CB249C1E7500607F66 /* terminal.css in Resources */ = {isa = PBXBuildFile; fileRef = 75D2E3CA249C1E7500607F66 /* terminal.css */; };
 		75DA86A325EDB05100722F1D /* Integrations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DA86A225EDB05100722F1D /* Integrations.swift */; };
 		75DA86A525EEBD7500722F1D /* Alert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DA86A425EEBD7400722F1D /* Alert.swift */; };
@@ -264,17 +263,6 @@
 				758AEB6724CE8B8F00A15EAF /* figcli in Embed Command Line Tool */,
 			);
 			name = "Embed Command Line Tool";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		75CFF64C2496B43A00C6A6DE /* Embed Frameworks */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 10;
-			files = (
-				75CFF64B2496B43A00C6A6DE /* Sparkle.framework in Embed Frameworks */,
-			);
-			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -486,7 +474,6 @@
 		75C57C122581C0700065741E /* ioreg.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ioreg.h; sourceTree = "<group>"; };
 		75C57C132581C0700065741E /* ioreg.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ioreg.c; sourceTree = "<group>"; };
 		75CFDBDE24EDB2E900F00CAE /* Onboarding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Onboarding.swift; sourceTree = "<group>"; };
-		75CFF6482496B43600C6A6DE /* Sparkle.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Sparkle.framework; sourceTree = "<group>"; };
 		75D2E3CA249C1E7500607F66 /* terminal.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = terminal.css; sourceTree = "<group>"; };
 		75DA86A225EDB05100722F1D /* Integrations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Integrations.swift; sourceTree = "<group>"; };
 		75DA86A425EEBD7400722F1D /* Alert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Alert.swift; sourceTree = "<group>"; };
@@ -518,11 +505,11 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7512A48B263252EF00CDE824 /* Sparkle in Frameworks */,
 				75CFDBE224EDE31800F00CAE /* Sentry in Frameworks */,
 				755D0F512482D4920074AB5C /* HotKey in Frameworks */,
 				757CA8E424905B0E002A64A8 /* Kitura-WebSocket in Frameworks */,
 				75A4A2A725CBBDE7002EFD6B /* AXSwift in Frameworks */,
-				75CFF64A2496B43A00C6A6DE /* Sparkle.framework in Frameworks */,
 				756C4D832542A6D30035B467 /* Starscream in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -970,7 +957,6 @@
 			isa = PBXGroup;
 			children = (
 				75AC55312522C8EB0069635E /* upgrade */,
-				75CFF6482496B43600C6A6DE /* Sparkle.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -1029,7 +1015,6 @@
 				7567594D244634AD006AA988 /* Sources */,
 				7567594E244634AD006AA988 /* Frameworks */,
 				7567594F244634AD006AA988 /* Resources */,
-				75CFF64C2496B43A00C6A6DE /* Embed Frameworks */,
 				758AEB6324CE8B2F00A15EAF /* Embed Command Line Tool */,
 				75AA9FAA256D9D6C00CEFAC8 /* ShellScript */,
 			);
@@ -1045,6 +1030,7 @@
 				75CFDBE124EDE31800F00CAE /* Sentry */,
 				756C4D822542A6D30035B467 /* Starscream */,
 				75A4A2A625CBBDE7002EFD6B /* AXSwift */,
+				7512A48A263252EF00CDE824 /* Sparkle */,
 			);
 			productName = fig;
 			productReference = 75675951244634AD006AA988 /* fig.app */;
@@ -1128,6 +1114,7 @@
 				758AEB6824CEA4D000A15EAF /* XCRemoteSwiftPackageReference "Starscream" */,
 				75CFDBE024EDE31800F00CAE /* XCRemoteSwiftPackageReference "sentry-cocoa" */,
 				75A4A2A525CBBDE4002EFD6B /* XCRemoteSwiftPackageReference "AXSwift" */,
+				7512A489263252EF00CDE824 /* XCRemoteSwiftPackageReference "Sparkle" */,
 			);
 			productRefGroup = 75675952244634AD006AA988 /* Products */;
 			projectDirPath = "";
@@ -1592,6 +1579,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = NO;
 				"OTHER_CODE_SIGN_FLAGS[sdk=macosx*]" = "--timestamp";
 				SDKROOT = macosx;
 				SWIFT_COMPILATION_MODE = wholemodule;
@@ -1615,7 +1603,6 @@
 				DEVELOPMENT_TEAM = D93PPD94WK;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
-				EXCLUDED_ARCHS = arm64;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)",
@@ -1627,6 +1614,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MARKETING_VERSION = 1.0.41;
+				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mschrage.fig;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1651,7 +1639,6 @@
 				DEVELOPMENT_TEAM = D93PPD94WK;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
-				EXCLUDED_ARCHS = arm64;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)",
@@ -1663,6 +1650,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MARKETING_VERSION = 1.0.41;
+				ONLY_ACTIVE_ARCH = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mschrage.fig;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1802,6 +1790,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		7512A489263252EF00CDE824 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.26.0;
+			};
+		};
 		755D0F4F2482D4910074AB5C /* XCRemoteSwiftPackageReference "HotKey" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/soffes/HotKey";
@@ -1845,6 +1841,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		7512A48A263252EF00CDE824 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7512A489263252EF00CDE824 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
 		755D0F502482D4920074AB5C /* HotKey */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 755D0F4F2482D4910074AB5C /* XCRemoteSwiftPackageReference "HotKey" */;
