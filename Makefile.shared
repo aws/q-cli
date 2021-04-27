@@ -1,0 +1,16 @@
+PLATFORM=$(shell $(ROOT)/systype.sh)
+
+CC=gcc
+COMPILE.c=$(CC) $(CFLAGS) $(CPPFLAGS) -c
+LINK.c=$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
+LDFLAGS=
+LDDIR=-L$(ROOT)/lib
+LDLIBS=$(LDDIR) -lfig -lvterm -lm $(EXTRALIBS)
+CFLAGS=-I$(ROOT)/include -Wall -ggdb -DLINUX -D_GNU_SOURCE $(EXTRA)
+RANLIB=echo
+AR=ar
+AWK=awk
+
+ifeq "$(PLATFORM)" "solaris"
+  EXTRALIBS=-lsocket -lnsl
+endif
