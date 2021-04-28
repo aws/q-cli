@@ -749,7 +749,7 @@ extension WindowManager : WindowManagementService {
             // get 'true' main screen (accounting for the fact that fullScreen workspaces default to laptop screen)
             let currentScreen = NSScreen.screens.filter { (screen) -> Bool in
               return screen.frame.contains(rect)
-            }.first
+            }.first ?? NSScreen.main
           
           
 //            WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try { fig.autocomplete_above = \(isAbove)} catch(e) {}", completionHandler: nil)
