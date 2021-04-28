@@ -36,7 +36,11 @@ class KeypressProvider : KeypressService {
   var redirects: [ExternalWindowHash:  Set<Keystroke>] = [:]
   var buffers: [ExternalWindowHash: KeystrokeBuffer] = [:]
   
-  static let whitelist = Integrations.terminalsWhereAutocompleteShouldAppear
+  static var whitelist: Set<String> {
+    get {
+        return Integrations.terminalsWhereAutocompleteShouldAppear
+    }
+  }
   static let shared = KeypressProvider(windowServiceProvider: WindowServer.shared)
   
   init(windowServiceProvider: WindowService) {
