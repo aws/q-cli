@@ -1,10 +1,10 @@
 #MAGENTA=$(tput setaf 5)
 #BOLD=$(tput bold)
 #NORMAL=$(tput sgr0)
-
+echo
 echo "Pulling most up-to-date completion specs..."
 echo "Run $(tput setaf 5)$(tput bold)fig docs$(tput sgr0) to learn how to contribute your own!"
-
+echo
 # Download all the files in the specs folder of this repo
 
 base_url='https://codeload.github.com/withfig/autocomplete/tar.gz/';
