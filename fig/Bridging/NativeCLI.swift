@@ -55,6 +55,7 @@ class NativeCLI {
         case debugDotfiles = "debug:dotfiles"
         case electronAccessibility = "util:axelectron"
         case restartSettingsListener = "settings:init"
+        case openSettingsFile = "settings:open"
 
         var isUtility: Bool {
             get {
