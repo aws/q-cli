@@ -17,8 +17,14 @@ class Onboarding {
     static func setUpEnviroment(completion:( () -> Void)? = nil) {
         
         DispatchQueue.global(qos: .userInitiated).async {
-            let githubURL = URL(string: "https://raw.githubusercontent.com/withfig/config/main/tools/install_and_upgrade.sh")!
+            guard let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String else {
+              Logger.log(message: "No version availible")
+              return
+            }
+          
+            let githubURL = URL(string: "https://raw.githubusercontent.com/withfig/config/v\(version)/tools/install_and_upgrade.sh")!
             let fallbackURL = Bundle.main.url(forResource: "install_and_upgrade_fallback", withExtension: "sh")!
+
             
             var script = try? String(contentsOf: githubURL)
             
@@ -55,11 +61,6 @@ class Onboarding {
 
 
                 print("onboarding: ", script)
-                
-                guard let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String else {
-                    Logger.log(message: "No version availible")
-                    return
-                }
                 
                 let out = "/bin/bash '\(script.path)' v\(version)".runAsCommand()
                 
