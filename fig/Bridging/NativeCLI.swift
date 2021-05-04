@@ -55,6 +55,7 @@ class NativeCLI {
         case debugDotfiles = "debug:dotfiles"
         case electronAccessibility = "util:axelectron"
         case restartSettingsListener = "settings:init"
+        case runInstallScript = "util:install-script"
 
         var isUtility: Bool {
             get {
@@ -93,6 +94,7 @@ class NativeCLI {
                                                            .electronAccessibility,
                                                            .issue,
                                                            .restartSettingsListener,
+                                                           .runInstallScript,
                                                            .quit,
                                                            .docs]
                return implementatedNatively.contains(self)
@@ -152,6 +154,8 @@ class NativeCLI {
                 NativeCLI.issueCommand(scope)
             case .restartSettingsListener:
                 NativeCLI.initSettingsCommand(scope)
+            case .runInstallScript:
+                NativeCLI.runInstallScriptCommand(scope)
             default:
                 break;
             }
@@ -473,6 +477,13 @@ extension NativeCLI {
 
         Github.openIssue(with: message.arguments.joined(separator: " "))
       
+    }
+  
+    static func runInstallScriptCommand(_ scope: Scope) {
+      let (_, connection) = scope
+
+      NativeCLI.printInTerminal("\n› Running installation script...\n", using: connection)
+      Onboarding.setUpEnviroment()
     }
   
     static func electronAccessibilityCommand(_ scope: Scope) {
