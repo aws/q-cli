@@ -70,9 +70,7 @@ if arguments.count > 1 {
         if let raw = Settings.rawFromFile() {
           print(raw)
         }
-//        settings.keys.forEach { (key) in
-//          print(key)
-//        }
+        print("\n› View all possible settings keys by running fig settings:docs")
         exit(0)
       }
 
