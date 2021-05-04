@@ -18,7 +18,8 @@ class NativeCLI {
         case helpCommand =  "help"
         case version = "--version"
         case accessibility = "util:axprompt"
-        case logout = "util:logout"
+        case logout = "logout"
+        case logoutLegacy = "util:logout"
         case restart = "util:restart"
         case build = "util:build"
         case feedback = "feedback"
@@ -58,7 +59,7 @@ class NativeCLI {
 
         var isUtility: Bool {
             get {
-                let utilities: Set<Command> = [.resetCache, .build, .logout, .restart, .accessibility]
+                let utilities: Set<Command> = [.resetCache, .build, .logoutLegacy, .restart, .accessibility]
                return utilities.contains(self)
             }
         }
@@ -75,6 +76,7 @@ class NativeCLI {
                 let implementatedNatively: Set<Command> = [.resetCache,
                                                            .build,
                                                            .logout,
+                                                           .logoutLegacy,
                                                            .restart,
                                                            .accessibility,
                                                            .openMenuBar,
@@ -114,7 +116,7 @@ class NativeCLI {
                 NativeCLI.restartCommand(scope)
             case .resetCache:
                 NativeCLI.resetCacheCommand(scope)
-            case .logout:
+            case .logout, .logoutLegacy:
                 NativeCLI.logoutCommand(scope)
             case .openMenuBar:
                 NativeCLI.openMenuBarCommand(scope)
