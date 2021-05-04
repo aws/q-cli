@@ -64,6 +64,11 @@ class Settings {
     setUpFileSystemListeners()
   }
   
+  func update(_ keyValues: Dictionary<String, Any>) {
+    currentSettings.merge(keyValues) { $1 }
+    serialize()
+  }
+  
   func set(value: Any, forKey key: String) {
     currentSettings.updateValue(value, forKey: key)
     serialize()
