@@ -259,6 +259,7 @@ extension TelemetryProvider : LocalTelemetryService {
           dict[event.rawValue] = "\(count)"
         })
         payload["date"] = dateIdentifier
+        payload["telemetryDisabled"] = (Settings.shared.getValue(forKey: Settings.telemetryDisabledKey) as? Bool ?? false) ? "true" : "false"
         print("aggregate:", countsForDate)
         // todo: add completion handler for success and failure
         // clean cache on success
