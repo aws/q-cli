@@ -55,6 +55,7 @@ class NativeCLI {
         case debugDotfiles = "debug:dotfiles"
         case electronAccessibility = "util:axelectron"
         case restartSettingsListener = "settings:init"
+        case lockscreen = "util:lockscreen"
 
         var isUtility: Bool {
             get {
@@ -93,6 +94,7 @@ class NativeCLI {
                                                            .electronAccessibility,
                                                            .issue,
                                                            .restartSettingsListener,
+                                                           .lockscreen,
                                                            .quit,
                                                            .docs]
                return implementatedNatively.contains(self)
@@ -152,6 +154,8 @@ class NativeCLI {
                 NativeCLI.issueCommand(scope)
             case .restartSettingsListener:
                 NativeCLI.initSettingsCommand(scope)
+            case .lockscreen:
+                NativeCLI.lockscreenCommand(scope)
             default:
                 break;
             }
@@ -474,6 +478,14 @@ extension NativeCLI {
         Github.openIssue(with: message.arguments.joined(separator: " "))
       
     }
+  
+  static func lockscreenCommand(_ scope: Scope) {
+    let (_, connection) = scope
+
+    NativeCLI.printInTerminal("\n→ Locking screen...\n  This may resolve issues with Secure Keyboard Entry\n", using: connection)
+    SecureKeyboardInput.lockscreen()
+
+  }
   
     static func electronAccessibilityCommand(_ scope: Scope) {
         let (_, connection) = scope
