@@ -57,9 +57,6 @@ class KeypressProvider : KeypressService {
                                            object:nil)
   }
   func shouldRedirect(event: CGEvent, in window: ExternalWindow) -> Bool {
-    guard event.type == .keyDown else {
-      return false
-    }
     
     guard KeypressProvider.shared.enabled else {
       return false
@@ -299,6 +296,11 @@ class KeypressProvider : KeypressService {
           
           guard WindowManager.shared.autocomplete?.isVisible ?? true else {
             return Unmanaged.passUnretained(event)
+          }
+          
+          // fig.keypress only recieves keyDown events
+          guard event.type == .keyDown else {
+            return nil
           }
 
           if (keyCode == Keycode.n) {
