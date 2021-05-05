@@ -99,10 +99,39 @@ extension PseudoTerminalHelper : PseudoTerminalEventDelegate {
 }
 
 class PseudoTerminal : PseudoTerminalService {
-    
-//    init(eventDelegate: PseudoTerminalEventDelegate) {
+    static let recievedEnvironmentVariablesFromShellNotification = NSNotification.Name("recievedEnvironmentVariablesFromShellNotification")
+    init() {
 //        self.delegate = eventDelegate
-//    }
+      NotificationCenter.default.addObserver(self,
+                                             selector: #selector(recievedEnvironmentVariablesFromShell(_:)),
+                                             name: PseudoTerminal.recievedEnvironmentVariablesFromShellNotification,
+                                             object: nil)
+    }
+  
+    deinit {
+      NotificationCenter.default.removeObserver(self)
+    }
+  
+    @objc func recievedEnvironmentVariablesFromShell(_ notification: Notification) {
+      
+      guard let env = notification.object as? [String: Any], self.mirrorsEnvironment else { return }
+      // Update environment variables in autocomplete PTY
+      let patterns = Settings.shared.getValue(forKey: Settings.ptyEnvKey) as? [String]
+      let environmentVariablesToMirror: Set<String> = Set(patterns ?? [ "AWS_" ])
+      let variablesToUpdate = env.filter({ (element) -> Bool in
+        guard element.value as? String != nil else {
+          return false
+        }
+        
+        return environmentVariablesToMirror.reduce(false) { (result, prefix) -> Bool in
+          return result || element.key.starts(with: prefix)
+        }
+      })
+      
+      let command = variablesToUpdate.keys.map { "\($0)='\(variablesToUpdate[$0] ?? "")'" }.joined(separator: "\n")
+      self.write(command: command + "\n", control: nil)
+    }
+  
     let pty: HeadlessTerminal = HeadlessTerminal(onEnd: { (code) in
         print("Exit")
     })
@@ -110,7 +139,7 @@ class PseudoTerminal : PseudoTerminalService {
     var streamHandlers: Set<String> = []
     var executeHandlers: Set<String> = []
     var delegate: PseudoTerminalEventDelegate?
-    
+    var mirrorsEnvironment = false
     func start(with env: [String : String]) {
         print("Starting PTY...")
         let shell = env["SHELL"] ?? "/bin/sh"
@@ -137,8 +166,10 @@ class PseudoTerminal : PseudoTerminalService {
           pty.send("export PATH=$(\(Defaults.userShell) -li -c \"/usr/bin/env | /usr/bin/grep '^PATH=' | /bin/cat | /usr/bin/sed 's|PATH=||g'\")\r")
         }
       
-        if let filePath = Settings.shared.getValue(forKey: Settings.ptyInitFile) as? NSString {
-          let expandedFilePath = filePath.expandingTildeInPath
+        let filePath = Settings.shared.getValue(forKey: Settings.ptyInitFile) as? NSString ?? "~/.fig/user/ptyrc"
+        let expandedFilePath = filePath.expandingTildeInPath
+
+        if FileManager.default.fileExists(atPath: expandedFilePath) {
           print("pty: sourcing \(expandedFilePath)")
           pty.send("source \(expandedFilePath)\r")
         }

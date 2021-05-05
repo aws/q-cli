@@ -43,6 +43,7 @@
 		7510F8BD24A9861E00E86F7C /* PrivateWindow.m in Sources */ = {isa = PBXBuildFile; fileRef = 7510F8BC24A9861E00E86F7C /* PrivateWindow.m */; };
 		7510F8BF24A99A4B00E86F7C /* WindowService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F8BE24A99A4B00E86F7C /* WindowService.swift */; };
 		7510F8C124A9B32D00E86F7C /* WindowManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F8C024A9B32D00E86F7C /* WindowManager.swift */; };
+		75184664263CF227003CBCF9 /* settings-open.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75184663263CF1E0003CBCF9 /* settings-open.sh */; };
 		7518606F255B2A0A0000A7C7 /* flag@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 75186069255B2A090000A7C7 /* flag@2x.png */; };
 		75186070255B2A0A0000A7C7 /* asterisk@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7518606A255B2A090000A7C7 /* asterisk@2x.png */; };
 		75186071255B2A0A0000A7C7 /* option@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7518606B255B2A090000A7C7 /* option@2x.png */; };
@@ -321,6 +322,7 @@
 		7510F8BC24A9861E00E86F7C /* PrivateWindow.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PrivateWindow.m; sourceTree = "<group>"; };
 		7510F8BE24A99A4B00E86F7C /* WindowService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowService.swift; sourceTree = "<group>"; };
 		7510F8C024A9B32D00E86F7C /* WindowManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowManager.swift; sourceTree = "<group>"; };
+		75184663263CF1E0003CBCF9 /* settings-open.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "settings-open.sh"; sourceTree = "<group>"; };
 		75186069255B2A090000A7C7 /* flag@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "flag@2x.png"; sourceTree = "<group>"; };
 		7518606A255B2A090000A7C7 /* asterisk@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "asterisk@2x.png"; sourceTree = "<group>"; };
 		7518606B255B2A090000A7C7 /* option@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "option@2x.png"; sourceTree = "<group>"; };
@@ -867,6 +869,7 @@
 				752D71C825AFD59B00263527 /* team-download.sh */,
 				752D71C925AFD5B800263527 /* team-upload.sh */,
 				753C31A12641F6D100202AAA /* settings-docs.sh */,
+				75184663263CF1E0003CBCF9 /* settings-open.sh */,
 			);
 			path = "CLI Scripts";
 			sourceTree = "<group>";
@@ -1150,6 +1153,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				753C31A22641FA4400202AAA /* settings-docs.sh in Resources */,
+				75184664263CF227003CBCF9 /* settings-open.sh in Resources */,
 				75DA86A725EF08F900722F1D /* debug-ssh.sh in Resources */,
 				759F989025C1172100EC3407 /* install_and_upgrade_fallback.sh in Resources */,
 				752D71CA25AFD7B400263527 /* team-download.sh in Resources */,
@@ -1614,7 +1618,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = YES;
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 191;
+				CURRENT_PROJECT_VERSION = 193;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				DEVELOPMENT_TEAM = D93PPD94WK;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1650,7 +1654,7 @@
 				CODE_SIGN_IDENTITY = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 191;
+				CURRENT_PROJECT_VERSION = 193;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				DEVELOPMENT_TEAM = D93PPD94WK;
 				ENABLE_HARDENED_RUNTIME = YES;

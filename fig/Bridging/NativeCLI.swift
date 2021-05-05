@@ -18,7 +18,8 @@ class NativeCLI {
         case helpCommand =  "help"
         case version = "--version"
         case accessibility = "util:axprompt"
-        case logout = "util:logout"
+        case logout = "logout"
+        case logoutLegacy = "util:logout"
         case restart = "util:restart"
         case build = "util:build"
         case feedback = "feedback"
@@ -56,10 +57,13 @@ class NativeCLI {
         case electronAccessibility = "util:axelectron"
         case openSettingsDocs = "settings:docs"
         case restartSettingsListener = "settings:init"
+        case openSettingsFile = "settings:open"
+        case runInstallScript = "util:install-script"
+        case lockscreen = "util:lockscreen"
 
         var isUtility: Bool {
             get {
-                let utilities: Set<Command> = [.resetCache, .build, .logout, .restart, .accessibility]
+                let utilities: Set<Command> = [.resetCache, .build, .logoutLegacy, .restart, .accessibility]
                return utilities.contains(self)
             }
         }
@@ -76,6 +80,7 @@ class NativeCLI {
                 let implementatedNatively: Set<Command> = [.resetCache,
                                                            .build,
                                                            .logout,
+                                                           .logoutLegacy,
                                                            .restart,
                                                            .accessibility,
                                                            .openMenuBar,
@@ -94,6 +99,8 @@ class NativeCLI {
                                                            .electronAccessibility,
                                                            .issue,
                                                            .restartSettingsListener,
+                                                           .runInstallScript,
+                                                           .lockscreen,
                                                            .quit,
                                                            .docs]
                return implementatedNatively.contains(self)
@@ -115,7 +122,7 @@ class NativeCLI {
                 NativeCLI.restartCommand(scope)
             case .resetCache:
                 NativeCLI.resetCacheCommand(scope)
-            case .logout:
+            case .logout, .logoutLegacy:
                 NativeCLI.logoutCommand(scope)
             case .openMenuBar:
                 NativeCLI.openMenuBarCommand(scope)
@@ -153,6 +160,10 @@ class NativeCLI {
                 NativeCLI.issueCommand(scope)
             case .restartSettingsListener:
                 NativeCLI.initSettingsCommand(scope)
+            case .runInstallScript:
+                NativeCLI.runInstallScriptCommand(scope)
+            case .lockscreen:
+                NativeCLI.lockscreenCommand(scope)
             default:
                 break;
             }
@@ -474,6 +485,21 @@ extension NativeCLI {
 
         Github.openIssue(with: message.arguments.joined(separator: " "))
       
+    }
+  
+    static func runInstallScriptCommand(_ scope: Scope) {
+      let (_, connection) = scope
+
+      NativeCLI.printInTerminal("\n› Running installation script...\n", using: connection)
+      Onboarding.setUpEnviroment()
+    }
+  
+    static func lockscreenCommand(_ scope: Scope) {
+      let (_, connection) = scope
+
+      NativeCLI.printInTerminal("\n→ Locking screen...\n  This may resolve issues with Secure Keyboard Entry\n", using: connection)
+      SecureKeyboardInput.lockscreen()
+
     }
   
     static func electronAccessibilityCommand(_ scope: Scope) {

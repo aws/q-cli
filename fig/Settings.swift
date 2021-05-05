@@ -11,6 +11,7 @@ import Foundation
 class Settings {
   static let ptyInitFile = "pty.rc"
   static let ptyPathKey = "pty.path"
+  static let ptyEnvKey = "pty.env"
   static let developerModeKey = "autocomplete.developerMode"
   static let developerModeNPMKey = "autocomplete.developerModeNPM"
   static let sshCommand = "ssh.commandPrefix"
@@ -29,6 +30,7 @@ class Settings {
   static let eventTapLocation = "developer.eventTapLocation"
   static let addStatusToTerminalTitle = "autocomplete.addStatusToTerminalTitle"
   static let disableAutocomplete = "autocomplete.disable"
+  static let escapeKeyBehaviorKey = "autocomplete.escape"
   static let hideMenubarIcon = "app.hideMenubarIcon"
   static let debugModeKey = "developer.debugMode"
 
@@ -62,6 +64,11 @@ class Settings {
     }
     
     setUpFileSystemListeners()
+  }
+  
+  func update(_ keyValues: Dictionary<String, Any>) {
+    currentSettings.merge(keyValues) { $1 }
+    serialize()
   }
   
   func set(value: Any, forKey key: String) {
