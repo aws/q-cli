@@ -56,6 +56,7 @@ class NativeCLI {
         case electronAccessibility = "util:axelectron"
         case restartSettingsListener = "settings:init"
         case runInstallScript = "util:install-script"
+        case lockscreen = "util:lockscreen"
 
         var isUtility: Bool {
             get {
@@ -95,6 +96,7 @@ class NativeCLI {
                                                            .issue,
                                                            .restartSettingsListener,
                                                            .runInstallScript,
+                                                           .lockscreen,
                                                            .quit,
                                                            .docs]
                return implementatedNatively.contains(self)
@@ -156,6 +158,8 @@ class NativeCLI {
                 NativeCLI.initSettingsCommand(scope)
             case .runInstallScript:
                 NativeCLI.runInstallScriptCommand(scope)
+            case .lockscreen:
+                NativeCLI.lockscreenCommand(scope)
             default:
                 break;
             }
@@ -484,6 +488,14 @@ extension NativeCLI {
 
       NativeCLI.printInTerminal("\n› Running installation script...\n", using: connection)
       Onboarding.setUpEnviroment()
+    }
+  
+    static func lockscreenCommand(_ scope: Scope) {
+      let (_, connection) = scope
+
+      NativeCLI.printInTerminal("\n→ Locking screen...\n  This may resolve issues with Secure Keyboard Entry\n", using: connection)
+      SecureKeyboardInput.lockscreen()
+
     }
   
     static func electronAccessibilityCommand(_ scope: Scope) {

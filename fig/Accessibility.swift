@@ -237,4 +237,18 @@ class Accessibility {
 
   }
   
+  static func openMenu(_ bundleId: String) {
+    guard let elm = Application.allForBundleID(bundleId).first else { return }
+    guard let menuBar = try? elm.attribute(.menuBar) as UIElement? else {
+      return
+    }
+    
+    let children: [UIElement] = (try? menuBar.arrayAttribute(.children)) ?? []
+    
+    // ignore first menuIterm which is Apple
+    let main = children[safe: 1]
+    
+    try? main?.performAction(.press)
+  }
+  
 }
