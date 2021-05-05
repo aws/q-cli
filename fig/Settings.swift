@@ -11,6 +11,7 @@ import Foundation
 class Settings {
   static let ptyInitFile = "pty.rc"
   static let ptyPathKey = "pty.path"
+  static let ptyEnvKey = "pty.env"
   static let developerModeKey = "autocomplete.developerMode"
   static let developerModeNPMKey = "autocomplete.developerModeNPM"
   static let sshCommand = "ssh.commandPrefix"
