@@ -264,6 +264,13 @@ class KeypressProvider : KeypressService {
           // send <esc> key event directly to underlying app
           return Unmanaged.passUnretained(event)
         }
+        
+        // Allow user to opt out of escape key being intercepted by Fig
+        if let behavior = Settings.shared.getValue(forKey: Settings.escapeKeyBehaviorKey) as? String,
+           behavior == "ignore",
+           !event.flags.containsKeyboardModifier {
+            return Unmanaged.passUnretained(event)
+        }
        
         buffer.writeOnly = !buffer.writeOnly
 
