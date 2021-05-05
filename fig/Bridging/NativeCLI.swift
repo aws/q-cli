@@ -55,6 +55,7 @@ class NativeCLI {
         case debugDotfiles = "debug:dotfiles"
         case electronAccessibility = "util:axelectron"
         case restartSettingsListener = "settings:init"
+        case runInstallScript = "util:install-script"
         case lockscreen = "util:lockscreen"
 
         var isUtility: Bool {
@@ -94,6 +95,7 @@ class NativeCLI {
                                                            .electronAccessibility,
                                                            .issue,
                                                            .restartSettingsListener,
+                                                           .runInstallScript,
                                                            .lockscreen,
                                                            .quit,
                                                            .docs]
@@ -154,6 +156,8 @@ class NativeCLI {
                 NativeCLI.issueCommand(scope)
             case .restartSettingsListener:
                 NativeCLI.initSettingsCommand(scope)
+            case .runInstallScript:
+                NativeCLI.runInstallScriptCommand(scope)
             case .lockscreen:
                 NativeCLI.lockscreenCommand(scope)
             default:
@@ -479,13 +483,20 @@ extension NativeCLI {
       
     }
   
-  static func lockscreenCommand(_ scope: Scope) {
-    let (_, connection) = scope
+    static func runInstallScriptCommand(_ scope: Scope) {
+      let (_, connection) = scope
 
-    NativeCLI.printInTerminal("\n→ Locking screen...\n  This may resolve issues with Secure Keyboard Entry\n", using: connection)
-    SecureKeyboardInput.lockscreen()
+      NativeCLI.printInTerminal("\n› Running installation script...\n", using: connection)
+      Onboarding.setUpEnviroment()
+    }
+  
+    static func lockscreenCommand(_ scope: Scope) {
+      let (_, connection) = scope
 
-  }
+      NativeCLI.printInTerminal("\n→ Locking screen...\n  This may resolve issues with Secure Keyboard Entry\n", using: connection)
+      SecureKeyboardInput.lockscreen()
+
+    }
   
     static func electronAccessibilityCommand(_ scope: Scope) {
         let (_, connection) = scope
