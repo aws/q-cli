@@ -29,6 +29,7 @@ class Settings {
   static let eventTapLocation = "developer.eventTapLocation"
   static let addStatusToTerminalTitle = "autocomplete.addStatusToTerminalTitle"
   static let disableAutocomplete = "autocomplete.disable"
+  static let escapeKeyBehaviorKey = "autocomplete.escape"
   static let hideMenubarIcon = "app.hideMenubarIcon"
   static let debugModeKey = "developer.debugMode"
 
