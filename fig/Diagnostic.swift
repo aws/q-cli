@@ -26,7 +26,7 @@ class Diagnostic {
       guard SecureKeyboardInput.enabled else { return nil }
 
       if let app = SecureKeyboardInput.responsibleApplication {
-        return "\(app.localizedName ?? "") - \(app.bundleIdentifier ?? "")"
+        return "\(app.localizedName ?? "") - \(app.bundleIdentifier ?? "") \(SecureKeyboardInput.enabled(by: app.bundleIdentifier) ? "(via Settings)" : "")"
       } else {
         return "no app for pid '\(SecureKeyboardInput.responsibleProcessId ?? -1)'"
       }

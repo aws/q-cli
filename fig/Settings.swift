@@ -29,6 +29,7 @@ class Settings {
   static let eventTapLocation = "developer.eventTapLocation"
   static let addStatusToTerminalTitle = "autocomplete.addStatusToTerminalTitle"
   static let disableAutocomplete = "autocomplete.disable"
+  static let escapeKeyBehaviorKey = "autocomplete.escape"
   static let hideMenubarIcon = "app.hideMenubarIcon"
   static let debugModeKey = "developer.debugMode"
 
@@ -62,6 +63,11 @@ class Settings {
     }
     
     setUpFileSystemListeners()
+  }
+  
+  func update(_ keyValues: Dictionary<String, Any>) {
+    currentSettings.merge(keyValues) { $1 }
+    serialize()
   }
   
   func set(value: Any, forKey key: String) {
