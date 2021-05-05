@@ -55,6 +55,7 @@ class NativeCLI {
         case debugProcesses = "debug:ps"
         case debugDotfiles = "debug:dotfiles"
         case electronAccessibility = "util:axelectron"
+        case openSettingsDocs = "settings:docs"
         case restartSettingsListener = "settings:init"
         case openSettingsFile = "settings:open"
         case runInstallScript = "util:install-script"
