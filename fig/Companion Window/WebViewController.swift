@@ -47,6 +47,7 @@ class WebViewController: NSViewController, NSWindowDelegate {
     
     init(_ configuration: WKWebViewConfiguration = WKWebViewConfiguration()){
         self.pty = PseudoTerminal()
+        self.pty.mirrorsEnvironment = true
         super.init(nibName: nil, bundle: nil)
         pty.delegate = self
         let settings = WebBridge.shared.configure(configuration)
