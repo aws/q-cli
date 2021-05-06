@@ -30,14 +30,24 @@ class Integrations {
                                      "com.runningwithcrayons.Alfred",
                                      "com.raycast.macos"]
   
-  static var electronTerminals: Set = ["co.zeit.hyper",
-                                       "com.microsoft.VSCode"]
+  static let electronIDEs: Set = [VSCode, VSCodeInsiders]
+  static var electronTerminals: Set<String> {
+    get {
+      let additions = Set(Settings.shared.getValue(forKey: Settings.additionalElectronTerminalsKey) as? [String] ?? [])
+      
+      return additions
+        .union(Integrations.electronIDEs)
+        .union(["co.zeit.hyper"])
+    }
+  }
+  
   
     static var terminalsWhereAutocompleteShouldAppear: Set<String> {
       get {
-      
+        let additions = Set(Settings.shared.getValue(forKey: Settings.additionalTerminalsKey) as? [String] ?? [])
         return Integrations.nativeTerminals
         .union(Integrations.electronTerminals)
+        .union(additions)
   .subtracting(Integrations.autocompleteBlocklist)
 
       }

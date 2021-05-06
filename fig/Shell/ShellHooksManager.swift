@@ -126,17 +126,30 @@ extension Dictionary where Value: Equatable {
 
 extension ShellHookManager {
     
-    func currentTabDidChange(_ info: ShellMessage) {
+    func currentTabDidChange(_ info: ShellMessage, includesBundleId: Bool = false) {
         Logger.log(message: "currentTabDidChange")
         
         // Need time for whitelisted window to change
         Timer.delayWithSeconds(0.1) {
             if let window = AXWindowServer.shared.whitelistedWindow {
                 if let id = info.options?.last {
-                  let VSCodeTerminal = window.bundleId == "com.microsoft.VSCode" && id.hasPrefix("code:")
-                  let HyperTab = window.bundleId == "co.zeit.hyper" &&  id.hasPrefix("hyper:")
-                  let iTermTab = window.bundleId == "com.googlecode.iterm2" && !id.hasPrefix("code:") && !id.hasPrefix("hyper:")
-                  guard VSCodeTerminal || iTermTab || HyperTab else { return }
+                  
+                  if includesBundleId {
+                    let tokens = id.split(separator: ":")
+                    let bundleId = String(tokens.first!)
+                    
+                    guard bundleId == window.bundleId ?? "" else {
+                      print("tab: bundleId from message did not match bundle id associated with current window ")
+                      return
+                    }
+                  }
+
+                  
+                  
+                  let VSCodeTerminal = (window.bundleId == Integrations.VSCode || window.bundleId == Integrations.VSCodeInsiders) && id.hasPrefix("code:")
+                  let HyperTab = window.bundleId == Integrations.Hyper &&  id.hasPrefix("hyper:")
+                  let iTermTab = window.bundleId == Integrations.iTerm && !id.hasPrefix("code:") && !id.hasPrefix("hyper:") && !includesBundleId
+                  guard VSCodeTerminal || iTermTab || HyperTab || includesBundleId else { return }
                     Logger.log(message: "tab: \(window.windowId)/\(id)")
 //                    self.tabs[window.windowId] = id
                     self.setActiveTab(id, for: window.windowId)

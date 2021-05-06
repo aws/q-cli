@@ -488,7 +488,7 @@ struct ShellMessage: Codable {
                 return "Alacritty"
             }
             
-            if let version = dict["TERM_PROGRAM_VERSION"] as? String, version.contains("insiders") {
+            if let version = dict["TERM_PROGRAM_VERSION"] as? String, version.contains("insider") {
                 return "vscode-insiders"
             }
           
@@ -510,6 +510,11 @@ struct ShellMessage: Codable {
         case "iTerm.app":
           return Integrations.iTerm
         default:
+          if let dict = self.env?.jsonStringToDict(),
+             let bundleId = dict["TERM_BUNDLE_IDENTIFIER"] as? String {
+             return bundleId
+          }
+          
           return nil
       }
     }
