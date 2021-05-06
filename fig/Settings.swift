@@ -25,6 +25,8 @@ class Settings {
   static let vscodeDisabledKey = "integrations.vscode.disabled"
   static let iTermDisabledKey = "integrations.iterm.disabled"
   static let terminalDisabledKey = "integrations.terminal.disabled"
+  static let additionalElectronTerminalsKey = "integrations.additionalElectronTerminals"
+  static let additionalTerminalsKey = "integrations.additionalTerminals"
   static let hyperDelayKey = "integrations.hyper.delay"
   static let vscodeDelayKey = "integrations.vscode.delay"
   static let eventTapLocation = "developer.eventTapLocation"

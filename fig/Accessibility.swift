@@ -162,7 +162,9 @@ class Accessibility {
       cursor = nil
     }
     
-    if !skipCache && cursor == nil && (cursorCache[window.hash]?.count ?? 0) > 0 {
+    // this is a performance optimization for VSCode (and other electron IDEs) so only enable it for them!
+    let isElectronIDE = Integrations.electronIDEs.contains(window.bundleId ?? "")
+    if isElectronIDE && !skipCache && cursor == nil && (cursorCache[window.hash]?.count ?? 0) > 0 {
       print("xterm-cursor: exists but is disabled (\(cursorCache[window.hash]?.count ?? 0))")
     } else if cursor == nil {
       let root = UIElement(axElement)
