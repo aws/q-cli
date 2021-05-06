@@ -497,6 +497,11 @@ struct ShellMessage: Codable {
         return nil
     }
   
+    // indicates whether the command was run from a fig command (eg. fig source internally uses fig bg:init)
+    var viaFigCommand: Bool {
+      return self.env?.jsonStringToDict()?["VIA_FIG_COMMAND"] as? String != nil
+    }
+  
     var potentialBundleId: String? {
       switch self.terminal {
         case "vscode-insiders":

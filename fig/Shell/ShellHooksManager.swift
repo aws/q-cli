@@ -273,6 +273,11 @@ extension ShellHookManager {
             delay = 0.2
         }
       
+        // no delay is needed because the command is being run by the user, so the window is already active
+        if info.viaFigCommand {
+            delay = 0
+        }
+      
         observer = WindowObserver(with: bundleId)
       
         let bundleIdBasedOnTermProgram = info.potentialBundleId
