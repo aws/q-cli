@@ -1,10 +1,8 @@
 #MAGENTA=$(tput setaf 5)
 #BOLD=$(tput bold)
 #NORMAL=$(tput sgr0)
-echo
-echo "Pulling most up-to-date completion specs..."
-echo "Run $(tput setaf 5)$(tput bold)fig docs$(tput sgr0) to learn how to contribute your own!"
-echo
+printf "\nPulling most up-to-date completion specs...\n"
+printf "Run $(tput setaf 5)$(tput bold)fig docs$(tput sgr0) to learn how to contribute your own!\n\n"
 # Download all the files in the specs folder of this repo
 
 base_url='https://waitlist.withfig.com/specs?version=';
