@@ -250,5 +250,22 @@ class Accessibility {
     
     try? main?.performAction(.press)
   }
-  
+ 
+  static func focusedApplicationIsSupportedTerminal() -> Bool {
+    let systemWideElement: UIElement = UIElement(AXUIElementCreateSystemWide())
+
+    
+    guard let focusedElement: UIElement = try? systemWideElement.attribute(.focusedUIElement) else {
+      return false
+    }
+
+    guard let pid = try? focusedElement.pid(),
+          let app = NSRunningApplication(processIdentifier: pid),
+          Integrations.terminalsWhereAutocompleteShouldAppear.contains(app.bundleIdentifier ?? "") else {
+      return false
+    }
+    
+    return true
+    
+  }
 }
