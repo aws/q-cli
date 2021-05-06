@@ -218,6 +218,10 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             VSCodeIntegration.install(withRestart: false, inBackground: true)
         }
 
+        if !VSCodeInsidersIntegration.isInstalled {
+            VSCodeInsidersIntegration.install(withRestart: false, inBackground: true)
+        }
+      
         if !HyperIntegration.isInstalled {
             HyperIntegration.install(withRestart: false, inBackground: true)
         }
@@ -2147,6 +2151,8 @@ extension AppDelegate : NSMenuDelegate {
             name = "Hyper"
           case Integrations.VSCode:
             name = "VSCode"
+          case Integrations.VSCodeInsiders:
+            name = "VSCode Insiders"
           default:
             name = "Unknown"
           }
