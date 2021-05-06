@@ -9,10 +9,11 @@
 import Cocoa
 import Sentry
 
-class VSCodeIntegration: IntegrationProvider {
+// TODO: refactor this so that VSCode and VSCode Insiders share this logic
+class VSCodeInsidersIntegration: IntegrationProvider {
   static let supportURL: URL = URL(string: "https://withfig.com/docs/support/vscode-integration")!
   static var settingsPath: String {
-    let defaultPath = "\(NSHomeDirectory())/Library/Application Support/Code/User/settings.json"
+    let defaultPath = "\(NSHomeDirectory())/Library/Application Support/Code - Insiders/User/settings.json"
     return (try? FileManager.default.destinationOfSymbolicLink(atPath: defaultPath)) ?? defaultPath
   }
 
@@ -53,11 +54,11 @@ class VSCodeIntegration: IntegrationProvider {
 
   // If the extension path changes make sure to update the uninstall script!
   static let extensionVersion = "0.0.2"
-  static let extensionPath = "\(NSHomeDirectory())/.vscode/extensions/withfig.fig-\(extensionVersion)/extension.js"
+  static let extensionPath = "\(NSHomeDirectory())/.vscode-insiders/extensions/withfig.fig-\(extensionVersion)/extension.js"
 
   static func install(withRestart:Bool = true, inBackground: Bool, completion: (() -> Void)? = nil) {
-    guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.microsoft.VSCode") else {
-        print("VSCode not installed")
+    guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: Integrations.VSCodeInsiders) else {
+        print("VSCode Insiders not installed")
         return
     }
     
@@ -120,7 +121,7 @@ class VSCodeIntegration: IntegrationProvider {
       }
       
       if (withRestart) {
-        let VSCode = Restarter(with: "com.microsoft.VSCode")
+        let VSCode = Restarter(with: Integrations.VSCodeInsiders)
         VSCode.restart(launchingIfInactive: false, completion: completion)
       } else {
         completion?()
@@ -143,7 +144,7 @@ class VSCodeIntegration: IntegrationProvider {
       return
     }
 
-    guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.microsoft.VSCode") else {
+    guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: Integrations.VSCodeInsiders) else {
       // application not installed
       completion?()
       return
