@@ -57,9 +57,6 @@ class KeypressProvider : KeypressService {
                                            object:nil)
   }
   func shouldRedirect(event: CGEvent, in window: ExternalWindow) -> Bool {
-    guard event.type == .keyDown else {
-      return false
-    }
     
     guard KeypressProvider.shared.enabled else {
       return false
@@ -264,6 +261,13 @@ class KeypressProvider : KeypressService {
           // send <esc> key event directly to underlying app
           return Unmanaged.passUnretained(event)
         }
+        
+        // Allow user to opt out of escape key being intercepted by Fig
+        if let behavior = Settings.shared.getValue(forKey: Settings.escapeKeyBehaviorKey) as? String,
+           behavior == "ignore",
+           !event.flags.containsKeyboardModifier {
+            return Unmanaged.passUnretained(event)
+        }
        
         buffer.writeOnly = !buffer.writeOnly
 
@@ -292,6 +296,11 @@ class KeypressProvider : KeypressService {
           
           guard WindowManager.shared.autocomplete?.isVisible ?? true else {
             return Unmanaged.passUnretained(event)
+          }
+          
+          // fig.keypress only recieves keyDown events
+          guard event.type == .keyDown else {
+            return nil
           }
 
           if (keyCode == Keycode.n) {

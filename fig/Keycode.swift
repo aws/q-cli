@@ -132,3 +132,9 @@ struct Keycode {
     static let keypad8                   : UInt16 = 0x5B
     static let keypad9                   : UInt16 = 0x5C
 }
+
+extension CGEventFlags {
+  var containsKeyboardModifier: Bool {
+    return self.contains(.maskAlternate) || self.contains(.maskCommand) || self.contains(.maskControl) || self.contains(.maskSecondaryFn)
+  }
+}

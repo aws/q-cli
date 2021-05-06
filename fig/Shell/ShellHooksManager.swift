@@ -313,6 +313,13 @@ extension ShellHookManager {
           
             // Set version (used for checking compatibility)
             tty.shellIntegrationVersion = info.shellIntegrationVersion
+          
+          
+            DispatchQueue.main.async {
+              NotificationCenter.default.post(Notification(name: PseudoTerminal.recievedEnvironmentVariablesFromShellNotification,
+                                                           object: info.env?.jsonStringToDict() ?? [:]))
+            }
+
         })
 
     }
