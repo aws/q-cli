@@ -117,7 +117,7 @@ class PseudoTerminal : PseudoTerminalService {
       guard let env = notification.object as? [String: Any], self.mirrorsEnvironment else { return }
       // Update environment variables in autocomplete PTY
       let patterns = Settings.shared.getValue(forKey: Settings.ptyEnvKey) as? [String]
-      let environmentVariablesToMirror: Set<String> = Set(patterns ?? [ "AWS_" ])
+      let environmentVariablesToMirror: Set<String> = Set(patterns ?? [ "AWS_" ]).union(["PATH"])
       let variablesToUpdate = env.filter({ (element) -> Bool in
         guard element.value as? String != nil else {
           return false
