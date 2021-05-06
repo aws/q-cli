@@ -10,6 +10,7 @@ import Cocoa
 import Carbon
 import Sentry
 import Foundation
+import AXSwift
 
 protocol KeypressService {
   func keyBuffer(for window: ExternalWindow) -> KeystrokeBuffer
@@ -233,7 +234,13 @@ class KeypressProvider : KeypressService {
         return Unmanaged.passUnretained(event)
       }
       
-      guard Defaults.loggedIn, Defaults.useAutocomplete, let window = AXWindowServer.shared.whitelistedWindow, KeypressProvider.whitelist.contains(window.bundleId ?? "") else {
+      // prevents keystrokes from being processed when typing into another application (specifically, spotlight)
+      guard Accessibility.focusedApplicationIsSupportedTerminal() else {
+          return Unmanaged.passUnretained(event)
+      }
+      
+      guard Defaults.loggedIn, Defaults.useAutocomplete, Accessibility.focusedApplicationIsSupportedTerminal(),
+            let window = AXWindowServer.shared.whitelistedWindow else {
         print("eventTap window of \(AXWindowServer.shared.whitelistedWindow?.bundleId ?? "<none>") is not whitelisted")
         return Unmanaged.passUnretained(event)
       }
@@ -401,6 +408,12 @@ class KeypressProvider : KeypressService {
   
   func getTextRect(extendRange: Bool = true) -> CGRect? {
     
+    // prevent cursor position for being returned when apps like spotlight & alfred are active
+    
+    guard Accessibility.focusedApplicationIsSupportedTerminal() else {
+        return nil
+    }
+    
     if let window = AXWindowServer.shared.whitelistedWindow, Integrations.electronTerminals.contains(window.bundleId ?? "") {
       return Accessibility.findXTermCursorInElectronWindow(window)
     }
@@ -410,14 +423,6 @@ class KeypressProvider : KeypressService {
     let error = AXUIElementCopyAttributeValue(systemWideElement, kAXFocusedUIElementAttribute as CFString, &focusedElement)
     guard error == .success else {
       print("cursor: Couldn't get the focused element. Probably a webkit application")
-      return nil
-    }
-    
-    var subrole : AnyObject?
-    AXUIElementCopyAttributeValue(focusedElement as! AXUIElement, kAXSubroleAttribute as CFString, &subrole)
-    
-    if subrole as? String == kAXSearchFieldSubrole {
-      print("cursor: prevent spotlight search from recieving keypresses, due to subrole = \(kAXSearchFieldSubrole)")
       return nil
     }
     
