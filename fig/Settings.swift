@@ -33,6 +33,8 @@ class Settings {
   static let escapeKeyBehaviorKey = "autocomplete.escape"
   static let hideMenubarIcon = "app.hideMenubarIcon"
   static let debugModeKey = "developer.debugMode"
+  static let onlyShowOnTabKey = "autocomplete.onlyShowOnTab"
+
 
   static let filePath = NSHomeDirectory() + "/.fig/settings.json"
   static let shared = Settings()
