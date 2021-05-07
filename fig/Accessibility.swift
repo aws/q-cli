@@ -162,7 +162,9 @@ class Accessibility {
       cursor = nil
     }
     
-    if !skipCache && cursor == nil && (cursorCache[window.hash]?.count ?? 0) > 0 {
+    // this is a performance optimization for VSCode (and other electron IDEs) so only enable it for them!
+    let isElectronIDE = Integrations.electronIDEs.contains(window.bundleId ?? "")
+    if isElectronIDE && !skipCache && cursor == nil && (cursorCache[window.hash]?.count ?? 0) > 0 {
       print("xterm-cursor: exists but is disabled (\(cursorCache[window.hash]?.count ?? 0))")
     } else if cursor == nil {
       let root = UIElement(axElement)
@@ -237,4 +239,35 @@ class Accessibility {
 
   }
   
+  static func openMenu(_ bundleId: String) {
+    guard let elm = Application.allForBundleID(bundleId).first else { return }
+    guard let menuBar = try? elm.attribute(.menuBar) as UIElement? else {
+      return
+    }
+    
+    let children: [UIElement] = (try? menuBar.arrayAttribute(.children)) ?? []
+    
+    // ignore first menuIterm which is Apple
+    let main = children[safe: 1]
+    
+    try? main?.performAction(.press)
+  }
+ 
+  static func focusedApplicationIsSupportedTerminal() -> Bool {
+    let systemWideElement: UIElement = UIElement(AXUIElementCreateSystemWide())
+
+    
+    guard let focusedElement: UIElement = try? systemWideElement.attribute(.focusedUIElement) else {
+      return false
+    }
+
+    guard let pid = try? focusedElement.pid(),
+          let app = NSRunningApplication(processIdentifier: pid),
+          Integrations.terminalsWhereAutocompleteShouldAppear.contains(app.bundleIdentifier ?? "") else {
+      return false
+    }
+    
+    return true
+    
+  }
 }

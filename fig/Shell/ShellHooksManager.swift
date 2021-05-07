@@ -126,17 +126,30 @@ extension Dictionary where Value: Equatable {
 
 extension ShellHookManager {
     
-    func currentTabDidChange(_ info: ShellMessage) {
+    func currentTabDidChange(_ info: ShellMessage, includesBundleId: Bool = false) {
         Logger.log(message: "currentTabDidChange")
         
         // Need time for whitelisted window to change
         Timer.delayWithSeconds(0.1) {
             if let window = AXWindowServer.shared.whitelistedWindow {
                 if let id = info.options?.last {
-                  let VSCodeTerminal = window.bundleId == "com.microsoft.VSCode" && id.hasPrefix("code:")
-                  let HyperTab = window.bundleId == "co.zeit.hyper" &&  id.hasPrefix("hyper:")
-                  let iTermTab = window.bundleId == "com.googlecode.iterm2" && !id.hasPrefix("code:") && !id.hasPrefix("hyper:")
-                  guard VSCodeTerminal || iTermTab || HyperTab else { return }
+                  
+                  if includesBundleId {
+                    let tokens = id.split(separator: ":")
+                    let bundleId = String(tokens.first!)
+                    
+                    guard bundleId == window.bundleId ?? "" else {
+                      print("tab: bundleId from message did not match bundle id associated with current window ")
+                      return
+                    }
+                  }
+
+                  
+                  
+                  let VSCodeTerminal = (window.bundleId == Integrations.VSCode || window.bundleId == Integrations.VSCodeInsiders) && id.hasPrefix("code:")
+                  let HyperTab = window.bundleId == Integrations.Hyper &&  id.hasPrefix("hyper:")
+                  let iTermTab = window.bundleId == Integrations.iTerm && !id.hasPrefix("code:") && !id.hasPrefix("hyper:") && !includesBundleId
+                  guard VSCodeTerminal || iTermTab || HyperTab || includesBundleId else { return }
                     Logger.log(message: "tab: \(window.windowId)/\(id)")
 //                    self.tabs[window.windowId] = id
                     self.setActiveTab(id, for: window.windowId)
@@ -223,7 +236,8 @@ extension ShellHookManager {
         // This doesn't work because of timing issues. If the user types too quickly, the first keypress will be overwritten.
         // KeypressProvider.shared.keyBuffer(for: hash).buffer = ""
 
-      
+        // if Fig should emulate shell autocomplete behavior and only appear when tab is pressed, set keybuffer to writeOnly
+        KeypressProvider.shared.keyBuffer(for: hash).writeOnly = (Settings.shared.getValue(forKey: Settings.onlyShowOnTabKey) as? Bool) ?? false
     }
     
     func startedNewShellSession(_ info: ShellMessage) {
@@ -273,6 +287,11 @@ extension ShellHookManager {
             delay = 0.2
         }
       
+        // no delay is needed because the command is being run by the user, so the window is already active
+        if info.viaFigCommand {
+            delay = 0
+        }
+      
         observer = WindowObserver(with: bundleId)
       
         let bundleIdBasedOnTermProgram = info.potentialBundleId
@@ -300,6 +319,13 @@ extension ShellHookManager {
           
             // Set version (used for checking compatibility)
             tty.shellIntegrationVersion = info.shellIntegrationVersion
+          
+          
+            DispatchQueue.main.async {
+              NotificationCenter.default.post(Notification(name: PseudoTerminal.recievedEnvironmentVariablesFromShellNotification,
+                                                           object: info.env?.jsonStringToDict() ?? [:]))
+            }
+
         })
 
     }
@@ -403,7 +429,9 @@ extension ShellHookManager {
           }
           
           // write only prevents autocomplete from recieving keypresses
-          guard !keybuffer.writeOnly else {
+          // if buffer is empty, make sure autocomplete window is hidden
+          // when writeOnly is the default starting state (eg. fig.settings.autocomplete.onlyShowOnTab)
+          guard  buffer == "" || !keybuffer.writeOnly else {
             print("ZLE: keybuffer is write only")
             return
           }

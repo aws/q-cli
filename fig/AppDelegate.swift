@@ -218,6 +218,10 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             VSCodeIntegration.install(withRestart: false, inBackground: true)
         }
 
+        if !VSCodeInsidersIntegration.isInstalled {
+            VSCodeInsidersIntegration.install(withRestart: false, inBackground: true)
+        }
+      
         if !HyperIntegration.isInstalled {
             HyperIntegration.install(withRestart: false, inBackground: true)
         }
@@ -2006,8 +2010,8 @@ extension AppDelegate : NSMenuDelegate {
                     legend.addItem(NSMenuItem.separator())
                     legend.addItem(NSMenuItem(title: "Re-run Install Script", action: #selector(setupScript), keyEquivalent: ""))
                   
-                } else if (SecureKeyboardInput.enabled) {
-                    
+                } else if (SecureKeyboardInput.enabled || (SecureKeyboardInput.wasEnabled && window?.bundleId == Integrations.Terminal)) {
+                    // Also check previous value (wasEnabled) because clicking on menubar icon will disable secure keyboard input in Terminal.app
                     color = .systemPink
                     legend.addItem(NSMenuItem(title: "'Secure Keyboard Input' Enabled", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem.separator())
@@ -2016,13 +2020,19 @@ extension AppDelegate : NSMenuDelegate {
                     legend.addItem(NSMenuItem.separator())
 
                     
-                  if let app = SecureKeyboardInput.responsibleApplication,
+                  if let app = SecureKeyboardInput.responsibleApplication ?? app,
+                     SecureKeyboardInput.enabled(by: window?.bundleId),
                     let name = app.localizedName,
-                    let pid = SecureKeyboardInput.responsibleProcessId {
-                        legend.addItem(NSMenuItem(title: "Disable in '\(name)' (\(pid)).", action: nil, keyEquivalent: ""))
+                    let pid = SecureKeyboardInput.responsibleProcessId ?? app.processIdentifier {
+                        let open = NSMenuItem(title: "Disable in '\(name)' (\(pid)).", action: #selector(SecureKeyboardInput.openRelevantMenu), keyEquivalent: "")
+                        open.target = SecureKeyboardInput.self
+                        legend.addItem(open)
 
                     } else {
-                        legend.addItem(NSMenuItem(title: "Run `ioreg -l -w 0 | grep SecureInput` to determine which app is responsible.", action: nil, keyEquivalent: ""))
+                      //Run `ioreg -l -w 0 | grep SecureInput` to determine which app is responsible.
+                        let lock = NSMenuItem(title: "Lock screen and log back in", action: #selector(SecureKeyboardInput.lockscreen), keyEquivalent: "")
+                        lock.target = SecureKeyboardInput.self
+                        legend.addItem(lock)
                     }
                   
                     legend.addItem(NSMenuItem.separator())
@@ -2103,8 +2113,10 @@ extension AppDelegate : NSMenuDelegate {
             } else {
 //                let title = "\(app.localizedName ?? "Unknown") \(cmd)"
                 let icon = app.icon?.resized(to: NSSize(width: 16, height: 16))//?.overlayBadge(color: .red, text: "")
-
-                let item = NSMenuItem(title: "is not supported.", action: nil, keyEquivalent: "")
+                
+                let text = Integrations.autocompleteBlocklist.contains(app.bundleIdentifier ?? "") ? "has been disabled." : "is not supported."
+            
+                let item = NSMenuItem(title: text, action: nil, keyEquivalent: "")
                 item.image = icon
 
                 menu.insertItem(item, at: 0)
@@ -2145,6 +2157,8 @@ extension AppDelegate : NSMenuDelegate {
             name = "Hyper"
           case Integrations.VSCode:
             name = "VSCode"
+          case Integrations.VSCodeInsiders:
+            name = "VSCode Insiders"
           default:
             name = "Unknown"
           }
