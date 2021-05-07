@@ -10,6 +10,7 @@ import Cocoa
 import Carbon
 import Sentry
 import Foundation
+import AXSwift
 
 protocol KeypressService {
   func keyBuffer(for window: ExternalWindow) -> KeystrokeBuffer
@@ -36,7 +37,11 @@ class KeypressProvider : KeypressService {
   var redirects: [ExternalWindowHash:  Set<Keystroke>] = [:]
   var buffers: [ExternalWindowHash: KeystrokeBuffer] = [:]
   
-  static let whitelist = Integrations.terminalsWhereAutocompleteShouldAppear
+  static var whitelist: Set<String> {
+    get {
+        return Integrations.terminalsWhereAutocompleteShouldAppear
+    }
+  }
   static let shared = KeypressProvider(windowServiceProvider: WindowServer.shared)
   
   init(windowServiceProvider: WindowService) {
@@ -53,9 +58,6 @@ class KeypressProvider : KeypressService {
                                            object:nil)
   }
   func shouldRedirect(event: CGEvent, in window: ExternalWindow) -> Bool {
-    guard event.type == .keyDown else {
-      return false
-    }
     
     guard KeypressProvider.shared.enabled else {
       return false
@@ -232,7 +234,13 @@ class KeypressProvider : KeypressService {
         return Unmanaged.passUnretained(event)
       }
       
-      guard Defaults.loggedIn, Defaults.useAutocomplete, let window = AXWindowServer.shared.whitelistedWindow, KeypressProvider.whitelist.contains(window.bundleId ?? "") else {
+      // prevents keystrokes from being processed when typing into another application (specifically, spotlight)
+      guard Accessibility.focusedApplicationIsSupportedTerminal() else {
+          return Unmanaged.passUnretained(event)
+      }
+      
+      guard Defaults.loggedIn, Defaults.useAutocomplete, Accessibility.focusedApplicationIsSupportedTerminal(),
+            let window = AXWindowServer.shared.whitelistedWindow else {
         print("eventTap window of \(AXWindowServer.shared.whitelistedWindow?.bundleId ?? "<none>") is not whitelisted")
         return Unmanaged.passUnretained(event)
       }
@@ -244,35 +252,24 @@ class KeypressProvider : KeypressService {
         return Unmanaged.passUnretained(event)
       }
       
+      
+      switch KeypressProvider.shared.handleTabKey(event: event, in: window) {
+        case .forward:
+          return Unmanaged.passUnretained(event)
+        case .consume:
+          return nil
+        case .ignore:
+          break
+      }
+      
       // Toggle autocomplete on and off
-      if UInt16(event.getIntegerValueField(.keyboardEventKeycode)) == Keycode.escape,
-        [.keyDown].contains(type) {
-        let buffer = KeypressProvider.shared.keyBuffer(for: window)
-        
-        
-        // Don't intercept escape key when in VSCode editor
-        if Integrations.electronTerminals.contains(window.bundleId ?? "") && Accessibility.findXTermCursorInElectronWindow(window) == nil {
+      switch KeypressProvider.shared.handleEscapeKey(event: event, in: window) {
+        case .forward:
           return Unmanaged.passUnretained(event)
-        }
-        
-        let escapeKeyPressedWhenFigIsVisible = WindowManager.shared.autocomplete?.isVisible ?? false && !event.flags.contains(.maskControl)
-        guard escapeKeyPressedWhenFigIsVisible || event.flags.contains(.maskControl) else {
-          // send <esc> key event directly to underlying app
-          return Unmanaged.passUnretained(event)
-        }
-       
-        buffer.writeOnly = !buffer.writeOnly
-
-        if buffer.writeOnly {
-            Autocomplete.hide()
-            WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try{ fig.keypress(\"\(Keycode.escape)\", \"\(window.hash)\") } catch(e) {}", completionHandler: nil)
-        } else {
-            Autocomplete.update(with: buffer.currentState, for: window.hash)
-            Autocomplete.position()
-        }
-        
-        return WindowManager.shared.autocomplete?.isVisible ?? false ? nil : Unmanaged.passUnretained(event)
-        
+        case .consume:
+          return nil
+        case .ignore:
+          break
       }
       
       if [.keyDown , .keyUp].contains(type) {
@@ -288,6 +285,11 @@ class KeypressProvider : KeypressService {
           
           guard WindowManager.shared.autocomplete?.isVisible ?? true else {
             return Unmanaged.passUnretained(event)
+          }
+          
+          // fig.keypress only recieves keyDown events
+          guard event.type == .keyDown else {
+            return nil
           }
 
           if (keyCode == Keycode.n) {
@@ -352,6 +354,74 @@ class KeypressProvider : KeypressService {
     }
   }
   
+  enum EventTapAction {
+    case forward
+    case consume
+    case ignore
+  }
+  
+  func handleTabKey(event:CGEvent, in window: ExternalWindow) -> EventTapAction {
+    let keycode = UInt16(event.getIntegerValueField(.keyboardEventKeycode))
+    guard Keycode.tab == keycode else {
+      return .ignore
+    }
+    
+    guard [.keyDown].contains(event.type) else {
+      return .ignore
+    }
+    
+    let autocompleteIsNotVisible = !(WindowManager.shared.autocomplete?.isVisible ?? false)
+
+    let onlyShowOnTab = (Settings.shared.getValue(forKey: Settings.onlyShowOnTabKey) as? Bool) ?? false
+    
+    // if not enabled or if autocomplete is already visible, handle normally
+    if !onlyShowOnTab || !autocompleteIsNotVisible {
+      return .ignore
+    }
+    
+    // toggle autocomplete on and consume tab keypress
+    Autocomplete.toggle(for: window)
+    return .consume
+    
+  }
+  
+  func handleEscapeKey(event:CGEvent, in window: ExternalWindow) -> EventTapAction {
+    let keycode = UInt16(event.getIntegerValueField(.keyboardEventKeycode))
+    guard Keycode.escape == keycode else {
+      return .ignore
+    }
+    
+    guard [.keyDown].contains(event.type) else {
+      return .ignore
+    }
+    
+    let autocompleteIsNotVisible = !(WindowManager.shared.autocomplete?.isVisible ?? false)
+        
+    // Don't intercept escape key when in VSCode editor
+    if Integrations.electronTerminals.contains(window.bundleId ?? "") &&
+        Accessibility.findXTermCursorInElectronWindow(window) == nil {
+      return .forward
+    }
+    
+    // Send <esc> key event directly to underlying app, if autocomplete is hidden and no modifiers
+    if autocompleteIsNotVisible, !event.flags.containsKeyboardModifier {
+      return .forward
+    }
+    
+    // Allow user to opt out of escape key being intercepted by Fig
+    if let behavior = Settings.shared.getValue(forKey: Settings.escapeKeyBehaviorKey) as? String,
+       behavior == "ignore",
+       !event.flags.containsKeyboardModifier {
+        return .forward
+    }
+    
+    // control+esc toggles autocomplete on and off
+    Autocomplete.toggle(for: window)
+    
+    return WindowManager.shared.autocomplete?.isVisible ?? false ? .consume : .forward
+
+  }
+  
   func handleKeystroke(event: NSEvent?, in window: ExternalWindow) {
     
     // handle keystrokes in VSCode editor
@@ -388,6 +458,12 @@ class KeypressProvider : KeypressService {
   
   func getTextRect(extendRange: Bool = true) -> CGRect? {
     
+    // prevent cursor position for being returned when apps like spotlight & alfred are active
+    
+    guard Accessibility.focusedApplicationIsSupportedTerminal() else {
+        return nil
+    }
+    
     if let window = AXWindowServer.shared.whitelistedWindow, Integrations.electronTerminals.contains(window.bundleId ?? "") {
       return Accessibility.findXTermCursorInElectronWindow(window)
     }
@@ -397,14 +473,6 @@ class KeypressProvider : KeypressService {
     let error = AXUIElementCopyAttributeValue(systemWideElement, kAXFocusedUIElementAttribute as CFString, &focusedElement)
     guard error == .success else {
       print("cursor: Couldn't get the focused element. Probably a webkit application")
-      return nil
-    }
-    
-    var subrole : AnyObject?
-    AXUIElementCopyAttributeValue(focusedElement as! AXUIElement, kAXSubroleAttribute as CFString, &subrole)
-    
-    if subrole as? String == kAXSearchFieldSubrole {
-      print("cursor: prevent spotlight search from recieving keypresses, due to subrole = \(kAXSearchFieldSubrole)")
       return nil
     }
     

@@ -234,6 +234,8 @@ extension TelemetryProvider : LocalTelemetryService {
             let key = "\(dateIdentifier)#\(event.rawValue)"
             let aggregate = UserDefaults.standard.integer(forKey: key)
             UserDefaults.standard.set(aggregate + increment, forKey: key)
+          
+            UserDefaults.standard.setValue(Settings.shared.getValue(forKey: Settings.telemetryDisabledKey) as? Bool ?? false, forKey: "\(dateIdentifier)#telemetryDisabled")
             
             // update what dates have data to send
             var pending:Set<String> = Set(UserDefaults.standard.stringArray(forKey: "pendingTelemetryUpload") ?? [])
@@ -259,6 +261,7 @@ extension TelemetryProvider : LocalTelemetryService {
           dict[event.rawValue] = "\(count)"
         })
         payload["date"] = dateIdentifier
+        payload["telemetryDisabled"] = UserDefaults.standard.bool(forKey: "\(dateIdentifier)#telemetryDisabled") ? "true" : "false"
         print("aggregate:", countsForDate)
         // todo: add completion handler for success and failure
         // clean cache on success
