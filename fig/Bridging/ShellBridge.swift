@@ -320,12 +320,6 @@ class ShellBridge {
             self.simulate(keypress: .ctrlE)
             self.simulate(keypress: .ctrlU)
         }
-        
-        // If user has onlyShowOnTab setting enabled, hid Fig window by setting writeOnly = true after insert
-        if let window = AXWindowServer.shared.whitelistedWindow {
-          KeypressProvider.shared.keyBuffer(for: window).writeOnly = KeystrokeBuffer.initialWritingMode
-        }
-
       
         // Add delay for Electron terminals
         let delay: TimeInterval? = Integrations.electronTerminals.contains(app) ? 0.05 : nil

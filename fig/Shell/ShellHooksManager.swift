@@ -236,8 +236,7 @@ extension ShellHookManager {
         // This doesn't work because of timing issues. If the user types too quickly, the first keypress will be overwritten.
         // KeypressProvider.shared.keyBuffer(for: hash).buffer = ""
 
-        // if Fig should emulate shell autocomplete behavior and only appear when tab is pressed, set keybuffer to writeOnly
-        KeypressProvider.shared.keyBuffer(for: hash).writeOnly = (Settings.shared.getValue(forKey: Settings.onlyShowOnTabKey) as? Bool) ?? false
+      
     }
     
     func startedNewShellSession(_ info: ShellMessage) {
@@ -429,9 +428,7 @@ extension ShellHookManager {
           }
           
           // write only prevents autocomplete from recieving keypresses
-          // if buffer is empty, make sure autocomplete window is hidden
-          // when writeOnly is the default starting state (eg. fig.settings.autocomplete.onlyShowOnTab)
-          guard  buffer == "" || !keybuffer.writeOnly else {
+          guard !keybuffer.writeOnly else {
             print("ZLE: keybuffer is write only")
             return
           }
