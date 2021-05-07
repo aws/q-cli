@@ -2019,11 +2019,10 @@ extension AppDelegate : NSMenuDelegate {
                     legend.addItem(NSMenuItem(title: "processing keypress events. ", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem.separator())
 
-                    
-                  if let app = SecureKeyboardInput.responsibleApplication ?? app,
-                     SecureKeyboardInput.enabled(by: window?.bundleId),
-                    let name = app.localizedName,
-                    let pid = SecureKeyboardInput.responsibleProcessId ?? app.processIdentifier {
+                  let app = SecureKeyboardInput.responsibleApplication ?? app
+                  let pid = SecureKeyboardInput.responsibleProcessId ?? app.processIdentifier
+                  if SecureKeyboardInput.enabled(by: window?.bundleId),
+                     let name = app.localizedName {
                         let open = NSMenuItem(title: "Disable in '\(name)' (\(pid)).", action: #selector(SecureKeyboardInput.openRelevantMenu), keyEquivalent: "")
                         open.target = SecureKeyboardInput.self
                         legend.addItem(open)
