@@ -28,6 +28,7 @@ class NativeCLI {
         case update = "update"
         case source = "source"
         case resetCache = "util:reset-cache"
+        case tools = "tools"
         case list = "list"
         case onboarding = "onboarding"
         case star = "star"
@@ -60,6 +61,7 @@ class NativeCLI {
         case openSettingsFile = "settings:open"
         case runInstallScript = "util:install-script"
         case lockscreen = "util:lockscreen"
+        case setPATH = "set:path"
 
         var isUtility: Bool {
             get {
@@ -91,6 +93,7 @@ class NativeCLI {
                                                            .vscode,
                                                            .iterm,
                                                            .hyper,
+                                                           .tools,
                                                            .pty,
                                                            .debugApp,
                                                            .debugProcesses,
@@ -164,6 +167,8 @@ class NativeCLI {
                 NativeCLI.runInstallScriptCommand(scope)
             case .lockscreen:
                 NativeCLI.lockscreenCommand(scope)
+            case .tools:
+                NativeCLI.toolsCommand(scope)
             default:
                 break;
             }
@@ -354,6 +359,42 @@ extension NativeCLI {
           connection.send(message: "disconnect")
         }
 
+    }
+  
+    static func toolsCommand(_ scope: Scope) {
+        let folder = "\(NSHomeDirectory())/.fig/tools"
+        let (message, connection) = scope
+      switch message.arguments.count {
+        case 0:
+          let files = (try? FileManager.default.contentsOfDirectory(atPath: folder)) ?? []
+          let out = files.map { (str) -> String in
+            guard let name = str.split(separator: ".").first else {
+              return str
+            }
+            return String(name)
+          }.joined(separator: "\n")
+
+          NativeCLI.printInTerminal(out, using: connection)
+
+        case 1:
+          let path = message.arguments.first!
+          let fullPathIncludingExtension = folder + "/" + path + ".sh"
+          let fullPathWithoutExtension =  folder + "/" + path
+          if FileManager.default.fileExists(atPath: fullPathIncludingExtension) {
+            NativeCLI.runInTerminal(command: "bash \(fullPathIncludingExtension)", over: connection)
+          } else if FileManager.default.fileExists(atPath: fullPathWithoutExtension) {
+            NativeCLI.runInTerminal(command: "bash \(fullPathWithoutExtension)", over: connection)
+          } else {
+            NativeCLI.printInTerminal("\nNo matching script found...\n", using: connection)
+          }
+          
+          break;
+        default:
+          NativeCLI.printInTerminal("\nToo many arguments. Expects 0 or 1.\n", using: connection)
+          return
+      }
+      
+      
     }
     
     static func reportCommand(_ scope: Scope) {
