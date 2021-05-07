@@ -60,6 +60,7 @@ class NativeCLI {
         case openSettingsFile = "settings:open"
         case runInstallScript = "util:install-script"
         case lockscreen = "util:lockscreen"
+        case setPATH = "set:path"
 
         var isUtility: Bool {
             get {
