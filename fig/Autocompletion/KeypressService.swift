@@ -252,24 +252,42 @@ class KeypressProvider : KeypressService {
         return Unmanaged.passUnretained(event)
       }
       
-      
-      switch KeypressProvider.shared.handleTabKey(event: event, in: window) {
-        case .forward:
-          return Unmanaged.passUnretained(event)
-        case .consume:
-          return nil
-        case .ignore:
-          break
-      }
-      
       // Toggle autocomplete on and off
-      switch KeypressProvider.shared.handleEscapeKey(event: event, in: window) {
-        case .forward:
+      if UInt16(event.getIntegerValueField(.keyboardEventKeycode)) == Keycode.escape,
+        [.keyDown].contains(type) {
+        let buffer = KeypressProvider.shared.keyBuffer(for: window)
+        
+        
+        // Don't intercept escape key when in VSCode editor
+        if Integrations.electronTerminals.contains(window.bundleId ?? "") && Accessibility.findXTermCursorInElectronWindow(window) == nil {
           return Unmanaged.passUnretained(event)
-        case .consume:
-          return nil
-        case .ignore:
-          break
+        }
+        
+        let escapeKeyPressedWhenFigIsVisible = WindowManager.shared.autocomplete?.isVisible ?? false && !event.flags.contains(.maskControl)
+        guard escapeKeyPressedWhenFigIsVisible || event.flags.contains(.maskControl) else {
+          // send <esc> key event directly to underlying app
+          return Unmanaged.passUnretained(event)
+        }
+        
+        // Allow user to opt out of escape key being intercepted by Fig
+        if let behavior = Settings.shared.getValue(forKey: Settings.escapeKeyBehaviorKey) as? String,
+           behavior == "ignore",
+           !event.flags.containsKeyboardModifier {
+            return Unmanaged.passUnretained(event)
+        }
+       
+        buffer.writeOnly = !buffer.writeOnly
+
+        if buffer.writeOnly {
+            Autocomplete.hide()
+            WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try{ fig.keypress(\"\(Keycode.escape)\", \"\(window.hash)\") } catch(e) {}", completionHandler: nil)
+        } else {
+            Autocomplete.update(with: buffer.currentState, for: window.hash)
+            Autocomplete.position()
+        }
+        
+        return WindowManager.shared.autocomplete?.isVisible ?? false ? nil : Unmanaged.passUnretained(event)
+        
       }
       
       if [.keyDown , .keyUp].contains(type) {
@@ -352,74 +370,6 @@ class KeypressProvider : KeypressService {
       self.buffers[windowHash] = buffer
       return buffer
     }
-  }
-  
-  enum EventTapAction {
-    case forward
-    case consume
-    case ignore
-  }
-  
-  func handleTabKey(event:CGEvent, in window: ExternalWindow) -> EventTapAction {
-    let keycode = UInt16(event.getIntegerValueField(.keyboardEventKeycode))
-    guard Keycode.tab == keycode else {
-      return .ignore
-    }
-    
-    guard [.keyDown].contains(event.type) else {
-      return .ignore
-    }
-    
-    let autocompleteIsNotVisible = !(WindowManager.shared.autocomplete?.isVisible ?? false)
-
-    let onlyShowOnTab = (Settings.shared.getValue(forKey: Settings.onlyShowOnTabKey) as? Bool) ?? false
-    
-    // if not enabled or if autocomplete is already visible, handle normally
-    if !onlyShowOnTab || !autocompleteIsNotVisible {
-      return .ignore
-    }
-    
-    // toggle autocomplete on and consume tab keypress
-    Autocomplete.toggle(for: window)
-    return .consume
-    
-  }
-  
-  func handleEscapeKey(event:CGEvent, in window: ExternalWindow) -> EventTapAction {
-    let keycode = UInt16(event.getIntegerValueField(.keyboardEventKeycode))
-    guard Keycode.escape == keycode else {
-      return .ignore
-    }
-    
-    guard [.keyDown].contains(event.type) else {
-      return .ignore
-    }
-    
-    let autocompleteIsNotVisible = !(WindowManager.shared.autocomplete?.isVisible ?? false)
-        
-    // Don't intercept escape key when in VSCode editor
-    if Integrations.electronTerminals.contains(window.bundleId ?? "") &&
-        Accessibility.findXTermCursorInElectronWindow(window) == nil {
-      return .forward
-    }
-    
-    // Send <esc> key event directly to underlying app, if autocomplete is hidden and no modifiers
-    if autocompleteIsNotVisible, !event.flags.containsKeyboardModifier {
-      return .forward
-    }
-    
-    // Allow user to opt out of escape key being intercepted by Fig
-    if let behavior = Settings.shared.getValue(forKey: Settings.escapeKeyBehaviorKey) as? String,
-       behavior == "ignore",
-       !event.flags.containsKeyboardModifier {
-        return .forward
-    }
-    
-    // control+esc toggles autocomplete on and off
-    Autocomplete.toggle(for: window)
-    
-    return WindowManager.shared.autocomplete?.isVisible ?? false ? .consume : .forward
-
   }
   
   func handleKeystroke(event: NSEvent?, in window: ExternalWindow) {
