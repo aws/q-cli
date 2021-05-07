@@ -1935,6 +1935,7 @@ extension AppDelegate : NSMenuDelegate {
           if Integrations.terminalsWhereAutocompleteShouldAppear.contains(window?.bundleId ?? "") ||  Integrations.terminalsWhereAutocompleteShouldAppear.contains(app.bundleIdentifier ?? "") {
                 let tty = window?.tty
                 var hasContext = false
+                var isHidden = false
                 var bufferDescription: String? = nil
                 var backedByShell = false
                 var backing: String?
@@ -1943,6 +1944,7 @@ extension AppDelegate : NSMenuDelegate {
                 if let window = window {
                     let keybuffer = KeypressProvider.shared.keyBuffer(for: window)
                     hasContext = keybuffer.buffer != nil && !keybuffer.writeOnly
+                    isHidden = keybuffer.buffer != nil && keybuffer.writeOnly
                     bufferDescription = keybuffer.representation
                     backedByShell = keybuffer.backedByShell
                    
@@ -2039,6 +2041,22 @@ extension AppDelegate : NSMenuDelegate {
                     support.target = SecureKeyboardInput.self
                     legend.addItem(support)
 
+                } else if (isHidden) {
+                    color = .orange
+                    legend.addItem(NSMenuItem(title: "Autocomplete is hidden.", action: nil, keyEquivalent: ""))
+                    legend.addItem(NSMenuItem.separator())
+
+                    if let onlyShowOnTab = Settings.shared.getValue(forKey: Settings.onlyShowOnTabKey) as? Bool, onlyShowOnTab {
+                      legend.addItem(NSMenuItem(title: "Press <tab> to show suggestions", action: nil, keyEquivalent: ""))
+                      legend.addItem(NSMenuItem.separator())
+                      legend.addItem(NSMenuItem(title: "Or update '\(Settings.onlyShowOnTabKey)' setting", action: nil, keyEquivalent: ""))
+
+                    } else {
+                      legend.addItem(NSMenuItem(title: "Press control + <escape>", action: nil, keyEquivalent: ""))
+                      legend.addItem(NSMenuItem(title: "to toggle it back on", action: nil, keyEquivalent: ""))
+
+                    }
+                  
                 } else if (!hasContext) {
                     color = .orange
                     legend.addItem(NSMenuItem(title: "Keybuffer context is lost.", action: nil, keyEquivalent: ""))
