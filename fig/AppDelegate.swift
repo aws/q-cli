@@ -2052,7 +2052,9 @@ extension AppDelegate : NSMenuDelegate {
                       legend.addItem(NSMenuItem(title: "Or update '\(Settings.onlyShowOnTabKey)' setting", action: nil, keyEquivalent: ""))
 
                     } else {
-                      legend.addItem(NSMenuItem(title: "Press control + <escape> to toggle it back on", action: nil, keyEquivalent: ""))
+                      legend.addItem(NSMenuItem(title: "Press control + <escape>", action: nil, keyEquivalent: ""))
+                      legend.addItem(NSMenuItem(title: "to toggle it back on", action: nil, keyEquivalent: ""))
+
                     }
                   
                 } else if (!hasContext) {
