@@ -21,6 +21,7 @@ class Settings {
   static let autocompleteWidth = "autocomplete.width"
   static let autocompleteHeight = "autocomplete.height"
   static let enterKeyBehavior = "autocomplete.enter"
+  static let rightArrowKeyBehavior = "autocomplete.right-arrow"
   static let hyperDisabledKey = "integrations.hyper.disabled"
   static let vscodeDisabledKey = "integrations.vscode.disabled"
   static let iTermDisabledKey = "integrations.iterm.disabled"

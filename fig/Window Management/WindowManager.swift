@@ -739,6 +739,10 @@ extension WindowManager : WindowManagementService {
                 }
                 KeypressProvider.shared.addRedirect(for: Keystroke(modifierFlags: [.control], keyCode: Keycode.n), in: window)
                 KeypressProvider.shared.addRedirect(for: Keystroke(modifierFlags: [.control], keyCode: Keycode.p), in: window)
+              
+                if (Defaults.insertUsingRightArrow) {
+                    KeypressProvider.shared.addRedirect(for: Keycode.rightArrow, in: window)
+                }
 
 
             } else {
@@ -749,6 +753,8 @@ extension WindowManager : WindowManagementService {
                 KeypressProvider.shared.removeRedirect(for:  Keystroke(modifierFlags: [.shift], keyCode: Keycode.tab), in: window)
                 KeypressProvider.shared.removeRedirect(for: Keystroke(modifierFlags: [.control], keyCode: Keycode.n), in: window)
                 KeypressProvider.shared.removeRedirect(for: Keystroke(modifierFlags: [.control], keyCode: Keycode.p), in: window)
+                KeypressProvider.shared.removeRedirect(for: Keycode.rightArrow, in: window)
+
 
             }
             
