@@ -457,4 +457,26 @@ class Defaults {
             UserDefaults.standard.synchronize()
         }
     }
+  
+    static var insertUsingRightArrow: Bool {
+        get {
+            if let behavior = Settings.shared.getValue(forKey: Settings.rightArrowKeyBehavior) as? String {
+              switch behavior {
+                case "insert":
+                  return true
+                case "ignore":
+                  return false
+                default:
+                  return false
+              }
+            }
+          
+            return false
+        }
+        
+        set(flag) {
+            Settings.shared.set(value: flag ? "insert" :  "ignore" , forKey: Settings.rightArrowKeyBehavior)
+        }
+
+    }
 }
