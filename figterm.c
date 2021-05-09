@@ -1,6 +1,7 @@
 #include "fig.h"
+#include <vterm.h>
 
-static int should_resize;
+static FigTerm *_ft = NULL;
 
 void get_winsize(struct winsize *ws) {
   const char *term = ctermid(NULL);
@@ -18,7 +19,12 @@ void get_winsize(struct winsize *ws) {
   close(fd);
 }
 
-FigTerm *figterm_new(bool utf8, VTermScreenCallbacks *screen_callbacks) {
+FigTerm *figterm_new(bool utf8, VTermScreenCallbacks *screen_callbacks,
+                     VTermParserCallbacks *parser_callbacks) {
+  if (_ft != NULL) {
+    return _ft;
+  }
+
   FigTerm *ft = malloc(sizeof(FigTerm));
 
   // Initialize vterm
@@ -28,22 +34,30 @@ FigTerm *figterm_new(bool utf8, VTermScreenCallbacks *screen_callbacks) {
 
   VTerm *vt = vterm_new(w.ws_row, w.ws_col);
 
-  ft->screen_rows = w.ws_row;
-  ft->screen_cols = w.ws_col;
+  ft->altscreen = false;
+
+  ft->cursor = malloc(sizeof(VTermPos));
+  ft->cursor->row = -1;
+  ft->cursor->col = -1;
 
   vterm_set_utf8(vt, utf8);
   ft->state = term_state_new(vt);
   ft->prompt_state = term_state_new(vt);
 
-  ft->update_prompt = false;
-  ft->is_resizing = false;
+  ft->damage_prompt = false;
+  ft->wait_for_prompt = true;
   ft->vt = vt;
 
   VTermScreen *vts = vterm_obtain_screen(vt);
   vterm_screen_set_callbacks(vts, screen_callbacks, ft);
+  vterm_screen_set_unrecognised_fallbacks(vts, parser_callbacks, ft);
   vterm_screen_set_damage_merge(vts, VTERM_DAMAGE_ROW);
 
   vterm_screen_reset(vts, 1);
+
+  ft->ptyc_pid = -1;
+
+  _ft = ft;
 
   return ft;
 }
@@ -52,6 +66,7 @@ void figterm_free(FigTerm *ft) {
   vterm_free(ft->vt);
   term_state_free(ft->state);
   term_state_free(ft->prompt_state);
+  free(ft->cursor);
   free(ft);
 }
 
@@ -65,20 +80,27 @@ void figterm_resize(FigTerm *ft) {
   vterm_get_size(ft->vt, &nrow, &ncol);
   log_debug("RESIZING %d, %d -> %d, %d", nrow, ncol, window_size.ws_row,
             window_size.ws_col);
-  ft->is_resizing = true;
-  ft->update_prompt = true;
+  // TODO(sean) make sure terms are reset when size is reset
+  ft->damage_prompt = true;
   vterm_set_size(ft->vt, window_size.ws_row, window_size.ws_col);
-  ft->update_prompt = false;
-  ft->is_resizing = false;
+  ft->damage_prompt = false;
 
-  // VTermRect rect = { .start_row = 0, .end_row = window_size.ws_row,
-  // .start_col = 0, .end_col = window_size.ws_col };
-  // term_state_update(ft->state, ft->vt, rect, true);
-  // term_state_update(ft->prompt_state, ft->vt, rect, true);
-
-  should_resize = 0;
+  VTermRect rect = {.start_row = 0,
+                    .end_row = window_size.ws_row,
+                    .start_col = 0,
+                    .end_col = window_size.ws_col};
+  term_state_update(ft->state, ft->vt, rect, true);
+  term_state_update(ft->prompt_state, ft->vt, rect, true);
+  if (ft->ptyc_pid > 0) {
+    kill(ft->ptyc_pid, SIGWINCH);
+  }
 }
 
-void figterm_handle_winch(int sig) { should_resize = 1; }
+// TODO(sean) This should probably not be done inside a signal handler,
+// consider non-blocking i/o and setting a flag instead.
+void figterm_handle_winch(int sig) { figterm_resize(_ft); }
 
-int figterm_should_resize() { return should_resize; }
+static FigInfo *fig_info;
+
+void set_fig_info(FigInfo *fi) { fig_info = fi; }
+FigInfo *get_fig_info() { return fig_info; }

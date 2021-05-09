@@ -30,8 +30,8 @@
 
 #define	MAXLINE	4096
 #define FIG_NEW_CMD "FIG_NEW_CMD"
-#define FIG_START_SKIP "FIG_START_SKIP"
-#define FIG_END_SKIP "FIG_END_SKIP"
+#define FIG_START_PROMPT "FIG_START_PROMPT"
+#define FIG_END_PROMPT "FIG_END_PROMPT"
 
 // Common structs
 typedef struct {
@@ -46,13 +46,18 @@ typedef struct {
   VTerm *vt;
   TermState *state;
   TermState *prompt_state;
-  bool update_prompt;
-  bool is_resizing;
-  bool skip;
-  int screen_rows;
-  int screen_cols;
+  VTermPos* cursor;
+  bool altscreen;
+  bool damage_prompt;
+  bool wait_for_prompt;
   int ptyp;
+  int ptyc_pid;
 } FigTerm;
+
+typedef struct {
+  char *term_session_id;
+  char *fig_integration_version;
+} FigInfo;
 
 // term_state.c
 TermState* term_state_new(VTerm*);
@@ -60,13 +65,16 @@ void term_state_free(TermState*);
 void term_state_init_rows(TermState*,  int);
 void term_state_free_rows(TermState*);
 void term_state_update_cursor(TermState*, const VTermPos);
+void term_state_update(TermState*, VTerm*, VTermRect, bool);
 
 // figterm.c
-FigTerm* figterm_new(bool, VTermScreenCallbacks*);
+FigTerm* figterm_new(bool, VTermScreenCallbacks*, VTermParserCallbacks*);
 void figterm_free(FigTerm*);
 void figterm_resize(FigTerm*);
 void figterm_handle_winch(int);
 int figterm_should_resize();
+FigInfo* get_fig_info();
+void set_fig_info(FigInfo*);
 
 // string.c
 char* ltrim(char*);
@@ -102,3 +110,10 @@ void err_sys_msg(const char *file, int line, const char *fmt, ...) __attribute__
 // Signal Handling
 typedef	void SigHandler(int);
 SigHandler* set_sigaction(int, SigHandler*);
+
+// lib/base64.c
+unsigned char * base64_encode(const unsigned char *src, size_t len,
+			      size_t *out_len);
+unsigned char * base64_decode(const unsigned char *src, size_t len,
+			      size_t *out_len);
+

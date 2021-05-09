@@ -1,6 +1,7 @@
 #include "fig.h"
 #include <errno.h>
 #include <stdarg.h>
+#include <stdio.h>
 
 static const char *log_levels[] = {"DEBUG", "INFO", "WARN", "ERROR", "FATAL"};
 
@@ -9,14 +10,13 @@ FILE *log_file;
 
 void vlog_msg(int level, const char *file, int line, const char *fmt,
               va_list ap) {
-  time_t t = time(NULL);
-  struct tm *time = localtime(&t);
-  if (log_file == NULL) {
-    log_file = fopen("out.log", "w");
-  }
-
   if (level >= logging_level) {
-    // callback
+    time_t t = time(NULL);
+    struct tm *time = localtime(&t);
+    if (log_file == NULL) {
+      log_file = fopen("out.log", "w");
+    }
+
     char buf[64];
     buf[strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", time)] = '\0';
     fprintf(log_file, "%s %-5s %s:%d: ", buf, log_levels[level], file, line);

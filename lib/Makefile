@@ -6,7 +6,7 @@ TEMPFILES=core core.* *.o temp.* *.out
 DIRS = lib 
 
 LIBFIG	= libfig.a
-OBJS   = string.o log.o pty.o tty.o
+OBJS   = base64.o string.o log.o pty.o tty.o
 
 all:	$(LIBFIG)
 
