@@ -53,6 +53,8 @@ class Autocomplete {
     KeypressProvider.shared.removeRedirect(for: Keycode.returnKey, in: window)
     KeypressProvider.shared.removeRedirect(for: Keystroke(modifierFlags: [.control], keyCode: Keycode.n), in: window)
     KeypressProvider.shared.removeRedirect(for: Keystroke(modifierFlags: [.control], keyCode: Keycode.p), in: window)
+    KeypressProvider.shared.removeRedirect(for: Keycode.rightArrow, in: window)
+
   }
   
   static func position(makeVisibleImmediately: Bool = true, completion:(() -> Void)? = nil) {
@@ -73,7 +75,8 @@ class Autocomplete {
           KeypressProvider.shared.removeRedirect(for: Keycode.returnKey, in: window)
           KeypressProvider.shared.removeRedirect(for: Keystroke(modifierFlags: [.control], keyCode: Keycode.n), in: window)
           KeypressProvider.shared.removeRedirect(for: Keystroke(modifierFlags: [.control], keyCode: Keycode.p), in: window)
-          
+          KeypressProvider.shared.removeRedirect(for: Keycode.rightArrow, in: window)
+
           completion?()
         }
       }
