@@ -58,10 +58,10 @@ jobs:
       #
       # Setup
       #
-      - name: "Select Xcode 12.0.1"
+      - name: "Select Xcode 12.3"
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: "12.0.1"
+          xcode-version: "12.3"
       # - name: "Select Xcode 12.0.0"
       #   uses: devbotsxyz/xcode-select@main
       #   with:
