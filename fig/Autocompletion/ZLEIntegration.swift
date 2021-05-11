@@ -136,6 +136,20 @@ class ZLEIntegration {
           ShellBridge.injectUnicodeString("◧")
       }
     
+    
+      // Delay helps avoid jank (caused by positioning window on old cursor location)
+      Timer.delayWithSeconds(0.175) {
+        
+        if let window = AXWindowServer.shared.whitelistedWindow,
+            KeypressProvider.shared.keyBuffer(for: window).backing == .zle {
+
+            Autocomplete.position(makeVisibleImmediately: false)
+         
+//            WindowManager.shared.positionAutocompletePopover(textRect: KeypressProvider.shared.getTextRect(), makeVisibleImmediately: false, completion: nil)
+
+        }
+      }
+    
   }
 
   

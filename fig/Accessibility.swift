@@ -148,6 +148,9 @@ class Accessibility {
   static func findXTermCursorInElectronWindow(_ window: ExternalWindow, skipCache: Bool = false) -> CGRect? {
     guard let axElement = window.accesibilityElement else { return nil }
     
+    // remove invalid entries; this fixes the issue with VSCode where upon changing tabs
+    cursorCache[window.hash] = cursorCache[window.hash]?.filter { isValidUIElement($0) }
+    
     var cursor: UIElement? = cursorCache[window.hash]?.filter { cursorIsActive($0) }.reduce(nil, { (existing, cache) -> UIElement? in
       guard existing == nil else {
         return existing
@@ -165,7 +168,7 @@ class Accessibility {
     // this is a performance optimization for VSCode (and other electron IDEs) so only enable it for them!
     let isElectronIDE = Integrations.electronIDEs.contains(window.bundleId ?? "")
     if isElectronIDE && !skipCache && cursor == nil && (cursorCache[window.hash]?.count ?? 0) > 0 {
-      print("xterm-cursor: exists but is disabled (\(cursorCache[window.hash]?.count ?? 0))")
+      print("xterm-cursor: exists but is disabled (\(cursorCache[window.hash]?.count ?? 0)) in window '\(window.hash)'")
     } else if cursor == nil {
       let root = UIElement(axElement)
       cursor = findXTermCursor(root)
@@ -205,6 +208,18 @@ class Accessibility {
       return true
     } else {
       return false
+    }
+  }
+  
+  fileprivate static func isValidUIElement(_ elm: UIElement?) -> Bool {
+    guard let elm = elm else { return false }
+    do {
+      let _ = try elm.role()
+      return true
+    } catch AXError.invalidUIElement {
+      return false
+    } catch {
+      return true
     }
   }
   

@@ -239,8 +239,7 @@ class KeypressProvider : KeypressService {
           return Unmanaged.passUnretained(event)
       }
       
-      guard Defaults.loggedIn, Defaults.useAutocomplete, Accessibility.focusedApplicationIsSupportedTerminal(),
-            let window = AXWindowServer.shared.whitelistedWindow else {
+      guard Defaults.loggedIn, Defaults.useAutocomplete, let window = AXWindowServer.shared.whitelistedWindow else {
         print("eventTap window of \(AXWindowServer.shared.whitelistedWindow?.bundleId ?? "<none>") is not whitelisted")
         return Unmanaged.passUnretained(event)
       }
@@ -289,6 +288,7 @@ class KeypressProvider : KeypressService {
           
           // fig.keypress only recieves keyDown events
           guard event.type == .keyDown else {
+            Autocomplete.position(makeVisibleImmediately: false)
             return nil
           }
 
