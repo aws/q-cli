@@ -162,7 +162,10 @@ extension ShellHookManager {
                   
                     // refresh cache
                     if Integrations.electronTerminals.contains(window.bundleId ?? "") {
-                        let _ = Accessibility.findXTermCursorInElectronWindow(window, skipCache: true)
+                      let
+                        cursor = Accessibility.findXTermCursorInElectronWindow(window, skipCache: true)
+                      print("cursor: updating due to tab changed? \(String(describing: cursor))")
+
                     }
                     
                     DispatchQueue.main.async {
@@ -391,7 +394,8 @@ extension ShellHookManager {
     }
   
     func updateKeybuffer(_ info: ShellMessage, backing: KeystrokeBuffer.Backing) {
-        guard let hash = attemptToFindToAssociatedWindow(for: info.session) else {
+        guard let hash = attemptToFindToAssociatedWindow(for: info.session,
+                                                         currentTopmostWindow: AXWindowServer.shared.whitelistedWindow) else {
               Logger.log(message: "Could not link to window on new shell session.", priority: .notify, subsystem: .tty)
               return
           }
