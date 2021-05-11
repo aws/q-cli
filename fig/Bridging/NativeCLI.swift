@@ -55,6 +55,7 @@ class NativeCLI {
         case debugSSHSession = "debug:ssh-session"
         case debugProcesses = "debug:ps"
         case debugDotfiles = "debug:dotfiles"
+        case debugWindows = "debug:windows"
         case electronAccessibility = "util:axelectron"
         case openSettingsDocs = "settings:docs"
         case restartSettingsListener = "settings:init"
@@ -99,6 +100,7 @@ class NativeCLI {
                                                            .debugProcesses,
                                                            .debugDotfiles,
                                                            .debugSSHSession,
+                                                           .debugWindows,
                                                            .electronAccessibility,
                                                            .issue,
                                                            .restartSettingsListener,
@@ -169,6 +171,8 @@ class NativeCLI {
                 NativeCLI.lockscreenCommand(scope)
             case .tools:
                 NativeCLI.toolsCommand(scope)
+            case .debugWindows:
+                NativeCLI.debugWindowsCommand(scope)
             default:
                 break;
             }
@@ -395,6 +399,22 @@ extension NativeCLI {
       }
       
       
+    }
+  
+    static func debugWindowsCommand(_ scope: Scope) {
+        let (_, connection) = scope
+      let window2tty = ShellHookManager.shared.ttys()
+      
+      let matchedWindowHashes = window2tty.keys.map{ "\($0) - \(window2tty[$0]?.descriptor ?? "???") (\(window2tty[$0]?.pid ?? 0))" }.joined(separator: "\n")
+      let current = AXWindowServer.shared.whitelistedWindow
+      
+      let out =
+      """
+      \(current?.hash ?? "???") - \(current?.tty?.descriptor ?? "???") (\(current?.tty?.pid ?? 0))
+      ---
+      \(matchedWindowHashes)
+      """
+      NativeCLI.printInTerminal(out, using: connection)
     }
     
     static func reportCommand(_ scope: Scope) {
