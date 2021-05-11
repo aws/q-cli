@@ -26,6 +26,7 @@ func runCommand(_ command: String, completion: ((Int32) -> Void)? = nil) throws 
     let args = ["sh", "-c", command]
     var env = ProcessInfo().environment
         env["SHELLPID"] = String(getppid())
+        env["VIA_FIG_COMMAND"] = "1"
     let envStr = env.map { k, v in "\(k)=\(v)" }
     try withCStrings(args) { cArgs in
         try withCStrings(envStr) { cEnvs in
@@ -70,9 +71,7 @@ if arguments.count > 1 {
         if let raw = Settings.rawFromFile() {
           print(raw)
         }
-//        settings.keys.forEach { (key) in
-//          print(key)
-//        }
+        print("\n› View all possible settings keys by running fig settings:docs")
         exit(0)
       }
 

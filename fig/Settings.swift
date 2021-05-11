@@ -11,6 +11,7 @@ import Foundation
 class Settings {
   static let ptyInitFile = "pty.rc"
   static let ptyPathKey = "pty.path"
+  static let ptyEnvKey = "pty.env"
   static let developerModeKey = "autocomplete.developerMode"
   static let developerModeNPMKey = "autocomplete.developerModeNPM"
   static let sshCommand = "ssh.commandPrefix"
@@ -20,13 +21,23 @@ class Settings {
   static let autocompleteWidth = "autocomplete.width"
   static let autocompleteHeight = "autocomplete.height"
   static let enterKeyBehavior = "autocomplete.enter"
+  static let rightArrowKeyBehavior = "autocomplete.right-arrow"
+  static let hyperDisabledKey = "integrations.hyper.disabled"
+  static let vscodeDisabledKey = "integrations.vscode.disabled"
+  static let iTermDisabledKey = "integrations.iterm.disabled"
+  static let terminalDisabledKey = "integrations.terminal.disabled"
+  static let additionalElectronTerminalsKey = "integrations.additionalElectronTerminals"
+  static let additionalTerminalsKey = "integrations.additionalTerminals"
   static let hyperDelayKey = "integrations.hyper.delay"
   static let vscodeDelayKey = "integrations.vscode.delay"
   static let eventTapLocation = "developer.eventTapLocation"
   static let addStatusToTerminalTitle = "autocomplete.addStatusToTerminalTitle"
   static let disableAutocomplete = "autocomplete.disable"
+  static let escapeKeyBehaviorKey = "autocomplete.escape"
   static let hideMenubarIcon = "app.hideMenubarIcon"
   static let debugModeKey = "developer.debugMode"
+  static let onlyShowOnTabKey = "autocomplete.onlyShowOnTab"
+
 
   static let filePath = NSHomeDirectory() + "/.fig/settings.json"
   static let shared = Settings()
@@ -58,6 +69,11 @@ class Settings {
     }
     
     setUpFileSystemListeners()
+  }
+  
+  func update(_ keyValues: Dictionary<String, Any>) {
+    currentSettings.merge(keyValues) { $1 }
+    serialize()
   }
   
   func set(value: Any, forKey key: String) {

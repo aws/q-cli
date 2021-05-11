@@ -218,6 +218,10 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             VSCodeIntegration.install(withRestart: false, inBackground: true)
         }
 
+        if !VSCodeInsidersIntegration.isInstalled {
+            VSCodeInsidersIntegration.install(withRestart: false, inBackground: true)
+        }
+      
         if !HyperIntegration.isInstalled {
             HyperIntegration.install(withRestart: false, inBackground: true)
         }
@@ -1931,6 +1935,7 @@ extension AppDelegate : NSMenuDelegate {
           if Integrations.terminalsWhereAutocompleteShouldAppear.contains(window?.bundleId ?? "") ||  Integrations.terminalsWhereAutocompleteShouldAppear.contains(app.bundleIdentifier ?? "") {
                 let tty = window?.tty
                 var hasContext = false
+                var isHidden = false
                 var bufferDescription: String? = nil
                 var backedByShell = false
                 var backing: String?
@@ -1939,6 +1944,7 @@ extension AppDelegate : NSMenuDelegate {
                 if let window = window {
                     let keybuffer = KeypressProvider.shared.keyBuffer(for: window)
                     hasContext = keybuffer.buffer != nil && !keybuffer.writeOnly
+                    isHidden = keybuffer.buffer != nil && keybuffer.writeOnly
                     bufferDescription = keybuffer.representation
                     backedByShell = keybuffer.backedByShell
                    
@@ -2006,8 +2012,8 @@ extension AppDelegate : NSMenuDelegate {
                     legend.addItem(NSMenuItem.separator())
                     legend.addItem(NSMenuItem(title: "Re-run Install Script", action: #selector(setupScript), keyEquivalent: ""))
                   
-                } else if (SecureKeyboardInput.enabled) {
-                    
+                } else if (SecureKeyboardInput.enabled || (SecureKeyboardInput.wasEnabled && window?.bundleId == Integrations.Terminal)) {
+                    // Also check previous value (wasEnabled) because clicking on menubar icon will disable secure keyboard input in Terminal.app
                     color = .systemPink
                     legend.addItem(NSMenuItem(title: "'Secure Keyboard Input' Enabled", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem.separator())
@@ -2015,14 +2021,19 @@ extension AppDelegate : NSMenuDelegate {
                     legend.addItem(NSMenuItem(title: "processing keypress events. ", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem.separator())
 
-                    
-                  if let app = SecureKeyboardInput.responsibleApplication,
-                    let name = app.localizedName,
-                    let pid = SecureKeyboardInput.responsibleProcessId {
-                        legend.addItem(NSMenuItem(title: "Disable in '\(name)' (\(pid)).", action: nil, keyEquivalent: ""))
+                  let app = SecureKeyboardInput.responsibleApplication ?? app
+                  let pid = SecureKeyboardInput.responsibleProcessId ?? app.processIdentifier
+                  if SecureKeyboardInput.enabled(by: window?.bundleId),
+                     let name = app.localizedName {
+                        let open = NSMenuItem(title: "Disable in '\(name)' (\(pid)).", action: #selector(SecureKeyboardInput.openRelevantMenu), keyEquivalent: "")
+                        open.target = SecureKeyboardInput.self
+                        legend.addItem(open)
 
                     } else {
-                        legend.addItem(NSMenuItem(title: "Run `ioreg -l -w 0 | grep SecureInput` to determine which app is responsible.", action: nil, keyEquivalent: ""))
+                      //Run `ioreg -l -w 0 | grep SecureInput` to determine which app is responsible.
+                        let lock = NSMenuItem(title: "Lock screen and log back in", action: #selector(SecureKeyboardInput.lockscreen), keyEquivalent: "")
+                        lock.target = SecureKeyboardInput.self
+                        legend.addItem(lock)
                     }
                   
                     legend.addItem(NSMenuItem.separator())
@@ -2030,6 +2041,22 @@ extension AppDelegate : NSMenuDelegate {
                     support.target = SecureKeyboardInput.self
                     legend.addItem(support)
 
+                } else if (isHidden) {
+                    color = .orange
+                    legend.addItem(NSMenuItem(title: "Autocomplete is hidden.", action: nil, keyEquivalent: ""))
+                    legend.addItem(NSMenuItem.separator())
+
+                    if let onlyShowOnTab = Settings.shared.getValue(forKey: Settings.onlyShowOnTabKey) as? Bool, onlyShowOnTab {
+                      legend.addItem(NSMenuItem(title: "Press <tab> to show suggestions", action: nil, keyEquivalent: ""))
+                      legend.addItem(NSMenuItem.separator())
+                      legend.addItem(NSMenuItem(title: "Or update '\(Settings.onlyShowOnTabKey)' setting", action: nil, keyEquivalent: ""))
+
+                    } else {
+                      legend.addItem(NSMenuItem(title: "Press control + <escape>", action: nil, keyEquivalent: ""))
+                      legend.addItem(NSMenuItem(title: "to toggle it back on", action: nil, keyEquivalent: ""))
+
+                    }
+                  
                 } else if (!hasContext) {
                     color = .orange
                     legend.addItem(NSMenuItem(title: "Keybuffer context is lost.", action: nil, keyEquivalent: ""))
@@ -2103,8 +2130,10 @@ extension AppDelegate : NSMenuDelegate {
             } else {
 //                let title = "\(app.localizedName ?? "Unknown") \(cmd)"
                 let icon = app.icon?.resized(to: NSSize(width: 16, height: 16))//?.overlayBadge(color: .red, text: "")
-
-                let item = NSMenuItem(title: "is not supported.", action: nil, keyEquivalent: "")
+                
+                let text = Integrations.autocompleteBlocklist.contains(app.bundleIdentifier ?? "") ? "has been disabled." : "is not supported."
+            
+                let item = NSMenuItem(title: text, action: nil, keyEquivalent: "")
                 item.image = icon
 
                 menu.insertItem(item, at: 0)
@@ -2145,6 +2174,8 @@ extension AppDelegate : NSMenuDelegate {
             name = "Hyper"
           case Integrations.VSCode:
             name = "VSCode"
+          case Integrations.VSCodeInsiders:
+            name = "VSCode Insiders"
           default:
             name = "Unknown"
           }

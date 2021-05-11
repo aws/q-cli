@@ -418,11 +418,11 @@ class Defaults {
   
     static var developerModeEnabled: Bool {
       get {
-        if let mode = Settings.shared.getValue(forKey: Settings.developerModeKey) as? Bool {
+        if let mode = Settings.shared.getValue(forKey: Settings.developerModeKey) as? Bool, mode {
           return mode
         }
         
-        if let mode = Settings.shared.getValue(forKey: Settings.developerModeNPMKey) as? Bool {
+        if let mode = Settings.shared.getValue(forKey: Settings.developerModeNPMKey) as? Bool, mode {
           return mode
         }
         
@@ -430,13 +430,16 @@ class Defaults {
       }
       
       set (enabled) {
+        var delta: [String:Any] = [:]
         if Settings.shared.getValue(forKey: Settings.developerModeKey) as? Bool != nil {
-          Settings.shared.set(value: enabled, forKey: Settings.developerModeKey)
+          delta[Settings.developerModeKey] = enabled
         }
         
         if Settings.shared.getValue(forKey: Settings.developerModeNPMKey) as? Bool != nil {
-          Settings.shared.set(value: enabled, forKey: Settings.developerModeNPMKey)
+          delta[Settings.developerModeNPMKey] = enabled
         }
+        
+        Settings.shared.update(delta)
       }
     }
   
@@ -453,5 +456,27 @@ class Defaults {
             UserDefaults.standard.set(version, forKey: "accessibilityEnabledOnPreviousLaunch")
             UserDefaults.standard.synchronize()
         }
+    }
+  
+    static var insertUsingRightArrow: Bool {
+        get {
+            if let behavior = Settings.shared.getValue(forKey: Settings.rightArrowKeyBehavior) as? String {
+              switch behavior {
+                case "insert":
+                  return true
+                case "ignore":
+                  return false
+                default:
+                  return false
+              }
+            }
+          
+            return false
+        }
+        
+        set(flag) {
+            Settings.shared.set(value: flag ? "insert" :  "ignore" , forKey: Settings.rightArrowKeyBehavior)
+        }
+
     }
 }

@@ -27,6 +27,20 @@ class Autocomplete {
     
   }
   
+  static func toggle(for window: ExternalWindow) {
+    let buffer = KeypressProvider.shared.keyBuffer(for: window)
+
+    buffer.writeOnly = !buffer.writeOnly
+
+    if buffer.writeOnly {
+        Autocomplete.hide()
+        WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try{ fig.keypress(\"\(Keycode.escape)\", \"\(window.hash)\") } catch(e) {}", completionHandler: nil)
+    } else {
+        Autocomplete.update(with: buffer.currentState, for: window.hash)
+        Autocomplete.position()
+    }
+  }
+  
   static func hide() {
     guard let window = AXWindowServer.shared.whitelistedWindow else { return }
     
@@ -39,6 +53,8 @@ class Autocomplete {
     KeypressProvider.shared.removeRedirect(for: Keycode.returnKey, in: window)
     KeypressProvider.shared.removeRedirect(for: Keystroke(modifierFlags: [.control], keyCode: Keycode.n), in: window)
     KeypressProvider.shared.removeRedirect(for: Keystroke(modifierFlags: [.control], keyCode: Keycode.p), in: window)
+    KeypressProvider.shared.removeRedirect(for: Keycode.rightArrow, in: window)
+
   }
   
   static func position(makeVisibleImmediately: Bool = true, completion:(() -> Void)? = nil) {
@@ -59,7 +75,8 @@ class Autocomplete {
           KeypressProvider.shared.removeRedirect(for: Keycode.returnKey, in: window)
           KeypressProvider.shared.removeRedirect(for: Keystroke(modifierFlags: [.control], keyCode: Keycode.n), in: window)
           KeypressProvider.shared.removeRedirect(for: Keystroke(modifierFlags: [.control], keyCode: Keycode.p), in: window)
-          
+          KeypressProvider.shared.removeRedirect(for: Keycode.rightArrow, in: window)
+
           completion?()
         }
       }

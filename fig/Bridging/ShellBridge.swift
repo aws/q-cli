@@ -320,6 +320,12 @@ class ShellBridge {
             self.simulate(keypress: .ctrlE)
             self.simulate(keypress: .ctrlU)
         }
+        
+        // If user has onlyShowOnTab setting enabled, hid Fig window by setting writeOnly = true after insert
+        if let window = AXWindowServer.shared.whitelistedWindow {
+          KeypressProvider.shared.keyBuffer(for: window).writeOnly = KeystrokeBuffer.initialWritingMode
+        }
+
       
         // Add delay for Electron terminals
         let delay: TimeInterval? = Integrations.electronTerminals.contains(app) ? 0.05 : nil
@@ -488,13 +494,24 @@ struct ShellMessage: Codable {
                 return "Alacritty"
             }
             
+            if let version = dict["TERM_PROGRAM_VERSION"] as? String, version.contains("insider") {
+                return "vscode-insiders"
+            }
+          
             return dict["TERM_PROGRAM"] as? String
         }
         return nil
     }
   
+    // indicates whether the command was run from a fig command (eg. fig source internally uses fig bg:init)
+    var viaFigCommand: Bool {
+      return self.env?.jsonStringToDict()?["VIA_FIG_COMMAND"] as? String != nil
+    }
+  
     var potentialBundleId: String? {
       switch self.terminal {
+        case "vscode-insiders":
+          return Integrations.VSCodeInsiders
         case "vscode":
           return Integrations.VSCode
         case "Apple_Terminal":
@@ -504,6 +521,11 @@ struct ShellMessage: Codable {
         case "iTerm.app":
           return Integrations.iTerm
         default:
+          if let dict = self.env?.jsonStringToDict(),
+             let bundleId = dict["TERM_BUNDLE_IDENTIFIER"] as? String {
+             return bundleId
+          }
+          
           return nil
       }
     }

@@ -709,10 +709,16 @@ extension WindowManager : WindowManagementService {
     
   func positionAutocompletePopover(textRect: CGRect?, makeVisibleImmediately: Bool = true, completion: (() -> Void)? = nil) {
         if let rect = textRect, let window = AXWindowServer.shared.whitelistedWindow {
+          
+          // get 'true' main screen (accounting for the fact that fullScreen workspaces default to laptop screen)
+          let currentScreen = NSScreen.screens.filter { (screen) -> Bool in
+            return screen.frame.contains(rect)
+          }.first ?? NSScreen.main
+          
           let heightLimit: CGFloat = Settings.shared.getValue(forKey: Settings.autocompleteHeight) as? CGFloat ?? 140.0 //300.0//
             
           let isAbove = window.frame.height < window.frame.origin.y - rect.origin.y + rect.height + heightLimit
-                        && rect.origin.y + heightLimit <= NSScreen.main?.frame.maxY ?? 0.0
+                        && rect.origin.y + heightLimit <= currentScreen?.frame.maxY ?? 0.0
                         // *visor* I'm not sure what the second conditional is for...
 
 
@@ -733,6 +739,10 @@ extension WindowManager : WindowManagementService {
                 }
                 KeypressProvider.shared.addRedirect(for: Keystroke(modifierFlags: [.control], keyCode: Keycode.n), in: window)
                 KeypressProvider.shared.addRedirect(for: Keystroke(modifierFlags: [.control], keyCode: Keycode.p), in: window)
+              
+                if (Defaults.insertUsingRightArrow) {
+                    KeypressProvider.shared.addRedirect(for: Keycode.rightArrow, in: window)
+                }
 
 
             } else {
@@ -743,13 +753,11 @@ extension WindowManager : WindowManagementService {
                 KeypressProvider.shared.removeRedirect(for:  Keystroke(modifierFlags: [.shift], keyCode: Keycode.tab), in: window)
                 KeypressProvider.shared.removeRedirect(for: Keystroke(modifierFlags: [.control], keyCode: Keycode.n), in: window)
                 KeypressProvider.shared.removeRedirect(for: Keystroke(modifierFlags: [.control], keyCode: Keycode.p), in: window)
+                KeypressProvider.shared.removeRedirect(for: Keycode.rightArrow, in: window)
+
 
             }
             
-            // get 'true' main screen (accounting for the fact that fullScreen workspaces default to laptop screen)
-            let currentScreen = NSScreen.screens.filter { (screen) -> Bool in
-              return screen.frame.contains(rect)
-            }.first ?? NSScreen.main
           
           
 //            WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try { fig.autocomplete_above = \(isAbove)} catch(e) {}", completionHandler: nil)

@@ -23,11 +23,17 @@ class KeystrokeBuffer : NSObject {
     }
   }
   
+  // whether a keybuffer starts in writeOnly mode (historically has been `false`)
+  static var initialWritingMode: Bool {
+    get {
+      return (Settings.shared.getValue(forKey: Settings.onlyShowOnTabKey) as? Bool) ?? false
+    }
+  }
   var historyIndex = 0
   var index: String.Index?
   var stashedBuffer: String?
   var stashedIndex: String.Index?
-  var writeOnly = false // update buffer, but don't return it (prevents keypress events from being sent to autocomplete)
+  var writeOnly = KeystrokeBuffer.initialWritingMode // update buffer, but don't return it (prevents keypress events from being sent to autocomplete)
     {
     didSet {
       print("writeOnly: \(writeOnly)")
@@ -59,7 +65,7 @@ class KeystrokeBuffer : NSObject {
       // so that even if escape has been pressed previous
       // the autocomplete window will reappear
       if (shellHistoryNumber != oldValue) {
-        writeOnly = false
+        writeOnly = KeystrokeBuffer.initialWritingMode
       }
       
     }
@@ -95,7 +101,7 @@ class KeystrokeBuffer : NSObject {
         NotificationCenter.default.post(name: Self.lineResetInKeyStrokeBufferNotification, object: nil)
         index = buffer!.startIndex
         dropStash()
-        writeOnly = false
+        writeOnly = KeystrokeBuffer.initialWritingMode
       } else if (buffer?.count == 1) {
         NotificationCenter.default.post(name: Self.firstCharacterInKeystrokeBufferNotification, object: nil)
       }
@@ -259,7 +265,7 @@ class KeystrokeBuffer : NSObject {
       }
       
       if (historyIndex <= -1) {
-        writeOnly = false
+        writeOnly = KeystrokeBuffer.initialWritingMode
         historyIndex = 0
       }
       print("xterm: next history")

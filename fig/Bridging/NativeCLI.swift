@@ -18,7 +18,8 @@ class NativeCLI {
         case helpCommand =  "help"
         case version = "--version"
         case accessibility = "util:axprompt"
-        case logout = "util:logout"
+        case logout = "logout"
+        case logoutLegacy = "util:logout"
         case restart = "util:restart"
         case build = "util:build"
         case feedback = "feedback"
@@ -27,6 +28,7 @@ class NativeCLI {
         case update = "update"
         case source = "source"
         case resetCache = "util:reset-cache"
+        case tools = "tools"
         case list = "list"
         case onboarding = "onboarding"
         case star = "star"
@@ -53,12 +55,18 @@ class NativeCLI {
         case debugSSHSession = "debug:ssh-session"
         case debugProcesses = "debug:ps"
         case debugDotfiles = "debug:dotfiles"
+        case debugWindows = "debug:windows"
         case electronAccessibility = "util:axelectron"
+        case openSettingsDocs = "settings:docs"
         case restartSettingsListener = "settings:init"
+        case openSettingsFile = "settings:open"
+        case runInstallScript = "util:install-script"
+        case lockscreen = "util:lockscreen"
+        case setPATH = "set:path"
 
         var isUtility: Bool {
             get {
-                let utilities: Set<Command> = [.resetCache, .build, .logout, .restart, .accessibility]
+                let utilities: Set<Command> = [.resetCache, .build, .logoutLegacy, .restart, .accessibility]
                return utilities.contains(self)
             }
         }
@@ -75,6 +83,7 @@ class NativeCLI {
                 let implementatedNatively: Set<Command> = [.resetCache,
                                                            .build,
                                                            .logout,
+                                                           .logoutLegacy,
                                                            .restart,
                                                            .accessibility,
                                                            .openMenuBar,
@@ -85,14 +94,18 @@ class NativeCLI {
                                                            .vscode,
                                                            .iterm,
                                                            .hyper,
+                                                           .tools,
                                                            .pty,
                                                            .debugApp,
                                                            .debugProcesses,
                                                            .debugDotfiles,
                                                            .debugSSHSession,
+                                                           .debugWindows,
                                                            .electronAccessibility,
                                                            .issue,
                                                            .restartSettingsListener,
+                                                           .runInstallScript,
+                                                           .lockscreen,
                                                            .quit,
                                                            .docs]
                return implementatedNatively.contains(self)
@@ -114,7 +127,7 @@ class NativeCLI {
                 NativeCLI.restartCommand(scope)
             case .resetCache:
                 NativeCLI.resetCacheCommand(scope)
-            case .logout:
+            case .logout, .logoutLegacy:
                 NativeCLI.logoutCommand(scope)
             case .openMenuBar:
                 NativeCLI.openMenuBarCommand(scope)
@@ -152,6 +165,14 @@ class NativeCLI {
                 NativeCLI.issueCommand(scope)
             case .restartSettingsListener:
                 NativeCLI.initSettingsCommand(scope)
+            case .runInstallScript:
+                NativeCLI.runInstallScriptCommand(scope)
+            case .lockscreen:
+                NativeCLI.lockscreenCommand(scope)
+            case .tools:
+                NativeCLI.toolsCommand(scope)
+            case .debugWindows:
+                NativeCLI.debugWindowsCommand(scope)
             default:
                 break;
             }
@@ -343,6 +364,58 @@ extension NativeCLI {
         }
 
     }
+  
+    static func toolsCommand(_ scope: Scope) {
+        let folder = "\(NSHomeDirectory())/.fig/tools"
+        let (message, connection) = scope
+      switch message.arguments.count {
+        case 0:
+          let files = (try? FileManager.default.contentsOfDirectory(atPath: folder)) ?? []
+          let out = files.map { (str) -> String in
+            guard let name = str.split(separator: ".").first else {
+              return str
+            }
+            return String(name)
+          }.joined(separator: "\n")
+
+          NativeCLI.printInTerminal(out, using: connection)
+
+        case 1:
+          let path = message.arguments.first!
+          let fullPathIncludingExtension = folder + "/" + path + ".sh"
+          let fullPathWithoutExtension =  folder + "/" + path
+          if FileManager.default.fileExists(atPath: fullPathIncludingExtension) {
+            NativeCLI.runInTerminal(command: "bash \(fullPathIncludingExtension)", over: connection)
+          } else if FileManager.default.fileExists(atPath: fullPathWithoutExtension) {
+            NativeCLI.runInTerminal(command: "bash \(fullPathWithoutExtension)", over: connection)
+          } else {
+            NativeCLI.printInTerminal("\nNo matching script found...\n", using: connection)
+          }
+          
+          break;
+        default:
+          NativeCLI.printInTerminal("\nToo many arguments. Expects 0 or 1.\n", using: connection)
+          return
+      }
+      
+      
+    }
+  
+    static func debugWindowsCommand(_ scope: Scope) {
+        let (_, connection) = scope
+      let window2tty = ShellHookManager.shared.ttys()
+      
+      let matchedWindowHashes = window2tty.keys.map{ "\($0) - \(window2tty[$0]?.descriptor ?? "???") (\(window2tty[$0]?.pid ?? 0))" }.joined(separator: "\n")
+      let current = AXWindowServer.shared.whitelistedWindow
+      
+      let out =
+      """
+      \(current?.hash ?? "???") - \(current?.tty?.descriptor ?? "???") (\(current?.tty?.pid ?? 0))
+      ---
+      \(matchedWindowHashes)
+      """
+      NativeCLI.printInTerminal(out, using: connection)
+    }
     
     static func reportCommand(_ scope: Scope) {
         let (message, connection) = scope
@@ -475,6 +548,21 @@ extension NativeCLI {
       
     }
   
+    static func runInstallScriptCommand(_ scope: Scope) {
+      let (_, connection) = scope
+
+      NativeCLI.printInTerminal("\n› Running installation script...\n", using: connection)
+      Onboarding.setUpEnviroment()
+    }
+  
+    static func lockscreenCommand(_ scope: Scope) {
+      let (_, connection) = scope
+
+      NativeCLI.printInTerminal("\n→ Locking screen...\n  This may resolve issues with Secure Keyboard Entry\n", using: connection)
+      SecureKeyboardInput.lockscreen()
+
+    }
+  
     static func electronAccessibilityCommand(_ scope: Scope) {
         let (_, connection) = scope
         if let app = AXWindowServer.shared.topApplication, let name = app.localizedName {
@@ -525,7 +613,7 @@ extension NativeCLI {
           return controlPath + "\n"
       }.filter { $0 != nil } as! [String]
       
-      let remote_cwd_script = Settings.shared.getValue(forKey: Settings.sshRemoteDirectoryScript) as? String ?? Bundle.main.path(forResource: "remote_cwd", ofType: "sh")!
+      let remote_cwd_script = SSHIntegration.pathToRemoteWorkingDirectoryScript()
       
       let out =
       """
