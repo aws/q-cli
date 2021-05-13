@@ -1,0 +1,3 @@
+Host *
+  PermitLocalCommand yes
+  LocalCommand ~/.fig_pty/ssh_install.sh %h

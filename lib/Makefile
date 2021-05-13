@@ -1,19 +1,11 @@
 ROOT=..
 include $(ROOT)/Makefile.shared
+LIBVTERM=$(ROOT)/libvterm/libvterm.la
 
-# Common temp files to delete from each directory.
-TEMPFILES=core core.* *.o temp.* *.out
-DIRS = lib 
+all:	libfig.a
 
-LIBFIG	= libfig.a
-OBJS   = base64.o string.o log.o pty.o tty.o
-
-all:	$(LIBFIG)
-
-$(LIBFIG):	$(OBJS)
-	$(AR) rv $(LIBFIG) $?
-	$(RANLIB) $(LIBFIG)
-
+libfig.a:	base64.o string.o log.o pty.o tty.o
+	$(AR) rv libfig.a $?
 
 clean:
-	rm -f *.o a.out core temp.* $(LIBFIG)
+	rm -f *.o libfig.a

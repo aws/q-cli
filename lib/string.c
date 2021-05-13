@@ -35,3 +35,33 @@ char *strrstr(const char *haystack, const char *needle, const size_t haylen,
     --p;
   }
 }
+
+// Splice out everything between (start, end) in str.
+void splicestr(char* str, const char* start, const char* end) {
+  int pre_len;
+  int post_len;
+  char* splice_end;
+  char* splice_start;
+  const char* post_start;
+  size_t str_len = strlen(str);
+  size_t end_len = end == NULL ? 0 : strlen(end);
+
+  if (start != NULL && (splice_start = strstr(str, start)) != NULL) {
+    pre_len = splice_start - str;
+  } else {
+    pre_len = 0;
+  }
+
+  if (end != NULL && (splice_end = strrstr(str, end, str_len, end_len)) != NULL) {
+    post_start = splice_end + end_len;
+    post_len = str_len - (post_start - str);
+  } else {
+    post_start = str;
+    post_len = 0;
+  }
+
+  char* tmpbuf = malloc(sizeof(char) * (pre_len + 1));
+  sprintf(tmpbuf, "%.*s", pre_len, str);
+  sprintf(str, "%.*s%.*s", pre_len, tmpbuf, post_len, post_start);
+  free(tmpbuf);
+}

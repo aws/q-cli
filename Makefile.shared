@@ -4,10 +4,8 @@ CC=gcc
 COMPILE.c=$(CC) $(CFLAGS) $(CPPFLAGS) -c
 LINK.c=$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
 LDFLAGS=
-LDDIR=-L$(ROOT)/lib
-LDLIBS=$(LDDIR) -lfig -lvterm -lm $(EXTRALIBS)
-CFLAGS=-I$(ROOT)/include -Wall -ggdb -DLINUX -D_GNU_SOURCE $(EXTRA)
-RANLIB=echo
+LDLIBS=-L$(ROOT)/libvterm -L$(ROOT)/lib -lvterm -lfig -lm $(EXTRALIBS)
+CFLAGS=-I$(ROOT)/libvterm/include -I$(ROOT)/include -Wall -ggdb -DLINUX -D_GNU_SOURCE $(EXTRA)
 AR=ar
 AWK=awk
 

@@ -19,8 +19,13 @@ void get_winsize(struct winsize *ws) {
   close(fd);
 }
 
+void preparser_reset(PreParserData* data) {
+  data->has_internal_cmd = false;
+  data->has_new_cmd = false;
+}
+
 FigTerm *figterm_new(bool utf8, VTermScreenCallbacks *screen_callbacks,
-                     VTermParserCallbacks *parser_callbacks) {
+                     VTermParserCallbacks *parser_callbacks, int ptyc_pid, int ptyp) {
   if (_ft != NULL) {
     return _ft;
   }
@@ -36,6 +41,9 @@ FigTerm *figterm_new(bool utf8, VTermScreenCallbacks *screen_callbacks,
 
   ft->altscreen = false;
 
+  ft->preparser_data = malloc(sizeof(PreParserData));
+  preparser_reset(ft->preparser_data);
+
   ft->cursor = malloc(sizeof(VTermPos));
   ft->cursor->row = -1;
   ft->cursor->col = -1;
@@ -44,9 +52,14 @@ FigTerm *figterm_new(bool utf8, VTermScreenCallbacks *screen_callbacks,
   ft->state = term_state_new(vt);
   ft->prompt_state = term_state_new(vt);
 
-  ft->damage_prompt = false;
-  ft->wait_for_prompt = true;
+  ft->in_prompt = false;
+  ft->preexec = true;
+  ft->in_internal = false;
   ft->vt = vt;
+
+  // Used for resize.
+  ft->ptyp = ptyp;
+  ft->ptyc_pid = ptyc_pid;
 
   VTermScreen *vts = vterm_obtain_screen(vt);
   vterm_screen_set_callbacks(vts, screen_callbacks, ft);
@@ -54,8 +67,6 @@ FigTerm *figterm_new(bool utf8, VTermScreenCallbacks *screen_callbacks,
   vterm_screen_set_damage_merge(vts, VTERM_DAMAGE_ROW);
 
   vterm_screen_reset(vts, 1);
-
-  ft->ptyc_pid = -1;
 
   _ft = ft;
 
@@ -66,31 +77,33 @@ void figterm_free(FigTerm *ft) {
   vterm_free(ft->vt);
   term_state_free(ft->state);
   term_state_free(ft->prompt_state);
+  free(ft->preparser_data);
   free(ft->cursor);
   free(ft);
 }
 
 void figterm_resize(FigTerm *ft) {
-  struct winsize window_size;
+  struct winsize ws;
   int nrow, ncol;
 
-  get_winsize(&window_size);
-  // ioctl(STDIN_FILENO, TIOCGWINSZ, &window_size);
-  ioctl(ft->ptyp, TIOCSWINSZ, &window_size);
+  get_winsize(&ws);
+  if (ioctl(ft->ptyp, TIOCSWINSZ, &ws))
+    err_sys("failed to set window size");
+
   vterm_get_size(ft->vt, &nrow, &ncol);
-  log_debug("RESIZING %d, %d -> %d, %d", nrow, ncol, window_size.ws_row,
-            window_size.ws_col);
-  // TODO(sean) make sure terms are reset when size is reset
-  ft->damage_prompt = true;
-  vterm_set_size(ft->vt, window_size.ws_row, window_size.ws_col);
-  ft->damage_prompt = false;
+
+  ft->in_prompt = true;
+  log_info("Resizing (%d, %d) -> (%d, %d)", nrow, ncol, ws.ws_row, ws.ws_col);
+  vterm_set_size(ft->vt, ws.ws_row, ws.ws_col);
+  ft->in_prompt = false;
 
   VTermRect rect = {.start_row = 0,
-                    .end_row = window_size.ws_row,
+                    .end_row = ws.ws_row,
                     .start_col = 0,
-                    .end_col = window_size.ws_col};
+                    .end_col = ws.ws_col};
   term_state_update(ft->state, ft->vt, rect, true);
   term_state_update(ft->prompt_state, ft->vt, rect, true);
+
   if (ft->ptyc_pid > 0) {
     kill(ft->ptyc_pid, SIGWINCH);
   }

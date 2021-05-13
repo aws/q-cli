@@ -15,20 +15,36 @@
 #define _PATH_BSHELL "/bin/sh"
 #endif
 
-void loop(int, int); /* in the file loop.c */
+void loop(int, int);
 
-int validshell(const char *shell) {
-  if (shell == NULL || *shell != '/')
-    return (0);
-  if (access(shell, X_OK) != 0)
-    return (0);
-  return (1);
+static char *get_exe(pid_t pid) {
+  char procfile[50];
+  ssize_t ret;
+  unsigned int bufsize = 1024;
+
+  sprintf(procfile, "/proc/%d/exe", pid);
+  char* tmp = calloc(bufsize, sizeof(char));
+  while (true) {
+    ret = readlink(procfile, tmp, bufsize - 1);
+    if (ret == -1) {
+      free(tmp);
+      return NULL;
+    } else if ((size_t) ret != bufsize - 1) {
+      tmp[ret] = '\0';
+      return tmp;
+    }
+    bufsize *= 2;
+    tmp = (char *) realloc(tmp, bufsize);
+  }
 }
 
-static const char *getshell(void) {
-  struct passwd *pw;
-  const char *shell;
+int validshell(const char *shell) {
+  return shell != NULL && *shell == '/' && access(shell, X_OK) == 0;
+}
 
+static char *getshell(void) {
+  struct passwd *pw;
+  char *shell;
   shell = getenv("SHELL");
   if (validshell(shell))
     return shell;
@@ -46,8 +62,10 @@ void kill_parent() {
 }
 
 void abort_handler(int sig) {
-  log_info("ABORTT %d: %d", getpid(), sig);
+  log_warn("Aborting %d: %d", getpid(), sig);
   tty_reset(STDIN_FILENO);
+
+  // Use quick exit to avoid killing parent shell.
   quick_exit(0);
 }
 
@@ -56,6 +74,7 @@ int main(int argc, char *argv[]) {
   pid_t pid;
   char child_name[20];
 
+  // TODO(sean) breaks if these are NULL.
   char *term_session_id = getenv("TERM_SESSION_ID");
   char *fig_integration_version = getenv("FIG_INTEGRATION_VERSION");
   char *tmux = getenv("TMUX");
@@ -83,14 +102,13 @@ int main(int argc, char *argv[]) {
   if (pid < 0) {
     err_sys("fork error");
   } else if (pid == 0) {
-    // TODO(sean) change to getshell
-    char *shell = "/bin/bash";
+    // char *shell = get_exe(getppid());
+    char* shell = getshell();
     char *const args[] = {shell, NULL};
     setenv("FIG_TERM", "1", 1);
     if (tmux != NULL) {
-      log_info("IN TMUX");
+      setenv("FIG_TERM_TMUX", "1", 1);
     }
-    setenv("FIG_TERM_TMUX", "1", 1);
     if (execvp(args[0], args) < 0)
       err_sys("execvp error");
   }

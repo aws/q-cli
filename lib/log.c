@@ -14,7 +14,9 @@ void vlog_msg(int level, const char *file, int line, const char *fmt,
     time_t t = time(NULL);
     struct tm *time = localtime(&t);
     if (log_file == NULL) {
-      log_file = fopen("out.log", "w");
+      char tmp[50];
+      sprintf(tmp, "out.%d.log", getpid());
+      log_file = fopen(tmp, "w");
     }
 
     char buf[64];
@@ -47,6 +49,12 @@ void err_sys_msg(const char *file, int line, const char *fmt, ...) {
   va_end(ap);
 
   log_msg(LOG_FATAL, __FILE__, __LINE__, "%s", buf);
+
+  // TODO(sean) try to replicate current shell to fail fully silently: e.g.
+  // if read/write fails within vim or something, the user will be popped out
+  // of vim and into a parent shell no longer in vim. One solution is to stay
+  // in the PTY and disable everything but the basic read/write calls.
+  tty_reset(STDIN_FILENO);
   exit(1);
 }
 

@@ -31,7 +31,7 @@ VTermRect full_screen(VTerm *vt) {
 void term_state_update(TermState *ts, VTerm *vt, VTermRect rect, bool reset) {
   int nrow, ncol;
   vterm_get_size(vt, &nrow, &ncol);
-  if (rect.end_row > ts->nrows || reset) {
+  if (reset || rect.end_row > ts->nrows) {
     log_debug("Term state update reset.");
     term_state_free_rows(ts);
 
