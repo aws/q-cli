@@ -19,13 +19,8 @@ void get_winsize(struct winsize *ws) {
   close(fd);
 }
 
-void preparser_reset(PreParserData* data) {
-  data->has_internal_cmd = false;
-  data->has_new_cmd = false;
-}
-
 FigTerm *figterm_new(bool utf8, VTermScreenCallbacks *screen_callbacks,
-                     VTermParserCallbacks *parser_callbacks, int ptyc_pid, int ptyp) {
+                     VTermStateFallbacks *parser_callbacks, int ptyc_pid, int ptyp) {
   if (_ft != NULL) {
     return _ft;
   }
@@ -41,9 +36,6 @@ FigTerm *figterm_new(bool utf8, VTermScreenCallbacks *screen_callbacks,
 
   ft->altscreen = false;
 
-  ft->preparser_data = malloc(sizeof(PreParserData));
-  preparser_reset(ft->preparser_data);
-
   ft->cursor = malloc(sizeof(VTermPos));
   ft->cursor->row = -1;
   ft->cursor->col = -1;
@@ -54,7 +46,6 @@ FigTerm *figterm_new(bool utf8, VTermScreenCallbacks *screen_callbacks,
 
   ft->in_prompt = false;
   ft->preexec = true;
-  ft->in_internal = false;
   ft->vt = vt;
 
   // Used for resize.
@@ -77,7 +68,6 @@ void figterm_free(FigTerm *ft) {
   vterm_free(ft->vt);
   term_state_free(ft->state);
   term_state_free(ft->prompt_state);
-  free(ft->preparser_data);
   free(ft->cursor);
   free(ft);
 }

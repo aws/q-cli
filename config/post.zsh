@@ -5,7 +5,6 @@ if [[ -o interactive ]] && [ -z "${FIG_HAS_ZSH_PTY_HOOKS-}" ] && [ "$TERM" != li
   FIG_HAS_SET_PROMPT=0
 
   fig_preexec() {
-    echo prexec
     # Restore user defined prompt before executing.
     PS1="$FIG_USER_PS1"
     PS2="$FIG_USER_PS2"

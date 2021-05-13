@@ -1,3 +1,4 @@
 Host *
   PermitLocalCommand yes
+  # TODO(sean) make this only run on interactive ssh (e.g. don't try on git push).
   LocalCommand ~/.fig_pty/ssh_install.sh %h

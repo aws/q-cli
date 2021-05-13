@@ -13,18 +13,6 @@
 
 #define strneq(a,b,n) (strncmp(a,b,n)==0)
 #define BUFFSIZE (1024 * 100)
-#define max(a, b)                                                              \
-  ({                                                                           \
-    __typeof__(a) _a = (a);                                                    \
-    __typeof__(b) _b = (b);                                                    \
-    _a > _b ? _a : _b;                                                         \
-  })
-#define min(a, b)                                                              \
-  ({                                                                           \
-    __typeof__(a) _a = (a);                                                    \
-    __typeof__(b) _b = (b);                                                    \
-    _a < _b ? _a : _b;                                                         \
-  })
 
 static volatile sig_atomic_t sigcaught;
 
@@ -137,73 +125,39 @@ int settermprop_cb(VTermProp prop, VTermValue *val, void *user) {
   return 0;
 }
 
-int osc_cb(const char *command, size_t cmdlen, void *user) {
-  log_debug("OSC CB: %d, %.*s", cmdlen, cmdlen, command);
-  if (strneq(command, "697;", 4)) {
-    command += 4;
-    cmdlen -= 4;
-
+int osc_cb(int command, VTermStringFragment frag, void *user) {
+  log_debug("OSC CB: %d, %.*s", command, frag.len, frag.str);
+  if (command == 697) {
     FigTerm *ft = user;
-    if (strneq(command, "NewCmd", cmdlen)) {
+    if (strneq(frag.str, "NewCmd", frag.len)) {
       VTermRect rect = {};
       term_state_update(ft->prompt_state, ft->vt, rect, true);
       term_state_update_cursor(ft->prompt_state, *ft->cursor);
       log_info("Prompt at position: (%d, %d)", ft->cursor->row,
                ft->cursor->col);
       ft->preexec = false;
-      // Reset internal command at new prompt.
-      ft->in_internal = false;
-    } else if (strneq(command, "StartPrompt", cmdlen)) {
+    } else if (strneq(frag.str, "StartPrompt", frag.len)) {
       VTermScreen *vts = vterm_obtain_screen(ft->vt);
       vterm_screen_set_damage_merge(vts, VTERM_DAMAGE_CELL);
       ft->in_prompt = true;
-    } else if (strneq(command, "EndPrompt", cmdlen)) {
+    } else if (strneq(frag.str, "EndPrompt", frag.len)) {
       VTermScreen *vts = vterm_obtain_screen(ft->vt);
       vterm_screen_flush_damage(vts);
       vterm_screen_set_damage_merge(vts, VTERM_DAMAGE_ROW);
       ft->in_prompt = false;
-    } else if (strneq(command, "PreExec", cmdlen)) {
+    } else if (strneq(frag.str, "PreExec", frag.len)) {
       ft->preexec = true;
-    } else if (strneq(command, "Dir=", 4)) {
-      log_info("In dir %.*s", cmdlen - 4, command + 4);
-    } else if (strneq(command, "Shell=", 6)) {
-      log_info("Using shell %.*s", cmdlen - 6, command + 6);
+    } else if (strneq(frag.str, "Dir=", 4)) {
+      log_info("In dir %.*s", frag.len - 4, frag.str + 4);
+    } else if (strneq(frag.str, "Shell=", 6)) {
+      log_info("Using shell %.*s", frag.len - 6, frag.str + 6);
     }
   }
   return 0;
 }
 
-int pre_osc_cb(const char *command, size_t cmdlen, void *user) {
-  // TODO(sean) Clean up case statements here, add enums like libvterm.
-  if (strneq(command, "697;", 4)) {
-    command += 4;
-    cmdlen -= 4;
-    PreParserData* data = user;
-    if (strneq(command, "NewCmd", cmdlen)) {
-        data->has_new_cmd = true;
-    }
-  }
-  return 0;
-}
-
-int pre_text_cb(const char* bytes, size_t len, void* user) {
-    char* buf = malloc(sizeof(char) * (len + 1));
-    sprintf(buf, "%.*s", (int) len, bytes);
-    PreParserData* data = user;
-    if (strstr(buf, "fig_start") != NULL) {
-        data->has_internal_cmd = true;
-    }
-    free(buf);
-    return 0;
-}
-
-static VTermParserCallbacks parser_callbacks = {
+static VTermStateFallbacks parser_callbacks = {
     .osc = osc_cb,
-};
-
-static VTermParserCallbacks preparser_callbacks = {
-    .osc = pre_osc_cb,
-    .text = pre_text_cb,
 };
 
 static VTermScreenCallbacks screen_callbacks = {
@@ -240,16 +194,6 @@ void child_loop(int ptyp) {
       err_sys("read error from stdin");
     else if (nread == 0)
       break;
-
-    /*
-    char* cmd = "\027fig_start || echo internal\n"; //fig_internal_cmd("echo internal");
-    log_info("Sending internal cmd: %s", cmd);
-    size_t cmdlen = strlen(cmd);
-    if (write(ptyp, cmd, cmdlen) != cmdlen)
-      err_sys("write error to parent pty");
-    free(cmd);
-    */
-
     if (write(ptyp, buf, nread) != nread)
       err_sys("write error to parent pty");
   }
@@ -317,19 +261,11 @@ void loop(int ptyp, int ptyc_pid) {
   log_info("Child: %d", child);
   log_info("Parent: %d", getpid());
 
-  // Initialize preparser.
-  VTerm* preparser = vterm_new(1, 1);
-  vterm_parser_set_callbacks(preparser, &preparser_callbacks, ft->preparser_data);
-
-
   if (set_sigaction(SIGWINCH, figterm_handle_winch) == SIG_ERR)
     err_sys("signal_intr error for SIGWINCH");
 
   if (set_sigaction(SIGTERM, sig_term) == SIG_ERR)
     err_sys("signal_intr error for SIGTERM");
-
-  char* internal_cmd = "fig_start";
-  char* new_cmd = fig_osc("NewCmd");
 
   for (;;) {
     // Read from pty parent.
@@ -343,23 +279,7 @@ void loop(int ptyp, int ptyc_pid) {
     // Make buf a proper str to use str operations.
     buf[nread] = '\0';
 
-    // Preparse buffer to see if there's an internal fig cmd.
-    PreParserData* data = ft->preparser_data;
-    preparser_reset(data);
-    vterm_input_write(preparser, buf, nread);
-
-    // Splice string if we encounter start or end of internal cmd.
-    bool extract_pre = data->has_internal_cmd && !ft->in_internal;
-    bool extract_post = data->has_new_cmd && (extract_pre || ft->in_internal);
-    if (extract_pre || extract_post) {
-        splicestr(buf, extract_pre ? internal_cmd : NULL, extract_post ? new_cmd : NULL);
-        nread = strlen(buf);
-    } else if (ft->in_internal) {
-        // ignore anything written during internal cmd.
-        continue;
-    }
-
-    log_info("Writing %.*s", nread, buf);
+    log_debug("Writing %.*s", nread, buf);
     vterm_input_write(ft->vt, buf, nread);
     VTermScreen *vts = vterm_obtain_screen(ft->vt);
     vterm_screen_flush_damage(vts);
@@ -391,7 +311,5 @@ void loop(int ptyp, int ptyc_pid) {
     kill(child, SIGTERM);
 
   // clean up
-  free(internal_cmd);
-  free(new_cmd);
   figterm_free(ft);
 }

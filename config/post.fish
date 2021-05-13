@@ -49,7 +49,7 @@ if [ -z "$FIG_PTY_SHELL_VAR" ]
         function fish_right_prompt; fig_wrap_prompt (fig_user_right_prompt); end
       end
 
-      fig_copy_fn fish_prompt fig_user_prompt 
+      fig_copy_fn fish_prompt fig_user_prompt
       function fish_prompt; fig_wrap_prompt (fig_user_prompt); fig_osc NewCmd; end
 
       set fig_has_set_prompt 1

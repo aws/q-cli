@@ -12,10 +12,8 @@ export FIG_INTEGRATION_VERSION=2
 if command -v fig_pty 1> /dev/null 2> /dev/null; then
   if [ -t 1 ] && [ -n "${DISPLAY}" ]; then
     if [ -z "$FIG_TERM" ]; then
-      echo launching_pty
       fig_pty
     elif [ -z "$FIG_TERM_TMUX" -a -n "$TMUX" ]; then
-      echo launching_pty
       fig_pty
     fi
   fi

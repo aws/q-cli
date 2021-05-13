@@ -39,21 +39,13 @@ typedef struct {
 } TermState;
 
 typedef struct {
-  bool has_internal_cmd;
-  bool has_new_cmd;
-} PreParserData;
-
-typedef struct {
   VTerm *vt;
   TermState *state;
   TermState *prompt_state;
   VTermPos* cursor;
-  PreParserData* preparser_data;
   bool altscreen;
   bool in_prompt;
   bool preexec;
-  bool in_internal;
-  bool enter_internal;
   int ptyp;
   int ptyc_pid;
 } FigTerm;
@@ -72,21 +64,18 @@ void term_state_update_cursor(TermState*, const VTermPos);
 void term_state_update(TermState*, VTerm*, VTermRect, bool);
 
 // figterm.c
-FigTerm* figterm_new(bool, VTermScreenCallbacks*, VTermParserCallbacks*, int, int);
+FigTerm* figterm_new(bool, VTermScreenCallbacks*, VTermStateFallbacks*, int, int);
 void figterm_free(FigTerm*);
 void figterm_resize(FigTerm*);
 void figterm_handle_winch(int);
 int figterm_should_resize();
 FigInfo* get_fig_info();
 void set_fig_info(FigInfo*);
-void preparser_reset(PreParserData* );
 
 // string.c
 char* ltrim(char*);
 char* rtrim(char*);
 char* strrstr(const char*, const char*, const size_t, const size_t);
-void splicestr(char*, const char*, const char*);
-
 
 // lib/tty.c
 int tty_raw(int);
