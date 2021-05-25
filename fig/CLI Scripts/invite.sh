@@ -66,7 +66,7 @@ then
     echo 
     print_special "Run ${BOLD}${MAGENTA}fig util:logout${NORMAL} then follow the prompts to log back. Then try again"
     echo
-    print_special "If you think there is a mistake, please contact ${UNDERLINE}hello@withfig.com${UNDERLINE_END}"
+    print_special "If you think there is a mistake, please contact ${UNDERLINE}hello@fig.io${UNDERLINE_END}"
     echo
     echo
     print_special "P.S. This error may also occur if you are not connected to the internet"

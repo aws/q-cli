@@ -11,7 +11,7 @@ import Sentry
 
 // TODO: refactor this so that VSCode and VSCode Insiders share this logic
 class VSCodeInsidersIntegration: IntegrationProvider {
-  static let supportURL: URL = URL(string: "https://withfig.com/docs/support/vscode-integration")!
+  static let supportURL: URL = URL(string: "https://fig.io/docs/support/vscode-integration")!
   static var settingsPath: String {
     let defaultPath = "\(NSHomeDirectory())/Library/Application Support/Code - Insiders/User/settings.json"
     return (try? FileManager.default.destinationOfSymbolicLink(atPath: defaultPath)) ?? defaultPath

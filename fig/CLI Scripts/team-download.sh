@@ -114,7 +114,7 @@ cat <<EOF
 
     There was an error downloading your team's private completion specs.
 
-    Please contact ${BOLD}hello@withfig.com${NORMAL} for support
+    Please contact ${BOLD}hello@fig.io${NORMAL} for support
 EOF
 
 elif [ -z $file_name ]
@@ -166,7 +166,7 @@ then
 
     There was an error downloading and/or saving your team's private autocomplete spec ${BOLD}${MAGENTA}$file_name${NORMAL}
 
-    If this problem persists, please contact hello@withfig.com for support.
+    If this problem persists, please contact hello@fig.io for support.
 
 EOF
 
