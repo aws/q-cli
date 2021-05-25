@@ -206,7 +206,7 @@ class Diagnostic {
   }
   
   static var distribution: String {
-    return "Version \(Diagnostic.version) (B\(Diagnostic.build))"
+    return "Version \(Diagnostic.version) (B\(Diagnostic.build))\(Defaults.isProduction ? "" : " [\(Defaults.build.rawValue)]")"
   }
   
   static var pseudoTerminalPath: String? {
@@ -241,7 +241,7 @@ class Diagnostic {
     get {
       """
       
-      \(Diagnostic.distribution)
+      \(Diagnostic.distribution) \(Defaults.debugAutocomplete ? "[Debug] " : "")\(Defaults.developerModeEnabled ? "[Dev] " : "")
       UserShell: \(Defaults.userShell)
       Bundle path: \(Diagnostic.pathToBundle)
       Autocomplete: \(Defaults.useAutocomplete)

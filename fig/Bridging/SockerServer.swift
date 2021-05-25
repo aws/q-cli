@@ -94,7 +94,7 @@ class WebSocketServer {
 
                         DispatchQueue.main.async {
                             if let delegate = NSApp.delegate as? AppDelegate {
-                              let _ = delegate.dialogOKCancel(question: "Could not link with terminal", text: "A process is already listening on port \(Defaults.port).\nRun `lsof -i tcp:\(Defaults.port)` to identify it.\n\nPlease email hello@withfig.com for help debugging.", prompt: "", noAction: true, icon: nil)
+                              let _ = delegate.dialogOKCancel(question: "Could not link with terminal", text: "A process is already listening on port \(Defaults.port).\nRun `lsof -i tcp:\(Defaults.port)` to identify it.\n\nPlease email hello@fig.io for help debugging.", prompt: "", noAction: true, icon: nil)
                             }
                         }
                    }

@@ -159,7 +159,7 @@ cat <<EOF
 
     There was an error uploading your completion spec.
 
-    Please contact ${BOLD}hello@withfig.com${NORMAL} for support
+    Please contact ${BOLD}hello@fig.io${NORMAL} for support
 EOF
 
 

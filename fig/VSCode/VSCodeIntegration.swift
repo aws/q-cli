@@ -10,7 +10,7 @@ import Cocoa
 import Sentry
 
 class VSCodeIntegration: IntegrationProvider {
-  static let supportURL: URL = URL(string: "https://withfig.com/docs/support/vscode-integration")!
+  static let supportURL: URL = URL(string: "https://fig.io/docs/support/vscode-integration")!
   static var settingsPath: String {
     let defaultPath = "\(NSHomeDirectory())/Library/Application Support/Code/User/settings.json"
     return (try? FileManager.default.destinationOfSymbolicLink(atPath: defaultPath)) ?? defaultPath

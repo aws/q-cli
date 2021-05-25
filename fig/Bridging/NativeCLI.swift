@@ -63,6 +63,9 @@ class NativeCLI {
         case runInstallScript = "util:install-script"
         case lockscreen = "util:lockscreen"
         case setPATH = "set:path"
+        case community = "community"
+        case chat = "chat"
+        case discord = "discord"
 
         var isUtility: Bool {
             get {
@@ -198,6 +201,8 @@ class NativeCLI {
                 scriptName = "tweet"
             case .ssh:
                 scriptName = "ssh"
+            case .chat, .discord, .community:
+                scriptName = "community"
             default:
                 break;
             }

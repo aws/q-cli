@@ -398,7 +398,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         statusBarMenu.addItem(NSMenuItem.separator())
       
         let forum = statusBarMenu.addItem(
-         withTitle: "Support Forum",
+         withTitle: "Support Guide",
          action: #selector(AppDelegate.viewSupportForum),
          keyEquivalent: "")
         forum.image = NSImage(named: NSImage.Name("commandkey"))
@@ -407,7 +407,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
          withTitle: "Join Fig Community",
          action: #selector(AppDelegate.inviteToSlack),
          keyEquivalent: "")
-        slack.image = NSImage(named: NSImage.Name("slack"))//.resized(to: NSSize(width: 16, height: 16))
+        slack.image = NSImage(named: NSImage.Name("discord"))//.resized(to: NSSize(width: 16, height: 16))
         statusBarMenu.addItem(NSMenuItem.separator())
     
         let invite = statusBarMenu.addItem(
@@ -429,12 +429,12 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         let debugMenu = NSMenu(title: "debug")
         debugMenu.addItem(withTitle: "View All Settings...", action: #selector(openSettingsDocs), keyEquivalent: "")
         debugMenu.addItem(NSMenuItem.separator())
-        let sidebar = debugMenu.addItem(
-        withTitle: "Sidebar (Legacy)",
-        action: #selector(AppDelegate.toggleSidebar(_:)),
-        keyEquivalent: "")
-        //        sidebar.indentationLevel = 1
-        sidebar.state = Defaults.showSidebar ? .on : .off
+//        let sidebar = debugMenu.addItem(
+//        withTitle: "Sidebar (Legacy)",
+//        action: #selector(AppDelegate.toggleSidebar(_:)),
+//        keyEquivalent: "")
+//        //        sidebar.indentationLevel = 1
+//        sidebar.state = Defaults.showSidebar ? .on : .off
         
 //        let tab = debugMenu.addItem(
 //        withTitle: "Only Autocomplete on Tab ",
@@ -496,14 +496,14 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
          keyEquivalent: "")
         utilitiesMenu.addItem(NSMenuItem.separator())
 
-        let logging =  utilitiesMenu.addItem(
-         withTitle: "Logging",
-         action: #selector(AppDelegate.toggleLogging),
-         keyEquivalent: "")
-        logging.state = Defaults.broadcastLogs ? .on : .off
+//        let logging =  utilitiesMenu.addItem(
+//         withTitle: "Logging",
+//         action: #selector(AppDelegate.toggleLogging),
+//         keyEquivalent: "")
+//        logging.state = Defaults.broadcastLogs ? .on : .off
         debugMenu.addItem(NSMenuItem.separator())
         let debugAutocomplete = utilitiesMenu.addItem(
-         withTitle: "Debug Mode",
+         withTitle: "Force Popup to Appear",
          action: #selector(AppDelegate.toggleDebugAutocomplete(_:)),
          keyEquivalent: "")
         debugAutocomplete.state = Defaults.debugAutocomplete ? .on : .off
@@ -701,7 +701,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     }
   
     @objc func openSettingsDocs() {
-      NSWorkspace.shared.open(URL(string: "https://withfig.com/docs/support/settings")!)
+      NSWorkspace.shared.open(URL(string: "https://fig.io/docs/support/settings")!)
     }
   
     @objc func editKeybindingsFile() {
@@ -721,7 +721,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             }
 
             if let general = Bundle.main.path(forResource: "uninstall", ofType: "sh") {
-                NSWorkspace.shared.open(URL(string: "https://withfig.com/uninstall?email=\(Defaults.email ?? "")")!)
+                NSWorkspace.shared.open(URL(string: "https://fig.io/uninstall?email=\(Defaults.email ?? "")")!)
                 LoginItems.shared.currentApplicationShouldLaunchOnStartup = false
                 
                 let domain = Bundle.main.bundleIdentifier!
@@ -942,7 +942,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 
           guard let data = data else {
               Alert.show(title: "Could not retrieve referral link!",
-                         message: "Please contact hello@withfig.com and we will get you a working referral link.",
+                         message: "Please contact hello@fig.io and we will get you a working referral link.",
                          icon: Alert.appIcon)
               return
           }
@@ -970,13 +970,13 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     
     @objc func viewDocs() {
         
-        NSWorkspace.shared.open(URL(string: "https://withfig.com/docs")!)
+        NSWorkspace.shared.open(URL(string: "https://fig.io/docs")!)
         TelemetryProvider.track(event: .viewDocs, with: [:])
     }
   
     @objc func viewSupportForum() {
         
-        NSWorkspace.shared.open(URL(string: "https://forum.withfig.com/")!)
+        NSWorkspace.shared.open(URL(string: "https://fig.io/support")!)
         TelemetryProvider.track(event: .viewSupportForum, with: [:])
     }
 
@@ -1196,7 +1196,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             }
             
             SSHIntegration.install()
-            let _ = self.dialogOKCancel(question: "SSH Integration Installed!", text: "When you connect to a remote machine using SSH, Fig will show relevant completions.\n\nIf you run into any issues, please email hello@withfig.com.", noAction: true, icon: NSImage.init(imageLiteralResourceName: NSImage.applicationIconName))
+            let _ = self.dialogOKCancel(question: "SSH Integration Installed!", text: "When you connect to a remote machine using SSH, Fig will show relevant completions.\n\nIf you run into any issues, please email hello@fig.io.", noAction: true, icon: NSImage.init(imageLiteralResourceName: NSImage.applicationIconName))
             return
         }
         
@@ -1984,10 +1984,11 @@ extension AppDelegate : NSMenuDelegate {
                     
                 } else if !Integrations.terminalsWhereAutocompleteShouldAppear.contains(window?.bundleId ?? "") {
                   color = .orange
-                  legend.addItem(NSMenuItem(title: "Registering with Window Server...", action: nil, keyEquivalent: ""))
+                  legend.addItem(NSMenuItem(title: "Not tracking window...", action: nil, keyEquivalent: ""))
                   
                   legend.addItem(NSMenuItem.separator())
-                  legend.addItem(NSMenuItem(title: "This may take up to 10 seconds", action: nil, keyEquivalent: ""))
+                  legend.addItem(NSMenuItem(title: "Switch to a different application", action: nil, keyEquivalent: ""))
+                  legend.addItem(NSMenuItem(title: "and then return to current window", action: nil, keyEquivalent: ""))
                   
                 } else if let loaded = companionWindow?.loaded, !loaded {
                     color = .red
