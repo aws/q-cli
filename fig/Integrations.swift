@@ -69,7 +69,7 @@ class Integrations {
               blocklist.insert(Integrations.iTerm)
           }
           
-          if let terminalDisabled  = Settings.shared.getValue(forKey: Settings.iTermDisabledKey) as? Bool, terminalDisabled {
+          if let terminalDisabled  = Settings.shared.getValue(forKey: Settings.terminalDisabledKey) as? Bool, terminalDisabled {
               blocklist.insert(Integrations.Terminal)
           }
           return blocklist
