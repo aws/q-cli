@@ -424,7 +424,7 @@ class FigCLI {
 
                    → Click the Fig icon in your menu bar \u{001b}[1mDebug > Request Accessibility Permission\u{001b}[0m
 
-                     Please email \u{001b}[1mhello@withfig.com\u{001b}[0m if this problem persists.
+                     Please email \u{001b}[1mhello@fig.io\u{001b}[0m if this problem persists.
 
                    """
                    //            → Run \u{001b}[1mopen -b com.mschrage.fig\u{001b}[0m to prompt for access.

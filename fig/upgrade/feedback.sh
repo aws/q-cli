@@ -44,7 +44,7 @@ then
     then    
         print_special "Feedback sent to ${MAGENTA}${BOLD}Fig${NORMAL} team. Thanks so much!"
     else
-        print_special "Request to Fig server failed. Please try emailing hello@withfig.com"
+        print_special "Request to Fig server failed. Please try emailing hello@fig.io"
     fi
 
 else

@@ -302,7 +302,7 @@ DispatchQueue.global().asyncAfter(deadline: .now() + 1.25) {
           \u{001b}[1mQUICK FIX\u{001b}[0m
           Open Fig to set up your account.
 
-          Please email \u{001b}[1mhello@withfig.com\u{001b}[0m if this problem persists.
+          Please email \u{001b}[1mhello@fig.io\u{001b}[0m if this problem persists.
 
         """
         print(error)
@@ -320,7 +320,7 @@ DispatchQueue.global().asyncAfter(deadline: .now() + 1.25) {
   
 → If not, run \u{001b}[1mfig launch\u{001b}[0m to relaunch the app.
 
-  Please email \u{001b}[1mhello@withfig.com\u{001b}[0m if this problem persists.
+  Please email \u{001b}[1mhello@fig.io\u{001b}[0m if this problem persists.
 
 """
     print(error)

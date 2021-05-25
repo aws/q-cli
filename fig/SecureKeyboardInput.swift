@@ -100,7 +100,7 @@ class SecureKeyboardInput {
     }
   }
   
-  static let supportURL = URL(string:"https://withfig.com/docs/support/secure-keyboard-input")!
+  static let supportURL = URL(string:"https://fig.io/docs/support/secure-keyboard-input")!
   @objc class func openSupportPage() {
     NSWorkspace.shared.open(supportURL)
     DispatchQueue.global(qos: .background).async {

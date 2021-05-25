@@ -108,6 +108,8 @@
 		755D0DE2247EFAE10074AB5C /* Logging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755D0DE1247EFAE10074AB5C /* Logging.swift */; };
 		755D0DE4247F038B0074AB5C /* logs.html in Resources */ = {isa = PBXBuildFile; fileRef = 755D0DE3247F038B0074AB5C /* logs.html */; };
 		755D0F512482D4920074AB5C /* HotKey in Frameworks */ = {isa = PBXBuildFile; productRef = 755D0F502482D4920074AB5C /* HotKey */; };
+		7564AE6F265C9DCE0040BD4C /* discord@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7564AE6E265C9DCD0040BD4C /* discord@2x.png */; };
+		7564AE7D265CB2930040BD4C /* community.sh in Resources */ = {isa = PBXBuildFile; fileRef = 7564AE78265CB0620040BD4C /* community.sh */; };
 		75675955244634AD006AA988 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75675954244634AD006AA988 /* AppDelegate.swift */; };
 		75675959244634B2006AA988 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 75675958244634B2006AA988 /* Assets.xcassets */; };
 		7567595C244634B2006AA988 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7567595B244634B2006AA988 /* Preview Assets.xcassets */; };
@@ -375,6 +377,8 @@
 		755D0DDF247DDE050074AB5C /* FigCLI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FigCLI.swift; sourceTree = "<group>"; };
 		755D0DE1247EFAE10074AB5C /* Logging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logging.swift; sourceTree = "<group>"; };
 		755D0DE3247F038B0074AB5C /* logs.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = logs.html; sourceTree = "<group>"; };
+		7564AE6E265C9DCD0040BD4C /* discord@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "discord@2x.png"; sourceTree = "<group>"; };
+		7564AE78265CB0620040BD4C /* community.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = community.sh; sourceTree = "<group>"; };
 		75675951244634AD006AA988 /* fig.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = fig.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		75675954244634AD006AA988 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		75675958244634B2006AA988 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -625,6 +629,7 @@
 			isa = PBXGroup;
 			children = (
 				752E68E52620F884009E9A7E /* android@2x.png */,
+				7564AE6E265C9DCD0040BD4C /* discord@2x.png */,
 				752E68EC2620F884009E9A7E /* apple@2x.png */,
 				752E68E62620F884009E9A7E /* aws@2x.png */,
 				752E68E02620F882009E9A7E /* azure@2x.png */,
@@ -851,6 +856,7 @@
 				75AA24C325A6EA5000A51E9D /* list.sh */,
 				75AA24C425A6EA5900A51E9D /* help.sh */,
 				75AA24CE25A79A2000A51E9D /* tweet.sh */,
+				7564AE78265CB0620040BD4C /* community.sh */,
 				75AA24D025A79B4A00A51E9D /* issue.sh */,
 				75AA24CF25A79ACC00A51E9D /* contribute.sh */,
 				75AA24CC25A6F6F000A51E9D /* uninstall_spec.sh */,
@@ -1145,6 +1151,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7564AE7D265CB2930040BD4C /* community.sh in Resources */,
 				75C8A1422645E029001B69DA /* set-path.sh in Resources */,
 				753C31A22641FA4400202AAA /* settings-docs.sh in Resources */,
 				75184664263CF227003CBCF9 /* settings-open.sh in Resources */,
@@ -1206,6 +1213,7 @@
 				754D31B525759D900020CED4 /* tutorial.html in Resources */,
 				752D71C725AECB4B00263527 /* ssh.mp4 in Resources */,
 				7573F15C2602B4E000C833FA /* invite@2x.png in Resources */,
+				7564AE6F265C9DCE0040BD4C /* discord@2x.png in Resources */,
 				75D2E3CB249C1E7500607F66 /* terminal.css in Resources */,
 				757CA88A248AD58C002A64A8 /* onboarding.html in Resources */,
 				752E68F72620F885009E9A7E /* vercel@2x.png in Resources */,
