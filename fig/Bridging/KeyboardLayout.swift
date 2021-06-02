@@ -65,9 +65,7 @@ class KeyboardLayout : NSObject {
     
     static let keyboardLayoutDidChangeNotification = Notification.Name("keyboardLayoutDidChange")
 
-    @objc func keyboardLayoutDidChange() {
-        print("Intercept: keyboardLayoutDidChange")
-        
+    @objc func keyboardLayoutDidChange() {        
         // Delay is added to make sure TISCopyCurrentKeyboardLayoutInputSource returns the current layout!
         Timer.delayWithSeconds(0.15) {
           self.mapping = KeyboardLayout.generateMapping()
