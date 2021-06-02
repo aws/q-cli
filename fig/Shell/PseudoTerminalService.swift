@@ -167,19 +167,27 @@ class PseudoTerminal : PseudoTerminalService {
           pty.send("export PATH=$(\(Defaults.userShell) -li -c \"/usr/bin/env | /usr/bin/grep '^PATH=' | /bin/cat | /usr/bin/sed 's|PATH=||g'\")\r")
         }
       
-        let filePath = Settings.shared.getValue(forKey: Settings.ptyInitFile) as? NSString ?? "~/.fig/user/ptyrc"
-        let expandedFilePath = filePath.expandingTildeInPath
-
-        if FileManager.default.fileExists(atPath: expandedFilePath) {
-          print("pty: sourcing \(expandedFilePath)")
-          pty.send("source \(expandedFilePath)\r")
-        }
+        // Source default ptyrc file (if it exists)
+        sourceFile(at: "~/.fig/tools/ptyrc")
+      
+      // Source user-specified ptyrc file (if it exists)
+        let filePath = Settings.shared.getValue(forKey: Settings.ptyInitFile) as? String ?? "~/.fig/user/ptyrc"
+        sourceFile(at: filePath)
 
         // Copy enviroment from userShell
 //        pty.send("export $(env -i '\(Defaults.userShell)' -li -c env | tr '\n' ' ')\r")
         print(pty.process.delegate)
     }
     
+    func sourceFile(at path: String) {
+      let expandedFilePath = NSString(string: path).expandingTildeInPath
+
+      if FileManager.default.fileExists(atPath: expandedFilePath) {
+        print("pty: sourcing \(expandedFilePath)")
+        pty.send("source \(expandedFilePath)\r")
+      }
+    }
+  
     func write(command: String, control: ControlCode?) {
         if let code = control {
             print("Write PTY controlCode: \(code.rawValue)")
