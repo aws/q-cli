@@ -8,7 +8,7 @@
 
 import Foundation
 import Carbon
-
+import Cocoa
 class KeyboardLayout : NSObject {
     static let shared = KeyboardLayout()
     
@@ -51,7 +51,6 @@ class KeyboardLayout : NSObject {
     override init() {
         super.init()
         DistributedNotificationCenter.default().addObserver(self, selector: #selector(KeyboardLayout.keyboardLayoutDidChange), name: NSNotification.Name(rawValue: NSNotification.Name.RawValue(kTISNotifySelectedKeyboardInputSourceChanged as NSString)), object: nil)
-
     }
     
     static func generateMapping() -> [String: UInt16] {
@@ -64,7 +63,26 @@ class KeyboardLayout : NSObject {
         return layout
     }
     
+    static let keyboardLayoutDidChangeNotification = Notification.Name("keyboardLayoutDidChange")
+
     @objc func keyboardLayoutDidChange() {
-        self.mapping = KeyboardLayout.generateMapping()
+        print("Intercept: keyboardLayoutDidChange")
+        
+        // Delay is added to make sure TISCopyCurrentKeyboardLayoutInputSource returns the current layout!
+        Timer.delayWithSeconds(0.15) {
+          self.mapping = KeyboardLayout.generateMapping()
+          NotificationCenter.default.post(Notification(name: KeyboardLayout.keyboardLayoutDidChangeNotification))
+        }
     }
+  
+  
+  func currentLayoutName() -> String? {
+    let inputSource = TISCopyCurrentKeyboardInputSource().takeRetainedValue() as TISInputSource;
+    return getProperty(inputSource, kTISPropertyLocalizedName) as? String
+  }
+  
+  private func getProperty(_ source: TISInputSource, _ key: CFString) -> AnyObject? {
+      guard let cfType = TISGetInputSourceProperty(source, key) else { return nil }
+      return Unmanaged<AnyObject>.fromOpaque(cfType).takeUnretainedValue()
+  }
 }

@@ -730,32 +730,10 @@ extension WindowManager : WindowManagementService {
             
             // Prevent arrow keys
             if ((WindowManager.shared.autocomplete?.maxHeight != 0)) {
-                KeypressProvider.shared.addRedirect(for: Keycode.upArrow, in: window)
-                KeypressProvider.shared.addRedirect(for: Keycode.downArrow, in: window)
-                KeypressProvider.shared.addRedirect(for: Keycode.tab, in: window)
-                KeypressProvider.shared.addRedirect(for:  Keystroke(modifierFlags: [.shift], keyCode: Keycode.tab), in: window)
-                if (!Defaults.onlyInsertOnTab) {
-                    KeypressProvider.shared.addRedirect(for: Keycode.returnKey, in: window)
-                }
-                KeypressProvider.shared.addRedirect(for: Keystroke(modifierFlags: [.control], keyCode: Keycode.n), in: window)
-                KeypressProvider.shared.addRedirect(for: Keystroke(modifierFlags: [.control], keyCode: Keycode.p), in: window)
-              
-                if (Defaults.insertUsingRightArrow) {
-                    KeypressProvider.shared.addRedirect(for: Keycode.rightArrow, in: window)
-                }
-
+              Autocomplete.interceptKeystrokes(in: window)
 
             } else {
-                KeypressProvider.shared.removeRedirect(for: Keycode.upArrow, in: window)
-                KeypressProvider.shared.removeRedirect(for: Keycode.downArrow, in: window)
-                KeypressProvider.shared.removeRedirect(for: Keycode.returnKey, in: window)
-                KeypressProvider.shared.removeRedirect(for: Keycode.tab, in: window)
-                KeypressProvider.shared.removeRedirect(for:  Keystroke(modifierFlags: [.shift], keyCode: Keycode.tab), in: window)
-                KeypressProvider.shared.removeRedirect(for: Keystroke(modifierFlags: [.control], keyCode: Keycode.n), in: window)
-                KeypressProvider.shared.removeRedirect(for: Keystroke(modifierFlags: [.control], keyCode: Keycode.p), in: window)
-                KeypressProvider.shared.removeRedirect(for: Keycode.rightArrow, in: window)
-
-
+              Autocomplete.removeAllRedirects(from: window)
             }
             
           

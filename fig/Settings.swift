@@ -37,6 +37,7 @@ class Settings {
   static let hideMenubarIcon = "app.hideMenubarIcon"
   static let debugModeKey = "developer.debugMode"
   static let onlyShowOnTabKey = "autocomplete.onlyShowOnTab"
+  static let allowAlternateNavigationKeys = "autocomplete.allowAlternateNavigationKeys"
 
 
   static let filePath = NSHomeDirectory() + "/.fig/settings.json"

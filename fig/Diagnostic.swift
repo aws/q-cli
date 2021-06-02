@@ -237,11 +237,12 @@ class Diagnostic {
     }
   }
   
+  
   static var summary: String {
     get {
       """
       
-      \(Diagnostic.distribution) \(Defaults.debugAutocomplete ? "[Debug] " : "")\(Defaults.developerModeEnabled ? "[Dev] " : "")
+      \(Diagnostic.distribution) \(Defaults.debugAutocomplete ? "[Debug] " : "")\(Defaults.developerModeEnabled ? "[Dev] " : "")"[\(KeyboardLayout.shared.currentLayoutName() ?? "?")] "
       UserShell: \(Defaults.userShell)
       Bundle path: \(Diagnostic.pathToBundle)
       Autocomplete: \(Defaults.useAutocomplete)
