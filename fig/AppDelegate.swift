@@ -15,7 +15,7 @@ import Sentry
 class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 
     var window: NSWindow!
-    var onboardingWindow: OnboardingWindow!
+    var onboardingWindow: WebViewWindow!
     var statusBarItem: NSStatusItem!
     var frontmost: NSMenuItem?
     var integrationPrompt: NSMenuItem?
@@ -126,7 +126,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             onboardingViewController.webView?.dragShouldRepositionWindow = true
 //            onboardingViewController.webView?.loadRemoteApp(at: URL(string: "https://app.withfig.com/onboarding/landing.html")!)
 
-            onboardingWindow = OnboardingWindow(viewController: onboardingViewController)
+            onboardingWindow = WebViewWindow(viewController: onboardingViewController)
             onboardingWindow.makeKeyAndOrderFront(nil)
             onboardingWindow.setFrame(NSRect(x: 0, y: 0, width: 590, height: 480), display: true, animate: false)
             onboardingWindow.center()
@@ -438,6 +438,14 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
       integrationsMenu.addItem(NSMenuItem.separator())
       integrationsMenu.addItem(withTitle: "Edit Key Bindings", action: #selector(editKeybindingsFile), keyEquivalent: "")
       
+      let developer = integrationsMenu.addItem(
+       withTitle: "Developer",
+       action: nil,
+       keyEquivalent: "")
+      developer.submenu = developerMenu()
+      
+      integrationsMenu.addItem(NSMenuItem.separator())
+
       integrationsMenu.addItem(
        withTitle: "Uninstall Fig",
        action: #selector(AppDelegate.uninstall),
@@ -522,6 +530,8 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         autocomplete.indentationLevel = 1
         statusBarMenu.addItem(NSMenuItem.separator())
       
+//        statusBarMenu.addItem(NSMenuItem.separator())
+
         let forum = statusBarMenu.addItem(
          withTitle: "Support Guide",
          action: #selector(AppDelegate.viewSupportForum),
@@ -534,12 +544,21 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
          keyEquivalent: "")
         slack.image = NSImage(named: NSImage.Name("discord"))//.resized(to: NSSize(width: 16, height: 16))
         statusBarMenu.addItem(NSMenuItem.separator())
-    
-        let invite = statusBarMenu.addItem(
-         withTitle: "Invite a friend...",
-         action: #selector(AppDelegate.inviteAFriend),
+        let settings = statusBarMenu.addItem(
+         withTitle: "Settings",
+         action: #selector(Settings.openUI),
          keyEquivalent: "")
-        invite.image = NSImage(named: NSImage.Name("invite"))
+        settings.image = NSImage(imageLiteralResourceName: "gear")
+        settings.target = Settings.self
+      
+        statusBarMenu.addItem(NSMenuItem.separator())
+
+        let integrations = statusBarMenu.addItem(
+         withTitle: "Integrations",
+         action: nil,
+         keyEquivalent: "")
+        integrations.submenu = integrationsMenu()
+        
         statusBarMenu.addItem(NSMenuItem.separator())
 
         if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String, let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String {
@@ -550,27 +569,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
          action: #selector(AppDelegate.checkForUpdates),
          keyEquivalent: "")
         statusBarMenu.addItem(NSMenuItem.separator())
-
-      
-    
-        let settings = statusBarMenu.addItem(
-         withTitle: "Settings",
-         action: #selector(Settings.openUI),
-         keyEquivalent: "")
-//        settings.image = NSImage(imageLiteralResourceName: "gear")
-        settings.target = Settings.self
-      
-        let integrations = statusBarMenu.addItem(
-         withTitle: "Integrations",
-         action: nil,
-         keyEquivalent: "")
-        integrations.submenu = integrationsMenu()
-
-        let developer = statusBarMenu.addItem(
-         withTitle: "Developer",
-         action: nil,
-         keyEquivalent: "")
-        developer.submenu = developerMenu()
         
         statusBarMenu.addItem(NSMenuItem.separator())
         let issue = statusBarMenu.addItem(
@@ -578,6 +576,13 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
          action: #selector(AppDelegate.sendFeedback),
          keyEquivalent: "")
         issue.image = NSImage(imageLiteralResourceName: "github")
+//      statusBarMenu.addItem(NSMenuItem.separator())
+
+      let invite = statusBarMenu.addItem(
+       withTitle: "Invite a friend...",
+       action: #selector(AppDelegate.inviteAFriend),
+       keyEquivalent: "")
+      invite.image = NSImage(named: NSImage.Name("invite"))
 
       statusBarMenu.addItem(NSMenuItem.separator())
         statusBarMenu.addItem(
