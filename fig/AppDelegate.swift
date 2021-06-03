@@ -368,20 +368,145 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         withTitle: "Fig hasn't been set up yet...",
         action: nil,
         keyEquivalent: "")
-        
-//        statusBarMenu.addItem(
-//        withTitle: "Get started",
-//        action:  #selector(AppDelegate.promptForAccesibilityAccess),
-//        keyEquivalent: "")
+      
+        statusBarMenu.addItem(NSMenuItem.separator())
 
+      
+        let forum = statusBarMenu.addItem(
+         withTitle: "Support Guide",
+         action: #selector(AppDelegate.viewSupportForum),
+         keyEquivalent: "")
+        forum.image = NSImage(named: NSImage.Name("commandkey"))
+    
+        statusBarMenu.addItem(
+        withTitle: "Quit",
+        action:  #selector(AppDelegate.quit),
+        keyEquivalent: "")
+      
         statusBarMenu.addItem(NSMenuItem.separator())
 
         statusBarMenu.addItem(
-        withTitle: "Quit Fig",
-        action:  #selector(AppDelegate.quit),
-        keyEquivalent: "")
+         withTitle: "Uninstall Fig",
+         action: #selector(AppDelegate.uninstall),
+         keyEquivalent: "")
         
         return statusBarMenu
+    }
+  
+    func integrationsMenu() -> NSMenu {
+      let integrationsMenu = NSMenu(title: "fig")
+
+      let statusInTitle = integrationsMenu.addItem(
+      withTitle: "Show '☑ fig' in Terminal",
+      action: #selector(AppDelegate.toggleFigIndicator(_:)),
+      keyEquivalent: "")
+      statusInTitle.state = AutocompleteContextNotifier.addIndicatorToTitlebar ? .on : .off
+      integrationsMenu.addItem(NSMenuItem.separator())
+      
+//      integrationsMenu.addItem(withTitle: "Integrations", action: nil, keyEquivalent: "")
+      
+      let zshPlugin = integrationsMenu.addItem(
+      withTitle: "Fish Autosuggest", //Defer to Shell Autosuggest
+      action: #selector(AppDelegate.toggleZshPlugin(_:)),
+      keyEquivalent: "")
+      zshPlugin.state = Defaults.deferToShellAutosuggestions ? .on : .off
+      
+      let iTermIntegration = integrationsMenu.addItem(
+      withTitle: "iTerm Integration",
+      action: #selector(AppDelegate.iTermSetup),
+      keyEquivalent: "")
+      iTermIntegration.state = iTermTabIntegration.isInstalled ? .on : .off
+      
+      let vscodeIntegration = integrationsMenu.addItem(
+      withTitle: "VSCode Integration",
+      action: #selector(AppDelegate.toggleVSCodeIntegration(_:)),
+      keyEquivalent: "")
+      vscodeIntegration.state = VSCodeIntegration.isInstalled ? .on : .off
+    
+      let hyperIntegration = integrationsMenu.addItem(
+      withTitle: "Hyper Integration",
+      action: #selector(AppDelegate.toggleHyperIntegration(_:)),
+      keyEquivalent: "")
+      hyperIntegration.state = HyperIntegration.isInstalled ? .on : .off
+    
+      let sshIntegration = integrationsMenu.addItem(
+      withTitle: "SSH Integration",
+      action: #selector(AppDelegate.toggleSSHIntegration(_:)),
+      keyEquivalent: "")
+      sshIntegration.state = Defaults.SSHIntegrationEnabled ? .on : .off
+      
+      integrationsMenu.addItem(NSMenuItem.separator())
+      integrationsMenu.addItem(withTitle: "Edit Key Bindings", action: #selector(editKeybindingsFile), keyEquivalent: "")
+      
+      integrationsMenu.addItem(
+       withTitle: "Uninstall Fig",
+       action: #selector(AppDelegate.uninstall),
+       keyEquivalent: "")
+      
+      return integrationsMenu
+    }
+    
+    func developerMenu() -> NSMenu {
+      let developerMenu = NSMenu(title: "Developer")
+
+      developerMenu.addItem(
+       withTitle: "Install CLI Tool",
+       action: #selector(AppDelegate.addCLI),
+       keyEquivalent: "")
+      developerMenu.addItem(
+       withTitle: "Request Accessibility Permission",
+       action: #selector(AppDelegate.promptForAccesibilityAccess),
+       keyEquivalent: "")
+      developerMenu.addItem(NSMenuItem.separator())
+      
+      let debugAutocomplete = developerMenu.addItem(
+       withTitle: "Force Popup to Appear",
+       action: #selector(AppDelegate.toggleDebugAutocomplete(_:)),
+       keyEquivalent: "")
+      debugAutocomplete.state = Defaults.debugAutocomplete ? .on : .off
+//        utilitiesMenu.addItem(NSMenuItem.separator())
+      developerMenu.addItem(NSMenuItem.separator())
+      developerMenu.addItem(
+       withTitle: "Run Install/Update Script",
+       action: #selector(AppDelegate.setupScript),
+       keyEquivalent: "")
+      
+      if (!Defaults.isProduction) {
+              developerMenu.addItem(
+               withTitle: "Internal (not for prod)",
+               action: nil,
+               keyEquivalent: "")
+              developerMenu.addItem(
+               withTitle: "Flush logs",
+               action: #selector(AppDelegate.flushLogs),
+               keyEquivalent: "")
+              developerMenu.addItem(
+               withTitle: "Windows",
+               action: #selector(AppDelegate.allWindows),
+               keyEquivalent: "")
+             developerMenu.addItem(
+              withTitle: "Keyboard",
+              action: #selector(AppDelegate.getKeyboardLayout),
+              keyEquivalent: "")
+             developerMenu.addItem(
+              withTitle: "AXObserver",
+              action: #selector(AppDelegate.addAccesbilityObserver),
+              keyEquivalent: "")
+             developerMenu.addItem(
+              withTitle: "Get Selected Text",
+              action: #selector(AppDelegate.getSelectedText),
+              keyEquivalent: "")
+             developerMenu.addItem(
+               withTitle: "Processes",
+               action: #selector(AppDelegate.processes),
+               keyEquivalent: "")
+             developerMenu.addItem(
+               withTitle: "Trigger ScreenReader mode in topmost app",
+               action: #selector(AppDelegate.triggerScreenReader),
+               keyEquivalent: "")
+         }
+      
+      return developerMenu
     }
     
     func defaultStatusBarMenu() -> NSMenu {
@@ -425,149 +550,27 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
          action: #selector(AppDelegate.checkForUpdates),
          keyEquivalent: "")
         statusBarMenu.addItem(NSMenuItem.separator())
-        
-        let debugMenu = NSMenu(title: "debug")
-        debugMenu.addItem(withTitle: "View All Settings...", action: #selector(openSettingsDocs), keyEquivalent: "")
-        debugMenu.addItem(NSMenuItem.separator())
-//        let sidebar = debugMenu.addItem(
-//        withTitle: "Sidebar (Legacy)",
-//        action: #selector(AppDelegate.toggleSidebar(_:)),
-//        keyEquivalent: "")
-//        //        sidebar.indentationLevel = 1
-//        sidebar.state = Defaults.showSidebar ? .on : .off
-        
-//        let tab = debugMenu.addItem(
-//        withTitle: "Only Autocomplete on Tab ",
-//        action: #selector(AppDelegate.toggleOnlyTab(_:)),
-//        keyEquivalent: "")
-//        //        sidebar.indentationLevel = 1
-//        tab.state = Defaults.onlyInsertOnTab ? .on : .off
-      
-        let statusInTitle = debugMenu.addItem(
-        withTitle: "Show '☑ fig' in Terminal",
-        action: #selector(AppDelegate.toggleFigIndicator(_:)),
-        keyEquivalent: "")
-        statusInTitle.state = AutocompleteContextNotifier.addIndicatorToTitlebar ? .on : .off
-        debugMenu.addItem(NSMenuItem.separator())
-        
-        debugMenu.addItem(withTitle: "Integrations", action: nil, keyEquivalent: "")
-        
-        let zshPlugin = debugMenu.addItem(
-        withTitle: "Fish Autosuggest", //Defer to Shell Autosuggest
-        action: #selector(AppDelegate.toggleZshPlugin(_:)),
-        keyEquivalent: "")
-        zshPlugin.state = Defaults.deferToShellAutosuggestions ? .on : .off
-        
-        let iTermIntegration = debugMenu.addItem(
-        withTitle: "iTerm Integration",
-        action: #selector(AppDelegate.iTermSetup),
-        keyEquivalent: "")
-        iTermIntegration.state = FileManager.default.fileExists(atPath: "\(NSHomeDirectory())/Library/Application Support/iTerm2/Scripts/AutoLaunch/fig-iterm-integration.py") ? .on : .off
-        
-        let vscodeIntegration = debugMenu.addItem(
-        withTitle: "VSCode Integration",
-        action: #selector(AppDelegate.toggleVSCodeIntegration(_:)),
-        keyEquivalent: "")
-        vscodeIntegration.state = VSCodeIntegration.isInstalled ? .on : .off
-      
-        let hyperIntegration = debugMenu.addItem(
-        withTitle: "Hyper Integration",
-        action: #selector(AppDelegate.toggleHyperIntegration(_:)),
-        keyEquivalent: "")
-        hyperIntegration.state = HyperIntegration.isInstalled ? .on : .off
-      
-        let sshIntegration = debugMenu.addItem(
-        withTitle: "SSH Integration",
-        action: #selector(AppDelegate.toggleSSHIntegration(_:)),
-        keyEquivalent: "")
-        sshIntegration.state = Defaults.SSHIntegrationEnabled ? .on : .off
-        
-        debugMenu.addItem(NSMenuItem.separator())
-      
-        let utilitiesMenu = NSMenu(title: "utilities")
-        
-        utilitiesMenu.addItem(
-         withTitle: "Install CLI Tool",
-         action: #selector(AppDelegate.addCLI),
-         keyEquivalent: "")
-        utilitiesMenu.addItem(
-         withTitle: "Request Accessibility Permission",
-         action: #selector(AppDelegate.promptForAccesibilityAccess),
-         keyEquivalent: "")
-        utilitiesMenu.addItem(NSMenuItem.separator())
 
-//        let logging =  utilitiesMenu.addItem(
-//         withTitle: "Logging",
-//         action: #selector(AppDelegate.toggleLogging),
-//         keyEquivalent: "")
-//        logging.state = Defaults.broadcastLogs ? .on : .off
-        debugMenu.addItem(NSMenuItem.separator())
-        let debugAutocomplete = utilitiesMenu.addItem(
-         withTitle: "Force Popup to Appear",
-         action: #selector(AppDelegate.toggleDebugAutocomplete(_:)),
+      
+    
+        let settings = statusBarMenu.addItem(
+         withTitle: "Settings",
+         action: #selector(Settings.openUI),
          keyEquivalent: "")
-        debugAutocomplete.state = Defaults.debugAutocomplete ? .on : .off
-//        utilitiesMenu.addItem(NSMenuItem.separator())
-        utilitiesMenu.addItem(NSMenuItem.separator())
-        utilitiesMenu.addItem(
-         withTitle: "Run Install/Update Script",
-         action: #selector(AppDelegate.setupScript),
+//        settings.image = NSImage(imageLiteralResourceName: "gear")
+        settings.target = Settings.self
+      
+        let integrations = statusBarMenu.addItem(
+         withTitle: "Integrations",
+         action: nil,
          keyEquivalent: "")
-        debugMenu.addItem(withTitle: "Edit Key Bindings", action: #selector(editKeybindingsFile), keyEquivalent: "")
-        let utilities = debugMenu.addItem(withTitle: "Developer", action: nil, keyEquivalent: "")
-        utilities.submenu = utilitiesMenu
-        
-        debugMenu.addItem(NSMenuItem.separator())
-        debugMenu.addItem(
-         withTitle: "Uninstall Fig",
-         action: #selector(AppDelegate.uninstall),
-         keyEquivalent: "")
-        
-        debugMenu.addItem(NSMenuItem.separator())
+        integrations.submenu = integrationsMenu()
 
-
-//        debugMenu.addItem(
-//         withTitle: "New Terminal Window",
-//         action: #selector(AppDelegate.newTerminalWindow),
-//         keyEquivalent: "")
-        
-        if (!Defaults.isProduction) {
-                debugMenu.addItem(
-                 withTitle: "Internal (not for prod)",
-                 action: nil,
-                 keyEquivalent: "")
-                debugMenu.addItem(
-                 withTitle: "Flush logs",
-                 action: #selector(AppDelegate.flushLogs),
-                 keyEquivalent: "")
-                debugMenu.addItem(
-                 withTitle: "Windows",
-                 action: #selector(AppDelegate.allWindows),
-                 keyEquivalent: "")
-               debugMenu.addItem(
-                withTitle: "Keyboard",
-                action: #selector(AppDelegate.getKeyboardLayout),
-                keyEquivalent: "")
-               debugMenu.addItem(
-                withTitle: "AXObserver",
-                action: #selector(AppDelegate.addAccesbilityObserver),
-                keyEquivalent: "")
-               debugMenu.addItem(
-                withTitle: "Get Selected Text",
-                action: #selector(AppDelegate.getSelectedText),
-                keyEquivalent: "")
-               debugMenu.addItem(
-                 withTitle: "Processes",
-                 action: #selector(AppDelegate.processes),
-                 keyEquivalent: "")
-               debugMenu.addItem(
-                 withTitle: "Trigger ScreenReader mode in topmost app",
-                 action: #selector(AppDelegate.triggerScreenReader),
-                 keyEquivalent: "")
-           }
-        
-        let debug = statusBarMenu.addItem(withTitle: "Settings", action: nil, keyEquivalent: "")
-        debug.submenu = debugMenu
+        let developer = statusBarMenu.addItem(
+         withTitle: "Developer",
+         action: nil,
+         keyEquivalent: "")
+        developer.submenu = developerMenu()
         
         statusBarMenu.addItem(NSMenuItem.separator())
         let issue = statusBarMenu.addItem(
@@ -575,8 +578,8 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
          action: #selector(AppDelegate.sendFeedback),
          keyEquivalent: "")
         issue.image = NSImage(imageLiteralResourceName: "github")
-        //email.image = NSImage(imageLiteralResourceName: "founders")
-        statusBarMenu.addItem(NSMenuItem.separator())
+
+      statusBarMenu.addItem(NSMenuItem.separator())
         statusBarMenu.addItem(
          withTitle: "Restart",
          action: #selector(AppDelegate.restart),
@@ -1243,9 +1246,8 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     }
     
     @objc func checkForUpdates() {
-        print("Checking")
-//        self.updater?.checkForUpdates(self)
-        self.updater?.installUpdatesIfAvailable()
+        self.updater?.checkForUpdates(self)
+//        self.updater?.installUpdatesIfAvailable()
     }
     @objc func toggleVisibility() {
         if let window = self.window {

@@ -1082,7 +1082,8 @@ extension WebBridge {
 
                   let companion = scope.getCompanionWindow()              
                   companion?.status = (data["message"] ?? "", data["color"], data["display"] == "true")
-
+                case "uninstall":
+                  NSApp.appDelegate.uninstall()
                 default:
                     print("private command '\(type)' does not exist.")
             }

@@ -71,6 +71,10 @@ class Settings {
     setUpFileSystemListeners()
   }
   
+  @objc class func openUI() {
+    print("Open Settings UI")
+  }
+  
   func update(_ keyValues: Dictionary<String, Any>) {
     currentSettings.merge(keyValues) { $1 }
     serialize()
