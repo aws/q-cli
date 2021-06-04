@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import Cocoa
 
 class Settings {
   static let ptyInitFile = "pty.rc"
@@ -80,6 +81,7 @@ class Settings {
       if (settingsWindow.contentViewController != nil) {
         settingsWindow.makeKeyAndOrderFront(nil)
         settingsWindow.orderFrontRegardless()
+        NSApp.activate(ignoringOtherApps: true)
         
         return
       } else {
@@ -90,11 +92,11 @@ class Settings {
     
     let settingsViewController = WebViewController()
     settingsViewController.webView?.defaultURL = nil
-    settingsViewController.webView?.loadBundleApp("landing")
+    settingsViewController.webView?.loadBundleApp("settings/index")
     settingsViewController.webView?.dragShouldRepositionWindow = true
 
     let settings = WebViewWindow(viewController: settingsViewController, shouldQuitAppOnClose: false)
-    settings.setFrame(NSRect(x: 0, y: 0, width: 590, height: 480), display: true, animate: false)
+    settings.setFrame(NSRect(x: 0, y: 0, width: 670, height: 420), display: true, animate: false)
     settings.center()
     settings.makeKeyAndOrderFront(self)
     

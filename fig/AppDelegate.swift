@@ -550,14 +550,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
          keyEquivalent: "")
         settings.image = NSImage(imageLiteralResourceName: "gear")
         settings.target = Settings.self
-      
-        statusBarMenu.addItem(NSMenuItem.separator())
-
-        let integrations = statusBarMenu.addItem(
-         withTitle: "Integrations",
-         action: nil,
-         keyEquivalent: "")
-        integrations.submenu = integrationsMenu()
         
         statusBarMenu.addItem(NSMenuItem.separator())
 
@@ -568,15 +560,19 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
          withTitle: "Check for Updates...",
          action: #selector(AppDelegate.checkForUpdates),
          keyEquivalent: "")
-        statusBarMenu.addItem(NSMenuItem.separator())
-        
+        let integrations = statusBarMenu.addItem(
+         withTitle: "Integrations",
+         action: nil,
+         keyEquivalent: "")
+        integrations.submenu = integrationsMenu()
+      
         statusBarMenu.addItem(NSMenuItem.separator())
         let issue = statusBarMenu.addItem(
          withTitle: "Report a bug...", //✉️
          action: #selector(AppDelegate.sendFeedback),
          keyEquivalent: "")
         issue.image = NSImage(imageLiteralResourceName: "github")
-//      statusBarMenu.addItem(NSMenuItem.separator())
+      statusBarMenu.addItem(NSMenuItem.separator())
 
       let invite = statusBarMenu.addItem(
        withTitle: "Invite a friend...",
