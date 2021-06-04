@@ -9,27 +9,23 @@
 import Cocoa
 
 class WebViewWindow : NSWindow {
-    init(viewController: NSViewController, quitAppOnClose: Bool = true) {
+    init(viewController: NSViewController, shouldQuitAppOnClose: Bool = true) {
             super.init(
                 contentRect: NSRect(x: 0, y: 0, width: 520, height: 350),
                 styleMask: [.fullSizeContentView, .resizable, .titled, .miniaturizable, .closable],
                 backing: .buffered, defer: false)
             self.center()
-//            self.title = "Fig"
             self.titlebarAppearsTransparent = true
 
-//            self.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
             self.isMovableByWindowBackground = true
-//            self.isOpaque = false
-            self.backgroundColor = NSColor.white//.clear//NSColor.init(white: 1, alpha: 0.75)
+            self.backgroundColor = NSColor.white
             self.level = .floating
             self.setFrameAutosaveName("Main Window")
-            self.contentViewController = viewController //WebViewController()
+            self.contentViewController = viewController
             self.makeKeyAndOrderFront(nil)
-        
-//            self.delegate = self
-        
-        if let closeButton = self.standardWindowButton(.closeButton), quitAppOnClose {
+            self.delegate = self
+                
+        if let closeButton = self.standardWindowButton(.closeButton), shouldQuitAppOnClose {
             closeButton.target = self
             closeButton.action = #selector(closeViaButton)
         }
@@ -43,4 +39,11 @@ class WebViewWindow : NSWindow {
             delegate.quit()
         }
     }
+}
+
+extension WebViewWindow: NSWindowDelegate {
+  func windowShouldClose(_ sender: NSWindow) -> Bool {
+    self.contentViewController = nil
+    return true
+  }
 }
