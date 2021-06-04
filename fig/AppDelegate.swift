@@ -2060,9 +2060,10 @@ extension AppDelegate : NSMenuDelegate {
                   
                 } else if (!hasContext) {
                     color = .orange
-                    legend.addItem(NSMenuItem(title: "Keybuffer context is lost.", action: nil, keyEquivalent: ""))
+                    legend.addItem(NSMenuItem(title: "Fig is unsure what you typed", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem.separator())
-                    legend.addItem(NSMenuItem(title: "↪ Enter a new line to reset it.", action: nil, keyEquivalent: ""))
+                    legend.addItem(NSMenuItem(title: "Go to a new line by pressing", action: nil, keyEquivalent: ""))
+                    legend.addItem(NSMenuItem(title: "<enter> or ctrl+c", action: nil, keyEquivalent: ""))
 
                 } else if (!hasCommand) {
                     color = .yellow
