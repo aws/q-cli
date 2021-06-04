@@ -56,6 +56,12 @@ class KeypressProvider : KeypressService {
                                            selector:#selector(accesibilityPermissionsUpdated),
                                            name: Accessibility.permissionDidUpdate,
                                            object:nil)
+    
+    NotificationCenter.default.addObserver(self,
+                                           selector: #selector(inputSourceChanged),
+                                           name: KeyboardLayout.keyboardLayoutDidChangeNotification,
+                                           object: nil)
+    
   }
   func shouldRedirect(event: CGEvent, in window: ExternalWindow) -> Bool {
     
@@ -97,8 +103,25 @@ class KeypressProvider : KeypressService {
     self.removeRedirect(for: Keystroke(keyCode: keycode), in: window)
   }
   
+  func resetRedirects(for window: ExternalWindow) {
+    queue.async(flags: .barrier) {
+      self.redirects[window.hash] = []
+    }
+  }
+  
+  func resetAllRedirects() {
+    queue.async(flags: .barrier) {
+      self.redirects = [:]
+    }
+  }
+  
   func setEnabled(value: Bool) {
     self.enabled = value
+  }
+  
+  @objc func inputSourceChanged() {
+    resetAllRedirects()
+    Autocomplete.position(makeVisibleImmediately: false, completion: nil)
   }
   
   @objc func lineAcceptedInKeystrokeBuffer() {
@@ -292,11 +315,11 @@ class KeypressProvider : KeypressService {
             return nil
           }
 
-          if (keyCode == Keycode.n) {
+          if (keyCode == KeyboardLayout.shared.keyCode(for: "N") ?? Keycode.n) {
             keyCode = Keycode.downArrow
           }
           
-          if (keyCode == Keycode.p) {
+          if (keyCode == KeyboardLayout.shared.keyCode(for: "P") ?? Keycode.p) {
             keyCode = Keycode.upArrow
           }
           

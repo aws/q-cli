@@ -46,14 +46,7 @@ class Autocomplete {
     
     WindowManager.shared.positionAutocompletePopover(textRect: nil)
     
-    KeypressProvider.shared.removeRedirect(for: Keycode.upArrow, in: window)
-    KeypressProvider.shared.removeRedirect(for: Keycode.downArrow, in: window)
-    KeypressProvider.shared.removeRedirect(for: Keycode.tab, in: window)
-    KeypressProvider.shared.removeRedirect(for: Keystroke(modifierFlags: [.shift], keyCode: Keycode.tab), in: window)
-    KeypressProvider.shared.removeRedirect(for: Keycode.returnKey, in: window)
-    KeypressProvider.shared.removeRedirect(for: Keystroke(modifierFlags: [.control], keyCode: Keycode.n), in: window)
-    KeypressProvider.shared.removeRedirect(for: Keystroke(modifierFlags: [.control], keyCode: Keycode.p), in: window)
-    KeypressProvider.shared.removeRedirect(for: Keycode.rightArrow, in: window)
+    Autocomplete.removeAllRedirects(from: window)
 
   }
   
@@ -69,17 +62,36 @@ class Autocomplete {
         if let rect = KeypressProvider.shared.getTextRect(), !keybuffer.writeOnly {//, keybuffer.buffer?.count != 0 {
           WindowManager.shared.positionAutocompletePopover(textRect: rect, makeVisibleImmediately: makeVisibleImmediately, completion: completion)
         } else {
-          KeypressProvider.shared.removeRedirect(for: Keycode.upArrow, in: window)
-          KeypressProvider.shared.removeRedirect(for: Keycode.downArrow, in: window)
-          KeypressProvider.shared.removeRedirect(for: Keycode.tab, in: window)
-          KeypressProvider.shared.removeRedirect(for: Keycode.returnKey, in: window)
-          KeypressProvider.shared.removeRedirect(for: Keystroke(modifierFlags: [.control], keyCode: Keycode.n), in: window)
-          KeypressProvider.shared.removeRedirect(for: Keystroke(modifierFlags: [.control], keyCode: Keycode.p), in: window)
-          KeypressProvider.shared.removeRedirect(for: Keycode.rightArrow, in: window)
-
+          Autocomplete.removeAllRedirects(from: window)
           completion?()
         }
       }
     }
+  }
+  
+  static func interceptKeystrokes(in window: ExternalWindow) {
+    let nKeycode = KeyboardLayout.shared.keyCode(for: "N") ?? Keycode.n
+    let pKeycode = KeyboardLayout.shared.keyCode(for: "P") ?? Keycode.p
+
+    KeypressProvider.shared.addRedirect(for: Keycode.upArrow, in: window)
+    KeypressProvider.shared.addRedirect(for: Keycode.downArrow, in: window)
+    KeypressProvider.shared.addRedirect(for: Keycode.tab, in: window)
+    KeypressProvider.shared.addRedirect(for:  Keystroke(modifierFlags: [.shift], keyCode: Keycode.tab), in: window)
+    if (!Defaults.onlyInsertOnTab) {
+        KeypressProvider.shared.addRedirect(for: Keycode.returnKey, in: window)
+    }
+    
+    if (Settings.shared.getValue(forKey: Settings.allowAlternateNavigationKeys) as? Bool ?? true) {
+        KeypressProvider.shared.addRedirect(for: Keystroke(modifierFlags: [.control], keyCode: nKeycode), in: window)
+        KeypressProvider.shared.addRedirect(for: Keystroke(modifierFlags: [.control], keyCode: pKeycode), in: window)
+    }
+  
+    if (Defaults.insertUsingRightArrow) {
+        KeypressProvider.shared.addRedirect(for: Keycode.rightArrow, in: window)
+    }
+  }
+  
+  static func removeAllRedirects(from window: ExternalWindow) {
+    KeypressProvider.shared.resetRedirects(for: window)
   }
 }
