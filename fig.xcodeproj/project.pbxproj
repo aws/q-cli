@@ -108,6 +108,7 @@
 		755D0DE2247EFAE10074AB5C /* Logging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755D0DE1247EFAE10074AB5C /* Logging.swift */; };
 		755D0DE4247F038B0074AB5C /* logs.html in Resources */ = {isa = PBXBuildFile; fileRef = 755D0DE3247F038B0074AB5C /* logs.html */; };
 		755D0F512482D4920074AB5C /* HotKey in Frameworks */ = {isa = PBXBuildFile; productRef = 755D0F502482D4920074AB5C /* HotKey */; };
+		755EC8DD2669D34F00CBEF57 /* gear@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 755EC8DC2669D34F00CBEF57 /* gear@2x.png */; };
 		7564AE6F265C9DCE0040BD4C /* discord@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7564AE6E265C9DCD0040BD4C /* discord@2x.png */; };
 		7564AE7D265CB2930040BD4C /* community.sh in Resources */ = {isa = PBXBuildFile; fileRef = 7564AE78265CB0620040BD4C /* community.sh */; };
 		75675955244634AD006AA988 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75675954244634AD006AA988 /* AppDelegate.swift */; };
@@ -377,6 +378,7 @@
 		755D0DDF247DDE050074AB5C /* FigCLI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FigCLI.swift; sourceTree = "<group>"; };
 		755D0DE1247EFAE10074AB5C /* Logging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logging.swift; sourceTree = "<group>"; };
 		755D0DE3247F038B0074AB5C /* logs.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = logs.html; sourceTree = "<group>"; };
+		755EC8DC2669D34F00CBEF57 /* gear@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "gear@2x.png"; sourceTree = "<group>"; };
 		7564AE6E265C9DCD0040BD4C /* discord@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "discord@2x.png"; sourceTree = "<group>"; };
 		7564AE78265CB0620040BD4C /* community.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = community.sh; sourceTree = "<group>"; };
 		75675951244634AD006AA988 /* fig.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = fig.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -638,6 +640,7 @@
 				752E68E42620F883009E9A7E /* firebase@2x.png */,
 				752E68E82620F884009E9A7E /* gcloud@2x.png */,
 				752E68EB2620F884009E9A7E /* github@2x.png */,
+				755EC8DC2669D34F00CBEF57 /* gear@2x.png */,
 				752E68E22620F883009E9A7E /* gitlab@2x.png */,
 				752E68E92620F884009E9A7E /* netlify@2x.png */,
 				752E68E32620F883009E9A7E /* template@2x.png */,
@@ -1213,6 +1216,7 @@
 				754D31B525759D900020CED4 /* tutorial.html in Resources */,
 				752D71C725AECB4B00263527 /* ssh.mp4 in Resources */,
 				7573F15C2602B4E000C833FA /* invite@2x.png in Resources */,
+				755EC8DD2669D34F00CBEF57 /* gear@2x.png in Resources */,
 				7564AE6F265C9DCE0040BD4C /* discord@2x.png in Resources */,
 				75D2E3CB249C1E7500607F66 /* terminal.css in Resources */,
 				757CA88A248AD58C002A64A8 /* onboarding.html in Resources */,
