@@ -57,6 +57,7 @@ enum TelemetryEvent: String {
     case openedFigMenuIcon = "Opened Fig Menu Icon"
     case inviteAFriend = "Prompt to Invite"
     case runInstallationScript = "Running Installation Script"
+    case telemetryToggled = "Toggled Telemetry"
 
 
 }
@@ -85,14 +86,14 @@ class TelemetryProvider: TelemetryService {
         body["event"] = event
         body["userId"] = Defaults.uuid
       
-        if let telemetryDisabled = Settings.shared.getValue(forKey: Settings.telemetryDisabledKey) as? Bool, telemetryDisabled {
-          let eventsToSendEvenWhenDisabled: [TelemetryEvent] = [.dailyAggregates]
+        if Defaults.telemetryDisabled {
+          let eventsToSendEvenWhenDisabled: [TelemetryEvent] = [.telemetryToggled]
           let sendEvent = eventsToSendEvenWhenDisabled.reduce(false, { (ignore, whitelistedEvent) -> Bool in
             return ignore || whitelistedEvent.rawValue == event
           })
           
           guard sendEvent else {
-            print("telemetry: no sending event because of \(Settings.telemetryDisabledKey)")
+            print("telemetry: not sending event because telemetry is diabled")
             completion?(nil, nil, nil)
             return
           }
@@ -112,8 +113,8 @@ class TelemetryProvider: TelemetryService {
         
         body["userId"] = Defaults.uuid
       
-        if let telemetryDisabled = Settings.shared.getValue(forKey: Settings.telemetryDisabledKey) as? Bool, telemetryDisabled {
-            print("telemetry: no sending identification event because of \(Settings.telemetryDisabledKey)")
+        if Defaults.telemetryDisabled {
+            print("telemetry: not sending identification event because telemetry is diabled")
            return
         }
 
@@ -121,6 +122,12 @@ class TelemetryProvider: TelemetryService {
     }
     
     static func alias(userId: String?) {
+      
+        if Defaults.telemetryDisabled {
+            print("telemetry: not sending identification event because telemetry is diabled")
+           return
+        }
+      
         upload(to: "alias", with: ["previousId" : Defaults.uuid, "userId": userId ?? ""])
     }
     
@@ -234,8 +241,6 @@ extension TelemetryProvider : LocalTelemetryService {
             let key = "\(dateIdentifier)#\(event.rawValue)"
             let aggregate = UserDefaults.standard.integer(forKey: key)
             UserDefaults.standard.set(aggregate + increment, forKey: key)
-          
-            UserDefaults.standard.setValue(Settings.shared.getValue(forKey: Settings.telemetryDisabledKey) as? Bool ?? false, forKey: "\(dateIdentifier)#telemetryDisabled")
             
             // update what dates have data to send
             var pending:Set<String> = Set(UserDefaults.standard.stringArray(forKey: "pendingTelemetryUpload") ?? [])

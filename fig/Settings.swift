@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import Cocoa
 
 class Settings {
   static let ptyInitFile = "pty.rc"
@@ -17,7 +18,8 @@ class Settings {
   static let sshCommand = "ssh.commandPrefix"
   static let sshRemoteDirectoryScript = "ssh.remoteDirectoryScript"
   static let launchOnStartupKey = "app.launchOnStartup"
-  static let telemetryDisabledKey = "app.disableTelemetry"
+  static let legacyTelemetryDisabledKey = "app.disableTelemetry"
+  static let telemetryDisabledKey = "telemetry.disabled"
   static let autocompleteWidth = "autocomplete.width"
   static let autocompleteHeight = "autocomplete.height"
   static let enterKeyBehavior = "autocomplete.enter"
@@ -37,6 +39,7 @@ class Settings {
   static let hideMenubarIcon = "app.hideMenubarIcon"
   static let debugModeKey = "developer.debugMode"
   static let onlyShowOnTabKey = "autocomplete.onlyShowOnTab"
+  static let allowAlternateNavigationKeys = "autocomplete.allowAlternateNavigationKeys"
 
 
   static let filePath = NSHomeDirectory() + "/.fig/settings.json"
@@ -69,6 +72,41 @@ class Settings {
     }
     
     setUpFileSystemListeners()
+  }
+  
+  fileprivate var settingsWindow: WebViewWindow?
+  @objc class func openUI() {
+    print("Open Settings UI")
+    
+    if let settingsWindow = Settings.shared.settingsWindow {
+      
+      if (settingsWindow.contentViewController != nil) {
+        settingsWindow.makeKeyAndOrderFront(nil)
+        settingsWindow.orderFrontRegardless()
+        NSApp.activate(ignoringOtherApps: true)
+        
+        return
+      } else {
+        Settings.shared.settingsWindow?.contentViewController = nil
+        Settings.shared.settingsWindow = nil
+      }
+    }
+    
+    let settingsViewController = WebViewController()
+    settingsViewController.webView?.defaultURL = nil
+    settingsViewController.webView?.loadBundleApp("settings/index")
+    settingsViewController.webView?.dragShouldRepositionWindow = true
+
+    let settings = WebViewWindow(viewController: settingsViewController, shouldQuitAppOnClose: false)
+    settings.setFrame(NSRect(x: 0, y: 0, width: 670, height: 420), display: true, animate: false)
+    settings.center()
+    settings.makeKeyAndOrderFront(self)
+    
+    settings.delegate = settings
+    settings.isReleasedWhenClosed = false
+    settings.level = .normal
+    
+    Settings.shared.settingsWindow = settings
   }
   
   func update(_ keyValues: Dictionary<String, Any>) {
@@ -136,9 +174,20 @@ class Settings {
     }
   }
   
+  fileprivate func processDiffs(prev: [String: Any], curr: [String: Any]) {
+    let priorTelemetryStatus = prev[Settings.legacyTelemetryDisabledKey] as? Bool ??
+                               prev[Settings.telemetryDisabledKey] as? Bool ?? false
+    let currentTelemetryStatus = curr[Settings.legacyTelemetryDisabledKey] as? Bool ??
+                                 curr[Settings.telemetryDisabledKey] as? Bool ?? false
+    if priorTelemetryStatus != currentTelemetryStatus {
+      TelemetryProvider.track(event: .telemetryToggled, with: ["status" : "\(currentTelemetryStatus)"], completion: nil)
+    }
+  }
+  
   static let settingsUpdatedNotification = Notification.Name("settingsUpdated")
   func settingsUpdated() {
     if let settings = Settings.loadFromFile() {
+       processDiffs(prev: currentSettings, curr: settings)
        currentSettings = settings
        processSettingsUpdatesToLegacyDefaults()
        NotificationCenter.default.post(Notification(name: Settings.settingsUpdatedNotification))

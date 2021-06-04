@@ -66,7 +66,7 @@ class VSCodeInsidersIntegration: IntegrationProvider {
     var successfullyUpdatedSettings = false
     var updatedSettings: String!
     do {
-      if var json = try VSCodeIntegration.settings() {
+      if var json = try VSCodeInsidersIntegration.settings() {
         
         if let accessibilitySupport = json[accessibilitySupportKey] as? String?, accessibilitySupport != "on" {
           json[accessibilitySupportKey] = "off"
@@ -112,7 +112,7 @@ class VSCodeInsidersIntegration: IntegrationProvider {
                                        icon: Alert.appIcon,
                                        hasSecondaryOption: true)
             if (openSupportPage) {
-              NSWorkspace.shared.open(VSCodeIntegration.supportURL)
+              NSWorkspace.shared.open(VSCodeInsidersIntegration.supportURL)
             }
           }
         }
@@ -167,7 +167,7 @@ class VSCodeInsidersIntegration: IntegrationProvider {
     let install = alert.runModal() == .alertFirstButtonReturn
     
     if (install) {
-      VSCodeIntegration.install(inBackground: false) {
+      VSCodeInsidersIntegration.install(inBackground: false) {
         print("Installation completed!")
         if let app = AXWindowServer.shared.topApplication, Integrations.VSCode == app.bundleIdentifier {
           Accessibility.triggerScreenReaderModeInChromiumApplication(app)

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/src/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script type="module" crossorigin src="./assets/index.e958b9aa.js"></script>
+  <link rel="modulepreload" href="./assets/vendor.7cfa1067.js">
+  <link rel="stylesheet" href="./assets/index.7e9ac9a0.css">
+</head>
+  <body>
+    <div id="root"></div>
+    <script>
+      /**
+       * We need to define the init Fig function here
+       * because of timings
+       */
+      window.fig.init = () => {
+        window.__isFigInited__ = true;
+        window.dispatchEvent(new Event("FIG_INIT_INTERNAL"));
+      };
+    </script>
+    
+  </body>
+</html>
