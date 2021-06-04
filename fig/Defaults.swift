@@ -447,6 +447,34 @@ class Defaults {
       Defaults.developerModeEnabled = !Defaults.developerModeEnabled
     }
   
+    static var telemetryDisabled: Bool {
+      get {
+        
+        if let mode = Settings.shared.getValue(forKey: Settings.legacyTelemetryDisabledKey) as? Bool, mode {
+          return mode
+        }
+        
+        if let mode = Settings.shared.getValue(forKey: Settings.telemetryDisabledKey) as? Bool, mode {
+          return mode
+        }
+        
+        return false
+      }
+    
+    set (enabled) {
+      var delta: [String:Any] = [:]
+      if Settings.shared.getValue(forKey: Settings.legacyTelemetryDisabledKey) as? Bool != nil {
+        delta[Settings.legacyTelemetryDisabledKey] = enabled
+      }
+      
+      if Settings.shared.getValue(forKey: Settings.telemetryDisabledKey) as? Bool != nil {
+        delta[Settings.telemetryDisabledKey] = enabled
+      }
+      
+      Settings.shared.update(delta)
+    }
+  }
+  
     static var accessibilityEnabledOnPreviousLaunch: Bool? {
         get {
             return  UserDefaults.standard.bool(forKey: "accessibilityEnabledOnPreviousLaunch")

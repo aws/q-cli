@@ -17,7 +17,8 @@ class Settings {
   static let sshCommand = "ssh.commandPrefix"
   static let sshRemoteDirectoryScript = "ssh.remoteDirectoryScript"
   static let launchOnStartupKey = "app.launchOnStartup"
-  static let telemetryDisabledKey = "app.disableTelemetry"
+  static let legacyTelemetryDisabledKey = "app.disableTelemetry"
+  static let telemetryDisabledKey = "telemetry.disabled"
   static let autocompleteWidth = "autocomplete.width"
   static let autocompleteHeight = "autocomplete.height"
   static let enterKeyBehavior = "autocomplete.enter"
@@ -137,9 +138,20 @@ class Settings {
     }
   }
   
+  fileprivate func processDiffs(prev: [String: Any], curr: [String: Any]) {
+    let priorTelemetryStatus = prev[Settings.legacyTelemetryDisabledKey] as? Bool ??
+                               prev[Settings.telemetryDisabledKey] as? Bool ?? false
+    let currentTelemetryStatus = curr[Settings.legacyTelemetryDisabledKey] as? Bool ??
+                                 curr[Settings.telemetryDisabledKey] as? Bool ?? false
+    if priorTelemetryStatus != currentTelemetryStatus {
+      TelemetryProvider.track(event: .telemetryToggled, with: ["status" : "\(currentTelemetryStatus)"], completion: nil)
+    }
+  }
+  
   static let settingsUpdatedNotification = Notification.Name("settingsUpdated")
   func settingsUpdated() {
     if let settings = Settings.loadFromFile() {
+       processDiffs(prev: currentSettings, curr: settings)
        currentSettings = settings
        processSettingsUpdatesToLegacyDefaults()
        NotificationCenter.default.post(Notification(name: Settings.settingsUpdatedNotification))
