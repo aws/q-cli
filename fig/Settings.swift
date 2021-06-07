@@ -110,12 +110,16 @@ class Settings {
   }
   
   func update(_ keyValues: Dictionary<String, Any>) {
+    let prev = currentSettings
     currentSettings.merge(keyValues) { $1 }
+    processDiffs(prev: prev, curr: currentSettings)
     serialize()
   }
   
   func set(value: Any, forKey key: String) {
+    let prev = currentSettings
     currentSettings.updateValue(value, forKey: key)
+    processDiffs(prev: prev, curr: currentSettings)
     serialize()
   }
   
@@ -180,7 +184,9 @@ class Settings {
     let currentTelemetryStatus = curr[Settings.legacyTelemetryDisabledKey] as? Bool ??
                                  curr[Settings.telemetryDisabledKey] as? Bool ?? false
     if priorTelemetryStatus != currentTelemetryStatus {
-      TelemetryProvider.track(event: .telemetryToggled, with: ["status" : "\(currentTelemetryStatus)"], completion: nil)
+      TelemetryProvider.identify(with:
+                                  ["telemetry": currentTelemetryStatus ? "off" : "on"],
+                                 shouldIgnoreTelemetryPreferences: true)
     }
   }
   

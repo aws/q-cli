@@ -103,7 +103,7 @@ class TelemetryProvider: TelemetryService {
         upload(to: "track", with: body, completion: completion)
     }
     
-    static func identify(with traits: Dictionary<String, String>, needsPrefix prefix: String? = "trait_") {
+  static func identify(with traits: Dictionary<String, String>, needsPrefix prefix: String? = "trait_", shouldIgnoreTelemetryPreferences: Bool = false) {
         var body: Dictionary<String, String> = [:]
         if let prefix = prefix {
             body = TelemetryProvider.addPrefixToKeys(prefix: prefix, dict: traits)
@@ -113,7 +113,7 @@ class TelemetryProvider: TelemetryService {
         
         body["userId"] = Defaults.uuid
       
-        if Defaults.telemetryDisabled {
+        if Defaults.telemetryDisabled && !shouldIgnoreTelemetryPreferences {
             print("telemetry: not sending identification event because telemetry is diabled")
            return
         }
