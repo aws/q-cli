@@ -56,7 +56,7 @@ char *extract_buffer(TermState *state, TermState *prompt_state, int *index) {
         c = ' ';
       }
       if (state->cursor->row == i && state->cursor->col - 1 == j) {
-        *index = pos;
+        *index = pos + 1;
       }
       text[pos++] = c;
     }
@@ -64,7 +64,7 @@ char *extract_buffer(TermState *state, TermState *prompt_state, int *index) {
     j = 0;
   }
   text[pos] = '\0';
-  return rtrim(text, *index + 1);
+  return rtrim(text, *index);
 }
 
 static void print_term_state(TermState *ts, bool is_prompt) {
