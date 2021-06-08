@@ -239,7 +239,6 @@ class KeypressProvider : KeypressService {
       guard event.type != .tapDisabledByTimeout else {
         if let tap = KeypressProvider.shared.tap {
           CGEvent.tapEnable(tap: tap, enable: true)
-          SentrySDK.capture(message: "tapDisabledByTimeout")
         }
         return Unmanaged.passUnretained(event)
       }
