@@ -74,7 +74,7 @@ void set_fig_info(FigInfo*);
 
 // string.c
 char* ltrim(char*);
-char* rtrim(char*);
+char* rtrim(char*, int);
 char* strrstr(const char*, const char*, const size_t, const size_t);
 
 // lib/tty.c

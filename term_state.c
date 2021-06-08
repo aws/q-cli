@@ -13,8 +13,6 @@ char *update_row(char *row, int *row_len, VTermRect rect, VTermScreen *vts) {
 
     memset(new_row + *row_len, ' ', sizeof(char) * (rect.end_col - *row_len));
   }
-  // TODO(sean) segfaults on resize when new_cols > old_cols and new_rows <
-  // old_rows
   size_t outpos = vterm_screen_get_text(vts, new_row + rect.start_col,
                                         rect.end_col - rect.start_col, rect);
 

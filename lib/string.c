@@ -7,9 +7,9 @@ char *ltrim(char *s) {
   return s;
 }
 
-char *rtrim(char *s) {
+char *rtrim(char *s, int min) {
   for (size_t i = strlen(s); i >= 0; i--) {
-    if (i == 0 || !isspace(s[i - 1])) {
+    if (i == 0 || i == min || !isspace(s[i - 1])) {
       s[i] = '\0';
       break;
     }

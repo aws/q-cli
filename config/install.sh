@@ -10,19 +10,19 @@ fig_source() {
 }
 
 fig_append() {
-  if [ -f "$2" ] && grep -qv "source ~/.fig_pty/$1" "$2"; then
+  if [ -f "$2" ] && ! grep -q "source ~/.fig_pty/$1" "$2"; then
     echo "$(fig_source $1)" >> "$2"
   fi
 }
 
 fig_prepend() {
-  if [ -f "$2" ] && grep -qv "source ~/.fig_pty/$1" "$2"; then
+  if [ -f "$2" ] && ! grep -q "source ~/.fig_pty/$1" "$2"; then
     echo -e "$(fig_source $1)\n$(cat $2)" > $2
   fi
 }
 
 append_to_profiles() {
-  for profile in .zshrc .profile .zprofile .bash_profile .bashrc .zshrc; do
+  for profile in .profile .zprofile .bash_profile .bashrc .zshrc; do
     fig_prepend pre.sh "$ROOT/$profile"
     fig_append post.sh "$ROOT/$profile"
   done

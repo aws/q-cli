@@ -38,6 +38,7 @@ char *extract_buffer(TermState *state, TermState *prompt_state, int *index) {
   int pos = 0;
 
   *index = -1;
+
   for (; i < state->nrows; i++) {
     char *row = state->rows[i];
 
@@ -63,7 +64,7 @@ char *extract_buffer(TermState *state, TermState *prompt_state, int *index) {
     j = 0;
   }
   text[pos] = '\0';
-  return rtrim(text);
+  return rtrim(text, *index + 1);
 }
 
 static void print_term_state(TermState *ts, bool is_prompt) {
@@ -211,10 +212,11 @@ int unix_socket_connect(char *path) {
     return -1;
 
   struct sockaddr_un remote;
+  memset(&remote, 0, sizeof(struct sockaddr_un));
   remote.sun_family = AF_UNIX;
   strcpy(remote.sun_path, path);
 
-  size_t len = strlen(remote.sun_path) + sizeof(remote.sun_family);
+  size_t len = SUN_LEN(&remote);
   if (connect(sock, (struct sockaddr *)&remote, len) == -1)
     return -1;
   return sock;
@@ -292,13 +294,13 @@ void loop(int ptyp, int ptyc_pid) {
       char *guess = extract_buffer(ft->state, ft->prompt_state, &index);
 
       if (guess != NULL) {
+        log_info("guess: %s|\nindex: %d", guess, index);
         if (index > 0) {
           publish_guess(index, guess);
-          log_info("guess: %s\nindex: %d", guess, index);
         }
       } else {
         ft->preexec = true;
-        log_debug("Null guess, waiting for new prompt...");
+        log_info("Null guess, waiting for new prompt...");
         ft->prompt_state->cursor->row = -1;
         ft->prompt_state->cursor->col = -1;
       }

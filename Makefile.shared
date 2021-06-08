@@ -4,10 +4,15 @@ CC=gcc
 COMPILE.c=$(CC) $(CFLAGS) $(CPPFLAGS) -c
 LINK.c=$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
 LDFLAGS=
-LDLIBS=-L$(ROOT)/libvterm -L$(ROOT)/lib -lvterm -lfig -lm $(EXTRALIBS)
-CFLAGS=-I$(ROOT)/libvterm/include -I$(ROOT)/include -Wall -ggdb -DLINUX -D_GNU_SOURCE $(EXTRA)
+LDLIBS=-L$(ROOT)/libvterm/lib -l:libvterm.a -L$(ROOT)/lib -lfig -lm $(EXTRALIBS)
+CFLAGS=-I$(ROOT)/libvterm/include -I$(ROOT)/include -Wall -ggdb $(EXTRA)
 AR=ar
-AWK=awk
+
+ifeq "$(PLATFORM)" "macos"
+  CFLAGS+=-D_DARWIN_C_SOURCE
+else
+  CFLAGS+=-DLINUX -D_GNU_SOURCE
+endif
 
 ifeq "$(PLATFORM)" "solaris"
   EXTRALIBS=-lsocket -lnsl

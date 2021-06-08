@@ -9,7 +9,7 @@ FIG_LAST_PS3="$PS3"
 PROMPT_COMMAND+='__fig_prompt'
 
 # Add preexec, override __bp_adjust_histcontrol to preserve histcontrol.
-source ~/.fig/bash-preexec.sh
+source ~/.fig_pty/bash-preexec.sh
 function __bp_adjust_histcontrol() { :; }
 
 # Construct Operating System Command.
