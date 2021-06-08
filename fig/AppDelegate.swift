@@ -1957,6 +1957,8 @@ extension AppDelegate : NSMenuDelegate {
                     break;
                   case .fish:
                     backing = "Fish Command Line"
+                  case .bash:
+                    backing = "Bash Command Line"
                   default:
                     backing = nil
                   }

@@ -449,5 +449,6 @@ extension KeystrokeBuffer {
   enum Backing: String {
     case zle = "zle"
     case fish = "fish"
+    case bash = "bash"
   }
 }
