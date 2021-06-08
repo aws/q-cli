@@ -148,7 +148,7 @@ class PseudoTerminal : PseudoTerminalService {
         // Add TERM variable to supress warning for ZSH
         // Set INPUTRC variable to prevent using a misconfigured inputrc file (https://linear.app/fig/issue/ENG-500)
         // Set FIG_PTY so that dotfiles can detect when they are being run in fig.pty
-        let updatedEnv = env.merging(["FIG_ENV_VAR" : "1", "FIG_SHELL_VAR" : "1", "TERM" : "xterm-256color", "INPUTRC" : "~/.fig/nop", "FIG_PTY" : "1"]) { $1 }
+        let updatedEnv = env.merging(["FIG_ENV_VAR" : "1", "FIG_SHELL_VAR" : "1", "TERM" : "xterm-256color", "INPUTRC" : "~/.fig/nop", "FIG_PTY" : "1", "HISTCONTROL" : "ignoreboth"]) { $1 }
         let rawEnv = updatedEnv.reduce([]) { (acc, elm) -> [String] in
             let (key, value) = elm
             return acc + ["\(key)=\(value)"]
@@ -157,8 +157,9 @@ class PseudoTerminal : PseudoTerminalService {
         pty.process.startProcess(executable: shell, args: [], environment: rawEnv.count == 0 ? nil : rawEnv)
         pty.process.delegate = self
 
-        pty.send("unset HISTFILE\r")
-        
+        pty.send(" set +o history\r")
+        pty.send(" unset HISTFILE\r")
+      
         // Retrieve PATH from settings if it exists
         if let path = Settings.shared.getValue(forKey: Settings.ptyPathKey) as? String {
           pty.send("export PATH='\(path)'\r")
@@ -166,19 +167,27 @@ class PseudoTerminal : PseudoTerminalService {
           pty.send("export PATH=$(\(Defaults.userShell) -li -c \"/usr/bin/env | /usr/bin/grep '^PATH=' | /bin/cat | /usr/bin/sed 's|PATH=||g'\")\r")
         }
       
-        let filePath = Settings.shared.getValue(forKey: Settings.ptyInitFile) as? NSString ?? "~/.fig/user/ptyrc"
-        let expandedFilePath = filePath.expandingTildeInPath
-
-        if FileManager.default.fileExists(atPath: expandedFilePath) {
-          print("pty: sourcing \(expandedFilePath)")
-          pty.send("source \(expandedFilePath)\r")
-        }
+        // Source default ptyrc file (if it exists)
+        sourceFile(at: "~/.fig/tools/ptyrc")
+      
+      // Source user-specified ptyrc file (if it exists)
+        let filePath = Settings.shared.getValue(forKey: Settings.ptyInitFile) as? String ?? "~/.fig/user/ptyrc"
+        sourceFile(at: filePath)
 
         // Copy enviroment from userShell
 //        pty.send("export $(env -i '\(Defaults.userShell)' -li -c env | tr '\n' ' ')\r")
         print(pty.process.delegate)
     }
     
+    func sourceFile(at path: String) {
+      let expandedFilePath = NSString(string: path).expandingTildeInPath
+
+      if FileManager.default.fileExists(atPath: expandedFilePath) {
+        print("pty: sourcing \(expandedFilePath)")
+        pty.send("source \(expandedFilePath)\r")
+      }
+    }
+  
     func write(command: String, control: ControlCode?) {
         if let code = control {
             print("Write PTY controlCode: \(code.rawValue)")
