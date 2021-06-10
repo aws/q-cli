@@ -79,6 +79,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         }
       
         let _ = DockerEventStream.shared
+        let _ = iTermIntegration.shared
         let _ = Settings.shared
 
         
