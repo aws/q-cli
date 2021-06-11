@@ -55,20 +55,20 @@ class iTermIntegration {
     
     self.attemptToConnect()
     
-    self.timer = Timer.scheduledTimer(withTimeInterval: self.pollingInterval, repeats: true) { _ in
-      print("iTerm: should attempt to connect?")
-      guard self.appIsRunning else {
-        print("iTerm: desktop app is not running, so disconnecting from socket.")
-        self.socket.disconnect()
-        return
-      }
-      guard !self.socket.isConnected else {
-        print("iTerm: Socket is already connected")
-        return
-      }
-      
-      self.attemptToConnect()
-    }
+//    self.timer = Timer.scheduledTimer(withTimeInterval: self.pollingInterval, repeats: true) { _ in
+//      print("iTerm: should attempt to connect?")
+//      guard self.appIsRunning else {
+//        print("iTerm: desktop app is not running, so disconnecting from socket.")
+//        self.socket.disconnect()
+//        return
+//      }
+//      guard !self.socket.isConnected else {
+//        print("iTerm: Socket is already connected")
+//        return
+//      }
+//
+//      self.attemptToConnect()
+//    }
     
     
   }
@@ -78,7 +78,7 @@ class iTermIntegration {
   // https://gitlab.com/gnachman/iterm2/-/issues/9058#note_392824614
   // https://github.com/gnachman/iTerm2/blob/c52136b7c0bae545436be8d1441449f19e21faa1/sources/iTermWebSocketConnection.m#L50
   static let iTermLibraryVersion = 0.24
-  func handshake(cookie: String, key: String) -> String {
+  fileprivate func handshakeRequest(cookie: String, key: String) -> String {
     let CRLF = "\r\n"
 
     let request = [
@@ -109,17 +109,39 @@ class iTermIntegration {
       return nil
     }
     
-    let tokens = contents.split(separator: " ").map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }
+    
+    var allCredentials = contents.split(separator: "\n")
+    
+    guard allCredentials.count > 0 else {
+      print("iTerm: no credentials availible")
+      return nil
+    }
+    
+    let currentCredentials = allCredentials.removeFirst()
+    let tokens = currentCredentials.split(separator: " ").map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }
     guard tokens.count == 2 else {
       return nil
     }
     
+    let updatedCredentialsList = allCredentials.joined(separator: "\n")
+    do {
+      try updatedCredentialsList.write(to: URL(fileURLWithPath: iTermIntegration.apiCredentialsPath),
+                                       atomically: true,
+                                       encoding: .utf8)
+    } catch {
+      print("iTerm: error writing updated credential list to \(iTermIntegration.apiCredentialsPath)")
+    }
+
     return (tokens[0], tokens[1])
     
   }
   
-  fileprivate func attemptToConnect() {
-    print("iTerm: attempting to connect!")
+  func attemptToConnect() {
+    print("iTerm: attempting to connect! Is iTerm running: \(appIsRunning)")
+    if socket.isConnected {
+      socket.disconnect()
+    }
+    
     if appIsRunning, socket.connect() {
         print("iTerm: connected to socket")
         guard let (cookie, key) =  credentials() else {
@@ -131,7 +153,7 @@ class iTermIntegration {
       print("iTerm: credentials (\(cookie),\(key)")
       
        Timer.delayWithSeconds(1) {
-          self.socket.send(message: self.handshake(cookie: cookie, key: key))
+          self.socket.send(message: self.handshakeRequest(cookie: cookie, key: key))
        }
        
      } else {
@@ -198,8 +220,6 @@ extension iTermIntegration: UnixSocketDelegate {
       var message = Iterm2_ClientOriginatedMessage()
       message.id = 0
       
-//      message.listSessionsRequest = Iterm2_ListSessionsRequest()
-//
       var notificationRequest = Iterm2_NotificationRequest()
       notificationRequest.session = "all"
       notificationRequest.subscribe = true
@@ -214,16 +234,12 @@ extension iTermIntegration: UnixSocketDelegate {
       socket.send(data: frame)
     }
 
-    // process message
   }
   
   func socket(_ socket: UnixSocketClient, didReceive data: Data) {
     print("iTerm: recieved data")
     
     ws.add(data: data)
-  
-
-
   }
   
   func socketDidClose(_ socket: UnixSocketClient) {
