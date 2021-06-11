@@ -13,9 +13,6 @@ class iTermIntegration {
   static let apiCredentialsPath = "\(NSHomeDirectory())/.fig/tools/iterm-api-credentials"
   static let iTermBundleId = Integrations.iTerm
   
-  fileprivate let pollingInterval: TimeInterval = 20
-  fileprivate var timer: Timer? = nil
-  
   let socket = UnixSocketClient(path: "\(NSHomeDirectory())/Library/Application Support/iTerm2/private/socket", waitForNewline: false)
   let ws = WSFramer(isServer: false)
   fileprivate var sessionId: String? {
@@ -23,9 +20,8 @@ class iTermIntegration {
       guard let sessionId = sessionId else {
         return
       }
-      /// Update current sessionId
-//      ShellHooksManager.shared.setTab()
-      print("iTerm: sessionId did changed to \(sessionId)")
+
+      Logger.log(message: "sessionId did changed to \(sessionId)", subsystem: .iterm)
 
       if let window = AXWindowServer.shared.whitelistedWindow, window.bundleId ?? "" == iTermIntegration.iTermBundleId {
         ShellHookManager.shared.setActiveTab(sessionId, for: window.windowId)
@@ -44,14 +40,22 @@ class iTermIntegration {
     }
   }
   
+  var isConnectedToAPI = false
+  
   init() {
     
     guard self.appIsInstalled else {
       print("iTerm is not installed.")
       return
     }
+    
     socket.delegate = self
     ws.register(delegate: self)
+    
+    NSWorkspace.shared.notificationCenter.addObserver(self,
+                                                      selector: #selector(didTerminateApplication),
+                                                      name: NSWorkspace.didTerminateApplicationNotification,
+                                                      object: nil)
     
     self.attemptToConnect()
     
@@ -90,7 +94,7 @@ class iTermIntegration {
       "sec-websocket-protocol: api.iterm2.com",
       "sec-websocket-version: 13",
       "sec-websocket-key: \(key)",
-      "x-iterm2-library-version: python 0.24",
+      "x-iterm2-library-version: python \(iTermIntegration.iTermLibraryVersion)",
       "x-iterm2-cookie: \(cookie)",
       "x-iterm2-key: \(key)",
       "x-iterm2-disable-auth-ui: true"
@@ -100,8 +104,24 @@ class iTermIntegration {
     return request.joined(separator: CRLF) + CRLF + CRLF
   }
   
+  @objc func didTerminateApplication(notification: Notification) {
+    guard let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication else {
+      return
+    }
+    
+    guard app.bundleIdentifier == iTermIntegration.iTermBundleId else {
+      return
+    }
+    
+    Logger.log(message: "disconnecting socket because application was terminated.", subsystem: .iterm)
+//    self.socket.disconnect()
+    self.disconnect()
+    
+  }
+  
   func credentials() -> (String, String)? {
     guard FileManager.default.fileExists(atPath: iTermIntegration.apiCredentialsPath) else {
+      Logger.log(message: "credentials file does not exist - this is likely because Fig is newly installed and iTerm has not restarted yet!", subsystem: .iterm)
       return nil
     }
     
@@ -113,7 +133,7 @@ class iTermIntegration {
     var allCredentials = contents.split(separator: "\n")
     
     guard allCredentials.count > 0 else {
-      print("iTerm: no credentials availible")
+      Logger.log(message: "no credentials availible!", subsystem: .iterm)
       return nil
     }
     
@@ -129,35 +149,53 @@ class iTermIntegration {
                                        atomically: true,
                                        encoding: .utf8)
     } catch {
-      print("iTerm: error writing updated credential list to \(iTermIntegration.apiCredentialsPath)")
+      Logger.log(message: "error writing updated credential list to \(iTermIntegration.apiCredentialsPath)", subsystem: .iterm)
     }
 
     return (tokens[0], tokens[1])
     
   }
   
+  func disconnect() {
+    self.socket.disconnect()
+    self.ws.reset()
+    self.isConnectedToAPI = false
+
+  }
+  
   func attemptToConnect() {
-    print("iTerm: attempting to connect! Is iTerm running: \(appIsRunning)")
-    if socket.isConnected {
-      socket.disconnect()
+    Logger.log(message: "attempting to connect!", subsystem: .iterm)
+
+//    if socket.isConnected {
+//      socket.disconnect()
+//    }
+    guard appIsRunning else {
+      Logger.log(message: "target app is not running...", subsystem: .iterm)
+      return
     }
     
-    if appIsRunning, socket.connect() {
-        print("iTerm: connected to socket")
+    if socket.connect() {
+        Logger.log(message: "connected to socket", subsystem: .iterm)
+
         guard let (cookie, key) =  credentials() else {
-          print("iTerm: could not find credentials")
-          self.socket.disconnect()
+          Logger.log(message: "could not find credentials", subsystem: .iterm)
+
+//          self.socket.disconnect()
+          self.disconnect()
           return
         }
       
-      print("iTerm: credentials (\(cookie),\(key)")
+        Logger.log(message: "Sending websocket handshake", subsystem: .iterm)
+
       
        Timer.delayWithSeconds(1) {
           self.socket.send(message: self.handshakeRequest(cookie: cookie, key: key))
+        Logger.log(message: "Sent websocket handshake!", subsystem: .iterm)
+
        }
        
      } else {
-        print("iTerm: could not connect...")
+        Logger.log(message: "Already connected...", subsystem: .iterm)
      }
   }
 
@@ -172,21 +210,39 @@ class iTermIntegration {
 
 extension iTermIntegration: FramerEventClient {
   func frameProcessed(event: FrameEvent) {
-    print("iTerm: frame processed")
+//    Logger.log(message: "frame processed", subsystem: .iterm)
     switch event {
     case .frame(let frame):
       let message = try! Iterm2_ServerOriginatedMessage(serializedData: frame.payload)
-//      print("iTerm: # of windows = \(message.listSessionsResponse.windows.count)")
-      let focusChangedEvent = message.notification.focusChangedNotification
-      print("iTerm: focus event! - \(focusChangedEvent.session) ")
-      //forEach { print("iTerm: \($0.windowID)") }
-    
-      let session = focusChangedEvent.session
-      if session.count > 0 {
-        self.sessionId = session
+      
+      guard message.error.count == 0 else {
+        Logger.log(message: "API error - \(message.error)", subsystem: .iterm)
+        return
+        
       }
+      
+      guard !message.notificationResponse.hasStatus else {
+        Logger.log(message: "notification response \(message.notificationResponse.status)", subsystem: .iterm)
+        return
+      }
+      
+      if message.notification.hasFocusChangedNotification {
+        let focusChangedEvent = message.notification.focusChangedNotification
+        Logger.log(message: "focus event! - \(focusChangedEvent.session)", subsystem: .iterm)
+      
+        let session = focusChangedEvent.session
+        if session.count > 0 {
+          self.sessionId = session
+        }
+        
+        return
+      }
+      
+      
+      print("iterm: other API event")
+
     case .error(let err):
-      print("iTerm: an error occurred - \(err) ")
+      Logger.log(message: "an error occurred - \(err)", subsystem: .iterm)
     }
   }
   
@@ -194,11 +250,17 @@ extension iTermIntegration: FramerEventClient {
 }
 
 class iTermEventStream {
-  static func notificationRequest() {
+  static func notificationRequest() -> Iterm2_ClientOriginatedMessage {
+    var message = Iterm2_ClientOriginatedMessage()
+    message.id = 0
+    
     var notificationRequest = Iterm2_NotificationRequest()
     notificationRequest.session = "all"
+    notificationRequest.subscribe = true
     notificationRequest.notificationType = .notifyOnFocusChange
+    message.notificationRequest = notificationRequest
     
+    return message
   }
 
 }
@@ -206,25 +268,20 @@ class iTermEventStream {
 extension iTermIntegration: UnixSocketDelegate {
 
   func socket(_ socket: UnixSocketClient, didReceive message: String) {
-    print("iTerm: recieved message, '\(message)'")
-    
+    Logger.log(message: "recieved message, '\(message)'", subsystem: .iterm)
+
     guard !message.contains("HTTP/1.1 401 Unauthorized") else {
-      print("iTerm: disconnecting because connection refused")
-      socket.disconnect()
+      Logger.log(message: "disconnecting because connection refused", subsystem: .iterm)
+      
+      self.disconnect()
       return
     }
     
     //HTTP/1.1 101 Switching Protocols -> Success
     if (message.contains("HTTP/1.1 101 Switching Protocols")) {
-      print("iTerm: connection accepted!")
-      var message = Iterm2_ClientOriginatedMessage()
-      message.id = 0
-      
-      var notificationRequest = Iterm2_NotificationRequest()
-      notificationRequest.session = "all"
-      notificationRequest.subscribe = true
-      notificationRequest.notificationType = .notifyOnFocusChange
-      message.notificationRequest = notificationRequest
+      Logger.log(message: "connection accepted!", subsystem: .iterm)
+      self.isConnectedToAPI = true
+      let message = iTermEventStream.notificationRequest()
       
       let payload = try! message.serializedData()
       let frame = ws.createWriteFrame(opcode: .binaryFrame,
@@ -237,15 +294,11 @@ extension iTermIntegration: UnixSocketDelegate {
   }
   
   func socket(_ socket: UnixSocketClient, didReceive data: Data) {
-    print("iTerm: recieved data")
-    
+    Logger.log(message: "recieved data", subsystem: .iterm)
     ws.add(data: data)
   }
   
-  func socketDidClose(_ socket: UnixSocketClient) {
-    // schedule attempts to reconnnect
-    //attemptToConnectToDocker()
-  }
+  func socketDidClose(_ socket: UnixSocketClient) { }
 }
 
 

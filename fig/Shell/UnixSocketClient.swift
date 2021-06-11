@@ -128,6 +128,9 @@ final class UnixSocketClient: NSObject, StreamDelegate {
       output.remove(from: .current, forMode: .default)
       outputStream = nil
     }
+    
+    // zero buffer
+    messageBuffer.resetBytes(in: NSRange(location:0, length:messageBuffer.length))
   }
   
   func send(message: String) {

@@ -139,7 +139,11 @@ public class WSFramer: Framer {
     public func register(delegate: FramerEventClient) {
         self.delegate = delegate
     }
-    
+  
+    public func reset() {
+      self.buffer = Data()
+    }
+  
     private func process() -> ProcessEvent {
         if buffer.count < 2 {
             return .needsMoreData
