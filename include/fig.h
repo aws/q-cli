@@ -15,6 +15,10 @@
 #include <sys/ioctl.h>
 #endif
 
+#if defined(MACOS)
+#include <libproc.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -43,6 +47,7 @@ typedef struct {
   TermState *state;
   TermState *prompt_state;
   VTermPos* cursor;
+  bool shell_enabled;
   bool altscreen;
   bool in_prompt;
   bool preexec;

@@ -18,12 +18,23 @@
 void loop(int, int);
 
 static char *get_exe(pid_t pid) {
-  char procfile[50];
   ssize_t ret;
   unsigned int bufsize = 1024;
-
-  sprintf(procfile, "/proc/%d/exe", pid);
   char* tmp = calloc(bufsize, sizeof(char));
+
+#if defined(MACOS)
+  // TODO(sean): make sure pid exists or that access is allowed?
+  ret = proc_pidpath(pid, &tmp, sizeof(char) * bufsize);
+
+  if (ret == 0) {
+    log_error("Error getting shell");
+    return NULL;
+  }
+  return strdup(buf);
+#else
+  char procfile[50];
+  sprintf(procfile, "/proc/%d/exe", pid);
+
   while (true) {
     ret = readlink(procfile, tmp, bufsize - 1);
     if (ret == -1) {
@@ -36,6 +47,7 @@ static char *get_exe(pid_t pid) {
     bufsize *= 2;
     tmp = (char *) realloc(tmp, bufsize);
   }
+#endif
 }
 
 int validshell(const char *shell) {
@@ -74,6 +86,8 @@ int main(int argc, char *argv[]) {
   pid_t pid;
   char child_name[20];
 
+  pid_t shell_pid = getppid();
+
   // TODO(sean) breaks if these are NULL.
   char *term_session_id = getenv("TERM_SESSION_ID");
   char *fig_integration_version = getenv("FIG_INTEGRATION_VERSION");
@@ -102,8 +116,8 @@ int main(int argc, char *argv[]) {
   if (pid < 0) {
     err_sys("fork error");
   } else if (pid == 0) {
-    // char *shell = get_exe(getppid());
-    char* shell = getshell();
+    char *shell = get_exe(shell_pid);
+    log_info("shell exe: %s", shell);
     char *const args[] = {shell, NULL};
     setenv("FIG_TERM", "1", 1);
     if (tmux != NULL) {

@@ -44,6 +44,10 @@ FigTerm *figterm_new(bool utf8, VTermScreenCallbacks *screen_callbacks,
   ft->state = term_state_new(vt);
   ft->prompt_state = term_state_new(vt);
 
+  // Default to disabled until we see a shell prompt with shell info we
+  // recognize.
+  ft->shell_enabled = false;
+
   ft->in_prompt = false;
   ft->preexec = true;
   ft->vt = vt;

@@ -39,6 +39,10 @@ char *extract_buffer(TermState *state, TermState *prompt_state, int *index) {
 
   *index = -1;
 
+  if (state->cursor->row == i && state->cursor->col == j) {
+    *index = 0;
+  }
+
   for (; i < state->nrows; i++) {
     char *row = state->rows[i];
 
@@ -151,7 +155,8 @@ int osc_cb(int command, VTermStringFragment frag, void *user) {
     } else if (strneq(frag.str, "Dir=", 4)) {
       log_info("In dir %.*s", frag.len - 4, frag.str + 4);
     } else if (strneq(frag.str, "Shell=", 6)) {
-      log_info("Using shell %.*s", frag.len - 6, frag.str + 6);
+      // Only enable in bash for now.
+      ft->shell_enabled = strneq(frag.str + 6, "bash", frag.len - 6);
     }
   }
   return 0;
@@ -289,13 +294,13 @@ void loop(int ptyp, int ptyc_pid) {
     if (write(STDOUT_FILENO, buf, nread) != nread)
       err_sys("write error to stdout");
 
-    if (!ft->preexec) {
+    if (!ft->preexec && ft->shell_enabled) {
       int index;
       char *guess = extract_buffer(ft->state, ft->prompt_state, &index);
 
       if (guess != NULL) {
         log_info("guess: %s|\nindex: %d", guess, index);
-        if (index > 0) {
+        if (index >= 0) {
           publish_guess(index, guess);
         }
       } else {
