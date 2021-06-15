@@ -10,11 +10,19 @@ import Cocoa
 //import Starscream
 class iTermIntegration {
   static let shared = iTermIntegration()
-  static let apiCredentialsPath = "\(NSHomeDirectory())/.fig/tools/iterm-api-credentials"
   static let iTermBundleId = Integrations.iTerm
   
+  // Installation
+  static let autolaunchAuthenticationAppleScript = "\(NSHomeDirectory())/.fig/tools/fig-iterm-integration.scpt"
+  static var iTerm: NSRunningApplication? = nil
+  static var kvo: NSKeyValueObservation? = nil
+  
+  // API
+  var isConnectedToAPI = false
+  static let apiCredentialsPath = "\(NSHomeDirectory())/.fig/tools/iterm-api-credentials"
   let socket = UnixSocketClient(path: "\(NSHomeDirectory())/Library/Application Support/iTerm2/private/socket", waitForNewline: false)
   let ws = WSFramer(isServer: false)
+  
   fileprivate var sessionId: String? {
     didSet {
       guard let sessionId = sessionId else {
@@ -40,7 +48,6 @@ class iTermIntegration {
     }
   }
   
-  var isConnectedToAPI = false
   
   init() {
     
@@ -303,15 +310,58 @@ extension iTermIntegration: UnixSocketDelegate {
 
 
 extension iTermIntegration: IntegrationProvider {
+      
   static func install(withRestart: Bool, inBackground: Bool, completion: (() -> Void)?) {
+    
+    // Update API preferences
+    
+    
+    guard withRestart else {
+      completion?()
+      return
+    }
+    
+    if let app = NSRunningApplication.forBundleId(iTermBundleId) {
+       self.iTerm = app
+       self.iTerm!.terminate()
+       self.kvo = self.iTerm!.observe(\.isTerminated, options: .new) { (app, terminated) in
+           if terminated.newValue == true {
+               print("iTerm terminated! Restarting...")
+                NSWorkspace.shared.launchApplication(withBundleIdentifier: iTermBundleId,
+                                                     options: [.default],
+                                                     additionalEventParamDescriptor: nil,
+                                                     launchIdentifier: nil)
+               self.kvo!.invalidate()
+               self.iTerm = nil
+           }
+       }
+    } else {
+       NSWorkspace.shared.launchApplication(withBundleIdentifier: iTermBundleId,
+                                            options: [.default],
+                                            additionalEventParamDescriptor: nil,
+                                            launchIdentifier: nil)
+   }
     
   }
   
   static var isInstalled: Bool {
-    return false
+    return FileManager.default.fileExists(atPath: iTermIntegration.autolaunchAuthenticationAppleScript)
   }
   
   static func promptToInstall(completion: (()->Void)?) {
-    
+//    Alert.show(title: <#T##String#>, message: <#T##String#>)
+  }
+}
+
+
+extension NSRunningApplication {
+  
+  static func forBundleId(_ bundleId: String?) -> NSRunningApplication? {
+    guard let bundleId = bundleId else {
+      return nil
+    }
+
+    return NSWorkspace.shared.runningApplications.filter ({ return $0.bundleIdentifier == bundleId }).first
+
   }
 }
