@@ -1,11 +1,7 @@
 #include "fig.h"
-#include <ctype.h>
 #include <errno.h>
 #include <math.h>
 #include <stdio.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <sys/un.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #include <vterm.h>
@@ -18,68 +14,6 @@ static volatile sig_atomic_t sigcaught;
 
 // Called when child sends us SIGTERM
 static void sig_term(int signo) { sigcaught = 1; }
-
-char *extract_buffer(TermState *state, TermState *prompt_state, int *index) {
-  int i = prompt_state->cursor->row - prompt_state->scroll;
-  int j = prompt_state->cursor->col;
-
-  // Invalid prompt cursor position, return null.
-  if (i < 0 || state->row_lens[i] < j)
-    return NULL;
-
-  size_t total_len = 0;
-  for (int k = i; k < state->nrows; k++) {
-    total_len += state->row_lens[k] + 1;
-  }
-  total_len -= j;
-
-  log_debug("Alloc text: %d", (int)total_len);
-  char *text = malloc(sizeof(char) * (total_len + 1));
-  int pos = 0;
-
-  *index = -1;
-
-  if (state->cursor->row == i && state->cursor->col == j) {
-    *index = 0;
-  }
-
-  for (; i < state->nrows; i++) {
-    char *row = state->rows[i];
-
-    char *prow = NULL;
-    int prow_len = 0;
-
-    if (i + prompt_state->scroll < prompt_state->nrows) {
-      prow = prompt_state->rows[i + prompt_state->scroll];
-      prow_len = prompt_state->row_lens[i + prompt_state->scroll];
-    }
-
-    for (; j < state->row_lens[i]; j++) {
-      char c = row[j];
-      if (prow != NULL && j < prow_len && !isspace(c) && c == prow[j]) {
-        c = ' ';
-      }
-      if (state->cursor->row == i && state->cursor->col - 1 == j) {
-        *index = pos + 1;
-      }
-      text[pos++] = c;
-    }
-    text[pos++] = '\n';
-    j = 0;
-  }
-  text[pos] = '\0';
-  return rtrim(text, *index);
-}
-
-static void print_term_state(TermState *ts, bool is_prompt) {
-  log_debug("text:");
-  for (int i = 0; i < ts->nrows; i++) {
-    log_debug("%.*s", ts->row_lens[i], ts->rows[i]);
-  }
-  log_debug("cursor pos: %d %d", ts->cursor->row, ts->cursor->col);
-  log_debug("scrollback: %d", ts->scroll);
-  log_debug("is_prompt: %s", is_prompt ? "true" : "false");
-}
 
 static int movecursor_cb(VTermPos pos, VTermPos oldpos, int visible,
                          void *user) {
@@ -174,22 +108,6 @@ static VTermScreenCallbacks screen_callbacks = {
     .sb_popline = sb_popline_cb,
 };
 
-char* fig_osc(char* cmd) {
-    // TODO(sean) use a macro like #define FIG_OSC(x) ("\033]697;" (x) "\007").
-    char* outbuf = malloc(sizeof(char) * (strlen(cmd) + 7 + 1));
-    sprintf(outbuf, "\033]697;%s\007", cmd);
-    return outbuf;
-}
-
-char* fig_internal_cmd(char* cmd) {
-    char* internal_cmd = fig_osc("InternalCmd"); // len 11 + 7 = 18.
-
-    char* outbuf = malloc(sizeof(char) * (18 + strlen(cmd) + 1 + 1));
-    sprintf(outbuf, "%s%s\n", internal_cmd, cmd);
-    free(internal_cmd);
-    return outbuf;
-}
-
 void child_loop(int ptyp) {
   int nread;
   char buf[BUFFSIZE + 1];
@@ -209,45 +127,15 @@ void child_loop(int ptyp) {
   exit(0);
 }
 
-static int fig_sock = -1;
-
-int unix_socket_connect(char *path) {
-  int sock;
-  if ((sock = socket(AF_UNIX, SOCK_STREAM, 0)) < 0)
-    return -1;
-
-  struct sockaddr_un remote;
-  memset(&remote, 0, sizeof(struct sockaddr_un));
-  remote.sun_family = AF_UNIX;
-  strcpy(remote.sun_path, path);
-
-  size_t len = SUN_LEN(&remote);
-  if (connect(sock, (struct sockaddr *)&remote, len) == -1)
-    return -1;
-  return sock;
-}
-
 void publish_guess(int index, char *buffer) {
   FigInfo *fig_info = get_fig_info();
   size_t buflen = strlen(buffer) + strlen(fig_info->term_session_id) +
                   strlen(fig_info->fig_integration_version);
-
   char *tmpbuf = malloc(buflen + sizeof(char) * 50);
   sprintf(tmpbuf, "fig bg:bash-keybuffer %s %s 0 %d \"%s\"",
           fig_info->term_session_id, fig_info->fig_integration_version, index,
           buffer);
-  size_t out_len;
-  unsigned char *encoded =
-      base64_encode((unsigned char *)tmpbuf, strlen(tmpbuf), &out_len);
-
-  if (fig_sock < 0)
-    fig_sock = unix_socket_connect("/tmp/fig.socket");
-
-  if (fig_sock < 0)
-    log_warn("Can't connect to fig socket");
-  else
-    send(fig_sock, encoded, out_len, 0);
-
+  fig_socket_send(tmpbuf);
   free(tmpbuf);
 }
 
@@ -264,6 +152,7 @@ void loop(int ptyp, int ptyc_pid) {
 
   // Initialize screen buffer copy "FigTerm".
   FigTerm *ft = figterm_new(true, &screen_callbacks, &parser_callbacks, ptyc_pid, ptyp);
+  char* insertion_lock = fig_path("insertion-lock");
   log_info("Shell: %d", ptyc_pid);
   log_info("Child: %d", child);
   log_info("Parent: %d", getpid());
@@ -294,7 +183,9 @@ void loop(int ptyp, int ptyc_pid) {
     if (write(STDOUT_FILENO, buf, nread) != nread)
       err_sys("write error to stdout");
 
-    if (!ft->preexec && ft->shell_enabled) {
+    bool fig_is_inserting = access(insertion_lock, F_OK) == 0;
+
+    if (!ft->preexec && ft->shell_enabled && !fig_is_inserting) {
       int index;
       char *guess = extract_buffer(ft->state, ft->prompt_state, &index);
 
@@ -319,4 +210,5 @@ void loop(int ptyp, int ptyc_pid) {
 
   // clean up
   figterm_free(ft);
+  free(insertion_lock);
 }

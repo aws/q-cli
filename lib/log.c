@@ -3,28 +3,37 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-static const char *log_levels[] = {"DEBUG", "INFO", "WARN", "ERROR", "FATAL"};
+static const char *log_levels[] = {"FATAL", "ERROR", "WARN", "INFO", "DEBUG"};
+static int _logging_level = LOG_INFO;
+FILE *_log_file;
 
-int logging_level = LOG_INFO;
-FILE *log_file;
+void set_logging_level(int level) {
+  level = level < LOG_FATAL ? LOG_FATAL : level;
+  level = level > LOG_DEBUG ? LOG_DEBUG : level;
+  _logging_level = level;
+}
+
+void set_log_file(char* path) {
+  _log_file = fopen(path, "w");
+}
 
 void vlog_msg(int level, const char *file, int line, const char *fmt,
               va_list ap) {
-  if (level >= logging_level) {
+  if (level <= _logging_level) {
     time_t t = time(NULL);
     struct tm *time = localtime(&t);
-    if (log_file == NULL) {
+    if (_log_file == NULL) {
       char tmp[50];
       sprintf(tmp, "out.%d.log", getpid());
-      log_file = fopen(tmp, "w");
+      set_log_file(tmp);
     }
 
     char buf[64];
     buf[strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", time)] = '\0';
-    fprintf(log_file, "%s %-5s %s:%d: ", buf, log_levels[level], file, line);
-    vfprintf(log_file, fmt, ap);
-    fprintf(log_file, "\n");
-    fflush(log_file);
+    fprintf(_log_file, "[%s %-5s %d %s:%d] ", buf, log_levels[level], getpid(), file, line);
+    vfprintf(_log_file, fmt, ap);
+    fprintf(_log_file, "\n");
+    fflush(_log_file);
   }
 }
 

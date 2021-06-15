@@ -17,68 +17,22 @@
 
 void loop(int, int);
 
-static char *get_exe(pid_t pid) {
-  ssize_t ret;
-  unsigned int bufsize = 1024;
-  char* tmp = calloc(bufsize, sizeof(char));
+static bool _should_kill_parent = true;
 
-#if defined(MACOS)
-  // TODO(sean): make sure pid exists or that access is allowed?
-  ret = proc_pidpath(pid, &tmp, sizeof(char) * bufsize);
-
-  if (ret == 0) {
-    log_error("Error getting shell");
-    return NULL;
-  }
-  return strdup(buf);
-#else
-  char procfile[50];
-  sprintf(procfile, "/proc/%d/exe", pid);
-
-  while (true) {
-    ret = readlink(procfile, tmp, bufsize - 1);
-    if (ret == -1) {
-      free(tmp);
-      return NULL;
-    } else if ((size_t) ret != bufsize - 1) {
-      tmp[ret] = '\0';
-      return tmp;
-    }
-    bufsize *= 2;
-    tmp = (char *) realloc(tmp, bufsize);
-  }
-#endif
-}
-
-int validshell(const char *shell) {
-  return shell != NULL && *shell == '/' && access(shell, X_OK) == 0;
-}
-
-static char *getshell(void) {
-  struct passwd *pw;
-  char *shell;
-  shell = getenv("SHELL");
-  if (validshell(shell))
-    return shell;
-
-  pw = getpwuid(getuid());
-  if (pw != NULL && validshell(pw->pw_shell))
-    return (pw->pw_shell);
-
-  return (_PATH_BSHELL);
-}
-
-void kill_parent() {
+void on_pty_exit() {
   // Use SIGKILL to kill parent shell, shells trap SIGTERM.
-  kill(getppid(), SIGKILL);
+  if (_should_kill_parent) {
+    kill(getppid(), SIGKILL);
+  }
 }
 
 void abort_handler(int sig) {
   log_warn("Aborting %d: %d", getpid(), sig);
   tty_reset(STDIN_FILENO);
 
-  // Use quick exit to avoid killing parent shell.
-  quick_exit(0);
+  // Avoid killing parent shell when we encounter unexpected error.
+  _should_kill_parent = false;
+  exit(0);
 }
 
 int main(int argc, char *argv[]) {
@@ -87,20 +41,19 @@ int main(int argc, char *argv[]) {
   char child_name[20];
 
   pid_t shell_pid = getppid();
+  set_logging_level(LOG_DEBUG);
+  char* log_path = fig_path("pty.log");
+  set_log_file(log_path);
 
   // TODO(sean) breaks if these are NULL.
-  char *term_session_id = getenv("TERM_SESSION_ID");
-  char *fig_integration_version = getenv("FIG_INTEGRATION_VERSION");
+  //
+  FigInfo* fig_info = init_fig_info();
   char *tmux = getenv("TMUX");
-  FigInfo *fi = malloc(sizeof(FigInfo));
-  fi->term_session_id = term_session_id;
-  fi->fig_integration_version = fig_integration_version;
-  set_fig_info(fi);
 
-  if (!isatty(STDIN_FILENO) || term_session_id == NULL ||
-      fig_integration_version == NULL) {
+  if (!isatty(STDIN_FILENO) || fig_info->term_session_id == NULL ||
+      fig_info->fig_integration_version == NULL) {
     execvp(argv[0], argv + 1);
-    err_sys("Not in tty");
+    err_sys("Not in valid tty");
   }
 
   struct termios orig_termios;
@@ -131,7 +84,7 @@ int main(int argc, char *argv[]) {
   if (tty_raw(STDIN_FILENO) < 0)
     err_sys("tty_raw error");
   // Reset parent tty on exit.
-  if (atexit(kill_parent) < 0)
+  if (atexit(on_pty_exit) < 0)
     err_sys("atexit error");
   if (set_sigaction(SIGABRT, abort_handler) < 0)
     err_sys("sigabrt error");
@@ -142,9 +95,7 @@ int main(int argc, char *argv[]) {
   // copy stdin -> ptyp, ptyp -> stdout
   loop(fdm, pid);
 
-  free(fi);
-  free(term_session_id);
-  free(fig_integration_version);
-  free(tmux);
+  free(fig_info);
+  free(log_path);
   exit(0);
 }

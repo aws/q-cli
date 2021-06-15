@@ -3,22 +3,6 @@
 
 static FigTerm *_ft = NULL;
 
-void get_winsize(struct winsize *ws) {
-  const char *term = ctermid(NULL);
-  log_debug("term %s", term);
-  if (!term[0]) {
-    err_sys("can't get name of controlling terminal");
-  }
-  int fd = open(term, O_RDONLY);
-  if (fd == -1) {
-    err_sys("can't open terminal at %s", term);
-  }
-  if (ioctl(fd, TIOCGWINSZ, ws) == -1) {
-    err_sys("can't get the window size of %s", term);
-  }
-  close(fd);
-}
-
 FigTerm *figterm_new(bool utf8, VTermScreenCallbacks *screen_callbacks,
                      VTermStateFallbacks *parser_callbacks, int ptyc_pid, int ptyp) {
   if (_ft != NULL) {
@@ -106,8 +90,3 @@ void figterm_resize(FigTerm *ft) {
 // TODO(sean) This should probably not be done inside a signal handler,
 // consider non-blocking i/o and setting a flag instead.
 void figterm_handle_winch(int sig) { figterm_resize(_ft); }
-
-static FigInfo *fig_info;
-
-void set_fig_info(FigInfo *fi) { fig_info = fi; }
-FigInfo *get_fig_info() { return fig_info; }

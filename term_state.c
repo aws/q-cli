@@ -1,4 +1,5 @@
 #include "fig.h"
+#include <ctype.h>
 #include <vterm.h>
 
 char *update_row(char *row, int *row_len, VTermRect rect, VTermScreen *vts) {
@@ -96,4 +97,66 @@ void term_state_free(TermState *ts) {
 void term_state_update_cursor(TermState *ts, const VTermPos pos) {
   ts->cursor->row = pos.row;
   ts->cursor->col = pos.col;
+}
+
+char *extract_buffer(TermState *state, TermState *prompt_state, int *index) {
+  int i = prompt_state->cursor->row - prompt_state->scroll;
+  int j = prompt_state->cursor->col;
+
+  // Invalid prompt cursor position, return null.
+  if (i < 0 || state->row_lens[i] < j)
+    return NULL;
+
+  size_t total_len = 0;
+  for (int k = i; k < state->nrows; k++) {
+    total_len += state->row_lens[k] + 1;
+  }
+  total_len -= j;
+
+  log_debug("Alloc text: %d", (int)total_len);
+  char *text = malloc(sizeof(char) * (total_len + 1));
+  int pos = 0;
+
+  *index = -1;
+
+  if (state->cursor->row == i && state->cursor->col == j) {
+    *index = 0;
+  }
+
+  for (; i < state->nrows; i++) {
+    char *row = state->rows[i];
+
+    char *prow = NULL;
+    int prow_len = 0;
+
+    if (i + prompt_state->scroll < prompt_state->nrows) {
+      prow = prompt_state->rows[i + prompt_state->scroll];
+      prow_len = prompt_state->row_lens[i + prompt_state->scroll];
+    }
+
+    for (; j < state->row_lens[i]; j++) {
+      char c = row[j];
+      if (prow != NULL && j < prow_len && !isspace(c) && c == prow[j]) {
+        c = ' ';
+      }
+      if (state->cursor->row == i && state->cursor->col - 1 == j) {
+        *index = pos + 1;
+      }
+      text[pos++] = c;
+    }
+    text[pos++] = '\n';
+    j = 0;
+  }
+  text[pos] = '\0';
+  return rtrim(text, *index);
+}
+
+void print_term_state(TermState *ts, bool is_prompt) {
+  log_debug("text:");
+  for (int i = 0; i < ts->nrows; i++) {
+    log_debug("%.*s", ts->row_lens[i], ts->rows[i]);
+  }
+  log_debug("cursor pos: %d %d", ts->cursor->row, ts->cursor->col);
+  log_debug("scrollback: %d", ts->scroll);
+  log_debug("is_prompt: %s", is_prompt ? "true" : "false");
 }

@@ -67,6 +67,9 @@ void term_state_init_rows(TermState*,  int);
 void term_state_free_rows(TermState*);
 void term_state_update_cursor(TermState*, const VTermPos);
 void term_state_update(TermState*, VTerm*, VTermRect, bool);
+void print_term_state(TermState*, bool);
+char* extract_buffer(TermState*, TermState*, int*);
+
 
 // figterm.c
 FigTerm* figterm_new(bool, VTermScreenCallbacks*, VTermStateFallbacks*, int, int);
@@ -74,10 +77,17 @@ void figterm_free(FigTerm*);
 void figterm_resize(FigTerm*);
 void figterm_handle_winch(int);
 int figterm_should_resize();
-FigInfo* get_fig_info();
-void set_fig_info(FigInfo*);
 
-// string.c
+// util.c
+void get_winsize();
+FigInfo* init_fig_info();
+FigInfo* get_fig_info();
+char* get_exe(pid_t);
+int unix_socket_connect(char*);
+int fig_socket_send(char*);
+char* fig_path(char*);
+
+// lib/string.c
 char* ltrim(char*);
 char* rtrim(char*, int);
 char* strrstr(const char*, const char*, const size_t, const size_t);
@@ -95,10 +105,12 @@ pid_t pty_fork(int*, char*, int, const struct termios*, const struct winsize*);
 #endif
 
 // lib/log.c
-enum { LOG_DEBUG, LOG_INFO, LOG_WARN, LOG_ERROR, LOG_FATAL };
+enum { LOG_FATAL, LOG_ERROR, LOG_WARN, LOG_INFO, LOG_DEBUG };
 
 void log_msg(int level, const char *file, int line, const char *fmt, ...);
 void err_sys_msg(const char *file, int line, const char *fmt, ...) __attribute__((noreturn));
+void set_logging_level(int);
+void set_log_file(char*);
 
 #define log_debug(...) log_msg(LOG_DEBUG, __FILE__, __LINE__, __VA_ARGS__)
 #define log_info(...)  log_msg(LOG_INFO,  __FILE__, __LINE__, __VA_ARGS__)

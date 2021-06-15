@@ -7,8 +7,8 @@ PROGS =	fig_pty
 
 all:	$(PROGS)
 
-fig_pty:	main.o loop.o term_state.o figterm.o $(LIBVTERM) $(LIBFIG)
-	$(CC) $(CFLAGS) -o fig_pty main.o loop.o term_state.o figterm.o $(LDFLAGS) $(LDLIBS)
+fig_pty:	main.o loop.o term_state.o figterm.o util.o $(LIBVTERM) $(LIBFIG)
+	$(CC) $(CFLAGS) -o fig_pty main.o loop.o term_state.o figterm.o util.o $(LDFLAGS) $(LDLIBS)
 
 clean:
 	rm -f $(PROGS) $(TEMPFILES) *.o *.log; \
