@@ -71,11 +71,9 @@
 		75290A7D266B09CB000F4255 /* gear@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 75290A7C266B09CB000F4255 /* gear@2x.png */; };
 		75290AB4267126EB000F4255 /* iTermIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75290AB3267126EB000F4255 /* iTermIntegration.swift */; };
 		75290ABD26719090000F4255 /* iterm.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75290ABA26719090000F4255 /* iterm.pb.swift */; };
-		75290ABE26719090000F4255 /* iterm.proto in Sources */ = {isa = PBXBuildFile; fileRef = 75290ABB26719090000F4255 /* iterm.proto */; };
 		75290ABF26719090000F4255 /* README in Resources */ = {isa = PBXBuildFile; fileRef = 75290ABC26719090000F4255 /* README */; };
 		75290AC626719157000F4255 /* SwiftProtobuf in Frameworks */ = {isa = PBXBuildFile; productRef = 75290AC526719157000F4255 /* SwiftProtobuf */; };
 		75290ACC2671AD1E000F4255 /* WebSocketFramer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75290ACB2671AD1D000F4255 /* WebSocketFramer.swift */; };
-		75290ADE2674287B000F4255 /* fig-item-integration.scpt in Resources */ = {isa = PBXBuildFile; fileRef = 75290ADD2674287B000F4255 /* fig-item-integration.scpt */; };
 		752A398325CD024C00B1AC40 /* VSCodeIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 752A398225CD024C00B1AC40 /* VSCodeIntegration.swift */; };
 		752A398625CD0FE800B1AC40 /* fig-0.0.1.vsix in Resources */ = {isa = PBXBuildFile; fileRef = 752A398525CD0FE800B1AC40 /* fig-0.0.1.vsix */; };
 		752C0BD82479EEDB0077E415 /* File.swift in Sources */ = {isa = PBXBuildFile; fileRef = 752C0BD72479EEDA0077E415 /* File.swift */; };
@@ -225,6 +223,7 @@
 		75DA86A925EF145E00722F1D /* TmuxIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DA86A825EF145E00722F1D /* TmuxIntegration.swift */; };
 		75E993F22515A6DD000BE6BE /* statusbar@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 75E993F12515A6DD000BE6BE /* statusbar@2x.png */; };
 		75E993F52517E226000BE6BE /* AXWindowServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75E993F42517E226000BE6BE /* AXWindowServer.swift */; };
+		75EB570B267AAE5B00F10C64 /* fig-iterm-integration.scpt in Resources */ = {isa = PBXBuildFile; fileRef = 75EB570A267AAE5B00F10C64 /* fig-iterm-integration.scpt */; };
 		75EB592B258D98A7002915E7 /* BiMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75EB592A258D98A7002915E7 /* BiMap.swift */; };
 		75EB592D258DD771002915E7 /* TTY.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75EB592C258DD771002915E7 /* TTY.swift */; };
 		75EDDC4E25D23773003AECC6 /* HyperIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75EDDC4D25D23773003AECC6 /* HyperIntegration.swift */; };
@@ -353,7 +352,6 @@
 		75290ABB26719090000F4255 /* iterm.proto */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.protobuf; path = iterm.proto; sourceTree = "<group>"; };
 		75290ABC26719090000F4255 /* README */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README; sourceTree = "<group>"; };
 		75290ACB2671AD1D000F4255 /* WebSocketFramer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebSocketFramer.swift; sourceTree = "<group>"; };
-		75290ADD2674287B000F4255 /* fig-item-integration.scpt */ = {isa = PBXFileReference; lastKnownFileType = file; path = "fig-item-integration.scpt"; sourceTree = "<group>"; };
 		752A398225CD024C00B1AC40 /* VSCodeIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VSCodeIntegration.swift; sourceTree = "<group>"; };
 		752A398525CD0FE800B1AC40 /* fig-0.0.1.vsix */ = {isa = PBXFileReference; lastKnownFileType = file; path = "fig-0.0.1.vsix"; sourceTree = "<group>"; };
 		752C0BD72479EEDA0077E415 /* File.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = File.swift; sourceTree = "<group>"; };
@@ -511,6 +509,7 @@
 		75DA86A825EF145E00722F1D /* TmuxIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TmuxIntegration.swift; sourceTree = "<group>"; };
 		75E993F12515A6DD000BE6BE /* statusbar@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "statusbar@2x.png"; sourceTree = "<group>"; };
 		75E993F42517E226000BE6BE /* AXWindowServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AXWindowServer.swift; sourceTree = "<group>"; };
+		75EB570A267AAE5B00F10C64 /* fig-iterm-integration.scpt */ = {isa = PBXFileReference; lastKnownFileType = file; path = "fig-iterm-integration.scpt"; sourceTree = "<group>"; };
 		75EB592A258D98A7002915E7 /* BiMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiMap.swift; sourceTree = "<group>"; };
 		75EB592C258DD771002915E7 /* TTY.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TTY.swift; sourceTree = "<group>"; };
 		75EDDC4D25D23773003AECC6 /* HyperIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HyperIntegration.swift; sourceTree = "<group>"; };
@@ -702,10 +701,10 @@
 		75290AB92671905D000F4255 /* iTerm */ = {
 			isa = PBXGroup;
 			children = (
+				75EB570A267AAE5B00F10C64 /* fig-iterm-integration.scpt */,
 				75290AB3267126EB000F4255 /* iTermIntegration.swift */,
 				75290ACB2671AD1D000F4255 /* WebSocketFramer.swift */,
 				75290ABA26719090000F4255 /* iterm.pb.swift */,
-				75290ADD2674287B000F4255 /* fig-item-integration.scpt */,
 				75290ABB26719090000F4255 /* iterm.proto */,
 				75290ABC26719090000F4255 /* README */,
 			);
@@ -1187,7 +1186,6 @@
 				75DA86A725EF08F900722F1D /* debug-ssh.sh in Resources */,
 				759F989025C1172100EC3407 /* install_and_upgrade_fallback.sh in Resources */,
 				752D71CA25AFD7B400263527 /* team-download.sh in Resources */,
-				75290ADE2674287B000F4255 /* fig-item-integration.scpt in Resources */,
 				752D71CB25AFD7B400263527 /* team-upload.sh in Resources */,
 				752D71C225AE80CF00263527 /* ssh.sh in Resources */,
 				752E68DF2620F868009E9A7E /* yarn@2x.png in Resources */,
@@ -1245,6 +1243,7 @@
 				754D31B525759D900020CED4 /* tutorial.html in Resources */,
 				752D71C725AECB4B00263527 /* ssh.mp4 in Resources */,
 				7573F15C2602B4E000C833FA /* invite@2x.png in Resources */,
+				75EB570B267AAE5B00F10C64 /* fig-iterm-integration.scpt in Resources */,
 				7564AE6F265C9DCE0040BD4C /* discord@2x.png in Resources */,
 				75D2E3CB249C1E7500607F66 /* terminal.css in Resources */,
 				757CA88A248AD58C002A64A8 /* onboarding.html in Resources */,
@@ -1402,7 +1401,6 @@
 				759F987C25BF903900EC3407 /* Accessibility.swift in Sources */,
 				7510F8A424A6910500E86F7C /* iOSCaretView.swift in Sources */,
 				751C3BEE24B6915000B5C7FD /* Defaults.swift in Sources */,
-				75290ABE26719090000F4255 /* iterm.proto in Sources */,
 				757712492564D94A0011FF48 /* ProcessStatus.swift in Sources */,
 				7510F89A24A6910500E86F7C /* Extensions.swift in Sources */,
 				7510F8B524A6910500E86F7C /* SearchService.swift in Sources */,

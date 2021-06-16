@@ -13,12 +13,33 @@ class iTermIntegration {
   static let iTermBundleId = Integrations.iTerm
   
   // Installation
-  static let autolaunchAuthenticationAppleScript = "\(NSHomeDirectory())/.fig/tools/fig-iterm-integration.scpt"
-  static var iTerm: NSRunningApplication? = nil
-  static var kvo: NSKeyValueObservation? = nil
+  fileprivate static let scriptName = "fig-iterm-integration"
+
+    //Bundle.main.path(forAuxiliaryExecutable: "\(scriptName).scpt")!
+  fileprivate static let iTermAutoLaunchDirectory = "\(NSHomeDirectory())/Library/Application Support/iTerm2/Scripts/AutoLaunch/"
+  fileprivate static let autoLaunchScriptTarget = iTermAutoLaunchDirectory + scriptName + ".scpt"
+  // Where do we want to store this file?
+  static let bundleAppleScriptFilePath = Bundle.main.path(forResource: scriptName, ofType: "scpt")!
+
+  // static let autolaunchAuthenticationAppleScript = "\(NSHomeDirectory())/.fig/tools/\(scriptName).scpt"
+  fileprivate static var iTerm: NSRunningApplication? = nil
+  fileprivate static var kvo: NSKeyValueObservation? = nil
+  fileprivate static let plistVersionKey = "iTerm Version"
+  fileprivate static let plistAPIEnabledKey = "EnableAPIServer"
+  fileprivate static let minimumSupportedVersion:[Int] = [3,3,0]
   
+  
+  fileprivate static let legacyIntegrationPath = iTermAutoLaunchDirectory + scriptName + ".py"
+
   // API
-  var isConnectedToAPI = false
+  var isConnectedToAPI = false {
+    didSet {
+      if isConnectedToAPI {
+        // Remove legacy integration!
+        try? FileManager.default.removeItem(at: URL(fileURLWithPath: iTermIntegration.legacyIntegrationPath))
+      }
+    }
+  }
   static let apiCredentialsPath = "\(NSHomeDirectory())/.fig/tools/iterm-api-credentials"
   let socket = UnixSocketClient(path: "\(NSHomeDirectory())/Library/Application Support/iTerm2/private/socket", waitForNewline: false)
   let ws = WSFramer(isServer: false)
@@ -313,7 +334,62 @@ extension iTermIntegration: IntegrationProvider {
       
   static func install(withRestart: Bool, inBackground: Bool, completion: (() -> Void)?) {
     
+    // Check version number
+    guard let iTermDefaults = UserDefaults(suiteName: iTermBundleId),
+          let version = iTermDefaults.string(forKey: plistVersionKey) else {
+      if !inBackground {
+        // Alert that version couldn't be found
+        Alert.show(title: "Could not install iTerm Integration",
+                   message: "Could not read iTerm plist file to determine version")
+      }
+      
+      return
+    }
+    
+    // Version Check
+    let semver = version.split(separator: ".").map { Int($0) }
+    guard semver.count == 3 else {
+      if !inBackground {
+        Alert.show(title: "Could not install iTerm Integration",
+                   message: "iTerm version (\(version)) was invalid")
+      }
+      
+      return
+    }
+    
+    for idx in 0...2 {
+      if semver[idx]! < minimumSupportedVersion[idx] {
+        if !inBackground {
+          Alert.show(title: "Could not install iTerm Integration",
+                     message: "iTerm version \(version) is not supported. Must be 3.3.0 or above.")
+        }
+        
+        return
+      }
+      
+      if semver[idx]! > minimumSupportedVersion[idx] {
+        break
+      }
+    }
+    
     // Update API preferences
+    iTermDefaults.setValue(true, forKey: plistAPIEnabledKey)
+    iTermDefaults.synchronize()
+    
+    try? FileManager.default.createSymbolicLink(atPath: autoLaunchScriptTarget,
+                                                withDestinationPath: bundleAppleScriptFilePath)
+  
+    let destination = try? FileManager.default.destinationOfSymbolicLink(atPath: autoLaunchScriptTarget)
+    
+    // Check if symlink exists and is pointing to the correct location
+    guard destination == bundleAppleScriptFilePath else {
+      if !inBackground {
+        Alert.show(title: "Could not install iTerm Integration",
+                   message: "Could not create symlink to '\(autoLaunchScriptTarget)'")
+      }
+      return
+      
+    }
     
     
     guard withRestart else {
@@ -345,11 +421,34 @@ extension iTermIntegration: IntegrationProvider {
   }
   
   static var isInstalled: Bool {
-    return FileManager.default.fileExists(atPath: iTermIntegration.autolaunchAuthenticationAppleScript)
+    guard let symlinkDestination = try? FileManager.default.destinationOfSymbolicLink(atPath: iTermIntegration.autoLaunchScriptTarget) else {
+      return false
+    }
+    
+    return symlinkDestination == bundleAppleScriptFilePath
   }
   
-  static func promptToInstall(completion: (()->Void)?) {
-//    Alert.show(title: <#T##String#>, message: <#T##String#>)
+  static func promptToInstall(completion: (()->Void)? = nil) {
+    guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: iTermBundleId) else {
+      completion?()
+      return
+    }
+    
+    let icon = NSImage(imageLiteralResourceName: "NSSecurity")
+
+    let app = NSWorkspace.shared.icon(forFile: url.path)
+    
+    let shouldInstall = Alert.show(title: "Install iTerm Integration?",
+                                 message: "Fig will add a plugin to iTerm that tracks which terminal session is active.\n\n",
+                                 okText: "Install plugin",
+                                 icon: icon.overlayImage(app),
+                                 hasSecondaryOption: true)
+    
+    if shouldInstall {
+      install(withRestart: true,
+              inBackground: false,
+              completion: completion)
+    }
   }
 }
 

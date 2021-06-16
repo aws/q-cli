@@ -33,7 +33,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         warnToMoveToApplicationIfNecessary()
       
-
+        iTermIntegration.promptToInstall(completion: nil)
       
         if let hideMenuBar = Settings.shared.getValue(forKey: Settings.hideMenubarIcon) as? Bool, hideMenuBar {
           print("Not showing menubarIcon because of \(Settings.hideMenubarIcon)")
@@ -187,7 +187,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
           LoginItems.shared.currentApplicationShouldLaunchOnStartup = true
         }
         
-        iTermTabIntegration.listenForHotKey()
+//        iTermTabIntegration.listenForHotKey()
         AutocompleteContextNotifier.listenForUpdates()
         SecureKeyboardInput.listen()
       
@@ -412,11 +412,11 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
       keyEquivalent: "")
       zshPlugin.state = Defaults.deferToShellAutosuggestions ? .on : .off
       
-      let iTermIntegration = integrationsMenu.addItem(
+      let itermIntegration = integrationsMenu.addItem(
       withTitle: "iTerm Integration",
       action: #selector(AppDelegate.iTermSetup),
       keyEquivalent: "")
-      iTermIntegration.state = iTermTabIntegration.isInstalled ? .on : .off
+      itermIntegration.state = iTermIntegration.isInstalled ? .on : .off
       
       let vscodeIntegration = integrationsMenu.addItem(
       withTitle: "VSCode Integration",

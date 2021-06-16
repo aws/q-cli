@@ -507,14 +507,14 @@ extension NativeCLI {
     static func iTermCommand(_ scope: Scope) {
         let (_, connection) = scope
 
-        if iTermTabIntegration.isInstalled {
-            NativeCLI.printInTerminal("\n› iTerm Tab Integration is already installed.\n  If you are having issues, please use fig report.\n", using: connection)
+        if iTermIntegration.isInstalled {
+            NativeCLI.printInTerminal("\n› iTerm Integration is already installed.\n  If you are having issues, please use fig report.\n", using: connection)
             connection.send(message: "disconnect")
 
         } else {
-            NativeCLI.printInTerminal("→ Prompting iTerm Tab Integration...", using: connection)
+            NativeCLI.printInTerminal("→ Prompting iTerm Integration...", using: connection)
             connection.send(message: "disconnect")
-            iTermTabIntegration.promptToInstall()
+            iTermIntegration.promptToInstall()
         }
 
     }
