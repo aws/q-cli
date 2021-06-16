@@ -4,7 +4,7 @@ CC=gcc
 COMPILE.c=$(CC) $(CFLAGS) $(CPPFLAGS) -c
 LINK.c=$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
 LDFLAGS=
-LDLIBS=-L$(ROOT)/libvterm/lib -l:libvterm.a -L$(ROOT)/lib -lfig -lm $(EXTRALIBS)
+LDLIBS=$(ROOT)/libvterm/lib/libvterm.a -L$(ROOT)/lib -lfig -lm $(EXTRALIBS)
 CFLAGS=-I$(ROOT)/libvterm/include -I$(ROOT)/include -Wall -ggdb $(EXTRA)
 AR=ar
 

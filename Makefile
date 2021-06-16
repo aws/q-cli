@@ -1,4 +1,4 @@
-ROOT=$(realpath .)
+ROOT=$(shell ./realpath.sh)
 include $(ROOT)/Makefile.shared
 LIBFIG=$(ROOT)/lib/libfig.a
 LIBVTERM=$(ROOT)/lib/libvterm.a
