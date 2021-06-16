@@ -331,10 +331,6 @@ class KeypressProvider : KeypressService {
             return Unmanaged.passUnretained(event)
           }
           
-          guard !BashIntegration.handleKeystroke(event: NSEvent(cgEvent: event), in: window) else {
-            return Unmanaged.passUnretained(event)
-          }
-          
           autoreleasepool {
             KeypressProvider.shared.handleKeystroke(event: NSEvent(cgEvent: event), in: window)
           }

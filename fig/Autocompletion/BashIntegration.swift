@@ -8,7 +8,40 @@
 
 import Cocoa
 
-class BashIntegration {
+class BashIntegration: ShellIntegration {
+  static let insertionLock = "\(NSHomeDirectory())/.fig/insertion-lock"
+
+  static func insertLock() {
+    FileManager.default.createFile(atPath: insertionLock, contents: nil, attributes: nil)
+  }
+  
+  static func insertUnlock(with insertionText: String) {
+    // remove lock after keystrokes have been processes
+    // requires delay proportional to number of character inserted
+    // unfortunately, we don't really know how long this will take - it varies significantly between native and Electron terminals.
+    // We can probably be smarter about this and modulate delay based on terminal.
+    let delay = min(0.01 * Double(insertionText.count), 0.15)
+    Timer.delayWithSeconds(delay) {
+        try? FileManager.default.removeItem(atPath: insertionLock)
+        // If Bash, manually update keybuffer
+        if let window = AXWindowServer.shared.whitelistedWindow,
+            KeypressProvider.shared.keyBuffer(for: window).backing == .bash,
+           let context = KeypressProvider.shared.keyBuffer(for: window).insert(text: insertionText) {
+            // trigger an update!
+            print("update: \(context.0)")
+            Autocomplete.update(with: context, for: window.hash)
+          
+        }
+    }
+  
+    // Update position of window if backed by Bash
+    if let window = AXWindowServer.shared.whitelistedWindow,
+          KeypressProvider.shared.keyBuffer(for: window).backing == .bash {
+      
+      Autocomplete.position(makeVisibleImmediately: false, completion: nil)
+    }
+    
+  }
 
   static func enabledFor(_ tty: TTY) -> Bool {
     
@@ -16,39 +49,10 @@ class BashIntegration {
       return false
     }
     
-    guard let version = tty.shellIntegrationVersion, version >= 2 else {
+    guard let version = tty.shellIntegrationVersion, version >= 3 else {
       return false
     }
 
-    return true
-  }
-
-  static func handleKeystroke(event: NSEvent?, in window: ExternalWindow) -> Bool {
-    guard let event = event else {
-      return false
-    }
-    
-    guard let tty = window.tty else {
-      return false
-    }
-    
-    guard enabledFor(tty) else {
-      return false
-    }
-    
-    let shouldReposition = ![ Keycode.enter, Keycode.upArrow, Keycode.downArrow ].contains(event.keyCode) && !(event.modifierFlags.contains(.command) || event.modifierFlags.contains(.control))
-    
-    // Only send signal on key up
-    // because we don't want to run updates twice per keystroke
-    // Don't send signal on enter key (avoids killing new process when execing and multiple phantom keypresses when inserting)
-    if event.type == .keyUp, event.keyCode != Keycode.returnKey, !(event.keyCode == KeyboardLayout.shared.keyCode(for: "R") &&  event.modifierFlags.contains(.control))  {
-    } else if shouldReposition {
-      // Reposition on keyDown to make motion less jerky
-      // But not when modifier keys are pressed
-      // or enter or up / down arrow keys
-      Autocomplete.position(makeVisibleImmediately: false)
-    }
-    
     return true
   }
 }

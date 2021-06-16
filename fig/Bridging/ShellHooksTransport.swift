@@ -103,8 +103,8 @@ extension ShellMessage {
   }
   
   static func from(raw: String) -> ShellMessage? {
-    guard let decodedData = Data(base64Encoded: raw, options: .ignoreUnknownCharacters) else { return nil }
-    let decodedString = String(data: decodedData, encoding: .utf8)!
+    guard let decodedData = Data(base64Encoded: raw, options: .ignoreUnknownCharacters),
+          let decodedString = String(data: decodedData, encoding: .utf8) else { return nil }
     print("unix: '\(decodedString)'")
     let tokens: [String] = decodedString.split(separator: " ", maxSplits: Int.max, omittingEmptySubsequences: false).map(String.init)
     
