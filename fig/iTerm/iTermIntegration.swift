@@ -51,7 +51,7 @@ class iTermIntegration {
       Logger.log(message: "sessionId did changed to \(sessionId)", subsystem: .iterm)
 
       if let window = AXWindowServer.shared.whitelistedWindow, window.bundleId ?? "" == iTermIntegration.iTermBundleId {
-        ShellHookManager.shared.setActiveTab(sessionId, for: window.windowId)
+          ShellHookManager.shared.keyboardFocusDidChange(to: sessionId, in: window)
 
       }
 
