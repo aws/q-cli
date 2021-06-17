@@ -58,6 +58,7 @@ class NativeCLI {
         case debugWindows = "debug:windows"
         case electronAccessibility = "util:axelectron"
         case openSettingsDocs = "settings:docs"
+        case openSettings = "settings"
         case restartSettingsListener = "settings:init"
         case openSettingsFile = "settings:open"
         case runInstallScript = "util:install-script"
@@ -109,6 +110,7 @@ class NativeCLI {
                                                            .restartSettingsListener,
                                                            .runInstallScript,
                                                            .lockscreen,
+                                                           .openSettings,
                                                            .quit,
                                                            .docs]
                return implementatedNatively.contains(self)
@@ -176,6 +178,8 @@ class NativeCLI {
                 NativeCLI.toolsCommand(scope)
             case .debugWindows:
                 NativeCLI.debugWindowsCommand(scope)
+            case .openSettings:
+                NativeCLI.openSettingsCommand(scope)
             default:
                 break;
             }
@@ -550,6 +554,14 @@ extension NativeCLI {
         NativeCLI.printInTerminal("\n→ Opening Github...\n", using: connection)
 
         Github.openIssue(with: message.arguments.joined(separator: " "))
+      
+    }
+  
+    static func openSettingsCommand(_ scope: Scope) {
+      let (_, connection) = scope
+
+      NativeCLI.printInTerminal("\n› Opening settings...\n", using: connection)
+      Settings.openUI()
       
     }
   
