@@ -237,12 +237,33 @@ class Diagnostic {
     }
   }
   
+  //https://github.com/sparkle-project/Sparkle/blob/3a5c620b60f483b71f8c28573ac29bf85fda6193/Sparkle/SUHost.m#L178-L183
   
+  // Check if app is translocated
+  static var isRunningOnReadOnlyVolume: Bool {
+    get {
+      let url = Bundle.main.bundleURL as NSURL
+      var resourceValue: AnyObject?
+
+      do {
+        try url.getResourceValue(&resourceValue, forKey: URLResourceKey.volumeIsReadOnlyKey)
+      } catch {
+        return false
+      }
+      
+      if let isReadOnly = resourceValue as? NSNumber {
+        return isReadOnly.boolValue
+      } else {
+        return false
+      }
+    }
+  }
+
   static var summary: String {
     get {
       """
       
-      \(Diagnostic.distribution) \(Defaults.debugAutocomplete ? "[Debug] " : "")\(Defaults.developerModeEnabled ? "[Dev] " : "")"[\(KeyboardLayout.shared.currentLayoutName() ?? "?")] "
+      \(Diagnostic.distribution) \(Defaults.debugAutocomplete ? "[Debug] " : "")\(Defaults.developerModeEnabled ? "[Dev] " : "")[\(KeyboardLayout.shared.currentLayoutName() ?? "?")] \(Diagnostic.isRunningOnReadOnlyVolume ? "TRANSLOCATED!!!" : "")
       UserShell: \(Defaults.userShell)
       Bundle path: \(Diagnostic.pathToBundle)
       Autocomplete: \(Defaults.useAutocomplete)
