@@ -69,6 +69,11 @@
 		751F7591246E16D800E083C8 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751F7590246E16D800E083C8 /* main.swift */; };
 		75288EF924CCE72F002DF12A /* WebViewWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757CA887248AD067002A64A8 /* WebViewWindow.swift */; };
 		75290A7D266B09CB000F4255 /* gear@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 75290A7C266B09CB000F4255 /* gear@2x.png */; };
+		75290AB4267126EB000F4255 /* iTermIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75290AB3267126EB000F4255 /* iTermIntegration.swift */; };
+		75290ABD26719090000F4255 /* iterm.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75290ABA26719090000F4255 /* iterm.pb.swift */; };
+		75290ABF26719090000F4255 /* README in Resources */ = {isa = PBXBuildFile; fileRef = 75290ABC26719090000F4255 /* README */; };
+		75290AC626719157000F4255 /* SwiftProtobuf in Frameworks */ = {isa = PBXBuildFile; productRef = 75290AC526719157000F4255 /* SwiftProtobuf */; };
+		75290ACC2671AD1E000F4255 /* WebSocketFramer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75290ACB2671AD1D000F4255 /* WebSocketFramer.swift */; };
 		752A398325CD024C00B1AC40 /* VSCodeIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 752A398225CD024C00B1AC40 /* VSCodeIntegration.swift */; };
 		752A398625CD0FE800B1AC40 /* fig-0.0.1.vsix in Resources */ = {isa = PBXBuildFile; fileRef = 752A398525CD0FE800B1AC40 /* fig-0.0.1.vsix */; };
 		752C0BD82479EEDB0077E415 /* File.swift in Sources */ = {isa = PBXBuildFile; fileRef = 752C0BD72479EEDA0077E415 /* File.swift */; };
@@ -85,7 +90,6 @@
 		752D71CA25AFD7B400263527 /* team-download.sh in Resources */ = {isa = PBXBuildFile; fileRef = 752D71C825AFD59B00263527 /* team-download.sh */; };
 		752D71CB25AFD7B400263527 /* team-upload.sh in Resources */ = {isa = PBXBuildFile; fileRef = 752D71C925AFD5B800263527 /* team-upload.sh */; };
 		752D71CD25B8A6B300263527 /* Restarter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 752D71CC25B8A6B200263527 /* Restarter.swift */; };
-		752D71CF25B8CA4000263527 /* iTermTabIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 752D71CE25B8CA4000263527 /* iTermTabIntegration.swift */; };
 		752E68DD2620F868009E9A7E /* gradle@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752E68DA2620F868009E9A7E /* gradle@2x.png */; };
 		752E68DE2620F868009E9A7E /* slack@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752E68DB2620F868009E9A7E /* slack@2x.png */; };
 		752E68DF2620F868009E9A7E /* yarn@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752E68DC2620F868009E9A7E /* yarn@2x.png */; };
@@ -218,6 +222,7 @@
 		75DA86A925EF145E00722F1D /* TmuxIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DA86A825EF145E00722F1D /* TmuxIntegration.swift */; };
 		75E993F22515A6DD000BE6BE /* statusbar@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 75E993F12515A6DD000BE6BE /* statusbar@2x.png */; };
 		75E993F52517E226000BE6BE /* AXWindowServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75E993F42517E226000BE6BE /* AXWindowServer.swift */; };
+		75EB570B267AAE5B00F10C64 /* fig-iterm-integration.scpt in Resources */ = {isa = PBXBuildFile; fileRef = 75EB570A267AAE5B00F10C64 /* fig-iterm-integration.scpt */; };
 		75EB592B258D98A7002915E7 /* BiMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75EB592A258D98A7002915E7 /* BiMap.swift */; };
 		75EB592D258DD771002915E7 /* TTY.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75EB592C258DD771002915E7 /* TTY.swift */; };
 		75EDDC4E25D23773003AECC6 /* HyperIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75EDDC4D25D23773003AECC6 /* HyperIntegration.swift */; };
@@ -341,6 +346,11 @@
 		751F758E246E16D800E083C8 /* figcli */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = figcli; sourceTree = BUILT_PRODUCTS_DIR; };
 		751F7590246E16D800E083C8 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		75290A7C266B09CB000F4255 /* gear@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "gear@2x.png"; sourceTree = "<group>"; };
+		75290AB3267126EB000F4255 /* iTermIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iTermIntegration.swift; sourceTree = "<group>"; };
+		75290ABA26719090000F4255 /* iterm.pb.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = iterm.pb.swift; sourceTree = "<group>"; };
+		75290ABB26719090000F4255 /* iterm.proto */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.protobuf; path = iterm.proto; sourceTree = "<group>"; };
+		75290ABC26719090000F4255 /* README */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README; sourceTree = "<group>"; };
+		75290ACB2671AD1D000F4255 /* WebSocketFramer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebSocketFramer.swift; sourceTree = "<group>"; };
 		752A398225CD024C00B1AC40 /* VSCodeIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VSCodeIntegration.swift; sourceTree = "<group>"; };
 		752A398525CD0FE800B1AC40 /* fig-0.0.1.vsix */ = {isa = PBXFileReference; lastKnownFileType = file; path = "fig-0.0.1.vsix"; sourceTree = "<group>"; };
 		752C0BD72479EEDA0077E415 /* File.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = File.swift; sourceTree = "<group>"; };
@@ -357,7 +367,6 @@
 		752D71C825AFD59B00263527 /* team-download.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "team-download.sh"; sourceTree = "<group>"; };
 		752D71C925AFD5B800263527 /* team-upload.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "team-upload.sh"; sourceTree = "<group>"; };
 		752D71CC25B8A6B200263527 /* Restarter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Restarter.swift; sourceTree = "<group>"; };
-		752D71CE25B8CA4000263527 /* iTermTabIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iTermTabIntegration.swift; sourceTree = "<group>"; };
 		752E68DA2620F868009E9A7E /* gradle@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "gradle@2x.png"; sourceTree = "<group>"; };
 		752E68DB2620F868009E9A7E /* slack@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "slack@2x.png"; sourceTree = "<group>"; };
 		752E68DC2620F868009E9A7E /* yarn@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "yarn@2x.png"; sourceTree = "<group>"; };
@@ -498,6 +507,7 @@
 		75DA86A825EF145E00722F1D /* TmuxIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TmuxIntegration.swift; sourceTree = "<group>"; };
 		75E993F12515A6DD000BE6BE /* statusbar@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "statusbar@2x.png"; sourceTree = "<group>"; };
 		75E993F42517E226000BE6BE /* AXWindowServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AXWindowServer.swift; sourceTree = "<group>"; };
+		75EB570A267AAE5B00F10C64 /* fig-iterm-integration.scpt */ = {isa = PBXFileReference; lastKnownFileType = file; path = "fig-iterm-integration.scpt"; sourceTree = "<group>"; };
 		75EB592A258D98A7002915E7 /* BiMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiMap.swift; sourceTree = "<group>"; };
 		75EB592C258DD771002915E7 /* TTY.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TTY.swift; sourceTree = "<group>"; };
 		75EDDC4D25D23773003AECC6 /* HyperIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HyperIntegration.swift; sourceTree = "<group>"; };
@@ -526,6 +536,7 @@
 				755D0F512482D4920074AB5C /* HotKey in Frameworks */,
 				757CA8E424905B0E002A64A8 /* Kitura-WebSocket in Frameworks */,
 				75A4A2A725CBBDE7002EFD6B /* AXSwift in Frameworks */,
+				75290AC626719157000F4255 /* SwiftProtobuf in Frameworks */,
 				756C4D832542A6D30035B467 /* Starscream in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -685,6 +696,19 @@
 			path = figcli;
 			sourceTree = "<group>";
 		};
+		75290AB92671905D000F4255 /* iTerm */ = {
+			isa = PBXGroup;
+			children = (
+				75EB570A267AAE5B00F10C64 /* fig-iterm-integration.scpt */,
+				75290AB3267126EB000F4255 /* iTermIntegration.swift */,
+				75290ACB2671AD1D000F4255 /* WebSocketFramer.swift */,
+				75290ABA26719090000F4255 /* iterm.pb.swift */,
+				75290ABB26719090000F4255 /* iterm.proto */,
+				75290ABC26719090000F4255 /* README */,
+			);
+			path = iTerm;
+			sourceTree = "<group>";
+		};
 		752A398725CD0FFB00B1AC40 /* VSCode */ = {
 			isa = PBXGroup;
 			children = (
@@ -756,11 +780,11 @@
 				75A4521325AD367E00107D2C /* Feedback.swift */,
 				75AEF2E325C3C34A00D78431 /* Diagnostic.swift */,
 				75AEF2E925C4C34D00D78431 /* SecureKeyboardInput.swift */,
-				752D71CE25B8CA4000263527 /* iTermTabIntegration.swift */,
 				75DA86A225EDB05100722F1D /* Integrations.swift */,
 				7573F15F260BC70F00C833FA /* LoginItems.swift */,
 				75DA86A425EEBD7400722F1D /* Alert.swift */,
 				75FE3FFF2626A4BD00AC8414 /* Github.swift */,
+				75290AB92671905D000F4255 /* iTerm */,
 				75EDDC4F25D2473C003AECC6 /* Hyper */,
 				752A398725CD0FFB00B1AC40 /* VSCode */,
 				75B1992A25019FDE00F38EA8 /* Companion Window */,
@@ -1047,6 +1071,7 @@
 				756C4D822542A6D30035B467 /* Starscream */,
 				75A4A2A625CBBDE7002EFD6B /* AXSwift */,
 				7512A48A263252EF00CDE824 /* Sparkle */,
+				75290AC526719157000F4255 /* SwiftProtobuf */,
 			);
 			productName = fig;
 			productReference = 75675951244634AD006AA988 /* fig.app */;
@@ -1131,6 +1156,7 @@
 				75CFDBE024EDE31800F00CAE /* XCRemoteSwiftPackageReference "sentry-cocoa" */,
 				75A4A2A525CBBDE4002EFD6B /* XCRemoteSwiftPackageReference "AXSwift" */,
 				7512A489263252EF00CDE824 /* XCRemoteSwiftPackageReference "Sparkle" */,
+				75290AC426719156000F4255 /* XCRemoteSwiftPackageReference "swift-protobuf" */,
 			);
 			productRefGroup = 75675952244634AD006AA988 /* Products */;
 			projectDirPath = "";
@@ -1199,6 +1225,7 @@
 				757CA88624876043002A64A8 /* error.html in Resources */,
 				752E68DD2620F868009E9A7E /* gradle@2x.png in Resources */,
 				75A4A29E25C91471002EFD6B /* debugger-2-trimmed.mp4 in Resources */,
+				75290ABF26719090000F4255 /* README in Resources */,
 				757CA88F248B0D31002A64A8 /* cli.png in Resources */,
 				752C0BE4247B44C60077E415 /* finder.html in Resources */,
 				752E68F22620F885009E9A7E /* android@2x.png in Resources */,
@@ -1213,6 +1240,7 @@
 				754D31B525759D900020CED4 /* tutorial.html in Resources */,
 				752D71C725AECB4B00263527 /* ssh.mp4 in Resources */,
 				7573F15C2602B4E000C833FA /* invite@2x.png in Resources */,
+				75EB570B267AAE5B00F10C64 /* fig-iterm-integration.scpt in Resources */,
 				7564AE6F265C9DCE0040BD4C /* discord@2x.png in Resources */,
 				75D2E3CB249C1E7500607F66 /* terminal.css in Resources */,
 				757CA88A248AD58C002A64A8 /* onboarding.html in Resources */,
@@ -1355,7 +1383,6 @@
 				75A4A2A225CA2190002EFD6B /* ZLEIntegration.swift in Sources */,
 				75AA24DA25A7E8B000A51E9D /* lsof.m in Sources */,
 				75EB592B258D98A7002915E7 /* BiMap.swift in Sources */,
-				752D71CF25B8CA4000263527 /* iTermTabIntegration.swift in Sources */,
 				751F7589246D090100E083C8 /* WebBridge.swift in Sources */,
 				75EDDC5B25D4BC54003AECC6 /* UnixSocketClient.swift in Sources */,
 				75AEF2E625C3DEAF00D78431 /* DockerIntegration.swift in Sources */,
@@ -1366,6 +1393,7 @@
 				75AEF2E425C3C34A00D78431 /* Diagnostic.swift in Sources */,
 				75A4A2A025CA0D46002EFD6B /* Autocomplete.swift in Sources */,
 				7510F89924A6910500E86F7C /* TerminalViewDelegate.swift in Sources */,
+				75290ACC2671AD1E000F4255 /* WebSocketFramer.swift in Sources */,
 				759F987C25BF903900EC3407 /* Accessibility.swift in Sources */,
 				7510F8A424A6910500E86F7C /* iOSCaretView.swift in Sources */,
 				751C3BEE24B6915000B5C7FD /* Defaults.swift in Sources */,
@@ -1382,10 +1410,12 @@
 				75DA86A925EF145E00722F1D /* TmuxIntegration.swift in Sources */,
 				7577124725648DFB0011FF48 /* ps.c in Sources */,
 				753C31A42643816D00202AAA /* VSCodeInsidersIntegration.swift in Sources */,
+				75290ABD26719090000F4255 /* iterm.pb.swift in Sources */,
 				75B1993825100E4E00F38EA8 /* KeypressService.swift in Sources */,
 				7510F8A724A6910500E86F7C /* MacAccessibilityService.swift in Sources */,
 				75C57C142581C0700065741E /* ioreg.c in Sources */,
 				7510F8AA24A6910500E86F7C /* MacCaretView.swift in Sources */,
+				75290AB4267126EB000F4255 /* iTermIntegration.swift in Sources */,
 				75B0A07C25BA64CC00FCD89A /* AutocompleteContextNotifier.swift in Sources */,
 				75FE40002626A4BD00AC8414 /* Github.swift in Sources */,
 				751C3BEC24B6910800B5C7FD /* Remote.swift in Sources */,
@@ -1822,6 +1852,14 @@
 				minimumVersion = 1.26.0;
 			};
 		};
+		75290AC426719156000F4255 /* XCRemoteSwiftPackageReference "swift-protobuf" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-protobuf.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.17.0;
+			};
+		};
 		755D0F4F2482D4910074AB5C /* XCRemoteSwiftPackageReference "HotKey" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/soffes/HotKey";
@@ -1869,6 +1907,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 7512A489263252EF00CDE824 /* XCRemoteSwiftPackageReference "Sparkle" */;
 			productName = Sparkle;
+		};
+		75290AC526719157000F4255 /* SwiftProtobuf */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 75290AC426719156000F4255 /* XCRemoteSwiftPackageReference "swift-protobuf" */;
+			productName = SwiftProtobuf;
 		};
 		755D0F502482D4920074AB5C /* HotKey */ = {
 			isa = XCSwiftPackageProductDependency;

@@ -1,0 +1,13 @@
+# 
+
+Download most recent .proto file from iTerm.
+
+Install protobuf compiler:
+
+```
+brew install swift-protobuf
+```
+
+```
+protoc --swift_out=. api.proto
+```

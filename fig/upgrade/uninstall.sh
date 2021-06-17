@@ -17,6 +17,7 @@ defaults write com.mschrage.fig 'uuid' "$saved_id"
 echo "Remove iTerm integration (if set up)"
 rm ~/Library/Application\ Support/iTerm2/Scripts/AutoLaunch/fig-iterm-integration.py
 rm ~/.config/iterm2/AppSupport/Scripts/AutoLaunch/fig-iterm-integration.py
+rm ~/Library/Application\ Support/iTerm2/Scripts/AutoLaunch/fig-iterm-integration.scpt
 
 echo "Remove VSCode integration (if set up)"
 rm -rf ~/.vscode/extensions/withfig.fig-*

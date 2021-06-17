@@ -254,7 +254,7 @@ class Diagnostic {
       SSH Integration: \(Defaults.SSHIntegrationEnabled)
       Tmux Integration: \(TmuxIntegration.isInstalled)
       Keybindings path: \(Diagnostic.keybindingsPath ?? "<none>")
-      iTerm Integration: \(iTermTabIntegration.isInstalled)
+      iTerm Integration: \(iTermIntegration.isInstalled) \(iTermIntegration.shared.isConnectedToAPI ? "[Authenticated]": "")
       Hyper Integration: \(HyperIntegration.isInstalled)
       VSCode Integration: \(VSCodeIntegration.isInstalled)
       Docker Integration: \(DockerEventStream.shared.socket.isConnected)
