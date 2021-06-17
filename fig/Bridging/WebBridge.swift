@@ -877,10 +877,6 @@ extension WebBridge {
                 }
                 case "deleteCache":
                     (scope.webView as? WebView)?.deleteCache()
-                case "iterm":
-                    if let delegate = NSApplication.shared.delegate as? AppDelegate {
-                        delegate.iTermSetup()
-                    }
                 case "newTerminalWindow":
                     let path = Bundle.main.path(forResource: "open_new_terminal_window", ofType: "scpt")
                     NSAppleScript.run(path: path!)

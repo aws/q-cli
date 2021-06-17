@@ -22,8 +22,6 @@ class iTermIntegration {
   static let bundleAppleScriptFilePath = Bundle.main.path(forResource: scriptName, ofType: "scpt")!
 
   // static let autolaunchAuthenticationAppleScript = "\(NSHomeDirectory())/.fig/tools/\(scriptName).scpt"
-  fileprivate static var iTerm: NSRunningApplication? = nil
-  fileprivate static var kvo: NSKeyValueObservation? = nil
   fileprivate static let plistVersionKey = "iTerm Version"
   fileprivate static let plistAPIEnabledKey = "EnableAPIServer"
   fileprivate static let minimumSupportedVersion:[Int] = [3,3,0]
@@ -332,8 +330,11 @@ extension iTermIntegration: UnixSocketDelegate {
 
 extension iTermIntegration: IntegrationProvider {
       
-  static func install(withRestart: Bool, inBackground: Bool, completion: (() -> Void)?) {
-    
+  static func install(withRestart: Bool, inBackground: Bool, completion: (() -> Void)? = nil) {
+    guard NSWorkspace.shared.applicationIsInstalled(iTermBundleId) else {
+      completion?()
+      return
+    }
     // Check version number
     guard let iTermDefaults = UserDefaults(suiteName: iTermBundleId),
           let version = iTermDefaults.string(forKey: plistVersionKey) else {
@@ -342,7 +343,7 @@ extension iTermIntegration: IntegrationProvider {
         Alert.show(title: "Could not install iTerm Integration",
                    message: "Could not read iTerm plist file to determine version")
       }
-      
+      completion?()
       return
     }
     
@@ -353,7 +354,7 @@ extension iTermIntegration: IntegrationProvider {
         Alert.show(title: "Could not install iTerm Integration",
                    message: "iTerm version (\(version)) was invalid")
       }
-      
+      completion?()
       return
     }
     
@@ -363,7 +364,7 @@ extension iTermIntegration: IntegrationProvider {
           Alert.show(title: "Could not install iTerm Integration",
                      message: "iTerm version \(version) is not supported. Must be 3.3.0 or above.")
         }
-        
+        completion?()
         return
       }
       
@@ -387,6 +388,7 @@ extension iTermIntegration: IntegrationProvider {
         Alert.show(title: "Could not install iTerm Integration",
                    message: "Could not create symlink to '\(autoLaunchScriptTarget)'")
       }
+      completion?()
       return
       
     }
@@ -397,26 +399,8 @@ extension iTermIntegration: IntegrationProvider {
       return
     }
     
-    if let app = NSRunningApplication.forBundleId(iTermBundleId) {
-       self.iTerm = app
-       self.iTerm!.terminate()
-       self.kvo = self.iTerm!.observe(\.isTerminated, options: .new) { (app, terminated) in
-           if terminated.newValue == true {
-               print("iTerm terminated! Restarting...")
-                NSWorkspace.shared.launchApplication(withBundleIdentifier: iTermBundleId,
-                                                     options: [.default],
-                                                     additionalEventParamDescriptor: nil,
-                                                     launchIdentifier: nil)
-               self.kvo!.invalidate()
-               self.iTerm = nil
-           }
-       }
-    } else {
-       NSWorkspace.shared.launchApplication(withBundleIdentifier: iTermBundleId,
-                                            options: [.default],
-                                            additionalEventParamDescriptor: nil,
-                                            launchIdentifier: nil)
-   }
+    let iTerm = Restarter(with: iTermBundleId)
+    iTerm.restart(launchingIfInactive: false, completion: completion)
     
   }
   
@@ -462,5 +446,15 @@ extension NSRunningApplication {
 
     return NSWorkspace.shared.runningApplications.filter ({ return $0.bundleIdentifier == bundleId }).first
 
+  }
+}
+
+extension NSWorkspace {
+  func applicationIsInstalled(_ bundleId: String?) -> Bool {
+    guard let bundleId = bundleId else {
+      return false
+    }
+    
+    return  NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleId) != nil
   }
 }

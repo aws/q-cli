@@ -90,7 +90,6 @@
 		752D71CA25AFD7B400263527 /* team-download.sh in Resources */ = {isa = PBXBuildFile; fileRef = 752D71C825AFD59B00263527 /* team-download.sh */; };
 		752D71CB25AFD7B400263527 /* team-upload.sh in Resources */ = {isa = PBXBuildFile; fileRef = 752D71C925AFD5B800263527 /* team-upload.sh */; };
 		752D71CD25B8A6B300263527 /* Restarter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 752D71CC25B8A6B200263527 /* Restarter.swift */; };
-		752D71CF25B8CA4000263527 /* iTermTabIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 752D71CE25B8CA4000263527 /* iTermTabIntegration.swift */; };
 		752E68DD2620F868009E9A7E /* gradle@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752E68DA2620F868009E9A7E /* gradle@2x.png */; };
 		752E68DE2620F868009E9A7E /* slack@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752E68DB2620F868009E9A7E /* slack@2x.png */; };
 		752E68DF2620F868009E9A7E /* yarn@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752E68DC2620F868009E9A7E /* yarn@2x.png */; };
@@ -368,7 +367,6 @@
 		752D71C825AFD59B00263527 /* team-download.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "team-download.sh"; sourceTree = "<group>"; };
 		752D71C925AFD5B800263527 /* team-upload.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "team-upload.sh"; sourceTree = "<group>"; };
 		752D71CC25B8A6B200263527 /* Restarter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Restarter.swift; sourceTree = "<group>"; };
-		752D71CE25B8CA4000263527 /* iTermTabIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iTermTabIntegration.swift; sourceTree = "<group>"; };
 		752E68DA2620F868009E9A7E /* gradle@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "gradle@2x.png"; sourceTree = "<group>"; };
 		752E68DB2620F868009E9A7E /* slack@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "slack@2x.png"; sourceTree = "<group>"; };
 		752E68DC2620F868009E9A7E /* yarn@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "yarn@2x.png"; sourceTree = "<group>"; };
@@ -782,7 +780,6 @@
 				75A4521325AD367E00107D2C /* Feedback.swift */,
 				75AEF2E325C3C34A00D78431 /* Diagnostic.swift */,
 				75AEF2E925C4C34D00D78431 /* SecureKeyboardInput.swift */,
-				752D71CE25B8CA4000263527 /* iTermTabIntegration.swift */,
 				75DA86A225EDB05100722F1D /* Integrations.swift */,
 				7573F15F260BC70F00C833FA /* LoginItems.swift */,
 				75DA86A425EEBD7400722F1D /* Alert.swift */,
@@ -1386,7 +1383,6 @@
 				75A4A2A225CA2190002EFD6B /* ZLEIntegration.swift in Sources */,
 				75AA24DA25A7E8B000A51E9D /* lsof.m in Sources */,
 				75EB592B258D98A7002915E7 /* BiMap.swift in Sources */,
-				752D71CF25B8CA4000263527 /* iTermTabIntegration.swift in Sources */,
 				751F7589246D090100E083C8 /* WebBridge.swift in Sources */,
 				75EDDC5B25D4BC54003AECC6 /* UnixSocketClient.swift in Sources */,
 				75AEF2E625C3DEAF00D78431 /* DockerIntegration.swift in Sources */,
