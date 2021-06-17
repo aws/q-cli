@@ -7,7 +7,7 @@
 //
 
 import Cocoa
-//import Starscream
+
 class iTermIntegration {
   static let shared = iTermIntegration()
   static let iTermBundleId = Integrations.iTerm
@@ -15,13 +15,10 @@ class iTermIntegration {
   // Installation
   fileprivate static let scriptName = "fig-iterm-integration"
 
-    //Bundle.main.path(forAuxiliaryExecutable: "\(scriptName).scpt")!
   fileprivate static let iTermAutoLaunchDirectory = "\(NSHomeDirectory())/Library/Application Support/iTerm2/Scripts/AutoLaunch/"
   fileprivate static let autoLaunchScriptTarget = iTermAutoLaunchDirectory + scriptName + ".scpt"
-  // Where do we want to store this file?
   static let bundleAppleScriptFilePath = Bundle.main.path(forResource: scriptName, ofType: "scpt")!
-
-  // static let autolaunchAuthenticationAppleScript = "\(NSHomeDirectory())/.fig/tools/\(scriptName).scpt"
+  // Do we want to store the Applescript in the bundle or in withfig/fig? eg. "\(NSHomeDirectory())/.fig/tools/\(scriptName).scpt"
   fileprivate static let plistVersionKey = "iTerm Version"
   fileprivate static let plistAPIEnabledKey = "EnableAPIServer"
   fileprivate static let minimumSupportedVersion:[Int] = [3,3,0]
@@ -85,26 +82,8 @@ class iTermIntegration {
     
     self.attemptToConnect()
     
-//    self.timer = Timer.scheduledTimer(withTimeInterval: self.pollingInterval, repeats: true) { _ in
-//      print("iTerm: should attempt to connect?")
-//      guard self.appIsRunning else {
-//        print("iTerm: desktop app is not running, so disconnecting from socket.")
-//        self.socket.disconnect()
-//        return
-//      }
-//      guard !self.socket.isConnected else {
-//        print("iTerm: Socket is already connected")
-//        return
-//      }
-//
-//      self.attemptToConnect()
-//    }
-    
-    
   }
-  
-  // potentially add file watcher for ~/.fig/tools/iterm-api-credentials
-  
+    
   // https://gitlab.com/gnachman/iterm2/-/issues/9058#note_392824614
   // https://github.com/gnachman/iTerm2/blob/c52136b7c0bae545436be8d1441449f19e21faa1/sources/iTermWebSocketConnection.m#L50
   static let iTermLibraryVersion = 0.24
@@ -140,7 +119,6 @@ class iTermIntegration {
     }
     
     Logger.log(message: "disconnecting socket because application was terminated.", subsystem: .iterm)
-//    self.socket.disconnect()
     self.disconnect()
     
   }
@@ -192,9 +170,6 @@ class iTermIntegration {
   func attemptToConnect() {
     Logger.log(message: "attempting to connect!", subsystem: .iterm)
 
-//    if socket.isConnected {
-//      socket.disconnect()
-//    }
     guard appIsRunning else {
       Logger.log(message: "target app is not running...", subsystem: .iterm)
       return
@@ -206,7 +181,6 @@ class iTermIntegration {
         guard let (cookie, key) =  credentials() else {
           Logger.log(message: "could not find credentials", subsystem: .iterm)
 
-//          self.socket.disconnect()
           self.disconnect()
           return
         }
@@ -236,7 +210,7 @@ class iTermIntegration {
 
 extension iTermIntegration: FramerEventClient {
   func frameProcessed(event: FrameEvent) {
-//    Logger.log(message: "frame processed", subsystem: .iterm)
+
     switch event {
     case .frame(let frame):
       let message = try! Iterm2_ServerOriginatedMessage(serializedData: frame.payload)
@@ -264,9 +238,7 @@ extension iTermIntegration: FramerEventClient {
         return
       }
       
-      
-      print("iterm: other API event")
-
+    
     case .error(let err):
       Logger.log(message: "an error occurred - \(err)", subsystem: .iterm)
     }
@@ -303,7 +275,6 @@ extension iTermIntegration: UnixSocketDelegate {
       return
     }
     
-    //HTTP/1.1 101 Switching Protocols -> Success
     if (message.contains("HTTP/1.1 101 Switching Protocols")) {
       Logger.log(message: "connection accepted!", subsystem: .iterm)
       self.isConnectedToAPI = true
