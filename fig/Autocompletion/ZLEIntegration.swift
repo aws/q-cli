@@ -131,7 +131,7 @@ class ZLEIntegration {
       
       switch version {
         case nil:
-          ShellBridge.simulate(keystroke: Keystroke(keyCode: Keycode.f12))
+          ShellBridge.injectUnicodeString(insertionText, delay: 0.01, completion: nil)
         default: // > 1
           ShellBridge.injectUnicodeString("◧")
       }

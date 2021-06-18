@@ -138,11 +138,10 @@ extension ShellHookManager {
       self.updateHashMetadata(oldHash: "\(window.windowId)/%", hash: window.hash)
     }
   
-    // refresh cache
+    // refresh cache! Why don't we us Accessibility.resetCache()?
     if Integrations.electronTerminals.contains(window.bundleId ?? "") {
-      let
-        cursor = Accessibility.findXTermCursorInElectronWindow(window, skipCache: true)
-      print("cursor: updating due to tab changed? \(String(describing: cursor))")
+      let _ = Accessibility.findXTermCursorInElectronWindow(window, skipCache: true)
+      print("xterm-cursor: updating due to tab changed?")
 
     }
     
@@ -405,13 +404,20 @@ extension ShellHookManager {
               return
           }
       
-      // prevents fig window from popping up if we don't have an associated shell process
-      guard let tty = tty[hash], tty.isShell ?? false else {
-        return
-      }
       
-      // Set version (used for checking compatibility)
-      tty.shellIntegrationVersion = info.shellIntegrationVersion
+      // Attempt to find corresponding tty...
+      // if we don't find it that's okay, we still want to show the popup
+      if let tty = tty[hash] {
+        
+        // If found, set version (used for checking compatibility)
+        tty.shellIntegrationVersion = info.shellIntegrationVersion
+        
+        // If we have a tty and the active process is not a shell, then prevent fig window from popping up
+        // if we're not sure, we default to showing popup here.
+        if !(tty.isShell ?? true) {
+          return
+        }
+      }
       
       // ignore events if secure keyboard is enabled
       guard !SecureKeyboardInput.enabled else {
