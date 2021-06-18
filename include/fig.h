@@ -51,6 +51,7 @@ typedef struct {
   bool altscreen;
   bool in_prompt;
   bool preexec;
+  bool disable_figterm;
   int ptyp;
   int ptyc_pid;
 } FigTerm;
@@ -63,10 +64,10 @@ typedef struct {
 // term_state.c
 TermState* term_state_new(VTerm*);
 void term_state_free(TermState*);
-void term_state_init_rows(TermState*,  int);
+int term_state_init_rows(TermState*,  int);
 void term_state_free_rows(TermState*);
 void term_state_update_cursor(TermState*, const VTermPos);
-void term_state_update(TermState*, VTerm*, VTermRect, bool);
+int term_state_update(TermState*, VTerm*, VTermRect, bool);
 void print_term_state(TermState*, bool);
 char* extract_buffer(TermState*, TermState*, int*);
 
@@ -79,13 +80,20 @@ void figterm_handle_winch(int);
 int figterm_should_resize();
 
 // util.c
-void get_winsize();
+int get_winsize();
 FigInfo* init_fig_info();
 FigInfo* get_fig_info();
+void free_fig_info();
 char* get_exe(pid_t);
 int unix_socket_connect(char*);
 int fig_socket_send(char*);
 char* fig_path(char*);
+
+// lib/exit.c
+int get_exit_status();
+void exit_with_status(int) __attribute__((noreturn));
+
+#define EXIT(status) exit_with_status(status)
 
 // lib/string.c
 char* ltrim(char*);

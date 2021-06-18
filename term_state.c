@@ -9,8 +9,10 @@ char *update_row(char *row, int *row_len, VTermRect rect, VTermScreen *vts) {
 
   if (rect.end_col > *row_len) {
     new_row = realloc(row, sizeof(char) * rect.end_col);
-    if (new_row == NULL)
-      err_sys("Error in realloc");
+    if (new_row == NULL) {
+      log_error("Error in realloc");
+      return NULL;
+    }
 
     memset(new_row + *row_len, ' ', sizeof(char) * (rect.end_col - *row_len));
   }
@@ -27,14 +29,15 @@ VTermRect full_screen(VTerm *vt) {
   return rect;
 }
 
-void term_state_update(TermState *ts, VTerm *vt, VTermRect rect, bool reset) {
+int term_state_update(TermState *ts, VTerm *vt, VTermRect rect, bool reset) {
   int nrow, ncol;
   vterm_get_size(vt, &nrow, &ncol);
   if (reset || rect.end_row > ts->nrows) {
     log_debug("Term state update reset.");
     term_state_free_rows(ts);
 
-    term_state_init_rows(ts, nrow);
+    if (term_state_init_rows(ts, nrow) == -1)
+      return -1;
     rect = full_screen(vt);
   }
 
@@ -44,8 +47,12 @@ void term_state_update(TermState *ts, VTerm *vt, VTermRect rect, bool reset) {
   for (int i = rect.start_row; i < end_row; i++) {
     rect.start_row = i;
     rect.end_row = i + 1;
-    ts->rows[i] = update_row(ts->rows[i], ts->row_lens + i, rect, vts);
+    char* new_row = update_row(ts->rows[i], ts->row_lens + i, rect, vts);
+    if (new_row == NULL && ts->rows[i] != NULL)
+      return -1;
+    ts->rows[i] = new_row;
   }
+  return 0;
 }
 
 void term_state_free_rows(TermState *ts) {
@@ -56,15 +63,17 @@ void term_state_free_rows(TermState *ts) {
   free(ts->rows);
 }
 
-void term_state_init_rows(TermState *ts, int nrow) {
+int term_state_init_rows(TermState *ts, int nrow) {
   ts->rows = malloc(sizeof(char *) * nrow);
 
-  if (ts->rows == NULL)
-    err_sys("malloc error");
+  if (ts->rows == NULL) {
+    return -1;
+  }
 
   ts->row_lens = malloc(sizeof(int) * nrow);
-  if (ts->row_lens == NULL)
-    err_sys("malloc error");
+  if (ts->row_lens == NULL) {
+    return -1;
+  }
 
   ts->nrows = nrow;
 
@@ -74,6 +83,7 @@ void term_state_init_rows(TermState *ts, int nrow) {
   }
 
   ts->scroll = 0;
+  return 0;
 }
 
 TermState *term_state_new(VTerm *vt) {
@@ -84,13 +94,20 @@ TermState *term_state_new(VTerm *vt) {
 
   int nrow, ncol;
   vterm_get_size(vt, &nrow, &ncol);
-  term_state_init_rows(ts, nrow);
+
+  if (term_state_init_rows(ts, nrow) == -1) {
+    term_state_free(ts);
+    return NULL;
+  }
+
   return ts;
 }
 
 void term_state_free(TermState *ts) {
-  free(ts->cursor);
-  term_state_free_rows(ts);
+  if (ts != NULL) {
+    free(ts->cursor);
+    term_state_free_rows(ts);
+  }
   free(ts);
 }
 

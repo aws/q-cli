@@ -83,14 +83,14 @@ void err_sys_msg(const char *file, int line, const char *fmt, ...) {
   strcat(buf, "\n");
   va_end(ap);
 
-  log_msg(LOG_FATAL, __FILE__, __LINE__, "%s", buf);
+  log_msg(LOG_FATAL, file, line, "%s", buf);
 
   // TODO(sean) try to replicate current shell to fail fully silently: e.g.
   // if read/write fails within vim or something, the user will be popped out
   // of vim and into a parent shell no longer in vim. One solution is to stay
   // in the PTY and disable everything but the basic read/write calls.
   tty_reset(STDIN_FILENO);
-  exit(1);
+  EXIT(1);
 }
 
 SigHandler *set_sigaction(int sig, SigHandler *func) {

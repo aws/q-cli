@@ -5,40 +5,50 @@ static FigTerm *_ft = NULL;
 
 FigTerm *figterm_new(bool utf8, VTermScreenCallbacks *screen_callbacks,
                      VTermStateFallbacks *parser_callbacks, int ptyc_pid, int ptyp) {
-  if (_ft != NULL) {
-    return _ft;
-  }
+  VTerm* vt;
+  FigTerm *ft;
+  struct winsize w;
 
-  FigTerm *ft = malloc(sizeof(FigTerm));
+  if (_ft != NULL)
+    return _ft;
+
+  if ((ft = malloc(sizeof(FigTerm))) == NULL)
+    goto error;
 
   // Initialize vterm
-  struct winsize w;
-  get_winsize(&w);
-  // ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+  if (get_winsize(&w) == -1)
+    goto error;
 
-  VTerm *vt = vterm_new(w.ws_row, w.ws_col);
+  if ((vt = vterm_new(w.ws_row, w.ws_col)) == NULL)
+    goto error;
 
-  ft->altscreen = false;
+  if ((ft->state = term_state_new(vt)) == NULL)
+    goto error;
 
-  ft->cursor = malloc(sizeof(VTermPos));
+  if ((ft->prompt_state = term_state_new(vt)) == NULL)
+    goto error;
+
+  if ((ft->cursor = malloc(sizeof(VTermPos))) == NULL)
+    goto error;
+
   ft->cursor->row = -1;
   ft->cursor->col = -1;
-
-  vterm_set_utf8(vt, utf8);
-  ft->state = term_state_new(vt);
-  ft->prompt_state = term_state_new(vt);
 
   // Default to disabled until we see a shell prompt with shell info we
   // recognize.
   ft->shell_enabled = false;
 
+  ft->altscreen = false;
   ft->in_prompt = false;
   ft->preexec = true;
   ft->vt = vt;
+  ft->disable_figterm = false;
 
   // Used for resize.
   ft->ptyp = ptyp;
   ft->ptyc_pid = ptyc_pid;
+
+  vterm_set_utf8(vt, utf8);
 
   VTermScreen *vts = vterm_obtain_screen(vt);
   vterm_screen_set_callbacks(vts, screen_callbacks, ft);
@@ -50,13 +60,19 @@ FigTerm *figterm_new(bool utf8, VTermScreenCallbacks *screen_callbacks,
   _ft = ft;
 
   return ft;
+
+error:
+  figterm_free(ft);
+  return NULL;
 }
 
 void figterm_free(FigTerm *ft) {
-  vterm_free(ft->vt);
-  term_state_free(ft->state);
-  term_state_free(ft->prompt_state);
-  free(ft->cursor);
+  if (ft != NULL) {
+    vterm_free(ft->vt);
+    term_state_free(ft->state);
+    term_state_free(ft->prompt_state);
+    free(ft->cursor);
+  }
   free(ft);
 }
 
@@ -64,9 +80,14 @@ void figterm_resize(FigTerm *ft) {
   struct winsize ws;
   int nrow, ncol;
 
-  get_winsize(&ws);
-  if (ioctl(ft->ptyp, TIOCSWINSZ, &ws))
+  if (get_winsize(&ws) == -1 || ioctl(ft->ptyp, TIOCSWINSZ, &ws))
     err_sys("failed to set window size");
+
+  if (ft->ptyc_pid > 0) {
+    kill(ft->ptyc_pid, SIGWINCH);
+  }
+
+  if (ft->disable_figterm) return;
 
   vterm_get_size(ft->vt, &nrow, &ncol);
 
@@ -79,12 +100,10 @@ void figterm_resize(FigTerm *ft) {
                     .end_row = ws.ws_row,
                     .start_col = 0,
                     .end_col = ws.ws_col};
-  term_state_update(ft->state, ft->vt, rect, true);
-  term_state_update(ft->prompt_state, ft->vt, rect, true);
-
-  if (ft->ptyc_pid > 0) {
-    kill(ft->ptyc_pid, SIGWINCH);
-  }
+  if (term_state_update(ft->state, ft->vt, rect, true) == -1)
+    ft->disable_figterm = true;
+  if (term_state_update(ft->prompt_state, ft->vt, rect, true) == -1)
+    ft->disable_figterm = true;
 }
 
 // TODO(sean) This should probably not be done inside a signal handler,

@@ -2,6 +2,7 @@
 #include <errno.h>
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #include <vterm.h>
@@ -45,9 +46,12 @@ static int damage_cb(VTermRect rect, void *user) {
   char *prompt_str = ft->in_prompt ? " (+prompt)" : "";
   log_debug("Damage screen%s: (%d-%d, %d-%d)", prompt_str, rect.start_row,
             rect.end_row, rect.start_col, rect.end_col);
-  term_state_update(ft->state, ft->vt, rect, false);
-  if (ft->in_prompt)
-    term_state_update(ft->prompt_state, ft->vt, rect, false);
+  if (term_state_update(ft->state, ft->vt, rect, false) == -1) 
+    ft->disable_figterm = true;
+  if (ft->in_prompt) {
+    if (term_state_update(ft->prompt_state, ft->vt, rect, false) == -1)
+      ft->disable_figterm = true;
+  }
 
   print_term_state(ft->state, false);
   print_term_state(ft->prompt_state, true);
@@ -65,12 +69,13 @@ int settermprop_cb(VTermProp prop, VTermValue *val, void *user) {
 }
 
 int osc_cb(int command, VTermStringFragment frag, void *user) {
-  log_debug("OSC CB: %d, %.*s", command, frag.len, frag.str);
-  if (command == 697) {
+  log_debug("OSC CB (len %d): %d, %.*s", frag.len, command, frag.len, frag.str);
+  if (command == 697 && frag.len > 0) {
     FigTerm *ft = user;
     if (strneq(frag.str, "NewCmd", frag.len)) {
       VTermRect rect = {};
-      term_state_update(ft->prompt_state, ft->vt, rect, true);
+      if (term_state_update(ft->prompt_state, ft->vt, rect, true) == -1)
+        ft->disable_figterm = true;
       term_state_update_cursor(ft->prompt_state, *ft->cursor);
       log_info("Prompt at position: (%d, %d)", ft->cursor->row,
                ft->cursor->col);
@@ -108,25 +113,6 @@ static VTermScreenCallbacks screen_callbacks = {
     .sb_popline = sb_popline_cb,
 };
 
-void child_loop(int ptyp) {
-  int nread;
-  char buf[BUFFSIZE + 1];
-
-  for (;;) {
-    // Copy stdin to pty parent.
-    if ((nread = read(STDIN_FILENO, buf, BUFFSIZE)) < 0)
-      err_sys("read error from stdin");
-    log_debug("Read %d chars on input", nread);
-    if (write(ptyp, buf, nread) != nread)
-      err_sys("write error to parent pty");
-    if (nread == 0)
-      break;
-  }
-
-  // notify parent process on exit.
-  kill(getppid(), SIGTERM);
-  exit(0);
-}
 
 void publish_guess(int index, char *buffer) {
   FigInfo *fig_info = get_fig_info();
@@ -140,23 +126,9 @@ void publish_guess(int index, char *buffer) {
   free(tmpbuf);
 }
 
-void loop(int ptyp, int ptyc_pid) {
-  pid_t child;
+void loop(int ptyp, pid_t child, pid_t ptyc_pid) {
   int nread;
   char buf[BUFFSIZE + 1];
-
-  if ((child = fork()) < 0) {
-    err_sys("fork error");
-  } else if (child == 0) {
-    child_loop(ptyp);
-  }
-
-  // Initialize screen buffer copy "FigTerm".
-  FigTerm *ft = figterm_new(true, &screen_callbacks, &parser_callbacks, ptyc_pid, ptyp);
-  char* insertion_lock = fig_path("insertion-lock");
-  log_info("Shell: %d", ptyc_pid);
-  log_info("Child: %d", child);
-  log_info("Parent: %d", getpid());
 
   if (set_sigaction(SIGWINCH, figterm_handle_winch) == SIG_ERR)
     err_sys("signal_intr error for SIGWINCH");
@@ -164,15 +136,24 @@ void loop(int ptyp, int ptyc_pid) {
   if (set_sigaction(SIGTERM, sig_term) == SIG_ERR)
     err_sys("signal_intr error for SIGTERM");
 
+  // Initialize screen buffer copy "FigTerm".
+  FigTerm *ft = figterm_new(true, &screen_callbacks, &parser_callbacks, ptyc_pid, ptyp);
+
+  char* insertion_lock = fig_path("insertion-lock");
   for (;;) {
     // Read from pty parent.
     nread = read(ptyp, buf, BUFFSIZE - 1);
-    log_debug("Read %d chars (%d)", nread, errno);
-    if (nread < 0 && errno == EINTR) {
+    log_debug("read %d chars on ptyp (%d)", nread, errno);
+    if (nread < 0 && errno == EINTR)
       continue;
-    } else if (nread < 0) {
-      err_sys("read error from ptyp");
-    }
+    else if (nread <= 0)
+      break;
+
+    if (write(STDOUT_FILENO, buf, nread) != nread)
+      err_sys("write error to stdout");
+
+    if (ft == NULL || ft->disable_figterm)
+      continue;
 
     // Make buf a proper str to use str operations.
     buf[nread] = '\0';
@@ -182,25 +163,17 @@ void loop(int ptyp, int ptyc_pid) {
     VTermScreen *vts = vterm_obtain_screen(ft->vt);
     vterm_screen_flush_damage(vts);
 
-    if (write(STDOUT_FILENO, buf, nread) != nread)
-      err_sys("write error to stdout");
-
-    if (nread == 0) {
-      log_info("Got EOF");
-      break;
-    }
-
     bool fig_is_inserting = access(insertion_lock, F_OK) == 0;
 
+    log_debug("prexec %d", ft->preexec);
     if (!ft->preexec && ft->shell_enabled && !fig_is_inserting) {
       int index;
       char *guess = extract_buffer(ft->state, ft->prompt_state, &index);
 
       if (guess != NULL) {
         log_info("guess: %s|\nindex: %d", guess, index);
-        if (index >= 0) {
+        if (index >= 0)
           publish_guess(index, guess);
-        }
       } else {
         ft->preexec = true;
         log_info("Null guess, waiting for new prompt...");
@@ -211,11 +184,18 @@ void loop(int ptyp, int ptyc_pid) {
     }
   }
 
-  // Kill child if we read EOF on pty parent
-  if (sigcaught == 0)
-    kill(child, SIGTERM);
-
   // clean up
   figterm_free(ft);
   free(insertion_lock);
+
+  if (sigcaught == 1) {
+    // child exited, check status code.
+    int status;
+    if ((waitpid(child, &status, 0) != child)
+        || (WIFEXITED(status) && WEXITSTATUS(status) != 0))
+      err_sys("child did not exit cleanly");
+  } else {
+    // Kill child if we read EOF on pty parent
+    kill(child, SIGTERM);
+  }
 }

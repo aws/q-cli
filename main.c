@@ -15,17 +15,65 @@
 #define _PATH_BSHELL "/bin/sh"
 #endif
 
-void loop(int, int);
+#define BUFFSIZE (1024 * 100)
 
-void on_pty_exit() {
-  // Use SIGKILL to kill parent shell, shells trap SIGTERM.
-  tty_reset(STDIN_FILENO);
-  log_info("Exiting.");
-}
+void loop(int, pid_t, pid_t);
 
 void abort_handler(int sig) {
   log_warn("Aborting %d: %d", getpid(), sig);
-  exit(0);
+  EXIT(1);
+}
+
+static char* _parent_shell;
+
+void launch_shell() {
+  char *const args[] = {_parent_shell, NULL};
+  setenv("FIG_TERM", "1", 1);
+  if (getenv("TMUX") != NULL)
+    setenv("FIG_TERM_TMUX", "1", 1);
+  if (execvp(args[0], args) < 0) {
+    printf("FAILL");
+    err_sys("execvp error");
+  }
+}
+
+void on_pty_exit() {
+  int status = get_exit_status();
+  log_info("Exiting (%d).", status);
+  free_fig_info();
+  close_log_file();
+  tty_reset(STDIN_FILENO);
+  if (status != 0) {
+    // Unexpected exit, fallback to exec parent shell.
+    launch_shell();
+  }
+}
+
+void on_child_exit() {
+  // notify parent process on exit.
+  kill(getppid(), SIGTERM);
+  log_info("child exiting");
+}
+
+void child_loop(int ptyp) {
+  int nread;
+  char buf[BUFFSIZE + 1];
+
+  if (atexit(on_child_exit))
+    err_sys("atexit error");
+
+  for (;;) {
+    // Copy stdin to pty parent.
+    if ((nread = read(STDIN_FILENO, buf, BUFFSIZE)) < 0)
+      err_sys("read error from stdin");
+    log_debug("Read %d chars on child", nread);
+    if (write(ptyp, buf, nread) != nread)
+      err_sys("write error to parent pty");
+    if (nread == 0)
+      break;
+  }
+
+  EXIT(0);
 }
 
 int main(int argc, char *argv[]) {
@@ -33,70 +81,75 @@ int main(int argc, char *argv[]) {
   pid_t pid;
   char child_name[20];
 
-  pid_t shell_pid = getpid();
-
-  char *shell = get_exe(shell_pid);
-  printf("shell exe: %s\n", shell);
+  _parent_shell = argv[1];
 
   set_logging_level(LOG_INFO);
   char* log_path = fig_path("pty.log");
   init_log_file(log_path);
+  free(log_path);
 
   FigInfo* fig_info = init_fig_info();
-  char *tmux = getenv("TMUX");
 
   // TODO(sean) breaks if these are NULL.
   if (!isatty(STDIN_FILENO) || fig_info->term_session_id == NULL ||
       fig_info->fig_integration_version == NULL) {
-    execvp(argv[0], argv + 1);
-    err_sys("Not in valid tty");
+    execvp(argv[0], argv);
+    log_error("Not in valid tty");
+    EXIT(1);
   }
 
   struct termios orig_termios;
   struct winsize size;
 
-  if (tcgetattr(STDIN_FILENO, &orig_termios) < 0)
-    err_sys("tcgetattr error on stdin");
-  if (ioctl(STDIN_FILENO, TIOCGWINSZ, (char *)&size) < 0)
-    err_sys("TIOCGWINSZ error");
+  if (tcgetattr(STDIN_FILENO, &orig_termios) < 0) {
+    log_error("tcgetattr error on stdin");
+    goto fallback;
+  }
+  if (ioctl(STDIN_FILENO, TIOCGWINSZ, (char *)&size) < 0) {
+    log_error("TIOCGWINSZ error");
+    goto fallback;
+  }
 
   pid = pty_fork(&fdm, child_name, sizeof(child_name), &orig_termios, &size);
 
   if (pid < 0) {
-    err_sys("fork error");
-  } else if (pid == 0) {
-    log_info("shell exe: %s", shell);
+    log_error("fork error");
+  } else if (pid != 0) {
+    pid_t child;
 
-    char *const args[] = {shell, NULL};
-    setenv("FIG_TERM", "1", 1);
-    if (tmux != NULL) {
-      setenv("FIG_TERM_TMUX", "1", 1);
+    if ((child = fork()) < 0) {
+      err_sys("fork error");
+    } else if (child == 0) {
+      child_loop(fdm);
     }
-    if (execvp(args[0], args) < 0)
-      err_sys("execvp error");
+
+    log_info("Shell: %d", pid);
+    log_info("Child: %d", child);
+    log_info("Parent: %d", getpid());
+
+    // On exit fallback to launching same shell as parent if unexpected exit.
+    if (atexit(on_pty_exit) < 0) {
+      log_error("error setting atexit");
+      kill(pid, SIGKILL);
+      launch_shell();
+    }
+
+    // Set parent tty to raw, passthrough mode.
+    if (tty_raw(STDIN_FILENO) < 0)
+      err_sys("tty_raw error");
+
+    if (set_sigaction(SIGABRT, abort_handler) < 0)
+      err_sys("sigabrt error");
+
+    if (set_sigaction(SIGSEGV, abort_handler) < 0)
+      err_sys("sigsegv error");
+
+    // copy stdin -> ptyp, ptyp -> stdout
+    loop(fdm, child, pid);
+    EXIT(0);
   }
 
-  // Set parent tty to raw, passthrough mode.
-  if (tty_raw(STDIN_FILENO) < 0)
-    err_sys("tty_raw error");
-  // Reset parent tty on exit.
-  if (atexit(on_pty_exit) < 0)
-    err_sys("atexit error");
-  if (set_sigaction(SIGABRT, abort_handler) < 0)
-    err_sys("sigabrt error");
-  if (set_sigaction(SIGSEGV, abort_handler) < 0)
-    err_sys("sigsegv error");
-  fclose(stderr);
-
-  // copy stdin -> ptyp, ptyp -> stdout
-  loop(fdm, pid);
-
-  free(fig_info);
-  free(log_path);
-  close_log_file();
-  log_info("Cleaned up");
-  int x= 0;
-  int ret = waitpid(pid, &x, 0);
-  log_info("%d, %d, %d, %d", x, ret, WIFEXITED(x), WIFSIGNALED(x));
-  exit(0);
+fallback:
+  log_info("launching shell exe: %s", _parent_shell);
+  launch_shell();
 }

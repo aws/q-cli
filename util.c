@@ -1,4 +1,5 @@
 #include "fig.h"
+#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/un.h>
 #include <sys/socket.h>
@@ -6,21 +7,28 @@
 static FigInfo *_fig_info;
 static int fig_sock = -1;
 
-void get_winsize(struct winsize *ws) {
+int get_winsize(struct winsize *ws) {
   // Get window size of current terminal.
   const char *term = ctermid(NULL);
-  log_debug("term %s", term);
   if (!term[0]) {
-    err_sys("can't get name of controlling terminal");
+    log_error("can't get name of controlling terminal");
+    return -1;
   }
   int fd = open(term, O_RDONLY);
   if (fd == -1) {
-    err_sys("can't open terminal at %s", term);
+    log_error("can't open terminal at %s", term);
+    return -1;
   }
   if (ioctl(fd, TIOCGWINSZ, ws) == -1) {
-    err_sys("can't get the window size of %s", term);
+    log_error("can't get the window size of %s", term);
+    return -1;
   }
   close(fd);
+  return 0;
+}
+
+void free_fig_info() {
+  free(_fig_info);
 }
 
 FigInfo *init_fig_info() {

@@ -1,4 +1,4 @@
-./setup.sh
+make install
 
 tmux new-session -s fig_dev -d "bash ${@}"
 pid=$(tmux list-panes -t fig_dev -F '#{pane_pid}')
