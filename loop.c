@@ -116,10 +116,11 @@ void child_loop(int ptyp) {
     // Copy stdin to pty parent.
     if ((nread = read(STDIN_FILENO, buf, BUFFSIZE)) < 0)
       err_sys("read error from stdin");
-    else if (nread == 0)
-      break;
+    log_debug("Read %d chars on input", nread);
     if (write(ptyp, buf, nread) != nread)
       err_sys("write error to parent pty");
+    if (nread == 0)
+      break;
   }
 
   // notify parent process on exit.
@@ -166,6 +167,7 @@ void loop(int ptyp, int ptyc_pid) {
   for (;;) {
     // Read from pty parent.
     nread = read(ptyp, buf, BUFFSIZE - 1);
+    log_debug("Read %d chars (%d)", nread, errno);
     if (nread < 0 && errno == EINTR) {
       continue;
     } else if (nread < 0) {
@@ -175,13 +177,18 @@ void loop(int ptyp, int ptyc_pid) {
     // Make buf a proper str to use str operations.
     buf[nread] = '\0';
 
-    log_debug("Writing %.*s", nread, buf);
+    log_debug("Writing %d chars %.*s", nread, nread, buf);
     vterm_input_write(ft->vt, buf, nread);
     VTermScreen *vts = vterm_obtain_screen(ft->vt);
     vterm_screen_flush_damage(vts);
 
     if (write(STDOUT_FILENO, buf, nread) != nread)
       err_sys("write error to stdout");
+
+    if (nread == 0) {
+      log_info("Got EOF");
+      break;
+    }
 
     bool fig_is_inserting = access(insertion_lock, F_OK) == 0;
 

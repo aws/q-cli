@@ -13,7 +13,7 @@ fig_pty:	main.o loop.o term_state.o figterm.o util.o $(LIBVTERM) $(LIBFIG)
 clean:
 	rm -f $(PROGS) $(TEMPFILES) *.o *.log; \
   (cd $(ROOT)/lib && $(MAKE) clean && rm libvterm.*); \
-  (cd $(ROOT)/libvterm && $(MAKE) PREFIX=$(ROOT)/libvterm clean); \
+  (cd $(ROOT)/libvterm && $(MAKE) PREFIX=$(ROOT)/libvterm clean && rm -rf lib); \
 
 $(LIBVTERM):
 	(cd $(ROOT)/libvterm && $(MAKE) PREFIX=$(ROOT)/libvterm install-lib);

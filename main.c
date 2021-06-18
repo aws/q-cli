@@ -17,21 +17,14 @@
 
 void loop(int, int);
 
-static bool _should_kill_parent = true;
-
 void on_pty_exit() {
   // Use SIGKILL to kill parent shell, shells trap SIGTERM.
-  if (_should_kill_parent) {
-    kill(getppid(), SIGKILL);
-  }
+  tty_reset(STDIN_FILENO);
+  log_info("Exiting.");
 }
 
 void abort_handler(int sig) {
   log_warn("Aborting %d: %d", getpid(), sig);
-  tty_reset(STDIN_FILENO);
-
-  // Avoid killing parent shell when we encounter unexpected error.
-  _should_kill_parent = false;
   exit(0);
 }
 
@@ -40,16 +33,19 @@ int main(int argc, char *argv[]) {
   pid_t pid;
   char child_name[20];
 
-  pid_t shell_pid = getppid();
-  set_logging_level(LOG_DEBUG);
-  char* log_path = fig_path("pty.log");
-  set_log_file(log_path);
+  pid_t shell_pid = getpid();
 
-  // TODO(sean) breaks if these are NULL.
-  //
+  char *shell = get_exe(shell_pid);
+  printf("shell exe: %s\n", shell);
+
+  set_logging_level(LOG_INFO);
+  char* log_path = fig_path("pty.log");
+  init_log_file(log_path);
+
   FigInfo* fig_info = init_fig_info();
   char *tmux = getenv("TMUX");
 
+  // TODO(sean) breaks if these are NULL.
   if (!isatty(STDIN_FILENO) || fig_info->term_session_id == NULL ||
       fig_info->fig_integration_version == NULL) {
     execvp(argv[0], argv + 1);
@@ -69,8 +65,8 @@ int main(int argc, char *argv[]) {
   if (pid < 0) {
     err_sys("fork error");
   } else if (pid == 0) {
-    char *shell = get_exe(shell_pid);
     log_info("shell exe: %s", shell);
+
     char *const args[] = {shell, NULL};
     setenv("FIG_TERM", "1", 1);
     if (tmux != NULL) {
@@ -97,5 +93,10 @@ int main(int argc, char *argv[]) {
 
   free(fig_info);
   free(log_path);
+  close_log_file();
+  log_info("Cleaned up");
+  int x= 0;
+  int ret = waitpid(pid, &x, 0);
+  log_info("%d, %d, %d, %d", x, ret, WIFEXITED(x), WIFSIGNALED(x));
   exit(0);
 }

@@ -11,11 +11,11 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/termios.h>
-#if defined(MACOS) || !defined(TIOCGWINSZ)
+#if defined(__APPLE__) || !defined(TIOCGWINSZ)
 #include <sys/ioctl.h>
 #endif
 
-#if defined(MACOS)
+#if defined(__APPLE__)
 #include <libproc.h>
 #endif
 
@@ -110,7 +110,8 @@ enum { LOG_FATAL, LOG_ERROR, LOG_WARN, LOG_INFO, LOG_DEBUG };
 void log_msg(int level, const char *file, int line, const char *fmt, ...);
 void err_sys_msg(const char *file, int line, const char *fmt, ...) __attribute__((noreturn));
 void set_logging_level(int);
-void set_log_file(char*);
+void init_log_file(char*);
+void close_log_file();
 
 #define log_debug(...) log_msg(LOG_DEBUG, __FILE__, __LINE__, __VA_ARGS__)
 #define log_info(...)  log_msg(LOG_INFO,  __FILE__, __LINE__, __VA_ARGS__)

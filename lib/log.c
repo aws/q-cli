@@ -2,10 +2,21 @@
 #include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <sys/mman.h>
+#include <pthread.h>
+
+typedef struct
+{
+  FILE* file;
+  pthread_mutex_t mutex;
+  pthread_mutexattr_t attr;
+} shared_file_mutex;
+
+static shared_file_mutex* _mutex_log_file = NULL;
+
 
 static const char *log_levels[] = {"FATAL", "ERROR", "WARN", "INFO", "DEBUG"};
 static int _logging_level = LOG_INFO;
-FILE *_log_file;
 
 void set_logging_level(int level) {
   level = level < LOG_FATAL ? LOG_FATAL : level;
@@ -13,8 +24,20 @@ void set_logging_level(int level) {
   _logging_level = level;
 }
 
-void set_log_file(char* path) {
-  _log_file = fopen(path, "w");
+void init_log_file(char* path) {
+  int prot = PROT_READ | PROT_WRITE;
+  int flags = MAP_SHARED | MAP_ANONYMOUS;
+  _mutex_log_file = mmap(NULL, sizeof(shared_file_mutex), prot, flags, -1, 0);
+
+  pthread_mutexattr_init(&_mutex_log_file->attr);
+  pthread_mutexattr_setpshared(&_mutex_log_file->attr, PTHREAD_PROCESS_SHARED);
+  _mutex_log_file->file = fopen(path, "w");
+  pthread_mutex_init(&_mutex_log_file->mutex, &_mutex_log_file->attr);
+}
+
+void close_log_file() {
+  pthread_mutex_destroy(&_mutex_log_file->mutex);
+  pthread_mutexattr_destroy(&_mutex_log_file->attr);
 }
 
 void vlog_msg(int level, const char *file, int line, const char *fmt,
@@ -22,18 +45,21 @@ void vlog_msg(int level, const char *file, int line, const char *fmt,
   if (level <= _logging_level) {
     time_t t = time(NULL);
     struct tm *time = localtime(&t);
-    if (_log_file == NULL) {
-      char tmp[50];
-      sprintf(tmp, "out.%d.log", getpid());
-      set_log_file(tmp);
+    if (_mutex_log_file->file == NULL) {
+      return;
     }
 
     char buf[64];
     buf[strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", time)] = '\0';
-    fprintf(_log_file, "[%s %-5s %d %s:%d] ", buf, log_levels[level], getpid(), file, line);
-    vfprintf(_log_file, fmt, ap);
-    fprintf(_log_file, "\n");
-    fflush(_log_file);
+
+    pthread_mutex_lock(&_mutex_log_file->mutex);
+
+    fprintf(_mutex_log_file->file, "[%s %-5s %d %s:%d] ", buf, log_levels[level], getpid(), file, line);
+    vfprintf(_mutex_log_file->file, fmt, ap);
+    fprintf(_mutex_log_file->file, "\n");
+    fflush(_mutex_log_file->file);
+
+    pthread_mutex_unlock(&_mutex_log_file->mutex);
   }
 }
 
