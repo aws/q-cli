@@ -77,16 +77,12 @@ void child_loop(int ptyp) {
 }
 
 int main(int argc, char *argv[]) {
-  int fdm;
+  int fdm, fdp;
   pid_t pid;
-  char child_name[20];
+  char ptc_name[30];
+  char log_name[100];
 
   _parent_shell = argv[1];
-
-  set_logging_level(LOG_INFO);
-  char* log_path = fig_path("pty.log");
-  init_log_file(log_path);
-  free(log_path);
 
   FigInfo* fig_info = init_fig_info();
 
@@ -94,9 +90,21 @@ int main(int argc, char *argv[]) {
   if (!isatty(STDIN_FILENO) || fig_info->term_session_id == NULL ||
       fig_info->fig_integration_version == NULL) {
     execvp(argv[0], argv);
-    log_error("Not in valid tty");
     EXIT(1);
   }
+
+  if ((fdp = ptyp_open(ptc_name, sizeof(ptc_name))) < 0)
+    goto fallback;
+
+  // Get log file name from ptc_name, e.g. pty_dev_pts_4.log.
+  sprintf(log_name, "pty%s.log", ptc_name);
+  replace(log_name, '/', '_');
+
+  // Initialize logging.
+  set_logging_level(LOG_INFO);
+  char* log_path = fig_path(log_name);
+  init_log_file(log_path);
+  free(log_path);
 
   struct termios orig_termios;
   struct winsize size;
@@ -105,14 +113,13 @@ int main(int argc, char *argv[]) {
     log_error("tcgetattr error on stdin");
     goto fallback;
   }
+
   if (ioctl(STDIN_FILENO, TIOCGWINSZ, (char *)&size) < 0) {
-    log_error("TIOCGWINSZ error");
+    log_error("get window size error");
     goto fallback;
   }
 
-  pid = pty_fork(&fdm, child_name, sizeof(child_name), &orig_termios, &size);
-
-  if (pid < 0) {
+  if ((pid = pty_fork(&fdm, fdp, ptc_name, &orig_termios, &size)) < 0) {
     log_error("fork error");
   } else if (pid != 0) {
     pid_t child;

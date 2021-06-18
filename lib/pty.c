@@ -7,21 +7,9 @@
 #include <stropts.h>
 #endif
 
-pid_t pty_fork(int *ptrfdm, char *child_name, int child_name_size,
-               const struct termios *term, const struct winsize *ws) {
-  int fdp, fdc;
+pid_t pty_fork(int *ptrfdm, int fdp, char* ptc_name, const struct termios *term, const struct winsize *ws) {
+  int fdc;
   pid_t pid;
-  char ptc_name[20];
-
-  if ((fdp = ptyp_open(ptc_name, sizeof(ptc_name))) < 0)
-    err_sys("can't open master pty: %s, error %d", ptc_name, fdp);
-
-  if (child_name != NULL) {
-    // Return child's name
-    strncpy(child_name, ptc_name, child_name_size);
-    child_name[child_name_size - 1] = '\0';
-  }
-
   if ((pid = fork()) < 0) {
     return -1;
   } else if (pid == 0) {

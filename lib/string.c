@@ -7,6 +7,14 @@ char *ltrim(char *s) {
   return s;
 }
 
+void replace(char *s, char o, char n) {
+  while (*s != '\0') {
+    if (*s == o)
+      *s = n;
+    s++;
+  }
+}
+
 char *rtrim(char *s, int min) {
   for (size_t i = strlen(s); i >= 0; i--) {
     if (i == 0 || i == min || !isspace(s[i - 1])) {

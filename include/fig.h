@@ -96,6 +96,7 @@ void exit_with_status(int) __attribute__((noreturn));
 #define EXIT(status) exit_with_status(status)
 
 // lib/string.c
+void replace(char*, char, char);
 char* ltrim(char*);
 char* rtrim(char*, int);
 char* strrstr(const char*, const char*, const size_t, const size_t);
@@ -109,7 +110,7 @@ int tty_reset(int);
 int ptyp_open(char*, int);
 int ptyc_open(char*);
 #ifdef TIOCGWINSZ
-pid_t pty_fork(int*, char*, int, const struct termios*, const struct winsize*);
+pid_t pty_fork(int*, int, char*, const struct termios*, const struct winsize*);
 #endif
 
 // lib/log.c
