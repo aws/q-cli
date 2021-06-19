@@ -40,6 +40,9 @@ class Settings {
   static let debugModeKey = "developer.debugMode"
   static let onlyShowOnTabKey = "autocomplete.onlyShowOnTab"
   static let allowAlternateNavigationKeys = "autocomplete.allowAlternateNavigationKeys"
+  static let logging = "developer.logging"
+  static let loggingEnabledInternally = "developer.logging.internal"
+  static let colorfulLogging = "developer.logging.color"
 
 
   static let filePath = NSHomeDirectory() + "/.fig/settings.json"

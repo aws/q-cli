@@ -66,6 +66,7 @@ class NativeCLI {
         case community = "community"
         case chat = "chat"
         case discord = "discord"
+        case viewLogs = "debug:log"
 
         var isUtility: Bool {
             get {
@@ -110,6 +111,7 @@ class NativeCLI {
                                                            .runInstallScript,
                                                            .lockscreen,
                                                            .quit,
+                                                           .viewLogs,
                                                            .docs]
                return implementatedNatively.contains(self)
             }
@@ -176,6 +178,8 @@ class NativeCLI {
                 NativeCLI.toolsCommand(scope)
             case .debugWindows:
                 NativeCLI.debugWindowsCommand(scope)
+            case .viewLogs:
+                break
             default:
                 break;
             }

@@ -223,6 +223,7 @@
 		75E993F22515A6DD000BE6BE /* statusbar@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 75E993F12515A6DD000BE6BE /* statusbar@2x.png */; };
 		75E993F52517E226000BE6BE /* AXWindowServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75E993F42517E226000BE6BE /* AXWindowServer.swift */; };
 		75EB570B267AAE5B00F10C64 /* fig-iterm-integration.scpt in Resources */ = {isa = PBXBuildFile; fileRef = 75EB570A267AAE5B00F10C64 /* fig-iterm-integration.scpt */; };
+		75EB5721267D749A00F10C64 /* debug-log.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75EB571C267D534200F10C64 /* debug-log.sh */; };
 		75EB592B258D98A7002915E7 /* BiMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75EB592A258D98A7002915E7 /* BiMap.swift */; };
 		75EB592D258DD771002915E7 /* TTY.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75EB592C258DD771002915E7 /* TTY.swift */; };
 		75EDDC4E25D23773003AECC6 /* HyperIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75EDDC4D25D23773003AECC6 /* HyperIntegration.swift */; };
@@ -508,6 +509,7 @@
 		75E993F12515A6DD000BE6BE /* statusbar@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "statusbar@2x.png"; sourceTree = "<group>"; };
 		75E993F42517E226000BE6BE /* AXWindowServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AXWindowServer.swift; sourceTree = "<group>"; };
 		75EB570A267AAE5B00F10C64 /* fig-iterm-integration.scpt */ = {isa = PBXFileReference; lastKnownFileType = file; path = "fig-iterm-integration.scpt"; sourceTree = "<group>"; };
+		75EB571C267D534200F10C64 /* debug-log.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "debug-log.sh"; sourceTree = "<group>"; };
 		75EB592A258D98A7002915E7 /* BiMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiMap.swift; sourceTree = "<group>"; };
 		75EB592C258DD771002915E7 /* TTY.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TTY.swift; sourceTree = "<group>"; };
 		75EDDC4D25D23773003AECC6 /* HyperIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HyperIntegration.swift; sourceTree = "<group>"; };
@@ -891,6 +893,7 @@
 				753C31A12641F6D100202AAA /* settings-docs.sh */,
 				75184663263CF1E0003CBCF9 /* settings-open.sh */,
 				75C8A1412645DEFB001B69DA /* set-path.sh */,
+				75EB571C267D534200F10C64 /* debug-log.sh */,
 			);
 			path = "CLI Scripts";
 			sourceTree = "<group>";
@@ -1175,6 +1178,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				75EB5721267D749A00F10C64 /* debug-log.sh in Resources */,
 				7564AE7D265CB2930040BD4C /* community.sh in Resources */,
 				75C8A1422645E029001B69DA /* set-path.sh in Resources */,
 				75290A7D266B09CB000F4255 /* gear@2x.png in Resources */,
