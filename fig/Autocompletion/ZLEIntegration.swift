@@ -132,8 +132,10 @@ class ZLEIntegration {
       switch version {
         case nil:
           ShellBridge.injectUnicodeString(insertionText, delay: 0.01, completion: nil)
-        default: // > 1
+        case 1, 2:
           ShellBridge.injectUnicodeString("◧")
+        default:
+          ShellBridge.injectUnicodeString(isImmediate ? "◨": "◧")
       }
     
     
