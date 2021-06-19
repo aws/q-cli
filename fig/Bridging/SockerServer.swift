@@ -221,7 +221,14 @@ class ShellBridgeSocketService: WebSocketService {
                                     case "bg:cd":
                                         ShellHookManager.shared.currentDirectoryDidChange(msg)
                                     case "bg:tab":
+                                      // Ignore pings from legacy python script once the new API is working
+                                      // This should only ever happen the first time that iTerm is launched after
+                                      // the new integration is installed, insce after the new API is connected,
+                                      // the python script is deleted from iTerm's AutoLaunch directory.
+                                      // - mschrage, v1.0.44
+                                      if !iTermIntegration.shared.isConnectedToAPI {
                                         ShellHookManager.shared.currentTabDidChange(msg)
+                                      }
                                     case "bg:init":
                                         ShellHookManager.shared.startedNewTerminalSession(msg)
                                     case "bg:prompt":
