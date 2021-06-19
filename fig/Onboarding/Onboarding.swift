@@ -15,6 +15,10 @@ class Onboarding {
     static let commitHashForVersion = ""//["1.0.24" : "hi"]
     
     static func setUpEnviroment(completion:( () -> Void)? = nil) {
+      
+      if !Diagnostic.isRunningOnReadOnlyVolume {
+        SentrySDK.capture(message: "Currently running on read only volume! App is translocated!")
+      }
         
         DispatchQueue.global(qos: .userInitiated).async {
             guard let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String else {
