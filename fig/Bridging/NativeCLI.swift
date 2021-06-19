@@ -179,7 +179,8 @@ class NativeCLI {
             case .debugWindows:
                 NativeCLI.debugWindowsCommand(scope)
             case .viewLogs:
-                break
+                NativeCLI.debugLogsCommand(scope)
+
             default:
                 break;
             }
@@ -588,6 +589,20 @@ extension NativeCLI {
       
         
         NativeCLI.printInTerminal(ps, using: connection)
+    }
+  
+    static func debugLogsCommand(_ scope: Scope) {
+        let (message, connection) = scope
+        var files: String!
+        if message.arguments.count == 0 {
+          let all = (try? FileManager.default.contentsOfDirectory(atPath: Logger.defaultLocation.path)) ?? []
+          files = all.map { "\(Logger.defaultLocation.path)/\($0)" }.joined(separator: " ")
+        } else {
+          files = message.arguments.map { "\(NSHomeDirectory())/.fig/logs/\($0).log" }.joined(separator: " ")
+        }
+
+        connection.send(message: "execvp:tail -qf \(files!)")
+        
     }
   
     static func debugDotfilesCommand(_ scope: Scope) {

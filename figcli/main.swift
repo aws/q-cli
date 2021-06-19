@@ -44,6 +44,20 @@ func runCommand(_ command: String, completion: ((Int32) -> Void)? = nil) throws 
     }
 }
 
+
+func exec(command: String, args: [String]) {
+  withCStrings([command] + args) { (args) in
+    guard execvp(command, args) != 0 else {
+      print("Failed to exec...")
+      return
+
+    }
+    fatalError("Impossible if execv succeeded")
+
+  }
+
+}
+
 let arguments = CommandLine.arguments
 
 if arguments.count > 1 {
@@ -51,6 +65,8 @@ if arguments.count > 1 {
     if command == "cli:installed" {
         print("true")
         exit(0)
+    } else if command == "exec" {
+      exec(command:"tail", args: ["-qf","/Users/mschrage/.fig/logs/global.log"])
     } else if command == "launch" {
         let appIsRunning = NSWorkspace.shared.runningApplications.filter { $0.bundleIdentifier == "com.mschrage.fig"}.count >= 1
         
@@ -179,6 +195,10 @@ class CLI : WebSocketConnectionDelegate {
             }
         }
     }
+    var execOnExit = false
+    var commandToExec: String?
+    var argsToExec: [String] = []
+    
     var pendingDisconnection = false;
     let group: DispatchGroup
     
@@ -252,9 +272,24 @@ class CLI : WebSocketConnectionDelegate {
                 pendingDisconnection = true
             }
             return
+        } else if (text.starts(with: "execvp:")) {
+          let payload = text.replacingOccurrences(of: "execvp:", with: "")
+          let tokens = payload
+            .split(separator: " ").map { String($0) }
+          
+          guard let command = tokens.first else {
+            return
+          }
+          
+          let args = Array(tokens.dropFirst(1))
+          
+          self.execOnExit = true
+          self.commandToExec = command
+          self.argsToExec = args
+          connection.disconnect()
+          return
         }
-
-//        print("msg: '\(text)'")
+      
         busy = true
         
         try? runCommand(text) { (status) in
@@ -328,3 +363,10 @@ DispatchQueue.global().asyncAfter(deadline: .now() + 1.25) {
 }
 
 group.wait()
+
+if let handler = handler, handler.execOnExit, let command = handler.commandToExec {
+  print("exec: \(command)")
+  exec(command: command,
+       args: handler.argsToExec)
+
+}
