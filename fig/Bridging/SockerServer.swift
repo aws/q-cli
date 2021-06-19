@@ -246,6 +246,8 @@ class ShellBridgeSocketService: WebSocketService {
                                         ShellHookManager.shared.clearKeybuffer(msg)
                                     case "bg:keyboard-focus-changed":
                                       ShellHookManager.shared.currentTabDidChange(msg, includesBundleId: true)
+                                    case "bg:iterm-api-ready":
+                                      iTermIntegration.shared.attemptToConnect()
                                     case "bg:alert":
                                         if let title = msg.options?[safe: 1], let text = msg.options?[safe: 2]  {
                                             DispatchQueue.main.async {

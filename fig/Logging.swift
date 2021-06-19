@@ -22,6 +22,7 @@ class Logger {
         case xterm = "xterm"
         case javascript = "javascript"
         case tty = "tty"
+        case iterm = "iterm"
 
     }
     

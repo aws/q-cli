@@ -29,13 +29,15 @@ final class UnixSocketClient: NSObject, StreamDelegate {
   private var outputStream: OutputStream?
   
   private let messageBuffer = NSMutableData(capacity: 256)!
+  private let waitForNewline: Bool // maintain old behavior for DockerIntegration
   
   var isConnected: Bool { return inputStream != nil && outputStream != nil }
   
   // MARK: - Lifecycle
   
-  init(path: String) {
+  init(path: String, waitForNewline: Bool = true) {
     self.path = path
+    self.waitForNewline = waitForNewline
   }
   
   // MARK: - Public API
@@ -126,6 +128,9 @@ final class UnixSocketClient: NSObject, StreamDelegate {
       output.remove(from: .current, forMode: .default)
       outputStream = nil
     }
+    
+    // zero buffer
+    messageBuffer.resetBytes(in: NSRange(location:0, length:messageBuffer.length))
   }
   
   func send(message: String) {
@@ -138,6 +143,17 @@ final class UnixSocketClient: NSObject, StreamDelegate {
       return
     }
     print("Socket: send '\(message)'")
+    var bytes = Array<UInt8>(repeating: 0, count: data.count)
+    (data as NSData).getBytes(&bytes, length: data.count)
+    outputStream.write(&bytes, maxLength: data.count)
+  }
+  
+  func send(data: Data) {
+    guard let outputStream = outputStream else {
+      print("Error: Not Connected")
+      return
+    }
+    
     var bytes = Array<UInt8>(repeating: 0, count: data.count)
     (data as NSData).getBytes(&bytes, length: data.count)
     outputStream.write(&bytes, maxLength: data.count)
@@ -167,10 +183,11 @@ final class UnixSocketClient: NSObject, StreamDelegate {
       }
       
       print("Socket: buffer = \(String(data: messageBuffer as Data, encoding: String.Encoding.utf8) ?? "")")
+      delegate?.socket(self, didReceive: messageBuffer as Data)
       // only inform our delegate of complete messages (must end in newline character)
-      if let message = String(data: messageBuffer as Data, encoding: String.Encoding.utf8), message.hasSuffix("\n") {
-        delegate?.socket(self, didReceive: messageBuffer as Data
-        )
+      if let message = String(data: messageBuffer as Data, encoding: String.Encoding.utf8),
+         message.hasSuffix("\n") {
+
         delegate?.socket(self, didReceive: message)
         messageBuffer.length = 0
       }
