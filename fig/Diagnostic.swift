@@ -292,4 +292,14 @@ class Diagnostic {
       """
     }
   }
+  
+  static func summaryWithEnvironment(_ env: [String: Any]) -> String {
+    let relevantEnvironmentVariables =
+    """
+    PATH: \(env["PATH"] as? String ?? "???")
+    FIG_INTEGRATION_VERSION: \(env["FIG_INTEGRATION_VERSION"] as? String ?? "???")
+    """
+    return Diagnostic.summary + relevantEnvironmentVariables
+    
+  }
 }

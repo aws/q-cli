@@ -349,8 +349,9 @@ extension NativeCLI {
     }
   
     static func diagnosticCommand(_ scope: Scope) {
-        let (_, connection) = scope
-        NativeCLI.printInTerminal(Diagnostic.summary, using: connection)
+        let (message, connection) = scope
+        let env = message.env?.jsonStringToDict() ?? [:]
+        NativeCLI.printInTerminal(Diagnostic.summaryWithEnvironment(env), using: connection)
     }
   
     static func quitCommand(_ scope: Scope) {
