@@ -69,8 +69,8 @@ class UnixSocketServer {
         repeat {
           let newSocket = try socket.acceptClientConnection()
           
-          print("Accepted connection from: \(newSocket.remoteHostname) on port \(newSocket.remotePort)")
-          print("Socket Signature: \(String(describing: newSocket.signature?.description))")
+//          print("Accepted connection from: \(newSocket.remoteHostname) on port \(newSocket.remotePort)")
+//          print("Socket Signature: \(String(describing: newSocket.signature?.description))")
           
           self.addNewConnection(socket: newSocket)
           

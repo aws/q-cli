@@ -126,6 +126,35 @@ extension Dictionary where Value: Equatable {
 
 extension ShellHookManager {
     
+  func keyboardFocusDidChange(to uuid: String, in window: ExternalWindow) {
+    let VSCodeTerminal = window.bundleId == Integrations.VSCode ||
+                         window.bundleId == Integrations.VSCodeInsiders
+    
+    self.setActiveTab(uuid, for: window.windowId)
+  
+    // Manually ensuring that values set prior to tab are updated
+    // Make sure oldHash is equal to whatever the default value of the hash would be
+    if (!VSCodeTerminal) {
+      self.updateHashMetadata(oldHash: "\(window.windowId)/%", hash: window.hash)
+    }
+  
+    // refresh cache! Why don't we us Accessibility.resetCache()?
+    if Integrations.electronTerminals.contains(window.bundleId ?? "") {
+      let _ = Accessibility.findXTermCursorInElectronWindow(window, skipCache: true)
+      print("xterm-cursor: updating due to tab changed?")
+
+    }
+    
+    DispatchQueue.main.async {
+      // If leaving visor mode in iTerm, we need to manually check which window is on top
+      // if let app = NSWorkspace.shared.frontmostApplication {
+      //     AXWindowServer.shared.register(app, fromActivation: true)
+      // }
+
+        WindowManager.shared.windowChanged()
+    }
+  }
+    // If this changes, make sure to reflect changes in iTermIntegration.sessionId setter
     func currentTabDidChange(_ info: ShellMessage, includesBundleId: Bool = false) {
         Logger.log(message: "currentTabDidChange")
         
@@ -151,32 +180,7 @@ extension ShellHookManager {
                   let iTermTab = window.bundleId == Integrations.iTerm && !id.hasPrefix("code:") && !id.hasPrefix("hyper:") && !includesBundleId
                   guard VSCodeTerminal || iTermTab || HyperTab || includesBundleId else { return }
                     Logger.log(message: "tab: \(window.windowId)/\(id)")
-//                    self.tabs[window.windowId] = id
-                    self.setActiveTab(id, for: window.windowId)
-                  
-                    // Manually ensuring that values set prior to tab are updated
-                    // Make sure oldHash is equal to whatever the default value of the hash would be
-                    if (!VSCodeTerminal) {
-                      self.updateHashMetadata(oldHash: "\(window.windowId)/%", hash: window.hash)
-                    }
-                  
-                    // refresh cache
-                    if Integrations.electronTerminals.contains(window.bundleId ?? "") {
-                      let
-                        cursor = Accessibility.findXTermCursorInElectronWindow(window, skipCache: true)
-                      print("cursor: updating due to tab changed? \(String(describing: cursor))")
-
-                    }
-                    
-                    DispatchQueue.main.async {
-                      
-                        // If leaving visor mode in iTerm, we need to manually check which window is on top
-//                        if let app = NSWorkspace.shared.frontmostApplication {
-//                            AXWindowServer.shared.register(app, fromActivation: true)
-//                        }
-
-                        WindowManager.shared.windowChanged()
-                    }
+                    self.keyboardFocusDidChange(to: id, in: window)
                 }
             }
         }
@@ -400,13 +404,20 @@ extension ShellHookManager {
               return
           }
       
-      // prevents fig window from popping up if we don't have an associated shell process
-      guard let tty = tty[hash], tty.isShell ?? false else {
-        return
-      }
       
-      // Set version (used for checking compatibility)
-      tty.shellIntegrationVersion = info.shellIntegrationVersion
+      // Attempt to find corresponding tty...
+      // if we don't find it that's okay, we still want to show the popup
+      if let tty = tty[hash] {
+        
+        // If found, set version (used for checking compatibility)
+        tty.shellIntegrationVersion = info.shellIntegrationVersion
+        
+        // If we have a tty and the active process is not a shell, then prevent fig window from popping up
+        // if we're not sure, we default to showing popup here.
+        if !(tty.isShell ?? true) {
+          return
+        }
+      }
       
       // ignore events if secure keyboard is enabled
       guard !SecureKeyboardInput.enabled else {

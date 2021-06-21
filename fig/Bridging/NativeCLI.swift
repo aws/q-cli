@@ -58,6 +58,7 @@ class NativeCLI {
         case debugWindows = "debug:windows"
         case electronAccessibility = "util:axelectron"
         case openSettingsDocs = "settings:docs"
+        case openSettings = "settings"
         case restartSettingsListener = "settings:init"
         case openSettingsFile = "settings:open"
         case runInstallScript = "util:install-script"
@@ -109,6 +110,7 @@ class NativeCLI {
                                                            .restartSettingsListener,
                                                            .runInstallScript,
                                                            .lockscreen,
+                                                           .openSettings,
                                                            .quit,
                                                            .docs]
                return implementatedNatively.contains(self)
@@ -176,6 +178,8 @@ class NativeCLI {
                 NativeCLI.toolsCommand(scope)
             case .debugWindows:
                 NativeCLI.debugWindowsCommand(scope)
+            case .openSettings:
+                NativeCLI.openSettingsCommand(scope)
             default:
                 break;
             }
@@ -345,8 +349,9 @@ extension NativeCLI {
     }
   
     static func diagnosticCommand(_ scope: Scope) {
-        let (_, connection) = scope
-        NativeCLI.printInTerminal(Diagnostic.summary, using: connection)
+        let (message, connection) = scope
+        let env = message.env?.jsonStringToDict() ?? [:]
+        NativeCLI.printInTerminal(Diagnostic.summaryWithEnvironment(env), using: connection)
     }
   
     static func quitCommand(_ scope: Scope) {
@@ -507,14 +512,14 @@ extension NativeCLI {
     static func iTermCommand(_ scope: Scope) {
         let (_, connection) = scope
 
-        if iTermTabIntegration.isInstalled {
-            NativeCLI.printInTerminal("\n› iTerm Tab Integration is already installed.\n  If you are having issues, please use fig report.\n", using: connection)
+        if iTermIntegration.isInstalled {
+            NativeCLI.printInTerminal("\n› iTerm Integration is already installed.\n  If you are having issues, please use fig report.\n", using: connection)
             connection.send(message: "disconnect")
 
         } else {
-            NativeCLI.printInTerminal("→ Prompting iTerm Tab Integration...", using: connection)
+            NativeCLI.printInTerminal("→ Prompting iTerm Integration...", using: connection)
             connection.send(message: "disconnect")
-            iTermTabIntegration.promptToInstall()
+            iTermIntegration.promptToInstall()
         }
 
     }
@@ -550,6 +555,14 @@ extension NativeCLI {
         NativeCLI.printInTerminal("\n→ Opening Github...\n", using: connection)
 
         Github.openIssue(with: message.arguments.joined(separator: " "))
+      
+    }
+  
+    static func openSettingsCommand(_ scope: Scope) {
+      let (_, connection) = scope
+
+      NativeCLI.printInTerminal("\n› Opening settings...\n", using: connection)
+      Settings.openUI()
       
     }
   

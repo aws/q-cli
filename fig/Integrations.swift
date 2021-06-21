@@ -104,7 +104,7 @@ class Integrations {
         }
     }
   static let providers: [String: IntegrationProvider.Type] =
-                        [Integrations.iTerm : iTermTabIntegration.self,
+                        [Integrations.iTerm : iTermIntegration.self,
                           Integrations.Hyper : HyperIntegration.self,
                           Integrations.VSCode : VSCodeIntegration.self,
                           Integrations.VSCodeInsiders : VSCodeInsidersIntegration.self]
