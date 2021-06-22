@@ -25,7 +25,18 @@ class Logger {
         case javascript = "javascript"
         case tty = "tty-link"
         case iterm = "iterm"
-      
+        case docker = "docker"
+        case ssh = "ssh"
+        case pty = "pty"
+        case cli = "cli"
+        case shellhooks = "shellhooks"
+        case windowEvents = "window-events"
+        case buffer = "buffer"
+        case autocomplete = "autocomplete"
+        case cursor = "cursor"
+        case xtermCursor = "xterm-cursor"
+        case settings = "settings"
+        case fish = "fish"
         func pathToLogFile() -> URL {
           return Logger.defaultLocation
                  .appendingPathComponent(self.rawValue, isDirectory: false)
@@ -33,8 +44,15 @@ class Logger {
         }
       
         func ansiColor() -> String {
-          return Subsystem.colorTable[self]!
+          return Subsystem.colorOverridesTable[self] ?? Subsystem.colorTable[self]!
         }
+      
+        private static let colorOverridesTable: [Subsystem : String] =
+          [ .autocomplete : "[36m"
+          , .xtermCursor  : "[35;1m"
+          , .windowEvents : "[46;1m"
+          ]
+
       
         private static let colorTable: [Subsystem : String] = {
           var table: [Subsystem : String] = [:]
@@ -55,6 +73,10 @@ class Logger {
     
     static func log(message: String, priority: Priority = .info, subsystem: Subsystem = .global) {
       var line = Logger.format(message, priority, subsystem)
+      
+      guard Settings.canLogWithoutCrash else {
+        return
+      }
     
       if Settings.shared.getValue(forKey: Settings.loggingEnabledInternally) as? Bool ?? true {
         print(line)
@@ -101,7 +123,7 @@ class Logger {
         var prefix = "\(subsystem.rawValue): "
       
         if colorful {
-          prefix = "\u{001b}\(subsystem.ansiColor())" + prefix + "\u{001b}[0m"
+          prefix = "\u{001b}\(subsystem.ansiColor())" + prefix.trimmingCharacters(in: .whitespaces) + "\u{001b}[0m "
         }
       
         return message.split(separator: "\n").map { return prefix + $0 }.joined(separator: "\n") + "\n"

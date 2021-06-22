@@ -47,7 +47,8 @@ class Settings {
 
   static let filePath = NSHomeDirectory() + "/.fig/settings.json"
   static let shared = Settings()
-  
+  //Note: app will crash if anything is logged before Settings.shared is initted
+  static var canLogWithoutCrash = false
   fileprivate var currentSettings: [String: Any]
   
   func keys() -> [String] {
@@ -63,6 +64,15 @@ class Settings {
 
   }
   
+  static func log(_ message: String) {
+    guard canLogWithoutCrash else {
+      print("Unable to log follow message since Settings.shared hasn't been inited yet.")
+      print(message)
+      return
+    }
+    Logger.log(message: message, subsystem: .settings)
+  }
+  
   init() {
     
     // load contents of file into memory
@@ -75,11 +85,12 @@ class Settings {
     }
     
     setUpFileSystemListeners()
+    Settings.canLogWithoutCrash = true
   }
   
   fileprivate var settingsWindow: WebViewWindow?
   @objc class func openUI() {
-    print("Open Settings UI")
+    Settings.log("Open Settings UI")
     
     if let settingsWindow = Settings.shared.settingsWindow {
       
@@ -135,18 +146,18 @@ class Settings {
       let data = try JSONSerialization.data(withJSONObject: currentSettings, options: [.prettyPrinted, .sortedKeys])
       try data.write(to: URL(fileURLWithPath: Settings.filePath), options: .atomic)
     } catch {
-      print("Settings: failed to serialize data")
+      Settings.log("failed to serialize data")
     }
   }
   
   static func loadFromFile() ->  [String: Any]? {
     guard FileManager.default.fileExists(atPath: Settings.filePath) else {
-      print("Settings: settings file does not exist")
+      Settings.log("settings file does not exist")
       return nil
     }
     
     guard let settings = try? String(contentsOfFile: Settings.filePath) else {
-      print("Settings: settings file is empty")
+      Settings.log("settings file is empty")
       return nil
     }
     
@@ -217,7 +228,7 @@ class Settings {
   fileprivate func setUpFileSystemListeners() {
     // set up file observers
     guard FileManager.default.fileExists(atPath: Settings.filePath) else {
-      print("Settings: file does not exist. Not setting up listeners")
+      Settings.log("file does not exist. Not setting up listeners")
       return
     }
 
@@ -231,7 +242,7 @@ class Settings {
                                                                  queue: DispatchQueue.main)
     self.eventSource?.setEventHandler {
       [weak self] in
-      print("Settings:", self?.eventSource?.dataStrings ?? [])
+      Settings.log(String(describing: self?.eventSource?.dataStrings ?? []))
       if ( [.write, .attrib].contains(self?.eventSource?.data) ) {
         self?.settingsUpdated()
       }

@@ -315,7 +315,7 @@ class ShellBridge {
       
         // There used to be a check here to determine if Spotlight was active. It seems like this is no longer needed.
         let app = NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "<none>"
-        print("Insert '\(cmd)' into ", app)
+        Logger.log(message: "Insert '\(cmd)' into \(app)", subsystem: .autocomplete)
         if (clearLine) {
             self.simulate(keypress: .ctrlE)
             self.simulate(keypress: .ctrlU)

@@ -121,7 +121,7 @@ class DockerEventStream {
   init() {
     
     guard self.appIsInstalled else {
-      print("Docker is not installed.")
+      Logger.log(message: "Docker is not installed.", subsystem: .docker)
       return
     }
     socket.delegate = self
@@ -133,16 +133,16 @@ class DockerEventStream {
 //    }
     
     self.timer = Timer.scheduledTimer(withTimeInterval: self.pollingInterval, repeats: true) { _ in
-      print("Docker: should attempt to connect?")
+      Logger.log(message: "should attempt to connect?", subsystem: .docker)
       guard NSWorkspace.shared.runningApplications.contains(where: { (app) -> Bool in
         return app.bundleIdentifier == DockerEventStream.dockerBundleId
       }) else {
-        print("Docker: desktop app is not running, so disconnecting from socket.")
+        Logger.log(message: "desktop app is not running, so disconnecting from socket.", subsystem: .docker)
         self.socket.disconnect()
         return
       }
       guard !self.socket.isConnected else {
-        print("Docker: Socket is already connected")
+        Logger.log(message: "Socket is already connected", subsystem: .docker)
         return
       }
       
@@ -153,16 +153,16 @@ class DockerEventStream {
   }
   
   fileprivate func attemptToConnectToDocker() {
-    print("Docker: attempting to connect!")
+    Logger.log(message: "attempting to connect!", subsystem: .docker)
     if daemonIsRunning, socket.connect() {
-        print("Docker: connected to socket")
+      Logger.log(message: "connected to socket", subsystem: .docker)
        // can we get a callback from connect?
        Timer.delayWithSeconds(1) {
          self.socket.send(message: "GET /events HTTP/1.0\r\n\r\n")
        }
        
      } else {
-      print("Docker: could not connect... Waiting \(self.pollingInterval) seconds to retry.")
+      Logger.log(message: "could not connect... Waiting \(self.pollingInterval) seconds to retry.", subsystem: .docker)
        // if docker is installed, periodically check if docker is running
 
      }
@@ -216,13 +216,13 @@ class DockerEventStream {
   
   func processEvent(_ raw: String) {
     guard let data = raw.data(using: .utf8) else {
-      print("Docker: could not convert to data")
+      Logger.log(message: "could not convert to data")
       return
     }
     let jsonDecoder = JSONDecoder()
     if let event = try? jsonDecoder.decode(DockerEventStream.ContainerEvent.self, from: data) {
-      print("Docker: Event '\(event.status ?? "unknown")' in container '\(event.id ?? "???")'")
-      print("Docker: handlers = \(handlers.count)")
+      Logger.log(message: "Event '\(event.status ?? "unknown")' in container '\(event.id ?? "???")'")
+      Logger.log(message: "handlers = \(handlers.count)")
 
       handlers = handlers.reduce([]) { (remaining, item) -> [([String], DockerEventHandler)] in
         let (conditions, handler) = item
@@ -241,11 +241,11 @@ class DockerEventStream {
 
 extension DockerEventStream: UnixSocketDelegate {
   func socket(_ socket: UnixSocketClient, didReceive message: String) {
-    print("Docker: recieved message")
+    Logger.log(message: "recieved message", subsystem: .docker)
     
     //
     guard !message.contains("connection refused") else {
-      print("Docker: disconnecting because connection refused")
+      Logger.log(message: "disconnecting because connection refused", subsystem: .docker)
       socket.disconnect()
       return
     }

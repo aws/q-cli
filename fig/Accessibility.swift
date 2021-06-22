@@ -161,19 +161,19 @@ class Accessibility {
     })
     
     if skipCache {
-      print("cursor: skip cache")
+     Accessibility.xtermLog("skip cache")
       cursor = nil
     }
     
     // this is a performance optimization for VSCode (and other electron IDEs) so only enable it for them!
     let isElectronIDE = Integrations.electronIDEs.contains(window.bundleId ?? "")
     if isElectronIDE && !skipCache && cursor == nil && (cursorCache[window.hash]?.count ?? 0) > 0 {
-      print("xterm-cursor: exists but is disabled (\(cursorCache[window.hash]?.count ?? 0)) in window '\(window.hash)'")
+     Accessibility.xtermLog("exists but is disabled (\(cursorCache[window.hash]?.count ?? 0)) in window '\(window.hash)'")
     } else if cursor == nil {
       let root = UIElement(axElement)
       cursor = findXTermCursor(root)
     } else {
-      print("xterm-cursor: Cursor Cache hit!")
+     Accessibility.xtermLog("Cursor Cache hit!")
     }
     
     guard let currentCursor = cursor else {
@@ -242,12 +242,12 @@ class Accessibility {
     }.filter { $0 != nil }
     
     guard let candidate = candidates.first else {
-      print("xterm-cursor: no candidates")
+     Accessibility.xtermLog("no candidates")
       return nil
     }
     
     if (candidates.count != 1) {
-      print("xterm-cursor: There were two candidates!")
+     Accessibility.xtermLog("There were two candidates!")
     }
     
     return candidate
@@ -284,5 +284,9 @@ class Accessibility {
     
     return true
     
+  }
+  
+  fileprivate static func xtermLog(_ message: String){
+    Logger.log(message: message, subsystem: .xtermCursor)
   }
 }

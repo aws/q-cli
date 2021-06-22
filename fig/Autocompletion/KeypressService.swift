@@ -266,7 +266,20 @@ class KeypressProvider : KeypressService {
         return Unmanaged.passUnretained(event)
       }
       
-      print("tty: hash = \(window.hash) tty = \(window.tty?.descriptor ?? "nil") pwd = \(window.tty?.cwd ?? "<none>") \(window.tty?.isShell ?? true ? "shell!" : "not shell")")
+      var action = ""
+      if (event.type == .keyDown) {
+        action = "pressed "
+      } else if (event.type == .keyUp) {
+        action = "released"
+      }
+      
+      
+      let keyName = KeyboardLayout.humanReadableKeyName(event) ?? "?"
+      
+      Logger.log(message: "\(action) '\(keyName)' in \(window.bundleId ?? "<unknown>"), \(window.tty?.descriptor ?? "???") (\(window.tty?.name ?? "???"))", subsystem: .keypress)
+
+      
+//      print("tty: hash = \(window.hash) tty = \(window.tty?.descriptor ?? "nil") pwd = \(window.tty?.cwd ?? "<none>") \(window.tty?.isShell ?? true ? "shell!" : "not shell")")
       
       guard window.tty?.isShell ?? true else {
         print("tty: Is not in a shell")
@@ -295,10 +308,9 @@ class KeypressProvider : KeypressService {
       
       if [.keyDown , .keyUp].contains(type) {
         var keyCode = UInt16(event.getIntegerValueField(.keyboardEventKeycode))
-        print("eventTap", keyCode, event.getIntegerValueField(.eventTargetUnixProcessID))
         print("eventTap", "\(window.hash)")
         if KeypressProvider.shared.shouldRedirect(event: event, in: window) {
-          print("eventTap", "Should redirect!")
+
           // prevent redirects when typing in VSCode editor
           if Integrations.electronTerminals.contains(window.bundleId ?? "") && Accessibility.findXTermCursorInElectronWindow(window) == nil {
             return Unmanaged.passUnretained(event)
@@ -313,6 +325,9 @@ class KeypressProvider : KeypressService {
             Autocomplete.position(makeVisibleImmediately: false)
             return nil
           }
+          
+          Logger.log(message: "Should redirect keypress '\(KeyboardLayout.humanReadableKeyName(event) ?? "?")'", subsystem: .keypress)
+
 
           if (keyCode == KeyboardLayout.shared.keyCode(for: "N") ?? Keycode.n) {
             keyCode = Keycode.downArrow
@@ -494,7 +509,7 @@ class KeypressProvider : KeypressService {
     var focusedElement : AnyObject?
     let error = AXUIElementCopyAttributeValue(systemWideElement, kAXFocusedUIElementAttribute as CFString, &focusedElement)
     guard error == .success else {
-      print("cursor: Couldn't get the focused element. Probably a webkit application")
+      Logger.log(message: "cursor: Couldn't get the focused element.", subsystem: .cursor)
       return nil
     }
     
@@ -502,7 +517,7 @@ class KeypressProvider : KeypressService {
     let selectedRangeError = AXUIElementCopyAttributeValue(focusedElement as! AXUIElement, kAXSelectedTextRangeAttribute as CFString, &selectedRangeValue)
     
     guard selectedRangeError == .success else {
-      print("cursor: couldn't get selected range")
+      Logger.log(message: "couldn't get selected range", subsystem: .cursor)
       return nil
     }
     
@@ -521,19 +536,20 @@ class KeypressProvider : KeypressService {
     
     // https://linear.app/fig/issue/ENG-109/ - autocomplete-popup-shows-when-copying-and-pasting-in-terminal
     if selectedRange.length > 1 {
-      print("cursor: selectedRange length > 1")
+      Logger.log(message: "selectedRange length > 1", subsystem: .cursor)
+
       return nil
     }
     
     let selectedBoundsError = AXUIElementCopyParameterizedAttributeValue(focusedElement as! AXUIElement, kAXBoundsForRangeParameterizedAttribute as CFString, selectedRangeValue!, &selectBounds)
     
     guard selectedBoundsError == .success else {
-      print("cursor: selectedBoundsError")
+      Logger.log(message: "selectedBoundsError", subsystem: .cursor)
       return nil
     }
     
     AXValueGetValue(selectBounds as! AXValue, .cgRect, &selectRect)
-    print("selected", selectRect)
+    Logger.log(message: "\(selectRect)", subsystem: .cursor)
     //prevent spotlight search from recieving keypresses, this is sooo hacky
 //    guard selectRect.size.height != 30 else {
 //      print("cursor: prevent spotlight search from recieving keypresses, this is sooo hacky")
@@ -542,7 +558,7 @@ class KeypressProvider : KeypressService {
     
     // Sanity check: prevents flashing autocomplete in bottom corner
     guard selectRect.size != .zero else {
-      print("cursor: prevents flashing autocomplete in bottom corner")
+      Logger.log(message: "prevents flashing autocomplete in bottom corner", subsystem: .cursor)
       return nil
     }
     

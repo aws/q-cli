@@ -112,6 +112,9 @@ extension ExternalApplication: Hashable {
 
 
 class AXWindowServer : WindowService {
+    static func log(_ message: String) {
+        Logger.log(message: message, subsystem: .windowServer)
+    }
     static let windowTitleUpdatedNotification: NSNotification.Name = .init("windowTitleUpdatedNotification")
     static let windowDidChangeNotification = Notification.Name("AXWindowServerWindowDidChangeNotification")
     static let shared = AXWindowServer()
@@ -130,7 +133,7 @@ class AXWindowServer : WindowService {
     var topWindow: ExternalWindow? = nil {
         didSet {
             NotificationCenter.default.post(name: AXWindowServer.windowDidChangeNotification, object: self.topWindow)
-            Logger.log(message: "AXWindowServer: Window = \(self.topWindow?.windowId ?? 0); App = \(self.topWindow?.bundleId ?? "<none>"); pid = \(self.topWindow?.app.processIdentifier ?? 0)")
+            AXWindowServer.log("Window = \(self.topWindow?.windowId ?? 0); App = \(self.topWindow?.bundleId ?? "<none>"); pid = \(self.topWindow?.app.processIdentifier ?? 0)")
        }
     }
     var whitelistedWindow: ExternalWindow? {
@@ -150,7 +153,7 @@ class AXWindowServer : WindowService {
     
     func register(_ app: NSRunningApplication, fromActivation: Bool = false) {
         guard AXIsProcessTrustedWithOptions(nil) else {
-            Logger.log(message: "AXWindowServer: cannot register to observe window events before accesibility permissions are enabled")
+            AXWindowServer.log("cannot register to observe window events before accesibility permissions are enabled")
             return
         }
 
@@ -163,7 +166,7 @@ class AXWindowServer : WindowService {
         
         // Cannot track fig windows... (too meta!)
         guard !app.isFig else {
-            Logger.log(message: "AXWindowServer: cannot register to observe window events on Fig")
+            AXWindowServer.log("cannot register to observe window events on Fig")
             return
         }
         
@@ -175,18 +178,18 @@ class AXWindowServer : WindowService {
 //        }
         
         guard app.bundleIdentifier != nil else {
-           Logger.log(message: "AXWindowServer: cannot register to observe apps without Bundle Id")
+           AXWindowServer.log("cannot register to observe apps without Bundle Id")
             return
         }
         
         guard !AXWindowServer.blocklist.contains(app.bundleIdentifier!) else {
-            Logger.log(message: "AXWindowServer: cannot register to observe window events on \(app.bundleIdentifier!)")
+            AXWindowServer.log("cannot register to observe window events on \(app.bundleIdentifier!)")
             return
         }
         
         // prevents hanging on certain applications (like com.apple.AirDrop.send)
         guard app.activationPolicy != .prohibited else {
-            Logger.log(message: "AXWindowServer: don't track application that are prohibited from launching windows by activation policy.")
+            AXWindowServer.log("don't track application that are prohibited from launching windows by activation policy.")
             return
         }
         
@@ -198,7 +201,7 @@ class AXWindowServer : WindowService {
 //        self.tracked.contains { return $0.bundleId == app.bundleIdentifier && $0.pid == app.processIdentifier}
         // Check if application is already tracked
         if self.trackedApplications().contains(appRef)  {
-            Logger.log(message: "AXWindowServer: app '\(appRef.bundleId ?? "<none>") is already registered")
+            AXWindowServer.log("app '\(appRef.bundleId ?? "<none>") is already registered")
             self.deregister(app: app)
             //return
         }
@@ -214,9 +217,9 @@ class AXWindowServer : WindowService {
                 self.topApplication = appRef
                 self.topWindow = ExternalWindow(backedBy: window as! AXUIElement, in: appRef)
 
-                Logger.log(message: "AXWindowServer: Add window manually!")
+                AXWindowServer.log("Add window manually!")
             }
-           Logger.log(message: "AXWindowServer: fromActivation!")
+           AXWindowServer.log("fromActivation!")
 
 
         }
@@ -353,13 +356,13 @@ class AXWindowServer : WindowService {
         }
         
         if (success) {
-            Logger.log(message: "AXWindowServer: Began tracking '\(appRef.bundleId ?? "<none>")'")
+            AXWindowServer.log("Began tracking '\(appRef.bundleId ?? "<none>")'")
             //EXC_BAD_ACCESS (code=EXC_I386_GPFLT
             // Duplicate elements of type 'ExternalApplication' were found in a Set
             startTracking(app: appRef)
 
         } else {
-            Logger.log(message: "AXWindowServer: Error setting up tracking for app '\(appRef.bundleId ?? "<none>")")
+            AXWindowServer.log("Error setting up tracking for app '\(appRef.bundleId ?? "<none>")")
         }
     }
     
@@ -451,7 +454,7 @@ class AXWindowServer : WindowService {
             register(app)
         }
         
-        Logger.log(message: "AXWindowServer: Tracking \(self.tracked.count) applications...")
+        AXWindowServer.log("Tracking \(self.tracked.count) applications...")
 
     }
   
@@ -484,14 +487,15 @@ class AXWindowServer : WindowService {
         // this is used to reset previous application when space is changed. Maybe should be nil.
         //self.previousApplication =
         if let app = NSWorkspace.shared.frontmostApplication {
-            print("AXWindowServer: space changed - \(app.bundleIdentifier ?? "<none>")")
+          Logger.log(message: "activeSpaceDidChange - \(app.bundleIdentifier ?? "<none>")", subsystem: .windowEvents)
             //self.register(app, fromActivation: true)
         }
     }
 
     @objc func didDeactivateApplication(notification: NSNotification!) {
         if let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication, Integrations.whitelist.contains(app.bundleIdentifier ?? "") {
-            print("AXWindowServer:", app.bundleIdentifier ?? "")
+            Logger.log(message: "didDeactivateApplication - \(app.bundleIdentifier ?? "<none>")", subsystem: .windowEvents)
+
         }
         
         //self.previousApplication = notification!.userInfo![NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
@@ -499,25 +503,22 @@ class AXWindowServer : WindowService {
     
     
     @objc func didActivateApplication(notification: Notification) {
-        if let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication { //Integrations.whitelist.contains(app.bundleIdentifier ?? "") {
-//            self.tracked = self.tracked.filter { return $0.handler != nil && $0.observer != nil}
-            print("AXWindowServer - register", app.bundleIdentifier ?? "")
+        if let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication {
+            Logger.log(message: "didActivateApplication - \( app.bundleIdentifier ?? "<nonde>")", subsystem: .windowEvents)
             self.register(app, fromActivation: true)
         }
     }
     
     @objc func didTerminateApplication(notification: Notification) {
-        if let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication { //Integrations.whitelist.contains(app.bundleIdentifier ?? "") {
-//            self.tracked = self.tracked.filter { return $0.handler != nil && $0.observer != nil}
-            print("AXWindowServer - terminate", app.bundleIdentifier ?? "")
+        if let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication {
+            Logger.log(message: "didTerminateApplication - \( app.bundleIdentifier ?? "<nonde>")", subsystem: .windowEvents)
             self.deregister(app: app)
         }
     }
     
     @objc func didLaunchApplicationNotification(notification: Notification) {
-        if let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication { //Integrations.whitelist.contains(app.bundleIdentifier ?? "") {
-//            self.tracked = self.tracked.filter { return $0.handler != nil && $0.observer != nil}
-            print("AXWindowServer - launch", app.bundleIdentifier ?? "")
+        if let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication {
+            Logger.log(message: "didLaunchApplication - \( app.bundleIdentifier ?? "<nonde>")", subsystem: .windowEvents)
             // This register function is required in order to track new windows when an app is launched!
             self.register(app, fromActivation: true)
         }

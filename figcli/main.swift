@@ -365,7 +365,7 @@ DispatchQueue.global().asyncAfter(deadline: .now() + 1.25) {
 group.wait()
 
 if let handler = handler, handler.execOnExit, let command = handler.commandToExec {
-  print("exec: \(command)")
+  print("Running: \(command) \(handler.argsToExec.joined(separator: " "))")
   exec(command: command,
        args: handler.argsToExec)
 
