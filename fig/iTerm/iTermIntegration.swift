@@ -348,6 +348,11 @@ extension iTermIntegration: IntegrationProvider {
     iTermDefaults.setValue(true, forKey: plistAPIEnabledKey)
     iTermDefaults.synchronize()
     
+    // Create directory if it does not exist.
+    try? FileManager.default.createDirectory(at: iTermAutoLaunchDirectory,
+                                             withIntermediateDirectories: true,
+                                             attributes: nil)
+    
     try? FileManager.default.createSymbolicLink(atPath: autoLaunchScriptTarget,
                                                 withDestinationPath: bundleAppleScriptFilePath)
   
