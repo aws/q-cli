@@ -144,11 +144,72 @@ class Accessibility {
     }
   }
   
+  // THANKFULLY WE DON'T DO THIS!
+  // This is an unfortunate hack that is necessary because there is no VSCode API to determe when the terminal has focus.
+  // Currently, we use whether the cursor AXElement exists and has focus as a proxy. This is cached to avoid performance penalty.
+  // However, when the bottom panel is closed, the cache always misses and typing can become noticably slow.
+  // We're going to fight fire with fire and use the AXAPI to check if the panel is open.
+  // This is completely an implementation detail of VSCode and if (when) it changes in the future, this method will not work...
+  
+  // Approach:
+  // The editor pane is contained in a <main> tag which WebKit maps to the subrole "AXLandmarkMain". (https://bugs.webkit.org/show_bug.cgi?id=103172)
+  // This <main> tag is the direct child of a group that contains the bottom pane as well.
+  // Identify <main> tag and than check the child of the parent. This should be more performant since the search is shallower and terminates early.
+  //  static func findPanel(_ parent: UIElement, siblings: [UIElement]) -> UIElement? {
+  //    let AXLandmarkMain = "AXLandmarkMain"
+  //    let children: [UIElement] = (try? parent.arrayAttribute(.children)) ?? []
+  //
+  //
+  //    var containsMainAsChild = false
+  //    for element in children {
+  //      if let subrole: String = try? element.attribute(.subrole),
+  //         subrole == AXLandmarkMain {
+  //        containsMainAsChild = true
+  //        break;
+  //      }
+  //    }
+  //
+  //    guard !containsMainAsChild  else {
+  //
+  //      // if the parent has 1 sibling, then it must be the panel!
+  //      if (siblings.count == 1) {
+  //        return siblings.first!
+  //      }
+  //
+  //      return nil
+  //    }
+  //
+  //    // continue searching...
+  //    let roles: Set<Role> = [.scrollArea, .group, .application, .browser]
+  //
+  //    for index in 0..<children.count {
+  //      let element = children[index]
+  //
+  //      if let role = try? element.role(), !roles.contains(role) {
+  //        continue
+  //      }
+  //
+  //      let siblings: [UIElement] =  Array(children[0..<index] + children[index+1..<children.count])
+  //      if let panel = findPanel(element, siblings:siblings) {
+  //        return panel
+  //      }
+  //    }
+  //
+  //    return nil
+  //  }
+  
+  static let throttler = Throttler(minimumDelay: 0.1, queue: DispatchQueue(label: "io.fig.electron-cursor"))
+
+  fileprivate static var cachedCursor: UIElement? = nil
   fileprivate static var cursorCache: [ExternalWindowHash: [UIElement]] = [:]
+  static func resetCursorCache() {
+    cachedCursor = nil
+    cursorCache = [:]
+  }
   static func findXTermCursorInElectronWindow(_ window: ExternalWindow, skipCache: Bool = false) -> CGRect? {
     guard let axElement = window.accesibilityElement else { return nil }
     
-    // remove invalid entries; this fixes the issue with VSCode where upon changing tabs
+    // remove invalid entries; this fixes the issue with VSCode where upon changing tabs, some cached cursors go stale
     cursorCache[window.hash] = cursorCache[window.hash]?.filter { isValidUIElement($0) }
     
     var cursor: UIElement? = cursorCache[window.hash]?.filter { cursorIsActive($0) }.reduce(nil, { (existing, cache) -> UIElement? in
@@ -156,8 +217,7 @@ class Accessibility {
         return existing
       }
       
-//      print("cursor: elementIsCursor", elementIsCursor(cache))
-      return cache //cursorIsActive(cache)// ? cache : nil //findXTermCursor(cache)
+      return cache
     })
     
     if skipCache {
@@ -165,13 +225,32 @@ class Accessibility {
       cursor = nil
     }
     
-    // this is a performance optimization for VSCode (and other electron IDEs) so only enable it for them!
+    // some additional checks and performance optimization are put in place for VSCode (and other electron IDEs) so only enable it for them!
     let isElectronIDE = Integrations.electronIDEs.contains(window.bundleId ?? "")
-    if isElectronIDE && !skipCache && cursor == nil && (cursorCache[window.hash]?.count ?? 0) > 0 {
-     Accessibility.xtermLog("exists but is disabled (\(cursorCache[window.hash]?.count ?? 0)) in window '\(window.hash)'")
-    } else if cursor == nil {
-      let root = UIElement(axElement)
-      cursor = findXTermCursor(root)
+
+    if cursor == nil {
+      
+      // Hyper has a small enough a11y tree that we can synchronously find cursor every time
+      if skipCache || !isElectronIDE {
+        let root = UIElement(axElement)
+        cachedCursor = findXTermCursor(root, inVSCodeIDE: isElectronIDE)
+      } else {
+        
+        throttler.throttle {
+          let root = UIElement(axElement)
+          cachedCursor = findXTermCursor(root, inVSCodeIDE: isElectronIDE)
+          // trigger reposition if cursor has been found
+          print("xterm-cursor: finished searching for cursor (throttled) \(String(describing: cachedCursor))")
+          if cachedCursor != nil {
+            Autocomplete.position(makeVisibleImmediately: true, completion: nil)
+          }
+        }
+                
+      }
+      
+      cursor = cachedCursor
+
+
     } else {
      Accessibility.xtermLog("Cursor Cache hit!")
     }
@@ -193,10 +272,15 @@ class Accessibility {
     
    
     guard let frame: CGRect = try? currentCursor.attribute(.frame) else {
+      print("xterm-cursor: no frame!")
       return nil
     }
     
-    return  NSRect(x: frame.origin.x, y: NSMaxY(NSScreen.screens[0].frame) - frame.origin.y, width:  frame.width, height: frame.height)
+    print("xterm-cursor: \(frame)")
+    return  NSRect(x: frame.origin.x,
+                   y: NSMaxY(NSScreen.screens[0].frame) - frame.origin.y,
+                   width:  frame.width,
+                   height: frame.height)
   }
   
   fileprivate static func cursorIsActive(_ elm: UIElement?) -> Bool {
@@ -223,9 +307,27 @@ class Accessibility {
     }
   }
   
-  fileprivate static func findXTermCursor(_ root: UIElement) -> UIElement? {
+  fileprivate static func findXTermCursor(_ root: UIElement, inVSCodeIDE: Bool = false, depth: Int = 0) -> UIElement? {
+    
     if let role = try? root.role(), role == .textField, let hasKeyboardFocus: Bool = try? root.attribute(.focused), hasKeyboardFocus == true {
-      return root
+      
+      print("xterm-cursor: success \(depth)")
+      // VSCode-specific cursor sanity checking to ensure Fig window doesn't appear in other textfields
+      // Look for great great grand with subrole of AXDocument!
+      if inVSCodeIDE,
+         let up1:UIElement = try? root.attribute(.parent),
+         let up2:UIElement = try? up1.attribute(.parent),
+         let document:UIElement = try? up2.attribute(.parent),
+         let subrole: String = try? document.attribute(.subrole),
+         subrole == "AXDocument" {
+          
+        return root
+
+      } else {
+        return root
+      }
+
+      
     }
     
     
@@ -235,14 +337,13 @@ class Accessibility {
     let candidates = children.map { (element) -> UIElement? in
       // optimize which elements are checked
       if let role = try? element.role(), !roles.contains(role) {
-        print("role: ", role)
+//        print("role: ", role)
         return nil
       }
-      return findXTermCursor(element)
+      return findXTermCursor(element, inVSCodeIDE: inVSCodeIDE, depth: depth + 1)
     }.filter { $0 != nil }
     
     guard let candidate = candidates.first else {
-     Accessibility.xtermLog("no candidates")
       return nil
     }
     

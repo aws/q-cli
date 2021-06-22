@@ -78,19 +78,15 @@ if arguments.count > 1 {
         }
         
         exit(0)
-    } else if command == "settings" {
+      
+    } else if command == "settings",
+              arguments.count > 2 { 
+      // we handle `fig settings` in main app
+
+
       guard var settings = Settings.loadFromFile() else {
         exit(0)
       }
-      
-      if (arguments.count == 2) {
-        if let raw = Settings.rawFromFile() {
-          print(raw)
-        }
-        print("\n› View all possible settings keys by running fig settings:docs")
-        exit(0)
-      }
-
       
       let key = arguments[2]
       if arguments.count == 3 { // fig settings key --> Read value

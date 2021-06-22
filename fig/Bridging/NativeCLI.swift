@@ -58,6 +58,7 @@ class NativeCLI {
         case debugWindows = "debug:windows"
         case electronAccessibility = "util:axelectron"
         case openSettingsDocs = "settings:docs"
+        case openSettings = "settings"
         case restartSettingsListener = "settings:init"
         case openSettingsFile = "settings:open"
         case runInstallScript = "util:install-script"
@@ -110,6 +111,7 @@ class NativeCLI {
                                                            .restartSettingsListener,
                                                            .runInstallScript,
                                                            .lockscreen,
+                                                           .openSettings,
                                                            .quit,
                                                            .viewLogs,
                                                            .docs]
@@ -180,7 +182,8 @@ class NativeCLI {
                 NativeCLI.debugWindowsCommand(scope)
             case .viewLogs:
                 NativeCLI.debugLogsCommand(scope)
-
+            case .openSettings:
+                NativeCLI.openSettingsCommand(scope)
             default:
                 break;
             }
@@ -350,8 +353,9 @@ extension NativeCLI {
     }
   
     static func diagnosticCommand(_ scope: Scope) {
-        let (_, connection) = scope
-        NativeCLI.printInTerminal(Diagnostic.summary, using: connection)
+        let (message, connection) = scope
+        let env = message.env?.jsonStringToDict() ?? [:]
+        NativeCLI.printInTerminal(Diagnostic.summaryWithEnvironment(env), using: connection)
     }
   
     static func quitCommand(_ scope: Scope) {
@@ -555,6 +559,14 @@ extension NativeCLI {
         NativeCLI.printInTerminal("\n→ Opening Github...\n", using: connection)
 
         Github.openIssue(with: message.arguments.joined(separator: " "))
+      
+    }
+  
+    static func openSettingsCommand(_ scope: Scope) {
+      let (_, connection) = scope
+
+      NativeCLI.printInTerminal("\n› Opening settings...\n", using: connection)
+      Settings.openUI()
       
     }
   

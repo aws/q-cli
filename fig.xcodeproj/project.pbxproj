@@ -67,6 +67,7 @@
 		751C3BEE24B6915000B5C7FD /* Defaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751C3BED24B6915000B5C7FD /* Defaults.swift */; };
 		751F7589246D090100E083C8 /* WebBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751F7588246D090100E083C8 /* WebBridge.swift */; };
 		751F7591246E16D800E083C8 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751F7590246E16D800E083C8 /* main.swift */; };
+		7520D7F1267D98790034FE2B /* fig-0.0.3.vsix in Resources */ = {isa = PBXBuildFile; fileRef = 7520D7F0267D98790034FE2B /* fig-0.0.3.vsix */; };
 		75288EF924CCE72F002DF12A /* WebViewWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757CA887248AD067002A64A8 /* WebViewWindow.swift */; };
 		75290A7D266B09CB000F4255 /* gear@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 75290A7C266B09CB000F4255 /* gear@2x.png */; };
 		75290AB4267126EB000F4255 /* iTermIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75290AB3267126EB000F4255 /* iTermIntegration.swift */; };
@@ -346,6 +347,7 @@
 		751F7588246D090100E083C8 /* WebBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebBridge.swift; sourceTree = "<group>"; };
 		751F758E246E16D800E083C8 /* figcli */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = figcli; sourceTree = BUILT_PRODUCTS_DIR; };
 		751F7590246E16D800E083C8 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		7520D7F0267D98790034FE2B /* fig-0.0.3.vsix */ = {isa = PBXFileReference; lastKnownFileType = file; path = "fig-0.0.3.vsix"; sourceTree = "<group>"; };
 		75290A7C266B09CB000F4255 /* gear@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "gear@2x.png"; sourceTree = "<group>"; };
 		75290AB3267126EB000F4255 /* iTermIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iTermIntegration.swift; sourceTree = "<group>"; };
 		75290ABA26719090000F4255 /* iterm.pb.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = iterm.pb.swift; sourceTree = "<group>"; };
@@ -716,6 +718,7 @@
 			children = (
 				75C8A15F2649E712001B69DA /* fig-0.0.2.vsix */,
 				752A398525CD0FE800B1AC40 /* fig-0.0.1.vsix */,
+				7520D7F0267D98790034FE2B /* fig-0.0.3.vsix */,
 				753C31A32643816100202AAA /* VSCodeInsidersIntegration.swift */,
 				752A398225CD024C00B1AC40 /* VSCodeIntegration.swift */,
 			);
@@ -1204,6 +1207,7 @@
 				75186083255CB0C20000A7C7 /* iterm-integration.sh in Resources */,
 				75EDDC5125D24755003AECC6 /* hyper-integration.js in Resources */,
 				759F988325BFF0FF00EC3407 /* database@2x.png in Resources */,
+				7520D7F1267D98790034FE2B /* fig-0.0.3.vsix in Resources */,
 				755EC8CF266997A700CBEF57 /* settings in Resources */,
 				75186084255CB0C20000A7C7 /* 1.0.23.sh in Resources */,
 				75186085255CB0C20000A7C7 /* fig-iterm-integration.py in Resources */,
@@ -1656,7 +1660,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = YES;
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 213;
+				CURRENT_PROJECT_VERSION = 217;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				DEVELOPMENT_TEAM = D93PPD94WK;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1692,7 +1696,7 @@
 				CODE_SIGN_IDENTITY = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 213;
+				CURRENT_PROJECT_VERSION = 217;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				DEVELOPMENT_TEAM = D93PPD94WK;
 				ENABLE_HARDENED_RUNTIME = YES;
