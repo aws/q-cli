@@ -76,7 +76,6 @@
 		75290ABF26719090000F4255 /* README in Resources */ = {isa = PBXBuildFile; fileRef = 75290ABC26719090000F4255 /* README */; };
 		75290AC626719157000F4255 /* SwiftProtobuf in Frameworks */ = {isa = PBXBuildFile; productRef = 75290AC526719157000F4255 /* SwiftProtobuf */; };
 		75290ACC2671AD1E000F4255 /* WebSocketFramer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75290ACB2671AD1D000F4255 /* WebSocketFramer.swift */; };
-		75290A93266F05A9000F4255 /* BashIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75290A92266F05A9000F4255 /* BashIntegration.swift */; };
 		752A398325CD024C00B1AC40 /* VSCodeIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 752A398225CD024C00B1AC40 /* VSCodeIntegration.swift */; };
 		752A398625CD0FE800B1AC40 /* fig-0.0.1.vsix in Resources */ = {isa = PBXBuildFile; fileRef = 752A398525CD0FE800B1AC40 /* fig-0.0.1.vsix */; };
 		752C0BD82479EEDB0077E415 /* File.swift in Sources */ = {isa = PBXBuildFile; fileRef = 752C0BD72479EEDA0077E415 /* File.swift */; };
@@ -357,7 +356,6 @@
 		75290ABB26719090000F4255 /* iterm.proto */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.protobuf; path = iterm.proto; sourceTree = "<group>"; };
 		75290ABC26719090000F4255 /* README */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README; sourceTree = "<group>"; };
 		75290ACB2671AD1D000F4255 /* WebSocketFramer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebSocketFramer.swift; sourceTree = "<group>"; };
-		75290A92266F05A9000F4255 /* BashIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BashIntegration.swift; sourceTree = "<group>"; };
 		752A398225CD024C00B1AC40 /* VSCodeIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VSCodeIntegration.swift; sourceTree = "<group>"; };
 		752A398525CD0FE800B1AC40 /* fig-0.0.1.vsix */ = {isa = PBXFileReference; lastKnownFileType = file; path = "fig-0.0.1.vsix"; sourceTree = "<group>"; };
 		752C0BD72479EEDA0077E415 /* File.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = File.swift; sourceTree = "<group>"; };
@@ -1023,7 +1021,6 @@
 				75A4A29F25CA0D46002EFD6B /* Autocomplete.swift */,
 				75A4A2A125CA218F002EFD6B /* ZLEIntegration.swift */,
 				75C3B7FE261BC9D0007FA3A7 /* FishIntegration.swift */,
-				75290A92266F05A9000F4255 /* BashIntegration.swift */,
 			);
 			path = Autocompletion;
 			sourceTree = "<group>";
@@ -1437,7 +1434,6 @@
 				75EDDC4E25D23773003AECC6 /* HyperIntegration.swift in Sources */,
 				7510F8A924A6910500E86F7C /* MacLocalTerminalView.swift in Sources */,
 				75A4A2A425CB4DE3002EFD6B /* BundleIdCache.swift in Sources */,
-				75290A93266F05A9000F4255 /* BashIntegration.swift in Sources */,
 				7510F89824A6910500E86F7C /* AppleTerminalView.swift in Sources */,
 				75AEF2EA25C4C34D00D78431 /* SecureKeyboardInput.swift in Sources */,
 				757CA8E124903D3B002A64A8 /* HotKeyManager.swift in Sources */,
