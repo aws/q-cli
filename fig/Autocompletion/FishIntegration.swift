@@ -8,7 +8,7 @@
 
 import Cocoa
 
-class FishIntegration {
+class FishIntegration: ShellIntegration {
   static let throttler = Throttler(minimumDelay: 0.005, queue: DispatchQueue(label: "com.withfig.fish"))
   static func enabledFor(_ tty: TTY) -> Bool {
     

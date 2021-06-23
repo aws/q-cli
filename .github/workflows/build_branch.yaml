@@ -1,0 +1,114 @@
+name: Build Specified Branch
+
+on:
+  workflow_dispatch:
+    inputs:
+      buildName:
+        description: 'Name for Build'
+    # tags: [ v* ]
+
+jobs:
+  release:
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+
+      - name: "Checkout Project"
+        uses: actions/checkout@v2
+
+      - name: "Get Release Version"
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+        run: |
+          echo "::set-env name=VERSION::$(cat fig.xcodeproj/project.pbxproj | grep -m1 'MARKETING_VERSION' | cut -d'=' -f2 | tr -d ';' | tr -d ' ')"      
+      
+      - name: "Log Release Version"
+        run: echo $VERSION
+      #
+      # Setup
+      #
+      - name: "Select Xcode 12.3"
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: "12.3"
+
+      - name: "Bump Build number"
+        run: |
+          agvtool bump
+      - name: "Get Build"
+        env:
+            ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+        run: |
+          echo "::set-env name=BUILD::$(agvtool what-version -terse)"
+          echo $BUILD
+
+
+      - name: "Import Certificate"
+        uses: devbotsxyz/import-signing-certificate@main
+        with:
+          certificate-data: ${{ secrets.SIGNING_CERTIFICATE_P12_DATA }}
+          certificate-passphrase: ${{ secrets.SIGNING_CERTIFICATE_PASSWORD }}
+          keychain-password: ${{ secrets.KEYCHAIN_PASSWORD }}
+
+
+      - name: "Create exportOptions.plist"
+        run: |
+          echo $FILE_BASE64 | base64 -D > $FILE_NAME
+        env:
+          FILE_NAME: "exportOptions.plist"
+          FILE_BASE64: "PCFET0NUWVBFIHBsaXN0IFBVQkxJQyAiLS8vQXBwbGUvL0RURCBQTElTVCAxLjAvL0VOIiAiaHR0cDovL3d3dy5hcHBsZS5jb20vRFREcy9Qcm9wZXJ0eUxpc3QtMS4wLmR0ZCI+CjxwbGlzdCB2ZXJzaW9uPSIxLjAiPgo8ZGljdD4KICAgIDxrZXk+bWV0aG9kPC9rZXk+CiAgICA8c3RyaW5nPmRldmVsb3Blci1pZDwvc3RyaW5nPgogICAgPGtleT50ZWFtSUQ8L2tleT4KICAgIDxzdHJpbmc+RDkzUFBEOTRXSzwvc3RyaW5nPgo8L2RpY3Q+CjwvcGxpc3Q+"
+     
+      - name: "Test"
+        run: security find-identity -v -p codesigning
+      - name: "Archive"
+        uses: devbotsxyz/xcode-archive@v1
+
+      #
+      # Next ask Xcode to export the product from the archived build
+      # we just created. This will also re-sign the application with
+      # the "Developer ID" certificate.
+      #
+
+      - name: "Export & Sign Release Build"
+        uses: mattschrage/xcode-export-archive@main
+
+      #
+      # Now send the product to Apple's notarization service and then
+      # staple it.
+      #
+
+      - name: "Notarize Release Build"
+        uses: devbotsxyz/xcode-notarize@v1
+        with:
+          product-path: "Export/Fig.app"
+          verbose: true
+          appstore-connect-username: ${{ secrets.NOTARIZE_USERNAME }}
+          appstore-connect-password: ${{ secrets.NOTARIZE_PASSWORD }}
+
+      - name: "Staple Release Build"
+        uses: devbotsxyz/xcode-staple@v1
+        with:
+          product-path: "Export/Fig.app"
+      - name: "Package as .zip"
+        run: |
+          zip -r fig.zip Export/Fig.app
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: manual-build-${{ github.run_number }}
+          release_name: Manual Build '${{ github.event.inputs.buildName }}'
+          draft: false
+          prerelease: true
+      - name: Upload Release Asset
+        id: upload-release-asset 
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+          asset_path: ./fig.zip
+          asset_name: Fig.zip
+          asset_content_type: application/octet-stream

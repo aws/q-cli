@@ -42,12 +42,15 @@ class ShellHookTransport: UnixSocketServerDelegate {
               ShellHookManager.shared.updateKeybuffer(shellMessage, backing: .zle)
           case .fishKeybuffer:
               ShellHookManager.shared.updateKeybuffer(shellMessage, backing: .fish)
+          case .bashKeybuffer:
+              ShellHookManager.shared.updateKeybuffer(shellMessage, backing: .bash)
           case .ssh:
               ShellHookManager.shared.startedNewSSHConnection(shellMessage)
           case .vscode:
               ShellHookManager.shared.currentTabDidChange(shellMessage)
           case .hyper:
               ShellHookManager.shared.currentTabDidChange(shellMessage)
+          
           case .tmux:
               ShellHookManager.shared.tmuxPaneChanged(shellMessage)
           case .hide:
@@ -70,6 +73,7 @@ class ShellHookTransport: UnixSocketServerDelegate {
      case exec = "bg:exec"
      case ZSHKeybuffer = "bg:zsh-keybuffer"
      case fishKeybuffer = "bg:fish-keybuffer"
+     case bashKeybuffer = "bg:bash-keybuffer"
      case ssh = "bg:ssh"
      case vscode = "bg:vscode"
      case hyper = "bg:hyper"
@@ -79,7 +83,7 @@ class ShellHookTransport: UnixSocketServerDelegate {
     
     func packetType() -> ShellMessage.PacketType {
       switch self {
-        case .fishKeybuffer, .ZSHKeybuffer:
+        case .fishKeybuffer, .ZSHKeybuffer, .bashKeybuffer:
           return .keypress
         case .prompt, .initialize, .exec:
           return .shellhook
