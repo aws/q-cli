@@ -213,7 +213,11 @@ extension iTermIntegration: FramerEventClient {
 
     switch event {
     case .frame(let frame):
-      let message = try! Iterm2_ServerOriginatedMessage(serializedData: frame.payload)
+      guard let message = try? Iterm2_ServerOriginatedMessage(serializedData: frame.payload) else {
+        Logger.log(message: "could not parse protobuf frame payload", subsystem: .iterm)
+
+        return
+      }
       
       guard message.error.count == 0 else {
         Logger.log(message: "API error - \(message.error)", subsystem: .iterm)
@@ -347,6 +351,11 @@ extension iTermIntegration: IntegrationProvider {
     // Update API preferences
     iTermDefaults.setValue(true, forKey: plistAPIEnabledKey)
     iTermDefaults.synchronize()
+    
+    // Create directory if it does not exist.
+    try? FileManager.default.createDirectory(at: iTermAutoLaunchDirectory,
+                                             withIntermediateDirectories: true,
+                                             attributes: nil)
     
     try? FileManager.default.createSymbolicLink(atPath: autoLaunchScriptTarget,
                                                 withDestinationPath: bundleAppleScriptFilePath)

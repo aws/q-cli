@@ -31,6 +31,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     let VSCodeObserver = WindowObserver(with: Integrations.VSCode)
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
+        Logger.resetLogs()
         warnToMoveToApplicationIfNecessary()
         
         if let hideMenuBar = Settings.shared.getValue(forKey: Settings.hideMenubarIcon) as? Bool, hideMenuBar {

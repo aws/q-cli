@@ -214,6 +214,19 @@ class KeypressProvider {
         return Unmanaged.passUnretained(event)
       }
       
+      var action = ""
+      if (event.type == .keyDown) {
+        action = "pressed "
+      } else if (event.type == .keyUp) {
+        action = "released"
+      }
+      
+      
+      let keyName = KeyboardLayout.humanReadableKeyName(event) ?? "?"
+      
+      Logger.log(message: "\(action) '\(keyName)' in \(window.bundleId ?? "<unknown>"), \(window.tty?.descriptor ?? "???") (\(window.tty?.name ?? "???"))", subsystem: .keypress)
+
+      
       guard window.tty?.isShell ?? true else {
         print("tty: Is not in a shell")
         return Unmanaged.passUnretained(event)

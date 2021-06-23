@@ -50,7 +50,7 @@ class FishIntegration {
     // because we don't want to run updates twice per keystroke
     // Don't send signal on enter key (avoids killing new process when execing and multiple phantom keypresses when inserting)
     if event.type == .keyUp, event.keyCode != Keycode.returnKey, !(event.keyCode == KeyboardLayout.shared.keyCode(for: "R") &&  event.modifierFlags.contains(.control))  {
-      print("fish: Send signal SIGUSR1 to \(pid) on '\(event.characters ?? "?")' (\(event.keyCode))")
+      Logger.log(message: "Send signal SIGUSR1 to \(pid) on '\(event.characters ?? "?")' (\(event.keyCode))", subsystem: .fish)
       requestUpdate(from: pid)
     } else if shouldReposition {
       // Reposition on keyDown to make motion less jerky

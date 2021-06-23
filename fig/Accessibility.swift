@@ -221,7 +221,7 @@ class Accessibility {
     })
     
     if skipCache {
-      print("xterm-cursor: skip cache")
+     Accessibility.xtermLog("skip cache")
       cursor = nil
     }
     
@@ -252,7 +252,7 @@ class Accessibility {
 
 
     } else {
-      print("xterm-cursor: Cursor Cache hit!")
+     Accessibility.xtermLog("Cursor Cache hit!")
     }
     
     guard let currentCursor = cursor else {
@@ -344,12 +344,11 @@ class Accessibility {
     }.filter { $0 != nil }
     
     guard let candidate = candidates.first else {
-//      print("xterm-cursor: no candidates \(depth)")
       return nil
     }
     
     if (candidates.count != 1) {
-      print("xterm-cursor: There were two candidates!")
+     Accessibility.xtermLog("There were two candidates!")
     }
     
     return candidate
@@ -404,7 +403,7 @@ class Accessibility {
     var focusedElement : AnyObject?
     let error = AXUIElementCopyAttributeValue(systemWideElement, kAXFocusedUIElementAttribute as CFString, &focusedElement)
     guard error == .success else {
-      print("cursor: Couldn't get the focused element. Probably a webkit application")
+      Logger.log(message: "Couldn't get the focused element.", subsystem: .cursor)
       return nil
     }
     
@@ -412,7 +411,7 @@ class Accessibility {
     let selectedRangeError = AXUIElementCopyAttributeValue(focusedElement as! AXUIElement, kAXSelectedTextRangeAttribute as CFString, &selectedRangeValue)
     
     guard selectedRangeError == .success else {
-      print("cursor: couldn't get selected range")
+      Logger.log(message: "couldn't get selected range", subsystem: .cursor)
       return nil
     }
     
@@ -431,28 +430,23 @@ class Accessibility {
     
     // https://linear.app/fig/issue/ENG-109/ - autocomplete-popup-shows-when-copying-and-pasting-in-terminal
     if selectedRange.length > 1 {
-      print("cursor: selectedRange length > 1")
+      Logger.log(message: "selectedRange length > 1", subsystem: .cursor)
       return nil
     }
     
     let selectedBoundsError = AXUIElementCopyParameterizedAttributeValue(focusedElement as! AXUIElement, kAXBoundsForRangeParameterizedAttribute as CFString, selectedRangeValue!, &selectBounds)
     
     guard selectedBoundsError == .success else {
-      print("cursor: selectedBoundsError")
+      Logger.log(message: "selectedBoundsError", subsystem: .cursor)
       return nil
     }
     
     AXValueGetValue(selectBounds as! AXValue, .cgRect, &selectRect)
-    print("selected", selectRect)
-    //prevent spotlight search from recieving keypresses, this is sooo hacky
-  //    guard selectRect.size.height != 30 else {
-  //      print("cursor: prevent spotlight search from recieving keypresses, this is sooo hacky")
-  //      return nil
-  //    }
+   Logger.log(message: "\(selectRect)", subsystem: .cursor)
     
     // Sanity check: prevents flashing autocomplete in bottom corner
     guard selectRect.size != .zero else {
-      print("cursor: prevents flashing autocomplete in bottom corner")
+      Logger.log(message: "prevents flashing autocomplete in bottom corner", subsystem: .cursor)
       return nil
     }
     
@@ -460,5 +454,8 @@ class Accessibility {
     return NSRect(x: selectRect.origin.x, y: NSMaxY(NSScreen.screens[0].frame) - selectRect.origin.y, width:  selectRect.width, height: selectRect.height)
   }
 
+  fileprivate static func xtermLog(_ message: String){
+    Logger.log(message: message, subsystem: .xtermCursor)
+  }
 }
 
