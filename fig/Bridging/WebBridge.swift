@@ -1046,7 +1046,7 @@ extension WebBridge {
                                 NotificationCenter.default.post(name: NSNotification.Name("showAutocompletePopup"), object: nil)
                             }
                             companion?.orderFrontRegardless()
-                            let rect = KeypressProvider.shared.getTextRect()
+                            let rect = Accessibility.getTextRect()
                             WindowManager.shared.positionAutocompletePopover(textRect: rect)
                         }
                         

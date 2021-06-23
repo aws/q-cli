@@ -12,11 +12,18 @@ import Sentry
 import Foundation
 import AXSwift
 
+enum EventTapAction {
+  case forward
+  case consume
+  case ignore
+}
+
+typealias EventTapHandler = (_ event: CGEvent, _ in: ExternalWindow) -> EventTapAction
 protocol KeypressService {
-  func keyBuffer(for window: ExternalWindow) -> KeystrokeBuffer
-  func keyBuffer(for windowHash: ExternalWindowHash) -> KeystrokeBuffer
-  func getTextRect(extendRange: Bool) -> CGRect?
-  func clean()
+  func register(handler: @escaping EventTapHandler )
+}
+
+protocol KeypressRedirectService {
   func addRedirect(for keycode: UInt16, in window: ExternalWindow)
   func removeRedirect(for keycode: UInt16, in window: ExternalWindow)
   
@@ -26,26 +33,42 @@ protocol KeypressService {
   func setEnabled(value: Bool)
 }
 
-class KeypressProvider : KeypressService {
+protocol EditBufferService {
+  func keyBuffer(for window: ExternalWindow) -> KeystrokeBuffer
+  func keyBuffer(for windowHash: ExternalWindowHash) -> KeystrokeBuffer
+  func clean()
+}
+
+class KeypressProvider {
+  // MARK: - Properties
   var enabled = true
   var keyHandler: Any? = nil
   var tap: CFMachPort? = nil
   var mouseHandler: Any? = nil
-  let windowServiceProvider: WindowService
   let throttler = Throttler(minimumDelay: 0.05)
   private let queue = DispatchQueue(label: "com.withfig.keypress.redirects", attributes: .concurrent)
   var redirects: [ExternalWindowHash:  Set<Keystroke>] = [:]
   var buffers: [ExternalWindowHash: KeystrokeBuffer] = [:]
+  fileprivate let handlers: [EventTapHandler] =
+    [ Autocomplete.handleTabKey
+    , Autocomplete.handleEscapeKey
+    , KeypressProvider.processRegisteredHandlers
+    , KeypressProvider.handleRedirect
+    , FishIntegration.handleKeystroke
+    ]
+  
+  var registeredHandlers: [EventTapHandler] = []
   
   static var whitelist: Set<String> {
     get {
         return Integrations.terminalsWhereAutocompleteShouldAppear
     }
   }
-  static let shared = KeypressProvider(windowServiceProvider: WindowServer.shared)
+  static let shared = KeypressProvider()
   
-  init(windowServiceProvider: WindowService) {
-    self.windowServiceProvider = windowServiceProvider
+  // MARK: - Setup
+
+  init() {
     registerKeystrokeHandler()
     NotificationCenter.default.addObserver(self,
                                            selector:#selector(lineAcceptedInKeystrokeBuffer),
@@ -61,87 +84,11 @@ class KeypressProvider : KeypressService {
                                            selector: #selector(inputSourceChanged),
                                            name: KeyboardLayout.keyboardLayoutDidChangeNotification,
                                            object: nil)
+    NotificationCenter.default.addObserver(self,
+                                           selector: #selector(windowDidChange(_:)),
+                                           name: AXWindowServer.windowDidChangeNotification,
+                                           object: nil)
     
-  }
-  func shouldRedirect(event: CGEvent, in window: ExternalWindow) -> Bool {
-    
-    guard KeypressProvider.shared.enabled else {
-      return false
-    }
-    
-    let keystroke = Keystroke.from(event: event)
-    var windowHasRedirect: Bool!
-    queue.sync {
-      windowHasRedirect = self.redirects[window.hash]?.contains(keystroke) ?? false
-    }
-    
-    return windowHasRedirect
-  }
-  
-  func addRedirect(for keycode: Keystroke, in window: ExternalWindow) {
-    queue.async(flags: .barrier) {
-      var set = self.redirects[window.hash] ?? []
-      set.insert(keycode)
-      self.redirects[window.hash] = set
-    }
-  }
-  
-  func removeRedirect(for keycode: Keystroke, in window: ExternalWindow) {
-    queue.async(flags: .barrier) {
-      if var set = self.redirects[window.hash] {
-        set.remove(keycode)
-        self.redirects[window.hash] = set
-      }
-    }
-  }
-  
-  func addRedirect(for keycode: UInt16, in window: ExternalWindow) {
-    self.addRedirect(for: Keystroke(keyCode: keycode), in: window)
-  }
-  
-  func removeRedirect(for keycode: UInt16, in window: ExternalWindow) {
-    self.removeRedirect(for: Keystroke(keyCode: keycode), in: window)
-  }
-  
-  func resetRedirects(for window: ExternalWindow) {
-    queue.async(flags: .barrier) {
-      self.redirects[window.hash] = []
-    }
-  }
-  
-  func resetAllRedirects() {
-    queue.async(flags: .barrier) {
-      self.redirects = [:]
-    }
-  }
-  
-  func setEnabled(value: Bool) {
-    self.enabled = value
-  }
-  
-  @objc func inputSourceChanged() {
-    resetAllRedirects()
-    Autocomplete.position(makeVisibleImmediately: false, completion: nil)
-  }
-  
-  @objc func lineAcceptedInKeystrokeBuffer() {
-    if let window = AXWindowServer.shared.whitelistedWindow, let tty = window.tty {
-      Timer.delayWithSeconds(0.2) {
-        DispatchQueue.global(qos: .userInteractive).async {
-          tty.update()
-        }
-      }
-    }
-  }
-  
-  @objc func accesibilityPermissionsUpdated(_ notification: Notification) {
-    guard let granted = notification.object as? Bool else { return }
-    
-    if (granted) {
-      self.registerKeystrokeHandler()
-    } else {
-      self.deregisterKeystrokeHandler()
-    }
   }
   
   func registerKeystrokeHandler() {
@@ -150,7 +97,7 @@ class KeypressProvider : KeypressService {
     }
     
     self.mouseHandler = NSEvent.addGlobalMonitorForEvents(matching: .leftMouseUp) { (event) in
-      if let window = self.windowServiceProvider.topmostWhitelistedWindow(), KeypressProvider.whitelist.contains(window.bundleId ?? "") {
+      if let window = AXWindowServer.shared.whitelistedWindow {
         // option click, moves cursor to unknown location
         if (event.modifierFlags.contains(.option)) {
           let keyBuffer = self.keyBuffer(for: window)
@@ -163,6 +110,7 @@ class KeypressProvider : KeypressService {
       NSEvent.removeMonitor(handler)
     }
     
+    // todo: it bothers me that this is here since wi. Should we consolidate
     self.keyHandler = NSEvent.addGlobalMonitorForEvents(matching: [ .keyDown, .keyUp], handler: { (event) in
       guard Defaults.useAutocomplete else { return }
       
@@ -222,46 +170,46 @@ class KeypressProvider : KeypressService {
       self.tap = nil
     }
   }
-    
+  
   func registerKeyInterceptor() -> CFMachPort? {
     guard AXIsProcessTrustedWithOptions(nil) else {
       print("KeypressService: Could not register without accesibility permissions")
       return nil
     }
     
-    let eventMask = (1 << CGEventType.keyDown.rawValue) | (1 << CGEventType.keyUp.rawValue) | (1 << CGEventType.tapDisabledByTimeout.rawValue) | (1 << CGEventType.tapDisabledByUserInput.rawValue)
+    let eventMask = (1 << CGEventType.keyDown.rawValue) | (1 << CGEventType.keyUp.rawValue) | (1 << CGEventType.tapDisabledByTimeout.rawValue)// | (1 << CGEventType.tapDisabledByUserInput.rawValue)
     
-    // not sure what the difference is between passRetained vs passUnretained?
     let eventCallBack: CGEventTapCallBack = { (proxy, type, event, refcon) -> Unmanaged<CGEvent>? in
-      print("Keystroke event!")
-      print("eventTap", event.getIntegerValueField(.eventTargetUnixProcessID))
       
-      guard event.type != .tapDisabledByTimeout else {
-        if let tap = KeypressProvider.shared.tap {
-          CGEvent.tapEnable(tap: tap, enable: true)
-        }
-        return Unmanaged.passUnretained(event)
+      switch event.type {
+        case .tapDisabledByTimeout:
+          print("eventTap: disabled by timeout")
+          if let tap = KeypressProvider.shared.tap {
+            CGEvent.tapEnable(tap: tap, enable: true)
+          }
+          return Unmanaged.passUnretained(event)
+
+        case .tapDisabledByUserInput:
+          // This is triggered if we manually disable the event tap
+          print("eventTap: disabled by user input")
+          return Unmanaged.passUnretained(event)
+        default:
+          break
       }
-      
-      guard event.type != .tapDisabledByUserInput else {
-        if let tap = KeypressProvider.shared.tap {
-          CGEvent.tapEnable(tap: tap, enable: true)
-          SentrySDK.capture(message: "tapDisabledByUserInput")
-        }
-        return Unmanaged.passUnretained(event)
-      }
-      
+
       // fixes slowdown when typing into Fig
-      guard !(NSWorkspace.shared.frontmostApplication?.isFig ?? false) else {
+      if let isFigActive = NSWorkspace.shared.frontmostApplication?.isFig, isFigActive {
         return Unmanaged.passUnretained(event)
       }
       
       // prevents keystrokes from being processed when typing into another application (specifically, spotlight)
-      guard Accessibility.focusedApplicationIsSupportedTerminal() else {
-          return Unmanaged.passUnretained(event)
+      guard Defaults.loggedIn,
+            Defaults.useAutocomplete,
+            Accessibility.focusedApplicationIsSupportedTerminal() else {
+        return Unmanaged.passUnretained(event)
       }
       
-      guard Defaults.loggedIn, Defaults.useAutocomplete, let window = AXWindowServer.shared.whitelistedWindow else {
+      guard let window = AXWindowServer.shared.whitelistedWindow else {
         print("eventTap window of \(AXWindowServer.shared.whitelistedWindow?.bundleId ?? "<none>") is not whitelisted")
         return Unmanaged.passUnretained(event)
       }
@@ -279,77 +227,28 @@ class KeypressProvider : KeypressService {
       Logger.log(message: "\(action) '\(keyName)' in \(window.bundleId ?? "<unknown>"), \(window.tty?.descriptor ?? "???") (\(window.tty?.name ?? "???"))", subsystem: .keypress)
 
       
-//      print("tty: hash = \(window.hash) tty = \(window.tty?.descriptor ?? "nil") pwd = \(window.tty?.cwd ?? "<none>") \(window.tty?.isShell ?? true ? "shell!" : "not shell")")
-      
       guard window.tty?.isShell ?? true else {
         print("tty: Is not in a shell")
         return Unmanaged.passUnretained(event)
       }
       
-      
-      switch KeypressProvider.shared.handleTabKey(event: event, in: window) {
-        case .forward:
-          return Unmanaged.passUnretained(event)
-        case .consume:
-          return nil
-        case .ignore:
-          break
-      }
-      
-      // Toggle autocomplete on and off
-      switch KeypressProvider.shared.handleEscapeKey(event: event, in: window) {
-        case .forward:
-          return Unmanaged.passUnretained(event)
-        case .consume:
-          return nil
-        case .ignore:
-          break
-      }
-      
-      if [.keyDown , .keyUp].contains(type) {
-        var keyCode = UInt16(event.getIntegerValueField(.keyboardEventKeycode))
-        print("eventTap", "\(window.hash)")
-        if KeypressProvider.shared.shouldRedirect(event: event, in: window) {
-
-          // prevent redirects when typing in VSCode editor
-          if Integrations.electronTerminals.contains(window.bundleId ?? "") && Accessibility.findXTermCursorInElectronWindow(window) == nil {
+      // process handlers (order is important)
+      for handler in KeypressProvider.shared.handlers {
+        let action = handler(event, window)
+        switch action {
+          case .forward:
             return Unmanaged.passUnretained(event)
-          }
-          
-          guard WindowManager.shared.autocomplete?.isVisible ?? true else {
-            return Unmanaged.passUnretained(event)
-          }
-          
-          // fig.keypress only recieves keyDown events
-          guard event.type == .keyDown else {
-            Autocomplete.position(makeVisibleImmediately: false)
+          case .consume:
             return nil
-          }
-          
-          Logger.log(message: "Should redirect keypress '\(KeyboardLayout.humanReadableKeyName(event) ?? "?")'", subsystem: .keypress)
-
-
-          if (keyCode == KeyboardLayout.shared.keyCode(for: "N") ?? Keycode.n) {
-            keyCode = Keycode.downArrow
-          }
-          
-          if (keyCode == KeyboardLayout.shared.keyCode(for: "P") ?? Keycode.p) {
-            keyCode = Keycode.upArrow
-          }
-          
-          WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try{ fig.keypress(\"\(keyCode)\", \"\(window.hash)\", { command: \(event.flags.contains(.maskCommand)), control: \(event.flags.contains(.maskControl)), shift: \(event.flags.contains(.maskShift)) }) } catch(e) {}", completionHandler: nil)
-          return nil
-        } else {
-          
-          guard !FishIntegration.handleKeystroke(event: NSEvent(cgEvent: event), in: window) else {
-            return Unmanaged.passUnretained(event)
-          }
-          
-          autoreleasepool {
-            KeypressProvider.shared.handleKeystroke(event: NSEvent(cgEvent: event), in: window)
-          }
+          case .ignore:
+            continue
         }
       }
+      
+      autoreleasepool {
+        KeypressProvider.shared.handleKeystroke(event: NSEvent(cgEvent: event), in: window)
+      }
+      
       return Unmanaged.passUnretained(event)
     }
     
@@ -360,7 +259,8 @@ class KeypressProvider : KeypressService {
                                                        place: CGEventTapPlacement.tailAppendEventTap,
                                                        options: CGEventTapOptions.defaultTap,
                                                        eventsOfInterest: CGEventMask(eventMask),
-                                                       callback: eventCallBack, userInfo: nil) else {
+                                                       callback: eventCallBack,
+                                                       userInfo: nil) else {
       print("Could not create tap")
       SentrySDK.capture(message: "Could not create event tap")
       return nil
@@ -373,96 +273,102 @@ class KeypressProvider : KeypressService {
     return eventTap
   }
   
-  func clean() {
-    buffers = [:]
+    
+  
+  // MARK: - Notifications
+  @objc func windowDidChange(_ notification: Notification) {
+    guard let window = notification.object as? ExternalWindow else { return }
+    
+    let enabled = Integrations.terminalsWhereAutocompleteShouldAppear.contains(window.bundleId ?? "")
+    print("eventTap: \(enabled)")
+    if let tap = self.tap {
+      // turn off event tap for windows that belong to applications
+      // which are not supported terminals
+      CGEvent.tapEnable(tap: tap, enable: enabled)
+    }
+
   }
   
-  func keyBuffer(for window: ExternalWindow) -> KeystrokeBuffer {
-    return self.keyBuffer(for: window.hash)
+  @objc func inputSourceChanged() {
+    resetAllRedirects()
+    Autocomplete.position(makeVisibleImmediately: false, completion: nil)
   }
   
-  func keyBuffer(for windowHash: ExternalWindowHash) -> KeystrokeBuffer {
-    if let buffer = self.buffers[windowHash] {
-      return buffer
+  @objc func lineAcceptedInKeystrokeBuffer() {
+    if let window = AXWindowServer.shared.whitelistedWindow, let tty = window.tty {
+      Timer.delayWithSeconds(0.2) {
+        DispatchQueue.global(qos: .userInteractive).async {
+          tty.update()
+        }
+      }
+    }
+  }
+  
+  @objc func accesibilityPermissionsUpdated(_ notification: Notification) {
+    guard let granted = notification.object as? Bool else { return }
+    
+    if (granted) {
+      self.registerKeystrokeHandler()
     } else {
-      let buffer = KeystrokeBuffer()
-      self.buffers[windowHash] = buffer
-      return buffer
+      self.deregisterKeystrokeHandler()
     }
   }
-  
-  enum EventTapAction {
-    case forward
-    case consume
-    case ignore
-  }
-  
-  func handleTabKey(event:CGEvent, in window: ExternalWindow) -> EventTapAction {
-    let keycode = UInt16(event.getIntegerValueField(.keyboardEventKeycode))
-    guard Keycode.tab == keycode else {
-      return .ignore
-    }
-    
-    guard [.keyDown].contains(event.type) else {
-      return .ignore
-    }
-    
-    let autocompleteIsNotVisible = !(WindowManager.shared.autocomplete?.isVisible ?? false)
 
-    let onlyShowOnTab = (Settings.shared.getValue(forKey: Settings.onlyShowOnTabKey) as? Bool) ?? false
+  // MARK: - EventTapHandlers
+
+  static func handleRedirect(event:CGEvent, in window: ExternalWindow) -> EventTapAction {
+    var keyCode = UInt16(event.getIntegerValueField(.keyboardEventKeycode))
     
-    // if not enabled or if autocomplete is already visible, handle normally
-    if !onlyShowOnTab || !autocompleteIsNotVisible {
+    guard KeypressProvider.shared.shouldRedirect(event: event, in: window) else {
       return .ignore
     }
     
-    // toggle autocomplete on and consume tab keypress
-    Autocomplete.toggle(for: window)
+    // prevent redirects when typing in VSCode editor
+    if Integrations.electronTerminals.contains(window.bundleId ?? "") && Accessibility.findXTermCursorInElectronWindow(window) == nil {
+      return .forward
+    }
+    
+    guard WindowManager.shared.autocomplete?.isVisible ?? true else {
+      return .forward
+    }
+    
+    // fig.keypress only recieves keyDown events
+    guard event.type == .keyDown else {
+      Autocomplete.position(makeVisibleImmediately: false)
+      return .consume
+    }
+    
+
+    if (keyCode == KeyboardLayout.shared.keyCode(for: "N") ?? Keycode.n) {
+      keyCode = Keycode.downArrow
+    }
+    
+    if (keyCode == KeyboardLayout.shared.keyCode(for: "P") ?? Keycode.p) {
+      keyCode = Keycode.upArrow
+    }
+    
+    Autocomplete.redirect(keyCode: keyCode, event: event, for: window.hash)
     return .consume
-    
   }
   
-  func handleEscapeKey(event:CGEvent, in window: ExternalWindow) -> EventTapAction {
-    let keycode = UInt16(event.getIntegerValueField(.keyboardEventKeycode))
-    guard Keycode.escape == keycode else {
-      return .ignore
+  static func processRegisteredHandlers(event:CGEvent, in window: ExternalWindow) -> EventTapAction {
+    for handler in KeypressProvider.shared.registeredHandlers {
+      let action = handler(event, window)
+      switch action {
+        case .forward, .consume:
+          return action
+        case .ignore:
+          continue
+      }
     }
     
-    guard [.keyDown].contains(event.type) else {
-      return .ignore
-    }
-    
-    let autocompleteIsNotVisible = !(WindowManager.shared.autocomplete?.isVisible ?? false)
-        
-    // Don't intercept escape key when in VSCode editor
-    if Integrations.electronTerminals.contains(window.bundleId ?? "") &&
-        Accessibility.findXTermCursorInElectronWindow(window) == nil {
-      return .forward
-    }
-    
-    // Send <esc> key event directly to underlying app, if autocomplete is hidden and no modifiers
-    if autocompleteIsNotVisible, !event.flags.containsKeyboardModifier {
-      return .forward
-    }
-    
-    // Allow user to opt out of escape key being intercepted by Fig
-    if let behavior = Settings.shared.getValue(forKey: Settings.escapeKeyBehaviorKey) as? String,
-       behavior == "ignore",
-       !event.flags.containsKeyboardModifier {
-        return .forward
-    }
-    
-    // control+esc toggles autocomplete on and off
-    Autocomplete.toggle(for: window)
-    
-    return WindowManager.shared.autocomplete?.isVisible ?? false ? .consume : .forward
-
+    return .ignore
   }
   
   func handleKeystroke(event: NSEvent?, in window: ExternalWindow) {
     
     // handle keystrokes in VSCode editor
-    if Integrations.electronTerminals.contains(window.bundleId ?? "") && self.getTextRect() == nil {
+    if Integrations.electronTerminals.contains(window.bundleId ?? "") && Accessibility.getTextRect() == nil {
         return
     }
     
@@ -492,106 +398,92 @@ class KeypressProvider : KeypressService {
     Autocomplete.position()
  
   }
-  
-  func getTextRect(extendRange: Bool = true) -> CGRect? {
-    
-    // prevent cursor position for being returned when apps like spotlight & alfred are active
-    
-    guard Accessibility.focusedApplicationIsSupportedTerminal() else {
-        return nil
-    }
-    
-    if let window = AXWindowServer.shared.whitelistedWindow, Integrations.electronTerminals.contains(window.bundleId ?? "") {
-      return Accessibility.findXTermCursorInElectronWindow(window)
-    }
-    
-    let systemWideElement = AXUIElementCreateSystemWide()
-    var focusedElement : AnyObject?
-    let error = AXUIElementCopyAttributeValue(systemWideElement, kAXFocusedUIElementAttribute as CFString, &focusedElement)
-    guard error == .success else {
-      Logger.log(message: "cursor: Couldn't get the focused element.", subsystem: .cursor)
-      return nil
-    }
-    
-    var selectedRangeValue : AnyObject?
-    let selectedRangeError = AXUIElementCopyAttributeValue(focusedElement as! AXUIElement, kAXSelectedTextRangeAttribute as CFString, &selectedRangeValue)
-    
-    guard selectedRangeError == .success else {
-      Logger.log(message: "couldn't get selected range", subsystem: .cursor)
-      return nil
-    }
-    
-    var selectedRange = CFRange()
-    AXValueGetValue(selectedRangeValue as! AXValue, .cfRange, &selectedRange)
-    var selectRect = CGRect()
-    var selectBounds : AnyObject?
-    
-    // ensure selected text range is at least 1 - in order to find rect.
-    if (extendRange) {
-      var updatedRange = CFRangeMake(selectedRange.location, 1)
-      withUnsafeMutablePointer(to: &updatedRange) { (ptr) in
-        selectedRangeValue = AXValueCreate(.cfRange, ptr)
-      }
-    }
-    
-    // https://linear.app/fig/issue/ENG-109/ - autocomplete-popup-shows-when-copying-and-pasting-in-terminal
-    if selectedRange.length > 1 {
-      Logger.log(message: "selectedRange length > 1", subsystem: .cursor)
+}
 
-      return nil
-    }
-    
-    let selectedBoundsError = AXUIElementCopyParameterizedAttributeValue(focusedElement as! AXUIElement, kAXBoundsForRangeParameterizedAttribute as CFString, selectedRangeValue!, &selectBounds)
-    
-    guard selectedBoundsError == .success else {
-      Logger.log(message: "selectedBoundsError", subsystem: .cursor)
-      return nil
-    }
-    
-    AXValueGetValue(selectBounds as! AXValue, .cgRect, &selectRect)
-    Logger.log(message: "\(selectRect)", subsystem: .cursor)
-    //prevent spotlight search from recieving keypresses, this is sooo hacky
-//    guard selectRect.size.height != 30 else {
-//      print("cursor: prevent spotlight search from recieving keypresses, this is sooo hacky")
-//      return nil
-//    }
-    
-    // Sanity check: prevents flashing autocomplete in bottom corner
-    guard selectRect.size != .zero else {
-      Logger.log(message: "prevents flashing autocomplete in bottom corner", subsystem: .cursor)
-      return nil
-    }
-    
-    // convert Quartz coordinate system to Cocoa!
-    return NSRect(x: selectRect.origin.x, y: NSMaxY(NSScreen.screens[0].frame) - selectRect.origin.y, width:  selectRect.width, height: selectRect.height)
+// MARK: - Extensions -
+
+extension KeypressProvider: KeypressService {
+  
+  func register(handler: @escaping EventTapHandler) {
+    self.registeredHandlers.append(handler)
   }
 }
 
-class Throttler {
-  private var workItem: DispatchWorkItem = DispatchWorkItem(block: {})
-  private var previousRun: Date = Date.distantPast
-  private let queue: DispatchQueue
-  private let minimumDelay: TimeInterval
-  
-  init(minimumDelay: TimeInterval, queue: DispatchQueue = DispatchQueue(label: "com.withfig.keyhandler", qos: .userInitiated)) {
-    self.minimumDelay = minimumDelay
-    self.queue = queue
+extension KeypressProvider: EditBufferService {
+  func keyBuffer(for window: ExternalWindow) -> KeystrokeBuffer {
+    return self.keyBuffer(for: window.hash)
   }
   
-  func throttle(_ block: @escaping () -> Void) {
-    // Cancel any existing work item if it has not yet executed
-    workItem.cancel()
-    // Re-assign workItem with the new block task, resetting the previousRun time when it executes
-    workItem = DispatchWorkItem() {
-      [weak self] in
-      self?.previousRun = Date()
-      block()
+  func keyBuffer(for windowHash: ExternalWindowHash) -> KeystrokeBuffer {
+    if let buffer = self.buffers[windowHash] {
+      return buffer
+    } else {
+      let buffer = KeystrokeBuffer()
+      self.buffers[windowHash] = buffer
+      return buffer
     }
-    // If the time since the previous run is more than the required minimum delay
-    // => execute the workItem immediately
-    // else
-    // => delay the workItem execution by the minimum delay time
-    let delay = previousRun.timeIntervalSinceNow > minimumDelay ? 0 : minimumDelay
-    queue.asyncAfter(deadline: .now() + Double(delay), execute: workItem)
   }
+  
+  func clean() {
+    buffers = [:]
+  }
+}
+
+extension KeypressProvider: KeypressRedirectService {
+  func shouldRedirect(event: CGEvent, in window: ExternalWindow) -> Bool {
+    
+    guard KeypressProvider.shared.enabled else {
+      return false
+    }
+    
+    let keystroke = Keystroke.from(event: event)
+    var windowHasRedirect: Bool!
+    queue.sync {
+      windowHasRedirect = self.redirects[window.hash]?.contains(keystroke) ?? false
+    }
+    
+    return windowHasRedirect
+  }
+  
+  func addRedirect(for keycode: Keystroke, in window: ExternalWindow) {
+    queue.async(flags: .barrier) {
+      var set = self.redirects[window.hash] ?? []
+      set.insert(keycode)
+      self.redirects[window.hash] = set
+    }
+  }
+  
+  func removeRedirect(for keycode: Keystroke, in window: ExternalWindow) {
+    queue.async(flags: .barrier) {
+      if var set = self.redirects[window.hash] {
+        set.remove(keycode)
+        self.redirects[window.hash] = set
+      }
+    }
+  }
+  
+  func addRedirect(for keycode: UInt16, in window: ExternalWindow) {
+    self.addRedirect(for: Keystroke(keyCode: keycode), in: window)
+  }
+  
+  func removeRedirect(for keycode: UInt16, in window: ExternalWindow) {
+    self.removeRedirect(for: Keystroke(keyCode: keycode), in: window)
+  }
+  
+  func resetRedirects(for window: ExternalWindow) {
+    queue.async(flags: .barrier) {
+      self.redirects[window.hash] = []
+    }
+  }
+  
+  func resetAllRedirects() {
+    queue.async(flags: .barrier) {
+      self.redirects = [:]
+    }
+  }
+  
+  func setEnabled(value: Bool) {
+    self.enabled = value
+  }
+  
 }

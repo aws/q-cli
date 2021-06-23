@@ -68,6 +68,7 @@
 		751F7589246D090100E083C8 /* WebBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751F7588246D090100E083C8 /* WebBridge.swift */; };
 		751F7591246E16D800E083C8 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751F7590246E16D800E083C8 /* main.swift */; };
 		7520D7F1267D98790034FE2B /* fig-0.0.3.vsix in Resources */ = {isa = PBXBuildFile; fileRef = 7520D7F0267D98790034FE2B /* fig-0.0.3.vsix */; };
+		7520D8122682AEB00034FE2B /* Throttler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7520D8112682AEB00034FE2B /* Throttler.swift */; };
 		75288EF924CCE72F002DF12A /* WebViewWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757CA887248AD067002A64A8 /* WebViewWindow.swift */; };
 		75290A7D266B09CB000F4255 /* gear@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 75290A7C266B09CB000F4255 /* gear@2x.png */; };
 		75290AB4267126EB000F4255 /* iTermIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75290AB3267126EB000F4255 /* iTermIntegration.swift */; };
@@ -348,6 +349,7 @@
 		751F758E246E16D800E083C8 /* figcli */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = figcli; sourceTree = BUILT_PRODUCTS_DIR; };
 		751F7590246E16D800E083C8 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		7520D7F0267D98790034FE2B /* fig-0.0.3.vsix */ = {isa = PBXFileReference; lastKnownFileType = file; path = "fig-0.0.3.vsix"; sourceTree = "<group>"; };
+		7520D8112682AEB00034FE2B /* Throttler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Throttler.swift; sourceTree = "<group>"; };
 		75290A7C266B09CB000F4255 /* gear@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "gear@2x.png"; sourceTree = "<group>"; };
 		75290AB3267126EB000F4255 /* iTermIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iTermIntegration.swift; sourceTree = "<group>"; };
 		75290ABA26719090000F4255 /* iterm.pb.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = iterm.pb.swift; sourceTree = "<group>"; };
@@ -789,6 +791,7 @@
 				7573F15F260BC70F00C833FA /* LoginItems.swift */,
 				75DA86A425EEBD7400722F1D /* Alert.swift */,
 				75FE3FFF2626A4BD00AC8414 /* Github.swift */,
+				7520D8112682AEB00034FE2B /* Throttler.swift */,
 				75290AB92671905D000F4255 /* iTerm */,
 				75EDDC4F25D2473C003AECC6 /* Hyper */,
 				752A398725CD0FFB00B1AC40 /* VSCode */,
@@ -1415,6 +1418,7 @@
 				7510F8AD24A6910500E86F7C /* SelectionService.swift in Sources */,
 				7510F89B24A6910500E86F7C /* CharSets.swift in Sources */,
 				7510F8B824A6910500E86F7C /* Pty.swift in Sources */,
+				7520D8122682AEB00034FE2B /* Throttler.swift in Sources */,
 				75DA86A925EF145E00722F1D /* TmuxIntegration.swift in Sources */,
 				7577124725648DFB0011FF48 /* ps.c in Sources */,
 				753C31A42643816D00202AAA /* VSCodeInsidersIntegration.swift in Sources */,
