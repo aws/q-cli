@@ -215,7 +215,6 @@ extension iTermIntegration: FramerEventClient {
     case .frame(let frame):
       guard let message = try? Iterm2_ServerOriginatedMessage(serializedData: frame.payload) else {
         Logger.log(message: "could not parse protobuf frame payload", subsystem: .iterm)
-
         return
       }
       

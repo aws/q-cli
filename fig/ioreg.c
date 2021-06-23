@@ -16,7 +16,7 @@ secure_keyboard_entry_process_info(pid_t *pid)
     if (!session) return;
 
     CFNumberRef pid_ref = (CFNumberRef) CFDictionaryGetValue(session, CFSTR("kCGSSessionSecureInputPID"));
-    if (pid_ref) {
+    if (pid_ref != NULL) {
         CFNumberGetValue(pid_ref, CFNumberGetType(pid_ref), pid);
     }
 
