@@ -69,13 +69,39 @@ class Diagnostic {
   
   static var installationScriptRan: Bool {
     let dotfig = "\(NSHomeDirectory())/.fig"
-    let filesAndFolders = [
-                           "tmux", "ssh", // Integration setup files
-                           "fig.bash", "fig.fish", "fig.sh", "fig.zsh", // Shell Hooks
-                           "zle.zsh", "zle", // ZLE integration
-                           "tools", "tools/drip", "tools/drip/fig_onboarding.sh", "user/config", // Onboarding
-                           "autocomplete" // Autocomplete folder
-                          ]
+    
+    // Integration setup files
+    let integrations = ["tmux", "ssh"]
+    
+    
+    let settings = [ "settings.json" ]
+    
+    // Shell Hooks
+    let shellHooks = [
+      "fig.sh",
+      "shell/bash-preexec.sh",
+      "shell/post.bash",
+      "shell/post.fish",
+      "shell/post.sh",
+      "shell/post.zsh",
+      "shell/pre.fish",
+      "shell/pre.sh",
+      "shell/zle.zsh",
+      "zle" // make sure folder exists
+    ]
+    
+    let onboarding = [
+      "tools",
+      "tools/drip",
+      "tools/drip/fig_onboarding.sh",
+      "user/config"
+    ]
+    
+    let filesAndFolders = integrations +
+                              settings +
+                            shellHooks +
+                            onboarding + [ "autocomplete" ]
+      
     
     return filesAndFolders.reduce(true) { (exists, path) -> Bool in
       var isDir : ObjCBool = false

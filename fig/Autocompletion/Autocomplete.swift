@@ -171,3 +171,29 @@ class Autocomplete {
 
   }
 }
+
+protocol ShellIntegration {
+  static func insertLock()
+  static func insertUnlock(with insertionText: String)
+}
+
+class GenericShellIntegration: ShellIntegration {
+  static let insertionLock = "\(NSHomeDirectory())/.fig/insertion-lock"
+
+  static func insertLock() {
+    FileManager.default.createFile(atPath: insertionLock, contents: nil, attributes: nil)
+  }
+  
+  static func insertUnlock(with insertionText: String) {
+    // remove lock after keystrokes have been processes
+    // requires delay proportional to number of character inserted
+    // unfortunately, we don't really know how long this will take - it varies significantly between native and Electron terminals.
+    // We can probably be smarter about this and modulate delay based on terminal.
+    let delay = min(0.01 * Double(insertionText.count), 0.15)
+    Timer.delayWithSeconds(delay) {
+        try? FileManager.default.removeItem(atPath: insertionLock)
+      
+    }
+    
+  }
+}
