@@ -349,7 +349,7 @@ extension iTermIntegration: IntegrationProvider {
     iTermDefaults.synchronize()
     
     // Create directory if it does not exist.
-    try? FileManager.default.createDirectory(at: iTermAutoLaunchDirectory,
+    try? FileManager.default.createDirectory(at: URL(fileURLWithPath: iTermAutoLaunchDirectory),
                                              withIntermediateDirectories: true,
                                              attributes: nil)
     
