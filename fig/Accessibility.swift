@@ -387,4 +387,78 @@ class Accessibility {
     return true
     
   }
+  
+  static func getTextRect(extendRange: Bool = true) -> CGRect? {
+    
+    // prevent cursor position for being returned when apps like spotlight & alfred are active
+    
+    guard Accessibility.focusedApplicationIsSupportedTerminal() else {
+        return nil
+    }
+    
+    if let window = AXWindowServer.shared.whitelistedWindow, Integrations.electronTerminals.contains(window.bundleId ?? "") {
+      return Accessibility.findXTermCursorInElectronWindow(window)
+    }
+    
+    let systemWideElement = AXUIElementCreateSystemWide()
+    var focusedElement : AnyObject?
+    let error = AXUIElementCopyAttributeValue(systemWideElement, kAXFocusedUIElementAttribute as CFString, &focusedElement)
+    guard error == .success else {
+      print("cursor: Couldn't get the focused element. Probably a webkit application")
+      return nil
+    }
+    
+    var selectedRangeValue : AnyObject?
+    let selectedRangeError = AXUIElementCopyAttributeValue(focusedElement as! AXUIElement, kAXSelectedTextRangeAttribute as CFString, &selectedRangeValue)
+    
+    guard selectedRangeError == .success else {
+      print("cursor: couldn't get selected range")
+      return nil
+    }
+    
+    var selectedRange = CFRange()
+    AXValueGetValue(selectedRangeValue as! AXValue, .cfRange, &selectedRange)
+    var selectRect = CGRect()
+    var selectBounds : AnyObject?
+    
+    // ensure selected text range is at least 1 - in order to find rect.
+    if (extendRange) {
+      var updatedRange = CFRangeMake(selectedRange.location, 1)
+      withUnsafeMutablePointer(to: &updatedRange) { (ptr) in
+        selectedRangeValue = AXValueCreate(.cfRange, ptr)
+      }
+    }
+    
+    // https://linear.app/fig/issue/ENG-109/ - autocomplete-popup-shows-when-copying-and-pasting-in-terminal
+    if selectedRange.length > 1 {
+      print("cursor: selectedRange length > 1")
+      return nil
+    }
+    
+    let selectedBoundsError = AXUIElementCopyParameterizedAttributeValue(focusedElement as! AXUIElement, kAXBoundsForRangeParameterizedAttribute as CFString, selectedRangeValue!, &selectBounds)
+    
+    guard selectedBoundsError == .success else {
+      print("cursor: selectedBoundsError")
+      return nil
+    }
+    
+    AXValueGetValue(selectBounds as! AXValue, .cgRect, &selectRect)
+    print("selected", selectRect)
+    //prevent spotlight search from recieving keypresses, this is sooo hacky
+  //    guard selectRect.size.height != 30 else {
+  //      print("cursor: prevent spotlight search from recieving keypresses, this is sooo hacky")
+  //      return nil
+  //    }
+    
+    // Sanity check: prevents flashing autocomplete in bottom corner
+    guard selectRect.size != .zero else {
+      print("cursor: prevents flashing autocomplete in bottom corner")
+      return nil
+    }
+    
+    // convert Quartz coordinate system to Cocoa!
+    return NSRect(x: selectRect.origin.x, y: NSMaxY(NSScreen.screens[0].frame) - selectRect.origin.y, width:  selectRect.width, height: selectRect.height)
+  }
+
 }
+
