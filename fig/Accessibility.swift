@@ -221,7 +221,7 @@ class Accessibility {
     })
     
     if skipCache {
-      print("xterm-cursor: skip cache")
+     Accessibility.xtermLog("skip cache")
       cursor = nil
     }
     
@@ -252,7 +252,7 @@ class Accessibility {
 
 
     } else {
-      print("xterm-cursor: Cursor Cache hit!")
+     Accessibility.xtermLog("Cursor Cache hit!")
     }
     
     guard let currentCursor = cursor else {
@@ -344,12 +344,11 @@ class Accessibility {
     }.filter { $0 != nil }
     
     guard let candidate = candidates.first else {
-//      print("xterm-cursor: no candidates \(depth)")
       return nil
     }
     
     if (candidates.count != 1) {
-      print("xterm-cursor: There were two candidates!")
+     Accessibility.xtermLog("There were two candidates!")
     }
     
     return candidate
@@ -386,5 +385,9 @@ class Accessibility {
     
     return true
     
+  }
+  
+  fileprivate static func xtermLog(_ message: String){
+    Logger.log(message: message, subsystem: .xtermCursor)
   }
 }

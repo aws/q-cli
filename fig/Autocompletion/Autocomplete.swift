@@ -9,6 +9,13 @@
 import Foundation
 
 class Autocomplete {
+  static func log(_ buffer: String, _ cursor: Int) {
+    var logging = buffer
+    let index = logging.index(logging.startIndex, offsetBy: cursor, limitedBy: buffer.endIndex) ?? buffer.endIndex
+    logging.insert("|", at: index)
+    Logger.log(message: logging, subsystem: .autocomplete)
+  }
+  
   static let throttler = Throttler(minimumDelay: 0.05)
   static func update(with context: (String, Int)?, for windowHash: ExternalWindowHash) {
     let tty = ShellHookManager.shared.tty(for: windowHash)
@@ -18,6 +25,9 @@ class Autocomplete {
     let prefix = tty?.runUsingPrefix == nil ? "null" : "`\(tty!.runUsingPrefix!)`"
     if let (buffer, index) = context, let b64 = buffer.data(using: .utf8)?.base64EncodedString() {
       // We aren't setting the tetheredWindow!
+      
+      Autocomplete.log(buffer, index)
+      
       print("fig.autocomplete = \(buffer)")
       print("fig.autocomplete(b64DecodeUnicode(`\(b64)`), \(index), '\(windowHash)', \(ttyDescriptor), \(cwd), \(cmd), \(prefix))")
       WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try{ fig.autocomplete(b64DecodeUnicode(`\(b64)`), \(index), '\(windowHash)', \(ttyDescriptor), \(cwd), \(cmd), \(prefix)) } catch(e){} ", completionHandler: nil)

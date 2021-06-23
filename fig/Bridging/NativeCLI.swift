@@ -67,6 +67,7 @@ class NativeCLI {
         case community = "community"
         case chat = "chat"
         case discord = "discord"
+        case viewLogs = "debug:log"
 
         var isUtility: Bool {
             get {
@@ -112,6 +113,7 @@ class NativeCLI {
                                                            .lockscreen,
                                                            .openSettings,
                                                            .quit,
+                                                           .viewLogs,
                                                            .docs]
                return implementatedNatively.contains(self)
             }
@@ -120,7 +122,7 @@ class NativeCLI {
 
         func run(_ scope: Scope) {
             guard self.implementatedNatively else {
-                Logger.log(message: "CLI function '\(self.rawValue)' not implemented natively")
+              Logger.log(message: "CLI function '\(self.rawValue)' not implemented natively", subsystem: .cli)
                 return
             }
             switch self {
@@ -178,6 +180,8 @@ class NativeCLI {
                 NativeCLI.toolsCommand(scope)
             case .debugWindows:
                 NativeCLI.debugWindowsCommand(scope)
+            case .viewLogs:
+                NativeCLI.debugLogsCommand(scope)
             case .openSettings:
                 NativeCLI.openSettingsCommand(scope)
             default:
@@ -215,9 +219,9 @@ class NativeCLI {
             if let scriptPath = Bundle.main.path(forResource: script,
                                                  ofType: "sh") {
                 NativeCLI.runShellScriptInTerminal(scriptPath, with: scope)
-                Logger.log(message: "CLI: \(scriptPath)")
+                Logger.log(message: "\(scriptPath)", subsystem: .cli)
             } else {
-                Logger.log(message: "CLI: Failed to find script")
+                Logger.log(message: "CLI: Failed to find script", subsystem: .cli)
                
             }
         }
@@ -599,6 +603,29 @@ extension NativeCLI {
         NativeCLI.printInTerminal(ps, using: connection)
     }
   
+    static func debugLogsCommand(_ scope: Scope) {
+        let (message, connection) = scope
+        let loggingEnabled = Settings.shared.getValue(forKey: Settings.logging) as? Bool ?? false
+        guard loggingEnabled else {
+          NativeCLI.printInTerminal("'\(Settings.logging)' is not enabled.", using: connection)
+          return
+        }
+        let all = Set((try? FileManager.default.contentsOfDirectory(atPath: Logger.defaultLocation.path)) ?? [])
+        let removed = Set(message.arguments.filter { $0.starts(with: "-") }.map { $0.stringByReplacingFirstOccurrenceOfString("-", withString: "") + ".log" })
+
+        var files: String!
+        if message.arguments.count == 0 {
+          files = all.map { "\(Logger.defaultLocation.path)/\($0)" }.joined(separator: " ")
+        } else if removed.count > 0 {
+          files = all.subtracting(removed).map { "\(Logger.defaultLocation.path)/\($0)" }.joined(separator: " ")
+        } else {
+          files = message.arguments.map { "\(NSHomeDirectory())/.fig/logs/\($0).log" }.joined(separator: " ")
+        }
+
+        connection.send(message: "execvp:tail -n0 -qf \(files!)")
+        
+    }
+  
     static func debugDotfilesCommand(_ scope: Scope) {
         let (_, connection) = scope
       
@@ -661,7 +688,7 @@ extension NativeCLI {
         if let scriptPath = Bundle.main.path(forResource: script, ofType: "sh") {
             connection.send(message: "bash \(scriptPath)")
         } else {
-            Logger.log(message: "Script does not exisr for command '\(command.rawValue)'")
+          Logger.log(message: "Script does not exist for command '\(command.rawValue)'", subsystem: .cli)
         }
         
         
@@ -697,4 +724,15 @@ extension NativeCLI {
                                         ])
     }
     
+}
+
+extension String {
+
+  func stringByReplacingFirstOccurrenceOfString(_ target: String, withString replaceString: String) -> String {
+      if let range = self.range(of: target) {
+          return self.replacingCharacters(in: range, with: replaceString)
+      }
+      return self
+  }
+
 }
