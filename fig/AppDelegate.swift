@@ -31,10 +31,9 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     let VSCodeObserver = WindowObserver(with: Integrations.VSCode)
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
+        Logger.resetLogs()
         warnToMoveToApplicationIfNecessary()
-      
-
-      
+        
         if let hideMenuBar = Settings.shared.getValue(forKey: Settings.hideMenubarIcon) as? Bool, hideMenuBar {
           print("Not showing menubarIcon because of \(Settings.hideMenubarIcon)")
         } else {
@@ -79,6 +78,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         }
       
         let _ = DockerEventStream.shared
+        let _ = iTermIntegration.shared
         let _ = Settings.shared
 
         
@@ -186,7 +186,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
           LoginItems.shared.currentApplicationShouldLaunchOnStartup = true
         }
         
-        iTermTabIntegration.listenForHotKey()
+//        iTermTabIntegration.listenForHotKey()
         AutocompleteContextNotifier.listenForUpdates()
         SecureKeyboardInput.listen()
       
@@ -224,6 +224,10 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
       
         if !HyperIntegration.isInstalled {
             HyperIntegration.install(withRestart: false, inBackground: true)
+        }
+      
+        if !iTermIntegration.isInstalled {
+            iTermIntegration.install(withRestart: false, inBackground: true)
         }
         
     }
@@ -411,11 +415,11 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
       keyEquivalent: "")
       zshPlugin.state = Defaults.deferToShellAutosuggestions ? .on : .off
       
-      let iTermIntegration = integrationsMenu.addItem(
+      let itermIntegration = integrationsMenu.addItem(
       withTitle: "iTerm Integration",
-      action: #selector(AppDelegate.iTermSetup),
+      action: #selector(AppDelegate.toggleiTermIntegration(_:)),
       keyEquivalent: "")
-      iTermIntegration.state = iTermTabIntegration.isInstalled ? .on : .off
+      itermIntegration.state = iTermIntegration.isInstalled ? .on : .off
       
       let vscodeIntegration = integrationsMenu.addItem(
       withTitle: "VSCode Integration",
@@ -759,37 +763,11 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         Onboarding.setUpEnviroment()
     }
     
-    var iTerm: NSRunningApplication? = nil
-    var kvo: NSKeyValueObservation? = nil
-    @objc func iTermSetup() {
-        guard self.dialogOKCancel(question: "Install iTerm integration?", text: "iTerm will need to restart and download the Python runtime.", icon: NSImage.init(imageLiteralResourceName: NSImage.applicationIconName)) else {
-            return
-        }
-        
-        guard NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.googlecode.iterm2") != nil else {
-            let _ = self.dialogOKCancel(question: "Cannot setup iTerm integration", text: "It appears that iTerm is not installed.", noAction: true, icon: NSImage.init(imageLiteralResourceName: NSImage.applicationIconName))
-            return
-        }
 
-        TelemetryProvider.track(event: .iTermSetup, with: [:])
-        let _ = "sh \(Bundle.main.path(forResource: "iterm-integration", ofType: "sh") ?? "") \(Bundle.main.resourcePath ?? "")".runInBackground(cwd: nil, with: nil, updateHandler: nil, completion: { (out) in
-             self.configureStatusBarItem() // So that "iTerm integration" check mark is toggled on
-             print("iterm: ", out)
-             if let app = NSWorkspace.shared.runningApplications.filter ({ return $0.bundleIdentifier == "com.googlecode.iterm2" }).first {
-                self.iTerm = app
-                self.iTerm!.terminate()
-                self.kvo = self.iTerm!.observe(\.isTerminated, options: .new) { (app, terminated) in
-                    if terminated.newValue == true {
-                        print("iTerm terminated! Restarting...")
-                         NSWorkspace.shared.launchApplication(withBundleIdentifier: "com.googlecode.iterm2", options: [.default], additionalEventParamDescriptor: nil, launchIdentifier: nil)
-                        self.kvo!.invalidate()
-                        self.iTerm = nil
-                    }
-                }
-             } else {
-                NSWorkspace.shared.launchApplication(withBundleIdentifier: "com.googlecode.iterm2", options: [.default], additionalEventParamDescriptor: nil, launchIdentifier: nil)
-            }
-        })
+    @objc func toggleiTermIntegration(_ sender: NSMenuItem) {
+      iTermIntegration.promptToInstall {
+        sender.state = iTermIntegration.isInstalled ? .on : .off
+      }
     }
         
     func dialogOKCancel(question: String, text: String, prompt:String = "OK", noAction:Bool = false, icon: NSImage? = nil, noActionTitle: String? = nil) -> Bool {

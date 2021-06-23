@@ -44,6 +44,20 @@ func runCommand(_ command: String, completion: ((Int32) -> Void)? = nil) throws 
     }
 }
 
+
+func exec(command: String, args: [String]) {
+  withCStrings([command] + args) { (args) in
+    guard execvp(command, args) != 0 else {
+      print("Failed to exec...")
+      return
+
+    }
+    fatalError("Impossible if execv succeeded")
+
+  }
+
+}
+
 let arguments = CommandLine.arguments
 
 if arguments.count > 1 {
@@ -51,6 +65,8 @@ if arguments.count > 1 {
     if command == "cli:installed" {
         print("true")
         exit(0)
+    } else if command == "exec" {
+      exec(command:"tail", args: ["-qf","/Users/mschrage/.fig/logs/global.log"])
     } else if command == "launch" {
         let appIsRunning = NSWorkspace.shared.runningApplications.filter { $0.bundleIdentifier == "com.mschrage.fig"}.count >= 1
         
@@ -62,19 +78,15 @@ if arguments.count > 1 {
         }
         
         exit(0)
-    } else if command == "settings" {
+      
+    } else if command == "settings",
+              arguments.count > 2 { 
+      // we handle `fig settings` in main app
+
+
       guard var settings = Settings.loadFromFile() else {
         exit(0)
       }
-      
-      if (arguments.count == 2) {
-        if let raw = Settings.rawFromFile() {
-          print(raw)
-        }
-        print("\n› View all possible settings keys by running fig settings:docs")
-        exit(0)
-      }
-
       
       let key = arguments[2]
       if arguments.count == 3 { // fig settings key --> Read value
@@ -179,6 +191,10 @@ class CLI : WebSocketConnectionDelegate {
             }
         }
     }
+    var execOnExit = false
+    var commandToExec: String?
+    var argsToExec: [String] = []
+    
     var pendingDisconnection = false;
     let group: DispatchGroup
     
@@ -252,9 +268,24 @@ class CLI : WebSocketConnectionDelegate {
                 pendingDisconnection = true
             }
             return
+        } else if (text.starts(with: "execvp:")) {
+          let payload = text.replacingOccurrences(of: "execvp:", with: "")
+          let tokens = payload
+            .split(separator: " ").map { String($0) }
+          
+          guard let command = tokens.first else {
+            return
+          }
+          
+          let args = Array(tokens.dropFirst(1))
+          
+          self.execOnExit = true
+          self.commandToExec = command
+          self.argsToExec = args
+          connection.disconnect()
+          return
         }
-
-//        print("msg: '\(text)'")
+      
         busy = true
         
         try? runCommand(text) { (status) in
@@ -328,3 +359,10 @@ DispatchQueue.global().asyncAfter(deadline: .now() + 1.25) {
 }
 
 group.wait()
+
+if let handler = handler, handler.execOnExit, let command = handler.commandToExec {
+  print("Running: \(command) \(handler.argsToExec.joined(separator: " "))")
+  exec(command: command,
+       args: handler.argsToExec)
+
+}

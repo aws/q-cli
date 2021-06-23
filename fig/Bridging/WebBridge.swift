@@ -877,10 +877,6 @@ extension WebBridge {
                 }
                 case "deleteCache":
                     (scope.webView as? WebView)?.deleteCache()
-                case "iterm":
-                    if let delegate = NSApplication.shared.delegate as? AppDelegate {
-                        delegate.iTermSetup()
-                    }
                 case "newTerminalWindow":
                     let path = Bundle.main.path(forResource: "open_new_terminal_window", ofType: "scpt")
                     NSAppleScript.run(path: path!)
@@ -1050,7 +1046,7 @@ extension WebBridge {
                                 NotificationCenter.default.post(name: NSNotification.Name("showAutocompletePopup"), object: nil)
                             }
                             companion?.orderFrontRegardless()
-                            let rect = KeypressProvider.shared.getTextRect()
+                            let rect = Accessibility.getTextRect()
                             WindowManager.shared.positionAutocompletePopover(textRect: rect)
                         }
                         

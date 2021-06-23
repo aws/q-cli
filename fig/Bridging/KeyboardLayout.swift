@@ -41,6 +41,52 @@ class KeyboardLayout : NSObject {
 
        return  String(utf16CodeUnits: nameBuffer, count: nameLength)
    }
+  
+    static func humanReadableKeyName(_ event: CGEvent) -> String? {
+      guard let event = NSEvent(cgEvent: event) else {
+        return nil
+      }
+      
+      switch(event.keyCode) {
+        case Keycode.upArrow:
+          return "↑"
+        case Keycode.downArrow:
+          return "↓"
+        case Keycode.leftArrow:
+          return "←"
+        case Keycode.rightArrow:
+          return "→"
+        case Keycode.delete:
+          return "⌫"
+        case Keycode.tab:
+          return "⇥"
+        case Keycode.escape:
+          return "<esc>"
+        case Keycode.returnKey:
+          return "↩"
+        default:
+          break
+      }
+      
+      var out = ""
+      
+      if event.modifierFlags.contains(.command) {
+        out += "⌘"
+      } else if event.modifierFlags.contains(.control) {
+        out += "⌃"
+      } else if event.modifierFlags.contains(.option) {
+        out += "⌥"
+      }
+     
+      if let characters = event.characters {
+        out += characters
+      } else {
+        out += keyName(scanCode: event.keyCode) ?? ""
+      }
+      
+      
+      return out
+    }
     
     func keyCode(for ascii: String) -> CGKeyCode? {
         return self.mapping[ascii]
