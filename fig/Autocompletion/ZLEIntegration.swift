@@ -8,7 +8,7 @@
 
 import Cocoa
 
-class ZLEIntegration: ShellIntegration {
+class ZLEIntegration {
   static let insertionLock = "\(NSHomeDirectory())/.fig/insertion-lock"
   static let insertionFile = "\(NSHomeDirectory())/.fig/zle/insert"
   static let deletionFile = "\(NSHomeDirectory())/.fig/zle/delete"

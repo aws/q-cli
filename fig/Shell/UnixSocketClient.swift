@@ -190,6 +190,8 @@ final class UnixSocketClient: NSObject, StreamDelegate {
 
         delegate?.socket(self, didReceive: message)
         messageBuffer.length = 0
+      } else {
+        messageBuffer.length = 0
       }
       
     case Stream.Event.hasSpaceAvailable:

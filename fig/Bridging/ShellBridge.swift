@@ -331,38 +331,21 @@ class ShellBridge {
         let delay: TimeInterval? = Integrations.electronTerminals.contains(app) ? 0.05 : nil
         
         let insertion = cmd + (runImmediately ? "\n" :"")
-      
-        var backing: KeystrokeBuffer.Backing?
-        if let window = AXWindowServer.shared.whitelistedWindow {
-          backing = KeypressProvider.shared.keyBuffer(for: window).backing
-        }
-      
-      
-        let integration: ShellIntegration.Type
-        switch backing {
-        case .bash:
-          integration = BashIntegration.self
-        case .fish:
-          integration = FishIntegration.self
-        case .zle:
-          integration = ZLEIntegration.self
-        default:
-          integration = GenericShellIntegration.self
-        }
-      
-      
 
-        // Use shell specific insertion method
         if let window = AXWindowServer.shared.whitelistedWindow,
           KeypressProvider.shared.keyBuffer(for: window).backing == .zle {
           ZLEIntegration.insert(with: insertion,
                                 version: window.tty?.shellIntegrationVersion)
           return
         }
-        
-        integration.insertLock()
+      
+        // Keep the ZLE insertion lock to speed up "fig source"
+        // when run from no context popup
+        ZLEIntegration.insertLock()
+        FishIntegration.insertLock()
         injectUnicodeString(insertion, delay: delay) {
-          integration.insertUnlock(with: insertion)
+          ZLEIntegration.insertUnlock(with: insertion)
+          FishIntegration.insertUnlock(with: insertion)
         }
     }
   

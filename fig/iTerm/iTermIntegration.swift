@@ -215,7 +215,6 @@ extension iTermIntegration: FramerEventClient {
     case .frame(let frame):
       guard let message = try? Iterm2_ServerOriginatedMessage(serializedData: frame.payload) else {
         Logger.log(message: "could not parse protobuf frame payload", subsystem: .iterm)
-
         return
       }
       
@@ -353,7 +352,7 @@ extension iTermIntegration: IntegrationProvider {
     iTermDefaults.synchronize()
     
     // Create directory if it does not exist.
-    try? FileManager.default.createDirectory(at: iTermAutoLaunchDirectory,
+    try? FileManager.default.createDirectory(at: URL(fileURLWithPath: iTermAutoLaunchDirectory),
                                              withIntermediateDirectories: true,
                                              attributes: nil)
     
