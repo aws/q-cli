@@ -1,10 +1,9 @@
-ROOT=..
-CC=gcc
-CFLAGS=-I$(ROOT)/include -Wall -pthread $(EXTRA)
+ROOT=$(shell ../realpath.sh)/..
+include $(ROOT)/Makefile.shared
 
-all:	libfig.a
+all: libfig
 
-libfig.a:	base64.o string.o log.o pty.o tty.o exit.o
+libfig: base64.o string.o log.o pty.o tty.o exit.o
 	ar rv libfig.a $?
 
 clean:

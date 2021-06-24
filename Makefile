@@ -1,25 +1,5 @@
 ROOT=$(shell ./realpath.sh)
-PLATFORM=$(shell $(ROOT)/systype.sh)
-
-CC=gcc
-LDFLAGS=
-LDLIBS=$(ROOT)/libvterm/lib/libvterm.a -L$(ROOT)/lib -lfig -lm $(EXTRALIBS)
-CFLAGS=-I$(ROOT)/libvterm/include -I$(ROOT)/include -Wall -pthread $(EXTRA)
-PROD=0
-
-ifeq "$(PROD)" "0"
-	CFLAGS+=-ggdb
-endif
-
-ifeq "$(PLATFORM)" "macos"
-  CFLAGS+=-D_DARWIN_C_SOURCE
-else
-  CFLAGS+=-DLINUX -D_GNU_SOURCE
-endif
-
-ifeq "$(PLATFORM)" "solaris"
-  EXTRALIBS=-lsocket -lnsl
-endif
+include $(ROOT)/Makefile.shared
 
 LIBFIG=$(ROOT)/lib/libfig.a
 LIBVTERM=$(ROOT)/lib/libvterm.a
