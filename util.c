@@ -39,8 +39,13 @@ FigInfo *init_fig_info() {
   FigInfo *fi = malloc(sizeof(FigInfo));
   fi->term_session_id = term_session_id;
   fi->fig_integration_version = fig_integration_version;
+  fi->pty_name = NULL;
   _fig_info = fi;
   return _fig_info;
+}
+
+void set_pty_name(char* name) {
+  _fig_info->pty_name = name;
 }
 FigInfo *get_fig_info() { return _fig_info; }
 

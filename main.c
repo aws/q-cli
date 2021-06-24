@@ -1,6 +1,5 @@
 #include "fig.h"
 #include <pwd.h>
-#include <term.h>
 #include <termios.h>
 #include <unistd.h>
 #include <vterm.h>
@@ -96,6 +95,7 @@ int main(int argc, char *argv[]) {
   if ((fdp = ptyp_open(ptc_name, sizeof(ptc_name))) < 0)
     goto fallback;
 
+  set_pty_name(ptc_name);
   // Get log file name from ptc_name, e.g. pty_dev_pts_4.log.
   sprintf(log_name, "pty%s.log", ptc_name);
   replace(log_name, '/', '_');

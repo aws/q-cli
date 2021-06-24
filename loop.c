@@ -163,10 +163,7 @@ void loop(int ptyp, pid_t child, pid_t ptyc_pid) {
     VTermScreen *vts = vterm_obtain_screen(ft->vt);
     vterm_screen_flush_damage(vts);
 
-    bool fig_is_inserting = access(insertion_lock, F_OK) == 0;
-
-    log_debug("prexec %d", ft->preexec);
-    if (!ft->preexec && ft->shell_enabled && !fig_is_inserting) {
+    if (!ft->preexec && ft->shell_enabled && access(insertion_lock, F_OK) != 0) {
       int index;
       char *guess = extract_buffer(ft->state, ft->prompt_state, &index);
 

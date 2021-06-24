@@ -1,6 +1,7 @@
 #pragma once
 
 #define _POSIX_C_SOURCE 200809L
+#define _DEFAULT_SOURCE
 
 #if defined(SOLARIS)
 #define _XOPEN_SOURCE 600
@@ -59,6 +60,7 @@ typedef struct {
 typedef struct {
   char *term_session_id;
   char *fig_integration_version;
+  char *pty_name;
 } FigInfo;
 
 // term_state.c
@@ -83,6 +85,7 @@ int figterm_should_resize();
 int get_winsize();
 FigInfo* init_fig_info();
 FigInfo* get_fig_info();
+void set_pty_name(char*);
 void free_fig_info();
 char* get_exe(pid_t);
 int unix_socket_connect(char*);

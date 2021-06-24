@@ -1,5 +1,26 @@
 ROOT=$(shell ./realpath.sh)
-include $(ROOT)/Makefile.shared
+PLATFORM=$(shell $(ROOT)/systype.sh)
+
+CC=gcc
+LDFLAGS=
+LDLIBS=$(ROOT)/libvterm/lib/libvterm.a -L$(ROOT)/lib -lfig -lm $(EXTRALIBS)
+CFLAGS=-I$(ROOT)/libvterm/include -I$(ROOT)/include -Wall -pthread $(EXTRA)
+PROD=0
+
+ifeq "$(PROD)" "0"
+	CFLAGS+=-ggdb
+endif
+
+ifeq "$(PLATFORM)" "macos"
+  CFLAGS+=-D_DARWIN_C_SOURCE
+else
+  CFLAGS+=-DLINUX -D_GNU_SOURCE
+endif
+
+ifeq "$(PLATFORM)" "solaris"
+  EXTRALIBS=-lsocket -lnsl
+endif
+
 LIBFIG=$(ROOT)/lib/libfig.a
 LIBVTERM=$(ROOT)/lib/libvterm.a
 
@@ -15,13 +36,12 @@ fig_get_shell:	get_shell.o
 
 install: all
 	mkdir -p $(HOME)/.fig/bin; \
-	cd $(ROOT) && cp $(PROGS) $(HOME)/.fig/bin; \
+	cd $(HOME)/.fig/bin && rm -rf $(PROGS) && cd $(ROOT) && cp $(PROGS) $(HOME)/.fig/bin; \
 	# Add fake fig binary on linux or if fig not installed that just logs
 	# commands to fig.
 	command -v ~/.fig/bin/fig > /dev/null 2>&1 || ( \
 		printf "#!/bin/bash\necho \"\$$@\" >> ~/.fig/fig.log" > $(HOME)/.fig/bin/fig && \
 		chmod +x $(HOME)/.fig/bin/fig)
-
 
 clean:
 	rm -f $(PROGS) $(TEMPFILES) *.o *.log; \

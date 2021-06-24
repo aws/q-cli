@@ -10,10 +10,8 @@ char *update_row(char *row, int *row_len, VTermRect rect, VTermScreen *vts) {
   if (rect.end_col > *row_len) {
     new_row = realloc(row, sizeof(char) * rect.end_col);
     if (new_row == NULL) {
-      log_error("Error in realloc");
-      return NULL;
+      err_sys("Error in realloc");
     }
-
     memset(new_row + *row_len, ' ', sizeof(char) * (rect.end_col - *row_len));
   }
   size_t outpos = vterm_screen_get_text(vts, new_row + rect.start_col,
@@ -47,10 +45,7 @@ int term_state_update(TermState *ts, VTerm *vt, VTermRect rect, bool reset) {
   for (int i = rect.start_row; i < end_row; i++) {
     rect.start_row = i;
     rect.end_row = i + 1;
-    char* new_row = update_row(ts->rows[i], ts->row_lens + i, rect, vts);
-    if (new_row == NULL && ts->rows[i] != NULL)
-      return -1;
-    ts->rows[i] = new_row;
+    ts->rows[i] = update_row(ts->rows[i], ts->row_lens + i, rect, vts);
   }
   return 0;
 }
@@ -130,7 +125,6 @@ char *extract_buffer(TermState *state, TermState *prompt_state, int *index) {
   }
   total_len -= j;
 
-  log_debug("Alloc text: %d", (int)total_len);
   char *text = malloc(sizeof(char) * (total_len + 1));
   int pos = 0;
 
