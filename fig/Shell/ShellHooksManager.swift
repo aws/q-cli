@@ -405,8 +405,33 @@ extension ShellHookManager {
           }
       
       
+      var ttyHandler: TTY? = tty[hash]
+      
+      // stop process if user is definitely in a shell process
+//      guard ttyHandler?.isShell != true else {
+//        return
+//      }
+      
+      if ttyHandler == nil,
+         let ttyDescriptor = info.env?.jsonStringToDict()?["TTY"] as? String,
+         let trimmedDescriptor = ttyDescriptor.split(separator: "/").last,
+         let pidString = info.env?.jsonStringToDict()?["PID"] as? String,
+         let pid = pid_t(pidString) {
+//        print("tty",  ?? "?")
+//        print("tty", info.env?.jsonStringToDict()?["PID"] ?? "?")
+//        ttyDescriptor.split(sep)
+          print("tty: linking")
+          ttyHandler = self.link(info.session, hash, String(trimmedDescriptor))
+        
+        ttyHandler?.startedNewShellSession(for: pid )
+        
+      }
+      
       // prevents fig window from popping up if we don't have an associated shell process
-      guard let tty = tty[hash], tty.isShell ?? false else {
+//      guard let tty = tty[hash], tty.isShell ?? false else {
+//        return
+//      }
+      guard let tty = ttyHandler else {
         return
       }
       
