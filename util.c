@@ -1,4 +1,5 @@
 #include "fig.h"
+#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/un.h>
 #include <sys/socket.h>
@@ -6,21 +7,28 @@
 static FigInfo *_fig_info;
 static int fig_sock = -1;
 
-void get_winsize(struct winsize *ws) {
+int get_winsize(struct winsize *ws) {
   // Get window size of current terminal.
   const char *term = ctermid(NULL);
-  log_debug("term %s", term);
   if (!term[0]) {
-    err_sys("can't get name of controlling terminal");
+    log_error("can't get name of controlling terminal");
+    return -1;
   }
   int fd = open(term, O_RDONLY);
   if (fd == -1) {
-    err_sys("can't open terminal at %s", term);
+    log_error("can't open terminal at %s", term);
+    return -1;
   }
   if (ioctl(fd, TIOCGWINSZ, ws) == -1) {
-    err_sys("can't get the window size of %s", term);
+    log_error("can't get the window size of %s", term);
+    return -1;
   }
   close(fd);
+  return 0;
+}
+
+void free_fig_info() {
+  free(_fig_info);
 }
 
 FigInfo *init_fig_info() {
@@ -31,8 +39,13 @@ FigInfo *init_fig_info() {
   FigInfo *fi = malloc(sizeof(FigInfo));
   fi->term_session_id = term_session_id;
   fi->fig_integration_version = fig_integration_version;
+  fi->pty_name = NULL;
   _fig_info = fi;
   return _fig_info;
+}
+
+void set_pty_name(char* name) {
+  _fig_info->pty_name = name;
 }
 FigInfo *get_fig_info() { return _fig_info; }
 
@@ -48,16 +61,19 @@ char *get_exe(pid_t pid) {
   ssize_t ret;
   unsigned int bufsize = 1024;
   char* tmp = calloc(bufsize, sizeof(char));
+  if (tmp == NULL) {
+    return NULL;
+  }
 
-#if defined(MACOS)
+#if defined(__APPLE__)
   // TODO(sean): make sure pid exists or that access is allowed?
-  ret = proc_pidpath(pid, &tmp, sizeof(char) * bufsize);
+  ret = proc_pidpath(pid, tmp, sizeof(char) * bufsize);
 
   if (ret == 0) {
     log_error("Error getting shell");
     return NULL;
   }
-  return strdup(buf);
+  return tmp;
 #else
   char procfile[50];
   sprintf(procfile, "/proc/%d/exe", pid);
