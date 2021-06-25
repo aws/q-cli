@@ -26,5 +26,7 @@ jobs:
           mkdir -p bin
           cp ../fig_pty ../fig_get_shell bin
           git add .
+          # https://github.community/t/automating-push-to-public-repo/17742/12
+          git config -l | grep 'http\..*\.extraheader' | cut -d= -f1 | xargs -L1 git config --unset-all
           git diff-index --quiet HEAD || git commit -m "Automatic publish from figterm repository"
           git push
