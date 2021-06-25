@@ -20,13 +20,13 @@ jobs:
         run:  PROD=1 make all
       - name: Push to config
         run: |
-          git clone https://.:${{ secrets.GITHUB_TOKEN }}@github.com/withfig/config config
+          eval "$(ssh-agent -s)"
+          ssh-add - <<< "${{ secrets.CONFIG_DEPLOY_PRIVATE_KEY }}"
+          git clone git@github.com:withfig/config config
           cd config
           git checkout sean/pty_integration
           mkdir -p bin
           cp ../fig_pty ../fig_get_shell bin
           git add .
-          # https://github.community/t/automating-push-to-public-repo/17742/12
-          git config -l | grep 'http\..*\.extraheader' | cut -d= -f1 | xargs -L1 git config --unset-all
           git diff-index --quiet HEAD || git commit -m "Automatic publish from figterm repository"
           git push
