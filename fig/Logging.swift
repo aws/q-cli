@@ -37,6 +37,7 @@ class Logger {
         case xtermCursor = "xterm-cursor"
         case settings = "settings"
         case fish = "fish"
+        case tmux = "tmux"
         func pathToLogFile() -> URL {
           return Logger.defaultLocation
                  .appendingPathComponent(self.rawValue, isDirectory: false)
