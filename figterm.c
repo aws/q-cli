@@ -38,7 +38,11 @@ FigTerm *figterm_new(bool utf8, VTermScreenCallbacks *screen_callbacks,
   // recognize.
   ft->shell_enabled = false;
 
+  ft->pid[0] = '\0';
+  ft->tty[0] = '\0';
+  ft->osc = NULL;
   ft->altscreen = false;
+  ft->parsing_osc = false;
   ft->in_prompt = false;
   ft->preexec = true;
   ft->vt = vt;
@@ -72,6 +76,7 @@ void figterm_free(FigTerm *ft) {
     term_state_free(ft->state);
     term_state_free(ft->prompt_state);
     free(ft->cursor);
+    free(ft->osc);
   }
   free(ft);
 }

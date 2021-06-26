@@ -48,6 +48,10 @@ typedef struct {
   TermState *state;
   TermState *prompt_state;
   VTermPos* cursor;
+  char* osc;
+  char tty[30];
+  char pid[8];
+  bool parsing_osc;
   bool shell_enabled;
   bool altscreen;
   bool in_prompt;
