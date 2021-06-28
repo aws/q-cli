@@ -465,18 +465,30 @@ extension ShellHookManager {
     guard let window = AXWindowServer.shared.whitelistedWindow else { return }
     let oldHash =  window.hash
     
-    if let newPane = info.arguments[safe: 0], let (windowId, _, oldPane) = oldHash.components() {
+    if let newPane = info.arguments[safe: 0], let (windowId, sessionHash, oldPane) = oldHash.components() {
         
       if oldPane != nil {
         // user is switching between panes in tmux
         if newPane == "%" {
-          print("tmux: closing tmux session")
+          Logger.log(message: "closing tmux session", subsystem: .tmux)
+          
+          // Remove all associated panes by filtering out all panes with prefix
+          // corresponding to current window hash
+          let stalePrefix = "\(windowId)/\(sessionHash ?? "")%"
+          let staleWindowHashes = self.tty.keys.filter { $0.count > stalePrefix.count && $0.hasPrefix(stalePrefix) }
+            
+          Logger.log(message: "removing \(staleWindowHashes.count) stale window hashes", subsystem: .tmux)
+          
+          staleWindowHashes.forEach {
+            Logger.log(message: $0, subsystem: .tmux)
+            self.tty.removeValue(forKey: $0)
+          }
         } else {
-          print("tmux: user is switching between panes %\(oldPane!) -> \(newPane)")
+          Logger.log(message: "user is switching between panes %\(oldPane!) -> \(newPane)", subsystem: .tmux)
         }
 
       } else {
-        print("tmux: launched new session")
+        Logger.log(message: "launched new session", subsystem: .tmux)
       }
       
       setActivePane(newPane, for: windowId)
