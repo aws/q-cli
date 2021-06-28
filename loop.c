@@ -148,7 +148,7 @@ void publish_guess(int index, char *buffer, FigTerm* ft) {
   char *tmpbuf = malloc(buflen + sizeof(char) * 50);
   sprintf(
     tmpbuf,
-    "fig bg:bash-keybuffer \"%s\" \"%s\" \"%s\" \"%s\" 0 %d \"%s\"",
+    "fig bg:bash-keybuffer %s %s %s %s 0 %d \"%s\"",
     fig_info->term_session_id,
     fig_info->fig_integration_version,
     ft->tty,
