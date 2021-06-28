@@ -108,7 +108,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         Defaults.deferToShellAutosuggestions = true
         Defaults.autocompleteVersion = "v6"
         Defaults.autocompleteWidth = 250
-        Defaults.ignoreProcessList = ["figcli", "gitstatusd-darwin-x86_64", "nc"]
+        Defaults.ignoreProcessList = ["figcli", "gitstatusd-darwin-x86_64", "nc", "fig_pty"]
 
         let hasLaunched = UserDefaults.standard.bool(forKey: "hasLaunched")
         let email = UserDefaults.standard.string(forKey: "userEmail")
@@ -1935,6 +1935,8 @@ extension AppDelegate : NSMenuDelegate {
                     break;
                   case .fish:
                     backing = "Fish Command Line"
+                  case .bash:
+                    backing = "Bash Command Line"
                   default:
                     backing = nil
                   }
