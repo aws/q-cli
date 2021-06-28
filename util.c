@@ -56,6 +56,21 @@ char* fig_path(char* fname) {
   return strcat(strcat(strcpy(file, home_dir), "/.fig/"), fname);
 }
 
+char* log_path(char* log_name) {
+  char* dir = fig_path("logs/");
+
+  struct stat st = {0};
+  if (stat(dir, &st) == -1) {
+    mkdir(dir, 0700);
+  }
+
+  int path_len = strlen(dir) + strlen(log_name) + 1;
+  char* full_path = malloc(path_len * sizeof(char));
+  strcat(strcpy(full_path, dir), log_name);
+  free(dir);
+  return full_path;
+}
+
 char *get_exe(pid_t pid) {
   // Get executable path of a process by pid.
   ssize_t ret;
