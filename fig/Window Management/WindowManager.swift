@@ -24,7 +24,6 @@ protocol WindowManagementService {
 
 class WindowManager : NSObject {
     static let shared = WindowManager(windowService: WindowServer.shared)
-    var hotKeyManager: HotKeyManager?
 
     var sidebar: CompanionWindow?
     var autocomplete: CompanionWindow?
@@ -197,12 +196,6 @@ class WindowManager : NSObject {
                 WindowManager.shared.windowServiceProvider.takeFocus()
            }
         }
-
-        if let keyWindow = NSApp.keyWindow as? CompanionWindow, untetheredWindows.contains(keyWindow) {
-            self.hotKeyManager?.companionWindow = keyWindow
-        } else if let sidebar = self.sidebar {
-            self.hotKeyManager?.companionWindow = visibleWindows.first ?? sidebar
-        }
         
         print(reason)
     
@@ -221,7 +214,6 @@ class WindowManager : NSObject {
         let companion = CompanionWindow(viewController: web)
         companion.positioning = CompanionWindow.defaultPassivePosition
         companion.repositionWindow(forceUpdate: true, explicit: true)
-        self.hotKeyManager = HotKeyManager(companion:companion)
         self.sidebar = companion
         
     }
