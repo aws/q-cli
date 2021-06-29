@@ -21,7 +21,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     var integrationPrompt: NSMenuItem?
 
     var clicks:Int = 6;
-    var hotKeyManager: HotKeyManager?
     let updater = SUUpdater.shared()
     let processPool = WKProcessPool()
     
