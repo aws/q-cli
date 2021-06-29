@@ -52,7 +52,7 @@ class VSCodeIntegration: IntegrationProvider {
   static let accessibilitySupportKey = "editor.accessibilitySupport"
 
   // If the extension path changes make sure to update the uninstall script!
-  static let extensionVersion = "0.0.3"
+  static let extensionVersion = "0.0.4"
   static let extensionPath = "\(NSHomeDirectory())/.vscode/extensions/withfig.fig-\(extensionVersion)/extension.js"
 
   static func install(withRestart:Bool = true, inBackground: Bool, completion: (() -> Void)? = nil) {
