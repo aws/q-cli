@@ -18,6 +18,9 @@ protocol UnixSocketDelegate: AnyObject {
 }
 
 final class UnixSocketClient: NSObject, StreamDelegate {
+  static func log(_ message: String) {
+    Logger.log(message: message, subsystem: .unix)
+  }
   
   // MARK: - Properties
   
@@ -61,7 +64,7 @@ final class UnixSocketClient: NSObject, StreamDelegate {
 
     // Validate the length...
     guard lengthOfPath < MemoryLayout.size(ofValue: addr.sun_path) else {
-      print("Pathname supplied is too long.");
+      UnixSocketClient.log("Pathname supplied is too long.");
       return false
     }
 
@@ -76,7 +79,7 @@ final class UnixSocketClient: NSObject, StreamDelegate {
       withUnsafeMutablePointer(to: &addr) {
           $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
             guard Darwin.connect(socketFileDescriptor, $0, socklen_t(MemoryLayout<sockaddr_un>.stride)) != -1 else {
-              print("Socket: Error connecting to socket, \(errno)")
+              UnixSocketClient.log("Error connecting to socket, \(errno)")
               error = true
               return
             }
@@ -97,7 +100,7 @@ final class UnixSocketClient: NSObject, StreamDelegate {
     outputStream?.setProperty(kCFBooleanTrue, forKey:  kCFStreamPropertyShouldCloseNativeSocket as Stream.PropertyKey)
 
     guard let inputStream = inputStream, let outputStream = outputStream else {
-      print("Failed to get input & output streams")
+      UnixSocketClient.log("Failed to get input & output streams")
       return false
     }
     
@@ -135,14 +138,14 @@ final class UnixSocketClient: NSObject, StreamDelegate {
   
   func send(message: String) {
     guard let outputStream = outputStream else {
-      print("Error: Not Connected")
+      UnixSocketClient.log("Error: Not Connected")
       return
     }
     guard let data = message.data(using: String.Encoding.utf8, allowLossyConversion: false) else {
-      print("Cannot convert message into data to send: invalid format?")
+      UnixSocketClient.log("Cannot convert message into data to send: invalid format?")
       return
     }
-    print("Socket: send '\(message)'")
+    UnixSocketClient.log("send '\(message)'")
     var bytes = Array<UInt8>(repeating: 0, count: data.count)
     (data as NSData).getBytes(&bytes, length: data.count)
     outputStream.write(&bytes, maxLength: data.count)
@@ -150,7 +153,7 @@ final class UnixSocketClient: NSObject, StreamDelegate {
   
   func send(data: Data) {
     guard let outputStream = outputStream else {
-      print("Error: Not Connected")
+      UnixSocketClient.log("Error: Not Connected")
       return
     }
     
@@ -168,7 +171,7 @@ final class UnixSocketClient: NSObject, StreamDelegate {
       break
       
     case Stream.Event.openCompleted:
-      print("Socket: openCompleted")
+      UnixSocketClient.log("openCompleted")
       break
       
     case Stream.Event.hasBytesAvailable:
@@ -182,7 +185,7 @@ final class UnixSocketClient: NSObject, StreamDelegate {
         messageBuffer.append(&byte, length: bytesRead)
       }
       
-      print("Socket: buffer = \(String(data: messageBuffer as Data, encoding: String.Encoding.utf8) ?? "")")
+      UnixSocketClient.log("buffer = \(String(data: messageBuffer as Data, encoding: String.Encoding.utf8) ?? "")")
       delegate?.socket(self, didReceive: messageBuffer as Data)
       // only inform our delegate of complete messages (must end in newline character)
       if let message = String(data: messageBuffer as Data, encoding: String.Encoding.utf8),
@@ -195,13 +198,13 @@ final class UnixSocketClient: NSObject, StreamDelegate {
       }
       
     case Stream.Event.hasSpaceAvailable:
-      print("Socket: hasSpaceAvailable ")
+      UnixSocketClient.log("hasSpaceAvailable ")
       break
     case Stream.Event.endEncountered:
-      print("Socket: endEncountered ")
+      UnixSocketClient.log("endEncountered ")
 
     case Stream.Event.errorOccurred:
-      print("Socket: errorOccurred ")
+      UnixSocketClient.log("errorOccurred ")
       
       stream.close()
       stream.remove(from: .current, forMode: .default)
