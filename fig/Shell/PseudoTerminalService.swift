@@ -128,7 +128,7 @@ class PseudoTerminal : PseudoTerminalService {
         }
       })
       
-      let command = variablesToUpdate.keys.map { "\($0)='\(variablesToUpdate[$0] ?? "")'" }.joined(separator: "\n")
+      let command = variablesToUpdate.keys.map { "export \($0)='\(variablesToUpdate[$0] ?? "")'" }.joined(separator: "\n")
       self.write(command: command + "\n", control: nil)
     }
   
