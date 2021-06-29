@@ -101,6 +101,13 @@ class Logger {
       try? FileManager.default.createDirectory(at: Logger.defaultLocation,
                                                withIntermediateDirectories: true,
                                                attributes: nil)
+      // Create all log files so that they can be tailed
+      // even if no events have been logged yet
+      for system in Subsystem.allCases {
+        FileManager.default.createFile(atPath: system.pathToLogFile().path,
+                                       contents: nil,
+                                       attributes: nil)
+      }
     }
     
     fileprivate static func appendToLog(_ line: String, subsystem: Subsystem = .global) {
