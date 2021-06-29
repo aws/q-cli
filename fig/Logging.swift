@@ -38,6 +38,7 @@ class Logger {
         case settings = "settings"
         case fish = "fish"
         case tmux = "tmux"
+        case unix = "unix"
         func pathToLogFile() -> URL {
           return Logger.defaultLocation
                  .appendingPathComponent(self.rawValue, isDirectory: false)

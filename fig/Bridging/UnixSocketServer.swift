@@ -126,6 +126,7 @@ class UnixSocketServer {
 
 //            let reply = "Server response: \n\(response)\n"
             self.delegate?.recieved(string: response)
+            Logger.log(message: "recieved message \"\(response)\"", subsystem: .unix)
           }
           
           if bytesRead == 0 {
