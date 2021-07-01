@@ -481,6 +481,7 @@ extension WebViewController : WKNavigationDelegate {
         WebBridge.declareRemoteURL(webview: webView)
         WebBridge.declareHomeDirectory(webview: webView)
         WebBridge.declareSettings(webview:webView)
+        WebBridge.declareUpdate(webview: webView)
         WebBridge.initJS(webview: webView)
 //        webView.evaluateJavaScript("fig.callinit()", completionHandler: nil)
 
