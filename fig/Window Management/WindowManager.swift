@@ -45,7 +45,7 @@ class WindowManager : NSObject {
         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(activateApp), name: NSWorkspace.didActivateApplicationNotification, object: nil)
         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(deactivateApp), name: NSWorkspace.didDeactivateApplicationNotification, object: nil)
 
-        NotificationCenter.default.addObserver(self, selector: #selector(windowChanged), name: WindowServer.whitelistedWindowDidChangeNotification, object: nil)
+      NotificationCenter.default.addObserver(self, selector: #selector(windowChanged(_:)), name: WindowServer.whitelistedWindowDidChangeNotification, object: nil)
 
         
 //        _ = Timer.scheduledTimer(timeInterval: 0.25, target: self, selector: #selector(updatePositionTimer), userInfo: nil, repeats: true)
@@ -109,9 +109,14 @@ class WindowManager : NSObject {
         updatePosition(for: .applicationActivated)
     }
     
-    @objc func windowChanged(){
+    @objc func windowChanged(_ notification: Notification? = nil){
         updatePosition(for: .windowChanged)
         self.autocomplete?.maxHeight = 0
+      if let notification = notification,
+         let app = notification.object as? ExternalWindow,
+         let bundleId = app.bundleId  {
+        Autocomplete.runJavascript("fig.currentApp = '\(bundleId)'")
+      }
 //
 //        DispatchQueue.main.async {
 //            self.autocomplete?.orderOut(nil)

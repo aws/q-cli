@@ -1271,6 +1271,12 @@ extension WebBridge {
           """, completionHandler: nil)
       }
     }
+  
+  static func declareCurrentApplication(webview: WebView) {
+      let bundleId = AXWindowServer.shared.whitelistedWindow?.bundleId
+      webview.evaluateJavaScript("fig.currentApp = '\(bundleId ?? "")'", completionHandler: nil)
+          
+  }
     
     static func initJS(webview: WebView) {
         webview.evaluateJavaScript("fig.callinit()", completionHandler: nil)
