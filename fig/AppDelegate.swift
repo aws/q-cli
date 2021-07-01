@@ -21,7 +21,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     var integrationPrompt: NSMenuItem?
 
     var clicks:Int = 6;
-    let updater = SUUpdater.shared()
+    let updater = UpdateService.provider
     let processPool = WKProcessPool()
     
     let iTermObserver = WindowObserver(with: "com.googlecode.iterm2")
@@ -94,7 +94,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         }
                 
 //        updater?.checkForUpdateInformation()
-        updater?.delegate = self as SUUpdaterDelegate;
+//        updater?.delegate = self as SUUpdaterDelegate;
 //        updater?.checkForUpdateInformation()
         
 //        let domain = Bundle.main.bundleIdentifier!
@@ -1210,7 +1210,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     }
     
     @objc func checkForUpdates() {
-        self.updater?.checkForUpdates(self)
+          self.updater.checkForUpdates(self)
 //        self.updater?.installUpdatesIfAvailable()
     }
     @objc func toggleVisibility() {

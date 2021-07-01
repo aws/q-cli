@@ -37,6 +37,9 @@ class Autocomplete {
     
   }
   
+  static func runJavascript(_ command: String) {
+    WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try{ \(command) } catch(e) { console.log(e) }", completionHandler: nil)
+  }
   static func redirect(keyCode: UInt16, event: CGEvent, for windowHash: ExternalWindowHash) {
     
     guard let event =  NSEvent(cgEvent: event) else { return }
