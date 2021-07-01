@@ -69,15 +69,15 @@ int main(int argc, char *argv[]) {
     goto fallback;
 
   set_pty_name(ptc_name);
-  // Get log file name from ptc_name, e.g. pty_dev_pts_4.log.
-  sprintf(log_name, "pty%s.log", ptc_name);
+  // Get log file name from ptc_name, e.g. logs/figterm_dev_pts_4.log.
+  sprintf(log_name, "figterm%s.log", ptc_name);
   replace(log_name, '/', '_');
 
   // Initialize logging.
   set_logging_level(LOG_INFO);
-  char* log_path = fig_path(log_name);
-  init_log_file(log_path);
-  free(log_path);
+  char* log_file = log_path(log_name);
+  init_log_file(log_file);
+  free(log_file);
 
   struct termios orig_termios;
   struct winsize size;

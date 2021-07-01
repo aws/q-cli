@@ -12,6 +12,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/termios.h>
+
 #if defined(__APPLE__) || !defined(TIOCGWINSZ)
 #include <sys/ioctl.h>
 #endif
@@ -95,6 +96,7 @@ char* get_exe(pid_t);
 int unix_socket_connect(char*);
 int fig_socket_send(char*);
 char* fig_path(char*);
+char* log_path(char*);
 
 // lib/exit.c
 int get_exit_status();
