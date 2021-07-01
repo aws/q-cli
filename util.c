@@ -110,19 +110,34 @@ int unix_socket_connect(char *path) {
   return sock;
 }
 
+void sigpipe_handler(int sig) {
+  fig_sock = -1;
+}
+
 int fig_socket_send(char* buf) {
   // Base64 encode buf and send to fig socket.
+  int st;
   size_t out_len;
+  SigHandler* old_handler;
+
   unsigned char *encoded =
       base64_encode((unsigned char *) buf, strlen(buf), &out_len);
 
-  if (fig_sock < 0)
+  if (fig_sock < 0) {
     fig_sock = unix_socket_connect("/tmp/fig.socket");
+  }
 
   if (fig_sock < 0) {
     log_warn("Can't connect to fig socket");
     return fig_sock;
   }
   
-  return send(fig_sock, encoded, out_len, 0);
+  // Handle sigpipe if socket is closed, reset afterwards.
+  if ((old_handler = set_sigaction(SIGPIPE, sigpipe_handler)) == SIG_ERR)
+    err_sys("sigpipe error");
+  st = send(fig_sock, encoded, out_len, 0);
+  if (set_sigaction(SIGPIPE, old_handler) == SIG_ERR)
+    err_sys("sigpipe error");
+
+  return st;
 }

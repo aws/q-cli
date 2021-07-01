@@ -16,7 +16,7 @@
 
 #define BUFFSIZE (1024 * 100)
 
-void loop(int, pid_t, pid_t);
+void loop(int, pid_t);
 
 void abort_handler(int sig) {
   log_warn("Aborting %d: %d", getpid(), sig);
@@ -46,33 +46,6 @@ void on_pty_exit() {
     // Unexpected exit, fallback to exec parent shell.
     launch_shell();
   }
-}
-
-void on_child_exit() {
-  // notify parent process on exit.
-  kill(getppid(), SIGTERM);
-  log_info("child exiting");
-}
-
-void child_loop(int ptyp) {
-  int nread;
-  char buf[BUFFSIZE + 1];
-
-  if (atexit(on_child_exit))
-    err_sys("atexit error");
-
-  for (;;) {
-    // Copy stdin to pty parent.
-    if ((nread = read(STDIN_FILENO, buf, BUFFSIZE)) < 0)
-      err_sys("read error from stdin");
-    log_debug("Read %d chars on child", nread);
-    if (write(ptyp, buf, nread) != nread)
-      err_sys("write error to parent pty");
-    if (nread == 0)
-      break;
-  }
-
-  EXIT(0);
 }
 
 int main(int argc, char *argv[]) {
@@ -122,16 +95,7 @@ int main(int argc, char *argv[]) {
   if ((pid = pty_fork(&fdm, fdp, ptc_name, &orig_termios, &size)) < 0) {
     log_error("fork error");
   } else if (pid != 0) {
-    pid_t child;
-
-    if ((child = fork()) < 0) {
-      err_sys("fork error");
-    } else if (child == 0) {
-      child_loop(fdm);
-    }
-
     log_info("Shell: %d", pid);
-    log_info("Child: %d", child);
     log_info("Parent: %d", getpid());
 
     // On exit fallback to launching same shell as parent if unexpected exit.
@@ -145,14 +109,14 @@ int main(int argc, char *argv[]) {
     if (tty_raw(STDIN_FILENO) < 0)
       err_sys("tty_raw error");
 
-    if (set_sigaction(SIGABRT, abort_handler) < 0)
+    if (set_sigaction(SIGABRT, abort_handler) == SIG_ERR)
       err_sys("sigabrt error");
 
-    if (set_sigaction(SIGSEGV, abort_handler) < 0)
+    if (set_sigaction(SIGSEGV, abort_handler) == SIG_ERR)
       err_sys("sigsegv error");
 
     // copy stdin -> ptyp, ptyp -> stdout
-    loop(fdm, child, pid);
+    loop(fdm, pid);
     EXIT(0);
   }
 

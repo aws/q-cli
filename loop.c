@@ -11,11 +11,6 @@
 #define strneq(a,b,n) (strncmp(a,b,n)==0)
 #define BUFFSIZE (1024 * 100)
 
-static volatile sig_atomic_t sigcaught;
-
-// Called when child sends us SIGTERM
-static void sig_term(int signo) { sigcaught = 1; }
-
 static int movecursor_cb(VTermPos pos, VTermPos oldpos, int visible,
                          void *user) {
   FigTerm *ft = user;
@@ -157,77 +152,85 @@ void publish_guess(int index, char *buffer, FigTerm* ft) {
     buffer
   );
 
-  fig_socket_send(tmpbuf);
+  int ret = fig_socket_send(tmpbuf);
+  log_info("done sending %d", ret);
   free(tmpbuf);
 }
 
-void loop(int ptyp, pid_t child, pid_t ptyc_pid) {
+void loop(int ptyp, pid_t ptyc_pid) {
   int nread;
   char buf[BUFFSIZE + 1];
 
   if (set_sigaction(SIGWINCH, figterm_handle_winch) == SIG_ERR)
     err_sys("signal_intr error for SIGWINCH");
 
-  if (set_sigaction(SIGTERM, sig_term) == SIG_ERR)
-    err_sys("signal_intr error for SIGTERM");
-
   // Initialize screen buffer copy "FigTerm".
   FigTerm *ft = figterm_new(true, &screen_callbacks, &parser_callbacks, ptyc_pid, ptyp);
 
   char* insertion_lock = fig_path("insertion-lock");
+  fd_set rfd;
+
   for (;;) {
-    // Read from pty parent.
-    nread = read(ptyp, buf, BUFFSIZE - 1);
-    log_debug("read %d chars on ptyp (%d)", nread, errno);
-    if (nread < 0 && errno == EINTR)
-      continue;
-    else if (nread <= 0)
-      break;
+    FD_ZERO(&rfd);
+    FD_SET(STDIN_FILENO, &rfd);
+    FD_SET(ptyp, &rfd);
 
-    if (write(STDOUT_FILENO, buf, nread) != nread)
-      err_sys("write error to stdout");
+    int n = select(ptyp + 1, &rfd, 0, 0, NULL);
+    if (n < 0 && errno != EINTR) {
+      err_sys("select error");
+    }
+    if (n > 0 && FD_ISSET(STDIN_FILENO, &rfd)) {
+      // Copy stdin to pty parent.
+      if ((nread = read(STDIN_FILENO, buf, BUFFSIZE)) < 0)
+        err_sys("read error from stdin");
+      log_debug("Read %d chars on stdin", nread);
+      if (write(ptyp, buf, nread) != nread)
+        err_sys("write error to parent pty");
+      if (nread == 0)
+        break;
+    }
+    if (n > 0 && FD_ISSET(ptyp, &rfd)) {
+      nread = read(ptyp, buf, BUFFSIZE - 1);
+      log_debug("read %d chars on ptyp (%d)", nread, errno);
+      if (nread < 0 && errno == EINTR)
+        continue;
+      else if (nread <= 0)
+        break;
 
-    if (ft == NULL || ft->disable_figterm)
-      continue;
+      if (write(STDOUT_FILENO, buf, nread) != nread)
+        err_sys("write error to stdout");
 
-    // Make buf a proper str to use str operations.
-    buf[nread] = '\0';
+      if (ft == NULL || ft->disable_figterm)
+        continue;
 
-    log_debug("Writing %d chars %.*s", nread, nread, buf);
-    vterm_input_write(ft->vt, buf, nread);
-    VTermScreen *vts = vterm_obtain_screen(ft->vt);
-    vterm_screen_flush_damage(vts);
+      // Make buf a proper str to use str operations.
+      buf[nread] = '\0';
 
-    if (!ft->preexec && ft->shell_enabled && access(insertion_lock, F_OK) != 0) {
-      int index;
-      char *guess = extract_buffer(ft->state, ft->prompt_state, &index);
+      log_debug("Writing %d chars %.*s", nread, nread, buf);
+      vterm_input_write(ft->vt, buf, nread);
+      VTermScreen *vts = vterm_obtain_screen(ft->vt);
+      vterm_screen_flush_damage(vts);
 
-      if (guess != NULL) {
-        log_info("guess: %s|\nindex: %d", guess, index);
-        if (index >= 0)
-          publish_guess(index, guess, ft);
-      } else {
-        ft->preexec = true;
-        log_info("Null guess, waiting for new prompt...");
-        ft->prompt_state->cursor->row = -1;
-        ft->prompt_state->cursor->col = -1;
+      if (!ft->preexec && ft->shell_enabled && access(insertion_lock, F_OK) != 0) {
+        int index;
+        char *guess = extract_buffer(ft->state, ft->prompt_state, &index);
+
+        if (guess != NULL) {
+          log_info("guess: %s|\nindex: %d", guess, index);
+          if (index >= 0)
+            publish_guess(index, guess, ft);
+        } else {
+          ft->preexec = true;
+          log_info("Null guess, waiting for new prompt...");
+          ft->prompt_state->cursor->row = -1;
+          ft->prompt_state->cursor->col = -1;
+        }
+        free(guess);
       }
-      free(guess);
     }
   }
 
   // clean up
   figterm_free(ft);
   free(insertion_lock);
-
-  if (sigcaught == 1) {
-    // child exited, check status code.
-    int status;
-    if ((waitpid(child, &status, 0) != child)
-        || (WIFEXITED(status) && WEXITSTATUS(status) != 0))
-      err_sys("child did not exit cleanly");
-  } else {
-    // Kill child if we read EOF on pty parent
-    kill(child, SIGTERM);
-  }
 }
