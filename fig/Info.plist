@@ -55,5 +55,7 @@
 	<string>https://versions.withfig.com/appcast.xml</string>
 	<key>SUPublicEDKey</key>
 	<string>5Mzvu9ARpu2fmUhnxCH3D7txwJYo7MmLqRv9ddSIbuA=</string>
+	<key>SUScheduleCheckInterval</key>
+	<integer>3600</integer>
 </dict>
 </plist>
