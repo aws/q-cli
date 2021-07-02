@@ -321,8 +321,17 @@ extension iTermIntegration: IntegrationProvider {
       return
     }
     
+    var cleanedVersion = version
+    if cleanedVersion.contains("-nightly") {
+      // remove nightly (3.4.20210701-nightly)
+      cleanedVersion = cleanedVersion.stringByReplacingFirstOccurrenceOfString("-nightly", withString: "")
+    } else if let range = cleanedVersion.range(of: "beta") {
+      // remove beta (3.4.9beta1)
+      cleanedVersion = String(cleanedVersion.prefix(upTo: range.lowerBound))
+    }
+    
     // Version Check
-    let semver = version.split(separator: ".").map { Int($0) }
+    let semver = cleanedVersion.split(separator: ".").map { Int($0) }.filter { $0 != nil }
     guard semver.count == 3 else {
       if !inBackground {
         Alert.show(title: "Could not install iTerm Integration",
