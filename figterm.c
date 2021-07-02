@@ -1,16 +1,81 @@
 #include "fig.h"
 #include <vterm.h>
 
-static FigTerm *_ft = NULL;
+#define UNICODE_SPACE 0x20
 
-FigTerm *figterm_new(bool utf8, VTermScreenCallbacks *screen_callbacks,
-                     VTermStateFallbacks *parser_callbacks, int ptyc_pid, int ptyp) {
+static void handle_osc(FigTerm* ft) {
+  // Handle osc after we received the final fragment.
+  if (strcmp(ft->osc, "NewCmd") == 0) {
+    figterm_screen_get_cursorpos(ft->screen, ft->cmd_cursor);
+    log_info("Prompt at position: (%d, %d)", ft->cmd_cursor->row, ft->cmd_cursor->col);
+    ft->preexec = false;
+  } else if (strcmp(ft->osc, "StartPrompt") == 0) {
+    bool in_prompt = true;
+    figterm_screen_set_attr(ft->screen, FIGTERM_ATTR_IN_PROMPT, &in_prompt);
+  } else if (strcmp(ft->osc, "EndPrompt") == 0) {
+    bool in_prompt = false;
+    figterm_screen_set_attr(ft->screen, FIGTERM_ATTR_IN_PROMPT, &in_prompt);
+  } else if (strcmp(ft->osc, "PreExec") == 0) {
+    ft->preexec = true;
+  } else if (!strncmp(ft->osc, "Dir=", 4)) {
+    log_info("In dir %s", ft->osc + 4);
+  } else if (!strncmp(ft->osc, "Shell=", 6)) {
+    // Only enable in bash for now.
+    ft->shell_enabled = strcmp(ft->osc + 6, "bash") == 0;
+  } else if (!strncmp(ft->osc, "TTY=", 4)) {
+    strcpy(ft->tty, ft->osc + 4);
+  } else if (!strncmp(ft->osc, "PID=", 4)) {
+    strcpy(ft->pid, ft->osc + 4);
+  }
+}
+
+static int osc_cb(int command, VTermStringFragment frag, void *user) {
+  // Piece fragments of an osc together.
+  if (command == 697) {
+    FigTerm *ft = user;
+    if (frag.initial) {
+      ft->parsing_osc = true;
+      free(ft->osc);
+      ft->osc = malloc(sizeof(char) * (frag.len + 1));
+      strncpy(ft->osc, frag.str, frag.len);
+      ft->osc[frag.len] = '\0';
+    } else if (ft->parsing_osc) {
+      // TODO(sean) handle failure in realloc.
+      ft->osc = realloc(ft->osc, strlen(ft->osc) + sizeof(char) * (frag.len + 1));
+      strncat(ft->osc, frag.str, frag.len);
+    } 
+
+    if (frag.final) {
+      log_debug("OSC CB: %s", ft->osc);
+      ft->parsing_osc = false;
+
+      handle_osc(ft);
+
+      free(ft->osc);
+      ft->osc = NULL;
+    }
+
+  }
+  return 0;
+}
+
+static void scroll_cb(int scroll_delta, void* user) {
+  FigTerm* ft = user;
+  ft->cmd_cursor->row += scroll_delta;
+}
+
+static VTermStateFallbacks state_fallbacks = {
+    .osc = osc_cb,
+};
+
+static FigTermScreenCallbacks screen_callbacks = {
+    .scroll = scroll_cb,
+};
+
+FigTerm *figterm_new(int ptyc_pid, int ptyp) {
   VTerm* vt;
   FigTerm *ft;
   struct winsize w;
-
-  if (_ft != NULL)
-    return _ft;
 
   if ((ft = malloc(sizeof(FigTerm))) == NULL)
     goto error;
@@ -22,46 +87,35 @@ FigTerm *figterm_new(bool utf8, VTermScreenCallbacks *screen_callbacks,
   if ((vt = vterm_new(w.ws_row, w.ws_col)) == NULL)
     goto error;
 
-  if ((ft->state = term_state_new(vt)) == NULL)
-    goto error;
+  VTermPos* cmd_cursor = malloc(sizeof(VTermPos));
+  cmd_cursor->row = -1;
+  cmd_cursor->col = -1;
+  ft->cmd_cursor = cmd_cursor;
 
-  if ((ft->prompt_state = term_state_new(vt)) == NULL)
-    goto error;
+  ft->pid[0] = '\0';
+  ft->tty[0] = '\0';
 
-  if ((ft->cursor = malloc(sizeof(VTermPos))) == NULL)
-    goto error;
-
-  ft->cursor->row = -1;
-  ft->cursor->col = -1;
+  ft->osc = NULL;
+  ft->parsing_osc = false;
 
   // Default to disabled until we see a shell prompt with shell info we
   // recognize.
   ft->shell_enabled = false;
-
-  ft->pid[0] = '\0';
-  ft->tty[0] = '\0';
-  ft->osc = NULL;
-  ft->altscreen = false;
-  ft->parsing_osc = false;
-  ft->in_prompt = false;
   ft->preexec = true;
-  ft->vt = vt;
   ft->disable_figterm = false;
 
   // Used for resize.
   ft->ptyp = ptyp;
   ft->ptyc_pid = ptyc_pid;
 
-  vterm_set_utf8(vt, utf8);
+  ft->vt = vt;
+  FigTermScreen* screen = figterm_screen_new(vt);
+  figterm_screen_set_callbacks(screen, &screen_callbacks, ft);
+  figterm_screen_set_unrecognised_fallbacks(screen, &state_fallbacks, ft);
+  figterm_screen_reset(screen, true);
+  ft->screen = screen;
 
-  VTermScreen *vts = vterm_obtain_screen(vt);
-  vterm_screen_set_callbacks(vts, screen_callbacks, ft);
-  vterm_screen_set_unrecognised_fallbacks(vts, parser_callbacks, ft);
-  vterm_screen_set_damage_merge(vts, VTERM_DAMAGE_ROW);
-
-  vterm_screen_reset(vts, 1);
-
-  _ft = ft;
+  ft->insertion_lock_path = fig_path("insertion-lock");
 
   return ft;
 
@@ -73,44 +127,79 @@ error:
 void figterm_free(FigTerm *ft) {
   if (ft != NULL) {
     vterm_free(ft->vt);
-    term_state_free(ft->state);
-    term_state_free(ft->prompt_state);
-    free(ft->cursor);
+    figterm_screen_free(ft->screen);
+    free(ft->cmd_cursor);
     free(ft->osc);
+    free(ft->insertion_lock_path);
   }
   free(ft);
 }
 
-void figterm_resize(FigTerm *ft) {
-  struct winsize ws;
-  int nrow, ncol;
+char* figterm_get_buffer(FigTerm* ft, int* index) {
+  int i = ft->cmd_cursor->row;
+  int j = ft->cmd_cursor->col;
 
+  if (ft->disable_figterm || !ft->shell_enabled ||
+      ft->preexec || access(ft->insertion_lock_path, F_OK) == 0 ||
+      i < 0)
+    return NULL;
+
+  int rows, cols;
+  vterm_get_size(ft->vt, &rows, &cols);
+
+  int len = (rows + 1 - i) * (cols + 1);
+  char* buf = malloc(sizeof(char) * len);
+
+  int* index_ptr = index;
+
+  // Get prompt row text first.
+  VTermRect rect = {
+    .start_row = i, .end_row = i + 1, .start_col = j, .end_col = cols
+  };
+  size_t row_len = figterm_screen_get_text(ft->screen, buf, len, rect, UNICODE_SPACE, index_ptr);
+
+  if (*index_ptr != -1)
+    index_ptr = NULL;
+
+  // Then the rest of the screen.
+  rect.start_row += 1;
+  rect.end_row = rows;
+  rect.start_col = 0;
+  rect.end_col = cols;
+
+  figterm_screen_get_text(ft->screen, buf + row_len, len - row_len, rect, UNICODE_SPACE, index_ptr);
+
+  if (index_ptr != NULL)
+    *index += row_len;
+
+  return rtrim(buf, *index);
+}
+
+void figterm_resize(FigTerm* ft) {
+  if (ft->ptyc_pid > 0)
+    kill(ft->ptyc_pid, SIGWINCH);
+
+  struct winsize ws;
   if (get_winsize(&ws) == -1 || ioctl(ft->ptyp, TIOCSWINSZ, &ws))
     err_sys("failed to set window size");
 
-  if (ft->ptyc_pid > 0) {
-    kill(ft->ptyc_pid, SIGWINCH);
-  }
-
   if (ft->disable_figterm) return;
-
-  vterm_get_size(ft->vt, &nrow, &ncol);
-
-  ft->in_prompt = true;
-  log_info("Resizing (%d, %d) -> (%d, %d)", nrow, ncol, ws.ws_row, ws.ws_col);
   vterm_set_size(ft->vt, ws.ws_row, ws.ws_col);
-  ft->in_prompt = false;
-
-  VTermRect rect = {.start_row = 0,
-                    .end_row = ws.ws_row,
-                    .start_col = 0,
-                    .end_col = ws.ws_col};
-  if (term_state_update(ft->state, ft->vt, rect, true) == -1)
-    ft->disable_figterm = true;
-  if (term_state_update(ft->prompt_state, ft->vt, rect, true) == -1)
-    ft->disable_figterm = true;
 }
 
-// TODO(sean) This should probably not be done inside a signal handler,
-// consider non-blocking i/o and setting a flag instead.
-void figterm_handle_winch(int sig) { figterm_resize(_ft); }
+void figterm_log(FigTerm *ft, char mask) {
+  // Output text of figterm screen, optionally masking prompt cells with mask.
+  // Passing mask=0 will display prompts normally.
+  VTermRect rect = {.start_row = 0, .start_col = 0};
+  vterm_get_size(ft->vt, &rect.end_row, &rect.end_col);
+  int len = (rect.end_row + 1) * (rect.end_col + 1);
+  char* buf = malloc(sizeof(char) * len);
+  size_t outpos = figterm_screen_get_text(ft->screen, buf, len, rect, mask, NULL);
+
+  VTermPos cursor;
+  figterm_screen_get_cursorpos(ft->screen, &cursor);
+
+  log_info("\ntext:\n%.*s\ncursor pos: %d %d", outpos, buf, cursor.row, cursor.col);
+  free(buf);
+}
+

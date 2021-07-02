@@ -71,44 +71,7 @@ char* log_path(char* log_name) {
   return full_path;
 }
 
-char *get_exe(pid_t pid) {
-  // Get executable path of a process by pid.
-  ssize_t ret;
-  unsigned int bufsize = 1024;
-  char* tmp = calloc(bufsize, sizeof(char));
-  if (tmp == NULL) {
-    return NULL;
-  }
-
-#if defined(__APPLE__)
-  // TODO(sean): make sure pid exists or that access is allowed?
-  ret = proc_pidpath(pid, tmp, sizeof(char) * bufsize);
-
-  if (ret == 0) {
-    log_error("Error getting shell");
-    return NULL;
-  }
-  return tmp;
-#else
-  char procfile[50];
-  sprintf(procfile, "/proc/%d/exe", pid);
-
-  while (true) {
-    ret = readlink(procfile, tmp, bufsize - 1);
-    if (ret == -1) {
-      free(tmp);
-      return NULL;
-    } else if ((size_t) ret != bufsize - 1) {
-      tmp[ret] = '\0';
-      return tmp;
-    }
-    bufsize *= 2;
-    tmp = (char *) realloc(tmp, bufsize);
-  }
-#endif
-}
-
-int unix_socket_connect(char *path) {
+static int unix_socket_connect(char *path) {
   // Connect to a unix socket at path.
   int sock;
   if ((sock = socket(AF_UNIX, SOCK_STREAM, 0)) < 0)

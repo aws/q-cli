@@ -35,29 +35,28 @@
 
 #define	MAXLINE	4096
 
-// Common structs
-typedef struct {
-  VTermPos *cursor;
-  char **rows;
-  int *row_lens;
-  int nrows;
-  int scroll;
-} TermState;
+typedef struct FigTermScreen FigTermScreen;
 
 typedef struct {
-  VTerm *vt;
-  TermState *state;
-  TermState *prompt_state;
-  VTermPos* cursor;
-  char* osc;
+  void (*scroll)(int scroll_delta, void *user);
+} FigTermScreenCallbacks;
+
+typedef struct {
+  VTerm* vt;
+  FigTermScreen* screen;
+  VTermPos *cmd_cursor;
+  char* insertion_lock_path;
+
   char tty[30];
   char pid[8];
+
+  char* osc;
   bool parsing_osc;
+
   bool shell_enabled;
-  bool altscreen;
-  bool in_prompt;
   bool preexec;
   bool disable_figterm;
+
   int ptyp;
   int ptyc_pid;
 } FigTerm;
@@ -68,32 +67,33 @@ typedef struct {
   char *pty_name;
 } FigInfo;
 
-// term_state.c
-TermState* term_state_new(VTerm*);
-void term_state_free(TermState*);
-int term_state_init_rows(TermState*,  int);
-void term_state_free_rows(TermState*);
-void term_state_update_cursor(TermState*, const VTermPos);
-int term_state_update(TermState*, VTerm*, VTermRect, bool);
-void print_term_state(TermState*, bool);
-char* extract_buffer(TermState*, TermState*, int*);
+typedef enum {
+  FIGTERM_ATTR_IN_PROMPT = 0,
+} FigTermAttr;
 
+// screen.c
+FigTermScreen* figterm_screen_new(VTerm*);
+void figterm_screen_free(FigTermScreen*);
+void figterm_screen_set_unrecognised_fallbacks(FigTermScreen*, const VTermStateFallbacks*, void*);
+void figterm_screen_reset(FigTermScreen*, int);
+void figterm_screen_set_callbacks(FigTermScreen*, const FigTermScreenCallbacks*, void*);
+void figterm_screen_get_cursorpos(FigTermScreen*, VTermPos*);
+void figterm_screen_set_attr(FigTermScreen*, FigTermAttr, void*);
+size_t figterm_screen_get_text(FigTermScreen*, char*, size_t, const VTermRect, char, int*);
 
 // figterm.c
-FigTerm* figterm_new(bool, VTermScreenCallbacks*, VTermStateFallbacks*, int, int);
+FigTerm* figterm_new(int, int);
 void figterm_free(FigTerm*);
+char* figterm_get_buffer(FigTerm*, int*);
 void figterm_resize(FigTerm*);
-void figterm_handle_winch(int);
-int figterm_should_resize();
+void figterm_log(FigTerm*, char);
 
 // util.c
 int get_winsize();
 FigInfo* init_fig_info();
 FigInfo* get_fig_info();
-void set_pty_name(char*);
 void free_fig_info();
-char* get_exe(pid_t);
-int unix_socket_connect(char*);
+void set_pty_name(char*);
 int fig_socket_send(char*);
 char* fig_path(char*);
 char* log_path(char*);
@@ -147,4 +147,3 @@ unsigned char * base64_encode(const unsigned char *src, size_t len,
 			      size_t *out_len);
 unsigned char * base64_decode(const unsigned char *src, size_t len,
 			      size_t *out_len);
-

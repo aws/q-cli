@@ -8,8 +8,8 @@ PROGS =	figterm fig_get_shell
 
 all:	$(PROGS)
 
-figterm:	main.o loop.o term_state.o figterm.o util.o $(LIBVTERM) $(LIBFIG)
-	$(CC) $(CFLAGS) -o figterm main.o loop.o term_state.o figterm.o util.o $(LDFLAGS) $(LDLIBS)
+figterm:	main.o loop.o figterm.o util.o screen.o $(LIBVTERM) $(LIBFIG)
+	$(CC) $(CFLAGS) -o figterm main.o loop.o figterm.o util.o screen.o $(LDFLAGS) $(LDLIBS)
 
 fig_get_shell:	get_shell.o
 	$(CC) $(CFLAGS) -o fig_get_shell get_shell.o
