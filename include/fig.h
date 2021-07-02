@@ -49,6 +49,7 @@ typedef struct {
 
   char tty[30];
   char pid[8];
+  bool in_ssh;
 
   char* osc;
   bool parsing_osc;

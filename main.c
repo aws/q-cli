@@ -54,12 +54,7 @@ int main(int argc, char *argv[]) {
   char ptc_name[30];
   char log_name[100];
 
-  char shell[30];
-  int len = strlen(argv[0]) - strlen(" (figterm)");
-  strncpy(shell, argv[0], len);
-  shell[len] = '\0';
-
-  _parent_shell = shell;
+  _parent_shell = getenv("FIG_SHELL");
 
   FigInfo* fig_info = init_fig_info();
 

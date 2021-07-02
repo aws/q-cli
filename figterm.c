@@ -19,6 +19,9 @@ static void handle_osc(FigTerm* ft) {
     ft->preexec = true;
   } else if (!strncmp(ft->osc, "Dir=", 4)) {
     log_info("In dir %s", ft->osc + 4);
+    if (!ft->in_ssh) {
+      chdir(ft->osc + 4);
+    }
   } else if (!strncmp(ft->osc, "Shell=", 6)) {
     // Only enable in bash for now.
     ft->shell_enabled = strcmp(ft->osc + 6, "bash") == 0;
@@ -26,6 +29,8 @@ static void handle_osc(FigTerm* ft) {
     strcpy(ft->tty, ft->osc + 4);
   } else if (!strncmp(ft->osc, "PID=", 4)) {
     strcpy(ft->pid, ft->osc + 4);
+  } else if (!strncmp(ft->osc, "SSH=", 4)) {
+    ft->in_ssh = ft->osc[5] == '1';
   }
 }
 
@@ -94,6 +99,7 @@ FigTerm *figterm_new(int ptyc_pid, int ptyp) {
 
   ft->pid[0] = '\0';
   ft->tty[0] = '\0';
+  ft->in_ssh = false;
 
   ft->osc = NULL;
   ft->parsing_osc = false;
