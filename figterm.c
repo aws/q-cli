@@ -2,35 +2,58 @@
 #include <vterm.h>
 
 #define UNICODE_SPACE 0x20
+#define strneq(a,b,n) (strncmp(a,b,n)==0)
+
+struct FigTerm {
+  VTerm* vt;
+  FigTermScreen* screen;
+  VTermPos *cmd_cursor;
+  char* insertion_lock_path;
+
+  char* osc;
+  bool parsing_osc;
+
+  FigShellState shell_state;
+
+  bool shell_enabled;
+
+  // Turn off figterm if there's an error.
+  bool disable_figterm;
+
+  // Used for resizing.
+  int ptyp_fd;
+  int shell_pid;
+};
 
 static void handle_osc(FigTerm* ft) {
   // Handle osc after we received the final fragment.
   if (strcmp(ft->osc, "NewCmd") == 0) {
     figterm_screen_get_cursorpos(ft->screen, ft->cmd_cursor);
     log_info("Prompt at position: (%d, %d)", ft->cmd_cursor->row, ft->cmd_cursor->col);
-    ft->preexec = false;
+    ft->shell_state.preexec = false;
   } else if (strcmp(ft->osc, "StartPrompt") == 0) {
-    bool in_prompt = true;
-    figterm_screen_set_attr(ft->screen, FIGTERM_ATTR_IN_PROMPT, &in_prompt);
+    ft->shell_state.in_prompt = true;
+    figterm_screen_set_attr(ft->screen, FIGTERM_ATTR_IN_PROMPT, &ft->shell_state.in_prompt);
   } else if (strcmp(ft->osc, "EndPrompt") == 0) {
-    bool in_prompt = false;
-    figterm_screen_set_attr(ft->screen, FIGTERM_ATTR_IN_PROMPT, &in_prompt);
+    ft->shell_state.in_prompt = false;
+    figterm_screen_set_attr(ft->screen, FIGTERM_ATTR_IN_PROMPT, &ft->shell_state.in_prompt);
   } else if (strcmp(ft->osc, "PreExec") == 0) {
-    ft->preexec = true;
-  } else if (!strncmp(ft->osc, "Dir=", 4)) {
+    ft->shell_state.preexec = true;
+  } else if (strneq(ft->osc, "Dir=", 4)) {
     log_info("In dir %s", ft->osc + 4);
-    if (!ft->in_ssh) {
+    if (!ft->shell_state.in_ssh) {
+      // change figterm cwd to match shell.
       chdir(ft->osc + 4);
     }
-  } else if (!strncmp(ft->osc, "Shell=", 6)) {
+  } else if (strneq(ft->osc, "Shell=", 6)) {
     // Only enable in bash for now.
     ft->shell_enabled = strcmp(ft->osc + 6, "bash") == 0;
-  } else if (!strncmp(ft->osc, "TTY=", 4)) {
-    strcpy(ft->tty, ft->osc + 4);
-  } else if (!strncmp(ft->osc, "PID=", 4)) {
-    strcpy(ft->pid, ft->osc + 4);
-  } else if (!strncmp(ft->osc, "SSH=", 4)) {
-    ft->in_ssh = ft->osc[5] == '1';
+  } else if (strneq(ft->osc, "TTY=", 4)) {
+    strcpy(ft->shell_state.tty, ft->osc + 4);
+  } else if (strneq(ft->osc, "PID=", 4)) {
+    strcpy(ft->shell_state.pid, ft->osc + 4);
+  } else if (strneq(ft->osc, "SSH=", 4)) {
+    ft->shell_state.in_ssh = ft->osc[5] == '1';
   }
 }
 
@@ -77,7 +100,7 @@ static FigTermScreenCallbacks screen_callbacks = {
     .scroll = scroll_cb,
 };
 
-FigTerm *figterm_new(int ptyc_pid, int ptyp) {
+FigTerm *figterm_new(int shell_pid, int ptyp_fd) {
   VTerm* vt;
   FigTerm *ft;
   struct winsize w;
@@ -96,23 +119,26 @@ FigTerm *figterm_new(int ptyc_pid, int ptyp) {
   cmd_cursor->row = -1;
   cmd_cursor->col = -1;
   ft->cmd_cursor = cmd_cursor;
-
-  ft->pid[0] = '\0';
-  ft->tty[0] = '\0';
-  ft->in_ssh = false;
+  ft->insertion_lock_path = fig_path("insertion-lock");
 
   ft->osc = NULL;
   ft->parsing_osc = false;
 
+  ft->shell_state.pid[0] = '\0';
+  ft->shell_state.tty[0] = '\0';
+  ft->shell_state.in_ssh = false;
+  ft->shell_state.preexec = true;
+  ft->shell_state.in_prompt = false;
+
   // Default to disabled until we see a shell prompt with shell info we
   // recognize.
   ft->shell_enabled = false;
-  ft->preexec = true;
+
   ft->disable_figterm = false;
 
   // Used for resize.
-  ft->ptyp = ptyp;
-  ft->ptyc_pid = ptyc_pid;
+  ft->ptyp_fd = ptyp_fd;
+  ft->shell_pid = shell_pid;
 
   ft->vt = vt;
   FigTermScreen* screen = figterm_screen_new(vt);
@@ -120,8 +146,6 @@ FigTerm *figterm_new(int ptyc_pid, int ptyp) {
   figterm_screen_set_unrecognised_fallbacks(screen, &state_fallbacks, ft);
   figterm_screen_reset(screen, true);
   ft->screen = screen;
-
-  ft->insertion_lock_path = fig_path("insertion-lock");
 
   return ft;
 
@@ -146,7 +170,7 @@ char* figterm_get_buffer(FigTerm* ft, int* index) {
   int j = ft->cmd_cursor->col;
 
   if (ft->disable_figterm || !ft->shell_enabled ||
-      ft->preexec || access(ft->insertion_lock_path, F_OK) == 0 ||
+      ft->shell_state.preexec || access(ft->insertion_lock_path, F_OK) == 0 ||
       i < 0)
     return NULL;
 
@@ -182,15 +206,19 @@ char* figterm_get_buffer(FigTerm* ft, int* index) {
 }
 
 void figterm_resize(FigTerm* ft) {
-  if (ft->ptyc_pid > 0)
-    kill(ft->ptyc_pid, SIGWINCH);
+  if (ft->shell_pid > 0)
+    kill(ft->shell_pid, SIGWINCH);
 
   struct winsize ws;
-  if (get_winsize(&ws) == -1 || ioctl(ft->ptyp, TIOCSWINSZ, &ws))
+  if (get_winsize(&ws) == -1 || ioctl(ft->ptyp_fd, TIOCSWINSZ, &ws))
     err_sys("failed to set window size");
 
   if (ft->disable_figterm) return;
   vterm_set_size(ft->vt, ws.ws_row, ws.ws_col);
+}
+
+void figterm_get_shell_state(FigTerm* ft, FigShellState* shell_state) {
+  memcpy(&ft->shell_state, shell_state, sizeof(FigShellState));
 }
 
 void figterm_log(FigTerm *ft, char mask) {
@@ -209,3 +237,11 @@ void figterm_log(FigTerm *ft, char mask) {
   free(buf);
 }
 
+void figterm_write(FigTerm* ft, char* buf, int n) {
+  log_debug("Writing %d chars %.*s", n, n, buf);
+  vterm_input_write(ft->vt, buf, n);
+}
+
+bool figterm_is_disabled(FigTerm* ft) {
+  return ft->disable_figterm;
+}
