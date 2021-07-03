@@ -70,7 +70,7 @@ jobs:
           echo $BUILD
       - name: "Commit Build number"
         run: |
-          git add .
+          git add fig.xcodeproj/project.pbxproj
           git commit -m "Bump build to $BUILD [skip ci]"
           git push origin staging
 
@@ -163,14 +163,14 @@ jobs:
         run: |
           ls
           pwd
-          cp "fig $VERSION.dmg" ./versions
+          cp "fig $BUILD.dmg" ./versions
 
       - name: "Generate Appcast"
         run: ./Sparkle/bin/generate_appcast -s $SPARKLE_KEY versions
         env:
           SPARKLE_KEY: ${{ secrets.SPARKLE_SIGNING_KEY }}
       - name: Create fig@latest.dmg
-        run: cp "./versions/fig ${VERSION}.dmg" ./versions/fig@latest.dmg
+        run: cp "./versions/fig ${BUILD}.dmg" ./versions/fig@latest.dmg
       - name: Push Changes to withfig/versions
         run: |
           cd versions
