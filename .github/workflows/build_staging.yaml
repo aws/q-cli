@@ -158,8 +158,8 @@ jobs:
           NOTARIZE_PASSWORD: ${{ secrets.NOTARIZE_PASSWORD }}
       - name: Rename DMG
         run: |
-        mv "fig $VERSION.dmg" fig.dmg
-        mv "fig $VERSION.dmg" "fig $BUILD.dmg"
+          mv "fig $VERSION.dmg" fig.dmg
+          mv "fig $VERSION.dmg" "fig $BUILD.dmg"
 
       - name: Add DMG to /releases
         run: |
