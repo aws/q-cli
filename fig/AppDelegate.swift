@@ -21,8 +21,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     var integrationPrompt: NSMenuItem?
 
     var clicks:Int = 6;
-    var hotKeyManager: HotKeyManager?
-    let updater = SUUpdater.shared()
+    let updater = UpdateService.provider
     let processPool = WKProcessPool()
     
     let iTermObserver = WindowObserver(with: "com.googlecode.iterm2")
@@ -95,7 +94,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         }
                 
 //        updater?.checkForUpdateInformation()
-        updater?.delegate = self as SUUpdaterDelegate;
+//        updater?.delegate = self as SUUpdaterDelegate;
 //        updater?.checkForUpdateInformation()
         
 //        let domain = Bundle.main.bundleIdentifier!
@@ -233,22 +232,8 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     }
   
     func warnToMoveToApplicationIfNecessary() {
-      let path = Bundle.main.bundlePath
-      if path.hasPrefix("Volumes/fig") {
-        //send a telemetry event
-        SentrySDK.capture(message: "Attempted to launch Fig from a DMG")
-        // warn and quit
-        let alert = NSAlert()
-        alert.messageText = "Attempting to Launch From a Removable Volume"
-        alert.informativeText = "Please move Fig to the /Applications folder and relaunch."
-        alert.alertStyle = .warning
-        let button = alert.addButton(withTitle: "Quit Fig")
-        button.highlight(true)
-        let response = alert.runModal()
-        if (response == .alertFirstButtonReturn) {
-          // TOOD: Move to Applications foler
-          exit(2)
-        }
+      if Diagnostic.isRunningOnReadOnlyVolume {
+        AppMover.moveIfNecessary()
       }
     }
     
@@ -1225,7 +1210,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     }
     
     @objc func checkForUpdates() {
-        self.updater?.checkForUpdates(self)
+          self.updater.checkForUpdates(self)
 //        self.updater?.installUpdatesIfAvailable()
     }
     @objc func toggleVisibility() {

@@ -864,11 +864,11 @@ extension WebBridge {
 //                    NSWorkspace.shared.launchApplication("Terminal")
                 case "forceUpdate":
                     if let appDelegate = NSApp.delegate as? AppDelegate {
-                        appDelegate.updater?.installUpdatesIfAvailable()
+                        appDelegate.updater.installUpdatesIfAvailable()
                     }
                 case "promptUpdate":
                     if let appDelegate = NSApp.delegate as? AppDelegate {
-                        appDelegate.updater?.checkForUpdates(self)
+                        appDelegate.updater.checkForUpdates(self)
                     }
                 case "hello":
                     Timer.delayWithSeconds(2) {
@@ -1250,6 +1250,33 @@ extension WebBridge {
     static func declareRemoteURL(webview: WebView) {
         webview.evaluateJavaScript("fig.remoteURL = '\( Remote.baseURL.absoluteString)'", completionHandler: nil)
     }
+  
+    static func declareUpdate(webview: WebView) {
+      webview.evaluateJavaScript("fig.updateAvailable = \(UpdateService.provider.updateIsAvailable)", completionHandler: nil)
+
+      if UpdateService.provider.updateIsAvailable {
+        webview.evaluateJavaScript(
+          """
+          fig.updateMetadate =
+          {
+            version: "\( UpdateService.provider.updateVersion ?? "")",
+            build: "\( UpdateService.provider.updateBuild ?? "")",
+            published: "\(UpdateService.provider.updatePublishedOn ?? "")"
+          }
+          """, completionHandler: nil)
+      } else {
+        webview.evaluateJavaScript(
+          """
+          fig.updateMetadate = null
+          """, completionHandler: nil)
+      }
+    }
+  
+  static func declareCurrentApplication(webview: WebView) {
+      let bundleId = AXWindowServer.shared.whitelistedWindow?.bundleId
+      webview.evaluateJavaScript("fig.currentApp = '\(bundleId ?? "")'", completionHandler: nil)
+          
+  }
     
     static func initJS(webview: WebView) {
         webview.evaluateJavaScript("fig.callinit()", completionHandler: nil)

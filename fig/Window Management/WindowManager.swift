@@ -24,7 +24,6 @@ protocol WindowManagementService {
 
 class WindowManager : NSObject {
     static let shared = WindowManager(windowService: WindowServer.shared)
-    var hotKeyManager: HotKeyManager?
 
     var sidebar: CompanionWindow?
     var autocomplete: CompanionWindow?
@@ -46,7 +45,7 @@ class WindowManager : NSObject {
         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(activateApp), name: NSWorkspace.didActivateApplicationNotification, object: nil)
         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(deactivateApp), name: NSWorkspace.didDeactivateApplicationNotification, object: nil)
 
-        NotificationCenter.default.addObserver(self, selector: #selector(windowChanged), name: WindowServer.whitelistedWindowDidChangeNotification, object: nil)
+      NotificationCenter.default.addObserver(self, selector: #selector(windowChanged(_:)), name: WindowServer.whitelistedWindowDidChangeNotification, object: nil)
 
         
 //        _ = Timer.scheduledTimer(timeInterval: 0.25, target: self, selector: #selector(updatePositionTimer), userInfo: nil, repeats: true)
@@ -110,9 +109,14 @@ class WindowManager : NSObject {
         updatePosition(for: .applicationActivated)
     }
     
-    @objc func windowChanged(){
+    @objc func windowChanged(_ notification: Notification? = nil){
         updatePosition(for: .windowChanged)
         self.autocomplete?.maxHeight = 0
+      if let notification = notification,
+         let app = notification.object as? ExternalWindow,
+         let bundleId = app.bundleId  {
+        Autocomplete.runJavascript("fig.currentApp = '\(bundleId)'")
+      }
 //
 //        DispatchQueue.main.async {
 //            self.autocomplete?.orderOut(nil)
@@ -197,12 +201,6 @@ class WindowManager : NSObject {
                 WindowManager.shared.windowServiceProvider.takeFocus()
            }
         }
-
-        if let keyWindow = NSApp.keyWindow as? CompanionWindow, untetheredWindows.contains(keyWindow) {
-            self.hotKeyManager?.companionWindow = keyWindow
-        } else if let sidebar = self.sidebar {
-            self.hotKeyManager?.companionWindow = visibleWindows.first ?? sidebar
-        }
         
         print(reason)
     
@@ -221,7 +219,6 @@ class WindowManager : NSObject {
         let companion = CompanionWindow(viewController: web)
         companion.positioning = CompanionWindow.defaultPassivePosition
         companion.repositionWindow(forceUpdate: true, explicit: true)
-        self.hotKeyManager = HotKeyManager(companion:companion)
         self.sidebar = companion
         
     }

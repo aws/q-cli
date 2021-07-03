@@ -6,7 +6,7 @@
 //  Copyright © 2021 Matt Schrage. All rights reserved.
 //
 
-import Foundation
+import Cocoa
 
 class Autocomplete {
   static func log(_ buffer: String, _ cursor: Int) {
@@ -37,8 +37,25 @@ class Autocomplete {
     
   }
   
+  static func runJavascript(_ command: String) {
+    WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try{ \(command) } catch(e) { console.log(e) }", completionHandler: nil)
+  }
   static func redirect(keyCode: UInt16, event: CGEvent, for windowHash: ExternalWindowHash) {
-    WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try{ fig.keypress(\"\(keyCode)\", \"\(windowHash)\", { command: \(event.flags.contains(.maskCommand)), control: \(event.flags.contains(.maskControl)), shift: \(event.flags.contains(.maskShift)) }) } catch(e) {}", completionHandler: nil)
+    
+    guard let event =  NSEvent(cgEvent: event) else { return }
+    let characters = event.characters ?? ""
+      
+    WindowManager.shared.autocomplete?.webView?.evaluateJavaScript(
+      """
+      try{
+        fig.keypress(\"\(keyCode)\", \"\(windowHash)\", {
+            command: \(event.modifierFlags.contains(.command)),
+            control: \(event.modifierFlags.contains(.control)),
+              shift: \(event.modifierFlags.contains(.shift)),
+           isRepeat: \(event.isARepeat),
+         characters: \"\(characters.isAlphanumeric() ? characters : "")\" })
+      } catch(e) {}
+      """, completionHandler: nil)
   }
   
   static func toggle(for window: ExternalWindow) {
@@ -86,7 +103,9 @@ class Autocomplete {
   static func interceptKeystrokes(in window: ExternalWindow) {
     let nKeycode = KeyboardLayout.shared.keyCode(for: "N") ?? Keycode.n
     let pKeycode = KeyboardLayout.shared.keyCode(for: "P") ?? Keycode.p
-
+    let iKeycode = KeyboardLayout.shared.keyCode(for: "I") ?? Keycode.i
+    
+    KeypressProvider.shared.addRedirect(for: Keystroke(modifierFlags: [.command], keyCode: iKeycode), in: window)
     KeypressProvider.shared.addRedirect(for: Keycode.upArrow, in: window)
     KeypressProvider.shared.addRedirect(for: Keycode.downArrow, in: window)
     KeypressProvider.shared.addRedirect(for: Keycode.tab, in: window)
@@ -196,4 +215,11 @@ class GenericShellIntegration: ShellIntegration {
     }
     
   }
+}
+
+extension String {
+  
+    func isAlphanumeric() -> Bool {
+        return self.rangeOfCharacter(from: CharacterSet.alphanumerics.inverted) == nil && self != ""
+    }
 }

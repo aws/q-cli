@@ -31,7 +31,6 @@ class Defaults {
         set(value) {
             UserDefaults.standard.set(value.rawValue, forKey: "build")
             UserDefaults.standard.synchronize()
-            WindowManager.shared.createSidebar()
             WindowManager.shared.createAutocomplete()
             (NSApp.delegate as? AppDelegate)?.configureStatusBarItem()
 
