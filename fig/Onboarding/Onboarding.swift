@@ -25,8 +25,14 @@ class Onboarding {
               Logger.log(message: "No version availible")
               return
             }
+            
+            var tag = "v\(version)"
+            
+            if let beta = Settings.shared.getValue(forKey: Settings.beta) as? Bool, beta {
+              tag = "main"
+            }
           
-            let githubURL = URL(string: "https://raw.githubusercontent.com/withfig/config/v\(version)/tools/install_and_upgrade.sh")!
+            let githubURL = URL(string: "https://raw.githubusercontent.com/withfig/config/\(tag)/tools/install_and_upgrade.sh")!
             let fallbackURL = Bundle.main.url(forResource: "install_and_upgrade_fallback", withExtension: "sh")!
 
             

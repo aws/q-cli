@@ -10,6 +10,9 @@ import Cocoa
 import Sparkle
 
 class UpdateService: NSObject {
+  static let appcastURL = URL(string: "https://versions.withfig.com/appcast.xml")!
+  static let betaAppcastURL = URL(string: "https://beta.withfig.com/appcast.xml")!
+
   static let provider = UpdateService(sparkle: SUUpdater.shared())
   static func log(_ message: String) {
     Logger.log(message: message, subsystem: .updater)
@@ -28,8 +31,26 @@ class UpdateService: NSObject {
     self.sparkle.automaticallyChecksForUpdates = true
     
     self.sparkle.checkForUpdateInformation()
+    
+    NotificationCenter.default.addObserver(self,
+                                           selector: #selector(settingsDidChange),
+                                           name: Settings.settingsUpdatedNotification,
+                                           object: nil)
   
 
+  }
+  
+  @objc func settingsDidChange() {
+    if let beta = Settings.shared.getValue(forKey: Settings.beta) as? Bool {
+      let current = self.sparkle.feedURL
+      let update = beta ? UpdateService.betaAppcastURL : UpdateService.appcastURL
+      
+      if current != update {
+        self.sparkle.feedURL = update
+        TelemetryProvider.identify(with: ["beta" : (beta ? "true" : "false")])
+        self.sparkle.checkForUpdates(nil)
+      }
+    }
   }
   
   // Show updates with UI
