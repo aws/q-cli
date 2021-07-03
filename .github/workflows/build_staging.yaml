@@ -33,6 +33,24 @@ jobs:
 
       - name: "Install imagemagik for custom DMG image"
         run: brew install graphicsmagick imagemagick
+
+      - name: "Download Sparkle"
+        run: curl -sOL https://github.com/sparkle-project/Sparkle/releases/download/1.24.0/Sparkle-1.24.0.tar.xz
+      - name: "Unzip Sparkle"
+        run: |
+          mkdir Sparkle
+          cd Sparkle && tar xopf ../Sparkle-1.24.0.tar.xz
+          cd ..
+
+      - name: "Checkout withfig/versions"
+        run: |
+          git clone https://mattschrage:$(echo $PERSONAL_GITHUB_ACCESS_TOKEN)@github.com/withfig/versions.git
+          cd versions
+          git checkout beta
+          cd ..
+
+        env:
+          PERSONAL_GITHUB_ACCESS_TOKEN: ${{ secrets.PERSONAL_GITHUB_ACCESS_TOKEN }}
       #
       # Setup
       #
@@ -140,6 +158,27 @@ jobs:
           NOTARIZE_PASSWORD: ${{ secrets.NOTARIZE_PASSWORD }}
       - name: Rename DMG
         run: mv "fig $VERSION.dmg" fig.dmg
+
+      - name: Add DMG to /releases
+        run: |
+          ls
+          pwd
+          cp "fig $VERSION.dmg" ./versions
+
+      - name: "Generate Appcast"
+        run: ./Sparkle/bin/generate_appcast -s $SPARKLE_KEY versions
+        env:
+          SPARKLE_KEY: ${{ secrets.SPARKLE_SIGNING_KEY }}
+      - name: Create fig@latest.dmg
+        run: cp "./versions/fig ${VERSION}.dmg" ./versions/fig@latest.dmg
+      - name: Push Changes to withfig/versions
+        run: |
+          cd versions
+          git add .
+          git commit -m "Deploy Build $BUILD"
+          git push origin beta
+          cd ..
+
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
