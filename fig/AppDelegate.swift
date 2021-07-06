@@ -714,7 +714,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             }
           
             var uninstallScriptFile: String? = "\(NSHomeDirectory())/.fig/tools/uninstall-script.sh"
-            if !FileManager.default.fileExists(atPath: uninstallScriptFile) {
+            if !FileManager.default.fileExists(atPath: uninstallScriptFile!) {
                uninstallScriptFile = Bundle.main.path(forResource: "uninstall", ofType: "sh")
             }
 
