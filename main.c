@@ -96,7 +96,7 @@ void publish_buffer(int index, char *buffer, FigTerm* ft) {
   );
 
   int ret = fig_socket_send(tmpbuf);
-  log_debug("done sending %d", ret);
+  log_debug("done sending %s", tmpbuf);
   free(tmpbuf);
 }
 
@@ -141,13 +141,16 @@ void figterm_loop(int ptyp_fd, pid_t shell_pid) {
       else if (nread <= 0)
         break;
 
+      // Write to figterm first so we can e.g. chdir before terminal emulator.
+      if (!figterm_is_disabled(ft))
+        figterm_write(ft, buf, nread);
+
       if (write(STDOUT_FILENO, buf, nread) != nread)
         err_sys("write error to stdout");
 
-      if (ft == NULL || figterm_is_disabled(ft))
+      if (figterm_is_disabled(ft))
         continue;
 
-      figterm_write(ft, buf, nread);
       char* buffer = figterm_get_buffer(ft, &index);
 
       if (buffer != NULL) {
@@ -202,9 +205,9 @@ int main(int argc, char *argv[]) {
   if ((pid = fork()) < 0) {
     log_error("fork error");
     goto fallback;
-  } else if (pid == 0) {
+  } else if (pid != 0) {
     // figterm process, child of shell process.
-    pid_t shell_pid = getppid();
+    pid_t shell_pid = pid;
     log_info("Shell: %d", shell_pid);
     log_info("Figterm: %d", getpid());
 

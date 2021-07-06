@@ -291,12 +291,22 @@ static int resize(int new_rows, int new_cols, VTermStateFields *fields, void *us
   return 1;
 }
 
+static int movecursor(VTermPos pos, VTermPos oldpos, int visible, void *user) {
+  FigTermScreen *screen = user;
+
+  if (screen->callbacks && screen->callbacks->movecursor)
+    return (*screen->callbacks->movecursor)(pos, oldpos, visible, screen->cbdata);
+
+  return 0;
+}
+
 static VTermStateCallbacks state_cbs = {
   .putglyph    = &putglyph,
   .scrollrect  = &scrollrect,
   .erase       = &erase,
   .settermprop = &settermprop,
   .resize      = &resize,
+  .movecursor  = &movecursor
 };
 
 FigTermScreen *figterm_screen_new(VTerm *vt) {

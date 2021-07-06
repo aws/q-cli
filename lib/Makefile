@@ -3,7 +3,7 @@ include $(ROOT)/Makefile.shared
 
 all: libfig
 
-libfig: base64.o string.o log.o pty.o tty.o exit.o
+libfig: base64.o string.o log.o pty.o tty.o exit.o proc.o
 	ar rv libfig.a $?
 
 clean:

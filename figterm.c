@@ -92,12 +92,27 @@ static void scroll_cb(int scroll_delta, void* user) {
   ft->cmd_cursor->row += scroll_delta;
 }
 
+static int movecursor_cb(VTermPos pos, VTermPos oldpos, int visible, void *user) {
+  FigTerm *ft = user;
+
+  if (pos.col == 0 || oldpos.col == 0) {
+    // On or after linefeed, update cwd to match shell's.
+    char* cwd = get_cwd(ft->shell_pid);
+    log_debug("cwd (%d, %d) -> (%d, %d): %s", oldpos.row, oldpos.col, pos.row, pos.col, cwd);
+    chdir(cwd);
+    free(cwd);
+  }
+
+  return 0;
+}
+
 static VTermStateFallbacks state_fallbacks = {
     .osc = osc_cb,
 };
 
 static FigTermScreenCallbacks screen_callbacks = {
     .scroll = scroll_cb,
+    .movecursor = movecursor_cb,
 };
 
 FigTerm *figterm_new(int shell_pid, int ptyp_fd) {
@@ -218,7 +233,7 @@ void figterm_resize(FigTerm* ft) {
 }
 
 void figterm_get_shell_state(FigTerm* ft, FigShellState* shell_state) {
-  memcpy(&ft->shell_state, shell_state, sizeof(FigShellState));
+  memcpy(shell_state, &ft->shell_state, sizeof(FigShellState));
 }
 
 void figterm_log(FigTerm *ft, char mask) {
@@ -243,5 +258,5 @@ void figterm_write(FigTerm* ft, char* buf, int n) {
 }
 
 bool figterm_is_disabled(FigTerm* ft) {
-  return ft->disable_figterm;
+  return ft == NULL || ft->disable_figterm;
 }

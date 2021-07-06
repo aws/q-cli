@@ -42,6 +42,7 @@ typedef enum {
 
 typedef struct {
   void (*scroll)(int scroll_delta, void *user);
+  int (*movecursor)(VTermPos pos, VTermPos oldpos, int visible, void *user);
 } FigTermScreenCallbacks;
 
 typedef struct FigTermScreen FigTermScreen;
@@ -120,6 +121,9 @@ int tty_reset(int);
 // lib/pty.c
 int ptyp_open(char*);
 int ptyc_open(int, char*, const struct termios*, const struct winsize*);
+
+// lib/proc.c
+char* get_cwd(pid_t);
 
 // lib/log.c
 enum { LOG_FATAL, LOG_ERROR, LOG_WARN, LOG_INFO, LOG_DEBUG };
