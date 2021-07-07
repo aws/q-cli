@@ -31,9 +31,6 @@ jobs:
       - name: "Log Release Version"
         run: echo $VERSION
 
-      - name: "Install imagemagik for custom DMG image"
-        run: brew install graphicsmagick imagemagick
-
       - name: "Download Sparkle"
         run: curl -sOL https://github.com/sparkle-project/Sparkle/releases/download/1.24.0/Sparkle-1.24.0.tar.xz
       - name: "Unzip Sparkle"
@@ -143,23 +140,25 @@ jobs:
         with:
           product-path: "Export/Fig.app"
 
+      - name: Install fileicon
+        run: HOMEBREW_NO_AUTO_UPDATE=1 brew install fileicon
       - name: Setup Node Environment
         uses: actions/setup-node@v1
-      - name: Install create-dmg
-        run: npm install --global create-dmg
-
+      - name: Install appdmg
+        run: npm install -g appdmg
       - name: Create DMG
-        run: create-dmg "Export/Fig.app"
+        run: appdmg ./dmg/dmg-spec.json "fig $BUILD.dmg"
+      - name: Update Fileicon
+        run: fileicon set "fig $BUILD.dmg" ./dmg/VolumeIcon.icns
+
+      # codesign dmg
+
       - name: Notarize DMG
         run: |
-          npx notarize-cli --file "fig $VERSION.dmg" --bundle-id com.mschrage.fig
+          npx notarize-cli --file "fig $BUILD.dmg" --bundle-id com.mschrage.fig
         env:
           NOTARIZE_USERNAME: ${{ secrets.NOTARIZE_USERNAME }}
           NOTARIZE_PASSWORD: ${{ secrets.NOTARIZE_PASSWORD }}
-      - name: Rename DMG
-        run: |
-          mv "fig $VERSION.dmg" fig.dmg
-          cp "fig.dmg" "fig $BUILD.dmg"
 
       - name: Add DMG to /releases
         run: |
