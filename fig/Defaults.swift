@@ -447,6 +447,16 @@ class Defaults {
       Defaults.developerModeEnabled = !Defaults.developerModeEnabled
     }
   
+    static var beta: Bool {
+      get {
+        return Settings.shared.getValue(forKey: Settings.beta) as? Bool ?? false
+      }
+      
+      set (enabled) {
+        Settings.shared.set(value: enabled, forKey: Settings.beta)
+      }
+    }
+  
     static var telemetryDisabled: Bool {
       get {
         
