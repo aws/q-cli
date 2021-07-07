@@ -72,7 +72,7 @@ class Onboarding {
 
                 print("onboarding: ", script)
                 
-                let out = "/bin/bash '\(script.path)' v\(version)".runAsCommand()
+                let out = "/bin/bash '\(script.path)' \(tag)".runAsCommand()
                 
                 guard !out.starts(with: "Error:") else {
                     Logger.log(message: out)

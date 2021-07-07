@@ -87,7 +87,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         SentrySDK.start { options in
             options.dsn = "https://4544a50058a645f5a779ea0a78c9e7ec@o436453.ingest.sentry.io/5397687"
             options.debug = false // Enabled debug when first installing is always helpful
-            options.logLevel = SentryLogLevel.verbose
             options.enableAutoSessionTracking = true
             options.attachStacktrace = true
             options.sessionTrackingIntervalMillis = 5_000
