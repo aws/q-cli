@@ -579,10 +579,10 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
          action: #selector(AppDelegate.quit),
          keyEquivalent: "")
         
-        if (!Defaults.isProduction) {
+        if (!Defaults.isProduction || Defaults.beta) {
             statusBarMenu.addItem(NSMenuItem.separator())
             statusBarMenu.addItem(
-                withTitle: Defaults.build.rawValue,
+              withTitle: "\(Defaults.beta ? "[Beta] ":"")\(Defaults.build.rawValue)",
              action: nil,
              keyEquivalent: "")
         }
