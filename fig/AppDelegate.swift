@@ -712,8 +712,13 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
                let (_, tty) = pair
                tty.setTitle("Restart this terminal to finish uninstalling Fig...")
             }
+          
+            var uninstallScriptFile: String? = "\(NSHomeDirectory())/.fig/tools/uninstall-script.sh"
+            if !FileManager.default.fileExists(atPath: uninstallScriptFile!) {
+               uninstallScriptFile = Bundle.main.path(forResource: "uninstall", ofType: "sh")
+            }
 
-            if let general = Bundle.main.path(forResource: "uninstall", ofType: "sh") {
+            if let general = uninstallScriptFile {
                 NSWorkspace.shared.open(URL(string: "https://fig.io/uninstall?email=\(Defaults.email ?? "")")!)
                 LoginItems.shared.currentApplicationShouldLaunchOnStartup = false
                 
