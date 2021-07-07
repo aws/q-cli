@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 52;
+	objectVersion = 54;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -1071,7 +1071,8 @@
 				7567594E244634AD006AA988 /* Frameworks */,
 				7567594F244634AD006AA988 /* Resources */,
 				758AEB6324CE8B2F00A15EAF /* Embed Command Line Tool */,
-				75AA9FAA256D9D6C00CEFAC8 /* ShellScript */,
+				75AA9FAA256D9D6C00CEFAC8 /* Run Script */,
+				759E4BFD268F9BCC00CC1565 /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -1323,7 +1324,25 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		75AA9FAA256D9D6C00CEFAC8 /* ShellScript */ = {
+		759E4BFD268F9BCC00CC1565 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# prevent AppleScript from self-modifying after codesigning\nchmod a-w \"${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.app/Contents/Resources/fig-iterm-integration.scpt\"\n";
+		};
+		75AA9FAA256D9D6C00CEFAC8 /* Run Script */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -1333,6 +1352,7 @@
 			inputPaths = (
 				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${TARGET_NAME}",
 			);
+			name = "Run Script";
 			outputFileListPaths = (
 			);
 			outputPaths = (
