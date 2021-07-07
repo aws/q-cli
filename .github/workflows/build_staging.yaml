@@ -165,6 +165,7 @@ jobs:
           ls
           pwd
           cp "fig $BUILD.dmg" ./versions
+          mv "fig $BUILD.dmg" fig.dmg
 
       - name: "Generate Appcast"
         run: ./Sparkle/bin/generate_appcast -s $SPARKLE_KEY --download-url-prefix https://beta.withfig.com versions
