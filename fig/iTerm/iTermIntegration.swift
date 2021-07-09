@@ -364,7 +364,8 @@ extension iTermIntegration: IntegrationProvider {
     try? FileManager.default.createDirectory(at: URL(fileURLWithPath: iTermAutoLaunchDirectory),
                                              withIntermediateDirectories: true,
                                              attributes: nil)
-    
+    // Delete existing file (in case, it was setup by when app was launched from DMG)
+    try? FileManager.default.removeItem(atPath: autoLaunchScriptTarget)
     try? FileManager.default.createSymbolicLink(atPath: autoLaunchScriptTarget,
                                                 withDestinationPath: bundleAppleScriptFilePath)
   
@@ -397,7 +398,12 @@ extension iTermIntegration: IntegrationProvider {
       return false
     }
     
-    return symlinkDestination == bundleAppleScriptFilePath
+    guard let iTermDefaults = UserDefaults(suiteName: iTermBundleId),
+          let apiEnabled = iTermDefaults.bool(forKey: plistAPIEnabledKey) else {
+      return false
+    }
+    
+    return symlinkDestination == bundleAppleScriptFilePath && apiEnabled
   }
   
   static func promptToInstall(completion: (()->Void)? = nil) {
