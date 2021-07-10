@@ -94,6 +94,8 @@ class Settings {
   @objc class func openUI() {
     Settings.log("Open Settings UI")
     
+    TelemetryProvider.track(event: .openedSettingsPage, with: [:])
+    
     if let settingsWindow = Settings.shared.settingsWindow {
       
       if (settingsWindow.contentViewController != nil) {
