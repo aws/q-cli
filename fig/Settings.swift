@@ -44,6 +44,7 @@ class Settings {
   static let loggingEnabledInternally = "developer.logging.internal"
   static let colorfulLogging = "developer.logging.color"
   static let beta = "app.beta"
+  static let shellIntegrationIsManagedByUser = "integrations.shell.managedByUser"
 
 
   static let filePath = NSHomeDirectory() + "/.fig/settings.json"
