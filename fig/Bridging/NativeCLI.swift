@@ -26,6 +26,7 @@ class NativeCLI {
         case invite = "invite"
         case docs = "docs"
         case update = "update"
+        case updateApp = "update:app"
         case source = "source"
         case resetCache = "util:reset-cache"
         case tools = "tools"
@@ -114,6 +115,7 @@ class NativeCLI {
                                                            .openSettings,
                                                            .quit,
                                                            .viewLogs,
+                                                           .updateApp,
                                                            .docs]
                return implementatedNatively.contains(self)
             }
@@ -184,6 +186,8 @@ class NativeCLI {
                 NativeCLI.debugLogsCommand(scope)
             case .openSettings:
                 NativeCLI.openSettingsCommand(scope)
+            case .updateApp:
+              NativeCLI.updateAppCommand(scope)
             default:
                 break;
             }
@@ -582,6 +586,24 @@ extension NativeCLI {
 
       NativeCLI.printInTerminal("\n→ Locking screen...\n  This may resolve issues with Secure Keyboard Entry\n", using: connection)
       SecureKeyboardInput.lockscreen()
+
+    }
+  
+    static func updateAppCommand(_ scope: Scope) {
+      let (message, connection) = scope
+
+      if message.arguments.contains("--force") {
+        if UpdateService.provider.updateIsAvailable {
+          NativeCLI.printInTerminal("\n→ Installing update for macOS app...\n", using: connection)
+          DispatchQueue.main.asyncAfter(deadline:.now() + 0.25) {
+            UpdateService.provider.installUpdateIfAvailible()
+          }
+        }
+
+      } else {
+        NativeCLI.printInTerminal("\n→ Checking for updates to macOS app...\n", using: connection)
+        UpdateService.provider.checkForUpdates(nil)
+      }
 
     }
   

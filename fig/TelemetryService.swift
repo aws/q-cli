@@ -58,6 +58,7 @@ enum TelemetryEvent: String {
     case inviteAFriend = "Prompt to Invite"
     case runInstallationScript = "Running Installation Script"
     case telemetryToggled = "Toggled Telemetry"
+    case openedSettingsPage = "Opened Settings Page"
 
 
 }

@@ -44,6 +44,7 @@ class Settings {
   static let loggingEnabledInternally = "developer.logging.internal"
   static let colorfulLogging = "developer.logging.color"
   static let beta = "app.beta"
+  static let shellIntegrationIsManagedByUser = "integrations.shell.managedByUser"
 
 
   static let filePath = NSHomeDirectory() + "/.fig/settings.json"
@@ -92,6 +93,8 @@ class Settings {
   fileprivate var settingsWindow: WebViewWindow?
   @objc class func openUI() {
     Settings.log("Open Settings UI")
+    
+    TelemetryProvider.track(event: .openedSettingsPage, with: [:])
     
     if let settingsWindow = Settings.shared.settingsWindow {
       
