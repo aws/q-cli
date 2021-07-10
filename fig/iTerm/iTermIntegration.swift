@@ -398,10 +398,11 @@ extension iTermIntegration: IntegrationProvider {
       return false
     }
     
-    guard let iTermDefaults = UserDefaults(suiteName: iTermBundleId),
-          let apiEnabled = iTermDefaults.bool(forKey: plistAPIEnabledKey) else {
+    guard let iTermDefaults = UserDefaults(suiteName: iTermBundleId) else {
       return false
     }
+    
+    let apiEnabled = iTermDefaults.bool(forKey: plistAPIEnabledKey)
     
     return symlinkDestination == bundleAppleScriptFilePath && apiEnabled
   }
