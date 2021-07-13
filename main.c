@@ -16,19 +16,40 @@
 #endif
 
 #define BUFFSIZE (1024 * 100)
+#define FIGTERM_VERSION 1
 
 void abort_handler(int sig) {
   log_warn("Aborting %d: %d", getpid(), sig);
   EXIT(1);
 }
 
-static char* _parent_shell;
+char* _parent_shell = NULL;
+char* _parent_shell_is_login = NULL;
 
 void launch_shell() {
-  char *const args[] = {_parent_shell, NULL};
+  if (_parent_shell == NULL) {
+    if ((_parent_shell = getenv("FIG_SHELL")) == NULL)
+      EXIT(1);
+  }
+
+  if (_parent_shell_is_login == NULL)
+    _parent_shell_is_login = getenv("FIG_IS_LOGIN_SHELL");
+
+  char* args[] = {_parent_shell, NULL, NULL};
+  if (_parent_shell_is_login != NULL && *_parent_shell_is_login == '1')
+    args[1] = "--login";
+
+  // Expose shell variables for version and to prevent nested fig term launches.
+  char version[3];
+  sprintf(version, "%d", FIGTERM_VERSION);
   setenv("FIG_TERM", "1", 1);
+  setenv("FIG_TERM_VERSION", version, 1);
   if (getenv("TMUX") != NULL)
     setenv("FIG_TERM_TMUX", "1", 1);
+
+  // Clean up environment and launch shell.
+  unsetenv("FIG_SHELL");
+  unsetenv("FIG_IS_LOGIN_SHELL");
   if (execvp(args[0], args) < 0) {
     EXIT(1);
   }
@@ -95,7 +116,7 @@ void publish_buffer(int index, char *buffer, FigTerm* ft) {
     buffer
   );
 
-  int ret = fig_socket_send(tmpbuf);
+  fig_socket_send(tmpbuf);
   log_debug("done sending %s", tmpbuf);
   free(tmpbuf);
 }
@@ -174,9 +195,14 @@ int main(int argc, char *argv[]) {
   struct termios term;
   struct winsize ws;
 
-  _parent_shell = getenv("FIG_SHELL");
-
   FigInfo* fig_info = init_fig_info();
+
+  for (int i = 1; i < argc; i++) {
+    if (strcmp(argv[i], "--version") == 0 || strcmp(argv[i], "-v") == 0) {
+      printf("Figterm version: %d\n", FIGTERM_VERSION);
+      exit(0);
+    }
+  }
 
   if (!isatty(STDIN_FILENO) ||
       fig_info->term_session_id == NULL ||
@@ -235,7 +261,7 @@ int main(int argc, char *argv[]) {
   // Parent process becomes pty child and launches shell.
   ptyc_open(fdp, ptc_name, &term, &ws);
 
-  log_info("launching shell exe: %s", _parent_shell);
+  log_info("launching shell exe: %s", getenv("FIG_SHELL"));
 fallback:
   launch_shell();
 }
