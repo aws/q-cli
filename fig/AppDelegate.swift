@@ -103,10 +103,9 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 
         handleUpdateIfNeeded()
         Defaults.useAutocomplete = true
-        Defaults.deferToShellAutosuggestions = true
         Defaults.autocompleteVersion = "v6"
         Defaults.autocompleteWidth = 250
-        Defaults.ignoreProcessList = ["figcli", "gitstatusd-darwin-x86_64", "nc", "fig_pty"]
+        Defaults.ignoreProcessList = ["figcli", "gitstatusd-darwin", "nc", "fig_pty", "starship", "figterm"]
 
         let hasLaunched = UserDefaults.standard.bool(forKey: "hasLaunched")
         let email = UserDefaults.standard.string(forKey: "userEmail")
@@ -390,14 +389,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
       keyEquivalent: "")
       statusInTitle.state = AutocompleteContextNotifier.addIndicatorToTitlebar ? .on : .off
       integrationsMenu.addItem(NSMenuItem.separator())
-      
-//      integrationsMenu.addItem(withTitle: "Integrations", action: nil, keyEquivalent: "")
-      
-      let zshPlugin = integrationsMenu.addItem(
-      withTitle: "Fish Autosuggest", //Defer to Shell Autosuggest
-      action: #selector(AppDelegate.toggleZshPlugin(_:)),
-      keyEquivalent: "")
-      zshPlugin.state = Defaults.deferToShellAutosuggestions ? .on : .off
       
       let itermIntegration = integrationsMenu.addItem(
       withTitle: "iTerm Integration",
@@ -1144,11 +1135,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             sender.state = Defaults.broadcastLogs ? .on : .off
             
         }
-    
-    @objc func toggleZshPlugin(_ sender: NSMenuItem) {
-        Defaults.deferToShellAutosuggestions = !Defaults.deferToShellAutosuggestions
-        sender.state = Defaults.deferToShellAutosuggestions ? .on : .off
-    }
     
     @objc func toggleFigIndicator(_ sender: NSMenuItem) {
         AutocompleteContextNotifier.addIndicatorToTitlebar = !AutocompleteContextNotifier.addIndicatorToTitlebar

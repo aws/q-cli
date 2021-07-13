@@ -201,19 +201,6 @@ class Defaults {
 
        }
     
-    static var deferToShellAutosuggestions: Bool {
-           get {
-               return
-                   UserDefaults.standard.bool(forKey: "zshAutosuggestionPlugin")
-           }
-           
-           set(flag) {
-               UserDefaults.standard.set(flag, forKey: "zshAutosuggestionPlugin")
-               UserDefaults.standard.synchronize()
-           }
-
-       }
-    
     static var versionAtPreviousLaunch: String? {
         get {
             return  UserDefaults.standard.string(forKey: "versionAtPreviousLaunch")

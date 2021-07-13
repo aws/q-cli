@@ -204,11 +204,6 @@ class KeystrokeBuffer : NSObject {
       index = buffer!.index(before: index!)
       print("xterm: move cursor to the left by 1")
     case .forwardChar:
-      // handles zsh greyed out text
-      if Defaults.deferToShellAutosuggestions && buffer != nil && index == buffer!.endIndex {
-        buffer = nil
-        print("xterm: possible zsh autosuggest, break context")
-      }
       guard buffer != nil, index != nil, index != buffer!.endIndex else { break }
       index = buffer!.index(after: index!)
       print("xterm: move cursor to the right by 1")
