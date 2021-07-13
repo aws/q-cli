@@ -24,7 +24,7 @@ jobs:
           ssh-add - <<< "${{ secrets.CONFIG_DEPLOY_PRIVATE_KEY }}"
           git clone git@github.com:withfig/config config
           cd config
-          git checkout sean/pty_integration
+          git checkout main
           mkdir -p bin
           cp ../figterm ../fig_get_shell bin
           git add .
