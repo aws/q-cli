@@ -89,6 +89,7 @@ static int osc_cb(int command, VTermStringFragment frag, void *user) {
 
 static void scroll_cb(int scroll_delta, void* user) {
   FigTerm* ft = user;
+  log_debug("Scroll cb %d+%d", ft->cmd_cursor->row, scroll_delta);
   ft->cmd_cursor->row += scroll_delta;
 }
 
@@ -193,7 +194,7 @@ char* figterm_get_buffer(FigTerm* ft, int* index) {
   vterm_get_size(ft->vt, &rows, &cols);
 
   int len = (rows + 1 - i) * (cols + 1);
-  char* buf = malloc(sizeof(char) * len);
+  char* buf = malloc(sizeof(char) * (len + 1));
 
   int* index_ptr = index;
 
@@ -212,7 +213,8 @@ char* figterm_get_buffer(FigTerm* ft, int* index) {
   rect.start_col = 0;
   rect.end_col = cols;
 
-  figterm_screen_get_text(ft->screen, buf + row_len, len - row_len, rect, UNICODE_SPACE, index_ptr);
+  size_t text_len = figterm_screen_get_text(ft->screen, buf + row_len, len - row_len, rect, UNICODE_SPACE, index_ptr);
+  buf[row_len + text_len] = '\0';
 
   if (index_ptr != NULL)
     *index += row_len;
