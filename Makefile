@@ -16,7 +16,7 @@ fig_get_shell:	get_shell.o
 
 install: all
 	mkdir -p $(HOME)/.fig/bin; \
-	cd $(HOME)/.fig/bin && rm -rf $(PROGS) && cd $(ROOT) && cp $(PROGS) $(HOME)/.fig/bin; \
+	cd $(HOME)/.fig/bin && rm -rf $(PROGS) *figterm* && cd $(ROOT) && cp $(PROGS) $(HOME)/.fig/bin; \
 	# Add fake fig binary on linux or if fig not installed that just logs
 	# commands to fig.
 	command -v ~/.fig/bin/fig > /dev/null 2>&1 || ( \
