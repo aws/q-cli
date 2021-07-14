@@ -65,8 +65,10 @@ if arguments.count > 1 {
     if command == "cli:installed" {
         print("true")
         exit(0)
-    } else if command == "exec" {
-      exec(command:"tail", args: ["-qf","/Users/mschrage/.fig/logs/global.log"])
+    } else if command == "app:running" {
+      let appIsRunning = NSWorkspace.shared.runningApplications.filter { $0.bundleIdentifier == "com.mschrage.fig"}.count >= 1
+      print(appIsRunning ? "1" : "0")
+      exit(0)
     } else if command == "launch" {
         let appIsRunning = NSWorkspace.shared.runningApplications.filter { $0.bundleIdentifier == "com.mschrage.fig"}.count >= 1
         
