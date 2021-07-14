@@ -160,6 +160,8 @@ class UpdateService: NSObject {
 
   func installUpdateIfAvailible() {
     if self.updateIsAvailable {
+      // This updates the status in the shell config and js
+      self.update = nil
       // since the update is already downloaded, restarting the app should apply it.
       NSApp.appDelegate.restart()
     }
