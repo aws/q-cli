@@ -67,7 +67,35 @@ class Diagnostic {
     return location
   }
   
-  static var installationScriptRan: Bool {
+  static var shellIntegrationAddedToDotfiles: Bool {
+    let dotfiles = [
+      ".bashrc",
+      ".bash_profile",
+      ".zshrc",
+      ".zprofile",
+      ".profile"
+    ]
+    
+    let target = "source ~/.fig/fig.sh"
+    
+    return dotfiles.reduce(true) { (result, file) -> Bool in
+      guard result else {
+        return false
+      }
+      let filepath = "\(NSHomeDirectory())/\(file)"
+      guard FileManager.default.fileExists(atPath: filepath) else {
+        return true
+      }
+      
+      guard let contents = try? String(contentsOfFile: filepath) else {
+        return true
+      }
+      
+      return contents.contains(target)
+    }
+  }
+  
+  static var dotfigFolderIsSetupCorrectly: Bool {
     let dotfig = "\(NSHomeDirectory())/.fig"
     
     // Integration setup files
@@ -108,6 +136,19 @@ class Diagnostic {
       return exists && FileManager.default.fileExists(atPath: "\(dotfig)/\(path)", isDirectory:&isDir)
 
     }
+  }
+  
+  static var installationScriptRan: Bool {
+    
+    let folderContainsExpectedFiles = Diagnostic.dotfigFolderIsSetupCorrectly
+    
+    let shellIntegrationIsManagedByUser = Settings.shared.getValue(forKey: Settings.shellIntegrationIsManagedByUser) as? Bool ?? false
+    
+    if shellIntegrationIsManagedByUser {
+      return folderContainsExpectedFiles
+    }
+    
+    return folderContainsExpectedFiles && shellIntegrationAddedToDotfiles
   }
     
   static var pathToBundle: String {

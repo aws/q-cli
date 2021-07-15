@@ -34,9 +34,9 @@ public enum AppMover {
             alert.informativeText.append(" You need to authenticate with your administrator password to complete this step.")
         }
         alert.addButton(withTitle: "Move to Applications Folder")
-        alert.addButton(withTitle: "Do Not Move")
+        alert.addButton(withTitle: "Quit")
         guard alert.runModal() == .alertFirstButtonReturn else {
-            return
+            exit(0)
         }
         if needAuth {
             let result = authorizedInstall(from: bundleUrl, to: destinationUrl)

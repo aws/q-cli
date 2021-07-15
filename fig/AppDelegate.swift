@@ -31,6 +31,13 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         Logger.resetLogs()
+        SentrySDK.start { options in
+            options.dsn = "https://4544a50058a645f5a779ea0a78c9e7ec@o436453.ingest.sentry.io/5397687"
+            options.debug = false // Enabled debug when first installing is always helpful
+            options.enableAutoSessionTracking = true
+            options.attachStacktrace = true
+            options.sessionTrackingIntervalMillis = 5_000
+        }
         warnToMoveToApplicationIfNecessary()
         
         if let hideMenuBar = Settings.shared.getValue(forKey: Settings.hideMenubarIcon) as? Bool, hideMenuBar {
@@ -83,15 +90,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         
         TelemetryProvider.register()
         Accessibility.listen()
-      
-        SentrySDK.start { options in
-            options.dsn = "https://4544a50058a645f5a779ea0a78c9e7ec@o436453.ingest.sentry.io/5397687"
-            options.debug = false // Enabled debug when first installing is always helpful
-            options.logLevel = SentryLogLevel.verbose
-            options.enableAutoSessionTracking = true
-            options.attachStacktrace = true
-            options.sessionTrackingIntervalMillis = 5_000
-        }
                 
 //        updater?.checkForUpdateInformation()
 //        updater?.delegate = self as SUUpdaterDelegate;
@@ -712,8 +710,13 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
                let (_, tty) = pair
                tty.setTitle("Restart this terminal to finish uninstalling Fig...")
             }
+          
+            var uninstallScriptFile: String? = "\(NSHomeDirectory())/.fig/tools/uninstall-script.sh"
+            if !FileManager.default.fileExists(atPath: uninstallScriptFile!) {
+               uninstallScriptFile = Bundle.main.path(forResource: "uninstall", ofType: "sh")
+            }
 
-            if let general = Bundle.main.path(forResource: "uninstall", ofType: "sh") {
+            if let general = uninstallScriptFile {
                 NSWorkspace.shared.open(URL(string: "https://fig.io/uninstall?email=\(Defaults.email ?? "")")!)
                 LoginItems.shared.currentApplicationShouldLaunchOnStartup = false
                 
