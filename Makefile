@@ -8,11 +8,23 @@ PROGS =	figterm fig_get_shell
 
 all:	$(PROGS)
 
-figterm:	main.o figterm.o screen.o util.o $(LIBVTERM) $(LIBFIG)
-	$(CC) $(CFLAGS) -o figterm main.o figterm.o screen.o util.o $(LDFLAGS) $(LDLIBS)
+figterm-arm: main.o figterm.o screen.o util.o $(LIBVTERM) $(LIBFIG)
+	$(CC) $(CFLAGS) -o figterm-arm main.o figterm.o screen.o util.o $(LDFLAGS) $(LDLIBS) -target arm64-apple-macos11
 
-fig_get_shell:	get_shell.o
-	$(CC) $(CFLAGS) -o fig_get_shell get_shell.o
+figterm-x86: main.o figterm.o screen.o util.o $(LIBVTERM) $(LIBFIG)
+	$(CC) $(CFLAGS) -o figterm-x86 main.o figterm.o screen.o util.o $(LDFLAGS) $(LDLIBS) -target x86_64-apple-macos10.12
+
+figterm: figterm-x86 figterm-arm
+	lipo -create -output figterm figterm-x86 figterm-arm
+
+fig_get_shell_arm: get_shell.o
+	$(CC) $(CFLAGS) -o fig_get_shell get_shell.o -target arm64-apple-macos11
+
+fig_get_shell_x86: get_shell.o
+	$(CC) $(CFLAGS) -o fig_get_shell get_shell.o -target x86_64-apple-macos10.12
+
+fig_get_shell: fig_get_shell_x86 fig_get_shell_arm
+	lipo -create -output fig_get_shell fig_get_shell_x86 fig_get_shell_arm
 
 install: all
 	mkdir -p $(HOME)/.fig/bin; \
