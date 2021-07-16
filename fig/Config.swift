@@ -9,6 +9,8 @@
 import Foundation
 
 class Config {
+  static let userExplictlyQuitApp = "APP_TERMINATED_BY_USER"
+  static let userLoggedIn = "FIG_LOGGED_IN"
   fileprivate static let userConfigPath: URL = URL(fileURLWithPath: "\(NSHomeDirectory())/.fig/user/config")
   
   static func set(value: String?, forKey key: String) {
