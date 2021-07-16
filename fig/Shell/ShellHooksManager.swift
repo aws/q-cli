@@ -127,14 +127,20 @@ extension Dictionary where Value: Equatable {
 extension ShellHookManager {
     
   func keyboardFocusDidChange(to uuid: String, in window: ExternalWindow) {
-    let VSCodeTerminal = window.bundleId == Integrations.VSCode ||
-                         window.bundleId == Integrations.VSCodeInsiders
+    let isHyper = window.bundleId == Integrations.Hyper
     
     self.setActiveTab(uuid, for: window.windowId)
   
     // Manually ensuring that values set prior to tab are updated
     // Make sure oldHash is equal to whatever the default value of the hash would be
-    if (!VSCodeTerminal) {
+    // Why Hyper? Any terminal integration that reports the sessionId without waiting for
+    // the session to change, can be included here!
+    //
+    // Launched App                      Changed Tabs
+    // 123/%    123/abc%                   123/def%
+    // |-------->---------------------------->--------------------
+    //          SessionId for current Tab    SessionId for new tab
+    if isHyper {
       self.updateHashMetadata(oldHash: "\(window.windowId)/%", hash: window.hash)
     }
   
