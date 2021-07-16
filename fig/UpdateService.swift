@@ -130,32 +130,10 @@ class UpdateService: NSObject {
     }
   }
   
-  fileprivate let userConfigPath: URL = URL(fileURLWithPath: "\(NSHomeDirectory())/.fig/user/config")
   fileprivate let configUpdateAvailableKey = "NEW_VERSION_AVAILABLE"
   fileprivate func notifyShellOfUpdateStatus() {
-    if let config = try? String(contentsOf: userConfigPath, encoding: .utf8) {
-      var lines = config.split(separator: "\n").filter { !$0.trimmingCharacters(in: .whitespaces).starts(with: configUpdateAvailableKey) }
-      
-      if self.updateIsAvailable {
-        lines.append("\(configUpdateAvailableKey)=\(self.updateVersion ?? "???")")
-      }
-      
-      let newConfig = lines.joined(separator: "\n")
-      
-      do {
-        try newConfig.write(to: userConfigPath,
-                        atomically: true,
-                        encoding: .utf8)
-      } catch {
-        UpdateService.log("could not write updated config file")
-      }
-
-      
-      
-    } else {
-      UpdateService.log("could not read config file at \(userConfigPath.path)")
-    }
-    
+    let value = self.updateIsAvailable ? self.updateVersion ?? "???" : nil
+    Config.set(value: value, forKey: configUpdateAvailableKey)
   }
 
   func installUpdateIfAvailible() {
