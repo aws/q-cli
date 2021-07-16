@@ -9,20 +9,20 @@
 import Foundation
 
 class Config {
-  fileprivate let userConfigPath: URL = URL(fileURLWithPath: "\(NSHomeDirectory())/.fig/user/config")
+  fileprivate static let userConfigPath: URL = URL(fileURLWithPath: "\(NSHomeDirectory())/.fig/user/config")
   
-  func set(value: String?, forKey key: String) {
+  static func set(value: String?, forKey key: String) {
     Config.log("set '\(key)' := \(value ?? "nil")")
     updateConfig(key, value)
   }
   
-  func getValue(forKey key: String) -> String? {
+  static func getValue(forKey key: String) -> String? {
     let value = readConfig(forKey: key).value
     Config.log("get '\(key)' = \(value ?? "nil")")
     return value
   }
   
-  func readConfig(forKey key: String? = nil) -> (lines: [String], value: String?) {
+  static func readConfig(forKey key: String? = nil) -> (lines: [String], value: String?) {
     guard let config = try? String(contentsOf: userConfigPath, encoding: .utf8) else {
       Config.log("could not read config file")
       return ([], nil)
@@ -53,7 +53,7 @@ class Config {
     
   }
   
-  func updateConfig(_ key: String, _ value: String?) {
+  static func updateConfig(_ key: String, _ value: String?) {
     var lines = readConfig(forKey: key).lines
     
     if let value = value {
