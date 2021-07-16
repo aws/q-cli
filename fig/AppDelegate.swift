@@ -69,7 +69,8 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         
         TelemetryProvider.track(event: .launchedApp, with:
                                 ["crashed" : Defaults.launchedFollowingCrash ? "true" : "false"])
-        Defaults.launchedFollowingCrash = true //
+        Defaults.launchedFollowingCrash = true
+        Config.set(value: nil, forKey: Config.userExplictlyQuitApp)
         Accessibility.checkIfPermissionRevoked()
       
 //        AppMover.moveIfNecessary()
@@ -115,6 +116,8 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             Defaults.build = .production
             Defaults.clearExistingLineOnTerminalInsert = true
             Defaults.showSidebar = false
+          
+            Config.set(value: "0", forKey: Config.userLoggedIn)
 //            Defaults.defaultActivePosition = .outsideRight
             
             let onboardingViewController = WebViewController()
@@ -137,6 +140,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             user.email = email
             SentrySDK.setUser(user)
             ShellBridge.symlinkCLI()
+            Config.set(value: "1", forKey: Config.userLoggedIn)
 
             
           if (!Accessibility.enabled) {
@@ -1246,6 +1250,8 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         if let statusbar = self.statusBarItem {
             NSStatusBar.system.removeStatusItem(statusbar)
         }
+      
+        Config.set(value: "1", forKey: Config.userExplictlyQuitApp)
         
         TelemetryProvider.track(event: .quitApp, with: [:]) { (_, _, _) in
             DispatchQueue.main.async {
