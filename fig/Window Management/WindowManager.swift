@@ -236,6 +236,9 @@ class WindowManager : NSObject {
         
         web.webView?.loadAutocomplete()
         let companion = CompanionWindow(viewController: web)
+        // prevents strange artifacts at top of autocomplete window
+        // shadow can be added back in using CSS
+        companion.hasShadow = false
         companion.positioning = .hidden
         companion.repositionWindow(forceUpdate: true, explicit: true)
         companion.maxHeight = 0

@@ -126,8 +126,8 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
         self.center()
         self.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         self.isMovableByWindowBackground = true
-        self.isOpaque = false
-        self.backgroundColor = .clear//NSColor.init(white: 1, alpha: 0.75)
+        self.isOpaque = true
+        self.backgroundColor = .clear //NSColor.init(white: 1, alpha: 0.75)
         self.delegate = self
         self.level = self.floatingWindowLevel
         self.setFrameAutosaveName("Main Window")
