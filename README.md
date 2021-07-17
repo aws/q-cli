@@ -1,5 +1,9 @@
 # Dev Setup
 
+After cloning...
+1. Pull submodules `git submodule update --init --recursive`
+2. Install `glibtool` using `brew install libtool`
+
 Change files, run `make install` (with `make clean` first if you change
 anything in `lib/`) and this will copy output binaries to your
 `~/.fig/bin` directory.
