@@ -234,8 +234,18 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
   
     func warnToMoveToApplicationIfNecessary() {
       if Diagnostic.isRunningOnReadOnlyVolume {
-        AppMover.moveIfNecessary()
+        Alert.show(title: "Move to Applications folder",
+                   message: "Fig needs to be launched from your Applications folder in order to work properly.",
+                   okText: "Quit",
+                   icon: NSApp.applicationIconImage)
+        
+        NSApp.terminate(self)
+        
       }
+      
+      // Get rid of reference to DMG if it exists in LoginItems
+      let dmgAppURL = NSURL.fileURL(withPath: "/Volumes/Fig/Fig.app")
+      LoginItems.shared.removeURLIfExists(dmgAppURL)
     }
     
     func remindToSourceFigInExistingTerminals() {
