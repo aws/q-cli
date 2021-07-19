@@ -69,6 +69,7 @@ class NativeCLI {
         case chat = "chat"
         case discord = "discord"
         case viewLogs = "debug:log"
+        case symlinkCLI = "util:symlink-cli"
 
         var isUtility: Bool {
             get {
@@ -116,6 +117,7 @@ class NativeCLI {
                                                            .quit,
                                                            .viewLogs,
                                                            .updateApp,
+                                                           .symlinkCLI,
                                                            .docs]
                return implementatedNatively.contains(self)
             }
@@ -188,6 +190,8 @@ class NativeCLI {
                 NativeCLI.openSettingsCommand(scope)
             case .updateApp:
               NativeCLI.updateAppCommand(scope)
+            case .symlinkCLI:
+              NativeCLI.symlinkCLICommand(scope)
             default:
                 break;
             }
@@ -360,6 +364,12 @@ extension NativeCLI {
         let (message, connection) = scope
         let env = message.env?.jsonStringToDict() ?? [:]
         NativeCLI.printInTerminal(Diagnostic.summaryWithEnvironment(env), using: connection)
+    }
+  
+    static func symlinkCLICommand(_ scope: Scope) {
+        let (_, connection) = scope
+        NativeCLI.printInTerminal("Symlinking CLI to ~/.fig/bin/fig...", using: connection)
+        Onboarding.copyFigCLIExecutable(to:"~/.fig/bin/fig")
     }
   
     static func quitCommand(_ scope: Scope) {
