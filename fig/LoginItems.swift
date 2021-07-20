@@ -41,13 +41,13 @@ class LoginItems {
   
   @available(macOS, deprecated: 10.11)
   func _containsURL(_ url: URL) -> Bool {
-    let itemReferences = itemReferencesInLoginItems()
+    let itemReferences = itemReferencesInLoginItems(forFileURL: url as NSURL)
     return itemReferences.existingReference != nil
   }
   
   @available(macOS, deprecated: 10.11)
   func _removeURLIfExists(_ url: URL) {
-    let itemReferences = itemReferencesInLoginItems()
+    let itemReferences = itemReferencesInLoginItems(forFileURL: url as NSURL)
     guard let ref = itemReferences.existingReference else {
       return
     }
