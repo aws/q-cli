@@ -8,7 +8,7 @@
 
 import Cocoa
 
-class FishIntegration {
+class FishIntegration: ShellIntegration {
   static let throttler = Throttler(minimumDelay: 0.005, queue: DispatchQueue(label: "com.withfig.fish"))
   static func enabledFor(_ tty: TTY) -> Bool {
     
@@ -26,21 +26,22 @@ class FishIntegration {
   // function fig_keybuffer --on-signal SIGUSR1
   //    fig bg:zsh-keybuffer (commandline -C) (commandline) 0 &
   // end
-  static func handleKeystroke(event: NSEvent?, in window: ExternalWindow) -> Bool {
-    guard let event = event else {
-      return false
-    }
+  static func handleKeystroke(event: CGEvent, in window: ExternalWindow) -> EventTapAction {
     
     guard let tty = window.tty else {
-      return false
+      return .ignore
     }
     
     guard enabledFor(tty) else {
-      return false
+      return .ignore
     }
     
     guard let pid = tty.pid else {
-      return false
+      return .ignore
+    }
+    
+    guard let event = NSEvent(cgEvent: event) else {
+      return .ignore
     }
     
     let shouldReposition = ![ Keycode.enter, Keycode.upArrow, Keycode.downArrow ].contains(event.keyCode) && !(event.modifierFlags.contains(.command) || event.modifierFlags.contains(.control))
@@ -49,7 +50,7 @@ class FishIntegration {
     // because we don't want to run updates twice per keystroke
     // Don't send signal on enter key (avoids killing new process when execing and multiple phantom keypresses when inserting)
     if event.type == .keyUp, event.keyCode != Keycode.returnKey, !(event.keyCode == KeyboardLayout.shared.keyCode(for: "R") &&  event.modifierFlags.contains(.control))  {
-      print("fish: Send signal SIGUSR1 to \(pid) on '\(event.characters ?? "?")' (\(event.keyCode))")
+      Logger.log(message: "Send signal SIGUSR1 to \(pid) on '\(event.characters ?? "?")' (\(event.keyCode))", subsystem: .fish)
       requestUpdate(from: pid)
     } else if shouldReposition {
       // Reposition on keyDown to make motion less jerky
@@ -58,7 +59,7 @@ class FishIntegration {
       Autocomplete.position(makeVisibleImmediately: false)
     }
     
-    return true
+    return .forward
   }
   
   static func requestUpdate(from pid: pid_t) {

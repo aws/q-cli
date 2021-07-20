@@ -42,7 +42,7 @@ struct Keystroke: Hashable {
 
 extension NSEvent.ModifierFlags: Hashable {
   public func hash(into hasher: inout Hasher) {
-    hasher.combine(self.carbonFlags)
+    hasher.combine(self.rawValue)
   }
 }
 

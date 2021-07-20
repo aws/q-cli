@@ -26,6 +26,7 @@ class NativeCLI {
         case invite = "invite"
         case docs = "docs"
         case update = "update"
+        case updateApp = "update:app"
         case source = "source"
         case resetCache = "util:reset-cache"
         case tools = "tools"
@@ -67,6 +68,8 @@ class NativeCLI {
         case community = "community"
         case chat = "chat"
         case discord = "discord"
+        case viewLogs = "debug:log"
+        case symlinkCLI = "util:symlink-cli"
 
         var isUtility: Bool {
             get {
@@ -112,6 +115,9 @@ class NativeCLI {
                                                            .lockscreen,
                                                            .openSettings,
                                                            .quit,
+                                                           .viewLogs,
+                                                           .updateApp,
+                                                           .symlinkCLI,
                                                            .docs]
                return implementatedNatively.contains(self)
             }
@@ -120,7 +126,7 @@ class NativeCLI {
 
         func run(_ scope: Scope) {
             guard self.implementatedNatively else {
-                Logger.log(message: "CLI function '\(self.rawValue)' not implemented natively")
+              Logger.log(message: "CLI function '\(self.rawValue)' not implemented natively", subsystem: .cli)
                 return
             }
             switch self {
@@ -178,8 +184,14 @@ class NativeCLI {
                 NativeCLI.toolsCommand(scope)
             case .debugWindows:
                 NativeCLI.debugWindowsCommand(scope)
+            case .viewLogs:
+                NativeCLI.debugLogsCommand(scope)
             case .openSettings:
                 NativeCLI.openSettingsCommand(scope)
+            case .updateApp:
+              NativeCLI.updateAppCommand(scope)
+            case .symlinkCLI:
+              NativeCLI.symlinkCLICommand(scope)
             default:
                 break;
             }
@@ -215,9 +227,9 @@ class NativeCLI {
             if let scriptPath = Bundle.main.path(forResource: script,
                                                  ofType: "sh") {
                 NativeCLI.runShellScriptInTerminal(scriptPath, with: scope)
-                Logger.log(message: "CLI: \(scriptPath)")
+                Logger.log(message: "\(scriptPath)", subsystem: .cli)
             } else {
-                Logger.log(message: "CLI: Failed to find script")
+                Logger.log(message: "CLI: Failed to find script", subsystem: .cli)
                
             }
         }
@@ -352,6 +364,12 @@ extension NativeCLI {
         let (message, connection) = scope
         let env = message.env?.jsonStringToDict() ?? [:]
         NativeCLI.printInTerminal(Diagnostic.summaryWithEnvironment(env), using: connection)
+    }
+  
+    static func symlinkCLICommand(_ scope: Scope) {
+        let (_, connection) = scope
+        NativeCLI.printInTerminal("Symlinking CLI to ~/.fig/bin/fig...", using: connection)
+        Onboarding.copyFigCLIExecutable(to:"~/.fig/bin/fig")
     }
   
     static func quitCommand(_ scope: Scope) {
@@ -581,6 +599,24 @@ extension NativeCLI {
 
     }
   
+    static func updateAppCommand(_ scope: Scope) {
+      let (message, connection) = scope
+
+      if message.arguments.contains("--force") {
+        if UpdateService.provider.updateIsAvailable {
+          NativeCLI.printInTerminal("\n→ Installing update for macOS app...\n", using: connection)
+          DispatchQueue.main.asyncAfter(deadline:.now() + 0.25) {
+            UpdateService.provider.installUpdateIfAvailible()
+          }
+        }
+
+      } else {
+        NativeCLI.printInTerminal("\n→ Checking for updates to macOS app...\n", using: connection)
+        UpdateService.provider.checkForUpdates(nil)
+      }
+
+    }
+  
     static func electronAccessibilityCommand(_ scope: Scope) {
         let (_, connection) = scope
         if let app = AXWindowServer.shared.topApplication, let name = app.localizedName {
@@ -597,6 +633,29 @@ extension NativeCLI {
       
         
         NativeCLI.printInTerminal(ps, using: connection)
+    }
+  
+    static func debugLogsCommand(_ scope: Scope) {
+        let (message, connection) = scope
+        let loggingEnabled = Settings.shared.getValue(forKey: Settings.logging) as? Bool ?? false
+        guard loggingEnabled else {
+          NativeCLI.printInTerminal("'\(Settings.logging)' is not enabled.", using: connection)
+          return
+        }
+        let all = Set((try? FileManager.default.contentsOfDirectory(atPath: Logger.defaultLocation.path)) ?? [])
+        let removed = Set(message.arguments.filter { $0.starts(with: "-") }.map { $0.stringByReplacingFirstOccurrenceOfString("-", withString: "") + ".log" })
+
+        var files: String!
+        if message.arguments.count == 0 {
+          files = all.map { "\(Logger.defaultLocation.path)/\($0)" }.joined(separator: " ")
+        } else if removed.count > 0 {
+          files = all.subtracting(removed).map { "\(Logger.defaultLocation.path)/\($0)" }.joined(separator: " ")
+        } else {
+          files = message.arguments.map { "\(NSHomeDirectory())/.fig/logs/\($0).log" }.joined(separator: " ")
+        }
+
+        connection.send(message: "execvp:tail -n0 -qf \(files!)")
+        
     }
   
     static func debugDotfilesCommand(_ scope: Scope) {
@@ -661,7 +720,7 @@ extension NativeCLI {
         if let scriptPath = Bundle.main.path(forResource: script, ofType: "sh") {
             connection.send(message: "bash \(scriptPath)")
         } else {
-            Logger.log(message: "Script does not exisr for command '\(command.rawValue)'")
+          Logger.log(message: "Script does not exist for command '\(command.rawValue)'", subsystem: .cli)
         }
         
         
@@ -697,4 +756,15 @@ extension NativeCLI {
                                         ])
     }
     
+}
+
+extension String {
+
+  func stringByReplacingFirstOccurrenceOfString(_ target: String, withString replaceString: String) -> String {
+      if let range = self.range(of: target) {
+          return self.replacingCharacters(in: range, with: replaceString)
+      }
+      return self
+  }
+
 }

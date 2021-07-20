@@ -93,9 +93,16 @@ class WebSocketServer {
                         SentrySDK.capture(message: "Error listening on port \(port): \(error).")
 
                         DispatchQueue.main.async {
-                            if let delegate = NSApp.delegate as? AppDelegate {
-                              let _ = delegate.dialogOKCancel(question: "Could not link with terminal", text: "A process is already listening on port \(Defaults.port).\nRun `lsof -i tcp:\(Defaults.port)` to identify it.\n\nPlease email hello@fig.io for help debugging.", prompt: "", noAction: true, icon: nil)
-                            }
+                          let quit = Alert.show(title: "Could not link with terminal",
+                                     message: "A process is already listening on port \(Defaults.port).\nRun `lsof -i tcp:\(Defaults.port)` to identify it.\n\nPlease email hello@fig.io for help debugging.",
+                                     okText: "Quit",
+                                     hasSecondaryOption: true, secondaryOptionTitle: "Restart")
+                          
+                          if quit {
+                            NSApp.appDelegate.quit()
+                          } else {
+                            NSApp.appDelegate.restart()
+                          }
                         }
                    }
         }
@@ -202,6 +209,7 @@ class ShellBridgeSocketService: WebSocketService {
                         self.sessionIds[msg.session] = from.id
                     case "pipe":
                         print("Handle CLI command: fig \((msg.options ?? []).joined(separator: " "))")
+                        Logger.log(message: "fig \((msg.options ?? []).joined(separator: " "))", subsystem: .cli)
                         guard Defaults.loggedIn else {
                             from.send(message: "disconnect")
                             return

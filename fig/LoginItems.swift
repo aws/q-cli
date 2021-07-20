@@ -12,6 +12,8 @@ import Foundation
 private protocol LoginItemsProtocol {
     func toggleLaunchAtStartup(shouldBeOff: Bool)
     func containsCurrentApplication() -> Bool
+    func _containsURL(_ url: URL) -> Bool
+    func _removeURLIfExists(_ url: URL)
 }
 
 class LoginItems {
@@ -27,6 +29,40 @@ class LoginItems {
   
   var includesCurrentApplication: Bool {
     return (self as LoginItemsProtocol).containsCurrentApplication()
+  }
+  
+  func containsURL(_ url: URL) -> Bool {
+    return (self as LoginItemsProtocol)._containsURL(url)
+  }
+  
+  func removeURLIfExists(_ url: URL) {
+    return (self as LoginItemsProtocol)._removeURLIfExists(url)
+  }
+  
+  @available(macOS, deprecated: 10.11)
+  func _containsURL(_ url: URL) -> Bool {
+    let itemReferences = itemReferencesInLoginItems(forFileURL: url as NSURL)
+    return itemReferences.existingReference != nil
+  }
+  
+  @available(macOS, deprecated: 10.11)
+  func _removeURLIfExists(_ url: URL) {
+    let itemReferences = itemReferencesInLoginItems(forFileURL: url as NSURL)
+    guard let ref = itemReferences.existingReference else {
+      return
+    }
+    
+    let loginItemsRef = LSSharedFileListCreate(
+      nil,
+      kLSSharedFileListSessionLoginItems.takeRetainedValue(),
+      nil
+    ).takeRetainedValue() as LSSharedFileList?
+    
+    if loginItemsRef != nil {
+      LSSharedFileListItemRemove(loginItemsRef, ref);
+
+    }
+
   }
   
     @available(macOS, deprecated: 10.11)
@@ -55,11 +91,10 @@ class LoginItems {
     }
 
   @available(macOS, deprecated: 10.11)
-  func itemReferencesInLoginItems() -> (existingReference: LSSharedFileListItem?, lastReference: LSSharedFileListItem?) {
+  func itemReferencesInLoginItems(forFileURL appUrl: NSURL = NSURL(fileURLWithPath: Bundle.main.bundlePath)) -> (existingReference: LSSharedFileListItem?, lastReference: LSSharedFileListItem?) {
         
       let itemUrl = UnsafeMutablePointer<Unmanaged<CFURL>?>.allocate(capacity: 1)
 
-        let appUrl = NSURL(fileURLWithPath: Bundle.main.bundlePath)
         let loginItemsRef = LSSharedFileListCreate(
           nil,
           kLSSharedFileListSessionLoginItems.takeRetainedValue(),

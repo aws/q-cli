@@ -67,21 +67,88 @@ class Diagnostic {
     return location
   }
   
-  static var installationScriptRan: Bool {
+  static var shellIntegrationAddedToDotfiles: Bool {
+    let dotfiles = [
+      ".bashrc",
+      ".bash_profile",
+      ".zshrc",
+      ".zprofile",
+      ".profile"
+    ]
+    
+    let target = "source ~/.fig/fig.sh"
+    
+    return dotfiles.reduce(true) { (result, file) -> Bool in
+      guard result else {
+        return false
+      }
+      let filepath = "\(NSHomeDirectory())/\(file)"
+      guard FileManager.default.fileExists(atPath: filepath) else {
+        return true
+      }
+      
+      guard let contents = try? String(contentsOfFile: filepath) else {
+        return true
+      }
+      
+      return contents.contains(target)
+    }
+  }
+  
+  static var dotfigFolderIsSetupCorrectly: Bool {
     let dotfig = "\(NSHomeDirectory())/.fig"
-    let filesAndFolders = [
-                           "tmux", "ssh", // Integration setup files
-                           "fig.bash", "fig.fish", "fig.sh", "fig.zsh", // Shell Hooks
-                           "zle.zsh", "zle", // ZLE integration
-                           "tools", "tools/drip", "tools/drip/fig_onboarding.sh", "user/config", // Onboarding
-                           "autocomplete" // Autocomplete folder
-                          ]
+    
+    // Integration setup files
+    let integrations = ["tmux", "ssh"]
+    
+    
+    let settings = [ "settings.json" ]
+    
+    // Shell Hooks
+    let shellHooks = [
+      "fig.sh",
+      "shell/bash-preexec.sh",
+      "shell/post.bash",
+      "shell/post.fish",
+      "shell/post.sh",
+      "shell/post.zsh",
+      "shell/pre.fish",
+      "shell/pre.sh",
+      "shell/zle.zsh",
+      "zle" // make sure folder exists
+    ]
+    
+    let onboarding = [
+      "tools",
+      "tools/drip",
+      "tools/drip/fig_onboarding.sh",
+      "user/config"
+    ]
+    
+    let filesAndFolders = integrations +
+                              settings +
+                            shellHooks +
+                            onboarding + [ "autocomplete" ]
+      
     
     return filesAndFolders.reduce(true) { (exists, path) -> Bool in
       var isDir : ObjCBool = false
       return exists && FileManager.default.fileExists(atPath: "\(dotfig)/\(path)", isDirectory:&isDir)
 
     }
+  }
+  
+  static var installationScriptRan: Bool {
+    
+    let folderContainsExpectedFiles = Diagnostic.dotfigFolderIsSetupCorrectly
+    
+    let shellIntegrationIsManagedByUser = Settings.shared.getValue(forKey: Settings.shellIntegrationIsManagedByUser) as? Bool ?? false
+    
+    if shellIntegrationIsManagedByUser {
+      return folderContainsExpectedFiles
+    }
+    
+    return folderContainsExpectedFiles && shellIntegrationAddedToDotfiles
   }
     
   static var pathToBundle: String {
@@ -263,7 +330,7 @@ class Diagnostic {
     get {
       """
       
-      \(Diagnostic.distribution) \(Defaults.debugAutocomplete ? "[Debug] " : "")\(Defaults.developerModeEnabled ? "[Dev] " : "")[\(KeyboardLayout.shared.currentLayoutName() ?? "?")] \(Diagnostic.isRunningOnReadOnlyVolume ? "TRANSLOCATED!!!" : "")
+      \(Diagnostic.distribution) \(Defaults.beta ? "[Beta] " : "")\(Defaults.debugAutocomplete ? "[Debug] " : "")\(Defaults.developerModeEnabled ? "[Dev] " : "")[\(KeyboardLayout.shared.currentLayoutName() ?? "?")] \(Diagnostic.isRunningOnReadOnlyVolume ? "TRANSLOCATED!!!" : "")
       UserShell: \(Defaults.userShell)
       Bundle path: \(Diagnostic.pathToBundle)
       Autocomplete: \(Defaults.useAutocomplete)

@@ -1,6 +1,7 @@
 #MAGENTA=$(tput setaf 5)
 #BOLD=$(tput bold)
 #NORMAL=$(tput sgr0)
+fig update:app --force
 printf "\nPulling most up-to-date completion specs...\n"
 printf "Run $(tput setaf 5)$(tput bold)fig docs$(tput sgr0) to learn how to contribute your own!\n\n"
 # Download all the files in the specs folder of this repo

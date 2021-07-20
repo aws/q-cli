@@ -52,16 +52,42 @@ class WebViewController: NSViewController, NSWindowDelegate {
         pty.delegate = self
         let settings = WebBridge.shared.configure(configuration)
         webView = WebView(frame: .zero, configuration: settings)
+        webView?.drawsBackground = false
+        self.view = webView!
+        webView?.translatesAutoresizingMaskIntoConstraints = false
+
+        webView?.uiDelegate = self
+        webView?.navigationDelegate = self
+        
+        if (UserDefaults.standard.string(forKey: "debugMode") != "enabled") {
+            NSLayoutConstraint.activate([
+                webView!.topAnchor.constraint(equalTo: view.topAnchor),
+                webView!.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+                webView!.leftAnchor.constraint(equalTo: view.leftAnchor),
+                webView!.rightAnchor.constraint(equalTo: view.rightAnchor)
+            ])
+        }
+
+
     }
     
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
+  
+//    override func loadView() {
+//        self.view = TransparentView(frame: .zero)
+//    }
+  
     //    override func loadView() {
 //        self.view = webView
 //    }
-    override func loadView() {
+//    override func loadView() {
+//      self.view = webView!
 //        self.view = NSView(frame: .zero)
+//        self.view.wantsLayer = true
+//      self.view.layer?.backgroundColor = NSColor.clear.cgColor
+      
 ////        let blurView = NSView(frame: view.bounds)
 //         view.wantsLayer = true
 //         view.layer?.backgroundColor = NSColor.clear.cgColor
@@ -86,22 +112,22 @@ class WebViewController: NSViewController, NSWindowDelegate {
 //
 //         view.layer?.needsDisplay()
         
-        let effect = NSVisualEffectView(frame: .zero)
-        effect.blendingMode = .behindWindow
-        effect.state = .active
-        effect.material = .mediumLight
-        effect.maskImage = _maskImage(cornerRadius: 5)
-        
-        
-        self.view = effect// NSView(frame: .zero);
-//         view.setValue(false, forKey: "drawsBackground")
-        self.view.postsFrameChangedNotifications = true
-        self.view.postsBoundsChangedNotifications = true
-        
-
-        
-
-    }
+//        let effect = NSVisualEffectView(frame: .zero)
+//        effect.blendingMode = .behindWindow
+//        effect.state = .active
+//        effect.material = .dark
+//        effect.maskImage = _maskImage(cornerRadius: 5)
+//
+//
+//        self.view = effect// NSView(frame: .zero);
+////         view.setValue(false, forKey: "drawsBackground")
+//        self.view.postsFrameChangedNotifications = true
+//        self.view.postsBoundsChangedNotifications = true
+//
+//
+//
+//
+ //   }
     override func viewDidAppear() {
 //        blur(view:self.view)
 
@@ -198,7 +224,6 @@ class WebViewController: NSViewController, NSWindowDelegate {
 
         webView?.uiDelegate = self
         webView?.navigationDelegate = self
-        self.view.addSubview(webView!)
         
         if (UserDefaults.standard.string(forKey: "debugMode") != "enabled") {
             NSLayoutConstraint.activate([
@@ -287,12 +312,10 @@ class WebViewController: NSViewController, NSWindowDelegate {
     }
 }
 //https://ribachenko.com/posts/nsvisualeffectview-with-adjustable-blur-level/
-class SemiTransparentView: NSView {
+class TransparentView: NSView {
 
-    var alphaLevel: Double = 0.12
-
-    override var allowsVibrancy: Bool { return true }
-
+    var alphaLevel: Double = 0.0
+  
     override func draw(_ dirtyRect: NSRect) {
         NSColor(deviceWhite: 255, alpha: CGFloat(alphaLevel)).set()
         dirtyRect.fill()
@@ -445,7 +468,6 @@ extension WebViewController : WKNavigationDelegate {
             onNavigateCallback()
         }
         webView.onNavigate = []
-        webView.window?.backgroundColor = .white
         webView.window?.title = ""
         webView.window?.representedURL = nil
     }
@@ -481,6 +503,8 @@ extension WebViewController : WKNavigationDelegate {
         WebBridge.declareRemoteURL(webview: webView)
         WebBridge.declareHomeDirectory(webview: webView)
         WebBridge.declareSettings(webview:webView)
+        WebBridge.declareUpdate(webview: webView)
+        WebBridge.declareCurrentApplication(webview: webView)
         WebBridge.initJS(webview: webView)
 //        webView.evaluateJavaScript("fig.callinit()", completionHandler: nil)
 
@@ -514,7 +538,7 @@ class WebView : WKWebView {
     var defaultURL: URL? = Remote.baseURL.appendingPathComponent("sidebar")
     var dragShouldRepositionWindow = false
     private var dragging = false
-    var drawsBackground: Bool = true {
+    var drawsBackground: Bool = false {
         didSet {
             self.setValue(self.drawsBackground, forKey: "drawsBackground")
         }

@@ -21,8 +21,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     var integrationPrompt: NSMenuItem?
 
     var clicks:Int = 6;
-    var hotKeyManager: HotKeyManager?
-    let updater = SUUpdater.shared()
+    let updater = UpdateService.provider
     let processPool = WKProcessPool()
     
     let iTermObserver = WindowObserver(with: "com.googlecode.iterm2")
@@ -31,6 +30,14 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     let VSCodeObserver = WindowObserver(with: Integrations.VSCode)
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
+        Logger.resetLogs()
+        SentrySDK.start { options in
+            options.dsn = "https://4544a50058a645f5a779ea0a78c9e7ec@o436453.ingest.sentry.io/5397687"
+            options.debug = false // Enabled debug when first installing is always helpful
+            options.enableAutoSessionTracking = true
+            options.attachStacktrace = true
+            options.sessionTrackingIntervalMillis = 5_000
+        }
         warnToMoveToApplicationIfNecessary()
         
         if let hideMenuBar = Settings.shared.getValue(forKey: Settings.hideMenubarIcon) as? Bool, hideMenuBar {
@@ -62,7 +69,8 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         
         TelemetryProvider.track(event: .launchedApp, with:
                                 ["crashed" : Defaults.launchedFollowingCrash ? "true" : "false"])
-        Defaults.launchedFollowingCrash = true //
+        Defaults.launchedFollowingCrash = true
+        Config.set(value: nil, forKey: Config.userExplictlyQuitApp)
         Accessibility.checkIfPermissionRevoked()
       
 //        AppMover.moveIfNecessary()
@@ -83,18 +91,9 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         
         TelemetryProvider.register()
         Accessibility.listen()
-      
-        SentrySDK.start { options in
-            options.dsn = "https://4544a50058a645f5a779ea0a78c9e7ec@o436453.ingest.sentry.io/5397687"
-            options.debug = false // Enabled debug when first installing is always helpful
-            options.logLevel = SentryLogLevel.verbose
-            options.enableAutoSessionTracking = true
-            options.attachStacktrace = true
-            options.sessionTrackingIntervalMillis = 5_000
-        }
                 
 //        updater?.checkForUpdateInformation()
-        updater?.delegate = self as SUUpdaterDelegate;
+//        updater?.delegate = self as SUUpdaterDelegate;
 //        updater?.checkForUpdateInformation()
         
 //        let domain = Bundle.main.bundleIdentifier!
@@ -104,10 +103,9 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 
         handleUpdateIfNeeded()
         Defaults.useAutocomplete = true
-        Defaults.deferToShellAutosuggestions = true
         Defaults.autocompleteVersion = "v6"
         Defaults.autocompleteWidth = 250
-        Defaults.ignoreProcessList = ["figcli", "gitstatusd-darwin-x86_64", "nc"]
+        Defaults.ignoreProcessList = ["figcli", "gitstatusd-darwin", "nc", "fig_pty", "starship", "figterm"]
 
         let hasLaunched = UserDefaults.standard.bool(forKey: "hasLaunched")
         let email = UserDefaults.standard.string(forKey: "userEmail")
@@ -117,6 +115,8 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             Defaults.build = .production
             Defaults.clearExistingLineOnTerminalInsert = true
             Defaults.showSidebar = false
+          
+            Config.set(value: "0", forKey: Config.userLoggedIn)
 //            Defaults.defaultActivePosition = .outsideRight
             
             let onboardingViewController = WebViewController()
@@ -139,6 +139,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             user.email = email
             SentrySDK.setUser(user)
             ShellBridge.symlinkCLI()
+            Config.set(value: "1", forKey: Config.userLoggedIn)
 
             
           if (!Accessibility.enabled) {
@@ -232,23 +233,19 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     }
   
     func warnToMoveToApplicationIfNecessary() {
-      let path = Bundle.main.bundlePath
-      if path.hasPrefix("Volumes/fig") {
-        //send a telemetry event
-        SentrySDK.capture(message: "Attempted to launch Fig from a DMG")
-        // warn and quit
-        let alert = NSAlert()
-        alert.messageText = "Attempting to Launch From a Removable Volume"
-        alert.informativeText = "Please move Fig to the /Applications folder and relaunch."
-        alert.alertStyle = .warning
-        let button = alert.addButton(withTitle: "Quit Fig")
-        button.highlight(true)
-        let response = alert.runModal()
-        if (response == .alertFirstButtonReturn) {
-          // TOOD: Move to Applications foler
-          exit(2)
-        }
+      if Diagnostic.isRunningOnReadOnlyVolume && !Defaults.loggedIn {
+        Alert.show(title: "Move to Applications folder",
+                   message: "Fig needs to be launched from your Applications folder in order to work properly.",
+                   okText: "Quit",
+                   icon: NSApp.applicationIconImage)
+        
+        NSApp.terminate(self)
+        
       }
+      
+      // Get rid of reference to DMG if it exists in LoginItems
+      let dmgAppURL = NSURL.fileURL(withPath: "/Volumes/Fig/Fig.app")
+      LoginItems.shared.removeURLIfExists(dmgAppURL)
     }
     
     func remindToSourceFigInExistingTerminals() {
@@ -405,14 +402,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
       keyEquivalent: "")
       statusInTitle.state = AutocompleteContextNotifier.addIndicatorToTitlebar ? .on : .off
       integrationsMenu.addItem(NSMenuItem.separator())
-      
-//      integrationsMenu.addItem(withTitle: "Integrations", action: nil, keyEquivalent: "")
-      
-      let zshPlugin = integrationsMenu.addItem(
-      withTitle: "Fish Autosuggest", //Defer to Shell Autosuggest
-      action: #selector(AppDelegate.toggleZshPlugin(_:)),
-      keyEquivalent: "")
-      zshPlugin.state = Defaults.deferToShellAutosuggestions ? .on : .off
       
       let itermIntegration = integrationsMenu.addItem(
       withTitle: "iTerm Integration",
@@ -593,10 +582,10 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
          action: #selector(AppDelegate.quit),
          keyEquivalent: "")
         
-        if (!Defaults.isProduction) {
+        if (!Defaults.isProduction || Defaults.beta) {
             statusBarMenu.addItem(NSMenuItem.separator())
             statusBarMenu.addItem(
-                withTitle: Defaults.build.rawValue,
+              withTitle: "\(Defaults.beta ? "[Beta] ":"")\(Defaults.build.rawValue)",
              action: nil,
              keyEquivalent: "")
         }
@@ -726,8 +715,13 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
                let (_, tty) = pair
                tty.setTitle("Restart this terminal to finish uninstalling Fig...")
             }
+          
+            var uninstallScriptFile: String? = "\(NSHomeDirectory())/.fig/tools/uninstall-script.sh"
+            if !FileManager.default.fileExists(atPath: uninstallScriptFile!) {
+               uninstallScriptFile = Bundle.main.path(forResource: "uninstall", ofType: "sh")
+            }
 
-            if let general = Bundle.main.path(forResource: "uninstall", ofType: "sh") {
+            if let general = uninstallScriptFile {
                 NSWorkspace.shared.open(URL(string: "https://fig.io/uninstall?email=\(Defaults.email ?? "")")!)
                 LoginItems.shared.currentApplicationShouldLaunchOnStartup = false
                 
@@ -1155,11 +1149,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             
         }
     
-    @objc func toggleZshPlugin(_ sender: NSMenuItem) {
-        Defaults.deferToShellAutosuggestions = !Defaults.deferToShellAutosuggestions
-        sender.state = Defaults.deferToShellAutosuggestions ? .on : .off
-    }
-    
     @objc func toggleFigIndicator(_ sender: NSMenuItem) {
         AutocompleteContextNotifier.addIndicatorToTitlebar = !AutocompleteContextNotifier.addIndicatorToTitlebar
         sender.state = AutocompleteContextNotifier.addIndicatorToTitlebar ? .on : .off
@@ -1224,7 +1213,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     }
     
     @objc func checkForUpdates() {
-        self.updater?.checkForUpdates(self)
+          self.updater.checkForUpdates(self)
 //        self.updater?.installUpdatesIfAvailable()
     }
     @objc func toggleVisibility() {
@@ -1257,6 +1246,8 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         if let statusbar = self.statusBarItem {
             NSStatusBar.system.removeStatusItem(statusbar)
         }
+      
+        Config.set(value: "1", forKey: Config.userExplictlyQuitApp)
         
         TelemetryProvider.track(event: .quitApp, with: [:]) { (_, _, _) in
             DispatchQueue.main.async {
@@ -1934,6 +1925,8 @@ extension AppDelegate : NSMenuDelegate {
                     break;
                   case .fish:
                     backing = "Fish Command Line"
+                  case .bash:
+                    backing = "Bash Command Line"
                   default:
                     backing = nil
                   }

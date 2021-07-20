@@ -42,12 +42,15 @@ class ShellHookTransport: UnixSocketServerDelegate {
               ShellHookManager.shared.updateKeybuffer(shellMessage, backing: .zle)
           case .fishKeybuffer:
               ShellHookManager.shared.updateKeybuffer(shellMessage, backing: .fish)
+          case .bashKeybuffer:
+              ShellHookManager.shared.updateKeybuffer(shellMessage, backing: .bash)
           case .ssh:
               ShellHookManager.shared.startedNewSSHConnection(shellMessage)
           case .vscode:
               ShellHookManager.shared.currentTabDidChange(shellMessage)
           case .hyper:
               ShellHookManager.shared.currentTabDidChange(shellMessage)
+          
           case .tmux:
               ShellHookManager.shared.tmuxPaneChanged(shellMessage)
           case .hide:
@@ -70,6 +73,7 @@ class ShellHookTransport: UnixSocketServerDelegate {
      case exec = "bg:exec"
      case ZSHKeybuffer = "bg:zsh-keybuffer"
      case fishKeybuffer = "bg:fish-keybuffer"
+     case bashKeybuffer = "bg:bash-keybuffer"
      case ssh = "bg:ssh"
      case vscode = "bg:vscode"
      case hyper = "bg:hyper"
@@ -77,10 +81,10 @@ class ShellHookTransport: UnixSocketServerDelegate {
      case hide = "bg:hide"
      case clearKeybuffer = "bg:clear-keybuffer"
     
-    func packetType() -> ShellMessage.PacketType {
+    func packetType(for version: Int = 0) -> ShellMessage.PacketType {
       switch self {
-        case .fishKeybuffer, .ZSHKeybuffer:
-          return .keypress
+        case .fishKeybuffer, .ZSHKeybuffer, .bashKeybuffer:
+          return version >= 4 ? .keypress : .legacyKeypress
         case .prompt, .initialize, .exec:
           return .shellhook
         default:
@@ -94,6 +98,7 @@ class ShellHookTransport: UnixSocketServerDelegate {
 extension ShellMessage {
   enum PacketType {
     case keypress
+    case legacyKeypress
     case shellhook
     case standard
   }
@@ -105,10 +110,38 @@ extension ShellMessage {
     let tokens: [String] = decodedString.split(separator: " ", maxSplits: Int.max, omittingEmptySubsequences: false).map(String.init)
     
     guard let subcommand = tokens[safe: 1],  let session = tokens[safe: 2], let integration = tokens[safe: 3] else { return nil }
-  
     
-    switch ShellHookTransport.Hook(rawValue: subcommand)?.packetType() {
+    let integrationNumber = Int(integration) ?? 0
+    
+    switch ShellHookTransport.Hook(rawValue: subcommand)?.packetType(for: integrationNumber) {
       case .keypress:
+        guard let tty = tokens[safe: 4],
+              let pid = tokens[safe: 5],
+              let histno = tokens[safe: 6],
+              let cursor = tokens[safe: 7] else { return nil }
+        // "this is the buffer"\n -- drop quotes and newline
+        var buffer = tokens.suffix(from: 8).joined(separator: " ")
+        if buffer.first == "\"" {
+          buffer.removeFirst()
+        }
+        
+        if buffer.last == "\n" {
+          buffer.removeLast()
+        }
+        
+        if buffer.last == "\"" {
+          buffer.removeLast()
+        }
+        
+        return ShellMessage(type: "pipe",
+                            source: "",
+                            session: String(session),
+                            env: "{\"FIG_INTEGRATION_VERSION\":\"\(integration)\",\"TTY\":\"\(tty)\",\"PID\":\"\(pid)\"}",
+                            io: nil,
+                            data: "",
+                            options: [String(subcommand), String(cursor), String(buffer), String(histno)],
+                            hook: subcommand)
+      case .legacyKeypress:
         guard let histno = tokens[safe: 4],
               let cursor = tokens[safe: 5] else { return nil }
         // "this is the buffer"\n -- drop quotes and newline

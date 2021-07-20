@@ -127,14 +127,20 @@ extension Dictionary where Value: Equatable {
 extension ShellHookManager {
     
   func keyboardFocusDidChange(to uuid: String, in window: ExternalWindow) {
-    let VSCodeTerminal = window.bundleId == Integrations.VSCode ||
-                         window.bundleId == Integrations.VSCodeInsiders
+    let isHyper = window.bundleId == Integrations.Hyper
     
     self.setActiveTab(uuid, for: window.windowId)
   
     // Manually ensuring that values set prior to tab are updated
     // Make sure oldHash is equal to whatever the default value of the hash would be
-    if (!VSCodeTerminal) {
+    // Why Hyper? Any terminal integration that reports the sessionId without waiting for
+    // the session to change, can be included here!
+    //
+    // Launched App                      Changed Tabs
+    // 123/%    123/abc%                   123/def%
+    // |-------->---------------------------->--------------------
+    //          SessionId for current Tab    SessionId for new tab
+    if isHyper {
       self.updateHashMetadata(oldHash: "\(window.windowId)/%", hash: window.hash)
     }
   
@@ -405,8 +411,33 @@ extension ShellHookManager {
           }
       
       
+      var ttyHandler: TTY? = tty[hash]
+      
+      // stop process if user is definitely in a shell process
+//      guard ttyHandler?.isShell != true else {
+//        return
+//      }
+      
+      if ttyHandler == nil,
+         let ttyDescriptor = info.env?.jsonStringToDict()?["TTY"] as? String,
+         let trimmedDescriptor = ttyDescriptor.split(separator: "/").last,
+         let pidString = info.env?.jsonStringToDict()?["PID"] as? String,
+         let pid = pid_t(pidString) {
+//        print("tty",  ?? "?")
+//        print("tty", info.env?.jsonStringToDict()?["PID"] ?? "?")
+//        ttyDescriptor.split(sep)
+          print("tty: linking")
+          ttyHandler = self.link(info.session, hash, String(trimmedDescriptor))
+        
+        ttyHandler?.startedNewShellSession(for: pid )
+        
+      }
+      
       // prevents fig window from popping up if we don't have an associated shell process
-      guard let tty = tty[hash], tty.isShell ?? false else {
+//      guard let tty = tty[hash], tty.isShell ?? false else {
+//        return
+//      }
+      guard let tty = ttyHandler else {
         return
       }
       
@@ -465,18 +496,30 @@ extension ShellHookManager {
     guard let window = AXWindowServer.shared.whitelistedWindow else { return }
     let oldHash =  window.hash
     
-    if let newPane = info.arguments[safe: 0], let (windowId, _, oldPane) = oldHash.components() {
+    if let newPane = info.arguments[safe: 0], let (windowId, sessionHash, oldPane) = oldHash.components() {
         
       if oldPane != nil {
         // user is switching between panes in tmux
         if newPane == "%" {
-          print("tmux: closing tmux session")
+          Logger.log(message: "closing tmux session", subsystem: .tmux)
+          
+          // Remove all associated panes by filtering out all panes with prefix
+          // corresponding to current window hash
+          let stalePrefix = "\(windowId)/\(sessionHash ?? "")%"
+          let staleWindowHashes = self.tty.keys.filter { $0.count > stalePrefix.count && $0.hasPrefix(stalePrefix) }
+            
+          Logger.log(message: "removing \(staleWindowHashes.count) stale window hashes", subsystem: .tmux)
+          
+          staleWindowHashes.forEach {
+            Logger.log(message: $0, subsystem: .tmux)
+            self.tty.removeValue(forKey: $0)
+          }
         } else {
-          print("tmux: user is switching between panes %\(oldPane!) -> \(newPane)")
+          Logger.log(message: "user is switching between panes %\(oldPane!) -> \(newPane)", subsystem: .tmux)
         }
 
       } else {
-        print("tmux: launched new session")
+        Logger.log(message: "launched new session", subsystem: .tmux)
       }
       
       setActivePane(newPane, for: windowId)

@@ -321,8 +321,17 @@ extension iTermIntegration: IntegrationProvider {
       return
     }
     
+    var cleanedVersion = version
+    if cleanedVersion.contains("-nightly") {
+      // remove nightly (3.4.20210701-nightly)
+      cleanedVersion = cleanedVersion.stringByReplacingFirstOccurrenceOfString("-nightly", withString: "")
+    } else if let range = cleanedVersion.range(of: "beta") {
+      // remove beta (3.4.9beta1)
+      cleanedVersion = String(cleanedVersion.prefix(upTo: range.lowerBound))
+    }
+    
     // Version Check
-    let semver = version.split(separator: ".").map { Int($0) }
+    let semver = cleanedVersion.split(separator: ".").map { Int($0) }.filter { $0 != nil }
     guard semver.count == 3 else {
       if !inBackground {
         Alert.show(title: "Could not install iTerm Integration",
@@ -355,7 +364,8 @@ extension iTermIntegration: IntegrationProvider {
     try? FileManager.default.createDirectory(at: URL(fileURLWithPath: iTermAutoLaunchDirectory),
                                              withIntermediateDirectories: true,
                                              attributes: nil)
-    
+    // Delete existing file (in case, it was setup by when app was launched from DMG)
+    try? FileManager.default.removeItem(atPath: autoLaunchScriptTarget)
     try? FileManager.default.createSymbolicLink(atPath: autoLaunchScriptTarget,
                                                 withDestinationPath: bundleAppleScriptFilePath)
   
@@ -388,7 +398,13 @@ extension iTermIntegration: IntegrationProvider {
       return false
     }
     
-    return symlinkDestination == bundleAppleScriptFilePath
+    guard let iTermDefaults = UserDefaults(suiteName: iTermBundleId) else {
+      return false
+    }
+    
+    let apiEnabled = iTermDefaults.bool(forKey: plistAPIEnabledKey)
+    
+    return symlinkDestination == bundleAppleScriptFilePath && apiEnabled
   }
   
   static func promptToInstall(completion: (()->Void)? = nil) {

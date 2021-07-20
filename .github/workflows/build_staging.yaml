@@ -31,9 +31,6 @@ jobs:
       - name: "Log Release Version"
         run: echo $VERSION
 
-      - name: "Install imagemagik for custom DMG image"
-        run: brew install graphicsmagick imagemagick
-
       - name: "Download Sparkle"
         run: curl -sOL https://github.com/sparkle-project/Sparkle/releases/download/1.24.0/Sparkle-1.24.0.tar.xz
       - name: "Unzip Sparkle"
@@ -70,7 +67,7 @@ jobs:
           echo $BUILD
       - name: "Commit Build number"
         run: |
-          git add .
+          git add fig.xcodeproj/project.pbxproj
           git commit -m "Bump build to $BUILD [skip ci]"
           git push origin staging
 
@@ -143,34 +140,39 @@ jobs:
         with:
           product-path: "Export/Fig.app"
 
+      - name: Install fileicon
+        run: HOMEBREW_NO_AUTO_UPDATE=1 brew install fileicon
       - name: Setup Node Environment
         uses: actions/setup-node@v1
-      - name: Install create-dmg
-        run: npm install --global create-dmg
-
+      - name: Install appdmg
+        run: npm install -g appdmg
       - name: Create DMG
-        run: create-dmg "Export/Fig.app"
+        run: appdmg ./dmg/dmg-spec.json "fig $BUILD.dmg"
+      - name: Update Fileicon
+        run: fileicon set "fig $BUILD.dmg" ./dmg/VolumeIcon.icns
+
+      # codesign dmg
+
       - name: Notarize DMG
         run: |
-          npx notarize-cli --file "fig $VERSION.dmg" --bundle-id com.mschrage.fig
+          npx notarize-cli --file "fig $BUILD.dmg" --bundle-id com.mschrage.fig
         env:
           NOTARIZE_USERNAME: ${{ secrets.NOTARIZE_USERNAME }}
           NOTARIZE_PASSWORD: ${{ secrets.NOTARIZE_PASSWORD }}
-      - name: Rename DMG
-        run: mv "fig $VERSION.dmg" fig.dmg
 
       - name: Add DMG to /releases
         run: |
           ls
           pwd
-          cp "fig $VERSION.dmg" ./versions
+          cp "fig $BUILD.dmg" ./versions
+          mv "fig $BUILD.dmg" fig.dmg
 
       - name: "Generate Appcast"
-        run: ./Sparkle/bin/generate_appcast -s $SPARKLE_KEY versions
+        run: ./Sparkle/bin/generate_appcast -s $SPARKLE_KEY --download-url-prefix https://beta.withfig.com versions
         env:
           SPARKLE_KEY: ${{ secrets.SPARKLE_SIGNING_KEY }}
       - name: Create fig@latest.dmg
-        run: cp "./versions/fig ${VERSION}.dmg" ./versions/fig@latest.dmg
+        run: cp "./versions/fig ${BUILD}.dmg" ./versions/fig@latest.dmg
       - name: Push Changes to withfig/versions
         run: |
           cd versions

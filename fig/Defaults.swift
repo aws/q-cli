@@ -31,7 +31,6 @@ class Defaults {
         set(value) {
             UserDefaults.standard.set(value.rawValue, forKey: "build")
             UserDefaults.standard.synchronize()
-            WindowManager.shared.createSidebar()
             WindowManager.shared.createAutocomplete()
             (NSApp.delegate as? AppDelegate)?.configureStatusBarItem()
 
@@ -197,19 +196,6 @@ class Defaults {
            
            set(flag) {
                UserDefaults.standard.set(flag, forKey: "playSoundWhenContextIsLost")
-               UserDefaults.standard.synchronize()
-           }
-
-       }
-    
-    static var deferToShellAutosuggestions: Bool {
-           get {
-               return
-                   UserDefaults.standard.bool(forKey: "zshAutosuggestionPlugin")
-           }
-           
-           set(flag) {
-               UserDefaults.standard.set(flag, forKey: "zshAutosuggestionPlugin")
                UserDefaults.standard.synchronize()
            }
 
@@ -445,6 +431,16 @@ class Defaults {
   
     @objc static func toggleDeveloperMode() {
       Defaults.developerModeEnabled = !Defaults.developerModeEnabled
+    }
+  
+    static var beta: Bool {
+      get {
+        return Settings.shared.getValue(forKey: Settings.beta) as? Bool ?? false
+      }
+      
+      set (enabled) {
+        Settings.shared.set(value: enabled, forKey: Settings.beta)
+      }
     }
   
     static var telemetryDisabled: Bool {
