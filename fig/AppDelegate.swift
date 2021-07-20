@@ -105,7 +105,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         Defaults.useAutocomplete = true
         Defaults.autocompleteVersion = "v6"
         Defaults.autocompleteWidth = 250
-        Defaults.ignoreProcessList = ["figcli", "gitstatusd-darwin", "nc", "fig_pty", "starship", "figterm"]
+        Defaults.ignoreProcessList = ["figcli", "gitstatusd-darwin-x86_64", "gitstatusd-darwin-arm64", "nc", "fig_pty", "starship", "figterm"]
 
         let hasLaunched = UserDefaults.standard.bool(forKey: "hasLaunched")
         let email = UserDefaults.standard.string(forKey: "userEmail")
