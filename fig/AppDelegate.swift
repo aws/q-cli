@@ -233,7 +233,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     }
   
     func warnToMoveToApplicationIfNecessary() {
-      if Diagnostic.isRunningOnReadOnlyVolume {
+      if Diagnostic.isRunningOnReadOnlyVolume && !Defaults.loggedIn {
         Alert.show(title: "Move to Applications folder",
                    message: "Fig needs to be launched from your Applications folder in order to work properly.",
                    okText: "Quit",
