@@ -67,8 +67,14 @@ class WebViewController: NSViewController, NSWindowDelegate {
                 webView!.rightAnchor.constraint(equalTo: view.rightAnchor)
             ])
         }
+      
+        NotificationCenter.default.addObserver(self, selector: #selector(settingsUpdated), name: Settings.settingsUpdatedNotification, object: nil)
 
 
+    }
+  
+    deinit {
+      NotificationCenter.default.removeObserver(self)
     }
     
     required init?(coder: NSCoder) {
@@ -185,60 +191,6 @@ class WebViewController: NSViewController, NSWindowDelegate {
 
 //        self.webView?.reload()
         print("resize")
-    }
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        
-        print("viewDidLoad")
-        
-        if (self.webView == nil) {
-            let settings = WebBridge.shared.configure(WKWebViewConfiguration())
-
-            webView = WebView(frame: .zero, configuration: settings)
-        }
-
-        
-        NotificationCenter.default.addObserver(self, selector: #selector(recievedDataFromPipe(_:)), name: .recievedDataFromPipe, object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(recievedStdoutFromTerminal(_:)), name: .recievedStdoutFromTerminal, object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(recievedUserInputFromTerminal(_:)), name: .recievedUserInputFromTerminal, object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(recievedDataFromPty(_:)), name: .recievedDataFromPty, object: nil)
-        
-//        NotificationCenter.default.addObserver(self, selector: #selector(insertCommandInTerminal(_:)), name: .insertCommandInTerminal, object: nil)
-//        NotificationCenter.default.addObserver(self, selector: #selector(executeCommandInTerminal(_:)), name: .executeCommandInTerminal, object: nil)
-        
-        NotificationCenter.default.addObserver(self, selector: #selector(windowDidResize(_:)), name: NSWindow.didResizeNotification, object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(viewFrameResized), name:NSView.frameDidChangeNotification, object: self.view)
-        NotificationCenter.default.addObserver(self, selector: #selector(viewFrameResized), name:NSView.boundsDidChangeNotification, object: self.view)
-        NotificationCenter.default.addObserver(self, selector: #selector(overlayDidBecomeIcon), name:.overlayDidBecomeIcon, object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(overlayDidBecomeMain), name:.overlayDidBecomeMain, object: nil)
-        // TIMER to UPDATE INNER VIEW EVERY x INTERVAL
-        
-        NotificationCenter.default.addObserver(self, selector: #selector(settingsUpdated), name: Settings.settingsUpdatedNotification, object: nil)
-
-        
-        view.window?.delegate = self
-//        webView = WKWebView(frame: self.view.window?.frame ?? .zero)
-//        webView.ba
-        webView?.translatesAutoresizingMaskIntoConstraints = false
-
-        webView?.uiDelegate = self
-        webView?.navigationDelegate = self
-        
-        if (UserDefaults.standard.string(forKey: "debugMode") != "enabled") {
-            NSLayoutConstraint.activate([
-                webView!.topAnchor.constraint(equalTo: view.topAnchor),
-                webView!.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-                webView!.leftAnchor.constraint(equalTo: view.leftAnchor),
-                webView!.rightAnchor.constraint(equalTo: view.rightAnchor)
-            ])
-        }
-//
-        self.view.addSubview(self.icon)
-        self.icon.isHidden = true;
-
-//        webView?.bindFrameToSuperviewBounds()
-        
     }
     
     @objc func overlayDidBecomeIcon() {
