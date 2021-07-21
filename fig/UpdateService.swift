@@ -161,7 +161,11 @@ class UpdateService: NSObject {
   func installUpdateIfAvailible() {
     if self.updateIsAvailable {
       // since the update is already downloaded, restarting the app should apply it.
-      NSApp.appDelegate.restart()
+      if Defaults.updateByQuiting {
+        NSApp.terminate(nil)
+      } else {
+        NSApp.appDelegate.restart()
+      }
     }
   }
   
@@ -208,7 +212,7 @@ extension UpdateService: SUUpdaterDelegate {
   func updater(_ updater: SUUpdater, willExtractUpdate item: SUAppcastItem) {
     UpdateService.log("will extract update (\(item.displayVersionString ?? "?" ))")
   }
-      
+
   func updater(_ updater: SUUpdater,
                willInstallUpdateOnQuit item: SUAppcastItem,
                immediateInstallationBlock installationBlock: @escaping () -> Void) {
