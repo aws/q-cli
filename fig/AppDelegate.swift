@@ -244,8 +244,8 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
       }
       
       // Get rid of reference to DMG if it exists in LoginItems
-      let dmgAppURL = NSURL.fileURL(withPath: "/Volumes/Fig/Fig.app")
-      LoginItems.shared.removeURLIfExists(dmgAppURL)
+      // let dmgAppURL = NSURL.fileURL(withPath: "/Volumes/Fig/Fig.app")
+      // LoginItems.shared.removeURLIfExists(dmgAppURL)
     }
     
     func remindToSourceFigInExistingTerminals() {
