@@ -26,11 +26,11 @@ class UpdateService: NSObject {
     self.sparkle.delegate = self
 
     // https://github.com/sparkle-project/Sparkle/issues/1047
-    UserDefaults.standard.set(true, forKey: "SUAtomaticallyUpdate")
+    UserDefaults.standard.set(true, forKey: "SUAutomaticallyUpdate")
+    UserDefaults.standard.synchronize()
     self.sparkle.automaticallyDownloadsUpdates = true
     self.sparkle.automaticallyChecksForUpdates = true
-    
-    self.sparkle.checkForUpdateInformation()
+    self.sparkle.checkForUpdatesInBackground()
     
     NotificationCenter.default.addObserver(self,
                                            selector: #selector(settingsDidChange),
@@ -153,6 +153,15 @@ extension UpdateService: SUUpdaterDelegate {
     UpdateService.log("did download update (\(item.displayVersionString ?? "?" ))")
   }
   
+  func updater(_ updater: SUUpdater, willDownloadUpdate item: SUAppcastItem, with request: NSMutableURLRequest) {
+    UpdateService.log("will download update (\(item.displayVersionString ?? "?" ))")
+
+  }
+  
+  func updater(_ updater: SUUpdater, failedToDownloadUpdate item: SUAppcastItem, error: Error) {
+    UpdateService.log("failed to download update: \(error.localizedDescription)")
+  }
+  
   func updaterDidNotFindUpdate(_ updater: SUUpdater) {
     self.update = nil
     UpdateService.log("did not find update")
@@ -167,7 +176,25 @@ extension UpdateService: SUUpdaterDelegate {
   }
   
   func updater(_ updater: SUUpdater, didFindValidUpdate item: SUAppcastItem) {
-    self.update = item
-    UpdateService.log("found valid update (\(self.updateVersion ?? "?" ))")
+    UpdateService.log("found valid update (\(item.displayVersionString ?? "?" ))")
+    self.sparkle.checkForUpdatesInBackground()
+
   }
+  
+  func updater(_ updater: SUUpdater, didAbortWithError error: Error) {
+    UpdateService.log("did abort with error: \(error.localizedDescription)")
+  }
+  
+  func updater(_ updater: SUUpdater, willExtractUpdate item: SUAppcastItem) {
+    UpdateService.log("will extract update (\(item.displayVersionString ?? "?" ))")
+  }
+      
+  func updater(_ updater: SUUpdater,
+               willInstallUpdateOnQuit item: SUAppcastItem,
+               immediateInstallationBlock installationBlock: @escaping () -> Void) {
+    self.update = item
+    UpdateService.log("ready to apply update (\(self.updateVersion ?? "?" ))")
+
+  }
+  
 }

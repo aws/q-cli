@@ -838,7 +838,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         task.launchPath = "/usr/bin/open"
         task.arguments = [path]
         task.launch()
-        exit(0)
+        NSApp.terminate(self)
     }
 
     
@@ -1294,7 +1294,8 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         ShellBridge.shared.stopWebSocketServer()
         Defaults.launchedFollowingCrash = false
         AutocompleteContextNotifier.clearFigContext()
-
+        
+        Logger.log(message: "app will terminate...")
     }
     
     @objc func runScriptCmd() {
