@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
   if (debug) printf("Sending '%s' over unix socket!\n", tmpbuf);
 
   // send to macOS app over unix socket
-  fig_socket_send(tmpbuf);
+  fig_socket_send(strcat(tmpbuf, "\n"));
   free(tmpbuf);
 
 }
