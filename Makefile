@@ -26,8 +26,14 @@ fig_get_shell_x86: get_shell.c
 fig_get_shell: fig_get_shell_x86 fig_get_shell_arm
 	lipo -create -output fig_get_shell fig_get_shell_x86 fig_get_shell_arm
 
-fig_callback_x86: callback.c $(LIBFIG)
-	$(CC) callback.c $(CFLAGS) -o fig_callback_x86 $(LDFLAGS) $(LDLIBS) -target x86_64-apple-macos10.12
+fig_callback-arm: callback.c util.c $(LIBFIG)
+	$(CC) callback.c util.c $(CFLAGS) -o fig_callback-arm $(LDFLAGS) $(LDLIBS) -target arm64-apple-macos11
+
+fig_callback-x86: callback.c util.c $(LIBFIG)
+	$(CC) callback.c util.c $(CFLAGS) -o fig_callback-x86 $(LDFLAGS) $(LDLIBS) -target x86_64-apple-macos10.12
+
+fig_callback: fig_callback-x86 fig_callback-arm
+	lipo -create -output fig_callback fig_callback-x86 fig_callback-arm
 
 install: all
 	mkdir -p $(HOME)/.fig/bin; \
