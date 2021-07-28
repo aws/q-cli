@@ -252,13 +252,20 @@ let setup = function(window) {
               window.webkit.messageHandlers.ptyHandler.postMessage({env, type: 'init'});
           },
           execute(cmd, handler) {
-              let handlerId = `${random_identifier(5)}:pty`
+              let handlerId = `${random_identifier(5)}`
               fig[handlerId] = handler
               window.webkit.messageHandlers.ptyHandler.postMessage({handlerId, cmd, type: 'execute'});
 
           },
+        
+          shell(cmd, handler) {
+              let handlerId = `${random_identifier(5)}`
+              fig[handlerId] = handler
+              window.webkit.messageHandlers.ptyHandler.postMessage({handlerId, cmd, type: 'shell'});
+
+          },
           stream(cmd, handler) {
-              let handlerId = `${random_identifier(5)}:pty`
+              let handlerId = `${random_identifier(5)}`
               fig[handlerId] = handler
               window.webkit.messageHandlers.ptyHandler.postMessage({handlerId, cmd, type: 'stream'});
           },
