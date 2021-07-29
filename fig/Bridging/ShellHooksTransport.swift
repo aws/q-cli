@@ -50,7 +50,11 @@ class ShellHookTransport: UnixSocketServerDelegate {
               ShellHookManager.shared.currentTabDidChange(shellMessage)
           case .hyper:
               ShellHookManager.shared.currentTabDidChange(shellMessage)
-          
+          case .callback:
+            NotificationCenter.default.post(name: PseudoTerminal.recievedCallbackNotification,
+                                            object: [
+                                              "handlerId" : shellMessage.options?[0] ?? nil,
+                                              "filepath"  : shellMessage.options?[1] ?? nil ])
           case .tmux:
               ShellHookManager.shared.tmuxPaneChanged(shellMessage)
           case .hide:
@@ -80,13 +84,16 @@ class ShellHookTransport: UnixSocketServerDelegate {
      case tmux = "bg:tmux"
      case hide = "bg:hide"
      case clearKeybuffer = "bg:clear-keybuffer"
-    
+     case callback = "pty:callback"
+
     func packetType(for version: Int = 0) -> ShellMessage.PacketType {
       switch self {
         case .fishKeybuffer, .ZSHKeybuffer, .bashKeybuffer:
           return version >= 4 ? .keypress : .legacyKeypress
         case .prompt, .initialize, .exec:
           return .shellhook
+        case .callback:
+          return .callback
         default:
           return .standard
       }
@@ -101,11 +108,20 @@ extension ShellMessage {
     case legacyKeypress
     case shellhook
     case standard
+    case callback
+  }
+  
+  static func callback(raw: String) -> [String: String]? {
+    guard let decodedData = Data(base64Encoded: raw, options: .ignoreUnknownCharacters),
+          let decodedString = String(data: decodedData, encoding: .utf8) else { return nil }
+    let tokens: [String] = decodedString.split(separator: " ", maxSplits: Int.max, omittingEmptySubsequences: false).map(String.init)
+    
+    return ["handlerId" : tokens[1], "filepath" : tokens[2]]
   }
   
   static func from(raw: String) -> ShellMessage? {
     guard let decodedData = Data(base64Encoded: raw, options: .ignoreUnknownCharacters),
-          let decodedString = String(data: decodedData, encoding: .utf8) else { return nil }
+          let decodedString = String(data: decodedData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) else { return nil }
     print("unix: '\(decodedString)'")
     let tokens: [String] = decodedString.split(separator: " ", maxSplits: Int.max, omittingEmptySubsequences: false).map(String.init)
     
@@ -114,6 +130,15 @@ extension ShellMessage {
     let integrationNumber = Int(integration) ?? 0
     
     switch ShellHookTransport.Hook(rawValue: subcommand)?.packetType(for: integrationNumber) {
+      case .callback:
+        return ShellMessage(type: "pipe",
+                            source: "",
+                            session: "",
+                            env: "",
+                            io: nil,
+                            data: "",
+                            options: [String(session), String(integration) ],
+                            hook: subcommand)
       case .keypress:
         guard let tty = tokens[safe: 4],
               let pid = tokens[safe: 5],

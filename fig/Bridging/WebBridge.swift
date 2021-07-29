@@ -1380,6 +1380,11 @@ extension WebBridge {
                         let handlerId = params["handlerId"] {
                         controller.pty.execute(command: cmd, handlerId: handlerId)
                     }
+                case "shell":
+                    if let cmd = params["cmd"],
+                        let handlerId = params["handlerId"] {
+                        controller.pty.shell(command: cmd, handlerId: handlerId)
+                    }
                 case "write":
                     if let cmd = params["cmd"] {
                         if let code = ControlCode(rawValue:cmd) {
