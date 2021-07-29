@@ -37,6 +37,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             options.enableAutoSessionTracking = true
             options.attachStacktrace = true
             options.sessionTrackingIntervalMillis = 5_000
+            options.enabled = !Defaults.telemetryDisabled
         }
         warnToMoveToApplicationIfNecessary()
         
