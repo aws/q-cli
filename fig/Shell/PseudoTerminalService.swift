@@ -132,8 +132,20 @@ class PseudoTerminal : PseudoTerminalService {
         }
       })
       
-      let command = variablesToUpdate.keys.map { "export \($0)='\(variablesToUpdate[$0] ?? "")'" }.joined(separator: "\r")
-      self.write(command: command + "\r", control: nil)
+      let command = variablesToUpdate.keys.map { "export \($0)='\(variablesToUpdate[$0] ?? "")'" }.joined(separator: "\n")
+      
+      let tmpFile = "\(NSTemporaryDirectory())/fig_source_env"
+      Logger.log(message: "Writing new ENV vars to '\(tmpFile)'", subsystem: .pty)
+
+      do {
+        
+        try command.write(toFile: tmpFile,
+                      atomically: true,
+                      encoding: .utf8)
+        sourceFile(at: tmpFile)
+      } catch {
+        Logger.log(message: "could not source ENV vars from '\(tmpFile)'", subsystem: .pty)
+      }
     }
   
     @objc func recievedCallbackNotification(_ notification: Notification) {
