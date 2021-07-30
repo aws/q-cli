@@ -70,6 +70,7 @@ class NativeCLI {
         case discord = "discord"
         case viewLogs = "debug:log"
         case symlinkCLI = "util:symlink-cli"
+        case loginItems = "util:login-items"
 
         var isUtility: Bool {
             get {
@@ -118,6 +119,7 @@ class NativeCLI {
                                                            .viewLogs,
                                                            .updateApp,
                                                            .symlinkCLI,
+                                                           .loginItems,
                                                            .docs]
                return implementatedNatively.contains(self)
             }
@@ -192,6 +194,8 @@ class NativeCLI {
               NativeCLI.updateAppCommand(scope)
             case .symlinkCLI:
               NativeCLI.symlinkCLICommand(scope)
+            case .loginItems:
+              NativeCLI.updateLoginItemCommand(scope)
             default:
                 break;
             }
@@ -591,6 +595,24 @@ extension NativeCLI {
       Onboarding.setUpEnviroment()
     }
   
+    static func updateLoginItemCommand(_ scope: Scope) {
+        let (message, connection) = scope
+        let command = message.arguments.first ?? ""
+        
+        switch command {
+            case "--remove":
+                LoginItems.shared.currentApplicationShouldLaunchOnStartup = false
+                NativeCLI.printInTerminal("\n› Removing Fig from LoginItems\n", using: connection)
+            case "--add":
+                LoginItems.shared.currentApplicationShouldLaunchOnStartup = true
+                NativeCLI.printInTerminal("\n› Adding Fig to LoginItems\n", using: connection)
+            default:
+                NativeCLI.printInTerminal("\(LoginItems.shared.currentApplicationShouldLaunchOnStartup ? "true" : "false")", using: connection)
+
+        }
+    }
+    
+    
     static func lockscreenCommand(_ scope: Scope) {
       let (_, connection) = scope
 
