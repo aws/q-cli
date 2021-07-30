@@ -39,7 +39,10 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             options.sessionTrackingIntervalMillis = 5_000
         }
         warnToMoveToApplicationIfNecessary()
-        
+      
+        // Set timeout to avoid hanging misbehaving 3rd party apps
+        Accessibility.setGlobalTimeout(seconds: 0.5)
+
         if let hideMenuBar = Settings.shared.getValue(forKey: Settings.hideMenubarIcon) as? Bool, hideMenuBar {
           print("Not showing menubarIcon because of \(Settings.hideMenubarIcon)")
         } else {

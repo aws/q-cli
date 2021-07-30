@@ -457,5 +457,13 @@ class Accessibility {
   fileprivate static func xtermLog(_ message: String){
     Logger.log(message: message, subsystem: .xtermCursor)
   }
+  
+  static func setGlobalTimeout(seconds: Float) {
+    let result = AXUIElementSetMessagingTimeout(AXUIElementCreateSystemWide(), seconds)
+    
+    if result != .success {
+      SentrySDK.capture(message: "Error setting AX global timeout")
+    }
+  }
 }
 
