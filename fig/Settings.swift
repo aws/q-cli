@@ -206,6 +206,13 @@ class Settings {
                                   ["telemetry": currentTelemetryStatus ? "off" : "on"],
                                  shouldIgnoreTelemetryPreferences: true)
     }
+    
+    let priorLaunchAtLoginPreference = prev[Settings.launchOnStartupKey] as? Bool ?? true
+    let currentLaunchAtLoginPreference = curr[Settings.launchOnStartupKey] as? Bool ?? true
+
+    if priorLaunchAtLoginPreference != currentLaunchAtLoginPreference {
+        LoginItems.shared.currentApplicationShouldLaunchOnStartup = currentLaunchAtLoginPreference
+    }
   }
   
   static let settingsUpdatedNotification = Notification.Name("settingsUpdated")
