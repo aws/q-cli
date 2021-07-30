@@ -5,3 +5,4 @@ lib/*.a
 figterm*
 .DS_Store
 libvterm
+fig_*

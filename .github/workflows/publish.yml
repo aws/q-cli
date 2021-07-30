@@ -26,7 +26,7 @@ jobs:
           cd config
           git checkout main
           mkdir -p bin
-          cp ../figterm ../fig_get_shell bin
+          cp ../figterm ../fig_get_shell ../fig_callback bin
           git add .
           git diff-index --quiet HEAD || git commit -m "Automatic publish from figterm repository"
           git push

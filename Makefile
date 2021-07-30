@@ -4,7 +4,7 @@ include $(ROOT)/Makefile.shared
 LIBFIG=$(ROOT)/lib/libfig.a
 LIBVTERM=$(ROOT)/lib/libvterm.a
 
-PROGS =	figterm fig_get_shell
+PROGS =	figterm fig_get_shell fig_callback
 
 all:	$(PROGS)
 
@@ -17,7 +17,7 @@ figterm-x86: main.c figterm.c screen.c util.c $(LIBVTERM) $(LIBFIG)
 figterm: figterm-x86 figterm-arm
 	lipo -create -output figterm figterm-x86 figterm-arm
 
-fig_get_shell_arm: get_shell.o
+fig_get_shell_arm: get_shell.c
 	$(CC) get_shell.c $(CFLAGS) -o fig_get_shell_arm -target arm64-apple-macos11
 
 fig_get_shell_x86: get_shell.c
@@ -25,6 +25,15 @@ fig_get_shell_x86: get_shell.c
 
 fig_get_shell: fig_get_shell_x86 fig_get_shell_arm
 	lipo -create -output fig_get_shell fig_get_shell_x86 fig_get_shell_arm
+
+fig_callback-arm: callback.c util.c $(LIBFIG)
+	$(CC) callback.c util.c $(CFLAGS) -o fig_callback-arm $(LDFLAGS) $(LDLIBS) -target arm64-apple-macos11
+
+fig_callback-x86: callback.c util.c $(LIBFIG)
+	$(CC) callback.c util.c $(CFLAGS) -o fig_callback-x86 $(LDFLAGS) $(LDLIBS) -target x86_64-apple-macos10.12
+
+fig_callback: fig_callback-x86 fig_callback-arm
+	lipo -create -output fig_callback fig_callback-x86 fig_callback-arm
 
 install: all
 	mkdir -p $(HOME)/.fig/bin; \
