@@ -45,7 +45,7 @@ class Settings {
   static let colorfulLogging = "developer.logging.color"
   static let beta = "app.beta"
   static let shellIntegrationIsManagedByUser = "integrations.shell.managedByUser"
-
+  static let theme = "autocomplete.theme"
 
   static let filePath = NSHomeDirectory() + "/.fig/settings.json"
   static let shared = Settings()
