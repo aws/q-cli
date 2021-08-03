@@ -17,7 +17,7 @@ int main(int argc, char *argv[]) {
     exit(1);
   }
 
-  if (strcmp(argv[1], "-v") || strcmp(argv[1], "--version")) {
+  if (strcmp(argv[1], "-v") == 0 || strcmp(argv[1], "--version") == 0) {
     printf("%i\n", VERSION_NUMBER);
     exit(0);
   }
