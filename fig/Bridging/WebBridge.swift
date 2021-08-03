@@ -1380,7 +1380,7 @@ extension WebBridge {
                         let handlerId = params["handlerId"] {
                         
                         var asBackgroundJob: Bool = true
-                        var asPipeline: Bool = true
+                        var asPipeline: Bool = false
 
                         if let options = params["options"],
                            let parsedOptions = options.jsonStringToDict() {
