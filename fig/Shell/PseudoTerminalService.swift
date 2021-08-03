@@ -25,7 +25,7 @@ protocol PseudoTerminalService {
     
     func start(with env: [String: String])
     func write(command: String, control: ControlCode?)
-    func execute(command: String, handlerId:String)
+    func execute(command: String, handlerId:String, asBackgroundJob: Bool, asPipeline: Bool)
     func stream(command: String, handlerId:String)
     func close()
     
@@ -51,7 +51,7 @@ class PseudoTerminalHelper {
           self.executeHandlers[id] = handler
         }
         print("pty: Executing command with PTY Service '\(command)'. Output Id = \(id).")
-        pty.execute(command: command, handlerId: id)
+        pty.execute(command: command, handlerId: id, asBackgroundJob: true, asPipeline: false)
     }
     
     func start(with env: [String : String]) {
@@ -134,7 +134,7 @@ class PseudoTerminal : PseudoTerminalService {
       
       let command = variablesToUpdate.keys.map { "export \($0)='\(variablesToUpdate[$0] ?? "")'" }.joined(separator: "\n")
       
-      let tmpFile = "\(NSTemporaryDirectory())/fig_source_env"
+      let tmpFile = NSTemporaryDirectory().appending("fig_source_env")
       Logger.log(message: "Writing new ENV vars to '\(tmpFile)'", subsystem: .pty)
 
       do {
@@ -155,8 +155,12 @@ class PseudoTerminal : PseudoTerminalService {
             let pathToFile = info["filepath"] else {
         return
       }
-      
+      guard executeHandlers.contains(handlerId) else {
+        return
+      }
+
       PseudoTerminal.log("callback for \(handlerId) with output at \(pathToFile)")
+      executeHandlers.remove(handlerId)
 
       if let delegate = self.delegate,
          let data = FileManager.default.contents(atPath: pathToFile) {
@@ -251,9 +255,32 @@ class PseudoTerminal : PseudoTerminalService {
       PseudoTerminal.log("Execute PTY command: \(command) \(pty.process.running) \(pty.process.delegate)")
     }
   
-    func execute(command: String, handlerId: String) {
-      let tmpFilepath = "/tmp/\(handlerId)"
-      pty.send("( \(command) )> \(tmpFilepath) && fig_callback \(handlerId) \(tmpFilepath) &\r")
+    static let callbackExecutable = "\(NSHomeDirectory())/.fig/bin/fig_callback"
+    func execute(command: String,
+                 handlerId: String,
+                 asBackgroundJob: Bool,
+                 asPipeline: Bool) {
+      
+      executeHandlers.insert(handlerId)
+
+      var commandToRun: String
+      
+      if asPipeline {
+        commandToRun = "\(command) | \(PseudoTerminal.callbackExecutable) \(handlerId)"
+      } else {
+        let tmpFilepath = "/tmp/\(handlerId)"
+        commandToRun = "( \(command) )> \(tmpFilepath) && \(PseudoTerminal.callbackExecutable) \(handlerId) \(tmpFilepath)"
+
+      }
+      
+      if asBackgroundJob {
+        commandToRun.append(" &")
+      }
+      
+      commandToRun.append("\r")
+      
+      pty.send(commandToRun)
+
       PseudoTerminal.log("Execute PTY command: \(command) \(pty.process.running) \(pty.process.delegate)")
     }
     

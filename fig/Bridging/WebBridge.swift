@@ -1378,7 +1378,18 @@ extension WebBridge {
                 case "execute":
                     if let cmd = params["cmd"],
                         let handlerId = params["handlerId"] {
-                        controller.pty.execute(command: cmd, handlerId: handlerId)
+                        
+                        var asBackgroundJob: Bool = true
+                        var asPipeline: Bool = true
+
+                        if let options = params["options"],
+                           let parsedOptions = options.jsonStringToDict() {
+                            
+                          asBackgroundJob = parsedOptions["backgroundJob"] as? Bool ?? asBackgroundJob
+                          asPipeline = parsedOptions["pipeline"] as? Bool ?? asPipeline
+                          
+                        }
+                      controller.pty.execute(command: cmd, handlerId: handlerId, asBackgroundJob: asBackgroundJob, asPipeline: asPipeline)
                     }
                 case "shell":
                     if let cmd = params["cmd"],

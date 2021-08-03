@@ -251,10 +251,10 @@ let setup = function(window) {
               let env = JSON.stringify(fig.env)
               window.webkit.messageHandlers.ptyHandler.postMessage({env, type: 'init'});
           },
-          execute(cmd, handler) {
+          execute(cmd, options, handler) {
               let handlerId = `${random_identifier(5)}`
               fig[handlerId] = handler
-              window.webkit.messageHandlers.ptyHandler.postMessage({handlerId, cmd, type: 'execute'});
+              window.webkit.messageHandlers.ptyHandler.postMessage({handlerId, cmd, type: 'execute', options: JSON.stringify(options)});
 
           },
         
