@@ -282,6 +282,7 @@ class PseudoTerminal : PseudoTerminalService {
       pty.send(commandToRun)
 
       PseudoTerminal.log("Execute PTY command: \(command) \(pty.process.running) \(pty.process.delegate)")
+        PseudoTerminal.log(commandToRun)
     }
     
     let streamDelimeter = "================="
