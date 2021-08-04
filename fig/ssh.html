@@ -97,7 +97,7 @@
             }
 
         .section {
-            margin-top:30px;
+            margin-top:25px;
 
             /* margin-left: 50px; */
         }
@@ -165,7 +165,7 @@
         #skip {
             color: #ccc;
             margin: 5px;
-            font-size: 0.85em;
+            font-size: 1em;
             text-align: center;
             width: 100px;
             margin-left: auto;
@@ -215,6 +215,10 @@
         from { opacity: 0; }
         to   { opacity: 1; }
     }
+        
+    sup {
+        color: #0984e3;
+    }
     </style>
 </head>
 
@@ -222,7 +226,7 @@
     <div class="wrapper">
         <section>
             <div class="section">
-                <span class="title" href="javascript:ssh()" id="permissions">Setup SSH Integration</span>
+                <span class="title" href="javascript:ssh()" id="permissions">Set up SSH Integration<sup>beta</sup></span>
                 <p style = " color: #5e5e5e">Fig will make changes to your SSH config (stored in <span class = "code" figdisabled = "true">~/.ssh/config</span>).</p>
                 <details>
                 <summary>How does it work?</summary>
@@ -238,7 +242,7 @@
     PermitLocalCommand yes
     LocalCommand fig bg:ssh ~/.ssh/%C &
 </pre>
-
+                <p>You can disable this at any time by editing your <span class = "code" figdisabled = "true">~/.ssh/config</span> file and removing the integration.</p>
                 </details>
                 <br>
                 <div class="video-mask">
@@ -250,8 +254,10 @@
                 <div class = "button">
                     <a id = "enable" href="javascript:ssh()">Install</a>
                 </div>
+<!--                <div class = "button">-->
+<!--                    <a href="javascript:skip()">Skip</a>-->
+<!--                </div>-->
                 <a id = "skip" href="javascript:skip()">Maybe later</a>
-
             </div>
         </section>
 

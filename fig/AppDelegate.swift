@@ -375,15 +375,23 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
       
         statusBarMenu.addItem(NSMenuItem.separator())
 
-      
+        statusBarMenu.addItem(NSMenuItem.separator())
+        let issue = statusBarMenu.addItem(
+         withTitle: "Report a bug...",
+         action: #selector(AppDelegate.sendFeedback),
+         keyEquivalent: "")
+        issue.image = NSImage(imageLiteralResourceName: "github")
+        
         let forum = statusBarMenu.addItem(
          withTitle: "Support Guide",
          action: #selector(AppDelegate.viewSupportForum),
          keyEquivalent: "")
         forum.image = NSImage(named: NSImage.Name("commandkey"))
-    
+        
+        statusBarMenu.addItem(NSMenuItem.separator())
+
         statusBarMenu.addItem(
-        withTitle: "Quit",
+        withTitle: "Quit Fig",
         action:  #selector(AppDelegate.quit),
         keyEquivalent: "")
       
