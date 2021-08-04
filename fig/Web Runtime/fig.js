@@ -254,6 +254,7 @@ let setup = function(window) {
           execute(cmd, options, handler) {
               let handlerId = `${random_identifier(5)}`
               fig[handlerId] = handler
+              options = options || {}
               window.webkit.messageHandlers.ptyHandler.postMessage({handlerId, cmd, type: 'execute', options: JSON.stringify(options)});
 
           },
