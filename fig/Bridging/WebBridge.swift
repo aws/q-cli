@@ -1386,7 +1386,7 @@ extension WebBridge {
                            let parsedOptions = options.jsonStringToDict() {
                             
                           asBackgroundJob = parsedOptions["backgroundJob"] as? Bool ?? asBackgroundJob
-                          asPipeline = parsedOptions["pipeline"] as? Bool ?? asPipeline
+                          asPipeline = parsedOptions["pipelined"] as? Bool ?? asPipeline
                           
                         }
                       controller.pty.execute(command: cmd, handlerId: handlerId, asBackgroundJob: asBackgroundJob, asPipeline: asPipeline)

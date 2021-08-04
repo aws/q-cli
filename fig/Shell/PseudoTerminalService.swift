@@ -281,7 +281,7 @@ class PseudoTerminal : PseudoTerminalService {
       
       pty.send(commandToRun)
 
-      PseudoTerminal.log("Execute PTY command: \(command) \(pty.process.running) \(pty.process.delegate)")
+        PseudoTerminal.log("Running '\(command)' \(asPipeline ? "as pipeline" : "")\( asBackgroundJob ? " in background" : "")")
         PseudoTerminal.log(commandToRun)
     }
     
