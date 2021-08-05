@@ -400,13 +400,16 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     func integrationsMenu() -> NSMenu {
       let integrationsMenu = NSMenu(title: "fig")
 
-      let statusInTitle = integrationsMenu.addItem(
-      withTitle: "Show '☑ fig' in Terminal",
-      action: #selector(AppDelegate.toggleFigIndicator(_:)),
-      keyEquivalent: "")
-      statusInTitle.state = AutocompleteContextNotifier.addIndicatorToTitlebar ? .on : .off
-      integrationsMenu.addItem(NSMenuItem.separator())
-      
+        // todo(mschrage): Renable when we can set the title using bi-directional IPC with figterm
+      if AutocompleteContextNotifier.addIndicatorToTitlebar {
+          let statusInTitle = integrationsMenu.addItem(
+          withTitle: "Show '☑ fig' in Terminal",
+          action: #selector(AppDelegate.toggleFigIndicator(_:)),
+          keyEquivalent: "")
+          statusInTitle.state = AutocompleteContextNotifier.addIndicatorToTitlebar ? .on : .off
+          integrationsMenu.addItem(NSMenuItem.separator())
+      }
+
       let itermIntegration = integrationsMenu.addItem(
       withTitle: "iTerm Integration",
       action: #selector(AppDelegate.toggleiTermIntegration(_:)),
