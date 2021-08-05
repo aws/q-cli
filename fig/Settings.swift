@@ -116,7 +116,7 @@ class Settings {
     settingsViewController.webView?.dragShouldRepositionWindow = true
 
     let settings = WebViewWindow(viewController: settingsViewController, shouldQuitAppOnClose: false)
-    settings.setFrame(NSRect(x: 0, y: 0, width: 670, height: 420), display: true, animate: false)
+    settings.setFrame(NSRect(x: 0, y: 0, width: 770, height: 520), display: true, animate: false)
     settings.center()
     settings.makeKeyAndOrderFront(self)
     
