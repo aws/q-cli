@@ -70,6 +70,8 @@ class NativeCLI {
         case discord = "discord"
         case viewLogs = "debug:log"
         case symlinkCLI = "util:symlink-cli"
+        case loginItems = "util:login-items"
+        case theme = "theme"
 
         var isUtility: Bool {
             get {
@@ -118,6 +120,8 @@ class NativeCLI {
                                                            .viewLogs,
                                                            .updateApp,
                                                            .symlinkCLI,
+                                                           .loginItems,
+                                                           .theme,
                                                            .docs]
                return implementatedNatively.contains(self)
             }
@@ -192,6 +196,10 @@ class NativeCLI {
               NativeCLI.updateAppCommand(scope)
             case .symlinkCLI:
               NativeCLI.symlinkCLICommand(scope)
+            case .loginItems:
+              NativeCLI.updateLoginItemCommand(scope)
+            case .theme:
+              NativeCLI.themeCommand(scope)
             default:
                 break;
             }
@@ -575,6 +583,54 @@ extension NativeCLI {
         Github.openIssue(with: message.arguments.joined(separator: " "))
       
     }
+    
+    static func themeCommand(_ scope: Scope) {
+        let (message, connection) = scope
+        
+        guard message.arguments.count == 1 else {
+            let theme = Settings.shared.getValue(forKey: Settings.theme) as? String ?? "dark"
+            NativeCLI.printInTerminal("\(theme)", using: connection)
+            return
+        }
+        
+        if let themeName = message.arguments.first {
+            let pathToTheme = NSHomeDirectory() + "/.fig/themes/\(themeName).json"
+            
+            if FileManager.default.fileExists(atPath: pathToTheme),
+               let data = try? Data(contentsOf: URL(fileURLWithPath: pathToTheme)),
+               let theme = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
+                
+                var byLine: String? = nil
+                var twitterLine: String? = nil
+                var githubLine: String? = nil
+
+                if let author = theme["author"] as? [String: String],
+                   let name = author["name"] {
+                    byLine = " by " + name
+                    
+                    if let handle = author["twitter"] {
+                        twitterLine = "  🐦 \u{001b}[0;96m\(handle)\u{001b}[0m\n"
+                    }
+                    
+                    if let handle = author["github"] {
+                        githubLine = "  💻 \u{001b}[4mgithub.com/\(handle)\u{001b}[0m\n"
+                    }
+                }
+                
+                Settings.shared.set(value: themeName, forKey: Settings.theme)
+                
+                let text = "\n› Switching to theme '\u{001b}[1m\(themeName)\u{001b}[0m'\(byLine ?? "")\n\n\(twitterLine ?? "")\(githubLine ?? "")"
+                NativeCLI.printInTerminal(text, using: connection)
+
+                
+            } else {
+                NativeCLI.printInTerminal("'\(themeName)' does not exist. \n", using: connection)
+
+            }
+            
+        }
+      
+    }
   
     static func openSettingsCommand(_ scope: Scope) {
       let (_, connection) = scope
@@ -591,6 +647,24 @@ extension NativeCLI {
       Onboarding.setUpEnviroment()
     }
   
+    static func updateLoginItemCommand(_ scope: Scope) {
+        let (message, connection) = scope
+        let command = message.arguments.first ?? ""
+        
+        switch command {
+            case "--remove":
+                LoginItems.shared.currentApplicationShouldLaunchOnStartup = false
+                NativeCLI.printInTerminal("\n› Removing Fig from LoginItems\n", using: connection)
+            case "--add":
+                LoginItems.shared.currentApplicationShouldLaunchOnStartup = true
+                NativeCLI.printInTerminal("\n› Adding Fig to LoginItems\n", using: connection)
+            default:
+                NativeCLI.printInTerminal("\(LoginItems.shared.currentApplicationShouldLaunchOnStartup ? "true" : "false")", using: connection)
+
+        }
+    }
+    
+    
     static func lockscreenCommand(_ scope: Scope) {
       let (_, connection) = scope
 

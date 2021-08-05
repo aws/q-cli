@@ -23,14 +23,9 @@ protocol PseudoTerminalEventDelegate {
 
 protocol PseudoTerminalService {
     
-//    var pty: HeadlessTerminal
-//    var rawOutput: String { get set }
-//    var streamHandlers: Set<String> { get set }
-//    var executeHandlers: Set<String> { get set }
-    
     func start(with env: [String: String])
     func write(command: String, control: ControlCode?)
-    func execute(command: String, handlerId:String)
+    func execute(command: String, handlerId:String, asBackgroundJob: Bool, asPipeline: Bool)
     func stream(command: String, handlerId:String)
     func close()
     
@@ -56,7 +51,7 @@ class PseudoTerminalHelper {
           self.executeHandlers[id] = handler
         }
         print("pty: Executing command with PTY Service '\(command)'. Output Id = \(id).")
-        pty.execute(command: command, handlerId: id)
+        pty.execute(command: command, handlerId: id, asBackgroundJob: true, asPipeline: false)
     }
     
     func start(with env: [String : String]) {
@@ -100,11 +95,20 @@ extension PseudoTerminalHelper : PseudoTerminalEventDelegate {
 
 class PseudoTerminal : PseudoTerminalService {
     static let recievedEnvironmentVariablesFromShellNotification = NSNotification.Name("recievedEnvironmentVariablesFromShellNotification")
+    static let recievedCallbackNotification = NSNotification.Name("recievedCallbackNotification")
+    static func log(_ message: String) {
+      Logger.log(message: message, subsystem: .pty)
+    }
+  
     init() {
 //        self.delegate = eventDelegate
       NotificationCenter.default.addObserver(self,
                                              selector: #selector(recievedEnvironmentVariablesFromShell(_:)),
                                              name: PseudoTerminal.recievedEnvironmentVariablesFromShellNotification,
+                                             object: nil)
+      NotificationCenter.default.addObserver(self,
+                                             selector: #selector(recievedCallbackNotification(_:)),
+                                             name: PseudoTerminal.recievedCallbackNotification,
                                              object: nil)
     }
   
@@ -129,19 +133,57 @@ class PseudoTerminal : PseudoTerminalService {
       })
       
       let command = variablesToUpdate.keys.map { "export \($0)='\(variablesToUpdate[$0] ?? "")'" }.joined(separator: "\n")
-      self.write(command: command + "\n", control: nil)
+      
+      let tmpFile = NSTemporaryDirectory().appending("fig_source_env")
+      Logger.log(message: "Writing new ENV vars to '\(tmpFile)'", subsystem: .pty)
+
+      do {
+        
+        try command.write(toFile: tmpFile,
+                      atomically: true,
+                      encoding: .utf8)
+        sourceFile(at: tmpFile)
+      } catch {
+        Logger.log(message: "could not source ENV vars from '\(tmpFile)'", subsystem: .pty)
+      }
     }
   
+    @objc func recievedCallbackNotification(_ notification: Notification) {
+      PseudoTerminal.log("recieved callback")
+      guard let info = notification.object as? [String: String],
+            let handlerId = info["handlerId"],
+            let pathToFile = info["filepath"] else {
+        return
+      }
+      guard executeHandlers.contains(handlerId) else {
+        return
+      }
+
+      PseudoTerminal.log("callback for \(handlerId) with output at \(pathToFile)")
+      executeHandlers.remove(handlerId)
+
+      if let delegate = self.delegate,
+         let data = FileManager.default.contents(atPath: pathToFile) {
+          let output = String(decoding: data, as: UTF8.self)
+          let msg = PtyMessage(type: "execute", handleId: handlerId, output: output)
+          delegate.recievedDataFromPty(Notification(name: .recievedDataFromPty, object: msg))
+      }
+      
+
+    }
+
+  
     let pty: HeadlessTerminal = HeadlessTerminal(onEnd: { (code) in
-        print("Exit")
+      PseudoTerminal.log("ending session with exit code: \(code ?? -1)")
     })
+  
     var rawOutput = ""
     var streamHandlers: Set<String> = []
     var executeHandlers: Set<String> = []
     var delegate: PseudoTerminalEventDelegate?
     var mirrorsEnvironment = false
     func start(with env: [String : String]) {
-        print("Starting PTY...")
+        PseudoTerminal.log("Starting PTY...")
         let shell = env["SHELL"] ?? "/bin/sh"
         
         // don't add shell hooks to pty
@@ -182,24 +224,20 @@ class PseudoTerminal : PseudoTerminalService {
       // Source user-specified ptyrc file (if it exists)
         let filePath = Settings.shared.getValue(forKey: Settings.ptyInitFile) as? String ?? "~/.fig/user/ptyrc"
         sourceFile(at: filePath)
-
-        // Copy enviroment from userShell
-//        pty.send("export $(env -i '\(Defaults.userShell)' -li -c env | tr '\n' ' ')\r")
-        print(pty.process.delegate)
     }
     
     func sourceFile(at path: String) {
       let expandedFilePath = NSString(string: path).expandingTildeInPath
 
       if FileManager.default.fileExists(atPath: expandedFilePath) {
-        print("pty: sourcing \(expandedFilePath)")
+        PseudoTerminal.log("sourcing \(expandedFilePath)")
         pty.send("source \(expandedFilePath)\r")
       }
     }
   
     func write(command: String, control: ControlCode?) {
         if let code = control {
-            print("Write PTY controlCode: \(code.rawValue)")
+            PseudoTerminal.log("Write PTY controlCode: \(code.rawValue)")
             switch code {
             case .EOT:
                 pty.send(data: [0x4])
@@ -207,18 +245,44 @@ class PseudoTerminal : PseudoTerminalService {
                 pty.send(data: [0x3])
             }
         } else {
-            print("Write PTY command: \(command)")
+            PseudoTerminal.log("Write PTY command: \(command)")
             pty.send("\(command)\r")
         }
     }
+  
+    func shell(command: String, handlerId: String) {
+      pty.send("\(command) | fig_callback \(handlerId) &\r")
+      PseudoTerminal.log("Execute PTY command: \(command) \(pty.process.running) \(pty.process.delegate)")
+    }
+  
+    static let callbackExecutable = "\(NSHomeDirectory())/.fig/bin/fig_callback"
+    func execute(command: String,
+                 handlerId: String,
+                 asBackgroundJob: Bool,
+                 asPipeline: Bool) {
+      
+      executeHandlers.insert(handlerId)
 
-    let executeDelimeter = "-----------------"
-    func execute(command: String, handlerId: String) {
-        executeHandlers.insert(handlerId)
-        let cmd = "printf \"<<<\" ; echo \"\(executeDelimeter)\(handlerId)\(executeDelimeter)\" ; \(command) ; echo \"\(executeDelimeter)\(handlerId)\(executeDelimeter)>>>\"\r"
-        pty.send(cmd)
-        print("Execute PTY command: \(cmd) \(pty.process.running) \(pty.process.delegate)")
+      var commandToRun: String
+      
+      if asPipeline {
+        commandToRun = "\(command) | \(PseudoTerminal.callbackExecutable) \(handlerId)"
+      } else {
+        let tmpFilepath = "/tmp/\(handlerId)"
+        commandToRun = "( \(command) )> \(tmpFilepath) && \(PseudoTerminal.callbackExecutable) \(handlerId) \(tmpFilepath)"
 
+      }
+      
+      if asBackgroundJob {
+        commandToRun.append(" &")
+      }
+      
+      commandToRun.append("\r")
+      
+      pty.send(commandToRun)
+
+        PseudoTerminal.log("Running '\(command)' \(asPipeline ? "as pipeline" : "")\( asBackgroundJob ? " in background" : "")")
+        PseudoTerminal.log(commandToRun)
     }
     
     let streamDelimeter = "================="
@@ -227,18 +291,14 @@ class PseudoTerminal : PseudoTerminalService {
         //        streamHandlers.insert(handlerId)
         let cmd = "printf \"<<<\" ; echo \"\(streamDelimeter)\(handlerId)\(streamDelimeter)\" ; \(command) ; echo \"\(streamDelimeter)\(handlerId)\(streamDelimeter)>>>\"\r"
         pty.send(cmd)
-        print("Stream PTY command: \(command)")
+        PseudoTerminal.log("Stream PTY command: \(command)")
     }
     
     func close() {
-        print("Close PTY")
+        PseudoTerminal.log("Close PTY")
         streamHandlers = []
         executeHandlers = []
         if pty.process.running {
-            pty.send(data: [0x4])
-            pty.send(data: [0x4])
-            pty.send(data: [0x4])
-            pty.send(data: [0x4])
             pty.send(data: [0x4])
             kill(pty.process.shellPid, SIGTERM)
         }
@@ -247,13 +307,12 @@ class PseudoTerminal : PseudoTerminalService {
 
 extension PseudoTerminal : LocalProcessDelegate {
     func processTerminated(_ source: LocalProcess, exitCode: Int32?) {
-        print("Exited...\(exitCode ?? 0)")
+        PseudoTerminal.log("Exited...\(exitCode ?? 0)")
     }
     
     func dataReceived(slice: ArraySlice<UInt8>) {
         let data = String(bytes: slice, encoding: .utf8) ?? ""
-        print("data", data)
-        
+        PseudoTerminal.log(data)
         
         for handle in streamHandlers {
             var ping = ""
@@ -272,12 +331,9 @@ extension PseudoTerminal : LocalProcessDelegate {
                 rawOutput = ""
             }
             
-            print(handle, ping)
             if let delegate = self.delegate {
                 let msg = PtyMessage(type: "stream", handleId: handle, output: ping)
                 delegate.recievedDataFromPty(Notification(name: .recievedDataFromPty, object: msg))
-//                let msg = PtyMessage(type: "stream", handleId: handle, output: ping)
-//                NotificationCenter.default.post(name: .recievedDataFromPty, object: msg)
             }
 
         }
@@ -288,25 +344,6 @@ extension PseudoTerminal : LocalProcessDelegate {
         
         rawOutput += data
 
-        for handle in executeHandlers {
-            let groups = rawOutput.groups(for: "(?s)<<<\(executeDelimeter)\(handle)\(executeDelimeter)(.*?)\(executeDelimeter)\(handle)\(executeDelimeter)>>>")
-            
-            if let group = groups[safe: 0], let output = group.last {
-                executeHandlers.remove(handle)
-                rawOutput = ""
-                print(handle, output)
-                
-                if let delegate = self.delegate {
-                    let msg = PtyMessage(type: "execute", handleId: handle, output: output)
-                    delegate.recievedDataFromPty(Notification(name: .recievedDataFromPty, object: msg))
-//                    let msg = PtyMessage(type: "execute", handleId: handle, output: output)
-//                    NotificationCenter.default.post(name: .recievedDataFromPty, object: msg)
-                }
-
-
-            }
-
-        }
     }
     
     func getWindowSize() -> winsize {

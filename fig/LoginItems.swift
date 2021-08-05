@@ -10,134 +10,126 @@ import Foundation
 
 // https://stackoverflow.com/questions/31540446/how-to-silence-a-warning-in-swift
 private protocol LoginItemsProtocol {
-    func toggleLaunchAtStartup(shouldBeOff: Bool)
     func containsCurrentApplication() -> Bool
-    func _containsURL(_ url: URL) -> Bool
-    func _removeURLIfExists(_ url: URL)
+    
+    func addLoginItem(_ url: URL)
+    func removeLoginItem(_ url: URL)
+    func itemForBundleURL(_ bundleURL: URL) -> LSSharedFileListItem?
 }
 
 class LoginItems {
   static let shared = LoginItems()
   var currentApplicationShouldLaunchOnStartup: Bool {
     get {
-      return (self as LoginItemsProtocol).containsCurrentApplication()
+        return ((self as LoginItemsProtocol).itemForBundleURL(Bundle.main.bundleURL) != nil)
     }
-    set (newValue) {
-      (self as LoginItemsProtocol).toggleLaunchAtStartup(shouldBeOff: !newValue)
+    set (launchOnStartup) {
+        if (launchOnStartup) {
+            (self as LoginItemsProtocol).addLoginItem(Bundle.main.bundleURL)
+        } else {
+            (self as LoginItemsProtocol).removeLoginItem(Bundle.main.bundleURL)
+        }
     }
   }
   
   var includesCurrentApplication: Bool {
-    return (self as LoginItemsProtocol).containsCurrentApplication()
+    return ((self as LoginItemsProtocol).itemForBundleURL(Bundle.main.bundleURL) != nil)
   }
   
   func containsURL(_ url: URL) -> Bool {
-    return (self as LoginItemsProtocol)._containsURL(url)
+    return ((self as LoginItemsProtocol).itemForBundleURL(url) != nil)
   }
   
   func removeURLIfExists(_ url: URL) {
-    return (self as LoginItemsProtocol)._removeURLIfExists(url)
-  }
-  
-  @available(macOS, deprecated: 10.11)
-  func _containsURL(_ url: URL) -> Bool {
-    let itemReferences = itemReferencesInLoginItems(forFileURL: url as NSURL)
-    return itemReferences.existingReference != nil
-  }
-  
-  @available(macOS, deprecated: 10.11)
-  func _removeURLIfExists(_ url: URL) {
-    let itemReferences = itemReferencesInLoginItems(forFileURL: url as NSURL)
-    guard let ref = itemReferences.existingReference else {
-      return
-    }
-    
-    let loginItemsRef = LSSharedFileListCreate(
-      nil,
-      kLSSharedFileListSessionLoginItems.takeRetainedValue(),
-      nil
-    ).takeRetainedValue() as LSSharedFileList?
-    
-    if loginItemsRef != nil {
-      LSSharedFileListItemRemove(loginItemsRef, ref);
-
-    }
-
+    return (self as LoginItemsProtocol).removeLoginItem(url)
   }
   
     @available(macOS, deprecated: 10.11)
-    func toggleLaunchAtStartup(shouldBeOff: Bool = false) {
-      let itemReferences = itemReferencesInLoginItems()
-      let shouldBeToggled = (itemReferences.existingReference == nil)
-      let loginItemsRef = LSSharedFileListCreate(
-        nil,
-        kLSSharedFileListSessionLoginItems.takeRetainedValue(),
-        nil
-      ).takeRetainedValue() as LSSharedFileList?
-      
-      if loginItemsRef != nil {
-        if shouldBeToggled {
-            let appUrl = NSURL.fileURL(withPath: Bundle.main.bundlePath) as CFURL
-            LSSharedFileListInsertItemURL(loginItemsRef, itemReferences.lastReference, nil, nil, appUrl, nil, nil)
-            print("Application was added to login items")
-        }
-        else if (shouldBeOff) {
-          if let itemRef = itemReferences.existingReference {
-            LSSharedFileListItemRemove(loginItemsRef,itemRef);
-            print("Application was removed from login items")
-          }
-        }
-      }
+    func addLoginItem(_ url: URL = Bundle.main.bundleURL) {
+        if let loginReference = LSSharedFileListCreate(kCFAllocatorDefault,
+                                                       kLSSharedFileListSessionLoginItems.takeUnretainedValue(),
+                                                       nil) {
+           let loginListValue = loginReference.takeUnretainedValue()
+           LSSharedFileListInsertItemURL(loginListValue,
+                                         lastItem(),
+                                         nil,
+                                         nil,
+                                         url as CFURL,
+                                         nil,
+                                         nil)
+
+       }
     }
+    @available(macOS, deprecated: 10.11)
+    func lastItem() -> LSSharedFileListItem? {
+        guard let loginReference = LSSharedFileListCreate(kCFAllocatorDefault,
+                                                          kLSSharedFileListSessionLoginItems.takeUnretainedValue(),
+                                                          nil) else { return nil }
+        let loginListValue = loginReference.takeUnretainedValue()
 
-  @available(macOS, deprecated: 10.11)
-  func itemReferencesInLoginItems(forFileURL appUrl: NSURL = NSURL(fileURLWithPath: Bundle.main.bundlePath)) -> (existingReference: LSSharedFileListItem?, lastReference: LSSharedFileListItem?) {
+        let items = LSSharedFileListCopySnapshot(loginListValue,
+                                                 nil).takeRetainedValue() as NSArray
         
-      let itemUrl = UnsafeMutablePointer<Unmanaged<CFURL>?>.allocate(capacity: 1)
+        guard items.count > 0 else { return nil }
+        
+        return (items.lastObject as! LSSharedFileListItem)
+    }
+    
+    @available(macOS, deprecated: 10.11)
+    func itemForBundleURL(_ bundleURL: URL = Bundle.main.bundleURL) -> LSSharedFileListItem? {
+        guard let loginReference = LSSharedFileListCreate(kCFAllocatorDefault,
+                                                          kLSSharedFileListSessionLoginItems.takeUnretainedValue(),
+                                                          nil) else { return nil }
+        let loginListValue = loginReference.takeUnretainedValue()
 
-        let loginItemsRef = LSSharedFileListCreate(
-          nil,
-          kLSSharedFileListSessionLoginItems.takeRetainedValue(),
-          nil
-        ).takeRetainedValue() as LSSharedFileList?
+        let items = LSSharedFileListCopySnapshot(loginListValue,
+                                                 nil).takeRetainedValue() as NSArray
         
-        if loginItemsRef != nil {
-          let loginItems = LSSharedFileListCopySnapshot(loginItemsRef, nil).takeRetainedValue() as NSArray
-          print("There are \(loginItems.count) login items")
-          
-          if(loginItems.count > 0) {
-            let lastItemRef = loginItems.lastObject as! LSSharedFileListItem
+        guard items.count > 0 else { return nil }
         
-            for i in 0...loginItems.count-1 {
-                let currentItemRef = loginItems.object(at: i) as! LSSharedFileListItem
-              
-              if LSSharedFileListItemResolve(currentItemRef, 0, itemUrl, nil) == noErr {
-                if let urlRef: NSURL = itemUrl.pointee?.takeRetainedValue() {
-                    print("URL Ref: \(urlRef.lastPathComponent ?? "")")
-                  if urlRef.isEqual(appUrl) {
-                    return (currentItemRef, lastItemRef)
-                  }
+        let urlPtr = UnsafeMutablePointer<Unmanaged<CFURL>?>.allocate(capacity: 1)
+
+        for item in items {
+            let itemRef = item as! LSSharedFileListItem
+            if LSSharedFileListItemResolve(itemRef,
+                                           0,
+                                           urlPtr,
+                                           nil) == noErr {
+              if let url: NSURL = urlPtr.pointee?.takeRetainedValue() {
+                  print("URL Ref: \(url.lastPathComponent ?? "")")
+                if url.isEqual(bundleURL) {
+                  return itemRef
                 }
               }
-              else {
-                print("Unknown login application")
-              }
             }
-            // The application was not found in the startup list
-            return (nil, lastItemRef)
-            
-          } else  {
-            let addatstart: LSSharedFileListItem = kLSSharedFileListItemBeforeFirst.takeRetainedValue()
-            return(nil,addatstart)
-          }
-      }
-      
-      return (nil, nil)
+        }
+        
+        return nil
     }
-  
+    
+    @available(macOS, deprecated: 10.11)
+    func removeLoginItem(_ url: URL = Bundle.main.bundleURL) {
+        guard let itemRef = itemForBundleURL(url) else {
+            return
+        }
+
+        if let loginReference = LSSharedFileListCreate(kCFAllocatorDefault,
+                                                       kLSSharedFileListSessionLoginItems.takeUnretainedValue(),
+                                                       nil) {
+           let loginListValue = loginReference.takeUnretainedValue()
+         LSSharedFileListItemRemove(loginListValue, itemRef)
+
+       }
+    }
+    
+    
+    
+    
+    
   @available(macOS, deprecated: 10.11)
   func containsCurrentApplication() -> Bool {
-    return itemReferencesInLoginItems().existingReference != nil
+    return ((self as LoginItemsProtocol).itemForBundleURL(Bundle.main.bundleURL) != nil)
+
   }
 }
 

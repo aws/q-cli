@@ -45,7 +45,7 @@ class Settings {
   static let colorfulLogging = "developer.logging.color"
   static let beta = "app.beta"
   static let shellIntegrationIsManagedByUser = "integrations.shell.managedByUser"
-
+  static let theme = "autocomplete.theme"
 
   static let filePath = NSHomeDirectory() + "/.fig/settings.json"
   static let shared = Settings()
@@ -116,7 +116,7 @@ class Settings {
     settingsViewController.webView?.dragShouldRepositionWindow = true
 
     let settings = WebViewWindow(viewController: settingsViewController, shouldQuitAppOnClose: false)
-    settings.setFrame(NSRect(x: 0, y: 0, width: 670, height: 420), display: true, animate: false)
+    settings.setFrame(NSRect(x: 0, y: 0, width: 770, height: 520), display: true, animate: false)
     settings.center()
     settings.makeKeyAndOrderFront(self)
     
@@ -205,6 +205,13 @@ class Settings {
       TelemetryProvider.identify(with:
                                   ["telemetry": currentTelemetryStatus ? "off" : "on"],
                                  shouldIgnoreTelemetryPreferences: true)
+    }
+    
+    let priorLaunchAtLoginPreference = prev[Settings.launchOnStartupKey] as? Bool ?? true
+    let currentLaunchAtLoginPreference = curr[Settings.launchOnStartupKey] as? Bool ?? true
+
+    if priorLaunchAtLoginPreference != currentLaunchAtLoginPreference {
+        LoginItems.shared.currentApplicationShouldLaunchOnStartup = currentLaunchAtLoginPreference
     }
   }
   
