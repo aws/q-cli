@@ -257,8 +257,9 @@
       //document.querySelector('video').playbackRate = 0.8;
 
         let next = function () {
-            var addToTerminalTitle = document.getElementById("status").checked
-            fig.onboarding('terminaltitle:' + addToTerminalTitle)
+            // todo(mschrage): Re-enable when we can set title using IPC with figterm
+            //var addToTerminalTitle = document.getElementById("status").checked
+            //fig.onboarding('terminaltitle:' + addToTerminalTitle)
             window.location.href = './privacy.html'//`${fig.remoteURL}/onboarding/signin.html`
 
         }
