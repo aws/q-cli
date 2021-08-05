@@ -1059,6 +1059,26 @@ extension WebBridge {
                     let source = data["source"]
 
                     Feedback.getFeedback(source: source ?? "javascript")
+                case "alert":
+                    let title = data["title"] ?? "title"
+                    let message = data["message"] ?? "message"
+                    let yesButtonText = data["yesButtonText"] ?? "OK"
+                    let noButtonText = data["noButtonText"]
+
+
+                    let response = Alert.show(title: title,
+                                              message: message,
+                                              okText: yesButtonText,
+                                              icon: Alert.appIcon,
+                                              hasSecondaryOption: noButtonText != nil && noButtonText != "",
+                                              secondaryOptionTitle: noButtonText)
+                    
+                    if let handlerId = handlerId {
+                        WebBridge.callback(handler: handlerId,
+                                           value: response ? "true" : "false",
+                                           webView: scope.webView)
+                    }
+
                 case "key":
                   guard let codeString = data["code"], let keycode = UInt16(codeString), let keypress = ShellBridge.Keypress(rawValue: keycode) else {
                       return

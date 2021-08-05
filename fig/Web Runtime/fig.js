@@ -293,6 +293,11 @@ let setup = function(window) {
           fig.private({ type: "prompt", data: {source}})
       },
       
+      alert(params, callback) {
+          // {title, message, yesButtonText, noButtonText} = params
+          fig.private({ type: "alert", data: params}, callback)
+      },
+      
       autocompletePopup : {
           hide() {
               fig.private({ type: "autocomplete-hide", data: {}})
