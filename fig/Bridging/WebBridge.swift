@@ -1314,6 +1314,10 @@ extension WebBridge {
     static func declareRemoteURL(webview: WebView) {
         webview.evaluateJavaScript("fig.remoteURL = '\( Remote.baseURL.absoluteString)'", completionHandler: nil)
     }
+    
+    static func declareBuildNumber(webview: WebView) {
+        webview.evaluateJavaScript("fig.buildNumber = '\( Diagnostic.build)'", completionHandler: nil)
+    }
   
     static func declareUpdate(webview: WebView) {
       webview.evaluateJavaScript("fig.updateAvailable = \(UpdateService.provider.updateIsAvailable)", completionHandler: nil)
