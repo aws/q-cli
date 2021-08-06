@@ -363,6 +363,14 @@ let setup = function(window) {
           fig.private({ type: "key", data: {code: "51"}})
         }
       },
+      positioning: {
+          isValidFrame: function(frame, callback) {
+              fig.private({ type: "positioning.isValidFrame", data: frame }, callback)
+          },
+          setFrame: function(frame, completion) {
+              fig.private({ type: "positioning.setFrame", data: frame }, completion)
+          }
+      },
       
       updateSettings(settingsStr) {
         let settings = JSON.parse(settingsStr)

@@ -41,6 +41,8 @@ class Logger {
         case unix = "unix"
         case updater = "updater"
         case config = "config"
+        case positioning = "positioning"
+
         func pathToLogFile() -> URL {
           return Logger.defaultLocation
                  .appendingPathComponent(self.rawValue, isDirectory: false)
