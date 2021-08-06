@@ -365,10 +365,20 @@ let setup = function(window) {
       },
       positioning: {
           isValidFrame: function(frame, callback) {
-              fig.private({ type: "positioning.isValidFrame", data: frame }, callback)
+              let data = Object.keys(frame).reduce((dict, key) => {
+                  dict[key] = frame[key].toString();
+                  return dict
+              }, {})
+              
+              fig.private({ type: "positioning.isValidFrame", data }, callback)
           },
           setFrame: function(frame, completion) {
-              fig.private({ type: "positioning.setFrame", data: frame }, completion)
+              let data = Object.keys(frame).reduce((dict, key) => {
+                  dict[key] = frame[key].toString();
+                  return dict
+              }, {})
+              
+              fig.private({ type: "positioning.setFrame", data }, completion)
           }
       },
       

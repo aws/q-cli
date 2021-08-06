@@ -1086,14 +1086,19 @@ extension WebBridge {
                       return
                     }
                     
-                    guard let response = WindowPositioning.frameRelativeToCursor(width: CGFloat(width),
-                                                                           height: CGFloat(height),
-                                                                           anchorOffset: CGPoint(x: CGFloat(anchorX), y: 0)) else {
-                        WebBridge.callback(handler: handler, value: "false", webView: scope.webView)
-                        return
-                    }
+                    do {
+                        let response = try WindowPositioning.frameRelativeToCursor(width: CGFloat(width),
+                                                                               height: CGFloat(height),
+                                                                               anchorOffset: CGPoint(x: CGFloat(anchorX), y: 0))
+                        WebBridge.callback(handler: handler, value: "{ \"isAbove\":  \(!response.isAbove ? "true" : "false"), \"isClipped\": \(!response.isClipped ? "true" : "false") }", webView: scope.webView)
+                        
+                    } catch APIError.generic(message: let message) {
+                        WebBridge.callback(handler: handler,
+                                           value: "{ \"error\" : \"\(message)\" }",
+                                           webView: scope.webView)
+                    } catch {}
                     
-                    WebBridge.callback(handler: handler, value: "\(!response.isClipped ? "true" : "false")", webView: scope.webView)
+  
                     
                 case "positioning.setFrame":
                     guard let companion = scope.getCompanionWindow() else {

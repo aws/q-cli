@@ -8,20 +8,27 @@
 
 import Cocoa
 
+enum APIError: Error {
+    case generic(message: String)
+}
+
 class WindowPositioning {
     
     static func frameRelativeToCursor(width: CGFloat,
                                       height: CGFloat,
-                                      anchorOffset: CGPoint) -> (frame: CGRect, isAbove: Bool, isClipped: Bool)? {
-        guard let cursorRect = Accessibility.getTextRect(),
-              let window = AXWindowServer.shared.whitelistedWindow else {
-            return nil
+                                      anchorOffset: CGPoint) throws -> (frame: CGRect, isAbove: Bool, isClipped: Bool) {
+        guard let window = AXWindowServer.shared.whitelistedWindow else {
+            throw APIError.generic(message: "Could not find whitelisted window")
+        }
+        
+        guard let cursorRect = Accessibility.getTextRect() else {
+            throw APIError.generic(message: "Could not find cursor rect")
         }
         
         guard let currentScreen = NSScreen.screens.filter({ (screen) -> Bool in
             return screen.frame.contains(cursorRect)
         }).first ?? NSScreen.main else {
-            return nil
+            throw APIError.generic(message: "Could not determine main screen")
         }
         
         let maxHeight = Settings.shared.getValue(forKey: Settings.autocompleteHeight) as? CGFloat ?? 140.0
