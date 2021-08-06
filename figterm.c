@@ -20,6 +20,9 @@ struct FigTerm {
   // Turn off figterm if there's an error.
   bool disable_figterm;
 
+  // Whether or not we've seen the first prompt.
+  bool has_seen_prompt;
+
   // Used for resizing.
   int ptyp_fd;
   int shell_pid;
@@ -34,6 +37,7 @@ static void handle_osc(FigTerm* ft) {
   } else if (strcmp(ft->osc, "StartPrompt") == 0) {
     ft->shell_state.in_prompt = true;
     figterm_screen_set_attr(ft->screen, FIGTERM_ATTR_IN_PROMPT, &ft->shell_state.in_prompt);
+    ft->has_seen_prompt = true;
   } else if (strcmp(ft->osc, "EndPrompt") == 0) {
     ft->shell_state.in_prompt = false;
     figterm_screen_set_attr(ft->screen, FIGTERM_ATTR_IN_PROMPT, &ft->shell_state.in_prompt);
@@ -152,6 +156,8 @@ FigTerm *figterm_new(int shell_pid, int ptyp_fd) {
 
   ft->disable_figterm = false;
 
+  ft->has_seen_prompt = false;
+
   // Used for resize.
   ft->ptyp_fd = ptyp_fd;
   ft->shell_pid = shell_pid;
@@ -261,4 +267,8 @@ void figterm_write(FigTerm* ft, char* buf, int n) {
 
 bool figterm_is_disabled(FigTerm* ft) {
   return ft == NULL || ft->disable_figterm;
+}
+
+bool figterm_has_seen_prompt(FigTerm* ft) {
+  return ft != NULL && ft->has_seen_prompt;
 }

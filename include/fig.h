@@ -82,6 +82,7 @@ void figterm_log(FigTerm*, char);
 void figterm_get_shell_state(FigTerm*, FigShellState*);
 void figterm_write(FigTerm*, char*, int);
 bool figterm_is_disabled(FigTerm*);
+bool figterm_has_seen_prompt(FigTerm*);
 
 // util.c
 typedef struct {
