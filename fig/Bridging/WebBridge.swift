@@ -1078,7 +1078,46 @@ extension WebBridge {
                                            value: response ? "true" : "false",
                                            webView: scope.webView)
                     }
+                case "positioning.isValidFrame":
+                    guard let width = Float(data["width"] ?? ""),
+                      let height = Float(data["height"]  ?? ""),
+                      let anchorX = Float(data["anchorX"]  ?? ""),
+                      let handler = handlerId else {
+                      return
+                    }
+                    
+                    guard let response = WindowPositioning.frameRelativeToCursor(width: CGFloat(width),
+                                                                           height: CGFloat(height),
+                                                                           anchorOffset: CGPoint(x: CGFloat(anchorX), y: 0)) else {
+                        WebBridge.callback(handler: handler, value: "false", webView: scope.webView)
+                        return
+                    }
+                    
+                    WebBridge.callback(handler: handler, value: "\(!response.isClipped ? "true" : "false")", webView: scope.webView)
+                    
+                case "positioning.setFrame":
+                    guard let companion = scope.getCompanionWindow() else {
+                        return
+                    }
+                    
+                    if let width = Float(data["width"] ?? "") {
+                        companion.width = CGFloat(width)
+                    }
+                    
+                    if let height = Float(data["height"]  ?? "") {
+                        companion.maxHeight = CGFloat(height)
+                    }
+                    
+                    if let anchorX = Float(data["anchorX"]  ?? "") {
+                        companion.anchorOffsetPoint = CGPoint(x: CGFloat(anchorX), y: 0)
+                    }
+                    
+                    WindowManager.shared.positionAutocompletePopover(textRect: Accessibility.getTextRect())
 
+                    if let handlerId = handlerId {
+                        WebBridge.callback(handler: handlerId, value: "", webView: scope.webView)
+                    }
+                    
                 case "key":
                   guard let codeString = data["code"], let keycode = UInt16(codeString), let keypress = ShellBridge.Keypress(rawValue: keycode) else {
                       return
