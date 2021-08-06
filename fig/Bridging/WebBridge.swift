@@ -1078,7 +1078,51 @@ extension WebBridge {
                                            value: response ? "true" : "false",
                                            webView: scope.webView)
                     }
+                case "positioning.isValidFrame":
+                    guard let width = Float(data["width"] ?? ""),
+                      let height = Float(data["height"]  ?? ""),
+                      let anchorX = Float(data["anchorX"]  ?? ""),
+                      let handler = handlerId else {
+                      return
+                    }
+                    
+                    do {
+                        let response = try WindowPositioning.frameRelativeToCursor(width: CGFloat(width),
+                                                                               height: CGFloat(height),
+                                                                               anchorOffset: CGPoint(x: CGFloat(anchorX), y: 0))
+                        WebBridge.callback(handler: handler, value: "{ \"isAbove\":  \(!response.isAbove ? "true" : "false"), \"isClipped\": \(!response.isClipped ? "true" : "false") }", webView: scope.webView)
+                        
+                    } catch APIError.generic(message: let message) {
+                        WebBridge.callback(handler: handler,
+                                           value: "{ \"error\" : \"\(message)\" }",
+                                           webView: scope.webView)
+                    } catch {}
+                    
+  
+                    
+                case "positioning.setFrame":
+                    guard let companion = scope.getCompanionWindow() else {
+                        return
+                    }
+                    
+                    if let width = Float(data["width"] ?? "") {
+                        companion.width = CGFloat(width)
+                    }
+                    
+                    if let height = Float(data["height"]  ?? "") {
+                        companion.maxHeight = CGFloat(height)
+                    }
+                    
+                    if let anchorX = Float(data["anchorX"]  ?? "") {
+                        companion.anchorOffsetPoint = CGPoint(x: CGFloat(anchorX), y: 0)
+                    }
+                    
+                    WindowManager.shared.positionAutocompletePopover(textRect: Accessibility.getTextRect())
 
+                    if let handlerId = handlerId {
+                        WebBridge.callback(handler: handlerId, value: "", webView: scope.webView)
+                    }
+                    
                 case "key":
                   guard let codeString = data["code"], let keycode = UInt16(codeString), let keypress = ShellBridge.Keypress(rawValue: keycode) else {
                       return

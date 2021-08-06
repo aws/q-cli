@@ -363,6 +363,24 @@ let setup = function(window) {
           fig.private({ type: "key", data: {code: "51"}})
         }
       },
+      positioning: {
+          isValidFrame: function(frame, callback) {
+              let data = Object.keys(frame).reduce((dict, key) => {
+                  dict[key] = frame[key].toString();
+                  return dict
+              }, {})
+              
+              fig.private({ type: "positioning.isValidFrame", data }, callback)
+          },
+          setFrame: function(frame, completion) {
+              let data = Object.keys(frame).reduce((dict, key) => {
+                  dict[key] = frame[key].toString();
+                  return dict
+              }, {})
+              
+              fig.private({ type: "positioning.setFrame", data }, completion)
+          }
+      },
       
       updateSettings(settingsStr) {
         let settings = JSON.parse(settingsStr)
