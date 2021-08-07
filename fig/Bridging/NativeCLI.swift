@@ -593,6 +593,7 @@ extension NativeCLI {
             return
         }
         
+        let builtins: Set<String> = ["dark", "light"]
         if let themeName = message.arguments.first {
             let pathToTheme = NSHomeDirectory() + "/.fig/themes/\(themeName).json"
             
@@ -623,6 +624,11 @@ extension NativeCLI {
                 NativeCLI.printInTerminal(text, using: connection)
 
                 
+            } else if builtins.contains(themeName) {
+                let text = "\n› Switching to theme '\u{001b}[1m\(themeName)\u{001b}[0m'\n"
+                Settings.shared.set(value: themeName, forKey: Settings.theme)
+                NativeCLI.printInTerminal(text, using: connection)
+
             } else {
                 NativeCLI.printInTerminal("'\(themeName)' does not exist. \n", using: connection)
 
