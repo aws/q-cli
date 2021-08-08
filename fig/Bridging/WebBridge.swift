@@ -1090,7 +1090,7 @@ extension WebBridge {
                         let response = try WindowPositioning.frameRelativeToCursor(width: CGFloat(width),
                                                                                height: CGFloat(height),
                                                                                anchorOffset: CGPoint(x: CGFloat(anchorX), y: 0))
-                        WebBridge.callback(handler: handler, value: "{ \"isAbove\":  \(!response.isAbove ? "true" : "false"), \"isClipped\": \(!response.isClipped ? "true" : "false") }", webView: scope.webView)
+                        WebBridge.callback(handler: handler, value: "{ \"isAbove\":  \(response.isAbove ? "true" : "false"), \"isClipped\": \(response.isClipped ? "true" : "false") }", webView: scope.webView)
                         
                     } catch APIError.generic(message: let message) {
                         WebBridge.callback(handler: handler,
@@ -1313,6 +1313,10 @@ extension WebBridge {
     
     static func declareRemoteURL(webview: WebView) {
         webview.evaluateJavaScript("fig.remoteURL = '\( Remote.baseURL.absoluteString)'", completionHandler: nil)
+    }
+    
+    static func declareBuildNumber(webview: WebView) {
+        webview.evaluateJavaScript("fig.buildNumber = '\( Diagnostic.build)'", completionHandler: nil)
     }
   
     static func declareUpdate(webview: WebView) {
