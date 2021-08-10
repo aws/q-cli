@@ -119,6 +119,10 @@ class Autocomplete {
         KeypressProvider.shared.addRedirect(for: Keystroke(modifierFlags: [.control], keyCode: pKeycode), in: window)
     }
   
+    if (Settings.shared.getValue(forKey: Settings.disablePopoutDescriptions) as? Bool ?? false) {
+        KeypressProvider.shared.addRedirect(for: Keystroke(modifierFlags: [.command], keyCode: iKeycode), in: window)
+    }
+    
     if (Defaults.insertUsingRightArrow) {
         KeypressProvider.shared.addRedirect(for: Keycode.rightArrow, in: window)
     }
@@ -126,6 +130,33 @@ class Autocomplete {
   
   static func removeAllRedirects(from window: ExternalWindow) {
     KeypressProvider.shared.resetRedirects(for: window)
+  }
+  
+  static func handleCommandIKey(event:CGEvent, in window: ExternalWindow) -> EventTapAction {
+    let keycode = UInt16(event.getIntegerValueField(.keyboardEventKeycode))
+    guard KeyboardLayout.shared.keyCode(for: "I") ?? Keycode.i == keycode else {
+      return .ignore
+    }
+    
+    guard let event = NSEvent(cgEvent: event), event.modifierFlags.contains(.command) else {
+      return .ignore
+    }
+    
+    guard [.keyDown].contains(event.type) else {
+      return .ignore
+    }
+    
+    // Don't intercept command+I when in VSCode editor
+    if Integrations.electronTerminals.contains(window.bundleId ?? "") &&
+        Accessibility.findXTermCursorInElectronWindow(window) == nil {
+      return .forward
+    }
+        
+    let autocompleteIsNotVisible = !(WindowManager.shared.autocomplete?.isVisible ?? false)
+
+    // Allow to be intercepted by autocomplete app if visible
+    // otherwise prevent keypress from propogating
+    return autocompleteIsNotVisible ? .consume : .ignore
   }
   
   static func handleTabKey(event:CGEvent, in window: ExternalWindow) -> EventTapAction {

@@ -69,7 +69,7 @@ class WindowPositioning {
         let translatedX = cursorRect.origin.x + anchorOffset.x
     
         let translatedOrigin = isAbove ? NSPoint(x: translatedX,
-                                                 y: cursorRect.origin.y + height + verticalPaddingFromCursor) :
+                                                 y: cursorRect.origin.y + 0 + verticalPaddingFromCursor) :
                                          NSPoint(x: translatedX,
                                                  y: cursorRect.origin.y - cursorRect.height - verticalPaddingFromCursor)
 
@@ -83,8 +83,12 @@ class WindowPositioning {
         if (overhang < 0) {
             isClipped = true
         }
+      
+//        let diff = height - frame.height
+
+
         
-    
+//      (popup.height - maxHeight)
         let frame = NSRect(x: popup.origin.x + (isClipped ? overhang : 0),
                            y: popup.origin.y,
                            width: popup.width,
