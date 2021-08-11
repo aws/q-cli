@@ -138,7 +138,11 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
 //        self.makeKeyAndOrderFront(nil)
         
         self.delegate = self
-//        self.backgroundColor = .red
+        
+        if let disableTransparency = Settings.shared.getValue(forKey: Settings.disableWebviewTransparency) as? Bool, disableTransparency {
+            self.backgroundColor = .red
+        }
+
 //        self.backgroundColor = NSColor(red: 47/255, green: 47/255, blue: 47/255, alpha: 1)
 
         

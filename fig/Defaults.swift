@@ -227,6 +227,8 @@ class Defaults {
             UserDefaults.standard.synchronize()
           
             Settings.shared.set(value: flag, forKey: Settings.debugModeKey)
+            
+            WindowManager.shared.autocomplete?.backgroundColor = .clear
 
         }
 

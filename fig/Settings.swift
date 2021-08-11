@@ -47,7 +47,8 @@ class Settings {
   static let beta = "app.beta"
   static let shellIntegrationIsManagedByUser = "integrations.shell.managedByUser"
   static let theme = "autocomplete.theme"
-
+  static let disableWebviewTransparency = "developer.disableWebviewTransparency"
+    
   static let filePath = NSHomeDirectory() + "/.fig/settings.json"
   static let shared = Settings()
   //Note: app will crash if anything is logged before Settings.shared is initted
