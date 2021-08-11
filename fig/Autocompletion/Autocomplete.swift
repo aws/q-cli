@@ -128,6 +128,29 @@ class Autocomplete {
     KeypressProvider.shared.resetRedirects(for: window)
   }
   
+  static func handleCommandIKey(event:CGEvent, in window: ExternalWindow) -> EventTapAction {
+    let keycode = UInt16(event.getIntegerValueField(.keyboardEventKeycode))
+    guard KeyboardLayout.shared.keyCode(for: "I") ?? Keycode.i == keycode else {
+      return .ignore
+    }
+    
+    guard let event = NSEvent(cgEvent: event), event.modifierFlags.contains(.command) else {
+      return .ignore
+    }
+    
+    // Don't intercept command+I when in VSCode editor
+    if Integrations.electronTerminals.contains(window.bundleId ?? "") &&
+        Accessibility.findXTermCursorInElectronWindow(window) == nil {
+      return .forward
+    }
+        
+    let autocompleteIsNotVisible = (WindowManager.shared.autocomplete?.maxHeight ?? 0 <= 1 ||  !(WindowManager.shared.autocomplete?.isVisible ?? false))
+
+    // Allow to be intercepted by autocomplete app if visible
+    // otherwise prevent keypress from propogating
+    return autocompleteIsNotVisible ? .consume : .ignore
+  }
+  
   static func handleTabKey(event:CGEvent, in window: ExternalWindow) -> EventTapAction {
     let keycode = UInt16(event.getIntegerValueField(.keyboardEventKeycode))
     guard Keycode.tab == keycode else {
