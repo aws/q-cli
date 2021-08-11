@@ -142,17 +142,13 @@ class Autocomplete {
       return .ignore
     }
     
-    guard [.keyDown].contains(event.type) else {
-      return .ignore
-    }
-    
     // Don't intercept command+I when in VSCode editor
     if Integrations.electronTerminals.contains(window.bundleId ?? "") &&
         Accessibility.findXTermCursorInElectronWindow(window) == nil {
       return .forward
     }
         
-    let autocompleteIsNotVisible = !(WindowManager.shared.autocomplete?.isVisible ?? false)
+    let autocompleteIsNotVisible = (WindowManager.shared.autocomplete?.maxHeight ?? 0 <= 1 ||  !(WindowManager.shared.autocomplete?.isVisible ?? false))
 
     // Allow to be intercepted by autocomplete app if visible
     // otherwise prevent keypress from propogating
