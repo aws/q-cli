@@ -52,6 +52,7 @@ class KeypressProvider {
   fileprivate let handlers: [EventTapHandler] =
     [ Autocomplete.handleTabKey
     , Autocomplete.handleEscapeKey
+    , Autocomplete.handleCommandIKey
     , KeypressProvider.processRegisteredHandlers
     , KeypressProvider.handleRedirect
     , FishIntegration.handleKeystroke

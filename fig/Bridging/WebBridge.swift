@@ -1012,6 +1012,8 @@ extension WebBridge {
                     }
                     
                 case "setAutocompleteHeight":
+                    print("positioning: attempting to setAutocompleteHeight")
+
                     guard let heightString = data["height"] else { return }
                     let companion = scope.getCompanionWindow()
                     let previousMax = companion?.maxHeight
@@ -1106,14 +1108,17 @@ extension WebBridge {
                     }
                     
                     if let width = Float(data["width"] ?? "") {
+                        print("autocomplete.width := \(width)")
                         companion.width = CGFloat(width)
                     }
                     
                     if let height = Float(data["height"]  ?? "") {
+                        print("autocomplete.height := \(height)")
                         companion.maxHeight = CGFloat(height)
                     }
                     
                     if let anchorX = Float(data["anchorX"]  ?? "") {
+                        print("autocomplete.anchorX := \(anchorX)")
                         companion.anchorOffsetPoint = CGPoint(x: CGFloat(anchorX), y: 0)
                     }
                     
@@ -1184,6 +1189,7 @@ extension WebBridge {
               let companion = scope.getCompanionWindow()
               companion?.loaded = value == "true"
             case "maxheight":
+                print("positioning: attempting to set maxheight")
                 let companion = scope.getCompanionWindow()
                 let previousMax = companion?.maxHeight
                 if let number = NumberFormatter().number(from: value) {

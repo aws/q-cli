@@ -227,10 +227,24 @@ class Defaults {
             UserDefaults.standard.synchronize()
           
             Settings.shared.set(value: flag, forKey: Settings.debugModeKey)
+            
+            WindowManager.shared.autocomplete?.backgroundColor = .clear
 
         }
 
     }
+  
+  static var globalAccessibilityTimeout: Float {
+    get {
+      return UserDefaults.standard.float(forKey: "globalAccessibilityTimeout")
+    }
+    
+    set(value) {
+        UserDefaults.standard.set(value, forKey: "globalAccessibilityTimeout")
+        UserDefaults.standard.synchronize()
+    }
+
+  }
     
     static var broadcastLogs: Bool {
         get {
