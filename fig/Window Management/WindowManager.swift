@@ -727,7 +727,9 @@ extension WindowManager : WindowManagementService {
 
 
             if (Defaults.debugAutocomplete) {
-                WindowManager.shared.autocomplete?.maxHeight = heightLimit//140
+                WindowManager.shared.autocomplete?.maxHeight = heightLimit
+                WindowManager.shared.autocomplete?.backgroundColor = .red
+                Logger.log(message: "Note: Debug mode is enabled!", subsystem: .positioning)
             }
 
             let positioning = WindowPositioning.frameRelativeToCursor(currentScreenFrame: currentScreen?.frame ?? .zero,
