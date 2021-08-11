@@ -119,6 +119,10 @@ class Autocomplete {
         KeypressProvider.shared.addRedirect(for: Keystroke(modifierFlags: [.control], keyCode: pKeycode), in: window)
     }
   
+    if (Settings.shared.getValue(forKey: Settings.disablePopoutDescriptions) as? Bool ?? false) {
+        KeypressProvider.shared.addRedirect(for: Keystroke(modifierFlags: [.command], keyCode: iKeycode), in: window)
+    }
+    
     if (Defaults.insertUsingRightArrow) {
         KeypressProvider.shared.addRedirect(for: Keycode.rightArrow, in: window)
     }

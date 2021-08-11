@@ -78,6 +78,7 @@ class Accessibility {
         TelemetryProvider.track(event: .grantedAXPermission, with: [:])
       }
       print("Accessibility Permission Granted!!!")
+      Accessibility.setGlobalTimeout(seconds: 2)
       completion?(granted)
       Accessibility.pendingPermission = false
     }
