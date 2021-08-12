@@ -251,14 +251,22 @@ let setup = function(window) {
               let env = JSON.stringify(fig.env)
               window.webkit.messageHandlers.ptyHandler.postMessage({env, type: 'init'});
           },
-          execute(cmd, handler) {
-              let handlerId = `${random_identifier(5)}:pty`
+          execute(cmd, options, handler) {
+              let handlerId = `${random_identifier(5)}`
               fig[handlerId] = handler
-              window.webkit.messageHandlers.ptyHandler.postMessage({handlerId, cmd, type: 'execute'});
+              options = options || {}
+              window.webkit.messageHandlers.ptyHandler.postMessage({handlerId, cmd, type: 'execute', options: JSON.stringify(options)});
+
+          },
+        
+          shell(cmd, handler) {
+              let handlerId = `${random_identifier(5)}`
+              fig[handlerId] = handler
+              window.webkit.messageHandlers.ptyHandler.postMessage({handlerId, cmd, type: 'shell'});
 
           },
           stream(cmd, handler) {
-              let handlerId = `${random_identifier(5)}:pty`
+              let handlerId = `${random_identifier(5)}`
               fig[handlerId] = handler
               window.webkit.messageHandlers.ptyHandler.postMessage({handlerId, cmd, type: 'stream'});
           },
@@ -283,6 +291,11 @@ let setup = function(window) {
       
       prompt(source) {
           fig.private({ type: "prompt", data: {source}})
+      },
+      
+      alert(params, callback) {
+          // {title, message, yesButtonText, noButtonText} = params
+          fig.private({ type: "alert", data: params}, callback)
       },
       
       autocompletePopup : {
@@ -349,6 +362,24 @@ let setup = function(window) {
         backspace: function() {
           fig.private({ type: "key", data: {code: "51"}})
         }
+      },
+      positioning: {
+          isValidFrame: function(frame, callback) {
+              let data = Object.keys(frame).reduce((dict, key) => {
+                  dict[key] = frame[key].toString();
+                  return dict
+              }, {})
+              
+              fig.private({ type: "positioning.isValidFrame", data }, callback)
+          },
+          setFrame: function(frame, completion) {
+              let data = Object.keys(frame).reduce((dict, key) => {
+                  dict[key] = frame[key].toString();
+                  return dict
+              }, {})
+              
+              fig.private({ type: "positioning.setFrame", data }, completion)
+          }
       },
       
       updateSettings(settingsStr) {

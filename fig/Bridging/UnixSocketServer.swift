@@ -67,7 +67,13 @@ class UnixSocketServer {
         print("Listening on port: \(socket.remotePath ?? "")")
         
         repeat {
-          let newSocket = try socket.acceptClientConnection()
+           
+            // Prevent server from closing when a client fails to connect
+            // Fixes issue related to setting set_sockopt NO_SIGPIPE
+            guard let newSocket = try? socket.acceptClientConnection() else {
+                Logger.log(message: "connection could not be made!", subsystem: .unix)
+                continue
+            }
           
 //          print("Accepted connection from: \(newSocket.remoteHostname) on port \(newSocket.remotePort)")
 //          print("Socket Signature: \(String(describing: newSocket.signature?.description))")

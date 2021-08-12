@@ -710,57 +710,42 @@ extension WindowManager : WindowManagementService {
   func positionAutocompletePopover(textRect: CGRect?, makeVisibleImmediately: Bool = true, completion: (() -> Void)? = nil) {
         if let rect = textRect, let window = AXWindowServer.shared.whitelistedWindow {
           
-          // get 'true' main screen (accounting for the fact that fullScreen workspaces default to laptop screen)
-          let currentScreen = NSScreen.screens.filter { (screen) -> Bool in
+            // get 'true' main screen (accounting for the fact that fullScreen workspaces default to laptop screen)
+            let currentScreen = NSScreen.screens.filter { (screen) -> Bool in
             return screen.frame.contains(rect)
-          }.first ?? NSScreen.main
-          
-          let heightLimit: CGFloat = Settings.shared.getValue(forKey: Settings.autocompleteHeight) as? CGFloat ?? 140.0 //300.0//
-            
-          let isAbove = window.frame.height < window.frame.origin.y - rect.origin.y + rect.height + heightLimit
-                        && rect.origin.y + heightLimit <= currentScreen?.frame.maxY ?? 0.0
-                        // *visor* I'm not sure what the second conditional is for...
+            }.first ?? NSScreen.main
+            let heightLimit: CGFloat = Settings.shared.getValue(forKey: Settings.autocompleteHeight) as? CGFloat ?? 140.0 
 
-
-            
-            let height:CGFloat = isAbove ? 0 : heightLimit
-            let translatedOrigin = isAbove ? NSPoint(x: rect.origin.x, y: rect.origin.y + height + 5) :
-                                             NSPoint(x: rect.origin.x, y: rect.origin.y - rect.height - 5) //below
-            
-            
             // Prevent arrow keys
             if ((WindowManager.shared.autocomplete?.maxHeight != 0)) {
-              Autocomplete.interceptKeystrokes(in: window)
-
+                Autocomplete.interceptKeystrokes(in: window)
             } else {
-              Autocomplete.removeAllRedirects(from: window)
+                Autocomplete.removeAllRedirects(from: window)
             }
-            
-          
-          
-//            WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try { fig.autocomplete_above = \(isAbove)} catch(e) {}", completionHandler: nil)
-            let maxWidth =  Settings.shared.getValue(forKey: Settings.autocompleteWidth) as? CGFloat
-            let popup = NSRect(origin: translatedOrigin, size: CGSize(width: WindowManager.shared.autocomplete?.width ?? maxWidth ?? Defaults.autocompleteWidth ?? 200
-                , height: height))
-            let sidebarInsetBuffer:CGFloat = 0.0//60;
-            let w = (currentScreen!.frame.maxX - sidebarInsetBuffer) - popup.maxX
-            var x = popup.origin.x
-            print("edge",w, x, x + w)
-            print("main:",currentScreen!.frame)
 
-            if (w < 0) {
-               x += w
-            }
-            
+            let maxWidth =  Settings.shared.getValue(forKey: Settings.autocompleteWidth) as? CGFloat
+
+
             if (Defaults.debugAutocomplete) {
-                WindowManager.shared.autocomplete?.maxHeight = heightLimit//140
+                WindowManager.shared.autocomplete?.maxHeight = heightLimit
+                WindowManager.shared.autocomplete?.backgroundColor = .red
+                Logger.log(message: "Note: Debug mode is enabled!", subsystem: .positioning)
             }
-          
+
+            let positioning = WindowPositioning.frameRelativeToCursor(currentScreenFrame: currentScreen?.frame ?? .zero,
+                                                currentWindowFrame: window.frame,
+                                                cursorRect: rect,
+                                                width: WindowManager.shared.autocomplete?.width ?? maxWidth ?? Defaults.autocompleteWidth ?? 200,
+                                                height: WindowManager.shared.autocomplete?.maxHeight ?? 0,
+                                                anchorOffset: WindowManager.shared.autocomplete?.anchorOffsetPoint ?? .zero,
+                                                maxHeight: heightLimit)
+            Logger.log(message: "New calculation: \(positioning.frame)", subsystem: .positioning)
+
             DispatchQueue.main.async {
-              WindowManager.shared.autocomplete?.tetheredWindow = window
-              WindowManager.shared.autocomplete?.setOverlayFrame(NSRect(x: x, y: popup.origin.y, width: popup.width, height: height), makeVisible: makeVisibleImmediately)//140
-              completion?()
- 
+                WindowManager.shared.autocomplete?.tetheredWindow = window
+                WindowManager.shared.autocomplete?.setOverlayFrame(positioning.frame, makeVisible: makeVisibleImmediately)//140
+                completion?()
+
             }
             
         } else {

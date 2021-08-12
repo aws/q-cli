@@ -1012,6 +1012,8 @@ extension WebBridge {
                     }
                     
                 case "setAutocompleteHeight":
+                    print("positioning: attempting to setAutocompleteHeight")
+
                     guard let heightString = data["height"] else { return }
                     let companion = scope.getCompanionWindow()
                     let previousMax = companion?.maxHeight
@@ -1059,6 +1061,73 @@ extension WebBridge {
                     let source = data["source"]
 
                     Feedback.getFeedback(source: source ?? "javascript")
+                case "alert":
+                    let title = data["title"] ?? "title"
+                    let message = data["message"] ?? "message"
+                    let yesButtonText = data["yesButtonText"] ?? "OK"
+                    let noButtonText = data["noButtonText"]
+
+
+                    let response = Alert.show(title: title,
+                                              message: message,
+                                              okText: yesButtonText,
+                                              icon: Alert.appIcon,
+                                              hasSecondaryOption: noButtonText != nil && noButtonText != "",
+                                              secondaryOptionTitle: noButtonText)
+                    
+                    if let handlerId = handlerId {
+                        WebBridge.callback(handler: handlerId,
+                                           value: response ? "true" : "false",
+                                           webView: scope.webView)
+                    }
+                case "positioning.isValidFrame":
+                    guard let width = Float(data["width"] ?? ""),
+                      let height = Float(data["height"]  ?? ""),
+                      let anchorX = Float(data["anchorX"]  ?? ""),
+                      let handler = handlerId else {
+                      return
+                    }
+                    
+                    do {
+                        let response = try WindowPositioning.frameRelativeToCursor(width: CGFloat(width),
+                                                                               height: CGFloat(height),
+                                                                               anchorOffset: CGPoint(x: CGFloat(anchorX), y: 0))
+                        WebBridge.callback(handler: handler, value: "{ \"isAbove\":  \(response.isAbove ? "true" : "false"), \"isClipped\": \(response.isClipped ? "true" : "false") }", webView: scope.webView)
+                        
+                    } catch APIError.generic(message: let message) {
+                        WebBridge.callback(handler: handler,
+                                           value: "{ \"error\" : \"\(message)\" }",
+                                           webView: scope.webView)
+                    } catch {}
+                    
+  
+                    
+                case "positioning.setFrame":
+                    guard let companion = scope.getCompanionWindow() else {
+                        return
+                    }
+                    
+                    if let width = Float(data["width"] ?? "") {
+                        print("autocomplete.width := \(width)")
+                        companion.width = CGFloat(width)
+                    }
+                    
+                    if let height = Float(data["height"]  ?? "") {
+                        print("autocomplete.height := \(height)")
+                        companion.maxHeight = CGFloat(height)
+                    }
+                    
+                    if let anchorX = Float(data["anchorX"]  ?? "") {
+                        print("autocomplete.anchorX := \(anchorX)")
+                        companion.anchorOffsetPoint = CGPoint(x: CGFloat(anchorX), y: 0)
+                    }
+                    
+                    WindowManager.shared.positionAutocompletePopover(textRect: Accessibility.getTextRect())
+
+                    if let handlerId = handlerId {
+                        WebBridge.callback(handler: handlerId, value: "", webView: scope.webView)
+                    }
+                    
                 case "key":
                   guard let codeString = data["code"], let keycode = UInt16(codeString), let keypress = ShellBridge.Keypress(rawValue: keycode) else {
                       return
@@ -1120,6 +1189,7 @@ extension WebBridge {
               let companion = scope.getCompanionWindow()
               companion?.loaded = value == "true"
             case "maxheight":
+                print("positioning: attempting to set maxheight")
                 let companion = scope.getCompanionWindow()
                 let previousMax = companion?.maxHeight
                 if let number = NumberFormatter().number(from: value) {
@@ -1250,6 +1320,10 @@ extension WebBridge {
     static func declareRemoteURL(webview: WebView) {
         webview.evaluateJavaScript("fig.remoteURL = '\( Remote.baseURL.absoluteString)'", completionHandler: nil)
     }
+    
+    static func declareBuildNumber(webview: WebView) {
+        webview.evaluateJavaScript("fig.buildNumber = '\( Diagnostic.build)'", completionHandler: nil)
+    }
   
     static func declareUpdate(webview: WebView) {
       webview.evaluateJavaScript("fig.updateAvailable = \(UpdateService.provider.updateIsAvailable)", completionHandler: nil)
@@ -1378,7 +1452,23 @@ extension WebBridge {
                 case "execute":
                     if let cmd = params["cmd"],
                         let handlerId = params["handlerId"] {
-                        controller.pty.execute(command: cmd, handlerId: handlerId)
+                        
+                        var asBackgroundJob: Bool = true
+                        var asPipeline: Bool = false
+
+                        if let options = params["options"],
+                           let parsedOptions = options.jsonStringToDict() {
+                            
+                          asBackgroundJob = parsedOptions["backgroundJob"] as? Bool ?? asBackgroundJob
+                          asPipeline = parsedOptions["pipelined"] as? Bool ?? asPipeline
+                          
+                        }
+                      controller.pty.execute(command: cmd, handlerId: handlerId, asBackgroundJob: asBackgroundJob, asPipeline: asPipeline)
+                    }
+                case "shell":
+                    if let cmd = params["cmd"],
+                        let handlerId = params["handlerId"] {
+                        controller.pty.shell(command: cmd, handlerId: handlerId)
                     }
                 case "write":
                     if let cmd = params["cmd"] {

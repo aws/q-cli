@@ -78,6 +78,7 @@ class Accessibility {
         TelemetryProvider.track(event: .grantedAXPermission, with: [:])
       }
       print("Accessibility Permission Granted!!!")
+      Accessibility.setGlobalTimeout(seconds: 2)
       completion?(granted)
       Accessibility.pendingPermission = false
     }
@@ -456,6 +457,14 @@ class Accessibility {
 
   fileprivate static func xtermLog(_ message: String){
     Logger.log(message: message, subsystem: .xtermCursor)
+  }
+  
+  static func setGlobalTimeout(seconds: Float) {
+    let result = AXUIElementSetMessagingTimeout(AXUIElementCreateSystemWide(), seconds)
+    
+    if result != .success {
+      SentrySDK.capture(message: "Error setting AX global timeout")
+    }
   }
 }
 

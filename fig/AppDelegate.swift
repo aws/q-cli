@@ -37,9 +37,13 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             options.enableAutoSessionTracking = true
             options.attachStacktrace = true
             options.sessionTrackingIntervalMillis = 5_000
+            options.enabled = !Defaults.telemetryDisabled
         }
         warnToMoveToApplicationIfNecessary()
-        
+      
+        // Set timeout to avoid hanging misbehaving 3rd party apps
+        Accessibility.setGlobalTimeout(seconds: 2)
+
         if let hideMenuBar = Settings.shared.getValue(forKey: Settings.hideMenubarIcon) as? Bool, hideMenuBar {
           print("Not showing menubarIcon because of \(Settings.hideMenubarIcon)")
         } else {
@@ -103,7 +107,9 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 
         handleUpdateIfNeeded()
         Defaults.useAutocomplete = true
-        Defaults.autocompleteVersion = "v6"
+        Defaults.autocompleteVersion = "v7"
+        AutocompleteContextNotifier.addIndicatorToTitlebar = false
+
         Defaults.autocompleteWidth = 250
         Defaults.ignoreProcessList = ["figcli", "gitstatusd-darwin-x86_64", "gitstatusd-darwin-arm64", "nc", "fig_pty", "starship", "figterm"]
 
@@ -371,15 +377,23 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
       
         statusBarMenu.addItem(NSMenuItem.separator())
 
-      
+        statusBarMenu.addItem(NSMenuItem.separator())
+        let issue = statusBarMenu.addItem(
+         withTitle: "Report a bug...",
+         action: #selector(AppDelegate.sendFeedback),
+         keyEquivalent: "")
+        issue.image = NSImage(imageLiteralResourceName: "github")
+        
         let forum = statusBarMenu.addItem(
          withTitle: "Support Guide",
          action: #selector(AppDelegate.viewSupportForum),
          keyEquivalent: "")
         forum.image = NSImage(named: NSImage.Name("commandkey"))
-    
+        
+        statusBarMenu.addItem(NSMenuItem.separator())
+
         statusBarMenu.addItem(
-        withTitle: "Quit",
+        withTitle: "Quit Fig",
         action:  #selector(AppDelegate.quit),
         keyEquivalent: "")
       
@@ -396,13 +410,16 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     func integrationsMenu() -> NSMenu {
       let integrationsMenu = NSMenu(title: "fig")
 
-      let statusInTitle = integrationsMenu.addItem(
-      withTitle: "Show '☑ fig' in Terminal",
-      action: #selector(AppDelegate.toggleFigIndicator(_:)),
-      keyEquivalent: "")
-      statusInTitle.state = AutocompleteContextNotifier.addIndicatorToTitlebar ? .on : .off
-      integrationsMenu.addItem(NSMenuItem.separator())
-      
+        // todo(mschrage): Renable when we can set the title using bi-directional IPC with figterm
+      if AutocompleteContextNotifier.addIndicatorToTitlebar {
+          let statusInTitle = integrationsMenu.addItem(
+          withTitle: "Show '☑ fig' in Terminal",
+          action: #selector(AppDelegate.toggleFigIndicator(_:)),
+          keyEquivalent: "")
+          statusInTitle.state = AutocompleteContextNotifier.addIndicatorToTitlebar ? .on : .off
+          integrationsMenu.addItem(NSMenuItem.separator())
+      }
+
       let itermIntegration = integrationsMenu.addItem(
       withTitle: "iTerm Integration",
       action: #selector(AppDelegate.toggleiTermIntegration(_:)),
