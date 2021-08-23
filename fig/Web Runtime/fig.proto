@@ -1,0 +1,28 @@
+syntax = "proto3";
+//option objc_class_prefix = "FIG";
+package fig;
+
+message ClientOriginatedMessage {
+  optional int64 id = 1;
+
+  oneof submessage {
+      
+  }
+}
+
+message ServerOriginatedMessage {
+  optional int64 id = 1;
+
+  // Responses to ClientOriginatedMessages of the corresponding type
+  oneof submessage {}
+    
+}
+
+// Requests the contents of a range of lines.
+message GetBufferRequest {
+  // See documentation on session IDs. "all" not accepted.
+  optional string session = 1;
+
+  // Which lines to return?
+  optional LineRange line_range = 2;
+}

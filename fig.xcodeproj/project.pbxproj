@@ -136,6 +136,7 @@
 		7573F15B2602B4E000C833FA /* alert@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7573F1592602B4E000C833FA /* alert@2x.png */; };
 		7573F15C2602B4E000C833FA /* invite@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7573F15A2602B4E000C833FA /* invite@2x.png */; };
 		7573F160260BC71000C833FA /* LoginItems.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7573F15F260BC70F00C833FA /* LoginItems.swift */; };
+		7575D44926C7400800D0C8D7 /* fig.proto in Sources */ = {isa = PBXBuildFile; fileRef = 7575D44826C7400800D0C8D7 /* fig.proto */; };
 		7577124725648DFB0011FF48 /* ps.c in Sources */ = {isa = PBXBuildFile; fileRef = 7577124625648DFB0011FF48 /* ps.c */; };
 		757712492564D94A0011FF48 /* ProcessStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757712482564D9490011FF48 /* ProcessStatus.swift */; };
 		757AF4C826BC73FA00349764 /* WindowPositioning.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757AF4C726BC73FA00349764 /* WindowPositioning.swift */; };
@@ -426,6 +427,7 @@
 		7573F15A2602B4E000C833FA /* invite@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "invite@2x.png"; sourceTree = "<group>"; };
 		7573F15F260BC70F00C833FA /* LoginItems.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginItems.swift; sourceTree = "<group>"; };
 		7573F161260BEF7F00C833FA /* figRelease.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = figRelease.entitlements; sourceTree = "<group>"; };
+		7575D44826C7400800D0C8D7 /* fig.proto */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.protobuf; path = fig.proto; sourceTree = "<group>"; };
 		7577124525648DCD0011FF48 /* ps.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ps.h; sourceTree = "<group>"; };
 		7577124625648DFB0011FF48 /* ps.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ps.c; sourceTree = "<group>"; };
 		757712482564D9490011FF48 /* ProcessStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessStatus.swift; sourceTree = "<group>"; };
@@ -973,6 +975,7 @@
 				752C0BDB2479F68C0077E415 /* tutorial.css */,
 				75D2E3CA249C1E7500607F66 /* terminal.css */,
 				752C0BD92479F37B0077E415 /* fig.js */,
+				7575D44826C7400800D0C8D7 /* fig.proto */,
 			);
 			path = "Web Runtime";
 			sourceTree = "<group>";
@@ -1431,6 +1434,7 @@
 				751F7589246D090100E083C8 /* WebBridge.swift in Sources */,
 				75EDDC5B25D4BC54003AECC6 /* UnixSocketClient.swift in Sources */,
 				75AEF2E625C3DEAF00D78431 /* DockerIntegration.swift in Sources */,
+				7575D44926C7400800D0C8D7 /* fig.proto in Sources */,
 				7510F8A624A6910500E86F7C /* iOSAccessoryView.swift in Sources */,
 				75AEF2EE25C5062E00D78431 /* WindowObserver.swift in Sources */,
 				75675955244634AD006AA988 /* AppDelegate.swift in Sources */,
