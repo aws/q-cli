@@ -363,6 +363,28 @@ let setup = function(window) {
           fig.private({ type: "key", data: {code: "51"}})
         }
       },
+      proto: {
+          callback: function (b64) {
+              let raw = b64DecodeUnicode(b64)
+              
+              let response = JSON.parse(raw)
+              if (fig.debug) { console.log(response) }
+              
+              let callback = this[response.id]
+              
+              if (callback) {
+                  callback(response)
+              }
+          },
+          send: function (request, callback) {
+              let jsonString = JSON.stringify(request)
+              
+              if (callback) {
+                  callback(response)
+              }
+              window.webkit.messageHandlers.proto.postMessage(jsonString);
+          }
+      },
       positioning: {
           isValidFrame: function(frame, callback) {
               let data = Object.keys(frame).reduce((dict, key) => {

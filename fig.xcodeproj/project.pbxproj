@@ -137,6 +137,8 @@
 		7573F15C2602B4E000C833FA /* invite@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7573F15A2602B4E000C833FA /* invite@2x.png */; };
 		7573F160260BC71000C833FA /* LoginItems.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7573F15F260BC70F00C833FA /* LoginItems.swift */; };
 		7575D44926C7400800D0C8D7 /* fig.proto in Sources */ = {isa = PBXBuildFile; fileRef = 7575D44826C7400800D0C8D7 /* fig.proto */; };
+		7575D44F26D5D35000D0C8D7 /* API.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7575D44E26D5D35000D0C8D7 /* API.swift */; };
+		7575D45126D6ED2400D0C8D7 /* fig.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7575D45026D6ED2400D0C8D7 /* fig.pb.swift */; };
 		7577124725648DFB0011FF48 /* ps.c in Sources */ = {isa = PBXBuildFile; fileRef = 7577124625648DFB0011FF48 /* ps.c */; };
 		757712492564D94A0011FF48 /* ProcessStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757712482564D9490011FF48 /* ProcessStatus.swift */; };
 		757AF4C826BC73FA00349764 /* WindowPositioning.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757AF4C726BC73FA00349764 /* WindowPositioning.swift */; };
@@ -428,6 +430,8 @@
 		7573F15F260BC70F00C833FA /* LoginItems.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginItems.swift; sourceTree = "<group>"; };
 		7573F161260BEF7F00C833FA /* figRelease.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = figRelease.entitlements; sourceTree = "<group>"; };
 		7575D44826C7400800D0C8D7 /* fig.proto */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.protobuf; path = fig.proto; sourceTree = "<group>"; };
+		7575D44E26D5D35000D0C8D7 /* API.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = API.swift; sourceTree = "<group>"; };
+		7575D45026D6ED2400D0C8D7 /* fig.pb.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = fig.pb.swift; path = "../../../proto-api/swift/fig.pb.swift"; sourceTree = "<group>"; };
 		7577124525648DCD0011FF48 /* ps.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ps.h; sourceTree = "<group>"; };
 		7577124625648DFB0011FF48 /* ps.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ps.c; sourceTree = "<group>"; };
 		757712482564D9490011FF48 /* ProcessStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessStatus.swift; sourceTree = "<group>"; };
@@ -805,6 +809,7 @@
 				7520D8112682AEB00034FE2B /* Throttler.swift */,
 				755FC553268D09DE00966027 /* UpdateService.swift */,
 				750CF21726A1055F0094D76A /* Config.swift */,
+				7575D44B26D5C4DD00D0C8D7 /* API */,
 				75290AB92671905D000F4255 /* iTerm */,
 				75EDDC4F25D2473C003AECC6 /* Hyper */,
 				752A398725CD0FFB00B1AC40 /* VSCode */,
@@ -853,6 +858,15 @@
 				75675977244634B2006AA988 /* Info.plist */,
 			);
 			path = figUITests;
+			sourceTree = "<group>";
+		};
+		7575D44B26D5C4DD00D0C8D7 /* API */ = {
+			isa = PBXGroup;
+			children = (
+				7575D44E26D5D35000D0C8D7 /* API.swift */,
+				7575D45026D6ED2400D0C8D7 /* fig.pb.swift */,
+			);
+			path = API;
 			sourceTree = "<group>";
 		};
 		757CA88B248B08D7002A64A8 /* local */ = {
@@ -1423,6 +1437,7 @@
 				1A63312125A4BE6D00CEA06A /* Keystroke.swift in Sources */,
 				7510F8C124A9B32D00E86F7C /* WindowManager.swift in Sources */,
 				7510F8AF24A6910500E86F7C /* HeadlessTerminal.swift in Sources */,
+				7575D44F26D5D35000D0C8D7 /* API.swift in Sources */,
 				755FC554268D09DE00966027 /* UpdateService.swift in Sources */,
 				75DA86A525EEBD7500722F1D /* Alert.swift in Sources */,
 				755D0DE0247DDE050074AB5C /* FigCLI.swift in Sources */,
@@ -1469,6 +1484,7 @@
 				75290AB4267126EB000F4255 /* iTermIntegration.swift in Sources */,
 				75B0A07C25BA64CC00FCD89A /* AutocompleteContextNotifier.swift in Sources */,
 				75FE40002626A4BD00AC8414 /* Github.swift in Sources */,
+				7575D45126D6ED2400D0C8D7 /* fig.pb.swift in Sources */,
 				751C3BEC24B6910800B5C7FD /* Remote.swift in Sources */,
 				75EDDC4E25D23773003AECC6 /* HyperIntegration.swift in Sources */,
 				7510F8A924A6910500E86F7C /* MacLocalTerminalView.swift in Sources */,

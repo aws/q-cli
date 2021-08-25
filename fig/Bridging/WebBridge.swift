@@ -69,6 +69,7 @@ class WebBridge : NSObject {
                 contentController.add(self, name: WebBridgeScript.globalExecuteHandler.rawValue)
                 contentController.add(self, name: WebBridgeScript.stdoutHandler.rawValue)
                 contentController.add(self, name: WebBridgeScript.privateHandler.rawValue)
+                contentController.add(self, name: WebBridgeScript.protobufHandler.rawValue)
 
                 contentController.add(self, name: WebBridgeScript.onboardingHandler.rawValue)
 
@@ -172,6 +173,7 @@ enum WebBridgeScript: String, CaseIterable {
     case detachHandler = "detachHandler"
     case globalExecuteHandler = "globalExecuteHandler"
     case privateHandler = "privateHandler"
+    case protobufHandler = "proto"
 
     case onboardingHandler = "onboardingHandler"
 
@@ -550,6 +552,8 @@ extension WebBridge : WKScriptMessageHandler {
             WebBridge.stdout(scope: message)
         case .privateHandler:
             WebBridge.privateAPI(scope: message)
+        case .protobufHandler:
+            API.handle(scriptMessage: message)
         default:
             print("Unhandled WKScriptMessage type '\(message.name)'")
         }
