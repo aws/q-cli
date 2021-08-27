@@ -329,7 +329,7 @@ class KeypressProvider {
       return .forward
     }
     
-    guard WindowManager.shared.autocomplete?.isVisible ?? true else {
+    guard !(WindowManager.shared.autocomplete?.isHidden ?? true) else {
       return .forward
     }
     

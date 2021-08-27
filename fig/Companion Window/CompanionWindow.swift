@@ -31,6 +31,11 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
     var shouldTrackWindow = true;
     
     var isDocked = true;
+    var isHidden: Bool {
+        get {
+            return self.frame.height == 1 || self.frame.height == 0 || !self.isVisible
+        }
+    }
     
     var oneTimeUse = false;
 
