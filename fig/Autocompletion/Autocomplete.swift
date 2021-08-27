@@ -148,7 +148,7 @@ class Autocomplete {
       return .forward
     }
         
-    let autocompleteIsNotVisible = (WindowManager.shared.autocomplete?.maxHeight ?? 0 <= 1 ||  !(WindowManager.shared.autocomplete?.isVisible ?? false))
+    let autocompleteIsNotVisible = WindowManager.shared.autocomplete?.isHidden ?? true
 
     // Allow to be intercepted by autocomplete app if visible
     // otherwise prevent keypress from propogating
@@ -165,7 +165,7 @@ class Autocomplete {
       return .ignore
     }
     
-    let autocompleteIsNotVisible = !(WindowManager.shared.autocomplete?.isVisible ?? false)
+    let autocompleteIsNotVisible = WindowManager.shared.autocomplete?.isHidden ?? true
 
     let onlyShowOnTab = (Settings.shared.getValue(forKey: Settings.onlyShowOnTabKey) as? Bool) ?? false
     
@@ -190,7 +190,7 @@ class Autocomplete {
       return .ignore
     }
     
-    let autocompleteIsNotVisible = !(WindowManager.shared.autocomplete?.isVisible ?? false)
+    let autocompleteIsNotVisible = WindowManager.shared.autocomplete?.isHidden ?? true
         
     // Don't intercept escape key when in VSCode editor
     if Integrations.electronTerminals.contains(window.bundleId ?? "") &&
@@ -213,7 +213,7 @@ class Autocomplete {
     // control+esc toggles autocomplete on and off
     Autocomplete.toggle(for: window)
     
-    return WindowManager.shared.autocomplete?.isVisible ?? false ? .consume : .forward
+    return autocompleteIsNotVisible ? .forward : .consume
 
   }
 }
