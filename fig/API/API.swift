@@ -8,6 +8,7 @@
 
 import Cocoa
 import WebKit
+import FigAPIBindings
 
 typealias Request = Fig_ClientOriginatedMessage
 typealias Response = Fig_ServerOriginatedMessage
@@ -24,7 +25,7 @@ class API {
         
         do {
             let request = try scriptMessage.parseAsAPIRequest()
-            API.handle(request, in: webView)
+            API.handle(request, from: webView)
 
         } catch APIError.generic(message: let message) {
             API.reportGlobalError(message: message, in: webView)
@@ -34,12 +35,13 @@ class API {
         
     }
     
-    static func handle(_ request: Request, in webView: WKWebView) {
+    static func handle(_ request: Request, from webView: WKWebView) {
         
         print(request.id, String(reflecting: request.submessage))
         var response = Response()
         response.id = request.id
 
+        var isAsync = false
         do {
             switch request.submessage {
                 case .getBufferRequest(let getBufferRequest):
@@ -49,6 +51,8 @@ class API {
                     response.positionWindowResponse = try WindowPositioning.positionWindow(positionWindowRequest)
                 case .ptyRequest(let ptyRequest):
                     print("API: ptyRequest")
+                    
+                    isAsync = true
                 default:
                     print("API: unknown request")
             }
@@ -58,7 +62,10 @@ class API {
             response.error = "An unknown error occured."
         }
         
-        API.send(response, to: webView)
+        // Send response immediately if request is completed synchronously
+        if !isAsync {
+            API.send(response, to: webView)
+        }
     }
     
     static func send(_ response: Response, to webView: WKWebView) {
@@ -76,7 +83,7 @@ class API {
     static func reportGlobalError(message: String, in webView: WKWebView) {
         API.log("reporting global error: " + message)
         
-        let payload = "document.dispatchEvent(new CustomEvent('FigGlobalErrorOccured', {'detail': {'error' : '\(message)' } }));"
+        let payload = "document.dispatchEvent(new CustomEvent('FigGlobalErrorOccurred', {'detail': {'error' : '\(message)' } }));"
         webView.evaluateJavaScript(payload, completionHandler: nil)
 
     }

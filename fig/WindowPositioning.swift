@@ -7,6 +7,7 @@
 //
 
 import Cocoa
+import FigAPIBindings
 
 enum APIError: Error {
     case generic(message: String)
