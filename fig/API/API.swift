@@ -80,10 +80,13 @@ class API {
         webView.evaluateJavaScript(payload, completionHandler: nil)
     }
     
-    static func reportGlobalError(message: String, in webView: WKWebView) {
+    static func reportGlobalError(message: String, in webView: WKWebView,
+                                  file: String = #file,
+                                  function: String = #function,
+                                  line: Int = #line) {
         API.log("reporting global error: " + message)
-        
-        let payload = "document.dispatchEvent(new CustomEvent('FigGlobalErrorOccurred', {'detail': {'error' : '\(message)' } }));"
+        let source = "\(function) in \(file):\(line)"
+        let payload = "document.dispatchEvent(new CustomEvent('FigGlobalErrorOccurred', {'detail': {'error' : '\(message)', '', 'source': '\(source)' } }));"
         webView.evaluateJavaScript(payload, completionHandler: nil)
 
     }
