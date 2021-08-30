@@ -193,7 +193,9 @@ void figterm_loop(int ptyp_fd, pid_t shell_pid, char* initial_command) {
 
       if (buffer != NULL) {
         log_info("guess: %s|\nindex: %d", buffer, index);
-        // figterm_log(ft, '.');
+        if (get_logging_level() == LOG_DEBUG) {
+          figterm_log(ft, '.');
+        }
         if (index >= 0)
           publish_buffer(index, buffer, ft);
       }
@@ -237,13 +239,13 @@ int main(int argc, char *argv[]) {
   if ((fdp = ptyp_open(ptc_name)) < 0)
     goto fallback;
 
-  initialize_logging(ptc_name);
   set_pty_name(ptc_name);
 
   if ((pid = fork()) < 0) {
     log_error("fork error");
     goto fallback;
   } else if (pid != 0) {
+    initialize_logging(ptc_name);
     // figterm process, parent of shell process.
     pid_t shell_pid = pid;
     log_info("Shell: %d", shell_pid);
@@ -272,8 +274,6 @@ int main(int argc, char *argv[]) {
 
   // Child process becomes pty child and launches shell.
   ptyc_open(fdp, ptc_name, &term, &ws);
-
-  log_info("launching shell exe: %s", getenv("FIG_SHELL"));
 fallback:
   launch_shell();
 }

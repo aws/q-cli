@@ -24,6 +24,10 @@ void set_logging_level(int level) {
   _logging_level = level;
 }
 
+int get_logging_level() {
+  return _logging_level;
+}
+
 void init_log_file(char* path) {
   int prot = PROT_READ | PROT_WRITE;
   int flags = MAP_SHARED | MAP_ANONYMOUS;
@@ -50,11 +54,9 @@ void vlog_msg(int level, const char *file, int line, const char *fmt,
     }
 
     char buf[64];
-    buf[strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", time)] = '\0';
-
     pthread_mutex_lock(&_mutex_log_file->mutex);
 
-    fprintf(_mutex_log_file->file, "[%s %-5s %d %s:%d] ", buf, log_levels[level], getpid(), file, line);
+    fprintf(_mutex_log_file->file, "\033[38;5;168mfigterm (%d):\033[0m [%s:%d] ", getpid(), file, line);
     vfprintf(_mutex_log_file->file, fmt, ap);
     fprintf(_mutex_log_file->file, "\n");
     fflush(_mutex_log_file->file);

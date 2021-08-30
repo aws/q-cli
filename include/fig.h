@@ -139,6 +139,7 @@ enum { LOG_FATAL, LOG_ERROR, LOG_WARN, LOG_INFO, LOG_DEBUG };
 void log_msg(int level, const char *file, int line, const char *fmt, ...);
 void err_sys_msg(const char *file, int line, const char *fmt, ...) __attribute__((noreturn));
 void set_logging_level(int);
+int get_logging_level();
 void init_log_file(char*);
 void close_log_file();
 
