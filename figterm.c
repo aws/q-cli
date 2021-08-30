@@ -15,8 +15,6 @@ struct FigTerm {
 
   FigShellState shell_state;
 
-  bool shell_enabled;
-
   // Turn off figterm if there's an error.
   bool disable_figterm;
 
@@ -50,8 +48,6 @@ static void handle_osc(FigTerm* ft) {
       chdir(ft->osc + 4);
     }
   } else if (strneq(ft->osc, "Shell=", 6)) {
-    // Only enable in bash for now.
-    ft->shell_enabled = strcmp(ft->osc + 6, "bash") == 0;
     strcpy(ft->shell_state.shell, ft->osc + 6);
   } else if (strneq(ft->osc, "FishSuggestionColor=", 20)) {
     int rgb[3];
@@ -197,10 +193,6 @@ FigTerm *figterm_new(int shell_pid, int ptyp_fd) {
   ft->shell_state.preexec = true;
   ft->shell_state.in_prompt = false;
 
-  // Default to disabled until we see a shell prompt with shell info we
-  // recognize.
-  ft->shell_enabled = false;
-
   ft->disable_figterm = false;
 
   ft->has_seen_prompt = false;
@@ -235,11 +227,15 @@ void figterm_free(FigTerm *ft) {
   free(ft);
 }
 
+bool figterm_shell_enabled(FigTerm* ft) {
+  return strcmp(ft->shell_state.shell, "bash") == 0 || strcmp(ft->shell_state.shell, "fish") == 0;
+}
+
 char* figterm_get_buffer(FigTerm* ft, int* index) {
   int i = ft->cmd_cursor->row;
   int j = ft->cmd_cursor->col;
 
-  if (ft->disable_figterm || !ft->shell_enabled ||
+  if (ft->disable_figterm || !figterm_shell_enabled(ft) ||
       ft->shell_state.preexec || access(ft->insertion_lock_path, F_OK) == 0 ||
       i < 0)
     return NULL;

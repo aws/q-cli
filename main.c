@@ -102,13 +102,15 @@ void publish_buffer(int index, char *buffer, FigTerm* ft) {
   size_t buflen = strlen(buffer) +
     strlen(fig_info->term_session_id) +
     strlen(fig_info->fig_integration_version) +
+    strlen(shell_state.shell) +
     strlen(shell_state.tty) +
     strlen(shell_state.pid);
 
   char *tmpbuf = malloc(buflen + sizeof(char) * 50);
   sprintf(
     tmpbuf,
-    "fig bg:bash-keybuffer %s %s %s %s 0 %d \"%s\"",
+    "fig bg:%s-keybuffer %s %s %s %s 0 %d \"%s\"",
+    shell_state.shell,
     fig_info->term_session_id,
     fig_info->fig_integration_version,
     shell_state.tty,
@@ -224,6 +226,12 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  char* log_level = getenv("FIG_LOG_LEVEL");
+  bool log_debug = log_level != NULL && strcmp(log_level, "DEBUG");
+  if (log_debug) {
+    printf("Checking stdin fd validity...\n");
+  }
+
   if (!isatty(STDIN_FILENO) ||
       fig_info->term_session_id == NULL ||
       fig_info->fig_integration_version == NULL)
@@ -240,6 +248,10 @@ int main(int argc, char *argv[]) {
     goto fallback;
 
   set_pty_name(ptc_name);
+
+  if (log_debug) {
+    printf("Forking child shell process\n");
+  }
 
   if ((pid = fork()) < 0) {
     log_error("fork error");
@@ -270,6 +282,10 @@ int main(int argc, char *argv[]) {
     // copy stdin -> ptyp, ptyp -> stdout
     figterm_loop(fdp, shell_pid, initial_command);
     EXIT(0);
+  }
+
+  if (log_debug) {
+    printf("About to launch shell\n");
   }
 
   // Child process becomes pty child and launches shell.
