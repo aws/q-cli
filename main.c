@@ -227,7 +227,7 @@ int main(int argc, char *argv[]) {
   }
 
   char* log_level = getenv("FIG_LOG_LEVEL");
-  bool log_debug = log_level != NULL && strcmp(log_level, "DEBUG");
+  bool log_debug = log_level != NULL && strcmp(log_level, "DEBUG") == 0;
   if (log_debug) {
     printf("Checking stdin fd validity...\n");
   }
