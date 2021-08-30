@@ -26,7 +26,7 @@ class WindowPositioning {
             response.isClipped = info.isClipped
             return response
         } else {
-            return Fig_PositionWindowResponse()
+            throw APIError.generic(message: "Not implemented")
         }
     }
     

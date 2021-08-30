@@ -14,8 +14,7 @@ typealias Request = Fig_ClientOriginatedMessage
 typealias Response = Fig_ServerOriginatedMessage
 
 class API {
-    let broker = API()
-
+    
     static func handle(scriptMessage: WKScriptMessage) {
         
         guard let webView = scriptMessage.webView else {
@@ -37,7 +36,6 @@ class API {
     
     static func handle(_ request: Request, from webView: WKWebView) {
         
-        print(request.id, String(reflecting: request.submessage))
         var response = Response()
         response.id = request.id
 
