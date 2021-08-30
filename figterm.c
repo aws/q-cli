@@ -274,7 +274,9 @@ void figterm_log(FigTerm *ft, char mask) {
 }
 
 void figterm_write(FigTerm* ft, char* buf, int n) {
-  log_debug("Writing %d chars %.*s", n, n, buf);
+  if (!ft->disable_figterm && !ft->shell_state.preexec) {
+    log_debug("Writing %d chars %.*s", n, n, buf);
+  }
   vterm_input_write(ft->vt, buf, n);
 }
 

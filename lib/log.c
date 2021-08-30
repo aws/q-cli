@@ -56,7 +56,7 @@ void vlog_msg(int level, const char *file, int line, const char *fmt,
     char buf[64];
     pthread_mutex_lock(&_mutex_log_file->mutex);
 
-    fprintf(_mutex_log_file->file, "\033[255;127;127mfigterm:\033[0m [%-5s %d %s:%d] ", log_levels[level], getpid(), file, line);
+    fprintf(_mutex_log_file->file, "\033[38;5;168mfigterm (%d):\033[0m [%s:%d] ", getpid(), file, line);
     vfprintf(_mutex_log_file->file, fmt, ap);
     fprintf(_mutex_log_file->file, "\n");
     fflush(_mutex_log_file->file);

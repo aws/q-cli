@@ -193,7 +193,7 @@ void figterm_loop(int ptyp_fd, pid_t shell_pid, char* initial_command) {
 
       if (buffer != NULL) {
         log_info("guess: %s|\nindex: %d", buffer, index);
-        if (get_logging_level() == FIG_DEBUG) {
+        if (get_logging_level() == LOG_DEBUG) {
           figterm_log(ft, '.');
         }
         if (index >= 0)
