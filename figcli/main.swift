@@ -21,16 +21,16 @@ enum RunCommandError: Error {
     case POSIXSpawnError(Int32)
 }
 
-func runCommand(_ command: String, completion: ((Int32) -> Void)? = nil) throws {
+func runCommand(_ command: String, isScript: Bool = false, shell: String = "/bin/sh", completion: ((Int32) -> Void)? = nil) throws {
     var pid: pid_t = 0
-    let args = ["sh", "-c", command]
+    let args = isScript ? ["sh", "-c", command] : [command]
     var env = ProcessInfo().environment
         env["SHELLPID"] = String(getppid())
         env["VIA_FIG_COMMAND"] = "1"
     let envStr = env.map { k, v in "\(k)=\(v)" }
     try withCStrings(args) { cArgs in
         try withCStrings(envStr) { cEnvs in
-            var status = posix_spawn(&pid, "/bin/sh", nil, nil, cArgs, cEnvs)
+            var status = posix_spawn(&pid, shell, nil, nil, cArgs, cEnvs)
             if status == 0 {
                 if (waitpid(pid, &status, 0) != -1) {
                     completion?(status)
@@ -131,6 +131,13 @@ if arguments.count > 1 {
       exit(0)
 
     }
+}
+
+// determine if command exists as script in ~/.fig/tools/cli/SCRIPT.sh
+if let pathToScriptCommand = ScriptCommand.matchesArguments(arguments) {
+    exec(command: "/bin/bash",
+         args: [ pathToScriptCommand ] + Array(arguments.dropFirst(2)))
+    exit(0)
 }
 
 // early exit if bg:* and fig is not active

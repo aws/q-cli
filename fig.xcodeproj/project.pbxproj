@@ -235,6 +235,7 @@
 		75EDDC4E25D23773003AECC6 /* HyperIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75EDDC4D25D23773003AECC6 /* HyperIntegration.swift */; };
 		75EDDC5125D24755003AECC6 /* hyper-integration.js in Resources */ = {isa = PBXBuildFile; fileRef = 75EDDC5025D24755003AECC6 /* hyper-integration.js */; };
 		75EDDC5B25D4BC54003AECC6 /* UnixSocketClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75EDDC5A25D4BC53003AECC6 /* UnixSocketClient.swift */; };
+		75F78F8226DC3A56001FB6C1 /* ScriptCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75F78F8126DC3A56001FB6C1 /* ScriptCommands.swift */; };
 		75F7F952261FBDC30005E215 /* UnixSocketServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75F7F951261FBDC30005E215 /* UnixSocketServer.swift */; };
 		75F7F954262007170005E215 /* ShellHooksTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75F7F953262007170005E215 /* ShellHooksTransport.swift */; };
 		75FE40002626A4BD00AC8414 /* Github.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75FE3FFF2626A4BD00AC8414 /* Github.swift */; };
@@ -527,6 +528,7 @@
 		75EDDC4D25D23773003AECC6 /* HyperIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HyperIntegration.swift; sourceTree = "<group>"; };
 		75EDDC5025D24755003AECC6 /* hyper-integration.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = "hyper-integration.js"; sourceTree = "<group>"; };
 		75EDDC5A25D4BC53003AECC6 /* UnixSocketClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnixSocketClient.swift; sourceTree = "<group>"; };
+		75F78F8126DC3A56001FB6C1 /* ScriptCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptCommands.swift; sourceTree = "<group>"; };
 		75F7F951261FBDC30005E215 /* UnixSocketServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnixSocketServer.swift; sourceTree = "<group>"; };
 		75F7F953262007170005E215 /* ShellHooksTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellHooksTransport.swift; sourceTree = "<group>"; };
 		75FE3FFF2626A4BD00AC8414 /* Github.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Github.swift; sourceTree = "<group>"; };
@@ -703,6 +705,7 @@
 			children = (
 				751F7590246E16D800E083C8 /* main.swift */,
 				758AEB6B24CEA54600A15EAF /* SocketServer.swift */,
+				75F78F8126DC3A56001FB6C1 /* ScriptCommands.swift */,
 				758AEB5F24CE529D00A15EAF /* String+Shell.swift */,
 				758AEB5D24CD35D400A15EAF /* WebSocket.swift */,
 				7573F1572601927200C833FA /* Settings.swift */,
@@ -1376,6 +1379,7 @@
 			files = (
 				758AEB6024CE529D00A15EAF /* String+Shell.swift in Sources */,
 				758AEB6C24CEA54600A15EAF /* SocketServer.swift in Sources */,
+				75F78F8226DC3A56001FB6C1 /* ScriptCommands.swift in Sources */,
 				751F7591246E16D800E083C8 /* main.swift in Sources */,
 				758AEB5E24CD35D400A15EAF /* WebSocket.swift in Sources */,
 				7573F1582601927200C833FA /* Settings.swift in Sources */,
