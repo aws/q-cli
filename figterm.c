@@ -56,6 +56,19 @@ static void handle_osc(FigTerm* ft) {
     strcpy(ft->shell_state.tty, ft->osc + 4);
   } else if (strneq(ft->osc, "PID=", 4)) {
     strcpy(ft->shell_state.pid, ft->osc + 4);
+  } else if (strneq(ft->osc, "Log=", 4)) {
+    if (strcmp(ft->osc + 4, "DEBUG") == 0) {
+      set_logging_level(LOG_DEBUG);
+    } else if (strcmp(ft->osc + 4, "INFO") == 0) {
+      set_logging_level(LOG_INFO);
+    } else if (strcmp(ft->osc + 4, "ERROR") == 0) {
+      set_logging_level(LOG_ERROR);
+    } else if (strcmp(ft->osc + 4, "FATAL") == 0) {
+      set_logging_level(LOG_FATAL);
+    } else {
+      // Default to WARN.
+      set_logging_level(LOG_WARN);
+    }
   } else if (strneq(ft->osc, "SSH=", 4)) {
     ft->shell_state.in_ssh = ft->osc[5] == '1';
   }
@@ -256,7 +269,7 @@ void figterm_log(FigTerm *ft, char mask) {
   VTermPos cursor;
   figterm_screen_get_cursorpos(ft->screen, &cursor);
 
-  log_info("\ntext:\n%.*s\ncursor pos: %d %d", outpos, buf, cursor.row, cursor.col);
+  log_debug("\ntext:\n%.*s\ncursor pos: %d %d", outpos, buf, cursor.row, cursor.col);
   free(buf);
 }
 
