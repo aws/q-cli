@@ -52,6 +52,11 @@ static void handle_osc(FigTerm* ft) {
   } else if (strneq(ft->osc, "Shell=", 6)) {
     // Only enable in bash for now.
     ft->shell_enabled = strcmp(ft->osc + 6, "bash") == 0;
+    strcpy(ft->shell_state.shell, ft->osc + 6);
+  } else if (strneq(ft->osc, "FishSuggestionColor=", 20)) {
+    int rgb[3];
+    sscanf(ft->osc + 20, "%02x%02x%02x", &rgb[0], &rgb[1], &rgb[2]);
+    memcpy(ft->shell_state.fish_suggestion_color, rgb, sizeof(rgb));
   } else if (strneq(ft->osc, "TTY=", 4)) {
     strcpy(ft->shell_state.tty, ft->osc + 4);
   } else if (strneq(ft->osc, "PID=", 4)) {
@@ -111,6 +116,29 @@ static int movecursor_cb(VTermPos pos, VTermPos oldpos, int visible, void *user)
   return 0;
 }
 
+static int setpenattr_cb(VTermAttr attr, VTermValue *val, void *user) {
+  FigTerm *ft = user;
+  bool in_suggestion = false;
+
+  switch(attr) {
+    case VTERM_ATTR_FOREGROUND:
+      if (VTERM_COLOR_IS_RGB(&val->color) &&
+        strcmp(ft->shell_state.shell, "fish") == 0 &&
+        ft->shell_state.fish_suggestion_color[0] == val->color.rgb.red &&
+        ft->shell_state.fish_suggestion_color[1] == val->color.rgb.blue &&
+        ft->shell_state.fish_suggestion_color[2] == val->color.rgb.green) {
+        in_suggestion = true;
+      }
+      figterm_screen_set_attr(ft->screen, FIGTERM_ATTR_IN_SUGGESTION, &in_suggestion);
+      return 1;
+
+    default:
+      return 0;
+  }
+
+  return 0;
+}
+
 static VTermStateFallbacks state_fallbacks = {
     .osc = osc_cb,
 };
@@ -118,6 +146,7 @@ static VTermStateFallbacks state_fallbacks = {
 static FigTermScreenCallbacks screen_callbacks = {
     .scroll = scroll_cb,
     .movecursor = movecursor_cb,
+    .setpenattr = setpenattr_cb,
 };
 
 FigTerm *figterm_new(int shell_pid, int ptyp_fd) {
@@ -146,6 +175,11 @@ FigTerm *figterm_new(int shell_pid, int ptyp_fd) {
 
   ft->shell_state.pid[0] = '\0';
   ft->shell_state.tty[0] = '\0';
+  ft->shell_state.shell[0] = '\0';
+  for (int i = 0; i < 3; i += 1) {
+    ft->shell_state.fish_suggestion_color[i] = 0;
+  }
+
   ft->shell_state.in_ssh = false;
   ft->shell_state.preexec = true;
   ft->shell_state.in_prompt = false;
@@ -164,10 +198,11 @@ FigTerm *figterm_new(int shell_pid, int ptyp_fd) {
 
   ft->vt = vt;
   FigTermScreen* screen = figterm_screen_new(vt);
+  ft->screen = screen;
+
   figterm_screen_set_callbacks(screen, &screen_callbacks, ft);
   figterm_screen_set_unrecognised_fallbacks(screen, &state_fallbacks, ft);
   figterm_screen_reset(screen, true);
-  ft->screen = screen;
 
   return ft;
 

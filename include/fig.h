@@ -38,11 +38,13 @@
 // screen.c
 typedef enum {
   FIGTERM_ATTR_IN_PROMPT = 0,
+  FIGTERM_ATTR_IN_SUGGESTION = 1,
 } FigTermAttr;
 
 typedef struct {
   void (*scroll)(int scroll_delta, void *user);
   int (*movecursor)(VTermPos pos, VTermPos oldpos, int visible, void *user);
+  int (*setpenattr)(VTermAttr attr, VTermValue *val, void *user);
 } FigTermScreenCallbacks;
 
 typedef struct FigTermScreen FigTermScreen;
@@ -65,10 +67,15 @@ size_t figterm_screen_get_text(FigTermScreen*, char*, size_t, const VTermRect, c
 typedef struct {
   char tty[30];
   char pid[8];
+
+  char shell[10];
+  int fish_suggestion_color[3];
+
   bool in_ssh;
 
   bool preexec;
   bool in_prompt;
+
 } FigShellState;
 
 typedef struct FigTerm FigTerm;
