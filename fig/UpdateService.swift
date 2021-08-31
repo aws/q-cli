@@ -140,12 +140,10 @@ class UpdateService: NSObject {
     if self.updateIsAvailable {
       // This updates the status in the shell config and js
       self.update = nil
-      // since the update is already downloaded, restarting the app should apply it.
-      if Defaults.updateByQuiting {
-        NSApp.terminate(nil)
-      } else {
-        NSApp.appDelegate.restart()
-      }
+      // since the update is already downloaded, quitting the app will apply it.
+      // todo(mschrage): restart app automatically. (currently it must be relaunched manually or using `fig launch`
+      NSApp.terminate(nil)
+        
     }
   }
   
@@ -173,6 +171,10 @@ extension UpdateService: SUUpdaterDelegate {
   
   func updater(_ updater: SUUpdater, willInstallUpdate item: SUAppcastItem) {
     UpdateService.log("will install update")
+  }
+    
+  func updaterWillRelaunchApplication(_ updater: SUUpdater) {
+    UpdateService.log("will relaunch application")
   }
   
   func updater(_ updater: SUUpdater, didFinishLoading appcast: SUAppcast) {
