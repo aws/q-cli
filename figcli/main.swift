@@ -21,16 +21,16 @@ enum RunCommandError: Error {
     case POSIXSpawnError(Int32)
 }
 
-func runCommand(_ command: String, isScript: Bool = false, shell: String = "/bin/sh", completion: ((Int32) -> Void)? = nil) throws {
+func runCommand(_ command: String, completion: ((Int32) -> Void)? = nil) throws {
     var pid: pid_t = 0
-    let args = isScript ? ["sh", "-c", command] : [command]
+    let args = ["sh", "-c", command]
     var env = ProcessInfo().environment
         env["SHELLPID"] = String(getppid())
         env["VIA_FIG_COMMAND"] = "1"
     let envStr = env.map { k, v in "\(k)=\(v)" }
     try withCStrings(args) { cArgs in
         try withCStrings(envStr) { cEnvs in
-            var status = posix_spawn(&pid, shell, nil, nil, cArgs, cEnvs)
+            var status = posix_spawn(&pid, "/bin/sh", nil, nil, cArgs, cEnvs)
             if status == 0 {
                 if (waitpid(pid, &status, 0) != -1) {
                     completion?(status)

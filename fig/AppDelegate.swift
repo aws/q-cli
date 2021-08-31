@@ -855,7 +855,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         task.launchPath = "/usr/bin/open"
         task.arguments = [path]
         task.launch()
-        NSApp.terminate(self)
+        exit(0)
     }
 
     
