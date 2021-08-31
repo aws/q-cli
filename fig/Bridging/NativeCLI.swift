@@ -71,6 +71,7 @@ class NativeCLI {
         case viewLogs = "debug:log"
         case symlinkCLI = "util:symlink-cli"
         case loginItems = "util:login-items"
+        case inputMethod = "util:input-method"
         case theme = "theme"
 
         var isUtility: Bool {
@@ -121,6 +122,7 @@ class NativeCLI {
                                                            .updateApp,
                                                            .symlinkCLI,
                                                            .loginItems,
+                                                           .inputMethod,
                                                            .theme,
                                                            .docs]
                return implementatedNatively.contains(self)
@@ -200,6 +202,8 @@ class NativeCLI {
               NativeCLI.updateLoginItemCommand(scope)
             case .theme:
               NativeCLI.themeCommand(scope)
+            case .inputMethod:
+              NativeCLI.toggleInputMethod(scope)
             default:
                 break;
             }
@@ -653,6 +657,29 @@ extension NativeCLI {
       Onboarding.setUpEnviroment()
     }
   
+    static func toggleInputMethod(_ scope: Scope) {
+        let (message, connection) = scope
+        let command = message.arguments.first ?? ""
+        
+        switch command {
+            case "--enable":
+                InputMethod.toggleSource(on: true)
+                NativeCLI.printInTerminal("\n› Enabling Fig Input Method\n", using: connection)
+            case "--disable":
+                InputMethod.toggleSource(on: false)
+                NativeCLI.printInTerminal("\n› Disabling Fig Input Method\n", using: connection)
+            case "install":
+                if InputMethod.install() {
+                    NativeCLI.printInTerminal("\n› Installed Fig IME\n", using: connection)
+                } else {
+                    NativeCLI.printInTerminal("\n› Failed to install Fig IME\n", using: connection)
+                }
+            default:
+                return
+
+        }
+    }
+    
     static func updateLoginItemCommand(_ scope: Scope) {
         let (message, connection) = scope
         let command = message.arguments.first ?? ""
