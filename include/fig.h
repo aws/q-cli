@@ -38,11 +38,13 @@
 // screen.c
 typedef enum {
   FIGTERM_ATTR_IN_PROMPT = 0,
+  FIGTERM_ATTR_IN_SUGGESTION = 1,
 } FigTermAttr;
 
 typedef struct {
   void (*scroll)(int scroll_delta, void *user);
   int (*movecursor)(VTermPos pos, VTermPos oldpos, int visible, void *user);
+  int (*setpenattr)(VTermAttr attr, VTermValue *val, void *user);
 } FigTermScreenCallbacks;
 
 typedef struct FigTermScreen FigTermScreen;
@@ -65,10 +67,15 @@ size_t figterm_screen_get_text(FigTermScreen*, char*, size_t, const VTermRect, c
 typedef struct {
   char tty[30];
   char pid[8];
+
+  char shell[10];
+  int fish_suggestion_color[3];
+
   bool in_ssh;
 
   bool preexec;
   bool in_prompt;
+
 } FigShellState;
 
 typedef struct FigTerm FigTerm;
@@ -82,6 +89,7 @@ void figterm_log(FigTerm*, char);
 void figterm_get_shell_state(FigTerm*, FigShellState*);
 void figterm_write(FigTerm*, char*, int);
 bool figterm_is_disabled(FigTerm*);
+bool figterm_has_seen_prompt(FigTerm*);
 
 // util.c
 typedef struct {
@@ -131,6 +139,7 @@ enum { LOG_FATAL, LOG_ERROR, LOG_WARN, LOG_INFO, LOG_DEBUG };
 void log_msg(int level, const char *file, int line, const char *fmt, ...);
 void err_sys_msg(const char *file, int line, const char *fmt, ...) __attribute__((noreturn));
 void set_logging_level(int);
+int get_logging_level();
 void init_log_file(char*);
 void close_log_file();
 

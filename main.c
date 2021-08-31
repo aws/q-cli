@@ -50,6 +50,7 @@ void launch_shell() {
   // Clean up environment and launch shell.
   unsetenv("FIG_SHELL");
   unsetenv("FIG_IS_LOGIN_SHELL");
+  unsetenv("FIG_START_TEXT");
   if (execvp(args[0], args) < 0) {
     EXIT(1);
   }
@@ -101,13 +102,15 @@ void publish_buffer(int index, char *buffer, FigTerm* ft) {
   size_t buflen = strlen(buffer) +
     strlen(fig_info->term_session_id) +
     strlen(fig_info->fig_integration_version) +
+    strlen(shell_state.shell) +
     strlen(shell_state.tty) +
     strlen(shell_state.pid);
 
   char *tmpbuf = malloc(buflen + sizeof(char) * 50);
   sprintf(
     tmpbuf,
-    "fig bg:bash-keybuffer %s %s %s %s 0 %d \"%s\"",
+    "fig bg:%s-keybuffer %s %s %s %s 0 %d \"%s\"",
+    shell_state.shell,
     fig_info->term_session_id,
     fig_info->fig_integration_version,
     shell_state.tty,
@@ -122,7 +125,7 @@ void publish_buffer(int index, char *buffer, FigTerm* ft) {
 }
 
 // Main figterm loop.
-void figterm_loop(int ptyp_fd, pid_t shell_pid) {
+void figterm_loop(int ptyp_fd, pid_t shell_pid, char* initial_command) {
   int nread;
   char buf[BUFFSIZE + 1];
   FigTerm* ft;
@@ -135,10 +138,26 @@ void figterm_loop(int ptyp_fd, pid_t shell_pid) {
 
   fd_set rfd;
 
+  bool is_first_time = true;
+
   for (;;) {
     FD_ZERO(&rfd);
     FD_SET(STDIN_FILENO, &rfd);
     FD_SET(ptyp_fd, &rfd);
+
+    if (figterm_has_seen_prompt(ft) && is_first_time) {
+      if (initial_command != NULL && strlen(initial_command) > 0) {
+        int cmdlen = strlen(initial_command);
+        char* tmpbuf = malloc((cmdlen + 2) * sizeof(char));
+        sprintf(tmpbuf, "%s\n", initial_command);
+        if (write(ptyp_fd, tmpbuf, cmdlen + 1) != cmdlen + 1) {
+          free(tmpbuf);
+          err_sys("write error to parent pty");
+        }
+        free(tmpbuf);
+      }
+      is_first_time = false;
+    }
 
     int n = select(ptyp_fd + 1, &rfd, 0, 0, NULL);
     if (n < 0 && errno != EINTR) {
@@ -176,7 +195,9 @@ void figterm_loop(int ptyp_fd, pid_t shell_pid) {
 
       if (buffer != NULL) {
         log_info("guess: %s|\nindex: %d", buffer, index);
-        // figterm_log(ft, '.');
+        if (get_logging_level() == LOG_DEBUG) {
+          figterm_log(ft, '.');
+        }
         if (index >= 0)
           publish_buffer(index, buffer, ft);
       }
@@ -196,12 +217,19 @@ int main(int argc, char *argv[]) {
   struct winsize ws;
 
   FigInfo* fig_info = init_fig_info();
+  char* initial_command = getenv("FIG_START_TEXT");
 
   for (int i = 1; i < argc; i++) {
     if (strcmp(argv[i], "--version") == 0 || strcmp(argv[i], "-v") == 0) {
       printf("Figterm version: %d\n", FIGTERM_VERSION);
       exit(0);
     }
+  }
+
+  char* log_level = getenv("FIG_LOG_LEVEL");
+  bool log_debug = log_level != NULL && strcmp(log_level, "DEBUG") == 0;
+  if (log_debug) {
+    printf("Checking stdin fd validity...\n");
   }
 
   if (!isatty(STDIN_FILENO) ||
@@ -219,20 +247,18 @@ int main(int argc, char *argv[]) {
   if ((fdp = ptyp_open(ptc_name)) < 0)
     goto fallback;
 
-  initialize_logging(ptc_name);
   set_pty_name(ptc_name);
 
-  // Fork for pty child/parent split. Note that the shell is the parent process
-  // but becomes the pty child, controlled by figterm, which is the child
-  // process but pty parent. We make the shell the parent process so it is
-  // exposed to the terminal emulator and keeps things like current directory,
-  // etc. in sync, useful for features like iTerm's "Reuse Previous Sessions'
-  // Directory" setting.
+  if (log_debug) {
+    printf("Forking child shell process\n");
+  }
+
   if ((pid = fork()) < 0) {
     log_error("fork error");
     goto fallback;
   } else if (pid != 0) {
-    // figterm process, child of shell process.
+    initialize_logging(ptc_name);
+    // figterm process, parent of shell process.
     pid_t shell_pid = pid;
     log_info("Shell: %d", shell_pid);
     log_info("Figterm: %d", getpid());
@@ -254,14 +280,16 @@ int main(int argc, char *argv[]) {
       err_sys("sigsegv error");
 
     // copy stdin -> ptyp, ptyp -> stdout
-    figterm_loop(fdp, shell_pid);
+    figterm_loop(fdp, shell_pid, initial_command);
     EXIT(0);
   }
 
-  // Parent process becomes pty child and launches shell.
-  ptyc_open(fdp, ptc_name, &term, &ws);
+  if (log_debug) {
+    printf("About to launch shell\n");
+  }
 
-  log_info("launching shell exe: %s", getenv("FIG_SHELL"));
+  // Child process becomes pty child and launches shell.
+  ptyc_open(fdp, ptc_name, &term, &ws);
 fallback:
   launch_shell();
 }

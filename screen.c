@@ -20,6 +20,7 @@
 
 typedef struct {
   bool in_prompt;
+  bool in_suggestion;
 } ScreenAttrs;
 
 typedef struct {
@@ -300,11 +301,21 @@ static int movecursor(VTermPos pos, VTermPos oldpos, int visible, void *user) {
   return 0;
 }
 
+int setpenattr(VTermAttr attr, VTermValue *val, void *user) {
+  FigTermScreen *screen = user;
+
+  if (screen->callbacks && screen->callbacks->setpenattr)
+    return (*screen->callbacks->setpenattr)(attr, val, screen->cbdata);
+
+  return 0;
+}
+
 static VTermStateCallbacks state_cbs = {
   .putglyph    = &putglyph,
   .scrollrect  = &scrollrect,
   .erase       = &erase,
   .settermprop = &settermprop,
+  .setpenattr =  &setpenattr,
   .resize      = &resize,
   .movecursor  = &movecursor
 };
@@ -332,6 +343,7 @@ FigTermScreen *figterm_screen_new(VTerm *vt) {
   screen->sb_buffer = malloc(sizeof(ScreenCell) * cols);
 
   screen->attrs.in_prompt = false;
+  screen->attrs.in_suggestion = false;
 
   screen->callbacks = NULL;
   screen->cbdata = NULL;
@@ -370,8 +382,11 @@ void figterm_screen_get_cursorpos(FigTermScreen* screen, VTermPos* cursor) {
 }
 
 void figterm_screen_set_attr(FigTermScreen* screen, FigTermAttr attr, void* val) {
-  if (attr == FIGTERM_ATTR_IN_PROMPT)
+  if (attr == FIGTERM_ATTR_IN_PROMPT) {
     screen->attrs.in_prompt = *((bool*) val);
+  } else if (attr == FIGTERM_ATTR_IN_SUGGESTION) {
+    screen->attrs.in_suggestion = *((bool*) val);
+  }
 }
 
 size_t figterm_screen_get_text(FigTermScreen *screen, char *buffer, size_t len, const VTermRect rect, char mask, int* index) {
@@ -402,8 +417,9 @@ size_t figterm_screen_get_text(FigTermScreen *screen, char *buffer, size_t len, 
 
       ScreenCell *cell = getcell(screen, row, col);
 
-      if (cell->chars[0] == 0 || (cell->attrs.in_prompt && mask == UNICODE_SPACE))
-        // Erased or prompt cell, might need a space.
+      if (cell->chars[0] == 0 ||
+          (mask == UNICODE_SPACE && (cell->attrs.in_prompt || cell->attrs.in_suggestion)))
+        // Erased prompt or autosuggestion cell, might need a space.
         padding++;
       else if (cell->chars[0] == (uint32_t) -1)
         // Gap behind a double-width char, do nothing.
@@ -413,7 +429,7 @@ size_t figterm_screen_get_text(FigTermScreen *screen, char *buffer, size_t len, 
           PUT(UNICODE_SPACE);
           padding--;
         }
-        if (mask && cell->attrs.in_prompt) {
+        if (mask && (cell->attrs.in_prompt || cell->attrs.in_suggestion)) {
           PUT(mask);
         } else {
           for (int i = 0; i < MAX_CHARS_PER_CELL && cell->chars[i]; i++) {
