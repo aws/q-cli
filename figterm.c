@@ -228,7 +228,7 @@ void figterm_free(FigTerm *ft) {
 }
 
 bool figterm_shell_enabled(FigTerm* ft) {
-  return strcmp(ft->shell_state.shell, "bash") == 0 || strcmp(ft->shell_state.shell, "fish") == 0;
+  return strcmp(ft->shell_state.shell, "bash") == 0; //|| strcmp(ft->shell_state.shell, "fish") == 0;
 }
 
 char* figterm_get_buffer(FigTerm* ft, int* index) {
