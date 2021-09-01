@@ -740,7 +740,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 
             if let general = uninstallScriptFile {
                 NSWorkspace.shared.open(URL(string: "https://fig.io/uninstall?email=\(Defaults.email ?? "")")!)
-                LoginItems.shared.currentApplicationShouldLaunchOnStartup = false
+                LoginItems.shared.removeAllItemsMatchingBundleURL()
                 
                 let domain = Bundle.main.bundleIdentifier!
                 let uuid = Defaults.uuid
@@ -840,7 +840,9 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
                 try? FileManager.default.createSymbolicLink(atPath: iTermIntegrationPath, withDestinationPath: localScript)
             }
             
-            //remindToSourceFigInExistingTerminals()
+            // resolves a bug where Fig was added to login items multiple times
+            // if the appropriate setting is enabled, a single entry will be readded
+            LoginItems.shared.removeAllItemsMatchingBundleURL()
         }
         
         Defaults.versionAtPreviousLaunch = current

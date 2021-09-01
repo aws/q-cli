@@ -664,6 +664,9 @@ extension NativeCLI {
             case "--add":
                 LoginItems.shared.currentApplicationShouldLaunchOnStartup = true
                 NativeCLI.printInTerminal("\n› Adding Fig to LoginItems\n", using: connection)
+            case "--remove-all":
+                LoginItems.shared.removeAllItemsMatchingBundleURL()
+                NativeCLI.printInTerminal("\n› Removing all Fig entries from LoginItems\n", using: connection)
             default:
                 NativeCLI.printInTerminal("\(LoginItems.shared.currentApplicationShouldLaunchOnStartup ? "true" : "false")", using: connection)
 
