@@ -16,6 +16,7 @@ figterm-x86: main.c figterm.c screen.c util.c $(LIBVTERM) $(LIBFIG)
 
 figterm: figterm-x86 figterm-arm
 	lipo -create -output figterm figterm-x86 figterm-arm
+	codesign -s - -v figterm
 
 fig_get_shell_arm: get_shell.c
 	$(CC) get_shell.c $(CFLAGS) -o fig_get_shell_arm -target arm64-apple-macos11
@@ -25,6 +26,7 @@ fig_get_shell_x86: get_shell.c
 
 fig_get_shell: fig_get_shell_x86 fig_get_shell_arm
 	lipo -create -output fig_get_shell fig_get_shell_x86 fig_get_shell_arm
+	codesign -s - -v fig_get_shell
 
 fig_callback-arm: callback.c util.c $(LIBFIG)
 	$(CC) callback.c util.c $(CFLAGS) -o fig_callback-arm $(LDFLAGS) $(LDLIBS) -target arm64-apple-macos11
@@ -34,6 +36,7 @@ fig_callback-x86: callback.c util.c $(LIBFIG)
 
 fig_callback: fig_callback-x86 fig_callback-arm
 	lipo -create -output fig_callback fig_callback-x86 fig_callback-arm
+	codesign -s - -v fig_callback
 
 install: all
 	mkdir -p $(HOME)/.fig/bin; \
