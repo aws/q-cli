@@ -496,17 +496,6 @@ class Defaults {
         }
     }
   
-    static var updateByQuiting: Bool {
-        get {
-            return  UserDefaults.standard.bool(forKey: "updateByQuiting") ?? false
-        }
-        
-        set(version){
-            UserDefaults.standard.set(version, forKey: "updateByQuiting")
-            UserDefaults.standard.synchronize()
-        }
-    }
-  
     static var insertUsingRightArrow: Bool {
         get {
             if let behavior = Settings.shared.getValue(forKey: Settings.rightArrowKeyBehavior) as? String {

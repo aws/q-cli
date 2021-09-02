@@ -24,9 +24,9 @@ class LoginItems {
         return ((self as LoginItemsProtocol).itemForBundleURL(Bundle.main.bundleURL) != nil)
     }
     set (launchOnStartup) {
-        if (launchOnStartup) {
+        if (launchOnStartup && !self.includesCurrentApplication) {
             (self as LoginItemsProtocol).addLoginItem(Bundle.main.bundleURL)
-        } else {
+        } else if (!launchOnStartup && self.includesCurrentApplication) {
             (self as LoginItemsProtocol).removeLoginItem(Bundle.main.bundleURL)
         }
     }
@@ -133,4 +133,12 @@ class LoginItems {
   }
 }
 
-extension LoginItems: LoginItemsProtocol {}
+extension LoginItems: LoginItemsProtocol {
+    
+    // Note: this is used to resolve a bug where we added to many entries to login items
+    func removeAllItemsMatchingBundleURL() {
+        while (LoginItems.shared.containsURL(Bundle.main.bundleURL)) {
+            LoginItems.shared.removeURLIfExists(Bundle.main.bundleURL)
+        }
+    }
+}

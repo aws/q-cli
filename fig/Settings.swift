@@ -48,7 +48,9 @@ class Settings {
   static let shellIntegrationIsManagedByUser = "integrations.shell.managedByUser"
   static let theme = "autocomplete.theme"
   static let disableWebviewTransparency = "developer.disableWebviewTransparency"
-    
+  static let useControlRForHistoryBeta = "beta.history.ctrl-r"
+  static let useControlRForHistory = "history.ctrl-r"
+
   static let filePath = NSHomeDirectory() + "/.fig/settings.json"
   static let shared = Settings()
   //Note: app will crash if anything is logged before Settings.shared is initted
