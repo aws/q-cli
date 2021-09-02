@@ -45,7 +45,7 @@ class InputMethod {
     }
     
     static func keypressTrigger(_ event: CGEvent, _ window: ExternalWindow) -> EventTapAction {
-        if event.type == .keyDown {
+        if [.keyDown, .keyUp ].contains(event.type) {
             let center: DistributedNotificationCenter = DistributedNotificationCenter.default()
             center.postNotificationName(NSNotification.Name("io.fig.keypress"), object: nil, userInfo: ["bundleIdentifier" : window.bundleId ?? ""], deliverImmediately: true)
             print("Sending distributed notification!")
