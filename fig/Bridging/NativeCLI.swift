@@ -204,43 +204,6 @@ class NativeCLI {
                 break;
             }
         }
-        
-        func runFromScript(_ scope: Scope) {
-            guard !self.implementatedNatively else {
-                Logger.log(message: "CLI function '\(self.rawValue)' is implemented natively")
-                return
-            }
-            
-            var scriptName: String? = nil
-            
-            // map between raw CLI command and script name
-            switch self {
-            case .h, .help:
-                scriptName = "help"
-            case .uninstall, .disable, .remove:
-                scriptName = "uninstall_spec"
-            case .star:
-                scriptName = "contribute"
-            case .share:
-                scriptName = "tweet"
-            case .ssh:
-                scriptName = "ssh"
-            case .chat, .discord, .community:
-                scriptName = "community"
-            default:
-                break;
-            }
-            
-            let script = scriptName ?? self.rawValue.split(separator: ":").joined(separator: "-")
-            if let scriptPath = Bundle.main.path(forResource: script,
-                                                 ofType: "sh") {
-                NativeCLI.runShellScriptInTerminal(scriptPath, with: scope)
-                Logger.log(message: "\(scriptPath)", subsystem: .cli)
-            } else {
-                Logger.log(message: "CLI: Failed to find script", subsystem: .cli)
-               
-            }
-        }
     }
     
     static func route(_ command: Command, with message: ShellMessage, from connection: WebSocketConnection) {
@@ -253,8 +216,6 @@ class NativeCLI {
           
             if command.implementatedNatively {
                 command.run(scope)
-            } else {
-                command.runFromScript(scope)
             }
             
             if (!command.handlesDisconnect) {
