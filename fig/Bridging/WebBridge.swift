@@ -1113,8 +1113,21 @@ extension WebBridge {
                     }
                     
                     if let height = Float(data["height"]  ?? "") {
+                        let prevHeight = companion.maxHeight
+                        
                         print("autocomplete.height := \(height)")
                         companion.maxHeight = CGFloat(height)
+                        
+                        // Workaround to ensure compatibility with legacy behavior.
+                        // Ensure window is visible when the height is greater than 1!
+                        if height > 1 {
+                            companion.orderFrontRegardless()
+                            if prevHeight == 1 || prevHeight == 0 || prevHeight == nil {
+                                NotificationCenter.default.post(name: NSNotification.Name("showAutocompletePopup"), object: nil)
+                            }
+                        }
+
+
                     }
                     
                     if let anchorX = Float(data["anchorX"]  ?? "") {
