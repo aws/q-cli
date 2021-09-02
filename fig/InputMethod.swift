@@ -11,7 +11,7 @@ import Foundation
 class InputMethod {
     //defaults read ~/Library/Preferences/com.apple.HIToolbox.plist
     //https://developer.apple.com/library/archive/qa/qa1810/_index.html
-    @discardableResult static func toggleSource(with id: String = "com.monkeyank.inputmethod.figInputMethod", on: Bool) -> Bool {
+    @discardableResult static func toggleSource(with id: String = "io.fig.inputmethod.cursor", on: Bool) -> Bool {
 //        kTISCategoryPaletteInputSource
         
         let properties = [
@@ -37,7 +37,7 @@ class InputMethod {
     
     static func install() -> Bool {
         
-        let url = URL(fileURLWithPath: "\(NSHomeDirectory())/Library/Input Methods/figInputMethod.app")
+        let url = URL(fileURLWithPath: "\(NSHomeDirectory())/Library/Input Methods/FigInputMethod.app")
         let err = TISRegisterInputSource(url as CFURL)
         guard err != paramErr else {return false}
         
