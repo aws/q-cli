@@ -1,4 +1,5 @@
 #include "fig.h"
+#include <stdlib.h>
 #include <vterm.h>
 
 #define UNICODE_SPACE 0x20
@@ -50,9 +51,7 @@ static void handle_osc(FigTerm* ft) {
   } else if (strneq(ft->osc, "Shell=", 6)) {
     strcpy(ft->shell_state.shell, ft->osc + 6);
   } else if (strneq(ft->osc, "FishSuggestionColor=", 20)) {
-    int rgb[3];
-    sscanf(ft->osc + 20, "%02x%02x%02x", &rgb[0], &rgb[1], &rgb[2]);
-    memcpy(ft->shell_state.fish_suggestion_color, rgb, sizeof(rgb));
+    figterm_update_fish_suggestion_color(ft, ft->osc + 20);
   } else if (strneq(ft->osc, "TTY=", 4)) {
     strcpy(ft->shell_state.tty, ft->osc + 4);
   } else if (strneq(ft->osc, "PID=", 4)) {
@@ -131,11 +130,8 @@ static int setpenattr_cb(VTermAttr attr, VTermValue *val, void *user) {
 
   switch(attr) {
     case VTERM_ATTR_FOREGROUND:
-      if (VTERM_COLOR_IS_RGB(&val->color) &&
-        strcmp(ft->shell_state.shell, "fish") == 0 &&
-        ft->shell_state.fish_suggestion_color[0] == val->color.rgb.red &&
-        ft->shell_state.fish_suggestion_color[1] == val->color.rgb.blue &&
-        ft->shell_state.fish_suggestion_color[2] == val->color.rgb.green) {
+      if (ft->shell_state.fish_suggestion_color != NULL &&
+          vterm_color_is_equal(&val->color, ft->shell_state.fish_suggestion_color)) {
         in_suggestion = true;
       }
       figterm_screen_set_attr(ft->screen, FIGTERM_ATTR_IN_SUGGESTION, &in_suggestion);
@@ -185,9 +181,12 @@ FigTerm *figterm_new(int shell_pid, int ptyp_fd) {
   ft->shell_state.pid[0] = '\0';
   ft->shell_state.tty[0] = '\0';
   ft->shell_state.shell[0] = '\0';
-  for (int i = 0; i < 3; i += 1) {
-    ft->shell_state.fish_suggestion_color[i] = 0;
-  }
+
+  // TODO(sean): should get color support on prompt passing relevent env variables through.
+  ft->shell_state.color_support = get_color_support();
+  ft->shell_state.fish_suggestion_color_text = NULL;
+  ft->shell_state.fish_suggestion_color = NULL;
+  figterm_update_fish_suggestion_color(ft, getenv("fish_color_autosuggestion"));
 
   ft->shell_state.in_ssh = false;
   ft->shell_state.preexec = true;
@@ -228,7 +227,7 @@ void figterm_free(FigTerm *ft) {
 }
 
 bool figterm_shell_enabled(FigTerm* ft) {
-  return strcmp(ft->shell_state.shell, "bash") == 0; //|| strcmp(ft->shell_state.shell, "fish") == 0;
+  return strcmp(ft->shell_state.shell, "bash") == 0 || strcmp(ft->shell_state.shell, "fish") == 0;
 }
 
 char* figterm_get_buffer(FigTerm* ft, int* index) {
@@ -317,4 +316,22 @@ bool figterm_is_disabled(FigTerm* ft) {
 
 bool figterm_has_seen_prompt(FigTerm* ft) {
   return ft != NULL && ft->has_seen_prompt;
+}
+
+void figterm_update_fish_suggestion_color(FigTerm* ft, const char* new_color) {
+  if (new_color == NULL) {
+    return;
+  }
+  char* current_color = ft->shell_state.fish_suggestion_color_text;
+  if (current_color == NULL || strcmp(current_color, new_color) != 0) {
+    free(ft->shell_state.fish_suggestion_color);
+    free(ft->shell_state.fish_suggestion_color_text);
+
+    ft->shell_state.fish_suggestion_color_text = strdup(new_color);
+
+    ft->shell_state.fish_suggestion_color = parse_vterm_color_from_string(
+      new_color,
+      ft->shell_state.color_support
+    );
+  }
 }

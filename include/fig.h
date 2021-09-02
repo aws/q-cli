@@ -61,6 +61,13 @@ void figterm_screen_get_cursorpos(FigTermScreen*, VTermPos*);
 void figterm_screen_set_attr(FigTermScreen*, FigTermAttr, void*);
 size_t figterm_screen_get_text(FigTermScreen*, char*, size_t, const VTermRect, char, int*);
 
+// color.c
+enum { color_support_term256 = 1 << 0, color_support_term24bit = 1 << 1 };
+typedef unsigned int color_support_t;
+color_support_t get_color_support();
+
+VTermColor* parse_vterm_color_from_string(const char*, color_support_t);
+
 // figterm.c
 
 // Holds information about shell processes passed from shell config via osc.
@@ -69,7 +76,11 @@ typedef struct {
   char pid[8];
 
   char shell[10];
-  int fish_suggestion_color[3];
+
+  char* fish_suggestion_color_text;
+  VTermColor* fish_suggestion_color;
+
+  color_support_t color_support;
 
   bool in_ssh;
 
@@ -90,6 +101,7 @@ void figterm_get_shell_state(FigTerm*, FigShellState*);
 void figterm_write(FigTerm*, char*, int);
 bool figterm_is_disabled(FigTerm*);
 bool figterm_has_seen_prompt(FigTerm*);
+void figterm_update_fish_suggestion_color(FigTerm*, const char*);
 
 // util.c
 typedef struct {
