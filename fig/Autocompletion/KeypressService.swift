@@ -55,7 +55,6 @@ class KeypressProvider {
     , Autocomplete.handleCommandIKey
     , KeypressProvider.processRegisteredHandlers
     , KeypressProvider.handleRedirect
-    , FishIntegration.handleKeystroke
     ]
   
   var registeredHandlers: [EventTapHandler] = []
