@@ -1,249 +1,793 @@
-<html>
-<head>
-    <meta charset="utf-8">
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8" />
 
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta content="width=device-width, initial-scale=1" name="viewport" />
     <style>
-        body {
-            margin-left: 0;
-            margin-right: 0;
-            margin-top: 0;
-            font-family: "Avenir";
-        }
+      html {
+        --main-bg-color: rgb(254, 254, 254);
+        --main-text-color: rgb(7, 7, 7);
+        --description-text-color: rgb(7, 7, 7);
+        --description-border-color: rgb(199, 199, 199);
+        --selected-bg-color: rgb(41, 105, 218);
+        --selected-text-color: rgb(253, 253, 253);
+        --matching-bg-color: rgb(255, 239, 152);
+        --corner-radius: 5px;
 
-        a {
-            text-decoration: none;
-        }
+        position: absolute;
+        z-index: 1;
+        overflow: hidden;
+      }
 
+      /* Dark Mode */
+      html:not(.style-scope)[dark] {
+        --main-bg-color: rgb(48, 48, 48);
+        --main-text-color: rgb(180, 180, 180);
+        --description-text-color: rgb(180, 180, 180);
+        --description-border-color: rgb(65, 65, 65);
+        --selected-bg-color: rgb(30, 90, 199);
+        --selected-text-color: rgb(253, 253, 253);
+        --matching-bg-color: rgb(95, 89, 56);
+      }
+
+      code,
+      pre {
+        cursor: pointer !important;
+      }
+
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+        -webkit-user-select: none !important;
+      }
+
+      a {
+        text-decoration: none;
+      }
+
+      @media screen and (prefers-reduced-motion: reduce) {
         .wrapper {
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
-            
-            -webkit-animation: fadein 1s; /* Safari, Chrome and Opera > 12.1 */
-                      -moz-animation: fadein 1s; /* Firefox < 16 */
-                       -ms-animation: fadein 1s; /* Internet Explorer */
-                        -o-animation: fadein 1s; /* Opera < 12.1 */
-                           animation: fadein 1s;
+          display: block;
+          margin-right: auto;
+          margin-left: auto;
+          -webkit-animation: fadein 1s; /* Safari, Chrome and Opera > 12.1 */
+          -moz-animation: fadein 1s; /* Firefox < 16 */
+          -ms-animation: fadein 1s; /* Internet Explorer */
+          -o-animation: fadein 1s; /* Opera < 12.1 */
+          animation: none;
         }
+      }
 
-        @media only screen and (min-width: 800px) {
-            /* tablets and desktop */
-            .wrapper {
-                width: 35%;
-            }
-        }
-
-        @media only screen and (max-width: 800px) {
-            /* portrait phones */
-            .wrapper {
-                width: 90%;
-
-            }
-        }
-
-        header {
-            width: 275px;
-            margin-top: 20px;
-            margin-bottom: 10px;
-
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        header .title {
-            font-size: 1.7em;
-            display: block;
-        }
-
-        header .subtitle {
-            font-size: 0.8em;
-            display: block;
-        }
-
-    .button {
-        width: 161px;
-        margin-left: auto;
+      .wrapper {
+        display: block;
         margin-right: auto;
-    }
-            .button a {
-              color: white;
-              background-color: #0984e3;/*#00b894;*/
-              padding-top: 8px;
-              padding-bottom: 8px;
-              padding-right: 60px;
-              padding-left: 60px;
-              border-radius: 10px;
-              display: inline-block;
+        margin-left: auto;
+        -webkit-animation: fadein 1s; /* Safari, Chrome and Opera > 12.1 */
+        -moz-animation: fadein 1s; /* Firefox < 16 */
+        -ms-animation: fadein 1s; /* Internet Explorer */
+        -o-animation: fadein 1s; /* Opera < 12.1 */
+        animation: fadein 1s;
+      }
 
-              filter: brightness(100%);
-            }
-
-            .button p {
-              margin: 0px;
-              margin-top: 5px;
-              font-size: 10px;
-            }
-
-        
-            .button:hover {
-                filter: brightness(110%);
-            }
-
-        .section {
-            margin-top:30px;
+      @media only screen and (min-width: 800px) {
+        /* tablets and desktop */
+        .wrapper {
+          width: 35%;
         }
+      }
 
-        .section .title {
-            display: block;
-            font-weight: 500;
+      @media only screen and (max-width: 800px) {
+        /* portrait phones */
+        .wrapper {
+          width: 90%;
         }
+      }
 
-        .section .subtitle {
-            display: inline-block;
-            color: #ccc;
-        }
+      header {
+        width: 275px;
+        margin: 20px auto 10px;
+      }
 
-        .section p {
-            font-size: 0.85em;
-        }
+      header .title {
+        display: block;
+        font-size: 1.7em;
+      }
 
-        .video-mask {
-            width: 300;
-            border-radius: 5px;
-            -webkit-border-radius: 5px;
+      .button {
+        width: 161px;
+        margin-right: auto;
+        margin-left: auto;
+      }
 
-            overflow: hidden;
-            box-shadow: 0px 8px 18px #888888;
-            margin-bottom: 30px;
+      .button a {
+        display: inline-block;
+        padding: 8px 60px;
+        color: white;
+        background-color: #0984e3; /* #00b894; */
+        border-radius: 10px;
+        filter: brightness(100%);
+      }
 
-        }
+      .button p {
+        margin: 5px 0 0;
+        font-size: 10px;
+      }
 
-        video {
-            width: 100%;
-        }
+      .button:hover,
+      .button:focus {
+        filter: brightness(110%);
+      }
 
-        img {
-            width: 300;
-        }
+      .section {
+        margin-top: 30px;
+      }
 
-        section {
-            width: 275px;
+      .section .title {
+        display: block;
+        font-weight: 500;
+      }
 
-            margin-left: auto;
-            margin-right: auto;
-        }
+      .section p {
+        font-size: 0.85em;
+      }
 
-        .emoji {
-            padding-right: 5px;
-        }
+      img {
+        width: 300px;
+      }
 
-        code {
-            display: inline-block;
-            border-radius: 5px;
-            background-color: #ddd;
-            color: #bdbdbd
-        }
-    
-        #skip {
-            color: #ccc;
-            margin: 5px;
-            font-size: 0.85em;
-            text-align: center;
-            width: 300px;
-            margin-left: auto;
-            margin-right: auto;
-            display:block;
-        }
-    
-    ::-webkit-scrollbar {
+      section {
+        width: 275px;
+        margin-right: auto;
+        margin-left: auto;
+      }
+
+      code {
+        display: inline-block;
+        color: #bdbdbd;
+        background-color: #ddd;
+        border-radius: 5px;
+      }
+
+      #skip {
+        display: block;
+        width: 300px;
+        margin: 5px auto;
+        color: #ccc;
+        font-size: 0.85em;
+        text-align: center;
+      }
+
+      ::-webkit-scrollbar {
         display: none !important;
-    }
-    
-    @keyframes fadein {
-        from { opacity: 0; }
-        to   { opacity: 1; }
-    }
+      }
+
+      @keyframes fadein {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      /* Autocomplete window */
+      .suggestion {
+        display: flex !important;
+        height: 20px;
+        padding-left: 5px;
+      }
+
+      .icon {
+        width: 100%;
+        height: 100%;
+      }
+
+      /* Hide Scrollbar in every div */
+      *::-webkit-scrollbar {
+        display: none;
+      }
+
+      @keyframes shake {
+        0% {
+          transform: translate(1px, 1px) rotate(0deg);
+        }
+        10% {
+          transform: translate(-1px, -2px) rotate(-1deg);
+        }
+        20% {
+          transform: translate(-3px, 0) rotate(1deg);
+        }
+        30% {
+          transform: translate(3px, 2px) rotate(0deg);
+        }
+        40% {
+          transform: translate(1px, -1px) rotate(1deg);
+        }
+        50% {
+          transform: translate(-1px, 2px) rotate(-1deg);
+        }
+        60% {
+          transform: translate(-3px, 1px) rotate(0deg);
+        }
+        70% {
+          transform: translate(3px, 1px) rotate(-1deg);
+        }
+        80% {
+          transform: translate(-1px, -1px) rotate(1deg);
+        }
+        90% {
+          transform: translate(1px, 2px) rotate(0deg);
+        }
+        100% {
+          transform: translate(1px, -2px) rotate(-1deg);
+        }
+      }
+
+      mark.shared_start_match {
+        color: inherit;
+        text-decoration: underline;
+        background: none;
+      }
+
+      mark.search_match {
+        color: inherit;
+        background: var(--matching-bg-color);
+      }
+
+      span.active-item > span > mark.search_match {
+        color: inherit;
+        background: rgb(106, 142, 218);
+      }
+
+      /* Holds suggestions container and possibly description popout, side by side. */
+      #autocompleteWindow {
+        position: relative;
+        display: flex;
+        flex-direction: row;
+        overflow: hidden;
+      }
+
+      /* Holds suggestions list and possibly description below. */
+      #suggestionsContainer {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        overflow: hidden;
+        background-color: var(--main-bg-color);
+        border-radius: var(--corner-radius);
+      }
+
+      .listContainer {
+        border-radius: var(--corner-radius);
+      }
+
+      .loadingWrapper {
+        max-height: 20px;
+        padding-right: 5px;
+        padding-left: 5px;
+        background-color: var(--main-bg-color);
+        border-radius: var(--corner-radius);
+      }
+
+      .descriptionHint {
+        display: flex;
+        flex-shrink: 0;
+        align-items: center;
+        align-self: flex-end;
+        justify-content: center;
+        height: 20px;
+        padding-right: 5px;
+        padding-left: 5px;
+        color: var(--description-text-color);
+        font-size: 10px;
+        font-style: italic;
+        background-color: var(--main-bg-color);
+        border-radius: var(--corner-radius);
+      }
+
+      .zero-radius-bottom {
+        border-bottom-right-radius: 0;
+        border-bottom-left-radius: 0;
+      }
+
+      .text {
+        color: var(--main-text-color);
+        font-size: 0.8em;
+        font-family: "Monaco", sans-serif;
+      }
+
+      .active-item {
+        background-color: var(--selected-bg-color); /* #d4d4d4; */
+      }
+
+      .active-item .text {
+        color: var(--selected-text-color);
+      }
+
+      .flexRow {
+        display: flex;
+        flex-direction: row;
+      }
+
+      #description {
+        display: flex;
+        flex: 1;
+        flex-direction: row;
+        align-items: center;
+        align-self: flex-start;
+        justify-content: space-between;
+        margin-left: 0;
+        padding-right: 5px;
+        padding-left: 5px;
+        overflow: hidden scroll;
+        color: var(--description-text-color);
+        font-size: var(--font-size, 0.8em);
+        font-style: italic;
+        white-space: nowrap;
+        background-color: var(--main-bg-color);
+        border: 0 solid var(--description-border-color);
+      }
+
+      #description.withSuggestions {
+        border-top-width: 1px;
+      }
+
+      #description.popout {
+        z-index: 1;
+        overflow: hidden;
+        font-size: 12px;
+        white-space: normal;
+        border-radius: var(--corner-radius);
+      }
+
+      #description.popout .popoutText {
+        display: flex;
+        flex-direction: column;
+        align-self: flex-start;
+        padding-top: 5px;
+        padding-bottom: 5px;
+        overflow: hidden scroll;
+        border-radius: inherit;
+      }
+
+      #description.popout .popoutText span {
+        display: block;
+        word-wrap: normal;
+        -webkit-hyphens: auto;
+        hyphens: auto;
+      }
+
+      /* Light Mode */
+
+      .fig_wrapper {
+        position: relative !important;
+        overflow: visible !important;
+      }
+
+      @media screen and (prefers-reduced-motion: reduce) {
+        .fig_pearButton {
+          position: absolute !important;
+          z-index: 10 !important;
+          padding: 2px 6px !important;
+          font-size: 20px !important;
+          background-color: white !important;
+          border: none !important;
+          border-radius: 5px !important;
+          cursor: pointer !important;
+          opacity: 0 !important;
+          transition: none !important;
+          all: unset !important;
+        }
+      }
+
+      .fig_pearButton {
+        position: absolute !important;
+        z-index: 10 !important;
+        padding: 2px 6px !important;
+        font-size: 20px !important;
+        background-color: white !important;
+        border: none !important;
+        border-radius: 5px !important;
+        cursor: pointer !important;
+        opacity: 0 !important;
+        transition: all 0.1s ease-in-out !important;
+        all: unset !important;
+      }
+
+      .fig_prePearButton {
+        top: 5px !important;
+        right: 5px !important;
+      }
+
+      .fig_inlinePearButton {
+        right: -36px !important;
+        bottom: -7px !important;
+      }
+
+      button:focus {
+        outline: 0 !important;
+      }
+
+      .fig_hidden {
+        display: none !important;
+      }
+
+      .fig_buttonShow {
+        opacity: 1 !important;
+      }
+
+      .terminal-bg-color {
+        background-color: white !important;
+      }
+
+      .terminal-text-color {
+        color: black !important;
+      }
     </style>
-</head>
+    <title>Customize Setup</title>
+  </head>
 
-<body>
+  <body>
     <div class="wrapper">
-        <section>
-            <div class="section">
-                <span class="title" href="javascript:permission()" id="permissions">Customize Setup</span>
-                <p style = " color: #5e5e5e">Fig uses this permission to insert text on your behalf and read the current keybuffer.</p>
-                <div class="video-mask">
-                    <video autoplay playsinline muted loop defaultPlaybackRate=1.5>
-                        <source src="./permissions.mp4" type="video/mp4" />
-                        Your browser does not support the video tag.
-                    </video>
+      <section>
+        <div class="section">
+          <span class="title" href="javascript:permission()" id="permissions"
+            >Customize Setup</span
+          >
+          <p style="color: #5e5e5e">
+            Fig uses this permission to insert text on your behalf and read the
+            current keybuffer.
+          </p>
+          <div id="root">
+            <div id="autocompleteWindow">
+              <div
+                id="suggestionsContainer"
+                style="
+                  align-self: flex-start;
+                  width: 320px;
+                  height: 100%;
+                  max-height: 140px;
+                "
+              >
+                <div
+                  style="
+                    flex-basis: 1060px;
+                    flex-shrink: 1;
+                    min-width: 0;
+                    min-height: 0;
+                  "
+                >
+                  <div
+                    class="listContainer zero-radius-bottom"
+                    style="
+                      position: relative;
+                      width: 100%;
+                      height: 119px;
+                      overflow: auto;
+                      direction: ltr;
+                      will-change: transform;
+                    "
+                  >
+                    <div style="width: 100%; height: 1060px">
+                      <span
+                        class="suggestion active-item"
+                        style="
+                          position: absolute;
+                          top: 0;
+                          left: 0;
+                          width: 100%;
+                          height: 20px;
+                        "
+                        ><div
+                          style="
+                            width: 15px;
+                            min-width: 15px;
+                            height: 15px;
+                            margin-top: auto;
+                            margin-right: 5px;
+                            margin-bottom: auto;
+                            vertical-align: middle;
+                          "
+                        >
+                          <span
+                            ><img
+                              alt="subcommand"
+                              class="icon"
+                              src="fig://icon?type=command"
+                          /></span>
+                        </div>
+                        <span
+                          class="text"
+                          style="overflow: auto hidden; white-space: nowrap"
+                          >commit<span style="opacity: 0.5">
+                            [pathspec]
+                          </span></span
+                        ></span
+                      ><span
+                        class="suggestion"
+                        style="
+                          position: absolute;
+                          top: 20px;
+                          left: 0;
+                          width: 100%;
+                          height: 20px;
+                        "
+                        ><div
+                          style="
+                            width: 15px;
+                            min-width: 15px;
+                            height: 15px;
+                            margin-top: auto;
+                            margin-right: 5px;
+                            margin-bottom: auto;
+                            vertical-align: middle;
+                          "
+                        >
+                          <span
+                            ><img
+                              alt=""
+                              class="icon"
+                              src="fig://icon?type=commandkey"
+                          /></span>
+                        </div>
+                        <span
+                          class="text"
+                          style="overflow: auto hidden; white-space: nowrap"
+                          >s<span style="opacity: 0.5"> </span></span></span
+                      ><span
+                        class="suggestion"
+                        style="
+                          position: absolute;
+                          top: 40px;
+                          left: 0;
+                          width: 100%;
+                          height: 20px;
+                        "
+                        ><div
+                          style="
+                            width: 15px;
+                            min-width: 15px;
+                            height: 15px;
+                            margin-top: auto;
+                            margin-right: 5px;
+                            margin-bottom: auto;
+                            vertical-align: middle;
+                          "
+                        >
+                          <span
+                            ><img
+                              alt=""
+                              class="icon"
+                              src="fig://icon?type=commandkey"
+                          /></span>
+                        </div>
+                        <span
+                          class="text"
+                          style="overflow: auto hidden; white-space: nowrap"
+                          >d<span style="opacity: 0.5"> </span></span></span
+                      ><span
+                        class="suggestion"
+                        style="
+                          position: absolute;
+                          top: 60px;
+                          left: 0;
+                          width: 100%;
+                          height: 20px;
+                        "
+                        ><div
+                          style="
+                            width: 15px;
+                            min-width: 15px;
+                            height: 15px;
+                            margin-top: auto;
+                            margin-right: 5px;
+                            margin-bottom: auto;
+                            vertical-align: middle;
+                          "
+                        >
+                          <span
+                            ><img
+                              alt=""
+                              class="icon"
+                              src="fig://icon?type=commandkey"
+                          /></span>
+                        </div>
+                        <span
+                          class="text"
+                          style="overflow: auto hidden; white-space: nowrap"
+                          >co<span style="opacity: 0.5"> </span></span></span
+                      ><span
+                        class="suggestion"
+                        style="
+                          position: absolute;
+                          top: 80px;
+                          left: 0;
+                          width: 100%;
+                          height: 20px;
+                        "
+                        ><div
+                          style="
+                            width: 15px;
+                            min-width: 15px;
+                            height: 15px;
+                            margin-top: auto;
+                            margin-right: 5px;
+                            margin-bottom: auto;
+                            vertical-align: middle;
+                          "
+                        >
+                          <span
+                            ><img
+                              alt="subcommand"
+                              class="icon"
+                              src="fig://icon?type=command"
+                          /></span>
+                        </div>
+                        <span
+                          class="text"
+                          style="overflow: auto hidden; white-space: nowrap"
+                          >add<span style="opacity: 0.5">
+                            [pathspec]
+                          </span></span
+                        ></span
+                      ><span
+                        class="suggestion"
+                        style="
+                          position: absolute;
+                          top: 100px;
+                          left: 0;
+                          width: 100%;
+                          height: 20px;
+                        "
+                        ><div
+                          style="
+                            width: 15px;
+                            min-width: 15px;
+                            height: 15px;
+                            margin-top: auto;
+                            margin-right: 5px;
+                            margin-bottom: auto;
+                            vertical-align: middle;
+                          "
+                        >
+                          <span
+                            ><img
+                              alt="subcommand"
+                              class="icon"
+                              src="fig://icon?type=command"
+                          /></span>
+                        </div>
+                        <span
+                          class="text"
+                          style="overflow: auto hidden; white-space: nowrap"
+                          >bisect<span style="opacity: 0.5">
+                            &lt;paths&gt;
+                          </span></span
+                        ></span
+                      ><span
+                        class="suggestion"
+                        style="
+                          position: absolute;
+                          top: 120px;
+                          left: 0;
+                          width: 100%;
+                          height: 20px;
+                        "
+                        ><div
+                          style="
+                            width: 15px;
+                            min-width: 15px;
+                            height: 15px;
+                            margin-top: auto;
+                            margin-right: 5px;
+                            margin-bottom: auto;
+                            vertical-align: middle;
+                          "
+                        >
+                          <span
+                            ><img
+                              alt="subcommand"
+                              class="icon"
+                              src="fig://icon?type=command"
+                          /></span>
+                        </div>
+                        <span
+                          class="text"
+                          style="overflow: auto hidden; white-space: nowrap"
+                          >branch<span style="opacity: 0.5">
+                          </span></span></span
+                      ><span
+                        class="suggestion"
+                        style="
+                          position: absolute;
+                          top: 140px;
+                          left: 0;
+                          width: 100%;
+                          height: 20px;
+                        "
+                        ><div
+                          style="
+                            width: 15px;
+                            min-width: 15px;
+                            height: 15px;
+                            margin-top: auto;
+                            margin-right: 5px;
+                            margin-bottom: auto;
+                            vertical-align: middle;
+                          "
+                        >
+                          <span
+                            ><img
+                              alt="subcommand"
+                              class="icon"
+                              src="fig://icon?type=command"
+                          /></span>
+                        </div>
+                        <span
+                          class="text"
+                          style="overflow: auto hidden; white-space: nowrap"
+                          >checkout<span style="opacity: 0.5">
+                            [branch, file, tag or commit] [pathspec]
+                          </span></span
+                        ></span
+                      >
+                    </div>
+                  </div>
                 </div>
-                <div class = "button">
-                    <a id = "enable" href="javascript:permissions()">Continue</a>
+                <div class="flexRow" style="flex-shrink: 0">
+                  <div
+                    class="withSuggestions"
+                    id="description"
+                    style="height: 20px"
+                  >
+                    <span style="flex-shrink: 1; overflow: auto hidden"
+                      >Record changes to the repository</span
+                    >
+                    <div class="descriptionHint"><span>(⌘i)</span></div>
+                  </div>
                 </div>
-                <a id = "skip" style="display:none;" href="javascript:next()">Continue to next step manually</a>
+              </div>
             </div>
-        </section>
+          </div>
 
+          <div class="button">
+            <a href="javascript:permissions()" id="enable">Continue</a>
+          </div>
+          <a href="javascript:next()" id="skip" style="display: none"
+            >Continue to next step manually</a
+          >
+        </div>
+      </section>
     </div>
     <script>
-        document.querySelector('video').playbackRate = 1.8;
+      document.querySelector("video").playbackRate = 1.8;
 
-        let ws = function () {
-            fig.onboarding("ws", () => {
+      let ws = function () {
+        fig.onboarding("ws", () => {});
+      };
 
-            })
-        }
+      let cli = function () {
+        fig.onboarding("cli", () => {
+          window.location.href = "./cli.html";
+        });
+      };
 
-        let cli = function () {
-            fig.onboarding("cli", () => {
-                window.location.href = './cli.html'
-            })
-        }
+      let permissions = function () {
+        document.querySelector("#enable").innerText = "Waiting...";
+        fig.onboarding("permissions", () => {
+          window.location.href = "./debugger.html";
+        });
 
-        let permissions = function () {
-            document.querySelector("#enable").innerText = "Waiting..."
-            fig.onboarding("permissions", (value) => {
-               //window.location.href = `${fig.remoteURL}/onboarding/signin.html`
-               // window.location.href = './ssh.html'
-               window.location.href = './debugger.html'
+        setTimeout(() => {
+          document.querySelector("#skip").style.display = "block";
+        }, 1000 * 10);
+      };
 
-            })
-            
-            setTimeout(() => {
-               document.querySelector("#skip").style.display = "block";
-                
-            },1000 * 10)
-            //fig.onboarding("close")
-
-        }
-    
-        let next = function() {
-          // window.location.href = './ssh.html'
-          window.location.href = './debugger.html'
-        }
-        // const progressbar = document.querySelector('progress')
-        // const article = document.querySelector('body')
-
-        // let isScrolling = false
-
-        // document.addEventListener('scroll', (e) => isScrolling = true)
-
-        // render()
-
-        // function render() {
-
-        //     requestAnimationFrame(render)
-
-        //     if (!isScrolling) return
-
-        //     progressbar.value = window.scrollY / (article.offsetHeight - window.innerHeight) * 100
-
-        //     isScrolling = false
-
-        // }
+      let next = function () {
+        window.location.href = "./debugger.html";
+      };
     </script>
-</body>
-
+  </body>
 </html>
