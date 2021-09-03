@@ -31,6 +31,11 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
     var shouldTrackWindow = true;
     
     var isDocked = true;
+    var isHidden: Bool {
+        get {
+            return self.frame.height == 1 || self.frame.height == 0 || !self.isVisible
+        }
+    }
     
     var oneTimeUse = false;
 
@@ -608,7 +613,7 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
                 let frame = self.positioning.frame(targetWindowFrame: targetFrame,
                                                    screen: candidates.first!.frame)
 
-                setOverlayFrame(frame)
+                setOverlayFrame(frame.offsetBy(dx: 0, dy: frame.height * -1))
     
             }
             
@@ -628,7 +633,8 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
 //                    }
                     let frame = self.positioning.frame(targetWindowFrame: targetFrame,
                                                        screen: NSScreen.main!.frame)
-                    setOverlayFrame(frame)
+                    
+                    setOverlayFrame(frame.offsetBy(dx: 0, dy: frame.height * -1))
     
                 }
             }

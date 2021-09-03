@@ -133,6 +133,13 @@ if arguments.count > 1 {
     }
 }
 
+// determine if command exists as script in ~/.fig/tools/cli/SCRIPT.sh
+if let pathToScriptCommand = ScriptCommand.matchesArguments(arguments) {
+    exec(command: "/bin/bash",
+         args: [ pathToScriptCommand ] + Array(arguments.dropFirst(2)))
+    exit(0)
+}
+
 // early exit if bg:* and fig is not active
 
 if (arguments.filter { $0.starts(with: "bg:")}.count == 1  && NSWorkspace.shared.runningApplications.filter { $0.bundleIdentifier == "com.mschrage.fig"}.count == 0) {

@@ -342,8 +342,6 @@ class ShellBridge {
         switch backing {
         case .bash:
           integration = BashIntegration.self
-        case .fish:
-          integration = FishIntegration.self
         case .zle:
           integration = ZLEIntegration.self
         default:

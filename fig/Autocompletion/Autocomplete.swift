@@ -103,8 +103,11 @@ class Autocomplete {
   static func interceptKeystrokes(in window: ExternalWindow) {
     let nKeycode = KeyboardLayout.shared.keyCode(for: "N") ?? Keycode.n
     let pKeycode = KeyboardLayout.shared.keyCode(for: "P") ?? Keycode.p
+    let jKeycode = KeyboardLayout.shared.keyCode(for: "J") ?? Keycode.j
+    let kKeycode = KeyboardLayout.shared.keyCode(for: "K") ?? Keycode.k
     let iKeycode = KeyboardLayout.shared.keyCode(for: "I") ?? Keycode.i
-    
+    let rKeycode = KeyboardLayout.shared.keyCode(for: "R") ?? Keycode.r
+
     KeypressProvider.shared.addRedirect(for: Keystroke(modifierFlags: [.command], keyCode: iKeycode), in: window)
     KeypressProvider.shared.addRedirect(for: Keycode.upArrow, in: window)
     KeypressProvider.shared.addRedirect(for: Keycode.downArrow, in: window)
@@ -117,10 +120,18 @@ class Autocomplete {
     if (Settings.shared.getValue(forKey: Settings.allowAlternateNavigationKeys) as? Bool ?? true) {
         KeypressProvider.shared.addRedirect(for: Keystroke(modifierFlags: [.control], keyCode: nKeycode), in: window)
         KeypressProvider.shared.addRedirect(for: Keystroke(modifierFlags: [.control], keyCode: pKeycode), in: window)
+        
+        KeypressProvider.shared.addRedirect(for: Keystroke(modifierFlags: [.control], keyCode: jKeycode), in: window)
+        KeypressProvider.shared.addRedirect(for: Keystroke(modifierFlags: [.control], keyCode: kKeycode), in: window)
     }
   
     if (Settings.shared.getValue(forKey: Settings.disablePopoutDescriptions) as? Bool ?? false) {
         KeypressProvider.shared.addRedirect(for: Keystroke(modifierFlags: [.command], keyCode: iKeycode), in: window)
+    }
+    
+    if (Settings.shared.getValue(forKey: Settings.useControlRForHistory) as? Bool ??
+        Settings.shared.getValue(forKey: Settings.useControlRForHistoryBeta) as? Bool ?? false) {
+        KeypressProvider.shared.addRedirect(for: Keystroke(modifierFlags: [.control], keyCode: rKeycode), in: window)
     }
     
     if (Defaults.insertUsingRightArrow) {
@@ -148,7 +159,7 @@ class Autocomplete {
       return .forward
     }
         
-    let autocompleteIsNotVisible = (WindowManager.shared.autocomplete?.maxHeight ?? 0 <= 1 ||  !(WindowManager.shared.autocomplete?.isVisible ?? false))
+    let autocompleteIsNotVisible = WindowManager.shared.autocomplete?.isHidden ?? true
 
     // Allow to be intercepted by autocomplete app if visible
     // otherwise prevent keypress from propogating
@@ -165,7 +176,7 @@ class Autocomplete {
       return .ignore
     }
     
-    let autocompleteIsNotVisible = !(WindowManager.shared.autocomplete?.isVisible ?? false)
+    let autocompleteIsNotVisible = WindowManager.shared.autocomplete?.isHidden ?? true
 
     let onlyShowOnTab = (Settings.shared.getValue(forKey: Settings.onlyShowOnTabKey) as? Bool) ?? false
     
@@ -190,7 +201,7 @@ class Autocomplete {
       return .ignore
     }
     
-    let autocompleteIsNotVisible = !(WindowManager.shared.autocomplete?.isVisible ?? false)
+    let autocompleteIsNotVisible = WindowManager.shared.autocomplete?.isHidden ?? true
         
     // Don't intercept escape key when in VSCode editor
     if Integrations.electronTerminals.contains(window.bundleId ?? "") &&
@@ -213,7 +224,7 @@ class Autocomplete {
     // control+esc toggles autocomplete on and off
     Autocomplete.toggle(for: window)
     
-    return WindowManager.shared.autocomplete?.isVisible ?? false ? .consume : .forward
+    return autocompleteIsNotVisible ? .forward : .consume
 
   }
 }
