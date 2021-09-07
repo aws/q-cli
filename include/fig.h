@@ -69,11 +69,14 @@ color_support_t get_color_support();
 VTermColor* parse_vterm_color_from_string(const char*, color_support_t);
 
 // figterm.c
+#define SESSION_ID_MAX_LEN 40
 
 // Holds information about shell processes passed from shell config via osc.
 typedef struct {
   char tty[30];
   char pid[8];
+  char session_id[SESSION_ID_MAX_LEN + 1];
+  char* hostname;
 
   char shell[10];
 
@@ -83,6 +86,7 @@ typedef struct {
   color_support_t color_support;
 
   bool in_ssh;
+  bool in_docker;
 
   bool preexec;
   bool in_prompt;
@@ -101,7 +105,11 @@ void figterm_get_shell_state(FigTerm*, FigShellState*);
 void figterm_write(FigTerm*, char*, int);
 bool figterm_is_disabled(FigTerm*);
 bool figterm_has_seen_prompt(FigTerm*);
+bool figterm_shell_enabled(FigTerm*);
 void figterm_update_fish_suggestion_color(FigTerm*, const char*);
+
+void figterm_preexec_hook(FigTerm*);
+void close_history_file();
 
 // util.c
 typedef struct {

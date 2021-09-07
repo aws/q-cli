@@ -65,6 +65,7 @@ void on_figterm_exit() {
   log_info("Exiting (%d).", status);
   free_fig_info();
   close_log_file();
+  close_history_file();
   tty_reset(STDIN_FILENO);
   if (status != 0) {
     // Unexpected exit, fallback to exec parent shell.
@@ -188,7 +189,7 @@ void figterm_loop(int ptyp_fd, pid_t shell_pid, char* initial_command) {
       if (write(STDOUT_FILENO, buf, nread) != nread)
         err_sys("write error to stdout");
 
-      if (figterm_is_disabled(ft))
+      if (figterm_is_disabled(ft) || !figterm_shell_enabled(ft))
         continue;
 
       char* buffer = figterm_get_buffer(ft, &index);
