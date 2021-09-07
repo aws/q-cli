@@ -161,6 +161,13 @@ static int erase(VTermRect rect, int selective, void *user) {
 }
 
 static int scrollrect(VTermRect rect, int downward, int rightward, void *user) {
+  FigTermScreen *screen = user;
+  if (rect.start_row == 0 && rect.end_row == screen->rows &&
+      rect.start_col == 0 && rect.end_col == screen->cols &&
+      screen->callbacks && screen->callbacks->scroll) {
+    // If whole screen is scrolled then call scroll callback.
+    screen->callbacks->scroll(-downward, screen->cbdata);
+  }
   vterm_scroll_rect(rect, downward, rightward, moverect, erase, user);
   return 1;
 }
