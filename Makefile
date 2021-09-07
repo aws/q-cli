@@ -8,11 +8,11 @@ PROGS =	figterm fig_get_shell fig_callback
 
 all:	$(PROGS)
 
-figterm-arm: main.c figterm.c screen.c util.c color.c $(LIBVTERM) $(LIBFIG)
-	$(CC) main.c figterm.c screen.c util.c color.c $(CFLAGS) -o figterm-arm $(LDFLAGS) $(LDLIBS) -target arm64-apple-macos11
+figterm-arm: main.c figterm.c screen.c util.c color.c history.c $(LIBVTERM) $(LIBFIG)
+	$(CC) main.c figterm.c screen.c util.c color.c history.c $(CFLAGS) -o figterm-arm $(LDFLAGS) $(LDLIBS) -target arm64-apple-macos11
 
-figterm-x86: main.c figterm.c screen.c util.c color.c $(LIBVTERM) $(LIBFIG)
-	$(CC) main.c figterm.c screen.c util.c color.c $(CFLAGS) -o figterm-x86 $(LDFLAGS) $(LDLIBS) -target x86_64-apple-macos10.12
+figterm-x86: main.c figterm.c screen.c util.c color.c history.c $(LIBVTERM) $(LIBFIG)
+	$(CC) main.c figterm.c screen.c util.c color.c history.c $(CFLAGS) -o figterm-x86 $(LDFLAGS) $(LDLIBS) -target x86_64-apple-macos10.12
 
 figterm: figterm-x86 figterm-arm
 	lipo -create -output figterm figterm-x86 figterm-arm

@@ -1,5 +1,6 @@
 #include "fig.h"
 #include <pwd.h>
+#include <execinfo.h>
 #include <termios.h>
 #include <unistd.h>
 #include <vterm.h>
@@ -19,7 +20,31 @@
 #define FIGTERM_VERSION 1
 
 void abort_handler(int sig) {
-  log_warn("Aborting %d: %d", getpid(), sig);
+  log_error("Aborting %d: %d", getpid(), sig);
+  void *array[10];
+  size_t size = backtrace(array, 10);
+  int i;
+
+  // print out all the frames to stderr
+  char** symbols = backtrace_symbols(array, size);
+
+  int total_len = 0;
+  for (i = 0; i < size; i += 1) {
+    total_len += strlen(symbols[i]);
+  }
+
+  char* tmp = malloc(sizeof(char) * (total_len + size));
+  tmp[0] = '\0';
+  for (i = 0; i < size; i += 1) {
+    strcat(tmp, symbols[i]);
+    if (i != size - 1) {
+      strcat(tmp, "\n");
+    }
+  }
+  log_warn("Error:\n%s", tmp);
+  free(tmp);
+  free(symbols);
+
   EXIT(1);
 }
 
@@ -65,6 +90,7 @@ void on_figterm_exit() {
   log_info("Exiting (%d).", status);
   free_fig_info();
   close_log_file();
+  history_file_close();
   tty_reset(STDIN_FILENO);
   if (status != 0) {
     // Unexpected exit, fallback to exec parent shell.
@@ -82,8 +108,11 @@ void initialize_logging(char* ptc_name) {
   // Initialize logging.
   char* log_file = log_path(log_name);
 
-  // TODO(sean) take this from an environment variable or flag.
-  set_logging_level(LOG_INFO);
+  char* log_level = getenv("FIG_LOG_LEVEL");
+  if (log_level != NULL) {
+    set_logging_level_from_string(log_level);
+  }
+
   init_log_file(log_file);
   free(log_file);
 }
@@ -94,7 +123,21 @@ static FigTerm* _ft;
 // consider non-blocking i/o and setting a flag instead.
 void handle_winch(int sig) { figterm_resize(_ft); }
 
-void publish_buffer(int index, char *buffer, FigTerm* ft) {
+void publish_buffer(FigTerm* ft) {
+  int index;
+  char* buffer = figterm_get_buffer(ft, &index);
+  if (buffer != NULL) {
+    log_info("guess: %s|\nindex: %d", buffer, index);
+  }
+
+  if (buffer == NULL || index < 0) {
+    return;
+  }
+
+  if (get_logging_level() == LOG_DEBUG) {
+    figterm_log(ft, '.');
+  }
+
   FigInfo *fig_info = get_fig_info();
   FigShellState shell_state;
   figterm_get_shell_state(ft, &shell_state);
@@ -129,7 +172,6 @@ void figterm_loop(int ptyp_fd, pid_t shell_pid, char* initial_command) {
   int nread;
   char buf[BUFFSIZE + 1];
   FigTerm* ft;
-  int index;
 
   if (set_sigaction(SIGWINCH, handle_winch) == SIG_ERR)
     err_sys("signal_intr error for SIGWINCH");
@@ -188,18 +230,8 @@ void figterm_loop(int ptyp_fd, pid_t shell_pid, char* initial_command) {
       if (write(STDOUT_FILENO, buf, nread) != nread)
         err_sys("write error to stdout");
 
-      if (figterm_is_disabled(ft))
-        continue;
-
-      char* buffer = figterm_get_buffer(ft, &index);
-
-      if (buffer != NULL) {
-        log_info("guess: %s|\nindex: %d", buffer, index);
-        if (get_logging_level() == LOG_DEBUG) {
-          figterm_log(ft, '.');
-        }
-        if (index >= 0)
-          publish_buffer(index, buffer, ft);
+      if (!figterm_is_disabled(ft) && figterm_can_send_buffer(ft)) {
+        publish_buffer(ft);
       }
     }
   }

@@ -68,12 +68,33 @@ color_support_t get_color_support();
 
 VTermColor* parse_vterm_color_from_string(const char*, color_support_t);
 
+// history.c
+typedef struct HistoryEntry HistoryEntry;
+HistoryEntry* history_entry_new(
+  char* command,
+  char* shell,
+  char* session_id,
+  char* cwd,
+  unsigned long time,
+  bool in_ssh,
+  bool in_docker,
+  char* hostname,
+  unsigned int exit_code
+);
+void history_entry_free(HistoryEntry*);
+void history_entry_set_exit_code(HistoryEntry*, unsigned int);
+void history_file_close();
+void write_history_entry(HistoryEntry*);
+
 // figterm.c
+#define SESSION_ID_MAX_LEN 40
 
 // Holds information about shell processes passed from shell config via osc.
 typedef struct {
   char tty[30];
   char pid[8];
+  char session_id[SESSION_ID_MAX_LEN + 1];
+  char* hostname;
 
   char shell[10];
 
@@ -83,6 +104,7 @@ typedef struct {
   color_support_t color_support;
 
   bool in_ssh;
+  bool in_docker;
 
   bool preexec;
   bool in_prompt;
@@ -101,7 +123,10 @@ void figterm_get_shell_state(FigTerm*, FigShellState*);
 void figterm_write(FigTerm*, char*, int);
 bool figterm_is_disabled(FigTerm*);
 bool figterm_has_seen_prompt(FigTerm*);
+bool figterm_can_send_buffer(FigTerm*);
 void figterm_update_fish_suggestion_color(FigTerm*, const char*);
+
+void figterm_preexec_hook(FigTerm*);
 
 // util.c
 typedef struct {
@@ -151,6 +176,7 @@ enum { LOG_FATAL, LOG_ERROR, LOG_WARN, LOG_INFO, LOG_DEBUG };
 void log_msg(int level, const char *file, int line, const char *fmt, ...);
 void err_sys_msg(const char *file, int line, const char *fmt, ...) __attribute__((noreturn));
 void set_logging_level(int);
+void set_logging_level_from_string(char*);
 int get_logging_level();
 void init_log_file(char*);
 void close_log_file();

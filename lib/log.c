@@ -109,3 +109,18 @@ SigHandler *set_sigaction(int sig, SigHandler *func) {
 
   return old_action.sa_handler;
 }
+
+void set_logging_level_from_string(char* str) {
+  if (strcmp(str, "DEBUG") == 0) {
+    set_logging_level(LOG_DEBUG);
+  } else if (strcmp(str, "INFO") == 0) {
+    set_logging_level(LOG_INFO);
+  } else if (strcmp(str, "ERROR") == 0) {
+    set_logging_level(LOG_ERROR);
+  } else if (strcmp(str, "FATAL") == 0) {
+    set_logging_level(LOG_FATAL);
+  } else {
+    // Default to WARN.
+    set_logging_level(LOG_WARN);
+  }
+}

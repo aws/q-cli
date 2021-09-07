@@ -1,5 +1,5 @@
 #include "fig.h"
-#include <stdlib.h>
+#include <sys/fcntl.h>
 #include <vterm.h>
 
 #define UNICODE_SPACE 0x20
@@ -25,6 +25,8 @@ struct FigTerm {
   // Used for resizing.
   int ptyp_fd;
   int shell_pid;
+
+  HistoryEntry* last_command;
 };
 
 static void handle_osc(FigTerm* ft) {
@@ -33,6 +35,13 @@ static void handle_osc(FigTerm* ft) {
     figterm_screen_get_cursorpos(ft->screen, ft->cmd_cursor);
     log_info("Prompt at position: (%d, %d)", ft->cmd_cursor->row, ft->cmd_cursor->col);
     ft->shell_state.preexec = false;
+    if (ft->last_command != NULL) {
+      // TODO(sean) this won't work super well for first/last commands in a new
+      // shell, ssh, docker etc.
+      write_history_entry(ft->last_command);
+      history_entry_free(ft->last_command);
+      ft->last_command = NULL;
+    }
   } else if (strcmp(ft->osc, "StartPrompt") == 0) {
     ft->shell_state.in_prompt = true;
     figterm_screen_set_attr(ft->screen, FIGTERM_ATTR_IN_PROMPT, &ft->shell_state.in_prompt);
@@ -41,12 +50,19 @@ static void handle_osc(FigTerm* ft) {
     ft->shell_state.in_prompt = false;
     figterm_screen_set_attr(ft->screen, FIGTERM_ATTR_IN_PROMPT, &ft->shell_state.in_prompt);
   } else if (strcmp(ft->osc, "PreExec") == 0) {
+    figterm_preexec_hook(ft);
     ft->shell_state.preexec = true;
   } else if (strneq(ft->osc, "Dir=", 4)) {
     log_info("In dir %s", ft->osc + 4);
     if (!ft->shell_state.in_ssh) {
       // change figterm cwd to match shell.
       chdir(ft->osc + 4);
+    }
+  } else if (strneq(ft->osc, "ExitCode=", 9)) {
+    if (ft->last_command != NULL) {
+      int exit_code;
+      sscanf(ft->osc + 9, "%d", &exit_code);
+      history_entry_set_exit_code(ft->last_command, exit_code);
     }
   } else if (strneq(ft->osc, "Shell=", 6)) {
     strcpy(ft->shell_state.shell, ft->osc + 6);
@@ -56,21 +72,18 @@ static void handle_osc(FigTerm* ft) {
     strcpy(ft->shell_state.tty, ft->osc + 4);
   } else if (strneq(ft->osc, "PID=", 4)) {
     strcpy(ft->shell_state.pid, ft->osc + 4);
+  } else if (strneq(ft->osc, "SessionId=", 10)) {
+    strncpy(ft->shell_state.session_id, ft->osc + 10, SESSION_ID_MAX_LEN);
+    ft->shell_state.session_id[SESSION_ID_MAX_LEN] = '\0';
+  } else if (strneq(ft->osc, "Docker=", 7)) {
+    ft->shell_state.in_docker = ft->osc[7] == '1';
+  } else if (strneq(ft->osc, "Hostname=", 7)) {
+    free(ft->shell_state.hostname);
+    ft->shell_state.hostname = strdup(ft->osc + 7);
   } else if (strneq(ft->osc, "Log=", 4)) {
-    if (strcmp(ft->osc + 4, "DEBUG") == 0) {
-      set_logging_level(LOG_DEBUG);
-    } else if (strcmp(ft->osc + 4, "INFO") == 0) {
-      set_logging_level(LOG_INFO);
-    } else if (strcmp(ft->osc + 4, "ERROR") == 0) {
-      set_logging_level(LOG_ERROR);
-    } else if (strcmp(ft->osc + 4, "FATAL") == 0) {
-      set_logging_level(LOG_FATAL);
-    } else {
-      // Default to WARN.
-      set_logging_level(LOG_WARN);
-    }
+    set_logging_level_from_string(ft->osc + 4);
   } else if (strneq(ft->osc, "SSH=", 4)) {
-    ft->shell_state.in_ssh = ft->osc[5] == '1';
+    ft->shell_state.in_ssh = ft->osc[4] == '1';
   }
 }
 
@@ -116,7 +129,6 @@ static int movecursor_cb(VTermPos pos, VTermPos oldpos, int visible, void *user)
   if (pos.col == 0 || oldpos.col == 0) {
     // On or after linefeed, update cwd to match shell's.
     char* cwd = get_cwd(ft->shell_pid);
-    log_debug("cwd (%d, %d) -> (%d, %d): %s", oldpos.row, oldpos.col, pos.row, pos.col, cwd);
     chdir(cwd);
     free(cwd);
   }
@@ -145,13 +157,13 @@ static int setpenattr_cb(VTermAttr attr, VTermValue *val, void *user) {
 }
 
 static VTermStateFallbacks state_fallbacks = {
-    .osc = osc_cb,
+  .osc = osc_cb,
 };
 
 static FigTermScreenCallbacks screen_callbacks = {
-    .scroll = scroll_cb,
-    .movecursor = movecursor_cb,
-    .setpenattr = setpenattr_cb,
+  .scroll = scroll_cb,
+  .movecursor = movecursor_cb,
+  .setpenattr = setpenattr_cb,
 };
 
 FigTerm *figterm_new(int shell_pid, int ptyp_fd) {
@@ -179,6 +191,8 @@ FigTerm *figterm_new(int shell_pid, int ptyp_fd) {
   ft->parsing_osc = false;
 
   ft->shell_state.pid[0] = '\0';
+  ft->shell_state.session_id[0] = '\0';
+  ft->shell_state.hostname = strdup("");
   ft->shell_state.tty[0] = '\0';
   ft->shell_state.shell[0] = '\0';
 
@@ -189,6 +203,7 @@ FigTerm *figterm_new(int shell_pid, int ptyp_fd) {
   figterm_update_fish_suggestion_color(ft, getenv("fish_color_autosuggestion"));
 
   ft->shell_state.in_ssh = false;
+  ft->shell_state.in_docker = false;
   ft->shell_state.preexec = true;
   ft->shell_state.in_prompt = false;
 
@@ -199,6 +214,8 @@ FigTerm *figterm_new(int shell_pid, int ptyp_fd) {
   // Used for resize.
   ft->ptyp_fd = ptyp_fd;
   ft->shell_pid = shell_pid;
+
+  ft->last_command = NULL;
 
   ft->vt = vt;
   FigTermScreen* screen = figterm_screen_new(vt);
@@ -222,21 +239,22 @@ void figterm_free(FigTerm *ft) {
     free(ft->cmd_cursor);
     free(ft->osc);
     free(ft->insertion_lock_path);
+    free(ft->last_command);
   }
   free(ft);
 }
 
-bool figterm_shell_enabled(FigTerm* ft) {
-  return strcmp(ft->shell_state.shell, "bash") == 0 || strcmp(ft->shell_state.shell, "fish") == 0;
+bool figterm_can_send_buffer(FigTerm* ft) {
+  bool shell_enabled = strcmp(ft->shell_state.shell, "bash") == 0 || strcmp(ft->shell_state.shell, "fish") == 0;
+  bool insertion_locked = access(ft->insertion_lock_path, F_OK) != 0;
+  return shell_enabled && !insertion_locked && !ft->shell_state.preexec;
 }
 
 char* figterm_get_buffer(FigTerm* ft, int* index) {
   int i = ft->cmd_cursor->row;
   int j = ft->cmd_cursor->col;
 
-  if (ft->disable_figterm || !figterm_shell_enabled(ft) ||
-      ft->shell_state.preexec || access(ft->insertion_lock_path, F_OK) == 0 ||
-      i < 0)
+  if (i < 0)
     return NULL;
 
   int rows, cols;
@@ -252,6 +270,8 @@ char* figterm_get_buffer(FigTerm* ft, int* index) {
     .start_row = i, .end_row = i + 1, .start_col = j, .end_col = cols
   };
   size_t row_len = figterm_screen_get_text(ft->screen, buf, len, rect, UNICODE_SPACE, index_ptr);
+  buf[row_len] = '\n';
+  row_len += 1;
 
   if (*index_ptr != -1)
     index_ptr = NULL;
@@ -268,7 +288,7 @@ char* figterm_get_buffer(FigTerm* ft, int* index) {
   if (index_ptr != NULL)
     *index += row_len;
 
-  return rtrim(buf, *index);
+  return rtrim(buf, *index - 1);
 }
 
 void figterm_resize(FigTerm* ft) {
@@ -334,4 +354,25 @@ void figterm_update_fish_suggestion_color(FigTerm* ft, const char* new_color) {
       ft->shell_state.color_support
     );
   }
+}
+
+void figterm_preexec_hook(FigTerm* ft) {
+  int index;
+  char* buffer = figterm_get_buffer(ft, &index);
+
+  if (buffer == NULL)
+    return;
+
+  history_entry_free(ft->last_command);
+  ft->last_command = history_entry_new(
+    buffer,
+    ft->shell_state.shell,
+    ft->shell_state.session_id,
+    get_cwd(ft->shell_pid),
+    time(NULL),
+    ft->shell_state.in_ssh,
+    ft->shell_state.in_docker,
+    ft->shell_state.hostname,
+    0
+  );
 }
