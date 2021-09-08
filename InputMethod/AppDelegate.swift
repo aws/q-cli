@@ -41,6 +41,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // as of 10.15.3, default candidates window key event handling is buggy
         // (number selector keys don't work). workaround involves bypassing default window handling.
         candidatesWindow.setAttributes([IMKCandidatesSendServerKeyEventFirst : NSNumber(booleanLiteral: true)])
+        
+        let center = DistributedNotificationCenter.default()
+        let reportVersionNotification = NSNotification.Name("io.fig.report-ime-version")
+        
+        center.addObserver(forName: reportVersionNotification, object: nil, queue: nil) { aNotification in
+            Logger.appendToLog("Version: \(version) (\(buildNumber))")
+        }
     }
 
     func applicationWillTerminate(_ aNotification: Notification) {

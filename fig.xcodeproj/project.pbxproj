@@ -227,6 +227,7 @@
 		75C8A1602649E712001B69DA /* fig-0.0.2.vsix in Resources */ = {isa = PBXBuildFile; fileRef = 75C8A15F2649E712001B69DA /* fig-0.0.2.vsix */; };
 		75CFDBDF24EDB2E900F00CAE /* Onboarding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75CFDBDE24EDB2E900F00CAE /* Onboarding.swift */; };
 		75CFDBE224EDE31800F00CAE /* Sentry in Frameworks */ = {isa = PBXBuildFile; productRef = 75CFDBE124EDE31800F00CAE /* Sentry */; };
+		75D18DC426E86617008B9731 /* FigInputMethod.app in Resources */ = {isa = PBXBuildFile; fileRef = 754316F426E08F5C00188887 /* FigInputMethod.app */; };
 		75D2E3CB249C1E7500607F66 /* terminal.css in Resources */ = {isa = PBXBuildFile; fileRef = 75D2E3CA249C1E7500607F66 /* terminal.css */; };
 		75DA86A325EDB05100722F1D /* Integrations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DA86A225EDB05100722F1D /* Integrations.swift */; };
 		75DA86A525EEBD7500722F1D /* Alert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DA86A425EEBD7400722F1D /* Alert.swift */; };
@@ -268,6 +269,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = 751F758D246E16D800E083C8;
 			remoteInfo = figcli;
+		};
+		75D18DC526E86697008B9731 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 75675949244634AD006AA988 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 754316F326E08F5C00188887;
+			remoteInfo = FigInputMethod;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -1145,12 +1153,13 @@
 				7567594E244634AD006AA988 /* Frameworks */,
 				7567594F244634AD006AA988 /* Resources */,
 				758AEB6324CE8B2F00A15EAF /* Embed Command Line Tool */,
-				75AA9FAA256D9D6C00CEFAC8 /* Run Script */,
-				759E4BFD268F9BCC00CC1565 /* ShellScript */,
+				75AA9FAA256D9D6C00CEFAC8 /* Upload dsym files to Sentry */,
+				759E4BFD268F9BCC00CC1565 /* Change permissions to make Applescript read-only */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				75D18DC626E86697008B9731 /* PBXTargetDependency */,
 				758AEB6624CE8B8700A15EAF /* PBXTargetDependency */,
 			);
 			name = fig;
@@ -1279,6 +1288,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				75D18DC426E86617008B9731 /* FigInputMethod.app in Resources */,
 				75EB5721267D749A00F10C64 /* debug-log.sh in Resources */,
 				7564AE7D265CB2930040BD4C /* community.sh in Resources */,
 				75C8A1422645E029001B69DA /* set-path.sh in Resources */,
@@ -1428,9 +1438,9 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "echo \"Moving Input Method Kit app to Input Methods directory.\"\nkillall $EXECUTABLE_NAME\ncp -R \"$BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME\" \"$HOME/Library/Input Methods\"\n";
+			shellScript = "echo \"Moving Input Method Kit app to Input Methods directory.\"\n# killall $EXECUTABLE_NAME\n# cp -R \"$BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME\" \"$HOME/Library/Input Methods\"\n";
 		};
-		759E4BFD268F9BCC00CC1565 /* ShellScript */ = {
+		759E4BFD268F9BCC00CC1565 /* Change permissions to make Applescript read-only */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -1440,6 +1450,7 @@
 			);
 			inputPaths = (
 			);
+			name = "Change permissions to make Applescript read-only";
 			outputFileListPaths = (
 			);
 			outputPaths = (
@@ -1448,7 +1459,7 @@
 			shellPath = /bin/sh;
 			shellScript = "# prevent AppleScript from self-modifying after codesigning\nchmod a-w \"${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.app/Contents/Resources/fig-iterm-integration.scpt\"\n";
 		};
-		75AA9FAA256D9D6C00CEFAC8 /* Run Script */ = {
+		75AA9FAA256D9D6C00CEFAC8 /* Upload dsym files to Sentry */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -1458,7 +1469,7 @@
 			inputPaths = (
 				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${TARGET_NAME}",
 			);
-			name = "Run Script";
+			name = "Upload dsym files to Sentry";
 			outputFileListPaths = (
 			);
 			outputPaths = (
@@ -1635,6 +1646,11 @@
 			isa = PBXTargetDependency;
 			target = 751F758D246E16D800E083C8 /* figcli */;
 			targetProxy = 758AEB6524CE8B8700A15EAF /* PBXContainerItemProxy */;
+		};
+		75D18DC626E86697008B9731 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 754316F326E08F5C00188887 /* FigInputMethod */;
+			targetProxy = 75D18DC526E86697008B9731 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
