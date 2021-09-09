@@ -200,12 +200,6 @@ extension InstallationStatus: Codable {
     
 }
 
-protocol IntegrationProvider {
-  static func install(withRestart: Bool, inBackground: Bool, completion: (() -> Void)?)
-  static var isInstalled: Bool { get }
-  static func promptToInstall(completion: (() -> Void)?)
-}
-
 protocol TerminalIntegrationProvider {
     var bundleIdentifier: String { get }
     var applicationName: String? { get }
