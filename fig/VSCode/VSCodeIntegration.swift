@@ -13,7 +13,7 @@ class VSCodeIntegration: GenericTerminalIntegrationProvider {
   static let `default` = VSCodeIntegration(bundleIdentifier: Integrations.VSCode,
                                            configFolderName: ".vscode",
                                            applicationSupportFolderName: "Code")
-  static let insiders = VSCodeIntegration(bundleIdentifier: Integrations.VSCode,
+  static let insiders = VSCodeIntegration(bundleIdentifier: Integrations.VSCodeInsiders,
                                           configFolderName: ".vscode-insiders",
                                           applicationSupportFolderName: "Code - Insiders")
     
