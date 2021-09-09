@@ -89,7 +89,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         }
       
         let _ = DockerEventStream.shared
-        let _ = iTermIntegration.shared
+        let _ = iTermIntegration.default
         let _ = Settings.shared
 
         
@@ -220,20 +220,20 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 //          }
         }
       
-        if !VSCodeIntegration.isInstalled {
-            VSCodeIntegration.install(withRestart: false, inBackground: true)
+        if !VSCodeIntegration.default.isInstalled {
+            VSCodeIntegration.default.install(withRestart: false, inBackground: true)
         }
 
-        if !VSCodeInsidersIntegration.isInstalled {
-            VSCodeInsidersIntegration.install(withRestart: false, inBackground: true)
+        if !VSCodeIntegration.insiders.isInstalled {
+            VSCodeIntegration.insiders.install(withRestart: false, inBackground: true)
         }
       
-        if !HyperIntegration.isInstalled {
-            HyperIntegration.install(withRestart: false, inBackground: true)
+        if !HyperIntegration.default.isInstalled {
+            HyperIntegration.default.install(withRestart: false, inBackground: true)
         }
       
-        if !iTermIntegration.isInstalled {
-            iTermIntegration.install(withRestart: false, inBackground: true)
+        if !iTermIntegration.default.isInstalled {
+            iTermIntegration.default.install(withRestart: false, inBackground: true)
         }
         
     }
@@ -424,19 +424,19 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
       withTitle: "iTerm Integration",
       action: #selector(AppDelegate.toggleiTermIntegration(_:)),
       keyEquivalent: "")
-      itermIntegration.state = iTermIntegration.isInstalled ? .on : .off
+      itermIntegration.state = iTermIntegration.default.isInstalled ? .on : .off
       
       let vscodeIntegration = integrationsMenu.addItem(
       withTitle: "VSCode Integration",
       action: #selector(AppDelegate.toggleVSCodeIntegration(_:)),
       keyEquivalent: "")
-      vscodeIntegration.state = VSCodeIntegration.isInstalled ? .on : .off
+      vscodeIntegration.state = VSCodeIntegration.default.isInstalled ? .on : .off
     
       let hyperIntegration = integrationsMenu.addItem(
       withTitle: "Hyper Integration",
       action: #selector(AppDelegate.toggleHyperIntegration(_:)),
       keyEquivalent: "")
-      hyperIntegration.state = HyperIntegration.isInstalled ? .on : .off
+      hyperIntegration.state = HyperIntegration.default.isInstalled ? .on : .off
     
       let sshIntegration = integrationsMenu.addItem(
       withTitle: "SSH Integration",
@@ -775,9 +775,9 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     
 
     @objc func toggleiTermIntegration(_ sender: NSMenuItem) {
-      iTermIntegration.promptToInstall {
-        sender.state = iTermIntegration.isInstalled ? .on : .off
-      }
+        iTermIntegration.default.promptToInstall { _ in
+            sender.state = iTermIntegration.default.isInstalled ? .on : .off
+        }
     }
         
     func dialogOKCancel(question: String, text: String, prompt:String = "OK", noAction:Bool = false, icon: NSImage? = nil, noActionTitle: String? = nil) -> Bool {
@@ -1195,16 +1195,16 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
   
     @objc func toggleVSCodeIntegration(_ sender: NSMenuItem) {
         
-      VSCodeIntegration.promptToInstall {
-        sender.state = VSCodeIntegration.isInstalled ? .on : .off
+      VSCodeIntegration.default.promptToInstall { status in
+        sender.state = VSCodeIntegration.default.isInstalled ? .on : .off
       }
         
     }
   
     @objc func toggleHyperIntegration(_ sender: NSMenuItem) {
         
-      HyperIntegration.promptToInstall {
-        sender.state = HyperIntegration.isInstalled ? .on : .off
+      HyperIntegration.default.promptToInstall { status in
+        sender.state = HyperIntegration.default.isInstalled ? .on : .off
       }
         
     }
@@ -1521,14 +1521,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         }
     }
     @objc func triggerScreenReader() {
-      VSCodeIntegration.install(inBackground: true) {
-        Alert.show(title: "VSCode Integration Installed!", message: "The Fig extension was successfully added to VSCode.", hasSecondaryOption: false)
-//      if let app = AXWindowServer.shared.topApplication, let window = AXWindowServer.shared.topWindow {
-//        print("Triggering ScreenreaderMode in \(app.bundleIdentifier ?? "<unknown>")")
-//        Accessibility.triggerScreenReaderModeInChromiumApplication(app)
-//        let cursor = Accessibility.findXTermCursorInElectronWindow(window)
-//        print("Detect cursor:", cursor ?? .zero)
-      }
     }
     @objc func allWindows() {
         
