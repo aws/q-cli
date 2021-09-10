@@ -5,22 +5,6 @@
     <meta content="width=device-width, initial-scale=1" name="viewport" />
     <style>
       html {
-        --main-bg-color: rgb(254, 254, 254);
-        --main-text-color: rgb(7, 7, 7);
-        --description-text-color: rgb(7, 7, 7);
-        --description-border-color: rgb(199, 199, 199);
-        --selected-bg-color: rgb(41, 105, 218);
-        --selected-text-color: rgb(253, 253, 253);
-        --matching-bg-color: rgb(255, 239, 152);
-        --corner-radius: 5px;
-
-        position: absolute;
-        z-index: 1;
-        overflow: hidden;
-      }
-
-      /* Dark Mode */
-      html:not(.style-scope)[dark] {
         --main-bg-color: rgb(48, 48, 48);
         --main-text-color: rgb(180, 180, 180);
         --description-text-color: rgb(180, 180, 180);
@@ -28,6 +12,17 @@
         --selected-bg-color: rgb(30, 90, 199);
         --selected-text-color: rgb(253, 253, 253);
         --matching-bg-color: rgb(95, 89, 56);
+        --corner-radius: 5px;
+        --autocomplete-font-family: "Monaco";
+        --autocomplete-font-size: 0.8em;
+        --description-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+          Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue",
+          sans-serif;
+        --description-font-family: 0.8em;
+
+        position: absolute;
+        z-index: 1;
+        overflow: hidden;
       }
 
       code,
@@ -36,7 +31,11 @@
       }
 
       body {
-        margin: 0;
+        width: 100vw;
+        height: 100vh;
+        margin-left: 0;
+        margin-right: 0;
+        margin-top: 0;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
           Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
         -webkit-user-select: none !important;
@@ -56,6 +55,18 @@
           -ms-animation: fadein 1s; /* Internet Explorer */
           -o-animation: fadein 1s; /* Opera < 12.1 */
           animation: none;
+        }
+      }
+
+      @media only screen and (min-width: 800px) {
+        .wrapper {
+          width: 35%;
+        }
+      }
+
+      @media only screen and (max-width: 800px) {
+        .wrapper {
+          width: 90%;
         }
       }
 
@@ -86,6 +97,25 @@
 
       header {
         width: 275px;
+        margin-top: 20px;
+        margin-bottom: 10px;
+
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      header .title {
+        font-size: 1.7em;
+        display: block;
+      }
+
+      header .subtitle {
+        font-size: 0.8em;
+        display: block;
+      }
+
+      header {
+        width: 275px;
         margin: 20px auto 10px;
       }
 
@@ -95,7 +125,7 @@
       }
 
       .button {
-        width: 161px;
+        text-align: center;
         margin-right: auto;
         margin-left: auto;
       }
@@ -137,11 +167,16 @@
       }
 
       section {
+        position: absolute;
+        top: 30%;
+        left: 50%;
+        transform: translate(-50%, -30%);
         width: 275px;
-        margin-right: auto;
-        margin-left: auto;
-      }
+        z-index: 100;
 
+        margin-left: auto;
+        margin-right: auto;
+      }
       code {
         display: inline-block;
         color: #bdbdbd;
@@ -176,52 +211,24 @@
         display: flex !important;
         height: 20px;
         padding-left: 5px;
+        left: 0px;
+        height: 20px;
+        width: 100%;
       }
 
       .icon {
-        width: 100%;
-        height: 100%;
+        height: 15px;
+        width: 15px;
+        min-width: 15px;
+        vertical-align: middle;
+        margin-right: 5px;
+        margin-top: 2.5px;
+        margin-bottom: 2.5px;
       }
 
       /* Hide Scrollbar in every div */
       *::-webkit-scrollbar {
         display: none;
-      }
-
-      @keyframes shake {
-        0% {
-          transform: translate(1px, 1px) rotate(0deg);
-        }
-        10% {
-          transform: translate(-1px, -2px) rotate(-1deg);
-        }
-        20% {
-          transform: translate(-3px, 0) rotate(1deg);
-        }
-        30% {
-          transform: translate(3px, 2px) rotate(0deg);
-        }
-        40% {
-          transform: translate(1px, -1px) rotate(1deg);
-        }
-        50% {
-          transform: translate(-1px, 2px) rotate(-1deg);
-        }
-        60% {
-          transform: translate(-3px, 1px) rotate(0deg);
-        }
-        70% {
-          transform: translate(3px, 1px) rotate(-1deg);
-        }
-        80% {
-          transform: translate(-1px, -1px) rotate(1deg);
-        }
-        90% {
-          transform: translate(1px, 2px) rotate(0deg);
-        }
-        100% {
-          transform: translate(1px, -2px) rotate(-1deg);
-        }
       }
 
       mark.shared_start_match {
@@ -257,6 +264,24 @@
         overflow: hidden;
         background-color: var(--main-bg-color);
         border-radius: var(--corner-radius);
+        width: 320px;
+        height: 100%;
+        align-self: flex-start;
+        max-height: 140px;
+      }
+
+      #listContainer {
+        flex-shrink: 1;
+        flex-basis: 920px;
+        min-height: 0;
+        min-width: 0;
+      }
+
+      #innerListContainer {
+        display: flex;
+        flex-direction: column;
+        height: 920px;
+        width: 100%;
       }
 
       .listContainer {
@@ -287,6 +312,11 @@
         border-radius: var(--corner-radius);
       }
 
+      .descriptionHint span {
+        font-size: var(--description-font-size);
+        font-family: var(--description-font-family);
+      }
+
       .zero-radius-bottom {
         border-bottom-right-radius: 0;
         border-bottom-left-radius: 0;
@@ -294,8 +324,15 @@
 
       .text {
         color: var(--main-text-color);
-        font-size: 0.8em;
-        font-family: "Monaco", sans-serif;
+        font-size: var(--autocomplete-font-size);
+        overflow: auto hidden;
+        white-space: nowrap;
+        font-size: var(--autocomplete-font-size);
+        font-family: var(--autocomplete-font-family);
+      }
+
+      .other {
+        opacity: 0.5;
       }
 
       .active-item {
@@ -309,9 +346,11 @@
       .flexRow {
         display: flex;
         flex-direction: row;
+        flex-shrink: 0;
       }
 
       #description {
+        height: 20px;
         display: flex;
         flex: 1;
         flex-direction: row;
@@ -328,6 +367,13 @@
         white-space: nowrap;
         background-color: var(--main-bg-color);
         border: 0 solid var(--description-border-color);
+      }
+
+      #descriptionText {
+        flex-shrink: 1;
+        overflow: auto hidden;
+        font-size: var(--description-font-size);
+        font-family: var(--description-font-family);
       }
 
       #description.withSuggestions {
@@ -425,6 +471,67 @@
       .terminal-text-color {
         color: black !important;
       }
+
+      #listContainer {
+        position: relative;
+        height: 119px;
+        width: 100%;
+        overflow: auto;
+        will-change: transform;
+        direction: ltr;
+      }
+
+      #customization-box {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 1rem 0 2rem;
+        align-items: center;
+      }
+
+      #form {
+        display: flex;
+        margin-bottom: 1rem;
+        align-items: center;
+      }
+
+      #left *,
+      #right * {
+        margin-bottom: 0.25rem;
+      }
+
+      #left {
+        margin-right: 1rem;
+      }
+
+      #popup {
+        margin: 0 2rem;
+      }
+
+      #bottom-form {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        margin: 0.75rem 0;
+      }
+
+      #bottom-form * {
+        margin-bottom: 0.25rem;
+      }
+
+      label,
+      p {
+        font-size: 0.85em;
+        color: #5e5e5e;
+      }
+
+      input,
+      select,
+      option {
+        font-size: 0.75em;
+        border-radius: 3px;
+        border: 1px solid #5e5e5e;
+        color: #5e5e5e;
+      }
     </style>
     <title>Customize Setup</title>
   </head>
@@ -436,325 +543,112 @@
           <span class="title" href="javascript:permission()" id="permissions"
             >Customize Setup</span
           >
-          <p style="color: #5e5e5e">
-            Fig uses this permission to insert text on your behalf and read the
-            current keybuffer.
-          </p>
-          <div id="root">
-            <div id="autocompleteWindow">
-              <div
-                id="suggestionsContainer"
-                style="
-                  align-self: flex-start;
-                  width: 320px;
-                  height: 100%;
-                  max-height: 140px;
-                "
-              >
-                <div
-                  style="
-                    flex-basis: 1060px;
-                    flex-shrink: 1;
-                    min-width: 0;
-                    min-height: 0;
-                  "
-                >
-                  <div
-                    class="listContainer zero-radius-bottom"
-                    style="
-                      position: relative;
-                      width: 100%;
-                      height: 119px;
-                      overflow: auto;
-                      direction: ltr;
-                      will-change: transform;
-                    "
-                  >
-                    <div style="width: 100%; height: 1060px">
-                      <span
-                        class="suggestion active-item"
-                        style="
-                          position: absolute;
-                          top: 0;
-                          left: 0;
-                          width: 100%;
-                          height: 20px;
-                        "
-                        ><div
-                          style="
-                            width: 15px;
-                            min-width: 15px;
-                            height: 15px;
-                            margin-top: auto;
-                            margin-right: 5px;
-                            margin-bottom: auto;
-                            vertical-align: middle;
-                          "
-                        >
-                          <span
-                            ><img
-                              alt="subcommand"
-                              class="icon"
-                              src="fig://icon?type=command"
-                          /></span>
-                        </div>
-                        <span
-                          class="text"
-                          style="overflow: auto hidden; white-space: nowrap"
-                          >commit<span style="opacity: 0.5">
-                            [pathspec]
-                          </span></span
-                        ></span
-                      ><span
-                        class="suggestion"
-                        style="
-                          position: absolute;
-                          top: 20px;
-                          left: 0;
-                          width: 100%;
-                          height: 20px;
-                        "
-                        ><div
-                          style="
-                            width: 15px;
-                            min-width: 15px;
-                            height: 15px;
-                            margin-top: auto;
-                            margin-right: 5px;
-                            margin-bottom: auto;
-                            vertical-align: middle;
-                          "
-                        >
-                          <span
-                            ><img
-                              alt=""
-                              class="icon"
-                              src="fig://icon?type=commandkey"
-                          /></span>
-                        </div>
-                        <span
-                          class="text"
-                          style="overflow: auto hidden; white-space: nowrap"
-                          >s<span style="opacity: 0.5"> </span></span></span
-                      ><span
-                        class="suggestion"
-                        style="
-                          position: absolute;
-                          top: 40px;
-                          left: 0;
-                          width: 100%;
-                          height: 20px;
-                        "
-                        ><div
-                          style="
-                            width: 15px;
-                            min-width: 15px;
-                            height: 15px;
-                            margin-top: auto;
-                            margin-right: 5px;
-                            margin-bottom: auto;
-                            vertical-align: middle;
-                          "
-                        >
-                          <span
-                            ><img
-                              alt=""
-                              class="icon"
-                              src="fig://icon?type=commandkey"
-                          /></span>
-                        </div>
-                        <span
-                          class="text"
-                          style="overflow: auto hidden; white-space: nowrap"
-                          >d<span style="opacity: 0.5"> </span></span></span
-                      ><span
-                        class="suggestion"
-                        style="
-                          position: absolute;
-                          top: 60px;
-                          left: 0;
-                          width: 100%;
-                          height: 20px;
-                        "
-                        ><div
-                          style="
-                            width: 15px;
-                            min-width: 15px;
-                            height: 15px;
-                            margin-top: auto;
-                            margin-right: 5px;
-                            margin-bottom: auto;
-                            vertical-align: middle;
-                          "
-                        >
-                          <span
-                            ><img
-                              alt=""
-                              class="icon"
-                              src="fig://icon?type=commandkey"
-                          /></span>
-                        </div>
-                        <span
-                          class="text"
-                          style="overflow: auto hidden; white-space: nowrap"
-                          >co<span style="opacity: 0.5"> </span></span></span
-                      ><span
-                        class="suggestion"
-                        style="
-                          position: absolute;
-                          top: 80px;
-                          left: 0;
-                          width: 100%;
-                          height: 20px;
-                        "
-                        ><div
-                          style="
-                            width: 15px;
-                            min-width: 15px;
-                            height: 15px;
-                            margin-top: auto;
-                            margin-right: 5px;
-                            margin-bottom: auto;
-                            vertical-align: middle;
-                          "
-                        >
-                          <span
-                            ><img
-                              alt="subcommand"
-                              class="icon"
-                              src="fig://icon?type=command"
-                          /></span>
-                        </div>
-                        <span
-                          class="text"
-                          style="overflow: auto hidden; white-space: nowrap"
-                          >add<span style="opacity: 0.5">
-                            [pathspec]
-                          </span></span
-                        ></span
-                      ><span
-                        class="suggestion"
-                        style="
-                          position: absolute;
-                          top: 100px;
-                          left: 0;
-                          width: 100%;
-                          height: 20px;
-                        "
-                        ><div
-                          style="
-                            width: 15px;
-                            min-width: 15px;
-                            height: 15px;
-                            margin-top: auto;
-                            margin-right: 5px;
-                            margin-bottom: auto;
-                            vertical-align: middle;
-                          "
-                        >
-                          <span
-                            ><img
-                              alt="subcommand"
-                              class="icon"
-                              src="fig://icon?type=command"
-                          /></span>
-                        </div>
-                        <span
-                          class="text"
-                          style="overflow: auto hidden; white-space: nowrap"
-                          >bisect<span style="opacity: 0.5">
-                            &lt;paths&gt;
-                          </span></span
-                        ></span
-                      ><span
-                        class="suggestion"
-                        style="
-                          position: absolute;
-                          top: 120px;
-                          left: 0;
-                          width: 100%;
-                          height: 20px;
-                        "
-                        ><div
-                          style="
-                            width: 15px;
-                            min-width: 15px;
-                            height: 15px;
-                            margin-top: auto;
-                            margin-right: 5px;
-                            margin-bottom: auto;
-                            vertical-align: middle;
-                          "
-                        >
-                          <span
-                            ><img
-                              alt="subcommand"
-                              class="icon"
-                              src="fig://icon?type=command"
-                          /></span>
-                        </div>
-                        <span
-                          class="text"
-                          style="overflow: auto hidden; white-space: nowrap"
-                          >branch<span style="opacity: 0.5">
-                          </span></span></span
-                      ><span
-                        class="suggestion"
-                        style="
-                          position: absolute;
-                          top: 140px;
-                          left: 0;
-                          width: 100%;
-                          height: 20px;
-                        "
-                        ><div
-                          style="
-                            width: 15px;
-                            min-width: 15px;
-                            height: 15px;
-                            margin-top: auto;
-                            margin-right: 5px;
-                            margin-bottom: auto;
-                            vertical-align: middle;
-                          "
-                        >
-                          <span
-                            ><img
-                              alt="subcommand"
-                              class="icon"
-                              src="fig://icon?type=command"
-                          /></span>
-                        </div>
-                        <span
-                          class="text"
-                          style="overflow: auto hidden; white-space: nowrap"
-                          >checkout<span style="opacity: 0.5">
-                            [branch, file, tag or commit] [pathspec]
-                          </span></span
-                        ></span
-                      >
-                    </div>
-                  </div>
-                </div>
-                <div class="flexRow" style="flex-shrink: 0">
-                  <div
-                    class="withSuggestions"
-                    id="description"
-                    style="height: 20px"
-                  >
-                    <span style="flex-shrink: 1; overflow: auto hidden"
-                      >Record changes to the repository</span
-                    >
-                    <div class="descriptionHint"><span>(⌘i)</span></div>
-                  </div>
-                </div>
+          <p>Make Fig fit your terminal.</p>
+          <div id="customization-box">
+            <div id="form">
+              <div id="left">
+                <label for="width">Width</label>
+                <input
+                  oninput="handleWidth(this.value)"
+                  type="range"
+                  id="width"
+                  name="width"
+                  min="150"
+                  max="600"
+                  step="5"
+                />
+
+                <label for="height">Height</label>
+                <input
+                  oninput="handleHeight(this.value)"
+                  type="range"
+                  id="height"
+                  name="height"
+                  min="50"
+                  max="450"
+                  step="10"
+                />
               </div>
+
+              <div id="right">
+                <label for="theme">Theme</label>
+                <select
+                  name="theme"
+                  id="theme-select"
+                  oninput="handleTheme(this.value)"
+                >
+                  <option value="dark">Dark</option>
+                  <option value="light">Light</option>
+                  <option value="cobalt">Cobalt</option>
+                  <option value="dracula">Dracula</option>
+                  <option value="github-dark">GitHub Dark</option>
+                  <option value="nightowl">Night Owl</option>
+                  <option value="nord">Nord</option>
+                  <option value="poimandres">Poimandres</option>
+                  <option value="the-unnamed">The Unnamed</option>
+                </select>
+
+                <label for="font-family">Font Family</label>
+                <input
+                  placeholder="Monaco"
+                  type="text"
+                  id="font-family"
+                  name="font-family"
+                  onchange="handleFontFamily(`${this.value}`)"
+                />
+
+                <label for="font-size">Font Size</label>
+                <input
+                  placeholder="13"
+                  type="number"
+                  min="1"
+                  id="font-size"
+                  name="font-size"
+                  onchange="handleFontSize(`${this.value}`)"
+                />
+              </div>
+            </div>
+
+            <div id="popup">
+              <div id="root"></div>
             </div>
           </div>
 
-          <div class="button">
-            <a href="javascript:permissions()" id="enable">Continue</a>
+          <div id="bottom-form">
+            <div>
+              <!--             <p>
+              If true, Fig will only show autocomplete when Tab is pressed
+              instead of showing it automatically.
+            </p>
+ -->
+              <input
+                type="checkbox"
+                oninput="handleShowOnTab(this.checked)"
+                id="showOnTab"
+                name="showOnTab"
+              />
+              <label for="showOnTab">Only show on tab</label>
+            </div>
+
+            <div>
+              <!--             <p>
+              If true, Fig will allow user to immediately execute commands after
+              the user hits space.
+            </p>
+ -->
+              <input
+                type="checkbox"
+                oninput="handleExecuteAfterSpace(this.checked)"
+                id="executeAfterSpace"
+                name="executeAfterSpace"
+              />
+              <label for="executeAfterSpace"
+                >Allow immediate execute after space</label
+              >
+            </div>
           </div>
+
+          <div class="button" onclick="handleContinue()"><a>Continue</a></div>
           <a href="javascript:next()" id="skip" style="display: none"
             >Continue to next step manually</a
           >
@@ -762,11 +656,475 @@
       </section>
     </div>
     <script>
-      document.querySelector("video").playbackRate = 1.8;
-
-      let ws = function () {
-        fig.onboarding("ws", () => {});
+      const builtInThemes = {
+        dark: {
+          version: "1.0",
+          theme: {
+            backgroundColor: "rgb(48,48,48)",
+            textColor: "rgb(180, 180, 180)",
+            matchBackgroundColor: "rgb(95,89,56)",
+            selection: {
+              textColor: "rgb(253,253,253)",
+              backgroundColor: "rgb(30,90,199)",
+            },
+            description: {
+              textColor: "rgb(180, 180, 180)",
+              borderColor: "rgb(65,65,65)",
+            },
+          },
+        },
+        light: {
+          version: "1.0",
+          theme: {
+            backgroundColor: "rgb(254,254,254)",
+            textColor: "rgb(7,7,7)",
+            matchBackgroundColor: "rgb(255, 239, 152)",
+            selection: {
+              textColor: "rgb(253,253,253)",
+              backgroundColor: "rgb(41,105,218)",
+            },
+            description: {
+              textColor: "rgb(7,7,7)",
+              borderColor: "rgb(199,199,199)",
+            },
+          },
+        },
       };
+
+      const suggestions = [
+        {
+          icon: "command",
+          command: "clone",
+          other: "<repository> [directory]",
+        },
+        {
+          icon: "command",
+          command: "cherry-pick",
+          other: "<commit>",
+        },
+        {
+          icon: "command",
+          command: "add",
+          other: "[pathspec]",
+        },
+        {
+          icon: "command",
+          command: "bisect",
+          other: "<paths>",
+        },
+        {
+          icon: "command",
+          command: "branch",
+          other: "",
+        },
+        {
+          icon: "command",
+          command: "checkout",
+          other: "[branch, file, tag or commit] [pathspec]",
+        },
+        {
+          icon: "command",
+          command: "clean",
+          other: "<path>",
+        },
+        {
+          icon: "command",
+          command: "commit",
+          other: "[pathspec]",
+        },
+        {
+          icon: "command",
+          command: "config",
+          other: "",
+        },
+        {
+          icon: "command",
+          command: "diff",
+          other: "[commit or file]",
+        },
+        {
+          icon: "command",
+          command: "fetch",
+          other: "[remote] [branch] [refspec]",
+        },
+        {
+          icon: "command",
+          command: "grep",
+          other: "",
+        },
+        {
+          icon: "command",
+          command: "init",
+          other: "[directory]",
+        },
+        {
+          icon: "command",
+          command: "log",
+          other: "[since] [util]",
+        },
+        {
+          icon: "command",
+          command: "merge",
+          other: "[branch]",
+        },
+        {
+          icon: "command",
+          command: "mergetool",
+          other: "",
+        },
+        {
+          icon: "command",
+          command: "mv",
+          other: "<source> <destination>",
+        },
+        {
+          icon: "command",
+          command: "pull",
+          other: "[remote] [branch]",
+        },
+        {
+          icon: "command",
+          command: "push",
+          other: "[remote] [branch]",
+        },
+        {
+          icon: "command",
+          command: "rebase",
+          other: "[base] [new base]",
+        },
+        {
+          icon: "command",
+          command: "reflog",
+          other: "",
+        },
+        {
+          icon: "command",
+          command: "remote",
+          other: "",
+        },
+        {
+          icon: "command",
+          command: "reset",
+          other: "",
+        },
+        {
+          icon: "command",
+          command: "restore",
+          other: "[pathspec]",
+        },
+        {
+          icon: "command",
+          command: "revert",
+          other: "[commit]",
+        },
+        {
+          icon: "command",
+          command: "rm",
+          other: "",
+        },
+        {
+          icon: "command",
+          command: "show",
+          other: "",
+        },
+        {
+          icon: "command",
+          command: "stage",
+          other: "[pathspec]",
+        },
+        {
+          icon: "command",
+          command: "stash",
+          other: "",
+        },
+        {
+          icon: "command",
+          command: "status",
+          other: "[pathspec]",
+        },
+        {
+          icon: "command",
+          command: "submodule",
+          other: "",
+        },
+        {
+          icon: "command",
+          command: "switch",
+          other: "<branch name> [start point]",
+        },
+        {
+          icon: "command",
+          command: "tag",
+          other: "[tagname]",
+        },
+        {
+          icon: "shortcut",
+          command: "commit -m 'msg'",
+          other: "",
+        },
+        {
+          icon: "option",
+          command: "--bare",
+          other: "",
+        },
+        {
+          icon: "option",
+          command: "--exec-path",
+          other: "[path]",
+        },
+        {
+          icon: "option",
+          command: "--git-dir",
+          other: "<path>",
+        },
+        {
+          icon: "option",
+          command: "--help",
+          other: "",
+        },
+        {
+          icon: "option",
+          command: "--html-path",
+          other: "",
+        },
+        {
+          icon: "option",
+          command: "--info-path",
+          other: "",
+        },
+        {
+          icon: "option",
+          command: "--man-path",
+          other: "",
+        },
+        {
+          icon: "option",
+          command: "--namespace",
+          other: "<name>",
+        },
+        {
+          icon: "option",
+          command: "--no-optional-locks",
+          other: "",
+        },
+        {
+          icon: "option",
+          command: "--no-pager",
+          other: "",
+        },
+        {
+          icon: "option",
+          command: "--no-replace-objects",
+          other: "",
+        },
+        {
+          icon: "option",
+          command: "--version",
+          other: "",
+        },
+        {
+          icon: "option",
+          command: "--work-tree",
+          other: "<path>",
+        },
+        {
+          icon: "option",
+          command: "-c",
+          other: "<name=value>",
+        },
+        {
+          icon: "option",
+          command: "-C",
+          other: "<path>",
+        },
+        {
+          icon: "option",
+          command: "-p, --paginate",
+          other: "",
+        },
+      ];
+
+      const createEl = (id) => (className) => (tag) => {
+        const el = document.createElement(tag);
+
+        return fold(setAttr("id")(id), setAttr("class")(className))(el);
+      };
+
+      const createImg = (id) => (src) => (className) =>
+        setAttr("src")(src)(createEl(id)(className)("img"));
+
+      const fold =
+        (...functions) =>
+        (value) =>
+          functions.reduce((result, fun) => fun(result), value);
+
+      const setAttr = (attr) => (value) => (el) => {
+        el.setAttribute(attr, value);
+        return el;
+      };
+
+      const append = (child) => (target) => {
+        target.append(child);
+        return target;
+      };
+
+      const text = (text) => document.createTextNode(text);
+
+      const suggestion = (icon) => (command) => (other) => {
+        const rowClass =
+          command === "clone" ? "suggestion active-item" : "suggestion";
+        const row = createEl("")(rowClass)("span");
+        const iconEl = createImg("")(`icons/${icon}.png`)("icon");
+        const commandEl = append(text(command))(createEl("")("text")("span"));
+        const otherEl = append(text(` ${other}`))(
+          createEl("")("other")("span")
+        );
+
+        const description = append(otherEl)(commandEl);
+
+        return fold(append(iconEl), append(description))(row);
+      };
+
+      const innerListContainer = createEl("innerListContainer")("")("div");
+
+      const suggestionSpans = suggestions.map(({ icon, command, other }) =>
+        append(suggestion(icon)(command)(other))(innerListContainer)
+      );
+
+      const listContainer = append(innerListContainer)(
+        createEl("listContainer")("listContainer zero-radius-bottom")("div")
+      );
+
+      const innerContainer = append(listContainer)(
+        createEl("innerContainer")("")("div")
+      );
+
+      const descriptionSpan = append(
+        text("Clone a repository into a new directory")
+      )(createEl("descriptionText")()("span"));
+
+      const hintSpan = append(text("(⌘i)"))(createEl("")("")("span"));
+
+      const hintDiv = append(hintSpan)(createEl("")("descriptionHint")("div"));
+
+      const descriptionContainer = fold(
+        append(descriptionSpan),
+        append(hintDiv)
+      )(createEl("description")("withSuggestions")("div"));
+
+      const descriptionRow = append(descriptionContainer)(
+        createEl("")("flexRow")("div")
+      );
+
+      const suggestionsContainer = fold(
+        append(innerContainer),
+        append(descriptionRow)
+      )(createEl("suggestionsContainer")("")("div"));
+
+      const autocompleteWindow = append(suggestionsContainer)(
+        createEl("autocompleteWindow")("")("div")
+      );
+
+      const view = (root) => append(autocompleteWindow)(root);
+
+      const mount = (view) => (rootElementId) => {
+        view(document.getElementById(rootElementId));
+      };
+
+      mount(view)("root");
+
+      const state = {
+        "autocomplete.width": 320,
+        "autocomplete.height": 140,
+        "autocomplete.onlyShowOnTab": false,
+        "autocomplete.theme": "dark",
+        "autocomplete.fontSize": "13",
+        "autocomplete.fontFamily": "Monaco",
+      };
+
+      function handleWidth(width) {
+        document.getElementById("suggestionsContainer").style.width = width;
+        state["autocomplete.width"] = width;
+      }
+
+      function handleHeight(height) {
+        document.getElementById("suggestionsContainer").style.maxHeight =
+          height;
+        document.getElementById("listContainer").style.height = height - 21;
+        state["autocomplete.height"] = height;
+      }
+
+      function handleShowOnTab(checked) {
+        state["autocomplete.onlyShowOnTab"] = checked;
+      }
+
+      function handleExecuteAfterSpace(checked) {
+        state["autocomplete.immediatelyExecuteAfterSpace"] = checked;
+      }
+
+      function handleFontFamily(font) {
+        state["autocomplete.fontFamily"] = font;
+        root.style.setProperty("--autocomplete-font-family", font);
+        root.style.setProperty("--description-font-family", font);
+      }
+
+      function handleFontSize(size) {
+        state["autocomplete.fontSize"] = size;
+        root.style.setProperty("--autocomplete-font-size", `${size}px`);
+        root.style.setProperty("--description-font-size", `${size}px`);
+      }
+
+      function handleTheme(theme) {
+        state["autocomplete.theme"] = theme;
+
+        if (theme === "light" || theme === "dark") {
+          updateTheme(builtInThemes[theme]);
+        } else {
+          fig.fread(`~/.fig/themes/${theme}.json`, updateTheme);
+        }
+      }
+
+      function updateTheme({ theme }) {
+        const root = document.documentElement;
+        root.style.setProperty("--main-bg-color", theme.backgroundColor);
+        root.style.setProperty("--main-text-color", theme.textColor);
+        root.style.setProperty(
+          "--description-text-color",
+          theme.description.textColor
+        );
+        root.style.setProperty(
+          "--description-border-color",
+          theme.description.borderColor
+        );
+        root.style.setProperty(
+          "--selected-bg-color",
+          theme.selection.backgroundColor
+        );
+        root.style.setProperty(
+          "--selected-text-color",
+          theme.selection.textColor
+        );
+        root.style.setProperty(
+          "--matching-bg-color",
+          theme.matchBackgroundColor
+        );
+      }
+
+      function handleContinue() {
+        for (setting in state) {
+          const name = setting;
+          const newValue = state[setting];
+
+          if (window.fig) {
+            window.fig.private({
+              type: "settings",
+              data: { key: name, value: newValue },
+            });
+            window.fig["_settings"][name] = newValue;
+            window.fig.settings[name] = newValue;
+          }
+        }
+      }
 
       let cli = function () {
         fig.onboarding("cli", () => {
