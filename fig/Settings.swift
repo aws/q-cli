@@ -50,6 +50,7 @@ class Settings {
   static let disableWebviewTransparency = "developer.disableWebviewTransparency"
   static let useControlRForHistoryBeta = "beta.history.ctrl-r"
   static let useControlRForHistory = "history.ctrl-r"
+  static let shouldInterceptCommandI = "autocomplete.alwaysInterceptCommandI"
 
   static let filePath = NSHomeDirectory() + "/.fig/settings.json"
   static let shared = Settings()
