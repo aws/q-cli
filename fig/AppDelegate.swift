@@ -78,19 +78,18 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         Accessibility.checkIfPermissionRevoked()
       
 //        AppMover.moveIfNecessary()
+        let _ = Settings.shared
         let _ = ShellBridge.shared
         let _ = WindowManager.shared
         let _ = ShellHookManager.shared
         let _ = KeypressProvider.shared
         let _ = ShellHookTransport.shared
       
-        DispatchQueue.global(qos: .userInitiated).async {
-          let _ = AXWindowServer.shared
-        }
+        let _ = AXWindowServer.shared
+
       
         let _ = DockerEventStream.shared
         let _ = iTermIntegration.shared
-        let _ = Settings.shared
 
         
         TelemetryProvider.register()
