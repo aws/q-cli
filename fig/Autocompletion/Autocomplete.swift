@@ -167,6 +167,7 @@ class Autocomplete {
   }
   
   static func handleTabKey(event:CGEvent, in window: ExternalWindow) -> EventTapAction {
+
     let keycode = UInt16(event.getIntegerValueField(.keyboardEventKeycode))
     guard Keycode.tab == keycode else {
       return .ignore
@@ -176,6 +177,11 @@ class Autocomplete {
       return .ignore
     }
     
+    // no modifier keys are pressed!
+    guard !event.flags.containsKeyboardModifier else {
+        return .ignore
+    }
+        
     let autocompleteIsNotVisible = WindowManager.shared.autocomplete?.isHidden ?? true
 
     let onlyShowOnTab = (Settings.shared.getValue(forKey: Settings.onlyShowOnTabKey) as? Bool) ?? false
