@@ -148,8 +148,8 @@ class Autocomplete {
     guard KeyboardLayout.shared.keyCode(for: "I") ?? Keycode.i == keycode else {
       return .ignore
     }
-    
-    guard let event = NSEvent(cgEvent: event), event.modifierFlags.contains(.command) else {
+
+    guard let event = NSEvent(cgEvent: event), event.modifierFlags.intersection(.deviceIndependentFlagsMask) == .command else {
       return .ignore
     }
     
@@ -160,10 +160,13 @@ class Autocomplete {
     }
         
     let autocompleteIsNotVisible = WindowManager.shared.autocomplete?.isHidden ?? true
-
+    
+    // Allow user to opt out of cmd+i interception if autocomplete window isn't visibile
+    let shouldInterceptCommandI = Settings.shared.getValue(forKey: Settings.shouldInterceptCommandI) as? Bool ?? true
+    
     // Allow to be intercepted by autocomplete app if visible
     // otherwise prevent keypress from propogating
-    return autocompleteIsNotVisible ? .consume : .ignore
+    return autocompleteIsNotVisible && shouldInterceptCommandI ? .consume : .ignore
   }
   
   static func handleTabKey(event:CGEvent, in window: ExternalWindow) -> EventTapAction {
