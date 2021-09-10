@@ -12,10 +12,12 @@ import Sentry
 class VSCodeIntegration: GenericTerminalIntegrationProvider {
   static let `default` = VSCodeIntegration(bundleIdentifier: Integrations.VSCode,
                                            configFolderName: ".vscode",
-                                           applicationSupportFolderName: "Code")
+                                           applicationSupportFolderName: "Code",
+                                           applicationName: "VSCode")
   static let insiders = VSCodeIntegration(bundleIdentifier: Integrations.VSCodeInsiders,
                                           configFolderName: ".vscode-insiders",
-                                          applicationSupportFolderName: "Code - Insiders")
+                                          applicationSupportFolderName: "Code - Insiders",
+                                          applicationName: "VSCode Insiders")
     
   static let supportURL: URL = URL(string: "https://fig.io/docs/support/vscode-integration")!
 
@@ -27,7 +29,7 @@ class VSCodeIntegration: GenericTerminalIntegrationProvider {
   fileprivate let configFolderName: String
   fileprivate let applicationSupportFolderName: String
 
-  init(bundleIdentifier: String, configFolderName: String, applicationSupportFolderName: String) {
+  init(bundleIdentifier: String, configFolderName: String, applicationSupportFolderName: String, applicationName: String) {
       self.configFolderName = configFolderName
       self.applicationSupportFolderName = applicationSupportFolderName
     
@@ -35,6 +37,7 @@ class VSCodeIntegration: GenericTerminalIntegrationProvider {
 
       self.promptMessage = "Fig will add an extension to Visual Studio Code that tracks which integrated terminal is active.\n\nVSCode will need to restart for changes to take effect.\n"
       self.promptButtonText = "Install Extension"
+      self.applicationName = applicationName
   }
     
   var settingsPath: String {

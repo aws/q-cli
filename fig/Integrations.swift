@@ -103,7 +103,7 @@ class Integrations {
       .subtracting(Integrations.blocked)
         }
     }
-  static let providers: [String: TerminalIntegrationProvider ] =
+  static let providers: [String: GenericTerminalIntegrationProvider ] =
                         [ Integrations.iTerm : iTermIntegration.default,
                           Integrations.Hyper : HyperIntegration.default,
                           Integrations.VSCode : VSCodeIntegration.default,
@@ -212,26 +212,31 @@ protocol TerminalIntegrationProvider {
     
     func install(withRestart: Bool, inBackground: Bool, completion: ((InstallationStatus) -> Void)?)
     func promptToInstall(completion: ((InstallationStatus) -> Void)?)
-
 }
 
 
+extension Integrations {
+    static let statusDidChange = Notification.Name("integrationStatusDidChange")
+    static let integrationKey = "integrationKey"
+}
+
 class GenericTerminalIntegrationProvider: TerminalIntegrationProvider {
-    var shouldAttemptToInstall: Bool {
-        get {
-            return Defaults.loggedIn && status == .unattempted
-        }
-    }
     
     let bundleIdentifier: String
     var applicationName: String?
     var promptMessage: String?
     var promptButtonText: String?
     private let defaultsKey: String
+    
     var status: InstallationStatus {
         didSet {
             UserDefaults.standard.set(status.encoded(), forKey: defaultsKey)
             UserDefaults.standard.synchronize()
+            
+            let notification = Notification(name: Integrations.statusDidChange,
+                                            object: nil,
+                                            userInfo: [ Integrations.integrationKey: self ])
+            NotificationCenter.default.post(notification)
         }
     }
     
@@ -263,8 +268,18 @@ class GenericTerminalIntegrationProvider: TerminalIntegrationProvider {
             return
         }
         
-        if app.bundleIdentifier == self.bundleIdentifier && self.status == .appNotPresent {
-            self.status = .unattempted
+        guard app.bundleIdentifier == self.bundleIdentifier else {
+            return
+        }
+        
+        switch self.status {
+            case .appNotPresent:
+                self.status = .unattempted
+            case .pendingRestart:
+                self.status = self.isInstalled ? .installed
+                                               : .failed(error: "The integration was not successfully installed after restart")
+            default:
+                break
         }
     }
     
@@ -274,6 +289,12 @@ class GenericTerminalIntegrationProvider: TerminalIntegrationProvider {
     
     var isInstalled: Bool {
         fatalError("GenericTerminalIntegrationProvider.isInstalled is unimplemented" )
+    }
+    
+    var shouldAttemptToInstall: Bool {
+        get {
+            return Defaults.loggedIn && status == .unattempted
+        }
     }
     
     func install(withRestart: Bool, inBackground: Bool, completion: ((InstallationStatus) -> Void)? = nil) {
@@ -322,6 +343,34 @@ class GenericTerminalIntegrationProvider: TerminalIntegrationProvider {
         }
     }
 
+    @objc func promptToInstall() {
+        promptToInstall(completion: nil)
+    }
+    
+    @objc func openSupportPage() {
+        
+        switch self.status {
+        case .failed(_, let supportURL):
+            if let supportURL = supportURL {
+                NSWorkspace.shared.open(supportURL)
+            }
+        default:
+            break
+        }
+           
+    }
+    
+    @objc func restart() {
+        let targetTerminal = Restarter(with: self.bundleIdentifier)
+        targetTerminal.restart(launchingIfInactive: false) {
+            
+            if self.status == .pendingRestart {
+                self.status = self.isInstalled ? .installed
+                                               : .failed(error: "The integration was not successfully installed after restart")
+            }
+            
+        }
+    }
     
     func promptToInstall(completion: ((InstallationStatus) -> Void)? = nil) {
         guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: self.bundleIdentifier) else {
