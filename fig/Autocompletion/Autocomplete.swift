@@ -194,6 +194,12 @@ class Autocomplete {
       return .ignore
     }
     
+    // Don't intercept tab when in VSCode editor
+    if Integrations.electronTerminals.contains(window.bundleId ?? "") &&
+        Accessibility.findXTermCursorInElectronWindow(window) == nil {
+      return .forward
+    }
+    
     // toggle autocomplete on and consume tab keypress
     Autocomplete.toggle(for: window)
     return .consume
