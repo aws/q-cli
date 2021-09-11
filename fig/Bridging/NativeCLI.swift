@@ -484,14 +484,14 @@ extension NativeCLI {
     static func VSCodeCommand(_ scope: Scope) {
         let (_, connection) = scope
 
-        if VSCodeIntegration.isInstalled {
+        if VSCodeIntegration.default.isInstalled {
             NativeCLI.printInTerminal("\n› VSCode Integration is already installed.\n  You may need to restart VSCode for the changes to take effect.\n  If you are having issues, please use fig report.\n", using: connection)
             connection.send(message: "disconnect")
         } else {
             NativeCLI.printInTerminal("→ Prompting VSCode Integration...", using: connection)
             connection.send(message: "disconnect")
 
-            VSCodeIntegration.promptToInstall()
+            VSCodeIntegration.default.promptToInstall()
         }
 
     }
@@ -499,14 +499,14 @@ extension NativeCLI {
     static func iTermCommand(_ scope: Scope) {
         let (_, connection) = scope
 
-        if iTermIntegration.isInstalled {
+        if iTermIntegration.default.isInstalled {
             NativeCLI.printInTerminal("\n› iTerm Integration is already installed.\n  If you are having issues, please use fig report.\n", using: connection)
             connection.send(message: "disconnect")
 
         } else {
             NativeCLI.printInTerminal("→ Prompting iTerm Integration...", using: connection)
             connection.send(message: "disconnect")
-            iTermIntegration.promptToInstall()
+            iTermIntegration.default.promptToInstall()
         }
 
     }
@@ -514,13 +514,13 @@ extension NativeCLI {
     static func HyperCommand(_ scope: Scope) {
         let (_, connection) = scope
 
-        if HyperIntegration.isInstalled {
+        if HyperIntegration.default.isInstalled {
             NativeCLI.printInTerminal("\n› Hyper Integration is already installed.\n  You may need to restart Hyper for the changes to take effect.\n  If you are having issues, please use fig report.\n", using: connection)
             connection.send(message: "disconnect")
         } else {
             NativeCLI.printInTerminal("→ Prompting Hyper Integration...", using: connection)
             connection.send(message: "disconnect")
-            HyperIntegration.promptToInstall()
+            HyperIntegration.default.promptToInstall()
         }
 
     }
