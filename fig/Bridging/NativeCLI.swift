@@ -208,43 +208,6 @@ class NativeCLI {
                 break;
             }
         }
-        
-        func runFromScript(_ scope: Scope) {
-            guard !self.implementatedNatively else {
-                Logger.log(message: "CLI function '\(self.rawValue)' is implemented natively")
-                return
-            }
-            
-            var scriptName: String? = nil
-            
-            // map between raw CLI command and script name
-            switch self {
-            case .h, .help:
-                scriptName = "help"
-            case .uninstall, .disable, .remove:
-                scriptName = "uninstall_spec"
-            case .star:
-                scriptName = "contribute"
-            case .share:
-                scriptName = "tweet"
-            case .ssh:
-                scriptName = "ssh"
-            case .chat, .discord, .community:
-                scriptName = "community"
-            default:
-                break;
-            }
-            
-            let script = scriptName ?? self.rawValue.split(separator: ":").joined(separator: "-")
-            if let scriptPath = Bundle.main.path(forResource: script,
-                                                 ofType: "sh") {
-                NativeCLI.runShellScriptInTerminal(scriptPath, with: scope)
-                Logger.log(message: "\(scriptPath)", subsystem: .cli)
-            } else {
-                Logger.log(message: "CLI: Failed to find script", subsystem: .cli)
-               
-            }
-        }
     }
     
     static func route(_ command: Command, with message: ShellMessage, from connection: WebSocketConnection) {
@@ -257,8 +220,6 @@ class NativeCLI {
           
             if command.implementatedNatively {
                 command.run(scope)
-            } else {
-                command.runFromScript(scope)
             }
             
             if (!command.handlesDisconnect) {
@@ -527,14 +488,14 @@ extension NativeCLI {
     static func VSCodeCommand(_ scope: Scope) {
         let (_, connection) = scope
 
-        if VSCodeIntegration.isInstalled {
+        if VSCodeIntegration.default.isInstalled {
             NativeCLI.printInTerminal("\n› VSCode Integration is already installed.\n  You may need to restart VSCode for the changes to take effect.\n  If you are having issues, please use fig report.\n", using: connection)
             connection.send(message: "disconnect")
         } else {
             NativeCLI.printInTerminal("→ Prompting VSCode Integration...", using: connection)
             connection.send(message: "disconnect")
 
-            VSCodeIntegration.promptToInstall()
+            VSCodeIntegration.default.promptToInstall()
         }
 
     }
@@ -542,14 +503,14 @@ extension NativeCLI {
     static func iTermCommand(_ scope: Scope) {
         let (_, connection) = scope
 
-        if iTermIntegration.isInstalled {
+        if iTermIntegration.default.isInstalled {
             NativeCLI.printInTerminal("\n› iTerm Integration is already installed.\n  If you are having issues, please use fig report.\n", using: connection)
             connection.send(message: "disconnect")
 
         } else {
             NativeCLI.printInTerminal("→ Prompting iTerm Integration...", using: connection)
             connection.send(message: "disconnect")
-            iTermIntegration.promptToInstall()
+            iTermIntegration.default.promptToInstall()
         }
 
     }
@@ -557,13 +518,13 @@ extension NativeCLI {
     static func HyperCommand(_ scope: Scope) {
         let (_, connection) = scope
 
-        if HyperIntegration.isInstalled {
+        if HyperIntegration.default.isInstalled {
             NativeCLI.printInTerminal("\n› Hyper Integration is already installed.\n  You may need to restart Hyper for the changes to take effect.\n  If you are having issues, please use fig report.\n", using: connection)
             connection.send(message: "disconnect")
         } else {
             NativeCLI.printInTerminal("→ Prompting Hyper Integration...", using: connection)
             connection.send(message: "disconnect")
-            HyperIntegration.promptToInstall()
+            HyperIntegration.default.promptToInstall()
         }
 
     }
@@ -699,6 +660,9 @@ extension NativeCLI {
             case "--add":
                 LoginItems.shared.currentApplicationShouldLaunchOnStartup = true
                 NativeCLI.printInTerminal("\n› Adding Fig to LoginItems\n", using: connection)
+            case "--remove-all":
+                LoginItems.shared.removeAllItemsMatchingBundleURL()
+                NativeCLI.printInTerminal("\n› Removing all Fig entries from LoginItems\n", using: connection)
             default:
                 NativeCLI.printInTerminal("\(LoginItems.shared.currentApplicationShouldLaunchOnStartup ? "true" : "false")", using: connection)
 

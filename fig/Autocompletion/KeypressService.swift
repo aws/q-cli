@@ -56,7 +56,6 @@ class KeypressProvider {
     , Autocomplete.handleCommandIKey
     , KeypressProvider.processRegisteredHandlers
     , KeypressProvider.handleRedirect
-    , FishIntegration.handleKeystroke
     ]
   
   var registeredHandlers: [EventTapHandler] = []
@@ -341,11 +340,20 @@ class KeypressProvider {
     }
     
 
+    // todo(mschrage): This should be handled by autocomplete. Not hard coded in macOS app.
     if (keyCode == KeyboardLayout.shared.keyCode(for: "N") ?? Keycode.n) {
       keyCode = Keycode.downArrow
     }
     
     if (keyCode == KeyboardLayout.shared.keyCode(for: "P") ?? Keycode.p) {
+      keyCode = Keycode.upArrow
+    }
+    
+    if (keyCode == KeyboardLayout.shared.keyCode(for: "J") ?? Keycode.j) {
+      keyCode = Keycode.downArrow
+    }
+    
+    if (keyCode == KeyboardLayout.shared.keyCode(for: "K") ?? Keycode.k) {
       keyCode = Keycode.upArrow
     }
     
@@ -392,13 +400,6 @@ class KeypressProvider {
       
       return
     }
-
-    if let event = event, event.type == NSEvent.EventType.keyDown {
-      Autocomplete.update(with: keyBuffer.handleKeystroke(event: event), for: window.hash)
-    }
-    
-    Autocomplete.position()
- 
   }
 }
 

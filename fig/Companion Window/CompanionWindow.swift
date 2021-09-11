@@ -613,7 +613,7 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
                 let frame = self.positioning.frame(targetWindowFrame: targetFrame,
                                                    screen: candidates.first!.frame)
 
-                setOverlayFrame(frame)
+                setOverlayFrame(frame.offsetBy(dx: 0, dy: frame.height * -1))
     
             }
             
@@ -633,7 +633,8 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
 //                    }
                     let frame = self.positioning.frame(targetWindowFrame: targetFrame,
                                                        screen: NSScreen.main!.frame)
-                    setOverlayFrame(frame)
+                    
+                    setOverlayFrame(frame.offsetBy(dx: 0, dy: frame.height * -1))
     
                 }
             }

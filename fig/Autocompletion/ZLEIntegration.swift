@@ -152,6 +152,7 @@ class ZLEIntegration: ShellIntegration {
          
 //            WindowManager.shared.positionAutocompletePopover(textRect: KeypressProvider.shared.getTextRect(), makeVisibleImmediately: false, completion: nil)
 
+
         }
       }
     
