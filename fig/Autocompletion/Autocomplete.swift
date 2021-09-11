@@ -148,8 +148,8 @@ class Autocomplete {
     guard KeyboardLayout.shared.keyCode(for: "I") ?? Keycode.i == keycode else {
       return .ignore
     }
-    
-    guard let event = NSEvent(cgEvent: event), event.modifierFlags.contains(.command) else {
+
+    guard let event = NSEvent(cgEvent: event), event.modifierFlags.intersection(.deviceIndependentFlagsMask) == .command else {
       return .ignore
     }
     
@@ -160,13 +160,17 @@ class Autocomplete {
     }
         
     let autocompleteIsNotVisible = WindowManager.shared.autocomplete?.isHidden ?? true
-
+    
+    // Allow user to opt out of cmd+i interception if autocomplete window isn't visibile
+    let shouldInterceptCommandI = Settings.shared.getValue(forKey: Settings.shouldInterceptCommandI) as? Bool ?? true
+    
     // Allow to be intercepted by autocomplete app if visible
     // otherwise prevent keypress from propogating
-    return autocompleteIsNotVisible ? .consume : .ignore
+    return autocompleteIsNotVisible && shouldInterceptCommandI ? .consume : .ignore
   }
   
   static func handleTabKey(event:CGEvent, in window: ExternalWindow) -> EventTapAction {
+
     let keycode = UInt16(event.getIntegerValueField(.keyboardEventKeycode))
     guard Keycode.tab == keycode else {
       return .ignore
@@ -176,6 +180,11 @@ class Autocomplete {
       return .ignore
     }
     
+    // no modifier keys are pressed!
+    guard !event.flags.containsKeyboardModifier else {
+        return .ignore
+    }
+        
     let autocompleteIsNotVisible = WindowManager.shared.autocomplete?.isHidden ?? true
 
     let onlyShowOnTab = (Settings.shared.getValue(forKey: Settings.onlyShowOnTabKey) as? Bool) ?? false
@@ -183,6 +192,12 @@ class Autocomplete {
     // if not enabled or if autocomplete is already visible, handle normally
     if !onlyShowOnTab || !autocompleteIsNotVisible {
       return .ignore
+    }
+    
+    // Don't intercept tab when in VSCode editor
+    if Integrations.electronTerminals.contains(window.bundleId ?? "") &&
+        Accessibility.findXTermCursorInElectronWindow(window) == nil {
+      return .forward
     }
     
     // toggle autocomplete on and consume tab keypress
