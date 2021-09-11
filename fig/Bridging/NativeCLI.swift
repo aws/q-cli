@@ -674,6 +674,14 @@ extension NativeCLI {
                 } else {
                     NativeCLI.printInTerminal("\n› Failed to install Fig IME\n", using: connection)
                 }
+            case "uninstall":
+                InputMethod.uninstall()
+                NativeCLI.printInTerminal("\n› Uninstalling IME\n", using: connection)
+
+            case "--version":
+                InputMethod.requestVersion()
+                NativeCLI.printInTerminal("\n› Requesting version! Check the logs!\n", using: connection)
+
             default:
                 return
 
