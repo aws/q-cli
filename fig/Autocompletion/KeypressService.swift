@@ -399,13 +399,6 @@ class KeypressProvider {
       
       return
     }
-
-    if let event = event, event.type == NSEvent.EventType.keyDown {
-      Autocomplete.update(with: keyBuffer.handleKeystroke(event: event), for: window.hash)
-    }
-    
-    Autocomplete.position()
- 
   }
 }
 
