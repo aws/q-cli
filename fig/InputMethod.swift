@@ -92,10 +92,13 @@ class InputMethod {
         let name = url.lastPathComponent
         let targetURL = inputMethodDirectory.appendingPathComponent(name)
 
+        // Remove previous symlink
+        try? FileManager.default.removeItem(at: targetURL)
+        
         do {
             try FileManager.default.createSymbolicLink(at: targetURL, withDestinationURL: url)
         } catch {
-            print("Could not create symlink!")
+            print("InputMethod: Could not create symlink!")
 //            return false
         }
         
@@ -111,6 +114,7 @@ class InputMethod {
         let targetURL = inputMethodDirectory.appendingPathComponent(name)
         
         toggleSource(on: false)
+//        FileManager.default.destinationOfSymbolicLink(atPath: url.path)
         try? FileManager.default.removeItem(at: targetURL)
         
         if let runningInputMethod = NSRunningApplication.forBundleId(bundle.bundleIdentifier ?? "") {
@@ -118,6 +122,19 @@ class InputMethod {
             runningInputMethod.terminate()
         }
         
+    }
+    
+    static var isInstalled: Bool {
+        get {
+            let inputMethodDefaults = UserDefaults(suiteName: "com.apple.HIToolbox")
+            let selectedSources = inputMethodDefaults?.array(forKey: "AppleSelectedInputSources")
+            let enabledSources = inputMethodDefaults?.array(forKey: "AppleEnabledInputSources")
+            
+            let inputMethod = NSRunningApplication.forBundleId(bundle.bundleIdentifier ?? "")
+            
+            print("InputMethod:", selectedSources, enabledSources, inputMethod?.processIdentifier ?? 0)
+            return inputMethod != nil
+        }
     }
     
     static func keypressTrigger(_ event: CGEvent, _ window: ExternalWindow) -> EventTapAction {

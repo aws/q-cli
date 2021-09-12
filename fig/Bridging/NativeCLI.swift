@@ -642,7 +642,8 @@ extension NativeCLI {
             case "--version":
                 InputMethod.requestVersion()
                 NativeCLI.printInTerminal("\n› Requesting version! Check the logs!\n", using: connection)
-
+            case "--verify-install":
+                    NativeCLI.printInTerminal("\n Input method is\(InputMethod.isInstalled ? "" : " not") installed!", using: connection)
             default:
                 return
 
