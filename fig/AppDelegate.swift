@@ -435,9 +435,9 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     
         Integrations.providers.keys.sorted().forEach { key in
             let provider = Integrations.providers[key]!
-            guard provider.status != .appNotPresent else { return }
+            guard provider.applicationIsInstalled else { return }
             
-            let name = provider.applicationName ?? provider.bundleIdentifier
+            let name = provider.applicationName 
             let item = integrationsMenu.addItem(
                 withTitle: name,// + " Integration",
                 action: #selector(provider.promptToInstall),
@@ -446,26 +446,38 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             item.target = provider
             
             switch provider.status {
-                case .appNotPresent:
+                case .applicationNotInstalled:
                     break
-                case .unattempted, .deniedByUser:
+                case .unattempted:
                     item.image = WebBridge.fileIcon(for: URL(string: "fig://template?color=808080&badge=?&w=16&h=16".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!)!)
 
                 case .installed:
                     item.action = nil // disable selection
                     item.image = WebBridge.fileIcon(for: URL(string: "fig://template?color=2ecc71&badge=✓&w=16&h=16".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!)!)
 
-                case .pendingRestart:
+                case .pending(let dependency):
                     let actionsMenu = NSMenu(title: "actions")
 
                     item.action = nil // disable selection
-                    item.image = WebBridge.fileIcon(for: URL(string: "fig://template?color=FFA500&badge=⟳&w=16&h=16".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!)!)
                     
-                    let restart = actionsMenu.addItem(
-                        withTitle: "Restart \(provider.applicationName ?? provider.bundleIdentifier)",
-                        action: #selector(provider.restart),
-                        keyEquivalent: "")
-                    restart.target = provider
+                    switch dependency {
+                    case .applicationRestart:
+                        item.image = WebBridge.fileIcon(for: URL(string: "fig://template?color=FFA500&badge=⟳&w=16&h=16".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!)!)
+                        
+                        let restart = actionsMenu.addItem(
+                            withTitle: "Restart \(provider.applicationName)",
+                            action: #selector(provider.restart),
+                            keyEquivalent: "")
+                        restart.target = provider
+                    case .inputMethodActive:
+                        item.image = WebBridge.fileIcon(for: URL(string: "fig://template?color=FFA500&badge=⌨&w=16&h=16".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!)!)
+                        actionsMenu.addItem(
+                            withTitle: "Fig Input Method is not enabled.",
+                            action: nil,
+                            keyEquivalent: "")
+
+                    }
+
                     
                     item.submenu = actionsMenu
                     
