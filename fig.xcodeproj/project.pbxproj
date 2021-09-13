@@ -63,6 +63,7 @@
 		7518608E255CB0C20000A7C7 /* 1.0.20.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75186082255CB0870000A7C7 /* 1.0.20.sh */; };
 		751C3BEC24B6910800B5C7FD /* Remote.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751C3BEB24B6910800B5C7FD /* Remote.swift */; };
 		751C3BEE24B6915000B5C7FD /* Defaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751C3BED24B6915000B5C7FD /* Defaults.swift */; };
+		751DC66126EBF3AA00697DFB /* cpu.png in Resources */ = {isa = PBXBuildFile; fileRef = 751DC66026EBF3AA00697DFB /* cpu.png */; };
 		751F7589246D090100E083C8 /* WebBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751F7588246D090100E083C8 /* WebBridge.swift */; };
 		751F7591246E16D800E083C8 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751F7590246E16D800E083C8 /* main.swift */; };
 		7520D7F1267D98790034FE2B /* fig-0.0.3.vsix in Resources */ = {isa = PBXBuildFile; fileRef = 7520D7F0267D98790034FE2B /* fig-0.0.3.vsix */; };
@@ -328,6 +329,8 @@
 		75186082255CB0870000A7C7 /* 1.0.20.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = 1.0.20.sh; sourceTree = "<group>"; };
 		751C3BEB24B6910800B5C7FD /* Remote.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Remote.swift; sourceTree = "<group>"; };
 		751C3BED24B6915000B5C7FD /* Defaults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Defaults.swift; sourceTree = "<group>"; };
+		751DC66026EBF3AA00697DFB /* cpu.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = cpu.png; path = ../../../Downloads/cpu.png; sourceTree = "<group>"; };
+		751DC66226EBF3B500697DFB /* cpu@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "cpu@2x.png"; sourceTree = "<group>"; };
 		751F7588246D090100E083C8 /* WebBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebBridge.swift; sourceTree = "<group>"; };
 		751F758E246E16D800E083C8 /* figcli */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = figcli; sourceTree = BUILT_PRODUCTS_DIR; };
 		751F7590246E16D800E083C8 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
@@ -619,6 +622,7 @@
 		7518608F255CE49B0000A7C7 /* Icons */ = {
 			isa = PBXGroup;
 			children = (
+				751DC66226EBF3B500697DFB /* cpu@2x.png */,
 				752E68E52620F884009E9A7E /* android@2x.png */,
 				75290A7C266B09CB000F4255 /* gear@2x.png */,
 				7564AE6E265C9DCD0040BD4C /* discord@2x.png */,
@@ -743,6 +747,7 @@
 			children = (
 				7510F87324A6910500E86F7C /* SwiftTerm */,
 				75675954244634AD006AA988 /* AppDelegate.swift */,
+				751DC66026EBF3AA00697DFB /* cpu.png */,
 				75E993F32515C8D3000BE6BE /* Autocompletion */,
 				75B199332504190900F38EA8 /* Keycode.swift */,
 				752D71CC25B8A6B200263527 /* Restarter.swift */,
@@ -1198,6 +1203,7 @@
 				7573F15B2602B4E000C833FA /* alert@2x.png in Resources */,
 				755D0DE4247F038B0074AB5C /* logs.html in Resources */,
 				752E68F52620F885009E9A7E /* gcloud@2x.png in Resources */,
+				751DC66126EBF3AA00697DFB /* cpu.png in Resources */,
 				752E68F92620F885009E9A7E /* apple@2x.png in Resources */,
 				75A4A29A25C8D855002EFD6B /* commit@2x.png in Resources */,
 				752D71C525AE9B7200263527 /* ssh.html in Resources */,
