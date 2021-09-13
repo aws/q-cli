@@ -114,14 +114,17 @@ class Integrations {
                           Integrations.VSCodeInsiders : VSCodeIntegration.insiders]
 }
 
+enum InstallationDependency: String, Codable {
+    case applicationRestart
+    case inputMethodActive
+}
 
 enum InstallationStatus: Equatable {
+    case applicationNotInstalled  // target app not installed,
     case unattempted    // we have not tried to install the integration
-    case pendingRestart // waiting for the host app to restart for the integration to be active
+    case pending(event: InstallationDependency)
     case installed      // integration has been successfully installed
     
-    case appNotPresent  // target app not installed,
-    case deniedByUser   // when prompted, the user rejected the integration prompt
     case failed(error: String, supportURL: URL? = nil)
     
     func encoded() -> Data? {
@@ -142,11 +145,16 @@ enum InstallationStatus: Equatable {
         
         self = status
     }
+    
+    //
+    func staticallyVerifiable() -> Bool {
+        return ![InstallationStatus.pending(event: .applicationRestart)].contains(self)
+    }
 }
 
 extension InstallationStatus: Codable {
     enum CodingKeys: CodingKey {
-        case unattempted, pendingRestart, installed, appNotPresent, deniedByUser, failed
+        case unattempted, pending, installed, failed, applicationNotInstalled
     }
     
     init(from decoder: Decoder) throws {
@@ -160,16 +168,16 @@ extension InstallationStatus: Codable {
             let supportURL = try nestedContainer.decode(URL?.self)
             self = .failed(error: error,
                            supportURL: supportURL)
+        case .pending:
+            var nestedContainer = try container.nestedUnkeyedContainer(forKey: .pending)
+            let dependency = try nestedContainer.decode(InstallationDependency.self)
+            self = .pending(event: dependency)
         case .unattempted:
             self = .unattempted
-        case .pendingRestart:
-            self = .pendingRestart
         case .installed:
             self = .installed
-        case .appNotPresent:
-            self = .appNotPresent
-        case .deniedByUser:
-            self = .deniedByUser
+        case .applicationNotInstalled:
+            self = .applicationNotInstalled
         default:
             throw DecodingError.dataCorrupted(
                 DecodingError.Context(
@@ -187,14 +195,14 @@ extension InstallationStatus: Codable {
         switch self {
         case .unattempted:
             try container.encode(true, forKey: .unattempted)
-        case .pendingRestart:
-            try container.encode(true, forKey: .pendingRestart)
         case .installed:
             try container.encode(true, forKey: .installed)
-        case .appNotPresent:
-            try container.encode(true, forKey: .appNotPresent)
-        case .deniedByUser:
-            try container.encode(true, forKey: .deniedByUser)
+        case .applicationNotInstalled:
+            try container.encode(true, forKey: .applicationNotInstalled)
+        case .pending(let dependency):
+            var nestedContainer = container.nestedUnkeyedContainer(forKey: .pending)
+            try nestedContainer.encode(dependency)
+
         case .failed(let error, let supportURL):
             var nestedContainer = container.nestedUnkeyedContainer(forKey: .failed)
             try nestedContainer.encode(error)
@@ -206,12 +214,13 @@ extension InstallationStatus: Codable {
 
 protocol TerminalIntegrationProvider {
     var bundleIdentifier: String { get }
-    var applicationName: String? { get }
+    var applicationName: String { get }
     var status: InstallationStatus { get }
     var shouldAttemptToInstall: Bool { get }
     
     // Must be implemented!
     var isInstalled: Bool { get }
+    func verifyInstallation() -> InstallationStatus
     func install() -> InstallationStatus
     
     func install(withRestart: Bool, inBackground: Bool, completion: ((InstallationStatus) -> Void)?)
@@ -227,7 +236,26 @@ extension Integrations {
 class GenericTerminalIntegrationProvider: TerminalIntegrationProvider {
     
     let bundleIdentifier: String
-    var applicationName: String?
+    var applicationName: String
+    var applicationIsInstalled: Bool {
+        
+        didSet {
+            if applicationIsInstalled, applicationName == bundleIdentifier {
+                self.applicationName = NSWorkspace.shared.urlForApplication(withBundleIdentifier: self.bundleIdentifier)?
+                    .deletingPathExtension()
+                    .lastPathComponent ?? bundleIdentifier
+            }
+            
+            if applicationIsInstalled && self.status == .applicationNotInstalled {
+                self.status = .unattempted
+            }
+            
+            if !applicationIsInstalled && self.status != .applicationNotInstalled {
+                self.status = .applicationNotInstalled
+            }
+        }
+    }
+
     var promptMessage: String?
     var promptButtonText: String?
     private let defaultsKey: String
@@ -247,14 +275,22 @@ class GenericTerminalIntegrationProvider: TerminalIntegrationProvider {
     init(bundleIdentifier: String) {
         self.bundleIdentifier = bundleIdentifier
         self.defaultsKey =  self.bundleIdentifier + ".integration"
+        self.applicationName = NSWorkspace.shared.urlForApplication(withBundleIdentifier: self.bundleIdentifier)?
+                                                 .deletingPathExtension()
+                                                 .lastPathComponent ?? bundleIdentifier
         
-        if NSWorkspace.shared.applicationIsInstalled(self.bundleIdentifier) {
+        self.applicationIsInstalled = NSWorkspace.shared.applicationIsInstalled(self.bundleIdentifier)
+        
+        if self.applicationIsInstalled {
             let data = UserDefaults.standard.data(forKey: self.defaultsKey)
             self.status = InstallationStatus(data: data) ?? .unattempted
-            self.applicationName = NSWorkspace.shared.urlForApplication(withBundleIdentifier: self.bundleIdentifier)?.deletingPathExtension().lastPathComponent
-
+            
+            if self.status.staticallyVerifiable() {
+                self.verifyAndUpdateInstallationStatus()
+            }
+            
         } else {
-            self.status = .appNotPresent
+            self.status = .applicationNotInstalled
         }
         
         NSWorkspace.shared.notificationCenter.addObserver(self,
@@ -276,23 +312,33 @@ class GenericTerminalIntegrationProvider: TerminalIntegrationProvider {
             return
         }
         
-        switch self.status {
-            case .appNotPresent:
-                self.status = .unattempted
-            case .pendingRestart:
-                self.status = self.isInstalled ? .installed
-                                               : .failed(error: "The integration was not successfully installed after restart")
-            default:
-                break
+        if !self.applicationIsInstalled {
+            self.applicationIsInstalled = true
         }
+        
+        if self.status == .pending(event: .applicationRestart) {
+            self.verifyAndUpdateInstallationStatus()
+        }
+
     }
     
     func install() -> InstallationStatus {
         fatalError("GenericTerminalIntegrationProvider.install() is unimplemented" )
     }
     
+    func verifyInstallation() -> InstallationStatus {
+        fatalError("GenericTerminalIntegrationProvider.verifyInstallation is unimplemented" )
+    }
+    
     var isInstalled: Bool {
-        fatalError("GenericTerminalIntegrationProvider.isInstalled is unimplemented" )
+        return self.verifyInstallation() == .installed
+    }
+    
+    func verifyAndUpdateInstallationStatus() {
+        let status = verifyInstallation()
+        if self.status != status {
+            self.status = status
+        }
     }
     
     var shouldAttemptToInstall: Bool {
@@ -302,15 +348,16 @@ class GenericTerminalIntegrationProvider: TerminalIntegrationProvider {
     }
     
     func install(withRestart: Bool, inBackground: Bool, completion: ((InstallationStatus) -> Void)? = nil) {
-        let status = self.install()
-        let name = self.applicationName ?? self.bundleIdentifier
+        let name = self.applicationName
         let title = "Could not install \(name) integration"
+
+        let status = self.install()
         
         if !inBackground {
             switch status {
-            case .appNotPresent:
+            case .applicationNotInstalled:
                 Alert.show(title: title,
-                           message: "\(name) is not installed.")
+                            message: "\(name) is not installed.")
             case .failed(let error, let supportURL):
                 
                 if let supportURL = supportURL {
@@ -327,18 +374,15 @@ class GenericTerminalIntegrationProvider: TerminalIntegrationProvider {
                     Alert.show(title: title,
                                message: error)
                 }
-            case .deniedByUser:
-                // todo(mschrage): disable autocomplete in target terminal, if integration is denied
-                break
             default:
                 break
             }
         }
         
-        if withRestart && status == .pendingRestart {
+        if withRestart && status == .pending(event: .applicationRestart) {
             let targetTerminal = Restarter(with: self.bundleIdentifier)
             targetTerminal.restart(launchingIfInactive: false) {
-                self.status = .installed
+                self.verifyAndUpdateInstallationStatus()
                 completion?(self.status)
             }
         } else {
@@ -368,9 +412,8 @@ class GenericTerminalIntegrationProvider: TerminalIntegrationProvider {
         let targetTerminal = Restarter(with: self.bundleIdentifier)
         targetTerminal.restart(launchingIfInactive: false) {
             
-            if self.status == .pendingRestart {
-                self.status = self.isInstalled ? .installed
-                                               : .failed(error: "The integration was not successfully installed after restart")
+            if self.status == .pending(event: .applicationRestart) {
+                self.verifyAndUpdateInstallationStatus()
             }
             
         }
@@ -378,13 +421,13 @@ class GenericTerminalIntegrationProvider: TerminalIntegrationProvider {
     
     func promptToInstall(completion: ((InstallationStatus) -> Void)? = nil) {
         guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: self.bundleIdentifier) else {
-          self.status = .appNotPresent
+          self.status = .applicationNotInstalled
           completion?(self.status)
           return
         }
         
         let icon = NSImage(imageLiteralResourceName: "NSSecurity")
-        let name = self.applicationName ?? self.bundleIdentifier
+        let name = self.applicationName
 
         let app = NSWorkspace.shared.icon(forFile: url.path)
         let shouldInstall = Alert.show(title: "Install \(name) Integration?",
@@ -405,7 +448,7 @@ class GenericTerminalIntegrationProvider: TerminalIntegrationProvider {
             }
           }
         } else {
-            self.status = .deniedByUser
+            self.status = .unattempted
             completion?(self.status)
         }
         

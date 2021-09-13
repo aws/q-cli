@@ -26,7 +26,7 @@ class iTermIntegration: GenericTerminalIntegrationProvider {
     
   override func install() -> InstallationStatus {
       guard NSWorkspace.shared.applicationIsInstalled(self.bundleIdentifier) else {
-          return .appNotPresent
+          return .applicationNotInstalled
       }
       // Check version number
       guard let iTermDefaults = UserDefaults(suiteName: self.bundleIdentifier),
@@ -80,21 +80,29 @@ class iTermIntegration: GenericTerminalIntegrationProvider {
           return .failed(error:  "Could not create symlink to '\(iTermIntegration.autoLaunchScriptTarget)'")
       }
       
-      return .pendingRestart
+      return .pending(event: .applicationRestart)
   }
 
-  override var isInstalled: Bool {
-      guard let symlinkDestination = try? FileManager.default.destinationOfSymbolicLink(atPath: iTermIntegration.autoLaunchScriptTarget) else {
-        return false
-      }
-      
-      guard let iTermDefaults = UserDefaults(suiteName: self.bundleIdentifier) else {
-        return false
-      }
-      
-      let apiEnabled = iTermDefaults.bool(forKey: iTermIntegration.plistAPIEnabledKey)
-      
-      return symlinkDestination == iTermIntegration.bundleAppleScriptFilePath && apiEnabled
+  override func verifyInstallation() -> InstallationStatus {
+    guard let symlinkDestination = try? FileManager.default.destinationOfSymbolicLink(atPath: iTermIntegration.autoLaunchScriptTarget) else {
+        return .failed(error: "AutoLaunch script does not exist at \(iTermIntegration.autoLaunchScriptTarget).")
+    }
+    
+    guard symlinkDestination == iTermIntegration.bundleAppleScriptFilePath else {
+        return .failed(error: "AutoLaunch script symlink points to the wrong file")
+    }
+    
+    guard let iTermDefaults = UserDefaults(suiteName: self.bundleIdentifier) else {
+        return .failed(error: "Could not read iTerm plist file to determine version")
+    }
+    
+    let apiEnabled = iTermDefaults.bool(forKey: iTermIntegration.plistAPIEnabledKey)
+    
+    guard apiEnabled else {
+        return .failed(error: "iTerm's Python API is not enabled.")
+    }
+    
+    return .installed
   }
 
 
