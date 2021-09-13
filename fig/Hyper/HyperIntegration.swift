@@ -9,7 +9,7 @@
 import Cocoa
 import Sentry
 
-class HyperIntegration: GenericTerminalIntegrationProvider {
+class HyperIntegration: TerminalIntegrationProvider {
   static let `default` = HyperIntegration(bundleIdentifier: Integrations.Hyper)
   static let settingsPath = "\(NSHomeDirectory())/.hyper.js"
 
@@ -26,7 +26,7 @@ class HyperIntegration: GenericTerminalIntegrationProvider {
   static let pluginPath: URL = URL(fileURLWithPath:"\(NSHomeDirectory())/.hyper_plugins/local/fig-hyper-integration/index.js")
   static let pluginPathInBundle = Bundle.main.url(forResource: "hyper-integration", withExtension: "js")!
 
-  override func install() -> InstallationStatus {
+  func install() -> InstallationStatus {
     guard NSWorkspace.shared.applicationIsInstalled(self.bundleIdentifier) else {
         return .applicationNotInstalled
     }
@@ -86,7 +86,7 @@ class HyperIntegration: GenericTerminalIntegrationProvider {
   }
     
 
-  override func verifyInstallation() -> InstallationStatus {
+  func verifyInstallation() -> InstallationStatus {
     guard let settings = try? String(contentsOfFile: HyperIntegration.settingsPath) else {
         return .failed(error: "Could not read Hyper settings file (\(HyperIntegration.settingsPath))")
     }
