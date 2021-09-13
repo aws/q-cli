@@ -52,7 +52,7 @@ class VSCodeIntegration: GenericTerminalIntegrationProvider {
 
   override func install() -> InstallationStatus {
     guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: self.bundleIdentifier) else {
-        return .appNotPresent
+        return .applicationNotInstalled
     }
     
     var successfullyUpdatedSettings = false
@@ -98,11 +98,15 @@ class VSCodeIntegration: GenericTerminalIntegrationProvider {
 
     }
     
-    return .pendingRestart
+    return .pending(event: .applicationRestart)
   }
     
-  override var isInstalled: Bool {
-    return FileManager.default.fileExists(atPath: self.extensionPath)
+  override func verifyInstallation() -> InstallationStatus {
+    guard FileManager.default.fileExists(atPath: self.extensionPath) else {
+        return .failed(error: "Extension is not installed.")
+    }
+    
+    return .installed
   }
     
 }

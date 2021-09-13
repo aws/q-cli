@@ -28,7 +28,7 @@ class HyperIntegration: GenericTerminalIntegrationProvider {
 
   override func install() -> InstallationStatus {
     guard NSWorkspace.shared.applicationIsInstalled(self.bundleIdentifier) else {
-        return .appNotPresent
+        return .applicationNotInstalled
     }
     
     do {
@@ -81,19 +81,26 @@ class HyperIntegration: GenericTerminalIntegrationProvider {
         return .failed(error: "Could not write to '\(HyperIntegration.settingsPath)' to update localPlugins.")
     }
     
-    return .pendingRestart
+    return .pending(event: .applicationRestart)
 
   }
     
 
-  
-  override var isInstalled: Bool {
-      guard let settings = try? String(contentsOfFile: HyperIntegration.settingsPath) else {
-      return false
-      }
-  
-      return FileManager.default.fileExists(atPath: HyperIntegration.pluginPath.path) && settings.contains("fig-hyper-integration")
+  override func verifyInstallation() -> InstallationStatus {
+    guard let settings = try? String(contentsOfFile: HyperIntegration.settingsPath) else {
+        return .failed(error: "Could not read Hyper settings file (\(HyperIntegration.settingsPath))")
+    }
+    
+    guard settings.contains("fig-hyper-integration") else {
+        return .failed(error: "hyper.js must include `fig-hyper-integration` in localPlugins.")
+    }
+    
+    guard FileManager.default.fileExists(atPath: HyperIntegration.pluginPath.path) else {
+        return .failed(error: "Hyper plugin does not exists at \(HyperIntegration.pluginPath.path)")
+    }
+    
+    return .installed
+
   }
     
-  
 }
