@@ -105,8 +105,6 @@
 		752E68F72620F885009E9A7E /* vercel@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752E68EA2620F884009E9A7E /* vercel@2x.png */; };
 		752E68F82620F885009E9A7E /* github@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752E68EB2620F884009E9A7E /* github@2x.png */; };
 		752E68F92620F885009E9A7E /* apple@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752E68EC2620F884009E9A7E /* apple@2x.png */; };
-		753C31A22641FA4400202AAA /* settings-docs.sh in Resources */ = {isa = PBXBuildFile; fileRef = 753C31A12641F6D100202AAA /* settings-docs.sh */; };
-		753C31A42643816D00202AAA /* VSCodeInsidersIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 753C31A32643816100202AAA /* VSCodeInsidersIntegration.swift */; };
 		754316F726E08F5C00188887 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 754316F626E08F5C00188887 /* AppDelegate.swift */; };
 		754316FB26E08F5D00188887 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 754316FA26E08F5D00188887 /* Assets.xcassets */; };
 		754316FE26E08F5D00188887 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 754316FD26E08F5D00188887 /* Preview Assets.xcassets */; };
@@ -213,6 +211,7 @@
 		75CFDBDF24EDB2E900F00CAE /* Onboarding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75CFDBDE24EDB2E900F00CAE /* Onboarding.swift */; };
 		75CFDBE224EDE31800F00CAE /* Sentry in Frameworks */ = {isa = PBXBuildFile; productRef = 75CFDBE124EDE31800F00CAE /* Sentry */; };
 		75D18DC426E86617008B9731 /* FigInputMethod.app in Resources */ = {isa = PBXBuildFile; fileRef = 754316F426E08F5C00188887 /* FigInputMethod.app */; };
+		75D1ECB426EFE55A00BC8A04 /* AlacrittyIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75D1ECB326EFE55A00BC8A04 /* AlacrittyIntegration.swift */; };
 		75D2E3CB249C1E7500607F66 /* terminal.css in Resources */ = {isa = PBXBuildFile; fileRef = 75D2E3CA249C1E7500607F66 /* terminal.css */; };
 		75DA86A325EDB05100722F1D /* Integrations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DA86A225EDB05100722F1D /* Integrations.swift */; };
 		75DA86A525EEBD7500722F1D /* Alert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DA86A425EEBD7400722F1D /* Alert.swift */; };
@@ -388,8 +387,6 @@
 		752E68EA2620F884009E9A7E /* vercel@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "vercel@2x.png"; sourceTree = "<group>"; };
 		752E68EB2620F884009E9A7E /* github@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "github@2x.png"; sourceTree = "<group>"; };
 		752E68EC2620F884009E9A7E /* apple@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "apple@2x.png"; sourceTree = "<group>"; };
-		753C31A12641F6D100202AAA /* settings-docs.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "settings-docs.sh"; sourceTree = "<group>"; };
-		753C31A32643816100202AAA /* VSCodeInsidersIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VSCodeInsidersIntegration.swift; sourceTree = "<group>"; };
 		754316F426E08F5C00188887 /* FigInputMethod.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FigInputMethod.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		754316F626E08F5C00188887 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		754316FA26E08F5D00188887 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -506,6 +503,7 @@
 		75C57C132581C0700065741E /* ioreg.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ioreg.c; sourceTree = "<group>"; };
 		75C8A15F2649E712001B69DA /* fig-0.0.2.vsix */ = {isa = PBXFileReference; lastKnownFileType = file; path = "fig-0.0.2.vsix"; sourceTree = "<group>"; };
 		75CFDBDE24EDB2E900F00CAE /* Onboarding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Onboarding.swift; sourceTree = "<group>"; };
+		75D1ECB326EFE55A00BC8A04 /* AlacrittyIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlacrittyIntegration.swift; sourceTree = "<group>"; };
 		75D2E3CA249C1E7500607F66 /* terminal.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = terminal.css; sourceTree = "<group>"; };
 		75DA86A225EDB05100722F1D /* Integrations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Integrations.swift; sourceTree = "<group>"; };
 		75DA86A425EEBD7400722F1D /* Alert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Alert.swift; sourceTree = "<group>"; };
@@ -829,6 +827,7 @@
 				7520D8112682AEB00034FE2B /* Throttler.swift */,
 				755FC553268D09DE00966027 /* UpdateService.swift */,
 				750CF21726A1055F0094D76A /* Config.swift */,
+				75D1ECB226EFE53F00BC8A04 /* Alacritty */,
 				75290AB92671905D000F4255 /* iTerm */,
 				75EDDC4F25D2473C003AECC6 /* Hyper */,
 				752A398725CD0FFB00B1AC40 /* VSCode */,
@@ -1019,6 +1018,14 @@
 				75AC55312522C8EB0069635E /* upgrade */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		75D1ECB226EFE53F00BC8A04 /* Alacritty */ = {
+			isa = PBXGroup;
+			children = (
+				75D1ECB326EFE55A00BC8A04 /* AlacrittyIntegration.swift */,
+			);
+			path = Alacritty;
 			sourceTree = "<group>";
 		};
 		75E993F32515C8D3000BE6BE /* Autocompletion */ = {
@@ -1230,9 +1237,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				75D18DC426E86617008B9731 /* FigInputMethod.app in Resources */,
-				75EB5721267D749A00F10C64 /* debug-log.sh in Resources */,
-				7564AE7D265CB2930040BD4C /* community.sh in Resources */,
-				75C8A1422645E029001B69DA /* set-path.sh in Resources */,
 				75290A7D266B09CB000F4255 /* gear@2x.png in Resources */,
 				759F989025C1172100EC3407 /* install_and_upgrade_fallback.sh in Resources */,
 				752E68DF2620F868009E9A7E /* yarn@2x.png in Resources */,
@@ -1532,6 +1536,7 @@
 				7510F8AE24A6910500E86F7C /* SixelDcsHandler.swift in Sources */,
 				7587B4D824F97F9E00E355E4 /* ShellHooksManager.swift in Sources */,
 				7510F89C24A6910500E86F7C /* Buffer.swift in Sources */,
+				75D1ECB426EFE55A00BC8A04 /* AlacrittyIntegration.swift in Sources */,
 				7510F8BD24A9861E00E86F7C /* PrivateWindow.m in Sources */,
 				756759D424498CA0006AA988 /* WebViewController.swift in Sources */,
 				7510F8B024A6910500E86F7C /* LocalProcess.swift in Sources */,

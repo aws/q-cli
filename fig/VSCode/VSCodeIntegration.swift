@@ -9,7 +9,7 @@
 import Cocoa
 import Sentry
 
-class VSCodeIntegration: GenericTerminalIntegrationProvider {
+class VSCodeIntegration: TerminalIntegrationProvider {
   static let `default` = VSCodeIntegration(bundleIdentifier: Integrations.VSCode,
                                            configFolderName: ".vscode",
                                            applicationSupportFolderName: "Code",
@@ -50,7 +50,7 @@ class VSCodeIntegration: GenericTerminalIntegrationProvider {
       return "\(NSHomeDirectory())/\(self.configFolderName)/extensions/withfig.fig-\(VSCodeIntegration.extensionVersion)/extension.js"
   }
 
-  override func install() -> InstallationStatus {
+  func install() -> InstallationStatus {
     guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: self.bundleIdentifier) else {
         return .applicationNotInstalled
     }
@@ -101,7 +101,7 @@ class VSCodeIntegration: GenericTerminalIntegrationProvider {
     return .pending(event: .applicationRestart)
   }
     
-  override func verifyInstallation() -> InstallationStatus {
+  func verifyInstallation() -> InstallationStatus {
     guard FileManager.default.fileExists(atPath: self.extensionPath) else {
         return .failed(error: "Extension is not installed.")
     }

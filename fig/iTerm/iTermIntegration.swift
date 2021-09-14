@@ -8,7 +8,7 @@
 
 import Cocoa
 
-class iTermIntegration: GenericTerminalIntegrationProvider {
+class iTermIntegration: TerminalIntegrationProvider {
   static let `default` = iTermIntegration(bundleIdentifier: Integrations.iTerm)
   
   // MARK: - Installation
@@ -24,7 +24,7 @@ class iTermIntegration: GenericTerminalIntegrationProvider {
   
   fileprivate static let legacyIntegrationPath = iTermAutoLaunchDirectory + scriptName + ".py"
     
-  override func install() -> InstallationStatus {
+  func install() -> InstallationStatus {
       guard NSWorkspace.shared.applicationIsInstalled(self.bundleIdentifier) else {
           return .applicationNotInstalled
       }
@@ -83,7 +83,8 @@ class iTermIntegration: GenericTerminalIntegrationProvider {
       return .pending(event: .applicationRestart)
   }
 
-  override func verifyInstallation() -> InstallationStatus {
+  func verifyInstallation() -> InstallationStatus {
+
     guard let symlinkDestination = try? FileManager.default.destinationOfSymbolicLink(atPath: iTermIntegration.autoLaunchScriptTarget) else {
         return .failed(error: "AutoLaunch script does not exist at \(iTermIntegration.autoLaunchScriptTarget).")
     }

@@ -111,12 +111,14 @@ class Integrations {
                         [ Integrations.iTerm : iTermIntegration.default,
                           Integrations.Hyper : HyperIntegration.default,
                           Integrations.VSCode : VSCodeIntegration.default,
-                          Integrations.VSCodeInsiders : VSCodeIntegration.insiders]
+                          Integrations.VSCodeInsiders : VSCodeIntegration.insiders,
+                          Integrations.Alacritty : AlacrittyIntegration.default
+                        ]
 }
 
 enum InstallationDependency: String, Codable {
     case applicationRestart
-    case inputMethodActive
+    case inputMethodActivation
 }
 
 enum InstallationStatus: Equatable {
@@ -212,20 +214,14 @@ extension InstallationStatus: Codable {
     
 }
 
-protocol TerminalIntegrationProvider {
-    var bundleIdentifier: String { get }
-    var applicationName: String { get }
-    var status: InstallationStatus { get }
-    var shouldAttemptToInstall: Bool { get }
-    
-    // Must be implemented!
-    var isInstalled: Bool { get }
+protocol IntegrationProvider {
     func verifyInstallation() -> InstallationStatus
     func install() -> InstallationStatus
-    
-    func install(withRestart: Bool, inBackground: Bool, completion: ((InstallationStatus) -> Void)?)
-    func promptToInstall(completion: ((InstallationStatus) -> Void)?)
 }
+
+// https://stackoverflow.com/a/51333906
+// Create typealias so we can inherit from superclass while also requiring certain methods to be implemented
+typealias TerminalIntegrationProvider = GenericTerminalIntegrationProvider & IntegrationProvider
 
 
 extension Integrations {
@@ -233,7 +229,7 @@ extension Integrations {
     static let integrationKey = "integrationKey"
 }
 
-class GenericTerminalIntegrationProvider: TerminalIntegrationProvider {
+class GenericTerminalIntegrationProvider {
     
     let bundleIdentifier: String
     var applicationName: String
@@ -322,8 +318,20 @@ class GenericTerminalIntegrationProvider: TerminalIntegrationProvider {
 
     }
     
-    func install() -> InstallationStatus {
-        fatalError("GenericTerminalIntegrationProvider.install() is unimplemented" )
+    func _install() -> InstallationStatus {
+        guard let provider = self as? TerminalIntegrationProvider else {
+            return .failed(error: "TerminalIntegrationProvider does not conform to protocol.")
+        }
+        
+        return provider.install()
+    }
+    
+    func _verifyInstallation() -> InstallationStatus {
+        guard let provider = self as? TerminalIntegrationProvider else {
+            return .failed(error: "TerminalIntegrationProvider does not conform to protocol.")
+        }
+        
+        return provider.verifyInstallation()
     }
     
     func verifyInstallation() -> InstallationStatus {
@@ -331,11 +339,11 @@ class GenericTerminalIntegrationProvider: TerminalIntegrationProvider {
     }
     
     var isInstalled: Bool {
-        return self.verifyInstallation() == .installed
+        return self._verifyInstallation() == .installed
     }
     
     func verifyAndUpdateInstallationStatus() {
-        let status = verifyInstallation()
+        let status = _verifyInstallation()
         if self.status != status {
             self.status = status
         }
@@ -351,7 +359,7 @@ class GenericTerminalIntegrationProvider: TerminalIntegrationProvider {
         let name = self.applicationName
         let title = "Could not install \(name) integration"
 
-        let status = self.install()
+        let status = self._install()
         
         if !inBackground {
             switch status {
@@ -452,5 +460,25 @@ class GenericTerminalIntegrationProvider: TerminalIntegrationProvider {
             completion?(self.status)
         }
         
+    }
+}
+
+
+class InputMethodDependentTerminalIntegrationProvider: GenericTerminalIntegrationProvider {
+    override init(bundleIdentifier: String) {
+        super.init(bundleIdentifier: bundleIdentifier)
+        
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(inputMethodStatusDidChange),
+                                               name: InputMethod.statusDidChange,
+                                               object: nil)
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+    
+    @objc func inputMethodStatusDidChange() {
+        self.status = self._verifyInstallation()
     }
 }
