@@ -105,6 +105,13 @@
 		752E68F72620F885009E9A7E /* vercel@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752E68EA2620F884009E9A7E /* vercel@2x.png */; };
 		752E68F82620F885009E9A7E /* github@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752E68EB2620F884009E9A7E /* github@2x.png */; };
 		752E68F92620F885009E9A7E /* apple@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752E68EC2620F884009E9A7E /* apple@2x.png */; };
+		753C31A22641FA4400202AAA /* settings-docs.sh in Resources */ = {isa = PBXBuildFile; fileRef = 753C31A12641F6D100202AAA /* settings-docs.sh */; };
+		753C31A42643816D00202AAA /* VSCodeInsidersIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 753C31A32643816100202AAA /* VSCodeInsidersIntegration.swift */; };
+		754316F726E08F5C00188887 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 754316F626E08F5C00188887 /* AppDelegate.swift */; };
+		754316FB26E08F5D00188887 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 754316FA26E08F5D00188887 /* Assets.xcassets */; };
+		754316FE26E08F5D00188887 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 754316FD26E08F5D00188887 /* Preview Assets.xcassets */; };
+		7543170126E08F5D00188887 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 754316FF26E08F5D00188887 /* Main.storyboard */; };
+		7543170826E0901B00188887 /* FigIMKInputController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7543170726E0901B00188887 /* FigIMKInputController.swift */; };
 		754D31B525759D900020CED4 /* tutorial.html in Resources */ = {isa = PBXBuildFile; fileRef = 754D31B425759D900020CED4 /* tutorial.html */; };
 		75543FD0268AC6E5003221DF /* fig-0.0.4.vsix in Resources */ = {isa = PBXBuildFile; fileRef = 75543FCF268AC6E5003221DF /* fig-0.0.4.vsix */; };
 		755D0DE0247DDE050074AB5C /* FigCLI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755D0DDF247DDE050074AB5C /* FigCLI.swift */; };
@@ -124,6 +131,7 @@
 		756759D424498CA0006AA988 /* WebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756759D324498CA0006AA988 /* WebViewController.swift */; };
 		7568203126003BDF0006FE78 /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7568203026003BDF0006FE78 /* Settings.swift */; };
 		756C4D832542A6D30035B467 /* Starscream in Frameworks */ = {isa = PBXBuildFile; productRef = 756C4D822542A6D30035B467 /* Starscream */; };
+		75738F1E26DDAB760086D972 /* InputMethod.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75738F1D26DDAB760086D972 /* InputMethod.swift */; };
 		7573F1582601927200C833FA /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7573F1572601927200C833FA /* Settings.swift */; };
 		7573F15B2602B4E000C833FA /* alert@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7573F1592602B4E000C833FA /* alert@2x.png */; };
 		7573F15C2602B4E000C833FA /* invite@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7573F15A2602B4E000C833FA /* invite@2x.png */; };
@@ -204,6 +212,7 @@
 		75C8A1602649E712001B69DA /* fig-0.0.2.vsix in Resources */ = {isa = PBXBuildFile; fileRef = 75C8A15F2649E712001B69DA /* fig-0.0.2.vsix */; };
 		75CFDBDF24EDB2E900F00CAE /* Onboarding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75CFDBDE24EDB2E900F00CAE /* Onboarding.swift */; };
 		75CFDBE224EDE31800F00CAE /* Sentry in Frameworks */ = {isa = PBXBuildFile; productRef = 75CFDBE124EDE31800F00CAE /* Sentry */; };
+		75D18DC426E86617008B9731 /* FigInputMethod.app in Resources */ = {isa = PBXBuildFile; fileRef = 754316F426E08F5C00188887 /* FigInputMethod.app */; };
 		75D2E3CB249C1E7500607F66 /* terminal.css in Resources */ = {isa = PBXBuildFile; fileRef = 75D2E3CA249C1E7500607F66 /* terminal.css */; };
 		75DA86A325EDB05100722F1D /* Integrations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DA86A225EDB05100722F1D /* Integrations.swift */; };
 		75DA86A525EEBD7500722F1D /* Alert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DA86A425EEBD7400722F1D /* Alert.swift */; };
@@ -243,6 +252,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = 751F758D246E16D800E083C8;
 			remoteInfo = figcli;
+		};
+		75D18DC526E86697008B9731 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 75675949244634AD006AA988 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 754316F326E08F5C00188887;
+			remoteInfo = FigInputMethod;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -372,6 +388,16 @@
 		752E68EA2620F884009E9A7E /* vercel@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "vercel@2x.png"; sourceTree = "<group>"; };
 		752E68EB2620F884009E9A7E /* github@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "github@2x.png"; sourceTree = "<group>"; };
 		752E68EC2620F884009E9A7E /* apple@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "apple@2x.png"; sourceTree = "<group>"; };
+		753C31A12641F6D100202AAA /* settings-docs.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "settings-docs.sh"; sourceTree = "<group>"; };
+		753C31A32643816100202AAA /* VSCodeInsidersIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VSCodeInsidersIntegration.swift; sourceTree = "<group>"; };
+		754316F426E08F5C00188887 /* FigInputMethod.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FigInputMethod.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		754316F626E08F5C00188887 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		754316FA26E08F5D00188887 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		754316FD26E08F5D00188887 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		7543170026E08F5D00188887 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		7543170226E08F5D00188887 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		7543170326E08F5D00188887 /* InputMethod.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = InputMethod.entitlements; sourceTree = "<group>"; };
+		7543170726E0901B00188887 /* FigIMKInputController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FigIMKInputController.swift; sourceTree = "<group>"; };
 		754D31B425759D900020CED4 /* tutorial.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = tutorial.html; sourceTree = "<group>"; };
 		75543FCF268AC6E5003221DF /* fig-0.0.4.vsix */ = {isa = PBXFileReference; lastKnownFileType = file; path = "fig-0.0.4.vsix"; sourceTree = "<group>"; };
 		755D0DDF247DDE050074AB5C /* FigCLI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FigCLI.swift; sourceTree = "<group>"; };
@@ -396,6 +422,7 @@
 		756759962446C44C006AA988 /* String+Shell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+Shell.swift"; sourceTree = "<group>"; };
 		756759D324498CA0006AA988 /* WebViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewController.swift; sourceTree = "<group>"; };
 		7568203026003BDF0006FE78 /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
+		75738F1D26DDAB760086D972 /* InputMethod.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputMethod.swift; sourceTree = "<group>"; };
 		7573F1572601927200C833FA /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
 		7573F1592602B4E000C833FA /* alert@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "alert@2x.png"; sourceTree = "<group>"; };
 		7573F15A2602B4E000C833FA /* invite@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "invite@2x.png"; sourceTree = "<group>"; };
@@ -503,6 +530,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				758AEB6A24CEA4D000A15EAF /* Starscream in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		754316F126E08F5C00188887 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -717,6 +751,28 @@
 			name = System;
 			sourceTree = "<group>";
 		};
+		754316F526E08F5C00188887 /* InputMethod */ = {
+			isa = PBXGroup;
+			children = (
+				754316F626E08F5C00188887 /* AppDelegate.swift */,
+				7543170726E0901B00188887 /* FigIMKInputController.swift */,
+				754316FA26E08F5D00188887 /* Assets.xcassets */,
+				754316FF26E08F5D00188887 /* Main.storyboard */,
+				7543170226E08F5D00188887 /* Info.plist */,
+				7543170326E08F5D00188887 /* InputMethod.entitlements */,
+				754316FC26E08F5D00188887 /* Preview Content */,
+			);
+			path = InputMethod;
+			sourceTree = "<group>";
+		};
+		754316FC26E08F5D00188887 /* Preview Content */ = {
+			isa = PBXGroup;
+			children = (
+				754316FD26E08F5D00188887 /* Preview Assets.xcassets */,
+			);
+			path = "Preview Content";
+			sourceTree = "<group>";
+		};
 		75675948244634AD006AA988 = {
 			isa = PBXGroup;
 			children = (
@@ -726,6 +782,7 @@
 				75675969244634B2006AA988 /* figTests */,
 				75675974244634B2006AA988 /* figUITests */,
 				751F758F246E16D800E083C8 /* figcli */,
+				754316F526E08F5C00188887 /* InputMethod */,
 				75675952244634AD006AA988 /* Products */,
 				75CFF6432496B3BA00C6A6DE /* Frameworks */,
 			);
@@ -738,6 +795,7 @@
 				75675966244634B2006AA988 /* figTests.xctest */,
 				75675971244634B2006AA988 /* figUITests.xctest */,
 				751F758E246E16D800E083C8 /* figcli */,
+				754316F426E08F5C00188887 /* FigInputMethod.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -750,6 +808,7 @@
 				751DC66026EBF3AA00697DFB /* cpu.png */,
 				75E993F32515C8D3000BE6BE /* Autocompletion */,
 				75B199332504190900F38EA8 /* Keycode.swift */,
+				75738F1D26DDAB760086D972 /* InputMethod.swift */,
 				752D71CC25B8A6B200263527 /* Restarter.swift */,
 				759F987B25BF903900EC3407 /* Accessibility.swift */,
 				751C3BEB24B6910800B5C7FD /* Remote.swift */,
@@ -1009,6 +1068,24 @@
 			productReference = 751F758E246E16D800E083C8 /* figcli */;
 			productType = "com.apple.product-type.tool";
 		};
+		754316F326E08F5C00188887 /* FigInputMethod */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7543170626E08F5D00188887 /* Build configuration list for PBXNativeTarget "FigInputMethod" */;
+			buildPhases = (
+				754316F026E08F5C00188887 /* Sources */,
+				754316F126E08F5C00188887 /* Frameworks */,
+				754316F226E08F5C00188887 /* Resources */,
+				7543170926E0904C00188887 /* Install Input Method */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = FigInputMethod;
+			productName = InputMethod;
+			productReference = 754316F426E08F5C00188887 /* FigInputMethod.app */;
+			productType = "com.apple.product-type.application";
+		};
 		75675950244634AD006AA988 /* fig */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 7567597A244634B2006AA988 /* Build configuration list for PBXNativeTarget "fig" */;
@@ -1017,12 +1094,13 @@
 				7567594E244634AD006AA988 /* Frameworks */,
 				7567594F244634AD006AA988 /* Resources */,
 				758AEB6324CE8B2F00A15EAF /* Embed Command Line Tool */,
-				75AA9FAA256D9D6C00CEFAC8 /* Run Script */,
-				759E4BFD268F9BCC00CC1565 /* ShellScript */,
+				75AA9FAA256D9D6C00CEFAC8 /* Upload dsym files to Sentry */,
+				759E4BFD268F9BCC00CC1565 /* Change permissions to make Applescript read-only */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				75D18DC626E86697008B9731 /* PBXTargetDependency */,
 				758AEB6624CE8B8700A15EAF /* PBXTargetDependency */,
 			);
 			name = fig;
@@ -1081,12 +1159,15 @@
 		75675949244634AD006AA988 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastSwiftUpdateCheck = 1130;
+				LastSwiftUpdateCheck = 1250;
 				LastUpgradeCheck = 1130;
 				ORGANIZATIONNAME = "Matt Schrage";
 				TargetAttributes = {
 					751F758D246E16D800E083C8 = {
 						CreatedOnToolsVersion = 11.3.1;
+					};
+					754316F326E08F5C00188887 = {
+						CreatedOnToolsVersion = 12.5.1;
 					};
 					75675950244634AD006AA988 = {
 						CreatedOnToolsVersion = 11.3.1;
@@ -1128,15 +1209,30 @@
 				75675965244634B2006AA988 /* figTests */,
 				75675970244634B2006AA988 /* figUITests */,
 				751F758D246E16D800E083C8 /* figcli */,
+				754316F326E08F5C00188887 /* FigInputMethod */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		754316F226E08F5C00188887 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7543170126E08F5D00188887 /* Main.storyboard in Resources */,
+				754316FE26E08F5D00188887 /* Preview Assets.xcassets in Resources */,
+				754316FB26E08F5D00188887 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		7567594F244634AD006AA988 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				75D18DC426E86617008B9731 /* FigInputMethod.app in Resources */,
+				75EB5721267D749A00F10C64 /* debug-log.sh in Resources */,
+				7564AE7D265CB2930040BD4C /* community.sh in Resources */,
+				75C8A1422645E029001B69DA /* set-path.sh in Resources */,
 				75290A7D266B09CB000F4255 /* gear@2x.png in Resources */,
 				759F989025C1172100EC3407 /* install_and_upgrade_fallback.sh in Resources */,
 				752E68DF2620F868009E9A7E /* yarn@2x.png in Resources */,
@@ -1253,7 +1349,25 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		759E4BFD268F9BCC00CC1565 /* ShellScript */ = {
+		7543170926E0904C00188887 /* Install Input Method */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Install Input Method";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "echo \"Moving Input Method Kit app to Input Methods directory.\"\n# killall $EXECUTABLE_NAME\n# cp -R \"$BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME\" \"$HOME/Library/Input Methods\"\n";
+		};
+		759E4BFD268F9BCC00CC1565 /* Change permissions to make Applescript read-only */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -1263,6 +1377,7 @@
 			);
 			inputPaths = (
 			);
+			name = "Change permissions to make Applescript read-only";
 			outputFileListPaths = (
 			);
 			outputPaths = (
@@ -1271,7 +1386,7 @@
 			shellPath = /bin/sh;
 			shellScript = "# prevent AppleScript from self-modifying after codesigning\nchmod a-w \"${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.app/Contents/Resources/fig-iterm-integration.scpt\"\n";
 		};
-		75AA9FAA256D9D6C00CEFAC8 /* Run Script */ = {
+		75AA9FAA256D9D6C00CEFAC8 /* Upload dsym files to Sentry */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -1281,7 +1396,7 @@
 			inputPaths = (
 				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${TARGET_NAME}",
 			);
-			name = "Run Script";
+			name = "Upload dsym files to Sentry";
 			outputFileListPaths = (
 			);
 			outputPaths = (
@@ -1306,6 +1421,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		754316F026E08F5C00188887 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				754316F726E08F5C00188887 /* AppDelegate.swift in Sources */,
+				7543170826E0901B00188887 /* FigIMKInputController.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		7567594D244634AD006AA988 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -1322,6 +1446,7 @@
 				757CA8E624905B38002A64A8 /* SockerServer.swift in Sources */,
 				75B7931A24BB897F0073AAC6 /* PseudoTerminalService.swift in Sources */,
 				75CFDBDF24EDB2E900F00CAE /* Onboarding.swift in Sources */,
+				75738F1E26DDAB760086D972 /* InputMethod.swift in Sources */,
 				752A398325CD024C00B1AC40 /* VSCodeIntegration.swift in Sources */,
 				75C05C6C24FDEA2B001F0A52 /* KeystrokeBuffer.swift in Sources */,
 				7510F8AC24A6910500E86F7C /* MacTerminalView.swift in Sources */,
@@ -1447,9 +1572,22 @@
 			target = 751F758D246E16D800E083C8 /* figcli */;
 			targetProxy = 758AEB6524CE8B8700A15EAF /* PBXContainerItemProxy */;
 		};
+		75D18DC626E86697008B9731 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 754316F326E08F5C00188887 /* FigInputMethod */;
+			targetProxy = 75D18DC526E86697008B9731 /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
+		754316FF26E08F5D00188887 /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				7543170026E08F5D00188887 /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
 		7567595D244634B2006AA988 /* Main.storyboard */ = {
 			isa = PBXVariantGroup;
 			children = (
@@ -1491,6 +1629,56 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		7543170426E08F5D00188887 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CODE_SIGN_ENTITLEMENTS = InputMethod/InputMethod.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_ASSET_PATHS = "\"InputMethod/Preview Content\"";
+				DEVELOPMENT_TEAM = D93PPD94WK;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				INFOPLIST_FILE = InputMethod/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 11.3;
+				PRODUCT_BUNDLE_IDENTIFIER = io.fig.inputmethod.cursor;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		7543170526E08F5D00188887 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CODE_SIGN_ENTITLEMENTS = InputMethod/InputMethod.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_ASSET_PATHS = "\"InputMethod/Preview Content\"";
+				DEVELOPMENT_TEAM = D93PPD94WK;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				INFOPLIST_FILE = InputMethod/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 11.3;
+				PRODUCT_BUNDLE_IDENTIFIER = io.fig.inputmethod.cursor;
+				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
@@ -1771,6 +1959,15 @@
 			buildConfigurations = (
 				751F7593246E16D800E083C8 /* Debug */,
 				751F7594246E16D800E083C8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		7543170626E08F5D00188887 /* Build configuration list for PBXNativeTarget "FigInputMethod" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7543170426E08F5D00188887 /* Debug */,
+				7543170526E08F5D00188887 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

@@ -387,6 +387,25 @@ class Accessibility {
     return true
     
   }
+    
+  static func getCursorFromInputMethod() -> CGRect? {
+    guard let raw = try? String(contentsOfFile: NSHomeDirectory()+"/.fig/tools/cursor") else {
+        return nil
+    }
+    
+    let tokens = raw.split(separator: ",")
+    guard tokens.count == 4,
+          let x = Double(tokens[0]),
+          let y = Double(tokens[1]),
+          let width = Double(tokens[2]),
+          let height = Double(tokens[1]) else {
+        return nil
+    }
+
+    print("ime:", x,y,width, height)
+
+    return CGRect(x: x, y: y, width: 10, height: 0)
+  }
   
   static func getTextRect(extendRange: Bool = true) -> CGRect? {
     
@@ -398,6 +417,10 @@ class Accessibility {
     
     if let window = AXWindowServer.shared.whitelistedWindow, Integrations.electronTerminals.contains(window.bundleId ?? "") {
       return Accessibility.findXTermCursorInElectronWindow(window)
+    }
+    
+    if  let window = AXWindowServer.shared.whitelistedWindow, Integrations.otherTerminals.contains(window.bundleId ?? "") {
+        return Accessibility.getCursorFromInputMethod()
     }
     
     let systemWideElement = AXUIElementCreateSystemWide()

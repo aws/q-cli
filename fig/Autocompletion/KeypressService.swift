@@ -50,7 +50,8 @@ class KeypressProvider {
   var redirects: [ExternalWindowHash:  Set<Keystroke>] = [:]
   var buffers: [ExternalWindowHash: KeystrokeBuffer] = [:]
   fileprivate let handlers: [EventTapHandler] =
-    [ Autocomplete.handleTabKey
+    [ InputMethod.keypressTrigger
+    , Autocomplete.handleTabKey
     , Autocomplete.handleEscapeKey
     , Autocomplete.handleCommandIKey
     , KeypressProvider.processRegisteredHandlers

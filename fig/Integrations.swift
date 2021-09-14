@@ -14,7 +14,9 @@ class Integrations {
     static let Hyper = "co.zeit.hyper"
     static let VSCode = "com.microsoft.VSCode"
     static let VSCodeInsiders = "com.microsoft.VSCodeInsiders"
-  
+    static let Kitty = "net.kovidgoyal.kitty"
+    static let Alacritty = "io.alacritty"
+
     static let terminals: Set = ["com.googlecode.iterm2",
                                  "com.apple.Terminal",
                                  "io.alacritty",
@@ -30,6 +32,7 @@ class Integrations {
                                      "com.runningwithcrayons.Alfred",
                                      "com.raycast.macos"]
   
+  static let otherTerminals = [ Kitty, Alacritty ]
   static let electronIDEs: Set = [VSCode, VSCodeInsiders]
   static var electronTerminals: Set<String> {
     get {
@@ -47,6 +50,7 @@ class Integrations {
         let additions = Set(Settings.shared.getValue(forKey: Settings.additionalTerminalsKey) as? [String] ?? [])
         return Integrations.nativeTerminals
         .union(Integrations.electronTerminals)
+        .union(Integrations.otherTerminals)
         .union(additions)
   .subtracting(Integrations.autocompleteBlocklist)
 
