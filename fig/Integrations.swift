@@ -334,6 +334,10 @@ class GenericTerminalIntegrationProvider {
         return provider.verifyInstallation()
     }
     
+    func verifyInstallation() -> InstallationStatus {
+        fatalError("GenericTerminalIntegrationProvider.verifyInstallation is unimplemented" )
+    }
+    
     var isInstalled: Bool {
         return self._verifyInstallation() == .installed
     }
@@ -382,7 +386,8 @@ class GenericTerminalIntegrationProvider {
                 break
             }
         }
-                if withRestart && status == .pending(event: .applicationRestart) {
+        
+        if withRestart && status == .pending(event: .applicationRestart) {
             let targetTerminal = Restarter(with: self.bundleIdentifier)
             targetTerminal.restart(launchingIfInactive: false) {
                 self.verifyAndUpdateInstallationStatus()

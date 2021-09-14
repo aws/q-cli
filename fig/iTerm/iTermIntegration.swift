@@ -84,6 +84,7 @@ class iTermIntegration: TerminalIntegrationProvider {
   }
 
   func verifyInstallation() -> InstallationStatus {
+
     guard let symlinkDestination = try? FileManager.default.destinationOfSymbolicLink(atPath: iTermIntegration.autoLaunchScriptTarget) else {
         return .failed(error: "AutoLaunch script does not exist at \(iTermIntegration.autoLaunchScriptTarget).")
     }
