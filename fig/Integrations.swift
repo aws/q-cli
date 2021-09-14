@@ -334,10 +334,6 @@ class GenericTerminalIntegrationProvider {
         return provider.verifyInstallation()
     }
     
-    func verifyInstallation() -> InstallationStatus {
-        fatalError("GenericTerminalIntegrationProvider.verifyInstallation is unimplemented" )
-    }
-    
     var isInstalled: Bool {
         return self._verifyInstallation() == .installed
     }

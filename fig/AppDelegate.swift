@@ -490,7 +490,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
                         default:
                             break
                         }
-                    case .inputMethodActive:
+                    case .inputMethodActivation:
                         item.image = WebBridge.fileIcon(for: URL(string: "fig://template?color=FFA500&badge=⌨&w=16&h=16".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!)!)
                         actionsMenu.addItem(
                             withTitle: "Fig Input Method is not enabled.",
