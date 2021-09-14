@@ -457,3 +457,23 @@ class GenericTerminalIntegrationProvider {
         
     }
 }
+
+
+class InputMethodDependentTerminalIntegrationProvider: GenericTerminalIntegrationProvider {
+    override init(bundleIdentifier: String) {
+        super.init(bundleIdentifier: bundleIdentifier)
+        
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(inputMethodStatusDidChange),
+                                               name: InputMethod.statusDidChange,
+                                               object: nil)
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+    
+    @objc func inputMethodStatusDidChange() {
+        self.status = self._verifyInstallation()
+    }
+}
