@@ -111,12 +111,14 @@ class Integrations {
                         [ Integrations.iTerm : iTermIntegration.default,
                           Integrations.Hyper : HyperIntegration.default,
                           Integrations.VSCode : VSCodeIntegration.default,
-                          Integrations.VSCodeInsiders : VSCodeIntegration.insiders]
+                          Integrations.VSCodeInsiders : VSCodeIntegration.insiders,
+                          Integrations.Alacritty : AlacrittyIntegration.default
+                        ]
 }
 
 enum InstallationDependency: String, Codable {
     case applicationRestart
-    case inputMethodActive
+    case inputMethodActivation
 }
 
 enum InstallationStatus: Equatable {
@@ -380,8 +382,7 @@ class GenericTerminalIntegrationProvider {
                 break
             }
         }
-        
-        if withRestart && status == .pending(event: .applicationRestart) {
+                if withRestart && status == .pending(event: .applicationRestart) {
             let targetTerminal = Restarter(with: self.bundleIdentifier)
             targetTerminal.restart(launchingIfInactive: false) {
                 self.verifyAndUpdateInstallationStatus()

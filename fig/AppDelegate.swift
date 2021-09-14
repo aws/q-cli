@@ -467,12 +467,29 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
                             action: #selector(provider.restart),
                             keyEquivalent: "")
                         restart.target = provider
-                    case .inputMethodActive:
+                    case .inputMethodActivation:
                         item.image = WebBridge.fileIcon(for: URL(string: "fig://template?color=FFA500&badge=⌨&w=16&h=16".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!)!)
                         actionsMenu.addItem(
-                            withTitle: "Fig Input Method is not enabled.",
+                            withTitle: "Requires Input Method",
                             action: nil,
                             keyEquivalent: "")
+                        
+                        switch InputMethod.default.status {
+                        case .failed(let error, _):
+                            actionsMenu.addItem(NSMenuItem.separator())
+                            actionsMenu.addItem(
+                                withTitle: error,
+                                action: nil,
+                                keyEquivalent: "")
+                            actionsMenu.addItem(NSMenuItem.separator())
+                            let installer = actionsMenu.addItem(
+                                withTitle: "Attempt to Install",
+                                action: #selector(provider.promptToInstall),
+                                keyEquivalent: "")
+                            installer.target = provider
+                        default:
+                            break
+                        }
 
                     }
 
@@ -490,7 +507,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
                         keyEquivalent: "")
                     
                     actionsMenu.addItem(NSMenuItem.separator())
-                    let install = actionsMenu.addItem(withTitle: "Try to install again",
+                    let install = actionsMenu.addItem(withTitle: "Attempt to install",
                                                       action: #selector(provider.promptToInstall),
                                                       keyEquivalent: "")
                     install.target = provider
@@ -2234,22 +2251,9 @@ extension AppDelegate : NSMenuDelegate {
     
         
         
-          let name: String!
-          
-          switch app.bundleIdentifier {
-          case Integrations.iTerm:
-            name = "iTerm"
-          case Integrations.Hyper:
-            name = "Hyper"
-          case Integrations.VSCode:
-            name = "VSCode"
-          case Integrations.VSCodeInsiders:
-            name = "VSCode Insiders"
-          default:
-            name = "Unknown"
-          }
+          let name: String = provider.applicationName
 
-        let item = NSMenuItem(title: "Install \(name!) Integration", action: #selector(AppDelegate.installIntegrationForFrontmostApp) , keyEquivalent: "")
+        let item = NSMenuItem(title: "Install \(name) Integration", action: #selector(AppDelegate.installIntegrationForFrontmostApp) , keyEquivalent: "")
         item.image = NSImage(named: NSImage.Name("carrot"))
            menu.insertItem(item, at: 1)
            self.integrationPrompt = item

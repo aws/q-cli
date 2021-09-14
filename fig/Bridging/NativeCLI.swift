@@ -624,26 +624,26 @@ extension NativeCLI {
         
         switch command {
             case "--enable":
-                InputMethod.toggleSource(on: true)
+                InputMethod.default.toggleSource(on: true)
                 NativeCLI.printInTerminal("\n› Enabling Fig Input Method\n", using: connection)
             case "--disable":
-                InputMethod.toggleSource(on: false)
+                InputMethod.default.toggleSource(on: false)
                 NativeCLI.printInTerminal("\n› Disabling Fig Input Method\n", using: connection)
             case "install":
-                if InputMethod.install() {
+                if InputMethod.default.install() == .installed {
                     NativeCLI.printInTerminal("\n› Installed Fig IME\n", using: connection)
                 } else {
                     NativeCLI.printInTerminal("\n› Failed to install Fig IME\n", using: connection)
                 }
             case "uninstall":
-                InputMethod.uninstall()
+                InputMethod.default.uninstall()
                 NativeCLI.printInTerminal("\n› Uninstalling IME\n", using: connection)
 
             case "--version":
                 InputMethod.requestVersion()
                 NativeCLI.printInTerminal("\n› Requesting version! Check the logs!\n", using: connection)
             case "--verify-install":
-                    NativeCLI.printInTerminal("\n Input method is\(InputMethod.isInstalled ? "" : " not") installed!", using: connection)
+                NativeCLI.printInTerminal("\n Input method is\(InputMethod.default.isInstalled ? "" : " not") installed!", using: connection)
             default:
                 return
 

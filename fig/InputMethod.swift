@@ -10,15 +10,55 @@ import Foundation
 import Cocoa
 //defaults read ~/Library/Preferences/com.apple.HIToolbox.plist AppleSelectedInputSources
 class InputMethod {
-    static let bundleId = "io.fig.inputmethod.cursor"
-    static let bundle = Bundle(path: Bundle.main.path(forResource: "FigInputMethod", ofType: "app")!)!
     static let inputMethodDirectory = URL(fileURLWithPath: "\(NSHomeDirectory())/Library/Input Methods/")
+    static let statusDidChange = Notification.Name("inputMethodStatusDidChange")
+
+    static let `default` = InputMethod(bundlePath: Bundle.main.path(forResource: "FigInputMethod", ofType: "app")!)
+
+    let bundle: Bundle
+    let originalBundlePath: String
+    var name: String {
+        let url = self.bundle.bundleURL
+        return url.lastPathComponent
+    }
+    var timer: Timer?
+    var status: InstallationStatus {
+        didSet {
+            if oldValue != status {
+                print("InputMethod: statusDidChange \(status)")
+                NotificationCenter.default.post(name: InputMethod.statusDidChange, object: nil)
+            }
+            
+            if status == .installed {
+                timer?.invalidate()
+                timer = nil
+            }
+        }
+    }
+    
+    fileprivate func startPollingForActivation() {
+        
+        guard self.timer == nil else {
+            return
+        }
+        
+        self.timer = Timer.scheduledTimer(withTimeInterval: 10, repeats: true) { _ in
+
+            self.enable()
+            self.select()
+            
+            self.status = self._verifyInstallation()
+            print("InputMethod: ping!!!!", self.status)
+        }
+        
+    }
+
     //defaults read ~/Library/Preferences/com.apple.HIToolbox.plist
     //https://developer.apple.com/library/archive/qa/qa1810/_index.html
-    static var `default`: TISInputSource? {
+    var source: TISInputSource? {
         get {
             let properties = [
-                kTISPropertyInputSourceID as String : InputMethod.bundle.bundleIdentifier,
+                kTISPropertyInputSourceID as String : self.bundle.bundleIdentifier,
                 kTISPropertyInputSourceType as String : kTISTypeCharacterPalette as String
             ] as CFDictionary
 
@@ -35,18 +75,37 @@ class InputMethod {
         
         }
     }
-    @discardableResult static func toggleSource(with id: String = InputMethod.bundle.bundleIdentifier ?? "", on: Bool) -> Bool {
+    
+    init(bundlePath: String) {
+        self.bundle = Bundle(path: bundlePath)!
+        self.originalBundlePath = bundlePath
+        self.status = InstallationStatus(data: UserDefaults.standard.data(forKey: self.bundle.bundleIdentifier! + ".integration")) ?? .unattempted
+        let center = DistributedNotificationCenter.default()
+        center.addObserver(self,
+                           selector: #selector(KeyboardLayout.keyboardLayoutDidChange),
+                           name: NSNotification.Name(rawValue: NSNotification.Name.RawValue(kTISNotifySelectedKeyboardInputSourceChanged as NSString)),
+                           object: nil)
+        
+        self.status = verifyInstallation()
+
+    }
+    
+    @objc func updateStatus() {
+        NotificationCenter.default.post(name: InputMethod.statusDidChange, object: nil)
+    }
+    
+    @discardableResult func toggleSource(on: Bool) -> Bool {
 //        kTISCategoryPaletteInputSource
         
         
         if on {
-            InputMethod.select()
-            InputMethod.enable()
+            self.select()
+            self.enable()
 
             // return TISEnableInputSource(inputMethod) != noErr
         } else {
-            InputMethod.deselect()
-            InputMethod.disable()
+            self.deselect()
+            self.disable()
             //return TISDisableInputSource(inputMethod) != noErr
         }
         
@@ -54,86 +113,61 @@ class InputMethod {
 
     }
     
-    static func select() {
-        guard let inputMethod = InputMethod.default else {
+    func select() {
+        guard let inputMethod = self.source else {
             return
         }
         
         TISSelectInputSource(inputMethod)
     }
     
-    static func deselect() {
-        guard let inputMethod = InputMethod.default else {
+    func deselect() {
+        guard let inputMethod = self.source else {
             return
         }
         
         TISDeselectInputSource(inputMethod)
     }
     
-    static func enable() {
-        guard let inputMethod = InputMethod.default else {
+    func enable() {
+        guard let inputMethod = self.source else {
             return
         }
         
         TISEnableInputSource(inputMethod)
     }
     
-    static func disable() {
-        guard let inputMethod = InputMethod.default else {
+    func disable() {
+        guard let inputMethod = self.source else {
             return
         }
         
         TISDisableInputSource(inputMethod)
     }
     
-    // Note: apps that rely on the input method to locate the cursor position must be restarted before the input method will work
-    static func install() -> Bool {
-        let url = bundle.bundleURL
-        let name = url.lastPathComponent
-        let targetURL = inputMethodDirectory.appendingPathComponent(name)
-
-        // Remove previous symlink
-        try? FileManager.default.removeItem(at: targetURL)
-        
-        do {
-            try FileManager.default.createSymbolicLink(at: targetURL, withDestinationURL: url)
-        } catch {
-            print("InputMethod: Could not create symlink!")
-//            return false
-        }
-        
-        let err = TISRegisterInputSource(targetURL as CFURL)
-        guard err != paramErr else {return false}
-        
-        return true
-    }
     
-    static func uninstall() {
-        let url = bundle.bundleURL
-        let name = url.lastPathComponent
-        let targetURL = inputMethodDirectory.appendingPathComponent(name)
+    func uninstall() {
+        let targetURL = InputMethod.inputMethodDirectory.appendingPathComponent(self.name)
         
-        toggleSource(on: false)
-//        FileManager.default.destinationOfSymbolicLink(atPath: url.path)
+        self.deselect()
+        self.disable()
+
         try? FileManager.default.removeItem(at: targetURL)
+        try? FileManager.default.removeItem(atPath: NSHomeDirectory()+"/.fig/tools/cursor")
         
         if let runningInputMethod = NSRunningApplication.forBundleId(bundle.bundleIdentifier ?? "") {
             print("Terminating input method \(bundle.bundleIdentifier ?? "") (\(runningInputMethod.processIdentifier))...")
             runningInputMethod.terminate()
         }
         
+        self.updateStatus()
+
+        
     }
     
-    static var isInstalled: Bool {
+    var isInstalled: Bool {
         get {
-            let inputMethodDefaults = UserDefaults(suiteName: "com.apple.HIToolbox")
-            let selectedSources = inputMethodDefaults?.array(forKey: "AppleSelectedInputSources")
-            let enabledSources = inputMethodDefaults?.array(forKey: "AppleEnabledInputSources")
-            
-            let inputMethod = NSRunningApplication.forBundleId(bundle.bundleIdentifier ?? "")
-            
-            print("InputMethod:", selectedSources, enabledSources, inputMethod?.processIdentifier ?? 0)
-            return inputMethod != nil
+            return self.verifyInstallation() == .installed
         }
     }
     
@@ -157,5 +191,94 @@ class InputMethod {
     static func requestVersion() {
         let center: DistributedNotificationCenter = DistributedNotificationCenter.default()
         center.postNotificationName(NSNotification.Name("io.fig.report-ime-version"), object: nil, userInfo: nil, deliverImmediately: true)
+    }
+}
+
+extension InputMethod: IntegrationProvider {
+    
+    fileprivate func _verifyInstallation() -> InstallationStatus {
+        
+        let targetURL = InputMethod.inputMethodDirectory.appendingPathComponent(name)
+
+        guard let destination = try? FileManager.default.destinationOfSymbolicLink(atPath: targetURL.path),
+              destination == self.originalBundlePath else {
+            return .failed(error: "input method is not installed in \(InputMethod.inputMethodDirectory.path)")
+        }
+        
+        guard NSRunningApplication.forBundleId(self.bundle.bundleIdentifier ?? "") != nil else {
+            return .failed(error: "input method is not running.")
+        }
+        
+        let inputMethodDefaults = UserDefaults(suiteName: "com.apple.HIToolbox")
+        guard let selectedSources = inputMethodDefaults?.array(forKey: "AppleSelectedInputSources") else {
+            return .failed(error: "Could not read the list of selected input sources")
+        }
+        
+        guard selectedSources.contains(where: { item in
+            let object = item as AnyObject
+            if let bundleId = object["Bundle ID"] as? String {
+                return bundleId == self.bundle.bundleIdentifier
+            }
+            return false
+        }) else {
+            return .failed(error: "Input source is not selected ")
+        }
+        
+        let enabledSources = inputMethodDefaults?.array(forKey: "AppleEnabledInputSources") ?? []
+
+        guard enabledSources.contains(where: { item in
+            let object = item as AnyObject
+            if let bundleId = object["Bundle ID"] as? String {
+                return bundleId == self.bundle.bundleIdentifier
+            }
+            return false
+        }) else {
+            return .failed(error: "Input source is not enabled ")
+        }
+        
+        return .installed
+    }
+    
+    fileprivate func _install() -> InstallationStatus {
+        let url = URL(fileURLWithPath: self.originalBundlePath)
+        let name = url.lastPathComponent
+        let targetURL = InputMethod.inputMethodDirectory.appendingPathComponent(name)
+
+        // Remove previous symlink
+        try? FileManager.default.removeItem(at: targetURL)
+        
+        try? FileManager.default.createSymbolicLink(at: targetURL, withDestinationURL: url)
+
+        guard let destination = try? FileManager.default.destinationOfSymbolicLink(atPath: targetURL.path),
+              destination == self.originalBundlePath else {
+            return .failed(error: "input method is not installed in \(InputMethod.inputMethodDirectory.path)")
+        }
+        
+        let err = TISRegisterInputSource(targetURL as CFURL)
+        guard err != paramErr else {
+            return .failed(error: err.description)
+        }
+        
+        self.enable()
+        self.select()
+        
+        // should we launch the application manually?
+        if let bundleId = self.bundle.bundleIdentifier {
+            let inputSource = Restarter(with: bundleId)
+            inputSource.restart(launchingIfInactive: true)
+        }
+        
+        self.startPollingForActivation()
+        return .pending(event: .inputMethodActivation)
+    }
+    
+    func verifyInstallation() -> InstallationStatus {
+        self.status = self._verifyInstallation()
+        return self.status
+    }
+    // Note: apps that rely on the input method to locate the cursor position must be restarted before the input method will work
+    func install() -> InstallationStatus {
+        self.status = self._install()
+        return self.status
     }
 }
