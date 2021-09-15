@@ -27,7 +27,7 @@ class InputMethod {
             return nil
         }
         print("ime:",x, y)
-        return NSRect(x: x, y: y, width: 10, height: 0)
+        return NSRect(x: x, y: y, width: 10, height: 10).offsetBy(dx: 0, dy: 10)
       }
 
     static let `default` = InputMethod(bundlePath: Bundle.main.path(forResource: "FigInputMethod", ofType: "app")!)
