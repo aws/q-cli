@@ -281,7 +281,7 @@ class GenericTerminalIntegrationProvider {
         }
         
         guard version >= minimumVersion else {
-            return .failed(error: "Application version '\(version.string)' is less than minimum supported version '\(minimumVersion.string)'")
+            return .failed(error: "\(self.applicationName) version \(version.string) is not supported. Must be \(minimumVersion.string) or above")
         }
         
         return nil

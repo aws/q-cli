@@ -20,7 +20,7 @@ class iTermIntegration: TerminalIntegrationProvider {
   // Do we want to store the Applescript in the bundle or in withfig/fig? eg. "\(NSHomeDirectory())/.fig/tools/\(scriptName).scpt"
   fileprivate static let plistVersionKey = "iTerm Version"
   fileprivate static let plistAPIEnabledKey = "EnableAPIServer"
-  fileprivate static let minimumSupportedVersion:[Int] = [3,4,0]
+  fileprivate static let minimumSupportedVersion = SemanticVersion(version: "3.4.0")!
   
   fileprivate static let legacyIntegrationPath = iTermAutoLaunchDirectory + scriptName + ".py"
     
@@ -45,19 +45,13 @@ class iTermIntegration: TerminalIntegrationProvider {
       }
       
       // Version Check
-      let semver = cleanedVersion.split(separator: ".").map { Int($0) }.filter { $0 != nil }
-      guard semver.count == 3 else {
+      guard let semver = SemanticVersion(version: cleanedVersion) else {
           return .failed(error: "iTerm version (\(version)) was invalid")
       }
       
-      for idx in 0...2 {
-          if semver[idx]! < iTermIntegration.minimumSupportedVersion[idx] {
-              return .failed(error: "iTerm version \(version) is not supported. Must be 3.4.0 or above.")
-        }
-        
-          if semver[idx]! > iTermIntegration.minimumSupportedVersion[idx] {
-          break
-        }
+    
+      guard semver >= iTermIntegration.minimumSupportedVersion else {
+          return .failed(error: "iTerm version \(version) is not supported. Must be \(iTermIntegration.minimumSupportedVersion.string) or above.")
       }
       
       // Update API preferences
