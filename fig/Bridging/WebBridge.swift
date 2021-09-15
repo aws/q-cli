@@ -199,7 +199,7 @@ extension WebBridge: WKURLSchemeHandler {
         }
         
         // fig://template?background-color=ccc&icon=box
-        if let host = url.host, let qs = url.queryDictionary, host == "template" {
+        if let host = url.host, host == "template" {
           guard let icon = Bundle.main.image(forResource: "template") else { return nil }
           return icon.overlayColor(color).overlayText(badge).resized(to: NSSize(width: width, height: height))//?.overlayBadge(color: color,  text: badge)
 
@@ -641,11 +641,11 @@ extension WebBridge {
         if let params = scope.body as? Dictionary<String, String>,
            let cmd = params["cmd"],
            let handlerId = params["handlerId"] {
-            cmd.runInBackground { (result) in
+            cmd.runInBackground(completion:  { (result) in
                 DispatchQueue.main.async {
                     WebBridge.callback(handler: handlerId, value: result, webView: scope.webView)
                 }
-            }
+            })
         }
     }
     

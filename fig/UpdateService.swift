@@ -60,7 +60,7 @@ class UpdateService: NSObject {
   }
   
   func installUpdatesIfAvailable() {
-    self.sparkle.installUpdatesIfAvailable()
+    (self.sparkle as SparkleDeprecatedAPI).installUpdatesIfAvailable()
   }
   
   var updateIsAvailable: Bool {
@@ -204,3 +204,9 @@ extension UpdateService: SUUpdaterDelegate {
   }
   
 }
+
+
+private protocol SparkleDeprecatedAPI {
+    func installUpdatesIfAvailable()
+}
+extension SUUpdater: SparkleDeprecatedAPI {}
