@@ -37,3 +37,15 @@ class AlacrittyIntegration: InputMethodDependentTerminalIntegrationProvider & In
     }
     
 }
+
+extension AlacrittyIntegration: TerminalIntegration {
+    func getCursorRect(in window: ExternalWindow) -> NSRect? {
+        return InputMethod.getCursorRect()
+    }
+    
+    func terminalIsFocused(in window: ExternalWindow) -> Bool {
+        return true
+    }
+    
+    
+}

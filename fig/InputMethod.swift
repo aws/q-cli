@@ -12,6 +12,23 @@ import Cocoa
 class InputMethod {
     static let inputMethodDirectory = URL(fileURLWithPath: "\(NSHomeDirectory())/Library/Input Methods/")
     static let statusDidChange = Notification.Name("inputMethodStatusDidChange")
+    
+    static func getCursorRect() -> NSRect? {
+        guard let raw = try? String(contentsOfFile: NSHomeDirectory()+"/.fig/tools/cursor") else {
+            return nil
+        }
+        
+        let tokens = raw.split(separator: ",")
+        guard tokens.count == 4,
+              let x = Double(tokens[0]),
+              let y = Double(tokens[1])/*,
+              let width = Double(tokens[2]),
+              let height = Double(tokens[1])*/ else {
+            return nil
+        }
+        print("ime:",x, y)
+        return NSRect(x: x, y: y, width: 10, height: 0)
+      }
 
     static let `default` = InputMethod(bundlePath: Bundle.main.path(forResource: "FigInputMethod", ofType: "app")!)
 

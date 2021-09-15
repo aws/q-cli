@@ -21,7 +21,7 @@ class WindowPositioning {
             throw APIError.generic(message: "Could not find whitelisted window")
         }
         
-        guard let cursorRect = Accessibility.getTextRect() else {
+        guard let cursorRect = window.cursor else {
             throw APIError.generic(message: "Could not find cursor rect")
         }
         

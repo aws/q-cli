@@ -212,6 +212,8 @@
 		75CFDBE224EDE31800F00CAE /* Sentry in Frameworks */ = {isa = PBXBuildFile; productRef = 75CFDBE124EDE31800F00CAE /* Sentry */; };
 		75D18DC426E86617008B9731 /* FigInputMethod.app in Resources */ = {isa = PBXBuildFile; fileRef = 754316F426E08F5C00188887 /* FigInputMethod.app */; };
 		75D1ECB426EFE55A00BC8A04 /* AlacrittyIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75D1ECB326EFE55A00BC8A04 /* AlacrittyIntegration.swift */; };
+		75D1ECBE26F15F4500BC8A04 /* TerminalIntegrationProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75D1ECBD26F15F4500BC8A04 /* TerminalIntegrationProvider.swift */; };
+		75D1ECC026F1658300BC8A04 /* InstallationStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75D1ECBF26F1658300BC8A04 /* InstallationStatus.swift */; };
 		75D2E3CB249C1E7500607F66 /* terminal.css in Resources */ = {isa = PBXBuildFile; fileRef = 75D2E3CA249C1E7500607F66 /* terminal.css */; };
 		75DA86A325EDB05100722F1D /* Integrations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DA86A225EDB05100722F1D /* Integrations.swift */; };
 		75DA86A525EEBD7500722F1D /* Alert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DA86A425EEBD7400722F1D /* Alert.swift */; };
@@ -504,6 +506,8 @@
 		75C8A15F2649E712001B69DA /* fig-0.0.2.vsix */ = {isa = PBXFileReference; lastKnownFileType = file; path = "fig-0.0.2.vsix"; sourceTree = "<group>"; };
 		75CFDBDE24EDB2E900F00CAE /* Onboarding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Onboarding.swift; sourceTree = "<group>"; };
 		75D1ECB326EFE55A00BC8A04 /* AlacrittyIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlacrittyIntegration.swift; sourceTree = "<group>"; };
+		75D1ECBD26F15F4500BC8A04 /* TerminalIntegrationProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalIntegrationProvider.swift; sourceTree = "<group>"; };
+		75D1ECBF26F1658300BC8A04 /* InstallationStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstallationStatus.swift; sourceTree = "<group>"; };
 		75D2E3CA249C1E7500607F66 /* terminal.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = terminal.css; sourceTree = "<group>"; };
 		75DA86A225EDB05100722F1D /* Integrations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Integrations.swift; sourceTree = "<group>"; };
 		75DA86A425EEBD7400722F1D /* Alert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Alert.swift; sourceTree = "<group>"; };
@@ -820,13 +824,13 @@
 				75A4521325AD367E00107D2C /* Feedback.swift */,
 				75AEF2E325C3C34A00D78431 /* Diagnostic.swift */,
 				75AEF2E925C4C34D00D78431 /* SecureKeyboardInput.swift */,
-				75DA86A225EDB05100722F1D /* Integrations.swift */,
 				7573F15F260BC70F00C833FA /* LoginItems.swift */,
 				75DA86A425EEBD7400722F1D /* Alert.swift */,
 				75FE3FFF2626A4BD00AC8414 /* Github.swift */,
 				7520D8112682AEB00034FE2B /* Throttler.swift */,
 				755FC553268D09DE00966027 /* UpdateService.swift */,
 				750CF21726A1055F0094D76A /* Config.swift */,
+				75D1ECBC26F15F0E00BC8A04 /* Integrations */,
 				75D1ECB226EFE53F00BC8A04 /* Alacritty */,
 				75290AB92671905D000F4255 /* iTerm */,
 				75EDDC4F25D2473C003AECC6 /* Hyper */,
@@ -1026,6 +1030,16 @@
 				75D1ECB326EFE55A00BC8A04 /* AlacrittyIntegration.swift */,
 			);
 			path = Alacritty;
+			sourceTree = "<group>";
+		};
+		75D1ECBC26F15F0E00BC8A04 /* Integrations */ = {
+			isa = PBXGroup;
+			children = (
+				75DA86A225EDB05100722F1D /* Integrations.swift */,
+				75D1ECBF26F1658300BC8A04 /* InstallationStatus.swift */,
+				75D1ECBD26F15F4500BC8A04 /* TerminalIntegrationProvider.swift */,
+			);
+			path = Integrations;
 			sourceTree = "<group>";
 		};
 		75E993F32515C8D3000BE6BE /* Autocompletion */ = {
@@ -1474,6 +1488,7 @@
 				7510F8AF24A6910500E86F7C /* HeadlessTerminal.swift in Sources */,
 				755FC554268D09DE00966027 /* UpdateService.swift in Sources */,
 				75DA86A525EEBD7500722F1D /* Alert.swift in Sources */,
+				75D1ECBE26F15F4500BC8A04 /* TerminalIntegrationProvider.swift in Sources */,
 				755D0DE0247DDE050074AB5C /* FigCLI.swift in Sources */,
 				75809B0E24BFA64D00BFFB3E /* TelemetryService.swift in Sources */,
 				7510F8B224A6910500E86F7C /* CharData.swift in Sources */,
@@ -1526,6 +1541,7 @@
 				75AEF2EA25C4C34D00D78431 /* SecureKeyboardInput.swift in Sources */,
 				75B199342504190900F38EA8 /* Keycode.swift in Sources */,
 				752C0BD82479EEDB0077E415 /* File.swift in Sources */,
+				75D1ECC026F1658300BC8A04 /* InstallationStatus.swift in Sources */,
 				75EB592D258DD771002915E7 /* TTY.swift in Sources */,
 				7510F8B324A6910500E86F7C /* TerminalOptions.swift in Sources */,
 				7510F8BF24A99A4B00E86F7C /* WindowService.swift in Sources */,

@@ -390,6 +390,16 @@ extension iTermIntegration: UnixSocketDelegate {
   func socketDidClose(_ socket: UnixSocketClient) { }
 }
 
+extension iTermIntegration {
+    func getCursorRect(in window: ExternalWindow) -> NSRect? {
+        return Accessibility.getCursorRect()
+    }
+    
+    func terminalIsFocused(in window: ExternalWindow) -> Bool {
+        return true
+    }
+}
+
 extension NSRunningApplication {
   
   static func forBundleId(_ bundleId: String?) -> NSRunningApplication? {

@@ -72,6 +72,7 @@ class NativeCLI {
         case symlinkCLI = "util:symlink-cli"
         case loginItems = "util:login-items"
         case inputMethod = "util:input-method"
+        case resetCursorCache = "util:reset-cursor-cache"
         case theme = "theme"
 
         var isUtility: Bool {
@@ -124,6 +125,7 @@ class NativeCLI {
                                                            .loginItems,
                                                            .inputMethod,
                                                            .theme,
+                                                           .resetCursorCache,
                                                            .docs]
                return implementatedNatively.contains(self)
             }
@@ -204,6 +206,8 @@ class NativeCLI {
               NativeCLI.themeCommand(scope)
             case .inputMethod:
               NativeCLI.toggleInputMethod(scope)
+            case .resetCursorCache:
+                Accessibility.resetCursorCache()
             default:
                 break;
             }

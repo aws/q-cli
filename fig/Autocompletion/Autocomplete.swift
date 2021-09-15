@@ -90,7 +90,7 @@ class Autocomplete {
     throttler.throttle {
       DispatchQueue.main.async {
         let keybuffer = KeypressProvider.shared.keyBuffer(for: window)
-        if let rect = Accessibility.getTextRect(), !keybuffer.writeOnly {//, keybuffer.buffer?.count != 0 {
+        if let rect = window.cursor, !keybuffer.writeOnly {//, keybuffer.buffer?.count != 0 {
           WindowManager.shared.positionAutocompletePopover(textRect: rect, makeVisibleImmediately: makeVisibleImmediately, completion: completion)
         } else {
           Autocomplete.removeAllRedirects(from: window)
@@ -154,8 +154,7 @@ class Autocomplete {
     }
     
     // Don't intercept command+I when in VSCode editor
-    if Integrations.electronTerminals.contains(window.bundleId ?? "") &&
-        Accessibility.findXTermCursorInElectronWindow(window) == nil {
+    guard window.isFocusedTerminal else {
       return .forward
     }
         
@@ -195,8 +194,7 @@ class Autocomplete {
     }
     
     // Don't intercept tab when in VSCode editor
-    if Integrations.electronTerminals.contains(window.bundleId ?? "") &&
-        Accessibility.findXTermCursorInElectronWindow(window) == nil {
+    guard window.isFocusedTerminal else {
       return .forward
     }
     
@@ -219,8 +217,7 @@ class Autocomplete {
     let autocompleteIsNotVisible = WindowManager.shared.autocomplete?.isHidden ?? true
         
     // Don't intercept escape key when in VSCode editor
-    if Integrations.electronTerminals.contains(window.bundleId ?? "") &&
-        Accessibility.findXTermCursorInElectronWindow(window) == nil {
+    guard window.isFocusedTerminal else {
       return .forward
     }
     
