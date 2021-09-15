@@ -170,6 +170,8 @@
 		759F988C25BFF8B000EC3407 /* docker@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 759F988825BFF8B000EC3407 /* docker@2x.png */; };
 		759F988E25BFFAE500EC3407 /* heroku@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 759F988D25BFFAE500EC3407 /* heroku@2x.png */; };
 		759F989025C1172100EC3407 /* install_and_upgrade_fallback.sh in Resources */ = {isa = PBXBuildFile; fileRef = 759F988F25C1151D00EC3407 /* install_and_upgrade_fallback.sh */; };
+		75A0A71926F1A79A008FAD70 /* KittyIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A0A71826F1A79A008FAD70 /* KittyIntegration.swift */; };
+		75A0A71B26F1A7CE008FAD70 /* kitty-integration.py in Resources */ = {isa = PBXBuildFile; fileRef = 75A0A71A26F1A7CE008FAD70 /* kitty-integration.py */; };
 		75A4521025A83E5600107D2C /* remote_cwd.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75A4520F25A839F500107D2C /* remote_cwd.sh */; };
 		75A4521425AD367E00107D2C /* Feedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A4521325AD367E00107D2C /* Feedback.swift */; };
 		75A4521A25AE2E6B00107D2C /* CommandIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A4521925AE2E6A00107D2C /* CommandIntegration.swift */; };
@@ -463,6 +465,8 @@
 		759F988825BFF8B000EC3407 /* docker@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "docker@2x.png"; sourceTree = "<group>"; };
 		759F988D25BFFAE500EC3407 /* heroku@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "heroku@2x.png"; sourceTree = "<group>"; };
 		759F988F25C1151D00EC3407 /* install_and_upgrade_fallback.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = install_and_upgrade_fallback.sh; sourceTree = "<group>"; };
+		75A0A71826F1A79A008FAD70 /* KittyIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KittyIntegration.swift; sourceTree = "<group>"; };
+		75A0A71A26F1A7CE008FAD70 /* kitty-integration.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = "kitty-integration.py"; sourceTree = "<group>"; };
 		75A4520F25A839F500107D2C /* remote_cwd.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = remote_cwd.sh; sourceTree = "<group>"; };
 		75A4521325AD367E00107D2C /* Feedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Feedback.swift; sourceTree = "<group>"; };
 		75A4521925AE2E6A00107D2C /* CommandIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandIntegration.swift; sourceTree = "<group>"; };
@@ -831,6 +835,7 @@
 				755FC553268D09DE00966027 /* UpdateService.swift */,
 				750CF21726A1055F0094D76A /* Config.swift */,
 				75D1ECBC26F15F0E00BC8A04 /* Integrations */,
+				75A0A71726F1A786008FAD70 /* Kitty */,
 				75D1ECB226EFE53F00BC8A04 /* Alacritty */,
 				75290AB92671905D000F4255 /* iTerm */,
 				75EDDC4F25D2473C003AECC6 /* Hyper */,
@@ -916,6 +921,15 @@
 				754D31B425759D900020CED4 /* tutorial.html */,
 			);
 			name = local;
+			sourceTree = "<group>";
+		};
+		75A0A71726F1A786008FAD70 /* Kitty */ = {
+			isa = PBXGroup;
+			children = (
+				75A0A71826F1A79A008FAD70 /* KittyIntegration.swift */,
+				75A0A71A26F1A7CE008FAD70 /* kitty-integration.py */,
+			);
+			path = Kitty;
 			sourceTree = "<group>";
 		};
 		75AC55312522C8EB0069635E /* upgrade */ = {
@@ -1285,6 +1299,7 @@
 				75186073255B2A0A0000A7C7 /* string@2x.png in Resources */,
 				757CA88624876043002A64A8 /* error.html in Resources */,
 				752E68DD2620F868009E9A7E /* gradle@2x.png in Resources */,
+				75A0A71B26F1A7CE008FAD70 /* kitty-integration.py in Resources */,
 				75A4A29E25C91471002EFD6B /* debugger-2-trimmed.mp4 in Resources */,
 				75290ABF26719090000F4255 /* README in Resources */,
 				757CA88F248B0D31002A64A8 /* cli.png in Resources */,
@@ -1542,6 +1557,7 @@
 				75B199342504190900F38EA8 /* Keycode.swift in Sources */,
 				752C0BD82479EEDB0077E415 /* File.swift in Sources */,
 				75D1ECC026F1658300BC8A04 /* InstallationStatus.swift in Sources */,
+				75A0A71926F1A79A008FAD70 /* KittyIntegration.swift in Sources */,
 				75EB592D258DD771002915E7 /* TTY.swift in Sources */,
 				7510F8B324A6910500E86F7C /* TerminalOptions.swift in Sources */,
 				7510F8BF24A99A4B00E86F7C /* WindowService.swift in Sources */,
@@ -1641,7 +1657,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
-				CODE_SIGN_IDENTITY = "Developer ID Application";
+				CODE_SIGN_IDENTITY = "Mac Developer";
 				CODE_SIGN_STYLE = Manual;
 				DEVELOPMENT_TEAM = D93PPD94WK;
 				EMBED_ASSET_PACKS_IN_PRODUCT_BUNDLE = NO;
