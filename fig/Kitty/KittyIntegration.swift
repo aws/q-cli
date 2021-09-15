@@ -76,8 +76,8 @@ extension KittyIntegration: IntegrationProvider {
             }
             
             guard kittyCommandLine.contains(KittyIntegration.commandLineArguments) else {
-                // todo(mschrage): we should have a support page for this case
-                return .failed(error: "\(KittyIntegration.cmdlineFilename) already exists and contains user-specified configuration.", supportURL: nil)
+                return .failed(error: "\(KittyIntegration.cmdlineFilename) already exists and contains user-specified configuration.",
+                               supportURL: URL(string: "https://fig.io/support/terminals/kitty"))
             }
         
         } else {
