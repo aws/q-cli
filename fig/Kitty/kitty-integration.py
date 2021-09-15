@@ -1,15 +1,18 @@
 import os
 from os.path import expanduser
+from kittens.tui.loop import debug
+from kitty.boss import Boss
+from kitty.window import Window
 
-def on_focus_change(boss, window, data):
+def on_focus_change(boss: Boss, window: Window, data) -> None:
     tab = boss.tab_for_window(window)
 
-    sessionId = str(tab.id) + "/" + str(window.id)
-    print(sessionId)
+    sessionId = str(tab.id) + "-" + str(window.id)
     if data["focused"]:
         print(sessionId)
         # send update to macOS app
-        os.system("fig bg:keyboard-focus-changed net.kovidgoyal.kitty:" + sessionId)
+        cli = expanduser("~/.fig/bin/fig")
+        os.system(cli + " bg:keyboard-focus-changed net.kovidgoyal.kitty:" + str(window.id))
 
         # logging
         logpath = expanduser("~/.fig/logs/kitty.log")
@@ -22,7 +25,3 @@ def on_focus_change(boss, window, data):
     for w in boss.all_windows:
         if w.id != window.id:
             w.watchers.add(watchers)
-
-
-
-    
