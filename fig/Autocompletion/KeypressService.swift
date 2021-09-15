@@ -325,7 +325,7 @@ class KeypressProvider {
     }
     
     // prevent redirects when typing in VSCode editor
-    if Integrations.electronTerminals.contains(window.bundleId ?? "") && Accessibility.findXTermCursorInElectronWindow(window) == nil {
+    guard window.isFocusedTerminal else {
       return .forward
     }
     
@@ -378,7 +378,7 @@ class KeypressProvider {
   func handleKeystroke(event: NSEvent?, in window: ExternalWindow) {
     
     // handle keystrokes in VSCode editor
-    if Integrations.electronTerminals.contains(window.bundleId ?? "") && Accessibility.getTextRect() == nil {
+    guard window.isFocusedTerminal else {
         return
     }
     

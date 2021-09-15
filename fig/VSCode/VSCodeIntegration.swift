@@ -9,7 +9,7 @@
 import Cocoa
 import Sentry
 
-class VSCodeIntegration: TerminalIntegrationProvider {
+class VSCodeIntegration: TerminalIntegrationProvider  {
   static let `default` = VSCodeIntegration(bundleIdentifier: Integrations.VSCode,
                                            configFolderName: ".vscode",
                                            applicationSupportFolderName: "Code",
@@ -106,6 +106,11 @@ class VSCodeIntegration: TerminalIntegrationProvider {
         return .failed(error: "Extension is not installed.")
     }
     
+    let inputMethodStatus = InputMethod.default.verifyInstallation()
+    guard inputMethodStatus == .installed else {
+        return .pending(event: .inputMethodActivation)
+    }
+    
     return .installed
   }
     
@@ -145,5 +150,17 @@ extension VSCodeIntegration {
       
       return json
     }
+    
+}
+
+extension VSCodeIntegration {
+    func getCursorRect(in window: ExternalWindow) -> NSRect? {
+        return Accessibility.findXTermCursorInElectronWindow(window)
+    }
+    
+    func terminalIsFocused(in window: ExternalWindow) -> Bool {
+        return Accessibility.findXTermCursorInElectronWindow(window) != nil
+    }
+    
     
 }

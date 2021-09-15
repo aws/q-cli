@@ -104,3 +104,13 @@ class HyperIntegration: TerminalIntegrationProvider {
   }
     
 }
+
+extension HyperIntegration {
+    func getCursorRect(in window: ExternalWindow) -> NSRect? {
+        return Accessibility.findXTermCursorInElectronWindow(window)
+    }
+    
+    func terminalIsFocused(in window: ExternalWindow) -> Bool {
+        return true
+    }
+}
