@@ -17,10 +17,17 @@ class KittyIntegration: InputMethodDependentTerminalIntegrationProvider {
     static let cmdlineFilepath = configDirectory.appendingPathComponent(cmdlineFilename)
     static let pythonScriptPath = Bundle.main.path(forResource: "kitty-integration", ofType: "py")!//"~/.fig/tools/kitty-integration.py"
     static let commandLineArguments = "--watcher \(pythonScriptPath)"
+    fileprivate static let minimumSupportedVersion = SemanticVersion(version: "0.20.0")!
+
 }
 
 extension KittyIntegration: IntegrationProvider {
     func verifyInstallation() -> InstallationStatus {
+        
+        if let failed = self.currentVersionIsSupported(minimumVersion: KittyIntegration.minimumSupportedVersion) {
+            return failed
+        }
+
         
         guard FileManager.default.fileExists(atPath: KittyIntegration.cmdlineFilepath.path) else {
             return .failed(error: "'\(KittyIntegration.cmdlineFilepath.path)' file does not exist")
@@ -47,6 +54,11 @@ extension KittyIntegration: IntegrationProvider {
             return .applicationNotInstalled
         }
         
+        if let failed = self.currentVersionIsSupported(minimumVersion: KittyIntegration.minimumSupportedVersion) {
+            return failed
+        }
+
+        
         if FileManager.default.fileExists(atPath: KittyIntegration.cmdlineFilepath.path) {
             
             guard let kittyCommandLine = try? String(contentsOf: KittyIntegration.cmdlineFilepath) else {
@@ -67,8 +79,6 @@ extension KittyIntegration: IntegrationProvider {
                 return .failed(error: "Could not write to \(KittyIntegration.cmdlineFilename)")
             }
         }
-        
-        // what is the minimum version where the integration works?
         
         return .pending(event: .applicationRestart)
     }

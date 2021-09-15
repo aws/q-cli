@@ -172,6 +172,7 @@
 		759F989025C1172100EC3407 /* install_and_upgrade_fallback.sh in Resources */ = {isa = PBXBuildFile; fileRef = 759F988F25C1151D00EC3407 /* install_and_upgrade_fallback.sh */; };
 		75A0A71926F1A79A008FAD70 /* KittyIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A0A71826F1A79A008FAD70 /* KittyIntegration.swift */; };
 		75A0A71B26F1A7CE008FAD70 /* kitty-integration.py in Resources */ = {isa = PBXBuildFile; fileRef = 75A0A71A26F1A7CE008FAD70 /* kitty-integration.py */; };
+		75A0A71D26F27E3D008FAD70 /* SemanticVersion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A0A71C26F27E3D008FAD70 /* SemanticVersion.swift */; };
 		75A4521025A83E5600107D2C /* remote_cwd.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75A4520F25A839F500107D2C /* remote_cwd.sh */; };
 		75A4521425AD367E00107D2C /* Feedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A4521325AD367E00107D2C /* Feedback.swift */; };
 		75A4521A25AE2E6B00107D2C /* CommandIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A4521925AE2E6A00107D2C /* CommandIntegration.swift */; };
@@ -467,6 +468,7 @@
 		759F988F25C1151D00EC3407 /* install_and_upgrade_fallback.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = install_and_upgrade_fallback.sh; sourceTree = "<group>"; };
 		75A0A71826F1A79A008FAD70 /* KittyIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KittyIntegration.swift; sourceTree = "<group>"; };
 		75A0A71A26F1A7CE008FAD70 /* kitty-integration.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = "kitty-integration.py"; sourceTree = "<group>"; };
+		75A0A71C26F27E3D008FAD70 /* SemanticVersion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SemanticVersion.swift; sourceTree = "<group>"; };
 		75A4520F25A839F500107D2C /* remote_cwd.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = remote_cwd.sh; sourceTree = "<group>"; };
 		75A4521325AD367E00107D2C /* Feedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Feedback.swift; sourceTree = "<group>"; };
 		75A4521925AE2E6A00107D2C /* CommandIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandIntegration.swift; sourceTree = "<group>"; };
@@ -1052,6 +1054,7 @@
 				75DA86A225EDB05100722F1D /* Integrations.swift */,
 				75D1ECBF26F1658300BC8A04 /* InstallationStatus.swift */,
 				75D1ECBD26F15F4500BC8A04 /* TerminalIntegrationProvider.swift */,
+				75A0A71C26F27E3D008FAD70 /* SemanticVersion.swift */,
 			);
 			path = Integrations;
 			sourceTree = "<group>";
@@ -1551,6 +1554,7 @@
 				7510F8A924A6910500E86F7C /* MacLocalTerminalView.swift in Sources */,
 				75A4A2A425CB4DE3002EFD6B /* BundleIdCache.swift in Sources */,
 				75290A93266F05A9000F4255 /* BashIntegration.swift in Sources */,
+				75A0A71D26F27E3D008FAD70 /* SemanticVersion.swift in Sources */,
 				7510F89824A6910500E86F7C /* AppleTerminalView.swift in Sources */,
 				750CF21826A1055F0094D76A /* Config.swift in Sources */,
 				75AEF2EA25C4C34D00D78431 /* SecureKeyboardInput.swift in Sources */,
