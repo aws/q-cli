@@ -262,6 +262,30 @@ class GenericTerminalIntegrationProvider {
         }
         
     }
+    
+    func currentVersionIsSupported(minimumVersion: SemanticVersion) -> InstallationStatus? {
+        
+        guard let bundleURL =  NSWorkspace.shared.urlForApplication(withBundleIdentifier: Integrations.Kitty) else {
+            return .failed(error: "Could not determine bundle URL")
+        }
+        guard let bundle = Bundle(url: bundleURL) else {
+            return .failed(error: "Could not load info.plist ")
+        }
+        
+        guard let versionString = bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String else {
+            return .failed(error: "Could not determine application version ")
+        }
+        
+        guard let version = SemanticVersion(version: versionString) else {
+            return .failed(error: "Could not parse version string (\(versionString))")
+        }
+        
+        guard version >= minimumVersion else {
+            return .failed(error: "\(self.applicationName) version \(version.string) is not supported. Must be \(minimumVersion.string) or above")
+        }
+        
+        return nil
+    }
 }
 
 

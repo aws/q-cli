@@ -32,7 +32,7 @@ class Integrations {
                                      "com.runningwithcrayons.Alfred",
                                      "com.raycast.macos"]
   
-  static let inputMethodDependentTerminals = [ Alacritty ]
+  static let inputMethodDependentTerminals = [ Alacritty, Kitty ]
   static let electronIDEs: Set = [VSCode, VSCodeInsiders]
   static var electronTerminals: Set<String> {
     get {
@@ -112,7 +112,8 @@ class Integrations {
                           Integrations.Hyper : HyperIntegration.default,
                           Integrations.VSCode : VSCodeIntegration.default,
                           Integrations.VSCodeInsiders : VSCodeIntegration.insiders,
-                          Integrations.Alacritty : AlacrittyIntegration.default
+                          Integrations.Alacritty : AlacrittyIntegration.default,
+                          Integrations.Kitty : KittyIntegration.default
                         ]
 }
 
