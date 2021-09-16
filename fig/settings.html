@@ -167,7 +167,7 @@
         margin-right: auto;
       }
 
-      code {
+      .code {
         display: inline-block;
         border-radius: 3px;
         background-color: #ddd;
@@ -178,6 +178,7 @@
         padding-bottom: 1px;
         margin-left: 2px;
         margin-right: 2px;
+        font-family: Monaco;
       }
 
       #skip {
@@ -488,6 +489,8 @@
         display: flex;
         margin-bottom: 0.75rem;
         align-self: flex-start;
+        outline: 0;
+        text-transform: lowercase;
       }
 
       #popup {
@@ -558,7 +561,7 @@
       <section>
         <div class="section">
           <span class="title" href="javascript:appearance()" id="appearance"
-            >Customize</span
+            >Customize Theme</span
           >
           <div id="customization-box">
             <div id="form">
@@ -567,15 +570,9 @@
                 id="theme-select"
                 oninput="handleTheme(this.value)"
               >
+                <!-- Hard-coded in case fig.onboarding("themes") breaks. This should be overwritten. -->
                 <option value="dark">Dark</option>
                 <option value="light">Light</option>
-                <option value="cobalt">Cobalt</option>
-                <option value="dracula">Dracula</option>
-                <option value="github-dark">GitHub Dark</option>
-                <option value="nightowl">Night Owl</option>
-                <option value="nord">Nord</option>
-                <option value="poimandres">Poimandres</option>
-                <option value="the-unnamed">The Unnamed</option>
               </select>
             </div>
 
@@ -586,7 +583,7 @@
 
           <p>
             Further customize Fig's appearance and behavior by running
-            <code>fig settings</code>
+            <span class="code" figdisabled = "true">fig settings</span>.
           </p>
 
           <div class="button" onclick="handleContinue()"><a>Continue</a></div>
@@ -1022,12 +1019,24 @@
       }
 
       function handleContinue() {
-        fig.updateSettings(
-          `{"autocomplete.theme": "${settings["autocomplete.theme"]}"}`
-        );
+          fig.private({
+            type: "settings",
+            data: { key: "autocomplete.theme", value: JSON.stringify(settings["autocomplete.theme"]) },
+          });
 
         window.location.href = `${fig.remoteURL}/onboarding/signin.html`;
       }
+        
+        // Load themes dynamically!
+        fig.onboarding("themes", (out) => {
+            console.log("Themes:", out)
+            let options = out.split("\n").map(theme => {
+                return `<option value="${theme}">${theme}</option>`
+            })
+
+            document.querySelector("#theme-select").innerHTML = options.join("\n")
+        })
+        
     </script>
   </body>
 </html>
