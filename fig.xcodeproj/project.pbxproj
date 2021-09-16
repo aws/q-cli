@@ -257,13 +257,6 @@
 			remoteGlobalIDString = 751F758D246E16D800E083C8;
 			remoteInfo = figcli;
 		};
-		75D18DC526E86697008B9731 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 75675949244634AD006AA988 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 754316F326E08F5C00188887;
-			remoteInfo = FigInputMethod;
-		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -1146,7 +1139,6 @@
 			buildRules = (
 			);
 			dependencies = (
-				75D18DC626E86697008B9731 /* PBXTargetDependency */,
 				758AEB6624CE8B8700A15EAF /* PBXTargetDependency */,
 			);
 			name = fig;
@@ -1619,11 +1611,6 @@
 			isa = PBXTargetDependency;
 			target = 751F758D246E16D800E083C8 /* figcli */;
 			targetProxy = 758AEB6524CE8B8700A15EAF /* PBXContainerItemProxy */;
-		};
-		75D18DC626E86697008B9731 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 754316F326E08F5C00188887 /* FigInputMethod */;
-			targetProxy = 75D18DC526E86697008B9731 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
