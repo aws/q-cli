@@ -220,6 +220,8 @@
 		75DA86A325EDB05100722F1D /* Integrations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DA86A225EDB05100722F1D /* Integrations.swift */; };
 		75DA86A525EEBD7500722F1D /* Alert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DA86A425EEBD7400722F1D /* Alert.swift */; };
 		75DA86A925EF145E00722F1D /* TmuxIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DA86A825EF145E00722F1D /* TmuxIntegration.swift */; };
+		75DF864926F31662003F32A5 /* FigInputMethod.app in Bundle InputMethod */ = {isa = PBXBuildFile; fileRef = 754316F426E08F5C00188887 /* FigInputMethod.app */; };
+		75DF864A26F31756003F32A5 /* cpu@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 751DC66226EBF3B500697DFB /* cpu@2x.png */; };
 		75E993F22515A6DD000BE6BE /* statusbar@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 75E993F12515A6DD000BE6BE /* statusbar@2x.png */; };
 		75E993F52517E226000BE6BE /* AXWindowServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75E993F42517E226000BE6BE /* AXWindowServer.swift */; };
 		75EB570B267AAE5B00F10C64 /* fig-iterm-integration.scpt in Resources */ = {isa = PBXBuildFile; fileRef = 75EB570A267AAE5B00F10C64 /* fig-iterm-integration.scpt */; };
@@ -288,6 +290,17 @@
 				758AEB6724CE8B8F00A15EAF /* figcli in Embed Command Line Tool */,
 			);
 			name = "Embed Command Line Tool";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		75DF864626F2C2C5003F32A5 /* Bundle InputMethod */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 12;
+			dstPath = "";
+			dstSubfolderSpec = 6;
+			files = (
+				75DF864926F31662003F32A5 /* FigInputMethod.app in Bundle InputMethod */,
+			);
+			name = "Bundle InputMethod";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -1266,6 +1279,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				75DF864A26F31756003F32A5 /* cpu@2x.png in Resources */,
 				75290A7D266B09CB000F4255 /* gear@2x.png in Resources */,
 				759F989025C1172100EC3407 /* install_and_upgrade_fallback.sh in Resources */,
 				752E68DF2620F868009E9A7E /* yarn@2x.png in Resources */,
@@ -1636,7 +1650,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
-				CODE_SIGN_IDENTITY = "Developer ID Application";
+				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Manual;
 				DEVELOPMENT_TEAM = D93PPD94WK;
 				EMBED_ASSET_PACKS_IN_PRODUCT_BUNDLE = NO;

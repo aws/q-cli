@@ -106,11 +106,6 @@ class VSCodeIntegration: TerminalIntegrationProvider  {
         return .failed(error: "Extension is not installed.")
     }
     
-    let inputMethodStatus = InputMethod.default.verifyInstallation()
-    guard inputMethodStatus == .installed else {
-        return .pending(event: .inputMethodActivation)
-    }
-    
     return .installed
   }
     
