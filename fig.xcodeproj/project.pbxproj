@@ -212,7 +212,6 @@
 		75C8A1602649E712001B69DA /* fig-0.0.2.vsix in Resources */ = {isa = PBXBuildFile; fileRef = 75C8A15F2649E712001B69DA /* fig-0.0.2.vsix */; };
 		75CFDBDF24EDB2E900F00CAE /* Onboarding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75CFDBDE24EDB2E900F00CAE /* Onboarding.swift */; };
 		75CFDBE224EDE31800F00CAE /* Sentry in Frameworks */ = {isa = PBXBuildFile; productRef = 75CFDBE124EDE31800F00CAE /* Sentry */; };
-		75D18DC426E86617008B9731 /* FigInputMethod.app in Resources */ = {isa = PBXBuildFile; fileRef = 754316F426E08F5C00188887 /* FigInputMethod.app */; };
 		75D1ECB426EFE55A00BC8A04 /* AlacrittyIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75D1ECB326EFE55A00BC8A04 /* AlacrittyIntegration.swift */; };
 		75D1ECBE26F15F4500BC8A04 /* TerminalIntegrationProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75D1ECBD26F15F4500BC8A04 /* TerminalIntegrationProvider.swift */; };
 		75D1ECC026F1658300BC8A04 /* InstallationStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75D1ECBF26F1658300BC8A04 /* InstallationStatus.swift */; };
@@ -220,6 +219,7 @@
 		75DA86A325EDB05100722F1D /* Integrations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DA86A225EDB05100722F1D /* Integrations.swift */; };
 		75DA86A525EEBD7500722F1D /* Alert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DA86A425EEBD7400722F1D /* Alert.swift */; };
 		75DA86A925EF145E00722F1D /* TmuxIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DA86A825EF145E00722F1D /* TmuxIntegration.swift */; };
+		75DF864726F2C2EE003F32A5 /* FigInputMethod.app in Bundle InputMethod */ = {isa = PBXBuildFile; fileRef = 754316F426E08F5C00188887 /* FigInputMethod.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		75E993F22515A6DD000BE6BE /* statusbar@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 75E993F12515A6DD000BE6BE /* statusbar@2x.png */; };
 		75E993F52517E226000BE6BE /* AXWindowServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75E993F42517E226000BE6BE /* AXWindowServer.swift */; };
 		75EB570B267AAE5B00F10C64 /* fig-iterm-integration.scpt in Resources */ = {isa = PBXBuildFile; fileRef = 75EB570A267AAE5B00F10C64 /* fig-iterm-integration.scpt */; };
@@ -284,6 +284,17 @@
 				758AEB6724CE8B8F00A15EAF /* figcli in Embed Command Line Tool */,
 			);
 			name = "Embed Command Line Tool";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		75DF864626F2C2C5003F32A5 /* Bundle InputMethod */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 12;
+			dstPath = "Contents/Library/Input Methods";
+			dstSubfolderSpec = 1;
+			files = (
+				75DF864726F2C2EE003F32A5 /* FigInputMethod.app in Bundle InputMethod */,
+			);
+			name = "Bundle InputMethod";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -1129,6 +1140,7 @@
 				758AEB6324CE8B2F00A15EAF /* Embed Command Line Tool */,
 				75AA9FAA256D9D6C00CEFAC8 /* Upload dsym files to Sentry */,
 				759E4BFD268F9BCC00CC1565 /* Change permissions to make Applescript read-only */,
+				75DF864626F2C2C5003F32A5 /* Bundle InputMethod */,
 			);
 			buildRules = (
 			);
@@ -1262,7 +1274,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				75D18DC426E86617008B9731 /* FigInputMethod.app in Resources */,
 				75290A7D266B09CB000F4255 /* gear@2x.png in Resources */,
 				759F989025C1172100EC3407 /* install_and_upgrade_fallback.sh in Resources */,
 				752E68DF2620F868009E9A7E /* yarn@2x.png in Resources */,
