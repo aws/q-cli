@@ -128,7 +128,6 @@
 		756759D424498CA0006AA988 /* WebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756759D324498CA0006AA988 /* WebViewController.swift */; };
 		7568203126003BDF0006FE78 /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7568203026003BDF0006FE78 /* Settings.swift */; };
 		756C4D832542A6D30035B467 /* Starscream in Frameworks */ = {isa = PBXBuildFile; productRef = 756C4D822542A6D30035B467 /* Starscream */; };
-		7571775726F3B8A80071AE10 /* FigInputMethod.app in Embed Input Method */ = {isa = PBXBuildFile; fileRef = 754316F426E08F5C00188887 /* FigInputMethod.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		75738F1E26DDAB760086D972 /* InputMethod.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75738F1D26DDAB760086D972 /* InputMethod.swift */; };
 		7573F1582601927200C833FA /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7573F1572601927200C833FA /* Settings.swift */; };
 		7573F15B2602B4E000C833FA /* alert@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7573F1592602B4E000C833FA /* alert@2x.png */; };
@@ -267,17 +266,6 @@
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 1;
-		};
-		7571775626F3B8910071AE10 /* Embed Input Method */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 12;
-			dstPath = Contents/Helpers;
-			dstSubfolderSpec = 1;
-			files = (
-				7571775726F3B8A80071AE10 /* FigInputMethod.app in Embed Input Method */,
-			);
-			name = "Embed Input Method";
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		758AEB6324CE8B2F00A15EAF /* Embed Command Line Tool */ = {
 			isa = PBXCopyFilesBuildPhase;
@@ -1133,7 +1121,6 @@
 				758AEB6324CE8B2F00A15EAF /* Embed Command Line Tool */,
 				75AA9FAA256D9D6C00CEFAC8 /* Upload dsym files to Sentry */,
 				759E4BFD268F9BCC00CC1565 /* Change permissions to make Applescript read-only */,
-				7571775626F3B8910071AE10 /* Embed Input Method */,
 			);
 			buildRules = (
 			);
