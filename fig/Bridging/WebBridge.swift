@@ -199,7 +199,7 @@ extension WebBridge: WKURLSchemeHandler {
         }
         
         // fig://template?background-color=ccc&icon=box
-        if let host = url.host, let qs = url.queryDictionary, host == "template" {
+        if let host = url.host, host == "template" {
           guard let icon = Bundle.main.image(forResource: "template") else { return nil }
           return icon.overlayColor(color).overlayText(badge).resized(to: NSSize(width: width, height: height))//?.overlayBadge(color: color,  text: badge)
 
@@ -641,11 +641,11 @@ extension WebBridge {
         if let params = scope.body as? Dictionary<String, String>,
            let cmd = params["cmd"],
            let handlerId = params["handlerId"] {
-            cmd.runInBackground { (result) in
+            cmd.runInBackground(completion:  { (result) in
                 DispatchQueue.main.async {
                     WebBridge.callback(handler: handlerId, value: result, webView: scope.webView)
                 }
-            }
+            })
         }
     }
     
@@ -1090,6 +1090,7 @@ extension WebBridge {
                     guard let width = Float(data["width"] ?? ""),
                       let height = Float(data["height"]  ?? ""),
                       let anchorX = Float(data["anchorX"]  ?? ""),
+                      let anchorY = Float(data["offsetFromBaseline"]  ?? "0"),
                       let handler = handlerId else {
                       return
                     }
@@ -1097,7 +1098,7 @@ extension WebBridge {
                     do {
                         let response = try WindowPositioning.frameRelativeToCursor(width: CGFloat(width),
                                                                                height: CGFloat(height),
-                                                                               anchorOffset: CGPoint(x: CGFloat(anchorX), y: 0))
+                                                                               anchorOffset: CGPoint(x: CGFloat(anchorX), y: CGFloat(anchorY)))
                         WebBridge.callback(handler: handler, value: "{ \"isAbove\":  \(response.isAbove ? "true" : "false"), \"isClipped\": \(response.isClipped ? "true" : "false") }", webView: scope.webView)
                         
                     } catch APIError.generic(message: let message) {
@@ -1125,7 +1126,15 @@ extension WebBridge {
                     
                     if let anchorX = Float(data["anchorX"]  ?? "") {
                         print("autocomplete.anchorX := \(anchorX)")
-                        companion.anchorOffsetPoint = CGPoint(x: CGFloat(anchorX), y: 0)
+                        var anchor = companion.anchorOffsetPoint
+                        anchor.x = CGFloat(anchorX)
+                        companion.anchorOffsetPoint = anchor                    }
+                    
+                    if let anchorY = Float(data["offsetFromBaseline"]  ?? "0") {
+                        print("autocomplete.anchorY := \(anchorY)")
+                        var anchor = companion.anchorOffsetPoint
+                        anchor.y = CGFloat(anchorY)
+                        companion.anchorOffsetPoint = anchor
                     }
                     
                     WindowManager.shared.positionAutocompletePopover(textRect: Accessibility.getTextRect())

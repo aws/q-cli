@@ -31,6 +31,11 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
     var shouldTrackWindow = true;
     
     var isDocked = true;
+    var isHidden: Bool {
+        get {
+            return self.frame.height == 1 || self.frame.height == 0 || !self.isVisible
+        }
+    }
     
     var oneTimeUse = false;
 
@@ -608,7 +613,7 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
                 let frame = self.positioning.frame(targetWindowFrame: targetFrame,
                                                    screen: candidates.first!.frame)
 
-                setOverlayFrame(frame)
+                setOverlayFrame(frame.offsetBy(dx: 0, dy: frame.height * -1))
     
             }
             
@@ -628,7 +633,8 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
 //                    }
                     let frame = self.positioning.frame(targetWindowFrame: targetFrame,
                                                        screen: NSScreen.main!.frame)
-                    setOverlayFrame(frame)
+                    
+                    setOverlayFrame(frame.offsetBy(dx: 0, dy: frame.height * -1))
     
                 }
             }
@@ -641,21 +647,6 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
     func setOverlayFrame(_ frame: NSRect, makeVisible: Bool = true) {
             print("flicker: calling setOverlay")
             self.windowController?.shouldCascadeWindows = false;
-        
-            var updated = frame
-            
-//            // todo: flesh out positioning API
-//            if let height = self.maxHeight {
-//                if (height > frame.height) {
-//                    let diff = height - frame.height
-//                    updated.origin = CGPoint(x: frame.origin.x, y: frame.origin.y + diff)
-//                    updated.size = CGSize(width: frame.width, height: height)
-//
-//                } else {
-//                    let height2 = abs(height)
-//                    updated.size = CGSize(width: frame.width, height: min(frame.height, height2))
-//                }
-//            }
         
             let newFrame = frame // updated.offsetBy(dx: 0, dy: -1 * updated.height)
             print("flicker:", newFrame, self.frame)
