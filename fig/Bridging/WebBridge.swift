@@ -885,10 +885,16 @@ extension WebBridge {
                 case "terminaltitle:false":
                     AutocompleteContextNotifier.addIndicatorToTitlebar = false
 
-            case "openOnStartup:true":
-                LoginItems.shared.currentApplicationShouldLaunchOnStartup = true
-            case "openOnStartup:false":
-                LoginItems.shared.currentApplicationShouldLaunchOnStartup = false
+                case "openOnStartup:true":
+                    LoginItems.shared.currentApplicationShouldLaunchOnStartup = true
+                case "openOnStartup:false":
+                    LoginItems.shared.currentApplicationShouldLaunchOnStartup = false
+                case "themes":
+                    let files = (try? FileManager.default.contentsOfDirectory(atPath: NSHomeDirectory() + "/.fig/themes")) ?? []
+                    let themes = [ "dark", "light"] + files.map { String($0.split(separator: ".")[0]) }.sorted()
+                    WebBridge.callback(handler: handlerId,
+                                       value: themes.joined(separator: "\n"),
+                                       webView: scope.webView)
             default:
                 break;
             }
