@@ -289,8 +289,8 @@
 		75DF864626F2C2C5003F32A5 /* Bundle InputMethod */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 12;
-			dstPath = "Contents/Library/Input Methods";
-			dstSubfolderSpec = 1;
+			dstPath = "";
+			dstSubfolderSpec = 6;
 			files = (
 				75DF864726F2C2EE003F32A5 /* FigInputMethod.app in Bundle InputMethod */,
 			);

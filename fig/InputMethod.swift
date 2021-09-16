@@ -31,7 +31,7 @@ class InputMethod {
       }
 
     
-    static let `default` = InputMethod(bundlePath: Bundle.main.bundlePath.appending("/Contents/Library/Input Methods/FigInputMethod.app"))
+    static let `default` = InputMethod(bundlePath: Bundle.main.url(forAuxiliaryExecutable: "FigInputMethod.app")!.path)//Bundle.main.bundlePath.appending("/Contents/Library/Input Methods/FigInputMethod.app"))
 
     let bundle: Bundle
     let originalBundlePath: String
