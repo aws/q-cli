@@ -49,14 +49,12 @@
 	</dict>
 	<key>ComponentInvisibleInSystemUI</key>
 	<true/>
+	<key>InputMethodType</key>
+	<string>palette</string>
 	<key>InputMethodConnectionName</key>
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)_Connection</string>
 	<key>InputMethodServerControllerClass</key>
 	<string>$(PRODUCT_MODULE_NAME).FigIMKInputController</string>
-	<key>InputMethodType</key>
-	<string>palette</string>
-	<key>LSApplicationCategoryType</key>
-	<string>public.app-category.developer-tools</string>
 	<key>LSBackgroundOnly</key>
 	<true/>
 	<key>LSMinimumSystemVersion</key>
