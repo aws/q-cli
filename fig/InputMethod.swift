@@ -30,8 +30,7 @@ class InputMethod {
         return NSRect(x: x, y: y, width: 10, height: 10).offsetBy(dx: 0, dy: 10)
       }
 
-    
-    static let `default` = InputMethod(bundlePath: Bundle.main.url(forAuxiliaryExecutable: "FigInputMethod.app")!.path)//Bundle.main.bundlePath.appending("/Contents/Library/Input Methods/FigInputMethod.app"))
+    static let `default` = InputMethod(bundlePath: Bundle.main.bundleURL.appendingPathComponent("Contents/Helpers/FigInputMethod.app").path)
 
     let bundle: Bundle
     let originalBundlePath: String
