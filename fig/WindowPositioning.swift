@@ -53,7 +53,6 @@ class WindowPositioning {
                                       anchorOffset: CGPoint,
                                       maxHeight: CGFloat) -> (frame: CGRect, isAbove: Bool, isClipped: Bool) {
 
-        let verticalPaddingFromCursor: CGFloat = 5
         var isClipped = false
         
         let popupHasSufficientVerticalSpaceToAppearInTopHalfOfCurrentWindow =
@@ -66,6 +65,7 @@ class WindowPositioning {
         let isAbove = popupHasSufficientVerticalSpaceToAppearInTopHalfOfCurrentWindow &&
                       popupHasSufficientVerticalSpaceToAppearOnCurrentScreen
 
+        let verticalPaddingFromCursor: CGFloat = 5 + anchorOffset.y
               
         let translatedX = cursorRect.origin.x + anchorOffset.x
     
