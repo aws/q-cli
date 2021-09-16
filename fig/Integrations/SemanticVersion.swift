@@ -43,64 +43,40 @@ class SemanticVersion {
 
 // MARK: - Operators
 extension SemanticVersion {
-    static func > (left: SemanticVersion, right: SemanticVersion) -> Bool {
-
-        guard left.major > right.major else {
+    static func compare(left: SemanticVersion, right: SemanticVersion, comparison: (Int, Int) -> Bool) -> Bool {
+        guard comparison(left.major, right.major) else {
             return false
         }
 
-        guard left.minor > right.minor else {
+        guard comparison(left.major, right.major) else {
             return false
         }
 
-        guard left.patch > right.patch else {
+        guard comparison(left.major, right.major) else {
             return false
         }
 
         return true
-
+    }
+    
+    static func > (left: SemanticVersion, right: SemanticVersion) -> Bool {
+        return compare(left: left, right: right, comparison: >)
     }
     
     static func < (left: SemanticVersion, right: SemanticVersion) -> Bool {
-      
-        guard left.major < right.major else {
-            return false
-        }
-      
-        guard left.minor < right.minor else {
-            return false
-        }
-      
-        guard left.patch < right.patch else {
-            return false
-        }
-      
-        return true
+        return compare(left: left, right: right, comparison: <)
     }
     
     static func == (left: SemanticVersion, right: SemanticVersion) -> Bool {
-      
-        guard left.major == right.major else {
-            return false
-        }
-      
-        guard left.minor == right.minor else {
-            return false
-        }
-      
-        guard left.patch == right.patch else {
-            return false
-        }
-      
-        return true
+        return compare(left: left, right: right, comparison: ==)
     }
     
     static func <= (left: SemanticVersion, right: SemanticVersion) -> Bool {
-       return left < right || left == right
+        return compare(left: left, right: right, comparison: <=)
     }
     
     static func >= (left: SemanticVersion, right: SemanticVersion) -> Bool {
-       return left > right || left == right
+        return compare(left: left, right: right, comparison: >=)
     }
 }
 
