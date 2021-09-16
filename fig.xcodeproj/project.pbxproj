@@ -219,7 +219,7 @@
 		75DA86A325EDB05100722F1D /* Integrations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DA86A225EDB05100722F1D /* Integrations.swift */; };
 		75DA86A525EEBD7500722F1D /* Alert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DA86A425EEBD7400722F1D /* Alert.swift */; };
 		75DA86A925EF145E00722F1D /* TmuxIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DA86A825EF145E00722F1D /* TmuxIntegration.swift */; };
-		75DF864926F31662003F32A5 /* FigInputMethod.app in Bundle InputMethod */ = {isa = PBXBuildFile; fileRef = 754316F426E08F5C00188887 /* FigInputMethod.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		75DF864926F31662003F32A5 /* FigInputMethod.app in Bundle InputMethod */ = {isa = PBXBuildFile; fileRef = 754316F426E08F5C00188887 /* FigInputMethod.app */; };
 		75DF864A26F31756003F32A5 /* cpu@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 751DC66226EBF3B500697DFB /* cpu@2x.png */; };
 		75E993F22515A6DD000BE6BE /* statusbar@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 75E993F12515A6DD000BE6BE /* statusbar@2x.png */; };
 		75E993F52517E226000BE6BE /* AXWindowServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75E993F42517E226000BE6BE /* AXWindowServer.swift */; };
@@ -1705,7 +1705,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = io.fig.inputmethod.cursor;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				SKIP_INSTALL = NO;
+				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
@@ -1733,7 +1733,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = io.fig.inputmethod.cursor;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				SKIP_INSTALL = NO;
+				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
