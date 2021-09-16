@@ -270,14 +270,14 @@
 		};
 		7571775626F3B8910071AE10 /* Embed Input Method */ = {
 			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
+			buildActionMask = 8;
 			dstPath = "";
 			dstSubfolderSpec = 6;
 			files = (
 				7571775726F3B8A80071AE10 /* FigInputMethod.app in Embed Input Method */,
 			);
 			name = "Embed Input Method";
-			runOnlyForDeploymentPostprocessing = 0;
+			runOnlyForDeploymentPostprocessing = 1;
 		};
 		758AEB6324CE8B2F00A15EAF /* Embed Command Line Tool */ = {
 			isa = PBXCopyFilesBuildPhase;
