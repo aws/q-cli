@@ -221,9 +221,25 @@ class Accessibility {
       return cache
     })
     
+    let root = UIElement(axElement)
+    
     if skipCache {
      Accessibility.xtermLog("skip cache")
       cursor = nil
+    }
+    
+    print("xterm-cursor: windowId = \(window.windowId)")
+    
+    if cursor != nil,
+       let toplevelElement: UIElement = try? cursor?.attribute(.topLevelUIElement),
+       root != toplevelElement {
+//       let windowTitle: String = try? root.attribute(.title),
+//       let elementTitle: String = try? toplevelElement.attribute(.title),
+//       windowTitle != elementTitle {
+        print("xterm-cursor: window for cached cursor (\(String(describing: toplevelElement)) is not equal to current window (\(String(describing: root))")
+//        print("xterm-cursor: window for cached cursor (\(elementTitle)) is not equal to current window (\(windowTitle)")
+        cursor = nil
+        cursorCache[window.hash] = []
     }
     
     // some additional checks and performance optimization are put in place for VSCode (and other electron IDEs) so only enable it for them!
@@ -238,7 +254,6 @@ class Accessibility {
       } else {
         
         throttler.throttle {
-          let root = UIElement(axElement)
           cachedCursor = findXTermCursor(root, inVSCodeIDE: isElectronIDE)
           // trigger reposition if cursor has been found
           print("xterm-cursor: finished searching for cursor (throttled) \(String(describing: cachedCursor))")
