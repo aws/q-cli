@@ -71,7 +71,10 @@ class NativeCLI {
         case viewLogs = "debug:log"
         case symlinkCLI = "util:symlink-cli"
         case loginItems = "util:login-items"
+        case inputMethod = "util:input-method"
+        case resetCursorCache = "util:reset-cursor-cache"
         case theme = "theme"
+        case integrations = "integrations"
 
         var isUtility: Bool {
             get {
@@ -82,7 +85,7 @@ class NativeCLI {
       
         var handlesDisconnect: Bool {
             get {
-              let handlesDisconnection: Set<Command> = [.pty, .hyper, .iterm, .vscode, .quit ]
+                let handlesDisconnection: Set<Command> = [.pty, .hyper, .iterm, .vscode, .integrations, .quit ]
                 return handlesDisconnection.contains(self)
             }
         }
@@ -121,7 +124,10 @@ class NativeCLI {
                                                            .updateApp,
                                                            .symlinkCLI,
                                                            .loginItems,
+                                                           .inputMethod,
                                                            .theme,
+                                                           .resetCursorCache,
+                                                           .integrations,
                                                            .docs]
                return implementatedNatively.contains(self)
             }
@@ -200,6 +206,12 @@ class NativeCLI {
               NativeCLI.updateLoginItemCommand(scope)
             case .theme:
               NativeCLI.themeCommand(scope)
+            case .inputMethod:
+              NativeCLI.toggleInputMethod(scope)
+            case .resetCursorCache:
+                Accessibility.resetCursorCache()
+            case .integrations:
+                NativeCLI.integrationsCommand(scope)
             default:
                 break;
             }
@@ -480,18 +492,45 @@ extension NativeCLI {
 
         NativeCLI.printInTerminal("→ Opening docs in browser...", using: connection)
     }
+    
+    static func integrationsCommand(_ scope: Scope) {
+        let (message, connection) = scope
+        if let id = message.arguments.first {
+            if let provider = Integrations.providers.values.first(where: { $0.id == id }) {
+                NativeCLI.printInTerminal("→ Prompting \(provider.applicationName) Integration...", using: connection)
+                connection.send(message: "disconnect")
+                
+                provider.promptToInstall()
+
+    
+            } else {
+                NativeCLI.printInTerminal("→ No integration for '\(id)'", using: connection)
+                connection.send(message: "disconnect")
+            }
+            
+        } else {
+            let statuses = Integrations.providers.values.map { provider in
+                return provider.applicationName + ": " + provider.status.description
+            }.sorted()
+            
+            NativeCLI.printInTerminal(statuses.joined(separator: "\n"), using: connection)
+            connection.send(message: "disconnect")
+
+        }
+
+    }
   
     static func VSCodeCommand(_ scope: Scope) {
         let (_, connection) = scope
 
-        if VSCodeIntegration.isInstalled {
+        if VSCodeIntegration.default.isInstalled {
             NativeCLI.printInTerminal("\n› VSCode Integration is already installed.\n  You may need to restart VSCode for the changes to take effect.\n  If you are having issues, please use fig report.\n", using: connection)
             connection.send(message: "disconnect")
         } else {
             NativeCLI.printInTerminal("→ Prompting VSCode Integration...", using: connection)
             connection.send(message: "disconnect")
 
-            VSCodeIntegration.promptToInstall()
+            VSCodeIntegration.default.promptToInstall()
         }
 
     }
@@ -499,14 +538,14 @@ extension NativeCLI {
     static func iTermCommand(_ scope: Scope) {
         let (_, connection) = scope
 
-        if iTermIntegration.isInstalled {
+        if iTermIntegration.default.isInstalled {
             NativeCLI.printInTerminal("\n› iTerm Integration is already installed.\n  If you are having issues, please use fig report.\n", using: connection)
             connection.send(message: "disconnect")
 
         } else {
             NativeCLI.printInTerminal("→ Prompting iTerm Integration...", using: connection)
             connection.send(message: "disconnect")
-            iTermIntegration.promptToInstall()
+            iTermIntegration.default.promptToInstall()
         }
 
     }
@@ -514,13 +553,13 @@ extension NativeCLI {
     static func HyperCommand(_ scope: Scope) {
         let (_, connection) = scope
 
-        if HyperIntegration.isInstalled {
+        if HyperIntegration.default.isInstalled {
             NativeCLI.printInTerminal("\n› Hyper Integration is already installed.\n  You may need to restart Hyper for the changes to take effect.\n  If you are having issues, please use fig report.\n", using: connection)
             connection.send(message: "disconnect")
         } else {
             NativeCLI.printInTerminal("→ Prompting Hyper Integration...", using: connection)
             connection.send(message: "disconnect")
-            HyperIntegration.promptToInstall()
+            HyperIntegration.default.promptToInstall()
         }
 
     }
@@ -614,6 +653,38 @@ extension NativeCLI {
       Onboarding.setUpEnviroment()
     }
   
+    static func toggleInputMethod(_ scope: Scope) {
+        let (message, connection) = scope
+        let command = message.arguments.first ?? ""
+        
+        switch command {
+            case "--enable":
+                InputMethod.default.toggleSource(on: true)
+                NativeCLI.printInTerminal("\n› Enabling Fig Input Method\n", using: connection)
+            case "--disable":
+                InputMethod.default.toggleSource(on: false)
+                NativeCLI.printInTerminal("\n› Disabling Fig Input Method\n", using: connection)
+            case "install":
+                if InputMethod.default.install() == .installed {
+                    NativeCLI.printInTerminal("\n› Installed Fig IME\n", using: connection)
+                } else {
+                    NativeCLI.printInTerminal("\n› Failed to install Fig IME\n", using: connection)
+                }
+            case "uninstall":
+                InputMethod.default.uninstall()
+                NativeCLI.printInTerminal("\n› Uninstalling IME\n", using: connection)
+
+            case "--version":
+                InputMethod.requestVersion()
+                NativeCLI.printInTerminal("\n› Requesting version! Check the logs!\n", using: connection)
+            case "--verify-install":
+                NativeCLI.printInTerminal(InputMethod.default.status.description, using: connection)
+            default:
+                return
+
+        }
+    }
+    
     static func updateLoginItemCommand(_ scope: Scope) {
         let (message, connection) = scope
         let command = message.arguments.first ?? ""

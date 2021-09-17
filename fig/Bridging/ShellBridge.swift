@@ -816,11 +816,11 @@ extension ShellBridge {
     static func resetAccesibilityPermissions( completion: (()-> Void)? = nil) {
         // reset permissions! (Make's sure check is toggled off!)
         if let bundleId = NSRunningApplication.current.bundleIdentifier {
-            let _ = "tccutil reset Accessibility \(bundleId)".runInBackground { (out) in
+            let _ = "tccutil reset Accessibility \(bundleId)".runInBackground(completion:  { (out) in
                 if let completion = completion {
                     completion()
                 }
-            }
+            })
         }
     }
     static var hasBeenPrompted = false

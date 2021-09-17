@@ -1,0 +1,1042 @@
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8" />
+
+    <meta content="width=device-width, initial-scale=1" name="viewport" />
+    <style>
+      html {
+        --main-bg-color: rgb(48, 48, 48);
+        --main-text-color: rgb(180, 180, 180);
+        --description-text-color: rgb(180, 180, 180);
+        --description-border-color: rgb(65, 65, 65);
+        --selected-bg-color: rgb(30, 90, 199);
+        --selected-text-color: rgb(253, 253, 253);
+        --matching-bg-color: rgb(95, 89, 56);
+        --corner-radius: 5px;
+        --autocomplete-font-family: "Monaco";
+        --autocomplete-font-size: 0.8em;
+        --description-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+          Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue",
+          sans-serif;
+        --description-font-family: 0.8em;
+
+        position: absolute;
+        z-index: 1;
+        overflow: hidden;
+      }
+
+      /*      code,
+      pre {
+        cursor: pointer !important;
+      }
+*/
+      body {
+        width: 100vw;
+        height: 100vh;
+        margin-left: 0;
+        margin-right: 0;
+        margin-top: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+        -webkit-user-select: none !important;
+      }
+
+      a {
+        text-decoration: none;
+        cursor: pointer;
+      }
+
+      @media screen and (prefers-reduced-motion: reduce) {
+        .wrapper {
+          display: block;
+          margin-right: auto;
+          margin-left: auto;
+          -webkit-animation: fadein 1s; /* Safari, Chrome and Opera > 12.1 */
+          -moz-animation: fadein 1s; /* Firefox < 16 */
+          -ms-animation: fadein 1s; /* Internet Explorer */
+          -o-animation: fadein 1s; /* Opera < 12.1 */
+          animation: none;
+        }
+      }
+
+      @media only screen and (min-width: 800px) {
+        .wrapper {
+          width: 35%;
+        }
+      }
+
+      @media only screen and (max-width: 800px) {
+        .wrapper {
+          width: 90%;
+        }
+      }
+
+      .wrapper {
+        display: block;
+        margin-right: auto;
+        margin-left: auto;
+        -webkit-animation: fadein 1s; /* Safari, Chrome and Opera > 12.1 */
+        -moz-animation: fadein 1s; /* Firefox < 16 */
+        -ms-animation: fadein 1s; /* Internet Explorer */
+        -o-animation: fadein 1s; /* Opera < 12.1 */
+        animation: fadein 1s;
+      }
+
+      @media only screen and (min-width: 800px) {
+        /* tablets and desktop */
+        .wrapper {
+          width: 35%;
+        }
+      }
+
+      @media only screen and (max-width: 800px) {
+        /* portrait phones */
+        .wrapper {
+          width: 90%;
+        }
+      }
+
+      header .title {
+        font-size: 1.7em;
+        display: block;
+      }
+
+      header .subtitle {
+        font-size: 0.8em;
+        display: block;
+      }
+
+      header {
+        width: 320px;
+        margin: 20px auto 10px;
+      }
+
+      .button {
+        text-align: center;
+        margin-right: auto;
+        margin-left: auto;
+      }
+
+      .button a {
+        display: inline-block;
+        padding: 8px 60px;
+        color: white;
+        background-color: #0984e3; /* #00b894; */
+        border-radius: 10px;
+        filter: brightness(100%);
+      }
+
+      .button p {
+        margin: 5px 0 0;
+        font-size: 10px;
+      }
+
+      .button:hover,
+      .button:focus {
+        filter: brightness(110%);
+      }
+
+      .section {
+        margin-top: 30px;
+      }
+
+      .section .title {
+        display: block;
+        font-weight: 500;
+        margin-bottom: 1rem;
+      }
+
+      .section p {
+        font-size: 0.85em;
+        margin: 1.5rem 0;
+      }
+
+      img {
+        width: 300px;
+      }
+
+      section {
+        position: absolute;
+        top: 30%;
+        left: 50%;
+        transform: translate(-50%, -30%);
+        width: 320px;
+        z-index: 100;
+
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      .code {
+        display: inline-block;
+        border-radius: 3px;
+        background-color: #ddd;
+        color: gray;
+        padding-left: 3px;
+        padding-right: 3px;
+        padding-top: 1px;
+        padding-bottom: 1px;
+        margin-left: 2px;
+        margin-right: 2px;
+        font-family: Monaco;
+      }
+
+      #skip {
+        display: block;
+        width: 300px;
+        margin: 5px auto;
+        color: #ccc;
+        font-size: 0.85em;
+        text-align: center;
+      }
+
+      ::-webkit-scrollbar {
+        display: none !important;
+      }
+
+      @keyframes fadein {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      /* Autocomplete window */
+      .suggestion {
+        display: flex !important;
+        height: 20px;
+        padding-left: 5px;
+        left: 0px;
+        height: 20px;
+        width: 100%;
+      }
+
+      .icon {
+        height: 15px;
+        width: 15px;
+        min-width: 15px;
+        vertical-align: middle;
+        margin-right: 5px;
+        margin-top: 2.5px;
+        margin-bottom: 2.5px;
+      }
+
+      /* Hide Scrollbar in every div */
+      *::-webkit-scrollbar {
+        display: none;
+      }
+
+      mark.shared_start_match {
+        color: inherit;
+        text-decoration: underline;
+        background: none;
+      }
+
+      mark.search_match {
+        color: inherit;
+        background: var(--matching-bg-color);
+      }
+
+      span.active-item > span > mark.search_match {
+        color: inherit;
+        background: rgb(106, 142, 218);
+      }
+
+      /* Holds suggestions container and possibly description popout, side by side. */
+      #autocompleteWindow {
+        position: relative;
+        display: flex;
+        flex-direction: row;
+        overflow: hidden;
+      }
+
+      /* Holds suggestions list and possibly description below. */
+      #suggestionsContainer {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        overflow: hidden;
+        background-color: var(--main-bg-color);
+        border-radius: var(--corner-radius);
+        width: 320px;
+        height: 100%;
+        align-self: flex-start;
+        max-height: 140px;
+      }
+
+      #listContainer {
+        flex-shrink: 1;
+        flex-basis: 920px;
+        min-height: 0;
+        min-width: 0;
+      }
+
+      #innerListContainer {
+        display: flex;
+        flex-direction: column;
+        height: 920px;
+        width: 100%;
+      }
+
+      .listContainer {
+        border-radius: var(--corner-radius);
+      }
+
+      .loadingWrapper {
+        max-height: 20px;
+        padding-right: 5px;
+        padding-left: 5px;
+        background-color: var(--main-bg-color);
+        border-radius: var(--corner-radius);
+      }
+
+      .descriptionHint {
+        display: flex;
+        flex-shrink: 0;
+        align-items: center;
+        align-self: flex-end;
+        justify-content: center;
+        height: 20px;
+        padding-right: 5px;
+        padding-left: 5px;
+        color: var(--description-text-color);
+        font-size: 10px;
+        font-style: italic;
+        background-color: var(--main-bg-color);
+        border-radius: var(--corner-radius);
+      }
+
+      .descriptionHint span {
+        font-size: var(--description-font-size);
+        font-family: var(--description-font-family);
+      }
+
+      .zero-radius-bottom {
+        border-bottom-right-radius: 0;
+        border-bottom-left-radius: 0;
+      }
+
+      .text {
+        color: var(--main-text-color);
+        font-size: var(--autocomplete-font-size);
+        overflow: auto hidden;
+        white-space: nowrap;
+        font-size: var(--autocomplete-font-size);
+        font-family: var(--autocomplete-font-family);
+      }
+
+      .other {
+        opacity: 0.5;
+      }
+
+      .active-item {
+        background-color: var(--selected-bg-color); /* #d4d4d4; */
+      }
+
+      .active-item .text {
+        color: var(--selected-text-color);
+      }
+
+      .flexRow {
+        display: flex;
+        flex-direction: row;
+        flex-shrink: 0;
+      }
+
+      #description {
+        height: 20px;
+        display: flex;
+        flex: 1;
+        flex-direction: row;
+        align-items: center;
+        align-self: flex-start;
+        justify-content: space-between;
+        margin-left: 0;
+        padding-right: 5px;
+        padding-left: 5px;
+        overflow: hidden scroll;
+        color: var(--description-text-color);
+        font-size: var(--font-size, 0.8em);
+        font-style: italic;
+        white-space: nowrap;
+        background-color: var(--main-bg-color);
+        border: 0 solid var(--description-border-color);
+      }
+
+      #descriptionText {
+        flex-shrink: 1;
+        overflow: auto hidden;
+        font-size: var(--description-font-size);
+        font-family: var(--description-font-family);
+      }
+
+      #description.withSuggestions {
+        border-top-width: 1px;
+      }
+
+      #description.popout {
+        z-index: 1;
+        overflow: hidden;
+        font-size: 12px;
+        white-space: normal;
+        border-radius: var(--corner-radius);
+      }
+
+      #description.popout .popoutText {
+        display: flex;
+        flex-direction: column;
+        align-self: flex-start;
+        padding-top: 5px;
+        padding-bottom: 5px;
+        overflow: hidden scroll;
+        border-radius: inherit;
+      }
+
+      #description.popout .popoutText span {
+        display: block;
+        word-wrap: normal;
+        -webkit-hyphens: auto;
+        hyphens: auto;
+      }
+
+      /* Light Mode */
+
+      .fig_wrapper {
+        position: relative !important;
+        overflow: visible !important;
+      }
+
+      @media screen and (prefers-reduced-motion: reduce) {
+        .fig_pearButton {
+          position: absolute !important;
+          z-index: 10 !important;
+          padding: 2px 6px !important;
+          font-size: 20px !important;
+          background-color: white !important;
+          border: none !important;
+          border-radius: 5px !important;
+          cursor: pointer !important;
+          opacity: 0 !important;
+          transition: none !important;
+          all: unset !important;
+        }
+      }
+
+      .fig_pearButton {
+        position: absolute !important;
+        z-index: 10 !important;
+        padding: 2px 6px !important;
+        font-size: 20px !important;
+        background-color: white !important;
+        border: none !important;
+        border-radius: 5px !important;
+        cursor: pointer !important;
+        opacity: 0 !important;
+        transition: all 0.1s ease-in-out !important;
+        all: unset !important;
+      }
+
+      .fig_prePearButton {
+        top: 5px !important;
+        right: 5px !important;
+      }
+
+      .fig_inlinePearButton {
+        right: -36px !important;
+        bottom: -7px !important;
+      }
+
+      button:focus {
+        outline: 0 !important;
+      }
+
+      .fig_hidden {
+        display: none !important;
+      }
+
+      .fig_buttonShow {
+        opacity: 1 !important;
+      }
+
+      .terminal-bg-color {
+        background-color: white !important;
+      }
+
+      .terminal-text-color {
+        color: black !important;
+      }
+
+      #listContainer {
+        position: relative;
+        height: 119px;
+        width: 100%;
+        overflow: auto;
+        will-change: transform;
+        direction: ltr;
+      }
+
+      #customization-box {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 1rem 0 2rem;
+        align-items: center;
+      }
+
+      #form {
+        display: flex;
+        margin-bottom: 0.75rem;
+        align-self: flex-start;
+        outline: 0;
+        text-transform: lowercase;
+      }
+
+      #popup {
+        margin: 0 2rem;
+        box-shadow: 0 2.8px 2.2px rgba(0, 0, 0, 0.034),
+          0 6.7px 5.3px rgba(0, 0, 0, 0.048), 0 12.5px 10px rgba(0, 0, 0, 0.06),
+          0 22.3px 17.9px rgba(0, 0, 0, 0.072);
+      }
+
+      label,
+      p {
+        font-size: 0.8em;
+        color: #5e5e5e;
+      }
+
+      select {
+        -webkit-appearance: none;
+        position: relative;
+        width: 320px;
+        height: 20px;
+        background-color: #0984e3;
+        border-radius: 5px;
+        border: none;
+        text-transform: capitalize;
+        color: #666666;
+        text-align: left;
+        padding: 0 15px;
+        font-size: 0.8em;
+        cursor: pointer;
+        background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%230984e3%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E"),
+          linear-gradient(to bottom, #fefefe 0%, #e2e2e2 100%);
+        background-repeat: no-repeat, repeat;
+        background-position: right 0.7em top 50%, 0 0;
+        background-size: 0.65em auto, 100%;
+        box-shadow: 0 2.8px 2.2px rgba(0, 0, 0, 0.034),
+          0 6.7px 5.3px rgba(0, 0, 0, 0.048);
+      }
+
+      select:hover {
+        filter: brightness(95%);
+      }
+
+      select:after {
+      }
+
+      option {
+        position: absolute;
+        top: 40px;
+        left: 0;
+        width: 100%;
+        height: fit-content;
+        background: rgba(0, 0, 0, 0.5);
+        border-bottom-left-radius: 10px;
+        border-bottom-right-radius: 10px;
+        overflow: hidden;
+        color: #fff;
+        padding: 0 15px;
+        line-height: 30px;
+        cursor: pointer;
+        display: none;
+      }
+    </style>
+    <title>Theme</title>
+  </head>
+
+  <body>
+    <div class="wrapper">
+      <section>
+        <div class="section">
+          <span class="title" href="javascript:appearance()" id="appearance"
+            >Customize Theme</span
+          >
+          <div id="customization-box">
+            <div id="form">
+              <select
+                name="theme"
+                id="theme-select"
+                oninput="handleTheme(this.value)"
+              >
+                <!-- Hard-coded in case fig.onboarding("themes") breaks. This should be overwritten. -->
+                <option value="dark">Dark</option>
+                <option value="light">Light</option>
+              </select>
+            </div>
+
+            <div id="popup">
+              <div id="root"></div>
+            </div>
+          </div>
+
+          <p>
+            Further customize Fig's appearance and behavior by running
+            <span class="code" figdisabled = "true">fig settings</span>.
+          </p>
+
+          <div class="button" onclick="handleContinue()"><a>Continue</a></div>
+          <a href="javascript:next()" id="skip" style="display: none"
+            >Continue to next step manually</a
+          >
+        </div>
+      </section>
+    </div>
+    <script>
+      const builtInThemes = {
+        dark: {
+          version: "1.0",
+          theme: {
+            backgroundColor: "rgb(48,48,48)",
+            textColor: "rgb(180, 180, 180)",
+            matchBackgroundColor: "rgb(95,89,56)",
+            selection: {
+              textColor: "rgb(253,253,253)",
+              backgroundColor: "rgb(30,90,199)",
+            },
+            description: {
+              textColor: "rgb(180, 180, 180)",
+              borderColor: "rgb(65,65,65)",
+            },
+          },
+        },
+        light: {
+          version: "1.0",
+          theme: {
+            backgroundColor: "rgb(254,254,254)",
+            textColor: "rgb(7,7,7)",
+            matchBackgroundColor: "rgb(255, 239, 152)",
+            selection: {
+              textColor: "rgb(253,253,253)",
+              backgroundColor: "rgb(41,105,218)",
+            },
+            description: {
+              textColor: "rgb(7,7,7)",
+              borderColor: "rgb(199,199,199)",
+            },
+          },
+        },
+      };
+
+      const suggestions = [
+        {
+          icon: "command",
+          command: "clone",
+          other: "<repository> [directory]",
+        },
+        {
+          icon: "command",
+          command: "cherry-pick",
+          other: "<commit>",
+        },
+        {
+          icon: "command",
+          command: "add",
+          other: "[pathspec]",
+        },
+        {
+          icon: "command",
+          command: "bisect",
+          other: "<paths>",
+        },
+        {
+          icon: "command",
+          command: "branch",
+          other: "",
+        },
+        {
+          icon: "command",
+          command: "checkout",
+          other: "[branch, file, tag or commit] [pathspec]",
+        },
+        {
+          icon: "command",
+          command: "clean",
+          other: "<path>",
+        },
+        {
+          icon: "command",
+          command: "commit",
+          other: "[pathspec]",
+        },
+        {
+          icon: "command",
+          command: "config",
+          other: "",
+        },
+        {
+          icon: "command",
+          command: "diff",
+          other: "[commit or file]",
+        },
+        {
+          icon: "command",
+          command: "fetch",
+          other: "[remote] [branch] [refspec]",
+        },
+        {
+          icon: "command",
+          command: "grep",
+          other: "",
+        },
+        {
+          icon: "command",
+          command: "init",
+          other: "[directory]",
+        },
+        {
+          icon: "command",
+          command: "log",
+          other: "[since] [util]",
+        },
+        {
+          icon: "command",
+          command: "merge",
+          other: "[branch]",
+        },
+        {
+          icon: "command",
+          command: "mergetool",
+          other: "",
+        },
+        {
+          icon: "command",
+          command: "mv",
+          other: "<source> <destination>",
+        },
+        {
+          icon: "command",
+          command: "pull",
+          other: "[remote] [branch]",
+        },
+        {
+          icon: "command",
+          command: "push",
+          other: "[remote] [branch]",
+        },
+        {
+          icon: "command",
+          command: "rebase",
+          other: "[base] [new base]",
+        },
+        {
+          icon: "command",
+          command: "reflog",
+          other: "",
+        },
+        {
+          icon: "command",
+          command: "remote",
+          other: "",
+        },
+        {
+          icon: "command",
+          command: "reset",
+          other: "",
+        },
+        {
+          icon: "command",
+          command: "restore",
+          other: "[pathspec]",
+        },
+        {
+          icon: "command",
+          command: "revert",
+          other: "[commit]",
+        },
+        {
+          icon: "command",
+          command: "rm",
+          other: "",
+        },
+        {
+          icon: "command",
+          command: "show",
+          other: "",
+        },
+        {
+          icon: "command",
+          command: "stage",
+          other: "[pathspec]",
+        },
+        {
+          icon: "command",
+          command: "stash",
+          other: "",
+        },
+        {
+          icon: "command",
+          command: "status",
+          other: "[pathspec]",
+        },
+        {
+          icon: "command",
+          command: "submodule",
+          other: "",
+        },
+        {
+          icon: "command",
+          command: "switch",
+          other: "<branch name> [start point]",
+        },
+        {
+          icon: "command",
+          command: "tag",
+          other: "[tagname]",
+        },
+        {
+          icon: "shortcut",
+          command: "commit -m 'msg'",
+          other: "",
+        },
+        {
+          icon: "option",
+          command: "--bare",
+          other: "",
+        },
+        {
+          icon: "option",
+          command: "--exec-path",
+          other: "[path]",
+        },
+        {
+          icon: "option",
+          command: "--git-dir",
+          other: "<path>",
+        },
+        {
+          icon: "option",
+          command: "--help",
+          other: "",
+        },
+        {
+          icon: "option",
+          command: "--html-path",
+          other: "",
+        },
+        {
+          icon: "option",
+          command: "--info-path",
+          other: "",
+        },
+        {
+          icon: "option",
+          command: "--man-path",
+          other: "",
+        },
+        {
+          icon: "option",
+          command: "--namespace",
+          other: "<name>",
+        },
+        {
+          icon: "option",
+          command: "--no-optional-locks",
+          other: "",
+        },
+        {
+          icon: "option",
+          command: "--no-pager",
+          other: "",
+        },
+        {
+          icon: "option",
+          command: "--no-replace-objects",
+          other: "",
+        },
+        {
+          icon: "option",
+          command: "--version",
+          other: "",
+        },
+        {
+          icon: "option",
+          command: "--work-tree",
+          other: "<path>",
+        },
+        {
+          icon: "option",
+          command: "-c",
+          other: "<name=value>",
+        },
+        {
+          icon: "option",
+          command: "-C",
+          other: "<path>",
+        },
+        {
+          icon: "option",
+          command: "-p, --paginate",
+          other: "",
+        },
+      ];
+
+      const createEl = (id) => (className) => (tag) => {
+        const el = document.createElement(tag);
+
+        return fold(setAttr("id")(id), setAttr("class")(className))(el);
+      };
+
+      const createImg = (id) => (src) => (className) =>
+        setAttr("src")(src)(createEl(id)(className)("img"));
+
+      const fold =
+        (...functions) =>
+        (value) =>
+          functions.reduce((result, fun) => fun(result), value);
+
+      const setAttr = (attr) => (value) => (el) => {
+        el.setAttribute(attr, value);
+        return el;
+      };
+
+      const append = (child) => (target) => {
+        target.append(child);
+        return target;
+      };
+
+      const text = (text) => document.createTextNode(text);
+
+      const suggestion = (icon) => (command) => (other) => {
+        const rowClass =
+          command === "clone" ? "suggestion active-item" : "suggestion";
+        const row = createEl("")(rowClass)("span");
+        const iconEl = createImg("")(`fig://icon?type=${icon}`)("icon");
+        const commandEl = append(text(command))(createEl("")("text")("span"));
+        const otherEl = append(text(` ${other}`))(
+          createEl("")("other")("span")
+        );
+
+        const description = append(otherEl)(commandEl);
+
+        return fold(append(iconEl), append(description))(row);
+      };
+
+      const innerListContainer = createEl("innerListContainer")("")("div");
+
+      const suggestionSpans = suggestions.map(({ icon, command, other }) =>
+        append(suggestion(icon)(command)(other))(innerListContainer)
+      );
+
+      const listContainer = append(innerListContainer)(
+        createEl("listContainer")("listContainer zero-radius-bottom")("div")
+      );
+
+      const innerContainer = append(listContainer)(
+        createEl("innerContainer")("")("div")
+      );
+
+      const descriptionSpan = append(
+        text("Clone a repository into a new directory")
+      )(createEl("descriptionText")()("span"));
+
+      const hintSpan = append(text("(⌘i)"))(createEl("")("")("span"));
+
+      const hintDiv = append(hintSpan)(createEl("")("descriptionHint")("div"));
+
+      const descriptionContainer = fold(
+        append(descriptionSpan),
+        append(hintDiv)
+      )(createEl("description")("withSuggestions")("div"));
+
+      const descriptionRow = append(descriptionContainer)(
+        createEl("")("flexRow")("div")
+      );
+
+      const suggestionsContainer = fold(
+        append(innerContainer),
+        append(descriptionRow)
+      )(createEl("suggestionsContainer")("")("div"));
+
+      const autocompleteWindow = append(suggestionsContainer)(
+        createEl("autocompleteWindow")("")("div")
+      );
+
+      const view = (root) => append(autocompleteWindow)(root);
+
+      const mount = (view) => (rootElementId) => {
+        view(document.getElementById(rootElementId));
+      };
+
+      mount(view)("root");
+
+      const settings = {
+        "autocomplete.width": 320,
+        "autocomplete.height": 140,
+        "autocomplete.onlyShowOnTab": false,
+        "autocomplete.theme": "dark",
+        "autocomplete.fontSize": "13",
+        "autocomplete.fontFamily": "Monaco",
+      };
+
+      function handleTheme(theme) {
+        settings["autocomplete.theme"] = theme;
+
+        if (theme === "light" || theme === "dark") {
+          updateTheme(builtInThemes[theme]);
+        } else {
+          fig.fread(`~/.fig/themes/${theme}.json`, (res) =>
+            updateTheme(JSON.parse(res))
+          );
+        }
+      }
+
+      function updateTheme({ theme }) {
+        const root = document.documentElement;
+        root.style.setProperty("--main-bg-color", theme.backgroundColor);
+        root.style.setProperty("--main-text-color", theme.textColor);
+        root.style.setProperty(
+          "--description-text-color",
+          theme.description.textColor
+        );
+        root.style.setProperty(
+          "--description-border-color",
+          theme.description.borderColor
+        );
+        root.style.setProperty(
+          "--selected-bg-color",
+          theme.selection.backgroundColor
+        );
+        root.style.setProperty(
+          "--selected-text-color",
+          theme.selection.textColor
+        );
+        root.style.setProperty(
+          "--matching-bg-color",
+          theme.matchBackgroundColor
+        );
+      }
+
+      function handleContinue() {
+          fig.private({
+            type: "settings",
+            data: { key: "autocomplete.theme", value: JSON.stringify(settings["autocomplete.theme"]) },
+          });
+
+        window.location.href = `${fig.remoteURL}/onboarding/signin.html`;
+      }
+        
+        // Load themes dynamically!
+        fig.onboarding("themes", (out) => {
+            console.log("Themes:", out)
+            let options = out.split("\n").map(theme => {
+                return `<option value="${theme}">${theme}</option>`
+            })
+
+            document.querySelector("#theme-select").innerHTML = options.join("\n")
+        })
+        
+    </script>
+  </body>
+</html>

@@ -14,7 +14,9 @@ class Integrations {
     static let Hyper = "co.zeit.hyper"
     static let VSCode = "com.microsoft.VSCode"
     static let VSCodeInsiders = "com.microsoft.VSCodeInsiders"
-  
+    static let Kitty = "net.kovidgoyal.kitty"
+    static let Alacritty = "io.alacritty"
+
     static let terminals: Set = ["com.googlecode.iterm2",
                                  "com.apple.Terminal",
                                  "io.alacritty",
@@ -30,6 +32,7 @@ class Integrations {
                                      "com.runningwithcrayons.Alfred",
                                      "com.raycast.macos"]
   
+  static let inputMethodDependentTerminals = [ Alacritty, Kitty ]
   static let electronIDEs: Set = [VSCode, VSCodeInsiders]
   static var electronTerminals: Set<String> {
     get {
@@ -37,7 +40,7 @@ class Integrations {
       
       return additions
         .union(Integrations.electronIDEs)
-        .union(["co.zeit.hyper"])
+        .union([Integrations.Hyper])
     }
   }
   
@@ -47,6 +50,7 @@ class Integrations {
         let additions = Set(Settings.shared.getValue(forKey: Settings.additionalTerminalsKey) as? [String] ?? [])
         return Integrations.nativeTerminals
         .union(Integrations.electronTerminals)
+        .union(Integrations.inputMethodDependentTerminals)
         .union(additions)
   .subtracting(Integrations.autocompleteBlocklist)
 
@@ -103,15 +107,25 @@ class Integrations {
       .subtracting(Integrations.blocked)
         }
     }
-  static let providers: [String: IntegrationProvider.Type] =
-                        [Integrations.iTerm : iTermIntegration.self,
-                          Integrations.Hyper : HyperIntegration.self,
-                          Integrations.VSCode : VSCodeIntegration.self,
-                          Integrations.VSCodeInsiders : VSCodeInsidersIntegration.self]
+  static let providers: [String: TerminalIntegrationProvider ] =
+                        [ Integrations.iTerm : iTermIntegration.default,
+                          Integrations.Hyper : HyperIntegration.default,
+                          Integrations.VSCode : VSCodeIntegration.default,
+                          Integrations.VSCodeInsiders : VSCodeIntegration.insiders,
+                          Integrations.Alacritty : AlacrittyIntegration.default,
+                          Integrations.Kitty : KittyIntegration.default
+                        ]
 }
 
 protocol IntegrationProvider {
-  static func install(withRestart: Bool, inBackground: Bool, completion: (() -> Void)?)
-  static var isInstalled: Bool { get }
-  static func promptToInstall(completion: (()->Void)?)
+    // access the stored value (no calculation)
+    var status: InstallationStatus { get }
+    
+    // idempotent (but potentially expensive) function to determine whether the integration is installed
+    func verifyInstallation() -> InstallationStatus
+    
+    // update the user's environment to install the integration
+    func install() -> InstallationStatus
+    
+    var id: String { get }
 }

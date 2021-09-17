@@ -50,7 +50,8 @@ class KeypressProvider {
   var redirects: [ExternalWindowHash:  Set<Keystroke>] = [:]
   var buffers: [ExternalWindowHash: KeystrokeBuffer] = [:]
   fileprivate let handlers: [EventTapHandler] =
-    [ Autocomplete.handleTabKey
+    [ InputMethod.keypressTrigger
+    , Autocomplete.handleTabKey
     , Autocomplete.handleEscapeKey
     , Autocomplete.handleCommandIKey
     , KeypressProvider.processRegisteredHandlers
@@ -324,7 +325,7 @@ class KeypressProvider {
     }
     
     // prevent redirects when typing in VSCode editor
-    if Integrations.electronTerminals.contains(window.bundleId ?? "") && Accessibility.findXTermCursorInElectronWindow(window) == nil {
+    guard window.isFocusedTerminal else {
       return .forward
     }
     
@@ -377,7 +378,7 @@ class KeypressProvider {
   func handleKeystroke(event: NSEvent?, in window: ExternalWindow) {
     
     // handle keystrokes in VSCode editor
-    if Integrations.electronTerminals.contains(window.bundleId ?? "") && Accessibility.getTextRect() == nil {
+    guard window.isFocusedTerminal else {
         return
     }
     
@@ -399,13 +400,6 @@ class KeypressProvider {
       
       return
     }
-
-    if let event = event, event.type == NSEvent.EventType.keyDown {
-      Autocomplete.update(with: keyBuffer.handleKeystroke(event: event), for: window.hash)
-    }
-    
-    Autocomplete.position()
- 
   }
 }
 

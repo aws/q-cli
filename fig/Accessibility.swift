@@ -260,6 +260,12 @@ class Accessibility {
       return nil
     }
     
+    // ensure that pid associated cursor matches pid associated with window
+    guard let pid = try? currentCursor.pid(),
+          pid == window.app.processIdentifier else {
+        return nil
+    }
+    
     // create cache if it doesn't exist
     if cursorCache[window.hash] == nil {
       cursorCache[window.hash] = []
@@ -387,19 +393,8 @@ class Accessibility {
     return true
     
   }
-  
-  static func getTextRect(extendRange: Bool = true) -> CGRect? {
     
-    // prevent cursor position for being returned when apps like spotlight & alfred are active
-    
-    guard Accessibility.focusedApplicationIsSupportedTerminal() else {
-        return nil
-    }
-    
-    if let window = AXWindowServer.shared.whitelistedWindow, Integrations.electronTerminals.contains(window.bundleId ?? "") {
-      return Accessibility.findXTermCursorInElectronWindow(window)
-    }
-    
+static func getCursorRect(extendRange: Bool = true) -> NSRect? {
     let systemWideElement = AXUIElementCreateSystemWide()
     var focusedElement : AnyObject?
     let error = AXUIElementCopyAttributeValue(systemWideElement, kAXFocusedUIElementAttribute as CFString, &focusedElement)
@@ -453,6 +448,21 @@ class Accessibility {
     
     // convert Quartz coordinate system to Cocoa!
     return NSRect(x: selectRect.origin.x, y: NSMaxY(NSScreen.screens[0].frame) - selectRect.origin.y, width:  selectRect.width, height: selectRect.height)
+}
+    
+  static func getTextRect() -> CGRect? {
+    
+    // prevent cursor position for being returned when apps like spotlight & alfred are active
+    
+    guard Accessibility.focusedApplicationIsSupportedTerminal() else {
+        return nil
+    }
+    
+    guard let window = AXWindowServer.shared.whitelistedWindow else {
+        return nil
+    }
+    
+    return window.cursor
   }
 
   fileprivate static func xtermLog(_ message: String){
