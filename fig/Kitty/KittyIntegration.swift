@@ -26,6 +26,10 @@ class KittyIntegration: InputMethodDependentTerminalIntegrationProvider {
 extension KittyIntegration: IntegrationProvider {
     func verifyInstallation() -> InstallationStatus {
         
+        guard self.applicationIsInstalled else {
+            return .applicationNotInstalled
+        }
+        
         if let failed = self.currentVersionIsSupported(minimumVersion: KittyIntegration.minimumSupportedVersion) {
             return failed
         }

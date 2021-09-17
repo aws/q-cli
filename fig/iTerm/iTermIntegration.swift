@@ -79,6 +79,10 @@ class iTermIntegration: TerminalIntegrationProvider {
 
   func verifyInstallation() -> InstallationStatus {
 
+    guard self.applicationIsInstalled else {
+        return .applicationNotInstalled
+    }
+    
     guard let symlinkDestination = try? FileManager.default.destinationOfSymbolicLink(atPath: iTermIntegration.autoLaunchScriptTarget) else {
         return .failed(error: "AutoLaunch script does not exist at \(iTermIntegration.autoLaunchScriptTarget).")
     }
@@ -166,6 +170,8 @@ class iTermIntegration: TerminalIntegrationProvider {
   var isConnectedToAPI = false {
     didSet {
       if isConnectedToAPI {
+        // signal that iTerm Integration has been set up successfully
+        self.runtimeValidationOccured()
         // Remove legacy integration!
         try? FileManager.default.removeItem(at: URL(fileURLWithPath: iTermIntegration.legacyIntegrationPath))
       }
