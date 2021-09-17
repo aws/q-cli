@@ -102,6 +102,10 @@ class VSCodeIntegration: TerminalIntegrationProvider  {
   }
     
   func verifyInstallation() -> InstallationStatus {
+    guard self.applicationIsInstalled else {
+        return .applicationNotInstalled
+    }
+    
     guard FileManager.default.fileExists(atPath: self.extensionPath) else {
         return .failed(error: "Extension is not installed.")
     }

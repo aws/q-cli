@@ -12,6 +12,10 @@ class AlacrittyIntegration: InputMethodDependentTerminalIntegrationProvider & In
     static let `default` = AlacrittyIntegration(bundleIdentifier: Integrations.Alacritty)
     
     func verifyInstallation() -> InstallationStatus {
+        guard self.applicationIsInstalled else {
+            return .applicationNotInstalled
+        }
+        
         let inputMethodStatus = InputMethod.default.verifyInstallation()
         guard inputMethodStatus == .installed else {
             return .pending(event: .inputMethodActivation)

@@ -64,7 +64,7 @@ class InputMethod {
             self.enable()
             self.select()
             
-            self.status = self._verifyInstallation()
+            self.verifyAndUpdateInstallationStatus()
             print("InputMethod: ping!!!!", self.status)
         }
         
@@ -103,7 +103,7 @@ class InputMethod {
                            name: NSNotification.Name(rawValue: NSNotification.Name.RawValue(kTISNotifySelectedKeyboardInputSourceChanged as NSString)),
                            object: nil)
         
-        self.status = verifyInstallation()
+        verifyAndUpdateInstallationStatus()
 
     }
     
@@ -217,7 +217,7 @@ extension InputMethod: IntegrationProvider {
     }
     
     
-    fileprivate func _verifyInstallation() -> InstallationStatus {
+    func verifyInstallation() -> InstallationStatus {
         
         let targetURL = InputMethod.inputMethodDirectory.appendingPathComponent(name)
 
@@ -293,10 +293,13 @@ extension InputMethod: IntegrationProvider {
         return .pending(event: .inputMethodActivation)
     }
     
-    func verifyInstallation() -> InstallationStatus {
-        self.status = self._verifyInstallation()
-        return self.status
+    func verifyAndUpdateInstallationStatus() {
+        let status = self.verifyInstallation()
+        if self.status != status {
+            self.status = status
+        }
     }
+    
     // Note: apps that rely on the input method to locate the cursor position must be restarted before the input method will work
     func install() -> InstallationStatus {
         self.status = self._install()
