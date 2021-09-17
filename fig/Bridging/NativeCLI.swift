@@ -74,6 +74,7 @@ class NativeCLI {
         case inputMethod = "util:input-method"
         case resetCursorCache = "util:reset-cursor-cache"
         case theme = "theme"
+        case integrations = "integrations"
 
         var isUtility: Bool {
             get {
@@ -84,7 +85,7 @@ class NativeCLI {
       
         var handlesDisconnect: Bool {
             get {
-              let handlesDisconnection: Set<Command> = [.pty, .hyper, .iterm, .vscode, .quit ]
+                let handlesDisconnection: Set<Command> = [.pty, .hyper, .iterm, .vscode, .integrations, .quit ]
                 return handlesDisconnection.contains(self)
             }
         }
@@ -126,6 +127,7 @@ class NativeCLI {
                                                            .inputMethod,
                                                            .theme,
                                                            .resetCursorCache,
+                                                           .integrations,
                                                            .docs]
                return implementatedNatively.contains(self)
             }
@@ -208,6 +210,8 @@ class NativeCLI {
               NativeCLI.toggleInputMethod(scope)
             case .resetCursorCache:
                 Accessibility.resetCursorCache()
+            case .integrations:
+                NativeCLI.integrationsCommand(scope)
             default:
                 break;
             }
@@ -488,6 +492,33 @@ extension NativeCLI {
 
         NativeCLI.printInTerminal("→ Opening docs in browser...", using: connection)
     }
+    
+    static func integrationsCommand(_ scope: Scope) {
+        let (message, connection) = scope
+        if let id = message.arguments.first {
+            if let provider = Integrations.providers.values.first(where: { $0.id == id }) {
+                NativeCLI.printInTerminal("→ Prompting \(provider.applicationName) Integration...", using: connection)
+                connection.send(message: "disconnect")
+                
+                provider.promptToInstall()
+
+    
+            } else {
+                NativeCLI.printInTerminal("→ No integration for '\(id)'", using: connection)
+                connection.send(message: "disconnect")
+            }
+            
+        } else {
+            let statuses = Integrations.providers.values.map { provider in
+                return provider.applicationName + ": " + provider.status.description
+            }.sorted()
+            
+            NativeCLI.printInTerminal(statuses.joined(separator: "\n"), using: connection)
+            connection.send(message: "disconnect")
+
+        }
+
+    }
   
     static func VSCodeCommand(_ scope: Scope) {
         let (_, connection) = scope
@@ -647,7 +678,7 @@ extension NativeCLI {
                 InputMethod.requestVersion()
                 NativeCLI.printInTerminal("\n› Requesting version! Check the logs!\n", using: connection)
             case "--verify-install":
-                NativeCLI.printInTerminal("\n Input method is\(InputMethod.default.isInstalled ? "" : " not") installed!", using: connection)
+                NativeCLI.printInTerminal(InputMethod.default.status.description, using: connection)
             default:
                 return
 

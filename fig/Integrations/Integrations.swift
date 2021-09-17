@@ -126,4 +126,6 @@ protocol IntegrationProvider {
     
     // update the user's environment to install the integration
     func install() -> InstallationStatus
+    
+    var id: String { get }
 }

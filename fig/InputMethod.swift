@@ -212,6 +212,10 @@ class InputMethod {
 }
 
 extension InputMethod: IntegrationProvider {
+    var id: String {
+        return "input-method"
+    }
+    
     
     fileprivate func _verifyInstallation() -> InstallationStatus {
         
