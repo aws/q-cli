@@ -94,7 +94,7 @@ class WebSocketServer {
 
                         DispatchQueue.main.async {
                           let quit = Alert.show(title: "Could not link with terminal",
-                                     message: "A process is already listening on port \(Defaults.port).\nRun `lsof -i tcp:\(Defaults.port)` to identify it.\n\nPlease email hello@fig.io for help debugging.",
+                                     message: "Error listening on port \(port): \(error).",
                                      okText: "Quit",
                                      hasSecondaryOption: true, secondaryOptionTitle: "Restart")
                           
