@@ -24,6 +24,7 @@ protocol TerminalIntegrationUI {
     func restart()
     func promptToInstall()
     func openSupportPage()
+    func runtimeValidationOccured()
 }
 // https://stackoverflow.com/a/51333906
 // Create typealias so we can inherit from superclass while also requiring certain methods to be implemented
@@ -71,6 +72,10 @@ class GenericTerminalIntegrationProvider {
                                             userInfo: [ Integrations.integrationKey: self ])
             NotificationCenter.default.post(notification)
         }
+    }
+    
+    var id: String {
+        return self.applicationName.lowercased().replacingOccurrences(of: " ", with: "-")
     }
     
     init(bundleIdentifier: String) {
@@ -219,7 +224,7 @@ class GenericTerminalIntegrationProvider {
     
     @objc func restart() {
         let targetTerminal = Restarter(with: self.bundleIdentifier)
-        targetTerminal.restart(launchingIfInactive: false) {
+        targetTerminal.restart(launchingIfInactive: true) {
             
             if self.status == .pending(event: .applicationRestart) {
                 self.verifyAndUpdateInstallationStatus()
@@ -285,6 +290,12 @@ class GenericTerminalIntegrationProvider {
         }
         
         return nil
+    }
+    
+    func runtimeValidationOccured() {
+        if self.status == .pending(event: .applicationRestart) {
+            self.verifyAndUpdateInstallationStatus()
+        }
     }
 }
 

@@ -224,20 +224,10 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 //          }
         }
       
-        if !VSCodeIntegration.default.isInstalled {
-            VSCodeIntegration.default.install(withRestart: false, inBackground: true)
-        }
-
-        if !VSCodeIntegration.insiders.isInstalled {
-            VSCodeIntegration.insiders.install(withRestart: false, inBackground: true)
-        }
-      
-        if !HyperIntegration.default.isInstalled {
-            HyperIntegration.default.install(withRestart: false, inBackground: true)
-        }
-      
-        if !iTermIntegration.default.isInstalled {
-            iTermIntegration.default.install(withRestart: false, inBackground: true)
+        Integrations.providers.values.forEach { provider in
+            if !provider.isInstalled {
+                provider.install(withRestart: false, inBackground: true)
+            }
         }
         
     }

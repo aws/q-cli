@@ -44,6 +44,24 @@ enum InstallationStatus: Equatable {
     func staticallyVerifiable() -> Bool {
         return ![InstallationStatus.pending(event: .applicationRestart)].contains(self)
     }
+    
+    var description: String {
+        switch self {
+        case .applicationNotInstalled:
+            return "application is not present."
+        case .installed:
+            return "installed!"
+        case .unattempted:
+            return "unattempted"
+        case .failed(let error, let supportURL):
+            return error + ((supportURL != nil) ? "\(supportURL!)" : "")
+        case .pending(event: .applicationRestart):
+            return "pending application restart"
+        case .pending(event: .inputMethodActivation):
+            return "pending input method activation"
+
+        }
+    }
 }
 
 extension InstallationStatus: Codable {
