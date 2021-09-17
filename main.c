@@ -163,7 +163,7 @@ void publish_buffer(FigTerm* ft) {
   );
 
   fig_socket_send(tmpbuf);
-  log_debug("done sending %s", tmpbuf);
+  log_info("done sending %s", tmpbuf);
   free(tmpbuf);
 }
 
@@ -209,7 +209,7 @@ void figterm_loop(int ptyp_fd, pid_t shell_pid, char* initial_command) {
       // Copy stdin to pty parent.
       if ((nread = read(STDIN_FILENO, buf, BUFFSIZE)) < 0)
         err_sys("read error from stdin");
-      log_debug("Read %d chars on stdin", nread);
+      log_info("Read %d chars on stdin", nread);
       if (write(ptyp_fd, buf, nread) != nread)
         err_sys("write error to parent pty");
       if (nread == 0)
@@ -217,7 +217,7 @@ void figterm_loop(int ptyp_fd, pid_t shell_pid, char* initial_command) {
     }
     if (n > 0 && FD_ISSET(ptyp_fd, &rfd)) {
       nread = read(ptyp_fd, buf, BUFFSIZE - 1);
-      log_debug("read %d chars on ptyp_fd (%d)", nread, errno);
+      log_info("read %d chars on ptyp_fd (%d)", nread, errno);
       if (nread < 0 && errno == EINTR)
         continue;
       else if (nread <= 0)

@@ -104,7 +104,7 @@ static int osc_cb(int command, VTermStringFragment frag, void *user) {
     } 
 
     if (frag.final) {
-      log_debug("OSC CB: %s", ft->osc);
+      log_info("OSC CB: %s", ft->osc);
       ft->parsing_osc = false;
 
       handle_osc(ft);
@@ -246,7 +246,7 @@ void figterm_free(FigTerm *ft) {
 
 bool figterm_can_send_buffer(FigTerm* ft) {
   bool shell_enabled = strcmp(ft->shell_state.shell, "bash") == 0 || strcmp(ft->shell_state.shell, "fish") == 0;
-  bool insertion_locked = access(ft->insertion_lock_path, F_OK) != 0;
+  bool insertion_locked = access(ft->insertion_lock_path, F_OK) == 0;
   return shell_enabled && !insertion_locked && !ft->shell_state.preexec;
 }
 
@@ -325,7 +325,7 @@ void figterm_log(FigTerm *ft, char mask) {
 
 void figterm_write(FigTerm* ft, char* buf, int n) {
   if (!ft->disable_figterm && !ft->shell_state.preexec) {
-    log_debug("Writing %d chars %.*s", n, n, buf);
+    log_info("Writing %d chars to child shell: %.*s", n, n, buf);
   }
   vterm_input_write(ft->vt, buf, n);
 }

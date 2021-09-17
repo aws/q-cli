@@ -40,7 +40,13 @@ fig_callback: fig_callback-x86 fig_callback-arm
 
 install: all
 	mkdir -p $(HOME)/.fig/bin; \
-	cd $(HOME)/.fig/bin && rm -rf $(PROGS) *figterm* && cd $(ROOT) && cp $(PROGS) $(HOME)/.fig/bin; \
+	cd $(HOME)/.fig/bin && \
+		rm -rf $(PROGS) *figterm* && \
+		cd $(ROOT) && \
+		cp $(PROGS) $(HOME)/.fig/bin && \
+		cp $(HOME)/.fig/bin/figterm $(HOME)/.fig/bin/zsh\ \(figterm\) && \
+		cp $(HOME)/.fig/bin/figterm $(HOME)/.fig/bin/fish\ \(figterm\) && \
+		cp $(HOME)/.fig/bin/figterm $(HOME)/.fig/bin/bash\ \(figterm\); \
 	# Add fake fig binary on linux or if fig not installed that just logs
 	# commands to fig.
 	command -v ~/.fig/bin/fig > /dev/null 2>&1 || ( \
