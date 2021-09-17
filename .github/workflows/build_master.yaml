@@ -150,7 +150,7 @@ jobs:
 
       - name: Notarize DMG
         run: |
-          npx notarize-cli --file "fig $VERSION.dmg" --bundle-id com.mschrage.fig
+          npx notarize-cli@0.1.1 --file "fig $VERSION.dmg" --bundle-id com.mschrage.fig
         env:
           NOTARIZE_USERNAME: ${{ secrets.NOTARIZE_USERNAME }}
           NOTARIZE_PASSWORD: ${{ secrets.NOTARIZE_PASSWORD }}

@@ -40,12 +40,17 @@ class Settings {
   static let debugModeKey = "developer.debugMode"
   static let onlyShowOnTabKey = "autocomplete.onlyShowOnTab"
   static let allowAlternateNavigationKeys = "autocomplete.allowAlternateNavigationKeys"
+  static let disablePopoutDescriptions = "autocomplete.disablePopoutDescriptions"
   static let logging = "developer.logging"
   static let loggingEnabledInternally = "developer.logging.internal"
   static let colorfulLogging = "developer.logging.color"
   static let beta = "app.beta"
   static let shellIntegrationIsManagedByUser = "integrations.shell.managedByUser"
   static let theme = "autocomplete.theme"
+  static let disableWebviewTransparency = "developer.disableWebviewTransparency"
+  static let useControlRForHistoryBeta = "beta.history.ctrl-r"
+  static let useControlRForHistory = "history.ctrl-r"
+  static let shouldInterceptCommandI = "autocomplete.alwaysInterceptCommandI"
 
   static let filePath = NSHomeDirectory() + "/.fig/settings.json"
   static let shared = Settings()

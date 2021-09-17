@@ -37,7 +37,7 @@ class WindowPositioning {
             throw APIError.generic(message: "Could not find whitelisted window")
         }
         
-        guard let cursorRect = Accessibility.getTextRect() else {
+        guard let cursorRect = window.cursor else {
             throw APIError.generic(message: "Could not find cursor rect")
         }
         
@@ -60,6 +60,7 @@ class WindowPositioning {
                                      maxHeight: maxHeight)
     }
     
+    // Tip: when debugging this, make SURE that DEBUG MODE is turned off.
     static func frameRelativeToCursor(currentScreenFrame: CGRect,
                                       currentWindowFrame: CGRect,
                                       cursorRect: CGRect,
@@ -67,8 +68,7 @@ class WindowPositioning {
                                       height: CGFloat,
                                       anchorOffset: CGPoint,
                                       maxHeight: CGFloat) -> (frame: CGRect, isAbove: Bool, isClipped: Bool) {
-        
-        let verticalPaddingFromCursor: CGFloat = 5
+
         var isClipped = false
         
         let popupHasSufficientVerticalSpaceToAppearInTopHalfOfCurrentWindow =
@@ -81,13 +81,14 @@ class WindowPositioning {
         let isAbove = popupHasSufficientVerticalSpaceToAppearInTopHalfOfCurrentWindow &&
                       popupHasSufficientVerticalSpaceToAppearOnCurrentScreen
 
+        let verticalPaddingFromCursor: CGFloat = 5 + anchorOffset.y
               
         let translatedX = cursorRect.origin.x + anchorOffset.x
     
         let translatedOrigin = isAbove ? NSPoint(x: translatedX,
-                                                 y: cursorRect.origin.y + height + verticalPaddingFromCursor) :
+                                                 y: cursorRect.origin.y + verticalPaddingFromCursor) :
                                          NSPoint(x: translatedX,
-                                                 y: cursorRect.origin.y - cursorRect.height - verticalPaddingFromCursor)
+                                                 y: cursorRect.origin.y - cursorRect.height - verticalPaddingFromCursor - height)
 
         let popup = NSRect(x: translatedOrigin.x,
                            y: translatedOrigin.y,
@@ -99,8 +100,7 @@ class WindowPositioning {
         if (overhang < 0) {
             isClipped = true
         }
-        
-    
+
         let frame = NSRect(x: popup.origin.x + (isClipped ? overhang : 0),
                            y: popup.origin.y,
                            width: popup.width,
