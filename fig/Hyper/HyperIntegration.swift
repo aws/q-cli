@@ -87,6 +87,10 @@ class HyperIntegration: TerminalIntegrationProvider {
     
 
   func verifyInstallation() -> InstallationStatus {
+    guard self.applicationIsInstalled else {
+        return .applicationNotInstalled
+    }
+    
     guard let settings = try? String(contentsOfFile: HyperIntegration.settingsPath) else {
         return .failed(error: "Could not read Hyper settings file (\(HyperIntegration.settingsPath))")
     }
