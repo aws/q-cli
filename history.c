@@ -113,11 +113,13 @@ void write_history_entry(HistoryEntry* entry) {
   char* tmp = malloc(sizeof(char) * (
       strlen("\n- command: %s\n exit_code: %s\n  shell: %s\n  session_id: %s\n  cwd: %s\n  time: %s\n  docker: %s\n  ssh: %s\n hostname: %s") +
       strlen(command_escaped) +
+      // Max value of an exit code is 255 -- so max string length is 3 + 1 for good measure.
       4 +
       strlen(entry->shell) +
       strlen(entry->session_id) +
       strlen(entry->cwd) +
       strlen(time_str) +
+      // Max length of a boolean string is 5 for docker + ssh.
       5 +
       5 +
       strlen(entry->hostname)

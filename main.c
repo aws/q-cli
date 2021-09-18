@@ -152,7 +152,7 @@ void publish_buffer(FigTerm* ft) {
   char *tmpbuf = malloc(buflen + sizeof(char) * 50);
   sprintf(
     tmpbuf,
-    "fig bg:%s-keybuffer %s %s %s %s 0 %d \"%s\"",
+    "fig bg:%s-keybuffer %s %s %s %s 0 %d \"%s\"\n",
     shell_state.shell,
     fig_info->term_session_id,
     fig_info->fig_integration_version,

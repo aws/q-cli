@@ -363,6 +363,13 @@ void figterm_preexec_hook(FigTerm* ft) {
   if (buffer == NULL)
     return;
 
+  // Strip trailing \n before adding to history.
+  int bufLen = strlen(buffer);
+  if (index == bufLen && buffer[bufLen - 1] == '\n') {
+    buffer[bufLen - 1] = '\0';
+    index -= 1;
+  }
+
   history_entry_free(ft->last_command);
   ft->last_command = history_entry_new(
     buffer,
