@@ -288,7 +288,7 @@ char* figterm_get_buffer(FigTerm* ft, int* index) {
   if (index_ptr != NULL)
     *index += row_len;
 
-  return rtrim(buf, *index - 1);
+  return rtrim(buf, *index);
 }
 
 void figterm_resize(FigTerm* ft) {
