@@ -21,11 +21,16 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
         
     var floatingWindowLevel: NSWindow.Level {
         // .statusBar level is required in order to appear above iTerm in Quake mode
-        if let level = tetheredWindow?.windowLevel, level == kCGStatusWindowLevel {
-            return .statusBar
-        } else {
+        guard let rawWindowLevel = tetheredWindow?.windowLevel else {
             return .floating
         }
+        
+        let windowLevel = NSWindow.Level(rawValue: Int(rawWindowLevel))
+        
+        if windowLevel == NSWindow.Level(rawValue: 0) {
+            return .floating
+        }
+        return windowLevel
     }
     //hides companion window when target is moving
     var shouldTrackWindow = true;
