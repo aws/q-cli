@@ -26,7 +26,7 @@ class InputMethod {
               let height = Double(tokens[1])*/ else {
             return nil
         }
-        print("ime:",x, y)
+        InputMethod.log("cursor=\(x),\(y)")
         return NSRect(x: x, y: y, width: 10, height: 10).offsetBy(dx: 0, dy: 10)
       }
 
@@ -42,7 +42,7 @@ class InputMethod {
     var status: InstallationStatus {
         didSet {
             if oldValue != status {
-                print("InputMethod: statusDidChange \(status)")
+                InputMethod.log("statusDidChange \(status)")
                 NotificationCenter.default.post(name: InputMethod.statusDidChange, object: nil)
             }
             
@@ -53,19 +53,29 @@ class InputMethod {
         }
     }
     
+    fileprivate let maxAttempts = 3
+    fileprivate var remainingAttempts = 0
     fileprivate func startPollingForActivation() {
-        
+        guard Settings.shared.getValue(forKey: Settings.inputMethodShouldPollForActivation) as? Bool ?? true else {
+            return
+        }
         guard self.timer == nil else {
             return
         }
-        
-        self.timer = Timer.scheduledTimer(withTimeInterval: 10, repeats: true) { _ in
-
+        self.remainingAttempts = maxAttempts
+        self.timer = Timer.scheduledTimer(withTimeInterval: 10, repeats: true) { timer in
+            self.remainingAttempts -= 1
             self.enable()
             self.select()
             
             self.verifyAndUpdateInstallationStatus()
-            print("InputMethod: ping!!!!", self.status)
+            InputMethod.log("ping!!!! (remaining attempts = \(self.remainingAttempts) - \(self.status)")
+            
+            if self.remainingAttempts == 0 && self.status != .installed {
+                self.status = .failed(error: "Failed to self/enable input method after \(self.maxAttempts) attempts.")
+                timer.invalidate()
+                self.timer = nil
+            }
         }
         
     }
@@ -304,5 +314,11 @@ extension InputMethod: IntegrationProvider {
     func install() -> InstallationStatus {
         self.status = self._install()
         return self.status
+    }
+}
+
+extension InputMethod {
+    static func log(_ message: String) {
+        Logger.log(message: message, subsystem: .inputMethod)
     }
 }
