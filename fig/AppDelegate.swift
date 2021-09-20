@@ -56,8 +56,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
           statusBarItem.button?.wantsLayer = true
         }
         
-        configureStatusBarItem()
-
 //        NSApp.setActivationPolicy(NSApplication.ActivationPolicy.accessory)
         // prevent multiple sessions
         let bundleID = Bundle.main.bundleIdentifier!
@@ -90,6 +88,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
       
         let _ = DockerEventStream.shared
         let _ = iTermIntegration.default
+        let _ = InputMethod.default
         
         TelemetryProvider.register()
         Accessibility.listen()
