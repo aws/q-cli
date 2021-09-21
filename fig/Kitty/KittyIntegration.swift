@@ -94,6 +94,10 @@ extension KittyIntegration: IntegrationProvider {
             }
         }
         
+        if !InputMethod.default.isInstalled {
+            let _ = InputMethod.default.install()
+        }
+        
         return .pending(event: .applicationRestart)
     }
 }
