@@ -128,8 +128,9 @@
 		756759D424498CA0006AA988 /* WebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756759D324498CA0006AA988 /* WebViewController.swift */; };
 		7568203126003BDF0006FE78 /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7568203026003BDF0006FE78 /* Settings.swift */; };
 		756C4D832542A6D30035B467 /* Starscream in Frameworks */ = {isa = PBXBuildFile; productRef = 756C4D822542A6D30035B467 /* Starscream */; };
-		7571775926F3E4CA0071AE10 /* settings.html in Resources */ = {isa = PBXBuildFile; fileRef = 7571775826F3E4CA0071AE10 /* settings.html */; };
 		7571775726F3B8A80071AE10 /* FigInputMethod.app in Embed Input Method */ = {isa = PBXBuildFile; fileRef = 754316F426E08F5C00188887 /* FigInputMethod.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		7571775926F3E4CA0071AE10 /* settings.html in Resources */ = {isa = PBXBuildFile; fileRef = 7571775826F3E4CA0071AE10 /* settings.html */; };
+		7571778326F91BF50071AE10 /* AppleTerminalIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7571778226F91BF50071AE10 /* AppleTerminalIntegration.swift */; };
 		75738F1E26DDAB760086D972 /* InputMethod.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75738F1D26DDAB760086D972 /* InputMethod.swift */; };
 		7573F1582601927200C833FA /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7573F1572601927200C833FA /* Settings.swift */; };
 		7573F15B2602B4E000C833FA /* alert@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7573F1592602B4E000C833FA /* alert@2x.png */; };
@@ -223,7 +224,6 @@
 		75DA86A325EDB05100722F1D /* Integrations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DA86A225EDB05100722F1D /* Integrations.swift */; };
 		75DA86A525EEBD7500722F1D /* Alert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DA86A425EEBD7400722F1D /* Alert.swift */; };
 		75DA86A925EF145E00722F1D /* TmuxIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DA86A825EF145E00722F1D /* TmuxIntegration.swift */; };
-		75DF864926F31662003F32A5 /* FigInputMethod.app in Bundle InputMethod */ = {isa = PBXBuildFile; fileRef = 754316F426E08F5C00188887 /* FigInputMethod.app */; };
 		75DF864A26F31756003F32A5 /* cpu@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 751DC66226EBF3B500697DFB /* cpu@2x.png */; };
 		75E993F22515A6DD000BE6BE /* statusbar@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 75E993F12515A6DD000BE6BE /* statusbar@2x.png */; };
 		75E993F52517E226000BE6BE /* AXWindowServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75E993F42517E226000BE6BE /* AXWindowServer.swift */; };
@@ -293,17 +293,6 @@
 				758AEB6724CE8B8F00A15EAF /* figcli in Embed Command Line Tool */,
 			);
 			name = "Embed Command Line Tool";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		75DF864626F2C2C5003F32A5 /* Bundle InputMethod */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 12;
-			dstPath = "";
-			dstSubfolderSpec = 6;
-			files = (
-				75DF864926F31662003F32A5 /* FigInputMethod.app in Bundle InputMethod */,
-			);
-			name = "Bundle InputMethod";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -443,6 +432,7 @@
 		756759D324498CA0006AA988 /* WebViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewController.swift; sourceTree = "<group>"; };
 		7568203026003BDF0006FE78 /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
 		7571775826F3E4CA0071AE10 /* settings.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = settings.html; sourceTree = "<group>"; };
+		7571778226F91BF50071AE10 /* AppleTerminalIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleTerminalIntegration.swift; sourceTree = "<group>"; };
 		75738F1D26DDAB760086D972 /* InputMethod.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputMethod.swift; sourceTree = "<group>"; };
 		7573F1572601927200C833FA /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
 		7573F1592602B4E000C833FA /* alert@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "alert@2x.png"; sourceTree = "<group>"; };
@@ -856,6 +846,7 @@
 				750CF21726A1055F0094D76A /* Config.swift */,
 				7575D44B26D5C4DD00D0C8D7 /* API */,
 				75D1ECBC26F15F0E00BC8A04 /* Integrations */,
+				7571778126F91BD60071AE10 /* AppleTerminal */,
 				75A0A71726F1A786008FAD70 /* Kitty */,
 				75D1ECB226EFE53F00BC8A04 /* Alacritty */,
 				75290AB92671905D000F4255 /* iTerm */,
@@ -913,6 +904,12 @@
 				7575D44E26D5D35000D0C8D7 /* API.swift */,
 			);
 			path = API;
+		7571778126F91BD60071AE10 /* AppleTerminal */ = {
+			isa = PBXGroup;
+			children = (
+				7571778226F91BF50071AE10 /* AppleTerminalIntegration.swift */,
+			);
+			path = AppleTerminal;
 			sourceTree = "<group>";
 		};
 		757CA88B248B08D7002A64A8 /* local */ = {
@@ -1516,6 +1513,7 @@
 				752A398325CD024C00B1AC40 /* VSCodeIntegration.swift in Sources */,
 				75C05C6C24FDEA2B001F0A52 /* KeystrokeBuffer.swift in Sources */,
 				7510F8AC24A6910500E86F7C /* MacTerminalView.swift in Sources */,
+				7571778326F91BF50071AE10 /* AppleTerminalIntegration.swift in Sources */,
 				755D0DE2247EFAE10074AB5C /* Logging.swift in Sources */,
 				7510F8A124A6910500E86F7C /* BufferLine.swift in Sources */,
 				7510F8A824A6910500E86F7C /* MacDebugView.swift in Sources */,
