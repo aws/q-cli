@@ -32,7 +32,7 @@ class Integrations {
                                      "com.runningwithcrayons.Alfred",
                                      "com.raycast.macos"]
   
-  static let inputMethodDependentTerminals = [ Alacritty, Kitty ]
+  static let inputMethodDependentTerminals = [ Alacritty ]
   static let electronIDEs: Set = [VSCode, VSCodeInsiders]
   static var electronTerminals: Set<String> {
     get {
@@ -48,9 +48,7 @@ class Integrations {
     static var terminalsWhereAutocompleteShouldAppear: Set<String> {
       get {
         let additions = Set(Settings.shared.getValue(forKey: Settings.additionalTerminalsKey) as? [String] ?? [])
-        return Integrations.nativeTerminals
-        .union(Integrations.electronTerminals)
-        .union(Integrations.inputMethodDependentTerminals)
+        return Set(Integrations.providers.keys)
         .union(additions)
   .subtracting(Integrations.autocompleteBlocklist)
 
@@ -113,7 +111,7 @@ class Integrations {
                           Integrations.VSCode : VSCodeIntegration.default,
                           Integrations.VSCodeInsiders : VSCodeIntegration.insiders,
                           Integrations.Alacritty : AlacrittyIntegration.default,
-                          Integrations.Kitty : KittyIntegration.default,
+//                          Integrations.Kitty : KittyIntegration.default,
                           Integrations.Terminal : AppleTerminalIntegration.default
                         ]
 }
