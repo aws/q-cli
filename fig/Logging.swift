@@ -8,10 +8,6 @@
 
 import Foundation
 
-protocol Logging {
-    static func log(_ message: String)
-}
-
 class Logger {
     enum Priority {
         case info
@@ -46,7 +42,6 @@ class Logger {
         case updater = "updater"
         case config = "config"
         case positioning = "positioning"
-        case api = "api"
         case inputMethod = "input-method"
 
         func pathToLogFile() -> URL {
