@@ -512,7 +512,16 @@ class AXWindowServer : WindowService {
     @objc func didTerminateApplication(notification: Notification) {
         if let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication {
             Logger.log(message: "didTerminateApplication - \( app.bundleIdentifier ?? "<nonde>")", subsystem: .windowEvents)
-            self.deregister(app: app)
+            
+            // Determine if this is the only instance of the application before removing window observers
+            // This resolves VSCode window issues caused when running `code .` inside the integrated terminal
+            if !NSWorkspace.shared.runningApplications.contains(where: { runningApp in
+                return runningApp.bundleIdentifier == app.bundleIdentifier
+            }) {
+                Logger.log(message:"Deregistering app (\(app.bundleIdentifier ?? "???")) since no other instances are running",
+                           subsystem: .windowServer)
+                self.deregister(app: app)
+            }
         }
     }
     

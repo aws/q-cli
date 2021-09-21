@@ -9,71 +9,63 @@
 import Cocoa
 import Sentry
 
-class VSCodeIntegration: IntegrationProvider {
+class VSCodeIntegration: TerminalIntegrationProvider  {
+  static let `default` = VSCodeIntegration(bundleIdentifier: Integrations.VSCode,
+                                           configFolderName: ".vscode",
+                                           applicationSupportFolderName: "Code",
+                                           applicationName: "VSCode")
+  static let insiders = VSCodeIntegration(bundleIdentifier: Integrations.VSCodeInsiders,
+                                          configFolderName: ".vscode-insiders",
+                                          applicationSupportFolderName: "Code - Insiders",
+                                          applicationName: "VSCode Insiders")
+    
   static let supportURL: URL = URL(string: "https://fig.io/docs/support/vscode-integration")!
-  static var settingsPath: String {
-    let defaultPath = "\(NSHomeDirectory())/Library/Application Support/Code/User/settings.json"
+
+  static let inheritEnvKey = "terminal.integrated.inheritEnv"
+  static let accessibilitySupportKey = "editor.accessibilitySupport"
+    
+  static let extensionVersion = "0.0.4"
+
+  fileprivate let configFolderName: String
+  fileprivate let applicationSupportFolderName: String
+
+  init(bundleIdentifier: String, configFolderName: String, applicationSupportFolderName: String, applicationName: String) {
+      self.configFolderName = configFolderName
+      self.applicationSupportFolderName = applicationSupportFolderName
+    
+      super.init(bundleIdentifier: bundleIdentifier)
+
+      self.promptMessage = "Fig will add an extension to Visual Studio Code that tracks which integrated terminal is active.\n\nVSCode will need to restart for changes to take effect.\n"
+      self.promptButtonText = "Install Extension"
+      self.applicationName = applicationName
+  }
+    
+  var settingsPath: String {
+    let defaultPath = "\(NSHomeDirectory())/Library/Application Support/\(self.applicationSupportFolderName)/User/settings.json"
     return (try? FileManager.default.destinationOfSymbolicLink(atPath: defaultPath)) ?? defaultPath
   }
 
-  enum InstallationError: Error {
-      case couldNotParseSettingsJSON
-      case couldNotReadContentsOfSettingsFile
-  }
-  
-  static func settings() throws -> [String: Any]? {
-    guard FileManager.default.fileExists(atPath: settingsPath) else {
-      // file does not exist
-      print("VSCode: settings file does not exist")
-      SentrySDK.capture(message: "VSCode: settings file does not exist")
-
-      return nil
-    }
-    
-    guard let settings = try? String(contentsOfFile: settingsPath) else {
-      print("VSCode: settings file is empty")
-      SentrySDK.capture(message: "VSCode: settings file is empty or could not be read")
-
-      throw InstallationError.couldNotReadContentsOfSettingsFile
-    }
-    
-    guard settings.count > 0 else {
-      return nil
-    }
-    
-    guard let json = settings.jsonStringToDict() else {
-      throw InstallationError.couldNotParseSettingsJSON
-    }
-    
-    return json
-  }
-  
-  static let inheritEnvKey = "terminal.integrated.inheritEnv"
-  static let accessibilitySupportKey = "editor.accessibilitySupport"
-
   // If the extension path changes make sure to update the uninstall script!
-  static let extensionVersion = "0.0.4"
-  static let extensionPath = "\(NSHomeDirectory())/.vscode/extensions/withfig.fig-\(extensionVersion)/extension.js"
+  var extensionPath: String {
+      return "\(NSHomeDirectory())/\(self.configFolderName)/extensions/withfig.fig-\(VSCodeIntegration.extensionVersion)/extension.js"
+  }
 
-  static func install(withRestart:Bool = true, inBackground: Bool, completion: (() -> Void)? = nil) {
-    guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.microsoft.VSCode") else {
-        print("VSCode not installed")
-        return
+  func install() -> InstallationStatus {
+    guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: self.bundleIdentifier) else {
+        return .applicationNotInstalled
     }
     
-    print(url)
     var successfullyUpdatedSettings = false
     var updatedSettings: String!
     do {
-      if var json = try VSCodeIntegration.settings() {
+      if var json = try self.settings() {
         
-        if let accessibilitySupport = json[accessibilitySupportKey] as? String?, accessibilitySupport != "on" {
-          json[accessibilitySupportKey] = "off"
+        if let accessibilitySupport = json[VSCodeIntegration.accessibilitySupportKey] as? String?, accessibilitySupport != "on" {
+            json[VSCodeIntegration.accessibilitySupportKey] = "off"
         }
         
         guard let data = try? JSONSerialization.data(withJSONObject: json, options: .prettyPrinted) else {
-          print("Could not serialize VSCode settings")
-          return
+            return .failed(error: "Could not serialize VSCode settings")
         }
         updatedSettings = String(decoding: data, as: UTF8.self)
         
@@ -81,12 +73,12 @@ class VSCodeIntegration: IntegrationProvider {
         updatedSettings =
         """
         {
-          "\(accessibilitySupportKey)": "off"
+          "\(VSCodeIntegration.accessibilitySupportKey)": "off"
         }
         """
       }
       
-      try updatedSettings.write(toFile: settingsPath, atomically: true, encoding: .utf8)
+        try updatedSettings.write(toFile: self.settingsPath, atomically: true, encoding: .utf8)
       successfullyUpdatedSettings = true
     } catch {
       //NSApp.appDelegate.dialogOKCancel(question: "Fig could not install the VSCode Integration",
@@ -98,84 +90,76 @@ class VSCodeIntegration: IntegrationProvider {
     }
     
     let cli = url.appendingPathComponent("Contents/Resources/app/bin/code")
-    let vsix = Bundle.main.path(forResource: "fig-\(extensionVersion)", ofType: "vsix")!
-    print("\(cli.path.replacingOccurrences(of: " ", with: "\\ ")) --install-extension \(vsix)")
-    "\(cli.path.replacingOccurrences(of: " ", with: "\\ ")) --install-extension \(vsix)".runInBackground { (out) in
-      print(out)
-      guard successfullyUpdatedSettings else {
-        if (!inBackground) {
-          DispatchQueue.main.async {
-            let openSupportPage = Alert.show(title: "Could not install VSCode integration automatically",
-                                       message: "Fig could not parse VSCode's settings.json file.\nTo finish the installation, you will need to update a few preferences manually.",
-                                       okText: "Learn more",
-                                       icon: Alert.appIcon,
-                                       hasSecondaryOption: true)
-            if (openSupportPage) {
-              NSWorkspace.shared.open(VSCodeIntegration.supportURL)
-            }
-          }
-        }
-        
-        return
+    let vsix = Bundle.main.path(forResource: "fig-\(VSCodeIntegration.extensionVersion)", ofType: "vsix")!
+    "\(cli.path.replacingOccurrences(of: " ", with: "\\ ")) --install-extension \(vsix)".runInBackground()
+    
+    guard successfullyUpdatedSettings else {
+        return .failed(error: "Fig could not parse VSCode's settings.json file.\nTo finish the installation, you will need to update a few preferences manually.", supportURL: VSCodeIntegration.supportURL)
+
+    }
+    
+    return .pending(event: .applicationRestart)
+  }
+    
+  func verifyInstallation() -> InstallationStatus {
+    guard self.applicationIsInstalled else {
+        return .applicationNotInstalled
+    }
+    
+    guard FileManager.default.fileExists(atPath: self.extensionPath) else {
+        return .failed(error: "Extension is not installed.")
+    }
+    
+    return .installed
+  }
+    
+}
+
+
+extension VSCodeIntegration {
+    
+    enum InstallationError: Error {
+        case couldNotParseSettingsJSON
+        case couldNotReadContentsOfSettingsFile
+    }
+    
+    func settings() throws -> [String: Any]? {
+      guard FileManager.default.fileExists(atPath: self.settingsPath) else {
+        // file does not exist
+        print("VSCode: settings file does not exist")
+        SentrySDK.capture(message: "VSCode: settings file does not exist")
+
+        return nil
       }
       
-      if (withRestart) {
-        let VSCode = Restarter(with: "com.microsoft.VSCode")
-        VSCode.restart(launchingIfInactive: false, completion: completion)
-      } else {
-        completion?()
-      }
-    }
-  }
-  
-  static var isInstalled: Bool {
-//    guard let settings = try? VSCodeIntegration.settings(),
-//      settings[accessibilitySupportKey] != nil else {
-//        return false
-//    }
-    
-    return FileManager.default.fileExists(atPath: extensionPath)
-  }
-    
-  static func promptToInstall(completion: (()->Void)? = nil) {
-    guard Defaults.loggedIn else {
-      completion?()
-      return
-    }
+      guard let settings = try? String(contentsOfFile: self.settingsPath) else {
+        print("VSCode: settings file is empty")
+        SentrySDK.capture(message: "VSCode: settings file is empty or could not be read")
 
-    guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.microsoft.VSCode") else {
-      // application not installed
-      completion?()
-      return
-    }
-    
-    let icon = NSImage(imageLiteralResourceName: "NSSecurity")
-
-    let app = NSWorkspace.shared.icon(forFile: url.path)
-    
-    let alert = NSAlert()
-    alert.icon = icon.overlayImage(app)
-    alert.messageText = "Install VSCode Integration?"
-    alert.informativeText = "Fig will add an extension to Visual Studio Code that tracks which integrated terminal is active.\n\nVSCode will need to restart for changes to take effect.\n"
-    alert.alertStyle = .warning
-    let button = alert.addButton(withTitle: "Install Extension")
-    button.highlight(true)
-    alert.addButton(withTitle: "Not now")
-  
-    
-    let install = alert.runModal() == .alertFirstButtonReturn
-    
-    if (install) {
-      VSCodeIntegration.install(inBackground: false) {
-        print("Installation completed!")
-        if let app = AXWindowServer.shared.topApplication, Integrations.VSCode == app.bundleIdentifier {
-          Accessibility.triggerScreenReaderModeInChromiumApplication(app)
-        }
-        completion?()
+        throw InstallationError.couldNotReadContentsOfSettingsFile
       }
-    } else {
-      completion?()
+      
+      guard settings.count > 0 else {
+        return nil
+      }
+      
+      guard let json = settings.jsonStringToDict() else {
+        throw InstallationError.couldNotParseSettingsJSON
+      }
+      
+      return json
     }
-  }
-  
+    
+}
+
+extension VSCodeIntegration {
+    func getCursorRect(in window: ExternalWindow) -> NSRect? {
+        return Accessibility.findXTermCursorInElectronWindow(window)
+    }
+    
+    func terminalIsFocused(in window: ExternalWindow) -> Bool {
+        return Accessibility.findXTermCursorInElectronWindow(window) != nil
+    }
+    
+    
 }

@@ -35,6 +35,14 @@ struct Keystroke: Hashable {
       modifierFlags.insert(.control)
     }
     
+    if (event.flags.contains(.maskShift)) {
+        modifierFlags.insert(.shift)
+    }
+    
+    if (event.flags.contains(.maskAlternate)) {
+        modifierFlags.insert(.option)
+    }
+    
     return Keystroke(modifierFlags: modifierFlags, keyCode: keyCode)
   }
   

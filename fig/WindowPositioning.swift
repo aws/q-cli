@@ -21,7 +21,7 @@ class WindowPositioning {
             throw APIError.generic(message: "Could not find whitelisted window")
         }
         
-        guard let cursorRect = Accessibility.getTextRect() else {
+        guard let cursorRect = window.cursor else {
             throw APIError.generic(message: "Could not find cursor rect")
         }
         
@@ -53,7 +53,6 @@ class WindowPositioning {
                                       anchorOffset: CGPoint,
                                       maxHeight: CGFloat) -> (frame: CGRect, isAbove: Bool, isClipped: Bool) {
 
-        let verticalPaddingFromCursor: CGFloat = 5
         var isClipped = false
         
         let popupHasSufficientVerticalSpaceToAppearInTopHalfOfCurrentWindow =
@@ -66,6 +65,7 @@ class WindowPositioning {
         let isAbove = popupHasSufficientVerticalSpaceToAppearInTopHalfOfCurrentWindow &&
                       popupHasSufficientVerticalSpaceToAppearOnCurrentScreen
 
+        let verticalPaddingFromCursor: CGFloat = 5 + anchorOffset.y
               
         let translatedX = cursorRect.origin.x + anchorOffset.x
     
