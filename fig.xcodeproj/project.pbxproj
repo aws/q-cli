@@ -210,6 +210,8 @@
 		75B199342504190900F38EA8 /* Keycode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B199332504190900F38EA8 /* Keycode.swift */; };
 		75B1993625042B2C00F38EA8 /* autocomplete.html in Resources */ = {isa = PBXBuildFile; fileRef = 75B1993525042B2C00F38EA8 /* autocomplete.html */; };
 		75B1993825100E4E00F38EA8 /* KeypressService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B1993725100E4D00F38EA8 /* KeypressService.swift */; };
+		75B4283626FABAAC003C9DE5 /* FileSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B4283526FABAAC003C9DE5 /* FileSystem.swift */; };
+		75B4283826FABE61003C9DE5 /* Notifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B4283726FABE61003C9DE5 /* Notifications.swift */; };
 		75B7931A24BB897F0073AAC6 /* PseudoTerminalService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B7931924BB897F0073AAC6 /* PseudoTerminalService.swift */; };
 		75C05C6C24FDEA2B001F0A52 /* KeystrokeBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75C05C6B24FDEA2B001F0A52 /* KeystrokeBuffer.swift */; };
 		75C0711D244AC3B2002DF69F /* index.html in Resources */ = {isa = PBXBuildFile; fileRef = 75C0711C244AC3B2002DF69F /* index.html */; };
@@ -503,6 +505,8 @@
 		75B199332504190900F38EA8 /* Keycode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Keycode.swift; sourceTree = "<group>"; };
 		75B1993525042B2C00F38EA8 /* autocomplete.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = autocomplete.html; sourceTree = "<group>"; };
 		75B1993725100E4D00F38EA8 /* KeypressService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeypressService.swift; sourceTree = "<group>"; };
+		75B4283526FABAAC003C9DE5 /* FileSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileSystem.swift; sourceTree = "<group>"; };
+		75B4283726FABE61003C9DE5 /* Notifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Notifications.swift; sourceTree = "<group>"; };
 		75B7931924BB897F0073AAC6 /* PseudoTerminalService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PseudoTerminalService.swift; sourceTree = "<group>"; };
 		75C05C6B24FDEA2B001F0A52 /* KeystrokeBuffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeystrokeBuffer.swift; sourceTree = "<group>"; };
 		75C0711C244AC3B2002DF69F /* index.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = index.html; sourceTree = "<group>"; };
@@ -862,6 +866,8 @@
 			isa = PBXGroup;
 			children = (
 				7575D44E26D5D35000D0C8D7 /* API.swift */,
+				75B4283526FABAAC003C9DE5 /* FileSystem.swift */,
+				75B4283726FABE61003C9DE5 /* Notifications.swift */,
 			);
 			path = API;
 			sourceTree = "<group>";
@@ -1416,6 +1422,7 @@
 				75CFDBDF24EDB2E900F00CAE /* Onboarding.swift in Sources */,
 				752A398325CD024C00B1AC40 /* VSCodeIntegration.swift in Sources */,
 				75C05C6C24FDEA2B001F0A52 /* KeystrokeBuffer.swift in Sources */,
+				75B4283826FABE61003C9DE5 /* Notifications.swift in Sources */,
 				7510F8AC24A6910500E86F7C /* MacTerminalView.swift in Sources */,
 				755D0DE2247EFAE10074AB5C /* Logging.swift in Sources */,
 				7510F8A124A6910500E86F7C /* BufferLine.swift in Sources */,
@@ -1502,6 +1509,7 @@
 				7587B4D824F97F9E00E355E4 /* ShellHooksManager.swift in Sources */,
 				7510F89C24A6910500E86F7C /* Buffer.swift in Sources */,
 				7510F8BD24A9861E00E86F7C /* PrivateWindow.m in Sources */,
+				75B4283626FABAAC003C9DE5 /* FileSystem.swift in Sources */,
 				756759D424498CA0006AA988 /* WebViewController.swift in Sources */,
 				7510F8B024A6910500E86F7C /* LocalProcess.swift in Sources */,
 			);

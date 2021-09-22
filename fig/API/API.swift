@@ -42,8 +42,6 @@ class API {
         var isAsync = false
         do {
             switch request.submessage {
-                case .getBufferRequest(let getBufferRequest):
-                    print("API: getBufferRequest")
                 case .positionWindowRequest(let positionWindowRequest):
                     print("API: positionWindowRequest")
                     response.positionWindowResponse = try WindowPositioning.positionWindow(positionWindowRequest)
@@ -51,6 +49,13 @@ class API {
                     print("API: ptyRequest")
                     
                     isAsync = true
+                case .readFileRequest(let request):
+                    response.readFileResponse = try FileSystem.readFile(request)
+                case .writeFileRequest(let request):
+                    response.success = try FileSystem.writeFile(request)
+                case .contentsOfDirectoryRequest(let request):
+                    response.contentsOfDirectoryResponse = try FileSystem.contentsOfDirectory(request)
+                    
                 default:
                     print("API: unknown request")
             }
