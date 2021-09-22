@@ -53,7 +53,7 @@ class Settings {
   static let shouldInterceptCommandI = "autocomplete.alwaysInterceptCommandI"
 
   static let filePath = NSHomeDirectory() + "/.fig/settings.json"
-  static let defaultSettingsPath = NSHomeDirectory() + "/.fig/default_settings.json"
+  static let defaultSettingsPath = NSHomeDirectory() + "/.fig/tools/all-settings.json"
 
   static let shared = Settings()
   //Note: app will crash if anything is logged before Settings.shared is initted
@@ -168,7 +168,7 @@ class Settings {
     }
   }
   
-  static func loadDictFromFile(path: String) -> [String: Any]? {
+  static func loadFileString(path: String) -> String? {
     guard FileManager.default.fileExists(atPath: path) else {
       Settings.log("file \(path) does not exist")
       return nil
@@ -183,19 +183,39 @@ class Settings {
       return nil
     }
     
-    guard let json = settings.jsonStringToDict() else {
-      return nil
-    }
-    
-    return json
+    return settings
   }
   
   static func loadDefaultSettings() -> [String: Any]? {
-    return loadDictFromFile(path: Settings.defaultSettingsPath)
+    guard let fileString = loadFileString(path: Settings.defaultSettingsPath) else {
+      return nil
+    }
+    
+    if let jsonStream = fileString.data(using: .utf8) {
+      do {
+        guard let defaultSettings = try JSONSerialization.jsonObject(with: jsonStream, options: .fragmentsAllowed) as? [[String: Any]] else {
+          return nil;
+        }
+        let keys = defaultSettings.map { $0["settingName"] as! String }
+        let values = defaultSettings.map { $0["default"] as Any }
+        return Dictionary(uniqueKeysWithValues: zip(keys, values))
+      } catch {
+        print(error.localizedDescription)
+      }
+    }
+    return nil
   }
   
   static func loadFromFile() ->  [String: Any]? {
-    return loadDictFromFile(path: Settings.filePath)
+    guard let fileString = loadFileString(path: Settings.filePath) else {
+      return nil
+    }
+    
+    guard let settings = fileString.jsonStringToDict() else {
+      return nil
+    }
+    
+    return settings
   }
 
   func restartListener() {
