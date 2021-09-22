@@ -996,18 +996,6 @@ extension WebBridge {
                         let running = tty.running
                         print("tty: \(running?.cmd ?? "?") \(running?.cwd ?? "cwd")")
                     }
-                case "keystroke":
-                    guard let keyCodeString = data["key"], let keyCode = UInt16(keyCodeString), let consumerString = data["consumer"] else {
-                        print("Missing params for keystroke")
-                        return
-                    }
-                    
-                    if (consumerString == "true") {
-                        KeypressProvider.shared.addRedirect(for: keyCode, in: (scope.getCompanionWindow()?.tetheredWindow)!)
-                    } else {
-                        KeypressProvider.shared.removeRedirect(for: keyCode, in: (scope.getCompanionWindow()?.tetheredWindow)!)
-
-                    }
                 case "autocomplete-hide":
 //                  break;
                     guard let companion = scope.getCompanionWindow(), companion.isAutocompletePopup else { return }//, let window = AXWindowServer.shared.whitelistedWindow  else { return }
@@ -1272,7 +1260,7 @@ extension WebBridge {
 
 
             case "interceptKeystrokes":
-                KeypressProvider.shared.setEnabled(value: value == "true")
+                KeypressProvider.shared.setRedirectsEnabled(value: value == "true")
 
             default:
                 print("Unrecognized property value '\(prop)' updated with value: \(value)")

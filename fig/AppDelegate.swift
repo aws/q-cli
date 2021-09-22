@@ -931,6 +931,40 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             // resolves a bug where Fig was added to login items multiple times
             // if the appropriate setting is enabled, a single entry will be readded
             LoginItems.shared.removeAllItemsMatchingBundleURL()
+
+            if current == "1.0.50" {
+                switch Settings.shared.getValue(forKey: "autocomplete.tab") as? String {
+                    case "insert":
+                        Settings.shared.set(value: "autocomplete.insertSelected", forKey: "keybindings.tab")
+                        break
+                    case "navigate":
+                        Settings.shared.set(value: "autocomplete.scrollDown", forKey: "keybindings.tab")
+                        Settings.shared.set(value: "autocomplete.scrollUp", forKey: "keybindings.shift+tab")
+                        break
+                    default:
+                        break
+                }
+
+                if Settings.shared.getValue(forKey: Settings.enterKeyBehavior) as? String == "ignore" {
+                    Settings.shared.set(value: "ignore", forKey: "keybindings.enter")
+                }
+
+                if Settings.shared.getValue(forKey: Settings.rightArrowKeyBehavior) as? String == "insert" {
+                    Settings.shared.set(value: "autocomplete.insertSelected", forKey: "keybindings.right")
+                }
+
+                if Settings.shared.getValue(forKey: Settings.allowAlternateNavigationKeys) as? Bool ?? true {
+                    Settings.shared.set(value: "autocomplete.scrollDown", forKey: "keybindings.ctrl+j")
+                    Settings.shared.set(value: "autocomplete.scrollUp", forKey: "keybindings.ctrl+k")
+                  
+                    Settings.shared.set(value: "autocomplete.scrollDown", forKey: "keybindings.ctrl+n")
+                    Settings.shared.set(value: "autocomplete.scrollUp", forKey: "keybindings.ctrl+p")
+                }
+
+                if Settings.shared.getValue(forKey: Settings.disablePopoutDescriptions) as? Bool ?? false {
+                    Settings.shared.set(value: "ignore", forKey: "keybindings.command+i")
+                }
+            }
         }
         
         Defaults.versionAtPreviousLaunch = current

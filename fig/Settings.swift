@@ -53,10 +53,13 @@ class Settings {
   static let shouldInterceptCommandI = "autocomplete.alwaysInterceptCommandI"
 
   static let filePath = NSHomeDirectory() + "/.fig/settings.json"
+  static let defaultSettingsPath = NSHomeDirectory() + "/.fig/default_settings.json"
+
   static let shared = Settings()
   //Note: app will crash if anything is logged before Settings.shared is initted
   static var canLogWithoutCrash = false
   fileprivate var currentSettings: [String: Any]
+  fileprivate var defaultSettings: [String: Any]
   
   func keys() -> [String] {
     return Array(currentSettings.keys)
@@ -81,6 +84,12 @@ class Settings {
   }
   
   init() {
+    if let settings = Settings.loadDefaultSettings() {
+      defaultSettings = settings
+    } else {
+      print("Settings: could not load default settings!")
+      defaultSettings = [:]
+    }
     
     // load contents of file into memory
     if let settings = Settings.loadFromFile() {
@@ -147,7 +156,7 @@ class Settings {
   }
   
   func getValue(forKey key: String) -> Any? {
-    return currentSettings[key]
+    return currentSettings[key] ?? defaultSettings[key]
   }
   
   fileprivate func serialize() {
@@ -159,14 +168,14 @@ class Settings {
     }
   }
   
-  static func loadFromFile() ->  [String: Any]? {
-    guard FileManager.default.fileExists(atPath: Settings.filePath) else {
-      Settings.log("settings file does not exist")
+  static func loadDictFromFile(path: String) -> [String: Any]? {
+    guard FileManager.default.fileExists(atPath: path) else {
+      Settings.log("file \(path) does not exist")
       return nil
     }
     
-    guard let settings = try? String(contentsOfFile: Settings.filePath) else {
-      Settings.log("settings file is empty")
+    guard let settings = try? String(contentsOfFile: path) else {
+      Settings.log("file \(path) is empty")
       return nil
     }
     
@@ -179,6 +188,14 @@ class Settings {
     }
     
     return json
+  }
+  
+  static func loadDefaultSettings() -> [String: Any]? {
+    return loadDictFromFile(path: Settings.defaultSettingsPath)
+  }
+  
+  static func loadFromFile() ->  [String: Any]? {
+    return loadDictFromFile(path: Settings.filePath)
   }
 
   func restartListener() {
