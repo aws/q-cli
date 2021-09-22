@@ -8,6 +8,7 @@
 
 import Foundation
 import Cocoa
+import FigAPIBindings
 
 extension ExternalWindowHash {
     func components() -> (windowId: CGWindowID, tab: String?, pane: String?)? {
@@ -482,7 +483,14 @@ extension ShellHookManager {
         guard Defaults.loggedIn, Defaults.useAutocomplete else {
           return
         }
-        
+        APINotifications.post(Fig_EditBufferChangedNotification.with({ notification in
+            if let (buffer, cursor) = keybuffer.currentState {
+                notification.buffer = buffer
+                notification.cursor = Int32(cursor)
+            }
+            
+            notification.sessionID = info.session
+        }))
         DispatchQueue.main.async {
            Autocomplete.update(with: (buffer, cursor), for: hash)
            Autocomplete.position()
