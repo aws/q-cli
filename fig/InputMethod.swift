@@ -107,11 +107,6 @@ class InputMethod {
         self.bundle = Bundle(path: bundlePath)!
         self.originalBundlePath = bundlePath
         self.status = InstallationStatus(data: UserDefaults.standard.data(forKey: self.bundle.bundleIdentifier! + ".integration")) ?? .unattempted
-        let center = DistributedNotificationCenter.default()
-        center.addObserver(self,
-                           selector: #selector(KeyboardLayout.keyboardLayoutDidChange),
-                           name: NSNotification.Name(rawValue: NSNotification.Name.RawValue(kTISNotifySelectedKeyboardInputSourceChanged as NSString)),
-                           object: nil)
         
         verifyAndUpdateInstallationStatus()
 
