@@ -1151,14 +1151,21 @@ extension WebBridge {
               
                   ShellBridge.simulate(keypress: keypress)
                 case "settings":
-                  guard let key = data["key"],
-                    let valueString = data["value"],
-                    let valueData = valueString.data(using: .utf8),
-                    let value = try? JSONSerialization.jsonObject(with: valueData, options: .allowFragments) else {
+                  guard let key = data["key"] else {
                     return
                   }
+                    
+                  if let valueString = data["value"],
+                     let valueData = valueString.data(using: .utf8),
+                     let value = try? JSONSerialization.jsonObject(with: valueData, options: .allowFragments) {
+                    
+                    Settings.shared.set(value: value, forKey: key)
+
+                  } else {
+                    
+                    Settings.shared.set(value: nil, forKey: key)
+                  }
                   
-                  Settings.shared.set(value: value, forKey: key)
                 case "status":
 
                   let companion = scope.getCompanionWindow()              
@@ -1328,8 +1335,12 @@ extension WebBridge {
     }
   
     static func declareSettings(webview: WebView) {
-        guard let settings = Settings.shared.jsonRepresentation(), let b64 = settings.data(using: .utf8)?.base64EncodedString() else { return }
-        webview.evaluateJavaScript("fig.updateSettings(b64DecodeUnicode(`\(b64)`))", completionHandler: nil)
+        guard let settings = Settings.shared.jsonRepresentation(),
+              let b64Settings = settings.data(using: .utf8)?.base64EncodedString() else { return }
+        guard let defaultSettings = Settings.shared.jsonRepresentation(ofDefaultSettings: true),
+              let b64Defaults = defaultSettings.data(using: .utf8)?.base64EncodedString() else { return }
+
+        webview.evaluateJavaScript("fig.updateSettings(b64DecodeUnicode(`\(b64Settings)`), b64DecodeUnicode(`\(b64Defaults)`))", completionHandler: nil)
       }
     
     

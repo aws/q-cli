@@ -382,15 +382,21 @@ let setup = function(window) {
           }
       },
       
-      updateSettings(settingsStr) {
+      updateSettings(settingsStr, defaultSettingsStr) {
         let settings = JSON.parse(settingsStr)
         fig["_settings"] = settings
+        fig["_defaultSettings"] = {}
+        if (defaultSettingsStr) {
+            fig["_defaultSettings"] = JSON.parse(defaultSettingsStr)
+        }
+
         fig.settings = {}
         let keys = Object.keys(settings)
         keys.forEach(key => {
             Object.defineProperty(fig.settings, key, {
               get : function () {
-                  return fig[`_settings`][key];
+                  let value = fig[`_settings`][key]
+                  return value ? value : fig["_defaultSettings"][key];
               },
               set : function (value) {
                   var val =  JSON.stringify(value) //typeof a === "object" ? JSON.stringify(value) : `${value}`
