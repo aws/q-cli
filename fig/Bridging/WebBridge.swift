@@ -1154,17 +1154,23 @@ extension WebBridge {
                   guard let key = data["key"] else {
                     return
                   }
-                    
-                  if let valueString = data["value"],
-                     let valueData = valueString.data(using: .utf8),
-                     let value = try? JSONSerialization.jsonObject(with: valueData, options: .allowFragments) {
+                
+                    let value: Any? = {
+                        let valueString = data["value"]
+                        guard let valueData = valueString?.data(using: .utf8) else {
+                            return nil
+                        }
+                        
+                        let value = try? JSONSerialization.jsonObject(with: valueData, options: .allowFragments)
+                        
+                        if value is NSNull {
+                            return nil
+                        }
+                        
+                        return value
+                    }()
                     
                     Settings.shared.set(value: value, forKey: key)
-
-                  } else {
-                    
-                    Settings.shared.set(value: nil, forKey: key)
-                  }
                   
                 case "status":
 
