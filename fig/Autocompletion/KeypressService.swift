@@ -318,27 +318,30 @@ class KeypressProvider {
     }
     
     if let keybindingString = KeyboardLayout.humanReadableKeyName(event) {
-      if let value = Settings.shared.getValue(forKey: "keybindings." + keybindingString) as? String {
-        let autocompleteIsHidden = WindowManager.shared.autocomplete?.isHidden ?? true
-        
-        guard value.contains("--global") || !autocompleteIsHidden else {
-          return .ignore
-        }
-        
-        guard value != "ignore" else {
-          return .ignore
-        }
-        
-        // fig.keypress only recieves keyDown events
-        guard event.type == .keyDown else {
-          Autocomplete.position(makeVisibleImmediately: false)
+      if let bindings = Settings.shared.getKeybindings(forKey: keybindingString) {
+        // Right now only handle autocomplete.keybindings
+        if let autocompleteBinding = bindings["autocomplete"] {
+          let autocompleteIsHidden = WindowManager.shared.autocomplete?.isHidden ?? true
+
+          guard autocompleteBinding.contains("--global") || !autocompleteIsHidden else {
+            return .ignore
+          }
+          
+          guard autocompleteBinding != "ignore" else {
+            return .ignore
+          }
+          
+          // fig.keypress only recieves keyDown events
+          guard event.type == .keyDown else {
+            Autocomplete.position(makeVisibleImmediately: false)
+            return .consume
+          }
+          
+          Logger.log(message: "Redirecting keypress '\(keybindingString)' to autocomplete", subsystem: .keypress)
+          let keyCode = UInt16(event.getIntegerValueField(.keyboardEventKeycode))
+          Autocomplete.redirect(keyCode: keyCode, event: event, for: window.hash)
           return .consume
         }
-        
-        Logger.log(message: "Redirecting keypress '\(keybindingString)' to autocomplete", subsystem: .keypress)
-        let keyCode = UInt16(event.getIntegerValueField(.keyboardEventKeycode))
-        Autocomplete.redirect(keyCode: keyCode, event: event, for: window.hash)
-        return .consume
       }
     }
     

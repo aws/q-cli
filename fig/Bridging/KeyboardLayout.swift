@@ -53,7 +53,7 @@ class KeyboardLayout : NSObject {
         modifiers.append("command")
       }
       if event.modifierFlags.contains(.control) {
-        modifiers.append("ctrl")
+        modifiers.append("control")
       }
       if event.modifierFlags.contains(.option) {
         modifiers.append("option")
