@@ -65,8 +65,9 @@ class Settings {
     return Array(currentSettings.keys)
   }
   
-  func jsonRepresentation() -> String? {
-    guard let data = try? JSONSerialization.data(withJSONObject: currentSettings, options: .prettyPrinted) else {
+  func jsonRepresentation(ofDefaultSettings: Bool = false) -> String? {
+    guard let data = try? JSONSerialization.data(withJSONObject: ofDefaultSettings ? defaultSettings : currentSettings,
+                                                 options: .prettyPrinted) else {
       return nil
     }
     
@@ -148,9 +149,15 @@ class Settings {
     serialize()
   }
   
-  func set(value: Any, forKey key: String) {
+  func set(value: Any?, forKey key: String) {
     let prev = currentSettings
-    currentSettings.updateValue(value, forKey: key)
+    
+    if let value = value {
+        currentSettings.updateValue(value, forKey: key)
+    } else {
+        currentSettings.removeValue(forKey: key)
+    }
+    
     processDiffs(prev: prev, curr: currentSettings)
     serialize()
   }

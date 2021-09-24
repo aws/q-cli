@@ -109,6 +109,12 @@ if arguments.count > 1 {
         }
       } else { // fig settings key value --> Write value to key
           let value = arguments[3]
+        
+          guard value != "--delete" && value != "--reset" else {
+            settings.removeValue(forKey: key)
+            Settings.serialize(settings: settings)
+            exit(0)
+          }
           
           guard var data = value.data(using: .utf8) else { exit(1) }
           var json = try? JSONSerialization.jsonObject(with: data, options: .allowFragments)
