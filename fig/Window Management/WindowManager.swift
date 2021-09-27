@@ -716,13 +716,6 @@ extension WindowManager : WindowManagementService {
             }.first ?? NSScreen.main
             let heightLimit: CGFloat = Settings.shared.getValue(forKey: Settings.autocompleteHeight) as? CGFloat ?? 140.0 
 
-            // Prevent arrow keys
-            if ((WindowManager.shared.autocomplete?.maxHeight != 0)) {
-                Autocomplete.interceptKeystrokes(in: window)
-            } else {
-                Autocomplete.removeAllRedirects(from: window)
-            }
-
             let maxWidth =  Settings.shared.getValue(forKey: Settings.autocompleteWidth) as? CGFloat
 
 
