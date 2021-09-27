@@ -246,6 +246,11 @@ extension ShellHookManager {
         // Set version (used for checking compatibility)
         tty.shellIntegrationVersion = info.shellIntegrationVersion
         
+        // post notification to API
+        API.notifications.post(Fig_ShellPromptReturnedNotification.with({ notification in
+            notification.sessionID = info.session
+        }))
+        
         // if the user has returned to the shell, their keypress buffer must be reset (for instance, if they exited by pressing 'q' rather than return)
         // This doesn't work because of timing issues. If the user types too quickly, the first keypress will be overwritten.
         // KeypressProvider.shared.keyBuffer(for: hash).buffer = ""
@@ -483,7 +488,7 @@ extension ShellHookManager {
         guard Defaults.loggedIn, Defaults.useAutocomplete else {
           return
         }
-        APINotifications.post(Fig_EditBufferChangedNotification.with({ notification in
+        API.notifications.post(Fig_EditBufferChangedNotification.with({ notification in
             if let (buffer, cursor) = keybuffer.currentState {
                 notification.buffer = buffer
                 notification.cursor = Int32(cursor)

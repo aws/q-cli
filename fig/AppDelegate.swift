@@ -2193,4 +2193,5 @@ extension NSApplication {
   var appDelegate: AppDelegate {
     return NSApp.delegate as! AppDelegate
   }
+    
 }
