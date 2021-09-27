@@ -420,8 +420,9 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             action: nil,
             keyEquivalent: "")
     
-        Integrations.providers.keys.sorted().forEach { key in
-            let provider = Integrations.providers[key]!
+        Integrations.providers.values.sorted(by: { lhs, rhs in
+            return lhs.applicationName.lowercased() >= rhs.applicationName.lowercased()
+        }).forEach { provider in
             guard provider.applicationIsInstalled else { return }
             
             let name = provider.applicationName 

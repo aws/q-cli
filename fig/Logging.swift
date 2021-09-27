@@ -42,6 +42,7 @@ class Logger {
         case updater = "updater"
         case config = "config"
         case positioning = "positioning"
+        case inputMethod = "input-method"
 
         func pathToLogFile() -> URL {
           return Logger.defaultLocation

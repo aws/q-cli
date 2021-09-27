@@ -51,7 +51,8 @@ class Settings {
   static let useControlRForHistoryBeta = "beta.history.ctrl-r"
   static let useControlRForHistory = "history.ctrl-r"
   static let shouldInterceptCommandI = "autocomplete.alwaysInterceptCommandI"
-  
+  static let inputMethodShouldPollForActivation = "integrations.input-method.shouldPollForActivation"
+
   static let keyAliases = [
     "super": "command",
     "cmd": "command",
@@ -61,7 +62,7 @@ class Settings {
     "shft": "shift",
     "return": "enter",
   ]
-
+    
   static let filePath = NSHomeDirectory() + "/.fig/settings.json"
   static let defaultSettingsPath = NSHomeDirectory() + "/.fig/tools/all-settings.json"
 
