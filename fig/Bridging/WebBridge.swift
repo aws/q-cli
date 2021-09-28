@@ -201,7 +201,7 @@ extension WebBridge: WKURLSchemeHandler {
         }
         
         // fig://template?background-color=ccc&icon=box
-        if let host = url.host, let qs = url.queryDictionary, host == "template" {
+        if let host = url.host, host == "template" {
           guard let icon = Bundle.main.image(forResource: "template") else { return nil }
           return icon.overlayColor(color).overlayText(badge).resized(to: NSSize(width: width, height: height))//?.overlayBadge(color: color,  text: badge)
 
@@ -645,11 +645,11 @@ extension WebBridge {
         if let params = scope.body as? Dictionary<String, String>,
            let cmd = params["cmd"],
            let handlerId = params["handlerId"] {
-            cmd.runInBackground { (result) in
+            cmd.runInBackground(completion:  { (result) in
                 DispatchQueue.main.async {
                     WebBridge.callback(handler: handlerId, value: result, webView: scope.webView)
                 }
-            }
+            })
         }
     }
     
@@ -889,10 +889,16 @@ extension WebBridge {
                 case "terminaltitle:false":
                     AutocompleteContextNotifier.addIndicatorToTitlebar = false
 
-            case "openOnStartup:true":
-                LoginItems.shared.currentApplicationShouldLaunchOnStartup = true
-            case "openOnStartup:false":
-                LoginItems.shared.currentApplicationShouldLaunchOnStartup = false
+                case "openOnStartup:true":
+                    LoginItems.shared.currentApplicationShouldLaunchOnStartup = true
+                case "openOnStartup:false":
+                    LoginItems.shared.currentApplicationShouldLaunchOnStartup = false
+                case "themes":
+                    let files = (try? FileManager.default.contentsOfDirectory(atPath: NSHomeDirectory() + "/.fig/themes")) ?? []
+                    let themes = [ "dark", "light"] + files.map { String($0.split(separator: ".")[0]) }.sorted()
+                    WebBridge.callback(handler: handlerId,
+                                       value: themes.joined(separator: "\n"),
+                                       webView: scope.webView)
             default:
                 break;
             }
@@ -994,18 +1000,6 @@ extension WebBridge {
                         let running = tty.running
                         print("tty: \(running?.cmd ?? "?") \(running?.cwd ?? "cwd")")
                     }
-                case "keystroke":
-                    guard let keyCodeString = data["key"], let keyCode = UInt16(keyCodeString), let consumerString = data["consumer"] else {
-                        print("Missing params for keystroke")
-                        return
-                    }
-                    
-                    if (consumerString == "true") {
-                        KeypressProvider.shared.addRedirect(for: keyCode, in: (scope.getCompanionWindow()?.tetheredWindow)!)
-                    } else {
-                        KeypressProvider.shared.removeRedirect(for: keyCode, in: (scope.getCompanionWindow()?.tetheredWindow)!)
-
-                    }
                 case "autocomplete-hide":
 //                  break;
                     guard let companion = scope.getCompanionWindow(), companion.isAutocompletePopup else { return }//, let window = AXWindowServer.shared.whitelistedWindow  else { return }
@@ -1016,6 +1010,8 @@ extension WebBridge {
                     }
                     
                 case "setAutocompleteHeight":
+                    print("positioning: attempting to setAutocompleteHeight")
+
                     guard let heightString = data["height"] else { return }
                     let companion = scope.getCompanionWindow()
                     let previousMax = companion?.maxHeight
@@ -1086,6 +1082,7 @@ extension WebBridge {
                     guard let width = Float(data["width"] ?? ""),
                       let height = Float(data["height"]  ?? ""),
                       let anchorX = Float(data["anchorX"]  ?? ""),
+                      let anchorY = Float(data["offsetFromBaseline"]  ?? "0"),
                       let handler = handlerId else {
                       return
                     }
@@ -1093,7 +1090,7 @@ extension WebBridge {
                     do {
                         let response = try WindowPositioning.frameRelativeToCursor(width: CGFloat(width),
                                                                                height: CGFloat(height),
-                                                                               anchorOffset: CGPoint(x: CGFloat(anchorX), y: 0))
+                                                                               anchorOffset: CGPoint(x: CGFloat(anchorX), y: CGFloat(anchorY)))
                         WebBridge.callback(handler: handler, value: "{ \"isAbove\":  \(response.isAbove ? "true" : "false"), \"isClipped\": \(response.isClipped ? "true" : "false") }", webView: scope.webView)
                         
                     } catch APIError.generic(message: let message) {
@@ -1110,15 +1107,39 @@ extension WebBridge {
                     }
                     
                     if let width = Float(data["width"] ?? "") {
+                        print("autocomplete.width := \(width)")
                         companion.width = CGFloat(width)
                     }
                     
                     if let height = Float(data["height"]  ?? "") {
+                        let prevHeight = companion.maxHeight
+                        
+                        print("autocomplete.height := \(height)")
                         companion.maxHeight = CGFloat(height)
+                        
+                        // Workaround to ensure compatibility with legacy behavior.
+                        // Ensure window is visible when the height is greater than 1!
+                        if height > 1 {
+                            companion.orderFrontRegardless()
+                            if prevHeight == 1 || prevHeight == 0 || prevHeight == nil {
+                                NotificationCenter.default.post(name: NSNotification.Name("showAutocompletePopup"), object: nil)
+                            }
+                        }
+
+
                     }
                     
                     if let anchorX = Float(data["anchorX"]  ?? "") {
-                        companion.anchorOffsetPoint = CGPoint(x: CGFloat(anchorX), y: 0)
+                        print("autocomplete.anchorX := \(anchorX)")
+                        var anchor = companion.anchorOffsetPoint
+                        anchor.x = CGFloat(anchorX)
+                        companion.anchorOffsetPoint = anchor                    }
+                    
+                    if let anchorY = Float(data["offsetFromBaseline"]  ?? "0") {
+                        print("autocomplete.anchorY := \(anchorY)")
+                        var anchor = companion.anchorOffsetPoint
+                        anchor.y = CGFloat(anchorY)
+                        companion.anchorOffsetPoint = anchor
                     }
                     
                     WindowManager.shared.positionAutocompletePopover(textRect: Accessibility.getTextRect())
@@ -1134,14 +1155,27 @@ extension WebBridge {
               
                   ShellBridge.simulate(keypress: keypress)
                 case "settings":
-                  guard let key = data["key"],
-                    let valueString = data["value"],
-                    let valueData = valueString.data(using: .utf8),
-                    let value = try? JSONSerialization.jsonObject(with: valueData, options: .allowFragments) else {
+                  guard let key = data["key"] else {
                     return
                   }
+                
+                    let value: Any? = {
+                        let valueString = data["value"]
+                        guard let valueData = valueString?.data(using: .utf8) else {
+                            return nil
+                        }
+                        
+                        let value = try? JSONSerialization.jsonObject(with: valueData, options: .allowFragments)
+                        
+                        if value is NSNull {
+                            return nil
+                        }
+                        
+                        return value
+                    }()
+                    
+                    Settings.shared.set(value: value, forKey: key)
                   
-                  Settings.shared.set(value: value, forKey: key)
                 case "status":
 
                   let companion = scope.getCompanionWindow()              
@@ -1188,6 +1222,7 @@ extension WebBridge {
               let companion = scope.getCompanionWindow()
               companion?.loaded = value == "true"
             case "maxheight":
+                print("positioning: attempting to set maxheight")
                 let companion = scope.getCompanionWindow()
                 let previousMax = companion?.maxHeight
                 if let number = NumberFormatter().number(from: value) {
@@ -1242,7 +1277,7 @@ extension WebBridge {
 
 
             case "interceptKeystrokes":
-                KeypressProvider.shared.setEnabled(value: value == "true")
+                KeypressProvider.shared.setRedirectsEnabled(value: value == "true")
 
             default:
                 print("Unrecognized property value '\(prop)' updated with value: \(value)")
@@ -1310,8 +1345,12 @@ extension WebBridge {
     }
   
     static func declareSettings(webview: WebView) {
-        guard let settings = Settings.shared.jsonRepresentation(), let b64 = settings.data(using: .utf8)?.base64EncodedString() else { return }
-        webview.evaluateJavaScript("fig.updateSettings(b64DecodeUnicode(`\(b64)`))", completionHandler: nil)
+        guard let settings = Settings.shared.jsonRepresentation(),
+              let b64Settings = settings.data(using: .utf8)?.base64EncodedString() else { return }
+        guard let defaultSettings = Settings.shared.jsonRepresentation(ofDefaultSettings: true),
+              let b64Defaults = defaultSettings.data(using: .utf8)?.base64EncodedString() else { return }
+
+        webview.evaluateJavaScript("fig.updateSettings(b64DecodeUnicode(`\(b64Settings)`), b64DecodeUnicode(`\(b64Defaults)`))", completionHandler: nil)
       }
     
     

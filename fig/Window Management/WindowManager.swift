@@ -716,18 +716,13 @@ extension WindowManager : WindowManagementService {
             }.first ?? NSScreen.main
             let heightLimit: CGFloat = Settings.shared.getValue(forKey: Settings.autocompleteHeight) as? CGFloat ?? 140.0 
 
-            // Prevent arrow keys
-            if ((WindowManager.shared.autocomplete?.maxHeight != 0)) {
-                Autocomplete.interceptKeystrokes(in: window)
-            } else {
-                Autocomplete.removeAllRedirects(from: window)
-            }
-
             let maxWidth =  Settings.shared.getValue(forKey: Settings.autocompleteWidth) as? CGFloat
 
 
             if (Defaults.debugAutocomplete) {
-                WindowManager.shared.autocomplete?.maxHeight = heightLimit//140
+                WindowManager.shared.autocomplete?.maxHeight = heightLimit
+                WindowManager.shared.autocomplete?.backgroundColor = .red
+                Logger.log(message: "Note: Debug mode is enabled!", subsystem: .positioning)
             }
 
             let positioning = WindowPositioning.frameRelativeToCursor(currentScreenFrame: currentScreen?.frame ?? .zero,

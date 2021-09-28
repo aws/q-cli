@@ -42,7 +42,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         warnToMoveToApplicationIfNecessary()
       
         // Set timeout to avoid hanging misbehaving 3rd party apps
-//        Accessibility.setGlobalTimeout(seconds: 2)
+        Accessibility.setGlobalTimeout(seconds: 2)
 
         if let hideMenuBar = Settings.shared.getValue(forKey: Settings.hideMenubarIcon) as? Bool, hideMenuBar {
           print("Not showing menubarIcon because of \(Settings.hideMenubarIcon)")
@@ -56,8 +56,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
           statusBarItem.button?.wantsLayer = true
         }
         
-        configureStatusBarItem()
-
 //        NSApp.setActivationPolicy(NSApplication.ActivationPolicy.accessory)
         // prevent multiple sessions
         let bundleID = Bundle.main.bundleIdentifier!
@@ -78,20 +76,19 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         Accessibility.checkIfPermissionRevoked()
       
 //        AppMover.moveIfNecessary()
+        let _ = Settings.shared
         let _ = ShellBridge.shared
         let _ = WindowManager.shared
         let _ = ShellHookManager.shared
         let _ = KeypressProvider.shared
         let _ = ShellHookTransport.shared
       
-        DispatchQueue.global(qos: .userInitiated).async {
-          let _ = AXWindowServer.shared
-        }
+        let _ = AXWindowServer.shared
+
       
         let _ = DockerEventStream.shared
-        let _ = iTermIntegration.shared
-        let _ = Settings.shared
-
+        let _ = iTermIntegration.default
+        let _ = InputMethod.default
         
         TelemetryProvider.register()
         Accessibility.listen()
@@ -108,6 +105,8 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         handleUpdateIfNeeded()
         Defaults.useAutocomplete = true
         Defaults.autocompleteVersion = "v7"
+        AutocompleteContextNotifier.addIndicatorToTitlebar = false
+
         Defaults.autocompleteWidth = 250
         Defaults.ignoreProcessList = ["figcli", "gitstatusd-darwin-x86_64", "gitstatusd-darwin-arm64", "nc", "fig_pty", "starship", "figterm"]
 
@@ -182,6 +181,12 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
                                                selector: #selector(settingsUpdated),
                                                name: Settings.settingsUpdatedNotification,
                                                object: nil)
+        
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(integrationsUpdated),
+                                               name: Integrations.statusDidChange,
+                                               object: nil)
+
 
         
         if let shouldLaunchOnStartup = Settings.shared.getValue(forKey: Settings.launchOnStartupKey) as? Bool {
@@ -218,20 +223,10 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 //          }
         }
       
-        if !VSCodeIntegration.isInstalled {
-            VSCodeIntegration.install(withRestart: false, inBackground: true)
-        }
-
-        if !VSCodeInsidersIntegration.isInstalled {
-            VSCodeInsidersIntegration.install(withRestart: false, inBackground: true)
-        }
-      
-        if !HyperIntegration.isInstalled {
-            HyperIntegration.install(withRestart: false, inBackground: true)
-        }
-      
-        if !iTermIntegration.isInstalled {
-            iTermIntegration.install(withRestart: false, inBackground: true)
+        Integrations.providers.values.forEach { provider in
+            if !provider.isInstalled {
+                provider.install(withRestart: false, inBackground: true)
+            }
         }
         
     }
@@ -417,24 +412,116 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
           statusInTitle.state = AutocompleteContextNotifier.addIndicatorToTitlebar ? .on : .off
           integrationsMenu.addItem(NSMenuItem.separator())
       }
-
-      let itermIntegration = integrationsMenu.addItem(
-      withTitle: "iTerm Integration",
-      action: #selector(AppDelegate.toggleiTermIntegration(_:)),
-      keyEquivalent: "")
-      itermIntegration.state = iTermIntegration.isInstalled ? .on : .off
-      
-      let vscodeIntegration = integrationsMenu.addItem(
-      withTitle: "VSCode Integration",
-      action: #selector(AppDelegate.toggleVSCodeIntegration(_:)),
-      keyEquivalent: "")
-      vscodeIntegration.state = VSCodeIntegration.isInstalled ? .on : .off
+        
+        
+        integrationsMenu.addItem(NSMenuItem.separator())
+        integrationsMenu.addItem(
+            withTitle: "Terminal Integrations",
+            action: nil,
+            keyEquivalent: "")
     
-      let hyperIntegration = integrationsMenu.addItem(
-      withTitle: "Hyper Integration",
-      action: #selector(AppDelegate.toggleHyperIntegration(_:)),
-      keyEquivalent: "")
-      hyperIntegration.state = HyperIntegration.isInstalled ? .on : .off
+        Integrations.providers.values.sorted(by: { lhs, rhs in
+            return lhs.applicationName.lowercased() >= rhs.applicationName.lowercased()
+        }).forEach { provider in
+            guard provider.applicationIsInstalled else { return }
+            
+            let name = provider.applicationName 
+            let item = integrationsMenu.addItem(
+                withTitle: name,// + " Integration",
+                action: #selector(provider.promptToInstall),
+                keyEquivalent: "")
+
+            item.target = provider
+            
+            switch provider.status {
+                case .applicationNotInstalled:
+                    break
+                case .unattempted:
+                    item.image = WebBridge.fileIcon(for: URL(string: "fig://template?color=808080&badge=?&w=16&h=16".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!)!)
+
+                case .installed:
+                    item.action = nil // disable selection
+                    item.image = WebBridge.fileIcon(for: URL(string: "fig://template?color=2ecc71&badge=✓&w=16&h=16".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!)!)
+
+                case .pending(let dependency):
+                    let actionsMenu = NSMenu(title: "actions")
+
+                    item.action = nil // disable selection
+                    
+                    switch dependency {
+                    case .applicationRestart:
+                        item.image = WebBridge.fileIcon(for: URL(string: "fig://template?color=FFA500&badge=⟳&w=16&h=16".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!)!)
+                        
+                        let restart = actionsMenu.addItem(
+                            withTitle: "Restart \(provider.applicationName)",
+                            action: #selector(provider.restart),
+                            keyEquivalent: "")
+                        restart.target = provider
+                    case .inputMethodActivation:
+                        item.image = WebBridge.fileIcon(for: URL(string: "fig://template?color=FFA500&badge=⌨&w=16&h=16".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!)!)
+                        actionsMenu.addItem(
+                            withTitle: "Requires Input Method",
+                            action: nil,
+                            keyEquivalent: "")
+                        
+                        switch InputMethod.default.status {
+                        case .failed(let error, _):
+                            actionsMenu.addItem(NSMenuItem.separator())
+                            actionsMenu.addItem(
+                                withTitle: error,
+                                action: nil,
+                                keyEquivalent: "")
+                            actionsMenu.addItem(NSMenuItem.separator())
+                            let installer = actionsMenu.addItem(
+                                withTitle: "Attempt to Install",
+                                action: #selector(provider.promptToInstall),
+                                keyEquivalent: "")
+                            installer.target = provider
+                        default:
+                            break
+                        }
+
+                    }
+
+                    
+                    item.submenu = actionsMenu
+                    
+                    
+                case .failed(let error, let supportURL):
+                    item.image = WebBridge.fileIcon(for: URL(string: "fig://template?color=e74c3c&badge=╳&w=16&h=16".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!)!)
+                    let actionsMenu = NSMenu(title: "actions")
+
+                    actionsMenu.addItem(
+                        withTitle: error,
+                        action: nil,
+                        keyEquivalent: "")
+                    
+                    actionsMenu.addItem(NSMenuItem.separator())
+                    let install = actionsMenu.addItem(withTitle: "Attempt to install",
+                                                      action: #selector(provider.promptToInstall),
+                                                      keyEquivalent: "")
+                    install.target = provider
+                    
+                    if supportURL != nil {
+                        actionsMenu.addItem(NSMenuItem.separator())
+
+                        let button = actionsMenu.addItem(
+                            withTitle: "Learn more",
+                            action: #selector(provider.openSupportPage),
+                            keyEquivalent: "")
+                        
+                        button.target = provider
+                    }
+                    
+                    item.submenu = actionsMenu
+
+
+
+            }
+        }
+        
+        integrationsMenu.addItem(NSMenuItem.separator())
+
     
       let sshIntegration = integrationsMenu.addItem(
       withTitle: "SSH Integration",
@@ -684,6 +771,10 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
       configureStatusBarItem()
     }
     
+    @objc func integrationsUpdated() {
+        configureStatusBarItem()
+    }
+    
     func setUpAccesibilityObserver(){
         
         let center = DistributedNotificationCenter.default()
@@ -738,7 +829,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 
             if let general = uninstallScriptFile {
                 NSWorkspace.shared.open(URL(string: "https://fig.io/uninstall?email=\(Defaults.email ?? "")")!)
-                LoginItems.shared.currentApplicationShouldLaunchOnStartup = false
+                LoginItems.shared.removeAllItemsMatchingBundleURL()
                 
                 let domain = Bundle.main.bundleIdentifier!
                 let uuid = Defaults.uuid
@@ -773,9 +864,9 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     
 
     @objc func toggleiTermIntegration(_ sender: NSMenuItem) {
-      iTermIntegration.promptToInstall {
-        sender.state = iTermIntegration.isInstalled ? .on : .off
-      }
+        iTermIntegration.default.promptToInstall { _ in
+            sender.state = iTermIntegration.default.isInstalled ? .on : .off
+        }
     }
         
     func dialogOKCancel(question: String, text: String, prompt:String = "OK", noAction:Bool = false, icon: NSImage? = nil, noActionTitle: String? = nil) -> Bool {
@@ -838,7 +929,43 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
                 try? FileManager.default.createSymbolicLink(atPath: iTermIntegrationPath, withDestinationPath: localScript)
             }
             
-            //remindToSourceFigInExistingTerminals()
+            // resolves a bug where Fig was added to login items multiple times
+            // if the appropriate setting is enabled, a single entry will be readded
+            LoginItems.shared.removeAllItemsMatchingBundleURL()
+
+            if current == "1.0.50" {
+                switch Settings.shared.getValue(forKey: "autocomplete.tab") as? String {
+                    case "insert":
+                        Settings.shared.set(value: "autocomplete.insertSelected", forKey: "keybindings.tab")
+                        break
+                    case "navigate":
+                        Settings.shared.set(value: "autocomplete.scrollDown", forKey: "keybindings.tab")
+                        Settings.shared.set(value: "autocomplete.scrollUp", forKey: "keybindings.shift+tab")
+                        break
+                    default:
+                        break
+                }
+
+                if Settings.shared.getValue(forKey: Settings.enterKeyBehavior) as? String == "ignore" {
+                    Settings.shared.set(value: "ignore", forKey: "keybindings.enter")
+                }
+
+                if Settings.shared.getValue(forKey: Settings.rightArrowKeyBehavior) as? String == "insert" {
+                    Settings.shared.set(value: "autocomplete.insertSelected", forKey: "keybindings.right")
+                }
+
+                if Settings.shared.getValue(forKey: Settings.allowAlternateNavigationKeys) as? Bool ?? true {
+                    Settings.shared.set(value: "autocomplete.scrollDown", forKey: "keybindings.ctrl+j")
+                    Settings.shared.set(value: "autocomplete.scrollUp", forKey: "keybindings.ctrl+k")
+                  
+                    Settings.shared.set(value: "autocomplete.scrollDown", forKey: "keybindings.ctrl+n")
+                    Settings.shared.set(value: "autocomplete.scrollUp", forKey: "keybindings.ctrl+p")
+                }
+
+                if Settings.shared.getValue(forKey: Settings.disablePopoutDescriptions) as? Bool ?? false {
+                    Settings.shared.set(value: "ignore", forKey: "keybindings.command+i")
+                }
+            }
         }
         
         Defaults.versionAtPreviousLaunch = current
@@ -853,7 +980,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         task.launchPath = "/usr/bin/open"
         task.arguments = [path]
         task.launch()
-        NSApp.terminate(self)
+        exit(0)
     }
 
     
@@ -1191,16 +1318,16 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
   
     @objc func toggleVSCodeIntegration(_ sender: NSMenuItem) {
         
-      VSCodeIntegration.promptToInstall {
-        sender.state = VSCodeIntegration.isInstalled ? .on : .off
+      VSCodeIntegration.default.promptToInstall { status in
+        sender.state = VSCodeIntegration.default.isInstalled ? .on : .off
       }
         
     }
   
     @objc func toggleHyperIntegration(_ sender: NSMenuItem) {
         
-      HyperIntegration.promptToInstall {
-        sender.state = HyperIntegration.isInstalled ? .on : .off
+      HyperIntegration.default.promptToInstall { status in
+        sender.state = HyperIntegration.default.isInstalled ? .on : .off
       }
         
     }
@@ -1517,14 +1644,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         }
     }
     @objc func triggerScreenReader() {
-      VSCodeIntegration.install(inBackground: true) {
-        Alert.show(title: "VSCode Integration Installed!", message: "The Fig extension was successfully added to VSCode.", hasSecondaryOption: false)
-//      if let app = AXWindowServer.shared.topApplication, let window = AXWindowServer.shared.topWindow {
-//        print("Triggering ScreenreaderMode in \(app.bundleIdentifier ?? "<unknown>")")
-//        Accessibility.triggerScreenReaderModeInChromiumApplication(app)
-//        let cursor = Accessibility.findXTermCursorInElectronWindow(window)
-//        print("Detect cursor:", cursor ?? .zero)
-      }
     }
     @objc func allWindows() {
         
@@ -2156,22 +2275,9 @@ extension AppDelegate : NSMenuDelegate {
     
         
         
-          let name: String!
-          
-          switch app.bundleIdentifier {
-          case Integrations.iTerm:
-            name = "iTerm"
-          case Integrations.Hyper:
-            name = "Hyper"
-          case Integrations.VSCode:
-            name = "VSCode"
-          case Integrations.VSCodeInsiders:
-            name = "VSCode Insiders"
-          default:
-            name = "Unknown"
-          }
+          let name: String = provider.applicationName
 
-        let item = NSMenuItem(title: "Install \(name!) Integration", action: #selector(AppDelegate.installIntegrationForFrontmostApp) , keyEquivalent: "")
+        let item = NSMenuItem(title: "Install \(name) Integration", action: #selector(AppDelegate.installIntegrationForFrontmostApp) , keyEquivalent: "")
         item.image = NSImage(named: NSImage.Name("carrot"))
            menu.insertItem(item, at: 1)
            self.integrationPrompt = item

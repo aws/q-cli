@@ -40,25 +40,54 @@ class Settings {
   static let debugModeKey = "developer.debugMode"
   static let onlyShowOnTabKey = "autocomplete.onlyShowOnTab"
   static let allowAlternateNavigationKeys = "autocomplete.allowAlternateNavigationKeys"
+  static let disablePopoutDescriptions = "autocomplete.disablePopoutDescriptions"
   static let logging = "developer.logging"
   static let loggingEnabledInternally = "developer.logging.internal"
   static let colorfulLogging = "developer.logging.color"
   static let beta = "app.beta"
   static let shellIntegrationIsManagedByUser = "integrations.shell.managedByUser"
   static let theme = "autocomplete.theme"
+  static let disableWebviewTransparency = "developer.disableWebviewTransparency"
+  static let useControlRForHistoryBeta = "beta.history.ctrl-r"
+  static let useControlRForHistory = "history.ctrl-r"
+  static let shouldInterceptCommandI = "autocomplete.alwaysInterceptCommandI"
+  static let inputMethodShouldPollForActivation = "integrations.input-method.shouldPollForActivation"
 
+  static let keyAliases = [
+    "super": "command",
+    "cmd": "command",
+    "alt": "option",
+    "opt": "option",
+    "ctrl": "control",
+    "shft": "shift",
+    "return": "enter",
+  ]
+    
   static let filePath = NSHomeDirectory() + "/.fig/settings.json"
+  static let defaultSettingsPath = NSHomeDirectory() + "/.fig/tools/all-settings.json"
+
   static let shared = Settings()
   //Note: app will crash if anything is logged before Settings.shared is initted
   static var canLogWithoutCrash = false
+  
+  // Unmodified settings read from/written to disk + updated by user.
+  fileprivate var rawSettings: [String: Any]
   fileprivate var currentSettings: [String: Any]
+  
+  // Default settings, read from ~/.fig/tools/all-settings.json list
+  fileprivate var defaultSettings: [String: Any]
+  
+  // Mapping from standardized key strings like control+r to app actions,
+  // e.g. { "control+r": {"autocomplete": "toggleHistory"} }
+  fileprivate var keybindings: [String: [String: String]]
   
   func keys() -> [String] {
     return Array(currentSettings.keys)
   }
   
-  func jsonRepresentation() -> String? {
-    guard let data = try? JSONSerialization.data(withJSONObject: currentSettings, options: .prettyPrinted) else {
+  func jsonRepresentation(ofDefaultSettings: Bool = false) -> String? {
+    guard let data = try? JSONSerialization.data(withJSONObject: ofDefaultSettings ? defaultSettings : currentSettings,
+                                                 options: .prettyPrinted) else {
       return nil
     }
     
@@ -76,15 +105,26 @@ class Settings {
   }
   
   init() {
+    defaultSettings = [:]
+    rawSettings = [:]
+    currentSettings = [:]
+    keybindings = [:]
+    
+    if let settings = Settings.loadDefaultSettings() {
+      defaultSettings = settings
+    } else {
+      print("Settings: could not load default settings!")
+    }
     
     // load contents of file into memory
     if let settings = Settings.loadFromFile() {
-      currentSettings = settings
+      rawSettings = settings
     } else {
       print("Settings: could not load settings!")
-      currentSettings = [:]
       serialize()
     }
+    
+    recomputeSettingsFromRaw()
     
     setUpFileSystemListeners()
     Settings.canLogWithoutCrash = true
@@ -128,40 +168,55 @@ class Settings {
   }
   
   func update(_ keyValues: Dictionary<String, Any>) {
-    let prev = currentSettings
-    currentSettings.merge(keyValues) { $1 }
-    processDiffs(prev: prev, curr: currentSettings)
+    let prev = rawSettings
+    rawSettings.merge(keyValues) { $1 }
+    processDiffs(prev: prev, curr: rawSettings)
+    recomputeSettingsFromRaw()
     serialize()
   }
   
-  func set(value: Any, forKey key: String) {
-    let prev = currentSettings
-    currentSettings.updateValue(value, forKey: key)
-    processDiffs(prev: prev, curr: currentSettings)
+  func set(value: Any?, forKey key: String) {
+    let prev = rawSettings
+    
+    if let value = value {
+      updateKey(key: key, value: value)
+    } else {
+      rawSettings.removeValue(forKey: key)
+      if Settings.getKeybinding(settingKey: key) != nil {
+        // If keybinding is removed we need to recompute everything to determine new binding.
+        recomputeSettingsFromRaw()
+      }
+    }
+    
+    processDiffs(prev: prev, curr: rawSettings)
     serialize()
   }
   
   func getValue(forKey key: String) -> Any? {
-    return currentSettings[key]
+    return rawSettings[key] ?? currentSettings[key] ?? defaultSettings[key]
+  }
+  
+  func getKeybindings(forKey key: String) -> [String : String]? {
+    return keybindings[key]
   }
   
   fileprivate func serialize() {
     do {
-      let data = try JSONSerialization.data(withJSONObject: currentSettings, options: [.prettyPrinted, .sortedKeys])
+      let data = try JSONSerialization.data(withJSONObject: rawSettings, options: [.prettyPrinted, .sortedKeys])
       try data.write(to: URL(fileURLWithPath: Settings.filePath), options: .atomic)
     } catch {
       Settings.log("failed to serialize data")
     }
   }
   
-  static func loadFromFile() ->  [String: Any]? {
-    guard FileManager.default.fileExists(atPath: Settings.filePath) else {
-      Settings.log("settings file does not exist")
+  static func loadFileString(path: String) -> String? {
+    guard FileManager.default.fileExists(atPath: path) else {
+      Settings.log("file \(path) does not exist")
       return nil
     }
     
-    guard let settings = try? String(contentsOfFile: Settings.filePath) else {
-      Settings.log("settings file is empty")
+    guard let settings = try? String(contentsOfFile: path) else {
+      Settings.log("file \(path) is empty")
       return nil
     }
     
@@ -169,11 +224,89 @@ class Settings {
       return nil
     }
     
-    guard let json = settings.jsonStringToDict() else {
+    return settings
+  }
+  
+  static func loadDefaultSettings() -> [String: Any]? {
+    guard let fileString = loadFileString(path: Settings.defaultSettingsPath) else {
       return nil
     }
     
-    return json
+    if let jsonStream = fileString.data(using: .utf8) {
+      do {
+        guard let defaultSettings = try JSONSerialization.jsonObject(with: jsonStream, options: .fragmentsAllowed) as? [[String: Any]] else {
+          return nil;
+        }
+        let keys = defaultSettings.map { $0["settingName"] as! String }
+        let values = defaultSettings.map { $0["default"] as Any }
+        return Dictionary(uniqueKeysWithValues: zip(keys, values))
+      } catch {
+        print(error.localizedDescription)
+      }
+    }
+    return nil
+  }
+  
+  func updateKey(key: String, value: Any) {
+    rawSettings[key] = value
+    
+    if let (app, keyString) = Settings.getKeybinding(settingKey: key) {
+      let standardizedKey = Settings.standardizeKeyString(keyString: keyString)
+      let prefix = app == "global" ? "" : "\(app)."
+      currentSettings["\(prefix)keybindings.\(standardizedKey)"] = value
+      keybindings[standardizedKey, default: [:]][app] = value as? String
+    } else {
+      currentSettings[key] = value
+    }
+  }
+  
+  func recomputeSettingsFromRaw() {
+    currentSettings = [:]
+    keybindings = [:]
+    
+    for (setting, value) in defaultSettings {
+      if let (app, keyString) = Settings.getKeybinding(settingKey: setting) {
+        let key = Settings.standardizeKeyString(keyString: keyString)
+        keybindings[key, default: [:]][app] = value as? String
+      }
+    }
+    
+    for (key, value) in rawSettings {
+      updateKey(key: key, value: value)
+    }
+  }
+  
+  static func loadFromFile() -> [String: Any]? {
+    guard let fileString = loadFileString(path: Settings.filePath) else {
+      return nil
+    }
+    
+    guard let settings = fileString.jsonStringToDict() else {
+      return nil
+    }
+    
+    return settings
+  }
+  
+  static func standardizeKeyString(keyString: String) -> String {
+    let keys = keyString.components(separatedBy: "+").map { keyAliases[$0] ?? $0 }
+    var standardKeys = keys.prefix(keys.count - 1).sorted { $0 < $1 }
+    standardKeys.append(keys[keys.count - 1])
+    return standardKeys.joined(separator: "+")
+  }
+  
+  static func getKeybinding(settingKey: String) -> (String, String)? {
+    // From a setting string like autocomplete.keybindings.control+r extract tuple of (app, keyString) if
+    // setting is a keybinding.
+    let components = settingKey.components(separatedBy: ".")
+    if components.count > 2, components[1] == "keybindings" {
+      let keyString = Settings.standardizeKeyString(keyString: components[2...].joined(separator: "."))
+      return (components[0], keyString)
+    } else if components.count > 1, components[0] == "keybindings" {
+      let keyString = Settings.standardizeKeyString(keyString: components[1...].joined(separator: "."))
+      return ("global", keyString)
+    }
+    return nil
   }
 
   func restartListener() {
@@ -218,10 +351,11 @@ class Settings {
   static let settingsUpdatedNotification = Notification.Name("settingsUpdated")
   func settingsUpdated() {
     if let settings = Settings.loadFromFile() {
-       processDiffs(prev: currentSettings, curr: settings)
-       currentSettings = settings
-       processSettingsUpdatesToLegacyDefaults()
-       NotificationCenter.default.post(Notification(name: Settings.settingsUpdatedNotification))
+      processDiffs(prev: rawSettings, curr: settings)
+      rawSettings = settings
+      recomputeSettingsFromRaw()
+      processSettingsUpdatesToLegacyDefaults()
+      NotificationCenter.default.post(Notification(name: Settings.settingsUpdatedNotification))
     } else {
       
       // Don't show prompt if file is deleted, mainly because it is confusing in the uninstall flow

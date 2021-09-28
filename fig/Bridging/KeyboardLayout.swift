@@ -47,45 +47,47 @@ class KeyboardLayout : NSObject {
         return nil
       }
       
-      switch(event.keyCode) {
-        case Keycode.upArrow:
-          return "↑"
-        case Keycode.downArrow:
-          return "↓"
-        case Keycode.leftArrow:
-          return "←"
-        case Keycode.rightArrow:
-          return "→"
-        case Keycode.delete:
-          return "⌫"
-        case Keycode.tab:
-          return "⇥"
-        case Keycode.escape:
-          return "<esc>"
-        case Keycode.returnKey:
-          return "↩"
-        default:
-          break
-      }
-      
-      var out = ""
+      var modifiers : [String] = []
       
       if event.modifierFlags.contains(.command) {
-        out += "⌘"
-      } else if event.modifierFlags.contains(.control) {
-        out += "⌃"
-      } else if event.modifierFlags.contains(.option) {
-        out += "⌥"
+        modifiers.append("command")
       }
-     
-      if let characters = event.characters {
-        out += characters
-      } else {
-        out += keyName(scanCode: event.keyCode) ?? ""
+      if event.modifierFlags.contains(.control) {
+        modifiers.append("control")
+      }
+      if event.modifierFlags.contains(.option) {
+        modifiers.append("option")
+      }
+      if event.modifierFlags.contains(.shift) {
+        modifiers.append("shift")
       }
       
+      let characters : String = {
+        switch(event.keyCode) {
+          case Keycode.upArrow:
+            return "up"
+          case Keycode.downArrow:
+            return "down"
+          case Keycode.leftArrow:
+            return "left"
+          case Keycode.rightArrow:
+            return "right"
+          case Keycode.delete:
+            return "delete"
+          case Keycode.tab:
+            return "tab"
+          case Keycode.escape:
+            return "esc"
+          case Keycode.returnKey:
+            return "enter"
+          default:
+            return event.charactersIgnoringModifiers ?? "";
+        }
+      }()
       
-      return out
+      modifiers.append(characters.lowercased())
+      
+      return modifiers.joined(separator: "+")
     }
     
     func keyCode(for ascii: String) -> CGKeyCode? {

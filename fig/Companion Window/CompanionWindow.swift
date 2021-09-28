@@ -21,16 +21,26 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
         
     var floatingWindowLevel: NSWindow.Level {
         // .statusBar level is required in order to appear above iTerm in Quake mode
-        if let level = tetheredWindow?.windowLevel, level == kCGStatusWindowLevel {
-            return .statusBar
-        } else {
+        guard let rawWindowLevel = tetheredWindow?.windowLevel else {
             return .floating
         }
+        
+        let windowLevel = NSWindow.Level(rawValue: Int(rawWindowLevel))
+        
+        if windowLevel == NSWindow.Level(rawValue: 0) {
+            return .floating
+        }
+        return windowLevel
     }
     //hides companion window when target is moving
     var shouldTrackWindow = true;
     
     var isDocked = true;
+    var isHidden: Bool {
+        get {
+            return self.frame.height == 1 || self.frame.height == 0 || !self.isVisible
+        }
+    }
     
     var oneTimeUse = false;
 
@@ -138,7 +148,11 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
 //        self.makeKeyAndOrderFront(nil)
         
         self.delegate = self
-//        self.backgroundColor = .red
+        
+        if let disableTransparency = Settings.shared.getValue(forKey: Settings.disableWebviewTransparency) as? Bool, disableTransparency {
+            self.backgroundColor = .red
+        }
+
 //        self.backgroundColor = NSColor(red: 47/255, green: 47/255, blue: 47/255, alpha: 1)
 
         
@@ -604,7 +618,7 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
                 let frame = self.positioning.frame(targetWindowFrame: targetFrame,
                                                    screen: candidates.first!.frame)
 
-                setOverlayFrame(frame)
+                setOverlayFrame(frame.offsetBy(dx: 0, dy: frame.height * -1))
     
             }
             
@@ -624,7 +638,8 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
 //                    }
                     let frame = self.positioning.frame(targetWindowFrame: targetFrame,
                                                        screen: NSScreen.main!.frame)
-                    setOverlayFrame(frame)
+                    
+                    setOverlayFrame(frame.offsetBy(dx: 0, dy: frame.height * -1))
     
                 }
             }
@@ -638,22 +653,7 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
             print("flicker: calling setOverlay")
             self.windowController?.shouldCascadeWindows = false;
         
-            var updated = frame
-            
-            // todo: flesh out positioning API
-            if let height = self.maxHeight {
-                if (height > frame.height) {
-                    let diff = height - frame.height
-                    updated.origin = CGPoint(x: frame.origin.x, y: frame.origin.y + diff)
-                    updated.size = CGSize(width: frame.width, height: height)
-
-                } else {
-                    let height2 = abs(height)
-                    updated.size = CGSize(width: frame.width, height: min(frame.height, height2))
-                }
-            }
-        
-            let newFrame = updated.offsetBy(dx: 0, dy: -1 * updated.height)
+            let newFrame = frame // updated.offsetBy(dx: 0, dy: -1 * updated.height)
             print("flicker:", newFrame, self.frame)
             guard newFrame != self.frame else {
                 print("flicker: same frame, aborting!")

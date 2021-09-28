@@ -47,7 +47,8 @@ class Logger {
         case config = "config"
         case positioning = "positioning"
         case api = "api"
-        
+        case inputMethod = "input-method"
+
         func pathToLogFile() -> URL {
           return Logger.defaultLocation
                  .appendingPathComponent(self.rawValue, isDirectory: false)

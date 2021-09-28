@@ -9,7 +9,8 @@
 import Cocoa
 import Sentry
 
-class HyperIntegration: IntegrationProvider {
+class HyperIntegration: TerminalIntegrationProvider {
+  static let `default` = HyperIntegration(bundleIdentifier: Integrations.Hyper)
   static let settingsPath = "\(NSHomeDirectory())/.hyper.js"
 
   static var settings: [String: Any]? {
@@ -23,21 +24,28 @@ class HyperIntegration: IntegrationProvider {
   
   // If the extension path changes make sure to update the uninstall script!
   static let pluginPath: URL = URL(fileURLWithPath:"\(NSHomeDirectory())/.hyper_plugins/local/fig-hyper-integration/index.js")
+  static let pluginPathInBundle = Bundle.main.url(forResource: "hyper-integration", withExtension: "js")!
 
-  static func install(withRestart:Bool = false, inBackground: Bool, completion: (() -> Void)? = nil) {
-    guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: Integrations.Hyper) else {
-        print("Hyper not installed")
-        return
+  func install() -> InstallationStatus {
+    guard NSWorkspace.shared.applicationIsInstalled(self.bundleIdentifier) else {
+        return .applicationNotInstalled
     }
     
-    print(url)
+    do {
+        try FileManager.default.createDirectory(atPath: HyperIntegration.pluginPath.deletingLastPathComponent().path, withIntermediateDirectories: true)
+        try FileManager.default.createSymbolicLink(at: HyperIntegration.pluginPath, withDestinationURL: HyperIntegration.pluginPathInBundle)
+    } catch {
+        
+        guard let destination = try? FileManager.default.destinationOfSymbolicLink(atPath: HyperIntegration.pluginPath.path),
+              destination == HyperIntegration.pluginPathInBundle.path else {
+            return .failed(error: "Could not create symbolic link to plugin in \(HyperIntegration.pluginPath)")
+        }
+    }
     
     var updatedSettings: String!
     
-    guard let settings = try? String(contentsOfFile: settingsPath) else {
-      print("Could not read Hyper settings")
-      SentrySDK.capture(message: "Could not read Hyper settings")
-      return
+    guard let settings = try? String(contentsOfFile: HyperIntegration.settingsPath) else {
+       return .failed(error: "Could not read Hyper settings")
     }
     
     let noExistingPlugins =
@@ -57,82 +65,56 @@ class HyperIntegration: IntegrationProvider {
       print("~/hyper.js already contains 'fig-hyper-integration'")
       updatedSettings = settings
       
-    } else if 
+    } else if
       settings.contains("localPlugins: []") {
       updatedSettings = settings.replacingOccurrences(of: "localPlugins: []", with: noExistingPlugins)
     } else if settings.contains("localPlugins: [") {
       updatedSettings = settings.replacingOccurrences(of: "localPlugins: [\n", with: existingPlugins)
     } else {
-      print("User will need to update the file manually")
-      SentrySDK.capture(message: "User will need to update the file manually")
-
-      return
+        return .failed(error: "In order for Fig to work with multiple tabs/panes in Hyper, you will need to setup the integration manually by editing ~/hyper.js.",
+                       supportURL: URL(string: "https://fig.io/support/terminals/hyper"))
     }
     
     do {
-      try FileManager.default.createDirectory(atPath: pluginPath.deletingLastPathComponent().path, withIntermediateDirectories: true)
-      try FileManager.default.createSymbolicLink(at: pluginPath, withDestinationURL: Bundle.main.url(forResource: "hyper-integration", withExtension: "js")!)
+        try updatedSettings.write(toFile: HyperIntegration.settingsPath, atomically: true, encoding: .utf8)
     } catch {
-      print("Could not add Hyper plugin")
-      SentrySDK.capture(message: "Could not add Hyper plugin")
+        return .failed(error: "Could not write to '\(HyperIntegration.settingsPath)' to update localPlugins.")
     }
     
-    try? updatedSettings.write(toFile: settingsPath, atomically: true, encoding: .utf8)
-    
-    if (withRestart) {
-      let Hyper = Restarter(with: Integrations.Hyper)
-      Hyper.restart(launchingIfInactive: false, completion: completion)
-    } else {
-      completion?()
-    }
-  }
-  
-  static var isInstalled: Bool {
-    guard let settings = try? String(contentsOfFile: settingsPath) else {
-        return false
-    }
-    
-    return FileManager.default.fileExists(atPath: pluginPath.path) && settings.contains("fig-hyper-integration")
-  }
-    
-  static func promptToInstall(completion: (()->Void)? = nil) {
-    guard Defaults.loggedIn else {
-      completion?()
-      return
-    }
-    guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: Integrations.Hyper) else {
-      // application not installed
-      completion?()
-      return
-    }
-    
-    let icon = NSImage(imageLiteralResourceName: "NSSecurity")
+    return .pending(event: .applicationRestart)
 
-    let app = NSWorkspace.shared.icon(forFile: url.path)
-    
-    let alert = NSAlert()
-    alert.icon = icon.overlayImage(app)
-    alert.messageText = "Install Hyper Integration?"
-    alert.informativeText = "Fig will add a plugin to Hyper that tracks which terminal session is active.\n\n"
-    alert.alertStyle = .warning
-    let button = alert.addButton(withTitle: "Install Plugin")
-    button.highlight(true)
-    alert.addButton(withTitle: "Not now")
-  
-    
-    let install = alert.runModal() == .alertFirstButtonReturn
-    
-    if (install) {
-      HyperIntegration.install(withRestart: true, inBackground: false) {
-        print("Installation completed!")
-        if let app = AXWindowServer.shared.topApplication, Integrations.Hyper == app.bundleIdentifier {
-          Accessibility.triggerScreenReaderModeInChromiumApplication(app)
-        }
-        completion?()
-      }
-    } else {
-      completion?()
-    }
   }
-  
+    
+
+  func verifyInstallation() -> InstallationStatus {
+    guard self.applicationIsInstalled else {
+        return .applicationNotInstalled
+    }
+    
+    guard let settings = try? String(contentsOfFile: HyperIntegration.settingsPath) else {
+        return .failed(error: "Could not read Hyper settings file (\(HyperIntegration.settingsPath))")
+    }
+    
+    guard settings.contains("fig-hyper-integration") else {
+        return .failed(error: "hyper.js must include `fig-hyper-integration` in localPlugins.")
+    }
+    
+    guard FileManager.default.fileExists(atPath: HyperIntegration.pluginPath.path) else {
+        return .failed(error: "Hyper plugin does not exists at \(HyperIntegration.pluginPath.path)")
+    }
+    
+    return .installed
+
+  }
+    
+}
+
+extension HyperIntegration {
+    func getCursorRect(in window: ExternalWindow) -> NSRect? {
+        return Accessibility.findXTermCursorInElectronWindow(window)
+    }
+    
+    func terminalIsFocused(in window: ExternalWindow) -> Bool {
+        return true
+    }
 }

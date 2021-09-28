@@ -23,16 +23,6 @@ protocol KeypressService {
   func register(handler: @escaping EventTapHandler )
 }
 
-protocol KeypressRedirectService {
-  func addRedirect(for keycode: UInt16, in window: ExternalWindow)
-  func removeRedirect(for keycode: UInt16, in window: ExternalWindow)
-  
-  func addRedirect(for keycode: Keystroke, in window: ExternalWindow)
-  func removeRedirect(for keycode: Keystroke, in window: ExternalWindow)
-
-  func setEnabled(value: Bool)
-}
-
 protocol EditBufferService {
   func keyBuffer(for window: ExternalWindow) -> KeystrokeBuffer
   func keyBuffer(for windowHash: ExternalWindowHash) -> KeystrokeBuffer
@@ -45,16 +35,14 @@ class KeypressProvider {
   var keyHandler: Any? = nil
   var tap: CFMachPort? = nil
   var mouseHandler: Any? = nil
+  var redirectsEnabled: Bool = true
   let throttler = Throttler(minimumDelay: 0.05)
-  private let queue = DispatchQueue(label: "com.withfig.keypress.redirects", attributes: .concurrent)
-  var redirects: [ExternalWindowHash:  Set<Keystroke>] = [:]
   var buffers: [ExternalWindowHash: KeystrokeBuffer] = [:]
   fileprivate let handlers: [EventTapHandler] =
-    [ Autocomplete.handleTabKey
-    , Autocomplete.handleEscapeKey
+    [ InputMethod.keypressTrigger
+    , Autocomplete.handleShowOnTab
     , KeypressProvider.processRegisteredHandlers
     , KeypressProvider.handleRedirect
-    , FishIntegration.handleKeystroke
     ]
   
   var registeredHandlers: [EventTapHandler] = []
@@ -216,7 +204,7 @@ class KeypressProvider {
       
       var action = ""
       if (event.type == .keyDown) {
-        action = "pressed "
+        action = "pressed"
       } else if (event.type == .keyUp) {
         action = "released"
       }
@@ -290,7 +278,6 @@ class KeypressProvider {
   }
   
   @objc func inputSourceChanged() {
-    resetAllRedirects()
     Autocomplete.position(makeVisibleImmediately: false, completion: nil)
   }
   
@@ -316,39 +303,49 @@ class KeypressProvider {
 
   // MARK: - EventTapHandlers
 
+  func setRedirectsEnabled(value: Bool) {
+    KeypressProvider.shared.redirectsEnabled = value
+  }
+  
   static func handleRedirect(event:CGEvent, in window: ExternalWindow) -> EventTapAction {
-    var keyCode = UInt16(event.getIntegerValueField(.keyboardEventKeycode))
+    // prevent redirects when typing in VSCode editor
+    guard window.isFocusedTerminal else {
+      return .forward
+    }
     
-    guard KeypressProvider.shared.shouldRedirect(event: event, in: window) else {
+    guard KeypressProvider.shared.redirectsEnabled else {
       return .ignore
     }
     
-    // prevent redirects when typing in VSCode editor
-    if Integrations.electronTerminals.contains(window.bundleId ?? "") && Accessibility.findXTermCursorInElectronWindow(window) == nil {
-      return .forward
-    }
-    
-    guard WindowManager.shared.autocomplete?.isVisible ?? true else {
-      return .forward
-    }
-    
-    // fig.keypress only recieves keyDown events
-    guard event.type == .keyDown else {
-      Autocomplete.position(makeVisibleImmediately: false)
-      return .consume
-    }
-    
+    if let keybindingString = KeyboardLayout.humanReadableKeyName(event) {
+      if let bindings = Settings.shared.getKeybindings(forKey: keybindingString) {
+        // Right now only handle autocomplete.keybindings
+        if let autocompleteBinding = bindings["autocomplete"] {
+          let autocompleteIsHidden = WindowManager.shared.autocomplete?.isHidden ?? true
 
-    if (keyCode == KeyboardLayout.shared.keyCode(for: "N") ?? Keycode.n) {
-      keyCode = Keycode.downArrow
+          guard autocompleteBinding.contains("--global") || !autocompleteIsHidden else {
+            return .ignore
+          }
+          
+          guard autocompleteBinding != "ignore" else {
+            return .ignore
+          }
+          
+          // fig.keypress only recieves keyDown events
+          guard event.type == .keyDown else {
+            Autocomplete.position(makeVisibleImmediately: false)
+            return .consume
+          }
+          
+          Logger.log(message: "Redirecting keypress '\(keybindingString)' to autocomplete", subsystem: .keypress)
+          let keyCode = UInt16(event.getIntegerValueField(.keyboardEventKeycode))
+          Autocomplete.redirect(keyCode: keyCode, event: event, for: window.hash)
+          return .consume
+        }
+      }
     }
     
-    if (keyCode == KeyboardLayout.shared.keyCode(for: "P") ?? Keycode.p) {
-      keyCode = Keycode.upArrow
-    }
-    
-    Autocomplete.redirect(keyCode: keyCode, event: event, for: window.hash)
-    return .consume
+    return .ignore
   }
   
   static func processRegisteredHandlers(event:CGEvent, in window: ExternalWindow) -> EventTapAction {
@@ -368,7 +365,7 @@ class KeypressProvider {
   func handleKeystroke(event: NSEvent?, in window: ExternalWindow) {
     
     // handle keystrokes in VSCode editor
-    if Integrations.electronTerminals.contains(window.bundleId ?? "") && Accessibility.getTextRect() == nil {
+    guard window.isFocusedTerminal else {
         return
     }
     
@@ -390,13 +387,6 @@ class KeypressProvider {
       
       return
     }
-
-    if let event = event, event.type == NSEvent.EventType.keyDown {
-      Autocomplete.update(with: keyBuffer.handleKeystroke(event: event), for: window.hash)
-    }
-    
-    Autocomplete.position()
- 
   }
 }
 
@@ -427,63 +417,4 @@ extension KeypressProvider: EditBufferService {
   func clean() {
     buffers = [:]
   }
-}
-
-extension KeypressProvider: KeypressRedirectService {
-  func shouldRedirect(event: CGEvent, in window: ExternalWindow) -> Bool {
-    
-    guard KeypressProvider.shared.enabled else {
-      return false
-    }
-    
-    let keystroke = Keystroke.from(event: event)
-    var windowHasRedirect: Bool!
-    queue.sync {
-      windowHasRedirect = self.redirects[window.hash]?.contains(keystroke) ?? false
-    }
-    
-    return windowHasRedirect
-  }
-  
-  func addRedirect(for keycode: Keystroke, in window: ExternalWindow) {
-    queue.async(flags: .barrier) {
-      var set = self.redirects[window.hash] ?? []
-      set.insert(keycode)
-      self.redirects[window.hash] = set
-    }
-  }
-  
-  func removeRedirect(for keycode: Keystroke, in window: ExternalWindow) {
-    queue.async(flags: .barrier) {
-      if var set = self.redirects[window.hash] {
-        set.remove(keycode)
-        self.redirects[window.hash] = set
-      }
-    }
-  }
-  
-  func addRedirect(for keycode: UInt16, in window: ExternalWindow) {
-    self.addRedirect(for: Keystroke(keyCode: keycode), in: window)
-  }
-  
-  func removeRedirect(for keycode: UInt16, in window: ExternalWindow) {
-    self.removeRedirect(for: Keystroke(keyCode: keycode), in: window)
-  }
-  
-  func resetRedirects(for window: ExternalWindow) {
-    queue.async(flags: .barrier) {
-      self.redirects[window.hash] = []
-    }
-  }
-  
-  func resetAllRedirects() {
-    queue.async(flags: .barrier) {
-      self.redirects = [:]
-    }
-  }
-  
-  func setEnabled(value: Bool) {
-    self.enabled = value
-  }
-  
 }

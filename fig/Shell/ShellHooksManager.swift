@@ -152,6 +152,11 @@ extension ShellHookManager {
 
     }
     
+    if Integrations.providers.keys.contains(window.bundleId ?? ""),
+       let provider = Integrations.providers[window.bundleId ?? ""] {
+        provider.runtimeValidationOccured()
+    }
+    
     DispatchQueue.main.async {
       // If leaving visor mode in iTerm, we need to manually check which window is on top
       // if let app = NSWorkspace.shared.frontmostApplication {

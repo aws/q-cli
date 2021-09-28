@@ -109,6 +109,12 @@ if arguments.count > 1 {
         }
       } else { // fig settings key value --> Write value to key
           let value = arguments[3]
+        
+          guard value != "--delete" && value != "--reset" else {
+            settings.removeValue(forKey: key)
+            Settings.serialize(settings: settings)
+            exit(0)
+          }
           
           guard var data = value.data(using: .utf8) else { exit(1) }
           var json = try? JSONSerialization.jsonObject(with: data, options: .allowFragments)
@@ -131,6 +137,13 @@ if arguments.count > 1 {
       exit(0)
 
     }
+}
+
+// determine if command exists as script in ~/.fig/tools/cli/SCRIPT.sh
+if let pathToScriptCommand = ScriptCommand.matchesArguments(arguments) {
+    exec(command: "/bin/bash",
+         args: [ pathToScriptCommand ] + Array(arguments.dropFirst(2)))
+    exit(0)
 }
 
 // early exit if bg:* and fig is not active

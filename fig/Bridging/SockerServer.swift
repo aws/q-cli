@@ -94,7 +94,7 @@ class WebSocketServer {
 
                         DispatchQueue.main.async {
                           let quit = Alert.show(title: "Could not link with terminal",
-                                     message: "A process is already listening on port \(Defaults.port).\nRun `lsof -i tcp:\(Defaults.port)` to identify it.\n\nPlease email hello@fig.io for help debugging.",
+                                     message: "Error listening on port \(port): \(error).",
                                      okText: "Quit",
                                      hasSecondaryOption: true, secondaryOptionTitle: "Restart")
                           
@@ -234,7 +234,7 @@ class ShellBridgeSocketService: WebSocketService {
                                       // the new integration is installed, insce after the new API is connected,
                                       // the python script is deleted from iTerm's AutoLaunch directory.
                                       // - mschrage, v1.0.44
-                                      if !iTermIntegration.shared.isConnectedToAPI {
+                                      if !iTermIntegration.default.isConnectedToAPI {
                                         ShellHookManager.shared.currentTabDidChange(msg)
                                       }
                                     case "bg:init":
@@ -262,7 +262,7 @@ class ShellBridgeSocketService: WebSocketService {
                                     case "bg:keyboard-focus-changed":
                                       ShellHookManager.shared.currentTabDidChange(msg, includesBundleId: true)
                                     case "bg:iterm-api-ready":
-                                      iTermIntegration.shared.attemptToConnect()
+                                      iTermIntegration.default.attemptToConnect()
                                     case "bg:alert":
                                         if let title = msg.options?[safe: 1], let text = msg.options?[safe: 2]  {
                                             DispatchQueue.main.async {
