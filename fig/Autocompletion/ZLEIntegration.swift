@@ -144,10 +144,14 @@ class ZLEIntegration: ShellIntegration {
         
         if let window = AXWindowServer.shared.whitelistedWindow,
             KeypressProvider.shared.keyBuffer(for: window).backing == .zle {
+            InputMethod.requestCursorUpdate(for: window.bundleId)
+            Timer.delayWithSeconds(0.175) {
 
-            Autocomplete.position(makeVisibleImmediately: false)
+                Autocomplete.position(makeVisibleImmediately: false)
+            }
          
 //            WindowManager.shared.positionAutocompletePopover(textRect: KeypressProvider.shared.getTextRect(), makeVisibleImmediately: false, completion: nil)
+
 
         }
       }

@@ -269,7 +269,7 @@ class PseudoTerminal : PseudoTerminalService {
         commandToRun = "\(command) | \(PseudoTerminal.callbackExecutable) \(handlerId)"
       } else {
         let tmpFilepath = "/tmp/\(handlerId)"
-        commandToRun = "( \(command) )> \(tmpFilepath) && \(PseudoTerminal.callbackExecutable) \(handlerId) \(tmpFilepath)"
+        commandToRun = "( ( \(command) )> \(tmpFilepath) ; \(PseudoTerminal.callbackExecutable) \(handlerId) \(tmpFilepath) )"
 
       }
       

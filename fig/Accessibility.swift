@@ -78,6 +78,7 @@ class Accessibility {
         TelemetryProvider.track(event: .grantedAXPermission, with: [:])
       }
       print("Accessibility Permission Granted!!!")
+      Accessibility.setGlobalTimeout(seconds: 2)
       completion?(granted)
       Accessibility.pendingPermission = false
     }
@@ -220,9 +221,25 @@ class Accessibility {
       return cache
     })
     
+    let root = UIElement(axElement)
+    
     if skipCache {
      Accessibility.xtermLog("skip cache")
       cursor = nil
+    }
+    
+    print("xterm-cursor: windowId = \(window.windowId)")
+    
+    if cursor != nil,
+       let toplevelElement: UIElement = try? cursor?.attribute(.topLevelUIElement),
+       root != toplevelElement {
+//       let windowTitle: String = try? root.attribute(.title),
+//       let elementTitle: String = try? toplevelElement.attribute(.title),
+//       windowTitle != elementTitle {
+        print("xterm-cursor: window for cached cursor (\(String(describing: toplevelElement)) is not equal to current window (\(String(describing: root))")
+//        print("xterm-cursor: window for cached cursor (\(elementTitle)) is not equal to current window (\(windowTitle)")
+        cursor = nil
+        cursorCache[window.hash] = []
     }
     
     // some additional checks and performance optimization are put in place for VSCode (and other electron IDEs) so only enable it for them!
@@ -237,7 +254,6 @@ class Accessibility {
       } else {
         
         throttler.throttle {
-          let root = UIElement(axElement)
           cachedCursor = findXTermCursor(root, inVSCodeIDE: isElectronIDE)
           // trigger reposition if cursor has been found
           print("xterm-cursor: finished searching for cursor (throttled) \(String(describing: cachedCursor))")
@@ -257,6 +273,12 @@ class Accessibility {
     
     guard let currentCursor = cursor else {
       return nil
+    }
+    
+    // ensure that pid associated cursor matches pid associated with window
+    guard let pid = try? currentCursor.pid(),
+          pid == window.app.processIdentifier else {
+        return nil
     }
     
     // create cache if it doesn't exist
@@ -386,19 +408,8 @@ class Accessibility {
     return true
     
   }
-  
-  static func getTextRect(extendRange: Bool = true) -> CGRect? {
     
-    // prevent cursor position for being returned when apps like spotlight & alfred are active
-    
-    guard Accessibility.focusedApplicationIsSupportedTerminal() else {
-        return nil
-    }
-    
-    if let window = AXWindowServer.shared.whitelistedWindow, Integrations.electronTerminals.contains(window.bundleId ?? "") {
-      return Accessibility.findXTermCursorInElectronWindow(window)
-    }
-    
+static func getCursorRect(extendRange: Bool = true) -> NSRect? {
     let systemWideElement = AXUIElementCreateSystemWide()
     var focusedElement : AnyObject?
     let error = AXUIElementCopyAttributeValue(systemWideElement, kAXFocusedUIElementAttribute as CFString, &focusedElement)
@@ -452,6 +463,21 @@ class Accessibility {
     
     // convert Quartz coordinate system to Cocoa!
     return NSRect(x: selectRect.origin.x, y: NSMaxY(NSScreen.screens[0].frame) - selectRect.origin.y, width:  selectRect.width, height: selectRect.height)
+}
+    
+  static func getTextRect() -> CGRect? {
+    
+    // prevent cursor position for being returned when apps like spotlight & alfred are active
+    
+    guard Accessibility.focusedApplicationIsSupportedTerminal() else {
+        return nil
+    }
+    
+    guard let window = AXWindowServer.shared.whitelistedWindow else {
+        return nil
+    }
+    
+    return window.cursor
   }
 
   fileprivate static func xtermLog(_ message: String){

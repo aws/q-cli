@@ -395,6 +395,22 @@ class ExternalWindow {
         return title as? String
     }
     
+    var isFocusedTerminal: Bool {
+        guard let provider = Integrations.providers[self.bundleId ?? ""] else {
+            return false
+        }
+        
+        return provider.terminalIsFocused(in: self)
+    }
+    
+    var cursor: NSRect? {
+        guard let provider = Integrations.providers[self.bundleId ?? ""] else {
+            return nil
+        }
+        
+        return provider.getCursorRect(in: self)
+    }
+    
 }
 
 extension ExternalWindow: Hashable {
@@ -406,4 +422,3 @@ extension ExternalWindow: Hashable {
         return lhs.windowId == rhs.windowId
        }
 }
-

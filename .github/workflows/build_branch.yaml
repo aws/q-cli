@@ -91,7 +91,7 @@ jobs:
           product-path: "Export/Fig.app"
       - name: "Package as .zip"
         run: |
-          zip -r fig.zip Export/Fig.app
+          ditto -c -k --sequesterRsrc --keepParent Export/Fig.app Fig.zip
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1

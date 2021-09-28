@@ -45,7 +45,6 @@
 		7510F8BF24A99A4B00E86F7C /* WindowService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F8BE24A99A4B00E86F7C /* WindowService.swift */; };
 		7510F8C124A9B32D00E86F7C /* WindowManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F8C024A9B32D00E86F7C /* WindowManager.swift */; };
 		7512A48B263252EF00CDE824 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 7512A48A263252EF00CDE824 /* Sparkle */; };
-		75184664263CF227003CBCF9 /* settings-open.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75184663263CF1E0003CBCF9 /* settings-open.sh */; };
 		7518606F255B2A0A0000A7C7 /* flag@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 75186069255B2A090000A7C7 /* flag@2x.png */; };
 		75186070255B2A0A0000A7C7 /* asterisk@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7518606A255B2A090000A7C7 /* asterisk@2x.png */; };
 		75186071255B2A0A0000A7C7 /* option@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7518606B255B2A090000A7C7 /* option@2x.png */; };
@@ -55,10 +54,8 @@
 		75186083255CB0C20000A7C7 /* iterm-integration.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75186077255CB0870000A7C7 /* iterm-integration.sh */; };
 		75186084255CB0C20000A7C7 /* 1.0.23.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75186078255CB0870000A7C7 /* 1.0.23.sh */; };
 		75186085255CB0C20000A7C7 /* fig-iterm-integration.py in Resources */ = {isa = PBXBuildFile; fileRef = 75186079255CB0870000A7C7 /* fig-iterm-integration.py */; };
-		75186086255CB0C20000A7C7 /* update.sh in Resources */ = {isa = PBXBuildFile; fileRef = 7518607A255CB0870000A7C7 /* update.sh */; };
 		75186087255CB0C20000A7C7 /* 1.0.22.sh in Resources */ = {isa = PBXBuildFile; fileRef = 7518607B255CB0870000A7C7 /* 1.0.22.sh */; };
 		75186088255CB0C20000A7C7 /* uninstall.sh in Resources */ = {isa = PBXBuildFile; fileRef = 7518607C255CB0870000A7C7 /* uninstall.sh */; };
-		75186089255CB0C20000A7C7 /* source.sh in Resources */ = {isa = PBXBuildFile; fileRef = 7518607D255CB0870000A7C7 /* source.sh */; };
 		7518608A255CB0C20000A7C7 /* 1.0.21.sh in Resources */ = {isa = PBXBuildFile; fileRef = 7518607E255CB0870000A7C7 /* 1.0.21.sh */; };
 		7518608B255CB0C20000A7C7 /* feedback.sh in Resources */ = {isa = PBXBuildFile; fileRef = 7518607F255CB0870000A7C7 /* feedback.sh */; };
 		7518608C255CB0C20000A7C7 /* 1.0.24.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75186080255CB0870000A7C7 /* 1.0.24.sh */; };
@@ -88,11 +85,8 @@
 		752C0BE2247A33F20077E415 /* viewer.html in Resources */ = {isa = PBXBuildFile; fileRef = 752C0BE1247A33F10077E415 /* viewer.html */; };
 		752C0BE4247B44C60077E415 /* finder.html in Resources */ = {isa = PBXBuildFile; fileRef = 752C0BE3247B44C50077E415 /* finder.html */; };
 		752C0BE6247C25290077E415 /* display.html in Resources */ = {isa = PBXBuildFile; fileRef = 752C0BE5247C25280077E415 /* display.html */; };
-		752D71C225AE80CF00263527 /* ssh.sh in Resources */ = {isa = PBXBuildFile; fileRef = 752D71C125AE790200263527 /* ssh.sh */; };
 		752D71C525AE9B7200263527 /* ssh.html in Resources */ = {isa = PBXBuildFile; fileRef = 752D71C425AE9B7200263527 /* ssh.html */; };
 		752D71C725AECB4B00263527 /* ssh.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 752D71C625AECB4B00263527 /* ssh.mp4 */; };
-		752D71CA25AFD7B400263527 /* team-download.sh in Resources */ = {isa = PBXBuildFile; fileRef = 752D71C825AFD59B00263527 /* team-download.sh */; };
-		752D71CB25AFD7B400263527 /* team-upload.sh in Resources */ = {isa = PBXBuildFile; fileRef = 752D71C925AFD5B800263527 /* team-upload.sh */; };
 		752D71CD25B8A6B300263527 /* Restarter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 752D71CC25B8A6B200263527 /* Restarter.swift */; };
 		752E68DD2620F868009E9A7E /* gradle@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752E68DA2620F868009E9A7E /* gradle@2x.png */; };
 		752E68DE2620F868009E9A7E /* slack@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752E68DB2620F868009E9A7E /* slack@2x.png */; };
@@ -110,8 +104,11 @@
 		752E68F72620F885009E9A7E /* vercel@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752E68EA2620F884009E9A7E /* vercel@2x.png */; };
 		752E68F82620F885009E9A7E /* github@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752E68EB2620F884009E9A7E /* github@2x.png */; };
 		752E68F92620F885009E9A7E /* apple@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752E68EC2620F884009E9A7E /* apple@2x.png */; };
-		753C31A22641FA4400202AAA /* settings-docs.sh in Resources */ = {isa = PBXBuildFile; fileRef = 753C31A12641F6D100202AAA /* settings-docs.sh */; };
-		753C31A42643816D00202AAA /* VSCodeInsidersIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 753C31A32643816100202AAA /* VSCodeInsidersIntegration.swift */; };
+		754316F726E08F5C00188887 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 754316F626E08F5C00188887 /* AppDelegate.swift */; };
+		754316FB26E08F5D00188887 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 754316FA26E08F5D00188887 /* Assets.xcassets */; };
+		754316FE26E08F5D00188887 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 754316FD26E08F5D00188887 /* Preview Assets.xcassets */; };
+		7543170126E08F5D00188887 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 754316FF26E08F5D00188887 /* Main.storyboard */; };
+		7543170826E0901B00188887 /* FigIMKInputController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7543170726E0901B00188887 /* FigIMKInputController.swift */; };
 		754D31B525759D900020CED4 /* tutorial.html in Resources */ = {isa = PBXBuildFile; fileRef = 754D31B425759D900020CED4 /* tutorial.html */; };
 		75543FD0268AC6E5003221DF /* fig-0.0.4.vsix in Resources */ = {isa = PBXBuildFile; fileRef = 75543FCF268AC6E5003221DF /* fig-0.0.4.vsix */; };
 		755D0DE0247DDE050074AB5C /* FigCLI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755D0DDF247DDE050074AB5C /* FigCLI.swift */; };
@@ -121,7 +118,6 @@
 		755EC8CF266997A700CBEF57 /* settings in Resources */ = {isa = PBXBuildFile; fileRef = 755EC8CE266997A600CBEF57 /* settings */; };
 		755FC554268D09DE00966027 /* UpdateService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755FC553268D09DE00966027 /* UpdateService.swift */; };
 		7564AE6F265C9DCE0040BD4C /* discord@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7564AE6E265C9DCD0040BD4C /* discord@2x.png */; };
-		7564AE7D265CB2930040BD4C /* community.sh in Resources */ = {isa = PBXBuildFile; fileRef = 7564AE78265CB0620040BD4C /* community.sh */; };
 		75675955244634AD006AA988 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75675954244634AD006AA988 /* AppDelegate.swift */; };
 		75675959244634B2006AA988 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 75675958244634B2006AA988 /* Assets.xcassets */; };
 		7567595C244634B2006AA988 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7567595B244634B2006AA988 /* Preview Assets.xcassets */; };
@@ -132,6 +128,10 @@
 		756759D424498CA0006AA988 /* WebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756759D324498CA0006AA988 /* WebViewController.swift */; };
 		7568203126003BDF0006FE78 /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7568203026003BDF0006FE78 /* Settings.swift */; };
 		756C4D832542A6D30035B467 /* Starscream in Frameworks */ = {isa = PBXBuildFile; productRef = 756C4D822542A6D30035B467 /* Starscream */; };
+		7571775726F3B8A80071AE10 /* FigInputMethod.app in Embed Input Method */ = {isa = PBXBuildFile; fileRef = 754316F426E08F5C00188887 /* FigInputMethod.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		7571775926F3E4CA0071AE10 /* settings.html in Resources */ = {isa = PBXBuildFile; fileRef = 7571775826F3E4CA0071AE10 /* settings.html */; };
+		7571778326F91BF50071AE10 /* AppleTerminalIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7571778226F91BF50071AE10 /* AppleTerminalIntegration.swift */; };
+		75738F1E26DDAB760086D972 /* InputMethod.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75738F1D26DDAB760086D972 /* InputMethod.swift */; };
 		7573F1582601927200C833FA /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7573F1572601927200C833FA /* Settings.swift */; };
 		7573F15B2602B4E000C833FA /* alert@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7573F1592602B4E000C833FA /* alert@2x.png */; };
 		7573F15C2602B4E000C833FA /* invite@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7573F15A2602B4E000C833FA /* invite@2x.png */; };
@@ -157,7 +157,6 @@
 		757CA8E624905B38002A64A8 /* SockerServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757CA8E524905B38002A64A8 /* SockerServer.swift */; };
 		75809B0E24BFA64D00BFFB3E /* TelemetryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75809B0D24BFA64D00BFFB3E /* TelemetryService.swift */; };
 		75809B1124C3876B00BFFB3E /* run-tutorial.js in Resources */ = {isa = PBXBuildFile; fileRef = 75809B1024C3876B00BFFB3E /* run-tutorial.js */; };
-		7585862625941A2700B76B4A /* invite.sh in Resources */ = {isa = PBXBuildFile; fileRef = 7585862525941A2700B76B4A /* invite.sh */; };
 		7587B4D824F97F9E00E355E4 /* ShellHooksManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7587B4D724F97F9E00E355E4 /* ShellHooksManager.swift */; };
 		758AEB5E24CD35D400A15EAF /* WebSocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 758AEB5D24CD35D400A15EAF /* WebSocket.swift */; };
 		758AEB6024CE529D00A15EAF /* String+Shell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 758AEB5F24CE529D00A15EAF /* String+Shell.swift */; };
@@ -174,6 +173,9 @@
 		759F988C25BFF8B000EC3407 /* docker@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 759F988825BFF8B000EC3407 /* docker@2x.png */; };
 		759F988E25BFFAE500EC3407 /* heroku@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 759F988D25BFFAE500EC3407 /* heroku@2x.png */; };
 		759F989025C1172100EC3407 /* install_and_upgrade_fallback.sh in Resources */ = {isa = PBXBuildFile; fileRef = 759F988F25C1151D00EC3407 /* install_and_upgrade_fallback.sh */; };
+		75A0A71926F1A79A008FAD70 /* KittyIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A0A71826F1A79A008FAD70 /* KittyIntegration.swift */; };
+		75A0A71B26F1A7CE008FAD70 /* kitty-integration.py in Resources */ = {isa = PBXBuildFile; fileRef = 75A0A71A26F1A7CE008FAD70 /* kitty-integration.py */; };
+		75A0A71D26F27E3D008FAD70 /* SemanticVersion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A0A71C26F27E3D008FAD70 /* SemanticVersion.swift */; };
 		75A4521025A83E5600107D2C /* remote_cwd.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75A4520F25A839F500107D2C /* remote_cwd.sh */; };
 		75A4521425AD367E00107D2C /* Feedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A4521325AD367E00107D2C /* Feedback.swift */; };
 		75A4521A25AE2E6B00107D2C /* CommandIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A4521925AE2E6A00107D2C /* CommandIntegration.swift */; };
@@ -186,12 +188,6 @@
 		75A4A2A425CB4DE3002EFD6B /* BundleIdCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A4A2A325CB4DE3002EFD6B /* BundleIdCache.swift */; };
 		75A4A2A725CBBDE7002EFD6B /* AXSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 75A4A2A625CBBDE7002EFD6B /* AXSwift */; };
 		75AA24C125A656FA00A51E9D /* NativeCLI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75AA24C025A656FA00A51E9D /* NativeCLI.swift */; };
-		75AA24CA25A6F39800A51E9D /* list.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75AA24C325A6EA5000A51E9D /* list.sh */; };
-		75AA24CB25A6F39800A51E9D /* help.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75AA24C425A6EA5900A51E9D /* help.sh */; };
-		75AA24CD25A6F98400A51E9D /* uninstall_spec.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75AA24CC25A6F6F000A51E9D /* uninstall_spec.sh */; };
-		75AA24D125A79F3400A51E9D /* tweet.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75AA24CE25A79A2000A51E9D /* tweet.sh */; };
-		75AA24D225A79F3400A51E9D /* issue.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75AA24D025A79B4A00A51E9D /* issue.sh */; };
-		75AA24D325A79F3400A51E9D /* contribute.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75AA24CF25A79ACC00A51E9D /* contribute.sh */; };
 		75AA24DA25A7E8B000A51E9D /* lsof.m in Sources */ = {isa = PBXBuildFile; fileRef = 75AA24D925A7E8B000A51E9D /* lsof.m */; };
 		75AE8FD926D7462600161B8C /* FigAPIBindings in Frameworks */ = {isa = PBXBuildFile; productRef = 75AE8FD826D7462600161B8C /* FigAPIBindings */; };
 		75AEF2E425C3C34A00D78431 /* Diagnostic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75AEF2E325C3C34A00D78431 /* Diagnostic.swift */; };
@@ -222,24 +218,26 @@
 		75C16D4826FD1EB400C83296 /* FigNotificationCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75C16D4726FD1EB400C83296 /* FigNotificationCenter.swift */; };
 		75C3B7FF261BC9D0007FA3A7 /* FishIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75C3B7FE261BC9D0007FA3A7 /* FishIntegration.swift */; };
 		75C57C142581C0700065741E /* ioreg.c in Sources */ = {isa = PBXBuildFile; fileRef = 75C57C132581C0700065741E /* ioreg.c */; };
-		75C8A1422645E029001B69DA /* set-path.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75C8A1412645DEFB001B69DA /* set-path.sh */; };
 		75C8A1602649E712001B69DA /* fig-0.0.2.vsix in Resources */ = {isa = PBXBuildFile; fileRef = 75C8A15F2649E712001B69DA /* fig-0.0.2.vsix */; };
 		75CFDBDF24EDB2E900F00CAE /* Onboarding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75CFDBDE24EDB2E900F00CAE /* Onboarding.swift */; };
 		75CFDBE224EDE31800F00CAE /* Sentry in Frameworks */ = {isa = PBXBuildFile; productRef = 75CFDBE124EDE31800F00CAE /* Sentry */; };
+		75D1ECB426EFE55A00BC8A04 /* AlacrittyIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75D1ECB326EFE55A00BC8A04 /* AlacrittyIntegration.swift */; };
+		75D1ECBE26F15F4500BC8A04 /* TerminalIntegrationProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75D1ECBD26F15F4500BC8A04 /* TerminalIntegrationProvider.swift */; };
+		75D1ECC026F1658300BC8A04 /* InstallationStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75D1ECBF26F1658300BC8A04 /* InstallationStatus.swift */; };
 		75D2E3CB249C1E7500607F66 /* terminal.css in Resources */ = {isa = PBXBuildFile; fileRef = 75D2E3CA249C1E7500607F66 /* terminal.css */; };
 		75DA86A325EDB05100722F1D /* Integrations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DA86A225EDB05100722F1D /* Integrations.swift */; };
 		75DA86A525EEBD7500722F1D /* Alert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DA86A425EEBD7400722F1D /* Alert.swift */; };
-		75DA86A725EF08F900722F1D /* debug-ssh.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75DA86A625EF085500722F1D /* debug-ssh.sh */; };
 		75DA86A925EF145E00722F1D /* TmuxIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DA86A825EF145E00722F1D /* TmuxIntegration.swift */; };
+		75DF864A26F31756003F32A5 /* cpu@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 751DC66226EBF3B500697DFB /* cpu@2x.png */; };
 		75E993F22515A6DD000BE6BE /* statusbar@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 75E993F12515A6DD000BE6BE /* statusbar@2x.png */; };
 		75E993F52517E226000BE6BE /* AXWindowServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75E993F42517E226000BE6BE /* AXWindowServer.swift */; };
 		75EB570B267AAE5B00F10C64 /* fig-iterm-integration.scpt in Resources */ = {isa = PBXBuildFile; fileRef = 75EB570A267AAE5B00F10C64 /* fig-iterm-integration.scpt */; };
-		75EB5721267D749A00F10C64 /* debug-log.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75EB571C267D534200F10C64 /* debug-log.sh */; };
 		75EB592B258D98A7002915E7 /* BiMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75EB592A258D98A7002915E7 /* BiMap.swift */; };
 		75EB592D258DD771002915E7 /* TTY.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75EB592C258DD771002915E7 /* TTY.swift */; };
 		75EDDC4E25D23773003AECC6 /* HyperIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75EDDC4D25D23773003AECC6 /* HyperIntegration.swift */; };
 		75EDDC5125D24755003AECC6 /* hyper-integration.js in Resources */ = {isa = PBXBuildFile; fileRef = 75EDDC5025D24755003AECC6 /* hyper-integration.js */; };
 		75EDDC5B25D4BC54003AECC6 /* UnixSocketClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75EDDC5A25D4BC53003AECC6 /* UnixSocketClient.swift */; };
+		75F78F8226DC3A56001FB6C1 /* ScriptCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75F78F8126DC3A56001FB6C1 /* ScriptCommands.swift */; };
 		75F7F952261FBDC30005E215 /* UnixSocketServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75F7F951261FBDC30005E215 /* UnixSocketServer.swift */; };
 		75F7F954262007170005E215 /* ShellHooksTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75F7F953262007170005E215 /* ShellHooksTransport.swift */; };
 		75FE40002626A4BD00AC8414 /* Github.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75FE3FFF2626A4BD00AC8414 /* Github.swift */; };
@@ -278,6 +276,17 @@
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 1;
+		};
+		7571775626F3B8910071AE10 /* Embed Input Method */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 12;
+			dstPath = Contents/Helpers;
+			dstSubfolderSpec = 1;
+			files = (
+				7571775726F3B8A80071AE10 /* FigInputMethod.app in Embed Input Method */,
+			);
+			name = "Embed Input Method";
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 		758AEB6324CE8B2F00A15EAF /* Embed Command Line Tool */ = {
 			isa = PBXCopyFilesBuildPhase;
@@ -334,7 +343,6 @@
 		7510F8BC24A9861E00E86F7C /* PrivateWindow.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PrivateWindow.m; sourceTree = "<group>"; };
 		7510F8BE24A99A4B00E86F7C /* WindowService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowService.swift; sourceTree = "<group>"; };
 		7510F8C024A9B32D00E86F7C /* WindowManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowManager.swift; sourceTree = "<group>"; };
-		75184663263CF1E0003CBCF9 /* settings-open.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "settings-open.sh"; sourceTree = "<group>"; };
 		75186069255B2A090000A7C7 /* flag@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "flag@2x.png"; sourceTree = "<group>"; };
 		7518606A255B2A090000A7C7 /* asterisk@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "asterisk@2x.png"; sourceTree = "<group>"; };
 		7518606B255B2A090000A7C7 /* option@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "option@2x.png"; sourceTree = "<group>"; };
@@ -344,10 +352,8 @@
 		75186077255CB0870000A7C7 /* iterm-integration.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "iterm-integration.sh"; sourceTree = "<group>"; };
 		75186078255CB0870000A7C7 /* 1.0.23.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = 1.0.23.sh; sourceTree = "<group>"; };
 		75186079255CB0870000A7C7 /* fig-iterm-integration.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = "fig-iterm-integration.py"; sourceTree = "<group>"; };
-		7518607A255CB0870000A7C7 /* update.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = update.sh; sourceTree = "<group>"; };
 		7518607B255CB0870000A7C7 /* 1.0.22.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = 1.0.22.sh; sourceTree = "<group>"; };
 		7518607C255CB0870000A7C7 /* uninstall.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = uninstall.sh; sourceTree = "<group>"; };
-		7518607D255CB0870000A7C7 /* source.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = source.sh; sourceTree = "<group>"; };
 		7518607E255CB0870000A7C7 /* 1.0.21.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = 1.0.21.sh; sourceTree = "<group>"; };
 		7518607F255CB0870000A7C7 /* feedback.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = feedback.sh; sourceTree = "<group>"; };
 		75186080255CB0870000A7C7 /* 1.0.24.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = 1.0.24.sh; sourceTree = "<group>"; };
@@ -355,6 +361,7 @@
 		75186082255CB0870000A7C7 /* 1.0.20.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = 1.0.20.sh; sourceTree = "<group>"; };
 		751C3BEB24B6910800B5C7FD /* Remote.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Remote.swift; sourceTree = "<group>"; };
 		751C3BED24B6915000B5C7FD /* Defaults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Defaults.swift; sourceTree = "<group>"; };
+		751DC66226EBF3B500697DFB /* cpu@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "cpu@2x.png"; sourceTree = "<group>"; };
 		751F7588246D090100E083C8 /* WebBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebBridge.swift; sourceTree = "<group>"; };
 		751F758E246E16D800E083C8 /* figcli */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = figcli; sourceTree = BUILT_PRODUCTS_DIR; };
 		751F7590246E16D800E083C8 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
@@ -377,11 +384,8 @@
 		752C0BE1247A33F10077E415 /* viewer.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = viewer.html; sourceTree = "<group>"; };
 		752C0BE3247B44C50077E415 /* finder.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = finder.html; sourceTree = "<group>"; };
 		752C0BE5247C25280077E415 /* display.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = display.html; sourceTree = "<group>"; };
-		752D71C125AE790200263527 /* ssh.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = ssh.sh; sourceTree = "<group>"; };
 		752D71C425AE9B7200263527 /* ssh.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = ssh.html; sourceTree = "<group>"; };
 		752D71C625AECB4B00263527 /* ssh.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = ssh.mp4; sourceTree = "<group>"; };
-		752D71C825AFD59B00263527 /* team-download.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "team-download.sh"; sourceTree = "<group>"; };
-		752D71C925AFD5B800263527 /* team-upload.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "team-upload.sh"; sourceTree = "<group>"; };
 		752D71CC25B8A6B200263527 /* Restarter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Restarter.swift; sourceTree = "<group>"; };
 		752E68DA2620F868009E9A7E /* gradle@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "gradle@2x.png"; sourceTree = "<group>"; };
 		752E68DB2620F868009E9A7E /* slack@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "slack@2x.png"; sourceTree = "<group>"; };
@@ -399,8 +403,14 @@
 		752E68EA2620F884009E9A7E /* vercel@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "vercel@2x.png"; sourceTree = "<group>"; };
 		752E68EB2620F884009E9A7E /* github@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "github@2x.png"; sourceTree = "<group>"; };
 		752E68EC2620F884009E9A7E /* apple@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "apple@2x.png"; sourceTree = "<group>"; };
-		753C31A12641F6D100202AAA /* settings-docs.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "settings-docs.sh"; sourceTree = "<group>"; };
-		753C31A32643816100202AAA /* VSCodeInsidersIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VSCodeInsidersIntegration.swift; sourceTree = "<group>"; };
+		754316F426E08F5C00188887 /* FigInputMethod.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FigInputMethod.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		754316F626E08F5C00188887 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		754316FA26E08F5D00188887 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		754316FD26E08F5D00188887 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		7543170026E08F5D00188887 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		7543170226E08F5D00188887 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		7543170326E08F5D00188887 /* InputMethod.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = InputMethod.entitlements; sourceTree = "<group>"; };
+		7543170726E0901B00188887 /* FigIMKInputController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FigIMKInputController.swift; sourceTree = "<group>"; };
 		754D31B425759D900020CED4 /* tutorial.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = tutorial.html; sourceTree = "<group>"; };
 		75543FCF268AC6E5003221DF /* fig-0.0.4.vsix */ = {isa = PBXFileReference; lastKnownFileType = file; path = "fig-0.0.4.vsix"; sourceTree = "<group>"; };
 		755D0DDF247DDE050074AB5C /* FigCLI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FigCLI.swift; sourceTree = "<group>"; };
@@ -409,7 +419,6 @@
 		755EC8CE266997A600CBEF57 /* settings */ = {isa = PBXFileReference; lastKnownFileType = folder; path = settings; sourceTree = "<group>"; };
 		755FC553268D09DE00966027 /* UpdateService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateService.swift; sourceTree = "<group>"; };
 		7564AE6E265C9DCD0040BD4C /* discord@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "discord@2x.png"; sourceTree = "<group>"; };
-		7564AE78265CB0620040BD4C /* community.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = community.sh; sourceTree = "<group>"; };
 		75675951244634AD006AA988 /* fig.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = fig.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		75675954244634AD006AA988 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		75675958244634B2006AA988 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -426,6 +435,9 @@
 		756759962446C44C006AA988 /* String+Shell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+Shell.swift"; sourceTree = "<group>"; };
 		756759D324498CA0006AA988 /* WebViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewController.swift; sourceTree = "<group>"; };
 		7568203026003BDF0006FE78 /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
+		7571775826F3E4CA0071AE10 /* settings.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = settings.html; sourceTree = "<group>"; };
+		7571778226F91BF50071AE10 /* AppleTerminalIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleTerminalIntegration.swift; sourceTree = "<group>"; };
+		75738F1D26DDAB760086D972 /* InputMethod.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputMethod.swift; sourceTree = "<group>"; };
 		7573F1572601927200C833FA /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
 		7573F1592602B4E000C833FA /* alert@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "alert@2x.png"; sourceTree = "<group>"; };
 		7573F15A2602B4E000C833FA /* invite@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "invite@2x.png"; sourceTree = "<group>"; };
@@ -454,7 +466,6 @@
 		75809B0D24BFA64D00BFFB3E /* TelemetryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetryService.swift; sourceTree = "<group>"; };
 		75809B0F24C2C66100BFFB3E /* WebView+Private.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "WebView+Private.h"; sourceTree = "<group>"; };
 		75809B1024C3876B00BFFB3E /* run-tutorial.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = "run-tutorial.js"; sourceTree = "<group>"; };
-		7585862525941A2700B76B4A /* invite.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = invite.sh; sourceTree = "<group>"; };
 		7587B4D724F97F9E00E355E4 /* ShellHooksManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellHooksManager.swift; sourceTree = "<group>"; };
 		758AEB5D24CD35D400A15EAF /* WebSocket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebSocket.swift; sourceTree = "<group>"; };
 		758AEB5F24CE529D00A15EAF /* String+Shell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+Shell.swift"; sourceTree = "<group>"; };
@@ -469,6 +480,9 @@
 		759F988825BFF8B000EC3407 /* docker@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "docker@2x.png"; sourceTree = "<group>"; };
 		759F988D25BFFAE500EC3407 /* heroku@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "heroku@2x.png"; sourceTree = "<group>"; };
 		759F988F25C1151D00EC3407 /* install_and_upgrade_fallback.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = install_and_upgrade_fallback.sh; sourceTree = "<group>"; };
+		75A0A71826F1A79A008FAD70 /* KittyIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KittyIntegration.swift; sourceTree = "<group>"; };
+		75A0A71A26F1A7CE008FAD70 /* kitty-integration.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = "kitty-integration.py"; sourceTree = "<group>"; };
+		75A0A71C26F27E3D008FAD70 /* SemanticVersion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SemanticVersion.swift; sourceTree = "<group>"; };
 		75A4520F25A839F500107D2C /* remote_cwd.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = remote_cwd.sh; sourceTree = "<group>"; };
 		75A4521325AD367E00107D2C /* Feedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Feedback.swift; sourceTree = "<group>"; };
 		75A4521925AE2E6A00107D2C /* CommandIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandIntegration.swift; sourceTree = "<group>"; };
@@ -480,15 +494,8 @@
 		75A4A2A125CA218F002EFD6B /* ZLEIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZLEIntegration.swift; sourceTree = "<group>"; };
 		75A4A2A325CB4DE3002EFD6B /* BundleIdCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BundleIdCache.swift; sourceTree = "<group>"; };
 		75AA24C025A656FA00A51E9D /* NativeCLI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeCLI.swift; sourceTree = "<group>"; };
-		75AA24C325A6EA5000A51E9D /* list.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = list.sh; sourceTree = "<group>"; };
-		75AA24C425A6EA5900A51E9D /* help.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = help.sh; sourceTree = "<group>"; };
-		75AA24CC25A6F6F000A51E9D /* uninstall_spec.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = uninstall_spec.sh; sourceTree = "<group>"; };
-		75AA24CE25A79A2000A51E9D /* tweet.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = tweet.sh; sourceTree = "<group>"; };
-		75AA24CF25A79ACC00A51E9D /* contribute.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = contribute.sh; sourceTree = "<group>"; };
-		75AA24D025A79B4A00A51E9D /* issue.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = issue.sh; sourceTree = "<group>"; };
 		75AA24D825A7E8B000A51E9D /* lsof.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = lsof.h; sourceTree = "<group>"; };
 		75AA24D925A7E8B000A51E9D /* lsof.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = lsof.m; sourceTree = "<group>"; };
-		75AC552B2522C7710069635E /* upgrade */ = {isa = PBXFileReference; lastKnownFileType = folder; name = upgrade; path = ../upgrade; sourceTree = "<group>"; };
 		75AC55322522C8EB0069635E /* 1.0.20.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = 1.0.20.sh; sourceTree = "<group>"; };
 		75AEF2E325C3C34A00D78431 /* Diagnostic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Diagnostic.swift; sourceTree = "<group>"; };
 		75AEF2E525C3DEAF00D78431 /* DockerIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DockerIntegration.swift; sourceTree = "<group>"; };
@@ -519,23 +526,24 @@
 		75C3B7FE261BC9D0007FA3A7 /* FishIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FishIntegration.swift; sourceTree = "<group>"; };
 		75C57C122581C0700065741E /* ioreg.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ioreg.h; sourceTree = "<group>"; };
 		75C57C132581C0700065741E /* ioreg.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ioreg.c; sourceTree = "<group>"; };
-		75C8A1412645DEFB001B69DA /* set-path.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "set-path.sh"; sourceTree = "<group>"; };
 		75C8A15F2649E712001B69DA /* fig-0.0.2.vsix */ = {isa = PBXFileReference; lastKnownFileType = file; path = "fig-0.0.2.vsix"; sourceTree = "<group>"; };
 		75CFDBDE24EDB2E900F00CAE /* Onboarding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Onboarding.swift; sourceTree = "<group>"; };
+		75D1ECB326EFE55A00BC8A04 /* AlacrittyIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlacrittyIntegration.swift; sourceTree = "<group>"; };
+		75D1ECBD26F15F4500BC8A04 /* TerminalIntegrationProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalIntegrationProvider.swift; sourceTree = "<group>"; };
+		75D1ECBF26F1658300BC8A04 /* InstallationStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstallationStatus.swift; sourceTree = "<group>"; };
 		75D2E3CA249C1E7500607F66 /* terminal.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = terminal.css; sourceTree = "<group>"; };
 		75DA86A225EDB05100722F1D /* Integrations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Integrations.swift; sourceTree = "<group>"; };
 		75DA86A425EEBD7400722F1D /* Alert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Alert.swift; sourceTree = "<group>"; };
-		75DA86A625EF085500722F1D /* debug-ssh.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "debug-ssh.sh"; sourceTree = "<group>"; };
 		75DA86A825EF145E00722F1D /* TmuxIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TmuxIntegration.swift; sourceTree = "<group>"; };
 		75E993F12515A6DD000BE6BE /* statusbar@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "statusbar@2x.png"; sourceTree = "<group>"; };
 		75E993F42517E226000BE6BE /* AXWindowServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AXWindowServer.swift; sourceTree = "<group>"; };
 		75EB570A267AAE5B00F10C64 /* fig-iterm-integration.scpt */ = {isa = PBXFileReference; lastKnownFileType = file; path = "fig-iterm-integration.scpt"; sourceTree = "<group>"; };
-		75EB571C267D534200F10C64 /* debug-log.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "debug-log.sh"; sourceTree = "<group>"; };
 		75EB592A258D98A7002915E7 /* BiMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiMap.swift; sourceTree = "<group>"; };
 		75EB592C258DD771002915E7 /* TTY.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TTY.swift; sourceTree = "<group>"; };
 		75EDDC4D25D23773003AECC6 /* HyperIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HyperIntegration.swift; sourceTree = "<group>"; };
 		75EDDC5025D24755003AECC6 /* hyper-integration.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = "hyper-integration.js"; sourceTree = "<group>"; };
 		75EDDC5A25D4BC53003AECC6 /* UnixSocketClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnixSocketClient.swift; sourceTree = "<group>"; };
+		75F78F8126DC3A56001FB6C1 /* ScriptCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptCommands.swift; sourceTree = "<group>"; };
 		75F7F951261FBDC30005E215 /* UnixSocketServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnixSocketServer.swift; sourceTree = "<group>"; };
 		75F7F953262007170005E215 /* ShellHooksTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellHooksTransport.swift; sourceTree = "<group>"; };
 		75FE3FFF2626A4BD00AC8414 /* Github.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Github.swift; sourceTree = "<group>"; };
@@ -547,6 +555,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				758AEB6A24CEA4D000A15EAF /* Starscream in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		754316F126E08F5C00188887 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -667,6 +682,7 @@
 		7518608F255CE49B0000A7C7 /* Icons */ = {
 			isa = PBXGroup;
 			children = (
+				751DC66226EBF3B500697DFB /* cpu@2x.png */,
 				752E68E52620F884009E9A7E /* android@2x.png */,
 				75290A7C266B09CB000F4255 /* gear@2x.png */,
 				7564AE6E265C9DCD0040BD4C /* discord@2x.png */,
@@ -713,6 +729,7 @@
 			children = (
 				751F7590246E16D800E083C8 /* main.swift */,
 				758AEB6B24CEA54600A15EAF /* SocketServer.swift */,
+				75F78F8126DC3A56001FB6C1 /* ScriptCommands.swift */,
 				758AEB5F24CE529D00A15EAF /* String+Shell.swift */,
 				758AEB5D24CD35D400A15EAF /* WebSocket.swift */,
 				7573F1572601927200C833FA /* Settings.swift */,
@@ -740,7 +757,6 @@
 				75C8A15F2649E712001B69DA /* fig-0.0.2.vsix */,
 				752A398525CD0FE800B1AC40 /* fig-0.0.1.vsix */,
 				7520D7F0267D98790034FE2B /* fig-0.0.3.vsix */,
-				753C31A32643816100202AAA /* VSCodeInsidersIntegration.swift */,
 				752A398225CD024C00B1AC40 /* VSCodeIntegration.swift */,
 			);
 			path = VSCode;
@@ -761,15 +777,37 @@
 			name = System;
 			sourceTree = "<group>";
 		};
+		754316F526E08F5C00188887 /* InputMethod */ = {
+			isa = PBXGroup;
+			children = (
+				754316F626E08F5C00188887 /* AppDelegate.swift */,
+				7543170726E0901B00188887 /* FigIMKInputController.swift */,
+				754316FA26E08F5D00188887 /* Assets.xcassets */,
+				754316FF26E08F5D00188887 /* Main.storyboard */,
+				7543170226E08F5D00188887 /* Info.plist */,
+				7543170326E08F5D00188887 /* InputMethod.entitlements */,
+				754316FC26E08F5D00188887 /* Preview Content */,
+			);
+			path = InputMethod;
+			sourceTree = "<group>";
+		};
+		754316FC26E08F5D00188887 /* Preview Content */ = {
+			isa = PBXGroup;
+			children = (
+				754316FD26E08F5D00188887 /* Preview Assets.xcassets */,
+			);
+			path = "Preview Content";
+			sourceTree = "<group>";
+		};
 		75675948244634AD006AA988 = {
 			isa = PBXGroup;
 			children = (
-				75AC552B2522C7710069635E /* upgrade */,
 				75186076255CB0870000A7C7 /* upgrade */,
 				75675953244634AD006AA988 /* fig */,
 				75675969244634B2006AA988 /* figTests */,
 				75675974244634B2006AA988 /* figUITests */,
 				751F758F246E16D800E083C8 /* figcli */,
+				754316F526E08F5C00188887 /* InputMethod */,
 				75675952244634AD006AA988 /* Products */,
 				75CFF6432496B3BA00C6A6DE /* Frameworks */,
 			);
@@ -782,6 +820,7 @@
 				75675966244634B2006AA988 /* figTests.xctest */,
 				75675971244634B2006AA988 /* figUITests.xctest */,
 				751F758E246E16D800E083C8 /* figcli */,
+				754316F426E08F5C00188887 /* FigInputMethod.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -793,6 +832,7 @@
 				75675954244634AD006AA988 /* AppDelegate.swift */,
 				75E993F32515C8D3000BE6BE /* Autocompletion */,
 				75B199332504190900F38EA8 /* Keycode.swift */,
+				75738F1D26DDAB760086D972 /* InputMethod.swift */,
 				752D71CC25B8A6B200263527 /* Restarter.swift */,
 				759F987B25BF903900EC3407 /* Accessibility.swift */,
 				751C3BEB24B6910800B5C7FD /* Remote.swift */,
@@ -806,7 +846,6 @@
 				75A4521325AD367E00107D2C /* Feedback.swift */,
 				75AEF2E325C3C34A00D78431 /* Diagnostic.swift */,
 				75AEF2E925C4C34D00D78431 /* SecureKeyboardInput.swift */,
-				75DA86A225EDB05100722F1D /* Integrations.swift */,
 				7573F15F260BC70F00C833FA /* LoginItems.swift */,
 				75DA86A425EEBD7400722F1D /* Alert.swift */,
 				75FE3FFF2626A4BD00AC8414 /* Github.swift */,
@@ -814,6 +853,10 @@
 				755FC553268D09DE00966027 /* UpdateService.swift */,
 				750CF21726A1055F0094D76A /* Config.swift */,
 				7575D44B26D5C4DD00D0C8D7 /* API */,
+				75D1ECBC26F15F0E00BC8A04 /* Integrations */,
+				7571778126F91BD60071AE10 /* AppleTerminal */,
+				75A0A71726F1A786008FAD70 /* Kitty */,
+				75D1ECB226EFE53F00BC8A04 /* Alacritty */,
 				75290AB92671905D000F4255 /* iTerm */,
 				75EDDC4F25D2473C003AECC6 /* Hyper */,
 				752A398725CD0FFB00B1AC40 /* VSCode */,
@@ -833,7 +876,6 @@
 				7573F161260BEF7F00C833FA /* figRelease.entitlements */,
 				7567595A244634B2006AA988 /* Preview Content */,
 				752A398825CD11F000B1AC40 /* System */,
-				75AA24C225A6E50000A51E9D /* CLI Scripts */,
 			);
 			path = fig;
 			sourceTree = "<group>";
@@ -873,6 +915,12 @@
 				75C16D4726FD1EB400C83296 /* FigNotificationCenter.swift */,
 			);
 			path = API;
+		7571778126F91BD60071AE10 /* AppleTerminal */ = {
+			isa = PBXGroup;
+			children = (
+				7571778226F91BF50071AE10 /* AppleTerminalIntegration.swift */,
+			);
+			path = AppleTerminal;
 			sourceTree = "<group>";
 		};
 		757CA88B248B08D7002A64A8 /* local */ = {
@@ -885,6 +933,7 @@
 				757CA896248C108D002A64A8 /* css */,
 				757CA890248B2798002A64A8 /* cli.html */,
 				757CA892248B28E3002A64A8 /* landing.html */,
+				7571775826F3E4CA0071AE10 /* settings.html */,
 				757CA894248B291E002A64A8 /* permissions.html */,
 				752D71C425AE9B7200263527 /* ssh.html */,
 				75B0A07D25BB746600FCD89A /* debugger.html */,
@@ -912,29 +961,13 @@
 			name = local;
 			sourceTree = "<group>";
 		};
-		75AA24C225A6E50000A51E9D /* CLI Scripts */ = {
+		75A0A71726F1A786008FAD70 /* Kitty */ = {
 			isa = PBXGroup;
 			children = (
-				7585862525941A2700B76B4A /* invite.sh */,
-				75AA24C325A6EA5000A51E9D /* list.sh */,
-				75AA24C425A6EA5900A51E9D /* help.sh */,
-				75AA24CE25A79A2000A51E9D /* tweet.sh */,
-				7564AE78265CB0620040BD4C /* community.sh */,
-				75AA24D025A79B4A00A51E9D /* issue.sh */,
-				75AA24CF25A79ACC00A51E9D /* contribute.sh */,
-				75AA24CC25A6F6F000A51E9D /* uninstall_spec.sh */,
-				7518607D255CB0870000A7C7 /* source.sh */,
-				7518607A255CB0870000A7C7 /* update.sh */,
-				752D71C125AE790200263527 /* ssh.sh */,
-				75DA86A625EF085500722F1D /* debug-ssh.sh */,
-				752D71C825AFD59B00263527 /* team-download.sh */,
-				752D71C925AFD5B800263527 /* team-upload.sh */,
-				753C31A12641F6D100202AAA /* settings-docs.sh */,
-				75184663263CF1E0003CBCF9 /* settings-open.sh */,
-				75C8A1412645DEFB001B69DA /* set-path.sh */,
-				75EB571C267D534200F10C64 /* debug-log.sh */,
+				75A0A71826F1A79A008FAD70 /* KittyIntegration.swift */,
+				75A0A71A26F1A7CE008FAD70 /* kitty-integration.py */,
 			);
-			path = "CLI Scripts";
+			path = Kitty;
 			sourceTree = "<group>";
 		};
 		75AC55312522C8EB0069635E /* upgrade */ = {
@@ -1043,6 +1076,25 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
+		75D1ECB226EFE53F00BC8A04 /* Alacritty */ = {
+			isa = PBXGroup;
+			children = (
+				75D1ECB326EFE55A00BC8A04 /* AlacrittyIntegration.swift */,
+			);
+			path = Alacritty;
+			sourceTree = "<group>";
+		};
+		75D1ECBC26F15F0E00BC8A04 /* Integrations */ = {
+			isa = PBXGroup;
+			children = (
+				75DA86A225EDB05100722F1D /* Integrations.swift */,
+				75D1ECBF26F1658300BC8A04 /* InstallationStatus.swift */,
+				75D1ECBD26F15F4500BC8A04 /* TerminalIntegrationProvider.swift */,
+				75A0A71C26F27E3D008FAD70 /* SemanticVersion.swift */,
+			);
+			path = Integrations;
+			sourceTree = "<group>";
+		};
 		75E993F32515C8D3000BE6BE /* Autocompletion */ = {
 			isa = PBXGroup;
 			children = (
@@ -1053,7 +1105,6 @@
 				75B1993725100E4D00F38EA8 /* KeypressService.swift */,
 				75A4A29F25CA0D46002EFD6B /* Autocomplete.swift */,
 				75A4A2A125CA218F002EFD6B /* ZLEIntegration.swift */,
-				75C3B7FE261BC9D0007FA3A7 /* FishIntegration.swift */,
 				75290A92266F05A9000F4255 /* BashIntegration.swift */,
 			);
 			path = Autocompletion;
@@ -1091,6 +1142,24 @@
 			productReference = 751F758E246E16D800E083C8 /* figcli */;
 			productType = "com.apple.product-type.tool";
 		};
+		754316F326E08F5C00188887 /* FigInputMethod */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7543170626E08F5D00188887 /* Build configuration list for PBXNativeTarget "FigInputMethod" */;
+			buildPhases = (
+				754316F026E08F5C00188887 /* Sources */,
+				754316F126E08F5C00188887 /* Frameworks */,
+				754316F226E08F5C00188887 /* Resources */,
+				7543170926E0904C00188887 /* Install Input Method */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = FigInputMethod;
+			productName = InputMethod;
+			productReference = 754316F426E08F5C00188887 /* FigInputMethod.app */;
+			productType = "com.apple.product-type.application";
+		};
 		75675950244634AD006AA988 /* fig */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 7567597A244634B2006AA988 /* Build configuration list for PBXNativeTarget "fig" */;
@@ -1099,8 +1168,9 @@
 				7567594E244634AD006AA988 /* Frameworks */,
 				7567594F244634AD006AA988 /* Resources */,
 				758AEB6324CE8B2F00A15EAF /* Embed Command Line Tool */,
-				75AA9FAA256D9D6C00CEFAC8 /* Run Script */,
-				759E4BFD268F9BCC00CC1565 /* ShellScript */,
+				75AA9FAA256D9D6C00CEFAC8 /* Upload dsym files to Sentry */,
+				759E4BFD268F9BCC00CC1565 /* Change permissions to make Applescript read-only */,
+				7571775626F3B8910071AE10 /* Embed Input Method */,
 			);
 			buildRules = (
 			);
@@ -1164,12 +1234,15 @@
 		75675949244634AD006AA988 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastSwiftUpdateCheck = 1130;
-				LastUpgradeCheck = 1130;
+				LastSwiftUpdateCheck = 1250;
+				LastUpgradeCheck = 1250;
 				ORGANIZATIONNAME = "Matt Schrage";
 				TargetAttributes = {
 					751F758D246E16D800E083C8 = {
 						CreatedOnToolsVersion = 11.3.1;
+					};
+					754316F326E08F5C00188887 = {
+						CreatedOnToolsVersion = 12.5.1;
 					};
 					75675950244634AD006AA988 = {
 						CreatedOnToolsVersion = 11.3.1;
@@ -1212,38 +1285,35 @@
 				75675965244634B2006AA988 /* figTests */,
 				75675970244634B2006AA988 /* figUITests */,
 				751F758D246E16D800E083C8 /* figcli */,
+				754316F326E08F5C00188887 /* FigInputMethod */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		754316F226E08F5C00188887 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7543170126E08F5D00188887 /* Main.storyboard in Resources */,
+				754316FE26E08F5D00188887 /* Preview Assets.xcassets in Resources */,
+				754316FB26E08F5D00188887 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		7567594F244634AD006AA988 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				75EB5721267D749A00F10C64 /* debug-log.sh in Resources */,
-				7564AE7D265CB2930040BD4C /* community.sh in Resources */,
-				75C8A1422645E029001B69DA /* set-path.sh in Resources */,
+				75DF864A26F31756003F32A5 /* cpu@2x.png in Resources */,
 				75290A7D266B09CB000F4255 /* gear@2x.png in Resources */,
-				753C31A22641FA4400202AAA /* settings-docs.sh in Resources */,
-				75184664263CF227003CBCF9 /* settings-open.sh in Resources */,
-				75DA86A725EF08F900722F1D /* debug-ssh.sh in Resources */,
 				759F989025C1172100EC3407 /* install_and_upgrade_fallback.sh in Resources */,
-				752D71CA25AFD7B400263527 /* team-download.sh in Resources */,
-				752D71CB25AFD7B400263527 /* team-upload.sh in Resources */,
-				752D71C225AE80CF00263527 /* ssh.sh in Resources */,
 				752E68DF2620F868009E9A7E /* yarn@2x.png in Resources */,
 				75A4521025A83E5600107D2C /* remote_cwd.sh in Resources */,
-				75AA24D125A79F3400A51E9D /* tweet.sh in Resources */,
-				75AA24D225A79F3400A51E9D /* issue.sh in Resources */,
 				75543FD0268AC6E5003221DF /* fig-0.0.4.vsix in Resources */,
-				75AA24D325A79F3400A51E9D /* contribute.sh in Resources */,
-				75AA24CD25A6F98400A51E9D /* uninstall_spec.sh in Resources */,
 				759F988225BFF0FF00EC3407 /* commandkey@2x.png in Resources */,
-				75AA24CA25A6F39800A51E9D /* list.sh in Resources */,
 				752E68F12620F885009E9A7E /* firebase@2x.png in Resources */,
 				75A4A29825C8D855002EFD6B /* node@2x.png in Resources */,
-				75AA24CB25A6F39800A51E9D /* help.sh in Resources */,
 				752E68F82620F885009E9A7E /* github@2x.png in Resources */,
 				75186083255CB0C20000A7C7 /* iterm-integration.sh in Resources */,
 				75EDDC5125D24755003AECC6 /* hyper-integration.js in Resources */,
@@ -1253,26 +1323,25 @@
 				75186084255CB0C20000A7C7 /* 1.0.23.sh in Resources */,
 				75186085255CB0C20000A7C7 /* fig-iterm-integration.py in Resources */,
 				75B0A08025BB74C700FCD89A /* fig-context-indicator.png in Resources */,
-				75186086255CB0C20000A7C7 /* update.sh in Resources */,
 				75186087255CB0C20000A7C7 /* 1.0.22.sh in Resources */,
 				752E68F02620F885009E9A7E /* template@2x.png in Resources */,
 				75186088255CB0C20000A7C7 /* uninstall.sh in Resources */,
 				752E68EF2620F885009E9A7E /* gitlab@2x.png in Resources */,
-				75186089255CB0C20000A7C7 /* source.sh in Resources */,
 				7518608A255CB0C20000A7C7 /* 1.0.21.sh in Resources */,
+				7571775926F3E4CA0071AE10 /* settings.html in Resources */,
 				759F988925BFF8B000EC3407 /* npm@2x.png in Resources */,
 				752E68F32620F885009E9A7E /* aws@2x.png in Resources */,
 				759F988A25BFF8B000EC3407 /* kubernetes@2x.png in Resources */,
 				7518608B255CB0C20000A7C7 /* feedback.sh in Resources */,
 				752E68DE2620F868009E9A7E /* slack@2x.png in Resources */,
 				7518608C255CB0C20000A7C7 /* 1.0.24.sh in Resources */,
-				7585862625941A2700B76B4A /* invite.sh in Resources */,
 				7518608D255CB0C20000A7C7 /* open_new_terminal_window.scpt in Resources */,
 				7518608E255CB0C20000A7C7 /* 1.0.20.sh in Resources */,
 				759F988B25BFF8B000EC3407 /* twitter@2x.png in Resources */,
 				75186073255B2A0A0000A7C7 /* string@2x.png in Resources */,
 				757CA88624876043002A64A8 /* error.html in Resources */,
 				752E68DD2620F868009E9A7E /* gradle@2x.png in Resources */,
+				75A0A71B26F1A7CE008FAD70 /* kitty-integration.py in Resources */,
 				75A4A29E25C91471002EFD6B /* debugger-2-trimmed.mp4 in Resources */,
 				75290ABF26719090000F4255 /* README in Resources */,
 				757CA88F248B0D31002A64A8 /* cli.png in Resources */,
@@ -1354,7 +1423,25 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		759E4BFD268F9BCC00CC1565 /* ShellScript */ = {
+		7543170926E0904C00188887 /* Install Input Method */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Install Input Method";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "echo \"Moving Input Method Kit app to Input Methods directory.\"\n# killall $EXECUTABLE_NAME\n# cp -R \"$BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME\" \"$HOME/Library/Input Methods\"\n";
+		};
+		759E4BFD268F9BCC00CC1565 /* Change permissions to make Applescript read-only */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -1364,6 +1451,7 @@
 			);
 			inputPaths = (
 			);
+			name = "Change permissions to make Applescript read-only";
 			outputFileListPaths = (
 			);
 			outputPaths = (
@@ -1372,7 +1460,7 @@
 			shellPath = /bin/sh;
 			shellScript = "# prevent AppleScript from self-modifying after codesigning\nchmod a-w \"${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.app/Contents/Resources/fig-iterm-integration.scpt\"\n";
 		};
-		75AA9FAA256D9D6C00CEFAC8 /* Run Script */ = {
+		75AA9FAA256D9D6C00CEFAC8 /* Upload dsym files to Sentry */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -1382,7 +1470,7 @@
 			inputPaths = (
 				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${TARGET_NAME}",
 			);
-			name = "Run Script";
+			name = "Upload dsym files to Sentry";
 			outputFileListPaths = (
 			);
 			outputPaths = (
@@ -1400,9 +1488,19 @@
 			files = (
 				758AEB6024CE529D00A15EAF /* String+Shell.swift in Sources */,
 				758AEB6C24CEA54600A15EAF /* SocketServer.swift in Sources */,
+				75F78F8226DC3A56001FB6C1 /* ScriptCommands.swift in Sources */,
 				751F7591246E16D800E083C8 /* main.swift in Sources */,
 				758AEB5E24CD35D400A15EAF /* WebSocket.swift in Sources */,
 				7573F1582601927200C833FA /* Settings.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		754316F026E08F5C00188887 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				754316F726E08F5C00188887 /* AppDelegate.swift in Sources */,
+				7543170826E0901B00188887 /* FigIMKInputController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1412,7 +1510,6 @@
 			files = (
 				75288EF924CCE72F002DF12A /* WebViewWindow.swift in Sources */,
 				75AEF2E825C3DEC600D78431 /* SSHIntegration.swift in Sources */,
-				75C3B7FF261BC9D0007FA3A7 /* FishIntegration.swift in Sources */,
 				75AA24C125A656FA00A51E9D /* NativeCLI.swift in Sources */,
 				757CA86724859461002A64A8 /* AppMover.swift in Sources */,
 				75C0EBD3253E336E001964DE /* TerminalUsageTelemetry.swift in Sources */,
@@ -1423,9 +1520,11 @@
 				757CA8E624905B38002A64A8 /* SockerServer.swift in Sources */,
 				75B7931A24BB897F0073AAC6 /* PseudoTerminalService.swift in Sources */,
 				75CFDBDF24EDB2E900F00CAE /* Onboarding.swift in Sources */,
+				75738F1E26DDAB760086D972 /* InputMethod.swift in Sources */,
 				752A398325CD024C00B1AC40 /* VSCodeIntegration.swift in Sources */,
 				75C05C6C24FDEA2B001F0A52 /* KeystrokeBuffer.swift in Sources */,
 				7510F8AC24A6910500E86F7C /* MacTerminalView.swift in Sources */,
+				7571778326F91BF50071AE10 /* AppleTerminalIntegration.swift in Sources */,
 				755D0DE2247EFAE10074AB5C /* Logging.swift in Sources */,
 				7510F8A124A6910500E86F7C /* BufferLine.swift in Sources */,
 				7510F8A824A6910500E86F7C /* MacDebugView.swift in Sources */,
@@ -1447,6 +1546,7 @@
 				7575D44F26D5D35000D0C8D7 /* API.swift in Sources */,
 				755FC554268D09DE00966027 /* UpdateService.swift in Sources */,
 				75DA86A525EEBD7500722F1D /* Alert.swift in Sources */,
+				75D1ECBE26F15F4500BC8A04 /* TerminalIntegrationProvider.swift in Sources */,
 				755D0DE0247DDE050074AB5C /* FigCLI.swift in Sources */,
 				75809B0E24BFA64D00BFFB3E /* TelemetryService.swift in Sources */,
 				7510F8B224A6910500E86F7C /* CharData.swift in Sources */,
@@ -1482,7 +1582,6 @@
 				75DA86A925EF145E00722F1D /* TmuxIntegration.swift in Sources */,
 				7577124725648DFB0011FF48 /* ps.c in Sources */,
 				757AF4C826BC73FA00349764 /* WindowPositioning.swift in Sources */,
-				753C31A42643816D00202AAA /* VSCodeInsidersIntegration.swift in Sources */,
 				75290ABD26719090000F4255 /* iterm.pb.swift in Sources */,
 				75B1993825100E4E00F38EA8 /* KeypressService.swift in Sources */,
 				7510F8A724A6910500E86F7C /* MacAccessibilityService.swift in Sources */,
@@ -1496,11 +1595,14 @@
 				7510F8A924A6910500E86F7C /* MacLocalTerminalView.swift in Sources */,
 				75A4A2A425CB4DE3002EFD6B /* BundleIdCache.swift in Sources */,
 				75290A93266F05A9000F4255 /* BashIntegration.swift in Sources */,
+				75A0A71D26F27E3D008FAD70 /* SemanticVersion.swift in Sources */,
 				7510F89824A6910500E86F7C /* AppleTerminalView.swift in Sources */,
 				750CF21826A1055F0094D76A /* Config.swift in Sources */,
 				75AEF2EA25C4C34D00D78431 /* SecureKeyboardInput.swift in Sources */,
 				75B199342504190900F38EA8 /* Keycode.swift in Sources */,
 				752C0BD82479EEDB0077E415 /* File.swift in Sources */,
+				75D1ECC026F1658300BC8A04 /* InstallationStatus.swift in Sources */,
+				75A0A71926F1A79A008FAD70 /* KittyIntegration.swift in Sources */,
 				75EB592D258DD771002915E7 /* TTY.swift in Sources */,
 				7510F8B324A6910500E86F7C /* TerminalOptions.swift in Sources */,
 				7510F8BF24A99A4B00E86F7C /* WindowService.swift in Sources */,
@@ -1512,6 +1614,7 @@
 				7510F8AE24A6910500E86F7C /* SixelDcsHandler.swift in Sources */,
 				7587B4D824F97F9E00E355E4 /* ShellHooksManager.swift in Sources */,
 				7510F89C24A6910500E86F7C /* Buffer.swift in Sources */,
+				75D1ECB426EFE55A00BC8A04 /* AlacrittyIntegration.swift in Sources */,
 				7510F8BD24A9861E00E86F7C /* PrivateWindow.m in Sources */,
 				75B4283626FABAAC003C9DE5 /* FileSystem.swift in Sources */,
 				756759D424498CA0006AA988 /* WebViewController.swift in Sources */,
@@ -1556,6 +1659,14 @@
 /* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
+		754316FF26E08F5D00188887 /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				7543170026E08F5D00188887 /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
 		7567595D244634B2006AA988 /* Main.storyboard */ = {
 			isa = PBXVariantGroup;
 			children = (
@@ -1592,8 +1703,65 @@
 				CODE_SIGN_STYLE = Manual;
 				DEVELOPMENT_TEAM = D93PPD94WK;
 				EMBED_ASSET_PACKS_IN_PRODUCT_BUNDLE = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		7543170426E08F5D00188887 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CODE_SIGN_ENTITLEMENTS = InputMethod/InputMethod.entitlements;
+				CODE_SIGN_IDENTITY = "Developer ID Application";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_ASSET_PATHS = "\"InputMethod/Preview Content\"";
+				DEVELOPMENT_TEAM = D93PPD94WK;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				INFOPLIST_FILE = InputMethod/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				PRODUCT_BUNDLE_IDENTIFIER = io.fig.inputmethod.cursor;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		7543170526E08F5D00188887 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CODE_SIGN_ENTITLEMENTS = InputMethod/InputMethod.entitlements;
+				CODE_SIGN_IDENTITY = "Developer ID Application";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_ASSET_PATHS = "\"InputMethod/Preview Content\"";
+				DEVELOPMENT_TEAM = D93PPD94WK;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				INFOPLIST_FILE = InputMethod/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				PRODUCT_BUNDLE_IDENTIFIER = io.fig.inputmethod.cursor;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
@@ -1627,6 +1795,7 @@
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
@@ -1687,6 +1856,7 @@
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
@@ -1724,11 +1894,11 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = fig/fig.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_IDENTITY = "Developer ID Application";
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = YES;
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 250;
+				CURRENT_PROJECT_VERSION = 264;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				DEVELOPMENT_TEAM = D93PPD94WK;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1743,7 +1913,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MARKETING_VERSION = 1.0.47;
+				MARKETING_VERSION = 1.0.49;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mschrage.fig;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1764,7 +1934,7 @@
 				CODE_SIGN_IDENTITY = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 250;
+				CURRENT_PROJECT_VERSION = 264;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				DEVELOPMENT_TEAM = D93PPD94WK;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1779,7 +1949,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MARKETING_VERSION = 1.0.47;
+				MARKETING_VERSION = 1.0.49;
 				ONLY_ACTIVE_ARCH = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mschrage.fig;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1877,6 +2047,15 @@
 			buildConfigurations = (
 				751F7593246E16D800E083C8 /* Debug */,
 				751F7594246E16D800E083C8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		7543170626E08F5D00188887 /* Build configuration list for PBXNativeTarget "FigInputMethod" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7543170426E08F5D00188887 /* Debug */,
+				7543170526E08F5D00188887 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
