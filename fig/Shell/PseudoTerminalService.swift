@@ -8,100 +8,44 @@
 
 import Foundation
 
-
-
 enum ControlCode : String {
     typealias RawValue = String
     case EOT = "^D"
     case ETX = "^C"
-    
 }
 
-protocol PseudoTerminalEventDelegate {
-    func recievedDataFromPty(_ notification: Notification)
-}
-
-protocol PseudoTerminalService {
+class PseudoTerminal {
+    typealias ProcessFinished = (stdout: String, stderr: String, exitCode: Int32)
+    typealias CallbackHandler =  (ProcessFinished) -> Void
+    typealias HandlerId = String
     
-    func start(with env: [String: String])
-    func write(command: String, control: ControlCode?)
-    func execute(command: String, handlerId:String, asBackgroundJob: Bool, asPipeline: Bool)
-    func stream(command: String, handlerId:String)
-    func close()
+    static let shared: PseudoTerminal = {
+        let pty = PseudoTerminal()
+        pty.start(with: [:])
+        return pty
+    }()
     
-    var delegate: PseudoTerminalEventDelegate? { get set }
-}
 
-class PseudoTerminalHelper {
-    var executeHandlers: [ String: (String) -> Void ] = [:]
-    let queue = DispatchQueue(label: "com.withfig.ptyhelper", attributes: .concurrent)
-
-    let pty = PseudoTerminal()
-    let debug = false
-    fileprivate let semaphore = DispatchSemaphore(value: 1)
-
-    // Because they ruin your punchline.
-    // Why should you never tell multithreaded programming jokes?
-    func execute(_ command: String, handler: @escaping (String) -> Void) {
-        // timeout prevents deadlocks
-        let _ = semaphore.wait(timeout: .now())
-        // Move all of this behind the semaphore!
-        let id = UUID().uuidString
-        queue.async(flags: .barrier) {
-          self.executeHandlers[id] = handler
-        }
-        print("pty: Executing command with PTY Service '\(command)'. Output Id = \(id).")
-        pty.execute(command: command, handlerId: id, asBackgroundJob: true, asPipeline: false)
-    }
-    
-    func start(with env: [String : String]) {
-        pty.start(with: env)
-        pty.delegate = self
-      if debug {
-        let path = "\(NSHomeDirectory())/.fig/\(UUID().uuidString).session"
-        pty.write(command:"script -q -t 0 \(path)", control: nil)
-        print("pty: Debug mode is on. Writting all logs to \(path). Can be read with tail -f \(path).")
-      }
-    }
-    
-    func close() {
-        pty.close()
-    }
-}
-
-extension PseudoTerminalHelper : PseudoTerminalEventDelegate {
-    func recievedDataFromPty(_ notification: Notification) {
-        if let msg = notification.object as? PtyMessage {
-            var handlerOption: ((String) -> Void)?
-            queue.sync {
-              handlerOption = self.executeHandlers[msg.handleId]
-            }
-          
-            guard let handler = handlerOption else {
-                return
-            }
-          
-            print("pty: Finished executing command for id = \(msg.handleId)")
-            semaphore.signal()
-            handler(msg.output)
-          
-            queue.async(flags: .barrier) {
-              self.executeHandlers.removeValue(forKey: msg.handleId)
-            }
-        }
-    }
-    
-}
-
-class PseudoTerminal : PseudoTerminalService {
     static let recievedEnvironmentVariablesFromShellNotification = NSNotification.Name("recievedEnvironmentVariablesFromShellNotification")
     static let recievedCallbackNotification = NSNotification.Name("recievedCallbackNotification")
+    
+    // https://scriptingosx.com/2017/05/where-paths-come-from/
+    static let defaultMacOSPath = "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:"
+    
     static func log(_ message: String) {
       Logger.log(message: message, subsystem: .pty)
     }
-  
+    
+
+    
+    // MARK: Initialize
+
+    fileprivate var handlers: [HandlerId: CallbackHandler] = [:]
+    fileprivate let headless: HeadlessTerminal = HeadlessTerminal(onEnd: { (code) in
+        PseudoTerminal.log("ending session with exit code: \(code ?? -1)")
+    })
+    
     init() {
-//        self.delegate = eventDelegate
       NotificationCenter.default.addObserver(self,
                                              selector: #selector(recievedEnvironmentVariablesFromShell(_:)),
                                              name: PseudoTerminal.recievedEnvironmentVariablesFromShellNotification,
@@ -115,10 +59,89 @@ class PseudoTerminal : PseudoTerminalService {
     deinit {
       NotificationCenter.default.removeObserver(self)
     }
-  
+    
+    func start(with environment: [String: String]) {
+        PseudoTerminal.log("Starting PTY...")
+        let shell = "/bin/sh" //"/bin/bash"
+        
+        let rawEnv = mergeFigSpecificEnvironmentVariables(with: environment)
+
+        
+        self.headless.process.startProcess(executable: shell, args: [], environment: rawEnv.count == 0 ? nil : rawEnv)
+        self.headless.process.delegate = self
+        
+        self.write(" set +o history\r")
+        self.write(" unset HISTFILE\r")
+      
+        // Retrieve PATH from settings if it exists
+        if let path = Settings.shared.getValue(forKey: Settings.ptyPathKey) as? String {
+            self.set(environmentVariable: "PATH", value: path)
+        } else {
+            self.set(environmentVariable: "PATH", value: PseudoTerminal.defaultMacOSPath)
+        }
+      
+        // Source default ptyrc file (if it exists)
+        sourceFile(at: "~/.fig/tools/ptyrc")
+      
+        // Source user-specified ptyrc file (if it exists)
+        let filePath = Settings.shared.getValue(forKey: Settings.ptyInitFile) as? String ?? "~/.fig/user/ptyrc"
+        sourceFile(at: filePath)
+        
+    }
+    
+    func write(_ input: String) {
+        self.headless.send(input)
+    }
+    
+    func close() {
+        if self.headless.process.running {
+            kill( self.headless.process.shellPid, SIGTERM)
+        }
+    }
+    
+    // MARK: Utilities
+
+    fileprivate func mergeFigSpecificEnvironmentVariables(with environment: [String : String]) -> [String] {
+        // don't add shell hooks to pty
+        // Add TERM variable to supress warning for ZSH
+        // Set INPUTRC variable to prevent using a misconfigured inputrc file (https://linear.app/fig/issue/ENG-500)
+        // Set FIG_PTY so that dotfiles can detect when they are being run in fig.pty
+        let lang = NSLocale.current.languageCode ?? "en"
+        let region = NSLocale.current.regionCode ?? "US"
+        let LANG = lang + "_" + region
+        let updatedEnv = environment.merging(["FIG_ENV_VAR" : "1",
+                                              "FIG_SHELL_VAR" : "1",
+                                              "TERM" : "xterm-256color",
+                                              "INPUTRC" : "~/.fig/nop",
+                                              "FIG_PTY" : "1",
+                                              "HISTCONTROL" : "ignoreboth",
+                                              "LANG" : "\(LANG).UTF-8"]) { $1 }
+        
+        return updatedEnv.reduce([]) { (acc, elm) -> [String] in
+            let (key, value) = elm
+            return acc + ["\(key)=\(value)"]
+        }
+    }
+    func sourceFile(at path: String) {
+        let expandedFilePath = NSString(string: path).expandingTildeInPath
+        
+        if FileManager.default.fileExists(atPath: expandedFilePath) {
+            PseudoTerminal.log("sourcing \(expandedFilePath)")
+            self.write("source \(expandedFilePath)\r")
+        }
+    }
+    
+    func set(environmentVariable key: String, value: String) {
+        self.write("export \(key)='\(value)'\r")
+    }
+    
+}
+
+
+extension PseudoTerminal {
     @objc func recievedEnvironmentVariablesFromShell(_ notification: Notification) {
       
-      guard let env = notification.object as? [String: Any], self.mirrorsEnvironment else { return }
+      guard let env = notification.object as? [String: Any] else { return }
       // Update environment variables in autocomplete PTY
       let patterns = Settings.shared.getValue(forKey: Settings.ptyEnvKey) as? [String]
       let environmentVariablesToMirror: Set<String> = Set(patterns ?? [ "AWS_" ]).union(["PATH"])
@@ -147,207 +170,108 @@ class PseudoTerminal : PseudoTerminalService {
         Logger.log(message: "could not source ENV vars from '\(tmpFile)'", subsystem: .pty)
       }
     }
-  
-    @objc func recievedCallbackNotification(_ notification: Notification) {
-      PseudoTerminal.log("recieved callback")
-      guard let info = notification.object as? [String: String],
-            let handlerId = info["handlerId"],
-            let pathToFile = info["filepath"] else {
-        return
-      }
-      guard executeHandlers.contains(handlerId) else {
-        return
-      }
+}
 
-      PseudoTerminal.log("callback for \(handlerId) with output at \(pathToFile)")
-      executeHandlers.remove(handlerId)
+// MARK: Running shell commands
 
-      if let delegate = self.delegate,
-         let data = FileManager.default.contents(atPath: pathToFile) {
-          let output = String(decoding: data, as: UTF8.self)
-          let msg = PtyMessage(type: "execute", handleId: handlerId, output: output)
-          delegate.recievedDataFromPty(Notification(name: .recievedDataFromPty, object: msg))
-      }
-      
+extension PseudoTerminal {
+    struct ExecutionOptions: OptionSet {
+        let rawValue: Int
 
-    }
-
-  
-    let pty: HeadlessTerminal = HeadlessTerminal(onEnd: { (code) in
-      PseudoTerminal.log("ending session with exit code: \(code ?? -1)")
-    })
-  
-    var rawOutput = ""
-    var streamHandlers: Set<String> = []
-    var executeHandlers: Set<String> = []
-    var delegate: PseudoTerminalEventDelegate?
-    var mirrorsEnvironment = false
-    func start(with env: [String : String]) {
-        PseudoTerminal.log("Starting PTY...")
-        let shell = env["SHELL"] ?? "/bin/sh"
-        
-        // don't add shell hooks to pty
-        // Add TERM variable to supress warning for ZSH
-        // Set INPUTRC variable to prevent using a misconfigured inputrc file (https://linear.app/fig/issue/ENG-500)
-        // Set FIG_PTY so that dotfiles can detect when they are being run in fig.pty
-        let lang = NSLocale.current.languageCode ?? "en"
-        let region = NSLocale.current.regionCode ?? "US"
-        let LANG = lang + "_" + region
-        let updatedEnv = env.merging(["FIG_ENV_VAR" : "1",
-                                      "FIG_SHELL_VAR" : "1",
-                                      "TERM" : "xterm-256color",
-                                      "INPUTRC" : "~/.fig/nop",
-                                      "FIG_PTY" : "1",
-                                      "HISTCONTROL" : "ignoreboth",
-                                      "LANG" : "\(LANG).UTF-8"]) { $1 }
-        let rawEnv = updatedEnv.reduce([]) { (acc, elm) -> [String] in
-            let (key, value) = elm
-            return acc + ["\(key)=\(value)"]
-        }
-        
-        pty.process.startProcess(executable: shell, args: [], environment: rawEnv.count == 0 ? nil : rawEnv)
-        pty.process.delegate = self
-
-        pty.send(" set +o history\r")
-        pty.send(" unset HISTFILE\r")
-      
-        // Retrieve PATH from settings if it exists
-        if let path = Settings.shared.getValue(forKey: Settings.ptyPathKey) as? String {
-          pty.send("export PATH='\(path)'\r")
-        } else { // export PATH from userShell
-          pty.send("export PATH=$(\(Defaults.userShell) -li -c \"/usr/bin/env | /usr/bin/grep '^PATH=' | /bin/cat | /usr/bin/sed 's|PATH=||g'\")\r")
-        }
-      
-        // Source default ptyrc file (if it exists)
-        sourceFile(at: "~/.fig/tools/ptyrc")
-      
-      // Source user-specified ptyrc file (if it exists)
-        let filePath = Settings.shared.getValue(forKey: Settings.ptyInitFile) as? String ?? "~/.fig/user/ptyrc"
-        sourceFile(at: filePath)
+        static let backgroundJob = ExecutionOptions(rawValue: 1 << 0)
+        static let pipelined = ExecutionOptions(rawValue: 1 << 1)
     }
     
-    func sourceFile(at path: String) {
-      let expandedFilePath = NSString(string: path).expandingTildeInPath
-
-      if FileManager.default.fileExists(atPath: expandedFilePath) {
-        PseudoTerminal.log("sourcing \(expandedFilePath)")
-        pty.send("source \(expandedFilePath)\r")
-      }
-    }
-  
-    func write(command: String, control: ControlCode?) {
-        if let code = control {
-            PseudoTerminal.log("Write PTY controlCode: \(code.rawValue)")
-            switch code {
-            case .EOT:
-                pty.send(data: [0x4])
-            case .ETX:
-                pty.send(data: [0x3])
-            }
-        } else {
-            PseudoTerminal.log("Write PTY command: \(command)")
-            pty.send("\(command)\r")
-        }
-    }
-  
-    func shell(command: String, handlerId: String) {
-      pty.send("\(command) | fig_callback \(handlerId) &\r")
-      PseudoTerminal.log("Execute PTY command: \(command) \(pty.process.running) \(pty.process.delegate)")
-    }
-  
     static let callbackExecutable = "\(NSHomeDirectory())/.fig/bin/fig_callback"
-    func execute(command: String,
-                 handlerId: String,
-                 asBackgroundJob: Bool,
-                 asPipeline: Bool) {
-      
-      executeHandlers.insert(handlerId)
-
-      var commandToRun: String
-      
-      if asPipeline {
-        commandToRun = "\(command) | \(PseudoTerminal.callbackExecutable) \(handlerId)"
-      } else {
-        let tmpFilepath = "/tmp/\(handlerId)"
-        commandToRun = "( ( \(command) )> \(tmpFilepath) ; \(PseudoTerminal.callbackExecutable) \(handlerId) \(tmpFilepath) )"
-
-      }
-      
-      if asBackgroundJob {
-        commandToRun.append(" &")
-      }
-      
-      commandToRun.append("\r")
-      
-      pty.send(commandToRun)
-
-        PseudoTerminal.log("Running '\(command)' \(asPipeline ? "as pipeline" : "")\( asBackgroundJob ? " in background" : "")")
-        PseudoTerminal.log(commandToRun)
-    }
-    
-    let streamDelimeter = "================="
-    func stream(command: String, handlerId: String) {
-        // not sure why this is commented out?
-        //        streamHandlers.insert(handlerId)
-        let cmd = "printf \"<<<\" ; echo \"\(streamDelimeter)\(handlerId)\(streamDelimeter)\" ; \(command) ; echo \"\(streamDelimeter)\(handlerId)\(streamDelimeter)>>>\"\r"
-        pty.send(cmd)
-        PseudoTerminal.log("Stream PTY command: \(command)")
-    }
-    
-    func close() {
-        PseudoTerminal.log("Close PTY")
-        streamHandlers = []
-        executeHandlers = []
-        if pty.process.running {
-            pty.send(data: [0x4])
-            kill(pty.process.shellPid, SIGTERM)
+    func execute(_ command: String,
+                 handlerId: HandlerId = UUID().uuidString,
+                 options: ExecutionOptions = [.backgroundJob],
+                 handler: @escaping CallbackHandler) {
+        
+        var cappedHandlerId = handlerId
+        // note: magic number comes from fig_callback implementation
+        if handlerId.count > 5 {
+            PseudoTerminal.log("handlerId must be 5 characters or less. '\(handlerId)' is too long and will be truncated.")
+            let index = handlerId.index(handlerId.startIndex, offsetBy: 5)
+            cappedHandlerId = String(handlerId.prefix(upTo: index))
         }
+        
+        var commandToRun: String
+        
+        // note: pipelined commands currently do not provide stderr or exit code!
+        if options.contains(.pipelined) {
+            commandToRun = "\(command) | \(PseudoTerminal.callbackExecutable) \(cappedHandlerId)"
+        } else {
+            let tmpFilepath = "/tmp/\(cappedHandlerId)"
+            commandToRun = "( ( \(command) ) 1> \(tmpFilepath).stdout 2> \(tmpFilepath).stderr; \(PseudoTerminal.callbackExecutable) \(handlerId) \(tmpFilepath) $? )"
+        }
+      
+        if options.contains(.backgroundJob) {
+            commandToRun.append(" &")
+        }
+      
+        commandToRun.append("\r")
+      
+        self.handlers[cappedHandlerId] = handler
+        self.headless.send(commandToRun)
+        print("pty:", commandToRun)
+        PseudoTerminal.log("Running '\(command)' \(options.contains(.pipelined) ? "as pipeline" : "")\(options.contains(.backgroundJob) ? " in background" : "")")
+    }
+    
+    @objc func recievedCallbackNotification(_ notification: Notification) {
+        PseudoTerminal.log("recieved callback")
+        guard let info = notification.object as? [String: String?],
+              let handlerId = info["handlerId"] as? String,
+              let pathToFile = info["filepath"] as? String else {
+        
+          return
+        }
+
+        guard let handler = self.handlers[handlerId] else {
+            return
+        }
+
+        PseudoTerminal.log("callback for \(handlerId) with output at \(pathToFile)")
+        
+        self.handlers.removeValue(forKey: handlerId)
+
+        if let legacy = contentsOfFile(path: pathToFile, suffix: "") {
+            handler((legacy, "", -2))
+            return
+        }
+        
+        let stdout = contentsOfFile(path: pathToFile, suffix: ".stdout")
+        let stderr = contentsOfFile(path: pathToFile, suffix: ".stderr")
+        let exitCode: Int32 = {
+            guard let codeStr = info["exitCode"] as? String,
+                  let code = Int32(codeStr) else {
+                return -1
+            }
+            
+            return code
+        }()
+
+        handler((stdout ?? "", stderr ?? "", exitCode))
+    }
+    
+    fileprivate func contentsOfFile(path: String, suffix: String) -> String? {
+        guard let data = FileManager.default.contents(atPath: path + suffix) else { return nil }
+        return String(decoding: data, as: UTF8.self)
     }
 }
 
 extension PseudoTerminal : LocalProcessDelegate {
     func processTerminated(_ source: LocalProcess, exitCode: Int32?) {
-        PseudoTerminal.log("Exited...\(exitCode ?? 0)")
+        
     }
     
     func dataReceived(slice: ArraySlice<UInt8>) {
-        let data = String(bytes: slice, encoding: .utf8) ?? ""
-        PseudoTerminal.log(data)
         
-        for handle in streamHandlers {
-            var ping = ""
-            let header = data.components(separatedBy: "<<<\(streamDelimeter)\(handle)\(streamDelimeter)")
-            if header.count == 2 {
-                ping += header[1]
-            } else {
-                ping = data
-            }
-            
-            let tail = ping.components(separatedBy: "\(streamDelimeter)\(handle)\(streamDelimeter)>>>")
-            
-            if tail.count == 2 {
-                ping = tail[0]
-                streamHandlers.remove(handle)
-                rawOutput = ""
-            }
-            
-            if let delegate = self.delegate {
-                let msg = PtyMessage(type: "stream", handleId: handle, output: ping)
-                delegate.recievedDataFromPty(Notification(name: .recievedDataFromPty, object: msg))
-            }
-
-        }
-        
-        if let streamCandidate = data.groups(for:"<<<\(streamDelimeter)(.*?)\(streamDelimeter)")[safe: 0] {
-            streamHandlers.insert(streamCandidate[1])
-        }
-        
-        rawOutput += data
-
     }
     
     func getWindowSize() -> winsize {
         return winsize(ws_row: UInt16(60), ws_col: UInt16(50), ws_xpixel: UInt16 (16), ws_ypixel: UInt16 (16))
     }
+    
     
 }

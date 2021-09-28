@@ -364,11 +364,9 @@ extension NativeCLI {
         let (message, connection) = scope
 //        message.
         let command = message.arguments.joined(separator: " ")
-        let pty = PseudoTerminalHelper()
-        pty.start(with: [:])
-        pty.execute(command) { (out) in
+        PseudoTerminal.shared.execute(command) { (response) in
+          let (out, _, _) = response
           NativeCLI.printInTerminal(out, using: connection)
-          pty.close()
           connection.send(message: "disconnect")
         }
 
