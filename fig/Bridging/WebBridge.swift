@@ -1000,18 +1000,6 @@ extension WebBridge {
                         let running = tty.running
                         print("tty: \(running?.cmd ?? "?") \(running?.cwd ?? "cwd")")
                     }
-                case "keystroke":
-                    guard let keyCodeString = data["key"], let keyCode = UInt16(keyCodeString), let consumerString = data["consumer"] else {
-                        print("Missing params for keystroke")
-                        return
-                    }
-                    
-                    if (consumerString == "true") {
-                        KeypressProvider.shared.addRedirect(for: keyCode, in: (scope.getCompanionWindow()?.tetheredWindow)!)
-                    } else {
-                        KeypressProvider.shared.removeRedirect(for: keyCode, in: (scope.getCompanionWindow()?.tetheredWindow)!)
-
-                    }
                 case "autocomplete-hide":
 //                  break;
                     guard let companion = scope.getCompanionWindow(), companion.isAutocompletePopup else { return }//, let window = AXWindowServer.shared.whitelistedWindow  else { return }
@@ -1167,14 +1155,27 @@ extension WebBridge {
               
                   ShellBridge.simulate(keypress: keypress)
                 case "settings":
-                  guard let key = data["key"],
-                    let valueString = data["value"],
-                    let valueData = valueString.data(using: .utf8),
-                    let value = try? JSONSerialization.jsonObject(with: valueData, options: .allowFragments) else {
+                  guard let key = data["key"] else {
                     return
                   }
+                
+                    let value: Any? = {
+                        let valueString = data["value"]
+                        guard let valueData = valueString?.data(using: .utf8) else {
+                            return nil
+                        }
+                        
+                        let value = try? JSONSerialization.jsonObject(with: valueData, options: .allowFragments)
+                        
+                        if value is NSNull {
+                            return nil
+                        }
+                        
+                        return value
+                    }()
+                    
+                    Settings.shared.set(value: value, forKey: key)
                   
-                  Settings.shared.set(value: value, forKey: key)
                 case "status":
 
                   let companion = scope.getCompanionWindow()              
@@ -1276,7 +1277,7 @@ extension WebBridge {
 
 
             case "interceptKeystrokes":
-                KeypressProvider.shared.setEnabled(value: value == "true")
+                KeypressProvider.shared.setRedirectsEnabled(value: value == "true")
 
             default:
                 print("Unrecognized property value '\(prop)' updated with value: \(value)")
@@ -1344,8 +1345,12 @@ extension WebBridge {
     }
   
     static func declareSettings(webview: WebView) {
-        guard let settings = Settings.shared.jsonRepresentation(), let b64 = settings.data(using: .utf8)?.base64EncodedString() else { return }
-        webview.evaluateJavaScript("fig.updateSettings(b64DecodeUnicode(`\(b64)`))", completionHandler: nil)
+        guard let settings = Settings.shared.jsonRepresentation(),
+              let b64Settings = settings.data(using: .utf8)?.base64EncodedString() else { return }
+        guard let defaultSettings = Settings.shared.jsonRepresentation(ofDefaultSettings: true),
+              let b64Defaults = defaultSettings.data(using: .utf8)?.base64EncodedString() else { return }
+
+        webview.evaluateJavaScript("fig.updateSettings(b64DecodeUnicode(`\(b64Settings)`), b64DecodeUnicode(`\(b64Defaults)`))", completionHandler: nil)
       }
     
     
