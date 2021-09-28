@@ -69,7 +69,6 @@
 		7520D8122682AEB00034FE2B /* Throttler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7520D8112682AEB00034FE2B /* Throttler.swift */; };
 		75288EF924CCE72F002DF12A /* WebViewWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757CA887248AD067002A64A8 /* WebViewWindow.swift */; };
 		75290A7D266B09CB000F4255 /* gear@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 75290A7C266B09CB000F4255 /* gear@2x.png */; };
-		75290A93266F05A9000F4255 /* BashIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75290A92266F05A9000F4255 /* BashIntegration.swift */; };
 		75290AB4267126EB000F4255 /* iTermIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75290AB3267126EB000F4255 /* iTermIntegration.swift */; };
 		75290ABD26719090000F4255 /* iterm.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75290ABA26719090000F4255 /* iterm.pb.swift */; };
 		75290ABF26719090000F4255 /* README in Resources */ = {isa = PBXBuildFile; fileRef = 75290ABC26719090000F4255 /* README */; };
@@ -366,7 +365,6 @@
 		7520D7F0267D98790034FE2B /* fig-0.0.3.vsix */ = {isa = PBXFileReference; lastKnownFileType = file; path = "fig-0.0.3.vsix"; sourceTree = "<group>"; };
 		7520D8112682AEB00034FE2B /* Throttler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Throttler.swift; sourceTree = "<group>"; };
 		75290A7C266B09CB000F4255 /* gear@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "gear@2x.png"; sourceTree = "<group>"; };
-		75290A92266F05A9000F4255 /* BashIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BashIntegration.swift; sourceTree = "<group>"; };
 		75290AB3267126EB000F4255 /* iTermIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iTermIntegration.swift; sourceTree = "<group>"; };
 		75290ABA26719090000F4255 /* iterm.pb.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = iterm.pb.swift; sourceTree = "<group>"; };
 		75290ABB26719090000F4255 /* iterm.proto */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.protobuf; path = iterm.proto; sourceTree = "<group>"; };
@@ -1102,7 +1100,6 @@
 				75B1993725100E4D00F38EA8 /* KeypressService.swift */,
 				75A4A29F25CA0D46002EFD6B /* Autocomplete.swift */,
 				75A4A2A125CA218F002EFD6B /* ZLEIntegration.swift */,
-				75290A92266F05A9000F4255 /* BashIntegration.swift */,
 			);
 			path = Autocompletion;
 			sourceTree = "<group>";
@@ -1591,7 +1588,6 @@
 				75EDDC4E25D23773003AECC6 /* HyperIntegration.swift in Sources */,
 				7510F8A924A6910500E86F7C /* MacLocalTerminalView.swift in Sources */,
 				75A4A2A425CB4DE3002EFD6B /* BundleIdCache.swift in Sources */,
-				75290A93266F05A9000F4255 /* BashIntegration.swift in Sources */,
 				75A0A71D26F27E3D008FAD70 /* SemanticVersion.swift in Sources */,
 				7510F89824A6910500E86F7C /* AppleTerminalView.swift in Sources */,
 				750CF21826A1055F0094D76A /* Config.swift in Sources */,

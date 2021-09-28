@@ -149,9 +149,13 @@ class GenericShellIntegration: ShellIntegration {
     let delay = min(0.01 * Double(insertionText.count), 0.15)
     Timer.delayWithSeconds(delay) {
         try? FileManager.default.removeItem(atPath: insertionLock)
-      
+        
+        if let window = AXWindowServer.shared.whitelistedWindow,
+           KeypressProvider.shared.keyBuffer(for: window).backing != nil,
+           let context = KeypressProvider.shared.keyBuffer(for: window).insert(text: insertionText) {
+            Autocomplete.update(with: context, for: window.hash)
+        }
     }
-    
   }
 }
 
