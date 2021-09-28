@@ -54,7 +54,8 @@ class ShellHookTransport: UnixSocketServerDelegate {
             NotificationCenter.default.post(name: PseudoTerminal.recievedCallbackNotification,
                                             object: [
                                               "handlerId" : shellMessage.options?[0] ?? nil,
-                                              "filepath"  : shellMessage.options?[1] ?? nil ])
+                                              "filepath"  : shellMessage.options?[1] ?? nil,
+                                              "exitCode"  : shellMessage.options?[safe: 2] ?? nil])
           case .tmux:
               ShellHookManager.shared.tmuxPaneChanged(shellMessage)
           case .hide:
