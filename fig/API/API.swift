@@ -63,9 +63,9 @@ class API {
                     response.getSettingsPropertyResponse = try Settings.shared.handleGetRequest(request)
                 case .updateSettingsPropertyRequest(let request):
                     response.success = try Settings.shared.handleSetRequest(request)
-                case .updateApplicationPropertiesReuest(let request):
+                case .updateApplicationPropertiesRequest(let request):
                     if request.hasInterceptBoundKeystrokes {
-                        KeypressProvider.shared.setEnabled(value: request.interceptBoundKeystrokes)
+                        KeypressProvider.shared.setRedirectsEnabled(value: true)
                     }
                     response.success = true
                 case .none:
@@ -126,43 +126,5 @@ extension WKScriptMessage {
         let message = try Request(serializedData: data)
         
         return message
-    }
-}
-
-// todo: move to Settings.swift once merged
-extension Settings {
-    func handleGetRequest(_ request: Fig_GetSettingsPropertyRequest) throws -> Fig_GetSettingsPropertyResponse {
-        guard request.hasKey else {
-            throw APIError.generic(message: "No key provided with request")
-        }
-        
-        guard let value = Settings.shared.getValue(forKey: request.key) else {
-            throw APIError.generic(message: "No value for key")
-        }
-        
-        guard let data = try? JSONSerialization.data(withJSONObject: value, options: .prettyPrinted) else {
-            throw APIError.generic(message: "Could not convert value for key to JSON")
-        }
-                
-        return Fig_GetSettingsPropertyResponse.with {
-            $0.jsonBlob = String(decoding: data, as: UTF8.self)
-        }
-    }
-    
-    func handleSetRequest(_ request: Fig_UpdateSettingsPropertyRequest) throws -> Bool {
-        guard request.hasKey else {
-            throw APIError.generic(message: "No key provided with request")
-        }
-        
-        
-        if request.hasValue {
-            Settings.shared.set(value: request.value, forKey: request.key)
-        } else {
-            // todo: uncomment once merged with more recent settings API
-            // Settings.shared.set(value: nil, forKey: request.key)
-        }
-        
-        return true
-        
     }
 }

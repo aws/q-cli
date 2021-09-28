@@ -11,10 +11,25 @@ typealias NotificationType = Fig_NotificationType
 typealias SubscriberList = Set<WKWebView>
 
 class APINotificationCenter {
+    init() {
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(settingsDidChange(notification:)),
+                                               name: Settings.settingsUpdatedNotification,
+                                               object: nil)
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(processDidChange(notification:)),
+                                               name: TTY.processUpdated,
+                                               object: nil)
+        
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+    
     var subscribers: Dictionary<NotificationType, SubscriberList> = [:]
     fileprivate var channels: Dictionary<WKWebView, Dictionary<NotificationType, Int64>> = [:]
     func handleRequest(id: Int64, request: NotificationRequest, for webview: WKWebView) throws -> Bool {
-        let _ = InternalNotificationsAdapter.shared
         if request.subscribe {
             try self.subscribe(webview: webview, to: request.type, on: id)
         } else {
@@ -89,6 +104,32 @@ class APINotificationCenter {
                 $0.id = self.channels[webview]?[type] ?? -1
             }), to: webview)
         })
+    }
+}
+
+extension APINotificationCenter {
+    @objc func settingsDidChange(notification: Notification) {
+        self.post(Fig_SettingsChangedNotification.with({ notification in
+             if let blob = Settings.shared.jsonRepresentation() {
+                 notification.jsonBlob = blob
+             }
+         }))
+    }
+    
+    @objc func processDidChange(notification: Notification) {
+        guard let tty = notification.object as? TTY else { return }
+        
+        guard let pid = tty.pid, let executable = tty.cmd, let directory = tty.cwd else { return }
+
+        self.post(Fig_ProcessChangedNotification.with({ notification in
+            notification.newProcess = Fig_Process.with({ process in
+                process.pid = pid
+                process.executable = executable
+                process.directory = directory
+            })
+            
+            notification.sessionID = tty.descriptor
+        }))
     }
 }
 
