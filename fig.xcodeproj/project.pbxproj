@@ -234,7 +234,7 @@
 		75F78F8226DC3A56001FB6C1 /* ScriptCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75F78F8126DC3A56001FB6C1 /* ScriptCommands.swift */; };
 		75F7F952261FBDC30005E215 /* UnixSocketServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75F7F951261FBDC30005E215 /* UnixSocketServer.swift */; };
 		75F7F954262007170005E215 /* ShellHooksTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75F7F953262007170005E215 /* ShellHooksTransport.swift */; };
-		75FB7CA8270255750094AFB3 /* PTY.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75FB7CA7270255750094AFB3 /* PTY.swift */; };
+		75FB7CA8270255750094AFB3 /* PseudoTerminal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75FB7CA7270255750094AFB3 /* PseudoTerminal.swift */; };
 		75FE40002626A4BD00AC8414 /* Github.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75FE3FFF2626A4BD00AC8414 /* Github.swift */; };
 /* End PBXBuildFile section */
 
@@ -536,7 +536,7 @@
 		75F78F8126DC3A56001FB6C1 /* ScriptCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptCommands.swift; sourceTree = "<group>"; };
 		75F7F951261FBDC30005E215 /* UnixSocketServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnixSocketServer.swift; sourceTree = "<group>"; };
 		75F7F953262007170005E215 /* ShellHooksTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellHooksTransport.swift; sourceTree = "<group>"; };
-		75FB7CA7270255750094AFB3 /* PTY.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PTY.swift; sourceTree = "<group>"; };
+		75FB7CA7270255750094AFB3 /* PseudoTerminal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PseudoTerminal.swift; sourceTree = "<group>"; };
 		75FE3FFF2626A4BD00AC8414 /* Github.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Github.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -1021,7 +1021,7 @@
 				756759962446C44C006AA988 /* String+Shell.swift */,
 				75EB592A258D98A7002915E7 /* BiMap.swift */,
 				75EB592C258DD771002915E7 /* TTY.swift */,
-				75FB7CA7270255750094AFB3 /* PTY.swift */,
+				75FB7CA7270255750094AFB3 /* PseudoTerminal.swift */,
 				75A4521925AE2E6A00107D2C /* CommandIntegration.swift */,
 				75AEF2E525C3DEAF00D78431 /* DockerIntegration.swift */,
 				75EDDC5A25D4BC53003AECC6 /* UnixSocketClient.swift */,
@@ -1524,7 +1524,7 @@
 				7510F8AF24A6910500E86F7C /* HeadlessTerminal.swift in Sources */,
 				755FC554268D09DE00966027 /* UpdateService.swift in Sources */,
 				75DA86A525EEBD7500722F1D /* Alert.swift in Sources */,
-				75FB7CA8270255750094AFB3 /* PTY.swift in Sources */,
+				75FB7CA8270255750094AFB3 /* PseudoTerminal.swift in Sources */,
 				75D1ECBE26F15F4500BC8A04 /* TerminalIntegrationProvider.swift in Sources */,
 				755D0DE0247DDE050074AB5C /* FigCLI.swift in Sources */,
 				75809B0E24BFA64D00BFFB3E /* TelemetryService.swift in Sources */,

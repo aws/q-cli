@@ -60,7 +60,7 @@ class TTY {
   
   let descriptor: String
   var runUsingPrefix: String? = nil
-  var pty: PseudoTerminalHelper? = nil
+  var pty: PseudoTerminal? = nil
   var processes: [proc] {
     return ProcessStatus.getProcesses(for: self.descriptor).filter({ (process) -> Bool in
       return !(Defaults.ignoreProcessList.contains(process.cmd) || Defaults.ignoreProcessList.contains(process.name))
@@ -201,7 +201,7 @@ class TTY {
         if let integration = self.integrationForProcess(runningProcess) {
           self.shell = nil
           if self.pty == nil {
-            self.pty = PseudoTerminalHelper()
+            self.pty = PseudoTerminal()
             self.pty?.start(with: [:])
           }
           integration.initialize(tty: self)

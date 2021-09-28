@@ -25,7 +25,7 @@ class DockerIntegration: CommandIntegration {
     func update(tty: TTY, for process: proc) {
         if tty.pty == nil {
             print("Starting PTY...!")
-            tty.pty = PseudoTerminalHelper()
+            tty.pty = PseudoTerminal()
             tty.pty?.start(with: [:])
             return
         }
@@ -41,7 +41,8 @@ class DockerIntegration: CommandIntegration {
             return
         }
       
-        tty.pty!.execute("\(prefix) 'readlink /proc/1/cwd'") { output in
+        tty.pty!.execute("\(prefix) 'readlink /proc/1/cwd'") { response in
+            let (output, _, _) = response
             print("Docker: working directory = ", output.trimmingCharacters(in: .whitespacesAndNewlines))
             
             // cmd is better for comparison that pid

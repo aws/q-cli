@@ -1458,8 +1458,7 @@ extension WebBridge {
     static func pty(scope: WKScriptMessage) {
         if let params = scope.body as? Dictionary<String, String>,
            let type = params["type"],
-           let webview = scope.webView as? WebView,
-           let window = webview.window {
+           let webview = scope.webView as? WebView {
 
             switch (type) {
                 case "init":
@@ -1483,7 +1482,7 @@ extension WebBridge {
                           
                         }
                         
-                        var options: PTY.ExecutionOptions = []
+                        var options: PseudoTerminal.ExecutionOptions = []
                         if asBackgroundJob {
                             options.insert(.backgroundJob)
                         }
@@ -1492,7 +1491,7 @@ extension WebBridge {
                             options.insert(.pipelined)
                         }
                         
-                        PTY.shared.execute(cmd, handlerId: handlerId, options: options) { (stdout, stderr, exitCode) in
+                        PseudoTerminal.shared.execute(cmd, handlerId: handlerId, options: options) { (stdout, stderr, exitCode) in
                             WebBridge.callback(handler: handlerId,
                                                value: stdout,
                                                webView: webview)
@@ -1504,7 +1503,7 @@ extension WebBridge {
                 case "write":
                     if let cmd = params["cmd"] {
                         if ControlCode(rawValue:cmd) == nil {
-                            PTY.shared.write(cmd)
+                            PseudoTerminal.shared.write(cmd)
                         }
                     }
                 case "exit":
