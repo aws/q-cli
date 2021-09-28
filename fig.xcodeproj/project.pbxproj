@@ -910,6 +910,8 @@
 				75B4283926FACD7B003C9DE5 /* APINotifications.swift */,
 			);
 			path = API;
+			sourceTree = "<group>";
+		};
 		7571778126F91BD60071AE10 /* AppleTerminal */ = {
 			isa = PBXGroup;
 			children = (
