@@ -115,6 +115,7 @@ class PseudoTerminal {
                                               "INPUTRC" : "~/.fig/nop",
                                               "FIG_PTY" : "1",
                                               "HISTCONTROL" : "ignoreboth",
+                                              "HOME" : NSHomeDirectory(),
                                               "LANG" : "\(LANG).UTF-8"]) { $1 }
         
         return updatedEnv.reduce([]) { (acc, elm) -> [String] in
@@ -274,4 +275,46 @@ extension PseudoTerminal : LocalProcessDelegate {
     }
     
     
+}
+
+
+import FigAPIBindings
+extension PseudoTerminal {
+    func handleWriteRequest(_ request: Fig_PseudoterminalWriteRequest) throws -> Bool {
+        switch request.input {
+            case .text(let text):
+                self.write(text)
+            case .octal(let data):
+                self.headless.send(data: ArraySlice([UInt8](data)))
+//                self.headless.send(data: )
+            case .none:
+                throw APIError.generic(message: "No input specified")
+            
+        }
+        
+        return true
+    }
+    
+    func handleExecuteRequest(_ request: Fig_PseudoterminalExecuteRequest, with id: Int64, callback: @escaping ((Fig_PseudoterminalExecuteResponse) -> Void)) {
+        
+        var options: ExecutionOptions = [ .backgroundJob ]
+        
+        if request.hasBackgroundJob && !request.backgroundJob {
+            options.remove(.backgroundJob)
+        }
+        
+        if request.hasIsPipelined && request.isPipelined {
+            options.insert(.pipelined)
+        }
+        
+        self.execute(request.command,
+                     handlerId: String(id),
+                     options: options) { (stdout, stderr, exitCode) in
+            callback(Fig_PseudoterminalExecuteResponse.with({ response in
+                response.stdout = stdout
+                response.stderr = stderr
+                response.exitCode = exitCode
+            }))
+        }
+    }
 }

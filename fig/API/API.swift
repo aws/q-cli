@@ -36,8 +36,9 @@ class API {
     
     static func handle(_ request: Request, from webView: WKWebView) {
         
+        let id = request.id
         var response = Response()
-        response.id = request.id
+        response.id = id
 
         var isAsync = false
         do {
@@ -45,9 +46,16 @@ class API {
                 case .positionWindowRequest(let positionWindowRequest):
                     response.positionWindowResponse = try WindowPositioning.positionWindow(positionWindowRequest)
                 case .pseudoterminalWriteRequest(let request):
-                    response.success = true
+                    response.success = try PseudoTerminal.shared.handleWriteRequest(request)
                 case .pseudoterminalExecuteRequest(let request):
                     isAsync = true
+                    PseudoTerminal.shared.handleExecuteRequest(request, with: id) { output in
+                        var response = Response()
+                        response.id = id
+                        response.pseudoterminalExecuteResponse = output
+                        API.send(response, to: webView)
+                    }
+
                 case .readFileRequest(let request):
                     response.readFileResponse = try FileSystem.readFile(request)
                 case .writeFileRequest(let request):
@@ -55,7 +63,7 @@ class API {
                 case .contentsOfDirectoryRequest(let request):
                     response.contentsOfDirectoryResponse = try FileSystem.contentsOfDirectory(request)
                 case .notificationRequest(let request):
-                    response.success = try API.notifications.handleRequest(id: response.id, request: request, for: webView)
+                    response.success = try API.notifications.handleRequest(id: id, request: request, for: webView)
                 case .insertTextRequest(let request):
                     ShellBridge.injectStringIntoTerminal(request.text)
                     response.success = true
