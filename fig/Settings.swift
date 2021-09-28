@@ -8,6 +8,7 @@
 
 import Foundation
 import Cocoa
+import FigAPIBindings
 
 class Settings {
   static let ptyInitFile = "pty.rc"
@@ -427,5 +428,41 @@ extension DispatchSourceFileSystemObject {
         if data.contains(.revoke)   { s.append("revoke") }
         if data.contains(.write)    { s.append("write") }
         return s
+    }
+}
+
+extension Settings {
+    func handleGetRequest(_ request: Fig_GetSettingsPropertyRequest) throws -> Fig_GetSettingsPropertyResponse {
+        guard request.hasKey else {
+            throw APIError.generic(message: "No key provided with request")
+        }
+        
+        guard let value = Settings.shared.getValue(forKey: request.key) else {
+            throw APIError.generic(message: "No value for key")
+        }
+        
+        guard let data = try? JSONSerialization.data(withJSONObject: value, options: .prettyPrinted) else {
+            throw APIError.generic(message: "Could not convert value for key to JSON")
+        }
+                
+        return Fig_GetSettingsPropertyResponse.with {
+            $0.jsonBlob = String(decoding: data, as: UTF8.self)
+        }
+    }
+    
+    func handleSetRequest(_ request: Fig_UpdateSettingsPropertyRequest) throws -> Bool {
+        guard request.hasKey else {
+            throw APIError.generic(message: "No key provided with request")
+        }
+        
+        
+        if request.hasValue {
+            Settings.shared.set(value: request.value, forKey: request.key)
+        } else {
+             Settings.shared.set(value: nil, forKey: request.key)
+        }
+        
+        return true
+        
     }
 }

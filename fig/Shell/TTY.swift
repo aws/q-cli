@@ -137,7 +137,7 @@ class TTY {
   var cwd: String?
   var cmd: String? {
     didSet {
-      NotificationCenter.default.post(name: TTY.processUpdated, object: nil)
+      NotificationCenter.default.post(name: TTY.processUpdated, object: self)
     }
   }
   var pid: pid_t?
