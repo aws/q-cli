@@ -388,7 +388,12 @@ let setup = function(window) {
         fig["_defaultSettings"] = JSON.parse(defaultSettingsStr) || {}
 
         fig.settings = {}
-        let keys = Object.keys(fig["_defaultSettings"])
+        
+        let settingsKeys = new Set(Object.keys(fig["_settings"]))
+        let defaultKeys = new Set(Object.keys(fig["_defaultSettings"]))
+        defaultKeys.forEach(settingsKeys.add, settingsKeys);
+          
+        let keys = settingsKeys
         keys.forEach(key => {
             Object.defineProperty(fig.settings, key, {
               get : function () {
