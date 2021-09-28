@@ -138,7 +138,7 @@ extension ShellMessage {
                             env: "",
                             io: nil,
                             data: "",
-                            options: [String(session), String(integration) ],
+                            options: [String(session), String(integration), tokens[safe: 4] ?? "-1" ],
                             hook: subcommand)
       case .keypress:
         guard let tty = tokens[safe: 4],
