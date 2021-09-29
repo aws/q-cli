@@ -82,7 +82,7 @@ class APINotificationCenter {
     
     func unsubscribe(webview: WKWebView, from type: NotificationType) throws {
         guard type != .all else {
-            return try unsubscribeAll(webview: webview)
+            return unsubscribeAll(webview: webview)
         }
         
         guard var subscribersForType = subscribers[type] else {
@@ -100,12 +100,12 @@ class APINotificationCenter {
 
     }
     
-    func unsubscribeAll(webview: WKWebView) throws {
+    func unsubscribeAll(webview: WKWebView) {
         
         for type in Fig_NotificationType.allCases where type != .all {
             try? unsubscribe(webview: webview, from: type)
         }
-        
+
     }
     
     func post(notification: Fig_Notification) {
