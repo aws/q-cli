@@ -208,6 +208,7 @@
 		75B1993825100E4E00F38EA8 /* KeypressService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B1993725100E4D00F38EA8 /* KeypressService.swift */; };
 		75B4283626FABAAC003C9DE5 /* FileSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B4283526FABAAC003C9DE5 /* FileSystem.swift */; };
 		75B7931A24BB897F0073AAC6 /* PseudoTerminalService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B7931924BB897F0073AAC6 /* PseudoTerminalService.swift */; };
+		75B850E52703D8FF00891A78 /* API+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B850E42703D8FF00891A78 /* API+Extensions.swift */; };
 		75C05C6C24FDEA2B001F0A52 /* KeystrokeBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75C05C6B24FDEA2B001F0A52 /* KeystrokeBuffer.swift */; };
 		75C0711D244AC3B2002DF69F /* index.html in Resources */ = {isa = PBXBuildFile; fileRef = 75C0711C244AC3B2002DF69F /* index.html */; };
 		75C07120244BB441002DF69F /* CompanionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75C0711F244BB441002DF69F /* CompanionViewController.swift */; };
@@ -513,6 +514,7 @@
 		75B1993725100E4D00F38EA8 /* KeypressService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeypressService.swift; sourceTree = "<group>"; };
 		75B4283526FABAAC003C9DE5 /* FileSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileSystem.swift; sourceTree = "<group>"; };
 		75B7931924BB897F0073AAC6 /* PseudoTerminalService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PseudoTerminalService.swift; sourceTree = "<group>"; };
+		75B850E42703D8FF00891A78 /* API+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API+Extensions.swift"; sourceTree = "<group>"; };
 		75C05C6B24FDEA2B001F0A52 /* KeystrokeBuffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeystrokeBuffer.swift; sourceTree = "<group>"; };
 		75C0711C244AC3B2002DF69F /* index.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = index.html; sourceTree = "<group>"; };
 		75C0711F244BB441002DF69F /* CompanionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionViewController.swift; sourceTree = "<group>"; };
@@ -914,6 +916,7 @@
 			isa = PBXGroup;
 			children = (
 				7575D44E26D5D35000D0C8D7 /* API.swift */,
+				75B850E42703D8FF00891A78 /* API+Extensions.swift */,
 				75B4283526FABAAC003C9DE5 /* FileSystem.swift */,
 				75C16D4726FD1EB400C83296 /* FigNotificationCenter.swift */,
 			);
@@ -1566,6 +1569,7 @@
 				7510F8A424A6910500E86F7C /* iOSCaretView.swift in Sources */,
 				751C3BEE24B6915000B5C7FD /* Defaults.swift in Sources */,
 				757712492564D94A0011FF48 /* ProcessStatus.swift in Sources */,
+				75B850E52703D8FF00891A78 /* API+Extensions.swift in Sources */,
 				7510F89A24A6910500E86F7C /* Extensions.swift in Sources */,
 				7510F8B524A6910500E86F7C /* SearchService.swift in Sources */,
 				75A4521425AD367E00107D2C /* Feedback.swift in Sources */,

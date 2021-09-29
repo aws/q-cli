@@ -11,6 +11,7 @@ import Carbon
 import Sentry
 import Foundation
 import AXSwift
+import FigAPIBindings
 
 enum EventTapAction {
   case forward
@@ -339,7 +340,21 @@ class KeypressProvider {
           
           Logger.log(message: "Redirecting keypress '\(keybindingString)' to autocomplete", subsystem: .keypress)
           let keyCode = UInt16(event.getIntegerValueField(.keyboardEventKeycode))
+            
+          // Legacy fig.keypress implementation
           Autocomplete.redirect(keyCode: keyCode, event: event, for: window.hash)
+          
+          // Protobuf API implementation
+          API.notifications.post(Fig_KeybindingPressedNotification.with {
+              if let action = autocompleteBinding.split(separator: " ").first {
+                  $0.action = String(action)
+              }
+              
+              if let event = NSEvent(cgEvent: event) {
+                  $0.keypress = event.fig_keyEvent
+              }
+          })
+            
           return .consume
         }
       }
