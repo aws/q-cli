@@ -676,7 +676,7 @@ extension NativeCLI {
                 InputMethod.requestVersion()
                 NativeCLI.printInTerminal("\n› Requesting version! Check the logs!\n", using: connection)
             case "--verify-install":
-                NativeCLI.printInTerminal(InputMethod.default.status.description, using: connection)
+                NativeCLI.printInTerminal(InputMethod.default.verifyInstallation().description, using: connection)
             default:
                 return
 
