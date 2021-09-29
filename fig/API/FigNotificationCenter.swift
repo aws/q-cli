@@ -65,6 +65,10 @@ class APINotificationCenter {
     
     
     func subscribe(webview: WKWebView, to type: NotificationType, on channel: Int64) throws {
+        guard type != .all else {
+            throw APIError.generic(message: "Cannot subscribe to 'all' notification type.")
+        }
+        
         var subscribersForType = subscribers[type] ?? SubscriberList()
         
         if subscribersForType.contains(webview) {
@@ -77,6 +81,10 @@ class APINotificationCenter {
     }
     
     func unsubscribe(webview: WKWebView, from type: NotificationType) throws {
+        guard type != .all else {
+            return try unsubscribeAll(webview: webview)
+        }
+        
         guard var subscribersForType = subscribers[type] else {
             throw APIError.generic(message: "Not subscribed notification type (\(type.rawValue))")
         }
@@ -90,6 +98,14 @@ class APINotificationCenter {
         subscribers[type] = subscribersForType
         setChannel(nil, for: webview, type: type)
 
+    }
+    
+    func unsubscribeAll(webview: WKWebView) throws {
+        
+        for type in Fig_NotificationType.allCases where type != .all {
+            try? unsubscribe(webview: webview, from: type)
+        }
+        
     }
     
     func post(notification: Fig_Notification) {
