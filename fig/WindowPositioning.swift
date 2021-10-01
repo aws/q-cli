@@ -7,12 +7,28 @@
 //
 
 import Cocoa
+import FigAPIBindings
 
 enum APIError: Error {
     case generic(message: String)
 }
 
 class WindowPositioning {
+    
+    static func positionWindow(_ request: Fig_PositionWindowRequest) throws -> Fig_PositionWindowResponse {
+        if request.dryrun {
+            let info = try frameRelativeToCursor(width: CGFloat(request.size.width),
+                                                 height: CGFloat(request.size.height),
+                                                 anchorOffset: CGPoint(x: CGFloat(request.anchor.x), y: CGFloat(request.anchor.y)))
+            
+            var response = Fig_PositionWindowResponse()
+            response.isAbove = info.isAbove
+            response.isClipped = info.isClipped
+            return response
+        } else {
+            throw APIError.generic(message: "Not implemented")
+        }
+    }
     
     static func frameRelativeToCursor(width: CGFloat,
                                       height: CGFloat,

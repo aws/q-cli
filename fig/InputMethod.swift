@@ -53,7 +53,7 @@ class InputMethod {
         }
     }
     
-    fileprivate let maxAttempts = 3
+    fileprivate let maxAttempts = 10
     fileprivate var remainingAttempts = 0
     fileprivate func startPollingForActivation() {
         guard Settings.shared.getValue(forKey: Settings.inputMethodShouldPollForActivation) as? Bool ?? true else {
@@ -65,14 +65,12 @@ class InputMethod {
         self.remainingAttempts = maxAttempts
         self.timer = Timer.scheduledTimer(withTimeInterval: 10, repeats: true) { timer in
             self.remainingAttempts -= 1
-            self.enable()
             self.select()
             
             self.verifyAndUpdateInstallationStatus()
             InputMethod.log("ping!!!! (remaining attempts = \(self.remainingAttempts) - \(self.status)")
             
             if self.remainingAttempts == 0 && self.status != .installed {
-                self.status = .failed(error: "Failed to self/enable input method after \(self.maxAttempts) attempts.")
                 timer.invalidate()
                 self.timer = nil
             }
@@ -107,6 +105,19 @@ class InputMethod {
         self.bundle = Bundle(path: bundlePath)!
         self.originalBundlePath = bundlePath
         self.status = InstallationStatus(data: UserDefaults.standard.data(forKey: self.bundle.bundleIdentifier! + ".integration")) ?? .unattempted
+
+        let center = DistributedNotificationCenter.default()
+        let enabledInputSourcesChangedNotification = NSNotification.Name(kTISNotifyEnabledKeyboardInputSourcesChanged as String)
+        center.addObserver(forName: enabledInputSourcesChangedNotification, object: nil, queue: nil) { notification in
+            InputMethod.log("enabled Input Sources changed")
+            self.verifyAndUpdateInstallationStatus()
+        }
+        
+        let selectedInputSourcesChangedNotification = NSNotification.Name(kTISNotifySelectedKeyboardInputSourceChanged as String)
+        center.addObserver(forName: selectedInputSourcesChangedNotification, object: nil, queue: nil) { notification in
+            InputMethod.log("selected Input Sources changed")
+            self.verifyAndUpdateInstallationStatus()
+        }
         
         verifyAndUpdateInstallationStatus()
 
@@ -250,16 +261,21 @@ extension InputMethod: IntegrationProvider {
             return .failed(error: "Input source is not selected ")
         }
         
-        let enabledSources = inputMethodDefaults?.array(forKey: "AppleEnabledInputSources") ?? []
+        if #available(OSX 12.0, *) {
+            InputMethod.log("Don't check AppleEnabledInputSources on Monterey")
+        } else {
+        
+            let enabledSources = inputMethodDefaults?.array(forKey: "AppleEnabledInputSources") ?? []
 
-        guard enabledSources.contains(where: { item in
-            let object = item as AnyObject
-            if let bundleId = object["Bundle ID"] as? String {
-                return bundleId == self.bundle.bundleIdentifier
+            guard enabledSources.contains(where: { item in
+                let object = item as AnyObject
+                if let bundleId = object["Bundle ID"] as? String {
+                    return bundleId == self.bundle.bundleIdentifier
+                }
+                return false
+            }) else {
+                return .failed(error: "Input source is not enabled ")
             }
-            return false
-        }) else {
-            return .failed(error: "Input source is not enabled ")
         }
         
         return .installed

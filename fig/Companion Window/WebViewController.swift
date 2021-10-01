@@ -14,7 +14,6 @@ class WebViewController: NSViewController, NSWindowDelegate {
     var mouseLocation: NSPoint? { self.view.window?.mouseLocationOutsideOfEventStream }
 
     var webView: WebView? // = WKWebView(frame:.zero)
-    let pty: PseudoTerminal
     
     var icon: NSTextField = {
         let label = NSTextField()
@@ -46,10 +45,8 @@ class WebViewController: NSViewController, NSWindowDelegate {
     }()
     
     init(_ configuration: WKWebViewConfiguration = WKWebViewConfiguration()){
-        self.pty = PseudoTerminal()
-        self.pty.mirrorsEnvironment = true
+  
         super.init(nibName: nil, bundle: nil)
-        pty.delegate = self
         let settings = WebBridge.shared.configure(configuration)
         webView = WebView(frame: .zero, configuration: settings)
         webView?.drawsBackground = false
@@ -315,56 +312,6 @@ extension WebViewController: WebBridgeEventListener {
     }
     
     
-}
-
-extension WebViewController: ShellBridgeEventListener, PseudoTerminalEventDelegate {
-    func shellPromptWillReturn(_ notification: Notification) {
-        
-    }
-    
-    func startedNewTerminalSession(_ notification: Notification) {
-        
-    }
-    
-    func currentTabDidChange(_ notification: Notification) {
-        
-    }
-    
-    func currentDirectoryDidChange(_ notification: Notification) {
-        
-    }
-    
-    @objc func recievedDataFromPty(_ notification: Notification) {
-        if let msg = notification.object as? PtyMessage {
-            WebBridge.callback(handler: msg.handleId, value: msg.output, webView: self.webView)
-        }
-    }
-    
-    @objc func recievedUserInputFromTerminal(_ notification: Notification) {
-        // match against regex?
-        WebBridge.ttyin(webView: self.webView!, msg: notification.object as! ShellMessage)
-    }
-    
-    @objc func recievedStdoutFromTerminal(_ notification: Notification) {
-        // match against regex?
-        WebBridge.ttyout(webView: self.webView!, msg: notification.object as! ShellMessage)
-
-    }
-    
-    
-    @objc func recievedDataFromPipe(_ notification: Notification) {
-        //Bring FIG to front when triggered explictly from commandline
-//        NSRunningApplication.current.activate(options: .activateIgnoringOtherApps)
-        
-//        let msg = (notification.object as! ShellMessage)
-//        DispatchQueue.main.async {
-//            if let companion = self.view.window as? CompanionWindow {
-////            FigCLI.route(msg,
-////                         webView: self.webView!,
-////                         companionWindow: companion)
-//            }
-//        }
-    }
 }
 
 extension WebViewController {

@@ -340,8 +340,6 @@ class ShellBridge {
       
         let integration: ShellIntegration.Type
         switch backing {
-        case .bash:
-          integration = BashIntegration.self
         case .zle:
           integration = ZLEIntegration.self
         default:
