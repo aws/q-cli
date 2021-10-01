@@ -936,34 +936,34 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             if current == "1.0.50" {
                 switch Settings.shared.getValue(forKey: "autocomplete.tab") as? String {
                     case "insert":
-                        Settings.shared.set(value: "autocomplete.insertSelected", forKey: "keybindings.tab")
+                        Settings.shared.set(value: "insertSelected", forKey: "autocomplete.keybindings.tab")
                         break
                     case "navigate":
-                        Settings.shared.set(value: "autocomplete.scrollDown", forKey: "keybindings.tab")
-                        Settings.shared.set(value: "autocomplete.scrollUp", forKey: "keybindings.shift+tab")
+                        Settings.shared.set(value: "navigateDown", forKey: "autocomplete.keybindings.tab")
+                        Settings.shared.set(value: "navigateUp", forKey: "autocomplete.keybindings.shift+tab")
                         break
                     default:
                         break
                 }
 
                 if Settings.shared.getValue(forKey: Settings.enterKeyBehavior) as? String == "ignore" {
-                    Settings.shared.set(value: "ignore", forKey: "keybindings.enter")
+                    Settings.shared.set(value: "ignore", forKey: "autocomplete.keybindings.enter")
                 }
 
                 if Settings.shared.getValue(forKey: Settings.rightArrowKeyBehavior) as? String == "insert" {
-                    Settings.shared.set(value: "autocomplete.insertSelected", forKey: "keybindings.right")
+                    Settings.shared.set(value: "insertSelected", forKey: "autocomplete.keybindings.right")
                 }
 
                 if Settings.shared.getValue(forKey: Settings.allowAlternateNavigationKeys) as? Bool ?? true {
-                    Settings.shared.set(value: "autocomplete.scrollDown", forKey: "keybindings.ctrl+j")
-                    Settings.shared.set(value: "autocomplete.scrollUp", forKey: "keybindings.ctrl+k")
+                    Settings.shared.set(value: "navigateDown", forKey: "autocomplete.keybindings.control+j")
+                    Settings.shared.set(value: "navigateUp", forKey: "autocomplete.keybindings.control+k")
                   
-                    Settings.shared.set(value: "autocomplete.scrollDown", forKey: "keybindings.ctrl+n")
-                    Settings.shared.set(value: "autocomplete.scrollUp", forKey: "keybindings.ctrl+p")
+                    Settings.shared.set(value: "navigateDown", forKey: "autocomplete.keybindings.control+n")
+                    Settings.shared.set(value: "navigateUp", forKey: "autocomplete.keybindings.control+p")
                 }
 
                 if Settings.shared.getValue(forKey: Settings.disablePopoutDescriptions) as? Bool ?? false {
-                    Settings.shared.set(value: "ignore", forKey: "keybindings.command+i")
+                    Settings.shared.set(value: "ignore", forKey: "autocomplete.keybindings.command+i")
                 }
             }
         }
