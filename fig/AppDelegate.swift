@@ -939,7 +939,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
                         Settings.shared.set(value: "insertSelected", forKey: "autocomplete.keybindings.tab")
                         break
                     case "navigate":
-                        Settings.shared.set(value: "navigateDown", forKey: "autocomplete.keybindings.tab")
+                        Settings.shared.set(value: "insertCommonPrefixOrNavigateDown", forKey: "autocomplete.keybindings.tab")
                         Settings.shared.set(value: "navigateUp", forKey: "autocomplete.keybindings.shift+tab")
                         break
                     default:
