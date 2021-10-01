@@ -52,3 +52,60 @@ extension NSEvent {
         }
     }
 }
+
+extension NSRect {
+    var fig_frame: Fig_Frame {
+        return Fig_Frame.with { frame in
+            frame.origin = Fig_Point.with { origin in
+                origin.x = Float(self.origin.x)
+                origin.y = Float(self.origin.y)
+            }
+            
+            frame.size = Fig_Size.with { size in
+                size.width = Float(self.size.width)
+                size.height = Float(self.size.height)
+            }
+        }
+    }
+}
+extension ExternalWindow {
+    var fig_window: Fig_Window {
+        return Fig_Window.with { window in
+            window.app = Fig_Application.with { app in
+                if let bundleId = self.app.bundleIdentifier {
+                    app.bundleIdentifier = bundleId
+                }
+                
+                if let name = self.app.localizedName {
+                    app.name = name
+                }
+            }
+            
+            if let frame = NSScreen.main?.frame.fig_frame {
+                window.currentScreen = Fig_Screen.with { screen in
+                    screen.frame = frame
+                }
+            }
+            
+            window.frame = self.frame.fig_frame
+            window.windowID = String(self.windowId)
+            
+            if let tty = ShellHookManager.shared.tty(for: self.hash) {
+                window.currentSession = Fig_Session.with{ session in
+                    
+                    if let pid = tty.pid, let executable = tty.cmd, let directory = tty.cwd {
+                        session.frontmostProcess = Fig_Process.with{ process in
+                            process.pid = pid
+                            process.executable = executable
+                            process.directory = directory
+                        }
+                        
+                        if let sessionId = ShellHookManager.shared.getSessionId(for: self.hash) {
+                            session.sessionID = sessionId
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
