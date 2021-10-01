@@ -20,7 +20,10 @@ class APINotificationCenter {
                                                selector: #selector(processDidChange(notification:)),
                                                name: TTY.processUpdated,
                                                object: nil)
-        
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(focusedWindowDidChange(notification:)),
+                                               name: WindowManager.focusedWindowChangedNotification,
+                                               object: nil)
     }
     
     deinit {
@@ -147,6 +150,14 @@ extension APINotificationCenter {
             notification.sessionID = tty.descriptor
         }))
     }
+    
+    @objc func focusedWindowDidChange(notification: Notification) {
+        guard let window = notification.object as? ExternalWindow else { return }
+
+        self.post(Fig_WindowFocusChangedNotification.with({ notification in
+            notification.window = window.fig_window
+         }))
+    }
 }
 
 // Must be updated when new notifications are added!
@@ -165,6 +176,8 @@ extension Fig_Notification {
             return .notifyOnPrompt
         case .settingsChangedNotification(_):
             return .notifyOnSettingsChange
+        case .windowFocusChangedNotification(_):
+            return .notifyOnFocusChanged
         case .none:
             return nil
         }
@@ -206,6 +219,12 @@ extension APINotificationCenter {
     func post(_ notification: Fig_KeybindingPressedNotification) {
         var wrapper = Fig_Notification()
         wrapper.keybindingPressedNotification = notification
+        self.post(notification: wrapper)
+    }
+    
+    func post(_ notification: Fig_WindowFocusChangedNotification) {
+        var wrapper = Fig_Notification()
+        wrapper.windowFocusChangedNotification = notification
         self.post(notification: wrapper)
     }
 }

@@ -109,6 +109,8 @@ class WindowManager : NSObject {
         updatePosition(for: .applicationActivated)
     }
     
+    static let focusedWindowChangedNotification = Notification.Name("focusedWindowChangedNotification")
+
     @objc func windowChanged(_ notification: Notification? = nil){
         updatePosition(for: .windowChanged)
         self.autocomplete?.maxHeight = 0
@@ -117,6 +119,10 @@ class WindowManager : NSObject {
          let bundleId = app.bundleId  {
         Autocomplete.runJavascript("fig.currentApp = '\(bundleId)'")
       }
+    
+        NotificationCenter.default.post(name: WindowManager.focusedWindowChangedNotification,
+                                        object: notification?.object as? ExternalWindow ?? AXWindowServer.shared.topWindow)
+
 //
 //        DispatchQueue.main.async {
 //            self.autocomplete?.orderOut(nil)
