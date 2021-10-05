@@ -313,6 +313,13 @@ class Settings {
   func restartListener() {
     self.eventSource?.cancel()
     self.setUpFileSystemListeners()
+    
+    if let settings = Settings.loadDefaultSettings() {
+      defaultSettings = settings
+    } else {
+      print("Settings: could not load default settings!")
+    }
+    
     self.settingsUpdated()
   }
   
