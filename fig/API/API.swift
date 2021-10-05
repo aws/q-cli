@@ -73,7 +73,7 @@ class API {
                     response.success = try Settings.shared.handleSetRequest(request)
                 case .updateApplicationPropertiesRequest(let request):
                     if request.hasInterceptBoundKeystrokes {
-                        KeypressProvider.shared.setRedirectsEnabled(value: true)
+                        KeypressProvider.shared.setRedirectsEnabled(value: request.interceptBoundKeystrokes)
                     }
                     response.success = true
                 case .none:
