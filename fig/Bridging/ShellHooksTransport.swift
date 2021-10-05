@@ -54,7 +54,8 @@ class ShellHookTransport: UnixSocketServerDelegate {
             NotificationCenter.default.post(name: PseudoTerminal.recievedCallbackNotification,
                                             object: [
                                               "handlerId" : shellMessage.options?[0] ?? nil,
-                                              "filepath"  : shellMessage.options?[1] ?? nil ])
+                                              "filepath"  : shellMessage.options?[1] ?? nil,
+                                              "exitCode"  : shellMessage.options?[safe: 2] ?? nil])
           case .tmux:
               ShellHookManager.shared.tmuxPaneChanged(shellMessage)
           case .hide:
@@ -137,7 +138,7 @@ extension ShellMessage {
                             env: "",
                             io: nil,
                             data: "",
-                            options: [String(session), String(integration) ],
+                            options: [String(session), String(integration), tokens[safe: 4] ?? "-1" ],
                             hook: subcommand)
       case .keypress:
         guard let tty = tokens[safe: 4],

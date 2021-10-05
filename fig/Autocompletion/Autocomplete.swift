@@ -72,13 +72,8 @@ class Autocomplete {
     }
   }
   
-  static func hide() {
-    guard let window = AXWindowServer.shared.whitelistedWindow else { return }
-    
+  static func hide() {  
     WindowManager.shared.positionAutocompletePopover(textRect: nil)
-    
-    Autocomplete.removeAllRedirects(from: window)
-
   }
   
   static func position(makeVisibleImmediately: Bool = true, completion:(() -> Void)? = nil) {
@@ -93,89 +88,19 @@ class Autocomplete {
         if let rect = window.cursor, !keybuffer.writeOnly {//, keybuffer.buffer?.count != 0 {
           WindowManager.shared.positionAutocompletePopover(textRect: rect, makeVisibleImmediately: makeVisibleImmediately, completion: completion)
         } else {
-          Autocomplete.removeAllRedirects(from: window)
           completion?()
         }
       }
     }
   }
-  
-  static func interceptKeystrokes(in window: ExternalWindow) {
-    let nKeycode = KeyboardLayout.shared.keyCode(for: "N") ?? Keycode.n
-    let pKeycode = KeyboardLayout.shared.keyCode(for: "P") ?? Keycode.p
-    let jKeycode = KeyboardLayout.shared.keyCode(for: "J") ?? Keycode.j
-    let kKeycode = KeyboardLayout.shared.keyCode(for: "K") ?? Keycode.k
-    let iKeycode = KeyboardLayout.shared.keyCode(for: "I") ?? Keycode.i
-    let rKeycode = KeyboardLayout.shared.keyCode(for: "R") ?? Keycode.r
 
-    KeypressProvider.shared.addRedirect(for: Keystroke(modifierFlags: [.command], keyCode: iKeycode), in: window)
-    KeypressProvider.shared.addRedirect(for: Keycode.upArrow, in: window)
-    KeypressProvider.shared.addRedirect(for: Keycode.downArrow, in: window)
-    KeypressProvider.shared.addRedirect(for: Keycode.tab, in: window)
-    KeypressProvider.shared.addRedirect(for:  Keystroke(modifierFlags: [.shift], keyCode: Keycode.tab), in: window)
-    if (!Defaults.onlyInsertOnTab) {
-        KeypressProvider.shared.addRedirect(for: Keycode.returnKey, in: window)
-    }
-    
-    if (Settings.shared.getValue(forKey: Settings.allowAlternateNavigationKeys) as? Bool ?? true) {
-        KeypressProvider.shared.addRedirect(for: Keystroke(modifierFlags: [.control], keyCode: nKeycode), in: window)
-        KeypressProvider.shared.addRedirect(for: Keystroke(modifierFlags: [.control], keyCode: pKeycode), in: window)
-        
-        KeypressProvider.shared.addRedirect(for: Keystroke(modifierFlags: [.control], keyCode: jKeycode), in: window)
-        KeypressProvider.shared.addRedirect(for: Keystroke(modifierFlags: [.control], keyCode: kKeycode), in: window)
-    }
-  
-    if (Settings.shared.getValue(forKey: Settings.disablePopoutDescriptions) as? Bool ?? false) {
-        KeypressProvider.shared.addRedirect(for: Keystroke(modifierFlags: [.command], keyCode: iKeycode), in: window)
-    }
-    
-    if (Settings.shared.getValue(forKey: Settings.useControlRForHistory) as? Bool ??
-        Settings.shared.getValue(forKey: Settings.useControlRForHistoryBeta) as? Bool ?? false) {
-        KeypressProvider.shared.addRedirect(for: Keystroke(modifierFlags: [.control], keyCode: rKeycode), in: window)
-    }
-    
-    if (Defaults.insertUsingRightArrow) {
-        KeypressProvider.shared.addRedirect(for: Keycode.rightArrow, in: window)
-    }
-  }
-  
-  static func removeAllRedirects(from window: ExternalWindow) {
-    KeypressProvider.shared.resetRedirects(for: window)
-  }
-  
-  static func handleCommandIKey(event:CGEvent, in window: ExternalWindow) -> EventTapAction {
-    let keycode = UInt16(event.getIntegerValueField(.keyboardEventKeycode))
-    guard KeyboardLayout.shared.keyCode(for: "I") ?? Keycode.i == keycode else {
-      return .ignore
-    }
-
-    guard let event = NSEvent(cgEvent: event), event.modifierFlags.intersection(.deviceIndependentFlagsMask) == .command else {
-      return .ignore
-    }
-    
-    // Don't intercept command+I when in VSCode editor
-    guard window.isFocusedTerminal else {
-      return .forward
-    }
-        
-    let autocompleteIsNotVisible = WindowManager.shared.autocomplete?.isHidden ?? true
-    
-    // Allow user to opt out of cmd+i interception if autocomplete window isn't visibile
-    let shouldInterceptCommandI = Settings.shared.getValue(forKey: Settings.shouldInterceptCommandI) as? Bool ?? true
-    
-    // Allow to be intercepted by autocomplete app if visible
-    // otherwise prevent keypress from propogating
-    return autocompleteIsNotVisible && shouldInterceptCommandI ? .consume : .ignore
-  }
-  
-  static func handleTabKey(event:CGEvent, in window: ExternalWindow) -> EventTapAction {
-
+  static func handleShowOnTab(event:CGEvent, in window: ExternalWindow) -> EventTapAction {
     let keycode = UInt16(event.getIntegerValueField(.keyboardEventKeycode))
     guard Keycode.tab == keycode else {
       return .ignore
     }
     
-    guard [.keyDown].contains(event.type) else {
+    guard event.type == .keyDown else {
       return .ignore
     }
     
@@ -201,43 +126,6 @@ class Autocomplete {
     // toggle autocomplete on and consume tab keypress
     Autocomplete.toggle(for: window)
     return .consume
-    
-  }
-  
-  static func handleEscapeKey(event:CGEvent, in window: ExternalWindow) -> EventTapAction {
-    let keycode = UInt16(event.getIntegerValueField(.keyboardEventKeycode))
-    guard Keycode.escape == keycode else {
-      return .ignore
-    }
-    
-    guard [.keyDown].contains(event.type) else {
-      return .ignore
-    }
-    
-    let autocompleteIsNotVisible = WindowManager.shared.autocomplete?.isHidden ?? true
-        
-    // Don't intercept escape key when in VSCode editor
-    guard window.isFocusedTerminal else {
-      return .forward
-    }
-    
-    // Send <esc> key event directly to underlying app, if autocomplete is hidden and no modifiers
-    if autocompleteIsNotVisible, !event.flags.containsKeyboardModifier {
-      return .forward
-    }
-    
-    // Allow user to opt out of escape key being intercepted by Fig
-    if let behavior = Settings.shared.getValue(forKey: Settings.escapeKeyBehaviorKey) as? String,
-       behavior == "ignore",
-       !event.flags.containsKeyboardModifier {
-        return .forward
-    }
-    
-    // control+esc toggles autocomplete on and off
-    Autocomplete.toggle(for: window)
-    
-    return autocompleteIsNotVisible ? .forward : .consume
-
   }
 }
 
@@ -261,9 +149,13 @@ class GenericShellIntegration: ShellIntegration {
     let delay = min(0.01 * Double(insertionText.count), 0.15)
     Timer.delayWithSeconds(delay) {
         try? FileManager.default.removeItem(atPath: insertionLock)
-      
+        
+        if let window = AXWindowServer.shared.whitelistedWindow,
+           KeypressProvider.shared.keyBuffer(for: window).backing != nil,
+           let context = KeypressProvider.shared.keyBuffer(for: window).insert(text: insertionText) {
+            Autocomplete.update(with: context, for: window.hash)
+        }
     }
-    
   }
 }
 

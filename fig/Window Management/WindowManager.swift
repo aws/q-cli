@@ -109,6 +109,8 @@ class WindowManager : NSObject {
         updatePosition(for: .applicationActivated)
     }
     
+    static let focusedWindowChangedNotification = Notification.Name("focusedWindowChangedNotification")
+
     @objc func windowChanged(_ notification: Notification? = nil){
         updatePosition(for: .windowChanged)
         self.autocomplete?.maxHeight = 0
@@ -117,6 +119,10 @@ class WindowManager : NSObject {
          let bundleId = app.bundleId  {
         Autocomplete.runJavascript("fig.currentApp = '\(bundleId)'")
       }
+    
+        NotificationCenter.default.post(name: WindowManager.focusedWindowChangedNotification,
+                                        object: notification?.object as? ExternalWindow ?? AXWindowServer.shared.topWindow)
+
 //
 //        DispatchQueue.main.async {
 //            self.autocomplete?.orderOut(nil)
@@ -225,7 +231,6 @@ class WindowManager : NSObject {
     
     func createAutocomplete() {
         if let autocomplete = self.autocomplete {
-            autocomplete.webViewController?.pty.close()
             autocomplete.orderOut(nil)
             self.autocomplete = nil
         }
@@ -657,7 +662,6 @@ extension WindowManager : WindowManagementService {
 //    }
     
     func close(window: CompanionWindow) {
-        (window.contentViewController as? WebViewController)?.pty.close()
         (window.contentViewController as? WebViewController)?.cleanUp()
         window.orderOut(nil)
         window.close()
@@ -715,13 +719,6 @@ extension WindowManager : WindowManagementService {
             return screen.frame.contains(rect)
             }.first ?? NSScreen.main
             let heightLimit: CGFloat = Settings.shared.getValue(forKey: Settings.autocompleteHeight) as? CGFloat ?? 140.0 
-
-            // Prevent arrow keys
-            if ((WindowManager.shared.autocomplete?.maxHeight != 0)) {
-                Autocomplete.interceptKeystrokes(in: window)
-            } else {
-                Autocomplete.removeAllRedirects(from: window)
-            }
 
             let maxWidth =  Settings.shared.getValue(forKey: Settings.autocompleteWidth) as? CGFloat
 

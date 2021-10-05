@@ -364,11 +364,9 @@ extension NativeCLI {
         let (message, connection) = scope
 //        message.
         let command = message.arguments.joined(separator: " ")
-        let pty = PseudoTerminalHelper()
-        pty.start(with: [:])
-        pty.execute(command) { (out) in
+        PseudoTerminal.shared.execute(command) { (response) in
+          let (out, _, _) = response
           NativeCLI.printInTerminal(out, using: connection)
-          pty.close()
           connection.send(message: "disconnect")
         }
 
@@ -678,7 +676,7 @@ extension NativeCLI {
                 InputMethod.requestVersion()
                 NativeCLI.printInTerminal("\n› Requesting version! Check the logs!\n", using: connection)
             case "--verify-install":
-                NativeCLI.printInTerminal(InputMethod.default.status.description, using: connection)
+                NativeCLI.printInTerminal(InputMethod.default.verifyInstallation().description, using: connection)
             default:
                 return
 

@@ -54,7 +54,7 @@ class SSHIntegration: CommandIntegration {
       
         if tty.pty == nil {
             print("Starting PTY...!")
-            tty.pty = PseudoTerminalHelper()
+            tty.pty = PseudoTerminal()
             tty.pty?.start(with: [:])
             return
         }
@@ -83,7 +83,9 @@ class SSHIntegration: CommandIntegration {
             return
         }
         
-        tty.pty!.execute("\(prefix) bash -s < \(modifiedScriptPath ?? scriptPath)") { output in
+        tty.pty!.execute("\(prefix) bash -s < \(modifiedScriptPath ?? scriptPath)") { response in
+            let (output, _, _) = response
+
             print("remote_machine:", output)
             guard tty.pid == process.pid else {
                 print("Process out of sync, abort update")

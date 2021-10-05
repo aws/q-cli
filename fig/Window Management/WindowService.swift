@@ -143,8 +143,8 @@ class WindowServer : WindowService {
     var previousApplication: NSRunningApplication?
     var previousWindow: ExternalWindow? {
         willSet(value) {
-            print("app: \(value?.bundleId ?? "<none>")")
             if (self.previousWindow != value) {
+                print("app: \(value?.bundleId ?? "<none>")")
                 print("Old window \(self.previousWindow?.windowId ?? 0)")
                 print("New window \(value?.windowId ?? 0)")
                 NotificationCenter.default.post(name: WindowServer.whitelistedWindowDidChangeNotification, object: value)
