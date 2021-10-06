@@ -7,7 +7,7 @@
 		<key>FigInputMethod.xcscheme_^#shared#^_</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>1</integer>
+			<integer>2</integer>
 		</dict>
 		<key>InputMethod.xcscheme_^#shared#^_</key>
 		<dict>
@@ -17,12 +17,17 @@
 		<key>fig.xcscheme_^#shared#^_</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>0</integer>
+			<integer>1</integer>
 		</dict>
 		<key>figcli.xcscheme_^#shared#^_</key>
 		<dict>
 			<key>orderHint</key>
 			<integer>1</integer>
+		</dict>
+		<key>figterm.xcscheme_^#shared#^_</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>0</integer>
 		</dict>
 	</dict>
 	<key>SuppressBuildableAutocreation</key>
@@ -43,6 +48,11 @@
 			<true/>
 		</dict>
 		<key>75675970244634B2006AA988</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>757A85BA270E31160017996A</key>
 		<dict>
 			<key>primary</key>
 			<true/>
