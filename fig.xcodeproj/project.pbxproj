@@ -1144,7 +1144,7 @@
 			buildPhases = (
 			);
 			buildToolPath = /usr/bin/make;
-			buildWorkingDirectory = /Users/mschrage/p/mono/figterm;
+			buildWorkingDirectory = ../figterm;
 			dependencies = (
 			);
 			name = figterm;
