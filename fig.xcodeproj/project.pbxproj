@@ -820,7 +820,6 @@
 				75675953244634AD006AA988 /* fig */,
 				75675969244634B2006AA988 /* figTests */,
 				75675974244634B2006AA988 /* figUITests */,
-				757A85D3270E3A6D0017996A /* figterm */,
 				751F758F246E16D800E083C8 /* figcli */,
 				754316F526E08F5C00188887 /* InputMethod */,
 				75675952244634AD006AA988 /* Products */,
@@ -929,13 +928,6 @@
 				7571778226F91BF50071AE10 /* AppleTerminalIntegration.swift */,
 			);
 			path = AppleTerminal;
-			sourceTree = "<group>";
-		};
-		757A85D3270E3A6D0017996A /* figterm */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = figterm;
 			sourceTree = "<group>";
 		};
 		757CA88B248B08D7002A64A8 /* local */ = {
