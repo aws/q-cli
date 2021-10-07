@@ -40,6 +40,9 @@ class WebBridge : NSObject {
 //                configuration.setURLSchemeHandler(self, forURLScheme: "figbundle")
 
                 let contentController = WebBridgeContentController()
+                contentController.addUserScript(WKUserScript(source: API.declareConstants(),
+                                                            injectionTime: .atDocumentStart,
+                                                            forMainFrameOnly: false))
                 
                 let _: [WebBridgeEventHandler] = [.logHandler,
                                                               .exceptionHandler,
