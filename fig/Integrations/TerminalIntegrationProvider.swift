@@ -317,4 +317,16 @@ class InputMethodDependentTerminalIntegrationProvider: GenericTerminalIntegratio
     @objc func inputMethodStatusDidChange() {
         self.status = self._verifyInstallation()
     }
+    
+    override func install(withRestart: Bool, inBackground: Bool, completion: ((InstallationStatus) -> Void)? = nil) {
+        // Cannot install InputMethod in background on macOS Monterey
+        if inBackground, #available(OSX 12.0, *) {
+            return
+        }
+        
+        super.install(withRestart: withRestart,
+                      inBackground: inBackground,
+                      completion: completion)
+    }
+
 }

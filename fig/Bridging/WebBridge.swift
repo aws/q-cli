@@ -69,6 +69,7 @@ class WebBridge : NSObject {
                 contentController.add(self, name: WebBridgeScript.globalExecuteHandler.rawValue)
                 contentController.add(self, name: WebBridgeScript.stdoutHandler.rawValue)
                 contentController.add(self, name: WebBridgeScript.privateHandler.rawValue)
+                contentController.add(self, name: WebBridgeScript.protobufHandler.rawValue)
 
                 contentController.add(self, name: WebBridgeScript.onboardingHandler.rawValue)
 
@@ -172,6 +173,7 @@ enum WebBridgeScript: String, CaseIterable {
     case detachHandler = "detachHandler"
     case globalExecuteHandler = "globalExecuteHandler"
     case privateHandler = "privateHandler"
+    case protobufHandler = "proto"
 
     case onboardingHandler = "onboardingHandler"
 
@@ -550,6 +552,8 @@ extension WebBridge : WKScriptMessageHandler {
             WebBridge.stdout(scope: message)
         case .privateHandler:
             WebBridge.privateAPI(scope: message)
+        case .protobufHandler:
+            API.handle(scriptMessage: message)
         default:
             print("Unhandled WKScriptMessage type '\(message.name)'")
         }
@@ -996,18 +1000,6 @@ extension WebBridge {
                         let running = tty.running
                         print("tty: \(running?.cmd ?? "?") \(running?.cwd ?? "cwd")")
                     }
-                case "keystroke":
-                    guard let keyCodeString = data["key"], let keyCode = UInt16(keyCodeString), let consumerString = data["consumer"] else {
-                        print("Missing params for keystroke")
-                        return
-                    }
-                    
-                    if (consumerString == "true") {
-                        KeypressProvider.shared.addRedirect(for: keyCode, in: (scope.getCompanionWindow()?.tetheredWindow)!)
-                    } else {
-                        KeypressProvider.shared.removeRedirect(for: keyCode, in: (scope.getCompanionWindow()?.tetheredWindow)!)
-
-                    }
                 case "autocomplete-hide":
 //                  break;
                     guard let companion = scope.getCompanionWindow(), companion.isAutocompletePopup else { return }//, let window = AXWindowServer.shared.whitelistedWindow  else { return }
@@ -1163,14 +1155,27 @@ extension WebBridge {
               
                   ShellBridge.simulate(keypress: keypress)
                 case "settings":
-                  guard let key = data["key"],
-                    let valueString = data["value"],
-                    let valueData = valueString.data(using: .utf8),
-                    let value = try? JSONSerialization.jsonObject(with: valueData, options: .allowFragments) else {
+                  guard let key = data["key"] else {
                     return
                   }
+                
+                    let value: Any? = {
+                        let valueString = data["value"]
+                        guard let valueData = valueString?.data(using: .utf8) else {
+                            return nil
+                        }
+                        
+                        let value = try? JSONSerialization.jsonObject(with: valueData, options: .allowFragments)
+                        
+                        if value is NSNull {
+                            return nil
+                        }
+                        
+                        return value
+                    }()
+                    
+                    Settings.shared.set(value: value, forKey: key)
                   
-                  Settings.shared.set(value: value, forKey: key)
                 case "status":
 
                   let companion = scope.getCompanionWindow()              
@@ -1272,7 +1277,7 @@ extension WebBridge {
 
 
             case "interceptKeystrokes":
-                KeypressProvider.shared.setEnabled(value: value == "true")
+                KeypressProvider.shared.setRedirectsEnabled(value: value == "true")
 
             default:
                 print("Unrecognized property value '\(prop)' updated with value: \(value)")
@@ -1340,8 +1345,12 @@ extension WebBridge {
     }
   
     static func declareSettings(webview: WebView) {
-        guard let settings = Settings.shared.jsonRepresentation(), let b64 = settings.data(using: .utf8)?.base64EncodedString() else { return }
-        webview.evaluateJavaScript("fig.updateSettings(b64DecodeUnicode(`\(b64)`))", completionHandler: nil)
+        guard let settings = Settings.shared.jsonRepresentation(),
+              let b64Settings = settings.data(using: .utf8)?.base64EncodedString() else { return }
+        guard let defaultSettings = Settings.shared.jsonRepresentation(ofDefaultSettings: true),
+              let b64Defaults = defaultSettings.data(using: .utf8)?.base64EncodedString() else { return }
+
+        webview.evaluateJavaScript("fig.updateSettings(b64DecodeUnicode(`\(b64Settings)`), b64DecodeUnicode(`\(b64Defaults)`))", completionHandler: nil)
       }
     
     
@@ -1453,30 +1462,15 @@ extension WebBridge {
     static func pty(scope: WKScriptMessage) {
         if let params = scope.body as? Dictionary<String, String>,
            let type = params["type"],
-           let webview = scope.webView as? WebView,
-           let window = webview.window,
-           let controller = window.contentViewController as? WebViewController {
-            print("\(params) \(webview), \(controller.pty.pty.process.running), \(controller.pty.pty.process.delegate)")
+           let webview = scope.webView as? WebView {
+
             switch (type) {
                 case "init":
-                    
-                    if let env = params["env"]{
-                        var parsedEnv = env.jsonStringToDict() as? [String: String] ?? FigCLI.extract(keys: ["PWD","USER","HOME","SHELL", "OLDPWD", "TERM_PROGRAM", "TERM_SESSION_ID", "HISTFILE","FIG","FIGPATH"], from: env)
-                        parsedEnv["HOME"] = NSHomeDirectory()
-                        parsedEnv["TERM"] = "xterm"//-256color
-//                        parsedEnv["SHELL"] = "/bin/bash"
-//                        DispatchQueue.global(qos: .userInteractive).async {
-                        controller.pty.start(with: parsedEnv)
-//                        }
-                    } else {
-                        controller.pty.start(with: ["HOME":NSHomeDirectory(), "TERM" : "xterm-256color", "SHELL":"/bin/bash"])
-                    }
-         
+                    Logger.log(message: "fig.pty.init is deprecated", subsystem: .pty)
+                    break;
                 case "stream":
-                    if let cmd = params["cmd"],
-                        let handlerId = params["handlerId"] {
-                        controller.pty.stream(command: cmd, handlerId: handlerId)
-                    }
+                    Logger.log(message: "fig.pty.stream is deprecated", subsystem: .pty)
+                    break;
                 case "execute":
                     if let cmd = params["cmd"],
                         let handlerId = params["handlerId"] {
@@ -1491,23 +1485,35 @@ extension WebBridge {
                           asPipeline = parsedOptions["pipelined"] as? Bool ?? asPipeline
                           
                         }
-                      controller.pty.execute(command: cmd, handlerId: handlerId, asBackgroundJob: asBackgroundJob, asPipeline: asPipeline)
+                        
+                        var options: PseudoTerminal.ExecutionOptions = []
+                        if asBackgroundJob {
+                            options.insert(.backgroundJob)
+                        }
+                        
+                        if asPipeline {
+                            options.insert(.pipelined)
+                        }
+                        
+                        PseudoTerminal.shared.execute(cmd, handlerId: handlerId, options: options) { (stdout, stderr, exitCode) in
+                            WebBridge.callback(handler: handlerId,
+                                               value: stdout,
+                                               webView: webview)
+                        }
                     }
                 case "shell":
-                    if let cmd = params["cmd"],
-                        let handlerId = params["handlerId"] {
-                        controller.pty.shell(command: cmd, handlerId: handlerId)
-                    }
+                    Logger.log(message: "fig.pty.shell is deprecated", subsystem: .pty)
+                    break;
                 case "write":
                     if let cmd = params["cmd"] {
-                        if let code = ControlCode(rawValue:cmd) {
-                            controller.pty.write(command: "", control: code)
-                        } else {
-                            controller.pty.write(command: cmd, control: nil)
+                        if ControlCode(rawValue:cmd) == nil {
+                            PseudoTerminal.shared.write(cmd)
                         }
                     }
                 case "exit":
-                    controller.pty.close()
+                    Logger.log(message: "fig.pty.exit is deprecated", subsystem: .pty)
+
+                    break;
                 default:
                     break;
             }

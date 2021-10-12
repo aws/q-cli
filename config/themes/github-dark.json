@@ -1,0 +1,16 @@
+{
+  "version": "1.0",
+  "theme": {
+    "textColor": "#83befc",
+    "backgroundColor": "#282e34",
+    "matchBackgroundColor": "#2d5072",
+    "selection": {
+      "textColor": "rgb(253,253,253)",
+      "backgroundColor": "rgb(30,90,199)"
+    },
+    "description": {
+      "textColor": "#757e88",
+      "borderColor": "#1d2227"
+    }
+  }
+}
