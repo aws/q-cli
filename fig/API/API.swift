@@ -49,7 +49,6 @@ class API {
         
         do {
             let request = try scriptMessage.parseAsAPIRequest(using: encoding)
-            print("proto", try? request.jsonString() )
             API.handle(request, from: webView, using: encoding)
 
         } catch APIError.generic(message: let message) {
