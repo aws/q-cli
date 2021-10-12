@@ -185,7 +185,7 @@ extension PseudoTerminal {
         static let pipelined = ExecutionOptions(rawValue: 1 << 1)
     }
     
-    static let callbackExecutable = "\(NSHomeDirectory())/.fig/bin/fig_callback"
+    static let callbackExecutable = Bundle.main.path(forAuxiliaryExecutable: "fig_callback")!
     func execute(_ command: String,
                  handlerId: HandlerId = UUID().uuidString,
                  options: ExecutionOptions = [.backgroundJob],
