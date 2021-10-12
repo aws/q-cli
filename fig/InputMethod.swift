@@ -105,6 +105,7 @@ class InputMethod {
         self.bundle = Bundle(path: bundlePath)!
         self.originalBundlePath = bundlePath
         self.status = InstallationStatus(data: UserDefaults.standard.data(forKey: self.bundle.bundleIdentifier! + ".integration")) ?? .unattempted
+
         let center = DistributedNotificationCenter.default()
         let enabledInputSourcesChangedNotification = NSNotification.Name(kTISNotifyEnabledKeyboardInputSourcesChanged as String)
         center.addObserver(forName: enabledInputSourcesChangedNotification, object: nil, queue: nil) { notification in
