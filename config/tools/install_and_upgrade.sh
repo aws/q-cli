@@ -12,8 +12,6 @@
 # or via fetch:
 #   sh <(fetch -o - https://raw.githubusercontent.com/withfig/config/main/tools/install_and_upgrade.sh) TAG_NAME
 
-FIGREPO='https://github.com/withfig/config.git'
-
 # We are constantly pushing changes to the public repo.  Each version of the
 # swift app is only compatible with a certain version of the public repo.
 # The commit hash is passed in as a parameter to this script.  We hard reset to
@@ -50,9 +48,11 @@ install_fig() {
 
   # rename figterm binaries to mirror supported shell
   # copy binaries on install to avoid issues with file permissions at runtime
-  cp -p "${HOME}"/.fig/bin/figterm "${HOME}"/.fig/bin/zsh\ \(figterm\)
-  cp -p "${HOME}"/.fig/bin/figterm "${HOME}"/.fig/bin/bash\ \(figterm\)
-  cp -p "${HOME}"/.fig/bin/figterm "${HOME}"/.fig/bin/fish\ \(figterm\)
+  FIGTERM=/Applications/Fig.app/Contents/MacOS/figterm 
+
+  cp -p "${FIGTERM}" "${HOME}"/.fig/bin/zsh\ \(figterm\)
+  cp -p "${FIGTERM}" "${HOME}"/.fig/bin/bash\ \(figterm\)
+  cp -p "${FIGTERM}" "${HOME}"/.fig/bin/fish\ \(figterm\)
 
   if [[ ! -f ~/.fig/settings.json ]]; then
     echo "{}" > ~/.fig/settings.json
