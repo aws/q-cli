@@ -1158,7 +1158,7 @@
 			buildPhases = (
 			);
 			buildToolPath = /usr/bin/make;
-			buildWorkingDirectory = ../figterm;
+			buildWorkingDirectory = ./figterm;
 			dependencies = (
 			);
 			name = figterm;
