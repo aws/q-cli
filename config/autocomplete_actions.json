@@ -1,0 +1,21 @@
+[
+  "insertSelected",
+  "insertSelectedAndExecute",
+  "insertCommonPrefix",
+  "insertCommonPrefixOrInsertSelected",
+  "insertCommonPrefixOrNavigateDown",
+  "execute",
+
+  "hideAutocomplete",
+  "showAutocomplete",
+  "toggleAutocomplete",
+
+  "navigateUp",
+  "navigateDown",
+
+  "hideDescription",
+  "showDescription",
+  "toggleDescription",
+
+  "toggleHistoryMode"
+]
