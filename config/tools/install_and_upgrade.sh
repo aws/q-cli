@@ -20,9 +20,6 @@ FIGREPO='https://github.com/withfig/config.git'
 # this commit hash. If we don't get a hash, we just hard reset to the most
 # recent version of the repo...
 FIG_TAG="$1"
-if [[ -z "${FIG_TAG}" ]]; then
-  FIG_TAG="main"
-fi
 
 echo "Tag is ${FIG_TAG}"
 date_string=$(date '+%Y-%m-%d_%H-%M-%S')
@@ -45,16 +42,6 @@ install_fig() {
   if [[ "${FIG_TAG}" == "local" ]]; then
     cp -R "$PWD"/* ~/.fig
     cd ~/.fig
-  else
-    cd ~/.fig
-    curl "https://codeload.github.com/withfig/config/tar.gz/${FIG_TAG}" \
-      | tar -xz --strip-components=1 \
-      || (
-        echo "downloading from main instead of fig tag_name" \
-          && curl https://codeload.github.com/withfig/config/tar.gz/main \
-            | tar -xz --strip-components=1 \
-        ) \
-      || error "pulling withfig/config repo failed"
   fi
 
   # Make files and folders that the user can edit (that aren't overridden by above)
