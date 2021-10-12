@@ -25,25 +25,34 @@ class Onboarding {
         }
         
         
-        "/bin/bash '\(path)' local".runInBackground()
+        "/bin/bash '\(path)' local".runInBackground(completion:  { _ in
+            Onboarding.symlinkBundleExecutable("figcli", to: "~/.fig/bin/fig")
+            Onboarding.symlinkBundleExecutable("figterm", to: "~/.fig/bin/figterm")
+            Onboarding.symlinkBundleExecutable("fig_get_shell", to: "~/.fig/bin/fig_get_shell")
+            Onboarding.symlinkBundleExecutable("fig_callback", to: "~/.fig/bin/fig_callback")
+        })
     }
-
-    static func copyFigCLIExecutable(to path: String) {
+    
+    static func symlinkBundleExecutable(_ executable: String, to path: String) {
         let fullPath = NSString(string: path).expandingTildeInPath
         let existingSymlink = try? FileManager.default.destinationOfSymbolicLink(atPath: fullPath)
 
-        if let cliPath = Bundle.main.path(forAuxiliaryExecutable: "figcli"), existingSymlink != cliPath {
+        if let cliPath = Bundle.main.path(forAuxiliaryExecutable: executable), existingSymlink != cliPath {
             do {
                 try? FileManager.default.removeItem(atPath: fullPath)
                 let fullURL = URL(fileURLWithPath: fullPath)
                 try? FileManager.default.createDirectory(at: fullURL.deletingLastPathComponent(), withIntermediateDirectories: true, attributes: [:])
                 try FileManager.default.createSymbolicLink(at: fullURL, withDestinationURL: URL(fileURLWithPath: cliPath))
             } catch {
-                Logger.log(message: "Could not download copy CLI to ~/.fig/bin")
-                SentrySDK.capture(message: "Could not download copy CLI to ~/.fig/bin")
+                Logger.log(message: "Could not symlink executable '\(executable)' to '\(path)'")
+                SentrySDK.capture(message: "Could not symlink executable '\(executable)' to '\(path)'")
             }
         }
         
+    }
+
+    static func copyFigCLIExecutable(to path: String) {
+        symlinkBundleExecutable("figcli", to: path)
     }
     
     static func setupTerminalsForShellOnboarding(completion: (()->Void)? = nil) {
