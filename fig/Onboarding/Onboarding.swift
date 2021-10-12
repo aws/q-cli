@@ -16,81 +16,16 @@ class Onboarding {
     
     static func setUpEnviroment(completion:( () -> Void)? = nil) {
       
-      if !Diagnostic.isRunningOnReadOnlyVolume {
-        SentrySDK.capture(message: "Currently running on read only volume! App is translocated!")
-      }
-        
-        DispatchQueue.global(qos: .userInitiated).async {
-            guard let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String else {
-              Logger.log(message: "No version availible")
-              return
-            }
-            
-            var tag = "v\(version)"
-            
-            if let beta = Settings.shared.getValue(forKey: Settings.beta) as? Bool, beta {
-              tag = "main"
-            }
-          
-            let githubURL = URL(string: "https://raw.githubusercontent.com/withfig/config/\(tag)/tools/install_and_upgrade.sh")!
-            let fallbackURL = Bundle.main.url(forResource: "install_and_upgrade_fallback", withExtension: "sh")!
-
-            
-            var script = try? String(contentsOf: githubURL)
-            
-            if (script == nil) {
-              script = try? String(contentsOf: fallbackURL)
-            }
-          
-            if let envSetupScript = script {
-                let scriptsURL = FileManager.default.urls(for: .applicationScriptsDirectory, in: .userDomainMask)[0] as NSURL
-
-                guard let folderPath = scriptsURL.path else {
-                    Logger.log(message: "Folder path does not exist")
-                    return
-                }
-                
-                Logger.log(message: String(describing: scriptsURL.path))
-
-                guard let script = scriptsURL.appendingPathComponent("install_and_upgrade.sh") else {
-                    Logger.log(message: "Could not create PATH for install_and_upgrade.sh")
-                    SentrySDK.capture(message: "Could not create PATH for install_and_upgrade.sh")
-                    return
-                }
-                Logger.log(message: script.path)
-
-                do {
-                    try FileManager.default.createDirectory(atPath: folderPath, withIntermediateDirectories: true)
-                    try envSetupScript.write(to: script, atomically: true, encoding: String.Encoding.utf8)
-                } catch {
-                    SentrySDK.capture(message: "Could not write to file.")
-                    Logger.log(message: "Could not write to file.")
-
-                    return
-                }
-
-
-                print("onboarding: ", script)
-                
-                let out = "/bin/bash '\(script.path)' \(tag)".runAsCommand()
-                
-                guard !out.starts(with: "Error:") else {
-                    Logger.log(message: out)
-                    SentrySDK.capture(message: "Onboarding: \(out)")
-                    return
-                }
-                
-                Logger.log(message: "Successfully ran installation script!")
-                Logger.log(message: "\(out)")
-                SentrySDK.capture(message: "Script: \(out)")
-
-                
-            } else {
-                Logger.log(message: "Could not download installation script")
-                SentrySDK.capture(message: "Could not download installation script")
-                // What should we do when this happens?
-            }
+        if !Diagnostic.isRunningOnReadOnlyVolume {
+            SentrySDK.capture(message: "Currently running on read only volume! App is translocated!")
         }
+        
+        guard let path = Bundle.main.path(forResource: "install_and_upgrade", ofType: "sh", inDirectory: "config/tools") else {
+            return Logger.log(message: "Could not locate install script!")
+        }
+        
+        
+        "/bin/bash '\(path)'".runInBackground()
     }
 
     static func copyFigCLIExecutable(to path: String) {

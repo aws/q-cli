@@ -138,6 +138,9 @@
 		7575D44F26D5D35000D0C8D7 /* API.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7575D44E26D5D35000D0C8D7 /* API.swift */; };
 		7577124725648DFB0011FF48 /* ps.c in Sources */ = {isa = PBXBuildFile; fileRef = 7577124625648DFB0011FF48 /* ps.c */; };
 		757712492564D94A0011FF48 /* ProcessStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757712482564D9490011FF48 /* ProcessStatus.swift */; };
+		757A85F8270E46A40017996A /* figterm in Embed figterm & helpers */ = {isa = PBXBuildFile; fileRef = "figterm-0000000000000000" /* figterm */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		757A85F9270E46A40017996A /* fig_callback in Embed figterm & helpers */ = {isa = PBXBuildFile; fileRef = "fig_callback-00000000000" /* fig_callback */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		757A85FA270E46A40017996A /* fig_get_shell in Embed figterm & helpers */ = {isa = PBXBuildFile; fileRef = "fig_get_shell-0000000000" /* fig_get_shell */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		757AF4C826BC73FA00349764 /* WindowPositioning.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757AF4C726BC73FA00349764 /* WindowPositioning.swift */; };
 		757CA86724859461002A64A8 /* AppMover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757CA86624859461002A64A8 /* AppMover.swift */; };
 		757CA88624876043002A64A8 /* error.html in Resources */ = {isa = PBXBuildFile; fileRef = 757CA88524876042002A64A8 /* error.html */; };
@@ -257,6 +260,13 @@
 			remoteGlobalIDString = 75675950244634AD006AA988;
 			remoteInfo = fig;
 		};
+		757A85BE270E37380017996A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 75675949244634AD006AA988 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 757A85BA270E31160017996A;
+			remoteInfo = figterm;
+		};
 		758AEB6524CE8B8700A15EAF /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 75675949244634AD006AA988 /* Project object */;
@@ -285,6 +295,19 @@
 				7571775726F3B8A80071AE10 /* FigInputMethod.app in Embed Input Method */,
 			);
 			name = "Embed Input Method";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		757A85C0270E37A90017996A /* Embed figterm & helpers */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 12;
+			dstPath = "";
+			dstSubfolderSpec = 6;
+			files = (
+				757A85F8270E46A40017996A /* figterm in Embed figterm & helpers */,
+				757A85F9270E46A40017996A /* fig_callback in Embed figterm & helpers */,
+				757A85FA270E46A40017996A /* fig_get_shell in Embed figterm & helpers */,
+			);
+			name = "Embed figterm & helpers";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		758AEB6324CE8B2F00A15EAF /* Embed Command Line Tool */ = {
@@ -545,6 +568,9 @@
 		75F7F951261FBDC30005E215 /* UnixSocketServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnixSocketServer.swift; sourceTree = "<group>"; };
 		75F7F953262007170005E215 /* ShellHooksTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellHooksTransport.swift; sourceTree = "<group>"; };
 		75FE3FFF2626A4BD00AC8414 /* Github.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Github.swift; sourceTree = "<group>"; };
+		"fig_callback-00000000000" /* fig_callback */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = fig_callback; sourceTree = BUILT_PRODUCTS_DIR; };
+		"fig_get_shell-0000000000" /* fig_get_shell */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = fig_get_shell; sourceTree = BUILT_PRODUCTS_DIR; };
+		"figterm-0000000000000000" /* figterm */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = figterm; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -818,6 +844,9 @@
 				75675966244634B2006AA988 /* figTests.xctest */,
 				75675971244634B2006AA988 /* figUITests.xctest */,
 				751F758E246E16D800E083C8 /* figcli */,
+				"figterm-0000000000000000" /* figterm */,
+				"fig_callback-00000000000" /* fig_callback */,
+				"fig_get_shell-0000000000" /* fig_get_shell */,
 				754316F426E08F5C00188887 /* FigInputMethod.app */,
 			);
 			name = Products;
@@ -1121,6 +1150,23 @@
 		};
 /* End PBXGroup section */
 
+/* Begin PBXLegacyTarget section */
+		757A85BA270E31160017996A /* figterm */ = {
+			isa = PBXLegacyTarget;
+			buildArgumentsString = "$(ACTION)";
+			buildConfigurationList = 757A85BB270E31160017996A /* Build configuration list for PBXLegacyTarget "figterm" */;
+			buildPhases = (
+			);
+			buildToolPath = /usr/bin/make;
+			buildWorkingDirectory = ../figterm;
+			dependencies = (
+			);
+			name = figterm;
+			passBuildSettingsInEnvironment = 1;
+			productName = figterm;
+		};
+/* End PBXLegacyTarget section */
+
 /* Begin PBXNativeTarget section */
 		751F758D246E16D800E083C8 /* figcli */ = {
 			isa = PBXNativeTarget;
@@ -1171,10 +1217,13 @@
 				75AA9FAA256D9D6C00CEFAC8 /* Upload dsym files to Sentry */,
 				759E4BFD268F9BCC00CC1565 /* Change permissions to make Applescript read-only */,
 				7571775626F3B8910071AE10 /* Embed Input Method */,
+				75FD16E727150DC400056A39 /* Package config folder */,
+				757A85C0270E37A90017996A /* Embed figterm & helpers */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				757A85BF270E37380017996A /* PBXTargetDependency */,
 				758AEB6624CE8B8700A15EAF /* PBXTargetDependency */,
 			);
 			name = fig;
@@ -1256,6 +1305,9 @@
 						CreatedOnToolsVersion = 11.3.1;
 						TestTargetID = 75675950244634AD006AA988;
 					};
+					757A85BA270E31160017996A = {
+						CreatedOnToolsVersion = 12.5.1;
+					};
 				};
 			};
 			buildConfigurationList = 7567594C244634AD006AA988 /* Build configuration list for PBXProject "fig" */;
@@ -1286,6 +1338,7 @@
 				75675970244634B2006AA988 /* figUITests */,
 				751F758D246E16D800E083C8 /* figcli */,
 				754316F326E08F5C00188887 /* FigInputMethod */,
+				757A85BA270E31160017996A /* figterm */,
 			);
 		};
 /* End PBXProject section */
@@ -1479,6 +1532,25 @@
 			shellPath = /bin/sh;
 			shellScript = "if which sentry-cli >/dev/null; then\nexport SENTRY_ORG=fig-op\nexport SENTRY_PROJECT=fig-op\nexport SENTRY_AUTH_TOKEN=39d2f0e340074f82aaa662967bef1de1b17ae67f7b204bfdb61d9005f4f6bf4b\nERROR=$(sentry-cli upload-dif \"$DWARF_DSYM_FOLDER_PATH\" 2>&1 >/dev/null)\nif [ ! $? -eq 0 ]; then\necho \"warning: sentry-cli - $ERROR\"\nfi\nelse\necho \"warning: sentry-cli not installed, download from https://github.com/getsentry/sentry-cli/releases\"\nfi\n";
 		};
+		75FD16E727150DC400056A39 /* Package config folder */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 12;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Package config folder";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "cp -R ./config ${CONFIGURATION_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/config/\n\n\ncp ./config/tools/install_and_upgrade.sh ${CONFIGURATION_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/installation.sh\n";
+		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -1650,6 +1722,11 @@
 			isa = PBXTargetDependency;
 			target = 75675950244634AD006AA988 /* fig */;
 			targetProxy = 75675972244634B2006AA988 /* PBXContainerItemProxy */;
+		};
+		757A85BF270E37380017996A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 757A85BA270E31160017996A /* figterm */;
+			targetProxy = 757A85BE270E37380017996A /* PBXContainerItemProxy */;
 		};
 		758AEB6624CE8B8700A15EAF /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -2039,6 +2116,33 @@
 			};
 			name = Release;
 		};
+		757A85BC270E31160017996A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEBUGGING_SYMBOLS = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = D93PPD94WK;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		757A85BD270E31160017996A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = D93PPD94WK;
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -2092,6 +2196,15 @@
 			buildConfigurations = (
 				75675981244634B2006AA988 /* Debug */,
 				75675982244634B2006AA988 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		757A85BB270E31160017996A /* Build configuration list for PBXLegacyTarget "figterm" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				757A85BC270E31160017996A /* Debug */,
+				757A85BD270E31160017996A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
