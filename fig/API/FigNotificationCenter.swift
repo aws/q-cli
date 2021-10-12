@@ -121,7 +121,7 @@ class APINotificationCenter {
             API.send(Response.with({
                 $0.notification = notification
                 $0.id = self.channels[webview]?[type] ?? -1
-            }), to: webview)
+            }), to: webview, using: .binary)
         })
     }
 }
