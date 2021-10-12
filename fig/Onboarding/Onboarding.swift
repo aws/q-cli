@@ -25,7 +25,7 @@ class Onboarding {
         }
         
         
-        "/bin/bash '\(path)'".runInBackground()
+        "/bin/bash '\(path)' local".runInBackground()
     }
 
     static func copyFigCLIExecutable(to path: String) {
