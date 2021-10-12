@@ -24,7 +24,8 @@ extension API {
 "protoMessageRecieved" : API.Encoding.binary.eventName,
  "protoMessageHandler" : API.Encoding.binary.webkitMessageHandler,
               "themes" : {
-                 let files = (try? FileManager.default.contentsOfDirectory(atPath: NSHomeDirectory() + "/.fig/themes")) ?? []
+                 let configFolder = Bundle.main.resourceURL?.appendingPathComponent("config", isDirectory: true).path ?? (NSHomeDirectory() + "/.fig")
+                 let files = (try? FileManager.default.contentsOfDirectory(atPath: configFolder + "/themes")) ?? []
                  let themes = [ "dark", "light"] + files.map { String($0.split(separator: ".")[0]) }.sorted()
                  return themes.joined(separator: "\n")
              }(),
