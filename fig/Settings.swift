@@ -65,7 +65,8 @@ class Settings {
   ]
     
   static let filePath = NSHomeDirectory() + "/.fig/settings.json"
-  static let defaultSettingsPath = NSHomeDirectory() + "/.fig/tools/all-settings.json"
+  static let defaultSettingsPath = Bundle.main.configURL.appendingPathComponent("tools", isDirectory: true)
+                                                        .appendingPathComponent("all-settings.json").path
 
   static let shared = Settings()
   //Note: app will crash if anything is logged before Settings.shared is initted
