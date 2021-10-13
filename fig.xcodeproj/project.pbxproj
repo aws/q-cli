@@ -108,6 +108,7 @@
 		754316FE26E08F5D00188887 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 754316FD26E08F5D00188887 /* Preview Assets.xcassets */; };
 		7543170126E08F5D00188887 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 754316FF26E08F5D00188887 /* Main.storyboard */; };
 		7543170826E0901B00188887 /* FigIMKInputController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7543170726E0901B00188887 /* FigIMKInputController.swift */; };
+		7546F5B3271660BA0077359F /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7546F5B2271660BA0077359F /* Constants.swift */; };
 		754D31B525759D900020CED4 /* tutorial.html in Resources */ = {isa = PBXBuildFile; fileRef = 754D31B425759D900020CED4 /* tutorial.html */; };
 		75543FD0268AC6E5003221DF /* fig-0.0.4.vsix in Resources */ = {isa = PBXBuildFile; fileRef = 75543FCF268AC6E5003221DF /* fig-0.0.4.vsix */; };
 		755D0DE0247DDE050074AB5C /* FigCLI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755D0DDF247DDE050074AB5C /* FigCLI.swift */; };
@@ -246,6 +247,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		7546F5B027164A1B0077359F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 75675949244634AD006AA988 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 754316F326E08F5C00188887;
+			remoteInfo = FigInputMethod;
+		};
 		75675967244634B2006AA988 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 75675949244634AD006AA988 /* Project object */;
@@ -432,6 +440,7 @@
 		7543170226E08F5D00188887 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		7543170326E08F5D00188887 /* InputMethod.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = InputMethod.entitlements; sourceTree = "<group>"; };
 		7543170726E0901B00188887 /* FigIMKInputController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FigIMKInputController.swift; sourceTree = "<group>"; };
+		7546F5B2271660BA0077359F /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		754D31B425759D900020CED4 /* tutorial.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = tutorial.html; sourceTree = "<group>"; };
 		75543FCF268AC6E5003221DF /* fig-0.0.4.vsix */ = {isa = PBXFileReference; lastKnownFileType = file; path = "fig-0.0.4.vsix"; sourceTree = "<group>"; };
 		755D0DDF247DDE050074AB5C /* FigCLI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FigCLI.swift; sourceTree = "<group>"; };
@@ -864,6 +873,7 @@
 				759F987B25BF903900EC3407 /* Accessibility.swift */,
 				751C3BEB24B6910800B5C7FD /* Remote.swift */,
 				751C3BED24B6915000B5C7FD /* Defaults.swift */,
+				7546F5B2271660BA0077359F /* Constants.swift */,
 				7568203026003BDF0006FE78 /* Settings.swift */,
 				75E993F12515A6DD000BE6BE /* statusbar@2x.png */,
 				755D0DE1247EFAE10074AB5C /* Logging.swift */,
@@ -1223,6 +1233,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				7546F5B127164A1B0077359F /* PBXTargetDependency */,
 				757A85BF270E37380017996A /* PBXTargetDependency */,
 				758AEB6624CE8B8700A15EAF /* PBXTargetDependency */,
 			);
@@ -1619,6 +1630,7 @@
 				7575D44F26D5D35000D0C8D7 /* API.swift in Sources */,
 				755FC554268D09DE00966027 /* UpdateService.swift in Sources */,
 				75DA86A525EEBD7500722F1D /* Alert.swift in Sources */,
+				7546F5B3271660BA0077359F /* Constants.swift in Sources */,
 				75D1ECBE26F15F4500BC8A04 /* TerminalIntegrationProvider.swift in Sources */,
 				755D0DE0247DDE050074AB5C /* FigCLI.swift in Sources */,
 				75809B0E24BFA64D00BFFB3E /* TelemetryService.swift in Sources */,
@@ -1713,6 +1725,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		7546F5B127164A1B0077359F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 754316F326E08F5C00188887 /* FigInputMethod */;
+			targetProxy = 7546F5B027164A1B0077359F /* PBXContainerItemProxy */;
+		};
 		75675968244634B2006AA988 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 75675950244634AD006AA988 /* fig */;
@@ -1759,7 +1776,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
-				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_IDENTITY = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				DEVELOPMENT_TEAM = D93PPD94WK;
 				EMBED_ASSET_PACKS_IN_PRODUCT_BUNDLE = NO;
