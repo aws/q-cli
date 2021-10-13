@@ -80,17 +80,24 @@ jobs:
       #
 
       - name: "Notarize Release Build"
-        uses: devbotsxyz/xcode-notarize@v1
-        with:
-          product-path: "Export/Fig.app"
-          verbose: true
-          appstore-connect-username: ${{ secrets.NOTARIZE_USERNAME }}
-          appstore-connect-password: ${{ secrets.NOTARIZE_PASSWORD }}
+        run: |
+          npx notarize-cli@0.1.1 --file "Export/Fig.app" --bundle-id com.mschrage.fig
+        env:
+          NOTARIZE_USERNAME: ${{ secrets.NOTARIZE_USERNAME }}
+          NOTARIZE_PASSWORD: ${{ secrets.NOTARIZE_PASSWORD }}
 
-      - name: "Staple Release Build"
-        uses: devbotsxyz/xcode-staple@v1
-        with:
-          product-path: "Export/Fig.app"
+      # - name: "Notarize Release Build"
+      #   uses: devbotsxyz/xcode-notarize@v1
+      #   with:
+      #     product-path: "Export/Fig.app"
+      #     verbose: true
+      #     appstore-connect-username: ${{ secrets.NOTARIZE_USERNAME }}
+      #     appstore-connect-password: ${{ secrets.NOTARIZE_PASSWORD }}
+
+      # - name: "Staple Release Build"
+      #   uses: devbotsxyz/xcode-staple@v1
+      #   with:
+      #     product-path: "Export/Fig.app"
       - name: "Package as .zip"
         run: |
           ditto -c -k --sequesterRsrc --keepParent Export/Fig.app Fig.zip
