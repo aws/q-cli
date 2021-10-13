@@ -373,7 +373,6 @@ extension WebViewController : WKNavigationDelegate {
     
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
         print("ERROR Loading URL: \(error.localizedDescription)")
-//        webView.evaluateJavaScript("document.body.innerText = 'An error occured when trying to load this URL.'", completionHandler: nil)
         webView.window?.title = "Could not load URL..."
     }
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -397,35 +396,10 @@ extension WebViewController : WKNavigationDelegate {
         }
         webView.onLoad = []
         WebBridge.enableInteractiveCodeTags(webview: webView)
-        WebBridge.declareAppVersion(webview: webView)
-        WebBridge.declareFigCLIPath(webview: webView)
-        WebBridge.declareRemoteURL(webview: webView)
-        WebBridge.declareHomeDirectory(webview: webView)
         WebBridge.declareSettings(webview:webView)
         WebBridge.declareUpdate(webview: webView)
-        WebBridge.declareBuildNumber(webview: webView)
         WebBridge.declareCurrentApplication(webview: webView)
         WebBridge.initJS(webview: webView)
-//        webView.evaluateJavaScript("fig.callinit()", completionHandler: nil)
-
-
-        
-//    webView.evaluateJavaScript("window.scrollTo(0,0)", completionHandler: nil)
-
-        
-//        self.webView?.evaluateJavaScript("document.body.style = document.body.style.cssText + \";background: transparent !important;\";", completionHandler: nil)
-//        
-        
-//        self.webView?.evaluateJavaScript("document.readyState", completionHandler: { (complete, error) in
-//            if complete != nil {
-//                self.webView?.evaluateJavaScript("document.body.scrollHeight", completionHandler: { (height, error) in
-//                    let h = height as! CGFloat
-//                    print(h)
-//                })
-//                
-//            }
-//
-//            })
     }
 }
 
@@ -443,12 +417,6 @@ class WebView : WKWebView {
             self.setValue(self.drawsBackground, forKey: "drawsBackground")
         }
     }
-    
-//    override var intrinsicContentSize: NSSize {
-//        get {
-//            return self.superview?.bounds.size ?? NSSize.zero
-//        }
-//    }
     
     override var canGoBack: Bool {
         get {

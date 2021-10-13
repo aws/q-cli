@@ -25,6 +25,8 @@ class PseudoTerminal {
         return pty
     }()
     
+    fileprivate static let CRLF = "\r\n"
+    
 
     static let recievedEnvironmentVariablesFromShellNotification = NSNotification.Name("recievedEnvironmentVariablesFromShellNotification")
     static let recievedCallbackNotification = NSNotification.Name("recievedCallbackNotification")
@@ -70,11 +72,11 @@ class PseudoTerminal {
         self.headless.process.startProcess(executable: shell, args: [], environment: rawEnv.count == 0 ? nil : rawEnv)
         self.headless.process.delegate = self
         
-        self.write(" set +o history\r")
-        self.write(" unset HISTFILE\r")
+        self.write(" set +o history" + PseudoTerminal.CRLF)
+        self.write(" unset HISTFILE" + PseudoTerminal.CRLF)
       
         // Retrieve PATH from settings if it exists
-        if let path = Settings.shared.getValue(forKey: Settings.ptyPathKey) as? String {
+        if let path = Settings.shared.getValue(forKey: Settings.ptyPathKey) as? String, path.count > 0 {
             self.set(environmentVariable: "PATH", value: path)
         } else {
             self.set(environmentVariable: "PATH", value: PseudoTerminal.defaultMacOSPath)
@@ -90,7 +92,7 @@ class PseudoTerminal {
     }
     
     func write(_ input: String) {
-        self.headless.send(input)
+        self.headless.send(input + PseudoTerminal.CRLF)
     }
     
     func close() {
@@ -128,12 +130,12 @@ class PseudoTerminal {
         
         if FileManager.default.fileExists(atPath: expandedFilePath) {
             PseudoTerminal.log("sourcing \(expandedFilePath)")
-            self.write("source \(expandedFilePath)\r")
+            self.write("source \(expandedFilePath)")
         }
     }
     
     func set(environmentVariable key: String, value: String) {
-        self.write("export \(key)='\(value)'\r")
+        self.write("export \(key)='\(value)'")
     }
     
 }
@@ -183,7 +185,7 @@ extension PseudoTerminal {
         static let pipelined = ExecutionOptions(rawValue: 1 << 1)
     }
     
-    static let callbackExecutable = "\(NSHomeDirectory())/.fig/bin/fig_callback"
+    static let callbackExecutable = Bundle.main.path(forAuxiliaryExecutable: "fig_callback")!
     func execute(_ command: String,
                  handlerId: HandlerId = UUID().uuidString,
                  options: ExecutionOptions = [.backgroundJob],
