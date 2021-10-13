@@ -21,6 +21,8 @@ jobs:
 
       - name: "Checkout Project"
         uses: actions/checkout@v2
+        with:
+          submodules: recursive
 
       - name: "Get Release Version"
         env:
