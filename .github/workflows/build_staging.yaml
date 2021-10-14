@@ -9,7 +9,7 @@ on:
 jobs:
   release:
     if: "!contains(github.event.head_commit.message, 'skip ci')"
-    runs-on: macos-latest
+    runs-on: macos-11
     timeout-minutes: 30
     steps:
       - name: Cancel Previous Runs
@@ -21,6 +21,8 @@ jobs:
 
       - name: "Checkout Project"
         uses: actions/checkout@v2
+        with:
+          submodules: recursive
 
       - name: "Get Release Version"
         env:
@@ -51,10 +53,10 @@ jobs:
       #
       # Setup
       #
-      - name: "Select Xcode 12.3"
+      - name: "Select Xcode 12.5.1"
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: "12.3"
+          xcode-version: "12.5.1"
 
       - name: "Bump Build number"
         run: |
@@ -109,7 +111,7 @@ jobs:
         uses: devbotsxyz/xcode-archive@v1
 
       - name: Upload dSYM files to Sentry
-        run: sentry-cli upload-dif --org fig-op --project fig-op --derived-data
+        run: sentry-cli upload-dif --org withfig --project macos-app --derived-data
         env: 
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
 
@@ -128,17 +130,11 @@ jobs:
       #
 
       - name: "Notarize Release Build"
-        uses: devbotsxyz/xcode-notarize@v1
-        with:
-          product-path: "Export/Fig.app"
-          verbose: true
-          appstore-connect-username: ${{ secrets.NOTARIZE_USERNAME }}
-          appstore-connect-password: ${{ secrets.NOTARIZE_PASSWORD }}
-
-      - name: "Staple Release Build"
-        uses: devbotsxyz/xcode-staple@v1
-        with:
-          product-path: "Export/Fig.app"
+        run: |
+          npx notarize-cli@0.1.1 --file "Export/Fig.app" --bundle-id com.mschrage.fig
+        env:
+          NOTARIZE_USERNAME: ${{ secrets.NOTARIZE_USERNAME }}
+          NOTARIZE_PASSWORD: ${{ secrets.NOTARIZE_PASSWORD }}
 
       - name: Install fileicon
         run: HOMEBREW_NO_AUTO_UPDATE=1 brew install fileicon

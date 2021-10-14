@@ -5,10 +5,10 @@
 #include <string.h>
 #include <limits.h>
 
-#define VERSION_NUMBER 1
+#define VERSION_NUMBER 2
 #define MAX_BUFFER_SIZE 1024
 #define MAX_HANDLER_ID_LEN 5
-
+#define MAX_EXIT_CODE_LEN 3
 int main(int argc, char *argv[]) {
   bool debug = (getenv("FIG_DEBUG") != NULL);
 
@@ -35,9 +35,13 @@ int main(int argc, char *argv[]) {
   if (debug) printf("handlerId: %s\n", handlerId);
 
   char filename[PATH_MAX];
-  if (argc == 3) {
-    if (debug) printf("fig_callback specified filepath (%s) to output!\n", argv[2]);
+  char exitcode[MAX_EXIT_CODE_LEN + 1] = "-1";
+  if (argc == 4) {
+    if (debug) printf("fig_callback specified filepath (%s) and exitCode (%s) to output!\n", argv[2], argv[3]);
     strncpy(filename, argv[2], PATH_MAX);
+    
+    memset(exitcode, '\0', sizeof(exitcode));
+    strncpy(exitcode, argv[3], MAX_EXIT_CODE_LEN);
     goto send;
   }
 
@@ -75,12 +79,13 @@ int main(int argc, char *argv[]) {
   send:
   if (debug) printf("Done reading from stdin!\n");
 
-  char *tmpbuf = malloc(strlen(filename) + sizeof(handlerId) + sizeof(char) * 50);
+  char *tmpbuf = malloc(strlen(filename) + sizeof(handlerId) + sizeof(exitcode) + sizeof(char) * 50);
   sprintf(
     tmpbuf,
-    "fig pty:callback %s %s",
+    "fig pty:callback %s %s %s",
     handlerId,
-    filename
+    filename,
+    exitcode
   );
 
   if (debug) printf("Sending '%s' over unix socket!\n", tmpbuf);

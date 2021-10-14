@@ -245,7 +245,10 @@ void figterm_free(FigTerm *ft) {
 }
 
 bool figterm_can_send_buffer(FigTerm* ft) {
-  bool shell_enabled = strcmp(ft->shell_state.shell, "bash") == 0 || strcmp(ft->shell_state.shell, "fish") == 0;
+  bool in_ssh_or_docker = ft->shell_state.in_ssh || ft->shell_state.in_docker;
+  bool shell_enabled = strcmp(ft->shell_state.shell, "bash") == 0 ||
+    strcmp(ft->shell_state.shell, "fish") == 0 ||
+    (in_ssh_or_docker && strcmp(ft->shell_state.shell, "zsh") == 0);
   bool insertion_locked = access(ft->insertion_lock_path, F_OK) == 0;
   return shell_enabled && !insertion_locked && !ft->shell_state.preexec;
 }
