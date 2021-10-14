@@ -63,9 +63,7 @@ class UnixSocketServer {
           return
         }
         try socket.listen(on: self.path)
-        // ensure this file can be overwritten by other users
-        try FileManager.default.setAttributes([.posixPermissions: 0o777 ], ofItemAtPath: path)
-        
+
         print("Listening on port: \(socket.remotePath ?? "")")
         
         repeat {
