@@ -1158,7 +1158,7 @@
 			buildPhases = (
 			);
 			buildToolPath = /usr/bin/make;
-			buildWorkingDirectory = ../figterm;
+			buildWorkingDirectory = ./figterm;
 			dependencies = (
 			);
 			name = figterm;
@@ -1530,7 +1530,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if which sentry-cli >/dev/null; then\nexport SENTRY_ORG=fig-op\nexport SENTRY_PROJECT=fig-op\nexport SENTRY_AUTH_TOKEN=39d2f0e340074f82aaa662967bef1de1b17ae67f7b204bfdb61d9005f4f6bf4b\nERROR=$(sentry-cli upload-dif \"$DWARF_DSYM_FOLDER_PATH\" 2>&1 >/dev/null)\nif [ ! $? -eq 0 ]; then\necho \"warning: sentry-cli - $ERROR\"\nfi\nelse\necho \"warning: sentry-cli not installed, download from https://github.com/getsentry/sentry-cli/releases\"\nfi\n";
+			shellScript = "if which sentry-cli >/dev/null; then\nexport SENTRY_ORG=withfig\nexport SENTRY_PROJECT=macos-app\nexport SENTRY_AUTH_TOKEN=39d2f0e340074f82aaa662967bef1de1b17ae67f7b204bfdb61d9005f4f6bf4b\nERROR=$(sentry-cli upload-dif \"$DWARF_DSYM_FOLDER_PATH\" 2>&1 >/dev/null)\nif [ ! $? -eq 0 ]; then\necho \"warning: sentry-cli - $ERROR\"\nfi\nelse\necho \"warning: sentry-cli not installed, download from https://github.com/getsentry/sentry-cli/releases\"\nfi\n";
 		};
 		75FD16E727150DC400056A39 /* Package config folder */ = {
 			isa = PBXShellScriptBuildPhase;
