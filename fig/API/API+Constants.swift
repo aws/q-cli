@@ -37,7 +37,8 @@ extension API {
         "version": "appversion",
         "cli": "clipath",
         "remote" : "remoteURL",
-        "build" : "build"
+        "build" : "build",
+        "home" : "home"
     ]
     
     static func declareConstants() -> String {
