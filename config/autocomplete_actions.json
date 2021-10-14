@@ -17,5 +17,8 @@
   "showDescription",
   "toggleDescription",
 
-  "toggleHistoryMode"
+  "toggleHistoryMode",
+
+  "increaseSize",
+  "decreaseSize"
 ]

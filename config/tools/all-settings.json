@@ -322,5 +322,13 @@
   {
     "settingName": "autocomplete.keybindings.control+r",
     "default": "toggleHistoryMode"
+  },
+  {
+    "settingName": "autocomplete.keybindings.control+shift+=",
+    "default": "increaseSize"
+  },
+  {
+    "settingName": "autocomplete.keybindings.control+shift+-",
+    "default": "decreaseSize"
   }
 ]
