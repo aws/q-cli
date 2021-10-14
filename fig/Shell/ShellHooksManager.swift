@@ -187,7 +187,7 @@ extension ShellHookManager {
 
                   
                   
-                  let VSCodeTerminal = (window.bundleId == Integrations.VSCode || window.bundleId == Integrations.VSCodeInsiders) && id.hasPrefix("code:")
+                  let VSCodeTerminal = [Integrations.VSCode, Integrations.VSCodeInsiders, Integrations.VSCodium].contains(window.bundleId) && id.hasPrefix("code:")
                   let HyperTab = window.bundleId == Integrations.Hyper &&  id.hasPrefix("hyper:")
                   let iTermTab = window.bundleId == Integrations.iTerm && !id.hasPrefix("code:") && !id.hasPrefix("hyper:") && !includesBundleId
                   guard VSCodeTerminal || iTermTab || HyperTab || includesBundleId else { return }
