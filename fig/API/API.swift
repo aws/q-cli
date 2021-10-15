@@ -107,7 +107,9 @@ class API {
                 case .none:
                     throw APIError.generic(message: "No submessage was included in request.")
                 
-            }
+                case .destinationOfSymbolicLinkRequest(let request):
+                    response.destinationOfSymbolicLinkResponse = try FileSystem.destinationOfSymbolicLink(request)
+                }
         } catch APIError.generic(message: let message) {
             response.error = message
         } catch {
