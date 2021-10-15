@@ -34,7 +34,7 @@ extension WebView {
     
     func archive() {
         
-        guard let url = self.url, !url.isFileURL else {
+        guard let url = self.url, !url.isFileURL, url.host != "localhost" else {
             return
         }
         self.archive(to: archivePath(for: url).path)
