@@ -50,6 +50,31 @@ class FileSystem {
             $0.fileNames = contents
         }
     }
+    
+    static func destinationOfSymbolicLink(_ request: Fig_DestinationOfSymbolicLinkRequest) throws -> Fig_DestinationOfSymbolicLinkResponse {
+        guard request.hasPath else {
+            throw APIError.generic(message: "Must specify a filepath")
+        }
+        
+        let fileURL = request.path.normalizedFileURL
+        
+        let wrapper = try FileWrapper(url: fileURL, options: .immediate)
+        
+        guard wrapper.isSymbolicLink else {
+            throw APIError.generic(message: "File at path is not a symbolic link")
+        }
+        
+        guard let destinationURL = wrapper.symbolicLinkDestinationURL,
+              let destination = destinationURL.fig_filepath else {
+            throw APIError.generic(message: "No destination found for symbolic link")
+        }
+        
+        
+        return Fig_DestinationOfSymbolicLinkResponse.with { response in
+            response.destination = destination
+        }
+        
+    }
 }
 
 extension Fig_FilePath {
@@ -71,5 +96,19 @@ extension Fig_FilePath {
             
             return normalizedPath
         }
+    }
+    
+    var normalizedFileURL: URL {
+        return URL(fileURLWithPath: self.normalizedPath)
+    }
+}
+
+extension URL {
+    var fig_filepath: Fig_FilePath? {
+        
+        guard self.isFileURL else { return nil }
+        return Fig_FilePath.with({filepath in
+            filepath.path = self.path
+        })
     }
 }
