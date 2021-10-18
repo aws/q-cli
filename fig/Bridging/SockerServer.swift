@@ -20,7 +20,8 @@ class WebSocketServer {
     //lsof -i tcp:8765
   static let bridge = { () -> WebSocketServer in
       var port = 0
-      for i in 50000..<65000 {
+      // add 697 (FIG) offset to minimize possibility of collisions
+      for i in 50697..<65000 {
         let (isFree, _) = WebSocketServer.checkPortForListener(port: UInt16(i))
           if isFree == true {
               port = i
