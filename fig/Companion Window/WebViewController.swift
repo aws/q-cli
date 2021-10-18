@@ -367,6 +367,7 @@ extension WebViewController : WKNavigationDelegate {
             onNavigateCallback()
         }
         webView.onNavigate = []
+        webView.requestedURL = navigationAction.request.url
         webView.window?.title = ""
         webView.window?.representedURL = nil
     }
@@ -374,7 +375,13 @@ extension WebViewController : WKNavigationDelegate {
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
         print("ERROR Loading URL: \(error.localizedDescription)")
         webView.window?.title = "Could not load URL..."
+        
+        if let webView = webView as? WebView {
+            webView.loadArchivedURL()
+        }
+        
     }
+    
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         print("Loaded URL \(webView.url?.absoluteString ?? "<none>")")
         var scriptContent = "var meta = document.createElement('meta');"
@@ -400,6 +407,9 @@ extension WebViewController : WKNavigationDelegate {
         WebBridge.declareUpdate(webview: webView)
         WebBridge.declareCurrentApplication(webview: webView)
         WebBridge.initJS(webview: webView)
+        
+        // Automatically archive this URL for offline use
+        webView.archive()
     }
 }
 
@@ -423,6 +433,7 @@ class WebView : WKWebView {
             return !(super.backForwardList.backItem?.initialURL.absoluteString == Remote.baseURL.appendingPathComponent("sidebar").absoluteString) && super.canGoBack
         }
     }
+    var requestedURL: URL?
 
 //    override func shouldDelayWindowOrdering(for event: NSEvent) -> Bool {
 //        return true
