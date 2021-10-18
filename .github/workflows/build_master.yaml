@@ -197,3 +197,10 @@ jobs:
           asset_path: ./fig.dmg
           asset_name: fig.dmg
           asset_content_type: application/octet-stream
+      - name: "Get Build"
+        env:
+            ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+        run: |
+          echo "::set-env name=BUILD::$(agvtool what-version -terse)"
+      - name: Update the brew cask
+        run: echo 'Run the following command:' brew bump-cask-pr --version $VERSION,$BUILD fig

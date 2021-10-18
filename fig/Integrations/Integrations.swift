@@ -14,6 +14,7 @@ class Integrations {
     static let Hyper = "co.zeit.hyper"
     static let VSCode = "com.microsoft.VSCode"
     static let VSCodeInsiders = "com.microsoft.VSCodeInsiders"
+    static let VSCodium = "com.visualstudio.code.oss"
     static let Kitty = "net.kovidgoyal.kitty"
     static let Alacritty = "io.alacritty"
 
@@ -33,7 +34,7 @@ class Integrations {
                                      "com.raycast.macos"]
   
   static let inputMethodDependentTerminals = [ Alacritty ]
-  static let electronIDEs: Set = [VSCode, VSCodeInsiders]
+  static let electronIDEs: Set = [VSCode, VSCodeInsiders, VSCodium]
   static var electronTerminals: Set<String> {
     get {
       let additions = Set(Settings.shared.getValue(forKey: Settings.additionalElectronTerminalsKey) as? [String] ?? [])
@@ -110,6 +111,7 @@ class Integrations {
                           Integrations.Hyper : HyperIntegration.default,
                           Integrations.VSCode : VSCodeIntegration.default,
                           Integrations.VSCodeInsiders : VSCodeIntegration.insiders,
+                          Integrations.VSCodium : VSCodeIntegration.vscodium,
                           Integrations.Alacritty : AlacrittyIntegration.default,
 //                          Integrations.Kitty : KittyIntegration.default,
                           Integrations.Terminal : AppleTerminalIntegration.default

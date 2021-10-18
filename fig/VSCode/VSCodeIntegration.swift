@@ -18,6 +18,11 @@ class VSCodeIntegration: TerminalIntegrationProvider  {
                                           configFolderName: ".vscode-insiders",
                                           applicationSupportFolderName: "Code - Insiders",
                                           applicationName: "VSCode Insiders")
+  static let vscodium = VSCodeIntegration(bundleIdentifier: Integrations.VSCodium,
+                                          configFolderName: ".vscode-oss",
+                                          applicationSupportFolderName: "VSCodium",
+                                          applicationName: "VSCodium",
+                                          cliExecutableName: "codium")
     
   static let supportURL: URL = URL(string: "https://fig.io/docs/support/vscode-integration")!
 
@@ -28,16 +33,17 @@ class VSCodeIntegration: TerminalIntegrationProvider  {
 
   fileprivate let configFolderName: String
   fileprivate let applicationSupportFolderName: String
+  fileprivate let cliExecutableName: String
 
-  init(bundleIdentifier: String, configFolderName: String, applicationSupportFolderName: String, applicationName: String) {
+  init(bundleIdentifier: String, configFolderName: String, applicationSupportFolderName: String, applicationName: String, cliExecutableName: String = "code") {
       self.configFolderName = configFolderName
       self.applicationSupportFolderName = applicationSupportFolderName
-    
+      self.cliExecutableName = cliExecutableName
       super.init(bundleIdentifier: bundleIdentifier)
 
-      self.promptMessage = "Fig will add an extension to Visual Studio Code that tracks which integrated terminal is active.\n\nVSCode will need to restart for changes to take effect.\n"
-      self.promptButtonText = "Install Extension"
       self.applicationName = applicationName
+      self.promptMessage = "Fig will add an extension to \(self.applicationName) that tracks which integrated terminal is active.\n\n\(self.applicationName) will need to restart for changes to take effect.\n"
+      self.promptButtonText = "Install Extension"
   }
     
   var settingsPath: String {
@@ -89,7 +95,7 @@ class VSCodeIntegration: TerminalIntegrationProvider  {
       
     }
     
-    let cli = url.appendingPathComponent("Contents/Resources/app/bin/code")
+    let cli = url.appendingPathComponent("Contents/Resources/app/bin/" + self.cliExecutableName)
     let vsix = Bundle.main.path(forResource: "fig-\(VSCodeIntegration.extensionVersion)", ofType: "vsix")!
     "\(cli.path.replacingOccurrences(of: " ", with: "\\ ")) --install-extension \(vsix)".runInBackground()
     
