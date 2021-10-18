@@ -16,144 +16,48 @@ class Onboarding {
     
     static func setUpEnviroment(completion:( () -> Void)? = nil) {
       
-      if !Diagnostic.isRunningOnReadOnlyVolume {
-        SentrySDK.capture(message: "Currently running on read only volume! App is translocated!")
-      }
-        
-        DispatchQueue.global(qos: .userInitiated).async {
-            guard let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String else {
-              Logger.log(message: "No version availible")
-              return
-            }
-            
-            var tag = "v\(version)"
-            
-            if let beta = Settings.shared.getValue(forKey: Settings.beta) as? Bool, beta {
-              tag = "main"
-            }
-          
-            let githubURL = URL(string: "https://raw.githubusercontent.com/withfig/config/\(tag)/tools/install_and_upgrade.sh")!
-            let fallbackURL = Bundle.main.url(forResource: "install_and_upgrade_fallback", withExtension: "sh")!
-
-            
-            var script = try? String(contentsOf: githubURL)
-            
-            if (script == nil) {
-              script = try? String(contentsOf: fallbackURL)
-            }
-          
-            if let envSetupScript = script {
-                let scriptsURL = FileManager.default.urls(for: .applicationScriptsDirectory, in: .userDomainMask)[0] as NSURL
-
-                guard let folderPath = scriptsURL.path else {
-                    Logger.log(message: "Folder path does not exist")
-                    return
-                }
-                
-                Logger.log(message: String(describing: scriptsURL.path))
-
-                guard let script = scriptsURL.appendingPathComponent("install_and_upgrade.sh") else {
-                    Logger.log(message: "Could not create PATH for install_and_upgrade.sh")
-                    SentrySDK.capture(message: "Could not create PATH for install_and_upgrade.sh")
-                    return
-                }
-                Logger.log(message: script.path)
-
-                do {
-                    try FileManager.default.createDirectory(atPath: folderPath, withIntermediateDirectories: true)
-                    try envSetupScript.write(to: script, atomically: true, encoding: String.Encoding.utf8)
-                } catch {
-                    SentrySDK.capture(message: "Could not write to file.")
-                    Logger.log(message: "Could not write to file.")
-
-                    return
-                }
-
-
-                print("onboarding: ", script)
-                
-                let out = "/bin/bash '\(script.path)' \(tag)".runAsCommand()
-                
-                guard !out.starts(with: "Error:") else {
-                    Logger.log(message: out)
-                    SentrySDK.capture(message: "Onboarding: \(out)")
-                    return
-                }
-                
-                Logger.log(message: "Successfully ran installation script!")
-                Logger.log(message: "\(out)")
-                SentrySDK.capture(message: "Script: \(out)")
-
-                
-            } else {
-                Logger.log(message: "Could not download installation script")
-                SentrySDK.capture(message: "Could not download installation script")
-                // What should we do when this happens?
-            }
+        if !Diagnostic.isRunningOnReadOnlyVolume {
+            SentrySDK.capture(message: "Currently running on read only volume! App is translocated!")
         }
+        
+        guard let path = Bundle.main.path(forResource: "install_and_upgrade", ofType: "sh", inDirectory: "config/tools") else {
+            return Logger.log(message: "Could not locate install script!")
+        }
+        
+        let configDirectory = Bundle.main.resourceURL?.appendingPathComponent("config", isDirectory: true).path
+        
+        "/bin/bash '\(path)' local".runInBackground(cwd: configDirectory, completion:  { transcript in
+            Onboarding.symlinkBundleExecutable("figcli", to: "~/.fig/bin/fig")
+            Onboarding.symlinkBundleExecutable("figterm", to: "~/.fig/bin/figterm")
+            Onboarding.symlinkBundleExecutable("fig_get_shell", to: "~/.fig/bin/fig_get_shell")
+            Onboarding.symlinkBundleExecutable("fig_callback", to: "~/.fig/bin/fig_callback")
+            completion?()
+        })
     }
-
-    static func copyFigCLIExecutable(to path: String) {
+    
+    static func symlinkBundleExecutable(_ executable: String, to path: String) {
         let fullPath = NSString(string: path).expandingTildeInPath
         let existingSymlink = try? FileManager.default.destinationOfSymbolicLink(atPath: fullPath)
 
-        if let cliPath = Bundle.main.path(forAuxiliaryExecutable: "figcli"), existingSymlink != cliPath {
+        if let cliPath = Bundle.main.path(forAuxiliaryExecutable: executable), existingSymlink != cliPath {
             do {
                 try? FileManager.default.removeItem(atPath: fullPath)
                 let fullURL = URL(fileURLWithPath: fullPath)
                 try? FileManager.default.createDirectory(at: fullURL.deletingLastPathComponent(), withIntermediateDirectories: true, attributes: [:])
                 try FileManager.default.createSymbolicLink(at: fullURL, withDestinationURL: URL(fileURLWithPath: cliPath))
             } catch {
-                Logger.log(message: "Could not download copy CLI to ~/.fig/bin")
-                SentrySDK.capture(message: "Could not download copy CLI to ~/.fig/bin")
+                Logger.log(message: "Could not symlink executable '\(executable)' to '\(path)'")
+                SentrySDK.capture(message: "Could not symlink executable '\(executable)' to '\(path)'")
             }
         }
         
     }
+
+    static func copyFigCLIExecutable(to path: String) {
+        symlinkBundleExecutable("figcli", to: path)
+    }
     
     static func setupTerminalsForShellOnboarding(completion: (()->Void)? = nil) {
         WindowManager.shared.newNativeTerminalSession(completion: completion)
-        
-        // filter for native terminal windows (with hueristic to avoid menubar items + other window types)
-//        let nativeTerminals = NSWorkspace.shared.runningApplications.filter { Integrations.nativeTerminals.contains($0.bundleIdentifier ?? "")}
-//
-//        let count = nativeTerminals.count
-//        guard count > 0 else {
-//            WindowManager.shared.newNativeTerminalSession(completion: completion)
-//            return
-//        }
-//        let iTermOpen = nativeTerminals.contains { $0.bundleIdentifier == "com.googlecode.iterm2" }
-//        let terminalAppOpen = nativeTerminals.contains { $0.bundleIdentifier == "com.apple.Terminal" }
-//
-//        var emulators: [String] = []
-//
-//        if (iTermOpen) {
-//            emulators.append("iTerm")
-//        }
-//
-//        if (terminalAppOpen) {
-//            emulators.append("Terminal")
-//        }
-//
-//        let restart = (NSApp.delegate as! AppDelegate).dialogOKCancel(question: "Fig will not work in existing terminal sessions", text: "Restart existing terminal sessions.\n", prompt: "Restart \(emulators.joined(separator: " and "))", noAction: false, icon: NSImage.init(imageLiteralResourceName: NSImage.applicationIconName), noActionTitle: "Open new terminal window")
-//
-//        // only restart one of the terminals, so that shell onboarding doesn't appear twice
-//        if (restart) {
-//            TelemetryProvider.track(event: .restartForOnboarding, with: [:])
-//
-//            guard !iTermOpen else {
-//                let iTerm = Restarter(with: "com.googlecode.iterm2")
-//                iTerm.restart(completion: completion)
-//                return
-//            }
-//
-//
-//            let terminalApp = Restarter(with: "com.apple.Terminal")
-//            terminalApp.restart(completion: completion)
-//        } else {
-//            TelemetryProvider.track(event: .newWindowForOnboarding, with: [:])
-//            // if the user doesn't want to restart their terminal, revert to previous approach of creating new window.
-//            WindowManager.shared.newNativeTerminalSession(completion: completion)
-//        }
     }
 }

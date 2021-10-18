@@ -1,0 +1,21 @@
+CC=gcc
+LDFLAGS=
+LDLIBS=$(ROOT)/libvterm/lib/libvterm.a -L$(ROOT)/lib -lfig -lm $(EXTRALIBS)
+CFLAGS=-I$(ROOT)/libvterm/include -I$(ROOT)/include -Wall -pthread $(EXTRA)
+PROD=0
+
+ifeq "$(PROD)" "0"
+	CFLAGS+=-ggdb
+endif
+
+PLATFORM=$(shell $(ROOT)/systype.sh)
+
+ifeq "$(PLATFORM)" "macos"
+  CFLAGS+=-D_DARWIN_C_SOURCE
+else
+  CFLAGS+=-DLINUX -D_GNU_SOURCE
+endif
+
+ifeq "$(PLATFORM)" "solaris"
+  EXTRALIBS=-lsocket -lnsl
+endif

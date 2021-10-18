@@ -1,0 +1,5 @@
+ControlPath ~/.ssh/%C
+ControlMaster auto
+ControlPersist 1
+PermitLocalCommand yes
+LocalCommand fig bg:ssh ~/.ssh/%C &

@@ -1,0 +1,33 @@
+name: Publish shell integration script
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "main"
+    # paths:
+    #   - config/**
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      UPDATE_SITE_TOKEN: ${{ secrets.UPDATE_SITE_TOKEN }}
+    steps:
+    - uses: actions/checkout@v2
+    - name: Create tar file
+      run: |
+        tar -czvf shell-integration.tar.gz \
+          config/shell/ \
+          config/tools/install_integrations.sh \
+          config/fig.sh
+    - name: Update Site
+      run: |
+        git clone https://withfig-bot:$UPDATE_SITE_TOKEN@github.com/withfig/public-site-nextjs
+        cp shell-integration.tar.gz tools/install-shell-integration.sh public-site-nextjs/public/
+        cd public-site-nextjs
+      
+        git config user.email "hello@withfig.com"
+        git config user.name "Figbot"
+        
+        git add .
+        git commit -m "Updated shell integration script"
+        git push origin main

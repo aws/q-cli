@@ -1437,6 +1437,9 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         Defaults.launchedFollowingCrash = false
         AutocompleteContextNotifier.clearFigContext()
         
+        // Ensure that fig.socket is deleted, so that if user switches acounts it can be recreated
+        try? FileManager.default.removeItem(atPath: "/tmp/fig.socket")
+        
         Logger.log(message: "app will terminate...")
     }
     

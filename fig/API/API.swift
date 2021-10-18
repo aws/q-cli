@@ -14,8 +14,33 @@ typealias Request = Fig_ClientOriginatedMessage
 typealias Response = Fig_ServerOriginatedMessage
 typealias NotificationRequest = Fig_NotificationRequest
 class API {
+    // binary is the primary transport method.
+    // json is a fallback only used in environments where the API bindings are not accessible (eg. onboarding flow)
+    // note: notifications will ignore json encodings
+    enum Encoding {
+        case binary
+        case json
+        
+        var eventName: String {
+            switch self {
+            case .binary:
+                return "FigProtoMessageRecieved"
+            case .json:
+                return "FigJSONMessageRecieved"
+            }
+        }
+        
+        var webkitMessageHandler: String {
+            switch self {
+            case .binary:
+                return "proto"
+            case .json:
+                return "protoJSON"
+            }
+        }
+    }
     static let notifications = APINotificationCenter()
-    static func handle(scriptMessage: WKScriptMessage) {
+    static func handle(scriptMessage: WKScriptMessage, encoding: Encoding) {
         
         guard let webView = scriptMessage.webView else {
             API.log("no webview associated with API request")
@@ -23,8 +48,8 @@ class API {
         }
         
         do {
-            let request = try scriptMessage.parseAsAPIRequest()
-            API.handle(request, from: webView)
+            let request = try scriptMessage.parseAsAPIRequest(using: encoding)
+            API.handle(request, from: webView, using: encoding)
 
         } catch APIError.generic(message: let message) {
             API.reportGlobalError(message: message, in: webView)
@@ -34,7 +59,7 @@ class API {
         
     }
     
-    static func handle(_ request: Request, from webView: WKWebView) {
+    static func handle(_ request: Request, from webView: WKWebView, using encoding: API.Encoding) {
         
         let id = request.id
         var response = Response()
@@ -53,7 +78,7 @@ class API {
                         var response = Response()
                         response.id = id
                         response.pseudoterminalExecuteResponse = output
-                        API.send(response, to: webView)
+                        API.send(response, to: webView, using: encoding)
                     }
 
                 case .readFileRequest(let request):
@@ -63,6 +88,9 @@ class API {
                 case .contentsOfDirectoryRequest(let request):
                     response.contentsOfDirectoryResponse = try FileSystem.contentsOfDirectory(request)
                 case .notificationRequest(let request):
+                    guard encoding == .binary else {
+                        throw APIError.generic(message: "Notifications must use the binary encoding.")
+                    }
                     response.success = try API.notifications.handleRequest(id: id, request: request, for: webView)
                 case .insertTextRequest(let request):
                     ShellBridge.injectStringIntoTerminal(request.text)
@@ -72,13 +100,13 @@ class API {
                 case .updateSettingsPropertyRequest(let request):
                     response.success = try Settings.shared.handleSetRequest(request)
                 case .updateApplicationPropertiesRequest(let request):
-                    if request.hasInterceptBoundKeystrokes {
-                        KeypressProvider.shared.setRedirectsEnabled(value: request.interceptBoundKeystrokes)
-                    }
-                    response.success = true
+                    response.success = try FigApp.updateProperties(request,
+                                                               for: FigApp(identifier: webView.appIdentifier))
                 case .none:
                     throw APIError.generic(message: "No submessage was included in request.")
                 
+                case .destinationOfSymbolicLinkRequest(let request):
+                    response.destinationOfSymbolicLinkResponse = try FileSystem.destinationOfSymbolicLink(request)
             }
         } catch APIError.generic(message: let message) {
             response.error = message
@@ -88,18 +116,30 @@ class API {
         
         // Send response immediately if request is completed synchronously
         if !isAsync {
-            API.send(response, to: webView)
+            API.send(response, to: webView, using: encoding)
         }
     }
     
-    static func send(_ response: Response, to webView: WKWebView) {
-        guard let data = try? response.serializedData() else {
-            return
+    static func send(_ response: Response, to webView: WKWebView, using encoding: API.Encoding) {
+        var payload: String!
+        switch encoding {
+        case .binary :
+            guard let data = try? response.serializedData() else {
+                return
+            }
+            
+            let b64 = data.base64EncodedString()
+            
+            payload = "document.dispatchEvent(new CustomEvent('\(encoding.eventName)', {'detail': `\(b64)`}));"
+        case .json:
+            guard let jsonString = try? response.jsonString() else {
+                return
+            }
+            
+            payload = "document.dispatchEvent(new CustomEvent('\(encoding.eventName)', {'detail': \(jsonString)}));"
+
         }
-        
-        let b64 = data.base64EncodedString()
-        
-        let payload = "document.dispatchEvent(new CustomEvent('FigProtoMessageRecieved', {'detail': `\(b64)`}));"
+       
         
         webView.evaluateJavaScript(payload, completionHandler: nil)
     }
@@ -110,7 +150,7 @@ class API {
                                   line: Int = #line) {
         API.log("reporting global error: " + message)
         let source = "\(function) in \(file):\(line)"
-        let payload = "document.dispatchEvent(new CustomEvent('FigGlobalErrorOccurred', {'detail': {'error' : '\(message)', '', 'source': '\(source)' } }));"
+        let payload = "document.dispatchEvent(new CustomEvent('FigGlobalErrorOccurred', {'detail': {'error' : '\(message)', '', 'source': `\(source)` } }));"
         webView.evaluateJavaScript(payload, completionHandler: nil)
 
     }
@@ -124,14 +164,23 @@ extension API: Logging {
 }
 
 extension WKScriptMessage {
-    func parseAsAPIRequest() throws -> Request  {
-        
-        guard let b64 = self.body as? String,
-              let data = Data(base64Encoded: b64) else {
-            throw APIError.generic(message: "Could not convert from WKScriptMessage to string")
+    func parseAsAPIRequest(using encoding: API.Encoding) throws -> Request  {
+        var message: Request!
+        switch encoding {
+        case .binary:
+            guard let b64 = self.body as? String,
+                  let data = Data(base64Encoded: b64) else {
+                throw APIError.generic(message: "Could not convert from WKScriptMessage to data")
+            }
+                    
+            message = try Request(serializedData: data)
+        case .json:
+            guard let jsonString = self.body as? String else {
+                throw APIError.generic(message: "Could not convert from WKScriptMessage to json")
+            }
+            message = try Request(jsonString: jsonString)
         }
-                
-        let message = try Request(serializedData: data)
+
         
         return message
     }

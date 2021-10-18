@@ -367,15 +367,21 @@ extension WebViewController : WKNavigationDelegate {
             onNavigateCallback()
         }
         webView.onNavigate = []
+        webView.requestedURL = navigationAction.request.url
         webView.window?.title = ""
         webView.window?.representedURL = nil
     }
     
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
         print("ERROR Loading URL: \(error.localizedDescription)")
-//        webView.evaluateJavaScript("document.body.innerText = 'An error occured when trying to load this URL.'", completionHandler: nil)
         webView.window?.title = "Could not load URL..."
+        
+        if let webView = webView as? WebView {
+            webView.loadArchivedURL()
+        }
+        
     }
+    
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         print("Loaded URL \(webView.url?.absoluteString ?? "<none>")")
         var scriptContent = "var meta = document.createElement('meta');"
@@ -397,35 +403,13 @@ extension WebViewController : WKNavigationDelegate {
         }
         webView.onLoad = []
         WebBridge.enableInteractiveCodeTags(webview: webView)
-        WebBridge.declareAppVersion(webview: webView)
-        WebBridge.declareFigCLIPath(webview: webView)
-        WebBridge.declareRemoteURL(webview: webView)
-        WebBridge.declareHomeDirectory(webview: webView)
         WebBridge.declareSettings(webview:webView)
         WebBridge.declareUpdate(webview: webView)
-        WebBridge.declareBuildNumber(webview: webView)
         WebBridge.declareCurrentApplication(webview: webView)
         WebBridge.initJS(webview: webView)
-//        webView.evaluateJavaScript("fig.callinit()", completionHandler: nil)
-
-
         
-//    webView.evaluateJavaScript("window.scrollTo(0,0)", completionHandler: nil)
-
-        
-//        self.webView?.evaluateJavaScript("document.body.style = document.body.style.cssText + \";background: transparent !important;\";", completionHandler: nil)
-//        
-        
-//        self.webView?.evaluateJavaScript("document.readyState", completionHandler: { (complete, error) in
-//            if complete != nil {
-//                self.webView?.evaluateJavaScript("document.body.scrollHeight", completionHandler: { (height, error) in
-//                    let h = height as! CGFloat
-//                    print(h)
-//                })
-//                
-//            }
-//
-//            })
+        // Automatically archive this URL for offline use
+        webView.archive()
     }
 }
 
@@ -444,17 +428,12 @@ class WebView : WKWebView {
         }
     }
     
-//    override var intrinsicContentSize: NSSize {
-//        get {
-//            return self.superview?.bounds.size ?? NSSize.zero
-//        }
-//    }
-    
     override var canGoBack: Bool {
         get {
             return !(super.backForwardList.backItem?.initialURL.absoluteString == Remote.baseURL.appendingPathComponent("sidebar").absoluteString) && super.canGoBack
         }
     }
+    var requestedURL: URL?
 
 //    override func shouldDelayWindowOrdering(for event: NSEvent) -> Bool {
 //        return true

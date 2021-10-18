@@ -63,7 +63,7 @@ class UnixSocketServer {
           return
         }
         try socket.listen(on: self.path)
-        
+
         print("Listening on port: \(socket.remotePath ?? "")")
         
         repeat {

@@ -1,0 +1,8 @@
+compile_commands.json
+.cache/
+*.o
+lib/*.a
+figterm*
+.DS_Store
+libvterm
+fig_*

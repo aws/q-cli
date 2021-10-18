@@ -187,7 +187,7 @@ extension ShellHookManager {
 
                   
                   
-                  let VSCodeTerminal = (window.bundleId == Integrations.VSCode || window.bundleId == Integrations.VSCodeInsiders) && id.hasPrefix("code:")
+                  let VSCodeTerminal = [Integrations.VSCode, Integrations.VSCodeInsiders, Integrations.VSCodium].contains(window.bundleId) && id.hasPrefix("code:")
                   let HyperTab = window.bundleId == Integrations.Hyper &&  id.hasPrefix("hyper:")
                   let iTermTab = window.bundleId == Integrations.iTerm && !id.hasPrefix("code:") && !id.hasPrefix("hyper:") && !includesBundleId
                   guard VSCodeTerminal || iTermTab || HyperTab || includesBundleId else { return }
@@ -474,8 +474,10 @@ extension ShellHookManager {
           // Prevent Fig from immediately when the user navigates through history
           // Note that Fig is hidden in response to the "history-line-set" zle hook
         
+          let isFirstCharacterOfNewLine = previousHistoryNumber != histno && buffer.count == 1
+        
           // If buffer is empty, line is being reset (eg. ctrl+c) and event should be processed :/
-          guard buffer == "" || previousHistoryNumber == histno else {
+          guard buffer == "" || previousHistoryNumber == histno || isFirstCharacterOfNewLine else {
             print("ZLE: history numbers do not match")
             return
           }

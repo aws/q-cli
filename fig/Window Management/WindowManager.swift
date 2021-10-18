@@ -250,6 +250,7 @@ class WindowManager : NSObject {
         companion.loaded = false
         self.autocomplete = companion
         
+        
     }
     
     func newCompanionWindow() -> CompanionWindow {
