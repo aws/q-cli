@@ -100,13 +100,13 @@ class API {
                 case .updateSettingsPropertyRequest(let request):
                     response.success = try Settings.shared.handleSetRequest(request)
                 case .updateApplicationPropertiesRequest(let request):
-                    if request.hasInterceptBoundKeystrokes {
-                        KeypressProvider.shared.setRedirectsEnabled(value: request.interceptBoundKeystrokes)
-                    }
-                    response.success = true
+                    response.success = try FigApp.updateProperties(request,
+                                                               for: FigApp(identifier: webView.appIdentifier))
                 case .none:
                     throw APIError.generic(message: "No submessage was included in request.")
                 
+                case .destinationOfSymbolicLinkRequest(let request):
+                    response.destinationOfSymbolicLinkResponse = try FileSystem.destinationOfSymbolicLink(request)
             }
         } catch APIError.generic(message: let message) {
             response.error = message
