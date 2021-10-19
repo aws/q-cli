@@ -297,6 +297,53 @@ class GenericTerminalIntegrationProvider {
             self.verifyAndUpdateInstallationStatus()
         }
     }
+  
+    func handleIntegrationRequest(_ request: Local_TerminalIntegrationRequest) throws -> CommandResponse {
+      switch (request.action) {
+        case .install:
+          let status = self._install()
+          return CommandResponse.with { response in
+            
+            if status == .installed {
+              response.success = Local_Success.with({ success in
+                success.message = status.description
+              })
+            } else {
+              response.error = Local_Error.with({ error in
+                error.message = status.description
+              })
+            }
+          }
+        case .uninstall:
+          return CommandResponse.with { response in
+            response.error = Local_Error.with({ error in
+              error.message = "Uninstall command is not available yet."
+            })
+          }
+      case .verifyInstall:
+        let status = self._verifyInstallation()
+        
+        return CommandResponse.with { response in
+          
+          if status == .installed {
+            response.success = Local_Success.with({ success in
+              success.message = status.description
+            })
+          } else {
+            response.error = Local_Error.with({ error in
+              error.message = status.description
+            })
+          }
+        }
+      case .UNRECOGNIZED(_):
+        return CommandResponse.with { response in
+          response.error = Local_Error.with({ error in
+            error.message = "Unrecognized action in integration request."
+          })
+        }
+      }
+    }
+
 }
 
 

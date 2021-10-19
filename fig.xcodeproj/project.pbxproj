@@ -131,6 +131,7 @@
 		756968012718FF600029F063 /* WebArchive.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756968002718FF600029F063 /* WebArchive.swift */; };
 		756968032719450A0029F063 /* API+App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756968022719450A0029F063 /* API+App.swift */; };
 		7569682F271F63F40029F063 /* FigAPIBindings in Frameworks */ = {isa = PBXBuildFile; productRef = 7569682E271F63F40029F063 /* FigAPIBindings */; };
+		75696832271F71270029F063 /* local.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75696831271F71270029F063 /* local.pb.swift */; };
 		756C4D832542A6D30035B467 /* Starscream in Frameworks */ = {isa = PBXBuildFile; productRef = 756C4D822542A6D30035B467 /* Starscream */; };
 		7571775726F3B8A80071AE10 /* FigInputMethod.app in Embed Input Method */ = {isa = PBXBuildFile; fileRef = 754316F426E08F5C00188887 /* FigInputMethod.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		7571775926F3E4CA0071AE10 /* settings.html in Resources */ = {isa = PBXBuildFile; fileRef = 7571775826F3E4CA0071AE10 /* settings.html */; };
@@ -245,7 +246,7 @@
 		75EDDC5B25D4BC54003AECC6 /* UnixSocketClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75EDDC5A25D4BC53003AECC6 /* UnixSocketClient.swift */; };
 		75F78F8226DC3A56001FB6C1 /* ScriptCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75F78F8126DC3A56001FB6C1 /* ScriptCommands.swift */; };
 		75F7F952261FBDC30005E215 /* UnixSocketServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75F7F951261FBDC30005E215 /* UnixSocketServer.swift */; };
-		75F7F954262007170005E215 /* ShellHooksTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75F7F953262007170005E215 /* ShellHooksTransport.swift */; };
+		75F7F954262007170005E215 /* LocalIPC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75F7F953262007170005E215 /* LocalIPC.swift */; };
 		75FE40002626A4BD00AC8414 /* Github.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75FE3FFF2626A4BD00AC8414 /* Github.swift */; };
 /* End PBXBuildFile section */
 
@@ -471,6 +472,7 @@
 		756968002718FF600029F063 /* WebArchive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebArchive.swift; sourceTree = "<group>"; };
 		756968022719450A0029F063 /* API+App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API+App.swift"; sourceTree = "<group>"; };
 		7569680F271E556B0029F063 /* swift-api-bindings */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "swift-api-bindings"; sourceTree = "<group>"; };
+		75696831271F71270029F063 /* local.pb.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = local.pb.swift; sourceTree = "<group>"; };
 		7571775826F3E4CA0071AE10 /* settings.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = settings.html; sourceTree = "<group>"; };
 		7571778226F91BF50071AE10 /* AppleTerminalIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleTerminalIntegration.swift; sourceTree = "<group>"; };
 		75738F1D26DDAB760086D972 /* InputMethod.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputMethod.swift; sourceTree = "<group>"; };
@@ -581,7 +583,7 @@
 		75EDDC5A25D4BC53003AECC6 /* UnixSocketClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnixSocketClient.swift; sourceTree = "<group>"; };
 		75F78F8126DC3A56001FB6C1 /* ScriptCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptCommands.swift; sourceTree = "<group>"; };
 		75F7F951261FBDC30005E215 /* UnixSocketServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnixSocketServer.swift; sourceTree = "<group>"; };
-		75F7F953262007170005E215 /* ShellHooksTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellHooksTransport.swift; sourceTree = "<group>"; };
+		75F7F953262007170005E215 /* LocalIPC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalIPC.swift; sourceTree = "<group>"; };
 		75FE3FFF2626A4BD00AC8414 /* Github.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Github.swift; sourceTree = "<group>"; };
 		"fig_callback-00000000000" /* fig_callback */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = fig_callback; sourceTree = BUILT_PRODUCTS_DIR; };
 		"fig_get_shell-0000000000" /* fig_get_shell */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = fig_get_shell; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -896,6 +898,7 @@
 				7520D8112682AEB00034FE2B /* Throttler.swift */,
 				755FC553268D09DE00966027 /* UpdateService.swift */,
 				750CF21726A1055F0094D76A /* Config.swift */,
+				75696830271F70800029F063 /* Local IPC */,
 				7575D44B26D5C4DD00D0C8D7 /* API */,
 				75D1ECBC26F15F0E00BC8A04 /* Integrations */,
 				7571778126F91BD60071AE10 /* AppleTerminal */,
@@ -948,6 +951,14 @@
 				75675977244634B2006AA988 /* Info.plist */,
 			);
 			path = figUITests;
+			sourceTree = "<group>";
+		};
+		75696830271F70800029F063 /* Local IPC */ = {
+			isa = PBXGroup;
+			children = (
+				75696831271F71270029F063 /* local.pb.swift */,
+			);
+			path = "Local IPC";
 			sourceTree = "<group>";
 		};
 		7571778126F91BD60071AE10 /* AppleTerminal */ = {
@@ -1063,7 +1074,7 @@
 				755D0DDF247DDE050074AB5C /* FigCLI.swift */,
 				75AA24C025A656FA00A51E9D /* NativeCLI.swift */,
 				757CA8E524905B38002A64A8 /* SockerServer.swift */,
-				75F7F953262007170005E215 /* ShellHooksTransport.swift */,
+				75F7F953262007170005E215 /* LocalIPC.swift */,
 				75F7F951261FBDC30005E215 /* UnixSocketServer.swift */,
 			);
 			path = Bridging;
@@ -1628,7 +1639,7 @@
 				7510F8A824A6910500E86F7C /* MacDebugView.swift in Sources */,
 				75C07120244BB441002DF69F /* CompanionViewController.swift in Sources */,
 				7510F89E24A6910500E86F7C /* BufferSet.swift in Sources */,
-				75F7F954262007170005E215 /* ShellHooksTransport.swift in Sources */,
+				75F7F954262007170005E215 /* LocalIPC.swift in Sources */,
 				75DA86A325EDB05100722F1D /* Integrations.swift in Sources */,
 				7510F8B724A6910500E86F7C /* EscapeSequenceParser.swift in Sources */,
 				7510F89D24A6910500E86F7C /* Utilities.swift in Sources */,
@@ -1688,6 +1699,7 @@
 				75C57C142581C0700065741E /* ioreg.c in Sources */,
 				7510F8AA24A6910500E86F7C /* MacCaretView.swift in Sources */,
 				75290AB4267126EB000F4255 /* iTermIntegration.swift in Sources */,
+				75696832271F71270029F063 /* local.pb.swift in Sources */,
 				75B0A07C25BA64CC00FCD89A /* AutocompleteContextNotifier.swift in Sources */,
 				75FE40002626A4BD00AC8414 /* Github.swift in Sources */,
 				751C3BEC24B6910800B5C7FD /* Remote.swift in Sources */,

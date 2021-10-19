@@ -7,18 +7,90 @@
 //
 
 import Foundation
+import Socket
 
-class ShellHookTransport: UnixSocketServerDelegate {
-  
-  static let shared = ShellHookTransport()
-  fileprivate let server = UnixSocketServer(path: "/tmp/fig.socket") // "/tmp/fig.socket"
-  
+typealias LocalMessage = Local_LocalMessage
+typealias CommandResponse = Local_CommandResponse
+class LocalIPC: UnixSocketServerDelegate {
+  static let shared = LocalIPC()
+  fileprivate var buffer: Data = Data()
+  fileprivate let legacyServer = UnixSocketServer(path: "/tmp/fig.socket")
+  fileprivate let server = UnixSocketServer(path: FileManager.default.temporaryDirectory.appendingPathComponent("fig.socket").path,
+                                            bidirectional: true)
   init() {
+    legacyServer.delegate = self
+    legacyServer.run()
+    
     server.delegate = self
     server.run()
   }
   
-  func recieved(string: String) {
+  func recieved(data: Data, on socket: Socket?) {
+    guard let socket = socket else { return }
+    do {
+      try self.handle(rawBytes: data, from: socket)
+    } catch {
+      Logger.log(message: "Error writing response to socket: \(error.localizedDescription)", subsystem: .unix)
+    }
+  }
+  
+  func retriveMessage(rawBytes: Data) -> LocalMessage? {
+    buffer.append(rawBytes)
+    
+    guard let rawString = String(data: buffer, encoding: .utf8) else {
+      return nil
+    }
+    
+    let jsonPattern = "\\x1b@fig-json([^\\x1b]+)\\x1b\\"
+    let regex = try! NSRegularExpression(pattern: jsonPattern, options: [])
+    
+    regex.matches(in: rawString, options: <#T##NSRegularExpression.MatchingOptions#>, range: <#T##NSRange#>)
+    
+    return try? LocalMessage(serializedData: rawBytes)
+  }
+  func handle(rawBytes: Data, from socket: Socket) throws {
+      
+      buffer.append(rawBytes)
+      
+
+      
+      let message = try LocalMessage(serializedData: rawBytes)
+      
+      switch message.type {
+      case .command(let message):
+        switch message.command {
+        case .terminalIntegrationUpdate(let request):
+          let response = try Integrations.providers[request.identifier]?.handleIntegrationRequest(request)
+          guard let data = try response?.serializedData() else { return }
+          try socket.write(from: data)
+        default:
+          break
+        }
+        break
+      case .hook(let message):
+        Logger.log(message: "Recieved hook message!", subsystem: .unix)
+        let json = try? message.jsonString()
+        Logger.log(message: json ?? "Could not decode message", subsystem: .unix)
+        break
+      case .none:
+        break;
+
+    }
+  }
+}
+
+extension LocalIPC {
+  func recieved(string: String, on socket: Socket?) {
+    
+    // handle legacy `fig bg:` messages
+    // todo: remove this after v1.0.53
+    if socket == nil {
+      legacyServerRecieved(string: string)
+      return
+    }
+  }
+  
+  func legacyServerRecieved(string: String) {
     guard let shellMessage = ShellMessage.from(raw: string) else { return }
     DispatchQueue.main.async {
       switch Hook(rawValue: shellMessage.hook ?? "") {
@@ -66,7 +138,6 @@ class ShellHookTransport: UnixSocketServerDelegate {
               print("Unknown background Unix socket")
       }
     }
-       
   }
   
   enum Hook: String {
@@ -130,7 +201,7 @@ extension ShellMessage {
     
     let integrationNumber = Int(integration) ?? 0
     
-    switch ShellHookTransport.Hook(rawValue: subcommand)?.packetType(for: integrationNumber) {
+    switch LocalIPC.Hook(rawValue: subcommand)?.packetType(for: integrationNumber) {
       case .callback:
         return ShellMessage(type: "pipe",
                             source: "",

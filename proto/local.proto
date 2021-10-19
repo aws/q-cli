@@ -1,6 +1,6 @@
 syntax = "proto3";
 option objc_class_prefix = "FIG";
-//package local;
+package local;
 
 message LocalMessage {
 	oneof type {
