@@ -22,7 +22,7 @@ struct FigApp {
     func writeToAppDirectory(_ name: String, data: Data?) throws {
         guard let data = data else { return }
         guard self.identifier != nil else {
-            return APIError.generic(message: "App identifier is not set.")
+            throw APIError.generic(message: "App identifier is not set.")
         }
         try? FileManager.default.createDirectory(at: folder!,
                                                  withIntermediateDirectories: true,

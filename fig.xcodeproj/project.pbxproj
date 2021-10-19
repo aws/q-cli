@@ -130,7 +130,7 @@
 		756967FF2718E0300029F063 /* WebArchiver in Frameworks */ = {isa = PBXBuildFile; productRef = 756967FE2718E0300029F063 /* WebArchiver */; };
 		756968012718FF600029F063 /* WebArchive.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756968002718FF600029F063 /* WebArchive.swift */; };
 		756968032719450A0029F063 /* API+App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756968022719450A0029F063 /* API+App.swift */; };
-		75696811271E557E0029F063 /* FigAPIBindings in Frameworks */ = {isa = PBXBuildFile; productRef = 75696810271E557E0029F063 /* FigAPIBindings */; };
+		7569682F271F63F40029F063 /* FigAPIBindings in Frameworks */ = {isa = PBXBuildFile; productRef = 7569682E271F63F40029F063 /* FigAPIBindings */; };
 		756C4D832542A6D30035B467 /* Starscream in Frameworks */ = {isa = PBXBuildFile; productRef = 756C4D822542A6D30035B467 /* Starscream */; };
 		7571775726F3B8A80071AE10 /* FigInputMethod.app in Embed Input Method */ = {isa = PBXBuildFile; fileRef = 754316F426E08F5C00188887 /* FigInputMethod.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		7571775926F3E4CA0071AE10 /* settings.html in Resources */ = {isa = PBXBuildFile; fileRef = 7571775826F3E4CA0071AE10 /* settings.html */; };
@@ -610,7 +610,7 @@
 			files = (
 				7512A48B263252EF00CDE824 /* Sparkle in Frameworks */,
 				75CFDBE224EDE31800F00CAE /* Sentry in Frameworks */,
-				75696811271E557E0029F063 /* FigAPIBindings in Frameworks */,
+				7569682F271F63F40029F063 /* FigAPIBindings in Frameworks */,
 				755D0F512482D4920074AB5C /* HotKey in Frameworks */,
 				757CA8E424905B0E002A64A8 /* Kitura-WebSocket in Frameworks */,
 				75A4A2A725CBBDE7002EFD6B /* AXSwift in Frameworks */,
@@ -1257,7 +1257,7 @@
 				7512A48A263252EF00CDE824 /* Sparkle */,
 				75290AC526719157000F4255 /* SwiftProtobuf */,
 				756967FE2718E0300029F063 /* WebArchiver */,
-				75696810271E557E0029F063 /* FigAPIBindings */,
+				7569682E271F63F40029F063 /* FigAPIBindings */,
 			);
 			productName = fig;
 			productReference = 75675951244634AD006AA988 /* fig.app */;
@@ -2338,7 +2338,7 @@
 			package = 756967FD2718E0300029F063 /* XCRemoteSwiftPackageReference "WebArchiver" */;
 			productName = WebArchiver;
 		};
-		75696810271E557E0029F063 /* FigAPIBindings */ = {
+		7569682E271F63F40029F063 /* FigAPIBindings */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = FigAPIBindings;
 		};
