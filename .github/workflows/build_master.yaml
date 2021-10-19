@@ -131,11 +131,6 @@ jobs:
         env:
           NOTARIZE_USERNAME: ${{ secrets.NOTARIZE_USERNAME }}
           NOTARIZE_PASSWORD: ${{ secrets.NOTARIZE_PASSWORD }}
-          
-      - name: "Staple Release Build"
-        uses: devbotsxyz/xcode-staple@v1
-        with:
-          product-path: "Export/Fig.app"
 
       - name: Setup Node Environment
         uses: actions/setup-node@v1
