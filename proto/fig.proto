@@ -1,0 +1,330 @@
+syntax = "proto3";
+option objc_class_prefix = "FIG";
+package fig;
+
+message ClientOriginatedMessage {
+  optional int64 id = 1;
+
+  oneof submessage {
+      PositionWindowRequest position_window_request = 101;
+      PseudoterminalExecuteRequest pseudoterminal_execute_request = 102;
+      PseudoterminalWriteRequest pseudoterminal_write_request = 103;
+      ReadFileRequest read_file_request = 104;
+      WriteFileRequest write_file_request = 105;
+      ContentsOfDirectoryRequest contents_of_directory_request = 106;
+      NotificationRequest notification_request = 107;
+      GetSettingsPropertyRequest get_settings_property_request = 108;
+      UpdateSettingsPropertyRequest update_settings_property_request = 109;
+      InsertTextRequest insert_text_request = 110;
+      UpdateApplicationPropertiesRequest update_application_properties_request = 111;
+      DestinationOfSymbolicLinkRequest destination_of_symbolic_link_request = 112;
+  }
+}
+
+message ServerOriginatedMessage {
+  optional int64 id = 1;
+
+  // Responses to ClientOriginatedMessages of the corresponding type
+  oneof submessage {
+    string error = 2; 
+    bool success = 3;
+    PositionWindowResponse position_window_response = 100;
+    PseudoterminalExecuteResponse pseudoterminal_execute_response = 101;
+    ReadFileResponse read_file_response = 102;
+    ContentsOfDirectoryResponse contents_of_directory_response = 103;
+    GetSettingsPropertyResponse get_settings_property_response = 104;
+    DestinationOfSymbolicLinkResponse destination_of_symbolic_link_response = 105;
+
+    Notification notification = 1000;
+  }
+    
+}
+
+
+// Basic types
+
+message Point {
+  float x = 1;
+  float y = 2;
+}
+
+message Size {
+  float width = 1;
+  float height = 2;
+}
+
+message Frame {
+  Point origin = 1;
+  Size size = 2;
+}
+
+
+message EnvironmentVariable {
+  string key = 1;
+  optional string value = 2;
+}
+
+message Process {
+  optional int32 pid = 1;
+  optional string executable = 2;
+  optional string directory = 3; 
+  repeated EnvironmentVariable env = 4;
+}
+
+message FilePath {
+  optional string path = 1;
+  optional string relative_to = 2;
+  optional bool expand_tilde_in_path = 3;
+}
+
+enum Modifiers {
+  CONTROL = 0;
+  OPTION = 1;
+  COMMAND = 2;
+  SHIFT = 3;
+  FUNCTION = 4;
+  NUMPAD = 5;
+}
+
+message KeyEvent {
+  optional int32 appleKeyCode = 1;
+  optional string characters = 2;
+  optional string characters_ignoring_modifiers = 3;
+  repeated Modifiers modifiers = 4 ;
+  optional bool is_repeat = 5;
+
+}
+
+message Screen {
+  optional Frame frame = 1;
+}
+
+message Session {
+  optional string session_id = 1;
+  optional Process frontmost_process = 2;
+  repeated EnvironmentVariable env = 3;
+}
+
+message Application {
+  optional string bundle_identifier = 1;
+  optional string name = 2;
+}
+
+message Window {
+  optional string window_id = 1;
+  optional Frame frame = 2;
+  optional Session current_session = 3;
+  optional Application app = 4;
+  optional Screen current_screen = 5;
+}
+
+/// Requests
+
+message TextUpdate {
+    optional string insertion = 1;
+    optional int64 deletion = 2; 
+    optional int64 offset = 3;
+    optional bool immediate = 4;
+}
+
+message InsertTextRequest {
+  oneof type {
+    string text = 1;
+    TextUpdate update  = 2;
+  }
+}
+
+message PseudoterminalWriteRequest {
+    oneof input {
+      string text = 1;
+      bytes octal = 2;
+    }
+}
+
+message PseudoterminalExecuteRequest {
+  string command = 1;
+  optional string workingDirectory = 2;
+  optional bool backgroundJob = 3;
+  optional bool isPipelined = 4;
+  repeated EnvironmentVariable env = 5;
+}
+
+message PseudoterminalExecuteResponse {
+  string stdout = 1;
+  optional string stderr = 2;
+  optional int32 exitCode = 3; 
+}
+
+message PositionWindowRequest {
+  Point anchor = 1;
+  Size size = 2;
+  optional bool dryrun = 3; 
+} 
+
+message PositionWindowResponse {
+  optional bool isAbove = 1;
+  optional bool isClipped = 2;
+}
+
+message ReadFileRequest {
+  optional FilePath path = 1;
+}
+
+message ReadFileResponse {
+  optional bytes data = 1;
+}
+
+message WriteFileRequest {
+  optional FilePath path = 1;
+
+  oneof data {
+    string text = 2;
+    bytes binary = 3;
+  }
+}
+
+message ContentsOfDirectoryRequest {
+  optional FilePath directory = 1;
+}
+
+message ContentsOfDirectoryResponse {
+  repeated string file_names = 1;
+}
+
+message DestinationOfSymbolicLinkRequest {
+    optional FilePath path = 1;
+}
+
+message DestinationOfSymbolicLinkResponse {
+    optional FilePath destination = 1;
+}
+
+/// Settings
+
+message GetSettingsPropertyRequest {
+  optional string key = 1;
+}
+
+message GetSettingsPropertyResponse {
+  optional string jsonBlob = 1;
+  optional bool isDefault = 2; 
+}
+
+message UpdateSettingsPropertyRequest {
+  optional string key = 1;
+  optional string value = 2;
+}
+
+
+/// Actions
+
+enum ActionAvailability {
+  ALWAYS = 0;
+  WHEN_FOCUSED = 1; // the action can only be performed when the app has keyboard focus
+  WHEN_VISIBLE = 2; // the action can only be performed when the app is visible
+  WHEN_HIDDEN = 3; // the action can only be performed when the app is hidden
+}
+
+message Action {
+  optional string identifier = 1; // unique identifier for the action; not user facing.
+  optional string name = 2; // name of action, will appear in user interfaces.
+  optional string description = 3; // a quick summary of what the action will do
+  optional string category = 4; 
+  optional ActionAvailability availability = 5; // when can this action be performed
+
+}
+
+/// App properties
+
+message UpdateApplicationPropertiesRequest {
+  optional bool interceptBoundKeystrokes = 1;
+  repeated Action actions = 2;
+
+}
+
+
+/// Notifications
+
+message NotificationRequest {
+  optional bool subscribe = 1;
+  optional NotificationType type = 2;
+}
+
+enum NotificationType {
+  ALL = 0;
+  NOTIFY_ON_EDITBUFFFER_CHANGE = 1;
+  NOTIFY_ON_SETTINGS_CHANGE = 2;
+  NOTIFY_ON_PROMPT = 3;
+  NOTIFY_ON_LOCATION_CHANGE = 4;
+  NOTIFY_ON_PROCESS_CHANGED = 5;
+  NOTIFY_ON_KEYBINDING_PRESSED = 6;
+  NOTIFY_ON_FOCUS_CHANGED = 7;
+}
+
+message Notification {
+  oneof type {
+    EditBufferChangedNotification edit_buffer_notification = 1;
+    SettingsChangedNotification settings_changed_notification = 2;
+    ShellPromptReturnedNotification shell_prompt_returned_notification = 3;
+    LocationChangedNotification location_changed_notification = 4;
+    ProcessChangedNotification process_change_notification= 5;
+    KeybindingPressedNotification keybinding_pressed_notification = 6;
+    WindowFocusChangedNotification window_focus_changed_notification = 7;
+  }
+}
+
+message EditBufferChangedNotification {
+    optional string session_id = 1;
+    optional int32 cursor = 2;
+    optional string buffer = 3;
+}
+
+message SettingsChangedNotification {
+    optional string jsonBlob = 1;
+}
+
+message ShellPromptReturnedNotification {
+    optional string session_id = 1;
+    optional Process shell = 2;
+}
+
+message LocationChangedNotification {
+    optional string session_id = 1;
+    optional string host_name = 2;
+    optional string user_name = 3;
+    optional string directory = 4;
+}
+
+message ProcessChangedNotification {
+  optional string session_id = 1;
+  optional Process new_process = 2; 
+}
+
+message KeybindingPressedNotification {
+  optional KeyEvent keypress = 1;
+  optional string action = 2;
+}
+
+message WindowFocusChangedNotification {
+  optional Window window = 1;
+}
+
+/// Constants
+// Can be found under fig.constants. Certain legacy constants are included at the top-level for backwards compatibility.
+message Constants {
+  optional string version = 1; // the current version of Fig
+  optional string build = 2;  // the current build of Fig 
+  optional string cli = 3; // the path to the figcli executable
+  optional string bundlePath = 4; // the filepath of the macOS bundle
+  optional string remote = 5; // the remote URL where apps are loaded from
+  optional string home = 6; // the user's home directory 
+  optional string user = 7; // the user's name (equivalent to running `whoami`)
+  optional string defaultPath = 8; // the default macOS $PATH
+  optional string jsonMessageRecieved = 9;
+  optional string jsonMessageHandler = 10;
+  optional string protoMessageRecieved = 11;
+  optional string protoMessageHandler = 12;
+  optional string themes = 13; // a comma-separated list of all themes
+}
+
+
