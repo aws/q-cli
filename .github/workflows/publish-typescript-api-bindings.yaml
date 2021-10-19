@@ -1,0 +1,32 @@
+name: Publish package to NPM
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [develop]
+    path: typescript-api-bindings/src/*.ts
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+
+      - name: "Checkout Project"
+        uses: actions/checkout@v2
+      - name: Navigate to typescript-api-bindings
+        run: cd typescript-api-bindings
+      - name: "Install package.json dependencies"
+        run: npm ci
+
+      - name: "Automated Version Bump"
+        uses: "phips28/gh-action-bump-version@master"
+        env:
+          GITHUB_TOKEN: ${{ secrets.PERSONAL_GITHUB_ACCESS_TOKEN }}
+        with:
+          skip-tag: "true"
+      - name: Publish to npm
+        uses: JS-DevTools/npm-publish@v1
+        with:
+          access: public
+          token: ${{ secrets.NPM_PUBLISH_TOKEN }}
