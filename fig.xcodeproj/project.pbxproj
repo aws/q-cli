@@ -130,6 +130,7 @@
 		756967FF2718E0300029F063 /* WebArchiver in Frameworks */ = {isa = PBXBuildFile; productRef = 756967FE2718E0300029F063 /* WebArchiver */; };
 		756968012718FF600029F063 /* WebArchive.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756968002718FF600029F063 /* WebArchive.swift */; };
 		756968032719450A0029F063 /* API+App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756968022719450A0029F063 /* API+App.swift */; };
+		75696811271E557E0029F063 /* FigAPIBindings in Frameworks */ = {isa = PBXBuildFile; productRef = 75696810271E557E0029F063 /* FigAPIBindings */; };
 		756C4D832542A6D30035B467 /* Starscream in Frameworks */ = {isa = PBXBuildFile; productRef = 756C4D822542A6D30035B467 /* Starscream */; };
 		7571775726F3B8A80071AE10 /* FigInputMethod.app in Embed Input Method */ = {isa = PBXBuildFile; fileRef = 754316F426E08F5C00188887 /* FigInputMethod.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		7571775926F3E4CA0071AE10 /* settings.html in Resources */ = {isa = PBXBuildFile; fileRef = 7571775826F3E4CA0071AE10 /* settings.html */; };
@@ -195,7 +196,6 @@
 		75A4A2A725CBBDE7002EFD6B /* AXSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 75A4A2A625CBBDE7002EFD6B /* AXSwift */; };
 		75AA24C125A656FA00A51E9D /* NativeCLI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75AA24C025A656FA00A51E9D /* NativeCLI.swift */; };
 		75AA24DA25A7E8B000A51E9D /* lsof.m in Sources */ = {isa = PBXBuildFile; fileRef = 75AA24D925A7E8B000A51E9D /* lsof.m */; };
-		75AE8FD926D7462600161B8C /* FigAPIBindings in Frameworks */ = {isa = PBXBuildFile; productRef = 75AE8FD826D7462600161B8C /* FigAPIBindings */; };
 		75AEF2E425C3C34A00D78431 /* Diagnostic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75AEF2E325C3C34A00D78431 /* Diagnostic.swift */; };
 		75AEF2E625C3DEAF00D78431 /* DockerIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75AEF2E525C3DEAF00D78431 /* DockerIntegration.swift */; };
 		75AEF2E825C3DEC600D78431 /* SSHIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75AEF2E725C3DEC600D78431 /* SSHIntegration.swift */; };
@@ -470,6 +470,7 @@
 		7568203026003BDF0006FE78 /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
 		756968002718FF600029F063 /* WebArchive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebArchive.swift; sourceTree = "<group>"; };
 		756968022719450A0029F063 /* API+App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API+App.swift"; sourceTree = "<group>"; };
+		7569680F271E556B0029F063 /* swift-api-bindings */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "swift-api-bindings"; sourceTree = "<group>"; };
 		7571775826F3E4CA0071AE10 /* settings.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = settings.html; sourceTree = "<group>"; };
 		7571778226F91BF50071AE10 /* AppleTerminalIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleTerminalIntegration.swift; sourceTree = "<group>"; };
 		75738F1D26DDAB760086D972 /* InputMethod.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputMethod.swift; sourceTree = "<group>"; };
@@ -609,9 +610,9 @@
 			files = (
 				7512A48B263252EF00CDE824 /* Sparkle in Frameworks */,
 				75CFDBE224EDE31800F00CAE /* Sentry in Frameworks */,
+				75696811271E557E0029F063 /* FigAPIBindings in Frameworks */,
 				755D0F512482D4920074AB5C /* HotKey in Frameworks */,
 				757CA8E424905B0E002A64A8 /* Kitura-WebSocket in Frameworks */,
-				75AE8FD926D7462600161B8C /* FigAPIBindings in Frameworks */,
 				75A4A2A725CBBDE7002EFD6B /* AXSwift in Frameworks */,
 				75290AC626719157000F4255 /* SwiftProtobuf in Frameworks */,
 				756967FF2718E0300029F063 /* WebArchiver in Frameworks */,
@@ -1119,6 +1120,7 @@
 		75CFF6432496B3BA00C6A6DE /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				7569680F271E556B0029F063 /* swift-api-bindings */,
 				75AC55312522C8EB0069635E /* upgrade */,
 			);
 			name = Frameworks;
@@ -1254,8 +1256,8 @@
 				75A4A2A625CBBDE7002EFD6B /* AXSwift */,
 				7512A48A263252EF00CDE824 /* Sparkle */,
 				75290AC526719157000F4255 /* SwiftProtobuf */,
-				75AE8FD826D7462600161B8C /* FigAPIBindings */,
 				756967FE2718E0300029F063 /* WebArchiver */,
+				75696810271E557E0029F063 /* FigAPIBindings */,
 			);
 			productName = fig;
 			productReference = 75675951244634AD006AA988 /* fig.app */;
@@ -2336,6 +2338,10 @@
 			package = 756967FD2718E0300029F063 /* XCRemoteSwiftPackageReference "WebArchiver" */;
 			productName = WebArchiver;
 		};
+		75696810271E557E0029F063 /* FigAPIBindings */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = FigAPIBindings;
+		};
 		756C4D822542A6D30035B467 /* Starscream */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 758AEB6824CEA4D000A15EAF /* XCRemoteSwiftPackageReference "Starscream" */;
@@ -2355,11 +2361,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 75A4A2A525CBBDE4002EFD6B /* XCRemoteSwiftPackageReference "AXSwift" */;
 			productName = AXSwift;
-		};
-		75AE8FD826D7462600161B8C /* FigAPIBindings */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 75AE8FD526D744C700161B8C /* XCRemoteSwiftPackageReference "swift-api-bindings" */;
-			productName = FigAPIBindings;
 		};
 		75CFDBE124EDE31800F00CAE /* Sentry */ = {
 			isa = XCSwiftPackageProductDependency;
