@@ -16,8 +16,13 @@ func init() {
 
 var settingsCmd = &cobra.Command{
 	Use:   "settings [key] [value]",
-	Short: "documentation for building completion specs",
-	Args:  cobra.ArbitraryArgs,
+	Short: "Get or set a setting",
+	Long:  "Get or set a setting",
+	Args:  cobra.RangeArgs(1, 2),
+	Annotations: map[string]string{
+		"figcli.command.categories":      "Common",
+		"figcli.command.argDescriptions": "[key] key to get or set\n[value] value to set (optional)",
+	},
 	Run: func(cmd *cobra.Command, arg []string) {
 		result, err := settings.Load()
 		if err != nil {

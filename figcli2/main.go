@@ -2,6 +2,8 @@ package main
 
 import (
 	"fig-cli/cmd"
+	fig_ipc "fig-cli/fig-ipc"
+	"fig-cli/proto"
 )
 
 func main() {
@@ -24,4 +26,16 @@ func main() {
 	// res, _ := ipc.Recv()
 
 	// fmt.Println(res)
+
+	// auth, _ := fig_teams.GetAuthToken()
+	// teams, _ := fig_teams.FetchTeams(auth)
+	// for _, team := range teams {
+	// 	fmt.Println(team.(map[string]interface{})["name"])
+	// }
+	// who, _ := fig_teams.FetchWhoAmI(auth)
+	// fmt.Println(who)
+	// teams.PostTeam(auth)
+
+	conn, _ := fig_ipc.Connect()
+	b, t, a := conn.RecvMessage()
 }

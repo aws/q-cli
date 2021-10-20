@@ -70,12 +70,14 @@ func (f *FigIpc) Recv() (string, error) {
 
 // Send fig-json to the server
 func (f *FigIpc) SendFigJson(msg string) error {
-	if _, err := f.conn.Write([]byte("\x1b@fig-json")); err != nil {
+	buf := new(bytes.Buffer)
+
+	if _, err := buf.Write([]byte("\x1b@fig-json")); err != nil {
 		return err
 	}
 
 	// Write the size of the message
-	if err := binary.Write(f.conn, binary.BigEndian, uint64(len(msg))); err != nil {
+	if err := binary.Write(buf, binary.BigEndian, uint64(len(msg))); err != nil {
 		return err
 	}
 
@@ -133,7 +135,7 @@ func (f *FigIpc) RecvMessage() ([]byte, ProtoType, error) {
 	switch string(buf) {
 	case "\x1b@fig-json":
 		protoType = protoTypeFigJson
-	case "\x1b@fig-proto":
+	case "\x1b@fig-pbuf":
 		protoType = protoTypeFigProto
 	}
 

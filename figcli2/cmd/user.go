@@ -10,8 +10,9 @@ import (
 )
 
 func init() {
-	userCmd.AddCommand(logoutCmd)
-	userCmd.AddCommand(getCmd)
+	userCmd.AddCommand(userLoginCmd)
+	userCmd.AddCommand(userLogoutCmd)
+	userCmd.AddCommand(userWhoamiCmd)
 
 	rootCmd.AddCommand(userCmd)
 }
@@ -21,7 +22,7 @@ var userCmd = &cobra.Command{
 	Short: "update repo of completion scripts",
 }
 
-var logoutCmd = &cobra.Command{
+var userLogoutCmd = &cobra.Command{
 	Use:   "logout",
 	Short: "logout from fig",
 	Run: func(cmd *cobra.Command, arg []string) {
@@ -29,9 +30,17 @@ var logoutCmd = &cobra.Command{
 	},
 }
 
-var getCmd = &cobra.Command{
-	Use:   "get",
-	Short: "get user info",
+var userLoginCmd = &cobra.Command{
+	Use:   "login",
+	Short: "login to fig",
+	Run: func(cmd *cobra.Command, arg []string) {
+
+	},
+}
+
+var userWhoamiCmd = &cobra.Command{
+	Use:   "whoami",
+	Short: "get currently logged in user",
 	Run: func(cmd *cobra.Command, arg []string) {
 		email, err := exec.Command("defaults", "read", "com.mschrage.fig", "userEmail").Output()
 		emailStr := strings.TrimSpace(string(email))
