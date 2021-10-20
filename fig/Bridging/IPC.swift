@@ -65,16 +65,18 @@ class IPC: UnixSocketServerDelegate {
   
   // send a response to a socket that conforms to the IPC protocol
   func send(_ response: CommandResponse, to socket: Socket, encoding: IPC.Encoding) throws {
-    try socket.write(from: "\u{001b}@fig-\(encoding.type)")
+    var data: Data!
     switch encoding {
     case .binary:
-      let data = try response.serializedData()
-      try socket.write(from: data)
+      data = try response.serializedData()
     case .json:
       let json = try response.jsonString()
-      try socket.write(from: json)
+      data = json.data(using: .utf8)
     }
-    try socket.write(from: "\u{001b}\\")
+    
+    try socket.write(from: "\u{001b}@fig-\(encoding.type)")
+    try socket.write(from: Data(from: Int64(data.count).bigEndian))
+    try socket.write(from: data)
 
   }
   
