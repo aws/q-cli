@@ -14,11 +14,27 @@ typealias CommandResponse = Local_CommandResponse
 class IPC: UnixSocketServerDelegate {
   
   enum Encoding: String {
-      case binary = "proto"
+      case binary = "pbuf"
       case json = "json"
     
     var type: String {
       return self.rawValue
+    }
+    
+    var typeBytes: Data {
+      return self.rawValue.data(using: .utf8)!
+    }
+    
+    static var typeSize: Int {
+      return 4
+    }
+    
+    static var headerPrefix: Data {
+      return "\u{1B}@fig-".data(using: .utf8)!
+    }
+    //\efig-(pbuf|json)
+    static var headerSize: Int {
+      return headerPrefix.count + typeSize + 8
     }
   }
   
@@ -64,39 +80,82 @@ class IPC: UnixSocketServerDelegate {
   
   // attempt to decode the bytes as a packet, if not possible add to buffer
   func retriveMessage(rawBytes: Data) throws -> (LocalMessage, IPC.Encoding)? {
-    buffer.append(rawBytes)
+//    buffer.append(rawBytes)
     
-    guard let rawString = String(data: buffer, encoding: .utf8) else {
+    var header = rawBytes.subdata(in: 0...IPC.Encoding.headerSize)
+    
+    guard header.starts(with: IPC.Encoding.headerPrefix) else {
       return nil
     }
-        
-    let pattern = "\\x1b@fig-(json|proto)([^\\x1b]+)\\x1b\\\\"
-    let regex = try! NSRegularExpression(pattern: pattern, options: [])
     
-    let matches = regex.matches(in: rawString,
-                                options: [],
-                                range: NSMakeRange(0, rawString.utf16.count))
     
-    guard let match = matches.first else { return nil }
+    header = header.advanced(by: IPC.Encoding.headerPrefix.count)
     
-    let groups = match.groups(testedString: rawString)
+    let type = header.subdata(in: 0..<IPC.Encoding.typeSize)
+    let encoding: IPC.Encoding!
+    switch type {
+      case IPC.Encoding.binary.typeBytes:
+        encoding = .binary
+      case IPC.Encoding.json.typeBytes:
+        encoding = .json
+      default:
+        return nil
+    }
     
-    guard groups.count == 3 else { return nil }
-    let packet = match.range(at: 0)
-    let encoding = IPC.Encoding(rawValue: groups[1])
-    let message = groups[2]
+    header = header.advanced(by: IPC.Encoding.typeSize)
 
-    // remove consumed packet from buffer
-    self.buffer.removeFirst(packet.location + packet.length)
+    let packetSizeData = header.subdata(in: 0..<8)
+    guard let packetSizeLittleEndian = packetSizeData.to(type: Int64.self) else {
+      return nil
+    }
+
+    let packetSize = Int64(bigEndian: packetSizeLittleEndian)
+    
+    let message = rawBytes.subdata(in: IPC.Encoding.headerSize...IPC.Encoding.headerSize + Int(packetSize))
+        
     switch encoding {
     case .binary:
-        guard let data = message.data(using: .utf8) else { return nil }
-        return (try LocalMessage(serializedData: data), encoding!)
+        return (try LocalMessage(serializedData: message), encoding!)
     case .json:
-        return (try LocalMessage(jsonString: message), encoding!)
+        guard let json = String(data: message, encoding: .utf8) else {
+            return nil
+        }
+        return (try LocalMessage(jsonString: json), encoding!)
     case .none:
       return nil
     }
+    
+//    guard let rawString = String(data: buffer, encoding: .utf8) else {
+//      return nil
+//    }
+//
+//    let pattern = "\\x1b@fig-(json|proto)([^\\x1b]+)\\x1b\\\\"
+//    let regex = try! NSRegularExpression(pattern: pattern, options: [])
+//
+//    let matches = regex.matches(in: rawString,
+//                                options: [],
+//                                range: NSMakeRange(0, rawString.utf16.count))
+//
+//    guard let match = matches.first else { return nil }
+//
+//    let groups = match.groups(testedString: rawString)
+//
+//    guard groups.count == 3 else { return nil }
+//    let packet = match.range(at: 0)
+//    let encoding = IPC.Encoding(rawValue: groups[1])
+//    let message = groups[2]
+//
+//    // remove consumed packet from buffer
+//    self.buffer.removeFirst(packet.location + packet.length)
+//    switch encoding {
+//    case .binary:
+//        guard let data = message.data(using: .utf8) else { return nil }
+//        return (try LocalMessage(serializedData: data), encoding!)
+//    case .json:
+//        return (try LocalMessage(jsonString: message), encoding!)
+//    case .none:
+//      return nil
+//    }
 
   }
   
@@ -148,6 +207,26 @@ extension NSTextCheckingResult {
             groups.append(group)
         }
         return groups
+    }
+}
+
+extension Data {
+    func subdata(in range: ClosedRange<Index>) -> Data {
+        return subdata(in: range.lowerBound ..< range.upperBound)
+    }
+}
+
+extension Data {
+
+    init<T>(from value: T) {
+        self = Swift.withUnsafeBytes(of: value) { Data($0) }
+    }
+
+    func to<T>(type: T.Type) -> T? where T: ExpressibleByIntegerLiteral {
+        var value: T = 0
+        guard count >= MemoryLayout.size(ofValue: value) else { return nil }
+        _ = Swift.withUnsafeMutableBytes(of: &value, { copyBytes(to: $0)} )
+        return value
     }
 }
 
