@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
@@ -85,13 +86,13 @@ func Execute() {
 				for _, c := range command {
 					fmt.Print(" > ")
 					fmt.Print(lipgloss.NewStyle().
-						Width(12).
+						Width(14).
 						Bold(true).
 						Render(c.Name()))
 
 					fmt.Println(lipgloss.NewStyle().
 						Align(lipgloss.Left).
-						Width(TextWidth - 14).
+						Width(TextWidth - 16).
 						Italic(true).
 						Render(` ` + c.Short))
 				}
@@ -129,6 +130,22 @@ func Execute() {
 					Width(TextWidth).
 					Align(lipgloss.Left).
 					Render(cmd.CommandPath() + " [subcommand]"))
+			}
+
+			if len(cmd.ValidArgs) > 0 {
+				fmt.Println(lipgloss.NewStyle().
+					MarginTop(1).
+					Width(TextWidth).
+					Align(lipgloss.Left).
+					Bold(true).
+					Render("Argument Options"))
+
+				fmt.Println(lipgloss.NewStyle().
+					Padding(0, 2).
+					Width(TextWidth).
+					Align(lipgloss.Left).
+					Render(strings.Join(cmd.ValidArgs, " ")))
+
 			}
 
 			if cmd.Annotations["figcli.command.argDescriptions"] != "" {

@@ -4,7 +4,7 @@
 // 	protoc        v3.17.3
 // source: local.proto
 
-package proto
+package fig_proto
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
