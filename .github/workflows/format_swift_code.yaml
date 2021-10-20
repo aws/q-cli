@@ -28,7 +28,7 @@ jobs:
               sudo cp -f .build/release/swift-format /usr/local/bin/swift-format
             fi
           else
-            git clone -b swift-5.2-branch https://github.com/apple/swift-format.git
+            git clone -b swift-5.4-branch https://github.com/apple/swift-format.git
             cd swift-format
             swift build --disable-sandbox -c release
             mv .build .. && cd ..
