@@ -7,18 +7,243 @@
 //
 
 import Foundation
+import Socket
 
-class ShellHookTransport: UnixSocketServerDelegate {
+typealias LocalMessage = Local_LocalMessage
+typealias CommandResponse = Local_CommandResponse
+class IPC: UnixSocketServerDelegate {
   
-  static let shared = ShellHookTransport()
-  fileprivate let server = UnixSocketServer(path: "/tmp/fig.socket") // "/tmp/fig.socket"
+  enum Encoding: String {
+      case binary = "pbuf"
+      case json = "json"
+    
+    var type: String {
+      return self.rawValue
+    }
+    
+    var typeBytes: Data {
+      return self.rawValue.data(using: .utf8)!
+    }
+    
+    static var typeSize: Int {
+      return 4
+    }
+    
+    static var headerPrefix: Data {
+      return "\u{1B}@fig-".data(using: .utf8)!
+    }
+    //\efig-(pbuf|json)
+    static var headerSize: Int {
+      return headerPrefix.count + typeSize + 8
+    }
+  }
   
+  static let shared = IPC()
+  fileprivate var buffer: Data = Data()
+  fileprivate let legacyServer = UnixSocketServer(path: "/tmp/fig.socket")
+  fileprivate let server = UnixSocketServer(path: FileManager.default.temporaryDirectory.appendingPathComponent("fig.socket").path,
+                                            bidirectional: true)
   init() {
+    legacyServer.delegate = self
+    legacyServer.run()
+    
     server.delegate = self
     server.run()
   }
   
-  func recieved(string: String) {
+  func recieved(data: Data, on socket: Socket?) {
+    guard let socket = socket,
+          let (message, encoding) = try? retriveMessage(rawBytes: data) else { return }
+    
+    do {
+      try self.handle(message, from: socket, using: encoding)
+    } catch {
+      Logger.log(message: "Error handling IPC message: \(error.localizedDescription)",
+                 subsystem: .unix)
+    }
+  }
+  
+  // send a response to a socket that conforms to the IPC protocol
+  func send(_ response: CommandResponse, to socket: Socket, encoding: IPC.Encoding) throws {
+    var data: Data!
+    switch encoding {
+    case .binary:
+      data = try response.serializedData()
+    case .json:
+      let json = try response.jsonString()
+      data = json.data(using: .utf8)
+    }
+    
+    try socket.write(from: "\u{001b}@fig-\(encoding.type)")
+    try socket.write(from: Data(from: Int64(data.count).bigEndian))
+    try socket.write(from: data)
+
+  }
+  
+  // attempt to decode the bytes as a packet, if not possible add to buffer
+  func retriveMessage(rawBytes: Data) throws -> (LocalMessage, IPC.Encoding)? {
+//    buffer.append(rawBytes)
+    
+    var header = rawBytes.subdata(in: 0...IPC.Encoding.headerSize)
+    
+    guard header.starts(with: IPC.Encoding.headerPrefix) else {
+      return nil
+    }
+    
+    
+    header = header.advanced(by: IPC.Encoding.headerPrefix.count)
+    
+    let type = header.subdata(in: 0..<IPC.Encoding.typeSize)
+    let encoding: IPC.Encoding!
+    switch type {
+      case IPC.Encoding.binary.typeBytes:
+        encoding = .binary
+      case IPC.Encoding.json.typeBytes:
+        encoding = .json
+      default:
+        return nil
+    }
+    
+    header = header.advanced(by: IPC.Encoding.typeSize)
+
+    let packetSizeData = header.subdata(in: 0..<8)
+    guard let packetSizeLittleEndian = packetSizeData.to(type: Int64.self) else {
+      return nil
+    }
+
+    let packetSize = Int64(bigEndian: packetSizeLittleEndian)
+    
+    let message = rawBytes.subdata(in: IPC.Encoding.headerSize...IPC.Encoding.headerSize + Int(packetSize))
+        
+    switch encoding {
+    case .binary:
+        return (try LocalMessage(serializedData: message), encoding!)
+    case .json:
+        guard let json = String(data: message, encoding: .utf8) else {
+            return nil
+        }
+        return (try LocalMessage(jsonString: json), encoding!)
+    case .none:
+      return nil
+    }
+    
+//    guard let rawString = String(data: buffer, encoding: .utf8) else {
+//      return nil
+//    }
+//
+//    let pattern = "\\x1b@fig-(json|proto)([^\\x1b]+)\\x1b\\\\"
+//    let regex = try! NSRegularExpression(pattern: pattern, options: [])
+//
+//    let matches = regex.matches(in: rawString,
+//                                options: [],
+//                                range: NSMakeRange(0, rawString.utf16.count))
+//
+//    guard let match = matches.first else { return nil }
+//
+//    let groups = match.groups(testedString: rawString)
+//
+//    guard groups.count == 3 else { return nil }
+//    let packet = match.range(at: 0)
+//    let encoding = IPC.Encoding(rawValue: groups[1])
+//    let message = groups[2]
+//
+//    // remove consumed packet from buffer
+//    self.buffer.removeFirst(packet.location + packet.length)
+//    switch encoding {
+//    case .binary:
+//        guard let data = message.data(using: .utf8) else { return nil }
+//        return (try LocalMessage(serializedData: data), encoding!)
+//    case .json:
+//        return (try LocalMessage(jsonString: message), encoding!)
+//    case .none:
+//      return nil
+//    }
+
+  }
+  
+func handle(_ message: LocalMessage, from socket: Socket, using encoding: IPC.Encoding) throws {
+      
+      switch message.type {
+      case .command(let command):
+        try handleCommand(command, from: socket, using: encoding)
+      case .hook(let hook):
+        handleHook(hook)
+      case .none:
+        break;
+
+    }
+  }
+
+func handleCommand(_ message: Local_Command, from socket: Socket, using encoding: IPC.Encoding) throws {
+    let id = message.id
+    var response: CommandResponse!
+    switch message.command {
+      case .terminalIntegrationUpdate(let request):
+        response = try Integrations.providers[request.identifier]?.handleIntegrationRequest(request)
+      case .none:
+        break
+    }
+  
+    response.id = id
+  
+    guard !message.noResponse else { return }
+  
+    try self.send(response, to: socket, encoding: encoding)
+
+  }
+
+
+  func handleHook(_ message: Local_Hook) {
+      Logger.log(message: "Recieved hook message!", subsystem: .unix)
+      let json = try? message.jsonString()
+      Logger.log(message: json ?? "Could not decode message", subsystem: .unix)
+  }
+}
+
+extension NSTextCheckingResult {
+    func groups(testedString:String) -> [String] {
+        var groups = [String]()
+        for i in  0 ..< self.numberOfRanges
+        {
+            let group = String(testedString[Range(self.range(at: i), in: testedString)!])
+            groups.append(group)
+        }
+        return groups
+    }
+}
+
+extension Data {
+    func subdata(in range: ClosedRange<Index>) -> Data {
+        return subdata(in: range.lowerBound ..< range.upperBound)
+    }
+}
+
+extension Data {
+
+    init<T>(from value: T) {
+        self = Swift.withUnsafeBytes(of: value) { Data($0) }
+    }
+
+    func to<T>(type: T.Type) -> T? where T: ExpressibleByIntegerLiteral {
+        var value: T = 0
+        guard count >= MemoryLayout.size(ofValue: value) else { return nil }
+        _ = Swift.withUnsafeMutableBytes(of: &value, { copyBytes(to: $0)} )
+        return value
+    }
+}
+
+extension IPC {
+  func recieved(string: String, on socket: Socket?) {
+    
+    // handle legacy `fig bg:` messages
+    // todo: remove this after v1.0.53
+    if socket == nil {
+      legacyServerRecieved(string: string)
+      return
+    }
+  }
+  
+  func legacyServerRecieved(string: String) {
     guard let shellMessage = ShellMessage.from(raw: string) else { return }
     DispatchQueue.main.async {
       switch Hook(rawValue: shellMessage.hook ?? "") {
@@ -66,7 +291,6 @@ class ShellHookTransport: UnixSocketServerDelegate {
               print("Unknown background Unix socket")
       }
     }
-       
   }
   
   enum Hook: String {
@@ -130,7 +354,7 @@ extension ShellMessage {
     
     let integrationNumber = Int(integration) ?? 0
     
-    switch ShellHookTransport.Hook(rawValue: subcommand)?.packetType(for: integrationNumber) {
+    switch IPC.Hook(rawValue: subcommand)?.packetType(for: integrationNumber) {
       case .callback:
         return ShellMessage(type: "pipe",
                             source: "",
