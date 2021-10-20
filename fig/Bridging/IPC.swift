@@ -47,6 +47,7 @@ class IPC: UnixSocketServerDelegate {
     }
   }
   
+  // send a response to a socket that conforms to the IPC protocol
   func send(_ response: CommandResponse, to socket: Socket, encoding: IPC.Encoding) throws {
     try socket.write(from: "\u{001b}@fig-\(encoding.type)")
     switch encoding {
@@ -61,6 +62,7 @@ class IPC: UnixSocketServerDelegate {
 
   }
   
+  // attempt to decode the bytes as a packet, if not possible add to buffer
   func retriveMessage(rawBytes: Data) throws -> (LocalMessage, IPC.Encoding)? {
     buffer.append(rawBytes)
     
