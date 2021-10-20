@@ -1,7 +1,10 @@
 package fig_ipc
 
 import (
+	"bytes"
 	"context"
+	"encoding/binary"
+	"fmt"
 	"net"
 	"os"
 	"time"
@@ -19,6 +22,7 @@ func Connect() (*FigIpc, error) {
 	socket := os.Getenv("TMPDIR") + "fig.socket"
 
 	var d net.Dialer
+
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
@@ -38,12 +42,16 @@ func (f *FigIpc) Close() error {
 }
 
 // Send a message to the server
+//
+// DO NOT USE EXCEPT FOR TESTING
 func (f *FigIpc) Send(msg string) error {
 	_, err := f.conn.Write([]byte(msg))
 	return err
 }
 
-// Receive a message from the server, reading until a newline
+// Receive a message from the server, reading until a newline.
+//
+// DO NOT USE EXCEPT FOR TESTING
 func (f *FigIpc) Recv() (string, error) {
 	buf := make([]byte, 1)
 	var msg []byte
@@ -62,18 +70,16 @@ func (f *FigIpc) Recv() (string, error) {
 
 // Send fig-json to the server
 func (f *FigIpc) SendFigJson(msg string) error {
-	_, err := f.conn.Write([]byte("\x1b@fig-json"))
-	if err != nil {
+	if _, err := f.conn.Write([]byte("\x1b@fig-json")); err != nil {
 		return err
 	}
 
-	_, err = f.conn.Write([]byte(msg))
-	if err != nil {
+	// Write the size of the message
+	if err := binary.Write(f.conn, binary.BigEndian, uint64(len(msg))); err != nil {
 		return err
 	}
 
-	_, err = f.conn.Write([]byte("\x1b\\"))
-	if err != nil {
+	if _, err := f.conn.Write([]byte(msg)); err != nil {
 		return err
 	}
 
@@ -87,46 +93,65 @@ func (f *FigIpc) SendFigProto(m protoreflect.ProtoMessage) error {
 		return err
 	}
 
-	_, err = f.conn.Write([]byte("\x1b@fig-proto"))
-	if err != nil {
+	buf := new(bytes.Buffer)
+
+	if _, err := buf.Write([]byte("\x1b@fig-pbuf")); err != nil {
 		return err
 	}
 
-	_, err = f.conn.Write(data)
-	if err != nil {
+	// Write the size of the message
+	if err := binary.Write(buf, binary.BigEndian, uint64(len(data))); err != nil {
 		return err
 	}
 
-	_, err = f.conn.Write([]byte("\x1b\\"))
-	if err != nil {
+	if _, err = buf.Write(data); err != nil {
 		return err
 	}
+
+	f.conn.Write(buf.Bytes())
 
 	return nil
 }
 
-func (f *FigIpc) RecvData() (string, error) {
-	// Read data until escape backslash
-	buf := make([]byte, 1)
-	prev_char := byte(0)
-	var msg []byte
-	for {
-		_, err := f.conn.Read(buf)
-		if err != nil {
-			return "", err
-		}
-		if buf[0] == '\x1b' && prev_char == '\\' {
-			break
-		}
-		msg = append(msg, buf[0])
-		prev_char = buf[0]
+type ProtoType int
+
+const (
+	protoTypeUndefined ProtoType = iota
+	protoTypeFigJson
+	protoTypeFigProto
+)
+
+func (f *FigIpc) RecvMessage() ([]byte, ProtoType, error) {
+	// Read first 10 bytes to get the type
+	buf := make([]byte, 10)
+	if _, err := f.conn.Read(buf); err != nil {
+		return nil, protoTypeUndefined, err
 	}
 
-	// Parse the message type
-	// msg_type := string(msg[])
-	// if msg_type != "fig-json" && msg_type != "fig-proto" {
-	// 	return "", nil
-	// }
+	// Determine the type of the message
+	protoType := protoTypeUndefined
+	switch string(buf) {
+	case "\x1b@fig-json":
+		protoType = protoTypeFigJson
+	case "\x1b@fig-proto":
+		protoType = protoTypeFigProto
+	}
 
-	return string(msg), nil
+	if protoType == protoTypeUndefined {
+		return nil, protoTypeUndefined, fmt.Errorf("unknown protocol type %s", string(buf[1:]))
+	}
+
+	// Read u64 from the stream to determine the size of the message
+	var size uint64
+	if err := binary.Read(f.conn, binary.BigEndian, &size); err != nil {
+		return nil, protoTypeUndefined, err
+	}
+
+	// Read the rest of the data
+	buf = make([]byte, size)
+	if _, err := f.conn.Read(buf); err != nil {
+		return nil, protoTypeUndefined, err
+	}
+
+	return buf, protoType, nil
 }
