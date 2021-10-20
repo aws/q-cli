@@ -11,7 +11,7 @@ jobs:
     name: Swift-Format
     steps:
       - name: swift version
-        run:  xcrun swift -version
+        run:  swift -version
       - name: Checkout
         uses: actions/checkout@v2
 
