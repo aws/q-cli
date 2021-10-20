@@ -81,7 +81,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         let _ = WindowManager.shared
         let _ = ShellHookManager.shared
         let _ = KeypressProvider.shared
-        let _ = LocalIPC.shared
+        let _ = IPC.shared
       
         let _ = AXWindowServer.shared
 

@@ -11,8 +11,18 @@ import Socket
 
 typealias LocalMessage = Local_LocalMessage
 typealias CommandResponse = Local_CommandResponse
-class LocalIPC: UnixSocketServerDelegate {
-  static let shared = LocalIPC()
+class IPC: UnixSocketServerDelegate {
+  
+  enum Encoding: String {
+      case binary = "proto"
+      case json = "json"
+    
+    var type: String {
+      return self.rawValue
+    }
+  }
+  
+  static let shared = IPC()
   fileprivate var buffer: Data = Data()
   fileprivate let legacyServer = UnixSocketServer(path: "/tmp/fig.socket")
   fileprivate let server = UnixSocketServer(path: FileManager.default.temporaryDirectory.appendingPathComponent("fig.socket").path,
@@ -26,60 +36,120 @@ class LocalIPC: UnixSocketServerDelegate {
   }
   
   func recieved(data: Data, on socket: Socket?) {
-    guard let socket = socket else { return }
+    guard let socket = socket,
+          let (message, encoding) = try? retriveMessage(rawBytes: data) else { return }
+    
     do {
-      try self.handle(rawBytes: data, from: socket)
+      try self.handle(message, from: socket, using: encoding)
     } catch {
-      Logger.log(message: "Error writing response to socket: \(error.localizedDescription)", subsystem: .unix)
+      Logger.log(message: "Error handling IPC message: \(error.localizedDescription)",
+                 subsystem: .unix)
     }
   }
   
-  func retriveMessage(rawBytes: Data) -> LocalMessage? {
+  func send(_ response: CommandResponse, to socket: Socket, encoding: IPC.Encoding) throws {
+    try socket.write(from: "\u{001b}@fig-\(encoding.type)")
+    switch encoding {
+    case .binary:
+      let data = try response.serializedData()
+      try socket.write(from: data)
+    case .json:
+      let json = try response.jsonString()
+      try socket.write(from: json)
+    }
+    try socket.write(from: "\u{001b}\\")
+
+  }
+  
+  func retriveMessage(rawBytes: Data) throws -> (LocalMessage, IPC.Encoding)? {
     buffer.append(rawBytes)
     
     guard let rawString = String(data: buffer, encoding: .utf8) else {
       return nil
     }
+        
+    let pattern = "\\x1b@fig-(json|proto)([^\\x1b]+)\\x1b\\\\"
+    let regex = try! NSRegularExpression(pattern: pattern, options: [])
     
-    let jsonPattern = "\\x1b@fig-json([^\\x1b]+)\\x1b\\"
-    let regex = try! NSRegularExpression(pattern: jsonPattern, options: [])
+    let matches = regex.matches(in: rawString,
+                                options: [],
+                                range: NSMakeRange(0, rawString.utf16.count))
     
-    regex.matches(in: rawString, options: <#T##NSRegularExpression.MatchingOptions#>, range: <#T##NSRange#>)
+    guard let match = matches.first else { return nil }
     
-    return try? LocalMessage(serializedData: rawBytes)
-  }
-  func handle(rawBytes: Data, from socket: Socket) throws {
-      
-      buffer.append(rawBytes)
-      
+    let groups = match.groups(testedString: rawString)
+    
+    guard groups.count == 3 else { return nil }
+    let packet = match.range(at: 0)
+    let encoding = IPC.Encoding(rawValue: groups[1])
+    let message = groups[2]
 
-      
-      let message = try LocalMessage(serializedData: rawBytes)
+    // remove consumed packet from buffer
+    self.buffer.removeFirst(packet.location + packet.length)
+    switch encoding {
+    case .binary:
+        guard let data = message.data(using: .utf8) else { return nil }
+        return (try LocalMessage(serializedData: data), encoding!)
+    case .json:
+        return (try LocalMessage(jsonString: message), encoding!)
+    case .none:
+      return nil
+    }
+
+  }
+  
+func handle(_ message: LocalMessage, from socket: Socket, using encoding: IPC.Encoding) throws {
       
       switch message.type {
-      case .command(let message):
-        switch message.command {
-        case .terminalIntegrationUpdate(let request):
-          let response = try Integrations.providers[request.identifier]?.handleIntegrationRequest(request)
-          guard let data = try response?.serializedData() else { return }
-          try socket.write(from: data)
-        default:
-          break
-        }
-        break
-      case .hook(let message):
-        Logger.log(message: "Recieved hook message!", subsystem: .unix)
-        let json = try? message.jsonString()
-        Logger.log(message: json ?? "Could not decode message", subsystem: .unix)
-        break
+      case .command(let command):
+        try handleCommand(command, from: socket, using: encoding)
+      case .hook(let hook):
+        handleHook(hook)
       case .none:
         break;
 
     }
   }
+
+func handleCommand(_ message: Local_Command, from socket: Socket, using encoding: IPC.Encoding) throws {
+    let id = message.id
+    var response: CommandResponse!
+    switch message.command {
+      case .terminalIntegrationUpdate(let request):
+        response = try Integrations.providers[request.identifier]?.handleIntegrationRequest(request)
+      case .none:
+        break
+    }
+  
+    response.id = id
+  
+    guard !message.noResponse else { return }
+  
+    try self.send(response, to: socket, encoding: encoding)
+
+  }
+
+
+  func handleHook(_ message: Local_Hook) {
+      Logger.log(message: "Recieved hook message!", subsystem: .unix)
+      let json = try? message.jsonString()
+      Logger.log(message: json ?? "Could not decode message", subsystem: .unix)
+  }
 }
 
-extension LocalIPC {
+extension NSTextCheckingResult {
+    func groups(testedString:String) -> [String] {
+        var groups = [String]()
+        for i in  0 ..< self.numberOfRanges
+        {
+            let group = String(testedString[Range(self.range(at: i), in: testedString)!])
+            groups.append(group)
+        }
+        return groups
+    }
+}
+
+extension IPC {
   func recieved(string: String, on socket: Socket?) {
     
     // handle legacy `fig bg:` messages
@@ -201,7 +271,7 @@ extension ShellMessage {
     
     let integrationNumber = Int(integration) ?? 0
     
-    switch LocalIPC.Hook(rawValue: subcommand)?.packetType(for: integrationNumber) {
+    switch IPC.Hook(rawValue: subcommand)?.packetType(for: integrationNumber) {
       case .callback:
         return ShellMessage(type: "pipe",
                             source: "",
