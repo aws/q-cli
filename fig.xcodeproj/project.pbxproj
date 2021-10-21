@@ -170,6 +170,7 @@
 		758AEB6A24CEA4D000A15EAF /* Starscream in Frameworks */ = {isa = PBXBuildFile; productRef = 758AEB6924CEA4D000A15EAF /* Starscream */; };
 		758AEB6C24CEA54600A15EAF /* SocketServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 758AEB6B24CEA54600A15EAF /* SocketServer.swift */; };
 		75915DFE27210A4C005A9909 /* FigAPIBindings in Frameworks */ = {isa = PBXBuildFile; productRef = 75915DFD27210A4C005A9909 /* FigAPIBindings */; };
+		75915E002722044D005A9909 /* API.js in Resources */ = {isa = PBXBuildFile; fileRef = 75915DFF2722044D005A9909 /* API.js */; };
 		759F987C25BF903900EC3407 /* Accessibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 759F987B25BF903900EC3407 /* Accessibility.swift */; };
 		759F988225BFF0FF00EC3407 /* commandkey@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 759F987E25BFF0FE00EC3407 /* commandkey@2x.png */; };
 		759F988325BFF0FF00EC3407 /* database@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 759F987F25BFF0FE00EC3407 /* database@2x.png */; };
@@ -506,6 +507,7 @@
 		758AEB5D24CD35D400A15EAF /* WebSocket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebSocket.swift; sourceTree = "<group>"; };
 		758AEB5F24CE529D00A15EAF /* String+Shell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+Shell.swift"; sourceTree = "<group>"; };
 		758AEB6B24CEA54600A15EAF /* SocketServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocketServer.swift; sourceTree = "<group>"; };
+		75915DFF2722044D005A9909 /* API.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = API.js; sourceTree = "<group>"; };
 		759F987B25BF903900EC3407 /* Accessibility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Accessibility.swift; sourceTree = "<group>"; };
 		759F987E25BFF0FE00EC3407 /* commandkey@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "commandkey@2x.png"; sourceTree = "<group>"; };
 		759F987F25BFF0FE00EC3407 /* database@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "database@2x.png"; sourceTree = "<group>"; };
@@ -962,6 +964,7 @@
 			isa = PBXGroup;
 			children = (
 				7575D44E26D5D35000D0C8D7 /* API.swift */,
+				75915DFF2722044D005A9909 /* API.js */,
 				75B850E42703D8FF00891A78 /* API+Extensions.swift */,
 				75BF28A7270E9B9200E7C914 /* API+Constants.swift */,
 				75B4283526FABAAC003C9DE5 /* FileSystem.swift */,
@@ -1463,6 +1466,7 @@
 				75E993F22515A6DD000BE6BE /* statusbar@2x.png in Resources */,
 				752C0BDE2479F6AF0077E415 /* insert-tutorial.js in Resources */,
 				752C0BE2247A33F20077E415 /* viewer.html in Resources */,
+				75915E002722044D005A9909 /* API.js in Resources */,
 				752C0BE6247C25290077E415 /* display.html in Resources */,
 				752C0BDC2479F68C0077E415 /* tutorial.css in Resources */,
 				75B0A08E25BBC9B800FCD89A /* privacy.html in Resources */,
