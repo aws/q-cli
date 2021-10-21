@@ -22,6 +22,7 @@ func init() {
 	appCmd.AddCommand(appOnboardingCmd)
 	appCmd.AddCommand(appThemeCmd)
 	appCmd.AddCommand(appUpgradeCmd)
+	appCmd.AddCommand(appSetPath)
 
 	rootCmd.AddCommand(appCmd)
 }
@@ -97,7 +98,7 @@ var appOnboardingCmd = &cobra.Command{
 	Use:   "onboarding",
 	Short: "onboarding",
 	Run: func(cmd *cobra.Command, arg []string) {
-		sh := exec.Command("sh", "-c", "~/.fig/tools/drip/fig_onboarding.sh")
+		sh := exec.Command("bash", "-c", "~/.fig/tools/drip/fig_onboarding.sh")
 		sh.Stdout = os.Stdout
 		sh.Stderr = os.Stderr
 		sh.Stdin = os.Stdin
@@ -337,5 +338,48 @@ var appUpgradeCmd = &cobra.Command{
 		exec.Command("sh", "~/.fig/tools/install_integrations.sh").Run()
 
 		fmt.Println("success")
+	},
+}
+
+var appSetPath = &cobra.Command{
+	Use:   "set-path",
+	Short: "Set the path to the fig executable",
+	Long:  `Set the path to the fig executable`,
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Println("\n  Setting $PATH variable in Fig pseudo-terminal...\n\n")
+
+		// Get the users $PATH
+		path, err := exec.Command("sh", "-c", "echo $PATH").Output()
+		if err != nil {
+			fmt.Println("Error: ", err)
+			return
+		}
+
+		pathStr := strings.TrimSpace(string(path))
+
+		// Load ~/.fig/settings.json and set the path
+		settings, err := settings.Load()
+		if err != nil {
+			fmt.Println("Error: ", err)
+			return
+		}
+
+		settings.Set("pty.path", pathStr)
+
+		// Trigger update of ENV in PTY
+		// TODO: fig bg:init $SHELLPID $(tty)
+	},
+}
+
+var appUninstallCmd = &cobra.Command{
+	Use:   "uninstall",
+	Short: "Uninstall Fig",
+	Long:  `Uninstall Fig`,
+	Run: func(cmd *cobra.Command, args []string) {
+		sh := exec.Command("bash", "-c", "~/.fig/tools/drip/fig_onboarding.sh")
+		sh.Stdout = os.Stdout
+		sh.Stderr = os.Stderr
+		sh.Stdin = os.Stdin
+		sh.Run()
 	},
 }

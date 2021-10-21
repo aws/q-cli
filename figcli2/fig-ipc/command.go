@@ -20,7 +20,9 @@ func SendRecvCommand(cmd *fig_proto.Command) (string, error) {
 		},
 	}
 
-	conn.SendFigProto(&message)
+	if err = conn.SendFigProto(&message); err != nil {
+		return "", err
+	}
 
 	buff, buffType, err := conn.RecvMessage()
 	if err != nil {

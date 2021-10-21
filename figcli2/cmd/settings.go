@@ -4,12 +4,15 @@ import (
 	"encoding/json"
 	"fig-cli/settings"
 	"fmt"
+	"os/exec"
 
 	"github.com/spf13/cobra"
 )
 
 func init() {
 	settingsCmd.Flags().Bool("delete", false, "Delete the key")
+	settingsCmd.AddCommand(settingsDocsCmd)
+	settingsCmd.AddCommand(settingsOpenCmd)
 
 	rootCmd.AddCommand(settingsCmd)
 }
@@ -18,7 +21,7 @@ var settingsCmd = &cobra.Command{
 	Use:   "settings [key] [value]",
 	Short: "Get or set a setting",
 	Long:  "Get or set a setting",
-	Args:  cobra.RangeArgs(1, 2),
+	Args:  cobra.RangeArgs(0, 2),
 	Annotations: map[string]string{
 		"figcli.command.categories":      "Common",
 		"figcli.command.argDescriptions": "[key] key to get or set\n[value] value to set (optional)",
@@ -59,6 +62,32 @@ var settingsCmd = &cobra.Command{
 			}
 
 			result.Save()
+		}
+	},
+}
+
+var settingsDocsCmd = &cobra.Command{
+	Use:   "docs",
+	Short: "Get the settings documentation",
+	Long:  "Get the settings documentation",
+	Run: func(cmd *cobra.Command, arg []string) {
+		exec.Command("open", "https://fig.io/docs/support/settings").Run()
+	},
+}
+
+var settingsOpenCmd = &cobra.Command{
+	Use:   "open",
+	Short: "Open the settings file",
+	Long:  "Open the settings file",
+	Run: func(cmd *cobra.Command, arg []string) {
+		settingsFilepath, err := settings.GetFilepath()
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		if err := exec.Command("open", settingsFilepath).Run(); err != nil {
+			fmt.Println(err)
 		}
 	},
 }

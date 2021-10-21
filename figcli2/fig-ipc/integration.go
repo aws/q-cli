@@ -36,19 +36,19 @@ func CreateTerminalIntegrationRequest(
 	}
 }
 
-func Install(integration Integration) (string, error) {
+func IntegrationInstall(integration Integration) (string, error) {
 	terminalIntegrationRequest := CreateTerminalIntegrationRequest(integration, fig_proto.IntegrationAction_INSTALL)
 	res, err := SendRecvCommand(terminalIntegrationRequest)
 	return res, err
 }
 
-func VerifyInstall(integration Integration) (string, error) {
+func IntegrationVerifyInstall(integration Integration) (string, error) {
 	terminalIntegrationRequest := CreateTerminalIntegrationRequest(integration, fig_proto.IntegrationAction_VERIFY_INSTALL)
 	res, err := SendRecvCommand(terminalIntegrationRequest)
 	return res, err
 }
 
-func Uninstall(integration Integration) (string, error) {
+func IntegrationUninstall(integration Integration) (string, error) {
 	terminalIntegrationRequest := CreateTerminalIntegrationRequest(integration, fig_proto.IntegrationAction_UNINSTALL)
 	res, err := SendRecvCommand(terminalIntegrationRequest)
 	return res, err

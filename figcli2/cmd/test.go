@@ -5,8 +5,8 @@ import (
 	fig_proto "fig-cli/fig-proto"
 	"fmt"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/spf13/cobra"
+	"google.golang.org/protobuf/proto"
 )
 
 func init() {

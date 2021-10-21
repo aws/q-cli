@@ -71,3 +71,12 @@ func (s Settings) Save() error {
 
 	return nil
 }
+
+func GetFilepath() (string, error) {
+	usr, err := user.Current()
+	if err != nil {
+		return "", err
+	}
+
+	return usr.HomeDir + "/.fig/settings.json", nil
+}

@@ -48,7 +48,7 @@ var integrationsInstallCmd = &cobra.Command{
 	ValidArgs: integrationList,
 	Run: func(cmd *cobra.Command, args []string) {
 		integration := args[0]
-		if _, err := fig_ipc.Install(integrationMap[integration]); err != nil {
+		if _, err := fig_ipc.IntegrationInstall(integrationMap[integration]); err != nil {
 			fmt.Printf("Error installing integration: %s\n", err.Error())
 		} else {
 			fmt.Printf("Integration %s installed\n", integration)
@@ -64,7 +64,7 @@ var integrationsUninstallCmd = &cobra.Command{
 	ValidArgs: integrationList,
 	Run: func(cmd *cobra.Command, args []string) {
 		integration := args[0]
-		if _, err := fig_ipc.Uninstall(integrationMap[integration]); err != nil {
+		if _, err := fig_ipc.IntegrationUninstall(integrationMap[integration]); err != nil {
 			fmt.Printf("Error uninstalling integration: %s\n", err.Error())
 		} else {
 			fmt.Printf("Integration %s uninstalled\n", integration)
@@ -80,7 +80,7 @@ var integrationsVerifyCmd = &cobra.Command{
 	ValidArgs: integrationList,
 	Run: func(cmd *cobra.Command, args []string) {
 		integration := args[0]
-		if _, err := fig_ipc.VerifyInstall(integrationMap[integration]); err != nil {
+		if _, err := fig_ipc.IntegrationVerifyInstall(integrationMap[integration]); err != nil {
 			fmt.Printf("Error verifying integration: %s\n", err.Error())
 		} else {
 			fmt.Printf("Integration %s is verified\n", integration)

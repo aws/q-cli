@@ -52,8 +52,8 @@ class UnixSocketServer {
   }
   
   func run() {
-    
-    let queue = DispatchQueue.global(qos: .userInitiated)
+      try? FileManager.default.removeItem(at: URL(fileURLWithPath: path))
+      let queue = DispatchQueue.global(qos: .userInitiated)
     
     queue.async { [unowned self] in
       

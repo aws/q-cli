@@ -13,13 +13,11 @@ protoc --plugin="$DIRECTORY/../typescript-api-bindings/node_modules/.bin/protoc-
 
 export PATH=$(go env GOPATH)/bin:$PATH
 
-# todo: update GO_DEST to correct directory in cli
-export GO_DEST="."
 echo "Compiling local.proto..."
 protoc --swift_opt=Visibility=Public \
 	   --swift_out="$DIRECTORY/../fig/Local IPC" \
 	   --go_opt=paths=source_relative \
-	   --go_opt=Mlocal.proto=$GO_DEST \
-	   --go_out="./" \
+	   --go_opt=Mlocal.proto="fig-proto/" \
+	   --go_out="$DIRECTORY/../figcli2/fig-proto" \
 	   "./local.proto"
 

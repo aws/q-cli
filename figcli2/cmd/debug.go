@@ -17,6 +17,9 @@ func init() {
 	debugCmd.AddCommand(debugTerminalCmd)
 	debugCmd.AddCommand(debugUnixSocketCmd)
 	debugCmd.AddCommand(debugVerifyCodesignCmd)
+	debugCmd.AddCommand(debugSshCmd)
+	debugCmd.AddCommand(debugSampleCmd)
+	debugCmd.AddCommand(debugDotfilesCmd)
 
 	rootCmd.AddCommand(debugCmd)
 }
@@ -184,5 +187,100 @@ var debugVerifyCodesignCmd = &cobra.Command{
 		codesignExec.Stderr = os.Stderr
 
 		codesignExec.Run()
+	},
+}
+
+var debugSshCmd = &cobra.Command{
+	Use:   "ssh",
+	Short: "debug ssh",
+	Run: func(cmd *cobra.Command, args []string) {
+		execSsh := exec.Command("ssh", "-V")
+		execSsh.Stdout = os.Stdout
+		execSsh.Stderr = os.Stderr
+		execSsh.Run()
+
+		fmt.Println("~/.ssh/config:")
+
+		configExec := exec.Command("cat", "~/.ssh/config")
+		configExec.Stdout = os.Stdout
+		configExec.Stderr = os.Stderr
+		configExec.Run()
+	},
+}
+
+var debugSampleCmd = &cobra.Command{
+	Use:   "sample",
+	Short: "sample fig",
+	Run: func(cmd *cobra.Command, args []string) {
+		const outfile = "/tmp/fig-sample"
+
+		execPid, err := exec.Command("lsappinfo", "info", "-only", "pid", "-app", "com.mschrage.fig").Output()
+		execPidStr := strings.Split(strings.TrimSpace(string(execPid)), "=")[1]
+
+		if err != nil {
+			fmt.Println("Could not get Fig app pid")
+			return
+		}
+
+		fmt.Printf("Sampling Fig process (%s). Writing output to %s\n", execPidStr, outfile)
+
+		if err := exec.Command("sample", "-p", execPidStr, "-o", outfile).Run(); err != nil {
+			fmt.Println("Could not sample Fig process")
+			return
+		}
+
+		fmt.Printf("\n\n\n-------\nFinished writing to %s\n", outfile)
+		fmt.Println("Please send this file to the Fig Team")
+		fmt.Println("Or attach it to a GitHub issue (run 'fig issue')")
+	},
+}
+
+var debugDotfilesCmd = &cobra.Command{
+	Use:   "dotfiles",
+	Short: "debug dotfiles",
+	Run: func(cmd *cobra.Command, args []string) {
+		// TODO: Replace with native implementation
+		sh := exec.Command("bash", "-c", "~/.fig/tools/cli/email_dotfiles.sh")
+		sh.Stdout = os.Stdout
+		sh.Stderr = os.Stderr
+		sh.Stdin = os.Stdin
+		sh.Run()
+
+	},
+}
+
+var debugPerfsCmd = &cobra.Command{
+	Use:   "perfs",
+	Short: "debug perfs",
+	Run: func(cmd *cobra.Command, args []string) {
+		clearExec := exec.Command("clear") //Linux example, its tested
+		clearExec.Stdout = os.Stdout
+		clearExec.Run()
+
+		// Print content of ~/.fig/settings.json
+		fmt.Println("~/.fig/settings.json:")
+		settingsExec := exec.Command("cat", "~/.fig/settings.json")
+		settingsExec.Stdout = os.Stdout
+		settingsExec.Stderr = os.Stderr
+		settingsExec.Run()
+
+		// Print content of ~/.fig/user/config
+		fmt.Println("~/.fig/user/config:")
+		configExec := exec.Command("cat", "~/.fig/user/config")
+		configExec.Stdout = os.Stdout
+		configExec.Stderr = os.Stderr
+		configExec.Run()
+
+		// Print NSUserDefaults
+		fmt.Println("NSUserDefaults:")
+		userDefaultsExec := exec.Command("defaults", "read", "com.mschrage.fig")
+		userDefaultsExec.Stdout = os.Stdout
+		userDefaultsExec.Stderr = os.Stderr
+		userDefaultsExec.Run()
+
+		userDefaultsExecShared := exec.Command("defaults", "read", "com.mschrage.fig.shared")
+		userDefaultsExecShared.Stdout = os.Stdout
+		userDefaultsExecShared.Stderr = os.Stderr
+		userDefaultsExecShared.Run()
 	},
 }
