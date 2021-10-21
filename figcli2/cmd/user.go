@@ -26,7 +26,7 @@ var userLogoutCmd = &cobra.Command{
 	Use:   "logout",
 	Short: "logout from fig",
 	Run: func(cmd *cobra.Command, arg []string) {
-
+		// TODO
 	},
 }
 
@@ -34,7 +34,7 @@ var userLoginCmd = &cobra.Command{
 	Use:   "login",
 	Short: "login to fig",
 	Run: func(cmd *cobra.Command, arg []string) {
-
+		// TODO
 	},
 }
 

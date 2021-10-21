@@ -23,18 +23,22 @@ func init() {
 	appCmd.AddCommand(appThemeCmd)
 	appCmd.AddCommand(appUpgradeCmd)
 	appCmd.AddCommand(appSetPath)
+	appCmd.AddCommand(appUninstallCmd)
 
 	rootCmd.AddCommand(appCmd)
 }
 
 var appCmd = &cobra.Command{
 	Use:   "app",
-	Short: "app",
+	Short: "Manage your Fig app",
+	Annotations: map[string]string{
+		"figcli.command.categories": "Common",
+	},
 }
 
 var appUpdateSpecsCmd = &cobra.Command{
 	Use:   "update-specs",
-	Short: "update repo of completion scripts",
+	Short: "Update repo of completion scripts",
 	Run: func(cmd *cobra.Command, arg []string) {
 		fmt.Println()
 		fmt.Println("Pulling most up-to-date completion specs...")
@@ -96,7 +100,7 @@ var appUpdateSpecsCmd = &cobra.Command{
 
 var appOnboardingCmd = &cobra.Command{
 	Use:   "onboarding",
-	Short: "onboarding",
+	Short: "Run through onboarding process",
 	Run: func(cmd *cobra.Command, arg []string) {
 		sh := exec.Command("bash", "-c", "~/.fig/tools/drip/fig_onboarding.sh")
 		sh.Stdout = os.Stdout
@@ -108,8 +112,8 @@ var appOnboardingCmd = &cobra.Command{
 
 var appThemeCmd = &cobra.Command{
 	Use:   "theme [theme]",
-	Short: "set theme",
-	Long:  `Set the theme for fig.`,
+	Short: "Get/Set theme",
+	Long:  `Set or Set the theme for fig.`,
 	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, arg []string) {
 		settings, err := settings.Load()
@@ -180,7 +184,7 @@ var appThemeCmd = &cobra.Command{
 
 var appUpgradeCmd = &cobra.Command{
 	Use:   "upgrade",
-	Short: "upgrade",
+	Short: "Upgrade Fig",
 	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, arg []string) {
 		if len(arg) == 1 {
@@ -376,7 +380,7 @@ var appUninstallCmd = &cobra.Command{
 	Short: "Uninstall Fig",
 	Long:  `Uninstall Fig`,
 	Run: func(cmd *cobra.Command, args []string) {
-		sh := exec.Command("bash", "-c", "~/.fig/tools/drip/fig_onboarding.sh")
+		sh := exec.Command("bash", "-c", "~/.fig/tools/uninstall-script.sh")
 		sh.Stdout = os.Stdout
 		sh.Stderr = os.Stderr
 		sh.Stdin = os.Stdin

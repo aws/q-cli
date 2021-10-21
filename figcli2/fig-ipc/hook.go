@@ -39,10 +39,13 @@ func CreatePromptHook(pid int32, shell string, currentWorkingDirectory string, s
 	return &fig_proto.Hook{
 		Hook: &fig_proto.Hook_Prompt{
 			Prompt: &fig_proto.Prompt{
-				Pid:                     pid,
-				Shell:                   shell,
-				CurrentWorkingDirectory: currentWorkingDirectory,
-				SessionId:               sesstionId,
+				Context: &fig_proto.ShellContext{
+					Pid:                     pid,
+					Ttys:                    "",
+					Shell:                   shell,
+					CurrentWorkingDirectory: currentWorkingDirectory,
+					SessionId:               sesstionId,
+				},
 			},
 		},
 	}

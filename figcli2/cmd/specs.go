@@ -25,6 +25,9 @@ var specsCmd = &cobra.Command{
 	Use:   "specs",
 	Short: "Manage your specs",
 	Long:  `Manage your autocomplete specs`,
+	Annotations: map[string]string{
+		"figcli.command.categories": "Common",
+	},
 }
 
 var specsUninstallCmd = &cobra.Command{

@@ -24,6 +24,7 @@ var integrationMap = map[string]fig_ipc.Integration{
 }
 
 func init() {
+	integrationsCmd.AddCommand(integrationsListCmd)
 	integrationsCmd.AddCommand(integrationsInstallCmd)
 	integrationsCmd.AddCommand(integrationsUninstallCmd)
 	integrationsCmd.AddCommand(integrationsVerifyCmd)
@@ -37,6 +38,16 @@ var integrationsCmd = &cobra.Command{
 	Long:  "Install, uninstall, and verify Fig integrations",
 	Annotations: map[string]string{
 		"figcli.command.categories": "Common",
+	},
+}
+
+var integrationsListCmd = &cobra.Command{
+	Use:   "list",
+	Short: "List Fig integrations",
+	Long:  "List Fig integrations",
+	Run: func(cmd *cobra.Command, args []string) {
+		res, err := fig_ipc.GetIntegrations()
+		fmt.Println(res, err)
 	},
 }
 

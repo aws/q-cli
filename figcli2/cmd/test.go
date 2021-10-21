@@ -14,8 +14,9 @@ func init() {
 }
 
 var testCmd = &cobra.Command{
-	Use:   "test",
-	Short: "test unix sockets",
+	Use:    "test",
+	Short:  "test unix sockets",
+	Hidden: true,
 	Run: func(cmd *cobra.Command, arg []string) {
 		conn, err := fig_ipc.Connect()
 		if err != nil {

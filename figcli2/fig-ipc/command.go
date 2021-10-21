@@ -7,7 +7,7 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-func SendRecvCommand(cmd *fig_proto.Command) (string, error) {
+func SendRecvCommand(cmd *fig_proto.Command) (interface{}, error) {
 	conn, err := Connect()
 	if err != nil {
 		return "", err
@@ -38,10 +38,12 @@ func SendRecvCommand(cmd *fig_proto.Command) (string, error) {
 
 	switch res := cmdResponse.Response.(type) {
 	case *fig_proto.CommandResponse_Error:
-		return "", fmt.Errorf("%s", res.Error.GetMessage())
+		return nil, fmt.Errorf("%s", res.Error.GetMessage())
 	case *fig_proto.CommandResponse_Success:
 		return res.Success.GetMessage(), nil
+	case *fig_proto.CommandResponse_IntegrationList:
+		return res.IntegrationList.GetIntegrations(), nil
+	default:
+		return "", fmt.Errorf("unexpected response type: %T", res)
 	}
-
-	return "", fmt.Errorf("unexpected response type: %T", cmdResponse.Response)
 }
