@@ -20,7 +20,9 @@ message ClientOriginatedMessage {
       DestinationOfSymbolicLinkRequest destination_of_symbolic_link_request = 112;
       GetDefaultsPropertyRequest get_defaults_property_request = 113;
       UpdateDefaultsPropertyRequest update_defaults_property_request = 114;
-
+      TelemetryAliasRequest telemetry_alias_request = 115;
+      TelemetryIdentifyRequest telemetry_identify_request = 116;
+      TelemetryTrackRequest telemetry_track_request = 117;
   }
 }
 
@@ -245,6 +247,25 @@ message UpdateSettingsPropertyRequest {
   optional string value = 2;
 }
 
+/// Telemetry
+
+message TelemetryProperty {
+  string key = 1;
+  string value = 2;
+}
+
+message TelemetryAliasRequest {
+  optional string userId = 1;
+}
+
+message TelemetryTrackRequest {
+  optional string event = 1;
+  repeated TelemetryProperty properties = 2;
+}
+
+message TelemetryIdentifyRequest {
+  repeated TelemetryProperty traits = 2;
+}
 
 /// Actions
 

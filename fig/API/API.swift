@@ -108,7 +108,12 @@ class API {
                   response.getDefaultsPropertyResponse = try Defaults.handleGetRequest(request)
                 case .updateDefaultsPropertyRequest(let request):
                   response.success = try Defaults.handleSetRequest(request)
-
+                case .telemetryAliasRequest(let request):
+                  response.success = try TelemetryProvider.handleAliasRequest(request)
+                case .telemetryIdentifyRequest(let request):
+                  response.success = try TelemetryProvider.handleIdentifyRequest(request)
+                case .telemetryTrackRequest(let request):
+                  response.success = try TelemetryProvider.handleTrackRequest(request)
                 case .none:
                     throw APIError.generic(message: "No submessage was included in request.")
             }

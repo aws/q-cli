@@ -221,6 +221,18 @@ export interface ClientOriginatedMessage {
     | {
         $case: "updateDefaultsPropertyRequest";
         updateDefaultsPropertyRequest: UpdateDefaultsPropertyRequest;
+      }
+    | {
+        $case: "telemetryAliasRequest";
+        telemetryAliasRequest: TelemetryAliasRequest;
+      }
+    | {
+        $case: "telemetryIdentifyRequest";
+        telemetryIdentifyRequest: TelemetryIdentifyRequest;
+      }
+    | {
+        $case: "telemetryTrackRequest";
+        telemetryTrackRequest: TelemetryTrackRequest;
       };
 }
 
@@ -430,6 +442,24 @@ export interface GetSettingsPropertyResponse {
 export interface UpdateSettingsPropertyRequest {
   key?: string | undefined;
   value?: string | undefined;
+}
+
+export interface TelemetryProperty {
+  key: string;
+  value: string;
+}
+
+export interface TelemetryAliasRequest {
+  userId?: string | undefined;
+}
+
+export interface TelemetryTrackRequest {
+  event?: string | undefined;
+  properties: TelemetryProperty[];
+}
+
+export interface TelemetryIdentifyRequest {
+  traits: TelemetryProperty[];
 }
 
 export interface Action {
@@ -645,6 +675,24 @@ export const ClientOriginatedMessage = {
         writer.uint32(914).fork()
       ).ldelim();
     }
+    if (message.submessage?.$case === "telemetryAliasRequest") {
+      TelemetryAliasRequest.encode(
+        message.submessage.telemetryAliasRequest,
+        writer.uint32(922).fork()
+      ).ldelim();
+    }
+    if (message.submessage?.$case === "telemetryIdentifyRequest") {
+      TelemetryIdentifyRequest.encode(
+        message.submessage.telemetryIdentifyRequest,
+        writer.uint32(930).fork()
+      ).ldelim();
+    }
+    if (message.submessage?.$case === "telemetryTrackRequest") {
+      TelemetryTrackRequest.encode(
+        message.submessage.telemetryTrackRequest,
+        writer.uint32(938).fork()
+      ).ldelim();
+    }
     return writer;
   },
 
@@ -777,6 +825,33 @@ export const ClientOriginatedMessage = {
           message.submessage = {
             $case: "updateDefaultsPropertyRequest",
             updateDefaultsPropertyRequest: UpdateDefaultsPropertyRequest.decode(
+              reader,
+              reader.uint32()
+            ),
+          };
+          break;
+        case 115:
+          message.submessage = {
+            $case: "telemetryAliasRequest",
+            telemetryAliasRequest: TelemetryAliasRequest.decode(
+              reader,
+              reader.uint32()
+            ),
+          };
+          break;
+        case 116:
+          message.submessage = {
+            $case: "telemetryIdentifyRequest",
+            telemetryIdentifyRequest: TelemetryIdentifyRequest.decode(
+              reader,
+              reader.uint32()
+            ),
+          };
+          break;
+        case 117:
+          message.submessage = {
+            $case: "telemetryTrackRequest",
+            telemetryTrackRequest: TelemetryTrackRequest.decode(
               reader,
               reader.uint32()
             ),
@@ -947,6 +1022,39 @@ export const ClientOriginatedMessage = {
         ),
       };
     }
+    if (
+      object.telemetryAliasRequest !== undefined &&
+      object.telemetryAliasRequest !== null
+    ) {
+      message.submessage = {
+        $case: "telemetryAliasRequest",
+        telemetryAliasRequest: TelemetryAliasRequest.fromJSON(
+          object.telemetryAliasRequest
+        ),
+      };
+    }
+    if (
+      object.telemetryIdentifyRequest !== undefined &&
+      object.telemetryIdentifyRequest !== null
+    ) {
+      message.submessage = {
+        $case: "telemetryIdentifyRequest",
+        telemetryIdentifyRequest: TelemetryIdentifyRequest.fromJSON(
+          object.telemetryIdentifyRequest
+        ),
+      };
+    }
+    if (
+      object.telemetryTrackRequest !== undefined &&
+      object.telemetryTrackRequest !== null
+    ) {
+      message.submessage = {
+        $case: "telemetryTrackRequest",
+        telemetryTrackRequest: TelemetryTrackRequest.fromJSON(
+          object.telemetryTrackRequest
+        ),
+      };
+    }
     return message;
   },
 
@@ -1036,6 +1144,25 @@ export const ClientOriginatedMessage = {
         ?.updateDefaultsPropertyRequest
         ? UpdateDefaultsPropertyRequest.toJSON(
             message.submessage?.updateDefaultsPropertyRequest
+          )
+        : undefined);
+    message.submessage?.$case === "telemetryAliasRequest" &&
+      (obj.telemetryAliasRequest = message.submessage?.telemetryAliasRequest
+        ? TelemetryAliasRequest.toJSON(
+            message.submessage?.telemetryAliasRequest
+          )
+        : undefined);
+    message.submessage?.$case === "telemetryIdentifyRequest" &&
+      (obj.telemetryIdentifyRequest = message.submessage
+        ?.telemetryIdentifyRequest
+        ? TelemetryIdentifyRequest.toJSON(
+            message.submessage?.telemetryIdentifyRequest
+          )
+        : undefined);
+    message.submessage?.$case === "telemetryTrackRequest" &&
+      (obj.telemetryTrackRequest = message.submessage?.telemetryTrackRequest
+        ? TelemetryTrackRequest.toJSON(
+            message.submessage?.telemetryTrackRequest
           )
         : undefined);
     return obj;
@@ -1220,6 +1347,42 @@ export const ClientOriginatedMessage = {
           UpdateDefaultsPropertyRequest.fromPartial(
             object.submessage.updateDefaultsPropertyRequest
           ),
+      };
+    }
+    if (
+      object.submessage?.$case === "telemetryAliasRequest" &&
+      object.submessage?.telemetryAliasRequest !== undefined &&
+      object.submessage?.telemetryAliasRequest !== null
+    ) {
+      message.submessage = {
+        $case: "telemetryAliasRequest",
+        telemetryAliasRequest: TelemetryAliasRequest.fromPartial(
+          object.submessage.telemetryAliasRequest
+        ),
+      };
+    }
+    if (
+      object.submessage?.$case === "telemetryIdentifyRequest" &&
+      object.submessage?.telemetryIdentifyRequest !== undefined &&
+      object.submessage?.telemetryIdentifyRequest !== null
+    ) {
+      message.submessage = {
+        $case: "telemetryIdentifyRequest",
+        telemetryIdentifyRequest: TelemetryIdentifyRequest.fromPartial(
+          object.submessage.telemetryIdentifyRequest
+        ),
+      };
+    }
+    if (
+      object.submessage?.$case === "telemetryTrackRequest" &&
+      object.submessage?.telemetryTrackRequest !== undefined &&
+      object.submessage?.telemetryTrackRequest !== null
+    ) {
+      message.submessage = {
+        $case: "telemetryTrackRequest",
+        telemetryTrackRequest: TelemetryTrackRequest.fromPartial(
+          object.submessage.telemetryTrackRequest
+        ),
       };
     }
     return message;
@@ -4309,6 +4472,299 @@ export const UpdateSettingsPropertyRequest = {
     }
     if (object.value !== undefined && object.value !== null) {
       message.value = object.value;
+    }
+    return message;
+  },
+};
+
+const baseTelemetryProperty: object = { key: "", value: "" };
+
+export const TelemetryProperty = {
+  encode(
+    message: TelemetryProperty,
+    writer: _m0.Writer = _m0.Writer.create()
+  ): _m0.Writer {
+    if (message.key !== "") {
+      writer.uint32(10).string(message.key);
+    }
+    if (message.value !== "") {
+      writer.uint32(18).string(message.value);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): TelemetryProperty {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = { ...baseTelemetryProperty } as TelemetryProperty;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.key = reader.string();
+          break;
+        case 2:
+          message.value = reader.string();
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TelemetryProperty {
+    const message = { ...baseTelemetryProperty } as TelemetryProperty;
+    if (object.key !== undefined && object.key !== null) {
+      message.key = String(object.key);
+    }
+    if (object.value !== undefined && object.value !== null) {
+      message.value = String(object.value);
+    }
+    return message;
+  },
+
+  toJSON(message: TelemetryProperty): unknown {
+    const obj: any = {};
+    message.key !== undefined && (obj.key = message.key);
+    message.value !== undefined && (obj.value = message.value);
+    return obj;
+  },
+
+  fromPartial(object: DeepPartial<TelemetryProperty>): TelemetryProperty {
+    const message = { ...baseTelemetryProperty } as TelemetryProperty;
+    if (object.key !== undefined && object.key !== null) {
+      message.key = object.key;
+    }
+    if (object.value !== undefined && object.value !== null) {
+      message.value = object.value;
+    }
+    return message;
+  },
+};
+
+const baseTelemetryAliasRequest: object = {};
+
+export const TelemetryAliasRequest = {
+  encode(
+    message: TelemetryAliasRequest,
+    writer: _m0.Writer = _m0.Writer.create()
+  ): _m0.Writer {
+    if (message.userId !== undefined) {
+      writer.uint32(10).string(message.userId);
+    }
+    return writer;
+  },
+
+  decode(
+    input: _m0.Reader | Uint8Array,
+    length?: number
+  ): TelemetryAliasRequest {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = { ...baseTelemetryAliasRequest } as TelemetryAliasRequest;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.userId = reader.string();
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TelemetryAliasRequest {
+    const message = { ...baseTelemetryAliasRequest } as TelemetryAliasRequest;
+    if (object.userId !== undefined && object.userId !== null) {
+      message.userId = String(object.userId);
+    }
+    return message;
+  },
+
+  toJSON(message: TelemetryAliasRequest): unknown {
+    const obj: any = {};
+    message.userId !== undefined && (obj.userId = message.userId);
+    return obj;
+  },
+
+  fromPartial(
+    object: DeepPartial<TelemetryAliasRequest>
+  ): TelemetryAliasRequest {
+    const message = { ...baseTelemetryAliasRequest } as TelemetryAliasRequest;
+    if (object.userId !== undefined && object.userId !== null) {
+      message.userId = object.userId;
+    }
+    return message;
+  },
+};
+
+const baseTelemetryTrackRequest: object = {};
+
+export const TelemetryTrackRequest = {
+  encode(
+    message: TelemetryTrackRequest,
+    writer: _m0.Writer = _m0.Writer.create()
+  ): _m0.Writer {
+    if (message.event !== undefined) {
+      writer.uint32(10).string(message.event);
+    }
+    for (const v of message.properties) {
+      TelemetryProperty.encode(v!, writer.uint32(18).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(
+    input: _m0.Reader | Uint8Array,
+    length?: number
+  ): TelemetryTrackRequest {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = { ...baseTelemetryTrackRequest } as TelemetryTrackRequest;
+    message.properties = [];
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.event = reader.string();
+          break;
+        case 2:
+          message.properties.push(
+            TelemetryProperty.decode(reader, reader.uint32())
+          );
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TelemetryTrackRequest {
+    const message = { ...baseTelemetryTrackRequest } as TelemetryTrackRequest;
+    message.properties = [];
+    if (object.event !== undefined && object.event !== null) {
+      message.event = String(object.event);
+    }
+    if (object.properties !== undefined && object.properties !== null) {
+      for (const e of object.properties) {
+        message.properties.push(TelemetryProperty.fromJSON(e));
+      }
+    }
+    return message;
+  },
+
+  toJSON(message: TelemetryTrackRequest): unknown {
+    const obj: any = {};
+    message.event !== undefined && (obj.event = message.event);
+    if (message.properties) {
+      obj.properties = message.properties.map((e) =>
+        e ? TelemetryProperty.toJSON(e) : undefined
+      );
+    } else {
+      obj.properties = [];
+    }
+    return obj;
+  },
+
+  fromPartial(
+    object: DeepPartial<TelemetryTrackRequest>
+  ): TelemetryTrackRequest {
+    const message = { ...baseTelemetryTrackRequest } as TelemetryTrackRequest;
+    message.properties = [];
+    if (object.event !== undefined && object.event !== null) {
+      message.event = object.event;
+    }
+    if (object.properties !== undefined && object.properties !== null) {
+      for (const e of object.properties) {
+        message.properties.push(TelemetryProperty.fromPartial(e));
+      }
+    }
+    return message;
+  },
+};
+
+const baseTelemetryIdentifyRequest: object = {};
+
+export const TelemetryIdentifyRequest = {
+  encode(
+    message: TelemetryIdentifyRequest,
+    writer: _m0.Writer = _m0.Writer.create()
+  ): _m0.Writer {
+    for (const v of message.traits) {
+      TelemetryProperty.encode(v!, writer.uint32(18).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(
+    input: _m0.Reader | Uint8Array,
+    length?: number
+  ): TelemetryIdentifyRequest {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = {
+      ...baseTelemetryIdentifyRequest,
+    } as TelemetryIdentifyRequest;
+    message.traits = [];
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 2:
+          message.traits.push(
+            TelemetryProperty.decode(reader, reader.uint32())
+          );
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TelemetryIdentifyRequest {
+    const message = {
+      ...baseTelemetryIdentifyRequest,
+    } as TelemetryIdentifyRequest;
+    message.traits = [];
+    if (object.traits !== undefined && object.traits !== null) {
+      for (const e of object.traits) {
+        message.traits.push(TelemetryProperty.fromJSON(e));
+      }
+    }
+    return message;
+  },
+
+  toJSON(message: TelemetryIdentifyRequest): unknown {
+    const obj: any = {};
+    if (message.traits) {
+      obj.traits = message.traits.map((e) =>
+        e ? TelemetryProperty.toJSON(e) : undefined
+      );
+    } else {
+      obj.traits = [];
+    }
+    return obj;
+  },
+
+  fromPartial(
+    object: DeepPartial<TelemetryIdentifyRequest>
+  ): TelemetryIdentifyRequest {
+    const message = {
+      ...baseTelemetryIdentifyRequest,
+    } as TelemetryIdentifyRequest;
+    message.traits = [];
+    if (object.traits !== undefined && object.traits !== null) {
+      for (const e of object.traits) {
+        message.traits.push(TelemetryProperty.fromPartial(e));
+      }
     }
     return message;
   },
