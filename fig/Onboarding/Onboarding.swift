@@ -61,3 +61,34 @@ class Onboarding {
         WindowManager.shared.newNativeTerminalSession(completion: completion)
     }
 }
+
+import FigAPIBindings
+import WebKit
+extension Onboarding {
+  static func handleRequest(_ request: Fig_OnboardingRequest, in webView: WKWebView, callback: @escaping ((Bool) -> Void)) {
+    
+    switch request.action {
+      case .installationScript:
+        Onboarding.setUpEnviroment {
+          callback(true)
+        }
+      case .promptForAccessibilityPermission:
+        Accessibility.promptForPermission { status in
+          callback(true)
+        }
+      case .launchShellOnboarding:
+        callback(true)
+        webView.window?.close()
+        Defaults.loggedIn = true
+
+        Onboarding.setupTerminalsForShellOnboarding {
+          SecureKeyboardInput.notifyIfEnabled()
+        }
+    
+        NSApp.appDelegate.setupCompanionWindow()
+      case .UNRECOGNIZED(_):
+        Logger.log(message: "Unrecognized Onboarding Action!", subsystem: .api)
+        callback(false)
+    }
+  }
+}

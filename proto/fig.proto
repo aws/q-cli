@@ -23,6 +23,7 @@ message ClientOriginatedMessage {
       TelemetryAliasRequest telemetry_alias_request = 115;
       TelemetryIdentifyRequest telemetry_identify_request = 116;
       TelemetryTrackRequest telemetry_track_request = 117;
+      OnboardingRequest onboarding_request = 118;
   }
 }
 
@@ -265,6 +266,18 @@ message TelemetryTrackRequest {
 
 message TelemetryIdentifyRequest {
   repeated TelemetryProperty traits = 2;
+}
+
+/// Onboarding
+
+enum OnboardingAction {
+  INSTALLATION_SCRIPT = 0;
+  PROMPT_FOR_ACCESSIBILITY_PERMISSION = 1;
+  LAUNCH_SHELL_ONBOARDING = 3;
+}
+
+message OnboardingRequest {
+  OnboardingAction action = 1;
 }
 
 /// Actions

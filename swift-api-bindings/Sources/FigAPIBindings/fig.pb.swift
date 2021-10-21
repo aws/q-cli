@@ -76,6 +76,50 @@ extension Fig_Modifiers: CaseIterable {
 
 #endif  // swift(>=4.2)
 
+public enum Fig_OnboardingAction: SwiftProtobuf.Enum {
+  public typealias RawValue = Int
+  case installationScript // = 0
+  case promptForAccessibilityPermission // = 1
+  case launchShellOnboarding // = 3
+  case UNRECOGNIZED(Int)
+
+  public init() {
+    self = .installationScript
+  }
+
+  public init?(rawValue: Int) {
+    switch rawValue {
+    case 0: self = .installationScript
+    case 1: self = .promptForAccessibilityPermission
+    case 3: self = .launchShellOnboarding
+    default: self = .UNRECOGNIZED(rawValue)
+    }
+  }
+
+  public var rawValue: Int {
+    switch self {
+    case .installationScript: return 0
+    case .promptForAccessibilityPermission: return 1
+    case .launchShellOnboarding: return 3
+    case .UNRECOGNIZED(let i): return i
+    }
+  }
+
+}
+
+#if swift(>=4.2)
+
+extension Fig_OnboardingAction: CaseIterable {
+  // The compiler won't synthesize support with the UNRECOGNIZED case.
+  public static var allCases: [Fig_OnboardingAction] = [
+    .installationScript,
+    .promptForAccessibilityPermission,
+    .launchShellOnboarding,
+  ]
+}
+
+#endif  // swift(>=4.2)
+
 public enum Fig_ActionAvailability: SwiftProtobuf.Enum {
   public typealias RawValue = Int
   case always // = 0
@@ -346,6 +390,14 @@ public struct Fig_ClientOriginatedMessage {
     set {submessage = .telemetryTrackRequest(newValue)}
   }
 
+  public var onboardingRequest: Fig_OnboardingRequest {
+    get {
+      if case .onboardingRequest(let v)? = submessage {return v}
+      return Fig_OnboardingRequest()
+    }
+    set {submessage = .onboardingRequest(newValue)}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public enum OneOf_Submessage: Equatable {
@@ -366,6 +418,7 @@ public struct Fig_ClientOriginatedMessage {
     case telemetryAliasRequest(Fig_TelemetryAliasRequest)
     case telemetryIdentifyRequest(Fig_TelemetryIdentifyRequest)
     case telemetryTrackRequest(Fig_TelemetryTrackRequest)
+    case onboardingRequest(Fig_OnboardingRequest)
 
   #if !swift(>=4.1)
     public static func ==(lhs: Fig_ClientOriginatedMessage.OneOf_Submessage, rhs: Fig_ClientOriginatedMessage.OneOf_Submessage) -> Bool {
@@ -439,6 +492,10 @@ public struct Fig_ClientOriginatedMessage {
       }()
       case (.telemetryTrackRequest, .telemetryTrackRequest): return {
         guard case .telemetryTrackRequest(let l) = lhs, case .telemetryTrackRequest(let r) = rhs else { preconditionFailure() }
+        return l == r
+      }()
+      case (.onboardingRequest, .onboardingRequest): return {
+        guard case .onboardingRequest(let l) = lhs, case .onboardingRequest(let r) = rhs else { preconditionFailure() }
         return l == r
       }()
       default: return false
@@ -1781,6 +1838,18 @@ public struct Fig_TelemetryIdentifyRequest {
   public init() {}
 }
 
+public struct Fig_OnboardingRequest {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var action: Fig_OnboardingAction = .installationScript
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
 public struct Fig_Action {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -2411,6 +2480,14 @@ extension Fig_Modifiers: SwiftProtobuf._ProtoNameProviding {
   ]
 }
 
+extension Fig_OnboardingAction: SwiftProtobuf._ProtoNameProviding {
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    0: .same(proto: "INSTALLATION_SCRIPT"),
+    1: .same(proto: "PROMPT_FOR_ACCESSIBILITY_PERMISSION"),
+    3: .same(proto: "LAUNCH_SHELL_ONBOARDING"),
+  ]
+}
+
 extension Fig_ActionAvailability: SwiftProtobuf._ProtoNameProviding {
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     0: .same(proto: "ALWAYS"),
@@ -2454,6 +2531,7 @@ extension Fig_ClientOriginatedMessage: SwiftProtobuf.Message, SwiftProtobuf._Mes
     115: .standard(proto: "telemetry_alias_request"),
     116: .standard(proto: "telemetry_identify_request"),
     117: .standard(proto: "telemetry_track_request"),
+    118: .standard(proto: "onboarding_request"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -2684,6 +2762,19 @@ extension Fig_ClientOriginatedMessage: SwiftProtobuf.Message, SwiftProtobuf._Mes
           self.submessage = .telemetryTrackRequest(v)
         }
       }()
+      case 118: try {
+        var v: Fig_OnboardingRequest?
+        var hadOneofValue = false
+        if let current = self.submessage {
+          hadOneofValue = true
+          if case .onboardingRequest(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.submessage = .onboardingRequest(v)
+        }
+      }()
       default: break
       }
     }
@@ -2765,6 +2856,10 @@ extension Fig_ClientOriginatedMessage: SwiftProtobuf.Message, SwiftProtobuf._Mes
     case .telemetryTrackRequest?: try {
       guard case .telemetryTrackRequest(let v)? = self.submessage else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 117)
+    }()
+    case .onboardingRequest?: try {
+      guard case .onboardingRequest(let v)? = self.submessage else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 118)
     }()
     case nil: break
     }
@@ -4661,6 +4756,38 @@ extension Fig_TelemetryIdentifyRequest: SwiftProtobuf.Message, SwiftProtobuf._Me
 
   public static func ==(lhs: Fig_TelemetryIdentifyRequest, rhs: Fig_TelemetryIdentifyRequest) -> Bool {
     if lhs.traits != rhs.traits {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Fig_OnboardingRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".OnboardingRequest"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .same(proto: "action"),
+  ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularEnumField(value: &self.action) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if self.action != .installationScript {
+      try visitor.visitSingularEnumField(value: self.action, fieldNumber: 1)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Fig_OnboardingRequest, rhs: Fig_OnboardingRequest) -> Bool {
+    if lhs.action != rhs.action {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

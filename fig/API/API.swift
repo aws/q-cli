@@ -114,6 +114,14 @@ class API {
                   response.success = try TelemetryProvider.handleIdentifyRequest(request)
                 case .telemetryTrackRequest(let request):
                   response.success = try TelemetryProvider.handleTrackRequest(request)
+                case .onboardingRequest(let request):
+                  isAsync = true
+                  Onboarding.handleRequest(request, in: webView) { output in
+                      var response = Response()
+                      response.id = id
+                      response.success = output
+                      API.send(response, to: webView, using: encoding)
+                  }
                 case .none:
                     throw APIError.generic(message: "No submessage was included in request.")
             }
@@ -159,7 +167,7 @@ class API {
                                   line: Int = #line) {
         API.log("reporting global error: " + message)
         let source = "\(function) in \(file):\(line)"
-        let payload = "document.dispatchEvent(new CustomEvent('FigGlobalErrorOccurred', {'detail': {'error' : '\(message)', '', 'source': `\(source)` } }));"
+        let payload = "document.dispatchEvent(new CustomEvent('FigGlobalErrorOccurred', {'detail': {'error' : '\(message)', 'source': `\(source)` } }));"
         webView.evaluateJavaScript(payload, completionHandler: nil)
 
     }

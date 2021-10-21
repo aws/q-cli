@@ -12,6 +12,7 @@ import {
     GetSettingsPropertyRequest,
     GetSettingsPropertyResponse,
     InsertTextRequest,
+    OnboardingRequest,
     PositionWindowRequest,
     PositionWindowResponse,
     PseudoterminalExecuteRequest,
@@ -430,6 +431,32 @@ export const sendTelemetryTrackRequest = async (
                         reject(
                             Error(
                                 "Invalid response '" + response?.$case + "' for 'TelemetryTrackRequest'"
+                            )
+                        );
+                }
+            }
+        );
+    });
+
+
+export const sendOnboardingRequest = async (
+    request: OnboardingRequest
+): Promise<void> =>
+    new Promise((resolve, reject) => {
+        sendMessage(
+            { $case: "onboardingRequest", onboardingRequest: request },
+            (response) => {
+                switch (response?.$case) {
+                    case "success":
+                        resolve();
+                        break;
+                    case "error":
+                        reject(Error(response.error));
+                        break;
+                    default:
+                        reject(
+                            Error(
+                                "Invalid response '" + response?.$case + "' for 'OnboardingRequest'"
                             )
                         );
                 }

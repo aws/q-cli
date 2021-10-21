@@ -60,6 +60,44 @@ export function modifiersToJSON(object: Modifiers): string {
   }
 }
 
+export enum OnboardingAction {
+  INSTALLATION_SCRIPT = 0,
+  PROMPT_FOR_ACCESSIBILITY_PERMISSION = 1,
+  LAUNCH_SHELL_ONBOARDING = 3,
+  UNRECOGNIZED = -1,
+}
+
+export function onboardingActionFromJSON(object: any): OnboardingAction {
+  switch (object) {
+    case 0:
+    case "INSTALLATION_SCRIPT":
+      return OnboardingAction.INSTALLATION_SCRIPT;
+    case 1:
+    case "PROMPT_FOR_ACCESSIBILITY_PERMISSION":
+      return OnboardingAction.PROMPT_FOR_ACCESSIBILITY_PERMISSION;
+    case 3:
+    case "LAUNCH_SHELL_ONBOARDING":
+      return OnboardingAction.LAUNCH_SHELL_ONBOARDING;
+    case -1:
+    case "UNRECOGNIZED":
+    default:
+      return OnboardingAction.UNRECOGNIZED;
+  }
+}
+
+export function onboardingActionToJSON(object: OnboardingAction): string {
+  switch (object) {
+    case OnboardingAction.INSTALLATION_SCRIPT:
+      return "INSTALLATION_SCRIPT";
+    case OnboardingAction.PROMPT_FOR_ACCESSIBILITY_PERMISSION:
+      return "PROMPT_FOR_ACCESSIBILITY_PERMISSION";
+    case OnboardingAction.LAUNCH_SHELL_ONBOARDING:
+      return "LAUNCH_SHELL_ONBOARDING";
+    default:
+      return "UNKNOWN";
+  }
+}
+
 export enum ActionAvailability {
   ALWAYS = 0,
   /** WHEN_FOCUSED - the action can only be performed when the app has keyboard focus */
@@ -233,7 +271,8 @@ export interface ClientOriginatedMessage {
     | {
         $case: "telemetryTrackRequest";
         telemetryTrackRequest: TelemetryTrackRequest;
-      };
+      }
+    | { $case: "onboardingRequest"; onboardingRequest: OnboardingRequest };
 }
 
 export interface ServerOriginatedMessage {
@@ -460,6 +499,10 @@ export interface TelemetryTrackRequest {
 
 export interface TelemetryIdentifyRequest {
   traits: TelemetryProperty[];
+}
+
+export interface OnboardingRequest {
+  action: OnboardingAction;
 }
 
 export interface Action {
@@ -693,6 +736,12 @@ export const ClientOriginatedMessage = {
         writer.uint32(938).fork()
       ).ldelim();
     }
+    if (message.submessage?.$case === "onboardingRequest") {
+      OnboardingRequest.encode(
+        message.submessage.onboardingRequest,
+        writer.uint32(946).fork()
+      ).ldelim();
+    }
     return writer;
   },
 
@@ -852,6 +901,15 @@ export const ClientOriginatedMessage = {
           message.submessage = {
             $case: "telemetryTrackRequest",
             telemetryTrackRequest: TelemetryTrackRequest.decode(
+              reader,
+              reader.uint32()
+            ),
+          };
+          break;
+        case 118:
+          message.submessage = {
+            $case: "onboardingRequest",
+            onboardingRequest: OnboardingRequest.decode(
               reader,
               reader.uint32()
             ),
@@ -1055,6 +1113,15 @@ export const ClientOriginatedMessage = {
         ),
       };
     }
+    if (
+      object.onboardingRequest !== undefined &&
+      object.onboardingRequest !== null
+    ) {
+      message.submessage = {
+        $case: "onboardingRequest",
+        onboardingRequest: OnboardingRequest.fromJSON(object.onboardingRequest),
+      };
+    }
     return message;
   },
 
@@ -1164,6 +1231,10 @@ export const ClientOriginatedMessage = {
         ? TelemetryTrackRequest.toJSON(
             message.submessage?.telemetryTrackRequest
           )
+        : undefined);
+    message.submessage?.$case === "onboardingRequest" &&
+      (obj.onboardingRequest = message.submessage?.onboardingRequest
+        ? OnboardingRequest.toJSON(message.submessage?.onboardingRequest)
         : undefined);
     return obj;
   },
@@ -1382,6 +1453,18 @@ export const ClientOriginatedMessage = {
         $case: "telemetryTrackRequest",
         telemetryTrackRequest: TelemetryTrackRequest.fromPartial(
           object.submessage.telemetryTrackRequest
+        ),
+      };
+    }
+    if (
+      object.submessage?.$case === "onboardingRequest" &&
+      object.submessage?.onboardingRequest !== undefined &&
+      object.submessage?.onboardingRequest !== null
+    ) {
+      message.submessage = {
+        $case: "onboardingRequest",
+        onboardingRequest: OnboardingRequest.fromPartial(
+          object.submessage.onboardingRequest
         ),
       };
     }
@@ -4765,6 +4848,61 @@ export const TelemetryIdentifyRequest = {
       for (const e of object.traits) {
         message.traits.push(TelemetryProperty.fromPartial(e));
       }
+    }
+    return message;
+  },
+};
+
+const baseOnboardingRequest: object = { action: 0 };
+
+export const OnboardingRequest = {
+  encode(
+    message: OnboardingRequest,
+    writer: _m0.Writer = _m0.Writer.create()
+  ): _m0.Writer {
+    if (message.action !== 0) {
+      writer.uint32(8).int32(message.action);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): OnboardingRequest {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = { ...baseOnboardingRequest } as OnboardingRequest;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.action = reader.int32() as any;
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+
+  fromJSON(object: any): OnboardingRequest {
+    const message = { ...baseOnboardingRequest } as OnboardingRequest;
+    if (object.action !== undefined && object.action !== null) {
+      message.action = onboardingActionFromJSON(object.action);
+    }
+    return message;
+  },
+
+  toJSON(message: OnboardingRequest): unknown {
+    const obj: any = {};
+    message.action !== undefined &&
+      (obj.action = onboardingActionToJSON(message.action));
+    return obj;
+  },
+
+  fromPartial(object: DeepPartial<OnboardingRequest>): OnboardingRequest {
+    const message = { ...baseOnboardingRequest } as OnboardingRequest;
+    if (object.action !== undefined && object.action !== null) {
+      message.action = object.action;
     }
     return message;
   },
