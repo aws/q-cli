@@ -15,6 +15,7 @@ message Command {
 
 	oneof command {
 		TerminalIntegrationRequest terminal_integration_update = 100;
+		ListTerminalIntegrations list_terminal_integrations = 101;
 	}
 }
 
@@ -36,6 +37,27 @@ message TerminalIntegrationRequest {
 	IntegrationAction action = 2;
 }
 
+message ListTerminalIntegrations { }
+
+message TerminalIntegration {
+	string bundle_identifier = 1;
+	string name = 2;
+	optional string status = 3;
+}
+
+message TerminalIntegrationsList {
+	repeated TerminalIntegration integrations = 1;
+}
+
+message ShellContext {
+	int32 pid = 1;
+	string ttys = 2; // /dev/ttys## of terminal session
+	string shell = 3; // the name of the shell
+	string currentWorkingDirectory = 4; // the directory where the user ran the command
+	string sessionId = 5; // the value of $TERM_SESSION_ID 
+	optional string integration_version = 6;
+	optional string terminal = 7;
+}
 
 // Example Hook
 message EditBuffer {
@@ -43,13 +65,41 @@ message EditBuffer {
 	int64 cursor = 2;
 	string shell = 3;
 	string sessionId = 4;
+	string integration_version = 5;
+
+	ShellContext context = 6;
 }
 
 message Prompt {
-	int32 pid = 1;
-	string shell = 2;
-	string currentWorkingDirectory = 3;
-	string sessionId = 4;
+	ShellContext context = 1;
+}
+
+message PreExec {
+	ShellContext context = 1;
+
+	string command = 2; // the full command that was run in the shell
+
+}
+
+message PostExec {
+	ShellContext context = 1;
+
+	string command = 2; // the full command that was run in the shell
+	int32 exit_code = 3; // the exit code of the command
+}
+
+message keyboardFocusChanged {
+	string bundle_identifier = 1;
+	string focused_session = 2; // a unique identifier associated with the pane or tab that is currently focused
+}
+
+message tmuxPaneChanged {
+	int32 pane_identifier = 1;
+}
+
+message openedSSHConnection {
+	ShellContext context = 1;
+	string control_path = 2;
 }
 
 // 
@@ -66,7 +116,9 @@ message CommandResponse {
 	optional int64 id = 1;
 	oneof response {
 		Error error = 2;
-		Success success = 3; 
+		Success success = 3;
+		TerminalIntegrationsList integration_list = 100;
+
 		// ... add structured responses for specific commands, as necessary
 	}
 }
