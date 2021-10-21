@@ -18,6 +18,9 @@ message ClientOriginatedMessage {
       InsertTextRequest insert_text_request = 110;
       UpdateApplicationPropertiesRequest update_application_properties_request = 111;
       DestinationOfSymbolicLinkRequest destination_of_symbolic_link_request = 112;
+      GetDefaultsPropertyRequest get_defaults_property_request = 113;
+      UpdateDefaultsPropertyRequest update_defaults_property_request = 114;
+
   }
 }
 
@@ -34,6 +37,7 @@ message ServerOriginatedMessage {
     ContentsOfDirectoryResponse contents_of_directory_response = 103;
     GetSettingsPropertyResponse get_settings_property_response = 104;
     DestinationOfSymbolicLinkResponse destination_of_symbolic_link_response = 105;
+    GetDefaultsPropertyResponse get_defaults_property_response = 106;
 
     Notification notification = 1000;
   }
@@ -198,6 +202,32 @@ message DestinationOfSymbolicLinkRequest {
 message DestinationOfSymbolicLinkResponse {
     optional FilePath destination = 1;
 }
+
+/// Defaults
+
+message DefaultsValue {
+  oneof type {
+    bool null = 1;
+    bool boolean = 2;
+    string string = 3;
+    int64 integer = 4;
+  }
+}
+
+message GetDefaultsPropertyRequest {
+    optional string key = 1;
+}
+
+message GetDefaultsPropertyResponse {
+    optional string key = 1;
+    optional DefaultsValue value = 2;
+}
+
+message UpdateDefaultsPropertyRequest {
+  optional string key = 1;
+  optional DefaultsValue value = 2;
+}
+
 
 /// Settings
 

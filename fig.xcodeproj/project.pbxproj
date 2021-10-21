@@ -130,7 +130,6 @@
 		756967FF2718E0300029F063 /* WebArchiver in Frameworks */ = {isa = PBXBuildFile; productRef = 756967FE2718E0300029F063 /* WebArchiver */; };
 		756968012718FF600029F063 /* WebArchive.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756968002718FF600029F063 /* WebArchive.swift */; };
 		756968032719450A0029F063 /* API+App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756968022719450A0029F063 /* API+App.swift */; };
-		7569682F271F63F40029F063 /* FigAPIBindings in Frameworks */ = {isa = PBXBuildFile; productRef = 7569682E271F63F40029F063 /* FigAPIBindings */; };
 		756C4D832542A6D30035B467 /* Starscream in Frameworks */ = {isa = PBXBuildFile; productRef = 756C4D822542A6D30035B467 /* Starscream */; };
 		7571775726F3B8A80071AE10 /* FigInputMethod.app in Embed Input Method */ = {isa = PBXBuildFile; fileRef = 754316F426E08F5C00188887 /* FigInputMethod.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		7571775926F3E4CA0071AE10 /* settings.html in Resources */ = {isa = PBXBuildFile; fileRef = 7571775826F3E4CA0071AE10 /* settings.html */; };
@@ -170,6 +169,7 @@
 		758AEB6724CE8B8F00A15EAF /* figcli in Embed Command Line Tool */ = {isa = PBXBuildFile; fileRef = 751F758E246E16D800E083C8 /* figcli */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		758AEB6A24CEA4D000A15EAF /* Starscream in Frameworks */ = {isa = PBXBuildFile; productRef = 758AEB6924CEA4D000A15EAF /* Starscream */; };
 		758AEB6C24CEA54600A15EAF /* SocketServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 758AEB6B24CEA54600A15EAF /* SocketServer.swift */; };
+		75915DFE27210A4C005A9909 /* FigAPIBindings in Frameworks */ = {isa = PBXBuildFile; productRef = 75915DFD27210A4C005A9909 /* FigAPIBindings */; };
 		759F987C25BF903900EC3407 /* Accessibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 759F987B25BF903900EC3407 /* Accessibility.swift */; };
 		759F988225BFF0FF00EC3407 /* commandkey@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 759F987E25BFF0FE00EC3407 /* commandkey@2x.png */; };
 		759F988325BFF0FF00EC3407 /* database@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 759F987F25BFF0FE00EC3407 /* database@2x.png */; };
@@ -610,7 +610,7 @@
 			files = (
 				7512A48B263252EF00CDE824 /* Sparkle in Frameworks */,
 				75CFDBE224EDE31800F00CAE /* Sentry in Frameworks */,
-				7569682F271F63F40029F063 /* FigAPIBindings in Frameworks */,
+				75915DFE27210A4C005A9909 /* FigAPIBindings in Frameworks */,
 				755D0F512482D4920074AB5C /* HotKey in Frameworks */,
 				757CA8E424905B0E002A64A8 /* Kitura-WebSocket in Frameworks */,
 				75A4A2A725CBBDE7002EFD6B /* AXSwift in Frameworks */,
@@ -1257,7 +1257,7 @@
 				7512A48A263252EF00CDE824 /* Sparkle */,
 				75290AC526719157000F4255 /* SwiftProtobuf */,
 				756967FE2718E0300029F063 /* WebArchiver */,
-				7569682E271F63F40029F063 /* FigAPIBindings */,
+				75915DFD27210A4C005A9909 /* FigAPIBindings */,
 			);
 			productName = fig;
 			productReference = 75675951244634AD006AA988 /* fig.app */;
@@ -1349,7 +1349,6 @@
 				75A4A2A525CBBDE4002EFD6B /* XCRemoteSwiftPackageReference "AXSwift" */,
 				7512A489263252EF00CDE824 /* XCRemoteSwiftPackageReference "Sparkle" */,
 				75290AC426719156000F4255 /* XCRemoteSwiftPackageReference "swift-protobuf" */,
-				75AE8FD526D744C700161B8C /* XCRemoteSwiftPackageReference "swift-api-bindings" */,
 				756967FD2718E0300029F063 /* XCRemoteSwiftPackageReference "WebArchiver" */,
 			);
 			productRefGroup = 75675952244634AD006AA988 /* Products */;
@@ -2299,14 +2298,6 @@
 				minimumVersion = 0.3.1;
 			};
 		};
-		75AE8FD526D744C700161B8C /* XCRemoteSwiftPackageReference "swift-api-bindings" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/withfig/swift-api-bindings";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.0.0;
-			};
-		};
 		75CFDBE024EDE31800F00CAE /* XCRemoteSwiftPackageReference "sentry-cocoa" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/getsentry/sentry-cocoa.git";
@@ -2338,10 +2329,6 @@
 			package = 756967FD2718E0300029F063 /* XCRemoteSwiftPackageReference "WebArchiver" */;
 			productName = WebArchiver;
 		};
-		7569682E271F63F40029F063 /* FigAPIBindings */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = FigAPIBindings;
-		};
 		756C4D822542A6D30035B467 /* Starscream */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 758AEB6824CEA4D000A15EAF /* XCRemoteSwiftPackageReference "Starscream" */;
@@ -2356,6 +2343,10 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 758AEB6824CEA4D000A15EAF /* XCRemoteSwiftPackageReference "Starscream" */;
 			productName = Starscream;
+		};
+		75915DFD27210A4C005A9909 /* FigAPIBindings */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = FigAPIBindings;
 		};
 		75A4A2A625CBBDE7002EFD6B /* AXSwift */ = {
 			isa = XCSwiftPackageProductDependency;

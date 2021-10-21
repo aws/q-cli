@@ -102,11 +102,15 @@ class API {
                 case .updateApplicationPropertiesRequest(let request):
                     response.success = try FigApp.updateProperties(request,
                                                                for: FigApp(identifier: webView.appIdentifier))
-                case .none:
-                    throw APIError.generic(message: "No submessage was included in request.")
-                
                 case .destinationOfSymbolicLinkRequest(let request):
                     response.destinationOfSymbolicLinkResponse = try FileSystem.destinationOfSymbolicLink(request)
+                case .getDefaultsPropertyRequest(let request):
+                  response.getDefaultsPropertyResponse = try Defaults.handleGetRequest(request)
+                case .updateDefaultsPropertyRequest(let request):
+                  response.success = try Defaults.handleSetRequest(request)
+
+                case .none:
+                    throw APIError.generic(message: "No submessage was included in request.")
             }
         } catch APIError.generic(message: let message) {
             response.error = message
