@@ -373,21 +373,24 @@ class ShellBridge {
       
       
       let version = window.tty?.shellIntegrationVersion
-      let useFigTerm = version ?? 0 >= 5
+      let figTermInstanceSupportsInserts = version ?? 0 >= 5
       
       let backing = KeypressProvider.shared.keyBuffer(for: window).backing
-      let effectedShells: Set<KeystrokeBuffer.Backing> = [.fish, .bash, .zle]
+      let effectedShells: Set<KeystrokeBuffer.Backing> = [.fish, .bash ]
       let usingEffectedShell = backing != nil ? effectedShells.contains(backing!) : false
       let inElectronTerminal = Integrations.electronTerminals.contains(window.bundleId ?? "")
-//      let useFigTerm = usingEffectedShell &&
-//                       inElectronTerminal &&
-//                       withFigTermInstanceThatSupportsInserts
+      let useFigTerm = usingEffectedShell &&
+                       inElectronTerminal &&
+                       figTermInstanceSupportsInserts
       
 
-      
+
       if let sessionId = window.session, useFigTerm {
+        Logger.log(message: "Inserting '\(cmd)' using figterm (\(sessionId)")
         try? FigTerm.insert(cmd, into: sessionId)
       } else if usingEffectedShell && inElectronTerminal {
+        Logger.log(message: "Insert effected by xtermjs bug! Showing alert...")
+
         //
 //        guard !Defaults.promptedToRestartDueToXtermBug else {
 //          Logger.log(message: "Not inserting due to xterm.js bug...")
@@ -411,6 +414,8 @@ class ShellBridge {
         Defaults.promptedToRestartDueToXtermBug = true
 
       } else {
+        Logger.log(message: "Inserting '\(cmd)' using keyboard")
+
         // use legacy insertion
         if (NSWorkspace.shared.frontmostApplication?.isFig ?? false) {
             print("Fig is the active window. Sending focus back to previous applications.")
