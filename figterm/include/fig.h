@@ -141,7 +141,8 @@ FigInfo* get_fig_info();
 void free_fig_info();
 void set_pty_name(char*);
 int fig_socket_send(char*);
-int unix_socket_listen(char*);
+int fig_socket_listen();
+void fig_socket_cleanup();
 char* fig_path(char*);
 char* log_path(char*);
 

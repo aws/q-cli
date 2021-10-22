@@ -110,6 +110,30 @@ static int unix_socket_connect(char *path) {
   return sock;
 }
 
+char* _incoming_socket_path = NULL;
+int _incoming_socket_fd = -1;
+
+int fig_socket_listen() {
+  FigInfo *fig_info = get_fig_info();
+  _incoming_socket_path = malloc(sizeof("char") * (
+    strlen("/tmp/figterm-.socket") + SESSION_ID_MAX_LEN + 1
+  ));
+
+  sprintf(_incoming_socket_path, "/tmp/figterm-%s.socket", fig_info->term_session_id);
+  _incoming_socket_fd = unix_socket_listen(_incoming_socket_path);
+  return _incoming_socket_fd;
+}
+
+void fig_socket_cleanup() {
+  if (_incoming_socket_fd != -1) {
+    close(_incoming_socket_fd);
+  }
+  if (_incoming_socket_path != NULL) {
+    unlink(_incoming_socket_path);
+    free(_incoming_socket_path);
+  }
+}
+
 void sigpipe_handler(int sig) {
   fig_sock = -1;
 }

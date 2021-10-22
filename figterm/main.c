@@ -50,7 +50,6 @@ void abort_handler(int sig) {
 
 char* _parent_shell = NULL;
 char* _parent_shell_is_login = NULL;
-int incoming_socket = -1;
 
 void launch_shell() {
   if (_parent_shell == NULL) {
@@ -92,9 +91,7 @@ void on_figterm_exit() {
   free_fig_info();
   close_log_file();
   history_file_close();
-  if (incoming_socket >= 0) {
-    close(incoming_socket);
-  }
+  fig_socket_cleanup();
   tty_reset(STDIN_FILENO);
   if (status != 0) {
     // Unexpected exit, fallback to exec parent shell.
@@ -181,15 +178,7 @@ void figterm_loop(int ptyp_fd, pid_t shell_pid, char* initial_command) {
     err_sys("signal_intr error for SIGWINCH");
 
   ft = _ft = figterm_new(shell_pid, ptyp_fd);
-
-  FigShellState shell_state;
-  figterm_get_shell_state(ft, &shell_state);
-
-  char* incoming_socket_addr = malloc(sizeof("char") * (strlen("/tmp/figterm-.socket") + SESSION_ID_MAX_LEN + 1));
-  sprintf(incoming_socket_addr, "/tmp/figterm-input.socket");
-  log_info("SOCKET: %s", incoming_socket_addr);
-  incoming_socket = unix_socket_listen(incoming_socket_addr);
-  free(incoming_socket_addr);
+  int incoming_socket = fig_socket_listen();
 
   fd_set rfd;
 
