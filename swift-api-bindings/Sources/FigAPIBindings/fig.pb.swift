@@ -1358,11 +1358,21 @@ public struct Fig_ReadFileRequest {
   /// Clears the value of `path`. Subsequent reads from it will return its default value.
   public mutating func clearPath() {self._path = nil}
 
+  public var isBinaryFile: Bool {
+    get {return _isBinaryFile ?? false}
+    set {_isBinaryFile = newValue}
+  }
+  /// Returns true if `isBinaryFile` has been explicitly set.
+  public var hasIsBinaryFile: Bool {return self._isBinaryFile != nil}
+  /// Clears the value of `isBinaryFile`. Subsequent reads from it will return its default value.
+  public mutating func clearIsBinaryFile() {self._isBinaryFile = nil}
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
 
   fileprivate var _path: Fig_FilePath? = nil
+  fileprivate var _isBinaryFile: Bool? = nil
 }
 
 public struct Fig_ReadFileResponse {
@@ -1370,20 +1380,51 @@ public struct Fig_ReadFileResponse {
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
+  public var type: Fig_ReadFileResponse.OneOf_Type? = nil
+
   public var data: Data {
-    get {return _data ?? Data()}
-    set {_data = newValue}
+    get {
+      if case .data(let v)? = type {return v}
+      return Data()
+    }
+    set {type = .data(newValue)}
   }
-  /// Returns true if `data` has been explicitly set.
-  public var hasData: Bool {return self._data != nil}
-  /// Clears the value of `data`. Subsequent reads from it will return its default value.
-  public mutating func clearData() {self._data = nil}
+
+  public var text: String {
+    get {
+      if case .text(let v)? = type {return v}
+      return String()
+    }
+    set {type = .text(newValue)}
+  }
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  public enum OneOf_Type: Equatable {
+    case data(Data)
+    case text(String)
 
-  fileprivate var _data: Data? = nil
+  #if !swift(>=4.1)
+    public static func ==(lhs: Fig_ReadFileResponse.OneOf_Type, rhs: Fig_ReadFileResponse.OneOf_Type) -> Bool {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch (lhs, rhs) {
+      case (.data, .data): return {
+        guard case .data(let l) = lhs, case .data(let r) = rhs else { preconditionFailure() }
+        return l == r
+      }()
+      case (.text, .text): return {
+        guard case .text(let l) = lhs, case .text(let r) = rhs else { preconditionFailure() }
+        return l == r
+      }()
+      default: return false
+      }
+    }
+  #endif
+  }
+
+  public init() {}
 }
 
 public struct Fig_WriteFileRequest {
@@ -4013,6 +4054,7 @@ extension Fig_ReadFileRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
   public static let protoMessageName: String = _protobuf_package + ".ReadFileRequest"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "path"),
+    2: .same(proto: "isBinaryFile"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -4022,6 +4064,7 @@ extension Fig_ReadFileRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularMessageField(value: &self._path) }()
+      case 2: try { try decoder.decodeSingularBoolField(value: &self._isBinaryFile) }()
       default: break
       }
     }
@@ -4035,11 +4078,15 @@ extension Fig_ReadFileRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
     try { if let v = self._path {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
     } }()
+    try { if let v = self._isBinaryFile {
+      try visitor.visitSingularBoolField(value: v, fieldNumber: 2)
+    } }()
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: Fig_ReadFileRequest, rhs: Fig_ReadFileRequest) -> Bool {
     if lhs._path != rhs._path {return false}
+    if lhs._isBinaryFile != rhs._isBinaryFile {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -4049,6 +4096,7 @@ extension Fig_ReadFileResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImp
   public static let protoMessageName: String = _protobuf_package + ".ReadFileResponse"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "data"),
+    2: .same(proto: "text"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -4057,7 +4105,22 @@ extension Fig_ReadFileResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImp
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try { try decoder.decodeSingularBytesField(value: &self._data) }()
+      case 1: try {
+        var v: Data?
+        try decoder.decodeSingularBytesField(value: &v)
+        if let v = v {
+          if self.type != nil {try decoder.handleConflictingOneOf()}
+          self.type = .data(v)
+        }
+      }()
+      case 2: try {
+        var v: String?
+        try decoder.decodeSingularStringField(value: &v)
+        if let v = v {
+          if self.type != nil {try decoder.handleConflictingOneOf()}
+          self.type = .text(v)
+        }
+      }()
       default: break
       }
     }
@@ -4068,14 +4131,22 @@ extension Fig_ReadFileResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImp
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
     // https://github.com/apple/swift-protobuf/issues/1182
-    try { if let v = self._data {
+    switch self.type {
+    case .data?: try {
+      guard case .data(let v)? = self.type else { preconditionFailure() }
       try visitor.visitSingularBytesField(value: v, fieldNumber: 1)
-    } }()
+    }()
+    case .text?: try {
+      guard case .text(let v)? = self.type else { preconditionFailure() }
+      try visitor.visitSingularStringField(value: v, fieldNumber: 2)
+    }()
+    case nil: break
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: Fig_ReadFileResponse, rhs: Fig_ReadFileResponse) -> Bool {
-    if lhs._data != rhs._data {return false}
+    if lhs.type != rhs.type {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

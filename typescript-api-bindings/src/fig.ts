@@ -418,10 +418,11 @@ export interface PositionWindowResponse {
 
 export interface ReadFileRequest {
   path?: FilePath | undefined;
+  isBinaryFile?: boolean | undefined;
 }
 
 export interface ReadFileResponse {
-  data?: Uint8Array | undefined;
+  type?: { $case: "data"; data: Uint8Array } | { $case: "text"; text: string };
 }
 
 export interface WriteFileRequest {
@@ -3525,6 +3526,9 @@ export const ReadFileRequest = {
     if (message.path !== undefined) {
       FilePath.encode(message.path, writer.uint32(10).fork()).ldelim();
     }
+    if (message.isBinaryFile !== undefined) {
+      writer.uint32(16).bool(message.isBinaryFile);
+    }
     return writer;
   },
 
@@ -3537,6 +3541,9 @@ export const ReadFileRequest = {
       switch (tag >>> 3) {
         case 1:
           message.path = FilePath.decode(reader, reader.uint32());
+          break;
+        case 2:
+          message.isBinaryFile = reader.bool();
           break;
         default:
           reader.skipType(tag & 7);
@@ -3551,6 +3558,9 @@ export const ReadFileRequest = {
     if (object.path !== undefined && object.path !== null) {
       message.path = FilePath.fromJSON(object.path);
     }
+    if (object.isBinaryFile !== undefined && object.isBinaryFile !== null) {
+      message.isBinaryFile = Boolean(object.isBinaryFile);
+    }
     return message;
   },
 
@@ -3558,6 +3568,8 @@ export const ReadFileRequest = {
     const obj: any = {};
     message.path !== undefined &&
       (obj.path = message.path ? FilePath.toJSON(message.path) : undefined);
+    message.isBinaryFile !== undefined &&
+      (obj.isBinaryFile = message.isBinaryFile);
     return obj;
   },
 
@@ -3565,6 +3577,9 @@ export const ReadFileRequest = {
     const message = { ...baseReadFileRequest } as ReadFileRequest;
     if (object.path !== undefined && object.path !== null) {
       message.path = FilePath.fromPartial(object.path);
+    }
+    if (object.isBinaryFile !== undefined && object.isBinaryFile !== null) {
+      message.isBinaryFile = object.isBinaryFile;
     }
     return message;
   },
@@ -3577,8 +3592,11 @@ export const ReadFileResponse = {
     message: ReadFileResponse,
     writer: _m0.Writer = _m0.Writer.create()
   ): _m0.Writer {
-    if (message.data !== undefined) {
-      writer.uint32(10).bytes(message.data);
+    if (message.type?.$case === "data") {
+      writer.uint32(10).bytes(message.type.data);
+    }
+    if (message.type?.$case === "text") {
+      writer.uint32(18).string(message.type.text);
     }
     return writer;
   },
@@ -3591,7 +3609,10 @@ export const ReadFileResponse = {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
-          message.data = reader.bytes();
+          message.type = { $case: "data", data: reader.bytes() };
+          break;
+        case 2:
+          message.type = { $case: "text", text: reader.string() };
           break;
         default:
           reader.skipType(tag & 7);
@@ -3604,23 +3625,40 @@ export const ReadFileResponse = {
   fromJSON(object: any): ReadFileResponse {
     const message = { ...baseReadFileResponse } as ReadFileResponse;
     if (object.data !== undefined && object.data !== null) {
-      message.data = bytesFromBase64(object.data);
+      message.type = { $case: "data", data: bytesFromBase64(object.data) };
+    }
+    if (object.text !== undefined && object.text !== null) {
+      message.type = { $case: "text", text: String(object.text) };
     }
     return message;
   },
 
   toJSON(message: ReadFileResponse): unknown {
     const obj: any = {};
-    message.data !== undefined &&
+    message.type?.$case === "data" &&
       (obj.data =
-        message.data !== undefined ? base64FromBytes(message.data) : undefined);
+        message.type?.data !== undefined
+          ? base64FromBytes(message.type?.data)
+          : undefined);
+    message.type?.$case === "text" && (obj.text = message.type?.text);
     return obj;
   },
 
   fromPartial(object: DeepPartial<ReadFileResponse>): ReadFileResponse {
     const message = { ...baseReadFileResponse } as ReadFileResponse;
-    if (object.data !== undefined && object.data !== null) {
-      message.data = object.data;
+    if (
+      object.type?.$case === "data" &&
+      object.type?.data !== undefined &&
+      object.type?.data !== null
+    ) {
+      message.type = { $case: "data", data: object.type.data };
+    }
+    if (
+      object.type?.$case === "text" &&
+      object.type?.text !== undefined &&
+      object.type?.text !== null
+    ) {
+      message.type = { $case: "text", text: object.type.text };
     }
     return message;
   },

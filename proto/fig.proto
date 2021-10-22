@@ -175,10 +175,14 @@ message PositionWindowResponse {
 
 message ReadFileRequest {
   optional FilePath path = 1;
+  optional bool isBinaryFile = 2;
 }
 
 message ReadFileResponse {
-  optional bytes data = 1;
+  oneof type {
+    bytes data = 1; 
+    string text = 2;
+  }
 }
 
 message WriteFileRequest {

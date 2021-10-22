@@ -113,7 +113,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         let hasLaunched = UserDefaults.standard.bool(forKey: "hasLaunched")
         let email = UserDefaults.standard.string(forKey: "userEmail")
 
-        if (!hasLaunched || email == nil ) {
+        if (!hasLaunched || email == nil || true) {
             Defaults.loggedIn = false
             Defaults.build = .production
             Defaults.clearExistingLineOnTerminalInsert = true
