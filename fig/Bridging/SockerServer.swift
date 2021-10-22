@@ -236,18 +236,18 @@ class ShellBridgeSocketService: WebSocketService {
                                       // the python script is deleted from iTerm's AutoLaunch directory.
                                       // - mschrage, v1.0.44
                                       if !iTermIntegration.default.isConnectedToAPI {
-                                        ShellHookManager.shared.currentTabDidChange(msg)
+                                        ShellHookManager.shared.currentTabDidChangeLegacy(msg)
                                       }
                                     case "bg:init":
                                         ShellHookManager.shared.startedNewTerminalSession(msg)
                                     case "bg:prompt":
-                                        ShellHookManager.shared.shellPromptWillReturn(msg)
+                                        ShellHookManager.shared.shellPromptWillReturnLegacy(msg)
                                     case "bg:exec":
                                         ShellHookManager.shared.shellWillExecuteCommand(msg)
                                     case "bg:zsh-keybuffer":
-                                        ShellHookManager.shared.updateKeybuffer(msg, backing: .zle)
+                                        ShellHookManager.shared.updateKeybufferLegacy(msg)
                                     case "bg:fish-keybuffer":
-                                        ShellHookManager.shared.updateKeybuffer(msg, backing: .fish)
+                                        ShellHookManager.shared.updateKeybufferLegacy(msg)
                                     case "bg:ssh":
                                         ShellHookManager.shared.startedNewSSHConnection(msg)
                                     case "bg:vscode":
@@ -261,7 +261,7 @@ class ShellBridgeSocketService: WebSocketService {
                                     case "bg:clear-keybuffer":
                                         ShellHookManager.shared.clearKeybuffer(msg)
                                     case "bg:keyboard-focus-changed":
-                                      ShellHookManager.shared.currentTabDidChange(msg, includesBundleId: true)
+                                      ShellHookManager.shared.currentTabDidChangeLegacy(msg, includesBundleId: true)
                                     case "bg:iterm-api-ready":
                                       iTermIntegration.default.attemptToConnect()
                                     case "bg:alert":

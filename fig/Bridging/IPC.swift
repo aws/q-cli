@@ -180,6 +180,8 @@ func handleCommand(_ message: Local_Command, from socket: Socket, using encoding
     switch message.command {
       case .terminalIntegrationUpdate(let request):
         response = try Integrations.providers[request.identifier]?.handleIntegrationRequest(request)
+      case .listTerminalIntegrations(_):
+        response = Integrations.handleListIntegrationsRequest()
       case .none:
         break
     }
@@ -197,6 +199,28 @@ func handleCommand(_ message: Local_Command, from socket: Socket, using encoding
       Logger.log(message: "Recieved hook message!", subsystem: .unix)
       let json = try? message.jsonString()
       Logger.log(message: json ?? "Could not decode message", subsystem: .unix)
+    
+    switch message.hook {
+      case .editbuffer(let hook):
+        ShellHookManager.shared.updateKeybuffer(context: hook.context,
+                                                text: hook.text,
+                                                cursor: Int(hook.cursor),
+                                                histno: Int(hook.histno))
+      case .prompt(let hook):
+        ShellHookManager.shared.shellPromptWillReturn(context: hook.context)
+      case .preexec(_):
+        break
+      case .postexec(_):
+        break
+      case .keyboardfocuschanged(let hook):
+        break
+      case .tmuxpanechanged(_):
+        break
+      case .some(.openedsshconnection(_)):
+        break
+      case .none:
+        break
+    }
   }
 }
 
@@ -260,15 +284,15 @@ extension IPC {
           case .initialize:
               ShellHookManager.shared.startedNewTerminalSession(shellMessage)
           case .prompt:
-              ShellHookManager.shared.shellPromptWillReturn(shellMessage)
+              ShellHookManager.shared.shellPromptWillReturnLegacy(shellMessage)
           case .exec:
               ShellHookManager.shared.shellWillExecuteCommand(shellMessage)
           case.ZSHKeybuffer:
-              ShellHookManager.shared.updateKeybuffer(shellMessage, backing: .zle)
+              ShellHookManager.shared.updateKeybufferLegacy(shellMessage)
           case .fishKeybuffer:
-              ShellHookManager.shared.updateKeybuffer(shellMessage, backing: .fish)
+              ShellHookManager.shared.updateKeybufferLegacy(shellMessage)
           case .bashKeybuffer:
-              ShellHookManager.shared.updateKeybuffer(shellMessage, backing: .bash)
+              ShellHookManager.shared.updateKeybufferLegacy(shellMessage)
           case .ssh:
               ShellHookManager.shared.startedNewSSHConnection(shellMessage)
           case .vscode:

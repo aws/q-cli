@@ -13,7 +13,7 @@ import Starscream
 func withCStrings(_ strings: [String], scoped: ([UnsafeMutablePointer<CChar>?]) throws -> Void) rethrows {
     let cStrings = strings.map { strdup($0) }
     try scoped(cStrings + [nil])
-    cStrings.forEach { free($0) }
+    cStrings.forEach { free($0!) }
 }
 
 enum RunCommandError: Error {

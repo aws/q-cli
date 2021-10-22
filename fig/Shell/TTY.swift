@@ -56,7 +56,7 @@ class TTY {
   static let processUpdated: NSNotification.Name = .init("processUpdated")
   
   // set from $FIG_INTEGRATION_VERSION
-  var shellIntegrationVersion: Int?
+  var shellIntegrationVersion: String?
   
   let descriptor: String
   var runUsingPrefix: String? = nil

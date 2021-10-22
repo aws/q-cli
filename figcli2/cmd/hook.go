@@ -1,9 +1,9 @@
 package cmd
 
 import (
-	fig_ipc "fig-cli/fig-ipc"
-	"fmt"
 	"strconv"
+
+	fig_ipc "fig-cli/fig-ipc"
 
 	"github.com/spf13/cobra"
 )
@@ -22,43 +22,35 @@ var hookCmd = &cobra.Command{
 }
 
 var hookEditbufferCmd = &cobra.Command{
-	Use:   "editbuffer [text] [cursor] [shell] [session-id]",
+	Use:   "editbuffer [session-id] [integration] [tty] [pid] [histno] [cursor] [text]",
 	Short: "Run the editbuffer hook",
-	Args:  cobra.ExactArgs(4),
 	Run: func(cmd *cobra.Command, args []string) {
-		cursor, err := strconv.ParseInt(args[1], 10, 64)
-		if err != nil {
-			fmt.Println("Error", err)
+		if len(args) != 7 {
 			return
 		}
 
-		hook := fig_ipc.CreateEditBufferHook(args[0], cursor, args[2], args[3])
-		if err := fig_ipc.SendHook(hook); err != nil {
-			fmt.Println("Error:", err)
-		} else {
-			fmt.Println("Success")
-		}
+		pid, _ := strconv.Atoi(args[3])
+		histno, _ := strconv.Atoi(args[4])
+		cursor, _ := strconv.Atoi(args[5])
+
+		hook := fig_ipc.CreateEditBufferHook(args[0], args[1], args[2], pid, histno, cursor, args[6])
+		fig_ipc.SendHook(hook)
+		// TODO: Add error handling
 	},
 }
 
 var hookPromptCmd = &cobra.Command{
-	Use:   "prompt [pid] [shell] [current-working-directory] [session-id]",
+	Use:   "prompt [pid] [tty]",
 	Short: "Run the prompt hook",
-	Args:  cobra.ExactArgs(4),
 	Run: func(cmd *cobra.Command, args []string) {
-		pid64, err := strconv.ParseInt(args[0], 10, 32)
-		if err != nil {
-			fmt.Println("Error:", err)
+		if len(args) != 2 {
 			return
 		}
 
-		pid := int32(pid64)
+		pid, _ := strconv.Atoi(args[0])
 
-		hook := fig_ipc.CreatePromptHook(pid, args[1], args[2], args[3])
-		if err := fig_ipc.SendHook(hook); err != nil {
-			fmt.Println("Error:", err)
-		} else {
-			fmt.Println("Success")
-		}
+		hook := fig_ipc.CreatePromptHook(pid, args[1])
+		fig_ipc.SendHook(hook)
+		// TODO: Add error handling
 	},
 }

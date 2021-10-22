@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fig-cli/diagnostics"
 	"fmt"
 	"os"
 	"strings"
@@ -10,15 +11,20 @@ import (
 	"github.com/spf13/pflag"
 )
 
+const TextWidth = 60
+
 var rootCmd = &cobra.Command{
 	Use:   "fig",
 	Short: "CLI to interact with Fig",
 	Annotations: map[string]string{
 		"fig.command": "true",
 	},
+	// This is stupid, I hate golang, why can I not decompose multiple returns into a single line?
+	Version: func() string {
+		version, _ := diagnostics.GetFigVersion()
+		return version
+	}(),
 }
-
-const TextWidth = 60
 
 func Execute() {
 	rootCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {

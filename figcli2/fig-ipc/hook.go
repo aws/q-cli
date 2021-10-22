@@ -1,6 +1,9 @@
 package fig_ipc
 
-import fig_proto "fig-cli/fig-proto"
+import (
+	fig_proto "fig-cli/fig-proto"
+	"os"
+)
 
 func SendHook(hook *fig_proto.Hook) error {
 	conn, err := Connect()
@@ -22,30 +25,55 @@ func SendHook(hook *fig_proto.Hook) error {
 	return nil
 }
 
-func CreateEditBufferHook(text string, cursor int64, shell string, sessionId string) *fig_proto.Hook {
+func GenerateShellContext(
+	pid int64,
+	tty string,
+	shell string,
+	sessionId string,
+	integrationVersion string,
+) *fig_proto.ShellContext {
+	wd, _ := os.Getwd()
+
+	return &fig_proto.ShellContext{
+		Pid:                     0,
+		Ttys:                    tty,
+		Shell:                   shell,
+		CurrentWorkingDirectory: wd,
+		SessionId:               "",
+		IntegrationVersion:      &integrationVersion,
+	}
+}
+
+func CreateEditBufferHook(sessionId string, integrationVersion string, tty string, pid int, histno int, cursor int, text string) *fig_proto.Hook {
 	return &fig_proto.Hook{
 		Hook: &fig_proto.Hook_Editbuffer{
 			Editbuffer: &fig_proto.EditBuffer{
-				Text:      text,
-				Cursor:    cursor,
-				Shell:     shell,
-				SessionId: sessionId,
+				Context: GenerateShellContext(
+					int64(pid),
+					tty,
+					"",
+					sessionId,
+					integrationVersion,
+				),
+				Text:   text,
+				Cursor: int64(cursor),
+				Histno: int64(histno),
 			},
 		},
 	}
 }
 
-func CreatePromptHook(pid int32, shell string, currentWorkingDirectory string, sesstionId string) *fig_proto.Hook {
+func CreatePromptHook(pid int, tty string) *fig_proto.Hook {
 	return &fig_proto.Hook{
 		Hook: &fig_proto.Hook_Prompt{
 			Prompt: &fig_proto.Prompt{
-				Context: &fig_proto.ShellContext{
-					Pid:                     pid,
-					Ttys:                    "",
-					Shell:                   shell,
-					CurrentWorkingDirectory: currentWorkingDirectory,
-					SessionId:               sesstionId,
-				},
+				Context: GenerateShellContext(
+					int64(pid),
+					tty,
+					"",
+					"",
+					"",
+				),
 			},
 		},
 	}

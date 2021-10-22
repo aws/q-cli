@@ -47,7 +47,14 @@ var integrationsListCmd = &cobra.Command{
 	Long:  "List Fig integrations",
 	Run: func(cmd *cobra.Command, args []string) {
 		res, err := fig_ipc.GetIntegrations()
-		fmt.Println(res, err)
+		if err != nil {
+			fmt.Println("Error:", err)
+			return
+		}
+
+		for _, integration := range res {
+			fmt.Printf("%s: %s\n", integration.GetName(), integration.GetStatus())
+		}
 	},
 }
 
@@ -59,10 +66,10 @@ var integrationsInstallCmd = &cobra.Command{
 	ValidArgs: integrationList,
 	Run: func(cmd *cobra.Command, args []string) {
 		integration := args[0]
-		if _, err := fig_ipc.IntegrationInstall(integrationMap[integration]); err != nil {
-			fmt.Printf("Error installing integration: %s\n", err.Error())
+		if res, err := fig_ipc.IntegrationInstall(integrationMap[integration]); err != nil {
+			fmt.Println("Error installing integration:", err.Error())
 		} else {
-			fmt.Printf("Integration %s installed\n", integration)
+			fmt.Println(res)
 		}
 	},
 }
@@ -75,10 +82,10 @@ var integrationsUninstallCmd = &cobra.Command{
 	ValidArgs: integrationList,
 	Run: func(cmd *cobra.Command, args []string) {
 		integration := args[0]
-		if _, err := fig_ipc.IntegrationUninstall(integrationMap[integration]); err != nil {
-			fmt.Printf("Error uninstalling integration: %s\n", err.Error())
+		if res, err := fig_ipc.IntegrationUninstall(integrationMap[integration]); err != nil {
+			fmt.Println("Error uninstalling integration:", err.Error())
 		} else {
-			fmt.Printf("Integration %s uninstalled\n", integration)
+			fmt.Println(res)
 		}
 	},
 }
@@ -91,10 +98,10 @@ var integrationsVerifyCmd = &cobra.Command{
 	ValidArgs: integrationList,
 	Run: func(cmd *cobra.Command, args []string) {
 		integration := args[0]
-		if _, err := fig_ipc.IntegrationVerifyInstall(integrationMap[integration]); err != nil {
-			fmt.Printf("Error verifying integration: %s\n", err.Error())
+		if res, err := fig_ipc.IntegrationVerifyInstall(integrationMap[integration]); err != nil {
+			fmt.Println("Error verifying integration:", err.Error())
 		} else {
-			fmt.Printf("Integration %s is verified\n", integration)
+			fmt.Println("Status:", res)
 		}
 	},
 }

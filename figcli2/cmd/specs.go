@@ -2,18 +2,18 @@ package cmd
 
 import (
 	"encoding/json"
+	"fig-cli/specs"
 	"fmt"
 	"net/http"
 	"os"
 	"os/user"
-	"path/filepath"
 	"strings"
 
 	"github.com/spf13/cobra"
 )
 
 func init() {
-	specsListCmd.Flags().Bool("local", false, "List local specs only")
+	specsListCmd.Flags().Bool("remote", false, "List specs that are available on the remote")
 
 	specsCmd.AddCommand(specsUninstallCmd)
 	specsCmd.AddCommand(specsListCmd)
@@ -57,14 +57,7 @@ var specsListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List installed specs",
 	Run: func(cmd *cobra.Command, arg []string) {
-		// Get user
-		user, err := user.Current()
-		if err != nil {
-			fmt.Println("Error:", err)
-			return
-		}
-
-		if cmd.Flags().Lookup("local").Value.String() == "false" {
+		if cmd.Flags().Lookup("remote").Value.String() == "true" {
 			// Get remote specs
 			req, _ := http.NewRequest("GET", "https://api.github.com/repos/withfig/autocomplete/contents/src", nil)
 			req.Header.Set("Accept", "application/vnd.github.v3+json")
@@ -90,17 +83,9 @@ var specsListCmd = &cobra.Command{
 				fmt.Println(spec)
 			}
 		} else {
-			// Get specs
-			files, err := filepath.Glob(fmt.Sprintf("%s/.fig/autocomplete/*.js", user.HomeDir))
-			if err != nil {
-				fmt.Println("Error:", err)
-				return
-			}
-
-			// Print specs
-			for _, file := range files {
-				fileName := strings.TrimSuffix(strings.TrimPrefix(file, fmt.Sprintf("%s/.fig/autocomplete/", user.HomeDir)), ".js")
-				fmt.Println(fileName)
+			specs, _ := specs.GetSpecsNames()
+			for _, spec := range specs {
+				fmt.Println(spec)
 			}
 		}
 

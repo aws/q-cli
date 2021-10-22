@@ -49,26 +49,38 @@ func CreateListTerminalIntegrations() *fig_proto.Command {
 	}
 }
 
-func GetIntegrations() (interface{}, error) {
+func GetIntegrations() ([]*fig_proto.TerminalIntegration, error) {
 	terminalIntegrationRequest := CreateListTerminalIntegrations()
 	res, err := SendRecvCommand(terminalIntegrationRequest)
-	return res, err
+	return res.GetIntegrationList().Integrations, err
 }
 
 func IntegrationInstall(integration Integration) (string, error) {
 	terminalIntegrationRequest := CreateTerminalIntegrationRequest(integration, fig_proto.IntegrationAction_INSTALL)
 	res, err := SendRecvCommand(terminalIntegrationRequest)
-	return res.(string), err
+	if err != nil {
+		return "", err
+	}
+
+	return GetCommandResponseMessage(res)
 }
 
 func IntegrationVerifyInstall(integration Integration) (string, error) {
 	terminalIntegrationRequest := CreateTerminalIntegrationRequest(integration, fig_proto.IntegrationAction_VERIFY_INSTALL)
 	res, err := SendRecvCommand(terminalIntegrationRequest)
-	return res.(string), err
+	if err != nil {
+		return "", err
+	}
+
+	return GetCommandResponseMessage(res)
 }
 
 func IntegrationUninstall(integration Integration) (string, error) {
 	terminalIntegrationRequest := CreateTerminalIntegrationRequest(integration, fig_proto.IntegrationAction_UNINSTALL)
 	res, err := SendRecvCommand(terminalIntegrationRequest)
-	return res.(string), err
+	if err != nil {
+		return "", err
+	}
+
+	return GetCommandResponseMessage(res)
 }

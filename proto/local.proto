@@ -16,6 +16,9 @@ message Command {
 	oneof command {
 		TerminalIntegrationRequest terminal_integration_update = 100;
 		ListTerminalIntegrations list_terminal_integrations = 101;
+		// Logout
+		// Login
+		// settings:init
 	}
 }
 
@@ -23,10 +26,15 @@ message Hook {
 	oneof hook {
 		EditBuffer editbuffer = 100;
 		Prompt prompt = 101;
+		PreExec preexec = 102;
+		PostExec postexec = 103;
+		KeyboardFocusChanged keyboardfocuschanged = 104;
+		TmuxPaneChanged tmuxpanechanged = 105;
+		OpenedSSHConnection openedsshconnection = 106;
 	}
 }
 
-// Example Command
+// == Commands ==
 enum IntegrationAction {
 	INSTALL = 0;
 	VERIFY_INSTALL = 1;
@@ -39,16 +47,7 @@ message TerminalIntegrationRequest {
 
 message ListTerminalIntegrations { }
 
-message TerminalIntegration {
-	string bundle_identifier = 1;
-	string name = 2;
-	optional string status = 3;
-}
-
-message TerminalIntegrationsList {
-	repeated TerminalIntegration integrations = 1;
-}
-
+// == Hooks ==
 message ShellContext {
 	int32 pid = 1;
 	string ttys = 2; // /dev/ttys## of terminal session
@@ -59,15 +58,15 @@ message ShellContext {
 	optional string terminal = 7;
 }
 
-// Example Hook
 message EditBuffer {
-	string text = 1;
-	int64 cursor = 2;
-	string shell = 3;
-	string sessionId = 4;
-	string integration_version = 5;
+	ShellContext context = 1;
 
-	ShellContext context = 6;
+	string text = 2;
+	int64 cursor = 3;
+	int64 histno = 4;
+	//string integration_version = 3;
+	//string shell = 3;
+	//string sessionId = 4;
 }
 
 message Prompt {
@@ -78,7 +77,6 @@ message PreExec {
 	ShellContext context = 1;
 
 	string command = 2; // the full command that was run in the shell
-
 }
 
 message PostExec {
@@ -88,21 +86,22 @@ message PostExec {
 	int32 exit_code = 3; // the exit code of the command
 }
 
-message keyboardFocusChanged {
+message KeyboardFocusChanged {
 	string bundle_identifier = 1;
 	string focused_session = 2; // a unique identifier associated with the pane or tab that is currently focused
 }
 
-message tmuxPaneChanged {
+message TmuxPaneChanged {
 	int32 pane_identifier = 1;
 }
 
-message openedSSHConnection {
+message OpenedSSHConnection {
 	ShellContext context = 1;
+
 	string control_path = 2;
 }
 
-// 
+// == Responses ==
 message Error {
 	optional int32 exit_code = 1;
 	optional string message = 2;
@@ -112,13 +111,23 @@ message Success {
 	optional string message = 1;
 }
 
+message TerminalIntegration {
+	string bundle_identifier = 1;
+	string name = 2;
+	optional string status = 3;
+}
+
+message TerminalIntegrationsList {
+	repeated TerminalIntegration integrations = 1;
+}
+
 message CommandResponse {
 	optional int64 id = 1;
 	oneof response {
 		Error error = 2;
 		Success success = 3;
-		TerminalIntegrationsList integration_list = 100;
 
 		// ... add structured responses for specific commands, as necessary
+		TerminalIntegrationsList integration_list = 100;
 	}
 }

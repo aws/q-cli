@@ -7,10 +7,10 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-func SendRecvCommand(cmd *fig_proto.Command) (interface{}, error) {
+func SendRecvCommand(cmd *fig_proto.Command) (*fig_proto.CommandResponse, error) {
 	conn, err := Connect()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer conn.Close()
 
@@ -21,29 +21,30 @@ func SendRecvCommand(cmd *fig_proto.Command) (interface{}, error) {
 	}
 
 	if err = conn.SendFigProto(&message); err != nil {
-		return "", err
+		return nil, err
 	}
 
 	buff, buffType, err := conn.RecvMessage()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	if buffType != protoTypeFigProto {
-		return "", fmt.Errorf("unexpected message type: %d", buffType)
+		return nil, fmt.Errorf("unexpected message type: %d", buffType)
 	}
 
 	var cmdResponse fig_proto.CommandResponse
 	proto.Unmarshal(buff, &cmdResponse)
+	return &cmdResponse, nil
+}
 
-	switch res := cmdResponse.Response.(type) {
-	case *fig_proto.CommandResponse_Error:
-		return nil, fmt.Errorf("%s", res.Error.GetMessage())
+func GetCommandResponseMessage(commandResponse *fig_proto.CommandResponse) (string, error) {
+	switch commandResponse.Response.(type) {
 	case *fig_proto.CommandResponse_Success:
-		return res.Success.GetMessage(), nil
-	case *fig_proto.CommandResponse_IntegrationList:
-		return res.IntegrationList.GetIntegrations(), nil
+		return commandResponse.GetSuccess().GetMessage(), nil
+	case *fig_proto.CommandResponse_Error:
+		return commandResponse.GetError().GetMessage(), nil
 	default:
-		return "", fmt.Errorf("unexpected response type: %T", res)
+		return "", fmt.Errorf("unknown response %T", commandResponse.Response)
 	}
 }
