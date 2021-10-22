@@ -17,7 +17,7 @@
 #endif
 
 #define BUFFSIZE (1024 * 100)
-#define FIGTERM_VERSION 1
+#define FIGTERM_VERSION 2
 
 void abort_handler(int sig) {
   log_error("Aborting %d: %d", getpid(), sig);

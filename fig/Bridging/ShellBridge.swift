@@ -367,15 +367,19 @@ class ShellBridge {
                                          clearLine: Bool = Defaults.clearExistingLineOnTerminalInsert,
                                          completion: (() -> Void)? = nil) {
         
-        if (NSWorkspace.shared.frontmostApplication?.isFig ?? false) {
-            print("Fig is the active window. Sending focus back to previous applications.")
-            WindowServer.shared.returnFocus()
-            Timer.delayWithSeconds(0.15) {
-              inject(cmd, runImmediately: runImmediately, clearLine: clearLine, completion: completion)
-            }
-        } else {
-            inject(cmd, runImmediately: runImmediately, clearLine: clearLine, completion: completion)
-        }
+      if let window = AXWindowServer.shared.whitelistedWindow,
+         let sessionId = window.session {
+        try? FigTerm.insert(cmd, into: sessionId)
+      }
+//        if (NSWorkspace.shared.frontmostApplication?.isFig ?? false) {
+//            print("Fig is the active window. Sending focus back to previous applications.")
+//            WindowServer.shared.returnFocus()
+//            Timer.delayWithSeconds(0.15) {
+//              inject(cmd, runImmediately: runImmediately, clearLine: clearLine, completion: completion)
+//            }
+//        } else {
+//            inject(cmd, runImmediately: runImmediately, clearLine: clearLine, completion: completion)
+//        }
     }
 
     //https://gist.github.com/eegrok/949034
