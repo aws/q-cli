@@ -3,6 +3,9 @@ package cmd
 import (
 	"fig-cli/diagnostics"
 	"fmt"
+	"net/url"
+	"os/exec"
+	"regexp"
 	"runtime"
 	"strings"
 
@@ -22,6 +25,19 @@ var issueCmd = &cobra.Command{
 	},
 	Args: cobra.ArbitraryArgs,
 	Run: func(cmd *cobra.Command, arg []string) {
+		text := strings.Join(arg, " ")
+
+		assignees := []string{"mschrage"}
+
+		// If args include "cli", then add the figcli team to the assignees
+		if regexp.MustCompile(`(?i)cli`).MatchString(text) {
+			assignees = append(assignees, "grant0417")
+		}
+
+		// If args include "figterm", then add the figterm team to the assignees
+		if regexp.MustCompile(`(?i)figterm`).MatchString(text) {
+			assignees = append(assignees, "sullivan-sean")
+		}
 
 		osName := runtime.GOOS
 		osArch := runtime.GOARCH
@@ -31,11 +47,11 @@ var issueCmd = &cobra.Command{
 
 		body.WriteString("### Description:\n> Please include a detailed description of the issue (and an image or screen recording, if applicable)\n\n")
 
-		if len(arg) > 0 {
-			body.WriteString(strings.Join(arg, " "))
+		if len(text) > 0 {
+			body.WriteString(text)
 		}
 
-		body.WriteString("\n\n\n\n### Details:\n|macOS|Fig|Shell|\n|-|-|-|\n")
+		body.WriteString("\n\n### Details:\n|macOS|Fig|Shell|\n|-|-|-|\n")
 
 		macOsVersion, _ := diagnostics.GetMacOsVersion()
 		figVersion, _ := diagnostics.GetFigVersion()
@@ -43,16 +59,21 @@ var issueCmd = &cobra.Command{
 
 		body.WriteString(fmt.Sprintf("|%s|%s|%s|\n", macOsVersion, figVersion, shell))
 
-		body.WriteString(fmt.Sprintf("|%s|%s|%s|\n", osName, "fig", "bash"))
 		body.WriteString("<details><summary><code>fig diagnostic</code></summary>\n<p>\n<pre>")
 
-		//\(Diagnostic.summary.trimmingCharacters(in: .whitespacesAndNewlines))
+		diagnostic := diagnostics.Summary()
+
+		body.WriteString(diagnostic)
 
 		body.WriteString("</pre>\n</p>\n</details>")
 
 		fmt.Println(body.String())
 
-		// fmt.Println("→ Opening GitHub...")
-		// exec.Command("open", "https://github.com/withfig/fig/issues/new?labels=bug&assignees=mattschrage&body="+url.QueryEscape(body.String())).Run()
+		fmt.Println("→ Opening GitHub...")
+		exec.Command("open",
+			fmt.Sprintf("https://github.com/withfig/fig/issues/new?labels=bug&assignees=%s&body=%s",
+				strings.Join(assignees, ","),
+				url.QueryEscape(body.String())),
+		).Run()
 	},
 }

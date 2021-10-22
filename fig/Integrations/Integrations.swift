@@ -126,7 +126,7 @@ class Integrations {
   
   static func handleListIntegrationsRequest() -> CommandResponse {
     CommandResponse.with { response in
-      response.integrationList = Local_TerminalIntegrationsList.with({ list in
+      response.integrationList = Local_TerminalIntegrationsListResponse.with({ list in
         list.integrations = Integrations.providers.map({ (key: String, value: TerminalIntegrationProvider) in
           Local_TerminalIntegration.with { integration in
             integration.bundleIdentifier = key

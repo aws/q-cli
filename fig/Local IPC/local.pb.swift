@@ -147,33 +147,72 @@ public struct Local_Command {
 
   public var command: Local_Command.OneOf_Command? = nil
 
-  public var terminalIntegrationUpdate: Local_TerminalIntegrationRequest {
+  public var terminalIntegration: Local_TerminalIntegrationCommand {
     get {
-      if case .terminalIntegrationUpdate(let v)? = command {return v}
-      return Local_TerminalIntegrationRequest()
+      if case .terminalIntegration(let v)? = command {return v}
+      return Local_TerminalIntegrationCommand()
     }
-    set {command = .terminalIntegrationUpdate(newValue)}
+    set {command = .terminalIntegration(newValue)}
   }
 
-  /// Logout
-  /// Login
-  /// settings:init
-  public var listTerminalIntegrations: Local_ListTerminalIntegrations {
+  public var listTerminalIntegrations: Local_ListTerminalIntegrationsCommand {
     get {
       if case .listTerminalIntegrations(let v)? = command {return v}
-      return Local_ListTerminalIntegrations()
+      return Local_ListTerminalIntegrationsCommand()
     }
     set {command = .listTerminalIntegrations(newValue)}
+  }
+
+  public var logout: Local_LogoutCommand {
+    get {
+      if case .logout(let v)? = command {return v}
+      return Local_LogoutCommand()
+    }
+    set {command = .logout(newValue)}
+  }
+
+  public var restart: Local_RestartCommand {
+    get {
+      if case .restart(let v)? = command {return v}
+      return Local_RestartCommand()
+    }
+    set {command = .restart(newValue)}
+  }
+
+  public var quit: Local_QuitCommand {
+    get {
+      if case .quit(let v)? = command {return v}
+      return Local_QuitCommand()
+    }
+    set {command = .quit(newValue)}
+  }
+
+  public var update: Local_UpdateCommand {
+    get {
+      if case .update(let v)? = command {return v}
+      return Local_UpdateCommand()
+    }
+    set {command = .update(newValue)}
+  }
+
+  public var diagnostics: Local_DiagnosticsCommand {
+    get {
+      if case .diagnostics(let v)? = command {return v}
+      return Local_DiagnosticsCommand()
+    }
+    set {command = .diagnostics(newValue)}
   }
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public enum OneOf_Command: Equatable {
-    case terminalIntegrationUpdate(Local_TerminalIntegrationRequest)
-    /// Logout
-    /// Login
-    /// settings:init
-    case listTerminalIntegrations(Local_ListTerminalIntegrations)
+    case terminalIntegration(Local_TerminalIntegrationCommand)
+    case listTerminalIntegrations(Local_ListTerminalIntegrationsCommand)
+    case logout(Local_LogoutCommand)
+    case restart(Local_RestartCommand)
+    case quit(Local_QuitCommand)
+    case update(Local_UpdateCommand)
+    case diagnostics(Local_DiagnosticsCommand)
 
   #if !swift(>=4.1)
     public static func ==(lhs: Local_Command.OneOf_Command, rhs: Local_Command.OneOf_Command) -> Bool {
@@ -181,12 +220,32 @@ public struct Local_Command {
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch (lhs, rhs) {
-      case (.terminalIntegrationUpdate, .terminalIntegrationUpdate): return {
-        guard case .terminalIntegrationUpdate(let l) = lhs, case .terminalIntegrationUpdate(let r) = rhs else { preconditionFailure() }
+      case (.terminalIntegration, .terminalIntegration): return {
+        guard case .terminalIntegration(let l) = lhs, case .terminalIntegration(let r) = rhs else { preconditionFailure() }
         return l == r
       }()
       case (.listTerminalIntegrations, .listTerminalIntegrations): return {
         guard case .listTerminalIntegrations(let l) = lhs, case .listTerminalIntegrations(let r) = rhs else { preconditionFailure() }
+        return l == r
+      }()
+      case (.logout, .logout): return {
+        guard case .logout(let l) = lhs, case .logout(let r) = rhs else { preconditionFailure() }
+        return l == r
+      }()
+      case (.restart, .restart): return {
+        guard case .restart(let l) = lhs, case .restart(let r) = rhs else { preconditionFailure() }
+        return l == r
+      }()
+      case (.quit, .quit): return {
+        guard case .quit(let l) = lhs, case .quit(let r) = rhs else { preconditionFailure() }
+        return l == r
+      }()
+      case (.update, .update): return {
+        guard case .update(let l) = lhs, case .update(let r) = rhs else { preconditionFailure() }
+        return l == r
+      }()
+      case (.diagnostics, .diagnostics): return {
+        guard case .diagnostics(let l) = lhs, case .diagnostics(let r) = rhs else { preconditionFailure() }
         return l == r
       }()
       default: return false
@@ -208,72 +267,81 @@ public struct Local_Hook {
 
   public var hook: Local_Hook.OneOf_Hook? = nil
 
-  public var editbuffer: Local_EditBuffer {
+  public var editbuffer: Local_EditBufferHook {
     get {
       if case .editbuffer(let v)? = hook {return v}
-      return Local_EditBuffer()
+      return Local_EditBufferHook()
     }
     set {hook = .editbuffer(newValue)}
   }
 
-  public var prompt: Local_Prompt {
+  public var prompt: Local_PromptHook {
     get {
       if case .prompt(let v)? = hook {return v}
-      return Local_Prompt()
+      return Local_PromptHook()
     }
     set {hook = .prompt(newValue)}
   }
 
-  public var preexec: Local_PreExec {
+  public var preexec: Local_PreExecHook {
     get {
       if case .preexec(let v)? = hook {return v}
-      return Local_PreExec()
+      return Local_PreExecHook()
     }
     set {hook = .preexec(newValue)}
   }
 
-  public var postexec: Local_PostExec {
+  public var postexec: Local_PostExecHook {
     get {
       if case .postexec(let v)? = hook {return v}
-      return Local_PostExec()
+      return Local_PostExecHook()
     }
     set {hook = .postexec(newValue)}
   }
 
-  public var keyboardfocuschanged: Local_KeyboardFocusChanged {
+  public var keyboardfocuschanged: Local_KeyboardFocusChangedHook {
     get {
       if case .keyboardfocuschanged(let v)? = hook {return v}
-      return Local_KeyboardFocusChanged()
+      return Local_KeyboardFocusChangedHook()
     }
     set {hook = .keyboardfocuschanged(newValue)}
   }
 
-  public var tmuxpanechanged: Local_TmuxPaneChanged {
+  public var tmuxpanechanged: Local_TmuxPaneChangedHook {
     get {
       if case .tmuxpanechanged(let v)? = hook {return v}
-      return Local_TmuxPaneChanged()
+      return Local_TmuxPaneChangedHook()
     }
     set {hook = .tmuxpanechanged(newValue)}
   }
 
-  public var openedsshconnection: Local_OpenedSSHConnection {
+  public var openedsshconnection: Local_OpenedSSHConnectionHook {
     get {
       if case .openedsshconnection(let v)? = hook {return v}
-      return Local_OpenedSSHConnection()
+      return Local_OpenedSSHConnectionHook()
     }
     set {hook = .openedsshconnection(newValue)}
+  }
+
+  public var callback: Local_CallbackHook {
+    get {
+      if case .callback(let v)? = hook {return v}
+      return Local_CallbackHook()
+    }
+    set {hook = .callback(newValue)}
   }
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public enum OneOf_Hook: Equatable {
-    case editbuffer(Local_EditBuffer)
-    case prompt(Local_Prompt)
-    case preexec(Local_PreExec)
-    case postexec(Local_PostExec)
-    case keyboardfocuschanged(Local_KeyboardFocusChanged)
-    case tmuxpanechanged(Local_TmuxPaneChanged)
-    case openedsshconnection(Local_OpenedSSHConnection)
+    case editbuffer(Local_EditBufferHook)
+    case prompt(Local_PromptHook)
+    case preexec(Local_PreExecHook)
+    case postexec(Local_PostExecHook)
+    case keyboardfocuschanged(Local_KeyboardFocusChangedHook)
+    case tmuxpanechanged(Local_TmuxPaneChangedHook)
+    case openedsshconnection(Local_OpenedSSHConnectionHook)
+    case callback(Local_CallbackHook)
 
   #if !swift(>=4.1)
     public static func ==(lhs: Local_Hook.OneOf_Hook, rhs: Local_Hook.OneOf_Hook) -> Bool {
@@ -309,6 +377,10 @@ public struct Local_Hook {
         guard case .openedsshconnection(let l) = lhs, case .openedsshconnection(let r) = rhs else { preconditionFailure() }
         return l == r
       }()
+      case (.callback, .callback): return {
+        guard case .callback(let l) = lhs, case .callback(let r) = rhs else { preconditionFailure() }
+        return l == r
+      }()
       default: return false
       }
     }
@@ -318,7 +390,7 @@ public struct Local_Hook {
   public init() {}
 }
 
-public struct Local_TerminalIntegrationRequest {
+public struct Local_TerminalIntegrationCommand {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -332,7 +404,59 @@ public struct Local_TerminalIntegrationRequest {
   public init() {}
 }
 
-public struct Local_ListTerminalIntegrations {
+public struct Local_ListTerminalIntegrationsCommand {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public struct Local_LogoutCommand {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public struct Local_RestartCommand {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public struct Local_QuitCommand {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public struct Local_UpdateCommand {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var force: Bool = false
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public struct Local_DiagnosticsCommand {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -388,7 +512,7 @@ public struct Local_ShellContext {
   fileprivate var _terminal: String? = nil
 }
 
-public struct Local_EditBuffer {
+public struct Local_EditBufferHook {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -418,7 +542,7 @@ public struct Local_EditBuffer {
   fileprivate var _context: Local_ShellContext? = nil
 }
 
-public struct Local_Prompt {
+public struct Local_PromptHook {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -439,7 +563,7 @@ public struct Local_Prompt {
   fileprivate var _context: Local_ShellContext? = nil
 }
 
-public struct Local_PreExec {
+public struct Local_PreExecHook {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -463,7 +587,7 @@ public struct Local_PreExec {
   fileprivate var _context: Local_ShellContext? = nil
 }
 
-public struct Local_PostExec {
+public struct Local_PostExecHook {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -490,7 +614,7 @@ public struct Local_PostExec {
   fileprivate var _context: Local_ShellContext? = nil
 }
 
-public struct Local_KeyboardFocusChanged {
+public struct Local_KeyboardFocusChangedHook {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -505,7 +629,7 @@ public struct Local_KeyboardFocusChanged {
   public init() {}
 }
 
-public struct Local_TmuxPaneChanged {
+public struct Local_TmuxPaneChangedHook {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -517,7 +641,7 @@ public struct Local_TmuxPaneChanged {
   public init() {}
 }
 
-public struct Local_OpenedSSHConnection {
+public struct Local_OpenedSSHConnectionHook {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -540,8 +664,24 @@ public struct Local_OpenedSSHConnection {
   fileprivate var _context: Local_ShellContext? = nil
 }
 
+public struct Local_CallbackHook {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var handlerID: String = String()
+
+  public var filepath: String = String()
+
+  public var exitCode: String = String()
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
 /// == Responses ==
-public struct Local_Error {
+public struct Local_ErrorResponse {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -572,7 +712,7 @@ public struct Local_Error {
   fileprivate var _message: String? = nil
 }
 
-public struct Local_Success {
+public struct Local_SuccessResponse {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -618,12 +758,46 @@ public struct Local_TerminalIntegration {
   fileprivate var _status: String? = nil
 }
 
-public struct Local_TerminalIntegrationsList {
+public struct Local_TerminalIntegrationsListResponse {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   public var integrations: [Local_TerminalIntegration] = []
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public struct Local_DiagnosticsResponse {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var pathToBundle: String = String()
+
+  public var accessibility: String = String()
+
+  public var keypath: String = String()
+
+  public var docker: String = String()
+
+  public var symlinked: String = String()
+
+  public var onlytab: String = String()
+
+  public var installscript: String = String()
+
+  public var psudopath: String = String()
+
+  public var securekeyboard: String = String()
+
+  public var securekeyboardPath: String = String()
+
+  public var currentProcess: String = String()
+
+  public var currentWindowIdentifier: String = String()
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -646,38 +820,47 @@ public struct Local_CommandResponse {
 
   public var response: Local_CommandResponse.OneOf_Response? = nil
 
-  public var error: Local_Error {
+  public var error: Local_ErrorResponse {
     get {
       if case .error(let v)? = response {return v}
-      return Local_Error()
+      return Local_ErrorResponse()
     }
     set {response = .error(newValue)}
   }
 
-  public var success: Local_Success {
+  public var success: Local_SuccessResponse {
     get {
       if case .success(let v)? = response {return v}
-      return Local_Success()
+      return Local_SuccessResponse()
     }
     set {response = .success(newValue)}
   }
 
   /// ... add structured responses for specific commands, as necessary
-  public var integrationList: Local_TerminalIntegrationsList {
+  public var integrationList: Local_TerminalIntegrationsListResponse {
     get {
       if case .integrationList(let v)? = response {return v}
-      return Local_TerminalIntegrationsList()
+      return Local_TerminalIntegrationsListResponse()
     }
     set {response = .integrationList(newValue)}
+  }
+
+  public var diagnostics: Local_DiagnosticsResponse {
+    get {
+      if case .diagnostics(let v)? = response {return v}
+      return Local_DiagnosticsResponse()
+    }
+    set {response = .diagnostics(newValue)}
   }
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public enum OneOf_Response: Equatable {
-    case error(Local_Error)
-    case success(Local_Success)
+    case error(Local_ErrorResponse)
+    case success(Local_SuccessResponse)
     /// ... add structured responses for specific commands, as necessary
-    case integrationList(Local_TerminalIntegrationsList)
+    case integrationList(Local_TerminalIntegrationsListResponse)
+    case diagnostics(Local_DiagnosticsResponse)
 
   #if !swift(>=4.1)
     public static func ==(lhs: Local_CommandResponse.OneOf_Response, rhs: Local_CommandResponse.OneOf_Response) -> Bool {
@@ -695,6 +878,10 @@ public struct Local_CommandResponse {
       }()
       case (.integrationList, .integrationList): return {
         guard case .integrationList(let l) = lhs, case .integrationList(let r) = rhs else { preconditionFailure() }
+        return l == r
+      }()
+      case (.diagnostics, .diagnostics): return {
+        guard case .diagnostics(let l) = lhs, case .diagnostics(let r) = rhs else { preconditionFailure() }
         return l == r
       }()
       default: return false
@@ -795,8 +982,13 @@ extension Local_Command: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementa
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "id"),
     2: .standard(proto: "no_response"),
-    100: .standard(proto: "terminal_integration_update"),
+    100: .standard(proto: "terminal_integration"),
     101: .standard(proto: "list_terminal_integrations"),
+    102: .same(proto: "logout"),
+    103: .same(proto: "restart"),
+    104: .same(proto: "quit"),
+    105: .same(proto: "update"),
+    106: .same(proto: "diagnostics"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -808,20 +1000,20 @@ extension Local_Command: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementa
       case 1: try { try decoder.decodeSingularInt64Field(value: &self._id) }()
       case 2: try { try decoder.decodeSingularBoolField(value: &self._noResponse) }()
       case 100: try {
-        var v: Local_TerminalIntegrationRequest?
+        var v: Local_TerminalIntegrationCommand?
         var hadOneofValue = false
         if let current = self.command {
           hadOneofValue = true
-          if case .terminalIntegrationUpdate(let m) = current {v = m}
+          if case .terminalIntegration(let m) = current {v = m}
         }
         try decoder.decodeSingularMessageField(value: &v)
         if let v = v {
           if hadOneofValue {try decoder.handleConflictingOneOf()}
-          self.command = .terminalIntegrationUpdate(v)
+          self.command = .terminalIntegration(v)
         }
       }()
       case 101: try {
-        var v: Local_ListTerminalIntegrations?
+        var v: Local_ListTerminalIntegrationsCommand?
         var hadOneofValue = false
         if let current = self.command {
           hadOneofValue = true
@@ -831,6 +1023,71 @@ extension Local_Command: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementa
         if let v = v {
           if hadOneofValue {try decoder.handleConflictingOneOf()}
           self.command = .listTerminalIntegrations(v)
+        }
+      }()
+      case 102: try {
+        var v: Local_LogoutCommand?
+        var hadOneofValue = false
+        if let current = self.command {
+          hadOneofValue = true
+          if case .logout(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.command = .logout(v)
+        }
+      }()
+      case 103: try {
+        var v: Local_RestartCommand?
+        var hadOneofValue = false
+        if let current = self.command {
+          hadOneofValue = true
+          if case .restart(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.command = .restart(v)
+        }
+      }()
+      case 104: try {
+        var v: Local_QuitCommand?
+        var hadOneofValue = false
+        if let current = self.command {
+          hadOneofValue = true
+          if case .quit(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.command = .quit(v)
+        }
+      }()
+      case 105: try {
+        var v: Local_UpdateCommand?
+        var hadOneofValue = false
+        if let current = self.command {
+          hadOneofValue = true
+          if case .update(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.command = .update(v)
+        }
+      }()
+      case 106: try {
+        var v: Local_DiagnosticsCommand?
+        var hadOneofValue = false
+        if let current = self.command {
+          hadOneofValue = true
+          if case .diagnostics(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.command = .diagnostics(v)
         }
       }()
       default: break
@@ -850,13 +1107,33 @@ extension Local_Command: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementa
       try visitor.visitSingularBoolField(value: v, fieldNumber: 2)
     } }()
     switch self.command {
-    case .terminalIntegrationUpdate?: try {
-      guard case .terminalIntegrationUpdate(let v)? = self.command else { preconditionFailure() }
+    case .terminalIntegration?: try {
+      guard case .terminalIntegration(let v)? = self.command else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 100)
     }()
     case .listTerminalIntegrations?: try {
       guard case .listTerminalIntegrations(let v)? = self.command else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 101)
+    }()
+    case .logout?: try {
+      guard case .logout(let v)? = self.command else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 102)
+    }()
+    case .restart?: try {
+      guard case .restart(let v)? = self.command else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 103)
+    }()
+    case .quit?: try {
+      guard case .quit(let v)? = self.command else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 104)
+    }()
+    case .update?: try {
+      guard case .update(let v)? = self.command else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 105)
+    }()
+    case .diagnostics?: try {
+      guard case .diagnostics(let v)? = self.command else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 106)
     }()
     case nil: break
     }
@@ -882,6 +1159,7 @@ extension Local_Hook: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementatio
     104: .same(proto: "keyboardfocuschanged"),
     105: .same(proto: "tmuxpanechanged"),
     106: .same(proto: "openedsshconnection"),
+    107: .same(proto: "callback"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -891,7 +1169,7 @@ extension Local_Hook: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementatio
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
       case 100: try {
-        var v: Local_EditBuffer?
+        var v: Local_EditBufferHook?
         var hadOneofValue = false
         if let current = self.hook {
           hadOneofValue = true
@@ -904,7 +1182,7 @@ extension Local_Hook: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementatio
         }
       }()
       case 101: try {
-        var v: Local_Prompt?
+        var v: Local_PromptHook?
         var hadOneofValue = false
         if let current = self.hook {
           hadOneofValue = true
@@ -917,7 +1195,7 @@ extension Local_Hook: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementatio
         }
       }()
       case 102: try {
-        var v: Local_PreExec?
+        var v: Local_PreExecHook?
         var hadOneofValue = false
         if let current = self.hook {
           hadOneofValue = true
@@ -930,7 +1208,7 @@ extension Local_Hook: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementatio
         }
       }()
       case 103: try {
-        var v: Local_PostExec?
+        var v: Local_PostExecHook?
         var hadOneofValue = false
         if let current = self.hook {
           hadOneofValue = true
@@ -943,7 +1221,7 @@ extension Local_Hook: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementatio
         }
       }()
       case 104: try {
-        var v: Local_KeyboardFocusChanged?
+        var v: Local_KeyboardFocusChangedHook?
         var hadOneofValue = false
         if let current = self.hook {
           hadOneofValue = true
@@ -956,7 +1234,7 @@ extension Local_Hook: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementatio
         }
       }()
       case 105: try {
-        var v: Local_TmuxPaneChanged?
+        var v: Local_TmuxPaneChangedHook?
         var hadOneofValue = false
         if let current = self.hook {
           hadOneofValue = true
@@ -969,7 +1247,7 @@ extension Local_Hook: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementatio
         }
       }()
       case 106: try {
-        var v: Local_OpenedSSHConnection?
+        var v: Local_OpenedSSHConnectionHook?
         var hadOneofValue = false
         if let current = self.hook {
           hadOneofValue = true
@@ -979,6 +1257,19 @@ extension Local_Hook: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementatio
         if let v = v {
           if hadOneofValue {try decoder.handleConflictingOneOf()}
           self.hook = .openedsshconnection(v)
+        }
+      }()
+      case 107: try {
+        var v: Local_CallbackHook?
+        var hadOneofValue = false
+        if let current = self.hook {
+          hadOneofValue = true
+          if case .callback(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.hook = .callback(v)
         }
       }()
       default: break
@@ -1020,6 +1311,10 @@ extension Local_Hook: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementatio
       guard case .openedsshconnection(let v)? = self.hook else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 106)
     }()
+    case .callback?: try {
+      guard case .callback(let v)? = self.hook else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 107)
+    }()
     case nil: break
     }
     try unknownFields.traverse(visitor: &visitor)
@@ -1032,8 +1327,8 @@ extension Local_Hook: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementatio
   }
 }
 
-extension Local_TerminalIntegrationRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".TerminalIntegrationRequest"
+extension Local_TerminalIntegrationCommand: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".TerminalIntegrationCommand"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "identifier"),
     2: .same(proto: "action"),
@@ -1062,7 +1357,7 @@ extension Local_TerminalIntegrationRequest: SwiftProtobuf.Message, SwiftProtobuf
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Local_TerminalIntegrationRequest, rhs: Local_TerminalIntegrationRequest) -> Bool {
+  public static func ==(lhs: Local_TerminalIntegrationCommand, rhs: Local_TerminalIntegrationCommand) -> Bool {
     if lhs.identifier != rhs.identifier {return false}
     if lhs.action != rhs.action {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
@@ -1070,8 +1365,8 @@ extension Local_TerminalIntegrationRequest: SwiftProtobuf.Message, SwiftProtobuf
   }
 }
 
-extension Local_ListTerminalIntegrations: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".ListTerminalIntegrations"
+extension Local_ListTerminalIntegrationsCommand: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".ListTerminalIntegrationsCommand"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap()
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -1083,7 +1378,115 @@ extension Local_ListTerminalIntegrations: SwiftProtobuf.Message, SwiftProtobuf._
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Local_ListTerminalIntegrations, rhs: Local_ListTerminalIntegrations) -> Bool {
+  public static func ==(lhs: Local_ListTerminalIntegrationsCommand, rhs: Local_ListTerminalIntegrationsCommand) -> Bool {
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Local_LogoutCommand: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".LogoutCommand"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap()
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let _ = try decoder.nextFieldNumber() {
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Local_LogoutCommand, rhs: Local_LogoutCommand) -> Bool {
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Local_RestartCommand: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".RestartCommand"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap()
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let _ = try decoder.nextFieldNumber() {
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Local_RestartCommand, rhs: Local_RestartCommand) -> Bool {
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Local_QuitCommand: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".QuitCommand"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap()
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let _ = try decoder.nextFieldNumber() {
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Local_QuitCommand, rhs: Local_QuitCommand) -> Bool {
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Local_UpdateCommand: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".UpdateCommand"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .same(proto: "force"),
+  ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularBoolField(value: &self.force) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if self.force != false {
+      try visitor.visitSingularBoolField(value: self.force, fieldNumber: 1)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Local_UpdateCommand, rhs: Local_UpdateCommand) -> Bool {
+    if lhs.force != rhs.force {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Local_DiagnosticsCommand: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".DiagnosticsCommand"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap()
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let _ = try decoder.nextFieldNumber() {
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Local_DiagnosticsCommand, rhs: Local_DiagnosticsCommand) -> Bool {
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -1161,8 +1564,8 @@ extension Local_ShellContext: SwiftProtobuf.Message, SwiftProtobuf._MessageImple
   }
 }
 
-extension Local_EditBuffer: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".EditBuffer"
+extension Local_EditBufferHook: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".EditBufferHook"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "context"),
     2: .same(proto: "text"),
@@ -1205,7 +1608,7 @@ extension Local_EditBuffer: SwiftProtobuf.Message, SwiftProtobuf._MessageImpleme
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Local_EditBuffer, rhs: Local_EditBuffer) -> Bool {
+  public static func ==(lhs: Local_EditBufferHook, rhs: Local_EditBufferHook) -> Bool {
     if lhs._context != rhs._context {return false}
     if lhs.text != rhs.text {return false}
     if lhs.cursor != rhs.cursor {return false}
@@ -1215,8 +1618,8 @@ extension Local_EditBuffer: SwiftProtobuf.Message, SwiftProtobuf._MessageImpleme
   }
 }
 
-extension Local_Prompt: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".Prompt"
+extension Local_PromptHook: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".PromptHook"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "context"),
   ]
@@ -1244,15 +1647,15 @@ extension Local_Prompt: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementat
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Local_Prompt, rhs: Local_Prompt) -> Bool {
+  public static func ==(lhs: Local_PromptHook, rhs: Local_PromptHook) -> Bool {
     if lhs._context != rhs._context {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
 }
 
-extension Local_PreExec: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".PreExec"
+extension Local_PreExecHook: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".PreExecHook"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "context"),
     2: .same(proto: "command"),
@@ -1285,7 +1688,7 @@ extension Local_PreExec: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementa
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Local_PreExec, rhs: Local_PreExec) -> Bool {
+  public static func ==(lhs: Local_PreExecHook, rhs: Local_PreExecHook) -> Bool {
     if lhs._context != rhs._context {return false}
     if lhs.command != rhs.command {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
@@ -1293,8 +1696,8 @@ extension Local_PreExec: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementa
   }
 }
 
-extension Local_PostExec: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".PostExec"
+extension Local_PostExecHook: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".PostExecHook"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "context"),
     2: .same(proto: "command"),
@@ -1332,7 +1735,7 @@ extension Local_PostExec: SwiftProtobuf.Message, SwiftProtobuf._MessageImplement
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Local_PostExec, rhs: Local_PostExec) -> Bool {
+  public static func ==(lhs: Local_PostExecHook, rhs: Local_PostExecHook) -> Bool {
     if lhs._context != rhs._context {return false}
     if lhs.command != rhs.command {return false}
     if lhs.exitCode != rhs.exitCode {return false}
@@ -1341,8 +1744,8 @@ extension Local_PostExec: SwiftProtobuf.Message, SwiftProtobuf._MessageImplement
   }
 }
 
-extension Local_KeyboardFocusChanged: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".KeyboardFocusChanged"
+extension Local_KeyboardFocusChangedHook: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".KeyboardFocusChangedHook"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .standard(proto: "bundle_identifier"),
     2: .standard(proto: "focused_session"),
@@ -1371,7 +1774,7 @@ extension Local_KeyboardFocusChanged: SwiftProtobuf.Message, SwiftProtobuf._Mess
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Local_KeyboardFocusChanged, rhs: Local_KeyboardFocusChanged) -> Bool {
+  public static func ==(lhs: Local_KeyboardFocusChangedHook, rhs: Local_KeyboardFocusChangedHook) -> Bool {
     if lhs.bundleIdentifier != rhs.bundleIdentifier {return false}
     if lhs.focusedSession != rhs.focusedSession {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
@@ -1379,8 +1782,8 @@ extension Local_KeyboardFocusChanged: SwiftProtobuf.Message, SwiftProtobuf._Mess
   }
 }
 
-extension Local_TmuxPaneChanged: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".TmuxPaneChanged"
+extension Local_TmuxPaneChangedHook: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".TmuxPaneChangedHook"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .standard(proto: "pane_identifier"),
   ]
@@ -1404,15 +1807,15 @@ extension Local_TmuxPaneChanged: SwiftProtobuf.Message, SwiftProtobuf._MessageIm
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Local_TmuxPaneChanged, rhs: Local_TmuxPaneChanged) -> Bool {
+  public static func ==(lhs: Local_TmuxPaneChangedHook, rhs: Local_TmuxPaneChangedHook) -> Bool {
     if lhs.paneIdentifier != rhs.paneIdentifier {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
 }
 
-extension Local_OpenedSSHConnection: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".OpenedSSHConnection"
+extension Local_OpenedSSHConnectionHook: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".OpenedSSHConnectionHook"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "context"),
     2: .standard(proto: "control_path"),
@@ -1445,7 +1848,7 @@ extension Local_OpenedSSHConnection: SwiftProtobuf.Message, SwiftProtobuf._Messa
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Local_OpenedSSHConnection, rhs: Local_OpenedSSHConnection) -> Bool {
+  public static func ==(lhs: Local_OpenedSSHConnectionHook, rhs: Local_OpenedSSHConnectionHook) -> Bool {
     if lhs._context != rhs._context {return false}
     if lhs.controlPath != rhs.controlPath {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
@@ -1453,8 +1856,52 @@ extension Local_OpenedSSHConnection: SwiftProtobuf.Message, SwiftProtobuf._Messa
   }
 }
 
-extension Local_Error: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".Error"
+extension Local_CallbackHook: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".CallbackHook"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .standard(proto: "handler_id"),
+    2: .same(proto: "filepath"),
+    3: .standard(proto: "exit_code"),
+  ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.handlerID) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.filepath) }()
+      case 3: try { try decoder.decodeSingularStringField(value: &self.exitCode) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.handlerID.isEmpty {
+      try visitor.visitSingularStringField(value: self.handlerID, fieldNumber: 1)
+    }
+    if !self.filepath.isEmpty {
+      try visitor.visitSingularStringField(value: self.filepath, fieldNumber: 2)
+    }
+    if !self.exitCode.isEmpty {
+      try visitor.visitSingularStringField(value: self.exitCode, fieldNumber: 3)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Local_CallbackHook, rhs: Local_CallbackHook) -> Bool {
+    if lhs.handlerID != rhs.handlerID {return false}
+    if lhs.filepath != rhs.filepath {return false}
+    if lhs.exitCode != rhs.exitCode {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Local_ErrorResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".ErrorResponse"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .standard(proto: "exit_code"),
     2: .same(proto: "message"),
@@ -1487,7 +1934,7 @@ extension Local_Error: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementati
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Local_Error, rhs: Local_Error) -> Bool {
+  public static func ==(lhs: Local_ErrorResponse, rhs: Local_ErrorResponse) -> Bool {
     if lhs._exitCode != rhs._exitCode {return false}
     if lhs._message != rhs._message {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
@@ -1495,8 +1942,8 @@ extension Local_Error: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementati
   }
 }
 
-extension Local_Success: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".Success"
+extension Local_SuccessResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".SuccessResponse"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "message"),
   ]
@@ -1524,7 +1971,7 @@ extension Local_Success: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementa
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Local_Success, rhs: Local_Success) -> Bool {
+  public static func ==(lhs: Local_SuccessResponse, rhs: Local_SuccessResponse) -> Bool {
     if lhs._message != rhs._message {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -1579,8 +2026,8 @@ extension Local_TerminalIntegration: SwiftProtobuf.Message, SwiftProtobuf._Messa
   }
 }
 
-extension Local_TerminalIntegrationsList: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".TerminalIntegrationsList"
+extension Local_TerminalIntegrationsListResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".TerminalIntegrationsListResponse"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "integrations"),
   ]
@@ -1604,8 +2051,106 @@ extension Local_TerminalIntegrationsList: SwiftProtobuf.Message, SwiftProtobuf._
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Local_TerminalIntegrationsList, rhs: Local_TerminalIntegrationsList) -> Bool {
+  public static func ==(lhs: Local_TerminalIntegrationsListResponse, rhs: Local_TerminalIntegrationsListResponse) -> Bool {
     if lhs.integrations != rhs.integrations {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Local_DiagnosticsResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".DiagnosticsResponse"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .standard(proto: "path_to_bundle"),
+    2: .same(proto: "accessibility"),
+    3: .same(proto: "keypath"),
+    4: .same(proto: "docker"),
+    5: .same(proto: "symlinked"),
+    6: .same(proto: "onlytab"),
+    7: .same(proto: "installscript"),
+    8: .same(proto: "psudopath"),
+    9: .same(proto: "securekeyboard"),
+    10: .standard(proto: "securekeyboard_path"),
+    11: .standard(proto: "current_process"),
+    12: .standard(proto: "current_window_identifier"),
+  ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.pathToBundle) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.accessibility) }()
+      case 3: try { try decoder.decodeSingularStringField(value: &self.keypath) }()
+      case 4: try { try decoder.decodeSingularStringField(value: &self.docker) }()
+      case 5: try { try decoder.decodeSingularStringField(value: &self.symlinked) }()
+      case 6: try { try decoder.decodeSingularStringField(value: &self.onlytab) }()
+      case 7: try { try decoder.decodeSingularStringField(value: &self.installscript) }()
+      case 8: try { try decoder.decodeSingularStringField(value: &self.psudopath) }()
+      case 9: try { try decoder.decodeSingularStringField(value: &self.securekeyboard) }()
+      case 10: try { try decoder.decodeSingularStringField(value: &self.securekeyboardPath) }()
+      case 11: try { try decoder.decodeSingularStringField(value: &self.currentProcess) }()
+      case 12: try { try decoder.decodeSingularStringField(value: &self.currentWindowIdentifier) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.pathToBundle.isEmpty {
+      try visitor.visitSingularStringField(value: self.pathToBundle, fieldNumber: 1)
+    }
+    if !self.accessibility.isEmpty {
+      try visitor.visitSingularStringField(value: self.accessibility, fieldNumber: 2)
+    }
+    if !self.keypath.isEmpty {
+      try visitor.visitSingularStringField(value: self.keypath, fieldNumber: 3)
+    }
+    if !self.docker.isEmpty {
+      try visitor.visitSingularStringField(value: self.docker, fieldNumber: 4)
+    }
+    if !self.symlinked.isEmpty {
+      try visitor.visitSingularStringField(value: self.symlinked, fieldNumber: 5)
+    }
+    if !self.onlytab.isEmpty {
+      try visitor.visitSingularStringField(value: self.onlytab, fieldNumber: 6)
+    }
+    if !self.installscript.isEmpty {
+      try visitor.visitSingularStringField(value: self.installscript, fieldNumber: 7)
+    }
+    if !self.psudopath.isEmpty {
+      try visitor.visitSingularStringField(value: self.psudopath, fieldNumber: 8)
+    }
+    if !self.securekeyboard.isEmpty {
+      try visitor.visitSingularStringField(value: self.securekeyboard, fieldNumber: 9)
+    }
+    if !self.securekeyboardPath.isEmpty {
+      try visitor.visitSingularStringField(value: self.securekeyboardPath, fieldNumber: 10)
+    }
+    if !self.currentProcess.isEmpty {
+      try visitor.visitSingularStringField(value: self.currentProcess, fieldNumber: 11)
+    }
+    if !self.currentWindowIdentifier.isEmpty {
+      try visitor.visitSingularStringField(value: self.currentWindowIdentifier, fieldNumber: 12)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Local_DiagnosticsResponse, rhs: Local_DiagnosticsResponse) -> Bool {
+    if lhs.pathToBundle != rhs.pathToBundle {return false}
+    if lhs.accessibility != rhs.accessibility {return false}
+    if lhs.keypath != rhs.keypath {return false}
+    if lhs.docker != rhs.docker {return false}
+    if lhs.symlinked != rhs.symlinked {return false}
+    if lhs.onlytab != rhs.onlytab {return false}
+    if lhs.installscript != rhs.installscript {return false}
+    if lhs.psudopath != rhs.psudopath {return false}
+    if lhs.securekeyboard != rhs.securekeyboard {return false}
+    if lhs.securekeyboardPath != rhs.securekeyboardPath {return false}
+    if lhs.currentProcess != rhs.currentProcess {return false}
+    if lhs.currentWindowIdentifier != rhs.currentWindowIdentifier {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -1618,6 +2163,7 @@ extension Local_CommandResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageIm
     2: .same(proto: "error"),
     3: .same(proto: "success"),
     100: .standard(proto: "integration_list"),
+    101: .same(proto: "diagnostics"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -1628,7 +2174,7 @@ extension Local_CommandResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageIm
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularInt64Field(value: &self._id) }()
       case 2: try {
-        var v: Local_Error?
+        var v: Local_ErrorResponse?
         var hadOneofValue = false
         if let current = self.response {
           hadOneofValue = true
@@ -1641,7 +2187,7 @@ extension Local_CommandResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageIm
         }
       }()
       case 3: try {
-        var v: Local_Success?
+        var v: Local_SuccessResponse?
         var hadOneofValue = false
         if let current = self.response {
           hadOneofValue = true
@@ -1654,7 +2200,7 @@ extension Local_CommandResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageIm
         }
       }()
       case 100: try {
-        var v: Local_TerminalIntegrationsList?
+        var v: Local_TerminalIntegrationsListResponse?
         var hadOneofValue = false
         if let current = self.response {
           hadOneofValue = true
@@ -1664,6 +2210,19 @@ extension Local_CommandResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageIm
         if let v = v {
           if hadOneofValue {try decoder.handleConflictingOneOf()}
           self.response = .integrationList(v)
+        }
+      }()
+      case 101: try {
+        var v: Local_DiagnosticsResponse?
+        var hadOneofValue = false
+        if let current = self.response {
+          hadOneofValue = true
+          if case .diagnostics(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.response = .diagnostics(v)
         }
       }()
       default: break
@@ -1691,6 +2250,10 @@ extension Local_CommandResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageIm
     case .integrationList?: try {
       guard case .integrationList(let v)? = self.response else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 100)
+    }()
+    case .diagnostics?: try {
+      guard case .diagnostics(let v)? = self.response else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 101)
     }()
     case nil: break
     }

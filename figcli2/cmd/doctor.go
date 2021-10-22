@@ -25,6 +25,8 @@ var doctorCmd = &cobra.Command{
 		sh.Stdin = os.Stdin
 		sh.Run()
 
+		// TODO: Implement in Go
+
 		// fmt.Println()
 		// fmt.Println("Let's make sure Fig is running...")
 		// fmt.Println()

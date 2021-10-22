@@ -20,6 +20,7 @@ func init() {
 	debugCmd.AddCommand(debugSshCmd)
 	debugCmd.AddCommand(debugSampleCmd)
 	debugCmd.AddCommand(debugDotfilesCmd)
+	debugCmd.AddCommand(debugPerfsCmd)
 
 	rootCmd.AddCommand(debugCmd)
 }

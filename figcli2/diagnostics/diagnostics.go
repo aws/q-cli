@@ -2,6 +2,7 @@ package diagnostics
 
 import (
 	fig_ipc "fig-cli/fig-ipc"
+	fig_proto "fig-cli/fig-proto"
 	"fig-cli/settings"
 	"fig-cli/specs"
 	"fmt"
@@ -38,7 +39,7 @@ func ReadPlist(field string) (string, error) {
 		return "", err
 	}
 
-	re, err := regexp.Compile(fmt.Sprintf("<key>%s</key>\\s*<\\S>(.*)</\\S>", field))
+	re, err := regexp.Compile(fmt.Sprintf("<key>%s</key>\\s*<\\S+>(\\S+)</\\S+>", field))
 	if err != nil {
 		return "", err
 	}
@@ -83,8 +84,16 @@ func DsclRead(value string) (string, error) {
 func Summary() string {
 	var summary strings.Builder
 
+	cmd := fig_proto.Command{
+		Command: &fig_proto.Command_Diagnostics{},
+	}
+
+	resp, err := fig_ipc.SendRecvCommand(&cmd)
+	if err != nil {
+		summary.WriteString(fmt.Sprintf("Error: %s\n", err.Error()))
+	}
+
 	//  \(Diagnostic.distribution) \(Defaults.beta ? "[Beta] " : "")\(Defaults.debugAutocomplete ? "[Debug] " : "")\(Defaults.developerModeEnabled ? "[Dev] " : "")[\(KeyboardLayout.shared.currentLayoutName() ?? "?")] \(Diagnostic.isRunningOnReadOnlyVolume ? "TRANSLOCATED!!!" : "")
-	
 
 	// User shell: \(Diagnostic.userShell)
 	userShell, _ := DsclRead("UserShell")
@@ -92,11 +101,18 @@ func Summary() string {
 	summary.WriteString("\n")
 
 	//  Bundle path: \(Diagnostic.pathToBundle)
+	summary.WriteString("Bundle path: ")
+	summary.WriteString(resp.GetDiagnostics().GetPathToBundle())
+	summary.WriteString("\n")
 
 	//  Autocomplete: \(Defaults.useAutocomplete)
+	autocomplete, _ := ReadPlist("useAutocomplete")
+	summary.WriteString("Autocomplete: ")
+	summary.WriteString(autocomplete)
+	summary.WriteString("\n")
 
 	//  Settings.json: \(Diagnostic.settingsExistAndHaveValidFormat)
-	_, err := settings.Load()
+	_, err = settings.Load()
 	if err != nil {
 		summary.WriteString("Settings.json: false\n")
 	} else {
@@ -115,6 +131,9 @@ func Summary() string {
 	}
 
 	//  Accessibility: \(Accessibility.enabled)
+	summary.WriteString("Accessibility: ")
+	summary.WriteString(resp.GetDiagnostics().GetAccessibility())
+	summary.WriteString("\n")
 
 	//  Number of specs: \(Diagnostic.numberOfCompletionSpecs)
 	specCount, _ := specs.GetSpecsCount()
@@ -127,6 +146,9 @@ func Summary() string {
 	summary.WriteString("Tmux Integration: false\n")
 
 	//  Keybindings path: \(Diagnostic.keybindingsPath ?? "<none>")
+	summary.WriteString("Keybindings path: ")
+	summary.WriteString(resp.GetDiagnostics().GetKeypath())
+	summary.WriteString("\n")
 
 	//  iTerm Integration: \(iTermIntegration.default.isInstalled) \(iTermIntegration.default.isConnectedToAPI ? "[Authenticated]": "")
 	res, _ := fig_ipc.IntegrationVerifyInstall(fig_ipc.IntegrationIterm)
@@ -141,19 +163,53 @@ func Summary() string {
 	summary.WriteString(fmt.Sprintf("VSCode Integration: %s\n", res))
 
 	//  Docker Integration: \(DockerEventStream.shared.socket.isConnected)
-	//  Symlinked dotfiles: \(Diagnostic.dotfilesAreSymlinked)
+	summary.WriteString("Docker Integration: ")
+	summary.WriteString(resp.GetDiagnostics().GetDocker())
+	summary.WriteString("\n")
+
+	//  Symlinked dotfiles: \(DD)
+	summary.WriteString("Symlinked dotfiles: ")
+	summary.WriteString(resp.GetDiagnostics().GetSymlinked())
+	summary.WriteString("\n")
+
 	//  Only insert on tab: \(Defaults.onlyInsertOnTab)
+	summary.WriteString("Only insert on tab: ")
+	summary.WriteString(resp.GetDiagnostics().GetOnlytab())
+	summary.WriteString("\n")
+
 	//  Installation Script: \(Diagnostic.installationScriptRan)
+	summary.WriteString("Installation Script: ")
+	summary.WriteString(resp.GetDiagnostics().GetInstallscript())
+	summary.WriteString("\n")
+
 	//  PseudoTerminal Path: \(Diagnostic.pseudoTerminalPath ?? "<generated dynamically>")
+	summary.WriteString("PseudoTerminal Path: ")
+	summary.WriteString(resp.GetDiagnostics().GetPsudopath())
+	summary.WriteString("\n")
+
 	//  SecureKeyboardInput: \(Diagnostic.secureKeyboardInput)
+	summary.WriteString("SecureKeyboardInput: ")
+	summary.WriteString(resp.GetDiagnostics().GetSecurekeyboard())
+	summary.WriteString("\n")
+
 	//  SecureKeyboardProcess: \(Diagnostic.blockingProcess ?? "<none>")
+	summary.WriteString("SecureKeyboardProcess: ")
+	summary.WriteString(resp.GetDiagnostics().GetSecurekeyboardPath())
+	summary.WriteString("\n")
+
 	//  Current active process: \(Diagnostic.processForTopmostWindow) (\(Diagnostic.processIdForTopmostWindow)) - \(Diagnostic.ttyDescriptorForTopmostWindow)
+	summary.WriteString("Current active process: ")
+	summary.WriteString(resp.GetDiagnostics().GetCurrentProcess())
+	summary.WriteString("\n")
 
 	//  Current working directory: \(Diagnostic.workingDirectoryForTopmostWindow)
 	wd, _ := os.Getwd()
 	summary.WriteString(fmt.Sprintf("Current working directory: %s\n", wd))
 
 	//  Current window identifier: \(Diagnostic.descriptionOfTopmostWindow)
+	summary.WriteString("Current window identifier: ")
+	summary.WriteString(resp.GetDiagnostics().GetCurrentWindowIdentifier())
+	summary.WriteString("\n")
 
 	return summary.String()
 }

@@ -1,5 +1,8 @@
 syntax = "proto3";
+
 option objc_class_prefix = "FIG";
+option go_package = "fig_proto";
+
 package local;
 
 message LocalMessage {
@@ -14,23 +17,27 @@ message Command {
 	optional bool no_response = 2; // opt-out of response from host app
 
 	oneof command {
-		TerminalIntegrationRequest terminal_integration_update = 100;
-		ListTerminalIntegrations list_terminal_integrations = 101;
-		// Logout
-		// Login
-		// settings:init
+		TerminalIntegrationCommand terminal_integration = 100;
+		ListTerminalIntegrationsCommand list_terminal_integrations = 101;
+		LogoutCommand logout = 102;
+		RestartCommand restart = 103;
+		QuitCommand quit = 104;
+		UpdateCommand update = 105;
+		DiagnosticsCommand diagnostics = 106;
 	}
 }
 
 message Hook {
 	oneof hook {
-		EditBuffer editbuffer = 100;
-		Prompt prompt = 101;
-		PreExec preexec = 102;
-		PostExec postexec = 103;
-		KeyboardFocusChanged keyboardfocuschanged = 104;
-		TmuxPaneChanged tmuxpanechanged = 105;
-		OpenedSSHConnection openedsshconnection = 106;
+		EditBufferHook editbuffer = 100;
+		PromptHook prompt = 101;
+		PreExecHook preexec = 102;
+		PostExecHook postexec = 103;
+		KeyboardFocusChangedHook keyboardfocuschanged = 104;
+		TmuxPaneChangedHook tmuxpanechanged = 105;
+		OpenedSSHConnectionHook openedsshconnection = 106;
+		CallbackHook callback = 107;
+
 	}
 }
 
@@ -40,12 +47,25 @@ enum IntegrationAction {
 	VERIFY_INSTALL = 1;
 	UNINSTALL = 2;
 }
-message TerminalIntegrationRequest {
+
+message TerminalIntegrationCommand {
 	string identifier = 1;
 	IntegrationAction action = 2;
 }
 
-message ListTerminalIntegrations { }
+message ListTerminalIntegrationsCommand { }
+
+message LogoutCommand { }
+
+message RestartCommand { }
+
+message QuitCommand { }
+
+message UpdateCommand {
+	bool force = 1;
+}
+
+message DiagnosticsCommand {}
 
 // == Hooks ==
 message ShellContext {
@@ -58,7 +78,7 @@ message ShellContext {
 	optional string terminal = 7;
 }
 
-message EditBuffer {
+message EditBufferHook {
 	ShellContext context = 1;
 
 	string text = 2;
@@ -69,45 +89,51 @@ message EditBuffer {
 	//string sessionId = 4;
 }
 
-message Prompt {
+message PromptHook {
 	ShellContext context = 1;
 }
 
-message PreExec {
+message PreExecHook {
 	ShellContext context = 1;
 
 	string command = 2; // the full command that was run in the shell
 }
 
-message PostExec {
+message PostExecHook {
 	ShellContext context = 1;
 
 	string command = 2; // the full command that was run in the shell
 	int32 exit_code = 3; // the exit code of the command
 }
 
-message KeyboardFocusChanged {
+message KeyboardFocusChangedHook {
 	string bundle_identifier = 1;
 	string focused_session = 2; // a unique identifier associated with the pane or tab that is currently focused
 }
 
-message TmuxPaneChanged {
+message TmuxPaneChangedHook {
 	int32 pane_identifier = 1;
 }
 
-message OpenedSSHConnection {
+message OpenedSSHConnectionHook {
 	ShellContext context = 1;
 
 	string control_path = 2;
 }
 
+message CallbackHook {
+	string handler_id = 1;
+	string filepath = 2;
+	string exit_code = 3;
+}
+
 // == Responses ==
-message Error {
+message ErrorResponse {
 	optional int32 exit_code = 1;
 	optional string message = 2;
 }
 
-message Success {
+message SuccessResponse {
 	optional string message = 1;
 }
 
@@ -117,17 +143,33 @@ message TerminalIntegration {
 	optional string status = 3;
 }
 
-message TerminalIntegrationsList {
+message TerminalIntegrationsListResponse {
 	repeated TerminalIntegration integrations = 1;
+}
+
+message DiagnosticsResponse {
+	string path_to_bundle = 1;
+	string accessibility = 2;
+	string keypath = 3;
+	string docker = 4;
+	string symlinked = 5;
+	string onlytab = 6;
+	string installscript = 7;
+	string psudopath = 8;
+	string securekeyboard = 9;
+	string securekeyboard_path = 10;
+	string current_process = 11;
+	string current_window_identifier = 12;
 }
 
 message CommandResponse {
 	optional int64 id = 1;
 	oneof response {
-		Error error = 2;
-		Success success = 3;
+		ErrorResponse error = 2;
+		SuccessResponse success = 3;
 
 		// ... add structured responses for specific commands, as necessary
-		TerminalIntegrationsList integration_list = 100;
+		TerminalIntegrationsListResponse integration_list = 100;
+		DiagnosticsResponse diagnostics = 101;
 	}
 }

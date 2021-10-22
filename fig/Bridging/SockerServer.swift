@@ -239,27 +239,27 @@ class ShellBridgeSocketService: WebSocketService {
                                         ShellHookManager.shared.currentTabDidChangeLegacy(msg)
                                       }
                                     case "bg:init":
-                                        ShellHookManager.shared.startedNewTerminalSession(msg)
+                                        ShellHookManager.shared.startedNewTerminalSessionLegacy(msg)
                                     case "bg:prompt":
                                         ShellHookManager.shared.shellPromptWillReturnLegacy(msg)
                                     case "bg:exec":
-                                        ShellHookManager.shared.shellWillExecuteCommand(msg)
+                                        ShellHookManager.shared.shellWillExecuteCommandLegacy(msg)
                                     case "bg:zsh-keybuffer":
                                         ShellHookManager.shared.updateKeybufferLegacy(msg)
                                     case "bg:fish-keybuffer":
                                         ShellHookManager.shared.updateKeybufferLegacy(msg)
                                     case "bg:ssh":
-                                        ShellHookManager.shared.startedNewSSHConnection(msg)
+                                        ShellHookManager.shared.startedNewSSHConnectionLegacy(msg)
                                     case "bg:vscode":
-                                        ShellHookManager.shared.currentTabDidChange(msg)
+                                        ShellHookManager.shared.currentTabDidChangeLegacy(msg)
                                     case "bg:hyper":
-                                        ShellHookManager.shared.currentTabDidChange(msg)
+                                        ShellHookManager.shared.currentTabDidChangeLegacy(msg)
                                     case "bg:tmux":
-                                        ShellHookManager.shared.tmuxPaneChanged(msg)
+                                        ShellHookManager.shared.tmuxPaneChangedLegacy(msg)
                                     case "bg:hide":
                                         Autocomplete.hide()
                                     case "bg:clear-keybuffer":
-                                        ShellHookManager.shared.clearKeybuffer(msg)
+                                        ShellHookManager.shared.clearKeybufferLegacy(msg)
                                     case "bg:keyboard-focus-changed":
                                       ShellHookManager.shared.currentTabDidChangeLegacy(msg, includesBundleId: true)
                                     case "bg:iterm-api-ready":

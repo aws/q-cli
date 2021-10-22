@@ -47,7 +47,7 @@ func GenerateShellContext(
 func CreateEditBufferHook(sessionId string, integrationVersion string, tty string, pid int, histno int, cursor int, text string) *fig_proto.Hook {
 	return &fig_proto.Hook{
 		Hook: &fig_proto.Hook_Editbuffer{
-			Editbuffer: &fig_proto.EditBuffer{
+			Editbuffer: &fig_proto.EditBufferHook{
 				Context: GenerateShellContext(
 					int64(pid),
 					tty,
@@ -66,7 +66,7 @@ func CreateEditBufferHook(sessionId string, integrationVersion string, tty strin
 func CreatePromptHook(pid int, tty string) *fig_proto.Hook {
 	return &fig_proto.Hook{
 		Hook: &fig_proto.Hook_Prompt{
-			Prompt: &fig_proto.Prompt{
+			Prompt: &fig_proto.PromptHook{
 				Context: GenerateShellContext(
 					int64(pid),
 					tty,

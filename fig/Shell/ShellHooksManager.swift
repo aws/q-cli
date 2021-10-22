@@ -316,6 +316,10 @@ extension ShellHookManager {
     KeypressProvider.shared.keyBuffer(for: hash).backedByShell = false
 
   }
+  
+  func startedNewTerminalSessionLegacy(_ info: ShellMessage) {
+    startedNewTerminalSession(info)
+  }
 
   func startedNewTerminalSession(_ info: ShellMessage) {
 
@@ -394,9 +398,12 @@ extension ShellHookManager {
       })
 
   }
+  
+  func shellWillExecuteCommandLegacy(_ info: ShellMessage) {
+    shellWillExecuteCommand(info)
+  }
 
   func shellWillExecuteCommand(_ info: ShellMessage) {
-
     guard let (_, ttyDescriptor, sessionId) = info.parseShellHook() else {
       Logger.log(
         message: "Could not parse out shellHook metadata", priority: .notify, subsystem: .tty)
@@ -434,6 +441,10 @@ extension ShellHookManager {
     }
   }
 
+  func startedNewSSHConnectionLegacy(_ info: ShellMessage) {
+    startedNewSSHConnection(info)
+  }
+  
   func startedNewSSHConnection(_ info: ShellMessage) {
     guard let hash = attemptToFindToAssociatedWindow(for: info.session) else {
       Logger.log(
@@ -451,6 +462,10 @@ extension ShellHookManager {
 
     KeypressProvider.shared.keyBuffer(for: hash).backedByShell = false
 
+  }
+  
+  func clearKeybufferLegacy(_ info: ShellMessage) {
+    clearKeybuffer(info)
   }
 
   func clearKeybuffer(_ info: ShellMessage) {
@@ -576,7 +591,7 @@ extension ShellHookManager {
     }
   }
 
-  func tmuxPaneChanged(_ info: ShellMessage) {
+  func tmuxPaneChangedLegacy(_ info: ShellMessage) {
     guard let window = AXWindowServer.shared.whitelistedWindow else { return }
     let oldHash = window.hash
 

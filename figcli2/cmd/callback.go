@@ -1,7 +1,10 @@
 package cmd
 
 import (
+	fig_ipc "fig-cli/fig-ipc"
+	fig_proto "fig-cli/fig-proto"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 
@@ -22,16 +25,21 @@ var callbackCmd = &cobra.Command{
 	Use:    "callback",
 	Hidden: true,
 	Run: func(cmd *cobra.Command, args []string) {
+		output := os.Stderr
 		debug := os.Getenv("FIG_DEBUG") != ""
 
+		if debug {
+			fmt.Fprintln(output, "Fig CLI version:", versionNumber)
+		}
+
 		if cmd.Flags().Lookup("version").Value.String() == "true" {
-			fmt.Println(versionNumber)
+			fmt.Fprintln(output, versionNumber)
 			os.Exit(0)
 		}
 
 		if len(args) == 0 {
 			if debug {
-				fmt.Println("callback must include a handlerId")
+				fmt.Fprintln(output, "callback must include a handlerId")
 			}
 			os.Exit(1)
 		}
@@ -45,7 +53,7 @@ var callbackCmd = &cobra.Command{
 		size := fi.Size()
 		if size == 0 {
 			if debug {
-				fmt.Println("No data on stdin!")
+				fmt.Fprintln(output, "No data on stdin!")
 			}
 			os.Exit(1)
 		}
@@ -56,12 +64,12 @@ var callbackCmd = &cobra.Command{
 		exitcode := "-1"
 
 		if debug {
-			fmt.Println("handlerId:", handlerId)
+			fmt.Fprintln(output, "handlerId:", handlerId)
 		}
 
 		if len(args) == 3 {
 			if debug {
-				fmt.Printf("callback specified filepath (%s) and exitCode (%s) to output!\n", args[1], args[2])
+				fmt.Fprintf(output, "callback specified filepath (%s) and exitCode (%s) to output!\n", args[1], args[2])
 			}
 
 			filename = args[1]
@@ -76,13 +84,17 @@ var callbackCmd = &cobra.Command{
 			filename = file.Name()
 
 			if debug {
-				fmt.Printf("Created tmp file: %s\n", file.Name())
+				fmt.Fprintln(output, "Created tmp file:", file.Name())
 			}
 
 			// Copy stdin to tmp file
 			for {
 				buf := make([]byte, 1024)
 				n, err := stdin.Read(buf)
+				if err == io.EOF {
+					break
+				}
+
 				if err != nil {
 					panic(err)
 				}
@@ -96,25 +108,40 @@ var callbackCmd = &cobra.Command{
 				file.Write(buf[:n])
 
 				if debug {
-					fmt.Printf("Read %d bytes\n", size)
-					fmt.Printf("%s\n", buf)
+					fmt.Fprintf(output, "Read %d bytes\n", size)
+					fmt.Fprintf(output, "%s\n", buf)
 				}
 			}
 
 			if debug {
-				fmt.Println("EOF!")
+				fmt.Fprintln(output, "EOF!")
 			}
 		}
 
 		// Send
 		if debug {
-			fmt.Println("Done reading from stdin!")
+			fmt.Fprintln(output, "Done reading from stdin!")
 		}
 
 		callback := fmt.Sprintf("fig pty:callback %s %s %s", handlerId, filename, exitcode)
 
 		if debug {
-			fmt.Printf("Sending '%s' over unix socket!\n", callback)
+			fmt.Fprintf(output, "Sending '%s' over unix socket!\n", callback)
+		}
+
+		callbackHook := fig_proto.Hook{
+			Hook: &fig_proto.Hook_Callback{
+				Callback: &fig_proto.CallbackHook{
+					HandlerId: handlerId,
+					Filepath:  filename,
+					ExitCode:  exitcode,
+				},
+			},
+		}
+
+		err = fig_ipc.SendHook(&callbackHook)
+		if debug && err != nil {
+			fmt.Fprintln(output, "Error sending callback:", err)
 		}
 	},
 }

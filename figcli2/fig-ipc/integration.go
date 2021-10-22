@@ -27,8 +27,8 @@ func CreateTerminalIntegrationRequest(
 	return &fig_proto.Command{
 		Id:         &id,
 		NoResponse: &noResponse,
-		Command: &fig_proto.Command_TerminalIntegrationUpdate{
-			TerminalIntegrationUpdate: &fig_proto.TerminalIntegrationRequest{
+		Command: &fig_proto.Command_TerminalIntegration{
+			TerminalIntegration: &fig_proto.TerminalIntegrationCommand{
 				Identifier: string(identifier),
 				Action:     action,
 			},
@@ -44,7 +44,7 @@ func CreateListTerminalIntegrations() *fig_proto.Command {
 		Id:         &id,
 		NoResponse: &noResponse,
 		Command: &fig_proto.Command_ListTerminalIntegrations{
-			ListTerminalIntegrations: &fig_proto.ListTerminalIntegrations{},
+			ListTerminalIntegrations: &fig_proto.ListTerminalIntegrationsCommand{},
 		},
 	}
 }

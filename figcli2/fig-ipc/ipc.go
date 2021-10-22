@@ -23,14 +23,14 @@ func Connect() (*FigIpc, error) {
 
 	var d net.Dialer
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
 	raddr := net.UnixAddr{Name: socket, Net: "unix"}
 	conn, err := d.DialContext(ctx, "unix", raddr.String())
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to connect to Fig, perhaps Fig isn't running\n\nDetails: %s", err)
 	}
 
 	return &FigIpc{conn: conn.(*net.UnixConn)}, nil
@@ -44,29 +44,29 @@ func (f *FigIpc) Close() error {
 // Send a message to the server
 //
 // DO NOT USE EXCEPT FOR TESTING
-func (f *FigIpc) Send(msg string) error {
-	_, err := f.conn.Write([]byte(msg))
-	return err
-}
+// func (f *FigIpc) Send(msg string) error {
+// 	_, err := f.conn.Write([]byte(msg))
+// 	return err
+// }
 
 // Receive a message from the server, reading until a newline.
 //
 // DO NOT USE EXCEPT FOR TESTING
-func (f *FigIpc) Recv() (string, error) {
-	buf := make([]byte, 1)
-	var msg []byte
-	for {
-		_, err := f.conn.Read(buf)
-		if err != nil {
-			return "", err
-		}
-		if buf[0] == '\n' {
-			break
-		}
-		msg = append(msg, buf[0])
-	}
-	return string(msg), nil
-}
+// func (f *FigIpc) Recv() (string, error) {
+// 	buf := make([]byte, 1)
+// 	var msg []byte
+// 	for {
+// 		_, err := f.conn.Read(buf)
+// 		if err != nil {
+// 			return "", err
+// 		}
+// 		if buf[0] == '\n' {
+// 			break
+// 		}
+// 		msg = append(msg, buf[0])
+// 	}
+// 	return string(msg), nil
+// }
 
 // Send fig-json to the server
 func (f *FigIpc) SendFigJson(msg string) error {
@@ -123,11 +123,17 @@ const (
 	protoTypeFigProto
 )
 
-func (f *FigIpc) RecvMessage() ([]byte, ProtoType, error) {
+type MessageResponse struct {
+	Message   []byte
+	ProtoType ProtoType
+	Error     error
+}
+
+func (f *FigIpc) RecvMessage() MessageResponse {
 	// Read first 10 bytes to get the type
 	buf := make([]byte, 10)
 	if _, err := f.conn.Read(buf); err != nil {
-		return nil, protoTypeUndefined, err
+		return MessageResponse{Error: err}
 	}
 
 	// Determine the type of the message
@@ -140,20 +146,35 @@ func (f *FigIpc) RecvMessage() ([]byte, ProtoType, error) {
 	}
 
 	if protoType == protoTypeUndefined {
-		return nil, protoTypeUndefined, fmt.Errorf("unknown protocol type %s", string(buf[1:]))
+		return MessageResponse{Error: fmt.Errorf("unknown message type: %s", buf[1:])}
 	}
 
 	// Read u64 from the stream to determine the size of the message
 	var size uint64
 	if err := binary.Read(f.conn, binary.BigEndian, &size); err != nil {
-		return nil, protoTypeUndefined, err
+		return MessageResponse{Error: err}
 	}
 
 	// Read the rest of the data
 	buf = make([]byte, size)
 	if _, err := f.conn.Read(buf); err != nil {
-		return nil, protoTypeUndefined, err
+		return MessageResponse{Error: err}
 	}
 
-	return buf, protoType, nil
+	return MessageResponse{Message: buf, ProtoType: protoType}
+}
+
+func (f *FigIpc) RecvMessageTimeout(duration time.Duration) MessageResponse {
+	channel := make(chan MessageResponse, 1)
+	go func() {
+		msg := f.RecvMessage()
+		channel <- msg
+	}()
+
+	select {
+	case res := <-channel:
+		return res
+	case <-time.After(duration):
+		return MessageResponse{Error: fmt.Errorf("timeout waiting for message")}
+	}
 }
