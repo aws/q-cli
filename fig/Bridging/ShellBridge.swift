@@ -367,19 +367,61 @@ class ShellBridge {
                                          clearLine: Bool = Defaults.clearExistingLineOnTerminalInsert,
                                          completion: (() -> Void)? = nil) {
         
-      if let window = AXWindowServer.shared.whitelistedWindow,
-         let sessionId = window.session {
-        try? FigTerm.insert(cmd, into: sessionId)
+      guard let window = AXWindowServer.shared.whitelistedWindow else {
+        return
       }
-//        if (NSWorkspace.shared.frontmostApplication?.isFig ?? false) {
-//            print("Fig is the active window. Sending focus back to previous applications.")
-//            WindowServer.shared.returnFocus()
-//            Timer.delayWithSeconds(0.15) {
-//              inject(cmd, runImmediately: runImmediately, clearLine: clearLine, completion: completion)
-//            }
-//        } else {
-//            inject(cmd, runImmediately: runImmediately, clearLine: clearLine, completion: completion)
+      
+      
+      let version = window.tty?.shellIntegrationVersion
+      let useFigTerm = version ?? 0 >= 5
+      
+      let backing = KeypressProvider.shared.keyBuffer(for: window).backing
+      let effectedShells: Set<KeystrokeBuffer.Backing> = [.fish, .bash, .zle]
+      let usingEffectedShell = backing != nil ? effectedShells.contains(backing!) : false
+      let inElectronTerminal = Integrations.electronTerminals.contains(window.bundleId ?? "")
+//      let useFigTerm = usingEffectedShell &&
+//                       inElectronTerminal &&
+//                       withFigTermInstanceThatSupportsInserts
+      
+
+      
+      if let sessionId = window.session, useFigTerm {
+        try? FigTerm.insert(cmd, into: sessionId)
+      } else if usingEffectedShell && inElectronTerminal {
+        //
+//        guard !Defaults.promptedToRestartDueToXtermBug else {
+//          Logger.log(message: "Not inserting due to xterm.js bug...")
+//          return
 //        }
+        
+        let title = "Restart " + (window.app.localizedName ?? "all electron terminals")
+        
+        let shouldRestart = Alert.show(title: title,
+                                       message: "Due to a regressions in xterm.js, Fig cannot insert text into electron terminals using the accessibility API.\n\nRestarting your terminal will resolve the issue.",
+                                       okText: "Restart",
+                                       icon: NSImage(named: NSImage.cautionName) ?? Alert.appIcon,
+                                       hasSecondaryOption: true,
+                                       secondaryOptionTitle: "Not now")
+        
+        if let app = window.app.bundleIdentifier, shouldRestart {
+          let restarter = Restarter(with: app)
+          restarter.restart()
+        }
+        
+        Defaults.promptedToRestartDueToXtermBug = true
+
+      } else {
+        // use legacy insertion
+        if (NSWorkspace.shared.frontmostApplication?.isFig ?? false) {
+            print("Fig is the active window. Sending focus back to previous applications.")
+            WindowServer.shared.returnFocus()
+            Timer.delayWithSeconds(0.15) {
+              inject(cmd, runImmediately: runImmediately, clearLine: clearLine, completion: completion)
+            }
+        } else {
+            inject(cmd, runImmediately: runImmediately, clearLine: clearLine, completion: completion)
+        }
+      }
     }
 
     //https://gist.github.com/eegrok/949034

@@ -13,15 +13,17 @@ class FigTerm {
   
   // todo: update path depending on sessionId
   static func path(for sessionId: SessionId) -> String {
-    return defaultPath.path
+    return "/tmp/figterm-\(sessionId).socket"
+      //FileManager.default.temporaryDirectory.appendingPathComponent("figterm-" + sessionId + ".socket").path
   }
   static func insert(_ text: String, into session: SessionId) throws {
     let socket = UnixSocketClient(path: path(for: session))
     guard socket.connect() else {
       return //throw
     }
-    
+    GenericShellIntegration.insertLock()
     socket.send(message: text)
+    GenericShellIntegration.insertUnlock(with: text)
     socket.disconnect()
   }
   

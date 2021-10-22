@@ -11,7 +11,7 @@ if [ -d /Applications/Fig.app -o -d ~/Applications/Fig.app ] \
   if [ -z "$TERM_SESSION_ID" ] || [ -n "$TMUX" ] || [ "$TERM_PROGRAM" = vscode ]
     export TERM_SESSION_ID=(uuidgen)
   end
-  export FIG_INTEGRATION_VERSION=4
+  export FIG_INTEGRATION_VERSION=5
 
   if command -v figterm 1>/dev/null 2>/dev/null
     if [ -z "$FIG_TERM" ] || [ -z "$FIG_TERM_TMUX" -a -n "$TMUX" ]

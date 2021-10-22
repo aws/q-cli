@@ -19,7 +19,7 @@ if [[ "${TERMINAL_EMULATOR}" != JetBrains-JediTerm ]] \
   if [[ -z "${TERM_SESSION_ID}" || -n "${TMUX}" || "${TERM_PROGRAM}" = vscode ]]; then
     export TERM_SESSION_ID="$(uuidgen)"
   fi
-  export FIG_INTEGRATION_VERSION=4
+  export FIG_INTEGRATION_VERSION=5
 
   # Only launch figterm if current session is not already inside PTY and command exists
   if [[ -z "${FIG_PTY}" ]] && command -v ~/.fig/bin/figterm 2>&1 1>/dev/null; then
