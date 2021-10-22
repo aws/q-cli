@@ -71,6 +71,28 @@ char* log_path(char* log_name) {
   return full_path;
 }
 
+int unix_socket_listen(char *path) {
+  // Connect to a unix socket at path.
+  int sock;
+  if ((sock = socket(AF_UNIX, SOCK_STREAM, 0)) < 0)
+    return -1;
+
+  struct sockaddr_un remote;
+  memset(&remote, 0, sizeof(struct sockaddr_un));
+  remote.sun_family = AF_UNIX;
+  strcpy(remote.sun_path, path);
+
+  size_t len = SUN_LEN(&remote);
+
+  if (bind(sock, (struct sockaddr *) &remote, len) == -1) {
+    return -1;
+  }
+  
+  // Set backlog max of 5 queued messages
+  listen(sock, 5);
+  return sock;
+}
+
 static int unix_socket_connect(char *path) {
   // Connect to a unix socket at path.
   int sock;

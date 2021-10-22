@@ -50,6 +50,7 @@ void abort_handler(int sig) {
 
 char* _parent_shell = NULL;
 char* _parent_shell_is_login = NULL;
+int incoming_socket = -1;
 
 void launch_shell() {
   if (_parent_shell == NULL) {
@@ -91,6 +92,9 @@ void on_figterm_exit() {
   free_fig_info();
   close_log_file();
   history_file_close();
+  if (incoming_socket >= 0) {
+    close(incoming_socket);
+  }
   tty_reset(STDIN_FILENO);
   if (status != 0) {
     // Unexpected exit, fallback to exec parent shell.
@@ -178,6 +182,15 @@ void figterm_loop(int ptyp_fd, pid_t shell_pid, char* initial_command) {
 
   ft = _ft = figterm_new(shell_pid, ptyp_fd);
 
+  FigShellState shell_state;
+  figterm_get_shell_state(ft, &shell_state);
+
+  char* incoming_socket_addr = malloc(sizeof("char") * (strlen("/tmp/figterm-.socket") + SESSION_ID_MAX_LEN + 1));
+  sprintf(incoming_socket_addr, "/tmp/figterm-input.socket");
+  log_info("SOCKET: %s", incoming_socket_addr);
+  incoming_socket = unix_socket_listen(incoming_socket_addr);
+  free(incoming_socket_addr);
+
   fd_set rfd;
 
   bool is_first_time = true;
@@ -186,6 +199,8 @@ void figterm_loop(int ptyp_fd, pid_t shell_pid, char* initial_command) {
     FD_ZERO(&rfd);
     FD_SET(STDIN_FILENO, &rfd);
     FD_SET(ptyp_fd, &rfd);
+    FD_SET(incoming_socket, &rfd);
+    int max_fd = ptyp_fd > incoming_socket ? ptyp_fd : incoming_socket;
 
     if (figterm_has_seen_prompt(ft) && is_first_time) {
       if (initial_command != NULL && strlen(initial_command) > 0) {
@@ -201,7 +216,8 @@ void figterm_loop(int ptyp_fd, pid_t shell_pid, char* initial_command) {
       is_first_time = false;
     }
 
-    int n = select(ptyp_fd + 1, &rfd, 0, 0, NULL);
+    int n = select(max_fd + 1, &rfd, 0, 0, NULL);
+    log_info("Got n %d, %d, %d, %d", n, FD_ISSET(STDIN_FILENO, &rfd), FD_ISSET(ptyp_fd, &rfd), FD_ISSET(incoming_socket, &rfd));
     if (n < 0 && errno != EINTR) {
       err_sys("select error");
     }
@@ -232,6 +248,19 @@ void figterm_loop(int ptyp_fd, pid_t shell_pid, char* initial_command) {
 
       if (!figterm_is_disabled(ft) && figterm_can_send_buffer(ft)) {
         publish_buffer(ft);
+      }
+    }
+    if (n > 0 && FD_ISSET(incoming_socket, &rfd)) {
+      log_info("Got message on socket");
+      int sockfd = accept(incoming_socket, NULL, NULL);
+      if (sockfd < 0) {
+        log_warn("Failed to accept message on socket");
+      } else {
+        nread = read(sockfd, buf, BUFFSIZE - 1);
+        log_warn("Message: %.*s", nread, buf);
+        if (write(ptyp_fd, buf, nread) != nread)
+          err_sys("write error to parent pty");
+        close(sockfd);
       }
     }
   }
