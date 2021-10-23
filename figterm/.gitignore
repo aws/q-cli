@@ -3,6 +3,7 @@ compile_commands.json
 *.o
 lib/*.a
 figterm*
+!figterm.c
 .DS_Store
 libvterm
 fig_*

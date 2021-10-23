@@ -46,9 +46,11 @@ install_fig() {
   mkdir -p ~/.fig/{bin,zle,autocomplete}
   mkdir -p ~/.fig/user/{aliases,apps,autocomplete,aliases}
 
+  BUNDLE="${FIG_BUNDLE_EXECUTABLES:-/Applications/Fig.app/Contents/MacOS/}"
+  echo $FIG_BUNDLE_EXECUTABLES > ~/bundle.txt
   # rename figterm binaries to mirror supported shell
   # copy binaries on install to avoid issues with file permissions at runtime
-  FIGTERM=/Applications/Fig.app/Contents/MacOS/figterm 
+  FIGTERM="${BUNDLE}/figterm" 
 
   cp -p "${FIGTERM}" "${HOME}"/.fig/bin/zsh\ \(figterm\)
   cp -p "${FIGTERM}" "${HOME}"/.fig/bin/bash\ \(figterm\)
@@ -72,7 +74,7 @@ install_fig() {
 
   # Hardcode figcli path because symlinking has not happened when this script
   # runs.
-  FIGCLI=/Applications/Fig.app/Contents/MacOS/figcli 
+  FIGCLI="${BUNDLE}/figcli" 
   "${FIGCLI}" settings userShell "${USER_SHELL_TRIMMED}"
   
   "${FIGCLI}" settings pty.path $("${USER_SHELL_TRIMMED}" -li -c "/usr/bin/env | /usr/bin/grep '^PATH=' | /bin/cat | /usr/bin/sed 's|PATH=||g'") 
