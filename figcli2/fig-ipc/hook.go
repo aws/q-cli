@@ -3,6 +3,7 @@ package fig_ipc
 import (
 	fig_proto "fig-cli/fig-proto"
 	"os"
+	"strings"
 )
 
 func SendHook(hook *fig_proto.Hook) error {
@@ -26,32 +27,31 @@ func SendHook(hook *fig_proto.Hook) error {
 }
 
 func GenerateShellContext(
-	pid int64,
+	pid int32,
 	tty string,
-	shell string,
 	sessionId string,
 	integrationVersion string,
 ) *fig_proto.ShellContext {
 	wd, _ := os.Getwd()
+	shell, _ := GetShell()
 
 	return &fig_proto.ShellContext{
-		Pid:                     0,
-		Ttys:                    tty,
-		Shell:                   shell,
-		CurrentWorkingDirectory: wd,
-		SessionId:               "",
+		Pid:                     &pid,
+		Ttys:                    &tty,
+		Shell:                   &shell,
+		CurrentWorkingDirectory: &wd,
+		SessionId:               &sessionId,
 		IntegrationVersion:      &integrationVersion,
 	}
 }
 
 func CreateEditBufferHook(sessionId string, integrationVersion string, tty string, pid int, histno int, cursor int, text string) *fig_proto.Hook {
 	return &fig_proto.Hook{
-		Hook: &fig_proto.Hook_Editbuffer{
-			Editbuffer: &fig_proto.EditBufferHook{
+		Hook: &fig_proto.Hook_EditBuffer{
+			EditBuffer: &fig_proto.EditBufferHook{
 				Context: GenerateShellContext(
-					int64(pid),
+					int32(pid),
 					tty,
-					"",
 					sessionId,
 					integrationVersion,
 				),
@@ -68,12 +68,56 @@ func CreatePromptHook(pid int, tty string) *fig_proto.Hook {
 		Hook: &fig_proto.Hook_Prompt{
 			Prompt: &fig_proto.PromptHook{
 				Context: GenerateShellContext(
-					int64(pid),
+					int32(pid),
 					tty,
 					"",
 					"",
+				),
+			},
+		},
+	}
+}
+
+func CreateInitHook(pid int, tty string) *fig_proto.Hook {
+	env := os.Environ()
+	envMap := make(map[string]string)
+	for _, e := range env {
+		pair := strings.Split(e, "=")
+		envMap[pair[0]] = pair[1]
+	}
+
+	return &fig_proto.Hook{
+		Hook: &fig_proto.Hook_Init{
+			Init: &fig_proto.InitHook{
+				Context: GenerateShellContext(
+					int32(pid),
+					tty,
+					"",
 					"",
 				),
+				CalledDirect: true,
+				Env:          envMap,
+			},
+		},
+	}
+}
+
+func CreateKeyboardFocusChangedHook(bundleIdentifier string, focusedSession string) *fig_proto.Hook {
+	return &fig_proto.Hook{
+		Hook: &fig_proto.Hook_KeyboardFocusChanged{
+			KeyboardFocusChanged: &fig_proto.KeyboardFocusChangedHook{
+				BundleIdentifier: bundleIdentifier,
+				FocusedSession:   focusedSession,
+			},
+		},
+	}
+}
+
+func CreateIntegrationReadyHook(identifyier string) *fig_proto.Hook {
+	return &fig_proto.Hook{
+		Hook: &fig_proto.Hook_IntegrationReady{
+			IntegrationReady: &fig_proto.IntegrationReadyHook{
+				Identifier: identifyier,
 			},
 		},
 	}

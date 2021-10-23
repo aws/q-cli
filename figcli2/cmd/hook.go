@@ -11,6 +11,9 @@ import (
 func init() {
 	hookCmd.AddCommand(hookEditbufferCmd)
 	hookCmd.AddCommand(hookPromptCmd)
+	hookCmd.AddCommand(hookInitCmd)
+	hookCmd.AddCommand(hookKeyboardFocusChanged)
+	hookCmd.AddCommand(hookIntegrationReady)
 
 	rootCmd.AddCommand(hookCmd)
 }
@@ -52,5 +55,46 @@ var hookPromptCmd = &cobra.Command{
 		hook := fig_ipc.CreatePromptHook(pid, args[1])
 		fig_ipc.SendHook(hook)
 		// TODO: Add error handling
+	},
+}
+
+var hookInitCmd = &cobra.Command{
+	Use:   "init [pid] [tty]",
+	Short: "Run the init hook",
+	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) != 2 {
+			return
+		}
+
+		pid, _ := strconv.Atoi(args[0])
+
+		hook := fig_ipc.CreateInitHook(pid, args[1])
+		fig_ipc.SendHook(hook)
+	},
+}
+
+var hookKeyboardFocusChanged = &cobra.Command{
+	Use:   "keyboard-focus-changed [bundle-id] [focused-session]",
+	Short: "Run the keyboard-focus-changed hook",
+	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) != 2 {
+			return
+		}
+
+		hook := fig_ipc.CreateKeyboardFocusChangedHook(args[0], args[1])
+		fig_ipc.SendHook(hook)
+	},
+}
+
+var hookIntegrationReady = &cobra.Command{
+	Use:   "integration-ready [integration]",
+	Short: "Run the integration-ready hook",
+	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) != 1 {
+			return
+		}
+
+		hook := fig_ipc.CreateIntegrationReadyHook(args[0])
+		fig_ipc.SendHook(hook)
 	},
 }

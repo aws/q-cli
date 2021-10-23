@@ -169,6 +169,21 @@ extension ShellHookManager {
   }
   
   func currentTabDidChangeLegacy(_ info: ShellMessage, includesBundleId: Bool = false) {
+    if let id = info.options?.last {
+
+      if includesBundleId {
+        let tokens = id.split(separator: ":")
+        let bundleId = String(tokens.first!)
+
+//        guard bundleId == window.bundleId ?? "" else {
+//          print(
+//            "tab: bundleId from message did not match bundle id associated with current window "
+//          )
+//          return
+//        }
+      }
+
+    }
     currentTabDidChange(info, includesBundleId: includesBundleId)
   }
   
@@ -180,18 +195,6 @@ extension ShellHookManager {
     Timer.delayWithSeconds(0.1) {
       if let window = AXWindowServer.shared.whitelistedWindow {
         if let id = info.options?.last {
-
-          if includesBundleId {
-            let tokens = id.split(separator: ":")
-            let bundleId = String(tokens.first!)
-
-            guard bundleId == window.bundleId ?? "" else {
-              print(
-                "tab: bundleId from message did not match bundle id associated with current window "
-              )
-              return
-            }
-          }
 
           let VSCodeTerminal =
             [Integrations.VSCode, Integrations.VSCodeInsiders, Integrations.VSCodium].contains(
@@ -318,16 +321,31 @@ extension ShellHookManager {
   }
   
   func startedNewTerminalSessionLegacy(_ info: ShellMessage) {
-    startedNewTerminalSession(info)
-  }
-
-  func startedNewTerminalSession(_ info: ShellMessage) {
-
     guard let (shellPid, ttyDescriptor, sessionId) = info.parseShellHook() else {
       Logger.log(
         message: "Could not parse out shellHook metadata", priority: .notify, subsystem: .tty)
       return
     }
+    
+    let ctx = Local_ShellContext.with { context in
+      context.sessionID = sessionId
+      context.ttys = ttyDescriptor
+      context.pid = shellPid
+    }
+    let calledDirect = info.viaFigCommand
+    let bundle = info.potentialBundleId
+    let env = info.env?.jsonStringToDict() ?? [:]
+    let envMap = env.mapValues { val in
+      val as? String
+    }
+    let envFilter = envMap.filter { (_, val) in
+      val != nil
+    } as! [String: String]
+    
+    startedNewTerminalSession(context: ctx, calledDirect: calledDirect, bundle: bundle, env: envFilter)
+  }
+
+  func startedNewTerminalSession(context: Local_ShellContext, calledDirect: Bool, bundle: String?, env: [String: String]) {
 
     guard let bundleId = NSWorkspace.shared.frontmostApplication?.bundleIdentifier else {
       Logger.log(message: "Could not get bundle id", priority: .notify, subsystem: .tty)
@@ -346,13 +364,11 @@ extension ShellHookManager {
     }
 
     // no delay is needed because the command is being run by the user, so the window is already active
-    if info.viaFigCommand {
+    if calledDirect {
       delay = 0
     }
 
     observer = WindowObserver(with: bundleId)
-
-    let bundleIdBasedOnTermProgram = info.potentialBundleId
 
     // We need to wait for window to appear if the terminal emulator is being launched for the first time. Can this be handled more robustly?
     observer?.windowDidAppear(
@@ -370,29 +386,29 @@ extension ShellHookManager {
           return
         }
 
-        guard window.bundleId == bundleIdBasedOnTermProgram else {
+        guard window.bundleId == bundle else {
           Logger.log(
             message:
-              "Cannot track a new terminal session if topmost window '\(window.bundleId ?? "?")' doesn't correspond to $TERM_PROGRAM '\(bundleIdBasedOnTermProgram ?? "?")'",
+              "Cannot track a new terminal session if topmost window '\(window.bundleId ?? "?")' doesn't correspond to $TERM_PROGRAM '\(bundle ?? "?")'",
             priority: .notify, subsystem: .tty)
           return
         }
 
         Logger.log(
-          message: "Linking \(ttyDescriptor) with \(window.hash) for \(sessionId)",
+          message: "Linking \(context.ttys) with \(window.hash) for \(context.sessionID)",
           priority: .notify, subsystem: .tty)
 
-        let tty = self.link(sessionId, window.hash, ttyDescriptor)
-        tty.startedNewShellSession(for: shellPid)
+        let tty = self.link(context.sessionID, window.hash, context.ttys)
+        tty.startedNewShellSession(for: context.pid)
 
         // Set version (used for checking compatibility)
-        tty.shellIntegrationVersion = String(info.shellIntegrationVersion ?? 0)
+        tty.shellIntegrationVersion = context.integrationVersion
 
         DispatchQueue.main.async {
           NotificationCenter.default.post(
             Notification(
               name: PseudoTerminal.recievedEnvironmentVariablesFromShellNotification,
-              object: info.env?.jsonStringToDict() ?? [:]))
+              object: env))
         }
 
       })
@@ -400,19 +416,25 @@ extension ShellHookManager {
   }
   
   func shellWillExecuteCommandLegacy(_ info: ShellMessage) {
-    shellWillExecuteCommand(info)
-  }
-
-  func shellWillExecuteCommand(_ info: ShellMessage) {
     guard let (_, ttyDescriptor, sessionId) = info.parseShellHook() else {
       Logger.log(
         message: "Could not parse out shellHook metadata", priority: .notify, subsystem: .tty)
       return
     }
+    
+    let context = Local_ShellContext.with { ctx in
+      ctx.integrationVersion = String(info.shellIntegrationVersion ?? 0)
+      ctx.ttys = ttyDescriptor
+      ctx.sessionID = sessionId
+    }
+    
+    shellWillExecuteCommand(context: context)
+  }
 
+  func shellWillExecuteCommand(context: Local_ShellContext) {
     guard
       let hash = attemptToFindToAssociatedWindow(
-        for: sessionId,
+        for: context.sessionID,
         currentTopmostWindow: AXWindowServer.shared.whitelistedWindow)
     else {
 
@@ -422,11 +444,11 @@ extension ShellHookManager {
       return
     }
 
-    let tty = self.tty(for: hash) ?? link(sessionId, hash, ttyDescriptor)
+    let tty = self.tty(for: hash) ?? link(context.sessionID, hash, context.ttys)
     tty.preexec()
 
     // Set version (used for checking compatibility)
-    tty.shellIntegrationVersion = String(info.shellIntegrationVersion ?? 0)
+    tty.shellIntegrationVersion = context.integrationVersion
 
     // update keybuffer backing
     if KeypressProvider.shared.keyBuffer(for: hash).backedByShell {
@@ -636,6 +658,16 @@ extension ShellHookManager {
 
     }
 
+  }
+  
+  func integrationReadyHook(identifier: String) {
+    switch identifier {
+    case "iterm":
+      iTermIntegration.default.attemptToConnect()
+    default:
+      break
+    }
+    
   }
 
 }

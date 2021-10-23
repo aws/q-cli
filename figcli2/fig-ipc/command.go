@@ -3,6 +3,7 @@ package fig_ipc
 import (
 	fig_proto "fig-cli/fig-proto"
 	"fmt"
+	"os"
 	"time"
 
 	"google.golang.org/protobuf/proto"
@@ -117,6 +118,30 @@ func UpdateCommand(force bool) error {
 	}
 
 	if err := SendCommand(&cmd); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func ReportWindowCommand(message string) error {
+	path := os.Getenv("PATH")
+	figEnvVar := os.Getenv("FIG_ENV_VAR")
+	term := os.Getenv("TERM")
+
+	cmd := fig_proto.Command{
+		Command: &fig_proto.Command_ReportWindow{
+			ReportWindow: &fig_proto.ReportWindowCommand{
+				Report:    message,
+				Path:      path,
+				FigEnvVar: figEnvVar,
+				Terminal:  term,
+			},
+		},
+	}
+
+	err := SendCommand(&cmd)
+	if err != nil {
 		return err
 	}
 

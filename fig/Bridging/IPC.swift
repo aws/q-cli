@@ -198,6 +198,8 @@ class IPC: UnixSocketServerDelegate {
       CommandHandlers.updateCommand(request.force)
     case .diagnostics(_):
       response = CommandHandlers.diagnosticsCommand()
+    case .reportWindow(let request):
+      CommandHandlers.displayReportWindow(message: request.report, path: request.path, figEnvVar: request.figEnvVar, terminal: request.terminal)
     case .none:
       break
     }
@@ -212,32 +214,47 @@ class IPC: UnixSocketServerDelegate {
 
   func handleHook(_ message: Local_Hook) {
     Logger.log(message: "Recieved hook message!", subsystem: .unix)
-    let json = try? message.jsonString()
-    Logger.log(message: json ?? "Could not decode message", subsystem: .unix)
-
+    
+    #if DEBUG
+      let json = try? message.jsonString()
+      Logger.log(message: json ?? "Could not decode message", subsystem: .unix)
+    #endif
+    
     switch message.hook {
-    case .editbuffer(let hook):
+    case .editBuffer(let hook):
       ShellHookManager.shared.updateKeybuffer(
         context: hook.context,
         text: hook.text,
         cursor: Int(hook.cursor),
         histno: Int(hook.histno))
+    case .init_p(let hook):
+      ShellHookManager.shared.startedNewTerminalSession(
+        context: hook.context,
+        calledDirect: hook.calledDirect,
+        bundle: hook.bundle,
+        env: hook.env)
     case .prompt(let hook):
       ShellHookManager.shared.shellPromptWillReturn(context: hook.context)
-    case .preexec(_):
+    case .preExec(let hook):
+      ShellHookManager.shared.shellWillExecuteCommand(context: hook.context)
       break
-    case .postexec(_):
+    case .postExec(_):
       break
-    case .keyboardfocuschanged(_):
+    case .keyboardFocusChanged(_):
+      // TODO
       // ShellHookManager.shared.currentTabDidChange(context: hook.context, bundleId: hook.bundleIdentifier)
       break
-    case .tmuxpanechanged(_):
+    case .tmuxPaneChanged(_):
       break
-    case .openedsshconnection(_):
+    case .openedSshConnection(_):
       break
-    case .callback(let hook):
+    case .callback(_):
       break
-//      ShellHookManager.shared.callback(handler_id: hook.handlerID, filepath: hook.filepath, exit_code: hook.exitCode)
+    case .integrationReady(let hook):
+      ShellHookManager.shared.integrationReadyHook(identifier: hook.identifier)
+      break
+    case .hide(_):
+      Autocomplete.hide()
     case .none:
       break
     }

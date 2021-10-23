@@ -350,7 +350,7 @@ var appSetPath = &cobra.Command{
 	Short: "Set the path to the fig executable",
 	Long:  `Set the path to the fig executable`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("\n  Setting $PATH variable in Fig pseudo-terminal...\n\n")
+		fmt.Printf("\n  Setting $PATH variable in Fig pseudo-terminal...\n\n\n")
 
 		// Get the users $PATH
 		path, err := exec.Command("sh", "-c", "echo $PATH").Output()

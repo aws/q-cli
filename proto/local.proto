@@ -24,19 +24,23 @@ message Command {
 		QuitCommand quit = 104;
 		UpdateCommand update = 105;
 		DiagnosticsCommand diagnostics = 106;
+		ReportWindowCommand report_window = 107;
 	}
 }
 
 message Hook {
 	oneof hook {
-		EditBufferHook editbuffer = 100;
-		PromptHook prompt = 101;
-		PreExecHook preexec = 102;
-		PostExecHook postexec = 103;
-		KeyboardFocusChangedHook keyboardfocuschanged = 104;
-		TmuxPaneChangedHook tmuxpanechanged = 105;
-		OpenedSSHConnectionHook openedsshconnection = 106;
-		CallbackHook callback = 107;
+		EditBufferHook edit_buffer = 100;
+		InitHook init = 101;
+		PromptHook prompt = 102;
+		PreExecHook pre_exec = 103;
+		PostExecHook post_exec = 104;
+		KeyboardFocusChangedHook keyboard_focus_changed = 105;
+		TmuxPaneChangedHook tmux_pane_changed = 106;
+		OpenedSSHConnectionHook opened_ssh_connection = 107;
+		CallbackHook callback = 108;
+		IntegrationReadyHook integration_ready = 109;
+		HideHook hide = 110;
 
 	}
 }
@@ -67,13 +71,20 @@ message UpdateCommand {
 
 message DiagnosticsCommand {}
 
+message ReportWindowCommand {
+	string report = 1;
+	string path = 2;
+	string fig_env_var = 3;
+	string terminal = 4;
+}
+
 // == Hooks ==
 message ShellContext {
-	int32 pid = 1;
-	string ttys = 2; // /dev/ttys## of terminal session
-	string shell = 3; // the name of the shell
-	string currentWorkingDirectory = 4; // the directory where the user ran the command
-	string sessionId = 5; // the value of $TERM_SESSION_ID 
+	optional int32 pid = 1;
+	optional string ttys = 2; // /dev/ttys## of terminal session
+	optional string shell = 3; // the name of the shell
+	optional string currentWorkingDirectory = 4; // the directory where the user ran the command
+	optional string sessionId = 5; // the value of $TERM_SESSION_ID 
 	optional string integration_version = 6;
 	optional string terminal = 7;
 }
@@ -84,9 +95,15 @@ message EditBufferHook {
 	string text = 2;
 	int64 cursor = 3;
 	int64 histno = 4;
-	//string integration_version = 3;
-	//string shell = 3;
-	//string sessionId = 4;
+}
+
+message InitHook {
+	ShellContext context = 1;
+
+	bool called_direct = 2;
+	string bundle = 3;
+
+	map<string, string> env = 100;
 }
 
 message PromptHook {
@@ -126,6 +143,12 @@ message CallbackHook {
 	string filepath = 2;
 	string exit_code = 3;
 }
+
+message IntegrationReadyHook {
+	string identifier = 1;
+}
+
+message HideHook { }
 
 // == Responses ==
 message ErrorResponse {

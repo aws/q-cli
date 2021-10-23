@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fig-cli/diagnostics"
+	fig_ipc "fig-cli/fig-ipc"
 	"fmt"
 	"net/url"
 	"os/exec"
@@ -55,7 +56,7 @@ var issueCmd = &cobra.Command{
 
 		macOsVersion, _ := diagnostics.GetMacOsVersion()
 		figVersion, _ := diagnostics.GetFigVersion()
-		shell, _ := diagnostics.GetShell()
+		shell, _ := fig_ipc.GetShell()
 
 		body.WriteString(fmt.Sprintf("|%s|%s|%s|\n", macOsVersion, figVersion, shell))
 

@@ -43,12 +43,14 @@ extension CommandHandlers {
   }
   
   static func updateCommand(_ force: Bool = false) {
-    if force {
-      if UpdateService.provider.updateIsAvailable {
-        UpdateService.provider.installUpdateIfAvailible()
+    DispatchQueue.main.async {
+      if force {
+        if UpdateService.provider.updateIsAvailable {
+          UpdateService.provider.installUpdateIfAvailible()
+        }
+      } else {
+        UpdateService.provider.checkForUpdates(nil)
       }
-    } else {
-      UpdateService.provider.checkForUpdates(nil)
     }
   }
   
@@ -67,6 +69,41 @@ extension CommandHandlers {
       response.diagnostics.currentProcess = "\(Diagnostic.processForTopmostWindow) (\(Diagnostic.processIdForTopmostWindow)) - \(Diagnostic.ttyDescriptorForTopmostWindow)"
       response.diagnostics.onlytab = String(Defaults.onlyInsertOnTab)
       response.diagnostics.psudopath = Diagnostic.pseudoTerminalPath ?? "<generated dynamically>"
+    }
+  }
+  
+  static func displayReportWindow(message: String, path: String?, figEnvVar: String?, terminal: String?) {
+    let placeholder =
+    """
+    \(message)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    ---------------------------------------
+    DIAGNOSTIC
+    \(Diagnostic.summary)
+    ---------------------------------------
+    ENVIRONMENT
+    Terminal: \(terminal ?? "<unknown>")
+    PATH: \(path ?? "Not found")
+    FIG_ENV_VAR: \(figEnvVar ?? "Not found")
+    --------------------------------------
+    CONFIG
+    \(Diagnostic.userConfig ?? "?")
+    """
+    DispatchQueue.main.async {
+      Feedback.getFeedback(source: "fig_report_cli", placeholder: placeholder)
     }
   }
 }
