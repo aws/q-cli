@@ -373,6 +373,7 @@ class ShellBridge {
       
       
       let version = window.tty?.shellIntegrationVersion
+      print(version)
       let figTermInstanceSupportsInserts = version ?? 0 >= 5
       
       let backing = KeypressProvider.shared.keyBuffer(for: window).backing
@@ -388,6 +389,7 @@ class ShellBridge {
       if let sessionId = window.session, useFigTerm {
         Logger.log(message: "Inserting '\(cmd)' using figterm (\(sessionId)")
         try? FigTerm.insert(cmd, into: sessionId)
+        NSSound.beep()
       } else if usingEffectedShell && inElectronTerminal {
         Logger.log(message: "Insert effected by xtermjs bug! Showing alert...")
 
@@ -616,7 +618,7 @@ struct ShellMessage: Codable {
             let version = Int(versionString) else {
                return nil
            }
-      
+       print("shellIntegrationVersion: \(version)")
        return version
     }
 
