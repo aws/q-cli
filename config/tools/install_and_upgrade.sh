@@ -47,7 +47,7 @@ install_fig() {
   mkdir -p ~/.fig/user/{aliases,apps,autocomplete,aliases}
 
   BUNDLE="${FIG_BUNDLE_EXECUTABLES:-/Applications/Fig.app/Contents/MacOS/}"
-  echo $FIG_BUNDLE_EXECUTABLES > ~/bundle.txt
+
   # rename figterm binaries to mirror supported shell
   # copy binaries on install to avoid issues with file permissions at runtime
   FIGTERM="${BUNDLE}/figterm" 
