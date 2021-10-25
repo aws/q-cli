@@ -8,6 +8,13 @@ pathadd() {
 
 pathadd ~/.fig/bin
 
+if [[ ! -z "${FIG_NEW_SESSION}" ]]; then
+  unset TERM_SESSION_ID
+  unset FIG_TERM
+  unset FIG_ENV_VAR
+  unset FIG_NEW_SESSION
+fi
+
 # Only launch figterm if current session is not already inside PTY and command exists
 if [[ "${TERMINAL_EMULATOR}" != JetBrains-JediTerm ]] \
   && [[ ! "${TERM_PROGRAM}" = WarpTerminal ]] \
@@ -20,7 +27,7 @@ if [[ "${TERMINAL_EMULATOR}" != JetBrains-JediTerm ]] \
   # new ttys are created using Tmux of VSCode and must be explictly
   # overwritten.
 
-  if [[ -z "${TERM_SESSION_ID}" || -n "${TMUX}" || "${TERM_PROGRAM}" = vscode ]]; then
+  if [[ -z "${TERM_SESSION_ID}" || -n "${TMUX}" ]]; then
     export TERM_SESSION_ID="$(uuidgen)"
   fi
   export FIG_INTEGRATION_VERSION=5

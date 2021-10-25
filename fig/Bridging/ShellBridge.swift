@@ -389,7 +389,6 @@ class ShellBridge {
       if let sessionId = window.session, useFigTerm {
         Logger.log(message: "Inserting '\(cmd)' using figterm (\(sessionId)")
         try? FigTerm.insert(cmd, into: sessionId)
-        NSSound.beep()
       } else if usingEffectedShell && inElectronTerminal {
         Logger.log(message: "Insert effected by xtermjs bug! Showing alert...")
 
