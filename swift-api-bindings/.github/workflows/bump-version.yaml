@@ -1,0 +1,25 @@
+name: Bump Version
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: Create Release
+        id: create_release
+        uses: zendesk/action-create-release@v1
+        with:
+          tag_schema: semantic
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # - uses: zwaldowski/semver-release-action@v1
+      #   with:
+      #     bump: patch
+      #     prefix: v
+      #     github_token: ${{ secrets.GITHUB_TOKEN }}
+      #   env:
+      #     ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'

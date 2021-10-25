@@ -213,7 +213,7 @@ extension PseudoTerminal {
             commandToRun.append(" &")
         }
       
-        commandToRun.append("\r")
+        commandToRun.append(PseudoTerminal.CRLF)
       
         self.handlers[cappedHandlerId] = handler
         self.headless.send(commandToRun)

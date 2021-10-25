@@ -1,0 +1,72 @@
+syntax = "proto3";
+option objc_class_prefix = "FIG";
+//package local;
+
+message LocalMessage {
+	oneof type {
+		Command command = 2; // expect a response from the host app
+		Hook hook = 3; // one way update only, no response expected
+	}
+}
+
+message Command {
+	optional int64 id = 1;
+	optional bool no_response = 2; // opt-out of response from host app
+
+	oneof command {
+		TerminalIntegrationRequest terminal_integration_update = 100;
+	}
+}
+
+message Hook {
+	oneof hook {
+		EditBuffer editbuffer = 100;
+		Prompt prompt = 101;
+	}
+}
+
+// Example Command
+enum IntegrationAction {
+	INSTALL = 0;
+	VERIFY_INSTALL = 1;
+	UNINSTALL = 2;
+}
+message TerminalIntegrationRequest {
+	string identifier = 1;
+	IntegrationAction action = 2;
+}
+
+
+// Example Hook
+message EditBuffer {
+	string text = 1;
+	int64 cursor = 2;
+	string shell = 3;
+	string sessionId = 4;
+}
+
+message Prompt {
+	int32 pid = 1;
+	string shell = 2;
+	string currentWorkingDirectory = 3;
+	string sessionId = 4;
+}
+
+// 
+message Error {
+	optional int32 exit_code = 1;
+	optional string message = 2;
+}
+
+message Success {
+	optional string message = 1;
+}
+
+message CommandResponse {
+	optional int64 id = 1;
+	oneof response {
+		Error error = 2;
+		Success success = 3; 
+		// ... add structured responses for specific commands, as necessary
+	}
+}

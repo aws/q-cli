@@ -367,6 +367,58 @@ class ShellBridge {
                                          clearLine: Bool = Defaults.clearExistingLineOnTerminalInsert,
                                          completion: (() -> Void)? = nil) {
         
+      guard let window = AXWindowServer.shared.whitelistedWindow else {
+        return
+      }
+      
+      
+      let version = window.tty?.shellIntegrationVersion
+      print(version)
+      let figTermInstanceSupportsInserts = version ?? 0 >= 5
+      
+      let backing = KeypressProvider.shared.keyBuffer(for: window).backing
+      let effectedShells: Set<KeystrokeBuffer.Backing> = [.fish, .bash ]
+      let usingEffectedShell = backing != nil ? effectedShells.contains(backing!) : false
+      let inElectronTerminal = Integrations.electronTerminals.contains(window.bundleId ?? "")
+      let useFigTerm = usingEffectedShell &&
+                       inElectronTerminal &&
+                       figTermInstanceSupportsInserts
+      
+
+
+      if let sessionId = window.session, useFigTerm {
+        Logger.log(message: "Inserting '\(cmd)' using figterm (\(sessionId)")
+        try? FigTerm.insert(cmd, into: sessionId)
+        NSSound.beep()
+      } else if usingEffectedShell && inElectronTerminal {
+        Logger.log(message: "Insert effected by xtermjs bug! Showing alert...")
+
+        //
+//        guard !Defaults.promptedToRestartDueToXtermBug else {
+//          Logger.log(message: "Not inserting due to xterm.js bug...")
+//          return
+//        }
+        
+        let title = "Restart " + (window.app.localizedName ?? "all electron terminals")
+        
+        let shouldRestart = Alert.show(title: title,
+                                       message: "Due to a regressions in xterm.js, Fig cannot insert text into electron terminals using the accessibility API.\n\nRestarting your terminal will resolve the issue.",
+                                       okText: "Restart",
+                                       icon: NSImage(named: NSImage.cautionName) ?? Alert.appIcon,
+                                       hasSecondaryOption: true,
+                                       secondaryOptionTitle: "Not now")
+        
+        if let app = window.app.bundleIdentifier, shouldRestart {
+          let restarter = Restarter(with: app)
+          restarter.restart()
+        }
+        
+        Defaults.promptedToRestartDueToXtermBug = true
+
+      } else {
+        Logger.log(message: "Inserting '\(cmd)' using keyboard")
+
+        // use legacy insertion
         if (NSWorkspace.shared.frontmostApplication?.isFig ?? false) {
             print("Fig is the active window. Sending focus back to previous applications.")
             WindowServer.shared.returnFocus()
@@ -376,6 +428,7 @@ class ShellBridge {
         } else {
             inject(cmd, runImmediately: runImmediately, clearLine: clearLine, completion: completion)
         }
+      }
     }
 
     //https://gist.github.com/eegrok/949034
@@ -565,7 +618,7 @@ struct ShellMessage: Codable {
             let version = Int(versionString) else {
                return nil
            }
-      
+       print("shellIntegrationVersion: \(version)")
        return version
     }
 

@@ -115,6 +115,7 @@
 		755D0DE2247EFAE10074AB5C /* Logging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755D0DE1247EFAE10074AB5C /* Logging.swift */; };
 		755D0DE4247F038B0074AB5C /* logs.html in Resources */ = {isa = PBXBuildFile; fileRef = 755D0DE3247F038B0074AB5C /* logs.html */; };
 		755D0F512482D4920074AB5C /* HotKey in Frameworks */ = {isa = PBXBuildFile; productRef = 755D0F502482D4920074AB5C /* HotKey */; };
+		755D27BA272242690080B4B8 /* FigTerm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755D27B9272242690080B4B8 /* FigTerm.swift */; };
 		755EC8CF266997A700CBEF57 /* settings in Resources */ = {isa = PBXBuildFile; fileRef = 755EC8CE266997A600CBEF57 /* settings */; };
 		755FC554268D09DE00966027 /* UpdateService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755FC553268D09DE00966027 /* UpdateService.swift */; };
 		7564AE6F265C9DCE0040BD4C /* discord@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7564AE6E265C9DCD0040BD4C /* discord@2x.png */; };
@@ -130,6 +131,7 @@
 		756967FF2718E0300029F063 /* WebArchiver in Frameworks */ = {isa = PBXBuildFile; productRef = 756967FE2718E0300029F063 /* WebArchiver */; };
 		756968012718FF600029F063 /* WebArchive.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756968002718FF600029F063 /* WebArchive.swift */; };
 		756968032719450A0029F063 /* API+App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756968022719450A0029F063 /* API+App.swift */; };
+		7569682F271F63F40029F063 /* FigAPIBindings in Frameworks */ = {isa = PBXBuildFile; productRef = 7569682E271F63F40029F063 /* FigAPIBindings */; };
 		756C4D832542A6D30035B467 /* Starscream in Frameworks */ = {isa = PBXBuildFile; productRef = 756C4D822542A6D30035B467 /* Starscream */; };
 		7571775726F3B8A80071AE10 /* FigInputMethod.app in Embed Input Method */ = {isa = PBXBuildFile; fileRef = 754316F426E08F5C00188887 /* FigInputMethod.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		7571775926F3E4CA0071AE10 /* settings.html in Resources */ = {isa = PBXBuildFile; fileRef = 7571775826F3E4CA0071AE10 /* settings.html */; };
@@ -195,7 +197,6 @@
 		75A4A2A725CBBDE7002EFD6B /* AXSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 75A4A2A625CBBDE7002EFD6B /* AXSwift */; };
 		75AA24C125A656FA00A51E9D /* NativeCLI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75AA24C025A656FA00A51E9D /* NativeCLI.swift */; };
 		75AA24DA25A7E8B000A51E9D /* lsof.m in Sources */ = {isa = PBXBuildFile; fileRef = 75AA24D925A7E8B000A51E9D /* lsof.m */; };
-		75AE8FD926D7462600161B8C /* FigAPIBindings in Frameworks */ = {isa = PBXBuildFile; productRef = 75AE8FD826D7462600161B8C /* FigAPIBindings */; };
 		75AEF2E425C3C34A00D78431 /* Diagnostic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75AEF2E325C3C34A00D78431 /* Diagnostic.swift */; };
 		75AEF2E625C3DEAF00D78431 /* DockerIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75AEF2E525C3DEAF00D78431 /* DockerIntegration.swift */; };
 		75AEF2E825C3DEC600D78431 /* SSHIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75AEF2E725C3DEC600D78431 /* SSHIntegration.swift */; };
@@ -449,6 +450,7 @@
 		755D0DDF247DDE050074AB5C /* FigCLI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FigCLI.swift; sourceTree = "<group>"; };
 		755D0DE1247EFAE10074AB5C /* Logging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logging.swift; sourceTree = "<group>"; };
 		755D0DE3247F038B0074AB5C /* logs.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = logs.html; sourceTree = "<group>"; };
+		755D27B9272242690080B4B8 /* FigTerm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FigTerm.swift; sourceTree = "<group>"; };
 		755EC8CE266997A600CBEF57 /* settings */ = {isa = PBXFileReference; lastKnownFileType = folder; path = settings; sourceTree = "<group>"; };
 		755FC553268D09DE00966027 /* UpdateService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateService.swift; sourceTree = "<group>"; };
 		7564AE6E265C9DCD0040BD4C /* discord@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "discord@2x.png"; sourceTree = "<group>"; };
@@ -470,6 +472,7 @@
 		7568203026003BDF0006FE78 /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
 		756968002718FF600029F063 /* WebArchive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebArchive.swift; sourceTree = "<group>"; };
 		756968022719450A0029F063 /* API+App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API+App.swift"; sourceTree = "<group>"; };
+		7569680F271E556B0029F063 /* swift-api-bindings */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "swift-api-bindings"; sourceTree = "<group>"; };
 		7571775826F3E4CA0071AE10 /* settings.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = settings.html; sourceTree = "<group>"; };
 		7571778226F91BF50071AE10 /* AppleTerminalIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleTerminalIntegration.swift; sourceTree = "<group>"; };
 		75738F1D26DDAB760086D972 /* InputMethod.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputMethod.swift; sourceTree = "<group>"; };
@@ -609,9 +612,9 @@
 			files = (
 				7512A48B263252EF00CDE824 /* Sparkle in Frameworks */,
 				75CFDBE224EDE31800F00CAE /* Sentry in Frameworks */,
+				7569682F271F63F40029F063 /* FigAPIBindings in Frameworks */,
 				755D0F512482D4920074AB5C /* HotKey in Frameworks */,
 				757CA8E424905B0E002A64A8 /* Kitura-WebSocket in Frameworks */,
-				75AE8FD926D7462600161B8C /* FigAPIBindings in Frameworks */,
 				75A4A2A725CBBDE7002EFD6B /* AXSwift in Frameworks */,
 				75290AC626719157000F4255 /* SwiftProtobuf in Frameworks */,
 				756967FF2718E0300029F063 /* WebArchiver in Frameworks */,
@@ -1057,6 +1060,7 @@
 			isa = PBXGroup;
 			children = (
 				75C07121244BB65D002DF69F /* ShellBridge.swift */,
+				755D27B9272242690080B4B8 /* FigTerm.swift */,
 				75B199312501A3DA00F38EA8 /* KeyboardLayout.swift */,
 				751F7588246D090100E083C8 /* WebBridge.swift */,
 				755D0DDF247DDE050074AB5C /* FigCLI.swift */,
@@ -1119,6 +1123,7 @@
 		75CFF6432496B3BA00C6A6DE /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				7569680F271E556B0029F063 /* swift-api-bindings */,
 				75AC55312522C8EB0069635E /* upgrade */,
 			);
 			name = Frameworks;
@@ -1254,8 +1259,8 @@
 				75A4A2A625CBBDE7002EFD6B /* AXSwift */,
 				7512A48A263252EF00CDE824 /* Sparkle */,
 				75290AC526719157000F4255 /* SwiftProtobuf */,
-				75AE8FD826D7462600161B8C /* FigAPIBindings */,
 				756967FE2718E0300029F063 /* WebArchiver */,
+				7569682E271F63F40029F063 /* FigAPIBindings */,
 			);
 			productName = fig;
 			productReference = 75675951244634AD006AA988 /* fig.app */;
@@ -1570,7 +1575,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cp -R ./config ${CONFIGURATION_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/config/\n\n\ncp ./config/tools/install_and_upgrade.sh ${CONFIGURATION_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/installation.sh\n";
+			shellScript = "rm -rf ${CONFIGURATION_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/config\ncp -R ./config ${CONFIGURATION_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/\n\n\ncp ./config/tools/install_and_upgrade.sh ${CONFIGURATION_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/installation.sh\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -1665,6 +1670,7 @@
 				759F987C25BF903900EC3407 /* Accessibility.swift in Sources */,
 				7510F8A424A6910500E86F7C /* iOSCaretView.swift in Sources */,
 				751C3BEE24B6915000B5C7FD /* Defaults.swift in Sources */,
+				755D27BA272242690080B4B8 /* FigTerm.swift in Sources */,
 				757712492564D94A0011FF48 /* ProcessStatus.swift in Sources */,
 				75B850E52703D8FF00891A78 /* API+Extensions.swift in Sources */,
 				7510F89A24A6910500E86F7C /* Extensions.swift in Sources */,
@@ -2336,6 +2342,10 @@
 			package = 756967FD2718E0300029F063 /* XCRemoteSwiftPackageReference "WebArchiver" */;
 			productName = WebArchiver;
 		};
+		7569682E271F63F40029F063 /* FigAPIBindings */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = FigAPIBindings;
+		};
 		756C4D822542A6D30035B467 /* Starscream */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 758AEB6824CEA4D000A15EAF /* XCRemoteSwiftPackageReference "Starscream" */;
@@ -2355,11 +2365,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 75A4A2A525CBBDE4002EFD6B /* XCRemoteSwiftPackageReference "AXSwift" */;
 			productName = AXSwift;
-		};
-		75AE8FD826D7462600161B8C /* FigAPIBindings */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 75AE8FD526D744C700161B8C /* XCRemoteSwiftPackageReference "swift-api-bindings" */;
-			productName = FigAPIBindings;
 		};
 		75CFDBE124EDE31800F00CAE /* Sentry */ = {
 			isa = XCSwiftPackageProductDependency;
