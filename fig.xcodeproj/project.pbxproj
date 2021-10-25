@@ -116,6 +116,7 @@
 		755D0DE4247F038B0074AB5C /* logs.html in Resources */ = {isa = PBXBuildFile; fileRef = 755D0DE3247F038B0074AB5C /* logs.html */; };
 		755D0F512482D4920074AB5C /* HotKey in Frameworks */ = {isa = PBXBuildFile; productRef = 755D0F502482D4920074AB5C /* HotKey */; };
 		755D27BA272242690080B4B8 /* FigTerm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755D27B9272242690080B4B8 /* FigTerm.swift */; };
+		755D27C2272772280080B4B8 /* fig-0.0.5.vsix in Resources */ = {isa = PBXBuildFile; fileRef = 755D27C1272772280080B4B8 /* fig-0.0.5.vsix */; };
 		755EC8CF266997A700CBEF57 /* settings in Resources */ = {isa = PBXBuildFile; fileRef = 755EC8CE266997A600CBEF57 /* settings */; };
 		755FC554268D09DE00966027 /* UpdateService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755FC553268D09DE00966027 /* UpdateService.swift */; };
 		7564AE6F265C9DCE0040BD4C /* discord@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7564AE6E265C9DCD0040BD4C /* discord@2x.png */; };
@@ -451,6 +452,7 @@
 		755D0DE1247EFAE10074AB5C /* Logging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logging.swift; sourceTree = "<group>"; };
 		755D0DE3247F038B0074AB5C /* logs.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = logs.html; sourceTree = "<group>"; };
 		755D27B9272242690080B4B8 /* FigTerm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FigTerm.swift; sourceTree = "<group>"; };
+		755D27C1272772280080B4B8 /* fig-0.0.5.vsix */ = {isa = PBXFileReference; lastKnownFileType = file; path = "fig-0.0.5.vsix"; sourceTree = "<group>"; };
 		755EC8CE266997A600CBEF57 /* settings */ = {isa = PBXFileReference; lastKnownFileType = folder; path = settings; sourceTree = "<group>"; };
 		755FC553268D09DE00966027 /* UpdateService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateService.swift; sourceTree = "<group>"; };
 		7564AE6E265C9DCD0040BD4C /* discord@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "discord@2x.png"; sourceTree = "<group>"; };
@@ -795,6 +797,7 @@
 		752A398725CD0FFB00B1AC40 /* VSCode */ = {
 			isa = PBXGroup;
 			children = (
+				755D27C1272772280080B4B8 /* fig-0.0.5.vsix */,
 				75543FCF268AC6E5003221DF /* fig-0.0.4.vsix */,
 				75C8A15F2649E712001B69DA /* fig-0.0.2.vsix */,
 				752A398525CD0FE800B1AC40 /* fig-0.0.1.vsix */,
@@ -1429,6 +1432,7 @@
 				75B0A08C25BBC7A300FCD89A /* autoc.mp4 in Resources */,
 				759F988425BFF0FF00EC3407 /* package@2x.png in Resources */,
 				752C0BDA2479F37B0077E415 /* fig.js in Resources */,
+				755D27C2272772280080B4B8 /* fig-0.0.5.vsix in Resources */,
 				75A4A29925C8D855002EFD6B /* git@2x.png in Resources */,
 				757CA88D248B091D002A64A8 /* permissions.mp4 in Resources */,
 				757CA897248C108E002A64A8 /* css in Resources */,
