@@ -92,7 +92,7 @@ jobs:
       - name: "Notarize (Manual)" 
         run: |
           /usr/bin/ditto -c -k --keepParent Export/Fig.app Fig.zip
-          xcrun notarytool submit Fig.zip --apple-id "$NOTARIZE_USERNAME" --password "$NOTARIZE_PASSWORD" --wait
+          xcrun notarytool submit Fig.zip --apple-id "$NOTARIZE_USERNAME" --password "$NOTARIZE_PASSWORD" --team-id D93PPD94WK --wait
           # xcrun altool --notarize-app --primary-bundle-id "com.mschrage.fig" -u "$NOTARIZE_USERNAME" -p "$NOTARIZE_PASSWORD" --file Fig.zip
         env:
           NOTARIZE_USERNAME: ${{ secrets.NOTARIZE_USERNAME }}
