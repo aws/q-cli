@@ -81,10 +81,17 @@ jobs:
 
       - name: "Notarize Release Build"
         run: |
-          npx notarize-cli@0.1.1 --file "Export/Fig.app" --bundle-id com.mschrage.fig
-        env:
-          NOTARIZE_USERNAME: ${{ secrets.NOTARIZE_USERNAME }}
-          NOTARIZE_PASSWORD: ${{ secrets.NOTARIZE_PASSWORD }}
+          brew tap mitchellh/gon
+          brew install mitchellh/gon/gon
+          gon ./ci/release.hcl
+
+
+      # - name: "Notarize Release Build"
+      #   run: |
+      #     npx notarize-cli@0.1.1 --file "Export/Fig.app" --bundle-id com.mschrage.fig
+      #   env:
+      #     NOTARIZE_USERNAME: ${{ secrets.NOTARIZE_USERNAME }}
+      #     NOTARIZE_PASSWORD: ${{ secrets.NOTARIZE_PASSWORD }}
 
       # - name: "Notarize Release Build"
       #   uses: devbotsxyz/xcode-notarize@v1
