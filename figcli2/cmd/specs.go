@@ -13,7 +13,7 @@ import (
 )
 
 func init() {
-	specsListCmd.Flags().Bool("remote", false, "List specs that are available on the remote")
+	// specsListCmd.Flags().Bool("remote", false, "List specs that are available on the remote")
 
 	specsCmd.AddCommand(specsUninstallCmd)
 	specsCmd.AddCommand(specsListCmd)
@@ -55,39 +55,37 @@ var specsUninstallCmd = &cobra.Command{
 
 var specsListCmd = &cobra.Command{
 	Use:   "list",
-	Short: "List installed specs",
+	Short: "List autcomplete specs",
 	Run: func(cmd *cobra.Command, arg []string) {
-		if cmd.Flags().Lookup("remote").Value.String() == "true" {
-			// Get remote specs
-			req, _ := http.NewRequest("GET", "https://api.github.com/repos/withfig/autocomplete/contents/src", nil)
-			req.Header.Set("Accept", "application/vnd.github.v3+json")
+		req, _ := http.NewRequest("GET", "https://api.github.com/repos/withfig/autocomplete/contents/src", nil)
+		req.Header.Set("Accept", "application/vnd.github.v3+json")
 
-			client := &http.Client{}
-			resp, err := client.Do(req)
-			if err != nil {
-				fmt.Println("Error:", err)
-				return
-			}
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			fmt.Println("Error:", err)
+			return
+		}
 
-			defer resp.Body.Close()
+		defer resp.Body.Close()
 
-			// Get spec files
-			var specFiles []interface{}
-			if err = json.NewDecoder(resp.Body).Decode(&specFiles); err != nil {
-				fmt.Println("Error:", err)
-				return
-			}
+		// Get spec files
+		var specFiles []interface{}
+		if err = json.NewDecoder(resp.Body).Decode(&specFiles); err != nil {
+			fmt.Println("Error:", err)
+			return
+		}
 
-			for _, specFile := range specFiles {
-				spec := strings.TrimSuffix(strings.TrimPrefix(specFile.(map[string]interface{})["name"].(string), "autocomplete/src/"), ".ts")
-				fmt.Println(spec)
-			}
-		} else {
+		for _, specFile := range specFiles {
+			spec := strings.TrimSuffix(strings.TrimPrefix(specFile.(map[string]interface{})["name"].(string), "autocomplete/src/"), ".ts")
+			fmt.Println(spec)
+		}
+
+		if cmd.Flags().Lookup("local").Value.String() == "true" {
 			specs, _ := specs.GetSpecsNames()
 			for _, spec := range specs {
 				fmt.Println(spec)
 			}
 		}
-
 	},
 }

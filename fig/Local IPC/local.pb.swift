@@ -394,6 +394,14 @@ public struct Local_Hook {
     set {hook = .hide(newValue)}
   }
 
+  public var event: Local_EventHook {
+    get {
+      if case .event(let v)? = hook {return v}
+      return Local_EventHook()
+    }
+    set {hook = .event(newValue)}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public enum OneOf_Hook: Equatable {
@@ -408,6 +416,7 @@ public struct Local_Hook {
     case callback(Local_CallbackHook)
     case integrationReady(Local_IntegrationReadyHook)
     case hide(Local_HideHook)
+    case event(Local_EventHook)
 
   #if !swift(>=4.1)
     public static func ==(lhs: Local_Hook.OneOf_Hook, rhs: Local_Hook.OneOf_Hook) -> Bool {
@@ -457,6 +466,10 @@ public struct Local_Hook {
       }()
       case (.hide, .hide): return {
         guard case .hide(let l) = lhs, case .hide(let r) = rhs else { preconditionFailure() }
+        return l == r
+      }()
+      case (.event, .event): return {
+        guard case .event(let l) = lhs, case .event(let r) = rhs else { preconditionFailure() }
         return l == r
       }()
       default: return false
@@ -802,7 +815,7 @@ public struct Local_KeyboardFocusChangedHook {
   public var bundleIdentifier: String = String()
 
   /// a unique identifier associated with the pane or tab that is currently focused
-  public var focusedSession: String = String()
+  public var focusedSessionID: String = String()
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -876,6 +889,18 @@ public struct Local_HideHook {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public struct Local_EventHook {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var eventName: String = String()
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -1419,6 +1444,7 @@ extension Local_Hook: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementatio
     108: .same(proto: "callback"),
     109: .standard(proto: "integration_ready"),
     110: .same(proto: "hide"),
+    111: .same(proto: "event"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -1570,6 +1596,19 @@ extension Local_Hook: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementatio
           self.hook = .hide(v)
         }
       }()
+      case 111: try {
+        var v: Local_EventHook?
+        var hadOneofValue = false
+        if let current = self.hook {
+          hadOneofValue = true
+          if case .event(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.hook = .event(v)
+        }
+      }()
       default: break
       }
     }
@@ -1624,6 +1663,10 @@ extension Local_Hook: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementatio
     case .hide?: try {
       guard case .hide(let v)? = self.hook else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 110)
+    }()
+    case .event?: try {
+      guard case .event(let v)? = self.hook else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 111)
     }()
     case nil: break
     }
@@ -2200,7 +2243,7 @@ extension Local_KeyboardFocusChangedHook: SwiftProtobuf.Message, SwiftProtobuf._
   public static let protoMessageName: String = _protobuf_package + ".KeyboardFocusChangedHook"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .standard(proto: "bundle_identifier"),
-    2: .standard(proto: "focused_session"),
+    2: .standard(proto: "focused_session_id"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -2210,7 +2253,7 @@ extension Local_KeyboardFocusChangedHook: SwiftProtobuf.Message, SwiftProtobuf._
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularStringField(value: &self.bundleIdentifier) }()
-      case 2: try { try decoder.decodeSingularStringField(value: &self.focusedSession) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.focusedSessionID) }()
       default: break
       }
     }
@@ -2220,15 +2263,15 @@ extension Local_KeyboardFocusChangedHook: SwiftProtobuf.Message, SwiftProtobuf._
     if !self.bundleIdentifier.isEmpty {
       try visitor.visitSingularStringField(value: self.bundleIdentifier, fieldNumber: 1)
     }
-    if !self.focusedSession.isEmpty {
-      try visitor.visitSingularStringField(value: self.focusedSession, fieldNumber: 2)
+    if !self.focusedSessionID.isEmpty {
+      try visitor.visitSingularStringField(value: self.focusedSessionID, fieldNumber: 2)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: Local_KeyboardFocusChangedHook, rhs: Local_KeyboardFocusChangedHook) -> Bool {
     if lhs.bundleIdentifier != rhs.bundleIdentifier {return false}
-    if lhs.focusedSession != rhs.focusedSession {return false}
+    if lhs.focusedSessionID != rhs.focusedSessionID {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -2398,6 +2441,38 @@ extension Local_HideHook: SwiftProtobuf.Message, SwiftProtobuf._MessageImplement
   }
 
   public static func ==(lhs: Local_HideHook, rhs: Local_HideHook) -> Bool {
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Local_EventHook: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".EventHook"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .standard(proto: "event_name"),
+  ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.eventName) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.eventName.isEmpty {
+      try visitor.visitSingularStringField(value: self.eventName, fieldNumber: 1)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Local_EventHook, rhs: Local_EventHook) -> Bool {
+    if lhs.eventName != rhs.eventName {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

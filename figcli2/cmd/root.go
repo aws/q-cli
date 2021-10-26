@@ -50,12 +50,7 @@ func Execute() {
 				Width(TextWidth).
 				Align(lipgloss.Center).
 				Render(
-					lipgloss.NewStyle().
-						Bold(true).
-						Render(`Fig CLI: `) +
-						lipgloss.NewStyle().
-							Italic(true).
-							Render(`A CLI to interact with Fig`),
+					"",
 				))
 
 			for _, c := range cmd.Commands() {

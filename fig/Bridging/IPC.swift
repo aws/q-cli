@@ -243,10 +243,8 @@ class IPC: UnixSocketServerDelegate {
       ShellHookManager.shared.shellWillExecuteCommand(context: hook.context)
     case .postExec(_):
       break
-    case .keyboardFocusChanged(_):
-      // TODO
-      // ShellHookManager.shared.currentTabDidChange(context: hook.context, bundleId: hook.bundleIdentifier)
-      break
+    case .keyboardFocusChanged(let hook):
+      ShellHookManager.shared.currentTabDidChange(bundleIdentifier: hook.bundleIdentifier, sessionId: hook.focusedSessionID)
     case .tmuxPaneChanged(_):
       break
     case .openedSshConnection(_):
@@ -257,6 +255,8 @@ class IPC: UnixSocketServerDelegate {
       ShellHookManager.shared.integrationReadyHook(identifier: hook.identifier)
     case .hide(_):
       Autocomplete.hide()
+    case .event(let hook):
+      ShellHookManager.shared.eventHook(event: hook.eventName)
     case .none:
       break
     }

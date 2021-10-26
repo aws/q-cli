@@ -106,12 +106,12 @@ func CreateInitHook(pid int, tty string) *fig_proto.Hook {
 	}
 }
 
-func CreateKeyboardFocusChangedHook(bundleIdentifier string, focusedSession string) *fig_proto.Hook {
+func CreateKeyboardFocusChangedHook(bundleIdentifier string, focusedSessionId string) *fig_proto.Hook {
 	return &fig_proto.Hook{
 		Hook: &fig_proto.Hook_KeyboardFocusChanged{
 			KeyboardFocusChanged: &fig_proto.KeyboardFocusChangedHook{
 				BundleIdentifier: bundleIdentifier,
-				FocusedSession:   focusedSession,
+				FocusedSessionId: focusedSessionId,
 			},
 		},
 	}
@@ -122,6 +122,24 @@ func CreateIntegrationReadyHook(identifyier string) *fig_proto.Hook {
 		Hook: &fig_proto.Hook_IntegrationReady{
 			IntegrationReady: &fig_proto.IntegrationReadyHook{
 				Identifier: identifyier,
+			},
+		},
+	}
+}
+
+func CreateHideHook() *fig_proto.Hook {
+	return &fig_proto.Hook{
+		Hook: &fig_proto.Hook_Hide{
+			Hide: &fig_proto.HideHook{},
+		},
+	}
+}
+
+func CreateEventHook(eventName string) *fig_proto.Hook {
+	return &fig_proto.Hook{
+		Hook: &fig_proto.Hook_Event{
+			Event: &fig_proto.EventHook{
+				EventName: eventName,
 			},
 		},
 	}

@@ -12,11 +12,15 @@ func init() {
 	hookCmd.AddCommand(hookEditbufferCmd)
 	hookCmd.AddCommand(hookPromptCmd)
 	hookCmd.AddCommand(hookInitCmd)
-	hookCmd.AddCommand(hookKeyboardFocusChanged)
-	hookCmd.AddCommand(hookIntegrationReady)
+	hookCmd.AddCommand(hookKeyboardFocusChangedCmd)
+	hookCmd.AddCommand(hookIntegrationReadyCmd)
+	hookCmd.AddCommand(hookHideCmd)
+	hookCmd.AddCommand(hookEventCmd)
 
 	rootCmd.AddCommand(hookCmd)
 }
+
+// TODO: Add error handling for hooks
 
 var hookCmd = &cobra.Command{
 	Use:    "hook",
@@ -39,7 +43,6 @@ var hookEditbufferCmd = &cobra.Command{
 
 		hook := fig_ipc.CreateEditBufferHook(args[0], integrationVersion, args[2], pid, histno, cursor, args[6])
 		fig_ipc.SendHook(hook)
-		// TODO: Add error handling
 	},
 }
 
@@ -55,7 +58,6 @@ var hookPromptCmd = &cobra.Command{
 
 		hook := fig_ipc.CreatePromptHook(pid, args[1])
 		fig_ipc.SendHook(hook)
-		// TODO: Add error handling
 	},
 }
 
@@ -74,8 +76,8 @@ var hookInitCmd = &cobra.Command{
 	},
 }
 
-var hookKeyboardFocusChanged = &cobra.Command{
-	Use:   "keyboard-focus-changed [bundle-id] [focused-session]",
+var hookKeyboardFocusChangedCmd = &cobra.Command{
+	Use:   "keyboard-focus-changed [bundle-id] [focused-session-id]",
 	Short: "Run the keyboard-focus-changed hook",
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) != 2 {
@@ -87,7 +89,7 @@ var hookKeyboardFocusChanged = &cobra.Command{
 	},
 }
 
-var hookIntegrationReady = &cobra.Command{
+var hookIntegrationReadyCmd = &cobra.Command{
 	Use:   "integration-ready [integration]",
 	Short: "Run the integration-ready hook",
 	Run: func(cmd *cobra.Command, args []string) {
@@ -96,6 +98,28 @@ var hookIntegrationReady = &cobra.Command{
 		}
 
 		hook := fig_ipc.CreateIntegrationReadyHook(args[0])
+		fig_ipc.SendHook(hook)
+	},
+}
+
+var hookHideCmd = &cobra.Command{
+	Use:   "hide",
+	Short: "Run the hide hook",
+	Run: func(cmd *cobra.Command, args []string) {
+		hook := fig_ipc.CreateHideHook()
+		fig_ipc.SendHook(hook)
+	},
+}
+
+var hookEventCmd = &cobra.Command{
+	Use:   "event [event-name]",
+	Short: "Run the event hook",
+	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) != 1 {
+			return
+		}
+
+		hook := fig_ipc.CreateEventHook(args[0])
 		fig_ipc.SendHook(hook)
 	},
 }

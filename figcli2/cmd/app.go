@@ -2,10 +2,11 @@ package cmd
 
 import (
 	"encoding/json"
+	"fig-cli/diagnostics"
+	fig_ipc "fig-cli/fig-ipc"
 	"fig-cli/settings"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"os/exec"
 	"os/user"
@@ -18,7 +19,7 @@ import (
 )
 
 func init() {
-	appCmd.AddCommand(appUpdateSpecsCmd)
+	// appCmd.AddCommand(appUpdateSpecsCmd)
 	appCmd.AddCommand(appOnboardingCmd)
 	appCmd.AddCommand(appThemeCmd)
 	appCmd.AddCommand(appUpgradeCmd)
@@ -36,67 +37,67 @@ var appCmd = &cobra.Command{
 	},
 }
 
-var appUpdateSpecsCmd = &cobra.Command{
-	Use:   "update-specs",
-	Short: "Update repo of completion scripts",
-	Run: func(cmd *cobra.Command, arg []string) {
-		fmt.Println()
-		fmt.Println("Pulling most up-to-date completion specs...")
-		fmt.Println("Run " + lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#FF00FF")).Render("fig docs") + " to learn how to contribute your own!")
-		fmt.Println()
+// var appUpdateSpecsCmd = &cobra.Command{
+// 	Use:   "update-specs",
+// 	Short: "Update repo of completion scripts",
+// 	Run: func(cmd *cobra.Command, arg []string) {
+// 		fmt.Println()
+// 		fmt.Println("Pulling most up-to-date completion specs...")
+// 		fmt.Println("Run " + lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#FF00FF")).Render("fig docs") + " to learn how to contribute your own!")
+// 		fmt.Println()
 
-		usr, err := user.Current()
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
+// 		usr, err := user.Current()
+// 		if err != nil {
+// 			fmt.Println(err)
+// 			return
+// 		}
 
-		autocompleteVersion, err := exec.Command("defaults", "read", "com.mschrage.fig", "autocompleteVersion").Output()
-		if err != nil {
-			fmt.Println("Error reading autocomplete version:", err)
-			return
-		}
+// 		autocompleteVersion, err := exec.Command("defaults", "read", "com.mschrage.fig", "autocompleteVersion").Output()
+// 		if err != nil {
+// 			fmt.Println("Error reading autocomplete version:", err)
+// 			return
+// 		}
 
-		autocompleteVersionStr := strings.TrimSpace(string(autocompleteVersion))
+// 		autocompleteVersionStr := strings.TrimSpace(string(autocompleteVersion))
 
-		build, err := exec.Command("defaults", "read", "com.mschrage.fig", "build").Output()
-		if err != nil {
-			fmt.Println("Error getting build number:", err)
-			return
-		}
+// 		build, err := exec.Command("defaults", "read", "com.mschrage.fig", "build").Output()
+// 		if err != nil {
+// 			fmt.Println("Error getting build number:", err)
+// 			return
+// 		}
 
-		buildStr := strings.TrimSpace(string(build))
+// 		buildStr := strings.TrimSpace(string(build))
 
-		appVersion, err := exec.Command("fig", "--version").Output()
-		if err != nil {
-			fmt.Println("Error getting fig version:", err)
-			return
-		}
+// 		appVersion, err := exec.Command("fig", "--version").Output()
+// 		if err != nil {
+// 			fmt.Println("Error getting fig version:", err)
+// 			return
+// 		}
 
-		appVersionStr := strings.TrimSpace(string(appVersion))
+// 		appVersionStr := strings.TrimSpace(string(appVersion))
 
-		// Make directory if it doesn't exist at ~/.fig
-		if _, err := os.Stat(usr.HomeDir + "/.fig/autocomplete"); os.IsNotExist(err) {
-			os.Mkdir(usr.HomeDir+"/.fig/autocomplete", 0755)
-		}
+// 		// Make directory if it doesn't exist at ~/.fig
+// 		if _, err := os.Stat(usr.HomeDir + "/.fig/autocomplete"); os.IsNotExist(err) {
+// 			os.Mkdir(usr.HomeDir+"/.fig/autocomplete", 0755)
+// 		}
 
-		os.Chdir(usr.HomeDir + "/.fig/autocomplete")
+// 		os.Chdir(usr.HomeDir + "/.fig/autocomplete")
 
-		// Download autocomplete script and pipe it to tar
-		data, err := http.Get("https://waitlist.withfig.com/specs?version=" + autocompleteVersionStr + "&app=" + appVersionStr + "&build=" + buildStr)
-		if err != nil {
-			fmt.Println("Error downloading completion specs:", err)
-			return
-		}
+// 		// Download autocomplete script and pipe it to tar
+// 		data, err := http.Get("https://waitlist.withfig.com/specs?version=" + autocompleteVersionStr + "&app=" + appVersionStr + "&build=" + buildStr)
+// 		if err != nil {
+// 			fmt.Println("Error downloading completion specs:", err)
+// 			return
+// 		}
 
-		tar := exec.Command("tar", "-xz", "--strip-components=1", "specs")
-		tar.Stdin = data.Body
-		tar.Stdout = os.Stdout
-		tar.Stderr = os.Stderr
-		tar.Run()
+// 		tar := exec.Command("tar", "-xz", "--strip-components=1", "specs")
+// 		tar.Stdin = data.Body
+// 		tar.Stdout = os.Stdout
+// 		tar.Stderr = os.Stderr
+// 		tar.Run()
 
-	},
-}
+// 	},
+// }
 
 var appOnboardingCmd = &cobra.Command{
 	Use:   "onboarding",
@@ -183,8 +184,8 @@ var appThemeCmd = &cobra.Command{
 }
 
 var appUpgradeCmd = &cobra.Command{
-	Use:   "upgrade",
-	Short: "Upgrade Fig",
+	Use:   "install-and-upgrace",
+	Short: "Install and upgrade fig",
 	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, arg []string) {
 		if len(arg) == 1 {
@@ -353,13 +354,7 @@ var appSetPath = &cobra.Command{
 		fmt.Printf("\n  Setting $PATH variable in Fig pseudo-terminal...\n\n\n")
 
 		// Get the users $PATH
-		path, err := exec.Command("sh", "-c", "echo $PATH").Output()
-		if err != nil {
-			fmt.Println("Error: ", err)
-			return
-		}
-
-		pathStr := strings.TrimSpace(string(path))
+		path := os.Getenv("PATH")
 
 		// Load ~/.fig/settings.json and set the path
 		settings, err := settings.Load()
@@ -368,10 +363,17 @@ var appSetPath = &cobra.Command{
 			return
 		}
 
-		settings.Set("pty.path", pathStr)
+		settings.Set("pty.path", path)
 
 		// Trigger update of ENV in PTY
-		// TODO: fig bg:init $SHELLPID $(tty)
+		pty, err := diagnostics.GetTty()
+		if err != nil {
+			fmt.Println("Error: ", err)
+			return
+		}
+
+		hook := fig_ipc.CreateInitHook(os.Getppid(), pty)
+		fig_ipc.SendHook(hook)
 	},
 }
 

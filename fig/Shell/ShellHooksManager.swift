@@ -167,7 +167,7 @@ extension ShellHookManager {
       WindowManager.shared.windowChanged()
     }
   }
-  
+
   func currentTabDidChangeLegacy(_ info: ShellMessage, includesBundleId: Bool = false) {
     Logger.log(message: "currentTabDidChange")
 
@@ -175,7 +175,7 @@ extension ShellHookManager {
     Timer.delayWithSeconds(0.1) {
       if let window = AXWindowServer.shared.whitelistedWindow {
         if let id = info.options?.last {
-          
+
           if includesBundleId {
             let tokens = id.split(separator: ":")
             let bundleId = String(tokens.first!)
@@ -202,39 +202,34 @@ extension ShellHookManager {
       }
     }
   }
-  
+
   // If this changes, make sure to reflect changes in iTermIntegration.sessionId setter
-  func currentTabDidChange(_ info: ShellMessage, includesBundleId: Bool = false) {
+  func currentTabDidChange(bundleIdentifier: String, sessionId: String) {
     Logger.log(message: "currentTabDidChange")
 
     // Need time for whitelisted window to change
     Timer.delayWithSeconds(0.1) {
       if let window = AXWindowServer.shared.whitelistedWindow {
-        if let id = info.options?.last {
-          
-          if includesBundleId {
-            let tokens = id.split(separator: ":")
-            let bundleId = String(tokens.first!)
-
-            guard bundleId == window.bundleId ?? "" else {
-              print(
-                "tab: bundleId from message did not match bundle id associated with current window "
-              )
-              return
-            }
-          }
-
-          let VSCodeTerminal =
-            [Integrations.VSCode, Integrations.VSCodeInsiders, Integrations.VSCodium].contains(
-              window.bundleId) && id.hasPrefix("code:")
-          let HyperTab = window.bundleId == Integrations.Hyper && id.hasPrefix("hyper:")
-          let iTermTab =
-            window.bundleId == Integrations.iTerm && !id.hasPrefix("code:")
-            && !id.hasPrefix("hyper:") && !includesBundleId
-          guard VSCodeTerminal || iTermTab || HyperTab || includesBundleId else { return }
-          Logger.log(message: "tab: \(window.windowId)/\(id)")
-          self.keyboardFocusDidChange(to: id, in: window)
+        guard bundleIdentifier == window.bundleId else {
+          print(
+            "tab: bundleId from message did not match bundle id associated with current window "
+          )
+          return
         }
+
+        let VSCodeTerminal =
+          [Integrations.VSCode, Integrations.VSCodeInsiders, Integrations.VSCodium]
+          .contains(window.bundleId)
+
+        let HyperTab = window.bundleId == Integrations.Hyper
+
+        let iTermTab = window.bundleId == Integrations.iTerm
+
+        guard VSCodeTerminal || iTermTab || HyperTab else { return }
+
+        Logger.log(message: "tab: \(window.windowId)/\(sessionId)")
+
+        self.keyboardFocusDidChange(to: sessionId, in: window)
       }
     }
   }
@@ -347,14 +342,14 @@ extension ShellHookManager {
     KeypressProvider.shared.keyBuffer(for: hash).backedByShell = false
 
   }
-  
+
   func startedNewTerminalSessionLegacy(_ info: ShellMessage) {
     guard let (shellPid, ttyDescriptor, sessionId) = info.parseShellHook() else {
       Logger.log(
         message: "Could not parse out shellHook metadata", priority: .notify, subsystem: .tty)
       return
     }
-    
+
     let ctx = Local_ShellContext.with { context in
       context.sessionID = sessionId
       context.ttys = ttyDescriptor
@@ -366,14 +361,18 @@ extension ShellHookManager {
     let envMap = env.mapValues { val in
       val as? String
     }
-    let envFilter = envMap.filter { (_, val) in
-      val != nil
-    } as! [String: String]
-    
-    startedNewTerminalSession(context: ctx, calledDirect: calledDirect, bundle: bundle, env: envFilter)
+    let envFilter =
+      envMap.filter { (_, val) in
+        val != nil
+      } as! [String: String]
+
+    startedNewTerminalSession(
+      context: ctx, calledDirect: calledDirect, bundle: bundle, env: envFilter)
   }
 
-  func startedNewTerminalSession(context: Local_ShellContext, calledDirect: Bool, bundle: String?, env: [String: String]) {
+  func startedNewTerminalSession(
+    context: Local_ShellContext, calledDirect: Bool, bundle: String?, env: [String: String]
+  ) {
 
     guard let bundleId = NSWorkspace.shared.frontmostApplication?.bundleIdentifier else {
       Logger.log(message: "Could not get bundle id", priority: .notify, subsystem: .tty)
@@ -442,20 +441,20 @@ extension ShellHookManager {
       })
 
   }
-  
+
   func shellWillExecuteCommandLegacy(_ info: ShellMessage) {
     guard let (_, ttyDescriptor, sessionId) = info.parseShellHook() else {
       Logger.log(
         message: "Could not parse out shellHook metadata", priority: .notify, subsystem: .tty)
       return
     }
-    
+
     let context = Local_ShellContext.with { ctx in
       ctx.integrationVersion = Int32(info.shellIntegrationVersion ?? 0)
       ctx.ttys = ttyDescriptor
       ctx.sessionID = sessionId
     }
-    
+
     shellWillExecuteCommand(context: context)
   }
 
@@ -494,7 +493,7 @@ extension ShellHookManager {
   func startedNewSSHConnectionLegacy(_ info: ShellMessage) {
     startedNewSSHConnection(info)
   }
-  
+
   func startedNewSSHConnection(_ info: ShellMessage) {
     guard let hash = attemptToFindToAssociatedWindow(for: info.session) else {
       Logger.log(
@@ -513,7 +512,7 @@ extension ShellHookManager {
     KeypressProvider.shared.keyBuffer(for: hash).backedByShell = false
 
   }
-  
+
   func clearKeybufferLegacy(_ info: ShellMessage) {
     clearKeybuffer(info)
   }
@@ -687,7 +686,7 @@ extension ShellHookManager {
     }
 
   }
-  
+
   func integrationReadyHook(identifier: String) {
     switch identifier {
     case "iterm":
@@ -695,107 +694,123 @@ extension ShellHookManager {
     default:
       break
     }
-    
+
+  }
+
+  func eventHook(event: String?) {
+    if let event = event {
+      TelemetryProvider.track(event: event, with: [:])
+    } else {
+      print("No event")
+    }
   }
 
 }
 
-
 extension ShellHookManager {
-    
-    fileprivate func attemptToFindToAssociatedWindow(for sessionId: SessionId, currentTopmostWindow: ExternalWindow? = nil) -> ExternalWindowHash? {
-        
-        if let hash = getWindowHash(for: sessionId) {
-            guard !validWindowHash(hash) else {
-                // the hash is valid and is linked to a session
-                Logger.log(message: "WindowHash '\(hash)' is valid", subsystem: .tty)
-                
-                
-                Logger.log(message: "WindowHash '\(hash)' is linked to sessionId '\(sessionId)'", subsystem: .tty)
-                return hash
-                
 
-            }
-            
-            // hash exists, but is invalid (eg. should have tab component and it doesn't)
-            
-            Logger.log(message: "\(hash) is not a valid window hash, attempting to find previous value", priority: .info, subsystem: .tty)
-            
-//            // clean up this out-of-date hash
-            //queue.async(flags:[.barrier]) {
-                self.sessions[hash] = nil
-                self.tty.removeValue(forKey: hash)
-            //}
+  fileprivate func attemptToFindToAssociatedWindow(
+    for sessionId: SessionId, currentTopmostWindow: ExternalWindow? = nil
+  ) -> ExternalWindowHash? {
 
+    if let hash = getWindowHash(for: sessionId) {
+      guard !validWindowHash(hash) else {
+        // the hash is valid and is linked to a session
+        Logger.log(message: "WindowHash '\(hash)' is valid", subsystem: .tty)
 
-        }
-        
-        // user had this terminal session up prior to launching Fig or has iTerm tab integration set up, which caused original hash to go stale (eg. 16356/ -> 16356/1)
-        
-        // hash does not exist
-        
-        // so, lets see if the top window is a supported terminal
-        guard let window = currentTopmostWindow else {
-            // no terminal window found or passed in, don't link!
-            Logger.log(message: "No window included when attempting to link to TTY, don't link!", priority: .info, subsystem: .tty)
-            return nil
-        }
-        
-        let hash = window.hash
-        let sessionIdForWindow = getSessionId(for: hash)
-        
-        guard sessionIdForWindow == nil else {
-            // a different session Id is already associated with window, don't link!
-          Logger.log(message: "A different session Id (\(sessionIdForWindow!) is already associated with window (\(hash)), don't link new session (\(sessionId)!", priority: .info, subsystem: .tty)
-            return nil
-        }
-        
-        Logger.log(message: "Found WindowHash '\(hash)' for sessionId '\(sessionId)'", subsystem: .tty)
+        Logger.log(
+          message: "WindowHash '\(hash)' is linked to sessionId '\(sessionId)'", subsystem: .tty)
         return hash
-            
+
+      }
+
+      // hash exists, but is invalid (eg. should have tab component and it doesn't)
+
+      Logger.log(
+        message: "\(hash) is not a valid window hash, attempting to find previous value",
+        priority: .info, subsystem: .tty)
+
+      //            // clean up this out-of-date hash
+      //queue.async(flags:[.barrier]) {
+      self.sessions[hash] = nil
+      self.tty.removeValue(forKey: hash)
+      //}
 
     }
-    
-    fileprivate func link(_ sessionId: SessionId, _ hash: ExternalWindowHash, _ ttyDescriptor: TTYDescriptor) -> TTY {
-        let device = TTY(fd: ttyDescriptor)
-        
 
-        // tie tty & sessionId to windowHash
-        //queue.async(flags: [.barrier]) {
-         semaphore.wait()
-            self.tty[hash] = device
-            self.sessions[sessionId] = nil // unlink sessionId from any previous windowHash
-            self.sessions[hash] = sessionId // sessions is bidirectional between sessionId and windowHash
-         semaphore.signal()
-        //}
-        return device
+    // user had this terminal session up prior to launching Fig or has iTerm tab integration set up, which caused original hash to go stale (eg. 16356/ -> 16356/1)
+
+    // hash does not exist
+
+    // so, lets see if the top window is a supported terminal
+    guard let window = currentTopmostWindow else {
+      // no terminal window found or passed in, don't link!
+      Logger.log(
+        message: "No window included when attempting to link to TTY, don't link!", priority: .info,
+        subsystem: .tty)
+      return nil
     }
-    
-    func getSessionId(for windowHash: ExternalWindowHash) -> SessionId? {
-        var id: SessionId?
-        //queue.sync {
-            id = self.sessions[windowHash]
-        //}
-      
-        return id
+
+    let hash = window.hash
+    let sessionIdForWindow = getSessionId(for: hash)
+
+    guard sessionIdForWindow == nil else {
+      // a different session Id is already associated with window, don't link!
+      Logger.log(
+        message:
+          "A different session Id (\(sessionIdForWindow!) is already associated with window (\(hash)), don't link new session (\(sessionId)!",
+        priority: .info, subsystem: .tty)
+      return nil
     }
-    
-    fileprivate func getWindowHash(for sessionId: SessionId) -> ExternalWindowHash? {
-        var hash: ExternalWindowHash?
-        //queue.sync {
-            hash = self.sessions[sessionId]
-        //}
-      
-        return hash
-    }
-    
-    func validWindowHash(_ hash: ExternalWindowHash) -> Bool {
-        guard let components = hash.components() else { return false }
-        let windowHasNoTabs = (tabs[components.windowId] == nil && components.tab == nil)
-        let windowHasTabs = (tabs[components.windowId] != nil && components.tab != nil)
-        let windowHasNoPanes = (panes["\(components.windowId)/\(components.tab ?? "")"] == nil && components.pane == nil)
-        let windowHasPanes = (panes["\(components.windowId)/\(components.tab ?? "")"] != nil && components.pane != nil)
-        return (windowHasNoTabs && (windowHasNoPanes || windowHasPanes))
-            || (windowHasTabs   && (windowHasNoPanes || windowHasPanes))
-    }
+
+    Logger.log(message: "Found WindowHash '\(hash)' for sessionId '\(sessionId)'", subsystem: .tty)
+    return hash
+
+  }
+
+  fileprivate func link(
+    _ sessionId: SessionId, _ hash: ExternalWindowHash, _ ttyDescriptor: TTYDescriptor
+  ) -> TTY {
+    let device = TTY(fd: ttyDescriptor)
+
+    // tie tty & sessionId to windowHash
+    //queue.async(flags: [.barrier]) {
+    semaphore.wait()
+    self.tty[hash] = device
+    self.sessions[sessionId] = nil  // unlink sessionId from any previous windowHash
+    self.sessions[hash] = sessionId  // sessions is bidirectional between sessionId and windowHash
+    semaphore.signal()
+    //}
+    return device
+  }
+
+  func getSessionId(for windowHash: ExternalWindowHash) -> SessionId? {
+    var id: SessionId?
+    //queue.sync {
+    id = self.sessions[windowHash]
+    //}
+
+    return id
+  }
+
+  fileprivate func getWindowHash(for sessionId: SessionId) -> ExternalWindowHash? {
+    var hash: ExternalWindowHash?
+    //queue.sync {
+    hash = self.sessions[sessionId]
+    //}
+
+    return hash
+  }
+
+  func validWindowHash(_ hash: ExternalWindowHash) -> Bool {
+    guard let components = hash.components() else { return false }
+    let windowHasNoTabs = (tabs[components.windowId] == nil && components.tab == nil)
+    let windowHasTabs = (tabs[components.windowId] != nil && components.tab != nil)
+    let windowHasNoPanes =
+      (panes["\(components.windowId)/\(components.tab ?? "")"] == nil && components.pane == nil)
+    let windowHasPanes =
+      (panes["\(components.windowId)/\(components.tab ?? "")"] != nil && components.pane != nil)
+    return (windowHasNoTabs && (windowHasNoPanes || windowHasPanes))
+      || (windowHasTabs && (windowHasNoPanes || windowHasPanes))
+  }
 }

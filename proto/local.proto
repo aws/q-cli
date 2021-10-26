@@ -43,6 +43,7 @@ message Hook {
 		CallbackHook callback = 108;
 		IntegrationReadyHook integration_ready = 109;
 		HideHook hide = 110;
+		EventHook event = 111;
 
 	}
 }
@@ -131,7 +132,7 @@ message PostExecHook {
 
 message KeyboardFocusChangedHook {
 	string bundle_identifier = 1;
-	string focused_session = 2; // a unique identifier associated with the pane or tab that is currently focused
+	string focused_session_id = 2; // a unique identifier associated with the pane or tab that is currently focused
 }
 
 message TmuxPaneChangedHook {
@@ -155,6 +156,10 @@ message IntegrationReadyHook {
 }
 
 message HideHook { }
+
+message EventHook {
+	string event_name = 1;
+}
 
 // == Responses ==
 message ErrorResponse {

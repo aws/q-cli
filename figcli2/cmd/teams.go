@@ -16,7 +16,7 @@ func init() {
 	teamsMembersCmd.AddCommand(teamsMemberRemoveCmd)
 	teamsMembersCmd.AddCommand(teamsMemberRoleCmd)
 
-	rootCmd.AddCommand(teamsCmd)
+	// rootCmd.AddCommand(teamsCmd)
 }
 
 var teamsCmd = &cobra.Command{
