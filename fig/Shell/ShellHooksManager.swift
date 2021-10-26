@@ -711,8 +711,29 @@ extension ShellHookManager {
         // the hash is valid and is linked to a session
         Logger.log(message: "WindowHash '\(hash)' is valid", subsystem: .tty)
 
-        Logger.log(
-          message: "WindowHash '\(hash)' is linked to sessionId '\(sessionId)'", subsystem: .tty)
+        }
+        
+        // user had this terminal session up prior to launching Fig or has iTerm tab integration set up, which caused original hash to go stale (eg. 16356/ -> 16356/1)
+        
+        // hash does not exist
+        
+        // so, lets see if the top window is a supported terminal
+        guard let window = currentTopmostWindow else {
+            // no terminal window found or passed in, don't link!
+            Logger.log(message: "No window included when attempting to link to TTY, don't link!", priority: .info, subsystem: .tty)
+            return nil
+        }
+        
+        let hash = window.hash
+        let sessionIdForWindow = getSessionId(for: hash)
+        
+        guard sessionIdForWindow == nil else {
+            // a different session Id is already associated with window, don't link!
+          Logger.log(message: "A different session Id (\(sessionIdForWindow!) is already associated with window (\(hash)), don't link new session (\(sessionId)!", priority: .info, subsystem: .tty)
+            return nil
+        }
+        
+        Logger.log(message: "Found WindowHash '\(hash)' for sessionId '\(sessionId)'", subsystem: .tty)
         return hash
 
       }

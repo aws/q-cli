@@ -115,6 +115,8 @@
 		755D0DE2247EFAE10074AB5C /* Logging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755D0DE1247EFAE10074AB5C /* Logging.swift */; };
 		755D0DE4247F038B0074AB5C /* logs.html in Resources */ = {isa = PBXBuildFile; fileRef = 755D0DE3247F038B0074AB5C /* logs.html */; };
 		755D0F512482D4920074AB5C /* HotKey in Frameworks */ = {isa = PBXBuildFile; productRef = 755D0F502482D4920074AB5C /* HotKey */; };
+		755D27BA272242690080B4B8 /* FigTerm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755D27B9272242690080B4B8 /* FigTerm.swift */; };
+		755D27C2272772280080B4B8 /* fig-0.0.5.vsix in Resources */ = {isa = PBXBuildFile; fileRef = 755D27C1272772280080B4B8 /* fig-0.0.5.vsix */; };
 		755EC8CF266997A700CBEF57 /* settings in Resources */ = {isa = PBXBuildFile; fileRef = 755EC8CE266997A600CBEF57 /* settings */; };
 		755FC554268D09DE00966027 /* UpdateService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755FC553268D09DE00966027 /* UpdateService.swift */; };
 		7564AE6F265C9DCE0040BD4C /* discord@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7564AE6E265C9DCD0040BD4C /* discord@2x.png */; };
@@ -450,6 +452,8 @@
 		755D0DDF247DDE050074AB5C /* FigCLI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FigCLI.swift; sourceTree = "<group>"; };
 		755D0DE1247EFAE10074AB5C /* Logging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logging.swift; sourceTree = "<group>"; };
 		755D0DE3247F038B0074AB5C /* logs.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = logs.html; sourceTree = "<group>"; };
+		755D27B9272242690080B4B8 /* FigTerm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FigTerm.swift; sourceTree = "<group>"; };
+		755D27C1272772280080B4B8 /* fig-0.0.5.vsix */ = {isa = PBXFileReference; lastKnownFileType = file; path = "fig-0.0.5.vsix"; sourceTree = "<group>"; };
 		755EC8CE266997A600CBEF57 /* settings */ = {isa = PBXFileReference; lastKnownFileType = folder; path = settings; sourceTree = "<group>"; };
 		755FC553268D09DE00966027 /* UpdateService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateService.swift; sourceTree = "<group>"; };
 		7564AE6E265C9DCD0040BD4C /* discord@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "discord@2x.png"; sourceTree = "<group>"; };
@@ -795,6 +799,7 @@
 		752A398725CD0FFB00B1AC40 /* VSCode */ = {
 			isa = PBXGroup;
 			children = (
+				755D27C1272772280080B4B8 /* fig-0.0.5.vsix */,
 				75543FCF268AC6E5003221DF /* fig-0.0.4.vsix */,
 				75C8A15F2649E712001B69DA /* fig-0.0.2.vsix */,
 				752A398525CD0FE800B1AC40 /* fig-0.0.1.vsix */,
@@ -1069,6 +1074,7 @@
 			isa = PBXGroup;
 			children = (
 				75C07121244BB65D002DF69F /* ShellBridge.swift */,
+				755D27B9272242690080B4B8 /* FigTerm.swift */,
 				75B199312501A3DA00F38EA8 /* KeyboardLayout.swift */,
 				751F7588246D090100E083C8 /* WebBridge.swift */,
 				755D0DDF247DDE050074AB5C /* FigCLI.swift */,
@@ -1437,6 +1443,7 @@
 				75B0A08C25BBC7A300FCD89A /* autoc.mp4 in Resources */,
 				759F988425BFF0FF00EC3407 /* package@2x.png in Resources */,
 				752C0BDA2479F37B0077E415 /* fig.js in Resources */,
+				755D27C2272772280080B4B8 /* fig-0.0.5.vsix in Resources */,
 				75A4A29925C8D855002EFD6B /* git@2x.png in Resources */,
 				757CA88D248B091D002A64A8 /* permissions.mp4 in Resources */,
 				757CA897248C108E002A64A8 /* css in Resources */,
@@ -1583,7 +1590,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cp -R ./config ${CONFIGURATION_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/config/\n\n\ncp ./config/tools/install_and_upgrade.sh ${CONFIGURATION_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/installation.sh\n";
+			shellScript = "rm -rf ${CONFIGURATION_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/config\ncp -R ./config ${CONFIGURATION_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/\n\n\ncp ./config/tools/install_and_upgrade.sh ${CONFIGURATION_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/installation.sh\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -1678,6 +1685,7 @@
 				759F987C25BF903900EC3407 /* Accessibility.swift in Sources */,
 				7510F8A424A6910500E86F7C /* iOSCaretView.swift in Sources */,
 				751C3BEE24B6915000B5C7FD /* Defaults.swift in Sources */,
+				755D27BA272242690080B4B8 /* FigTerm.swift in Sources */,
 				757712492564D94A0011FF48 /* ProcessStatus.swift in Sources */,
 				75B850E52703D8FF00891A78 /* API+Extensions.swift in Sources */,
 				7510F89A24A6910500E86F7C /* Extensions.swift in Sources */,
@@ -2018,7 +2026,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = YES;
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 282;
+				CURRENT_PROJECT_VERSION = 287;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				DEVELOPMENT_TEAM = D93PPD94WK;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -2054,7 +2062,7 @@
 				CODE_SIGN_IDENTITY = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 282;
+				CURRENT_PROJECT_VERSION = 287;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				DEVELOPMENT_TEAM = D93PPD94WK;
 				ENABLE_HARDENED_RUNTIME = YES;
