@@ -281,7 +281,7 @@ extension ShellHookManager {
         ctx.pid = shellPid
         ctx.sessionID = sessionId
         ctx.shell = info.shell ?? ""
-        ctx.integrationVersion = String(info.shellIntegrationVersion ?? 0)
+        ctx.integrationVersion = Int32(info.shellIntegrationVersion ?? 0)
       }))
   }
 
@@ -306,7 +306,7 @@ extension ShellHookManager {
     tty.returnedToShellPrompt(for: context.pid)
 
     // Set version (used for checking compatibility)
-    tty.shellIntegrationVersion = context.integrationVersion
+    tty.shellIntegrationVersion = Int(context.integrationVersion)
 
     // post notification to API
     API.notifications.post(
@@ -342,7 +342,7 @@ extension ShellHookManager {
     tty.startedNewShellSession(for: shellPid)
 
     // Set version (used for checking compatibility)
-    tty.shellIntegrationVersion = String(info.shellIntegrationVersion ?? 0)
+    tty.shellIntegrationVersion = info.shellIntegrationVersion ?? 0
 
     KeypressProvider.shared.keyBuffer(for: hash).backedByShell = false
 
@@ -430,7 +430,7 @@ extension ShellHookManager {
         tty.startedNewShellSession(for: context.pid)
 
         // Set version (used for checking compatibility)
-        tty.shellIntegrationVersion = context.integrationVersion
+        tty.shellIntegrationVersion = Int(context.integrationVersion)
 
         DispatchQueue.main.async {
           NotificationCenter.default.post(
@@ -451,7 +451,7 @@ extension ShellHookManager {
     }
     
     let context = Local_ShellContext.with { ctx in
-      ctx.integrationVersion = String(info.shellIntegrationVersion ?? 0)
+      ctx.integrationVersion = Int32(info.shellIntegrationVersion ?? 0)
       ctx.ttys = ttyDescriptor
       ctx.sessionID = sessionId
     }
@@ -476,7 +476,7 @@ extension ShellHookManager {
     tty.preexec()
 
     // Set version (used for checking compatibility)
-    tty.shellIntegrationVersion = context.integrationVersion
+    tty.shellIntegrationVersion = Int(context.integrationVersion)
 
     // update keybuffer backing
     if KeypressProvider.shared.keyBuffer(for: hash).backedByShell {
@@ -508,7 +508,7 @@ extension ShellHookManager {
     sshIntegration.newConnection(with: info, in: tty)
 
     // Set version (used for checking compatibility)
-    tty.shellIntegrationVersion = String(info.shellIntegrationVersion ?? 0)
+    tty.shellIntegrationVersion = info.shellIntegrationVersion ?? 0
 
     KeypressProvider.shared.keyBuffer(for: hash).backedByShell = false
 
@@ -536,7 +536,7 @@ extension ShellHookManager {
         context: Local_ShellContext.with({ ctx in
           ctx.sessionID = info.session
           ctx.shell = info.shell ?? ""
-          ctx.integrationVersion = String(info.shellIntegrationVersion ?? 0)
+          ctx.integrationVersion = Int32(info.shellIntegrationVersion ?? 0)
         }), text: buffer, cursor: cursor, histno: histno)
     }
   }
@@ -583,7 +583,7 @@ extension ShellHookManager {
     }
 
     // Set version (used for checking compatibility)
-    tty.shellIntegrationVersion = context.integrationVersion
+    tty.shellIntegrationVersion = Int(context.integrationVersion)
 
     // ignore events if secure keyboard is enabled
     guard !SecureKeyboardInput.enabled else {
@@ -700,16 +700,33 @@ extension ShellHookManager {
 
 }
 
+
 extension ShellHookManager {
+    
+    fileprivate func attemptToFindToAssociatedWindow(for sessionId: SessionId, currentTopmostWindow: ExternalWindow? = nil) -> ExternalWindowHash? {
+        
+        if let hash = getWindowHash(for: sessionId) {
+            guard !validWindowHash(hash) else {
+                // the hash is valid and is linked to a session
+                Logger.log(message: "WindowHash '\(hash)' is valid", subsystem: .tty)
+                
+                
+                Logger.log(message: "WindowHash '\(hash)' is linked to sessionId '\(sessionId)'", subsystem: .tty)
+                return hash
+                
 
-  fileprivate func attemptToFindToAssociatedWindow(
-    for sessionId: SessionId, currentTopmostWindow: ExternalWindow? = nil
-  ) -> ExternalWindowHash? {
+            }
+            
+            // hash exists, but is invalid (eg. should have tab component and it doesn't)
+            
+            Logger.log(message: "\(hash) is not a valid window hash, attempting to find previous value", priority: .info, subsystem: .tty)
+            
+//            // clean up this out-of-date hash
+            //queue.async(flags:[.barrier]) {
+                self.sessions[hash] = nil
+                self.tty.removeValue(forKey: hash)
+            //}
 
-    if let hash = getWindowHash(for: sessionId) {
-      guard !validWindowHash(hash) else {
-        // the hash is valid and is linked to a session
-        Logger.log(message: "WindowHash '\(hash)' is valid", subsystem: .tty)
 
         }
         
@@ -735,95 +752,50 @@ extension ShellHookManager {
         
         Logger.log(message: "Found WindowHash '\(hash)' for sessionId '\(sessionId)'", subsystem: .tty)
         return hash
-
-      }
-
-      // hash exists, but is invalid (eg. should have tab component and it doesn't)
-
-      Logger.log(
-        message: "\(hash) is not a valid window hash, attempting to find previous value",
-        priority: .info, subsystem: .tty)
-
-      //            // clean up this out-of-date hash
-      //queue.async(flags:[.barrier]) {
-      self.sessions[hash] = nil
-      self.tty.removeValue(forKey: hash)
-      //}
+            
 
     }
+    
+    fileprivate func link(_ sessionId: SessionId, _ hash: ExternalWindowHash, _ ttyDescriptor: TTYDescriptor) -> TTY {
+        let device = TTY(fd: ttyDescriptor)
+        
 
-    // user had this terminal session up prior to launching Fig or has iTerm tab integration set up, which caused original hash to go stale (eg. 16356/ -> 16356/1)
-
-    // hash does not exist
-
-    // so, lets see if the top window is a supported terminal
-    guard let window = currentTopmostWindow else {
-      // no terminal window found or passed in, don't link!
-      Logger.log(
-        message: "No window included when attempting to link to TTY, don't link!", priority: .info,
-        subsystem: .tty)
-      return nil
+        // tie tty & sessionId to windowHash
+        //queue.async(flags: [.barrier]) {
+         semaphore.wait()
+            self.tty[hash] = device
+            self.sessions[sessionId] = nil // unlink sessionId from any previous windowHash
+            self.sessions[hash] = sessionId // sessions is bidirectional between sessionId and windowHash
+         semaphore.signal()
+        //}
+        return device
     }
-
-    let hash = window.hash
-    let sessionIdForWindow = getSessionId(for: hash)
-
-    guard sessionIdForWindow == nil else {
-      // a different session Id is already associated with window, don't link!
-      Logger.log(
-        message: "A different session Id is already associated with window, don't link!",
-        priority: .info, subsystem: .tty)
-      return nil
+    
+    func getSessionId(for windowHash: ExternalWindowHash) -> SessionId? {
+        var id: SessionId?
+        //queue.sync {
+            id = self.sessions[windowHash]
+        //}
+      
+        return id
     }
-
-    Logger.log(message: "Found WindowHash '\(hash)' for sessionId '\(sessionId)'", subsystem: .tty)
-    return hash
-
-  }
-
-  fileprivate func link(
-    _ sessionId: SessionId, _ hash: ExternalWindowHash, _ ttyDescriptor: TTYDescriptor
-  ) -> TTY {
-    let device = TTY(fd: ttyDescriptor)
-
-    // tie tty & sessionId to windowHash
-    //queue.async(flags: [.barrier]) {
-    semaphore.wait()
-    self.tty[hash] = device
-    self.sessions[sessionId] = nil  // unlink sessionId from any previous windowHash
-    self.sessions[hash] = sessionId  // sessions is bidirectional between sessionId and windowHash
-    semaphore.signal()
-    //}
-    return device
-  }
-
-  func getSessionId(for windowHash: ExternalWindowHash) -> SessionId? {
-    var id: SessionId?
-    //queue.sync {
-    id = self.sessions[windowHash]
-    //}
-
-    return id
-  }
-
-  fileprivate func getWindowHash(for sessionId: SessionId) -> ExternalWindowHash? {
-    var hash: ExternalWindowHash?
-    //queue.sync {
-    hash = self.sessions[sessionId]
-    //}
-
-    return hash
-  }
-
-  func validWindowHash(_ hash: ExternalWindowHash) -> Bool {
-    guard let components = hash.components() else { return false }
-    let windowHasNoTabs = (tabs[components.windowId] == nil && components.tab == nil)
-    let windowHasTabs = (tabs[components.windowId] != nil && components.tab != nil)
-    let windowHasNoPanes =
-      (panes["\(components.windowId)/\(components.tab ?? "")"] == nil && components.pane == nil)
-    let windowHasPanes =
-      (panes["\(components.windowId)/\(components.tab ?? "")"] != nil && components.pane != nil)
-    return (windowHasNoTabs && (windowHasNoPanes || windowHasPanes))
-      || (windowHasTabs && (windowHasNoPanes || windowHasPanes))
-  }
+    
+    fileprivate func getWindowHash(for sessionId: SessionId) -> ExternalWindowHash? {
+        var hash: ExternalWindowHash?
+        //queue.sync {
+            hash = self.sessions[sessionId]
+        //}
+      
+        return hash
+    }
+    
+    func validWindowHash(_ hash: ExternalWindowHash) -> Bool {
+        guard let components = hash.components() else { return false }
+        let windowHasNoTabs = (tabs[components.windowId] == nil && components.tab == nil)
+        let windowHasTabs = (tabs[components.windowId] != nil && components.tab != nil)
+        let windowHasNoPanes = (panes["\(components.windowId)/\(components.tab ?? "")"] == nil && components.pane == nil)
+        let windowHasPanes = (panes["\(components.windowId)/\(components.tab ?? "")"] != nil && components.pane != nil)
+        return (windowHasNoTabs && (windowHasNoPanes || windowHasPanes))
+            || (windowHasTabs   && (windowHasNoPanes || windowHasPanes))
+    }
 }

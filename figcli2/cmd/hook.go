@@ -32,11 +32,12 @@ var hookEditbufferCmd = &cobra.Command{
 			return
 		}
 
+		integrationVersion, _ := strconv.Atoi(args[1])
 		pid, _ := strconv.Atoi(args[3])
 		histno, _ := strconv.Atoi(args[4])
 		cursor, _ := strconv.Atoi(args[5])
 
-		hook := fig_ipc.CreateEditBufferHook(args[0], args[1], args[2], pid, histno, cursor, args[6])
+		hook := fig_ipc.CreateEditBufferHook(args[0], integrationVersion, args[2], pid, histno, cursor, args[6])
 		fig_ipc.SendHook(hook)
 		// TODO: Add error handling
 	},

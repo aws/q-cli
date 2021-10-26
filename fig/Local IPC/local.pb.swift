@@ -637,8 +637,8 @@ public struct Local_ShellContext {
   /// Clears the value of `sessionID`. Subsequent reads from it will return its default value.
   public mutating func clearSessionID() {self._sessionID = nil}
 
-  public var integrationVersion: String {
-    get {return _integrationVersion ?? String()}
+  public var integrationVersion: Int32 {
+    get {return _integrationVersion ?? 0}
     set {_integrationVersion = newValue}
   }
   /// Returns true if `integrationVersion` has been explicitly set.
@@ -664,7 +664,7 @@ public struct Local_ShellContext {
   fileprivate var _shell: String? = nil
   fileprivate var _currentWorkingDirectory: String? = nil
   fileprivate var _sessionID: String? = nil
-  fileprivate var _integrationVersion: String? = nil
+  fileprivate var _integrationVersion: Int32? = nil
   fileprivate var _terminal: String? = nil
 }
 
@@ -1913,7 +1913,7 @@ extension Local_ShellContext: SwiftProtobuf.Message, SwiftProtobuf._MessageImple
       case 3: try { try decoder.decodeSingularStringField(value: &self._shell) }()
       case 4: try { try decoder.decodeSingularStringField(value: &self._currentWorkingDirectory) }()
       case 5: try { try decoder.decodeSingularStringField(value: &self._sessionID) }()
-      case 6: try { try decoder.decodeSingularStringField(value: &self._integrationVersion) }()
+      case 6: try { try decoder.decodeSingularInt32Field(value: &self._integrationVersion) }()
       case 7: try { try decoder.decodeSingularStringField(value: &self._terminal) }()
       default: break
       }
@@ -1941,7 +1941,7 @@ extension Local_ShellContext: SwiftProtobuf.Message, SwiftProtobuf._MessageImple
       try visitor.visitSingularStringField(value: v, fieldNumber: 5)
     } }()
     try { if let v = self._integrationVersion {
-      try visitor.visitSingularStringField(value: v, fieldNumber: 6)
+      try visitor.visitSingularInt32Field(value: v, fieldNumber: 6)
     } }()
     try { if let v = self._terminal {
       try visitor.visitSingularStringField(value: v, fieldNumber: 7)

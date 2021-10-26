@@ -6,6 +6,10 @@ import (
 	"strings"
 )
 
+const (
+	currentIntegrationVersion = 5
+)
+
 func SendHook(hook *fig_proto.Hook) error {
 	conn, err := Connect()
 	if err != nil {
@@ -30,7 +34,7 @@ func GenerateShellContext(
 	pid int32,
 	tty string,
 	sessionId string,
-	integrationVersion string,
+	integrationVersion int32,
 ) *fig_proto.ShellContext {
 	wd, _ := os.Getwd()
 	shell, _ := GetShell()
@@ -45,7 +49,7 @@ func GenerateShellContext(
 	}
 }
 
-func CreateEditBufferHook(sessionId string, integrationVersion string, tty string, pid int, histno int, cursor int, text string) *fig_proto.Hook {
+func CreateEditBufferHook(sessionId string, integrationVersion int, tty string, pid int, histno int, cursor int, text string) *fig_proto.Hook {
 	return &fig_proto.Hook{
 		Hook: &fig_proto.Hook_EditBuffer{
 			EditBuffer: &fig_proto.EditBufferHook{
@@ -53,7 +57,7 @@ func CreateEditBufferHook(sessionId string, integrationVersion string, tty strin
 					int32(pid),
 					tty,
 					sessionId,
-					integrationVersion,
+					int32(integrationVersion),
 				),
 				Text:   text,
 				Cursor: int64(cursor),
@@ -71,7 +75,7 @@ func CreatePromptHook(pid int, tty string) *fig_proto.Hook {
 					int32(pid),
 					tty,
 					"",
-					"",
+					int32(currentIntegrationVersion),
 				),
 			},
 		},
@@ -93,7 +97,7 @@ func CreateInitHook(pid int, tty string) *fig_proto.Hook {
 					int32(pid),
 					tty,
 					"",
-					"",
+					int32(currentIntegrationVersion),
 				),
 				CalledDirect: true,
 				Env:          envMap,

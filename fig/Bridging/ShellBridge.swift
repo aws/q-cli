@@ -352,7 +352,7 @@ class ShellBridge {
         if let window = AXWindowServer.shared.whitelistedWindow,
           KeypressProvider.shared.keyBuffer(for: window).backing == .zle {
           ZLEIntegration.insert(with: insertion,
-                                version: window.tty?.shellIntegrationVersion)
+                                version: String(window.tty?.shellIntegrationVersion ?? 0))
           return
         }
         

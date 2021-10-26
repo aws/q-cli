@@ -91,7 +91,7 @@ message ShellContext {
 	optional string shell = 3; // the name of the shell
 	optional string currentWorkingDirectory = 4; // the directory where the user ran the command
 	optional string sessionId = 5; // the value of $TERM_SESSION_ID 
-	optional string integration_version = 6;
+	optional int32 integration_version = 6;
 	optional string terminal = 7;
 }
 
