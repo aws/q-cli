@@ -54,7 +54,7 @@ fi
 
 
 # Given a user's email, get their referral code
-url=$(curl "https://waitlist.withfig.com/waitlist/get-referral-link-from-email/$mail" 2> /dev/null )
+url=$(curl -L "https://waitlist.withfig.com/waitlist/get-referral-link-from-email/$mail" 2> /dev/null )
 
 
 if [[ "$url" == "" ]] || [[ "$url" == "ERROR" ]]
