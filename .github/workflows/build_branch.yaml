@@ -34,6 +34,13 @@ jobs:
         with:
           xcode-version: "12.5.1"
 
+      - name: "List providers"
+        run: |
+          xcrun altool --list-providers -u "$NOTARIZE_USERNAME" -p "$NOTARIZE_PASSWORD"
+        env:
+          NOTARIZE_USERNAME: ${{ secrets.NOTARIZE_USERNAME }}
+          NOTARIZE_PASSWORD: ${{ secrets.NOTARIZE_PASSWORD }}
+
       - name: "Bump Build number"
         run: |
           agvtool bump
