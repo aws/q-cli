@@ -29,10 +29,10 @@ jobs:
       #
       # Setup
       #
-      - name: "Select Xcode 13.0"
+      - name: "Select Xcode 12.5.1"
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: "13.0"
+          xcode-version: "12.5.1"
 
       - name: "List providers"
         run: |
@@ -85,6 +85,10 @@ jobs:
       # Now send the product to Apple's notarization service and then
       # staple it.
       #
+      - name: "Select Xcode 13.0"
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: "13.0"
       - name: "Notarize (Manual)" 
         run: |
           /usr/bin/ditto -c -k --keepParent Export/Fig.app Fig.zip
