@@ -174,7 +174,7 @@ jobs:
           cd versions
           git add .
           git commit -m "Deploy Build $BUILD"
-          git push origin beta
+          git push origin beta --verbose
           cd ..
 
       - name: Create Release
