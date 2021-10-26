@@ -1,0 +1,43 @@
+name: Update Typescript API Bindings
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    # tags: [ v* ]
+
+jobs:
+  release:
+    runs-on: macos-latest
+    timeout-minutes: 5
+    steps:
+
+      - name: "Checkout Project"
+        uses: actions/checkout@v2
+
+      - name: "Install protoc"
+        run: brew install protobuf 
+
+      - name: "Checkout withfig/typescript-api-bindings"
+        run: git clone https://mattschrage:$(echo $PERSONAL_GITHUB_ACCESS_TOKEN)@github.com/withfig/typescript-api-bindings.git
+        env:
+          PERSONAL_GITHUB_ACCESS_TOKEN: ${{ secrets.PERSONAL_GITHUB_ACCESS_TOKEN }}
+
+      - name: "Install ts_proto from npm"
+        run: |
+          cd typescript-api-bindings
+          npm install --only=prod
+          cd ..
+
+      - name: "Compile .proto"
+        run: protoc  --plugin=./typescript-api-bindings/node_modules/.bin/protoc-gen-ts_proto --ts_proto_opt=esModuleInterop=true --ts_proto_opt=oneof=unions --ts_proto_out=./typescript-api-bindings/src ./fig.proto
+
+      - name: "Commit changes"
+        run: |
+          cd typescript-api-bindings
+          git fetch origin main
+          # mv src/fig.ts src/index.ts
+          git add src/fig.ts
+          git commit -m "${{github.event.commits[0].message}}"
+          git push origin main
+  

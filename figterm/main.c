@@ -17,7 +17,7 @@
 #endif
 
 #define BUFFSIZE (1024 * 100)
-#define FIGTERM_VERSION 1
+#define FIGTERM_VERSION 2
 
 void abort_handler(int sig) {
   log_error("Aborting %d: %d", getpid(), sig);
@@ -91,6 +91,7 @@ void on_figterm_exit() {
   free_fig_info();
   close_log_file();
   history_file_close();
+  fig_socket_cleanup();
   tty_reset(STDIN_FILENO);
   if (status != 0) {
     // Unexpected exit, fallback to exec parent shell.
@@ -177,6 +178,7 @@ void figterm_loop(int ptyp_fd, pid_t shell_pid, char* initial_command) {
     err_sys("signal_intr error for SIGWINCH");
 
   ft = _ft = figterm_new(shell_pid, ptyp_fd);
+  int incoming_socket = fig_socket_listen();
 
   fd_set rfd;
 
@@ -186,6 +188,8 @@ void figterm_loop(int ptyp_fd, pid_t shell_pid, char* initial_command) {
     FD_ZERO(&rfd);
     FD_SET(STDIN_FILENO, &rfd);
     FD_SET(ptyp_fd, &rfd);
+    FD_SET(incoming_socket, &rfd);
+    int max_fd = ptyp_fd > incoming_socket ? ptyp_fd : incoming_socket;
 
     if (figterm_has_seen_prompt(ft) && is_first_time) {
       if (initial_command != NULL && strlen(initial_command) > 0) {
@@ -201,7 +205,8 @@ void figterm_loop(int ptyp_fd, pid_t shell_pid, char* initial_command) {
       is_first_time = false;
     }
 
-    int n = select(ptyp_fd + 1, &rfd, 0, 0, NULL);
+    int n = select(max_fd + 1, &rfd, 0, 0, NULL);
+    log_info("Got n %d, %d, %d, %d", n, FD_ISSET(STDIN_FILENO, &rfd), FD_ISSET(ptyp_fd, &rfd), FD_ISSET(incoming_socket, &rfd));
     if (n < 0 && errno != EINTR) {
       err_sys("select error");
     }
@@ -232,6 +237,19 @@ void figterm_loop(int ptyp_fd, pid_t shell_pid, char* initial_command) {
 
       if (!figterm_is_disabled(ft) && figterm_can_send_buffer(ft)) {
         publish_buffer(ft);
+      }
+    }
+    if (n > 0 && FD_ISSET(incoming_socket, &rfd)) {
+      log_info("Got message on socket");
+      int sockfd = accept(incoming_socket, NULL, NULL);
+      if (sockfd < 0) {
+        log_warn("Failed to accept message on socket");
+      } else {
+        nread = read(sockfd, buf, BUFFSIZE - 1);
+        log_warn("Message: %.*s", nread, buf);
+        if (write(ptyp_fd, buf, nread) != nread)
+          err_sys("write error to parent pty");
+        close(sockfd);
       }
     }
   }

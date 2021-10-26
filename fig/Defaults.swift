@@ -392,6 +392,17 @@ class Defaults {
               UserDefaults.standard.synchronize()
           }
     }
+  
+    static var promptedToRestartDueToXtermBug: Bool {
+        get {
+            return UserDefaults.standard.bool(forKey: "promptedToRestartDueToXtermBug")
+        }
+            
+        set(flag) {
+            UserDefaults.standard.set(flag, forKey: "promptedToRestartDueToXtermBug")
+            UserDefaults.standard.synchronize()
+        }
+    }
     
     static var hasShownAutocompletePopover: Bool {
         get {

@@ -727,6 +727,10 @@ extension WindowManager : WindowManagementService {
             if (Defaults.debugAutocomplete) {
                 WindowManager.shared.autocomplete?.maxHeight = heightLimit
                 WindowManager.shared.autocomplete?.backgroundColor = .red
+              
+                if WindowManager.shared.autocomplete?.width == 0 {
+                  WindowManager.shared.autocomplete?.width = 1
+                }
                 Logger.log(message: "Note: Debug mode is enabled!", subsystem: .positioning)
             }
 

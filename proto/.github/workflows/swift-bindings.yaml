@@ -1,0 +1,36 @@
+name: Update Swift API Bindings
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    # tags: [ v* ]
+
+jobs:
+  release:
+    runs-on: macos-latest
+    timeout-minutes: 5
+    steps:
+
+      - name: "Checkout Project"
+        uses: actions/checkout@v2
+
+      - name: "Install swift-protobuf & protoc"
+        run: brew install swift-protobuf 
+
+
+      - name: "Checkout withfig/swift-api-bindings"
+        run: git clone https://mattschrage:$(echo $PERSONAL_GITHUB_ACCESS_TOKEN)@github.com/withfig/swift-api-bindings.git
+        env:
+          PERSONAL_GITHUB_ACCESS_TOKEN: ${{ secrets.PERSONAL_GITHUB_ACCESS_TOKEN }}
+
+      - name: "Compile .proto"
+        run: protoc  --swift_opt=Visibility=Public --swift_out=swift-api-bindings/Sources/FigAPIBindings ./fig.proto
+
+      - name: "Commit changes"
+        run: |
+          cd swift-api-bindings
+          git add Sources/FigAPIBindings/fig.pb.swift
+          git commit -m "${{github.event.commits[0].message}}"
+          git push origin main
+  
