@@ -106,4 +106,39 @@ extension CommandHandlers {
       Feedback.getFeedback(source: "fig_report_cli", placeholder: placeholder)
     }
   }
+  
+  static func buildCommand(build: String?) -> CommandResponse {
+    if let buildMode = Build(rawValue: build ?? "") {
+      Defaults.build = buildMode
+      return CommandResponse.with { response in
+        response.success.message = buildMode.rawValue;
+      }
+    } else {
+      return CommandResponse.with { response in
+        response.success.message = Defaults.build.rawValue;
+      }
+    }
+  }
+  
+  static func sourceCommand() {
+    
+  }
+  
+  static func restartSettingsListenerCommand() -> CommandResponse {
+    DispatchQueue.main.async {
+      Settings.shared.restartListener()
+    }
+    
+    return CommandResponse.with { response in
+      response.success.message = "restarting ~/.fig/settings.json file watcher"
+    }
+  }
+  
+  static func runInstallScriptCommand() -> CommandResponse {
+    Onboarding.setUpEnviroment()
+    
+    return CommandResponse.with { response in
+      response.success.message = "running installation script"
+    }
+  }
 }

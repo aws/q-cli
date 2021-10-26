@@ -200,6 +200,10 @@ class IPC: UnixSocketServerDelegate {
       response = CommandHandlers.diagnosticsCommand()
     case .reportWindow(let request):
       CommandHandlers.displayReportWindow(message: request.report, path: request.path, figEnvVar: request.figEnvVar, terminal: request.terminal)
+    case .restartSettingsListener(_):
+      response = CommandHandlers.restartSettingsListenerCommand()
+    case .runInstallScript(_):
+      response = CommandHandlers.runInstallScriptCommand()
     case .none:
       break
     }
@@ -237,7 +241,6 @@ class IPC: UnixSocketServerDelegate {
       ShellHookManager.shared.shellPromptWillReturn(context: hook.context)
     case .preExec(let hook):
       ShellHookManager.shared.shellWillExecuteCommand(context: hook.context)
-      break
     case .postExec(_):
       break
     case .keyboardFocusChanged(_):
@@ -252,7 +255,6 @@ class IPC: UnixSocketServerDelegate {
       break
     case .integrationReady(let hook):
       ShellHookManager.shared.integrationReadyHook(identifier: hook.identifier)
-      break
     case .hide(_):
       Autocomplete.hide()
     case .none:

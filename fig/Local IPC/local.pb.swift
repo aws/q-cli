@@ -211,6 +211,22 @@ public struct Local_Command {
     set {command = .reportWindow(newValue)}
   }
 
+  public var restartSettingsListener: Local_RestartSettingsListenerCommand {
+    get {
+      if case .restartSettingsListener(let v)? = command {return v}
+      return Local_RestartSettingsListenerCommand()
+    }
+    set {command = .restartSettingsListener(newValue)}
+  }
+
+  public var runInstallScript: Local_RunInstallScriptCommand {
+    get {
+      if case .runInstallScript(let v)? = command {return v}
+      return Local_RunInstallScriptCommand()
+    }
+    set {command = .runInstallScript(newValue)}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public enum OneOf_Command: Equatable {
@@ -222,6 +238,8 @@ public struct Local_Command {
     case update(Local_UpdateCommand)
     case diagnostics(Local_DiagnosticsCommand)
     case reportWindow(Local_ReportWindowCommand)
+    case restartSettingsListener(Local_RestartSettingsListenerCommand)
+    case runInstallScript(Local_RunInstallScriptCommand)
 
   #if !swift(>=4.1)
     public static func ==(lhs: Local_Command.OneOf_Command, rhs: Local_Command.OneOf_Command) -> Bool {
@@ -259,6 +277,14 @@ public struct Local_Command {
       }()
       case (.reportWindow, .reportWindow): return {
         guard case .reportWindow(let l) = lhs, case .reportWindow(let r) = rhs else { preconditionFailure() }
+        return l == r
+      }()
+      case (.restartSettingsListener, .restartSettingsListener): return {
+        guard case .restartSettingsListener(let l) = lhs, case .restartSettingsListener(let r) = rhs else { preconditionFailure() }
+        return l == r
+      }()
+      case (.runInstallScript, .runInstallScript): return {
+        guard case .runInstallScript(let l) = lhs, case .runInstallScript(let r) = rhs else { preconditionFailure() }
         return l == r
       }()
       default: return false
@@ -530,6 +556,26 @@ public struct Local_ReportWindowCommand {
   public var figEnvVar: String = String()
 
   public var terminal: String = String()
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public struct Local_RestartSettingsListenerCommand {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public struct Local_RunInstallScriptCommand {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -1146,6 +1192,8 @@ extension Local_Command: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementa
     105: .same(proto: "update"),
     106: .same(proto: "diagnostics"),
     107: .standard(proto: "report_window"),
+    108: .standard(proto: "restart_settings_listener"),
+    109: .standard(proto: "run_install_script"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -1260,6 +1308,32 @@ extension Local_Command: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementa
           self.command = .reportWindow(v)
         }
       }()
+      case 108: try {
+        var v: Local_RestartSettingsListenerCommand?
+        var hadOneofValue = false
+        if let current = self.command {
+          hadOneofValue = true
+          if case .restartSettingsListener(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.command = .restartSettingsListener(v)
+        }
+      }()
+      case 109: try {
+        var v: Local_RunInstallScriptCommand?
+        var hadOneofValue = false
+        if let current = self.command {
+          hadOneofValue = true
+          if case .runInstallScript(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.command = .runInstallScript(v)
+        }
+      }()
       default: break
       }
     }
@@ -1308,6 +1382,14 @@ extension Local_Command: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementa
     case .reportWindow?: try {
       guard case .reportWindow(let v)? = self.command else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 107)
+    }()
+    case .restartSettingsListener?: try {
+      guard case .restartSettingsListener(let v)? = self.command else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 108)
+    }()
+    case .runInstallScript?: try {
+      guard case .runInstallScript(let v)? = self.command else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 109)
     }()
     case nil: break
     }
@@ -1765,6 +1847,44 @@ extension Local_ReportWindowCommand: SwiftProtobuf.Message, SwiftProtobuf._Messa
     if lhs.path != rhs.path {return false}
     if lhs.figEnvVar != rhs.figEnvVar {return false}
     if lhs.terminal != rhs.terminal {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Local_RestartSettingsListenerCommand: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".RestartSettingsListenerCommand"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap()
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let _ = try decoder.nextFieldNumber() {
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Local_RestartSettingsListenerCommand, rhs: Local_RestartSettingsListenerCommand) -> Bool {
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Local_RunInstallScriptCommand: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".RunInstallScriptCommand"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap()
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let _ = try decoder.nextFieldNumber() {
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Local_RunInstallScriptCommand, rhs: Local_RunInstallScriptCommand) -> Bool {
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

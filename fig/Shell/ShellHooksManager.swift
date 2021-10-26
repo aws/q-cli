@@ -169,22 +169,38 @@ extension ShellHookManager {
   }
   
   func currentTabDidChangeLegacy(_ info: ShellMessage, includesBundleId: Bool = false) {
-    if let id = info.options?.last {
+    Logger.log(message: "currentTabDidChange")
 
-      if includesBundleId {
-        let tokens = id.split(separator: ":")
-        let bundleId = String(tokens.first!)
+    // Need time for whitelisted window to change
+    Timer.delayWithSeconds(0.1) {
+      if let window = AXWindowServer.shared.whitelistedWindow {
+        if let id = info.options?.last {
+          
+          if includesBundleId {
+            let tokens = id.split(separator: ":")
+            let bundleId = String(tokens.first!)
 
-//        guard bundleId == window.bundleId ?? "" else {
-//          print(
-//            "tab: bundleId from message did not match bundle id associated with current window "
-//          )
-//          return
-//        }
+            guard bundleId == window.bundleId ?? "" else {
+              print(
+                "tab: bundleId from message did not match bundle id associated with current window "
+              )
+              return
+            }
+          }
+
+          let VSCodeTerminal =
+            [Integrations.VSCode, Integrations.VSCodeInsiders, Integrations.VSCodium].contains(
+              window.bundleId) && id.hasPrefix("code:")
+          let HyperTab = window.bundleId == Integrations.Hyper && id.hasPrefix("hyper:")
+          let iTermTab =
+            window.bundleId == Integrations.iTerm && !id.hasPrefix("code:")
+            && !id.hasPrefix("hyper:") && !includesBundleId
+          guard VSCodeTerminal || iTermTab || HyperTab || includesBundleId else { return }
+          Logger.log(message: "tab: \(window.windowId)/\(id)")
+          self.keyboardFocusDidChange(to: id, in: window)
+        }
       }
-
     }
-    currentTabDidChange(info, includesBundleId: includesBundleId)
   }
   
   // If this changes, make sure to reflect changes in iTermIntegration.sessionId setter
@@ -195,6 +211,18 @@ extension ShellHookManager {
     Timer.delayWithSeconds(0.1) {
       if let window = AXWindowServer.shared.whitelistedWindow {
         if let id = info.options?.last {
+          
+          if includesBundleId {
+            let tokens = id.split(separator: ":")
+            let bundleId = String(tokens.first!)
+
+            guard bundleId == window.bundleId ?? "" else {
+              print(
+                "tab: bundleId from message did not match bundle id associated with current window "
+              )
+              return
+            }
+          }
 
           let VSCodeTerminal =
             [Integrations.VSCode, Integrations.VSCodeInsiders, Integrations.VSCodium].contains(

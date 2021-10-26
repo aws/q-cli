@@ -21,8 +21,8 @@ func init() {
 
 var teamsCmd = &cobra.Command{
 	Use:   "teams",
-	Short: "Colllaberate with your team using Fig",
-	Long:  "Collabrate with your team using Fig",
+	Short: "Collaborate with your team using Fig",
+	Long:  "Collaborate with your team using Fig",
 	Annotations: map[string]string{
 		"figcli.command.categories": "Common",
 	},

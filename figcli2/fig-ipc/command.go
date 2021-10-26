@@ -147,3 +147,37 @@ func ReportWindowCommand(message string) error {
 
 	return nil
 }
+
+func RestartSettingsListenerCommand() error {
+	noResponse := true
+
+	cmd := fig_proto.Command{
+		NoResponse: &noResponse,
+		Command: &fig_proto.Command_RestartSettingsListener{
+			RestartSettingsListener: &fig_proto.RestartSettingsListenerCommand{},
+		},
+	}
+
+	if err := SendCommand(&cmd); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func RunInstallScriptCommand() error {
+	noResponse := true
+
+	cmd := fig_proto.Command{
+		NoResponse: &noResponse,
+		Command: &fig_proto.Command_RunInstallScript{
+			RunInstallScript: &fig_proto.RunInstallScriptCommand{},
+		},
+	}
+
+	if err := SendCommand(&cmd); err != nil {
+		return err
+	}
+
+	return nil
+}

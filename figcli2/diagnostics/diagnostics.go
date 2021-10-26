@@ -56,6 +56,10 @@ func GetFigVersion() (string, error) {
 	return ReadPlist("CFBundleShortVersionString")
 }
 
+func GetFigBuild() (string, error) {
+	return ReadPlist("CFBundleVersion")
+}
+
 func DsclRead(value string) (string, error) {
 	user, err := user.Current()
 	if err != nil {
@@ -116,6 +120,18 @@ func (t Terminal) PotentialBundleId() (string, error) {
 	return termBundle, nil
 }
 
+func GetTty() (string, error) {
+	ttyExec := exec.Command("tty")
+	ttyExec.Stdin = os.Stdin
+
+	out, err := ttyExec.Output()
+	if err != nil {
+		return "", err
+	}
+
+	return strings.TrimSpace(string(out)), nil
+}
+
 func Summary() string {
 	var summary strings.Builder
 
@@ -128,7 +144,15 @@ func Summary() string {
 		summary.WriteString(fmt.Sprintf("Error: %s\n", err.Error()))
 	}
 
+	figVersion, _ := GetFigVersion()
+	figBuild, _ := GetFigBuild()
+
 	//  \(Diagnostic.distribution) \(Defaults.beta ? "[Beta] " : "")\(Defaults.debugAutocomplete ? "[Debug] " : "")\(Defaults.developerModeEnabled ? "[Dev] " : "")[\(KeyboardLayout.shared.currentLayoutName() ?? "?")] \(Diagnostic.isRunningOnReadOnlyVolume ? "TRANSLOCATED!!!" : "")
+	summary.WriteString("Fig Version: ")
+	summary.WriteString(figVersion)
+	summary.WriteString(" ")
+	summary.WriteString(figBuild)
+	summary.WriteString("\n")
 
 	// User shell: \(Diagnostic.userShell)
 	userShell, _ := DsclRead("UserShell")
@@ -245,6 +269,10 @@ func Summary() string {
 	summary.WriteString("Current window identifier: ")
 	summary.WriteString(resp.GetDiagnostics().GetCurrentWindowIdentifier())
 	summary.WriteString("\n")
+
+	// Path
+	summary.WriteString("Path: ")
+	summary.WriteString(os.Getenv("PATH"))
 
 	return summary.String()
 }

@@ -25,6 +25,8 @@ message Command {
 		UpdateCommand update = 105;
 		DiagnosticsCommand diagnostics = 106;
 		ReportWindowCommand report_window = 107;
+		RestartSettingsListenerCommand restart_settings_listener = 108;
+		RunInstallScriptCommand run_install_script = 109;
 	}
 }
 
@@ -77,6 +79,10 @@ message ReportWindowCommand {
 	string fig_env_var = 3;
 	string terminal = 4;
 }
+
+message RestartSettingsListenerCommand {}
+
+message RunInstallScriptCommand {}
 
 // == Hooks ==
 message ShellContext {
