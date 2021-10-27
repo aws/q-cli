@@ -117,7 +117,9 @@ jobs:
           NOTARIZE_USERNAME: ${{ secrets.NOTARIZE_USERNAME }}
           NOTARIZE_PASSWORD: ${{ secrets.NOTARIZE_PASSWORD }}
           NOTARIZE_TEAM_ID: ${{ secrets.NOTARIZE_TEAM_ID }}
-      - name: "Verify that app has notarization ticket"
+      - name: "VERIFY: App is codesigned properly"
+        run: codesign --verify --deep --strict --verbose=2 Export/Fig.app
+      - name: "VERIFY: App has notarization ticket"
         run: spctl -a -v Export/Fig.app
 
       - name: Install fileicon
