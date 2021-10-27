@@ -213,6 +213,11 @@ jobs:
         run: |
           cp "fig $BUILD.dmg" ./versions
           rm ./versions/fig@latest.dmg
+          cd versions
+          git ls-tree -r --name-only HEAD | while read filename; do 
+            echo "$(git log -1 --format="%at" -- $filename) $filename"
+          done | grep '.dmg\|.delta' | sort -n
+          cd ..
       - name: "Generate Appcast"
         run: ./Sparkle/bin/generate_appcast -s $SPARKLE_KEY --download-url-prefix https://$VERSIONS_BRANCH.withfig.com versions
         env:
