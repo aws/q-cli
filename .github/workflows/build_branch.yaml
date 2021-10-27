@@ -5,6 +5,10 @@ on:
     inputs:
       buildName:
         description: 'Name for Build'
+      useCache:
+        description: 'Use cached build, if possible'     
+        required: true
+        default: false
     # tags: [ v* ]
 
 jobs:
@@ -57,7 +61,6 @@ jobs:
         env:
           cache-name: macos
         with:
-          # npm cache files are stored in `~/.npm` on Linux/macOS
           path: ~/Export
           key: build-${{ env.cache-name }}-${{ env.BUILD }}
 
@@ -79,7 +82,7 @@ jobs:
       - name: "Test"
         run: security find-identity -v -p codesigning
       - name: "Archive"
-        if: steps.archive.outputs.cache-hit != 'true'
+        if: ${{ github.event.inputs.useCache != 'true' || steps.archive.outputs.cache-hit != 'true' }}
         uses: devbotsxyz/xcode-archive@v1
 
       #
