@@ -160,7 +160,9 @@ jobs:
         env:
           PERSONAL_GITHUB_ACCESS_TOKEN: ${{ secrets.PERSONAL_GITHUB_ACCESS_TOKEN }}
       - name: Add latest versions
-        run: cp "fig $BUILD.dmg" ./versions
+        run: |
+          cp "fig $BUILD.dmg" ./versions
+          rm ./versions/fig@latest.dmg
       - name: "Generate Appcast"
         run: ./Sparkle/bin/generate_appcast -s $SPARKLE_KEY --download-url-prefix https://alpha.withfig.com versions
         env:
@@ -168,6 +170,7 @@ jobs:
       - name: Commit changes
         run: |
           cd versions
+          cp "fig $BUILD.dmg" fig@latest.dmg
           git add .
           git commit -m "Deploy Build $BUILD"
           cd ..
@@ -175,12 +178,19 @@ jobs:
       - name: Remove old versions
         run: |
           cd versions
+          echo $TMPDIR
           pwd
           git ls-tree -r --name-only HEAD | while read filename; do 
             echo "$(git log -1 --format="%at" -- $filename) $filename"
           done | grep '.dmg\|.delta' | sort -n | tail -${{env.size_of_archive}} | cut -f2-3 -d" " > $TMPDIR/safe
 
+          echo "<<<safe"
           cat $TMPDIR/safe
+          echo ">>>"
+
+          echo "<<<deleted"
+          ls | grep '.dmg\|.delta' | grep -v -x -F -f $TMPDIR/safe
+          echo ">>>"
 
           ls | grep '.dmg\|.delta' | grep -v -x -F -f $TMPDIR/safe | xargs -I{} rm -v {}
           git add .
