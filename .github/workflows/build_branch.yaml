@@ -139,7 +139,7 @@ jobs:
           NOTARIZE_USERNAME: ${{ secrets.NOTARIZE_USERNAME }}
           NOTARIZE_PASSWORD: ${{ secrets.NOTARIZE_PASSWORD }}
           NOTARIZE_TEAM_ID: ${{ secrets.NOTARIZE_TEAM_ID }}
-      - name: "Validate DMG":
+      - name: "Validate DMG"
         run: spctl -a -t open --context context:primary-signature -v  "fig $BUILD.dmg" 
       - name: "Package as .zip"
         run: |
