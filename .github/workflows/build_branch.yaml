@@ -214,7 +214,7 @@ jobs:
           cp "fig $BUILD.dmg" ./versions
           rm ./versions/fig@latest.dmg
       - name: "Generate Appcast"
-        run: ./Sparkle/bin/generate_appcast -s $SPARKLE_KEY --download-url-prefix https://alpha.withfig.com versions
+        run: ./Sparkle/bin/generate_appcast -s $SPARKLE_KEY --download-url-prefix https://$VERSIONS_BRANCH.withfig.com versions
         env:
           SPARKLE_KEY: ${{ secrets.SPARKLE_SIGNING_KEY }}
       - name: Commit changes
@@ -233,7 +233,7 @@ jobs:
           RECENT_FILES=$(git ls-tree -r --name-only HEAD | while read filename; do 
             echo "$(git log -1 --format="%at" -- $filename) $filename"
           done)
-
+          echo $RECENT_FILES
           echo $RECENT_FILES | grep '.dmg' | sort -n | tail -${{env.size_of_archive}} | cut -f2-3 -d" " > $TMPDIR/safe
 
           echo "<<<safe"
