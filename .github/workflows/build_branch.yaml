@@ -51,6 +51,15 @@ jobs:
           echo "::set-env name=BUILD::$(agvtool what-version -terse)"
           echo $BUILD
 
+      - name: Cache Build archive
+        uses: actions/cache@v2
+        id: archive
+        env:
+          cache-name: macos
+        with:
+          # npm cache files are stored in `~/.npm` on Linux/macOS
+          path: ~/Export
+          key: build-${{ env.cache-name }}-${{ env.BUILD }}
 
       - name: "Import Certificate"
         uses: devbotsxyz/import-signing-certificate@main
@@ -70,6 +79,7 @@ jobs:
       - name: "Test"
         run: security find-identity -v -p codesigning
       - name: "Archive"
+        if: steps.archive.outputs.cache-hit != 'true'
         uses: devbotsxyz/xcode-archive@v1
 
       #
