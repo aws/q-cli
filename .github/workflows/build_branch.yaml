@@ -120,35 +120,27 @@ jobs:
       - name: "Verify that app has notarization ticket"
         run: spctl -a -v Export/Fig.app
 
-      # - name: "Notarize Release Build"
-      #   run: |
-      #     brew tap mitchellh/gon
-      #     brew install mitchellh/gon/gon
-      #     gon ./ci/release.hcl
-      #   env:
-      #     NOTARIZE_USERNAME: ${{ secrets.NOTARIZE_USERNAME }}
-      #     NOTARIZE_PASSWORD: ${{ secrets.NOTARIZE_PASSWORD }}
+      - name: Install fileicon
+        run: HOMEBREW_NO_AUTO_UPDATE=1 brew install fileicon
+      - name: Setup Node Environment
+        uses: actions/setup-node@v1
+      - name: Install appdmg
+        run: npm install -g appdmg
+      - name: Create DMG
+        run: appdmg ./dmg/dmg-spec.json "fig $BUILD.dmg"
+      - name: Update Fileicon
+        run: fileicon set "fig $BUILD.dmg" ./dmg/VolumeIcon.icns
 
-
-      # - name: "Notarize Release Build"
-      #   run: |
-      #     npx notarize-cli@0.1.1 --file "Export/Fig.app" --bundle-id com.mschrage.fig
-      #   env:
-      #     NOTARIZE_USERNAME: ${{ secrets.NOTARIZE_USERNAME }}
-      #     NOTARIZE_PASSWORD: ${{ secrets.NOTARIZE_PASSWORD }}
-
-      # - name: "Notarize Release Build"
-      #   uses: devbotsxyz/xcode-notarize@v1
-      #   with:
-      #     product-path: "Export/Fig.app"
-      #     verbose: true
-      #     appstore-connect-username: ${{ secrets.NOTARIZE_USERNAME }}
-      #     appstore-connect-password: ${{ secrets.NOTARIZE_PASSWORD }}
-
-      # - name: "Staple Release Build"
-      #   uses: devbotsxyz/xcode-staple@v1
-      #   with:
-      #     product-path: "Export/Fig.app"
+      - name: "Notarize DMG"
+        run: |
+          xcrun notarytool submit "fig $BUILD.dmg" --apple-id "$NOTARIZE_USERNAME" --password "$NOTARIZE_PASSWORD" --team-id "$NOTARIZE_TEAM_ID" --wait
+          # xcrun stapler staple Export/Fig.app
+        env:
+          NOTARIZE_USERNAME: ${{ secrets.NOTARIZE_USERNAME }}
+          NOTARIZE_PASSWORD: ${{ secrets.NOTARIZE_PASSWORD }}
+          NOTARIZE_TEAM_ID: ${{ secrets.NOTARIZE_TEAM_ID }}
+      - name: "Validate DMG":
+        run: spctl -a -t open --context context:primary-signature -v  "fig $BUILD.dmg" 
       - name: "Package as .zip"
         run: |
           ditto -c -k --sequesterRsrc --keepParent Export/Fig.app Fig.zip
@@ -169,6 +161,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
-          asset_path: ./fig.zip
-          asset_name: Fig.zip
+          asset_path: fig ${{env.BUILD}}.dmg
+          asset_name: Fig.dmg
           asset_content_type: application/octet-stream
