@@ -77,7 +77,7 @@ install_fig() {
   FIGCLI="${BUNDLE}/figcli" 
   "${FIGCLI}" settings userShell "${USER_SHELL_TRIMMED}"
   
-  "${FIGCLI}" settings pty.path $("${USER_SHELL_TRIMMED}" -li -c "/usr/bin/env | /usr/bin/grep '^PATH=' | /bin/cat | /usr/bin/sed 's|PATH=||g'") 
+  "${FIGCLI}" settings pty.path "$("${USER_SHELL_TRIMMED}" -li -c "/usr/bin/env | /usr/bin/grep '^PATH=' | /bin/cat | /usr/bin/sed 's|PATH=||g'")" 
 
   # hotfix for infinite looping when writing "☑ fig" title to a tty backed by figterm
   "${FIGCLI}" settings autocomplete.addStatusToTerminalTitle false
