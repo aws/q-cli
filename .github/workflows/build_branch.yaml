@@ -1,49 +1,112 @@
 name: Build Specified Branch
 
 on:
+  push:
+    branches:
+      - master
+      - staging
   workflow_dispatch:
     inputs:
       buildName:
         description: 'Name for Build'
+      useCache:
+        description: 'Use cached build, if possible'     
+        default: 'false'
+      notarizeApp:
+        description: 'Notarize the app bundle'     
+        default: 'true'
+      notarizeDMG:
+        description: 'Notarize the .dmg'     
+        default: 'true'
     # tags: [ v* ]
 
 jobs:
   release:
     runs-on: macos-11
+    if: "!contains(github.event.head_commit.message, 'skip ci')"
     timeout-minutes: 30
     steps:
+############################################
+# Declare ENVIRONMENT variables
+############################################
+
+      - name: "SET: VERSIONS_BRANCH"
+        run: |
+          if [[ $REF == 'refs/heads/master' ]]; then
+              echo "::set-env name=VERSIONS_BRANCH::main"
+          elif [[ $REF == 'refs/heads/staging' ]]; then
+              echo "::set-env name=VERSIONS_BRANCH::beta"
+          else
+              echo "::set-env name=VERSIONS_BRANCH::alpha"
+          fi
+          echo $VERSIONS_BRANCH
+
+        env:
+          REF: ${{ github.ref }}
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+
 
       - name: "Checkout Project"
         uses: actions/checkout@v2
         with:
           submodules: recursive
 
-      - name: "Get Release Version"
+      - name: "SET: VERSION"
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: true
         run: |
           echo "::set-env name=VERSION::$(cat fig.xcodeproj/project.pbxproj | grep -m1 'MARKETING_VERSION' | cut -d'=' -f2 | tr -d ';' | tr -d ' ')"      
-      
-      - name: "Log Release Version"
-        run: echo $VERSION
-      #
-      # Setup
-      #
-      - name: "Select Xcode 12.5.1"
-        uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: "12.5.1"
+          echo $VERSION
+
+      - name: "SET: BUMP_BUILD_NUMBER"
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+        run: |
+          if [[ $REF == 'refs/heads/master' ]]; then
+              echo "::set-env name=BUMP_BUILD_NUMBER::0"
+          elif [[ $REF == 'refs/heads/staging' ]]; then
+              echo "::set-env name=BUMP_BUILD_NUMBER::1"
+          else
+              echo "::set-env name=BUMP_BUILD_NUMBER::0"
+          fi
+          echo $BUMP_BUILD_NUMBER
 
       - name: "Bump Build number"
-        run: |
-          agvtool bump
-      - name: "Get Build"
+        run: agvtool bump
+
+      - name: "SET: BUILD"
         env:
             ACTIONS_ALLOW_UNSECURE_COMMANDS: true
         run: |
           echo "::set-env name=BUILD::$(agvtool what-version -terse)"
           echo $BUILD
 
+      - name: "Commit Build number"
+        if: env.BUMP_BUILD_NUMBER == 1
+        run: |
+          git add fig.xcodeproj/project.pbxproj
+          git commit -m "Bump build to $BUILD [skip ci]"
+          git push origin staging
+
+############################################
+# Enable Caching
+############################################
+      - name: Cache Build archive
+        uses: actions/cache@v2
+        id: archive
+        env:
+          cache-name: macos
+        with:
+          path: Export
+          key: build-${{ env.cache-name }}-${{ env.BUILD }}
+
+############################################
+# Build, Archive & Export 
+############################################
+      - name: "Select Xcode 12.5.1"
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: "12.5.1"
 
       - name: "Import Certificate"
         uses: devbotsxyz/import-signing-certificate@main
@@ -51,7 +114,6 @@ jobs:
           certificate-data: ${{ secrets.SIGNING_CERTIFICATE_P12_DATA }}
           certificate-passphrase: ${{ secrets.SIGNING_CERTIFICATE_PASSWORD }}
           keychain-password: ${{ secrets.KEYCHAIN_PASSWORD }}
-
 
       - name: "Create exportOptions.plist"
         run: |
@@ -62,42 +124,142 @@ jobs:
      
       - name: "Test"
         run: security find-identity -v -p codesigning
+
       - name: "Archive"
+        if: ${{ github.event.inputs.useCache == 'false' || steps.archive.outputs.cache-hit != 'true' }}
         uses: devbotsxyz/xcode-archive@v1
 
-      #
-      # Next ask Xcode to export the product from the archived build
-      # we just created. This will also re-sign the application with
-      # the "Developer ID" certificate.
-      #
-
       - name: "Export & Sign Release Build"
+        if: ${{ github.event.inputs.useCache == 'false' || steps.archive.outputs.cache-hit != 'true' }}
         uses: mattschrage/xcode-export-archive@main
 
-      #
-      # Now send the product to Apple's notarization service and then
-      # staple it.
-      #
+############################################
+# Sentry Upload
+############################################
+      - name: Install Sentry
+        if: ${{ github.event.inputs.useCache == 'false' || steps.archive.outputs.cache-hit != 'true' }}
+        run: curl -sL https://sentry.io/get-cli/ | bash
+      - name: Upload dSYM files to Sentry
+        if: ${{ github.event.inputs.useCache == 'false' || steps.archive.outputs.cache-hit != 'true' }}
+        run: sentry-cli upload-dif --org withfig --project macos-app --derived-data
+        env: 
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
 
-      - name: "Notarize Release Build"
+############################################
+# Notarize App Bundle
+############################################
+      - name: "Select Xcode 13.0"
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: "13.0"
+      - name: "Notarize and Staple"
+        if: github.event.inputs.notarizeApp == 'true'
         run: |
-          npx notarize-cli@0.1.1 --file "Export/Fig.app" --bundle-id com.mschrage.fig
+          /usr/bin/ditto -c -k --keepParent Export/Fig.app Fig.zip
+          xcrun notarytool submit Fig.zip --apple-id "$NOTARIZE_USERNAME" --password "$NOTARIZE_PASSWORD" --team-id "$NOTARIZE_TEAM_ID" --wait
+          rm Fig.zip
+          xcrun stapler staple Export/Fig.app
+          # xcrun altool --notarize-app --primary-bundle-id "com.mschrage.fig" -u "$NOTARIZE_USERNAME" -p "$NOTARIZE_PASSWORD" --file Fig.zip
         env:
           NOTARIZE_USERNAME: ${{ secrets.NOTARIZE_USERNAME }}
           NOTARIZE_PASSWORD: ${{ secrets.NOTARIZE_PASSWORD }}
+          NOTARIZE_TEAM_ID: ${{ secrets.NOTARIZE_TEAM_ID }}
+      - name: "VERIFY: App is codesigned properly"
+        if: github.event.inputs.notarizeApp == 'true'
+        run: codesign --verify --deep --strict --verbose=2 Export/Fig.app
+      - name: "VERIFY: App has notarization ticket"
+        if: github.event.inputs.notarizeApp == 'true'
+        run: spctl -a -v Export/Fig.app
 
-      # - name: "Notarize Release Build"
-      #   uses: devbotsxyz/xcode-notarize@v1
-      #   with:
-      #     product-path: "Export/Fig.app"
-      #     verbose: true
-      #     appstore-connect-username: ${{ secrets.NOTARIZE_USERNAME }}
-      #     appstore-connect-password: ${{ secrets.NOTARIZE_PASSWORD }}
+############################################
+# Create and Notarize DMG
+############################################
+      # - name: Install fileicon
+      #   run: HOMEBREW_NO_AUTO_UPDATE=1 brew install fileicon
+      - name: Setup Node Environment
+        uses: actions/setup-node@v1
+      - name: Install appdmg
+        run: npm install -g appdmg
+      - name: Create DMG
+        run: appdmg ./dmg/dmg-spec.json "fig $BUILD.dmg"
+      # - name: Update Fileicon
+      #   run: fileicon set "fig $BUILD.dmg" ./dmg/VolumeIcon.icns
 
-      # - name: "Staple Release Build"
-      #   uses: devbotsxyz/xcode-staple@v1
-      #   with:
-      #     product-path: "Export/Fig.app"
+      - name: "Notarize DMG"
+        if: github.event.inputs.notarizeDMG == 'true'
+        run: |
+          xcrun notarytool submit "fig $BUILD.dmg" --apple-id "$NOTARIZE_USERNAME" --password "$NOTARIZE_PASSWORD" --team-id "$NOTARIZE_TEAM_ID" --wait
+          # xcrun stapler staple Export/Fig.app
+        env:
+          NOTARIZE_USERNAME: ${{ secrets.NOTARIZE_USERNAME }}
+          NOTARIZE_PASSWORD: ${{ secrets.NOTARIZE_PASSWORD }}
+          NOTARIZE_TEAM_ID: ${{ secrets.NOTARIZE_TEAM_ID }}
+      - name: "VERIFY: DMG notarization status"
+        if: github.event.inputs.notarizeDMG == 'true'
+        run: spctl -a -t open --context context:primary-signature -v  "fig $BUILD.dmg" 
+
+############################################
+# Sparkle Distribution
+############################################
+
+      - name: "Download Sparkle CLI"
+        run: |
+          curl -sOL https://github.com/sparkle-project/Sparkle/releases/download/1.24.0/Sparkle-1.24.0.tar.xz
+          mkdir Sparkle
+          cd Sparkle && tar xopf ../Sparkle-1.24.0.tar.xz
+          cd ..
+      - name: "Checkout withfig/versions"
+        run: |
+          git clone --branch $VERSIONS_BRANCH https://mattschrage:$(echo $PERSONAL_GITHUB_ACCESS_TOKEN)@github.com/withfig/versions.git
+        env:
+          PERSONAL_GITHUB_ACCESS_TOKEN: ${{ secrets.PERSONAL_GITHUB_ACCESS_TOKEN }}
+      - name: Add latest versions
+        run: |
+          cp "fig $BUILD.dmg" ./versions
+          rm ./versions/fig@latest.dmg
+      - name: "Generate Appcast"
+        run: ./Sparkle/bin/generate_appcast -s $SPARKLE_KEY --download-url-prefix https://$VERSIONS_BRANCH.withfig.com versions
+        env:
+          SPARKLE_KEY: ${{ secrets.SPARKLE_SIGNING_KEY }}
+      - name: Commit changes
+        run: |
+          cd versions
+          cp "fig $BUILD.dmg" fig@latest.dmg
+          git add .
+          git commit -m "Deploy Build $BUILD"
+          cd ..
+
+      - name: Remove old versions
+        run: |
+          cd versions
+
+          git ls-tree -r --name-only HEAD | while read filename; do 
+            echo "$(git log -1 --format="%at" -- "$filename") $filename"
+          done | grep '.dmg\|.delta' | sort -n | tail -${{env.size_of_archive}} | cut -f2-3 -d" " > $TMPDIR/safe
+
+          echo "<<<safe"
+          cat $TMPDIR/safe
+          echo ">>>"
+
+          echo "<<<deleted"
+          ls | grep '.dmg\|.delta' | grep -v -x -F -f $TMPDIR/safe
+          echo ">>>"
+
+          ls | grep '.dmg\|.delta' | grep -v -x -F -f $TMPDIR/safe | xargs -I{} rm -v {}
+          git add .
+          git commit -m "Remove old versions" --allow-empty
+          cd ..
+        env:
+          size_of_archive: 37 
+      - name: Push Changes to withfig/versions
+        run: |
+          cd versions
+          git push origin $VERSIONS_BRANCH
+          cd ..
+############################################
+# Create Github Release [Internal]
+############################################
+
       - name: "Package as .zip"
         run: |
           ditto -c -k --sequesterRsrc --keepParent Export/Fig.app Fig.zip
@@ -118,6 +280,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
-          asset_path: ./fig.zip
-          asset_name: Fig.zip
+          asset_path: fig ${{env.BUILD}}.dmg
+          asset_name: Fig.dmg
           asset_content_type: application/octet-stream
