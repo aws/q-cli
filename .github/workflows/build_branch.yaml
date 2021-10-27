@@ -7,8 +7,7 @@ on:
         description: 'Name for Build'
       useCache:
         description: 'Use cached build, if possible'     
-        required: true
-        default: false
+        default: 'false'
     # tags: [ v* ]
 
 jobs:
@@ -16,6 +15,9 @@ jobs:
     runs-on: macos-11
     timeout-minutes: 30
     steps:
+
+      - name: "Pwd"
+        run: echo $PWD && pwd
 
       - name: "Checkout Project"
         uses: actions/checkout@v2
@@ -30,6 +32,7 @@ jobs:
       
       - name: "Log Release Version"
         run: echo $VERSION
+
       #
       # Setup
       #
@@ -61,7 +64,7 @@ jobs:
         env:
           cache-name: macos
         with:
-          path: ~/Export
+          path: Export
           key: build-${{ env.cache-name }}-${{ env.BUILD }}
 
       - name: "Import Certificate"
@@ -82,7 +85,7 @@ jobs:
       - name: "Test"
         run: security find-identity -v -p codesigning
       - name: "Archive"
-        if: ${{ github.event.inputs.useCache != 'true' || steps.archive.outputs.cache-hit != 'true' }}
+        if: ${{ github.event.inputs.useCache == 'false' || steps.archive.outputs.cache-hit != 'true' }}
         uses: devbotsxyz/xcode-archive@v1
 
       #
@@ -92,7 +95,7 @@ jobs:
       #
 
       - name: "Export & Sign Release Build"
-        if: ${{ github.event.inputs.useCache != 'true' || steps.archive.outputs.cache-hit != 'true' }}
+        if: ${{ github.event.inputs.useCache == 'false' || steps.archive.outputs.cache-hit != 'true' }}
         uses: mattschrage/xcode-export-archive@main
 
       #
