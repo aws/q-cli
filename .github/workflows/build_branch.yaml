@@ -31,6 +31,9 @@ jobs:
 ############################################
 
       - name: "SET: VERSIONS_BRANCH"
+        env:
+          REF: ${{ github.ref }}
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
         run: |
           if [[ $REF == 'refs/heads/master' ]]; then
               echo "::set-env name=VERSIONS_BRANCH::main"
@@ -40,10 +43,6 @@ jobs:
               echo "::set-env name=VERSIONS_BRANCH::alpha"
           fi
           echo $VERSIONS_BRANCH
-
-        env:
-          REF: ${{ github.ref }}
-          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
 
 
       - name: "Checkout Project"
@@ -60,6 +59,7 @@ jobs:
 
       - name: "SET: BUMP_BUILD_NUMBER"
         env:
+          REF: ${{ github.ref }}
           ACTIONS_ALLOW_UNSECURE_COMMANDS: true
         run: |
           if [[ $REF == 'refs/heads/master' ]]; then
