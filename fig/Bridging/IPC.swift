@@ -204,6 +204,8 @@ class IPC: UnixSocketServerDelegate {
       response = CommandHandlers.restartSettingsListenerCommand()
     case .runInstallScript(_):
       response = CommandHandlers.runInstallScriptCommand()
+    case .build(let request):
+      response = CommandHandlers.buildCommand(branch: request.branch)
     case .none:
       break
     }

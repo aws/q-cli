@@ -554,6 +554,7 @@ extension ShellHookManager {
     }
 
     var ttyHandler: TTY? = tty[hash]
+    
 
     // stop process if user is definitely in a shell process
     //      guard ttyHandler?.isShell != true else {
@@ -594,8 +595,7 @@ extension ShellHookManager {
     let previousHistoryNumber = keybuffer.shellHistoryNumber
 
     keybuffer.backedByShell = true
-    // Is this okay??? TODO Grant
-    //keybuffer.backing = context.shell
+    keybuffer.backing = KeystrokeBuffer.Backing(rawValue: String(context.shell.split(separator: "/").last ?? ""))
     keybuffer.buffer = text
     keybuffer.shellCursor = cursor
     keybuffer.shellHistoryNumber = histno

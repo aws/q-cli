@@ -181,3 +181,22 @@ func RunInstallScriptCommand() error {
 
 	return nil
 }
+
+func RunBuildCommand(branch string) error {
+	noResponse := true
+
+	cmd := fig_proto.Command{
+		NoResponse: &noResponse,
+		Command: &fig_proto.Command_Build{
+			Build: &fig_proto.BuildCommand{
+				Branch: branch,
+			},
+		},
+	}
+
+	if err := SendCommand(&cmd); err != nil {
+		return err
+	}
+
+	return nil
+}

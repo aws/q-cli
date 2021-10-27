@@ -25,6 +25,7 @@ func init() {
 	appCmd.AddCommand(appUpgradeCmd)
 	appCmd.AddCommand(appSetPath)
 	appCmd.AddCommand(appUninstallCmd)
+	appCmd.AddCommand(appRunningCmd)
 
 	rootCmd.AddCommand(appCmd)
 }
@@ -387,5 +388,22 @@ var appUninstallCmd = &cobra.Command{
 		sh.Stderr = os.Stderr
 		sh.Stdin = os.Stdin
 		sh.Run()
+	},
+}
+
+var appRunningCmd = &cobra.Command{
+	Use:   "running",
+	Short: "Gets the status if Fig is running",
+	Run: func(cmd *cobra.Command, args []string) {
+		appInfo, err := diagnostics.GetAppInfo()
+		if err != nil {
+			return
+		}
+
+		if appInfo.IsRunning() {
+			fmt.Println("1")
+		} else {
+			fmt.Println("0")
+		}
 	},
 }

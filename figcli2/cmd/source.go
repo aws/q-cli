@@ -31,6 +31,8 @@ var sourceCmd = &cobra.Command{
 
 		pid := os.Getppid()
 
+		fmt.Println(tty, pid)
+
 		fig_ipc.SendHook(
 			fig_ipc.CreateInitHook(pid, tty),
 		)

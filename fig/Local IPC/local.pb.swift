@@ -227,6 +227,14 @@ public struct Local_Command {
     set {command = .runInstallScript(newValue)}
   }
 
+  public var build: Local_BuildCommand {
+    get {
+      if case .build(let v)? = command {return v}
+      return Local_BuildCommand()
+    }
+    set {command = .build(newValue)}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public enum OneOf_Command: Equatable {
@@ -240,6 +248,7 @@ public struct Local_Command {
     case reportWindow(Local_ReportWindowCommand)
     case restartSettingsListener(Local_RestartSettingsListenerCommand)
     case runInstallScript(Local_RunInstallScriptCommand)
+    case build(Local_BuildCommand)
 
   #if !swift(>=4.1)
     public static func ==(lhs: Local_Command.OneOf_Command, rhs: Local_Command.OneOf_Command) -> Bool {
@@ -285,6 +294,10 @@ public struct Local_Command {
       }()
       case (.runInstallScript, .runInstallScript): return {
         guard case .runInstallScript(let l) = lhs, case .runInstallScript(let r) = rhs else { preconditionFailure() }
+        return l == r
+      }()
+      case (.build, .build): return {
+        guard case .build(let l) = lhs, case .build(let r) = rhs else { preconditionFailure() }
         return l == r
       }()
       default: return false
@@ -589,6 +602,18 @@ public struct Local_RunInstallScriptCommand {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public struct Local_BuildCommand {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var branch: String = String()
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -1219,6 +1244,7 @@ extension Local_Command: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementa
     107: .standard(proto: "report_window"),
     108: .standard(proto: "restart_settings_listener"),
     109: .standard(proto: "run_install_script"),
+    110: .same(proto: "build"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -1359,6 +1385,19 @@ extension Local_Command: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementa
           self.command = .runInstallScript(v)
         }
       }()
+      case 110: try {
+        var v: Local_BuildCommand?
+        var hadOneofValue = false
+        if let current = self.command {
+          hadOneofValue = true
+          if case .build(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.command = .build(v)
+        }
+      }()
       default: break
       }
     }
@@ -1415,6 +1454,10 @@ extension Local_Command: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementa
     case .runInstallScript?: try {
       guard case .runInstallScript(let v)? = self.command else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 109)
+    }()
+    case .build?: try {
+      guard case .build(let v)? = self.command else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 110)
     }()
     case nil: break
     }
@@ -1928,6 +1971,38 @@ extension Local_RunInstallScriptCommand: SwiftProtobuf.Message, SwiftProtobuf._M
   }
 
   public static func ==(lhs: Local_RunInstallScriptCommand, rhs: Local_RunInstallScriptCommand) -> Bool {
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Local_BuildCommand: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".BuildCommand"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .same(proto: "branch"),
+  ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.branch) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.branch.isEmpty {
+      try visitor.visitSingularStringField(value: self.branch, fieldNumber: 1)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Local_BuildCommand, rhs: Local_BuildCommand) -> Bool {
+    if lhs.branch != rhs.branch {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

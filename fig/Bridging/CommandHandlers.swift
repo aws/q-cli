@@ -141,4 +141,15 @@ extension CommandHandlers {
       response.success.message = "running installation script"
     }
   }
+  
+  static func buildCommand(branch: String?) -> CommandResponse? {
+    if let buildMode = Build(rawValue: branch ?? "") {
+        Defaults.build = buildMode
+    } else {
+      return CommandResponse.with { response in
+        response.success.message = Defaults.build.rawValue
+      }
+    }
+    return nil
+  }
 }

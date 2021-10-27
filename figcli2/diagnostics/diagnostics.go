@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"os/user"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -74,52 +75,6 @@ func DsclRead(value string) (string, error) {
 	return strings.TrimSpace(string(execUserShell)), nil
 }
 
-type Terminal string
-
-func GetCurrentTerminal() (Terminal, error) {
-	if os.Getenv("KITTY_WINDOW_ID") != "" {
-		return Terminal("kitty"), nil
-	}
-
-	if os.Getenv("ALACRITTY_LOG") != "" {
-		return Terminal("alacritty"), nil
-	}
-
-	if strings.Contains(os.Getenv("TERM_PROGRAM_VERSION"), "insider") {
-		return Terminal("vscode-insiders"), nil
-	}
-
-	term := os.Getenv("TERM_PROGRAM")
-	if term == "" {
-		return Terminal("unknown"), fmt.Errorf("could not determine terminal")
-	}
-
-	return Terminal(term), nil
-}
-
-func (t Terminal) PotentialBundleId() (string, error) {
-	switch t {
-	case Terminal("vscode-insiders"):
-		return "com.microsoft.VSCodeInsiders", nil
-	case Terminal("vscode"):
-		return "com.microsoft.VSCode", nil
-	case Terminal("Apple_Terminal"):
-		return "com.apple.Terminal", nil
-	case Terminal("Hyper"):
-		return "co.zeit.hyper", nil
-	case Terminal("iTerm.app"):
-		return "com.googlecode.iterm2", nil
-	}
-
-	termBundle := os.Getenv("TERM_BUNDLE_IDENTIFIER")
-
-	if termBundle == "" {
-		return "unknown", fmt.Errorf("could not determine terminal bundle")
-	}
-
-	return termBundle, nil
-}
-
 func GetTty() (string, error) {
 	ttyExec := exec.Command("tty")
 	ttyExec.Stdin = os.Stdin
@@ -130,6 +85,59 @@ func GetTty() (string, error) {
 	}
 
 	return strings.TrimSpace(string(out)), nil
+}
+
+type AppInfo string
+
+func GetAppInfo() (AppInfo, error) {
+	lsappinfoOutput, err := exec.Command("lsappinfo", "info", "-app", "com.mschrage.fig").Output()
+	if err != nil {
+		return AppInfo(""), err
+	}
+
+	lsappinfoTrimmed := strings.TrimSpace(string(lsappinfoOutput))
+	if lsappinfoTrimmed == "" {
+		return AppInfo(""), fmt.Errorf("could not determine app info")
+	}
+
+	return AppInfo(lsappinfoTrimmed), nil
+}
+
+func (a AppInfo) IsRunning() bool {
+	return len(a) > 0
+}
+
+func (a AppInfo) BundlePath() (string, error) {
+	re := regexp.MustCompile(`bundle path=\"(\S+)\"`)
+
+	matches := re.FindStringSubmatch(string(a))
+	if len(matches) == 0 {
+		return "", fmt.Errorf("could not determine bundle path")
+	}
+
+	return matches[1], nil
+}
+
+func (a AppInfo) BuildVersion() (string, error) {
+	re := regexp.MustCompile(`Version=\"(\S+)\"`)
+
+	matches := re.FindStringSubmatch(string(a))
+	if len(matches) == 0 {
+		return "", fmt.Errorf("could not determine build version")
+	}
+
+	return matches[1], nil
+}
+
+func (a AppInfo) Pid() (int, error) {
+	re := regexp.MustCompile(`pid = (\S+)`)
+
+	matches := re.FindStringSubmatch(string(a))
+	if len(matches) == 0 {
+		return 0, fmt.Errorf("could not determine pid")
+	}
+
+	return strconv.Atoi(matches[1])
 }
 
 func Summary() string {

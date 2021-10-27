@@ -74,7 +74,7 @@ func CreatePromptHook(pid int, tty string) *fig_proto.Hook {
 				Context: GenerateShellContext(
 					int32(pid),
 					tty,
-					"",
+					os.Getenv("TERM_SESSION_ID"),
 					int32(currentIntegrationVersion),
 				),
 			},
@@ -90,16 +90,20 @@ func CreateInitHook(pid int, tty string) *fig_proto.Hook {
 		envMap[pair[0]] = pair[1]
 	}
 
+	term, _ := GetCurrentTerminal()
+	bundle, _ := term.PotentialBundleId()
+
 	return &fig_proto.Hook{
 		Hook: &fig_proto.Hook_Init{
 			Init: &fig_proto.InitHook{
 				Context: GenerateShellContext(
 					int32(pid),
 					tty,
-					"",
+					os.Getenv("TERM_SESSION_ID"),
 					int32(currentIntegrationVersion),
 				),
-				CalledDirect: true,
+				CalledDirect: false,
+				Bundle:       bundle,
 				Env:          envMap,
 			},
 		},
@@ -140,6 +144,22 @@ func CreateEventHook(eventName string) *fig_proto.Hook {
 		Hook: &fig_proto.Hook_Event{
 			Event: &fig_proto.EventHook{
 				EventName: eventName,
+			},
+		},
+	}
+}
+
+func CreatePreExecHook(pid int, tty string) *fig_proto.Hook {
+	return &fig_proto.Hook{
+		Hook: &fig_proto.Hook_PreExec{
+			PreExec: &fig_proto.PreExecHook{
+				Context: GenerateShellContext(
+					int32(pid),
+					tty,
+					os.Getenv("TERM_SESSION_ID"),
+					int32(currentIntegrationVersion),
+				),
+				Command: "",
 			},
 		},
 	}

@@ -1,7 +1,9 @@
 package cmd
 
 import (
+	"fig-cli/diagnostics"
 	fig_ipc "fig-cli/fig-ipc"
+	"fmt"
 	"strconv"
 
 	"github.com/spf13/cobra"
@@ -24,6 +26,9 @@ func init() {
 	rootCmd.AddCommand(legacyEvent)
 	rootCmd.AddCommand(legacyClearKeybuffer)
 	rootCmd.AddCommand(legacyHyper)
+	rootCmd.AddCommand(legacyExec)
+
+	rootCmd.AddCommand(legacyAppRunning)
 }
 
 var legacyZshKeybuffer = &cobra.Command{
@@ -159,5 +164,38 @@ var legacyHyper = &cobra.Command{
 
 		hook := fig_ipc.CreateKeyboardFocusChangedHook("co.zeit.hyper", args[1])
 		fig_ipc.SendHook(hook)
+	},
+}
+
+var legacyAppRunning = &cobra.Command{
+	Use:   "app:running",
+	Short: "Check if the app is running",
+	Run: func(cmd *cobra.Command, args []string) {
+		appInfo, err := diagnostics.GetAppInfo()
+		if err != nil {
+			return
+		}
+
+		if appInfo.IsRunning() {
+			fmt.Println("1")
+		} else {
+			fmt.Println("0")
+		}
+	},
+}
+
+var legacyExec = &cobra.Command{
+	Use:   "bg:exec [pid] [tty]",
+	Short: "Run the exec hook",
+	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) != 2 {
+			return
+		}
+
+		pid, _ := strconv.Atoi(args[0])
+
+		hook := fig_ipc.CreatePreExecHook(pid, args[1])
+		fig_ipc.SendHook(hook)
+		// TODO: Add error handling
 	},
 }

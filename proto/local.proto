@@ -27,6 +27,7 @@ message Command {
 		ReportWindowCommand report_window = 107;
 		RestartSettingsListenerCommand restart_settings_listener = 108;
 		RunInstallScriptCommand run_install_script = 109;
+		BuildCommand build = 110;
 	}
 }
 
@@ -44,7 +45,6 @@ message Hook {
 		IntegrationReadyHook integration_ready = 109;
 		HideHook hide = 110;
 		EventHook event = 111;
-
 	}
 }
 
@@ -84,6 +84,10 @@ message ReportWindowCommand {
 message RestartSettingsListenerCommand {}
 
 message RunInstallScriptCommand {}
+
+message BuildCommand {
+	string branch = 1;
+}
 
 // == Hooks ==
 message ShellContext {
