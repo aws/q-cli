@@ -22,9 +22,9 @@ jobs:
 
       - name: "SET: VERSIONS_BRANCH"
         run: |
-          if [$REF == 'refs/heads/master']; then
+          if [[ $REF == 'refs/heads/master' ]]; then
               echo "::set-env name=VERSIONS_BRANCH::main"
-          elif [$REF == 'refs/heads/staging']; then
+          elif [[ $REF == 'refs/heads/staging' ]]; then
               echo "::set-env name=VERSIONS_BRANCH::beta"
           else
               echo "::set-env name=VERSIONS_BRANCH::alpha"
@@ -52,9 +52,9 @@ jobs:
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: true
         run: |
-          if [$REF == 'refs/heads/master']; then
+          if [[ $REF == 'refs/heads/master' ]]; then
               echo "::set-env name=BUMP_BUILD_NUMBER::0"
-          elif [$REF == 'refs/heads/staging']; then
+          elif [[ $REF == 'refs/heads/staging' ]]; then
               echo "::set-env name=BUMP_BUILD_NUMBER::1"
           else
               echo "::set-env name=BUMP_BUILD_NUMBER::0"
