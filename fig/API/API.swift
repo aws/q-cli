@@ -93,8 +93,7 @@ class API {
                     }
                     response.success = try API.notifications.handleRequest(id: id, request: request, for: webView)
                 case .insertTextRequest(let request):
-                    ShellBridge.injectStringIntoTerminal(request.text)
-                    response.success = true
+                    response.success = try FigTerm.handleInsertRequest(request)
                 case .getSettingsPropertyRequest(let request):
                     response.getSettingsPropertyResponse = try Settings.shared.handleGetRequest(request)
                 case .updateSettingsPropertyRequest(let request):

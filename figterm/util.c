@@ -71,6 +71,28 @@ char* log_path(char* log_name) {
   return full_path;
 }
 
+int unix_socket_listen(char *path) {
+  // Connect to a unix socket at path.
+  int sock;
+  if ((sock = socket(AF_UNIX, SOCK_STREAM, 0)) < 0)
+    return -1;
+
+  struct sockaddr_un remote;
+  memset(&remote, 0, sizeof(struct sockaddr_un));
+  remote.sun_family = AF_UNIX;
+  strcpy(remote.sun_path, path);
+
+  size_t len = SUN_LEN(&remote);
+
+  if (bind(sock, (struct sockaddr *) &remote, len) == -1) {
+    return -1;
+  }
+  
+  // Set backlog max of 5 queued messages
+  listen(sock, 5);
+  return sock;
+}
+
 static int unix_socket_connect(char *path) {
   // Connect to a unix socket at path.
   int sock;
@@ -86,6 +108,30 @@ static int unix_socket_connect(char *path) {
   if (connect(sock, (struct sockaddr *)&remote, len) == -1)
     return -1;
   return sock;
+}
+
+char* _incoming_socket_path = NULL;
+int _incoming_socket_fd = -1;
+
+int fig_socket_listen() {
+  FigInfo *fig_info = get_fig_info();
+  _incoming_socket_path = malloc(sizeof("char") * (
+    strlen("/tmp/figterm-.socket") + SESSION_ID_MAX_LEN + 1
+  ));
+
+  sprintf(_incoming_socket_path, "/tmp/figterm-%s.socket", fig_info->term_session_id);
+  _incoming_socket_fd = unix_socket_listen(_incoming_socket_path);
+  return _incoming_socket_fd;
+}
+
+void fig_socket_cleanup() {
+  if (_incoming_socket_fd != -1) {
+    close(_incoming_socket_fd);
+  }
+  if (_incoming_socket_path != NULL) {
+    unlink(_incoming_socket_path);
+    free(_incoming_socket_path);
+  }
 }
 
 void sigpipe_handler(int sig) {

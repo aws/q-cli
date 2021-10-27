@@ -26,7 +26,9 @@ class Onboarding {
         
         let configDirectory = Bundle.main.resourceURL?.appendingPathComponent("config", isDirectory: true).path
         
-        "/bin/bash '\(path)' local".runInBackground(cwd: configDirectory, completion:  { transcript in
+      "/bin/bash '\(path)' local".runInBackground(cwd: configDirectory,
+                                                  with: [ "FIG_BUNDLE_EXECUTABLES" : Bundle.main.url(forAuxiliaryExecutable: "")!.path ],
+                                                  completion:  { transcript in
             Onboarding.symlinkBundleExecutable("figcli", to: "~/.fig/bin/fig")
             Onboarding.symlinkBundleExecutable("figterm", to: "~/.fig/bin/figterm")
             Onboarding.symlinkBundleExecutable("fig_get_shell", to: "~/.fig/bin/fig_get_shell")
