@@ -233,7 +233,11 @@ jobs:
           RECENT_FILES=$(git ls-tree -r --name-only HEAD | while read filename; do 
             echo "$(git log -1 --format="%at" -- $filename) $filename"
           done)
+
+          echo "<<<recent"
           echo $RECENT_FILES
+          echo ">>>"
+          
           echo $RECENT_FILES | grep '.dmg' | sort -n | tail -${{env.size_of_archive}} | cut -f2-3 -d" " > $TMPDIR/safe
 
           echo "<<<safe"
