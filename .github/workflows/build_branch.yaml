@@ -13,51 +13,76 @@ on:
 jobs:
   release:
     runs-on: macos-11
+    if: "!contains(github.event.head_commit.message, 'skip ci')"
     timeout-minutes: 30
     steps:
+############################################
+# Declare ENVIRONMENT variables
+############################################
 
-      - name: "Pwd"
-        run: echo $PWD && pwd
+      - name: "SET: VERSIONS_BRANCH"
+        run: |
+          if [$REF == 'refs/heads/master']
+          then
+              echo "::set-env name=VERSIONS_BRANCH::main"
+          elif [$REF == 'refs/heads/staging']
+              echo "::set-env name=VERSIONS_BRANCH::beta"
+          else
+              echo "::set-env name=VERSIONS_BRANCH::alpha"
+          fi
+          echo $VERSIONS_BRANCH
+
+        env:
+          REF: ${{ github.ref }}
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+
 
       - name: "Checkout Project"
         uses: actions/checkout@v2
         with:
           submodules: recursive
 
-      - name: "Get Release Version"
+      - name: "SET: VERSION"
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: true
         run: |
           echo "::set-env name=VERSION::$(cat fig.xcodeproj/project.pbxproj | grep -m1 'MARKETING_VERSION' | cut -d'=' -f2 | tr -d ';' | tr -d ' ')"      
-      
-      - name: "Log Release Version"
-        run: echo $VERSION
+          echo $VERSION
 
-      #
-      # Setup
-      #
-      - name: "Select Xcode 12.5.1"
-        uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: "12.5.1"
-
-      - name: "List providers"
-        run: |
-          xcrun altool --list-providers -u "$NOTARIZE_USERNAME" -p "$NOTARIZE_PASSWORD"
+      - name: "SET: BUMP_BUILD_NUMBER"
         env:
-          NOTARIZE_USERNAME: ${{ secrets.NOTARIZE_USERNAME }}
-          NOTARIZE_PASSWORD: ${{ secrets.NOTARIZE_PASSWORD }}
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+        run: |
+          if [$REF == 'refs/heads/master']
+          then
+              echo "::set-env name=BUMP_BUILD_NUMBER::0"
+          elif [$REF == 'refs/heads/staging']
+              echo "::set-env name=BUMP_BUILD_NUMBER::1"
+          else
+              echo "::set-env name=BUMP_BUILD_NUMBER::0"
+          fi
+          echo $BUMP_BUILD_NUMBER
 
       - name: "Bump Build number"
-        run: |
-          agvtool bump
-      - name: "Get Build"
+        run: agvtool bump
+
+      - name: "SET: BUILD"
         env:
             ACTIONS_ALLOW_UNSECURE_COMMANDS: true
         run: |
           echo "::set-env name=BUILD::$(agvtool what-version -terse)"
           echo $BUILD
 
+      - name: "Commit Build number"
+        if: env.BUMP_BUILD_NUMBER == "1"
+        run: |
+          git add fig.xcodeproj/project.pbxproj
+          git commit -m "Bump build to $BUILD [skip ci]"
+          git push origin staging
+          
+############################################
+# Enable Caching
+############################################
       - name: Cache Build archive
         uses: actions/cache@v2
         id: archive
@@ -67,13 +92,20 @@ jobs:
           path: Export
           key: build-${{ env.cache-name }}-${{ env.BUILD }}
 
+############################################
+# Build, Archive & Export 
+############################################
+      - name: "Select Xcode 12.5.1"
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: "12.5.1"
+
       - name: "Import Certificate"
         uses: devbotsxyz/import-signing-certificate@main
         with:
           certificate-data: ${{ secrets.SIGNING_CERTIFICATE_P12_DATA }}
           certificate-passphrase: ${{ secrets.SIGNING_CERTIFICATE_PASSWORD }}
           keychain-password: ${{ secrets.KEYCHAIN_PASSWORD }}
-
 
       - name: "Create exportOptions.plist"
         run: |
@@ -84,24 +116,30 @@ jobs:
      
       - name: "Test"
         run: security find-identity -v -p codesigning
+
       - name: "Archive"
         if: ${{ github.event.inputs.useCache == 'false' || steps.archive.outputs.cache-hit != 'true' }}
         uses: devbotsxyz/xcode-archive@v1
-
-      #
-      # Next ask Xcode to export the product from the archived build
-      # we just created. This will also re-sign the application with
-      # the "Developer ID" certificate.
-      #
 
       - name: "Export & Sign Release Build"
         if: ${{ github.event.inputs.useCache == 'false' || steps.archive.outputs.cache-hit != 'true' }}
         uses: mattschrage/xcode-export-archive@main
 
-      #
-      # Now send the product to Apple's notarization service and then
-      # staple it.
-      #
+############################################
+# Sentry Upload
+############################################
+      - name: Install Sentry
+        if: ${{ github.event.inputs.useCache == 'false' || steps.archive.outputs.cache-hit != 'true' }}
+        run: curl -sL https://sentry.io/get-cli/ | bash
+      - name: Upload dSYM files to Sentry
+        if: ${{ github.event.inputs.useCache == 'false' || steps.archive.outputs.cache-hit != 'true' }}
+        run: sentry-cli upload-dif --org withfig --project macos-app --derived-data
+        env: 
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+
+############################################
+# Notarize App Bundle
+############################################
       - name: "Select Xcode 13.0"
         uses: maxim-lobanov/setup-xcode@v1
         with:
@@ -122,6 +160,9 @@ jobs:
       - name: "VERIFY: App has notarization ticket"
         run: spctl -a -v Export/Fig.app
 
+############################################
+# Create and Notarize DMG
+############################################
       - name: Install fileicon
         run: HOMEBREW_NO_AUTO_UPDATE=1 brew install fileicon
       - name: Setup Node Environment
@@ -156,7 +197,7 @@ jobs:
           cd ..
       - name: "Checkout withfig/versions"
         run: |
-          git clone --branch alpha https://mattschrage:$(echo $PERSONAL_GITHUB_ACCESS_TOKEN)@github.com/withfig/versions.git
+          git clone --branch $VERSIONS_BRANCH https://mattschrage:$(echo $PERSONAL_GITHUB_ACCESS_TOKEN)@github.com/withfig/versions.git
         env:
           PERSONAL_GITHUB_ACCESS_TOKEN: ${{ secrets.PERSONAL_GITHUB_ACCESS_TOKEN }}
       - name: Add latest versions
@@ -201,7 +242,7 @@ jobs:
       - name: Push Changes to withfig/versions
         run: |
           cd versions
-          git push origin alpha
+          git push origin $VERSIONS_BRANCH
           cd ..
 ############################################
 # Create Github Release [Internal]
