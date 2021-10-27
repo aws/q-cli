@@ -541,6 +541,10 @@ struct ShellMessage: Codable {
     func getWorkingDirectory() -> String? {
         return self.env?.jsonStringToDict()?["PWD"] as? String
     }
+  
+    func environmentVariable(for key: String) -> String? {
+        return self.env?.jsonStringToDict()?[key] as? String
+    }
     
     var shell: String? {
         if let dict = self.env?.jsonStringToDict() {

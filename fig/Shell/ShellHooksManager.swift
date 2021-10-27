@@ -536,6 +536,9 @@ extension ShellHookManager {
           ctx.sessionID = info.session
           ctx.processName = info.shell ?? ""
           ctx.integrationVersion = Int32(info.shellIntegrationVersion ?? 0)
+          ctx.ttys = info.environmentVariable(for: "TTY") ?? ""
+          let pidString = info.environmentVariable(for: "PID")
+          ctx.pid = Int32(pidString ?? "") ?? -1
         }), text: buffer, cursor: cursor, histno: histno)
     }
   }
