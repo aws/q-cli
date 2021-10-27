@@ -74,12 +74,12 @@ jobs:
           echo $BUILD
 
       - name: "Commit Build number"
-        if: env.BUMP_BUILD_NUMBER == "1"
+        if: env.BUMP_BUILD_NUMBER == 1
         run: |
           git add fig.xcodeproj/project.pbxproj
           git commit -m "Bump build to $BUILD [skip ci]"
           git push origin staging
-          
+
 ############################################
 # Enable Caching
 ############################################
