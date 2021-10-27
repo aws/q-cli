@@ -8,6 +8,12 @@ on:
       useCache:
         description: 'Use cached build, if possible'     
         default: 'false'
+      notarizeApp:
+        description: 'Notarize the app bundle'     
+        default: 'true'
+      notarizeDMG:
+        description: 'Notarize the .dmg'     
+        default: 'true'
     # tags: [ v* ]
 
 jobs:
@@ -143,6 +149,7 @@ jobs:
         with:
           xcode-version: "13.0"
       - name: "Notarize and Staple"
+        if: github.event.inputs.notarizeApp == 'true'
         run: |
           /usr/bin/ditto -c -k --keepParent Export/Fig.app Fig.zip
           xcrun notarytool submit Fig.zip --apple-id "$NOTARIZE_USERNAME" --password "$NOTARIZE_PASSWORD" --team-id "$NOTARIZE_TEAM_ID" --wait
@@ -154,8 +161,10 @@ jobs:
           NOTARIZE_PASSWORD: ${{ secrets.NOTARIZE_PASSWORD }}
           NOTARIZE_TEAM_ID: ${{ secrets.NOTARIZE_TEAM_ID }}
       - name: "VERIFY: App is codesigned properly"
+        if: github.event.inputs.notarizeApp == 'true'
         run: codesign --verify --deep --strict --verbose=2 Export/Fig.app
       - name: "VERIFY: App has notarization ticket"
+        if: github.event.inputs.notarizeApp == 'true'
         run: spctl -a -v Export/Fig.app
 
 ############################################
@@ -173,6 +182,7 @@ jobs:
       #   run: fileicon set "fig $BUILD.dmg" ./dmg/VolumeIcon.icns
 
       - name: "Notarize DMG"
+        if: github.event.inputs.notarizeDMG == 'true'
         run: |
           xcrun notarytool submit "fig $BUILD.dmg" --apple-id "$NOTARIZE_USERNAME" --password "$NOTARIZE_PASSWORD" --team-id "$NOTARIZE_TEAM_ID" --wait
           # xcrun stapler staple Export/Fig.app
@@ -181,6 +191,7 @@ jobs:
           NOTARIZE_PASSWORD: ${{ secrets.NOTARIZE_PASSWORD }}
           NOTARIZE_TEAM_ID: ${{ secrets.NOTARIZE_TEAM_ID }}
       - name: "VERIFY: DMG notarization status"
+        if: github.event.inputs.notarizeDMG == 'true'
         run: spctl -a -t open --context context:primary-signature -v  "fig $BUILD.dmg" 
 
 ############################################
