@@ -92,14 +92,14 @@ jobs:
       - name: "Notarize and Staple"
         run: |
           /usr/bin/ditto -c -k --keepParent Export/Fig.app Fig.zip
-          xcrun notarytool submit Fig.zip --apple-id "$NOTARIZE_USERNAME" --password "$NOTARIZE_PASSWORD" --team-id "$NOTARIZE_TEAM" --wait
+          xcrun notarytool submit Fig.zip --apple-id "$NOTARIZE_USERNAME" --password "$NOTARIZE_PASSWORD" --team-id "$NOTARIZE_TEAM_ID" --wait
           rm Fig.zip
           xcrun stapler staple Export/Fig.app
           # xcrun altool --notarize-app --primary-bundle-id "com.mschrage.fig" -u "$NOTARIZE_USERNAME" -p "$NOTARIZE_PASSWORD" --file Fig.zip
         env:
           NOTARIZE_USERNAME: ${{ secrets.NOTARIZE_USERNAME }}
           NOTARIZE_PASSWORD: ${{ secrets.NOTARIZE_PASSWORD }}
-          NOTARIZE_TEAM: ${{ secrets.NOTARIZE_TEAM }}
+          NOTARIZE_TEAM_ID: ${{ secrets.NOTARIZE_TEAM_ID }}
       - name: "Verify that app has notarization ticket"
         run: spctl -a -v Export/Fig.app
 
