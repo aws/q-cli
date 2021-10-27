@@ -31,8 +31,8 @@ then
     download_endpoint="http://localhost:3000/autocomplete/download-team-file"
 
 else
-    filename_endpoint="https://waitlist.withfig.com/autocomplete/team-file-name"
-    download_endpoint="https://waitlist.withfig.com/autocomplete/download-team-file"
+    filename_endpoint="https://api.fig.io/autocomplete/team-file-name"
+    download_endpoint="https://api.fig.io/autocomplete/download-team-file"
 
 fi
 
