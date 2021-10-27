@@ -22,7 +22,13 @@ figcli-x86:
 
 figcli: figcli-arm figcli-x86
 	lipo -create -output $(BUILT_PRODUCTS_DIR)/figcli bin/figcli-x86 bin/figcli-arm
+	codesign -s - -v $(BUILT_PRODUCTS_DIR)/figcli
 
 clean:
 	rm $(ROOT)/bin/*
 	rm $(BUILT_PRODUCTS_DIR)/figcli
+
+install: all
+	mkdir -p ~/.fig/bin
+	rm ~/.fig/bin/fig
+	cp $(BUILT_PRODUCTS_DIR)/figcli ~/.fig/bin/fig
