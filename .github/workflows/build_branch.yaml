@@ -92,6 +92,7 @@ jobs:
       #
 
       - name: "Export & Sign Release Build"
+        if: ${{ github.event.inputs.useCache != 'true' || steps.archive.outputs.cache-hit != 'true' }}
         uses: mattschrage/xcode-export-archive@main
 
       #
