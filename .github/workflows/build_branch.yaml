@@ -215,7 +215,7 @@ jobs:
           rm ./versions/fig@latest.dmg
           cd versions
           git ls-tree -r --name-only HEAD | while read filename; do 
-            echo "$(git log -1 --format="%at" -- $filename) $filename"
+            echo "$(git log -1 --format="%at" -- "$filename") $filename"
           done | grep '.dmg\|.delta' | sort -n
           echo -------
           echo "$(git log -1 --format="%at" -- "fig 1.0.50.dmg") fig 1.0.50.dmg"
@@ -240,8 +240,8 @@ jobs:
           echo $TMPDIR
           pwd
           git ls-tree -r --name-only HEAD | while read filename; do 
-            echo "$(git log -1 --format="%at" -- $filename) $filename"
-          done | grep '.dmg' | sort -n | tail -${{env.size_of_archive}} | cut -f2-3 -d" " > $TMPDIR/safe
+            echo "$(git log -1 --format="%at" -- "$filename") $filename"
+          done | grep '.dmg\|.delta' | sort -n | tail -${{env.size_of_archive}} | cut -f2-3 -d" " > $TMPDIR/safe
 
           echo "$(git log -1 --format="%at" -- appcast.xml) appcast.xml"
           echo "<<<safe"
@@ -257,7 +257,7 @@ jobs:
           git commit -m "Remove old versions" --allow-empty
           cd ..
         env:
-          size_of_archive: 6 # 
+          size_of_archive: 37 # 
       - name: Push Changes to withfig/versions
         run: |
           cd versions
