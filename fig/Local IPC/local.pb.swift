@@ -627,83 +627,95 @@ public struct Local_ShellContext {
   // methods supported on all messages.
 
   public var pid: Int32 {
-    get {return _pid ?? 0}
-    set {_pid = newValue}
+    get {return _storage._pid ?? 0}
+    set {_uniqueStorage()._pid = newValue}
   }
   /// Returns true if `pid` has been explicitly set.
-  public var hasPid: Bool {return self._pid != nil}
+  public var hasPid: Bool {return _storage._pid != nil}
   /// Clears the value of `pid`. Subsequent reads from it will return its default value.
-  public mutating func clearPid() {self._pid = nil}
+  public mutating func clearPid() {_uniqueStorage()._pid = nil}
 
   /// /dev/ttys## of terminal session
   public var ttys: String {
-    get {return _ttys ?? String()}
-    set {_ttys = newValue}
+    get {return _storage._ttys ?? String()}
+    set {_uniqueStorage()._ttys = newValue}
   }
   /// Returns true if `ttys` has been explicitly set.
-  public var hasTtys: Bool {return self._ttys != nil}
+  public var hasTtys: Bool {return _storage._ttys != nil}
   /// Clears the value of `ttys`. Subsequent reads from it will return its default value.
-  public mutating func clearTtys() {self._ttys = nil}
+  public mutating func clearTtys() {_uniqueStorage()._ttys = nil}
 
-  /// the name of the shell
-  public var shell: String {
-    get {return _shell ?? String()}
-    set {_shell = newValue}
+  /// the name of the process
+  public var processName: String {
+    get {return _storage._processName ?? String()}
+    set {_uniqueStorage()._processName = newValue}
   }
-  /// Returns true if `shell` has been explicitly set.
-  public var hasShell: Bool {return self._shell != nil}
-  /// Clears the value of `shell`. Subsequent reads from it will return its default value.
-  public mutating func clearShell() {self._shell = nil}
+  /// Returns true if `processName` has been explicitly set.
+  public var hasProcessName: Bool {return _storage._processName != nil}
+  /// Clears the value of `processName`. Subsequent reads from it will return its default value.
+  public mutating func clearProcessName() {_uniqueStorage()._processName = nil}
 
   /// the directory where the user ran the command
   public var currentWorkingDirectory: String {
-    get {return _currentWorkingDirectory ?? String()}
-    set {_currentWorkingDirectory = newValue}
+    get {return _storage._currentWorkingDirectory ?? String()}
+    set {_uniqueStorage()._currentWorkingDirectory = newValue}
   }
   /// Returns true if `currentWorkingDirectory` has been explicitly set.
-  public var hasCurrentWorkingDirectory: Bool {return self._currentWorkingDirectory != nil}
+  public var hasCurrentWorkingDirectory: Bool {return _storage._currentWorkingDirectory != nil}
   /// Clears the value of `currentWorkingDirectory`. Subsequent reads from it will return its default value.
-  public mutating func clearCurrentWorkingDirectory() {self._currentWorkingDirectory = nil}
+  public mutating func clearCurrentWorkingDirectory() {_uniqueStorage()._currentWorkingDirectory = nil}
 
-  /// the value of $TERM_SESSION_ID 
+  /// the value of $TERM_SESSION_ID
   public var sessionID: String {
-    get {return _sessionID ?? String()}
-    set {_sessionID = newValue}
+    get {return _storage._sessionID ?? String()}
+    set {_uniqueStorage()._sessionID = newValue}
   }
   /// Returns true if `sessionID` has been explicitly set.
-  public var hasSessionID: Bool {return self._sessionID != nil}
+  public var hasSessionID: Bool {return _storage._sessionID != nil}
   /// Clears the value of `sessionID`. Subsequent reads from it will return its default value.
-  public mutating func clearSessionID() {self._sessionID = nil}
+  public mutating func clearSessionID() {_uniqueStorage()._sessionID = nil}
 
   public var integrationVersion: Int32 {
-    get {return _integrationVersion ?? 0}
-    set {_integrationVersion = newValue}
+    get {return _storage._integrationVersion ?? 0}
+    set {_uniqueStorage()._integrationVersion = newValue}
   }
   /// Returns true if `integrationVersion` has been explicitly set.
-  public var hasIntegrationVersion: Bool {return self._integrationVersion != nil}
+  public var hasIntegrationVersion: Bool {return _storage._integrationVersion != nil}
   /// Clears the value of `integrationVersion`. Subsequent reads from it will return its default value.
-  public mutating func clearIntegrationVersion() {self._integrationVersion = nil}
+  public mutating func clearIntegrationVersion() {_uniqueStorage()._integrationVersion = nil}
 
   public var terminal: String {
-    get {return _terminal ?? String()}
-    set {_terminal = newValue}
+    get {return _storage._terminal ?? String()}
+    set {_uniqueStorage()._terminal = newValue}
   }
   /// Returns true if `terminal` has been explicitly set.
-  public var hasTerminal: Bool {return self._terminal != nil}
+  public var hasTerminal: Bool {return _storage._terminal != nil}
   /// Clears the value of `terminal`. Subsequent reads from it will return its default value.
-  public mutating func clearTerminal() {self._terminal = nil}
+  public mutating func clearTerminal() {_uniqueStorage()._terminal = nil}
+
+  public var hostname: String {
+    get {return _storage._hostname ?? String()}
+    set {_uniqueStorage()._hostname = newValue}
+  }
+  /// Returns true if `hostname` has been explicitly set.
+  public var hasHostname: Bool {return _storage._hostname != nil}
+  /// Clears the value of `hostname`. Subsequent reads from it will return its default value.
+  public mutating func clearHostname() {_uniqueStorage()._hostname = nil}
+
+  public var remoteContext: Local_ShellContext {
+    get {return _storage._remoteContext ?? Local_ShellContext()}
+    set {_uniqueStorage()._remoteContext = newValue}
+  }
+  /// Returns true if `remoteContext` has been explicitly set.
+  public var hasRemoteContext: Bool {return _storage._remoteContext != nil}
+  /// Clears the value of `remoteContext`. Subsequent reads from it will return its default value.
+  public mutating func clearRemoteContext() {_uniqueStorage()._remoteContext = nil}
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
 
-  fileprivate var _pid: Int32? = nil
-  fileprivate var _ttys: String? = nil
-  fileprivate var _shell: String? = nil
-  fileprivate var _currentWorkingDirectory: String? = nil
-  fileprivate var _sessionID: String? = nil
-  fileprivate var _integrationVersion: Int32? = nil
-  fileprivate var _terminal: String? = nil
+  fileprivate var _storage = _StorageClass.defaultInstance
 }
 
 public struct Local_EditBufferHook {
@@ -2013,68 +2025,128 @@ extension Local_ShellContext: SwiftProtobuf.Message, SwiftProtobuf._MessageImple
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "pid"),
     2: .same(proto: "ttys"),
-    3: .same(proto: "shell"),
-    4: .same(proto: "currentWorkingDirectory"),
-    5: .same(proto: "sessionId"),
+    3: .standard(proto: "process_name"),
+    4: .standard(proto: "current_working_directory"),
+    5: .standard(proto: "session_id"),
     6: .standard(proto: "integration_version"),
     7: .same(proto: "terminal"),
+    8: .same(proto: "hostname"),
+    9: .standard(proto: "remote_context"),
   ]
 
+  fileprivate class _StorageClass {
+    var _pid: Int32? = nil
+    var _ttys: String? = nil
+    var _processName: String? = nil
+    var _currentWorkingDirectory: String? = nil
+    var _sessionID: String? = nil
+    var _integrationVersion: Int32? = nil
+    var _terminal: String? = nil
+    var _hostname: String? = nil
+    var _remoteContext: Local_ShellContext? = nil
+
+    static let defaultInstance = _StorageClass()
+
+    private init() {}
+
+    init(copying source: _StorageClass) {
+      _pid = source._pid
+      _ttys = source._ttys
+      _processName = source._processName
+      _currentWorkingDirectory = source._currentWorkingDirectory
+      _sessionID = source._sessionID
+      _integrationVersion = source._integrationVersion
+      _terminal = source._terminal
+      _hostname = source._hostname
+      _remoteContext = source._remoteContext
+    }
+  }
+
+  fileprivate mutating func _uniqueStorage() -> _StorageClass {
+    if !isKnownUniquelyReferenced(&_storage) {
+      _storage = _StorageClass(copying: _storage)
+    }
+    return _storage
+  }
+
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
-    while let fieldNumber = try decoder.nextFieldNumber() {
-      // The use of inline closures is to circumvent an issue where the compiler
-      // allocates stack space for every case branch when no optimizations are
-      // enabled. https://github.com/apple/swift-protobuf/issues/1034
-      switch fieldNumber {
-      case 1: try { try decoder.decodeSingularInt32Field(value: &self._pid) }()
-      case 2: try { try decoder.decodeSingularStringField(value: &self._ttys) }()
-      case 3: try { try decoder.decodeSingularStringField(value: &self._shell) }()
-      case 4: try { try decoder.decodeSingularStringField(value: &self._currentWorkingDirectory) }()
-      case 5: try { try decoder.decodeSingularStringField(value: &self._sessionID) }()
-      case 6: try { try decoder.decodeSingularInt32Field(value: &self._integrationVersion) }()
-      case 7: try { try decoder.decodeSingularStringField(value: &self._terminal) }()
-      default: break
+    _ = _uniqueStorage()
+    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      while let fieldNumber = try decoder.nextFieldNumber() {
+        // The use of inline closures is to circumvent an issue where the compiler
+        // allocates stack space for every case branch when no optimizations are
+        // enabled. https://github.com/apple/swift-protobuf/issues/1034
+        switch fieldNumber {
+        case 1: try { try decoder.decodeSingularInt32Field(value: &_storage._pid) }()
+        case 2: try { try decoder.decodeSingularStringField(value: &_storage._ttys) }()
+        case 3: try { try decoder.decodeSingularStringField(value: &_storage._processName) }()
+        case 4: try { try decoder.decodeSingularStringField(value: &_storage._currentWorkingDirectory) }()
+        case 5: try { try decoder.decodeSingularStringField(value: &_storage._sessionID) }()
+        case 6: try { try decoder.decodeSingularInt32Field(value: &_storage._integrationVersion) }()
+        case 7: try { try decoder.decodeSingularStringField(value: &_storage._terminal) }()
+        case 8: try { try decoder.decodeSingularStringField(value: &_storage._hostname) }()
+        case 9: try { try decoder.decodeSingularMessageField(value: &_storage._remoteContext) }()
+        default: break
+        }
       }
     }
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    // The use of inline closures is to circumvent an issue where the compiler
-    // allocates stack space for every if/case branch local when no optimizations
-    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
-    // https://github.com/apple/swift-protobuf/issues/1182
-    try { if let v = self._pid {
-      try visitor.visitSingularInt32Field(value: v, fieldNumber: 1)
-    } }()
-    try { if let v = self._ttys {
-      try visitor.visitSingularStringField(value: v, fieldNumber: 2)
-    } }()
-    try { if let v = self._shell {
-      try visitor.visitSingularStringField(value: v, fieldNumber: 3)
-    } }()
-    try { if let v = self._currentWorkingDirectory {
-      try visitor.visitSingularStringField(value: v, fieldNumber: 4)
-    } }()
-    try { if let v = self._sessionID {
-      try visitor.visitSingularStringField(value: v, fieldNumber: 5)
-    } }()
-    try { if let v = self._integrationVersion {
-      try visitor.visitSingularInt32Field(value: v, fieldNumber: 6)
-    } }()
-    try { if let v = self._terminal {
-      try visitor.visitSingularStringField(value: v, fieldNumber: 7)
-    } }()
+    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every if/case branch local when no optimizations
+      // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+      // https://github.com/apple/swift-protobuf/issues/1182
+      try { if let v = _storage._pid {
+        try visitor.visitSingularInt32Field(value: v, fieldNumber: 1)
+      } }()
+      try { if let v = _storage._ttys {
+        try visitor.visitSingularStringField(value: v, fieldNumber: 2)
+      } }()
+      try { if let v = _storage._processName {
+        try visitor.visitSingularStringField(value: v, fieldNumber: 3)
+      } }()
+      try { if let v = _storage._currentWorkingDirectory {
+        try visitor.visitSingularStringField(value: v, fieldNumber: 4)
+      } }()
+      try { if let v = _storage._sessionID {
+        try visitor.visitSingularStringField(value: v, fieldNumber: 5)
+      } }()
+      try { if let v = _storage._integrationVersion {
+        try visitor.visitSingularInt32Field(value: v, fieldNumber: 6)
+      } }()
+      try { if let v = _storage._terminal {
+        try visitor.visitSingularStringField(value: v, fieldNumber: 7)
+      } }()
+      try { if let v = _storage._hostname {
+        try visitor.visitSingularStringField(value: v, fieldNumber: 8)
+      } }()
+      try { if let v = _storage._remoteContext {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 9)
+      } }()
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: Local_ShellContext, rhs: Local_ShellContext) -> Bool {
-    if lhs._pid != rhs._pid {return false}
-    if lhs._ttys != rhs._ttys {return false}
-    if lhs._shell != rhs._shell {return false}
-    if lhs._currentWorkingDirectory != rhs._currentWorkingDirectory {return false}
-    if lhs._sessionID != rhs._sessionID {return false}
-    if lhs._integrationVersion != rhs._integrationVersion {return false}
-    if lhs._terminal != rhs._terminal {return false}
+    if lhs._storage !== rhs._storage {
+      let storagesAreEqual: Bool = withExtendedLifetime((lhs._storage, rhs._storage)) { (_args: (_StorageClass, _StorageClass)) in
+        let _storage = _args.0
+        let rhs_storage = _args.1
+        if _storage._pid != rhs_storage._pid {return false}
+        if _storage._ttys != rhs_storage._ttys {return false}
+        if _storage._processName != rhs_storage._processName {return false}
+        if _storage._currentWorkingDirectory != rhs_storage._currentWorkingDirectory {return false}
+        if _storage._sessionID != rhs_storage._sessionID {return false}
+        if _storage._integrationVersion != rhs_storage._integrationVersion {return false}
+        if _storage._terminal != rhs_storage._terminal {return false}
+        if _storage._hostname != rhs_storage._hostname {return false}
+        if _storage._remoteContext != rhs_storage._remoteContext {return false}
+        return true
+      }
+      if !storagesAreEqual {return false}
+    }
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

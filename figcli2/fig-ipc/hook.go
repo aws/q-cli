@@ -42,7 +42,7 @@ func GenerateShellContext(
 	return &fig_proto.ShellContext{
 		Pid:                     &pid,
 		Ttys:                    &tty,
-		Shell:                   &shell,
+		ProcessName:             &shell,
 		CurrentWorkingDirectory: &wd,
 		SessionId:               &sessionId,
 		IntegrationVersion:      &integrationVersion,

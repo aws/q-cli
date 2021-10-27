@@ -275,7 +275,7 @@ extension ShellHookManager {
         ctx.ttys = ttyDescriptor
         ctx.pid = shellPid
         ctx.sessionID = sessionId
-        ctx.shell = info.shell ?? ""
+        ctx.processName = info.shell ?? ""
         ctx.integrationVersion = Int32(info.shellIntegrationVersion ?? 0)
       }))
   }
@@ -534,7 +534,7 @@ extension ShellHookManager {
       updateKeybuffer(
         context: Local_ShellContext.with({ ctx in
           ctx.sessionID = info.session
-          ctx.shell = info.shell ?? ""
+          ctx.processName = info.shell ?? ""
           ctx.integrationVersion = Int32(info.shellIntegrationVersion ?? 0)
         }), text: buffer, cursor: cursor, histno: histno)
     }
@@ -595,7 +595,7 @@ extension ShellHookManager {
     let previousHistoryNumber = keybuffer.shellHistoryNumber
 
     keybuffer.backedByShell = true
-    keybuffer.backing = KeystrokeBuffer.Backing(rawValue: String(context.shell.split(separator: "/").last ?? ""))
+    keybuffer.backing = KeystrokeBuffer.Backing(rawValue: String(context.processName.split(separator: "/").last ?? ""))
     keybuffer.buffer = text
     keybuffer.shellCursor = cursor
     keybuffer.shellHistoryNumber = histno
