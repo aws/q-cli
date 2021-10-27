@@ -170,20 +170,27 @@ jobs:
           cd versions
           git add .
           git commit -m "Deploy Build $BUILD"
+          cd ..
 
       - name: Remove old versions
         run: |
+          cd versions
+          pwd
           git ls-tree -r --name-only HEAD | while read filename; do 
             echo "$(git log -1 --format="%at" -- $filename) $filename"
           done | grep '.dmg\|.delta' | sort -n | tail -${{env.size_of_archive}} | cut -f2-3 -d" " > $TMPDIR/safe
 
+          cat $TMPDIR/safe
+
           ls | grep '.dmg\|.delta' | grep -v -x -F -f $TMPDIR/safe | xargs -I{} rm -v {}
           git add .
           git commit -m "Remove old versions" --allow-empty
+          cd ..
         env:
           size_of_archive: 37 # 
       - name: Push Changes to withfig/versions
         run: |
+          cd versions
           git push origin alpha
           cd ..
 ############################################
