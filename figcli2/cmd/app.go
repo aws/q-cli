@@ -85,7 +85,7 @@ var appCmd = &cobra.Command{
 // 		os.Chdir(usr.HomeDir + "/.fig/autocomplete")
 
 // 		// Download autocomplete script and pipe it to tar
-// 		data, err := http.Get("https://waitlist.withfig.com/specs?version=" + autocompleteVersionStr + "&app=" + appVersionStr + "&build=" + buildStr)
+// 		data, err := http.Get("https://api.fig.io/specs?version=" + autocompleteVersionStr + "&app=" + appVersionStr + "&build=" + buildStr)
 // 		if err != nil {
 // 			fmt.Println("Error downloading completion specs:", err)
 // 			return

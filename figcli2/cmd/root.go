@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"fig-cli/diagnostics"
+	fig_ipc "fig-cli/fig-ipc"
+	fig_proto "fig-cli/fig-proto"
 	"fmt"
 	"os"
 	"strings"
@@ -24,6 +26,17 @@ var rootCmd = &cobra.Command{
 		version, _ := diagnostics.GetFigVersion()
 		return version
 	}(),
+	Run: func(cmd *cobra.Command, args []string) {
+		response, err := fig_ipc.RunOpenUiElementCommand(fig_proto.UiElement_MENU_BAR)
+		if err != nil {
+			fmt.Println("Error:", err)
+			return
+		}
+
+		if response != "" {
+			fmt.Printf("\n%s\n\n", response)
+		}
+	},
 }
 
 func Execute() {

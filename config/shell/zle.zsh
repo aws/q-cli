@@ -32,8 +32,7 @@ function fig_zsh_redraw() {
     unset _fig_redraw_fd
   fi
 
-
-  (echo fig bg:zsh-keybuffer "${TERM_SESSION_ID}" "${FIG_INTEGRATION_VERSION}" "${TTY}" "$$" "${HISTNO}" "${CURSOR}" \""$BUFFER"\" | /usr/bin/base64 | /usr/bin/nc -U /tmp/fig.socket 2>"$HOME"/.fig/logs/zsh.log &)
+  fig bg:zsh-keybuffer "${TERM_SESSION_ID}" "${FIG_INTEGRATION_VERSION}" "${TTY}" "$$" "${HISTNO}" "${CURSOR}" "$BUFFER"
 }
 
 function fig_hide() { 

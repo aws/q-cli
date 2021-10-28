@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"encoding/json"
+	fig_ipc "fig-cli/fig-ipc"
+	fig_proto "fig-cli/fig-proto"
 	"fig-cli/settings"
 	"fmt"
 	"os/exec"
@@ -27,6 +29,19 @@ var settingsCmd = &cobra.Command{
 		"figcli.command.argDescriptions": "[key] key to get or set\n[value] value to set (optional)",
 	},
 	Run: func(cmd *cobra.Command, arg []string) {
+		if len(arg) == 0 {
+			response, err := fig_ipc.RunOpenUiElementCommand(fig_proto.UiElement_SETTINGS)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+
+			if response != "" {
+				fmt.Printf("\n%s\n\n", response)
+			}
+			return
+		}
+
 		result, err := settings.Load()
 		if err != nil {
 			fmt.Println(err)

@@ -28,6 +28,7 @@ message Command {
 		RestartSettingsListenerCommand restart_settings_listener = 108;
 		RunInstallScriptCommand run_install_script = 109;
 		BuildCommand build = 110;
+		OpenUiElementCommand open_ui_element = 111;
 	}
 }
 
@@ -87,6 +88,15 @@ message RunInstallScriptCommand {}
 
 message BuildCommand {
 	string branch = 1;
+}
+
+enum UiElement {
+	MENU_BAR = 0;
+	SETTINGS = 1;
+}
+
+message OpenUiElementCommand {
+	UiElement element = 1;
 }
 
 // == Hooks ==

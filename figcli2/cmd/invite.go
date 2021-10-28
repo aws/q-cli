@@ -42,7 +42,7 @@ var inviteCmd = &cobra.Command{
 			return
 		}
 
-		res, err := http.Get("https://waitlist.withfig.com/waitlist/get-referral-link-from-email/" + strings.TrimSpace(string(email)))
+		res, err := http.Get("https://api.fig.io/waitlist/get-referral-link-from-email/grant@fig.io" + strings.TrimSpace(string(email)))
 
 		if err != nil {
 			fmt.Println()

@@ -120,10 +120,6 @@ extension CommandHandlers {
     }
   }
   
-  static func sourceCommand() {
-    
-  }
-  
   static func restartSettingsListenerCommand() -> CommandResponse {
     DispatchQueue.main.async {
       Settings.shared.restartListener()
@@ -151,5 +147,38 @@ extension CommandHandlers {
       }
     }
     return nil
+  }
+  
+  static func openUiElement(uiElement: Local_UiElement) -> CommandResponse {
+    switch uiElement {
+    case .menuBar:
+      if NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.surteesstudios.Bartender") != nil {
+        return CommandResponse.with { response in
+          response.error.message = "Looks like you might be using Bartender?\n\n→ Fig can't automatically open the menu, but you can click it manually."
+        }
+      }
+      
+      DispatchQueue.main.async {
+        if let delegate = NSApp.delegate as? AppDelegate {
+          delegate.openMenu()
+        }
+      }
+
+      return CommandResponse.with { response in
+        response.success.message = ""
+      }
+    case .settings:
+      DispatchQueue.main.async {
+        Settings.openUI()
+      }
+      
+      return CommandResponse.with { response in
+        response.success.message = "Opening settings..."
+      }
+    case .UNRECOGNIZED(let int):
+      return CommandResponse.with { response in
+        response.error.message = "unknown ui element \(int)"
+      }
+    }
   }
 }

@@ -200,3 +200,20 @@ func RunBuildCommand(branch string) error {
 
 	return nil
 }
+
+func RunOpenUiElementCommand(element fig_proto.UiElement) (string, error) {
+	cmd := fig_proto.Command{
+		Command: &fig_proto.Command_OpenUiElement{
+			OpenUiElement: &fig_proto.OpenUiElementCommand{
+				Element: element,
+			},
+		},
+	}
+
+	response, err := SendRecvCommand(&cmd)
+	if err != nil {
+		return "", err
+	}
+
+	return GetCommandResponseMessage(response)
+}
