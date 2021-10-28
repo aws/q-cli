@@ -16,6 +16,8 @@ import (
 // ============================================================
 
 func init() {
+	legacyUpdate.Flags().BoolP("force", "f", false, "Force update")
+
 	rootCmd.AddCommand(legacyInit)
 	rootCmd.AddCommand(legacyItermReady)
 	rootCmd.AddCommand(legacyZshKeybuffer)
@@ -28,7 +30,10 @@ func init() {
 	rootCmd.AddCommand(legacyHyper)
 	rootCmd.AddCommand(legacyExec)
 
+	rootCmd.AddCommand(testCmd)
+
 	rootCmd.AddCommand(legacyAppRunning)
+	rootCmd.AddCommand(legacyUpdate)
 }
 
 var legacyZshKeybuffer = &cobra.Command{
@@ -45,7 +50,7 @@ var legacyZshKeybuffer = &cobra.Command{
 		cursor, _ := strconv.Atoi(args[5])
 
 		hook := fig_ipc.CreateEditBufferHook(args[0], integrationVersion, args[2], pid, histno, cursor, args[6])
-		fig_ipc.SendHook(hook)
+		_ = fig_ipc.SendHook(hook)
 	},
 }
 
@@ -63,7 +68,7 @@ var legacyFishKeybuffer = &cobra.Command{
 		cursor, _ := strconv.Atoi(args[5])
 
 		hook := fig_ipc.CreateEditBufferHook(args[0], integrationVersion, args[2], pid, histno, cursor, args[6])
-		fig_ipc.SendHook(hook)
+		_ = fig_ipc.SendHook(hook)
 	},
 }
 
@@ -81,7 +86,7 @@ var legacyBashKeybuffer = &cobra.Command{
 		cursor, _ := strconv.Atoi(args[5])
 
 		hook := fig_ipc.CreateEditBufferHook(args[0], integrationVersion, args[2], pid, histno, cursor, args[6])
-		fig_ipc.SendHook(hook)
+		_ = fig_ipc.SendHook(hook)
 	},
 }
 
@@ -96,7 +101,7 @@ var legacyPrompt = &cobra.Command{
 		pid, _ := strconv.Atoi(args[0])
 
 		hook := fig_ipc.CreatePromptHook(pid, args[1])
-		fig_ipc.SendHook(hook)
+		_ = fig_ipc.SendHook(hook)
 		// TODO: Add error handling
 	},
 }
@@ -112,7 +117,7 @@ var legacyInit = &cobra.Command{
 		pid, _ := strconv.Atoi(args[0])
 
 		hook := fig_ipc.CreateInitHook(pid, args[1])
-		fig_ipc.SendHook(hook)
+		_ = fig_ipc.SendHook(hook)
 	},
 }
 
@@ -121,7 +126,7 @@ var legacyItermReady = &cobra.Command{
 	Short: "Run the integration-ready hook",
 	Run: func(cmd *cobra.Command, args []string) {
 		hook := fig_ipc.CreateIntegrationReadyHook("iterm")
-		fig_ipc.SendHook(hook)
+		_ = fig_ipc.SendHook(hook)
 	},
 }
 
@@ -130,7 +135,7 @@ var legacyHide = &cobra.Command{
 	Short: "Run the hide hook",
 	Run: func(cmd *cobra.Command, args []string) {
 		hook := fig_ipc.CreateHideHook()
-		fig_ipc.SendHook(hook)
+		_ = fig_ipc.SendHook(hook)
 	},
 }
 
@@ -143,7 +148,7 @@ var legacyEvent = &cobra.Command{
 		}
 
 		hook := fig_ipc.CreateEventHook(args[0])
-		fig_ipc.SendHook(hook)
+		_ = fig_ipc.SendHook(hook)
 	},
 }
 
@@ -163,7 +168,7 @@ var legacyHyper = &cobra.Command{
 		}
 
 		hook := fig_ipc.CreateKeyboardFocusChangedHook("co.zeit.hyper", args[1])
-		fig_ipc.SendHook(hook)
+		_ = fig_ipc.SendHook(hook)
 	},
 }
 
@@ -195,7 +200,22 @@ var legacyExec = &cobra.Command{
 		pid, _ := strconv.Atoi(args[0])
 
 		hook := fig_ipc.CreatePreExecHook(pid, args[1])
-		fig_ipc.SendHook(hook)
-		// TODO: Add error handling
+		_ = fig_ipc.SendHook(hook)
+	},
+}
+
+var legacyUpdate = &cobra.Command{
+	Use:   "update:app [pid] [tty]",
+	Short: "Run the update command",
+	Run: func(cmd *cobra.Command, args []string) {
+		fig_ipc.UpdateCommand(true)
+	},
+}
+
+var testCmd = &cobra.Command{
+	Use:   "test",
+	Short: "Run a test",
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Println("test")
 	},
 }

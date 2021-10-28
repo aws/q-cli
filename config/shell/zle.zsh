@@ -32,11 +32,12 @@ function fig_zsh_redraw() {
     unset _fig_redraw_fd
   fi
 
+  # TODO: Look at -- fix
   fig bg:zsh-keybuffer "${TERM_SESSION_ID}" "${FIG_INTEGRATION_VERSION}" "${TTY}" "$$" "${HISTNO}" "${CURSOR}" "$BUFFER"
 }
 
 function fig_hide() { 
-  command -v fig 2>"$HOME"/.fig/logs/zsh.log 1>/dev/null && fig bg:hide &!
+  command -v fig 2>"$HOME"/.fig/logs/zsh.log 1>/dev/null && fig bg:hide
 }
 
 # Hint: to list all special widgets, run `add-zle-hook-widget -L`

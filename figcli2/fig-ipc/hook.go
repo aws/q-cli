@@ -15,7 +15,6 @@ func SendHook(hook *fig_proto.Hook) error {
 	if err != nil {
 		return err
 	}
-	defer conn.Close()
 
 	message := fig_proto.LocalMessage{
 		Type: &fig_proto.LocalMessage_Hook{
@@ -24,6 +23,10 @@ func SendHook(hook *fig_proto.Hook) error {
 	}
 
 	if err = conn.SendFigProto(&message); err != nil {
+		return err
+	}
+
+	if err = conn.Close(); err != nil {
 		return err
 	}
 

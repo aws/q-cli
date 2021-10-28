@@ -173,7 +173,7 @@ extension CommandHandlers {
       }
       
       return CommandResponse.with { response in
-        response.success.message = "Opening settings..."
+        response.success.message = ""
       }
     case .UNRECOGNIZED(let int):
       return CommandResponse.with { response in
