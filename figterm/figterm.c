@@ -190,8 +190,14 @@ FigTerm *figterm_new(int shell_pid, int ptyp_fd) {
   ft->osc = NULL;
   ft->parsing_osc = false;
 
+  FigInfo *fig_info = get_fig_info();
+
   ft->shell_state.pid[0] = '\0';
-  ft->shell_state.session_id[0] = '\0';
+  if (fig_info->term_session_id != NULL) {
+    strcpy(ft->shell_state.session_id, fig_info->term_session_id);
+  } else {
+    ft->shell_state.session_id[0] = '\0';
+  }
   ft->shell_state.hostname = strdup("");
   ft->shell_state.tty[0] = '\0';
   ft->shell_state.shell[0] = '\0';
