@@ -249,7 +249,7 @@ jobs:
           echo ">>>"
 
           echo "<<<deleted"
-          ls | grep '.dmg\|.delta' | grep -v -x -F -f $TMPDIR/safe
+          ls | grep '.dmg\|.delta' | grep -v -x -F -f $TMPDIR/safe || true
           echo ">>>"
 
           ls | grep '.dmg\|.delta' | grep -v -x -F -f $TMPDIR/safe | xargs -I{} rm -v {}
