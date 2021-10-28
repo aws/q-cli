@@ -98,6 +98,38 @@ export function onboardingActionToJSON(object: OnboardingAction): string {
   }
 }
 
+export enum FocusRequest {
+  TAKE_FOCUS = 0,
+  RETURN_FOCUS = 1,
+  UNRECOGNIZED = -1,
+}
+
+export function focusRequestFromJSON(object: any): FocusRequest {
+  switch (object) {
+    case 0:
+    case "TAKE_FOCUS":
+      return FocusRequest.TAKE_FOCUS;
+    case 1:
+    case "RETURN_FOCUS":
+      return FocusRequest.RETURN_FOCUS;
+    case -1:
+    case "UNRECOGNIZED":
+    default:
+      return FocusRequest.UNRECOGNIZED;
+  }
+}
+
+export function focusRequestToJSON(object: FocusRequest): string {
+  switch (object) {
+    case FocusRequest.TAKE_FOCUS:
+      return "TAKE_FOCUS";
+    case FocusRequest.RETURN_FOCUS:
+      return "RETURN_FOCUS";
+    default:
+      return "UNKNOWN";
+  }
+}
+
 export enum ActionAvailability {
   ALWAYS = 0,
   /** WHEN_FOCUSED - the action can only be performed when the app has keyboard focus */
@@ -272,7 +304,8 @@ export interface ClientOriginatedMessage {
         $case: "telemetryTrackRequest";
         telemetryTrackRequest: TelemetryTrackRequest;
       }
-    | { $case: "onboardingRequest"; onboardingRequest: OnboardingRequest };
+    | { $case: "onboardingRequest"; onboardingRequest: OnboardingRequest }
+    | { $case: "focusRequest"; focusRequest: WindowFocusRequest };
 }
 
 export interface ServerOriginatedMessage {
@@ -504,6 +537,10 @@ export interface TelemetryIdentifyRequest {
 
 export interface OnboardingRequest {
   action: OnboardingAction;
+}
+
+export interface WindowFocusRequest {
+  type?: FocusRequest | undefined;
 }
 
 export interface Action {
@@ -743,6 +780,12 @@ export const ClientOriginatedMessage = {
         writer.uint32(946).fork()
       ).ldelim();
     }
+    if (message.submessage?.$case === "focusRequest") {
+      WindowFocusRequest.encode(
+        message.submessage.focusRequest,
+        writer.uint32(954).fork()
+      ).ldelim();
+    }
     return writer;
   },
 
@@ -914,6 +957,12 @@ export const ClientOriginatedMessage = {
               reader,
               reader.uint32()
             ),
+          };
+          break;
+        case 119:
+          message.submessage = {
+            $case: "focusRequest",
+            focusRequest: WindowFocusRequest.decode(reader, reader.uint32()),
           };
           break;
         default:
@@ -1123,6 +1172,12 @@ export const ClientOriginatedMessage = {
         onboardingRequest: OnboardingRequest.fromJSON(object.onboardingRequest),
       };
     }
+    if (object.focusRequest !== undefined && object.focusRequest !== null) {
+      message.submessage = {
+        $case: "focusRequest",
+        focusRequest: WindowFocusRequest.fromJSON(object.focusRequest),
+      };
+    }
     return message;
   },
 
@@ -1236,6 +1291,10 @@ export const ClientOriginatedMessage = {
     message.submessage?.$case === "onboardingRequest" &&
       (obj.onboardingRequest = message.submessage?.onboardingRequest
         ? OnboardingRequest.toJSON(message.submessage?.onboardingRequest)
+        : undefined);
+    message.submessage?.$case === "focusRequest" &&
+      (obj.focusRequest = message.submessage?.focusRequest
+        ? WindowFocusRequest.toJSON(message.submessage?.focusRequest)
         : undefined);
     return obj;
   },
@@ -1466,6 +1525,18 @@ export const ClientOriginatedMessage = {
         $case: "onboardingRequest",
         onboardingRequest: OnboardingRequest.fromPartial(
           object.submessage.onboardingRequest
+        ),
+      };
+    }
+    if (
+      object.submessage?.$case === "focusRequest" &&
+      object.submessage?.focusRequest !== undefined &&
+      object.submessage?.focusRequest !== null
+    ) {
+      message.submessage = {
+        $case: "focusRequest",
+        focusRequest: WindowFocusRequest.fromPartial(
+          object.submessage.focusRequest
         ),
       };
     }
@@ -4941,6 +5012,64 @@ export const OnboardingRequest = {
     const message = { ...baseOnboardingRequest } as OnboardingRequest;
     if (object.action !== undefined && object.action !== null) {
       message.action = object.action;
+    }
+    return message;
+  },
+};
+
+const baseWindowFocusRequest: object = {};
+
+export const WindowFocusRequest = {
+  encode(
+    message: WindowFocusRequest,
+    writer: _m0.Writer = _m0.Writer.create()
+  ): _m0.Writer {
+    if (message.type !== undefined) {
+      writer.uint32(8).int32(message.type);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): WindowFocusRequest {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = { ...baseWindowFocusRequest } as WindowFocusRequest;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.type = reader.int32() as any;
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+
+  fromJSON(object: any): WindowFocusRequest {
+    const message = { ...baseWindowFocusRequest } as WindowFocusRequest;
+    if (object.type !== undefined && object.type !== null) {
+      message.type = focusRequestFromJSON(object.type);
+    }
+    return message;
+  },
+
+  toJSON(message: WindowFocusRequest): unknown {
+    const obj: any = {};
+    message.type !== undefined &&
+      (obj.type =
+        message.type !== undefined
+          ? focusRequestToJSON(message.type)
+          : undefined);
+    return obj;
+  },
+
+  fromPartial(object: DeepPartial<WindowFocusRequest>): WindowFocusRequest {
+    const message = { ...baseWindowFocusRequest } as WindowFocusRequest;
+    if (object.type !== undefined && object.type !== null) {
+      message.type = object.type;
     }
     return message;
   },

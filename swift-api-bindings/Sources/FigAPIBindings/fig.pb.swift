@@ -120,6 +120,46 @@ extension Fig_OnboardingAction: CaseIterable {
 
 #endif  // swift(>=4.2)
 
+public enum Fig_FocusRequest: SwiftProtobuf.Enum {
+  public typealias RawValue = Int
+  case takeFocus // = 0
+  case returnFocus // = 1
+  case UNRECOGNIZED(Int)
+
+  public init() {
+    self = .takeFocus
+  }
+
+  public init?(rawValue: Int) {
+    switch rawValue {
+    case 0: self = .takeFocus
+    case 1: self = .returnFocus
+    default: self = .UNRECOGNIZED(rawValue)
+    }
+  }
+
+  public var rawValue: Int {
+    switch self {
+    case .takeFocus: return 0
+    case .returnFocus: return 1
+    case .UNRECOGNIZED(let i): return i
+    }
+  }
+
+}
+
+#if swift(>=4.2)
+
+extension Fig_FocusRequest: CaseIterable {
+  // The compiler won't synthesize support with the UNRECOGNIZED case.
+  public static var allCases: [Fig_FocusRequest] = [
+    .takeFocus,
+    .returnFocus,
+  ]
+}
+
+#endif  // swift(>=4.2)
+
 public enum Fig_ActionAvailability: SwiftProtobuf.Enum {
   public typealias RawValue = Int
   case always // = 0
@@ -398,6 +438,14 @@ public struct Fig_ClientOriginatedMessage {
     set {submessage = .onboardingRequest(newValue)}
   }
 
+  public var focusRequest: Fig_WindowFocusRequest {
+    get {
+      if case .focusRequest(let v)? = submessage {return v}
+      return Fig_WindowFocusRequest()
+    }
+    set {submessage = .focusRequest(newValue)}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public enum OneOf_Submessage: Equatable {
@@ -419,6 +467,7 @@ public struct Fig_ClientOriginatedMessage {
     case telemetryIdentifyRequest(Fig_TelemetryIdentifyRequest)
     case telemetryTrackRequest(Fig_TelemetryTrackRequest)
     case onboardingRequest(Fig_OnboardingRequest)
+    case focusRequest(Fig_WindowFocusRequest)
 
   #if !swift(>=4.1)
     public static func ==(lhs: Fig_ClientOriginatedMessage.OneOf_Submessage, rhs: Fig_ClientOriginatedMessage.OneOf_Submessage) -> Bool {
@@ -496,6 +545,10 @@ public struct Fig_ClientOriginatedMessage {
       }()
       case (.onboardingRequest, .onboardingRequest): return {
         guard case .onboardingRequest(let l) = lhs, case .onboardingRequest(let r) = rhs else { preconditionFailure() }
+        return l == r
+      }()
+      case (.focusRequest, .focusRequest): return {
+        guard case .focusRequest(let l) = lhs, case .focusRequest(let r) = rhs else { preconditionFailure() }
         return l == r
       }()
       default: return false
@@ -1891,6 +1944,27 @@ public struct Fig_OnboardingRequest {
   public init() {}
 }
 
+public struct Fig_WindowFocusRequest {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var type: Fig_FocusRequest {
+    get {return _type ?? .takeFocus}
+    set {_type = newValue}
+  }
+  /// Returns true if `type` has been explicitly set.
+  public var hasType: Bool {return self._type != nil}
+  /// Clears the value of `type`. Subsequent reads from it will return its default value.
+  public mutating func clearType() {self._type = nil}
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+
+  fileprivate var _type: Fig_FocusRequest? = nil
+}
+
 public struct Fig_Action {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -2529,6 +2603,13 @@ extension Fig_OnboardingAction: SwiftProtobuf._ProtoNameProviding {
   ]
 }
 
+extension Fig_FocusRequest: SwiftProtobuf._ProtoNameProviding {
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    0: .same(proto: "TAKE_FOCUS"),
+    1: .same(proto: "RETURN_FOCUS"),
+  ]
+}
+
 extension Fig_ActionAvailability: SwiftProtobuf._ProtoNameProviding {
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     0: .same(proto: "ALWAYS"),
@@ -2573,6 +2654,7 @@ extension Fig_ClientOriginatedMessage: SwiftProtobuf.Message, SwiftProtobuf._Mes
     116: .standard(proto: "telemetry_identify_request"),
     117: .standard(proto: "telemetry_track_request"),
     118: .standard(proto: "onboarding_request"),
+    119: .standard(proto: "focus_request"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -2816,6 +2898,19 @@ extension Fig_ClientOriginatedMessage: SwiftProtobuf.Message, SwiftProtobuf._Mes
           self.submessage = .onboardingRequest(v)
         }
       }()
+      case 119: try {
+        var v: Fig_WindowFocusRequest?
+        var hadOneofValue = false
+        if let current = self.submessage {
+          hadOneofValue = true
+          if case .focusRequest(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.submessage = .focusRequest(v)
+        }
+      }()
       default: break
       }
     }
@@ -2901,6 +2996,10 @@ extension Fig_ClientOriginatedMessage: SwiftProtobuf.Message, SwiftProtobuf._Mes
     case .onboardingRequest?: try {
       guard case .onboardingRequest(let v)? = self.submessage else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 118)
+    }()
+    case .focusRequest?: try {
+      guard case .focusRequest(let v)? = self.submessage else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 119)
     }()
     case nil: break
     }
@@ -4859,6 +4958,42 @@ extension Fig_OnboardingRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageIm
 
   public static func ==(lhs: Fig_OnboardingRequest, rhs: Fig_OnboardingRequest) -> Bool {
     if lhs.action != rhs.action {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Fig_WindowFocusRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".WindowFocusRequest"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .same(proto: "type"),
+  ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularEnumField(value: &self._type) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    try { if let v = self._type {
+      try visitor.visitSingularEnumField(value: v, fieldNumber: 1)
+    } }()
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Fig_WindowFocusRequest, rhs: Fig_WindowFocusRequest) -> Bool {
+    if lhs._type != rhs._type {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
