@@ -123,6 +123,8 @@ class API {
                   }
                 case .focusRequest(let request):
                   response.success = try WindowServer.handleFocusRequest(request)
+                case .openInExternalApplicationRequest(let request):
+                  response.success = try NSWorkspace.shared.handleOpenURLRequest(request)
                 case .none:
                     throw APIError.generic(message: "No submessage was included in request.")
             }

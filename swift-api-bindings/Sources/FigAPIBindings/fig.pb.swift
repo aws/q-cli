@@ -446,6 +446,14 @@ public struct Fig_ClientOriginatedMessage {
     set {submessage = .focusRequest(newValue)}
   }
 
+  public var openInExternalApplicationRequest: Fig_OpenInExternalApplicationRequest {
+    get {
+      if case .openInExternalApplicationRequest(let v)? = submessage {return v}
+      return Fig_OpenInExternalApplicationRequest()
+    }
+    set {submessage = .openInExternalApplicationRequest(newValue)}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public enum OneOf_Submessage: Equatable {
@@ -468,6 +476,7 @@ public struct Fig_ClientOriginatedMessage {
     case telemetryTrackRequest(Fig_TelemetryTrackRequest)
     case onboardingRequest(Fig_OnboardingRequest)
     case focusRequest(Fig_WindowFocusRequest)
+    case openInExternalApplicationRequest(Fig_OpenInExternalApplicationRequest)
 
   #if !swift(>=4.1)
     public static func ==(lhs: Fig_ClientOriginatedMessage.OneOf_Submessage, rhs: Fig_ClientOriginatedMessage.OneOf_Submessage) -> Bool {
@@ -549,6 +558,10 @@ public struct Fig_ClientOriginatedMessage {
       }()
       case (.focusRequest, .focusRequest): return {
         guard case .focusRequest(let l) = lhs, case .focusRequest(let r) = rhs else { preconditionFailure() }
+        return l == r
+      }()
+      case (.openInExternalApplicationRequest, .openInExternalApplicationRequest): return {
+        guard case .openInExternalApplicationRequest(let l) = lhs, case .openInExternalApplicationRequest(let r) = rhs else { preconditionFailure() }
         return l == r
       }()
       default: return false
@@ -1965,6 +1978,27 @@ public struct Fig_WindowFocusRequest {
   fileprivate var _type: Fig_FocusRequest? = nil
 }
 
+public struct Fig_OpenInExternalApplicationRequest {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var url: String {
+    get {return _url ?? String()}
+    set {_url = newValue}
+  }
+  /// Returns true if `url` has been explicitly set.
+  public var hasURL: Bool {return self._url != nil}
+  /// Clears the value of `url`. Subsequent reads from it will return its default value.
+  public mutating func clearURL() {self._url = nil}
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+
+  fileprivate var _url: String? = nil
+}
+
 public struct Fig_Action {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -2655,6 +2689,7 @@ extension Fig_ClientOriginatedMessage: SwiftProtobuf.Message, SwiftProtobuf._Mes
     117: .standard(proto: "telemetry_track_request"),
     118: .standard(proto: "onboarding_request"),
     119: .standard(proto: "focus_request"),
+    120: .standard(proto: "open_in_external_application_request"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -2911,6 +2946,19 @@ extension Fig_ClientOriginatedMessage: SwiftProtobuf.Message, SwiftProtobuf._Mes
           self.submessage = .focusRequest(v)
         }
       }()
+      case 120: try {
+        var v: Fig_OpenInExternalApplicationRequest?
+        var hadOneofValue = false
+        if let current = self.submessage {
+          hadOneofValue = true
+          if case .openInExternalApplicationRequest(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.submessage = .openInExternalApplicationRequest(v)
+        }
+      }()
       default: break
       }
     }
@@ -3000,6 +3048,10 @@ extension Fig_ClientOriginatedMessage: SwiftProtobuf.Message, SwiftProtobuf._Mes
     case .focusRequest?: try {
       guard case .focusRequest(let v)? = self.submessage else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 119)
+    }()
+    case .openInExternalApplicationRequest?: try {
+      guard case .openInExternalApplicationRequest(let v)? = self.submessage else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 120)
     }()
     case nil: break
     }
@@ -4994,6 +5046,42 @@ extension Fig_WindowFocusRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageI
 
   public static func ==(lhs: Fig_WindowFocusRequest, rhs: Fig_WindowFocusRequest) -> Bool {
     if lhs._type != rhs._type {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Fig_OpenInExternalApplicationRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".OpenInExternalApplicationRequest"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .same(proto: "url"),
+  ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self._url) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    try { if let v = self._url {
+      try visitor.visitSingularStringField(value: v, fieldNumber: 1)
+    } }()
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Fig_OpenInExternalApplicationRequest, rhs: Fig_OpenInExternalApplicationRequest) -> Bool {
+    if lhs._url != rhs._url {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

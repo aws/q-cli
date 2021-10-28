@@ -305,7 +305,11 @@ export interface ClientOriginatedMessage {
         telemetryTrackRequest: TelemetryTrackRequest;
       }
     | { $case: "onboardingRequest"; onboardingRequest: OnboardingRequest }
-    | { $case: "focusRequest"; focusRequest: WindowFocusRequest };
+    | { $case: "focusRequest"; focusRequest: WindowFocusRequest }
+    | {
+        $case: "openInExternalApplicationRequest";
+        openInExternalApplicationRequest: OpenInExternalApplicationRequest;
+      };
 }
 
 export interface ServerOriginatedMessage {
@@ -541,6 +545,10 @@ export interface OnboardingRequest {
 
 export interface WindowFocusRequest {
   type?: FocusRequest | undefined;
+}
+
+export interface OpenInExternalApplicationRequest {
+  url?: string | undefined;
 }
 
 export interface Action {
@@ -786,6 +794,12 @@ export const ClientOriginatedMessage = {
         writer.uint32(954).fork()
       ).ldelim();
     }
+    if (message.submessage?.$case === "openInExternalApplicationRequest") {
+      OpenInExternalApplicationRequest.encode(
+        message.submessage.openInExternalApplicationRequest,
+        writer.uint32(962).fork()
+      ).ldelim();
+    }
     return writer;
   },
 
@@ -963,6 +977,13 @@ export const ClientOriginatedMessage = {
           message.submessage = {
             $case: "focusRequest",
             focusRequest: WindowFocusRequest.decode(reader, reader.uint32()),
+          };
+          break;
+        case 120:
+          message.submessage = {
+            $case: "openInExternalApplicationRequest",
+            openInExternalApplicationRequest:
+              OpenInExternalApplicationRequest.decode(reader, reader.uint32()),
           };
           break;
         default:
@@ -1178,6 +1199,18 @@ export const ClientOriginatedMessage = {
         focusRequest: WindowFocusRequest.fromJSON(object.focusRequest),
       };
     }
+    if (
+      object.openInExternalApplicationRequest !== undefined &&
+      object.openInExternalApplicationRequest !== null
+    ) {
+      message.submessage = {
+        $case: "openInExternalApplicationRequest",
+        openInExternalApplicationRequest:
+          OpenInExternalApplicationRequest.fromJSON(
+            object.openInExternalApplicationRequest
+          ),
+      };
+    }
     return message;
   },
 
@@ -1295,6 +1328,13 @@ export const ClientOriginatedMessage = {
     message.submessage?.$case === "focusRequest" &&
       (obj.focusRequest = message.submessage?.focusRequest
         ? WindowFocusRequest.toJSON(message.submessage?.focusRequest)
+        : undefined);
+    message.submessage?.$case === "openInExternalApplicationRequest" &&
+      (obj.openInExternalApplicationRequest = message.submessage
+        ?.openInExternalApplicationRequest
+        ? OpenInExternalApplicationRequest.toJSON(
+            message.submessage?.openInExternalApplicationRequest
+          )
         : undefined);
     return obj;
   },
@@ -1538,6 +1578,19 @@ export const ClientOriginatedMessage = {
         focusRequest: WindowFocusRequest.fromPartial(
           object.submessage.focusRequest
         ),
+      };
+    }
+    if (
+      object.submessage?.$case === "openInExternalApplicationRequest" &&
+      object.submessage?.openInExternalApplicationRequest !== undefined &&
+      object.submessage?.openInExternalApplicationRequest !== null
+    ) {
+      message.submessage = {
+        $case: "openInExternalApplicationRequest",
+        openInExternalApplicationRequest:
+          OpenInExternalApplicationRequest.fromPartial(
+            object.submessage.openInExternalApplicationRequest
+          ),
       };
     }
     return message;
@@ -5070,6 +5123,71 @@ export const WindowFocusRequest = {
     const message = { ...baseWindowFocusRequest } as WindowFocusRequest;
     if (object.type !== undefined && object.type !== null) {
       message.type = object.type;
+    }
+    return message;
+  },
+};
+
+const baseOpenInExternalApplicationRequest: object = {};
+
+export const OpenInExternalApplicationRequest = {
+  encode(
+    message: OpenInExternalApplicationRequest,
+    writer: _m0.Writer = _m0.Writer.create()
+  ): _m0.Writer {
+    if (message.url !== undefined) {
+      writer.uint32(10).string(message.url);
+    }
+    return writer;
+  },
+
+  decode(
+    input: _m0.Reader | Uint8Array,
+    length?: number
+  ): OpenInExternalApplicationRequest {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = {
+      ...baseOpenInExternalApplicationRequest,
+    } as OpenInExternalApplicationRequest;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.url = reader.string();
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+
+  fromJSON(object: any): OpenInExternalApplicationRequest {
+    const message = {
+      ...baseOpenInExternalApplicationRequest,
+    } as OpenInExternalApplicationRequest;
+    if (object.url !== undefined && object.url !== null) {
+      message.url = String(object.url);
+    }
+    return message;
+  },
+
+  toJSON(message: OpenInExternalApplicationRequest): unknown {
+    const obj: any = {};
+    message.url !== undefined && (obj.url = message.url);
+    return obj;
+  },
+
+  fromPartial(
+    object: DeepPartial<OpenInExternalApplicationRequest>
+  ): OpenInExternalApplicationRequest {
+    const message = {
+      ...baseOpenInExternalApplicationRequest,
+    } as OpenInExternalApplicationRequest;
+    if (object.url !== undefined && object.url !== null) {
+      message.url = object.url;
     }
     return message;
   },

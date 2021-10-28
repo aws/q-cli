@@ -109,3 +109,16 @@ extension ExternalWindow {
         }
     }
 }
+
+extension NSWorkspace {
+  func handleOpenURLRequest(_ request: Fig_OpenInExternalApplicationRequest) throws -> Bool {
+    guard request.hasURL else { throw APIError.generic(message: "Missing 'url' parameter") }
+    
+    guard let url = URL(string: request.url) else {
+      throw APIError.generic(message: "Could not parse '\(request.url)' as a URL")
+    }
+   
+    return open(url)
+
+  }
+}
