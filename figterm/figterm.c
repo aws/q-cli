@@ -32,6 +32,7 @@ struct FigTerm {
 static void handle_osc(FigTerm* ft) {
   // Handle osc after we received the final fragment.
   if (strcmp(ft->osc, "NewCmd") == 0) {
+    publish_message("fig bg:prompt %d %s\n", ft->shell_state.pid, ft->shell_state.tty);
     figterm_screen_get_cursorpos(ft->screen, ft->cmd_cursor);
     log_info("Prompt at position: (%d, %d)", ft->cmd_cursor->row, ft->cmd_cursor->col);
     ft->shell_state.preexec = false;
@@ -50,6 +51,7 @@ static void handle_osc(FigTerm* ft) {
     ft->shell_state.in_prompt = false;
     figterm_screen_set_attr(ft->screen, FIGTERM_ATTR_IN_PROMPT, &ft->shell_state.in_prompt);
   } else if (strcmp(ft->osc, "PreExec") == 0) {
+    publish_message("fig bg:exec %d %s\n", ft->shell_state.pid, ft->shell_state.tty);
     figterm_preexec_hook(ft);
     ft->shell_state.preexec = true;
   } else if (strneq(ft->osc, "Dir=", 4)) {
@@ -383,6 +385,7 @@ void figterm_preexec_hook(FigTerm* ft) {
   ft->last_command = history_entry_new(
     buffer,
     ft->shell_state.shell,
+    ft->shell_state.pid,
     ft->shell_state.session_id,
     get_cwd(ft->shell_pid),
     time(NULL),

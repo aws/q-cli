@@ -6,6 +6,7 @@
 struct HistoryEntry {
   char* command;
   char shell[10];
+  char pid[8];
   char session_id[SESSION_ID_MAX_LEN + 1];
   char* cwd;
   unsigned long time;
@@ -23,7 +24,9 @@ char *escaped_str(const char *src) {
 
   for (i = j = 0; src[i] != '\0'; i++) {
     if (src[i] == '\n' || src[i] == '\t' ||
-        src[i] == '\\' || src[i] == '\"') {
+        src[i] == '\\' || src[i] == '\"' ||
+        src[i] == '/' || src[i] == '\b' ||
+        src[i] == '\r' || src[i] == '\f') {
       j++;
     }
   }
@@ -35,6 +38,10 @@ char *escaped_str(const char *src) {
       case '\t': pw[i+j] = '\\'; pw[i+j+1] = 't'; j++; break;
       case '\\': pw[i+j] = '\\'; pw[i+j+1] = '\\'; j++; break;
       case '\"': pw[i+j] = '\\'; pw[i+j+1] = '\"'; j++; break;
+      case '/': pw[i+j] = '\\'; pw[i+j+1] = '/'; j++; break;
+      case '\b': pw[i+j] = '\\'; pw[i+j+1] = 'b'; j++; break;
+      case '\r': pw[i+j] = '\\'; pw[i+j+1] = 'r'; j++; break;
+      case '\f': pw[i+j] = '\\'; pw[i+j+1] = 'f'; j++; break;
       default:   pw[i+j] = src[i]; break;
     }
   }
@@ -45,6 +52,7 @@ char *escaped_str(const char *src) {
 HistoryEntry* history_entry_new(
     char* command,
     char* shell,
+    char* pid,
     char* session_id,
     char* cwd,
     unsigned long time,
@@ -58,6 +66,7 @@ HistoryEntry* history_entry_new(
   entry->hostname = strdup_safe(hostname);
 
   strcpy(entry->shell, shell);
+  strcpy(entry->pid, pid);
   strcpy(entry->session_id, session_id);
 
   entry->time = time;
@@ -110,30 +119,30 @@ void write_history_entry(HistoryEntry* entry) {
   char time_str[20];
   sprintf(time_str, "%lu", entry->time);
 
-  char* tmp = malloc(sizeof(char) * (
-      strlen("\n- command: %s\n exit_code: %s\n  shell: %s\n  session_id: %s\n  cwd: %s\n  time: %s\n  docker: %s\n  ssh: %s\n hostname: %s") +
-      strlen(command_escaped) +
-      // Max value of an exit code is 255 -- so max string length is 3 + 1 for good measure.
-      4 +
-      strlen(entry->shell) +
-      strlen(entry->session_id) +
-      strlen(entry->cwd) +
-      strlen(time_str) +
-      // Max length of a boolean string is 5 for docker + ssh.
-      5 +
-      5 +
-      strlen(entry->hostname)
-    ));
+  char* context = printf_alloc(
+    "{\"sessionId\":\"%s\",\"pid\":\"%s\",\"currentWorkingDirectory\":\"%s\",\"hostname\":\"%s\"}",
+    entry->session_id,
+    entry->pid,
+    entry->cwd,
+    entry->hostname
+  );
 
-  sprintf(
-      tmp,
-      "\n- command: %s\n  exit_code: %d\n  shell: %s\n  session_id: %s\n  cwd: %s\n  time: %s",
-      command_escaped,
-      entry->exit_code,
-      entry->shell,
-      entry->session_id,
-      entry->cwd,
-      time_str
+  publish_json(
+    "{\"hook\":{\"postExec\":{\"command\":\"%s\",\"exitCode\":\"%d\", \"context\":%s}}}",
+    command_escaped,
+    entry->exit_code,
+    context
+  );
+  free(context);
+
+  char* tmp = printf_alloc(
+    "\n- command: %s\n  exit_code: %d\n  shell: %s\n  session_id: %s\n  cwd: %s\n  time: %s",
+    command_escaped,
+    entry->exit_code,
+    entry->shell,
+    entry->session_id,
+    entry->cwd,
+    time_str
   );
 
   if (entry->in_ssh || entry->in_docker) {

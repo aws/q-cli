@@ -165,3 +165,54 @@ int fig_socket_send(char* buf) {
 
   return st;
 }
+
+char* vprintf_alloc(const char* fmt, va_list va) {
+  const int len = vsnprintf(NULL, 0, fmt, va);
+  char *tmpbuf = malloc((len + 1) * sizeof(char));
+  vsprintf(tmpbuf, fmt, va);
+  return tmpbuf;
+}
+
+char* printf_alloc(const char* fmt, ...) {
+  va_list va;
+  va_start(va, fmt);
+  char* tmpbuf = vprintf_alloc(fmt, va);
+  va_end(va);
+  return tmpbuf;
+}
+
+void publish_message(const char* fmt, ...) {
+  va_list va;
+
+  va_start(va, fmt);
+  char* tmpbuf = vprintf_alloc(fmt, va);
+  va_end(va);
+
+  fig_socket_send(tmpbuf);
+  log_info("done sending %s", tmpbuf);
+  free(tmpbuf);
+}
+
+void publish_json(const char* fmt, ...) {
+  va_list va;
+
+  va_start(va, fmt);
+  char* tmpbuf = vprintf_alloc(fmt, va);
+  va_end(va);
+
+  unsigned int buf_len = strlen(tmpbuf);
+  unsigned char len[5] = {
+    (buf_len >> 24) & 0xFF,
+    (buf_len >> 16) & 0xFF,
+    (buf_len >> 8) & 0xFF,
+    buf_len & 0xFF,
+    '\0'
+  };
+
+  char* msg = printf_alloc("\x1b@fig-json%s%s", len, tmpbuf);
+
+  fig_socket_send(msg);
+  log_info("done sending %s", tmpbuf);
+  free(msg);
+  free(tmpbuf);
+}
