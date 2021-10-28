@@ -33,6 +33,7 @@ install_fig() {
   mkdir -p ~/.fig
 
   # delete binary artifacts to ensure ad-hoc code signature works for arm64 binaries on M1
+  rm ~/.fig/bin/figterm
   rm ~/.fig/bin/*figterm*
   rm ~/.fig/bin/fig_callback
   rm ~/.fig/bin/fig_get_shell
