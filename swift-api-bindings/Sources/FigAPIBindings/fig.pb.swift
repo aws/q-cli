@@ -81,6 +81,7 @@ public enum Fig_OnboardingAction: SwiftProtobuf.Enum {
   case installationScript // = 0
   case promptForAccessibilityPermission // = 1
   case launchShellOnboarding // = 3
+  case uninstall // = 4
   case UNRECOGNIZED(Int)
 
   public init() {
@@ -92,6 +93,7 @@ public enum Fig_OnboardingAction: SwiftProtobuf.Enum {
     case 0: self = .installationScript
     case 1: self = .promptForAccessibilityPermission
     case 3: self = .launchShellOnboarding
+    case 4: self = .uninstall
     default: self = .UNRECOGNIZED(rawValue)
     }
   }
@@ -101,6 +103,7 @@ public enum Fig_OnboardingAction: SwiftProtobuf.Enum {
     case .installationScript: return 0
     case .promptForAccessibilityPermission: return 1
     case .launchShellOnboarding: return 3
+    case .uninstall: return 4
     case .UNRECOGNIZED(let i): return i
     }
   }
@@ -115,6 +118,7 @@ extension Fig_OnboardingAction: CaseIterable {
     .installationScript,
     .promptForAccessibilityPermission,
     .launchShellOnboarding,
+    .uninstall,
   ]
 }
 
@@ -2634,6 +2638,7 @@ extension Fig_OnboardingAction: SwiftProtobuf._ProtoNameProviding {
     0: .same(proto: "INSTALLATION_SCRIPT"),
     1: .same(proto: "PROMPT_FOR_ACCESSIBILITY_PERMISSION"),
     3: .same(proto: "LAUNCH_SHELL_ONBOARDING"),
+    4: .same(proto: "UNINSTALL"),
   ]
 }
 

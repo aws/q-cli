@@ -64,6 +64,7 @@ export enum OnboardingAction {
   INSTALLATION_SCRIPT = 0,
   PROMPT_FOR_ACCESSIBILITY_PERMISSION = 1,
   LAUNCH_SHELL_ONBOARDING = 3,
+  UNINSTALL = 4,
   UNRECOGNIZED = -1,
 }
 
@@ -78,6 +79,9 @@ export function onboardingActionFromJSON(object: any): OnboardingAction {
     case 3:
     case "LAUNCH_SHELL_ONBOARDING":
       return OnboardingAction.LAUNCH_SHELL_ONBOARDING;
+    case 4:
+    case "UNINSTALL":
+      return OnboardingAction.UNINSTALL;
     case -1:
     case "UNRECOGNIZED":
     default:
@@ -93,6 +97,8 @@ export function onboardingActionToJSON(object: OnboardingAction): string {
       return "PROMPT_FOR_ACCESSIBILITY_PERMISSION";
     case OnboardingAction.LAUNCH_SHELL_ONBOARDING:
       return "LAUNCH_SHELL_ONBOARDING";
+    case OnboardingAction.UNINSTALL:
+      return "UNINSTALL";
     default:
       return "UNKNOWN";
   }

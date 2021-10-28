@@ -281,6 +281,7 @@ enum OnboardingAction {
   INSTALLATION_SCRIPT = 0;
   PROMPT_FOR_ACCESSIBILITY_PERMISSION = 1;
   LAUNCH_SHELL_ONBOARDING = 3;
+  UNINSTALL = 4;
 }
 
 message OnboardingRequest {
