@@ -310,3 +310,39 @@ extension Date {
     }
 }
 
+import FigAPIBindings
+extension TelemetryProvider {
+  static func handleAliasRequest(_ request: Fig_TelemetryAliasRequest) throws -> Bool {
+    guard request.hasUserID else {
+      throw APIError.generic(message: "No user id specified.")
+    }
+    
+    TelemetryProvider.alias(userId: request.userID)
+    
+    return true
+  }
+  
+  static func handleTrackRequest(_ request: Fig_TelemetryTrackRequest) throws -> Bool {
+    guard request.hasEvent else {
+      throw APIError.generic(message: "No event specified.")
+    }
+    
+    let keys = request.properties.map { $0.key }
+    let values = request.properties.map { $0.value }
+    let payload = Dictionary(uniqueKeysWithValues: zip(keys, values))
+    
+    TelemetryProvider.track(event: request.event, with: payload)
+    
+    return true
+  }
+  
+  static func handleIdentifyRequest(_ request: Fig_TelemetryIdentifyRequest) throws -> Bool {
+    let keys = request.traits.map { $0.key }
+    let values = request.traits.map { $0.value }
+    let payload = Dictionary(uniqueKeysWithValues: zip(keys, values))
+    
+    TelemetryProvider.identify(with: payload)
+    
+    return true
+  }
+}

@@ -60,6 +60,44 @@ export function modifiersToJSON(object: Modifiers): string {
   }
 }
 
+export enum OnboardingAction {
+  INSTALLATION_SCRIPT = 0,
+  PROMPT_FOR_ACCESSIBILITY_PERMISSION = 1,
+  LAUNCH_SHELL_ONBOARDING = 3,
+  UNRECOGNIZED = -1,
+}
+
+export function onboardingActionFromJSON(object: any): OnboardingAction {
+  switch (object) {
+    case 0:
+    case "INSTALLATION_SCRIPT":
+      return OnboardingAction.INSTALLATION_SCRIPT;
+    case 1:
+    case "PROMPT_FOR_ACCESSIBILITY_PERMISSION":
+      return OnboardingAction.PROMPT_FOR_ACCESSIBILITY_PERMISSION;
+    case 3:
+    case "LAUNCH_SHELL_ONBOARDING":
+      return OnboardingAction.LAUNCH_SHELL_ONBOARDING;
+    case -1:
+    case "UNRECOGNIZED":
+    default:
+      return OnboardingAction.UNRECOGNIZED;
+  }
+}
+
+export function onboardingActionToJSON(object: OnboardingAction): string {
+  switch (object) {
+    case OnboardingAction.INSTALLATION_SCRIPT:
+      return "INSTALLATION_SCRIPT";
+    case OnboardingAction.PROMPT_FOR_ACCESSIBILITY_PERMISSION:
+      return "PROMPT_FOR_ACCESSIBILITY_PERMISSION";
+    case OnboardingAction.LAUNCH_SHELL_ONBOARDING:
+      return "LAUNCH_SHELL_ONBOARDING";
+    default:
+      return "UNKNOWN";
+  }
+}
+
 export enum ActionAvailability {
   ALWAYS = 0,
   /** WHEN_FOCUSED - the action can only be performed when the app has keyboard focus */
@@ -213,7 +251,28 @@ export interface ClientOriginatedMessage {
     | {
         $case: "destinationOfSymbolicLinkRequest";
         destinationOfSymbolicLinkRequest: DestinationOfSymbolicLinkRequest;
-      };
+      }
+    | {
+        $case: "getDefaultsPropertyRequest";
+        getDefaultsPropertyRequest: GetDefaultsPropertyRequest;
+      }
+    | {
+        $case: "updateDefaultsPropertyRequest";
+        updateDefaultsPropertyRequest: UpdateDefaultsPropertyRequest;
+      }
+    | {
+        $case: "telemetryAliasRequest";
+        telemetryAliasRequest: TelemetryAliasRequest;
+      }
+    | {
+        $case: "telemetryIdentifyRequest";
+        telemetryIdentifyRequest: TelemetryIdentifyRequest;
+      }
+    | {
+        $case: "telemetryTrackRequest";
+        telemetryTrackRequest: TelemetryTrackRequest;
+      }
+    | { $case: "onboardingRequest"; onboardingRequest: OnboardingRequest };
 }
 
 export interface ServerOriginatedMessage {
@@ -241,6 +300,10 @@ export interface ServerOriginatedMessage {
     | {
         $case: "destinationOfSymbolicLinkResponse";
         destinationOfSymbolicLinkResponse: DestinationOfSymbolicLinkResponse;
+      }
+    | {
+        $case: "getDefaultsPropertyResponse";
+        getDefaultsPropertyResponse: GetDefaultsPropertyResponse;
       }
     | { $case: "notification"; notification: Notification };
 }
@@ -355,10 +418,11 @@ export interface PositionWindowResponse {
 
 export interface ReadFileRequest {
   path?: FilePath | undefined;
+  isBinaryFile?: boolean | undefined;
 }
 
 export interface ReadFileResponse {
-  data?: Uint8Array | undefined;
+  type?: { $case: "data"; data: Uint8Array } | { $case: "text"; text: string };
 }
 
 export interface WriteFileRequest {
@@ -384,6 +448,28 @@ export interface DestinationOfSymbolicLinkResponse {
   destination?: FilePath | undefined;
 }
 
+export interface DefaultsValue {
+  type?:
+    | { $case: "null"; null: boolean }
+    | { $case: "boolean"; boolean: boolean }
+    | { $case: "string"; string: string }
+    | { $case: "integer"; integer: number };
+}
+
+export interface GetDefaultsPropertyRequest {
+  key?: string | undefined;
+}
+
+export interface GetDefaultsPropertyResponse {
+  key?: string | undefined;
+  value?: DefaultsValue | undefined;
+}
+
+export interface UpdateDefaultsPropertyRequest {
+  key?: string | undefined;
+  value?: DefaultsValue | undefined;
+}
+
 export interface GetSettingsPropertyRequest {
   key?: string | undefined;
 }
@@ -396,6 +482,28 @@ export interface GetSettingsPropertyResponse {
 export interface UpdateSettingsPropertyRequest {
   key?: string | undefined;
   value?: string | undefined;
+}
+
+export interface TelemetryProperty {
+  key: string;
+  value: string;
+}
+
+export interface TelemetryAliasRequest {
+  userId?: string | undefined;
+}
+
+export interface TelemetryTrackRequest {
+  event?: string | undefined;
+  properties: TelemetryProperty[];
+}
+
+export interface TelemetryIdentifyRequest {
+  traits: TelemetryProperty[];
+}
+
+export interface OnboardingRequest {
+  action: OnboardingAction;
 }
 
 export interface Action {
@@ -599,6 +707,42 @@ export const ClientOriginatedMessage = {
         writer.uint32(898).fork()
       ).ldelim();
     }
+    if (message.submessage?.$case === "getDefaultsPropertyRequest") {
+      GetDefaultsPropertyRequest.encode(
+        message.submessage.getDefaultsPropertyRequest,
+        writer.uint32(906).fork()
+      ).ldelim();
+    }
+    if (message.submessage?.$case === "updateDefaultsPropertyRequest") {
+      UpdateDefaultsPropertyRequest.encode(
+        message.submessage.updateDefaultsPropertyRequest,
+        writer.uint32(914).fork()
+      ).ldelim();
+    }
+    if (message.submessage?.$case === "telemetryAliasRequest") {
+      TelemetryAliasRequest.encode(
+        message.submessage.telemetryAliasRequest,
+        writer.uint32(922).fork()
+      ).ldelim();
+    }
+    if (message.submessage?.$case === "telemetryIdentifyRequest") {
+      TelemetryIdentifyRequest.encode(
+        message.submessage.telemetryIdentifyRequest,
+        writer.uint32(930).fork()
+      ).ldelim();
+    }
+    if (message.submessage?.$case === "telemetryTrackRequest") {
+      TelemetryTrackRequest.encode(
+        message.submessage.telemetryTrackRequest,
+        writer.uint32(938).fork()
+      ).ldelim();
+    }
+    if (message.submessage?.$case === "onboardingRequest") {
+      OnboardingRequest.encode(
+        message.submessage.onboardingRequest,
+        writer.uint32(946).fork()
+      ).ldelim();
+    }
     return writer;
   },
 
@@ -716,6 +860,60 @@ export const ClientOriginatedMessage = {
             $case: "destinationOfSymbolicLinkRequest",
             destinationOfSymbolicLinkRequest:
               DestinationOfSymbolicLinkRequest.decode(reader, reader.uint32()),
+          };
+          break;
+        case 113:
+          message.submessage = {
+            $case: "getDefaultsPropertyRequest",
+            getDefaultsPropertyRequest: GetDefaultsPropertyRequest.decode(
+              reader,
+              reader.uint32()
+            ),
+          };
+          break;
+        case 114:
+          message.submessage = {
+            $case: "updateDefaultsPropertyRequest",
+            updateDefaultsPropertyRequest: UpdateDefaultsPropertyRequest.decode(
+              reader,
+              reader.uint32()
+            ),
+          };
+          break;
+        case 115:
+          message.submessage = {
+            $case: "telemetryAliasRequest",
+            telemetryAliasRequest: TelemetryAliasRequest.decode(
+              reader,
+              reader.uint32()
+            ),
+          };
+          break;
+        case 116:
+          message.submessage = {
+            $case: "telemetryIdentifyRequest",
+            telemetryIdentifyRequest: TelemetryIdentifyRequest.decode(
+              reader,
+              reader.uint32()
+            ),
+          };
+          break;
+        case 117:
+          message.submessage = {
+            $case: "telemetryTrackRequest",
+            telemetryTrackRequest: TelemetryTrackRequest.decode(
+              reader,
+              reader.uint32()
+            ),
+          };
+          break;
+        case 118:
+          message.submessage = {
+            $case: "onboardingRequest",
+            onboardingRequest: OnboardingRequest.decode(
+              reader,
+              reader.uint32()
+            ),
           };
           break;
         default:
@@ -861,6 +1059,70 @@ export const ClientOriginatedMessage = {
           ),
       };
     }
+    if (
+      object.getDefaultsPropertyRequest !== undefined &&
+      object.getDefaultsPropertyRequest !== null
+    ) {
+      message.submessage = {
+        $case: "getDefaultsPropertyRequest",
+        getDefaultsPropertyRequest: GetDefaultsPropertyRequest.fromJSON(
+          object.getDefaultsPropertyRequest
+        ),
+      };
+    }
+    if (
+      object.updateDefaultsPropertyRequest !== undefined &&
+      object.updateDefaultsPropertyRequest !== null
+    ) {
+      message.submessage = {
+        $case: "updateDefaultsPropertyRequest",
+        updateDefaultsPropertyRequest: UpdateDefaultsPropertyRequest.fromJSON(
+          object.updateDefaultsPropertyRequest
+        ),
+      };
+    }
+    if (
+      object.telemetryAliasRequest !== undefined &&
+      object.telemetryAliasRequest !== null
+    ) {
+      message.submessage = {
+        $case: "telemetryAliasRequest",
+        telemetryAliasRequest: TelemetryAliasRequest.fromJSON(
+          object.telemetryAliasRequest
+        ),
+      };
+    }
+    if (
+      object.telemetryIdentifyRequest !== undefined &&
+      object.telemetryIdentifyRequest !== null
+    ) {
+      message.submessage = {
+        $case: "telemetryIdentifyRequest",
+        telemetryIdentifyRequest: TelemetryIdentifyRequest.fromJSON(
+          object.telemetryIdentifyRequest
+        ),
+      };
+    }
+    if (
+      object.telemetryTrackRequest !== undefined &&
+      object.telemetryTrackRequest !== null
+    ) {
+      message.submessage = {
+        $case: "telemetryTrackRequest",
+        telemetryTrackRequest: TelemetryTrackRequest.fromJSON(
+          object.telemetryTrackRequest
+        ),
+      };
+    }
+    if (
+      object.onboardingRequest !== undefined &&
+      object.onboardingRequest !== null
+    ) {
+      message.submessage = {
+        $case: "onboardingRequest",
+        onboardingRequest: OnboardingRequest.fromJSON(object.onboardingRequest),
+      };
+    }
     return message;
   },
 
@@ -937,6 +1199,43 @@ export const ClientOriginatedMessage = {
         ? DestinationOfSymbolicLinkRequest.toJSON(
             message.submessage?.destinationOfSymbolicLinkRequest
           )
+        : undefined);
+    message.submessage?.$case === "getDefaultsPropertyRequest" &&
+      (obj.getDefaultsPropertyRequest = message.submessage
+        ?.getDefaultsPropertyRequest
+        ? GetDefaultsPropertyRequest.toJSON(
+            message.submessage?.getDefaultsPropertyRequest
+          )
+        : undefined);
+    message.submessage?.$case === "updateDefaultsPropertyRequest" &&
+      (obj.updateDefaultsPropertyRequest = message.submessage
+        ?.updateDefaultsPropertyRequest
+        ? UpdateDefaultsPropertyRequest.toJSON(
+            message.submessage?.updateDefaultsPropertyRequest
+          )
+        : undefined);
+    message.submessage?.$case === "telemetryAliasRequest" &&
+      (obj.telemetryAliasRequest = message.submessage?.telemetryAliasRequest
+        ? TelemetryAliasRequest.toJSON(
+            message.submessage?.telemetryAliasRequest
+          )
+        : undefined);
+    message.submessage?.$case === "telemetryIdentifyRequest" &&
+      (obj.telemetryIdentifyRequest = message.submessage
+        ?.telemetryIdentifyRequest
+        ? TelemetryIdentifyRequest.toJSON(
+            message.submessage?.telemetryIdentifyRequest
+          )
+        : undefined);
+    message.submessage?.$case === "telemetryTrackRequest" &&
+      (obj.telemetryTrackRequest = message.submessage?.telemetryTrackRequest
+        ? TelemetryTrackRequest.toJSON(
+            message.submessage?.telemetryTrackRequest
+          )
+        : undefined);
+    message.submessage?.$case === "onboardingRequest" &&
+      (obj.onboardingRequest = message.submessage?.onboardingRequest
+        ? OnboardingRequest.toJSON(message.submessage?.onboardingRequest)
         : undefined);
     return obj;
   },
@@ -1097,6 +1396,79 @@ export const ClientOriginatedMessage = {
           ),
       };
     }
+    if (
+      object.submessage?.$case === "getDefaultsPropertyRequest" &&
+      object.submessage?.getDefaultsPropertyRequest !== undefined &&
+      object.submessage?.getDefaultsPropertyRequest !== null
+    ) {
+      message.submessage = {
+        $case: "getDefaultsPropertyRequest",
+        getDefaultsPropertyRequest: GetDefaultsPropertyRequest.fromPartial(
+          object.submessage.getDefaultsPropertyRequest
+        ),
+      };
+    }
+    if (
+      object.submessage?.$case === "updateDefaultsPropertyRequest" &&
+      object.submessage?.updateDefaultsPropertyRequest !== undefined &&
+      object.submessage?.updateDefaultsPropertyRequest !== null
+    ) {
+      message.submessage = {
+        $case: "updateDefaultsPropertyRequest",
+        updateDefaultsPropertyRequest:
+          UpdateDefaultsPropertyRequest.fromPartial(
+            object.submessage.updateDefaultsPropertyRequest
+          ),
+      };
+    }
+    if (
+      object.submessage?.$case === "telemetryAliasRequest" &&
+      object.submessage?.telemetryAliasRequest !== undefined &&
+      object.submessage?.telemetryAliasRequest !== null
+    ) {
+      message.submessage = {
+        $case: "telemetryAliasRequest",
+        telemetryAliasRequest: TelemetryAliasRequest.fromPartial(
+          object.submessage.telemetryAliasRequest
+        ),
+      };
+    }
+    if (
+      object.submessage?.$case === "telemetryIdentifyRequest" &&
+      object.submessage?.telemetryIdentifyRequest !== undefined &&
+      object.submessage?.telemetryIdentifyRequest !== null
+    ) {
+      message.submessage = {
+        $case: "telemetryIdentifyRequest",
+        telemetryIdentifyRequest: TelemetryIdentifyRequest.fromPartial(
+          object.submessage.telemetryIdentifyRequest
+        ),
+      };
+    }
+    if (
+      object.submessage?.$case === "telemetryTrackRequest" &&
+      object.submessage?.telemetryTrackRequest !== undefined &&
+      object.submessage?.telemetryTrackRequest !== null
+    ) {
+      message.submessage = {
+        $case: "telemetryTrackRequest",
+        telemetryTrackRequest: TelemetryTrackRequest.fromPartial(
+          object.submessage.telemetryTrackRequest
+        ),
+      };
+    }
+    if (
+      object.submessage?.$case === "onboardingRequest" &&
+      object.submessage?.onboardingRequest !== undefined &&
+      object.submessage?.onboardingRequest !== null
+    ) {
+      message.submessage = {
+        $case: "onboardingRequest",
+        onboardingRequest: OnboardingRequest.fromPartial(
+          object.submessage.onboardingRequest
+        ),
+      };
+    }
     return message;
   },
 };
@@ -1151,6 +1523,12 @@ export const ServerOriginatedMessage = {
       DestinationOfSymbolicLinkResponse.encode(
         message.submessage.destinationOfSymbolicLinkResponse,
         writer.uint32(842).fork()
+      ).ldelim();
+    }
+    if (message.submessage?.$case === "getDefaultsPropertyResponse") {
+      GetDefaultsPropertyResponse.encode(
+        message.submessage.getDefaultsPropertyResponse,
+        writer.uint32(850).fork()
       ).ldelim();
     }
     if (message.submessage?.$case === "notification") {
@@ -1230,6 +1608,15 @@ export const ServerOriginatedMessage = {
             $case: "destinationOfSymbolicLinkResponse",
             destinationOfSymbolicLinkResponse:
               DestinationOfSymbolicLinkResponse.decode(reader, reader.uint32()),
+          };
+          break;
+        case 106:
+          message.submessage = {
+            $case: "getDefaultsPropertyResponse",
+            getDefaultsPropertyResponse: GetDefaultsPropertyResponse.decode(
+              reader,
+              reader.uint32()
+            ),
           };
           break;
         case 1000:
@@ -1327,6 +1714,17 @@ export const ServerOriginatedMessage = {
           ),
       };
     }
+    if (
+      object.getDefaultsPropertyResponse !== undefined &&
+      object.getDefaultsPropertyResponse !== null
+    ) {
+      message.submessage = {
+        $case: "getDefaultsPropertyResponse",
+        getDefaultsPropertyResponse: GetDefaultsPropertyResponse.fromJSON(
+          object.getDefaultsPropertyResponse
+        ),
+      };
+    }
     if (object.notification !== undefined && object.notification !== null) {
       message.submessage = {
         $case: "notification",
@@ -1379,6 +1777,13 @@ export const ServerOriginatedMessage = {
         ?.destinationOfSymbolicLinkResponse
         ? DestinationOfSymbolicLinkResponse.toJSON(
             message.submessage?.destinationOfSymbolicLinkResponse
+          )
+        : undefined);
+    message.submessage?.$case === "getDefaultsPropertyResponse" &&
+      (obj.getDefaultsPropertyResponse = message.submessage
+        ?.getDefaultsPropertyResponse
+        ? GetDefaultsPropertyResponse.toJSON(
+            message.submessage?.getDefaultsPropertyResponse
           )
         : undefined);
     message.submessage?.$case === "notification" &&
@@ -1486,6 +1891,18 @@ export const ServerOriginatedMessage = {
           DestinationOfSymbolicLinkResponse.fromPartial(
             object.submessage.destinationOfSymbolicLinkResponse
           ),
+      };
+    }
+    if (
+      object.submessage?.$case === "getDefaultsPropertyResponse" &&
+      object.submessage?.getDefaultsPropertyResponse !== undefined &&
+      object.submessage?.getDefaultsPropertyResponse !== null
+    ) {
+      message.submessage = {
+        $case: "getDefaultsPropertyResponse",
+        getDefaultsPropertyResponse: GetDefaultsPropertyResponse.fromPartial(
+          object.submessage.getDefaultsPropertyResponse
+        ),
       };
     }
     if (
@@ -3109,6 +3526,9 @@ export const ReadFileRequest = {
     if (message.path !== undefined) {
       FilePath.encode(message.path, writer.uint32(10).fork()).ldelim();
     }
+    if (message.isBinaryFile !== undefined) {
+      writer.uint32(16).bool(message.isBinaryFile);
+    }
     return writer;
   },
 
@@ -3121,6 +3541,9 @@ export const ReadFileRequest = {
       switch (tag >>> 3) {
         case 1:
           message.path = FilePath.decode(reader, reader.uint32());
+          break;
+        case 2:
+          message.isBinaryFile = reader.bool();
           break;
         default:
           reader.skipType(tag & 7);
@@ -3135,6 +3558,9 @@ export const ReadFileRequest = {
     if (object.path !== undefined && object.path !== null) {
       message.path = FilePath.fromJSON(object.path);
     }
+    if (object.isBinaryFile !== undefined && object.isBinaryFile !== null) {
+      message.isBinaryFile = Boolean(object.isBinaryFile);
+    }
     return message;
   },
 
@@ -3142,6 +3568,8 @@ export const ReadFileRequest = {
     const obj: any = {};
     message.path !== undefined &&
       (obj.path = message.path ? FilePath.toJSON(message.path) : undefined);
+    message.isBinaryFile !== undefined &&
+      (obj.isBinaryFile = message.isBinaryFile);
     return obj;
   },
 
@@ -3149,6 +3577,9 @@ export const ReadFileRequest = {
     const message = { ...baseReadFileRequest } as ReadFileRequest;
     if (object.path !== undefined && object.path !== null) {
       message.path = FilePath.fromPartial(object.path);
+    }
+    if (object.isBinaryFile !== undefined && object.isBinaryFile !== null) {
+      message.isBinaryFile = object.isBinaryFile;
     }
     return message;
   },
@@ -3161,8 +3592,11 @@ export const ReadFileResponse = {
     message: ReadFileResponse,
     writer: _m0.Writer = _m0.Writer.create()
   ): _m0.Writer {
-    if (message.data !== undefined) {
-      writer.uint32(10).bytes(message.data);
+    if (message.type?.$case === "data") {
+      writer.uint32(10).bytes(message.type.data);
+    }
+    if (message.type?.$case === "text") {
+      writer.uint32(18).string(message.type.text);
     }
     return writer;
   },
@@ -3175,7 +3609,10 @@ export const ReadFileResponse = {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
-          message.data = reader.bytes();
+          message.type = { $case: "data", data: reader.bytes() };
+          break;
+        case 2:
+          message.type = { $case: "text", text: reader.string() };
           break;
         default:
           reader.skipType(tag & 7);
@@ -3188,23 +3625,40 @@ export const ReadFileResponse = {
   fromJSON(object: any): ReadFileResponse {
     const message = { ...baseReadFileResponse } as ReadFileResponse;
     if (object.data !== undefined && object.data !== null) {
-      message.data = bytesFromBase64(object.data);
+      message.type = { $case: "data", data: bytesFromBase64(object.data) };
+    }
+    if (object.text !== undefined && object.text !== null) {
+      message.type = { $case: "text", text: String(object.text) };
     }
     return message;
   },
 
   toJSON(message: ReadFileResponse): unknown {
     const obj: any = {};
-    message.data !== undefined &&
+    message.type?.$case === "data" &&
       (obj.data =
-        message.data !== undefined ? base64FromBytes(message.data) : undefined);
+        message.type?.data !== undefined
+          ? base64FromBytes(message.type?.data)
+          : undefined);
+    message.type?.$case === "text" && (obj.text = message.type?.text);
     return obj;
   },
 
   fromPartial(object: DeepPartial<ReadFileResponse>): ReadFileResponse {
     const message = { ...baseReadFileResponse } as ReadFileResponse;
-    if (object.data !== undefined && object.data !== null) {
-      message.data = object.data;
+    if (
+      object.type?.$case === "data" &&
+      object.type?.data !== undefined &&
+      object.type?.data !== null
+    ) {
+      message.type = { $case: "data", data: object.type.data };
+    }
+    if (
+      object.type?.$case === "text" &&
+      object.type?.text !== undefined &&
+      object.type?.text !== null
+    ) {
+      message.type = { $case: "text", text: object.type.text };
     }
     return message;
   },
@@ -3584,6 +4038,345 @@ export const DestinationOfSymbolicLinkResponse = {
   },
 };
 
+const baseDefaultsValue: object = {};
+
+export const DefaultsValue = {
+  encode(
+    message: DefaultsValue,
+    writer: _m0.Writer = _m0.Writer.create()
+  ): _m0.Writer {
+    if (message.type?.$case === "null") {
+      writer.uint32(8).bool(message.type.null);
+    }
+    if (message.type?.$case === "boolean") {
+      writer.uint32(16).bool(message.type.boolean);
+    }
+    if (message.type?.$case === "string") {
+      writer.uint32(26).string(message.type.string);
+    }
+    if (message.type?.$case === "integer") {
+      writer.uint32(32).int64(message.type.integer);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): DefaultsValue {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = { ...baseDefaultsValue } as DefaultsValue;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.type = { $case: "null", null: reader.bool() };
+          break;
+        case 2:
+          message.type = { $case: "boolean", boolean: reader.bool() };
+          break;
+        case 3:
+          message.type = { $case: "string", string: reader.string() };
+          break;
+        case 4:
+          message.type = {
+            $case: "integer",
+            integer: longToNumber(reader.int64() as Long),
+          };
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+
+  fromJSON(object: any): DefaultsValue {
+    const message = { ...baseDefaultsValue } as DefaultsValue;
+    if (object.null !== undefined && object.null !== null) {
+      message.type = { $case: "null", null: Boolean(object.null) };
+    }
+    if (object.boolean !== undefined && object.boolean !== null) {
+      message.type = { $case: "boolean", boolean: Boolean(object.boolean) };
+    }
+    if (object.string !== undefined && object.string !== null) {
+      message.type = { $case: "string", string: String(object.string) };
+    }
+    if (object.integer !== undefined && object.integer !== null) {
+      message.type = { $case: "integer", integer: Number(object.integer) };
+    }
+    return message;
+  },
+
+  toJSON(message: DefaultsValue): unknown {
+    const obj: any = {};
+    message.type?.$case === "null" && (obj.null = message.type?.null);
+    message.type?.$case === "boolean" && (obj.boolean = message.type?.boolean);
+    message.type?.$case === "string" && (obj.string = message.type?.string);
+    message.type?.$case === "integer" && (obj.integer = message.type?.integer);
+    return obj;
+  },
+
+  fromPartial(object: DeepPartial<DefaultsValue>): DefaultsValue {
+    const message = { ...baseDefaultsValue } as DefaultsValue;
+    if (
+      object.type?.$case === "null" &&
+      object.type?.null !== undefined &&
+      object.type?.null !== null
+    ) {
+      message.type = { $case: "null", null: object.type.null };
+    }
+    if (
+      object.type?.$case === "boolean" &&
+      object.type?.boolean !== undefined &&
+      object.type?.boolean !== null
+    ) {
+      message.type = { $case: "boolean", boolean: object.type.boolean };
+    }
+    if (
+      object.type?.$case === "string" &&
+      object.type?.string !== undefined &&
+      object.type?.string !== null
+    ) {
+      message.type = { $case: "string", string: object.type.string };
+    }
+    if (
+      object.type?.$case === "integer" &&
+      object.type?.integer !== undefined &&
+      object.type?.integer !== null
+    ) {
+      message.type = { $case: "integer", integer: object.type.integer };
+    }
+    return message;
+  },
+};
+
+const baseGetDefaultsPropertyRequest: object = {};
+
+export const GetDefaultsPropertyRequest = {
+  encode(
+    message: GetDefaultsPropertyRequest,
+    writer: _m0.Writer = _m0.Writer.create()
+  ): _m0.Writer {
+    if (message.key !== undefined) {
+      writer.uint32(10).string(message.key);
+    }
+    return writer;
+  },
+
+  decode(
+    input: _m0.Reader | Uint8Array,
+    length?: number
+  ): GetDefaultsPropertyRequest {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = {
+      ...baseGetDefaultsPropertyRequest,
+    } as GetDefaultsPropertyRequest;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.key = reader.string();
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetDefaultsPropertyRequest {
+    const message = {
+      ...baseGetDefaultsPropertyRequest,
+    } as GetDefaultsPropertyRequest;
+    if (object.key !== undefined && object.key !== null) {
+      message.key = String(object.key);
+    }
+    return message;
+  },
+
+  toJSON(message: GetDefaultsPropertyRequest): unknown {
+    const obj: any = {};
+    message.key !== undefined && (obj.key = message.key);
+    return obj;
+  },
+
+  fromPartial(
+    object: DeepPartial<GetDefaultsPropertyRequest>
+  ): GetDefaultsPropertyRequest {
+    const message = {
+      ...baseGetDefaultsPropertyRequest,
+    } as GetDefaultsPropertyRequest;
+    if (object.key !== undefined && object.key !== null) {
+      message.key = object.key;
+    }
+    return message;
+  },
+};
+
+const baseGetDefaultsPropertyResponse: object = {};
+
+export const GetDefaultsPropertyResponse = {
+  encode(
+    message: GetDefaultsPropertyResponse,
+    writer: _m0.Writer = _m0.Writer.create()
+  ): _m0.Writer {
+    if (message.key !== undefined) {
+      writer.uint32(10).string(message.key);
+    }
+    if (message.value !== undefined) {
+      DefaultsValue.encode(message.value, writer.uint32(18).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(
+    input: _m0.Reader | Uint8Array,
+    length?: number
+  ): GetDefaultsPropertyResponse {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = {
+      ...baseGetDefaultsPropertyResponse,
+    } as GetDefaultsPropertyResponse;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.key = reader.string();
+          break;
+        case 2:
+          message.value = DefaultsValue.decode(reader, reader.uint32());
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetDefaultsPropertyResponse {
+    const message = {
+      ...baseGetDefaultsPropertyResponse,
+    } as GetDefaultsPropertyResponse;
+    if (object.key !== undefined && object.key !== null) {
+      message.key = String(object.key);
+    }
+    if (object.value !== undefined && object.value !== null) {
+      message.value = DefaultsValue.fromJSON(object.value);
+    }
+    return message;
+  },
+
+  toJSON(message: GetDefaultsPropertyResponse): unknown {
+    const obj: any = {};
+    message.key !== undefined && (obj.key = message.key);
+    message.value !== undefined &&
+      (obj.value = message.value
+        ? DefaultsValue.toJSON(message.value)
+        : undefined);
+    return obj;
+  },
+
+  fromPartial(
+    object: DeepPartial<GetDefaultsPropertyResponse>
+  ): GetDefaultsPropertyResponse {
+    const message = {
+      ...baseGetDefaultsPropertyResponse,
+    } as GetDefaultsPropertyResponse;
+    if (object.key !== undefined && object.key !== null) {
+      message.key = object.key;
+    }
+    if (object.value !== undefined && object.value !== null) {
+      message.value = DefaultsValue.fromPartial(object.value);
+    }
+    return message;
+  },
+};
+
+const baseUpdateDefaultsPropertyRequest: object = {};
+
+export const UpdateDefaultsPropertyRequest = {
+  encode(
+    message: UpdateDefaultsPropertyRequest,
+    writer: _m0.Writer = _m0.Writer.create()
+  ): _m0.Writer {
+    if (message.key !== undefined) {
+      writer.uint32(10).string(message.key);
+    }
+    if (message.value !== undefined) {
+      DefaultsValue.encode(message.value, writer.uint32(18).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(
+    input: _m0.Reader | Uint8Array,
+    length?: number
+  ): UpdateDefaultsPropertyRequest {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = {
+      ...baseUpdateDefaultsPropertyRequest,
+    } as UpdateDefaultsPropertyRequest;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.key = reader.string();
+          break;
+        case 2:
+          message.value = DefaultsValue.decode(reader, reader.uint32());
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+
+  fromJSON(object: any): UpdateDefaultsPropertyRequest {
+    const message = {
+      ...baseUpdateDefaultsPropertyRequest,
+    } as UpdateDefaultsPropertyRequest;
+    if (object.key !== undefined && object.key !== null) {
+      message.key = String(object.key);
+    }
+    if (object.value !== undefined && object.value !== null) {
+      message.value = DefaultsValue.fromJSON(object.value);
+    }
+    return message;
+  },
+
+  toJSON(message: UpdateDefaultsPropertyRequest): unknown {
+    const obj: any = {};
+    message.key !== undefined && (obj.key = message.key);
+    message.value !== undefined &&
+      (obj.value = message.value
+        ? DefaultsValue.toJSON(message.value)
+        : undefined);
+    return obj;
+  },
+
+  fromPartial(
+    object: DeepPartial<UpdateDefaultsPropertyRequest>
+  ): UpdateDefaultsPropertyRequest {
+    const message = {
+      ...baseUpdateDefaultsPropertyRequest,
+    } as UpdateDefaultsPropertyRequest;
+    if (object.key !== undefined && object.key !== null) {
+      message.key = object.key;
+    }
+    if (object.value !== undefined && object.value !== null) {
+      message.value = DefaultsValue.fromPartial(object.value);
+    }
+    return message;
+  },
+};
+
 const baseGetSettingsPropertyRequest: object = {};
 
 export const GetSettingsPropertyRequest = {
@@ -3800,6 +4593,354 @@ export const UpdateSettingsPropertyRequest = {
     }
     if (object.value !== undefined && object.value !== null) {
       message.value = object.value;
+    }
+    return message;
+  },
+};
+
+const baseTelemetryProperty: object = { key: "", value: "" };
+
+export const TelemetryProperty = {
+  encode(
+    message: TelemetryProperty,
+    writer: _m0.Writer = _m0.Writer.create()
+  ): _m0.Writer {
+    if (message.key !== "") {
+      writer.uint32(10).string(message.key);
+    }
+    if (message.value !== "") {
+      writer.uint32(18).string(message.value);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): TelemetryProperty {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = { ...baseTelemetryProperty } as TelemetryProperty;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.key = reader.string();
+          break;
+        case 2:
+          message.value = reader.string();
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TelemetryProperty {
+    const message = { ...baseTelemetryProperty } as TelemetryProperty;
+    if (object.key !== undefined && object.key !== null) {
+      message.key = String(object.key);
+    }
+    if (object.value !== undefined && object.value !== null) {
+      message.value = String(object.value);
+    }
+    return message;
+  },
+
+  toJSON(message: TelemetryProperty): unknown {
+    const obj: any = {};
+    message.key !== undefined && (obj.key = message.key);
+    message.value !== undefined && (obj.value = message.value);
+    return obj;
+  },
+
+  fromPartial(object: DeepPartial<TelemetryProperty>): TelemetryProperty {
+    const message = { ...baseTelemetryProperty } as TelemetryProperty;
+    if (object.key !== undefined && object.key !== null) {
+      message.key = object.key;
+    }
+    if (object.value !== undefined && object.value !== null) {
+      message.value = object.value;
+    }
+    return message;
+  },
+};
+
+const baseTelemetryAliasRequest: object = {};
+
+export const TelemetryAliasRequest = {
+  encode(
+    message: TelemetryAliasRequest,
+    writer: _m0.Writer = _m0.Writer.create()
+  ): _m0.Writer {
+    if (message.userId !== undefined) {
+      writer.uint32(10).string(message.userId);
+    }
+    return writer;
+  },
+
+  decode(
+    input: _m0.Reader | Uint8Array,
+    length?: number
+  ): TelemetryAliasRequest {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = { ...baseTelemetryAliasRequest } as TelemetryAliasRequest;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.userId = reader.string();
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TelemetryAliasRequest {
+    const message = { ...baseTelemetryAliasRequest } as TelemetryAliasRequest;
+    if (object.userId !== undefined && object.userId !== null) {
+      message.userId = String(object.userId);
+    }
+    return message;
+  },
+
+  toJSON(message: TelemetryAliasRequest): unknown {
+    const obj: any = {};
+    message.userId !== undefined && (obj.userId = message.userId);
+    return obj;
+  },
+
+  fromPartial(
+    object: DeepPartial<TelemetryAliasRequest>
+  ): TelemetryAliasRequest {
+    const message = { ...baseTelemetryAliasRequest } as TelemetryAliasRequest;
+    if (object.userId !== undefined && object.userId !== null) {
+      message.userId = object.userId;
+    }
+    return message;
+  },
+};
+
+const baseTelemetryTrackRequest: object = {};
+
+export const TelemetryTrackRequest = {
+  encode(
+    message: TelemetryTrackRequest,
+    writer: _m0.Writer = _m0.Writer.create()
+  ): _m0.Writer {
+    if (message.event !== undefined) {
+      writer.uint32(10).string(message.event);
+    }
+    for (const v of message.properties) {
+      TelemetryProperty.encode(v!, writer.uint32(18).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(
+    input: _m0.Reader | Uint8Array,
+    length?: number
+  ): TelemetryTrackRequest {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = { ...baseTelemetryTrackRequest } as TelemetryTrackRequest;
+    message.properties = [];
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.event = reader.string();
+          break;
+        case 2:
+          message.properties.push(
+            TelemetryProperty.decode(reader, reader.uint32())
+          );
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TelemetryTrackRequest {
+    const message = { ...baseTelemetryTrackRequest } as TelemetryTrackRequest;
+    message.properties = [];
+    if (object.event !== undefined && object.event !== null) {
+      message.event = String(object.event);
+    }
+    if (object.properties !== undefined && object.properties !== null) {
+      for (const e of object.properties) {
+        message.properties.push(TelemetryProperty.fromJSON(e));
+      }
+    }
+    return message;
+  },
+
+  toJSON(message: TelemetryTrackRequest): unknown {
+    const obj: any = {};
+    message.event !== undefined && (obj.event = message.event);
+    if (message.properties) {
+      obj.properties = message.properties.map((e) =>
+        e ? TelemetryProperty.toJSON(e) : undefined
+      );
+    } else {
+      obj.properties = [];
+    }
+    return obj;
+  },
+
+  fromPartial(
+    object: DeepPartial<TelemetryTrackRequest>
+  ): TelemetryTrackRequest {
+    const message = { ...baseTelemetryTrackRequest } as TelemetryTrackRequest;
+    message.properties = [];
+    if (object.event !== undefined && object.event !== null) {
+      message.event = object.event;
+    }
+    if (object.properties !== undefined && object.properties !== null) {
+      for (const e of object.properties) {
+        message.properties.push(TelemetryProperty.fromPartial(e));
+      }
+    }
+    return message;
+  },
+};
+
+const baseTelemetryIdentifyRequest: object = {};
+
+export const TelemetryIdentifyRequest = {
+  encode(
+    message: TelemetryIdentifyRequest,
+    writer: _m0.Writer = _m0.Writer.create()
+  ): _m0.Writer {
+    for (const v of message.traits) {
+      TelemetryProperty.encode(v!, writer.uint32(18).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(
+    input: _m0.Reader | Uint8Array,
+    length?: number
+  ): TelemetryIdentifyRequest {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = {
+      ...baseTelemetryIdentifyRequest,
+    } as TelemetryIdentifyRequest;
+    message.traits = [];
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 2:
+          message.traits.push(
+            TelemetryProperty.decode(reader, reader.uint32())
+          );
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TelemetryIdentifyRequest {
+    const message = {
+      ...baseTelemetryIdentifyRequest,
+    } as TelemetryIdentifyRequest;
+    message.traits = [];
+    if (object.traits !== undefined && object.traits !== null) {
+      for (const e of object.traits) {
+        message.traits.push(TelemetryProperty.fromJSON(e));
+      }
+    }
+    return message;
+  },
+
+  toJSON(message: TelemetryIdentifyRequest): unknown {
+    const obj: any = {};
+    if (message.traits) {
+      obj.traits = message.traits.map((e) =>
+        e ? TelemetryProperty.toJSON(e) : undefined
+      );
+    } else {
+      obj.traits = [];
+    }
+    return obj;
+  },
+
+  fromPartial(
+    object: DeepPartial<TelemetryIdentifyRequest>
+  ): TelemetryIdentifyRequest {
+    const message = {
+      ...baseTelemetryIdentifyRequest,
+    } as TelemetryIdentifyRequest;
+    message.traits = [];
+    if (object.traits !== undefined && object.traits !== null) {
+      for (const e of object.traits) {
+        message.traits.push(TelemetryProperty.fromPartial(e));
+      }
+    }
+    return message;
+  },
+};
+
+const baseOnboardingRequest: object = { action: 0 };
+
+export const OnboardingRequest = {
+  encode(
+    message: OnboardingRequest,
+    writer: _m0.Writer = _m0.Writer.create()
+  ): _m0.Writer {
+    if (message.action !== 0) {
+      writer.uint32(8).int32(message.action);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): OnboardingRequest {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = { ...baseOnboardingRequest } as OnboardingRequest;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.action = reader.int32() as any;
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+
+  fromJSON(object: any): OnboardingRequest {
+    const message = { ...baseOnboardingRequest } as OnboardingRequest;
+    if (object.action !== undefined && object.action !== null) {
+      message.action = onboardingActionFromJSON(object.action);
+    }
+    return message;
+  },
+
+  toJSON(message: OnboardingRequest): unknown {
+    const obj: any = {};
+    message.action !== undefined &&
+      (obj.action = onboardingActionToJSON(message.action));
+    return obj;
+  },
+
+  fromPartial(object: DeepPartial<OnboardingRequest>): OnboardingRequest {
+    const message = { ...baseOnboardingRequest } as OnboardingRequest;
+    if (object.action !== undefined && object.action !== null) {
+      message.action = object.action;
     }
     return message;
   },

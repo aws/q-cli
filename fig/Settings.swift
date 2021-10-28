@@ -463,12 +463,22 @@ extension Settings {
             throw APIError.generic(message: "No key provided with request")
         }
         
+        let value: Any? = {
+          let valueString = request.hasValue ? request.value : nil
+            guard let valueData = valueString?.data(using: .utf8) else {
+                return nil
+            }
+            
+            let value = try? JSONSerialization.jsonObject(with: valueData, options: .allowFragments)
+            
+            if value is NSNull {
+                return nil
+            }
+            
+            return value
+        }()
         
-        if request.hasValue {
-            Settings.shared.set(value: request.value, forKey: request.key)
-        } else {
-             Settings.shared.set(value: nil, forKey: request.key)
-        }
+        Settings.shared.set(value: value, forKey: request.key)
         
         return true
         
