@@ -444,11 +444,21 @@ extension Settings {
         guard request.hasKey else {
             throw APIError.generic(message: "No key provided with request")
         }
-        
-        guard let value = Settings.shared.getValue(forKey: request.key) else {
-            throw APIError.generic(message: "No value for key")
-        }
-        
+      
+        let value: Any = try {
+          
+          if request.hasKey {
+            if let value = Settings.shared.getValue(forKey: request.key) {
+              return value
+            } else {
+              throw APIError.generic(message: "No value for key")
+            }
+          } else {
+            return Settings.shared.currentSettings
+          }
+          
+        }()
+      
         guard let data = try? JSONSerialization.data(withJSONObject: value, options: .prettyPrinted) else {
             throw APIError.generic(message: "Could not convert value for key to JSON")
         }

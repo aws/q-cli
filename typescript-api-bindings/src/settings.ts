@@ -38,7 +38,11 @@ const set = async (
       key: key,
     });
 
+const current = async () => {
+    let all = await sendGetSettingsPropertyRequest({}); 
+    return JSON.parse(all.jsonBlob ?? "{}")
+}
 const didChange = { subscribe }
-const Settings = { didChange, get, set, remove };
+const Settings = { didChange, get, set, remove, current };
 
 export default Settings;
