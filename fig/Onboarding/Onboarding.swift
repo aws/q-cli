@@ -88,6 +88,8 @@ extension Onboarding {
         }
     
         NSApp.appDelegate.setupCompanionWindow()
+      case .uninstall:
+        NSApp.appDelegate.uninstall()
       case .UNRECOGNIZED(_):
         Logger.log(message: "Unrecognized Onboarding Action!", subsystem: .api)
         callback(false)

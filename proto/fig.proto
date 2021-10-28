@@ -24,6 +24,9 @@ message ClientOriginatedMessage {
       TelemetryIdentifyRequest telemetry_identify_request = 116;
       TelemetryTrackRequest telemetry_track_request = 117;
       OnboardingRequest onboarding_request = 118;
+      WindowFocusRequest focus_request = 119;
+      OpenInExternalApplicationRequest open_in_external_application_request = 120;
+
   }
 }
 
@@ -278,10 +281,26 @@ enum OnboardingAction {
   INSTALLATION_SCRIPT = 0;
   PROMPT_FOR_ACCESSIBILITY_PERMISSION = 1;
   LAUNCH_SHELL_ONBOARDING = 3;
+  UNINSTALL = 4;
 }
 
 message OnboardingRequest {
   OnboardingAction action = 1;
+}
+
+/// Window Focus
+
+enum FocusRequest {
+  TAKE_FOCUS = 0;
+  RETURN_FOCUS = 1;
+}
+
+message WindowFocusRequest {
+  optional FocusRequest type = 1;
+}
+
+message OpenInExternalApplicationRequest {
+  optional string url = 1;
 }
 
 /// Actions
