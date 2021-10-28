@@ -10,7 +10,11 @@ const write = async(path: string, contents: string) =>
 
 const read = async(path: string) => {
     let response = await sendReadFileRequest({ path: { path: path, expandTildeInPath: true}})
-    return response.data
+    if (response.type?.$case == "text") {
+        return response.type.text
+    } else {
+        return null
+    }
 }
 
 const list = async(path: string) => {
