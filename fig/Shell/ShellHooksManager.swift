@@ -603,7 +603,7 @@ extension ShellHookManager {
         
         guard sessionIdForWindow == nil else {
             // a different session Id is already associated with window, don't link!
-            Logger.log(message: "A different session Id is already associated with window, don't link!", priority: .info, subsystem: .tty)
+          Logger.log(message: "A different session Id (\(sessionIdForWindow!) is already associated with window (\(hash)), don't link new session (\(sessionId)!", priority: .info, subsystem: .tty)
             return nil
         }
         

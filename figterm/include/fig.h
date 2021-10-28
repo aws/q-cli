@@ -87,7 +87,7 @@ void history_file_close();
 void write_history_entry(HistoryEntry*);
 
 // figterm.c
-#define SESSION_ID_MAX_LEN 40
+#define SESSION_ID_MAX_LEN 50
 
 // Holds information about shell processes passed from shell config via osc.
 typedef struct {
@@ -141,6 +141,8 @@ FigInfo* get_fig_info();
 void free_fig_info();
 void set_pty_name(char*);
 int fig_socket_send(char*);
+int fig_socket_listen();
+void fig_socket_cleanup();
 char* fig_path(char*);
 char* log_path(char*);
 
