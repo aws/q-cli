@@ -459,7 +459,7 @@ extension Settings {
           
         }()
       
-        guard let data = try? JSONSerialization.data(withJSONObject: value, options: .prettyPrinted) else {
+        guard let data = try? JSONSerialization.data(withJSONObject: value, options: [ .prettyPrinted, .fragmentsAllowed]) else {
             throw APIError.generic(message: "Could not convert value for key to JSON")
         }
                 
