@@ -20,6 +20,7 @@ jobs:
         run: |
           cd typescript-api-bindings
           npm ci
+          npm run generate-requests
 
       - name: "Automated Version Bump"
         uses: "phips28/gh-action-bump-version@master"
