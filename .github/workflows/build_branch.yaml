@@ -82,23 +82,12 @@ jobs:
           fi
           echo $BUMP_BUILD_NUMBER
 
-      - name: "Bump Build number"
-        run: agvtool bump
-
       - name: "SET: BUILD"
         env:
             ACTIONS_ALLOW_UNSECURE_COMMANDS: true
         run: |
           echo "::set-env name=BUILD::$(agvtool what-version -terse)"
           echo $BUILD
-
-      - name: "Commit Build number"
-        if: env.BUMP_BUILD_NUMBER == 1
-        run: |
-          git pull
-          git add fig.xcodeproj/project.pbxproj
-          git commit -m "Bump build to $BUILD [skip ci]"
-          git push origin ${GITHUB_REF##*/}
 
 ############################################
 # Enable Caching
@@ -295,3 +284,15 @@ jobs:
           asset_path: fig ${{env.BUILD}}.dmg
           asset_name: Fig.dmg
           asset_content_type: application/octet-stream
+############################################
+# Bump Build number
+############################################
+      - name: "Bump Build number"
+        run: agvtool bump
+      - name: "Commit Build number"
+        if: env.BUMP_BUILD_NUMBER == 1
+        run: |
+          git pull
+          git add fig.xcodeproj/project.pbxproj
+          git commit -m "Bump build to $BUILD [skip ci]"
+          git push origin ${GITHUB_REF##*/}
