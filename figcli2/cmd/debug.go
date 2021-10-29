@@ -33,6 +33,7 @@ var debugCmd = &cobra.Command{
 var debugLogsCmd = &cobra.Command{
 	Use:   "logs",
 	Short: "debug fig logs",
+	Args:  cobra.ArbitraryArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Start logging
 		loggingExec := exec.Command("fig", "settings", "developer.logging", "true")
@@ -51,8 +52,21 @@ var debugLogsCmd = &cobra.Command{
 			os.Exit(0)
 		}()
 
+		files := []string{}
+
+		if len(args) > 0 {
+			for _, arg := range args {
+				file := fmt.Sprintf("~/.fig/logs/%s.log", arg)
+				files = append(files, file)
+			}
+		} else {
+			files = append(files, "~/.fig/logs/*.log")
+		}
+
+		command := fmt.Sprintf("tail -n0 -qf %s", strings.Join(files, " "))
+
 		// Tail logs
-		tailExec := exec.Command("sh", "-c", "tail -n0 -qf ~/.fig/logs/*.log")
+		tailExec := exec.Command("sh", "-c", command)
 
 		tailExec.Stdout = os.Stdout
 		tailExec.Stderr = os.Stderr
