@@ -7,7 +7,6 @@ import {
     ContentsOfDirectoryResponse,
     DestinationOfSymbolicLinkRequest,
     DestinationOfSymbolicLinkResponse,
-    FocusRequest,
     GetDefaultsPropertyRequest,
     GetDefaultsPropertyResponse,
     GetSettingsPropertyRequest,
@@ -28,6 +27,7 @@ import {
     UpdateApplicationPropertiesRequest,
     UpdateDefaultsPropertyRequest,
     UpdateSettingsPropertyRequest,
+    WindowFocusRequest,
     WriteFileRequest
 } from "./fig";
 import { sendMessage } from "./core"
@@ -467,12 +467,12 @@ export const sendOnboardingRequest = async (
     });
 
 
-export const sendFocusRequest = async (
-    request: FocusRequest
+export const sendWindowFocusRequest = async (
+    request: WindowFocusRequest
 ): Promise<void> =>
     new Promise((resolve, reject) => {
         sendMessage(
-            { $case: "focusRequest", focusRequest: request },
+            { $case: "windowFocusRequest", windowFocusRequest: request },
             (response) => {
                 switch (response?.$case) {
                     case "success":
@@ -484,7 +484,7 @@ export const sendFocusRequest = async (
                     default:
                         reject(
                             Error(
-                                "Invalid response '" + response?.$case + "' for 'FocusRequest'"
+                                "Invalid response '" + response?.$case + "' for 'WindowFocusRequest'"
                             )
                         );
                 }

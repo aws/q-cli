@@ -311,7 +311,7 @@ export interface ClientOriginatedMessage {
         telemetryTrackRequest: TelemetryTrackRequest;
       }
     | { $case: "onboardingRequest"; onboardingRequest: OnboardingRequest }
-    | { $case: "focusRequest"; focusRequest: WindowFocusRequest }
+    | { $case: "windowFocusRequest"; windowFocusRequest: WindowFocusRequest }
     | {
         $case: "openInExternalApplicationRequest";
         openInExternalApplicationRequest: OpenInExternalApplicationRequest;
@@ -794,9 +794,9 @@ export const ClientOriginatedMessage = {
         writer.uint32(946).fork()
       ).ldelim();
     }
-    if (message.submessage?.$case === "focusRequest") {
+    if (message.submessage?.$case === "windowFocusRequest") {
       WindowFocusRequest.encode(
-        message.submessage.focusRequest,
+        message.submessage.windowFocusRequest,
         writer.uint32(954).fork()
       ).ldelim();
     }
@@ -981,8 +981,11 @@ export const ClientOriginatedMessage = {
           break;
         case 119:
           message.submessage = {
-            $case: "focusRequest",
-            focusRequest: WindowFocusRequest.decode(reader, reader.uint32()),
+            $case: "windowFocusRequest",
+            windowFocusRequest: WindowFocusRequest.decode(
+              reader,
+              reader.uint32()
+            ),
           };
           break;
         case 120:
@@ -1199,10 +1202,15 @@ export const ClientOriginatedMessage = {
         onboardingRequest: OnboardingRequest.fromJSON(object.onboardingRequest),
       };
     }
-    if (object.focusRequest !== undefined && object.focusRequest !== null) {
+    if (
+      object.windowFocusRequest !== undefined &&
+      object.windowFocusRequest !== null
+    ) {
       message.submessage = {
-        $case: "focusRequest",
-        focusRequest: WindowFocusRequest.fromJSON(object.focusRequest),
+        $case: "windowFocusRequest",
+        windowFocusRequest: WindowFocusRequest.fromJSON(
+          object.windowFocusRequest
+        ),
       };
     }
     if (
@@ -1331,9 +1339,9 @@ export const ClientOriginatedMessage = {
       (obj.onboardingRequest = message.submessage?.onboardingRequest
         ? OnboardingRequest.toJSON(message.submessage?.onboardingRequest)
         : undefined);
-    message.submessage?.$case === "focusRequest" &&
-      (obj.focusRequest = message.submessage?.focusRequest
-        ? WindowFocusRequest.toJSON(message.submessage?.focusRequest)
+    message.submessage?.$case === "windowFocusRequest" &&
+      (obj.windowFocusRequest = message.submessage?.windowFocusRequest
+        ? WindowFocusRequest.toJSON(message.submessage?.windowFocusRequest)
         : undefined);
     message.submessage?.$case === "openInExternalApplicationRequest" &&
       (obj.openInExternalApplicationRequest = message.submessage
@@ -1575,14 +1583,14 @@ export const ClientOriginatedMessage = {
       };
     }
     if (
-      object.submessage?.$case === "focusRequest" &&
-      object.submessage?.focusRequest !== undefined &&
-      object.submessage?.focusRequest !== null
+      object.submessage?.$case === "windowFocusRequest" &&
+      object.submessage?.windowFocusRequest !== undefined &&
+      object.submessage?.windowFocusRequest !== null
     ) {
       message.submessage = {
-        $case: "focusRequest",
-        focusRequest: WindowFocusRequest.fromPartial(
-          object.submessage.focusRequest
+        $case: "windowFocusRequest",
+        windowFocusRequest: WindowFocusRequest.fromPartial(
+          object.submessage.windowFocusRequest
         ),
       };
     }
