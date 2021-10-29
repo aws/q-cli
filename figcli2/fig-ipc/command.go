@@ -217,3 +217,35 @@ func RunOpenUiElementCommand(element fig_proto.UiElement) (string, error) {
 
 	return GetCommandResponseMessage(response)
 }
+
+func ToggleDebugModeCommand() (string, error) {
+	cmd := fig_proto.Command{
+		Command: &fig_proto.Command_ToggleDebugMode{
+			ToggleDebugMode: &fig_proto.ToggleDebugModeCommand{},
+		},
+	}
+
+	response, err := SendRecvCommand(&cmd)
+	if err != nil {
+		return "", err
+	}
+
+	return GetCommandResponseMessage(response)
+}
+
+func SetDebugModeCommand(debugMode bool) (string, error) {
+	cmd := fig_proto.Command{
+		Command: &fig_proto.Command_ToggleDebugMode{
+			ToggleDebugMode: &fig_proto.ToggleDebugModeCommand{
+				DebugMode: &debugMode,
+			},
+		},
+	}
+
+	response, err := SendRecvCommand(&cmd)
+	if err != nil {
+		return "", err
+	}
+
+	return GetCommandResponseMessage(response)
+}

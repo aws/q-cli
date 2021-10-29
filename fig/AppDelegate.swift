@@ -561,13 +561,14 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
        keyEquivalent: "")
       developerMenu.addItem(NSMenuItem.separator())
       
-      let debugAutocomplete = developerMenu.addItem(
-       withTitle: "Force Popup to Appear",
-       action: #selector(AppDelegate.toggleDebugAutocomplete(_:)),
-       keyEquivalent: "")
-      debugAutocomplete.state = Defaults.debugAutocomplete ? .on : .off
-//        utilitiesMenu.addItem(NSMenuItem.separator())
-      developerMenu.addItem(NSMenuItem.separator())
+//      let debugAutocomplete = developerMenu.addItem(
+//       withTitle: "Force Popup to Appear",
+//       action: #selector(AppDelegate.toggleDebugAutocomplete(_:)),
+//       keyEquivalent: "")
+//      debugAutocomplete.state = Defaults.debugAutocomplete ? .on : .off
+//      utilitiesMenu.addItem(NSMenuItem.separator())
+//      developerMenu.addItem(NSMenuItem.separator())
+      
       developerMenu.addItem(
        withTitle: "Run Install/Update Script",
        action: #selector(AppDelegate.setupScript),
