@@ -30,19 +30,26 @@ jobs:
 # Declare ENVIRONMENT variables
 ############################################
 
-      - name: "SET: VERSIONS_BRANCH"
+      - name: "SET: VERSIONS_BRANCH and APPCAST_PREFIX"
         env:
           REF: ${{ github.ref }}
           ACTIONS_ALLOW_UNSECURE_COMMANDS: true
         run: |
           if [[ $REF == 'refs/heads/master' ]]; then
               echo "::set-env name=VERSIONS_BRANCH::main"
+              echo "::set-env name=APPCAST_PREFIX::versions"
+
           elif [[ $REF == 'refs/heads/staging' ]]; then
               echo "::set-env name=VERSIONS_BRANCH::beta"
+              echo "::set-env name=APPCAST_PREFIX::beta"
+
           else
               echo "::set-env name=VERSIONS_BRANCH::alpha"
+              echo "::set-env name=APPCAST_PREFIX::alpha"
+
           fi
           echo $VERSIONS_BRANCH
+          echo $APPCAST_PREFIX
 
 
       - name: "Checkout Project"
@@ -218,7 +225,7 @@ jobs:
           cp "fig $BUILD.dmg" ./versions
           rm ./versions/fig@latest.dmg
       - name: "Generate Appcast"
-        run: ./Sparkle/bin/generate_appcast -s $SPARKLE_KEY --download-url-prefix https://$VERSIONS_BRANCH.withfig.com versions
+        run: ./Sparkle/bin/generate_appcast -s $SPARKLE_KEY --download-url-prefix https://$APPCAST_PREFIX.withfig.com versions
         env:
           SPARKLE_KEY: ${{ secrets.SPARKLE_SIGNING_KEY }}
       - name: Commit changes
@@ -242,7 +249,7 @@ jobs:
           echo ">>>"
 
           echo "<<<deleted"
-          ls | grep '.dmg\|.delta' | grep -v -x -F -f $TMPDIR/safe
+          ls | grep '.dmg\|.delta' | grep -v -x -F -f $TMPDIR/safe || true
           echo ">>>"
 
           ls | grep '.dmg\|.delta' | grep -v -x -F -f $TMPDIR/safe | xargs -I{} rm -v {}

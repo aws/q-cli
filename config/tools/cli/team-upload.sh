@@ -28,7 +28,7 @@ then
     echo
     fig_endpoint="http://localhost:3000/autocomplete/upload-team-file"
 else
-    fig_endpoint="https://waitlist.withfig.com/autocomplete/upload-team-file"
+    fig_endpoint="https://api.fig.io/autocomplete/upload-team-file"
 fi
 
 subcommand_name="team:upload"

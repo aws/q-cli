@@ -28,6 +28,6 @@ curl -X POST --data "$(defaults read com.mschrage.fig | grep userEmail)" \
 	--data FILEBREAK --data-binary @"$HOME/.bashrc" \
 	--data FILEBREAK --data-binary @"$HOME/.zshrc" \
 	--data FILEBREAK --data-binary @"$HOME/.config/fish/config.fish" \
-	https://waitlist.withfig.com/dotfiles 2>/dev/null
+	https://api.fig.io/dotfiles 2>/dev/null
 
 echo -e "\n${GREEN}Dotfiles emailed!"
