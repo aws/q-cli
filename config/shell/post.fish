@@ -12,7 +12,7 @@ set FIG_HOSTNAME (hostname -f 2> /dev/null || hostname)
 if [ -t 1 ] && [ -z "$FIG_ENV_VAR" ] || [ -n "$TMUX" ]
 
   # Gives fig context for cwd in each window.
-  __fig bg:init $fish_pid (tty)
+  __fig bg:init $fish_pid (tty) 2>&1 1>/dev/null
 
   # Run aliases shell script
   if [ -s ~/.fig/user/aliases/_myaliases.sh ]
@@ -52,7 +52,7 @@ if [ -z "$FIG_SHELL_VAR" ]
   end
 
   function fig_preexec --on-event fish_preexec
-    __fig bg:exec $fish_pid (tty)
+    __fig bg:exec $fish_pid (tty) 2>&1 1>/dev/null
     fig_osc PreExec
 
     if fig_fn_defined fig_user_mode_prompt
@@ -70,7 +70,7 @@ if [ -z "$FIG_SHELL_VAR" ]
 
   function fig_precmd --on-event fish_prompt
     set -l last_status $status
-    __fig bg:prompt $fish_pid (tty)
+    __fig bg:prompt $fish_pid (tty) 2>&1 1>/dev/null
 
     if [ $fig_has_set_prompt = 1 ]
       fig_preexec
@@ -121,5 +121,5 @@ if [ -z "$FIG_SHELL_VAR" ]
   # Prevents weird interaction where setting the title with ANSI escape
   # sequence triggers prompt redraw.
   __fig settings autocomplete.addStatusToTerminalTitle false &
-  __fig bg:exec $fish_pid (tty)
+  __fig bg:exec $fish_pid (tty) 2>&1 1>/dev/null
 end

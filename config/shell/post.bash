@@ -24,7 +24,7 @@ fi
 function fig_osc { printf "\033]697;"; printf $@; printf "\007"; }
 
 function __fig_preexec() {
-  __fig bg:exec $$ $TTY
+  __fig bg:exec $$ $TTY 2>&1 1>/dev/null
 
   fig_osc PreExec
 
@@ -60,7 +60,7 @@ function __fig_prompt () {
   [[ -z "${_fig_done_preexec:-}" ]] && __fig_preexec ""
   _fig_done_preexec=""
 
-  __fig bg:prompt $$ $TTY
+  __fig bg:prompt $$ $TTY 2>&1 1>/dev/null
 
   # If FIG_USER_PSx is undefined or PSx changed by user, update FIG_USER_PSx.
   if [[ -z "${FIG_USER_PS1+x}" || "${PS1}" != "${FIG_LAST_PS1}" ]]; then
