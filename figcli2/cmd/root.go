@@ -6,6 +6,7 @@ import (
 	fig_proto "fig-cli/fig-proto"
 	"fmt"
 	"os"
+	"os/exec"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
@@ -29,7 +30,14 @@ var rootCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		response, err := fig_ipc.RunOpenUiElementCommand(fig_proto.UiElement_MENU_BAR)
 		if err != nil {
-			fmt.Println("Error:", err)
+			_, err := diagnostics.GetAppInfo()
+
+			if err != nil {
+				fmt.Print("\n› Launching Fig...\n\n")
+				figExec := exec.Command("open", "-b", "com.mschrage.fig")
+				figExec.Run()
+				figExec.Process.Release()
+			}
 			return
 		}
 

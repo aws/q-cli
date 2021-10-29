@@ -3,6 +3,7 @@ package cmd
 import (
 	"fig-cli/diagnostics"
 	fig_ipc "fig-cli/fig-ipc"
+	"fig-cli/logging"
 	"fmt"
 	"strconv"
 
@@ -37,8 +38,9 @@ func init() {
 }
 
 var legacyZshKeybuffer = &cobra.Command{
-	Use:   "bg:zsh-keybuffer [session-id] [integration] [tty] [pid] [histno] [cursor] [text]",
-	Short: "Run the editbuffer hook",
+	Use:                "bg:zsh-keybuffer [session-id] [integration] [tty] [pid] [histno] [cursor] [text]",
+	Short:              "Run the editbuffer hook",
+	DisableFlagParsing: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) != 7 {
 			return
@@ -50,13 +52,17 @@ var legacyZshKeybuffer = &cobra.Command{
 		cursor, _ := strconv.Atoi(args[5])
 
 		hook := fig_ipc.CreateEditBufferHook(args[0], integrationVersion, args[2], pid, histno, cursor, args[6])
-		_ = fig_ipc.SendHook(hook)
+		err := fig_ipc.SendHook(hook)
+		if err != nil {
+			logging.Log(err.Error())
+		}
 	},
 }
 
 var legacyFishKeybuffer = &cobra.Command{
-	Use:   "bg:fish-keybuffer [session-id] [integration] [tty] [pid] [histno] [cursor] [text]",
-	Short: "Run the editbuffer hook",
+	Use:                "bg:fish-keybuffer [session-id] [integration] [tty] [pid] [histno] [cursor] [text]",
+	Short:              "Run the editbuffer hook",
+	DisableFlagParsing: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) != 7 {
 			return
@@ -68,13 +74,17 @@ var legacyFishKeybuffer = &cobra.Command{
 		cursor, _ := strconv.Atoi(args[5])
 
 		hook := fig_ipc.CreateEditBufferHook(args[0], integrationVersion, args[2], pid, histno, cursor, args[6])
-		_ = fig_ipc.SendHook(hook)
+		err := fig_ipc.SendHook(hook)
+		if err != nil {
+			logging.Log(err.Error())
+		}
 	},
 }
 
 var legacyBashKeybuffer = &cobra.Command{
-	Use:   "bg:bash-keybuffer [session-id] [integration] [tty] [pid] [histno] [cursor] [text]",
-	Short: "Run the editbuffer hook",
+	Use:                "bg:bash-keybuffer [session-id] [integration] [tty] [pid] [histno] [cursor] [text]",
+	Short:              "Run the editbuffer hook",
+	DisableFlagParsing: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) != 7 {
 			return
@@ -86,13 +96,17 @@ var legacyBashKeybuffer = &cobra.Command{
 		cursor, _ := strconv.Atoi(args[5])
 
 		hook := fig_ipc.CreateEditBufferHook(args[0], integrationVersion, args[2], pid, histno, cursor, args[6])
-		_ = fig_ipc.SendHook(hook)
+		err := fig_ipc.SendHook(hook)
+		if err != nil {
+			logging.Log(err.Error())
+		}
 	},
 }
 
 var legacyPrompt = &cobra.Command{
-	Use:   "bg:prompt [pid] [tty]",
-	Short: "Run the prompt hook",
+	Use:                "bg:prompt [pid] [tty]",
+	Short:              "Run the prompt hook",
+	DisableFlagParsing: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) != 2 {
 			return
@@ -101,14 +115,17 @@ var legacyPrompt = &cobra.Command{
 		pid, _ := strconv.Atoi(args[0])
 
 		hook := fig_ipc.CreatePromptHook(pid, args[1])
-		_ = fig_ipc.SendHook(hook)
-		// TODO: Add error handling
+		err := fig_ipc.SendHook(hook)
+		if err != nil {
+			logging.Log(err.Error())
+		}
 	},
 }
 
 var legacyInit = &cobra.Command{
-	Use:   "bg:init [pid] [tty]",
-	Short: "Run the init hook",
+	Use:                "bg:init [pid] [tty]",
+	Short:              "Run the init hook",
+	DisableFlagParsing: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) != 2 {
 			return
@@ -117,58 +134,78 @@ var legacyInit = &cobra.Command{
 		pid, _ := strconv.Atoi(args[0])
 
 		hook := fig_ipc.CreateInitHook(pid, args[1])
-		_ = fig_ipc.SendHook(hook)
+		err := fig_ipc.SendHook(hook)
+		if err != nil {
+			logging.Log(err.Error())
+		}
 	},
 }
 
 var legacyItermReady = &cobra.Command{
-	Use:   "bg:iterm-api-ready",
-	Short: "Run the integration-ready hook",
+	Use:                "bg:iterm-api-ready",
+	Short:              "Run the integration-ready hook",
+	DisableFlagParsing: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		hook := fig_ipc.CreateIntegrationReadyHook("iterm")
-		_ = fig_ipc.SendHook(hook)
+		err := fig_ipc.SendHook(hook)
+		if err != nil {
+			logging.Log(err.Error())
+		}
 	},
 }
 
 var legacyHide = &cobra.Command{
-	Use:   "bg:hide",
-	Short: "Run the hide hook",
+	Use:                "bg:hide",
+	Short:              "Run the hide hook",
+	DisableFlagParsing: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		hook := fig_ipc.CreateHideHook()
-		_ = fig_ipc.SendHook(hook)
+		err := fig_ipc.SendHook(hook)
+		if err != nil {
+			logging.Log(err.Error())
+		}
 	},
 }
 
 var legacyEvent = &cobra.Command{
-	Use:   "bg:event [event-name]",
-	Short: "Run the event hook",
+	Use:                "bg:event [event-name]",
+	Short:              "Run the event hook",
+	DisableFlagParsing: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) != 1 {
 			return
 		}
 
 		hook := fig_ipc.CreateEventHook(args[0])
-		_ = fig_ipc.SendHook(hook)
+		err := fig_ipc.SendHook(hook)
+		if err != nil {
+			logging.Log(err.Error())
+		}
 	},
 }
 
 var legacyClearKeybuffer = &cobra.Command{
-	Use:   "bg:clear-keybuffer",
-	Short: "Run the clear-keybuffer hook",
+	Use:                "bg:clear-keybuffer",
+	Short:              "Run the clear-keybuffer hook",
+	DisableFlagParsing: true,
 	Run: func(cmd *cobra.Command, args []string) {
 	},
 }
 
 var legacyHyper = &cobra.Command{
-	Use:   "keyboard-focus-changed [focused-session-id]",
-	Short: "Run the keyboard-focus-changed hook",
+	Use:                "bg:hyper [focused-session-id]",
+	Short:              "Run the keyboard-focus-changed hook",
+	DisableFlagParsing: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) != 1 {
 			return
 		}
 
 		hook := fig_ipc.CreateKeyboardFocusChangedHook("co.zeit.hyper", args[1])
-		_ = fig_ipc.SendHook(hook)
+		err := fig_ipc.SendHook(hook)
+		if err != nil {
+			logging.Log(err.Error())
+		}
 	},
 }
 
@@ -190,8 +227,9 @@ var legacyAppRunning = &cobra.Command{
 }
 
 var legacyExec = &cobra.Command{
-	Use:   "bg:exec [pid] [tty]",
-	Short: "Run the exec hook",
+	Use:                "bg:exec [pid] [tty]",
+	Short:              "Run the exec hook",
+	DisableFlagParsing: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) != 2 {
 			return
@@ -200,7 +238,10 @@ var legacyExec = &cobra.Command{
 		pid, _ := strconv.Atoi(args[0])
 
 		hook := fig_ipc.CreatePreExecHook(pid, args[1])
-		_ = fig_ipc.SendHook(hook)
+		err := fig_ipc.SendHook(hook)
+		if err != nil {
+			logging.Log(err.Error())
+		}
 	},
 }
 
