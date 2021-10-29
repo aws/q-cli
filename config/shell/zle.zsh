@@ -1,7 +1,7 @@
-
+mkdir -p ~/.fig/logs/
 # Check if running under emulation to avoid running zsh specific code
 # fixes https://github.com/withfig/fig/issues/291
-EMULATION="$(emulate 2>"$HOME"/.fig/logs/zsh.log)"
+EMULATION="$(emulate 2>>"$HOME"/.fig/logs/zsh.log)"
 if [[ "${EMULATION}" != "zsh" ]]; then
   return
 fi 

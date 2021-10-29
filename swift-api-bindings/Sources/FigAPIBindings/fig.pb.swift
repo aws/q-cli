@@ -124,7 +124,7 @@ extension Fig_OnboardingAction: CaseIterable {
 
 #endif  // swift(>=4.2)
 
-public enum Fig_FocusRequest: SwiftProtobuf.Enum {
+public enum Fig_FocusAction: SwiftProtobuf.Enum {
   public typealias RawValue = Int
   case takeFocus // = 0
   case returnFocus // = 1
@@ -154,9 +154,9 @@ public enum Fig_FocusRequest: SwiftProtobuf.Enum {
 
 #if swift(>=4.2)
 
-extension Fig_FocusRequest: CaseIterable {
+extension Fig_FocusAction: CaseIterable {
   // The compiler won't synthesize support with the UNRECOGNIZED case.
-  public static var allCases: [Fig_FocusRequest] = [
+  public static var allCases: [Fig_FocusAction] = [
     .takeFocus,
     .returnFocus,
   ]
@@ -442,12 +442,12 @@ public struct Fig_ClientOriginatedMessage {
     set {submessage = .onboardingRequest(newValue)}
   }
 
-  public var focusRequest: Fig_WindowFocusRequest {
+  public var windowFocusRequest: Fig_WindowFocusRequest {
     get {
-      if case .focusRequest(let v)? = submessage {return v}
+      if case .windowFocusRequest(let v)? = submessage {return v}
       return Fig_WindowFocusRequest()
     }
-    set {submessage = .focusRequest(newValue)}
+    set {submessage = .windowFocusRequest(newValue)}
   }
 
   public var openInExternalApplicationRequest: Fig_OpenInExternalApplicationRequest {
@@ -479,7 +479,7 @@ public struct Fig_ClientOriginatedMessage {
     case telemetryIdentifyRequest(Fig_TelemetryIdentifyRequest)
     case telemetryTrackRequest(Fig_TelemetryTrackRequest)
     case onboardingRequest(Fig_OnboardingRequest)
-    case focusRequest(Fig_WindowFocusRequest)
+    case windowFocusRequest(Fig_WindowFocusRequest)
     case openInExternalApplicationRequest(Fig_OpenInExternalApplicationRequest)
 
   #if !swift(>=4.1)
@@ -560,8 +560,8 @@ public struct Fig_ClientOriginatedMessage {
         guard case .onboardingRequest(let l) = lhs, case .onboardingRequest(let r) = rhs else { preconditionFailure() }
         return l == r
       }()
-      case (.focusRequest, .focusRequest): return {
-        guard case .focusRequest(let l) = lhs, case .focusRequest(let r) = rhs else { preconditionFailure() }
+      case (.windowFocusRequest, .windowFocusRequest): return {
+        guard case .windowFocusRequest(let l) = lhs, case .windowFocusRequest(let r) = rhs else { preconditionFailure() }
         return l == r
       }()
       case (.openInExternalApplicationRequest, .openInExternalApplicationRequest): return {
@@ -1966,7 +1966,7 @@ public struct Fig_WindowFocusRequest {
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var type: Fig_FocusRequest {
+  public var type: Fig_FocusAction {
     get {return _type ?? .takeFocus}
     set {_type = newValue}
   }
@@ -1979,7 +1979,7 @@ public struct Fig_WindowFocusRequest {
 
   public init() {}
 
-  fileprivate var _type: Fig_FocusRequest? = nil
+  fileprivate var _type: Fig_FocusAction? = nil
 }
 
 public struct Fig_OpenInExternalApplicationRequest {
@@ -2642,7 +2642,7 @@ extension Fig_OnboardingAction: SwiftProtobuf._ProtoNameProviding {
   ]
 }
 
-extension Fig_FocusRequest: SwiftProtobuf._ProtoNameProviding {
+extension Fig_FocusAction: SwiftProtobuf._ProtoNameProviding {
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     0: .same(proto: "TAKE_FOCUS"),
     1: .same(proto: "RETURN_FOCUS"),
@@ -2693,7 +2693,7 @@ extension Fig_ClientOriginatedMessage: SwiftProtobuf.Message, SwiftProtobuf._Mes
     116: .standard(proto: "telemetry_identify_request"),
     117: .standard(proto: "telemetry_track_request"),
     118: .standard(proto: "onboarding_request"),
-    119: .standard(proto: "focus_request"),
+    119: .standard(proto: "window_focus_request"),
     120: .standard(proto: "open_in_external_application_request"),
   ]
 
@@ -2943,12 +2943,12 @@ extension Fig_ClientOriginatedMessage: SwiftProtobuf.Message, SwiftProtobuf._Mes
         var hadOneofValue = false
         if let current = self.submessage {
           hadOneofValue = true
-          if case .focusRequest(let m) = current {v = m}
+          if case .windowFocusRequest(let m) = current {v = m}
         }
         try decoder.decodeSingularMessageField(value: &v)
         if let v = v {
           if hadOneofValue {try decoder.handleConflictingOneOf()}
-          self.submessage = .focusRequest(v)
+          self.submessage = .windowFocusRequest(v)
         }
       }()
       case 120: try {
@@ -3050,8 +3050,8 @@ extension Fig_ClientOriginatedMessage: SwiftProtobuf.Message, SwiftProtobuf._Mes
       guard case .onboardingRequest(let v)? = self.submessage else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 118)
     }()
-    case .focusRequest?: try {
-      guard case .focusRequest(let v)? = self.submessage else { preconditionFailure() }
+    case .windowFocusRequest?: try {
+      guard case .windowFocusRequest(let v)? = self.submessage else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 119)
     }()
     case .openInExternalApplicationRequest?: try {

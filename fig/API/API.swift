@@ -121,7 +121,7 @@ class API {
                       response.success = output
                       API.send(response, to: webView, using: encoding)
                   }
-                case .focusRequest(let request):
+                case .windowFocusRequest(let request):
                   response.success = try WindowServer.handleFocusRequest(request)
                 case .openInExternalApplicationRequest(let request):
                   response.success = try NSWorkspace.shared.handleOpenURLRequest(request)

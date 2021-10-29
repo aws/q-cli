@@ -284,6 +284,10 @@
     "default": "insertCommonPrefix"
   },
   {
+    "settingName": "autocomplete.keybindings.shift+tab",
+    "default": "navigateUp"
+  },
+  {
     "settingName": "autocomplete.keybindings.enter",
     "default": "insertSelected"
   },

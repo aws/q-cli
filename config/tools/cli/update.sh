@@ -6,7 +6,7 @@ printf "\nPulling most up-to-date completion specs...\n"
 printf "Run $(tput setaf 5)$(tput bold)fig docs$(tput sgr0) to learn how to contribute your own!\n\n"
 # Download all the files in the specs folder of this repo
 
-base_url='https://waitlist.withfig.com/specs';
+base_url='https://api.fig.io.com/specs';
 
 # This is the current version of autocomplete
 # It should be 1 ahead of the most recent branch we have created on github
