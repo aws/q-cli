@@ -1,4 +1,4 @@
-name: Release
+name: Build
 
 on:
   push:
@@ -51,7 +51,7 @@ jobs:
           fi
           echo $VERSIONS_BRANCH
           echo $APPCAST_PREFIX
-          echo ${{GITHUB_REF##*/}}
+          echo ${GITHUB_REF##*/}
 
 
       - name: "Checkout Project"
@@ -97,7 +97,7 @@ jobs:
         run: |
           git add fig.xcodeproj/project.pbxproj
           git commit -m "Bump build to $BUILD [skip ci]"
-          git push origin ${{GITHUB_REF##*/}}
+          git push origin ${GITHUB_REF##*/}
 
 ############################################
 # Enable Caching
