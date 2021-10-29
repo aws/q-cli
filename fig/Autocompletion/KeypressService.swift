@@ -213,7 +213,7 @@ class KeypressProvider {
       
       let keyName = KeyboardLayout.humanReadableKeyName(event) ?? "?"
       
-      Logger.log(message: "\(action) '\(keyName)' in \(window.bundleId ?? "<unknown>") [\(window.hash)], \(window.tty?.descriptor ?? "???") (\(window.tty?.name ?? "???"))", subsystem: .keypress)
+      Logger.log(message: "\(action) '\(keyName)' in \(window.bundleId ?? "<unknown>") [\(window.hash)], \(window.tty?.descriptor ?? "???") (\(window.tty?.name ?? "???")) \(window.tty?.pid ?? 0)", subsystem: .keypress)
 
       
       guard window.tty?.isShell ?? true else {
