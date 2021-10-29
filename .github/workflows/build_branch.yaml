@@ -18,6 +18,12 @@ on:
       notarizeDMG:
         description: 'Notarize the .dmg'     
         default: 'true'
+      useSparkle:
+        description: 'Distribute the build using Sparkle'     
+        default: 'true'
+      createGithubRelease:
+        description: 'Create a release on Github'     
+        default: 'true'
   schedule:
     - cron:  '0 7 * * *'
 
@@ -204,25 +210,30 @@ jobs:
 ############################################
 
       - name: "Download Sparkle CLI"
+        if: github.event.inputs.useSparkle != 'false'
         run: |
           curl -sOL https://github.com/sparkle-project/Sparkle/releases/download/1.24.0/Sparkle-1.24.0.tar.xz
           mkdir Sparkle
           cd Sparkle && tar xopf ../Sparkle-1.24.0.tar.xz
           cd ..
       - name: "Checkout withfig/versions"
+        if: github.event.inputs.useSparkle != 'false'
         run: |
           git clone --branch $VERSIONS_BRANCH https://mattschrage:$(echo $PERSONAL_GITHUB_ACCESS_TOKEN)@github.com/withfig/versions.git
         env:
           PERSONAL_GITHUB_ACCESS_TOKEN: ${{ secrets.PERSONAL_GITHUB_ACCESS_TOKEN }}
       - name: Add latest versions
+        if: github.event.inputs.useSparkle != 'false'
         run: |
           cp "fig $BUILD.dmg" ./versions
           rm ./versions/fig@latest.dmg
       - name: "Generate Appcast"
+        if: github.event.inputs.useSparkle != 'false'
         run: ./Sparkle/bin/generate_appcast -s $SPARKLE_KEY --download-url-prefix https://$APPCAST_PREFIX.withfig.com versions
         env:
           SPARKLE_KEY: ${{ secrets.SPARKLE_SIGNING_KEY }}
       - name: Commit changes
+        if: github.event.inputs.useSparkle != 'false'
         run: |
           cd versions
           cp "fig $BUILD.dmg" fig@latest.dmg
@@ -231,6 +242,7 @@ jobs:
           cd ..
 
       - name: Remove old versions
+        if: github.event.inputs.useSparkle != 'false'
         run: |
           cd versions
 
@@ -253,6 +265,7 @@ jobs:
         env:
           size_of_archive: 37 
       - name: Push Changes to withfig/versions
+        if: github.event.inputs.useSparkle != 'false'
         run: |
           cd versions
           git push origin $VERSIONS_BRANCH
@@ -262,9 +275,11 @@ jobs:
 ############################################
 
       - name: "Package as .zip"
+        if: github.event.inputs.createGithubRelease != 'false'
         run: |
           ditto -c -k --sequesterRsrc --keepParent Export/Fig.app Fig.zip
       - name: Create Release
+        if: github.event.inputs.createGithubRelease != 'false'
         id: create_release
         uses: actions/create-release@v1
         env:
@@ -275,6 +290,7 @@ jobs:
           draft: false
           prerelease: true
       - name: Upload Release Asset
+        if: github.event.inputs.createGithubRelease != 'false'
         id: upload-release-asset 
         uses: actions/upload-release-asset@v1
         env:
