@@ -29,8 +29,8 @@ var hookCmd = &cobra.Command{
 }
 
 var hookEditbufferCmd = &cobra.Command{
-	Use:   "editbuffer [session-id] [integration] [tty] [pid] [histno] [cursor] [text]",
-	Short: "Run the editbuffer hook",
+	Use:                "editbuffer [session-id] [integration] [tty] [pid] [histno] [cursor] [text]",
+	Short:              "Run the editbuffer hook",
 	DisableFlagParsing: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) != 7 {
@@ -42,14 +42,14 @@ var hookEditbufferCmd = &cobra.Command{
 		histno, _ := strconv.Atoi(args[4])
 		cursor, _ := strconv.Atoi(args[5])
 
-		hook := fig_ipc.CreateEditBufferHook(args[0], integrationVersion, args[2], pid, histno, cursor, args[6])
+		hook, _ := fig_ipc.CreateEditBufferHook(args[0], integrationVersion, args[2], pid, histno, cursor, args[6])
 		fig_ipc.SendHook(hook)
 	},
 }
 
 var hookPromptCmd = &cobra.Command{
-	Use:   "prompt [pid] [tty]",
-	Short: "Run the prompt hook",
+	Use:                "prompt [pid] [tty]",
+	Short:              "Run the prompt hook",
 	DisableFlagParsing: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) != 2 {
@@ -58,14 +58,14 @@ var hookPromptCmd = &cobra.Command{
 
 		pid, _ := strconv.Atoi(args[0])
 
-		hook := fig_ipc.CreatePromptHook(pid, args[1])
+		hook, _ := fig_ipc.CreatePromptHook(pid, args[1])
 		fig_ipc.SendHook(hook)
 	},
 }
 
 var hookInitCmd = &cobra.Command{
-	Use:   "init [pid] [tty]",
-	Short: "Run the init hook",
+	Use:                "init [pid] [tty]",
+	Short:              "Run the init hook",
 	DisableFlagParsing: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) != 2 {
@@ -74,14 +74,14 @@ var hookInitCmd = &cobra.Command{
 
 		pid, _ := strconv.Atoi(args[0])
 
-		hook := fig_ipc.CreateInitHook(pid, args[1])
+		hook, _ := fig_ipc.CreateInitHook(pid, args[1])
 		fig_ipc.SendHook(hook)
 	},
 }
 
 var hookKeyboardFocusChangedCmd = &cobra.Command{
-	Use:   "keyboard-focus-changed [bundle-id] [focused-session-id]",
-	Short: "Run the keyboard-focus-changed hook",
+	Use:                "keyboard-focus-changed [bundle-id] [focused-session-id]",
+	Short:              "Run the keyboard-focus-changed hook",
 	DisableFlagParsing: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) != 2 {
@@ -94,8 +94,8 @@ var hookKeyboardFocusChangedCmd = &cobra.Command{
 }
 
 var hookIntegrationReadyCmd = &cobra.Command{
-	Use:   "integration-ready [integration]",
-	Short: "Run the integration-ready hook",
+	Use:                "integration-ready [integration]",
+	Short:              "Run the integration-ready hook",
 	DisableFlagParsing: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) != 1 {
@@ -108,8 +108,8 @@ var hookIntegrationReadyCmd = &cobra.Command{
 }
 
 var hookHideCmd = &cobra.Command{
-	Use:   "hide",
-	Short: "Run the hide hook",
+	Use:                "hide",
+	Short:              "Run the hide hook",
 	DisableFlagParsing: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		hook := fig_ipc.CreateHideHook()
@@ -118,8 +118,8 @@ var hookHideCmd = &cobra.Command{
 }
 
 var hookEventCmd = &cobra.Command{
-	Use:   "event [event-name]",
-	Short: "Run the event hook",
+	Use:                "event [event-name]",
+	Short:              "Run the event hook",
 	DisableFlagParsing: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) != 1 {

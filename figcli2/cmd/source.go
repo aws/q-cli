@@ -33,9 +33,9 @@ var sourceCmd = &cobra.Command{
 
 		fmt.Println(tty, pid)
 
-		fig_ipc.SendHook(
-			fig_ipc.CreateInitHook(pid, tty),
-		)
+		hook, _ := fig_ipc.CreateInitHook(pid, tty)
+
+		fig_ipc.SendHook(hook)
 
 		fmt.Print("\n")
 		fmt.Print(lipgloss.NewStyle().Foreground(lipgloss.Color("#FF00FF")).Bold(true).Render("fig"))

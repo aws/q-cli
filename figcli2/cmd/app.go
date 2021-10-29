@@ -373,7 +373,7 @@ var appSetPath = &cobra.Command{
 			return
 		}
 
-		hook := fig_ipc.CreateInitHook(os.Getppid(), pty)
+		hook, _ := fig_ipc.CreateInitHook(os.Getppid(), pty)
 		fig_ipc.SendHook(hook)
 	},
 }

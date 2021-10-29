@@ -51,8 +51,13 @@ var legacyZshKeybuffer = &cobra.Command{
 		histno, _ := strconv.Atoi(args[4])
 		cursor, _ := strconv.Atoi(args[5])
 
-		hook := fig_ipc.CreateEditBufferHook(args[0], integrationVersion, args[2], pid, histno, cursor, args[6])
-		err := fig_ipc.SendHook(hook)
+		hook, err := fig_ipc.CreateEditBufferHook(args[0], integrationVersion, args[2], pid, histno, cursor, args[6])
+		if err != nil {
+			logging.Log(err.Error())
+			return
+		}
+
+		err = fig_ipc.SendHook(hook)
 		if err != nil {
 			logging.Log(err.Error())
 		}
@@ -73,8 +78,13 @@ var legacyFishKeybuffer = &cobra.Command{
 		histno, _ := strconv.Atoi(args[4])
 		cursor, _ := strconv.Atoi(args[5])
 
-		hook := fig_ipc.CreateEditBufferHook(args[0], integrationVersion, args[2], pid, histno, cursor, args[6])
-		err := fig_ipc.SendHook(hook)
+		hook, err := fig_ipc.CreateEditBufferHook(args[0], integrationVersion, args[2], pid, histno, cursor, args[6])
+		if err != nil {
+			logging.Log(err.Error())
+			return
+		}
+
+		err = fig_ipc.SendHook(hook)
 		if err != nil {
 			logging.Log(err.Error())
 		}
@@ -95,8 +105,13 @@ var legacyBashKeybuffer = &cobra.Command{
 		histno, _ := strconv.Atoi(args[4])
 		cursor, _ := strconv.Atoi(args[5])
 
-		hook := fig_ipc.CreateEditBufferHook(args[0], integrationVersion, args[2], pid, histno, cursor, args[6])
-		err := fig_ipc.SendHook(hook)
+		hook, err := fig_ipc.CreateEditBufferHook(args[0], integrationVersion, args[2], pid, histno, cursor, args[6])
+		if err != nil {
+			logging.Log(err.Error())
+			return
+		}
+
+		err = fig_ipc.SendHook(hook)
 		if err != nil {
 			logging.Log(err.Error())
 		}
@@ -114,8 +129,13 @@ var legacyPrompt = &cobra.Command{
 
 		pid, _ := strconv.Atoi(args[0])
 
-		hook := fig_ipc.CreatePromptHook(pid, args[1])
-		err := fig_ipc.SendHook(hook)
+		hook, err := fig_ipc.CreatePromptHook(pid, args[1])
+		if err != nil {
+			logging.Log(err.Error())
+			return
+		}
+
+		err = fig_ipc.SendHook(hook)
 		if err != nil {
 			logging.Log(err.Error())
 		}
@@ -133,8 +153,13 @@ var legacyInit = &cobra.Command{
 
 		pid, _ := strconv.Atoi(args[0])
 
-		hook := fig_ipc.CreateInitHook(pid, args[1])
-		err := fig_ipc.SendHook(hook)
+		hook, err := fig_ipc.CreateInitHook(pid, args[1])
+		if err != nil {
+			logging.Log(err.Error())
+			return
+		}
+
+		err = fig_ipc.SendHook(hook)
 		if err != nil {
 			logging.Log(err.Error())
 		}
@@ -237,8 +262,13 @@ var legacyExec = &cobra.Command{
 
 		pid, _ := strconv.Atoi(args[0])
 
-		hook := fig_ipc.CreatePreExecHook(pid, args[1])
-		err := fig_ipc.SendHook(hook)
+		hook, err := fig_ipc.CreatePreExecHook(pid, args[1])
+		if err != nil {
+			logging.Log(err.Error())
+			return
+		}
+
+		err = fig_ipc.SendHook(hook)
 		if err != nil {
 			logging.Log(err.Error())
 		}

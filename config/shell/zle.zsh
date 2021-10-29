@@ -32,8 +32,8 @@ function fig_zsh_redraw() {
     unset _fig_redraw_fd
   fi
 
-  # TODO: Look at -- fix
-  fig bg:zsh-keybuffer "${TERM_SESSION_ID}" "${FIG_INTEGRATION_VERSION}" "${TTY}" "$$" "${HISTNO}" "${CURSOR}" "$BUFFER"
+  # Redirect to /dev/null to avoid printing escape sequences
+  fig bg:zsh-keybuffer "${TERM_SESSION_ID}" "${FIG_INTEGRATION_VERSION}" "${TTY}" "$$" "${HISTNO}" "${CURSOR}" "$BUFFER" 2>&1 >/dev/null
 }
 
 function fig_hide() { 
