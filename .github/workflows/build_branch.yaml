@@ -18,7 +18,8 @@ on:
       notarizeDMG:
         description: 'Notarize the .dmg'     
         default: 'true'
-    # tags: [ v* ]
+  schedule:
+    - cron:  '0 7 * * *'
 
 jobs:
   release:
@@ -50,6 +51,7 @@ jobs:
           fi
           echo $VERSIONS_BRANCH
           echo $APPCAST_PREFIX
+          echo ${{GITHUB_REF##*/}}
 
 
       - name: "Checkout Project"
@@ -73,6 +75,8 @@ jobs:
               echo "::set-env name=BUMP_BUILD_NUMBER::0"
           elif [[ $REF == 'refs/heads/staging' ]]; then
               echo "::set-env name=BUMP_BUILD_NUMBER::1"
+          elif [[ $REF == 'refs/heads/develop' ]]; then
+              echo "::set-env name=BUMP_BUILD_NUMBER::1"
           else
               echo "::set-env name=BUMP_BUILD_NUMBER::0"
           fi
@@ -93,7 +97,7 @@ jobs:
         run: |
           git add fig.xcodeproj/project.pbxproj
           git commit -m "Bump build to $BUILD [skip ci]"
-          git push origin staging
+          git push origin ${{GITHUB_REF##*/}}
 
 ############################################
 # Enable Caching
