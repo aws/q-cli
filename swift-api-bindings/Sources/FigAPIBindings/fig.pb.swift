@@ -124,7 +124,7 @@ extension Fig_OnboardingAction: CaseIterable {
 
 #endif  // swift(>=4.2)
 
-public enum Fig_FocusRequest: SwiftProtobuf.Enum {
+public enum Fig_FocusAction: SwiftProtobuf.Enum {
   public typealias RawValue = Int
   case takeFocus // = 0
   case returnFocus // = 1
@@ -154,9 +154,9 @@ public enum Fig_FocusRequest: SwiftProtobuf.Enum {
 
 #if swift(>=4.2)
 
-extension Fig_FocusRequest: CaseIterable {
+extension Fig_FocusAction: CaseIterable {
   // The compiler won't synthesize support with the UNRECOGNIZED case.
-  public static var allCases: [Fig_FocusRequest] = [
+  public static var allCases: [Fig_FocusAction] = [
     .takeFocus,
     .returnFocus,
   ]
@@ -1966,7 +1966,7 @@ public struct Fig_WindowFocusRequest {
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var type: Fig_FocusRequest {
+  public var type: Fig_FocusAction {
     get {return _type ?? .takeFocus}
     set {_type = newValue}
   }
@@ -1979,7 +1979,7 @@ public struct Fig_WindowFocusRequest {
 
   public init() {}
 
-  fileprivate var _type: Fig_FocusRequest? = nil
+  fileprivate var _type: Fig_FocusAction? = nil
 }
 
 public struct Fig_OpenInExternalApplicationRequest {
@@ -2642,7 +2642,7 @@ extension Fig_OnboardingAction: SwiftProtobuf._ProtoNameProviding {
   ]
 }
 
-extension Fig_FocusRequest: SwiftProtobuf._ProtoNameProviding {
+extension Fig_FocusAction: SwiftProtobuf._ProtoNameProviding {
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     0: .same(proto: "TAKE_FOCUS"),
     1: .same(proto: "RETURN_FOCUS"),

@@ -290,13 +290,13 @@ message OnboardingRequest {
 
 /// Window Focus
 
-enum FocusRequest {
+enum FocusAction {
   TAKE_FOCUS = 0;
   RETURN_FOCUS = 1;
 }
 
 message WindowFocusRequest {
-  optional FocusRequest type = 1;
+  optional FocusAction type = 1;
 }
 
 message OpenInExternalApplicationRequest {

@@ -104,32 +104,32 @@ export function onboardingActionToJSON(object: OnboardingAction): string {
   }
 }
 
-export enum FocusRequest {
+export enum FocusAction {
   TAKE_FOCUS = 0,
   RETURN_FOCUS = 1,
   UNRECOGNIZED = -1,
 }
 
-export function focusRequestFromJSON(object: any): FocusRequest {
+export function focusActionFromJSON(object: any): FocusAction {
   switch (object) {
     case 0:
     case "TAKE_FOCUS":
-      return FocusRequest.TAKE_FOCUS;
+      return FocusAction.TAKE_FOCUS;
     case 1:
     case "RETURN_FOCUS":
-      return FocusRequest.RETURN_FOCUS;
+      return FocusAction.RETURN_FOCUS;
     case -1:
     case "UNRECOGNIZED":
     default:
-      return FocusRequest.UNRECOGNIZED;
+      return FocusAction.UNRECOGNIZED;
   }
 }
 
-export function focusRequestToJSON(object: FocusRequest): string {
+export function focusActionToJSON(object: FocusAction): string {
   switch (object) {
-    case FocusRequest.TAKE_FOCUS:
+    case FocusAction.TAKE_FOCUS:
       return "TAKE_FOCUS";
-    case FocusRequest.RETURN_FOCUS:
+    case FocusAction.RETURN_FOCUS:
       return "RETURN_FOCUS";
     default:
       return "UNKNOWN";
@@ -550,7 +550,7 @@ export interface OnboardingRequest {
 }
 
 export interface WindowFocusRequest {
-  type?: FocusRequest | undefined;
+  type?: FocusAction | undefined;
 }
 
 export interface OpenInExternalApplicationRequest {
@@ -5110,7 +5110,7 @@ export const WindowFocusRequest = {
   fromJSON(object: any): WindowFocusRequest {
     const message = { ...baseWindowFocusRequest } as WindowFocusRequest;
     if (object.type !== undefined && object.type !== null) {
-      message.type = focusRequestFromJSON(object.type);
+      message.type = focusActionFromJSON(object.type);
     }
     return message;
   },
@@ -5120,7 +5120,7 @@ export const WindowFocusRequest = {
     message.type !== undefined &&
       (obj.type =
         message.type !== undefined
-          ? focusRequestToJSON(message.type)
+          ? focusActionToJSON(message.type)
           : undefined);
     return obj;
   },
