@@ -253,22 +253,7 @@ class FigCLI {
         FigCLI.url(with: modified)
     }
     static func openHelp(schema: CLICommandSchema, scope: Scope) {
-        let markup = schema.text
-        //markup.
-        do {
-            let path = WebBridge.appDirectory.appendingPathComponent("tmp/help.run")
-            try markup.write(to: path, atomically: true, encoding: String.Encoding.utf8)
-            scope.options = [path.deletingPathExtension().path]
-            FigCLI.run(scope: scope)
-            // this can be done without running the command again
-//            print("fig run \(path)")
-//            Timer.delayWithSeconds(1) {
-//                ShellBridge.injectStringIntoTerminal("fig run \(path.deletingPathExtension().path)", runImmediately: true, completion: nil)
-//            }
-        } catch {
-            print("error writing file")
-        }
-      
+ 
     }
     
     static func dotfig(filePath: String, scope: Scope) {

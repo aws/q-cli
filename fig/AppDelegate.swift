@@ -437,11 +437,11 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
                 case .applicationNotInstalled:
                     break
                 case .unattempted:
-                    item.image = WebBridge.fileIcon(for: URL(string: "fig://template?color=808080&badge=?&w=16&h=16".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!)!)
+                    item.image = Icon.fileIcon(for: "fig://template?color=808080&badge=?&w=16&h=16")
 
                 case .installed:
                     item.action = nil // disable selection
-                    item.image = WebBridge.fileIcon(for: URL(string: "fig://template?color=2ecc71&badge=✓&w=16&h=16".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!)!)
+                    item.image = Icon.fileIcon(for: "fig://template?color=2ecc71&badge=✓&w=16&h=16")
 
                 case .pending(let dependency):
                     let actionsMenu = NSMenu(title: "actions")
@@ -450,7 +450,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
                     
                     switch dependency {
                     case .applicationRestart:
-                        item.image = WebBridge.fileIcon(for: URL(string: "fig://template?color=FFA500&badge=⟳&w=16&h=16".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!)!)
+                        item.image = Icon.fileIcon(for: "fig://template?color=FFA500&badge=⟳&w=16&h=16")
                         
                         let restart = actionsMenu.addItem(
                             withTitle: "Restart \(provider.applicationName)",
@@ -458,7 +458,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
                             keyEquivalent: "")
                         restart.target = provider
                     case .inputMethodActivation:
-                        item.image = WebBridge.fileIcon(for: URL(string: "fig://template?color=FFA500&badge=⌨&w=16&h=16".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!)!)
+                        item.image = Icon.fileIcon(for: "fig://template?color=FFA500&badge=⌨&w=16&h=16")
                         actionsMenu.addItem(
                             withTitle: "Requires Input Method",
                             action: nil,
@@ -488,7 +488,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
                     
                     
                 case .failed(let error, let supportURL):
-                    item.image = WebBridge.fileIcon(for: URL(string: "fig://template?color=e74c3c&badge=╳&w=16&h=16".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!)!)
+                    item.image = Icon.fileIcon(for: "fig://template?color=e74c3c&badge=╳&w=16&h=16")
                     let actionsMenu = NSMenu(title: "actions")
 
                     actionsMenu.addItem(

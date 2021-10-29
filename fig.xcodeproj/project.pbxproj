@@ -132,7 +132,6 @@
 		756967FF2718E0300029F063 /* WebArchiver in Frameworks */ = {isa = PBXBuildFile; productRef = 756967FE2718E0300029F063 /* WebArchiver */; };
 		756968012718FF600029F063 /* WebArchive.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756968002718FF600029F063 /* WebArchive.swift */; };
 		756968032719450A0029F063 /* API+App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756968022719450A0029F063 /* API+App.swift */; };
-		7569682F271F63F40029F063 /* FigAPIBindings in Frameworks */ = {isa = PBXBuildFile; productRef = 7569682E271F63F40029F063 /* FigAPIBindings */; };
 		75696832271F71270029F063 /* local.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75696831271F71270029F063 /* local.pb.swift */; };
 		756C4D832542A6D30035B467 /* Starscream in Frameworks */ = {isa = PBXBuildFile; productRef = 756C4D822542A6D30035B467 /* Starscream */; };
 		7571775726F3B8A80071AE10 /* FigInputMethod.app in Embed Input Method */ = {isa = PBXBuildFile; fileRef = 754316F426E08F5C00188887 /* FigInputMethod.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -167,11 +166,6 @@
 		75809B0E24BFA64D00BFFB3E /* TelemetryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75809B0D24BFA64D00BFFB3E /* TelemetryService.swift */; };
 		75809B1124C3876B00BFFB3E /* run-tutorial.js in Resources */ = {isa = PBXBuildFile; fileRef = 75809B1024C3876B00BFFB3E /* run-tutorial.js */; };
 		7587B4D824F97F9E00E355E4 /* ShellHooksManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7587B4D724F97F9E00E355E4 /* ShellHooksManager.swift */; };
-		758AEB5E24CD35D400A15EAF /* WebSocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 758AEB5D24CD35D400A15EAF /* WebSocket.swift */; };
-		758AEB6024CE529D00A15EAF /* String+Shell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 758AEB5F24CE529D00A15EAF /* String+Shell.swift */; };
-		758AEB6724CE8B8F00A15EAF /* figcli in Embed Command Line Tool */ = {isa = PBXBuildFile; fileRef = 751F758E246E16D800E083C8 /* figcli */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
-		758AEB6A24CEA4D000A15EAF /* Starscream in Frameworks */ = {isa = PBXBuildFile; productRef = 758AEB6924CEA4D000A15EAF /* Starscream */; };
-		758AEB6C24CEA54600A15EAF /* SocketServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 758AEB6B24CEA54600A15EAF /* SocketServer.swift */; };
 		75915DFE27210A4C005A9909 /* FigAPIBindings in Frameworks */ = {isa = PBXBuildFile; productRef = 75915DFD27210A4C005A9909 /* FigAPIBindings */; };
 		75915E002722044D005A9909 /* API.js in Resources */ = {isa = PBXBuildFile; fileRef = 75915DFF2722044D005A9909 /* API.js */; };
 		759F987C25BF903900EC3407 /* Accessibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 759F987B25BF903900EC3407 /* Accessibility.swift */; };
@@ -242,6 +236,7 @@
 		75E993F22515A6DD000BE6BE /* statusbar@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 75E993F12515A6DD000BE6BE /* statusbar@2x.png */; };
 		75E993F52517E226000BE6BE /* AXWindowServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75E993F42517E226000BE6BE /* AXWindowServer.swift */; };
 		75EB32FC272A0BE700A544DB /* figcli in Embed Command Line Tool */ = {isa = PBXBuildFile; fileRef = "figcli-00000000000000000" /* figcli */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		75EB32FE272C89D100A544DB /* API+Icon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75EB32FD272C89D100A544DB /* API+Icon.swift */; };
 		75EB570B267AAE5B00F10C64 /* fig-iterm-integration.scpt in Resources */ = {isa = PBXBuildFile; fileRef = 75EB570A267AAE5B00F10C64 /* fig-iterm-integration.scpt */; };
 		75EB592B258D98A7002915E7 /* BiMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75EB592A258D98A7002915E7 /* BiMap.swift */; };
 		75EB592D258DD771002915E7 /* TTY.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75EB592C258DD771002915E7 /* TTY.swift */; };
@@ -499,9 +494,6 @@
 		75809B0F24C2C66100BFFB3E /* WebView+Private.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "WebView+Private.h"; sourceTree = "<group>"; };
 		75809B1024C3876B00BFFB3E /* run-tutorial.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = "run-tutorial.js"; sourceTree = "<group>"; };
 		7587B4D724F97F9E00E355E4 /* ShellHooksManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellHooksManager.swift; sourceTree = "<group>"; };
-		758AEB5D24CD35D400A15EAF /* WebSocket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebSocket.swift; sourceTree = "<group>"; };
-		758AEB5F24CE529D00A15EAF /* String+Shell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+Shell.swift"; sourceTree = "<group>"; };
-		758AEB6B24CEA54600A15EAF /* SocketServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocketServer.swift; sourceTree = "<group>"; };
 		75915DFF2722044D005A9909 /* API.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = API.js; sourceTree = "<group>"; };
 		759F987B25BF903900EC3407 /* Accessibility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Accessibility.swift; sourceTree = "<group>"; };
 		759F987E25BFF0FE00EC3407 /* commandkey@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "commandkey@2x.png"; sourceTree = "<group>"; };
@@ -570,6 +562,7 @@
 		75DA86A825EF145E00722F1D /* TmuxIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TmuxIntegration.swift; sourceTree = "<group>"; };
 		75E993F12515A6DD000BE6BE /* statusbar@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "statusbar@2x.png"; sourceTree = "<group>"; };
 		75E993F42517E226000BE6BE /* AXWindowServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AXWindowServer.swift; sourceTree = "<group>"; };
+		75EB32FD272C89D100A544DB /* API+Icon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API+Icon.swift"; sourceTree = "<group>"; };
 		75EB570A267AAE5B00F10C64 /* fig-iterm-integration.scpt */ = {isa = PBXFileReference; lastKnownFileType = file; path = "fig-iterm-integration.scpt"; sourceTree = "<group>"; };
 		75EB592A258D98A7002915E7 /* BiMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiMap.swift; sourceTree = "<group>"; };
 		75EB592C258DD771002915E7 /* TTY.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TTY.swift; sourceTree = "<group>"; };
@@ -953,6 +946,7 @@
 				75B4283526FABAAC003C9DE5 /* FileSystem.swift */,
 				75C16D4726FD1EB400C83296 /* API+NotificationCenter.swift */,
 				756968022719450A0029F063 /* API+App.swift */,
+				75EB32FD272C89D100A544DB /* API+Icon.swift */,
 			);
 			path = API;
 			sourceTree = "<group>";
@@ -1664,6 +1658,7 @@
 				75FE40002626A4BD00AC8414 /* Github.swift in Sources */,
 				751C3BEC24B6910800B5C7FD /* Remote.swift in Sources */,
 				75EDDC4E25D23773003AECC6 /* HyperIntegration.swift in Sources */,
+				75EB32FE272C89D100A544DB /* API+Icon.swift in Sources */,
 				7510F8A924A6910500E86F7C /* MacLocalTerminalView.swift in Sources */,
 				75A4A2A425CB4DE3002EFD6B /* BundleIdCache.swift in Sources */,
 				75A0A71D26F27E3D008FAD70 /* SemanticVersion.swift in Sources */,
@@ -2304,11 +2299,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 757CA8E224905B0E002A64A8 /* XCRemoteSwiftPackageReference "Kitura-WebSocket" */;
 			productName = "Kitura-WebSocket";
-		};
-		758AEB6924CEA4D000A15EAF /* Starscream */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 758AEB6824CEA4D000A15EAF /* XCRemoteSwiftPackageReference "Starscream" */;
-			productName = Starscream;
 		};
 		75915DFD27210A4C005A9909 /* FigAPIBindings */ = {
 			isa = XCSwiftPackageProductDependency;

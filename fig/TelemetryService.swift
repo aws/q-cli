@@ -183,10 +183,22 @@ extension TelemetryProvider : LocalTelemetryService {
         flushAll()
         
         // register other telemetry observers!
-        NotificationCenter.default.addObserver(self, selector:#selector(lineAcceptedInKeystrokeBuffer), name: KeystrokeBuffer.lineAcceptedInKeystrokeBufferNotification, object:nil)
-        NotificationCenter.default.addObserver(self, selector:#selector(insertionInTerminal), name: .insertCommandInTerminal, object:nil)
-        NotificationCenter.default.addObserver(self, selector:#selector(showAutocompletePopup), name: NSNotification.Name("showAutocompletePopup"), object:nil)
-        NotificationCenter.default.addObserver(self, selector:#selector(logTerminalUsage(_:)), name: TerminalUsageObserver.terminalApplicationLostFocusNotification, object:nil)
+        NotificationCenter.default.addObserver(self,
+                                               selector:#selector(lineAcceptedInKeystrokeBuffer),
+                                               name: KeystrokeBuffer.lineAcceptedInKeystrokeBufferNotification,
+                                               object:nil)
+        NotificationCenter.default.addObserver(self,
+                                               selector:#selector(insertionInTerminal),
+                                               name: FigTerm.insertedTextNotification,
+                                               object:nil)
+        NotificationCenter.default.addObserver(self,
+                                               selector:#selector(showAutocompletePopup),
+                                               name: NSNotification.Name("showAutocompletePopup"),
+                                               object:nil)
+        NotificationCenter.default.addObserver(self,
+                                               selector:#selector(logTerminalUsage(_:)),
+                                               name: TerminalUsageObserver.terminalApplicationLostFocusNotification,
+                                               object:nil)
     }
     
     @objc fileprivate static func calendarDayDidChange() {

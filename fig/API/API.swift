@@ -69,7 +69,11 @@ class API {
         do {
             switch request.submessage {
                 case .positionWindowRequest(let positionWindowRequest):
-                    response.positionWindowResponse = try WindowPositioning.positionWindow(positionWindowRequest)
+                    guard let window = webView.window as? CompanionWindow else {
+                      throw APIError.generic(message: "No window associated with webview")
+                    }
+                    response.positionWindowResponse = try WindowPositioning.positionWindow(positionWindowRequest,
+                                                                                           companionWindow: window)
                 case .pseudoterminalWriteRequest(let request):
                     response.success = try PseudoTerminal.shared.handleWriteRequest(request)
                 case .pseudoterminalExecuteRequest(let request):

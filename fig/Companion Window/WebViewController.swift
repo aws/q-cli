@@ -64,9 +64,6 @@ class WebViewController: NSViewController, NSWindowDelegate {
                 webView!.rightAnchor.constraint(equalTo: view.rightAnchor)
             ])
         }
-      
-        NotificationCenter.default.addObserver(self, selector: #selector(settingsUpdated), name: Settings.settingsUpdatedNotification, object: nil)
-
 
     }
   
@@ -274,32 +271,8 @@ class TransparentView: NSView {
 
 }
 
-extension WebViewController: WebBridgeEventListener {
+extension WebViewController {
     
-    
-    @objc func insertCommandInTerminal(_ notification: Notification) {
-        ShellBridge.injectStringIntoTerminal(notification.object as! String, runImmediately: false, clearLine: false, completion: {
-            if let currentMouseLocation = self.mouseLocation {
-               print("mouseLocation:", currentMouseLocation)
-               print("mouseInWindow", self.view.bounds.contains(currentMouseLocation))
-//               if (self.view.bounds.contains(currentMouseLocation)) {
-//                   NSRunningApplication.current.activate(options: .activateIgnoringOtherApps)
-//               }
-           }
-        })
-    }
-    
-    @objc func executeCommandInTerminal(_ notification: Notification) {
-        ShellBridge.injectStringIntoTerminal(notification.object as! String, runImmediately: true, completion: {
-            if let currentMouseLocation = self.mouseLocation {
-               print("mouseLocation:", currentMouseLocation)
-               print("mouseInWindow", self.view.bounds.contains(currentMouseLocation))
-//               if (self.view.bounds.contains(currentMouseLocation)) {
-//                   NSRunningApplication.current.activate(options: .activateIgnoringOtherApps)
-//               }
-           }
-        })
-    }
     
     func cleanUp() {
         self.webView?.configuration.userContentController.removeAllUserScripts()
@@ -312,16 +285,6 @@ extension WebViewController: WebBridgeEventListener {
     }
     
     
-}
-
-extension WebViewController {
-  @objc func settingsUpdated() {
-    DispatchQueue.main.async {
-      if let webView = self.webView {
-        WebBridge.declareSettings(webview: webView)
-      }
-    }
-  }
 }
 
 extension WebViewController : WKUIDelegate {
@@ -392,7 +355,6 @@ extension WebViewController : WKNavigationDelegate {
         webView.evaluateJavaScript(scriptContent, completionHandler: nil)
         
         let webView = webView as! WebView
-        WebBridge.updateTitlebar(webview: webView)
 
         if let configureEnv = webView.configureEnvOnLoad {
             configureEnv()
@@ -402,11 +364,6 @@ extension WebViewController : WKNavigationDelegate {
             onLoadCallback()
         }
         webView.onLoad = []
-        WebBridge.enableInteractiveCodeTags(webview: webView)
-        WebBridge.declareSettings(webview:webView)
-        WebBridge.declareUpdate(webview: webView)
-        WebBridge.declareCurrentApplication(webview: webView)
-        WebBridge.initJS(webview: webView)
         
         // Automatically archive this URL for offline use
         webView.archive()

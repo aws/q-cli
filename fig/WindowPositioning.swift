@@ -15,19 +15,42 @@ enum APIError: Error {
 
 class WindowPositioning {
     
-    static func positionWindow(_ request: Fig_PositionWindowRequest) throws -> Fig_PositionWindowResponse {
-        if request.dryrun {
-            let info = try frameRelativeToCursor(width: CGFloat(request.size.width),
-                                                 height: CGFloat(request.size.height),
-                                                 anchorOffset: CGPoint(x: CGFloat(request.anchor.x), y: CGFloat(request.anchor.y)))
-            
-            var response = Fig_PositionWindowResponse()
-            response.isAbove = info.isAbove
-            response.isClipped = info.isClipped
-            return response
-        } else {
-            throw APIError.generic(message: "Not implemented")
+  static func positionWindow(_ request: Fig_PositionWindowRequest, companionWindow: CompanionWindow) throws -> Fig_PositionWindowResponse {
+      let info = try frameRelativeToCursor(width: CGFloat(request.size.width),
+                                          height: CGFloat(request.size.height),
+                                          anchorOffset: CGPoint(x: CGFloat(request.anchor.x), y: CGFloat(request.anchor.y)))
+      
+
+      if !request.dryrun {
+ 
+          if let width = request.hasSize ? CGFloat(request.size.width) : nil {
+              print("autocomplete.width := \(width)")
+              companionWindow.width = width
+          }
+          
+          if let height =  request.hasSize ? CGFloat(request.size.height) : nil  {
+              let prevHeight = companionWindow.maxHeight
+              
+              print("autocomplete.height := \(height)")
+              companionWindow.maxHeight = height
+              
+              // Workaround to ensure compatibility with legacy behavior.
+              // Ensure window is visible when the height is greater than 1!
+              if height > 1 {
+                  companionWindow.orderFrontRegardless()
+                  if prevHeight == 1 || prevHeight == 0 || prevHeight == nil {
+                      NotificationCenter.default.post(name: NSNotification.Name("showAutocompletePopup"), object: nil)
+                  }
+              }
+          }
+          
+          WindowManager.shared.positionAutocompletePopover(textRect: Accessibility.getTextRect())
         }
+    
+        var response = Fig_PositionWindowResponse()
+        response.isAbove = info.isAbove
+        response.isClipped = info.isClipped
+        return response
     }
     
     static func frameRelativeToCursor(width: CGFloat,
