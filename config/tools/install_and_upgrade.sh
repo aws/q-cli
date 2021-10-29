@@ -33,6 +33,7 @@ install_fig() {
   mkdir -p ~/.fig
 
   # delete binary artifacts to ensure ad-hoc code signature works for arm64 binaries on M1
+  rm ~/.fig/bin/figterm
   rm ~/.fig/bin/*figterm*
   rm ~/.fig/bin/fig_callback
   rm ~/.fig/bin/fig_get_shell
@@ -77,7 +78,7 @@ install_fig() {
   FIGCLI="${BUNDLE}/figcli" 
   "${FIGCLI}" settings userShell "${USER_SHELL_TRIMMED}"
   
-  "${FIGCLI}" settings pty.path $("${USER_SHELL_TRIMMED}" -li -c "/usr/bin/env | /usr/bin/grep '^PATH=' | /bin/cat | /usr/bin/sed 's|PATH=||g'") 
+  "${FIGCLI}" settings pty.path "$("${USER_SHELL_TRIMMED}" -li -c "/usr/bin/env | /usr/bin/grep '^PATH=' | /bin/cat | /usr/bin/sed 's|PATH=||g'")" 
 
   # hotfix for infinite looping when writing "☑ fig" title to a tty backed by figterm
   "${FIGCLI}" settings autocomplete.addStatusToTerminalTitle false

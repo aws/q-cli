@@ -895,10 +895,13 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             return
         }
         
-        guard let current = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String else {
+        guard let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String,
+              let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String else {
             print("Update: No version detected.")
             return
         }
+      
+        let current = version + "," + build
         
         // upgrade path!
         if (previous != current) {
@@ -921,13 +924,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             // For anyone upgrading, we are just going to assume that this is true
             Defaults.hasShownAutocompletePopover = true
             
-            // if iTerm integration exists prior to update, reinstall because it should be symlinked
-            let iTermIntegrationPath = "\(NSHomeDirectory())/Library/Application Support/iTerm2/Scripts/AutoLaunch/fig-iterm-integration.py"
-            if (FileManager.default.fileExists(atPath: iTermIntegrationPath)) {
-                try? FileManager.default.removeItem(atPath: iTermIntegrationPath)
-                let localScript = Bundle.main.path(forResource: "fig-iterm-integration", ofType: "py")!
-                try? FileManager.default.createSymbolicLink(atPath: iTermIntegrationPath, withDestinationPath: localScript)
-            }
             
             // resolves a bug where Fig was added to login items multiple times
             // if the appropriate setting is enabled, a single entry will be readded
@@ -969,6 +965,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         }
         
         Defaults.versionAtPreviousLaunch = current
+        
     }
     
     @objc func restart() {
