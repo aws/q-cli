@@ -95,6 +95,7 @@ jobs:
       - name: "Commit Build number"
         if: env.BUMP_BUILD_NUMBER == 1
         run: |
+          git pull
           git add fig.xcodeproj/project.pbxproj
           git commit -m "Bump build to $BUILD [skip ci]"
           git push origin ${GITHUB_REF##*/}
