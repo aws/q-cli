@@ -4,11 +4,13 @@ import (
 	"strconv"
 
 	fig_ipc "fig-cli/fig-ipc"
+	"fig-cli/logging"
 
 	"github.com/spf13/cobra"
 )
 
 func init() {
+
 	hookCmd.AddCommand(hookEditbufferCmd)
 	hookCmd.AddCommand(hookPromptCmd)
 	hookCmd.AddCommand(hookInitCmd)
@@ -16,11 +18,10 @@ func init() {
 	hookCmd.AddCommand(hookIntegrationReadyCmd)
 	hookCmd.AddCommand(hookHideCmd)
 	hookCmd.AddCommand(hookEventCmd)
+	hookCmd.AddCommand(hookPreExecCmd)
 
 	rootCmd.AddCommand(hookCmd)
 }
-
-// TODO: Add error handling for hooks
 
 var hookCmd = &cobra.Command{
 	Use:    "hook",
@@ -42,8 +43,16 @@ var hookEditbufferCmd = &cobra.Command{
 		histno, _ := strconv.Atoi(args[4])
 		cursor, _ := strconv.Atoi(args[5])
 
-		hook, _ := fig_ipc.CreateEditBufferHook(args[0], integrationVersion, args[2], pid, histno, cursor, args[6])
-		fig_ipc.SendHook(hook)
+		hook, err := fig_ipc.CreateEditBufferHook(args[0], integrationVersion, args[2], pid, histno, cursor, args[6])
+		if err != nil {
+			logging.Log("Error:", err.Error())
+			return
+		}
+
+		err = fig_ipc.SendHook(hook)
+		if err != nil {
+			logging.Log("Error:", err.Error())
+		}
 	},
 }
 
@@ -58,8 +67,17 @@ var hookPromptCmd = &cobra.Command{
 
 		pid, _ := strconv.Atoi(args[0])
 
-		hook, _ := fig_ipc.CreatePromptHook(pid, args[1])
-		fig_ipc.SendHook(hook)
+		hook, err := fig_ipc.CreatePromptHook(pid, args[1])
+		if err != nil {
+			logging.Log("Error:", err.Error())
+			return
+		}
+
+		err = fig_ipc.SendHook(hook)
+		if err != nil {
+			logging.Log("Error:", err.Error())
+			return
+		}
 	},
 }
 
@@ -74,8 +92,17 @@ var hookInitCmd = &cobra.Command{
 
 		pid, _ := strconv.Atoi(args[0])
 
-		hook, _ := fig_ipc.CreateInitHook(pid, args[1])
-		fig_ipc.SendHook(hook)
+		hook, err := fig_ipc.CreateInitHook(pid, args[1])
+		if err != nil {
+			logging.Log("Error:", err.Error())
+			return
+		}
+
+		err = fig_ipc.SendHook(hook)
+		if err != nil {
+			logging.Log("Error:", err.Error())
+			return
+		}
 	},
 }
 
@@ -89,7 +116,11 @@ var hookKeyboardFocusChangedCmd = &cobra.Command{
 		}
 
 		hook := fig_ipc.CreateKeyboardFocusChangedHook(args[0], args[1])
-		fig_ipc.SendHook(hook)
+		err := fig_ipc.SendHook(hook)
+		if err != nil {
+			logging.Log("Error:", err.Error())
+			return
+		}
 	},
 }
 
@@ -103,7 +134,11 @@ var hookIntegrationReadyCmd = &cobra.Command{
 		}
 
 		hook := fig_ipc.CreateIntegrationReadyHook(args[0])
-		fig_ipc.SendHook(hook)
+		err := fig_ipc.SendHook(hook)
+		if err != nil {
+			logging.Log("Error:", err.Error())
+			return
+		}
 	},
 }
 
@@ -113,7 +148,11 @@ var hookHideCmd = &cobra.Command{
 	DisableFlagParsing: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		hook := fig_ipc.CreateHideHook()
-		fig_ipc.SendHook(hook)
+		err := fig_ipc.SendHook(hook)
+		if err != nil {
+			logging.Log("Error:", err.Error())
+			return
+		}
 	},
 }
 
@@ -127,6 +166,34 @@ var hookEventCmd = &cobra.Command{
 		}
 
 		hook := fig_ipc.CreateEventHook(args[0])
-		fig_ipc.SendHook(hook)
+		err := fig_ipc.SendHook(hook)
+		if err != nil {
+			logging.Log("Error:", err.Error())
+			return
+		}
+	},
+}
+
+var hookPreExecCmd = &cobra.Command{
+	Use:                "pre-exec [pid] [tty]",
+	Short:              "Run the exec hook",
+	DisableFlagParsing: true,
+	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) != 2 {
+			return
+		}
+
+		pid, _ := strconv.Atoi(args[0])
+
+		hook, err := fig_ipc.CreatePreExecHook(pid, args[1])
+		if err != nil {
+			logging.Log(err.Error())
+			return
+		}
+
+		err = fig_ipc.SendHook(hook)
+		if err != nil {
+			logging.Log(err.Error())
+		}
 	},
 }

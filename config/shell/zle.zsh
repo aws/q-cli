@@ -33,11 +33,11 @@ function fig_zsh_redraw() {
   fi
 
   # Redirect to /dev/null to avoid printing escape sequences
-  fig bg:zsh-keybuffer "${TERM_SESSION_ID}" "${FIG_INTEGRATION_VERSION}" "${TTY}" "$$" "${HISTNO}" "${CURSOR}" "$BUFFER" 2>&1 >/dev/null
+  fig hook editbuffer "${TERM_SESSION_ID}" "${FIG_INTEGRATION_VERSION}" "${TTY}" "$$" "${HISTNO}" "${CURSOR}" "$BUFFER" 2>&1 >/dev/null
 }
 
 function fig_hide() { 
-  command -v fig 2>"$HOME"/.fig/logs/zsh.log 1>/dev/null && fig bg:hide 2>&1 1>/dev/null
+  command -v fig 2>"$HOME"/.fig/logs/zsh.log 1>/dev/null && fig hook hide 2>&1 1>/dev/null
 }
 
 # Hint: to list all special widgets, run `add-zle-hook-widget -L`
