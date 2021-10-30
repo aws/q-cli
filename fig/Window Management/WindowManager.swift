@@ -237,7 +237,6 @@ class WindowManager : NSObject {
         
         let web = WebViewController()
         web.webView?.defaultURL = nil
-//        web.webView?.loadBundleApp("tutorial")
         
         web.webView?.loadAutocomplete()
         let companion = CompanionWindow(viewController: web)

@@ -315,6 +315,14 @@ export interface ClientOriginatedMessage {
     | {
         $case: "openInExternalApplicationRequest";
         openInExternalApplicationRequest: OpenInExternalApplicationRequest;
+      }
+    | {
+        $case: "getConfigPropertyRequest";
+        getConfigPropertyRequest: GetConfigPropertyRequest;
+      }
+    | {
+        $case: "updateConfigPropertyRequest";
+        updateConfigPropertyRequest: UpdateConfigPropertyRequest;
       };
 }
 
@@ -347,6 +355,10 @@ export interface ServerOriginatedMessage {
     | {
         $case: "getDefaultsPropertyResponse";
         getDefaultsPropertyResponse: GetDefaultsPropertyResponse;
+      }
+    | {
+        $case: "getConfigPropertyResponse";
+        getConfigPropertyResponse: GetConfigPropertyResponse;
       }
     | { $case: "notification"; notification: Notification };
 }
@@ -511,6 +523,19 @@ export interface GetDefaultsPropertyResponse {
 export interface UpdateDefaultsPropertyRequest {
   key?: string | undefined;
   value?: DefaultsValue | undefined;
+}
+
+export interface GetConfigPropertyRequest {
+  key?: string | undefined;
+}
+
+export interface GetConfigPropertyResponse {
+  value?: string | undefined;
+}
+
+export interface UpdateConfigPropertyRequest {
+  key?: string | undefined;
+  value?: string | undefined;
 }
 
 export interface GetSettingsPropertyRequest {
@@ -806,6 +831,18 @@ export const ClientOriginatedMessage = {
         writer.uint32(962).fork()
       ).ldelim();
     }
+    if (message.submessage?.$case === "getConfigPropertyRequest") {
+      GetConfigPropertyRequest.encode(
+        message.submessage.getConfigPropertyRequest,
+        writer.uint32(970).fork()
+      ).ldelim();
+    }
+    if (message.submessage?.$case === "updateConfigPropertyRequest") {
+      UpdateConfigPropertyRequest.encode(
+        message.submessage.updateConfigPropertyRequest,
+        writer.uint32(978).fork()
+      ).ldelim();
+    }
     return writer;
   },
 
@@ -993,6 +1030,24 @@ export const ClientOriginatedMessage = {
             $case: "openInExternalApplicationRequest",
             openInExternalApplicationRequest:
               OpenInExternalApplicationRequest.decode(reader, reader.uint32()),
+          };
+          break;
+        case 121:
+          message.submessage = {
+            $case: "getConfigPropertyRequest",
+            getConfigPropertyRequest: GetConfigPropertyRequest.decode(
+              reader,
+              reader.uint32()
+            ),
+          };
+          break;
+        case 122:
+          message.submessage = {
+            $case: "updateConfigPropertyRequest",
+            updateConfigPropertyRequest: UpdateConfigPropertyRequest.decode(
+              reader,
+              reader.uint32()
+            ),
           };
           break;
         default:
@@ -1225,6 +1280,28 @@ export const ClientOriginatedMessage = {
           ),
       };
     }
+    if (
+      object.getConfigPropertyRequest !== undefined &&
+      object.getConfigPropertyRequest !== null
+    ) {
+      message.submessage = {
+        $case: "getConfigPropertyRequest",
+        getConfigPropertyRequest: GetConfigPropertyRequest.fromJSON(
+          object.getConfigPropertyRequest
+        ),
+      };
+    }
+    if (
+      object.updateConfigPropertyRequest !== undefined &&
+      object.updateConfigPropertyRequest !== null
+    ) {
+      message.submessage = {
+        $case: "updateConfigPropertyRequest",
+        updateConfigPropertyRequest: UpdateConfigPropertyRequest.fromJSON(
+          object.updateConfigPropertyRequest
+        ),
+      };
+    }
     return message;
   },
 
@@ -1348,6 +1425,20 @@ export const ClientOriginatedMessage = {
         ?.openInExternalApplicationRequest
         ? OpenInExternalApplicationRequest.toJSON(
             message.submessage?.openInExternalApplicationRequest
+          )
+        : undefined);
+    message.submessage?.$case === "getConfigPropertyRequest" &&
+      (obj.getConfigPropertyRequest = message.submessage
+        ?.getConfigPropertyRequest
+        ? GetConfigPropertyRequest.toJSON(
+            message.submessage?.getConfigPropertyRequest
+          )
+        : undefined);
+    message.submessage?.$case === "updateConfigPropertyRequest" &&
+      (obj.updateConfigPropertyRequest = message.submessage
+        ?.updateConfigPropertyRequest
+        ? UpdateConfigPropertyRequest.toJSON(
+            message.submessage?.updateConfigPropertyRequest
           )
         : undefined);
     return obj;
@@ -1607,6 +1698,30 @@ export const ClientOriginatedMessage = {
           ),
       };
     }
+    if (
+      object.submessage?.$case === "getConfigPropertyRequest" &&
+      object.submessage?.getConfigPropertyRequest !== undefined &&
+      object.submessage?.getConfigPropertyRequest !== null
+    ) {
+      message.submessage = {
+        $case: "getConfigPropertyRequest",
+        getConfigPropertyRequest: GetConfigPropertyRequest.fromPartial(
+          object.submessage.getConfigPropertyRequest
+        ),
+      };
+    }
+    if (
+      object.submessage?.$case === "updateConfigPropertyRequest" &&
+      object.submessage?.updateConfigPropertyRequest !== undefined &&
+      object.submessage?.updateConfigPropertyRequest !== null
+    ) {
+      message.submessage = {
+        $case: "updateConfigPropertyRequest",
+        updateConfigPropertyRequest: UpdateConfigPropertyRequest.fromPartial(
+          object.submessage.updateConfigPropertyRequest
+        ),
+      };
+    }
     return message;
   },
 };
@@ -1667,6 +1782,12 @@ export const ServerOriginatedMessage = {
       GetDefaultsPropertyResponse.encode(
         message.submessage.getDefaultsPropertyResponse,
         writer.uint32(850).fork()
+      ).ldelim();
+    }
+    if (message.submessage?.$case === "getConfigPropertyResponse") {
+      GetConfigPropertyResponse.encode(
+        message.submessage.getConfigPropertyResponse,
+        writer.uint32(858).fork()
       ).ldelim();
     }
     if (message.submessage?.$case === "notification") {
@@ -1752,6 +1873,15 @@ export const ServerOriginatedMessage = {
           message.submessage = {
             $case: "getDefaultsPropertyResponse",
             getDefaultsPropertyResponse: GetDefaultsPropertyResponse.decode(
+              reader,
+              reader.uint32()
+            ),
+          };
+          break;
+        case 107:
+          message.submessage = {
+            $case: "getConfigPropertyResponse",
+            getConfigPropertyResponse: GetConfigPropertyResponse.decode(
               reader,
               reader.uint32()
             ),
@@ -1863,6 +1993,17 @@ export const ServerOriginatedMessage = {
         ),
       };
     }
+    if (
+      object.getConfigPropertyResponse !== undefined &&
+      object.getConfigPropertyResponse !== null
+    ) {
+      message.submessage = {
+        $case: "getConfigPropertyResponse",
+        getConfigPropertyResponse: GetConfigPropertyResponse.fromJSON(
+          object.getConfigPropertyResponse
+        ),
+      };
+    }
     if (object.notification !== undefined && object.notification !== null) {
       message.submessage = {
         $case: "notification",
@@ -1922,6 +2063,13 @@ export const ServerOriginatedMessage = {
         ?.getDefaultsPropertyResponse
         ? GetDefaultsPropertyResponse.toJSON(
             message.submessage?.getDefaultsPropertyResponse
+          )
+        : undefined);
+    message.submessage?.$case === "getConfigPropertyResponse" &&
+      (obj.getConfigPropertyResponse = message.submessage
+        ?.getConfigPropertyResponse
+        ? GetConfigPropertyResponse.toJSON(
+            message.submessage?.getConfigPropertyResponse
           )
         : undefined);
     message.submessage?.$case === "notification" &&
@@ -2040,6 +2188,18 @@ export const ServerOriginatedMessage = {
         $case: "getDefaultsPropertyResponse",
         getDefaultsPropertyResponse: GetDefaultsPropertyResponse.fromPartial(
           object.submessage.getDefaultsPropertyResponse
+        ),
+      };
+    }
+    if (
+      object.submessage?.$case === "getConfigPropertyResponse" &&
+      object.submessage?.getConfigPropertyResponse !== undefined &&
+      object.submessage?.getConfigPropertyResponse !== null
+    ) {
+      message.submessage = {
+        $case: "getConfigPropertyResponse",
+        getConfigPropertyResponse: GetConfigPropertyResponse.fromPartial(
+          object.submessage.getConfigPropertyResponse
         ),
       };
     }
@@ -4510,6 +4670,214 @@ export const UpdateDefaultsPropertyRequest = {
     }
     if (object.value !== undefined && object.value !== null) {
       message.value = DefaultsValue.fromPartial(object.value);
+    }
+    return message;
+  },
+};
+
+const baseGetConfigPropertyRequest: object = {};
+
+export const GetConfigPropertyRequest = {
+  encode(
+    message: GetConfigPropertyRequest,
+    writer: _m0.Writer = _m0.Writer.create()
+  ): _m0.Writer {
+    if (message.key !== undefined) {
+      writer.uint32(10).string(message.key);
+    }
+    return writer;
+  },
+
+  decode(
+    input: _m0.Reader | Uint8Array,
+    length?: number
+  ): GetConfigPropertyRequest {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = {
+      ...baseGetConfigPropertyRequest,
+    } as GetConfigPropertyRequest;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.key = reader.string();
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetConfigPropertyRequest {
+    const message = {
+      ...baseGetConfigPropertyRequest,
+    } as GetConfigPropertyRequest;
+    if (object.key !== undefined && object.key !== null) {
+      message.key = String(object.key);
+    }
+    return message;
+  },
+
+  toJSON(message: GetConfigPropertyRequest): unknown {
+    const obj: any = {};
+    message.key !== undefined && (obj.key = message.key);
+    return obj;
+  },
+
+  fromPartial(
+    object: DeepPartial<GetConfigPropertyRequest>
+  ): GetConfigPropertyRequest {
+    const message = {
+      ...baseGetConfigPropertyRequest,
+    } as GetConfigPropertyRequest;
+    if (object.key !== undefined && object.key !== null) {
+      message.key = object.key;
+    }
+    return message;
+  },
+};
+
+const baseGetConfigPropertyResponse: object = {};
+
+export const GetConfigPropertyResponse = {
+  encode(
+    message: GetConfigPropertyResponse,
+    writer: _m0.Writer = _m0.Writer.create()
+  ): _m0.Writer {
+    if (message.value !== undefined) {
+      writer.uint32(10).string(message.value);
+    }
+    return writer;
+  },
+
+  decode(
+    input: _m0.Reader | Uint8Array,
+    length?: number
+  ): GetConfigPropertyResponse {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = {
+      ...baseGetConfigPropertyResponse,
+    } as GetConfigPropertyResponse;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.value = reader.string();
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetConfigPropertyResponse {
+    const message = {
+      ...baseGetConfigPropertyResponse,
+    } as GetConfigPropertyResponse;
+    if (object.value !== undefined && object.value !== null) {
+      message.value = String(object.value);
+    }
+    return message;
+  },
+
+  toJSON(message: GetConfigPropertyResponse): unknown {
+    const obj: any = {};
+    message.value !== undefined && (obj.value = message.value);
+    return obj;
+  },
+
+  fromPartial(
+    object: DeepPartial<GetConfigPropertyResponse>
+  ): GetConfigPropertyResponse {
+    const message = {
+      ...baseGetConfigPropertyResponse,
+    } as GetConfigPropertyResponse;
+    if (object.value !== undefined && object.value !== null) {
+      message.value = object.value;
+    }
+    return message;
+  },
+};
+
+const baseUpdateConfigPropertyRequest: object = {};
+
+export const UpdateConfigPropertyRequest = {
+  encode(
+    message: UpdateConfigPropertyRequest,
+    writer: _m0.Writer = _m0.Writer.create()
+  ): _m0.Writer {
+    if (message.key !== undefined) {
+      writer.uint32(10).string(message.key);
+    }
+    if (message.value !== undefined) {
+      writer.uint32(18).string(message.value);
+    }
+    return writer;
+  },
+
+  decode(
+    input: _m0.Reader | Uint8Array,
+    length?: number
+  ): UpdateConfigPropertyRequest {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = {
+      ...baseUpdateConfigPropertyRequest,
+    } as UpdateConfigPropertyRequest;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.key = reader.string();
+          break;
+        case 2:
+          message.value = reader.string();
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+
+  fromJSON(object: any): UpdateConfigPropertyRequest {
+    const message = {
+      ...baseUpdateConfigPropertyRequest,
+    } as UpdateConfigPropertyRequest;
+    if (object.key !== undefined && object.key !== null) {
+      message.key = String(object.key);
+    }
+    if (object.value !== undefined && object.value !== null) {
+      message.value = String(object.value);
+    }
+    return message;
+  },
+
+  toJSON(message: UpdateConfigPropertyRequest): unknown {
+    const obj: any = {};
+    message.key !== undefined && (obj.key = message.key);
+    message.value !== undefined && (obj.value = message.value);
+    return obj;
+  },
+
+  fromPartial(
+    object: DeepPartial<UpdateConfigPropertyRequest>
+  ): UpdateConfigPropertyRequest {
+    const message = {
+      ...baseUpdateConfigPropertyRequest,
+    } as UpdateConfigPropertyRequest;
+    if (object.key !== undefined && object.key !== null) {
+      message.key = object.key;
+    }
+    if (object.value !== undefined && object.value !== null) {
+      message.value = object.value;
     }
     return message;
   },
