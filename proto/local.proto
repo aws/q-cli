@@ -29,6 +29,7 @@ message Command {
 		RunInstallScriptCommand run_install_script = 109;
 		BuildCommand build = 110;
 		OpenUiElementCommand open_ui_element = 111;
+		ResetCacheCommand reset_cache = 112;
 	}
 }
 
@@ -98,6 +99,8 @@ enum UiElement {
 message OpenUiElementCommand {
 	UiElement element = 1;
 }
+
+message ResetCacheCommand {}
 
 // == Hooks ==
 message ShellContext {

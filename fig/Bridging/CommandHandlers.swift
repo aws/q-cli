@@ -181,4 +181,12 @@ extension CommandHandlers {
       }
     }
   }
+  
+  static func resetCache() -> CommandResponse {
+    WebView.deleteCache()
+
+    return CommandResponse.with { response in
+      response.success.message = "reset cache"
+    }
+  }
 }

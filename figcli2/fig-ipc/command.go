@@ -217,3 +217,20 @@ func RunOpenUiElementCommand(element fig_proto.UiElement) (string, error) {
 
 	return GetCommandResponseMessage(response)
 }
+
+func RunResetCacheCommand() error {
+	noResponse := true
+
+	cmd := fig_proto.Command{
+		NoResponse: &noResponse,
+		Command: &fig_proto.Command_ResetCache{
+			ResetCache: &fig_proto.ResetCacheCommand{},
+		},
+	}
+
+	if err := SendCommand(&cmd); err != nil {
+		return err
+	}
+
+	return nil
+}
