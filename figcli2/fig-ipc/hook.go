@@ -145,22 +145,22 @@ func CreateInitHook(pid int, tty string) (*fig_proto.Hook, error) {
 	}, nil
 }
 
-func CreateKeyboardFocusChangedHook(bundleIdentifier string, focusedSessionId string) *fig_proto.Hook {
+func CreateKeyboardFocusChangedHook(appIdentifier string, focusedSessionId string) *fig_proto.Hook {
 	return &fig_proto.Hook{
 		Hook: &fig_proto.Hook_KeyboardFocusChanged{
 			KeyboardFocusChanged: &fig_proto.KeyboardFocusChangedHook{
-				BundleIdentifier: bundleIdentifier,
+				AppIdentifier:    appIdentifier,
 				FocusedSessionId: focusedSessionId,
 			},
 		},
 	}
 }
 
-func CreateIntegrationReadyHook(identifyier string) *fig_proto.Hook {
+func CreateIntegrationReadyHook(identifier string) *fig_proto.Hook {
 	return &fig_proto.Hook{
 		Hook: &fig_proto.Hook_IntegrationReady{
 			IntegrationReady: &fig_proto.IntegrationReadyHook{
-				Identifier: identifyier,
+				Identifier: identifier,
 			},
 		},
 	}

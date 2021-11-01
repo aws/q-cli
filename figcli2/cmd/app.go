@@ -290,9 +290,8 @@ var appUpgradeCmd = &cobra.Command{
 
 		settings.Save()
 
-		// TODO: Replace with native implementation
-		figcli := "/Applications/Fig.app/Contents/MacOS/figcli"
-		exec.Command(figcli, "settings:init").Run()
+		// Restart settings listener
+		fig_ipc.RestartSettingsListenerCommand()
 
 		// Onboarding
 

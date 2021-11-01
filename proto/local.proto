@@ -153,7 +153,7 @@ message PostExecHook {
 }
 
 message KeyboardFocusChangedHook {
-	string bundle_identifier = 1;
+	string app_identifier = 1;
 	string focused_session_id = 2; // a unique identifier associated with the pane or tab that is currently focused
 }
 
