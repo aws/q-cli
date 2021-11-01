@@ -154,7 +154,7 @@ class Settings {
     
     let settingsViewController = WebViewController()
     settingsViewController.webView?.defaultURL = nil
-    settingsViewController.webView?.loadBundleApp("settings/index")
+    settingsViewController.webView?.loadRemoteApp(at: Remote.baseURL.appendingPathComponent("settings"))
     settingsViewController.webView?.dragShouldRepositionWindow = true
 
     let settings = WebViewWindow(viewController: settingsViewController, shouldQuitAppOnClose: false)
