@@ -188,11 +188,7 @@ extension CommandHandlers {
     } else {
       Defaults.debugAutocomplete = !Defaults.debugAutocomplete
     }
-        
-    if (!Defaults.debugAutocomplete) {
-        WindowManager.shared.autocomplete?.maxHeight = 0
-    }
-        
+    
     return CommandResponse.with { response in
       response.success.message = Defaults.debugAutocomplete ? "on" : "off"
     }
