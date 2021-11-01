@@ -328,11 +328,11 @@
     "default": "toggleHistoryMode"
   },
   {
-    "settingName": "autocomplete.keybindings.control+shift+=",
+    "settingName": "autocomplete.keybindings.command+shift+=",
     "default": "increaseSize"
   },
   {
-    "settingName": "autocomplete.keybindings.control+shift+-",
+    "settingName": "autocomplete.keybindings.command+shift+-",
     "default": "decreaseSize"
   }
 ]

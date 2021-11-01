@@ -208,6 +208,8 @@ class IPC: UnixSocketServerDelegate {
       response = CommandHandlers.buildCommand(branch: request.branch)
     case .openUiElement(let request):
       response = CommandHandlers.openUiElement(uiElement: request.element)
+    case .toggleDebugMode(let request):
+      response = CommandHandlers.toggleAutocompleteDebugMode(setVal: request.hasDebugMode ? request.debugMode : nil)
     case .none:
       break
     }

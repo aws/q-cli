@@ -283,6 +283,14 @@ public struct Local_Command {
     set {command = .openUiElement(newValue)}
   }
 
+  public var toggleDebugMode: Local_ToggleDebugModeCommand {
+    get {
+      if case .toggleDebugMode(let v)? = command {return v}
+      return Local_ToggleDebugModeCommand()
+    }
+    set {command = .toggleDebugMode(newValue)}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public enum OneOf_Command: Equatable {
@@ -298,6 +306,7 @@ public struct Local_Command {
     case runInstallScript(Local_RunInstallScriptCommand)
     case build(Local_BuildCommand)
     case openUiElement(Local_OpenUiElementCommand)
+    case toggleDebugMode(Local_ToggleDebugModeCommand)
 
   #if !swift(>=4.1)
     public static func ==(lhs: Local_Command.OneOf_Command, rhs: Local_Command.OneOf_Command) -> Bool {
@@ -351,6 +360,10 @@ public struct Local_Command {
       }()
       case (.openUiElement, .openUiElement): return {
         guard case .openUiElement(let l) = lhs, case .openUiElement(let r) = rhs else { preconditionFailure() }
+        return l == r
+      }()
+      case (.toggleDebugMode, .toggleDebugMode): return {
+        guard case .toggleDebugMode(let l) = lhs, case .toggleDebugMode(let r) = rhs else { preconditionFailure() }
         return l == r
       }()
       default: return false
@@ -683,6 +696,27 @@ public struct Local_OpenUiElementCommand {
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
+}
+
+public struct Local_ToggleDebugModeCommand {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var debugMode: Bool {
+    get {return _debugMode ?? false}
+    set {_debugMode = newValue}
+  }
+  /// Returns true if `debugMode` has been explicitly set.
+  public var hasDebugMode: Bool {return self._debugMode != nil}
+  /// Clears the value of `debugMode`. Subsequent reads from it will return its default value.
+  public mutating func clearDebugMode() {self._debugMode = nil}
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+
+  fileprivate var _debugMode: Bool? = nil
 }
 
 /// == Hooks ==
@@ -1330,6 +1364,7 @@ extension Local_Command: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementa
     109: .standard(proto: "run_install_script"),
     110: .same(proto: "build"),
     111: .standard(proto: "open_ui_element"),
+    112: .standard(proto: "toggle_debug_mode"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -1496,6 +1531,19 @@ extension Local_Command: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementa
           self.command = .openUiElement(v)
         }
       }()
+      case 112: try {
+        var v: Local_ToggleDebugModeCommand?
+        var hadOneofValue = false
+        if let current = self.command {
+          hadOneofValue = true
+          if case .toggleDebugMode(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.command = .toggleDebugMode(v)
+        }
+      }()
       default: break
       }
     }
@@ -1560,6 +1608,10 @@ extension Local_Command: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementa
     case .openUiElement?: try {
       guard case .openUiElement(let v)? = self.command else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 111)
+    }()
+    case .toggleDebugMode?: try {
+      guard case .toggleDebugMode(let v)? = self.command else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 112)
     }()
     case nil: break
     }
@@ -2137,6 +2189,42 @@ extension Local_OpenUiElementCommand: SwiftProtobuf.Message, SwiftProtobuf._Mess
 
   public static func ==(lhs: Local_OpenUiElementCommand, rhs: Local_OpenUiElementCommand) -> Bool {
     if lhs.element != rhs.element {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Local_ToggleDebugModeCommand: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".ToggleDebugModeCommand"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .standard(proto: "debug_mode"),
+  ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularBoolField(value: &self._debugMode) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    try { if let v = self._debugMode {
+      try visitor.visitSingularBoolField(value: v, fieldNumber: 1)
+    } }()
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Local_ToggleDebugModeCommand, rhs: Local_ToggleDebugModeCommand) -> Bool {
+    if lhs._debugMode != rhs._debugMode {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

@@ -458,6 +458,22 @@ public struct Fig_ClientOriginatedMessage {
     set {submessage = .openInExternalApplicationRequest(newValue)}
   }
 
+  public var getConfigPropertyRequest: Fig_GetConfigPropertyRequest {
+    get {
+      if case .getConfigPropertyRequest(let v)? = submessage {return v}
+      return Fig_GetConfigPropertyRequest()
+    }
+    set {submessage = .getConfigPropertyRequest(newValue)}
+  }
+
+  public var updateConfigPropertyRequest: Fig_UpdateConfigPropertyRequest {
+    get {
+      if case .updateConfigPropertyRequest(let v)? = submessage {return v}
+      return Fig_UpdateConfigPropertyRequest()
+    }
+    set {submessage = .updateConfigPropertyRequest(newValue)}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public enum OneOf_Submessage: Equatable {
@@ -481,6 +497,8 @@ public struct Fig_ClientOriginatedMessage {
     case onboardingRequest(Fig_OnboardingRequest)
     case windowFocusRequest(Fig_WindowFocusRequest)
     case openInExternalApplicationRequest(Fig_OpenInExternalApplicationRequest)
+    case getConfigPropertyRequest(Fig_GetConfigPropertyRequest)
+    case updateConfigPropertyRequest(Fig_UpdateConfigPropertyRequest)
 
   #if !swift(>=4.1)
     public static func ==(lhs: Fig_ClientOriginatedMessage.OneOf_Submessage, rhs: Fig_ClientOriginatedMessage.OneOf_Submessage) -> Bool {
@@ -566,6 +584,14 @@ public struct Fig_ClientOriginatedMessage {
       }()
       case (.openInExternalApplicationRequest, .openInExternalApplicationRequest): return {
         guard case .openInExternalApplicationRequest(let l) = lhs, case .openInExternalApplicationRequest(let r) = rhs else { preconditionFailure() }
+        return l == r
+      }()
+      case (.getConfigPropertyRequest, .getConfigPropertyRequest): return {
+        guard case .getConfigPropertyRequest(let l) = lhs, case .getConfigPropertyRequest(let r) = rhs else { preconditionFailure() }
+        return l == r
+      }()
+      case (.updateConfigPropertyRequest, .updateConfigPropertyRequest): return {
+        guard case .updateConfigPropertyRequest(let l) = lhs, case .updateConfigPropertyRequest(let r) = rhs else { preconditionFailure() }
         return l == r
       }()
       default: return false
@@ -668,6 +694,14 @@ public struct Fig_ServerOriginatedMessage {
     set {submessage = .getDefaultsPropertyResponse(newValue)}
   }
 
+  public var getConfigPropertyResponse: Fig_GetConfigPropertyResponse {
+    get {
+      if case .getConfigPropertyResponse(let v)? = submessage {return v}
+      return Fig_GetConfigPropertyResponse()
+    }
+    set {submessage = .getConfigPropertyResponse(newValue)}
+  }
+
   public var notification: Fig_Notification {
     get {
       if case .notification(let v)? = submessage {return v}
@@ -689,6 +723,7 @@ public struct Fig_ServerOriginatedMessage {
     case getSettingsPropertyResponse(Fig_GetSettingsPropertyResponse)
     case destinationOfSymbolicLinkResponse(Fig_DestinationOfSymbolicLinkResponse)
     case getDefaultsPropertyResponse(Fig_GetDefaultsPropertyResponse)
+    case getConfigPropertyResponse(Fig_GetConfigPropertyResponse)
     case notification(Fig_Notification)
 
   #if !swift(>=4.1)
@@ -731,6 +766,10 @@ public struct Fig_ServerOriginatedMessage {
       }()
       case (.getDefaultsPropertyResponse, .getDefaultsPropertyResponse): return {
         guard case .getDefaultsPropertyResponse(let l) = lhs, case .getDefaultsPropertyResponse(let r) = rhs else { preconditionFailure() }
+        return l == r
+      }()
+      case (.getConfigPropertyResponse, .getConfigPropertyResponse): return {
+        guard case .getConfigPropertyResponse(let l) = lhs, case .getConfigPropertyResponse(let r) = rhs else { preconditionFailure() }
         return l == r
       }()
       case (.notification, .notification): return {
@@ -1796,6 +1835,79 @@ public struct Fig_UpdateDefaultsPropertyRequest {
   fileprivate var _value: Fig_DefaultsValue? = nil
 }
 
+public struct Fig_GetConfigPropertyRequest {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var key: String {
+    get {return _key ?? String()}
+    set {_key = newValue}
+  }
+  /// Returns true if `key` has been explicitly set.
+  public var hasKey: Bool {return self._key != nil}
+  /// Clears the value of `key`. Subsequent reads from it will return its default value.
+  public mutating func clearKey() {self._key = nil}
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+
+  fileprivate var _key: String? = nil
+}
+
+public struct Fig_GetConfigPropertyResponse {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var value: String {
+    get {return _value ?? String()}
+    set {_value = newValue}
+  }
+  /// Returns true if `value` has been explicitly set.
+  public var hasValue: Bool {return self._value != nil}
+  /// Clears the value of `value`. Subsequent reads from it will return its default value.
+  public mutating func clearValue() {self._value = nil}
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+
+  fileprivate var _value: String? = nil
+}
+
+public struct Fig_UpdateConfigPropertyRequest {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var key: String {
+    get {return _key ?? String()}
+    set {_key = newValue}
+  }
+  /// Returns true if `key` has been explicitly set.
+  public var hasKey: Bool {return self._key != nil}
+  /// Clears the value of `key`. Subsequent reads from it will return its default value.
+  public mutating func clearKey() {self._key = nil}
+
+  public var value: String {
+    get {return _value ?? String()}
+    set {_value = newValue}
+  }
+  /// Returns true if `value` has been explicitly set.
+  public var hasValue: Bool {return self._value != nil}
+  /// Clears the value of `value`. Subsequent reads from it will return its default value.
+  public mutating func clearValue() {self._value = nil}
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+
+  fileprivate var _key: String? = nil
+  fileprivate var _value: String? = nil
+}
+
 public struct Fig_GetSettingsPropertyRequest {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -2695,6 +2807,8 @@ extension Fig_ClientOriginatedMessage: SwiftProtobuf.Message, SwiftProtobuf._Mes
     118: .standard(proto: "onboarding_request"),
     119: .standard(proto: "window_focus_request"),
     120: .standard(proto: "open_in_external_application_request"),
+    121: .standard(proto: "get_config_property_request"),
+    122: .standard(proto: "update_config_property_request"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -2964,6 +3078,32 @@ extension Fig_ClientOriginatedMessage: SwiftProtobuf.Message, SwiftProtobuf._Mes
           self.submessage = .openInExternalApplicationRequest(v)
         }
       }()
+      case 121: try {
+        var v: Fig_GetConfigPropertyRequest?
+        var hadOneofValue = false
+        if let current = self.submessage {
+          hadOneofValue = true
+          if case .getConfigPropertyRequest(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.submessage = .getConfigPropertyRequest(v)
+        }
+      }()
+      case 122: try {
+        var v: Fig_UpdateConfigPropertyRequest?
+        var hadOneofValue = false
+        if let current = self.submessage {
+          hadOneofValue = true
+          if case .updateConfigPropertyRequest(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.submessage = .updateConfigPropertyRequest(v)
+        }
+      }()
       default: break
       }
     }
@@ -3058,6 +3198,14 @@ extension Fig_ClientOriginatedMessage: SwiftProtobuf.Message, SwiftProtobuf._Mes
       guard case .openInExternalApplicationRequest(let v)? = self.submessage else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 120)
     }()
+    case .getConfigPropertyRequest?: try {
+      guard case .getConfigPropertyRequest(let v)? = self.submessage else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 121)
+    }()
+    case .updateConfigPropertyRequest?: try {
+      guard case .updateConfigPropertyRequest(let v)? = self.submessage else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 122)
+    }()
     case nil: break
     }
     try unknownFields.traverse(visitor: &visitor)
@@ -3084,6 +3232,7 @@ extension Fig_ServerOriginatedMessage: SwiftProtobuf.Message, SwiftProtobuf._Mes
     104: .standard(proto: "get_settings_property_response"),
     105: .standard(proto: "destination_of_symbolic_link_response"),
     106: .standard(proto: "get_defaults_property_response"),
+    107: .standard(proto: "get_config_property_response"),
     1000: .same(proto: "notification"),
   ]
 
@@ -3201,6 +3350,19 @@ extension Fig_ServerOriginatedMessage: SwiftProtobuf.Message, SwiftProtobuf._Mes
           self.submessage = .getDefaultsPropertyResponse(v)
         }
       }()
+      case 107: try {
+        var v: Fig_GetConfigPropertyResponse?
+        var hadOneofValue = false
+        if let current = self.submessage {
+          hadOneofValue = true
+          if case .getConfigPropertyResponse(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.submessage = .getConfigPropertyResponse(v)
+        }
+      }()
       case 1000: try {
         var v: Fig_Notification?
         var hadOneofValue = false
@@ -3263,6 +3425,10 @@ extension Fig_ServerOriginatedMessage: SwiftProtobuf.Message, SwiftProtobuf._Mes
     case .getDefaultsPropertyResponse?: try {
       guard case .getDefaultsPropertyResponse(let v)? = self.submessage else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 106)
+    }()
+    case .getConfigPropertyResponse?: try {
+      guard case .getConfigPropertyResponse(let v)? = self.submessage else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 107)
     }()
     case .notification?: try {
       guard case .notification(let v)? = self.submessage else { preconditionFailure() }
@@ -4713,6 +4879,120 @@ extension Fig_UpdateDefaultsPropertyRequest: SwiftProtobuf.Message, SwiftProtobu
   }
 
   public static func ==(lhs: Fig_UpdateDefaultsPropertyRequest, rhs: Fig_UpdateDefaultsPropertyRequest) -> Bool {
+    if lhs._key != rhs._key {return false}
+    if lhs._value != rhs._value {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Fig_GetConfigPropertyRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".GetConfigPropertyRequest"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .same(proto: "key"),
+  ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self._key) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    try { if let v = self._key {
+      try visitor.visitSingularStringField(value: v, fieldNumber: 1)
+    } }()
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Fig_GetConfigPropertyRequest, rhs: Fig_GetConfigPropertyRequest) -> Bool {
+    if lhs._key != rhs._key {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Fig_GetConfigPropertyResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".GetConfigPropertyResponse"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .same(proto: "value"),
+  ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self._value) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    try { if let v = self._value {
+      try visitor.visitSingularStringField(value: v, fieldNumber: 1)
+    } }()
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Fig_GetConfigPropertyResponse, rhs: Fig_GetConfigPropertyResponse) -> Bool {
+    if lhs._value != rhs._value {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Fig_UpdateConfigPropertyRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".UpdateConfigPropertyRequest"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .same(proto: "key"),
+    2: .same(proto: "value"),
+  ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self._key) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self._value) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    try { if let v = self._key {
+      try visitor.visitSingularStringField(value: v, fieldNumber: 1)
+    } }()
+    try { if let v = self._value {
+      try visitor.visitSingularStringField(value: v, fieldNumber: 2)
+    } }()
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Fig_UpdateConfigPropertyRequest, rhs: Fig_UpdateConfigPropertyRequest) -> Bool {
     if lhs._key != rhs._key {return false}
     if lhs._value != rhs._value {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
