@@ -248,7 +248,7 @@ class IPC: UnixSocketServerDelegate {
     case .postExec(_):
       break
     case .keyboardFocusChanged(let hook):
-      ShellHookManager.shared.currentTabDidChange(bundleIdentifier: hook.bundleIdentifier, sessionId: hook.focusedSessionID)
+      ShellHookManager.shared.currentTabDidChange(applicationIdentifier: hook.appIdentifier, sessionId: hook.focusedSessionID)
     case .tmuxPaneChanged(_):
       break
     case .openedSshConnection(_):

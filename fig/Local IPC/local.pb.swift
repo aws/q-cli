@@ -914,7 +914,7 @@ public struct Local_KeyboardFocusChangedHook {
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var bundleIdentifier: String = String()
+  public var appIdentifier: String = String()
 
   /// a unique identifier associated with the pane or tab that is currently focused
   public var focusedSessionID: String = String()
@@ -2511,7 +2511,7 @@ extension Local_PostExecHook: SwiftProtobuf.Message, SwiftProtobuf._MessageImple
 extension Local_KeyboardFocusChangedHook: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".KeyboardFocusChangedHook"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "bundle_identifier"),
+    1: .standard(proto: "app_identifier"),
     2: .standard(proto: "focused_session_id"),
   ]
 
@@ -2521,7 +2521,7 @@ extension Local_KeyboardFocusChangedHook: SwiftProtobuf.Message, SwiftProtobuf._
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try { try decoder.decodeSingularStringField(value: &self.bundleIdentifier) }()
+      case 1: try { try decoder.decodeSingularStringField(value: &self.appIdentifier) }()
       case 2: try { try decoder.decodeSingularStringField(value: &self.focusedSessionID) }()
       default: break
       }
@@ -2529,8 +2529,8 @@ extension Local_KeyboardFocusChangedHook: SwiftProtobuf.Message, SwiftProtobuf._
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    if !self.bundleIdentifier.isEmpty {
-      try visitor.visitSingularStringField(value: self.bundleIdentifier, fieldNumber: 1)
+    if !self.appIdentifier.isEmpty {
+      try visitor.visitSingularStringField(value: self.appIdentifier, fieldNumber: 1)
     }
     if !self.focusedSessionID.isEmpty {
       try visitor.visitSingularStringField(value: self.focusedSessionID, fieldNumber: 2)
@@ -2539,7 +2539,7 @@ extension Local_KeyboardFocusChangedHook: SwiftProtobuf.Message, SwiftProtobuf._
   }
 
   public static func ==(lhs: Local_KeyboardFocusChangedHook, rhs: Local_KeyboardFocusChangedHook) -> Bool {
-    if lhs.bundleIdentifier != rhs.bundleIdentifier {return false}
+    if lhs.appIdentifier != rhs.appIdentifier {return false}
     if lhs.focusedSessionID != rhs.focusedSessionID {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true

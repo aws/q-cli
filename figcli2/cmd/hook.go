@@ -107,7 +107,7 @@ var hookInitCmd = &cobra.Command{
 }
 
 var hookKeyboardFocusChangedCmd = &cobra.Command{
-	Use:                "keyboard-focus-changed [bundle-id] [focused-session-id]",
+	Use:                "keyboard-focus-changed [app-identifier] [focused-session-id]",
 	Short:              "Run the keyboard-focus-changed hook",
 	DisableFlagParsing: true,
 	Run: func(cmd *cobra.Command, args []string) {

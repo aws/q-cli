@@ -40,7 +40,7 @@ function updateActiveTerminal(terminal) {
 	}
 	activeTerminal.processId.then((processId) => {
 		if (processId) {
-			runCommand('fig bg:vscode code:' + processId)
+			runCommand(`fig keyboard-focus-changed code ${processId}`)
 		}
 	})
 }
