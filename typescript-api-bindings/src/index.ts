@@ -7,11 +7,12 @@ import Keybindings from './keybindings'
 import Defaults from './defaults'
 import Telemetry from './telemetry'
 import fs from './filesystem'
+import Config from './config'
 
 import * as Fig from "./fig";
 import * as Internal from "./requests"
 
 // @ts-ignore
-window.f =  { WindowPosition, Settings, EditBufferNotifications, PTY, Shell, Keybindings, Defaults, Telemetry, fs, Internal}
+window.f =  { WindowPosition, Settings, EditBufferNotifications, PTY, Shell, Keybindings, Defaults, Telemetry, fs, Config, Internal}
 
-export { WindowPosition, Settings, EditBufferNotifications, PTY, Shell, Keybindings, Defaults, Telemetry, fs, Internal, Fig}
+export { WindowPosition, Settings, EditBufferNotifications, PTY, Shell, Keybindings, Defaults, Telemetry, fs, Config, Internal, Fig}

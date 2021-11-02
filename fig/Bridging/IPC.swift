@@ -210,6 +210,8 @@ class IPC: UnixSocketServerDelegate {
       response = CommandHandlers.openUiElement(uiElement: request.element)
     case .resetCache(_):
       response = CommandHandlers.resetCache()
+    case .toggleDebugMode(let request):
+      response = CommandHandlers.toggleAutocompleteDebugMode(setVal: request.hasDebugMode ? request.debugMode : nil)
     case .none:
       break
     }

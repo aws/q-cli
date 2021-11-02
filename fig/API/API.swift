@@ -69,7 +69,11 @@ class API {
         do {
             switch request.submessage {
                 case .positionWindowRequest(let positionWindowRequest):
-                    response.positionWindowResponse = try WindowPositioning.positionWindow(positionWindowRequest)
+                  guard let window = webView.window as? CompanionWindow else {
+                    throw APIError.generic(message: "No window associated with webview")
+                  }
+                  response.positionWindowResponse = try WindowPositioning.positionWindow(positionWindowRequest,
+                                                                                         companionWindow: window)
                 case .pseudoterminalWriteRequest(let request):
                     response.success = try PseudoTerminal.shared.handleWriteRequest(request)
                 case .pseudoterminalExecuteRequest(let request):
@@ -125,6 +129,10 @@ class API {
                   response.success = try WindowServer.handleFocusRequest(request)
                 case .openInExternalApplicationRequest(let request):
                   response.success = try NSWorkspace.shared.handleOpenURLRequest(request)
+                case .getConfigPropertyRequest(let request):
+                  response.getConfigPropertyResponse = try Config.handleGetRequest(request)
+                case .updateConfigPropertyRequest(let request):
+                  response.success = try Config.handleSetRequest(request)
                 case .none:
                     throw APIError.generic(message: "No submessage was included in request.")
             }

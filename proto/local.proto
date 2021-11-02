@@ -30,6 +30,7 @@ message Command {
 		BuildCommand build = 110;
 		OpenUiElementCommand open_ui_element = 111;
 		ResetCacheCommand reset_cache = 112;
+		ToggleDebugModeCommand toggle_debug_mode = 113;
 	}
 }
 
@@ -101,6 +102,10 @@ message OpenUiElementCommand {
 }
 
 message ResetCacheCommand {}
+
+message ToggleDebugModeCommand {
+	optional bool debug_mode = 1;
+}
 
 // == Hooks ==
 message ShellContext {

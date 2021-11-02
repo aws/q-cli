@@ -210,7 +210,6 @@ class ShellBridgeSocketService: WebSocketService {
                         self.sessionIds[msg.session] = from.id
                     case "pipe":
                         print("Handle CLI command: fig \((msg.options ?? []).joined(separator: " "))")
-                        Logger.log(message: "fig \((msg.options ?? []).joined(separator: " "))", subsystem: .cli)
                         guard Defaults.loggedIn else {
                             from.send(message: "disconnect")
                             return
@@ -219,6 +218,8 @@ class ShellBridgeSocketService: WebSocketService {
                             guard !subcommand.hasPrefix("bg:") else {
                               // Move processing on to mainThread to fix large class of concurrency bugs
                               DispatchQueue.main.async {
+                                Logger.log(message: "fig \((msg.options ?? []).joined(separator: " "))", subsystem: .cli)
+
 
                                 switch subcommand {
                                 case "bg:event":

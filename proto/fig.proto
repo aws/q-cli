@@ -26,6 +26,8 @@ message ClientOriginatedMessage {
       OnboardingRequest onboarding_request = 118;
       WindowFocusRequest window_focus_request = 119;
       OpenInExternalApplicationRequest open_in_external_application_request = 120;
+      GetConfigPropertyRequest get_config_property_request = 121;
+      UpdateConfigPropertyRequest update_config_property_request = 122;
 
   }
 }
@@ -44,6 +46,7 @@ message ServerOriginatedMessage {
     GetSettingsPropertyResponse get_settings_property_response = 104;
     DestinationOfSymbolicLinkResponse destination_of_symbolic_link_response = 105;
     GetDefaultsPropertyResponse get_defaults_property_response = 106;
+    GetConfigPropertyResponse get_config_property_response = 107;
 
     Notification notification = 1000;
   }
@@ -236,6 +239,21 @@ message GetDefaultsPropertyResponse {
 message UpdateDefaultsPropertyRequest {
   optional string key = 1;
   optional DefaultsValue value = 2;
+}
+
+/// Config
+
+message GetConfigPropertyRequest {
+  optional string key = 1;
+}
+
+message GetConfigPropertyResponse {
+  optional string value = 1;
+}
+
+message UpdateConfigPropertyRequest {
+  optional string key = 1;
+  optional string value = 2;
 }
 
 
