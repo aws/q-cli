@@ -70,6 +70,52 @@ func (IntegrationAction) EnumDescriptor() ([]byte, []int) {
 	return file_local_proto_rawDescGZIP(), []int{0}
 }
 
+type UiElement int32
+
+const (
+	UiElement_MENU_BAR UiElement = 0
+	UiElement_SETTINGS UiElement = 1
+)
+
+// Enum value maps for UiElement.
+var (
+	UiElement_name = map[int32]string{
+		0: "MENU_BAR",
+		1: "SETTINGS",
+	}
+	UiElement_value = map[string]int32{
+		"MENU_BAR": 0,
+		"SETTINGS": 1,
+	}
+)
+
+func (x UiElement) Enum() *UiElement {
+	p := new(UiElement)
+	*p = x
+	return p
+}
+
+func (x UiElement) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (UiElement) Descriptor() protoreflect.EnumDescriptor {
+	return file_local_proto_enumTypes[1].Descriptor()
+}
+
+func (UiElement) Type() protoreflect.EnumType {
+	return &file_local_proto_enumTypes[1]
+}
+
+func (x UiElement) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use UiElement.Descriptor instead.
+func (UiElement) EnumDescriptor() ([]byte, []int) {
+	return file_local_proto_rawDescGZIP(), []int{1}
+}
+
 type LocalMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -169,6 +215,9 @@ type Command struct {
 	//	*Command_RestartSettingsListener
 	//	*Command_RunInstallScript
 	//	*Command_Build
+	//	*Command_OpenUiElement
+	//	*Command_ResetCache
+	//	*Command_ToggleDebugMode
 	Command isCommand_Command `protobuf_oneof:"command"`
 }
 
@@ -302,6 +351,27 @@ func (x *Command) GetBuild() *BuildCommand {
 	return nil
 }
 
+func (x *Command) GetOpenUiElement() *OpenUiElementCommand {
+	if x, ok := x.GetCommand().(*Command_OpenUiElement); ok {
+		return x.OpenUiElement
+	}
+	return nil
+}
+
+func (x *Command) GetResetCache() *ResetCacheCommand {
+	if x, ok := x.GetCommand().(*Command_ResetCache); ok {
+		return x.ResetCache
+	}
+	return nil
+}
+
+func (x *Command) GetToggleDebugMode() *ToggleDebugModeCommand {
+	if x, ok := x.GetCommand().(*Command_ToggleDebugMode); ok {
+		return x.ToggleDebugMode
+	}
+	return nil
+}
+
 type isCommand_Command interface {
 	isCommand_Command()
 }
@@ -350,6 +420,18 @@ type Command_Build struct {
 	Build *BuildCommand `protobuf:"bytes,110,opt,name=build,proto3,oneof"`
 }
 
+type Command_OpenUiElement struct {
+	OpenUiElement *OpenUiElementCommand `protobuf:"bytes,111,opt,name=open_ui_element,json=openUiElement,proto3,oneof"`
+}
+
+type Command_ResetCache struct {
+	ResetCache *ResetCacheCommand `protobuf:"bytes,112,opt,name=reset_cache,json=resetCache,proto3,oneof"`
+}
+
+type Command_ToggleDebugMode struct {
+	ToggleDebugMode *ToggleDebugModeCommand `protobuf:"bytes,113,opt,name=toggle_debug_mode,json=toggleDebugMode,proto3,oneof"`
+}
+
 func (*Command_TerminalIntegration) isCommand_Command() {}
 
 func (*Command_ListTerminalIntegrations) isCommand_Command() {}
@@ -371,6 +453,12 @@ func (*Command_RestartSettingsListener) isCommand_Command() {}
 func (*Command_RunInstallScript) isCommand_Command() {}
 
 func (*Command_Build) isCommand_Command() {}
+
+func (*Command_OpenUiElement) isCommand_Command() {}
+
+func (*Command_ResetCache) isCommand_Command() {}
+
+func (*Command_ToggleDebugMode) isCommand_Command() {}
 
 type Hook struct {
 	state         protoimpl.MessageState
@@ -1078,6 +1166,138 @@ func (x *BuildCommand) GetBranch() string {
 	return ""
 }
 
+type OpenUiElementCommand struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Element UiElement `protobuf:"varint,1,opt,name=element,proto3,enum=local.UiElement" json:"element,omitempty"`
+}
+
+func (x *OpenUiElementCommand) Reset() {
+	*x = OpenUiElementCommand{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_local_proto_msgTypes[14]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *OpenUiElementCommand) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OpenUiElementCommand) ProtoMessage() {}
+
+func (x *OpenUiElementCommand) ProtoReflect() protoreflect.Message {
+	mi := &file_local_proto_msgTypes[14]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use OpenUiElementCommand.ProtoReflect.Descriptor instead.
+func (*OpenUiElementCommand) Descriptor() ([]byte, []int) {
+	return file_local_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *OpenUiElementCommand) GetElement() UiElement {
+	if x != nil {
+		return x.Element
+	}
+	return UiElement_MENU_BAR
+}
+
+type ResetCacheCommand struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *ResetCacheCommand) Reset() {
+	*x = ResetCacheCommand{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_local_proto_msgTypes[15]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ResetCacheCommand) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResetCacheCommand) ProtoMessage() {}
+
+func (x *ResetCacheCommand) ProtoReflect() protoreflect.Message {
+	mi := &file_local_proto_msgTypes[15]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResetCacheCommand.ProtoReflect.Descriptor instead.
+func (*ResetCacheCommand) Descriptor() ([]byte, []int) {
+	return file_local_proto_rawDescGZIP(), []int{15}
+}
+
+type ToggleDebugModeCommand struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	DebugMode *bool `protobuf:"varint,1,opt,name=debug_mode,json=debugMode,proto3,oneof" json:"debug_mode,omitempty"`
+}
+
+func (x *ToggleDebugModeCommand) Reset() {
+	*x = ToggleDebugModeCommand{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_local_proto_msgTypes[16]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ToggleDebugModeCommand) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ToggleDebugModeCommand) ProtoMessage() {}
+
+func (x *ToggleDebugModeCommand) ProtoReflect() protoreflect.Message {
+	mi := &file_local_proto_msgTypes[16]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ToggleDebugModeCommand.ProtoReflect.Descriptor instead.
+func (*ToggleDebugModeCommand) Descriptor() ([]byte, []int) {
+	return file_local_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *ToggleDebugModeCommand) GetDebugMode() bool {
+	if x != nil && x.DebugMode != nil {
+		return *x.DebugMode
+	}
+	return false
+}
+
 // == Hooks ==
 type ShellContext struct {
 	state         protoimpl.MessageState
@@ -1098,7 +1318,7 @@ type ShellContext struct {
 func (x *ShellContext) Reset() {
 	*x = ShellContext{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_local_proto_msgTypes[14]
+		mi := &file_local_proto_msgTypes[17]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1111,7 +1331,7 @@ func (x *ShellContext) String() string {
 func (*ShellContext) ProtoMessage() {}
 
 func (x *ShellContext) ProtoReflect() protoreflect.Message {
-	mi := &file_local_proto_msgTypes[14]
+	mi := &file_local_proto_msgTypes[17]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1124,7 +1344,7 @@ func (x *ShellContext) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ShellContext.ProtoReflect.Descriptor instead.
 func (*ShellContext) Descriptor() ([]byte, []int) {
-	return file_local_proto_rawDescGZIP(), []int{14}
+	return file_local_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *ShellContext) GetPid() int32 {
@@ -1204,7 +1424,7 @@ type EditBufferHook struct {
 func (x *EditBufferHook) Reset() {
 	*x = EditBufferHook{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_local_proto_msgTypes[15]
+		mi := &file_local_proto_msgTypes[18]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1217,7 +1437,7 @@ func (x *EditBufferHook) String() string {
 func (*EditBufferHook) ProtoMessage() {}
 
 func (x *EditBufferHook) ProtoReflect() protoreflect.Message {
-	mi := &file_local_proto_msgTypes[15]
+	mi := &file_local_proto_msgTypes[18]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1230,7 +1450,7 @@ func (x *EditBufferHook) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EditBufferHook.ProtoReflect.Descriptor instead.
 func (*EditBufferHook) Descriptor() ([]byte, []int) {
-	return file_local_proto_rawDescGZIP(), []int{15}
+	return file_local_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *EditBufferHook) GetContext() *ShellContext {
@@ -1275,7 +1495,7 @@ type InitHook struct {
 func (x *InitHook) Reset() {
 	*x = InitHook{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_local_proto_msgTypes[16]
+		mi := &file_local_proto_msgTypes[19]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1288,7 +1508,7 @@ func (x *InitHook) String() string {
 func (*InitHook) ProtoMessage() {}
 
 func (x *InitHook) ProtoReflect() protoreflect.Message {
-	mi := &file_local_proto_msgTypes[16]
+	mi := &file_local_proto_msgTypes[19]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1301,7 +1521,7 @@ func (x *InitHook) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InitHook.ProtoReflect.Descriptor instead.
 func (*InitHook) Descriptor() ([]byte, []int) {
-	return file_local_proto_rawDescGZIP(), []int{16}
+	return file_local_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *InitHook) GetContext() *ShellContext {
@@ -1343,7 +1563,7 @@ type PromptHook struct {
 func (x *PromptHook) Reset() {
 	*x = PromptHook{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_local_proto_msgTypes[17]
+		mi := &file_local_proto_msgTypes[20]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1356,7 +1576,7 @@ func (x *PromptHook) String() string {
 func (*PromptHook) ProtoMessage() {}
 
 func (x *PromptHook) ProtoReflect() protoreflect.Message {
-	mi := &file_local_proto_msgTypes[17]
+	mi := &file_local_proto_msgTypes[20]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1369,7 +1589,7 @@ func (x *PromptHook) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PromptHook.ProtoReflect.Descriptor instead.
 func (*PromptHook) Descriptor() ([]byte, []int) {
-	return file_local_proto_rawDescGZIP(), []int{17}
+	return file_local_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *PromptHook) GetContext() *ShellContext {
@@ -1391,7 +1611,7 @@ type PreExecHook struct {
 func (x *PreExecHook) Reset() {
 	*x = PreExecHook{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_local_proto_msgTypes[18]
+		mi := &file_local_proto_msgTypes[21]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1404,7 +1624,7 @@ func (x *PreExecHook) String() string {
 func (*PreExecHook) ProtoMessage() {}
 
 func (x *PreExecHook) ProtoReflect() protoreflect.Message {
-	mi := &file_local_proto_msgTypes[18]
+	mi := &file_local_proto_msgTypes[21]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1417,7 +1637,7 @@ func (x *PreExecHook) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PreExecHook.ProtoReflect.Descriptor instead.
 func (*PreExecHook) Descriptor() ([]byte, []int) {
-	return file_local_proto_rawDescGZIP(), []int{18}
+	return file_local_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *PreExecHook) GetContext() *ShellContext {
@@ -1447,7 +1667,7 @@ type PostExecHook struct {
 func (x *PostExecHook) Reset() {
 	*x = PostExecHook{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_local_proto_msgTypes[19]
+		mi := &file_local_proto_msgTypes[22]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1460,7 +1680,7 @@ func (x *PostExecHook) String() string {
 func (*PostExecHook) ProtoMessage() {}
 
 func (x *PostExecHook) ProtoReflect() protoreflect.Message {
-	mi := &file_local_proto_msgTypes[19]
+	mi := &file_local_proto_msgTypes[22]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1473,7 +1693,7 @@ func (x *PostExecHook) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PostExecHook.ProtoReflect.Descriptor instead.
 func (*PostExecHook) Descriptor() ([]byte, []int) {
-	return file_local_proto_rawDescGZIP(), []int{19}
+	return file_local_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *PostExecHook) GetContext() *ShellContext {
@@ -1502,14 +1722,14 @@ type KeyboardFocusChangedHook struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	BundleIdentifier string `protobuf:"bytes,1,opt,name=bundle_identifier,json=bundleIdentifier,proto3" json:"bundle_identifier,omitempty"`
+	AppIdentifier    string `protobuf:"bytes,1,opt,name=app_identifier,json=appIdentifier,proto3" json:"app_identifier,omitempty"`
 	FocusedSessionId string `protobuf:"bytes,2,opt,name=focused_session_id,json=focusedSessionId,proto3" json:"focused_session_id,omitempty"` // a unique identifier associated with the pane or tab that is currently focused
 }
 
 func (x *KeyboardFocusChangedHook) Reset() {
 	*x = KeyboardFocusChangedHook{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_local_proto_msgTypes[20]
+		mi := &file_local_proto_msgTypes[23]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1522,7 +1742,7 @@ func (x *KeyboardFocusChangedHook) String() string {
 func (*KeyboardFocusChangedHook) ProtoMessage() {}
 
 func (x *KeyboardFocusChangedHook) ProtoReflect() protoreflect.Message {
-	mi := &file_local_proto_msgTypes[20]
+	mi := &file_local_proto_msgTypes[23]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1535,12 +1755,12 @@ func (x *KeyboardFocusChangedHook) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use KeyboardFocusChangedHook.ProtoReflect.Descriptor instead.
 func (*KeyboardFocusChangedHook) Descriptor() ([]byte, []int) {
-	return file_local_proto_rawDescGZIP(), []int{20}
+	return file_local_proto_rawDescGZIP(), []int{23}
 }
 
-func (x *KeyboardFocusChangedHook) GetBundleIdentifier() string {
+func (x *KeyboardFocusChangedHook) GetAppIdentifier() string {
 	if x != nil {
-		return x.BundleIdentifier
+		return x.AppIdentifier
 	}
 	return ""
 }
@@ -1563,7 +1783,7 @@ type TmuxPaneChangedHook struct {
 func (x *TmuxPaneChangedHook) Reset() {
 	*x = TmuxPaneChangedHook{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_local_proto_msgTypes[21]
+		mi := &file_local_proto_msgTypes[24]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1576,7 +1796,7 @@ func (x *TmuxPaneChangedHook) String() string {
 func (*TmuxPaneChangedHook) ProtoMessage() {}
 
 func (x *TmuxPaneChangedHook) ProtoReflect() protoreflect.Message {
-	mi := &file_local_proto_msgTypes[21]
+	mi := &file_local_proto_msgTypes[24]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1589,7 +1809,7 @@ func (x *TmuxPaneChangedHook) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TmuxPaneChangedHook.ProtoReflect.Descriptor instead.
 func (*TmuxPaneChangedHook) Descriptor() ([]byte, []int) {
-	return file_local_proto_rawDescGZIP(), []int{21}
+	return file_local_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *TmuxPaneChangedHook) GetPaneIdentifier() int32 {
@@ -1611,7 +1831,7 @@ type OpenedSSHConnectionHook struct {
 func (x *OpenedSSHConnectionHook) Reset() {
 	*x = OpenedSSHConnectionHook{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_local_proto_msgTypes[22]
+		mi := &file_local_proto_msgTypes[25]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1624,7 +1844,7 @@ func (x *OpenedSSHConnectionHook) String() string {
 func (*OpenedSSHConnectionHook) ProtoMessage() {}
 
 func (x *OpenedSSHConnectionHook) ProtoReflect() protoreflect.Message {
-	mi := &file_local_proto_msgTypes[22]
+	mi := &file_local_proto_msgTypes[25]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1637,7 +1857,7 @@ func (x *OpenedSSHConnectionHook) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OpenedSSHConnectionHook.ProtoReflect.Descriptor instead.
 func (*OpenedSSHConnectionHook) Descriptor() ([]byte, []int) {
-	return file_local_proto_rawDescGZIP(), []int{22}
+	return file_local_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *OpenedSSHConnectionHook) GetContext() *ShellContext {
@@ -1667,7 +1887,7 @@ type CallbackHook struct {
 func (x *CallbackHook) Reset() {
 	*x = CallbackHook{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_local_proto_msgTypes[23]
+		mi := &file_local_proto_msgTypes[26]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1680,7 +1900,7 @@ func (x *CallbackHook) String() string {
 func (*CallbackHook) ProtoMessage() {}
 
 func (x *CallbackHook) ProtoReflect() protoreflect.Message {
-	mi := &file_local_proto_msgTypes[23]
+	mi := &file_local_proto_msgTypes[26]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1693,7 +1913,7 @@ func (x *CallbackHook) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CallbackHook.ProtoReflect.Descriptor instead.
 func (*CallbackHook) Descriptor() ([]byte, []int) {
-	return file_local_proto_rawDescGZIP(), []int{23}
+	return file_local_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *CallbackHook) GetHandlerId() string {
@@ -1728,7 +1948,7 @@ type IntegrationReadyHook struct {
 func (x *IntegrationReadyHook) Reset() {
 	*x = IntegrationReadyHook{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_local_proto_msgTypes[24]
+		mi := &file_local_proto_msgTypes[27]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1741,7 +1961,7 @@ func (x *IntegrationReadyHook) String() string {
 func (*IntegrationReadyHook) ProtoMessage() {}
 
 func (x *IntegrationReadyHook) ProtoReflect() protoreflect.Message {
-	mi := &file_local_proto_msgTypes[24]
+	mi := &file_local_proto_msgTypes[27]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1754,7 +1974,7 @@ func (x *IntegrationReadyHook) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IntegrationReadyHook.ProtoReflect.Descriptor instead.
 func (*IntegrationReadyHook) Descriptor() ([]byte, []int) {
-	return file_local_proto_rawDescGZIP(), []int{24}
+	return file_local_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *IntegrationReadyHook) GetIdentifier() string {
@@ -1773,7 +1993,7 @@ type HideHook struct {
 func (x *HideHook) Reset() {
 	*x = HideHook{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_local_proto_msgTypes[25]
+		mi := &file_local_proto_msgTypes[28]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1786,7 +2006,7 @@ func (x *HideHook) String() string {
 func (*HideHook) ProtoMessage() {}
 
 func (x *HideHook) ProtoReflect() protoreflect.Message {
-	mi := &file_local_proto_msgTypes[25]
+	mi := &file_local_proto_msgTypes[28]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1799,7 +2019,7 @@ func (x *HideHook) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HideHook.ProtoReflect.Descriptor instead.
 func (*HideHook) Descriptor() ([]byte, []int) {
-	return file_local_proto_rawDescGZIP(), []int{25}
+	return file_local_proto_rawDescGZIP(), []int{28}
 }
 
 type EventHook struct {
@@ -1813,7 +2033,7 @@ type EventHook struct {
 func (x *EventHook) Reset() {
 	*x = EventHook{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_local_proto_msgTypes[26]
+		mi := &file_local_proto_msgTypes[29]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1826,7 +2046,7 @@ func (x *EventHook) String() string {
 func (*EventHook) ProtoMessage() {}
 
 func (x *EventHook) ProtoReflect() protoreflect.Message {
-	mi := &file_local_proto_msgTypes[26]
+	mi := &file_local_proto_msgTypes[29]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1839,7 +2059,7 @@ func (x *EventHook) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EventHook.ProtoReflect.Descriptor instead.
 func (*EventHook) Descriptor() ([]byte, []int) {
-	return file_local_proto_rawDescGZIP(), []int{26}
+	return file_local_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *EventHook) GetEventName() string {
@@ -1862,7 +2082,7 @@ type ErrorResponse struct {
 func (x *ErrorResponse) Reset() {
 	*x = ErrorResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_local_proto_msgTypes[27]
+		mi := &file_local_proto_msgTypes[30]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1875,7 +2095,7 @@ func (x *ErrorResponse) String() string {
 func (*ErrorResponse) ProtoMessage() {}
 
 func (x *ErrorResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_local_proto_msgTypes[27]
+	mi := &file_local_proto_msgTypes[30]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1888,7 +2108,7 @@ func (x *ErrorResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ErrorResponse.ProtoReflect.Descriptor instead.
 func (*ErrorResponse) Descriptor() ([]byte, []int) {
-	return file_local_proto_rawDescGZIP(), []int{27}
+	return file_local_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *ErrorResponse) GetExitCode() int32 {
@@ -1916,7 +2136,7 @@ type SuccessResponse struct {
 func (x *SuccessResponse) Reset() {
 	*x = SuccessResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_local_proto_msgTypes[28]
+		mi := &file_local_proto_msgTypes[31]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1929,7 +2149,7 @@ func (x *SuccessResponse) String() string {
 func (*SuccessResponse) ProtoMessage() {}
 
 func (x *SuccessResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_local_proto_msgTypes[28]
+	mi := &file_local_proto_msgTypes[31]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1942,7 +2162,7 @@ func (x *SuccessResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SuccessResponse.ProtoReflect.Descriptor instead.
 func (*SuccessResponse) Descriptor() ([]byte, []int) {
-	return file_local_proto_rawDescGZIP(), []int{28}
+	return file_local_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *SuccessResponse) GetMessage() string {
@@ -1965,7 +2185,7 @@ type TerminalIntegration struct {
 func (x *TerminalIntegration) Reset() {
 	*x = TerminalIntegration{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_local_proto_msgTypes[29]
+		mi := &file_local_proto_msgTypes[32]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1978,7 +2198,7 @@ func (x *TerminalIntegration) String() string {
 func (*TerminalIntegration) ProtoMessage() {}
 
 func (x *TerminalIntegration) ProtoReflect() protoreflect.Message {
-	mi := &file_local_proto_msgTypes[29]
+	mi := &file_local_proto_msgTypes[32]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1991,7 +2211,7 @@ func (x *TerminalIntegration) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TerminalIntegration.ProtoReflect.Descriptor instead.
 func (*TerminalIntegration) Descriptor() ([]byte, []int) {
-	return file_local_proto_rawDescGZIP(), []int{29}
+	return file_local_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *TerminalIntegration) GetBundleIdentifier() string {
@@ -2026,7 +2246,7 @@ type TerminalIntegrationsListResponse struct {
 func (x *TerminalIntegrationsListResponse) Reset() {
 	*x = TerminalIntegrationsListResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_local_proto_msgTypes[30]
+		mi := &file_local_proto_msgTypes[33]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2039,7 +2259,7 @@ func (x *TerminalIntegrationsListResponse) String() string {
 func (*TerminalIntegrationsListResponse) ProtoMessage() {}
 
 func (x *TerminalIntegrationsListResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_local_proto_msgTypes[30]
+	mi := &file_local_proto_msgTypes[33]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2052,7 +2272,7 @@ func (x *TerminalIntegrationsListResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TerminalIntegrationsListResponse.ProtoReflect.Descriptor instead.
 func (*TerminalIntegrationsListResponse) Descriptor() ([]byte, []int) {
-	return file_local_proto_rawDescGZIP(), []int{30}
+	return file_local_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *TerminalIntegrationsListResponse) GetIntegrations() []*TerminalIntegration {
@@ -2084,7 +2304,7 @@ type DiagnosticsResponse struct {
 func (x *DiagnosticsResponse) Reset() {
 	*x = DiagnosticsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_local_proto_msgTypes[31]
+		mi := &file_local_proto_msgTypes[34]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2097,7 +2317,7 @@ func (x *DiagnosticsResponse) String() string {
 func (*DiagnosticsResponse) ProtoMessage() {}
 
 func (x *DiagnosticsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_local_proto_msgTypes[31]
+	mi := &file_local_proto_msgTypes[34]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2110,7 +2330,7 @@ func (x *DiagnosticsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DiagnosticsResponse.ProtoReflect.Descriptor instead.
 func (*DiagnosticsResponse) Descriptor() ([]byte, []int) {
-	return file_local_proto_rawDescGZIP(), []int{31}
+	return file_local_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *DiagnosticsResponse) GetPathToBundle() string {
@@ -2214,7 +2434,7 @@ type CommandResponse struct {
 func (x *CommandResponse) Reset() {
 	*x = CommandResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_local_proto_msgTypes[32]
+		mi := &file_local_proto_msgTypes[35]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2227,7 +2447,7 @@ func (x *CommandResponse) String() string {
 func (*CommandResponse) ProtoMessage() {}
 
 func (x *CommandResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_local_proto_msgTypes[32]
+	mi := &file_local_proto_msgTypes[35]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2240,7 +2460,7 @@ func (x *CommandResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CommandResponse.ProtoReflect.Descriptor instead.
 func (*CommandResponse) Descriptor() ([]byte, []int) {
-	return file_local_proto_rawDescGZIP(), []int{32}
+	return file_local_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *CommandResponse) GetId() int64 {
@@ -2324,7 +2544,7 @@ var file_local_proto_rawDesc = []byte{
 	0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x48, 0x00, 0x52, 0x07, 0x63, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64,
 	0x12, 0x21, 0x0a, 0x04, 0x68, 0x6f, 0x6f, 0x6b, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0b,
 	0x2e, 0x6c, 0x6f, 0x63, 0x61, 0x6c, 0x2e, 0x48, 0x6f, 0x6f, 0x6b, 0x48, 0x00, 0x52, 0x04, 0x68,
-	0x6f, 0x6f, 0x6b, 0x42, 0x06, 0x0a, 0x04, 0x74, 0x79, 0x70, 0x65, 0x22, 0xc7, 0x06, 0x0a, 0x07,
+	0x6f, 0x6f, 0x6b, 0x42, 0x06, 0x0a, 0x04, 0x74, 0x79, 0x70, 0x65, 0x22, 0x98, 0x08, 0x0a, 0x07,
 	0x43, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x12, 0x13, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20,
 	0x01, 0x28, 0x03, 0x48, 0x01, 0x52, 0x02, 0x69, 0x64, 0x88, 0x01, 0x01, 0x12, 0x24, 0x0a, 0x0b,
 	0x6e, 0x6f, 0x5f, 0x72, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28,
@@ -2650,44 +2870,48 @@ func file_local_proto_rawDescGZIP() []byte {
 	return file_local_proto_rawDescData
 }
 
-var file_local_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_local_proto_msgTypes = make([]protoimpl.MessageInfo, 34)
+var file_local_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_local_proto_msgTypes = make([]protoimpl.MessageInfo, 37)
 var file_local_proto_goTypes = []interface{}{
 	(IntegrationAction)(0),                   // 0: local.IntegrationAction
-	(*LocalMessage)(nil),                     // 1: local.LocalMessage
-	(*Command)(nil),                          // 2: local.Command
-	(*Hook)(nil),                             // 3: local.Hook
-	(*TerminalIntegrationCommand)(nil),       // 4: local.TerminalIntegrationCommand
-	(*ListTerminalIntegrationsCommand)(nil),  // 5: local.ListTerminalIntegrationsCommand
-	(*LogoutCommand)(nil),                    // 6: local.LogoutCommand
-	(*RestartCommand)(nil),                   // 7: local.RestartCommand
-	(*QuitCommand)(nil),                      // 8: local.QuitCommand
-	(*UpdateCommand)(nil),                    // 9: local.UpdateCommand
-	(*DiagnosticsCommand)(nil),               // 10: local.DiagnosticsCommand
-	(*ReportWindowCommand)(nil),              // 11: local.ReportWindowCommand
-	(*RestartSettingsListenerCommand)(nil),   // 12: local.RestartSettingsListenerCommand
-	(*RunInstallScriptCommand)(nil),          // 13: local.RunInstallScriptCommand
-	(*BuildCommand)(nil),                     // 14: local.BuildCommand
-	(*ShellContext)(nil),                     // 15: local.ShellContext
-	(*EditBufferHook)(nil),                   // 16: local.EditBufferHook
-	(*InitHook)(nil),                         // 17: local.InitHook
-	(*PromptHook)(nil),                       // 18: local.PromptHook
-	(*PreExecHook)(nil),                      // 19: local.PreExecHook
-	(*PostExecHook)(nil),                     // 20: local.PostExecHook
-	(*KeyboardFocusChangedHook)(nil),         // 21: local.KeyboardFocusChangedHook
-	(*TmuxPaneChangedHook)(nil),              // 22: local.TmuxPaneChangedHook
-	(*OpenedSSHConnectionHook)(nil),          // 23: local.OpenedSSHConnectionHook
-	(*CallbackHook)(nil),                     // 24: local.CallbackHook
-	(*IntegrationReadyHook)(nil),             // 25: local.IntegrationReadyHook
-	(*HideHook)(nil),                         // 26: local.HideHook
-	(*EventHook)(nil),                        // 27: local.EventHook
-	(*ErrorResponse)(nil),                    // 28: local.ErrorResponse
-	(*SuccessResponse)(nil),                  // 29: local.SuccessResponse
-	(*TerminalIntegration)(nil),              // 30: local.TerminalIntegration
-	(*TerminalIntegrationsListResponse)(nil), // 31: local.TerminalIntegrationsListResponse
-	(*DiagnosticsResponse)(nil),              // 32: local.DiagnosticsResponse
-	(*CommandResponse)(nil),                  // 33: local.CommandResponse
-	nil,                                      // 34: local.InitHook.EnvEntry
+	(UiElement)(0),                           // 1: local.UiElement
+	(*LocalMessage)(nil),                     // 2: local.LocalMessage
+	(*Command)(nil),                          // 3: local.Command
+	(*Hook)(nil),                             // 4: local.Hook
+	(*TerminalIntegrationCommand)(nil),       // 5: local.TerminalIntegrationCommand
+	(*ListTerminalIntegrationsCommand)(nil),  // 6: local.ListTerminalIntegrationsCommand
+	(*LogoutCommand)(nil),                    // 7: local.LogoutCommand
+	(*RestartCommand)(nil),                   // 8: local.RestartCommand
+	(*QuitCommand)(nil),                      // 9: local.QuitCommand
+	(*UpdateCommand)(nil),                    // 10: local.UpdateCommand
+	(*DiagnosticsCommand)(nil),               // 11: local.DiagnosticsCommand
+	(*ReportWindowCommand)(nil),              // 12: local.ReportWindowCommand
+	(*RestartSettingsListenerCommand)(nil),   // 13: local.RestartSettingsListenerCommand
+	(*RunInstallScriptCommand)(nil),          // 14: local.RunInstallScriptCommand
+	(*BuildCommand)(nil),                     // 15: local.BuildCommand
+	(*OpenUiElementCommand)(nil),             // 16: local.OpenUiElementCommand
+	(*ResetCacheCommand)(nil),                // 17: local.ResetCacheCommand
+	(*ToggleDebugModeCommand)(nil),           // 18: local.ToggleDebugModeCommand
+	(*ShellContext)(nil),                     // 19: local.ShellContext
+	(*EditBufferHook)(nil),                   // 20: local.EditBufferHook
+	(*InitHook)(nil),                         // 21: local.InitHook
+	(*PromptHook)(nil),                       // 22: local.PromptHook
+	(*PreExecHook)(nil),                      // 23: local.PreExecHook
+	(*PostExecHook)(nil),                     // 24: local.PostExecHook
+	(*KeyboardFocusChangedHook)(nil),         // 25: local.KeyboardFocusChangedHook
+	(*TmuxPaneChangedHook)(nil),              // 26: local.TmuxPaneChangedHook
+	(*OpenedSSHConnectionHook)(nil),          // 27: local.OpenedSSHConnectionHook
+	(*CallbackHook)(nil),                     // 28: local.CallbackHook
+	(*IntegrationReadyHook)(nil),             // 29: local.IntegrationReadyHook
+	(*HideHook)(nil),                         // 30: local.HideHook
+	(*EventHook)(nil),                        // 31: local.EventHook
+	(*ErrorResponse)(nil),                    // 32: local.ErrorResponse
+	(*SuccessResponse)(nil),                  // 33: local.SuccessResponse
+	(*TerminalIntegration)(nil),              // 34: local.TerminalIntegration
+	(*TerminalIntegrationsListResponse)(nil), // 35: local.TerminalIntegrationsListResponse
+	(*DiagnosticsResponse)(nil),              // 36: local.DiagnosticsResponse
+	(*CommandResponse)(nil),                  // 37: local.CommandResponse
+	nil,                                      // 38: local.InitHook.EnvEntry
 }
 var file_local_proto_depIdxs = []int32{
 	2,  // 0: local.LocalMessage.command:type_name -> local.Command
@@ -2911,7 +3135,7 @@ func file_local_proto_init() {
 			}
 		}
 		file_local_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ShellContext); i {
+			switch v := v.(*OpenUiElementCommand); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2923,7 +3147,7 @@ func file_local_proto_init() {
 			}
 		}
 		file_local_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EditBufferHook); i {
+			switch v := v.(*ResetCacheCommand); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2935,7 +3159,7 @@ func file_local_proto_init() {
 			}
 		}
 		file_local_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*InitHook); i {
+			switch v := v.(*ToggleDebugModeCommand); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2947,7 +3171,7 @@ func file_local_proto_init() {
 			}
 		}
 		file_local_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PromptHook); i {
+			switch v := v.(*ShellContext); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2959,7 +3183,7 @@ func file_local_proto_init() {
 			}
 		}
 		file_local_proto_msgTypes[18].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PreExecHook); i {
+			switch v := v.(*EditBufferHook); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2971,7 +3195,7 @@ func file_local_proto_init() {
 			}
 		}
 		file_local_proto_msgTypes[19].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PostExecHook); i {
+			switch v := v.(*InitHook); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2983,7 +3207,7 @@ func file_local_proto_init() {
 			}
 		}
 		file_local_proto_msgTypes[20].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*KeyboardFocusChangedHook); i {
+			switch v := v.(*PromptHook); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2995,7 +3219,7 @@ func file_local_proto_init() {
 			}
 		}
 		file_local_proto_msgTypes[21].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TmuxPaneChangedHook); i {
+			switch v := v.(*PreExecHook); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3007,7 +3231,7 @@ func file_local_proto_init() {
 			}
 		}
 		file_local_proto_msgTypes[22].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*OpenedSSHConnectionHook); i {
+			switch v := v.(*PostExecHook); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3019,7 +3243,7 @@ func file_local_proto_init() {
 			}
 		}
 		file_local_proto_msgTypes[23].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*CallbackHook); i {
+			switch v := v.(*KeyboardFocusChangedHook); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3031,7 +3255,7 @@ func file_local_proto_init() {
 			}
 		}
 		file_local_proto_msgTypes[24].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*IntegrationReadyHook); i {
+			switch v := v.(*TmuxPaneChangedHook); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3043,7 +3267,7 @@ func file_local_proto_init() {
 			}
 		}
 		file_local_proto_msgTypes[25].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*HideHook); i {
+			switch v := v.(*OpenedSSHConnectionHook); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3055,7 +3279,7 @@ func file_local_proto_init() {
 			}
 		}
 		file_local_proto_msgTypes[26].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EventHook); i {
+			switch v := v.(*CallbackHook); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3067,7 +3291,7 @@ func file_local_proto_init() {
 			}
 		}
 		file_local_proto_msgTypes[27].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ErrorResponse); i {
+			switch v := v.(*IntegrationReadyHook); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3079,7 +3303,7 @@ func file_local_proto_init() {
 			}
 		}
 		file_local_proto_msgTypes[28].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SuccessResponse); i {
+			switch v := v.(*HideHook); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3091,7 +3315,7 @@ func file_local_proto_init() {
 			}
 		}
 		file_local_proto_msgTypes[29].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TerminalIntegration); i {
+			switch v := v.(*EventHook); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3103,7 +3327,7 @@ func file_local_proto_init() {
 			}
 		}
 		file_local_proto_msgTypes[30].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TerminalIntegrationsListResponse); i {
+			switch v := v.(*ErrorResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3115,7 +3339,7 @@ func file_local_proto_init() {
 			}
 		}
 		file_local_proto_msgTypes[31].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*DiagnosticsResponse); i {
+			switch v := v.(*SuccessResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3127,6 +3351,42 @@ func file_local_proto_init() {
 			}
 		}
 		file_local_proto_msgTypes[32].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*TerminalIntegration); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_local_proto_msgTypes[33].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*TerminalIntegrationsListResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_local_proto_msgTypes[34].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*DiagnosticsResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_local_proto_msgTypes[35].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*CommandResponse); i {
 			case 0:
 				return &v.state
@@ -3155,6 +3415,9 @@ func file_local_proto_init() {
 		(*Command_RestartSettingsListener)(nil),
 		(*Command_RunInstallScript)(nil),
 		(*Command_Build)(nil),
+		(*Command_OpenUiElement)(nil),
+		(*Command_ResetCache)(nil),
+		(*Command_ToggleDebugMode)(nil),
 	}
 	file_local_proto_msgTypes[2].OneofWrappers = []interface{}{
 		(*Hook_EditBuffer)(nil),
@@ -3170,11 +3433,12 @@ func file_local_proto_init() {
 		(*Hook_Hide)(nil),
 		(*Hook_Event)(nil),
 	}
-	file_local_proto_msgTypes[14].OneofWrappers = []interface{}{}
-	file_local_proto_msgTypes[27].OneofWrappers = []interface{}{}
-	file_local_proto_msgTypes[28].OneofWrappers = []interface{}{}
-	file_local_proto_msgTypes[29].OneofWrappers = []interface{}{}
-	file_local_proto_msgTypes[32].OneofWrappers = []interface{}{
+	file_local_proto_msgTypes[16].OneofWrappers = []interface{}{}
+	file_local_proto_msgTypes[17].OneofWrappers = []interface{}{}
+	file_local_proto_msgTypes[30].OneofWrappers = []interface{}{}
+	file_local_proto_msgTypes[31].OneofWrappers = []interface{}{}
+	file_local_proto_msgTypes[32].OneofWrappers = []interface{}{}
+	file_local_proto_msgTypes[35].OneofWrappers = []interface{}{
 		(*CommandResponse_Error)(nil),
 		(*CommandResponse_Success)(nil),
 		(*CommandResponse_IntegrationList)(nil),
@@ -3185,8 +3449,8 @@ func file_local_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_local_proto_rawDesc,
-			NumEnums:      1,
-			NumMessages:   34,
+			NumEnums:      2,
+			NumMessages:   37,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

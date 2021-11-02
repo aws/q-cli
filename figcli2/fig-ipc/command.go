@@ -200,3 +200,69 @@ func RunBuildCommand(branch string) error {
 
 	return nil
 }
+
+func RunOpenUiElementCommand(element fig_proto.UiElement) (string, error) {
+	cmd := fig_proto.Command{
+		Command: &fig_proto.Command_OpenUiElement{
+			OpenUiElement: &fig_proto.OpenUiElementCommand{
+				Element: element,
+			},
+		},
+	}
+
+	response, err := SendRecvCommand(&cmd)
+	if err != nil {
+		return "", err
+	}
+
+	return GetCommandResponseMessage(response)
+}
+
+func RunResetCacheCommand() error {
+	noResponse := true
+
+	cmd := fig_proto.Command{
+		NoResponse: &noResponse,
+		Command: &fig_proto.Command_ResetCache{
+			ResetCache: &fig_proto.ResetCacheCommand{},
+		},
+	}
+
+	if err := SendCommand(&cmd); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func ToggleDebugModeCommand() (string, error) {
+	cmd := fig_proto.Command{
+		Command: &fig_proto.Command_ToggleDebugMode{
+			ToggleDebugMode: &fig_proto.ToggleDebugModeCommand{},
+		},
+	}
+
+	response, err := SendRecvCommand(&cmd)
+	if err != nil {
+		return "", err
+	}
+
+	return GetCommandResponseMessage(response)
+}
+
+func SetDebugModeCommand(debugMode bool) (string, error) {
+	cmd := fig_proto.Command{
+		Command: &fig_proto.Command_ToggleDebugMode{
+			ToggleDebugMode: &fig_proto.ToggleDebugModeCommand{
+				DebugMode: &debugMode,
+			},
+		},
+	}
+
+	response, err := SendRecvCommand(&cmd)
+	if err != nil {
+		return "", err
+	}
+
+	return GetCommandResponseMessage(response)
+}

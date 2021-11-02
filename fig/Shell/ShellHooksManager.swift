@@ -204,32 +204,41 @@ extension ShellHookManager {
   }
 
   // If this changes, make sure to reflect changes in iTermIntegration.sessionId setter
-  func currentTabDidChange(bundleIdentifier: String, sessionId: String) {
+  func currentTabDidChange(applicationIdentifier: String, sessionId: String) {
     Logger.log(message: "currentTabDidChange")
 
     // Need time for whitelisted window to change
     Timer.delayWithSeconds(0.1) {
       if let window = AXWindowServer.shared.whitelistedWindow {
-        guard bundleIdentifier == window.bundleId else {
-          print(
-            "tab: bundleId from message did not match bundle id associated with current window "
-          )
-          return
-        }
-
-        let VSCodeTerminal =
+        let CodeTerminal =
           [Integrations.VSCode, Integrations.VSCodeInsiders, Integrations.VSCodium]
-          .contains(window.bundleId)
+            .contains(window.bundleId)
+          && applicationIdentifier == "code"
+        
+        let VSCodeTerminal = window.bundleId == Integrations.VSCode
+          && applicationIdentifier == "vscode"
+        
+        let VSCodeInsidersTerminal = window.bundleId == Integrations.VSCodeInsiders
+          && applicationIdentifier == "vscode-insiders"
+        
+        let VSCodeiumTerminal = window.bundleId == Integrations.VSCodeInsiders
+          && applicationIdentifier == "vscodeium"
 
         let HyperTab = window.bundleId == Integrations.Hyper
+          && applicationIdentifier == "hyper"
 
         let iTermTab = window.bundleId == Integrations.iTerm
+          && applicationIdentifier == "iterm"
+        
+        let KittyTerm = window.bundleId == Integrations.Kitty
+          && applicationIdentifier == "kitty"
 
-        guard VSCodeTerminal || iTermTab || HyperTab else { return }
+        guard CodeTerminal || VSCodeTerminal || VSCodeInsidersTerminal ||
+                VSCodeiumTerminal || iTermTab || HyperTab || KittyTerm else { return }
 
-        Logger.log(message: "tab: \(window.windowId)/\(sessionId)")
+        Logger.log(message: "tab: \(window.windowId)/\(applicationIdentifier):\(sessionId)")
 
-        self.keyboardFocusDidChange(to: sessionId, in: window)
+        self.keyboardFocusDidChange(to: "\(applicationIdentifier):\(sessionId)", in: window)
       }
     }
   }
@@ -275,7 +284,7 @@ extension ShellHookManager {
         ctx.ttys = ttyDescriptor
         ctx.pid = shellPid
         ctx.sessionID = sessionId
-        ctx.shell = info.shell ?? ""
+        ctx.processName = info.shell ?? ""
         ctx.integrationVersion = Int32(info.shellIntegrationVersion ?? 0)
       }))
   }
@@ -534,8 +543,11 @@ extension ShellHookManager {
       updateKeybuffer(
         context: Local_ShellContext.with({ ctx in
           ctx.sessionID = info.session
-          ctx.shell = info.shell ?? ""
+          ctx.processName = info.shell ?? ""
           ctx.integrationVersion = Int32(info.shellIntegrationVersion ?? 0)
+          ctx.ttys = info.environmentVariable(for: "TTY") ?? ""
+          let pidString = info.environmentVariable(for: "PID")
+          ctx.pid = Int32(pidString ?? "") ?? -1
         }), text: buffer, cursor: cursor, histno: histno)
     }
   }
@@ -595,7 +607,7 @@ extension ShellHookManager {
     let previousHistoryNumber = keybuffer.shellHistoryNumber
 
     keybuffer.backedByShell = true
-    keybuffer.backing = KeystrokeBuffer.Backing(rawValue: String(context.shell.split(separator: "/").last ?? ""))
+    keybuffer.backing = KeystrokeBuffer.Backing(rawValue: String(context.processName.split(separator: "/").last ?? ""))
     keybuffer.buffer = text
     keybuffer.shellCursor = cursor
     keybuffer.shellHistoryNumber = histno

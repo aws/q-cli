@@ -28,6 +28,9 @@ message Command {
 		RestartSettingsListenerCommand restart_settings_listener = 108;
 		RunInstallScriptCommand run_install_script = 109;
 		BuildCommand build = 110;
+		OpenUiElementCommand open_ui_element = 111;
+		ResetCacheCommand reset_cache = 112;
+		ToggleDebugModeCommand toggle_debug_mode = 113;
 	}
 }
 
@@ -89,6 +92,21 @@ message BuildCommand {
 	string branch = 1;
 }
 
+enum UiElement {
+	MENU_BAR = 0;
+	SETTINGS = 1;
+}
+
+message OpenUiElementCommand {
+	UiElement element = 1;
+}
+
+message ResetCacheCommand {}
+
+message ToggleDebugModeCommand {
+	optional bool debug_mode = 1;
+}
+
 // == Hooks ==
 message ShellContext {
 	optional int32 pid = 1;
@@ -138,7 +156,7 @@ message PostExecHook {
 }
 
 message KeyboardFocusChangedHook {
-	string bundle_identifier = 1;
+	string app_identifier = 1;
 	string focused_session_id = 2; // a unique identifier associated with the pane or tab that is currently focused
 }
 

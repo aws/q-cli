@@ -65,6 +65,46 @@ extension Local_IntegrationAction: CaseIterable {
 
 #endif  // swift(>=4.2)
 
+public enum Local_UiElement: SwiftProtobuf.Enum {
+  public typealias RawValue = Int
+  case menuBar // = 0
+  case settings // = 1
+  case UNRECOGNIZED(Int)
+
+  public init() {
+    self = .menuBar
+  }
+
+  public init?(rawValue: Int) {
+    switch rawValue {
+    case 0: self = .menuBar
+    case 1: self = .settings
+    default: self = .UNRECOGNIZED(rawValue)
+    }
+  }
+
+  public var rawValue: Int {
+    switch self {
+    case .menuBar: return 0
+    case .settings: return 1
+    case .UNRECOGNIZED(let i): return i
+    }
+  }
+
+}
+
+#if swift(>=4.2)
+
+extension Local_UiElement: CaseIterable {
+  // The compiler won't synthesize support with the UNRECOGNIZED case.
+  public static var allCases: [Local_UiElement] = [
+    .menuBar,
+    .settings,
+  ]
+}
+
+#endif  // swift(>=4.2)
+
 public struct Local_LocalMessage {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -235,6 +275,30 @@ public struct Local_Command {
     set {command = .build(newValue)}
   }
 
+  public var openUiElement: Local_OpenUiElementCommand {
+    get {
+      if case .openUiElement(let v)? = command {return v}
+      return Local_OpenUiElementCommand()
+    }
+    set {command = .openUiElement(newValue)}
+  }
+
+  public var resetCache: Local_ResetCacheCommand {
+    get {
+      if case .resetCache(let v)? = command {return v}
+      return Local_ResetCacheCommand()
+    }
+    set {command = .resetCache(newValue)}
+  }
+
+  public var toggleDebugMode: Local_ToggleDebugModeCommand {
+    get {
+      if case .toggleDebugMode(let v)? = command {return v}
+      return Local_ToggleDebugModeCommand()
+    }
+    set {command = .toggleDebugMode(newValue)}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public enum OneOf_Command: Equatable {
@@ -249,6 +313,9 @@ public struct Local_Command {
     case restartSettingsListener(Local_RestartSettingsListenerCommand)
     case runInstallScript(Local_RunInstallScriptCommand)
     case build(Local_BuildCommand)
+    case openUiElement(Local_OpenUiElementCommand)
+    case resetCache(Local_ResetCacheCommand)
+    case toggleDebugMode(Local_ToggleDebugModeCommand)
 
   #if !swift(>=4.1)
     public static func ==(lhs: Local_Command.OneOf_Command, rhs: Local_Command.OneOf_Command) -> Bool {
@@ -298,6 +365,18 @@ public struct Local_Command {
       }()
       case (.build, .build): return {
         guard case .build(let l) = lhs, case .build(let r) = rhs else { preconditionFailure() }
+        return l == r
+      }()
+      case (.openUiElement, .openUiElement): return {
+        guard case .openUiElement(let l) = lhs, case .openUiElement(let r) = rhs else { preconditionFailure() }
+        return l == r
+      }()
+      case (.resetCache, .resetCache): return {
+        guard case .resetCache(let l) = lhs, case .resetCache(let r) = rhs else { preconditionFailure() }
+        return l == r
+      }()
+      case (.toggleDebugMode, .toggleDebugMode): return {
+        guard case .toggleDebugMode(let l) = lhs, case .toggleDebugMode(let r) = rhs else { preconditionFailure() }
         return l == r
       }()
       default: return false
@@ -620,6 +699,49 @@ public struct Local_BuildCommand {
   public init() {}
 }
 
+public struct Local_OpenUiElementCommand {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var element: Local_UiElement = .menuBar
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public struct Local_ResetCacheCommand {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public struct Local_ToggleDebugModeCommand {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var debugMode: Bool {
+    get {return _debugMode ?? false}
+    set {_debugMode = newValue}
+  }
+  /// Returns true if `debugMode` has been explicitly set.
+  public var hasDebugMode: Bool {return self._debugMode != nil}
+  /// Clears the value of `debugMode`. Subsequent reads from it will return its default value.
+  public mutating func clearDebugMode() {self._debugMode = nil}
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+
+  fileprivate var _debugMode: Bool? = nil
+}
+
 /// == Hooks ==
 public struct Local_ShellContext {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
@@ -849,7 +971,7 @@ public struct Local_KeyboardFocusChangedHook {
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var bundleIdentifier: String = String()
+  public var appIdentifier: String = String()
 
   /// a unique identifier associated with the pane or tab that is currently focused
   public var focusedSessionID: String = String()
@@ -1171,6 +1293,13 @@ extension Local_IntegrationAction: SwiftProtobuf._ProtoNameProviding {
   ]
 }
 
+extension Local_UiElement: SwiftProtobuf._ProtoNameProviding {
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    0: .same(proto: "MENU_BAR"),
+    1: .same(proto: "SETTINGS"),
+  ]
+}
+
 extension Local_LocalMessage: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".LocalMessage"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
@@ -1257,6 +1386,9 @@ extension Local_Command: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementa
     108: .standard(proto: "restart_settings_listener"),
     109: .standard(proto: "run_install_script"),
     110: .same(proto: "build"),
+    111: .standard(proto: "open_ui_element"),
+    112: .standard(proto: "reset_cache"),
+    113: .standard(proto: "toggle_debug_mode"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -1410,6 +1542,45 @@ extension Local_Command: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementa
           self.command = .build(v)
         }
       }()
+      case 111: try {
+        var v: Local_OpenUiElementCommand?
+        var hadOneofValue = false
+        if let current = self.command {
+          hadOneofValue = true
+          if case .openUiElement(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.command = .openUiElement(v)
+        }
+      }()
+      case 112: try {
+        var v: Local_ResetCacheCommand?
+        var hadOneofValue = false
+        if let current = self.command {
+          hadOneofValue = true
+          if case .resetCache(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.command = .resetCache(v)
+        }
+      }()
+      case 113: try {
+        var v: Local_ToggleDebugModeCommand?
+        var hadOneofValue = false
+        if let current = self.command {
+          hadOneofValue = true
+          if case .toggleDebugMode(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.command = .toggleDebugMode(v)
+        }
+      }()
       default: break
       }
     }
@@ -1470,6 +1641,18 @@ extension Local_Command: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementa
     case .build?: try {
       guard case .build(let v)? = self.command else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 110)
+    }()
+    case .openUiElement?: try {
+      guard case .openUiElement(let v)? = self.command else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 111)
+    }()
+    case .resetCache?: try {
+      guard case .resetCache(let v)? = self.command else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 112)
+    }()
+    case .toggleDebugMode?: try {
+      guard case .toggleDebugMode(let v)? = self.command else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 113)
     }()
     case nil: break
     }
@@ -2020,6 +2203,122 @@ extension Local_BuildCommand: SwiftProtobuf.Message, SwiftProtobuf._MessageImple
   }
 }
 
+extension Local_OpenUiElementCommand: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".OpenUiElementCommand"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .same(proto: "pid"),
+    2: .same(proto: "ttys"),
+    3: .standard(proto: "process_name"),
+    4: .standard(proto: "current_working_directory"),
+    5: .standard(proto: "session_id"),
+    6: .standard(proto: "integration_version"),
+    7: .same(proto: "terminal"),
+    8: .same(proto: "hostname"),
+    9: .standard(proto: "remote_context"),
+  ]
+
+  fileprivate class _StorageClass {
+    var _pid: Int32? = nil
+    var _ttys: String? = nil
+    var _processName: String? = nil
+    var _currentWorkingDirectory: String? = nil
+    var _sessionID: String? = nil
+    var _integrationVersion: Int32? = nil
+    var _terminal: String? = nil
+    var _hostname: String? = nil
+    var _remoteContext: Local_ShellContext? = nil
+
+    static let defaultInstance = _StorageClass()
+
+    private init() {}
+
+    init(copying source: _StorageClass) {
+      _pid = source._pid
+      _ttys = source._ttys
+      _processName = source._processName
+      _currentWorkingDirectory = source._currentWorkingDirectory
+      _sessionID = source._sessionID
+      _integrationVersion = source._integrationVersion
+      _terminal = source._terminal
+      _hostname = source._hostname
+      _remoteContext = source._remoteContext
+    }
+  }
+
+  fileprivate mutating func _uniqueStorage() -> _StorageClass {
+    if !isKnownUniquelyReferenced(&_storage) {
+      _storage = _StorageClass(copying: _storage)
+    }
+    return _storage
+  }
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    _ = _uniqueStorage()
+    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      while let fieldNumber = try decoder.nextFieldNumber() {
+        // The use of inline closures is to circumvent an issue where the compiler
+        // allocates stack space for every case branch when no optimizations are
+        // enabled. https://github.com/apple/swift-protobuf/issues/1034
+        switch fieldNumber {
+        case 1: try { try decoder.decodeSingularInt32Field(value: &_storage._pid) }()
+        case 2: try { try decoder.decodeSingularStringField(value: &_storage._ttys) }()
+        case 3: try { try decoder.decodeSingularStringField(value: &_storage._processName) }()
+        case 4: try { try decoder.decodeSingularStringField(value: &_storage._currentWorkingDirectory) }()
+        case 5: try { try decoder.decodeSingularStringField(value: &_storage._sessionID) }()
+        case 6: try { try decoder.decodeSingularInt32Field(value: &_storage._integrationVersion) }()
+        case 7: try { try decoder.decodeSingularStringField(value: &_storage._terminal) }()
+        case 8: try { try decoder.decodeSingularStringField(value: &_storage._hostname) }()
+        case 9: try { try decoder.decodeSingularMessageField(value: &_storage._remoteContext) }()
+        default: break
+        }
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every if/case branch local when no optimizations
+      // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+      // https://github.com/apple/swift-protobuf/issues/1182
+      try { if let v = _storage._pid {
+        try visitor.visitSingularInt32Field(value: v, fieldNumber: 1)
+      } }()
+      try { if let v = _storage._ttys {
+        try visitor.visitSingularStringField(value: v, fieldNumber: 2)
+      } }()
+      try { if let v = _storage._processName {
+        try visitor.visitSingularStringField(value: v, fieldNumber: 3)
+      } }()
+      try { if let v = _storage._currentWorkingDirectory {
+        try visitor.visitSingularStringField(value: v, fieldNumber: 4)
+      } }()
+      try { if let v = _storage._sessionID {
+        try visitor.visitSingularStringField(value: v, fieldNumber: 5)
+      } }()
+      try { if let v = _storage._integrationVersion {
+        try visitor.visitSingularInt32Field(value: v, fieldNumber: 6)
+      } }()
+      try { if let v = _storage._terminal {
+        try visitor.visitSingularStringField(value: v, fieldNumber: 7)
+      } }()
+      try { if let v = _storage._hostname {
+        try visitor.visitSingularStringField(value: v, fieldNumber: 8)
+      } }()
+      try { if let v = _storage._remoteContext {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 9)
+      } }()
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Local_ToggleDebugModeCommand, rhs: Local_ToggleDebugModeCommand) -> Bool {
+    if lhs._debugMode != rhs._debugMode {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
 extension Local_ShellContext: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".ShellContext"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
@@ -2389,7 +2688,7 @@ extension Local_PostExecHook: SwiftProtobuf.Message, SwiftProtobuf._MessageImple
 extension Local_KeyboardFocusChangedHook: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".KeyboardFocusChangedHook"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "bundle_identifier"),
+    1: .standard(proto: "app_identifier"),
     2: .standard(proto: "focused_session_id"),
   ]
 
@@ -2399,7 +2698,7 @@ extension Local_KeyboardFocusChangedHook: SwiftProtobuf.Message, SwiftProtobuf._
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try { try decoder.decodeSingularStringField(value: &self.bundleIdentifier) }()
+      case 1: try { try decoder.decodeSingularStringField(value: &self.appIdentifier) }()
       case 2: try { try decoder.decodeSingularStringField(value: &self.focusedSessionID) }()
       default: break
       }
@@ -2407,8 +2706,8 @@ extension Local_KeyboardFocusChangedHook: SwiftProtobuf.Message, SwiftProtobuf._
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    if !self.bundleIdentifier.isEmpty {
-      try visitor.visitSingularStringField(value: self.bundleIdentifier, fieldNumber: 1)
+    if !self.appIdentifier.isEmpty {
+      try visitor.visitSingularStringField(value: self.appIdentifier, fieldNumber: 1)
     }
     if !self.focusedSessionID.isEmpty {
       try visitor.visitSingularStringField(value: self.focusedSessionID, fieldNumber: 2)
@@ -2417,7 +2716,7 @@ extension Local_KeyboardFocusChangedHook: SwiftProtobuf.Message, SwiftProtobuf._
   }
 
   public static func ==(lhs: Local_KeyboardFocusChangedHook, rhs: Local_KeyboardFocusChangedHook) -> Bool {
-    if lhs.bundleIdentifier != rhs.bundleIdentifier {return false}
+    if lhs.appIdentifier != rhs.appIdentifier {return false}
     if lhs.focusedSessionID != rhs.focusedSessionID {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true

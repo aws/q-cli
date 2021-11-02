@@ -8,7 +8,7 @@ set -e
 
 # Force current process to be shell, rather than `env`.
 cd ~
-fig bg:prompt $$ $TTY
+fig hook prompt $$ $TTY 2>&1 1>/dev/null
 
 # Colors
 BLACK=$(tput setaf 0)
@@ -54,7 +54,7 @@ function prepare_prompt {
 }
 
 function reset_prompt {
-    (fig bg:exec $$ $TTY &)
+    (fig hook pre-exec $$ $TTY 2>&1 1>/dev/null)
 }
 
 print_special() {
@@ -132,7 +132,7 @@ exit_script_nice() {
 
   trap - SIGINT SIGTERM SIGQUIT # clear the trap
 
-  fig bg:event "Quit Shell Onboarding"
+  fig hook event "Quit Shell Onboarding" 2>&1 1>/dev/null
 
   exit 1
   # kill -- -$$# Kill the fig onboarding process. 
@@ -213,7 +213,6 @@ less -R <<EOF
 
 
 EOF
-  fig bg:clear-keybuffer
   reset_prompt
 }
 
@@ -221,7 +220,7 @@ EOF
 clear
 
 # Make absolutely sure that settings listener has been launched!
-(fig settings:init > /dev/null &)
+(fig settings init 2>&1 1>/dev/null)
 
 # Done using http://patorjk.com/software/taag/#p=testall&f=Graffiti&t=fig
 # Font name = ANSI Shadow
@@ -251,7 +250,7 @@ cat <<EOF
 
 EOF
 
-fig bg:event "Started Shell Onboarding"
+fig hook event "Started Shell Onboarding" 2>&1 1>/dev/null
 press_enter_to_continue
 
 clear
@@ -271,8 +270,7 @@ EOF
 press_enter_to_continue
 clear
 
-(fig bg:init $$ $TTY &)
-(fig bg:clear-keybuffer &)
+(fig hook init $$ $TTY 2>&1 1>/dev/null)
 cat <<EOF
 
    ${BOLD}Example${NORMAL}
@@ -338,8 +336,7 @@ EOF
 press_enter_to_continue
 clear 
 
-(fig bg:init $$ $TTY &)
-(fig bg:clear-keybuffer &)
+(fig hook init $$ $TTY 2>&1 1>/dev/null)
 cat <<EOF
 
    ${BOLD}Another Example${NORMAL}
@@ -399,8 +396,7 @@ clear
 
 # clear
 
-(fig bg:init $$ $TTY &)
-(fig bg:clear-keybuffer &)
+(fig hook init $$ $TTY 2>&1 1>/dev/null)
 cat <<EOF
    
    ${BOLD}Last Step: The ${MAGENTA}Fig${NORMAL} ${BOLD}CLI${NORMAL}
@@ -487,7 +483,6 @@ while true; do
       ;;
   esac
 done
-(fig bg:clear-keybuffer &)
 clear 
 
 cat <<EOF
@@ -524,7 +519,7 @@ EOF
 
 # Make sure we are using OSX sed rather than GNU version
 sed -i='' "s/FIG_ONBOARDING=.*/FIG_ONBOARDING=1/g" ~/.fig/user/config 2> /dev/null
-fig bg:event "Completed Shell Onboarding"
+fig hook event "Completed Shell Onboarding" 2>&1 1>/dev/null
 
 echo # new line
 press_enter_to_continue 'Press enter to finish'

@@ -30,7 +30,7 @@ func Connect() (*FigIpc, error) {
 	conn, err := d.DialContext(ctx, "unix", raddr.String())
 
 	if err != nil {
-		return nil, fmt.Errorf("unable to connect to Fig, perhaps Fig isn't running\n\nDetails: %s", err)
+		return nil, fmt.Errorf("unable to connect to socket: %s", err)
 	}
 
 	return &FigIpc{conn: conn.(*net.UnixConn)}, nil
@@ -40,33 +40,6 @@ func Connect() (*FigIpc, error) {
 func (f *FigIpc) Close() error {
 	return f.conn.Close()
 }
-
-// Send a message to the server
-//
-// DO NOT USE EXCEPT FOR TESTING
-// func (f *FigIpc) Send(msg string) error {
-// 	_, err := f.conn.Write([]byte(msg))
-// 	return err
-// }
-
-// Receive a message from the server, reading until a newline.
-//
-// DO NOT USE EXCEPT FOR TESTING
-// func (f *FigIpc) Recv() (string, error) {
-// 	buf := make([]byte, 1)
-// 	var msg []byte
-// 	for {
-// 		_, err := f.conn.Read(buf)
-// 		if err != nil {
-// 			return "", err
-// 		}
-// 		if buf[0] == '\n' {
-// 			break
-// 		}
-// 		msg = append(msg, buf[0])
-// 	}
-// 	return string(msg), nil
-// }
 
 // Send fig-json to the server
 func (f *FigIpc) SendFigJson(msg string) error {
