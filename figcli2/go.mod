@@ -20,5 +20,6 @@ require (
 	github.com/progrium/macdriver v0.1.0
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/withfig/autocomplete-tools/packages/cobra v0.0.0-20211031082027-7be58a01fcfc
 	golang.org/x/sys v0.0.0-20211015200801-69063c4bb744 // indirect
 )
