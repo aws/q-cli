@@ -136,7 +136,7 @@ if [[ $("$HOME"/.fig/bin/fig app:running) == 1 ]]; then
 	# check fig diagnostic #
 	########################
 
-	echo -e "\nLet's see what $(command "fig diagnostic") tells us...\n"
+	echo -e "\nLet's see what $(command "fig debug diagnostic") tells us...\n"
 	# run fig diagnostic and split output into lines
 	while IFS= read -ra line; do
 		# for each line, split by ':' into the check and value
