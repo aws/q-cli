@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fig-cli/cmd"
+	"fig-cli/cmd/root"
 	"fig-cli/logging"
 	"os"
 	"strings"
@@ -9,5 +9,5 @@ import (
 
 func main() {
 	_ = logging.Log("Executing:", strings.Join(os.Args, " "))
-	cmd.Execute()
+	root.Execute()
 }
