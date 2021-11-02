@@ -143,7 +143,7 @@ jobs:
         if: ${{ github.event.inputs.useCache == 'false' || steps.archive.outputs.cache-hit != 'true' }}
         uses: devbotsxyz/xcode-archive@v1
         with:
-          project: fig.xcodeproj
+          scheme: fig
 
       - name: "Export & Sign Release Build"
         if: ${{ github.event.inputs.useCache == 'false' || steps.archive.outputs.cache-hit != 'true' }}
