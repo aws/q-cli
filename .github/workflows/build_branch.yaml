@@ -108,6 +108,13 @@ jobs:
           key: build-${{ env.cache-name }}-${{ env.BUILD }}
 
 ############################################
+# Install Build Tools
+############################################
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '1.7.0'
+
+############################################
 # Build, Archive & Export 
 ############################################
       - name: "Select Xcode 12.5.1"
