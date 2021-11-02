@@ -2206,109 +2206,80 @@ extension Local_BuildCommand: SwiftProtobuf.Message, SwiftProtobuf._MessageImple
 extension Local_OpenUiElementCommand: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".OpenUiElementCommand"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "pid"),
-    2: .same(proto: "ttys"),
-    3: .standard(proto: "process_name"),
-    4: .standard(proto: "current_working_directory"),
-    5: .standard(proto: "session_id"),
-    6: .standard(proto: "integration_version"),
-    7: .same(proto: "terminal"),
-    8: .same(proto: "hostname"),
-    9: .standard(proto: "remote_context"),
+    1: .same(proto: "element"),
   ]
 
-  fileprivate class _StorageClass {
-    var _pid: Int32? = nil
-    var _ttys: String? = nil
-    var _processName: String? = nil
-    var _currentWorkingDirectory: String? = nil
-    var _sessionID: String? = nil
-    var _integrationVersion: Int32? = nil
-    var _terminal: String? = nil
-    var _hostname: String? = nil
-    var _remoteContext: Local_ShellContext? = nil
-
-    static let defaultInstance = _StorageClass()
-
-    private init() {}
-
-    init(copying source: _StorageClass) {
-      _pid = source._pid
-      _ttys = source._ttys
-      _processName = source._processName
-      _currentWorkingDirectory = source._currentWorkingDirectory
-      _sessionID = source._sessionID
-      _integrationVersion = source._integrationVersion
-      _terminal = source._terminal
-      _hostname = source._hostname
-      _remoteContext = source._remoteContext
-    }
-  }
-
-  fileprivate mutating func _uniqueStorage() -> _StorageClass {
-    if !isKnownUniquelyReferenced(&_storage) {
-      _storage = _StorageClass(copying: _storage)
-    }
-    return _storage
-  }
-
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
-    _ = _uniqueStorage()
-    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
-      while let fieldNumber = try decoder.nextFieldNumber() {
-        // The use of inline closures is to circumvent an issue where the compiler
-        // allocates stack space for every case branch when no optimizations are
-        // enabled. https://github.com/apple/swift-protobuf/issues/1034
-        switch fieldNumber {
-        case 1: try { try decoder.decodeSingularInt32Field(value: &_storage._pid) }()
-        case 2: try { try decoder.decodeSingularStringField(value: &_storage._ttys) }()
-        case 3: try { try decoder.decodeSingularStringField(value: &_storage._processName) }()
-        case 4: try { try decoder.decodeSingularStringField(value: &_storage._currentWorkingDirectory) }()
-        case 5: try { try decoder.decodeSingularStringField(value: &_storage._sessionID) }()
-        case 6: try { try decoder.decodeSingularInt32Field(value: &_storage._integrationVersion) }()
-        case 7: try { try decoder.decodeSingularStringField(value: &_storage._terminal) }()
-        case 8: try { try decoder.decodeSingularStringField(value: &_storage._hostname) }()
-        case 9: try { try decoder.decodeSingularMessageField(value: &_storage._remoteContext) }()
-        default: break
-        }
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularEnumField(value: &self.element) }()
+      default: break
       }
     }
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
-      // The use of inline closures is to circumvent an issue where the compiler
-      // allocates stack space for every if/case branch local when no optimizations
-      // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
-      // https://github.com/apple/swift-protobuf/issues/1182
-      try { if let v = _storage._pid {
-        try visitor.visitSingularInt32Field(value: v, fieldNumber: 1)
-      } }()
-      try { if let v = _storage._ttys {
-        try visitor.visitSingularStringField(value: v, fieldNumber: 2)
-      } }()
-      try { if let v = _storage._processName {
-        try visitor.visitSingularStringField(value: v, fieldNumber: 3)
-      } }()
-      try { if let v = _storage._currentWorkingDirectory {
-        try visitor.visitSingularStringField(value: v, fieldNumber: 4)
-      } }()
-      try { if let v = _storage._sessionID {
-        try visitor.visitSingularStringField(value: v, fieldNumber: 5)
-      } }()
-      try { if let v = _storage._integrationVersion {
-        try visitor.visitSingularInt32Field(value: v, fieldNumber: 6)
-      } }()
-      try { if let v = _storage._terminal {
-        try visitor.visitSingularStringField(value: v, fieldNumber: 7)
-      } }()
-      try { if let v = _storage._hostname {
-        try visitor.visitSingularStringField(value: v, fieldNumber: 8)
-      } }()
-      try { if let v = _storage._remoteContext {
-        try visitor.visitSingularMessageField(value: v, fieldNumber: 9)
-      } }()
+    if self.element != .menuBar {
+      try visitor.visitSingularEnumField(value: self.element, fieldNumber: 1)
     }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Local_OpenUiElementCommand, rhs: Local_OpenUiElementCommand) -> Bool {
+    if lhs.element != rhs.element {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Local_ResetCacheCommand: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".ResetCacheCommand"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap()
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let _ = try decoder.nextFieldNumber() {
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Local_ResetCacheCommand, rhs: Local_ResetCacheCommand) -> Bool {
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Local_ToggleDebugModeCommand: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".ToggleDebugModeCommand"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .standard(proto: "debug_mode"),
+  ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularBoolField(value: &self._debugMode) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    try { if let v = self._debugMode {
+      try visitor.visitSingularBoolField(value: v, fieldNumber: 1)
+    } }()
     try unknownFields.traverse(visitor: &visitor)
   }
 
