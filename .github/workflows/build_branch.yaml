@@ -112,7 +112,7 @@ jobs:
 ############################################
       - uses: actions/setup-go@v2
         with:
-          go-version: '1.17.0'
+          go-version: '1.17'
 
 ############################################
 # Build, Archive & Export 
@@ -138,6 +138,8 @@ jobs:
      
       - name: "Test"
         run: security find-identity -v -p codesigning
+      - name: Archive1
+        run: xcodebuild -scheme fig archive
 
       - name: "Archive"
         if: ${{ github.event.inputs.useCache == 'false' || steps.archive.outputs.cache-hit != 'true' }}
