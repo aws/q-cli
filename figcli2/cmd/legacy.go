@@ -6,6 +6,7 @@ import (
 	"fig-cli/logging"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -30,6 +31,7 @@ func init() {
 	rootCmd.AddCommand(legacyClearKeybuffer)
 	rootCmd.AddCommand(legacyHyper)
 	rootCmd.AddCommand(legacyExec)
+	rootCmd.AddCommand(vscodeLegacy)
 
 	rootCmd.AddCommand(testCmd)
 
@@ -226,7 +228,9 @@ var legacyHyper = &cobra.Command{
 			return
 		}
 
-		hook := fig_ipc.CreateKeyboardFocusChangedHook("co.zeit.hyper", args[1])
+		id := strings.TrimLeft(args[0], "hyper:")
+
+		hook := fig_ipc.CreateKeyboardFocusChangedHook("hyper", id)
 		err := fig_ipc.SendHook(hook)
 		if err != nil {
 			logging.Log(err.Error())
@@ -288,5 +292,23 @@ var testCmd = &cobra.Command{
 	Short: "Run a test",
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("test")
+	},
+}
+
+var vscodeLegacy = &cobra.Command{
+	Use:   "bg:vscode [focused-session-id]",
+	Short: "Run the vscode hook",
+	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) != 1 {
+			return
+		}
+
+		tabId := strings.TrimPrefix(args[0], "code:")
+
+		hook := fig_ipc.CreateKeyboardFocusChangedHook("code", tabId)
+		err := fig_ipc.SendHook(hook)
+		if err != nil {
+			logging.Log(err.Error())
+		}
 	},
 }

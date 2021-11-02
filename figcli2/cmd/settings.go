@@ -12,9 +12,11 @@ import (
 )
 
 func init() {
-	settingsCmd.Flags().Bool("delete", false, "Delete the key")
 	settingsCmd.AddCommand(settingsDocsCmd)
 	settingsCmd.AddCommand(settingsOpenCmd)
+	settingsCmd.AddCommand(settingsInitCmd)
+
+	settingsCmd.Flags().Bool("delete", false, "Delete the key")
 
 	rootCmd.AddCommand(settingsCmd)
 }
@@ -104,5 +106,19 @@ var settingsOpenCmd = &cobra.Command{
 		if err := exec.Command("open", settingsFilepath).Run(); err != nil {
 			fmt.Println(err)
 		}
+	},
+}
+
+var settingsInitCmd = &cobra.Command{
+	Use:   "init",
+	Short: "Reload the settings listener",
+	Run: func(cmd *cobra.Command, arg []string) {
+		err := fig_ipc.RestartSettingsListenerCommand()
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		fmt.Printf("\nSettings listener restarted.\n\n")
 	},
 }

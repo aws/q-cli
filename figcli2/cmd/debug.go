@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"bufio"
+	fig_ipc "fig-cli/fig-ipc"
+	"fig-cli/logging"
 	"fmt"
 	"os"
 	"os/exec"
@@ -21,6 +23,7 @@ func init() {
 	debugCmd.AddCommand(debugSampleCmd)
 	debugCmd.AddCommand(debugDotfilesCmd)
 	debugCmd.AddCommand(debugPerfsCmd)
+	debugCmd.AddCommand(debugDebugModeCmd)
 
 	rootCmd.AddCommand(debugCmd)
 }
@@ -260,7 +263,6 @@ var debugDotfilesCmd = &cobra.Command{
 		sh.Stderr = os.Stderr
 		sh.Stdin = os.Stdin
 		sh.Run()
-
 	},
 }
 
@@ -297,5 +299,48 @@ var debugPerfsCmd = &cobra.Command{
 		userDefaultsExecShared.Stdout = os.Stdout
 		userDefaultsExecShared.Stderr = os.Stderr
 		userDefaultsExecShared.Run()
+	},
+}
+
+var debugDebugModeCmd = &cobra.Command{
+	Use:   "debug-mode [mode]",
+	Short: "Toggle/set debug mode",
+	Args:  cobra.MaximumNArgs(1),
+	ValidArgs: []string{
+		"on",
+		"off",
+	},
+	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) == 0 {
+			resp, err := fig_ipc.ToggleDebugModeCommand()
+			if err != nil {
+				logging.Log("Debug mode toggle error:", err.Error())
+				fmt.Println("Could not toggle debug mode")
+				return
+			}
+
+			fmt.Println("Debug mode:", resp)
+			return
+		}
+
+		mode := args[0]
+		if mode == "on" {
+			_, err := fig_ipc.SetDebugModeCommand(true)
+			if err != nil {
+				logging.Log("Debug mode set error:", err.Error())
+				fmt.Println("Could not set debug mode")
+				return
+			}
+		} else if mode == "off" {
+			_, err := fig_ipc.SetDebugModeCommand(false)
+			if err != nil {
+				logging.Log("Debug mode set error:", err.Error())
+				fmt.Println("Could not set debug mode")
+				return
+			}
+		} else {
+			fmt.Println("Unknown mode:", mode)
+			fmt.Println("Valid modes: on, off")
+		}
 	},
 }

@@ -204,32 +204,41 @@ extension ShellHookManager {
   }
 
   // If this changes, make sure to reflect changes in iTermIntegration.sessionId setter
-  func currentTabDidChange(bundleIdentifier: String, sessionId: String) {
+  func currentTabDidChange(applicationIdentifier: String, sessionId: String) {
     Logger.log(message: "currentTabDidChange")
 
     // Need time for whitelisted window to change
     Timer.delayWithSeconds(0.1) {
       if let window = AXWindowServer.shared.whitelistedWindow {
-        guard bundleIdentifier == window.bundleId else {
-          print(
-            "tab: bundleId from message did not match bundle id associated with current window "
-          )
-          return
-        }
-
-        let VSCodeTerminal =
+        let CodeTerminal =
           [Integrations.VSCode, Integrations.VSCodeInsiders, Integrations.VSCodium]
-          .contains(window.bundleId)
+            .contains(window.bundleId)
+          && applicationIdentifier == "code"
+        
+        let VSCodeTerminal = window.bundleId == Integrations.VSCode
+          && applicationIdentifier == "vscode"
+        
+        let VSCodeInsidersTerminal = window.bundleId == Integrations.VSCodeInsiders
+          && applicationIdentifier == "vscode-insiders"
+        
+        let VSCodeiumTerminal = window.bundleId == Integrations.VSCodeInsiders
+          && applicationIdentifier == "vscodeium"
 
         let HyperTab = window.bundleId == Integrations.Hyper
+          && applicationIdentifier == "hyper"
 
         let iTermTab = window.bundleId == Integrations.iTerm
+          && applicationIdentifier == "iterm"
+        
+        let KittyTerm = window.bundleId == Integrations.Kitty
+          && applicationIdentifier == "kitty"
 
-        guard VSCodeTerminal || iTermTab || HyperTab else { return }
+        guard CodeTerminal || VSCodeTerminal || VSCodeInsidersTerminal ||
+                VSCodeiumTerminal || iTermTab || HyperTab || KittyTerm else { return }
 
-        Logger.log(message: "tab: \(window.windowId)/\(sessionId)")
+        Logger.log(message: "tab: \(window.windowId)/\(applicationIdentifier):\(sessionId)")
 
-        self.keyboardFocusDidChange(to: sessionId, in: window)
+        self.keyboardFocusDidChange(to: "\(applicationIdentifier):\(sessionId)", in: window)
       }
     }
   }

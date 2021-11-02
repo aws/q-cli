@@ -29,6 +29,7 @@ message Command {
 		RunInstallScriptCommand run_install_script = 109;
 		BuildCommand build = 110;
 		OpenUiElementCommand open_ui_element = 111;
+		ToggleDebugModeCommand toggle_debug_mode = 112;
 	}
 }
 
@@ -99,6 +100,10 @@ message OpenUiElementCommand {
 	UiElement element = 1;
 }
 
+message ToggleDebugModeCommand {
+	optional bool debug_mode = 1;
+}
+
 // == Hooks ==
 message ShellContext {
 	optional int32 pid = 1;
@@ -148,7 +153,7 @@ message PostExecHook {
 }
 
 message KeyboardFocusChangedHook {
-	string bundle_identifier = 1;
+	string app_identifier = 1;
 	string focused_session_id = 2; // a unique identifier associated with the pane or tab that is currently focused
 }
 

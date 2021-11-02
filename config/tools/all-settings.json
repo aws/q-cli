@@ -127,32 +127,6 @@
     "category": "Autocomplete"
   },
   {
-    "settingName": "autocomplete.enter",
-    "title": "Enter Behavior",
-    "description": "Set the behavior of the enter key.",
-    "type": "single_select",
-    "options": ["insert", "ignore"],
-    "default": "insert",
-    "category": "Autocomplete"
-  },
-  {
-    "settingName": "autocomplete.tab",
-    "title": "Tab Behavior",
-    "description": "Set the behavior of the tab key.",
-    "type": "single_select",
-    "default": "shake",
-    "options": [
-      { "name": "shake", "descrition": "Insert matching prefix or shake" },
-      { "name": "insert", "description": "Insert immediately" },
-      {
-        "name": "insertOrPrefix",
-        "description": "Insert matching prefix or selected suggestion."
-      },
-      { "name": "navigate", "decription": "Navigate" }
-    ],
-    "category": "Autocomplete"
-  },
-  {
     "settingName": "autocomplete.height",
     "title": "Window Height",
     "description": "Set the height of the autocomplete window in pixels.",
@@ -328,11 +302,11 @@
     "default": "toggleHistoryMode"
   },
   {
-    "settingName": "autocomplete.keybindings.control+shift+=",
+    "settingName": "autocomplete.keybindings.command+shift+=",
     "default": "increaseSize"
   },
   {
-    "settingName": "autocomplete.keybindings.control+shift+-",
+    "settingName": "autocomplete.keybindings.command+shift+-",
     "default": "decreaseSize"
   }
 ]
