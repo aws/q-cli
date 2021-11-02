@@ -1,0 +1,57 @@
+{
+  "name": "dotenv",
+  "version": "1.0.0",
+  "description": "Testing for shell integration and figterm",
+  "main": "test.js",
+  "scripts": {
+    "test": "jest --runInBand --verbose",
+    "test:bash": "npm run test -- -t bash",
+    "test:config": "npm run test -- -t config",
+    "test:zsh": "npm run test -- -t zsh",
+    "lint": "eslint src",
+    "precommit": "lint-staged",
+    "lint:fix": "npm run lint -- --fix"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/withfig/dotenv.git"
+  },
+  "prettier": {
+    "printWidth": 80,
+    "semi": true,
+    "singleQuote": true,
+    "trailingComma": "es5"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/withfig/dotenv/issues"
+  },
+  "homepage": "https://github.com/withfig/dotenv#readme",
+  "dependencies": {
+    "@types/jest": "^27.0.2",
+    "@types/uuid": "^8.3.1",
+    "node-pty": "^0.10.1",
+    "ts-node": "^10.4.0",
+    "uuid": "^8.3.2"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^4.26.1",
+    "@typescript-eslint/parser": "^4.26.1",
+    "eslint": "^7.28.0",
+    "eslint-config-airbnb": "^18.2.1",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-import": "^2.23.4",
+    "eslint-plugin-jest": "^24.3.6",
+    "jest": "^27.0.6",
+    "lint-staged": "^11.0.0",
+    "ts-jest": "^27.0.3",
+    "typescript": "^4.3.2"
+  },
+  "lint-staged": {
+    "*.ts": [
+      "prettier --write",
+      "eslint --cache --fix"
+    ]
+  }
+}

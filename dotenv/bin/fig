@@ -1,0 +1,20 @@
+#! /bin/bash
+
+(echo mock "$TERM_SESSION_ID" "$@" | base64 | /bin/nc -U /tmp/mock_figcli.socket &)
+
+# return settings
+if [[ "$1" == "settings" ]]; then
+    cat ~/.fig/settings.json | jq '.["'"$2"'"]';
+    exit
+fi
+
+# check if subcommand exists as env variable
+# eg. if `fig app:running` is called, check from an env var with the same name
+# replacing colons with underscores
+
+MOCKED_COMMAND=$(echo MOCK_"$1" | tr ':' '_')
+MOCKED_OUTPUT=$(eval "echo \$$(eval 'echo $MOCKED_COMMAND')")
+
+if [[ "${MOCKED_COMMAND}" != "${MOCKED_OUTPUT}" ]]; then
+    echo $MOCKED_OUTPUT
+fi
