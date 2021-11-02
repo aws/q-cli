@@ -6,7 +6,6 @@ import (
 	"fig-cli/settings"
 	"fig-cli/specs"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"os/user"
@@ -35,7 +34,7 @@ func GetMacOsVersion() (string, error) {
 }
 
 func ReadPlist(field string) (string, error) {
-	plistData, err := ioutil.ReadFile("/Applications/Fig.app/Contents/Info.plist")
+	plistData, err := os.ReadFile("/Applications/Fig.app/Contents/Info.plist")
 	if err != nil {
 		return "", err
 	}

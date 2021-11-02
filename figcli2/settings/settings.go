@@ -3,7 +3,7 @@ package settings
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"os/user"
 )
 
@@ -33,7 +33,7 @@ func Load() (Settings, error) {
 		return nil, err
 	}
 
-	data, err := ioutil.ReadFile(usr.HomeDir + "/.fig/settings.json")
+	data, err := os.ReadFile(usr.HomeDir + "/.fig/settings.json")
 	if err != nil {
 		fmt.Println("Settings: settings file does not exist")
 		return nil, err
@@ -63,7 +63,7 @@ func (s Settings) Save() error {
 		return err
 	}
 
-	err = ioutil.WriteFile(usr.HomeDir+"/.fig/settings.json", data, 0644)
+	err = os.WriteFile(usr.HomeDir+"/.fig/settings.json", data, 0644)
 	if err != nil {
 		fmt.Println("Settings: error writing settings file")
 		return err

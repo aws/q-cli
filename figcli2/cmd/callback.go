@@ -5,7 +5,6 @@ import (
 	fig_proto "fig-cli/fig-proto"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -76,7 +75,7 @@ var callbackCmd = &cobra.Command{
 			exitcode = args[2]
 		} else {
 			// Create tmp file
-			file, err := ioutil.TempFile("/tmp/", "fig-callback-*")
+			file, err := os.CreateTemp("/tmp/", "fig-callback-*")
 			if err != nil {
 				panic(err)
 			}

@@ -6,7 +6,6 @@ import (
 	fig_ipc "fig-cli/fig-ipc"
 	"fig-cli/settings"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"os/user"
@@ -136,7 +135,7 @@ var appThemeCmd = &cobra.Command{
 			return
 		}
 
-		data, err := ioutil.ReadFile(fmt.Sprintf("%s/.fig/themes/%s.json", usr.HomeDir, arg[0]))
+		data, err := os.ReadFile(fmt.Sprintf("%s/.fig/themes/%s.json", usr.HomeDir, arg[0]))
 		if err != nil {
 			// If builtin theme, just set it
 			for _, t := range bulitinTheme {
@@ -185,7 +184,7 @@ var appThemeCmd = &cobra.Command{
 }
 
 var appUpgradeCmd = &cobra.Command{
-	Use:   "install-and-upgrace",
+	Use:   "install-and-upgrade",
 	Short: "Install and upgrade fig",
 	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, arg []string) {
@@ -209,7 +208,7 @@ var appUpgradeCmd = &cobra.Command{
 		}
 
 		// delete binary artifacts to ensure ad-hoc code signature works for arm64 binaries on M1
-		files, err := ioutil.ReadDir(usr.HomeDir + "/.fig/bin")
+		files, err := os.ReadDir(usr.HomeDir + "/.fig/bin")
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -259,12 +258,12 @@ var appUpgradeCmd = &cobra.Command{
 
 		// If ~/.fig/user/aliases/_myaliases.sh does not exist, create it
 		if _, err := os.Stat(usr.HomeDir + "/.fig/user/aliases/_myaliases.sh"); os.IsNotExist(err) {
-			ioutil.WriteFile(usr.HomeDir+"/.fig/user/aliases/_myaliases.sh", []byte(""), 0755)
+			os.WriteFile(usr.HomeDir+"/.fig/user/aliases/_myaliases.sh", []byte(""), 0755)
 		}
 
 		// If ~/.fig/user/figpath.sh does not exist, create it
 		if _, err := os.Stat(usr.HomeDir + "/.fig/user/figpath.sh"); os.IsNotExist(err) {
-			ioutil.WriteFile(usr.HomeDir+"/.fig/user/figpath.sh", []byte(""), 0755)
+			os.WriteFile(usr.HomeDir+"/.fig/user/figpath.sh", []byte(""), 0755)
 		}
 
 		// Determine user's login shell by explicitly reading from "/Users/$(whoami)"
@@ -297,11 +296,11 @@ var appUpgradeCmd = &cobra.Command{
 
 		// If ~/.fig/user/config does not exist, create it
 		if _, err := os.Stat(usr.HomeDir + "/.fig/user/config"); os.IsNotExist(err) {
-			ioutil.WriteFile(usr.HomeDir+"/.fig/user/config", []byte(""), 0755)
+			os.WriteFile(usr.HomeDir+"/.fig/user/config", []byte(""), 0755)
 		}
 
 		// Load ~/.fig/user/config
-		config, err := ioutil.ReadFile(usr.HomeDir + "/.fig/user/config")
+		config, err := os.ReadFile(usr.HomeDir + "/.fig/user/config")
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -335,7 +334,7 @@ var appUpgradeCmd = &cobra.Command{
 		}
 
 		// Write config back to ~/.fig/user/config
-		ioutil.WriteFile(usr.HomeDir+"/.fig/user/config", config, 0755)
+		os.WriteFile(usr.HomeDir+"/.fig/user/config", config, 0755)
 
 		// hotfix for infinite looping when writing "☑ fig" title to a tty backed by figterm
 		exec.Command("defaults", "write", "com.mschrage.fig", "addIndicatorToTitlebar", "false").Run()
