@@ -364,7 +364,7 @@ if [[ $("$HOME"/.fig/bin/fig app:running) == 1 ]]; then
 			continue
 			;;
 		esac
-	done <<<"$("$HOME"/.fig/bin/fig diagnostic)"
+	done <<<"$("$HOME"/.fig/bin/fig debug diagnostic)"
 
 	###############
 	# misc checks #
