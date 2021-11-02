@@ -283,6 +283,14 @@ public struct Local_Command {
     set {command = .openUiElement(newValue)}
   }
 
+  public var resetCache: Local_ResetCacheCommand {
+    get {
+      if case .resetCache(let v)? = command {return v}
+      return Local_ResetCacheCommand()
+    }
+    set {command = .resetCache(newValue)}
+  }
+
   public var toggleDebugMode: Local_ToggleDebugModeCommand {
     get {
       if case .toggleDebugMode(let v)? = command {return v}
@@ -306,6 +314,7 @@ public struct Local_Command {
     case runInstallScript(Local_RunInstallScriptCommand)
     case build(Local_BuildCommand)
     case openUiElement(Local_OpenUiElementCommand)
+    case resetCache(Local_ResetCacheCommand)
     case toggleDebugMode(Local_ToggleDebugModeCommand)
 
   #if !swift(>=4.1)
@@ -360,6 +369,10 @@ public struct Local_Command {
       }()
       case (.openUiElement, .openUiElement): return {
         guard case .openUiElement(let l) = lhs, case .openUiElement(let r) = rhs else { preconditionFailure() }
+        return l == r
+      }()
+      case (.resetCache, .resetCache): return {
+        guard case .resetCache(let l) = lhs, case .resetCache(let r) = rhs else { preconditionFailure() }
         return l == r
       }()
       case (.toggleDebugMode, .toggleDebugMode): return {
@@ -692,6 +705,16 @@ public struct Local_OpenUiElementCommand {
   // methods supported on all messages.
 
   public var element: Local_UiElement = .menuBar
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public struct Local_ResetCacheCommand {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -1364,7 +1387,8 @@ extension Local_Command: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementa
     109: .standard(proto: "run_install_script"),
     110: .same(proto: "build"),
     111: .standard(proto: "open_ui_element"),
-    112: .standard(proto: "toggle_debug_mode"),
+    112: .standard(proto: "reset_cache"),
+    113: .standard(proto: "toggle_debug_mode"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -1532,6 +1556,19 @@ extension Local_Command: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementa
         }
       }()
       case 112: try {
+        var v: Local_ResetCacheCommand?
+        var hadOneofValue = false
+        if let current = self.command {
+          hadOneofValue = true
+          if case .resetCache(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.command = .resetCache(v)
+        }
+      }()
+      case 113: try {
         var v: Local_ToggleDebugModeCommand?
         var hadOneofValue = false
         if let current = self.command {
@@ -1609,9 +1646,13 @@ extension Local_Command: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementa
       guard case .openUiElement(let v)? = self.command else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 111)
     }()
+    case .resetCache?: try {
+      guard case .resetCache(let v)? = self.command else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 112)
+    }()
     case .toggleDebugMode?: try {
       guard case .toggleDebugMode(let v)? = self.command else { preconditionFailure() }
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 112)
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 113)
     }()
     case nil: break
     }
@@ -2189,6 +2230,25 @@ extension Local_OpenUiElementCommand: SwiftProtobuf.Message, SwiftProtobuf._Mess
 
   public static func ==(lhs: Local_OpenUiElementCommand, rhs: Local_OpenUiElementCommand) -> Bool {
     if lhs.element != rhs.element {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Local_ResetCacheCommand: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".ResetCacheCommand"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap()
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let _ = try decoder.nextFieldNumber() {
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Local_ResetCacheCommand, rhs: Local_ResetCacheCommand) -> Bool {
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

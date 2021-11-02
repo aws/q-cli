@@ -1,6 +1,7 @@
 package installandupgrade
 
 import (
+	"bytes"
 	fig_ipc "fig-cli/fig-ipc"
 	"fig-cli/settings"
 	"fmt"
@@ -15,9 +16,130 @@ import (
 	"github.com/spf13/cobra"
 )
 
+func backupDotfile(path string) error {
+	usr, err := user.Current()
+	if err != nil {
+		return err
+	}
+
+	// Backup dotfile by copy
+	data, err := ioutil.ReadFile(path)
+	if os.IsNotExist(err) {
+		return nil
+	}
+
+	if err != nil {
+		return err
+	}
+
+	// Make directory if it doesn't exist at ~/.fig
+	if _, err := os.Stat(usr.HomeDir + "/.fig.dotfiles.bak/"); os.IsNotExist(err) {
+		os.MkdirAll(usr.HomeDir+"/.fig.dotfiles.bak/", 0755)
+	}
+
+	err = ioutil.WriteFile(usr.HomeDir+"/.fig.dotfiles.bak/"+path, data, 0644)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func installIntegrations() {
+	// Add the fig.sh to your profiles so it can be sourced on new terminal window load
+
+	usr, err := user.Current()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	// Make sure one of [.bash_profile|.bash_login|.profile] exists to ensure fig
+	// is sourced on login shells. We choose .profile to be as minimally
+	// disruptive to existing user set up as possible.
+	// https://superuser.com/questions/320065/bashrc-not-sourced-in-iterm-mac-os-x
+	if _, err := os.Stat(usr.HomeDir + "/.profile"); os.IsNotExist(err) {
+		os.Create(usr.HomeDir + "/.profile")
+	}
+
+	// replace old sourcing in profiles
+	for _, profile := range []string{".profile", ".zprofile", ".bash_profile"} {
+		data, err := ioutil.ReadFile(usr.HomeDir + "/" + profile)
+		if os.IsNotExist(err) {
+			continue
+		}
+
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		newBytes := bytes.Replace(data, []byte("~/.fig/exports/env.sh"), []byte("~/.fig/fig.sh"), -1)
+
+		err = ioutil.WriteFile(usr.HomeDir+"/"+profile, newBytes, 0644)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+	}
+
+	// Create .zshrc/.bashrc regardless of whether it exists or not
+	for _, profile := range []string{".zshrc", ".bashrc"} {
+		if _, err := os.Stat(usr.HomeDir + "/" + profile); os.IsNotExist(err) {
+			os.Create(usr.HomeDir + "/" + profile)
+		}
+	}
+
+	// Don't modify files until all are backed up.
+	for _, profile := range []string{".profile", ".zprofile", ".bash_profile", ".bash_login", ".bashrc", ".zshrc"} {
+		if err := backupDotfile(profile); err != nil {
+			fmt.Println(err)
+			return
+		}
+	}
+
+	// Install fig.sh
+	for _, profile := range []string{".profile", ".zprofile", ".bash_profile", ".bash_login", ".bashrc", ".zshrc"} {
+		data, err := ioutil.ReadFile(usr.HomeDir + "/" + profile)
+		if os.IsNotExist(err) {
+			continue
+		}
+
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		newBytes := []byte("\n#### FIG ENV VARIABLES ####\n# Please make sure this block is at the start of this file.\n[ -s ~/.fig/shell/pre.sh ] && source ~/.fig/shell/pre.sh\n#### END FIG ENV VARIABLES ####\n")
+		newBytes = append(newBytes, data...)
+		newBytes = append(newBytes, []byte("\n#### FIG ENV VARIABLES ####\n# Please make sure this block is at the end of this file.\n[ -s ~/.fig/fig.sh ] && source ~/.fig/fig.sh\n#### END FIG ENV VARIABLES ####\n")...)
+
+		err = ioutil.WriteFile(usr.HomeDir+"/"+profile, newBytes, 0644)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+	}
+
+	// Handle fish separately
+	if _, err := os.Stat(usr.HomeDir + "/.config/fish/conf.d"); os.IsNotExist(err) {
+		os.MkdirAll(usr.HomeDir+"/.config/fish/conf.d", 0755)
+	}
+
+	// link pre.fish and post.fish
+	// Use 00_/99_ prefix to load script earlier/later in fish startup.
+	os.Symlink(usr.HomeDir+"/.fig/shell/pre.fish", usr.HomeDir+"/.config/fish/conf.d/00_pre.fish")
+	os.Symlink(usr.HomeDir+"/.fig/shell/post.fish", usr.HomeDir+"/.config/fish/conf.d/99_post.fish")
+
+	// Remove deprecated fish config file.
+	if _, err := os.Stat(usr.HomeDir + "/.config/fish/config.fish"); os.IsExist(err) {
+		os.Remove(usr.HomeDir + "/.config/fish/conf.d/fig.fish")
+	}
+}
+
 func NewCmdInstallAndUpgrade() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "install-and-upgrace",
+		Use:   "install-and-upgrade",
 		Short: "Install and upgrade fig",
 		Args:  cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, arg []string) {
@@ -172,7 +294,7 @@ func NewCmdInstallAndUpgrade() *cobra.Command {
 			// hotfix for infinite looping when writing "☑ fig" title to a tty backed by figterm
 			exec.Command("defaults", "write", "com.mschrage.fig", "addIndicatorToTitlebar", "false").Run()
 
-			exec.Command("sh", "~/.fig/tools/install_integrations.sh").Run()
+			installIntegrations()
 
 			fmt.Println("success")
 		},

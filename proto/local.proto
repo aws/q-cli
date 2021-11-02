@@ -29,7 +29,8 @@ message Command {
 		RunInstallScriptCommand run_install_script = 109;
 		BuildCommand build = 110;
 		OpenUiElementCommand open_ui_element = 111;
-		ToggleDebugModeCommand toggle_debug_mode = 112;
+		ResetCacheCommand reset_cache = 112;
+		ToggleDebugModeCommand toggle_debug_mode = 113;
 	}
 }
 
@@ -99,6 +100,8 @@ enum UiElement {
 message OpenUiElementCommand {
 	UiElement element = 1;
 }
+
+message ResetCacheCommand {}
 
 message ToggleDebugModeCommand {
 	optional bool debug_mode = 1;
