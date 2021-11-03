@@ -167,10 +167,9 @@ int fig_socket_send(char* buf) {
   return st;
 }
 
-int ipc_socket_send(char* buf) {
+int ipc_socket_send(char* buf, int len) {
   // send to ipc socket.
   int st;
-  size_t out_len = strlen(buf);
   SigHandler* old_handler;
 
   if (ipc_sock < 0) {
@@ -188,7 +187,7 @@ int ipc_socket_send(char* buf) {
   // Handle sigpipe if socket is closed, reset afterwards.
   if ((old_handler = set_sigaction(SIGPIPE, sigpipe_handler)) == SIG_ERR)
     err_sys("sigpipe error");
-  st = send(ipc_sock, buf, out_len, 0);
+  st = send(ipc_sock, buf, len, 0);
   if (set_sigaction(SIGPIPE, old_handler) == SIG_ERR)
     err_sys("sigpipe error");
 
@@ -222,6 +221,10 @@ void publish_message(const char* fmt, ...) {
   free(tmpbuf);
 }
 
+#define HEADER_PREFIX_LEN 10
+#define HEADER_INT64_LEN 8
+#define HEADER_LEN HEADER_PREFIX_LEN + HEADER_INT64_LEN
+
 void publish_json(const char* fmt, ...) {
   va_list va;
 
@@ -230,17 +233,30 @@ void publish_json(const char* fmt, ...) {
   va_end(va);
 
   unsigned int buf_len = strlen(tmpbuf);
-  unsigned char len[5] = {
+  unsigned char len[8] = {
+    0,
+    0,
+    0,
+    0,
     (buf_len >> 24) & 0xFF,
     (buf_len >> 16) & 0xFF,
     (buf_len >> 8) & 0xFF,
     buf_len & 0xFF,
-    '\0'
   };
 
-  char* msg = printf_alloc("\x1b@fig-json%s%s%s%s%s", len[0], len[1], len[2], len[3], tmpbuf);
+  char* msg = printf_alloc("\x1b@fig-json%c%c%c%c%c%c%c%c%s", len[0],
+                                                              len[1],
+                                                              len[2], 
+                                                              len[3], 
+                                                              len[4], 
+                                                              len[5], 
+                                                              len[6], 
+                                                              len[7],
+                                                              tmpbuf);
 
-  ipc_socket_send(msg);
+  int msg_len = HEADER_LEN + strlen(tmpbuf);
+
+  ipc_socket_send(msg, msg_len);
   log_info("done sending %s", tmpbuf);
   free(msg);
   free(tmpbuf);

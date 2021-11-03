@@ -114,9 +114,12 @@ class IPC: UnixSocketServerDelegate {
     }
 
     let packetSize = Int64(bigEndian: packetSizeLittleEndian)
+    
+    guard packetSize <= rawBytes.count - IPC.Encoding.headerSize && packetSize >= 0 else {
+      return nil
+    }
 
-    let message = rawBytes.subdata(
-      in: IPC.Encoding.headerSize...IPC.Encoding.headerSize + Int(packetSize))
+    let message = rawBytes.subdata(in: IPC.Encoding.headerSize...IPC.Encoding.headerSize + Int(packetSize))
 
     switch encoding {
     case .binary:

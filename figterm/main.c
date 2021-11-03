@@ -225,7 +225,6 @@ void figterm_loop(int ptyp_fd, pid_t shell_pid, char* initial_command) {
       if (!figterm_is_disabled(ft) && figterm_can_send_buffer(ft)) {
         publish_buffer(ft);
       }
-      printf("hi");
     }
     if (n > 0 && FD_ISSET(incoming_socket, &rfd)) {
       log_info("Got message on socket");
