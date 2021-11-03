@@ -2,10 +2,12 @@ package root
 
 import (
 	"fig-cli/cmd/app"
+	"fig-cli/cmd/callback"
 	"fig-cli/cmd/community"
 	"fig-cli/cmd/contrib"
 	"fig-cli/cmd/debug"
 	"fig-cli/cmd/dev"
+	"fig-cli/cmd/doctor"
 	"fig-cli/cmd/hook"
 	"fig-cli/cmd/integrations"
 	"fig-cli/cmd/invite"
@@ -15,6 +17,7 @@ import (
 	"fig-cli/cmd/settings"
 	"fig-cli/cmd/source"
 	"fig-cli/cmd/specs"
+	"fig-cli/cmd/theme"
 	"fig-cli/cmd/tweet"
 	"fig-cli/cmd/update"
 	"fig-cli/cmd/user"
@@ -90,7 +93,7 @@ func Execute() {
 				Width(TextWidth).
 				Align(lipgloss.Center).
 				Render(
-					"",
+					"Fig CLI",
 				))
 
 			for _, c := range cmd.Commands() {
@@ -264,10 +267,12 @@ func Execute() {
 	})
 
 	rootCmd.AddCommand(app.NewCmdApp())
+	rootCmd.AddCommand(callback.NewCmdCallback())
 	rootCmd.AddCommand(community.NewCmdCommunity())
 	rootCmd.AddCommand(contrib.NewCmdContrib())
 	rootCmd.AddCommand(debug.NewCmdDebug())
 	rootCmd.AddCommand(dev.NewCmdDev())
+	rootCmd.AddCommand(doctor.NewCmdDoctor())
 	rootCmd.AddCommand(hook.NewCmdHook())
 	rootCmd.AddCommand(integrations.NewCmdIntegrations())
 	rootCmd.AddCommand(invite.NewCmdInvite())
@@ -277,6 +282,7 @@ func Execute() {
 	rootCmd.AddCommand(settings.NewCmdSettings())
 	rootCmd.AddCommand(source.NewCmdSource())
 	rootCmd.AddCommand(specs.NewCmdSpecs())
+	rootCmd.AddCommand(theme.NewCmdTheme())
 	rootCmd.AddCommand(tweet.NewCmdTweet())
 	rootCmd.AddCommand(update.NewCmdUpdate())
 	rootCmd.AddCommand(user.NewCmdUser())
