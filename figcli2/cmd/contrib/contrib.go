@@ -1,7 +1,7 @@
 package contrib
 
 import (
-	"fig-cli/cmd/specs/list"
+	"fig-cli/cmd/contrib/list"
 	"fmt"
 	"os/exec"
 

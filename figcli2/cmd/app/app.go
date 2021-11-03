@@ -5,7 +5,6 @@ import (
 	"fig-cli/cmd/app/onboarding"
 	"fig-cli/cmd/app/running"
 	setpath "fig-cli/cmd/app/set-path"
-	"fig-cli/cmd/app/theme"
 	"fig-cli/cmd/app/uninstall"
 
 	"github.com/spf13/cobra"
@@ -21,10 +20,9 @@ func NewCmdApp() *cobra.Command {
 	}
 
 	cmd.AddCommand(onboarding.NewCmdOnboarding())
-	cmd.AddCommand(theme.NewThemeCmd())
 	cmd.AddCommand(installandupgrade.NewCmdInstallAndUpgrade())
 	cmd.AddCommand(setpath.NewCmdSetPath())
-	cmd.AddCommand(running.NewCommandRunning())
+	cmd.AddCommand(running.NewCmdRunning())
 	cmd.AddCommand(uninstall.NewCommandUninstall())
 
 	return cmd

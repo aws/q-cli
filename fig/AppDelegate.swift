@@ -906,63 +906,16 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         
         // upgrade path!
         if (previous != current) {
-            // look for $BUNDLE/upgrade/$OLD-->$NEW
-            let specific = Bundle.main.path(forResource: "\(previous)-->\(current)", ofType: "sh")
-            // look for $BUNDLE/upgrade/$NEW
-            let general = Bundle.main.path(forResource: "\(current)", ofType: "sh")
-            
-            let script = specific ?? general
-            if let script = script {
-                print("Update: Running script '\(script)' to upgrade to version \(current)")
-                let _ = "sh \(script) '\(Bundle.main.resourcePath ?? "")'".runAsCommand()
-            }
             
             Onboarding.setUpEnviroment()
 
-            TelemetryProvider.track(event: .updatedApp, with: ["script": script ?? "<none>"])
-            
-            // Any defaults that should be set for upgrading users
-            // For anyone upgrading, we are just going to assume that this is true
-            Defaults.hasShownAutocompletePopover = true
+            TelemetryProvider.track(event: .updatedApp, with: [:])
+      
             
             
             // resolves a bug where Fig was added to login items multiple times
             // if the appropriate setting is enabled, a single entry will be readded
             LoginItems.shared.removeAllItemsMatchingBundleURL()
-
-            if current == "1.0.50" {
-                switch Settings.shared.getValue(forKey: "autocomplete.tab") as? String {
-                    case "insert":
-                        Settings.shared.set(value: "insertSelected", forKey: "autocomplete.keybindings.tab")
-                        break
-                    case "navigate":
-                        Settings.shared.set(value: "insertCommonPrefixOrNavigateDown", forKey: "autocomplete.keybindings.tab")
-                        Settings.shared.set(value: "navigateUp", forKey: "autocomplete.keybindings.shift+tab")
-                        break
-                    default:
-                        break
-                }
-
-                if Settings.shared.getValue(forKey: Settings.enterKeyBehavior) as? String == "ignore" {
-                    Settings.shared.set(value: "ignore", forKey: "autocomplete.keybindings.enter")
-                }
-
-                if Settings.shared.getValue(forKey: Settings.rightArrowKeyBehavior) as? String == "insert" {
-                    Settings.shared.set(value: "insertSelected", forKey: "autocomplete.keybindings.right")
-                }
-
-                if Settings.shared.getValue(forKey: Settings.allowAlternateNavigationKeys) as? Bool ?? true {
-                    Settings.shared.set(value: "navigateDown", forKey: "autocomplete.keybindings.control+j")
-                    Settings.shared.set(value: "navigateUp", forKey: "autocomplete.keybindings.control+k")
-                  
-                    Settings.shared.set(value: "navigateDown", forKey: "autocomplete.keybindings.control+n")
-                    Settings.shared.set(value: "navigateUp", forKey: "autocomplete.keybindings.control+p")
-                }
-
-                if Settings.shared.getValue(forKey: Settings.disablePopoutDescriptions) as? Bool ?? false {
-                    Settings.shared.set(value: "ignore", forKey: "autocomplete.keybindings.command+i")
-                }
-            }
         }
         
         Defaults.versionAtPreviousLaunch = current

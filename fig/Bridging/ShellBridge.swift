@@ -373,7 +373,6 @@ class ShellBridge {
       
       
       let version = window.tty?.shellIntegrationVersion
-      print(version)
       let figTermInstanceSupportsInserts = version ?? 0 >= 5
       
       let backing = KeypressProvider.shared.keyBuffer(for: window).backing

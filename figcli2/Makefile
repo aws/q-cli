@@ -30,5 +30,5 @@ clean:
 
 install: all
 	mkdir -p ~/.fig/bin
-	rm ~/.fig/bin/fig
+	rm ~/.fig/bin/fig || echo "Could not remove ~/.fig/bin/fig"
 	cp $(BUILT_PRODUCTS_DIR)/figcli ~/.fig/bin/fig
