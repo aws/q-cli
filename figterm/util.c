@@ -6,6 +6,7 @@
 
 static FigInfo *_fig_info;
 static int fig_sock = -1;
+static int ipc_sock = -1;
 
 int get_winsize(struct winsize *ws) {
   // Get window size of current terminal.
@@ -166,6 +167,34 @@ int fig_socket_send(char* buf) {
   return st;
 }
 
+int ipc_socket_send(char* buf) {
+  // send to ipc socket.
+  int st;
+  size_t out_len = strlen(buf);
+  SigHandler* old_handler;
+
+  if (ipc_sock < 0) {
+    char* path = printf_alloc("%sfig.socket", getenv("TMPDIR"));
+    ipc_sock = unix_socket_connect(path);
+    free(path);
+  }
+
+  if (ipc_sock < 0) {
+    log_warn("Can't connect to fig socket");
+    close(ipc_sock);
+    return ipc_sock;
+  }
+  
+  // Handle sigpipe if socket is closed, reset afterwards.
+  if ((old_handler = set_sigaction(SIGPIPE, sigpipe_handler)) == SIG_ERR)
+    err_sys("sigpipe error");
+  st = send(ipc_sock, buf, out_len, 0);
+  if (set_sigaction(SIGPIPE, old_handler) == SIG_ERR)
+    err_sys("sigpipe error");
+
+  return st;
+}
+
 char* vprintf_alloc(const char* fmt, va_list va) {
   const int len = vsnprintf(NULL, 0, fmt, va);
   char *tmpbuf = malloc((len + 1) * sizeof(char));
@@ -209,9 +238,9 @@ void publish_json(const char* fmt, ...) {
     '\0'
   };
 
-  char* msg = printf_alloc("\x1b@fig-json%s%s", len, tmpbuf);
+  char* msg = printf_alloc("\x1b@fig-json%s%s%s%s%s", len[0], len[1], len[2], len[3], tmpbuf);
 
-  fig_socket_send(msg);
+  ipc_socket_send(msg);
   log_info("done sending %s", tmpbuf);
   free(msg);
   free(tmpbuf);

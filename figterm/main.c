@@ -17,7 +17,7 @@
 #endif
 
 #define BUFFSIZE (1024 * 100)
-#define FIGTERM_VERSION 2
+#define FIGTERM_VERSION 3
 
 void abort_handler(int sig) {
   log_error("Aborting %d: %d", getpid(), sig);
@@ -225,6 +225,7 @@ void figterm_loop(int ptyp_fd, pid_t shell_pid, char* initial_command) {
       if (!figterm_is_disabled(ft) && figterm_can_send_buffer(ft)) {
         publish_buffer(ft);
       }
+      printf("hi");
     }
     if (n > 0 && FD_ISSET(incoming_socket, &rfd)) {
       log_info("Got message on socket");

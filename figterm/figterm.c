@@ -30,9 +30,24 @@ struct FigTerm {
 };
 
 static void handle_osc(FigTerm* ft) {
+  printf("Hello!");
+
   // Handle osc after we received the final fragment.
   if (strcmp(ft->osc, "NewCmd") == 0) {
-    publish_message("fig bg:prompt %d %s\n", ft->shell_state.pid, ft->shell_state.tty);
+      char* context = printf_alloc(
+        "{\"sessionId\":\"%s\",\"pid\":\"%s\",\"hostname\":\"%s\",\"ttys\":\"%s\"}",
+        ft->shell_state.session_id,
+        ft->shell_state.pid,
+        ft->shell_state.hostname,
+        ft->shell_state.tty
+      );
+    publish_json(
+      "{\"hook\":{\"prompt\":{\"context\": %s}}}",
+      context
+    );
+    printf("%s", context);
+    free(context);
+    // publish_message("fig bg:prompt %d %s\n", ft->shell_state.pid, ft->shell_state.tty);
     figterm_screen_get_cursorpos(ft->screen, ft->cmd_cursor);
     log_info("Prompt at position: (%d, %d)", ft->cmd_cursor->row, ft->cmd_cursor->col);
     ft->shell_state.preexec = false;
