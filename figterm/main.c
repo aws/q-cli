@@ -50,6 +50,7 @@ void abort_handler(int sig) {
 
 char* _parent_shell = NULL;
 char* _parent_shell_is_login = NULL;
+char* _parent_shell_extra_args = NULL;
 
 void launch_shell(bool fatal_crash) {
   if (_parent_shell == NULL) {
@@ -60,9 +61,37 @@ void launch_shell(bool fatal_crash) {
   if (_parent_shell_is_login == NULL)
     _parent_shell_is_login = getenv("FIG_IS_LOGIN_SHELL");
 
-  char* args[] = {_parent_shell, NULL, NULL};
-  if (_parent_shell_is_login != NULL && *_parent_shell_is_login == '1')
-    args[1] = "--login";
+  if (_parent_shell_extra_args == NULL)
+    _parent_shell_extra_args = getenv("FIG_SHELL_EXTRA_ARGS");
+
+  int nargs = 2;
+  char** args = malloc(sizeof(char*) * nargs);
+  args[nargs - 2] = _parent_shell;
+  args[nargs - 1] = NULL;
+
+  bool is_login = _parent_shell_is_login != NULL && *_parent_shell_is_login == '1';
+  if (is_login) {
+    nargs += 1;
+    args = realloc(args, sizeof(char*) * nargs);
+    args[nargs - 2] = "--login";
+    args[nargs - 1] = NULL;
+  }
+
+  if (_parent_shell_extra_args != NULL) {
+    char* tmp = strdup(_parent_shell_extra_args);
+    char* arg = strtok(tmp, " ");
+
+    while (arg) {
+      if (strcmp(arg, "--login") != 0) {
+        nargs += 1;
+        args = realloc(args, sizeof(char*) * nargs);
+        args[nargs - 2] = strdup(arg);
+        args[nargs - 1] = NULL;
+      }
+      arg = strtok(NULL, " ");
+    }
+    free(tmp);
+  }
 
   // Expose shell variables for version and to prevent nested fig term launches.
   char version[3];
@@ -76,6 +105,7 @@ void launch_shell(bool fatal_crash) {
   unsetenv("FIG_SHELL");
   unsetenv("FIG_IS_LOGIN_SHELL");
   unsetenv("FIG_START_TEXT");
+  unsetenv("FIG_SHELL_EXTRA_ARGS");
 
   if (fatal_crash) {
     setenv("FIG_TERM_CRASHED", "1", 1);
