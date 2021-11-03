@@ -1,0 +1,21 @@
+{
+  "name": "root",
+  "private": true,
+  "repository": "git@github.com:withfig/macos",
+  "author": "Fig Team",
+  "license": "MIT",
+  "dependencies": {
+    "husky": "^7.0.4"
+  },
+  "workspaces": [
+    "typescript-api-bindings",
+    "dotenv"
+  ],
+  "resolutions": {
+    "**/@typescript-eslint/eslint-plugin": "^4.1.1",
+    "**/@typescript-eslint/parser": "^4.1.1"
+  },
+  "scripts": {
+    "prepare": "husky install"
+  }
+}

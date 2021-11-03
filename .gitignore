@@ -10,3 +10,6 @@ fig.xcodeproj/**
 
 # Misc
 .DS_Store
+node_modules/
+.eslintcache
+yarn-error.log
