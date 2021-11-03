@@ -138,9 +138,7 @@ jobs:
      
       - name: "Test"
         run: security find-identity -v -p codesigning
-      - name: Archive1
-        run: xcodebuild -scheme fig archive
-
+        
       - name: "Archive"
         if: ${{ github.event.inputs.useCache == 'false' || steps.archive.outputs.cache-hit != 'true' }}
         uses: devbotsxyz/xcode-archive@v1
