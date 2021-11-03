@@ -5,7 +5,6 @@ import (
 	fig_proto "fig-cli/fig-proto"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 
 	"github.com/spf13/cobra"
