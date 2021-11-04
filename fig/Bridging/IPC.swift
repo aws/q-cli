@@ -208,7 +208,7 @@ class IPC: UnixSocketServerDelegate {
     case .runInstallScript(_):
       response = CommandHandlers.runInstallScriptCommand()
     case .build(let request):
-      response = CommandHandlers.buildCommand(branch: request.branch)
+      response = CommandHandlers.buildCommand(build: request.branch)
     case .openUiElement(let request):
       response = CommandHandlers.openUiElement(uiElement: request.element)
     case .resetCache(_):
