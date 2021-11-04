@@ -114,9 +114,12 @@ class IPC: UnixSocketServerDelegate {
     }
 
     let packetSize = Int64(bigEndian: packetSizeLittleEndian)
+    
+    guard packetSize <= rawBytes.count - IPC.Encoding.headerSize && packetSize >= 0 else {
+      return nil
+    }
 
-    let message = rawBytes.subdata(
-      in: IPC.Encoding.headerSize...IPC.Encoding.headerSize + Int(packetSize))
+    let message = rawBytes.subdata(in: IPC.Encoding.headerSize...IPC.Encoding.headerSize + Int(packetSize))
 
     switch encoding {
     case .binary:
@@ -249,8 +252,8 @@ class IPC: UnixSocketServerDelegate {
       ShellHookManager.shared.shellPromptWillReturn(context: hook.context)
     case .preExec(let hook):
       ShellHookManager.shared.shellWillExecuteCommand(context: hook.context)
-    case .postExec(_):
-      break
+    case .postExec(let hook):
+      API.notifications.post(hook.historyNotification)
     case .keyboardFocusChanged(let hook):
       ShellHookManager.shared.currentTabDidChange(applicationIdentifier: hook.appIdentifier, sessionId: hook.focusedSessionID)
     case .tmuxPaneChanged(_):

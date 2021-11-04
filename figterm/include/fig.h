@@ -73,6 +73,7 @@ typedef struct HistoryEntry HistoryEntry;
 HistoryEntry* history_entry_new(
   char* command,
   char* shell,
+  char* pid,
   char* session_id,
   char* cwd,
   unsigned long time,
@@ -145,6 +146,9 @@ int fig_socket_listen();
 void fig_socket_cleanup();
 char* fig_path(char*);
 char* log_path(char*);
+char* printf_alloc(const char*, ...);
+void publish_message(const char*, ...);
+void publish_json(const char*, ...);
 
 // libfig
 

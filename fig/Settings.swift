@@ -53,6 +53,8 @@ class Settings {
   static let useControlRForHistory = "history.ctrl-r"
   static let shouldInterceptCommandI = "autocomplete.alwaysInterceptCommandI"
   static let inputMethodShouldPollForActivation = "integrations.input-method.shouldPollForActivation"
+  static let ptyTranscript = "developer.pty.transcript"
+
 
   static let keyAliases = [
     "super": "command",

@@ -228,6 +228,7 @@ public enum Fig_NotificationType: SwiftProtobuf.Enum {
   case notifyOnProcessChanged // = 5
   case notifyOnKeybindingPressed // = 6
   case notifyOnFocusChanged // = 7
+  case notifyOnHistoryUpdated // = 8
   case UNRECOGNIZED(Int)
 
   public init() {
@@ -244,6 +245,7 @@ public enum Fig_NotificationType: SwiftProtobuf.Enum {
     case 5: self = .notifyOnProcessChanged
     case 6: self = .notifyOnKeybindingPressed
     case 7: self = .notifyOnFocusChanged
+    case 8: self = .notifyOnHistoryUpdated
     default: self = .UNRECOGNIZED(rawValue)
     }
   }
@@ -258,6 +260,7 @@ public enum Fig_NotificationType: SwiftProtobuf.Enum {
     case .notifyOnProcessChanged: return 5
     case .notifyOnKeybindingPressed: return 6
     case .notifyOnFocusChanged: return 7
+    case .notifyOnHistoryUpdated: return 8
     case .UNRECOGNIZED(let i): return i
     }
   }
@@ -277,6 +280,7 @@ extension Fig_NotificationType: CaseIterable {
     .notifyOnProcessChanged,
     .notifyOnKeybindingPressed,
     .notifyOnFocusChanged,
+    .notifyOnHistoryUpdated,
   ]
 }
 
@@ -2297,6 +2301,14 @@ public struct Fig_Notification {
     set {type = .windowFocusChangedNotification(newValue)}
   }
 
+  public var historyUpdatedNotification: Fig_HistoryUpdatedNotification {
+    get {
+      if case .historyUpdatedNotification(let v)? = type {return v}
+      return Fig_HistoryUpdatedNotification()
+    }
+    set {type = .historyUpdatedNotification(newValue)}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public enum OneOf_Type: Equatable {
@@ -2307,6 +2319,7 @@ public struct Fig_Notification {
     case processChangeNotification(Fig_ProcessChangedNotification)
     case keybindingPressedNotification(Fig_KeybindingPressedNotification)
     case windowFocusChangedNotification(Fig_WindowFocusChangedNotification)
+    case historyUpdatedNotification(Fig_HistoryUpdatedNotification)
 
   #if !swift(>=4.1)
     public static func ==(lhs: Fig_Notification.OneOf_Type, rhs: Fig_Notification.OneOf_Type) -> Bool {
@@ -2340,6 +2353,10 @@ public struct Fig_Notification {
       }()
       case (.windowFocusChangedNotification, .windowFocusChangedNotification): return {
         guard case .windowFocusChangedNotification(let l) = lhs, case .windowFocusChangedNotification(let r) = rhs else { preconditionFailure() }
+        return l == r
+      }()
+      case (.historyUpdatedNotification, .historyUpdatedNotification): return {
+        guard case .historyUpdatedNotification(let l) = lhs, case .historyUpdatedNotification(let r) = rhs else { preconditionFailure() }
         return l == r
       }()
       default: return false
@@ -2578,6 +2595,81 @@ public struct Fig_WindowFocusChangedNotification {
   fileprivate var _window: Fig_Window? = nil
 }
 
+public struct Fig_HistoryUpdatedNotification {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var command: String {
+    get {return _command ?? String()}
+    set {_command = newValue}
+  }
+  /// Returns true if `command` has been explicitly set.
+  public var hasCommand: Bool {return self._command != nil}
+  /// Clears the value of `command`. Subsequent reads from it will return its default value.
+  public mutating func clearCommand() {self._command = nil}
+
+  /// the name of the process
+  public var processName: String {
+    get {return _processName ?? String()}
+    set {_processName = newValue}
+  }
+  /// Returns true if `processName` has been explicitly set.
+  public var hasProcessName: Bool {return self._processName != nil}
+  /// Clears the value of `processName`. Subsequent reads from it will return its default value.
+  public mutating func clearProcessName() {self._processName = nil}
+
+  /// the directory where the user ran the command
+  public var currentWorkingDirectory: String {
+    get {return _currentWorkingDirectory ?? String()}
+    set {_currentWorkingDirectory = newValue}
+  }
+  /// Returns true if `currentWorkingDirectory` has been explicitly set.
+  public var hasCurrentWorkingDirectory: Bool {return self._currentWorkingDirectory != nil}
+  /// Clears the value of `currentWorkingDirectory`. Subsequent reads from it will return its default value.
+  public mutating func clearCurrentWorkingDirectory() {self._currentWorkingDirectory = nil}
+
+  /// the value of $TERM_SESSION_ID
+  public var sessionID: String {
+    get {return _sessionID ?? String()}
+    set {_sessionID = newValue}
+  }
+  /// Returns true if `sessionID` has been explicitly set.
+  public var hasSessionID: Bool {return self._sessionID != nil}
+  /// Clears the value of `sessionID`. Subsequent reads from it will return its default value.
+  public mutating func clearSessionID() {self._sessionID = nil}
+
+  public var hostname: String {
+    get {return _hostname ?? String()}
+    set {_hostname = newValue}
+  }
+  /// Returns true if `hostname` has been explicitly set.
+  public var hasHostname: Bool {return self._hostname != nil}
+  /// Clears the value of `hostname`. Subsequent reads from it will return its default value.
+  public mutating func clearHostname() {self._hostname = nil}
+
+  /// the exit code of the command
+  public var exitCode: Int32 {
+    get {return _exitCode ?? 0}
+    set {_exitCode = newValue}
+  }
+  /// Returns true if `exitCode` has been explicitly set.
+  public var hasExitCode: Bool {return self._exitCode != nil}
+  /// Clears the value of `exitCode`. Subsequent reads from it will return its default value.
+  public mutating func clearExitCode() {self._exitCode = nil}
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+
+  fileprivate var _command: String? = nil
+  fileprivate var _processName: String? = nil
+  fileprivate var _currentWorkingDirectory: String? = nil
+  fileprivate var _sessionID: String? = nil
+  fileprivate var _hostname: String? = nil
+  fileprivate var _exitCode: Int32? = nil
+}
+
 //// Constants
 /// Can be found under fig.constants. Certain legacy constants are included at the top-level for backwards compatibility.
 public struct Fig_Constants {
@@ -2780,6 +2872,7 @@ extension Fig_NotificationType: SwiftProtobuf._ProtoNameProviding {
     5: .same(proto: "NOTIFY_ON_PROCESS_CHANGED"),
     6: .same(proto: "NOTIFY_ON_KEYBINDING_PRESSED"),
     7: .same(proto: "NOTIFY_ON_FOCUS_CHANGED"),
+    8: .same(proto: "NOTIFY_ON_HISTORY_UPDATED"),
   ]
 }
 
@@ -5526,6 +5619,7 @@ extension Fig_Notification: SwiftProtobuf.Message, SwiftProtobuf._MessageImpleme
     5: .standard(proto: "process_change_notification"),
     6: .standard(proto: "keybinding_pressed_notification"),
     7: .standard(proto: "window_focus_changed_notification"),
+    8: .standard(proto: "history_updated_notification"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -5625,6 +5719,19 @@ extension Fig_Notification: SwiftProtobuf.Message, SwiftProtobuf._MessageImpleme
           self.type = .windowFocusChangedNotification(v)
         }
       }()
+      case 8: try {
+        var v: Fig_HistoryUpdatedNotification?
+        var hadOneofValue = false
+        if let current = self.type {
+          hadOneofValue = true
+          if case .historyUpdatedNotification(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.type = .historyUpdatedNotification(v)
+        }
+      }()
       default: break
       }
     }
@@ -5663,6 +5770,10 @@ extension Fig_Notification: SwiftProtobuf.Message, SwiftProtobuf._MessageImpleme
     case .windowFocusChangedNotification?: try {
       guard case .windowFocusChangedNotification(let v)? = self.type else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 7)
+    }()
+    case .historyUpdatedNotification?: try {
+      guard case .historyUpdatedNotification(let v)? = self.type else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 8)
     }()
     case nil: break
     }
@@ -5971,6 +6082,72 @@ extension Fig_WindowFocusChangedNotification: SwiftProtobuf.Message, SwiftProtob
 
   public static func ==(lhs: Fig_WindowFocusChangedNotification, rhs: Fig_WindowFocusChangedNotification) -> Bool {
     if lhs._window != rhs._window {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Fig_HistoryUpdatedNotification: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".HistoryUpdatedNotification"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .same(proto: "command"),
+    2: .standard(proto: "process_name"),
+    3: .standard(proto: "current_working_directory"),
+    4: .standard(proto: "session_id"),
+    5: .same(proto: "hostname"),
+    6: .standard(proto: "exit_code"),
+  ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self._command) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self._processName) }()
+      case 3: try { try decoder.decodeSingularStringField(value: &self._currentWorkingDirectory) }()
+      case 4: try { try decoder.decodeSingularStringField(value: &self._sessionID) }()
+      case 5: try { try decoder.decodeSingularStringField(value: &self._hostname) }()
+      case 6: try { try decoder.decodeSingularInt32Field(value: &self._exitCode) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    try { if let v = self._command {
+      try visitor.visitSingularStringField(value: v, fieldNumber: 1)
+    } }()
+    try { if let v = self._processName {
+      try visitor.visitSingularStringField(value: v, fieldNumber: 2)
+    } }()
+    try { if let v = self._currentWorkingDirectory {
+      try visitor.visitSingularStringField(value: v, fieldNumber: 3)
+    } }()
+    try { if let v = self._sessionID {
+      try visitor.visitSingularStringField(value: v, fieldNumber: 4)
+    } }()
+    try { if let v = self._hostname {
+      try visitor.visitSingularStringField(value: v, fieldNumber: 5)
+    } }()
+    try { if let v = self._exitCode {
+      try visitor.visitSingularInt32Field(value: v, fieldNumber: 6)
+    } }()
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Fig_HistoryUpdatedNotification, rhs: Fig_HistoryUpdatedNotification) -> Bool {
+    if lhs._command != rhs._command {return false}
+    if lhs._processName != rhs._processName {return false}
+    if lhs._currentWorkingDirectory != rhs._currentWorkingDirectory {return false}
+    if lhs._sessionID != rhs._sessionID {return false}
+    if lhs._hostname != rhs._hostname {return false}
+    if lhs._exitCode != rhs._exitCode {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

@@ -10,10 +10,6 @@ end
 set FIG_HOSTNAME (hostname -f 2> /dev/null || hostname)
 
 if [ -t 1 ] && [ -z "$FIG_ENV_VAR" ] || [ -n "$TMUX" ]
-
-  # Gives fig context for cwd in each window.
-  __fig hook init $fish_pid (tty) 2>&1 1>/dev/null
-
   # Run aliases shell script
   if [ -s ~/.fig/user/aliases/_myaliases.sh ]
     bash ~/.fig/user/aliases/*.sh
@@ -52,7 +48,6 @@ if [ -z "$FIG_SHELL_VAR" ]
   end
 
   function fig_preexec --on-event fish_preexec
-    __fig hook pre-exec $fish_pid (tty) 2>&1 1>/dev/null
     fig_osc PreExec
 
     if fig_fn_defined fig_user_mode_prompt
@@ -70,7 +65,6 @@ if [ -z "$FIG_SHELL_VAR" ]
 
   function fig_precmd --on-event fish_prompt
     set -l last_status $status
-    __fig hook prompt $fish_pid (tty) 2>&1 1>/dev/null
 
     if [ $fig_has_set_prompt = 1 ]
       fig_preexec

@@ -192,6 +192,7 @@ export enum NotificationType {
   NOTIFY_ON_PROCESS_CHANGED = 5,
   NOTIFY_ON_KEYBINDING_PRESSED = 6,
   NOTIFY_ON_FOCUS_CHANGED = 7,
+  NOTIFY_ON_HISTORY_UPDATED = 8,
   UNRECOGNIZED = -1,
 }
 
@@ -221,6 +222,9 @@ export function notificationTypeFromJSON(object: any): NotificationType {
     case 7:
     case "NOTIFY_ON_FOCUS_CHANGED":
       return NotificationType.NOTIFY_ON_FOCUS_CHANGED;
+    case 8:
+    case "NOTIFY_ON_HISTORY_UPDATED":
+      return NotificationType.NOTIFY_ON_HISTORY_UPDATED;
     case -1:
     case "UNRECOGNIZED":
     default:
@@ -246,6 +250,8 @@ export function notificationTypeToJSON(object: NotificationType): string {
       return "NOTIFY_ON_KEYBINDING_PRESSED";
     case NotificationType.NOTIFY_ON_FOCUS_CHANGED:
       return "NOTIFY_ON_FOCUS_CHANGED";
+    case NotificationType.NOTIFY_ON_HISTORY_UPDATED:
+      return "NOTIFY_ON_HISTORY_UPDATED";
     default:
       return "UNKNOWN";
   }
@@ -633,6 +639,10 @@ export interface Notification {
     | {
         $case: "windowFocusChangedNotification";
         windowFocusChangedNotification: WindowFocusChangedNotification;
+      }
+    | {
+        $case: "historyUpdatedNotification";
+        historyUpdatedNotification: HistoryUpdatedNotification;
       };
 }
 
@@ -670,6 +680,19 @@ export interface KeybindingPressedNotification {
 
 export interface WindowFocusChangedNotification {
   window?: Window | undefined;
+}
+
+export interface HistoryUpdatedNotification {
+  command?: string | undefined;
+  /** the name of the process */
+  processName?: string | undefined;
+  /** the directory where the user ran the command */
+  currentWorkingDirectory?: string | undefined;
+  /** the value of $TERM_SESSION_ID */
+  sessionId?: string | undefined;
+  hostname?: string | undefined;
+  /** the exit code of the command */
+  exitCode?: number | undefined;
 }
 
 /**
@@ -5906,6 +5929,12 @@ export const Notification = {
         writer.uint32(58).fork()
       ).ldelim();
     }
+    if (message.type?.$case === "historyUpdatedNotification") {
+      HistoryUpdatedNotification.encode(
+        message.type.historyUpdatedNotification,
+        writer.uint32(66).fork()
+      ).ldelim();
+    }
     return writer;
   },
 
@@ -5973,6 +6002,15 @@ export const Notification = {
             $case: "windowFocusChangedNotification",
             windowFocusChangedNotification:
               WindowFocusChangedNotification.decode(reader, reader.uint32()),
+          };
+          break;
+        case 8:
+          message.type = {
+            $case: "historyUpdatedNotification",
+            historyUpdatedNotification: HistoryUpdatedNotification.decode(
+              reader,
+              reader.uint32()
+            ),
           };
           break;
         default:
@@ -6063,6 +6101,17 @@ export const Notification = {
         ),
       };
     }
+    if (
+      object.historyUpdatedNotification !== undefined &&
+      object.historyUpdatedNotification !== null
+    ) {
+      message.type = {
+        $case: "historyUpdatedNotification",
+        historyUpdatedNotification: HistoryUpdatedNotification.fromJSON(
+          object.historyUpdatedNotification
+        ),
+      };
+    }
     return message;
   },
 
@@ -6113,6 +6162,12 @@ export const Notification = {
         ?.windowFocusChangedNotification
         ? WindowFocusChangedNotification.toJSON(
             message.type?.windowFocusChangedNotification
+          )
+        : undefined);
+    message.type?.$case === "historyUpdatedNotification" &&
+      (obj.historyUpdatedNotification = message.type?.historyUpdatedNotification
+        ? HistoryUpdatedNotification.toJSON(
+            message.type?.historyUpdatedNotification
           )
         : undefined);
     return obj;
@@ -6205,6 +6260,18 @@ export const Notification = {
           WindowFocusChangedNotification.fromPartial(
             object.type.windowFocusChangedNotification
           ),
+      };
+    }
+    if (
+      object.type?.$case === "historyUpdatedNotification" &&
+      object.type?.historyUpdatedNotification !== undefined &&
+      object.type?.historyUpdatedNotification !== null
+    ) {
+      message.type = {
+        $case: "historyUpdatedNotification",
+        historyUpdatedNotification: HistoryUpdatedNotification.fromPartial(
+          object.type.historyUpdatedNotification
+        ),
       };
     }
     return message;
@@ -6773,6 +6840,144 @@ export const WindowFocusChangedNotification = {
     } as WindowFocusChangedNotification;
     if (object.window !== undefined && object.window !== null) {
       message.window = Window.fromPartial(object.window);
+    }
+    return message;
+  },
+};
+
+const baseHistoryUpdatedNotification: object = {};
+
+export const HistoryUpdatedNotification = {
+  encode(
+    message: HistoryUpdatedNotification,
+    writer: _m0.Writer = _m0.Writer.create()
+  ): _m0.Writer {
+    if (message.command !== undefined) {
+      writer.uint32(10).string(message.command);
+    }
+    if (message.processName !== undefined) {
+      writer.uint32(18).string(message.processName);
+    }
+    if (message.currentWorkingDirectory !== undefined) {
+      writer.uint32(26).string(message.currentWorkingDirectory);
+    }
+    if (message.sessionId !== undefined) {
+      writer.uint32(34).string(message.sessionId);
+    }
+    if (message.hostname !== undefined) {
+      writer.uint32(42).string(message.hostname);
+    }
+    if (message.exitCode !== undefined) {
+      writer.uint32(48).int32(message.exitCode);
+    }
+    return writer;
+  },
+
+  decode(
+    input: _m0.Reader | Uint8Array,
+    length?: number
+  ): HistoryUpdatedNotification {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = {
+      ...baseHistoryUpdatedNotification,
+    } as HistoryUpdatedNotification;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.command = reader.string();
+          break;
+        case 2:
+          message.processName = reader.string();
+          break;
+        case 3:
+          message.currentWorkingDirectory = reader.string();
+          break;
+        case 4:
+          message.sessionId = reader.string();
+          break;
+        case 5:
+          message.hostname = reader.string();
+          break;
+        case 6:
+          message.exitCode = reader.int32();
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+
+  fromJSON(object: any): HistoryUpdatedNotification {
+    const message = {
+      ...baseHistoryUpdatedNotification,
+    } as HistoryUpdatedNotification;
+    if (object.command !== undefined && object.command !== null) {
+      message.command = String(object.command);
+    }
+    if (object.processName !== undefined && object.processName !== null) {
+      message.processName = String(object.processName);
+    }
+    if (
+      object.currentWorkingDirectory !== undefined &&
+      object.currentWorkingDirectory !== null
+    ) {
+      message.currentWorkingDirectory = String(object.currentWorkingDirectory);
+    }
+    if (object.sessionId !== undefined && object.sessionId !== null) {
+      message.sessionId = String(object.sessionId);
+    }
+    if (object.hostname !== undefined && object.hostname !== null) {
+      message.hostname = String(object.hostname);
+    }
+    if (object.exitCode !== undefined && object.exitCode !== null) {
+      message.exitCode = Number(object.exitCode);
+    }
+    return message;
+  },
+
+  toJSON(message: HistoryUpdatedNotification): unknown {
+    const obj: any = {};
+    message.command !== undefined && (obj.command = message.command);
+    message.processName !== undefined &&
+      (obj.processName = message.processName);
+    message.currentWorkingDirectory !== undefined &&
+      (obj.currentWorkingDirectory = message.currentWorkingDirectory);
+    message.sessionId !== undefined && (obj.sessionId = message.sessionId);
+    message.hostname !== undefined && (obj.hostname = message.hostname);
+    message.exitCode !== undefined && (obj.exitCode = message.exitCode);
+    return obj;
+  },
+
+  fromPartial(
+    object: DeepPartial<HistoryUpdatedNotification>
+  ): HistoryUpdatedNotification {
+    const message = {
+      ...baseHistoryUpdatedNotification,
+    } as HistoryUpdatedNotification;
+    if (object.command !== undefined && object.command !== null) {
+      message.command = object.command;
+    }
+    if (object.processName !== undefined && object.processName !== null) {
+      message.processName = object.processName;
+    }
+    if (
+      object.currentWorkingDirectory !== undefined &&
+      object.currentWorkingDirectory !== null
+    ) {
+      message.currentWorkingDirectory = object.currentWorkingDirectory;
+    }
+    if (object.sessionId !== undefined && object.sessionId !== null) {
+      message.sessionId = object.sessionId;
+    }
+    if (object.hostname !== undefined && object.hostname !== null) {
+      message.hostname = object.hostname;
+    }
+    if (object.exitCode !== undefined && object.exitCode !== null) {
+      message.exitCode = object.exitCode;
     }
     return message;
   },

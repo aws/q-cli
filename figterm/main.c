@@ -17,7 +17,7 @@
 #endif
 
 #define BUFFSIZE (1024 * 100)
-#define FIGTERM_VERSION 2
+#define FIGTERM_VERSION 3
 
 void abort_handler(int sig) {
   log_error("Aborting %d: %d", getpid(), sig);
@@ -143,16 +143,7 @@ void publish_buffer(FigTerm* ft) {
   FigShellState shell_state;
   figterm_get_shell_state(ft, &shell_state);
 
-  size_t buflen = strlen(buffer) +
-    strlen(fig_info->term_session_id) +
-    strlen(fig_info->fig_integration_version) +
-    strlen(shell_state.shell) +
-    strlen(shell_state.tty) +
-    strlen(shell_state.pid);
-
-  char *tmpbuf = malloc(buflen + sizeof(char) * 50);
-  sprintf(
-    tmpbuf,
+  publish_message(
     "fig bg:%s-keybuffer %s %s %s %s 0 %d \"%s\"\n",
     shell_state.shell,
     fig_info->term_session_id,
@@ -162,10 +153,6 @@ void publish_buffer(FigTerm* ft) {
     index,
     buffer
   );
-
-  fig_socket_send(tmpbuf);
-  log_info("done sending %s", tmpbuf);
-  free(tmpbuf);
 }
 
 // Main figterm loop.
@@ -312,6 +299,8 @@ int main(int argc, char *argv[]) {
     pid_t shell_pid = pid;
     log_info("Shell: %d", shell_pid);
     log_info("Figterm: %d", getpid());
+
+    publish_message("fig bg:init %d %s\n", shell_pid, ptc_name);
 
     // On exit fallback to launching same shell as parent if unexpected exit.
     if (atexit(on_figterm_exit) < 0) {

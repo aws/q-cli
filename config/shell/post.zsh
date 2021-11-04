@@ -20,8 +20,6 @@ FIG_HAS_ZSH_PTY_HOOKS=1
 FIG_HAS_SET_PROMPT=0
 
 fig_preexec() {
-  __fig hook pre-exec $$ $TTY 2>&1 1>/dev/null
-
   # Restore user defined prompt before executing.
   [[ -v PS1 ]] && PS1="$FIG_USER_PS1"
   [[ -v PROMPT ]] && PROMPT="$FIG_USER_PROMPT"
@@ -48,8 +46,6 @@ fig_preexec() {
 
 fig_precmd() {
   local LAST_STATUS=$?
-  __fig hook prompt $$ $TTY 2>&1 1>/dev/null
-
   if [ $FIG_HAS_SET_PROMPT -eq 1 ]; then
     # ^C pressed while entering command, call preexec manually to clear fig prompts.
     fig_preexec
