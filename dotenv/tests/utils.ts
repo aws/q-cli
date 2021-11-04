@@ -1,19 +1,16 @@
-import { readdirSync, PathLike } from 'fs';
-import path from 'path';
+import {
+  describe,
+  expect,
+  test,
+  beforeAll,
+  beforeEach,
+  afterAll,
+} from '@jest/globals';
 import Shell from '../shell';
 import Config from '../config';
 import Settings from '../settings';
 
-const getDirectories = (source: PathLike) =>
-  readdirSync(source, { withFileTypes: true })
-    .filter(dirent => dirent.isDirectory())
-    .map(dirent => dirent.name);
-
-const getAbsolutePath = (relative: string) => path.resolve(relative);
-
-const absolutePath = getAbsolutePath('configs');
-
-const makeTestsForShell = (shell: Shell, name: string) => {
+export const makeTestsForShell = (shell: Shell, name: string) => {
   describe(name, () => {
     let env: Record<string, string>;
 
@@ -91,28 +88,3 @@ const makeTestsForShell = (shell: Shell, name: string) => {
     });
   });
 };
-
-describe('shell: bash', () => {
-  Settings.reset();
-  Config.reset();
-  getDirectories(absolutePath).forEach(configDir => {
-    const shell = new Shell({
-      shell: 'bash',
-      args: ['--init-file', `${absolutePath}/${configDir}/.bashrc`],
-    });
-    makeTestsForShell(shell, configDir);
-  });
-});
-
-describe('shell: zsh', () => {
-  getDirectories(absolutePath).forEach(configDir => {
-    const shell = new Shell({
-      shell: 'zsh',
-      env: {
-        ...process.env,
-        ZDOTDIR: `/usr/home/app/configs/${configDir}`,
-      },
-    });
-    makeTestsForShell(shell, configDir);
-  });
-});

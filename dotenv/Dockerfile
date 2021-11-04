@@ -1,4 +1,4 @@
-FROM node:buster
+FROM --platform=linux/arm64v8 arm64v8/node
 
 # Install dependencies
 RUN apt update
@@ -9,25 +9,33 @@ RUN apt install -y \
   bash zsh \
   uuid-runtime netcat-openbsd jq
 
-ENV HOME=/usr/home
-RUN mkdir -p /Applications/Fig.app/
-RUN mkdir -p /usr/home/app/ /usr/home/figterm/ /usr/home/.fig/
+WORKDIR /usr/home/app/
 
-# Set up shell integrations.
-COPY ./config/ /usr/home/config/
-RUN cd /usr/home/config/ && bash ./tools/install_and_upgrade.sh local
-COPY dotenv/bin/fig /usr/home/.fig/bin/
+# Set up testing infrastructure
+COPY ./dotenv/package.json .
+RUN node -v
+RUN npm install
+
+# Copy mock fig executable over.
+COPY ./dotenv .
+
+ENV HOME=/usr/home
+ENV FIG_BUNDLE_EXECUTABLES=/usr/home/.fig_bin
+RUN mkdir -p /Applications/Fig.app/
+RUN mkdir -p /usr/home/app/ /usr/home/figterm/ /usr/home/.fig/ ${FIG_BUNDLE_EXECUTABLES}
+
+RUN cp ./bin/fig ${FIG_BUNDLE_EXECUTABLES}/figcli
+RUN cp ./bin/fig ${FIG_BUNDLE_EXECUTABLES}/fig
 
 # Set up figterm.
 COPY ./figterm/ /usr/home/figterm/
-RUN cd /usr/home/figterm && make clean && make install
+RUN cd /usr/home/figterm && make clean && BUILT_PRODUCTS_DIR=${FIG_BUNDLE_EXECUTABLES} make all
 
-WORKDIR /usr/home/app/
+# Set up config repo.
+COPY ./config/ /usr/home/config/
+RUN mkdir -p /usr/home/config/bin/ && cp -r /usr/home/.fig_bin/* /usr/home/config/bin/
+# Provide easy script for child images to call to add fig to dotfiles.
+RUN echo '!#/bin/bash\ncd /usr/home/config/ && ./tools/install_and_upgrade.sh local\n' > ~/install-fig
+RUN chmod +x ~/install-fig
 
-COPY dotenv/package.json /usr/home/app/
-RUN npm install
-
-COPY ./dotenv .
-
-
-CMD ["npm", "run", "test"]
+CMD ["bash"]

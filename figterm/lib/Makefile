@@ -20,7 +20,6 @@ libfig: libfig_arm.a libfig_x86.a
 	lipo -create -output libfig.a libfig_x86.a libfig_arm.a
 else
 libfig: base64.c string.c log.c pty.c tty.c exit.c proc.c
-	echo I here
 	$(CC) $? $(CFLAGS)
 	ar rv libfig.a $(PROGS)
 endif

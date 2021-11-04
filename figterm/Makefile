@@ -1,4 +1,4 @@
-ROOT=$(shell ./realpath.sh)
+ROOT := $(shell ./realpath.sh)
 include $(ROOT)/Makefile.shared
 
 LIBFIG=$(ROOT)/lib/libfig.a
@@ -57,13 +57,13 @@ $(LIBVTERM):
 	lipo -create -output $(ROOT)/libvterm/lib/libvterm.a $(ROOT)/libvterm/lib/libvterm.x86.a $(ROOT)/libvterm/lib/libvterm.arm.a
 else
 figterm: main.c figterm.c screen.c util.c color.c history.c $(LIBVTERM) $(LIBFIG)
-	$(CC) main.c figterm.c screen.c util.c color.c history.c $(CFLAGS) -o figterm $(LDFLAGS) $(LDLIBS)
+	$(CC) main.c figterm.c screen.c util.c color.c history.c $(CFLAGS) -o $(BUILT_PRODUCTS_DIR)/figterm $(LDFLAGS) $(LDLIBS)
 
 fig_get_shell: get_shell.c
-	$(CC) get_shell.c $(CFLAGS) -o fig_get_shell
+	$(CC) get_shell.c $(CFLAGS) -o $(BUILT_PRODUCTS_DIR)/fig_get_shell
 
 fig_callback: callback.c util.c $(LIBFIG)
-	$(CC) callback.c util.c $(CFLAGS) -o fig_callback $(LDFLAGS) $(LDLIBS)
+	$(CC) callback.c util.c $(CFLAGS) -o $(BUILT_PRODUCTS_DIR)/fig_callback $(LDFLAGS) $(LDLIBS)
 
 $(LIBVTERM):
 	(cd $(ROOT)/libvterm && $(MAKE) clean && $(MAKE) LIBRARY="libvterm.la" PREFIX=$(ROOT)/libvterm install-lib);

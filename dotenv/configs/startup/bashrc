@@ -1,0 +1,2 @@
+PATH="~/.fig/bin:$PATH"
+PROMPT_COMMAND="fig bg:prompt $$ $TTY & disown"

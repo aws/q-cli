@@ -1,0 +1,8 @@
+PATH="$HOME/.fig/bin:$PATH"
+TERMINAL_SESSION_ID=$(uuidgen)
+precmd() {
+  echo hi there
+  fig bg:prompt $$ $TTY &!
+}
+
+add-zsh-hook precmd precmd

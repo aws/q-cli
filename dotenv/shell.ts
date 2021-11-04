@@ -48,6 +48,8 @@ class Shell {
 
   socketId: string;
 
+  startupTime = -1;
+
   constructor(options: PTYOptions) {
     const { env } = options;
     const envWithId = { ...(env || process.env), TERM_SESSION_ID: uuid.v4() };
@@ -61,6 +63,10 @@ class Shell {
       }
     });
     this.firstPromptPromise = this.cli.waitForNextPrompt();
+    const start = Date.now();
+    this.firstPromptPromise.then(() => {
+      this.startupTime = Date.now() - start;
+    });
     this.pty = new PTY({ ...options, env: envWithId });
   }
 
