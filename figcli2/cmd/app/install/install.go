@@ -1,4 +1,4 @@
-package installandupgrade
+package install
 
 import (
 	"bytes"
@@ -137,9 +137,9 @@ func installIntegrations() {
 	}
 }
 
-func NewCmdInstallAndUpgrade() *cobra.Command {
+func NewCmdInstall() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "install-and-upgrade",
+		Use:   "install",
 		Short: "Install and upgrade fig",
 		Args:  cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, arg []string) {

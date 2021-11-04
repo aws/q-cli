@@ -1,7 +1,7 @@
 package app
 
 import (
-	installandupgrade "fig-cli/cmd/app/install-and-upgrade"
+	"fig-cli/cmd/app/install"
 	"fig-cli/cmd/app/onboarding"
 	"fig-cli/cmd/app/running"
 	setpath "fig-cli/cmd/app/set-path"
@@ -20,7 +20,7 @@ func NewCmdApp() *cobra.Command {
 	}
 
 	cmd.AddCommand(onboarding.NewCmdOnboarding())
-	cmd.AddCommand(installandupgrade.NewCmdInstallAndUpgrade())
+	cmd.AddCommand(install.NewCmdInstall())
 	cmd.AddCommand(setpath.NewCmdSetPath())
 	cmd.AddCommand(running.NewCmdRunning())
 	cmd.AddCommand(uninstall.NewCommandUninstall())

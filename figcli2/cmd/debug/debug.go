@@ -2,6 +2,7 @@ package debug
 
 import (
 	"fig-cli/cmd/debug/app"
+	"fig-cli/cmd/debug/build"
 	debugmode "fig-cli/cmd/debug/debug-mode"
 	"fig-cli/cmd/debug/diagnostic"
 	"fig-cli/cmd/debug/dotfiles"
@@ -23,6 +24,7 @@ func NewCmdDebug() *cobra.Command {
 	}
 
 	cmd.AddCommand(app.NewCmdApp())
+	cmd.AddCommand(build.NewCmdBuild())
 	cmd.AddCommand(debugmode.NewCmdDebugMode())
 	cmd.AddCommand(diagnostic.NewCmdDiagnostic())
 	cmd.AddCommand(dotfiles.NewCmdDotfiles())

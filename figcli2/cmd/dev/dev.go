@@ -14,7 +14,6 @@ func NewCmdDev() *cobra.Command {
 	}
 
 	cmd.AddCommand(docs.NewCmdDocs())
-	cmd.AddCommand(build.NewCmdBuild())
 
 	return cmd
 }
