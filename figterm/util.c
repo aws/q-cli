@@ -261,3 +261,34 @@ void publish_json(const char* fmt, ...) {
   free(msg);
   free(tmpbuf);
 }
+
+// https://stackoverflow.com/a/33988826
+char *escaped_str(const char *src) {
+  int i, j;
+
+  for (i = j = 0; src[i] != '\0'; i++) {
+    if (src[i] == '\n' || src[i] == '\t' ||
+        src[i] == '\\' || src[i] == '\"' ||
+        src[i] == '/' || src[i] == '\b' ||
+        src[i] == '\r' || src[i] == '\f') {
+      j++;
+    }
+  }
+  char* pw = malloc(sizeof(char) * (i + j + 1));
+
+  for (i = j = 0; src[i] != '\0'; i++) {
+    switch (src[i]) {
+      case '\n': pw[i+j] = '\\'; pw[i+j+1] = 'n'; j++; break;
+      case '\t': pw[i+j] = '\\'; pw[i+j+1] = 't'; j++; break;
+      case '\\': pw[i+j] = '\\'; pw[i+j+1] = '\\'; j++; break;
+      case '\"': pw[i+j] = '\\'; pw[i+j+1] = '\"'; j++; break;
+      case '/': pw[i+j] = '\\'; pw[i+j+1] = '/'; j++; break;
+      case '\b': pw[i+j] = '\\'; pw[i+j+1] = 'b'; j++; break;
+      case '\r': pw[i+j] = '\\'; pw[i+j+1] = 'r'; j++; break;
+      case '\f': pw[i+j] = '\\'; pw[i+j+1] = 'f'; j++; break;
+      default:   pw[i+j] = src[i]; break;
+    }
+  }
+  pw[i+j] = '\0';
+  return pw;
+}

@@ -139,20 +139,13 @@ void publish_buffer(FigTerm* ft) {
     figterm_log(ft, '.');
   }
 
-  FigInfo *fig_info = get_fig_info();
-  FigShellState shell_state;
-  figterm_get_shell_state(ft, &shell_state);
+  char* context = figterm_get_shell_context(ft);
+  char* buffer_escaped = escaped_str(buffer);
 
-  publish_message(
-    "fig bg:%s-keybuffer %s %s %s %s 0 %d \"%s\"\n",
-    shell_state.shell,
-    fig_info->term_session_id,
-    fig_info->fig_integration_version,
-    shell_state.tty,
-    shell_state.pid,
-    index,
-    buffer
-  );
+  publish_json("{\"hook\":{\"editbuffer\":{\"text\":\"%s\",\"cursor\":\"%s\",\"context\": %s}}}", buffer_escaped, index, context);
+  
+  free(context);
+  free(buffer_escaped);
 }
 
 // Main figterm loop.
@@ -300,7 +293,15 @@ int main(int argc, char *argv[]) {
     log_info("Shell: %d", shell_pid);
     log_info("Figterm: %d", getpid());
 
-    publish_message("fig bg:init %d %s\n", shell_pid, ptc_name);
+    char* context = printf_alloc(
+      "{\"sessionId\":\"%s\",\"pid\":\"%i\",\"ttys\":\"%s\", \"integration_version\": \"%s\"}",
+      fig_info->term_session_id,
+      shell_pid,
+      ptc_name,
+      fig_info->fig_integration_version
+    );
+    publish_json("{\"hook\":{\"init\":{\"context\": %s}}}");
+    free(context);
 
     // On exit fallback to launching same shell as parent if unexpected exit.
     if (atexit(on_figterm_exit) < 0) {
