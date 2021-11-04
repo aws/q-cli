@@ -252,8 +252,8 @@ class IPC: UnixSocketServerDelegate {
       ShellHookManager.shared.shellPromptWillReturn(context: hook.context)
     case .preExec(let hook):
       ShellHookManager.shared.shellWillExecuteCommand(context: hook.context)
-    case .postExec(_):
-      break
+    case .postExec(let hook):
+      API.notifications.post(hook.historyNotification)
     case .keyboardFocusChanged(let hook):
       ShellHookManager.shared.currentTabDidChange(applicationIdentifier: hook.appIdentifier, sessionId: hook.focusedSessionID)
     case .tmuxPaneChanged(_):
