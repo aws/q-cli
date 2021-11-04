@@ -115,5 +115,4 @@ if [ -z "$FIG_SHELL_VAR" ]
   # Prevents weird interaction where setting the title with ANSI escape
   # sequence triggers prompt redraw.
   __fig settings autocomplete.addStatusToTerminalTitle false &
-  __fig hook pre-exec $fish_pid (tty) 2>&1 1>/dev/null
 end
