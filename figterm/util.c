@@ -168,7 +168,7 @@ int fig_socket_send(char* buf) {
 }
 
 int ipc_socket_send(char* buf, int len) {
-  // send to ipc socket.
+  // send to ipc socket. No base64 encoding.
   int st;
   SigHandler* old_handler;
 
@@ -209,18 +209,6 @@ char* printf_alloc(const char* fmt, ...) {
   return tmpbuf;
 }
 
-void publish_message(const char* fmt, ...) {
-  va_list va;
-
-  va_start(va, fmt);
-  char* tmpbuf = vprintf_alloc(fmt, va);
-  va_end(va);
-
-  fig_socket_send(tmpbuf);
-  log_info("done sending %s", tmpbuf);
-  free(tmpbuf);
-}
-
 #define HEADER_PREFIX_LEN 10
 #define HEADER_INT64_LEN 8
 #define HEADER_LEN HEADER_PREFIX_LEN + HEADER_INT64_LEN
@@ -232,6 +220,7 @@ void publish_json(const char* fmt, ...) {
   char* tmpbuf = vprintf_alloc(fmt, va);
   va_end(va);
 
+  // Convert to int64 big endian
   unsigned int buf_len = strlen(tmpbuf);
   unsigned char len[8] = {
     0,

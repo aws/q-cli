@@ -421,20 +421,20 @@ char* figterm_get_shell_context(FigTerm* ft) {
   figterm_get_shell_state(ft, &shell_state);
   figterm_get_shell_pid(ft);
   
-  char* cwd = get_cwd(ft->shell_pid);
-
+  // char* cwd = get_cwd(ft->shell_pid);
+  // \"current_working_directory\":\"%s\"
   char* context = printf_alloc(
-    "{\"pid\":\"%s\",\"ttys\":\"%s\",\"process_name\":\"%s\",\"current_working_directory\":\"%s\",\"session_id\":\"%s\",\"integration_version\": \"%s\",\"hostname\":\"%s\"}",
+    "{\"pid\":\"%s\",\"ttys\":\"%s\",\"process_name\":\"%s\",\"session_id\":\"%s\",\"integration_version\": \"%s\",\"hostname\":\"%s\"}",
     shell_state.pid,
     shell_state.tty,
     shell_state.shell,
-    cwd,
+    // cwd,
     fig_info->term_session_id,
     fig_info->fig_integration_version,
     ft->shell_state.hostname
   );
 
-  free(cwd);
+  //free(cwd);
 
   return context;
 }

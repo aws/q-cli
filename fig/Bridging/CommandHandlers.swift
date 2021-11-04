@@ -109,7 +109,9 @@ extension CommandHandlers {
   
   static func buildCommand(build: String?) -> CommandResponse {
     if let buildMode = Build(rawValue: build ?? "") {
-      Defaults.build = buildMode
+      DispatchQueue.main.async {
+        Defaults.build = buildMode
+      }
       return CommandResponse.with { response in
         response.success.message = buildMode.rawValue;
       }
@@ -183,7 +185,9 @@ extension CommandHandlers {
   }
   
   static func resetCache() -> CommandResponse {
-    WebView.deleteCache()
+    DispatchQueue.main.async {
+      WebView.deleteCache()
+    }
 
     return CommandResponse.with { response in
       response.success.message = "reset cache"
@@ -191,10 +195,12 @@ extension CommandHandlers {
   }
   
   static func toggleAutocompleteDebugMode(setVal: Bool?) -> CommandResponse {
-    if let val = setVal {
-      Defaults.debugAutocomplete = val
-    } else {
-      Defaults.debugAutocomplete = !Defaults.debugAutocomplete
+    DispatchQueue.main.async {
+      if let val = setVal {
+        Defaults.debugAutocomplete = val
+      } else {
+        Defaults.debugAutocomplete = !Defaults.debugAutocomplete
+      }
     }
     
     return CommandResponse.with { response in

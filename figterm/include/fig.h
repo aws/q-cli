@@ -149,7 +149,6 @@ void fig_socket_cleanup();
 char* fig_path(char*);
 char* log_path(char*);
 char* printf_alloc(const char*, ...);
-void publish_message(const char*, ...);
 void publish_json(const char*, ...);
 char *escaped_str(const char *);
 
