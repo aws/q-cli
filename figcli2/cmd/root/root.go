@@ -47,7 +47,8 @@ var rootCmd = &cobra.Command{
 	// This is stupid, I hate golang, why can I not decompose multiple returns into a single line?
 	Version: func() string {
 		version, _ := diagnostics.GetFigVersion()
-		return version
+		build, _ := diagnostics.GetFigBuild()
+		return fmt.Sprintf("%s B%s", version, build)
 	}(),
 	Run: func(cmd *cobra.Command, args []string) {
 		response, err := fig_ipc.RunOpenUiElementCommand(fig_proto.UiElement_MENU_BAR)
