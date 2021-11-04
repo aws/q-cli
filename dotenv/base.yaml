@@ -1,0 +1,10 @@
+services:
+  dotenv-base:
+    image: dotenv-base
+    build:
+      context: ../
+      dockerfile: ./dotenv/Dockerfile
+    extends:
+      file: common.yaml
+      service: common-options
+    entrypoint: echo

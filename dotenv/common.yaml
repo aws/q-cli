@@ -1,6 +1,0 @@
-services:
-  common-options:
-    volumes:
-      - ./:/usr/home/app/
-      - /usr/home/app/node_modules
-    tty: true

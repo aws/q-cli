@@ -13,3 +13,5 @@ fig.xcodeproj/**
 node_modules/
 .eslintcache
 yarn-error.log
+
+dotenv/docker-compose.yaml
