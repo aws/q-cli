@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 dotenv-base
+FROM dotenv-base
 
 COPY bashrc ~/.bashrc
 COPY zshrc ~/.zshrc

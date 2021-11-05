@@ -1,4 +1,4 @@
-FROM --platform=linux/arm64v8 dotenv-base
+FROM dotenv-base
 
 RUN ~/install-fig
 

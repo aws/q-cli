@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 dotenv-base
+FROM dotenv-base
 
 RUN git clone --recursive https://github.com/sorin-ionescu/prezto.git "$HOME/.zprezto"
 

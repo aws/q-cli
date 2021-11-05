@@ -1,4 +1,4 @@
-FROM --platform=linux/arm64v8 arm64v8/node
+FROM node
 
 # Install dependencies
 RUN apt update
@@ -10,6 +10,8 @@ RUN apt install -y \
   uuid-runtime netcat-openbsd jq
 
 WORKDIR /usr/home/app/
+ENV HOME=/usr/home
+ENV FIG_BUNDLE_EXECUTABLES=/usr/home/.fig_bin
 
 # Set up testing infrastructure
 COPY ./dotenv/package.json .
@@ -19,8 +21,6 @@ RUN npm install
 # Copy mock fig executable over.
 COPY ./dotenv .
 
-ENV HOME=/usr/home
-ENV FIG_BUNDLE_EXECUTABLES=/usr/home/.fig_bin
 RUN mkdir -p /Applications/Fig.app/
 RUN mkdir -p /usr/home/app/ /usr/home/figterm/ /usr/home/.fig/ ${FIG_BUNDLE_EXECUTABLES}
 
