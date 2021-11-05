@@ -97,7 +97,7 @@ void write_history_entry(HistoryEntry* entry) {
   );
 
   publish_json(
-    "{\"hook\":{\"postExec\":{\"command\":\"%s\",\"exit_code\":\"%d\", \"context\":%s}}}",
+    "{\"hook\":{\"post_exec\":{\"command\":\"%s\",\"exit_code\":\"%d\", \"context\":%s}}}",
     command_escaped,
     entry->exit_code,
     context

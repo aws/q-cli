@@ -217,7 +217,7 @@ void publish_json(const char* fmt, ...) {
   va_list va;
 
   va_start(va, fmt);
-  char* tmpbuf = vprintf_alloc(fmt, va);
+  char* tmpbuf = malloc(sizeof(char) * 900);//vprintf_alloc(fmt, va);
   va_end(va);
 
   // Convert to int64 big endian

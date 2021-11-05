@@ -61,7 +61,7 @@ static void handle_osc(FigTerm* ft) {
     char* context = figterm_get_shell_context(ft);
 
     publish_json(
-      "{\"hook\":{\"preExec\":{\"context\": %s}}}",
+      "{\"hook\":{\"pre_exec\":{\"context\": %s}}}",
       context
     );
 
