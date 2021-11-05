@@ -94,9 +94,9 @@ static void handle_osc(FigTerm* ft) {
     ft->shell_state.session_id[SESSION_ID_MAX_LEN] = '\0';
   } else if (strneq(ft->osc, "Docker=", 7)) {
     ft->shell_state.in_docker = ft->osc[7] == '1';
-  } else if (strneq(ft->osc, "Hostname=", 7)) {
+  } else if (strneq(ft->osc, "Hostname=", 9)) {
     free(ft->shell_state.hostname);
-    ft->shell_state.hostname = strdup(ft->osc + 7);
+    ft->shell_state.hostname = strdup(ft->osc + 9);
   } else if (strneq(ft->osc, "Log=", 4)) {
     set_logging_level_from_string(ft->osc + 4);
   } else if (strneq(ft->osc, "SSH=", 4)) {

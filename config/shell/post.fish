@@ -66,10 +66,6 @@ if [ -z "$FIG_SHELL_VAR" ]
   function fig_precmd --on-event fish_prompt
     set -l last_status $status
 
-    if [ $fig_has_set_prompt = 1 ]
-      fig_preexec
-    end
-
     fig_osc "Dir=%s" "$PWD"
     fig_osc "Shell=fish"
     fig_osc "PID=%d" "$fish_pid"
@@ -91,6 +87,10 @@ if [ -z "$FIG_SHELL_VAR" ]
       fig_osc "Hostname=%s@%s" "$USER" "$FIG_HOSTNAME"
     else
       fig_osc "Hostname=%s@%s" "root" "$FIG_HOSTNAME"
+    end
+
+    if [ $fig_has_set_prompt = 1 ]
+      fig_preexec
     end
 
     if fig_fn_defined fish_mode_prompt

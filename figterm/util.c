@@ -195,8 +195,11 @@ int ipc_socket_send(char* buf, int len) {
 }
 
 char* vprintf_alloc(const char* fmt, va_list va) {
-  const int len = vsnprintf(NULL, 0, fmt, va);
-  char *tmpbuf = malloc((len + 1) * sizeof(char));
+  va_list arg_copy;
+  va_copy(arg_copy, va);
+  const int len = vsnprintf(NULL, 0, fmt, arg_copy);
+  va_end(arg_copy);
+  char *tmpbuf = malloc(len * sizeof(char));
   vsprintf(tmpbuf, fmt, va);
   return tmpbuf;
 }
@@ -217,7 +220,7 @@ void publish_json(const char* fmt, ...) {
   va_list va;
 
   va_start(va, fmt);
-  char* tmpbuf = malloc(sizeof(char) * 900);//vprintf_alloc(fmt, va);
+  char* tmpbuf = vprintf_alloc(fmt, va);
   va_end(va);
 
   // Convert to int64 big endian
