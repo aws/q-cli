@@ -298,15 +298,15 @@ int main(int argc, char *argv[]) {
     log_info("Shell: %d", shell_pid);
     log_info("Figterm: %d", getpid());
 
-    // char* context = printf_alloc(
-    //   "{\"session_id\":\"%s\",\"pid\":\"%i\",\"ttys\":\"%s\",\"integration_version\":\"%s\"}",
-    //   fig_info->term_session_id,
-    //   shell_pid,
-    //   ptc_name,
-    //   fig_info->fig_integration_version
-    // );
-    // publish_json("{\"hook\":{\"init\":{\"context\": %s}}}", context);
-    // free(context);
+    char* context = printf_alloc(
+      "{\"session_id\":\"%s\",\"pid\":\"%i\",\"ttys\":\"%s\",\"integration_version\":\"%s\"}",
+      fig_info->term_session_id,
+      shell_pid,
+      ptc_name,
+      fig_info->fig_integration_version
+    );
+    publish_json("{\"hook\":{\"init\":{\"context\": %s}}}", context);
+    free(context);
 
     // On exit fallback to launching same shell as parent if unexpected exit.
     if (atexit(on_figterm_exit) < 0) {
