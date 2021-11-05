@@ -1,7 +1,6 @@
 package dev
 
 import (
-	"fig-cli/cmd/dev/build"
 	"fig-cli/cmd/settings/docs"
 
 	"github.com/spf13/cobra"
