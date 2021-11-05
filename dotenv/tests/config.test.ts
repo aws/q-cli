@@ -27,6 +27,7 @@ describe('Testing ~/.fig/user/config', () => {
     await shell.initialized();
 
     const transcript = shell.pty.getSessionTranscript();
+    console.log({ transcript, settings: Settings.get() });
     expect(transcript.match(UPDATE_ALERT)).toBeTruthy();
     expect(transcript.includes(AUTOUPDATE_TEXT)).toBeTruthy();
 

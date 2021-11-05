@@ -4,10 +4,7 @@
   "description": "Testing for shell integration and figterm",
   "main": "test.js",
   "scripts": {
-    "test": "jest --runInBand --verbose",
-    "test:bash": "npm run test -- -t bash",
-    "test:config": "npm run test -- -t config",
-    "test:zsh": "npm run test -- -t zsh",
+    "test": "jest --runInBand",
     "lint": "eslint src",
     "precommit": "lint-staged",
     "lint:fix": "npm run lint -- --fix"

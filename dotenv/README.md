@@ -2,15 +2,12 @@
 
 Testing for shell integrations and figterm
 
-Run `docker build -t {image tag} -f ./Dockerfile ..` to build the Docker
-image.
+Run `DOCKER_DEFAULT_PLATFORM=linux/arm64 docker-compose build` to build
+the Docker images.
 
-You should rebuild the image whenever you make changes to any dependencies
-(including npm dependencies, and your local figterm or config folders).
+The platform variable is necessary on M1's where Docker's resolution of
+base image architectures is a little buggy.
 
-Run `docker run -it -v "$(pwd):/usr/home/app/" -v /usr/home/app/node_modules {image tag}`
-from this directory to run tests. The `-v` flags will mount the current
-directory so that you don't need to rebuild if you are just changing js
-code here.
+Then run `docker-compose up -d` to run the images.
 
 `cp -r configs/blank configs/<new_config_name>` to create a new set of config files

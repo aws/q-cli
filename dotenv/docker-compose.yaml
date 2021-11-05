@@ -1,10 +1,12 @@
-version: "3.9"
 services:
   dotenv-base:
     image: dotenv-base
     build:
       context: ../
       dockerfile: ./dotenv/Dockerfile
+    extends:
+      file: common.yaml
+      service: common-options
     volumes:
       - ./:/usr/home/app/
       - /usr/home/app/node_modules
@@ -12,42 +14,48 @@ services:
   blank:
     build: ./configs/blank
     command: tests/bash tests/zsh tests/config
-    volumes_from:
-      - dotenv-base
+    extends:
+      file: common.yaml
+      service: common-options
     environment:
       ENV_NAME: blank
   emulate:
     build: ./configs/emulate
     command: tests/zsh
-    volumes_from:
-      - dotenv-base
+    extends:
+      file: common.yaml
+      service: common-options
     environment:
       ENV_NAME: emulate
   oh-my-zsh:
     build: ./configs/oh-my-zsh/
     command: tests/zsh
-    volumes_from:
-      - dotenv-base
+    extends:
+      file: common.yaml
+      service: common-options
     environment:
       ENV_NAME: oh-my-zsh
   prezto:
     build: ./configs/prezto/
     command: tests/zsh
-    volumes_from:
-      - dotenv-base
+    extends:
+      file: common.yaml
+      service: common-options
     environment:
       ENV_NAME: prezto
   starship:
     build: ./configs/starship/
     command: tests/bash tests/zsh
-    volumes_from:
-      - dotenv-base
+    extends:
+      file: common.yaml
+      service: common-options
     environment:
       ENV_NAME: starship
   startup:
     build: ./configs/startup/
     command: tests/startup
-    volumes_from:
-      - dotenv-base
+    extends:
+      file: common.yaml
+      service: common-options
     environment:
       ENV_NAME: startup
