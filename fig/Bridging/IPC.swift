@@ -173,7 +173,9 @@ class IPC: UnixSocketServerDelegate {
     case .command(let command):
       try handleCommand(command, from: socket, using: encoding)
     case .hook(let hook):
-      handleHook(hook)
+      DispatchQueue.main.async {
+        self.handleHook(hook)
+      }
     case .none:
       break
 

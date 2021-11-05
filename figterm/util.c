@@ -168,7 +168,7 @@ int fig_socket_send(char* buf) {
 }
 
 int ipc_socket_send(char* buf, int len) {
-  // send to ipc socket.
+  // send to ipc socket. No base64 encoding.
   int st;
   SigHandler* old_handler;
 
@@ -195,8 +195,11 @@ int ipc_socket_send(char* buf, int len) {
 }
 
 char* vprintf_alloc(const char* fmt, va_list va) {
-  const int len = vsnprintf(NULL, 0, fmt, va);
-  char *tmpbuf = malloc((len + 1) * sizeof(char));
+  va_list arg_copy;
+  va_copy(arg_copy, va);
+  const int len = vsnprintf(NULL, 0, fmt, arg_copy);
+  va_end(arg_copy);
+  char *tmpbuf = malloc(len * sizeof(char));
   vsprintf(tmpbuf, fmt, va);
   return tmpbuf;
 }
@@ -207,18 +210,6 @@ char* printf_alloc(const char* fmt, ...) {
   char* tmpbuf = vprintf_alloc(fmt, va);
   va_end(va);
   return tmpbuf;
-}
-
-void publish_message(const char* fmt, ...) {
-  va_list va;
-
-  va_start(va, fmt);
-  char* tmpbuf = vprintf_alloc(fmt, va);
-  va_end(va);
-
-  fig_socket_send(tmpbuf);
-  log_info("done sending %s", tmpbuf);
-  free(tmpbuf);
 }
 
 #define HEADER_PREFIX_LEN 10
@@ -232,6 +223,7 @@ void publish_json(const char* fmt, ...) {
   char* tmpbuf = vprintf_alloc(fmt, va);
   va_end(va);
 
+  // Convert to int64 big endian
   unsigned int buf_len = strlen(tmpbuf);
   unsigned char len[8] = {
     0,
@@ -260,4 +252,35 @@ void publish_json(const char* fmt, ...) {
   log_info("done sending %s", tmpbuf);
   free(msg);
   free(tmpbuf);
+}
+
+// https://stackoverflow.com/a/33988826
+char *escaped_str(const char *src) {
+  int i, j;
+
+  for (i = j = 0; src[i] != '\0'; i++) {
+    if (src[i] == '\n' || src[i] == '\t' ||
+        src[i] == '\\' || src[i] == '\"' ||
+        src[i] == '/' || src[i] == '\b' ||
+        src[i] == '\r' || src[i] == '\f') {
+      j++;
+    }
+  }
+  char* pw = malloc(sizeof(char) * (i + j + 1));
+
+  for (i = j = 0; src[i] != '\0'; i++) {
+    switch (src[i]) {
+      case '\n': pw[i+j] = '\\'; pw[i+j+1] = 'n'; j++; break;
+      case '\t': pw[i+j] = '\\'; pw[i+j+1] = 't'; j++; break;
+      case '\\': pw[i+j] = '\\'; pw[i+j+1] = '\\'; j++; break;
+      case '\"': pw[i+j] = '\\'; pw[i+j+1] = '\"'; j++; break;
+      case '/': pw[i+j] = '\\'; pw[i+j+1] = '/'; j++; break;
+      case '\b': pw[i+j] = '\\'; pw[i+j+1] = 'b'; j++; break;
+      case '\r': pw[i+j] = '\\'; pw[i+j+1] = 'r'; j++; break;
+      case '\f': pw[i+j] = '\\'; pw[i+j+1] = 'f'; j++; break;
+      default:   pw[i+j] = src[i]; break;
+    }
+  }
+  pw[i+j] = '\0';
+  return pw;
 }

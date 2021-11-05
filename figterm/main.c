@@ -51,7 +51,7 @@ void abort_handler(int sig) {
 char* _parent_shell = NULL;
 char* _parent_shell_is_login = NULL;
 
-void launch_shell() {
+void launch_shell(bool fatal_crash) {
   if (_parent_shell == NULL) {
     if ((_parent_shell = getenv("FIG_SHELL")) == NULL)
       EXIT(1);
@@ -76,6 +76,11 @@ void launch_shell() {
   unsetenv("FIG_SHELL");
   unsetenv("FIG_IS_LOGIN_SHELL");
   unsetenv("FIG_START_TEXT");
+
+  if (fatal_crash) {
+    setenv("FIG_TERM_CRASHED", "1", 1);
+  }
+
   if (execvp(args[0], args) < 0) {
     EXIT(1);
   }
@@ -95,7 +100,7 @@ void on_figterm_exit() {
   tty_reset(STDIN_FILENO);
   if (status != 0) {
     // Unexpected exit, fallback to exec parent shell.
-    launch_shell();
+    launch_shell(true);
   }
 }
 
@@ -139,20 +144,13 @@ void publish_buffer(FigTerm* ft) {
     figterm_log(ft, '.');
   }
 
-  FigInfo *fig_info = get_fig_info();
-  FigShellState shell_state;
-  figterm_get_shell_state(ft, &shell_state);
+  char* context = figterm_get_shell_context(ft);
+  char* buffer_escaped = escaped_str(buffer);
 
-  publish_message(
-    "fig bg:%s-keybuffer %s %s %s %s 0 %d \"%s\"\n",
-    shell_state.shell,
-    fig_info->term_session_id,
-    fig_info->fig_integration_version,
-    shell_state.tty,
-    shell_state.pid,
-    index,
-    buffer
-  );
+  publish_json("{\"hook\":{\"edit_buffer\":{\"text\":\"%s\",\"cursor\":\"%i\",\"context\": %s}}}", buffer_escaped, index, context);
+  
+  free(context);
+  free(buffer_escaped);
 }
 
 // Main figterm loop.
@@ -300,7 +298,15 @@ int main(int argc, char *argv[]) {
     log_info("Shell: %d", shell_pid);
     log_info("Figterm: %d", getpid());
 
-    publish_message("fig bg:init %d %s\n", shell_pid, ptc_name);
+    // char* context = printf_alloc(
+    //   "{\"session_id\":\"%s\",\"pid\":\"%i\",\"ttys\":\"%s\",\"integration_version\":\"%s\"}",
+    //   fig_info->term_session_id,
+    //   shell_pid,
+    //   ptc_name,
+    //   fig_info->fig_integration_version
+    // );
+    // publish_json("{\"hook\":{\"init\":{\"context\": %s}}}", context);
+    // free(context);
 
     // On exit fallback to launching same shell as parent if unexpected exit.
     if (atexit(on_figterm_exit) < 0) {
@@ -330,5 +336,5 @@ int main(int argc, char *argv[]) {
   // Child process becomes pty child and launches shell.
   ptyc_open(fdp, ptc_name, &term, &ws);
 fallback:
-  launch_shell();
+  launch_shell(false);
 }

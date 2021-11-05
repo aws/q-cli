@@ -175,7 +175,9 @@ extension CommandHandlers {
   }
   
   static func resetCache() -> CommandResponse {
-    WebView.deleteCache()
+    DispatchQueue.main.async {
+      WebView.deleteCache()
+    }
 
     return CommandResponse.with { response in
       response.success.message = "reset cache"
@@ -183,10 +185,12 @@ extension CommandHandlers {
   }
   
   static func toggleAutocompleteDebugMode(setVal: Bool?) -> CommandResponse {
-    if let val = setVal {
-      Defaults.debugAutocomplete = val
-    } else {
-      Defaults.debugAutocomplete = !Defaults.debugAutocomplete
+    DispatchQueue.main.async {
+      if let val = setVal {
+        Defaults.debugAutocomplete = val
+      } else {
+        Defaults.debugAutocomplete = !Defaults.debugAutocomplete
+      }
     }
     
     return CommandResponse.with { response in

@@ -32,16 +32,7 @@ struct FigTerm {
 static void handle_osc(FigTerm* ft) {
   // Handle osc after we received the final fragment.
   if (strcmp(ft->osc, "NewCmd") == 0) {
-    char* context = printf_alloc(
-      "{\"sessionId\":\"%s\",\"pid\":\"%s\",\"hostname\":\"%s\",\"ttys\":\"%s\", \"integration_version\": \"%s\", \"process_name\":\"%s\"}",
-      ft->shell_state.session_id,
-      ft->shell_state.pid,
-      ft->shell_state.hostname,
-      ft->shell_state.tty,
-      getenv("FIG_INTEGRATION_VERSION"),
-      ft->shell_state.shell
-    );
-
+    char* context = figterm_get_shell_context(ft);
     publish_json(
       "{\"hook\":{\"prompt\":{\"context\": %s}}}",
       context
@@ -67,18 +58,10 @@ static void handle_osc(FigTerm* ft) {
     figterm_screen_set_attr(ft->screen, FIGTERM_ATTR_IN_PROMPT, &ft->shell_state.in_prompt);
   } else if (strcmp(ft->osc, "PreExec") == 0) {
 
-    char* context = printf_alloc(
-      "{\"sessionId\":\"%s\",\"pid\":\"%s\",\"hostname\":\"%s\",\"ttys\":\"%s\", \"integration_version\": \"%s\", \"process_name\":\"%s\"}",
-      ft->shell_state.session_id,
-      ft->shell_state.pid,
-      ft->shell_state.hostname,
-      ft->shell_state.tty,
-      getenv("FIG_INTEGRATION_VERSION"),
-      ft->shell_state.shell
-    );
+    char* context = figterm_get_shell_context(ft);
 
     publish_json(
-      "{\"hook\":{\"preExec\":{\"context\": %s}}}",
+      "{\"hook\":{\"pre_exec\":{\"context\": %s}}}",
       context
     );
 
@@ -111,9 +94,9 @@ static void handle_osc(FigTerm* ft) {
     ft->shell_state.session_id[SESSION_ID_MAX_LEN] = '\0';
   } else if (strneq(ft->osc, "Docker=", 7)) {
     ft->shell_state.in_docker = ft->osc[7] == '1';
-  } else if (strneq(ft->osc, "Hostname=", 7)) {
+  } else if (strneq(ft->osc, "Hostname=", 9)) {
     free(ft->shell_state.hostname);
-    ft->shell_state.hostname = strdup(ft->osc + 7);
+    ft->shell_state.hostname = strdup(ft->osc + 9);
   } else if (strneq(ft->osc, "Log=", 4)) {
     set_logging_level_from_string(ft->osc + 4);
   } else if (strneq(ft->osc, "SSH=", 4)) {
@@ -426,4 +409,32 @@ void figterm_preexec_hook(FigTerm* ft) {
     ft->shell_state.hostname,
     0
   );
+}
+
+pid_t figterm_get_shell_pid(FigTerm* ft) {
+  return (ft == NULL) ? -1 : ft->shell_pid;
+}
+
+char* figterm_get_shell_context(FigTerm* ft) {
+  FigInfo *fig_info = get_fig_info();
+  FigShellState shell_state;
+  figterm_get_shell_state(ft, &shell_state);
+  figterm_get_shell_pid(ft);
+  
+  // char* cwd = get_cwd(ft->shell_pid);
+  // \"current_working_directory\":\"%s\"
+  char* context = printf_alloc(
+    "{\"pid\":\"%s\",\"ttys\":\"%s\",\"process_name\":\"%s\",\"session_id\":\"%s\",\"integration_version\": \"%s\",\"hostname\":\"%s\"}",
+    shell_state.pid,
+    shell_state.tty,
+    shell_state.shell,
+    // cwd,
+    fig_info->term_session_id,
+    fig_info->fig_integration_version,
+    ft->shell_state.hostname
+  );
+
+  //free(cwd);
+
+  return context;
 }
