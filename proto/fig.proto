@@ -18,6 +18,17 @@ message ClientOriginatedMessage {
       InsertTextRequest insert_text_request = 110;
       UpdateApplicationPropertiesRequest update_application_properties_request = 111;
       DestinationOfSymbolicLinkRequest destination_of_symbolic_link_request = 112;
+      GetDefaultsPropertyRequest get_defaults_property_request = 113;
+      UpdateDefaultsPropertyRequest update_defaults_property_request = 114;
+      TelemetryAliasRequest telemetry_alias_request = 115;
+      TelemetryIdentifyRequest telemetry_identify_request = 116;
+      TelemetryTrackRequest telemetry_track_request = 117;
+      OnboardingRequest onboarding_request = 118;
+      WindowFocusRequest window_focus_request = 119;
+      OpenInExternalApplicationRequest open_in_external_application_request = 120;
+      GetConfigPropertyRequest get_config_property_request = 121;
+      UpdateConfigPropertyRequest update_config_property_request = 122;
+
   }
 }
 
@@ -34,6 +45,8 @@ message ServerOriginatedMessage {
     ContentsOfDirectoryResponse contents_of_directory_response = 103;
     GetSettingsPropertyResponse get_settings_property_response = 104;
     DestinationOfSymbolicLinkResponse destination_of_symbolic_link_response = 105;
+    GetDefaultsPropertyResponse get_defaults_property_response = 106;
+    GetConfigPropertyResponse get_config_property_response = 107;
 
     Notification notification = 1000;
   }
@@ -168,10 +181,14 @@ message PositionWindowResponse {
 
 message ReadFileRequest {
   optional FilePath path = 1;
+  optional bool isBinaryFile = 2;
 }
 
 message ReadFileResponse {
-  optional bytes data = 1;
+  oneof type {
+    bytes data = 1; 
+    string text = 2;
+  }
 }
 
 message WriteFileRequest {
@@ -199,6 +216,47 @@ message DestinationOfSymbolicLinkResponse {
     optional FilePath destination = 1;
 }
 
+/// Defaults
+
+message DefaultsValue {
+  oneof type {
+    bool null = 1;
+    bool boolean = 2;
+    string string = 3;
+    int64 integer = 4;
+  }
+}
+
+message GetDefaultsPropertyRequest {
+    optional string key = 1;
+}
+
+message GetDefaultsPropertyResponse {
+    optional string key = 1;
+    optional DefaultsValue value = 2;
+}
+
+message UpdateDefaultsPropertyRequest {
+  optional string key = 1;
+  optional DefaultsValue value = 2;
+}
+
+/// Config
+
+message GetConfigPropertyRequest {
+  optional string key = 1;
+}
+
+message GetConfigPropertyResponse {
+  optional string value = 1;
+}
+
+message UpdateConfigPropertyRequest {
+  optional string key = 1;
+  optional string value = 2;
+}
+
+
 /// Settings
 
 message GetSettingsPropertyRequest {
@@ -215,6 +273,53 @@ message UpdateSettingsPropertyRequest {
   optional string value = 2;
 }
 
+/// Telemetry
+
+message TelemetryProperty {
+  string key = 1;
+  string value = 2;
+}
+
+message TelemetryAliasRequest {
+  optional string userId = 1;
+}
+
+message TelemetryTrackRequest {
+  optional string event = 1;
+  repeated TelemetryProperty properties = 2;
+}
+
+message TelemetryIdentifyRequest {
+  repeated TelemetryProperty traits = 2;
+}
+
+/// Onboarding
+
+enum OnboardingAction {
+  INSTALLATION_SCRIPT = 0;
+  PROMPT_FOR_ACCESSIBILITY_PERMISSION = 1;
+  LAUNCH_SHELL_ONBOARDING = 3;
+  UNINSTALL = 4;
+}
+
+message OnboardingRequest {
+  OnboardingAction action = 1;
+}
+
+/// Window Focus
+
+enum FocusAction {
+  TAKE_FOCUS = 0;
+  RETURN_FOCUS = 1;
+}
+
+message WindowFocusRequest {
+  optional FocusAction type = 1;
+}
+
+message OpenInExternalApplicationRequest {
+  optional string url = 1;
+}
 
 /// Actions
 
@@ -259,6 +364,8 @@ enum NotificationType {
   NOTIFY_ON_PROCESS_CHANGED = 5;
   NOTIFY_ON_KEYBINDING_PRESSED = 6;
   NOTIFY_ON_FOCUS_CHANGED = 7;
+  NOTIFY_ON_HISTORY_UPDATED = 8;
+
 }
 
 message Notification {
@@ -270,6 +377,8 @@ message Notification {
     ProcessChangedNotification process_change_notification= 5;
     KeybindingPressedNotification keybinding_pressed_notification = 6;
     WindowFocusChangedNotification window_focus_changed_notification = 7;
+    HistoryUpdatedNotification history_updated_notification = 8;
+
   }
 }
 
@@ -307,6 +416,16 @@ message KeybindingPressedNotification {
 
 message WindowFocusChangedNotification {
   optional Window window = 1;
+}
+
+message HistoryUpdatedNotification {
+  optional string command = 1;
+  optional string process_name = 2; // the name of the process
+  optional string current_working_directory = 3; // the directory where the user ran the command
+  optional string session_id = 4; // the value of $TERM_SESSION_ID
+  optional string hostname = 5;
+  optional int32 exit_code = 6; // the exit code of the command
+
 }
 
 /// Constants

@@ -442,7 +442,7 @@ extension String {
 
 extension KeystrokeBuffer {
   enum Backing: String {
-    case zle = "zle"
+    case zle = "zsh"
     case fish = "fish"
     case bash = "bash"
   }

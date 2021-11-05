@@ -1,4 +1,4 @@
-import { NotificationType,ProcessChangedNotification, ShellPromptReturnedNotification } from "./fig";
+import { NotificationType,ProcessChangedNotification, ShellPromptReturnedNotification, HistoryUpdatedNotification } from "./fig";
 import { sendInsertTextRequest } from './requests'
 import { _subscribe } from "./notifications";
 
@@ -28,6 +28,19 @@ const subscribeToPromptReturnedNotifications = (handler: (notification: ShellPro
     })
 }
 
+const subscribeToHistoryUpdatedNotifications = (handler: (notification: HistoryUpdatedNotification) => boolean | undefined) => {
+    return _subscribe({ type: NotificationType.NOTIFY_ON_HISTORY_UPDATED }, (notification) => {
+        switch (notification?.type?.$case) {
+            case "historyUpdatedNotification":
+                return handler(notification.type.historyUpdatedNotification)
+            default:
+                break;
+        }
+
+        return false
+    })
+}
+
 const insert =  async (text: string) =>
     sendInsertTextRequest({
         type: { $case: "text", text: text}
@@ -35,7 +48,8 @@ const insert =  async (text: string) =>
 
 const promptDidReturn = { subscribe: subscribeToPromptReturnedNotifications}
 const processDidChange = { subscribe: subscribeToProcessChangedNotifications };
+const historyUpdated = { subscribe: subscribeToHistoryUpdatedNotifications };
 
-const Shell = { processDidChange, promptDidReturn, insert };
+const Shell = { processDidChange, promptDidReturn, historyUpdated, insert };
 
 export default Shell;

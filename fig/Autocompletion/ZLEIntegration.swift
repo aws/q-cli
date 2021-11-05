@@ -59,7 +59,7 @@ class ZLEIntegration: ShellIntegration {
      }
   }
   
-  static func insert(with insertionText: String, version: Int?) {
+  static func insert(with insertionText: String, version: String?) {
     let backspaceLiteral = Character("\u{8}")
     let cursorLeftLiteral = String("\u{1b}[D")
     let cursorLeftPlaceholder =  Character("\u{0}")
@@ -132,7 +132,7 @@ class ZLEIntegration: ShellIntegration {
       switch version {
         case nil:
           ShellBridge.injectUnicodeString(insertionText, delay: 0.01, completion: nil)
-        case 1, 2:
+        case "1", "2":
           ShellBridge.injectUnicodeString("◧")
         default:
           ShellBridge.injectUnicodeString(isImmediate ? "◨": "◧")

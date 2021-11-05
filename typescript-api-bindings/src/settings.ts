@@ -3,7 +3,7 @@ import { _subscribe } from "./notifications";
 
 import { sendGetSettingsPropertyRequest, sendUpdateSettingsPropertyRequest } from "./requests"
 const subscribe = (handler: (notification: SettingsChangedNotification) => boolean | undefined) => {
-    _subscribe({ type: NotificationType.NOTIFY_ON_SETTINGS_CHANGE }, (notification) => {
+    return _subscribe({ type: NotificationType.NOTIFY_ON_SETTINGS_CHANGE }, (notification) => {
         switch (notification?.type?.$case) {
             case "settingsChangedNotification":
                 return handler(notification.type.settingsChangedNotification)
@@ -38,7 +38,11 @@ const set = async (
       key: key,
     });
 
+const current = async () => {
+    let all = await sendGetSettingsPropertyRequest({}); 
+    return JSON.parse(all.jsonBlob ?? "{}")
+}
 const didChange = { subscribe }
-const Settings = { didChange, get, set, remove };
+const Settings = { didChange, get, set, remove, current };
 
 export default Settings;

@@ -53,6 +53,8 @@ class Settings {
   static let useControlRForHistory = "history.ctrl-r"
   static let shouldInterceptCommandI = "autocomplete.alwaysInterceptCommandI"
   static let inputMethodShouldPollForActivation = "integrations.input-method.shouldPollForActivation"
+  static let ptyTranscript = "developer.pty.transcript"
+
 
   static let keyAliases = [
     "super": "command",
@@ -444,12 +446,22 @@ extension Settings {
         guard request.hasKey else {
             throw APIError.generic(message: "No key provided with request")
         }
-        
-        guard let value = Settings.shared.getValue(forKey: request.key) else {
-            throw APIError.generic(message: "No value for key")
-        }
-        
-        guard let data = try? JSONSerialization.data(withJSONObject: value, options: .prettyPrinted) else {
+      
+        let value: Any = try {
+          
+          if request.hasKey {
+            if let value = Settings.shared.getValue(forKey: request.key) {
+              return value
+            } else {
+              throw APIError.generic(message: "No value for key")
+            }
+          } else {
+            return Settings.shared.currentSettings
+          }
+          
+        }()
+      
+        guard let data = try? JSONSerialization.data(withJSONObject: value, options: [ .prettyPrinted, .fragmentsAllowed]) else {
             throw APIError.generic(message: "Could not convert value for key to JSON")
         }
                 
@@ -463,12 +475,22 @@ extension Settings {
             throw APIError.generic(message: "No key provided with request")
         }
         
+        let value: Any? = {
+          let valueString = request.hasValue ? request.value : nil
+            guard let valueData = valueString?.data(using: .utf8) else {
+                return nil
+            }
+            
+            let value = try? JSONSerialization.jsonObject(with: valueData, options: .allowFragments)
+            
+            if value is NSNull {
+                return nil
+            }
+            
+            return value
+        }()
         
-        if request.hasValue {
-            Settings.shared.set(value: request.value, forKey: request.key)
-        } else {
-             Settings.shared.set(value: nil, forKey: request.key)
-        }
+        Settings.shared.set(value: value, forKey: request.key)
         
         return true
         

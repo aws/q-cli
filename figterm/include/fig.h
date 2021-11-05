@@ -73,6 +73,7 @@ typedef struct HistoryEntry HistoryEntry;
 HistoryEntry* history_entry_new(
   char* command,
   char* shell,
+  char* pid,
   char* session_id,
   char* cwd,
   unsigned long time,
@@ -125,6 +126,8 @@ bool figterm_is_disabled(FigTerm*);
 bool figterm_has_seen_prompt(FigTerm*);
 bool figterm_can_send_buffer(FigTerm*);
 void figterm_update_fish_suggestion_color(FigTerm*, const char*);
+pid_t figterm_get_shell_pid(FigTerm*);
+char* figterm_get_shell_context(FigTerm*);
 
 void figterm_preexec_hook(FigTerm*);
 
@@ -145,6 +148,9 @@ int fig_socket_listen();
 void fig_socket_cleanup();
 char* fig_path(char*);
 char* log_path(char*);
+char* printf_alloc(const char*, ...);
+void publish_json(const char*, ...);
+char *escaped_str(const char *);
 
 // libfig
 

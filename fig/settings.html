@@ -593,6 +593,7 @@
         </div>
       </section>
     </div>
+    <script src="./API.js"></script>
     <script>
       const builtInThemes = {
         dark: {
@@ -986,9 +987,10 @@
         if (theme === "light" || theme === "dark") {
           updateTheme(builtInThemes[theme]);
         } else {
-          fig.fread(`~/.fig/themes/${theme}.json`, (res) =>
-            updateTheme(JSON.parse(res))
-          );
+          sendMessage({ readFileRequest: { path: { path: `~/.fig/themes/${theme}.json`, expandTildeInPath: true}}}, (res) => {
+            updateTheme(JSON.parse(res.readFileResponse.text))
+
+          })
         }
       }
 
@@ -1019,23 +1021,18 @@
       }
 
       function handleContinue() {
-          fig.private({
-            type: "settings",
-            data: { key: "autocomplete.theme", value: JSON.stringify(settings["autocomplete.theme"]) },
-          });
+        
+        sendMessage({ updateSettingsPropertyRequest: { key: "autocomplete.theme", value: JSON.stringify(settings["autocomplete.theme"]) }})
 
-        window.location.href = `${fig.remoteURL}/onboarding/signin.html`;
+        window.location.href = `${fig.constants.remote}/onboarding/signin.html`;
       }
         
         // Load themes dynamically!
-        fig.onboarding("themes", (out) => {
-            console.log("Themes:", out)
-            let options = out.split("\n").map(theme => {
-                return `<option value="${theme}">${theme}</option>`
-            })
-
-            document.querySelector("#theme-select").innerHTML = options.join("\n")
+        let options = fig.constants.themes.split("\n").map(theme => {
+            return `<option value="${theme}">${theme}</option>`
         })
+
+        document.querySelector("#theme-select").innerHTML = options.join("\n")
         
     </script>
   </body>
