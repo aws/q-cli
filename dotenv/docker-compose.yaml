@@ -7,55 +7,48 @@ services:
     extends:
       file: common.yaml
       service: common-options
-    volumes:
-      - ./:/usr/home/app/
-      - /usr/home/app/node_modules
     entrypoint: echo
   blank:
+    container_name: blank
     build: ./configs/blank
     command: tests/bash tests/zsh tests/config
     extends:
       file: common.yaml
       service: common-options
-    environment:
-      ENV_NAME: blank
   emulate:
+    container_name: emulate
     build: ./configs/emulate
     command: tests/zsh
     extends:
       file: common.yaml
       service: common-options
-    environment:
-      ENV_NAME: emulate
   oh-my-zsh:
+    container_name: oh-my-zsh
     build: ./configs/oh-my-zsh/
     command: tests/zsh
     extends:
       file: common.yaml
       service: common-options
     environment:
-      ENV_NAME: oh-my-zsh
+      ZSH_THEME: robyrussell
   prezto:
+    container_name: prezto
     build: ./configs/prezto/
     command: tests/zsh
     extends:
       file: common.yaml
       service: common-options
-    environment:
-      ENV_NAME: prezto
   starship:
+    container_name: starship
     build: ./configs/starship/
     command: tests/bash tests/zsh
     extends:
       file: common.yaml
       service: common-options
-    environment:
-      ENV_NAME: starship
   startup:
+    container_name: startup
     build: ./configs/startup/
     command: tests/startup
     extends:
       file: common.yaml
       service: common-options
-    environment:
-      ENV_NAME: startup

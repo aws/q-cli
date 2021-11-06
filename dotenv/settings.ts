@@ -7,7 +7,7 @@ const get = () => JSON.parse(String(fs.readFileSync(SETTINGS_PATH)));
 const getValue = (key: string) => get()[key];
 
 const set = (params: Record<string, unknown>, overwrite = false) => {
-  const newSettings = overwrite ? { ...get(), ...params } : params;
+  const newSettings = overwrite ? params : { ...get(), ...params };
   fs.writeFileSync(SETTINGS_PATH, JSON.stringify(newSettings, null, 4));
 };
 

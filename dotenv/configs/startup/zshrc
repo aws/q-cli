@@ -1,7 +1,7 @@
 PATH="$HOME/.fig/bin:$PATH"
 TERMINAL_SESSION_ID=$(uuidgen)
 precmd() {
-  echo hi there
+  echo hi
   fig bg:prompt $$ $TTY &!
 }
 

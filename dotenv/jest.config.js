@@ -3,5 +3,6 @@ module.exports = {
   testPathIgnorePatterns: ["/node_modules/", "/mocks/", "/parserCorpus/"],
   coveragePathIgnorePatterns: ["/mocks/", "/parserCorpus/"],
   testEnvironment: "jsdom",
+  reporters: ["./jest-reporter.js"],
 };
 

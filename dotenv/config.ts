@@ -21,7 +21,7 @@ const get = () => {
 const getValue = (key: string) => get()[key];
 
 const set = (params: Record<string, unknown>, overwrite = false) => {
-  const newConfig = overwrite ? { ...get(), ...params } : params;
+  const newConfig = overwrite ? params : { ...get(), ...params };
   const configString = Object.keys(newConfig)
     .reduce((out, key) => `${out}\n${key}=${newConfig[key]}`, '')
     .slice(1);

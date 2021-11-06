@@ -1,2 +1,3 @@
 PATH="~/.fig/bin:$PATH"
+TERMINAL_SESSION_ID=$(uuidgen)
 PROMPT_COMMAND="fig bg:prompt $$ $TTY & disown"

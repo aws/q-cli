@@ -4,7 +4,7 @@
   "description": "Testing for shell integration and figterm",
   "main": "test.js",
   "scripts": {
-    "test": "jest --runInBand",
+    "test": "jest --runInBand --noStackTrace --detectOpenHandles",
     "lint": "eslint src",
     "precommit": "lint-staged",
     "lint:fix": "npm run lint -- --fix"
@@ -26,9 +26,14 @@
   },
   "homepage": "https://github.com/withfig/dotenv#readme",
   "dependencies": {
+    "@jest/console": "^27.3.1",
     "@jest/globals": "^27.3.1",
+    "@jest/reporters": "^27.3.1",
+    "@jest/test-result": "^27.3.1",
+    "@jest/types": "^27.2.5",
     "@types/jest": "^27.0.2",
     "@types/uuid": "^8.3.1",
+    "chalk": "^4.1.2",
     "node-pty": "^0.10.1",
     "ts-node": "^10.4.0",
     "uuid": "^8.3.2"
