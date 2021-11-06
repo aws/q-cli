@@ -12,7 +12,7 @@ def on_focus_change(boss: Boss, window: Window, data) -> None:
         print(sessionId)
         # send update to macOS app
         cli = expanduser("~/.fig/bin/fig")
-        os.system(cli + " keyboard-focus-changed kitty " + str(window.id))
+        os.system(cli + " bg:keyboard-focus-changed net.kovidgoyal.kitty:" + str(window.id))
 
         # logging
         logpath = expanduser("~/.fig/logs/kitty.log")

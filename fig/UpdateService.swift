@@ -203,14 +203,6 @@ extension UpdateService: SUUpdaterDelegate {
 
   }
   
-  func versionComparator(for updater: SUUpdater) -> SUVersionComparison? {
-    #if DEBUG
-        return DebugVersionComparison()
-    #else
-        return nil
-    #endif
-  }
-  
 }
 
 
@@ -218,9 +210,3 @@ private protocol SparkleDeprecatedAPI {
     func installUpdatesIfAvailable()
 }
 extension SUUpdater: SparkleDeprecatedAPI {}
-
-class DebugVersionComparison: SUVersionComparison {
-  func compareVersion(_ versionA: String, toVersion versionB: String) -> ComparisonResult {
-    return .orderedSame
-  }
-}

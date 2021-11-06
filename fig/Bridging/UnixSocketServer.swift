@@ -12,8 +12,7 @@ import Socket
 import Dispatch
 
 protocol UnixSocketServerDelegate {
-  func recieved(string: String, on socket: Socket?)
-  func recieved(data: Data, on socket: Socket?)
+  func recieved(string: String)
 }
 
 class UnixSocketServer {
@@ -24,7 +23,6 @@ class UnixSocketServer {
   var continueRunningValue = true
   var connectedSockets = [Int32: Socket]()
   let socketLockQueue = DispatchQueue(label: "com.fig.socketLockQueue")
-  let bidirectional: Bool
   var continueRunning: Bool {
     set(newValue) {
       socketLockQueue.sync {
@@ -38,9 +36,8 @@ class UnixSocketServer {
     }
   }
 
-  init(path: String, bidirectional: Bool = false) {
+  init(path: String) {
     self.path = path
-    self.bidirectional = bidirectional
   }
   
   deinit {
@@ -52,8 +49,8 @@ class UnixSocketServer {
   }
   
   func run() {
-      try? FileManager.default.removeItem(at: URL(fileURLWithPath: path))
-      let queue = DispatchQueue.global(qos: .userInitiated)
+    
+    let queue = DispatchQueue.global(qos: .userInitiated)
     
     queue.async { [unowned self] in
       
@@ -77,6 +74,9 @@ class UnixSocketServer {
                 Logger.log(message: "connection could not be made!", subsystem: .unix)
                 continue
             }
+          
+//          print("Accepted connection from: \(newSocket.remoteHostname) on port \(newSocket.remotePort)")
+//          print("Socket Signature: \(String(describing: newSocket.signature?.description))")
           
           self.addNewConnection(socket: newSocket)
           
@@ -116,30 +116,23 @@ class UnixSocketServer {
       var readData = Data(capacity: UnixSocketServer.bufferSize)
       
       do {
+        // Write the welcome string...
+//        try socket.write(from: "Hello, type 'QUIT' to end session\nor 'SHUTDOWN' to stop server.\n")
         
         repeat {
           let bytesRead = try socket.read(into: &readData)
           
           if bytesRead > 0 {
-            
-            // maintain old behavior for legacy ~/fig.socket
-            // can be removed after v1.0.53
-            if (!bidirectional) {
-              guard let response = String(data: readData, encoding: .utf8) else {
-                
-                print("Error decoding response...")
-                readData.count = 0
-                break
-              }
+            guard let response = String(data: readData, encoding: .utf8) else {
               
-              self.delegate?.recieved(string: response, on: self.bidirectional ? socket : nil)
-              Logger.log(message: "recieved message \"\(response)\"", subsystem: .unix)
-
+              print("Error decoding response...")
+              readData.count = 0
+              break
             }
-            
-            self.delegate?.recieved(data: readData, on: self.bidirectional ? socket : nil)
 
-
+//            let reply = "Server response: \n\(response)\n"
+            self.delegate?.recieved(string: response)
+            Logger.log(message: "recieved message \"\(response)\"", subsystem: .unix)
           }
           
           if bytesRead == 0 {

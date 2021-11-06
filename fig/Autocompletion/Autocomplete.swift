@@ -9,9 +9,6 @@
 import Cocoa
 
 class Autocomplete {
-  // todo: load global actions from ~/.fig/apps/autocomplete/actions.json
-  static let globalActions = ["toggleAutocomplete", "showAutocomplete"]
-
   static func log(_ buffer: String, _ cursor: Int) {
     var logging = buffer
     let index = logging.index(logging.startIndex, offsetBy: cursor, limitedBy: buffer.endIndex) ?? buffer.endIndex

@@ -64,18 +64,13 @@ class PseudoTerminal {
     
     func start(with environment: [String: String]) {
         PseudoTerminal.log("Starting PTY...")
-        let shell = "/bin/bash" //"/bin/bash"
+        let shell = "/bin/sh" //"/bin/bash"
         
         let rawEnv = mergeFigSpecificEnvironmentVariables(with: environment)
 
         
-        self.headless.process.startProcess(executable: shell, args: [ "--norc", "--noprofile", "--noediting"], environment: rawEnv.count == 0 ? nil : rawEnv)
+        self.headless.process.startProcess(executable: shell, args: [], environment: rawEnv.count == 0 ? nil : rawEnv)
         self.headless.process.delegate = self
-        
-        if let shouldWriteTranscript = Settings.shared.getValue(forKey: Settings.ptyTranscript) as? Bool,
-               shouldWriteTranscript {
-          self.write(" script -qt0 ~/.fig/logs/pty_transcript.log")
-        }
         
         self.write(" set +o history" + PseudoTerminal.CRLF)
         self.write(" unset HISTFILE" + PseudoTerminal.CRLF)
@@ -123,7 +118,6 @@ class PseudoTerminal {
                                               "FIG_PTY" : "1",
                                               "HISTCONTROL" : "ignoreboth",
                                               "HOME" : NSHomeDirectory(),
-                                              "FIG_DEBUG" : "1",
                                               "LANG" : "\(LANG).UTF-8"]) { $1 }
         
         return updatedEnv.reduce([]) { (acc, elm) -> [String] in

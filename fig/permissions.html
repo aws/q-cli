@@ -210,7 +210,7 @@
     <div class="wrapper">
         <section>
             <div class="section">
-                <span class="title" href="javascript:requestPermission()" id="permissions">Enable Accessibility
+                <span class="title" href="javascript:permission()" id="permissions">Enable Accessibility
                     Permission</span>
                 <p style = " color: #5e5e5e">Fig uses this permission to insert text on your behalf and read the current keybuffer.</p>
                 <div class="video-mask">
@@ -220,7 +220,7 @@
                     </video>
                 </div>
                 <div class = "button">
-                    <a id = "enable" href="javascript:requestPermission()">Enable</a>
+                    <a id = "enable" href="javascript:permissions()">Enable</a>
                 </div>
                 <a id = "skip" style="display:none;" href="javascript:next()">Continue to next step manually</a>
 
@@ -228,29 +228,62 @@
         </section>
 
     </div>
-    <script src="./API.js"> </script>
-
     <script>
         document.querySelector('video').playbackRate = 1.8;
 
-        window.requestPermission = function () {
+        let ws = function () {
+            fig.onboarding("ws", () => {
+
+            })
+        }
+
+        let cli = function () {
+            fig.onboarding("cli", () => {
+                window.location.href = './cli.html'
+            })
+        }
+
+        let permissions = function () {
             document.querySelector("#enable").innerText = "Waiting..."
-            sendMessage({ onboardingRequest: { action: "PROMPT_FOR_ACCESSIBILITY_PERMISSION" } }, (response) => {
-              console.log(response)
-              window.location.href = './debugger.html'
+            fig.onboarding("permissions", (value) => {
+               //window.location.href = `${fig.remoteURL}/onboarding/signin.html`
+               // window.location.href = './ssh.html'
+               window.location.href = './debugger.html'
+
             })
             
             setTimeout(() => {
                document.querySelector("#skip").style.display = "block";
                 
             },1000 * 10)
+            //fig.onboarding("close")
 
         }
     
         let next = function() {
+          // window.location.href = './ssh.html'
           window.location.href = './debugger.html'
         }
-      
+        // const progressbar = document.querySelector('progress')
+        // const article = document.querySelector('body')
+
+        // let isScrolling = false
+
+        // document.addEventListener('scroll', (e) => isScrolling = true)
+
+        // render()
+
+        // function render() {
+
+        //     requestAnimationFrame(render)
+
+        //     if (!isScrolling) return
+
+        //     progressbar.value = window.scrollY / (article.offsetHeight - window.innerHeight) * 100
+
+        //     isScrolling = false
+
+        // }
     </script>
 </body>
 

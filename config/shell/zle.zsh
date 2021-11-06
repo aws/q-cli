@@ -32,12 +32,12 @@ function fig_zsh_redraw() {
     unset _fig_redraw_fd
   fi
 
-  # Redirect to /dev/null to avoid printing escape sequences
-  fig hook editbuffer "${TERM_SESSION_ID}" "${FIG_INTEGRATION_VERSION}" "${TTY}" "$$" "${HISTNO}" "${CURSOR}" "$BUFFER" 2>&1 >/dev/null
+
+  (echo fig bg:zsh-keybuffer "${TERM_SESSION_ID}" "${FIG_INTEGRATION_VERSION}" "${TTY}" "$$" "${HISTNO}" "${CURSOR}" \""$BUFFER"\" | /usr/bin/base64 | /usr/bin/nc -U /tmp/fig.socket 2>> /dev/null &)
 }
 
 function fig_hide() { 
-  command -v fig 2>"$HOME"/.fig/logs/zsh.log 1>/dev/null && fig hook hide 2>&1 1>/dev/null
+  command -v fig 2>>/dev/null 1>/dev/null && fig bg:hide &!
 }
 
 # Hint: to list all special widgets, run `add-zle-hook-widget -L`

@@ -18,15 +18,10 @@ class FileSystem {
             throw APIError.generic(message: "File does not exist.")
         }
         
-        let isBinaryFile = request.hasIsBinaryFile ? request.isBinaryFile : false
-      
-        return try Fig_ReadFileResponse.with {
-            let url = URL(fileURLWithPath: path)
-            if isBinaryFile {
-              $0.data = try Data(contentsOf: url)
-            } else {
-              $0.text = try String(contentsOf: URL(fileURLWithPath: path))
-            }
+        let data = try Data(contentsOf: URL(fileURLWithPath: path))
+        
+        return Fig_ReadFileResponse.with {
+            $0.data = data
         }
     }
     

@@ -46,22 +46,20 @@ class LoginItems {
   
     @available(macOS, deprecated: 10.11)
     func addLoginItem(_ url: URL = Bundle.main.bundleURL) {
-      if let loginReference = LSSharedFileListCreate(kCFAllocatorDefault,
+        if let loginReference = LSSharedFileListCreate(kCFAllocatorDefault,
                                                        kLSSharedFileListSessionLoginItems.takeUnretainedValue(),
-                                                       nil),
-         let lastItem = lastItem(){
+                                                       nil) {
            let loginListValue = loginReference.takeUnretainedValue()
            LSSharedFileListInsertItemURL(loginListValue,
-                                         lastItem,
+                                         lastItem(),
                                          nil,
                                          nil,
                                          url as CFURL,
                                          nil,
                                          nil)
 
-      }
+       }
     }
-  
     @available(macOS, deprecated: 10.11)
     func lastItem() -> LSSharedFileListItem? {
         guard let loginReference = LSSharedFileListCreate(kCFAllocatorDefault,
@@ -69,12 +67,8 @@ class LoginItems {
                                                           nil) else { return nil }
         let loginListValue = loginReference.takeUnretainedValue()
 
-        guard let snapshot = LSSharedFileListCopySnapshot(loginListValue,
-                                                 nil) else {
-            return nil
-        }
-      
-        let items = snapshot.takeRetainedValue() as NSArray
+        let items = LSSharedFileListCopySnapshot(loginListValue,
+                                                 nil).takeRetainedValue() as NSArray
         
         guard items.count > 0 else { return nil }
         
@@ -88,12 +82,8 @@ class LoginItems {
                                                           nil) else { return nil }
         let loginListValue = loginReference.takeUnretainedValue()
 
-        guard let snapshot = LSSharedFileListCopySnapshot(loginListValue,
-                                                 nil) else {
-            return nil
-        }
-      
-        let items = snapshot.takeRetainedValue() as NSArray
+        let items = LSSharedFileListCopySnapshot(loginListValue,
+                                                 nil).takeRetainedValue() as NSArray
         
         guard items.count > 0 else { return nil }
         

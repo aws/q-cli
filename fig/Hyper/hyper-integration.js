@@ -5,7 +5,7 @@ exports.middleware = ({ getState, dispatch }) => next => async (action) => {
     case 'SESSION_SET_ACTIVE':
     case 'SESSION_ADD':
       console.log(action.type, action.uid)
-      exec(`~/.fig/bin/fig keyboard-focus-changed hyper ${action.uid.split('-')[0]}`);
+      exec(`~/.fig/bin/fig bg:hyper hyper:${action.uid.split('-')[0]}`);
     default:
       break;
   }

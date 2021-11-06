@@ -69,11 +69,7 @@ class API {
         do {
             switch request.submessage {
                 case .positionWindowRequest(let positionWindowRequest):
-                  guard let window = webView.window as? CompanionWindow else {
-                    throw APIError.generic(message: "No window associated with webview")
-                  }
-                  response.positionWindowResponse = try WindowPositioning.positionWindow(positionWindowRequest,
-                                                                                         companionWindow: window)
+                    response.positionWindowResponse = try WindowPositioning.positionWindow(positionWindowRequest)
                 case .pseudoterminalWriteRequest(let request):
                     response.success = try PseudoTerminal.shared.handleWriteRequest(request)
                 case .pseudoterminalExecuteRequest(let request):
@@ -105,36 +101,11 @@ class API {
                 case .updateApplicationPropertiesRequest(let request):
                     response.success = try FigApp.updateProperties(request,
                                                                for: FigApp(identifier: webView.appIdentifier))
-                case .destinationOfSymbolicLinkRequest(let request):
-                    response.destinationOfSymbolicLinkResponse = try FileSystem.destinationOfSymbolicLink(request)
-                case .getDefaultsPropertyRequest(let request):
-                  response.getDefaultsPropertyResponse = try Defaults.handleGetRequest(request)
-                case .updateDefaultsPropertyRequest(let request):
-                  response.success = try Defaults.handleSetRequest(request)
-                case .telemetryAliasRequest(let request):
-                  response.success = try TelemetryProvider.handleAliasRequest(request)
-                case .telemetryIdentifyRequest(let request):
-                  response.success = try TelemetryProvider.handleIdentifyRequest(request)
-                case .telemetryTrackRequest(let request):
-                  response.success = try TelemetryProvider.handleTrackRequest(request)
-                case .onboardingRequest(let request):
-                  isAsync = true
-                  Onboarding.handleRequest(request, in: webView) { output in
-                      var response = Response()
-                      response.id = id
-                      response.success = output
-                      API.send(response, to: webView, using: encoding)
-                  }
-                case .windowFocusRequest(let request):
-                  response.success = try WindowServer.handleFocusRequest(request)
-                case .openInExternalApplicationRequest(let request):
-                  response.success = try NSWorkspace.shared.handleOpenURLRequest(request)
-                case .getConfigPropertyRequest(let request):
-                  response.getConfigPropertyResponse = try Config.handleGetRequest(request)
-                case .updateConfigPropertyRequest(let request):
-                  response.success = try Config.handleSetRequest(request)
                 case .none:
                     throw APIError.generic(message: "No submessage was included in request.")
+                
+                case .destinationOfSymbolicLinkRequest(let request):
+                    response.destinationOfSymbolicLinkResponse = try FileSystem.destinationOfSymbolicLink(request)
             }
         } catch APIError.generic(message: let message) {
             response.error = message
@@ -178,7 +149,7 @@ class API {
                                   line: Int = #line) {
         API.log("reporting global error: " + message)
         let source = "\(function) in \(file):\(line)"
-        let payload = "document.dispatchEvent(new CustomEvent('FigGlobalErrorOccurred', {'detail': {'error' : '\(message)', 'source': `\(source)` } }));"
+        let payload = "document.dispatchEvent(new CustomEvent('FigGlobalErrorOccurred', {'detail': {'error' : '\(message)', '', 'source': `\(source)` } }));"
         webView.evaluateJavaScript(payload, completionHandler: nil)
 
     }

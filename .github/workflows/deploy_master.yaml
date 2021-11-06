@@ -1,0 +1,108 @@
+name: master_deploy
+
+on:
+  workflow_dispatch:
+  # push:
+  #   tags: [ v* ]
+
+jobs:
+  master_deploy:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v2
+
+      - name: Find first scheme of default project
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+        run: |
+          echo "::set-env name=SCHEME::$(xcodebuild -list -json | jq -r '.project.schemes[0]')"
+          
+      - name: Set environment variables from project settings
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+        run: |
+          function set-env-from-proj { 
+            echo "::set-env name=$1::$(xcodebuild -scheme "$SCHEME" -showBuildSettings | grep " $1 " | sed "s/[ ]*$1 = //")"
+          }
+          set-env-from-proj FULL_PRODUCT_NAME
+          set-env-from-proj INSTALL_PATH
+          set-env-from-proj PRODUCT_BUNDLE_IDENTIFIER
+          set-env-from-proj PRODUCT_MODULE_NAME
+          set-env-from-proj PRODUCT_NAME
+          set-env-from-proj PROJECT_NAME
+
+
+      - name: Import signing certificate into keychain
+        run: |
+          KEYCHAIN_FILE=default.keychain
+          KEYCHAIN_PASSWORD=myvoiceismypassport
+          security create-keychain -p $KEYCHAIN_PASSWORD $KEYCHAIN_FILE
+          security default-keychain -s $KEYCHAIN_FILE
+          security unlock-keychain -p $KEYCHAIN_PASSWORD $KEYCHAIN_FILE
+          security import <(echo $SIGNING_CERTIFICATE_P12_DATA | base64 --decode) \
+                          -f pkcs12 \
+                          -k $KEYCHAIN_FILE \
+                          -P $SIGNING_CERTIFICATE_PASSWORD \
+                          -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k $KEYCHAIN_PASSWORD $KEYCHAIN_FILE
+        env:
+          SIGNING_CERTIFICATE_P12_DATA: ${{ secrets.SIGNING_CERTIFICATE_P12_DATA }}
+          SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.SIGNING_CERTIFICATE_PASSWORD }}
+
+
+      - name: Build and test app
+        shell: bash --noprofile --norc -eo pipefail {0}
+        run: |
+          xcodebuild -scheme "$SCHEME" test CODE_SIGN_IDENTITY=- | xcpretty
+
+      - name: Build and install app
+        shell: bash --noprofile --norc -eo pipefail {0}
+        run: |
+          xcodebuild -scheme "$SCHEME" install DSTROOT=build/root | xcpretty
+
+      - name: Package app
+        run: |
+          hdiutil create \
+                  -fs HFS+ \
+                  -srcfolder "build/root/$INSTALL_PATH/$FULL_PRODUCT_NAME" \
+                  -volname "$PRODUCT_NAME" "build/$PRODUCT_MODULE_NAME.dmg"
+
+      - name: Notarize dmg
+        run: |
+          npx notarize-cli --file "build/$PRODUCT_MODULE_NAME.dmg"
+        env:
+          NOTARIZE_USERNAME: ${{ secrets.NOTARIZE_USERNAME }}
+          NOTARIZE_PASSWORD: ${{ secrets.NOTARIZE_PASSWORD }}
+
+      - name: Release app
+        uses: softprops/action-gh-release@v1
+        with:
+          files: build/${{ env.PRODUCT_MODULE_NAME }}.dmg
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Checkout Homebrew tap
+        uses: actions/checkout@v2
+        with:
+          repository: ${{ secrets.CASK_REPO }}
+          token: ${{ secrets.CASK_REPO_TOKEN }}
+          path: homebrew-tap
+
+      - name: Update cask in Homebrew tap
+        run: |
+          CASK_NAME=$PROJECT_NAME
+          CASK_VERSION=$(echo "$GITHUB_REF" | cut -c12-)
+          CASK_SHA256=$(shasum --algorithm 256 "build/$PRODUCT_MODULE_NAME.dmg" | awk '{print $1}')
+          cd homebrew-tap
+          git config --local user.name "${USER_NAME}"
+          git config --local user.email "${USER_NAME}@users.noreply.github.com"
+          sed -i '' "s/\( *version *'\)\([^']*\)'/\1${CASK_VERSION}'/" Casks/${CASK_NAME}.rb
+          sed -i '' "s/\( *sha256 *'\)\([^']*\)'/\1${CASK_SHA256}'/" Casks/${CASK_NAME}.rb
+          git add Casks/${CASK_NAME}.rb
+          git commit -m "update ${CASK_NAME} to v${CASK_VERSION}"
+          git push origin
+        env:
+          GITHUB_REF: ${{ github.ref }}
+          USER_NAME: ${{ github.event.sender.login }}

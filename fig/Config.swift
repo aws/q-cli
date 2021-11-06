@@ -81,32 +81,3 @@ extension Config {
     Logger.log(message: message, subsystem: .config)
   }
 }
-
-import FigAPIBindings
-extension Config {
-  
-  static func handleGetRequest(_ request: Fig_GetConfigPropertyRequest) throws -> Fig_GetConfigPropertyResponse {
-    guard request.hasKey else {
-      throw APIError.generic(message: "Must include key parameter")
-    }
-    
-    guard let value = Config.getValue(forKey: request.key) else {
-      throw APIError.generic(message: "No value for key")
-    }
-    
-    return Fig_GetConfigPropertyResponse.with { response in
-      response.value = value
-    }
-  }
-  
-  static func handleSetRequest(_ request: Fig_UpdateConfigPropertyRequest) throws -> Bool {
-    guard request.hasKey else {
-      throw APIError.generic(message: "Must include key parameter")
-    }
-    
-    Config.updateConfig(request.key, request.hasValue ? request.value : nil)
-    
-    return true
-  }
-  
-}

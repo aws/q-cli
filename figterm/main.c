@@ -17,7 +17,7 @@
 #endif
 
 #define BUFFSIZE (1024 * 100)
-#define FIGTERM_VERSION 3
+#define FIGTERM_VERSION 2
 
 void abort_handler(int sig) {
   log_error("Aborting %d: %d", getpid(), sig);
@@ -51,7 +51,7 @@ void abort_handler(int sig) {
 char* _parent_shell = NULL;
 char* _parent_shell_is_login = NULL;
 
-void launch_shell(bool fatal_crash) {
+void launch_shell() {
   if (_parent_shell == NULL) {
     if ((_parent_shell = getenv("FIG_SHELL")) == NULL)
       EXIT(1);
@@ -76,11 +76,6 @@ void launch_shell(bool fatal_crash) {
   unsetenv("FIG_SHELL");
   unsetenv("FIG_IS_LOGIN_SHELL");
   unsetenv("FIG_START_TEXT");
-
-  if (fatal_crash) {
-    setenv("FIG_TERM_CRASHED", "1", 1);
-  }
-
   if (execvp(args[0], args) < 0) {
     EXIT(1);
   }
@@ -100,7 +95,7 @@ void on_figterm_exit() {
   tty_reset(STDIN_FILENO);
   if (status != 0) {
     // Unexpected exit, fallback to exec parent shell.
-    launch_shell(true);
+    launch_shell();
   }
 }
 
@@ -144,13 +139,33 @@ void publish_buffer(FigTerm* ft) {
     figterm_log(ft, '.');
   }
 
-  char* context = figterm_get_shell_context(ft);
-  char* buffer_escaped = escaped_str(buffer);
+  FigInfo *fig_info = get_fig_info();
+  FigShellState shell_state;
+  figterm_get_shell_state(ft, &shell_state);
 
-  publish_json("{\"hook\":{\"edit_buffer\":{\"text\":\"%s\",\"cursor\":\"%i\",\"context\": %s}}}", buffer_escaped, index, context);
-  
-  free(context);
-  free(buffer_escaped);
+  size_t buflen = strlen(buffer) +
+    strlen(fig_info->term_session_id) +
+    strlen(fig_info->fig_integration_version) +
+    strlen(shell_state.shell) +
+    strlen(shell_state.tty) +
+    strlen(shell_state.pid);
+
+  char *tmpbuf = malloc(buflen + sizeof(char) * 50);
+  sprintf(
+    tmpbuf,
+    "fig bg:%s-keybuffer %s %s %s %s 0 %d \"%s\"\n",
+    shell_state.shell,
+    fig_info->term_session_id,
+    fig_info->fig_integration_version,
+    shell_state.tty,
+    shell_state.pid,
+    index,
+    buffer
+  );
+
+  fig_socket_send(tmpbuf);
+  log_info("done sending %s", tmpbuf);
+  free(tmpbuf);
 }
 
 // Main figterm loop.
@@ -298,16 +313,6 @@ int main(int argc, char *argv[]) {
     log_info("Shell: %d", shell_pid);
     log_info("Figterm: %d", getpid());
 
-    char* context = printf_alloc(
-      "{\"session_id\":\"%s\",\"pid\":\"%i\",\"ttys\":\"%s\",\"integration_version\":\"%s\"}",
-      fig_info->term_session_id,
-      shell_pid,
-      ptc_name,
-      fig_info->fig_integration_version
-    );
-    publish_json("{\"hook\":{\"init\":{\"context\": %s}}}", context);
-    free(context);
-
     // On exit fallback to launching same shell as parent if unexpected exit.
     if (atexit(on_figterm_exit) < 0) {
       kill(shell_pid, SIGKILL);
@@ -336,5 +341,5 @@ int main(int argc, char *argv[]) {
   // Child process becomes pty child and launches shell.
   ptyc_open(fdp, ptc_name, &term, &ws);
 fallback:
-  launch_shell(false);
+  launch_shell();
 }

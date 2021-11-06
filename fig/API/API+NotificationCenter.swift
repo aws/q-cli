@@ -178,8 +178,6 @@ extension Fig_Notification {
             return .notifyOnSettingsChange
         case .windowFocusChangedNotification(_):
             return .notifyOnFocusChanged
-        case .historyUpdatedNotification(_):
-            return .notifyOnHistoryUpdated
         case .none:
             return nil
         }
@@ -227,12 +225,6 @@ extension APINotificationCenter {
     func post(_ notification: Fig_WindowFocusChangedNotification) {
         var wrapper = Fig_Notification()
         wrapper.windowFocusChangedNotification = notification
-        self.post(notification: wrapper)
-    }
-  
-    func post(_ notification: Fig_HistoryUpdatedNotification) {
-        var wrapper = Fig_Notification()
-        wrapper.historyUpdatedNotification = notification
         self.post(notification: wrapper)
     }
 }

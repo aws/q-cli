@@ -210,6 +210,7 @@ class ShellBridgeSocketService: WebSocketService {
                         self.sessionIds[msg.session] = from.id
                     case "pipe":
                         print("Handle CLI command: fig \((msg.options ?? []).joined(separator: " "))")
+                        Logger.log(message: "fig \((msg.options ?? []).joined(separator: " "))", subsystem: .cli)
                         guard Defaults.loggedIn else {
                             from.send(message: "disconnect")
                             return
@@ -218,8 +219,6 @@ class ShellBridgeSocketService: WebSocketService {
                             guard !subcommand.hasPrefix("bg:") else {
                               // Move processing on to mainThread to fix large class of concurrency bugs
                               DispatchQueue.main.async {
-                                Logger.log(message: "fig \((msg.options ?? []).joined(separator: " "))", subsystem: .cli)
-
 
                                 switch subcommand {
                                 case "bg:event":
@@ -237,32 +236,32 @@ class ShellBridgeSocketService: WebSocketService {
                                       // the python script is deleted from iTerm's AutoLaunch directory.
                                       // - mschrage, v1.0.44
                                       if !iTermIntegration.default.isConnectedToAPI {
-                                        ShellHookManager.shared.currentTabDidChangeLegacy(msg)
+                                        ShellHookManager.shared.currentTabDidChange(msg)
                                       }
                                     case "bg:init":
-                                        ShellHookManager.shared.startedNewTerminalSessionLegacy(msg)
+                                        ShellHookManager.shared.startedNewTerminalSession(msg)
                                     case "bg:prompt":
-                                        ShellHookManager.shared.shellPromptWillReturnLegacy(msg)
+                                        ShellHookManager.shared.shellPromptWillReturn(msg)
                                     case "bg:exec":
-                                        ShellHookManager.shared.shellWillExecuteCommandLegacy(msg)
+                                        ShellHookManager.shared.shellWillExecuteCommand(msg)
                                     case "bg:zsh-keybuffer":
-                                        ShellHookManager.shared.updateKeybufferLegacy(msg)
+                                        ShellHookManager.shared.updateKeybuffer(msg, backing: .zle)
                                     case "bg:fish-keybuffer":
-                                        ShellHookManager.shared.updateKeybufferLegacy(msg)
+                                        ShellHookManager.shared.updateKeybuffer(msg, backing: .fish)
                                     case "bg:ssh":
-                                        ShellHookManager.shared.startedNewSSHConnectionLegacy(msg)
+                                        ShellHookManager.shared.startedNewSSHConnection(msg)
                                     case "bg:vscode":
-                                        ShellHookManager.shared.currentTabDidChangeLegacy(msg)
+                                        ShellHookManager.shared.currentTabDidChange(msg)
                                     case "bg:hyper":
-                                        ShellHookManager.shared.currentTabDidChangeLegacy(msg)
+                                        ShellHookManager.shared.currentTabDidChange(msg)
                                     case "bg:tmux":
-                                        ShellHookManager.shared.tmuxPaneChangedLegacy(msg)
+                                        ShellHookManager.shared.tmuxPaneChanged(msg)
                                     case "bg:hide":
                                         Autocomplete.hide()
                                     case "bg:clear-keybuffer":
-                                        ShellHookManager.shared.clearKeybufferLegacy(msg)
+                                        ShellHookManager.shared.clearKeybuffer(msg)
                                     case "bg:keyboard-focus-changed":
-                                      ShellHookManager.shared.currentTabDidChangeLegacy(msg, includesBundleId: true)
+                                      ShellHookManager.shared.currentTabDidChange(msg, includesBundleId: true)
                                     case "bg:iterm-api-ready":
                                       iTermIntegration.default.attemptToConnect()
                                     case "bg:alert":

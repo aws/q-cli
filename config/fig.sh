@@ -21,6 +21,8 @@ if [[ ! "${TERMINAL_EMULATOR}" = JetBrains-JediTerm ]]; then
     # Gives fig context for cwd in each window
     export TTY=$(tty)
 
+    __fig bg:init "$$" "$TTY"
+
     # Check for prompts or onboarding must be last, so Fig has context for
     # onboarding!
     if [[ -s ~/.fig/tools/prompts.sh ]]; then

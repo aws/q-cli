@@ -352,7 +352,7 @@ class ShellBridge {
         if let window = AXWindowServer.shared.whitelistedWindow,
           KeypressProvider.shared.keyBuffer(for: window).backing == .zle {
           ZLEIntegration.insert(with: insertion,
-                                version: String(window.tty?.shellIntegrationVersion ?? 0))
+                                version: window.tty?.shellIntegrationVersion)
           return
         }
         
@@ -373,6 +373,7 @@ class ShellBridge {
       
       
       let version = window.tty?.shellIntegrationVersion
+      print(version)
       let figTermInstanceSupportsInserts = version ?? 0 >= 5
       
       let backing = KeypressProvider.shared.keyBuffer(for: window).backing
@@ -539,10 +540,6 @@ struct ShellMessage: Codable {
     
     func getWorkingDirectory() -> String? {
         return self.env?.jsonStringToDict()?["PWD"] as? String
-    }
-  
-    func environmentVariable(for key: String) -> String? {
-        return self.env?.jsonStringToDict()?[key] as? String
     }
     
     var shell: String? {

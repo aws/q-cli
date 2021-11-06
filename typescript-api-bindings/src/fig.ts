@@ -60,82 +60,6 @@ export function modifiersToJSON(object: Modifiers): string {
   }
 }
 
-export enum OnboardingAction {
-  INSTALLATION_SCRIPT = 0,
-  PROMPT_FOR_ACCESSIBILITY_PERMISSION = 1,
-  LAUNCH_SHELL_ONBOARDING = 3,
-  UNINSTALL = 4,
-  UNRECOGNIZED = -1,
-}
-
-export function onboardingActionFromJSON(object: any): OnboardingAction {
-  switch (object) {
-    case 0:
-    case "INSTALLATION_SCRIPT":
-      return OnboardingAction.INSTALLATION_SCRIPT;
-    case 1:
-    case "PROMPT_FOR_ACCESSIBILITY_PERMISSION":
-      return OnboardingAction.PROMPT_FOR_ACCESSIBILITY_PERMISSION;
-    case 3:
-    case "LAUNCH_SHELL_ONBOARDING":
-      return OnboardingAction.LAUNCH_SHELL_ONBOARDING;
-    case 4:
-    case "UNINSTALL":
-      return OnboardingAction.UNINSTALL;
-    case -1:
-    case "UNRECOGNIZED":
-    default:
-      return OnboardingAction.UNRECOGNIZED;
-  }
-}
-
-export function onboardingActionToJSON(object: OnboardingAction): string {
-  switch (object) {
-    case OnboardingAction.INSTALLATION_SCRIPT:
-      return "INSTALLATION_SCRIPT";
-    case OnboardingAction.PROMPT_FOR_ACCESSIBILITY_PERMISSION:
-      return "PROMPT_FOR_ACCESSIBILITY_PERMISSION";
-    case OnboardingAction.LAUNCH_SHELL_ONBOARDING:
-      return "LAUNCH_SHELL_ONBOARDING";
-    case OnboardingAction.UNINSTALL:
-      return "UNINSTALL";
-    default:
-      return "UNKNOWN";
-  }
-}
-
-export enum FocusAction {
-  TAKE_FOCUS = 0,
-  RETURN_FOCUS = 1,
-  UNRECOGNIZED = -1,
-}
-
-export function focusActionFromJSON(object: any): FocusAction {
-  switch (object) {
-    case 0:
-    case "TAKE_FOCUS":
-      return FocusAction.TAKE_FOCUS;
-    case 1:
-    case "RETURN_FOCUS":
-      return FocusAction.RETURN_FOCUS;
-    case -1:
-    case "UNRECOGNIZED":
-    default:
-      return FocusAction.UNRECOGNIZED;
-  }
-}
-
-export function focusActionToJSON(object: FocusAction): string {
-  switch (object) {
-    case FocusAction.TAKE_FOCUS:
-      return "TAKE_FOCUS";
-    case FocusAction.RETURN_FOCUS:
-      return "RETURN_FOCUS";
-    default:
-      return "UNKNOWN";
-  }
-}
-
 export enum ActionAvailability {
   ALWAYS = 0,
   /** WHEN_FOCUSED - the action can only be performed when the app has keyboard focus */
@@ -192,7 +116,6 @@ export enum NotificationType {
   NOTIFY_ON_PROCESS_CHANGED = 5,
   NOTIFY_ON_KEYBINDING_PRESSED = 6,
   NOTIFY_ON_FOCUS_CHANGED = 7,
-  NOTIFY_ON_HISTORY_UPDATED = 8,
   UNRECOGNIZED = -1,
 }
 
@@ -222,9 +145,6 @@ export function notificationTypeFromJSON(object: any): NotificationType {
     case 7:
     case "NOTIFY_ON_FOCUS_CHANGED":
       return NotificationType.NOTIFY_ON_FOCUS_CHANGED;
-    case 8:
-    case "NOTIFY_ON_HISTORY_UPDATED":
-      return NotificationType.NOTIFY_ON_HISTORY_UPDATED;
     case -1:
     case "UNRECOGNIZED":
     default:
@@ -250,8 +170,6 @@ export function notificationTypeToJSON(object: NotificationType): string {
       return "NOTIFY_ON_KEYBINDING_PRESSED";
     case NotificationType.NOTIFY_ON_FOCUS_CHANGED:
       return "NOTIFY_ON_FOCUS_CHANGED";
-    case NotificationType.NOTIFY_ON_HISTORY_UPDATED:
-      return "NOTIFY_ON_HISTORY_UPDATED";
     default:
       return "UNKNOWN";
   }
@@ -295,40 +213,6 @@ export interface ClientOriginatedMessage {
     | {
         $case: "destinationOfSymbolicLinkRequest";
         destinationOfSymbolicLinkRequest: DestinationOfSymbolicLinkRequest;
-      }
-    | {
-        $case: "getDefaultsPropertyRequest";
-        getDefaultsPropertyRequest: GetDefaultsPropertyRequest;
-      }
-    | {
-        $case: "updateDefaultsPropertyRequest";
-        updateDefaultsPropertyRequest: UpdateDefaultsPropertyRequest;
-      }
-    | {
-        $case: "telemetryAliasRequest";
-        telemetryAliasRequest: TelemetryAliasRequest;
-      }
-    | {
-        $case: "telemetryIdentifyRequest";
-        telemetryIdentifyRequest: TelemetryIdentifyRequest;
-      }
-    | {
-        $case: "telemetryTrackRequest";
-        telemetryTrackRequest: TelemetryTrackRequest;
-      }
-    | { $case: "onboardingRequest"; onboardingRequest: OnboardingRequest }
-    | { $case: "windowFocusRequest"; windowFocusRequest: WindowFocusRequest }
-    | {
-        $case: "openInExternalApplicationRequest";
-        openInExternalApplicationRequest: OpenInExternalApplicationRequest;
-      }
-    | {
-        $case: "getConfigPropertyRequest";
-        getConfigPropertyRequest: GetConfigPropertyRequest;
-      }
-    | {
-        $case: "updateConfigPropertyRequest";
-        updateConfigPropertyRequest: UpdateConfigPropertyRequest;
       };
 }
 
@@ -357,14 +241,6 @@ export interface ServerOriginatedMessage {
     | {
         $case: "destinationOfSymbolicLinkResponse";
         destinationOfSymbolicLinkResponse: DestinationOfSymbolicLinkResponse;
-      }
-    | {
-        $case: "getDefaultsPropertyResponse";
-        getDefaultsPropertyResponse: GetDefaultsPropertyResponse;
-      }
-    | {
-        $case: "getConfigPropertyResponse";
-        getConfigPropertyResponse: GetConfigPropertyResponse;
       }
     | { $case: "notification"; notification: Notification };
 }
@@ -479,11 +355,10 @@ export interface PositionWindowResponse {
 
 export interface ReadFileRequest {
   path?: FilePath | undefined;
-  isBinaryFile?: boolean | undefined;
 }
 
 export interface ReadFileResponse {
-  type?: { $case: "data"; data: Uint8Array } | { $case: "text"; text: string };
+  data?: Uint8Array | undefined;
 }
 
 export interface WriteFileRequest {
@@ -509,41 +384,6 @@ export interface DestinationOfSymbolicLinkResponse {
   destination?: FilePath | undefined;
 }
 
-export interface DefaultsValue {
-  type?:
-    | { $case: "null"; null: boolean }
-    | { $case: "boolean"; boolean: boolean }
-    | { $case: "string"; string: string }
-    | { $case: "integer"; integer: number };
-}
-
-export interface GetDefaultsPropertyRequest {
-  key?: string | undefined;
-}
-
-export interface GetDefaultsPropertyResponse {
-  key?: string | undefined;
-  value?: DefaultsValue | undefined;
-}
-
-export interface UpdateDefaultsPropertyRequest {
-  key?: string | undefined;
-  value?: DefaultsValue | undefined;
-}
-
-export interface GetConfigPropertyRequest {
-  key?: string | undefined;
-}
-
-export interface GetConfigPropertyResponse {
-  value?: string | undefined;
-}
-
-export interface UpdateConfigPropertyRequest {
-  key?: string | undefined;
-  value?: string | undefined;
-}
-
 export interface GetSettingsPropertyRequest {
   key?: string | undefined;
 }
@@ -556,36 +396,6 @@ export interface GetSettingsPropertyResponse {
 export interface UpdateSettingsPropertyRequest {
   key?: string | undefined;
   value?: string | undefined;
-}
-
-export interface TelemetryProperty {
-  key: string;
-  value: string;
-}
-
-export interface TelemetryAliasRequest {
-  userId?: string | undefined;
-}
-
-export interface TelemetryTrackRequest {
-  event?: string | undefined;
-  properties: TelemetryProperty[];
-}
-
-export interface TelemetryIdentifyRequest {
-  traits: TelemetryProperty[];
-}
-
-export interface OnboardingRequest {
-  action: OnboardingAction;
-}
-
-export interface WindowFocusRequest {
-  type?: FocusAction | undefined;
-}
-
-export interface OpenInExternalApplicationRequest {
-  url?: string | undefined;
 }
 
 export interface Action {
@@ -639,10 +449,6 @@ export interface Notification {
     | {
         $case: "windowFocusChangedNotification";
         windowFocusChangedNotification: WindowFocusChangedNotification;
-      }
-    | {
-        $case: "historyUpdatedNotification";
-        historyUpdatedNotification: HistoryUpdatedNotification;
       };
 }
 
@@ -680,19 +486,6 @@ export interface KeybindingPressedNotification {
 
 export interface WindowFocusChangedNotification {
   window?: Window | undefined;
-}
-
-export interface HistoryUpdatedNotification {
-  command?: string | undefined;
-  /** the name of the process */
-  processName?: string | undefined;
-  /** the directory where the user ran the command */
-  currentWorkingDirectory?: string | undefined;
-  /** the value of $TERM_SESSION_ID */
-  sessionId?: string | undefined;
-  hostname?: string | undefined;
-  /** the exit code of the command */
-  exitCode?: number | undefined;
 }
 
 /**
@@ -804,66 +597,6 @@ export const ClientOriginatedMessage = {
       DestinationOfSymbolicLinkRequest.encode(
         message.submessage.destinationOfSymbolicLinkRequest,
         writer.uint32(898).fork()
-      ).ldelim();
-    }
-    if (message.submessage?.$case === "getDefaultsPropertyRequest") {
-      GetDefaultsPropertyRequest.encode(
-        message.submessage.getDefaultsPropertyRequest,
-        writer.uint32(906).fork()
-      ).ldelim();
-    }
-    if (message.submessage?.$case === "updateDefaultsPropertyRequest") {
-      UpdateDefaultsPropertyRequest.encode(
-        message.submessage.updateDefaultsPropertyRequest,
-        writer.uint32(914).fork()
-      ).ldelim();
-    }
-    if (message.submessage?.$case === "telemetryAliasRequest") {
-      TelemetryAliasRequest.encode(
-        message.submessage.telemetryAliasRequest,
-        writer.uint32(922).fork()
-      ).ldelim();
-    }
-    if (message.submessage?.$case === "telemetryIdentifyRequest") {
-      TelemetryIdentifyRequest.encode(
-        message.submessage.telemetryIdentifyRequest,
-        writer.uint32(930).fork()
-      ).ldelim();
-    }
-    if (message.submessage?.$case === "telemetryTrackRequest") {
-      TelemetryTrackRequest.encode(
-        message.submessage.telemetryTrackRequest,
-        writer.uint32(938).fork()
-      ).ldelim();
-    }
-    if (message.submessage?.$case === "onboardingRequest") {
-      OnboardingRequest.encode(
-        message.submessage.onboardingRequest,
-        writer.uint32(946).fork()
-      ).ldelim();
-    }
-    if (message.submessage?.$case === "windowFocusRequest") {
-      WindowFocusRequest.encode(
-        message.submessage.windowFocusRequest,
-        writer.uint32(954).fork()
-      ).ldelim();
-    }
-    if (message.submessage?.$case === "openInExternalApplicationRequest") {
-      OpenInExternalApplicationRequest.encode(
-        message.submessage.openInExternalApplicationRequest,
-        writer.uint32(962).fork()
-      ).ldelim();
-    }
-    if (message.submessage?.$case === "getConfigPropertyRequest") {
-      GetConfigPropertyRequest.encode(
-        message.submessage.getConfigPropertyRequest,
-        writer.uint32(970).fork()
-      ).ldelim();
-    }
-    if (message.submessage?.$case === "updateConfigPropertyRequest") {
-      UpdateConfigPropertyRequest.encode(
-        message.submessage.updateConfigPropertyRequest,
-        writer.uint32(978).fork()
       ).ldelim();
     }
     return writer;
@@ -983,94 +716,6 @@ export const ClientOriginatedMessage = {
             $case: "destinationOfSymbolicLinkRequest",
             destinationOfSymbolicLinkRequest:
               DestinationOfSymbolicLinkRequest.decode(reader, reader.uint32()),
-          };
-          break;
-        case 113:
-          message.submessage = {
-            $case: "getDefaultsPropertyRequest",
-            getDefaultsPropertyRequest: GetDefaultsPropertyRequest.decode(
-              reader,
-              reader.uint32()
-            ),
-          };
-          break;
-        case 114:
-          message.submessage = {
-            $case: "updateDefaultsPropertyRequest",
-            updateDefaultsPropertyRequest: UpdateDefaultsPropertyRequest.decode(
-              reader,
-              reader.uint32()
-            ),
-          };
-          break;
-        case 115:
-          message.submessage = {
-            $case: "telemetryAliasRequest",
-            telemetryAliasRequest: TelemetryAliasRequest.decode(
-              reader,
-              reader.uint32()
-            ),
-          };
-          break;
-        case 116:
-          message.submessage = {
-            $case: "telemetryIdentifyRequest",
-            telemetryIdentifyRequest: TelemetryIdentifyRequest.decode(
-              reader,
-              reader.uint32()
-            ),
-          };
-          break;
-        case 117:
-          message.submessage = {
-            $case: "telemetryTrackRequest",
-            telemetryTrackRequest: TelemetryTrackRequest.decode(
-              reader,
-              reader.uint32()
-            ),
-          };
-          break;
-        case 118:
-          message.submessage = {
-            $case: "onboardingRequest",
-            onboardingRequest: OnboardingRequest.decode(
-              reader,
-              reader.uint32()
-            ),
-          };
-          break;
-        case 119:
-          message.submessage = {
-            $case: "windowFocusRequest",
-            windowFocusRequest: WindowFocusRequest.decode(
-              reader,
-              reader.uint32()
-            ),
-          };
-          break;
-        case 120:
-          message.submessage = {
-            $case: "openInExternalApplicationRequest",
-            openInExternalApplicationRequest:
-              OpenInExternalApplicationRequest.decode(reader, reader.uint32()),
-          };
-          break;
-        case 121:
-          message.submessage = {
-            $case: "getConfigPropertyRequest",
-            getConfigPropertyRequest: GetConfigPropertyRequest.decode(
-              reader,
-              reader.uint32()
-            ),
-          };
-          break;
-        case 122:
-          message.submessage = {
-            $case: "updateConfigPropertyRequest",
-            updateConfigPropertyRequest: UpdateConfigPropertyRequest.decode(
-              reader,
-              reader.uint32()
-            ),
           };
           break;
         default:
@@ -1216,115 +861,6 @@ export const ClientOriginatedMessage = {
           ),
       };
     }
-    if (
-      object.getDefaultsPropertyRequest !== undefined &&
-      object.getDefaultsPropertyRequest !== null
-    ) {
-      message.submessage = {
-        $case: "getDefaultsPropertyRequest",
-        getDefaultsPropertyRequest: GetDefaultsPropertyRequest.fromJSON(
-          object.getDefaultsPropertyRequest
-        ),
-      };
-    }
-    if (
-      object.updateDefaultsPropertyRequest !== undefined &&
-      object.updateDefaultsPropertyRequest !== null
-    ) {
-      message.submessage = {
-        $case: "updateDefaultsPropertyRequest",
-        updateDefaultsPropertyRequest: UpdateDefaultsPropertyRequest.fromJSON(
-          object.updateDefaultsPropertyRequest
-        ),
-      };
-    }
-    if (
-      object.telemetryAliasRequest !== undefined &&
-      object.telemetryAliasRequest !== null
-    ) {
-      message.submessage = {
-        $case: "telemetryAliasRequest",
-        telemetryAliasRequest: TelemetryAliasRequest.fromJSON(
-          object.telemetryAliasRequest
-        ),
-      };
-    }
-    if (
-      object.telemetryIdentifyRequest !== undefined &&
-      object.telemetryIdentifyRequest !== null
-    ) {
-      message.submessage = {
-        $case: "telemetryIdentifyRequest",
-        telemetryIdentifyRequest: TelemetryIdentifyRequest.fromJSON(
-          object.telemetryIdentifyRequest
-        ),
-      };
-    }
-    if (
-      object.telemetryTrackRequest !== undefined &&
-      object.telemetryTrackRequest !== null
-    ) {
-      message.submessage = {
-        $case: "telemetryTrackRequest",
-        telemetryTrackRequest: TelemetryTrackRequest.fromJSON(
-          object.telemetryTrackRequest
-        ),
-      };
-    }
-    if (
-      object.onboardingRequest !== undefined &&
-      object.onboardingRequest !== null
-    ) {
-      message.submessage = {
-        $case: "onboardingRequest",
-        onboardingRequest: OnboardingRequest.fromJSON(object.onboardingRequest),
-      };
-    }
-    if (
-      object.windowFocusRequest !== undefined &&
-      object.windowFocusRequest !== null
-    ) {
-      message.submessage = {
-        $case: "windowFocusRequest",
-        windowFocusRequest: WindowFocusRequest.fromJSON(
-          object.windowFocusRequest
-        ),
-      };
-    }
-    if (
-      object.openInExternalApplicationRequest !== undefined &&
-      object.openInExternalApplicationRequest !== null
-    ) {
-      message.submessage = {
-        $case: "openInExternalApplicationRequest",
-        openInExternalApplicationRequest:
-          OpenInExternalApplicationRequest.fromJSON(
-            object.openInExternalApplicationRequest
-          ),
-      };
-    }
-    if (
-      object.getConfigPropertyRequest !== undefined &&
-      object.getConfigPropertyRequest !== null
-    ) {
-      message.submessage = {
-        $case: "getConfigPropertyRequest",
-        getConfigPropertyRequest: GetConfigPropertyRequest.fromJSON(
-          object.getConfigPropertyRequest
-        ),
-      };
-    }
-    if (
-      object.updateConfigPropertyRequest !== undefined &&
-      object.updateConfigPropertyRequest !== null
-    ) {
-      message.submessage = {
-        $case: "updateConfigPropertyRequest",
-        updateConfigPropertyRequest: UpdateConfigPropertyRequest.fromJSON(
-          object.updateConfigPropertyRequest
-        ),
-      };
-    }
     return message;
   },
 
@@ -1400,68 +936,6 @@ export const ClientOriginatedMessage = {
         ?.destinationOfSymbolicLinkRequest
         ? DestinationOfSymbolicLinkRequest.toJSON(
             message.submessage?.destinationOfSymbolicLinkRequest
-          )
-        : undefined);
-    message.submessage?.$case === "getDefaultsPropertyRequest" &&
-      (obj.getDefaultsPropertyRequest = message.submessage
-        ?.getDefaultsPropertyRequest
-        ? GetDefaultsPropertyRequest.toJSON(
-            message.submessage?.getDefaultsPropertyRequest
-          )
-        : undefined);
-    message.submessage?.$case === "updateDefaultsPropertyRequest" &&
-      (obj.updateDefaultsPropertyRequest = message.submessage
-        ?.updateDefaultsPropertyRequest
-        ? UpdateDefaultsPropertyRequest.toJSON(
-            message.submessage?.updateDefaultsPropertyRequest
-          )
-        : undefined);
-    message.submessage?.$case === "telemetryAliasRequest" &&
-      (obj.telemetryAliasRequest = message.submessage?.telemetryAliasRequest
-        ? TelemetryAliasRequest.toJSON(
-            message.submessage?.telemetryAliasRequest
-          )
-        : undefined);
-    message.submessage?.$case === "telemetryIdentifyRequest" &&
-      (obj.telemetryIdentifyRequest = message.submessage
-        ?.telemetryIdentifyRequest
-        ? TelemetryIdentifyRequest.toJSON(
-            message.submessage?.telemetryIdentifyRequest
-          )
-        : undefined);
-    message.submessage?.$case === "telemetryTrackRequest" &&
-      (obj.telemetryTrackRequest = message.submessage?.telemetryTrackRequest
-        ? TelemetryTrackRequest.toJSON(
-            message.submessage?.telemetryTrackRequest
-          )
-        : undefined);
-    message.submessage?.$case === "onboardingRequest" &&
-      (obj.onboardingRequest = message.submessage?.onboardingRequest
-        ? OnboardingRequest.toJSON(message.submessage?.onboardingRequest)
-        : undefined);
-    message.submessage?.$case === "windowFocusRequest" &&
-      (obj.windowFocusRequest = message.submessage?.windowFocusRequest
-        ? WindowFocusRequest.toJSON(message.submessage?.windowFocusRequest)
-        : undefined);
-    message.submessage?.$case === "openInExternalApplicationRequest" &&
-      (obj.openInExternalApplicationRequest = message.submessage
-        ?.openInExternalApplicationRequest
-        ? OpenInExternalApplicationRequest.toJSON(
-            message.submessage?.openInExternalApplicationRequest
-          )
-        : undefined);
-    message.submessage?.$case === "getConfigPropertyRequest" &&
-      (obj.getConfigPropertyRequest = message.submessage
-        ?.getConfigPropertyRequest
-        ? GetConfigPropertyRequest.toJSON(
-            message.submessage?.getConfigPropertyRequest
-          )
-        : undefined);
-    message.submessage?.$case === "updateConfigPropertyRequest" &&
-      (obj.updateConfigPropertyRequest = message.submessage
-        ?.updateConfigPropertyRequest
-        ? UpdateConfigPropertyRequest.toJSON(
-            message.submessage?.updateConfigPropertyRequest
           )
         : undefined);
     return obj;
@@ -1623,128 +1097,6 @@ export const ClientOriginatedMessage = {
           ),
       };
     }
-    if (
-      object.submessage?.$case === "getDefaultsPropertyRequest" &&
-      object.submessage?.getDefaultsPropertyRequest !== undefined &&
-      object.submessage?.getDefaultsPropertyRequest !== null
-    ) {
-      message.submessage = {
-        $case: "getDefaultsPropertyRequest",
-        getDefaultsPropertyRequest: GetDefaultsPropertyRequest.fromPartial(
-          object.submessage.getDefaultsPropertyRequest
-        ),
-      };
-    }
-    if (
-      object.submessage?.$case === "updateDefaultsPropertyRequest" &&
-      object.submessage?.updateDefaultsPropertyRequest !== undefined &&
-      object.submessage?.updateDefaultsPropertyRequest !== null
-    ) {
-      message.submessage = {
-        $case: "updateDefaultsPropertyRequest",
-        updateDefaultsPropertyRequest:
-          UpdateDefaultsPropertyRequest.fromPartial(
-            object.submessage.updateDefaultsPropertyRequest
-          ),
-      };
-    }
-    if (
-      object.submessage?.$case === "telemetryAliasRequest" &&
-      object.submessage?.telemetryAliasRequest !== undefined &&
-      object.submessage?.telemetryAliasRequest !== null
-    ) {
-      message.submessage = {
-        $case: "telemetryAliasRequest",
-        telemetryAliasRequest: TelemetryAliasRequest.fromPartial(
-          object.submessage.telemetryAliasRequest
-        ),
-      };
-    }
-    if (
-      object.submessage?.$case === "telemetryIdentifyRequest" &&
-      object.submessage?.telemetryIdentifyRequest !== undefined &&
-      object.submessage?.telemetryIdentifyRequest !== null
-    ) {
-      message.submessage = {
-        $case: "telemetryIdentifyRequest",
-        telemetryIdentifyRequest: TelemetryIdentifyRequest.fromPartial(
-          object.submessage.telemetryIdentifyRequest
-        ),
-      };
-    }
-    if (
-      object.submessage?.$case === "telemetryTrackRequest" &&
-      object.submessage?.telemetryTrackRequest !== undefined &&
-      object.submessage?.telemetryTrackRequest !== null
-    ) {
-      message.submessage = {
-        $case: "telemetryTrackRequest",
-        telemetryTrackRequest: TelemetryTrackRequest.fromPartial(
-          object.submessage.telemetryTrackRequest
-        ),
-      };
-    }
-    if (
-      object.submessage?.$case === "onboardingRequest" &&
-      object.submessage?.onboardingRequest !== undefined &&
-      object.submessage?.onboardingRequest !== null
-    ) {
-      message.submessage = {
-        $case: "onboardingRequest",
-        onboardingRequest: OnboardingRequest.fromPartial(
-          object.submessage.onboardingRequest
-        ),
-      };
-    }
-    if (
-      object.submessage?.$case === "windowFocusRequest" &&
-      object.submessage?.windowFocusRequest !== undefined &&
-      object.submessage?.windowFocusRequest !== null
-    ) {
-      message.submessage = {
-        $case: "windowFocusRequest",
-        windowFocusRequest: WindowFocusRequest.fromPartial(
-          object.submessage.windowFocusRequest
-        ),
-      };
-    }
-    if (
-      object.submessage?.$case === "openInExternalApplicationRequest" &&
-      object.submessage?.openInExternalApplicationRequest !== undefined &&
-      object.submessage?.openInExternalApplicationRequest !== null
-    ) {
-      message.submessage = {
-        $case: "openInExternalApplicationRequest",
-        openInExternalApplicationRequest:
-          OpenInExternalApplicationRequest.fromPartial(
-            object.submessage.openInExternalApplicationRequest
-          ),
-      };
-    }
-    if (
-      object.submessage?.$case === "getConfigPropertyRequest" &&
-      object.submessage?.getConfigPropertyRequest !== undefined &&
-      object.submessage?.getConfigPropertyRequest !== null
-    ) {
-      message.submessage = {
-        $case: "getConfigPropertyRequest",
-        getConfigPropertyRequest: GetConfigPropertyRequest.fromPartial(
-          object.submessage.getConfigPropertyRequest
-        ),
-      };
-    }
-    if (
-      object.submessage?.$case === "updateConfigPropertyRequest" &&
-      object.submessage?.updateConfigPropertyRequest !== undefined &&
-      object.submessage?.updateConfigPropertyRequest !== null
-    ) {
-      message.submessage = {
-        $case: "updateConfigPropertyRequest",
-        updateConfigPropertyRequest: UpdateConfigPropertyRequest.fromPartial(
-          object.submessage.updateConfigPropertyRequest
-        ),
-      };
-    }
     return message;
   },
 };
@@ -1799,18 +1151,6 @@ export const ServerOriginatedMessage = {
       DestinationOfSymbolicLinkResponse.encode(
         message.submessage.destinationOfSymbolicLinkResponse,
         writer.uint32(842).fork()
-      ).ldelim();
-    }
-    if (message.submessage?.$case === "getDefaultsPropertyResponse") {
-      GetDefaultsPropertyResponse.encode(
-        message.submessage.getDefaultsPropertyResponse,
-        writer.uint32(850).fork()
-      ).ldelim();
-    }
-    if (message.submessage?.$case === "getConfigPropertyResponse") {
-      GetConfigPropertyResponse.encode(
-        message.submessage.getConfigPropertyResponse,
-        writer.uint32(858).fork()
       ).ldelim();
     }
     if (message.submessage?.$case === "notification") {
@@ -1890,24 +1230,6 @@ export const ServerOriginatedMessage = {
             $case: "destinationOfSymbolicLinkResponse",
             destinationOfSymbolicLinkResponse:
               DestinationOfSymbolicLinkResponse.decode(reader, reader.uint32()),
-          };
-          break;
-        case 106:
-          message.submessage = {
-            $case: "getDefaultsPropertyResponse",
-            getDefaultsPropertyResponse: GetDefaultsPropertyResponse.decode(
-              reader,
-              reader.uint32()
-            ),
-          };
-          break;
-        case 107:
-          message.submessage = {
-            $case: "getConfigPropertyResponse",
-            getConfigPropertyResponse: GetConfigPropertyResponse.decode(
-              reader,
-              reader.uint32()
-            ),
           };
           break;
         case 1000:
@@ -2005,28 +1327,6 @@ export const ServerOriginatedMessage = {
           ),
       };
     }
-    if (
-      object.getDefaultsPropertyResponse !== undefined &&
-      object.getDefaultsPropertyResponse !== null
-    ) {
-      message.submessage = {
-        $case: "getDefaultsPropertyResponse",
-        getDefaultsPropertyResponse: GetDefaultsPropertyResponse.fromJSON(
-          object.getDefaultsPropertyResponse
-        ),
-      };
-    }
-    if (
-      object.getConfigPropertyResponse !== undefined &&
-      object.getConfigPropertyResponse !== null
-    ) {
-      message.submessage = {
-        $case: "getConfigPropertyResponse",
-        getConfigPropertyResponse: GetConfigPropertyResponse.fromJSON(
-          object.getConfigPropertyResponse
-        ),
-      };
-    }
     if (object.notification !== undefined && object.notification !== null) {
       message.submessage = {
         $case: "notification",
@@ -2079,20 +1379,6 @@ export const ServerOriginatedMessage = {
         ?.destinationOfSymbolicLinkResponse
         ? DestinationOfSymbolicLinkResponse.toJSON(
             message.submessage?.destinationOfSymbolicLinkResponse
-          )
-        : undefined);
-    message.submessage?.$case === "getDefaultsPropertyResponse" &&
-      (obj.getDefaultsPropertyResponse = message.submessage
-        ?.getDefaultsPropertyResponse
-        ? GetDefaultsPropertyResponse.toJSON(
-            message.submessage?.getDefaultsPropertyResponse
-          )
-        : undefined);
-    message.submessage?.$case === "getConfigPropertyResponse" &&
-      (obj.getConfigPropertyResponse = message.submessage
-        ?.getConfigPropertyResponse
-        ? GetConfigPropertyResponse.toJSON(
-            message.submessage?.getConfigPropertyResponse
           )
         : undefined);
     message.submessage?.$case === "notification" &&
@@ -2200,30 +1486,6 @@ export const ServerOriginatedMessage = {
           DestinationOfSymbolicLinkResponse.fromPartial(
             object.submessage.destinationOfSymbolicLinkResponse
           ),
-      };
-    }
-    if (
-      object.submessage?.$case === "getDefaultsPropertyResponse" &&
-      object.submessage?.getDefaultsPropertyResponse !== undefined &&
-      object.submessage?.getDefaultsPropertyResponse !== null
-    ) {
-      message.submessage = {
-        $case: "getDefaultsPropertyResponse",
-        getDefaultsPropertyResponse: GetDefaultsPropertyResponse.fromPartial(
-          object.submessage.getDefaultsPropertyResponse
-        ),
-      };
-    }
-    if (
-      object.submessage?.$case === "getConfigPropertyResponse" &&
-      object.submessage?.getConfigPropertyResponse !== undefined &&
-      object.submessage?.getConfigPropertyResponse !== null
-    ) {
-      message.submessage = {
-        $case: "getConfigPropertyResponse",
-        getConfigPropertyResponse: GetConfigPropertyResponse.fromPartial(
-          object.submessage.getConfigPropertyResponse
-        ),
       };
     }
     if (
@@ -3847,9 +3109,6 @@ export const ReadFileRequest = {
     if (message.path !== undefined) {
       FilePath.encode(message.path, writer.uint32(10).fork()).ldelim();
     }
-    if (message.isBinaryFile !== undefined) {
-      writer.uint32(16).bool(message.isBinaryFile);
-    }
     return writer;
   },
 
@@ -3862,9 +3121,6 @@ export const ReadFileRequest = {
       switch (tag >>> 3) {
         case 1:
           message.path = FilePath.decode(reader, reader.uint32());
-          break;
-        case 2:
-          message.isBinaryFile = reader.bool();
           break;
         default:
           reader.skipType(tag & 7);
@@ -3879,9 +3135,6 @@ export const ReadFileRequest = {
     if (object.path !== undefined && object.path !== null) {
       message.path = FilePath.fromJSON(object.path);
     }
-    if (object.isBinaryFile !== undefined && object.isBinaryFile !== null) {
-      message.isBinaryFile = Boolean(object.isBinaryFile);
-    }
     return message;
   },
 
@@ -3889,8 +3142,6 @@ export const ReadFileRequest = {
     const obj: any = {};
     message.path !== undefined &&
       (obj.path = message.path ? FilePath.toJSON(message.path) : undefined);
-    message.isBinaryFile !== undefined &&
-      (obj.isBinaryFile = message.isBinaryFile);
     return obj;
   },
 
@@ -3898,9 +3149,6 @@ export const ReadFileRequest = {
     const message = { ...baseReadFileRequest } as ReadFileRequest;
     if (object.path !== undefined && object.path !== null) {
       message.path = FilePath.fromPartial(object.path);
-    }
-    if (object.isBinaryFile !== undefined && object.isBinaryFile !== null) {
-      message.isBinaryFile = object.isBinaryFile;
     }
     return message;
   },
@@ -3913,11 +3161,8 @@ export const ReadFileResponse = {
     message: ReadFileResponse,
     writer: _m0.Writer = _m0.Writer.create()
   ): _m0.Writer {
-    if (message.type?.$case === "data") {
-      writer.uint32(10).bytes(message.type.data);
-    }
-    if (message.type?.$case === "text") {
-      writer.uint32(18).string(message.type.text);
+    if (message.data !== undefined) {
+      writer.uint32(10).bytes(message.data);
     }
     return writer;
   },
@@ -3930,10 +3175,7 @@ export const ReadFileResponse = {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
-          message.type = { $case: "data", data: reader.bytes() };
-          break;
-        case 2:
-          message.type = { $case: "text", text: reader.string() };
+          message.data = reader.bytes();
           break;
         default:
           reader.skipType(tag & 7);
@@ -3946,40 +3188,23 @@ export const ReadFileResponse = {
   fromJSON(object: any): ReadFileResponse {
     const message = { ...baseReadFileResponse } as ReadFileResponse;
     if (object.data !== undefined && object.data !== null) {
-      message.type = { $case: "data", data: bytesFromBase64(object.data) };
-    }
-    if (object.text !== undefined && object.text !== null) {
-      message.type = { $case: "text", text: String(object.text) };
+      message.data = bytesFromBase64(object.data);
     }
     return message;
   },
 
   toJSON(message: ReadFileResponse): unknown {
     const obj: any = {};
-    message.type?.$case === "data" &&
+    message.data !== undefined &&
       (obj.data =
-        message.type?.data !== undefined
-          ? base64FromBytes(message.type?.data)
-          : undefined);
-    message.type?.$case === "text" && (obj.text = message.type?.text);
+        message.data !== undefined ? base64FromBytes(message.data) : undefined);
     return obj;
   },
 
   fromPartial(object: DeepPartial<ReadFileResponse>): ReadFileResponse {
     const message = { ...baseReadFileResponse } as ReadFileResponse;
-    if (
-      object.type?.$case === "data" &&
-      object.type?.data !== undefined &&
-      object.type?.data !== null
-    ) {
-      message.type = { $case: "data", data: object.type.data };
-    }
-    if (
-      object.type?.$case === "text" &&
-      object.type?.text !== undefined &&
-      object.type?.text !== null
-    ) {
-      message.type = { $case: "text", text: object.type.text };
+    if (object.data !== undefined && object.data !== null) {
+      message.data = object.data;
     }
     return message;
   },
@@ -4359,553 +3584,6 @@ export const DestinationOfSymbolicLinkResponse = {
   },
 };
 
-const baseDefaultsValue: object = {};
-
-export const DefaultsValue = {
-  encode(
-    message: DefaultsValue,
-    writer: _m0.Writer = _m0.Writer.create()
-  ): _m0.Writer {
-    if (message.type?.$case === "null") {
-      writer.uint32(8).bool(message.type.null);
-    }
-    if (message.type?.$case === "boolean") {
-      writer.uint32(16).bool(message.type.boolean);
-    }
-    if (message.type?.$case === "string") {
-      writer.uint32(26).string(message.type.string);
-    }
-    if (message.type?.$case === "integer") {
-      writer.uint32(32).int64(message.type.integer);
-    }
-    return writer;
-  },
-
-  decode(input: _m0.Reader | Uint8Array, length?: number): DefaultsValue {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = { ...baseDefaultsValue } as DefaultsValue;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1:
-          message.type = { $case: "null", null: reader.bool() };
-          break;
-        case 2:
-          message.type = { $case: "boolean", boolean: reader.bool() };
-          break;
-        case 3:
-          message.type = { $case: "string", string: reader.string() };
-          break;
-        case 4:
-          message.type = {
-            $case: "integer",
-            integer: longToNumber(reader.int64() as Long),
-          };
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
-      }
-    }
-    return message;
-  },
-
-  fromJSON(object: any): DefaultsValue {
-    const message = { ...baseDefaultsValue } as DefaultsValue;
-    if (object.null !== undefined && object.null !== null) {
-      message.type = { $case: "null", null: Boolean(object.null) };
-    }
-    if (object.boolean !== undefined && object.boolean !== null) {
-      message.type = { $case: "boolean", boolean: Boolean(object.boolean) };
-    }
-    if (object.string !== undefined && object.string !== null) {
-      message.type = { $case: "string", string: String(object.string) };
-    }
-    if (object.integer !== undefined && object.integer !== null) {
-      message.type = { $case: "integer", integer: Number(object.integer) };
-    }
-    return message;
-  },
-
-  toJSON(message: DefaultsValue): unknown {
-    const obj: any = {};
-    message.type?.$case === "null" && (obj.null = message.type?.null);
-    message.type?.$case === "boolean" && (obj.boolean = message.type?.boolean);
-    message.type?.$case === "string" && (obj.string = message.type?.string);
-    message.type?.$case === "integer" && (obj.integer = message.type?.integer);
-    return obj;
-  },
-
-  fromPartial(object: DeepPartial<DefaultsValue>): DefaultsValue {
-    const message = { ...baseDefaultsValue } as DefaultsValue;
-    if (
-      object.type?.$case === "null" &&
-      object.type?.null !== undefined &&
-      object.type?.null !== null
-    ) {
-      message.type = { $case: "null", null: object.type.null };
-    }
-    if (
-      object.type?.$case === "boolean" &&
-      object.type?.boolean !== undefined &&
-      object.type?.boolean !== null
-    ) {
-      message.type = { $case: "boolean", boolean: object.type.boolean };
-    }
-    if (
-      object.type?.$case === "string" &&
-      object.type?.string !== undefined &&
-      object.type?.string !== null
-    ) {
-      message.type = { $case: "string", string: object.type.string };
-    }
-    if (
-      object.type?.$case === "integer" &&
-      object.type?.integer !== undefined &&
-      object.type?.integer !== null
-    ) {
-      message.type = { $case: "integer", integer: object.type.integer };
-    }
-    return message;
-  },
-};
-
-const baseGetDefaultsPropertyRequest: object = {};
-
-export const GetDefaultsPropertyRequest = {
-  encode(
-    message: GetDefaultsPropertyRequest,
-    writer: _m0.Writer = _m0.Writer.create()
-  ): _m0.Writer {
-    if (message.key !== undefined) {
-      writer.uint32(10).string(message.key);
-    }
-    return writer;
-  },
-
-  decode(
-    input: _m0.Reader | Uint8Array,
-    length?: number
-  ): GetDefaultsPropertyRequest {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = {
-      ...baseGetDefaultsPropertyRequest,
-    } as GetDefaultsPropertyRequest;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1:
-          message.key = reader.string();
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
-      }
-    }
-    return message;
-  },
-
-  fromJSON(object: any): GetDefaultsPropertyRequest {
-    const message = {
-      ...baseGetDefaultsPropertyRequest,
-    } as GetDefaultsPropertyRequest;
-    if (object.key !== undefined && object.key !== null) {
-      message.key = String(object.key);
-    }
-    return message;
-  },
-
-  toJSON(message: GetDefaultsPropertyRequest): unknown {
-    const obj: any = {};
-    message.key !== undefined && (obj.key = message.key);
-    return obj;
-  },
-
-  fromPartial(
-    object: DeepPartial<GetDefaultsPropertyRequest>
-  ): GetDefaultsPropertyRequest {
-    const message = {
-      ...baseGetDefaultsPropertyRequest,
-    } as GetDefaultsPropertyRequest;
-    if (object.key !== undefined && object.key !== null) {
-      message.key = object.key;
-    }
-    return message;
-  },
-};
-
-const baseGetDefaultsPropertyResponse: object = {};
-
-export const GetDefaultsPropertyResponse = {
-  encode(
-    message: GetDefaultsPropertyResponse,
-    writer: _m0.Writer = _m0.Writer.create()
-  ): _m0.Writer {
-    if (message.key !== undefined) {
-      writer.uint32(10).string(message.key);
-    }
-    if (message.value !== undefined) {
-      DefaultsValue.encode(message.value, writer.uint32(18).fork()).ldelim();
-    }
-    return writer;
-  },
-
-  decode(
-    input: _m0.Reader | Uint8Array,
-    length?: number
-  ): GetDefaultsPropertyResponse {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = {
-      ...baseGetDefaultsPropertyResponse,
-    } as GetDefaultsPropertyResponse;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1:
-          message.key = reader.string();
-          break;
-        case 2:
-          message.value = DefaultsValue.decode(reader, reader.uint32());
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
-      }
-    }
-    return message;
-  },
-
-  fromJSON(object: any): GetDefaultsPropertyResponse {
-    const message = {
-      ...baseGetDefaultsPropertyResponse,
-    } as GetDefaultsPropertyResponse;
-    if (object.key !== undefined && object.key !== null) {
-      message.key = String(object.key);
-    }
-    if (object.value !== undefined && object.value !== null) {
-      message.value = DefaultsValue.fromJSON(object.value);
-    }
-    return message;
-  },
-
-  toJSON(message: GetDefaultsPropertyResponse): unknown {
-    const obj: any = {};
-    message.key !== undefined && (obj.key = message.key);
-    message.value !== undefined &&
-      (obj.value = message.value
-        ? DefaultsValue.toJSON(message.value)
-        : undefined);
-    return obj;
-  },
-
-  fromPartial(
-    object: DeepPartial<GetDefaultsPropertyResponse>
-  ): GetDefaultsPropertyResponse {
-    const message = {
-      ...baseGetDefaultsPropertyResponse,
-    } as GetDefaultsPropertyResponse;
-    if (object.key !== undefined && object.key !== null) {
-      message.key = object.key;
-    }
-    if (object.value !== undefined && object.value !== null) {
-      message.value = DefaultsValue.fromPartial(object.value);
-    }
-    return message;
-  },
-};
-
-const baseUpdateDefaultsPropertyRequest: object = {};
-
-export const UpdateDefaultsPropertyRequest = {
-  encode(
-    message: UpdateDefaultsPropertyRequest,
-    writer: _m0.Writer = _m0.Writer.create()
-  ): _m0.Writer {
-    if (message.key !== undefined) {
-      writer.uint32(10).string(message.key);
-    }
-    if (message.value !== undefined) {
-      DefaultsValue.encode(message.value, writer.uint32(18).fork()).ldelim();
-    }
-    return writer;
-  },
-
-  decode(
-    input: _m0.Reader | Uint8Array,
-    length?: number
-  ): UpdateDefaultsPropertyRequest {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = {
-      ...baseUpdateDefaultsPropertyRequest,
-    } as UpdateDefaultsPropertyRequest;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1:
-          message.key = reader.string();
-          break;
-        case 2:
-          message.value = DefaultsValue.decode(reader, reader.uint32());
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
-      }
-    }
-    return message;
-  },
-
-  fromJSON(object: any): UpdateDefaultsPropertyRequest {
-    const message = {
-      ...baseUpdateDefaultsPropertyRequest,
-    } as UpdateDefaultsPropertyRequest;
-    if (object.key !== undefined && object.key !== null) {
-      message.key = String(object.key);
-    }
-    if (object.value !== undefined && object.value !== null) {
-      message.value = DefaultsValue.fromJSON(object.value);
-    }
-    return message;
-  },
-
-  toJSON(message: UpdateDefaultsPropertyRequest): unknown {
-    const obj: any = {};
-    message.key !== undefined && (obj.key = message.key);
-    message.value !== undefined &&
-      (obj.value = message.value
-        ? DefaultsValue.toJSON(message.value)
-        : undefined);
-    return obj;
-  },
-
-  fromPartial(
-    object: DeepPartial<UpdateDefaultsPropertyRequest>
-  ): UpdateDefaultsPropertyRequest {
-    const message = {
-      ...baseUpdateDefaultsPropertyRequest,
-    } as UpdateDefaultsPropertyRequest;
-    if (object.key !== undefined && object.key !== null) {
-      message.key = object.key;
-    }
-    if (object.value !== undefined && object.value !== null) {
-      message.value = DefaultsValue.fromPartial(object.value);
-    }
-    return message;
-  },
-};
-
-const baseGetConfigPropertyRequest: object = {};
-
-export const GetConfigPropertyRequest = {
-  encode(
-    message: GetConfigPropertyRequest,
-    writer: _m0.Writer = _m0.Writer.create()
-  ): _m0.Writer {
-    if (message.key !== undefined) {
-      writer.uint32(10).string(message.key);
-    }
-    return writer;
-  },
-
-  decode(
-    input: _m0.Reader | Uint8Array,
-    length?: number
-  ): GetConfigPropertyRequest {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = {
-      ...baseGetConfigPropertyRequest,
-    } as GetConfigPropertyRequest;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1:
-          message.key = reader.string();
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
-      }
-    }
-    return message;
-  },
-
-  fromJSON(object: any): GetConfigPropertyRequest {
-    const message = {
-      ...baseGetConfigPropertyRequest,
-    } as GetConfigPropertyRequest;
-    if (object.key !== undefined && object.key !== null) {
-      message.key = String(object.key);
-    }
-    return message;
-  },
-
-  toJSON(message: GetConfigPropertyRequest): unknown {
-    const obj: any = {};
-    message.key !== undefined && (obj.key = message.key);
-    return obj;
-  },
-
-  fromPartial(
-    object: DeepPartial<GetConfigPropertyRequest>
-  ): GetConfigPropertyRequest {
-    const message = {
-      ...baseGetConfigPropertyRequest,
-    } as GetConfigPropertyRequest;
-    if (object.key !== undefined && object.key !== null) {
-      message.key = object.key;
-    }
-    return message;
-  },
-};
-
-const baseGetConfigPropertyResponse: object = {};
-
-export const GetConfigPropertyResponse = {
-  encode(
-    message: GetConfigPropertyResponse,
-    writer: _m0.Writer = _m0.Writer.create()
-  ): _m0.Writer {
-    if (message.value !== undefined) {
-      writer.uint32(10).string(message.value);
-    }
-    return writer;
-  },
-
-  decode(
-    input: _m0.Reader | Uint8Array,
-    length?: number
-  ): GetConfigPropertyResponse {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = {
-      ...baseGetConfigPropertyResponse,
-    } as GetConfigPropertyResponse;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1:
-          message.value = reader.string();
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
-      }
-    }
-    return message;
-  },
-
-  fromJSON(object: any): GetConfigPropertyResponse {
-    const message = {
-      ...baseGetConfigPropertyResponse,
-    } as GetConfigPropertyResponse;
-    if (object.value !== undefined && object.value !== null) {
-      message.value = String(object.value);
-    }
-    return message;
-  },
-
-  toJSON(message: GetConfigPropertyResponse): unknown {
-    const obj: any = {};
-    message.value !== undefined && (obj.value = message.value);
-    return obj;
-  },
-
-  fromPartial(
-    object: DeepPartial<GetConfigPropertyResponse>
-  ): GetConfigPropertyResponse {
-    const message = {
-      ...baseGetConfigPropertyResponse,
-    } as GetConfigPropertyResponse;
-    if (object.value !== undefined && object.value !== null) {
-      message.value = object.value;
-    }
-    return message;
-  },
-};
-
-const baseUpdateConfigPropertyRequest: object = {};
-
-export const UpdateConfigPropertyRequest = {
-  encode(
-    message: UpdateConfigPropertyRequest,
-    writer: _m0.Writer = _m0.Writer.create()
-  ): _m0.Writer {
-    if (message.key !== undefined) {
-      writer.uint32(10).string(message.key);
-    }
-    if (message.value !== undefined) {
-      writer.uint32(18).string(message.value);
-    }
-    return writer;
-  },
-
-  decode(
-    input: _m0.Reader | Uint8Array,
-    length?: number
-  ): UpdateConfigPropertyRequest {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = {
-      ...baseUpdateConfigPropertyRequest,
-    } as UpdateConfigPropertyRequest;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1:
-          message.key = reader.string();
-          break;
-        case 2:
-          message.value = reader.string();
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
-      }
-    }
-    return message;
-  },
-
-  fromJSON(object: any): UpdateConfigPropertyRequest {
-    const message = {
-      ...baseUpdateConfigPropertyRequest,
-    } as UpdateConfigPropertyRequest;
-    if (object.key !== undefined && object.key !== null) {
-      message.key = String(object.key);
-    }
-    if (object.value !== undefined && object.value !== null) {
-      message.value = String(object.value);
-    }
-    return message;
-  },
-
-  toJSON(message: UpdateConfigPropertyRequest): unknown {
-    const obj: any = {};
-    message.key !== undefined && (obj.key = message.key);
-    message.value !== undefined && (obj.value = message.value);
-    return obj;
-  },
-
-  fromPartial(
-    object: DeepPartial<UpdateConfigPropertyRequest>
-  ): UpdateConfigPropertyRequest {
-    const message = {
-      ...baseUpdateConfigPropertyRequest,
-    } as UpdateConfigPropertyRequest;
-    if (object.key !== undefined && object.key !== null) {
-      message.key = object.key;
-    }
-    if (object.value !== undefined && object.value !== null) {
-      message.value = object.value;
-    }
-    return message;
-  },
-};
-
 const baseGetSettingsPropertyRequest: object = {};
 
 export const GetSettingsPropertyRequest = {
@@ -5122,477 +3800,6 @@ export const UpdateSettingsPropertyRequest = {
     }
     if (object.value !== undefined && object.value !== null) {
       message.value = object.value;
-    }
-    return message;
-  },
-};
-
-const baseTelemetryProperty: object = { key: "", value: "" };
-
-export const TelemetryProperty = {
-  encode(
-    message: TelemetryProperty,
-    writer: _m0.Writer = _m0.Writer.create()
-  ): _m0.Writer {
-    if (message.key !== "") {
-      writer.uint32(10).string(message.key);
-    }
-    if (message.value !== "") {
-      writer.uint32(18).string(message.value);
-    }
-    return writer;
-  },
-
-  decode(input: _m0.Reader | Uint8Array, length?: number): TelemetryProperty {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = { ...baseTelemetryProperty } as TelemetryProperty;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1:
-          message.key = reader.string();
-          break;
-        case 2:
-          message.value = reader.string();
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
-      }
-    }
-    return message;
-  },
-
-  fromJSON(object: any): TelemetryProperty {
-    const message = { ...baseTelemetryProperty } as TelemetryProperty;
-    if (object.key !== undefined && object.key !== null) {
-      message.key = String(object.key);
-    }
-    if (object.value !== undefined && object.value !== null) {
-      message.value = String(object.value);
-    }
-    return message;
-  },
-
-  toJSON(message: TelemetryProperty): unknown {
-    const obj: any = {};
-    message.key !== undefined && (obj.key = message.key);
-    message.value !== undefined && (obj.value = message.value);
-    return obj;
-  },
-
-  fromPartial(object: DeepPartial<TelemetryProperty>): TelemetryProperty {
-    const message = { ...baseTelemetryProperty } as TelemetryProperty;
-    if (object.key !== undefined && object.key !== null) {
-      message.key = object.key;
-    }
-    if (object.value !== undefined && object.value !== null) {
-      message.value = object.value;
-    }
-    return message;
-  },
-};
-
-const baseTelemetryAliasRequest: object = {};
-
-export const TelemetryAliasRequest = {
-  encode(
-    message: TelemetryAliasRequest,
-    writer: _m0.Writer = _m0.Writer.create()
-  ): _m0.Writer {
-    if (message.userId !== undefined) {
-      writer.uint32(10).string(message.userId);
-    }
-    return writer;
-  },
-
-  decode(
-    input: _m0.Reader | Uint8Array,
-    length?: number
-  ): TelemetryAliasRequest {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = { ...baseTelemetryAliasRequest } as TelemetryAliasRequest;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1:
-          message.userId = reader.string();
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
-      }
-    }
-    return message;
-  },
-
-  fromJSON(object: any): TelemetryAliasRequest {
-    const message = { ...baseTelemetryAliasRequest } as TelemetryAliasRequest;
-    if (object.userId !== undefined && object.userId !== null) {
-      message.userId = String(object.userId);
-    }
-    return message;
-  },
-
-  toJSON(message: TelemetryAliasRequest): unknown {
-    const obj: any = {};
-    message.userId !== undefined && (obj.userId = message.userId);
-    return obj;
-  },
-
-  fromPartial(
-    object: DeepPartial<TelemetryAliasRequest>
-  ): TelemetryAliasRequest {
-    const message = { ...baseTelemetryAliasRequest } as TelemetryAliasRequest;
-    if (object.userId !== undefined && object.userId !== null) {
-      message.userId = object.userId;
-    }
-    return message;
-  },
-};
-
-const baseTelemetryTrackRequest: object = {};
-
-export const TelemetryTrackRequest = {
-  encode(
-    message: TelemetryTrackRequest,
-    writer: _m0.Writer = _m0.Writer.create()
-  ): _m0.Writer {
-    if (message.event !== undefined) {
-      writer.uint32(10).string(message.event);
-    }
-    for (const v of message.properties) {
-      TelemetryProperty.encode(v!, writer.uint32(18).fork()).ldelim();
-    }
-    return writer;
-  },
-
-  decode(
-    input: _m0.Reader | Uint8Array,
-    length?: number
-  ): TelemetryTrackRequest {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = { ...baseTelemetryTrackRequest } as TelemetryTrackRequest;
-    message.properties = [];
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1:
-          message.event = reader.string();
-          break;
-        case 2:
-          message.properties.push(
-            TelemetryProperty.decode(reader, reader.uint32())
-          );
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
-      }
-    }
-    return message;
-  },
-
-  fromJSON(object: any): TelemetryTrackRequest {
-    const message = { ...baseTelemetryTrackRequest } as TelemetryTrackRequest;
-    message.properties = [];
-    if (object.event !== undefined && object.event !== null) {
-      message.event = String(object.event);
-    }
-    if (object.properties !== undefined && object.properties !== null) {
-      for (const e of object.properties) {
-        message.properties.push(TelemetryProperty.fromJSON(e));
-      }
-    }
-    return message;
-  },
-
-  toJSON(message: TelemetryTrackRequest): unknown {
-    const obj: any = {};
-    message.event !== undefined && (obj.event = message.event);
-    if (message.properties) {
-      obj.properties = message.properties.map((e) =>
-        e ? TelemetryProperty.toJSON(e) : undefined
-      );
-    } else {
-      obj.properties = [];
-    }
-    return obj;
-  },
-
-  fromPartial(
-    object: DeepPartial<TelemetryTrackRequest>
-  ): TelemetryTrackRequest {
-    const message = { ...baseTelemetryTrackRequest } as TelemetryTrackRequest;
-    message.properties = [];
-    if (object.event !== undefined && object.event !== null) {
-      message.event = object.event;
-    }
-    if (object.properties !== undefined && object.properties !== null) {
-      for (const e of object.properties) {
-        message.properties.push(TelemetryProperty.fromPartial(e));
-      }
-    }
-    return message;
-  },
-};
-
-const baseTelemetryIdentifyRequest: object = {};
-
-export const TelemetryIdentifyRequest = {
-  encode(
-    message: TelemetryIdentifyRequest,
-    writer: _m0.Writer = _m0.Writer.create()
-  ): _m0.Writer {
-    for (const v of message.traits) {
-      TelemetryProperty.encode(v!, writer.uint32(18).fork()).ldelim();
-    }
-    return writer;
-  },
-
-  decode(
-    input: _m0.Reader | Uint8Array,
-    length?: number
-  ): TelemetryIdentifyRequest {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = {
-      ...baseTelemetryIdentifyRequest,
-    } as TelemetryIdentifyRequest;
-    message.traits = [];
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 2:
-          message.traits.push(
-            TelemetryProperty.decode(reader, reader.uint32())
-          );
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
-      }
-    }
-    return message;
-  },
-
-  fromJSON(object: any): TelemetryIdentifyRequest {
-    const message = {
-      ...baseTelemetryIdentifyRequest,
-    } as TelemetryIdentifyRequest;
-    message.traits = [];
-    if (object.traits !== undefined && object.traits !== null) {
-      for (const e of object.traits) {
-        message.traits.push(TelemetryProperty.fromJSON(e));
-      }
-    }
-    return message;
-  },
-
-  toJSON(message: TelemetryIdentifyRequest): unknown {
-    const obj: any = {};
-    if (message.traits) {
-      obj.traits = message.traits.map((e) =>
-        e ? TelemetryProperty.toJSON(e) : undefined
-      );
-    } else {
-      obj.traits = [];
-    }
-    return obj;
-  },
-
-  fromPartial(
-    object: DeepPartial<TelemetryIdentifyRequest>
-  ): TelemetryIdentifyRequest {
-    const message = {
-      ...baseTelemetryIdentifyRequest,
-    } as TelemetryIdentifyRequest;
-    message.traits = [];
-    if (object.traits !== undefined && object.traits !== null) {
-      for (const e of object.traits) {
-        message.traits.push(TelemetryProperty.fromPartial(e));
-      }
-    }
-    return message;
-  },
-};
-
-const baseOnboardingRequest: object = { action: 0 };
-
-export const OnboardingRequest = {
-  encode(
-    message: OnboardingRequest,
-    writer: _m0.Writer = _m0.Writer.create()
-  ): _m0.Writer {
-    if (message.action !== 0) {
-      writer.uint32(8).int32(message.action);
-    }
-    return writer;
-  },
-
-  decode(input: _m0.Reader | Uint8Array, length?: number): OnboardingRequest {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = { ...baseOnboardingRequest } as OnboardingRequest;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1:
-          message.action = reader.int32() as any;
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
-      }
-    }
-    return message;
-  },
-
-  fromJSON(object: any): OnboardingRequest {
-    const message = { ...baseOnboardingRequest } as OnboardingRequest;
-    if (object.action !== undefined && object.action !== null) {
-      message.action = onboardingActionFromJSON(object.action);
-    }
-    return message;
-  },
-
-  toJSON(message: OnboardingRequest): unknown {
-    const obj: any = {};
-    message.action !== undefined &&
-      (obj.action = onboardingActionToJSON(message.action));
-    return obj;
-  },
-
-  fromPartial(object: DeepPartial<OnboardingRequest>): OnboardingRequest {
-    const message = { ...baseOnboardingRequest } as OnboardingRequest;
-    if (object.action !== undefined && object.action !== null) {
-      message.action = object.action;
-    }
-    return message;
-  },
-};
-
-const baseWindowFocusRequest: object = {};
-
-export const WindowFocusRequest = {
-  encode(
-    message: WindowFocusRequest,
-    writer: _m0.Writer = _m0.Writer.create()
-  ): _m0.Writer {
-    if (message.type !== undefined) {
-      writer.uint32(8).int32(message.type);
-    }
-    return writer;
-  },
-
-  decode(input: _m0.Reader | Uint8Array, length?: number): WindowFocusRequest {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = { ...baseWindowFocusRequest } as WindowFocusRequest;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1:
-          message.type = reader.int32() as any;
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
-      }
-    }
-    return message;
-  },
-
-  fromJSON(object: any): WindowFocusRequest {
-    const message = { ...baseWindowFocusRequest } as WindowFocusRequest;
-    if (object.type !== undefined && object.type !== null) {
-      message.type = focusActionFromJSON(object.type);
-    }
-    return message;
-  },
-
-  toJSON(message: WindowFocusRequest): unknown {
-    const obj: any = {};
-    message.type !== undefined &&
-      (obj.type =
-        message.type !== undefined
-          ? focusActionToJSON(message.type)
-          : undefined);
-    return obj;
-  },
-
-  fromPartial(object: DeepPartial<WindowFocusRequest>): WindowFocusRequest {
-    const message = { ...baseWindowFocusRequest } as WindowFocusRequest;
-    if (object.type !== undefined && object.type !== null) {
-      message.type = object.type;
-    }
-    return message;
-  },
-};
-
-const baseOpenInExternalApplicationRequest: object = {};
-
-export const OpenInExternalApplicationRequest = {
-  encode(
-    message: OpenInExternalApplicationRequest,
-    writer: _m0.Writer = _m0.Writer.create()
-  ): _m0.Writer {
-    if (message.url !== undefined) {
-      writer.uint32(10).string(message.url);
-    }
-    return writer;
-  },
-
-  decode(
-    input: _m0.Reader | Uint8Array,
-    length?: number
-  ): OpenInExternalApplicationRequest {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = {
-      ...baseOpenInExternalApplicationRequest,
-    } as OpenInExternalApplicationRequest;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1:
-          message.url = reader.string();
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
-      }
-    }
-    return message;
-  },
-
-  fromJSON(object: any): OpenInExternalApplicationRequest {
-    const message = {
-      ...baseOpenInExternalApplicationRequest,
-    } as OpenInExternalApplicationRequest;
-    if (object.url !== undefined && object.url !== null) {
-      message.url = String(object.url);
-    }
-    return message;
-  },
-
-  toJSON(message: OpenInExternalApplicationRequest): unknown {
-    const obj: any = {};
-    message.url !== undefined && (obj.url = message.url);
-    return obj;
-  },
-
-  fromPartial(
-    object: DeepPartial<OpenInExternalApplicationRequest>
-  ): OpenInExternalApplicationRequest {
-    const message = {
-      ...baseOpenInExternalApplicationRequest,
-    } as OpenInExternalApplicationRequest;
-    if (object.url !== undefined && object.url !== null) {
-      message.url = object.url;
     }
     return message;
   },
@@ -5929,12 +4136,6 @@ export const Notification = {
         writer.uint32(58).fork()
       ).ldelim();
     }
-    if (message.type?.$case === "historyUpdatedNotification") {
-      HistoryUpdatedNotification.encode(
-        message.type.historyUpdatedNotification,
-        writer.uint32(66).fork()
-      ).ldelim();
-    }
     return writer;
   },
 
@@ -6002,15 +4203,6 @@ export const Notification = {
             $case: "windowFocusChangedNotification",
             windowFocusChangedNotification:
               WindowFocusChangedNotification.decode(reader, reader.uint32()),
-          };
-          break;
-        case 8:
-          message.type = {
-            $case: "historyUpdatedNotification",
-            historyUpdatedNotification: HistoryUpdatedNotification.decode(
-              reader,
-              reader.uint32()
-            ),
           };
           break;
         default:
@@ -6101,17 +4293,6 @@ export const Notification = {
         ),
       };
     }
-    if (
-      object.historyUpdatedNotification !== undefined &&
-      object.historyUpdatedNotification !== null
-    ) {
-      message.type = {
-        $case: "historyUpdatedNotification",
-        historyUpdatedNotification: HistoryUpdatedNotification.fromJSON(
-          object.historyUpdatedNotification
-        ),
-      };
-    }
     return message;
   },
 
@@ -6162,12 +4343,6 @@ export const Notification = {
         ?.windowFocusChangedNotification
         ? WindowFocusChangedNotification.toJSON(
             message.type?.windowFocusChangedNotification
-          )
-        : undefined);
-    message.type?.$case === "historyUpdatedNotification" &&
-      (obj.historyUpdatedNotification = message.type?.historyUpdatedNotification
-        ? HistoryUpdatedNotification.toJSON(
-            message.type?.historyUpdatedNotification
           )
         : undefined);
     return obj;
@@ -6260,18 +4435,6 @@ export const Notification = {
           WindowFocusChangedNotification.fromPartial(
             object.type.windowFocusChangedNotification
           ),
-      };
-    }
-    if (
-      object.type?.$case === "historyUpdatedNotification" &&
-      object.type?.historyUpdatedNotification !== undefined &&
-      object.type?.historyUpdatedNotification !== null
-    ) {
-      message.type = {
-        $case: "historyUpdatedNotification",
-        historyUpdatedNotification: HistoryUpdatedNotification.fromPartial(
-          object.type.historyUpdatedNotification
-        ),
       };
     }
     return message;
@@ -6840,144 +5003,6 @@ export const WindowFocusChangedNotification = {
     } as WindowFocusChangedNotification;
     if (object.window !== undefined && object.window !== null) {
       message.window = Window.fromPartial(object.window);
-    }
-    return message;
-  },
-};
-
-const baseHistoryUpdatedNotification: object = {};
-
-export const HistoryUpdatedNotification = {
-  encode(
-    message: HistoryUpdatedNotification,
-    writer: _m0.Writer = _m0.Writer.create()
-  ): _m0.Writer {
-    if (message.command !== undefined) {
-      writer.uint32(10).string(message.command);
-    }
-    if (message.processName !== undefined) {
-      writer.uint32(18).string(message.processName);
-    }
-    if (message.currentWorkingDirectory !== undefined) {
-      writer.uint32(26).string(message.currentWorkingDirectory);
-    }
-    if (message.sessionId !== undefined) {
-      writer.uint32(34).string(message.sessionId);
-    }
-    if (message.hostname !== undefined) {
-      writer.uint32(42).string(message.hostname);
-    }
-    if (message.exitCode !== undefined) {
-      writer.uint32(48).int32(message.exitCode);
-    }
-    return writer;
-  },
-
-  decode(
-    input: _m0.Reader | Uint8Array,
-    length?: number
-  ): HistoryUpdatedNotification {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = {
-      ...baseHistoryUpdatedNotification,
-    } as HistoryUpdatedNotification;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1:
-          message.command = reader.string();
-          break;
-        case 2:
-          message.processName = reader.string();
-          break;
-        case 3:
-          message.currentWorkingDirectory = reader.string();
-          break;
-        case 4:
-          message.sessionId = reader.string();
-          break;
-        case 5:
-          message.hostname = reader.string();
-          break;
-        case 6:
-          message.exitCode = reader.int32();
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
-      }
-    }
-    return message;
-  },
-
-  fromJSON(object: any): HistoryUpdatedNotification {
-    const message = {
-      ...baseHistoryUpdatedNotification,
-    } as HistoryUpdatedNotification;
-    if (object.command !== undefined && object.command !== null) {
-      message.command = String(object.command);
-    }
-    if (object.processName !== undefined && object.processName !== null) {
-      message.processName = String(object.processName);
-    }
-    if (
-      object.currentWorkingDirectory !== undefined &&
-      object.currentWorkingDirectory !== null
-    ) {
-      message.currentWorkingDirectory = String(object.currentWorkingDirectory);
-    }
-    if (object.sessionId !== undefined && object.sessionId !== null) {
-      message.sessionId = String(object.sessionId);
-    }
-    if (object.hostname !== undefined && object.hostname !== null) {
-      message.hostname = String(object.hostname);
-    }
-    if (object.exitCode !== undefined && object.exitCode !== null) {
-      message.exitCode = Number(object.exitCode);
-    }
-    return message;
-  },
-
-  toJSON(message: HistoryUpdatedNotification): unknown {
-    const obj: any = {};
-    message.command !== undefined && (obj.command = message.command);
-    message.processName !== undefined &&
-      (obj.processName = message.processName);
-    message.currentWorkingDirectory !== undefined &&
-      (obj.currentWorkingDirectory = message.currentWorkingDirectory);
-    message.sessionId !== undefined && (obj.sessionId = message.sessionId);
-    message.hostname !== undefined && (obj.hostname = message.hostname);
-    message.exitCode !== undefined && (obj.exitCode = message.exitCode);
-    return obj;
-  },
-
-  fromPartial(
-    object: DeepPartial<HistoryUpdatedNotification>
-  ): HistoryUpdatedNotification {
-    const message = {
-      ...baseHistoryUpdatedNotification,
-    } as HistoryUpdatedNotification;
-    if (object.command !== undefined && object.command !== null) {
-      message.command = object.command;
-    }
-    if (object.processName !== undefined && object.processName !== null) {
-      message.processName = object.processName;
-    }
-    if (
-      object.currentWorkingDirectory !== undefined &&
-      object.currentWorkingDirectory !== null
-    ) {
-      message.currentWorkingDirectory = object.currentWorkingDirectory;
-    }
-    if (object.sessionId !== undefined && object.sessionId !== null) {
-      message.sessionId = object.sessionId;
-    }
-    if (object.hostname !== undefined && object.hostname !== null) {
-      message.hostname = object.hostname;
-    }
-    if (object.exitCode !== undefined && object.exitCode !== null) {
-      message.exitCode = object.exitCode;
     }
     return message;
   },

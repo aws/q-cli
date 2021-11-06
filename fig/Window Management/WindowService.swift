@@ -422,18 +422,3 @@ extension ExternalWindow: Hashable {
         return lhs.windowId == rhs.windowId
        }
 }
-
-import FigAPIBindings
-extension WindowServer {
-  static func handleFocusRequest(_ request: Fig_WindowFocusRequest) throws -> Bool {
-    switch(request.type) {
-    case .takeFocus:
-      WindowServer.shared.takeFocus()
-    case .returnFocus:
-      WindowServer.shared.returnFocus()
-    default:
-      throw APIError.generic(message: "Did not specify 'type'")
-    }
-    return true
-  }
-}
