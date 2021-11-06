@@ -1,6 +1,6 @@
-import Shell from '../shell';
-import Config from '../config';
-import Settings from '../settings';
+import Shell from '../src/shell';
+import Config from '../src/config';
+import Settings from '../src/settings';
 
 let shell: Shell;
 

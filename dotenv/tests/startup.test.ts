@@ -1,5 +1,5 @@
-import { PTYOptions } from '../pty';
-import Shell from '../shell';
+import { PTYOptions } from '../src/pty';
+import Shell from '../src/shell';
 
 const filterOutliers = (arr: number[]): number[] => {
   const values = [...arr];

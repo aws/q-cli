@@ -6,9 +6,9 @@ import {
   beforeEach,
   afterAll,
 } from '@jest/globals';
-import Shell from '../shell';
-import Config from '../config';
-import Settings from '../settings';
+import Shell from '../src/shell';
+import Config from '../src/config';
+import Settings from '../src/settings';
 
 export const makeTestsForShell = (shell: Shell) => {
   let env: Record<string, string>;
