@@ -2,6 +2,7 @@ package drip
 
 import (
 	"encoding/json"
+	"fig-cli/settings"
 	"fmt"
 	"os"
 	"os/user"
@@ -81,6 +82,15 @@ func NewCmdDrip() *cobra.Command {
 		Short:  "",
 		Hidden: true,
 		Run: func(cmd *cobra.Command, args []string) {
+			settings, err := settings.Load()
+			if err != nil {
+				return
+			}
+
+			if settings.Get("cli.drip.disabled") == true {
+				return
+			}
+
 			dripFile, err := loadDrip()
 			if err != nil {
 				fmt.Println(err)
