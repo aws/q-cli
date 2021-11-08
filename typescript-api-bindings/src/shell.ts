@@ -48,23 +48,25 @@ const subscribeToPromptReturnedNotifications = (
 const subscribeToHistoryUpdatedNotifications = (
   handler: (notification: HistoryUpdatedNotification) => boolean | undefined
 ) => {
-  return _subscribe({ type: NotificationType.NOTIFY_ON_HISTORY_UPDATED }, (notification) => {
-    switch (notification?.type?.$case) {
-      case "historyUpdatedNotification":
-        return handler(notification.type.historyUpdatedNotification);
-      default:
-        break;
+  return _subscribe(
+    { type: NotificationType.NOTIFY_ON_HISTORY_UPDATED },
+    notification => {
+      switch (notification?.type?.$case) {
+        case 'historyUpdatedNotification':
+          return handler(notification.type.historyUpdatedNotification);
+        default:
+          break;
+      }
+
+      return false;
     }
-
-    return false;
-  })
-}
-
+  );
+};
 
 const insert = async (text: string) =>
   sendInsertTextRequest({
-  type: { $case: 'text', text: text },
-});
+    type: { $case: 'text', text: text },
+  });
 
 const promptDidReturn = { subscribe: subscribeToPromptReturnedNotifications };
 const processDidChange = { subscribe: subscribeToProcessChangedNotifications };

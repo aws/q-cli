@@ -2,12 +2,6 @@
 source ~/.fig/shell/bash-preexec.sh
 function __bp_adjust_histcontrol() { :; }
 
-__fig() {
-  if [[ -d /Applications/Fig.app || -d ~/Applications/Fig.app ]] && command -v fig 2>&1 1>/dev/null; then
-    fig "$@"
-  fi
-}
-
 FIG_LAST_PS1="$PS1"
 FIG_LAST_PS2="$PS2"
 FIG_LAST_PS3="$PS3"
