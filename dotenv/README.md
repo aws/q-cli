@@ -11,7 +11,7 @@ export DOCKER_DEFAULT_PLATFORM=linux/arm64
 
 Run `npx ts-node generate-compose` to generate the `docker-compose.yaml`
 file
-Run `docker-compose build -f base.yaml` to build base image.
+Run `docker-compose -f base.yaml build` to build base image.
 Run `docker-compose build` to build remaining images.
 
 ## Run tests

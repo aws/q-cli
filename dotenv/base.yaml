@@ -1,10 +1,10 @@
 services:
   dotenv-base:
     image: dotenv-base
+    platform: linux/arm64
     build:
       context: ../
       dockerfile: ./dotenv/Dockerfile
-    extends:
-      file: common.yaml
-      service: common-options
-    entrypoint: echo
+    volumes:
+      - ./:/usr/home/app/
+      - /usr/home/app/node_modules

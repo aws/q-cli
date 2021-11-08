@@ -167,6 +167,7 @@ void publish_buffer(FigTerm* ft) {
   }
 
   if (buffer == NULL || index < 0) {
+    log_info("Buffer is null or invalid index, not publishing...");
     return;
   }
 
@@ -221,7 +222,6 @@ void figterm_loop(int ptyp_fd, pid_t shell_pid, char* initial_command) {
     }
 
     int n = select(max_fd + 1, &rfd, 0, 0, NULL);
-    log_info("Got n %d, %d, %d, %d", n, FD_ISSET(STDIN_FILENO, &rfd), FD_ISSET(ptyp_fd, &rfd), FD_ISSET(incoming_socket, &rfd));
     if (n < 0 && errno != EINTR) {
       err_sys("select error");
     }

@@ -59,7 +59,7 @@ void figterm_screen_set_callbacks(FigTermScreen*, const FigTermScreenCallbacks*,
 // Methods.
 void figterm_screen_get_cursorpos(FigTermScreen*, VTermPos*);
 void figterm_screen_set_attr(FigTermScreen*, FigTermAttr, void*);
-size_t figterm_screen_get_text(FigTermScreen*, char*, size_t, const VTermRect, char, int*);
+size_t figterm_screen_get_text(FigTermScreen*, char*, size_t, const VTermRect, int, char, bool, int*);
 
 // color.c
 enum { color_support_term256 = 1 << 0, color_support_term24bit = 1 << 1 };

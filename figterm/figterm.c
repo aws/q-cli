@@ -271,7 +271,7 @@ bool figterm_can_send_buffer(FigTerm* ft) {
   bool in_ssh_or_docker = ft->shell_state.in_ssh || ft->shell_state.in_docker;
   bool shell_enabled = strcmp(ft->shell_state.shell, "bash") == 0 ||
     strcmp(ft->shell_state.shell, "fish") == 0 ||
-    (in_ssh_or_docker && strcmp(ft->shell_state.shell, "zsh") == 0);
+    strcmp(ft->shell_state.shell, "zsh") == 0;
   bool insertion_locked = access(ft->insertion_lock_path, F_OK) == 0;
   return shell_enabled && !insertion_locked && !ft->shell_state.preexec;
 }
@@ -289,31 +289,13 @@ char* figterm_get_buffer(FigTerm* ft, int* index) {
   int len = (rows + 1 - i) * (cols + 1);
   char* buf = malloc(sizeof(char) * (len + 1));
 
-  int* index_ptr = index;
-
   // Get prompt row text first.
   VTermRect rect = {
-    .start_row = i, .end_row = i + 1, .start_col = j, .end_col = cols
+    .start_row = i, .end_row = rows, .start_col = 0, .end_col = cols
   };
-  size_t row_len = figterm_screen_get_text(ft->screen, buf, len, rect, UNICODE_SPACE, index_ptr);
-  buf[row_len] = '\n';
-  row_len += 1;
-
-  if (*index_ptr != -1)
-    index_ptr = NULL;
-
-  // Then the rest of the screen.
-  rect.start_row += 1;
-  rect.end_row = rows;
-  rect.start_col = 0;
-  rect.end_col = cols;
-
-  size_t text_len = figterm_screen_get_text(ft->screen, buf + row_len, len - row_len, rect, UNICODE_SPACE, index_ptr);
-  buf[row_len + text_len] = '\0';
-
-  if (index_ptr != NULL)
-    *index += row_len;
-
+  size_t text_len = figterm_screen_get_text(ft->screen, buf, len, rect, j, UNICODE_SPACE, true, index);
+  buf[text_len] = '\0';
+  log_info("Row len: %d < %d, %d, %s", text_len, cols, *index, buf);
   return rtrim(buf, *index);
 }
 
@@ -340,7 +322,7 @@ void figterm_log(FigTerm *ft, char mask) {
   vterm_get_size(ft->vt, &rect.end_row, &rect.end_col);
   int len = (rect.end_row + 1) * (rect.end_col + 1);
   char* buf = malloc(sizeof(char) * len);
-  size_t outpos = figterm_screen_get_text(ft->screen, buf, len, rect, mask, NULL);
+  size_t outpos = figterm_screen_get_text(ft->screen, buf, len, rect, 0, mask, false, NULL);
 
   VTermPos cursor;
   figterm_screen_get_cursorpos(ft->screen, &cursor);

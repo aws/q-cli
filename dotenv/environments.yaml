@@ -25,6 +25,7 @@ services:
     command: ["tests/bash", "tests/zsh"]
   startup:
     command: ["tests/startup"]
+  powerlevel10k:
+    command: ["tests/zsh"]
   # TODO aliases
-  # TODO powerlevel10k
   # TODO space_in_path

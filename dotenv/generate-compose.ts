@@ -18,6 +18,8 @@ const services = Object.entries(skeleton.services).reduce((acc, [key, val]) => {
   acc[key] = {
     container_name: key,
     build: `./configs/${key}`,
+    // Mount current directory by default in all containers to avoid having to
+    // rebuild when writing tests.
     volumes: ['./:/usr/home/app/', '/usr/home/app/node_modules'],
     tty: true,
     ...val,

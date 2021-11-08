@@ -62,7 +62,7 @@ export const makeTestsForShell = (shell: Shell) => {
     });
 
     test('buffer should reset after typing a character', async () => {
-      await shell.pty.typeAsync('\b');
+      await shell.pty.typeAsync(' \b');
       expect(shell.buffer).toBe('');
     });
 
