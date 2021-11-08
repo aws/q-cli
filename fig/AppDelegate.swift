@@ -524,17 +524,15 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             }
         }
         
-        integrationsMenu.addItem(NSMenuItem.separator())
-
-    
-      let sshIntegration = integrationsMenu.addItem(
-      withTitle: "SSH Integration",
-      action: #selector(AppDelegate.toggleSSHIntegration(_:)),
-      keyEquivalent: "")
-      sshIntegration.state = Defaults.SSHIntegrationEnabled ? .on : .off
-      
       integrationsMenu.addItem(NSMenuItem.separator())
-      integrationsMenu.addItem(withTitle: "Edit Key Bindings", action: #selector(editKeybindingsFile), keyEquivalent: "")
+//
+//    
+//      let sshIntegration = integrationsMenu.addItem(
+//      withTitle: "SSH Integration",
+//      action: #selector(AppDelegate.toggleSSHIntegration(_:)),
+//      keyEquivalent: "")
+//      sshIntegration.state = Defaults.SSHIntegrationEnabled ? .on : .off
+
       
       let developer = integrationsMenu.addItem(
        withTitle: "Developer",
