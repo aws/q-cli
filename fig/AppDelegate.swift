@@ -285,12 +285,16 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     }
         
     func openMenu() {
+        
+        // Do not show menu if icon is hidden
+        if let hidden = Settings.shared.getValue(forKey: Settings.hideMenubarIcon) as? Bool,
+               hidden {
+          return
+        }
+      
         if let menu = self.statusBarItem.menu {
             self.statusBarItem.popUpMenu(menu)
         }
-//        self.statusBarItem.menu?.popUp(positioning: ,
-//                                       at: self.statusBarItem.view?.frame.origin,
-//                                       in: self.statusBarItem.view)
     }
     
     func validateMenuItem(menuItem: NSMenuItem) -> Bool {
