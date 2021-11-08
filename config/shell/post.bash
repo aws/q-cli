@@ -24,8 +24,6 @@ fi
 function fig_osc { printf "\033]697;"; printf $@; printf "\007"; }
 
 function __fig_preexec() {
-  __fig bg:exec $$ $TTY & disown
-
   fig_osc PreExec
 
   # Reset user prompts before executing a command, but only if it hasn't
@@ -55,24 +53,6 @@ function __fig_preexec_preserve_status() {
 function __fig_prompt () {
   __fig_ret_value="$?"
 
-  # Work around bug in CentOS 7.2 where preexec doesn't run if you press ^C
-  # while entering a command.
-  [[ -z "${_fig_done_preexec:-}" ]] && __fig_preexec ""
-  _fig_done_preexec=""
-
-  __fig bg:prompt $$ $TTY & disown
-
-  # If FIG_USER_PSx is undefined or PSx changed by user, update FIG_USER_PSx.
-  if [[ -z "${FIG_USER_PS1+x}" || "${PS1}" != "${FIG_LAST_PS1}" ]]; then
-    FIG_USER_PS1="${PS1}"
-  fi
-  if [[ -z "${FIG_USER_PS2+x}" || "${PS2}" != "${FIG_LAST_PS2}" ]]; then
-    FIG_USER_PS2="${PS2}"
-  fi
-  if [[ -z "${FIG_USER_PS3+x}" || "${PS3}" != "${FIG_LAST_PS3}" ]]; then
-    FIG_USER_PS3="${PS3}"
-  fi
-
   fig_osc "Dir=%s" "${PWD}"
   fig_osc "Shell=bash"
   fig_osc "PID=%d" "$$"
@@ -88,6 +68,22 @@ function __fig_prompt () {
   fi
   fig_osc "Docker=%d" "${FIG_IN_DOCKER}"
   fig_osc "Hostname=%s@%s" "${USER:-root}" "${FIG_HOSTNAME}"
+
+  # Work around bug in CentOS 7.2 where preexec doesn't run if you press ^C
+  # while entering a command.
+  [[ -z "${_fig_done_preexec:-}" ]] && __fig_preexec ""
+  _fig_done_preexec=""
+
+  # If FIG_USER_PSx is undefined or PSx changed by user, update FIG_USER_PSx.
+  if [[ -z "${FIG_USER_PS1+x}" || "${PS1}" != "${FIG_LAST_PS1}" ]]; then
+    FIG_USER_PS1="${PS1}"
+  fi
+  if [[ -z "${FIG_USER_PS2+x}" || "${PS2}" != "${FIG_LAST_PS2}" ]]; then
+    FIG_USER_PS2="${PS2}"
+  fi
+  if [[ -z "${FIG_USER_PS3+x}" || "${PS3}" != "${FIG_LAST_PS3}" ]]; then
+    FIG_USER_PS3="${PS3}"
+  fi
 
   START_PROMPT="\[$(fig_osc StartPrompt)\]"
   END_PROMPT="\[$(fig_osc EndPrompt)\]"

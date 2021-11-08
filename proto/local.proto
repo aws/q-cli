@@ -1,6 +1,9 @@
 syntax = "proto3";
+
 option objc_class_prefix = "FIG";
-//package local;
+option go_package = "fig_proto";
+
+package local;
 
 message LocalMessage {
 	oneof type {
@@ -14,59 +17,218 @@ message Command {
 	optional bool no_response = 2; // opt-out of response from host app
 
 	oneof command {
-		TerminalIntegrationRequest terminal_integration_update = 100;
+		TerminalIntegrationCommand terminal_integration = 100;
+		ListTerminalIntegrationsCommand list_terminal_integrations = 101;
+		LogoutCommand logout = 102;
+		RestartCommand restart = 103;
+		QuitCommand quit = 104;
+		UpdateCommand update = 105;
+		DiagnosticsCommand diagnostics = 106;
+		ReportWindowCommand report_window = 107;
+		RestartSettingsListenerCommand restart_settings_listener = 108;
+		RunInstallScriptCommand run_install_script = 109;
+		BuildCommand build = 110;
+		OpenUiElementCommand open_ui_element = 111;
+		ResetCacheCommand reset_cache = 112;
+		ToggleDebugModeCommand toggle_debug_mode = 113;
 	}
 }
 
 message Hook {
 	oneof hook {
-		EditBuffer editbuffer = 100;
-		Prompt prompt = 101;
+		EditBufferHook edit_buffer = 100;
+		InitHook init = 101;
+		PromptHook prompt = 102;
+		PreExecHook pre_exec = 103;
+		PostExecHook post_exec = 104;
+		KeyboardFocusChangedHook keyboard_focus_changed = 105;
+		TmuxPaneChangedHook tmux_pane_changed = 106;
+		OpenedSSHConnectionHook opened_ssh_connection = 107;
+		CallbackHook callback = 108;
+		IntegrationReadyHook integration_ready = 109;
+		HideHook hide = 110;
+		EventHook event = 111;
 	}
 }
 
-// Example Command
+// == Commands ==
 enum IntegrationAction {
 	INSTALL = 0;
 	VERIFY_INSTALL = 1;
 	UNINSTALL = 2;
 }
-message TerminalIntegrationRequest {
+
+message TerminalIntegrationCommand {
 	string identifier = 1;
 	IntegrationAction action = 2;
 }
 
+message ListTerminalIntegrationsCommand { }
 
-// Example Hook
-message EditBuffer {
-	string text = 1;
-	int64 cursor = 2;
-	string shell = 3;
-	string sessionId = 4;
+message LogoutCommand { }
+
+message RestartCommand { }
+
+message QuitCommand { }
+
+message UpdateCommand {
+	bool force = 1;
 }
 
-message Prompt {
-	int32 pid = 1;
-	string shell = 2;
-	string currentWorkingDirectory = 3;
-	string sessionId = 4;
+message DiagnosticsCommand {}
+
+message ReportWindowCommand {
+	string report = 1;
+	string path = 2;
+	string fig_env_var = 3;
+	string terminal = 4;
 }
 
-// 
-message Error {
+message RestartSettingsListenerCommand {}
+
+message RunInstallScriptCommand {}
+
+message BuildCommand {
+	string branch = 1;
+}
+
+enum UiElement {
+	MENU_BAR = 0;
+	SETTINGS = 1;
+}
+
+message OpenUiElementCommand {
+	UiElement element = 1;
+}
+
+message ResetCacheCommand {}
+
+message ToggleDebugModeCommand {
+	optional bool debug_mode = 1;
+}
+
+// == Hooks ==
+message ShellContext {
+	optional int32 pid = 1;
+	optional string ttys = 2; // /dev/ttys## of terminal session
+	optional string process_name = 3; // the name of the process
+	optional string current_working_directory = 4; // the directory where the user ran the command
+	optional string session_id = 5; // the value of $TERM_SESSION_ID
+	optional int32 integration_version = 6;
+	optional string terminal = 7;
+	optional string hostname = 8;
+
+	optional ShellContext remote_context = 9;
+}
+
+message EditBufferHook {
+	ShellContext context = 1;
+
+	string text = 2;
+	int64 cursor = 3;
+	int64 histno = 4;
+}
+
+message InitHook {
+	ShellContext context = 1;
+
+	bool called_direct = 2;
+	string bundle = 3;
+
+	map<string, string> env = 100;
+}
+
+message PromptHook {
+	ShellContext context = 1;
+}
+
+message PreExecHook {
+	ShellContext context = 1;
+
+	string command = 2; // the full command that was run in the shell
+}
+
+message PostExecHook {
+	ShellContext context = 1;
+
+	string command = 2; // the full command that was run in the shell
+	int32 exit_code = 3; // the exit code of the command
+}
+
+message KeyboardFocusChangedHook {
+	string app_identifier = 1;
+	string focused_session_id = 2; // a unique identifier associated with the pane or tab that is currently focused
+}
+
+message TmuxPaneChangedHook {
+	int32 pane_identifier = 1;
+}
+
+message OpenedSSHConnectionHook {
+	ShellContext context = 1;
+
+	string control_path = 2;
+}
+
+message CallbackHook {
+	string handler_id = 1;
+	string filepath = 2;
+	string exit_code = 3;
+}
+
+message IntegrationReadyHook {
+	string identifier = 1;
+}
+
+message HideHook { }
+
+message EventHook {
+	string event_name = 1;
+}
+
+// == Responses ==
+message ErrorResponse {
 	optional int32 exit_code = 1;
 	optional string message = 2;
 }
 
-message Success {
+message SuccessResponse {
 	optional string message = 1;
+}
+
+message TerminalIntegration {
+	string bundle_identifier = 1;
+	string name = 2;
+	optional string status = 3;
+}
+
+message TerminalIntegrationsListResponse {
+	repeated TerminalIntegration integrations = 1;
+}
+
+message DiagnosticsResponse {
+	string path_to_bundle = 1;
+	string accessibility = 2;
+	string keypath = 3;
+	string docker = 4;
+	string symlinked = 5;
+	string onlytab = 6;
+	string installscript = 7;
+	string psudopath = 8;
+	string securekeyboard = 9;
+	string securekeyboard_path = 10;
+	string current_process = 11;
+	string current_window_identifier = 12;
 }
 
 message CommandResponse {
 	optional int64 id = 1;
 	oneof response {
-		Error error = 2;
-		Success success = 3; 
+		ErrorResponse error = 2;
+		SuccessResponse success = 3;
+
 		// ... add structured responses for specific commands, as necessary
+		TerminalIntegrationsListResponse integration_list = 100;
+		DiagnosticsResponse diagnostics = 101;
 	}
 }

@@ -20,8 +20,6 @@ FIG_HAS_ZSH_PTY_HOOKS=1
 FIG_HAS_SET_PROMPT=0
 
 fig_preexec() {
-  __fig bg:exec $$ $TTY &!
-
   # Restore user defined prompt before executing.
   [[ -v PS1 ]] && PS1="$FIG_USER_PS1"
   [[ -v PROMPT ]] && PROMPT="$FIG_USER_PROMPT"
@@ -48,12 +46,6 @@ fig_preexec() {
 
 fig_precmd() {
   local LAST_STATUS=$?
-  __fig bg:prompt $$ $TTY &!
-
-  if [ $FIG_HAS_SET_PROMPT -eq 1 ]; then
-    # ^C pressed while entering command, call preexec manually to clear fig prompts.
-    fig_preexec
-  fi
 
   fig_osc "Dir=%s" "$PWD"
   fig_osc "Shell=zsh"
@@ -71,6 +63,11 @@ fig_precmd() {
 
   fig_osc "Docker=%d" "${FIG_IN_DOCKER}"
   fig_osc "Hostname=%s@%s" "${USER:-root}" "${FIG_HOSTNAME}"
+
+  if [ $FIG_HAS_SET_PROMPT -eq 1 ]; then
+    # ^C pressed while entering command, call preexec manually to clear fig prompts.
+    fig_preexec
+  fi
 
   START_PROMPT=$(fig_osc StartPrompt)
   END_PROMPT=$(fig_osc EndPrompt)

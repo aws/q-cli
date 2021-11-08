@@ -337,7 +337,6 @@ extension NativeCLI {
         } else {
             let msg = "→ Current build is '\( Defaults.build .rawValue)'\n\n fig util:build [prod | staging | dev]"
             NativeCLI.printInTerminal(msg, using: connection)
-
         }
     }
   
