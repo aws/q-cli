@@ -316,7 +316,7 @@ if [[ $("$HOME"/.fig/bin/fig app:running) == 1 ]]; then
 				echo -e "PATH and PseudoTerminal PATH match: $pass"
 			else
 				echo -e "PATH and PseudoTerminal PATH match: $fail"
-				fix "$HOME"/.fig/bin/fig app set:path
+				fix "$HOME"/.fig/bin/fig app set-path
 			fi
 			;;
 		"SecureKeyboardInput")
