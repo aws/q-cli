@@ -1161,33 +1161,101 @@ public struct Local_DiagnosticsResponse {
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var pathToBundle: String = String()
+  public var distribution: String {
+    get {return _storage._distribution}
+    set {_uniqueStorage()._distribution = newValue}
+  }
 
-  public var accessibility: String = String()
+  public var beta: Bool {
+    get {return _storage._beta}
+    set {_uniqueStorage()._beta = newValue}
+  }
 
-  public var keypath: String = String()
+  public var debugAutocomplete: Bool {
+    get {return _storage._debugAutocomplete}
+    set {_uniqueStorage()._debugAutocomplete = newValue}
+  }
 
-  public var docker: String = String()
+  public var developerModeEnabled: Bool {
+    get {return _storage._developerModeEnabled}
+    set {_uniqueStorage()._developerModeEnabled = newValue}
+  }
 
-  public var symlinked: String = String()
+  public var currentLayoutName: String {
+    get {return _storage._currentLayoutName}
+    set {_uniqueStorage()._currentLayoutName = newValue}
+  }
 
-  public var onlytab: String = String()
+  public var isRunningOnReadOnlyVolume: Bool {
+    get {return _storage._isRunningOnReadOnlyVolume}
+    set {_uniqueStorage()._isRunningOnReadOnlyVolume = newValue}
+  }
 
-  public var installscript: String = String()
+  public var pathToBundle: String {
+    get {return _storage._pathToBundle}
+    set {_uniqueStorage()._pathToBundle = newValue}
+  }
 
-  public var psudopath: String = String()
+  public var accessibility: String {
+    get {return _storage._accessibility}
+    set {_uniqueStorage()._accessibility = newValue}
+  }
 
-  public var securekeyboard: String = String()
+  public var keypath: String {
+    get {return _storage._keypath}
+    set {_uniqueStorage()._keypath = newValue}
+  }
 
-  public var securekeyboardPath: String = String()
+  public var docker: String {
+    get {return _storage._docker}
+    set {_uniqueStorage()._docker = newValue}
+  }
 
-  public var currentProcess: String = String()
+  public var symlinked: String {
+    get {return _storage._symlinked}
+    set {_uniqueStorage()._symlinked = newValue}
+  }
 
-  public var currentWindowIdentifier: String = String()
+  public var onlytab: String {
+    get {return _storage._onlytab}
+    set {_uniqueStorage()._onlytab = newValue}
+  }
+
+  public var installscript: String {
+    get {return _storage._installscript}
+    set {_uniqueStorage()._installscript = newValue}
+  }
+
+  public var psudopath: String {
+    get {return _storage._psudopath}
+    set {_uniqueStorage()._psudopath = newValue}
+  }
+
+  public var securekeyboard: String {
+    get {return _storage._securekeyboard}
+    set {_uniqueStorage()._securekeyboard = newValue}
+  }
+
+  public var securekeyboardPath: String {
+    get {return _storage._securekeyboardPath}
+    set {_uniqueStorage()._securekeyboardPath = newValue}
+  }
+
+  public var currentProcess: String {
+    get {return _storage._currentProcess}
+    set {_uniqueStorage()._currentProcess = newValue}
+  }
+
+  public var currentWindowIdentifier: String {
+    get {return _storage._currentWindowIdentifier}
+    set {_uniqueStorage()._currentWindowIdentifier = newValue}
+  }
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
+
+  fileprivate var _storage = _StorageClass.defaultInstance
 }
 
 public struct Local_CommandResponse {
@@ -3056,96 +3124,198 @@ extension Local_TerminalIntegrationsListResponse: SwiftProtobuf.Message, SwiftPr
 extension Local_DiagnosticsResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".DiagnosticsResponse"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "path_to_bundle"),
-    2: .same(proto: "accessibility"),
-    3: .same(proto: "keypath"),
-    4: .same(proto: "docker"),
-    5: .same(proto: "symlinked"),
-    6: .same(proto: "onlytab"),
-    7: .same(proto: "installscript"),
-    8: .same(proto: "psudopath"),
-    9: .same(proto: "securekeyboard"),
-    10: .standard(proto: "securekeyboard_path"),
-    11: .standard(proto: "current_process"),
-    12: .standard(proto: "current_window_identifier"),
+    1: .same(proto: "distribution"),
+    2: .same(proto: "beta"),
+    3: .standard(proto: "debug_autocomplete"),
+    4: .standard(proto: "developer_mode_enabled"),
+    5: .standard(proto: "current_layout_name"),
+    6: .standard(proto: "is_running_on_read_only_volume"),
+    7: .standard(proto: "path_to_bundle"),
+    8: .same(proto: "accessibility"),
+    9: .same(proto: "keypath"),
+    10: .same(proto: "docker"),
+    11: .same(proto: "symlinked"),
+    12: .same(proto: "onlytab"),
+    13: .same(proto: "installscript"),
+    14: .same(proto: "psudopath"),
+    15: .same(proto: "securekeyboard"),
+    16: .standard(proto: "securekeyboard_path"),
+    17: .standard(proto: "current_process"),
+    18: .standard(proto: "current_window_identifier"),
   ]
 
+  fileprivate class _StorageClass {
+    var _distribution: String = String()
+    var _beta: Bool = false
+    var _debugAutocomplete: Bool = false
+    var _developerModeEnabled: Bool = false
+    var _currentLayoutName: String = String()
+    var _isRunningOnReadOnlyVolume: Bool = false
+    var _pathToBundle: String = String()
+    var _accessibility: String = String()
+    var _keypath: String = String()
+    var _docker: String = String()
+    var _symlinked: String = String()
+    var _onlytab: String = String()
+    var _installscript: String = String()
+    var _psudopath: String = String()
+    var _securekeyboard: String = String()
+    var _securekeyboardPath: String = String()
+    var _currentProcess: String = String()
+    var _currentWindowIdentifier: String = String()
+
+    static let defaultInstance = _StorageClass()
+
+    private init() {}
+
+    init(copying source: _StorageClass) {
+      _distribution = source._distribution
+      _beta = source._beta
+      _debugAutocomplete = source._debugAutocomplete
+      _developerModeEnabled = source._developerModeEnabled
+      _currentLayoutName = source._currentLayoutName
+      _isRunningOnReadOnlyVolume = source._isRunningOnReadOnlyVolume
+      _pathToBundle = source._pathToBundle
+      _accessibility = source._accessibility
+      _keypath = source._keypath
+      _docker = source._docker
+      _symlinked = source._symlinked
+      _onlytab = source._onlytab
+      _installscript = source._installscript
+      _psudopath = source._psudopath
+      _securekeyboard = source._securekeyboard
+      _securekeyboardPath = source._securekeyboardPath
+      _currentProcess = source._currentProcess
+      _currentWindowIdentifier = source._currentWindowIdentifier
+    }
+  }
+
+  fileprivate mutating func _uniqueStorage() -> _StorageClass {
+    if !isKnownUniquelyReferenced(&_storage) {
+      _storage = _StorageClass(copying: _storage)
+    }
+    return _storage
+  }
+
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
-    while let fieldNumber = try decoder.nextFieldNumber() {
-      // The use of inline closures is to circumvent an issue where the compiler
-      // allocates stack space for every case branch when no optimizations are
-      // enabled. https://github.com/apple/swift-protobuf/issues/1034
-      switch fieldNumber {
-      case 1: try { try decoder.decodeSingularStringField(value: &self.pathToBundle) }()
-      case 2: try { try decoder.decodeSingularStringField(value: &self.accessibility) }()
-      case 3: try { try decoder.decodeSingularStringField(value: &self.keypath) }()
-      case 4: try { try decoder.decodeSingularStringField(value: &self.docker) }()
-      case 5: try { try decoder.decodeSingularStringField(value: &self.symlinked) }()
-      case 6: try { try decoder.decodeSingularStringField(value: &self.onlytab) }()
-      case 7: try { try decoder.decodeSingularStringField(value: &self.installscript) }()
-      case 8: try { try decoder.decodeSingularStringField(value: &self.psudopath) }()
-      case 9: try { try decoder.decodeSingularStringField(value: &self.securekeyboard) }()
-      case 10: try { try decoder.decodeSingularStringField(value: &self.securekeyboardPath) }()
-      case 11: try { try decoder.decodeSingularStringField(value: &self.currentProcess) }()
-      case 12: try { try decoder.decodeSingularStringField(value: &self.currentWindowIdentifier) }()
-      default: break
+    _ = _uniqueStorage()
+    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      while let fieldNumber = try decoder.nextFieldNumber() {
+        // The use of inline closures is to circumvent an issue where the compiler
+        // allocates stack space for every case branch when no optimizations are
+        // enabled. https://github.com/apple/swift-protobuf/issues/1034
+        switch fieldNumber {
+        case 1: try { try decoder.decodeSingularStringField(value: &_storage._distribution) }()
+        case 2: try { try decoder.decodeSingularBoolField(value: &_storage._beta) }()
+        case 3: try { try decoder.decodeSingularBoolField(value: &_storage._debugAutocomplete) }()
+        case 4: try { try decoder.decodeSingularBoolField(value: &_storage._developerModeEnabled) }()
+        case 5: try { try decoder.decodeSingularStringField(value: &_storage._currentLayoutName) }()
+        case 6: try { try decoder.decodeSingularBoolField(value: &_storage._isRunningOnReadOnlyVolume) }()
+        case 7: try { try decoder.decodeSingularStringField(value: &_storage._pathToBundle) }()
+        case 8: try { try decoder.decodeSingularStringField(value: &_storage._accessibility) }()
+        case 9: try { try decoder.decodeSingularStringField(value: &_storage._keypath) }()
+        case 10: try { try decoder.decodeSingularStringField(value: &_storage._docker) }()
+        case 11: try { try decoder.decodeSingularStringField(value: &_storage._symlinked) }()
+        case 12: try { try decoder.decodeSingularStringField(value: &_storage._onlytab) }()
+        case 13: try { try decoder.decodeSingularStringField(value: &_storage._installscript) }()
+        case 14: try { try decoder.decodeSingularStringField(value: &_storage._psudopath) }()
+        case 15: try { try decoder.decodeSingularStringField(value: &_storage._securekeyboard) }()
+        case 16: try { try decoder.decodeSingularStringField(value: &_storage._securekeyboardPath) }()
+        case 17: try { try decoder.decodeSingularStringField(value: &_storage._currentProcess) }()
+        case 18: try { try decoder.decodeSingularStringField(value: &_storage._currentWindowIdentifier) }()
+        default: break
+        }
       }
     }
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    if !self.pathToBundle.isEmpty {
-      try visitor.visitSingularStringField(value: self.pathToBundle, fieldNumber: 1)
-    }
-    if !self.accessibility.isEmpty {
-      try visitor.visitSingularStringField(value: self.accessibility, fieldNumber: 2)
-    }
-    if !self.keypath.isEmpty {
-      try visitor.visitSingularStringField(value: self.keypath, fieldNumber: 3)
-    }
-    if !self.docker.isEmpty {
-      try visitor.visitSingularStringField(value: self.docker, fieldNumber: 4)
-    }
-    if !self.symlinked.isEmpty {
-      try visitor.visitSingularStringField(value: self.symlinked, fieldNumber: 5)
-    }
-    if !self.onlytab.isEmpty {
-      try visitor.visitSingularStringField(value: self.onlytab, fieldNumber: 6)
-    }
-    if !self.installscript.isEmpty {
-      try visitor.visitSingularStringField(value: self.installscript, fieldNumber: 7)
-    }
-    if !self.psudopath.isEmpty {
-      try visitor.visitSingularStringField(value: self.psudopath, fieldNumber: 8)
-    }
-    if !self.securekeyboard.isEmpty {
-      try visitor.visitSingularStringField(value: self.securekeyboard, fieldNumber: 9)
-    }
-    if !self.securekeyboardPath.isEmpty {
-      try visitor.visitSingularStringField(value: self.securekeyboardPath, fieldNumber: 10)
-    }
-    if !self.currentProcess.isEmpty {
-      try visitor.visitSingularStringField(value: self.currentProcess, fieldNumber: 11)
-    }
-    if !self.currentWindowIdentifier.isEmpty {
-      try visitor.visitSingularStringField(value: self.currentWindowIdentifier, fieldNumber: 12)
+    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      if !_storage._distribution.isEmpty {
+        try visitor.visitSingularStringField(value: _storage._distribution, fieldNumber: 1)
+      }
+      if _storage._beta != false {
+        try visitor.visitSingularBoolField(value: _storage._beta, fieldNumber: 2)
+      }
+      if _storage._debugAutocomplete != false {
+        try visitor.visitSingularBoolField(value: _storage._debugAutocomplete, fieldNumber: 3)
+      }
+      if _storage._developerModeEnabled != false {
+        try visitor.visitSingularBoolField(value: _storage._developerModeEnabled, fieldNumber: 4)
+      }
+      if !_storage._currentLayoutName.isEmpty {
+        try visitor.visitSingularStringField(value: _storage._currentLayoutName, fieldNumber: 5)
+      }
+      if _storage._isRunningOnReadOnlyVolume != false {
+        try visitor.visitSingularBoolField(value: _storage._isRunningOnReadOnlyVolume, fieldNumber: 6)
+      }
+      if !_storage._pathToBundle.isEmpty {
+        try visitor.visitSingularStringField(value: _storage._pathToBundle, fieldNumber: 7)
+      }
+      if !_storage._accessibility.isEmpty {
+        try visitor.visitSingularStringField(value: _storage._accessibility, fieldNumber: 8)
+      }
+      if !_storage._keypath.isEmpty {
+        try visitor.visitSingularStringField(value: _storage._keypath, fieldNumber: 9)
+      }
+      if !_storage._docker.isEmpty {
+        try visitor.visitSingularStringField(value: _storage._docker, fieldNumber: 10)
+      }
+      if !_storage._symlinked.isEmpty {
+        try visitor.visitSingularStringField(value: _storage._symlinked, fieldNumber: 11)
+      }
+      if !_storage._onlytab.isEmpty {
+        try visitor.visitSingularStringField(value: _storage._onlytab, fieldNumber: 12)
+      }
+      if !_storage._installscript.isEmpty {
+        try visitor.visitSingularStringField(value: _storage._installscript, fieldNumber: 13)
+      }
+      if !_storage._psudopath.isEmpty {
+        try visitor.visitSingularStringField(value: _storage._psudopath, fieldNumber: 14)
+      }
+      if !_storage._securekeyboard.isEmpty {
+        try visitor.visitSingularStringField(value: _storage._securekeyboard, fieldNumber: 15)
+      }
+      if !_storage._securekeyboardPath.isEmpty {
+        try visitor.visitSingularStringField(value: _storage._securekeyboardPath, fieldNumber: 16)
+      }
+      if !_storage._currentProcess.isEmpty {
+        try visitor.visitSingularStringField(value: _storage._currentProcess, fieldNumber: 17)
+      }
+      if !_storage._currentWindowIdentifier.isEmpty {
+        try visitor.visitSingularStringField(value: _storage._currentWindowIdentifier, fieldNumber: 18)
+      }
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: Local_DiagnosticsResponse, rhs: Local_DiagnosticsResponse) -> Bool {
-    if lhs.pathToBundle != rhs.pathToBundle {return false}
-    if lhs.accessibility != rhs.accessibility {return false}
-    if lhs.keypath != rhs.keypath {return false}
-    if lhs.docker != rhs.docker {return false}
-    if lhs.symlinked != rhs.symlinked {return false}
-    if lhs.onlytab != rhs.onlytab {return false}
-    if lhs.installscript != rhs.installscript {return false}
-    if lhs.psudopath != rhs.psudopath {return false}
-    if lhs.securekeyboard != rhs.securekeyboard {return false}
-    if lhs.securekeyboardPath != rhs.securekeyboardPath {return false}
-    if lhs.currentProcess != rhs.currentProcess {return false}
-    if lhs.currentWindowIdentifier != rhs.currentWindowIdentifier {return false}
+    if lhs._storage !== rhs._storage {
+      let storagesAreEqual: Bool = withExtendedLifetime((lhs._storage, rhs._storage)) { (_args: (_StorageClass, _StorageClass)) in
+        let _storage = _args.0
+        let rhs_storage = _args.1
+        if _storage._distribution != rhs_storage._distribution {return false}
+        if _storage._beta != rhs_storage._beta {return false}
+        if _storage._debugAutocomplete != rhs_storage._debugAutocomplete {return false}
+        if _storage._developerModeEnabled != rhs_storage._developerModeEnabled {return false}
+        if _storage._currentLayoutName != rhs_storage._currentLayoutName {return false}
+        if _storage._isRunningOnReadOnlyVolume != rhs_storage._isRunningOnReadOnlyVolume {return false}
+        if _storage._pathToBundle != rhs_storage._pathToBundle {return false}
+        if _storage._accessibility != rhs_storage._accessibility {return false}
+        if _storage._keypath != rhs_storage._keypath {return false}
+        if _storage._docker != rhs_storage._docker {return false}
+        if _storage._symlinked != rhs_storage._symlinked {return false}
+        if _storage._onlytab != rhs_storage._onlytab {return false}
+        if _storage._installscript != rhs_storage._installscript {return false}
+        if _storage._psudopath != rhs_storage._psudopath {return false}
+        if _storage._securekeyboard != rhs_storage._securekeyboard {return false}
+        if _storage._securekeyboardPath != rhs_storage._securekeyboardPath {return false}
+        if _storage._currentProcess != rhs_storage._currentProcess {return false}
+        if _storage._currentWindowIdentifier != rhs_storage._currentWindowIdentifier {return false}
+        return true
+      }
+      if !storagesAreEqual {return false}
+    }
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
