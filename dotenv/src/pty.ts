@@ -134,7 +134,7 @@ class PTY {
       }
       const c = chars.shift();
       this.write(c ?? '');
-    }, 25);
+    }, 10);
   }
 
   execute(command: string, callback: (out: string) => void) {
@@ -160,7 +160,7 @@ class PTY {
 
   kill(signal?: string | undefined) {
     if (this.internalPty) {
-      this.internalPty.kill(signal);
+      this.internalPty.kill(signal ?? 'SIGKILL');
     }
   }
 
@@ -177,7 +177,9 @@ class PTY {
   async typeAsync(text: string) {
     return new Promise<void>(resolve => {
       this.type(text, () => {
-        resolve();
+        setTimeout(() => {
+          resolve();
+        }, 500);
       });
     });
   }

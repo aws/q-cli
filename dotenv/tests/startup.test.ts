@@ -29,13 +29,6 @@ const computeAverageStartupTime = async (opts: PTYOptions, n = 5) => {
 };
 
 test('zsh: fig startup time', async () => {
-  const withoutFig = await computeAverageStartupTime(
-    {
-      shell: 'zsh',
-      env: { ...process.env, ZDOTDIR: `/usr/home/withoutfig` },
-    },
-    100
-  );
   const figMinimal = await computeAverageStartupTime(
     {
       shell: 'zsh',
@@ -43,19 +36,20 @@ test('zsh: fig startup time', async () => {
     },
     100
   );
-  expect(withoutFig).toBeGreaterThan(0);
-  expect(figMinimal).toBeGreaterThan(0);
-  expect(figMinimal - withoutFig).toBeLessThan(50);
-}, 10000);
-
-test('bash: fig startup time', async () => {
   const withoutFig = await computeAverageStartupTime(
     {
-      shell: 'bash',
-      args: ['--init-file', '/usr/home/withoutfig/.bashrc'],
+      shell: 'zsh',
+      env: { ...process.env, ZDOTDIR: `/usr/home/withoutfig` },
     },
     100
   );
+  console.log({ figMinimal, withoutFig });
+  expect(withoutFig).toBeGreaterThan(0);
+  expect(figMinimal).toBeGreaterThan(0);
+  expect(figMinimal - withoutFig).toBeLessThan(50);
+}, 20000);
+
+test('bash: fig startup time', async () => {
   const figMinimal = await computeAverageStartupTime(
     {
       shell: 'bash',
@@ -63,7 +57,15 @@ test('bash: fig startup time', async () => {
     },
     100
   );
+  const withoutFig = await computeAverageStartupTime(
+    {
+      shell: 'bash',
+      args: ['--init-file', '/usr/home/withoutfig/.bashrc'],
+    },
+    100
+  );
+  console.log({ figMinimal, withoutFig });
   expect(withoutFig).toBeGreaterThan(0);
   expect(figMinimal).toBeGreaterThan(0);
   expect(figMinimal - withoutFig).toBeLessThan(50);
-}, 10000);
+}, 20000);

@@ -1,3 +1,3 @@
-PATH="~/.fig/bin:$PATH"
-TERMINAL_SESSION_ID=$(uuidgen)
-PROMPT_COMMAND="fig bg:prompt $$ $TTY & disown"
+export PATH="$HOME/.fig/bin:$PATH"
+TTY=$(tty)
+PROMPT_COMMAND="fig hook prompt $$ $TTY"

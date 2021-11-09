@@ -28,37 +28,14 @@ class FigCLI {
 
   commands: CommandObject[] = [];
 
-  nextPromptPromise: Promise<void>;
-
   socketId: string;
 
   constructor(sessionId: string, path = '/tmp/mock_figcli.socket') {
-    let nextPromptCallback: () => void;
-
-    const awaitNextPrompt = () => {
-      this.nextPromptPromise = new Promise<void>(resolve => {
-        nextPromptCallback = resolve;
-      });
-    };
-
-    this.nextPromptPromise = new Promise<void>(resolve => {
-      nextPromptCallback = resolve;
-    });
     this.socketId = socketListen(path, data => {
       const message = parseFigCLIMessage(data);
-      if (message.termSessionId !== sessionId) {
-        return;
-      }
-      if (message.command === 'bg:prompt') {
-        nextPromptCallback();
-        awaitNextPrompt();
-      }
+      if (message.termSessionId !== sessionId) return;
       this.commands.push(message);
     });
-  }
-
-  waitForNextPrompt() {
-    return this.nextPromptPromise;
   }
 
   mockCommand({ command, output }: { command: string; output: string }) {

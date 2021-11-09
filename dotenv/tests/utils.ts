@@ -26,7 +26,7 @@ export const makeTestsForShell = (shell: Shell) => {
     // Reset terminal size and get a fresh prompt before each test.
     shell.pty.resize({ rows: 30, cols: 80 });
     shell.pty.write('\r');
-    await shell.cli.waitForNextPrompt();
+    await shell.waitForNextPrompt();
   });
 
   describe('Valid environment', () => {

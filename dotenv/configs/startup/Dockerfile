@@ -2,6 +2,7 @@ FROM dotenv-base
 
 RUN ~/install-fig
 
+RUN rm -rf ~/.profile ~/.zprofile
 RUN mkdir -p ~/withfig ~/withoutfig
 RUN mv ~/.bashrc ~/.zshrc ~/withfig
 

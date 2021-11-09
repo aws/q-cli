@@ -61,7 +61,7 @@ static void handle_osc(FigTerm* ft) {
     char* context = figterm_get_shell_context(ft);
 
     publish_json(
-      "{\"hook\":{\"pre_exec\":{\"context\": %s}}}",
+      "{\"hook\":{\"preExec\":{\"context\": %s}}}",
       context
     );
 
@@ -295,7 +295,6 @@ char* figterm_get_buffer(FigTerm* ft, int* index) {
   };
   size_t text_len = figterm_screen_get_text(ft->screen, buf, len, rect, j, UNICODE_SPACE, true, index);
   buf[text_len] = '\0';
-  log_info("Row len: %d < %d, %d, %s", text_len, cols, *index, buf);
   return rtrim(buf, *index);
 }
 
@@ -406,7 +405,7 @@ char* figterm_get_shell_context(FigTerm* ft) {
   // char* cwd = get_cwd(ft->shell_pid);
   // \"current_working_directory\":\"%s\"
   char* context = printf_alloc(
-    "{\"pid\":\"%s\",\"ttys\":\"%s\",\"process_name\":\"%s\",\"session_id\":\"%s\",\"integration_version\": \"%s\",\"hostname\":\"%s\"}",
+    "{\"pid\":\"%s\",\"ttys\":\"%s\",\"processName\":\"%s\",\"sessionId\":\"%s\",\"integrationVersion\": \"%s\",\"hostname\":\"%s\"}",
     shell_state.pid,
     shell_state.tty,
     shell_state.shell,

@@ -2,37 +2,28 @@ import * as uuid from 'uuid';
 import PTY, { PTYOptions } from './pty';
 import FigCLI from './figcli';
 import { socketListen, removeListener } from './unix-server';
+import { LocalMessage } from './local';
 
-type EditBufferMessage = {
-  subcommand: string;
-  termSessionId: string;
-  integrationVersion: string;
-  tty: string;
-  pid: string;
-  histno: string;
-  cursor: number;
-  buffer: string;
-  timestamp: number;
-};
+const parseMessages = (data: Buffer): LocalMessage[] => {
+  const messages: LocalMessage[] = [];
+  let buf = data;
+  while (buf.length > 0) {
+    const dataType = buf.slice(2, 10).toString();
+    const lenBytes = buf.slice(10, 18);
+    let len = 0;
+    for (let i = 0; i < lenBytes.length; i += 1) {
+      len = len * 256 + lenBytes[i];
+    }
 
-const parseEditbufferMessage = (data: Buffer): EditBufferMessage => {
-  const original = String(Buffer.from(data.toString(), 'base64'));
-  const tokens = original.slice(0, -1).split(' ');
-  const buffer = tokens
-    .slice(8)
-    .join(' ')
-    .slice(1, -1); // remove surrounding quotes
-  return {
-    subcommand: tokens[1],
-    termSessionId: tokens[2],
-    integrationVersion: tokens[3],
-    tty: tokens[4],
-    pid: tokens[5],
-    histno: tokens[6],
-    cursor: parseInt(tokens[7], 10),
-    buffer,
-    timestamp: Date.now(),
-  };
+    const msg = buf.slice(18, 18 + len);
+    if (dataType === 'fig-json') {
+      messages.push(LocalMessage.fromJSON(JSON.parse(msg.toString())));
+    } else {
+      messages.push(LocalMessage.decode(msg));
+    }
+    buf = buf.slice(18 + len);
+  }
+  return messages;
 };
 
 class Shell {
@@ -42,9 +33,17 @@ class Shell {
 
   firstPromptPromise: Promise<void>;
 
+  nextPromptPromise: Promise<void>;
+
+  nextPromptCallback: () => void;
+
+  sessionId: string;
+
   buffer = '';
 
   cursor = 0;
+
+  tmpdir = '/tmp/';
 
   socketId: string;
 
@@ -52,17 +51,26 @@ class Shell {
 
   constructor(options: PTYOptions) {
     const { env } = options;
-    const envWithId = { ...(env || process.env), TERM_SESSION_ID: uuid.v4() };
-    const termSessionId = envWithId.TERM_SESSION_ID;
-    this.cli = new FigCLI(termSessionId);
-    this.socketId = socketListen('/tmp/fig.socket', data => {
-      const message = parseEditbufferMessage(data);
-      if (message.termSessionId === termSessionId) {
-        this.buffer = message.buffer;
-        this.cursor = message.cursor;
-      }
+    const envWithId = {
+      TMPDIR: '/tmp/',
+      ...(env || process.env),
+      TERM_SESSION_ID: uuid.v4(),
+    };
+    this.sessionId = envWithId.TERM_SESSION_ID;
+    this.tmpdir = envWithId.TMPDIR;
+    this.cli = new FigCLI(this.sessionId);
+
+    this.nextPromptCallback = () => {};
+    this.nextPromptPromise = new Promise<void>(resolve => {
+      this.nextPromptCallback = resolve;
     });
-    this.firstPromptPromise = this.cli.waitForNextPrompt();
+    this.firstPromptPromise = this.nextPromptPromise;
+
+    this.socketId = socketListen(`${this.tmpdir}fig.socket`, data => {
+      const messages = parseMessages(data);
+      messages.forEach(message => this.onMessage(message));
+    });
+
     const start = Date.now();
     this.firstPromptPromise.then(() => {
       this.startupTime = Date.now() - start;
@@ -74,10 +82,48 @@ class Shell {
     return this.firstPromptPromise;
   }
 
-  kill() {
+  waitForNextPrompt() {
+    return this.nextPromptPromise;
+  }
+
+  onMessage(message: LocalMessage) {
+    /* eslint-disable no-case-declarations */
+    switch (message.type?.$case) {
+      case 'hook':
+        const { hook } = message.type.hook;
+        switch (hook?.$case) {
+          case 'init':
+            break;
+          case 'prompt':
+            if (hook.prompt.context?.sessionId === this.sessionId) {
+              this.nextPromptCallback();
+              this.nextPromptPromise = new Promise<void>(resolve => {
+                this.nextPromptCallback = resolve;
+              });
+            }
+            break;
+          case 'editBuffer':
+            if (hook.editBuffer.context?.sessionId === this.sessionId) {
+              this.buffer = hook.editBuffer.text;
+              this.cursor = hook.editBuffer.cursor;
+            }
+            break;
+          default:
+            break;
+        }
+        break;
+      case 'command':
+        break;
+      default:
+        break;
+    }
+    /* eslint-enable no-case-declarations */
+  }
+
+  kill(signal?: string) {
     this.cli.close();
-    removeListener('/tmp/fig.socket', this.socketId);
-    this.pty.kill();
+    removeListener(`${this.tmpdir}fig.socket`, this.socketId);
+    this.pty.kill(signal);
   }
 }
 

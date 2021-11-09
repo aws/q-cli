@@ -114,6 +114,8 @@ void launch_shell(bool fatal_crash) {
   if (execvp(args[0], args) < 0) {
     EXIT(1);
   }
+  free(args);
+  EXIT(1);
 }
 
 void on_figterm_exit() {
@@ -178,7 +180,7 @@ void publish_buffer(FigTerm* ft) {
   char* context = figterm_get_shell_context(ft);
   char* buffer_escaped = escaped_str(buffer);
 
-  publish_json("{\"hook\":{\"edit_buffer\":{\"text\":\"%s\",\"cursor\":\"%i\",\"context\": %s}}}", buffer_escaped, index, context);
+  publish_json("{\"hook\":{\"editBuffer\":{\"text\":\"%s\",\"cursor\":\"%i\",\"context\": %s}}}", buffer_escaped, index, context);
   
   free(context);
   free(buffer_escaped);
@@ -329,7 +331,7 @@ int main(int argc, char *argv[]) {
     log_info("Figterm: %d", getpid());
 
     char* context = printf_alloc(
-      "{\"session_id\":\"%s\",\"pid\":\"%i\",\"ttys\":\"%s\",\"integration_version\":\"%s\"}",
+      "{\"sessionId\":\"%s\",\"pid\":\"%i\",\"ttys\":\"%s\",\"integrationVersion\":\"%s\"}",
       fig_info->term_session_id,
       shell_pid,
       ptc_name,
