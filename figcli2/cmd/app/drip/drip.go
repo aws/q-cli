@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
 )
 
@@ -136,6 +137,8 @@ func NewCmdDrip() *cobra.Command {
 	}
 
 	cmd.AddCommand(NewCmdAddDrip())
+	cmd.AddCommand(NewCmdAddChangelog())
+	cmd.AddCommand(NewCmdReset())
 
 	return cmd
 }
@@ -204,6 +207,58 @@ func NewCmdAddChangelog() *cobra.Command {
 			err = dripFile.saveDrip()
 			if err != nil {
 				fmt.Println(err)
+				return
+			}
+		},
+	}
+
+	return cmd
+}
+
+func NewCmdReset() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:    "reset",
+		Hidden: true,
+		Run: func(cmd *cobra.Command, args []string) {
+			boldStyle := lipgloss.NewStyle().Bold(true)
+
+			drip1Text := boldStyle.Render(`Fig Tips (1/5):`) + ` Selecting Files / Folders
+
+When selecting a file or folder:
+  * Type $ ` + boldStyle.Render("~/") + ` to start autocompleting from the home directory 
+  * Type $ ` + boldStyle.Render("../") + ` to start autocompleting from the directory above
+
+` + boldStyle.Render("To disable Fig Tips: ") + "fig tips disable"
+
+			drip1 := Drip{
+				Text:     drip1Text,
+				DripType: "drip",
+				Priority: 10,
+				WaitTime: 43200,
+			}
+
+			drip2Text := boldStyle.Render(`Fig Tips (2/5):`) + ` Selecting Files / Folders
+
+When selecting a file or folder:
+  * Type $ ` + boldStyle.Render("~/") + ` to start autocompleting from the home directory 
+  * Type $ ` + boldStyle.Render("../") + ` to start autocompleting from the directory above
+
+` + boldStyle.Render("To disable Fig Tips: ") + "fig tips disable"
+
+			drip2 := Drip{
+				Text:     drip2Text,
+				DripType: "drip",
+				Priority: 9,
+				WaitTime: 43200,
+			}
+
+			dripFile := DripFile{
+				Queue:        []Drip{drip1, drip2},
+				TimeLastSent: 0,
+			}
+
+			err := dripFile.saveDrip()
+			if err != nil {
 				return
 			}
 		},
