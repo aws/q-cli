@@ -109,13 +109,9 @@ class PseudoTerminal {
     }
   
   func restart(with environment: [String: String], completion: ((Bool) -> Void)? = nil) {
-      self.headless.onEnd = { (code) in
-        PseudoTerminal.log("[PTY] ending session with exit code (\(code ?? -1)) and restarting...")
-        //self.start(with: environment)
-
-      }
-      
       self.close()
+    
+      // todo: use self.headless.onEnd instead of a hardcoded delay
       Timer.delayWithSeconds(1) {
         guard !self.headless.process.running else {
           completion?(false)
