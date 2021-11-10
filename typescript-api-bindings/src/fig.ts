@@ -331,7 +331,7 @@ export interface ClientOriginatedMessage {
         updateConfigPropertyRequest: UpdateConfigPropertyRequest;
       }
     | {
-        $case: "pseudoterminalRestartRequest";
+        $case: 'pseudoterminalRestartRequest';
         pseudoterminalRestartRequest: PseudoterminalRestartRequest;
       };
 }
@@ -872,7 +872,7 @@ export const ClientOriginatedMessage = {
         writer.uint32(978).fork()
       ).ldelim();
     }
-    if (message.submessage?.$case === "pseudoterminalRestartRequest") {
+    if (message.submessage?.$case === 'pseudoterminalRestartRequest') {
       PseudoterminalRestartRequest.encode(
         message.submessage.pseudoterminalRestartRequest,
         writer.uint32(986).fork()
@@ -1090,7 +1090,7 @@ export const ClientOriginatedMessage = {
           break;
         case 123:
           message.submessage = {
-            $case: "pseudoterminalRestartRequest",
+            $case: 'pseudoterminalRestartRequest',
             pseudoterminalRestartRequest: PseudoterminalRestartRequest.decode(
               reader,
               reader.uint32()
@@ -1351,7 +1351,7 @@ export const ClientOriginatedMessage = {
       object.pseudoterminalRestartRequest !== null
     ) {
       message.submessage = {
-        $case: "pseudoterminalRestartRequest",
+        $case: 'pseudoterminalRestartRequest',
         pseudoterminalRestartRequest: PseudoterminalRestartRequest.fromJSON(
           object.pseudoterminalRestartRequest
         ),
@@ -1496,7 +1496,7 @@ export const ClientOriginatedMessage = {
             message.submessage?.updateConfigPropertyRequest
           )
         : undefined);
-    message.submessage?.$case === "pseudoterminalRestartRequest" &&
+    message.submessage?.$case === 'pseudoterminalRestartRequest' &&
       (obj.pseudoterminalRestartRequest = message.submessage
         ?.pseudoterminalRestartRequest
         ? PseudoterminalRestartRequest.toJSON(
@@ -1778,12 +1778,12 @@ export const ClientOriginatedMessage = {
       };
     }
     if (
-      object.submessage?.$case === "pseudoterminalRestartRequest" &&
+      object.submessage?.$case === 'pseudoterminalRestartRequest' &&
       object.submessage?.pseudoterminalRestartRequest !== undefined &&
       object.submessage?.pseudoterminalRestartRequest !== null
     ) {
       message.submessage = {
-        $case: "pseudoterminalRestartRequest",
+        $case: 'pseudoterminalRestartRequest',
         pseudoterminalRestartRequest: PseudoterminalRestartRequest.fromPartial(
           object.submessage.pseudoterminalRestartRequest
         ),

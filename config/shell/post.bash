@@ -97,7 +97,7 @@ function __fig_prompt () {
 }
 
 __fig_reset_hooks() {
-  if [[ ${precmd_functions[${#precmd_functions[@]} - 1]} != __fig_prompt ]]; then
+  if [[ ${#precmd_functions[@]} == 0 || ${precmd_functions[${#precmd_functions[@]} - 1]} != __fig_prompt ]]; then
     for index in "${!precmd_functions[@]}"; do
       if [[ ${precmd_functions[$index]} == __fig_prompt ]]; then
         unset -v 'precmd_functions[$index]'
