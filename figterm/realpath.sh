@@ -1,3 +1,5 @@
+#!/bin/bash
+
 realpath_replacement() {
   OURPWD=$PWD
   cd "$(dirname "$1")"

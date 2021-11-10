@@ -1,4 +1,4 @@
-import { sendPositionWindowRequest } from "./requests";
+import { sendPositionWindowRequest } from './requests';
 
 // Developer Facing API
 const isValidFrame = async (frame: {
@@ -6,7 +6,7 @@ const isValidFrame = async (frame: {
   height: number;
   anchorX: number;
 }) =>
-sendPositionWindowRequest({
+  sendPositionWindowRequest({
     size: { width: frame.width, height: frame.height },
     anchor: { x: frame.anchorX, y: 0 },
     dryrun: true,

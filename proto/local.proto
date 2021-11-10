@@ -145,7 +145,7 @@ message PromptHook {
 message PreExecHook {
 	ShellContext context = 1;
 
-	string command = 2; // the full command that was run in the shell
+	optional string command = 2; // the full command that was run in the shell
 }
 
 message PostExecHook {
