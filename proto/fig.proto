@@ -28,6 +28,8 @@ message ClientOriginatedMessage {
       OpenInExternalApplicationRequest open_in_external_application_request = 120;
       GetConfigPropertyRequest get_config_property_request = 121;
       UpdateConfigPropertyRequest update_config_property_request = 122;
+      PseudoterminalRestartRequest pseudoterminal_restart_request = 123;
+
 
   }
 }
@@ -167,6 +169,8 @@ message PseudoterminalExecuteResponse {
   optional string stderr = 2;
   optional int32 exitCode = 3; 
 }
+
+message PseudoterminalRestartRequest {}
 
 message PositionWindowRequest {
   Point anchor = 1;

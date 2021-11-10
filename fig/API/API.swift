@@ -84,7 +84,9 @@ class API {
                         response.pseudoterminalExecuteResponse = output
                         API.send(response, to: webView, using: encoding)
                     }
-
+                case .pseudoterminalRestartRequest(_):
+                    PseudoTerminal.shared.restart(with: [:])
+                    response.success = true
                 case .readFileRequest(let request):
                     response.readFileResponse = try FileSystem.readFile(request)
                 case .writeFileRequest(let request):

@@ -75,6 +75,8 @@ class PseudoTerminal {
         if let shouldWriteTranscript = Settings.shared.getValue(forKey: Settings.ptyTranscript) as? Bool,
                shouldWriteTranscript {
           self.write(" script -qt0 ~/.fig/logs/pty_transcript.log")
+          self.headless.process.debugIO = true
+          self.headless.process.setHostLogging(directory: NSHomeDirectory() + "/.fig/logs")
         }
         
         self.write(" set +o history" + PseudoTerminal.CRLF)
@@ -104,6 +106,15 @@ class PseudoTerminal {
         if self.headless.process.running {
             kill( self.headless.process.shellPid, SIGTERM)
         }
+    }
+  
+    func restart(with environment: [String: String]) {
+      self.headless.onEnd = { (code) in
+        PseudoTerminal.log("ending session with exit code (\(code ?? -1)) and restarting...")
+        self.start(with: environment)
+      }
+      
+      close()
     }
     
     // MARK: Utilities
@@ -150,34 +161,34 @@ class PseudoTerminal {
 extension PseudoTerminal {
     @objc func recievedEnvironmentVariablesFromShell(_ notification: Notification) {
       
-      guard let env = notification.object as? [String: Any] else { return }
-      // Update environment variables in autocomplete PTY
-      let patterns = Settings.shared.getValue(forKey: Settings.ptyEnvKey) as? [String]
-      let environmentVariablesToMirror: Set<String> = Set(patterns ?? [ "AWS_" ]).union(["PATH"])
-      let variablesToUpdate = env.filter({ (element) -> Bool in
-        guard element.value as? String != nil else {
-          return false
-        }
-        
-        return environmentVariablesToMirror.reduce(false) { (result, prefix) -> Bool in
-          return result || element.key.starts(with: prefix)
-        }
-      })
-      
-      let command = variablesToUpdate.keys.map { "export \($0)='\(variablesToUpdate[$0] ?? "")'" }.joined(separator: "\n")
-      
-      let tmpFile = NSTemporaryDirectory().appending("fig_source_env")
-      Logger.log(message: "Writing new ENV vars to '\(tmpFile)'", subsystem: .pty)
-
-      do {
-        
-        try command.write(toFile: tmpFile,
-                      atomically: true,
-                      encoding: .utf8)
-        sourceFile(at: tmpFile)
-      } catch {
-        Logger.log(message: "could not source ENV vars from '\(tmpFile)'", subsystem: .pty)
-      }
+//      guard let env = notification.object as? [String: Any] else { return }
+//      // Update environment variables in autocomplete PTY
+//      let patterns = Settings.shared.getValue(forKey: Settings.ptyEnvKey) as? [String]
+//      let environmentVariablesToMirror: Set<String> = Set(patterns ?? [ "AWS_" ]).union(["PATH"])
+//      let variablesToUpdate = env.filter({ (element) -> Bool in
+//        guard element.value as? String != nil else {
+//          return false
+//        }
+//
+//        return environmentVariablesToMirror.reduce(false) { (result, prefix) -> Bool in
+//          return result || element.key.starts(with: prefix)
+//        }
+//      })
+//
+//      let command = variablesToUpdate.keys.map { "export \($0)='\(variablesToUpdate[$0] ?? "")'" }.joined(separator: "\n")
+//
+//      let tmpFile = NSTemporaryDirectory().appending("fig_source_env")
+//      Logger.log(message: "Writing new ENV vars to '\(tmpFile)'", subsystem: .pty)
+//
+//      do {
+//
+//        try command.write(toFile: tmpFile,
+//                      atomically: true,
+//                      encoding: .utf8)
+//        sourceFile(at: tmpFile)
+//      } catch {
+//        Logger.log(message: "could not source ENV vars from '\(tmpFile)'", subsystem: .pty)
+//      }
     }
 }
 
