@@ -116,4 +116,4 @@ __fig_reset_hooks() {
   fi
 }
 
-__fig_reset_hooks()
+__fig_reset_hooks
