@@ -85,8 +85,13 @@ class API {
                         API.send(response, to: webView, using: encoding)
                     }
                 case .pseudoterminalRestartRequest(_):
-                    PseudoTerminal.shared.restart(with: [:])
-                    response.success = true
+                    isAsync = true
+                    PseudoTerminal.shared.restart(with: [:], completion: { status in
+                      var response = Response()
+                      response.id = id
+                      response.success = status
+                      API.send(response, to: webView, using: encoding)
+                    })
                 case .readFileRequest(let request):
                     response.readFileResponse = try FileSystem.readFile(request)
                 case .writeFileRequest(let request):
