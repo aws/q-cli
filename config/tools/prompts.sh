@@ -70,6 +70,8 @@ if [[ -z "$APP_TERMINATED_BY_USER" && "$FIG_IS_RUNNING" == '0' ]]; then
   unset DISPLAYED_AUTOLAUNCH_SETTINGS_HINT
 fi
 
+fig app drip 2> /dev/null &
+
 unset FIG_IS_RUNNING
 
 # NOTE: FIG_CHECKED_PROMPTS must be set to 1 in parent shell script.
