@@ -478,6 +478,14 @@ public struct Fig_ClientOriginatedMessage {
     set {submessage = .updateConfigPropertyRequest(newValue)}
   }
 
+  public var pseudoterminalRestartRequest: Fig_PseudoterminalRestartRequest {
+    get {
+      if case .pseudoterminalRestartRequest(let v)? = submessage {return v}
+      return Fig_PseudoterminalRestartRequest()
+    }
+    set {submessage = .pseudoterminalRestartRequest(newValue)}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public enum OneOf_Submessage: Equatable {
@@ -503,6 +511,7 @@ public struct Fig_ClientOriginatedMessage {
     case openInExternalApplicationRequest(Fig_OpenInExternalApplicationRequest)
     case getConfigPropertyRequest(Fig_GetConfigPropertyRequest)
     case updateConfigPropertyRequest(Fig_UpdateConfigPropertyRequest)
+    case pseudoterminalRestartRequest(Fig_PseudoterminalRestartRequest)
 
   #if !swift(>=4.1)
     public static func ==(lhs: Fig_ClientOriginatedMessage.OneOf_Submessage, rhs: Fig_ClientOriginatedMessage.OneOf_Submessage) -> Bool {
@@ -596,6 +605,10 @@ public struct Fig_ClientOriginatedMessage {
       }()
       case (.updateConfigPropertyRequest, .updateConfigPropertyRequest): return {
         guard case .updateConfigPropertyRequest(let l) = lhs, case .updateConfigPropertyRequest(let r) = rhs else { preconditionFailure() }
+        return l == r
+      }()
+      case (.pseudoterminalRestartRequest, .pseudoterminalRestartRequest): return {
+        guard case .pseudoterminalRestartRequest(let l) = lhs, case .pseudoterminalRestartRequest(let r) = rhs else { preconditionFailure() }
         return l == r
       }()
       default: return false
@@ -1383,6 +1396,16 @@ public struct Fig_PseudoterminalExecuteResponse {
 
   fileprivate var _stderr: String? = nil
   fileprivate var _exitCode: Int32? = nil
+}
+
+public struct Fig_PseudoterminalRestartRequest {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
 }
 
 public struct Fig_PositionWindowRequest {
@@ -2902,6 +2925,7 @@ extension Fig_ClientOriginatedMessage: SwiftProtobuf.Message, SwiftProtobuf._Mes
     120: .standard(proto: "open_in_external_application_request"),
     121: .standard(proto: "get_config_property_request"),
     122: .standard(proto: "update_config_property_request"),
+    123: .standard(proto: "pseudoterminal_restart_request"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -3197,6 +3221,19 @@ extension Fig_ClientOriginatedMessage: SwiftProtobuf.Message, SwiftProtobuf._Mes
           self.submessage = .updateConfigPropertyRequest(v)
         }
       }()
+      case 123: try {
+        var v: Fig_PseudoterminalRestartRequest?
+        var hadOneofValue = false
+        if let current = self.submessage {
+          hadOneofValue = true
+          if case .pseudoterminalRestartRequest(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.submessage = .pseudoterminalRestartRequest(v)
+        }
+      }()
       default: break
       }
     }
@@ -3298,6 +3335,10 @@ extension Fig_ClientOriginatedMessage: SwiftProtobuf.Message, SwiftProtobuf._Mes
     case .updateConfigPropertyRequest?: try {
       guard case .updateConfigPropertyRequest(let v)? = self.submessage else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 122)
+    }()
+    case .pseudoterminalRestartRequest?: try {
+      guard case .pseudoterminalRestartRequest(let v)? = self.submessage else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 123)
     }()
     case nil: break
     }
@@ -4370,6 +4411,25 @@ extension Fig_PseudoterminalExecuteResponse: SwiftProtobuf.Message, SwiftProtobu
     if lhs.stdout != rhs.stdout {return false}
     if lhs._stderr != rhs._stderr {return false}
     if lhs._exitCode != rhs._exitCode {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Fig_PseudoterminalRestartRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".PseudoterminalRestartRequest"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap()
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let _ = try decoder.nextFieldNumber() {
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Fig_PseudoterminalRestartRequest, rhs: Fig_PseudoterminalRestartRequest) -> Bool {
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

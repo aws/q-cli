@@ -20,6 +20,7 @@ import {
     PositionWindowResponse,
     PseudoterminalExecuteRequest,
     PseudoterminalExecuteResponse,
+    PseudoterminalRestartRequest,
     PseudoterminalWriteRequest,
     ReadFileRequest,
     ReadFileResponse,
@@ -565,6 +566,32 @@ export const sendUpdateConfigPropertyRequest = async (
                         reject(
                             Error(
                                 "Invalid response '" + response?.$case + "' for 'UpdateConfigPropertyRequest'"
+                            )
+                        );
+                }
+            }
+        );
+    });
+
+
+export const sendPseudoterminalRestartRequest = async (
+    request: PseudoterminalRestartRequest
+): Promise<void> =>
+    new Promise((resolve, reject) => {
+        sendMessage(
+            { $case: "pseudoterminalRestartRequest", pseudoterminalRestartRequest: request },
+            (response) => {
+                switch (response?.$case) {
+                    case "success":
+                        resolve();
+                        break;
+                    case "error":
+                        reject(Error(response.error));
+                        break;
+                    default:
+                        reject(
+                            Error(
+                                "Invalid response '" + response?.$case + "' for 'PseudoterminalRestartRequest'"
                             )
                         );
                 }

@@ -9,7 +9,6 @@
 #if !os(iOS)
 import Foundation
 
-
 public protocol LocalProcessDelegate {
     /// This method is invoked on the delegate when the process has exited
     /// - Parameter source: the local process that terminated
@@ -128,8 +127,14 @@ public class LocalProcess {
                 running = false
                 // delegate.processTerminated (self, exitCode: nil)
             }
+            print("[READ] read was 0. errno: \(errno)")
             return
         }
+      
+        if errno != 0 {
+          print("[READ] errno: \(errno)")
+        }
+
         var b: [UInt8] = Array.init(repeating: 0, count: data.count)
         b.withUnsafeMutableBufferPointer({ ptr in
             let _ = data.copyBytes(to: ptr)
@@ -160,7 +165,11 @@ public class LocalProcess {
         running = false
     }
     
-    var running: Bool = false
+    var running: Bool = false {
+      didSet {
+        print("[PTY] process is\(running ? "" : " not") running")
+      }
+    }
     /**
      * Launches a child process inside a pseudo-terminal
      * - Parameter executable: The executable to launch inside the pseudo terminal, defaults to /bin/bash

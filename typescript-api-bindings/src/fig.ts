@@ -329,6 +329,10 @@ export interface ClientOriginatedMessage {
     | {
         $case: 'updateConfigPropertyRequest';
         updateConfigPropertyRequest: UpdateConfigPropertyRequest;
+      }
+    | {
+        $case: "pseudoterminalRestartRequest";
+        pseudoterminalRestartRequest: PseudoterminalRestartRequest;
       };
 }
 
@@ -465,6 +469,8 @@ export interface PseudoterminalExecuteResponse {
   stderr?: string | undefined;
   exitCode?: number | undefined;
 }
+
+export interface PseudoterminalRestartRequest {}
 
 export interface PositionWindowRequest {
   anchor: Point | undefined;
@@ -866,6 +872,12 @@ export const ClientOriginatedMessage = {
         writer.uint32(978).fork()
       ).ldelim();
     }
+    if (message.submessage?.$case === "pseudoterminalRestartRequest") {
+      PseudoterminalRestartRequest.encode(
+        message.submessage.pseudoterminalRestartRequest,
+        writer.uint32(986).fork()
+      ).ldelim();
+    }
     return writer;
   },
 
@@ -1071,6 +1083,15 @@ export const ClientOriginatedMessage = {
           message.submessage = {
             $case: 'updateConfigPropertyRequest',
             updateConfigPropertyRequest: UpdateConfigPropertyRequest.decode(
+              reader,
+              reader.uint32()
+            ),
+          };
+          break;
+        case 123:
+          message.submessage = {
+            $case: "pseudoterminalRestartRequest",
+            pseudoterminalRestartRequest: PseudoterminalRestartRequest.decode(
               reader,
               reader.uint32()
             ),
@@ -1325,6 +1346,17 @@ export const ClientOriginatedMessage = {
         ),
       };
     }
+    if (
+      object.pseudoterminalRestartRequest !== undefined &&
+      object.pseudoterminalRestartRequest !== null
+    ) {
+      message.submessage = {
+        $case: "pseudoterminalRestartRequest",
+        pseudoterminalRestartRequest: PseudoterminalRestartRequest.fromJSON(
+          object.pseudoterminalRestartRequest
+        ),
+      };
+    }
     return message;
   },
 
@@ -1462,6 +1494,13 @@ export const ClientOriginatedMessage = {
         ?.updateConfigPropertyRequest
         ? UpdateConfigPropertyRequest.toJSON(
             message.submessage?.updateConfigPropertyRequest
+          )
+        : undefined);
+    message.submessage?.$case === "pseudoterminalRestartRequest" &&
+      (obj.pseudoterminalRestartRequest = message.submessage
+        ?.pseudoterminalRestartRequest
+        ? PseudoterminalRestartRequest.toJSON(
+            message.submessage?.pseudoterminalRestartRequest
           )
         : undefined);
     return obj;
@@ -1735,6 +1774,18 @@ export const ClientOriginatedMessage = {
         $case: 'updateConfigPropertyRequest',
         updateConfigPropertyRequest: UpdateConfigPropertyRequest.fromPartial(
           object.submessage.updateConfigPropertyRequest
+        ),
+      };
+    }
+    if (
+      object.submessage?.$case === "pseudoterminalRestartRequest" &&
+      object.submessage?.pseudoterminalRestartRequest !== undefined &&
+      object.submessage?.pseudoterminalRestartRequest !== null
+    ) {
+      message.submessage = {
+        $case: "pseudoterminalRestartRequest",
+        pseudoterminalRestartRequest: PseudoterminalRestartRequest.fromPartial(
+          object.submessage.pseudoterminalRestartRequest
         ),
       };
     }
@@ -3607,6 +3658,58 @@ export const PseudoterminalExecuteResponse = {
     message.stdout = object.stdout ?? '';
     message.stderr = object.stderr ?? undefined;
     message.exitCode = object.exitCode ?? undefined;
+    return message;
+  },
+};
+
+const basePseudoterminalRestartRequest: object = {};
+
+export const PseudoterminalRestartRequest = {
+  encode(
+    _: PseudoterminalRestartRequest,
+    writer: _m0.Writer = _m0.Writer.create()
+  ): _m0.Writer {
+    return writer;
+  },
+
+  decode(
+    input: _m0.Reader | Uint8Array,
+    length?: number
+  ): PseudoterminalRestartRequest {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = {
+      ...basePseudoterminalRestartRequest,
+    } as PseudoterminalRestartRequest;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+
+  fromJSON(_: any): PseudoterminalRestartRequest {
+    const message = {
+      ...basePseudoterminalRestartRequest,
+    } as PseudoterminalRestartRequest;
+    return message;
+  },
+
+  toJSON(_: PseudoterminalRestartRequest): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  fromPartial(
+    _: DeepPartial<PseudoterminalRestartRequest>
+  ): PseudoterminalRestartRequest {
+    const message = {
+      ...basePseudoterminalRestartRequest,
+    } as PseudoterminalRestartRequest;
     return message;
   },
 };
