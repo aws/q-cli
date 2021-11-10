@@ -220,7 +220,7 @@ message DiagnosticsResponse {
 	string symlinked = 11;
 	string onlytab = 12;
 	string installscript = 13;
-	string psudopath = 14;
+	string psudoterminal_path = 14;
 	string securekeyboard = 15;
 	string securekeyboard_path = 16;
 	string current_process = 17;

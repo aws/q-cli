@@ -1226,9 +1226,9 @@ public struct Local_DiagnosticsResponse {
     set {_uniqueStorage()._installscript = newValue}
   }
 
-  public var psudopath: String {
-    get {return _storage._psudopath}
-    set {_uniqueStorage()._psudopath = newValue}
+  public var psudoterminalPath: String {
+    get {return _storage._psudoterminalPath}
+    set {_uniqueStorage()._psudoterminalPath = newValue}
   }
 
   public var securekeyboard: String {
@@ -3137,7 +3137,7 @@ extension Local_DiagnosticsResponse: SwiftProtobuf.Message, SwiftProtobuf._Messa
     11: .same(proto: "symlinked"),
     12: .same(proto: "onlytab"),
     13: .same(proto: "installscript"),
-    14: .same(proto: "psudopath"),
+    14: .standard(proto: "psudoterminal_path"),
     15: .same(proto: "securekeyboard"),
     16: .standard(proto: "securekeyboard_path"),
     17: .standard(proto: "current_process"),
@@ -3158,7 +3158,7 @@ extension Local_DiagnosticsResponse: SwiftProtobuf.Message, SwiftProtobuf._Messa
     var _symlinked: String = String()
     var _onlytab: String = String()
     var _installscript: String = String()
-    var _psudopath: String = String()
+    var _psudoterminalPath: String = String()
     var _securekeyboard: String = String()
     var _securekeyboardPath: String = String()
     var _currentProcess: String = String()
@@ -3182,7 +3182,7 @@ extension Local_DiagnosticsResponse: SwiftProtobuf.Message, SwiftProtobuf._Messa
       _symlinked = source._symlinked
       _onlytab = source._onlytab
       _installscript = source._installscript
-      _psudopath = source._psudopath
+      _psudoterminalPath = source._psudoterminalPath
       _securekeyboard = source._securekeyboard
       _securekeyboardPath = source._securekeyboardPath
       _currentProcess = source._currentProcess
@@ -3218,7 +3218,7 @@ extension Local_DiagnosticsResponse: SwiftProtobuf.Message, SwiftProtobuf._Messa
         case 11: try { try decoder.decodeSingularStringField(value: &_storage._symlinked) }()
         case 12: try { try decoder.decodeSingularStringField(value: &_storage._onlytab) }()
         case 13: try { try decoder.decodeSingularStringField(value: &_storage._installscript) }()
-        case 14: try { try decoder.decodeSingularStringField(value: &_storage._psudopath) }()
+        case 14: try { try decoder.decodeSingularStringField(value: &_storage._psudoterminalPath) }()
         case 15: try { try decoder.decodeSingularStringField(value: &_storage._securekeyboard) }()
         case 16: try { try decoder.decodeSingularStringField(value: &_storage._securekeyboardPath) }()
         case 17: try { try decoder.decodeSingularStringField(value: &_storage._currentProcess) }()
@@ -3270,8 +3270,8 @@ extension Local_DiagnosticsResponse: SwiftProtobuf.Message, SwiftProtobuf._Messa
       if !_storage._installscript.isEmpty {
         try visitor.visitSingularStringField(value: _storage._installscript, fieldNumber: 13)
       }
-      if !_storage._psudopath.isEmpty {
-        try visitor.visitSingularStringField(value: _storage._psudopath, fieldNumber: 14)
+      if !_storage._psudoterminalPath.isEmpty {
+        try visitor.visitSingularStringField(value: _storage._psudoterminalPath, fieldNumber: 14)
       }
       if !_storage._securekeyboard.isEmpty {
         try visitor.visitSingularStringField(value: _storage._securekeyboard, fieldNumber: 15)
@@ -3307,7 +3307,7 @@ extension Local_DiagnosticsResponse: SwiftProtobuf.Message, SwiftProtobuf._Messa
         if _storage._symlinked != rhs_storage._symlinked {return false}
         if _storage._onlytab != rhs_storage._onlytab {return false}
         if _storage._installscript != rhs_storage._installscript {return false}
-        if _storage._psudopath != rhs_storage._psudopath {return false}
+        if _storage._psudoterminalPath != rhs_storage._psudoterminalPath {return false}
         if _storage._securekeyboard != rhs_storage._securekeyboard {return false}
         if _storage._securekeyboardPath != rhs_storage._securekeyboardPath {return false}
         if _storage._currentProcess != rhs_storage._currentProcess {return false}

@@ -270,7 +270,7 @@ func Summary() string {
 
 	//  PseudoTerminal Path: \(Diagnostic.pseudoTerminalPath ?? "<generated dynamically>")
 	summary.WriteString("PseudoTerminal Path: ")
-	summary.WriteString(resp.GetDiagnostics().GetPsudopath())
+	summary.WriteString(resp.GetDiagnostics().GetPsudoterminalPath())
 	summary.WriteString("\n")
 
 	//  SecureKeyboardInput: \(Diagnostic.secureKeyboardInput)
