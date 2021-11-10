@@ -104,7 +104,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 
         handleUpdateIfNeeded()
         Defaults.useAutocomplete = true
-        Defaults.autocompleteVersion = "v7"
+        Defaults.autocompleteVersion = "v8"
         AutocompleteContextNotifier.addIndicatorToTitlebar = false
 
         Defaults.autocompleteWidth = 250
@@ -526,7 +526,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         
       integrationsMenu.addItem(NSMenuItem.separator())
 //
-//    
+//
 //      let sshIntegration = integrationsMenu.addItem(
 //      withTitle: "SSH Integration",
 //      action: #selector(AppDelegate.toggleSSHIntegration(_:)),
