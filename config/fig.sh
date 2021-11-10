@@ -30,11 +30,7 @@ if [[ ! "${TERMINAL_EMULATOR}" = JetBrains-JediTerm ]]; then
     fi
   fi
 
-  # We use a shell variable to make sure this doesn't load twice
-  if [[ -z "${FIG_SHELL_VAR}" ]]; then
-    source ~/.fig/shell/post.sh
-    FIG_SHELL_VAR=1
-  fi
+  source ~/.fig/shell/post.sh
 
   # todo: Add a check to confirm "add-zle-hook-widget" facility exists
   # Not included in fig.zsh, because should be run last

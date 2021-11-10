@@ -45,12 +45,7 @@ fig_preexec() {
 fig_precmd() {
   local LAST_STATUS=$?
 
-  if [[ $precmd_functions[-1] != fig_precmd && $precmd_functions[(I)fig_precmd] != 0 ]]; then
-    precmd_functions=(${(@)precmd_functions:#fig_precmd} fig_precmd)
-  fi
-  if [[ $preexec_functions[1] != fig_preexec && $preexec_functions[(I)fig_preexec] != 0 ]]; then
-    preexec_functions=(fig_preexec ${(@)preexec_functions:#fig_preexec})
-  fi
+  fig_reset_hooks
 
   fig_osc "Dir=%s" "$PWD"
   fig_osc "Shell=zsh"
@@ -131,5 +126,13 @@ fig_precmd() {
   [[ -t 1 ]] && command stty -istrip
 }
 
-typeset -ga preexec_functions=(fig_preexec $preexec_functions)
-typeset -ga precmd_functions=($precmd_functions fig_precmd)
+fig_reset_hooks() {
+  if [[ $precmd_functions[-1] != fig_precmd ]]; then
+    precmd_functions=(${(@)precmd_functions:#fig_precmd} fig_precmd)
+  fi
+  if [[ $preexec_functions[1] != fig_preexec ]]; then
+    preexec_functions=(fig_preexec ${(@)preexec_functions:#fig_preexec})
+  fi
+}
+
+fig_reset_hooks
