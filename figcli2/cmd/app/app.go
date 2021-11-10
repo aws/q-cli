@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fig-cli/cmd/app/drip"
 	"fig-cli/cmd/app/install"
 	"fig-cli/cmd/app/onboarding"
 	"fig-cli/cmd/app/running"
@@ -19,6 +20,7 @@ func NewCmdApp() *cobra.Command {
 		},
 	}
 
+	cmd.AddCommand(drip.NewCmdDrip())
 	cmd.AddCommand(onboarding.NewCmdOnboarding())
 	cmd.AddCommand(install.NewCmdInstall())
 	cmd.AddCommand(setpath.NewCmdSetPath())

@@ -75,6 +75,7 @@ class PseudoTerminal {
         if let shouldWriteTranscript = Settings.shared.getValue(forKey: Settings.ptyTranscript) as? Bool,
                shouldWriteTranscript {
           self.write(" script -qt0 ~/.fig/logs/pty_transcript.log")
+          self.headless.process.debugIO = true
         }
         
         self.write(" set +o history" + PseudoTerminal.CRLF)
@@ -103,7 +104,23 @@ class PseudoTerminal {
     func close() {
         if self.headless.process.running {
             kill( self.headless.process.shellPid, SIGTERM)
+            kill( self.headless.process.shellPid, SIGKILL)
         }
+    }
+  
+  func restart(with environment: [String: String], completion: ((Bool) -> Void)? = nil) {
+      self.close()
+    
+      // todo: use self.headless.onEnd instead of a hardcoded delay
+      Timer.delayWithSeconds(1) {
+        guard !self.headless.process.running else {
+          completion?(false)
+          return
+        }
+        
+        self.start(with: environment)
+        completion?(true)
+      }
     }
     
     // MARK: Utilities
@@ -158,19 +175,19 @@ extension PseudoTerminal {
         guard element.value as? String != nil else {
           return false
         }
-        
+
         return environmentVariablesToMirror.reduce(false) { (result, prefix) -> Bool in
           return result || element.key.starts(with: prefix)
         }
       })
-      
+
       let command = variablesToUpdate.keys.map { "export \($0)='\(variablesToUpdate[$0] ?? "")'" }.joined(separator: "\n")
-      
+
       let tmpFile = NSTemporaryDirectory().appending("fig_source_env")
       Logger.log(message: "Writing new ENV vars to '\(tmpFile)'", subsystem: .pty)
 
       do {
-        
+
         try command.write(toFile: tmpFile,
                       atomically: true,
                       encoding: .utf8)

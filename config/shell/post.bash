@@ -2,12 +2,6 @@
 source ~/.fig/shell/bash-preexec.sh
 function __bp_adjust_histcontrol() { :; }
 
-__fig() {
-  if [[ -d /Applications/Fig.app || -d ~/Applications/Fig.app ]] && command -v fig 2>&1 1>/dev/null; then
-    fig "$@"
-  fi
-}
-
 FIG_LAST_PS1="$PS1"
 FIG_LAST_PS2="$PS2"
 FIG_LAST_PS3="$PS3"
@@ -52,6 +46,8 @@ function __fig_preexec_preserve_status() {
 
 function __fig_prompt () {
   __fig_ret_value="$?"
+
+  __fig_reset_hooks
 
   fig_osc "Dir=%s" "${PWD}"
   fig_osc "Shell=bash"
@@ -100,6 +96,24 @@ function __fig_prompt () {
   FIG_LAST_PS3="${PS3}"
 }
 
-# trap DEBUG -> preexec -> command -> PROMPT_COMMAND -> prompt shown.
-preexec_functions=(__fig_preexec_preserve_status "${preexec_functions[@]}")
-precmd_functions=(__fig_prompt "${precmd_functions[@]}")
+__fig_reset_hooks() {
+  if [[ ${precmd_functions[${#precmd_functions[@]} - 1]} != __fig_prompt ]]; then
+    for index in "${!precmd_functions[@]}"; do
+      if [[ ${precmd_functions[$index]} == __fig_prompt ]]; then
+        unset -v 'precmd_functions[$index]'
+      fi
+    done
+    precmd_functions=("${precmd_functions[@]}" __fig_prompt)
+  fi
+
+  if [[ ${preexec_functions[0]} != __fig_preexec_preserve_status ]]; then
+    for index in "${!preexec_functions[@]}"; do
+      if [[ ${preexec_functions[$index]} == __fig_preexec_preserve_status ]]; then
+        unset -v 'preexec_functions[$index]'
+      fi
+    done
+    preexec_functions=(__fig_preexec_preserve_status "${preexec_functions[@]}")
+  fi
+}
+
+__fig_reset_hooks

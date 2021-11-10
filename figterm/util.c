@@ -106,8 +106,10 @@ static int unix_socket_connect(char *path) {
   strcpy(remote.sun_path, path);
 
   size_t len = SUN_LEN(&remote);
-  if (connect(sock, (struct sockaddr *)&remote, len) == -1)
+  if (connect(sock, (struct sockaddr *)&remote, len) == -1) {
+    close(sock);
     return -1;
+  }
   return sock;
 }
 
@@ -180,7 +182,6 @@ int ipc_socket_send(char* buf, int len) {
 
   if (ipc_sock < 0) {
     log_warn("Can't connect to fig socket");
-    close(ipc_sock);
     return ipc_sock;
   }
   
@@ -199,7 +200,9 @@ char* vprintf_alloc(const char* fmt, va_list va) {
   va_copy(arg_copy, va);
   const int len = vsnprintf(NULL, 0, fmt, arg_copy);
   va_end(arg_copy);
-  char *tmpbuf = malloc(len * sizeof(char));
+  char *tmpbuf = malloc((len + 1) * sizeof(char));
+  if (tmpbuf == NULL)
+    return NULL;
   vsprintf(tmpbuf, fmt, va);
   return tmpbuf;
 }
@@ -246,9 +249,12 @@ void publish_json(const char* fmt, ...) {
                                                               len[7],
                                                               tmpbuf);
 
-  int msg_len = HEADER_LEN + strlen(tmpbuf);
-
-  ipc_socket_send(msg, msg_len);
+  if (msg == NULL) {
+    log_info("Null message, not sending");
+  } else {
+    int msg_len = HEADER_LEN + strlen(tmpbuf);
+    ipc_socket_send(msg, msg_len);
+  }
   log_info("done sending %s", tmpbuf);
   free(msg);
   free(tmpbuf);

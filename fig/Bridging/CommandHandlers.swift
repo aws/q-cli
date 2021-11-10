@@ -57,6 +57,12 @@ extension CommandHandlers {
   static func diagnosticsCommand() -> CommandResponse {
     Logger.log(message: "Diagnostics ran")
     return CommandResponse.with { response in
+      response.diagnostics.distribution = Diagnostic.distribution
+      response.diagnostics.beta = Defaults.beta
+      response.diagnostics.debugAutocomplete = Defaults.debugAutocomplete
+      response.diagnostics.developerModeEnabled = Defaults.developerModeEnabled
+      response.diagnostics.currentLayoutName = KeyboardLayout.shared.currentLayoutName() ?? ""
+      response.diagnostics.isRunningOnReadOnlyVolume = Diagnostic.isRunningOnReadOnlyVolume
       response.diagnostics.pathToBundle = Diagnostic.pathToBundle
       response.diagnostics.accessibility = String(Accessibility.enabled)
       response.diagnostics.keypath = Diagnostic.keybindingsPath ?? "<none>"
@@ -68,7 +74,7 @@ extension CommandHandlers {
       response.diagnostics.currentWindowIdentifier = Diagnostic.descriptionOfTopmostWindow
       response.diagnostics.currentProcess = "\(Diagnostic.processForTopmostWindow) (\(Diagnostic.processIdForTopmostWindow)) - \(Diagnostic.ttyDescriptorForTopmostWindow)"
       response.diagnostics.onlytab = String(Defaults.onlyInsertOnTab)
-      response.diagnostics.psudopath = Diagnostic.pseudoTerminalPath ?? "<generated dynamically>"
+      response.diagnostics.psudoterminalPath = Diagnostic.pseudoTerminalPath ?? "<generated dynamically>"
     }
   }
   
