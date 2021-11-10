@@ -105,25 +105,18 @@ void write_history_entry(HistoryEntry* entry) {
   free(context);
 
   char* tmp = printf_alloc(
-    "\n- command: %s\n  exit_code: %d\n  shell: %s\n  session_id: %s\n  cwd: %s\n  time: %s",
+    "\n- command: %s\n  exit_code: %d\n  shell: %s\n  session_id: %s\n  cwd: %s\n  time: %s%s%s%s%s",
     command_escaped,
     entry->exit_code,
     entry->shell,
     entry->session_id,
     entry->cwd,
-    time_str
+    time_str,
+    entry->in_ssh ? "\n  ssh: true" : "",
+    entry->in_docker ? "\n  docker: true" : "",
+    (entry->in_ssh || entry->in_docker) ? "\n  hostname: " : "",
+    (entry->in_ssh || entry->in_docker) ? entry->hostname : ""
   );
-
-  if (entry->in_ssh || entry->in_docker) {
-    if (entry->in_docker) {
-      strcat(tmp, "\n  docker: true");
-    }
-    if (entry->in_ssh) {
-      strcat(tmp, "\n  ssh: true");
-    }
-    strcat(tmp, "\n  hostname: ");
-    strcat(tmp, entry->hostname);
-  }
 
   flock(history_fd, LOCK_EX);
   dprintf(history_fd, "%s", tmp);

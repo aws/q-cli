@@ -1,5 +1,3 @@
-autoload -Uz add-zsh-hook
-
 FIG_HOSTNAME=$(hostname -f 2> /dev/null || hostname)
 
 if [[ -e /proc/1/cgroup ]] && grep -q docker /proc/1/cgroup; then
@@ -46,6 +44,13 @@ fig_preexec() {
 
 fig_precmd() {
   local LAST_STATUS=$?
+
+  if [[ $precmd_functions[-1] != fig_precmd && $precmd_functions[(I)fig_precmd] != 0 ]]; then
+    precmd_functions=(${(@)precmd_functions:#fig_precmd} fig_precmd)
+  fi
+  if [[ $preexec_functions[1] != fig_preexec && $preexec_functions[(I)fig_preexec] != 0 ]]; then
+    preexec_functions=(fig_preexec ${(@)preexec_functions:#fig_preexec})
+  fi
 
   fig_osc "Dir=%s" "$PWD"
   fig_osc "Shell=zsh"
@@ -126,5 +131,5 @@ fig_precmd() {
   [[ -t 1 ]] && command stty -istrip
 }
 
-add-zsh-hook precmd fig_precmd
-add-zsh-hook preexec fig_preexec
+typeset -ga preexec_functions=(fig_preexec $preexec_functions)
+typeset -ga precmd_functions=($precmd_functions fig_precmd)

@@ -61,7 +61,7 @@ static void handle_osc(FigTerm* ft) {
     char* context = figterm_get_shell_context(ft);
 
     publish_json(
-      "{\"hook\":{\"pre_exec\":{\"context\": %s}}}",
+      "{\"hook\":{\"preExec\":{\"context\": %s}}}",
       context
     );
 
@@ -289,31 +289,12 @@ char* figterm_get_buffer(FigTerm* ft, int* index) {
   int len = (rows + 1 - i) * (cols + 1);
   char* buf = malloc(sizeof(char) * (len + 1));
 
-  int* index_ptr = index;
-
   // Get prompt row text first.
   VTermRect rect = {
-    .start_row = i, .end_row = i + 1, .start_col = j, .end_col = cols
+    .start_row = i, .end_row = rows, .start_col = 0, .end_col = cols
   };
-  size_t row_len = figterm_screen_get_text(ft->screen, buf, len, rect, UNICODE_SPACE, index_ptr);
-  buf[row_len] = '\n';
-  row_len += 1;
-
-  if (*index_ptr != -1)
-    index_ptr = NULL;
-
-  // Then the rest of the screen.
-  rect.start_row += 1;
-  rect.end_row = rows;
-  rect.start_col = 0;
-  rect.end_col = cols;
-
-  size_t text_len = figterm_screen_get_text(ft->screen, buf + row_len, len - row_len, rect, UNICODE_SPACE, index_ptr);
-  buf[row_len + text_len] = '\0';
-
-  if (index_ptr != NULL)
-    *index += row_len;
-
+  size_t text_len = figterm_screen_get_text(ft->screen, buf, len, rect, j, UNICODE_SPACE, true, index);
+  buf[text_len] = '\0';
   return rtrim(buf, *index);
 }
 
@@ -340,7 +321,7 @@ void figterm_log(FigTerm *ft, char mask) {
   vterm_get_size(ft->vt, &rect.end_row, &rect.end_col);
   int len = (rect.end_row + 1) * (rect.end_col + 1);
   char* buf = malloc(sizeof(char) * len);
-  size_t outpos = figterm_screen_get_text(ft->screen, buf, len, rect, mask, NULL);
+  size_t outpos = figterm_screen_get_text(ft->screen, buf, len, rect, 0, mask, false, NULL);
 
   VTermPos cursor;
   figterm_screen_get_cursorpos(ft->screen, &cursor);
@@ -424,7 +405,7 @@ char* figterm_get_shell_context(FigTerm* ft) {
   // char* cwd = get_cwd(ft->shell_pid);
   // \"current_working_directory\":\"%s\"
   char* context = printf_alloc(
-    "{\"pid\":\"%s\",\"ttys\":\"%s\",\"process_name\":\"%s\",\"session_id\":\"%s\",\"integration_version\": \"%s\",\"hostname\":\"%s\"}",
+    "{\"pid\":\"%s\",\"ttys\":\"%s\",\"processName\":\"%s\",\"sessionId\":\"%s\",\"integrationVersion\": \"%s\",\"hostname\":\"%s\"}",
     shell_state.pid,
     shell_state.tty,
     shell_state.shell,

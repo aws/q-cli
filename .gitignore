@@ -10,3 +10,9 @@ fig.xcodeproj/**
 
 # Misc
 .DS_Store
+node_modules/
+.eslintcache
+yarn-error.log
+
+dotenv/docker-compose.yaml
+dotenv/src/local.ts
