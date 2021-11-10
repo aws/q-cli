@@ -50,6 +50,7 @@ void abort_handler(int sig) {
 
 char* _parent_shell = NULL;
 char* _parent_shell_is_login = NULL;
+char* _parent_shell_extra_args = NULL;
 
 void launch_shell(bool fatal_crash) {
   if (_parent_shell == NULL) {
@@ -60,9 +61,37 @@ void launch_shell(bool fatal_crash) {
   if (_parent_shell_is_login == NULL)
     _parent_shell_is_login = getenv("FIG_IS_LOGIN_SHELL");
 
-  char* args[] = {_parent_shell, NULL, NULL};
-  if (_parent_shell_is_login != NULL && *_parent_shell_is_login == '1')
-    args[1] = "--login";
+  if (_parent_shell_extra_args == NULL)
+    _parent_shell_extra_args = getenv("FIG_SHELL_EXTRA_ARGS");
+
+  int nargs = 2;
+  char** args = malloc(sizeof(char*) * nargs);
+  args[nargs - 2] = _parent_shell;
+  args[nargs - 1] = NULL;
+
+  bool is_login = _parent_shell_is_login != NULL && *_parent_shell_is_login == '1';
+  if (is_login) {
+    nargs += 1;
+    args = realloc(args, sizeof(char*) * nargs);
+    args[nargs - 2] = "--login";
+    args[nargs - 1] = NULL;
+  }
+
+  if (_parent_shell_extra_args != NULL) {
+    char* tmp = strdup(_parent_shell_extra_args);
+    char* arg = strtok(tmp, " ");
+
+    while (arg) {
+      if (strcmp(arg, "--login") != 0) {
+        nargs += 1;
+        args = realloc(args, sizeof(char*) * nargs);
+        args[nargs - 2] = strdup(arg);
+        args[nargs - 1] = NULL;
+      }
+      arg = strtok(NULL, " ");
+    }
+    free(tmp);
+  }
 
   // Expose shell variables for version and to prevent nested fig term launches.
   char version[3];
@@ -76,6 +105,7 @@ void launch_shell(bool fatal_crash) {
   unsetenv("FIG_SHELL");
   unsetenv("FIG_IS_LOGIN_SHELL");
   unsetenv("FIG_START_TEXT");
+  unsetenv("FIG_SHELL_EXTRA_ARGS");
 
   if (fatal_crash) {
     setenv("FIG_TERM_CRASHED", "1", 1);
@@ -84,6 +114,8 @@ void launch_shell(bool fatal_crash) {
   if (execvp(args[0], args) < 0) {
     EXIT(1);
   }
+  free(args);
+  EXIT(1);
 }
 
 void on_figterm_exit() {
@@ -137,6 +169,7 @@ void publish_buffer(FigTerm* ft) {
   }
 
   if (buffer == NULL || index < 0) {
+    log_info("Buffer is null or invalid index, not publishing...");
     return;
   }
 
@@ -147,7 +180,7 @@ void publish_buffer(FigTerm* ft) {
   char* context = figterm_get_shell_context(ft);
   char* buffer_escaped = escaped_str(buffer);
 
-  publish_json("{\"hook\":{\"edit_buffer\":{\"text\":\"%s\",\"cursor\":\"%i\",\"context\": %s}}}", buffer_escaped, index, context);
+  publish_json("{\"hook\":{\"editBuffer\":{\"text\":\"%s\",\"cursor\":\"%i\",\"context\": %s}}}", buffer_escaped, index, context);
   
   free(context);
   free(buffer_escaped);
@@ -191,7 +224,6 @@ void figterm_loop(int ptyp_fd, pid_t shell_pid, char* initial_command) {
     }
 
     int n = select(max_fd + 1, &rfd, 0, 0, NULL);
-    log_info("Got n %d, %d, %d, %d", n, FD_ISSET(STDIN_FILENO, &rfd), FD_ISSET(ptyp_fd, &rfd), FD_ISSET(incoming_socket, &rfd));
     if (n < 0 && errno != EINTR) {
       err_sys("select error");
     }
@@ -299,7 +331,7 @@ int main(int argc, char *argv[]) {
     log_info("Figterm: %d", getpid());
 
     char* context = printf_alloc(
-      "{\"session_id\":\"%s\",\"pid\":\"%i\",\"ttys\":\"%s\",\"integration_version\":\"%s\"}",
+      "{\"sessionId\":\"%s\",\"pid\":\"%i\",\"ttys\":\"%s\",\"integrationVersion\":\"%s\"}",
       fig_info->term_session_id,
       shell_pid,
       ptc_name,

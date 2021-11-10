@@ -1473,9 +1473,7 @@ export const ClientOriginatedMessage = {
     const message = {
       ...baseClientOriginatedMessage,
     } as ClientOriginatedMessage;
-    if (object.id !== undefined && object.id !== null) {
-      message.id = object.id;
-    }
+    message.id = object.id ?? undefined;
     if (
       object.submessage?.$case === "positionWindowRequest" &&
       object.submessage?.positionWindowRequest !== undefined &&
@@ -2108,9 +2106,7 @@ export const ServerOriginatedMessage = {
     const message = {
       ...baseServerOriginatedMessage,
     } as ServerOriginatedMessage;
-    if (object.id !== undefined && object.id !== null) {
-      message.id = object.id;
-    }
+    message.id = object.id ?? undefined;
     if (
       object.submessage?.$case === "error" &&
       object.submessage?.error !== undefined &&
@@ -2294,12 +2290,8 @@ export const Point = {
 
   fromPartial(object: DeepPartial<Point>): Point {
     const message = { ...basePoint } as Point;
-    if (object.x !== undefined && object.x !== null) {
-      message.x = object.x;
-    }
-    if (object.y !== undefined && object.y !== null) {
-      message.y = object.y;
-    }
+    message.x = object.x ?? 0;
+    message.y = object.y ?? 0;
     return message;
   },
 };
@@ -2358,12 +2350,8 @@ export const Size = {
 
   fromPartial(object: DeepPartial<Size>): Size {
     const message = { ...baseSize } as Size;
-    if (object.width !== undefined && object.width !== null) {
-      message.width = object.width;
-    }
-    if (object.height !== undefined && object.height !== null) {
-      message.height = object.height;
-    }
+    message.width = object.width ?? 0;
+    message.height = object.height ?? 0;
     return message;
   },
 };
@@ -2426,9 +2414,13 @@ export const Frame = {
     const message = { ...baseFrame } as Frame;
     if (object.origin !== undefined && object.origin !== null) {
       message.origin = Point.fromPartial(object.origin);
+    } else {
+      message.origin = undefined;
     }
     if (object.size !== undefined && object.size !== null) {
       message.size = Size.fromPartial(object.size);
+    } else {
+      message.size = undefined;
     }
     return message;
   },
@@ -2491,12 +2483,8 @@ export const EnvironmentVariable = {
 
   fromPartial(object: DeepPartial<EnvironmentVariable>): EnvironmentVariable {
     const message = { ...baseEnvironmentVariable } as EnvironmentVariable;
-    if (object.key !== undefined && object.key !== null) {
-      message.key = object.key;
-    }
-    if (object.value !== undefined && object.value !== null) {
-      message.value = object.value;
-    }
+    message.key = object.key ?? "";
+    message.value = object.value ?? undefined;
     return message;
   },
 };
@@ -2588,16 +2576,10 @@ export const Process = {
 
   fromPartial(object: DeepPartial<Process>): Process {
     const message = { ...baseProcess } as Process;
+    message.pid = object.pid ?? undefined;
+    message.executable = object.executable ?? undefined;
+    message.directory = object.directory ?? undefined;
     message.env = [];
-    if (object.pid !== undefined && object.pid !== null) {
-      message.pid = object.pid;
-    }
-    if (object.executable !== undefined && object.executable !== null) {
-      message.executable = object.executable;
-    }
-    if (object.directory !== undefined && object.directory !== null) {
-      message.directory = object.directory;
-    }
     if (object.env !== undefined && object.env !== null) {
       for (const e of object.env) {
         message.env.push(EnvironmentVariable.fromPartial(e));
@@ -2678,18 +2660,9 @@ export const FilePath = {
 
   fromPartial(object: DeepPartial<FilePath>): FilePath {
     const message = { ...baseFilePath } as FilePath;
-    if (object.path !== undefined && object.path !== null) {
-      message.path = object.path;
-    }
-    if (object.relativeTo !== undefined && object.relativeTo !== null) {
-      message.relativeTo = object.relativeTo;
-    }
-    if (
-      object.expandTildeInPath !== undefined &&
-      object.expandTildeInPath !== null
-    ) {
-      message.expandTildeInPath = object.expandTildeInPath;
-    }
+    message.path = object.path ?? undefined;
+    message.relativeTo = object.relativeTo ?? undefined;
+    message.expandTildeInPath = object.expandTildeInPath ?? undefined;
     return message;
   },
 };
@@ -2805,27 +2778,17 @@ export const KeyEvent = {
 
   fromPartial(object: DeepPartial<KeyEvent>): KeyEvent {
     const message = { ...baseKeyEvent } as KeyEvent;
+    message.appleKeyCode = object.appleKeyCode ?? undefined;
+    message.characters = object.characters ?? undefined;
+    message.charactersIgnoringModifiers =
+      object.charactersIgnoringModifiers ?? undefined;
     message.modifiers = [];
-    if (object.appleKeyCode !== undefined && object.appleKeyCode !== null) {
-      message.appleKeyCode = object.appleKeyCode;
-    }
-    if (object.characters !== undefined && object.characters !== null) {
-      message.characters = object.characters;
-    }
-    if (
-      object.charactersIgnoringModifiers !== undefined &&
-      object.charactersIgnoringModifiers !== null
-    ) {
-      message.charactersIgnoringModifiers = object.charactersIgnoringModifiers;
-    }
     if (object.modifiers !== undefined && object.modifiers !== null) {
       for (const e of object.modifiers) {
         message.modifiers.push(e);
       }
     }
-    if (object.isRepeat !== undefined && object.isRepeat !== null) {
-      message.isRepeat = object.isRepeat;
-    }
+    message.isRepeat = object.isRepeat ?? undefined;
     return message;
   },
 };
@@ -2880,6 +2843,8 @@ export const Screen = {
     const message = { ...baseScreen } as Screen;
     if (object.frame !== undefined && object.frame !== null) {
       message.frame = Frame.fromPartial(object.frame);
+    } else {
+      message.frame = undefined;
     }
     return message;
   },
@@ -2971,16 +2936,16 @@ export const Session = {
 
   fromPartial(object: DeepPartial<Session>): Session {
     const message = { ...baseSession } as Session;
-    message.env = [];
-    if (object.sessionId !== undefined && object.sessionId !== null) {
-      message.sessionId = object.sessionId;
-    }
+    message.sessionId = object.sessionId ?? undefined;
     if (
       object.frontmostProcess !== undefined &&
       object.frontmostProcess !== null
     ) {
       message.frontmostProcess = Process.fromPartial(object.frontmostProcess);
+    } else {
+      message.frontmostProcess = undefined;
     }
+    message.env = [];
     if (object.env !== undefined && object.env !== null) {
       for (const e of object.env) {
         message.env.push(EnvironmentVariable.fromPartial(e));
@@ -3051,15 +3016,8 @@ export const Application = {
 
   fromPartial(object: DeepPartial<Application>): Application {
     const message = { ...baseApplication } as Application;
-    if (
-      object.bundleIdentifier !== undefined &&
-      object.bundleIdentifier !== null
-    ) {
-      message.bundleIdentifier = object.bundleIdentifier;
-    }
-    if (object.name !== undefined && object.name !== null) {
-      message.name = object.name;
-    }
+    message.bundleIdentifier = object.bundleIdentifier ?? undefined;
+    message.name = object.name ?? undefined;
     return message;
   },
 };
@@ -3159,20 +3117,26 @@ export const Window = {
 
   fromPartial(object: DeepPartial<Window>): Window {
     const message = { ...baseWindow } as Window;
-    if (object.windowId !== undefined && object.windowId !== null) {
-      message.windowId = object.windowId;
-    }
+    message.windowId = object.windowId ?? undefined;
     if (object.frame !== undefined && object.frame !== null) {
       message.frame = Frame.fromPartial(object.frame);
+    } else {
+      message.frame = undefined;
     }
     if (object.currentSession !== undefined && object.currentSession !== null) {
       message.currentSession = Session.fromPartial(object.currentSession);
+    } else {
+      message.currentSession = undefined;
     }
     if (object.app !== undefined && object.app !== null) {
       message.app = Application.fromPartial(object.app);
+    } else {
+      message.app = undefined;
     }
     if (object.currentScreen !== undefined && object.currentScreen !== null) {
       message.currentScreen = Screen.fromPartial(object.currentScreen);
+    } else {
+      message.currentScreen = undefined;
     }
     return message;
   },
@@ -3255,18 +3219,10 @@ export const TextUpdate = {
 
   fromPartial(object: DeepPartial<TextUpdate>): TextUpdate {
     const message = { ...baseTextUpdate } as TextUpdate;
-    if (object.insertion !== undefined && object.insertion !== null) {
-      message.insertion = object.insertion;
-    }
-    if (object.deletion !== undefined && object.deletion !== null) {
-      message.deletion = object.deletion;
-    }
-    if (object.offset !== undefined && object.offset !== null) {
-      message.offset = object.offset;
-    }
-    if (object.immediate !== undefined && object.immediate !== null) {
-      message.immediate = object.immediate;
-    }
+    message.insertion = object.insertion ?? undefined;
+    message.deletion = object.deletion ?? undefined;
+    message.offset = object.offset ?? undefined;
+    message.immediate = object.immediate ?? undefined;
     return message;
   },
 };
@@ -3562,22 +3518,11 @@ export const PseudoterminalExecuteRequest = {
     const message = {
       ...basePseudoterminalExecuteRequest,
     } as PseudoterminalExecuteRequest;
+    message.command = object.command ?? "";
+    message.workingDirectory = object.workingDirectory ?? undefined;
+    message.backgroundJob = object.backgroundJob ?? undefined;
+    message.isPipelined = object.isPipelined ?? undefined;
     message.env = [];
-    if (object.command !== undefined && object.command !== null) {
-      message.command = object.command;
-    }
-    if (
-      object.workingDirectory !== undefined &&
-      object.workingDirectory !== null
-    ) {
-      message.workingDirectory = object.workingDirectory;
-    }
-    if (object.backgroundJob !== undefined && object.backgroundJob !== null) {
-      message.backgroundJob = object.backgroundJob;
-    }
-    if (object.isPipelined !== undefined && object.isPipelined !== null) {
-      message.isPipelined = object.isPipelined;
-    }
     if (object.env !== undefined && object.env !== null) {
       for (const e of object.env) {
         message.env.push(EnvironmentVariable.fromPartial(e));
@@ -3665,15 +3610,9 @@ export const PseudoterminalExecuteResponse = {
     const message = {
       ...basePseudoterminalExecuteResponse,
     } as PseudoterminalExecuteResponse;
-    if (object.stdout !== undefined && object.stdout !== null) {
-      message.stdout = object.stdout;
-    }
-    if (object.stderr !== undefined && object.stderr !== null) {
-      message.stderr = object.stderr;
-    }
-    if (object.exitCode !== undefined && object.exitCode !== null) {
-      message.exitCode = object.exitCode;
-    }
+    message.stdout = object.stdout ?? "";
+    message.stderr = object.stderr ?? undefined;
+    message.exitCode = object.exitCode ?? undefined;
     return message;
   },
 };
@@ -3754,13 +3693,15 @@ export const PositionWindowRequest = {
     const message = { ...basePositionWindowRequest } as PositionWindowRequest;
     if (object.anchor !== undefined && object.anchor !== null) {
       message.anchor = Point.fromPartial(object.anchor);
+    } else {
+      message.anchor = undefined;
     }
     if (object.size !== undefined && object.size !== null) {
       message.size = Size.fromPartial(object.size);
+    } else {
+      message.size = undefined;
     }
-    if (object.dryrun !== undefined && object.dryrun !== null) {
-      message.dryrun = object.dryrun;
-    }
+    message.dryrun = object.dryrun ?? undefined;
     return message;
   },
 };
@@ -3827,12 +3768,8 @@ export const PositionWindowResponse = {
     object: DeepPartial<PositionWindowResponse>
   ): PositionWindowResponse {
     const message = { ...basePositionWindowResponse } as PositionWindowResponse;
-    if (object.isAbove !== undefined && object.isAbove !== null) {
-      message.isAbove = object.isAbove;
-    }
-    if (object.isClipped !== undefined && object.isClipped !== null) {
-      message.isClipped = object.isClipped;
-    }
+    message.isAbove = object.isAbove ?? undefined;
+    message.isClipped = object.isClipped ?? undefined;
     return message;
   },
 };
@@ -3898,10 +3835,10 @@ export const ReadFileRequest = {
     const message = { ...baseReadFileRequest } as ReadFileRequest;
     if (object.path !== undefined && object.path !== null) {
       message.path = FilePath.fromPartial(object.path);
+    } else {
+      message.path = undefined;
     }
-    if (object.isBinaryFile !== undefined && object.isBinaryFile !== null) {
-      message.isBinaryFile = object.isBinaryFile;
-    }
+    message.isBinaryFile = object.isBinaryFile ?? undefined;
     return message;
   },
 };
@@ -4062,6 +3999,8 @@ export const WriteFileRequest = {
     const message = { ...baseWriteFileRequest } as WriteFileRequest;
     if (object.path !== undefined && object.path !== null) {
       message.path = FilePath.fromPartial(object.path);
+    } else {
+      message.path = undefined;
     }
     if (
       object.data?.$case === "text" &&
@@ -4144,6 +4083,8 @@ export const ContentsOfDirectoryRequest = {
     } as ContentsOfDirectoryRequest;
     if (object.directory !== undefined && object.directory !== null) {
       message.directory = FilePath.fromPartial(object.directory);
+    } else {
+      message.directory = undefined;
     }
     return message;
   },
@@ -4286,6 +4227,8 @@ export const DestinationOfSymbolicLinkRequest = {
     } as DestinationOfSymbolicLinkRequest;
     if (object.path !== undefined && object.path !== null) {
       message.path = FilePath.fromPartial(object.path);
+    } else {
+      message.path = undefined;
     }
     return message;
   },
@@ -4354,6 +4297,8 @@ export const DestinationOfSymbolicLinkResponse = {
     } as DestinationOfSymbolicLinkResponse;
     if (object.destination !== undefined && object.destination !== null) {
       message.destination = FilePath.fromPartial(object.destination);
+    } else {
+      message.destination = undefined;
     }
     return message;
   },
@@ -4529,9 +4474,7 @@ export const GetDefaultsPropertyRequest = {
     const message = {
       ...baseGetDefaultsPropertyRequest,
     } as GetDefaultsPropertyRequest;
-    if (object.key !== undefined && object.key !== null) {
-      message.key = object.key;
-    }
+    message.key = object.key ?? undefined;
     return message;
   },
 };
@@ -4607,11 +4550,11 @@ export const GetDefaultsPropertyResponse = {
     const message = {
       ...baseGetDefaultsPropertyResponse,
     } as GetDefaultsPropertyResponse;
-    if (object.key !== undefined && object.key !== null) {
-      message.key = object.key;
-    }
+    message.key = object.key ?? undefined;
     if (object.value !== undefined && object.value !== null) {
       message.value = DefaultsValue.fromPartial(object.value);
+    } else {
+      message.value = undefined;
     }
     return message;
   },
@@ -4688,11 +4631,11 @@ export const UpdateDefaultsPropertyRequest = {
     const message = {
       ...baseUpdateDefaultsPropertyRequest,
     } as UpdateDefaultsPropertyRequest;
-    if (object.key !== undefined && object.key !== null) {
-      message.key = object.key;
-    }
+    message.key = object.key ?? undefined;
     if (object.value !== undefined && object.value !== null) {
       message.value = DefaultsValue.fromPartial(object.value);
+    } else {
+      message.value = undefined;
     }
     return message;
   },
@@ -4756,9 +4699,7 @@ export const GetConfigPropertyRequest = {
     const message = {
       ...baseGetConfigPropertyRequest,
     } as GetConfigPropertyRequest;
-    if (object.key !== undefined && object.key !== null) {
-      message.key = object.key;
-    }
+    message.key = object.key ?? undefined;
     return message;
   },
 };
@@ -4821,9 +4762,7 @@ export const GetConfigPropertyResponse = {
     const message = {
       ...baseGetConfigPropertyResponse,
     } as GetConfigPropertyResponse;
-    if (object.value !== undefined && object.value !== null) {
-      message.value = object.value;
-    }
+    message.value = object.value ?? undefined;
     return message;
   },
 };
@@ -4896,12 +4835,8 @@ export const UpdateConfigPropertyRequest = {
     const message = {
       ...baseUpdateConfigPropertyRequest,
     } as UpdateConfigPropertyRequest;
-    if (object.key !== undefined && object.key !== null) {
-      message.key = object.key;
-    }
-    if (object.value !== undefined && object.value !== null) {
-      message.value = object.value;
-    }
+    message.key = object.key ?? undefined;
+    message.value = object.value ?? undefined;
     return message;
   },
 };
@@ -4964,9 +4899,7 @@ export const GetSettingsPropertyRequest = {
     const message = {
       ...baseGetSettingsPropertyRequest,
     } as GetSettingsPropertyRequest;
-    if (object.key !== undefined && object.key !== null) {
-      message.key = object.key;
-    }
+    message.key = object.key ?? undefined;
     return message;
   },
 };
@@ -5039,12 +4972,8 @@ export const GetSettingsPropertyResponse = {
     const message = {
       ...baseGetSettingsPropertyResponse,
     } as GetSettingsPropertyResponse;
-    if (object.jsonBlob !== undefined && object.jsonBlob !== null) {
-      message.jsonBlob = object.jsonBlob;
-    }
-    if (object.isDefault !== undefined && object.isDefault !== null) {
-      message.isDefault = object.isDefault;
-    }
+    message.jsonBlob = object.jsonBlob ?? undefined;
+    message.isDefault = object.isDefault ?? undefined;
     return message;
   },
 };
@@ -5117,12 +5046,8 @@ export const UpdateSettingsPropertyRequest = {
     const message = {
       ...baseUpdateSettingsPropertyRequest,
     } as UpdateSettingsPropertyRequest;
-    if (object.key !== undefined && object.key !== null) {
-      message.key = object.key;
-    }
-    if (object.value !== undefined && object.value !== null) {
-      message.value = object.value;
-    }
+    message.key = object.key ?? undefined;
+    message.value = object.value ?? undefined;
     return message;
   },
 };
@@ -5184,12 +5109,8 @@ export const TelemetryProperty = {
 
   fromPartial(object: DeepPartial<TelemetryProperty>): TelemetryProperty {
     const message = { ...baseTelemetryProperty } as TelemetryProperty;
-    if (object.key !== undefined && object.key !== null) {
-      message.key = object.key;
-    }
-    if (object.value !== undefined && object.value !== null) {
-      message.value = object.value;
-    }
+    message.key = object.key ?? "";
+    message.value = object.value ?? "";
     return message;
   },
 };
@@ -5246,9 +5167,7 @@ export const TelemetryAliasRequest = {
     object: DeepPartial<TelemetryAliasRequest>
   ): TelemetryAliasRequest {
     const message = { ...baseTelemetryAliasRequest } as TelemetryAliasRequest;
-    if (object.userId !== undefined && object.userId !== null) {
-      message.userId = object.userId;
-    }
+    message.userId = object.userId ?? undefined;
     return message;
   },
 };
@@ -5327,10 +5246,8 @@ export const TelemetryTrackRequest = {
     object: DeepPartial<TelemetryTrackRequest>
   ): TelemetryTrackRequest {
     const message = { ...baseTelemetryTrackRequest } as TelemetryTrackRequest;
+    message.event = object.event ?? undefined;
     message.properties = [];
-    if (object.event !== undefined && object.event !== null) {
-      message.event = object.event;
-    }
     if (object.properties !== undefined && object.properties !== null) {
       for (const e of object.properties) {
         message.properties.push(TelemetryProperty.fromPartial(e));
@@ -5468,9 +5385,7 @@ export const OnboardingRequest = {
 
   fromPartial(object: DeepPartial<OnboardingRequest>): OnboardingRequest {
     const message = { ...baseOnboardingRequest } as OnboardingRequest;
-    if (object.action !== undefined && object.action !== null) {
-      message.action = object.action;
-    }
+    message.action = object.action ?? 0;
     return message;
   },
 };
@@ -5526,9 +5441,7 @@ export const WindowFocusRequest = {
 
   fromPartial(object: DeepPartial<WindowFocusRequest>): WindowFocusRequest {
     const message = { ...baseWindowFocusRequest } as WindowFocusRequest;
-    if (object.type !== undefined && object.type !== null) {
-      message.type = object.type;
-    }
+    message.type = object.type ?? undefined;
     return message;
   },
 };
@@ -5591,9 +5504,7 @@ export const OpenInExternalApplicationRequest = {
     const message = {
       ...baseOpenInExternalApplicationRequest,
     } as OpenInExternalApplicationRequest;
-    if (object.url !== undefined && object.url !== null) {
-      message.url = object.url;
-    }
+    message.url = object.url ?? undefined;
     return message;
   },
 };
@@ -5690,21 +5601,11 @@ export const Action = {
 
   fromPartial(object: DeepPartial<Action>): Action {
     const message = { ...baseAction } as Action;
-    if (object.identifier !== undefined && object.identifier !== null) {
-      message.identifier = object.identifier;
-    }
-    if (object.name !== undefined && object.name !== null) {
-      message.name = object.name;
-    }
-    if (object.description !== undefined && object.description !== null) {
-      message.description = object.description;
-    }
-    if (object.category !== undefined && object.category !== null) {
-      message.category = object.category;
-    }
-    if (object.availability !== undefined && object.availability !== null) {
-      message.availability = object.availability;
-    }
+    message.identifier = object.identifier ?? undefined;
+    message.name = object.name ?? undefined;
+    message.description = object.description ?? undefined;
+    message.category = object.category ?? undefined;
+    message.availability = object.availability ?? undefined;
     return message;
   },
 };
@@ -5793,13 +5694,9 @@ export const UpdateApplicationPropertiesRequest = {
     const message = {
       ...baseUpdateApplicationPropertiesRequest,
     } as UpdateApplicationPropertiesRequest;
+    message.interceptBoundKeystrokes =
+      object.interceptBoundKeystrokes ?? undefined;
     message.actions = [];
-    if (
-      object.interceptBoundKeystrokes !== undefined &&
-      object.interceptBoundKeystrokes !== null
-    ) {
-      message.interceptBoundKeystrokes = object.interceptBoundKeystrokes;
-    }
     if (object.actions !== undefined && object.actions !== null) {
       for (const e of object.actions) {
         message.actions.push(Action.fromPartial(e));
@@ -5870,12 +5767,8 @@ export const NotificationRequest = {
 
   fromPartial(object: DeepPartial<NotificationRequest>): NotificationRequest {
     const message = { ...baseNotificationRequest } as NotificationRequest;
-    if (object.subscribe !== undefined && object.subscribe !== null) {
-      message.subscribe = object.subscribe;
-    }
-    if (object.type !== undefined && object.type !== null) {
-      message.type = object.type;
-    }
+    message.subscribe = object.subscribe ?? undefined;
+    message.type = object.type ?? undefined;
     return message;
   },
 };
@@ -6356,15 +6249,9 @@ export const EditBufferChangedNotification = {
     const message = {
       ...baseEditBufferChangedNotification,
     } as EditBufferChangedNotification;
-    if (object.sessionId !== undefined && object.sessionId !== null) {
-      message.sessionId = object.sessionId;
-    }
-    if (object.cursor !== undefined && object.cursor !== null) {
-      message.cursor = object.cursor;
-    }
-    if (object.buffer !== undefined && object.buffer !== null) {
-      message.buffer = object.buffer;
-    }
+    message.sessionId = object.sessionId ?? undefined;
+    message.cursor = object.cursor ?? undefined;
+    message.buffer = object.buffer ?? undefined;
     return message;
   },
 };
@@ -6427,9 +6314,7 @@ export const SettingsChangedNotification = {
     const message = {
       ...baseSettingsChangedNotification,
     } as SettingsChangedNotification;
-    if (object.jsonBlob !== undefined && object.jsonBlob !== null) {
-      message.jsonBlob = object.jsonBlob;
-    }
+    message.jsonBlob = object.jsonBlob ?? undefined;
     return message;
   },
 };
@@ -6503,11 +6388,11 @@ export const ShellPromptReturnedNotification = {
     const message = {
       ...baseShellPromptReturnedNotification,
     } as ShellPromptReturnedNotification;
-    if (object.sessionId !== undefined && object.sessionId !== null) {
-      message.sessionId = object.sessionId;
-    }
+    message.sessionId = object.sessionId ?? undefined;
     if (object.shell !== undefined && object.shell !== null) {
       message.shell = Process.fromPartial(object.shell);
+    } else {
+      message.shell = undefined;
     }
     return message;
   },
@@ -6601,18 +6486,10 @@ export const LocationChangedNotification = {
     const message = {
       ...baseLocationChangedNotification,
     } as LocationChangedNotification;
-    if (object.sessionId !== undefined && object.sessionId !== null) {
-      message.sessionId = object.sessionId;
-    }
-    if (object.hostName !== undefined && object.hostName !== null) {
-      message.hostName = object.hostName;
-    }
-    if (object.userName !== undefined && object.userName !== null) {
-      message.userName = object.userName;
-    }
-    if (object.directory !== undefined && object.directory !== null) {
-      message.directory = object.directory;
-    }
+    message.sessionId = object.sessionId ?? undefined;
+    message.hostName = object.hostName ?? undefined;
+    message.userName = object.userName ?? undefined;
+    message.directory = object.directory ?? undefined;
     return message;
   },
 };
@@ -6688,11 +6565,11 @@ export const ProcessChangedNotification = {
     const message = {
       ...baseProcessChangedNotification,
     } as ProcessChangedNotification;
-    if (object.sessionId !== undefined && object.sessionId !== null) {
-      message.sessionId = object.sessionId;
-    }
+    message.sessionId = object.sessionId ?? undefined;
     if (object.newProcess !== undefined && object.newProcess !== null) {
       message.newProcess = Process.fromPartial(object.newProcess);
+    } else {
+      message.newProcess = undefined;
     }
     return message;
   },
@@ -6771,10 +6648,10 @@ export const KeybindingPressedNotification = {
     } as KeybindingPressedNotification;
     if (object.keypress !== undefined && object.keypress !== null) {
       message.keypress = KeyEvent.fromPartial(object.keypress);
+    } else {
+      message.keypress = undefined;
     }
-    if (object.action !== undefined && object.action !== null) {
-      message.action = object.action;
-    }
+    message.action = object.action ?? undefined;
     return message;
   },
 };
@@ -6840,6 +6717,8 @@ export const WindowFocusChangedNotification = {
     } as WindowFocusChangedNotification;
     if (object.window !== undefined && object.window !== null) {
       message.window = Window.fromPartial(object.window);
+    } else {
+      message.window = undefined;
     }
     return message;
   },
@@ -6958,27 +6837,13 @@ export const HistoryUpdatedNotification = {
     const message = {
       ...baseHistoryUpdatedNotification,
     } as HistoryUpdatedNotification;
-    if (object.command !== undefined && object.command !== null) {
-      message.command = object.command;
-    }
-    if (object.processName !== undefined && object.processName !== null) {
-      message.processName = object.processName;
-    }
-    if (
-      object.currentWorkingDirectory !== undefined &&
-      object.currentWorkingDirectory !== null
-    ) {
-      message.currentWorkingDirectory = object.currentWorkingDirectory;
-    }
-    if (object.sessionId !== undefined && object.sessionId !== null) {
-      message.sessionId = object.sessionId;
-    }
-    if (object.hostname !== undefined && object.hostname !== null) {
-      message.hostname = object.hostname;
-    }
-    if (object.exitCode !== undefined && object.exitCode !== null) {
-      message.exitCode = object.exitCode;
-    }
+    message.command = object.command ?? undefined;
+    message.processName = object.processName ?? undefined;
+    message.currentWorkingDirectory =
+      object.currentWorkingDirectory ?? undefined;
+    message.sessionId = object.sessionId ?? undefined;
+    message.hostname = object.hostname ?? undefined;
+    message.exitCode = object.exitCode ?? undefined;
     return message;
   },
 };
@@ -7167,63 +7032,26 @@ export const Constants = {
 
   fromPartial(object: DeepPartial<Constants>): Constants {
     const message = { ...baseConstants } as Constants;
-    if (object.version !== undefined && object.version !== null) {
-      message.version = object.version;
-    }
-    if (object.build !== undefined && object.build !== null) {
-      message.build = object.build;
-    }
-    if (object.cli !== undefined && object.cli !== null) {
-      message.cli = object.cli;
-    }
-    if (object.bundlePath !== undefined && object.bundlePath !== null) {
-      message.bundlePath = object.bundlePath;
-    }
-    if (object.remote !== undefined && object.remote !== null) {
-      message.remote = object.remote;
-    }
-    if (object.home !== undefined && object.home !== null) {
-      message.home = object.home;
-    }
-    if (object.user !== undefined && object.user !== null) {
-      message.user = object.user;
-    }
-    if (object.defaultPath !== undefined && object.defaultPath !== null) {
-      message.defaultPath = object.defaultPath;
-    }
-    if (
-      object.jsonMessageRecieved !== undefined &&
-      object.jsonMessageRecieved !== null
-    ) {
-      message.jsonMessageRecieved = object.jsonMessageRecieved;
-    }
-    if (
-      object.jsonMessageHandler !== undefined &&
-      object.jsonMessageHandler !== null
-    ) {
-      message.jsonMessageHandler = object.jsonMessageHandler;
-    }
-    if (
-      object.protoMessageRecieved !== undefined &&
-      object.protoMessageRecieved !== null
-    ) {
-      message.protoMessageRecieved = object.protoMessageRecieved;
-    }
-    if (
-      object.protoMessageHandler !== undefined &&
-      object.protoMessageHandler !== null
-    ) {
-      message.protoMessageHandler = object.protoMessageHandler;
-    }
-    if (object.themes !== undefined && object.themes !== null) {
-      message.themes = object.themes;
-    }
+    message.version = object.version ?? undefined;
+    message.build = object.build ?? undefined;
+    message.cli = object.cli ?? undefined;
+    message.bundlePath = object.bundlePath ?? undefined;
+    message.remote = object.remote ?? undefined;
+    message.home = object.home ?? undefined;
+    message.user = object.user ?? undefined;
+    message.defaultPath = object.defaultPath ?? undefined;
+    message.jsonMessageRecieved = object.jsonMessageRecieved ?? undefined;
+    message.jsonMessageHandler = object.jsonMessageHandler ?? undefined;
+    message.protoMessageRecieved = object.protoMessageRecieved ?? undefined;
+    message.protoMessageHandler = object.protoMessageHandler ?? undefined;
+    message.themes = object.themes ?? undefined;
     return message;
   },
 };
 
 declare var self: any | undefined;
 declare var window: any | undefined;
+declare var global: any | undefined;
 var globalThis: any = (() => {
   if (typeof globalThis !== "undefined") return globalThis;
   if (typeof self !== "undefined") return self;

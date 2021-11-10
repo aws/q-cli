@@ -2,7 +2,9 @@ package update
 
 import (
 	fig_ipc "fig-cli/fig-ipc"
+	"fig-cli/logging"
 	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
 )
@@ -16,7 +18,9 @@ func NewCmdUpdate() *cobra.Command {
 
 			err := fig_ipc.UpdateCommand(false)
 			if err != nil {
-				panic(err)
+				logging.Log("fig update:", err.Error())
+				fmt.Println("Unable to update fig")
+				os.Exit(1)
 			}
 		},
 	}

@@ -930,13 +930,21 @@ public struct Local_PreExecHook {
   public mutating func clearContext() {self._context = nil}
 
   /// the full command that was run in the shell
-  public var command: String = String()
+  public var command: String {
+    get {return _command ?? String()}
+    set {_command = newValue}
+  }
+  /// Returns true if `command` has been explicitly set.
+  public var hasCommand: Bool {return self._command != nil}
+  /// Clears the value of `command`. Subsequent reads from it will return its default value.
+  public mutating func clearCommand() {self._command = nil}
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
 
   fileprivate var _context: Local_ShellContext? = nil
+  fileprivate var _command: String? = nil
 }
 
 public struct Local_PostExecHook {
@@ -2648,7 +2656,7 @@ extension Local_PreExecHook: SwiftProtobuf.Message, SwiftProtobuf._MessageImplem
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularMessageField(value: &self._context) }()
-      case 2: try { try decoder.decodeSingularStringField(value: &self.command) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self._command) }()
       default: break
       }
     }
@@ -2662,15 +2670,15 @@ extension Local_PreExecHook: SwiftProtobuf.Message, SwiftProtobuf._MessageImplem
     try { if let v = self._context {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
     } }()
-    if !self.command.isEmpty {
-      try visitor.visitSingularStringField(value: self.command, fieldNumber: 2)
-    }
+    try { if let v = self._command {
+      try visitor.visitSingularStringField(value: v, fieldNumber: 2)
+    } }()
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: Local_PreExecHook, rhs: Local_PreExecHook) -> Bool {
     if lhs._context != rhs._context {return false}
-    if lhs.command != rhs.command {return false}
+    if lhs._command != rhs._command {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
