@@ -32,14 +32,14 @@ func NewCmdInvite() *cobra.Command {
 				fmt.Println()
 				fmt.Println(
 					"Run " +
-						lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#FF00FF")).Render("fig util:logout") +
+						lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#FF00FF")).Render("fig user logout") +
 						" then follow the prompts to log back. Then try again",
 				)
 				fmt.Println()
 				return
 			}
 
-			res, err := http.Get("https://api.fig.io/waitlist/get-referral-link-from-email/grant@fig.io" + strings.TrimSpace(string(email)))
+			res, err := http.Get("https://api.fig.io/waitlist/get-referral-link-from-email/" + strings.TrimSpace(string(email)))
 
 			if err != nil {
 				fmt.Println()
