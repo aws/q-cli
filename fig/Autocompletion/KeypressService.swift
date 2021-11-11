@@ -213,7 +213,7 @@ class KeypressProvider {
       
       let keyName = KeyboardLayout.humanReadableKeyName(event) ?? "?"
       
-      Logger.log(message: "\(action) '\(keyName)' in \(window.bundleId ?? "<unknown>") [\(window.hash)], \(window.tty?.descriptor ?? "???") (\(window.tty?.name ?? "???"))", subsystem: .keypress)
+      Logger.log(message: "\(action) '\(keyName)' in \(window.bundleId ?? "<unknown>") [\(window.hash)], \(window.tty?.descriptor ?? "???") (\(window.tty?.name ?? "???")) \(window.tty?.pid ?? 0)", subsystem: .keypress)
 
       
       guard window.tty?.isShell ?? true else {
@@ -313,20 +313,23 @@ class KeypressProvider {
     guard window.isFocusedTerminal else {
       return .forward
     }
-    
-    guard KeypressProvider.shared.redirectsEnabled else {
-      return .ignore
-    }
-    
+        
     if let keybindingString = KeyboardLayout.humanReadableKeyName(event) {
       if let bindings = Settings.shared.getKeybindings(forKey: keybindingString) {
         // Right now only handle autocomplete.keybindings
         if let autocompleteBinding = bindings["autocomplete"] {
           let autocompleteIsHidden = WindowManager.shared.autocomplete?.isHidden ?? true
-
-          guard autocompleteBinding.contains("--global") || !autocompleteIsHidden else {
+          let action = autocompleteBinding.split(separator: " ").first
+          let isGlobalAction = Autocomplete.globalActions.contains(String(action ?? "")) || autocompleteBinding.contains("--global")
+          
+          guard isGlobalAction || !autocompleteIsHidden else {
             return .ignore
           }
+          
+          guard isGlobalAction || KeypressProvider.shared.redirectsEnabled else {
+            return .ignore
+          }
+
           
           guard autocompleteBinding != "ignore" else {
             return .ignore
@@ -346,7 +349,7 @@ class KeypressProvider {
           
           // Protobuf API implementation
           API.notifications.post(Fig_KeybindingPressedNotification.with {
-              if let action = autocompleteBinding.split(separator: " ").first {
+              if let action = action  {
                   $0.action = String(action)
               }
               

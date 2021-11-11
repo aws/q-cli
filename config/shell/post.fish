@@ -1,19 +1,9 @@
 contains $HOME/.fig/bin $fish_user_paths
 or set -Ua fish_user_paths $HOME/.fig/bin
 
-function __fig
-  if [ -d /Applications/Fig.app -o -d ~/Applications/Fig.app ] && command -v fig 2>&1 1>/dev/null
-    fig $argv &; disown
-  end
-end
-
 set FIG_HOSTNAME (hostname -f 2> /dev/null || hostname)
 
 if [ -t 1 ] && [ -z "$FIG_ENV_VAR" ] || [ -n "$TMUX" ]
-
-  # Gives fig context for cwd in each window.
-  __fig bg:init $fish_pid (tty)
-
   # Run aliases shell script
   if [ -s ~/.fig/user/aliases/_myaliases.sh ]
     bash ~/.fig/user/aliases/*.sh
@@ -52,7 +42,6 @@ if [ -z "$FIG_SHELL_VAR" ]
   end
 
   function fig_preexec --on-event fish_preexec
-    __fig bg:exec $fish_pid (tty)
     fig_osc PreExec
 
     if fig_fn_defined fig_user_mode_prompt
@@ -70,11 +59,6 @@ if [ -z "$FIG_SHELL_VAR" ]
 
   function fig_precmd --on-event fish_prompt
     set -l last_status $status
-    __fig bg:prompt $fish_pid (tty)
-
-    if [ $fig_has_set_prompt = 1 ]
-      fig_preexec
-    end
 
     fig_osc "Dir=%s" "$PWD"
     fig_osc "Shell=fish"
@@ -99,6 +83,10 @@ if [ -z "$FIG_SHELL_VAR" ]
       fig_osc "Hostname=%s@%s" "root" "$FIG_HOSTNAME"
     end
 
+    if [ $fig_has_set_prompt = 1 ]
+      fig_preexec
+    end
+
     if fig_fn_defined fish_mode_prompt
       fig_copy_fn fish_mode_prompt fig_user_mode_prompt
       function fish_mode_prompt; fig_wrap_prompt (fig_user_mode_prompt); end
@@ -120,6 +108,7 @@ if [ -z "$FIG_SHELL_VAR" ]
 
   # Prevents weird interaction where setting the title with ANSI escape
   # sequence triggers prompt redraw.
-  __fig settings autocomplete.addStatusToTerminalTitle false &
-  __fig bg:exec $fish_pid (tty) &
+  if [ -d /Applications/Fig.app -o -d ~/Applications/Fig.app ] && command -v fig 2>&1 1>/dev/null
+    fig settings autocomplete.addStatusToTerminalTitle false &; disown
+  end
 end

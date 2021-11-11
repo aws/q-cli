@@ -81,7 +81,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         let _ = WindowManager.shared
         let _ = ShellHookManager.shared
         let _ = KeypressProvider.shared
-        let _ = ShellHookTransport.shared
+        let _ = IPC.shared
       
         let _ = AXWindowServer.shared
 
@@ -104,7 +104,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 
         handleUpdateIfNeeded()
         Defaults.useAutocomplete = true
-        Defaults.autocompleteVersion = "v7"
+        Defaults.autocompleteVersion = "v8"
         AutocompleteContextNotifier.addIndicatorToTitlebar = false
 
         Defaults.autocompleteWidth = 250
@@ -113,7 +113,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         let hasLaunched = UserDefaults.standard.bool(forKey: "hasLaunched")
         let email = UserDefaults.standard.string(forKey: "userEmail")
 
-        if (!hasLaunched || email == nil ) {
+        if (!hasLaunched || email == nil) {
             Defaults.loggedIn = false
             Defaults.build = .production
             Defaults.clearExistingLineOnTerminalInsert = true
@@ -285,12 +285,16 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     }
         
     func openMenu() {
+        
+        // Do not show menu if icon is hidden
+        if let hidden = Settings.shared.getValue(forKey: Settings.hideMenubarIcon) as? Bool,
+               hidden {
+          return
+        }
+      
         if let menu = self.statusBarItem.menu {
             self.statusBarItem.popUpMenu(menu)
         }
-//        self.statusBarItem.menu?.popUp(positioning: ,
-//                                       at: self.statusBarItem.view?.frame.origin,
-//                                       in: self.statusBarItem.view)
     }
     
     func validateMenuItem(menuItem: NSMenuItem) -> Bool {
@@ -520,17 +524,15 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             }
         }
         
-        integrationsMenu.addItem(NSMenuItem.separator())
-
-    
-      let sshIntegration = integrationsMenu.addItem(
-      withTitle: "SSH Integration",
-      action: #selector(AppDelegate.toggleSSHIntegration(_:)),
-      keyEquivalent: "")
-      sshIntegration.state = Defaults.SSHIntegrationEnabled ? .on : .off
-      
       integrationsMenu.addItem(NSMenuItem.separator())
-      integrationsMenu.addItem(withTitle: "Edit Key Bindings", action: #selector(editKeybindingsFile), keyEquivalent: "")
+//
+//
+//      let sshIntegration = integrationsMenu.addItem(
+//      withTitle: "SSH Integration",
+//      action: #selector(AppDelegate.toggleSSHIntegration(_:)),
+//      keyEquivalent: "")
+//      sshIntegration.state = Defaults.SSHIntegrationEnabled ? .on : .off
+
       
       let developer = integrationsMenu.addItem(
        withTitle: "Developer",
@@ -561,13 +563,14 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
        keyEquivalent: "")
       developerMenu.addItem(NSMenuItem.separator())
       
-      let debugAutocomplete = developerMenu.addItem(
-       withTitle: "Force Popup to Appear",
-       action: #selector(AppDelegate.toggleDebugAutocomplete(_:)),
-       keyEquivalent: "")
-      debugAutocomplete.state = Defaults.debugAutocomplete ? .on : .off
-//        utilitiesMenu.addItem(NSMenuItem.separator())
-      developerMenu.addItem(NSMenuItem.separator())
+//      let debugAutocomplete = developerMenu.addItem(
+//       withTitle: "Force Popup to Appear",
+//       action: #selector(AppDelegate.toggleDebugAutocomplete(_:)),
+//       keyEquivalent: "")
+//      debugAutocomplete.state = Defaults.debugAutocomplete ? .on : .off
+//      utilitiesMenu.addItem(NSMenuItem.separator())
+//      developerMenu.addItem(NSMenuItem.separator())
+      
       developerMenu.addItem(
        withTitle: "Run Install/Update Script",
        action: #selector(AppDelegate.setupScript),
@@ -905,63 +908,16 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         
         // upgrade path!
         if (previous != current) {
-            // look for $BUNDLE/upgrade/$OLD-->$NEW
-            let specific = Bundle.main.path(forResource: "\(previous)-->\(current)", ofType: "sh")
-            // look for $BUNDLE/upgrade/$NEW
-            let general = Bundle.main.path(forResource: "\(current)", ofType: "sh")
-            
-            let script = specific ?? general
-            if let script = script {
-                print("Update: Running script '\(script)' to upgrade to version \(current)")
-                let _ = "sh \(script) '\(Bundle.main.resourcePath ?? "")'".runAsCommand()
-            }
             
             Onboarding.setUpEnviroment()
 
-            TelemetryProvider.track(event: .updatedApp, with: ["script": script ?? "<none>"])
-            
-            // Any defaults that should be set for upgrading users
-            // For anyone upgrading, we are just going to assume that this is true
-            Defaults.hasShownAutocompletePopover = true
+            TelemetryProvider.track(event: .updatedApp, with: [:])
+      
             
             
             // resolves a bug where Fig was added to login items multiple times
             // if the appropriate setting is enabled, a single entry will be readded
             LoginItems.shared.removeAllItemsMatchingBundleURL()
-
-            if current == "1.0.50" {
-                switch Settings.shared.getValue(forKey: "autocomplete.tab") as? String {
-                    case "insert":
-                        Settings.shared.set(value: "insertSelected", forKey: "autocomplete.keybindings.tab")
-                        break
-                    case "navigate":
-                        Settings.shared.set(value: "insertCommonPrefixOrNavigateDown", forKey: "autocomplete.keybindings.tab")
-                        Settings.shared.set(value: "navigateUp", forKey: "autocomplete.keybindings.shift+tab")
-                        break
-                    default:
-                        break
-                }
-
-                if Settings.shared.getValue(forKey: Settings.enterKeyBehavior) as? String == "ignore" {
-                    Settings.shared.set(value: "ignore", forKey: "autocomplete.keybindings.enter")
-                }
-
-                if Settings.shared.getValue(forKey: Settings.rightArrowKeyBehavior) as? String == "insert" {
-                    Settings.shared.set(value: "insertSelected", forKey: "autocomplete.keybindings.right")
-                }
-
-                if Settings.shared.getValue(forKey: Settings.allowAlternateNavigationKeys) as? Bool ?? true {
-                    Settings.shared.set(value: "navigateDown", forKey: "autocomplete.keybindings.control+j")
-                    Settings.shared.set(value: "navigateUp", forKey: "autocomplete.keybindings.control+k")
-                  
-                    Settings.shared.set(value: "navigateDown", forKey: "autocomplete.keybindings.control+n")
-                    Settings.shared.set(value: "navigateUp", forKey: "autocomplete.keybindings.control+p")
-                }
-
-                if Settings.shared.getValue(forKey: Settings.disablePopoutDescriptions) as? Bool ?? false {
-                    Settings.shared.set(value: "ignore", forKey: "autocomplete.keybindings.command+i")
-                }
-            }
         }
         
         Defaults.versionAtPreviousLaunch = current

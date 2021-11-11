@@ -230,14 +230,13 @@ class WindowManager : NSObject {
     }
     
     func createAutocomplete() {
-        if let autocomplete = self.autocomplete {
-            autocomplete.orderOut(nil)
-            self.autocomplete = nil
+        guard self.autocomplete == nil else {
+          self.autocomplete?.webView?.loadAutocomplete()
+          return
         }
         
         let web = WebViewController()
         web.webView?.defaultURL = nil
-//        web.webView?.loadBundleApp("tutorial")
         
         web.webView?.loadAutocomplete()
         let companion = CompanionWindow(viewController: web)
