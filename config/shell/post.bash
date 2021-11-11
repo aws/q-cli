@@ -44,10 +44,8 @@ function __fig_preexec_preserve_status() {
   __bp_set_ret_value "${__fig_ret_value}" "${__bp_last_argument_prev_command}"
 }
 
-function __fig_prompt () {
+function __fig_pre_prompt () {
   __fig_ret_value="$?"
-
-  __fig_reset_hooks
 
   fig_osc "Dir=%s" "${PWD}"
   fig_osc "Shell=bash"
@@ -69,6 +67,15 @@ function __fig_prompt () {
   # while entering a command.
   [[ -z "${_fig_done_preexec:-}" ]] && __fig_preexec ""
   _fig_done_preexec=""
+
+  # Reset $?
+  __bp_set_ret_value "${__fig_ret_value}" "${__bp_last_argument_prev_command}"
+}
+
+function __fig_post_prompt () {
+  __fig_ret_value="$?"
+
+  __fig_reset_hooks
 
   # If FIG_USER_PSx is undefined or PSx changed by user, update FIG_USER_PSx.
   if [[ -z "${FIG_USER_PS1+x}" || "${PS1}" != "${FIG_LAST_PS1}" ]]; then
@@ -97,13 +104,37 @@ function __fig_prompt () {
 }
 
 __fig_reset_hooks() {
-  if [[ ${#precmd_functions[@]} == 0 || ${precmd_functions[${#precmd_functions[@]} - 1]} != __fig_prompt ]]; then
+  # Rely on PROMPT_COMMAND instead of precmd_functions because precmd_functions
+  # are all run before PROMPT_COMMAND.
+  # Set PROMPT_COMMAND to "[
+  #   __fig_pre_prompt,
+  #   ...precmd_functions,
+  #   ORIGINAL_PROMPT_COMMAND,
+  #   __fig_post_prompt,
+  #   __bp_interactive_mode
+  # ]"
+  local existing_prompt_command
+  existing_prompt_command="${PROMPT_COMMAND}"
+  existing_prompt_command="${existing_prompt_command//__fig_post_prompt[;$'\n']}"
+  existing_prompt_command="${existing_prompt_command//__fig_post_prompt}"
+  existing_prompt_command="${existing_prompt_command//__bp_interactive_mode[;$'\n']}"
+  existing_prompt_command="${existing_prompt_command//__bp_interactive_mode}"
+  __bp_sanitize_string existing_prompt_command "$existing_prompt_command"
+
+  PROMPT_COMMAND=""
+  if [[ -n "$existing_prompt_command" ]]; then
+      PROMPT_COMMAND+=${existing_prompt_command}$'\n'
+  fi;
+  PROMPT_COMMAND+=$'__fig_post_prompt\n'
+  PROMPT_COMMAND+='__bp_interactive_mode'
+
+  if [[ ${precmd_functions[0]} != __fig_pre_prompt ]]; then
     for index in "${!precmd_functions[@]}"; do
-      if [[ ${precmd_functions[$index]} == __fig_prompt ]]; then
+      if [[ ${precmd_functions[$index]} == __fig_pre_prompt ]]; then
         unset -v 'precmd_functions[$index]'
       fi
     done
-    precmd_functions=("${precmd_functions[@]}" __fig_prompt)
+    precmd_functions=(__fig_pre_prompt "${precmd_functions[@]}")
   fi
 
   if [[ ${preexec_functions[0]} != __fig_preexec_preserve_status ]]; then
