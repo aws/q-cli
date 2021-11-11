@@ -242,11 +242,10 @@ extension PseudoTerminal {
         commandToRun.append(PseudoTerminal.CRLF)
         self.handlers[cappedHandlerId] = handler
         rateLimiter.limit {
-          PseudoTerminal.log("Running command!")
+          PseudoTerminal.log("Writing command for handler '\(cappedHandlerId)'")
           self.headless.send(commandToRun)
         }
-        //
-        print("pty:", commandToRun)
+
         PseudoTerminal.log("Running '\(command)' \(options.contains(.pipelined) ? "as pipeline" : "")\(options.contains(.backgroundJob) ? " in background" : "")")
     }
     
