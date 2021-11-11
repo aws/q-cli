@@ -4,8 +4,11 @@ import (
 	"fig-cli/cmd/doctor"
 	"fig-cli/diagnostics"
 	fig_ipc "fig-cli/fig-ipc"
+	fig_proto "fig-cli/fig-proto"
 	"fig-cli/logging"
+	"fig-cli/settings"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 
@@ -38,6 +41,8 @@ func init() {
 	// Legacy commands
 	rootCmd.AddCommand(legacyAppRunning)
 	rootCmd.AddCommand(legacyUpdate)
+	rootCmd.AddCommand(legacySetpath)
+	rootCmd.AddCommand(legacyLogout)
 
 	// Legacy `fig tools doctor`
 	legacyTools.AddCommand(doctor.NewCmdDoctor())
@@ -327,4 +332,66 @@ var legacyVscode = &cobra.Command{
 var legacyTools = &cobra.Command{
 	Use:    "tools",
 	Hidden: true,
+}
+
+var legacySetpath = &cobra.Command{
+	Use:    "set:path",
+	Hidden: true,
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Printf("\n  Setting $PATH variable in Fig pseudo-terminal...\n\n")
+
+		// Get the users $PATH
+		path := os.Getenv("PATH")
+
+		// Load ~/.fig/settings.json and set the path
+		settings, err := settings.Load()
+		if err != nil {
+			fmt.Println("Error: ", err)
+			return
+		}
+
+		settings.Set("pty.path", path)
+
+		// Trigger update of ENV in PTY
+		pty, err := diagnostics.GetTty()
+		if err != nil {
+			fmt.Println("Error: ", err)
+			return
+		}
+
+		hook, _ := fig_ipc.CreateInitHook(os.Getppid(), pty)
+		fig_ipc.SendHook(hook)
+
+	},
+}
+
+var legacyLogout = &cobra.Command{
+	Use:    "logout",
+	Hidden: true,
+	Run: func(cmd *cobra.Command, args []string) {
+		// Logout
+		logout := fig_proto.Command{
+			Command: &fig_proto.Command_Logout{},
+		}
+
+		res, err := fig_ipc.SendRecvCommand(&logout)
+		if err != nil {
+			fmt.Println("Error:", err)
+			return
+		}
+
+		message, err := fig_ipc.GetCommandResponseMessage(res)
+		if err != nil {
+			fmt.Println("Error:", err)
+			return
+		}
+
+		fmt.Println(message)
+
+		// Restart Fig
+		if err := fig_ipc.RestartCommand(); err != nil {
+			fmt.Println("Error:", err)
+			return
+		}
+	},
 }

@@ -32,9 +32,6 @@ func NewCmdSource() *cobra.Command {
 			}
 
 			pid := os.Getppid()
-
-			fmt.Println(tty, pid)
-
 			hook, _ := fig_ipc.CreateInitHook(pid, tty)
 
 			fig_ipc.SendHook(hook)
