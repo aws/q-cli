@@ -11,7 +11,7 @@ import (
 
 func NewCmdList() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "contributors",
+		Use:   "list",
 		Short: "List the contributors to Fig",
 		Long:  "List the contributors to Fig",
 		Run: func(cmd *cobra.Command, arg []string) {

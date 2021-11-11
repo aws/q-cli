@@ -551,7 +551,7 @@ EOF
 cat <<EOF
    ${BOLD}Final notes${NORMAL}
 
-   1. You should run ${MAGENTA}${BOLD}fig set:path${NORMAL} right now. This syncs your \$PATH variable with Fig. We can't do this automatically.
+   1. You should run ${MAGENTA}${BOLD}fig app set-path${NORMAL} right now. This syncs your \$PATH variable with Fig. We can't do this automatically.
 
    2. Fig won't work in any terminal sessions you currently have running, only new ones. (You might want to restart your terminal emulator)
 

@@ -37,7 +37,6 @@ export const sendMessage = (
 
   const buffer = ClientOriginatedMessage.encode(request).finish();
   const b64 = bytesToBase64(buffer);
-  console.log(b64);
 
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore

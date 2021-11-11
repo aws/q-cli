@@ -31,8 +31,7 @@ class PseudoTerminal {
     static let recievedEnvironmentVariablesFromShellNotification = NSNotification.Name("recievedEnvironmentVariablesFromShellNotification")
     static let recievedCallbackNotification = NSNotification.Name("recievedCallbackNotification")
     
-    // https://scriptingosx.com/2017/05/where-paths-come-from/
-    static let defaultMacOSPath = "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:"
+    static let defaultPath = PathHelper.defaultPath
     
     static func log(_ message: String) {
       Logger.log(message: message, subsystem: .pty)
@@ -83,9 +82,10 @@ class PseudoTerminal {
       
         // Retrieve PATH from settings if it exists
         if let path = Settings.shared.getValue(forKey: Settings.ptyPathKey) as? String, path.count > 0 {
-            self.set(environmentVariable: "PATH", value: path)
+            let updatedPath = PathHelper.pathByPrependingMissingWellKnownLocations(path)
+            self.set(environmentVariable: "PATH", value: updatedPath)
         } else {
-            self.set(environmentVariable: "PATH", value: PseudoTerminal.defaultMacOSPath)
+            self.set(environmentVariable: "PATH", value: PseudoTerminal.defaultPath)
         }
       
         // Source default ptyrc file (if it exists)
