@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		1A1F160025A7A93E0074D541 /* KeyBindingsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1F15FF25A7A93E0074D541 /* KeyBindingsManager.swift */; };
 		1A63312125A4BE6D00CEA06A /* Keystroke.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A63312025A4BE6D00CEA06A /* Keystroke.swift */; };
+		750BA10C2733590A00705E63 /* API+IPC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750BA10B2733590A00705E63 /* API+IPC.swift */; };
 		750CF21826A1055F0094D76A /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750CF21726A1055F0094D76A /* Config.swift */; };
 		7510F89824A6910500E86F7C /* AppleTerminalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F87524A6910500E86F7C /* AppleTerminalView.swift */; };
 		7510F89924A6910500E86F7C /* TerminalViewDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F87624A6910500E86F7C /* TerminalViewDelegate.swift */; };
@@ -51,16 +52,6 @@
 		75186072255B2A0A0000A7C7 /* carrot@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7518606C255B2A090000A7C7 /* carrot@2x.png */; };
 		75186073255B2A0A0000A7C7 /* string@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7518606D255B2A090000A7C7 /* string@2x.png */; };
 		75186074255B2A0A0000A7C7 /* command@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7518606E255B2A0A0000A7C7 /* command@2x.png */; };
-		75186083255CB0C20000A7C7 /* iterm-integration.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75186077255CB0870000A7C7 /* iterm-integration.sh */; };
-		75186084255CB0C20000A7C7 /* 1.0.23.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75186078255CB0870000A7C7 /* 1.0.23.sh */; };
-		75186085255CB0C20000A7C7 /* fig-iterm-integration.py in Resources */ = {isa = PBXBuildFile; fileRef = 75186079255CB0870000A7C7 /* fig-iterm-integration.py */; };
-		75186087255CB0C20000A7C7 /* 1.0.22.sh in Resources */ = {isa = PBXBuildFile; fileRef = 7518607B255CB0870000A7C7 /* 1.0.22.sh */; };
-		75186088255CB0C20000A7C7 /* uninstall.sh in Resources */ = {isa = PBXBuildFile; fileRef = 7518607C255CB0870000A7C7 /* uninstall.sh */; };
-		7518608A255CB0C20000A7C7 /* 1.0.21.sh in Resources */ = {isa = PBXBuildFile; fileRef = 7518607E255CB0870000A7C7 /* 1.0.21.sh */; };
-		7518608B255CB0C20000A7C7 /* feedback.sh in Resources */ = {isa = PBXBuildFile; fileRef = 7518607F255CB0870000A7C7 /* feedback.sh */; };
-		7518608C255CB0C20000A7C7 /* 1.0.24.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75186080255CB0870000A7C7 /* 1.0.24.sh */; };
-		7518608D255CB0C20000A7C7 /* open_new_terminal_window.scpt in Resources */ = {isa = PBXBuildFile; fileRef = 75186081255CB0870000A7C7 /* open_new_terminal_window.scpt */; };
-		7518608E255CB0C20000A7C7 /* 1.0.20.sh in Resources */ = {isa = PBXBuildFile; fileRef = 75186082255CB0870000A7C7 /* 1.0.20.sh */; };
 		751C3BEC24B6910800B5C7FD /* Remote.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751C3BEB24B6910800B5C7FD /* Remote.swift */; };
 		751C3BEE24B6915000B5C7FD /* Defaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751C3BED24B6915000B5C7FD /* Defaults.swift */; };
 		751F7589246D090100E083C8 /* WebBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751F7588246D090100E083C8 /* WebBridge.swift */; };
@@ -132,7 +123,6 @@
 		756967FF2718E0300029F063 /* WebArchiver in Frameworks */ = {isa = PBXBuildFile; productRef = 756967FE2718E0300029F063 /* WebArchiver */; };
 		756968012718FF600029F063 /* WebArchive.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756968002718FF600029F063 /* WebArchive.swift */; };
 		756968032719450A0029F063 /* API+App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756968022719450A0029F063 /* API+App.swift */; };
-		7569682F271F63F40029F063 /* FigAPIBindings in Frameworks */ = {isa = PBXBuildFile; productRef = 7569682E271F63F40029F063 /* FigAPIBindings */; };
 		75696832271F71270029F063 /* local.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75696831271F71270029F063 /* local.pb.swift */; };
 		756C4D832542A6D30035B467 /* Starscream in Frameworks */ = {isa = PBXBuildFile; productRef = 756C4D822542A6D30035B467 /* Starscream */; };
 		7571775726F3B8A80071AE10 /* FigInputMethod.app in Embed Input Method */ = {isa = PBXBuildFile; fileRef = 754316F426E08F5C00188887 /* FigInputMethod.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -167,10 +157,6 @@
 		75809B0E24BFA64D00BFFB3E /* TelemetryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75809B0D24BFA64D00BFFB3E /* TelemetryService.swift */; };
 		75809B1124C3876B00BFFB3E /* run-tutorial.js in Resources */ = {isa = PBXBuildFile; fileRef = 75809B1024C3876B00BFFB3E /* run-tutorial.js */; };
 		7587B4D824F97F9E00E355E4 /* ShellHooksManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7587B4D724F97F9E00E355E4 /* ShellHooksManager.swift */; };
-		758AEB5E24CD35D400A15EAF /* WebSocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 758AEB5D24CD35D400A15EAF /* WebSocket.swift */; };
-		758AEB6024CE529D00A15EAF /* String+Shell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 758AEB5F24CE529D00A15EAF /* String+Shell.swift */; };
-		758AEB6A24CEA4D000A15EAF /* Starscream in Frameworks */ = {isa = PBXBuildFile; productRef = 758AEB6924CEA4D000A15EAF /* Starscream */; };
-		758AEB6C24CEA54600A15EAF /* SocketServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 758AEB6B24CEA54600A15EAF /* SocketServer.swift */; };
 		75915DFE27210A4C005A9909 /* FigAPIBindings in Frameworks */ = {isa = PBXBuildFile; productRef = 75915DFD27210A4C005A9909 /* FigAPIBindings */; };
 		75915E002722044D005A9909 /* API.js in Resources */ = {isa = PBXBuildFile; fileRef = 75915DFF2722044D005A9909 /* API.js */; };
 		759F987C25BF903900EC3407 /* Accessibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 759F987B25BF903900EC3407 /* Accessibility.swift */; };
@@ -182,7 +168,6 @@
 		759F988B25BFF8B000EC3407 /* twitter@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 759F988725BFF8B000EC3407 /* twitter@2x.png */; };
 		759F988C25BFF8B000EC3407 /* docker@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 759F988825BFF8B000EC3407 /* docker@2x.png */; };
 		759F988E25BFFAE500EC3407 /* heroku@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 759F988D25BFFAE500EC3407 /* heroku@2x.png */; };
-		759F989025C1172100EC3407 /* install_and_upgrade_fallback.sh in Resources */ = {isa = PBXBuildFile; fileRef = 759F988F25C1151D00EC3407 /* install_and_upgrade_fallback.sh */; };
 		75A0A71926F1A79A008FAD70 /* KittyIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A0A71826F1A79A008FAD70 /* KittyIntegration.swift */; };
 		75A0A71B26F1A7CE008FAD70 /* kitty-integration.py in Resources */ = {isa = PBXBuildFile; fileRef = 75A0A71A26F1A7CE008FAD70 /* kitty-integration.py */; };
 		75A0A71D26F27E3D008FAD70 /* SemanticVersion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A0A71C26F27E3D008FAD70 /* SemanticVersion.swift */; };
@@ -331,6 +316,7 @@
 /* Begin PBXFileReference section */
 		1A1F15FF25A7A93E0074D541 /* KeyBindingsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyBindingsManager.swift; sourceTree = "<group>"; };
 		1A63312025A4BE6D00CEA06A /* Keystroke.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Keystroke.swift; sourceTree = "<group>"; };
+		750BA10B2733590A00705E63 /* API+IPC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API+IPC.swift"; sourceTree = "<group>"; };
 		750CF21726A1055F0094D76A /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
 		7510F87524A6910500E86F7C /* AppleTerminalView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppleTerminalView.swift; sourceTree = "<group>"; };
 		7510F87624A6910500E86F7C /* TerminalViewDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TerminalViewDelegate.swift; sourceTree = "<group>"; };
@@ -376,16 +362,6 @@
 		7518606C255B2A090000A7C7 /* carrot@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "carrot@2x.png"; sourceTree = "<group>"; };
 		7518606D255B2A090000A7C7 /* string@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "string@2x.png"; sourceTree = "<group>"; };
 		7518606E255B2A0A0000A7C7 /* command@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "command@2x.png"; sourceTree = "<group>"; };
-		75186077255CB0870000A7C7 /* iterm-integration.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "iterm-integration.sh"; sourceTree = "<group>"; };
-		75186078255CB0870000A7C7 /* 1.0.23.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = 1.0.23.sh; sourceTree = "<group>"; };
-		75186079255CB0870000A7C7 /* fig-iterm-integration.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = "fig-iterm-integration.py"; sourceTree = "<group>"; };
-		7518607B255CB0870000A7C7 /* 1.0.22.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = 1.0.22.sh; sourceTree = "<group>"; };
-		7518607C255CB0870000A7C7 /* uninstall.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = uninstall.sh; sourceTree = "<group>"; };
-		7518607E255CB0870000A7C7 /* 1.0.21.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = 1.0.21.sh; sourceTree = "<group>"; };
-		7518607F255CB0870000A7C7 /* feedback.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = feedback.sh; sourceTree = "<group>"; };
-		75186080255CB0870000A7C7 /* 1.0.24.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = 1.0.24.sh; sourceTree = "<group>"; };
-		75186081255CB0870000A7C7 /* open_new_terminal_window.scpt */ = {isa = PBXFileReference; lastKnownFileType = file; path = open_new_terminal_window.scpt; sourceTree = "<group>"; };
-		75186082255CB0870000A7C7 /* 1.0.20.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = 1.0.20.sh; sourceTree = "<group>"; };
 		751C3BEB24B6910800B5C7FD /* Remote.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Remote.swift; sourceTree = "<group>"; };
 		751C3BED24B6915000B5C7FD /* Defaults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Defaults.swift; sourceTree = "<group>"; };
 		751DC66226EBF3B500697DFB /* cpu@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "cpu@2x.png"; sourceTree = "<group>"; };
@@ -498,9 +474,6 @@
 		75809B0F24C2C66100BFFB3E /* WebView+Private.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "WebView+Private.h"; sourceTree = "<group>"; };
 		75809B1024C3876B00BFFB3E /* run-tutorial.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = "run-tutorial.js"; sourceTree = "<group>"; };
 		7587B4D724F97F9E00E355E4 /* ShellHooksManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellHooksManager.swift; sourceTree = "<group>"; };
-		758AEB5D24CD35D400A15EAF /* WebSocket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebSocket.swift; sourceTree = "<group>"; };
-		758AEB5F24CE529D00A15EAF /* String+Shell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+Shell.swift"; sourceTree = "<group>"; };
-		758AEB6B24CEA54600A15EAF /* SocketServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocketServer.swift; sourceTree = "<group>"; };
 		75915DFF2722044D005A9909 /* API.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = API.js; sourceTree = "<group>"; };
 		759F987B25BF903900EC3407 /* Accessibility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Accessibility.swift; sourceTree = "<group>"; };
 		759F987E25BFF0FE00EC3407 /* commandkey@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "commandkey@2x.png"; sourceTree = "<group>"; };
@@ -511,7 +484,6 @@
 		759F988725BFF8B000EC3407 /* twitter@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "twitter@2x.png"; sourceTree = "<group>"; };
 		759F988825BFF8B000EC3407 /* docker@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "docker@2x.png"; sourceTree = "<group>"; };
 		759F988D25BFFAE500EC3407 /* heroku@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "heroku@2x.png"; sourceTree = "<group>"; };
-		759F988F25C1151D00EC3407 /* install_and_upgrade_fallback.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = install_and_upgrade_fallback.sh; sourceTree = "<group>"; };
 		75A0A71826F1A79A008FAD70 /* KittyIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KittyIntegration.swift; sourceTree = "<group>"; };
 		75A0A71A26F1A7CE008FAD70 /* kitty-integration.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = "kitty-integration.py"; sourceTree = "<group>"; };
 		75A0A71C26F27E3D008FAD70 /* SemanticVersion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SemanticVersion.swift; sourceTree = "<group>"; };
@@ -688,25 +660,6 @@
 			path = Mac;
 			sourceTree = "<group>";
 		};
-		75186076255CB0870000A7C7 /* upgrade */ = {
-			isa = PBXGroup;
-			children = (
-				7518607C255CB0870000A7C7 /* uninstall.sh */,
-				75186077255CB0870000A7C7 /* iterm-integration.sh */,
-				75186078255CB0870000A7C7 /* 1.0.23.sh */,
-				75186079255CB0870000A7C7 /* fig-iterm-integration.py */,
-				7518607B255CB0870000A7C7 /* 1.0.22.sh */,
-				7518607E255CB0870000A7C7 /* 1.0.21.sh */,
-				7518607F255CB0870000A7C7 /* feedback.sh */,
-				75186080255CB0870000A7C7 /* 1.0.24.sh */,
-				75186081255CB0870000A7C7 /* open_new_terminal_window.scpt */,
-				75186082255CB0870000A7C7 /* 1.0.20.sh */,
-				759F988F25C1151D00EC3407 /* install_and_upgrade_fallback.sh */,
-			);
-			name = upgrade;
-			path = fig/upgrade;
-			sourceTree = "<group>";
-		};
 		7518608F255CE49B0000A7C7 /* Icons */ = {
 			isa = PBXGroup;
 			children = (
@@ -818,7 +771,6 @@
 		75675948244634AD006AA988 = {
 			isa = PBXGroup;
 			children = (
-				75186076255CB0870000A7C7 /* upgrade */,
 				75675953244634AD006AA988 /* fig */,
 				75675969244634B2006AA988 /* figTests */,
 				75675974244634B2006AA988 /* figUITests */,
@@ -952,6 +904,7 @@
 				75B4283526FABAAC003C9DE5 /* FileSystem.swift */,
 				75C16D4726FD1EB400C83296 /* API+NotificationCenter.swift */,
 				756968022719450A0029F063 /* API+App.swift */,
+				750BA10B2733590A00705E63 /* API+IPC.swift */,
 			);
 			path = API;
 			sourceTree = "<group>";
@@ -1363,7 +1316,6 @@
 			files = (
 				75DF864A26F31756003F32A5 /* cpu@2x.png in Resources */,
 				75290A7D266B09CB000F4255 /* gear@2x.png in Resources */,
-				759F989025C1172100EC3407 /* install_and_upgrade_fallback.sh in Resources */,
 				752E68DF2620F868009E9A7E /* yarn@2x.png in Resources */,
 				75A4521025A83E5600107D2C /* remote_cwd.sh in Resources */,
 				75543FD0268AC6E5003221DF /* fig-0.0.4.vsix in Resources */,
@@ -1371,28 +1323,18 @@
 				752E68F12620F885009E9A7E /* firebase@2x.png in Resources */,
 				75A4A29825C8D855002EFD6B /* node@2x.png in Resources */,
 				752E68F82620F885009E9A7E /* github@2x.png in Resources */,
-				75186083255CB0C20000A7C7 /* iterm-integration.sh in Resources */,
 				75EDDC5125D24755003AECC6 /* hyper-integration.js in Resources */,
 				759F988325BFF0FF00EC3407 /* database@2x.png in Resources */,
 				7520D7F1267D98790034FE2B /* fig-0.0.3.vsix in Resources */,
 				755EC8CF266997A700CBEF57 /* settings in Resources */,
-				75186084255CB0C20000A7C7 /* 1.0.23.sh in Resources */,
-				75186085255CB0C20000A7C7 /* fig-iterm-integration.py in Resources */,
 				75B0A08025BB74C700FCD89A /* fig-context-indicator.png in Resources */,
-				75186087255CB0C20000A7C7 /* 1.0.22.sh in Resources */,
 				752E68F02620F885009E9A7E /* template@2x.png in Resources */,
-				75186088255CB0C20000A7C7 /* uninstall.sh in Resources */,
 				752E68EF2620F885009E9A7E /* gitlab@2x.png in Resources */,
-				7518608A255CB0C20000A7C7 /* 1.0.21.sh in Resources */,
 				7571775926F3E4CA0071AE10 /* settings.html in Resources */,
 				759F988925BFF8B000EC3407 /* npm@2x.png in Resources */,
 				752E68F32620F885009E9A7E /* aws@2x.png in Resources */,
 				759F988A25BFF8B000EC3407 /* kubernetes@2x.png in Resources */,
-				7518608B255CB0C20000A7C7 /* feedback.sh in Resources */,
 				752E68DE2620F868009E9A7E /* slack@2x.png in Resources */,
-				7518608C255CB0C20000A7C7 /* 1.0.24.sh in Resources */,
-				7518608D255CB0C20000A7C7 /* open_new_terminal_window.scpt in Resources */,
-				7518608E255CB0C20000A7C7 /* 1.0.20.sh in Resources */,
 				759F988B25BFF8B000EC3407 /* twitter@2x.png in Resources */,
 				75186073255B2A0A0000A7C7 /* string@2x.png in Resources */,
 				757CA88624876043002A64A8 /* error.html in Resources */,
@@ -1633,6 +1575,7 @@
 				7510F89924A6910500E86F7C /* TerminalViewDelegate.swift in Sources */,
 				75290ACC2671AD1E000F4255 /* WebSocketFramer.swift in Sources */,
 				75C16D4826FD1EB400C83296 /* API+NotificationCenter.swift in Sources */,
+				750BA10C2733590A00705E63 /* API+IPC.swift in Sources */,
 				759F987C25BF903900EC3407 /* Accessibility.swift in Sources */,
 				7510F8A424A6910500E86F7C /* iOSCaretView.swift in Sources */,
 				751C3BEE24B6915000B5C7FD /* Defaults.swift in Sources */,
@@ -1970,7 +1913,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = YES;
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 297;
+				CURRENT_PROJECT_VERSION = 304;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				DEVELOPMENT_TEAM = D93PPD94WK;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1985,7 +1928,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MARKETING_VERSION = 1.0.51;
+				MARKETING_VERSION = 1.0.52;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mschrage.fig;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -2006,7 +1949,7 @@
 				CODE_SIGN_IDENTITY = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 297;
+				CURRENT_PROJECT_VERSION = 304;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				DEVELOPMENT_TEAM = D93PPD94WK;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -2021,7 +1964,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MARKETING_VERSION = 1.0.51;
+				MARKETING_VERSION = 1.0.52;
 				ONLY_ACTIVE_ARCH = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mschrage.fig;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -2303,11 +2246,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 757CA8E224905B0E002A64A8 /* XCRemoteSwiftPackageReference "Kitura-WebSocket" */;
 			productName = "Kitura-WebSocket";
-		};
-		758AEB6924CEA4D000A15EAF /* Starscream */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 758AEB6824CEA4D000A15EAF /* XCRemoteSwiftPackageReference "Starscream" */;
-			productName = Starscream;
 		};
 		75915DFD27210A4C005A9909 /* FigAPIBindings */ = {
 			isa = XCSwiftPackageProductDependency;

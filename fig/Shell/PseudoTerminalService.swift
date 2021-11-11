@@ -64,13 +64,19 @@ class PseudoTerminal {
     
     func start(with environment: [String: String]) {
         PseudoTerminal.log("Starting PTY...")
-        let shell = "/bin/sh" //"/bin/bash"
+        let shell = "/bin/bash" //"/bin/bash"
         
         let rawEnv = mergeFigSpecificEnvironmentVariables(with: environment)
 
         
-        self.headless.process.startProcess(executable: shell, args: [], environment: rawEnv.count == 0 ? nil : rawEnv)
+        self.headless.process.startProcess(executable: shell, args: [ "--norc", "--noprofile", "--noediting"], environment: rawEnv.count == 0 ? nil : rawEnv)
         self.headless.process.delegate = self
+        
+        if let shouldWriteTranscript = Settings.shared.getValue(forKey: Settings.ptyTranscript) as? Bool,
+               shouldWriteTranscript {
+          self.write(" script -qt0 ~/.fig/logs/pty_transcript.log")
+          self.headless.process.debugIO = true
+        }
         
         self.write(" set +o history" + PseudoTerminal.CRLF)
         self.write(" unset HISTFILE" + PseudoTerminal.CRLF)
@@ -98,7 +104,23 @@ class PseudoTerminal {
     func close() {
         if self.headless.process.running {
             kill( self.headless.process.shellPid, SIGTERM)
+            kill( self.headless.process.shellPid, SIGKILL)
         }
+    }
+  
+  func restart(with environment: [String: String], completion: ((Bool) -> Void)? = nil) {
+      self.close()
+    
+      // todo: use self.headless.onEnd instead of a hardcoded delay
+      Timer.delayWithSeconds(1) {
+        guard !self.headless.process.running else {
+          completion?(false)
+          return
+        }
+        
+        self.start(with: environment)
+        completion?(true)
+      }
     }
     
     // MARK: Utilities
@@ -118,6 +140,7 @@ class PseudoTerminal {
                                               "FIG_PTY" : "1",
                                               "HISTCONTROL" : "ignoreboth",
                                               "HOME" : NSHomeDirectory(),
+                                              "FIG_DEBUG" : "1",
                                               "LANG" : "\(LANG).UTF-8"]) { $1 }
         
         return updatedEnv.reduce([]) { (acc, elm) -> [String] in
@@ -152,19 +175,19 @@ extension PseudoTerminal {
         guard element.value as? String != nil else {
           return false
         }
-        
+
         return environmentVariablesToMirror.reduce(false) { (result, prefix) -> Bool in
           return result || element.key.starts(with: prefix)
         }
       })
-      
+
       let command = variablesToUpdate.keys.map { "export \($0)='\(variablesToUpdate[$0] ?? "")'" }.joined(separator: "\n")
-      
+
       let tmpFile = NSTemporaryDirectory().appending("fig_source_env")
       Logger.log(message: "Writing new ENV vars to '\(tmpFile)'", subsystem: .pty)
 
       do {
-        
+
         try command.write(toFile: tmpFile,
                       atomically: true,
                       encoding: .utf8)

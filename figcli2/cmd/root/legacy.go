@@ -1,6 +1,7 @@
 package root
 
 import (
+	"fig-cli/cmd/doctor"
 	"fig-cli/diagnostics"
 	fig_ipc "fig-cli/fig-ipc"
 	"fig-cli/logging"
@@ -37,6 +38,10 @@ func init() {
 	// Legacy commands
 	rootCmd.AddCommand(legacyAppRunning)
 	rootCmd.AddCommand(legacyUpdate)
+
+	// Legacy `fig tools doctor`
+	legacyTools.AddCommand(doctor.NewCmdDoctor())
+	rootCmd.AddCommand(legacyTools)
 }
 
 var legacyZshKeybuffer = &cobra.Command{
@@ -317,4 +322,9 @@ var legacyVscode = &cobra.Command{
 			logging.Log(err.Error())
 		}
 	},
+}
+
+var legacyTools = &cobra.Command{
+	Use:    "tools",
+	Hidden: true,
 }

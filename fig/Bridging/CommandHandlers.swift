@@ -57,6 +57,12 @@ extension CommandHandlers {
   static func diagnosticsCommand() -> CommandResponse {
     Logger.log(message: "Diagnostics ran")
     return CommandResponse.with { response in
+      response.diagnostics.distribution = Diagnostic.distribution
+      response.diagnostics.beta = Defaults.beta
+      response.diagnostics.debugAutocomplete = Defaults.debugAutocomplete
+      response.diagnostics.developerModeEnabled = Defaults.developerModeEnabled
+      response.diagnostics.currentLayoutName = KeyboardLayout.shared.currentLayoutName() ?? ""
+      response.diagnostics.isRunningOnReadOnlyVolume = Diagnostic.isRunningOnReadOnlyVolume
       response.diagnostics.pathToBundle = Diagnostic.pathToBundle
       response.diagnostics.accessibility = String(Accessibility.enabled)
       response.diagnostics.keypath = Diagnostic.keybindingsPath ?? "<none>"
@@ -68,7 +74,7 @@ extension CommandHandlers {
       response.diagnostics.currentWindowIdentifier = Diagnostic.descriptionOfTopmostWindow
       response.diagnostics.currentProcess = "\(Diagnostic.processForTopmostWindow) (\(Diagnostic.processIdForTopmostWindow)) - \(Diagnostic.ttyDescriptorForTopmostWindow)"
       response.diagnostics.onlytab = String(Defaults.onlyInsertOnTab)
-      response.diagnostics.psudopath = Diagnostic.pseudoTerminalPath ?? "<generated dynamically>"
+      response.diagnostics.psudoterminalPath = Diagnostic.pseudoTerminalPath ?? "<generated dynamically>"
     }
   }
   
@@ -109,7 +115,10 @@ extension CommandHandlers {
   
   static func buildCommand(build: String?) -> CommandResponse {
     if let buildMode = Build(rawValue: build ?? "") {
-      Defaults.build = buildMode
+      DispatchQueue.main.async {
+        Defaults.build = buildMode
+      }
+      
       return CommandResponse.with { response in
         response.success.message = buildMode.rawValue;
       }
@@ -136,17 +145,6 @@ extension CommandHandlers {
     return CommandResponse.with { response in
       response.success.message = "running installation script"
     }
-  }
-  
-  static func buildCommand(branch: String?) -> CommandResponse? {
-    if let buildMode = Build(rawValue: branch ?? "") {
-        Defaults.build = buildMode
-    } else {
-      return CommandResponse.with { response in
-        response.success.message = Defaults.build.rawValue
-      }
-    }
-    return nil
   }
   
   static func openUiElement(uiElement: Local_UiElement) -> CommandResponse {
@@ -183,7 +181,9 @@ extension CommandHandlers {
   }
   
   static func resetCache() -> CommandResponse {
-    WebView.deleteCache()
+    DispatchQueue.main.async {
+      WebView.deleteCache()
+    }
 
     return CommandResponse.with { response in
       response.success.message = "reset cache"
@@ -191,10 +191,12 @@ extension CommandHandlers {
   }
   
   static func toggleAutocompleteDebugMode(setVal: Bool?) -> CommandResponse {
-    if let val = setVal {
-      Defaults.debugAutocomplete = val
-    } else {
-      Defaults.debugAutocomplete = !Defaults.debugAutocomplete
+    DispatchQueue.main.async {
+      if let val = setVal {
+        Defaults.debugAutocomplete = val
+      } else {
+        Defaults.debugAutocomplete = !Defaults.debugAutocomplete
+      }
     }
     
     return CommandResponse.with { response in

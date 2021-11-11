@@ -200,7 +200,6 @@ func CreatePreExecHook(pid int, tty string) (*fig_proto.Hook, error) {
 		Hook: &fig_proto.Hook_PreExec{
 			PreExec: &fig_proto.PreExecHook{
 				Context: context,
-				Command: "",
 			},
 		},
 	}, nil

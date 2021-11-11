@@ -151,14 +151,33 @@ func Summary() string {
 		summary.WriteString(fmt.Sprintf("Error: %s\n", err.Error()))
 	}
 
-	figVersion, _ := GetFigVersion()
-	figBuild, _ := GetFigBuild()
-
 	//  \(Diagnostic.distribution) \(Defaults.beta ? "[Beta] " : "")\(Defaults.debugAutocomplete ? "[Debug] " : "")\(Defaults.developerModeEnabled ? "[Dev] " : "")[\(KeyboardLayout.shared.currentLayoutName() ?? "?")] \(Diagnostic.isRunningOnReadOnlyVolume ? "TRANSLOCATED!!!" : "")
 	summary.WriteString("Fig Version: ")
-	summary.WriteString(figVersion)
+	summary.WriteString(resp.GetDiagnostics().GetDistribution())
 	summary.WriteString(" ")
-	summary.WriteString(figBuild)
+
+	if resp.GetDiagnostics().GetBeta() {
+		summary.WriteString("[Beta] ")
+	}
+
+	if resp.GetDiagnostics().GetDebugAutocomplete() {
+		summary.WriteString("[Debug] ")
+	}
+
+	if resp.GetDiagnostics().GetDeveloperModeEnabled() {
+		summary.WriteString("[Dev] ")
+	}
+
+	layoutName := resp.GetDiagnostics().GetCurrentLayoutName()
+	if layoutName == "" {
+		layoutName = "?"
+	}
+	summary.WriteString(fmt.Sprintf("[%v] ", layoutName))
+
+	if resp.GetDiagnostics().GetIsRunningOnReadOnlyVolume() {
+		summary.WriteString("TRANSLOCATED!!!")
+	}
+
 	summary.WriteString("\n")
 
 	// User shell: \(Diagnostic.userShell)
@@ -250,7 +269,7 @@ func Summary() string {
 
 	//  PseudoTerminal Path: \(Diagnostic.pseudoTerminalPath ?? "<generated dynamically>")
 	summary.WriteString("PseudoTerminal Path: ")
-	summary.WriteString(resp.GetDiagnostics().GetPsudopath())
+	summary.WriteString(resp.GetDiagnostics().GetPsudoterminalPath())
 	summary.WriteString("\n")
 
 	//  SecureKeyboardInput: \(Diagnostic.secureKeyboardInput)

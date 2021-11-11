@@ -53,6 +53,8 @@ class Settings {
   static let useControlRForHistory = "history.ctrl-r"
   static let shouldInterceptCommandI = "autocomplete.alwaysInterceptCommandI"
   static let inputMethodShouldPollForActivation = "integrations.input-method.shouldPollForActivation"
+  static let ptyTranscript = "developer.pty.transcript"
+
 
   static let keyAliases = [
     "super": "command",
@@ -154,7 +156,7 @@ class Settings {
     
     let settingsViewController = WebViewController()
     settingsViewController.webView?.defaultURL = nil
-    settingsViewController.webView?.loadBundleApp("settings/index")
+    settingsViewController.webView?.loadRemoteApp(at: Remote.baseURL.appendingPathComponent("settings"))
     settingsViewController.webView?.dragShouldRepositionWindow = true
 
     let settings = WebViewWindow(viewController: settingsViewController, shouldQuitAppOnClose: false)

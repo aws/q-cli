@@ -104,7 +104,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 
         handleUpdateIfNeeded()
         Defaults.useAutocomplete = true
-        Defaults.autocompleteVersion = "v7"
+        Defaults.autocompleteVersion = "v8"
         AutocompleteContextNotifier.addIndicatorToTitlebar = false
 
         Defaults.autocompleteWidth = 250
@@ -285,12 +285,16 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     }
         
     func openMenu() {
+        
+        // Do not show menu if icon is hidden
+        if let hidden = Settings.shared.getValue(forKey: Settings.hideMenubarIcon) as? Bool,
+               hidden {
+          return
+        }
+      
         if let menu = self.statusBarItem.menu {
             self.statusBarItem.popUpMenu(menu)
         }
-//        self.statusBarItem.menu?.popUp(positioning: ,
-//                                       at: self.statusBarItem.view?.frame.origin,
-//                                       in: self.statusBarItem.view)
     }
     
     func validateMenuItem(menuItem: NSMenuItem) -> Bool {
@@ -520,17 +524,15 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             }
         }
         
-        integrationsMenu.addItem(NSMenuItem.separator())
-
-    
-      let sshIntegration = integrationsMenu.addItem(
-      withTitle: "SSH Integration",
-      action: #selector(AppDelegate.toggleSSHIntegration(_:)),
-      keyEquivalent: "")
-      sshIntegration.state = Defaults.SSHIntegrationEnabled ? .on : .off
-      
       integrationsMenu.addItem(NSMenuItem.separator())
-      integrationsMenu.addItem(withTitle: "Edit Key Bindings", action: #selector(editKeybindingsFile), keyEquivalent: "")
+//
+//
+//      let sshIntegration = integrationsMenu.addItem(
+//      withTitle: "SSH Integration",
+//      action: #selector(AppDelegate.toggleSSHIntegration(_:)),
+//      keyEquivalent: "")
+//      sshIntegration.state = Defaults.SSHIntegrationEnabled ? .on : .off
+
       
       let developer = integrationsMenu.addItem(
        withTitle: "Developer",

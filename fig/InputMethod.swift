@@ -63,9 +63,10 @@ class InputMethod {
             return
         }
         self.remainingAttempts = maxAttempts
-        self.timer = Timer.scheduledTimer(withTimeInterval: 10, repeats: true) { timer in
+        self.timer = Timer.scheduledTimer(withTimeInterval: 3, repeats: true) { timer in
             self.remainingAttempts -= 1
             self.select()
+            self.enable()
             
             self.verifyAndUpdateInstallationStatus()
             InputMethod.log("ping!!!! (remaining attempts = \(self.remainingAttempts) - \(self.status)")

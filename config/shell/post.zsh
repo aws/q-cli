@@ -1,5 +1,3 @@
-autoload -Uz add-zsh-hook
-
 FIG_HOSTNAME=$(hostname -f 2> /dev/null || hostname)
 
 if [[ -e /proc/1/cgroup ]] && grep -q docker /proc/1/cgroup; then
@@ -20,8 +18,6 @@ FIG_HAS_ZSH_PTY_HOOKS=1
 FIG_HAS_SET_PROMPT=0
 
 fig_preexec() {
-  __fig hook pre-exec $$ $TTY 2>&1 1>/dev/null
-
   # Restore user defined prompt before executing.
   [[ -v PS1 ]] && PS1="$FIG_USER_PS1"
   [[ -v PROMPT ]] && PROMPT="$FIG_USER_PROMPT"
@@ -48,12 +44,8 @@ fig_preexec() {
 
 fig_precmd() {
   local LAST_STATUS=$?
-  __fig hook prompt $$ $TTY 2>&1 1>/dev/null
 
-  if [ $FIG_HAS_SET_PROMPT -eq 1 ]; then
-    # ^C pressed while entering command, call preexec manually to clear fig prompts.
-    fig_preexec
-  fi
+  fig_reset_hooks
 
   fig_osc "Dir=%s" "$PWD"
   fig_osc "Shell=zsh"
@@ -71,6 +63,11 @@ fig_precmd() {
 
   fig_osc "Docker=%d" "${FIG_IN_DOCKER}"
   fig_osc "Hostname=%s@%s" "${USER:-root}" "${FIG_HOSTNAME}"
+
+  if [ $FIG_HAS_SET_PROMPT -eq 1 ]; then
+    # ^C pressed while entering command, call preexec manually to clear fig prompts.
+    fig_preexec
+  fi
 
   START_PROMPT=$(fig_osc StartPrompt)
   END_PROMPT=$(fig_osc EndPrompt)
@@ -129,5 +126,13 @@ fig_precmd() {
   [[ -t 1 ]] && command stty -istrip
 }
 
-add-zsh-hook precmd fig_precmd
-add-zsh-hook preexec fig_preexec
+fig_reset_hooks() {
+  if [[ $precmd_functions[-1] != fig_precmd ]]; then
+    precmd_functions=(${(@)precmd_functions:#fig_precmd} fig_precmd)
+  fi
+  if [[ $preexec_functions[1] != fig_preexec ]]; then
+    preexec_functions=(fig_preexec ${(@)preexec_functions:#fig_preexec})
+  fi
+}
+
+fig_reset_hooks

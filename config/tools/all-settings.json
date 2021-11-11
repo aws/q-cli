@@ -308,5 +308,13 @@
   {
     "settingName": "autocomplete.keybindings.command+shift+-",
     "default": "decreaseSize"
+  },
+  {
+    "settingName": "cli.drip.disabled",
+    "title": "Disable terminal dip",
+    "description": "Disables the text from appearing at the top of your terminal on start.",
+    "type": "boolean",
+    "default": false,
+    "commonlyUsed": true
   }
 ]

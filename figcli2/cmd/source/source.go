@@ -3,6 +3,7 @@ package source
 import (
 	"fig-cli/diagnostics"
 	fig_ipc "fig-cli/fig-ipc"
+	"fig-cli/logging"
 	"fmt"
 	"os"
 
@@ -18,18 +19,19 @@ func NewCmdSource() *cobra.Command {
 		Run: func(cmd *cobra.Command, arg []string) {
 			err := fig_ipc.RestartSettingsListenerCommand()
 			if err != nil {
-				panic(err)
+				logging.Log("fig source:", err.Error())
+				fmt.Println("Unable to restart settings listener")
+				os.Exit(1)
 			}
 
 			tty, err := diagnostics.GetTty()
 			if err != nil {
-				panic(err)
+				logging.Log("fig source:", err.Error())
+				fmt.Println("Unable to get TTY")
+				os.Exit(1)
 			}
 
 			pid := os.Getppid()
-
-			fmt.Println(tty, pid)
-
 			hook, _ := fig_ipc.CreateInitHook(pid, tty)
 
 			fig_ipc.SendHook(hook)

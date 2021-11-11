@@ -12,6 +12,7 @@ import (
 	"fig-cli/cmd/integrations"
 	"fig-cli/cmd/invite"
 	"fig-cli/cmd/issue"
+	"fig-cli/cmd/launch"
 	"fig-cli/cmd/quit"
 	"fig-cli/cmd/report"
 	"fig-cli/cmd/settings"
@@ -47,7 +48,8 @@ var rootCmd = &cobra.Command{
 	// This is stupid, I hate golang, why can I not decompose multiple returns into a single line?
 	Version: func() string {
 		version, _ := diagnostics.GetFigVersion()
-		return version
+		build, _ := diagnostics.GetFigBuild()
+		return fmt.Sprintf("%s B%s", version, build)
 	}(),
 	Run: func(cmd *cobra.Command, args []string) {
 		response, err := fig_ipc.RunOpenUiElementCommand(fig_proto.UiElement_MENU_BAR)
@@ -277,6 +279,7 @@ func Execute() {
 	rootCmd.AddCommand(integrations.NewCmdIntegrations())
 	rootCmd.AddCommand(invite.NewCmdInvite())
 	rootCmd.AddCommand(issue.NewCmdIssue())
+	rootCmd.AddCommand(launch.NewCmdLaunch())
 	rootCmd.AddCommand(quit.NewCmdQuit())
 	rootCmd.AddCommand(report.NewCmdReport())
 	rootCmd.AddCommand(settings.NewCmdSettings())
