@@ -26,7 +26,7 @@ extension CommandHandlers {
 
       WebView.deleteCache()
 
-      Config.set(value: "0", forKey: "FIG_LOGGED_IN")
+      Config.shared.set(value: "0", forKey: "FIG_LOGGED_IN")
     }
 
     return CommandResponse.with { response in
