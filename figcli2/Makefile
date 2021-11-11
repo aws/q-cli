@@ -30,8 +30,8 @@ figcli:
 endif
 
 clean:
-	rm $(ROOT)/bin/*
-	rm $(BUILT_PRODUCTS_DIR)/figcli
+	rm -f $(ROOT)/bin/*
+	rm -f $(BUILT_PRODUCTS_DIR)/figcli
 
 install: all
 	mkdir -p ~/.fig/bin
