@@ -24,6 +24,9 @@ class PseudoTerminal {
         pty.start(with: [:])
         return pty
     }()
+  
+    let rateLimiter = RateLimiter(minimumDelay: 0.3, queue: DispatchQueue(label: "io.fig.pseudoterminal"))
+
     
     fileprivate static let CRLF = "\r\n"
     
@@ -38,6 +41,7 @@ class PseudoTerminal {
       Logger.log(message: message, subsystem: .pty)
     }
     
+  
 
     
     // MARK: Initialize
@@ -140,7 +144,6 @@ class PseudoTerminal {
                                               "FIG_PTY" : "1",
                                               "HISTCONTROL" : "ignoreboth",
                                               "HOME" : NSHomeDirectory(),
-                                              "FIG_DEBUG" : "1",
                                               "LANG" : "\(LANG).UTF-8"]) { $1 }
         
         return updatedEnv.reduce([]) { (acc, elm) -> [String] in
@@ -237,9 +240,12 @@ extension PseudoTerminal {
         }
       
         commandToRun.append(PseudoTerminal.CRLF)
-      
         self.handlers[cappedHandlerId] = handler
-        self.headless.send(commandToRun)
+        rateLimiter.limit {
+          PseudoTerminal.log("Running command!")
+          self.headless.send(commandToRun)
+        }
+        //
         print("pty:", commandToRun)
         PseudoTerminal.log("Running '\(command)' \(options.contains(.pipelined) ? "as pipeline" : "")\(options.contains(.backgroundJob) ? " in background" : "")")
     }
