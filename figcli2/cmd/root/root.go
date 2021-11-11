@@ -12,6 +12,7 @@ import (
 	"fig-cli/cmd/integrations"
 	"fig-cli/cmd/invite"
 	"fig-cli/cmd/issue"
+	"fig-cli/cmd/launch"
 	"fig-cli/cmd/quit"
 	"fig-cli/cmd/report"
 	"fig-cli/cmd/settings"
@@ -278,6 +279,7 @@ func Execute() {
 	rootCmd.AddCommand(integrations.NewCmdIntegrations())
 	rootCmd.AddCommand(invite.NewCmdInvite())
 	rootCmd.AddCommand(issue.NewCmdIssue())
+	rootCmd.AddCommand(launch.NewCmdLaunch())
 	rootCmd.AddCommand(quit.NewCmdQuit())
 	rootCmd.AddCommand(report.NewCmdReport())
 	rootCmd.AddCommand(settings.NewCmdSettings())
