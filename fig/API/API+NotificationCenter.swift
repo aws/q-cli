@@ -236,3 +236,16 @@ extension APINotificationCenter {
         self.post(notification: wrapper)
     }
 }
+
+extension APINotificationCenter {
+  func editbufferChanged(buffer: String, cursor: Int, session: SessionId) {
+  
+    API.notifications.post(
+      Fig_EditBufferChangedNotification.with({ notification in
+        notification.buffer = buffer
+        notification.cursor = Int32(cursor)
+        notification.sessionID = session
+      })
+    )
+  }
+}

@@ -6,6 +6,7 @@ import (
 	"fig-cli/cmd/community"
 	"fig-cli/cmd/contrib"
 	"fig-cli/cmd/debug"
+	"fig-cli/cmd/debug/diagnostic"
 	"fig-cli/cmd/dev"
 	"fig-cli/cmd/doctor"
 	"fig-cli/cmd/hook"
@@ -22,9 +23,11 @@ import (
 	"fig-cli/cmd/tweet"
 	"fig-cli/cmd/update"
 	"fig-cli/cmd/user"
+	"fig-cli/cmd/user/logout"
 	"fig-cli/diagnostics"
 	fig_ipc "fig-cli/fig-ipc"
 	fig_proto "fig-cli/fig-proto"
+	"fig-cli/logging"
 	"fmt"
 	"os"
 	"os/exec"
@@ -290,10 +293,13 @@ func Execute() {
 	rootCmd.AddCommand(update.NewCmdUpdate())
 	rootCmd.AddCommand(user.NewCmdUser())
 
+	rootCmd.AddCommand(diagnostic.NewCmdDiagnostic())
+	rootCmd.AddCommand(logout.NewCmdLogout())
+
 	rootCmd.AddCommand(genFigSpec.NewCmdGenFigSpec())
 
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		logging.Log("root error:", err.Error())
 		os.Exit(1)
 	}
 }
