@@ -13,7 +13,7 @@ func NewCmdLaunch() *cobra.Command {
 		Short:  "Launch Fig",
 		Hidden: true,
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("→ Launching Fig...")
+			fmt.Printf("\n→ Launching Fig...\n\n")
 			figCmd := exec.Command("open", "-b", "com.mschrage.fig")
 			figCmd.Run()
 			figCmd.Process.Release()
