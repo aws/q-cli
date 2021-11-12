@@ -295,7 +295,7 @@ char *escaped_str(const char *src) {
 char *get_term_bundle() {
   char *term_program = getenv("TERM_PROGRAM");
   if (term_program == NULL) {
-    return NULL;
+    return "unknown";
   }
 
   if (strcmp(term_program, "iTerm.app") == 0) {
