@@ -60,7 +60,7 @@ func NewCmdIssue() *cobra.Command {
 
 			body.WriteString("</pre>\n</p>\n</details>")
 
-			fmt.Println("→ Opening GitHub...")
+			fmt.Printf("\n→ Opening GitHub...\n\n")
 			exec.Command("open",
 				fmt.Sprintf("https://github.com/withfig/fig/issues/new?labels=bug&assignees=%s&body=%s",
 					strings.Join(assignees, ","),
