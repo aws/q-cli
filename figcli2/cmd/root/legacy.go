@@ -37,6 +37,7 @@ func init() {
 	rootCmd.AddCommand(legacyHyper)
 	rootCmd.AddCommand(legacyExec)
 	rootCmd.AddCommand(legacyVscode)
+	rootCmd.AddCommand(legacySshHook)
 
 	// Legacy commands
 	rootCmd.AddCommand(legacyAppRunning)
@@ -393,5 +394,12 @@ var legacyLogout = &cobra.Command{
 			fmt.Println("Error:", err)
 			return
 		}
+	},
+}
+
+var legacySshHook = &cobra.Command{
+	Use:    "bg:ssh",
+	Hidden: true,
+	Run: func(cmd *cobra.Command, args []string) {
 	},
 }
