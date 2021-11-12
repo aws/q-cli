@@ -32,6 +32,7 @@ RUN mkdir -p /usr/home/app/ \
   /usr/home/figterm/ \
   /usr/home/.fig/ \
   /usr/home/bin/ \
+  /usr/home/figcli/bin/ \
   ${FIG_BUNDLE_EXECUTABLES}
 
 RUN cp ./bin/fig $FIG_BUNDLE_EXECUTABLES/fig
