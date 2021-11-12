@@ -71,6 +71,14 @@ class Autocomplete {
         WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try{ fig.keypress(\"\(Keycode.escape)\", \"\(window.hash)\") } catch(e) {}", completionHandler: nil)
     } else {
         Autocomplete.update(with: buffer.currentState, for: window.hash)
+        
+        if let (buffer, cursor) =  buffer.currentState,
+           let sessionId = window.session {
+          API.notifications.editbufferChanged(buffer: buffer,
+                                              cursor: cursor,
+                                              session: sessionId)
+        }
+      
         Autocomplete.position()
     }
   }
@@ -157,6 +165,14 @@ class GenericShellIntegration: ShellIntegration {
            KeypressProvider.shared.keyBuffer(for: window).backing != nil,
            let context = KeypressProvider.shared.keyBuffer(for: window).insert(text: insertionText) {
             Autocomplete.update(with: context, for: window.hash)
+          
+            // manually trigger edit buffer update since `Autocomplete.update` is deprecated
+            let (buffer, cursor) = context
+            if let sessionId = window.session {
+              API.notifications.editbufferChanged(buffer: buffer,
+                                                  cursor: cursor,
+                                                  session: sessionId)
+            }
         }
     }
   }

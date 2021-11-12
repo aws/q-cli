@@ -37,6 +37,13 @@ class ZLEIntegration: ShellIntegration {
               // trigger an update!
               print("update: \(context.0)")
               Autocomplete.update(with: context, for: window.hash)
+              // manually trigger edit buffer update since `Autocomplete.update` is deprecated
+              let (buffer, cursor) = context
+              if let sessionId = window.session {
+                API.notifications.editbufferChanged(buffer: buffer,
+                                                    cursor: cursor,
+                                                    session: sessionId)
+              }
             
           }
       }
@@ -56,6 +63,14 @@ class ZLEIntegration: ShellIntegration {
         let context = KeypressProvider.shared.keyBuffer(for: window).insert(text: pastedText) {
          print("ZLE: paste! (Hiding popup window)")
          Autocomplete.update(with: context, for: window.hash)
+      
+         // manually trigger edit buffer update since `Autocomplete.update` is deprecated
+         let (buffer, cursor) = context
+         if let sessionId = window.session {
+           API.notifications.editbufferChanged(buffer: buffer,
+                                               cursor: cursor,
+                                               session: sessionId)
+         }
      }
   }
   
