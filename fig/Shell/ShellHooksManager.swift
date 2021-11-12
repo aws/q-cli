@@ -494,6 +494,12 @@ extension ShellHookManager {
       DispatchQueue.main.async {
         Autocomplete.update(with: ("", 0), for: hash)
         Autocomplete.position()
+        
+        // manually trigger edit buffer update since `Autocomplete.update` is deprecated
+        API.notifications.post(Fig_EditBufferChangedNotification.with({ notification in
+          notification.buffer = ""
+          notification.cursor = 0
+        }))
       }
       KeypressProvider.shared.keyBuffer(for: hash).backedByShell = false
     }
