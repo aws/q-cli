@@ -1,88 +1,85 @@
-import {
-  describe,
-  expect,
-  test,
-  beforeAll,
-  beforeEach,
-  afterAll,
-} from '@jest/globals';
-import Shell from '../src/shell';
+import { describe, expect, test, beforeEach } from '@jest/globals';
+import Shell, { PTYOptions } from '../src/shell';
 import Config from '../src/config';
 import Settings from '../src/settings';
 
-export const makeTestsForShell = (shell: Shell) => {
-  let env: Record<string, string>;
-
-  beforeAll(async () => {
-    await shell.initialized();
-    env = await shell.pty.getEnv();
-  });
-
-  afterAll(() => shell.kill());
+export const makeTestsForShell = (ptyOptions: PTYOptions) => {
+  // Each invocation creates one shell, that can be used across multiple tests.
+  let shell = new Shell();
 
   beforeEach(async () => {
     Settings.reset();
     Config.reset();
-    // Reset terminal size and get a fresh prompt before each test.
-    shell.pty.resize({ rows: 30, cols: 80 });
-    shell.pty.write('\r');
-    await shell.waitForNextPrompt();
+    await shell.initialize(ptyOptions);
   });
 
-  describe('Valid environment', () => {
-    test('FIG_TERM=1', () => {
-      expect(env.FIG_TERM).toBe('1');
-    });
+  afterEach(async () => {
+    await shell.kill();
+  })
 
-    test('FIG_CHECKED_PROMPTS=1', () => {
-      expect(env.FIG_CHECKED_PROMPTS).toBe('1');
-    });
+  test('shell environment setup', async () => {
+    const env = await shell.getEnv();
 
-    test('FIG_INTEGRATION_VERSION is correct', () => {
-      expect(env.FIG_INTEGRATION_VERSION).toBe('5');
-    });
-
-    test('PATH contains ~/.fig/bin', () => {
-      expect(env.PATH.includes('/.fig/bin')).toBe(true);
-    });
-
-    test('TTY var exists', () => {
-      expect(env.TTY).not.toBeNull();
-    });
-
-    test('TTY equals output of tty command', async () => {
-      expect(await shell.pty.executeAsync('tty')).toBe(env.TTY);
-    });
+    expect(env.FIG_TERM).toBe('1');
+    expect(env.FIG_CHECKED_PROMPTS).toBe('1');
+    expect(env.FIG_INTEGRATION_VERSION).toBe('5');
+    expect(env.PATH.includes('/.fig/bin')).toBe(true);
+    expect(env.TTY).not.toBeNull();
+    expect(await shell.execute('tty')).toBe(env.TTY);
   });
 
-  describe('Exercise Figterm', () => {
+
+  describe('figterm', () => {
+    beforeEach(async () => {
+      shell.resize({ rows: 30, cols: 80 });
+      shell.write('\r');
+      await shell.waitForNextPrompt();
+    });
+
     test('Type "echo hello world"', async () => {
-      await shell.pty.typeAsync('echo hello world!');
+      await shell.type('echo hello world!');
       expect(shell.buffer).toBe('echo hello world!');
     });
 
     test('buffer should reset after typing a character', async () => {
-      await shell.pty.typeAsync(' \b');
+      await shell.type(' \b');
       expect(shell.buffer).toBe('');
     });
 
     test.skip('buffer should be empty on new prompt.', async () => {
-      await shell.pty.typeAsync('\b');
+      await shell.type('\b');
       expect(shell.buffer).toBe('');
     });
 
+    test.skip('executing basic commands works', async () => {
+      const output = await shell.execute('echo hello world');
+      expect(output).toBe('hello world');
+    });
+
     test('Resize window (horizontal)', async () => {
-      await shell.pty.typeAsync('echo testing');
-      shell.pty.resize({ rows: 30, cols: 30 });
-      await shell.pty.typeAsync('11');
+      await shell.type('echo testing');
+      shell.resize({ rows: 30, cols: 30 });
+      await shell.type('11');
       expect(shell.buffer).toBe('echo testing11');
     });
 
     test('Resize window (vertical)', async () => {
-      await shell.pty.typeAsync('echo testing');
-      shell.pty.resize({ rows: 15, cols: 80 });
-      await shell.pty.typeAsync('111');
+      await shell.type('echo testing');
+      shell.resize({ rows: 15, cols: 80 });
+      await shell.type('111');
       expect(shell.buffer).toBe('echo testing111');
     });
   });
+
+  describe('figterm', () => {
+    test('Works after restarting macos app', async () => {
+      await shell.execute('echo hello world!');
+      await shell.restartFigtermListener();
+
+      await shell.execute('echo hello');
+      await shell.type('abc');
+      expect(shell.buffer).toBe('abc');
+    });
+  })
+
 };
