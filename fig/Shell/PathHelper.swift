@@ -40,7 +40,12 @@ class PathHelper {
     let locations = locations(for: path)
     let missingLocations = wellKnownLocations.subtracting(locations)
     
-    return PathHelper.path(from: missingLocations) + ":" + path
+    if missingLocations.count > 0 {
+      return PathHelper.path(from: missingLocations) + ":" + path
+    } else {
+      return path
+    }
+    
   }
 }
 
