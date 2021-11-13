@@ -337,7 +337,8 @@ int main(int argc, char *argv[]) {
       ptc_name,
       fig_info->fig_integration_version
     );
-    publish_json("{\"hook\":{\"init\":{\"context\": %s}}}", context);
+    char* bundle = get_term_bundle();
+    publish_json("{\"hook\":{\"init\":{\"context\": %s, \"bundle\": \"%s\"}}}", context, bundle);
     free(context);
 
     // On exit fallback to launching same shell as parent if unexpected exit.
