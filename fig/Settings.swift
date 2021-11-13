@@ -54,6 +54,8 @@ class Settings {
   static let shouldInterceptCommandI = "autocomplete.alwaysInterceptCommandI"
   static let inputMethodShouldPollForActivation = "integrations.input-method.shouldPollForActivation"
   static let ptyTranscript = "developer.pty.transcript"
+  static let autocompleteURL = "developer.autocomplete.host"
+  static let settingsURL = "developer.settings.host"
 
 
   static let keyAliases = [
@@ -154,9 +156,21 @@ class Settings {
       }
     }
     
+    let url: URL = {
+      
+      // Use value specified by developer.settings.host if it exists
+      if let urlString = Settings.shared.getValue(forKey: Settings.settingsURL) as? String,
+         let url = URL(string: urlString)   {
+         return url
+      }
+      
+      // otherwise use fallback
+      return Remote.baseURL.appendingPathComponent("settings")
+    }()
+    
     let settingsViewController = WebViewController()
     settingsViewController.webView?.defaultURL = nil
-    settingsViewController.webView?.loadRemoteApp(at: Remote.baseURL.appendingPathComponent("settings"))
+    settingsViewController.webView?.loadRemoteApp(at: url)
     settingsViewController.webView?.dragShouldRepositionWindow = true
 
     let settings = WebViewWindow(viewController: settingsViewController, shouldQuitAppOnClose: false)
