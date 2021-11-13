@@ -212,23 +212,6 @@ class WindowManager : NSObject {
     
     }
     
-    func createSidebar() {
-        
-        if let sidebar = self.sidebar {
-            sidebar.close()
-            self.sidebar = nil
-        }
-        
-        let web = WebViewController()
-        web.webView?.defaultURL = nil
-        web.webView?.loadRemoteApp(at: Remote.baseURL.appendingPathComponent("sidebar"))
-        let companion = CompanionWindow(viewController: web)
-        companion.positioning = CompanionWindow.defaultPassivePosition
-        companion.repositionWindow(forceUpdate: true, explicit: true)
-        self.sidebar = companion
-        
-    }
-    
     func createAutocomplete() {
         guard self.autocomplete == nil else {
           self.autocomplete?.webView?.loadAutocomplete()

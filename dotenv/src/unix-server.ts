@@ -8,6 +8,7 @@ type Socket = {
   path: string;
   callbacks: Record<string, SocketCallback>;
   server: net.Server;
+  connections: net.Socket[];
 };
 
 const sockets: Record<string, Socket> = {};
@@ -19,9 +20,11 @@ export const socketListen = (
 ): string => {
   const callbackUUID = uuid ?? uuidv4();
 
-  if (sockets[path]) {
+  try {
     sockets[path].callbacks[callbackUUID] = callback;
     return callbackUUID;
+  } catch (e) {
+    // continue
   }
 
   try {
@@ -31,19 +34,22 @@ export const socketListen = (
   }
 
   const server = net.createServer();
+  const connections: net.Socket[] = [];
   sockets[path] = {
     path,
     callbacks: { [callbackUUID]: callback },
     server,
+    connections,
   };
 
   server.on('connection', s => {
-    s.on('end', () => {});
-
+    connections.push(s);
+    s.on('close', () => {
+      const index = connections.findIndex((conn) => conn === s);
+      if (index !== -1) connections.splice(index, 1);
+    })
     s.on('data', data => {
-      if (sockets[path]) {
-        Object.values(sockets[path].callbacks).forEach(cb => cb(data));
-      }
+      Object.values(sockets[path]?.callbacks ?? {}).forEach(cb => cb(data));
       s.end();
     });
 
@@ -54,21 +60,32 @@ export const socketListen = (
   return callbackUUID;
 };
 
-export const closeSocket = (path: string) => {
-  sockets[path]?.server.close();
+export const closeSocket = async (path: string) => {
+  if (sockets[path]) {
+    const { server, connections } = sockets[path];
+    delete sockets[path];
 
-  try {
-    fs.unlinkSync(path);
-  } catch (e) {
-    /* console.log(e) */
+    await Promise.all(connections.map((connection) => {
+      return new Promise<void>((resolve) => {
+        connection.end(() => {
+          connection.destroy();
+          resolve();
+        });
+      })
+      // connection.destroy();
+    }));
+    await new Promise<void>((resolve) => {
+      server.close((err) => {
+        if (err) console.log(err);
+        resolve();
+      });
+    });
   }
-
-  delete sockets[path];
 };
 
-export const removeListener = (path: string, uuid: string) => {
+export const removeListener = async (path: string, uuid: string) => {
   delete sockets[path]?.callbacks[uuid];
   if (Object.keys(sockets[path].callbacks).length === 0) {
-    closeSocket(path);
+    await closeSocket(path);
   }
 };
