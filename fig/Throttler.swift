@@ -57,7 +57,9 @@ class RateLimiter {
       }
     }
     
-    self.workItems.append(workItem)
+    self.queue.sync {
+      self.workItems.append(workItem)
+    }
     
     // Only schedule first workItem explicitly, others will by handled in callback
     guard self.workItems.count == 1 else {
