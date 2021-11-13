@@ -21,6 +21,7 @@ jobs:
           cd typescript-api-bindings
           npm ci
           npm run generate-requests
+          npm run lint -- --fix
 
       - name: "Automated Version Bump"
         uses: "phips28/gh-action-bump-version@master"

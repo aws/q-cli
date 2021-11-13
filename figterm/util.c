@@ -1,4 +1,5 @@
 #include "fig.h"
+#include <string.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/un.h>
@@ -301,4 +302,50 @@ char *escaped_str(const char *src) {
   }
   pw[i+j] = '\0';
   return pw;
+}
+
+char *get_term_bundle() {
+  char *term_program = getenv("TERM_PROGRAM");
+  if (term_program == NULL) {
+    return "unknown";
+  }
+
+  if (strcmp(term_program, "iTerm.app") == 0) {
+    return "com.googlecode.iterm2";
+  }
+
+  if (strcmp(term_program, "Apple_Terminal") == 0) {
+    return "com.apple.Terminal";
+  }
+
+  if (strcmp(term_program, "Hyper") == 0) {
+    return "co.zeit.hyper";
+  }
+
+  if (strcmp(term_program, "vscode") == 0) {
+    char *term_program_version = getenv("TERM_PROGRAM_VERSION");
+    
+    if (term_program_version == NULL) {
+      return "com.microsoft.vscode";
+    }
+
+    if (strstr(term_program_version, "insiders") != NULL) {
+      return "com.microsoft.vscode-insiders";
+    } else {
+      return "com.microsoft.vscode";
+    }
+  }
+
+  if (strcmp(term_program, "Hyper") == 0) {
+    return "co.zeit.hyper";
+  }
+
+  char *term_bundle = getenv("TERM_BUNDLE_IDENTIFIER");
+
+  if (term_bundle == NULL) {
+    return "unknown";
+  }
+
+  return term_bundle;
+
 }
