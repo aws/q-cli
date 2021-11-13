@@ -211,6 +211,7 @@
 		7A0A41DF2738731900080BCE /* FileSystemTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0A41DE2738731900080BCE /* FileSystemTests.swift */; };
 		7A2C8636273949BE00AE5EB6 /* testable-file-to-read.txt in Resources */ = {isa = PBXBuildFile; fileRef = 7A0A41E22738749200080BCE /* testable-file-to-read.txt */; };
 		7A2C8640273951FE00AE5EB6 /* contents-of-this-folder in Resources */ = {isa = PBXBuildFile; fileRef = 7A2C863F273951FE00AE5EB6 /* contents-of-this-folder */; };
+		7AB6B6872740301500428F47 /* NSWorkspaceExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AB6B6862740301500428F47 /* NSWorkspaceExtensionTests.swift */; };
 		7AF96D3F273DB3E30006A41B /* ConfigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF96D3E273DB3E30006A41B /* ConfigTests.swift */; };
 /* End PBXBuildFile section */
 
@@ -503,6 +504,7 @@
 		7A0A41DE2738731900080BCE /* FileSystemTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileSystemTests.swift; sourceTree = "<group>"; };
 		7A0A41E22738749200080BCE /* testable-file-to-read.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "testable-file-to-read.txt"; sourceTree = "<group>"; };
 		7A2C863F273951FE00AE5EB6 /* contents-of-this-folder */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "contents-of-this-folder"; sourceTree = "<group>"; };
+		7AB6B6862740301500428F47 /* NSWorkspaceExtensionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSWorkspaceExtensionTests.swift; sourceTree = "<group>"; };
 		7AF96D3E273DB3E30006A41B /* ConfigTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigTests.swift; sourceTree = "<group>"; };
 		"fig_callback-00000000000" /* fig_callback */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = fig_callback; sourceTree = BUILT_PRODUCTS_DIR; };
 		"fig_get_shell-0000000000" /* fig_get_shell */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = fig_get_shell; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -769,6 +771,7 @@
 				7567596A244634B2006AA988 /* figTests.swift */,
 				7567596C244634B2006AA988 /* Info.plist */,
 				7AF96D3E273DB3E30006A41B /* ConfigTests.swift */,
+				7AB6B6862740301500428F47 /* NSWorkspaceExtensionTests.swift */,
 			);
 			path = figTests;
 			sourceTree = "<group>";
@@ -1537,6 +1540,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7AB6B6872740301500428F47 /* NSWorkspaceExtensionTests.swift in Sources */,
 				7A0A41DF2738731900080BCE /* FileSystemTests.swift in Sources */,
 				7AF96D3F273DB3E30006A41B /* ConfigTests.swift in Sources */,
 				7567596B244634B2006AA988 /* figTests.swift in Sources */,
