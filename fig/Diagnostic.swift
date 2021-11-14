@@ -273,7 +273,7 @@ class Diagnostic {
   }
   
   static var distribution: String {
-    return "Version \(Diagnostic.version) (B\(Diagnostic.build))\(Defaults.isProduction ? "" : " [\(Defaults.build.rawValue)]")"
+    return "Version \(Diagnostic.version) (B\(Diagnostic.build))\(Defaults.shared.isProduction ? "" : " [\(Defaults.shared.build.rawValue)]")"
   }
   
   static var pseudoTerminalPath: String? {
@@ -330,16 +330,16 @@ class Diagnostic {
     get {
       """
       
-      \(Diagnostic.distribution) \(Defaults.beta ? "[Beta] " : "")\(Defaults.debugAutocomplete ? "[Debug] " : "")\(Defaults.developerModeEnabled ? "[Dev] " : "")[\(KeyboardLayout.shared.currentLayoutName() ?? "?")] \(Diagnostic.isRunningOnReadOnlyVolume ? "TRANSLOCATED!!!" : "")
-      UserShell: \(Defaults.userShell)
+      \(Diagnostic.distribution) \(Defaults.shared.beta ? "[Beta] " : "")\(Defaults.shared.debugAutocomplete ? "[Debug] " : "")\(Defaults.shared.developerModeEnabled ? "[Dev] " : "")[\(KeyboardLayout.shared.currentLayoutName() ?? "?")] \(Diagnostic.isRunningOnReadOnlyVolume ? "TRANSLOCATED!!!" : "")
+      UserShell: \(Defaults.shared.userShell)
       Bundle path: \(Diagnostic.pathToBundle)
-      Autocomplete: \(Defaults.useAutocomplete)
+      Autocomplete: \(Defaults.shared.useAutocomplete)
       Settings.json: \(Diagnostic.settingsExistAndHaveValidFormat)
       CLI installed: \(Diagnostic.installedCLI)
       CLI tool path: \(Diagnostic.pathOfCLI ?? "<none>")
       Accessibility: \(Accessibility.enabled)
       Number of specs: \(Diagnostic.numberOfCompletionSpecs)
-      SSH Integration: \(Defaults.SSHIntegrationEnabled)
+      SSH Integration: \(Defaults.shared.SSHIntegrationEnabled)
       Tmux Integration: \(TmuxIntegration.isInstalled)
       Keybindings path: \(Diagnostic.keybindingsPath ?? "<none>")
       iTerm Integration: \(iTermIntegration.default.isInstalled) \(iTermIntegration.default.isConnectedToAPI ? "[Authenticated]": "")
@@ -347,7 +347,7 @@ class Diagnostic {
       VSCode Integration: \(VSCodeIntegration.default.isInstalled)
       Docker Integration: \(DockerEventStream.shared.socket.isConnected)
       Symlinked dotfiles: \(Diagnostic.dotfilesAreSymlinked)
-      Only insert on tab: \(Defaults.onlyInsertOnTab)
+      Only insert on tab: \(Defaults.shared.onlyInsertOnTab)
       Installation Script: \(Diagnostic.installationScriptRan)
       PseudoTerminal Path: \(Diagnostic.pseudoTerminalPath ?? "<generated dynamically>")
       SecureKeyboardInput: \(Diagnostic.secureKeyboardInput)

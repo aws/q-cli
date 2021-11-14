@@ -157,7 +157,7 @@ class GenericTerminalIntegrationProvider {
     
     var shouldAttemptToInstall: Bool {
         get {
-            return Defaults.loggedIn && status == .unattempted
+            return Defaults.shared.loggedIn && status == .unattempted
         }
     }
     

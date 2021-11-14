@@ -16,7 +16,7 @@ class Remote {
     static var API: URL = URL(string: "https://api.fig.io")!
 
     static var baseURL: URL {
-        switch Defaults.build {
+        switch Defaults.shared.build {
         case .production:
             return productionURL
         case .staging:

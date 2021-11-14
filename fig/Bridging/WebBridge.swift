@@ -862,7 +862,7 @@ extension WebBridge {
 //                    WindowManager.shared.bringTerminalWindowToFront()
                     //WindowManager.shared.newNativeTerminalSession()
                     scope.webView?.window?.close()
-                    Defaults.loggedIn = true
+                    Defaults.shared.loggedIn = true
 
                     Onboarding.setupTerminalsForShellOnboarding {
                       SecureKeyboardInput.notifyIfEnabled()

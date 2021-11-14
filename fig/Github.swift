@@ -25,7 +25,7 @@ class Github {
         ### Details:
         |macOS|Fig|Shell|
         |-|-|-|
-        |\(os.majorVersion).\(os.minorVersion).\(os.patchVersion)|\(Diagnostic.distribution)|\(Defaults.userShell)|
+        |\(os.majorVersion).\(os.minorVersion).\(os.patchVersion)|\(Diagnostic.distribution)|\(Defaults.shared.userShell)|
         <details><summary><code>fig diagnostic</code></summary>
         <p>
         <pre>\(Diagnostic.summary.trimmingCharacters(in: .whitespacesAndNewlines))</pre>

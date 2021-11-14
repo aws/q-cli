@@ -115,9 +115,9 @@ class API {
                 case .destinationOfSymbolicLinkRequest(let request):
                     response.destinationOfSymbolicLinkResponse = try FileSystem.destinationOfSymbolicLink(request)
                 case .getDefaultsPropertyRequest(let request):
-                  response.getDefaultsPropertyResponse = try Defaults.handleGetRequest(request)
+                  response.getDefaultsPropertyResponse = try Defaults.shared.handleGetRequest(request)
                 case .updateDefaultsPropertyRequest(let request):
-                  response.success = try Defaults.handleSetRequest(request)
+                  response.success = try Defaults.shared.handleSetRequest(request)
                 case .telemetryAliasRequest(let request):
                   response.success = try TelemetryProvider.handleAliasRequest(request)
                 case .telemetryIdentifyRequest(let request):
