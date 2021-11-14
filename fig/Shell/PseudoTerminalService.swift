@@ -25,7 +25,7 @@ class PseudoTerminal {
         return pty
     }()
   
-    let rateLimiter = RateLimiter(minimumDelay: 0.01, queue: DispatchQueue(label: "io.fig.pseudoterminal"))
+    let rateLimiter = RateLimiter(minimumDelay: 0.1, queue: DispatchQueue(label: "io.fig.pseudoterminal"))
     
     fileprivate static let CRLF = "\r\n"
     
