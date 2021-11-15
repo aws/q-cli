@@ -37,7 +37,7 @@ function fig_zsh_redraw() {
 }
 
 function fig_hide() { 
-  command -v fig 2>"$HOME"/.fig/logs/zsh.log 1>/dev/null && fig hook hide 2>&1 1>/dev/null
+  command -v fig 2>>"$HOME"/.fig/logs/zsh.log 1>/dev/null && fig hook hide 2>&1 1>/dev/null
 }
 
 # Hint: to list all special widgets, run `add-zle-hook-widget -L`
