@@ -1,4 +1,5 @@
 #include "fig.h"
+#include <string.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/un.h>
@@ -137,8 +138,18 @@ void fig_socket_cleanup() {
   }
 }
 
-void sigpipe_handler(int sig) {
+void fig_sigpipe_handler(int sig) {
+  if (fig_sock > -1) {
+    close(fig_sock);
+  }
   fig_sock = -1;
+}
+
+void ipc_sigpipe_handler(int sig) {
+  if (ipc_sock > -1) {
+    close(ipc_sock);
+  }
+  ipc_sock = -1;
 }
 
 int fig_socket_send(char* buf) {
@@ -160,7 +171,7 @@ int fig_socket_send(char* buf) {
   }
   
   // Handle sigpipe if socket is closed, reset afterwards.
-  if ((old_handler = set_sigaction(SIGPIPE, sigpipe_handler)) == SIG_ERR)
+  if ((old_handler = set_sigaction(SIGPIPE, fig_sigpipe_handler)) == SIG_ERR)
     err_sys("sigpipe error");
   st = send(fig_sock, encoded, out_len, 0);
   if (set_sigaction(SIGPIPE, old_handler) == SIG_ERR)
@@ -181,12 +192,12 @@ int ipc_socket_send(char* buf, int len) {
   }
 
   if (ipc_sock < 0) {
-    log_warn("Can't connect to fig socket");
+    log_warn("Can't connect to fig ipc socket");
     return ipc_sock;
   }
   
   // Handle sigpipe if socket is closed, reset afterwards.
-  if ((old_handler = set_sigaction(SIGPIPE, sigpipe_handler)) == SIG_ERR)
+  if ((old_handler = set_sigaction(SIGPIPE, ipc_sigpipe_handler)) == SIG_ERR)
     err_sys("sigpipe error");
   st = send(ipc_sock, buf, len, 0);
   if (set_sigaction(SIGPIPE, old_handler) == SIG_ERR)
@@ -252,10 +263,12 @@ void publish_json(const char* fmt, ...) {
   if (msg == NULL) {
     log_info("Null message, not sending");
   } else {
-    int msg_len = HEADER_LEN + strlen(tmpbuf);
-    ipc_socket_send(msg, msg_len);
+    if (ipc_socket_send(msg, HEADER_LEN + strlen(tmpbuf)) > -1) {
+      log_info("done sending %s", tmpbuf);
+    } else {
+      log_info("failed sending");
+    }
   }
-  log_info("done sending %s", tmpbuf);
   free(msg);
   free(tmpbuf);
 }
@@ -289,4 +302,50 @@ char *escaped_str(const char *src) {
   }
   pw[i+j] = '\0';
   return pw;
+}
+
+char *get_term_bundle() {
+  char *term_program = getenv("TERM_PROGRAM");
+  if (term_program == NULL) {
+    return "unknown";
+  }
+
+  if (strcmp(term_program, "iTerm.app") == 0) {
+    return "com.googlecode.iterm2";
+  }
+
+  if (strcmp(term_program, "Apple_Terminal") == 0) {
+    return "com.apple.Terminal";
+  }
+
+  if (strcmp(term_program, "Hyper") == 0) {
+    return "co.zeit.hyper";
+  }
+
+  if (strcmp(term_program, "vscode") == 0) {
+    char *term_program_version = getenv("TERM_PROGRAM_VERSION");
+    
+    if (term_program_version == NULL) {
+      return "com.microsoft.vscode";
+    }
+
+    if (strstr(term_program_version, "insiders") != NULL) {
+      return "com.microsoft.vscode-insiders";
+    } else {
+      return "com.microsoft.vscode";
+    }
+  }
+
+  if (strcmp(term_program, "Hyper") == 0) {
+    return "co.zeit.hyper";
+  }
+
+  char *term_bundle = getenv("TERM_BUNDLE_IDENTIFIER");
+
+  if (term_bundle == NULL) {
+    return "unknown";
+  }
+
+  return term_bundle;
+
 }

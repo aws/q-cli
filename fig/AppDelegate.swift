@@ -22,7 +22,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 
     var clicks:Int = 6;
     let updater = UpdateService.provider
-    let processPool = WKProcessPool()
+//    let processPool = WKProcessPool()
     
     let iTermObserver = WindowObserver(with: "com.googlecode.iterm2")
     let TerminalObserver = WindowObserver(with: "com.apple.Terminal")
@@ -945,21 +945,8 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         self.configureStatusBarItem()
         
         Logger.log(message: "Creating windows...")
-        WindowManager.shared.createSidebar()
         WindowManager.shared.createAutocomplete()
-        
-//        Logger.log(message: "Registering keystrokeHandler...")
-//        KeypressProvider.shared.registerKeystrokeHandler()
-//        
-//        Logger.log(message: "Registering window tracking...")
-//        AXWindowServer.shared.registerWindowTracking()
-        
-        //let companion = CompanionWindow(viewController: WebViewController())
-        //companion.positioning = CompanionWindow.defaultPassivePosition
-        //window = companion
 
-        //(window as! CompanionWindow).repositionWindow(forceUpdate: true, explicit: true)
-        //self.hotKeyManager = HotKeyManager(companion: window as! CompanionWindow)
     }
     
     //https://stackoverflow.com/a/35138823

@@ -151,6 +151,7 @@ char* log_path(char*);
 char* printf_alloc(const char*, ...);
 void publish_json(const char*, ...);
 char *escaped_str(const char *);
+char *get_term_bundle();
 
 // libfig
 
