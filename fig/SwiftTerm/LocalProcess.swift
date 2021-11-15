@@ -75,7 +75,7 @@ public class LocalProcess {
     public init (delegate: LocalProcessDelegate, dispatchQueue: DispatchQueue? = nil)
     {
         self.delegate = delegate
-        self.dispatchQueue = dispatchQueue ?? DispatchQueue.main
+      self.dispatchQueue = dispatchQueue ?? DispatchQueue.init(label: "LocalProcess", qos: .userInitiated)//DispatchQueue.main
     }
     
     /**
@@ -96,7 +96,7 @@ public class LocalProcess {
                 print ("[SEND-\(copy)] Queuing data to client: \(data) ")
             }
 
-            DispatchIO.write(toFileDescriptor: childfd, data: ddata, runningHandlerOn: DispatchQueue.global(qos: .userInitiated), handler:  { dd, errno in
+            DispatchIO.write(toFileDescriptor: childfd, data: ddata, runningHandlerOn: dispatchQueue, handler:  { dd, errno in
                 self.total += copyCount
                 if self.debugIO {
                     print ("[SEND-\(copy)] completed bytes=\(self.total)")
