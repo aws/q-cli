@@ -9,23 +9,23 @@ SHELL := env PATH=$(PATH) /bin/bash
 # check if go is installed
 GO := $(shell command -v go 2> /dev/null)
 
-all: figcli
+all: build-figcli
 ifndef GO
     $(error "go is not in PATH")
 endif
 
-ifeq "$(uname -s)" "Darwin"
-figcli-arm:
+ifeq "$(shell uname -s)" "Darwin"
+build-figcli-arm:
 	GOOS=darwin GOARCH=arm64 go build -o bin/figcli-arm .
 
-figcli-x86:
+build-figcli-x86:
 	GOOS=darwin GOARCH=amd64 go build -o bin/figcli-x86 .
 
-figcli: figcli-arm figcli-x86
+build-figcli: build-figcli-arm build-figcli-x86
 	lipo -create -output $(BUILT_PRODUCTS_DIR)/figcli bin/figcli-x86 bin/figcli-arm
 	codesign -s - -v $(BUILT_PRODUCTS_DIR)/figcli
 else
-figcli:
+build-figcli:
 	go build -o $(BUILT_PRODUCTS_DIR)/figcli .
 endif
 
