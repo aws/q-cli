@@ -247,11 +247,6 @@ extension PseudoTerminal {
         PseudoTerminal.log("Writing command for handler '\(cappedHandlerId)'")
         
         self.process.write(commandToRun)
-      
-//        rateLimiter.limit {
-         
-//          self.headless.send(commandToRun)
-//        }
 
         PseudoTerminal.log("Running '\(command)' \(options.contains(.pipelined) ? "as pipeline" : "")\(options.contains(.backgroundJob) ? " in background" : "")")
     }
