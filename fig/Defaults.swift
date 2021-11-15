@@ -551,10 +551,12 @@ extension Defaults {
     switch value {
       case nil:
         fig_value = Fig_DefaultsValue.with { $0.null = true }
-      case let integer as Int:
-        fig_value = Fig_DefaultsValue.with { $0.integer = Int64(integer) }
-      case let boolean as Bool:
-        fig_value = Fig_DefaultsValue.with { $0.boolean = boolean }
+      case let number as NSNumber:
+        if number === kCFBooleanTrue || number === kCFBooleanFalse {
+            fig_value = Fig_DefaultsValue.with({ $0.boolean = number.boolValue })
+        } else {
+            fig_value = Fig_DefaultsValue.with { $0.integer = number.int64Value }
+        }
       case let string as String:
         fig_value = Fig_DefaultsValue.with { $0.string = string }
       default:
@@ -569,12 +571,13 @@ extension Defaults {
     
   }
   
+  @discardableResult
   func handleSetRequest(_ request: Fig_UpdateDefaultsPropertyRequest) throws -> Bool {
     guard request.hasKey else {
       throw APIError.generic(message: "No key provided.")
     }
     
-    guard request.hasValue || request.value.null else {
+      guard request.hasValue && request.value.type != .null(true) else {
       defaults.removeObject(forKey: request.key)
       defaults.synchronize()
       return true
