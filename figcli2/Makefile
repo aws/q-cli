@@ -14,7 +14,7 @@ ifndef GO
     $(error "go is not in PATH")
 endif
 
-ifeq "$(uname -s)" "Darwin"
+ifeq "$(shell uname -s)" "Darwin"
 build-figcli-arm:
 	GOOS=darwin GOARCH=arm64 go build -o bin/figcli-arm .
 
