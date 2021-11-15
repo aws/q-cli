@@ -103,7 +103,7 @@ func NewCmdTip() *cobra.Command {
 				return
 			}
 
-			if settings.Get("cli.tip.disabled") == true {
+			if settings.Get("cli.tips.disabled") == true {
 				return
 			}
 
@@ -117,14 +117,26 @@ func NewCmdTip() *cobra.Command {
 				return
 			}
 
+			// Get unsent tips
+			unsentTips := []Tip{}
+			for _, tip := range tipFile.Queue {
+				if !tip.Sent {
+					unsentTips = append(unsentTips, tip)
+				}
+			}
+
 			// Find max priority or type == "changelog"
-			tipToSend := tipFile.Queue[0]
+			tipToSend := unsentTips[0]
 			tipIndex := 0
-			for i, tip := range tipFile.Queue {
+			for i, tip := range unsentTips {
 				if tip.Priority > tipToSend.Priority || tip.TipType == "changelog" {
 					tipToSend = tip
 					tipIndex = i
 				}
+			}
+
+			if tipToSend.Sent {
+				return
 			}
 
 			// Check if to print tip
