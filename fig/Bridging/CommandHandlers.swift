@@ -64,9 +64,9 @@ extension CommandHandlers {
     Logger.log(message: "Diagnostics ran")
     return CommandResponse.with { response in
       response.diagnostics.distribution = Diagnostic.distribution
-      response.diagnostics.beta = Defaults.beta
-      response.diagnostics.debugAutocomplete = Defaults.debugAutocomplete
-      response.diagnostics.developerModeEnabled = Defaults.developerModeEnabled
+      response.diagnostics.beta = Defaults.shared.beta
+      response.diagnostics.debugAutocomplete = Defaults.shared.debugAutocomplete
+      response.diagnostics.developerModeEnabled = Defaults.shared.developerModeEnabled
       response.diagnostics.currentLayoutName = KeyboardLayout.shared.currentLayoutName() ?? ""
       response.diagnostics.isRunningOnReadOnlyVolume = Diagnostic.isRunningOnReadOnlyVolume
       response.diagnostics.pathToBundle = Diagnostic.pathToBundle
