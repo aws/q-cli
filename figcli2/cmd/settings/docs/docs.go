@@ -14,7 +14,7 @@ func NewCmdDocs() *cobra.Command {
 		Long:  "Get the settings documentation",
 		Run: func(cmd *cobra.Command, arg []string) {
 			fmt.Printf("\n→ Opening Fig docs...\n\n")
-			exec.Command("open", "https://fig.io/docs/support/settings").Run()
+			exec.Command("open", "https://fig.io/docs/support/settings/").Run()
 		},
 	}
 
