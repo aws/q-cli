@@ -206,7 +206,7 @@ extension PseudoTerminal {
         }
       
         if options.contains(.backgroundJob) {
-            commandToRun = "{ \(commandToRun) & } 2> /dev/null"
+            commandToRun.append(" &")
         }
       
         self.handlers[cappedHandlerId] = handler
