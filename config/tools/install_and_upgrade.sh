@@ -77,11 +77,6 @@ install_fig() {
   # runs.
   FIGCLI="${BUNDLE}/figcli" 
   "${FIGCLI}" settings userShell "${USER_SHELL_TRIMMED}"
-  
-  "${FIGCLI}" settings pty.path "$("${USER_SHELL_TRIMMED}" -li -c "/usr/bin/env | /usr/bin/grep '^PATH=' | /bin/cat | /usr/bin/sed 's|PATH=||g'")" 
-
-  # hotfix for infinite looping when writing "☑ fig" title to a tty backed by figterm
-  "${FIGCLI}" settings autocomplete.addStatusToTerminalTitle false
 
   # Restart file watcher
   "${FIGCLI}" settings:init
@@ -118,14 +113,8 @@ setup_onboarding() {
   done
 }
 
-# hotfix for infinite looping when writing "☑ fig" title to a tty backed by figterm
-disable_setting_tty_title() {
-  defaults write com.mschrage.fig addIndicatorToTitlebar false
-}
-
 install_fig
 setup_onboarding
-disable_setting_tty_title
 
 ~/.fig/tools/install_integrations.sh
 

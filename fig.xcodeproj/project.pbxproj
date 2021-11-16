@@ -110,6 +110,8 @@
 		755D27C2272772280080B4B8 /* fig-0.0.5.vsix in Resources */ = {isa = PBXBuildFile; fileRef = 755D27C1272772280080B4B8 /* fig-0.0.5.vsix */; };
 		755EC8CF266997A700CBEF57 /* settings in Resources */ = {isa = PBXBuildFile; fileRef = 755EC8CE266997A600CBEF57 /* settings */; };
 		755FC554268D09DE00966027 /* UpdateService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755FC553268D09DE00966027 /* UpdateService.swift */; };
+		756127C3274380BF007F26EA /* pty.c in Sources */ = {isa = PBXBuildFile; fileRef = 756127C2274380BF007F26EA /* pty.c */; };
+		756127C52743856D007F26EA /* InteractiveProcess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756127C42743856D007F26EA /* InteractiveProcess.swift */; };
 		7564AE6F265C9DCE0040BD4C /* discord@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7564AE6E265C9DCD0040BD4C /* discord@2x.png */; };
 		75675955244634AD006AA988 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75675954244634AD006AA988 /* AppDelegate.swift */; };
 		75675959244634B2006AA988 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 75675958244634B2006AA988 /* Assets.xcassets */; };
@@ -423,6 +425,9 @@
 		755D27C1272772280080B4B8 /* fig-0.0.5.vsix */ = {isa = PBXFileReference; lastKnownFileType = file; path = "fig-0.0.5.vsix"; sourceTree = "<group>"; };
 		755EC8CE266997A600CBEF57 /* settings */ = {isa = PBXFileReference; lastKnownFileType = folder; path = settings; sourceTree = "<group>"; };
 		755FC553268D09DE00966027 /* UpdateService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateService.swift; sourceTree = "<group>"; };
+		756127C1274380BF007F26EA /* pty.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = pty.h; sourceTree = "<group>"; };
+		756127C2274380BF007F26EA /* pty.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = pty.c; sourceTree = "<group>"; };
+		756127C42743856D007F26EA /* InteractiveProcess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InteractiveProcess.swift; sourceTree = "<group>"; };
 		7564AE6E265C9DCD0040BD4C /* discord@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "discord@2x.png"; sourceTree = "<group>"; };
 		75675951244634AD006AA988 /* fig.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = fig.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		75675954244634AD006AA988 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -739,6 +744,8 @@
 				7510F8BA24A9861E00E86F7C /* fig-Bridging-Header.h */,
 				75AA24D825A7E8B000A51E9D /* lsof.h */,
 				75AA24D925A7E8B000A51E9D /* lsof.m */,
+				756127C1274380BF007F26EA /* pty.h */,
+				756127C2274380BF007F26EA /* pty.c */,
 				7577124525648DCD0011FF48 /* ps.h */,
 				7577124625648DFB0011FF48 /* ps.c */,
 				75C57C122581C0700065741E /* ioreg.h */,
@@ -1038,6 +1045,7 @@
 				75EDDC5A25D4BC53003AECC6 /* UnixSocketClient.swift */,
 				75AEF2E725C3DEC600D78431 /* SSHIntegration.swift */,
 				75DA86A825EF145E00722F1D /* TmuxIntegration.swift */,
+				756127C42743856D007F26EA /* InteractiveProcess.swift */,
 				75A4520F25A839F500107D2C /* remote_cwd.sh */,
 			);
 			path = Shell;
@@ -1586,12 +1594,14 @@
 				755D27BA272242690080B4B8 /* FigTerm.swift in Sources */,
 				757712492564D94A0011FF48 /* ProcessStatus.swift in Sources */,
 				75B850E52703D8FF00891A78 /* API+Extensions.swift in Sources */,
+				756127C52743856D007F26EA /* InteractiveProcess.swift in Sources */,
 				7510F89A24A6910500E86F7C /* Extensions.swift in Sources */,
 				7510F8B524A6910500E86F7C /* SearchService.swift in Sources */,
 				75A4521425AD367E00107D2C /* Feedback.swift in Sources */,
 				752D71CD25B8A6B300263527 /* Restarter.swift in Sources */,
 				7510F8A024A6910500E86F7C /* EscapeSequences.swift in Sources */,
 				7510F8A224A6910500E86F7C /* CircularList.swift in Sources */,
+				756127C3274380BF007F26EA /* pty.c in Sources */,
 				7510F8AD24A6910500E86F7C /* SelectionService.swift in Sources */,
 				7510F89B24A6910500E86F7C /* CharSets.swift in Sources */,
 				7510F8B824A6910500E86F7C /* Pty.swift in Sources */,
@@ -1917,7 +1927,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = YES;
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 307;
+				CURRENT_PROJECT_VERSION = 310;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				DEVELOPMENT_TEAM = D93PPD94WK;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1953,7 +1963,7 @@
 				CODE_SIGN_IDENTITY = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 307;
+				CURRENT_PROJECT_VERSION = 310;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				DEVELOPMENT_TEAM = D93PPD94WK;
 				ENABLE_HARDENED_RUNTIME = YES;
