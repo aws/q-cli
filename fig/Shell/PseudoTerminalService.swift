@@ -18,18 +18,25 @@ class PseudoTerminal {
     typealias ProcessFinished = (stdout: String, stderr: String, exitCode: Int32)
     typealias CallbackHandler =  (ProcessFinished) -> Void
     typealias HandlerId = String
-    
-    static let shared: PseudoTerminal = {
-        let pty = PseudoTerminal()
-        pty.start(with: [:])
-        return pty
-    }()
   
-    let rateLimiter = RateLimiter(minimumDelay: 0.2, queue: DispatchQueue(label: "io.fig.pseudoterminal"))
+    struct Static {
+      fileprivate static var instance: PseudoTerminal?
+    }
+    
+    class var shared: PseudoTerminal {
+      if Static.instance == nil {
+        Static.instance = PseudoTerminal()
+        Static.instance!.start(with: [:])
+      }
+      return Static.instance!
+    }
+  
+    func dispose() {
+      PseudoTerminal.Static.instance = nil
+    }
     
     fileprivate static let CRLF = "\r\n"
     
-
     static let recievedEnvironmentVariablesFromShellNotification = NSNotification.Name("recievedEnvironmentVariablesFromShellNotification")
     static let recievedCallbackNotification = NSNotification.Name("recievedCallbackNotification")
     
@@ -38,16 +45,9 @@ class PseudoTerminal {
     static func log(_ message: String) {
       Logger.log(message: message, subsystem: .pty)
     }
-    
-  
-
-    
-    // MARK: Initialize
 
     fileprivate var handlers: [HandlerId: CallbackHandler] = [:]
-    fileprivate let headless: HeadlessTerminal = HeadlessTerminal(onEnd: { (code) in
-        PseudoTerminal.log("ending session with exit code: \(code ?? -1)")
-    })
+    var process = PTYProcess(logFile: NSHomeDirectory() + "/.fig/logs/c_pty.log")
     
     init() {
       NotificationCenter.default.addObserver(self,
@@ -61,27 +61,17 @@ class PseudoTerminal {
     }
   
     deinit {
+      PseudoTerminal.log("Deinit!")
       NotificationCenter.default.removeObserver(self)
     }
     
     func start(with environment: [String: String]) {
         PseudoTerminal.log("Starting PTY...")
         let shell = "/bin/bash" //"/bin/bash"
-        
         let rawEnv = mergeFigSpecificEnvironmentVariables(with: environment)
-
-        
-        self.headless.process.startProcess(executable: shell, args: [ "--norc", "--noprofile", "--noediting"], environment: rawEnv.count == 0 ? nil : rawEnv)
-        self.headless.process.delegate = self
-        
-        if let shouldWriteTranscript = Settings.shared.getValue(forKey: Settings.ptyTranscript) as? Bool,
-               shouldWriteTranscript {
-          self.write(" script -qt0 ~/.fig/logs/pty_transcript.log")
-          self.headless.process.debugIO = true
-        }
-        
-        self.write(" set +o history" + PseudoTerminal.CRLF)
-        self.write(" unset HISTFILE" + PseudoTerminal.CRLF)
+        self.process.startProcess(executable: shell, args: [ "--norc", "--noprofile", "--noediting"], environment: rawEnv)
+        self.write("set +m +b +o history")
+        self.write("unset HISTFILE")
       
         // Retrieve PATH from settings if it exists
         if let path = Settings.shared.getValue(forKey: Settings.ptyPathKey) as? String, path.count > 0 {
@@ -97,36 +87,18 @@ class PseudoTerminal {
         // Source user-specified ptyrc file (if it exists)
         let filePath = Settings.shared.getValue(forKey: Settings.ptyInitFile) as? String ?? "~/.fig/user/ptyrc"
         sourceFile(at: filePath)
-        
     }
     
-    func write(_ input: String) {
-        self.headless.send(input + PseudoTerminal.CRLF)
+  func write(_ input: String, handlerId: String? = nil) {
+      self.process.send(input + PseudoTerminal.CRLF)
     }
-    
-    func close() {
-        if self.headless.process.running {
-            kill( self.headless.process.shellPid, SIGTERM)
-            kill( self.headless.process.shellPid, SIGKILL)
-        }
-    }
-  
+
   func restart(with environment: [String: String], completion: ((Bool) -> Void)? = nil) {
-      self.close()
-    
-      // todo: use self.headless.onEnd instead of a hardcoded delay
-      Timer.delayWithSeconds(1) {
-        guard !self.headless.process.running else {
-          completion?(false)
-          return
-        }
-        
+      self.process.stop {
         self.start(with: environment)
         completion?(true)
       }
     }
-    
-    // MARK: Utilities
 
     fileprivate func mergeFigSpecificEnvironmentVariables(with environment: [String : String]) -> [String] {
         // don't add shell hooks to pty
@@ -138,6 +110,7 @@ class PseudoTerminal {
         let LANG = lang + "_" + region
         let updatedEnv = environment.merging(["FIG_ENV_VAR" : "1",
                                               "FIG_SHELL_VAR" : "1",
+                                              "FIG_TERM": "1",
                                               "TERM" : "xterm-256color",
                                               "INPUTRC" : "~/.fig/nop",
                                               "FIG_PTY" : "1",
@@ -189,7 +162,6 @@ extension PseudoTerminal {
       Logger.log(message: "Writing new ENV vars to '\(tmpFile)'", subsystem: .pty)
 
       do {
-
         try command.write(toFile: tmpFile,
                       atomically: true,
                       encoding: .utf8)
@@ -215,7 +187,6 @@ extension PseudoTerminal {
                  handlerId: HandlerId = UUID().uuidString,
                  options: ExecutionOptions = [.backgroundJob],
                  handler: @escaping CallbackHandler) {
-        
         var cappedHandlerId = handlerId
         // note: magic number comes from fig_callback implementation
         if handlerId.count > 5 {
@@ -231,21 +202,18 @@ extension PseudoTerminal {
             commandToRun = "\(command) | \(PseudoTerminal.callbackExecutable) \(cappedHandlerId)"
         } else {
             let tmpFilepath = "/tmp/\(cappedHandlerId)"
-            commandToRun = "( ( \(command) ) 1> \(tmpFilepath).stdout 2> \(tmpFilepath).stderr; \(PseudoTerminal.callbackExecutable) \(handlerId) \(tmpFilepath) $? )"
+            commandToRun = "{ ( \(command) ) 1> \(tmpFilepath).stdout 2> \(tmpFilepath).stderr; \(PseudoTerminal.callbackExecutable) \(handlerId) \(tmpFilepath) $? ; }"
         }
       
         if options.contains(.backgroundJob) {
-            commandToRun.append(" &")
+            commandToRun = "{ \(commandToRun) & } 2> /dev/null"
         }
       
-        commandToRun.append(PseudoTerminal.CRLF)
         self.handlers[cappedHandlerId] = handler
-        rateLimiter.limit {
-          PseudoTerminal.log("Writing command for handler '\(cappedHandlerId)'")
-          self.headless.send(commandToRun)
-        }
+        
+        self.write(commandToRun, handlerId: cappedHandlerId)
 
-        PseudoTerminal.log("Running '\(command)' \(options.contains(.pipelined) ? "as pipeline" : "")\(options.contains(.backgroundJob) ? " in background" : "")")
+        PseudoTerminal.log("Running '\(command)' \(options.contains(.pipelined) ? "as pipeline" : "")\(options.contains(.backgroundJob) ? " in background" : "") with id \(cappedHandlerId)")
     }
     
     @objc func recievedCallbackNotification(_ notification: Notification) {
@@ -290,21 +258,6 @@ extension PseudoTerminal {
     }
 }
 
-extension PseudoTerminal : LocalProcessDelegate {
-    func processTerminated(_ source: LocalProcess, exitCode: Int32?) {
-        
-    }
-    
-    func dataReceived(slice: ArraySlice<UInt8>) {
-        
-    }
-    
-    func getWindowSize() -> winsize {
-        return winsize(ws_row: UInt16(60), ws_col: UInt16(50), ws_xpixel: UInt16 (16), ws_ypixel: UInt16 (16))
-    }
-    
-    
-}
 
 
 import FigAPIBindings
@@ -312,10 +265,11 @@ extension PseudoTerminal {
     func handleWriteRequest(_ request: Fig_PseudoterminalWriteRequest) throws -> Bool {
         switch request.input {
             case .text(let text):
-                self.write(text)
+              self.write(text)
             case .octal(let data):
-                self.headless.send(data: ArraySlice([UInt8](data)))
-//                self.headless.send(data: )
+              if let text = String(bytes: data, encoding: .utf8) {
+                  self.write(text)
+              }
             case .none:
                 throw APIError.generic(message: "No input specified")
             

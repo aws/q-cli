@@ -15,7 +15,9 @@ func NewCmdContrib() *cobra.Command {
 		Long:  "Contribute to Fig CLI",
 		Run: func(cmd *cobra.Command, arg []string) {
 			fmt.Printf("\n→ Opening GitHub repo...\n\n")
-			exec.Command("open", "https://github.com/withfig/autocomplete").Run()
+			if err := exec.Command("open", "https://github.com/withfig/autocomplete").Run(); err != nil {
+				fmt.Println(err)
+			}
 		},
 	}
 

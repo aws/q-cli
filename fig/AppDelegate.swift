@@ -1376,6 +1376,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         ShellBridge.shared.stopWebSocketServer()
         Defaults.launchedFollowingCrash = false
         AutocompleteContextNotifier.clearFigContext()
+        PseudoTerminal.shared.dispose()
         
         // Ensure that fig.socket is deleted, so that if user switches acounts it can be recreated
         try? FileManager.default.removeItem(atPath: "/tmp/fig.socket")
