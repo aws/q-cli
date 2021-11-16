@@ -39,6 +39,7 @@ class PseudoTerminal {
       Logger.log(message: message, subsystem: .pty)
     }
     
+    let process = InteractiveProcess(logFile: NSHomeDirectory() + "/.fig/logs/c_pty.log")
   
 
     
@@ -101,7 +102,9 @@ class PseudoTerminal {
     }
     
     func write(_ input: String) {
-        self.headless.send(input + PseudoTerminal.CRLF)
+      self.process.write(input + PseudoTerminal.CRLF)
+
+        //self.headless.send(input + PseudoTerminal.CRLF)
     }
     
     func close() {
@@ -240,10 +243,15 @@ extension PseudoTerminal {
       
         commandToRun.append(PseudoTerminal.CRLF)
         self.handlers[cappedHandlerId] = handler
-        rateLimiter.limit {
-          PseudoTerminal.log("Writing command for handler '\(cappedHandlerId)'")
-          self.headless.send(commandToRun)
-        }
+        
+        PseudoTerminal.log("Writing command for handler '\(cappedHandlerId)'")
+        
+        self.process.write(commandToRun)
+      
+//        rateLimiter.limit {
+         
+//          self.headless.send(commandToRun)
+//        }
 
         PseudoTerminal.log("Running '\(command)' \(options.contains(.pipelined) ? "as pipeline" : "")\(options.contains(.backgroundJob) ? " in background" : "")")
     }
