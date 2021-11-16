@@ -269,14 +269,17 @@ func NewCmdReset() *cobra.Command {
 		Hidden: true,
 		Run: func(cmd *cobra.Command, args []string) {
 			boldStyle := lipgloss.NewStyle().Bold(true)
+			boldMagentaStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#ff00ff"))
+			underlineStyle := lipgloss.NewStyle().Underline(true)
 
-			tip1Text := boldStyle.Render(`Fig Tips (1/5):`) + ` Selecting Files / Folders
+			tip1Text := "\n" + boldMagentaStyle.Render(`Fig Tips (1/5):`) +
+				` Selecting Files / Folders
 
 When selecting a file or folder:
   * Type $ ` + boldStyle.Render("~/") + ` to start autocompleting from the home directory 
   * Type $ ` + boldStyle.Render("../") + ` to start autocompleting from the directory above
 
-` + boldStyle.Render("To disable Fig Tips: ") + "fig tips disable"
+` + underlineStyle.Render("To disable Fig Tips:") + " fig tips disable\n"
 
 			tip1 := Tip{
 				Id:       "tip-1",
@@ -287,13 +290,14 @@ When selecting a file or folder:
 				WaitTime: 60 * 10,
 			}
 
-			tip2Text := boldStyle.Render(`Fig Tips (2/5):`) + ` Selecting Files / Folders
+			tip2Text := "\n" + boldMagentaStyle.Render(`Fig Tips (2/5):`) +
+				` Selecting Files / Folders
 
 When selecting a file or folder:
   * Type $ ` + boldStyle.Render("~/") + ` to start autocompleting from the home directory 
   * Type $ ` + boldStyle.Render("../") + ` to start autocompleting from the directory above
 
-` + boldStyle.Render("To disable Fig Tips: ") + "fig tips disable"
+` + underlineStyle.Render("To disable Fig Tips:") + " fig tips disable\n"
 
 			tip2 := Tip{
 				Id:       "tip-2",
