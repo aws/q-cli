@@ -69,7 +69,7 @@ class PseudoTerminal {
         PseudoTerminal.log("Starting PTY...")
         let shell = "/bin/bash" //"/bin/bash"
         let rawEnv = mergeFigSpecificEnvironmentVariables(with: environment)
-        self.process.startProcess(executable: shell, args: [ "--norc", "--noprofile", "--noediting"], environment: rawEnv)
+        self.process.startProcess(executable: shell, args: [ "--norc", "--noprofile" ], environment: rawEnv)
         self.write("set +m +b +o history")
         self.write("unset HISTFILE")
       
