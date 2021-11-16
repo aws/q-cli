@@ -11,36 +11,6 @@
 		1A63312125A4BE6D00CEA06A /* Keystroke.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A63312025A4BE6D00CEA06A /* Keystroke.swift */; };
 		750BA10C2733590A00705E63 /* API+IPC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750BA10B2733590A00705E63 /* API+IPC.swift */; };
 		750CF21826A1055F0094D76A /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750CF21726A1055F0094D76A /* Config.swift */; };
-		7510F89824A6910500E86F7C /* AppleTerminalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F87524A6910500E86F7C /* AppleTerminalView.swift */; };
-		7510F89924A6910500E86F7C /* TerminalViewDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F87624A6910500E86F7C /* TerminalViewDelegate.swift */; };
-		7510F89A24A6910500E86F7C /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F87724A6910500E86F7C /* Extensions.swift */; };
-		7510F89B24A6910500E86F7C /* CharSets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F87824A6910500E86F7C /* CharSets.swift */; };
-		7510F89C24A6910500E86F7C /* Buffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F87924A6910500E86F7C /* Buffer.swift */; };
-		7510F89D24A6910500E86F7C /* Utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F87A24A6910500E86F7C /* Utilities.swift */; };
-		7510F89E24A6910500E86F7C /* BufferSet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F87B24A6910500E86F7C /* BufferSet.swift */; };
-		7510F89F24A6910500E86F7C /* Terminal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F87C24A6910500E86F7C /* Terminal.swift */; };
-		7510F8A024A6910500E86F7C /* EscapeSequences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F87D24A6910500E86F7C /* EscapeSequences.swift */; };
-		7510F8A124A6910500E86F7C /* BufferLine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F87E24A6910500E86F7C /* BufferLine.swift */; };
-		7510F8A224A6910500E86F7C /* CircularList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F87F24A6910500E86F7C /* CircularList.swift */; };
-		7510F8A324A6910500E86F7C /* iOSTerminalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F88124A6910500E86F7C /* iOSTerminalView.swift */; };
-		7510F8A424A6910500E86F7C /* iOSCaretView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F88224A6910500E86F7C /* iOSCaretView.swift */; };
-		7510F8A624A6910500E86F7C /* iOSAccessoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F88424A6910500E86F7C /* iOSAccessoryView.swift */; };
-		7510F8A724A6910500E86F7C /* MacAccessibilityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F88624A6910500E86F7C /* MacAccessibilityService.swift */; };
-		7510F8A824A6910500E86F7C /* MacDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F88724A6910500E86F7C /* MacDebugView.swift */; };
-		7510F8A924A6910500E86F7C /* MacLocalTerminalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F88824A6910500E86F7C /* MacLocalTerminalView.swift */; };
-		7510F8AA24A6910500E86F7C /* MacCaretView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F88924A6910500E86F7C /* MacCaretView.swift */; };
-		7510F8AC24A6910500E86F7C /* MacTerminalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F88B24A6910500E86F7C /* MacTerminalView.swift */; };
-		7510F8AD24A6910500E86F7C /* SelectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F88C24A6910500E86F7C /* SelectionService.swift */; };
-		7510F8AE24A6910500E86F7C /* SixelDcsHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F88D24A6910500E86F7C /* SixelDcsHandler.swift */; };
-		7510F8AF24A6910500E86F7C /* HeadlessTerminal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F88E24A6910500E86F7C /* HeadlessTerminal.swift */; };
-		7510F8B024A6910500E86F7C /* LocalProcess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F88F24A6910500E86F7C /* LocalProcess.swift */; };
-		7510F8B124A6910500E86F7C /* Line.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F89024A6910500E86F7C /* Line.swift */; };
-		7510F8B224A6910500E86F7C /* CharData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F89124A6910500E86F7C /* CharData.swift */; };
-		7510F8B324A6910500E86F7C /* TerminalOptions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F89224A6910500E86F7C /* TerminalOptions.swift */; };
-		7510F8B424A6910500E86F7C /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F89324A6910500E86F7C /* Colors.swift */; };
-		7510F8B524A6910500E86F7C /* SearchService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F89424A6910500E86F7C /* SearchService.swift */; };
-		7510F8B624A6910500E86F7C /* Position.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F89524A6910500E86F7C /* Position.swift */; };
-		7510F8B724A6910500E86F7C /* EscapeSequenceParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F89624A6910500E86F7C /* EscapeSequenceParser.swift */; };
 		7510F8B824A6910500E86F7C /* Pty.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F89724A6910500E86F7C /* Pty.swift */; };
 		7510F8BD24A9861E00E86F7C /* PrivateWindow.m in Sources */ = {isa = PBXBuildFile; fileRef = 7510F8BC24A9861E00E86F7C /* PrivateWindow.m */; };
 		7510F8BF24A99A4B00E86F7C /* WindowService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F8BE24A99A4B00E86F7C /* WindowService.swift */; };
@@ -111,7 +81,6 @@
 		755EC8CF266997A700CBEF57 /* settings in Resources */ = {isa = PBXBuildFile; fileRef = 755EC8CE266997A600CBEF57 /* settings */; };
 		755FC554268D09DE00966027 /* UpdateService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755FC553268D09DE00966027 /* UpdateService.swift */; };
 		756127C3274380BF007F26EA /* pty.c in Sources */ = {isa = PBXBuildFile; fileRef = 756127C2274380BF007F26EA /* pty.c */; };
-		756127C52743856D007F26EA /* InteractiveProcess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756127C42743856D007F26EA /* InteractiveProcess.swift */; };
 		7564AE6F265C9DCE0040BD4C /* discord@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7564AE6E265C9DCD0040BD4C /* discord@2x.png */; };
 		75675955244634AD006AA988 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75675954244634AD006AA988 /* AppDelegate.swift */; };
 		75675959244634B2006AA988 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 75675958244634B2006AA988 /* Assets.xcassets */; };
@@ -187,6 +156,7 @@
 		75A4A2A725CBBDE7002EFD6B /* AXSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 75A4A2A625CBBDE7002EFD6B /* AXSwift */; };
 		75AA24C125A656FA00A51E9D /* NativeCLI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75AA24C025A656FA00A51E9D /* NativeCLI.swift */; };
 		75AA24DA25A7E8B000A51E9D /* lsof.m in Sources */ = {isa = PBXBuildFile; fileRef = 75AA24D925A7E8B000A51E9D /* lsof.m */; };
+		75ACFE7A274442C7003C22EE /* PTYProcess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75ACFE79274442C7003C22EE /* PTYProcess.swift */; };
 		75AEF2E425C3C34A00D78431 /* Diagnostic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75AEF2E325C3C34A00D78431 /* Diagnostic.swift */; };
 		75AEF2E625C3DEAF00D78431 /* DockerIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75AEF2E525C3DEAF00D78431 /* DockerIntegration.swift */; };
 		75AEF2E825C3DEC600D78431 /* SSHIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75AEF2E725C3DEC600D78431 /* SSHIntegration.swift */; };
@@ -321,37 +291,6 @@
 		1A63312025A4BE6D00CEA06A /* Keystroke.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Keystroke.swift; sourceTree = "<group>"; };
 		750BA10B2733590A00705E63 /* API+IPC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API+IPC.swift"; sourceTree = "<group>"; };
 		750CF21726A1055F0094D76A /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
-		7510F87524A6910500E86F7C /* AppleTerminalView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppleTerminalView.swift; sourceTree = "<group>"; };
-		7510F87624A6910500E86F7C /* TerminalViewDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TerminalViewDelegate.swift; sourceTree = "<group>"; };
-		7510F87724A6910500E86F7C /* Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
-		7510F87824A6910500E86F7C /* CharSets.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CharSets.swift; sourceTree = "<group>"; };
-		7510F87924A6910500E86F7C /* Buffer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Buffer.swift; sourceTree = "<group>"; };
-		7510F87A24A6910500E86F7C /* Utilities.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Utilities.swift; sourceTree = "<group>"; };
-		7510F87B24A6910500E86F7C /* BufferSet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BufferSet.swift; sourceTree = "<group>"; };
-		7510F87C24A6910500E86F7C /* Terminal.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Terminal.swift; sourceTree = "<group>"; };
-		7510F87D24A6910500E86F7C /* EscapeSequences.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EscapeSequences.swift; sourceTree = "<group>"; };
-		7510F87E24A6910500E86F7C /* BufferLine.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BufferLine.swift; sourceTree = "<group>"; };
-		7510F87F24A6910500E86F7C /* CircularList.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CircularList.swift; sourceTree = "<group>"; };
-		7510F88124A6910500E86F7C /* iOSTerminalView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = iOSTerminalView.swift; sourceTree = "<group>"; };
-		7510F88224A6910500E86F7C /* iOSCaretView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = iOSCaretView.swift; sourceTree = "<group>"; };
-		7510F88424A6910500E86F7C /* iOSAccessoryView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = iOSAccessoryView.swift; sourceTree = "<group>"; };
-		7510F88624A6910500E86F7C /* MacAccessibilityService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MacAccessibilityService.swift; sourceTree = "<group>"; };
-		7510F88724A6910500E86F7C /* MacDebugView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MacDebugView.swift; sourceTree = "<group>"; };
-		7510F88824A6910500E86F7C /* MacLocalTerminalView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MacLocalTerminalView.swift; sourceTree = "<group>"; };
-		7510F88924A6910500E86F7C /* MacCaretView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MacCaretView.swift; sourceTree = "<group>"; };
-		7510F88A24A6910500E86F7C /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
-		7510F88B24A6910500E86F7C /* MacTerminalView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MacTerminalView.swift; sourceTree = "<group>"; };
-		7510F88C24A6910500E86F7C /* SelectionService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SelectionService.swift; sourceTree = "<group>"; };
-		7510F88D24A6910500E86F7C /* SixelDcsHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SixelDcsHandler.swift; sourceTree = "<group>"; };
-		7510F88E24A6910500E86F7C /* HeadlessTerminal.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HeadlessTerminal.swift; sourceTree = "<group>"; };
-		7510F88F24A6910500E86F7C /* LocalProcess.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LocalProcess.swift; sourceTree = "<group>"; };
-		7510F89024A6910500E86F7C /* Line.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Line.swift; sourceTree = "<group>"; };
-		7510F89124A6910500E86F7C /* CharData.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CharData.swift; sourceTree = "<group>"; };
-		7510F89224A6910500E86F7C /* TerminalOptions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TerminalOptions.swift; sourceTree = "<group>"; };
-		7510F89324A6910500E86F7C /* Colors.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Colors.swift; sourceTree = "<group>"; };
-		7510F89424A6910500E86F7C /* SearchService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SearchService.swift; sourceTree = "<group>"; };
-		7510F89524A6910500E86F7C /* Position.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Position.swift; sourceTree = "<group>"; };
-		7510F89624A6910500E86F7C /* EscapeSequenceParser.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EscapeSequenceParser.swift; sourceTree = "<group>"; };
 		7510F89724A6910500E86F7C /* Pty.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Pty.swift; sourceTree = "<group>"; };
 		7510F8B924A9701000E86F7C /* Private.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Private.h; sourceTree = "<group>"; };
 		7510F8BA24A9861E00E86F7C /* fig-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "fig-Bridging-Header.h"; sourceTree = "<group>"; };
@@ -427,7 +366,6 @@
 		755FC553268D09DE00966027 /* UpdateService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateService.swift; sourceTree = "<group>"; };
 		756127C1274380BF007F26EA /* pty.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = pty.h; sourceTree = "<group>"; };
 		756127C2274380BF007F26EA /* pty.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = pty.c; sourceTree = "<group>"; };
-		756127C42743856D007F26EA /* InteractiveProcess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InteractiveProcess.swift; sourceTree = "<group>"; };
 		7564AE6E265C9DCD0040BD4C /* discord@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "discord@2x.png"; sourceTree = "<group>"; };
 		75675951244634AD006AA988 /* fig.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = fig.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		75675954244634AD006AA988 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -508,6 +446,7 @@
 		75AA24D825A7E8B000A51E9D /* lsof.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = lsof.h; sourceTree = "<group>"; };
 		75AA24D925A7E8B000A51E9D /* lsof.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = lsof.m; sourceTree = "<group>"; };
 		75AC55322522C8EB0069635E /* 1.0.20.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = 1.0.20.sh; sourceTree = "<group>"; };
+		75ACFE79274442C7003C22EE /* PTYProcess.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PTYProcess.swift; sourceTree = "<group>"; };
 		75AEF2E325C3C34A00D78431 /* Diagnostic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Diagnostic.swift; sourceTree = "<group>"; };
 		75AEF2E525C3DEAF00D78431 /* DockerIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DockerIntegration.swift; sourceTree = "<group>"; };
 		75AEF2E725C3DEC600D78431 /* SSHIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSHIntegration.swift; sourceTree = "<group>"; };
@@ -607,64 +546,9 @@
 		7510F87324A6910500E86F7C /* SwiftTerm */ = {
 			isa = PBXGroup;
 			children = (
-				7510F87424A6910500E86F7C /* Apple */,
-				7510F87824A6910500E86F7C /* CharSets.swift */,
-				7510F87924A6910500E86F7C /* Buffer.swift */,
-				7510F87A24A6910500E86F7C /* Utilities.swift */,
-				7510F87B24A6910500E86F7C /* BufferSet.swift */,
-				7510F87C24A6910500E86F7C /* Terminal.swift */,
-				7510F87D24A6910500E86F7C /* EscapeSequences.swift */,
-				7510F87E24A6910500E86F7C /* BufferLine.swift */,
-				7510F87F24A6910500E86F7C /* CircularList.swift */,
-				7510F88024A6910500E86F7C /* iOS */,
-				7510F88524A6910500E86F7C /* Mac */,
-				7510F88C24A6910500E86F7C /* SelectionService.swift */,
-				7510F88D24A6910500E86F7C /* SixelDcsHandler.swift */,
-				7510F88E24A6910500E86F7C /* HeadlessTerminal.swift */,
-				7510F88F24A6910500E86F7C /* LocalProcess.swift */,
-				7510F89024A6910500E86F7C /* Line.swift */,
-				7510F89124A6910500E86F7C /* CharData.swift */,
-				7510F89224A6910500E86F7C /* TerminalOptions.swift */,
-				7510F89324A6910500E86F7C /* Colors.swift */,
-				7510F89424A6910500E86F7C /* SearchService.swift */,
-				7510F89524A6910500E86F7C /* Position.swift */,
-				7510F89624A6910500E86F7C /* EscapeSequenceParser.swift */,
 				7510F89724A6910500E86F7C /* Pty.swift */,
 			);
 			path = SwiftTerm;
-			sourceTree = "<group>";
-		};
-		7510F87424A6910500E86F7C /* Apple */ = {
-			isa = PBXGroup;
-			children = (
-				7510F87524A6910500E86F7C /* AppleTerminalView.swift */,
-				7510F87624A6910500E86F7C /* TerminalViewDelegate.swift */,
-				7510F87724A6910500E86F7C /* Extensions.swift */,
-			);
-			path = Apple;
-			sourceTree = "<group>";
-		};
-		7510F88024A6910500E86F7C /* iOS */ = {
-			isa = PBXGroup;
-			children = (
-				7510F88124A6910500E86F7C /* iOSTerminalView.swift */,
-				7510F88224A6910500E86F7C /* iOSCaretView.swift */,
-				7510F88424A6910500E86F7C /* iOSAccessoryView.swift */,
-			);
-			path = iOS;
-			sourceTree = "<group>";
-		};
-		7510F88524A6910500E86F7C /* Mac */ = {
-			isa = PBXGroup;
-			children = (
-				7510F88624A6910500E86F7C /* MacAccessibilityService.swift */,
-				7510F88724A6910500E86F7C /* MacDebugView.swift */,
-				7510F88824A6910500E86F7C /* MacLocalTerminalView.swift */,
-				7510F88924A6910500E86F7C /* MacCaretView.swift */,
-				7510F88A24A6910500E86F7C /* README.md */,
-				7510F88B24A6910500E86F7C /* MacTerminalView.swift */,
-			);
-			path = Mac;
 			sourceTree = "<group>";
 		};
 		7518608F255CE49B0000A7C7 /* Icons */ = {
@@ -1034,6 +918,7 @@
 			isa = PBXGroup;
 			children = (
 				757712482564D9490011FF48 /* ProcessStatus.swift */,
+				75ACFE79274442C7003C22EE /* PTYProcess.swift */,
 				7583A12D273CF261001DF86B /* PathHelper.swift */,
 				7587B4D724F97F9E00E355E4 /* ShellHooksManager.swift */,
 				75B7931924BB897F0073AAC6 /* PseudoTerminalService.swift */,
@@ -1045,7 +930,6 @@
 				75EDDC5A25D4BC53003AECC6 /* UnixSocketClient.swift */,
 				75AEF2E725C3DEC600D78431 /* SSHIntegration.swift */,
 				75DA86A825EF145E00722F1D /* TmuxIntegration.swift */,
-				756127C42743856D007F26EA /* InteractiveProcess.swift */,
 				75A4520F25A839F500107D2C /* remote_cwd.sh */,
 			);
 			path = Shell;
@@ -1531,7 +1415,6 @@
 				75AA24C125A656FA00A51E9D /* NativeCLI.swift in Sources */,
 				757CA86724859461002A64A8 /* AppMover.swift in Sources */,
 				75C0EBD3253E336E001964DE /* TerminalUsageTelemetry.swift in Sources */,
-				7510F89F24A6910500E86F7C /* Terminal.swift in Sources */,
 				75B199322501A3DA00F38EA8 /* KeyboardLayout.swift in Sources */,
 				756759972446C44C006AA988 /* String+Shell.swift in Sources */,
 				75F7F952261FBDC30005E215 /* UnixSocketServer.swift in Sources */,
@@ -1542,28 +1425,19 @@
 				752A398325CD024C00B1AC40 /* VSCodeIntegration.swift in Sources */,
 				7583A12E273CF261001DF86B /* PathHelper.swift in Sources */,
 				75C05C6C24FDEA2B001F0A52 /* KeystrokeBuffer.swift in Sources */,
-				7510F8AC24A6910500E86F7C /* MacTerminalView.swift in Sources */,
 				7571778326F91BF50071AE10 /* AppleTerminalIntegration.swift in Sources */,
 				756968012718FF600029F063 /* WebArchive.swift in Sources */,
 				755D0DE2247EFAE10074AB5C /* Logging.swift in Sources */,
 				756968032719450A0029F063 /* API+App.swift in Sources */,
-				7510F8A124A6910500E86F7C /* BufferLine.swift in Sources */,
-				7510F8A824A6910500E86F7C /* MacDebugView.swift in Sources */,
 				75C07120244BB441002DF69F /* CompanionViewController.swift in Sources */,
-				7510F89E24A6910500E86F7C /* BufferSet.swift in Sources */,
 				75F7F954262007170005E215 /* IPC.swift in Sources */,
 				75DA86A325EDB05100722F1D /* Integrations.swift in Sources */,
-				7510F8B724A6910500E86F7C /* EscapeSequenceParser.swift in Sources */,
-				7510F89D24A6910500E86F7C /* Utilities.swift in Sources */,
-				7510F8B424A6910500E86F7C /* Colors.swift in Sources */,
-				7510F8B624A6910500E86F7C /* Position.swift in Sources */,
 				7568203126003BDF0006FE78 /* Settings.swift in Sources */,
 				75E993F52517E226000BE6BE /* AXWindowServer.swift in Sources */,
 				75C07124244BE45A002DF69F /* CompanionWindow.swift in Sources */,
 				75C07122244BB65D002DF69F /* ShellBridge.swift in Sources */,
 				1A63312125A4BE6D00CEA06A /* Keystroke.swift in Sources */,
 				7510F8C124A9B32D00E86F7C /* WindowManager.swift in Sources */,
-				7510F8AF24A6910500E86F7C /* HeadlessTerminal.swift in Sources */,
 				7575D44F26D5D35000D0C8D7 /* API.swift in Sources */,
 				755FC554268D09DE00966027 /* UpdateService.swift in Sources */,
 				75DA86A525EEBD7500722F1D /* Alert.swift in Sources */,
@@ -1571,39 +1445,28 @@
 				75D1ECBE26F15F4500BC8A04 /* TerminalIntegrationProvider.swift in Sources */,
 				755D0DE0247DDE050074AB5C /* FigCLI.swift in Sources */,
 				75809B0E24BFA64D00BFFB3E /* TelemetryService.swift in Sources */,
-				7510F8B224A6910500E86F7C /* CharData.swift in Sources */,
 				75A4A2A225CA2190002EFD6B /* ZLEIntegration.swift in Sources */,
 				75AA24DA25A7E8B000A51E9D /* lsof.m in Sources */,
 				75EB592B258D98A7002915E7 /* BiMap.swift in Sources */,
 				751F7589246D090100E083C8 /* WebBridge.swift in Sources */,
 				75EDDC5B25D4BC54003AECC6 /* UnixSocketClient.swift in Sources */,
 				75AEF2E625C3DEAF00D78431 /* DockerIntegration.swift in Sources */,
-				7510F8A624A6910500E86F7C /* iOSAccessoryView.swift in Sources */,
 				75AEF2EE25C5062E00D78431 /* WindowObserver.swift in Sources */,
 				75675955244634AD006AA988 /* AppDelegate.swift in Sources */,
 				7573F160260BC71000C833FA /* LoginItems.swift in Sources */,
 				75AEF2E425C3C34A00D78431 /* Diagnostic.swift in Sources */,
 				75A4A2A025CA0D46002EFD6B /* Autocomplete.swift in Sources */,
-				7510F89924A6910500E86F7C /* TerminalViewDelegate.swift in Sources */,
 				75290ACC2671AD1E000F4255 /* WebSocketFramer.swift in Sources */,
 				75C16D4826FD1EB400C83296 /* API+NotificationCenter.swift in Sources */,
 				750BA10C2733590A00705E63 /* API+IPC.swift in Sources */,
 				759F987C25BF903900EC3407 /* Accessibility.swift in Sources */,
-				7510F8A424A6910500E86F7C /* iOSCaretView.swift in Sources */,
 				751C3BEE24B6915000B5C7FD /* Defaults.swift in Sources */,
 				755D27BA272242690080B4B8 /* FigTerm.swift in Sources */,
 				757712492564D94A0011FF48 /* ProcessStatus.swift in Sources */,
 				75B850E52703D8FF00891A78 /* API+Extensions.swift in Sources */,
-				756127C52743856D007F26EA /* InteractiveProcess.swift in Sources */,
-				7510F89A24A6910500E86F7C /* Extensions.swift in Sources */,
-				7510F8B524A6910500E86F7C /* SearchService.swift in Sources */,
 				75A4521425AD367E00107D2C /* Feedback.swift in Sources */,
 				752D71CD25B8A6B300263527 /* Restarter.swift in Sources */,
-				7510F8A024A6910500E86F7C /* EscapeSequences.swift in Sources */,
-				7510F8A224A6910500E86F7C /* CircularList.swift in Sources */,
 				756127C3274380BF007F26EA /* pty.c in Sources */,
-				7510F8AD24A6910500E86F7C /* SelectionService.swift in Sources */,
-				7510F89B24A6910500E86F7C /* CharSets.swift in Sources */,
 				7510F8B824A6910500E86F7C /* Pty.swift in Sources */,
 				7520D8122682AEB00034FE2B /* Throttler.swift in Sources */,
 				75DA86A925EF145E00722F1D /* TmuxIntegration.swift in Sources */,
@@ -1611,19 +1474,15 @@
 				757AF4C826BC73FA00349764 /* WindowPositioning.swift in Sources */,
 				75290ABD26719090000F4255 /* iterm.pb.swift in Sources */,
 				75B1993825100E4E00F38EA8 /* KeypressService.swift in Sources */,
-				7510F8A724A6910500E86F7C /* MacAccessibilityService.swift in Sources */,
 				75C57C142581C0700065741E /* ioreg.c in Sources */,
-				7510F8AA24A6910500E86F7C /* MacCaretView.swift in Sources */,
 				75290AB4267126EB000F4255 /* iTermIntegration.swift in Sources */,
 				75696832271F71270029F063 /* local.pb.swift in Sources */,
 				75B0A07C25BA64CC00FCD89A /* AutocompleteContextNotifier.swift in Sources */,
 				75FE40002626A4BD00AC8414 /* Github.swift in Sources */,
 				751C3BEC24B6910800B5C7FD /* Remote.swift in Sources */,
 				75EDDC4E25D23773003AECC6 /* HyperIntegration.swift in Sources */,
-				7510F8A924A6910500E86F7C /* MacLocalTerminalView.swift in Sources */,
 				75A4A2A425CB4DE3002EFD6B /* BundleIdCache.swift in Sources */,
 				75A0A71D26F27E3D008FAD70 /* SemanticVersion.swift in Sources */,
-				7510F89824A6910500E86F7C /* AppleTerminalView.swift in Sources */,
 				750CF21826A1055F0094D76A /* Config.swift in Sources */,
 				75AEF2EA25C4C34D00D78431 /* SecureKeyboardInput.swift in Sources */,
 				75B199342504190900F38EA8 /* Keycode.swift in Sources */,
@@ -1631,21 +1490,16 @@
 				75D1ECC026F1658300BC8A04 /* InstallationStatus.swift in Sources */,
 				75A0A71926F1A79A008FAD70 /* KittyIntegration.swift in Sources */,
 				75EB592D258DD771002915E7 /* TTY.swift in Sources */,
-				7510F8B324A6910500E86F7C /* TerminalOptions.swift in Sources */,
 				7510F8BF24A99A4B00E86F7C /* WindowService.swift in Sources */,
-				7510F8A324A6910500E86F7C /* iOSTerminalView.swift in Sources */,
 				75A4521A25AE2E6B00107D2C /* CommandIntegration.swift in Sources */,
-				7510F8B124A6910500E86F7C /* Line.swift in Sources */,
 				1A1F160025A7A93E0074D541 /* KeyBindingsManager.swift in Sources */,
-				7510F8AE24A6910500E86F7C /* SixelDcsHandler.swift in Sources */,
 				754569FC272A05C200C7588F /* CommandHandlers.swift in Sources */,
+				75ACFE7A274442C7003C22EE /* PTYProcess.swift in Sources */,
 				7587B4D824F97F9E00E355E4 /* ShellHooksManager.swift in Sources */,
-				7510F89C24A6910500E86F7C /* Buffer.swift in Sources */,
 				75D1ECB426EFE55A00BC8A04 /* AlacrittyIntegration.swift in Sources */,
 				7510F8BD24A9861E00E86F7C /* PrivateWindow.m in Sources */,
 				75B4283626FABAAC003C9DE5 /* FileSystem.swift in Sources */,
 				756759D424498CA0006AA988 /* WebViewController.swift in Sources */,
-				7510F8B024A6910500E86F7C /* LocalProcess.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
