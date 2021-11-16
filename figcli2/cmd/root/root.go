@@ -18,6 +18,7 @@ import (
 	"fig-cli/cmd/report"
 	"fig-cli/cmd/restart"
 	"fig-cli/cmd/settings"
+	"fig-cli/cmd/settings/docs"
 	"fig-cli/cmd/source"
 	"fig-cli/cmd/specs"
 	"fig-cli/cmd/theme"
@@ -278,6 +279,7 @@ func Execute() {
 	rootCmd.AddCommand(contrib.NewCmdContrib())
 	rootCmd.AddCommand(debug.NewCmdDebug())
 	rootCmd.AddCommand(dev.NewCmdDev())
+	rootCmd.AddCommand(docs.NewCmdDocs())
 	rootCmd.AddCommand(doctor.NewCmdDoctor())
 	rootCmd.AddCommand(hook.NewCmdHook())
 	rootCmd.AddCommand(integrations.NewCmdIntegrations())
