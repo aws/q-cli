@@ -1259,6 +1259,11 @@ public struct Local_DiagnosticsResponse {
     set {_uniqueStorage()._currentWindowIdentifier = newValue}
   }
 
+  public var autocomplete: Bool {
+    get {return _storage._autocomplete}
+    set {_uniqueStorage()._autocomplete = newValue}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
@@ -3150,6 +3155,7 @@ extension Local_DiagnosticsResponse: SwiftProtobuf.Message, SwiftProtobuf._Messa
     16: .standard(proto: "securekeyboard_path"),
     17: .standard(proto: "current_process"),
     18: .standard(proto: "current_window_identifier"),
+    19: .same(proto: "autocomplete"),
   ]
 
   fileprivate class _StorageClass {
@@ -3171,6 +3177,7 @@ extension Local_DiagnosticsResponse: SwiftProtobuf.Message, SwiftProtobuf._Messa
     var _securekeyboardPath: String = String()
     var _currentProcess: String = String()
     var _currentWindowIdentifier: String = String()
+    var _autocomplete: Bool = false
 
     static let defaultInstance = _StorageClass()
 
@@ -3195,6 +3202,7 @@ extension Local_DiagnosticsResponse: SwiftProtobuf.Message, SwiftProtobuf._Messa
       _securekeyboardPath = source._securekeyboardPath
       _currentProcess = source._currentProcess
       _currentWindowIdentifier = source._currentWindowIdentifier
+      _autocomplete = source._autocomplete
     }
   }
 
@@ -3231,6 +3239,7 @@ extension Local_DiagnosticsResponse: SwiftProtobuf.Message, SwiftProtobuf._Messa
         case 16: try { try decoder.decodeSingularStringField(value: &_storage._securekeyboardPath) }()
         case 17: try { try decoder.decodeSingularStringField(value: &_storage._currentProcess) }()
         case 18: try { try decoder.decodeSingularStringField(value: &_storage._currentWindowIdentifier) }()
+        case 19: try { try decoder.decodeSingularBoolField(value: &_storage._autocomplete) }()
         default: break
         }
       }
@@ -3293,6 +3302,9 @@ extension Local_DiagnosticsResponse: SwiftProtobuf.Message, SwiftProtobuf._Messa
       if !_storage._currentWindowIdentifier.isEmpty {
         try visitor.visitSingularStringField(value: _storage._currentWindowIdentifier, fieldNumber: 18)
       }
+      if _storage._autocomplete != false {
+        try visitor.visitSingularBoolField(value: _storage._autocomplete, fieldNumber: 19)
+      }
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -3320,6 +3332,7 @@ extension Local_DiagnosticsResponse: SwiftProtobuf.Message, SwiftProtobuf._Messa
         if _storage._securekeyboardPath != rhs_storage._securekeyboardPath {return false}
         if _storage._currentProcess != rhs_storage._currentProcess {return false}
         if _storage._currentWindowIdentifier != rhs_storage._currentWindowIdentifier {return false}
+        if _storage._autocomplete != rhs_storage._autocomplete {return false}
         return true
       }
       if !storagesAreEqual {return false}

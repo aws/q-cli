@@ -13,7 +13,9 @@ func NewCmdCommunity() *cobra.Command {
 		Short: "Join the Fig community",
 		Run: func(cmd *cobra.Command, arg []string) {
 			fmt.Printf("\n→ Joining Fig community....\n\n")
-			exec.Command("open", "https://fig.io/community").Run()
+			if err := exec.Command("open", "https://fig.io/community").Run(); err != nil {
+				fmt.Println(err)
+			}
 		},
 	}
 

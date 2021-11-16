@@ -1,6 +1,7 @@
 package restart
 
 import (
+	"fig-cli/cmd/launch"
 	fig_ipc "fig-cli/fig-ipc"
 	"fmt"
 
@@ -13,7 +14,9 @@ func NewCmdRestart() *cobra.Command {
 		Short: "Restart Fig",
 		Run: func(cmd *cobra.Command, arg []string) {
 			if err := fig_ipc.RestartCommand(); err != nil {
-				fmt.Println("Error:", err)
+				launch.Launch()
+			} else {
+				fmt.Printf("\n→ Restarting Fig...\n\n")
 			}
 		},
 	}

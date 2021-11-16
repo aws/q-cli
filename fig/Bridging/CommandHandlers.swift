@@ -81,6 +81,7 @@ extension CommandHandlers {
       response.diagnostics.currentProcess = "\(Diagnostic.processForTopmostWindow) (\(Diagnostic.processIdForTopmostWindow)) - \(Diagnostic.ttyDescriptorForTopmostWindow)"
       response.diagnostics.onlytab = String(Defaults.onlyInsertOnTab)
       response.diagnostics.psudoterminalPath = Diagnostic.pseudoTerminalPath ?? "<generated dynamically>"
+      response.diagnostics.autocomplete = Defaults.useAutocomplete
     }
   }
   

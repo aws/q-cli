@@ -61,11 +61,13 @@ func NewCmdIssue() *cobra.Command {
 			body.WriteString("</pre>\n</p>\n</details>")
 
 			fmt.Printf("\n→ Opening GitHub...\n\n")
-			exec.Command("open",
+			if err := exec.Command("open",
 				fmt.Sprintf("https://github.com/withfig/fig/issues/new?labels=bug&assignees=%s&body=%s",
 					strings.Join(assignees, ","),
 					url.QueryEscape(body.String())),
-			).Run()
+			).Run(); err != nil {
+				fmt.Println(err)
+			}
 		},
 	}
 

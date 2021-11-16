@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
 )
 
@@ -37,8 +38,21 @@ func NewCmdSetPath() *cobra.Command {
 				return
 			}
 
-			hook, _ := fig_ipc.CreateInitHook(os.Getppid(), pty)
-			fig_ipc.SendHook(hook)
+			hook, err := fig_ipc.CreateInitHook(os.Getppid(), pty)
+			if err != nil {
+				fmt.Println("Error: ", err)
+				return
+			}
+
+			err = fig_ipc.SendHook(hook)
+			if err != nil {
+				fmt.Printf("\n" +
+					lipgloss.NewStyle().Bold(true).Render("Unable to Connect to Fig") +
+					"\nFig might not be running, to launch Fig run: " +
+					lipgloss.NewStyle().Foreground(lipgloss.Color("#ff00ff")).Render("fig launch") +
+					"\n\n")
+				return
+			}
 		},
 	}
 

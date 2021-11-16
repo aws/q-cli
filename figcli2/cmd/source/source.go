@@ -20,7 +20,11 @@ func NewCmdSource() *cobra.Command {
 			err := fig_ipc.RestartSettingsListenerCommand()
 			if err != nil {
 				logging.Log("fig source:", err.Error())
-				fmt.Println("Unable to restart settings listener")
+				fmt.Printf("\n" +
+					lipgloss.NewStyle().Bold(true).Render("Unable to Connect to Fig") +
+					"\nFig might not be running, to launch Fig run: " +
+					lipgloss.NewStyle().Foreground(lipgloss.Color("#ff00ff")).Render("fig launch") +
+					"\n\n")
 				os.Exit(1)
 			}
 
