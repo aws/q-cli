@@ -2,6 +2,7 @@ package tips
 
 import (
 	"encoding/json"
+	"fig-cli/logging"
 	"fig-cli/settings"
 	"fmt"
 	"os"
@@ -92,14 +93,30 @@ func loadTip() (*TipFile, error) {
 	return &tipFileData, nil
 }
 
-func NewCmdTip() *cobra.Command {
+func NewCmdTips() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:    "tip",
-		Short:  "",
+		Use:   "tips",
+		Short: "Enable/Disable Fig tips",
+	}
+
+	cmd.AddCommand(NewCmdPrompt())
+	cmd.AddCommand(NewCmdAddTip())
+	cmd.AddCommand(NewCmdAddChangelog())
+	cmd.AddCommand(NewCmdReset())
+	cmd.AddCommand(NewCmdDisable())
+	cmd.AddCommand(NewCmdEnable())
+
+	return cmd
+}
+
+func NewCmdPrompt() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:    "prompt",
 		Hidden: true,
 		Run: func(cmd *cobra.Command, args []string) {
 			settings, err := settings.Load()
 			if err != nil {
+				logging.Log("tips prompt", err.Error())
 				return
 			}
 
@@ -109,11 +126,7 @@ func NewCmdTip() *cobra.Command {
 
 			tipFile, err := loadTip()
 			if err != nil {
-				fmt.Println(err)
-				return
-			}
-
-			if len(tipFile.Queue) == 0 {
+				logging.Log("tips prompt", err.Error())
 				return
 			}
 
@@ -125,13 +138,15 @@ func NewCmdTip() *cobra.Command {
 				}
 			}
 
+			if len(unsentTips) == 0 {
+				return
+			}
+
 			// Find max priority or type == "changelog"
 			tipToSend := unsentTips[0]
-			tipIndex := 0
-			for i, tip := range unsentTips {
+			for _, tip := range unsentTips {
 				if tip.Priority > tipToSend.Priority || tip.TipType == "changelog" {
 					tipToSend = tip
-					tipIndex = i
 				}
 			}
 
@@ -153,19 +168,21 @@ func NewCmdTip() *cobra.Command {
 			}
 
 			// Mark tip as sent
-			tipFile.Queue[tipIndex].Sent = true
+			for i, tip := range tipFile.Queue {
+				if tip.Id == tipToSend.Id {
+					tipFile.Queue[i].Sent = true
+				}
+			}
+
 			tipFile.TimeLastSent = int(time.Now().Unix())
+
 			err = tipFile.saveTip()
 			if err != nil {
-				fmt.Println(err)
+				logging.Log("tips prompt:", err.Error())
 				return
 			}
 		},
 	}
-
-	cmd.AddCommand(NewCmdAddTip())
-	cmd.AddCommand(NewCmdAddChangelog())
-	cmd.AddCommand(NewCmdReset())
 
 	return cmd
 }
@@ -298,6 +315,52 @@ When selecting a file or folder:
 			if err != nil {
 				fmt.Println("Error adding tip-2:", err)
 			}
+		},
+	}
+
+	return cmd
+}
+
+func NewCmdDisable() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "disable",
+		Short: "Disable Fig Tips",
+		Run: func(cmd *cobra.Command, args []string) {
+			settings, err := settings.Load()
+			if err != nil {
+				os.Exit(1)
+			}
+
+			settings.Set("cli.tips.disabled", true)
+			err = settings.Save()
+			if err != nil {
+				os.Exit(1)
+			}
+
+			fmt.Printf("\n→ Fig Tips disabled...\n\n")
+		},
+	}
+
+	return cmd
+}
+
+func NewCmdEnable() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "enable",
+		Short: "Enable Fig Tips",
+		Run: func(cmd *cobra.Command, args []string) {
+			settings, err := settings.Load()
+			if err != nil {
+				os.Exit(1)
+			}
+
+			settings.Set("cli.tips.disabled", false)
+			err = settings.Save()
+			if err != nil {
+				os.Exit(1)
+			}
+
+			fmt.Printf("\n→ Fig Tips enabled...\n\n")
 		},
 	}
 

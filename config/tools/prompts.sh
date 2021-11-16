@@ -70,8 +70,9 @@ if [[ -z "$APP_TERMINATED_BY_USER" && "$FIG_IS_RUNNING" == '0' ]]; then
   unset DISPLAYED_AUTOLAUNCH_SETTINGS_HINT
 fi
 
-# Uncomment when drip campaign is ready
-# fig app drip 2> /dev/null &
+# Reset and Show Fig tips
+fig tips reset 2>&1 > /dev/null
+fig tips prompt 2> /dev/null &
 
 unset FIG_IS_RUNNING
 

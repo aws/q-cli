@@ -20,6 +20,7 @@ import (
 	"fig-cli/cmd/source"
 	"fig-cli/cmd/specs"
 	"fig-cli/cmd/theme"
+	"fig-cli/cmd/tips"
 	"fig-cli/cmd/tweet"
 	"fig-cli/cmd/update"
 	"fig-cli/cmd/user"
@@ -221,19 +222,21 @@ func Execute() {
 					Render("Subcommands"))
 
 				for _, c := range cmd.Commands() {
-					fmt.Print(" > ")
-					fmt.Print(lipgloss.NewStyle().
-						Width(12).
-						Bold(true).
-						Align(lipgloss.Left).
-						Render(c.Name()))
+					if !c.Hidden {
+						fmt.Print(" > ")
+						fmt.Print(lipgloss.NewStyle().
+							Width(12).
+							Bold(true).
+							Align(lipgloss.Left).
+							Render(c.Name()))
 
-					fmt.Println(lipgloss.NewStyle().
-						Padding(0, 2).
-						Width(TextWidth).
-						Align(lipgloss.Left).
-						Italic(true).
-						Render(c.Short))
+						fmt.Println(lipgloss.NewStyle().
+							Padding(0, 2).
+							Width(TextWidth).
+							Align(lipgloss.Left).
+							Italic(true).
+							Render(c.Short))
+					}
 				}
 			}
 
@@ -289,6 +292,7 @@ func Execute() {
 	rootCmd.AddCommand(source.NewCmdSource())
 	rootCmd.AddCommand(specs.NewCmdSpecs())
 	rootCmd.AddCommand(theme.NewCmdTheme())
+	rootCmd.AddCommand(tips.NewCmdTips())
 	rootCmd.AddCommand(tweet.NewCmdTweet())
 	rootCmd.AddCommand(update.NewCmdUpdate())
 	rootCmd.AddCommand(user.NewCmdUser())
