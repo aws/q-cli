@@ -47,17 +47,17 @@ extension CommandHandlers {
       NSApp.appDelegate.restart()
     }
   }
-  
+
   static func updateCommand(_ force: Bool = false) {
-    DispatchQueue.main.async {
-      if force {
-        if UpdateService.provider.updateIsAvailable {
-          UpdateService.provider.installUpdateIfAvailible()
+      DispatchQueue.main.async {
+        if force {
+          if UpdateService.provider.updateIsAvailable {
+            UpdateService.provider.installUpdateIfAvailible()
+          }
+        } else {
+          UpdateService.provider.checkForUpdates(nil)
         }
-      } else {
-        UpdateService.provider.checkForUpdates(nil)
       }
-    }
   }
   
   static func diagnosticsCommand() -> CommandResponse {
@@ -81,7 +81,7 @@ extension CommandHandlers {
       response.diagnostics.currentProcess = "\(Diagnostic.processForTopmostWindow) (\(Diagnostic.processIdForTopmostWindow)) - \(Diagnostic.ttyDescriptorForTopmostWindow)"
       response.diagnostics.onlytab = String(Defaults.shared.onlyInsertOnTab)
       response.diagnostics.psudoterminalPath = Diagnostic.pseudoTerminalPath ?? "<generated dynamically>"
-      response.diagnostics.autocomplete = Defaults.useAutocomplete
+      response.diagnostics.autocomplete = Defaults.shared.useAutocomplete
     }
   }
   
