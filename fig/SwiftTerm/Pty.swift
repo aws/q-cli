@@ -23,7 +23,7 @@ public class PseudoTerminalHelpers {
     }
 
     /* Taken from Swift's StdLib: https://github.com/apple/swift/blob/master/stdlib/private/SwiftPrivate/SwiftPrivate.swift */
-    static func withArrayOfCStrings<R>(
+    public static func withArrayOfCStrings<R>(
       _ args: [String], _ body: ([UnsafeMutablePointer<CChar>?]) -> R
     ) -> R {
       let argsCounts = Array(args.map { $0.utf8.count + 1 })
@@ -47,10 +47,10 @@ public class PseudoTerminalHelpers {
       }
     }
 
-    public static func fork (andExec: String, args: [String], env: [String], desiredWindowSize: inout winsize) -> (pid: pid_t, masterFd: Int32)? {
+    public static func fork (andExec: String, args: [String], env: [String]) -> (pid: pid_t, masterFd: Int32)? {
         var master: Int32 = 0
         
-        let pid = forkpty(&master, nil, nil, &desiredWindowSize)
+        let pid = forkpty(&master, nil, nil, nil)
         if pid < 0 {
             return nil
         }
@@ -62,15 +62,5 @@ public class PseudoTerminalHelpers {
             })
         }
         return (pid, master)
-    }
-    
-    public static func setWinSize (masterPtyDescriptor: Int32, windowSize: inout winsize) -> Int32 {
-        return ioctl(masterPtyDescriptor, TIOCSWINSZ, &windowSize)
-    }
-    
-    public static func availableBytes (fd: Int32) -> (status: Int32, size: Int32) {
-        var size: Int32 = 0
-        let status = ioctl (fd, 0x4004667f /* FIONREAD */, &size)
-        return (status, size)
     }
 }

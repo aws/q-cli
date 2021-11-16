@@ -17,9 +17,9 @@ typedef struct {
 } Pty;
 
 
-Pty* pty_init(const char* logfile);
-int pty_send(Pty* pty, const char* buf, int count);
-void pty_free(Pty* pty);
+Pty* _Nullable pty_init(const char* _Nonnull executable, char* _Nullable const* _Nonnull args, char* _Nullable const* _Nonnull env, const char* _Nonnull logfile);
+ssize_t pty_send(Pty* _Nullable pty, const char* _Nonnull buf, int count);
+void pty_free(Pty* _Nullable pty);
 
 
 #endif /* pty_h */

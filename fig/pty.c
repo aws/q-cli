@@ -24,12 +24,7 @@
 
 #define _POSIX_C_SOURCE 200809L
 #define _DEFAULT_SOURCE
-
-#if defined(SOLARIS)
-#define _XOPEN_SOURCE 600
-#else
 #define _XOPEN_SOURCE 700
-#endif
 
 #if defined(__APPLE__) || !defined(TIOCGWINSZ)
 #include <sys/ioctl.h>
@@ -128,18 +123,19 @@ void error(int log, const char* fmt, ...) {
   exit(1);
 }
 
-int pty_send(Pty* p, const char* buf, int count) {
-    int nwrite;
-    while ((nwrite = write(p->fd, buf, count)) < 0 && errno == EINTR) {};
-    return nwrite;
+ssize_t pty_send(Pty* p, const char* buf, int count) {
+  if (p == NULL) return -1;
+  ssize_t nwrite;
+  while ((nwrite = write(p->fd, buf, count)) < 0 && errno == EINTR) {};
+  return nwrite;
 }
 
-Pty* pty_init(const char* logfile) {
+Pty* pty_init(const char* executable, char* const* args, char* const* env, const char* logfile) {
   int fdp;
   pid_t process_pid;
   pid_t pty_pid;
   char ptc_name[30];
-  int log = open(logfile, O_APPEND | O_CREAT | O_WRONLY);
+  int log = open(logfile, O_APPEND | O_CREAT | O_WRONLY, 0666);
 
   // Open parent/child ends of pty.
   if ((fdp = ptyp_open(ptc_name)) < 0)
@@ -150,25 +146,26 @@ Pty* pty_init(const char* logfile) {
   } else if (process_pid == 0) {
     close(log);
     ptyc_open(fdp, ptc_name, NULL, NULL);
-    char* argv[] = { "/bin/bash", "--noprofile", "--norc", "--noediting", NULL };
-    execvp(argv[0], argv);
+    execve(executable, args, env);
     exit(1);
   }
 
-//  if ((pty_pid = fork()) < 0) {
-//    error(log, "failed to fork pty parent");
-//  } else if (pty_pid == 0) {
-//    char buf[BUFFSIZE + 1];
-//    for (;;) {
-//      int nread = read(fdp, buf, BUFFSIZE - 1);
-//      if (nread <= 0)
-//        break;
-//      if (write(log, buf, nread) != nread)
-//        error(log, "failed to write to log file");
-//    }
-//    close(log);
-//    exit(0);
-//  }
+  if ((pty_pid = fork()) < 0) {
+    error(log, "failed to fork pty parent");
+  } else if (pty_pid == 0) {
+    char buf[BUFFSIZE + 1];
+    for (;;) {
+      ssize_t nread = read(fdp, buf, BUFFSIZE - 1);
+      if (nread < 0 && errno == EINTR)
+        continue;
+      if (nread <= 0)
+        break;
+      if (write(log, buf, nread) != nread)
+        error(log, "failed to write to log file");
+    }
+    close(log);
+    exit(0);
+  }
   close(log);
 
   Pty* pty = malloc(sizeof(Pty));
@@ -179,6 +176,9 @@ Pty* pty_init(const char* logfile) {
 }
 
 void pty_free(Pty* pty) {
-  kill(pty->process_pid, SIGKILL);
+  if (pty != NULL) {
+    write(pty->fd, "\x04", 1);
+    kill(pty->process_pid, SIGKILL);
+  }
   free(pty);
 }
