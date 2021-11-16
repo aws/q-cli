@@ -6,9 +6,12 @@ import (
 	"fig-cli/cmd/settings/open"
 	fig_ipc "fig-cli/fig-ipc"
 	fig_proto "fig-cli/fig-proto"
+	"fig-cli/logging"
 	"fig-cli/settings"
 	"fmt"
+	"os"
 
+	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
 )
 
@@ -26,8 +29,13 @@ func NewCmdSettings() *cobra.Command {
 			if len(arg) == 0 {
 				response, err := fig_ipc.RunOpenUiElementCommand(fig_proto.UiElement_SETTINGS)
 				if err != nil {
-					fmt.Println(err)
-					return
+					logging.Log("settings:", err.Error())
+					fmt.Printf("\n" +
+						lipgloss.NewStyle().Bold(true).Render("Unable to Connect to Fig") +
+						"\nFig might not be running, to launch Fig run: " +
+						lipgloss.NewStyle().Foreground(lipgloss.Color("#ff00ff")).Render("fig launch") +
+						"\n\n")
+					os.Exit(1)
 				}
 
 				if response != "" {
@@ -51,10 +59,21 @@ func NewCmdSettings() *cobra.Command {
 
 			if len(arg) == 1 {
 				val := result[arg[0]]
-				if val != nil {
-					fmt.Println(result[arg[0]])
-				} else {
-					fmt.Println("No value associated with '" + arg[0] + "'.")
+				if val == nil {
+					fmt.Printf("No value associated with '%v'.\n", arg[0])
+				}
+
+				switch valType := val.(type) {
+				case []interface{}:
+					for _, v := range valType {
+						fmt.Println(v)
+					}
+				case map[string]interface{}:
+					for k, v := range valType {
+						fmt.Printf("%v: %v\n", k, v)
+					}
+				default:
+					fmt.Printf("%v\n", val)
 				}
 			}
 

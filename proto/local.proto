@@ -225,6 +225,7 @@ message DiagnosticsResponse {
 	string securekeyboard_path = 16;
 	string current_process = 17;
 	string current_window_identifier = 18;
+	bool autocomplete = 19;
 }
 
 message CommandResponse {

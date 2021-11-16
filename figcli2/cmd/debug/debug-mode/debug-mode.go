@@ -12,11 +12,12 @@ func NewCmdDebugMode() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "debug-mode [mode]",
 		Short: "Toggle/set debug mode",
-		Args:  cobra.MaximumNArgs(1),
+		Long:  "Toggle/set debug mode",
 		ValidArgs: []string{
 			"on",
 			"off",
 		},
+		Args: cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			if len(args) == 0 {
 				resp, err := fig_ipc.ToggleDebugModeCommand()

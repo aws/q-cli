@@ -302,11 +302,11 @@
     "default": "toggleHistoryMode"
   },
   {
-    "settingName": "autocomplete.keybindings.command+shift+=",
+    "settingName": "autocomplete.keybindings.command+=",
     "default": "increaseSize"
   },
   {
-    "settingName": "autocomplete.keybindings.command+shift+-",
+    "settingName": "autocomplete.keybindings.command+-",
     "default": "decreaseSize"
   },
   {

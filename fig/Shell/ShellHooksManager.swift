@@ -494,6 +494,12 @@ extension ShellHookManager {
       DispatchQueue.main.async {
         Autocomplete.update(with: ("", 0), for: hash)
         Autocomplete.position()
+        
+        // manually trigger edit buffer update since `Autocomplete.update` is deprecated
+        API.notifications.post(Fig_EditBufferChangedNotification.with({ notification in
+          notification.buffer = ""
+          notification.cursor = 0
+        }))
       }
       KeypressProvider.shared.keyBuffer(for: hash).backedByShell = false
     }
@@ -553,12 +559,9 @@ extension ShellHookManager {
   }
 
   func updateKeybuffer(context: Local_ShellContext, text: String, cursor: Int, histno: Int) {
-    Logger.log(message: "Keybuffer update")
-    guard
-      let hash = attemptToFindToAssociatedWindow(
-        for: context.sessionID,
-        currentTopmostWindow: AXWindowServer.shared.whitelistedWindow)
-    else {
+    
+    // invariant: frontmost whitelisted window is assumed to host shell session which sent this edit buffer event.
+    guard let hash = AXWindowServer.shared.whitelistedWindow?.hash else {
       Logger.log(
         message: "Could not link to window on new shell session.", priority: .notify,
         subsystem: .tty)
@@ -566,30 +569,16 @@ extension ShellHookManager {
     }
 
     var ttyHandler: TTY? = tty[hash]
-    
 
-    // stop process if user is definitely in a shell process
-    //      guard ttyHandler?.isShell != true else {
-    //        return
-    //      }
+    if ttyHandler == nil, let trimmedDescriptor = context.ttys.split(separator: "/").last {
 
-    if ttyHandler == nil,
-      let trimmedDescriptor = context.ttys.split(separator: "/").last
-    {
-      //        print("tty",  ?? "?")
-      //        print("tty", info.env?.jsonStringToDict()?["PID"] ?? "?")
-      //        ttyDescriptor.split(sep)
-      print("tty: linking")
+      Logger.log(message: "linking sessionId (\(context.sessionID)) to window hash: \(hash)", subsystem: .tty)
       ttyHandler = self.link(context.sessionID, hash, String(trimmedDescriptor))
 
       ttyHandler?.startedNewShellSession(for: context.pid)
 
     }
 
-    // prevents fig window from popping up if we don't have an associated shell process
-    //      guard let tty = tty[hash], tty.isShell ?? false else {
-    //        return
-    //      }
     guard let tty = ttyHandler else {
       return
     }

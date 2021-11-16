@@ -13,19 +13,21 @@ class CommandHandlers {}
 
 extension CommandHandlers {
   static func logoutCommand() -> CommandResponse {
-    let domain = Bundle.main.bundleIdentifier!
-    let uuid = Defaults.uuid
-    UserDefaults.standard.removePersistentDomain(forName: domain)
-    UserDefaults.standard.removePersistentDomain(forName: "\(domain).shared")
+    DispatchQueue.main.async {
+      let domain = Bundle.main.bundleIdentifier!
+      let uuid = Defaults.uuid
+      UserDefaults.standard.removePersistentDomain(forName: domain)
+      UserDefaults.standard.removePersistentDomain(forName: "\(domain).shared")
 
-    UserDefaults.standard.synchronize()
+      UserDefaults.standard.synchronize()
 
-    UserDefaults.standard.set(uuid, forKey: "uuid")
-    UserDefaults.standard.synchronize()
+      UserDefaults.standard.set(uuid, forKey: "uuid")
+      UserDefaults.standard.synchronize()
 
-    WebView.deleteCache()
+      WebView.deleteCache()
 
-    Config.set(value: "0", forKey: "FIG_LOGGED_IN")
+      Config.set(value: "0", forKey: "FIG_LOGGED_IN")
+    }
 
     return CommandResponse.with { response in
       response.success = Local_SuccessResponse.with({ success in
@@ -35,11 +37,15 @@ extension CommandHandlers {
   }
 
   static func quitCommand() {
-    NSApp.appDelegate.quit()
+    DispatchQueue.main.async {
+      NSApp.appDelegate.quit()
+    }
   }
 
   static func restartCommand() {
-    NSApp.appDelegate.restart()
+    DispatchQueue.main.async {
+      NSApp.appDelegate.restart()
+    }
   }
   
   static func updateCommand(_ force: Bool = false) {
@@ -75,6 +81,7 @@ extension CommandHandlers {
       response.diagnostics.currentProcess = "\(Diagnostic.processForTopmostWindow) (\(Diagnostic.processIdForTopmostWindow)) - \(Diagnostic.ttyDescriptorForTopmostWindow)"
       response.diagnostics.onlytab = String(Defaults.onlyInsertOnTab)
       response.diagnostics.psudoterminalPath = Diagnostic.pseudoTerminalPath ?? "<generated dynamically>"
+      response.diagnostics.autocomplete = Defaults.useAutocomplete
     }
   }
   

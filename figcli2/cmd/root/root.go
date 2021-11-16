@@ -6,6 +6,7 @@ import (
 	"fig-cli/cmd/community"
 	"fig-cli/cmd/contrib"
 	"fig-cli/cmd/debug"
+	"fig-cli/cmd/debug/diagnostic"
 	"fig-cli/cmd/dev"
 	"fig-cli/cmd/doctor"
 	"fig-cli/cmd/hook"
@@ -15,16 +16,20 @@ import (
 	"fig-cli/cmd/launch"
 	"fig-cli/cmd/quit"
 	"fig-cli/cmd/report"
+	"fig-cli/cmd/restart"
 	"fig-cli/cmd/settings"
+	"fig-cli/cmd/settings/docs"
 	"fig-cli/cmd/source"
 	"fig-cli/cmd/specs"
 	"fig-cli/cmd/theme"
 	"fig-cli/cmd/tweet"
 	"fig-cli/cmd/update"
 	"fig-cli/cmd/user"
+	"fig-cli/cmd/user/logout"
 	"fig-cli/diagnostics"
 	fig_ipc "fig-cli/fig-ipc"
 	fig_proto "fig-cli/fig-proto"
+	"fig-cli/logging"
 	"fmt"
 	"os"
 	"os/exec"
@@ -274,6 +279,7 @@ func Execute() {
 	rootCmd.AddCommand(contrib.NewCmdContrib())
 	rootCmd.AddCommand(debug.NewCmdDebug())
 	rootCmd.AddCommand(dev.NewCmdDev())
+	rootCmd.AddCommand(docs.NewCmdDocs())
 	rootCmd.AddCommand(doctor.NewCmdDoctor())
 	rootCmd.AddCommand(hook.NewCmdHook())
 	rootCmd.AddCommand(integrations.NewCmdIntegrations())
@@ -281,6 +287,7 @@ func Execute() {
 	rootCmd.AddCommand(issue.NewCmdIssue())
 	rootCmd.AddCommand(launch.NewCmdLaunch())
 	rootCmd.AddCommand(quit.NewCmdQuit())
+	rootCmd.AddCommand(restart.NewCmdRestart())
 	rootCmd.AddCommand(report.NewCmdReport())
 	rootCmd.AddCommand(settings.NewCmdSettings())
 	rootCmd.AddCommand(source.NewCmdSource())
@@ -290,10 +297,13 @@ func Execute() {
 	rootCmd.AddCommand(update.NewCmdUpdate())
 	rootCmd.AddCommand(user.NewCmdUser())
 
+	rootCmd.AddCommand(diagnostic.NewCmdDiagnostic())
+	rootCmd.AddCommand(logout.NewCmdLogout())
+
 	rootCmd.AddCommand(genFigSpec.NewCmdGenFigSpec())
 
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		logging.Log("root error:", err.Error())
 		os.Exit(1)
 	}
 }
