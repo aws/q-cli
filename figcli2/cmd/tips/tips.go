@@ -48,7 +48,7 @@ func tipFilePath() (string, error) {
 		return "", err
 	}
 
-	tipFilePath := user.HomeDir + "/.fig/tip.json"
+	tipFilePath := user.HomeDir + "/.fig/tips.json"
 	return tipFilePath, nil
 }
 
@@ -77,7 +77,9 @@ func loadTip() (*TipFile, error) {
 
 	tipFile, err := os.Open(tipFilePath)
 	if os.IsNotExist(err) {
-		return &TipFile{}, nil
+		return &TipFile{
+			TimeLastSent: int(time.Now().Unix()),
+		}, nil
 	}
 
 	if err != nil {
@@ -281,7 +283,8 @@ When selecting a file or folder:
 				Text:     tip1Text,
 				TipType:  "tip",
 				Priority: 10,
-				WaitTime: 43200,
+				// 10 minutes
+				WaitTime: 60 * 10,
 			}
 
 			tip2Text := boldStyle.Render(`Fig Tips (2/5):`) + ` Selecting Files / Folders
@@ -297,7 +300,8 @@ When selecting a file or folder:
 				Text:     tip2Text,
 				TipType:  "tip",
 				Priority: 9,
-				WaitTime: 43200,
+				// 12 hours
+				WaitTime: 60 * 60 * 12,
 			}
 
 			tipFile, err := loadTip()
