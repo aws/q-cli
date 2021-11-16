@@ -48,7 +48,7 @@ class PTYProcess {
   }
   
   func send(_ input: String, handlerId: String? = nil) {
-    PseudoTerminal.log("[SEND-\(handlerId ?? "0")] Queuing data to write: \(input.count) \(input)")
+    PseudoTerminal.log("[SEND-\(handlerId ?? "0")] Queuing data to write: \(input.count)")
     self.dispatchQueue.async { [weak self] in
       guard let strongSelf = self else { return }
       guard let process = strongSelf.process else { return }
