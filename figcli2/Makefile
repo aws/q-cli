@@ -14,14 +14,14 @@ ifndef GO
     $(error "go is not in PATH")
 endif
 
-ifeq "$(uname -s)" "Darwin"
+ifeq "$(shell uname -s)" "Darwin"
 build-figcli-arm:
 	GOOS=darwin GOARCH=arm64 go build -o bin/figcli-arm .
 
 build-figcli-x86:
 	GOOS=darwin GOARCH=amd64 go build -o bin/figcli-x86 .
 
-build-figcli: figcli-arm figcli-x86
+build-figcli: build-figcli-arm build-figcli-x86
 	lipo -create -output $(BUILT_PRODUCTS_DIR)/figcli bin/figcli-x86 bin/figcli-arm
 	codesign -s - -v $(BUILT_PRODUCTS_DIR)/figcli
 else
