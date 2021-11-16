@@ -14,6 +14,12 @@ enum ControlCode : String {
     case ETX = "^C"
 }
 
+class LPD : LocalProcessDelegate {
+    func processTerminated(_ source: LocalProcess, exitCode: Int32?) {
+        PseudoTerminal.log("ending session with exit code: \(exitCode ?? -1)")
+    }
+}
+
 class PseudoTerminal {
     typealias ProcessFinished = (stdout: String, stderr: String, exitCode: Int32)
     typealias CallbackHandler =  (ProcessFinished) -> Void
@@ -38,17 +44,10 @@ class PseudoTerminal {
     static func log(_ message: String) {
       Logger.log(message: message, subsystem: .pty)
     }
-    
     let process = InteractiveProcess(logFile: NSHomeDirectory() + "/.fig/logs/c_pty.log")
-  
-
-    
-    // MARK: Initialize
 
     fileprivate var handlers: [HandlerId: CallbackHandler] = [:]
-    fileprivate let headless: HeadlessTerminal = HeadlessTerminal(onEnd: { (code) in
-        PseudoTerminal.log("ending session with exit code: \(code ?? -1)")
-    })
+    fileprivate let process_2: LocalProcess = LocalProcess(delegate: LPD())
     
     init() {
       NotificationCenter.default.addObserver(self,
@@ -69,16 +68,13 @@ class PseudoTerminal {
         PseudoTerminal.log("Starting PTY...")
         let shell = "/bin/bash" //"/bin/bash"
         
-        let rawEnv = mergeFigSpecificEnvironmentVariables(with: environment)
-
-        
-        self.headless.process.startProcess(executable: shell, args: [ "--norc", "--noprofile", "--noediting"], environment: rawEnv.count == 0 ? nil : rawEnv)
-        self.headless.process.delegate = self
-        
+        let environment = mergeFigSpecificEnvironmentVariables(with: environment)
+      
+        var size = winsize(ws_row: UInt16(60), ws_col: UInt16(50), ws_xpixel: UInt16 (16), ws_ypixel: UInt16 (16))
+      
         if let shouldWriteTranscript = Settings.shared.getValue(forKey: Settings.ptyTranscript) as? Bool,
                shouldWriteTranscript {
           self.write(" script -qt0 ~/.fig/logs/pty_transcript.log")
-          self.headless.process.debugIO = true
         }
         
         self.write(" set +o history" + PseudoTerminal.CRLF)
@@ -103,23 +99,12 @@ class PseudoTerminal {
     
     func write(_ input: String) {
       self.process.write(input + PseudoTerminal.CRLF)
+    }
 
-        //self.headless.send(input + PseudoTerminal.CRLF)
-    }
-    
-    func close() {
-        if self.headless.process.running {
-            kill( self.headless.process.shellPid, SIGTERM)
-            kill( self.headless.process.shellPid, SIGKILL)
-        }
-    }
-  
   func restart(with environment: [String: String], completion: ((Bool) -> Void)? = nil) {
-      self.close()
-    
-      // todo: use self.headless.onEnd instead of a hardcoded delay
+      // todo: use processTerminated instead of a hardcoded delay
       Timer.delayWithSeconds(1) {
-        guard !self.headless.process.running else {
+        guard !self.process_2.running else {
           completion?(false)
           return
         }
@@ -192,7 +177,6 @@ extension PseudoTerminal {
       Logger.log(message: "Writing new ENV vars to '\(tmpFile)'", subsystem: .pty)
 
       do {
-
         try command.write(toFile: tmpFile,
                       atomically: true,
                       encoding: .utf8)
@@ -218,7 +202,9 @@ extension PseudoTerminal {
                  handlerId: HandlerId = UUID().uuidString,
                  options: ExecutionOptions = [.backgroundJob],
                  handler: @escaping CallbackHandler) {
-        
+        guard !command.contains("-lic") else {
+          return
+        }
         var cappedHandlerId = handlerId
         // note: magic number comes from fig_callback implementation
         if handlerId.count > 5 {
@@ -245,8 +231,7 @@ extension PseudoTerminal {
         self.handlers[cappedHandlerId] = handler
         
         PseudoTerminal.log("Writing command for handler '\(cappedHandlerId)'")
-        
-        self.process.write(commandToRun)
+        self.write(commandToRun)
 
         PseudoTerminal.log("Running '\(command)' \(options.contains(.pipelined) ? "as pipeline" : "")\(options.contains(.backgroundJob) ? " in background" : "")")
     }
@@ -293,21 +278,6 @@ extension PseudoTerminal {
     }
 }
 
-extension PseudoTerminal : LocalProcessDelegate {
-    func processTerminated(_ source: LocalProcess, exitCode: Int32?) {
-        
-    }
-    
-    func dataReceived(slice: ArraySlice<UInt8>) {
-        
-    }
-    
-    func getWindowSize() -> winsize {
-        return winsize(ws_row: UInt16(60), ws_col: UInt16(50), ws_xpixel: UInt16 (16), ws_ypixel: UInt16 (16))
-    }
-    
-    
-}
 
 
 import FigAPIBindings
@@ -315,10 +285,9 @@ extension PseudoTerminal {
     func handleWriteRequest(_ request: Fig_PseudoterminalWriteRequest) throws -> Bool {
         switch request.input {
             case .text(let text):
-                self.write(text)
+              self.write(text)
             case .octal(let data):
-                self.headless.send(data: ArraySlice([UInt8](data)))
-//                self.headless.send(data: )
+              self.process_2.send(data: ArraySlice([UInt8](data)))
             case .none:
                 throw APIError.generic(message: "No input specified")
             

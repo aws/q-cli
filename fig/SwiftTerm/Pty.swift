@@ -6,15 +6,8 @@
 //
 
 import Foundation
-#if !os(iOS) && !os(tvOS)
 
-/**
- * APIs to assist in controlling a Unix pseudo-terminal from Swift, it provides a wrapper for
- * the libc `forkpty`API in the form of `fork(andExec:args:env:desiredWindowSize:` method,
- * `setWinSize` and `availableBytes`
- */
 public class PseudoTerminalHelpers {
-    
     /* Taken from Swift's StdLib: https://github.com/apple/swift/blob/master/stdlib/private/SwiftPrivate/SwiftPrivate.swift */
     static func scan<
       S : Sequence, U
@@ -54,15 +47,7 @@ public class PseudoTerminalHelpers {
       }
     }
 
-    /**
-     * This method both forks and executes the provided command under a Pseudo Terminal, and returns both the process ID and the file descriptor for the pseudo-terminal
-     * - Parameter andExec: the name of the executable to run
-     * - Parameter args: arguments to be passed to the executable
-     * - Parameter env: the environment variables for the child process
-     * - Parameter desiredWindowSize: the window size that will be set on the pseudo terminal.
-     */
-    public static func fork (andExec: String, args: [String], env: [String], desiredWindowSize: inout winsize) -> (pid: pid_t, masterFd: Int32)?
-    {
+    public static func fork (andExec: String, args: [String], env: [String], desiredWindowSize: inout winsize) -> (pid: pid_t, masterFd: Int32)? {
         var master: Int32 = 0
         
         let pid = forkpty(&master, nil, nil, &desiredWindowSize)
@@ -79,24 +64,13 @@ public class PseudoTerminalHelpers {
         return (pid, master)
     }
     
-    /**
-     * Sets the window size of the underlying pseudo terminal.
-     * - Parameter masterPtyDescriptor: a pseudo-terminal master file descriptor, as returned by fork(andExec:)
-     * - Returns: the value from calling the ioctl
-     */
-    public static func setWinSize (masterPtyDescriptor: Int32, windowSize: inout winsize) -> Int32
-    {
+    public static func setWinSize (masterPtyDescriptor: Int32, windowSize: inout winsize) -> Int32 {
         return ioctl(masterPtyDescriptor, TIOCSWINSZ, &windowSize)
     }
     
-    /**
-     * Returns the number of available bytes to be read from the file descriptor
-     */
-    public static func availableBytes (fd: Int32) -> (status: Int32, size: Int32)
-    {
+    public static func availableBytes (fd: Int32) -> (status: Int32, size: Int32) {
         var size: Int32 = 0
         let status = ioctl (fd, 0x4004667f /* FIONREAD */, &size)
         return (status, size)
     }
 }
-#endif
