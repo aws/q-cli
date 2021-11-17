@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"os"
 	"os/user"
+	"path/filepath"
+	"regexp"
 	"strconv"
 	"time"
 
@@ -268,6 +270,33 @@ func NewCmdReset() *cobra.Command {
 		Use:    "reset",
 		Hidden: true,
 		Run: func(cmd *cobra.Command, args []string) {
+			// Read ~/.fig/user/config
+			user, err := user.Current()
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+
+			configPath := filepath.Join(user.HomeDir, ".fig", "user", "config")
+			config, err := os.ReadFile(configPath)
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+
+			tipsSent := true
+
+			// Check for `FIG_ONBOARDING` in config
+			onboardingRegex := regexp.MustCompile(`FIG_ONBOARDING\s*=\s*(0|1)`)
+			if onboardingRegex.Match(config) {
+				// Check value
+				onboarding := onboardingRegex.FindStringSubmatch(string(config))[1]
+				if onboarding == "0" {
+					// Not onboarded
+					tipsSent = false
+				}
+			}
+
 			boldStyle := lipgloss.NewStyle().Bold(true)
 			boldMagentaStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("5"))
 			underlineStyle := lipgloss.NewStyle().Underline(true)
@@ -290,6 +319,7 @@ func NewCmdReset() *cobra.Command {
 				Priority: 10,
 				// 10 minutes
 				WaitTime: 60 * 10,
+				Sent:     tipsSent,
 			}
 
 			tip2Text := "\n" + boldStyle.Render(`Fig Tips (2/5):`) +
@@ -309,6 +339,7 @@ func NewCmdReset() *cobra.Command {
 				Priority: 9,
 				// 12 hours
 				WaitTime: 60 * 60 * 12,
+				Sent:     tipsSent,
 			}
 
 			tip3Text := "\n" + boldStyle.Render(`Fig Tips (3/5):`) +
@@ -327,6 +358,7 @@ func NewCmdReset() *cobra.Command {
 				Priority: 8,
 				// 12 hours
 				WaitTime: 60 * 60 * 12,
+				Sent:     tipsSent,
 			}
 
 			tip4Text := "\n" + boldStyle.Render(`Fig Tips (4/5):`) +
@@ -344,6 +376,7 @@ func NewCmdReset() *cobra.Command {
 				Priority: 7,
 				// 12 hours
 				WaitTime: 60 * 60 * 12,
+				Sent:     tipsSent,
 			}
 
 			tip5Text := "\n" + boldStyle.Render(`Fig Tips (5/5):`) +
@@ -361,6 +394,7 @@ func NewCmdReset() *cobra.Command {
 				Priority: 6,
 				// 12 hours
 				WaitTime: 60 * 60 * 12,
+				Sent:     tipsSent,
 			}
 
 			tipFile, err := loadTip()

@@ -16,6 +16,11 @@ else
   exit
 fi
 
+# Set the tips for the next prompts
+if [[ "$FIG_ONBOARDING" == '0' ]]; then
+  fig tips reset 2>&1 > /dev/null
+fi
+
 # To update a specific variable:
 # sed -i '' "s/FIG_VAR=.*/FIG_VAR=1/g" ~/.fig/user/config 2> /dev/null
 
@@ -70,8 +75,7 @@ if [[ -z "$APP_TERMINATED_BY_USER" && "$FIG_IS_RUNNING" == '0' ]]; then
   unset DISPLAYED_AUTOLAUNCH_SETTINGS_HINT
 fi
 
-# Reset and Show Fig tips
-fig tips reset 2>&1 > /dev/null
+# Show Fig tips
 fig tips prompt 2> /dev/null &
 
 unset FIG_IS_RUNNING
