@@ -622,7 +622,7 @@ extension ShellHookManager {
 
     print("ZLE: \(text) \(cursor) \(histno)")
 
-    guard Defaults.loggedIn, Defaults.useAutocomplete else {
+    guard Defaults.shared.loggedIn, Defaults.shared.useAutocomplete else {
       return
     }
     API.notifications.post(

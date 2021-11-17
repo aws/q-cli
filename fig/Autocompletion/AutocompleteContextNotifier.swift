@@ -53,7 +53,7 @@ class AutocompleteContextNotifier {
     
     NotificationCenter.default.addObserver(self,
                                            selector: #selector(autocompletePreferenceUpdated(_ :)),
-                                           name: Defaults.autocompletePreferenceUpdated,
+                                           name: Defaults.shared.autocompletePreferenceUpdated,
                                            object: nil)
 
   }
@@ -176,7 +176,7 @@ class AutocompleteContextNotifier {
   }
   
   static func setContextIndicator(_ indicatorUpdate: ContextIndicator, overwriteExistingTitle: Bool = true) {
-    guard Defaults.loggedIn, Defaults.useAutocomplete, addIndicatorToTitlebar else { return }
+    guard Defaults.shared.loggedIn, Defaults.shared.useAutocomplete, addIndicatorToTitlebar else { return }
     guard let window = AXWindowServer.shared.whitelistedWindow else {
         return
       }

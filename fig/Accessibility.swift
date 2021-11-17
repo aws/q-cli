@@ -28,9 +28,9 @@ class Accessibility {
   }
   
   static func checkIfPermissionRevoked() {
-    let previousPermissions = Defaults.accessibilityEnabledOnPreviousLaunch
+    let previousPermissions = Defaults.shared.accessibilityEnabledOnPreviousLaunch
     let currentPermissions = Accessibility.enabled
-    Defaults.accessibilityEnabledOnPreviousLaunch = currentPermissions
+    Defaults.shared.accessibilityEnabledOnPreviousLaunch = currentPermissions
 
     switch (previous: previousPermissions, current: currentPermissions) {
     case (previous: true, current: true):

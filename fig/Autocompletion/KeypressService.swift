@@ -101,7 +101,7 @@ class KeypressProvider {
     
     // todo: it bothers me that this is here since wi. Should we consolidate
     self.keyHandler = NSEvent.addGlobalMonitorForEvents(matching: [ .keyDown, .keyUp], handler: { (event) in
-      guard Defaults.useAutocomplete else { return }
+      guard Defaults.shared.useAutocomplete else { return }
       
       switch event.type {
         case .keyDown:
@@ -192,8 +192,8 @@ class KeypressProvider {
       }
       
       // prevents keystrokes from being processed when typing into another application (specifically, spotlight)
-      guard Defaults.loggedIn,
-            Defaults.useAutocomplete,
+      guard Defaults.shared.loggedIn,
+            Defaults.shared.useAutocomplete,
             Accessibility.focusedApplicationIsSupportedTerminal() else {
         return Unmanaged.passUnretained(event)
       }

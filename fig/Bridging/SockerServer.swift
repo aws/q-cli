@@ -29,8 +29,8 @@ class WebSocketServer {
           }
       }
       
-      Defaults.port = port == 0 ? 8765 : port
-      return WebSocketServer(port: Defaults.port)
+      Defaults.shared.port = port == 0 ? 8765 : port
+      return WebSocketServer(port: Defaults.shared.port)
     }
     let service: ShellBridgeSocketService
     
@@ -168,7 +168,7 @@ class ShellBridgeSocketService: WebSocketService {
                     let firstPass = try decoder.decode(SocketMessage.self, from: message.data(using: .utf8)!)
                     switch firstPass.type {
                         case "request":
-                            guard Defaults.loggedIn else {
+                            guard Defaults.shared.loggedIn else {
                                 from.send(message: "disconnect")
                                 return
                             }
@@ -210,7 +210,7 @@ class ShellBridgeSocketService: WebSocketService {
                         self.sessionIds[msg.session] = from.id
                     case "pipe":
                         print("Handle CLI command: fig \((msg.options ?? []).joined(separator: " "))")
-                        guard Defaults.loggedIn else {
+                        guard Defaults.shared.loggedIn else {
                             from.send(message: "disconnect")
                             return
                         }

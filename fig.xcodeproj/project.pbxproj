@@ -208,6 +208,12 @@
 		75F7F952261FBDC30005E215 /* UnixSocketServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75F7F951261FBDC30005E215 /* UnixSocketServer.swift */; };
 		75F7F954262007170005E215 /* IPC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75F7F953262007170005E215 /* IPC.swift */; };
 		75FE40002626A4BD00AC8414 /* Github.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75FE3FFF2626A4BD00AC8414 /* Github.swift */; };
+		7A0A41DF2738731900080BCE /* FileSystemTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0A41DE2738731900080BCE /* FileSystemTests.swift */; };
+		7A2C8636273949BE00AE5EB6 /* testable-file-to-read.txt in Resources */ = {isa = PBXBuildFile; fileRef = 7A0A41E22738749200080BCE /* testable-file-to-read.txt */; };
+		7A2C8640273951FE00AE5EB6 /* contents-of-this-folder in Resources */ = {isa = PBXBuildFile; fileRef = 7A2C863F273951FE00AE5EB6 /* contents-of-this-folder */; };
+		7A9DB5662741A3E6008BD2AA /* DefaultsTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A9DB5652741A3E6008BD2AA /* DefaultsTest.swift */; };
+		7AB6B6872740301500428F47 /* NSWorkspaceExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AB6B6862740301500428F47 /* NSWorkspaceExtensionTests.swift */; };
+		7AF96D3F273DB3E30006A41B /* ConfigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF96D3E273DB3E30006A41B /* ConfigTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -496,6 +502,12 @@
 		75F7F951261FBDC30005E215 /* UnixSocketServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnixSocketServer.swift; sourceTree = "<group>"; };
 		75F7F953262007170005E215 /* IPC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPC.swift; sourceTree = "<group>"; };
 		75FE3FFF2626A4BD00AC8414 /* Github.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Github.swift; sourceTree = "<group>"; };
+		7A0A41DE2738731900080BCE /* FileSystemTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileSystemTests.swift; sourceTree = "<group>"; };
+		7A0A41E22738749200080BCE /* testable-file-to-read.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "testable-file-to-read.txt"; sourceTree = "<group>"; };
+		7A2C863F273951FE00AE5EB6 /* contents-of-this-folder */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "contents-of-this-folder"; sourceTree = "<group>"; };
+		7A9DB5652741A3E6008BD2AA /* DefaultsTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultsTest.swift; sourceTree = "<group>"; };
+		7AB6B6862740301500428F47 /* NSWorkspaceExtensionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSWorkspaceExtensionTests.swift; sourceTree = "<group>"; };
+		7AF96D3E273DB3E30006A41B /* ConfigTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigTests.swift; sourceTree = "<group>"; };
 		"fig_callback-00000000000" /* fig_callback */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = fig_callback; sourceTree = BUILT_PRODUCTS_DIR; };
 		"fig_get_shell-0000000000" /* fig_get_shell */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = fig_get_shell; sourceTree = BUILT_PRODUCTS_DIR; };
 		"figcli-00000000000000000" /* figcli */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = figcli; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -756,8 +768,13 @@
 		75675969244634B2006AA988 /* figTests */ = {
 			isa = PBXGroup;
 			children = (
+				7A0A41E02738737400080BCE /* fixtures */,
+				7A0A41DE2738731900080BCE /* FileSystemTests.swift */,
 				7567596A244634B2006AA988 /* figTests.swift */,
 				7567596C244634B2006AA988 /* Info.plist */,
+				7AF96D3E273DB3E30006A41B /* ConfigTests.swift */,
+				7AB6B6862740301500428F47 /* NSWorkspaceExtensionTests.swift */,
+				7A9DB5652741A3E6008BD2AA /* DefaultsTest.swift */,
 			);
 			path = figTests;
 			sourceTree = "<group>";
@@ -1001,6 +1018,23 @@
 				75EDDC5025D24755003AECC6 /* hyper-integration.js */,
 			);
 			path = Hyper;
+			sourceTree = "<group>";
+		};
+		7A0A41E02738737400080BCE /* fixtures */ = {
+			isa = PBXGroup;
+			children = (
+				7A0A41E12738740700080BCE /* FileSystem */,
+			);
+			path = fixtures;
+			sourceTree = "<group>";
+		};
+		7A0A41E12738740700080BCE /* FileSystem */ = {
+			isa = PBXGroup;
+			children = (
+				7A2C863F273951FE00AE5EB6 /* contents-of-this-folder */,
+				7A0A41E22738749200080BCE /* testable-file-to-read.txt */,
+			);
+			path = FileSystem;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -1305,6 +1339,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7A2C8636273949BE00AE5EB6 /* testable-file-to-read.txt in Resources */,
+				7A2C8640273951FE00AE5EB6 /* contents-of-this-folder in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1507,7 +1543,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7AB6B6872740301500428F47 /* NSWorkspaceExtensionTests.swift in Sources */,
+				7A0A41DF2738731900080BCE /* FileSystemTests.swift in Sources */,
+				7AF96D3F273DB3E30006A41B /* ConfigTests.swift in Sources */,
 				7567596B244634B2006AA988 /* figTests.swift in Sources */,
+				7A9DB5662741A3E6008BD2AA /* DefaultsTest.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

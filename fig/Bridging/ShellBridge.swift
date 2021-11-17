@@ -190,7 +190,7 @@ class ShellBridge {
     
     fileprivate static func inject(_ cmd: String,
                             runImmediately: Bool = false,
-                            clearLine: Bool = Defaults.clearExistingLineOnTerminalInsert,
+                            clearLine: Bool = Defaults.shared.clearExistingLineOnTerminalInsert,
                             completion: (() -> Void)? = nil) {
         // Frontmost application will recieve the keystrokes, make sure it's the appropriate app!
       
@@ -245,7 +245,7 @@ class ShellBridge {
   
     static func injectStringIntoTerminal(_ cmd: String,
                                          runImmediately: Bool = false,
-                                         clearLine: Bool = Defaults.clearExistingLineOnTerminalInsert,
+                                         clearLine: Bool = Defaults.shared.clearExistingLineOnTerminalInsert,
                                          completion: (() -> Void)? = nil) {
         
       guard let window = AXWindowServer.shared.whitelistedWindow else {
@@ -273,7 +273,7 @@ class ShellBridge {
         Logger.log(message: "Insert effected by xtermjs bug! Showing alert...")
 
         //
-//        guard !Defaults.promptedToRestartDueToXtermBug else {
+//        guard !Defaults.shared.promptedToRestartDueToXtermBug else {
 //          Logger.log(message: "Not inserting due to xterm.js bug...")
 //          return
 //        }
@@ -292,7 +292,7 @@ class ShellBridge {
           restarter.restart()
         }
         
-        Defaults.promptedToRestartDueToXtermBug = true
+        Defaults.shared.promptedToRestartDueToXtermBug = true
 
       } else {
         Logger.log(message: "Inserting '\(cmd)' using keyboard")

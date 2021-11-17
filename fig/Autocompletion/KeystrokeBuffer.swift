@@ -91,7 +91,7 @@ class KeystrokeBuffer : NSObject {
   var buffer: String? = nil {
     didSet {
       if buffer == nil {
-        if (Defaults.playSoundWhenContextIsLost) {
+        if (Defaults.shared.playSoundWhenContextIsLost) {
           NSSound.beep()
         }
         index = nil

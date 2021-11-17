@@ -22,7 +22,7 @@ func NewCmdReport() *cobra.Command {
 				fmt.Printf("\n" +
 					lipgloss.NewStyle().Bold(true).Render("Unable to Connect to Fig") +
 					"\nFig might not be running, to launch Fig run: " +
-					lipgloss.NewStyle().Foreground(lipgloss.Color("#ff00ff")).Render("fig launch") +
+					lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Render("fig launch") +
 					"\n\n")
 				os.Exit(1)
 			} else {

@@ -115,9 +115,9 @@ class API {
                 case .destinationOfSymbolicLinkRequest(let request):
                     response.destinationOfSymbolicLinkResponse = try FileSystem.destinationOfSymbolicLink(request)
                 case .getDefaultsPropertyRequest(let request):
-                  response.getDefaultsPropertyResponse = try Defaults.handleGetRequest(request)
+                  response.getDefaultsPropertyResponse = try Defaults.shared.handleGetRequest(request)
                 case .updateDefaultsPropertyRequest(let request):
-                  response.success = try Defaults.handleSetRequest(request)
+                  response.success = try Defaults.shared.handleSetRequest(request)
                 case .telemetryAliasRequest(let request):
                   response.success = try TelemetryProvider.handleAliasRequest(request)
                 case .telemetryIdentifyRequest(let request):
@@ -137,9 +137,9 @@ class API {
                 case .openInExternalApplicationRequest(let request):
                   response.success = try NSWorkspace.shared.handleOpenURLRequest(request)
                 case .getConfigPropertyRequest(let request):
-                  response.getConfigPropertyResponse = try Config.handleGetRequest(request)
+                response.getConfigPropertyResponse = try Config.shared.handleGetRequest(request)
                 case .updateConfigPropertyRequest(let request):
-                  response.success = try Config.handleSetRequest(request)
+                response.success = try Config.shared.handleSetRequest(request)
                 case .none:
                     throw APIError.generic(message: "No submessage was included in request.")
             }
