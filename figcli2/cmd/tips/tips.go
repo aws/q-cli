@@ -269,17 +269,19 @@ func NewCmdReset() *cobra.Command {
 		Hidden: true,
 		Run: func(cmd *cobra.Command, args []string) {
 			boldStyle := lipgloss.NewStyle().Bold(true)
-			boldMagentaStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#ff00ff"))
+			boldMagentaStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("5"))
 			underlineStyle := lipgloss.NewStyle().Underline(true)
 
-			tip1Text := "\n" + boldMagentaStyle.Render(`Fig Tips (1/5):`) +
-				` Selecting Files / Folders
-
-When selecting a file or folder:
-  * Type $ ` + boldStyle.Render("~/") + ` to start autocompleting from the home directory 
-  * Type $ ` + boldStyle.Render("../") + ` to start autocompleting from the directory above
-
-` + underlineStyle.Render("To disable Fig Tips:") + " fig tips disable\n"
+			tip1Text := "\n" + boldStyle.Render(`Fig Tips (1/5):`) +
+				" 🚀 Customize keybindings\n\n" +
+				"Fig lets you customize keybindings for:\n" +
+				"  • inserting text (like tab/enter)\n" +
+				"  • navigating (like " + boldStyle.Render("↑") + " & " + boldStyle.Render("↓") + " arrow keys)\n" +
+				"  • toggling the description pop out (like ⌘+i)\n" +
+				"  • and more\n\n" +
+				"Just run " + boldMagentaStyle.Render("fig settings") + " and then select " + underlineStyle.Render("keybindings") + "\n\n" +
+				underlineStyle.Render("Disable Fig Tips:") + " " + boldMagentaStyle.Render("fig tips disable") + "\n" +
+				underlineStyle.Render("Report a bug:") + " " + boldMagentaStyle.Render("fig issue") + "\n"
 
 			tip1 := Tip{
 				Id:       "tip-1",
@@ -290,14 +292,15 @@ When selecting a file or folder:
 				WaitTime: 60 * 10,
 			}
 
-			tip2Text := "\n" + boldMagentaStyle.Render(`Fig Tips (2/5):`) +
-				` Selecting Files / Folders
-
-When selecting a file or folder:
-  * Type $ ` + boldStyle.Render("~/") + ` to start autocompleting from the home directory 
-  * Type $ ` + boldStyle.Render("../") + ` to start autocompleting from the directory above
-
-` + underlineStyle.Render("To disable Fig Tips:") + " fig tips disable\n"
+			tip2Text := "\n" + boldStyle.Render(`Fig Tips (2/5):`) +
+				" ⚙️  Adjust settings\n\n" +
+				"Customize autocomplete's look and feel for things like:\n" +
+				"  • Width & height\n" +
+				"  • Font family, font size, theme\n" +
+				"  • Auto-execute functionality (e.g. allowing auto-execute after space)\n\n" +
+				"Just run " + boldMagentaStyle.Render("fig settings") + "\n\n" +
+				underlineStyle.Render("Disable Fig Tips:") + " " + boldMagentaStyle.Render("fig tips disable") + "\n" +
+				underlineStyle.Render("Report a bug:") + " " + boldMagentaStyle.Render("fig issue") + "\n"
 
 			tip2 := Tip{
 				Id:       "tip-2",
@@ -308,20 +311,70 @@ When selecting a file or folder:
 				WaitTime: 60 * 60 * 12,
 			}
 
+			tip3Text := "\n" + boldStyle.Render(`Fig Tips (3/5):`) +
+				" 😎 Private autocomplete\n\n" +
+				"Did you know Fig lets you private completions for your own personal shortcuts or even your team's internal CLI tool?\n\n" +
+				"Build private completions in less than 2 minutes:\n" +
+				"  1. " + boldStyle.Render("Personal:") + " " + underlineStyle.Render("fig.io/shortcuts") + "\n" +
+				"  2. " + boldStyle.Render("Team:") + " " + underlineStyle.Render("fig.io/teams") + "\n\n" +
+				underlineStyle.Render("Disable Fig Tips:") + " " + boldMagentaStyle.Render("fig tips disable") + "\n" +
+				underlineStyle.Render("Report a bug:") + " " + boldMagentaStyle.Render("fig issue") + "\n"
+
+			tip3 := Tip{
+				Id:       "tip-3",
+				Text:     tip3Text,
+				TipType:  "tip",
+				Priority: 8,
+				// 12 hours
+				WaitTime: 60 * 60 * 12,
+			}
+
+			tip4Text := "\n" + boldStyle.Render(`Fig Tips (4/5):`) +
+				" 🎉 Share Fig with friends\n\n" +
+				"Enjoying Fig and think your friends & teammates would too?\n\n" +
+				"Share Fig with friends!\n\n" +
+				"Claim your custom invite link by running: " + boldMagentaStyle.Render("fig invite") + "\n\n" +
+				underlineStyle.Render("Disable Fig Tips:") + " " + boldMagentaStyle.Render("fig tips disable") + "\n" +
+				underlineStyle.Render("Report a bug:") + " " + boldMagentaStyle.Render("fig issue") + "\n"
+
+			tip4 := Tip{
+				Id:       "tip-4",
+				Text:     tip4Text,
+				TipType:  "tip",
+				Priority: 7,
+				// 12 hours
+				WaitTime: 60 * 60 * 12,
+			}
+
+			tip5Text := "\n" + boldStyle.Render(`Fig Tips (5/5):`) +
+				" 🤗 Contribute to autocomplete for public CLIs\n\n" +
+				"Missing completions for a CLI? Finding some errors in completions for an existing CLI?\n\n" +
+				"All of Fig's completions for public CLI tools like cd, git, docker, kubectl are open source and community driven!\n\n" +
+				"Start contributing at: " + underlineStyle.Render("github.com/withfig/autocomplete") + "\n\n" +
+				underlineStyle.Render("Disable Fig Tips:") + " " + boldMagentaStyle.Render("fig tips disable") + "\n" +
+				underlineStyle.Render("Report a bug:") + " " + boldMagentaStyle.Render("fig issue") + "\n"
+
+			tip5 := Tip{
+				Id:       "tip-5",
+				Text:     tip5Text,
+				TipType:  "tip",
+				Priority: 6,
+				// 12 hours
+				WaitTime: 60 * 60 * 12,
+			}
+
 			tipFile, err := loadTip()
 			if err != nil {
 				fmt.Println(err)
 				os.Exit(1)
 			}
 
-			err = tipFile.addTip(tip1)
-			if err != nil {
-				fmt.Println("Error adding tip-1:", err)
-			}
-
-			err = tipFile.addTip(tip2)
-			if err != nil {
-				fmt.Println("Error adding tip-2:", err)
+			tips := []Tip{tip1, tip2, tip3, tip4, tip5}
+			for _, tip := range tips {
+				err := tipFile.addTip(tip)
+				if err != nil {
+					fmt.Printf("Error adding %s: %s\n", tip.Id, err)
+				}
 			}
 		},
 	}
