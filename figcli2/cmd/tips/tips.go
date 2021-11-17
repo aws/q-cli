@@ -297,18 +297,19 @@ func NewCmdReset() *cobra.Command {
 				}
 			}
 
+			boldMagentaAnsi := "\u001b[1;35m"
+			resetAnsi := "\u001b[0m"
+
 			boldStyle := lipgloss.NewStyle().Bold(true)
-			boldMagentaStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("5"))
 			underlineStyle := lipgloss.NewStyle().Underline(true)
 
-			tip1Text := "\n" + boldStyle.Render(`Fig Tips (1/5):`) +
-				" 🚀 Customize keybindings\n\n" +
+			tip1Text := "\n" + boldStyle.Render("Fig Tips (1/5):") + " 🚀 Customize keybindings\n\n" +
 				"Fig lets you customize keybindings for:\n" +
 				"  • inserting text (like tab/enter)\n" +
 				"  • navigating (like " + boldStyle.Render("↑") + " & " + boldStyle.Render("↓") + " arrow keys)\n" +
 				"  • toggling the description pop out (like ⌘+i)\n" +
 				"  • and more\n\n" +
-				"Just run " + boldMagentaStyle.Render("fig settings") + " and then select " + underlineStyle.Render("keybindings") + "\n\n" +
+				"Just run " + boldMagentaAnsi + "fig settings" + resetAnsi + " and then select " + underlineStyle.Render("keybindings") + "\n\n" +
 				underlineStyle.Render("Disable Getting Started Tips:") + " fig tips disable\n" +
 				underlineStyle.Render("Report a bug:") + " fig issue\n"
 
@@ -328,7 +329,7 @@ func NewCmdReset() *cobra.Command {
 				"  • Width & height\n" +
 				"  • Font family, font size, theme\n" +
 				"  • Auto-execute functionality (e.g. allowing auto-execute after space)\n\n" +
-				"Just run " + boldMagentaStyle.Render("fig settings") + "\n\n" +
+				"Just run " + boldMagentaAnsi + "fig settings" + resetAnsi + "\n\n" +
 				underlineStyle.Render("Disable Getting Started Tips:") + " fig tips disable\n" +
 				underlineStyle.Render("Report a bug:") + " fig issue\n"
 
@@ -344,7 +345,7 @@ func NewCmdReset() *cobra.Command {
 
 			tip3Text := "\n" + boldStyle.Render(`Fig Tips (3/5):`) +
 				" 😎 Private autocomplete\n\n" +
-				"Did you know Fig lets you private completions for your own personal shortcuts or even your team's internal CLI tool?\n\n" +
+				"Did you know Fig lets you private completions for your own personal\n shortcuts or even your team's internal CLI tool?\n\n" +
 				"Build private completions in less than 2 minutes:\n" +
 				"  1. " + boldStyle.Render("Personal:") + " " + underlineStyle.Render("fig.io/shortcuts") + "\n" +
 				"  2. " + boldStyle.Render("Team:") + " " + underlineStyle.Render("fig.io/teams") + "\n\n" +
@@ -365,7 +366,7 @@ func NewCmdReset() *cobra.Command {
 				" 🎉 Share Fig with friends\n\n" +
 				"Enjoying Fig and think your friends & teammates would too?\n\n" +
 				"Share Fig with friends!\n\n" +
-				"Claim your custom invite link by running: " + boldMagentaStyle.Render("fig invite") + "\n\n" +
+				"Claim your custom invite link by running: " + boldMagentaAnsi + "fig invite" + resetAnsi + "\n\n" +
 				underlineStyle.Render("Disable Getting Started Tips:") + " fig tips disable\n" +
 				underlineStyle.Render("Report a bug:") + " fig issue\n"
 
@@ -381,8 +382,8 @@ func NewCmdReset() *cobra.Command {
 
 			tip5Text := "\n" + boldStyle.Render(`Fig Tips (5/5):`) +
 				" 🤗 Contribute to autocomplete for public CLIs\n\n" +
-				"Missing completions for a CLI? Finding some errors in completions for an existing CLI?\n\n" +
-				"All of Fig's completions for public CLI tools like cd, git, docker, kubectl are open source and community driven!\n\n" +
+				"Missing completions for a CLI? Finding some errors in completions\nfor an existing CLI?\n\n" +
+				"All of Fig's completions for public CLI tools like cd, git, docker,\n kubectl are open source and community driven!\n\n" +
 				"Start contributing at: " + underlineStyle.Render("github.com/withfig/autocomplete") + "\n\n" +
 				underlineStyle.Render("Disable Getting Started Tips:") + " fig tips disable\n" +
 				underlineStyle.Render("Report a bug:") + " fig issue\n"
