@@ -171,7 +171,7 @@ class FigCLI {
         FigCLI.stdin(with: scope)
 //        FigCLI.initialPosition(with: scope)
         
-        if (Defaults.automaticallyLaunchWebAppsInDetachedWindow) {
+        if (Defaults.shared.automaticallyLaunchWebAppsInDetachedWindow) {
             scope.companionWindow.untether()
             scope.companionWindow.makeKey()
         }
@@ -596,7 +596,7 @@ class FigCLI {
         } else if (scope.cmd.starts(with: "@") || scope.cmd.starts(with: "+")) {
             // fig.run/@mschrage/document
             
-            scope.webView.loadRemoteApp(at: URL(string: "https://fig.run/\(scope.cmd)/\(scope.options.first ?? "")?token=\(Defaults.domainToken ?? "")") ?? FigCLI.baseURL)
+            scope.webView.loadRemoteApp(at: URL(string: "https://fig.run/\(scope.cmd)/\(scope.options.first ?? "")?token=\(Defaults.shared.domainToken ?? "")") ?? FigCLI.baseURL)
             FigCLI.env(with: scope)
             FigCLI.options(with: scope, removeFirstOption: true)
             FigCLI.stdin(with: scope)

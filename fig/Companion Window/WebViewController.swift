@@ -497,7 +497,7 @@ class WebView : WKWebView {
             
             self.evaluateJavaScript("fig.mouseEntered()", completionHandler: nil)
             print("Attempting to activate fig")
-            if (Defaults.triggerSidebarWithMouse) {
+            if (Defaults.shared.triggerSidebarWithMouse) {
                 WindowManager.shared.windowServiceProvider.takeFocus()
             }
 
@@ -514,7 +514,7 @@ class WebView : WKWebView {
             print("current frontmost application \(NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "")")
             print("Attempting to activate previous app \( ShellBridge.shared.previousFrontmostApplication?.bundleIdentifier ?? "<none>")")
 //            ShellBridge.shared.previousFrontmostApplication?.activate(options: .init())
-            if (Defaults.triggerSidebarWithMouse) {
+            if (Defaults.shared.triggerSidebarWithMouse) {
                 WindowManager.shared.windowServiceProvider.returnFocus()
             }
 
@@ -568,7 +568,7 @@ class WebView : WKWebView {
           
           // otherwise use fallback
           return Remote.baseURL.appendingPathComponent("autocomplete")
-                               .appendingPathComponent(Defaults.autocompleteVersion ?? "")
+                               .appendingPathComponent(Defaults.shared.autocompleteVersion ?? "")
         }()
         
         self.load(URLRequest(url: url, cachePolicy: .reloadIgnoringLocalAndRemoteCacheData))

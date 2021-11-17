@@ -257,7 +257,7 @@ extension NativeCLI {
     static func logoutCommand(_ scope: Scope) {
         let (_, connection) = scope
         let domain = Bundle.main.bundleIdentifier!
-        let uuid = Defaults.uuid
+        let uuid = Defaults.shared.uuid
         UserDefaults.standard.removePersistentDomain(forName: domain)
         UserDefaults.standard.removePersistentDomain(forName: "\(domain).shared")
 
@@ -333,9 +333,9 @@ extension NativeCLI {
         if let buildMode = Build(rawValue: message.arguments.first ?? "") {
             let msg = "→ Setting build to \(buildMode.rawValue)"
             NativeCLI.printInTerminal(msg, using: connection)
-            Defaults.build = buildMode
+            Defaults.shared.build = buildMode
         } else {
-            let msg = "→ Current build is '\( Defaults.build .rawValue)'\n\n fig util:build [prod | staging | dev]"
+            let msg = "→ Current build is '\( Defaults.shared.build .rawValue)'\n\n fig util:build [prod | staging | dev]"
             NativeCLI.printInTerminal(msg, using: connection)
         }
     }
