@@ -16,6 +16,9 @@ else
   exit
 fi
 
+# Set the tips for the next prompts
+fig tips reset > /dev/null 2>&1
+
 # To update a specific variable:
 # sed -i '' "s/FIG_VAR=.*/FIG_VAR=1/g" ~/.fig/user/config 2> /dev/null
 
@@ -70,8 +73,8 @@ if [[ -z "$APP_TERMINATED_BY_USER" && "$FIG_IS_RUNNING" == '0' ]]; then
   unset DISPLAYED_AUTOLAUNCH_SETTINGS_HINT
 fi
 
-# Uncomment when drip campaign is ready
-# fig app drip 2> /dev/null &
+# Show Fig tips
+fig tips prompt 2> /dev/null
 
 unset FIG_IS_RUNNING
 
