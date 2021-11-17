@@ -25,11 +25,8 @@ var IntegrationMap = map[string]fig_ipc.Integration{
 func NewCmdIntegrations() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "integrations",
-		Short: "Manage Fig integrations",
+		Short: "Manage integrations",
 		Long:  "Install, uninstall, and verify Fig integrations",
-		Annotations: map[string]string{
-			"figcli.command.categories": "Common",
-		},
 	}
 
 	return cmd
