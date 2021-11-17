@@ -26,7 +26,7 @@ func NewCmdSource() *cobra.Command {
 				fmt.Printf("\n" +
 					lipgloss.NewStyle().Bold(true).Render("Unable to Connect to Fig") +
 					"\nFig might not be running, to launch Fig run: " +
-					lipgloss.NewStyle().Foreground(lipgloss.Color("#ff00ff")).Render("fig launch") +
+					lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Render("fig launch") +
 					"\n\n")
 				os.Exit(1)
 			}
@@ -44,7 +44,7 @@ func NewCmdSource() *cobra.Command {
 			fig_ipc.SendHook(hook)
 
 			fmt.Print("\n")
-			fmt.Print(lipgloss.NewStyle().Foreground(lipgloss.Color("#FF00FF")).Bold(true).Render("fig"))
+			fmt.Print(lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Bold(true).Render("fig"))
 			fmt.Printf(" is now connected to this terminal session. (%s)\n\n", tty)
 		},
 	}

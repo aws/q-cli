@@ -2,7 +2,9 @@ package root
 
 import (
 	"fig-cli/cmd/app"
+	"fig-cli/cmd/app/onboarding"
 	"fig-cli/cmd/callback"
+	"fig-cli/cmd/careers"
 	"fig-cli/cmd/community"
 	contrib "fig-cli/cmd/contributors"
 	"fig-cli/cmd/debug"
@@ -281,6 +283,7 @@ func Execute() {
 
 	rootCmd.AddCommand(app.NewCmdApp())
 	rootCmd.AddCommand(callback.NewCmdCallback())
+	rootCmd.AddCommand(careers.NewCmdCareers())
 	rootCmd.AddCommand(community.NewCmdCommunity())
 	rootCmd.AddCommand(contrib.NewCmdContrib())
 	rootCmd.AddCommand(debug.NewCmdDebug())
@@ -305,6 +308,7 @@ func Execute() {
 
 	rootCmd.AddCommand(diagnostic.NewCmdDiagnostic())
 	rootCmd.AddCommand(logout.NewCmdLogout())
+	rootCmd.AddCommand(onboarding.NewCmdOnboarding())
 
 	rootCmd.AddCommand(genFigSpec.NewCmdGenFigSpec())
 
