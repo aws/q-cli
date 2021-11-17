@@ -284,7 +284,7 @@ class IPC: UnixSocketServerDelegate {
         object: [
           "handlerId": hook.handlerID,
           "filepath": hook.filepath,
-          "exitCode": hook.exitCode,
+          "exitCode": hook.exitCode
         ])
     case .integrationReady(let hook):
       ShellHookManager.shared.integrationReadyHook(identifier: hook.identifier)
@@ -346,7 +346,7 @@ extension IPC {
       switch Hook(rawValue: shellMessage.hook ?? "") {
       case .event:
         if let event = shellMessage.options?[safe: 1] {
-          TelemetryProvider.track(event: event, with: [:])
+          TelemetryProvider.shared.track(event: event, with: [:])
         } else {
           print("No event")
         }

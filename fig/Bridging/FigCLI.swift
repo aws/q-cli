@@ -430,9 +430,9 @@ class FigCLI {
 
       //            companionWindow.positioning =  .spotlight
       //            FigCLI.index(with: scope)
-      TelemetryProvider.track(event: .ranCommand, with:
+      TelemetryProvider.shared.track(event: .ranCommand, with:
                                 ["command": scope.cmd,
-                                 "arguments": scope.options.map { TelemetryProvider.obscure($0)}.joined(separator: " "),
+                                 "arguments": scope.options.map { TelemetryProvider.shared.obscure($0)}.joined(separator: " "),
                                  "shell": scope.shell ?? "<unknown>",
                                  "terminal": scope.term ?? "<unknown>"])
       return
@@ -448,9 +448,9 @@ class FigCLI {
                       session: message.session)
     print("ROUTING \(command)")
 
-    TelemetryProvider.track(event: .ranCommand, with:
+    TelemetryProvider.shared.track(event: .ranCommand, with:
                               ["command": scope.cmd,
-                               "arguments": scope.options.map { TelemetryProvider.obscure($0) }.joined(separator: " "),
+                               "arguments": scope.options.map { TelemetryProvider.shared.obscure($0) }.joined(separator: " "),
                                "shell": scope.shell ?? "<unknown>",
                                "terminal": scope.term ?? "<unknown>"])
 

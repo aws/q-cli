@@ -567,7 +567,7 @@ extension ShellHookManager {
 
   func eventHook(event: String?) {
     if let event = event {
-      TelemetryProvider.track(event: event, with: [:])
+      TelemetryProvider.shared.track(event: event, with: [:])
     } else {
       print("No event")
     }

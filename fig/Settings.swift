@@ -143,7 +143,7 @@ class Settings {
   @objc class func openUI() {
     Settings.log("Open Settings UI")
 
-    TelemetryProvider.track(event: .openedSettingsPage, with: [:])
+    TelemetryProvider.shared.track(event: .openedSettingsPage, with: [:])
 
     if let settingsWindow = Settings.shared.settingsWindow {
 
@@ -366,7 +366,7 @@ class Settings {
     let currentTelemetryStatus = curr[Settings.legacyTelemetryDisabledKey] as? Bool ??
       curr[Settings.telemetryDisabledKey] as? Bool ?? false
     if priorTelemetryStatus != currentTelemetryStatus {
-      TelemetryProvider.identify(with:
+      TelemetryProvider.shared.identify(with:
                                   ["telemetry": currentTelemetryStatus ? "off" : "on"],
                                  shouldIgnoreTelemetryPreferences: true)
     }

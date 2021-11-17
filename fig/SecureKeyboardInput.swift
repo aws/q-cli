@@ -113,7 +113,7 @@ class SecureKeyboardInput {
   @objc class func openSupportPage() {
     NSWorkspace.shared.open(supportURL)
     DispatchQueue.global(qos: .background).async {
-      TelemetryProvider.track(event: .openSecureInputSupportPage, with: [:])
+      TelemetryProvider.shared.track(event: .openSecureInputSupportPage, with: [:])
     }
   }
   static func notifyIfEnabled() {
@@ -152,7 +152,7 @@ class SecureKeyboardInput {
 
     let payload = [ "responsibleApp": responsibleApp?.bundleIdentifier ?? "unknown"]
     DispatchQueue.global(qos: .background).async {
-      TelemetryProvider.track(event: .showSecureInputEnabledAlert, with: payload)
+      TelemetryProvider.shared.track(event: .showSecureInputEnabledAlert, with: payload)
     }
 
     let action = alert.runModal()

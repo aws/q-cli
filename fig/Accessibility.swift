@@ -71,12 +71,12 @@ class Accessibility {
     pendingPermission = true
 
     DispatchQueue.global(qos: .background).async {
-      TelemetryProvider.track(event: .promptedForAXPermission, with: [:])
+      TelemetryProvider.shared.track(event: .promptedForAXPermission, with: [:])
     }
 
     Accessibility.waitForNextUpdate { (granted) in
       DispatchQueue.global(qos: .background).async {
-        TelemetryProvider.track(event: .grantedAXPermission, with: [:])
+        TelemetryProvider.shared.track(event: .grantedAXPermission, with: [:])
       }
       print("Accessibility Permission Granted!!!")
       Accessibility.setGlobalTimeout(seconds: 2)

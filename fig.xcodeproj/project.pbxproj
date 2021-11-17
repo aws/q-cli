@@ -202,6 +202,7 @@
 		7A2C8640273951FE00AE5EB6 /* contents-of-this-folder in Resources */ = {isa = PBXBuildFile; fileRef = 7A2C863F273951FE00AE5EB6 /* contents-of-this-folder */; };
 		7A9DB5662741A3E6008BD2AA /* DefaultsTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A9DB5652741A3E6008BD2AA /* DefaultsTest.swift */; };
 		7AB6B6872740301500428F47 /* NSWorkspaceExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AB6B6862740301500428F47 /* NSWorkspaceExtensionTests.swift */; };
+		7AC30EF8274573F700A4F7AB /* TelemetryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AC30EF7274573F700A4F7AB /* TelemetryTests.swift */; };
 		7AF96D3F273DB3E30006A41B /* ConfigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF96D3E273DB3E30006A41B /* ConfigTests.swift */; };
 		AB3FB17B27636BF3009EFD9E /* KeypressProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB3FB17A27636BF3009EFD9E /* KeypressProvider.swift */; };
 		AB3FB17C27636C64009EFD9E /* Keystroke.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A63312025A4BE6D00CEA06A /* Keystroke.swift */; };
@@ -489,6 +490,7 @@
 		7A2C863F273951FE00AE5EB6 /* contents-of-this-folder */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "contents-of-this-folder"; sourceTree = "<group>"; };
 		7A9DB5652741A3E6008BD2AA /* DefaultsTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultsTest.swift; sourceTree = "<group>"; };
 		7AB6B6862740301500428F47 /* NSWorkspaceExtensionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSWorkspaceExtensionTests.swift; sourceTree = "<group>"; };
+		7AC30EF7274573F700A4F7AB /* TelemetryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetryTests.swift; sourceTree = "<group>"; };
 		7AF96D3E273DB3E30006A41B /* ConfigTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigTests.swift; sourceTree = "<group>"; };
 		AB3FB17A27636BF3009EFD9E /* KeypressProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = KeypressProvider.swift; path = fig/Autocompletion/KeypressProvider.swift; sourceTree = "<group>"; };
 		"fig_callback-00000000000" /* fig_callback */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = fig_callback; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -748,6 +750,7 @@
 				7AF96D3E273DB3E30006A41B /* ConfigTests.swift */,
 				7AB6B6862740301500428F47 /* NSWorkspaceExtensionTests.swift */,
 				7A9DB5652741A3E6008BD2AA /* DefaultsTest.swift */,
+				7AC30EF7274573F700A4F7AB /* TelemetryTests.swift */,
 				75ACFE7D27556BC1003C22EE /* TerminalSessionLinkingTests.swift */,
 			);
 			path = figTests;
@@ -1515,6 +1518,7 @@
 				7AF96D3F273DB3E30006A41B /* ConfigTests.swift in Sources */,
 				7567596B244634B2006AA988 /* figTests.swift in Sources */,
 				7A9DB5662741A3E6008BD2AA /* DefaultsTest.swift in Sources */,
+				7AC30EF8274573F700A4F7AB /* TelemetryTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

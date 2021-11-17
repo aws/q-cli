@@ -495,7 +495,7 @@ extension ShellBridge {
     hasBeenPrompted = true
     // move analytics off of hotpath
     DispatchQueue.global(qos: .background).async {
-      TelemetryProvider.track(event: .promptedForAXPermission, with: [:])
+      TelemetryProvider.shared.track(event: .promptedForAXPermission, with: [:])
     }
 
     NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!)
@@ -514,7 +514,7 @@ extension ShellBridge {
           completion(value)
           center.removeObserver(observer!)
           DispatchQueue.global(qos: .background).async {
-            TelemetryProvider.track(event: .grantedAXPermission, with: [:])
+            TelemetryProvider.shared.track(event: .grantedAXPermission, with: [:])
           }
           print("Accessibility Permission Granted!!!")
           ShellBridge.hasBeenPrompted = false

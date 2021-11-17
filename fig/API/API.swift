@@ -119,11 +119,11 @@ class API {
       case .updateDefaultsPropertyRequest(let request):
         response.success = try Defaults.shared.handleSetRequest(request)
       case .telemetryAliasRequest(let request):
-        response.success = try TelemetryProvider.handleAliasRequest(request)
+        response.success = try TelemetryProvider.shared.handleAliasRequest(request)
       case .telemetryIdentifyRequest(let request):
-        response.success = try TelemetryProvider.handleIdentifyRequest(request)
+        response.success = try TelemetryProvider.shared.handleIdentifyRequest(request)
       case .telemetryTrackRequest(let request):
-        response.success = try TelemetryProvider.handleTrackRequest(request)
+        response.success = try TelemetryProvider.shared.handleTrackRequest(request)
       case .onboardingRequest(let request):
         isAsync = true
         Onboarding.handleRequest(request, in: webView) { output in
