@@ -18,8 +18,8 @@ import (
 func NewCmdSettings() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "settings [key] [value]",
-		Short: "Get or set a setting",
-		Long:  "Get or set a setting",
+		Short: "Customize appearance & behavior",
+		Long:  "Customize appearance & behavior",
 		Args:  cobra.RangeArgs(0, 2),
 		Annotations: map[string]string{
 			"figcli.command.categories":      "Common",
