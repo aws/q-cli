@@ -7,7 +7,6 @@ import (
 	"net/url"
 	"os/exec"
 	"regexp"
-	"runtime"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -37,10 +36,6 @@ func NewCmdIssue() *cobra.Command {
 				assignees = append(assignees, "sullivan-sean")
 			}
 
-			osName := runtime.GOOS
-			osArch := runtime.GOARCH
-			fmt.Println(osName, osArch)
-
 			var body strings.Builder
 
 			body.WriteString("### Description:\n> Please include a detailed description of the issue (and an image or screen recording, if applicable)\n\n")
@@ -65,14 +60,14 @@ func NewCmdIssue() *cobra.Command {
 
 			body.WriteString("</pre>\n</p>\n</details>")
 
-			fmt.Println(body.String())
-
-			fmt.Println("→ Opening GitHub...")
-			exec.Command("open",
+			fmt.Printf("\n→ Opening GitHub...\n\n")
+			if err := exec.Command("open",
 				fmt.Sprintf("https://github.com/withfig/fig/issues/new?labels=bug&assignees=%s&body=%s",
 					strings.Join(assignees, ","),
 					url.QueryEscape(body.String())),
-			).Run()
+			).Run(); err != nil {
+				fmt.Println(err)
+			}
 		},
 	}
 

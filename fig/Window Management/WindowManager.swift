@@ -212,23 +212,6 @@ class WindowManager : NSObject {
     
     }
     
-    func createSidebar() {
-        
-        if let sidebar = self.sidebar {
-            sidebar.close()
-            self.sidebar = nil
-        }
-        
-        let web = WebViewController()
-        web.webView?.defaultURL = nil
-        web.webView?.loadRemoteApp(at: Remote.baseURL.appendingPathComponent("sidebar"))
-        let companion = CompanionWindow(viewController: web)
-        companion.positioning = CompanionWindow.defaultPassivePosition
-        companion.repositionWindow(forceUpdate: true, explicit: true)
-        self.sidebar = companion
-        
-    }
-    
     func createAutocomplete() {
         guard self.autocomplete == nil else {
           self.autocomplete?.webView?.loadAutocomplete()
@@ -354,7 +337,7 @@ extension WindowManager : ShellBridgeEventListener {
     
     @objc func recievedDataFromPipe(_ notification: Notification) {
         // Prevent windows from being launched from CLI if the user hasn't signed in
-        guard Defaults.email != nil else {
+        guard Defaults.shared.email != nil else {
             SentrySDK.capture(message: "Attempting to run CLI command before signup")
             Logger.log(message: "Attempting to run CLI command before signup")
             return
@@ -505,7 +488,7 @@ extension WindowManager : WindowManagementService {
     func shouldAppear(window: CompanionWindow, explicitlyRepositioned: Bool) -> Bool {
         window.configureWindow(for: window.positioning)
         
-        if !Defaults.loggedIn {
+        if !Defaults.shared.loggedIn {
             print("shouldAppear: Not logged in")
             return false
         }
@@ -526,7 +509,7 @@ extension WindowManager : WindowManagementService {
         }
 
         if window.isAutocompletePopup {
-            guard !Defaults.debugAutocomplete else {
+            guard !Defaults.shared.debugAutocomplete else {
                 return true
             }
             if let max = window.maxHeight, max == 0 {
@@ -723,7 +706,7 @@ extension WindowManager : WindowManagementService {
             let maxWidth =  Settings.shared.getValue(forKey: Settings.autocompleteWidth) as? CGFloat
 
 
-            if (Defaults.debugAutocomplete) {
+            if (Defaults.shared.debugAutocomplete) {
                 WindowManager.shared.autocomplete?.maxHeight = heightLimit
                 WindowManager.shared.autocomplete?.backgroundColor = .red
               
@@ -736,7 +719,7 @@ extension WindowManager : WindowManagementService {
             let positioning = WindowPositioning.frameRelativeToCursor(currentScreenFrame: currentScreen?.frame ?? .zero,
                                                 currentWindowFrame: window.frame,
                                                 cursorRect: rect,
-                                                width: WindowManager.shared.autocomplete?.width ?? maxWidth ?? Defaults.autocompleteWidth ?? 200,
+                                                width: WindowManager.shared.autocomplete?.width ?? maxWidth ?? Defaults.shared.autocompleteWidth ?? 200,
                                                 height: WindowManager.shared.autocomplete?.maxHeight ?? 0,
                                                 anchorOffset: WindowManager.shared.autocomplete?.anchorOffsetPoint ?? .zero,
                                                 maxHeight: heightLimit)

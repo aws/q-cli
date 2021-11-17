@@ -12,17 +12,24 @@ import (
 
 func NewCmdBuild() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "build",
-		Short: "Switch Build",
-		Args:  cobra.ExactArgs(1),
+		Use:   "build {dev|prod|staging}",
+		Short: "Switch build",
+		Long:  `Switch build to dev, staging or prod`,
+		ValidArgs: []string{
+			"dev",
+			"prod",
+			"staging",
+		},
+		Args: cobra.ExactValidArgs(1),
 		Run: func(cmd *cobra.Command, arg []string) {
 			err := fig_ipc.RunBuildCommand(arg[0])
 			if err != nil {
 				logging.Log("fig debug build:", err.Error())
-				fmt.Printf("\n" + lipgloss.NewStyle().Bold(true).Render("Unable to Switch Build") +
-					"\n\n" + "Fig might not be running, you can run " +
-					lipgloss.NewStyle().Foreground(lipgloss.Color("#ff00ff")).Render("fig") +
-					" to launch it\n\n")
+				fmt.Printf("\n" +
+					lipgloss.NewStyle().Bold(true).Render("Unable to Connect to Fig") +
+					"\nFig might not be running, to launch Fig run: " +
+					lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Render("fig launch") +
+					"\n\n")
 				os.Exit(1)
 			}
 		},

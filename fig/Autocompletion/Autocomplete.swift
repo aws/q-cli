@@ -157,6 +157,18 @@ class GenericShellIntegration: ShellIntegration {
            KeypressProvider.shared.keyBuffer(for: window).backing != nil,
            let context = KeypressProvider.shared.keyBuffer(for: window).insert(text: insertionText) {
             Autocomplete.update(with: context, for: window.hash)
+          
+            let backing = KeypressProvider.shared.keyBuffer(for: window).backing
+
+            // manually trigger edit buffer update since `Autocomplete.update` is deprecated
+            // Only manually trigger edit buffer when not using ZLE widgets.
+            // todo(mschrage): Once we consolidate on figterm to get edit buffer, remove the zle specific logic
+            let (buffer, cursor) = context
+            if let sessionId = window.session, backing != .zle {
+              API.notifications.editbufferChanged(buffer: buffer,
+                                                  cursor: cursor,
+                                                  session: sessionId)
+            }
         }
     }
   }

@@ -32,7 +32,7 @@ func NewCmdInvite() *cobra.Command {
 				fmt.Println()
 				fmt.Println(
 					"Run " +
-						lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#FF00FF")).Render("fig user logout") +
+						lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("5")).Render("fig user logout") +
 						" then follow the prompts to log back. Then try again",
 				)
 				fmt.Println()
@@ -67,7 +67,7 @@ func NewCmdInvite() *cobra.Command {
 				fmt.Println()
 				fmt.Println(
 					"Run " +
-						lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#FF00FF")).Render("fig util:logout") +
+						lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("5")).Render("fig user logout") +
 						" then follow the prompts to log back. Then try again",
 				)
 				fmt.Println()
@@ -89,7 +89,7 @@ func NewCmdInvite() *cobra.Command {
 			fmt.Println()
 			fmt.Println(lipgloss.NewStyle().Bold(true).Render("Thank you for sharing Fig."))
 			fmt.Println()
-			fmt.Println("> " + lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#FF00FF")).Render(string(body)))
+			fmt.Println("> " + lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("5")).Render(string(body)))
 			fmt.Println("  Your referral link has been copied to the clipboard.")
 			fmt.Println()
 		},

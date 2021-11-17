@@ -191,9 +191,12 @@ func Summary() string {
 	summary.WriteString("\n")
 
 	//  Autocomplete: \(Defaults.useAutocomplete)
-	autocomplete, _ := ReadPlist("useAutocomplete")
 	summary.WriteString("Autocomplete: ")
-	summary.WriteString(autocomplete)
+	if resp.GetDiagnostics().GetAutocomplete() {
+		summary.WriteString("true")
+	} else {
+		summary.WriteString("false")
+	}
 	summary.WriteString("\n")
 
 	//  Settings.json: \(Diagnostic.settingsExistAndHaveValidFormat)

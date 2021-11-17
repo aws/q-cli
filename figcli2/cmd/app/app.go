@@ -14,7 +14,7 @@ import (
 func NewCmdApp() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "app",
-		Short: "Manage your Fig app",
+		Short: "Interact with the macOS app",
 		Annotations: map[string]string{
 			"figcli.command.categories": "Common",
 		},

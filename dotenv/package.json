@@ -4,7 +4,7 @@
   "description": "Testing for shell integration and figterm",
   "main": "test.js",
   "scripts": {
-    "test": "jest --runInBand --noStackTrace --detectOpenHandles",
+    "test": "jest --runInBand --detectOpenHandles",
     "lint": "eslint src",
     "proto-gen": "cd ../proto/ && ./proto.sh",
     "precommit": "lint-staged",

@@ -63,7 +63,7 @@ func (s Settings) Save() error {
 		return err
 	}
 
-	err = os.WriteFile(usr.HomeDir+"/.fig/settings.json", data, 0644)
+	err = os.WriteFile(usr.HomeDir + "/.fig/settings.json", data, 0644)
 	if err != nil {
 		fmt.Println("Settings: error writing settings file")
 		return err

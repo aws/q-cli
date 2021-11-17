@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
 )
 
@@ -14,13 +15,16 @@ func NewCmdUpdate() *cobra.Command {
 		Use:   "update",
 		Short: "Update Fig",
 		Run: func(cmd *cobra.Command, arg []string) {
-			fmt.Printf("\n→ Checking for updates to macOS app...\n\n")
-
-			err := fig_ipc.UpdateCommand(false)
-			if err != nil {
+			if err := fig_ipc.UpdateCommand(false); err != nil {
 				logging.Log("fig update:", err.Error())
-				fmt.Println("Unable to update fig")
+				fmt.Printf("\n" +
+					lipgloss.NewStyle().Bold(true).Render("Unable to Connect to Fig") +
+					"\nFig might not be running, to launch Fig run: " +
+					lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Render("fig launch") +
+					"\n\n")
 				os.Exit(1)
+			} else {
+				fmt.Printf("\n→ Checking for updates to macOS app...\n\n")
 			}
 		},
 	}

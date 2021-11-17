@@ -8,6 +8,7 @@
 
 import Cocoa
 import Sentry
+import FigAPIBindings
 
 enum Build: String {
     case production = "prod"
@@ -16,79 +17,83 @@ enum Build: String {
 }
 
 class Defaults {
-    static var isProduction: Bool {
-        return Defaults.build == .production
+    static let shared = Defaults(UserDefaults.standard)
+
+    private var defaults: UserDefaults!
+
+    var isProduction: Bool {
+        return build == .production
     }
     
-    static var isStaging: Bool {
-        return UserDefaults.standard.string(forKey: "build") == "staging"
+    var isStaging: Bool {
+        return defaults.string(forKey: "build") == "staging"
     }
     
-    static var build: Build {
+    var build: Build {
         get {
-            return Build(rawValue: UserDefaults.standard.string(forKey: "build") ?? "") ?? .production
+            return Build(rawValue: defaults.string(forKey: "build") ?? "") ?? .production
         }
         set(value) {
-            UserDefaults.standard.set(value.rawValue, forKey: "build")
-            UserDefaults.standard.synchronize()
+            defaults.set(value.rawValue, forKey: "build")
+            defaults.synchronize()
             WindowManager.shared.createAutocomplete()
             (NSApp.delegate as? AppDelegate)?.configureStatusBarItem()
 
         }
     }
     
-    static var uuid: String {
-        guard let uuid = UserDefaults.standard.string(forKey: "uuid") else {
+    var uuid: String {
+        guard let uuid = defaults.string(forKey: "uuid") else {
             let uuid = UUID().uuidString
-            UserDefaults.standard.set(uuid, forKey: "uuid")
-            UserDefaults.standard.synchronize()
+            defaults.set(uuid, forKey: "uuid")
+            defaults.synchronize()
             return uuid
         }
         
         return uuid
     }
     
-    static var showSidebar:Bool {
+    var showSidebar:Bool {
         get {
-            return UserDefaults.standard.string(forKey: "sidebar") != "hidden"
+            return defaults.string(forKey: "sidebar") != "hidden"
         }
         
         set(value) {
-            UserDefaults.standard.set(value ? "visible" : "hidden", forKey: "sidebar")
-            UserDefaults.standard.synchronize()
+            defaults.set(value ? "visible" : "hidden", forKey: "sidebar")
+            defaults.synchronize()
         }
     }
     
-    static var email: String? {
+    var email: String? {
         get {
-            return UserDefaults.standard.string(forKey: "userEmail")
+            return defaults.string(forKey: "userEmail")
         }
         
         set(email) {
             let user = User()
             user.email = email
             SentrySDK.setUser(user)
-            UserDefaults.standard.set(email, forKey: "userEmail")
-            UserDefaults.standard.synchronize()
+            defaults.set(email, forKey: "userEmail")
+            defaults.synchronize()
         }
     }
     
-    static var version: String {
+    var version: String {
          return Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "<unknown>"
     }
     
-    static var automaticallyLaunchWebAppsInDetachedWindow: Bool {
+    var automaticallyLaunchWebAppsInDetachedWindow: Bool {
         get {
-            return UserDefaults.standard.string(forKey: "undockWebApps") == "true"
+            return defaults.string(forKey: "undockWebApps") == "true"
         }
 
         set(flag) {
-            UserDefaults.standard.set(flag ? "true" : "false", forKey: "undockWebApps")
-            UserDefaults.standard.synchronize()
+            defaults.set(flag ? "true" : "false", forKey: "undockWebApps")
+            defaults.synchronize()
         }
     }
     
-    static var loggedIn: Bool {
+    var loggedIn: Bool {
         get {
             return UserDefaults(suiteName: "com.mschrage.fig.shared")?.bool(forKey: "loggedIn") ?? false
         }
@@ -101,73 +106,73 @@ class Defaults {
             }
         }
     }
-    static var domainToken: String? {
+    var domainToken: String? {
         get {
-            return UserDefaults.standard.string(forKey: "domainToken")
+            return defaults.string(forKey: "domainToken")
         }
         
         set(token) {
-            UserDefaults.standard.set(token, forKey: "domainToken")
-            UserDefaults.standard.synchronize()
+            defaults.set(token, forKey: "domainToken")
+            defaults.synchronize()
         }
     }
     
-    static var defaultActivePosition: CompanionWindow.OverlayPositioning {
+    var defaultActivePosition: CompanionWindow.OverlayPositioning {
         get {
              
-            return  UserDefaults.standard.bool(forKey: "updatedDefaultActivePosition") ? CompanionWindow.OverlayPositioning(rawValue: UserDefaults.standard.integer(forKey: "defaultActivePosition")) ?? .outsideRight :  .outsideRight
+            return  defaults.bool(forKey: "updatedDefaultActivePosition") ? CompanionWindow.OverlayPositioning(rawValue: defaults.integer(forKey: "defaultActivePosition")) ?? .outsideRight :  .outsideRight
         }
         
         set(id) {
-            UserDefaults.standard.set(id.rawValue, forKey: "defaultActivePosition")
-            UserDefaults.standard.synchronize()
+            defaults.set(id.rawValue, forKey: "defaultActivePosition")
+            defaults.synchronize()
         }
     }
     
-    static var shouldTrackTargetWindow: Bool {
+    var shouldTrackTargetWindow: Bool {
         get {
             return
-                UserDefaults.standard.bool(forKey: "shouldTrackTargetWindow")
+                defaults.bool(forKey: "shouldTrackTargetWindow")
         }
         
         set(token) {
-            UserDefaults.standard.set(token, forKey: "shouldTrackTargetWindow")
-            UserDefaults.standard.synchronize()
+            defaults.set(token, forKey: "shouldTrackTargetWindow")
+            defaults.synchronize()
         }
     }
     
-    static var clearExistingLineOnTerminalInsert: Bool {
+    var clearExistingLineOnTerminalInsert: Bool {
         get {
             return
-                UserDefaults.standard.bool(forKey: "clearExistingLineOnTerminalInsert")
+                defaults.bool(forKey: "clearExistingLineOnTerminalInsert")
         }
         
         set(token) {
-            UserDefaults.standard.set(token, forKey: "clearExistingLineOnTerminalInsert")
-            UserDefaults.standard.synchronize()
+            defaults.set(token, forKey: "clearExistingLineOnTerminalInsert")
+            defaults.synchronize()
         }
     }
     
-    static var triggerSidebarWithMouse: Bool {
+    var triggerSidebarWithMouse: Bool {
         get {
             return
-                UserDefaults.standard.bool(forKey: "triggerSidebarWithMouse")
+                defaults.bool(forKey: "triggerSidebarWithMouse")
         }
         
         set(token) {
-            UserDefaults.standard.set(token, forKey: "triggerSidebarWithMouse")
-            UserDefaults.standard.synchronize()
+            defaults.set(token, forKey: "triggerSidebarWithMouse")
+            defaults.synchronize()
         }
     }
     
-    static let autocompletePreferenceUpdated = Notification.Name("autocompletePreferenceUpdated")
-    fileprivate static var _useAutcomplete: Bool? = nil
-    static var useAutocomplete: Bool {
+    let autocompletePreferenceUpdated = Notification.Name("autocompletePreferenceUpdated")
+    fileprivate var _useAutcomplete: Bool? = nil
+    var useAutocomplete: Bool {
         get {
             if let flag = _useAutcomplete {
                 return flag
             } else {
-                let flag = UserDefaults.standard.bool(forKey: "useAutocomplete")
+                let flag = defaults.bool(forKey: "useAutocomplete")
                 _useAutcomplete = flag
                 return flag
             }
@@ -177,9 +182,9 @@ class Defaults {
             guard _useAutcomplete != flag else { return }
           
             _useAutcomplete = flag
-            NotificationCenter.default.post(name: Defaults.autocompletePreferenceUpdated, object: flag)
-            UserDefaults.standard.set(flag, forKey: "useAutocomplete")
-            UserDefaults.standard.synchronize()
+            NotificationCenter.default.post(name: autocompletePreferenceUpdated, object: flag)
+            defaults.set(flag, forKey: "useAutocomplete")
+            defaults.synchronize()
             
             Settings.shared.set(value: !flag, forKey: Settings.disableAutocomplete)
             
@@ -188,34 +193,34 @@ class Defaults {
 
     }
     
-    static var playSoundWhenContextIsLost: Bool {
+    var playSoundWhenContextIsLost: Bool {
            get {
                return
-                   UserDefaults.standard.bool(forKey: "playSoundWhenContextIsLost")
+                   defaults.bool(forKey: "playSoundWhenContextIsLost")
            }
            
            set(flag) {
-               UserDefaults.standard.set(flag, forKey: "playSoundWhenContextIsLost")
-               UserDefaults.standard.synchronize()
+               defaults.set(flag, forKey: "playSoundWhenContextIsLost")
+               defaults.synchronize()
            }
 
        }
     
-    static var versionAtPreviousLaunch: String? {
+    var versionAtPreviousLaunch: String? {
         get {
-            return  UserDefaults.standard.string(forKey: "versionAtPreviousLaunch")
+            return  defaults.string(forKey: "versionAtPreviousLaunch")
         }
         
         set(version){
-            UserDefaults.standard.set(version, forKey: "versionAtPreviousLaunch")
-            UserDefaults.standard.synchronize()
+            defaults.set(version, forKey: "versionAtPreviousLaunch")
+            defaults.synchronize()
         }
     }
     
-    static var debugAutocomplete: Bool {
+    var debugAutocomplete: Bool {
         get {
             return
-                UserDefaults.standard.bool(forKey: "debugAutocomplete")
+                defaults.bool(forKey: "debugAutocomplete")
         }
         
         set(flag) {
@@ -223,8 +228,8 @@ class Defaults {
               return
             }
           
-            UserDefaults.standard.set(flag, forKey: "debugAutocomplete")
-            UserDefaults.standard.synchronize()
+            defaults.set(flag, forKey: "debugAutocomplete")
+            defaults.synchronize()
           
             Settings.shared.set(value: flag, forKey: Settings.debugModeKey)
             
@@ -234,57 +239,56 @@ class Defaults {
 
     }
   
-  static var globalAccessibilityTimeout: Float {
-    get {
-      return UserDefaults.standard.float(forKey: "globalAccessibilityTimeout")
-    }
-    
-    set(value) {
-        UserDefaults.standard.set(value, forKey: "globalAccessibilityTimeout")
-        UserDefaults.standard.synchronize()
-    }
+    var globalAccessibilityTimeout: Float {
+        get {
+          return defaults.float(forKey: "globalAccessibilityTimeout")
+        }
 
-  }
+        set(value) {
+            defaults.set(value, forKey: "globalAccessibilityTimeout")
+            defaults.synchronize()
+        }
+    }
     
-    static var broadcastLogs: Bool {
+    var broadcastLogs: Bool {
         get {
             return
-                UserDefaults.standard.bool(forKey: "broadcastLogs")
+                defaults.bool(forKey: "broadcastLogs")
         }
         
         set(flag) {
-            UserDefaults.standard.set(flag, forKey: "broadcastLogs")
-            UserDefaults.standard.synchronize()
+            defaults.set(flag, forKey: "broadcastLogs")
+            defaults.synchronize()
         }
 
     }
     
-    static var broadcastLogsForSubsystem: Logger.Subsystem {
+    var broadcastLogsForSubsystem: Logger.Subsystem {
         get {
-            return Logger.Subsystem(rawValue: UserDefaults.standard.string(forKey: "broadcastLogsForSubsystem") ?? "") ?? .global
+            return Logger.Subsystem(rawValue: defaults.string(forKey: "broadcastLogsForSubsystem") ?? "") ?? .global
         }
         
         set(subsystem) {
-            UserDefaults.standard.set(subsystem.rawValue, forKey: "broadcastLogsForSubsystem")
-            UserDefaults.standard.synchronize()
+            defaults.set(subsystem.rawValue, forKey: "broadcastLogsForSubsystem")
+            defaults.synchronize()
         }
 
     }
     
-    static var autocompleteVersion: String? {
+    var autocompleteVersion: String? {
         get {
-            return  UserDefaults.standard.string(forKey: "autocompleteVersion")
+            return  defaults.string(forKey: "autocompleteVersion")
         }
         
         set(version){
-            UserDefaults.standard.set(version, forKey: "autocompleteVersion")
-            UserDefaults.standard.synchronize()
+            defaults.set(version, forKey: "autocompleteVersion")
+            defaults.synchronize()
         }
     }
     
-    static var autocompleteWidth: CGFloat? {
+    var autocompleteWidth: CGFloat? {
         get {
-            let string = UserDefaults.standard.string(forKey: "autocompleteWidth")
+            let string = defaults.string(forKey: "autocompleteWidth")
             guard let str = string, let n = NumberFormatter().number(from: str) else { return nil }
             return n as? CGFloat
         }
@@ -292,51 +296,51 @@ class Defaults {
         set(width){
             guard let width = width else { return }
             let str = NumberFormatter().string(from: NSNumber(floatLiteral: Double(width) ))
-            UserDefaults.standard.set(str, forKey: "autocompleteWidth")
-            UserDefaults.standard.synchronize()
+            defaults.set(str, forKey: "autocompleteWidth")
+            defaults.synchronize()
         }
     }
     
-    static var processWhitelist: [String] {
+    var processWhitelist: [String] {
         get {
-            let string = UserDefaults.standard.string(forKey: "processWhitelist")
+            let string = defaults.string(forKey: "processWhitelist")
             return string?.split(separator: ",").map { String($0) } ?? []
         }
         
         set(whitelist){
-            UserDefaults.standard.set(whitelist.joined(separator: ","), forKey: "processWhitelist")
-            UserDefaults.standard.synchronize()
+            defaults.set(whitelist.joined(separator: ","), forKey: "processWhitelist")
+            defaults.synchronize()
         }
         
     }
     
-    static var ignoreProcessList: [String] {
+    var ignoreProcessList: [String] {
         get {
-            let string = UserDefaults.standard.string(forKey: "ignoreProcessList")
+            let string = defaults.string(forKey: "ignoreProcessList")
             return string?.split(separator: ",").map { String($0) } ?? []
         }
         
         set(whitelist){
-            UserDefaults.standard.set(whitelist.joined(separator: ","), forKey: "ignoreProcessList")
-            UserDefaults.standard.synchronize()
+            defaults.set(whitelist.joined(separator: ","), forKey: "ignoreProcessList")
+            defaults.synchronize()
         }
         
     }
 
-    static var launchedFollowingCrash: Bool {
+    var launchedFollowingCrash: Bool {
         get {
             return
-                UserDefaults.standard.bool(forKey: "launchedFollowingCrash")
+                defaults.bool(forKey: "launchedFollowingCrash")
         }
         
         set(flag) {
-            UserDefaults.standard.set(flag, forKey: "launchedFollowingCrash")
-            UserDefaults.standard.synchronize()
+            defaults.set(flag, forKey: "launchedFollowingCrash")
+            defaults.synchronize()
         }
 
     }
     
-    static var onlyInsertOnTab: Bool {
+    var onlyInsertOnTab: Bool {
         get {
             if let behavior = Settings.shared.getValue(forKey: Settings.enterKeyBehavior) as? String {
               switch behavior {
@@ -349,12 +353,12 @@ class Defaults {
               }
             }
           
-            return UserDefaults.standard.bool(forKey: "onlyInsertOnTab")
+            return defaults.bool(forKey: "onlyInsertOnTab")
         }
         
         set(flag) {
-            UserDefaults.standard.set(flag, forKey: "onlyInsertOnTab")
-            UserDefaults.standard.synchronize()
+            defaults.set(flag, forKey: "onlyInsertOnTab")
+            defaults.synchronize()
           
             Settings.shared.set(value: flag ? "ignore" : "insert", forKey: Settings.enterKeyBehavior)
         }
@@ -363,9 +367,9 @@ class Defaults {
     
     // determined by running `dscl . -read ~/ UserShell`
     // output: "UserShell: /bin/zsh"
-    static var userShell: String {
+    var userShell: String {
         get {
-            let shell = UserDefaults.standard.string(forKey: "userShell")
+            let shell = defaults.string(forKey: "userShell")
             return shell?.replacingOccurrences(of: "UserShell: ", with: "") ?? "/bin/sh"
         }
         
@@ -377,45 +381,45 @@ class Defaults {
                 val = "UserShell: \(shell)"
             }
             
-            UserDefaults.standard.set(val!, forKey: "userShell")
-            UserDefaults.standard.synchronize()
+            defaults.set(val!, forKey: "userShell")
+            defaults.synchronize()
         }
     }
     
-    static var SSHIntegrationEnabled: Bool {
+    var SSHIntegrationEnabled: Bool {
         get {
-              return UserDefaults.standard.bool(forKey: "SSHIntegrationEnabled")
+              return defaults.bool(forKey: "SSHIntegrationEnabled")
           }
               
           set(flag) {
-              UserDefaults.standard.set(flag, forKey: "SSHIntegrationEnabled")
-              UserDefaults.standard.synchronize()
+              defaults.set(flag, forKey: "SSHIntegrationEnabled")
+              defaults.synchronize()
           }
     }
   
-    static var promptedToRestartDueToXtermBug: Bool {
+    var promptedToRestartDueToXtermBug: Bool {
         get {
-            return UserDefaults.standard.bool(forKey: "promptedToRestartDueToXtermBug")
+            return defaults.bool(forKey: "promptedToRestartDueToXtermBug")
         }
             
         set(flag) {
-            UserDefaults.standard.set(flag, forKey: "promptedToRestartDueToXtermBug")
-            UserDefaults.standard.synchronize()
+            defaults.set(flag, forKey: "promptedToRestartDueToXtermBug")
+            defaults.synchronize()
         }
     }
     
-    static var hasShownAutocompletePopover: Bool {
+    var hasShownAutocompletePopover: Bool {
         get {
-              return UserDefaults.standard.bool(forKey: "hasShownAutocompletePopover")
+              return defaults.bool(forKey: "hasShownAutocompletePopover")
           }
               
           set(flag) {
-              UserDefaults.standard.set(flag, forKey: "hasShownAutocompletePopover")
-              UserDefaults.standard.synchronize()
+              defaults.set(flag, forKey: "hasShownAutocompletePopover")
+              defaults.synchronize()
           }
     }
   
-    static var port: Int {
+    var port: Int {
       get {
         return UserDefaults(suiteName: "com.mschrage.fig.shared")?.integer(forKey: "port") ?? 8765
       }
@@ -427,7 +431,7 @@ class Defaults {
       
     }
   
-    static var developerModeEnabled: Bool {
+    var developerModeEnabled: Bool {
       get {
         if let mode = Settings.shared.getValue(forKey: Settings.developerModeKey) as? Bool, mode {
           return mode
@@ -454,11 +458,11 @@ class Defaults {
       }
     }
   
-    @objc static func toggleDeveloperMode() {
-      Defaults.developerModeEnabled = !Defaults.developerModeEnabled
+    @objc func toggleDeveloperMode() {
+        developerModeEnabled.toggle()
     }
   
-    static var beta: Bool {
+    var beta: Bool {
       get {
         return Settings.shared.getValue(forKey: Settings.beta) as? Bool ?? false
       }
@@ -468,7 +472,7 @@ class Defaults {
       }
     }
   
-    static var telemetryDisabled: Bool {
+    var telemetryDisabled: Bool {
       get {
         
         if let mode = Settings.shared.getValue(forKey: Settings.legacyTelemetryDisabledKey) as? Bool, mode {
@@ -496,18 +500,18 @@ class Defaults {
     }
   }
   
-    static var accessibilityEnabledOnPreviousLaunch: Bool? {
+    var accessibilityEnabledOnPreviousLaunch: Bool? {
         get {
-            return  UserDefaults.standard.bool(forKey: "accessibilityEnabledOnPreviousLaunch")
+            return  defaults.bool(forKey: "accessibilityEnabledOnPreviousLaunch")
         }
         
         set(version){
-            UserDefaults.standard.set(version, forKey: "accessibilityEnabledOnPreviousLaunch")
-            UserDefaults.standard.synchronize()
+            defaults.set(version, forKey: "accessibilityEnabledOnPreviousLaunch")
+            defaults.synchronize()
         }
     }
   
-    static var insertUsingRightArrow: Bool {
+    var insertUsingRightArrow: Bool {
         get {
             if let behavior = Settings.shared.getValue(forKey: Settings.rightArrowKeyBehavior) as? String {
               switch behavior {
@@ -528,26 +532,31 @@ class Defaults {
         }
 
     }
+    
+    init(_ defaults: UserDefaults) {
+        self.defaults = defaults
+    }
 }
 
-import FigAPIBindings
 extension Defaults {
-  static func handleGetRequest(_ request: Fig_GetDefaultsPropertyRequest) throws -> Fig_GetDefaultsPropertyResponse {
+  func handleGetRequest(_ request: Fig_GetDefaultsPropertyRequest) throws -> Fig_GetDefaultsPropertyResponse {
     guard request.hasKey else {
       throw APIError.generic(message: "No key provided.")
     }
     
-    let value = UserDefaults.standard.object(forKey: request.key)
+    let value = defaults.object(forKey: request.key)
     
     var fig_value: Fig_DefaultsValue
     
     switch value {
       case nil:
         fig_value = Fig_DefaultsValue.with { $0.null = true }
-      case let integer as Int:
-        fig_value = Fig_DefaultsValue.with { $0.integer = Int64(integer) }
-      case let boolean as Bool:
-        fig_value = Fig_DefaultsValue.with { $0.boolean = boolean }
+      case let number as NSNumber:
+        if number === kCFBooleanTrue || number === kCFBooleanFalse {
+            fig_value = Fig_DefaultsValue.with({ $0.boolean = number.boolValue })
+        } else {
+            fig_value = Fig_DefaultsValue.with { $0.integer = number.int64Value }
+        }
       case let string as String:
         fig_value = Fig_DefaultsValue.with { $0.string = string }
       default:
@@ -562,29 +571,30 @@ extension Defaults {
     
   }
   
-  static func handleSetRequest(_ request: Fig_UpdateDefaultsPropertyRequest) throws -> Bool {
+  @discardableResult
+  func handleSetRequest(_ request: Fig_UpdateDefaultsPropertyRequest) throws -> Bool {
     guard request.hasKey else {
       throw APIError.generic(message: "No key provided.")
     }
     
-    guard request.hasValue || request.value.null else {
-      UserDefaults.standard.removeObject(forKey: request.key)
-      UserDefaults.standard.synchronize()
+      guard request.hasValue && request.value.type != .null(true) else {
+      defaults.removeObject(forKey: request.key)
+      defaults.synchronize()
       return true
     }
     
     switch request.value.type {
     case .boolean(let bool):
-      UserDefaults.standard.set(bool, forKey: request.key)
+      defaults.set(bool, forKey: request.key)
     case .integer(let integer):
-      UserDefaults.standard.set(integer, forKey: request.key)
+      defaults.set(integer, forKey: request.key)
     case .string(let string):
-      UserDefaults.standard.set(string, forKey: request.key)
+      defaults.set(string, forKey: request.key)
     default:
       throw APIError.generic(message: "Value is an unsupport type.")
     }
     
-    UserDefaults.standard.synchronize()
+    defaults.synchronize()
     return true
   }
 

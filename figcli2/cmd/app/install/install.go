@@ -22,7 +22,7 @@ func backupDotfile(path string) error {
 	}
 
 	// Backup dotfile by copy
-	data, err := ioutil.ReadFile(path)
+	data, err := os.ReadFile(path)
 	if os.IsNotExist(err) {
 		return nil
 	}
@@ -36,7 +36,7 @@ func backupDotfile(path string) error {
 		os.MkdirAll(usr.HomeDir+"/.fig.dotfiles.bak/", 0755)
 	}
 
-	err = ioutil.WriteFile(usr.HomeDir+"/.fig.dotfiles.bak/"+path, data, 0644)
+	err = os.WriteFile(usr.HomeDir+"/.fig.dotfiles.bak/"+path, data, 0644)
 	if err != nil {
 		return err
 	}
@@ -63,7 +63,7 @@ func installIntegrations() {
 
 	// replace old sourcing in profiles
 	for _, profile := range []string{".profile", ".zprofile", ".bash_profile"} {
-		data, err := ioutil.ReadFile(usr.HomeDir + "/" + profile)
+		data, err := os.ReadFile(usr.HomeDir + "/" + profile)
 		if os.IsNotExist(err) {
 			continue
 		}
@@ -75,7 +75,7 @@ func installIntegrations() {
 
 		newBytes := bytes.Replace(data, []byte("~/.fig/exports/env.sh"), []byte("~/.fig/fig.sh"), -1)
 
-		err = ioutil.WriteFile(usr.HomeDir+"/"+profile, newBytes, 0644)
+		err = os.WriteFile(usr.HomeDir+"/"+profile, newBytes, 0644)
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -99,7 +99,7 @@ func installIntegrations() {
 
 	// Install fig.sh
 	for _, profile := range []string{".profile", ".zprofile", ".bash_profile", ".bash_login", ".bashrc", ".zshrc"} {
-		data, err := ioutil.ReadFile(usr.HomeDir + "/" + profile)
+		data, err := os.ReadFile(usr.HomeDir + "/" + profile)
 		if os.IsNotExist(err) {
 			continue
 		}
@@ -113,7 +113,7 @@ func installIntegrations() {
 		newBytes = append(newBytes, data...)
 		newBytes = append(newBytes, []byte("\n#### FIG ENV VARIABLES ####\n# Please make sure this block is at the end of this file.\n[ -s ~/.fig/fig.sh ] && source ~/.fig/fig.sh\n#### END FIG ENV VARIABLES ####\n")...)
 
-		err = ioutil.WriteFile(usr.HomeDir+"/"+profile, newBytes, 0644)
+		err = os.WriteFile(usr.HomeDir+"/"+profile, newBytes, 0644)
 		if err != nil {
 			fmt.Println(err)
 			return

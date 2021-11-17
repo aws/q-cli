@@ -54,6 +54,8 @@ class Settings {
   static let shouldInterceptCommandI = "autocomplete.alwaysInterceptCommandI"
   static let inputMethodShouldPollForActivation = "integrations.input-method.shouldPollForActivation"
   static let ptyTranscript = "developer.pty.transcript"
+  static let autocompleteURL = "developer.autocomplete.host"
+  static let settingsURL = "developer.settings.host"
 
 
   static let keyAliases = [
@@ -67,8 +69,10 @@ class Settings {
   ]
     
   static let filePath = NSHomeDirectory() + "/.fig/settings.json"
-  static let defaultSettingsPath = Bundle.main.configURL.appendingPathComponent("tools", isDirectory: true)
-                                                        .appendingPathComponent("all-settings.json").path
+  static let defaultSettingsPath = Bundle
+        .main.configURL
+        .appendingPathComponent("tools", isDirectory: true)
+        .appendingPathComponent("all-settings.json").path
 
   static let shared = Settings()
   //Note: app will crash if anything is logged before Settings.shared is initted
@@ -90,8 +94,10 @@ class Settings {
   }
   
   func jsonRepresentation(ofDefaultSettings: Bool = false) -> String? {
-    guard let data = try? JSONSerialization.data(withJSONObject: ofDefaultSettings ? defaultSettings : currentSettings,
-                                                 options: .prettyPrinted) else {
+    guard let data = try? JSONSerialization.data(
+        withJSONObject: ofDefaultSettings ? defaultSettings : currentSettings,
+        options: .prettyPrinted
+    ) else {
       return nil
     }
     
@@ -154,9 +160,21 @@ class Settings {
       }
     }
     
+    let url: URL = {
+      
+      // Use value specified by developer.settings.host if it exists
+      if let urlString = Settings.shared.getValue(forKey: Settings.settingsURL) as? String,
+         let url = URL(string: urlString)   {
+         return url
+      }
+      
+      // otherwise use fallback
+      return Remote.baseURL.appendingPathComponent("settings")
+    }()
+    
     let settingsViewController = WebViewController()
     settingsViewController.webView?.defaultURL = nil
-    settingsViewController.webView?.loadRemoteApp(at: Remote.baseURL.appendingPathComponent("settings"))
+    settingsViewController.webView?.loadRemoteApp(at: url)
     settingsViewController.webView?.dragShouldRepositionWindow = true
 
     let settings = WebViewWindow(viewController: settingsViewController, shouldQuitAppOnClose: false)
@@ -332,11 +350,11 @@ class Settings {
   
   fileprivate func processSettingsUpdatesToLegacyDefaults() {
     if let disabled = currentSettings[Settings.disableAutocomplete] as? Bool {
-      Defaults.useAutocomplete = !disabled
+      Defaults.shared.useAutocomplete = !disabled
     }
     
     if let debugMode = currentSettings[Settings.debugModeKey] as? Bool {
-      Defaults.debugAutocomplete = debugMode
+      Defaults.shared.debugAutocomplete = debugMode
     }
   }
   

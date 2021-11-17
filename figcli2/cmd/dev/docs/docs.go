@@ -12,8 +12,10 @@ func NewCmdDocs() *cobra.Command {
 		Use:   "docs",
 		Short: "documentation for building completion specs",
 		Run: func(cmd *cobra.Command, arg []string) {
-			fmt.Println("→ Opening docs in browser...")
-			exec.Command("open", "https://fig.io/docs/getting-started").Run()
+			fmt.Printf("\n→ Opening docs in browser...\n\n")
+			if err := exec.Command("open", "https://fig.io/docs/").Run(); err != nil {
+				fmt.Println(err)
+			}
 		},
 	}
 

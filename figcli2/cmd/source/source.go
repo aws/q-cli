@@ -14,13 +14,20 @@ import (
 func NewCmdSource() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "source",
-		Short: "Connected to this terminal session",
-		Long:  "Connected to this terminal session",
+		Short: "link with terminal session",
+		Long:  "(re)connect to this terminal session",
+		Annotations: map[string]string{
+			"figcli.command.categories": "Common",
+		},
 		Run: func(cmd *cobra.Command, arg []string) {
 			err := fig_ipc.RestartSettingsListenerCommand()
 			if err != nil {
 				logging.Log("fig source:", err.Error())
-				fmt.Println("Unable to restart settings listener")
+				fmt.Printf("\n" +
+					lipgloss.NewStyle().Bold(true).Render("Unable to Connect to Fig") +
+					"\nFig might not be running, to launch Fig run: " +
+					lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Render("fig launch") +
+					"\n\n")
 				os.Exit(1)
 			}
 
@@ -37,7 +44,7 @@ func NewCmdSource() *cobra.Command {
 			fig_ipc.SendHook(hook)
 
 			fmt.Print("\n")
-			fmt.Print(lipgloss.NewStyle().Foreground(lipgloss.Color("#FF00FF")).Bold(true).Render("fig"))
+			fmt.Print(lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Bold(true).Render("fig"))
 			fmt.Printf(" is now connected to this terminal session. (%s)\n\n", tty)
 		},
 	}

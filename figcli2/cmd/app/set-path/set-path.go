@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
 )
 
@@ -16,7 +17,7 @@ func NewCmdSetPath() *cobra.Command {
 		Short: "Set the path to the fig executable",
 		Long:  `Set the path to the fig executable`,
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Printf("\n  Setting $PATH variable in Fig pseudo-terminal...\n\n\n")
+			fmt.Printf("\n  Setting $PATH variable in Fig pseudo-terminal...\n\n")
 
 			// Get the users $PATH
 			path := os.Getenv("PATH")
@@ -37,8 +38,21 @@ func NewCmdSetPath() *cobra.Command {
 				return
 			}
 
-			hook, _ := fig_ipc.CreateInitHook(os.Getppid(), pty)
-			fig_ipc.SendHook(hook)
+			hook, err := fig_ipc.CreateInitHook(os.Getppid(), pty)
+			if err != nil {
+				fmt.Println("Error: ", err)
+				return
+			}
+
+			err = fig_ipc.SendHook(hook)
+			if err != nil {
+				fmt.Printf("\n" +
+					lipgloss.NewStyle().Bold(true).Render("Unable to Connect to Fig") +
+					"\nFig might not be running, to launch Fig run: " +
+					lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Render("fig launch") +
+					"\n\n")
+				return
+			}
 		},
 	}
 
