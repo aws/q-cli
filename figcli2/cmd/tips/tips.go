@@ -309,7 +309,7 @@ func NewCmdReset() *cobra.Command {
 				"  • toggling the description pop out (like ⌘+i)\n" +
 				"  • and more\n\n" +
 				"Just run " + boldMagentaStyle.Render("fig settings") + " and then select " + underlineStyle.Render("keybindings") + "\n\n" +
-				underlineStyle.Render("Disable Fig Tips:") + " fig tips disable\n" +
+				underlineStyle.Render("Disable Getting Started Tips:") + " fig tips disable\n" +
 				underlineStyle.Render("Report a bug:") + " fig issue\n"
 
 			tip1 := Tip{
@@ -329,7 +329,7 @@ func NewCmdReset() *cobra.Command {
 				"  • Font family, font size, theme\n" +
 				"  • Auto-execute functionality (e.g. allowing auto-execute after space)\n\n" +
 				"Just run " + boldMagentaStyle.Render("fig settings") + "\n\n" +
-				underlineStyle.Render("Disable Fig Tips:") + " fig tips disable\n" +
+				underlineStyle.Render("Disable Getting Started Tips:") + " fig tips disable\n" +
 				underlineStyle.Render("Report a bug:") + " fig issue\n"
 
 			tip2 := Tip{
@@ -348,7 +348,7 @@ func NewCmdReset() *cobra.Command {
 				"Build private completions in less than 2 minutes:\n" +
 				"  1. " + boldStyle.Render("Personal:") + " " + underlineStyle.Render("fig.io/shortcuts") + "\n" +
 				"  2. " + boldStyle.Render("Team:") + " " + underlineStyle.Render("fig.io/teams") + "\n\n" +
-				underlineStyle.Render("Disable Fig Tips:") + " fig tips disable\n" +
+				underlineStyle.Render("Disable Getting Started Tips:") + " fig tips disable\n" +
 				underlineStyle.Render("Report a bug:") + " fig issue\n"
 
 			tip3 := Tip{
@@ -366,7 +366,7 @@ func NewCmdReset() *cobra.Command {
 				"Enjoying Fig and think your friends & teammates would too?\n\n" +
 				"Share Fig with friends!\n\n" +
 				"Claim your custom invite link by running: " + boldMagentaStyle.Render("fig invite") + "\n\n" +
-				underlineStyle.Render("Disable Fig Tips:") + " fig tips disable\n" +
+				underlineStyle.Render("Disable Getting Started Tips:") + " fig tips disable\n" +
 				underlineStyle.Render("Report a bug:") + " fig issue\n"
 
 			tip4 := Tip{
@@ -384,7 +384,7 @@ func NewCmdReset() *cobra.Command {
 				"Missing completions for a CLI? Finding some errors in completions for an existing CLI?\n\n" +
 				"All of Fig's completions for public CLI tools like cd, git, docker, kubectl are open source and community driven!\n\n" +
 				"Start contributing at: " + underlineStyle.Render("github.com/withfig/autocomplete") + "\n\n" +
-				underlineStyle.Render("Disable Fig Tips:") + " fig tips disable\n" +
+				underlineStyle.Render("Disable Getting Started Tips:") + " fig tips disable\n" +
 				underlineStyle.Render("Report a bug:") + " fig issue\n"
 
 			tip5 := Tip{
