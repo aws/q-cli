@@ -21,14 +21,14 @@ class SSHIntegration: CommandIntegration {
     static let command = "ssh"
     static func install() {
         if let scriptPath = Bundle.main.path(forResource: "ssh", ofType: "sh") {
-            Defaults.SSHIntegrationEnabled = true
+            Defaults.shared.SSHIntegrationEnabled = true
             let out = "/bin/bash '\(scriptPath)'".runAsCommand()
             print(out)
         }
     }
     
     func runUsingPrefix() -> String? {
-        if let controlPath = self.controlPath, Defaults.SSHIntegrationEnabled {
+        if let controlPath = self.controlPath, Defaults.shared.SSHIntegrationEnabled {
             //-o KbdInteractiveAuthentication=no -o ChallengeResponseAuthentication=no -o BatchMode=yes
           if let prefix = Settings.shared.getValue(forKey: Settings.sshCommand) as? String {
             return prefix.replacingOccurrences(of: "%C", with: controlPath)
@@ -42,7 +42,7 @@ class SSHIntegration: CommandIntegration {
     
 
     func update(tty: TTY, for process: proc) {
-       guard Defaults.SSHIntegrationEnabled else {
+       guard Defaults.shared.SSHIntegrationEnabled else {
             Logger.log(message: "SSH Integration is not enabled", priority: .notify)
             tty.cwd = process.cwd
             tty.cmd = process.cmd

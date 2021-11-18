@@ -15,7 +15,7 @@ extension CommandHandlers {
   static func logoutCommand() -> CommandResponse {
     DispatchQueue.main.async {
       let domain = Bundle.main.bundleIdentifier!
-      let uuid = Defaults.uuid
+      let uuid = Defaults.shared.uuid
       UserDefaults.standard.removePersistentDomain(forName: domain)
       UserDefaults.standard.removePersistentDomain(forName: "\(domain).shared")
 
@@ -26,7 +26,7 @@ extension CommandHandlers {
 
       WebView.deleteCache()
 
-      Config.set(value: "0", forKey: "FIG_LOGGED_IN")
+      Config.shared.set(value: "0", forKey: "FIG_LOGGED_IN")
     }
 
     return CommandResponse.with { response in
@@ -47,26 +47,26 @@ extension CommandHandlers {
       NSApp.appDelegate.restart()
     }
   }
-  
+
   static func updateCommand(_ force: Bool = false) {
-    DispatchQueue.main.async {
-      if force {
-        if UpdateService.provider.updateIsAvailable {
-          UpdateService.provider.installUpdateIfAvailible()
+      DispatchQueue.main.async {
+        if force {
+          if UpdateService.provider.updateIsAvailable {
+            UpdateService.provider.installUpdateIfAvailible()
+          }
+        } else {
+          UpdateService.provider.checkForUpdates(nil)
         }
-      } else {
-        UpdateService.provider.checkForUpdates(nil)
       }
-    }
   }
   
   static func diagnosticsCommand() -> CommandResponse {
     Logger.log(message: "Diagnostics ran")
     return CommandResponse.with { response in
       response.diagnostics.distribution = Diagnostic.distribution
-      response.diagnostics.beta = Defaults.beta
-      response.diagnostics.debugAutocomplete = Defaults.debugAutocomplete
-      response.diagnostics.developerModeEnabled = Defaults.developerModeEnabled
+      response.diagnostics.beta = Defaults.shared.beta
+      response.diagnostics.debugAutocomplete = Defaults.shared.debugAutocomplete
+      response.diagnostics.developerModeEnabled = Defaults.shared.developerModeEnabled
       response.diagnostics.currentLayoutName = KeyboardLayout.shared.currentLayoutName() ?? ""
       response.diagnostics.isRunningOnReadOnlyVolume = Diagnostic.isRunningOnReadOnlyVolume
       response.diagnostics.pathToBundle = Diagnostic.pathToBundle
@@ -79,9 +79,9 @@ extension CommandHandlers {
       response.diagnostics.securekeyboardPath = Diagnostic.blockingProcess ?? "<none>"
       response.diagnostics.currentWindowIdentifier = Diagnostic.descriptionOfTopmostWindow
       response.diagnostics.currentProcess = "\(Diagnostic.processForTopmostWindow) (\(Diagnostic.processIdForTopmostWindow)) - \(Diagnostic.ttyDescriptorForTopmostWindow)"
-      response.diagnostics.onlytab = String(Defaults.onlyInsertOnTab)
+      response.diagnostics.onlytab = String(Defaults.shared.onlyInsertOnTab)
       response.diagnostics.psudoterminalPath = Diagnostic.pseudoTerminalPath ?? "<generated dynamically>"
-      response.diagnostics.autocomplete = Defaults.useAutocomplete
+      response.diagnostics.autocomplete = Defaults.shared.useAutocomplete
     }
   }
   
@@ -123,7 +123,7 @@ extension CommandHandlers {
   static func buildCommand(build: String?) -> CommandResponse {
     if let buildMode = Build(rawValue: build ?? "") {
       DispatchQueue.main.async {
-        Defaults.build = buildMode
+        Defaults.shared.build = buildMode
       }
       
       return CommandResponse.with { response in
@@ -131,7 +131,7 @@ extension CommandHandlers {
       }
     } else {
       return CommandResponse.with { response in
-        response.success.message = Defaults.build.rawValue;
+        response.success.message = Defaults.shared.build.rawValue;
       }
     }
   }
@@ -200,14 +200,14 @@ extension CommandHandlers {
   static func toggleAutocompleteDebugMode(setVal: Bool?) -> CommandResponse {
     DispatchQueue.main.async {
       if let val = setVal {
-        Defaults.debugAutocomplete = val
+        Defaults.shared.debugAutocomplete = val
       } else {
-        Defaults.debugAutocomplete = !Defaults.debugAutocomplete
+        Defaults.shared.debugAutocomplete = !Defaults.shared.debugAutocomplete
       }
     }
     
     return CommandResponse.with { response in
-      response.success.message = Defaults.debugAutocomplete ? "on" : "off"
+      response.success.message = Defaults.shared.debugAutocomplete ? "on" : "off"
     }
   }
 }

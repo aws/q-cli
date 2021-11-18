@@ -1,4 +1,4 @@
-package list
+package contrib
 
 import (
 	"encoding/json"
@@ -9,11 +9,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewCmdList() *cobra.Command {
+func NewCmdContrib() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "list",
-		Short: "List the contributors to Fig",
-		Long:  "List the contributors to Fig",
+		Use:   "contributors",
+		Short: "Contribute to Fig CLI",
+		Long:  "Contribute to Fig CLI",
 		Run: func(cmd *cobra.Command, arg []string) {
 			url := "https://api.github.com/repos/withfig/autocomplete/contributors?per_page=100"
 
@@ -37,18 +37,18 @@ func NewCmdList() *cobra.Command {
 				return
 			}
 
-			fmt.Println("Contributors:")
-			fmt.Println("------------")
 			for _, contributor := range contributors {
 				contributorMap := contributor.(map[string]interface{})
 				login := contributorMap["login"].(string)
-				url := contributorMap["html_url"].(string)
+				// url := contributorMap["html_url"].(string)
 				contribs := contributorMap["contributions"].(float64)
-				fmt.Printf("%.0f - %s - %s\n", contribs, login, url)
+				fmt.Printf("%s (%.0f)\n", login, contribs)
 			}
 
 		},
 	}
+
+	// cmd.AddCommand(list.NewCmdList())
 
 	return cmd
 }

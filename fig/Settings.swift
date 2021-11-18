@@ -69,8 +69,10 @@ class Settings {
   ]
     
   static let filePath = NSHomeDirectory() + "/.fig/settings.json"
-  static let defaultSettingsPath = Bundle.main.configURL.appendingPathComponent("tools", isDirectory: true)
-                                                        .appendingPathComponent("all-settings.json").path
+  static let defaultSettingsPath = Bundle
+        .main.configURL
+        .appendingPathComponent("tools", isDirectory: true)
+        .appendingPathComponent("all-settings.json").path
 
   static let shared = Settings()
   //Note: app will crash if anything is logged before Settings.shared is initted
@@ -92,8 +94,10 @@ class Settings {
   }
   
   func jsonRepresentation(ofDefaultSettings: Bool = false) -> String? {
-    guard let data = try? JSONSerialization.data(withJSONObject: ofDefaultSettings ? defaultSettings : currentSettings,
-                                                 options: .prettyPrinted) else {
+    guard let data = try? JSONSerialization.data(
+        withJSONObject: ofDefaultSettings ? defaultSettings : currentSettings,
+        options: .prettyPrinted
+    ) else {
       return nil
     }
     
@@ -346,11 +350,11 @@ class Settings {
   
   fileprivate func processSettingsUpdatesToLegacyDefaults() {
     if let disabled = currentSettings[Settings.disableAutocomplete] as? Bool {
-      Defaults.useAutocomplete = !disabled
+      Defaults.shared.useAutocomplete = !disabled
     }
     
     if let debugMode = currentSettings[Settings.debugModeKey] as? Bool {
-      Defaults.debugAutocomplete = debugMode
+      Defaults.shared.debugAutocomplete = debugMode
     }
   }
   

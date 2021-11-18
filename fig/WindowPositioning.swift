@@ -9,7 +9,7 @@
 import Cocoa
 import FigAPIBindings
 
-enum APIError: Error {
+enum APIError: Error, Equatable {
     case generic(message: String)
 }
 

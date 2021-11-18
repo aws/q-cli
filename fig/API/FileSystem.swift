@@ -30,6 +30,7 @@ class FileSystem {
         }
     }
     
+    @discardableResult
     static func writeFile(_ request: Fig_WriteFileRequest) throws -> Bool {
         let url = URL(fileURLWithPath: request.path.normalizedPath)
 

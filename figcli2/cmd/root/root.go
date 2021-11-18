@@ -2,12 +2,15 @@ package root
 
 import (
 	"fig-cli/cmd/app"
+	"fig-cli/cmd/app/onboarding"
 	"fig-cli/cmd/callback"
+	"fig-cli/cmd/careers"
 	"fig-cli/cmd/community"
-	"fig-cli/cmd/contrib"
+	contrib "fig-cli/cmd/contributors"
 	"fig-cli/cmd/debug"
 	"fig-cli/cmd/debug/diagnostic"
 	"fig-cli/cmd/dev"
+	"fig-cli/cmd/docs"
 	"fig-cli/cmd/doctor"
 	"fig-cli/cmd/hook"
 	"fig-cli/cmd/integrations"
@@ -18,10 +21,10 @@ import (
 	"fig-cli/cmd/report"
 	"fig-cli/cmd/restart"
 	"fig-cli/cmd/settings"
-	"fig-cli/cmd/settings/docs"
 	"fig-cli/cmd/source"
 	"fig-cli/cmd/specs"
 	"fig-cli/cmd/theme"
+	"fig-cli/cmd/tips"
 	"fig-cli/cmd/tweet"
 	"fig-cli/cmd/update"
 	"fig-cli/cmd/user"
@@ -83,25 +86,16 @@ func Execute() {
 		if !cmd.HasParent() {
 			println(lipgloss.NewStyle().
 				Bold(true).
-				Padding(1, 0).
+				PaddingTop(1).
+				PaddingLeft(2).
 				Width(TextWidth).
-				Align(lipgloss.Center).
-				Render(`/@@@@@@@@@@@\    /@@@@@@@ @@         
-@@@@@@/    \@    @@           /@@@@@@\
-@@@@@@      @    @@       /@ /@@    @@
-@@@@@@      @    @@@@@@@  @@ @@    @@@
-@@@@@@\    /@    @@       @@  \@@@@/@@
-\@@@@@@@@@@@/    @/       @/        @@
-                              \@@__@@/`))
-
-			fmt.Println(lipgloss.
-				NewStyle().
-				PaddingBottom(1).
-				Width(TextWidth).
-				Align(lipgloss.Center).
-				Render(
-					"Fig CLI",
-				))
+				Align(lipgloss.Left).
+				Render(`███████╗██╗ ██████╗
+██╔════╝██║██╔════╝
+█████╗  ██║██║  ███╗
+██╔══╝  ██║██║   ██║
+██║     ██║╚██████╔╝
+╚═╝     ╚═╝ ╚═════╝ CLI`))
 
 			for _, c := range cmd.Commands() {
 				if c.Annotations["figcli.command.categories"] != "" {
@@ -110,48 +104,63 @@ func Execute() {
 				}
 			}
 
+			fmt.Println(lipgloss.
+				NewStyle().
+				Padding(1, 1).
+				Width(TextWidth).
+				Foreground(lipgloss.Color("#9e9e9e")).
+				Render(
+					lipgloss.NewStyle().
+						Bold(true).
+						Render(`Usage: `) +
+						lipgloss.NewStyle().
+							Italic(true).
+							Foreground(lipgloss.Color("#9e9e9e")).
+							Render(`fig [subcommand]`),
+				))
+
+			fmt.Println(lipgloss.
+				NewStyle().
+				Padding(0, 1).
+				Foreground(lipgloss.Color("#d06fcf")).
+				// Border(lipgloss.RoundedBorder(), true, true).
+				Width(TextWidth).
+				Bold(true).
+				Render("Common Subcommands"))
+			var sb strings.Builder
+
 			for _, command := range commandGroups {
 
-				fmt.Println(lipgloss.
-					NewStyle().
-					Border(lipgloss.NormalBorder(), true, false).
-					Padding(0, 1).
-					Width(TextWidth).
-					Bold(true).
-					Render("Common Subcommands"))
-
-				fmt.Println(lipgloss.
-					NewStyle().
-					PaddingBottom(1).
-					PaddingLeft(1).
-					Width(TextWidth).
-					Render(
-						lipgloss.NewStyle().
-							Bold(true).
-							Render(`Usage: `) +
-							lipgloss.NewStyle().
-								Italic(true).
-								Render(`fig [subcommand]`),
-					))
-
 				for _, c := range command {
-					fmt.Print(" > ")
-					fmt.Print(lipgloss.NewStyle().
+					sb.WriteString(lipgloss.NewStyle().
 						Width(14).
+						// Foreground(lipgloss.Color("#FAFAFA")).
+						// Foreground(lipgloss.Color("#995399")).
 						Bold(true).
 						Render(c.Name()))
 
-					fmt.Println(lipgloss.NewStyle().
+					sb.WriteString(lipgloss.NewStyle().
 						Align(lipgloss.Left).
 						Width(TextWidth - 16).
+						Foreground(lipgloss.Color("#bcbcbc")).
 						Italic(true).
 						Render(` ` + c.Short))
 				}
+				fmt.Print(lipgloss.NewStyle().
+					Border(lipgloss.RoundedBorder(), true, true).
+					// BorderForeground(lipgloss.Color("#995399")). //d06fcf
+					Padding(0, 1).
+					Width(TextWidth - 10).
+					// Bold(true).
+					Render(sb.String()))
 
 				fmt.Println()
+				fmt.Println()
 
-				fmt.Println("For more help on a specific command, use:")
-				fmt.Println(" > " + lipgloss.NewStyle().Italic(true).Render("fig help [command]"))
+				fmt.Println(lipgloss.NewStyle().
+					Foreground(lipgloss.Color("#9e9e9e")).
+					Render(" For more info on a specific command, use:"))
+				fmt.Println("  > " + lipgloss.NewStyle().Italic(true).Render("fig help [command]"))
 
 				fmt.Println()
 			}
@@ -223,19 +232,21 @@ func Execute() {
 					Render("Subcommands"))
 
 				for _, c := range cmd.Commands() {
-					fmt.Print(" > ")
-					fmt.Print(lipgloss.NewStyle().
-						Width(12).
-						Bold(true).
-						Align(lipgloss.Left).
-						Render(c.Name()))
+					if !c.Hidden {
+						fmt.Print(" > ")
+						fmt.Print(lipgloss.NewStyle().
+							Width(12).
+							Bold(true).
+							Align(lipgloss.Left).
+							Render(c.Name()))
 
-					fmt.Println(lipgloss.NewStyle().
-						Padding(0, 2).
-						Width(TextWidth).
-						Align(lipgloss.Left).
-						Italic(true).
-						Render(c.Short))
+						fmt.Println(lipgloss.NewStyle().
+							Padding(0, 2).
+							Width(TextWidth).
+							Align(lipgloss.Left).
+							Italic(true).
+							Render(c.Short))
+					}
 				}
 			}
 
@@ -275,6 +286,7 @@ func Execute() {
 
 	rootCmd.AddCommand(app.NewCmdApp())
 	rootCmd.AddCommand(callback.NewCmdCallback())
+	rootCmd.AddCommand(careers.NewCmdCareers())
 	rootCmd.AddCommand(community.NewCmdCommunity())
 	rootCmd.AddCommand(contrib.NewCmdContrib())
 	rootCmd.AddCommand(debug.NewCmdDebug())
@@ -293,12 +305,14 @@ func Execute() {
 	rootCmd.AddCommand(source.NewCmdSource())
 	rootCmd.AddCommand(specs.NewCmdSpecs())
 	rootCmd.AddCommand(theme.NewCmdTheme())
+	rootCmd.AddCommand(tips.NewCmdTips())
 	rootCmd.AddCommand(tweet.NewCmdTweet())
 	rootCmd.AddCommand(update.NewCmdUpdate())
 	rootCmd.AddCommand(user.NewCmdUser())
 
 	rootCmd.AddCommand(diagnostic.NewCmdDiagnostic())
 	rootCmd.AddCommand(logout.NewCmdLogout())
+	rootCmd.AddCommand(onboarding.NewCmdOnboarding())
 
 	rootCmd.AddCommand(genFigSpec.NewCmdGenFigSpec())
 

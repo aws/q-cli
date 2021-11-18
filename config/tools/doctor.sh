@@ -242,7 +242,7 @@ if [[ $("$HOME"/.fig/bin/fig app:running) == 1 ]]; then
 			fi
 			;;
 		"iTerm Integration")
-			if [[ $value == *"true"* ]]; then
+			if [[ $value == *"installed!"* ]]; then
 				IFS="=. " read -ra version <<<"$(mdls -name kMDItemVersion /Applications/iTerm.app | xargs)"
 				iterm_version="${version[1]}${version[2]}"
 				if (("$iterm_version" > 33)); then
@@ -270,7 +270,7 @@ if [[ $("$HOME"/.fig/bin/fig app:running) == 1 ]]; then
 			fi
 			;;
 		"Hyper Integration")
-			if [[ $value == true ]]; then
+			if [[ $value == *"installed!"* ]]; then
 				echo -e "Hyper integration: $pass"
 			else
 				# only care about integration if Hyper is installed
@@ -288,7 +288,7 @@ if [[ $("$HOME"/.fig/bin/fig app:running) == 1 ]]; then
 			fi
 			;;
 		"VSCode Integration")
-			if [[ $value == true ]]; then
+			if [[ $value == *"installed!"* ]]; then
 				echo -e "VSCode integration: $pass"
 			else
 				# only care about integration if VSCode is installed

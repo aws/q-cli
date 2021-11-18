@@ -18,8 +18,8 @@ import (
 func NewCmdSettings() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "settings [key] [value]",
-		Short: "Get or set a setting",
-		Long:  "Get or set a setting",
+		Short: "Customize appearance & behavior",
+		Long:  "Customize appearance & behavior",
 		Args:  cobra.RangeArgs(0, 2),
 		Annotations: map[string]string{
 			"figcli.command.categories":      "Common",
@@ -33,7 +33,7 @@ func NewCmdSettings() *cobra.Command {
 					fmt.Printf("\n" +
 						lipgloss.NewStyle().Bold(true).Render("Unable to Connect to Fig") +
 						"\nFig might not be running, to launch Fig run: " +
-						lipgloss.NewStyle().Foreground(lipgloss.Color("#ff00ff")).Render("fig launch") +
+						lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Render("fig launch") +
 						"\n\n")
 					os.Exit(1)
 				}

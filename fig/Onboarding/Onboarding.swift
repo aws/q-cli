@@ -81,7 +81,7 @@ extension Onboarding {
       case .launchShellOnboarding:
         callback(true)
         webView.window?.close()
-        Defaults.loggedIn = true
+        Defaults.shared.loggedIn = true
 
         Onboarding.setupTerminalsForShellOnboarding {
           SecureKeyboardInput.notifyIfEnabled()
