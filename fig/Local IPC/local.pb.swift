@@ -291,12 +291,20 @@ public struct Local_Command {
     set {command = .resetCache(newValue)}
   }
 
-  public var toggleDebugMode: Local_ToggleDebugModeCommand {
+  public var debugMode: Local_DebugModeCommand {
     get {
-      if case .toggleDebugMode(let v)? = command {return v}
-      return Local_ToggleDebugModeCommand()
+      if case .debugMode(let v)? = command {return v}
+      return Local_DebugModeCommand()
     }
-    set {command = .toggleDebugMode(newValue)}
+    set {command = .debugMode(newValue)}
+  }
+
+  public var promptAccessibility: Local_PromptAccessibilityCommand {
+    get {
+      if case .promptAccessibility(let v)? = command {return v}
+      return Local_PromptAccessibilityCommand()
+    }
+    set {command = .promptAccessibility(newValue)}
   }
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
@@ -315,7 +323,8 @@ public struct Local_Command {
     case build(Local_BuildCommand)
     case openUiElement(Local_OpenUiElementCommand)
     case resetCache(Local_ResetCacheCommand)
-    case toggleDebugMode(Local_ToggleDebugModeCommand)
+    case debugMode(Local_DebugModeCommand)
+    case promptAccessibility(Local_PromptAccessibilityCommand)
 
   #if !swift(>=4.1)
     public static func ==(lhs: Local_Command.OneOf_Command, rhs: Local_Command.OneOf_Command) -> Bool {
@@ -375,8 +384,12 @@ public struct Local_Command {
         guard case .resetCache(let l) = lhs, case .resetCache(let r) = rhs else { preconditionFailure() }
         return l == r
       }()
-      case (.toggleDebugMode, .toggleDebugMode): return {
-        guard case .toggleDebugMode(let l) = lhs, case .toggleDebugMode(let r) = rhs else { preconditionFailure() }
+      case (.debugMode, .debugMode): return {
+        guard case .debugMode(let l) = lhs, case .debugMode(let r) = rhs else { preconditionFailure() }
+        return l == r
+      }()
+      case (.promptAccessibility, .promptAccessibility): return {
+        guard case .promptAccessibility(let l) = lhs, case .promptAccessibility(let r) = rhs else { preconditionFailure() }
         return l == r
       }()
       default: return false
@@ -692,11 +705,20 @@ public struct Local_BuildCommand {
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var branch: String = String()
+  public var branch: String {
+    get {return _branch ?? String()}
+    set {_branch = newValue}
+  }
+  /// Returns true if `branch` has been explicitly set.
+  public var hasBranch: Bool {return self._branch != nil}
+  /// Clears the value of `branch`. Subsequent reads from it will return its default value.
+  public mutating func clearBranch() {self._branch = nil}
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
+
+  fileprivate var _branch: String? = nil
 }
 
 public struct Local_OpenUiElementCommand {
@@ -721,25 +743,47 @@ public struct Local_ResetCacheCommand {
   public init() {}
 }
 
-public struct Local_ToggleDebugModeCommand {
+public struct Local_DebugModeCommand {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var debugMode: Bool {
-    get {return _debugMode ?? false}
-    set {_debugMode = newValue}
+  /// Set debug mode to true or false
+  public var setDebugMode: Bool {
+    get {return _setDebugMode ?? false}
+    set {_setDebugMode = newValue}
   }
-  /// Returns true if `debugMode` has been explicitly set.
-  public var hasDebugMode: Bool {return self._debugMode != nil}
-  /// Clears the value of `debugMode`. Subsequent reads from it will return its default value.
-  public mutating func clearDebugMode() {self._debugMode = nil}
+  /// Returns true if `setDebugMode` has been explicitly set.
+  public var hasSetDebugMode: Bool {return self._setDebugMode != nil}
+  /// Clears the value of `setDebugMode`. Subsequent reads from it will return its default value.
+  public mutating func clearSetDebugMode() {self._setDebugMode = nil}
+
+  /// Toggle debug mode
+  public var toggleDebugMode: Bool {
+    get {return _toggleDebugMode ?? false}
+    set {_toggleDebugMode = newValue}
+  }
+  /// Returns true if `toggleDebugMode` has been explicitly set.
+  public var hasToggleDebugMode: Bool {return self._toggleDebugMode != nil}
+  /// Clears the value of `toggleDebugMode`. Subsequent reads from it will return its default value.
+  public mutating func clearToggleDebugMode() {self._toggleDebugMode = nil}
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
 
-  fileprivate var _debugMode: Bool? = nil
+  fileprivate var _setDebugMode: Bool? = nil
+  fileprivate var _toggleDebugMode: Bool? = nil
+}
+
+public struct Local_PromptAccessibilityCommand {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
 }
 
 /// == Hooks ==
@@ -1469,7 +1513,8 @@ extension Local_Command: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementa
     110: .same(proto: "build"),
     111: .standard(proto: "open_ui_element"),
     112: .standard(proto: "reset_cache"),
-    113: .standard(proto: "toggle_debug_mode"),
+    113: .standard(proto: "debug_mode"),
+    114: .standard(proto: "prompt_accessibility"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -1650,16 +1695,29 @@ extension Local_Command: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementa
         }
       }()
       case 113: try {
-        var v: Local_ToggleDebugModeCommand?
+        var v: Local_DebugModeCommand?
         var hadOneofValue = false
         if let current = self.command {
           hadOneofValue = true
-          if case .toggleDebugMode(let m) = current {v = m}
+          if case .debugMode(let m) = current {v = m}
         }
         try decoder.decodeSingularMessageField(value: &v)
         if let v = v {
           if hadOneofValue {try decoder.handleConflictingOneOf()}
-          self.command = .toggleDebugMode(v)
+          self.command = .debugMode(v)
+        }
+      }()
+      case 114: try {
+        var v: Local_PromptAccessibilityCommand?
+        var hadOneofValue = false
+        if let current = self.command {
+          hadOneofValue = true
+          if case .promptAccessibility(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.command = .promptAccessibility(v)
         }
       }()
       default: break
@@ -1731,9 +1789,13 @@ extension Local_Command: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementa
       guard case .resetCache(let v)? = self.command else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 112)
     }()
-    case .toggleDebugMode?: try {
-      guard case .toggleDebugMode(let v)? = self.command else { preconditionFailure() }
+    case .debugMode?: try {
+      guard case .debugMode(let v)? = self.command else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 113)
+    }()
+    case .promptAccessibility?: try {
+      guard case .promptAccessibility(let v)? = self.command else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 114)
     }()
     case nil: break
     }
@@ -2264,21 +2326,25 @@ extension Local_BuildCommand: SwiftProtobuf.Message, SwiftProtobuf._MessageImple
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try { try decoder.decodeSingularStringField(value: &self.branch) }()
+      case 1: try { try decoder.decodeSingularStringField(value: &self._branch) }()
       default: break
       }
     }
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    if !self.branch.isEmpty {
-      try visitor.visitSingularStringField(value: self.branch, fieldNumber: 1)
-    }
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    try { if let v = self._branch {
+      try visitor.visitSingularStringField(value: v, fieldNumber: 1)
+    } }()
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: Local_BuildCommand, rhs: Local_BuildCommand) -> Bool {
-    if lhs.branch != rhs.branch {return false}
+    if lhs._branch != rhs._branch {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -2335,10 +2401,11 @@ extension Local_ResetCacheCommand: SwiftProtobuf.Message, SwiftProtobuf._Message
   }
 }
 
-extension Local_ToggleDebugModeCommand: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".ToggleDebugModeCommand"
+extension Local_DebugModeCommand: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".DebugModeCommand"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "debug_mode"),
+    1: .standard(proto: "set_debug_mode"),
+    2: .standard(proto: "toggle_debug_mode"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -2347,7 +2414,8 @@ extension Local_ToggleDebugModeCommand: SwiftProtobuf.Message, SwiftProtobuf._Me
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try { try decoder.decodeSingularBoolField(value: &self._debugMode) }()
+      case 1: try { try decoder.decodeSingularBoolField(value: &self._setDebugMode) }()
+      case 2: try { try decoder.decodeSingularBoolField(value: &self._toggleDebugMode) }()
       default: break
       }
     }
@@ -2358,14 +2426,37 @@ extension Local_ToggleDebugModeCommand: SwiftProtobuf.Message, SwiftProtobuf._Me
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
     // https://github.com/apple/swift-protobuf/issues/1182
-    try { if let v = self._debugMode {
+    try { if let v = self._setDebugMode {
       try visitor.visitSingularBoolField(value: v, fieldNumber: 1)
+    } }()
+    try { if let v = self._toggleDebugMode {
+      try visitor.visitSingularBoolField(value: v, fieldNumber: 2)
     } }()
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Local_ToggleDebugModeCommand, rhs: Local_ToggleDebugModeCommand) -> Bool {
-    if lhs._debugMode != rhs._debugMode {return false}
+  public static func ==(lhs: Local_DebugModeCommand, rhs: Local_DebugModeCommand) -> Bool {
+    if lhs._setDebugMode != rhs._setDebugMode {return false}
+    if lhs._toggleDebugMode != rhs._toggleDebugMode {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Local_PromptAccessibilityCommand: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".PromptAccessibilityCommand"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap()
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let _ = try decoder.nextFieldNumber() {
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Local_PromptAccessibilityCommand, rhs: Local_PromptAccessibilityCommand) -> Bool {
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

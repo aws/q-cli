@@ -18,7 +18,7 @@ func NewCmdSetPath() *cobra.Command {
 		Short: "Set the path to the fig executable",
 		Long:  `Set the path to the fig executable`,
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Printf("\n  Setting $PATH variable in Fig pseudo-terminal...\n\n")
+			fmt.Printf("\nSetting $PATH variable in Fig pseudo-terminal...\n\n")
 
 			// Get the users $PATH
 			path := os.Getenv("PATH")

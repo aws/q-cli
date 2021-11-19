@@ -30,7 +30,8 @@ message Command {
 		BuildCommand build = 110;
 		OpenUiElementCommand open_ui_element = 111;
 		ResetCacheCommand reset_cache = 112;
-		ToggleDebugModeCommand toggle_debug_mode = 113;
+		DebugModeCommand debug_mode = 113;
+		PromptAccessibilityCommand prompt_accessibility = 114;
 	}
 }
 
@@ -89,7 +90,7 @@ message RestartSettingsListenerCommand {}
 message RunInstallScriptCommand {}
 
 message BuildCommand {
-	string branch = 1;
+	optional string branch = 1;
 }
 
 enum UiElement {
@@ -103,9 +104,12 @@ message OpenUiElementCommand {
 
 message ResetCacheCommand {}
 
-message ToggleDebugModeCommand {
-	optional bool debug_mode = 1;
+message DebugModeCommand {
+	optional bool set_debug_mode = 1; // Set debug mode to true or false
+	optional bool toggle_debug_mode = 2; // Toggle debug mode
 }
+
+message PromptAccessibilityCommand {}
 
 // == Hooks ==
 message ShellContext {

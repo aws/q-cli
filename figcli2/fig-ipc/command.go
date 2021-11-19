@@ -189,7 +189,7 @@ func RunBuildCommand(branch string) error {
 		NoResponse: &noResponse,
 		Command: &fig_proto.Command_Build{
 			Build: &fig_proto.BuildCommand{
-				Branch: branch,
+				Branch: &branch,
 			},
 		},
 	}
@@ -236,9 +236,13 @@ func RunResetCacheCommand() error {
 }
 
 func ToggleDebugModeCommand() (string, error) {
+	toggle := true
+
 	cmd := fig_proto.Command{
-		Command: &fig_proto.Command_ToggleDebugMode{
-			ToggleDebugMode: &fig_proto.ToggleDebugModeCommand{},
+		Command: &fig_proto.Command_DebugMode{
+			DebugMode: &fig_proto.DebugModeCommand{
+				ToggleDebugMode: &toggle,
+			},
 		},
 	}
 
@@ -252,9 +256,9 @@ func ToggleDebugModeCommand() (string, error) {
 
 func SetDebugModeCommand(debugMode bool) (string, error) {
 	cmd := fig_proto.Command{
-		Command: &fig_proto.Command_ToggleDebugMode{
-			ToggleDebugMode: &fig_proto.ToggleDebugModeCommand{
-				DebugMode: &debugMode,
+		Command: &fig_proto.Command_DebugMode{
+			DebugMode: &fig_proto.DebugModeCommand{
+				SetDebugMode: &debugMode,
 			},
 		},
 	}
@@ -265,4 +269,36 @@ func SetDebugModeCommand(debugMode bool) (string, error) {
 	}
 
 	return GetCommandResponseMessage(response)
+}
+
+func GetDebugModeCommand() (string, error) {
+	cmd := fig_proto.Command{
+		Command: &fig_proto.Command_DebugMode{
+			DebugMode: &fig_proto.DebugModeCommand{},
+		},
+	}
+
+	response, err := SendRecvCommand(&cmd)
+	if err != nil {
+		return "", err
+	}
+
+	return GetCommandResponseMessage(response)
+}
+
+func PromptAccessibilityCommand() error {
+	noResponse := true
+
+	cmd := fig_proto.Command{
+		NoResponse: &noResponse,
+		Command: &fig_proto.Command_PromptAccessibility{
+			PromptAccessibility: &fig_proto.PromptAccessibilityCommand{},
+		},
+	}
+
+	if err := SendCommand(&cmd); err != nil {
+		return err
+	}
+
+	return nil
 }
