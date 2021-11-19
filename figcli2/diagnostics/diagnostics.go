@@ -3,6 +3,7 @@ package diagnostics
 import (
 	fig_ipc "fig-cli/fig-ipc"
 	fig_proto "fig-cli/fig-proto"
+	"fig-cli/logging"
 	"fig-cli/settings"
 	"fig-cli/specs"
 	"fmt"
@@ -148,7 +149,9 @@ func Summary() string {
 
 	resp, err := fig_ipc.SendRecvCommand(&cmd)
 	if err != nil {
-		summary.WriteString(fmt.Sprintf("Error: %s\n", err.Error()))
+		summary.WriteString("\nIt looks like Fig is not running.\nTry running: fig restart\n\n")
+		logging.Log("diagnostics", err.Error())
+		return summary.String()
 	}
 
 	//  \(Diagnostic.distribution) \(Defaults.beta ? "[Beta] " : "")\(Defaults.debugAutocomplete ? "[Debug] " : "")\(Defaults.developerModeEnabled ? "[Dev] " : "")[\(KeyboardLayout.shared.currentLayoutName() ?? "?")] \(Diagnostic.isRunningOnReadOnlyVolume ? "TRANSLOCATED!!!" : "")
