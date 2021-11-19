@@ -9,8 +9,10 @@ import (
 
 func NewCmdDiagnostic() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "diagnostic",
-		Short: "Run diagnostic tests",
+		Use:     "diagnostic",
+		Aliases: []string{"diagnostics"},
+		Short:   "Run diagnostic tests",
+		Long:    `Run diagnostic tests`,
 		Run: func(cmd *cobra.Command, arg []string) {
 			fmt.Println(diagnostics.Summary())
 		},
