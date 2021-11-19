@@ -61,6 +61,7 @@ func Fix(cmd string) {
 	executeCmd := exec.Command("sh", "-c", cmd)
 	executeCmd.Stdout = os.Stdout
 	executeCmd.Stderr = os.Stderr
+	executeCmd.Stdin = os.Stdin
 	err = executeCmd.Run()
 
 	if err != nil {
@@ -69,17 +70,41 @@ func Fix(cmd string) {
 		return
 	}
 
-	// Sleep 5 seconds
-	time.Sleep(5 * time.Second)
-
 	fmt.Println(lipgloss.NewStyle().Foreground(lipgloss.Color("2")).Render("\nFix applied!"))
-	fmt.Printf("Let's restart our checks to see if the problem is resolved...\n\n\n")
+	fmt.Printf("Rerunning " + lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Render("fig doctor") + " to see if the problem is resolved")
+	// Sleep 5 seconds
+	time.Sleep(time.Second)
+	fmt.Printf(".")
+	time.Sleep(time.Second)
+	fmt.Printf(".")
+	time.Sleep(time.Second)
+	fmt.Printf(".")
+	time.Sleep(time.Second)
+	fmt.Printf(".")
+	time.Sleep(time.Second)
+	fmt.Printf(".\n\n")
 
 }
 
 func ContactSupport() {
 	fmt.Printf("\nRun " + lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Render("fig issue") + " to let us know about this error!\n")
 	fmt.Printf("Or, email us at " + lipgloss.NewStyle().Underline(true).Foreground(lipgloss.Color("6")).Render("hello@fig.io") + "!\n\n")
+}
+
+func IsInstalled(application string) bool {
+	listInsatlledApps, err := exec.Command("mdfind", "kMDItemKind == 'Application'").Output()
+	if err != nil {
+		return false
+	}
+
+	installedApps := strings.Split(string(listInsatlledApps), "\n")
+	for _, app := range installedApps {
+		if strings.Contains(app, application) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func NewCmdDoctor() *cobra.Command {
@@ -165,7 +190,7 @@ func NewCmdDoctor() *cobra.Command {
 
 							fmt.Println(style.Render("   Fig ENV variables need to be at the very beginning and end of ~/" + fileName))
 							fmt.Println(style.Render("   If you see the FIG ENV VARs in ~/" + fileName + ", make sure they're at the very beginning (pre) and end (post). Open a new terminal then rerun the the doctor."))
-							fmt.Println(style.Render("   If you don't see the FIG ENV VARs in ~/" + fileName + ", run 'fig util:install-script' to add them. Open a new terminal then rerun the doctor."))
+							fmt.Println(style.Render("   If you don't see the FIG ENV VARs in ~/" + fileName + ", run 'fig app install' to add them. Open a new terminal then rerun the doctor."))
 						} else {
 							fmt.Printf("✅ Fig ENV variables are in ~/%s\n", fileName)
 						}
@@ -193,8 +218,8 @@ func NewCmdDoctor() *cobra.Command {
 				majorVersion, _ := strconv.Atoi(macosVersionSplit[0])
 				minorVersion, _ := strconv.Atoi(macosVersionSplit[1])
 
-				if majorVersion > 10 {
-					fmt.Println("✅ macOS version is 10.x or higher")
+				if majorVersion >= 11 {
+					fmt.Println("✅ macOS version is 11.x or higher")
 				} else {
 					if majorVersion == 10 && minorVersion >= 14 {
 						fmt.Println("✅ macOS version is 10.14 or higher")
@@ -214,6 +239,8 @@ func NewCmdDoctor() *cobra.Command {
 				diagnosticsResp, err := fig_ipc.SendRecvCommand(&cmd)
 				if err != nil {
 					fmt.Println("❌ Unable to get diagnostics")
+					fmt.Println("   Try restarting Fig by running:" + lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Render(" fig restart"))
+					fmt.Println("\nIf you are still running into this error:")
 					ContactSupport()
 					return
 				}
@@ -337,9 +364,46 @@ func NewCmdDoctor() *cobra.Command {
 				if diagnosticsResp.GetDiagnostics().GetSecurekeyboard() == "false" {
 					fmt.Println("✅ Secure keyboard input")
 				} else {
-					fmt.Println()
-					fmt.Println("❌ Secure keyboard input")
-					fmt.Println()
+					if IsInstalled("Bitwarden.app") {
+						// Check bitwarden version
+						bitwardenVersion, err := exec.Command("mdls", "-name", "kMDItemVersion", "/Applications/Bitwarden.app").Output()
+						if err != nil {
+							fmt.Println()
+							fmt.Println("❌ Could not get Bitwarden version")
+							fmt.Println("❌ Secure keyboard input")
+							fmt.Println("   Secure keyboard input is on")
+							fmt.Println("   Secure keyboard process is", diagnosticsResp.GetDiagnostics().GetSecurekeyboardPath())
+							fmt.Println()
+
+						} else {
+							versionRegex := regexp.MustCompile(`(\d+)\.(\d+)`)
+							versionMatch := versionRegex.FindStringSubmatch(string(bitwardenVersion))
+							if len(versionMatch) == 3 {
+								major, _ := strconv.Atoi(versionMatch[1])
+								minor, _ := strconv.Atoi(versionMatch[2])
+								if major <= 1 && minor <= 27 {
+									fmt.Println()
+									fmt.Println("❌ Secure keyboard input is")
+									fmt.Println("   Bitwarden may be enabling secure keyboard entry even when not focused.")
+									fmt.Println("   This was fixed in version 1.28.0. See https://github.com/bitwarden/desktop/issues/991 for details.")
+									fmt.Println("   To fix: upgrade Bitwarden to the latest version")
+									fmt.Println()
+								} else {
+									fmt.Println()
+									fmt.Println("❌ Secure keyboard input")
+									fmt.Println("   Secure keyboard input is on")
+									fmt.Println("   Secure keyboard process is", diagnosticsResp.GetDiagnostics().GetSecurekeyboardPath())
+									fmt.Println()
+								}
+							}
+						}
+					} else {
+						fmt.Println()
+						fmt.Println("❌ Secure keyboard input")
+						fmt.Println("   Secure keyboard input is on")
+						fmt.Println("   Secure keyboard process is", diagnosticsResp.GetDiagnostics().GetSecurekeyboardPath())
+						fmt.Println()
+					}
 				}
 
 				// Integrations
@@ -357,7 +421,44 @@ func NewCmdDoctor() *cobra.Command {
 					fmt.Println("❌ Could not verify iTerm integration")
 				} else {
 					if itermIntegration == "installed!" {
-						fmt.Println("✅ iTerm integration is enabled")
+						// Check iTerm version
+						itermVersion, err := exec.Command("mdls", "-name", "kMDItemVersion", "/Applications/iTerm.app").Output()
+						if err != nil {
+							fmt.Println("❌ Could not get iTerm version")
+						} else {
+							versionRegex := regexp.MustCompile(`(\d+)\.(\d+)\.(\d+)`)
+							versionMatch := versionRegex.FindStringSubmatch(string(itermVersion))
+							if len(versionMatch) == 4 {
+								itermVersionMajor, _ := strconv.Atoi(versionMatch[1])
+								itermVersionMinor, _ := strconv.Atoi(versionMatch[2])
+								if itermVersionMajor >= 3 && itermVersionMinor >= 4 {
+									fmt.Println("✅ iTerm integration is enabled")
+								} else {
+									fmt.Println("❌ iTerm integration fail")
+									fmt.Println("   Your iTerm version is incompatible with Fig. Please update iTerm to latest version")
+								}
+							}
+						}
+					} else {
+						// Check if iTerm is installed
+						if IsInstalled("iTerm.app") {
+							fmt.Println()
+							fmt.Println("❌ iTerm integration fail")
+
+							// Check if API is enabled
+							apiEnabled, err := exec.Command("defaults", "read", "com.googlecode.iterm2", "EnableAPIServer").Output()
+							if err != nil {
+								fmt.Println("   Could not get iTerm API status")
+							} else if string(apiEnabled) == "0\n" {
+								fmt.Println("   The iTerm API server is not enabled.")
+							}
+
+							// Check that fig-iterm-integration.scpt exists in ~/Library/Application\ Support/iTerm2/Scripts/AutoLaunch/
+							itermIntegrationPath := filepath.Join(user.HomeDir, "Library/Application Support/iTerm2/Scripts/AutoLaunch/fig-iterm-integration.scpt")
+							if _, err := os.Stat(itermIntegrationPath); os.IsNotExist(err) {
+								fmt.Println("   fig-iterm-integration.scpt is missing.")
+							}
+						}
 					}
 				}
 
@@ -368,6 +469,33 @@ func NewCmdDoctor() *cobra.Command {
 				} else {
 					if hyperIntegration == "installed!" {
 						fmt.Println("✅ Hyper integration is enabled")
+					} else {
+						// Check if Hyper is installed
+						if IsInstalled("Hyper.app") {
+							fmt.Println()
+							fmt.Println("❌ Hyper integration fail")
+
+							// Check ~/.hyper_plugins/local/fig-hyper-integration/index.js exists
+							hyperIntegrationPath := filepath.Join(user.HomeDir, ".hyper_plugins/local/fig-hyper-integration/index.js")
+							if _, err := os.Stat(hyperIntegrationPath); os.IsNotExist(err) {
+								fmt.Println("   fig-hyper-integration plugin is missing!.")
+							}
+
+							// Check if plugin is enabled in ~/.hyper.js
+							hyperConfigPath := filepath.Join(user.HomeDir, ".hyper.js")
+							if _, err := os.Stat(hyperConfigPath); os.IsNotExist(err) {
+								fmt.Println("   ~/.hyper.js is missing.")
+							} else {
+								hyperConfig, err := os.ReadFile(hyperConfigPath)
+								if err != nil {
+									fmt.Println("   Could not read ~/.hyper.js")
+								} else {
+									if !strings.Contains(string(hyperConfig), "fig-hyper-integration") {
+										fmt.Println("   fig-hyper-integration plugin needs to be added to localPlugins!")
+									}
+								}
+							}
+						}
 					}
 				}
 
@@ -378,6 +506,16 @@ func NewCmdDoctor() *cobra.Command {
 				} else {
 					if vscodeIntegration == "installed!" {
 						fmt.Println("✅ VSCode integration is enabled")
+					} else {
+						if IsInstalled("Visual Studio Code.app") {
+							fmt.Println("❌ VSCode integration fail")
+
+							// Check if withfig.fig exists
+							files, err := filepath.Glob(filepath.Join(user.HomeDir, ".vscode", "extensions", "withfig.fig-*"))
+							if err != nil || len(files) == 0 {
+								fmt.Println("   VSCode extension is missing!")
+							}
+						}
 					}
 				}
 

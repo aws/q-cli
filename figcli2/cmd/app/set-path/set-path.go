@@ -68,10 +68,6 @@ func NewCmdSetPath() *cobra.Command {
 				logging.Log("fig app set-path", err.Error())
 				return
 			}
-
-			fmt.Printf("Fig will now use the following path to locate the fig executable:\n" +
-				lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Render(path) +
-				"\n\n")
 		},
 	}
 
