@@ -17,7 +17,7 @@ func NewCmdSetPath() *cobra.Command {
 		Short: "Set the path to the fig executable",
 		Long:  `Set the path to the fig executable`,
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Printf("\n  Setting $PATH variable in Fig pseudo-terminal...\n\n")
+			fmt.Printf("\nSetting $PATH variable in Fig pseudo-terminal...\n\n")
 
 			// Get the users $PATH
 			path := os.Getenv("PATH")
@@ -30,6 +30,11 @@ func NewCmdSetPath() *cobra.Command {
 			}
 
 			settings.Set("pty.path", path)
+
+			if err := settings.Save(); err != nil {
+				fmt.Println("Error: ", err)
+				return
+			}
 
 			// Trigger update of ENV in PTY
 			pty, err := diagnostics.GetTty()
@@ -53,6 +58,10 @@ func NewCmdSetPath() *cobra.Command {
 					"\n\n")
 				return
 			}
+
+			fmt.Printf("Fig will now use the following path to locate the fig executable:\n" +
+				lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Render(path) +
+				"\n\n")
 		},
 	}
 

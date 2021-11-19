@@ -197,17 +197,23 @@ extension CommandHandlers {
     }
   }
   
-  static func toggleAutocompleteDebugMode(setVal: Bool?) -> CommandResponse {
-    DispatchQueue.main.async {
+  static func autocompleteDebugMode(setVal: Bool?, toggleVal: Bool?) -> CommandResponse {
+    DispatchQueue.main.sync {
       if let val = setVal {
         Defaults.shared.debugAutocomplete = val
-      } else {
+      } else if case true = toggleVal {
         Defaults.shared.debugAutocomplete = !Defaults.shared.debugAutocomplete
       }
     }
     
     return CommandResponse.with { response in
       response.success.message = Defaults.shared.debugAutocomplete ? "on" : "off"
+    }
+  }
+  
+  static func promptAccessibility() {
+    DispatchQueue.main.async {
+      Accessibility.promptForPermission()
     }
   }
 }

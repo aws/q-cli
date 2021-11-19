@@ -14,14 +14,72 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
 )
 
+func Fix(cmd string) {
+	user, err := user.Current()
+	if err != nil {
+		fmt.Println("Could not determine current user")
+		return
+	}
+
+	// Read fixes file
+	fixFile := filepath.Join(user.HomeDir, ".fig", "fig_fixes")
+	fixFileData, err := os.ReadFile(fixFile)
+	if err != nil && !os.IsNotExist(err) {
+		fmt.Println("Could not read fixes file")
+		os.Exit(1)
+	}
+
+	if err == nil {
+		// Remove file
+		os.Remove(fixFile)
+
+		// Check if fix cmd is in fixes file
+		if bytes.Contains(fixFileData, []byte(cmd)) {
+			fmt.Printf("\nLooks like we've already tried this fix before and it's not working.\n")
+			ContactSupport()
+			os.Exit(1)
+		}
+	}
+
+	// Run fix cmd
+	fmt.Printf("\nI can fix this!\n")
+
+	// Append to fixes file
+	f, err := os.OpenFile(fixFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err == nil {
+		defer f.Close()
+		f.Write([]byte(cmd + "\n"))
+	}
+
+	fmt.Printf("Running > " + lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Render(cmd) + "\n\n")
+	executeCmd := exec.Command("sh", "-c", cmd)
+	executeCmd.Stdout = os.Stdout
+	executeCmd.Stderr = os.Stderr
+	err = executeCmd.Run()
+
+	if err != nil {
+		fmt.Println("Could not fix this!")
+		ContactSupport()
+		return
+	}
+
+	// Sleep 5 seconds
+	time.Sleep(5 * time.Second)
+
+	fmt.Println(lipgloss.NewStyle().Foreground(lipgloss.Color("2")).Render("\nFix applied!"))
+	fmt.Printf("Let's restart our checks to see if the problem is resolved...\n\n\n")
+
+}
+
 func ContactSupport() {
 	fmt.Printf("\nRun " + lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Render("fig issue") + " to let us know about this error!\n")
-	fmt.Printf("Or, email us at " + lipgloss.NewStyle().Foreground(lipgloss.Color("6")).Render("hello@fig.io") + "!\n\n")
+	fmt.Printf("Or, email us at " + lipgloss.NewStyle().Underline(true).Foreground(lipgloss.Color("6")).Render("hello@fig.io") + "!\n\n")
 }
 
 func NewCmdDoctor() *cobra.Command {
@@ -33,16 +91,20 @@ func NewCmdDoctor() *cobra.Command {
 			"figcli.command.categories": "Common",
 		},
 		Run: func(cmd *cobra.Command, args []string) {
+			// Get user
+			user, err := user.Current()
+			if err != nil {
+				fmt.Printf("\n%v\n", err)
+				ContactSupport()
+				return
+			}
+
+			// Remove fix file
+			fixFile := filepath.Join(user.HomeDir, ".fig", "fig_fixes")
+			os.Remove(fixFile)
+
 			for {
 				fmt.Println(lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Render("\nLet's make sure Fig is running...\n"))
-
-				// Get user
-				user, err := user.Current()
-				if err != nil {
-					ContactSupport()
-					fmt.Println(err)
-					return
-				}
 
 				// Check if file ~/.fig/bin/fig exists
 				if _, err := os.ReadFile(fmt.Sprintf("%s/.fig/bin/fig", user.HomeDir)); err != nil {
@@ -63,7 +125,8 @@ func NewCmdDoctor() *cobra.Command {
 				appInfo, err := diagnostics.GetAppInfo()
 				if err != nil {
 					fmt.Println("❌ Fig is not running")
-					return
+					Fix("fig launch")
+					continue
 				}
 
 				running := appInfo.IsRunning()
@@ -160,6 +223,8 @@ func NewCmdDoctor() *cobra.Command {
 					fmt.Println("✅ Installation script")
 				} else {
 					fmt.Println("❌ Installation script")
+					Fix("~/.fig/tools/install_and_upgrade.sh")
+					continue
 				}
 
 				// Current Shell and User Shell
@@ -255,16 +320,17 @@ func NewCmdDoctor() *cobra.Command {
 					fmt.Println("✅ Accessibility is enabled")
 				} else {
 					fmt.Println("❌ Accessibility is disabled")
+					Fix("fig debug prompt-accessibility")
+					continue
 				}
 
 				// Path
 				if diagnosticsResp.GetDiagnostics().GetPsudoterminalPath() == os.Getenv("PATH") {
 					fmt.Println("✅ PATH and PseudoTerminal PATH match")
 				} else {
-					fmt.Println()
-					fmt.Println("🟡 PATH and PseudoTerminal PATH do not match")
-					fmt.Println("   To fix run: " + lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Render("fig app set-path"))
-					fmt.Println()
+					fmt.Println("❌ PATH and PseudoTerminal PATH do not match")
+					Fix("fig app set-path")
+					continue
 				}
 
 				// SecureKeyboardProcess
@@ -314,9 +380,30 @@ func NewCmdDoctor() *cobra.Command {
 						fmt.Println("✅ VSCode integration is enabled")
 					}
 				}
-				
+
 				// Debug Mode check
-				
+				debugMode, err := fig_ipc.GetDebugModeCommand()
+				if err != nil {
+					fmt.Println("❌ Could not get debug mode")
+				} else {
+					if debugMode == "on" {
+						fmt.Println()
+						fmt.Println("🟡 Debug mode is enabled")
+						fmt.Println("   Disable by running: " + lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Render("fig debug debug-mode off"))
+						fmt.Println()
+					}
+				}
+
+				if diagnosticsResp.GetDiagnostics().GetSymlinked() == "true" {
+					fmt.Println("FYI, looks like your dotfiles are symlinked.")
+					fmt.Println("If you need to make modifications, make sure they're made in the right place.")
+				}
+
+				fmt.Println()
+				fmt.Println("Fig still not working?")
+				fmt.Println("Run " + lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Render("fig issue") + " to let us know!")
+				fmt.Println("Or, email us at " + lipgloss.NewStyle().Underline(true).Foreground(lipgloss.Color("6")).Render("hello@fig.io") + "!")
+				fmt.Println()
 
 				break
 			}

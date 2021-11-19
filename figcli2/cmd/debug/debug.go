@@ -8,6 +8,7 @@ import (
 	"fig-cli/cmd/debug/dotfiles"
 	"fig-cli/cmd/debug/logs"
 	"fig-cli/cmd/debug/prefs"
+	promptaccessibility "fig-cli/cmd/debug/prompt-accessibility"
 	"fig-cli/cmd/debug/sample"
 	"fig-cli/cmd/debug/ssh"
 	"fig-cli/cmd/debug/terminal"
@@ -30,6 +31,7 @@ func NewCmdDebug() *cobra.Command {
 	cmd.AddCommand(dotfiles.NewCmdDotfiles())
 	cmd.AddCommand(logs.NewCmdLogs())
 	cmd.AddCommand(prefs.NewCmdPrefs())
+	cmd.AddCommand(promptaccessibility.NewCmdPromptAccessibility())
 	cmd.AddCommand(sample.NewCmdSample())
 	cmd.AddCommand(ssh.NewCmdSsh())
 	cmd.AddCommand(terminal.NewCmdTerminal())
