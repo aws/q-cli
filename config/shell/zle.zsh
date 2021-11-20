@@ -13,12 +13,12 @@ autoload -U +X add-zle-hook-widget
 function fig_zsh_keybuffer() { 
   if (( PENDING || KEYS_QUEUED_COUNT )); then
     if (( ! ${+_fig_redraw_fd} )); then
-    typeset -gi _fig_redraw_fd
-    if sysopen -o cloexec -ru _fig_redraw_fd /dev/null; then
-      zle -F $_fig_redraw_fd fig_zsh_redraw
-    else
-      unset _fig_redraw_fd
-    fi
+      typeset -gi _fig_redraw_fd
+      if sysopen -o cloexec -ru _fig_redraw_fd /dev/null; then
+        zle -F $_fig_redraw_fd fig_zsh_redraw
+      else
+        unset _fig_redraw_fd
+      fi
     fi
   else
     fig_zsh_redraw

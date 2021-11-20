@@ -3,8 +3,6 @@ package logging
 import (
 	"os"
 	"os/user"
-
-	"github.com/charmbracelet/lipgloss"
 )
 
 const (
@@ -33,7 +31,7 @@ func Log(message ...string) error {
 
 	defer f.Close()
 
-	_, err = f.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("#0D98BA")).Render("CLI: "))
+	_, err = f.WriteString("CLI: ")
 	if err != nil {
 		return err
 	}

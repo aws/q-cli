@@ -74,7 +74,7 @@ if [[ -z "$APP_TERMINATED_BY_USER" && "$FIG_IS_RUNNING" == '0' ]]; then
 fi
 
 # Show Fig tips
-fig tips prompt 2> /dev/null
+fig tips prompt 2> /dev/null &
 
 unset FIG_IS_RUNNING
 

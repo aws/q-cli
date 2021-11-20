@@ -61,8 +61,8 @@ extension CommandHandlers {
   }
   
   static func diagnosticsCommand() -> CommandResponse {
-    Logger.log(message: "Diagnostics ran")
-    return CommandResponse.with { response in
+    var response = CommandResponse.init()
+    DispatchQueue.main.sync {
       response.diagnostics.distribution = Diagnostic.distribution
       response.diagnostics.beta = Defaults.shared.beta
       response.diagnostics.debugAutocomplete = Defaults.shared.debugAutocomplete
@@ -83,6 +83,7 @@ extension CommandHandlers {
       response.diagnostics.psudoterminalPath = Diagnostic.pseudoTerminalPath ?? "<generated dynamically>"
       response.diagnostics.autocomplete = Defaults.shared.useAutocomplete
     }
+    return response
   }
   
   static func displayReportWindow(message: String, path: String?, figEnvVar: String?, terminal: String?) {
@@ -197,17 +198,23 @@ extension CommandHandlers {
     }
   }
   
-  static func toggleAutocompleteDebugMode(setVal: Bool?) -> CommandResponse {
-    DispatchQueue.main.async {
+  static func autocompleteDebugMode(setVal: Bool?, toggleVal: Bool?) -> CommandResponse {
+    DispatchQueue.main.sync {
       if let val = setVal {
         Defaults.shared.debugAutocomplete = val
-      } else {
+      } else if case true = toggleVal {
         Defaults.shared.debugAutocomplete = !Defaults.shared.debugAutocomplete
       }
     }
     
     return CommandResponse.with { response in
       response.success.message = Defaults.shared.debugAutocomplete ? "on" : "off"
+    }
+  }
+  
+  static func promptAccessibility() {
+    DispatchQueue.main.async {
+      Accessibility.promptForPermission()
     }
   }
 }
