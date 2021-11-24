@@ -18,6 +18,7 @@
 
 #define BUFFSIZE (1024 * 100)
 #define FIGTERM_VERSION 3
+#define FIG_MAX(x,y) (((x) >= (y)) ? (x) : (y))
 
 void abort_handler(int sig) {
   log_error("Aborting %d: %d", getpid(), sig);
@@ -196,7 +197,10 @@ void figterm_loop(int ptyp_fd, pid_t shell_pid, char* initial_command) {
     err_sys("signal_intr error for SIGWINCH");
 
   ft = _ft = figterm_new(shell_pid, ptyp_fd);
-  int incoming_socket = fig_socket_listen();
+  int incoming_listener = fig_socket_listen();
+  int incoming_socket = -1;
+  if (incoming_listener == -1)
+    log_error("Failed to open incoming socket, insertions will fail.");
 
   fd_set rfd;
 
@@ -206,8 +210,11 @@ void figterm_loop(int ptyp_fd, pid_t shell_pid, char* initial_command) {
     FD_ZERO(&rfd);
     FD_SET(STDIN_FILENO, &rfd);
     FD_SET(ptyp_fd, &rfd);
-    FD_SET(incoming_socket, &rfd);
-    int max_fd = ptyp_fd > incoming_socket ? ptyp_fd : incoming_socket;
+    if (incoming_listener >= 0)
+      FD_SET(incoming_listener, &rfd);
+
+    if (incoming_socket >= 0)
+      FD_SET(incoming_socket, &rfd);
 
     if (figterm_has_seen_prompt(ft) && is_first_time) {
       if (initial_command != NULL && strlen(initial_command) > 0) {
@@ -223,6 +230,7 @@ void figterm_loop(int ptyp_fd, pid_t shell_pid, char* initial_command) {
       is_first_time = false;
     }
 
+    int max_fd = FIG_MAX(FIG_MAX(ptyp_fd, incoming_listener), incoming_socket);
     int n = select(max_fd + 1, &rfd, 0, 0, NULL);
     if (n < 0 && errno != EINTR) {
       err_sys("select error");
@@ -256,18 +264,24 @@ void figterm_loop(int ptyp_fd, pid_t shell_pid, char* initial_command) {
         publish_buffer(ft);
       }
     }
-    if (n > 0 && FD_ISSET(incoming_socket, &rfd)) {
+    if (n > 0 && FD_ISSET(incoming_listener, &rfd)) {
       log_info("Got message on socket");
-      int sockfd = accept(incoming_socket, NULL, NULL);
-      if (sockfd < 0) {
+      incoming_socket = accept(incoming_listener, NULL, NULL);
+      if (incoming_socket < 0) {
         log_warn("Failed to accept message on socket");
+      }
+    }
+    if (n > 0 && FD_ISSET(incoming_socket, &rfd)) {
+      nread = read(incoming_socket, buf, BUFFSIZE - 1);
+      if (nread == -1) {
+        log_warn("Failed to read on socket %d (%d): %s", incoming_socket, errno, strerror(errno));
       } else {
-        nread = read(sockfd, buf, BUFFSIZE - 1);
-        log_warn("Message: %.*s", nread, buf);
+        log_warn("Message (%d): %.*s", nread, nread, buf);
         if (write(ptyp_fd, buf, nread) != nread)
           err_sys("write error to parent pty");
-        close(sockfd);
       }
+      close(incoming_socket);
+      incoming_socket = -1;
     }
   }
 
