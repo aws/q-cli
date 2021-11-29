@@ -125,6 +125,15 @@ int fig_socket_listen() {
 
   sprintf(_incoming_socket_path, "/tmp/figterm-%s.socket", fig_info->term_session_id);
   _incoming_socket_fd = unix_socket_listen(_incoming_socket_path);
+
+  int flags = fcntl(_incoming_socket_fd, F_GETFL);
+
+  if (flags != -1)
+    flags = fcntl(_incoming_socket_fd, F_SETFL, flags | O_NONBLOCK);
+
+  if (flags == -1)
+    log_warn("Failed to set socket to non-blocking");
+
   return _incoming_socket_fd;
 }
 

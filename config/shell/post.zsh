@@ -93,30 +93,47 @@ fig_precmd() {
   FIG_USER_RPS2="$RPS2"
   FIG_USER_RPROMPT2="$RPROMPT2"
 
-  [[ -v PS1 ]] && PS1="%{$START_PROMPT%}$PS1%{$END_PROMPT$NEW_CMD%}"
-  [[ -v PROMPT ]] && PROMPT="%{$START_PROMPT%}$PROMPT%{$END_PROMPT$NEW_CMD%}"
-  [[ -v prompt ]] && prompt="%{$START_PROMPT%}$prompt%{$END_PROMPT$NEW_CMD%}"
+  if [[ -v PROMPT ]]; then
+    PROMPT="%{$START_PROMPT%}$PROMPT%{$END_PROMPT$NEW_CMD%}"
+  elif [[ -v prompt ]]; then
+    prompt="%{$START_PROMPT%}$prompt%{$END_PROMPT$NEW_CMD%}"
+  else
+    PS1="%{$START_PROMPT%}$PS1%{$END_PROMPT$NEW_CMD%}"
+  fi
 
-  [[ -v PS2 ]] && PS2="%{$START_PROMPT%}$PS2%{$END_PROMPT%}"
-  [[ -v PROMPT2 ]] && PROMPT2="%{$START_PROMPT%}$PROMPT2%{$END_PROMPT%}"
+  if [[ -v PROMPT2 ]]; then
+    PROMPT2="%{$START_PROMPT%}$PROMPT2%{$END_PROMPT%}"
+  else
+    PS2="%{$START_PROMPT%}$PS2%{$END_PROMPT%}"
+  fi
 
-  [[ -v PS3 ]] && PS3="%{$START_PROMPT%}$PS3%{$END_PROMPT$NEW_CMD%}"
-  [[ -v PROMPT3 ]] && PROMPT3="%{$START_PROMPT%}$PROMPT3%{$END_PROMPT$NEW_CMD%}"
+  if [[ -v PROMPT3 ]]; then
+    PROMPT3="%{$START_PROMPT%}$PROMPT3%{$END_PROMPT$NEW_CMD%}"
+  else
+    PS3="%{$START_PROMPT%}$PS3%{$END_PROMPT$NEW_CMD%}"
+  fi
 
-  [[ -v PS4 ]] && PS4="%{$START_PROMPT%}$PS4%{$END_PROMPT%}"
-  [[ -v PROMPT4 ]] && PROMPT4="%{$START_PROMPT%}$PROMPT4%{$END_PROMPT%}"
+  if [[ -v PROMPT4 ]]; then
+    PROMPT4="%{$START_PROMPT%}$PROMPT4%{$END_PROMPT%}"
+  else
+    PS4="%{$START_PROMPT%}$PS4%{$END_PROMPT%}"
+  fi
 
   # The af-magic theme adds a final % to expand. We need to paste without the %
   # to avoid doubling up and mangling the prompt.
-  if [[ "$ZSH_THEME" == "af-magic" ]]; then
+  if [[ -v RPROMPT ]]; then
+    RPROMPT="%{$START_PROMPT%}$RPROMPT%{$END_PROMPT%}"
+  elif [[ "$ZSH_THEME" == "af-magic" ]]; then
     RPS1="%{$START_PROMPT%}$RPS1{$END_PROMPT%}"
   else
-    [[ -v RPS1 ]] && RPS1="%{$START_PROMPT%}$RPS1%{$END_PROMPT%}"
+    RPS1="%{$START_PROMPT%}$RPS1%{$END_PROMPT%}"
   fi
-  [[ -v RPROMPT ]] && RPROMPT="%{$START_PROMPT%}$RPROMPT%{$END_PROMPT%}"
 
-  [[ -v RPS2 ]] && RPS2="%{$START_PROMPT%}$RPS2%{$END_PROMPT%}"
-  [[ -v RPROMPT2 ]] && RPROMPT2="%{$START_PROMPT%}$RPROMPT2%{$END_PROMPT%}"
+  if [[ -v RPROMPT2 ]]; then
+    RPROMPT2="%{$START_PROMPT%}$RPROMPT2%{$END_PROMPT%}"
+  else
+    RPS2="%{$START_PROMPT%}$RPS2%{$END_PROMPT%}"
+  fi
   
   FIG_HAS_SET_PROMPT=1
 

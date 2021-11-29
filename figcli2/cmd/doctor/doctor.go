@@ -332,7 +332,8 @@ func NewCmdDoctor() *cobra.Command {
 					fmt.Println("❌ Could not get Fig executable path")
 				} else {
 					if executable == filepath.Join(user.HomeDir, ".fig/bin/fig") ||
-						executable == "/usr/local/bin/.fig/bin/fig" {
+						executable == "/usr/local/bin/.fig/bin/fig" ||
+						executable == "/usr/local/bin/fig" {
 						fmt.Println("✅ CLI tool path")
 					} else {
 						fmt.Println()
