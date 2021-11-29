@@ -72,7 +72,6 @@
 		7546F5B3271660BA0077359F /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7546F5B2271660BA0077359F /* Constants.swift */; };
 		754D31B525759D900020CED4 /* tutorial.html in Resources */ = {isa = PBXBuildFile; fileRef = 754D31B425759D900020CED4 /* tutorial.html */; };
 		75543FD0268AC6E5003221DF /* fig-0.0.4.vsix in Resources */ = {isa = PBXBuildFile; fileRef = 75543FCF268AC6E5003221DF /* fig-0.0.4.vsix */; };
-		755D0DE0247DDE050074AB5C /* FigCLI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755D0DDF247DDE050074AB5C /* FigCLI.swift */; };
 		755D0DE2247EFAE10074AB5C /* Logging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755D0DE1247EFAE10074AB5C /* Logging.swift */; };
 		755D0DE4247F038B0074AB5C /* logs.html in Resources */ = {isa = PBXBuildFile; fileRef = 755D0DE3247F038B0074AB5C /* logs.html */; };
 		755D0F512482D4920074AB5C /* HotKey in Frameworks */ = {isa = PBXBuildFile; productRef = 755D0F502482D4920074AB5C /* HotKey */; };
@@ -154,9 +153,9 @@
 		75A4A2A225CA2190002EFD6B /* ZLEIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A4A2A125CA218F002EFD6B /* ZLEIntegration.swift */; };
 		75A4A2A425CB4DE3002EFD6B /* BundleIdCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A4A2A325CB4DE3002EFD6B /* BundleIdCache.swift */; };
 		75A4A2A725CBBDE7002EFD6B /* AXSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 75A4A2A625CBBDE7002EFD6B /* AXSwift */; };
-		75AA24C125A656FA00A51E9D /* NativeCLI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75AA24C025A656FA00A51E9D /* NativeCLI.swift */; };
 		75AA24DA25A7E8B000A51E9D /* lsof.m in Sources */ = {isa = PBXBuildFile; fileRef = 75AA24D925A7E8B000A51E9D /* lsof.m */; };
 		75ACFE7A274442C7003C22EE /* PTYProcess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75ACFE79274442C7003C22EE /* PTYProcess.swift */; };
+		75ACFE7C274C3424003C22EE /* Utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75ACFE7B274C3424003C22EE /* Utilities.swift */; };
 		75AEF2E425C3C34A00D78431 /* Diagnostic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75AEF2E325C3C34A00D78431 /* Diagnostic.swift */; };
 		75AEF2E625C3DEAF00D78431 /* DockerIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75AEF2E525C3DEAF00D78431 /* DockerIntegration.swift */; };
 		75AEF2E825C3DEC600D78431 /* SSHIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75AEF2E725C3DEC600D78431 /* SSHIntegration.swift */; };
@@ -363,7 +362,6 @@
 		7546F5B2271660BA0077359F /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		754D31B425759D900020CED4 /* tutorial.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = tutorial.html; sourceTree = "<group>"; };
 		75543FCF268AC6E5003221DF /* fig-0.0.4.vsix */ = {isa = PBXFileReference; lastKnownFileType = file; path = "fig-0.0.4.vsix"; sourceTree = "<group>"; };
-		755D0DDF247DDE050074AB5C /* FigCLI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FigCLI.swift; sourceTree = "<group>"; };
 		755D0DE1247EFAE10074AB5C /* Logging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logging.swift; sourceTree = "<group>"; };
 		755D0DE3247F038B0074AB5C /* logs.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = logs.html; sourceTree = "<group>"; };
 		755D27B9272242690080B4B8 /* FigTerm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FigTerm.swift; sourceTree = "<group>"; };
@@ -448,11 +446,11 @@
 		75A4A29F25CA0D46002EFD6B /* Autocomplete.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Autocomplete.swift; sourceTree = "<group>"; };
 		75A4A2A125CA218F002EFD6B /* ZLEIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZLEIntegration.swift; sourceTree = "<group>"; };
 		75A4A2A325CB4DE3002EFD6B /* BundleIdCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BundleIdCache.swift; sourceTree = "<group>"; };
-		75AA24C025A656FA00A51E9D /* NativeCLI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeCLI.swift; sourceTree = "<group>"; };
 		75AA24D825A7E8B000A51E9D /* lsof.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = lsof.h; sourceTree = "<group>"; };
 		75AA24D925A7E8B000A51E9D /* lsof.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = lsof.m; sourceTree = "<group>"; };
 		75AC55322522C8EB0069635E /* 1.0.20.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = 1.0.20.sh; sourceTree = "<group>"; };
 		75ACFE79274442C7003C22EE /* PTYProcess.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PTYProcess.swift; sourceTree = "<group>"; };
+		75ACFE7B274C3424003C22EE /* Utilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utilities.swift; sourceTree = "<group>"; };
 		75AEF2E325C3C34A00D78431 /* Diagnostic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Diagnostic.swift; sourceTree = "<group>"; };
 		75AEF2E525C3DEAF00D78431 /* DockerIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DockerIntegration.swift; sourceTree = "<group>"; };
 		75AEF2E725C3DEC600D78431 /* SSHIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSHIntegration.swift; sourceTree = "<group>"; };
@@ -910,11 +908,10 @@
 				755D27B9272242690080B4B8 /* FigTerm.swift */,
 				75B199312501A3DA00F38EA8 /* KeyboardLayout.swift */,
 				751F7588246D090100E083C8 /* WebBridge.swift */,
-				755D0DDF247DDE050074AB5C /* FigCLI.swift */,
-				75AA24C025A656FA00A51E9D /* NativeCLI.swift */,
 				757CA8E524905B38002A64A8 /* SockerServer.swift */,
 				75F7F953262007170005E215 /* IPC.swift */,
 				75F7F951261FBDC30005E215 /* UnixSocketServer.swift */,
+				75ACFE7B274C3424003C22EE /* Utilities.swift */,
 			);
 			path = Bridging;
 			sourceTree = "<group>";
@@ -1448,7 +1445,6 @@
 				75288EF924CCE72F002DF12A /* WebViewWindow.swift in Sources */,
 				75BF28A8270E9B9200E7C914 /* API+Constants.swift in Sources */,
 				75AEF2E825C3DEC600D78431 /* SSHIntegration.swift in Sources */,
-				75AA24C125A656FA00A51E9D /* NativeCLI.swift in Sources */,
 				757CA86724859461002A64A8 /* AppMover.swift in Sources */,
 				75C0EBD3253E336E001964DE /* TerminalUsageTelemetry.swift in Sources */,
 				75B199322501A3DA00F38EA8 /* KeyboardLayout.swift in Sources */,
@@ -1479,7 +1475,6 @@
 				75DA86A525EEBD7500722F1D /* Alert.swift in Sources */,
 				7546F5B3271660BA0077359F /* Constants.swift in Sources */,
 				75D1ECBE26F15F4500BC8A04 /* TerminalIntegrationProvider.swift in Sources */,
-				755D0DE0247DDE050074AB5C /* FigCLI.swift in Sources */,
 				75809B0E24BFA64D00BFFB3E /* TelemetryService.swift in Sources */,
 				75A4A2A225CA2190002EFD6B /* ZLEIntegration.swift in Sources */,
 				75AA24DA25A7E8B000A51E9D /* lsof.m in Sources */,
@@ -1503,6 +1498,7 @@
 				75A4521425AD367E00107D2C /* Feedback.swift in Sources */,
 				752D71CD25B8A6B300263527 /* Restarter.swift in Sources */,
 				756127C3274380BF007F26EA /* pty.c in Sources */,
+				75ACFE7C274C3424003C22EE /* Utilities.swift in Sources */,
 				7510F8B824A6910500E86F7C /* Pty.swift in Sources */,
 				7520D8122682AEB00034FE2B /* Throttler.swift in Sources */,
 				75DA86A925EF145E00722F1D /* TmuxIntegration.swift in Sources */,
@@ -1821,7 +1817,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = YES;
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 317;
+				CURRENT_PROJECT_VERSION = 322;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				DEVELOPMENT_TEAM = D93PPD94WK;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1857,7 +1853,7 @@
 				CODE_SIGN_IDENTITY = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 317;
+				CURRENT_PROJECT_VERSION = 322;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				DEVELOPMENT_TEAM = D93PPD94WK;
 				ENABLE_HARDENED_RUNTIME = YES;

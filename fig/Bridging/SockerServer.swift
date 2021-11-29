@@ -285,14 +285,6 @@ class ShellBridgeSocketService: WebSocketService {
                             }
                         }
                         
-                        // native fig CLI commands
-                        if let command = NativeCLI.Command(rawValue: msg.options?.first ?? NativeCLI.index) {
-                            NativeCLI.route(command, with: msg, from: from)
-                            return
-                        }
-                        
-                        // Legacy routing to fig apps
-                        NotificationCenter.default.post(name: .recievedDataFromPipe, object: msg)
 
                     case "pty":
                         if let io = msg.io {

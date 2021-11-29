@@ -53,7 +53,7 @@ class UnixSocketServer {
   
   func run() {
       try? FileManager.default.removeItem(at: URL(fileURLWithPath: path))
-      let queue = DispatchQueue.global(qos: .userInitiated)
+      let queue = DispatchQueue(label: "io.fig.unix-server", qos: .userInitiated)
     
     queue.async { [unowned self] in
       
@@ -73,13 +73,21 @@ class UnixSocketServer {
            
             // Prevent server from closing when a client fails to connect
             // Fixes issue related to setting set_sockopt NO_SIGPIPE
-            guard let newSocket = try? socket.acceptClientConnection() else {
-                Logger.log(message: "connection could not be made!", subsystem: .unix)
-                continue
+          var newSocket: Socket? = nil
+            do {
+              newSocket = try socket.acceptClientConnection()
+            } catch let error {
+              Logger.log(message: "connection could not be made!", subsystem: .unix)
+              if let socketError = error as? Socket.Error {
+                Logger.log(message: "Code: \(socketError.errorCode) - \(socketError.errorReason ?? "")", subsystem: .unix)
+              }
             }
           
-          self.addNewConnection(socket: newSocket)
+          if let newSocket = newSocket {
+            self.addNewConnection(socket: newSocket)
+          }
           
+
         } while self.continueRunning
         
       }
