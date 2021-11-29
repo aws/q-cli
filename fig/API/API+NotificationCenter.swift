@@ -112,6 +112,9 @@ class APINotificationCenter {
     }
     
     func post(notification: Fig_Notification) {
+        #if DEBUG
+          assert(Thread.isMainThread)
+        #endif
         guard let type = notification.notificationType else { return }
         
         let subscribers = self.subscribers[type]
