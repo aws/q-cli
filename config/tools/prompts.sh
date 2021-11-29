@@ -17,7 +17,7 @@ else
 fi
 
 # Set the tips for the next prompts
-fig tips reset > /dev/null 2>&1
+fig tips reset &>/dev/null
 
 # To update a specific variable:
 # sed -i '' "s/FIG_VAR=.*/FIG_VAR=1/g" ~/.fig/user/config 2> /dev/null
@@ -74,7 +74,11 @@ if [[ -z "$APP_TERMINATED_BY_USER" && "$FIG_IS_RUNNING" == '0' ]]; then
 fi
 
 # Show Fig tips
-fig tips prompt 2> /dev/null &
+if [ "$1" = "fish" ]; then
+  fig tips prompt 2>/dev/null
+else
+  fig tips prompt 2>/dev/null &
+fi
 
 unset FIG_IS_RUNNING
 
