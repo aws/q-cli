@@ -379,66 +379,11 @@ extension ShellHookManager {
       context: ctx, calledDirect: calledDirect, bundle: bundle, env: envFilter)
   }
 
-  func startedNewTerminalSession(
-    context: Local_ShellContext, calledDirect: Bool, bundle: String?, env: [String: String]
-  ) {
+  func startedNewTerminalSession(context: Local_ShellContext,
+                                 calledDirect: Bool,
+                                 bundle: String?,
+                                 env: [String: String]) {
 
-    guard let bundleId = NSWorkspace.shared.frontmostApplication?.bundleIdentifier else {
-      Logger.log(message: "Could not get bundle id", priority: .notify, subsystem: .tty)
-      return
-    }
-
-    var delay: TimeInterval!
-
-    switch bundleId {
-    case Integrations.Hyper:
-      delay = Settings.shared.getValue(forKey: Settings.hyperDelayKey) as? TimeInterval ?? 2
-    case Integrations.VSCode:
-      delay = Settings.shared.getValue(forKey: Settings.vscodeDelayKey) as? TimeInterval ?? 1
-    default:
-      delay = 0.2
-    }
-
-    // no delay is needed because the command is being run by the user, so the window is already active
-    if calledDirect {
-      delay = 0
-    }
-
-    observer = WindowObserver(with: bundleId)
-
-    // We need to wait for window to appear if the terminal emulator is being launched for the first time. Can this be handled more robustly?
-    observer?.windowDidAppear(
-      timeoutAfter: delay,
-      completion: {
-        // ensuring window bundleId & frontmostApp bundleId match fixes case where a slow launching application (eg. Hyper) will init shell before window is visible/tracked
-        Logger.log(message: "Awaited window did appear", priority: .notify, subsystem: .tty)
-
-        guard let window = AXWindowServer.shared.whitelistedWindow,
-          window.bundleId == NSWorkspace.shared.frontmostApplication?.bundleIdentifier
-        else {
-          Logger.log(
-            message: "Cannot track a new terminal session if topmost window isn't whitelisted.",
-            priority: .notify, subsystem: .tty)
-          return
-        }
-
-        guard window.bundleId == bundle else {
-          Logger.log(
-            message:
-              "Cannot track a new terminal session if topmost window '\(window.bundleId ?? "?")' doesn't correspond to $TERM_PROGRAM '\(bundle ?? "?")'",
-            priority: .notify, subsystem: .tty)
-          return
-        }
-
-        Logger.log(
-          message: "Linking \(context.ttys) with \(window.hash) for \(context.sessionID)",
-          priority: .notify, subsystem: .tty)
-
-        let tty = self.link(context.sessionID, window.hash, context.ttys)
-        tty.startedNewShellSession(for: context.pid)
-
-        // Set version (used for checking compatibility)
-        tty.shellIntegrationVersion = Int(context.integrationVersion)
 
         DispatchQueue.main.async {
           NotificationCenter.default.post(
@@ -446,8 +391,6 @@ extension ShellHookManager {
               name: PseudoTerminal.recievedEnvironmentVariablesFromShellNotification,
               object: env))
         }
-
-      })
 
   }
 
@@ -713,60 +656,17 @@ extension ShellHookManager {
   fileprivate func attemptToFindToAssociatedWindow(
     for sessionId: SessionId, currentTopmostWindow: ExternalWindow? = nil
   ) -> ExternalWindowHash? {
+    
+    guard let hash = TerminalSessionLinker.shared.associatedWindowHash(for: sessionId) else {
+      Logger.log(message: "Could not find hash for sessionId '\(sessionId)'", subsystem: .tty)
 
-    if let hash = getWindowHash(for: sessionId) {
-      guard !validWindowHash(hash) else {
-        // the hash is valid and is linked to a session
-        Logger.log(message: "WindowHash '\(hash)' is valid", subsystem: .tty)
-
-        Logger.log(
-          message: "WindowHash '\(hash)' is linked to sessionId '\(sessionId)'", subsystem: .tty)
-        return hash
-
-      }
-
-      // hash exists, but is invalid (eg. should have tab component and it doesn't)
-
-      Logger.log(
-        message: "\(hash) is not a valid window hash, attempting to find previous value",
-        priority: .info, subsystem: .tty)
-
-      //            // clean up this out-of-date hash
-      //queue.async(flags:[.barrier]) {
-      self.sessions[hash] = nil
-      self.tty.removeValue(forKey: hash)
-      //}
-
-    }
-
-    // user had this terminal session up prior to launching Fig or has iTerm tab integration set up, which caused original hash to go stale (eg. 16356/ -> 16356/1)
-
-    // hash does not exist
-
-    // so, lets see if the top window is a supported terminal
-    guard let window = currentTopmostWindow else {
-      // no terminal window found or passed in, don't link!
-      Logger.log(
-        message: "No window included when attempting to link to TTY, don't link!", priority: .info,
-        subsystem: .tty)
       return nil
     }
-
-    let hash = window.hash
-    let sessionIdForWindow = getSessionId(for: hash)
-
-    guard sessionIdForWindow == nil else {
-      // a different session Id is already associated with window, don't link!
-      Logger.log(
-        message:
-          "A different session Id (\(sessionIdForWindow!) is already associated with window (\(hash)), don't link new session (\(sessionId)!",
-        priority: .info, subsystem: .tty)
-      return nil
-    }
-
+    
     Logger.log(message: "Found WindowHash '\(hash)' for sessionId '\(sessionId)'", subsystem: .tty)
-    return hash
 
+
+    return hash
   }
 
   fileprivate func link(
@@ -803,15 +703,4 @@ extension ShellHookManager {
     return hash
   }
 
-  func validWindowHash(_ hash: ExternalWindowHash) -> Bool {
-    guard let components = hash.components() else { return false }
-    let windowHasNoTabs = (tabs[components.windowId] == nil && components.tab == nil)
-    let windowHasTabs = (tabs[components.windowId] != nil && components.tab != nil)
-    let windowHasNoPanes =
-      (panes["\(components.windowId)/\(components.tab ?? "")"] == nil && components.pane == nil)
-    let windowHasPanes =
-      (panes["\(components.windowId)/\(components.tab ?? "")"] != nil && components.pane != nil)
-    return (windowHasNoTabs && (windowHasNoPanes || windowHasPanes))
-      || (windowHasTabs && (windowHasNoPanes || windowHasPanes))
-  }
 }

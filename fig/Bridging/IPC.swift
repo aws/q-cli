@@ -243,24 +243,36 @@ class IPC: UnixSocketServerDelegate {
     
     switch message.hook {
     case .editBuffer(let hook):
+      IPC.post(notification: .editBuffer, object: hook)
+
       ShellHookManager.shared.updateKeybuffer(
         context: hook.context,
         text: hook.text,
         cursor: Int(hook.cursor),
         histno: Int(hook.histno))
     case .init_p(let hook):
+      IPC.post(notification: .initialize, object: hook)
+
       ShellHookManager.shared.startedNewTerminalSession(
         context: hook.context,
         calledDirect: hook.calledDirect,
         bundle: hook.bundle,
         env: hook.env)
     case .prompt(let hook):
+      IPC.post(notification: .prompt, object: hook)
+
       ShellHookManager.shared.shellPromptWillReturn(context: hook.context)
     case .preExec(let hook):
+      IPC.post(notification: .preExec, object: hook)
+
       ShellHookManager.shared.shellWillExecuteCommand(context: hook.context)
     case .postExec(let hook):
+      IPC.post(notification: .postExec, object: hook)
+
       API.notifications.post(hook.historyNotification)
     case .keyboardFocusChanged(let hook):
+      IPC.post(notification: .keyboardFocusChanged, object: hook)
+      
       ShellHookManager.shared.currentTabDidChange(applicationIdentifier: hook.appIdentifier, sessionId: hook.focusedSessionID)
     case .tmuxPaneChanged(_):
       break

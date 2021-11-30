@@ -112,20 +112,20 @@ class APINotificationCenter {
     }
     
     func post(notification: Fig_Notification) {
-        #if DEBUG
-          assert(Thread.isMainThread)
-        #endif
-        guard let type = notification.notificationType else { return }
-        
-        let subscribers = self.subscribers[type]
-        
-        subscribers?.forEach({ webview in
-           
-            API.send(Response.with({
-                $0.notification = notification
-                $0.id = self.channels[webview]?[type] ?? -1
-            }), to: webview, using: .binary)
-        })
+
+        DispatchQueue.main.async {
+          guard let type = notification.notificationType else { return }
+          
+          let subscribers = self.subscribers[type]
+          
+          subscribers?.forEach({ webview in
+             
+              API.send(Response.with({
+                  $0.notification = notification
+                  $0.id = self.channels[webview]?[type] ?? -1
+              }), to: webview, using: .binary)
+          })
+        }
     }
 }
 

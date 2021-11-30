@@ -84,6 +84,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         let _ = IPC.shared
       
         let _ = AXWindowServer.shared
+        let _ = TerminalSessionLinker.shared
 
       
         let _ = DockerEventStream.shared
