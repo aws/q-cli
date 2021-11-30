@@ -156,6 +156,9 @@
 		75AA24DA25A7E8B000A51E9D /* lsof.m in Sources */ = {isa = PBXBuildFile; fileRef = 75AA24D925A7E8B000A51E9D /* lsof.m */; };
 		75ACFE7A274442C7003C22EE /* PTYProcess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75ACFE79274442C7003C22EE /* PTYProcess.swift */; };
 		75ACFE7C274C3424003C22EE /* Utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75ACFE7B274C3424003C22EE /* Utilities.swift */; };
+		75ACFE7E27556BC1003C22EE /* WindowMappingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75ACFE7D27556BC1003C22EE /* WindowMappingTests.swift */; };
+		75ACFE8027556D7A003C22EE /* TerminalSessionLinkingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75ACFE7F27556D7A003C22EE /* TerminalSessionLinkingService.swift */; };
+		75ACFE82275594FE003C22EE /* WindowService2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75ACFE81275594FE003C22EE /* WindowService2.swift */; };
 		75AEF2E425C3C34A00D78431 /* Diagnostic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75AEF2E325C3C34A00D78431 /* Diagnostic.swift */; };
 		75AEF2E625C3DEAF00D78431 /* DockerIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75AEF2E525C3DEAF00D78431 /* DockerIntegration.swift */; };
 		75AEF2E825C3DEC600D78431 /* SSHIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75AEF2E725C3DEC600D78431 /* SSHIntegration.swift */; };
@@ -451,6 +454,9 @@
 		75AC55322522C8EB0069635E /* 1.0.20.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = 1.0.20.sh; sourceTree = "<group>"; };
 		75ACFE79274442C7003C22EE /* PTYProcess.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PTYProcess.swift; sourceTree = "<group>"; };
 		75ACFE7B274C3424003C22EE /* Utilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utilities.swift; sourceTree = "<group>"; };
+		75ACFE7D27556BC1003C22EE /* WindowMappingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowMappingTests.swift; sourceTree = "<group>"; };
+		75ACFE7F27556D7A003C22EE /* TerminalSessionLinkingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalSessionLinkingService.swift; sourceTree = "<group>"; };
+		75ACFE81275594FE003C22EE /* WindowService2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowService2.swift; sourceTree = "<group>"; };
 		75AEF2E325C3C34A00D78431 /* Diagnostic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Diagnostic.swift; sourceTree = "<group>"; };
 		75AEF2E525C3DEAF00D78431 /* DockerIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DockerIntegration.swift; sourceTree = "<group>"; };
 		75AEF2E725C3DEC600D78431 /* SSHIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSHIntegration.swift; sourceTree = "<group>"; };
@@ -773,6 +779,7 @@
 				7AF96D3E273DB3E30006A41B /* ConfigTests.swift */,
 				7AB6B6862740301500428F47 /* NSWorkspaceExtensionTests.swift */,
 				7A9DB5652741A3E6008BD2AA /* DefaultsTest.swift */,
+				75ACFE7D27556BC1003C22EE /* WindowMappingTests.swift */,
 			);
 			path = figTests;
 			sourceTree = "<group>";
@@ -889,6 +896,7 @@
 			children = (
 				757AF4C726BC73FA00349764 /* WindowPositioning.swift */,
 				7510F8BE24A99A4B00E86F7C /* WindowService.swift */,
+				75ACFE81275594FE003C22EE /* WindowService2.swift */,
 				75E993F42517E226000BE6BE /* AXWindowServer.swift */,
 				75A4A2A325CB4DE3002EFD6B /* BundleIdCache.swift */,
 				75AEF2ED25C5062E00D78431 /* WindowObserver.swift */,
@@ -912,6 +920,7 @@
 				75F7F953262007170005E215 /* IPC.swift */,
 				75F7F951261FBDC30005E215 /* UnixSocketServer.swift */,
 				75ACFE7B274C3424003C22EE /* Utilities.swift */,
+				75ACFE7F27556D7A003C22EE /* TerminalSessionLinkingService.swift */,
 			);
 			path = Bridging;
 			sourceTree = "<group>";
@@ -1504,6 +1513,7 @@
 				75DA86A925EF145E00722F1D /* TmuxIntegration.swift in Sources */,
 				7577124725648DFB0011FF48 /* ps.c in Sources */,
 				757AF4C826BC73FA00349764 /* WindowPositioning.swift in Sources */,
+				75ACFE82275594FE003C22EE /* WindowService2.swift in Sources */,
 				75290ABD26719090000F4255 /* iterm.pb.swift in Sources */,
 				75B1993825100E4E00F38EA8 /* KeypressService.swift in Sources */,
 				75C57C142581C0700065741E /* ioreg.c in Sources */,
@@ -1522,6 +1532,7 @@
 				75D1ECC026F1658300BC8A04 /* InstallationStatus.swift in Sources */,
 				75A0A71926F1A79A008FAD70 /* KittyIntegration.swift in Sources */,
 				75EB592D258DD771002915E7 /* TTY.swift in Sources */,
+				75ACFE8027556D7A003C22EE /* TerminalSessionLinkingService.swift in Sources */,
 				7510F8BF24A99A4B00E86F7C /* WindowService.swift in Sources */,
 				75A4521A25AE2E6B00107D2C /* CommandIntegration.swift in Sources */,
 				1A1F160025A7A93E0074D541 /* KeyBindingsManager.swift in Sources */,
@@ -1539,6 +1550,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				75ACFE7E27556BC1003C22EE /* WindowMappingTests.swift in Sources */,
 				7AB6B6872740301500428F47 /* NSWorkspaceExtensionTests.swift in Sources */,
 				7A0A41DF2738731900080BCE /* FileSystemTests.swift in Sources */,
 				7AF96D3F273DB3E30006A41B /* ConfigTests.swift in Sources */,

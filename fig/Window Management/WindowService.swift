@@ -246,9 +246,10 @@ class ExternalWindow {
     let windowLevel: CGWindowLevel?
     let app: App
     let accesibilityElement: AXUIElement?
+    var windowService: WindowService2?
     var lastTabId: String? {
         get {
-          return ShellHookManager.shared.tab(for: self.windowId)
+          return windowService?.lastTabId(for: self.windowId) ?? ShellHookManager.shared.tab(for: self.windowId)
         }
     }
   
@@ -266,7 +267,7 @@ class ExternalWindow {
     
     var session: String? {
         get {
-          return ShellHookManager.shared.getSessionId(for: self.hash)
+          return TerminalSessionLinker.shared.focusedTerminalSession(for: self.windowId)//ShellHookManager.shared.getSessionId(for: self.hash)
         }
     }
     
@@ -349,7 +350,7 @@ class ExternalWindow {
       return matchingWindow.windowLevel
     }
   
-    init(_ frame: NSRect, _ windowId: CGWindowID, _ app: NSRunningApplication,_ accesibilityElement: AXUIElement? = nil) {
+    init(_ frame: NSRect, _ windowId: CGWindowID, _ app: App, _ accesibilityElement: AXUIElement? = nil) {
         self.frame = frame
         self.windowId = windowId
         self.app = app

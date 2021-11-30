@@ -243,6 +243,7 @@ class IPC: UnixSocketServerDelegate {
     
     switch message.hook {
     case .editBuffer(let hook):
+        try? TerminalSessionLinker.shared.linkWithFrontmostWindow(sessionId: hook.context.hasSessionID ? hook.context.sessionID : nil, isFocused: true)
       ShellHookManager.shared.updateKeybuffer(
         context: hook.context,
         text: hook.text,
