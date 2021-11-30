@@ -246,28 +246,28 @@ class ExternalWindow {
     let windowLevel: CGWindowLevel?
     let app: App
     let accesibilityElement: AXUIElement?
-    var windowService: WindowService2?
+    var windowMetadataService: WindowMetadataService = TerminalSessionLinker.shared//ShellHookManager.shared
     var lastTabId: String? {
         get {
-          return windowService?.lastTabId(for: self.windowId) ?? ShellHookManager.shared.tab(for: self.windowId)
+          return windowMetadataService.getMostRecentFocusId(for: self.windowId)
         }
     }
   
     var lastPaneId: String? {
         get {
-          return ShellHookManager.shared.pane(for: "\(self.windowId)/\(self.lastTabId ?? "")")
+          return windowMetadataService.getMostRecentPaneId(for: self.windowId)
         }
     }
   
     var tty: TTY? {
         get {
-          return ShellHookManager.shared.tty(for: self.hash)
+          return windowMetadataService.getAssociatedTTY(for: self.windowId)
         }
     }
     
     var session: String? {
         get {
-          return TerminalSessionLinker.shared.focusedTerminalSession(for: self.windowId)//ShellHookManager.shared.getSessionId(for: self.hash)
+          return windowMetadataService.getTerminalSessionId(for: windowId)
         }
     }
     
@@ -383,7 +383,7 @@ class ExternalWindow {
     }
     
     var hash: ExternalWindowHash {
-      return ShellHookManager.shared.hashFor(self.windowId)//"\(self.windowId)/\(self.lastTabId ?? "")\(self.lastPaneId ?? "%")"
+      return self.windowMetadataService.getWindowHash(for: self.windowId)
     }
     
     var windowTitle: String? {

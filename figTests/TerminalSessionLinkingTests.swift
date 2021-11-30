@@ -33,7 +33,7 @@ class TestableWindowServer {
     let app = TestableApp(bundleIdentifier: bundleId)
     
     let window = ExternalWindow(.zero, CGWindowID(windowCount), app, nil)
-    window.windowService = self
+    window.windowMetadataService = self
     self.windows.insert(window, at: 0)
     return window.windowId
   }
@@ -54,6 +54,10 @@ class TestableWindowServer {
     if let window = windowToMoveToFront {
       self.windows.insert(window, at: 0)
     }
+  }
+  
+  func switchToTab(_ focusId: String, in window: CGWindowID) {
+    self.tabs[window] = focusId
   }
     
 //    self.windows.re
@@ -92,12 +96,26 @@ extension TestableWindowServer: WindowService  {
 
 }
 
-extension TestableWindowServer: WindowService2 {
-  
-  func lastTabId(for windowId: CGWindowID) -> String {
-    return self.tabs[windowId] ?? ""
+extension TestableWindowServer: WindowMetadataService {
+  func getMostRecentFocusId(for windowId: WindowId) -> FocusId? {
+    return self.tabs[windowId]
   }
   
+  func getAssociatedTTY(for windowId: WindowId) -> TTY? {
+    return nil
+  }
+  
+  func getTerminalSessionId(for windowId: WindowId) -> TerminalSessionId? {
+    return nil
+  }
+  
+  func getWindowHash(for windowId: WindowId) -> ExternalWindowHash {
+    return String(windowId) + "/" + (self.tabs[windowId] ?? "") + "%"
+  }
+  
+  func getMostRecentPaneId(for windowId: WindowId) -> String? {
+    return nil
+  }
 }
 
 class TerminalSessionLinkingTests: XCTestCase {
@@ -109,8 +127,26 @@ class TerminalSessionLinkingTests: XCTestCase {
     override func tearDown() {
         // Put teardown code here. This method is called after the invocation of each test method in the class.
     }
+  
+    func testNoSessionUntilKeystroke() throws {
+      let windowObserver = TestableWindowServer()
+      let linker = TerminalSessionLinker(windowService: windowObserver)
+      
+      let a = windowObserver.createNewWindow(for: "iterm")
+      XCTAssertEqual(linker.focusedTerminalSession(for: a), nil)
+    }
+  
+    func testSessionOnceKeystroke() throws {
+      let windowObserver = TestableWindowServer()
+      let linker = TerminalSessionLinker(windowService: windowObserver)
+      
+      let a = windowObserver.createNewWindow(for: "iterm")
+      try linker.linkWithFrontmostWindow(sessionId: "session-1", isFocused: true)
+      XCTAssertEqual(linker.focusedTerminalSession(for: a), "session-1")
 
-    func testExample() throws {
+    }
+  
+    func testMultipleWindows() throws {
 
       let windowObserver = TestableWindowServer()
       let linker = TerminalSessionLinker(windowService: windowObserver)
@@ -126,6 +162,30 @@ class TerminalSessionLinkingTests: XCTestCase {
       windowObserver.switchToWindow(id: a)
       
       XCTAssertEqual(linker.focusedTerminalSession(for: a), nil)
+    }
+  
+    func testMultipleTabs() throws {
+
+      let windowObserver = TestableWindowServer()
+      let linker = TerminalSessionLinker(windowService: windowObserver)
+      
+      let a = windowObserver.createNewWindow(for: "iterm")
+
+      try linker.linkWithFrontmostWindow(sessionId: "session-1", isFocused: true)
+      windowObserver.switchToTab("tab-2", in: a)
+      linker.resetFocusForAllSessions(in: a)
+      XCTAssertEqual(linker.focusedTerminalSession(for: a), nil)
+      
+      try linker.linkWithFrontmostWindow(sessionId: "session-2", isFocused: true)
+      XCTAssertEqual(linker.focusedTerminalSession(for: a), "session-2")
+
+      windowObserver.switchToTab("tab-1", in: a)
+      linker.resetFocusForAllSessions(in: a)
+      XCTAssertEqual(linker.focusedTerminalSession(for: a), nil)
+      
+      try linker.linkWithFrontmostWindow(sessionId: "session-1", isFocused: true)
+      XCTAssertEqual(linker.focusedTerminalSession(for: a), "session-1")
+      
     }
 
 }

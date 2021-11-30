@@ -23,6 +23,7 @@ protocol TerminalSessionLinkingService {
             focusId: FocusId?,
             isFocused: Bool?)
   func focusedTerminalSession(for windowId: WindowId) -> TerminalSessionId?
+  func associatedWindowId(for terminalSession: TerminalSessionId) -> WindowId?
 
 }
 
@@ -71,12 +72,86 @@ class TerminalSessionLinker: TerminalSessionLinkingService {
 
   }
   
+  fileprivate func getTerminalSession(for terminalSessionId: TerminalSessionId) -> TerminalSession? {
+    for sessions in self.sessions.values {
+      if let targetSession = sessions[terminalSessionId] {
+        return targetSession
+      }
+    }
+    
+    return nil
+  }
+  
+  func associatedWindowId(for terminalSessionId: TerminalSessionId) -> WindowId? {
+    guard let session = self.getTerminalSession(for: terminalSessionId) else {
+      return nil
+    }
+    
+    return session.windowId
+  }
+  
+  func associatedWindowHash(for terminalSessionId: TerminalSessionId) -> ExternalWindowHash? {
+    guard let session = self.getTerminalSession(for: terminalSessionId) else {
+      return nil
+    }
+    
+    return "\(session.windowId)/\(session.focusId ?? "")%"
+  }
+  
   init(windowService: WindowService) {
     self.windowService = windowService
+    
+    NotificationCenter.default.addObserver(self,
+                                           selector: #selector(processEditbufferHook),
+                                           name: IPC.Notifications.editBuffer.notification,
+                                           object: nil)
+    
+    NotificationCenter.default.addObserver(self,
+                                           selector: #selector(processKeyboardFocusChangedHook),
+                                           name: IPC.Notifications.keyboardFocusChanged.notification,
+                                           object: nil)
 
   }
   
-  func processEditbufferChangedHook(event: Local_EditBufferHook) throws {
+  deinit {
+    NotificationCenter.default.removeObserver(self)
+  }
+  
+  @objc func processKeyboardFocusChangedHook(notification: Notification) {
+    guard let event = notification.object as? Local_KeyboardFocusChangedHook else {
+      return
+    }
+    
+    guard let window = windowService.topmostWhitelistedWindow() else {
+      return
+    }
+    
+    guard event.appIdentifier == window.bundleId else {
+      return
+    }
+    
+    // reset focus for all sessions associated with frontmost window
+    // so that the sessionId of a new tab is `nil` until updated on keypress
+    resetFocusForAllSessions(in: window.windowId)
+  }
+  
+  func resetFocusForAllSessions(in windowId: WindowId) {
+    self.queue.sync { [weak self] in
+      guard self != nil else { return }
+      self!.sessions[windowId] =
+        self!.sessions[windowId]?.mapValues({ session -> TerminalSession in
+        var updatedSession = session
+        updatedSession.isFocused = false
+        return updatedSession
+      })
+    }
+  }
+  
+  @objc func processEditbufferHook(notification: Notification) throws {
+    guard let event = notification.object as? Local_EditBufferHook else {
+      return
+    }
+    
     try self.linkWithFrontmostWindow(sessionId: event.context.hasSessionID ? event.context.sessionID : nil,
                                      isFocused: true)
   }
@@ -90,7 +165,6 @@ class TerminalSessionLinker: TerminalSessionLinkingService {
       throw LinkingError.noWindowCandidateAvailable
     }
     
-    // todo: handle focus id in WindowService
     link(windowId: window.windowId,
          bundleId: bundleId,
          terminalSessionId: sessionId,
