@@ -268,13 +268,13 @@ void figterm_loop(int ptyp_fd, pid_t shell_pid, char* initial_command) {
       log_info("Got message on socket");
       incoming_socket = accept(incoming_listener, NULL, NULL);
       if (incoming_socket < 0) {
-        log_warn("Failed to accept message on socket");
+        log_err("Failed to accept message on socket %d", incoming_listener);
       }
     }
     if (n > 0 && FD_ISSET(incoming_socket, &rfd)) {
       nread = read(incoming_socket, buf, BUFFSIZE - 1);
       if (nread == -1) {
-        log_warn("Failed to read on socket %d (%d): %s", incoming_socket, errno, strerror(errno));
+        log_err("Failed to read on socket %d", incoming_socket, errno, strerror(errno));
       } else {
         log_warn("Message (%d): %.*s", nread, nread, buf);
         if (write(ptyp_fd, buf, nread) != nread)
