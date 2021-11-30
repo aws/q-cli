@@ -45,7 +45,10 @@ function fig_hide() {
 # Delete any widget, if it already exists
 add-zle-hook-widget line-pre-redraw fig_zsh_keybuffer
 
-add-zle-hook-widget line-init fig_zsh_keybuffer
+# Workaround for zim crash
+if [[ -z "$ZIM_HOME" ]]; then
+  add-zle-hook-widget line-init fig_zsh_keybuffer
+fi
 
 # Hide when going through history (see also: histno logic in ShellHooksManager.updateKeybuffer)
 add-zle-hook-widget history-line-set fig_hide

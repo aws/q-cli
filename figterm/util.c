@@ -12,20 +12,13 @@ static int ipc_sock = -1;
 int get_winsize(struct winsize *ws) {
   // Get window size of current terminal.
   const char *term = ctermid(NULL);
-  if (!term[0]) {
-    log_error("can't get name of controlling terminal");
-    return -1;
-  }
+  CHECK(term[0], -1, "Can't get name of controlling terminal");
+
   int fd = open(term, O_RDONLY);
-  if (fd == -1) {
-    log_error("can't open terminal at %s", term);
-    return -1;
-  }
-  if (ioctl(fd, TIOCGWINSZ, ws) == -1) {
-    log_error("can't get the window size of %s", term);
-    return -1;
-  }
-  close(fd);
+  CHECK_SYS(fd, "Can't open terminal at %s", term);
+  CHECK_SYS(ioctl(fd, TIOCGWINSZ, ws), "Can't get the window size of %s", term);
+  CHECK_SYS(close(fd), "Failed to close fd %d", fd);
+
   return 0;
 }
 
@@ -39,6 +32,7 @@ FigInfo *init_fig_info() {
   char *fig_integration_version = getenv("FIG_INTEGRATION_VERSION");
 
   FigInfo *fi = malloc(sizeof(FigInfo));
+  CHECK_NONNULL(fi, "Failed to malloc figinfo");
   fi->term_session_id = term_session_id;
   fi->fig_integration_version = fig_integration_version;
   fi->pty_name = NULL;
@@ -55,6 +49,7 @@ char* fig_path(char* fname) {
   char* home_dir = getenv("HOME");
   int path_len = strlen(home_dir) + strlen("/.fig/") + strlen(fname) + 1;
   char* file = malloc(path_len * sizeof(char));
+  CHECK_NONNULL(file, "Failed to malloc file name");
   return strcat(strcat(strcpy(file, home_dir), "/.fig/"), fname);
 }
 
@@ -75,9 +70,8 @@ char* log_path(char* log_name) {
 
 int unix_socket_listen(char *path) {
   // Connect to a unix socket at path.
-  int sock;
-  if ((sock = socket(AF_UNIX, SOCK_STREAM, 0)) < 0)
-    return -1;
+  int sock = socket(AF_UNIX, SOCK_STREAM, 0);
+  CHECK_SYS(sock, "Failed to create socket object");
 
   struct sockaddr_un remote;
   memset(&remote, 0, sizeof(struct sockaddr_un));
@@ -86,9 +80,7 @@ int unix_socket_listen(char *path) {
 
   size_t len = SUN_LEN(&remote);
 
-  if (bind(sock, (struct sockaddr *) &remote, len) == -1) {
-    return -1;
-  }
+  CHECK_SYS(bind(sock, (struct sockaddr *) &remote, len), "Failed to bind socket");
   
   // Set backlog max of 5 queued messages
   listen(sock, 5);
@@ -97,9 +89,8 @@ int unix_socket_listen(char *path) {
 
 static int unix_socket_connect(char *path) {
   // Connect to a unix socket at path.
-  int sock;
-  if ((sock = socket(AF_UNIX, SOCK_STREAM, 0)) < 0)
-    return -1;
+  int sock = socket(AF_UNIX, SOCK_STREAM, 0);
+  CHECK_SYS(sock, "Failed to create socket object");
 
   struct sockaddr_un remote;
   memset(&remote, 0, sizeof(struct sockaddr_un));
@@ -108,7 +99,8 @@ static int unix_socket_connect(char *path) {
 
   size_t len = SUN_LEN(&remote);
   if (connect(sock, (struct sockaddr *)&remote, len) == -1) {
-    close(sock);
+    log_err("Failed to connect to socket");
+    CHECK_SYS(close(sock), "Failed to close socket");
     return -1;
   }
   return sock;
@@ -116,6 +108,18 @@ static int unix_socket_connect(char *path) {
 
 char* _incoming_socket_path = NULL;
 int _incoming_socket_fd = -1;
+
+int set_blocking(int fd, bool blocking) {
+  int flags = fcntl(fd, F_GETFL);
+
+  if (flags != -1)
+    flags = fcntl(fd, F_SETFL, blocking ? flags ^ O_NONBLOCK : flags | O_NONBLOCK);
+
+  if (flags == -1)
+    log_warn("Failed to set fd blocking");
+
+  return flags;
+}
 
 int fig_socket_listen() {
   FigInfo *fig_info = get_fig_info();
@@ -125,15 +129,7 @@ int fig_socket_listen() {
 
   sprintf(_incoming_socket_path, "/tmp/figterm-%s.socket", fig_info->term_session_id);
   _incoming_socket_fd = unix_socket_listen(_incoming_socket_path);
-
-  int flags = fcntl(_incoming_socket_fd, F_GETFL);
-
-  if (flags != -1)
-    flags = fcntl(_incoming_socket_fd, F_SETFL, flags | O_NONBLOCK);
-
-  if (flags == -1)
-    log_warn("Failed to set socket to non-blocking");
-
+  set_blocking(_incoming_socket_fd, false);
   return _incoming_socket_fd;
 }
 
@@ -149,14 +145,18 @@ void fig_socket_cleanup() {
 
 void fig_sigpipe_handler(int sig) {
   if (fig_sock > -1) {
-    close(fig_sock);
+    if (close(fig_sock) < 0) {
+      log_err("Failed to close fig socket");
+    }
   }
   fig_sock = -1;
 }
 
 void ipc_sigpipe_handler(int sig) {
   if (ipc_sock > -1) {
-    close(ipc_sock);
+    if (close(ipc_sock) < 0) {
+      log_err("Failed to close ipc socket");
+    }
   }
   ipc_sock = -1;
 }
@@ -172,17 +172,20 @@ int fig_socket_send(char* buf) {
 
   if (fig_sock < 0) {
     fig_sock = unix_socket_connect("/tmp/fig.socket");
-  }
-
-  if (fig_sock < 0) {
-    log_warn("Can't connect to fig socket");
-    return fig_sock;
+    CHECK_SYS(fig_sock, "Can't connect to fig socket");
+    CHECK_SYS(set_blocking(fig_sock, false), "Couldn't set fig sock to nonblocking");
   }
   
   // Handle sigpipe if socket is closed, reset afterwards.
   if ((old_handler = set_sigaction(SIGPIPE, fig_sigpipe_handler)) == SIG_ERR)
     err_sys("sigpipe error");
-  st = send(fig_sock, encoded, out_len, 0);
+  st = send(fig_sock, encoded, out_len, MSG_NOSIGNAL);
+
+  if (st < 0 && errno == EPIPE) {
+    fig_sigpipe_handler(SIGPIPE);
+    log_err("Error sending buffer to socket");
+  }
+
   if (set_sigaction(SIGPIPE, old_handler) == SIG_ERR)
     err_sys("sigpipe error");
 
@@ -197,18 +200,19 @@ int ipc_socket_send(char* buf, int len) {
   if (ipc_sock < 0) {
     char* path = printf_alloc("%sfig.socket", getenv("TMPDIR"));
     ipc_sock = unix_socket_connect(path);
+    CHECK_SYS(ipc_sock, "Can't connect to ipc socket");
+    CHECK_SYS(set_blocking(ipc_sock, false), "Couldn't set ipc sock to nonblocking");
     free(path);
   }
 
-  if (ipc_sock < 0) {
-    log_warn("Can't connect to fig ipc socket");
-    return ipc_sock;
-  }
-  
   // Handle sigpipe if socket is closed, reset afterwards.
   if ((old_handler = set_sigaction(SIGPIPE, ipc_sigpipe_handler)) == SIG_ERR)
     err_sys("sigpipe error");
-  st = send(ipc_sock, buf, len, 0);
+  st = send(ipc_sock, buf, len, MSG_NOSIGNAL);
+  if (st < 0 && errno == EPIPE) {
+    ipc_sigpipe_handler(SIGPIPE);
+    log_err("Error sending buffer to socket");
+  }
   if (set_sigaction(SIGPIPE, old_handler) == SIG_ERR)
     err_sys("sigpipe error");
 

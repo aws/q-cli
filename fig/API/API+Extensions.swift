@@ -90,7 +90,7 @@ extension ExternalWindow {
             window.frame = self.frame.fig_frame
             window.windowID = String(self.windowId)
             
-            if let tty = ShellHookManager.shared.tty(for: self.hash) {
+          if let tty = self.tty {
                 window.currentSession = Fig_Session.with{ session in
                     
                     if let pid = tty.pid, let executable = tty.cmd, let directory = tty.cwd {
@@ -100,7 +100,7 @@ extension ExternalWindow {
                             process.directory = directory
                         }
                         
-                        if let sessionId = ShellHookManager.shared.getSessionId(for: self.hash) {
+                        if let sessionId = self.session {
                             session.sessionID = sessionId
                         }
                     }
