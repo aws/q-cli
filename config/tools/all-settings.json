@@ -154,6 +154,14 @@
     "category": "Autocomplete"
   },
   {
+    "settingName": "autocomplete.personalShortcutsToken",
+    "title": "Personal Shortcuts Token",
+    "description": "Change the token used to trigger personal shortcuts.",
+    "type": "text",
+    "default": "+",
+    "category": "Autocomplete"
+  },
+  {
     "settingName": "pty.path",
     "title": "PTY Path",
     "description": "Sets the PATH variable used in pseudoterminals.",

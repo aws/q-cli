@@ -156,6 +156,8 @@ class API {
     }
     
     static func send(_ response: Response, to webView: WKWebView, using encoding: API.Encoding) {
+        assert(Thread.isMainThread)
+
         var payload: String!
         switch encoding {
         case .binary :

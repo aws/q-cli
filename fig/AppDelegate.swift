@@ -81,9 +81,11 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         let _ = WindowManager.shared
         let _ = ShellHookManager.shared
         let _ = KeypressProvider.shared
-        let _ = IPC.shared
       
         let _ = AXWindowServer.shared
+        let _ = TerminalSessionLinker.shared
+        
+        let _ = IPC.shared
 
       
         let _ = DockerEventStream.shared
