@@ -144,7 +144,6 @@ class TTY {
   var isShell: Bool?
   var shell: proc?
   let integrations: [ String : CommandIntegration] = [
-                                                      SSHIntegration.command : SSHIntegration(),
                                                       DockerIntegration.command : DockerIntegration()
                                                      ]
   
