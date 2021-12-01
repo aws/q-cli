@@ -147,13 +147,17 @@ class TerminalSessionLinker: TerminalSessionLinkingService {
     }
   }
   
-  @objc func processEditbufferHook(notification: Notification) throws {
+  @objc func processEditbufferHook(notification: Notification) {
     guard let event = notification.object as? Local_EditBufferHook else {
       return
     }
-    
-    try self.linkWithFrontmostWindow(sessionId: event.context.hasSessionID ? event.context.sessionID : nil,
-                                     isFocused: true)
+  
+    do {
+      try self.linkWithFrontmostWindow(sessionId: event.context.hasSessionID ? event.context.sessionID : nil,
+                                       isFocused: true)
+    } catch {
+      print(error)
+    }
   }
 
   func linkWithFrontmostWindow(sessionId: TerminalSessionId?, isFocused: Bool?) throws {
