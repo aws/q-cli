@@ -9,11 +9,6 @@
 import Cocoa
 
 extension IPC {
-//  static let promptHookNotification = Notification.Name(rawValue: "promptHookNotification")
-//  static let preExecHookNotification = Notification.Name(rawValue: "preExecHookNotification")
-//  static let postExecHookNotification = Notification.Name(rawValue: "postExecHookNotification")
-//  static let initializeHookNotification = Notification.Name(rawValue: "initializeHookNotification")
-//  static let editbufferHookNotification = Notification.Name(rawValue: "editbufferHookNotification")
 
   enum Notifications: String {
     case prompt = "promptHookNotification"
