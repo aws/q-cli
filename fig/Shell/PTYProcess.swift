@@ -40,6 +40,7 @@ class PTYProcess {
   func stop(block: @escaping () -> Void) {
     if let old_pid = self.process?.pointee.process_pid {
       pty_free(self.process)
+      self.process = nil
       var n: Int32 = 0
       waitpid(old_pid, &n, 0)
       self.running = false
@@ -58,6 +59,8 @@ class PTYProcess {
   }
   
   deinit {
+    guard self.process else { return }
     pty_free(self.process)
+    self.process = nil
   }
 }
