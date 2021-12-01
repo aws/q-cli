@@ -44,8 +44,8 @@ install_fig() {
   fi
 
   # Make files and folders that the user can edit (that aren't overridden by above)
-  mkdir -p ~/.fig/{bin,zle,autocomplete}
-  mkdir -p ~/.fig/user/{aliases,apps,autocomplete,aliases}
+  mkdir -p ~/.fig/bin
+  mkdir -p ~/.fig/user
 
   BUNDLE="${FIG_BUNDLE_EXECUTABLES:-/Applications/Fig.app/Contents/MacOS/}"
 
@@ -60,11 +60,6 @@ install_fig() {
   if [[ ! -f ~/.fig/settings.json ]]; then
     echo "{}" > ~/.fig/settings.json
   fi
-
-  touch ~/.fig/user/aliases/_myaliases.sh
-
-  # Figpath definition.
-  touch ~/.fig/user/figpath.sh
 
   # Determine user's login shell by explicitly reading from "/Users/$(whoami)"
   # rather than ~ to handle rare cases where these are different.
@@ -81,13 +76,6 @@ install_fig() {
   # Restart file watcher
   "${FIGCLI}" settings:init
 
-  # Define the figpath variable in the figpath file
-  # The file should look like this:
-  #   export FIGPATH="~/.fig/bin:~/run:"
-  #   FIGPATH=$FIGPATH'~/abc/de fg/hi''~/zyx/wvut'
-  if ! grep -q 'FIGPATH=$FIGPATH' ~/.fig/user/figpath.sh; then 
-    echo $'\n''FIGPATH=$FIGPATH' >> ~/.fig/user/figpath.sh
-  fi
 }
 
 setup_onboarding() {
