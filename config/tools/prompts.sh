@@ -74,11 +74,11 @@ if [[ -z "$APP_TERMINATED_BY_USER" && "$FIG_IS_RUNNING" == '0' ]]; then
 fi
 
 # Show Fig tips
-if [ "$1" = "fish" ]; then
-  fig tips prompt 2>/dev/null
-else
-  fig tips prompt 2>/dev/null &
-fi
+# if [ "$1" = "fish" ]; then
+#   fig tips prompt 2>/dev/null
+# else
+#   fig tips prompt 2>/dev/null &
+# fi
 
 unset FIG_IS_RUNNING
 
