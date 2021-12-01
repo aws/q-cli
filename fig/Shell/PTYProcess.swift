@@ -59,8 +59,8 @@ class PTYProcess {
   }
   
   deinit {
-    guard self.process else { return }
-    pty_free(self.process)
+    guard let process = self.process else { return }
+    pty_free(process)
     self.process = nil
   }
 }
