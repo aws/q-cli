@@ -221,8 +221,8 @@ extension ShellHookManager {
         let VSCodeInsidersTerminal = window.bundleId == Integrations.VSCodeInsiders
           && applicationIdentifier == "vscode-insiders"
         
-        let VSCodeiumTerminal = window.bundleId == Integrations.VSCodeInsiders
-          && applicationIdentifier == "vscodeium"
+        let VSCodeiumTerminal = window.bundleId == Integrations.VSCodium
+          && applicationIdentifier == "vscodium"
 
         let HyperTab = window.bundleId == Integrations.Hyper
           && applicationIdentifier == "hyper"

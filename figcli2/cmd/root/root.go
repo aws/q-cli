@@ -13,6 +13,7 @@ import (
 	"fig-cli/cmd/docs"
 	"fig-cli/cmd/doctor"
 	"fig-cli/cmd/hook"
+	legacy_focus_changed "fig-cli/cmd/hook/keyboard-focus-changed"
 	"fig-cli/cmd/integrations"
 	"fig-cli/cmd/invite"
 	"fig-cli/cmd/issue"
@@ -315,6 +316,9 @@ func Execute() {
 	rootCmd.AddCommand(onboarding.NewCmdOnboarding())
 
 	rootCmd.AddCommand(genFigSpec.NewCmdGenFigSpec())
+
+	// DO NOT REMOVE UNTIL HYPER & VSCODE EXTENSIONS USE `fig hook keyboard-focus-changed` format
+	rootCmd.AddCommand(legacy_focus_changed.NewCmdKeyboardFocusChanged(true))
 
 	if err := rootCmd.Execute(); err != nil {
 		logging.Log("root error:", err.Error())
