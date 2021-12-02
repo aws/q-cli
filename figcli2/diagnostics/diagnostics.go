@@ -107,6 +107,15 @@ func (a AppInfo) IsRunning() bool {
 	return len(a) > 0
 }
 
+func IsFigRunning() bool {
+	appInfo, err := GetAppInfo()
+	if err != nil {
+		return false
+	}
+
+	return appInfo.IsRunning()
+}
+
 func (a AppInfo) BundlePath() (string, error) {
 	re := regexp.MustCompile(`bundle path=\"(\S+)\"`)
 
