@@ -97,6 +97,11 @@ static int unix_socket_connect(char *path) {
   remote.sun_family = AF_UNIX;
   strcpy(remote.sun_path, path);
 
+  int enable = 1;
+  if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0)
+    log_err("setsockopt(SO_REUSEADDR) failed");
+    return -1;
+
   size_t len = SUN_LEN(&remote);
   if (connect(sock, (struct sockaddr *)&remote, len) == -1) {
     log_err("Failed to connect to socket");
