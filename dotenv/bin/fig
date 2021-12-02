@@ -13,7 +13,7 @@ else
     if [[ -n "${MOCKED_OUTPUT}" ]]; then
         echo $MOCKED_OUTPUT
     else
-        "$HOME/figcli/figcli" "$@" > /dev/null
+        "$HOME/figcli/figcli" "$@"
     fi
 fi
 
