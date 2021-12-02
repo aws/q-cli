@@ -56,7 +56,7 @@ int ptyp_open(char* ptc_name) {
   return fdp;
 }
 
-int ptyc_open(int fdp, char* ptc_name, const struct termios *term, const struct winsize *ws) {
+int ptyc_open(int fdp, char* ptc_name) {
   // Open pty child and set calling process as stdin/stdout/stderr of pty.
   int fdc, err;
 
@@ -73,28 +73,6 @@ int ptyc_open(int fdp, char* ptc_name, const struct termios *term, const struct 
   // acquire controlling terminal with TIOCSCTTY.
   if (ioctl(fdc, TIOCSCTTY, (char *)NULL) < 0)
     goto fail;
-#endif
-
-  // Set child's termios and window size.
-  if (term != NULL && tcsetattr(fdc, TCSANOW, term) < 0)
-    goto fail;
-
-  if (ws != NULL && ioctl(fdc, TIOCSWINSZ, ws) < 0)
-    goto fail;
-
-#if defined(SOLARIS)
-  int setup;
-  // Check if stream is already set up by autopush facility.
-  if ((setup = ioctl(fdc, I_FIND, "ldterm")) < 0)
-    goto fail;
-
-  if (setup == 0) {
-    if (ioctl(fdc, I_PUSH, "ptem") < 0 ||
-        ioctl(fdc, I_PUSH, "ldterm") < 0 ||
-        ioctl(fdc, I_PUSH, "ttcompat") < 0) {
-      goto fail;
-    }
-  }
 #endif
 
   // PTY becomes stdin/stdout/stderr of process.
@@ -120,7 +98,7 @@ void error(int log, const char* fmt, ...) {
   va_start(ap, fmt);
   vdprintf(log, fmt, ap);
   va_end(ap);
-  exit(1);
+  _exit(1);
 }
 
 ssize_t pty_send(Pty* p, const char* buf, int count) {
@@ -145,9 +123,9 @@ Pty* pty_init(const char* executable, char* const* args, char* const* env, const
     error(log, "failed to fork pty child");
   } else if (process_pid == 0) {
     close(log);
-    ptyc_open(fdp, ptc_name, NULL, NULL);
+    ptyc_open(fdp, ptc_name);
     execve(executable, args, env);
-    exit(1);
+    _exit(1);
   }
 
   if ((pty_pid = fork()) < 0) {
@@ -164,7 +142,7 @@ Pty* pty_init(const char* executable, char* const* args, char* const* env, const
         error(log, "failed to write to log file");
     }
     close(log);
-    exit(0);
+    _exit(0);
   }
   close(log);
 
