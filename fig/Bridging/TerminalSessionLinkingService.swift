@@ -124,7 +124,7 @@ class TerminalSessionLinker: TerminalSessionLinkingService {
       
       if let sessionId = terminalSessionId,
          let shellContext = event.context.internalContext {
-        try self.setShellContext(for: sessionId, context: shellContext)
+        self.setShellContext(for: sessionId, context: shellContext)
       }
       
 
@@ -171,7 +171,7 @@ class TerminalSessionLinker: TerminalSessionLinkingService {
                                workingDirectory: workingDirectory,
                                integrationVersion: Int(event.context.integrationVersion))
     
-    try? self.setShellContext(for: event.context.sessionID,
+    self.setShellContext(for: event.context.sessionID,
                               context: context)
   }
   
