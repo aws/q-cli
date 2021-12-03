@@ -17,7 +17,7 @@ else
 fi
 
 # Set the tips for the next prompts
-fig tips reset &>/dev/null
+# fig tips reset &>/dev/null
 
 # To update a specific variable:
 # sed -i '' "s/FIG_VAR=.*/FIG_VAR=1/g" ~/.fig/user/config 2> /dev/null

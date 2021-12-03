@@ -78,9 +78,6 @@ install_fig() {
   FIGCLI="${BUNDLE}/figcli" 
   "${FIGCLI}" settings userShell "${USER_SHELL_TRIMMED}"
 
-  # Restart file watcher
-  "${FIGCLI}" settings:init
-
   # Define the figpath variable in the figpath file
   # The file should look like this:
   #   export FIGPATH="~/.fig/bin:~/run:"

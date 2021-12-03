@@ -236,10 +236,8 @@ class IPC: UnixSocketServerDelegate {
   func handleHook(_ message: Local_Hook) {
     Logger.log(message: "Recieved hook message!", subsystem: .unix)
     
-    #if DEBUG
-      let json = try? message.jsonString()
-      Logger.log(message: json ?? "Could not decode message", subsystem: .unix)
-    #endif
+    let json = try? message.jsonString()
+    Logger.log(message: json ?? "Could not decode message", subsystem: .unix)
     
     switch message.hook {
     case .editBuffer(let hook):

@@ -264,14 +264,14 @@ void figterm_loop(int ptyp_fd, pid_t shell_pid, char* initial_command) {
         publish_buffer(ft);
       }
     }
-    if (n > 0 && FD_ISSET(incoming_listener, &rfd)) {
+    if (incoming_listener > -1 && n > 0 && FD_ISSET(incoming_listener, &rfd)) {
       log_info("Got message on socket");
       incoming_socket = accept(incoming_listener, NULL, NULL);
       if (incoming_socket < 0) {
         log_err("Failed to accept message on socket %d", incoming_listener);
       }
     }
-    if (n > 0 && FD_ISSET(incoming_socket, &rfd)) {
+    if (incoming_socket > -1 && n > 0 && FD_ISSET(incoming_socket, &rfd)) {
       nread = read(incoming_socket, buf, BUFFSIZE - 1);
       if (nread == -1) {
         log_err("Failed to read on socket %d", incoming_socket, errno, strerror(errno));

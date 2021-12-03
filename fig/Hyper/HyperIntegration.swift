@@ -33,6 +33,7 @@ class HyperIntegration: TerminalIntegrationProvider {
     
     do {
         try FileManager.default.createDirectory(atPath: HyperIntegration.pluginPath.deletingLastPathComponent().path, withIntermediateDirectories: true)
+        try? FileManager.default.removeItem(at: HyperIntegration.pluginPath)
         try FileManager.default.createSymbolicLink(at: HyperIntegration.pluginPath, withDestinationURL: HyperIntegration.pluginPathInBundle)
     } catch {
         
