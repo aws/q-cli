@@ -165,12 +165,12 @@ class Diagnostic {
     get {
       guard let app = NSWorkspace.shared.frontmostApplication, Integrations.terminalsWhereAutocompleteShouldAppear.contains(app.bundleIdentifier ?? ""),
             let window = AXWindowServer.shared.whitelistedWindow,
-            let tty = window.tty
+            let context = window.associatedShellContext
       else {
         return "???"
       }
 
-      return tty.cmd != nil ? "\(tty.cmd ?? "")" : "<Unknown Process>"
+      return context.executablePath
     }
   }
   
@@ -178,12 +178,12 @@ class Diagnostic {
     get {
       guard let app = NSWorkspace.shared.frontmostApplication, Integrations.terminalsWhereAutocompleteShouldAppear.contains(app.bundleIdentifier ?? ""),
             let window = AXWindowServer.shared.whitelistedWindow,
-            let tty = window.tty
+            let context = window.associatedShellContext
       else {
         return "???"
       }
 
-      return tty.pid != nil ? "\(tty.pid ?? -1)" : "???"
+      return "\(context.processId)"
     }
   }
   
@@ -191,12 +191,12 @@ class Diagnostic {
     get {
       guard let app = NSWorkspace.shared.frontmostApplication, Integrations.terminalsWhereAutocompleteShouldAppear.contains(app.bundleIdentifier ?? ""),
             let window = AXWindowServer.shared.whitelistedWindow,
-            let tty = window.tty
+            let context = window.associatedShellContext
       else {
         return "???"
       }
 
-      return tty.cwd ?? "<Unknown Working Directory>"
+      return context.workingDirectory
     }
   }
   
@@ -204,12 +204,12 @@ class Diagnostic {
     get {
       guard let app = NSWorkspace.shared.frontmostApplication, Integrations.terminalsWhereAutocompleteShouldAppear.contains(app.bundleIdentifier ?? ""),
             let window = AXWindowServer.shared.whitelistedWindow,
-            let tty = window.tty
+            let context = window.associatedShellContext
       else {
         return false
       }
 
-      return tty.isShell ?? false
+      return context.isShell()
     }
   }
   
@@ -217,12 +217,12 @@ class Diagnostic {
     get {
       guard let app = NSWorkspace.shared.frontmostApplication, Integrations.terminalsWhereAutocompleteShouldAppear.contains(app.bundleIdentifier ?? ""),
             let window = AXWindowServer.shared.whitelistedWindow,
-            let tty = window.tty
+            let context = window.associatedShellContext
       else {
         return "???"
       }
 
-      return tty.descriptor
+      return context.ttyDescriptor
     }
   }
   

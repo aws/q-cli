@@ -10,58 +10,54 @@ import Foundation
 
 protocol WindowMetadataService {
   func getMostRecentFocusId(for windowId: WindowId) -> FocusId?
-  func getAssociatedTTY(for windowId: WindowId) -> TTY?
+  func getAssociatedShellContext(for windowId: WindowId) -> ShellContext?
   func getTerminalSessionId(for windowId: WindowId) -> TerminalSessionId?
   func getWindowHash(for windowId: WindowId) -> ExternalWindowHash
+  
+  @available(*, deprecated, message: "TTY should be phased out in favor of ShellContext")
+  func getAssociatedTTY(for windowId: WindowId) -> TTY?
   
   @available(*, deprecated, message: "PaneId should be phased out in favor of FocusId")
   func getMostRecentPaneId(for windowId: WindowId) -> String?
 
 }
 
-
-// This should be temporary.
-extension ShellHookManager: WindowMetadataService {
-  func getMostRecentFocusId(for windowId: WindowId) -> FocusId? {
-    return self.tab(for: windowId)
-  }
-  
-  func getAssociatedTTY(for windowId: WindowId) -> TTY? {
-    return self.tty(for: self.getWindowHash(for: windowId))
-  }
-  
-  func getTerminalSessionId(for windowId: WindowId) -> TerminalSessionId? {
-    return self.getSessionId(for: self.getWindowHash(for: windowId))
-  }
-  
-  func getWindowHash(for windowId: WindowId) -> ExternalWindowHash {
-    return self.hashFor(windowId)
-  }
-  
-  func getMostRecentPaneId(for windowId: WindowId) -> String? {
-    return self.pane(for: "\(windowId)/\(self.getMostRecentFocusId(for: windowId) ?? "")")
-  }
-}
-
 extension TerminalSessionLinker: WindowMetadataService {
-  func getMostRecentFocusId(for windowId: WindowId) -> FocusId? {
-    return ShellHookManager.shared.tab(for: windowId)
+  func getAssociatedShellContext(for windowId: WindowId) -> ShellContext? {
+    guard let session = self.focusedTerminalSession(for: windowId) else {
+      return nil
+    }
+    
+    return session.shellContext
   }
   
-  func getAssociatedTTY(for windowId: WindowId) -> TTY? {
-    return ShellHookManager.shared.tty(for: self.getWindowHash(for: windowId))
+  func getMostRecentFocusId(for windowId: WindowId) -> FocusId? {
+    guard let session = self.focusedTerminalSession(for: windowId) else {
+      return nil
+    }
+    
+    return session.focusId
   }
   
   func getTerminalSessionId(for windowId: WindowId) -> TerminalSessionId? {
-    return self.focusedTerminalSession(for: windowId)
+    return self.focusedTerminalSession(for: windowId)?.terminalSessionId
   }
   
   func getWindowHash(for windowId: WindowId) -> ExternalWindowHash {
-    return ShellHookManager.shared.hashFor(windowId)
+    guard let session = self.focusedTerminalSession(for: windowId) else {
+      return "\(windowId)/%"
+    }
+   
+    return "\(session.windowId)/\(session.focusId ?? "")%"
+  }
+  
+  // MARK: - Deprecated
+  func getAssociatedTTY(for windowId: WindowId) -> TTY? {
+    return nil
   }
   
   func getMostRecentPaneId(for windowId: WindowId) -> String? {
-    return ShellHookManager.shared.pane(for: "\(windowId)/\(self.getMostRecentFocusId(for: windowId) ?? "")")
+    return nil
   }
 }
 
