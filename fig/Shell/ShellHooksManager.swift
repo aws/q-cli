@@ -435,7 +435,7 @@ extension ShellHookManager {
       // ZLE doesn't handle signals sent to shell, like control+c
       // So we need to manually force an update when the line changes
       DispatchQueue.main.async {
-//        Autocomplete.update(with: ("", 0), for: hash)
+        Autocomplete.update(with: ("", 0), for: context.sessionID)
         Autocomplete.position()
         
         // manually trigger edit buffer update since `Autocomplete.update` is deprecated
@@ -579,7 +579,7 @@ extension ShellHookManager {
         notification.sessionID = context.sessionID
       }))
     DispatchQueue.main.async {
-      Autocomplete.update(with: (text, cursor), for: window?.session)
+      Autocomplete.update(with: (text, cursor), for: context.sessionID)
       Autocomplete.position()
 
     }
