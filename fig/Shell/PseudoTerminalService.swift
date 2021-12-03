@@ -233,13 +233,13 @@ extension PseudoTerminal {
         
         self.handlers.removeValue(forKey: handlerId)
 
-        if let legacy = contentsOfFile(path: pathToFile, suffix: "") {
+        if let legacy = consumeContentsOfFile(path: pathToFile, suffix: "") {
             handler((legacy, "", -2))
             return
         }
         
-        let stdout = contentsOfFile(path: pathToFile, suffix: ".stdout")
-        let stderr = contentsOfFile(path: pathToFile, suffix: ".stderr")
+        let stdout = consumeContentsOfFile(path: pathToFile, suffix: ".stdout")
+        let stderr = consumeContentsOfFile(path: pathToFile, suffix: ".stderr")
         let exitCode: Int32 = {
             guard let codeStr = info["exitCode"] as? String,
                   let code = Int32(codeStr) else {
@@ -252,8 +252,10 @@ extension PseudoTerminal {
         handler((stdout ?? "", stderr ?? "", exitCode))
     }
     
-    fileprivate func contentsOfFile(path: String, suffix: String) -> String? {
+    fileprivate func consumeContentsOfFile(path: String, suffix: String) -> String? {
         guard let data = FileManager.default.contents(atPath: path + suffix) else { return nil }
+        try? FileManager.default.removeItem(atPath: path + suffix)
+
         return String(decoding: data, as: UTF8.self)
     }
 }
