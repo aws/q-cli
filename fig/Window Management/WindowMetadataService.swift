@@ -22,34 +22,6 @@ protocol WindowMetadataService {
 
 }
 
-
-// This should be temporary.
-extension ShellHookManager: WindowMetadataService {
-  func getAssociatedShellContext(for windowId: WindowId) -> ShellContext? {
-    return nil
-  }
-  
-  func getMostRecentFocusId(for windowId: WindowId) -> FocusId? {
-    return self.tab(for: windowId)
-  }
-  
-  func getAssociatedTTY(for windowId: WindowId) -> TTY? {
-    return self.tty(for: self.getWindowHash(for: windowId))
-  }
-  
-  func getTerminalSessionId(for windowId: WindowId) -> TerminalSessionId? {
-    return self.getSessionId(for: self.getWindowHash(for: windowId))
-  }
-  
-  func getWindowHash(for windowId: WindowId) -> ExternalWindowHash {
-    return self.hashFor(windowId)
-  }
-  
-  func getMostRecentPaneId(for windowId: WindowId) -> String? {
-    return self.pane(for: "\(windowId)/\(self.getMostRecentFocusId(for: windowId) ?? "")")
-  }
-}
-
 extension TerminalSessionLinker: WindowMetadataService {
   func getAssociatedShellContext(for windowId: WindowId) -> ShellContext? {
     guard let session = self.focusedTerminalSession(for: windowId) else {
@@ -67,10 +39,6 @@ extension TerminalSessionLinker: WindowMetadataService {
     return session.focusId
   }
   
-  func getAssociatedTTY(for windowId: WindowId) -> TTY? {
-    return nil//ShellHookManager.shared.tty(for: self.getWindowHash(for: windowId))
-  }
-  
   func getTerminalSessionId(for windowId: WindowId) -> TerminalSessionId? {
     return self.focusedTerminalSession(for: windowId)?.terminalSessionId
   }
@@ -83,8 +51,13 @@ extension TerminalSessionLinker: WindowMetadataService {
     return "\(session.windowId)/\(session.focusId ?? "")%"
   }
   
+  // MARK: - Deprecated
+  func getAssociatedTTY(for windowId: WindowId) -> TTY? {
+    return nil
+  }
+  
   func getMostRecentPaneId(for windowId: WindowId) -> String? {
-    return nil //ShellHookManager.shared.pane(for: "\(windowId)/\(self.getMostRecentFocusId(for: windowId) ?? "")")
+    return nil
   }
 }
 

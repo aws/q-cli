@@ -1921,25 +1921,6 @@ extension AppDelegate : NSMenuDelegate {
         
     }
     
-    @objc func forceUpdateTTY() {
-//        if let tty = AXWindowServer.shared.whitelistedWindow?.tty {
-//            tty.update()
-//        }
-    }
-    
-    @objc func addProcessToWhitelist() {
-//        if let tty = AXWindowServer.shared.whitelistedWindow?.tty, let cmd = tty.cmd {
-//            Defaults.shared.processWhitelist = Defaults.shared.processWhitelist + [cmd]
-//            tty.update()
-//        }
-    }
-    
-    @objc func addProcessToIgnorelist() {
-        if let context = AXWindowServer.shared.whitelistedWindow?.associatedShellContext {
-            Defaults.shared.ignoreProcessList = Defaults.shared.ignoreProcessList + [context.executablePath]
-        }
-    }
-    
     @objc func resetWindowTracking() {
         
 //        AXWindowServer.shared.registerWindowTracking()
@@ -2116,11 +2097,6 @@ extension AppDelegate : NSMenuDelegate {
                     legend.addItem(NSMenuItem(title: "Running proccess (\(cmd)) is not a shell.", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem.separator())
                     legend.addItem(NSMenuItem(title: "Fix: exit current process", action: nil, keyEquivalent: ""))
-                    legend.addItem(NSMenuItem.separator())
-                    legend.addItem(NSMenuItem(title: "Force Reset", action: #selector(forceUpdateTTY), keyEquivalent: ""))
-                    legend.addItem(NSMenuItem(title: "Add as Shell", action: #selector(addProcessToWhitelist), keyEquivalent: ""))
-                    legend.addItem(NSMenuItem.separator())
-                    legend.addItem(NSMenuItem(title: "Ignore", action: #selector(addProcessToIgnorelist), keyEquivalent: ""))
                     legend.addItem(NSMenuItem.separator())
                     legend.addItem(NSMenuItem(title: "window: \(window?.hash ?? "???")", action: nil, keyEquivalent: ""))
                 } else {

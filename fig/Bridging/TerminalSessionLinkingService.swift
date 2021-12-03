@@ -40,6 +40,7 @@ struct ShellContext {
 }
 
 extension ShellContext {
+  // todo(mschrage): this is for backwards compatiblity and can likely be removed
   func isShell() -> Bool {
     return ["zsh","fish","bash"].reduce(into: false) { (res, shell) in
       res = res || self.executablePath.contains(shell)
@@ -78,6 +79,8 @@ class TerminalSessionLinker: TerminalSessionLinkingService {
   static let shared = TerminalSessionLinker(windowService: AXWindowServer.shared)
   let windowService: WindowService
   let queue: DispatchQueue = DispatchQueue(label: "io.fig.session-linker")
+  
+  // `windows` is used to quickly index into `sessions` to locate TerminalSession for a given TerminalSessionId
   fileprivate var windows: [ TerminalSessionId : WindowId ] = [:]
   fileprivate var sessions: [WindowId : [ TerminalSessionId : TerminalSession ]] = [:]
   
@@ -225,7 +228,7 @@ class TerminalSessionLinker: TerminalSessionLinkingService {
 
   }
   
-  // MARK: Setters & Getters
+  // MARK: - Getters
   
   func focusedTerminalSession(for windowId: WindowId) -> TerminalSession? {
     guard let sessions = self.sessions[windowId]?.values else { return nil }
@@ -252,13 +255,7 @@ class TerminalSessionLinker: TerminalSessionLinkingService {
     return session
   }
   
-  fileprivate func associatedWindowId(for terminalSessionId: TerminalSessionId) -> WindowId? {
-    guard let session = self.getTerminalSession(for: terminalSessionId) else {
-      return nil
-    }
-    
-    return session.windowId
-  }
+  // MARK: - Setters
 
   fileprivate func updateTerminalSessionForWindow(_ windowId: WindowId, session: TerminalSession) {
     // updates must be threadsafe
@@ -272,22 +269,10 @@ class TerminalSessionLinker: TerminalSessionLinkingService {
         self!.windows[session.terminalSessionId] = windowId
     }
   }
-}
 
-protocol TerminalSessionMetadataService {
-  func setShellContext(for terminalSessionId: TerminalSessionId, context: ShellContext) throws
-  func getShellContext(for terminalSessionId: TerminalSessionId) -> ShellContext?
-}
-
-enum MetadataError: Error {
-    case couldNotFindTerminalSession
-}
-
-extension TerminalSessionLinker: TerminalSessionMetadataService {
-  
-  func setShellContext(for terminalSessionId: TerminalSessionId, context: ShellContext) throws {
+  fileprivate func setShellContext(for terminalSessionId: TerminalSessionId, context: ShellContext) {
     guard let session = self.getTerminalSession(for: terminalSessionId) else {
-      throw MetadataError.couldNotFindTerminalSession
+      return
     }
     
     var updatedSession = session
@@ -295,15 +280,10 @@ extension TerminalSessionLinker: TerminalSessionMetadataService {
     
     self.updateTerminalSessionForWindow(session.windowId, session: updatedSession)
   }
-  
-  func getShellContext(for terminalSessionId: TerminalSessionId) -> ShellContext? {
-    guard let session = self.getTerminalSession(for: terminalSessionId) else {
-      return nil
-    }
-    
-    return session.shellContext
-  }
 }
+
+
+
 
 extension Local_ShellContext {
   var internalContext: ShellContext? {
