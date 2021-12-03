@@ -187,5 +187,32 @@ class TerminalSessionLinkingTests: XCTestCase {
       XCTAssertEqual(linker.focusedTerminalSession(for: a), "session-1")
       
     }
+  
+  func testShellContext() throws {
+    let windowObserver = TestableWindowServer()
+    let linker = TerminalSessionLinker(windowService: windowObserver)
+    
+    let _ = windowObserver.createNewWindow(for: "iterm")
+    try linker.linkWithFrontmostWindow(sessionId: "session-1", isFocused: true)
+    
+    let notification = Notification(name: IPC.Notifications.prompt.notification,
+                                    object: Local_PromptHook.with { event in
+                                        event.context = Local_ShellContext.with { context in
+                                          context.pid = 0
+                                          context.currentWorkingDirectory = "/usr/home"
+                                          context.processName = "bash"
+                                          context.ttys = "/dev/ttys001"
+                                          context.sessionID = "session-1"
+                                        }
+                                    },
+                                    userInfo: nil)
+    linker.processPromptHook(notification: notification)
+    let context = linker.getShellContext(for: "session-1")
+    XCTAssertNotNil(context, "ShellContext should not be nil")
+    XCTAssertEqual(context?.workingDirectory, "/usr/home")
+
+
+    
+  }
 
 }

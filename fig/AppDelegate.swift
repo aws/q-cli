@@ -107,7 +107,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         handleUpdateIfNeeded()
         Defaults.shared.useAutocomplete = true
         Defaults.shared.autocompleteVersion = "v8"
-        AutocompleteContextNotifier.addIndicatorToTitlebar = false
 
         Defaults.shared.autocompleteWidth = 250
         Defaults.shared.ignoreProcessList = ["figcli", "gitstatusd-darwin-x86_64", "gitstatusd-darwin-arm64", "nc", "fig_pty", "starship", "figterm"]
@@ -198,7 +197,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         }
         
 //        iTermTabIntegration.listenForHotKey()
-        AutocompleteContextNotifier.listenForUpdates()
         SecureKeyboardInput.listen()
       
         iTermObserver?.windowDidAppear {
@@ -408,17 +406,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
   
     func integrationsMenu() -> NSMenu {
       let integrationsMenu = NSMenu(title: "fig")
-
-        // todo(mschrage): Renable when we can set the title using bi-directional IPC with figterm
-      if AutocompleteContextNotifier.addIndicatorToTitlebar {
-          let statusInTitle = integrationsMenu.addItem(
-          withTitle: "Show '☑ fig' in Terminal",
-          action: #selector(AppDelegate.toggleFigIndicator(_:)),
-          keyEquivalent: "")
-          statusInTitle.state = AutocompleteContextNotifier.addIndicatorToTitlebar ? .on : .off
-          integrationsMenu.addItem(NSMenuItem.separator())
-      }
-        
         
         integrationsMenu.addItem(NSMenuItem.separator())
         integrationsMenu.addItem(
@@ -1234,8 +1221,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         }
     
     @objc func toggleFigIndicator(_ sender: NSMenuItem) {
-        AutocompleteContextNotifier.addIndicatorToTitlebar = !AutocompleteContextNotifier.addIndicatorToTitlebar
-        sender.state = AutocompleteContextNotifier.addIndicatorToTitlebar ? .on : .off
+      
     }
   
     @objc func toggleSSHIntegration(_ sender: NSMenuItem) {
@@ -1377,7 +1363,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     func applicationWillTerminate(_ aNotification: Notification) {
         ShellBridge.shared.stopWebSocketServer()
         Defaults.shared.launchedFollowingCrash = false
-        AutocompleteContextNotifier.clearFigContext()
         PseudoTerminal.shared.dispose()
         
         // Ensure that fig.socket is deleted, so that if user switches acounts it can be recreated
@@ -1937,22 +1922,21 @@ extension AppDelegate : NSMenuDelegate {
     }
     
     @objc func forceUpdateTTY() {
-        if let tty = AXWindowServer.shared.whitelistedWindow?.tty {
-            tty.update()
-        }
+//        if let tty = AXWindowServer.shared.whitelistedWindow?.tty {
+//            tty.update()
+//        }
     }
     
     @objc func addProcessToWhitelist() {
-        if let tty = AXWindowServer.shared.whitelistedWindow?.tty, let cmd = tty.cmd {
-            Defaults.shared.processWhitelist = Defaults.shared.processWhitelist + [cmd]
-            tty.update()
-        }
+//        if let tty = AXWindowServer.shared.whitelistedWindow?.tty, let cmd = tty.cmd {
+//            Defaults.shared.processWhitelist = Defaults.shared.processWhitelist + [cmd]
+//            tty.update()
+//        }
     }
     
     @objc func addProcessToIgnorelist() {
-        if let tty = AXWindowServer.shared.whitelistedWindow?.tty, let cmd = tty.cmd {
-            Defaults.shared.ignoreProcessList = Defaults.shared.ignoreProcessList + [cmd]
-            tty.update()
+        if let context = AXWindowServer.shared.whitelistedWindow?.associatedShellContext {
+            Defaults.shared.ignoreProcessList = Defaults.shared.ignoreProcessList + [context.executablePath]
         }
     }
     
@@ -1985,7 +1969,7 @@ extension AppDelegate : NSMenuDelegate {
         if let app = NSWorkspace.shared.frontmostApplication, !app.isFig {
             let window = AXWindowServer.shared.whitelistedWindow
           if Integrations.terminalsWhereAutocompleteShouldAppear.contains(window?.bundleId ?? "") ||  Integrations.terminalsWhereAutocompleteShouldAppear.contains(app.bundleIdentifier ?? "") {
-                let tty = window?.tty
+                let shellContext = window?.associatedShellContext
                 var hasContext = false
                 var isHidden = false
                 var bufferDescription: String? = nil
@@ -2015,11 +1999,11 @@ extension AppDelegate : NSMenuDelegate {
                 }
 
                 let hasWindow = window != nil
-                let hasCommand = tty?.cmd != nil
-                let isShell = tty?.isShell ?? true
-                let runUsingPrefix = tty?.runUsingPrefix
-              
-                let cmd = tty?.cmd != nil ? "(\(tty?.name ?? tty!.cmd!))" : "(???)"
+                let hasCommand = shellContext != nil
+                let isShell = shellContext?.isShell() ?? true
+                let runUsingPrefix = false //tty?.runUsingPrefix
+                
+                let cmd = shellContext != nil ? "(\(shellContext!.executablePath))" : "(???)"
                 
                 var color: NSColor = .clear
                 let legend = NSMenu(title: "legend")
@@ -2129,7 +2113,7 @@ extension AppDelegate : NSMenuDelegate {
 
                 } else if (!isShell) {
                     color = .cyan
-                    legend.addItem(NSMenuItem(title: "Running proccess (\(tty?.cmd ?? "(???)")) is not a shell.", action: nil, keyEquivalent: ""))
+                    legend.addItem(NSMenuItem(title: "Running proccess (\(cmd)) is not a shell.", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem.separator())
                     legend.addItem(NSMenuItem(title: "Fix: exit current process", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem.separator())
@@ -2147,16 +2131,16 @@ extension AppDelegate : NSMenuDelegate {
                     legend.addItem(NSMenuItem(title: "Everything should be working.", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem.separator())
                     legend.addItem(NSMenuItem(title: "window: \(window?.hash.truncate(length: 15, trailing: "...") ?? "???")", action: nil, keyEquivalent: ""))
-                    legend.addItem(NSMenuItem(title: "tty: \(tty?.descriptor ?? "???")", action: nil, keyEquivalent: ""))
-                    legend.addItem(NSMenuItem(title: "cwd: \(tty?.cwd ?? "???")", action: nil, keyEquivalent: ""))
-                    legend.addItem(NSMenuItem(title: "pid: \(tty?.pid ?? -1)", action: nil, keyEquivalent: ""))
+                    legend.addItem(NSMenuItem(title: "tty: \(shellContext?.ttyDescriptor ?? "???")", action: nil, keyEquivalent: ""))
+                    legend.addItem(NSMenuItem(title: "cwd: \(shellContext?.workingDirectory ?? "???")", action: nil, keyEquivalent: ""))
+                    legend.addItem(NSMenuItem(title: "pid: \(shellContext?.processId ?? -1)", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem(title: "keybuffer: \(bufferDescription ?? "???")", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem(title: "path: \( path != nil ? (path! ? "☑" : "☒ ") : "<generated dynamically>")", action: nil, keyEquivalent: ""))
 
-                    if runUsingPrefix != nil {
-                      legend.addItem(NSMenuItem.separator())
-                      legend.addItem(NSMenuItem(title: "In SSH session or Docker container", action: nil, keyEquivalent: ""))
-                    }
+//                    if runUsingPrefix != nil {
+//                      legend.addItem(NSMenuItem.separator())
+//                      legend.addItem(NSMenuItem(title: "In SSH session or Docker container", action: nil, keyEquivalent: ""))
+//                    }
                   
                     if backedByShell {
                       legend.addItem(NSMenuItem.separator())

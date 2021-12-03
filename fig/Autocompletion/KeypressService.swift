@@ -116,14 +116,7 @@ class KeypressProvider {
             Autocomplete.hide()
           }
         case .keyUp:
-          guard event.keyCode == Keycode.returnKey || event.modifierFlags.contains(.control) else { return }
-          if let window = AXWindowServer.shared.whitelistedWindow, let tty = window.tty {
-            Timer.delayWithSeconds(0.2) {
-              DispatchQueue.global(qos: .userInteractive).async {
-                tty.update()
-              }
-            }
-          }
+          break
         default:
           print("Unknown keypress event")
       }
@@ -213,13 +206,7 @@ class KeypressProvider {
       
       let keyName = KeyboardLayout.humanReadableKeyName(event) ?? "?"
       
-      Logger.log(message: "\(action) '\(keyName)' in \(window.bundleId ?? "<unknown>") [\(window.hash)], \(window.tty?.descriptor ?? "???") (\(window.tty?.name ?? "???")) \(window.tty?.pid ?? 0)", subsystem: .keypress)
-
-      
-      guard window.tty?.isShell ?? true else {
-        print("tty: Is not in a shell")
-        return Unmanaged.passUnretained(event)
-      }
+      Logger.log(message: "\(action) '\(keyName)' in \(window.bundleId ?? "<unknown>") [\(window.hash)], \(window.associatedShellContext?.ttyDescriptor ?? "???") (\(window.associatedShellContext?.executablePath ?? "???")) \(window.associatedShellContext?.processId ?? 0)", subsystem: .keypress)
       
       // process handlers (order is important)
       for handler in KeypressProvider.shared.handlers {
@@ -283,13 +270,7 @@ class KeypressProvider {
   }
   
   @objc func lineAcceptedInKeystrokeBuffer() {
-    if let window = AXWindowServer.shared.whitelistedWindow, let tty = window.tty {
-      Timer.delayWithSeconds(0.2) {
-        DispatchQueue.global(qos: .userInteractive).async {
-          tty.update()
-        }
-      }
-    }
+
   }
   
   @objc func accesibilityPermissionsUpdated(_ notification: Notification) {
