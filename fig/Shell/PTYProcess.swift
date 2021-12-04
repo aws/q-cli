@@ -53,7 +53,7 @@ class PTYProcess {
     self.dispatchQueue.async { [weak self] in
       guard let strongSelf = self else { return }
       guard let process = strongSelf.process else { return }
-      let bytesWritten = pty_send(process, input, Int32(input.count))
+      let bytesWritten = pty_send(process, input, Int32(input.utf8.count))
       PseudoTerminal.log("[SEND-\(handlerId ?? "0")] Wrote \(bytesWritten) bytes")
     }
   }
