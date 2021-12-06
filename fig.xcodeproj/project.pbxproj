@@ -94,7 +94,6 @@
 		756968012718FF600029F063 /* WebArchive.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756968002718FF600029F063 /* WebArchive.swift */; };
 		756968032719450A0029F063 /* API+App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756968022719450A0029F063 /* API+App.swift */; };
 		75696832271F71270029F063 /* local.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75696831271F71270029F063 /* local.pb.swift */; };
-		756C4D832542A6D30035B467 /* Starscream in Frameworks */ = {isa = PBXBuildFile; productRef = 756C4D822542A6D30035B467 /* Starscream */; };
 		7571775726F3B8A80071AE10 /* FigInputMethod.app in Embed Input Method */ = {isa = PBXBuildFile; fileRef = 754316F426E08F5C00188887 /* FigInputMethod.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		7571775926F3E4CA0071AE10 /* settings.html in Resources */ = {isa = PBXBuildFile; fileRef = 7571775826F3E4CA0071AE10 /* settings.html */; };
 		7571778326F91BF50071AE10 /* AppleTerminalIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7571778226F91BF50071AE10 /* AppleTerminalIntegration.swift */; };
@@ -122,7 +121,6 @@
 		757CA89B248C18F1002A64A8 /* done.html in Resources */ = {isa = PBXBuildFile; fileRef = 757CA89A248C18F0002A64A8 /* done.html */; };
 		757CA89D248C1F50002A64A8 /* demo4onboarding.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 757CA89C248C1F50002A64A8 /* demo4onboarding.mp4 */; };
 		757CA89F248D628F002A64A8 /* sidebar.html in Resources */ = {isa = PBXBuildFile; fileRef = 757CA89E248D628E002A64A8 /* sidebar.html */; };
-		757CA8E424905B0E002A64A8 /* Kitura-WebSocket in Frameworks */ = {isa = PBXBuildFile; productRef = 757CA8E324905B0E002A64A8 /* Kitura-WebSocket */; };
 		75809B0E24BFA64D00BFFB3E /* TelemetryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75809B0D24BFA64D00BFFB3E /* TelemetryService.swift */; };
 		75809B1124C3876B00BFFB3E /* run-tutorial.js in Resources */ = {isa = PBXBuildFile; fileRef = 75809B1024C3876B00BFFB3E /* run-tutorial.js */; };
 		7583A12E273CF261001DF86B /* PathHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7583A12D273CF261001DF86B /* PathHelper.swift */; };
@@ -530,11 +528,9 @@
 				75CFDBE224EDE31800F00CAE /* Sentry in Frameworks */,
 				75915DFE27210A4C005A9909 /* FigAPIBindings in Frameworks */,
 				755D0F512482D4920074AB5C /* HotKey in Frameworks */,
-				757CA8E424905B0E002A64A8 /* Kitura-WebSocket in Frameworks */,
 				75A4A2A725CBBDE7002EFD6B /* AXSwift in Frameworks */,
 				75290AC626719157000F4255 /* SwiftProtobuf in Frameworks */,
 				756967FF2718E0300029F063 /* WebArchiver in Frameworks */,
-				756C4D832542A6D30035B467 /* Starscream in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1113,9 +1109,7 @@
 			name = fig;
 			packageProductDependencies = (
 				755D0F502482D4920074AB5C /* HotKey */,
-				757CA8E324905B0E002A64A8 /* Kitura-WebSocket */,
 				75CFDBE124EDE31800F00CAE /* Sentry */,
-				756C4D822542A6D30035B467 /* Starscream */,
 				75A4A2A625CBBDE7002EFD6B /* AXSwift */,
 				7512A48A263252EF00CDE824 /* Sparkle */,
 				75290AC526719157000F4255 /* SwiftProtobuf */,
@@ -2144,16 +2138,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 756967FD2718E0300029F063 /* XCRemoteSwiftPackageReference "WebArchiver" */;
 			productName = WebArchiver;
-		};
-		756C4D822542A6D30035B467 /* Starscream */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 758AEB6824CEA4D000A15EAF /* XCRemoteSwiftPackageReference "Starscream" */;
-			productName = Starscream;
-		};
-		757CA8E324905B0E002A64A8 /* Kitura-WebSocket */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 757CA8E224905B0E002A64A8 /* XCRemoteSwiftPackageReference "Kitura-WebSocket" */;
-			productName = "Kitura-WebSocket";
 		};
 		75915DFD27210A4C005A9909 /* FigAPIBindings */ = {
 			isa = XCSwiftPackageProductDependency;
