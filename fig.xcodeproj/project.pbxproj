@@ -123,7 +123,6 @@
 		757CA89D248C1F50002A64A8 /* demo4onboarding.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 757CA89C248C1F50002A64A8 /* demo4onboarding.mp4 */; };
 		757CA89F248D628F002A64A8 /* sidebar.html in Resources */ = {isa = PBXBuildFile; fileRef = 757CA89E248D628E002A64A8 /* sidebar.html */; };
 		757CA8E424905B0E002A64A8 /* Kitura-WebSocket in Frameworks */ = {isa = PBXBuildFile; productRef = 757CA8E324905B0E002A64A8 /* Kitura-WebSocket */; };
-		757CA8E624905B38002A64A8 /* SockerServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757CA8E524905B38002A64A8 /* SockerServer.swift */; };
 		75809B0E24BFA64D00BFFB3E /* TelemetryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75809B0D24BFA64D00BFFB3E /* TelemetryService.swift */; };
 		75809B1124C3876B00BFFB3E /* run-tutorial.js in Resources */ = {isa = PBXBuildFile; fileRef = 75809B1024C3876B00BFFB3E /* run-tutorial.js */; };
 		7583A12E273CF261001DF86B /* PathHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7583A12D273CF261001DF86B /* PathHelper.swift */; };
@@ -419,7 +418,6 @@
 		757CA89A248C18F0002A64A8 /* done.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = done.html; sourceTree = "<group>"; };
 		757CA89C248C1F50002A64A8 /* demo4onboarding.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = demo4onboarding.mp4; sourceTree = "<group>"; };
 		757CA89E248D628E002A64A8 /* sidebar.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = sidebar.html; sourceTree = "<group>"; };
-		757CA8E524905B38002A64A8 /* SockerServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SockerServer.swift; sourceTree = "<group>"; };
 		75809B0D24BFA64D00BFFB3E /* TelemetryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetryService.swift; sourceTree = "<group>"; };
 		75809B0F24C2C66100BFFB3E /* WebView+Private.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "WebView+Private.h"; sourceTree = "<group>"; };
 		75809B1024C3876B00BFFB3E /* run-tutorial.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = "run-tutorial.js"; sourceTree = "<group>"; };
@@ -914,7 +912,6 @@
 				755D27B9272242690080B4B8 /* FigTerm.swift */,
 				75B199312501A3DA00F38EA8 /* KeyboardLayout.swift */,
 				751F7588246D090100E083C8 /* WebBridge.swift */,
-				757CA8E524905B38002A64A8 /* SockerServer.swift */,
 				75F7F953262007170005E215 /* IPC.swift */,
 				75F7F951261FBDC30005E215 /* UnixSocketServer.swift */,
 				75ACFE7B274C3424003C22EE /* Utilities.swift */,
@@ -1457,7 +1454,6 @@
 				75B199322501A3DA00F38EA8 /* KeyboardLayout.swift in Sources */,
 				756759972446C44C006AA988 /* String+Shell.swift in Sources */,
 				75F7F952261FBDC30005E215 /* UnixSocketServer.swift in Sources */,
-				757CA8E624905B38002A64A8 /* SockerServer.swift in Sources */,
 				75B7931A24BB897F0073AAC6 /* PseudoTerminalService.swift in Sources */,
 				75CFDBDF24EDB2E900F00CAE /* Onboarding.swift in Sources */,
 				75738F1E26DDAB760086D972 /* InputMethod.swift in Sources */,

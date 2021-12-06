@@ -963,14 +963,7 @@ extension WebBridge {
         }
     }
     
-    static func stdout(scope: WKScriptMessage) {
-        if let params = scope.body as? Dictionary<String, String>,
-            let out = params["out"],
-            let companion = scope.getCompanionWindow(),
-            let sessionId = companion.sessionId {
-            ShellBridge.shared.socketServer.send(sessionId: sessionId, command: out)
-        }
-    }
+    static func stdout(scope: WKScriptMessage) {}
 
     
     static func privateAPI(scope: WKScriptMessage) {
