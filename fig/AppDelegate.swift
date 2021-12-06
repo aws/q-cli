@@ -2088,8 +2088,6 @@ extension AppDelegate : NSMenuDelegate {
                     color = .yellow
                     legend.addItem(NSMenuItem(title: "Not linked to TTY session.", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem.separator())
-                    legend.addItem(NSMenuItem(title: "Run `fig source` to connect.", action: nil, keyEquivalent: ""))
-                    legend.addItem(NSMenuItem.separator())
                     legend.addItem(NSMenuItem(title: "window: \(window?.hash ?? "???")", action: nil, keyEquivalent: ""))
 
                 } else if (!isShell) {
