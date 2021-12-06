@@ -11,15 +11,8 @@
 
 #include <stdio.h>
 
-typedef struct {
-  int fd;
-  int process_pid;
-} Pty;
-
-
-Pty* _Nullable pty_init(const char* _Nonnull executable, char* _Nullable const* _Nonnull args, char* _Nullable const* _Nonnull env, const char* _Nonnull logfile);
-ssize_t pty_send(Pty* _Nullable pty, const char* _Nonnull buf, int count);
-void pty_free(Pty* _Nullable pty);
-
+int pty_init(const int fdp, const char* _Nonnull logfile);
+ssize_t pty_send(const int fd, const char* _Nonnull buf, int count);
+void pty_free(const int fdp, const int process_pid);
 
 #endif /* pty_h */
