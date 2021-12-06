@@ -48,7 +48,6 @@ extension Notification.Name {
 
 class ShellBridge {
     static let shared = ShellBridge()
-  let socketServer: WebSocketServer = WebSocketServer.bridge()
     
     var rawOutput = ""
     var streamHandlers: Set<String> = []
