@@ -12,7 +12,10 @@ import (
 	"strings"
 	"time"
 
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 )
 
 type History struct {
@@ -231,6 +234,231 @@ func Metrics(history []History) HistoryMetrics {
 	return metrics
 }
 
+type model struct {
+	metrics HistoryMetrics
+	page    int
+}
+
+func initialModel() model {
+	history, _ := loadHistory()
+	metrics := Metrics(history)
+
+	return model{
+		metrics: metrics,
+		page:    0,
+	}
+}
+
+func (m model) Init() tea.Cmd {
+	return nil
+}
+
+func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "ctrl+c", "q":
+			return m, tea.Quit
+		case "enter", " ":
+			m.page++
+		}
+	}
+
+	if m.page >= 8 {
+		return m, tea.Quit
+	}
+
+	return m, nil
+}
+
+func (m model) View() string {
+	physicalWidth, physicalHeight, _ := term.GetSize(int(os.Stdout.Fd()))
+	doc := strings.Builder{}
+
+	switch m.page {
+	// Into page
+	case 0:
+
+		fig_logo := `███████╗██╗ ██████╗
+██╔════╝██║██╔════╝
+█████╗  ██║██║  ███╗
+██╔══╝  ██║██║   ██║
+██║     ██║╚██████╔╝
+╚═╝     ╚═╝ ╚═════╝  Wrapped`
+		title := lipgloss.NewStyle().Bold(true).PaddingBottom(1).Render(fig_logo)
+		caption := lipgloss.NewStyle().Italic(true).Foreground(lipgloss.Color("5")).Render("Here is your 2021 in the shell wrapped up")
+
+		doc.WriteString(lipgloss.JoinVertical(lipgloss.Center, title, caption))
+
+	// Command usage
+	case 1:
+		maxCommands := 10
+		if len(m.metrics.TopCommandsUsage) < maxCommands {
+			maxCommands = len(m.metrics.TopCommandsUsage)
+		}
+
+		commandPageTitle := lipgloss.NewStyle().Bold(true).PaddingBottom(1).Render(fmt.Sprintf("Top %v commands", maxCommands))
+
+		commandsStrBuilder := strings.Builder{}
+		for _, command := range m.metrics.TopCommandsUsage[0:maxCommands] {
+			commandsStrBuilder.WriteString(fmt.Sprintf("%5v: %v\n", command.Count, command.Command))
+		}
+
+		commmandsStr := lipgloss.NewStyle().Align(lipgloss.Left).Render(commandsStrBuilder.String())
+
+		commandPage := lipgloss.JoinVertical(lipgloss.Center, commandPageTitle, commmandsStr)
+
+		doc.WriteString(commandPage)
+
+	// Working dirs
+	case 2:
+		maxWorkingDirs := 5
+		if len(m.metrics.TopWorkingDirs) < maxWorkingDirs {
+			maxWorkingDirs = len(m.metrics.TopWorkingDirs)
+		}
+
+		workingDirPageTitle := lipgloss.NewStyle().Bold(true).PaddingBottom(1).Render(fmt.Sprintf("Top %v working dirs", maxWorkingDirs))
+
+		workingDirsStrBuilder := strings.Builder{}
+		for _, workingDir := range m.metrics.TopWorkingDirs[0:maxWorkingDirs] {
+			// Pretty print working dir
+			user, _ := user.Current()
+
+			workingDirPretty := strings.Replace(workingDir.WorkingDir, user.HomeDir, "~", 1)
+			if workingDirPretty[len(workingDirPretty)-1] != '/' {
+				workingDirPretty += "/"
+			}
+
+			workingDirsStrBuilder.WriteString(fmt.Sprintf("%5v: %v\n", workingDir.Count, workingDirPretty))
+		}
+
+		workingDirsStr := lipgloss.NewStyle().Align(lipgloss.Left).Render(workingDirsStrBuilder.String())
+
+		workingDirPage := lipgloss.JoinVertical(lipgloss.Center, workingDirPageTitle, workingDirsStr)
+
+		doc.WriteString(workingDirPage)
+
+	// Longest piped sequence
+	case 3:
+		longestPipedSequencePageTitle := lipgloss.NewStyle().Bold(true).PaddingBottom(1).Render("Longest piped sequence")
+		longestPipedSequenceStr := lipgloss.NewStyle().Align(lipgloss.Left).Render(m.metrics.LongestPipedSequence)
+		longestPipedSequencePage := lipgloss.JoinVertical(lipgloss.Center, longestPipedSequencePageTitle, longestPipedSequenceStr)
+		doc.WriteString(longestPipedSequencePage)
+
+	// Time of Day Histogram
+	case 4:
+		timeOfDayHistogramPageTitle := lipgloss.NewStyle().Bold(true).PaddingBottom(1).Render("Time of Day Histogram")
+
+		maxCount := 0
+		for _, count := range m.metrics.MostCommonTimeOfDay {
+			if count > maxCount {
+				maxCount = count
+			}
+		}
+
+		timeOfDayHistogramStrBuilder := strings.Builder{}
+		for i := 0; i < 24; i++ {
+			time := ""
+			if i == 0 {
+				time = fmt.Sprintf("%3d AM", 12)
+			} else if i <= 12 {
+				time = fmt.Sprintf("%3d AM", i)
+			} else if i == 12 {
+				time = fmt.Sprintf("%3d PM", i)
+			} else {
+				time = fmt.Sprintf("%3d PM", i-12)
+			}
+
+			timeOfDayHistogramStrBuilder.WriteString(
+				fmt.Sprintf("%v %v\n",
+					time,
+					strings.Repeat("█", int(float64(m.metrics.MostCommonTimeOfDay[i])/float64(maxCount)*70))))
+		}
+
+		timeOfDayHistogramStr := lipgloss.NewStyle().Align(lipgloss.Left).Render(timeOfDayHistogramStrBuilder.String())
+
+		timeOfDayHistogramPage := lipgloss.JoinVertical(lipgloss.Center, timeOfDayHistogramPageTitle, timeOfDayHistogramStr)
+
+		doc.WriteString(timeOfDayHistogramPage)
+
+	// Day of Week Histogram
+	case 5:
+		dayOfWeekHistogramPageTitle := lipgloss.NewStyle().Bold(true).PaddingBottom(1).Render("Day of Week Histogram")
+
+		maxCount := 0
+		for _, count := range m.metrics.MostCommonDayOfWeek {
+			if count > maxCount {
+				maxCount = count
+			}
+		}
+
+		dayOfWeekHistogramStrBuilder := strings.Builder{}
+
+		for i := 0; i < 7; i++ {
+			dayOfWeekHistogramStrBuilder.WriteString(fmt.Sprintf("%10v %v\n",
+				time.Weekday(i),
+				strings.Repeat("█", int(float64(m.metrics.MostCommonDayOfWeek[time.Weekday(i)])/float64(maxCount)*66))))
+		}
+
+		dayOfWeekHistogramStr := lipgloss.NewStyle().Align(lipgloss.Left).Render(dayOfWeekHistogramStrBuilder.String())
+
+		dayOfWeekHistogramPage := lipgloss.JoinVertical(lipgloss.Center, dayOfWeekHistogramPageTitle, dayOfWeekHistogramStr)
+
+		doc.WriteString(dayOfWeekHistogramPage)
+
+	// Top Shells
+	case 6:
+		topShellPageTitle := lipgloss.NewStyle().Bold(true).PaddingBottom(1).Render("Top Shells")
+
+		maxShells := 3
+		if len(m.metrics.TopShells) < maxShells {
+			maxShells = len(m.metrics.TopShells)
+		}
+
+		shellsStrBuilder := strings.Builder{}
+		for _, shell := range m.metrics.TopShells[0:maxShells] {
+			if shell.Count > 0 {
+				shellsStrBuilder.WriteString(fmt.Sprintf("%5v: %v\n", shell.Count, shell.Shell))
+			}
+		}
+
+		shellsStr := lipgloss.NewStyle().Align(lipgloss.Left).Render(shellsStrBuilder.String())
+
+		topShellPage := lipgloss.JoinVertical(lipgloss.Center, topShellPageTitle, shellsStr)
+
+		doc.WriteString(topShellPage)
+
+	// Shell Aliases
+	case 7:
+		shellAliasesPageTitle := lipgloss.NewStyle().Bold(true).PaddingBottom(1).Render("Chars saved by aliases")
+
+		shellAliasesPage := fmt.Sprintf("%v", m.metrics.CharactersSavedByAlias)
+
+		doc.WriteString(lipgloss.JoinVertical(lipgloss.Center, shellAliasesPageTitle, shellAliasesPage))
+
+	// End Screen
+	case 8:
+		doc.WriteString("Thanks for using Fig in 2021!")
+	}
+
+	fullPage := ""
+
+	if m.page < 8 {
+		nextPage := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("8")).MarginTop(2).Render("[Press Enter to continue]")
+		fullPage = lipgloss.JoinVertical(lipgloss.Center, doc.String(), nextPage)
+	} else {
+		fullPage = doc.String()
+	}
+
+	return lipgloss.Place(
+		physicalWidth,
+		physicalHeight,
+		lipgloss.Center,
+		lipgloss.Center,
+		lipgloss.NewStyle().Align(lipgloss.Left).Render(fullPage))
+}
+
 func NewCmdWrapped() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:    "wrapped",
@@ -238,100 +466,11 @@ func NewCmdWrapped() *cobra.Command {
 		Long:   "How did you use the shell in 2021",
 		Hidden: true,
 		Run: func(cmd *cobra.Command, arg []string) {
-			history, _ := loadHistory()
-			metrics := Metrics(history)
-
-			fmt.Printf("\n\nHere is your 2021 in the shell wrapped up:\n\n")
-
-			// Command usage
-			maxCommands := 10
-			if len(metrics.TopCommandsUsage) < maxCommands {
-				maxCommands = len(metrics.TopCommandsUsage)
+			p := tea.NewProgram(initialModel())
+			if err := p.Start(); err != nil {
+				fmt.Printf("Alas, there's been an error: %v", err)
+				os.Exit(1)
 			}
-
-			fmt.Printf("\nTop %v commands:\n\n", maxCommands)
-			for _, command := range metrics.TopCommandsUsage[0:maxCommands] {
-				fmt.Printf("%5v: %v\n", command.Count, command.Command)
-			}
-
-			// Working dirs
-			maxWorkingDirs := 5
-			if len(metrics.TopWorkingDirs) < maxWorkingDirs {
-				maxWorkingDirs = len(metrics.TopWorkingDirs)
-			}
-
-			fmt.Printf("\nTop %v working dirs:\n\n", maxWorkingDirs)
-			for _, workingDir := range metrics.TopWorkingDirs[0:maxWorkingDirs] {
-				// Pretty print working dir
-				user, _ := user.Current()
-
-				workingDirPretty := strings.Replace(workingDir.WorkingDir, user.HomeDir, "~", 1)
-				if workingDirPretty[len(workingDirPretty)-1] != '/' {
-					workingDirPretty += "/"
-				}
-
-				fmt.Printf("%5v: %v\n", workingDir.Count, workingDirPretty)
-			}
-
-			fmt.Printf("\nLongest Piped Sequence:\n")
-			fmt.Printf(" %v\n", metrics.LongestPipedSequence)
-
-			// Time of Day Histogram
-			fmt.Printf("\nTime of Day Histogram:\n\n")
-
-			maxCount := 0
-			for _, count := range metrics.MostCommonTimeOfDay {
-				if count > maxCount {
-					maxCount = count
-				}
-			}
-
-			for i := 0; i < 24; i++ {
-				time := ""
-				if i == 0 {
-					time = fmt.Sprintf("%3d AM", 12)
-				} else if i <= 12 {
-					time = fmt.Sprintf("%3d AM", i)
-				} else if i == 12 {
-					time = fmt.Sprintf("%3d PM", i)
-				} else {
-					time = fmt.Sprintf("%3d PM", i-12)
-				}
-
-				fmt.Printf("%v %v\n", time, strings.Repeat("█", int(float64(metrics.MostCommonTimeOfDay[i])/float64(maxCount)*70)))
-			}
-
-			// Day of Week Histogram
-			fmt.Printf("\nDay of Week Histogram:\n\n")
-
-			maxCount = 0
-			for _, count := range metrics.MostCommonDayOfWeek {
-				if count > maxCount {
-					maxCount = count
-				}
-			}
-
-			for i := 0; i < 7; i++ {
-				fmt.Printf("%10v %v\n",
-					time.Weekday(i),
-					strings.Repeat("█", int(float64(metrics.MostCommonDayOfWeek[time.Weekday(i)])/float64(maxCount)*66)))
-			}
-
-			maxShells := 3
-			if len(metrics.TopShells) < maxShells {
-				maxShells = len(metrics.TopShells)
-			}
-
-			// Top Shells
-			fmt.Printf("\nTop Shells:\n\n")
-			for _, shell := range metrics.TopShells[0:maxShells] {
-				if shell.Count > 0 {
-					fmt.Printf("%5v: %v\n", shell.Count, shell.Shell)
-				}
-			}
-
-			// Shell Aliases
-			fmt.Printf("\nChars saved by alias: %v\n\n", metrics.CharactersSavedByAlias)
 		},
 	}
 
