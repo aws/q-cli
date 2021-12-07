@@ -396,7 +396,7 @@ void figterm_screen_set_attr(FigTermScreen* screen, FigTermAttr attr, void* val)
   }
 }
 
-size_t figterm_screen_get_text(FigTermScreen *screen, char *buffer, size_t len, const VTermRect rect, char mask, int* index) {
+size_t figterm_screen_get_text(FigTermScreen *screen, char *buffer, size_t len, const VTermRect rect, int start_col_offset, char mask, bool wrap_lines, int* index) {
   size_t outpos = 0;
   int padding = 0;
   VTermPos cursor;
@@ -413,7 +413,10 @@ size_t figterm_screen_get_text(FigTermScreen *screen, char *buffer, size_t len, 
     outpos += thislen;
 
   for (int row = rect.start_row; row < rect.end_row; row++) {
-    for (int col = rect.start_col; col < rect.end_col; col++) {
+    bool last_char_was_padding = true;
+    int start_col = rect.start_col + (row == rect.start_row ? start_col_offset : 0);
+
+    for (int col = start_col; col < rect.end_col; col++) {
       if (index != NULL && row == cursor.row && col == cursor.col) {
         while (padding) {
           PUT(UNICODE_SPACE);
@@ -425,13 +428,13 @@ size_t figterm_screen_get_text(FigTermScreen *screen, char *buffer, size_t len, 
       ScreenCell *cell = getcell(screen, row, col);
 
       if (cell->chars[0] == 0 ||
-          (mask == UNICODE_SPACE && (cell->attrs.in_prompt || cell->attrs.in_suggestion)))
+          (mask == UNICODE_SPACE && (cell->attrs.in_prompt || cell->attrs.in_suggestion))) {
         // Erased prompt or autosuggestion cell, might need a space.
         padding++;
-      else if (cell->chars[0] == (uint32_t) -1)
+        last_char_was_padding = true;
+      } else if (cell->chars[0] == (uint32_t) -1) {
         // Gap behind a double-width char, do nothing.
-        ;
-      else {
+      } else {
         while (padding) {
           PUT(UNICODE_SPACE);
           padding--;
@@ -442,13 +445,18 @@ size_t figterm_screen_get_text(FigTermScreen *screen, char *buffer, size_t len, 
           for (int i = 0; i < MAX_CHARS_PER_CELL && cell->chars[i]; i++) {
             PUT(cell->chars[i]);
           }
+          last_char_was_padding = false;
         }
       }
     }
 
     if (row < rect.end_row - 1) {
       // Reset padding, adding only a linefeed if EOL reached without char.
-      PUT(UNICODE_LINEFEED);
+      if (last_char_was_padding || !wrap_lines) {
+        // If last char was a non-whitespace character, don't add end of line,
+        // terminal text is wrapped without explicit \n character.
+        PUT(UNICODE_LINEFEED);
+      }
       padding = 0;
     }
   }

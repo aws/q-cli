@@ -29,6 +29,7 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 #include <stdarg.h>
+#include <errno.h>
 #include <stdbool.h>
 #include <time.h>
 #include "vterm.h"
@@ -59,7 +60,7 @@ void figterm_screen_set_callbacks(FigTermScreen*, const FigTermScreenCallbacks*,
 // Methods.
 void figterm_screen_get_cursorpos(FigTermScreen*, VTermPos*);
 void figterm_screen_set_attr(FigTermScreen*, FigTermAttr, void*);
-size_t figterm_screen_get_text(FigTermScreen*, char*, size_t, const VTermRect, char, int*);
+size_t figterm_screen_get_text(FigTermScreen*, char*, size_t, const VTermRect, int, char, bool, int*);
 
 // color.c
 enum { color_support_term256 = 1 << 0, color_support_term24bit = 1 << 1 };
@@ -73,6 +74,7 @@ typedef struct HistoryEntry HistoryEntry;
 HistoryEntry* history_entry_new(
   char* command,
   char* shell,
+  char* pid,
   char* session_id,
   char* cwd,
   unsigned long time,
@@ -125,6 +127,8 @@ bool figterm_is_disabled(FigTerm*);
 bool figterm_has_seen_prompt(FigTerm*);
 bool figterm_can_send_buffer(FigTerm*);
 void figterm_update_fish_suggestion_color(FigTerm*, const char*);
+pid_t figterm_get_shell_pid(FigTerm*);
+char* figterm_get_shell_context(FigTerm*);
 
 void figterm_preexec_hook(FigTerm*);
 
@@ -140,11 +144,16 @@ FigInfo* init_fig_info();
 FigInfo* get_fig_info();
 void free_fig_info();
 void set_pty_name(char*);
+int set_blocking(int fd, bool blocking);
 int fig_socket_send(char*);
 int fig_socket_listen();
 void fig_socket_cleanup();
 char* fig_path(char*);
 char* log_path(char*);
+char* printf_alloc(const char*, ...);
+void publish_json(const char*, ...);
+char *escaped_str(const char *);
+char *get_term_bundle();
 
 // libfig
 
@@ -189,6 +198,34 @@ void close_log_file();
 #define log_error(...) log_msg(LOG_ERROR, __FILE__, __LINE__, __VA_ARGS__)
 #define log_fatal(...) log_msg(LOG_FATAL, __FILE__, __LINE__, __VA_ARGS__)
 #define err_sys(...) err_sys_msg(__FILE__, __LINE__, __VA_ARGS__)
+
+#define VA_HEAD(head, ...) head
+#define VA_TAIL(head, ...) , ## __VA_ARGS__
+
+#define log_err(...) \
+  log_error(VA_HEAD(__VA_ARGS__) "" " (%d): %s" VA_TAIL(__VA_ARGS__), errno, strerror(errno))
+
+// Macros for guarded system calls. Logs and returns from calling function on
+// error in syscall. msg must be a string literal, either a format string or string.
+// Uses ## __VA_ARGS__ to allow empty variadic macro args (https://stackoverflow.com/a/5897216)
+#define CHECK(condition, ret, ...) \
+  if (!(condition)) { \
+    log_err(__VA_ARGS__); \
+    return ret; \
+  }
+
+#define CHECK_SYS(call, ...) \
+  do { \
+    int CHECK_VALUE_call = (call); \
+    CHECK(CHECK_VALUE_call > -1, CHECK_VALUE_call, __VA_ARGS__); \
+  } while(0)
+
+#define CHECK_NONNULL(call, msg, ...) \
+  do { \
+    void* CHECK_VALUE_call = (call); \
+    CHECK(CHECK_VALUE_call != NULL, NULL, __VA_ARGS__); \
+  } while(0)
+
 
 typedef	void SigHandler(int);
 SigHandler* set_sigaction(int, SigHandler*);

@@ -3,10 +3,10 @@ package diagnostics
 import (
 	fig_ipc "fig-cli/fig-ipc"
 	fig_proto "fig-cli/fig-proto"
+	"fig-cli/logging"
 	"fig-cli/settings"
 	"fig-cli/specs"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"os/user"
@@ -35,7 +35,7 @@ func GetMacOsVersion() (string, error) {
 }
 
 func ReadPlist(field string) (string, error) {
-	plistData, err := ioutil.ReadFile("/Applications/Fig.app/Contents/Info.plist")
+	plistData, err := os.ReadFile("/Applications/Fig.app/Contents/Info.plist")
 	if err != nil {
 		return "", err
 	}
@@ -107,6 +107,15 @@ func (a AppInfo) IsRunning() bool {
 	return len(a) > 0
 }
 
+func IsFigRunning() bool {
+	appInfo, err := GetAppInfo()
+	if err != nil {
+		return false
+	}
+
+	return appInfo.IsRunning()
+}
+
 func (a AppInfo) BundlePath() (string, error) {
 	re := regexp.MustCompile(`bundle path=\"(\S+)\"`)
 
@@ -140,6 +149,18 @@ func (a AppInfo) Pid() (int, error) {
 	return strconv.Atoi(matches[1])
 }
 
+func FigEnvs() []string {
+	var fig_envs []string
+	env := os.Environ()
+	for _, e := range env {
+		if strings.HasPrefix(e, "FIG_") {
+			fig_envs = append(fig_envs, e)
+		}
+	}
+
+	return fig_envs
+}
+
 func Summary() string {
 	var summary strings.Builder
 
@@ -149,17 +170,38 @@ func Summary() string {
 
 	resp, err := fig_ipc.SendRecvCommand(&cmd)
 	if err != nil {
-		summary.WriteString(fmt.Sprintf("Error: %s\n", err.Error()))
+		summary.WriteString("\nIt looks like Fig is not running.\nTry running: fig restart\n\n")
+		logging.Log("diagnostics", err.Error())
+		return summary.String()
 	}
-
-	figVersion, _ := GetFigVersion()
-	figBuild, _ := GetFigBuild()
 
 	//  \(Diagnostic.distribution) \(Defaults.beta ? "[Beta] " : "")\(Defaults.debugAutocomplete ? "[Debug] " : "")\(Defaults.developerModeEnabled ? "[Dev] " : "")[\(KeyboardLayout.shared.currentLayoutName() ?? "?")] \(Diagnostic.isRunningOnReadOnlyVolume ? "TRANSLOCATED!!!" : "")
 	summary.WriteString("Fig Version: ")
-	summary.WriteString(figVersion)
+	summary.WriteString(resp.GetDiagnostics().GetDistribution())
 	summary.WriteString(" ")
-	summary.WriteString(figBuild)
+
+	if resp.GetDiagnostics().GetBeta() {
+		summary.WriteString("[Beta] ")
+	}
+
+	if resp.GetDiagnostics().GetDebugAutocomplete() {
+		summary.WriteString("[Debug] ")
+	}
+
+	if resp.GetDiagnostics().GetDeveloperModeEnabled() {
+		summary.WriteString("[Dev] ")
+	}
+
+	layoutName := resp.GetDiagnostics().GetCurrentLayoutName()
+	if layoutName == "" {
+		layoutName = "?"
+	}
+	summary.WriteString(fmt.Sprintf("[%v] ", layoutName))
+
+	if resp.GetDiagnostics().GetIsRunningOnReadOnlyVolume() {
+		summary.WriteString("TRANSLOCATED!!!")
+	}
+
 	summary.WriteString("\n")
 
 	// User shell: \(Diagnostic.userShell)
@@ -173,9 +215,12 @@ func Summary() string {
 	summary.WriteString("\n")
 
 	//  Autocomplete: \(Defaults.useAutocomplete)
-	autocomplete, _ := ReadPlist("useAutocomplete")
 	summary.WriteString("Autocomplete: ")
-	summary.WriteString(autocomplete)
+	if resp.GetDiagnostics().GetAutocomplete() {
+		summary.WriteString("true")
+	} else {
+		summary.WriteString("false")
+	}
 	summary.WriteString("\n")
 
 	//  Settings.json: \(Diagnostic.settingsExistAndHaveValidFormat)
@@ -251,7 +296,7 @@ func Summary() string {
 
 	//  PseudoTerminal Path: \(Diagnostic.pseudoTerminalPath ?? "<generated dynamically>")
 	summary.WriteString("PseudoTerminal Path: ")
-	summary.WriteString(resp.GetDiagnostics().GetPsudopath())
+	summary.WriteString(resp.GetDiagnostics().GetPsudoterminalPath())
 	summary.WriteString("\n")
 
 	//  SecureKeyboardInput: \(Diagnostic.secureKeyboardInput)
@@ -281,6 +326,18 @@ func Summary() string {
 	// Path
 	summary.WriteString("Path: ")
 	summary.WriteString(os.Getenv("PATH"))
+
+	// Fig envs
+	fig_envs := FigEnvs()
+	summary.WriteString("\nFig environment variables:\n")
+	summary.WriteString("  - TERM_SESSION_ID=")
+	summary.WriteString(os.Getenv("TERM_SESSION_ID"))
+	summary.WriteString("\n")
+	for _, env := range fig_envs {
+		summary.WriteString("  - ")
+		summary.WriteString(env)
+		summary.WriteString("\n")
+	}
 
 	return summary.String()
 }

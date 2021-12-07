@@ -18,7 +18,7 @@ extension API {
               "remote" : Remote.baseURL.absoluteString,
                 "home" : NSHomeDirectory(),
                 "user" : NSUserName(),
-         "defaultPath" : PseudoTerminal.defaultMacOSPath,
+         "defaultPath" : PathHelper.defaultPath,
  "jsonMessageRecieved" : API.Encoding.json.eventName,
   "jsonMessageHandler" : API.Encoding.json.webkitMessageHandler,
 "protoMessageRecieved" : API.Encoding.binary.eventName,

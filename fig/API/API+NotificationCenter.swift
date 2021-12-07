@@ -112,17 +112,20 @@ class APINotificationCenter {
     }
     
     func post(notification: Fig_Notification) {
-        guard let type = notification.notificationType else { return }
-        
-        let subscribers = self.subscribers[type]
-        
-        subscribers?.forEach({ webview in
-           
-            API.send(Response.with({
-                $0.notification = notification
-                $0.id = self.channels[webview]?[type] ?? -1
-            }), to: webview, using: .binary)
-        })
+
+        DispatchQueue.main.async {
+          guard let type = notification.notificationType else { return }
+          
+          let subscribers = self.subscribers[type]
+          
+          subscribers?.forEach({ webview in
+             
+              API.send(Response.with({
+                  $0.notification = notification
+                  $0.id = self.channels[webview]?[type] ?? -1
+              }), to: webview, using: .binary)
+          })
+        }
     }
 }
 
@@ -178,6 +181,8 @@ extension Fig_Notification {
             return .notifyOnSettingsChange
         case .windowFocusChangedNotification(_):
             return .notifyOnFocusChanged
+        case .historyUpdatedNotification(_):
+            return .notifyOnHistoryUpdated
         case .none:
             return nil
         }
@@ -227,4 +232,23 @@ extension APINotificationCenter {
         wrapper.windowFocusChangedNotification = notification
         self.post(notification: wrapper)
     }
+  
+    func post(_ notification: Fig_HistoryUpdatedNotification) {
+        var wrapper = Fig_Notification()
+        wrapper.historyUpdatedNotification = notification
+        self.post(notification: wrapper)
+    }
+}
+
+extension APINotificationCenter {
+  func editbufferChanged(buffer: String, cursor: Int, session: SessionId) {
+  
+    API.notifications.post(
+      Fig_EditBufferChangedNotification.with({ notification in
+        notification.buffer = buffer
+        notification.cursor = Int32(cursor)
+        notification.sessionID = session
+      })
+    )
+  }
 }

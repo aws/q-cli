@@ -153,9 +153,6 @@ class WebViewController: NSViewController, NSWindowDelegate {
         if let url = webView?.defaultURL {
             webView?.loadRemoteApp(at: url)
         }
-//        if !((webView?.url) != nil) {
-//            webView?.loadSideBar()
-//        }
     }
 
 
@@ -188,13 +185,7 @@ class WebViewController: NSViewController, NSWindowDelegate {
     }
     
     @objc func overlayDidBecomeIcon() {
-        print("didBecomeIcon")
-//        self.icon.isHidden = false;
-//
-//        self.icon.frame = NSRect(x: 0, y: -6, width: 50, height: 50)
-//        self.webView?.loadBundleApp("sidebar")
-        self.webView?.loadSideBar()
-//        (self.view as! NSVisualEffectView).maskImage = _maskImage(cornerRadius: 5)
+
     }
     
     @objc func overlayDidBecomeMain() {
@@ -463,7 +454,7 @@ class WebView : WKWebView {
             
             self.evaluateJavaScript("fig.mouseEntered()", completionHandler: nil)
             print("Attempting to activate fig")
-            if (Defaults.triggerSidebarWithMouse) {
+            if (Defaults.shared.triggerSidebarWithMouse) {
                 WindowManager.shared.windowServiceProvider.takeFocus()
             }
 
@@ -480,7 +471,7 @@ class WebView : WKWebView {
             print("current frontmost application \(NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "")")
             print("Attempting to activate previous app \( ShellBridge.shared.previousFrontmostApplication?.bundleIdentifier ?? "<none>")")
 //            ShellBridge.shared.previousFrontmostApplication?.activate(options: .init())
-            if (Defaults.triggerSidebarWithMouse) {
+            if (Defaults.shared.triggerSidebarWithMouse) {
                 WindowManager.shared.windowServiceProvider.returnFocus()
             }
 
@@ -507,7 +498,7 @@ class WebView : WKWebView {
     func loadRemoteApp(at url: URL) {
         print(url.absoluteString)
 //        self.load(URLRequest(url: URL(string:"about:blank")!))
-        self.load(URLRequest(url: url, cachePolicy: .useProtocolCachePolicy))
+        self.load(URLRequest(url: url, cachePolicy: .returnCacheDataElseLoad))
 
         self.evaluateJavaScript("document.documentElement.remove()") { (_, _) in
         }
@@ -521,16 +512,23 @@ class WebView : WKWebView {
 
     }
     
-    func loadSideBar() {
-        print("loadSidebar")
-        self.evaluateJavaScript("document.documentElement.remove()") { (_, _) in
-            self.load(URLRequest(url: Remote.baseURL.appendingPathComponent("sidebar"), cachePolicy: .useProtocolCachePolicy))
-       }
-    }
-    
     func loadAutocomplete() {
-        print("loadAutocomplete")
-        self.load(URLRequest(url: Remote.baseURL.appendingPathComponent("autocomplete").appendingPathComponent(        Defaults.autocompleteVersion ?? ""), cachePolicy: .reloadIgnoringLocalAndRemoteCacheData))
+        Logger.log(message: "Loading autocomplete...")
+      
+        let url: URL = {
+          
+          // Use value specified by developer.autocomplete.host if it exists
+          if let urlString = Settings.shared.getValue(forKey: Settings.autocompleteURL) as? String,
+             let url = URL(string: urlString)   {
+             return url
+          }
+          
+          // otherwise use fallback
+          return Remote.baseURL.appendingPathComponent("autocomplete")
+                               .appendingPathComponent(Defaults.shared.autocompleteVersion ?? "")
+        }()
+        
+        self.load(URLRequest(url: url, cachePolicy: .reloadIgnoringLocalAndRemoteCacheData))
     }
     
     func clearHistory() {

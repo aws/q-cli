@@ -44,4 +44,25 @@ class ProcessStatus {
     }
     return []
   }
+  
+  static func workingDirectory(for pid: Int32) -> String {
+    var pathinfo = proc_vnodepathinfo()
+
+    let st = proc_pidinfo(pid,
+                PROC_PIDVNODEPATHINFO,
+                0,
+                &pathinfo,
+                Int32(MemoryLayout<proc_vnodepathinfo>.size))
+    
+    guard st > 0 else {
+      Logger.log(message: "Error \(st): could not retrieve working directory for pid (\(pid)")
+      return "/"
+    }
+
+    return withUnsafePointer(to: pathinfo.pvi_cdir.vip_path) {
+        $0.withMemoryRebound(to: CChar.self, capacity: MemoryLayout.size(ofValue: $0)) {
+            String(cString: $0)
+        }
+    }
+  }
 }

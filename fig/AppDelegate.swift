@@ -22,7 +22,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 
     var clicks:Int = 6;
     let updater = UpdateService.provider
-    let processPool = WKProcessPool()
+//    let processPool = WKProcessPool()
     
     let iTermObserver = WindowObserver(with: "com.googlecode.iterm2")
     let TerminalObserver = WindowObserver(with: "com.apple.Terminal")
@@ -37,7 +37,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             options.enableAutoSessionTracking = true
             options.attachStacktrace = true
             options.sessionTrackingIntervalMillis = 5_000
-            options.enabled = !Defaults.telemetryDisabled
+            options.enabled = !Defaults.shared.telemetryDisabled
         }
         warnToMoveToApplicationIfNecessary()
       
@@ -70,9 +70,9 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         }
         
         TelemetryProvider.track(event: .launchedApp, with:
-                                ["crashed" : Defaults.launchedFollowingCrash ? "true" : "false"])
-        Defaults.launchedFollowingCrash = true
-        Config.set(value: nil, forKey: Config.userExplictlyQuitApp)
+                                ["crashed" : Defaults.shared.launchedFollowingCrash ? "true" : "false"])
+        Defaults.shared.launchedFollowingCrash = true
+        Config.shared.set(value: nil, forKey: Config.userExplictlyQuitApp)
         Accessibility.checkIfPermissionRevoked()
       
 //        AppMover.moveIfNecessary()
@@ -81,9 +81,11 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         let _ = WindowManager.shared
         let _ = ShellHookManager.shared
         let _ = KeypressProvider.shared
-        let _ = IPC.shared
       
         let _ = AXWindowServer.shared
+        let _ = TerminalSessionLinker.shared
+        
+        let _ = IPC.shared
 
       
         let _ = DockerEventStream.shared
@@ -103,24 +105,23 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 //        WebView.deleteCache()
 
         handleUpdateIfNeeded()
-        Defaults.useAutocomplete = true
-        Defaults.autocompleteVersion = "v7"
-        AutocompleteContextNotifier.addIndicatorToTitlebar = false
+        Defaults.shared.useAutocomplete = true
+        Defaults.shared.autocompleteVersion = "v8"
 
-        Defaults.autocompleteWidth = 250
-        Defaults.ignoreProcessList = ["figcli", "gitstatusd-darwin-x86_64", "gitstatusd-darwin-arm64", "nc", "fig_pty", "starship", "figterm"]
+        Defaults.shared.autocompleteWidth = 250
+        Defaults.shared.ignoreProcessList = ["figcli", "gitstatusd-darwin-x86_64", "gitstatusd-darwin-arm64", "nc", "fig_pty", "starship", "figterm"]
 
         let hasLaunched = UserDefaults.standard.bool(forKey: "hasLaunched")
         let email = UserDefaults.standard.string(forKey: "userEmail")
 
         if (!hasLaunched || email == nil) {
-            Defaults.loggedIn = false
-            Defaults.build = .production
-            Defaults.clearExistingLineOnTerminalInsert = true
-            Defaults.showSidebar = false
+            Defaults.shared.loggedIn = false
+            Defaults.shared.build = .production
+            Defaults.shared.clearExistingLineOnTerminalInsert = true
+            Defaults.shared.showSidebar = false
           
-            Config.set(value: "0", forKey: Config.userLoggedIn)
-//            Defaults.defaultActivePosition = .outsideRight
+            Config.shared.set(value: "0", forKey: Config.userLoggedIn)
+//            Defaults.shared.defaultActivePosition = .outsideRight
             
             let onboardingViewController = WebViewController()
             onboardingViewController.webView?.defaultURL = nil
@@ -142,7 +143,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             user.email = email
             SentrySDK.setUser(user)
             ShellBridge.symlinkCLI()
-            Config.set(value: "1", forKey: Config.userLoggedIn)
+            Config.shared.set(value: "1", forKey: Config.userLoggedIn)
 
             
           if (!Accessibility.enabled) {
@@ -196,7 +197,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         }
         
 //        iTermTabIntegration.listenForHotKey()
-        AutocompleteContextNotifier.listenForUpdates()
         SecureKeyboardInput.listen()
       
         iTermObserver?.windowDidAppear {
@@ -232,7 +232,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     }
   
     func warnToMoveToApplicationIfNecessary() {
-      if Diagnostic.isRunningOnReadOnlyVolume && !Defaults.loggedIn {
+      if Diagnostic.isRunningOnReadOnlyVolume && !Defaults.shared.loggedIn {
         Alert.show(title: "Move to Applications folder",
                    message: "Fig needs to be launched from your Applications folder in order to work properly.",
                    okText: "Quit",
@@ -285,12 +285,16 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     }
         
     func openMenu() {
+        
+        // Do not show menu if icon is hidden
+        if let hidden = Settings.shared.getValue(forKey: Settings.hideMenubarIcon) as? Bool,
+               hidden {
+          return
+        }
+      
         if let menu = self.statusBarItem.menu {
             self.statusBarItem.popUpMenu(menu)
         }
-//        self.statusBarItem.menu?.popUp(positioning: ,
-//                                       at: self.statusBarItem.view?.frame.origin,
-//                                       in: self.statusBarItem.view)
     }
     
     func validateMenuItem(menuItem: NSMenuItem) -> Bool {
@@ -402,17 +406,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
   
     func integrationsMenu() -> NSMenu {
       let integrationsMenu = NSMenu(title: "fig")
-
-        // todo(mschrage): Renable when we can set the title using bi-directional IPC with figterm
-      if AutocompleteContextNotifier.addIndicatorToTitlebar {
-          let statusInTitle = integrationsMenu.addItem(
-          withTitle: "Show '☑ fig' in Terminal",
-          action: #selector(AppDelegate.toggleFigIndicator(_:)),
-          keyEquivalent: "")
-          statusInTitle.state = AutocompleteContextNotifier.addIndicatorToTitlebar ? .on : .off
-          integrationsMenu.addItem(NSMenuItem.separator())
-      }
-        
         
         integrationsMenu.addItem(NSMenuItem.separator())
         integrationsMenu.addItem(
@@ -520,17 +513,15 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             }
         }
         
-        integrationsMenu.addItem(NSMenuItem.separator())
-
-    
-      let sshIntegration = integrationsMenu.addItem(
-      withTitle: "SSH Integration",
-      action: #selector(AppDelegate.toggleSSHIntegration(_:)),
-      keyEquivalent: "")
-      sshIntegration.state = Defaults.SSHIntegrationEnabled ? .on : .off
-      
       integrationsMenu.addItem(NSMenuItem.separator())
-      integrationsMenu.addItem(withTitle: "Edit Key Bindings", action: #selector(editKeybindingsFile), keyEquivalent: "")
+//
+//
+//      let sshIntegration = integrationsMenu.addItem(
+//      withTitle: "SSH Integration",
+//      action: #selector(AppDelegate.toggleSSHIntegration(_:)),
+//      keyEquivalent: "")
+//      sshIntegration.state = Defaults.SSHIntegrationEnabled ? .on : .off
+
       
       let developer = integrationsMenu.addItem(
        withTitle: "Developer",
@@ -561,19 +552,20 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
        keyEquivalent: "")
       developerMenu.addItem(NSMenuItem.separator())
       
-      let debugAutocomplete = developerMenu.addItem(
-       withTitle: "Force Popup to Appear",
-       action: #selector(AppDelegate.toggleDebugAutocomplete(_:)),
-       keyEquivalent: "")
-      debugAutocomplete.state = Defaults.debugAutocomplete ? .on : .off
-//        utilitiesMenu.addItem(NSMenuItem.separator())
-      developerMenu.addItem(NSMenuItem.separator())
+//      let debugAutocomplete = developerMenu.addItem(
+//       withTitle: "Force Popup to Appear",
+//       action: #selector(AppDelegate.toggleDebugAutocomplete(_:)),
+//       keyEquivalent: "")
+//      debugAutocomplete.state = Defaults.shared.debugAutocomplete ? .on : .off
+//      utilitiesMenu.addItem(NSMenuItem.separator())
+//      developerMenu.addItem(NSMenuItem.separator())
+      
       developerMenu.addItem(
        withTitle: "Run Install/Update Script",
        action: #selector(AppDelegate.setupScript),
        keyEquivalent: "")
       
-      if (!Defaults.isProduction) {
+      if (!Defaults.shared.isProduction) {
               developerMenu.addItem(
                withTitle: "Internal (not for prod)",
                action: nil,
@@ -620,7 +612,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
          withTitle: "Autocomplete", //(βeta)
          action: #selector(AppDelegate.toggleAutocomplete(_:)),
          keyEquivalent: "")
-        autocomplete.state = Defaults.useAutocomplete ? .on : .off
+        autocomplete.state = Defaults.shared.useAutocomplete ? .on : .off
         autocomplete.indentationLevel = 1
         statusBarMenu.addItem(NSMenuItem.separator())
       
@@ -684,10 +676,10 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
          action: #selector(AppDelegate.quit),
          keyEquivalent: "")
         
-        if (!Defaults.isProduction || Defaults.beta) {
+        if (!Defaults.shared.isProduction || Defaults.shared.beta) {
             statusBarMenu.addItem(NSMenuItem.separator())
             statusBarMenu.addItem(
-              withTitle: "\(Defaults.beta ? "[Beta] ":"")\(Defaults.build.rawValue)",
+              withTitle: "\(Defaults.shared.beta ? "[Beta] ":"")\(Defaults.shared.build.rawValue)",
              action: nil,
              keyEquivalent: "")
         }
@@ -716,7 +708,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             return
         }
         
-        guard Defaults.loggedIn else {
+        guard Defaults.shared.loggedIn else {
             self.statusBarItem.menu = self.onboardingStatusBarMenu()
             self.statusBarItem.menu?.delegate = self
             return
@@ -828,11 +820,11 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             }
 
             if let general = uninstallScriptFile {
-                NSWorkspace.shared.open(URL(string: "https://fig.io/uninstall?email=\(Defaults.email ?? "")")!)
+                NSWorkspace.shared.open(URL(string: "https://fig.io/uninstall?email=\(Defaults.shared.email ?? "")")!)
                 LoginItems.shared.removeAllItemsMatchingBundleURL()
                 
                 let domain = Bundle.main.bundleIdentifier!
-                let uuid = Defaults.uuid
+                let uuid = Defaults.shared.uuid
                 UserDefaults.standard.removePersistentDomain(forName: domain)
                 UserDefaults.standard.removePersistentDomain(forName: "\(domain).shared")
 
@@ -886,8 +878,8 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 
     func handleUpdateIfNeeded() {
         Logger.log(message: "Checking if app has updated...")
-        guard let previous = Defaults.versionAtPreviousLaunch else {
-            Defaults.versionAtPreviousLaunch = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
+        guard let previous = Defaults.shared.versionAtPreviousLaunch else {
+            Defaults.shared.versionAtPreviousLaunch = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
             print("Update: First launch!")
             Logger.log(message: "First launch!")
             TelemetryProvider.track(event: .firstTimeUser, with: [:])
@@ -905,71 +897,24 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         
         // upgrade path!
         if (previous != current) {
-            // look for $BUNDLE/upgrade/$OLD-->$NEW
-            let specific = Bundle.main.path(forResource: "\(previous)-->\(current)", ofType: "sh")
-            // look for $BUNDLE/upgrade/$NEW
-            let general = Bundle.main.path(forResource: "\(current)", ofType: "sh")
-            
-            let script = specific ?? general
-            if let script = script {
-                print("Update: Running script '\(script)' to upgrade to version \(current)")
-                let _ = "sh \(script) '\(Bundle.main.resourcePath ?? "")'".runAsCommand()
-            }
             
             Onboarding.setUpEnviroment()
 
-            TelemetryProvider.track(event: .updatedApp, with: ["script": script ?? "<none>"])
-            
-            // Any defaults that should be set for upgrading users
-            // For anyone upgrading, we are just going to assume that this is true
-            Defaults.hasShownAutocompletePopover = true
+            TelemetryProvider.track(event: .updatedApp, with: [:])
+      
             
             
             // resolves a bug where Fig was added to login items multiple times
             // if the appropriate setting is enabled, a single entry will be readded
             LoginItems.shared.removeAllItemsMatchingBundleURL()
-
-            if current == "1.0.50" {
-                switch Settings.shared.getValue(forKey: "autocomplete.tab") as? String {
-                    case "insert":
-                        Settings.shared.set(value: "insertSelected", forKey: "autocomplete.keybindings.tab")
-                        break
-                    case "navigate":
-                        Settings.shared.set(value: "insertCommonPrefixOrNavigateDown", forKey: "autocomplete.keybindings.tab")
-                        Settings.shared.set(value: "navigateUp", forKey: "autocomplete.keybindings.shift+tab")
-                        break
-                    default:
-                        break
-                }
-
-                if Settings.shared.getValue(forKey: Settings.enterKeyBehavior) as? String == "ignore" {
-                    Settings.shared.set(value: "ignore", forKey: "autocomplete.keybindings.enter")
-                }
-
-                if Settings.shared.getValue(forKey: Settings.rightArrowKeyBehavior) as? String == "insert" {
-                    Settings.shared.set(value: "insertSelected", forKey: "autocomplete.keybindings.right")
-                }
-
-                if Settings.shared.getValue(forKey: Settings.allowAlternateNavigationKeys) as? Bool ?? true {
-                    Settings.shared.set(value: "navigateDown", forKey: "autocomplete.keybindings.control+j")
-                    Settings.shared.set(value: "navigateUp", forKey: "autocomplete.keybindings.control+k")
-                  
-                    Settings.shared.set(value: "navigateDown", forKey: "autocomplete.keybindings.control+n")
-                    Settings.shared.set(value: "navigateUp", forKey: "autocomplete.keybindings.control+p")
-                }
-
-                if Settings.shared.getValue(forKey: Settings.disablePopoutDescriptions) as? Bool ?? false {
-                    Settings.shared.set(value: "ignore", forKey: "autocomplete.keybindings.command+i")
-                }
-            }
         }
         
-        Defaults.versionAtPreviousLaunch = current
+        Defaults.shared.versionAtPreviousLaunch = current
         
     }
     
     @objc func restart() {
-        Defaults.launchedFollowingCrash = false
+        Defaults.shared.launchedFollowingCrash = false
         Logger.log(message: "Restarting Fig...")
         let url = URL(fileURLWithPath: Bundle.main.resourcePath!)
         let path = url.deletingLastPathComponent().deletingLastPathComponent().absoluteString
@@ -983,27 +928,14 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     
     func setupCompanionWindow() {
         Logger.log(message: "Setting up companion windows")
-        Defaults.loggedIn = true
+        Defaults.shared.loggedIn = true
         
         Logger.log(message: "Configuring status bar")
         self.configureStatusBarItem()
         
         Logger.log(message: "Creating windows...")
-        WindowManager.shared.createSidebar()
         WindowManager.shared.createAutocomplete()
-        
-//        Logger.log(message: "Registering keystrokeHandler...")
-//        KeypressProvider.shared.registerKeystrokeHandler()
-//        
-//        Logger.log(message: "Registering window tracking...")
-//        AXWindowServer.shared.registerWindowTracking()
-        
-        //let companion = CompanionWindow(viewController: WebViewController())
-        //companion.positioning = CompanionWindow.defaultPassivePosition
-        //window = companion
 
-        //(window as! CompanionWindow).repositionWindow(forceUpdate: true, explicit: true)
-        //self.hotKeyManager = HotKeyManager(companion: window as! CompanionWindow)
     }
     
     //https://stackoverflow.com/a/35138823
@@ -1043,7 +975,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
   
     @objc func inviteAFriend() {
       
-      guard let email = Defaults.email else {
+      guard let email = Defaults.shared.email else {
         Alert.show(title: "You are not logged in!", message: "Run `fig util:logout` and try again.", icon: Alert.appIcon)
         return
       }
@@ -1109,19 +1041,19 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     }
     
     @objc func toggleAutocomplete(_ sender: NSMenuItem) {
-        Defaults.useAutocomplete = !Defaults.useAutocomplete
-        sender.state = Defaults.useAutocomplete ? .on : .off
+        Defaults.shared.useAutocomplete = !Defaults.shared.useAutocomplete
+        sender.state = Defaults.shared.useAutocomplete ? .on : .off
 //        KeypressProvider.shared.clean()
-        TelemetryProvider.track(event: .toggledAutocomplete, with: ["status" : Defaults.useAutocomplete ? "on" : "off"])
+        TelemetryProvider.track(event: .toggledAutocomplete, with: ["status" : Defaults.shared.useAutocomplete ? "on" : "off"])
 
-        if (Defaults.useAutocomplete) {
+        if (Defaults.shared.useAutocomplete) {
             WindowManager.shared.createAutocomplete()
 
             KeypressProvider.shared.registerKeystrokeHandler()
             AXWindowServer.shared.registerWindowTracking()
         }
 
-        Logger.log(message: "Toggle autocomplete \(Defaults.useAutocomplete ? "on" : "off")")
+        Logger.log(message: "Toggle autocomplete \(Defaults.shared.useAutocomplete ? "on" : "off")")
 
     }
 
@@ -1261,8 +1193,8 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     }
     
     @objc func toggleOnlyTab(_ sender: NSMenuItem){
-        Defaults.onlyInsertOnTab = !Defaults.onlyInsertOnTab
-        sender.state = Defaults.onlyInsertOnTab ? .on : .off
+        Defaults.shared.onlyInsertOnTab = !Defaults.shared.onlyInsertOnTab
+        sender.state = Defaults.shared.onlyInsertOnTab ? .on : .off
     }
     
     @objc func toggleSidebar(_ sender: NSMenuItem) {
@@ -1274,23 +1206,22 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 //
 //        }
         
-        Defaults.showSidebar = !Defaults.showSidebar
-        sender.state = Defaults.showSidebar ? .on : .off
+        Defaults.shared.showSidebar = !Defaults.shared.showSidebar
+        sender.state = Defaults.shared.showSidebar ? .on : .off
         WindowManager.shared.requestWindowUpdate()
         
-        TelemetryProvider.track(event: .toggledSidebar, with: ["status" : Defaults.useAutocomplete ? "on" : "off"])
+        TelemetryProvider.track(event: .toggledSidebar, with: ["status" : Defaults.shared.useAutocomplete ? "on" : "off"])
     }
     
         @objc func toggleLogging(_ sender: NSMenuItem) {
             
-            Defaults.broadcastLogs = !Defaults.broadcastLogs
-            sender.state = Defaults.broadcastLogs ? .on : .off
+            Defaults.shared.broadcastLogs = !Defaults.shared.broadcastLogs
+            sender.state = Defaults.shared.broadcastLogs ? .on : .off
             
         }
     
     @objc func toggleFigIndicator(_ sender: NSMenuItem) {
-        AutocompleteContextNotifier.addIndicatorToTitlebar = !AutocompleteContextNotifier.addIndicatorToTitlebar
-        sender.state = AutocompleteContextNotifier.addIndicatorToTitlebar ? .on : .off
+      
     }
   
     @objc func toggleSSHIntegration(_ sender: NSMenuItem) {
@@ -1309,8 +1240,8 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             return
         }
         
-        Defaults.SSHIntegrationEnabled = !Defaults.SSHIntegrationEnabled
-        sender.state = Defaults.SSHIntegrationEnabled ? .on : .off
+        Defaults.shared.SSHIntegrationEnabled = !Defaults.shared.SSHIntegrationEnabled
+        sender.state = Defaults.shared.SSHIntegrationEnabled ? .on : .off
     }
   
     @objc func toggleVSCodeIntegration(_ sender: NSMenuItem) {
@@ -1330,10 +1261,10 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     }
     
     @objc func toggleDebugAutocomplete(_ sender: NSMenuItem) {
-        Defaults.debugAutocomplete = !Defaults.debugAutocomplete
-        sender.state = Defaults.debugAutocomplete ? .on : .off
+        Defaults.shared.debugAutocomplete = !Defaults.shared.debugAutocomplete
+        sender.state = Defaults.shared.debugAutocomplete ? .on : .off
         
-        if (!Defaults.debugAutocomplete) {
+        if (!Defaults.shared.debugAutocomplete) {
             WindowManager.shared.autocomplete?.maxHeight = 0
         }
         
@@ -1386,7 +1317,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             NSStatusBar.system.removeStatusItem(statusbar)
         }
       
-        Config.set(value: "1", forKey: Config.userExplictlyQuitApp)
+        Config.shared.set(value: "1", forKey: Config.userExplictlyQuitApp)
         
         TelemetryProvider.track(event: .quitApp, with: [:]) { (_, _, _) in
             DispatchQueue.main.async {
@@ -1403,7 +1334,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     }
   
     @objc func toggleDeveloperMode() {
-        Defaults.toggleDeveloperMode()
+        Defaults.shared.toggleDeveloperMode()
     }
     
     @objc func promptForAccesibilityAccess() {
@@ -1431,8 +1362,8 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     }
     func applicationWillTerminate(_ aNotification: Notification) {
         ShellBridge.shared.stopWebSocketServer()
-        Defaults.launchedFollowingCrash = false
-        AutocompleteContextNotifier.clearFigContext()
+        Defaults.shared.launchedFollowingCrash = false
+        PseudoTerminal.shared.dispose()
         
         // Ensure that fig.socket is deleted, so that if user switches acounts it can be recreated
         try? FileManager.default.removeItem(atPath: "/tmp/fig.socket")
@@ -1990,26 +1921,6 @@ extension AppDelegate : NSMenuDelegate {
         
     }
     
-    @objc func forceUpdateTTY() {
-        if let tty = AXWindowServer.shared.whitelistedWindow?.tty {
-            tty.update()
-        }
-    }
-    
-    @objc func addProcessToWhitelist() {
-        if let tty = AXWindowServer.shared.whitelistedWindow?.tty, let cmd = tty.cmd {
-            Defaults.processWhitelist = Defaults.processWhitelist + [cmd]
-            tty.update()
-        }
-    }
-    
-    @objc func addProcessToIgnorelist() {
-        if let tty = AXWindowServer.shared.whitelistedWindow?.tty, let cmd = tty.cmd {
-            Defaults.ignoreProcessList = Defaults.ignoreProcessList + [cmd]
-            tty.update()
-        }
-    }
-    
     @objc func resetWindowTracking() {
         
 //        AXWindowServer.shared.registerWindowTracking()
@@ -2024,7 +1935,7 @@ extension AppDelegate : NSMenuDelegate {
         DispatchQueue.global(qos: .background).async {
           TelemetryProvider.track(event: .openedFigMenuIcon, with: [:])
         }
-        guard Defaults.loggedIn, Accessibility.enabled else {
+        guard Defaults.shared.loggedIn, Accessibility.enabled else {
             return
         }
         
@@ -2039,7 +1950,7 @@ extension AppDelegate : NSMenuDelegate {
         if let app = NSWorkspace.shared.frontmostApplication, !app.isFig {
             let window = AXWindowServer.shared.whitelistedWindow
           if Integrations.terminalsWhereAutocompleteShouldAppear.contains(window?.bundleId ?? "") ||  Integrations.terminalsWhereAutocompleteShouldAppear.contains(app.bundleIdentifier ?? "") {
-                let tty = window?.tty
+                let shellContext = window?.associatedShellContext
                 var hasContext = false
                 var isHidden = false
                 var bufferDescription: String? = nil
@@ -2069,11 +1980,11 @@ extension AppDelegate : NSMenuDelegate {
                 }
 
                 let hasWindow = window != nil
-                let hasCommand = tty?.cmd != nil
-                let isShell = tty?.isShell ?? true
-                let runUsingPrefix = tty?.runUsingPrefix
-              
-                let cmd = tty?.cmd != nil ? "(\(tty?.name ?? tty!.cmd!))" : "(???)"
+                let hasCommand = shellContext != nil
+                let isShell = shellContext?.isShell() ?? true
+                let runUsingPrefix = false //tty?.runUsingPrefix
+                
+                let cmd = shellContext != nil ? "(\(shellContext!.executablePath))" : "(???)"
                 
                 var color: NSColor = .clear
                 let legend = NSMenu(title: "legend")
@@ -2177,20 +2088,13 @@ extension AppDelegate : NSMenuDelegate {
                     color = .yellow
                     legend.addItem(NSMenuItem(title: "Not linked to TTY session.", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem.separator())
-                    legend.addItem(NSMenuItem(title: "Run `fig source` to connect.", action: nil, keyEquivalent: ""))
-                    legend.addItem(NSMenuItem.separator())
                     legend.addItem(NSMenuItem(title: "window: \(window?.hash ?? "???")", action: nil, keyEquivalent: ""))
 
                 } else if (!isShell) {
                     color = .cyan
-                    legend.addItem(NSMenuItem(title: "Running proccess (\(tty?.cmd ?? "(???)")) is not a shell.", action: nil, keyEquivalent: ""))
+                    legend.addItem(NSMenuItem(title: "Running proccess (\(cmd)) is not a shell.", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem.separator())
                     legend.addItem(NSMenuItem(title: "Fix: exit current process", action: nil, keyEquivalent: ""))
-                    legend.addItem(NSMenuItem.separator())
-                    legend.addItem(NSMenuItem(title: "Force Reset", action: #selector(forceUpdateTTY), keyEquivalent: ""))
-                    legend.addItem(NSMenuItem(title: "Add as Shell", action: #selector(addProcessToWhitelist), keyEquivalent: ""))
-                    legend.addItem(NSMenuItem.separator())
-                    legend.addItem(NSMenuItem(title: "Ignore", action: #selector(addProcessToIgnorelist), keyEquivalent: ""))
                     legend.addItem(NSMenuItem.separator())
                     legend.addItem(NSMenuItem(title: "window: \(window?.hash ?? "???")", action: nil, keyEquivalent: ""))
                 } else {
@@ -2201,16 +2105,16 @@ extension AppDelegate : NSMenuDelegate {
                     legend.addItem(NSMenuItem(title: "Everything should be working.", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem.separator())
                     legend.addItem(NSMenuItem(title: "window: \(window?.hash.truncate(length: 15, trailing: "...") ?? "???")", action: nil, keyEquivalent: ""))
-                    legend.addItem(NSMenuItem(title: "tty: \(tty?.descriptor ?? "???")", action: nil, keyEquivalent: ""))
-                    legend.addItem(NSMenuItem(title: "cwd: \(tty?.cwd ?? "???")", action: nil, keyEquivalent: ""))
-                    legend.addItem(NSMenuItem(title: "pid: \(tty?.pid ?? -1)", action: nil, keyEquivalent: ""))
+                    legend.addItem(NSMenuItem(title: "tty: \(shellContext?.ttyDescriptor ?? "???")", action: nil, keyEquivalent: ""))
+                    legend.addItem(NSMenuItem(title: "cwd: \(shellContext?.workingDirectory ?? "???")", action: nil, keyEquivalent: ""))
+                    legend.addItem(NSMenuItem(title: "pid: \(shellContext?.processId ?? -1)", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem(title: "keybuffer: \(bufferDescription ?? "???")", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem(title: "path: \( path != nil ? (path! ? "☑" : "☒ ") : "<generated dynamically>")", action: nil, keyEquivalent: ""))
 
-                    if runUsingPrefix != nil {
-                      legend.addItem(NSMenuItem.separator())
-                      legend.addItem(NSMenuItem(title: "In SSH session or Docker container", action: nil, keyEquivalent: ""))
-                    }
+//                    if runUsingPrefix != nil {
+//                      legend.addItem(NSMenuItem.separator())
+//                      legend.addItem(NSMenuItem(title: "In SSH session or Docker container", action: nil, keyEquivalent: ""))
+//                    }
                   
                     if backedByShell {
                       legend.addItem(NSMenuItem.separator())

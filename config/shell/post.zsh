@@ -1,5 +1,3 @@
-autoload -Uz add-zsh-hook
-
 FIG_HOSTNAME=$(hostname -f 2> /dev/null || hostname)
 
 if [[ -e /proc/1/cgroup ]] && grep -q docker /proc/1/cgroup; then
@@ -20,8 +18,6 @@ FIG_HAS_ZSH_PTY_HOOKS=1
 FIG_HAS_SET_PROMPT=0
 
 fig_preexec() {
-  __fig bg:exec $$ $TTY 2>&1 1>/dev/null
-
   # Restore user defined prompt before executing.
   [[ -v PS1 ]] && PS1="$FIG_USER_PS1"
   [[ -v PROMPT ]] && PROMPT="$FIG_USER_PROMPT"
@@ -48,12 +44,8 @@ fig_preexec() {
 
 fig_precmd() {
   local LAST_STATUS=$?
-  __fig bg:prompt $$ $TTY 2>&1 1>/dev/null
 
-  if [ $FIG_HAS_SET_PROMPT -eq 1 ]; then
-    # ^C pressed while entering command, call preexec manually to clear fig prompts.
-    fig_preexec
-  fi
+  fig_reset_hooks
 
   fig_osc "Dir=%s" "$PWD"
   fig_osc "Shell=zsh"
@@ -72,9 +64,14 @@ fig_precmd() {
   fig_osc "Docker=%d" "${FIG_IN_DOCKER}"
   fig_osc "Hostname=%s@%s" "${USER:-root}" "${FIG_HOSTNAME}"
 
-  START_PROMPT=$(fig_osc StartPrompt)
-  END_PROMPT=$(fig_osc EndPrompt)
-  NEW_CMD=$(fig_osc NewCmd)
+  if [ $FIG_HAS_SET_PROMPT -eq 1 ]; then
+    # ^C pressed while entering command, call preexec manually to clear fig prompts.
+    fig_preexec
+  fi
+
+  START_PROMPT=$'\033]697;StartPrompt\007'
+  END_PROMPT=$'\033]697;EndPrompt\007'
+  NEW_CMD=$'\033]697;NewCmd\007'
 
   # Save user defined prompts.
   FIG_USER_PS1="$PS1"
@@ -96,30 +93,47 @@ fig_precmd() {
   FIG_USER_RPS2="$RPS2"
   FIG_USER_RPROMPT2="$RPROMPT2"
 
-  [[ -v PS1 ]] && PS1="%{$START_PROMPT%}$PS1%{$END_PROMPT$NEW_CMD%}"
-  [[ -v PROMPT ]] && PROMPT="%{$START_PROMPT%}$PROMPT%{$END_PROMPT$NEW_CMD%}"
-  [[ -v prompt ]] && prompt="%{$START_PROMPT%}$prompt%{$END_PROMPT$NEW_CMD%}"
+  if [[ -v PROMPT ]]; then
+    PROMPT="%{$START_PROMPT%}$PROMPT%{$END_PROMPT$NEW_CMD%}"
+  elif [[ -v prompt ]]; then
+    prompt="%{$START_PROMPT%}$prompt%{$END_PROMPT$NEW_CMD%}"
+  else
+    PS1="%{$START_PROMPT%}$PS1%{$END_PROMPT$NEW_CMD%}"
+  fi
 
-  [[ -v PS2 ]] && PS2="%{$START_PROMPT%}$PS2%{$END_PROMPT%}"
-  [[ -v PROMPT2 ]] && PROMPT2="%{$START_PROMPT%}$PROMPT2%{$END_PROMPT%}"
+  if [[ -v PROMPT2 ]]; then
+    PROMPT2="%{$START_PROMPT%}$PROMPT2%{$END_PROMPT%}"
+  else
+    PS2="%{$START_PROMPT%}$PS2%{$END_PROMPT%}"
+  fi
 
-  [[ -v PS3 ]] && PS3="%{$START_PROMPT%}$PS3%{$END_PROMPT$NEW_CMD%}"
-  [[ -v PROMPT3 ]] && PROMPT3="%{$START_PROMPT%}$PROMPT3%{$END_PROMPT$NEW_CMD%}"
+  if [[ -v PROMPT3 ]]; then
+    PROMPT3="%{$START_PROMPT%}$PROMPT3%{$END_PROMPT$NEW_CMD%}"
+  else
+    PS3="%{$START_PROMPT%}$PS3%{$END_PROMPT$NEW_CMD%}"
+  fi
 
-  [[ -v PS4 ]] && PS4="%{$START_PROMPT%}$PS4%{$END_PROMPT%}"
-  [[ -v PROMPT4 ]] && PROMPT4="%{$START_PROMPT%}$PROMPT4%{$END_PROMPT%}"
+  if [[ -v PROMPT4 ]]; then
+    PROMPT4="%{$START_PROMPT%}$PROMPT4%{$END_PROMPT%}"
+  else
+    PS4="%{$START_PROMPT%}$PS4%{$END_PROMPT%}"
+  fi
 
   # The af-magic theme adds a final % to expand. We need to paste without the %
   # to avoid doubling up and mangling the prompt.
-  if [[ "$ZSH_THEME" == "af-magic" ]]; then
+  if [[ -v RPROMPT ]]; then
+    RPROMPT="%{$START_PROMPT%}$RPROMPT%{$END_PROMPT%}"
+  elif [[ "$ZSH_THEME" == "af-magic" ]]; then
     RPS1="%{$START_PROMPT%}$RPS1{$END_PROMPT%}"
   else
-    [[ -v RPS1 ]] && RPS1="%{$START_PROMPT%}$RPS1%{$END_PROMPT%}"
+    RPS1="%{$START_PROMPT%}$RPS1%{$END_PROMPT%}"
   fi
-  [[ -v RPROMPT ]] && RPROMPT="%{$START_PROMPT%}$RPROMPT%{$END_PROMPT%}"
 
-  [[ -v RPS2 ]] && RPS2="%{$START_PROMPT%}$RPS2%{$END_PROMPT%}"
-  [[ -v RPROMPT2 ]] && RPROMPT2="%{$START_PROMPT%}$RPROMPT2%{$END_PROMPT%}"
+  if [[ -v RPROMPT2 ]]; then
+    RPROMPT2="%{$START_PROMPT%}$RPROMPT2%{$END_PROMPT%}"
+  else
+    RPS2="%{$START_PROMPT%}$RPS2%{$END_PROMPT%}"
+  fi
   
   FIG_HAS_SET_PROMPT=1
 
@@ -129,5 +143,13 @@ fig_precmd() {
   [[ -t 1 ]] && command stty -istrip
 }
 
-add-zsh-hook precmd fig_precmd
-add-zsh-hook preexec fig_preexec
+fig_reset_hooks() {
+  if [[ $precmd_functions[-1] != fig_precmd ]]; then
+    precmd_functions=(${(@)precmd_functions:#fig_precmd} fig_precmd)
+  fi
+  if [[ $preexec_functions[1] != fig_preexec ]]; then
+    preexec_functions=(fig_preexec ${(@)preexec_functions:#fig_preexec})
+  fi
+}
+
+fig_reset_hooks

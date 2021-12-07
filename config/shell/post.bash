@@ -2,12 +2,6 @@
 source ~/.fig/shell/bash-preexec.sh
 function __bp_adjust_histcontrol() { :; }
 
-__fig() {
-  if [[ -d /Applications/Fig.app || -d ~/Applications/Fig.app ]] && command -v fig 2>&1 1>/dev/null; then
-    fig "$@"
-  fi
-}
-
 FIG_LAST_PS1="$PS1"
 FIG_LAST_PS2="$PS2"
 FIG_LAST_PS3="$PS3"
@@ -24,8 +18,6 @@ fi
 function fig_osc { printf "\033]697;"; printf $@; printf "\007"; }
 
 function __fig_preexec() {
-  __fig bg:exec $$ $TTY 2>&1 1>/dev/null
-
   fig_osc PreExec
 
   # Reset user prompts before executing a command, but only if it hasn't
@@ -52,26 +44,8 @@ function __fig_preexec_preserve_status() {
   __bp_set_ret_value "${__fig_ret_value}" "${__bp_last_argument_prev_command}"
 }
 
-function __fig_prompt () {
+function __fig_pre_prompt () {
   __fig_ret_value="$?"
-
-  # Work around bug in CentOS 7.2 where preexec doesn't run if you press ^C
-  # while entering a command.
-  [[ -z "${_fig_done_preexec:-}" ]] && __fig_preexec ""
-  _fig_done_preexec=""
-
-  __fig bg:prompt $$ $TTY 2>&1 1>/dev/null
-
-  # If FIG_USER_PSx is undefined or PSx changed by user, update FIG_USER_PSx.
-  if [[ -z "${FIG_USER_PS1+x}" || "${PS1}" != "${FIG_LAST_PS1}" ]]; then
-    FIG_USER_PS1="${PS1}"
-  fi
-  if [[ -z "${FIG_USER_PS2+x}" || "${PS2}" != "${FIG_LAST_PS2}" ]]; then
-    FIG_USER_PS2="${PS2}"
-  fi
-  if [[ -z "${FIG_USER_PS3+x}" || "${PS3}" != "${FIG_LAST_PS3}" ]]; then
-    FIG_USER_PS3="${PS3}"
-  fi
 
   fig_osc "Dir=%s" "${PWD}"
   fig_osc "Shell=bash"
@@ -89,6 +63,31 @@ function __fig_prompt () {
   fig_osc "Docker=%d" "${FIG_IN_DOCKER}"
   fig_osc "Hostname=%s@%s" "${USER:-root}" "${FIG_HOSTNAME}"
 
+  # Work around bug in CentOS 7.2 where preexec doesn't run if you press ^C
+  # while entering a command.
+  [[ -z "${_fig_done_preexec:-}" ]] && __fig_preexec ""
+  _fig_done_preexec=""
+
+  # Reset $?
+  __bp_set_ret_value "${__fig_ret_value}" "${__bp_last_argument_prev_command}"
+}
+
+function __fig_post_prompt () {
+  __fig_ret_value="$?"
+
+  __fig_reset_hooks
+
+  # If FIG_USER_PSx is undefined or PSx changed by user, update FIG_USER_PSx.
+  if [[ -z "${FIG_USER_PS1+x}" || "${PS1}" != "${FIG_LAST_PS1}" ]]; then
+    FIG_USER_PS1="${PS1}"
+  fi
+  if [[ -z "${FIG_USER_PS2+x}" || "${PS2}" != "${FIG_LAST_PS2}" ]]; then
+    FIG_USER_PS2="${PS2}"
+  fi
+  if [[ -z "${FIG_USER_PS3+x}" || "${PS3}" != "${FIG_LAST_PS3}" ]]; then
+    FIG_USER_PS3="${PS3}"
+  fi
+
   START_PROMPT="\[$(fig_osc StartPrompt)\]"
   END_PROMPT="\[$(fig_osc EndPrompt)\]"
   NEW_CMD="\[$(fig_osc NewCmd)\]"
@@ -104,6 +103,48 @@ function __fig_prompt () {
   FIG_LAST_PS3="${PS3}"
 }
 
-# trap DEBUG -> preexec -> command -> PROMPT_COMMAND -> prompt shown.
-preexec_functions=(__fig_preexec_preserve_status "${preexec_functions[@]}")
-precmd_functions=(__fig_prompt "${precmd_functions[@]}")
+__fig_reset_hooks() {
+  # Rely on PROMPT_COMMAND instead of precmd_functions because precmd_functions
+  # are all run before PROMPT_COMMAND.
+  # Set PROMPT_COMMAND to "[
+  #   __fig_pre_prompt,
+  #   ...precmd_functions,
+  #   ORIGINAL_PROMPT_COMMAND,
+  #   __fig_post_prompt,
+  #   __bp_interactive_mode
+  # ]"
+  local existing_prompt_command
+  existing_prompt_command="${PROMPT_COMMAND}"
+  existing_prompt_command="${existing_prompt_command//__fig_post_prompt[;$'\n']}"
+  existing_prompt_command="${existing_prompt_command//__fig_post_prompt}"
+  existing_prompt_command="${existing_prompt_command//__bp_interactive_mode[;$'\n']}"
+  existing_prompt_command="${existing_prompt_command//__bp_interactive_mode}"
+  __bp_sanitize_string existing_prompt_command "$existing_prompt_command"
+
+  PROMPT_COMMAND=""
+  if [[ -n "$existing_prompt_command" ]]; then
+      PROMPT_COMMAND+=${existing_prompt_command}$'\n'
+  fi;
+  PROMPT_COMMAND+=$'__fig_post_prompt\n'
+  PROMPT_COMMAND+='__bp_interactive_mode'
+
+  if [[ ${precmd_functions[0]} != __fig_pre_prompt ]]; then
+    for index in "${!precmd_functions[@]}"; do
+      if [[ ${precmd_functions[$index]} == __fig_pre_prompt ]]; then
+        unset -v 'precmd_functions[$index]'
+      fi
+    done
+    precmd_functions=(__fig_pre_prompt "${precmd_functions[@]}")
+  fi
+
+  if [[ ${preexec_functions[0]} != __fig_preexec_preserve_status ]]; then
+    for index in "${!preexec_functions[@]}"; do
+      if [[ ${preexec_functions[$index]} == __fig_preexec_preserve_status ]]; then
+        unset -v 'preexec_functions[$index]'
+      fi
+    done
+    preexec_functions=(__fig_preexec_preserve_status "${preexec_functions[@]}")
+  fi
+}
+
+__fig_reset_hooks

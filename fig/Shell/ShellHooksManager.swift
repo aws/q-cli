@@ -204,32 +204,41 @@ extension ShellHookManager {
   }
 
   // If this changes, make sure to reflect changes in iTermIntegration.sessionId setter
-  func currentTabDidChange(bundleIdentifier: String, sessionId: String) {
+  func currentTabDidChange(applicationIdentifier: String, sessionId: String) {
     Logger.log(message: "currentTabDidChange")
 
     // Need time for whitelisted window to change
     Timer.delayWithSeconds(0.1) {
       if let window = AXWindowServer.shared.whitelistedWindow {
-        guard bundleIdentifier == window.bundleId else {
-          print(
-            "tab: bundleId from message did not match bundle id associated with current window "
-          )
-          return
-        }
-
-        let VSCodeTerminal =
+        let CodeTerminal =
           [Integrations.VSCode, Integrations.VSCodeInsiders, Integrations.VSCodium]
-          .contains(window.bundleId)
+            .contains(window.bundleId)
+          && applicationIdentifier == "code"
+        
+        let VSCodeTerminal = window.bundleId == Integrations.VSCode
+          && applicationIdentifier == "vscode"
+        
+        let VSCodeInsidersTerminal = window.bundleId == Integrations.VSCodeInsiders
+          && applicationIdentifier == "vscode-insiders"
+        
+        let VSCodeiumTerminal = window.bundleId == Integrations.VSCodium
+          && applicationIdentifier == "vscodium"
 
         let HyperTab = window.bundleId == Integrations.Hyper
+          && applicationIdentifier == "hyper"
 
         let iTermTab = window.bundleId == Integrations.iTerm
+          && applicationIdentifier == "iterm"
+        
+        let KittyTerm = window.bundleId == Integrations.Kitty
+          && applicationIdentifier == "kitty"
 
-        guard VSCodeTerminal || iTermTab || HyperTab else { return }
+        guard CodeTerminal || VSCodeTerminal || VSCodeInsidersTerminal ||
+                VSCodeiumTerminal || iTermTab || HyperTab || KittyTerm else { return }
 
-        Logger.log(message: "tab: \(window.windowId)/\(sessionId)")
+        Logger.log(message: "tab: \(window.windowId)/\(applicationIdentifier):\(sessionId)")
 
-        self.keyboardFocusDidChange(to: sessionId, in: window)
+        self.keyboardFocusDidChange(to: "\(applicationIdentifier):\(sessionId)", in: window)
       }
     }
   }
@@ -370,66 +379,11 @@ extension ShellHookManager {
       context: ctx, calledDirect: calledDirect, bundle: bundle, env: envFilter)
   }
 
-  func startedNewTerminalSession(
-    context: Local_ShellContext, calledDirect: Bool, bundle: String?, env: [String: String]
-  ) {
+  func startedNewTerminalSession(context: Local_ShellContext,
+                                 calledDirect: Bool,
+                                 bundle: String?,
+                                 env: [String: String]) {
 
-    guard let bundleId = NSWorkspace.shared.frontmostApplication?.bundleIdentifier else {
-      Logger.log(message: "Could not get bundle id", priority: .notify, subsystem: .tty)
-      return
-    }
-
-    var delay: TimeInterval!
-
-    switch bundleId {
-    case Integrations.Hyper:
-      delay = Settings.shared.getValue(forKey: Settings.hyperDelayKey) as? TimeInterval ?? 2
-    case Integrations.VSCode:
-      delay = Settings.shared.getValue(forKey: Settings.vscodeDelayKey) as? TimeInterval ?? 1
-    default:
-      delay = 0.2
-    }
-
-    // no delay is needed because the command is being run by the user, so the window is already active
-    if calledDirect {
-      delay = 0
-    }
-
-    observer = WindowObserver(with: bundleId)
-
-    // We need to wait for window to appear if the terminal emulator is being launched for the first time. Can this be handled more robustly?
-    observer?.windowDidAppear(
-      timeoutAfter: delay,
-      completion: {
-        // ensuring window bundleId & frontmostApp bundleId match fixes case where a slow launching application (eg. Hyper) will init shell before window is visible/tracked
-        Logger.log(message: "Awaited window did appear", priority: .notify, subsystem: .tty)
-
-        guard let window = AXWindowServer.shared.whitelistedWindow,
-          window.bundleId == NSWorkspace.shared.frontmostApplication?.bundleIdentifier
-        else {
-          Logger.log(
-            message: "Cannot track a new terminal session if topmost window isn't whitelisted.",
-            priority: .notify, subsystem: .tty)
-          return
-        }
-
-        guard window.bundleId == bundle else {
-          Logger.log(
-            message:
-              "Cannot track a new terminal session if topmost window '\(window.bundleId ?? "?")' doesn't correspond to $TERM_PROGRAM '\(bundle ?? "?")'",
-            priority: .notify, subsystem: .tty)
-          return
-        }
-
-        Logger.log(
-          message: "Linking \(context.ttys) with \(window.hash) for \(context.sessionID)",
-          priority: .notify, subsystem: .tty)
-
-        let tty = self.link(context.sessionID, window.hash, context.ttys)
-        tty.startedNewShellSession(for: context.pid)
-
-        // Set version (used for checking compatibility)
-        tty.shellIntegrationVersion = Int(context.integrationVersion)
 
         DispatchQueue.main.async {
           NotificationCenter.default.post(
@@ -437,8 +391,6 @@ extension ShellHookManager {
               name: PseudoTerminal.recievedEnvironmentVariablesFromShellNotification,
               object: env))
         }
-
-      })
 
   }
 
@@ -483,8 +435,14 @@ extension ShellHookManager {
       // ZLE doesn't handle signals sent to shell, like control+c
       // So we need to manually force an update when the line changes
       DispatchQueue.main.async {
-        Autocomplete.update(with: ("", 0), for: hash)
+        Autocomplete.update(with: ("", 0), for: context.sessionID)
         Autocomplete.position()
+        
+        // manually trigger edit buffer update since `Autocomplete.update` is deprecated
+        API.notifications.post(Fig_EditBufferChangedNotification.with({ notification in
+          notification.buffer = ""
+          notification.cursor = 0
+        }))
       }
       KeypressProvider.shared.keyBuffer(for: hash).backedByShell = false
     }
@@ -544,12 +502,10 @@ extension ShellHookManager {
   }
 
   func updateKeybuffer(context: Local_ShellContext, text: String, cursor: Int, histno: Int) {
-    Logger.log(message: "Keybuffer update")
-    guard
-      let hash = attemptToFindToAssociatedWindow(
-        for: context.sessionID,
-        currentTopmostWindow: AXWindowServer.shared.whitelistedWindow)
-    else {
+    
+    // invariant: frontmost whitelisted window is assumed to host shell session which sent this edit buffer event.
+    let window = AXWindowServer.shared.whitelistedWindow
+    guard let hash = window?.hash else {
       Logger.log(
         message: "Could not link to window on new shell session.", priority: .notify,
         subsystem: .tty)
@@ -557,30 +513,16 @@ extension ShellHookManager {
     }
 
     var ttyHandler: TTY? = tty[hash]
-    
 
-    // stop process if user is definitely in a shell process
-    //      guard ttyHandler?.isShell != true else {
-    //        return
-    //      }
+    if ttyHandler == nil, let trimmedDescriptor = context.ttys.split(separator: "/").last {
 
-    if ttyHandler == nil,
-      let trimmedDescriptor = context.ttys.split(separator: "/").last
-    {
-      //        print("tty",  ?? "?")
-      //        print("tty", info.env?.jsonStringToDict()?["PID"] ?? "?")
-      //        ttyDescriptor.split(sep)
-      print("tty: linking")
+      Logger.log(message: "linking sessionId (\(context.sessionID)) to window hash: \(hash)", subsystem: .tty)
       ttyHandler = self.link(context.sessionID, hash, String(trimmedDescriptor))
 
       ttyHandler?.startedNewShellSession(for: context.pid)
 
     }
 
-    // prevents fig window from popping up if we don't have an associated shell process
-    //      guard let tty = tty[hash], tty.isShell ?? false else {
-    //        return
-    //      }
     guard let tty = ttyHandler else {
       return
     }
@@ -624,7 +566,7 @@ extension ShellHookManager {
 
     print("ZLE: \(text) \(cursor) \(histno)")
 
-    guard Defaults.loggedIn, Defaults.useAutocomplete else {
+    guard Defaults.shared.loggedIn, Defaults.shared.useAutocomplete else {
       return
     }
     API.notifications.post(
@@ -637,7 +579,7 @@ extension ShellHookManager {
         notification.sessionID = context.sessionID
       }))
     DispatchQueue.main.async {
-      Autocomplete.update(with: (text, cursor), for: hash)
+      Autocomplete.update(with: (text, cursor), for: context.sessionID)
       Autocomplete.position()
 
     }
@@ -715,60 +657,19 @@ extension ShellHookManager {
   fileprivate func attemptToFindToAssociatedWindow(
     for sessionId: SessionId, currentTopmostWindow: ExternalWindow? = nil
   ) -> ExternalWindowHash? {
+    
+    guard let session = TerminalSessionLinker.shared.getTerminalSession(for: sessionId) else {
+      Logger.log(message: "Could not find hash for sessionId '\(sessionId)'", subsystem: .tty)
 
-    if let hash = getWindowHash(for: sessionId) {
-      guard !validWindowHash(hash) else {
-        // the hash is valid and is linked to a session
-        Logger.log(message: "WindowHash '\(hash)' is valid", subsystem: .tty)
-
-        Logger.log(
-          message: "WindowHash '\(hash)' is linked to sessionId '\(sessionId)'", subsystem: .tty)
-        return hash
-
-      }
-
-      // hash exists, but is invalid (eg. should have tab component and it doesn't)
-
-      Logger.log(
-        message: "\(hash) is not a valid window hash, attempting to find previous value",
-        priority: .info, subsystem: .tty)
-
-      //            // clean up this out-of-date hash
-      //queue.async(flags:[.barrier]) {
-      self.sessions[hash] = nil
-      self.tty.removeValue(forKey: hash)
-      //}
-
-    }
-
-    // user had this terminal session up prior to launching Fig or has iTerm tab integration set up, which caused original hash to go stale (eg. 16356/ -> 16356/1)
-
-    // hash does not exist
-
-    // so, lets see if the top window is a supported terminal
-    guard let window = currentTopmostWindow else {
-      // no terminal window found or passed in, don't link!
-      Logger.log(
-        message: "No window included when attempting to link to TTY, don't link!", priority: .info,
-        subsystem: .tty)
       return nil
     }
-
-    let hash = window.hash
-    let sessionIdForWindow = getSessionId(for: hash)
-
-    guard sessionIdForWindow == nil else {
-      // a different session Id is already associated with window, don't link!
-      Logger.log(
-        message:
-          "A different session Id (\(sessionIdForWindow!) is already associated with window (\(hash)), don't link new session (\(sessionId)!",
-        priority: .info, subsystem: .tty)
-      return nil
-    }
-
+    
+    
+    let hash = session.generateLegacyWindowHash()
+    
     Logger.log(message: "Found WindowHash '\(hash)' for sessionId '\(sessionId)'", subsystem: .tty)
-    return hash
 
+    return hash
   }
 
   fileprivate func link(
@@ -805,15 +706,4 @@ extension ShellHookManager {
     return hash
   }
 
-  func validWindowHash(_ hash: ExternalWindowHash) -> Bool {
-    guard let components = hash.components() else { return false }
-    let windowHasNoTabs = (tabs[components.windowId] == nil && components.tab == nil)
-    let windowHasTabs = (tabs[components.windowId] != nil && components.tab != nil)
-    let windowHasNoPanes =
-      (panes["\(components.windowId)/\(components.tab ?? "")"] == nil && components.pane == nil)
-    let windowHasPanes =
-      (panes["\(components.windowId)/\(components.tab ?? "")"] != nil && components.pane != nil)
-    return (windowHasNoTabs && (windowHasNoPanes || windowHasPanes))
-      || (windowHasTabs && (windowHasNoPanes || windowHasPanes))
-  }
 }

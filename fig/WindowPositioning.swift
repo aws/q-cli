@@ -9,7 +9,7 @@
 import Cocoa
 import FigAPIBindings
 
-enum APIError: Error {
+enum APIError: Error, Equatable {
     case generic(message: String)
 }
 
@@ -157,7 +157,7 @@ class WindowPositioning {
 //    func namespace() -> String? {
 //        return "positioning"
 //    }
-//    
+//
 //    func handlers() -> [APIRequestHandler] {
 //        let frameParameters = [
 //            FigAPIParameter(key: "width", type: Int.self),
@@ -175,19 +175,19 @@ class WindowPositioning {
 //            setFrameHandler
 //        ]
 //    }
-//    
+//
 //    fileprivate func isValidFrame(payload: APIRequestPayload, callback: APICallback) {
 //        let width = payload["width"] as! Int
 //        let height = payload["height"] as! Int
 //        let anchorX = payload["anchorX"] as? Int
-//        
+//
 //        // Run code!
-//        
+//
 //        if let callback = callback {
 //            callback("hello")
 //        }
 //    }
-//    
+//
 //    fileprivate func setFrame(payload: APIRequestPayload, callback: APICallback) {
 //        print(payload)
 //    }

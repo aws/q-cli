@@ -35,26 +35,12 @@ class WindowManager : NSObject {
 
         self.windowServiceProvider = windowService
         super.init()
-
-        NotificationCenter.default.addObserver(self, selector: #selector(recievedDataFromPipe(_:)), name: .recievedDataFromPipe, object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(recievedStdoutFromTerminal(_:)), name: .recievedStdoutFromTerminal, object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(recievedUserInputFromTerminal(_:)), name: .recievedUserInputFromTerminal, object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(recievedDataFromPty(_:)), name: .recievedDataFromPty, object: nil)
         
         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(spaceChanged), name: NSWorkspace.activeSpaceDidChangeNotification, object: nil)
         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(activateApp), name: NSWorkspace.didActivateApplicationNotification, object: nil)
         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(deactivateApp), name: NSWorkspace.didDeactivateApplicationNotification, object: nil)
 
       NotificationCenter.default.addObserver(self, selector: #selector(windowChanged(_:)), name: WindowServer.whitelistedWindowDidChangeNotification, object: nil)
-
-        
-//        _ = Timer.scheduledTimer(timeInterval: 0.25, target: self, selector: #selector(updatePositionTimer), userInfo: nil, repeats: true)
-        
-            //var mouseDownPolling: Timer?
-//            NSEvent.addGlobalMonitorForEvents(matching: .any) { (event) in
-//                //self.updatePosition(for: .mouseDown)
-//                print(event)
-//            }
         
             NSEvent.addGlobalMonitorForEvents(matching: .leftMouseDown) { (event) in
                 self.updatePosition(for: .mouseDown)
@@ -212,32 +198,14 @@ class WindowManager : NSObject {
     
     }
     
-    func createSidebar() {
-        
-        if let sidebar = self.sidebar {
-            sidebar.close()
-            self.sidebar = nil
-        }
-        
-        let web = WebViewController()
-        web.webView?.defaultURL = nil
-        web.webView?.loadRemoteApp(at: Remote.baseURL.appendingPathComponent("sidebar"))
-        let companion = CompanionWindow(viewController: web)
-        companion.positioning = CompanionWindow.defaultPassivePosition
-        companion.repositionWindow(forceUpdate: true, explicit: true)
-        self.sidebar = companion
-        
-    }
-    
     func createAutocomplete() {
-        if let autocomplete = self.autocomplete {
-            autocomplete.orderOut(nil)
-            self.autocomplete = nil
+        guard self.autocomplete == nil else {
+          self.autocomplete?.webView?.loadAutocomplete()
+          return
         }
         
         let web = WebViewController()
         web.webView?.defaultURL = nil
-//        web.webView?.loadBundleApp("tutorial")
         
         web.webView?.loadAutocomplete()
         let companion = CompanionWindow(viewController: web)
@@ -323,176 +291,11 @@ class WindowManager : NSObject {
             NSRunningApplication(processIdentifier: target.app.processIdentifier)?.activate(options: .activateIgnoringOtherApps)
         }
     }
-}
-
-extension WindowManager : ShellBridgeEventListener {
-    func shellPromptWillReturn(_ notification: Notification) {
-        
-    }
-    
-    func startedNewTerminalSession(_ notification: Notification) {
-        
-    }
-    
-    func currentTabDidChange(_ notification: Notification) {
-        
-    }
-    
-    @objc func currentDirectoryDidChange(_ notification: Notification) {
-        
-    }
-    
-    @objc func recievedDataFromPty(_ notification: Notification) {
-      
-    }
-    
-    @objc func recievedUserInputFromTerminal(_ notification: Notification) {
-    }
-    
-    @objc func recievedStdoutFromTerminal(_ notification: Notification) {
-    
-    }
-    
-    @objc func recievedDataFromPipe(_ notification: Notification) {
-        // Prevent windows from being launched from CLI if the user hasn't signed in
-        guard Defaults.email != nil else {
-            SentrySDK.capture(message: "Attempting to run CLI command before signup")
-            Logger.log(message: "Attempting to run CLI command before signup")
-            return
-        }
-        
-//        NSRunningApplication.current.activate(options: .activateIgnoringOtherApps)
-        
-        let msg = (notification.object as! ShellMessage)
-        
-        // don't create new windows for background events
-        guard !(msg.options?.first ?? "").hasPrefix("bg:") else {
-            print("Handing background event elsewhere")
-            return
-        }
-        
-        DispatchQueue.main.async {
-
-            if let parent = self.windowServiceProvider.topmostWhitelistedWindow() {
-                
-//                if let nativeCommand = NativeCLICommand(rawValue: msg.options?.first ?? ""), !nativeCommand.openInNewWindow {
-//                    
-//                }
-
-                
-                if let companion = self.windows[parent], let web = companion.contentViewController as? WebViewController {
-                    self.windows[parent] = companion
-//                    companion.tetheredWindowId = parent.windowId
-                    companion.tetheredWindow = parent
-                    companion.delegate = self
-                    companion.sessionId = msg.session
-
-                    FigCLI.route(msg, webView: web.webView!, companionWindow: companion)
-                    companion.oneTimeUse = true
-                    
-                    if (companion.isVisible) {
-                        WindowServer.shared.takeFocus()
-                    }
-
-                } else {
-                    let web = WebViewController()
-                    web.webView?.defaultURL = nil
-
-                    let companion = self.windows[parent] ?? CompanionWindow(viewController: web)
-                    self.windows[parent] = companion
-//                    companion.tetheredWindowId = parent.windowId
-                    companion.tetheredWindow = parent
-                    companion.delegate = self
-                    companion.sessionId = msg.session
-                    
-                    companion.makeKeyAndOrderFront(nil)
-
-                    FigCLI.route(msg, webView: web.webView!, companionWindow: companion)
-                    companion.oneTimeUse = true 
-                    
-                    if (companion.isVisible) {
-                        WindowServer.shared.takeFocus()
-                    }
-                }
-            } else {
-                // check accessibility permissions
-                SentrySDK.capture(message: "Notify Accesibility Error in CLI")
-
-                FigCLI.notifyAccessibilityError(msg)
-            }
-        }
-    }
-    
+  
     func companionWindowForWindowId(_ id: CGWindowID) -> CompanionWindow {
         let pair = (self.windows.filter { $0.key.windowId == id}).first!
         return pair.value
     }
-}
-
-// Open WindowManager
-extension WindowManager {
-    func openCompanionWindow(from shell: ShellMessage) {
-        if let parent = self.windowServiceProvider.topmostWhitelistedWindow() {
-             
-             if let companion = self.windows[parent], let web = companion.contentViewController as? WebViewController {
-                 self.windows[parent] = companion
-//                 companion.tetheredWindowId = parent.windowId
-                 companion.tetheredWindow = parent
-                 companion.delegate = self
-
-                 FigCLI.route(shell, webView: web.webView!, companionWindow: companion)
-                 companion.oneTimeUse = true
-
-             } else {
-                 let web = WebViewController()
-                 web.webView?.defaultURL = nil
-
-                 let companion = self.windows[parent] ?? CompanionWindow(viewController: web)
-                 self.windows[parent] = companion
-//                 companion.tetheredWindowId = parent.windowId
-                 companion.tetheredWindow = parent
-                 companion.delegate = self
-
-                 companion.makeKeyAndOrderFront(nil)
-
-                 FigCLI.route(shell, webView: web.webView!, companionWindow: companion)
-                 companion.oneTimeUse = true
-
-                 
-             }
-        }
-    }
-    
-    func popupCompanionWindow(from navigationAction: WKNavigationAction, with configuration: WKWebViewConfiguration, frame: NSRect) -> WKWebView? {
-
-        
-        let web = WebViewController(configuration)
-        web.webView?.load(navigationAction.request)
-        web.webView?.defaultURL = nil
-
-        let companion = CompanionWindow(viewController: web)
-
-//        companion.tetheredWindowId = parent.windowId
-//        companion.tetheredWindow = parent
-
-        
-//        companion.setFrame(C, display: true, animate: false)
-        companion.oneTimeUse = true
-//        companion.isDocked = false
-        companion.configureWindow(for: CompanionWindow.defaultActivePosition)
-        companion.positioning = CompanionWindow.defaultActivePosition
-//        self.untether(window: companion)
-        companion.makeKeyAndOrderFront(nil)
-        companion.orderFrontRegardless()
-        companion.delegate = self
-
-        
-        return web.webView
-
-                    
-        
-    }
-
 }
 
 extension WindowManager : WindowManagementService {
@@ -506,7 +309,7 @@ extension WindowManager : WindowManagementService {
     func shouldAppear(window: CompanionWindow, explicitlyRepositioned: Bool) -> Bool {
         window.configureWindow(for: window.positioning)
         
-        if !Defaults.loggedIn {
+        if !Defaults.shared.loggedIn {
             print("shouldAppear: Not logged in")
             return false
         }
@@ -527,7 +330,7 @@ extension WindowManager : WindowManagementService {
         }
 
         if window.isAutocompletePopup {
-            guard !Defaults.debugAutocomplete else {
+            guard !Defaults.shared.debugAutocomplete else {
                 return true
             }
             if let max = window.maxHeight, max == 0 {
@@ -724,7 +527,7 @@ extension WindowManager : WindowManagementService {
             let maxWidth =  Settings.shared.getValue(forKey: Settings.autocompleteWidth) as? CGFloat
 
 
-            if (Defaults.debugAutocomplete) {
+            if (Defaults.shared.debugAutocomplete) {
                 WindowManager.shared.autocomplete?.maxHeight = heightLimit
                 WindowManager.shared.autocomplete?.backgroundColor = .red
               
@@ -737,7 +540,7 @@ extension WindowManager : WindowManagementService {
             let positioning = WindowPositioning.frameRelativeToCursor(currentScreenFrame: currentScreen?.frame ?? .zero,
                                                 currentWindowFrame: window.frame,
                                                 cursorRect: rect,
-                                                width: WindowManager.shared.autocomplete?.width ?? maxWidth ?? Defaults.autocompleteWidth ?? 200,
+                                                width: WindowManager.shared.autocomplete?.width ?? maxWidth ?? Defaults.shared.autocompleteWidth ?? 200,
                                                 height: WindowManager.shared.autocomplete?.maxHeight ?? 0,
                                                 anchorOffset: WindowManager.shared.autocomplete?.anchorOffsetPoint ?? .zero,
                                                 maxHeight: heightLimit)

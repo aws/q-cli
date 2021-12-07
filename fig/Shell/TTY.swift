@@ -39,7 +39,7 @@ struct proc {
   // Run cat /etc/shells
   var isShell: Bool {
     
-    return (Defaults.processWhitelist + ["zsh","fish","bash", "csh","dash","ksh","tcsh", "ssh", "docker", "tmux"]).reduce(into: false) { (res, shell) in
+    return (Defaults.shared.processWhitelist + ["zsh","fish","bash", "csh","dash","ksh","tcsh", "ssh", "docker", "tmux"]).reduce(into: false) { (res, shell) in
       res = res || cmd.contains(shell)
     }
   }
@@ -63,7 +63,7 @@ class TTY {
   var pty: PseudoTerminal? = nil
   var processes: [proc] {
     return ProcessStatus.getProcesses(for: self.descriptor).filter({ (process) -> Bool in
-      return !(Defaults.ignoreProcessList.contains(process.cmd) || Defaults.ignoreProcessList.contains(process.name))
+      return !(Defaults.shared.ignoreProcessList.contains(process.cmd) || Defaults.shared.ignoreProcessList.contains(process.name))
     }).reversed()
   }
   
@@ -144,7 +144,6 @@ class TTY {
   var isShell: Bool?
   var shell: proc?
   let integrations: [ String : CommandIntegration] = [
-                                                      SSHIntegration.command : SSHIntegration(),
                                                       DockerIntegration.command : DockerIntegration()
                                                      ]
   

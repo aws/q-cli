@@ -114,9 +114,12 @@ class IPC: UnixSocketServerDelegate {
     }
 
     let packetSize = Int64(bigEndian: packetSizeLittleEndian)
+    
+    guard packetSize <= rawBytes.count - IPC.Encoding.headerSize && packetSize >= 0 else {
+      return nil
+    }
 
-    let message = rawBytes.subdata(
-      in: IPC.Encoding.headerSize...IPC.Encoding.headerSize + Int(packetSize))
+    let message = rawBytes.subdata(in: IPC.Encoding.headerSize...IPC.Encoding.headerSize + Int(packetSize))
 
     switch encoding {
     case .binary:
@@ -170,7 +173,9 @@ class IPC: UnixSocketServerDelegate {
     case .command(let command):
       try handleCommand(command, from: socket, using: encoding)
     case .hook(let hook):
-      handleHook(hook)
+      DispatchQueue.main.async {
+        self.handleHook(hook)
+      }
     case .none:
       break
 
@@ -205,9 +210,17 @@ class IPC: UnixSocketServerDelegate {
     case .runInstallScript(_):
       response = CommandHandlers.runInstallScriptCommand()
     case .build(let request):
-      response = CommandHandlers.buildCommand(branch: request.branch)
+      response = CommandHandlers.buildCommand(build: request.branch)
     case .openUiElement(let request):
       response = CommandHandlers.openUiElement(uiElement: request.element)
+    case .resetCache(_):
+      response = CommandHandlers.resetCache()
+    case .debugMode(let request):
+      response = CommandHandlers.autocompleteDebugMode(
+        setVal: request.hasSetDebugMode ? request.setDebugMode : nil,
+        toggleVal: request.hasToggleDebugMode ? request.toggleDebugMode : nil)
+    case .promptAccessibility(_):
+      CommandHandlers.promptAccessibility()
     case .none:
       break
     }
@@ -223,32 +236,42 @@ class IPC: UnixSocketServerDelegate {
   func handleHook(_ message: Local_Hook) {
     Logger.log(message: "Recieved hook message!", subsystem: .unix)
     
-    #if DEBUG
-      let json = try? message.jsonString()
-      Logger.log(message: json ?? "Could not decode message", subsystem: .unix)
-    #endif
+    let json = try? message.jsonString()
+    Logger.log(message: json ?? "Could not decode message", subsystem: .unix)
     
     switch message.hook {
     case .editBuffer(let hook):
+      IPC.post(notification: .editBuffer, object: hook)
+
       ShellHookManager.shared.updateKeybuffer(
         context: hook.context,
         text: hook.text,
         cursor: Int(hook.cursor),
         histno: Int(hook.histno))
     case .init_p(let hook):
+      IPC.post(notification: .initialize, object: hook)
+
       ShellHookManager.shared.startedNewTerminalSession(
         context: hook.context,
         calledDirect: hook.calledDirect,
         bundle: hook.bundle,
         env: hook.env)
     case .prompt(let hook):
+      IPC.post(notification: .prompt, object: hook)
+
       ShellHookManager.shared.shellPromptWillReturn(context: hook.context)
     case .preExec(let hook):
+      IPC.post(notification: .preExec, object: hook)
+
       ShellHookManager.shared.shellWillExecuteCommand(context: hook.context)
-    case .postExec(_):
-      break
+    case .postExec(let hook):
+      IPC.post(notification: .postExec, object: hook)
+
+      API.notifications.post(hook.historyNotification)
     case .keyboardFocusChanged(let hook):
-      ShellHookManager.shared.currentTabDidChange(bundleIdentifier: hook.bundleIdentifier, sessionId: hook.focusedSessionID)
+      IPC.post(notification: .keyboardFocusChanged, object: hook)
+      
+      ShellHookManager.shared.currentTabDidChange(applicationIdentifier: hook.appIdentifier, sessionId: hook.focusedSessionID)
     case .tmuxPaneChanged(_):
       break
     case .openedSshConnection(_):

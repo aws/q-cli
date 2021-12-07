@@ -189,7 +189,7 @@ func RunBuildCommand(branch string) error {
 		NoResponse: &noResponse,
 		Command: &fig_proto.Command_Build{
 			Build: &fig_proto.BuildCommand{
-				Branch: branch,
+				Branch: &branch,
 			},
 		},
 	}
@@ -216,4 +216,89 @@ func RunOpenUiElementCommand(element fig_proto.UiElement) (string, error) {
 	}
 
 	return GetCommandResponseMessage(response)
+}
+
+func RunResetCacheCommand() error {
+	noResponse := true
+
+	cmd := fig_proto.Command{
+		NoResponse: &noResponse,
+		Command: &fig_proto.Command_ResetCache{
+			ResetCache: &fig_proto.ResetCacheCommand{},
+		},
+	}
+
+	if err := SendCommand(&cmd); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func ToggleDebugModeCommand() (string, error) {
+	toggle := true
+
+	cmd := fig_proto.Command{
+		Command: &fig_proto.Command_DebugMode{
+			DebugMode: &fig_proto.DebugModeCommand{
+				ToggleDebugMode: &toggle,
+			},
+		},
+	}
+
+	response, err := SendRecvCommand(&cmd)
+	if err != nil {
+		return "", err
+	}
+
+	return GetCommandResponseMessage(response)
+}
+
+func SetDebugModeCommand(debugMode bool) (string, error) {
+	cmd := fig_proto.Command{
+		Command: &fig_proto.Command_DebugMode{
+			DebugMode: &fig_proto.DebugModeCommand{
+				SetDebugMode: &debugMode,
+			},
+		},
+	}
+
+	response, err := SendRecvCommand(&cmd)
+	if err != nil {
+		return "", err
+	}
+
+	return GetCommandResponseMessage(response)
+}
+
+func GetDebugModeCommand() (string, error) {
+	cmd := fig_proto.Command{
+		Command: &fig_proto.Command_DebugMode{
+			DebugMode: &fig_proto.DebugModeCommand{},
+		},
+	}
+
+	response, err := SendRecvCommand(&cmd)
+	if err != nil {
+		return "", err
+	}
+
+	return GetCommandResponseMessage(response)
+}
+
+func PromptAccessibilityCommand() error {
+	noResponse := true
+
+	cmd := fig_proto.Command{
+		NoResponse: &noResponse,
+		Command: &fig_proto.Command_PromptAccessibility{
+			PromptAccessibility: &fig_proto.PromptAccessibilityCommand{},
+		},
+	}
+
+	if err := SendCommand(&cmd); err != nil {
+		return err
+	}
+
+	return nil
 }

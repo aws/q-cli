@@ -133,7 +133,7 @@ class UpdateService: NSObject {
   fileprivate let configUpdateAvailableKey = "NEW_VERSION_AVAILABLE"
   fileprivate func notifyShellOfUpdateStatus() {
     let value = self.updateIsAvailable ? self.updateVersion ?? "???" : nil
-    Config.set(value: value, forKey: configUpdateAvailableKey)
+      Config.shared.set(value: value, forKey: configUpdateAvailableKey)
   }
 
   func installUpdateIfAvailible() {

@@ -13,12 +13,12 @@ autoload -U +X add-zle-hook-widget
 function fig_zsh_keybuffer() { 
   if (( PENDING || KEYS_QUEUED_COUNT )); then
     if (( ! ${+_fig_redraw_fd} )); then
-    typeset -gi _fig_redraw_fd
-    if sysopen -o cloexec -ru _fig_redraw_fd /dev/null; then
-      zle -F $_fig_redraw_fd fig_zsh_redraw
-    else
-      unset _fig_redraw_fd
-    fi
+      typeset -gi _fig_redraw_fd
+      if sysopen -o cloexec -ru _fig_redraw_fd /dev/null; then
+        zle -F $_fig_redraw_fd fig_zsh_redraw
+      else
+        unset _fig_redraw_fd
+      fi
     fi
   else
     fig_zsh_redraw
@@ -33,11 +33,11 @@ function fig_zsh_redraw() {
   fi
 
   # Redirect to /dev/null to avoid printing escape sequences
-  fig bg:zsh-keybuffer "${TERM_SESSION_ID}" "${FIG_INTEGRATION_VERSION}" "${TTY}" "$$" "${HISTNO}" "${CURSOR}" "$BUFFER" 2>&1 >/dev/null
+  fig hook editbuffer "${TERM_SESSION_ID}" "${FIG_INTEGRATION_VERSION}" "${TTY}" "$$" "${HISTNO}" "${CURSOR}" "$BUFFER" 2>&1 >/dev/null
 }
 
 function fig_hide() { 
-  command -v fig 2>"$HOME"/.fig/logs/zsh.log 1>/dev/null && fig bg:hide 2>&1 1>/dev/null
+  command -v fig 2>>"$HOME"/.fig/logs/zsh.log 1>/dev/null && fig hook hide 2>&1 1>/dev/null
 }
 
 # Hint: to list all special widgets, run `add-zle-hook-widget -L`
@@ -45,7 +45,10 @@ function fig_hide() {
 # Delete any widget, if it already exists
 add-zle-hook-widget line-pre-redraw fig_zsh_keybuffer
 
-add-zle-hook-widget line-init fig_zsh_keybuffer
+# Workaround for zim crash
+if [[ -z "$ZIM_HOME" ]]; then
+  add-zle-hook-widget line-init fig_zsh_keybuffer
+fi
 
 # Hide when going through history (see also: histno logic in ShellHooksManager.updateKeybuffer)
 add-zle-hook-widget history-line-set fig_hide

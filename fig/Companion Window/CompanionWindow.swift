@@ -16,7 +16,7 @@ extension Notification.Name {
 }
 
 class CompanionWindow : NSWindow, NSWindowDelegate {
-    static let defaultActivePosition: OverlayPositioning = Defaults.defaultActivePosition
+    static let defaultActivePosition: OverlayPositioning = Defaults.shared.defaultActivePosition
     static let defaultPassivePosition: OverlayPositioning = .sidebar
         
     var floatingWindowLevel: NSWindow.Level {
@@ -589,7 +589,7 @@ class CompanionWindow : NSWindow, NSWindowDelegate {
             let mouseDown = (NSEvent.pressedMouseButtons & (1 << 0)) != 0;
             print("mouseDown \(mouseDown)")
 
-            if (!Defaults.shouldTrackTargetWindow) {
+            if (!Defaults.shared.shouldTrackTargetWindow) {
                 guard shouldTrackWindow else { return }
                 if (!forceUpdate && !targetFrame.equalTo(priorTargetFrame) && mouseDown) {
                     self.animationBehavior = .utilityWindow

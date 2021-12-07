@@ -29,6 +29,9 @@ message Command {
 		RunInstallScriptCommand run_install_script = 109;
 		BuildCommand build = 110;
 		OpenUiElementCommand open_ui_element = 111;
+		ResetCacheCommand reset_cache = 112;
+		DebugModeCommand debug_mode = 113;
+		PromptAccessibilityCommand prompt_accessibility = 114;
 	}
 }
 
@@ -87,7 +90,7 @@ message RestartSettingsListenerCommand {}
 message RunInstallScriptCommand {}
 
 message BuildCommand {
-	string branch = 1;
+	optional string branch = 1;
 }
 
 enum UiElement {
@@ -98,6 +101,15 @@ enum UiElement {
 message OpenUiElementCommand {
 	UiElement element = 1;
 }
+
+message ResetCacheCommand {}
+
+message DebugModeCommand {
+	optional bool set_debug_mode = 1; // Set debug mode to true or false
+	optional bool toggle_debug_mode = 2; // Toggle debug mode
+}
+
+message PromptAccessibilityCommand {}
 
 // == Hooks ==
 message ShellContext {
@@ -137,7 +149,7 @@ message PromptHook {
 message PreExecHook {
 	ShellContext context = 1;
 
-	string command = 2; // the full command that was run in the shell
+	optional string command = 2; // the full command that was run in the shell
 }
 
 message PostExecHook {
@@ -148,7 +160,7 @@ message PostExecHook {
 }
 
 message KeyboardFocusChangedHook {
-	string bundle_identifier = 1;
+	string app_identifier = 1;
 	string focused_session_id = 2; // a unique identifier associated with the pane or tab that is currently focused
 }
 
@@ -199,18 +211,25 @@ message TerminalIntegrationsListResponse {
 }
 
 message DiagnosticsResponse {
-	string path_to_bundle = 1;
-	string accessibility = 2;
-	string keypath = 3;
-	string docker = 4;
-	string symlinked = 5;
-	string onlytab = 6;
-	string installscript = 7;
-	string psudopath = 8;
-	string securekeyboard = 9;
-	string securekeyboard_path = 10;
-	string current_process = 11;
-	string current_window_identifier = 12;
+	string distribution = 1;
+	bool beta = 2;
+	bool debug_autocomplete = 3;
+	bool developer_mode_enabled = 4;
+	string current_layout_name = 5;
+	bool is_running_on_read_only_volume = 6;
+	string path_to_bundle = 7;
+	string accessibility = 8;
+	string keypath = 9;
+	string docker = 10;
+	string symlinked = 11;
+	string onlytab = 12;
+	string installscript = 13;
+	string psudoterminal_path = 14;
+	string securekeyboard = 15;
+	string securekeyboard_path = 16;
+	string current_process = 17;
+	string current_window_identifier = 18;
+	bool autocomplete = 19;
 }
 
 message CommandResponse {

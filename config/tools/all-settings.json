@@ -127,32 +127,6 @@
     "category": "Autocomplete"
   },
   {
-    "settingName": "autocomplete.enter",
-    "title": "Enter Behavior",
-    "description": "Set the behavior of the enter key.",
-    "type": "single_select",
-    "options": ["insert", "ignore"],
-    "default": "insert",
-    "category": "Autocomplete"
-  },
-  {
-    "settingName": "autocomplete.tab",
-    "title": "Tab Behavior",
-    "description": "Set the behavior of the tab key.",
-    "type": "single_select",
-    "default": "shake",
-    "options": [
-      { "name": "shake", "descrition": "Insert matching prefix or shake" },
-      { "name": "insert", "description": "Insert immediately" },
-      {
-        "name": "insertOrPrefix",
-        "description": "Insert matching prefix or selected suggestion."
-      },
-      { "name": "navigate", "decription": "Navigate" }
-    ],
-    "category": "Autocomplete"
-  },
-  {
     "settingName": "autocomplete.height",
     "title": "Window Height",
     "description": "Set the height of the autocomplete window in pixels.",
@@ -177,6 +151,14 @@
     "type": "boolean",
     "default": false,
     "details": "This currently does not support the tab autocomplete underlining that prefix search has",
+    "category": "Autocomplete"
+  },
+  {
+    "settingName": "autocomplete.personalShortcutsToken",
+    "title": "Personal Shortcuts Token",
+    "description": "Change the token used to trigger personal shortcuts.",
+    "type": "text",
+    "default": "+",
     "category": "Autocomplete"
   },
   {
@@ -328,11 +310,19 @@
     "default": "toggleHistoryMode"
   },
   {
-    "settingName": "autocomplete.keybindings.control+shift+=",
+    "settingName": "autocomplete.keybindings.command+=",
     "default": "increaseSize"
   },
   {
-    "settingName": "autocomplete.keybindings.control+shift+-",
+    "settingName": "autocomplete.keybindings.command+-",
     "default": "decreaseSize"
+  },
+  {
+    "settingName": "cli.tips.disabled",
+    "title": "Disable terminal tips",
+    "description": "Disables the tips from appearing at the top of your terminal on start.",
+    "type": "boolean",
+    "default": false,
+    "commonlyUsed": true
   }
 ]

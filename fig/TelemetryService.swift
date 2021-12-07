@@ -85,9 +85,9 @@ class TelemetryProvider: TelemetryService {
         
         body = TelemetryProvider.addDefaultProperties(to: body)
         body["event"] = event
-        body["userId"] = Defaults.uuid
+        body["userId"] = Defaults.shared.uuid
       
-        if Defaults.telemetryDisabled {
+        if Defaults.shared.telemetryDisabled {
           let eventsToSendEvenWhenDisabled: [TelemetryEvent] = [.telemetryToggled]
           let sendEvent = eventsToSendEvenWhenDisabled.reduce(false, { (ignore, whitelistedEvent) -> Bool in
             return ignore || whitelistedEvent.rawValue == event
@@ -112,9 +112,9 @@ class TelemetryProvider: TelemetryService {
             body = traits
         }
         
-        body["userId"] = Defaults.uuid
+        body["userId"] = Defaults.shared.uuid
       
-        if Defaults.telemetryDisabled && !shouldIgnoreTelemetryPreferences {
+        if Defaults.shared.telemetryDisabled && !shouldIgnoreTelemetryPreferences {
             print("telemetry: not sending identification event because telemetry is diabled")
            return
         }
@@ -124,12 +124,12 @@ class TelemetryProvider: TelemetryService {
     
     static func alias(userId: String?) {
       
-        if Defaults.telemetryDisabled {
+        if Defaults.shared.telemetryDisabled {
             print("telemetry: not sending identification event because telemetry is diabled")
            return
         }
       
-        upload(to: "alias", with: ["previousId" : Defaults.uuid, "userId": userId ?? ""])
+        upload(to: "alias", with: ["previousId" : Defaults.shared.uuid, "userId": userId ?? ""])
     }
     
     fileprivate static func upload(to endpoint: String, with body:  Dictionary<String, String>, completion: ((Data?, URLResponse?, Error?) -> Void)? = nil) {
@@ -160,14 +160,14 @@ class TelemetryProvider: TelemetryService {
     }
     
     fileprivate static func addDefaultProperties(to properties: Dictionary<String, String>, prefixedWith prefix: String = "prop_") -> Dictionary<String, String> {
-        let email = Defaults.email ?? ""
+        let email = Defaults.shared.email ?? ""
         let domain = String(email.split(separator: "@").last ?? "unregistered")
         let os = ProcessInfo.processInfo.operatingSystemVersion
 
         return properties.merging([
                                     "\(prefix)domain" : domain,
                                     "\(prefix)email" : email,
-                                    "\(prefix)version" : Defaults.version,
+                                    "\(prefix)version" : Defaults.shared.version,
                                     "\(prefix)os" :  "\(os.majorVersion).\(os.minorVersion).\(os.patchVersion)",
                                     ]) { $1 }
     }
@@ -221,8 +221,8 @@ extension TelemetryProvider : LocalTelemetryService {
         Logger.log(message: "showAutocompletePopup")
         self.store(event: .showAutocompletePopup)
         
-        if (!Defaults.hasShownAutocompletePopover) {
-            Defaults.hasShownAutocompletePopover = true
+        if (!Defaults.shared.hasShownAutocompletePopover) {
+            Defaults.shared.hasShownAutocompletePopover = true
             TelemetryProvider.track(event: .firstAutocompletePopup, with: [:])
         }
     }

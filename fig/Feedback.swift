@@ -13,7 +13,7 @@ class Feedback {
         if let response = Feedback.prompt(title: "Feedback on Fig?",
                                           question: "Please let us know about any issues you have been running into or if there is anything we can do to improve the experience.",
                                           defaultText: placeholder) {
-            let body = [ "email" : Defaults.email ?? "unknown", "text" : response, "via": source]
+            let body = [ "email" : Defaults.shared.email ?? "unknown", "text" : response, "via": source]
             upload(to: "feedback",
                    with: body)
         }

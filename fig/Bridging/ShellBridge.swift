@@ -48,11 +48,7 @@ extension Notification.Name {
 
 class ShellBridge {
     static let shared = ShellBridge()
-  let socketServer: WebSocketServer = WebSocketServer.bridge()
     
-    var pty: HeadlessTerminal = HeadlessTerminal(onEnd: { (code) in
-        print("Exit")
-    })
     var rawOutput = ""
     var streamHandlers: Set<String> = []
     var executeHandlers: Set<String> = []
@@ -63,94 +59,11 @@ class ShellBridge {
     init() {
         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(setPreviousApplication(notification:)), name: NSWorkspace.didDeactivateApplicationNotification, object: nil)
         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(spaceChanged), name: NSWorkspace.activeSpaceDidChangeNotification, object: nil)
-        
-//        startPty(env: [:])
-//        streamInPty(command: "sftp mschrage_mschrage-static@ssh.phx.nearlyfreespeech.net", handlerId: "abcde")
-//        executeInPty(command: "ls -1aF", handlerId: "abcdef")
-//        let term = HeadlessTerminal { (exit) in
-//            print("Exit:\(exit)")
-//        }
-//        term.process.debugIO = true
-//
-//        term.process.startProcess(executable: "/bin/zsh", args: [], environment: nil)
-//
-//        term.send("ls -1aF\r\n")
-//        term.send("\n\n")
-//        term.send("ms\r")
-//        Timer.delayWithSeconds(1) {
-//           
-//            Timer.delayWithSeconds(10) {
-//                term.send("ls\r")
-//
-//            }
-//        }
-
-//        kill(term.process.shellPid, SIGTERM)
-
-//        term.send("pwd\r")
-//        term.send("cd ~\r")
-//        term.send("pwd\r")
-//        term.send(data: [0x3])
-//        term.send(data: [0x4])
-
-        
-
-//        term.process.processTerminated()
-//        signal(SIGTERM) { (<#Int32#>) in
-//            <#code#>
-//        }
-
-
-//        term.process.processTerminated()
-
-
-
-        // start Python server script 
-//        "python3 /path/to/executable/fig.py utils:ws-start".runAsCommand()
         self.startWebSocketServer()
-
-
-    }
-    
-    func startPty(env: [String: String]) {
-//        if (pty.process.running) {
-//            print("Closing old PTY...")
-//            streamHandlers = []
-//            executeHandlers = []
-//            pty.send(data: [0x4])
-//            kill(pty.process.shellPid, SIGTERM)
-//            return
-//        }
-        print("Start PTY")
-
-        let shell = env["SHELL"] ?? "/bin/sh"
-        let rawEnv = env.reduce([]) { (acc, elm) -> [String] in
-            let (key, value) = elm
-            return acc + ["\(key)=\(value)"]
-        }
-        
-        pty.process.startProcess(executable: shell, args: [], environment: rawEnv.count == 0 ? nil : rawEnv)
-        pty.process.delegate = self
-        pty.send("unset HISTFILE\r")
     }
     
     let executeDelimeter = "-----------------"
-    func executeInPty(command: String, handlerId:String) {
-        executeHandlers.insert(handlerId)
-        let cmd = "printf \"<<<\" ; echo \"\(executeDelimeter)\(handlerId)\(executeDelimeter)\" ; \(command) ; echo \"\(executeDelimeter)\(handlerId)\(executeDelimeter)>>>\"\r"
-        pty.send(cmd)
-        print("Execute PTY command: \(command)")
-
-    }
-
     let streamDelimeter = "================="
-    func streamInPty(command: String, handlerId:String) {
-//        streamHandlers.insert(handlerId)
-        let cmd = "printf \"<<<\" ; echo \"\(streamDelimeter)\(handlerId)\(streamDelimeter)\" ; \(command) ; echo \"\(streamDelimeter)\(handlerId)\(streamDelimeter)>>>\"\r"
-        pty.send(cmd)
-        print("Stream PTY command: \(command)")
-
-    }
     
     //http://www.physics.udel.edu/~watson/scen103/ascii.html
     enum ControlCode : String {
@@ -158,39 +71,6 @@ class ShellBridge {
         case EOT = "^D"
         case ETX = "^C"
         
-    }
-    func writeInPty(command: String, control: ControlCode? = nil) {
-        
-        if let code = control {
-            print("Write PTY controlCode: \(code.rawValue)")
-            switch code {
-            case .EOT:
-                pty.send(data: [0x4])
-            case .ETX:
-                pty.send(data: [0x3])
-            }
-        } else {
-            print("Write PTY command: \(command)")
-            pty.send("\(command)\r")
-        }
-
-    }
-    
-    func closePty() {
-        streamHandlers = []
-        executeHandlers = []
-        if (pty.process.running) {
-            pty.send(data: [0x4])
-            pty.send(data: [0x4])
-            pty.send(data: [0x4])
-            pty.send(data: [0x4])
-            pty.send(data: [0x4])
-            pty.send(data: [0x4])
-            pty.send(data: [0x4])
-            pty.send(data: [0x4])
-
-            kill(pty.process.shellPid, SIGTERM)
-        }
     }
     
     func startWebSocketServer() {
@@ -309,7 +189,7 @@ class ShellBridge {
     
     fileprivate static func inject(_ cmd: String,
                             runImmediately: Bool = false,
-                            clearLine: Bool = Defaults.clearExistingLineOnTerminalInsert,
+                            clearLine: Bool = Defaults.shared.clearExistingLineOnTerminalInsert,
                             completion: (() -> Void)? = nil) {
         // Frontmost application will recieve the keystrokes, make sure it's the appropriate app!
       
@@ -352,7 +232,7 @@ class ShellBridge {
         if let window = AXWindowServer.shared.whitelistedWindow,
           KeypressProvider.shared.keyBuffer(for: window).backing == .zle {
           ZLEIntegration.insert(with: insertion,
-                                version: String(window.tty?.shellIntegrationVersion ?? 0))
+                                version: String(window.associatedShellContext?.integrationVersion ?? 0))
           return
         }
         
@@ -364,7 +244,7 @@ class ShellBridge {
   
     static func injectStringIntoTerminal(_ cmd: String,
                                          runImmediately: Bool = false,
-                                         clearLine: Bool = Defaults.clearExistingLineOnTerminalInsert,
+                                         clearLine: Bool = Defaults.shared.clearExistingLineOnTerminalInsert,
                                          completion: (() -> Void)? = nil) {
         
       guard let window = AXWindowServer.shared.whitelistedWindow else {
@@ -372,8 +252,7 @@ class ShellBridge {
       }
       
       
-      let version = window.tty?.shellIntegrationVersion
-      print(version)
+      let version = window.associatedShellContext?.integrationVersion
       let figTermInstanceSupportsInserts = version ?? 0 >= 5
       
       let backing = KeypressProvider.shared.keyBuffer(for: window).backing
@@ -393,7 +272,7 @@ class ShellBridge {
         Logger.log(message: "Insert effected by xtermjs bug! Showing alert...")
 
         //
-//        guard !Defaults.promptedToRestartDueToXtermBug else {
+//        guard !Defaults.shared.promptedToRestartDueToXtermBug else {
 //          Logger.log(message: "Not inserting due to xterm.js bug...")
 //          return
 //        }
@@ -412,7 +291,7 @@ class ShellBridge {
           restarter.restart()
         }
         
-        Defaults.promptedToRestartDueToXtermBug = true
+        Defaults.shared.promptedToRestartDueToXtermBug = true
 
       } else {
         Logger.log(message: "Inserting '\(cmd)' using keyboard")
@@ -625,74 +504,6 @@ struct ShellMessage: Codable {
        return version
     }
 
-}
-
-extension ShellBridge : LocalProcessDelegate {
-    func processTerminated(_ source: LocalProcess, exitCode: Int32?) {
-        print("Exited...\(exitCode ?? 0)")
-    }
-    
-    func dataReceived(slice: ArraySlice<UInt8>) {
-        
-        let data = String(bytes: slice, encoding: .utf8) ?? ""
-        print(data)
-        
-        
-        for handle in streamHandlers {
-            var ping = ""
-            let header = data.components(separatedBy: "<<<\(streamDelimeter)\(handle)\(streamDelimeter)")
-            if header.count == 2 {
-                ping += header[1]
-            } else {
-                ping = data
-            }
-            
-            let tail = ping.components(separatedBy: "\(streamDelimeter)\(handle)\(streamDelimeter)>>>")
-            
-            if tail.count == 2 {
-                ping = tail[0]
-                streamHandlers.remove(handle)
-                rawOutput = ""
-            }
-            
-            print(handle, ping)
-            let msg = PtyMessage(type: "stream", handleId: handle, output: ping)
-            NotificationCenter.default.post(name: .recievedDataFromPty, object: msg)
-            
-            
-        }
-        
-        if let streamCandidate = data.groups(for:"<<<\(streamDelimeter)(.*?)\(streamDelimeter)")[safe: 0] {
-            streamHandlers.insert(streamCandidate[1])
-        }
-        
-        rawOutput += data
-
-        for handle in executeHandlers {
-            let groups = rawOutput.groups(for: "(?s)<<<\(executeDelimeter)\(handle)\(executeDelimeter)(.*?)\(executeDelimeter)\(handle)\(executeDelimeter)>>>")
-            
-            if let group = groups[safe: 0], let output = group.last {
-                executeHandlers.remove(handle)
-                rawOutput = ""
-                print(handle, output)
-                let msg = PtyMessage(type: "execute", handleId: handle, output: output)
-                NotificationCenter.default.post(name: .recievedDataFromPty, object: msg)
-
-            }
-
-        }
-        
-
-
-        
-//        print(data)
-    }
-        
-    func getWindowSize() -> winsize {
-        return winsize(ws_row: UInt16(60), ws_col: UInt16(50), ws_xpixel: UInt16 (16), ws_ypixel: UInt16 (16))
-    }
-    
-    
 }
 
 extension Timer {

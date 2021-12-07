@@ -13,19 +13,21 @@ class CommandHandlers {}
 
 extension CommandHandlers {
   static func logoutCommand() -> CommandResponse {
-    let domain = Bundle.main.bundleIdentifier!
-    let uuid = Defaults.uuid
-    UserDefaults.standard.removePersistentDomain(forName: domain)
-    UserDefaults.standard.removePersistentDomain(forName: "\(domain).shared")
+    DispatchQueue.main.async {
+      let domain = Bundle.main.bundleIdentifier!
+      let uuid = Defaults.shared.uuid
+      UserDefaults.standard.removePersistentDomain(forName: domain)
+      UserDefaults.standard.removePersistentDomain(forName: "\(domain).shared")
 
-    UserDefaults.standard.synchronize()
+      UserDefaults.standard.synchronize()
 
-    UserDefaults.standard.set(uuid, forKey: "uuid")
-    UserDefaults.standard.synchronize()
+      UserDefaults.standard.set(uuid, forKey: "uuid")
+      UserDefaults.standard.synchronize()
 
-    WebView.deleteCache()
+      WebView.deleteCache()
 
-    Config.set(value: "0", forKey: "FIG_LOGGED_IN")
+      Config.shared.set(value: "0", forKey: "FIG_LOGGED_IN")
+    }
 
     return CommandResponse.with { response in
       response.success = Local_SuccessResponse.with({ success in
@@ -35,28 +37,38 @@ extension CommandHandlers {
   }
 
   static func quitCommand() {
-    NSApp.appDelegate.quit()
+    DispatchQueue.main.async {
+      NSApp.appDelegate.quit()
+    }
   }
 
   static func restartCommand() {
-    NSApp.appDelegate.restart()
-  }
-  
-  static func updateCommand(_ force: Bool = false) {
     DispatchQueue.main.async {
-      if force {
-        if UpdateService.provider.updateIsAvailable {
-          UpdateService.provider.installUpdateIfAvailible()
-        }
-      } else {
-        UpdateService.provider.checkForUpdates(nil)
-      }
+      NSApp.appDelegate.restart()
     }
+  }
+
+  static func updateCommand(_ force: Bool = false) {
+      DispatchQueue.main.async {
+        if force {
+          if UpdateService.provider.updateIsAvailable {
+            UpdateService.provider.installUpdateIfAvailible()
+          }
+        } else {
+          UpdateService.provider.checkForUpdates(nil)
+        }
+      }
   }
   
   static func diagnosticsCommand() -> CommandResponse {
-    Logger.log(message: "Diagnostics ran")
-    return CommandResponse.with { response in
+    var response = CommandResponse.init()
+    DispatchQueue.main.sync {
+      response.diagnostics.distribution = Diagnostic.distribution
+      response.diagnostics.beta = Defaults.shared.beta
+      response.diagnostics.debugAutocomplete = Defaults.shared.debugAutocomplete
+      response.diagnostics.developerModeEnabled = Defaults.shared.developerModeEnabled
+      response.diagnostics.currentLayoutName = KeyboardLayout.shared.currentLayoutName() ?? ""
+      response.diagnostics.isRunningOnReadOnlyVolume = Diagnostic.isRunningOnReadOnlyVolume
       response.diagnostics.pathToBundle = Diagnostic.pathToBundle
       response.diagnostics.accessibility = String(Accessibility.enabled)
       response.diagnostics.keypath = Diagnostic.keybindingsPath ?? "<none>"
@@ -67,9 +79,11 @@ extension CommandHandlers {
       response.diagnostics.securekeyboardPath = Diagnostic.blockingProcess ?? "<none>"
       response.diagnostics.currentWindowIdentifier = Diagnostic.descriptionOfTopmostWindow
       response.diagnostics.currentProcess = "\(Diagnostic.processForTopmostWindow) (\(Diagnostic.processIdForTopmostWindow)) - \(Diagnostic.ttyDescriptorForTopmostWindow)"
-      response.diagnostics.onlytab = String(Defaults.onlyInsertOnTab)
-      response.diagnostics.psudopath = Diagnostic.pseudoTerminalPath ?? "<generated dynamically>"
+      response.diagnostics.onlytab = String(Defaults.shared.onlyInsertOnTab)
+      response.diagnostics.psudoterminalPath = Diagnostic.pseudoTerminalPath ?? "<generated dynamically>"
+      response.diagnostics.autocomplete = Defaults.shared.useAutocomplete
     }
+    return response
   }
   
   static func displayReportWindow(message: String, path: String?, figEnvVar: String?, terminal: String?) {
@@ -109,13 +123,16 @@ extension CommandHandlers {
   
   static func buildCommand(build: String?) -> CommandResponse {
     if let buildMode = Build(rawValue: build ?? "") {
-      Defaults.build = buildMode
+      DispatchQueue.main.async {
+        Defaults.shared.build = buildMode
+      }
+      
       return CommandResponse.with { response in
         response.success.message = buildMode.rawValue;
       }
     } else {
       return CommandResponse.with { response in
-        response.success.message = Defaults.build.rawValue;
+        response.success.message = Defaults.shared.build.rawValue;
       }
     }
   }
@@ -136,17 +153,6 @@ extension CommandHandlers {
     return CommandResponse.with { response in
       response.success.message = "running installation script"
     }
-  }
-  
-  static func buildCommand(branch: String?) -> CommandResponse? {
-    if let buildMode = Build(rawValue: branch ?? "") {
-        Defaults.build = buildMode
-    } else {
-      return CommandResponse.with { response in
-        response.success.message = Defaults.build.rawValue
-      }
-    }
-    return nil
   }
   
   static func openUiElement(uiElement: Local_UiElement) -> CommandResponse {
@@ -179,6 +185,36 @@ extension CommandHandlers {
       return CommandResponse.with { response in
         response.error.message = "unknown ui element \(int)"
       }
+    }
+  }
+  
+  static func resetCache() -> CommandResponse {
+    DispatchQueue.main.async {
+      WebView.deleteCache()
+    }
+
+    return CommandResponse.with { response in
+      response.success.message = "reset cache"
+    }
+  }
+  
+  static func autocompleteDebugMode(setVal: Bool?, toggleVal: Bool?) -> CommandResponse {
+    DispatchQueue.main.sync {
+      if let val = setVal {
+        Defaults.shared.debugAutocomplete = val
+      } else if case true = toggleVal {
+        Defaults.shared.debugAutocomplete = !Defaults.shared.debugAutocomplete
+      }
+    }
+    
+    return CommandResponse.with { response in
+      response.success.message = Defaults.shared.debugAutocomplete ? "on" : "off"
+    }
+  }
+  
+  static func promptAccessibility() {
+    DispatchQueue.main.async {
+      Accessibility.promptForPermission()
     }
   }
 }

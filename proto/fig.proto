@@ -26,6 +26,10 @@ message ClientOriginatedMessage {
       OnboardingRequest onboarding_request = 118;
       WindowFocusRequest window_focus_request = 119;
       OpenInExternalApplicationRequest open_in_external_application_request = 120;
+      GetConfigPropertyRequest get_config_property_request = 121;
+      UpdateConfigPropertyRequest update_config_property_request = 122;
+      PseudoterminalRestartRequest pseudoterminal_restart_request = 123;
+
 
   }
 }
@@ -44,6 +48,7 @@ message ServerOriginatedMessage {
     GetSettingsPropertyResponse get_settings_property_response = 104;
     DestinationOfSymbolicLinkResponse destination_of_symbolic_link_response = 105;
     GetDefaultsPropertyResponse get_defaults_property_response = 106;
+    GetConfigPropertyResponse get_config_property_response = 107;
 
     Notification notification = 1000;
   }
@@ -165,6 +170,8 @@ message PseudoterminalExecuteResponse {
   optional int32 exitCode = 3; 
 }
 
+message PseudoterminalRestartRequest {}
+
 message PositionWindowRequest {
   Point anchor = 1;
   Size size = 2;
@@ -236,6 +243,21 @@ message GetDefaultsPropertyResponse {
 message UpdateDefaultsPropertyRequest {
   optional string key = 1;
   optional DefaultsValue value = 2;
+}
+
+/// Config
+
+message GetConfigPropertyRequest {
+  optional string key = 1;
+}
+
+message GetConfigPropertyResponse {
+  optional string value = 1;
+}
+
+message UpdateConfigPropertyRequest {
+  optional string key = 1;
+  optional string value = 2;
 }
 
 
@@ -346,6 +368,8 @@ enum NotificationType {
   NOTIFY_ON_PROCESS_CHANGED = 5;
   NOTIFY_ON_KEYBINDING_PRESSED = 6;
   NOTIFY_ON_FOCUS_CHANGED = 7;
+  NOTIFY_ON_HISTORY_UPDATED = 8;
+
 }
 
 message Notification {
@@ -357,6 +381,8 @@ message Notification {
     ProcessChangedNotification process_change_notification= 5;
     KeybindingPressedNotification keybinding_pressed_notification = 6;
     WindowFocusChangedNotification window_focus_changed_notification = 7;
+    HistoryUpdatedNotification history_updated_notification = 8;
+
   }
 }
 
@@ -394,6 +420,16 @@ message KeybindingPressedNotification {
 
 message WindowFocusChangedNotification {
   optional Window window = 1;
+}
+
+message HistoryUpdatedNotification {
+  optional string command = 1;
+  optional string process_name = 2; // the name of the process
+  optional string current_working_directory = 3; // the directory where the user ran the command
+  optional string session_id = 4; // the value of $TERM_SESSION_ID
+  optional string hostname = 5;
+  optional int32 exit_code = 6; // the exit code of the command
+
 }
 
 /// Constants
