@@ -114,8 +114,7 @@ class Diagnostic {
       "shell/post.zsh",
       "shell/pre.fish",
       "shell/pre.sh",
-      "shell/zle.zsh",
-      "zle" // make sure folder exists
+      "shell/zle.zsh"
     ]
     
     let onboarding = [
@@ -128,7 +127,7 @@ class Diagnostic {
     let filesAndFolders = integrations +
                               settings +
                             shellHooks +
-                            onboarding + [ "autocomplete" ]
+                            onboarding
       
     
     return filesAndFolders.reduce(true) { (exists, path) -> Bool in
