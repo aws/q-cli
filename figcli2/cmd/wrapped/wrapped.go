@@ -18,6 +18,10 @@ import (
 	"golang.org/x/term"
 )
 
+const (
+	timeGroups = 14
+)
+
 type History struct {
 	Command   string
 	ExitCode  int
@@ -91,9 +95,10 @@ type HistoryMetrics struct {
 	TopShells              []ShellUsage
 	TopAliases             []AliasUsage
 	LongestPipedSequence   string
-	MostCommonTimeOfDay    map[int]int
-	MostCommonDayOfWeek    map[time.Weekday]int
+	TimeOfDay              map[int]int
+	DayOfWeek              map[time.Weekday]int
 	CharactersSavedByAlias int
+	TotalCommands          int
 }
 
 func getAlias(shell string) (map[string]string, error) {
@@ -147,7 +152,6 @@ func Metrics(history []History) HistoryMetrics {
 	shellMap := map[string]int{}
 	aliasMap := map[string]int{}
 
-	longestPipedSequence := ""
 	pipesInSequence := 0
 
 	timeOfDay := map[int]int{}
@@ -163,8 +167,6 @@ func Metrics(history []History) HistoryMetrics {
 	shellAliases["bash"] = bashAliases
 	shellAliases["fish"] = fishAliases
 
-	charsSavedByAlias := 0
-
 	for _, h := range history {
 		workingDirMap[h.Cwd]++
 
@@ -177,32 +179,35 @@ func Metrics(history []History) HistoryMetrics {
 			} else {
 				commandsUsageMap[command]++
 			}
+
+			metrics.TotalCommands++
 		}
 
 		if shellAliases[h.Shell] != nil && shellAliases[h.Shell][command] != "" {
-			charsSavedByAlias += len(shellAliases[h.Shell][command]) - len(command)
+			metrics.CharactersSavedByAlias += len(shellAliases[h.Shell][command]) - len(command)
 			aliasMap[command]++
 		}
 
 		pipeCount := strings.Count(h.Command, "|")
 		if pipeCount > pipesInSequence {
-			longestPipedSequence = h.Command
+			metrics.LongestPipedSequence = h.Command
 			pipesInSequence = pipeCount
 		}
 
 		shellMap[h.Shell]++
 
 		commandTime := time.Unix(int64(h.Time), 0).Local()
-		timeOfDay[commandTime.Hour()]++
+
+		groups := timeGroups
+		minInDay := 24 * 60
+		group := int(float32(commandTime.Hour()*60+commandTime.Minute()) / float32(minInDay) * float32(groups))
+		timeOfDay[group]++
+
 		dayOfWeek[commandTime.Weekday()]++
 	}
 
-	metrics.LongestPipedSequence = longestPipedSequence
-
-	metrics.MostCommonTimeOfDay = timeOfDay
-	metrics.MostCommonDayOfWeek = dayOfWeek
-
-	metrics.CharactersSavedByAlias = charsSavedByAlias
+	metrics.TimeOfDay = timeOfDay
+	metrics.DayOfWeek = dayOfWeek
 
 	// Convert commandsUsageMap to list of CommandUsage
 	for command, count := range commandsUsageMap {
@@ -354,7 +359,7 @@ func (m model) View() string {
 			Background(workingDirBackground).
 			Render(workingDirTitle + "\n" + dirCountStr)
 
-		maxAlias := 5
+		maxAlias := 4
 		if len(m.metrics.TopAliases) < maxAlias {
 			maxAlias = len(m.metrics.TopAliases)
 		}
@@ -413,7 +418,7 @@ func (m model) View() string {
 		dayOfWeekHistogramTitle := lipgloss.NewStyle().Bold(true).PaddingBottom(1).Render("Weekly Activity")
 
 		maxCount := 0
-		for _, count := range m.metrics.MostCommonDayOfWeek {
+		for _, count := range m.metrics.DayOfWeek {
 			if count > maxCount {
 				maxCount = count
 			}
@@ -422,7 +427,7 @@ func (m model) View() string {
 		daysOfWeek := []string{"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"}
 		counts = []string{}
 		for i := 0; i < 7; i++ {
-			counts = append(counts, strings.Repeat("█", int(float64(m.metrics.MostCommonDayOfWeek[time.Weekday(i)])/float64(maxCount)*20)))
+			counts = append(counts, strings.Repeat("█", int(float64(m.metrics.DayOfWeek[time.Weekday(i)])/float64(maxCount)*20)))
 		}
 
 		daysOfWeekStr := lipgloss.JoinVertical(lipgloss.Right, daysOfWeek...)
@@ -436,13 +441,63 @@ func (m model) View() string {
 			Padding(1, 2).
 			Render(dayOfWeekHistogramTitle + "\n" + daysOfWeekHistogramStr)
 
+		timeOfDayHistogramPageTitle := lipgloss.NewStyle().Bold(true).PaddingBottom(1).Render("Time of Day Histogram")
+
+		maxCount = 0
+		for _, count := range m.metrics.TimeOfDay {
+			if count > maxCount {
+				maxCount = count
+			}
+		}
+
+		width := 20
+		timeOfDayHistogramStrBuilder := strings.Builder{}
+		for i := 0; i < timeGroups/2; i++ {
+			scaledTime1 := int(float64(m.metrics.TimeOfDay[i*2]) / float64(maxCount) * float64(width))
+			scaledTime2 := int(float64(m.metrics.TimeOfDay[i*2+1]) / float64(maxCount) * float64(width))
+
+			for j := 0; j < width; j++ {
+				if scaledTime1 > j && scaledTime2 > j {
+					timeOfDayHistogramStrBuilder.WriteString("█")
+				} else if scaledTime1 > j && scaledTime2 <= j {
+					timeOfDayHistogramStrBuilder.WriteString("▀")
+				} else if scaledTime1 <= j && scaledTime2 > j {
+					timeOfDayHistogramStrBuilder.WriteString("▄")
+				} else if scaledTime1 <= j && scaledTime2 <= j {
+					timeOfDayHistogramStrBuilder.WriteString(" ")
+				}
+			}
+			timeOfDayHistogramStrBuilder.WriteString("\n")
+		}
+
+		timeOfDayHistogramStr := lipgloss.NewStyle().Align(lipgloss.Left).Render(timeOfDayHistogramStrBuilder.String())
+
+		timeOfDayLabelStr := ""
+		for i := 0; i < timeGroups/2; i++ {
+			if i == 0 {
+				// timeOfDasyLabelStr += "12am"
+			} else if i == 1 {
+				timeOfDayLabelStr += "6am"
+			} else if i == 3 {
+				timeOfDayLabelStr += "12pm"
+			} else if i == 5 {
+				timeOfDayLabelStr += "6pm"
+			}
+
+			timeOfDayLabelStr = timeOfDayLabelStr + "\n"
+		}
+
+		timeOfDayStr := lipgloss.JoinHorizontal(lipgloss.Top, timeOfDayLabelStr, " ", timeOfDayHistogramStr)
+
+		timeOfDayHistogramPage := lipgloss.JoinVertical(lipgloss.Center, timeOfDayHistogramPageTitle, timeOfDayStr)
+
 		doc.WriteString(
 			lipgloss.JoinVertical(
 				lipgloss.Center,
 				lipgloss.NewStyle().Bold(true).MarginBottom(1).Render("Fig Wrapped"),
-				lipgloss.JoinHorizontal(lipgloss.Center, commandPanel, " ",
-					lipgloss.JoinVertical(lipgloss.Center, workingDirPanel, alisesCountPanel)),
-				lipgloss.JoinHorizontal(lipgloss.Center, dayOfWeekHistogramPanel, "  ", dayOfWeekHistogramPanel)))
+				lipgloss.JoinHorizontal(lipgloss.Bottom, commandPanel, " ",
+					lipgloss.JoinVertical(lipgloss.Left, alisesCountPanel, workingDirPanel)),
+				lipgloss.JoinHorizontal(lipgloss.Center, dayOfWeekHistogramPanel, "  ", timeOfDayHistogramPage)))
 
 	// Working dirs
 	case 2:
@@ -456,39 +511,6 @@ func (m model) View() string {
 
 	// Time of Day Histogram
 	case 4:
-		timeOfDayHistogramPageTitle := lipgloss.NewStyle().Bold(true).PaddingBottom(1).Render("Time of Day Histogram")
-
-		maxCount := 0
-		for _, count := range m.metrics.MostCommonTimeOfDay {
-			if count > maxCount {
-				maxCount = count
-			}
-		}
-
-		timeOfDayHistogramStrBuilder := strings.Builder{}
-		for i := 0; i < 24; i++ {
-			time := ""
-			if i == 0 {
-				time = fmt.Sprintf("%3d AM", 12)
-			} else if i < 12 {
-				time = fmt.Sprintf("%3d AM", i)
-			} else if i == 12 {
-				time = fmt.Sprintf("%3d PM", i)
-			} else {
-				time = fmt.Sprintf("%3d PM", i-12)
-			}
-
-			timeOfDayHistogramStrBuilder.WriteString(
-				fmt.Sprintf("%v %v\n",
-					time,
-					strings.Repeat("█", int(float64(m.metrics.MostCommonTimeOfDay[i])/float64(maxCount)*70))))
-		}
-
-		timeOfDayHistogramStr := lipgloss.NewStyle().Align(lipgloss.Left).Render(timeOfDayHistogramStrBuilder.String())
-
-		timeOfDayHistogramPage := lipgloss.JoinVertical(lipgloss.Center, timeOfDayHistogramPageTitle, timeOfDayHistogramStr)
-
-		doc.WriteString(timeOfDayHistogramPage)
 
 	// Day of Week Histogram
 	case 5:
@@ -532,7 +554,7 @@ func (m model) View() string {
 
 	year := lipgloss.NewStyle().PaddingLeft(1).PaddingRight(1).Background(lipgloss.Color("1")).Bold(true).Render("2021")
 	inReview := lipgloss.NewStyle().PaddingLeft(1).PaddingRight(1).Background(lipgloss.Color("2")).Bold(true).Render("In Review")
-	commands := lipgloss.NewStyle().PaddingLeft(1).PaddingRight(1).Background(lipgloss.Color("3")).Bold(true).Render("Commands")
+	commands := lipgloss.NewStyle().PaddingLeft(1).PaddingRight(1).Background(lipgloss.Color("3")).Bold(true).Render(fmt.Sprintf("%v Commands", m.metrics.TotalCommands))
 	atFig := lipgloss.NewStyle().PaddingLeft(1).PaddingRight(1).Background(lipgloss.Color("4")).Bold(true).Render("@fig")
 
 	statusBarLeft := year + inReview
