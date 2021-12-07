@@ -463,6 +463,28 @@ func NewCmdDoctor() *cobra.Command {
 					}
 				}
 
+				// iTerm Shell Integration Pre-exec Version
+				// Read fixes file regexp.FindString( )
+				iterm2ShellIntegrationFile := filepath.Join(user.HomeDir, ".iterm2_shell_integration.bash")
+				iterm2ShellIntegration, err := os.ReadFile(iterm2ShellIntegrationFile)
+				if err != nil && !os.IsNotExist(err) {
+					fmt.Println("❌ Could not read .iterm2_shell_integration.bash file")
+				} else if err == nil {
+					preexecVersionRegex := regexp.MustCompile(`V(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)`)
+					version := preexecVersionRegex.FindStringSubmatch(string(iterm2ShellIntegration))
+					if len(version) < 3 {
+						fmt.Println("🟡 You have iTerm's Bash Integration installed, but we could not check the version in ~/.iterm2_shell_integration.bash. Integration may be out of date. You can try updating in iTerm's menu by selecting \"Install Shell Integration\"")
+					} else {
+						major, _ := strconv.Atoi(version[1])
+						minor, _ := strconv.Atoi(version[2])
+						if major > 0 || minor > 3 {
+							fmt.Println("✅ iTerm Bash Integration is up to date.")
+						} else {
+							fmt.Println("❌ iTerm Bash Integration is out of date. Please update in iTerm's menu by selecting \"Install Shell Integration\".")
+						}
+					}
+				}
+
 				// Hyper Integration
 				hyperIntegration, err := fig_ipc.IntegrationVerifyInstall(fig_ipc.IntegrationHyper)
 				if err != nil {

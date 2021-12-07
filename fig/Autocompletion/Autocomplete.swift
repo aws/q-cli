@@ -20,12 +20,24 @@ class Autocomplete {
   }
   
   static let throttler = Throttler(minimumDelay: 0.05)
-  static func update(with context: (String, Int)?, for windowHash: ExternalWindowHash) {
-    let tty = ShellHookManager.shared.tty(for: windowHash)
-    let ttyDescriptor = tty?.descriptor == nil ? "null" : "'\(tty!.descriptor)'"
-    let cmd = tty?.cmd == nil ? "null" : "'\(tty!.cmd!)'"
-    let cwd = tty?.cwd == nil ? "null" : "`\(tty!.cwd!.trimmingCharacters(in: .whitespacesAndNewlines))`"
-    let prefix = tty?.runUsingPrefix == nil ? "null" : "`\(tty!.runUsingPrefix!)`"
+  static func update(with context: (String, Int)?, for terminalSessionId: TerminalSessionId?) {
+    
+    guard let sessionId = terminalSessionId,
+          let session = TerminalSessionLinker.shared.getTerminalSession(for: sessionId) else {
+      return
+    }
+    
+    let windowHash = session.generateLegacyWindowHash()
+    let (ttyDescriptor, cmd, cwd) : (String, String, String) = {
+      guard let context = session.shellContext else {
+        return ("null", "null", "null")
+      }
+      
+      return ("'\(context.ttyDescriptor)'", "'\(context.executablePath)'", "'\(context.workingDirectory)'")
+
+    }()
+
+    let prefix = "null"
     if let (buffer, index) = context, let b64 = buffer.data(using: .utf8)?.base64EncodedString() {
       // We aren't setting the tetheredWindow!
       
@@ -70,7 +82,7 @@ class Autocomplete {
         Autocomplete.hide()
         WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try{ fig.keypress(\"\(Keycode.escape)\", \"\(window.hash)\") } catch(e) {}", completionHandler: nil)
     } else {
-        Autocomplete.update(with: buffer.currentState, for: window.hash)
+        Autocomplete.update(with: buffer.currentState, for: window.session)
         Autocomplete.position()
     }
   }
@@ -156,7 +168,7 @@ class GenericShellIntegration: ShellIntegration {
         if let window = AXWindowServer.shared.whitelistedWindow,
            KeypressProvider.shared.keyBuffer(for: window).backing != nil,
            let context = KeypressProvider.shared.keyBuffer(for: window).insert(text: insertionText) {
-            Autocomplete.update(with: context, for: window.hash)
+            Autocomplete.update(with: context, for: window.session)
           
             let backing = KeypressProvider.shared.keyBuffer(for: window).backing
 

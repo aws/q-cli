@@ -97,6 +97,13 @@ static int unix_socket_connect(char *path) {
   remote.sun_family = AF_UNIX;
   strcpy(remote.sun_path, path);
 
+  // https://rigtorp.se/sockets/
+  int opt = 1;
+  if (setsockopt(sock, SOL_SOCKET, SO_NOSIGPIPE, &opt, sizeof(opt)) == -1) {
+      log_err("Failed to set SO_NOSIGPIPE");
+      return -1;
+  }
+
   size_t len = SUN_LEN(&remote);
   if (connect(sock, (struct sockaddr *)&remote, len) == -1) {
     log_err("Failed to connect to socket");
@@ -176,18 +183,12 @@ int fig_socket_send(char* buf) {
     CHECK_SYS(set_blocking(fig_sock, false), "Couldn't set fig sock to nonblocking");
   }
   
-  // Handle sigpipe if socket is closed, reset afterwards.
-  if ((old_handler = set_sigaction(SIGPIPE, fig_sigpipe_handler)) == SIG_ERR)
-    err_sys("sigpipe error");
-  st = send(fig_sock, encoded, out_len, MSG_NOSIGNAL);
+  st = send(fig_sock, encoded, out_len, 0);
 
   if (st < 0 && errno == EPIPE) {
     fig_sigpipe_handler(SIGPIPE);
     log_err("Error sending buffer to socket");
   }
-
-  if (set_sigaction(SIGPIPE, old_handler) == SIG_ERR)
-    err_sys("sigpipe error");
 
   return st;
 }
@@ -205,16 +206,11 @@ int ipc_socket_send(char* buf, int len) {
     free(path);
   }
 
-  // Handle sigpipe if socket is closed, reset afterwards.
-  if ((old_handler = set_sigaction(SIGPIPE, ipc_sigpipe_handler)) == SIG_ERR)
-    err_sys("sigpipe error");
-  st = send(ipc_sock, buf, len, MSG_NOSIGNAL);
+  st = send(ipc_sock, buf, len, 0);
   if (st < 0 && errno == EPIPE) {
     ipc_sigpipe_handler(SIGPIPE);
     log_err("Error sending buffer to socket");
   }
-  if (set_sigaction(SIGPIPE, old_handler) == SIG_ERR)
-    err_sys("sigpipe error");
 
   return st;
 }

@@ -891,11 +891,6 @@ extension WebBridge {
                 case "newTerminalWindow":
                     let path = Bundle.main.path(forResource: "open_new_terminal_window", ofType: "scpt")
                     NSAppleScript.run(path: path!)
-                case "terminaltitle:true":
-                    AutocompleteContextNotifier.addIndicatorToTitlebar = true
-                case "terminaltitle:false":
-                    AutocompleteContextNotifier.addIndicatorToTitlebar = false
-
                 case "openOnStartup:true":
                     LoginItems.shared.currentApplicationShouldLaunchOnStartup = true
                 case "openOnStartup:false":
@@ -968,14 +963,7 @@ extension WebBridge {
         }
     }
     
-    static func stdout(scope: WKScriptMessage) {
-        if let params = scope.body as? Dictionary<String, String>,
-            let out = params["out"],
-            let companion = scope.getCompanionWindow(),
-            let sessionId = companion.sessionId {
-            ShellBridge.shared.socketServer.send(sessionId: sessionId, command: out)
-        }
-    }
+    static func stdout(scope: WKScriptMessage) {}
 
     
     static func privateAPI(scope: WKScriptMessage) {

@@ -36,7 +36,7 @@ class ZLEIntegration: ShellIntegration {
              let context = KeypressProvider.shared.keyBuffer(for: window).insert(text: insertionText) {
               // trigger an update!
               print("update: \(context.0)")
-              Autocomplete.update(with: context, for: window.hash)
+              Autocomplete.update(with: context, for: window.session)
           }
       }
     
@@ -54,7 +54,7 @@ class ZLEIntegration: ShellIntegration {
         let pastedText = NSPasteboard.general.string(forType: .string),
         let context = KeypressProvider.shared.keyBuffer(for: window).insert(text: pastedText) {
          print("ZLE: paste! (Hiding popup window)")
-         Autocomplete.update(with: context, for: window.hash)
+         Autocomplete.update(with: context, for: window.session)
       
          // manually trigger edit buffer update since `Autocomplete.update` is deprecated
          let (buffer, cursor) = context

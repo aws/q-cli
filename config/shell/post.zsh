@@ -69,9 +69,9 @@ fig_precmd() {
     fig_preexec
   fi
 
-  START_PROMPT=$(fig_osc StartPrompt)
-  END_PROMPT=$(fig_osc EndPrompt)
-  NEW_CMD=$(fig_osc NewCmd)
+  START_PROMPT=$'\033]697;StartPrompt\007'
+  END_PROMPT=$'\033]697;EndPrompt\007'
+  NEW_CMD=$'\033]697;NewCmd\007'
 
   # Save user defined prompts.
   FIG_USER_PS1="$PS1"

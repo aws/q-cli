@@ -25,7 +25,7 @@ func NewCmdHook() *cobra.Command {
 	cmd.AddCommand(hide.NewCmdHide())
 	cmd.AddCommand(inith.NewCmdInit())
 	cmd.AddCommand(integrationready.NewCmdIntegrationReady())
-	cmd.AddCommand(keyboardfocuschanged.NewCmdKeyboardFocusChanged())
+	cmd.AddCommand(keyboardfocuschanged.NewCmdKeyboardFocusChanged(false))
 	cmd.AddCommand(preexec.NewCmdPreExec())
 	cmd.AddCommand(prompt.NewCmdPrompt())
 

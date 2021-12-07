@@ -105,10 +105,4 @@ if [ -z "$FIG_SHELL_VAR" ]
 
   set FIG_SHELL_VAR 1
   set fig_has_set_prompt 0
-
-  # Prevents weird interaction where setting the title with ANSI escape
-  # sequence triggers prompt redraw.
-  if [ -d /Applications/Fig.app -o -d ~/Applications/Fig.app ] && command -v fig 2>&1 1>/dev/null
-    fig settings autocomplete.addStatusToTerminalTitle false &; disown
-  end
 end

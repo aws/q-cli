@@ -107,6 +107,15 @@ func (a AppInfo) IsRunning() bool {
 	return len(a) > 0
 }
 
+func IsFigRunning() bool {
+	appInfo, err := GetAppInfo()
+	if err != nil {
+		return false
+	}
+
+	return appInfo.IsRunning()
+}
+
 func (a AppInfo) BundlePath() (string, error) {
 	re := regexp.MustCompile(`bundle path=\"(\S+)\"`)
 
@@ -138,6 +147,18 @@ func (a AppInfo) Pid() (int, error) {
 	}
 
 	return strconv.Atoi(matches[1])
+}
+
+func FigEnvs() []string {
+	var fig_envs []string
+	env := os.Environ()
+	for _, e := range env {
+		if strings.HasPrefix(e, "FIG_") {
+			fig_envs = append(fig_envs, e)
+		}
+	}
+
+	return fig_envs
 }
 
 func Summary() string {
@@ -305,6 +326,18 @@ func Summary() string {
 	// Path
 	summary.WriteString("Path: ")
 	summary.WriteString(os.Getenv("PATH"))
+
+	// Fig envs
+	fig_envs := FigEnvs()
+	summary.WriteString("\nFig environment variables:\n")
+	summary.WriteString("  - TERM_SESSION_ID=")
+	summary.WriteString(os.Getenv("TERM_SESSION_ID"))
+	summary.WriteString("\n")
+	for _, env := range fig_envs {
+		summary.WriteString("  - ")
+		summary.WriteString(env)
+		summary.WriteString("\n")
+	}
 
 	return summary.String()
 }

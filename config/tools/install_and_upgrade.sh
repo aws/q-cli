@@ -72,10 +72,6 @@ install_fig() {
   # runs.
   FIGCLI="${BUNDLE}/figcli" 
   "${FIGCLI}" settings userShell "${USER_SHELL_TRIMMED}"
-
-  # Restart file watcher
-  "${FIGCLI}" settings:init
-
 }
 
 setup_onboarding() {
