@@ -80,10 +80,16 @@ type ShellUsage struct {
 	Count int
 }
 
+type AliasUsage struct {
+	Alias string
+	Count int
+}
+
 type HistoryMetrics struct {
 	TopCommandsUsage       []CommandUsage
 	TopWorkingDirs         []WorkingDirUsage
 	TopShells              []ShellUsage
+	TopAliases             []AliasUsage
 	LongestPipedSequence   string
 	MostCommonTimeOfDay    map[int]int
 	MostCommonDayOfWeek    map[time.Weekday]int
@@ -139,6 +145,7 @@ func Metrics(history []History) HistoryMetrics {
 	commandsUsageMap := map[string]int{}
 	workingDirMap := map[string]int{}
 	shellMap := map[string]int{}
+	aliasMap := map[string]int{}
 
 	longestPipedSequence := ""
 	pipesInSequence := 0
@@ -162,14 +169,19 @@ func Metrics(history []History) HistoryMetrics {
 		workingDirMap[h.Cwd]++
 
 		command := strings.SplitN(h.Command, " ", 2)[0]
-		if command != "" {
-			commandsUsageMap[command]++
+		if command != "" && command != "\\n" {
+			if shellAliases[h.Shell] != nil && shellAliases[h.Shell][command] != "" {
+				deAliasedCommmand := shellAliases[h.Shell][command]
+				deAliasedCommmand = strings.SplitN(deAliasedCommmand, " ", 2)[0]
+				commandsUsageMap[deAliasedCommmand]++
+			} else {
+				commandsUsageMap[command]++
+			}
 		}
 
-		if shellAliases[h.Shell] != nil {
-			if shellAliases[h.Shell][command] != "" {
-				charsSavedByAlias += len(shellAliases[h.Shell][command]) - len(command)
-			}
+		if shellAliases[h.Shell] != nil && shellAliases[h.Shell][command] != "" {
+			charsSavedByAlias += len(shellAliases[h.Shell][command]) - len(command)
+			aliasMap[command]++
 		}
 
 		pipeCount := strings.Count(h.Command, "|")
@@ -229,6 +241,19 @@ func Metrics(history []History) HistoryMetrics {
 	// Sort ShellUsage by count
 	sort.Slice(metrics.TopShells, func(i, j int) bool {
 		return metrics.TopShells[i].Count > metrics.TopShells[j].Count
+	})
+
+	// Convert aliasMap to list of AliasUsage
+	for alias, count := range aliasMap {
+		metrics.TopAliases = append(metrics.TopAliases, AliasUsage{
+			Alias: alias,
+			Count: count,
+		})
+	}
+
+	// Sort AliasUsage by count
+	sort.Slice(metrics.TopAliases, func(i, j int) bool {
+		return metrics.TopAliases[i].Count > metrics.TopAliases[j].Count
 	})
 
 	return metrics
@@ -293,34 +318,17 @@ func (m model) View() string {
 
 	// Command usage
 	case 1:
-		maxCommands := 10
-		if len(m.metrics.TopCommandsUsage) < maxCommands {
-			maxCommands = len(m.metrics.TopCommandsUsage)
-		}
-
-		commandPageTitle := lipgloss.NewStyle().Bold(true).PaddingBottom(1).Render(fmt.Sprintf("Top %v commands", maxCommands))
-
-		commandsStrBuilder := strings.Builder{}
-		for _, command := range m.metrics.TopCommandsUsage[0:maxCommands] {
-			commandsStrBuilder.WriteString(fmt.Sprintf("%5v: %v\n", command.Count, command.Command))
-		}
-
-		commmandsStr := lipgloss.NewStyle().Align(lipgloss.Left).Render(commandsStrBuilder.String())
-
-		commandPage := lipgloss.JoinVertical(lipgloss.Center, commandPageTitle, commmandsStr)
-
-		doc.WriteString(commandPage)
-
-	// Working dirs
-	case 2:
 		maxWorkingDirs := 5
 		if len(m.metrics.TopWorkingDirs) < maxWorkingDirs {
 			maxWorkingDirs = len(m.metrics.TopWorkingDirs)
 		}
 
-		workingDirPageTitle := lipgloss.NewStyle().Bold(true).PaddingBottom(1).Render(fmt.Sprintf("Top %v working dirs", maxWorkingDirs))
+		workingDirBackground := lipgloss.Color("5")
 
-		workingDirsStrBuilder := strings.Builder{}
+		workingDirTitle := lipgloss.NewStyle().Background(workingDirBackground).MarginBottom(1).Bold(true).Render("Top working dirs")
+
+		counts := []string{}
+		dirs := []string{}
 		for _, workingDir := range m.metrics.TopWorkingDirs[0:maxWorkingDirs] {
 			// Pretty print working dir
 			user, _ := user.Current()
@@ -330,14 +338,114 @@ func (m model) View() string {
 				workingDirPretty += "/"
 			}
 
-			workingDirsStrBuilder.WriteString(fmt.Sprintf("%5v: %v\n", workingDir.Count, workingDirPretty))
+			counts = append(counts, fmt.Sprintf("%v", workingDir.Count))
+			dirs = append(dirs, workingDirPretty)
 		}
 
-		workingDirsStr := lipgloss.NewStyle().Align(lipgloss.Left).Render(workingDirsStrBuilder.String())
+		countsStr := lipgloss.JoinVertical(lipgloss.Right, counts...)
+		dirsStr := lipgloss.JoinVertical(lipgloss.Left, dirs...)
 
-		workingDirPage := lipgloss.JoinVertical(lipgloss.Center, workingDirPageTitle, workingDirsStr)
+		dirCountStr := lipgloss.NewStyle().
+			Render(lipgloss.JoinHorizontal(lipgloss.Top, countsStr, " ", dirsStr))
 
-		doc.WriteString(workingDirPage)
+		workingDirPanel := lipgloss.NewStyle().
+			Padding(1, 2).
+			Margin(0, 2, 1, 1).
+			Background(workingDirBackground).
+			Render(workingDirTitle + "\n" + dirCountStr)
+
+		maxAlias := 5
+		if len(m.metrics.TopAliases) < maxAlias {
+			maxAlias = len(m.metrics.TopAliases)
+		}
+
+		aliasBackground := lipgloss.Color("8")
+
+		aliasTitle := lipgloss.NewStyle().Background(aliasBackground).MarginBottom(1).Bold(true).Render("Top aliases")
+
+		counts = []string{}
+		aliases := []string{}
+		for _, alias := range m.metrics.TopAliases[0:maxAlias] {
+			counts = append(counts, fmt.Sprintf("%v", alias.Count))
+			aliases = append(aliases, alias.Alias)
+		}
+
+		countsStr = lipgloss.JoinVertical(lipgloss.Right, counts...)
+		aliasesStr := lipgloss.JoinVertical(lipgloss.Left, aliases...)
+
+		alisesCountStr := lipgloss.NewStyle().
+			Render(lipgloss.JoinHorizontal(lipgloss.Top, countsStr, " ", aliasesStr))
+
+		alisesCountPanel := lipgloss.NewStyle().
+			Padding(1, 2).
+			Margin(0, 2, 1, 1).
+			Background(aliasBackground).
+			Render(aliasTitle + "\n" + alisesCountStr)
+
+		maxCommands := 15
+		if len(m.metrics.TopCommandsUsage) < maxCommands {
+			maxCommands = len(m.metrics.TopCommandsUsage)
+		}
+
+		commandsPanelBackground := lipgloss.Color("2")
+
+		commandPageTitle := lipgloss.NewStyle().Bold(true).Background(commandsPanelBackground).PaddingBottom(1).Render("Top commands")
+
+		counts = []string{}
+		commands := []string{}
+		for _, command := range m.metrics.TopCommandsUsage[0:maxCommands] {
+			counts = append(counts, fmt.Sprintf("%v", command.Count))
+			commands = append(commands, command.Command)
+		}
+
+		countsStr = lipgloss.JoinVertical(lipgloss.Right, counts...)
+		commandsStr := lipgloss.JoinVertical(lipgloss.Left, commands...)
+
+		commmandsStr := lipgloss.NewStyle().
+			Render(lipgloss.JoinHorizontal(lipgloss.Top, countsStr, " ", commandsStr))
+
+		commandPanel := lipgloss.NewStyle().
+			Padding(1, 2).
+			Margin(0, 0, 1, 1).
+			Background(commandsPanelBackground).
+			Render(lipgloss.JoinVertical(lipgloss.Left, commandPageTitle, commmandsStr))
+
+		dayOfWeekHistogramTitle := lipgloss.NewStyle().Bold(true).PaddingBottom(1).Render("Weekly Activity")
+
+		maxCount := 0
+		for _, count := range m.metrics.MostCommonDayOfWeek {
+			if count > maxCount {
+				maxCount = count
+			}
+		}
+
+		daysOfWeek := []string{"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"}
+		counts = []string{}
+		for i := 0; i < 7; i++ {
+			counts = append(counts, strings.Repeat("█", int(float64(m.metrics.MostCommonDayOfWeek[time.Weekday(i)])/float64(maxCount)*20)))
+		}
+
+		daysOfWeekStr := lipgloss.JoinVertical(lipgloss.Right, daysOfWeek...)
+		countsStr = lipgloss.JoinVertical(lipgloss.Left, counts...)
+
+		daysOfWeekHistogramStr := lipgloss.NewStyle().
+			Render(lipgloss.JoinHorizontal(lipgloss.Top, daysOfWeekStr, " ", countsStr))
+
+		dayOfWeekHistogramPanel := lipgloss.NewStyle().
+			Background(lipgloss.Color("6")).
+			Padding(1, 2).
+			Render(dayOfWeekHistogramTitle + "\n" + daysOfWeekHistogramStr)
+
+		doc.WriteString(
+			lipgloss.JoinVertical(
+				lipgloss.Center,
+				lipgloss.NewStyle().Bold(true).MarginBottom(1).Render("Fig Wrapped"),
+				lipgloss.JoinHorizontal(lipgloss.Center, commandPanel, " ",
+					lipgloss.JoinVertical(lipgloss.Center, workingDirPanel, alisesCountPanel)),
+				lipgloss.JoinHorizontal(lipgloss.Center, dayOfWeekHistogramPanel, "  ", dayOfWeekHistogramPanel)))
+
+	// Working dirs
+	case 2:
 
 	// Longest piped sequence
 	case 3:
@@ -362,7 +470,7 @@ func (m model) View() string {
 			time := ""
 			if i == 0 {
 				time = fmt.Sprintf("%3d AM", 12)
-			} else if i <= 12 {
+			} else if i < 12 {
 				time = fmt.Sprintf("%3d AM", i)
 			} else if i == 12 {
 				time = fmt.Sprintf("%3d PM", i)
@@ -384,28 +492,6 @@ func (m model) View() string {
 
 	// Day of Week Histogram
 	case 5:
-		dayOfWeekHistogramPageTitle := lipgloss.NewStyle().Bold(true).PaddingBottom(1).Render("Day of Week Histogram")
-
-		maxCount := 0
-		for _, count := range m.metrics.MostCommonDayOfWeek {
-			if count > maxCount {
-				maxCount = count
-			}
-		}
-
-		dayOfWeekHistogramStrBuilder := strings.Builder{}
-
-		for i := 0; i < 7; i++ {
-			dayOfWeekHistogramStrBuilder.WriteString(fmt.Sprintf("%10v %v\n",
-				time.Weekday(i),
-				strings.Repeat("█", int(float64(m.metrics.MostCommonDayOfWeek[time.Weekday(i)])/float64(maxCount)*66))))
-		}
-
-		dayOfWeekHistogramStr := lipgloss.NewStyle().Align(lipgloss.Left).Render(dayOfWeekHistogramStrBuilder.String())
-
-		dayOfWeekHistogramPage := lipgloss.JoinVertical(lipgloss.Center, dayOfWeekHistogramPageTitle, dayOfWeekHistogramStr)
-
-		doc.WriteString(dayOfWeekHistogramPage)
 
 	// Top Shells
 	case 6:
@@ -431,7 +517,7 @@ func (m model) View() string {
 
 	// Shell Aliases
 	case 7:
-		shellAliasesPageTitle := lipgloss.NewStyle().Bold(true).PaddingBottom(1).Render("Chars saved by aliases")
+		shellAliasesPageTitle := lipgloss.NewStyle().Bold(true).PaddingBottom(1).Render("Keystrokes saved by using aliases")
 
 		shellAliasesPage := fmt.Sprintf("%v", m.metrics.CharactersSavedByAlias)
 
@@ -444,19 +530,31 @@ func (m model) View() string {
 
 	fullPage := ""
 
-	if m.page < 8 {
+	year := lipgloss.NewStyle().PaddingLeft(1).PaddingRight(1).Background(lipgloss.Color("1")).Bold(true).Render("2021")
+	inReview := lipgloss.NewStyle().PaddingLeft(1).PaddingRight(1).Background(lipgloss.Color("2")).Bold(true).Render("In Review")
+	commands := lipgloss.NewStyle().PaddingLeft(1).PaddingRight(1).Background(lipgloss.Color("3")).Bold(true).Render("Commands")
+	atFig := lipgloss.NewStyle().PaddingLeft(1).PaddingRight(1).Background(lipgloss.Color("4")).Bold(true).Render("@fig")
+
+	statusBarLeft := year + inReview
+	statusBarRight := lipgloss.NewStyle().Background(lipgloss.Color("5")).Width(physicalWidth - lipgloss.Width(statusBarLeft)).Align(lipgloss.Right).Render(commands + atFig)
+
+	statusBar := statusBarLeft + statusBarRight
+
+	if m.page < 8 && m.page != 1 {
 		nextPage := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("8")).MarginTop(2).Render("[Press Enter to continue]")
 		fullPage = lipgloss.JoinVertical(lipgloss.Center, doc.String(), nextPage)
 	} else {
 		fullPage = doc.String()
 	}
 
-	return lipgloss.Place(
+	page := lipgloss.Place(
 		physicalWidth,
-		physicalHeight,
+		physicalHeight-1,
 		lipgloss.Center,
 		lipgloss.Center,
-		lipgloss.NewStyle().Align(lipgloss.Left).Render(fullPage))
+		fullPage)
+
+	return lipgloss.JoinVertical(lipgloss.Center, page, statusBar)
 }
 
 func NewCmdWrapped() *cobra.Command {
