@@ -71,8 +71,8 @@ class UnixSocketServer {
         
         repeat {
            
-            // Prevent server from closing when a client fails to connect
-            // Fixes issue related to setting set_sockopt NO_SIGPIPE
+          // Prevent server from closing when a client fails to connect
+          // Fixes issue related to setting set_sockopt NO_SIGPIPE
           var newSocket: Socket? = nil
             do {
               newSocket = try socket.acceptClientConnection()

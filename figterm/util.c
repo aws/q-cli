@@ -207,8 +207,10 @@ int ipc_socket_send(char* buf, int len) {
   }
 
   st = send(ipc_sock, buf, len, 0);
-  if (st < 0 && errno == EPIPE) {
-    ipc_sigpipe_handler(SIGPIPE);
+  if (st < 0) {
+    if (errno == EPIPE) {
+      ipc_sigpipe_handler(SIGPIPE);
+    }
     log_err("Error sending buffer to socket");
   }
 
