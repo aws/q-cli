@@ -3,7 +3,7 @@ import {
   sendUpdateDefaultsPropertyRequest,
 } from './requests';
 
-const get = async (key: string): Promise<boolean | string | number | null> => {
+export const get = async (key: string): Promise<boolean | string | number | null> => {
   let response = await sendGetDefaultsPropertyRequest({
     key: key,
   });
@@ -22,29 +22,25 @@ const get = async (key: string): Promise<boolean | string | number | null> => {
   return null;
 };
 
-const setString = async (key: string, value: string): Promise<void> =>
+export const setString = async (key: string, value: string): Promise<void> =>
   sendUpdateDefaultsPropertyRequest({
     key: key,
     value: { type: { $case: 'string', string: value } },
   });
 
-const setBoolean = async (key: string, value: boolean): Promise<void> =>
+export const setBoolean = async (key: string, value: boolean): Promise<void> =>
   sendUpdateDefaultsPropertyRequest({
     key: key,
     value: { type: { $case: 'boolean', boolean: value } },
   });
 
-const setNumber = async (key: string, value: number): Promise<void> =>
+export const setNumber = async (key: string, value: number): Promise<void> =>
   sendUpdateDefaultsPropertyRequest({
     key: key,
     value: { type: { $case: 'integer', integer: value } },
   });
 
-const remove = async (key: string): Promise<void> =>
+export const remove = async (key: string): Promise<void> =>
   sendUpdateDefaultsPropertyRequest({
     key: key,
   });
-
-const Defaults = { get, setString, setBoolean, setNumber, remove };
-
-export default Defaults;
