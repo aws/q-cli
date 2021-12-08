@@ -2,6 +2,7 @@ package wrapped
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"os/exec"
 	"os/user"
@@ -22,25 +23,30 @@ const (
 	timeGroups = 24
 )
 
+func truncate(command string, maxlength int) string {
+	length := len(command)
+	if length > maxlength {
+		command = command[:maxlength-3] + "..."
+	}
+	return command
+}
+
 func truncatePath(path string, maxlength int) string {
 	length := len(path)
 
 	for length > maxlength {
 		path = strings.TrimLeft(path, "./")
 		split := strings.SplitN(path, "/", 2)
-		path = "./" + split[1]
-		length = len(path)
+		if len(split) == 2 {
+			path = "./" + split[1]
+			length = len(path)
+		} else {
+			path = truncate(path, maxlength)
+			break
+		}
 	}
 
 	return path
-}
-
-func truncateCommand(command string, maxlength int) string {
-	length := len(command)
-	if length > maxlength {
-		command = command[:maxlength-3] + "..."
-	}
-	return command
 }
 
 type History struct {
@@ -122,6 +128,8 @@ type HistoryMetrics struct {
 	TotalCommands          int
 	Keystrokes             int
 	Commits                int
+	ShortesGitCommit       string
+	ShortedCommitTime      int
 }
 
 func getAlias(shell string) (map[string]string, error) {
@@ -190,6 +198,9 @@ func Metrics(history []History) HistoryMetrics {
 	shellAliases["bash"] = bashAliases
 	shellAliases["fish"] = fishAliases
 
+	gitCommitRegex := regexp.MustCompile(`-m (\\\"(.*)\\\")|('(.*)')`)
+	shortestGitCommitLen := math.MaxInt
+
 	for _, h := range history {
 		workingDirMap[h.Cwd]++
 
@@ -197,6 +208,22 @@ func Metrics(history []History) HistoryMetrics {
 
 		if strings.HasPrefix(h.Command, "git commit") {
 			metrics.Commits++
+			gitCommitRegexMatch := gitCommitRegex.FindStringSubmatch(h.Command)
+			if len(gitCommitRegexMatch) > 0 {
+				gitCommit := ""
+
+				if gitCommitRegexMatch[2] != "" {
+					gitCommit = gitCommitRegexMatch[2]
+				} else if gitCommitRegexMatch[4] != "" {
+					gitCommit = gitCommitRegexMatch[4]
+				}
+
+				if len(gitCommit) > 1 && len(gitCommit) < shortestGitCommitLen {
+					shortestGitCommitLen = len(gitCommit)
+					metrics.ShortesGitCommit = gitCommit
+					metrics.ShortedCommitTime = h.Time
+				}
+			}
 		}
 
 		command := strings.SplitN(h.Command, " ", 2)[0]
@@ -302,6 +329,11 @@ func initialModel() model {
 	history, _ := loadHistory()
 	metrics := Metrics(history)
 
+	if len(history) < 100 {
+		fmt.Printf("\n→ You haven't had Fig installed long enough to generate your year in review.\n  Try again in a couple of days!\n\n")
+		os.Exit(1)
+	}
+
 	return model{
 		metrics: metrics,
 		page:    0,
@@ -339,16 +371,16 @@ func (m model) View() string {
 	// Into page
 	case 0:
 
-		asciiArt := ` .--~~~~~~~~~~~~~------.
- /--===============------\
- | |⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺|     |
- | | ` + lipgloss.NewStyle().Blink(true).Render(">") + `             |     |
- | |               |     |
- | |               |     |
- | |_______________|     |
- |                   ::::|
- '======================='
- //-'-'-'-'-'-'-'-'-'-'-\\
+		asciiArt := `.--~~~~~~~~~~~~~------.
+/--===============------\
+| |⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺|     |
+| | ` + lipgloss.NewStyle().Blink(true).Render(">") + `             |     |
+| |               |     |
+| |               |     |
+| |_______________|     |
+|                   ::::|
+'======================='
+//-'-'-'-'-'-'-'-'-'-'-\\
 //_'_'_'_'_'_'_'_'_'_'_'_\\
 [-------------------------]
 \_________________________/
@@ -382,20 +414,20 @@ func (m model) View() string {
 		// ╚═╝     ╚═╝ ╚═════╝  Wrapped`
 		// 		title := lipgloss.NewStyle().Bold(true).PaddingBottom(1).Render(fig_logo)
 
-		thanks := lipgloss.NewStyle().Bold(true).Render("Thank you so much for using Fig in 2021!")
+		thanks := lipgloss.NewStyle().Bold(true).Render("Thanks so much for using Fig in 2021!")
 
-		caption := lipgloss.NewStyle().Italic(true).Foreground(lipgloss.Color("5")).Render("Here is your 2021 in the shell wrapped up")
+		// caption := lipgloss.NewStyle().Italic(true).Foreground(lipgloss.Color("5")).Render("Here is your 2021 in the shell wrapped up")
 
-		doc.WriteString(lipgloss.JoinVertical(lipgloss.Center, thanks, caption))
+		doc.WriteString(lipgloss.JoinVertical(lipgloss.Center, thanks))
 
 	// Command usage
 	case 1, 2:
 
-		fig_logo := `███████╗██╗ ██████╗
+		figAscii := `███████╗██╗ ██████╗
 ██╔════╝██║██╔════╝
 █████╗  ██║██║  ███╗
 ██╔══╝  ██║██║   ██║
-██║     ██║╚██████╔╝
+██║     ██║╚██████╔╝ 2021
 ╚═╝     ╚═╝ ╚═════╝  Wrapped`
 
 		logoBox := lipgloss.NewStyle().
@@ -403,14 +435,14 @@ func (m model) View() string {
 			BorderForeground(lipgloss.Color("2")).
 			Padding(1, 2).
 			Bold(true).
-			Render(fig_logo)
+			Render(figAscii)
 
 		maxWorkingDirs := 5
 		if len(m.metrics.TopWorkingDirs) < maxWorkingDirs {
 			maxWorkingDirs = len(m.metrics.TopWorkingDirs)
 		}
 
-		workingDirTitle := lipgloss.NewStyle().MarginBottom(1).Bold(true).Render("Top working dirs")
+		workingDirTitle := lipgloss.NewStyle().MarginBottom(1).Bold(true).Render("Most Used Directories")
 
 		counts := []string{}
 		dirs := []string{}
@@ -474,13 +506,13 @@ func (m model) View() string {
 			maxCommands = len(m.metrics.TopCommandsUsage)
 		}
 
-		commandPageTitle := lipgloss.NewStyle().Bold(true).PaddingBottom(1).Render("Top commands")
+		commandPageTitle := lipgloss.NewStyle().Bold(true).PaddingBottom(1).Render("Top Commands")
 
 		counts = []string{}
 		commands := []string{}
 		for _, command := range m.metrics.TopCommandsUsage[0:maxCommands] {
 			counts = append(counts, fmt.Sprintf("%v", command.Count))
-			commands = append(commands, truncateCommand(command.Command, 15))
+			commands = append(commands, truncate(command.Command, 15))
 		}
 
 		countsStr = lipgloss.JoinVertical(lipgloss.Right, counts...)
@@ -590,14 +622,26 @@ func (m model) View() string {
 			Padding(1, 2).
 			Render(lipgloss.JoinVertical(lipgloss.Left, timeOfDayHistogramPageTitle, timeOfDayStr))
 
+		commitMsgSummary := ""
+
+		if m.metrics.ShortedCommitTime != 0 {
+			commitTime := time.Unix(int64(m.metrics.ShortedCommitTime), 0).Local()
+			commitTimeStr := commitTime.Format("Jan 2")
+			commitMsgSummary = lipgloss.JoinVertical(lipgloss.Left,
+				lipgloss.NewStyle().Bold(true).Render("Shortest Commit Message"),
+				"'"+truncate(m.metrics.ShortesGitCommit, 12)+"' on "+commitTimeStr)
+		} else {
+			commitMsgSummary = lipgloss.JoinVertical(lipgloss.Left,
+				lipgloss.NewStyle().Bold(true).Render("Shortest Commit Message"),
+				"No commits found")
+		}
+
 		statsSummary := lipgloss.NewStyle().
 			Padding(1, 2).
 			Width(lipgloss.Width(dayOfWeekHistogramPanel) - 2).
 			Border(lipgloss.DoubleBorder()).
 			BorderForeground(lipgloss.Color("9")).
-			Render(lipgloss.JoinVertical(lipgloss.Left,
-				lipgloss.JoinHorizontal(lipgloss.Top, "Key Strokes: ", strconv.Itoa(m.metrics.Keystrokes)),
-				lipgloss.JoinHorizontal(lipgloss.Top, "Git Commits: ", strconv.Itoa(m.metrics.Commits))))
+			Render(commitMsgSummary)
 
 		doc.WriteString(
 			lipgloss.JoinVertical(
@@ -680,22 +724,46 @@ func (m model) View() string {
 	statusBar := statusBarLeft + statusBarRight
 
 	if m.page == 0 {
-		nextPage := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("8")).MarginTop(2).Render("[Press Enter to continue]")
+		nextPage := lipgloss.NewStyle().
+			MarginTop(2).
+			Render(
+				lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Render("[Press Enter to see your ") +
+					lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Bold(true).Underline(true).Render("Fig Wrapped") +
+					lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Render("]"))
+
 		fullPage = lipgloss.JoinVertical(lipgloss.Center, doc.String(), nextPage)
 	} else {
 		fullPage = doc.String()
 	}
 
-	page := lipgloss.Place(
-		physicalWidth,
-		physicalHeight-1,
-		lipgloss.Center,
-		lipgloss.Center,
-		fullPage)
+	if lipgloss.Width(fullPage) > physicalWidth || lipgloss.Height(fullPage) > physicalHeight {
+		page := lipgloss.Place(
+			physicalWidth,
+			physicalHeight,
+			lipgloss.Center,
+			lipgloss.Center,
+			"Expand your terminal to see your Fig wrapped!")
 
-	if m.page == 0 {
+		return page
+	}
+
+	if true {
+		page := lipgloss.Place(
+			physicalWidth,
+			physicalHeight,
+			lipgloss.Center,
+			lipgloss.Center,
+			fullPage)
+
 		return page
 	} else {
+		page := lipgloss.Place(
+			physicalWidth,
+			physicalHeight-1,
+			lipgloss.Center,
+			lipgloss.Center,
+			fullPage)
+
 		return lipgloss.JoinVertical(lipgloss.Center, page, statusBar)
 	}
 
