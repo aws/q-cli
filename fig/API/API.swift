@@ -137,11 +137,12 @@ class API {
                 case .openInExternalApplicationRequest(let request):
                   response.success = try NSWorkspace.shared.handleOpenURLRequest(request)
                 case .getConfigPropertyRequest(let request):
-                response.getConfigPropertyResponse = try Config.shared.handleGetRequest(request)
+                  response.getConfigPropertyResponse = try Config.shared.handleGetRequest(request)
                 case .updateConfigPropertyRequest(let request):
-                response.success = try Config.shared.handleSetRequest(request)
+                  response.success = try Config.shared.handleSetRequest(request)
                 case .terminalSessionInfoRequest(let request):
                   response.terminalSessionInfoResponse = try TerminalSessionLinker.shared.handleRequest(request)
+                  break
                 case .none:
                     throw APIError.generic(message: "No submessage was included in request.")
             }

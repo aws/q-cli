@@ -675,6 +675,7 @@ export interface EditBufferChangedNotification {
   sessionId?: string | undefined;
   cursor?: number | undefined;
   buffer?: string | undefined;
+  context?: ShellContext | undefined;
 }
 
 export interface SettingsChangedNotification {
@@ -6672,6 +6673,9 @@ export const EditBufferChangedNotification = {
     if (message.buffer !== undefined) {
       writer.uint32(26).string(message.buffer);
     }
+    if (message.context !== undefined) {
+      ShellContext.encode(message.context, writer.uint32(34).fork()).ldelim();
+    }
     return writer;
   },
 
@@ -6695,6 +6699,9 @@ export const EditBufferChangedNotification = {
           break;
         case 3:
           message.buffer = reader.string();
+          break;
+        case 4:
+          message.context = ShellContext.decode(reader, reader.uint32());
           break;
         default:
           reader.skipType(tag & 7);
@@ -6723,6 +6730,11 @@ export const EditBufferChangedNotification = {
     } else {
       message.buffer = undefined;
     }
+    if (object.context !== undefined && object.context !== null) {
+      message.context = ShellContext.fromJSON(object.context);
+    } else {
+      message.context = undefined;
+    }
     return message;
   },
 
@@ -6731,6 +6743,10 @@ export const EditBufferChangedNotification = {
     message.sessionId !== undefined && (obj.sessionId = message.sessionId);
     message.cursor !== undefined && (obj.cursor = message.cursor);
     message.buffer !== undefined && (obj.buffer = message.buffer);
+    message.context !== undefined &&
+      (obj.context = message.context
+        ? ShellContext.toJSON(message.context)
+        : undefined);
     return obj;
   },
 
@@ -6743,6 +6759,11 @@ export const EditBufferChangedNotification = {
     message.sessionId = object.sessionId ?? undefined;
     message.cursor = object.cursor ?? undefined;
     message.buffer = object.buffer ?? undefined;
+    if (object.context !== undefined && object.context !== null) {
+      message.context = ShellContext.fromPartial(object.context);
+    } else {
+      message.context = undefined;
+    }
     return message;
   },
 };

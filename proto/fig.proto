@@ -404,6 +404,7 @@ message EditBufferChangedNotification {
     optional string session_id = 1;
     optional int32 cursor = 2;
     optional string buffer = 3;
+    optional local.ShellContext context = 4;
 }
 
 message SettingsChangedNotification {

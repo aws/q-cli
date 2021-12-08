@@ -2502,6 +2502,15 @@ public struct Fig_EditBufferChangedNotification {
   /// Clears the value of `buffer`. Subsequent reads from it will return its default value.
   public mutating func clearBuffer() {self._buffer = nil}
 
+  public var context: Local_ShellContext {
+    get {return _context ?? Local_ShellContext()}
+    set {_context = newValue}
+  }
+  /// Returns true if `context` has been explicitly set.
+  public var hasContext: Bool {return self._context != nil}
+  /// Clears the value of `context`. Subsequent reads from it will return its default value.
+  public mutating func clearContext() {self._context = nil}
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
@@ -2509,6 +2518,7 @@ public struct Fig_EditBufferChangedNotification {
   fileprivate var _sessionID: String? = nil
   fileprivate var _cursor: Int32? = nil
   fileprivate var _buffer: String? = nil
+  fileprivate var _context: Local_ShellContext? = nil
 }
 
 public struct Fig_SettingsChangedNotification {
@@ -6048,6 +6058,7 @@ extension Fig_EditBufferChangedNotification: SwiftProtobuf.Message, SwiftProtobu
     1: .standard(proto: "session_id"),
     2: .same(proto: "cursor"),
     3: .same(proto: "buffer"),
+    4: .same(proto: "context"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -6059,6 +6070,7 @@ extension Fig_EditBufferChangedNotification: SwiftProtobuf.Message, SwiftProtobu
       case 1: try { try decoder.decodeSingularStringField(value: &self._sessionID) }()
       case 2: try { try decoder.decodeSingularInt32Field(value: &self._cursor) }()
       case 3: try { try decoder.decodeSingularStringField(value: &self._buffer) }()
+      case 4: try { try decoder.decodeSingularMessageField(value: &self._context) }()
       default: break
       }
     }
@@ -6078,6 +6090,9 @@ extension Fig_EditBufferChangedNotification: SwiftProtobuf.Message, SwiftProtobu
     try { if let v = self._buffer {
       try visitor.visitSingularStringField(value: v, fieldNumber: 3)
     } }()
+    try { if let v = self._context {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 4)
+    } }()
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -6085,6 +6100,7 @@ extension Fig_EditBufferChangedNotification: SwiftProtobuf.Message, SwiftProtobu
     if lhs._sessionID != rhs._sessionID {return false}
     if lhs._cursor != rhs._cursor {return false}
     if lhs._buffer != rhs._buffer {return false}
+    if lhs._context != rhs._context {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
