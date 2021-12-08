@@ -140,6 +140,8 @@ class API {
                 response.getConfigPropertyResponse = try Config.shared.handleGetRequest(request)
                 case .updateConfigPropertyRequest(let request):
                 response.success = try Config.shared.handleSetRequest(request)
+                case .terminalSessionInfoRequest(let request):
+                  response.terminalSessionInfoResponse = try TerminalSessionLinker.shared.handleRequest(request)
                 case .none:
                     throw APIError.generic(message: "No submessage was included in request.")
             }

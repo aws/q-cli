@@ -91,7 +91,6 @@
 		756967FF2718E0300029F063 /* WebArchiver in Frameworks */ = {isa = PBXBuildFile; productRef = 756967FE2718E0300029F063 /* WebArchiver */; };
 		756968012718FF600029F063 /* WebArchive.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756968002718FF600029F063 /* WebArchive.swift */; };
 		756968032719450A0029F063 /* API+App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756968022719450A0029F063 /* API+App.swift */; };
-		75696832271F71270029F063 /* local.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75696831271F71270029F063 /* local.pb.swift */; };
 		7571775726F3B8A80071AE10 /* FigInputMethod.app in Embed Input Method */ = {isa = PBXBuildFile; fileRef = 754316F426E08F5C00188887 /* FigInputMethod.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		7571775926F3E4CA0071AE10 /* settings.html in Resources */ = {isa = PBXBuildFile; fileRef = 7571775826F3E4CA0071AE10 /* settings.html */; };
 		7571778326F91BF50071AE10 /* AppleTerminalIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7571778226F91BF50071AE10 /* AppleTerminalIntegration.swift */; };
@@ -385,7 +384,6 @@
 		756968002718FF600029F063 /* WebArchive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebArchive.swift; sourceTree = "<group>"; };
 		756968022719450A0029F063 /* API+App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API+App.swift"; sourceTree = "<group>"; };
 		7569680F271E556B0029F063 /* swift-api-bindings */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "swift-api-bindings"; sourceTree = "<group>"; };
-		75696831271F71270029F063 /* local.pb.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = local.pb.swift; sourceTree = "<group>"; };
 		7571775826F3E4CA0071AE10 /* settings.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = settings.html; sourceTree = "<group>"; };
 		7571778226F91BF50071AE10 /* AppleTerminalIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleTerminalIntegration.swift; sourceTree = "<group>"; };
 		75738F1D26DDAB760086D972 /* InputMethod.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputMethod.swift; sourceTree = "<group>"; };
@@ -784,7 +782,6 @@
 		75696830271F70800029F063 /* Local IPC */ = {
 			isa = PBXGroup;
 			children = (
-				75696831271F71270029F063 /* local.pb.swift */,
 				75ACFE832755B958003C22EE /* IPC+Notifications.swift */,
 			);
 			path = "Local IPC";
@@ -1487,7 +1484,6 @@
 				75B1993825100E4E00F38EA8 /* KeypressService.swift in Sources */,
 				75C57C142581C0700065741E /* ioreg.c in Sources */,
 				75290AB4267126EB000F4255 /* iTermIntegration.swift in Sources */,
-				75696832271F71270029F063 /* local.pb.swift in Sources */,
 				75FE40002626A4BD00AC8414 /* Github.swift in Sources */,
 				751C3BEC24B6910800B5C7FD /* Remote.swift in Sources */,
 				75EDDC4E25D23773003AECC6 /* HyperIntegration.swift in Sources */,

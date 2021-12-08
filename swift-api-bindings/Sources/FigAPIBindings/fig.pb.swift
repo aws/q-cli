@@ -486,6 +486,14 @@ public struct Fig_ClientOriginatedMessage {
     set {submessage = .pseudoterminalRestartRequest(newValue)}
   }
 
+  public var terminalSessionInfoRequest: Fig_TerminalSessionInfoRequest {
+    get {
+      if case .terminalSessionInfoRequest(let v)? = submessage {return v}
+      return Fig_TerminalSessionInfoRequest()
+    }
+    set {submessage = .terminalSessionInfoRequest(newValue)}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public enum OneOf_Submessage: Equatable {
@@ -512,6 +520,7 @@ public struct Fig_ClientOriginatedMessage {
     case getConfigPropertyRequest(Fig_GetConfigPropertyRequest)
     case updateConfigPropertyRequest(Fig_UpdateConfigPropertyRequest)
     case pseudoterminalRestartRequest(Fig_PseudoterminalRestartRequest)
+    case terminalSessionInfoRequest(Fig_TerminalSessionInfoRequest)
 
   #if !swift(>=4.1)
     public static func ==(lhs: Fig_ClientOriginatedMessage.OneOf_Submessage, rhs: Fig_ClientOriginatedMessage.OneOf_Submessage) -> Bool {
@@ -609,6 +618,10 @@ public struct Fig_ClientOriginatedMessage {
       }()
       case (.pseudoterminalRestartRequest, .pseudoterminalRestartRequest): return {
         guard case .pseudoterminalRestartRequest(let l) = lhs, case .pseudoterminalRestartRequest(let r) = rhs else { preconditionFailure() }
+        return l == r
+      }()
+      case (.terminalSessionInfoRequest, .terminalSessionInfoRequest): return {
+        guard case .terminalSessionInfoRequest(let l) = lhs, case .terminalSessionInfoRequest(let r) = rhs else { preconditionFailure() }
         return l == r
       }()
       default: return false
@@ -719,6 +732,14 @@ public struct Fig_ServerOriginatedMessage {
     set {submessage = .getConfigPropertyResponse(newValue)}
   }
 
+  public var terminalSessionInfoResponse: Fig_TerminalSessionInfoResponse {
+    get {
+      if case .terminalSessionInfoResponse(let v)? = submessage {return v}
+      return Fig_TerminalSessionInfoResponse()
+    }
+    set {submessage = .terminalSessionInfoResponse(newValue)}
+  }
+
   public var notification: Fig_Notification {
     get {
       if case .notification(let v)? = submessage {return v}
@@ -741,6 +762,7 @@ public struct Fig_ServerOriginatedMessage {
     case destinationOfSymbolicLinkResponse(Fig_DestinationOfSymbolicLinkResponse)
     case getDefaultsPropertyResponse(Fig_GetDefaultsPropertyResponse)
     case getConfigPropertyResponse(Fig_GetConfigPropertyResponse)
+    case terminalSessionInfoResponse(Fig_TerminalSessionInfoResponse)
     case notification(Fig_Notification)
 
   #if !swift(>=4.1)
@@ -787,6 +809,10 @@ public struct Fig_ServerOriginatedMessage {
       }()
       case (.getConfigPropertyResponse, .getConfigPropertyResponse): return {
         guard case .getConfigPropertyResponse(let l) = lhs, case .getConfigPropertyResponse(let r) = rhs else { preconditionFailure() }
+        return l == r
+      }()
+      case (.terminalSessionInfoResponse, .terminalSessionInfoResponse): return {
+        guard case .terminalSessionInfoResponse(let l) = lhs, case .terminalSessionInfoResponse(let r) = rhs else { preconditionFailure() }
         return l == r
       }()
       case (.notification, .notification): return {
@@ -2230,6 +2256,59 @@ public struct Fig_UpdateApplicationPropertiesRequest {
   fileprivate var _interceptBoundKeystrokes: Bool? = nil
 }
 
+public struct Fig_TerminalSessionInfoRequest {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var terminalSessionID: String = String()
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public struct Fig_TerminalSessionInfoResponse {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var context: Local_ShellContext {
+    get {return _context ?? Local_ShellContext()}
+    set {_context = newValue}
+  }
+  /// Returns true if `context` has been explicitly set.
+  public var hasContext: Bool {return self._context != nil}
+  /// Clears the value of `context`. Subsequent reads from it will return its default value.
+  public mutating func clearContext() {self._context = nil}
+
+  public var buffer: String {
+    get {return _buffer ?? String()}
+    set {_buffer = newValue}
+  }
+  /// Returns true if `buffer` has been explicitly set.
+  public var hasBuffer: Bool {return self._buffer != nil}
+  /// Clears the value of `buffer`. Subsequent reads from it will return its default value.
+  public mutating func clearBuffer() {self._buffer = nil}
+
+  public var cursor: Int64 {
+    get {return _cursor ?? 0}
+    set {_cursor = newValue}
+  }
+  /// Returns true if `cursor` has been explicitly set.
+  public var hasCursor: Bool {return self._cursor != nil}
+  /// Clears the value of `cursor`. Subsequent reads from it will return its default value.
+  public mutating func clearCursor() {self._cursor = nil}
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+
+  fileprivate var _context: Local_ShellContext? = nil
+  fileprivate var _buffer: String? = nil
+  fileprivate var _cursor: Int64? = nil
+}
+
 public struct Fig_NotificationRequest {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -2926,6 +3005,7 @@ extension Fig_ClientOriginatedMessage: SwiftProtobuf.Message, SwiftProtobuf._Mes
     121: .standard(proto: "get_config_property_request"),
     122: .standard(proto: "update_config_property_request"),
     123: .standard(proto: "pseudoterminal_restart_request"),
+    124: .standard(proto: "terminal_session_info_request"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -3234,6 +3314,19 @@ extension Fig_ClientOriginatedMessage: SwiftProtobuf.Message, SwiftProtobuf._Mes
           self.submessage = .pseudoterminalRestartRequest(v)
         }
       }()
+      case 124: try {
+        var v: Fig_TerminalSessionInfoRequest?
+        var hadOneofValue = false
+        if let current = self.submessage {
+          hadOneofValue = true
+          if case .terminalSessionInfoRequest(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.submessage = .terminalSessionInfoRequest(v)
+        }
+      }()
       default: break
       }
     }
@@ -3340,6 +3433,10 @@ extension Fig_ClientOriginatedMessage: SwiftProtobuf.Message, SwiftProtobuf._Mes
       guard case .pseudoterminalRestartRequest(let v)? = self.submessage else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 123)
     }()
+    case .terminalSessionInfoRequest?: try {
+      guard case .terminalSessionInfoRequest(let v)? = self.submessage else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 124)
+    }()
     case nil: break
     }
     try unknownFields.traverse(visitor: &visitor)
@@ -3367,6 +3464,7 @@ extension Fig_ServerOriginatedMessage: SwiftProtobuf.Message, SwiftProtobuf._Mes
     105: .standard(proto: "destination_of_symbolic_link_response"),
     106: .standard(proto: "get_defaults_property_response"),
     107: .standard(proto: "get_config_property_response"),
+    108: .standard(proto: "terminal_session_info_response"),
     1000: .same(proto: "notification"),
   ]
 
@@ -3497,6 +3595,19 @@ extension Fig_ServerOriginatedMessage: SwiftProtobuf.Message, SwiftProtobuf._Mes
           self.submessage = .getConfigPropertyResponse(v)
         }
       }()
+      case 108: try {
+        var v: Fig_TerminalSessionInfoResponse?
+        var hadOneofValue = false
+        if let current = self.submessage {
+          hadOneofValue = true
+          if case .terminalSessionInfoResponse(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.submessage = .terminalSessionInfoResponse(v)
+        }
+      }()
       case 1000: try {
         var v: Fig_Notification?
         var hadOneofValue = false
@@ -3563,6 +3674,10 @@ extension Fig_ServerOriginatedMessage: SwiftProtobuf.Message, SwiftProtobuf._Mes
     case .getConfigPropertyResponse?: try {
       guard case .getConfigPropertyResponse(let v)? = self.submessage else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 107)
+    }()
+    case .terminalSessionInfoResponse?: try {
+      guard case .terminalSessionInfoResponse(let v)? = self.submessage else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 108)
     }()
     case .notification?: try {
       guard case .notification(let v)? = self.submessage else { preconditionFailure() }
@@ -5622,6 +5737,86 @@ extension Fig_UpdateApplicationPropertiesRequest: SwiftProtobuf.Message, SwiftPr
   public static func ==(lhs: Fig_UpdateApplicationPropertiesRequest, rhs: Fig_UpdateApplicationPropertiesRequest) -> Bool {
     if lhs._interceptBoundKeystrokes != rhs._interceptBoundKeystrokes {return false}
     if lhs.actions != rhs.actions {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Fig_TerminalSessionInfoRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".TerminalSessionInfoRequest"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .standard(proto: "terminal_session_id"),
+  ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.terminalSessionID) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.terminalSessionID.isEmpty {
+      try visitor.visitSingularStringField(value: self.terminalSessionID, fieldNumber: 1)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Fig_TerminalSessionInfoRequest, rhs: Fig_TerminalSessionInfoRequest) -> Bool {
+    if lhs.terminalSessionID != rhs.terminalSessionID {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Fig_TerminalSessionInfoResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".TerminalSessionInfoResponse"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .same(proto: "context"),
+    2: .same(proto: "buffer"),
+    3: .same(proto: "cursor"),
+  ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularMessageField(value: &self._context) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self._buffer) }()
+      case 3: try { try decoder.decodeSingularInt64Field(value: &self._cursor) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    try { if let v = self._context {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
+    } }()
+    try { if let v = self._buffer {
+      try visitor.visitSingularStringField(value: v, fieldNumber: 2)
+    } }()
+    try { if let v = self._cursor {
+      try visitor.visitSingularInt64Field(value: v, fieldNumber: 3)
+    } }()
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Fig_TerminalSessionInfoResponse, rhs: Fig_TerminalSessionInfoResponse) -> Bool {
+    if lhs._context != rhs._context {return false}
+    if lhs._buffer != rhs._buffer {return false}
+    if lhs._cursor != rhs._cursor {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
