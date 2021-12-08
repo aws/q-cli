@@ -2009,9 +2009,9 @@ extension AppDelegate : NSMenuDelegate {
                   legend.addItem(NSMenuItem(title: "Switch to a different application", action: nil, keyEquivalent: ""))
                   legend.addItem(NSMenuItem(title: "and then return to current window", action: nil, keyEquivalent: ""))
                   
-                } else if let loaded = companionWindow?.loaded, !loaded {
-                    color = .red
-                    legend.addItem(NSMenuItem(title: "Autocomplete could not be loaded.", action: nil, keyEquivalent: ""))
+                } else if let isLoading = companionWindow?.webView?.isLoading, isLoading {
+                    color = .yellow
+                    legend.addItem(NSMenuItem(title: "Autocomplete is loading", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem.separator())
                     legend.addItem(NSMenuItem(title: "Make sure you're connected to", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem(title: "the internet and try again.", action: nil, keyEquivalent: ""))
