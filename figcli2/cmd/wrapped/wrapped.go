@@ -19,8 +19,29 @@ import (
 )
 
 const (
-	timeGroups = 14
+	timeGroups = 24
 )
+
+func truncatePath(path string, maxlength int) string {
+	length := len(path)
+
+	for length > maxlength {
+		path = strings.TrimLeft(path, "./")
+		split := strings.SplitN(path, "/", 2)
+		path = "./" + split[1]
+		length = len(path)
+	}
+
+	return path
+}
+
+func truncateCommand(command string, maxlength int) string {
+	length := len(command)
+	if length > maxlength {
+		command = command[:maxlength-3] + "..."
+	}
+	return command
+}
 
 type History struct {
 	Command   string
@@ -323,14 +344,27 @@ func (m model) View() string {
 
 	// Command usage
 	case 1:
+
+		fig_logo := `███████╗██╗ ██████╗
+██╔════╝██║██╔════╝
+█████╗  ██║██║  ███╗
+██╔══╝  ██║██║   ██║
+██║     ██║╚██████╔╝
+╚═╝     ╚═╝ ╚═════╝  Wrapped`
+
+		logoBox := lipgloss.NewStyle().
+			Border(lipgloss.ThickBorder()).
+			BorderForeground(lipgloss.Color("2")).
+			Padding(1, 2).
+			Bold(true).
+			Render(fig_logo)
+
 		maxWorkingDirs := 5
 		if len(m.metrics.TopWorkingDirs) < maxWorkingDirs {
 			maxWorkingDirs = len(m.metrics.TopWorkingDirs)
 		}
 
-		workingDirBackground := lipgloss.Color("5")
-
-		workingDirTitle := lipgloss.NewStyle().Background(workingDirBackground).MarginBottom(1).Bold(true).Render("Top working dirs")
+		workingDirTitle := lipgloss.NewStyle().MarginBottom(1).Bold(true).Render("Top working dirs")
 
 		counts := []string{}
 		dirs := []string{}
@@ -342,6 +376,8 @@ func (m model) View() string {
 			if workingDirPretty[len(workingDirPretty)-1] != '/' {
 				workingDirPretty += "/"
 			}
+
+			workingDirPretty = truncatePath(workingDirPretty, 25)
 
 			counts = append(counts, fmt.Sprintf("%v", workingDir.Count))
 			dirs = append(dirs, workingDirPretty)
@@ -355,52 +391,50 @@ func (m model) View() string {
 
 		workingDirPanel := lipgloss.NewStyle().
 			Padding(1, 2).
-			Margin(0, 2, 1, 1).
-			Background(workingDirBackground).
+			Border(lipgloss.DoubleBorder()).
+			BorderForeground(lipgloss.Color("3")).
+			Width(lipgloss.Width(logoBox) - 2).
 			Render(workingDirTitle + "\n" + dirCountStr)
 
-		maxAlias := 4
-		if len(m.metrics.TopAliases) < maxAlias {
-			maxAlias = len(m.metrics.TopAliases)
-		}
+		// maxAlias := 4
+		// if len(m.metrics.TopAliases) < maxAlias {
+		// 	maxAlias = len(m.metrics.TopAliases)
+		// }
 
-		aliasBackground := lipgloss.Color("8")
+		// aliasTitle := lipgloss.NewStyle().MarginBottom(1).Bold(true).Render("Top aliases")
 
-		aliasTitle := lipgloss.NewStyle().Background(aliasBackground).MarginBottom(1).Bold(true).Render("Top aliases")
+		// counts = []string{}
+		// aliases := []string{}
+		// for _, alias := range m.metrics.TopAliases[0:maxAlias] {
+		// 	counts = append(counts, fmt.Sprintf("%v", alias.Count))
+		// 	aliases = append(aliases, truncateCommand(alias.Alias, 25))
+		// }
 
-		counts = []string{}
-		aliases := []string{}
-		for _, alias := range m.metrics.TopAliases[0:maxAlias] {
-			counts = append(counts, fmt.Sprintf("%v", alias.Count))
-			aliases = append(aliases, alias.Alias)
-		}
+		// countsStr = lipgloss.JoinVertical(lipgloss.Right, counts...)
+		// aliasesStr := lipgloss.JoinVertical(lipgloss.Left, aliases...)
 
-		countsStr = lipgloss.JoinVertical(lipgloss.Right, counts...)
-		aliasesStr := lipgloss.JoinVertical(lipgloss.Left, aliases...)
+		// alisesCountStr := lipgloss.NewStyle().
+		// 	Render(lipgloss.JoinHorizontal(lipgloss.Top, countsStr, " ", aliasesStr))
 
-		alisesCountStr := lipgloss.NewStyle().
-			Render(lipgloss.JoinHorizontal(lipgloss.Top, countsStr, " ", aliasesStr))
+		// alisesCountPanel := lipgloss.NewStyle().
+		// 	Padding(1, 2).
+		// 	Border(lipgloss.RoundedBorder()).
+		// 	Render(aliasTitle + "\n" + alisesCountStr)
 
-		alisesCountPanel := lipgloss.NewStyle().
-			Padding(1, 2).
-			Margin(0, 2, 1, 1).
-			Background(aliasBackground).
-			Render(aliasTitle + "\n" + alisesCountStr)
+		//			Width(lipgloss.Width(workingDirPanel) - 2).
 
 		maxCommands := 15
 		if len(m.metrics.TopCommandsUsage) < maxCommands {
 			maxCommands = len(m.metrics.TopCommandsUsage)
 		}
 
-		commandsPanelBackground := lipgloss.Color("2")
-
-		commandPageTitle := lipgloss.NewStyle().Bold(true).Background(commandsPanelBackground).PaddingBottom(1).Render("Top commands")
+		commandPageTitle := lipgloss.NewStyle().Bold(true).PaddingBottom(1).Render("Top commands")
 
 		counts = []string{}
 		commands := []string{}
 		for _, command := range m.metrics.TopCommandsUsage[0:maxCommands] {
 			counts = append(counts, fmt.Sprintf("%v", command.Count))
-			commands = append(commands, command.Command)
+			commands = append(commands, truncateCommand(command.Command, 15))
 		}
 
 		countsStr = lipgloss.JoinVertical(lipgloss.Right, counts...)
@@ -411,8 +445,9 @@ func (m model) View() string {
 
 		commandPanel := lipgloss.NewStyle().
 			Padding(1, 2).
-			Margin(0, 0, 1, 1).
-			Background(commandsPanelBackground).
+			Border(lipgloss.NormalBorder()).
+			BorderForeground(lipgloss.Color("4")).
+			Width(25).
 			Render(lipgloss.JoinVertical(lipgloss.Left, commandPageTitle, commmandsStr))
 
 		dayOfWeekHistogramTitle := lipgloss.NewStyle().Bold(true).PaddingBottom(1).Render("Weekly Activity")
@@ -437,11 +472,12 @@ func (m model) View() string {
 			Render(lipgloss.JoinHorizontal(lipgloss.Top, daysOfWeekStr, " ", countsStr))
 
 		dayOfWeekHistogramPanel := lipgloss.NewStyle().
-			Background(lipgloss.Color("6")).
 			Padding(1, 2).
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(lipgloss.Color("5")).
 			Render(dayOfWeekHistogramTitle + "\n" + daysOfWeekHistogramStr)
 
-		timeOfDayHistogramPageTitle := lipgloss.NewStyle().Bold(true).PaddingBottom(1).Render("Time of Day Histogram")
+		timeOfDayHistogramPageTitle := lipgloss.NewStyle().Bold(true).PaddingBottom(1).Render("Daily Activity")
 
 		maxCount = 0
 		for _, count := range m.metrics.TimeOfDay {
@@ -451,53 +487,79 @@ func (m model) View() string {
 		}
 
 		width := 20
-		timeOfDayHistogramStrBuilder := strings.Builder{}
-		for i := 0; i < timeGroups/2; i++ {
-			scaledTime1 := int(float64(m.metrics.TimeOfDay[i*2]) / float64(maxCount) * float64(width))
-			scaledTime2 := int(float64(m.metrics.TimeOfDay[i*2+1]) / float64(maxCount) * float64(width))
+		timeOfDayHistogramBars := []string{}
+		for i := -0.5; i < timeGroups/2; i++ {
+			i_1 := int(i * 2)
+			i_2 := int(i*2 + 1)
+			scaledTime1 := int(float64(m.metrics.TimeOfDay[i_1]) / float64(maxCount) * float64(width))
+			scaledTime2 := int(float64(m.metrics.TimeOfDay[i_2]) / float64(maxCount) * float64(width))
 
+			histogramBuilder := strings.Builder{}
 			for j := 0; j < width; j++ {
 				if scaledTime1 > j && scaledTime2 > j {
-					timeOfDayHistogramStrBuilder.WriteString("█")
+					histogramBuilder.WriteString("█")
 				} else if scaledTime1 > j && scaledTime2 <= j {
-					timeOfDayHistogramStrBuilder.WriteString("▀")
+					histogramBuilder.WriteString("▀")
 				} else if scaledTime1 <= j && scaledTime2 > j {
-					timeOfDayHistogramStrBuilder.WriteString("▄")
+					histogramBuilder.WriteString("▄")
 				} else if scaledTime1 <= j && scaledTime2 <= j {
-					timeOfDayHistogramStrBuilder.WriteString(" ")
+					histogramBuilder.WriteString(" ")
 				}
 			}
-			timeOfDayHistogramStrBuilder.WriteString("\n")
+
+			timeOfDayHistogramBars = append(timeOfDayHistogramBars, histogramBuilder.String())
 		}
 
-		timeOfDayHistogramStr := lipgloss.NewStyle().Align(lipgloss.Left).Render(timeOfDayHistogramStrBuilder.String())
+		timeOfDayHistogramBarsStr := lipgloss.JoinVertical(lipgloss.Right, timeOfDayHistogramBars...)
 
-		timeOfDayLabelStr := ""
-		for i := 0; i < timeGroups/2; i++ {
+		timeOfDayHistogramStr := lipgloss.NewStyle().
+			Align(lipgloss.Left).
+			Render(timeOfDayHistogramBarsStr)
+
+		timeOfDayLabels := []string{}
+		for i := 0; i < timeGroups/2+1; i++ {
 			if i == 0 {
-				// timeOfDasyLabelStr += "12am"
-			} else if i == 1 {
-				timeOfDayLabelStr += "6am"
-			} else if i == 3 {
-				timeOfDayLabelStr += "12pm"
-			} else if i == 5 {
-				timeOfDayLabelStr += "6pm"
-			}
+				timeOfDayLabels = append(timeOfDayLabels, "12am ")
+			} else if i == timeGroups/2 {
+				timeOfDayLabels = append(timeOfDayLabels, "12am ")
+			} else if i == timeGroups/4 {
+				timeOfDayLabels = append(timeOfDayLabels, "12pm ")
+			} else if i == timeGroups/8 {
+				timeOfDayLabels = append(timeOfDayLabels, "6am ")
+			} else if i == timeGroups/8*3 {
+				timeOfDayLabels = append(timeOfDayLabels, "6pm ")
+			} else {
+				timeOfDayLabels = append(timeOfDayLabels, "")
 
-			timeOfDayLabelStr = timeOfDayLabelStr + "\n"
+			}
 		}
 
-		timeOfDayStr := lipgloss.JoinHorizontal(lipgloss.Top, timeOfDayLabelStr, " ", timeOfDayHistogramStr)
+		timeOfDayLabelsStr := lipgloss.JoinVertical(lipgloss.Right, timeOfDayLabels...)
 
-		timeOfDayHistogramPage := lipgloss.JoinVertical(lipgloss.Center, timeOfDayHistogramPageTitle, timeOfDayStr)
+		timeOfDayStr := lipgloss.JoinHorizontal(lipgloss.Top, timeOfDayLabelsStr, timeOfDayHistogramStr)
+
+		timeOfDayHistogramPage := lipgloss.NewStyle().
+			Border(lipgloss.ThickBorder()).
+			BorderForeground(lipgloss.Color("6")).
+			Padding(1, 2).
+			Render(lipgloss.JoinVertical(lipgloss.Left, timeOfDayHistogramPageTitle, timeOfDayStr))
+
+		statsSummary := lipgloss.NewStyle().
+			Padding(1, 2).
+			Width(lipgloss.Width(dayOfWeekHistogramPanel) - 2).
+			Border(lipgloss.DoubleBorder()).
+			BorderForeground(lipgloss.Color("9")).
+			Render(lipgloss.JoinVertical(lipgloss.Left, "Stats Summary",
+				lipgloss.JoinHorizontal(lipgloss.Top, "Total Commands: ", strconv.Itoa(m.metrics.TotalCommands))))
 
 		doc.WriteString(
 			lipgloss.JoinVertical(
 				lipgloss.Center,
-				lipgloss.NewStyle().Bold(true).MarginBottom(1).Render("Fig Wrapped"),
-				lipgloss.JoinHorizontal(lipgloss.Bottom, commandPanel, " ",
-					lipgloss.JoinVertical(lipgloss.Left, alisesCountPanel, workingDirPanel)),
-				lipgloss.JoinHorizontal(lipgloss.Center, dayOfWeekHistogramPanel, "  ", timeOfDayHistogramPage)))
+				lipgloss.JoinHorizontal(lipgloss.Center, commandPanel,
+					lipgloss.JoinVertical(lipgloss.Left, logoBox, workingDirPanel)),
+				lipgloss.JoinHorizontal(lipgloss.Center,
+					lipgloss.JoinVertical(lipgloss.Center, statsSummary, dayOfWeekHistogramPanel),
+					timeOfDayHistogramPage)))
 
 	// Working dirs
 	case 2:
@@ -552,13 +614,22 @@ func (m model) View() string {
 
 	fullPage := ""
 
-	year := lipgloss.NewStyle().PaddingLeft(1).PaddingRight(1).Background(lipgloss.Color("1")).Bold(true).Render("2021")
-	inReview := lipgloss.NewStyle().PaddingLeft(1).PaddingRight(1).Background(lipgloss.Color("2")).Bold(true).Render("In Review")
-	commands := lipgloss.NewStyle().PaddingLeft(1).PaddingRight(1).Background(lipgloss.Color("3")).Bold(true).Render(fmt.Sprintf("%v Commands", m.metrics.TotalCommands))
-	atFig := lipgloss.NewStyle().PaddingLeft(1).PaddingRight(1).Background(lipgloss.Color("4")).Bold(true).Render("@fig")
+	statusBarForeground := lipgloss.Color("#ffffff")
+
+	yearColor := lipgloss.Color("#1e90ff")
+	inReviewColor := lipgloss.Color("#2e8b57")
+	commandsColor := lipgloss.Color("#ffa500")
+	aliasesColor := lipgloss.Color("#ff4500")
+
+	statusBarColor := lipgloss.Color("#333333")
+
+	year := lipgloss.NewStyle().PaddingLeft(1).PaddingRight(1).Foreground(statusBarForeground).Background(yearColor).Bold(true).Render("2021")
+	inReview := lipgloss.NewStyle().PaddingLeft(1).PaddingRight(1).Foreground(statusBarForeground).Background(inReviewColor).Bold(true).Render("In Review")
+	commands := lipgloss.NewStyle().PaddingLeft(1).PaddingRight(1).Foreground(statusBarForeground).Background(commandsColor).Bold(true).Render(fmt.Sprintf("%v Commands", m.metrics.TotalCommands))
+	atFig := lipgloss.NewStyle().PaddingLeft(1).PaddingRight(1).Foreground(statusBarForeground).Background(aliasesColor).Bold(true).Render("@fig")
 
 	statusBarLeft := year + inReview
-	statusBarRight := lipgloss.NewStyle().Background(lipgloss.Color("5")).Width(physicalWidth - lipgloss.Width(statusBarLeft)).Align(lipgloss.Right).Render(commands + atFig)
+	statusBarRight := lipgloss.NewStyle().Background(statusBarColor).Width(physicalWidth - lipgloss.Width(statusBarLeft)).Align(lipgloss.Right).Render(commands + atFig)
 
 	statusBar := statusBarLeft + statusBarRight
 
