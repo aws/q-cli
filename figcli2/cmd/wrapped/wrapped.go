@@ -120,6 +120,8 @@ type HistoryMetrics struct {
 	DayOfWeek              map[time.Weekday]int
 	CharactersSavedByAlias int
 	TotalCommands          int
+	Keystrokes             int
+	Commits                int
 }
 
 func getAlias(shell string) (map[string]string, error) {
@@ -190,6 +192,12 @@ func Metrics(history []History) HistoryMetrics {
 
 	for _, h := range history {
 		workingDirMap[h.Cwd]++
+
+		metrics.Keystrokes += len(h.Command)
+
+		if strings.HasPrefix(h.Command, "git commit") {
+			metrics.Commits++
+		}
 
 		command := strings.SplitN(h.Command, " ", 2)[0]
 		if command != "" && command != "\\n" {
@@ -316,7 +324,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	if m.page >= 8 {
+	if m.page >= 2 {
 		return m, tea.Quit
 	}
 
@@ -331,19 +339,41 @@ func (m model) View() string {
 	// Into page
 	case 0:
 
-		fig_logo := `███████╗██╗ ██████╗
-██╔════╝██║██╔════╝
-█████╗  ██║██║  ███╗
-██╔══╝  ██║██║   ██║
-██║     ██║╚██████╔╝
-╚═╝     ╚═╝ ╚═════╝  Wrapped`
-		title := lipgloss.NewStyle().Bold(true).PaddingBottom(1).Render(fig_logo)
+		asciiArt := ` .--~~~~~~~~~~~~~------.
+ /--===============------\
+ | |⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺|     |
+ | |               |     |
+ | |      >_<      |     |
+ | |               |     |
+ | |_______________|     |
+ |                   ::::|
+ '======================='
+ //-'-'-'-'-'-'-'-'-'-'-\\
+//_'_'_'_'_'_'_'_'_'_'_'_\\
+[-------------------------]
+\_________________________/
+
+
+`
+
+		doc.WriteString(asciiArt)
+
+		// 		fig_logo := `███████╗██╗ ██████╗
+		// ██╔════╝██║██╔════╝
+		// █████╗  ██║██║  ███╗
+		// ██╔══╝  ██║██║   ██║
+		// ██║     ██║╚██████╔╝
+		// ╚═╝     ╚═╝ ╚═════╝  Wrapped`
+		// 		title := lipgloss.NewStyle().Bold(true).PaddingBottom(1).Render(fig_logo)
+
+		thanks := lipgloss.NewStyle().Bold(true).Render("Thank you so much for using Fig in 2021!")
+
 		caption := lipgloss.NewStyle().Italic(true).Foreground(lipgloss.Color("5")).Render("Here is your 2021 in the shell wrapped up")
 
-		doc.WriteString(lipgloss.JoinVertical(lipgloss.Center, title, caption))
+		doc.WriteString(lipgloss.JoinVertical(lipgloss.Center, thanks, caption))
 
 	// Command usage
-	case 1:
+	case 1, 2:
 
 		fig_logo := `███████╗██╗ ██████╗
 ██╔════╝██║██╔════╝
@@ -549,8 +579,9 @@ func (m model) View() string {
 			Width(lipgloss.Width(dayOfWeekHistogramPanel) - 2).
 			Border(lipgloss.DoubleBorder()).
 			BorderForeground(lipgloss.Color("9")).
-			Render(lipgloss.JoinVertical(lipgloss.Left, "Stats Summary",
-				lipgloss.JoinHorizontal(lipgloss.Top, "Total Commands: ", strconv.Itoa(m.metrics.TotalCommands))))
+			Render(lipgloss.JoinVertical(lipgloss.Left,
+				lipgloss.JoinHorizontal(lipgloss.Top, "Key Strokes: ", strconv.Itoa(m.metrics.Keystrokes)),
+				lipgloss.JoinHorizontal(lipgloss.Top, "Git Commits: ", strconv.Itoa(m.metrics.Commits))))
 
 		doc.WriteString(
 			lipgloss.JoinVertical(
@@ -562,7 +593,6 @@ func (m model) View() string {
 					timeOfDayHistogramPage)))
 
 	// Working dirs
-	case 2:
 
 	// Longest piped sequence
 	case 3:
@@ -633,7 +663,7 @@ func (m model) View() string {
 
 	statusBar := statusBarLeft + statusBarRight
 
-	if m.page < 8 && m.page != 1 {
+	if m.page == 0 {
 		nextPage := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("8")).MarginTop(2).Render("[Press Enter to continue]")
 		fullPage = lipgloss.JoinVertical(lipgloss.Center, doc.String(), nextPage)
 	} else {
