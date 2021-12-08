@@ -253,12 +253,6 @@ class ExternalWindow {
         }
     }
   
-    var lastPaneId: String? {
-        get {
-          return windowMetadataService.getMostRecentPaneId(for: self.windowId)
-        }
-    }
-  
   var associatedShellContext: ShellContext? {
     get {
       return windowMetadataService.getAssociatedShellContext(for: self.windowId)

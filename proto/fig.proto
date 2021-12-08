@@ -345,10 +345,16 @@ message Action {
 
 /// App properties
 
+message ActionList {
+  repeated Action actions = 1;
+}
+
 message UpdateApplicationPropertiesRequest {
   optional bool interceptBoundKeystrokes = 1;
-  repeated Action actions = 2;
+  optional bool interceptGlobalKeystrokes = 3;
+  optional ActionList actionList = 4;
 
+  reserved 2;
 }
 
 

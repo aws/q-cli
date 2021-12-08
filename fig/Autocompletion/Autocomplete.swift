@@ -108,40 +108,6 @@ class Autocomplete {
       }
     }
   }
-
-  static func handleShowOnTab(event:CGEvent, in window: ExternalWindow) -> EventTapAction {
-    let keycode = UInt16(event.getIntegerValueField(.keyboardEventKeycode))
-    guard Keycode.tab == keycode else {
-      return .ignore
-    }
-    
-    guard event.type == .keyDown else {
-      return .ignore
-    }
-    
-    // no modifier keys are pressed!
-    guard !event.flags.containsKeyboardModifier else {
-        return .ignore
-    }
-        
-    let autocompleteIsNotVisible = WindowManager.shared.autocomplete?.isHidden ?? true
-
-    let onlyShowOnTab = (Settings.shared.getValue(forKey: Settings.onlyShowOnTabKey) as? Bool) ?? false
-    
-    // if not enabled or if autocomplete is already visible, handle normally
-    if !onlyShowOnTab || !autocompleteIsNotVisible {
-      return .ignore
-    }
-    
-    // Don't intercept tab when in VSCode editor
-    guard window.isFocusedTerminal else {
-      return .forward
-    }
-    
-    // toggle autocomplete on and consume tab keypress
-    Autocomplete.toggle(for: window)
-    return .consume
-  }
 }
 
 protocol ShellIntegration {
