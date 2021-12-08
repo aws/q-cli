@@ -342,8 +342,8 @@ func (m model) View() string {
 		asciiArt := ` .--~~~~~~~~~~~~~------.
  /--===============------\
  | |⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺|     |
+ | | ` + lipgloss.NewStyle().Blink(true).Render(">") + `             |     |
  | |               |     |
- | |      >_<      |     |
  | |               |     |
  | |_______________|     |
  |                   ::::|
@@ -355,6 +355,22 @@ func (m model) View() string {
 
 
 `
+
+		// asciiArt := ` .--~~~~~~~~~~~~~------.
+		// /--===============------\
+		// | |⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺|     |
+		// | |    ███▛▀▀▜    |     |
+		// | |    ███▌  ▐    |     |
+		// | |    ███▙▄▄▟    |     |
+		// | |_______________|     |
+		// |                   ::::|
+		// '======================='
+		// //-'-'-'-'-'-'-'-'-'-'-\\
+		// //_'_'_'_'_'_'_'_'_'_'_'_\\
+		// [-------------------------]
+		// \_________________________/
+
+		// `
 
 		doc.WriteString(asciiArt)
 
@@ -644,14 +660,14 @@ func (m model) View() string {
 
 	fullPage := ""
 
-	statusBarForeground := lipgloss.Color("#ffffff")
+	statusBarForeground := lipgloss.Color("15")
 
-	yearColor := lipgloss.Color("#1e90ff")
-	inReviewColor := lipgloss.Color("#2e8b57")
-	commandsColor := lipgloss.Color("#ffa500")
-	aliasesColor := lipgloss.Color("#ff4500")
+	yearColor := lipgloss.Color("0")
+	inReviewColor := lipgloss.Color("8")
+	commandsColor := lipgloss.Color("7")
+	aliasesColor := lipgloss.Color("15")
 
-	statusBarColor := lipgloss.Color("#333333")
+	statusBarColor := lipgloss.Color("13")
 
 	year := lipgloss.NewStyle().PaddingLeft(1).PaddingRight(1).Foreground(statusBarForeground).Background(yearColor).Bold(true).Render("2021")
 	inReview := lipgloss.NewStyle().PaddingLeft(1).PaddingRight(1).Foreground(statusBarForeground).Background(inReviewColor).Bold(true).Render("In Review")
@@ -677,7 +693,12 @@ func (m model) View() string {
 		lipgloss.Center,
 		fullPage)
 
-	return lipgloss.JoinVertical(lipgloss.Center, page, statusBar)
+	if m.page == 0 {
+		return page
+	} else {
+		return lipgloss.JoinVertical(lipgloss.Center, page, statusBar)
+	}
+
 }
 
 func NewCmdWrapped() *cobra.Command {
