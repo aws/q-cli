@@ -326,12 +326,17 @@ type model struct {
 }
 
 func initialModel() model {
-	history, _ := loadHistory()
+	history, err := loadHistory()
+	if err != nil {
+		fmt.Printf("\n→ You haven't had Fig installed long enough to generate your year in review.\n  Try again in a couple of days!\n\n")
+		os.Exit(0)
+	}
+
 	metrics := Metrics(history)
 
 	if len(history) < 100 {
 		fmt.Printf("\n→ You haven't had Fig installed long enough to generate your year in review.\n  Try again in a couple of days!\n\n")
-		os.Exit(1)
+		os.Exit(0)
 	}
 
 	return model{
@@ -643,6 +648,10 @@ func (m model) View() string {
 			BorderForeground(lipgloss.Color("9")).
 			Render(commitMsgSummary)
 
+		shareText := lipgloss.NewStyle().
+			MarginTop(1).
+			Render("🎁 Share your " + lipgloss.NewStyle().Bold(true).Render("#FigWrapped"))
+
 		doc.WriteString(
 			lipgloss.JoinVertical(
 				lipgloss.Center,
@@ -650,7 +659,8 @@ func (m model) View() string {
 					lipgloss.JoinVertical(lipgloss.Left, logoBox, workingDirPanel)),
 				lipgloss.JoinHorizontal(lipgloss.Center,
 					lipgloss.JoinVertical(lipgloss.Center, statsSummary, dayOfWeekHistogramPanel),
-					timeOfDayHistogramPage)))
+					timeOfDayHistogramPage),
+				shareText))
 
 	// Working dirs
 
@@ -728,7 +738,7 @@ func (m model) View() string {
 			MarginTop(2).
 			Render(
 				lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Render("[Press Enter to see your ") +
-					lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Bold(true).Underline(true).Render("Fig Wrapped") +
+					lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Bold(true).Render("#FigWrapped") +
 					lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Render("]"))
 
 		fullPage = lipgloss.JoinVertical(lipgloss.Center, doc.String(), nextPage)
@@ -742,7 +752,7 @@ func (m model) View() string {
 			physicalHeight,
 			lipgloss.Center,
 			lipgloss.Center,
-			"Expand your terminal to see your Fig wrapped!")
+			"Expand your terminal to see your #FigWrapped!")
 
 		return page
 	}
@@ -771,10 +781,9 @@ func (m model) View() string {
 
 func NewCmdWrapped() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:    "wrapped",
-		Short:  "How did you use the shell in 2021",
-		Long:   "How did you use the shell in 2021",
-		Hidden: true,
+		Use:   "wrapped",
+		Short: "See your #FigWrapped",
+		Long:  "What did you do in the terminal in 2021, find out with #FigWrapped!",
 		Run: func(cmd *cobra.Command, arg []string) {
 			p := tea.NewProgram(initialModel())
 			if err := p.Start(); err != nil {
