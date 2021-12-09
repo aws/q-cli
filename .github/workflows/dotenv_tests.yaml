@@ -1,0 +1,37 @@
+name: Run dotenv test suite
+on:
+  pull_request:
+  workflow_dispatch:
+  push:
+    branches:
+      - "develop"
+      - "sean/dotenv-test"
+    # paths:
+    #   - config/**
+defaults:
+  run:
+    working-directory: ./dotenv
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      DOCKER_BUILDKIT: 1
+      COMPOSE_DOCKER_CLI_BUILD: 1
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: recursive
+    - name: Install NPM dependencies
+      run: npm install
+    - name: Generate docker-compose.yaml
+      run: npx ts-node generate-compose
+    - name: Build base image
+      run: docker-compose -f base.yaml build
+    - name: Build environment images
+      run: docker-compose build
+    - name: Run Tests
+      run: docker-compose up
+    - name: Check if all tests passed?
+      run: |
+        FAILED_TESTS=$(docker-compose ps -q | xargs docker inspect -f '{{ .State.ExitCode }}' | grep -v '^0' | wc -l | tr -d ' ')
+        test "$FAILED_TESTS" -eq 0 || exit $FAILED_TESTS
