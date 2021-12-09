@@ -38,18 +38,24 @@ extension FigApp {
         if request.hasInterceptBoundKeystrokes {
             KeypressProvider.shared.setRedirectsEnabled(value: request.interceptBoundKeystrokes)
         }
+      
+        if request.hasInterceptGlobalKeystrokes {
+          KeypressProvider.shared.setGlobalKeystrokeInterceptsEnabled(
+            value: request.interceptGlobalKeystrokes
+          )
+        }
         
-        let actions = try request.actions.map({ action in
-            try action.jsonString()
-        })
-        
-        let actionsList = "[" + actions.joined(separator: ",\n") + "]"
-        
-        try app.writeToAppDirectory("actions.json",
-                                    data: actionsList.data(using: .utf8))
-        
-        return true
-        
+        if request.hasActionList {
+          let actions = try request.actionList.actions.map({ action in
+              try action.jsonString()
+          })
+          
+          let actionsList = "[" + actions.joined(separator: ",\n") + "]"
+          
+          try app.writeToAppDirectory("actions.json",
+                                      data: actionsList.data(using: .utf8))
+        }
+        return true;
     }
 }
 

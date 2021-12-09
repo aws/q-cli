@@ -435,14 +435,14 @@ extension ShellHookManager {
       // ZLE doesn't handle signals sent to shell, like control+c
       // So we need to manually force an update when the line changes
       DispatchQueue.main.async {
-        Autocomplete.update(with: ("", 0), for: context.sessionID)
         Autocomplete.position()
         
-        // manually trigger edit buffer update since `Autocomplete.update` is deprecated
-        API.notifications.post(Fig_EditBufferChangedNotification.with({ notification in
-          notification.buffer = ""
-          notification.cursor = 0
-        }))
+        // manually trigger edit buffer update
+        API.notifications.editbufferChanged(buffer: "",
+                                            cursor: 0,
+                                            session: context.sessionID,
+                                            context: context)
+
       }
       KeypressProvider.shared.keyBuffer(for: hash).backedByShell = false
     }
@@ -569,17 +569,15 @@ extension ShellHookManager {
     guard Defaults.shared.loggedIn, Defaults.shared.useAutocomplete else {
       return
     }
-    API.notifications.post(
-      Fig_EditBufferChangedNotification.with({ notification in
-        if let (buffer, cursor) = keybuffer.currentState {
-          notification.buffer = buffer
-          notification.cursor = Int32(cursor)
-        }
+    
+    if let (buffer, cursor) = keybuffer.currentState {
+      API.notifications.editbufferChanged(buffer: buffer,
+                                          cursor: cursor,
+                                          session: context.sessionID,
+                                          context: window?.associatedShellContext?.ipcContext)
+    }
 
-        notification.sessionID = context.sessionID
-      }))
     DispatchQueue.main.async {
-      Autocomplete.update(with: (text, cursor), for: context.sessionID)
       Autocomplete.position()
 
     }

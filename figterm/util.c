@@ -172,7 +172,6 @@ int fig_socket_send(char* buf) {
   // Base64 encode buf and send to fig socket.
   int st;
   size_t out_len;
-  SigHandler* old_handler;
 
   unsigned char *encoded =
       base64_encode((unsigned char *) buf, strlen(buf), &out_len);
@@ -196,7 +195,6 @@ int fig_socket_send(char* buf) {
 int ipc_socket_send(char* buf, int len) {
   // send to ipc socket. No base64 encoding.
   int st;
-  SigHandler* old_handler;
 
   if (ipc_sock < 0) {
     char* path = printf_alloc("%sfig.socket", getenv("TMPDIR"));
@@ -207,10 +205,8 @@ int ipc_socket_send(char* buf, int len) {
   }
 
   st = send(ipc_sock, buf, len, 0);
-  if (st < 0) {
-    if (errno == EPIPE) {
-      ipc_sigpipe_handler(SIGPIPE);
-    }
+  if (st < 0 && errno == EPIPE) {
+    ipc_sigpipe_handler(SIGPIPE);
     log_err("Error sending buffer to socket");
   }
 

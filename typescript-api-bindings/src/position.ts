@@ -12,6 +12,16 @@ const isValidFrame = async (frame: {
     dryrun: true,
   });
 
-const WindowPosition = { isValidFrame };
+const setFrame = async (frame: {
+  width: number;
+  height: number;
+  anchorX: number;
+}) =>
+  sendPositionWindowRequest({
+    size: { width: frame.width, height: frame.height },
+    anchor: { x: frame.anchorX, y: 0 },
+  });
+
+const WindowPosition = { isValidFrame, setFrame };
 
 export default WindowPosition;

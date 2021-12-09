@@ -30,6 +30,7 @@ import (
 	"fig-cli/cmd/update"
 	"fig-cli/cmd/user"
 	"fig-cli/cmd/user/logout"
+	"fig-cli/cmd/wrapped"
 	"fig-cli/diagnostics"
 	fig_ipc "fig-cli/fig-ipc"
 	fig_proto "fig-cli/fig-proto"
@@ -109,21 +110,21 @@ func Execute() {
 				NewStyle().
 				Padding(1, 1).
 				Width(TextWidth).
-				Foreground(lipgloss.Color("#9e9e9e")).
+				Foreground(lipgloss.AdaptiveColor{Light: "236", Dark: "248"}).
 				Render(
 					lipgloss.NewStyle().
 						Bold(true).
 						Render(`Usage: `) +
 						lipgloss.NewStyle().
 							Italic(true).
-							Foreground(lipgloss.Color("#9e9e9e")).
+							Foreground(lipgloss.AdaptiveColor{Light: "236", Dark: "248"}).
 							Render(`fig [subcommand]`),
 				))
 
 			fmt.Println(lipgloss.
 				NewStyle().
 				Padding(0, 1).
-				Foreground(lipgloss.Color("#d06fcf")).
+				Foreground(lipgloss.Color("5")).
 				// Border(lipgloss.RoundedBorder(), true, true).
 				Width(TextWidth).
 				Bold(true).
@@ -143,7 +144,7 @@ func Execute() {
 					sb.WriteString(lipgloss.NewStyle().
 						Align(lipgloss.Left).
 						Width(TextWidth - 16).
-						Foreground(lipgloss.Color("#bcbcbc")).
+						Foreground(lipgloss.AdaptiveColor{Light: "236", Dark: "248"}).
 						Italic(true).
 						Render(` ` + c.Short))
 				}
@@ -159,7 +160,7 @@ func Execute() {
 				fmt.Println()
 
 				fmt.Println(lipgloss.NewStyle().
-					Foreground(lipgloss.Color("#9e9e9e")).
+					Foreground(lipgloss.AdaptiveColor{Light: "236", Dark: "248"}).
 					Render(" For more info on a specific command, use:"))
 				fmt.Println("  > " + lipgloss.NewStyle().Italic(true).Render("fig help [command]"))
 
@@ -310,6 +311,7 @@ func Execute() {
 	rootCmd.AddCommand(tweet.NewCmdTweet())
 	rootCmd.AddCommand(update.NewCmdUpdate())
 	rootCmd.AddCommand(user.NewCmdUser())
+	rootCmd.AddCommand(wrapped.NewCmdWrapped())
 
 	rootCmd.AddCommand(diagnostic.NewCmdDiagnostic())
 	rootCmd.AddCommand(logout.NewCmdLogout())

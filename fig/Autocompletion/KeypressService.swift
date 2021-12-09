@@ -37,11 +37,11 @@ class KeypressProvider {
   var tap: CFMachPort? = nil
   var mouseHandler: Any? = nil
   var redirectsEnabled: Bool = true
+  var globalKeystrokeInterceptsEnabled: Bool = false
   let throttler = Throttler(minimumDelay: 0.05)
   var buffers: [ExternalWindowHash: KeystrokeBuffer] = [:]
   fileprivate let handlers: [EventTapHandler] =
     [ InputMethod.keypressTrigger
-    , Autocomplete.handleShowOnTab
     , KeypressProvider.processRegisteredHandlers
     , KeypressProvider.handleRedirect
     ]
@@ -289,19 +289,33 @@ class KeypressProvider {
     KeypressProvider.shared.redirectsEnabled = value
   }
   
+  func setGlobalKeystrokeInterceptsEnabled(value: Bool) {
+    KeypressProvider.shared.globalKeystrokeInterceptsEnabled = value
+  }
+  
   static func handleRedirect(event:CGEvent, in window: ExternalWindow) -> EventTapAction {
     // prevent redirects when typing in VSCode editor
     guard window.isFocusedTerminal else {
       return .forward
     }
-        
+    
+    guard let context = window.associatedShellContext, context.isShell() else {
+      return .forward
+    }
+    
     if let keybindingString = KeyboardLayout.humanReadableKeyName(event) {
       if let bindings = Settings.shared.getKeybindings(forKey: keybindingString) {
         // Right now only handle autocomplete.keybindings
         if let autocompleteBinding = bindings["autocomplete"] {
           let autocompleteIsHidden = WindowManager.shared.autocomplete?.isHidden ?? true
           let action = autocompleteBinding.split(separator: " ").first
-          let isGlobalAction = Autocomplete.globalActions.contains(String(action ?? "")) || autocompleteBinding.contains("--global")
+          let onlyShowOnTab = Settings.shared.getValue(forKey: Settings.onlyShowOnTabKey) as? Bool ?? false;
+
+          let isGlobalAction = KeypressProvider.shared.globalKeystrokeInterceptsEnabled && (
+            keybindingString == "tab" && onlyShowOnTab ||
+            autocompleteBinding.contains("--global") ||
+            Autocomplete.globalActions.contains(String(action ?? ""))
+          )
           
           guard isGlobalAction || !autocompleteIsHidden else {
             return .ignore
