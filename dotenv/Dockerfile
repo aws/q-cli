@@ -22,8 +22,7 @@ ENV TMPDIR=/tmp/
 WORKDIR /usr/home/app/
 
 RUN mkdir -p /Applications/Fig.app/
-COPY ./dotenv .
-RUN mkdir -p /usr/home/app/ \
+RUN mkdir -p /usr/home/app/src/ \
   /usr/home/figterm/ \
   /usr/home/.fig/ \
   /usr/home/bin/ \
@@ -41,6 +40,8 @@ USER test
 # Set up testing infrastructure
 COPY --chown=test:test ./dotenv/package.json .
 RUN npm install
+
+COPY --chown=test:test ./dotenv .
 
 COPY --chown=test:test ./proto/ /usr/home/proto/
 RUN protoc --plugin="$(npm bin -g)/protoc-gen-ts_proto" \
