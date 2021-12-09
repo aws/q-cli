@@ -71,4 +71,7 @@ RUN mkdir -p /usr/home/config/bin/ && cp -r /usr/home/.fig_bin/* /usr/home/confi
 RUN echo '!#/bin/bash\ncd /usr/home/config/ && ./tools/install_and_upgrade.sh local\n' > ~/install-fig
 RUN chmod +x ~/install-fig
 
+# Indicate src/ will be mounted to preserve things like local.ts that are generated in the container.
+VOLUME /usr/home/app/src/
+
 CMD ["bash"]
