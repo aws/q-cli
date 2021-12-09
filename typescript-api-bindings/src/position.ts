@@ -16,10 +16,11 @@ const setFrame = async (frame: {
   width: number;
   height: number;
   anchorX: number;
+  offsetFromBaseline: number | undefined;
 }) =>
   sendPositionWindowRequest({
     size: { width: frame.width, height: frame.height },
-    anchor: { x: frame.anchorX, y: 0 },
+    anchor: { x: frame.anchorX, y: frame.offsetFromBaseline ?? 0 },
   });
 
 const WindowPosition = { isValidFrame, setFrame };
