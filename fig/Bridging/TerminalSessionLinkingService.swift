@@ -308,3 +308,32 @@ extension Local_ShellContext {
     }
   }
 }
+
+extension ShellContext {
+  var ipcContext: Local_ShellContext? {
+    return Local_ShellContext.with { context in
+      context.pid = self.processId
+      context.processName = self.executablePath
+      context.ttys = self.ttyDescriptor
+      context.currentWorkingDirectory = self.workingDirectory
+      if let integrationVersion = self.integrationVersion {
+        context.integrationVersion = Int32(integrationVersion)
+      }
+    }
+  }
+
+}
+
+import FigAPIBindings
+extension TerminalSessionLinker {
+  func handleRequest(_ request: Fig_TerminalSessionInfoRequest) throws -> Fig_TerminalSessionInfoResponse {
+    
+    let session = self.getTerminalSession(for: request.terminalSessionID)
+    
+    return Fig_TerminalSessionInfoResponse.with { response in
+      if let context = session?.shellContext?.ipcContext {
+        response.context = context
+      }
+    }
+  }
+}

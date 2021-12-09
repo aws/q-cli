@@ -10,14 +10,13 @@ protoc --plugin="$DIRECTORY/../typescript-api-bindings/node_modules/.bin/protoc-
 		 --experimental_allow_proto3_optional \
 	   --swift_opt=Visibility=Public \
 	   --swift_out="$DIRECTORY/../swift-api-bindings/Sources/FigAPIBindings" \
-	   "./fig.proto"
+	   "./fig.proto" \
+	   "./local.proto"
 
 export PATH=$(go env GOPATH)/bin:$PATH
 
 echo "Compiling local.proto..."
-protoc --swift_opt=Visibility=Public \
-	   --swift_out="$DIRECTORY/../fig/Local IPC" \
-		 --plugin="$DIRECTORY/../dotenv/node_modules/.bin/protoc-gen-ts_proto" \
+protoc --plugin="$DIRECTORY/../dotenv/node_modules/.bin/protoc-gen-ts_proto" \
 	   --ts_proto_opt=esModuleInterop=true \
 	   --ts_proto_opt=oneof=unions \
 	   --ts_proto_out="$DIRECTORY/../dotenv/src" \

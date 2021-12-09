@@ -33,10 +33,14 @@ class ZLEIntegration: ShellIntegration {
           // If ZLE, manually update keybuffer
           if let window = AXWindowServer.shared.whitelistedWindow,
               KeypressProvider.shared.keyBuffer(for: window).backing == .zle,
-             let context = KeypressProvider.shared.keyBuffer(for: window).insert(text: insertionText) {
+             let (buffer, cursor) = KeypressProvider.shared.keyBuffer(for: window).insert(text: insertionText),
+             let session = window.session {
               // trigger an update!
-              print("update: \(context.0)")
-              Autocomplete.update(with: context, for: window.session)
+            API.notifications.editbufferChanged(buffer: buffer,
+                                                cursor: cursor,
+                                                session: session,
+                                                context: window.associatedShellContext?.ipcContext)
+            
           }
       }
     
@@ -54,14 +58,14 @@ class ZLEIntegration: ShellIntegration {
         let pastedText = NSPasteboard.general.string(forType: .string),
         let context = KeypressProvider.shared.keyBuffer(for: window).insert(text: pastedText) {
          print("ZLE: paste! (Hiding popup window)")
-         Autocomplete.update(with: context, for: window.session)
       
-         // manually trigger edit buffer update since `Autocomplete.update` is deprecated
+         // manually trigger edit buffer
          let (buffer, cursor) = context
          if let sessionId = window.session {
            API.notifications.editbufferChanged(buffer: buffer,
                                                cursor: cursor,
-                                               session: sessionId)
+                                               session: sessionId,
+                                               context: window.associatedShellContext?.ipcContext)
          }
      }
   }

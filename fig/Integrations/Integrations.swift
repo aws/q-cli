@@ -7,6 +7,7 @@
 //
 
 import Cocoa
+import FigAPIBindings
 
 class Integrations {
   static let iTerm = "com.googlecode.iterm2"

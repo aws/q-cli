@@ -38,125 +38,75 @@
 
 #define BUFFSIZE (1024 * 100)
 
-int ptyp_open(char* ptc_name) {
-  // Open pseudoterminal, return pty parent fd and pty child name.
-  char* name;
-  int fdp;
+typedef void SigHandler(int);
+SigHandler *set_sigaction(int sig, SigHandler *func) {
+  struct sigaction action, old_action;
 
-  if ((fdp = posix_openpt(O_RDWR)) < 0)
-    return -1;
-
-  // grant access to child, clear lock flag, and then get child's name.
-  if (grantpt(fdp) < 0 || unlockpt(fdp) < 0 || (name = ptsname(fdp)) == NULL) {
-    close(fdp);
-    return -1;
-  }
-
-  strcpy(ptc_name, name);
-  return fdp;
-}
-
-int ptyc_open(int fdp, char* ptc_name) {
-  // Open pty child and set calling process as stdin/stdout/stderr of pty.
-  int fdc, err;
-
-  // Create a new session.
-  if (setsid() < 0)
-    return -1;
-  close(fdp);
-
-  // Open child, System V acquires controlling terminal on open.
-  if ((fdc = open(ptc_name, O_RDWR)) < 0)
-    return -1;
-
-#if defined(BSD)
-  // acquire controlling terminal with TIOCSCTTY.
-  if (ioctl(fdc, TIOCSCTTY, (char *)NULL) < 0)
-    goto fail;
+  action.sa_handler = func;
+  sigemptyset(&action.sa_mask);
+  action.sa_flags = 0;
+#ifdef SA_INTERRUPT
+  action.sa_flags |= SA_INTERRUPT;
 #endif
+  if (sigaction(sig, &action, &old_action) < 0)
+    return SIG_ERR;
 
-  // PTY becomes stdin/stdout/stderr of process.
-  if (dup2(fdc, STDIN_FILENO) != STDIN_FILENO ||
-      dup2(fdc, STDOUT_FILENO) != STDOUT_FILENO ||
-      dup2(fdc, STDERR_FILENO) != STDERR_FILENO)
-    goto fail;
-  if (fdc != STDIN_FILENO && fdc != STDOUT_FILENO && fdc != STDERR_FILENO)
-    close(fdc);
-
-  return 0;
-
-fail:
-  err = errno;
-  if (fdc >= 0)
-    close(fdc);
-  errno = err;
-  return -1;
+  return old_action.sa_handler;
 }
 
-void error(int log, const char* fmt, ...) {
-  va_list ap;
-  va_start(ap, fmt);
-  vdprintf(log, fmt, ap);
-  va_end(ap);
-  _exit(1);
-}
-
-ssize_t pty_send(Pty* p, const char* buf, int count) {
-  if (p == NULL) return -1;
+ssize_t pty_send(const int fd, const char* buf, int count) {
+  if (fd < 0) return -1;
   ssize_t nwrite;
-  while ((nwrite = write(p->fd, buf, count)) < 0 && errno == EINTR) {};
+  while ((nwrite = write(fd, buf, count)) < 0 && errno == EINTR) {};
   return nwrite;
 }
 
-Pty* pty_init(const char* executable, char* const* args, char* const* env, const char* logfile) {
-  int fdp;
-  pid_t process_pid;
-  pid_t pty_pid;
-  char ptc_name[30];
-  int log = open(logfile, O_APPEND | O_CREAT | O_WRONLY, 0666);
+int pty_init(const int fdp, const char* logfile) {
 
-  // Open parent/child ends of pty.
-  if ((fdp = ptyp_open(ptc_name)) < 0)
-    error(log, "failed to open pty parent");
+  int ppid = getpid();
+  int log_pid = fork();
 
-  if ((process_pid = fork()) < 0) {
-    error(log, "failed to fork pty child");
-  } else if (process_pid == 0) {
-    close(log);
-    ptyc_open(fdp, ptc_name);
-    execve(executable, args, env);
-    _exit(1);
-  }
+  if (log_pid == 0) {
+    int log = open(logfile, O_APPEND | O_CREAT | O_WRONLY, 0666);
 
-  if ((pty_pid = fork()) < 0) {
-    error(log, "failed to fork pty parent");
-  } else if (pty_pid == 0) {
     char buf[BUFFSIZE + 1];
+    
+    fd_set set;
+    
     for (;;) {
-      ssize_t nread = read(fdp, buf, BUFFSIZE - 1);
-      if (nread < 0 && errno == EINTR)
-        continue;
-      if (nread <= 0)
+      FD_ZERO(&set); /* clear the set */
+      FD_SET(fdp, &set); /* add our file descriptor to the set */
+      
+      struct timeval timeout;
+      
+      timeout.tv_sec = 5;
+      timeout.tv_usec = 0;
+      
+      int n = select(fdp + 1, &set, NULL, NULL, &timeout);
+      if (n < 0 || (getppid() != ppid)) {
         break;
-      if (write(log, buf, nread) != nread)
-        error(log, "failed to write to log file");
+      } else if (n > 0) {
+        ssize_t nread = read(fdp, buf, BUFFSIZE - 1);
+        if (nread < 0 && errno == EINTR)
+          continue;
+        if (nread <= 0)
+          break;
+        if (write(log, buf, nread) != nread)
+          break;
+      }
     }
+    close(fdp);
     close(log);
     _exit(0);
   }
-  close(log);
-
-  Pty* pty = malloc(sizeof(Pty));
-  pty->process_pid = process_pid;
-  pty->fd = fdp;
-
-  return pty;
+  return log_pid;
 }
 
-void pty_free(Pty* pty) {
-  if (pty != NULL) {
-    write(pty->fd, "\x04", 1);
-    kill(pty->process_pid, SIGKILL);
+void pty_free(const int fdp, const int process_pid) {
+  if (fdp > 0) {
+    write(fdp, "\x04", 1);
   }
-  free(pty);
+  if (process_pid > 0) {
+    kill(process_pid, SIGKILL);
+  }
 }

@@ -10,9 +10,10 @@ import Foundation
 
 class PTYProcess {
   var logFile : String
-  fileprivate var process: UnsafeMutablePointer<Pty>?
   var dispatchQueue: DispatchQueue
   var running: Bool = false
+  var pid: pid_t = -1
+  var fd: Int32 = -1
 
   func startProcess(executable: String, args: [String], environment: [String]) {
     if running {
@@ -21,14 +22,12 @@ class PTYProcess {
     
     var shellArgs = args
     shellArgs.insert(executable, at: 0)
-
-    PseudoTerminalHelpers.withArrayOfCStrings(shellArgs) { pargs in
-        PseudoTerminalHelpers.withArrayOfCStrings(environment) { penv in
-          if let process = pty_init(executable, pargs, penv, self.logFile) {
-                self.process = process
-                self.running = true
-            }
-        }
+    
+    if let (shell_pid, master_fd) = PseudoTerminalHelpers.fork(andExec: executable, args: shellArgs, env: environment) {
+      let log_pid = pty_init(master_fd, self.logFile)
+      PseudoTerminal.log("C PTY pid \(log_pid)")
+      self.pid = shell_pid
+      self.fd = master_fd
     }
   }
   
@@ -38,13 +37,14 @@ class PTYProcess {
   }
   
   func stop(block: @escaping () -> Void) {
-    if let old_pid = self.process?.pointee.process_pid {
-      pty_free(self.process)
-      self.process = nil
+    if (self.pid > -1) {
+      pty_free(self.fd, self.pid)
       var n: Int32 = 0
-      waitpid(old_pid, &n, 0)
-      self.running = false
+      waitpid(self.pid, &n, 0)
     }
+    self.pid = -1
+    self.fd = -1
+   
     block()
   }
   
@@ -52,15 +52,13 @@ class PTYProcess {
     PseudoTerminal.log("[SEND-\(handlerId ?? "0")] Queuing data to write: \(input.count)")
     self.dispatchQueue.async { [weak self] in
       guard let strongSelf = self else { return }
-      guard let process = strongSelf.process else { return }
-      let bytesWritten = pty_send(process, input, Int32(input.utf8.count))
+      guard strongSelf.fd > -1 else { return }
+      let bytesWritten = pty_send(strongSelf.fd, input, Int32(input.utf8.count))
       PseudoTerminal.log("[SEND-\(handlerId ?? "0")] Wrote \(bytesWritten) bytes")
     }
   }
   
   deinit {
-    guard let process = self.process else { return }
-    pty_free(process)
-    self.process = nil
+    pty_free(self.fd, self.pid)
   }
 }

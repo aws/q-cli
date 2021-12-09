@@ -3,13 +3,19 @@ package logging
 import (
 	"os"
 	"os/user"
-)
-
-const (
-	logFile = "/.fig/logs/cli.log"
+	"path/filepath"
 )
 
 type LoggingLevel int
+
+func GetLogFilepath() string {
+	user, err := user.Current()
+	if err != nil {
+		return ""
+	}
+
+	return filepath.Join(user.HomeDir, ".fig", "logs", "cli.log")
+}
 
 const (
 	LogLevelDebug LoggingLevel = iota
@@ -19,12 +25,12 @@ const (
 )
 
 func Log(message ...string) error {
-	user, err := user.Current()
-	if err != nil {
-		return err
+	logFilepath := GetLogFilepath()
+	if logFilepath == "" {
+		return nil
 	}
 
-	f, err := os.OpenFile(user.HomeDir+logFile, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
+	f, err := os.OpenFile(logFilepath, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
 		return err
 	}

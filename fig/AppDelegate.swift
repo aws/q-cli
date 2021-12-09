@@ -106,7 +106,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 
         handleUpdateIfNeeded()
         Defaults.shared.useAutocomplete = true
-        Defaults.shared.autocompleteVersion = "v8"
+        Defaults.shared.autocompleteVersion = "v9"
 
         Defaults.shared.autocompleteWidth = 250
         Defaults.shared.ignoreProcessList = ["figcli", "gitstatusd-darwin-x86_64", "gitstatusd-darwin-arm64", "nc", "fig_pty", "starship", "figterm"]
@@ -430,11 +430,11 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
                 case .applicationNotInstalled:
                     break
                 case .unattempted:
-                    item.image = WebBridge.fileIcon(for: URL(string: "fig://template?color=808080&badge=?&w=16&h=16".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!)!)
+                    item.image = Icon.fileIcon(for: "fig://template?color=808080&badge=?&w=16&h=16")
 
                 case .installed:
                     item.action = nil // disable selection
-                    item.image = WebBridge.fileIcon(for: URL(string: "fig://template?color=2ecc71&badge=✓&w=16&h=16".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!)!)
+                    item.image = Icon.fileIcon(for: "fig://template?color=2ecc71&badge=✓&w=16&h=16")
 
                 case .pending(let dependency):
                     let actionsMenu = NSMenu(title: "actions")
@@ -443,7 +443,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
                     
                     switch dependency {
                     case .applicationRestart:
-                        item.image = WebBridge.fileIcon(for: URL(string: "fig://template?color=FFA500&badge=⟳&w=16&h=16".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!)!)
+                        item.image = Icon.fileIcon(for: "fig://template?color=FFA500&badge=⟳&w=16&h=16")
                         
                         let restart = actionsMenu.addItem(
                             withTitle: "Restart \(provider.applicationName)",
@@ -451,7 +451,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
                             keyEquivalent: "")
                         restart.target = provider
                     case .inputMethodActivation:
-                        item.image = WebBridge.fileIcon(for: URL(string: "fig://template?color=FFA500&badge=⌨&w=16&h=16".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!)!)
+                        item.image = Icon.fileIcon(for: "fig://template?color=FFA500&badge=⌨&w=16&h=16")
                         actionsMenu.addItem(
                             withTitle: "Requires Input Method",
                             action: nil,
@@ -481,7 +481,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
                     
                     
                 case .failed(let error, let supportURL):
-                    item.image = WebBridge.fileIcon(for: URL(string: "fig://template?color=e74c3c&badge=╳&w=16&h=16".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!)!)
+                    item.image = Icon.fileIcon(for: "fig://template?color=e74c3c&badge=╳&w=16&h=16")
                     let actionsMenu = NSMenu(title: "actions")
 
                     actionsMenu.addItem(
@@ -1982,7 +1982,6 @@ extension AppDelegate : NSMenuDelegate {
                 let hasWindow = window != nil
                 let hasCommand = shellContext != nil
                 let isShell = shellContext?.isShell() ?? true
-                let runUsingPrefix = false //tty?.runUsingPrefix
                 
                 let cmd = shellContext != nil ? "(\(shellContext!.executablePath))" : "(???)"
                 
@@ -2009,9 +2008,9 @@ extension AppDelegate : NSMenuDelegate {
                   legend.addItem(NSMenuItem(title: "Switch to a different application", action: nil, keyEquivalent: ""))
                   legend.addItem(NSMenuItem(title: "and then return to current window", action: nil, keyEquivalent: ""))
                   
-                } else if let loaded = companionWindow?.loaded, !loaded {
-                    color = .red
-                    legend.addItem(NSMenuItem(title: "Autocomplete could not be loaded.", action: nil, keyEquivalent: ""))
+                } else if let isLoading = companionWindow?.webView?.isLoading, isLoading {
+                    color = .yellow
+                    legend.addItem(NSMenuItem(title: "Autocomplete is loading", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem.separator())
                     legend.addItem(NSMenuItem(title: "Make sure you're connected to", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem(title: "the internet and try again.", action: nil, keyEquivalent: ""))
@@ -2087,8 +2086,6 @@ extension AppDelegate : NSMenuDelegate {
                 } else if (!hasCommand) {
                     color = .yellow
                     legend.addItem(NSMenuItem(title: "Not linked to TTY session.", action: nil, keyEquivalent: ""))
-                    legend.addItem(NSMenuItem.separator())
-                    legend.addItem(NSMenuItem(title: "Run `fig source` to connect.", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem.separator())
                     legend.addItem(NSMenuItem(title: "window: \(window?.hash ?? "???")", action: nil, keyEquivalent: ""))
 
