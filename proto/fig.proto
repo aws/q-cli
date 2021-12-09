@@ -1,6 +1,7 @@
 syntax = "proto3";
 option objc_class_prefix = "FIG";
 package fig;
+import "local.proto";
 
 message ClientOriginatedMessage {
   optional int64 id = 1;
@@ -29,7 +30,7 @@ message ClientOriginatedMessage {
       GetConfigPropertyRequest get_config_property_request = 121;
       UpdateConfigPropertyRequest update_config_property_request = 122;
       PseudoterminalRestartRequest pseudoterminal_restart_request = 123;
-
+      TerminalSessionInfoRequest terminal_session_info_request = 124;
 
   }
 }
@@ -49,6 +50,7 @@ message ServerOriginatedMessage {
     DestinationOfSymbolicLinkResponse destination_of_symbolic_link_response = 105;
     GetDefaultsPropertyResponse get_defaults_property_response = 106;
     GetConfigPropertyResponse get_config_property_response = 107;
+    TerminalSessionInfoResponse terminal_session_info_response = 108;
 
     Notification notification = 1000;
   }
@@ -351,6 +353,18 @@ message UpdateApplicationPropertiesRequest {
 
 }
 
+/// Terminal Session
+
+message TerminalSessionInfoRequest {
+  string terminal_session_id = 1;
+}
+
+message TerminalSessionInfoResponse {
+  optional local.ShellContext context = 1;
+  optional string buffer = 2;
+  optional int64 cursor = 3;
+}
+
 
 /// Notifications
 
@@ -390,6 +404,7 @@ message EditBufferChangedNotification {
     optional string session_id = 1;
     optional int32 cursor = 2;
     optional string buffer = 3;
+    optional local.ShellContext context = 4;
 }
 
 message SettingsChangedNotification {
