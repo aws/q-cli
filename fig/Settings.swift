@@ -219,7 +219,7 @@ class Settings {
   }
   
   func getKeybindings(forKey key: String) -> [String : String]? {
-    return keybindings[key]
+    return keybindings[key] 
   }
   
   fileprivate func serialize() {

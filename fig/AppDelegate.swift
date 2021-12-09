@@ -106,7 +106,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 
         handleUpdateIfNeeded()
         Defaults.shared.useAutocomplete = true
-        Defaults.shared.autocompleteVersion = "v8"
+        Defaults.shared.autocompleteVersion = "v9"
 
         Defaults.shared.autocompleteWidth = 250
         Defaults.shared.ignoreProcessList = ["figcli", "gitstatusd-darwin-x86_64", "gitstatusd-darwin-arm64", "nc", "fig_pty", "starship", "figterm"]
@@ -1982,7 +1982,6 @@ extension AppDelegate : NSMenuDelegate {
                 let hasWindow = window != nil
                 let hasCommand = shellContext != nil
                 let isShell = shellContext?.isShell() ?? true
-                let runUsingPrefix = false //tty?.runUsingPrefix
                 
                 let cmd = shellContext != nil ? "(\(shellContext!.executablePath))" : "(???)"
                 

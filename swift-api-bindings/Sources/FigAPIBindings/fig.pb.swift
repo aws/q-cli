@@ -2233,6 +2233,18 @@ public struct Fig_Action {
   fileprivate var _availability: Fig_ActionAvailability? = nil
 }
 
+public struct Fig_ActionList {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var actions: [Fig_Action] = []
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
 public struct Fig_UpdateApplicationPropertiesRequest {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -2247,13 +2259,31 @@ public struct Fig_UpdateApplicationPropertiesRequest {
   /// Clears the value of `interceptBoundKeystrokes`. Subsequent reads from it will return its default value.
   public mutating func clearInterceptBoundKeystrokes() {self._interceptBoundKeystrokes = nil}
 
-  public var actions: [Fig_Action] = []
+  public var interceptGlobalKeystrokes: Bool {
+    get {return _interceptGlobalKeystrokes ?? false}
+    set {_interceptGlobalKeystrokes = newValue}
+  }
+  /// Returns true if `interceptGlobalKeystrokes` has been explicitly set.
+  public var hasInterceptGlobalKeystrokes: Bool {return self._interceptGlobalKeystrokes != nil}
+  /// Clears the value of `interceptGlobalKeystrokes`. Subsequent reads from it will return its default value.
+  public mutating func clearInterceptGlobalKeystrokes() {self._interceptGlobalKeystrokes = nil}
+
+  public var actionList: Fig_ActionList {
+    get {return _actionList ?? Fig_ActionList()}
+    set {_actionList = newValue}
+  }
+  /// Returns true if `actionList` has been explicitly set.
+  public var hasActionList: Bool {return self._actionList != nil}
+  /// Clears the value of `actionList`. Subsequent reads from it will return its default value.
+  public mutating func clearActionList() {self._actionList = nil}
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
 
   fileprivate var _interceptBoundKeystrokes: Bool? = nil
+  fileprivate var _interceptGlobalKeystrokes: Bool? = nil
+  fileprivate var _actionList: Fig_ActionList? = nil
 }
 
 public struct Fig_TerminalSessionInfoRequest {
@@ -5710,11 +5740,44 @@ extension Fig_Action: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementatio
   }
 }
 
+extension Fig_ActionList: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".ActionList"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .same(proto: "actions"),
+  ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeRepeatedMessageField(value: &self.actions) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.actions.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.actions, fieldNumber: 1)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Fig_ActionList, rhs: Fig_ActionList) -> Bool {
+    if lhs.actions != rhs.actions {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
 extension Fig_UpdateApplicationPropertiesRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".UpdateApplicationPropertiesRequest"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "interceptBoundKeystrokes"),
-    2: .same(proto: "actions"),
+    3: .same(proto: "interceptGlobalKeystrokes"),
+    4: .same(proto: "actionList"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -5724,7 +5787,8 @@ extension Fig_UpdateApplicationPropertiesRequest: SwiftProtobuf.Message, SwiftPr
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularBoolField(value: &self._interceptBoundKeystrokes) }()
-      case 2: try { try decoder.decodeRepeatedMessageField(value: &self.actions) }()
+      case 3: try { try decoder.decodeSingularBoolField(value: &self._interceptGlobalKeystrokes) }()
+      case 4: try { try decoder.decodeSingularMessageField(value: &self._actionList) }()
       default: break
       }
     }
@@ -5738,15 +5802,19 @@ extension Fig_UpdateApplicationPropertiesRequest: SwiftProtobuf.Message, SwiftPr
     try { if let v = self._interceptBoundKeystrokes {
       try visitor.visitSingularBoolField(value: v, fieldNumber: 1)
     } }()
-    if !self.actions.isEmpty {
-      try visitor.visitRepeatedMessageField(value: self.actions, fieldNumber: 2)
-    }
+    try { if let v = self._interceptGlobalKeystrokes {
+      try visitor.visitSingularBoolField(value: v, fieldNumber: 3)
+    } }()
+    try { if let v = self._actionList {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 4)
+    } }()
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: Fig_UpdateApplicationPropertiesRequest, rhs: Fig_UpdateApplicationPropertiesRequest) -> Bool {
     if lhs._interceptBoundKeystrokes != rhs._interceptBoundKeystrokes {return false}
-    if lhs.actions != rhs.actions {return false}
+    if lhs._interceptGlobalKeystrokes != rhs._interceptGlobalKeystrokes {return false}
+    if lhs._actionList != rhs._actionList {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

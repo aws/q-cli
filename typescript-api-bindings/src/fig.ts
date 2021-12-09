@@ -615,9 +615,14 @@ export interface Action {
   availability?: ActionAvailability | undefined;
 }
 
+export interface ActionList {
+  actions: Action[];
+}
+
 export interface UpdateApplicationPropertiesRequest {
   interceptBoundKeystrokes?: boolean | undefined;
-  actions: Action[];
+  interceptGlobalKeystrokes?: boolean | undefined;
+  actionList?: ActionList | undefined;
 }
 
 export interface TerminalSessionInfoRequest {
@@ -5931,6 +5936,73 @@ export const Action = {
   },
 };
 
+const baseActionList: object = {};
+
+export const ActionList = {
+  encode(
+    message: ActionList,
+    writer: _m0.Writer = _m0.Writer.create()
+  ): _m0.Writer {
+    for (const v of message.actions) {
+      Action.encode(v!, writer.uint32(10).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): ActionList {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = { ...baseActionList } as ActionList;
+    message.actions = [];
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.actions.push(Action.decode(reader, reader.uint32()));
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ActionList {
+    const message = { ...baseActionList } as ActionList;
+    message.actions = [];
+    if (object.actions !== undefined && object.actions !== null) {
+      for (const e of object.actions) {
+        message.actions.push(Action.fromJSON(e));
+      }
+    }
+    return message;
+  },
+
+  toJSON(message: ActionList): unknown {
+    const obj: any = {};
+    if (message.actions) {
+      obj.actions = message.actions.map((e) =>
+        e ? Action.toJSON(e) : undefined
+      );
+    } else {
+      obj.actions = [];
+    }
+    return obj;
+  },
+
+  fromPartial(object: DeepPartial<ActionList>): ActionList {
+    const message = { ...baseActionList } as ActionList;
+    message.actions = [];
+    if (object.actions !== undefined && object.actions !== null) {
+      for (const e of object.actions) {
+        message.actions.push(Action.fromPartial(e));
+      }
+    }
+    return message;
+  },
+};
+
 const baseUpdateApplicationPropertiesRequest: object = {};
 
 export const UpdateApplicationPropertiesRequest = {
@@ -5941,8 +6013,11 @@ export const UpdateApplicationPropertiesRequest = {
     if (message.interceptBoundKeystrokes !== undefined) {
       writer.uint32(8).bool(message.interceptBoundKeystrokes);
     }
-    for (const v of message.actions) {
-      Action.encode(v!, writer.uint32(18).fork()).ldelim();
+    if (message.interceptGlobalKeystrokes !== undefined) {
+      writer.uint32(24).bool(message.interceptGlobalKeystrokes);
+    }
+    if (message.actionList !== undefined) {
+      ActionList.encode(message.actionList, writer.uint32(34).fork()).ldelim();
     }
     return writer;
   },
@@ -5956,15 +6031,17 @@ export const UpdateApplicationPropertiesRequest = {
     const message = {
       ...baseUpdateApplicationPropertiesRequest,
     } as UpdateApplicationPropertiesRequest;
-    message.actions = [];
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
           message.interceptBoundKeystrokes = reader.bool();
           break;
-        case 2:
-          message.actions.push(Action.decode(reader, reader.uint32()));
+        case 3:
+          message.interceptGlobalKeystrokes = reader.bool();
+          break;
+        case 4:
+          message.actionList = ActionList.decode(reader, reader.uint32());
           break;
         default:
           reader.skipType(tag & 7);
@@ -5988,9 +6065,17 @@ export const UpdateApplicationPropertiesRequest = {
     } else {
       message.interceptBoundKeystrokes = undefined;
     }
-    message.actions = (object.actions ?? []).map((e: any) =>
-      Action.fromJSON(e)
-    );
+    if (
+      object.interceptGlobalKeystrokes !== undefined &&
+      object.interceptGlobalKeystrokes !== null
+    ) {
+      message.interceptGlobalKeystrokes = Boolean(
+        object.interceptGlobalKeystrokes
+      );
+    }
+    if (object.actionList !== undefined && object.actionList !== null) {
+      message.actionList = ActionList.fromJSON(object.actionList);
+    }
     return message;
   },
 
@@ -5998,13 +6083,12 @@ export const UpdateApplicationPropertiesRequest = {
     const obj: any = {};
     message.interceptBoundKeystrokes !== undefined &&
       (obj.interceptBoundKeystrokes = message.interceptBoundKeystrokes);
-    if (message.actions) {
-      obj.actions = message.actions.map((e) =>
-        e ? Action.toJSON(e) : undefined
-      );
-    } else {
-      obj.actions = [];
-    }
+    message.interceptGlobalKeystrokes !== undefined &&
+      (obj.interceptGlobalKeystrokes = message.interceptGlobalKeystrokes);
+    message.actionList !== undefined &&
+      (obj.actionList = message.actionList
+        ? ActionList.toJSON(message.actionList)
+        : undefined);
     return obj;
   },
 
@@ -6016,7 +6100,13 @@ export const UpdateApplicationPropertiesRequest = {
     } as UpdateApplicationPropertiesRequest;
     message.interceptBoundKeystrokes =
       object.interceptBoundKeystrokes ?? undefined;
-    message.actions = (object.actions ?? []).map((e) => Action.fromPartial(e));
+    message.interceptGlobalKeystrokes =
+      object.interceptGlobalKeystrokes ?? undefined;
+    if (object.actionList !== undefined && object.actionList !== null) {
+      message.actionList = ActionList.fromPartial(object.actionList);
+    } else {
+      message.actionList = undefined;
+    }
     return message;
   },
 };
