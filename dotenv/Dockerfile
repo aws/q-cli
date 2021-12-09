@@ -32,6 +32,9 @@ RUN mkdir -p /usr/home/app/ \
 
 # Set up test user
 RUN adduser --disabled-password --home /usr/home test 
+RUN adduser test sudo
+# Prevent password prompts for sudo
+RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers
 RUN chown -R test:test /usr/home/
 USER test
 

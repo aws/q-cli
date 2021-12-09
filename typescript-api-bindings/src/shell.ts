@@ -20,12 +20,12 @@ export const processDidChange = {
           default:
             break;
         }
-  
+
         return false;
       }
     );
-  }
-}
+  },
+};
 
 export const promptDidReturn = {
   subscribe: (
@@ -42,12 +42,12 @@ export const promptDidReturn = {
           default:
             break;
         }
-  
+
         return false;
       }
     );
-  }
-}
+  },
+};
 
 export const historyUpdated = {
   subscribe: (
@@ -62,12 +62,12 @@ export const historyUpdated = {
           default:
             break;
         }
-  
+
         return false;
       }
     );
-  }
-}
+  },
+};
 
 export const insert = async (text: string) =>
   sendInsertTextRequest({

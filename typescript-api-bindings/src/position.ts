@@ -22,4 +22,3 @@ export const setFrame = async (frame: {
     size: { width: frame.width, height: frame.height },
     anchor: { x: frame.anchorX, y: frame.offsetFromBaseline ?? 0 },
   });
-
