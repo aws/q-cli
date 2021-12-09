@@ -3,7 +3,7 @@ import {
   sendPseudoterminalWriteRequest,
 } from './requests';
 
-const execute = async (
+export const execute = async (
   command: string,
   options:
     | {
@@ -22,14 +22,10 @@ const execute = async (
     env: [],
   });
 
-const write = async (text: string): Promise<void> =>
+export const write = async (text: string): Promise<void> =>
   sendPseudoterminalWriteRequest({
     input: {
       $case: 'text',
       text: text,
     },
   });
-
-const PTY = { execute, write };
-
-export default PTY;
