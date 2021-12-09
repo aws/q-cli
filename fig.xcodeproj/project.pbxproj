@@ -72,7 +72,7 @@
 		7546F5B3271660BA0077359F /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7546F5B2271660BA0077359F /* Constants.swift */; };
 		754D31B525759D900020CED4 /* tutorial.html in Resources */ = {isa = PBXBuildFile; fileRef = 754D31B425759D900020CED4 /* tutorial.html */; };
 		75543FD0268AC6E5003221DF /* fig-0.0.4.vsix in Resources */ = {isa = PBXBuildFile; fileRef = 75543FCF268AC6E5003221DF /* fig-0.0.4.vsix */; };
-		755950D7275EE9D900B9FB5C /* Socket in Frameworks */ = {isa = PBXBuildFile; productRef = 755950D6275EE9D900B9FB5C /* Socket */; };
+		755950D4275EC6CC00B9FB5C /* Socket in Frameworks */ = {isa = PBXBuildFile; productRef = 755950D3275EC6CC00B9FB5C /* Socket */; };
 		755D0DE2247EFAE10074AB5C /* Logging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755D0DE1247EFAE10074AB5C /* Logging.swift */; };
 		755D0DE4247F038B0074AB5C /* logs.html in Resources */ = {isa = PBXBuildFile; fileRef = 755D0DE3247F038B0074AB5C /* logs.html */; };
 		755D0F512482D4920074AB5C /* HotKey in Frameworks */ = {isa = PBXBuildFile; productRef = 755D0F502482D4920074AB5C /* HotKey */; };
@@ -362,7 +362,6 @@
 		7546F5B2271660BA0077359F /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		754D31B425759D900020CED4 /* tutorial.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = tutorial.html; sourceTree = "<group>"; };
 		75543FCF268AC6E5003221DF /* fig-0.0.4.vsix */ = {isa = PBXFileReference; lastKnownFileType = file; path = "fig-0.0.4.vsix"; sourceTree = "<group>"; };
-		755950D5275EE99800B9FB5C /* BlueSocket */ = {isa = PBXFileReference; lastKnownFileType = folder; path = BlueSocket; sourceTree = "<group>"; };
 		755D0DE1247EFAE10074AB5C /* Logging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logging.swift; sourceTree = "<group>"; };
 		755D0DE3247F038B0074AB5C /* logs.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = logs.html; sourceTree = "<group>"; };
 		755D27B9272242690080B4B8 /* FigTerm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FigTerm.swift; sourceTree = "<group>"; };
@@ -533,7 +532,7 @@
 				75A4A2A725CBBDE7002EFD6B /* AXSwift in Frameworks */,
 				75290AC626719157000F4255 /* SwiftProtobuf in Frameworks */,
 				756967FF2718E0300029F063 /* WebArchiver in Frameworks */,
-				755950D7275EE9D900B9FB5C /* Socket in Frameworks */,
+				755950D4275EC6CC00B9FB5C /* Socket in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -972,7 +971,6 @@
 		75CFF6432496B3BA00C6A6DE /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				755950D5275EE99800B9FB5C /* BlueSocket */,
 				7569680F271E556B0029F063 /* swift-api-bindings */,
 				75AC55312522C8EB0069635E /* upgrade */,
 			);
@@ -1119,7 +1117,7 @@
 				75290AC526719157000F4255 /* SwiftProtobuf */,
 				756967FE2718E0300029F063 /* WebArchiver */,
 				75915DFD27210A4C005A9909 /* FigAPIBindings */,
-				755950D6275EE9D900B9FB5C /* Socket */,
+				755950D3275EC6CC00B9FB5C /* Socket */,
 			);
 			productName = fig;
 			productReference = 75675951244634AD006AA988 /* fig.app */;
@@ -2125,8 +2123,9 @@
 			package = 75290AC426719156000F4255 /* XCRemoteSwiftPackageReference "swift-protobuf" */;
 			productName = SwiftProtobuf;
 		};
-		755950D6275EE9D900B9FB5C /* Socket */ = {
+		755950D3275EC6CC00B9FB5C /* Socket */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 755950D2275EC6CC00B9FB5C /* XCRemoteSwiftPackageReference "BlueSocket" */;
 			productName = Socket;
 		};
 		755D0F502482D4920074AB5C /* HotKey */ = {
