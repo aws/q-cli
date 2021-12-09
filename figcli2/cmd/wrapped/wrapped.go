@@ -203,13 +203,19 @@ func Metrics(history []History) HistoryMetrics {
 	shortestGitCommitLen := math.MaxInt
 
 	for _, h := range history {
+		command := strings.TrimSpace(h.Command)
+
+		if command == "" || strings.Contains(command, `\n`) {
+			continue
+		}
+
 		workingDirMap[h.Cwd]++
 
-		metrics.Keystrokes += len(h.Command)
+		metrics.Keystrokes += len(command)
 
-		if strings.HasPrefix(h.Command, "git commit") {
+		if strings.HasPrefix(command, "git commit") {
 			metrics.Commits++
-			gitCommitRegexMatch := gitCommitRegex.FindStringSubmatch(h.Command)
+			gitCommitRegexMatch := gitCommitRegex.FindStringSubmatch(command)
 			if len(gitCommitRegexMatch) > 0 {
 				gitCommit := ""
 
@@ -227,18 +233,16 @@ func Metrics(history []History) HistoryMetrics {
 			}
 		}
 
-		command := strings.SplitN(h.Command, " ", 2)[0]
-		if command != "" && command != "\\n" {
-			if shellAliases[h.Shell] != nil && shellAliases[h.Shell][command] != "" {
-				deAliasedCommmand := shellAliases[h.Shell][command]
-				deAliasedCommmand = strings.SplitN(deAliasedCommmand, " ", 2)[0]
-				commandsUsageMap[deAliasedCommmand]++
-			} else {
-				commandsUsageMap[command]++
-			}
-
-			metrics.TotalCommands++
+		command = strings.SplitN(command, " ", 2)[0]
+		if shellAliases[h.Shell] != nil && shellAliases[h.Shell][command] != "" {
+			deAliasedCommmand := shellAliases[h.Shell][command]
+			deAliasedCommmand = strings.SplitN(deAliasedCommmand, " ", 2)[0]
+			commandsUsageMap[deAliasedCommmand]++
+		} else {
+			commandsUsageMap[command]++
 		}
+
+		metrics.TotalCommands++
 
 		if shellAliases[h.Shell] != nil && shellAliases[h.Shell][command] != "" {
 			metrics.CharactersSavedByAlias += len(shellAliases[h.Shell][command]) - len(command)
@@ -482,11 +486,7 @@ func (m model) View() string {
 			user, _ := user.Current()
 
 			workingDirPretty := strings.Replace(workingDir.WorkingDir, user.HomeDir, "~", 1)
-			if workingDirPretty[len(workingDirPretty)-1] != '/' {
-				workingDirPretty += "/"
-			}
-
-			workingDirPretty = truncatePath(workingDirPretty, 25)
+			workingDirPretty = truncatePath(workingDirPretty, 22)
 
 			counts = append(counts, fmt.Sprintf("%v", workingDir.Count))
 			dirs = append(dirs, workingDirPretty)
@@ -676,7 +676,7 @@ func (m model) View() string {
 
 		shareText := lipgloss.NewStyle().
 			MarginTop(1).
-			Render("🎁 Share your " + lipgloss.NewStyle().Bold(true).Render("#FigWrapped") + " with " + lipgloss.NewStyle().Bold(true).Render("@fig"))
+			Render("🎁  Share your " + lipgloss.NewStyle().Bold(true).Render("#FigWrapped") + " with " + lipgloss.NewStyle().Bold(true).Render("@fig"))
 
 		doc.WriteString(
 			lipgloss.JoinVertical(
