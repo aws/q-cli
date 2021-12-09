@@ -5,45 +5,44 @@ import {
   sendGetSettingsPropertyRequest,
   sendUpdateSettingsPropertyRequest,
 } from './requests';
-const subscribe = (
-  handler: (notification: SettingsChangedNotification) => boolean | undefined
-) => {
-  return _subscribe(
-    { type: NotificationType.NOTIFY_ON_SETTINGS_CHANGE },
-    notification => {
-      switch (notification?.type?.$case) {
-        case 'settingsChangedNotification':
-          return handler(notification.type.settingsChangedNotification);
-        default:
-          break;
-      }
 
-      return false;
-    }
-  );
+export const didChange = {
+  subscribe: (
+    handler: (notification: SettingsChangedNotification) => boolean | undefined
+  ) => {
+    return _subscribe(
+      { type: NotificationType.NOTIFY_ON_SETTINGS_CHANGE },
+      notification => {
+        switch (notification?.type?.$case) {
+          case 'settingsChangedNotification':
+            return handler(notification.type.settingsChangedNotification);
+          default:
+            break;
+        }
+  
+        return false;
+      }
+    );
+  }
 };
 
-const get = async (key: string) =>
+export const get = async (key: string) =>
   sendGetSettingsPropertyRequest({
     key: key,
   });
 
-const set = async (key: string, value: any): Promise<void> =>
+export const set = async (key: string, value: any): Promise<void> =>
   sendUpdateSettingsPropertyRequest({
     key: key,
     value: JSON.stringify(value),
   });
 
-const remove = async (key: string): Promise<void> =>
+export const remove = async (key: string): Promise<void> =>
   sendUpdateSettingsPropertyRequest({
     key: key,
   });
 
-const current = async () => {
+export const current = async () => {
   let all = await sendGetSettingsPropertyRequest({});
   return JSON.parse(all.jsonBlob ?? '{}');
 };
-const didChange = { subscribe };
-const Settings = { didChange, get, set, remove, current };
-
-export default Settings;
