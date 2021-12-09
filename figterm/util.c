@@ -98,11 +98,13 @@ static int unix_socket_connect(char *path) {
   strcpy(remote.sun_path, path);
 
   // https://rigtorp.se/sockets/
+#if defined(__APPLE__)
   int opt = 1;
   if (setsockopt(sock, SOL_SOCKET, SO_NOSIGPIPE, &opt, sizeof(opt)) == -1) {
       log_err("Failed to set SO_NOSIGPIPE");
       return -1;
   }
+#endif
 
   size_t len = SUN_LEN(&remote);
   if (connect(sock, (struct sockaddr *)&remote, len) == -1) {
@@ -182,10 +184,17 @@ int fig_socket_send(char* buf) {
     CHECK_SYS(set_blocking(fig_sock, false), "Couldn't set fig sock to nonblocking");
   }
   
-  st = send(fig_sock, encoded, out_len, 0);
 
-  if (st < 0 && errno == EPIPE) {
-    fig_sigpipe_handler(SIGPIPE);
+  int flags = 0;
+#if !defined(__APPLE__)
+  flags = MSG_NOSIGNAL;
+#endif
+  st = send(fig_sock, encoded, out_len, flags);
+
+  if (st < 0) {
+    if (errno == EPIPE) {
+      fig_sigpipe_handler(SIGPIPE);
+    }
     log_err("Error sending buffer to socket");
   }
 
@@ -204,9 +213,15 @@ int ipc_socket_send(char* buf, int len) {
     free(path);
   }
 
-  st = send(ipc_sock, buf, len, 0);
-  if (st < 0 && errno == EPIPE) {
-    ipc_sigpipe_handler(SIGPIPE);
+  int flags = 0;
+#if !defined(__APPLE__)
+  flags = MSG_NOSIGNAL;
+#endif
+  st = send(ipc_sock, buf, len, flags);
+  if (st < 0) {
+    if (errno == EPIPE) {
+      ipc_sigpipe_handler(SIGPIPE);
+    }
     log_err("Error sending buffer to socket");
   }
 
