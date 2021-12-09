@@ -1,10 +1,10 @@
 import { sendUpdateApplicationPropertiesRequest } from './requests';
 import { Action } from './fig';
 
-const registerActions = (actions: Array<Action>) =>
+export const registerActions = (actions: Array<Action>) =>
   sendUpdateApplicationPropertiesRequest({ actionList: { actions } });
 
-const setKeystrokeIntercept = ({
+export const setKeystrokeIntercept = ({
   interceptBoundKeystrokes,
   interceptGlobalKeystrokes,
 }: {
@@ -16,6 +16,5 @@ const setKeystrokeIntercept = ({
     interceptGlobalKeystrokes,
   });
 
-const App = { registerActions, setKeystrokeIntercept };
-
-export default App;
+export const registerActions = (actions: Array<Action>) =>
+  sendUpdateApplicationPropertiesRequest({ actions: actions });

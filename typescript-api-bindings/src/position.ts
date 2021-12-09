@@ -1,7 +1,7 @@
 import { sendPositionWindowRequest } from './requests';
 
 // Developer Facing API
-const isValidFrame = async (frame: {
+export const isValidFrame = async (frame: {
   width: number;
   height: number;
   anchorX: number;
@@ -12,7 +12,7 @@ const isValidFrame = async (frame: {
     dryrun: true,
   });
 
-const setFrame = async (frame: {
+export const setFrame = async (frame: {
   width: number;
   height: number;
   anchorX: number;
@@ -23,6 +23,3 @@ const setFrame = async (frame: {
     anchor: { x: frame.anchorX, y: frame.offsetFromBaseline ?? 0 },
   });
 
-const WindowPosition = { isValidFrame, setFrame };
-
-export default WindowPosition;

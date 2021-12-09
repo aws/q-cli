@@ -1,7 +1,7 @@
 import { EditBufferChangedNotification, NotificationType } from './fig';
 import { _subscribe } from './notifications';
 
-const subscribe = (
+export const subscribe = (
   handler: (notification: EditBufferChangedNotification) => boolean | undefined
 ) => {
   return _subscribe(
@@ -18,6 +18,3 @@ const subscribe = (
     }
   );
 };
-const EditBufferNotifications = { subscribe };
-
-export default EditBufferNotifications;
