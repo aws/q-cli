@@ -69,7 +69,8 @@ export const historyUpdated = {
   },
 };
 
-export const insert = async (text: string) =>
-  sendInsertTextRequest({
+export async function insert(text: string) {
+  return sendInsertTextRequest({
     type: { $case: 'text', text: text },
   });
+}

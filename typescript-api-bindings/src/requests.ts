@@ -38,10 +38,10 @@ import {
 } from './fig';
 import { sendMessage } from './core';
 
-export const sendPositionWindowRequest = async (
+export async function sendPositionWindowRequest(
   request: PositionWindowRequest
-): Promise<PositionWindowResponse> =>
-  new Promise((resolve, reject) => {
+): Promise<PositionWindowResponse> {
+  return new Promise((resolve, reject) => {
     sendMessage(
       { $case: 'positionWindowRequest', positionWindowRequest: request },
       response => {
@@ -64,11 +64,12 @@ export const sendPositionWindowRequest = async (
       }
     );
   });
+}
 
-export const sendPseudoterminalExecuteRequest = async (
+export async function sendPseudoterminalExecuteRequest(
   request: PseudoterminalExecuteRequest
-): Promise<PseudoterminalExecuteResponse> =>
-  new Promise((resolve, reject) => {
+): Promise<PseudoterminalExecuteResponse> {
+  return new Promise((resolve, reject) => {
     sendMessage(
       {
         $case: 'pseudoterminalExecuteRequest',
@@ -94,11 +95,12 @@ export const sendPseudoterminalExecuteRequest = async (
       }
     );
   });
+}
 
-export const sendReadFileRequest = async (
+export async function sendReadFileRequest(
   request: ReadFileRequest
-): Promise<ReadFileResponse> =>
-  new Promise((resolve, reject) => {
+): Promise<ReadFileResponse> {
+  return new Promise((resolve, reject) => {
     sendMessage(
       { $case: 'readFileRequest', readFileRequest: request },
       response => {
@@ -121,11 +123,12 @@ export const sendReadFileRequest = async (
       }
     );
   });
+}
 
-export const sendContentsOfDirectoryRequest = async (
+export async function sendContentsOfDirectoryRequest(
   request: ContentsOfDirectoryRequest
-): Promise<ContentsOfDirectoryResponse> =>
-  new Promise((resolve, reject) => {
+): Promise<ContentsOfDirectoryResponse> {
+  return new Promise((resolve, reject) => {
     sendMessage(
       {
         $case: 'contentsOfDirectoryRequest',
@@ -151,11 +154,12 @@ export const sendContentsOfDirectoryRequest = async (
       }
     );
   });
+}
 
-export const sendGetSettingsPropertyRequest = async (
+export async function sendGetSettingsPropertyRequest(
   request: GetSettingsPropertyRequest
-): Promise<GetSettingsPropertyResponse> =>
-  new Promise((resolve, reject) => {
+): Promise<GetSettingsPropertyResponse> {
+  return new Promise((resolve, reject) => {
     sendMessage(
       {
         $case: 'getSettingsPropertyRequest',
@@ -181,11 +185,12 @@ export const sendGetSettingsPropertyRequest = async (
       }
     );
   });
+}
 
-export const sendDestinationOfSymbolicLinkRequest = async (
+export async function sendDestinationOfSymbolicLinkRequest(
   request: DestinationOfSymbolicLinkRequest
-): Promise<DestinationOfSymbolicLinkResponse> =>
-  new Promise((resolve, reject) => {
+): Promise<DestinationOfSymbolicLinkResponse> {
+  return new Promise((resolve, reject) => {
     sendMessage(
       {
         $case: 'destinationOfSymbolicLinkRequest',
@@ -211,11 +216,12 @@ export const sendDestinationOfSymbolicLinkRequest = async (
       }
     );
   });
+}
 
-export const sendGetDefaultsPropertyRequest = async (
+export async function sendGetDefaultsPropertyRequest(
   request: GetDefaultsPropertyRequest
-): Promise<GetDefaultsPropertyResponse> =>
-  new Promise((resolve, reject) => {
+): Promise<GetDefaultsPropertyResponse> {
+  return new Promise((resolve, reject) => {
     sendMessage(
       {
         $case: 'getDefaultsPropertyRequest',
@@ -241,11 +247,12 @@ export const sendGetDefaultsPropertyRequest = async (
       }
     );
   });
+}
 
-export const sendGetConfigPropertyRequest = async (
+export async function sendGetConfigPropertyRequest(
   request: GetConfigPropertyRequest
-): Promise<GetConfigPropertyResponse> =>
-  new Promise((resolve, reject) => {
+): Promise<GetConfigPropertyResponse> {
+  return new Promise((resolve, reject) => {
     sendMessage(
       { $case: 'getConfigPropertyRequest', getConfigPropertyRequest: request },
       response => {
@@ -268,11 +275,12 @@ export const sendGetConfigPropertyRequest = async (
       }
     );
   });
+}
 
-export const sendTerminalSessionInfoRequest = async (
+export async function sendTerminalSessionInfoRequest(
   request: TerminalSessionInfoRequest
-): Promise<TerminalSessionInfoResponse> =>
-  new Promise((resolve, reject) => {
+): Promise<TerminalSessionInfoResponse> {
+  return new Promise((resolve, reject) => {
     sendMessage(
       {
         $case: 'terminalSessionInfoRequest',
@@ -298,11 +306,12 @@ export const sendTerminalSessionInfoRequest = async (
       }
     );
   });
+}
 
-export const sendPseudoterminalWriteRequest = async (
+export async function sendPseudoterminalWriteRequest(
   request: PseudoterminalWriteRequest
-): Promise<void> =>
-  new Promise((resolve, reject) => {
+): Promise<void> {
+  return new Promise((resolve, reject) => {
     sendMessage(
       {
         $case: 'pseudoterminalWriteRequest',
@@ -328,11 +337,12 @@ export const sendPseudoterminalWriteRequest = async (
       }
     );
   });
+}
 
-export const sendWriteFileRequest = async (
+export async function sendWriteFileRequest(
   request: WriteFileRequest
-): Promise<void> =>
-  new Promise((resolve, reject) => {
+): Promise<void> {
+  return new Promise((resolve, reject) => {
     sendMessage(
       { $case: 'writeFileRequest', writeFileRequest: request },
       response => {
@@ -355,11 +365,12 @@ export const sendWriteFileRequest = async (
       }
     );
   });
+}
 
-export const sendUpdateSettingsPropertyRequest = async (
+export async function sendUpdateSettingsPropertyRequest(
   request: UpdateSettingsPropertyRequest
-): Promise<void> =>
-  new Promise((resolve, reject) => {
+): Promise<void> {
+  return new Promise((resolve, reject) => {
     sendMessage(
       {
         $case: 'updateSettingsPropertyRequest',
@@ -385,11 +396,12 @@ export const sendUpdateSettingsPropertyRequest = async (
       }
     );
   });
+}
 
-export const sendInsertTextRequest = async (
+export async function sendInsertTextRequest(
   request: InsertTextRequest
-): Promise<void> =>
-  new Promise((resolve, reject) => {
+): Promise<void> {
+  return new Promise((resolve, reject) => {
     sendMessage(
       { $case: 'insertTextRequest', insertTextRequest: request },
       response => {
@@ -412,11 +424,12 @@ export const sendInsertTextRequest = async (
       }
     );
   });
+}
 
-export const sendUpdateApplicationPropertiesRequest = async (
+export async function sendUpdateApplicationPropertiesRequest(
   request: UpdateApplicationPropertiesRequest
-): Promise<void> =>
-  new Promise((resolve, reject) => {
+): Promise<void> {
+  return new Promise((resolve, reject) => {
     sendMessage(
       {
         $case: 'updateApplicationPropertiesRequest',
@@ -442,11 +455,12 @@ export const sendUpdateApplicationPropertiesRequest = async (
       }
     );
   });
+}
 
-export const sendUpdateDefaultsPropertyRequest = async (
+export async function sendUpdateDefaultsPropertyRequest(
   request: UpdateDefaultsPropertyRequest
-): Promise<void> =>
-  new Promise((resolve, reject) => {
+): Promise<void> {
+  return new Promise((resolve, reject) => {
     sendMessage(
       {
         $case: 'updateDefaultsPropertyRequest',
@@ -472,11 +486,12 @@ export const sendUpdateDefaultsPropertyRequest = async (
       }
     );
   });
+}
 
-export const sendTelemetryAliasRequest = async (
+export async function sendTelemetryAliasRequest(
   request: TelemetryAliasRequest
-): Promise<void> =>
-  new Promise((resolve, reject) => {
+): Promise<void> {
+  return new Promise((resolve, reject) => {
     sendMessage(
       { $case: 'telemetryAliasRequest', telemetryAliasRequest: request },
       response => {
@@ -499,11 +514,12 @@ export const sendTelemetryAliasRequest = async (
       }
     );
   });
+}
 
-export const sendTelemetryIdentifyRequest = async (
+export async function sendTelemetryIdentifyRequest(
   request: TelemetryIdentifyRequest
-): Promise<void> =>
-  new Promise((resolve, reject) => {
+): Promise<void> {
+  return new Promise((resolve, reject) => {
     sendMessage(
       { $case: 'telemetryIdentifyRequest', telemetryIdentifyRequest: request },
       response => {
@@ -526,11 +542,12 @@ export const sendTelemetryIdentifyRequest = async (
       }
     );
   });
+}
 
-export const sendTelemetryTrackRequest = async (
+export async function sendTelemetryTrackRequest(
   request: TelemetryTrackRequest
-): Promise<void> =>
-  new Promise((resolve, reject) => {
+): Promise<void> {
+  return new Promise((resolve, reject) => {
     sendMessage(
       { $case: 'telemetryTrackRequest', telemetryTrackRequest: request },
       response => {
@@ -553,11 +570,12 @@ export const sendTelemetryTrackRequest = async (
       }
     );
   });
+}
 
-export const sendOnboardingRequest = async (
+export async function sendOnboardingRequest(
   request: OnboardingRequest
-): Promise<void> =>
-  new Promise((resolve, reject) => {
+): Promise<void> {
+  return new Promise((resolve, reject) => {
     sendMessage(
       { $case: 'onboardingRequest', onboardingRequest: request },
       response => {
@@ -580,11 +598,12 @@ export const sendOnboardingRequest = async (
       }
     );
   });
+}
 
-export const sendWindowFocusRequest = async (
+export async function sendWindowFocusRequest(
   request: WindowFocusRequest
-): Promise<void> =>
-  new Promise((resolve, reject) => {
+): Promise<void> {
+  return new Promise((resolve, reject) => {
     sendMessage(
       { $case: 'windowFocusRequest', windowFocusRequest: request },
       response => {
@@ -607,11 +626,12 @@ export const sendWindowFocusRequest = async (
       }
     );
   });
+}
 
-export const sendOpenInExternalApplicationRequest = async (
+export async function sendOpenInExternalApplicationRequest(
   request: OpenInExternalApplicationRequest
-): Promise<void> =>
-  new Promise((resolve, reject) => {
+): Promise<void> {
+  return new Promise((resolve, reject) => {
     sendMessage(
       {
         $case: 'openInExternalApplicationRequest',
@@ -637,11 +657,12 @@ export const sendOpenInExternalApplicationRequest = async (
       }
     );
   });
+}
 
-export const sendUpdateConfigPropertyRequest = async (
+export async function sendUpdateConfigPropertyRequest(
   request: UpdateConfigPropertyRequest
-): Promise<void> =>
-  new Promise((resolve, reject) => {
+): Promise<void> {
+  return new Promise((resolve, reject) => {
     sendMessage(
       {
         $case: 'updateConfigPropertyRequest',
@@ -667,11 +688,12 @@ export const sendUpdateConfigPropertyRequest = async (
       }
     );
   });
+}
 
-export const sendPseudoterminalRestartRequest = async (
+export async function sendPseudoterminalRestartRequest(
   request: PseudoterminalRestartRequest
-): Promise<void> =>
-  new Promise((resolve, reject) => {
+): Promise<void> {
+  return new Promise((resolve, reject) => {
     sendMessage(
       {
         $case: 'pseudoterminalRestartRequest',
@@ -697,3 +719,4 @@ export const sendPseudoterminalRestartRequest = async (
       }
     );
   });
+}

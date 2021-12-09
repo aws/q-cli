@@ -1,17 +1,18 @@
 import { sendUpdateApplicationPropertiesRequest } from './requests';
 import { Action } from './fig';
 
-export const registerActions = (actions: Array<Action>) =>
-  sendUpdateApplicationPropertiesRequest({ actionList: { actions } });
+export function registerActions(actions: Array<Action>) {
+  return sendUpdateApplicationPropertiesRequest({ actionList: { actions } });
+}
 
-export const setKeystrokeIntercept = ({
+export function setKeystrokeIntercept({
   interceptBoundKeystrokes,
   interceptGlobalKeystrokes,
 }: {
   interceptBoundKeystrokes?: boolean;
   interceptGlobalKeystrokes?: boolean;
-}) =>
-  sendUpdateApplicationPropertiesRequest({
+}) {
+  return sendUpdateApplicationPropertiesRequest({
     interceptBoundKeystrokes,
     interceptGlobalKeystrokes,
   });
