@@ -7,7 +7,7 @@
 //
 
 import Cocoa
-
+import FigAPIBindings
 //
 protocol TerminalIntegration {
     func getCursorRect(in window: ExternalWindow) -> NSRect?

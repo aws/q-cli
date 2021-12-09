@@ -2,6 +2,3 @@
 	path = figterm/libvterm
 	url = https://github.com/neovim/libvterm
 	ignore = untracked
-[submodule "BlueSocket"]
-	path = BlueSocket
-	url = https://github.com/withfig/BlueSocket

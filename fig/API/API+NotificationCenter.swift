@@ -241,13 +241,17 @@ extension APINotificationCenter {
 }
 
 extension APINotificationCenter {
-  func editbufferChanged(buffer: String, cursor: Int, session: SessionId) {
-  
+  func editbufferChanged(buffer: String, cursor: Int, session: SessionId, context: Local_ShellContext? = nil) {
+    
     API.notifications.post(
       Fig_EditBufferChangedNotification.with({ notification in
         notification.buffer = buffer
         notification.cursor = Int32(cursor)
         notification.sessionID = session
+        
+        if let context = context {
+          notification.context = context
+        }
       })
     )
   }

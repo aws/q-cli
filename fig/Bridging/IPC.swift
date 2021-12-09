@@ -8,6 +8,7 @@
 
 import Foundation
 import Socket
+import FigAPIBindings
 
 typealias LocalMessage = Local_LocalMessage
 typealias CommandResponse = Local_CommandResponse

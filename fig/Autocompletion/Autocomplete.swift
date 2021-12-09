@@ -20,37 +20,6 @@ class Autocomplete {
   }
   
   static let throttler = Throttler(minimumDelay: 0.05)
-  static func update(with context: (String, Int)?, for terminalSessionId: TerminalSessionId?) {
-    
-    guard let sessionId = terminalSessionId,
-          let session = TerminalSessionLinker.shared.getTerminalSession(for: sessionId) else {
-      return
-    }
-    
-    let windowHash = session.generateLegacyWindowHash()
-    let (ttyDescriptor, cmd, cwd) : (String, String, String) = {
-      guard let context = session.shellContext else {
-        return ("null", "null", "null")
-      }
-      
-      return ("'\(context.ttyDescriptor)'", "'\(context.executablePath)'", "'\(context.workingDirectory)'")
-
-    }()
-
-    let prefix = "null"
-    if let (buffer, index) = context, let b64 = buffer.data(using: .utf8)?.base64EncodedString() {
-      // We aren't setting the tetheredWindow!
-      
-      Autocomplete.log(buffer, index)
-      
-      print("fig.autocomplete = \(buffer)")
-      print("fig.autocomplete(b64DecodeUnicode(`\(b64)`), \(index), '\(windowHash)', \(ttyDescriptor), \(cwd), \(cmd), \(prefix))")
-      WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try{ fig.autocomplete(b64DecodeUnicode(`\(b64)`), \(index), '\(windowHash)', \(ttyDescriptor), \(cwd), \(cmd), \(prefix)) } catch(e){} ", completionHandler: nil)
-    } else {
-      WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try{ fig.nocontext('\(windowHash)') } catch(e){} ", completionHandler: nil)
-    }
-    
-  }
   
   static func runJavascript(_ command: String) {
     WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try{ \(command) } catch(e) { console.log(e) }", completionHandler: nil)
@@ -82,7 +51,7 @@ class Autocomplete {
         Autocomplete.hide()
         WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try{ fig.keypress(\"\(Keycode.escape)\", \"\(window.hash)\") } catch(e) {}", completionHandler: nil)
     } else {
-        Autocomplete.update(with: buffer.currentState, for: window.session)
+//        Autocomplete.update(with: buffer.currentState, for: window.session)
         Autocomplete.position()
     }
   }
@@ -134,18 +103,18 @@ class GenericShellIntegration: ShellIntegration {
         if let window = AXWindowServer.shared.whitelistedWindow,
            KeypressProvider.shared.keyBuffer(for: window).backing != nil,
            let context = KeypressProvider.shared.keyBuffer(for: window).insert(text: insertionText) {
-            Autocomplete.update(with: context, for: window.session)
           
             let backing = KeypressProvider.shared.keyBuffer(for: window).backing
 
-            // manually trigger edit buffer update since `Autocomplete.update` is deprecated
+            // manually trigger edit buffer update
             // Only manually trigger edit buffer when not using ZLE widgets.
             // todo(mschrage): Once we consolidate on figterm to get edit buffer, remove the zle specific logic
             let (buffer, cursor) = context
             if let sessionId = window.session, backing != .zle {
               API.notifications.editbufferChanged(buffer: buffer,
                                                   cursor: cursor,
-                                                  session: sessionId)
+                                                  session: sessionId,
+                                                  context: window.associatedShellContext?.ipcContext)
             }
         }
     }
