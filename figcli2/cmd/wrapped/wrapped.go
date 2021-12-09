@@ -3,6 +3,7 @@ package wrapped
 import (
 	"fmt"
 	"math"
+	"math/rand"
 	"os"
 	"os/exec"
 	"os/user"
@@ -321,8 +322,10 @@ func Metrics(history []History) HistoryMetrics {
 }
 
 type model struct {
-	metrics HistoryMetrics
-	page    int
+	metrics     HistoryMetrics
+	asciiColors []string
+	borders     []lipgloss.Border
+	page        int
 }
 
 func initialModel() model {
@@ -339,9 +342,32 @@ func initialModel() model {
 		os.Exit(0)
 	}
 
+	rand.Seed(time.Now().UnixNano())
+
+	// Colors for borders shuffled
+	asciiColors := []string{"1", "2", "3", "4", "5", "6"}
+	rand.Shuffle(len(asciiColors), func(i, j int) {
+		asciiColors[i], asciiColors[j] = asciiColors[j], asciiColors[i]
+	})
+
+	// Border types shuffled
+	borders := []lipgloss.Border{
+		lipgloss.DoubleBorder(),
+		lipgloss.RoundedBorder(),
+		lipgloss.ThickBorder(),
+		lipgloss.DoubleBorder(),
+		lipgloss.RoundedBorder(),
+		lipgloss.ThickBorder(),
+	}
+	rand.Shuffle(len(borders), func(i, j int) {
+		borders[i], borders[j] = borders[j], borders[i]
+	})
+
 	return model{
-		metrics: metrics,
-		page:    0,
+		metrics:     metrics,
+		asciiColors: asciiColors,
+		borders:     borders,
+		page:        0,
 	}
 }
 
@@ -436,8 +462,8 @@ func (m model) View() string {
 ╚═╝     ╚═╝ ╚═════╝  Wrapped`
 
 		logoBox := lipgloss.NewStyle().
-			Border(lipgloss.ThickBorder()).
-			BorderForeground(lipgloss.Color("2")).
+			Border(m.borders[0]).
+			BorderForeground(lipgloss.Color(m.asciiColors[0])).
 			Padding(1, 2).
 			Bold(true).
 			Render(figAscii)
@@ -474,8 +500,8 @@ func (m model) View() string {
 
 		workingDirPanel := lipgloss.NewStyle().
 			Padding(1, 2).
-			Border(lipgloss.DoubleBorder()).
-			BorderForeground(lipgloss.Color("3")).
+			Border(m.borders[1]).
+			BorderForeground(lipgloss.Color(m.asciiColors[1])).
 			Width(lipgloss.Width(logoBox) - 2).
 			Render(workingDirTitle + "\n" + dirCountStr)
 
@@ -528,8 +554,8 @@ func (m model) View() string {
 
 		commandPanel := lipgloss.NewStyle().
 			Padding(1, 2).
-			Border(lipgloss.NormalBorder()).
-			BorderForeground(lipgloss.Color("4")).
+			Border(m.borders[2]).
+			BorderForeground(lipgloss.Color(m.asciiColors[2])).
 			Width(25).
 			Render(lipgloss.JoinVertical(lipgloss.Left, commandPageTitle, commmandsStr))
 
@@ -556,8 +582,8 @@ func (m model) View() string {
 
 		dayOfWeekHistogramPanel := lipgloss.NewStyle().
 			Padding(1, 2).
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("5")).
+			Border(m.borders[3]).
+			BorderForeground(lipgloss.Color(m.asciiColors[3])).
 			Render(dayOfWeekHistogramTitle + "\n" + daysOfWeekHistogramStr)
 
 		timeOfDayHistogramPageTitle := lipgloss.NewStyle().Bold(true).PaddingBottom(1).Render("Daily Activity")
@@ -622,8 +648,8 @@ func (m model) View() string {
 		timeOfDayStr := lipgloss.JoinHorizontal(lipgloss.Top, timeOfDayLabelsStr, timeOfDayHistogramStr)
 
 		timeOfDayHistogramPage := lipgloss.NewStyle().
-			Border(lipgloss.ThickBorder()).
-			BorderForeground(lipgloss.Color("6")).
+			Border(m.borders[4]).
+			BorderForeground(lipgloss.Color(m.asciiColors[4])).
 			Padding(1, 2).
 			Render(lipgloss.JoinVertical(lipgloss.Left, timeOfDayHistogramPageTitle, timeOfDayStr))
 
@@ -644,8 +670,8 @@ func (m model) View() string {
 		statsSummary := lipgloss.NewStyle().
 			Padding(1, 2).
 			Width(lipgloss.Width(dayOfWeekHistogramPanel) - 2).
-			Border(lipgloss.DoubleBorder()).
-			BorderForeground(lipgloss.Color("9")).
+			Border(m.borders[5]).
+			BorderForeground(lipgloss.Color(m.asciiColors[5])).
 			Render(commitMsgSummary)
 
 		shareText := lipgloss.NewStyle().
@@ -746,13 +772,39 @@ func (m model) View() string {
 		fullPage = doc.String()
 	}
 
-	if lipgloss.Width(fullPage) > physicalWidth || lipgloss.Height(fullPage) > physicalHeight {
+	pageWidth := lipgloss.Width(fullPage)
+	pageHeight := lipgloss.Height(fullPage)
+
+	if pageWidth > physicalWidth || pageHeight > physicalHeight {
+
+		expandLines := []string{}
+
+		if pageHeight > physicalHeight {
+			expandLines = append(expandLines, "⬆️")
+			expandLines = append(expandLines, "")
+		}
+
+		if pageWidth > physicalWidth {
+			expandLines = append(expandLines, "You'll need to expand")
+			expandLines = append(expandLines, "⬅️   your terminal to see your  ➡️")
+			expandLines = append(expandLines, "#FigWrapped!")
+		} else {
+			expandLines = append(expandLines, "You'll need to expand")
+			expandLines = append(expandLines, "your terminal to see your")
+			expandLines = append(expandLines, "#FigWrapped!")
+		}
+
+		if pageHeight > physicalHeight {
+			expandLines = append(expandLines, "")
+			expandLines = append(expandLines, "⬇️")
+		}
+
 		page := lipgloss.Place(
 			physicalWidth,
 			physicalHeight,
 			lipgloss.Center,
 			lipgloss.Center,
-			"Expand your terminal to see your #FigWrapped!")
+			lipgloss.JoinVertical(lipgloss.Center, expandLines...))
 
 		return page
 	}
