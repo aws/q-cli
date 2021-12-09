@@ -650,7 +650,7 @@ func (m model) View() string {
 
 		shareText := lipgloss.NewStyle().
 			MarginTop(1).
-			Render("🎁 Share your " + lipgloss.NewStyle().Bold(true).Render("#FigWrapped"))
+			Render("🎁 Share your " + lipgloss.NewStyle().Bold(true).Render("#FigWrapped") + " with " + lipgloss.NewStyle().Bold(true).Render("@fig"))
 
 		doc.WriteString(
 			lipgloss.JoinVertical(
