@@ -3,15 +3,15 @@ name: Publish package to NPM
 on:
   workflow_dispatch:
   push:
-    branches: [develop]
-    path: typescript-api-bindings/src/*.ts
+    paths: typescript-api-bindings/src/*.ts
 
 jobs:
   release:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    ## We only want to publish a package if it is on develop branch
+    if: github.ref == 'refs/heads/develop'
     steps:
-
       - name: "Checkout Project"
         uses: actions/checkout@v2
       - name: Navigate to typescript-api-bindings
