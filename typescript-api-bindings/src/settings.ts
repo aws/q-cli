@@ -26,23 +26,26 @@ export const didChange = {
   },
 };
 
-export const get = async (key: string) =>
-  sendGetSettingsPropertyRequest({
+export async function get(key: string) {
+  return sendGetSettingsPropertyRequest({
     key: key,
   });
+}
 
-export const set = async (key: string, value: any): Promise<void> =>
-  sendUpdateSettingsPropertyRequest({
+export async function set(key: string, value: any): Promise<void> {
+  return sendUpdateSettingsPropertyRequest({
     key: key,
     value: JSON.stringify(value),
   });
+}
 
-export const remove = async (key: string): Promise<void> =>
-  sendUpdateSettingsPropertyRequest({
+export async function remove(key: string): Promise<void> {
+  return sendUpdateSettingsPropertyRequest({
     key: key,
   });
+}
 
-export const current = async () => {
+export async function current() {
   let all = await sendGetSettingsPropertyRequest({});
   return JSON.parse(all.jsonBlob ?? '{}');
-};
+}

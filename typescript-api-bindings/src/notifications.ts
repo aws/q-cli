@@ -16,19 +16,19 @@ export interface Subscription {
 
 const handlers: Partial<Record<NotificationType, NotificationHandler[]>> = {};
 
-export const _unsubscribe = (
+export function _unsubscribe(
   type: NotificationType,
   handler?: NotificationHandler
-) => {
+) {
   if (handler && handlers[type] !== undefined) {
     handlers[type] = (handlers[type] ?? []).filter(x => x !== handler);
   }
-};
+}
 
-export const _subscribe = (
+export function _subscribe(
   request: NotificationRequest,
   handler: NotificationHandler
-): Promise<Subscription> | undefined => {
+): Promise<Subscription> | undefined {
   return new Promise<Subscription>((resolve, reject) => {
     const type = request.type;
 
@@ -84,7 +84,7 @@ export const _subscribe = (
       }
     );
   });
-};
+}
 
 const unsubscribeFromAll = () => {
   sendMessage({

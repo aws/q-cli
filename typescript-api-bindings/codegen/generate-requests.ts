@@ -3,6 +3,7 @@ import {
   PropertySignature,
   SourceFile,
   CodeBlockWriter,
+  IndentationText,
 } from 'ts-morph';
 const capitalizeFirstLetter = (str: string) => {
   return str.charAt(0).toUpperCase() + str.slice(1);
@@ -46,30 +47,31 @@ const writeGenericSendRequestWithResponseFunction = (
 ) => {
   let lowercasedEndpoint = lowercaseFirstLetter(endpoint);
 
-  const template = `export const send${endpoint}Request = async (
-    request: ${endpoint}Request
-    ): Promise<${endpoint}Response> =>
-    new Promise((resolve, reject) => {
-      sendMessage(
-        { $case: "${lowercasedEndpoint}Request", ${lowercasedEndpoint}Request: request },
-        (response) => {
-          switch (response?.$case) {
-            case "${lowercasedEndpoint}Response":
-              resolve(response.${lowercasedEndpoint}Response);
-              break;
-            case "error":
-              reject(Error(response.error));
-              break;
-            default:
-              reject(
-                Error(
-                    "Invalid response '" + response?.$case + "' for '${endpoint}Request'"
-                )
-              );
-          }
+  const template = `export async function send${endpoint}Request(
+request: ${endpoint}Request
+): Promise<${endpoint}Response> {
+  return new Promise((resolve, reject) => {
+    sendMessage(
+      { $case: "${lowercasedEndpoint}Request", ${lowercasedEndpoint}Request: request },
+      (response) => {
+        switch (response?.$case) {
+          case "${lowercasedEndpoint}Response":
+            resolve(response.${lowercasedEndpoint}Response);
+            break;
+          case "error":
+            reject(Error(response.error));
+            break;
+          default:
+            reject(
+              Error(
+                  "Invalid response '" + response?.$case + "' for '${endpoint}Request'"
+              )
+            );
         }
-      );
-    });`;
+      }
+    );
+  });
+}`;
 
   writer.writeLine(template).blankLine();
 };
@@ -80,35 +82,39 @@ const writeGenericSendRequestFunction = (
 ) => {
   let lowercasedEndpoint = lowercaseFirstLetter(endpoint);
 
-  const template = `export const send${endpoint}Request = async (
-        request: ${endpoint}Request
-    ): Promise<void> =>
-    new Promise((resolve, reject) => {
-      sendMessage(
-        { $case: "${lowercasedEndpoint}Request", ${lowercasedEndpoint}Request: request },
-        (response) => {
-          switch (response?.$case) {
-            case "success":
-              resolve();
-              break;
-            case "error":
-              reject(Error(response.error));
-              break;
-            default:
-              reject(
-                Error(
-                  "Invalid response '" + response?.$case + "' for '${endpoint}Request'"
-                )
-              );
-          }
+  const template = `export async function send${endpoint}Request(
+  request: ${endpoint}Request
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    sendMessage(
+      { $case: "${lowercasedEndpoint}Request", ${lowercasedEndpoint}Request: request },
+      (response) => {
+        switch (response?.$case) {
+          case "success":
+            resolve();
+            break;
+          case "error":
+            reject(Error(response.error));
+            break;
+          default:
+            reject(
+              Error(
+                "Invalid response '" + response?.$case + "' for '${endpoint}Request'"
+              )
+            );
         }
-      );
-    });
-    `;
+      }
+    );
+  });
+}`;
   writer.writeLine(template).blankLine();
 };
 
-const project = new Project();
+const project = new Project({
+  manipulationSettings: {
+    indentationText: IndentationText.TwoSpaces
+  }
+});
 
 project.addSourceFilesAtPaths(process.env.PWD + '/src/*.ts');
 
