@@ -5,13 +5,14 @@ import {
   sendContentsOfDirectoryRequest,
 } from './requests';
 
-export const write = async (path: string, contents: string) =>
-  sendWriteFileRequest({
+export async function write(path: string, contents: string) {
+  return sendWriteFileRequest({
     path: { path: path, expandTildeInPath: true },
     data: { $case: 'text', text: contents },
   });
+}
 
-export const read = async (path: string) => {
+export async function read(path: string) {
   let response = await sendReadFileRequest({
     path: { path: path, expandTildeInPath: true },
   });
@@ -20,18 +21,18 @@ export const read = async (path: string) => {
   } else {
     return null;
   }
-};
+}
 
-export const list = async (path: string) => {
+export async function list(path: string) {
   let response = await sendContentsOfDirectoryRequest({
     directory: { path: path, expandTildeInPath: true },
   });
   return response.fileNames;
-};
+}
 
-export const destinationOfSymbolicLink = async (path: string) => {
+export async function destinationOfSymbolicLink(path: string) {
   let response = await sendDestinationOfSymbolicLinkRequest({
     path: { path: path, expandTildeInPath: true },
   });
   return response.destination?.path;
-};
+}

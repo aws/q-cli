@@ -3,7 +3,7 @@
     "**/@typescript-eslint/eslint-plugin": "^4.1.1",
     "**/@typescript-eslint/parser": "^4.1.1"
   },
-  "version": "0.3.9",
+  "version": "0.3.16",
   "license": "MIT",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -19,7 +19,8 @@
     "build": "tsdx build",
     "test": "tsdx test",
     "lint": "tsdx lint",
-    "precommit": "tsdx lint",
+    "lint:fix": "tsdx lint --fix",
+    "precommit": "npm run lint:fix",
     "prepare": "tsdx build",
     "size": "size-limit",
     "analyze": "size-limit --why",

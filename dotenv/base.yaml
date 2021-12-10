@@ -1,7 +1,6 @@
 services:
   dotenv-base:
     image: dotenv-base
-    platform: linux/arm64
     build:
       context: ../
       dockerfile: ./dotenv/Dockerfile

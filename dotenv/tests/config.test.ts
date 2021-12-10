@@ -8,14 +8,14 @@ const VERSION_AVAILABLE = new RegExp('A new version of .*? is available.');
 const AUTOUPDATE_TEXT =
   '(To turn off automatic updates, run `fig settings app.disableAutoupdates true`)';
 
-let shell = new Shell();
+const shell = new Shell();
 let mockedCLICommands: Record<string, string> = {};
 
 beforeEach(async () => {
   Config.reset();
   Settings.reset();
   Config.set({ NEW_VERSION_AVAILABLE: 'v1.0.49' });
-  mockedCLICommands = { 'app:running': '1' }
+  mockedCLICommands = { 'app:running': '1' };
 });
 
 afterEach(async () => {
@@ -29,8 +29,8 @@ describe('Testing ~/.fig/user/config', () => {
 
     expect(transcript).toMatch(UPDATE_ALERT);
     expect(transcript).toContain(AUTOUPDATE_TEXT);
-    expect(shell.figCommands).toContain('fig app:running')
-    expect(shell.figCommands).toContain('fig update:app --force')
+    expect(shell.figCommands).toContain('fig app:running');
+    expect(shell.figCommands).toContain('fig update:app --force');
     expect(Config.getValue('DISPLAYED_AUTOUPDATE_SETTINGS_HINT')).toBe('1');
   });
 
@@ -53,7 +53,7 @@ describe('Testing ~/.fig/user/config', () => {
     expect(transcript).not.toMatch(UPDATE_ALERT);
     expect(transcript).not.toContain(AUTOUPDATE_TEXT);
     expect(shell.figCommands).toContain('fig app:running');
-    expect(shell.figCommands).not.toContain('fig update:app --force')
+    expect(shell.figCommands).not.toContain('fig update:app --force');
   });
 
   test('New version available. Autoupdates disabled.', async () => {
