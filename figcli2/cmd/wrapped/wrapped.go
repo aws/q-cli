@@ -657,16 +657,15 @@ func (m model) View() string {
 			Padding(0, 2).
 			Render(lipgloss.JoinVertical(lipgloss.Left, timeOfDayHistogramPageTitle, timeOfDayStr))
 
-
 		commitTitle := "😬  Shortest Commit Msg"
 		commitMsgSummary := ""
 
 		if m.metrics.ShortedCommitTime != 0 {
-			// commitTime := time.Unix(int64(m.metrics.ShortedCommitTime), 0).Local()
-			// commitTimeStr := lipgloss.NewStyle().Italic(true).Render(commitTime.Format("January 2 at 3:04pm"))
+			commitTime := time.Unix(int64(m.metrics.ShortedCommitTime), 0).Local()
+			commitTimeStr := lipgloss.NewStyle().Italic(true).Render(commitTime.Format("Jan 2"))
 			commitMsgSummary = lipgloss.JoinVertical(lipgloss.Left,
 				lipgloss.NewStyle().Bold(true).Render(commitTitle),
-				truncate(m.metrics.ShortesGitCommit, 24))
+				"'"+truncate(m.metrics.ShortesGitCommit, 12)+"' on "+commitTimeStr)
 		} else {
 			commitMsgSummary = lipgloss.JoinVertical(lipgloss.Left,
 				lipgloss.NewStyle().Bold(true).Render(commitTitle),
