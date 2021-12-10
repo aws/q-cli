@@ -19,11 +19,11 @@ export const didChange = {
           default:
             break;
         }
-  
+
         return false;
       }
     );
-  }
+  },
 };
 
 export const get = async (key: string) =>

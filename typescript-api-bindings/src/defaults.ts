@@ -3,7 +3,9 @@ import {
   sendUpdateDefaultsPropertyRequest,
 } from './requests';
 
-export const get = async (key: string): Promise<boolean | string | number | null> => {
+export const get = async (
+  key: string
+): Promise<boolean | string | number | null> => {
   let response = await sendGetDefaultsPropertyRequest({
     key: key,
   });
