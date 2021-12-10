@@ -23,8 +23,8 @@ services:
     command: ["tests/zsh"]
   starship:
     command: ["tests/bash", "tests/zsh"]
-  startup:
-    command: ["tests/startup"]
+  # startup:
+  #   command: ["tests/startup"]
   powerlevel10k:
     command: ["tests/zsh"]
   # TODO aliases
