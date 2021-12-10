@@ -146,11 +146,12 @@ jobs:
             </dict>
             </plist>
      
-      - name: "Test"
+      - name: "SET: CODESIGNING_IDENTITY"
         run: |
           security find-identity -v -p codesigning
-          security set-keychain-settings -lut 1200
-
+          echo CODESIGNING_IDENTITY=$(security find-identity -v -p codesigning | grep "Developer ID Application" | grep ${{ secrets.FIG__NOTARIZE_TEAM_ID }} | cut -d' ' -f5- | cut -d "\"" -f2) >> $GITHUB_ENV
+      - name: "Increase keychain access interval"
+        run: security set-keychain-settings -lut 1200
 
       - name: "Archive"
         if: ${{ github.event.inputs.useCache == 'false' || steps.archive.outputs.cache-hit != 'true' }}
@@ -211,6 +212,42 @@ jobs:
         uses: actions/setup-node@v1
       - name: Install appdmg
         run: npm install -g appdmg
+      - name: "Create dmg-spec.json"
+        run: |
+          echo $FILE_CONTENTS > $FILE_NAME
+        env:
+          FILE_NAME: ./dmg/dmg-spec.json
+          FILE_CONTENTS: |
+            {
+              "title": "Fig",
+              "icon": "VolumeIcon.icns",
+              "background": "dmg-background.png",
+              "icon-size": 160,
+              "format": "ULFO",
+              "window": {
+                "size": {
+                  "width": 660,
+                  "height": 400
+                }
+              },
+              "contents": [
+                {
+                  "x": 180,
+                  "y": 170,
+                  "type": "file",
+                  "path": "../Export/Fig.app"
+                },
+                {
+                  "x": 480,
+                  "y": 170,
+                  "type": "link",
+                  "path": "/Applications"
+                }
+              ],
+              "code-sign": {
+                "signing-identity": "${{env.CODESIGNING_IDENTITY}}"
+              }
+            }
       - name: Create DMG
         run: appdmg ./dmg/dmg-spec.json "fig $BUILD.dmg"
       # - name: Update Fileicon
