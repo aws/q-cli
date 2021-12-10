@@ -22,8 +22,7 @@ ENV TMPDIR=/tmp/
 WORKDIR /usr/home/app/
 
 RUN mkdir -p /Applications/Fig.app/
-COPY ./dotenv .
-RUN mkdir -p /usr/home/app/ \
+RUN mkdir -p /usr/home/app/src/ \
   /usr/home/figterm/ \
   /usr/home/.fig/ \
   /usr/home/bin/ \
@@ -32,12 +31,17 @@ RUN mkdir -p /usr/home/app/ \
 
 # Set up test user
 RUN adduser --disabled-password --home /usr/home test 
+RUN adduser test sudo
+# Prevent password prompts for sudo
+RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers
 RUN chown -R test:test /usr/home/
 USER test
 
 # Set up testing infrastructure
 COPY --chown=test:test ./dotenv/package.json .
 RUN npm install
+
+COPY --chown=test:test ./dotenv .
 
 COPY --chown=test:test ./proto/ /usr/home/proto/
 RUN protoc --plugin="$(npm bin -g)/protoc-gen-ts_proto" \
@@ -67,5 +71,8 @@ RUN mkdir -p /usr/home/config/bin/ && cp -r /usr/home/.fig_bin/* /usr/home/confi
 # Provide easy script for child images to call to add fig to dotfiles.
 RUN echo '!#/bin/bash\ncd /usr/home/config/ && ./tools/install_and_upgrade.sh local\n' > ~/install-fig
 RUN chmod +x ~/install-fig
+
+# Indicate src/ will be mounted to preserve things like local.ts that are generated in the container.
+VOLUME /usr/home/app/src/
 
 CMD ["bash"]

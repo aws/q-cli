@@ -1,3 +1,4 @@
+/* eslint-disable max-classes-per-file */
 import * as uuid from 'uuid';
 import * as pty from 'node-pty';
 
@@ -15,7 +16,7 @@ type Watcher = {
   pattern: RegExp;
   callback: (output: string) => void;
   clearOnMatch: boolean;
-}
+};
 
 function randomId(len: number) {
   const alphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -31,12 +32,19 @@ const CRLF = '\r\n';
 
 class FigtermListener {
   id = '';
+
   path: string;
+
   sessionId: string;
+
   callback: (msg: LocalMessage) => void = () => {};
+
   nextPrompt: Promise<void>;
+
   onPrompt = () => {};
+
   buffer = '';
+
   cursor = 0;
 
   constructor(path: string, sessionId: string) {
@@ -123,15 +131,21 @@ class FigtermListener {
 
 class FigCLIListener {
   id: string;
+
   commands: string[] = [];
 
   constructor(sessionId: string, path = '/tmp/mock_figcli.socket') {
     this.id = socketListen(path, data => {
       const message = String(Buffer.from(data.toString(), 'base64'));
       const tokens = message.slice(0, -1).split(' ');
-      if (tokens[1] === sessionId) {
-        this.commands.push(`fig ${tokens.slice(2).join(' ')}`.trim());
-      };
+      if (tokens[2] === sessionId) {
+        const command = `fig ${tokens.slice(3).join(' ')}`.trim();
+        if (tokens[1] !== '0') {
+          console.error(`Error running fig command "${command}"`);
+        } else {
+          this.commands.push(command);
+        }
+      }
     });
   }
 
@@ -146,10 +160,12 @@ class FigCLIListener {
 
 class Shell {
   cliListener: FigCLIListener | undefined;
+
   figtermListener: FigtermListener | undefined;
+
   pty: pty.IPty | undefined;
 
-  exitPty = async (signal?: string) => {};
+  exitPty: (signal?: string) => Promise<void> = async () => {};
 
   initialEnv: Record<string, string> = {};
 
@@ -180,12 +196,15 @@ class Shell {
     this.commandOutputWatchers = [];
     this.startupTime = -1;
 
-    const environment = Object.entries(env || process.env).reduce((acc, [key, val]) => {
-      if (!key.startsWith('FIG') && val !== undefined) {
-        acc[key] = val;
-      }
-      return acc;
-    }, {} as Record<string, string>)
+    const environment = Object.entries(env || process.env).reduce(
+      (acc, [key, val]) => {
+        if (!key.startsWith('FIG') && val !== undefined) {
+          acc[key] = val;
+        }
+        return acc;
+      },
+      {} as Record<string, string>
+    );
 
     if (mockedCLICommands) {
       environment.PATH = `${__dirname}/bin:${environment.PATH}`;
@@ -200,15 +219,13 @@ class Shell {
       ...environment,
       TMPDIR: '/tmp/',
       TERM_SESSION_ID: uuid.v4(),
-      FIG_SHELL_EXTRA_ARGS: Array.isArray(args)
-        ? args.join(' ')
-        : args ?? '',
-    }
+      FIG_SHELL_EXTRA_ARGS: Array.isArray(args) ? args.join(' ') : args ?? '',
+    };
 
     this.cliListener = new FigCLIListener(this.initialEnv.TERM_SESSION_ID);
     this.figtermListener = new FigtermListener(
       `${this.initialEnv.TMPDIR}fig.socket`,
-      this.initialEnv.TERM_SESSION_ID,
+      this.initialEnv.TERM_SESSION_ID
     );
     const firstPrompt = this.figtermListener.nextPrompt;
 
@@ -230,11 +247,11 @@ class Shell {
       commandOutputBuffer += data;
       this.sessionBuffer += data;
       let shouldClear = false;
-      this.commandOutputWatchers.filter((watcher) => {
+      this.commandOutputWatchers.filter(watcher => {
         const { pattern, callback, clearOnMatch } = watcher;
         const matches = commandOutputBuffer.match(pattern);
         if (matches) {
-          const output = matches[1] ?? "";
+          const output = matches[1] ?? '';
           callback(output);
           if (clearOnMatch) {
             shouldClear = true;
@@ -249,37 +266,39 @@ class Shell {
     });
 
     this.exitPty = (signal?: string) => {
-      const prom = new Promise<void>((resolve) => this.pty?.onExit(() => resolve()))
+      const prom = new Promise<void>(resolve =>
+        this.pty?.onExit(() => resolve())
+      );
       this.pty?.kill(signal ?? 'SIGKILL');
       this.pty = undefined;
 
       return prom;
-    }
+    };
 
     return firstPrompt;
   }
 
   async restartFigtermListener() {
-    if (!this.figtermListener) throw new Error("Initialize shell first");
+    if (!this.figtermListener) throw new Error('Initialize shell first');
     await this.figtermListener.restart();
   }
 
   waitForNextPrompt() {
-    if (!this.figtermListener) throw new Error("Initialize shell first");
+    if (!this.figtermListener) throw new Error('Initialize shell first');
     return this.figtermListener.nextPrompt;
   }
 
-  mockFigCommand({ command, value }: { command: string, value: string }) {
+  mockFigCommand({ command, value }: { command: string; value: string }) {
     return this.execute(`export MOCK_${command.replaceAll(':', '_')}=${value}`);
   }
 
   write(text: string) {
-    if (!this.pty) throw new Error("Initialize shell first");
+    if (!this.pty) throw new Error('Initialize shell first');
     this.pty.write(text);
   }
 
   resize({ rows, cols }: { rows: number; cols: number }) {
-    if (!this.pty) throw new Error("Initialize shell first");
+    if (!this.pty) throw new Error('Initialize shell first');
     this.pty.resize(cols, rows);
   }
 
@@ -288,26 +307,34 @@ class Shell {
       const nextPrompt = this.waitForNextPrompt();
       const callback = (output: string) => {
         // Wait for next prompt before resolving.
-        Promise.race([nextPrompt, new Promise<void>((_, r2) => setTimeout(r2, promptTimeout))])
+        Promise.race([
+          nextPrompt,
+          new Promise<void>((_, r2) => setTimeout(r2, promptTimeout)),
+        ])
           .then(() => resolve(output))
           .catch(() => {
-            reject(new Error(`Timed out waiting ${promptTimeout}ms for prompt after command '${command}' output '${output}'`));
+            reject(
+              new Error(
+                `Timed out waiting ${promptTimeout}ms for prompt ` +
+                  `after command '${command}' output '${output}'`
+              )
+            );
           });
-      }
+      };
 
       const wrapper = `-----${randomId(5)}-----`;
       const [prefix, suffix] = [`<<<${wrapper}`, `${wrapper}>>>`];
       this.commandOutputWatchers.push({
         pattern: new RegExp(`${prefix}${CRLF}(.*?)${CRLF}${suffix}`, 'ms'),
         clearOnMatch: true,
-        callback
+        callback,
       });
       this.write(`echo "${prefix}" ; ${command} ; echo "${suffix}"\r`);
     });
   }
 
   type(text: string) {
-    return new Promise<void>((resolve) => {
+    return new Promise<void>(resolve => {
       const chars = text.split('');
       const interval = setInterval(() => {
         if (chars.length === 0) {
@@ -324,9 +351,9 @@ class Shell {
   getEnv() {
     return this.execute('env').then(env =>
       env.split(CRLF).reduce((dict, line) => {
-        const [key, ...valueParts] = line.split("=");
+        const [key, ...valueParts] = line.split('=');
         // eslint-disable-next-line no-param-reassign
-        dict[key] = valueParts.join("=");
+        dict[key] = valueParts.join('=');
         return dict;
       }, {} as Record<string, string>)
     );
@@ -342,7 +369,7 @@ class Shell {
     await this.exitPty(signal);
     this.cliListener = undefined;
     this.figtermListener = undefined;
-    this.exitPty = async (signal?: string) => {};
+    this.exitPty = async () => {};
   }
 }
 

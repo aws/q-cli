@@ -1,9 +1,9 @@
 import { KeybindingPressedNotification, NotificationType } from './fig';
 import { _subscribe } from './notifications';
 
-export const pressed = (
+export function pressed(
   handler: (notification: KeybindingPressedNotification) => boolean | undefined
-) => {
+) {
   return _subscribe(
     { type: NotificationType.NOTIFY_ON_KEYBINDING_PRESSED },
     notification => {
@@ -17,4 +17,4 @@ export const pressed = (
       return false;
     }
   );
-};
+}

@@ -3,9 +3,9 @@ import {
   sendUpdateDefaultsPropertyRequest,
 } from './requests';
 
-export const get = async (
+export async function get(
   key: string
-): Promise<boolean | string | number | null> => {
+): Promise<boolean | string | number | null> {
   let response = await sendGetDefaultsPropertyRequest({
     key: key,
   });
@@ -22,27 +22,31 @@ export const get = async (
   }
 
   return null;
-};
+}
 
-export const setString = async (key: string, value: string): Promise<void> =>
-  sendUpdateDefaultsPropertyRequest({
+export async function setString(key: string, value: string): Promise<void> {
+  return sendUpdateDefaultsPropertyRequest({
     key: key,
     value: { type: { $case: 'string', string: value } },
   });
+}
 
-export const setBoolean = async (key: string, value: boolean): Promise<void> =>
-  sendUpdateDefaultsPropertyRequest({
+export async function setBoolean(key: string, value: boolean): Promise<void> {
+  return sendUpdateDefaultsPropertyRequest({
     key: key,
     value: { type: { $case: 'boolean', boolean: value } },
   });
+}
 
-export const setNumber = async (key: string, value: number): Promise<void> =>
-  sendUpdateDefaultsPropertyRequest({
+export async function setNumber(key: string, value: number): Promise<void> {
+  return sendUpdateDefaultsPropertyRequest({
     key: key,
     value: { type: { $case: 'integer', integer: value } },
   });
+}
 
-export const remove = async (key: string): Promise<void> =>
-  sendUpdateDefaultsPropertyRequest({
+export async function remove(key: string): Promise<void> {
+  return sendUpdateDefaultsPropertyRequest({
     key: key,
   });
+}

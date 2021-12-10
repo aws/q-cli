@@ -1,9 +1,9 @@
 import { EditBufferChangedNotification, NotificationType } from './fig';
 import { _subscribe } from './notifications';
 
-export const subscribe = (
+export function subscribe(
   handler: (notification: EditBufferChangedNotification) => boolean | undefined
-) => {
+) {
   return _subscribe(
     { type: NotificationType.NOTIFY_ON_EDITBUFFFER_CHANGE },
     notification => {
@@ -17,4 +17,4 @@ export const subscribe = (
       return false;
     }
   );
-};
+}
