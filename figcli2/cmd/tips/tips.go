@@ -345,7 +345,7 @@ func NewCmdReset() *cobra.Command {
 
 			tip3Text := "\n" + boldStyle.Render(`Fig Tips (3/5):`) +
 				" 😎 Private autocomplete\n\n" +
-				"Did you know Fig lets you private completions for your own personal\n shortcuts or even your team's internal CLI tool?\n\n" +
+				"Did you know Fig lets you create private completions for your own personal\n shortcuts or even your team's internal CLI tool?\n\n" +
 				"Build private completions in less than 2 minutes:\n" +
 				"  1. " + boldStyle.Render("Personal:") + " " + underlineStyle.Render("fig.io/shortcuts") + "\n" +
 				"  2. " + boldStyle.Render("Team:") + " " + underlineStyle.Render("fig.io/teams") + "\n\n" +
