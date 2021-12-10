@@ -377,4 +377,4 @@ jobs:
         run: |
           curl -H "Content-Type: application/json" \
             -d '{"username": "macOS build ($VERSION $BUILD) deployed!", "content": "${{ github.event.inputs.buildName }} | From branch: ${{ github.ref }}\n" }' \
-            ${{env.DISCORD_MACOS_WEBHOOK}}
+            ${{secrets.DISCORD_MACOS_WEBHOOK}}
