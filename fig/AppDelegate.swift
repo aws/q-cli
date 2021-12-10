@@ -95,15 +95,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         TelemetryProvider.register()
         Accessibility.listen()
                 
-//        updater?.checkForUpdateInformation()
-//        updater?.delegate = self as SUUpdaterDelegate;
-//        updater?.checkForUpdateInformation()
-        
-//        let domain = Bundle.main.bundleIdentifier!
-//        UserDefaults.standard.removePersistentDomain(forName: domain)
-//        UserDefaults.standard.synchronize()
-//        WebView.deleteCache()
-
         handleUpdateIfNeeded()
         Defaults.shared.useAutocomplete = true
         Defaults.shared.autocompleteVersion = "v9"
@@ -1888,11 +1879,10 @@ extension AppDelegate : NSMenuDelegate {
                 var bufferDescription: String? = nil
                 var backing: String?
 
-
                 if let window = window {
-                    let keybuffer = KeypressProvider.shared.keyBuffer(for: window)
-                    hasContext = keybuffer.buffer != nil
-                    bufferDescription = keybuffer.representation
+                  let keybuffer = KeypressProvider.shared.keyBuffer(for: window)
+                  hasContext = keybuffer.buffer != nil
+                  bufferDescription = keybuffer.representation
                    
                   switch keybuffer.backing {
                   case .zsh:
@@ -1905,7 +1895,6 @@ extension AppDelegate : NSMenuDelegate {
                   default:
                     backing = nil
                   }
-                  
                 }
 
                 let hasWindow = window != nil
@@ -1916,27 +1905,21 @@ extension AppDelegate : NSMenuDelegate {
                 
                 var color: NSColor = .clear
                 let legend = NSMenu(title: "legend")
+                var legendContent: [NSMenuItem] = []
+                var simpleLegend: [String] = []
                 
                 let companionWindow = WindowManager.shared.autocomplete
                 if let (message, hexString, shouldDisplay) = companionWindow?.status, shouldDisplay {
-                    color = hexString != nil ? (NSColor(hex: hexString!) ?? .red) : .red
-                  
-                  message.split(separator: "\n").forEach { (str) in
-                    if str == "---" {
-                      legend.addItem(NSMenuItem.separator())
-                    } else {
-                      legend.addItem(NSMenuItem(title: String(str), action: nil, keyEquivalent: ""))
-                    }
-                  }
-                    
+                  color = hexString != nil ? (NSColor(hex: hexString!) ?? .red) : .red
+                  simpleLegend = message.split(separator: "\n")
                 } else if !Integrations.terminalsWhereAutocompleteShouldAppear.contains(window?.bundleId ?? "") {
                   color = .orange
-                  legend.addItem(NSMenuItem(title: "Not tracking window...", action: nil, keyEquivalent: ""))
-                  
-                  legend.addItem(NSMenuItem.separator())
-                  legend.addItem(NSMenuItem(title: "Switch to a different application", action: nil, keyEquivalent: ""))
-                  legend.addItem(NSMenuItem(title: "and then return to current window", action: nil, keyEquivalent: ""))
-                  
+                  simpleLegend = [
+                    "Not tracking window...",
+                    "---",
+                    "Switch to a different application",
+                    "and then return to current window",
+                  ]
                 } else if let isLoading = companionWindow?.webView?.isLoading, isLoading {
                     color = .yellow
                     legend.addItem(NSMenuItem(title: "Autocomplete is loading", action: nil, keyEquivalent: ""))
@@ -1945,21 +1928,17 @@ extension AppDelegate : NSMenuDelegate {
                     legend.addItem(NSMenuItem(title: "the internet and try again.", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem.separator())
                     legend.addItem(NSMenuItem(title: "Reload Autocomplete", action: #selector(restart), keyEquivalent: ""))
-
                 } else if (!hasWindow) {
                     color = .red
                     legend.addItem(NSMenuItem(title: "Window is not being tracked.", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem.separator())
                     legend.addItem(NSMenuItem(title: "Reset Window Tracking", action: #selector(resetWindowTracking), keyEquivalent: ""))
                     legend.addItem(NSMenuItem(title: "Restart Fig", action: #selector(restart), keyEquivalent: ""))
-
-
                 } else if (!Diagnostic.installationScriptRan) {
                     color = .red
                     legend.addItem(NSMenuItem(title: "~/.fig directory is misconfigured", action: nil, keyEquivalent: ""))
                     legend.addItem(NSMenuItem.separator())
                     legend.addItem(NSMenuItem(title: "Re-run Install Script", action: #selector(setupScript), keyEquivalent: ""))
-                  
                 } else if (SecureKeyboardInput.enabled || (SecureKeyboardInput.wasEnabled && window?.bundleId == Integrations.Terminal)) {
                     // Also check previous value (wasEnabled) because clicking on menubar icon will disable secure keyboard input in Terminal.app
                     color = .systemPink
@@ -1990,47 +1969,56 @@ extension AppDelegate : NSMenuDelegate {
                     legend.addItem(support)
                 } else if (!hasContext) {
                     color = .orange
-                    legend.addItem(NSMenuItem(title: "Fig is unsure what you typed", action: nil, keyEquivalent: ""))
-                    legend.addItem(NSMenuItem.separator())
-                    legend.addItem(NSMenuItem(title: "Go to a new line by pressing", action: nil, keyEquivalent: ""))
-                    legend.addItem(NSMenuItem(title: "<enter> or ctrl+c", action: nil, keyEquivalent: ""))
-
+                    simpleLegend = [
+                        "Fig is unsure what you typed",
+                        "---",
+                        "Go to a new line by pressing",
+                        "<enter> or ctrl+c",
+                    ]
                 } else if (!hasCommand) {
                     color = .yellow
-                    legend.addItem(NSMenuItem(title: "Not linked to TTY session.", action: nil, keyEquivalent: ""))
-                    legend.addItem(NSMenuItem.separator())
-                    legend.addItem(NSMenuItem(title: "window: \(window?.hash ?? "???")", action: nil, keyEquivalent: ""))
-
+                    simpleLegend = [
+                        "Not linked to TTY session.",
+                        "---",
+                        "window: \(window?.hash ?? "???")",
+                    ]
                 } else if (!isShell) {
                     color = .cyan
-                    legend.addItem(NSMenuItem(title: "Running proccess (\(cmd)) is not a shell.", action: nil, keyEquivalent: ""))
-                    legend.addItem(NSMenuItem.separator())
-                    legend.addItem(NSMenuItem(title: "Fix: exit current process", action: nil, keyEquivalent: ""))
-                    legend.addItem(NSMenuItem.separator())
-                    legend.addItem(NSMenuItem(title: "window: \(window?.hash ?? "???")", action: nil, keyEquivalent: ""))
+                    simpleLegend = [
+                        "Running proccess (\(cmd)) is not a shell.",
+                        "---",
+                        "Fix: exit current process",
+                        "---",
+                        "window: \(window?.hash ?? "???")",
+                    ]
                 } else {
                     color = .green
                   
                     let path = Diagnostic.pseudoTerminalPathAppearsValid
                   
-                    legend.addItem(NSMenuItem(title: "Everything should be working.", action: nil, keyEquivalent: ""))
-                    legend.addItem(NSMenuItem.separator())
-                    legend.addItem(NSMenuItem(title: "window: \(window?.hash.truncate(length: 15, trailing: "...") ?? "???")", action: nil, keyEquivalent: ""))
-                    legend.addItem(NSMenuItem(title: "tty: \(shellContext?.ttyDescriptor ?? "???")", action: nil, keyEquivalent: ""))
-                    legend.addItem(NSMenuItem(title: "cwd: \(shellContext?.workingDirectory ?? "???")", action: nil, keyEquivalent: ""))
-                    legend.addItem(NSMenuItem(title: "pid: \(shellContext?.processId ?? -1)", action: nil, keyEquivalent: ""))
-                    legend.addItem(NSMenuItem(title: "keybuffer: \(bufferDescription ?? "???")", action: nil, keyEquivalent: ""))
-                    legend.addItem(NSMenuItem(title: "path: \( path != nil ? (path! ? "☑" : "☒ ") : "<generated dynamically>")", action: nil, keyEquivalent: ""))
-
-//                    if runUsingPrefix != nil {
-//                      legend.addItem(NSMenuItem.separator())
-//                      legend.addItem(NSMenuItem(title: "In SSH session or Docker container", action: nil, keyEquivalent: ""))
-//                    }
-                  
-                    legend.addItem(NSMenuItem.separator())
-                    legend.addItem(NSMenuItem(title: "Backed by \(backing ?? "???")", action: nil, keyEquivalent: ""))
+                    simpleLegend = [
+                        "Everything should be working.",
+                        "---",
+                        "window: \(window?.hash.truncate(length: 15, trailing: "...") ?? "???")",
+                        "tty: \(shellContext?.ttyDescriptor ?? "???")",
+                        "cwd: \(shellContext?.workingDirectory ?? "???")",
+                        "pid: \(shellContext?.processId ?? -1)",
+                        "keybuffer: \(bufferDescription ?? "???")",
+                        "path: \( path != nil ? (path! ? "☑" : "☒ ") : "<generated dynamically>")",
+                        "---",
+                        "Backed by \(backing ?? "???")",
+                    ]
                 }
-                
+
+                if simpleLegend.count > 0 {
+                  simpleLegend.forEach { (str) in
+                    if str == "---" {
+                      legendContent.append(NSMenuItem.separator())
+                    } else {
+                      legendContent.append(NSMenuItem(title: String(str), action: nil, keyEquivalent: ""))
+                    }
+                  }
+                }
                 
                 let title = "Debugger \(cmd)"//"\(app.localizedName ?? "Unknown") \(cmd)"
                 var image: NSImage?
@@ -2047,12 +2035,9 @@ extension AppDelegate : NSMenuDelegate {
                 app.submenu = legend
                 menu.insertItem(app, at: 0)
                 
-                
-
                 self.frontmost = app
             } else {
-//                let title = "\(app.localizedName ?? "Unknown") \(cmd)"
-                let icon = app.icon?.resized(to: NSSize(width: 16, height: 16))//?.overlayBadge(color: .red, text: "")
+                let icon = app.icon?.resized(to: NSSize(width: 16, height: 16))
                 
                 let text = Integrations.autocompleteBlocklist.contains(app.bundleIdentifier ?? "") ? "has been disabled." : "is not supported."
             

@@ -1,0 +1,17 @@
+excluded: # paths to ignore during linting. Takes precedence over `included`.
+  - fig/iTerm/iterm.pb.swift
+  - swift-api-bindings/Sources/FigAPIBindings/fig.pb.swift
+disabled_rules:
+  - identifier_name
+  - force_cast
+  - type_name
+  - implicit_getter
+  - operator_whitespace
+  - cyclomatic_complexity
+  - function_body_length
+  - inclusive_language
+  - nesting
+  - orphaned_doc_comment
+  - large_tuple
+indentation_width:
+  indentation_width: 2
