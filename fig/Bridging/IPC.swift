@@ -378,7 +378,7 @@ extension IPC {
       case .hide:
         Autocomplete.hide()
       case .clearKeybuffer:
-        ShellHookManager.shared.clearKeybufferLegacy(shellMessage)
+        print("Clear keybuffer command is deprecated, not doing anything.")
       default:
         print("Unknown background Unix socket")
       }

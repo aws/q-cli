@@ -22,7 +22,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 
     var clicks:Int = 6;
     let updater = UpdateService.provider
-//    let processPool = WKProcessPool()
     
     let iTermObserver = WindowObserver(with: "com.googlecode.iterm2")
     let TerminalObserver = WindowObserver(with: "com.apple.Terminal")
@@ -276,8 +275,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     }
         
     func openMenu() {
-        
-        // Do not show menu if icon is hidden
         if let hidden = Settings.shared.getValue(forKey: Settings.hideMenubarIcon) as? Bool,
                hidden {
           return
@@ -288,28 +285,14 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         }
     }
     
-    func validateMenuItem(menuItem: NSMenuItem) -> Bool {
-        print("menuitem!!!")
-//        if(menuItem.action == Selector("batteryStatus:")) {
-//            NSLog("refresh!");
-//            let now = NSDate()
-//            menuItem.title = String(format:"%f", now.timeIntervalSince1970);
-//            return true;
-//        }
-        return true;
-    }
-    
     @objc func statusBarButtonClicked(sender: NSStatusBarButton) {
         let event = NSApp.currentEvent!
 
         if event.type == NSEvent.EventType.leftMouseUp {
-
             sender.menu = self.defaultStatusBarMenu()
             if let menu = sender.menu {
                 menu.popUp(positioning: nil, at: NSPoint(x: 0, y: statusBarItem.statusBar!.thickness), in: sender)
             }
-//            sender.menu?.popUp(positioning: sender, at: <#T##NSPoint#>, in: )
-//            popover.show(relativeTo: sender.bounds, of: sender, preferredEdge: NSRectEdge.minY)
 
             // This is critical, otherwise clicks won't be processed again
             sender.menu = nil
@@ -323,34 +306,33 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         let statusBarMenu = NSMenu(title: "fig")
         statusBarItem.menu = statusBarMenu
         statusBarMenu.addItem(
-        withTitle: "Fig is disabled...",
-        action: nil,
-        keyEquivalent: "")
-        
+            withTitle: "Fig is disabled...",
+            action: nil,
+            keyEquivalent: "")
+            
         statusBarMenu.addItem(
-        withTitle: "Turn on Accessibility",
-        action:  #selector(AppDelegate.promptForAccesibilityAccess),
-        keyEquivalent: "")
+            withTitle: "Turn on Accessibility",
+            action:  #selector(AppDelegate.promptForAccesibilityAccess),
+            keyEquivalent: "")
 
         statusBarMenu.addItem(NSMenuItem.separator())
         let enable = statusBarMenu.addItem(
-        withTitle: "You may need to toggle the",
-        action: nil,
-        keyEquivalent: "")
+            withTitle: "You may need to toggle the",
+            action: nil,
+            keyEquivalent: "")
         enable.image = NSImage(imageLiteralResourceName: NSImage.smartBadgeTemplateName)
 
         let inset = statusBarMenu.addItem(
-        withTitle: "  checkbox off and on",
-        action: nil,
-        keyEquivalent: "")
+            withTitle: "  checkbox off and on",
+            action: nil,
+            keyEquivalent: "")
         inset.indentationLevel = 1
 
         statusBarMenu.addItem(NSMenuItem.separator())
-
         statusBarMenu.addItem(
-        withTitle: "Quit Fig",
-        action:  #selector(AppDelegate.quit),
-        keyEquivalent: "")
+            withTitle: "Quit Fig",
+            action:  #selector(AppDelegate.quit),
+            keyEquivalent: "")
         
         return statusBarMenu
     }
@@ -359,44 +341,43 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         let statusBarMenu = NSMenu(title: "fig")
         statusBarItem.menu = statusBarMenu
         statusBarMenu.addItem(
-        withTitle: "Fig hasn't been set up yet...",
-        action: nil,
-        keyEquivalent: "")
+            withTitle: "Fig hasn't been set up yet...",
+            action: nil,
+            keyEquivalent: "")
       
         statusBarMenu.addItem(NSMenuItem.separator())
 
         statusBarMenu.addItem(NSMenuItem.separator())
         let issue = statusBarMenu.addItem(
-         withTitle: "Report a bug...",
-         action: #selector(AppDelegate.sendFeedback),
-         keyEquivalent: "")
+            withTitle: "Report a bug...",
+            action: #selector(AppDelegate.sendFeedback),
+            keyEquivalent: "")
         issue.image = NSImage(imageLiteralResourceName: "github")
         
         let forum = statusBarMenu.addItem(
-         withTitle: "Support Guide",
-         action: #selector(AppDelegate.viewSupportForum),
-         keyEquivalent: "")
+            withTitle: "Support Guide",
+            action: #selector(AppDelegate.viewSupportForum),
+            keyEquivalent: "")
         forum.image = NSImage(named: NSImage.Name("commandkey"))
         
         statusBarMenu.addItem(NSMenuItem.separator())
 
         statusBarMenu.addItem(
-        withTitle: "Quit Fig",
-        action:  #selector(AppDelegate.quit),
-        keyEquivalent: "")
+            withTitle: "Quit Fig",
+            action:  #selector(AppDelegate.quit),
+            keyEquivalent: "")
       
         statusBarMenu.addItem(NSMenuItem.separator())
-
         statusBarMenu.addItem(
-         withTitle: "Uninstall Fig",
-         action: #selector(AppDelegate.uninstall),
-         keyEquivalent: "")
+            withTitle: "Uninstall Fig",
+            action: #selector(AppDelegate.uninstall),
+            keyEquivalent: "")
         
         return statusBarMenu
     }
   
     func integrationsMenu() -> NSMenu {
-      let integrationsMenu = NSMenu(title: "fig")
+        let integrationsMenu = NSMenu(title: "fig")
         
         integrationsMenu.addItem(NSMenuItem.separator())
         integrationsMenu.addItem(
@@ -418,89 +399,81 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             item.target = provider
             
             switch provider.status {
-                case .applicationNotInstalled:
-                    break
-                case .unattempted:
-                    item.image = Icon.fileIcon(for: "fig://template?color=808080&badge=?&w=16&h=16")
+            case .applicationNotInstalled:
+                break
+            case .unattempted:
+                item.image = Icon.fileIcon(for: "fig://template?color=808080&badge=?&w=16&h=16")
+            case .installed:
+                item.action = nil // disable selection
+                item.image = Icon.fileIcon(for: "fig://template?color=2ecc71&badge=✓&w=16&h=16")
+            case .pending(let dependency):
+                let actionsMenu = NSMenu(title: "actions")
 
-                case .installed:
-                    item.action = nil // disable selection
-                    item.image = Icon.fileIcon(for: "fig://template?color=2ecc71&badge=✓&w=16&h=16")
-
-                case .pending(let dependency):
-                    let actionsMenu = NSMenu(title: "actions")
-
-                    item.action = nil // disable selection
+                item.action = nil // disable selection
+                
+                switch dependency {
+                case .applicationRestart:
+                    item.image = Icon.fileIcon(for: "fig://template?color=FFA500&badge=⟳&w=16&h=16")
                     
-                    switch dependency {
-                    case .applicationRestart:
-                        item.image = Icon.fileIcon(for: "fig://template?color=FFA500&badge=⟳&w=16&h=16")
-                        
-                        let restart = actionsMenu.addItem(
-                            withTitle: "Restart \(provider.applicationName)",
-                            action: #selector(provider.restart),
-                            keyEquivalent: "")
-                        restart.target = provider
-                    case .inputMethodActivation:
-                        item.image = Icon.fileIcon(for: "fig://template?color=FFA500&badge=⌨&w=16&h=16")
-                        actionsMenu.addItem(
-                            withTitle: "Requires Input Method",
-                            action: nil,
-                            keyEquivalent: "")
-                        
-                        switch InputMethod.default.status {
-                        case .failed(let error, _):
-                            actionsMenu.addItem(NSMenuItem.separator())
-                            actionsMenu.addItem(
-                                withTitle: error,
-                                action: nil,
-                                keyEquivalent: "")
-                            actionsMenu.addItem(NSMenuItem.separator())
-                            let installer = actionsMenu.addItem(
-                                withTitle: "Attempt to Install",
-                                action: #selector(provider.promptToInstall),
-                                keyEquivalent: "")
-                            installer.target = provider
-                        default:
-                            break
-                        }
-
-                    }
-
-                    
-                    item.submenu = actionsMenu
-                    
-                    
-                case .failed(let error, let supportURL):
-                    item.image = Icon.fileIcon(for: "fig://template?color=e74c3c&badge=╳&w=16&h=16")
-                    let actionsMenu = NSMenu(title: "actions")
-
+                    let restart = actionsMenu.addItem(
+                        withTitle: "Restart \(provider.applicationName)",
+                        action: #selector(provider.restart),
+                        keyEquivalent: "")
+                    restart.target = provider
+                case .inputMethodActivation:
+                    item.image = Icon.fileIcon(for: "fig://template?color=FFA500&badge=⌨&w=16&h=16")
                     actionsMenu.addItem(
-                        withTitle: error,
+                        withTitle: "Requires Input Method",
                         action: nil,
                         keyEquivalent: "")
                     
-                    actionsMenu.addItem(NSMenuItem.separator())
-                    let install = actionsMenu.addItem(withTitle: "Attempt to install",
-                                                      action: #selector(provider.promptToInstall),
-                                                      keyEquivalent: "")
-                    install.target = provider
-                    
-                    if supportURL != nil {
+                    switch InputMethod.default.status {
+                    case .failed(let error, _):
                         actionsMenu.addItem(NSMenuItem.separator())
-
-                        let button = actionsMenu.addItem(
-                            withTitle: "Learn more",
-                            action: #selector(provider.openSupportPage),
+                        actionsMenu.addItem(
+                            withTitle: error,
+                            action: nil,
                             keyEquivalent: "")
-                        
-                        button.target = provider
+                        actionsMenu.addItem(NSMenuItem.separator())
+                        let installer = actionsMenu.addItem(
+                            withTitle: "Attempt to Install",
+                            action: #selector(provider.promptToInstall),
+                            keyEquivalent: "")
+                        installer.target = provider
+                    default:
+                        break
                     }
+
+                }
+                
+                item.submenu = actionsMenu
+            case .failed(let error, let supportURL):
+                item.image = Icon.fileIcon(for: "fig://template?color=e74c3c&badge=╳&w=16&h=16")
+                let actionsMenu = NSMenu(title: "actions")
+
+                actionsMenu.addItem(
+                    withTitle: error,
+                    action: nil,
+                    keyEquivalent: "")
+                
+                actionsMenu.addItem(NSMenuItem.separator())
+                let install = actionsMenu.addItem(withTitle: "Attempt to install",
+                                                    action: #selector(provider.promptToInstall),
+                                                    keyEquivalent: "")
+                install.target = provider
+                
+                if supportURL != nil {
+                    actionsMenu.addItem(NSMenuItem.separator())
+
+                    let button = actionsMenu.addItem(
+                        withTitle: "Learn more",
+                        action: #selector(provider.openSupportPage),
+                        keyEquivalent: "")
                     
-                    item.submenu = actionsMenu
-
-
-
+                    button.target = provider
+                }
+                
+                item.submenu = actionsMenu
             }
         }
         
@@ -543,14 +516,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
        keyEquivalent: "")
       developerMenu.addItem(NSMenuItem.separator())
       
-//      let debugAutocomplete = developerMenu.addItem(
-//       withTitle: "Force Popup to Appear",
-//       action: #selector(AppDelegate.toggleDebugAutocomplete(_:)),
-//       keyEquivalent: "")
-//      debugAutocomplete.state = Defaults.shared.debugAutocomplete ? .on : .off
-//      utilitiesMenu.addItem(NSMenuItem.separator())
-//      developerMenu.addItem(NSMenuItem.separator())
-      
       developerMenu.addItem(
        withTitle: "Run Install/Update Script",
        action: #selector(AppDelegate.setupScript),
@@ -575,7 +540,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
               keyEquivalent: "")
              developerMenu.addItem(
               withTitle: "AXObserver",
-              action: #selector(AppDelegate.addAccesbilityObserver),
+              action: #selector(AppDelegate.addAccessibilityObserver),
               keyEquivalent: "")
              developerMenu.addItem(
               withTitle: "Get Selected Text",
@@ -585,11 +550,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
                withTitle: "Processes",
                action: #selector(AppDelegate.processes),
                keyEquivalent: "")
-             developerMenu.addItem(
-               withTitle: "Trigger ScreenReader mode in topmost app",
-               action: #selector(AppDelegate.triggerScreenReader),
-               keyEquivalent: "")
-         }
+      }
       
       return developerMenu
     }
@@ -789,10 +750,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
       NSWorkspace.shared.open(URL(string: "https://fig.io/docs/support/settings")!)
     }
   
-    @objc func editKeybindingsFile() {
-      NSWorkspace.shared.open(KeyBindingsManager.keymapFilePath)
-    }
-    
     @objc func uninstall() {
         
         let confirmed = self.dialogOKCancel(question: "Uninstall Fig?", text: "You will need to restart any currently running terminal sessions.", icon: NSImage(imageLiteralResourceName: NSImage.applicationIconName))
@@ -929,35 +886,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
 
     }
     
-    //https://stackoverflow.com/a/35138823
-//    func keyName(scanCode: UInt16) -> String? {
-//        let maxNameLength = 4
-//        var nameBuffer = [UniChar](repeating: 0, count : maxNameLength)
-//        var nameLength = 0
-//
-//        let modifierKeys = UInt32(alphaLock >> 8) & 0xFF // Caps Lock
-//        var deadKeys: UInt32 = 0
-//        let keyboardType = UInt32(LMGetKbdType())
-//
-//        let source = TISCopyCurrentKeyboardLayoutInputSource().takeRetainedValue()
-//        guard let ptr = TISGetInputSourceProperty(source, kTISPropertyUnicodeKeyLayoutData) else {
-//            NSLog("Could not get keyboard layout data")
-//            return nil
-//        }
-//        let layoutData = Unmanaged<CFData>.fromOpaque(ptr).takeUnretainedValue() as Data
-//        let osStatus = layoutData.withUnsafeBytes {
-//            UCKeyTranslate($0.bindMemory(to: UCKeyboardLayout.self).baseAddress, scanCode, UInt16(kUCKeyActionDown),
-//                           modifierKeys, keyboardType, UInt32(kUCKeyTranslateNoDeadKeysMask),
-//                           &deadKeys, maxNameLength, &nameLength, &nameBuffer)
-//        }
-//        guard osStatus == noErr else {
-//            NSLog("Code: 0x%04X  Status: %+i", scanCode, osStatus);
-//            return nil
-//        }
-//
-//        return  String(utf16CodeUnits: nameBuffer, count: nameLength)
-//    }
-//
     @objc func inviteToSlack() {
         NSWorkspace.shared.open(URL(string: "https://fig-core-backend.herokuapp.com/community")!)
         TelemetryProvider.track(event: .joinSlack, with: [:])
@@ -965,7 +893,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     }
   
     @objc func inviteAFriend() {
-      
       guard let email = Defaults.shared.email else {
         Alert.show(title: "You are not logged in!", message: "Run `fig util:logout` and try again.", icon: Alert.appIcon)
         return
@@ -1002,39 +929,30 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
       }
 
       task.resume()
-
     }
     
     @objc func viewDocs() {
-        
         NSWorkspace.shared.open(URL(string: "https://fig.io/docs")!)
         TelemetryProvider.track(event: .viewDocs, with: [:])
     }
   
     @objc func viewSupportForum() {
-        
         NSWorkspace.shared.open(URL(string: "https://fig.io/support")!)
         TelemetryProvider.track(event: .viewSupportForum, with: [:])
     }
 
     @objc func getKeyboardLayout() {
-        guard let v = KeyboardLayout.shared.keyCode(for: "V"),
-          let e = KeyboardLayout.shared.keyCode(for: "E"),
-          let u = KeyboardLayout.shared.keyCode(for: "U") else {
+      guard let v = KeyboardLayout.shared.keyCode(for: "V"),
+        let e = KeyboardLayout.shared.keyCode(for: "E"),
+        let u = KeyboardLayout.shared.keyCode(for: "U") else {
             return
       }
-
-        print("v=\(v); e=\(e); u=\(u)")
-//        for var i in 0...100 {
-//            print(i, keyName(scanCode: UInt16(i)))
-//        }
-
+      print("v=\(v); e=\(e); u=\(u)")
     }
     
     @objc func toggleAutocomplete(_ sender: NSMenuItem) {
         Defaults.shared.useAutocomplete = !Defaults.shared.useAutocomplete
         sender.state = Defaults.shared.useAutocomplete ? .on : .off
-//        KeypressProvider.shared.clean()
         TelemetryProvider.track(event: .toggledAutocomplete, with: ["status" : Defaults.shared.useAutocomplete ? "on" : "off"])
 
         if (Defaults.shared.useAutocomplete) {
@@ -1045,10 +963,9 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         }
 
         Logger.log(message: "Toggle autocomplete \(Defaults.shared.useAutocomplete ? "on" : "off")")
-
     }
 
-    @objc func  getSelectedText() {
+    @objc func getSelectedText() {
         NSEvent.addGlobalMonitorForEvents(matching: .keyUp) { (event) in
             print("keylogger:", event.characters ?? "", event.keyCode)
             let systemWideElement = AXUIElementCreateSystemWide()
@@ -1071,7 +988,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     @objc func newAccesibilityAPI() {}
     var observer: AXObserver?
 
-    @objc func addAccesbilityObserver() {
+    @objc func addAccessibilityObserver() {
         let first = WindowServer.shared.topmostWindow(for: NSWorkspace.shared.frontmostApplication!)!
         print(first.bundleId ?? "?")
         let axErr = AXObserverCreate(first.app.processIdentifier, { (observer: AXObserver, element: AXUIElement, notificationName: CFString, refcon: UnsafeMutableRawPointer?) -> Void in
@@ -1079,9 +996,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
                 print("axobserver:", element)
                 print("axobserver:", observer)
                 print("axobserver:", refcon as Any)
-
-//            WindowManager.shared.requestWindowUpdate()
-            
         }, &observer)
         
         //kAXWindowMovedNotification
@@ -1102,18 +1016,10 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         
         AXObserverAddNotification(observer!, first.accesibilityElement!, kAXWindowMovedNotification as CFString, nil)
         AXObserverAddNotification(observer!, first.accesibilityElement!, kAXWindowResizedNotification as CFString, nil)
-//        _ element: AXUIElement,
-//        _ notification: CFString,
-//        _ refcon: UnsafeMutableRawPointer?)
-//        AXObserverAddNotification(observer,
-        
-        //[[NSRunLoop currentRunLoop] getCFRunLoop]
+
         print(axErr)
         print(observer as Any)
         CFRunLoopAddSource(CFRunLoopGetCurrent(), AXObserverGetRunLoopSource(observer!), CFRunLoopMode.defaultMode);
-        
-
-//        CFRunLoopAddSource( RunLoop.current.getCFRunLoop()), AXObserverGetRunLoopSource(observer), kCFRunLoopDefaultMode );
     }
     
     @objc func toggleOnlyTab(_ sender: NSMenuItem){
@@ -1137,19 +1043,16 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         TelemetryProvider.track(event: .toggledSidebar, with: ["status" : Defaults.shared.useAutocomplete ? "on" : "off"])
     }
     
-        @objc func toggleLogging(_ sender: NSMenuItem) {
-            
-            Defaults.shared.broadcastLogs = !Defaults.shared.broadcastLogs
-            sender.state = Defaults.shared.broadcastLogs ? .on : .off
-            
-        }
+    @objc func toggleLogging(_ sender: NSMenuItem) {
+        Defaults.shared.broadcastLogs = !Defaults.shared.broadcastLogs
+        sender.state = Defaults.shared.broadcastLogs ? .on : .off
+    }
     
     @objc func toggleFigIndicator(_ sender: NSMenuItem) {
       
     }
   
     @objc func toggleSSHIntegration(_ sender: NSMenuItem) {
-        
         let SSHConfigFile = URL(fileURLWithPath:  "\(NSHomeDirectory())/.ssh/config")
         let configuration = try? String(contentsOf: SSHConfigFile)
         
@@ -1169,19 +1072,15 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     }
   
     @objc func toggleVSCodeIntegration(_ sender: NSMenuItem) {
-        
       VSCodeIntegration.default.promptToInstall { status in
         sender.state = VSCodeIntegration.default.isInstalled ? .on : .off
       }
-        
     }
   
     @objc func toggleHyperIntegration(_ sender: NSMenuItem) {
-        
       HyperIntegration.default.promptToInstall { status in
         sender.state = HyperIntegration.default.isInstalled ? .on : .off
       }
-        
     }
     
     @objc func toggleDebugAutocomplete(_ sender: NSMenuItem) {
@@ -1191,15 +1090,8 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         if (!Defaults.shared.debugAutocomplete) {
             WindowManager.shared.autocomplete?.maxHeight = 0
         }
-        
-    }
-
-    
-    @objc func terminalWindowToFront() {
-        WindowManager.shared.bringTerminalWindowToFront()
     }
     
-
     @objc func pid() {
         if let window = WindowServer.shared.topmostWhitelistedWindow() {
             print("\(window.bundleId ?? "") -  pid:\(window.app.processIdentifier) - \(window.windowId)")
@@ -1208,8 +1100,8 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     
     @objc func checkForUpdates() {
           self.updater.checkForUpdates(self)
-//        self.updater?.installUpdatesIfAvailable()
     }
+
     @objc func toggleVisibility() {
         if let window = self.window {
            let companion = window as! CompanionWindow
@@ -1284,6 +1176,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     @objc func newActiveApp() {
         print("newActiveApp!");
     }
+
     func applicationWillTerminate(_ aNotification: Notification) {
         ShellBridge.shared.stopWebSocketServer()
         Defaults.shared.launchedFollowingCrash = false
@@ -1295,25 +1188,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         Logger.log(message: "app will terminate...")
     }
     
-    @objc func runScriptCmd() {
-        let path = "~/session.fig"//getDocumentsDirectory().appendingPathComponent("user.fig")
-        print(path)
-        injectStringIntoTerminal("script -q -t 0 \(path)")
-    }
-    
-    @objc func runTailCmd() {
-        let path = "~/session.fig"//getDocumentsDirectory().appendingPathComponent("user.fig")
-
-        let output = "tail -F \(path)".runAsCommand()
-        
-        print(output)
-    }
-        
-    @objc func runExitCmd() {
-         injectStringIntoTerminal("exit")
-     }
-    
-
     // > fig search
     @objc func getTopTerminalWindow() {
         guard let app = NSWorkspace.shared.frontmostApplication else {
@@ -1397,74 +1271,18 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
                 let bounds = AXValueGetters.asCGSize(value: size as! AXValue)
                 print(point, bounds)
                 
-                
                 let titleBarHeight:CGFloat = 23.0;
                 
                 let includeTitleBarHeight = false;
                 
                 let terminalWindowFrame = NSRect.init(x: point.x, y: (NSScreen.main?.visibleFrame.height)! - point.y + ((includeTitleBarHeight) ? titleBarHeight : 0), width: bounds.width, height: bounds.height - ((includeTitleBarHeight) ? 0 : titleBarHeight))
-                    //CGRect.init(origin: point, size: bounds)
                 print(terminalWindowFrame)
-//                let terminalFrame = NSRectFromCGRect(terminalWindowFrame)
                 self.window.windowController?.shouldCascadeWindows = false;
-                
-//                print("Before:", terminalWindowFrame)
-//                let figWindow = overlayFrame(OverlayPositioning.init(rawValue: self.clicks % 7)!, terminalFrame: terminalWindowFrame, screenBounds: .zero)
-//                print("After:", figWindow)
-
-//                self.window.setFrame(figWindow, display: true)
-//                self.window.setFrameTopLeftPoint(figWindow.origin)
                 self.clicks += 1;
-//                self.window.setFrameOrigin(NSPoint.init(x: point.x, y: (point.y < NSScreen.main!.frame.height/2) ? point.y + bounds.height : point.y - bounds.height) )
-////                self.window.cascadeTopLeft(from: NSPointFromCGPoint(point))
 
                 print(self.window.frame)
             }
-            
-
-
-            //
         }
-
-//        let type = CGWindowListOption.optionOnScreenOnly
-//        let windowList = CGWindowListCopyWindowInfo(type, kCGNullWindowID) as NSArray? as? [[String: AnyObject]]
-//
-//        for entry  in windowList!
-//        {
-//          let owner = entry[kCGWindowOwnerName as String] as! String
-//          var bounds = entry[kCGWindowBounds as String] as? [String: Int]
-//          let pid = entry[kCGWindowOwnerPID as String] as? Int32
-//
-//          if owner == "iTerm2"
-//          {
-//            let appRef = AXUIElementCreateApplication(pid!);  //TopLevel Accessability Object of PID
-//
-//            var value: AnyObject?
-//            let result = AXUIElementCopyAttributeValue(appRef, kAXWindowsAttribute as CFString, &value)
-//
-//            if let windowList = value as? [AXUIElement]
-//            { print ("windowList #\(windowList)")
-//              if let window = windowList.first
-//              {
-//                print(window)
-//                var position : CFTypeRef
-//                var size : CFTypeRef
-//                var  newPoint = CGPoint(x: 0, y: 0)
-//                var newSize = CGSize(width: 800, height: 800)
-//
-//                position = AXValueCreate(AXValueType(rawValue: kAXValueCGPointType)!,&newPoint)!;
-//                AXUIElementSetAttributeValue(windowList.first!, kAXPositionAttribute as CFString, position);
-//
-//               // AXUIElementCopyAttributeValue(windowList.first!, kAXPositionAttribute as CFString, )
-//
-//                size = AXValueCreate(AXValueType(rawValue: kAXValueCGSizeType)!,&newSize)!;
-//                AXUIElementSetAttributeValue(windowList.first!, kAXSizeAttribute as CFString, size);
-//
-//                print(newSize)
-//              }
-//            }
-//          }
-//        }
     }
     
     @objc func processes() {
@@ -1476,8 +1294,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             buffer.forEach { (process) in
                 var proc = process
 
-//            var proc = ptr.pointee
-//            String(cString: proc.tty),  String(cString: proc.cmd)
             let cwd = withUnsafeBytes(of: &proc.cwd) { (rawPtr) -> String in
                 let ptr = rawPtr.baseAddress!.assumingMemoryBound(to: CChar.self)
                 return String(cString: ptr)
@@ -1498,10 +1314,8 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
            free(ptr)
         }
     }
-    @objc func triggerScreenReader() {
-    }
+
     @objc func allWindows() {
-        
         Timer.delayWithSeconds(3) {
             guard let jsons = CGWindowListCopyWindowInfo(.optionOnScreenOnly, kCGNullWindowID) as? [[String: Any]] else {
                 return
@@ -1514,40 +1328,19 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
                 return NSRunningApplication(processIdentifier: pid_t($0.pid))?.bundleIdentifier == "com.apple.Spotlight"
             }))
         }
-
-        
-//        if let info = CGWindowListCopyWindowInfo(.optionOnScreenOnly, kCGNullWindowID) as? [[ String : Any]] {
-//            for dict in info {
-//                print(dict)
-//            }
-//        }
     }
     
     @objc func pasteStringToTerminal() {
         let terminals = NSRunningApplication.runningApplications(withBundleIdentifier: "com.googlecode.iterm2")
         if let activeTerminal = terminals.first {
             activeTerminal.activate(options: NSApplication.ActivationOptions.init())
-            simulateKeyPress(pid: activeTerminal.processIdentifier)
+            print("Simulate paste for process: \(activeTerminal.processIdentifier)")
+            simulate(keypress: .cmdV, pid: activeTerminal.processIdentifier)
         }
-               
- 
-    }
-    
-    @objc func frontmostApplication() {
-        print (NSWorkspace.shared.frontmostApplication?.localizedName ?? "")
-    }
-    
-    @objc func copyToPasteboard() {
-        let input = "echo \"hello world\""
-
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(input, forType: .string)
-        
     }
     
     func injectStringIntoTerminal(_ cmd: String, runImmediately: Bool = false) {
          if let currentApp = NSWorkspace.shared.frontmostApplication {
-                
             if (currentApp.bundleIdentifier == "com.googlecode.iterm2") {
                 // save current pasteboard
                 let pasteboard = NSPasteboard.general
@@ -1557,9 +1350,9 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString(cmd, forType: .string)
                 print(pasteboard.string(forType: .string) ?? "")
-                    self.simulate(keypress: .cmdV)
-                    self.simulate(keypress: .rightArrow)
-                    self.simulate(keypress: .enter)
+                self.simulate(keypress: .cmdV, mask: true)
+                self.simulate(keypress: .rightArrow)
+                self.simulate(keypress: .enter)
  
                 // need delay so that terminal responds
                 Timer.delayWithSeconds(1) {
@@ -1572,7 +1365,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     }
     
     @objc func sendStringIfTerminalActive() {
-        
         let input = "echo \"hello world\""
         if let currentApp = NSWorkspace.shared.frontmostApplication {
         
@@ -1585,10 +1377,9 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString(input, forType: .string)
                 print(pasteboard.string(forType: .string) ?? "")
-//                simulateRawKeyPress(flag: true)
-                    self.simulate(keypress: .cmdV)
-                    self.simulate(keypress: .rightArrow)
-                    self.simulate(keypress: .enter)
+                self.simulate(keypress: .cmdV, mask: true)
+                self.simulate(keypress: .rightArrow)
+                self.simulate(keypress: .enter)
  
                 // need delay so that terminal responds
                 Timer.delayWithSeconds(1) {
@@ -1600,12 +1391,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         }
     }
     
-    @objc func checkWinows() {
-        
-        let windowNumbers = NSWindow.windowNumbers(options: [])
-        windowNumbers?.forEach( { print($0.decimalValue) })
-    }
-    
     // /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/Carbon.framework/Versions/A/Frameworks/HIToolbox.framework/Versions/A/Headers/Events.h
     //https://gist.github.com/eegrok/949034
     enum Keypress: UInt16 {
@@ -1614,75 +1399,27 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         case rightArrow = 124
     }
     
-    func simulate(keypress: Keypress) {
+    func simulate(keypress: Keypress, pid: pid_t? = nil, mask: Bool = false) {
         let keyCode = keypress.rawValue as CGKeyCode
-//        print(keypress.rawValue, keyCode)
         let src = CGEventSource(stateID: CGEventSourceStateID.hidSystemState)
 
         let keydown = CGEvent(keyboardEventSource: src, virtualKey: keyCode, keyDown: true)
         let keyup = CGEvent(keyboardEventSource: src, virtualKey: keyCode, keyDown: false)
         
-        if (keypress == .cmdV){
+        if mask {
             keydown?.flags = CGEventFlags.maskCommand;
         }
         
+      guard let pidSafe = pid else {
         let loc = CGEventTapLocation.cghidEventTap
         keydown?.post(tap: loc)
         keyup?.post(tap: loc)
+        return
+      }
+      
+      keydown?.postToPid(pidSafe)
+      keyup?.postToPid(pidSafe)
     }
-    
-    func simulateRawKeyPress(flag: Bool = false) {
-        let src = CGEventSource(stateID: CGEventSourceStateID.hidSystemState)
-
-        let v_down = CGEvent(keyboardEventSource: src, virtualKey: 9 as CGKeyCode, keyDown: true)
-        let v_up = CGEvent(keyboardEventSource: src, virtualKey: 9 as CGKeyCode, keyDown: false)
-        
-        if (flag){
-            v_down?.flags = CGEventFlags.maskCommand;
-        }
-        
-        let loc = CGEventTapLocation.cghidEventTap
-        v_down?.post(tap: loc)
-        v_up?.post(tap: loc)
-    }
-
-    func simulateKeyPress(pid: pid_t, flag: Bool = false) {
-        print("Simulate keypress for process: \(pid)")
-
-        let src = CGEventSource(stateID: CGEventSourceStateID.hidSystemState)
-
-        let v_down = CGEvent(keyboardEventSource: src, virtualKey: 9 as CGKeyCode, keyDown: true)
-        let v_up = CGEvent(keyboardEventSource: src, virtualKey: 9 as CGKeyCode, keyDown: false)
-//        let spcd = CGEvent(keyboardEventSource: src, virtualKey: 0x31, keyDown: true)
-//        let spcu = CGEvent(keyboardEventSource: src, virtualKey: 0x31, keyDown: false)
-
-        if (flag){
-            v_down?.flags = CGEventFlags.maskCommand;
-        }
-//        v_up?.flags = CGEventFlags.maskCommand;
-
-//        let loc = CGEventTapLocation.cghidEventTap
-        
-
-        v_down?.postToPid(pid)
-        v_up?.postToPid(pid)
-
-//        v_down?.post(tap: loc)
-//        v_up?.post(tap: loc)
-
-//        spcd?.post(tap: loc)
-//        spcu?.post(tap: loc)
-//        cmdu?.post(tap: loc)
-    }
-    
-    func windowDidMove(_ notification: Notification) {
-        print(notification.object ?? "<none>")
-        
-        print("WINDOW MOVED", window.frame)
-//        print("SCREEN", NSScreen.main?.frame ?? "<none>")
-    }
-
-
 }
 
 fileprivate func delayWithSeconds(_ seconds: Double, completion: @escaping () -> ()) {
@@ -1716,8 +1453,8 @@ struct WindowInfo {
         }
         
         guard let rect = json["kCGWindowBounds"] as? [String: Any] else {
-                  return nil
-              }
+            return nil
+        }
 
         guard let x = rect["X"] as? CGFloat else {
             return nil
@@ -1789,69 +1526,160 @@ extension AppDelegate : SUUpdaterDelegate {
     }
     
     func updater(_ updater: SUUpdater, didFinishLoading appcast: SUAppcast) {
-//        let item = (appcast.items?.first! as! SUAppcastItem)
-//        item.
+
     }
 }
 
 extension AppDelegate : NSMenuDelegate {
     func menuDidClose(_ menu: NSMenu) {
         print("menuDidClose")
-
     }
     
     @objc func windowDidChange(_ notification: Notification){
-//        if let app = NSWorkspace.shared.frontmostApplication {
-//            if Integrations.nativeTerminals.contains(app.bundleIdentifier ?? "") {
-//                let window = AXWindowServer.shared.whitelistedWindow
-//                let tty = window?.tty
-//                var hasContext = false
-//
-//                if let window = window {
-//                   let keybuffer = KeypressProvider.shared.keyBuffer(for: window)
-//                   hasContext = keybuffer.buffer != nil
-//                }
-//
-//                let hasWindow = window != nil
-//                let hasCommand = tty?.cmd != nil
-//                let isShell = tty?.isShell ?? true
-//
-//                var color: NSColor = .clear
-//
-//                if (!hasWindow) {
-//                   color = .red
-//
-//                } else if (!hasContext) {
-//                   color = .orange
-//
-//                } else if (!hasCommand) {
-//                   color = .yellow
-//
-//                } else if (!isShell) {
-//                   color = .cyan
-//
-//                } else {
-//                   color = .green
-//                }
-//
-//                statusBarItem.button?.image?.isTemplate = false
-//                statusBarItem.button?.image = NSImage(imageLiteralResourceName: "statusbar@2x.png").overlayBadge(color: color, text: "")
-//                return
-//            }
-//        }
-//
-//        statusBarItem.button?.image?.isTemplate = true
-//        statusBarItem.button?.image = NSImage(imageLiteralResourceName: "statusbar@2x.png")
-        
     }
     
     @objc func resetWindowTracking() {
-        
-//        AXWindowServer.shared.registerWindowTracking()
-//        self.statusBarItem.menu?.cancelTracking()
         if let app = NSWorkspace.shared.frontmostApplication {
             AXWindowServer.shared.register(app, fromActivation: false)
         }
+    }
+
+    func stringArrayToMenu(items: [String]) -> [NSMenuItem] {
+        var legendItems: [NSMenuItem] = []
+        items.forEach { (str) in
+            if str == "---" {
+                legendItems.append(NSMenuItem.separator())
+            } else {
+                legendItems.append(NSMenuItem(title: str, action: nil, keyEquivalent: ""))
+            }
+        }
+        return legendItems
+    }
+
+  func getSubmenu(window: ExternalWindow?, app: NSRunningApplication) -> (NSColor, [NSMenuItem]) {
+        let companionWindow = WindowManager.shared.autocomplete
+        if let (message, hexString, shouldDisplay) = companionWindow?.status, shouldDisplay {
+            let color: NSColor = hexString != nil ? (NSColor(hex: hexString!) ?? .red) : .red
+            return (color, stringArrayToMenu(items: message.split(separator: "\n").map { String($0) }))
+        }
+
+        if !Integrations.bundleIsValidTerminal(window?.bundleId) {
+            let items = stringArrayToMenu(items: [
+                "Not tracking window...",
+                "---",
+                "Switch to a different application",
+                "and then return to current window",
+            ])
+            return (NSColor.clear, items)
+        } 
+
+        if let isLoading = companionWindow?.webView?.isLoading, isLoading {
+            return (NSColor.yellow, [
+                NSMenuItem(title: "Autocomplete is loading", action: nil, keyEquivalent: ""),
+                NSMenuItem.separator(),
+                NSMenuItem(title: "Make sure you're connected to", action: nil, keyEquivalent: ""),
+                NSMenuItem(title: "the internet and try again.", action: nil, keyEquivalent: ""),
+                NSMenuItem.separator(),
+                NSMenuItem(title: "Reload Autocomplete", action: #selector(restart), keyEquivalent: ""),
+            ])
+        } 
+
+        guard let windowSafe = window else {
+            return (NSColor.red, [
+                NSMenuItem(title: "Window is not being tracked.", action: nil, keyEquivalent: ""),
+                NSMenuItem.separator(),
+                NSMenuItem(title: "Reset Window Tracking", action: #selector(resetWindowTracking), keyEquivalent: ""),
+                NSMenuItem(title: "Restart Fig", action: #selector(restart), keyEquivalent: ""),
+            ])
+        }
+
+        if (!Diagnostic.installationScriptRan) {
+            return (NSColor.red, [
+                NSMenuItem(title: "~/.fig directory is misconfigured", action: nil, keyEquivalent: ""),
+                NSMenuItem.separator(),
+                NSMenuItem(title: "Re-run Install Script", action: #selector(setupScript), keyEquivalent: ""),
+            ])
+        }
+
+        if (SecureKeyboardInput.enabled || (SecureKeyboardInput.wasEnabled && windowSafe.bundleId == Integrations.Terminal)) {
+            // Also check previous value (wasEnabled) because clicking on menubar icon will disable secure keyboard input in Terminal.app
+            let color = NSColor.systemPink
+            var legendItems = [
+                NSMenuItem(title: "'Secure Keyboard Input' Enabled", action: nil, keyEquivalent: ""),
+                NSMenuItem.separator(),
+                NSMenuItem(title: "This prevents Fig from", action: nil, keyEquivalent: ""),
+                NSMenuItem(title: "processing keypress events. ", action: nil, keyEquivalent: ""),
+                NSMenuItem.separator(),
+            ]
+
+            let app = SecureKeyboardInput.responsibleApplication ?? app
+            let pid = SecureKeyboardInput.responsibleProcessId ?? app.processIdentifier
+            if SecureKeyboardInput.enabled(by: windowSafe.bundleId),
+                let name = app.localizedName {
+                let open = NSMenuItem(title: "Disable in '\(name)' (\(pid)).", action: #selector(SecureKeyboardInput.openRelevantMenu), keyEquivalent: "")
+                open.target = SecureKeyboardInput.self
+                legendItems.append(open)
+
+            } else {
+                //Run `ioreg -l -w 0 | grep SecureInput` to determine which app is responsible.
+                let lock = NSMenuItem(title: "Lock screen and log back in", action: #selector(SecureKeyboardInput.lockscreen), keyEquivalent: "")
+                lock.target = SecureKeyboardInput.self
+                legendItems.append(lock)
+            }
+            
+            legendItems.append(NSMenuItem.separator())
+            let support = NSMenuItem(title: "Learn more", action: #selector(SecureKeyboardInput.openSupportPage), keyEquivalent: "")
+            support.target = SecureKeyboardInput.self
+            legendItems.append(support)
+            return (color, legendItems)
+        }
+
+        guard let shellContext = windowSafe.associatedShellContext else {
+            let items = stringArrayToMenu(items: [
+                "Not linked to TTY session.",
+                "---",
+                "window: \(windowSafe.hash)",
+            ])
+            return (NSColor.yellow, items)
+        }
+        guard shellContext.isShell() else {
+            let items = stringArrayToMenu(items: [
+                "Running proccess (\(shellContext.executablePath)) is not a shell.",
+                "---",
+                "Fix: exit current process",
+                "---",
+                "window: \(windowSafe.hash)",
+            ])
+            return (NSColor.cyan, items)
+        }
+            
+        let path = Diagnostic.pseudoTerminalPathAppearsValid
+
+        var backing: String?
+        switch windowSafe.bufferInfo.backing {
+        case .zsh:
+            backing = "ZSH Command Line"
+        case .fish:
+            backing = "Fish Command Line"
+        case .bash:
+            backing = "Bash Command Line"
+        default:
+            backing = nil
+        }
+        
+        let items = stringArrayToMenu(items: [
+            "Everything should be working.",
+            "---",
+            "window: \(windowSafe.hash.truncate(length: 15, trailing: "..."))",
+            "tty: \(shellContext.ttyDescriptor)",
+            "cwd: \(shellContext.workingDirectory)",
+            "pid: \(shellContext.processId)",
+            "keybuffer: \(windowSafe.bufferInfo.representation)",
+            "path: \( path != nil ? (path! ? "☑" : "☒ ") : "<generated dynamically>")",
+            "---",
+            "Backed by \(backing ?? "???")",
+        ])
+        return (NSColor.green, items)
     }
     
     func menuWillOpen(_ menu: NSMenu) {
@@ -1873,154 +1701,15 @@ extension AppDelegate : NSMenuDelegate {
         
         if let app = NSWorkspace.shared.frontmostApplication, !app.isFig {
             let window = AXWindowServer.shared.whitelistedWindow
-          if Integrations.terminalsWhereAutocompleteShouldAppear.contains(window?.bundleId ?? "") ||  Integrations.terminalsWhereAutocompleteShouldAppear.contains(app.bundleIdentifier ?? "") {
-                let shellContext = window?.associatedShellContext
-                var hasContext = false
-                var bufferDescription: String? = nil
-                var backing: String?
-
-                if let window = window {
-                  let keybuffer = KeypressProvider.shared.keyBuffer(for: window)
-                  hasContext = keybuffer.buffer != nil
-                  bufferDescription = keybuffer.representation
-                   
-                  switch keybuffer.backing {
-                  case .zsh:
-                    backing = "ZSH Command Line"
-                    break;
-                  case .fish:
-                    backing = "Fish Command Line"
-                  case .bash:
-                    backing = "Bash Command Line"
-                  default:
-                    backing = nil
-                  }
-                }
-
-                let hasWindow = window != nil
-                let hasCommand = shellContext != nil
-                let isShell = shellContext?.isShell() ?? true
-                
-                let cmd = shellContext != nil ? "(\(shellContext!.executablePath))" : "(???)"
-                
-                var color: NSColor = .clear
-                let legend = NSMenu(title: "legend")
-                var legendContent: [NSMenuItem] = []
-                var simpleLegend: [String] = []
-                
-                let companionWindow = WindowManager.shared.autocomplete
-                if let (message, hexString, shouldDisplay) = companionWindow?.status, shouldDisplay {
-                  color = hexString != nil ? (NSColor(hex: hexString!) ?? .red) : .red
-                  simpleLegend = message.split(separator: "\n")
-                } else if !Integrations.terminalsWhereAutocompleteShouldAppear.contains(window?.bundleId ?? "") {
-                  color = .orange
-                  simpleLegend = [
-                    "Not tracking window...",
-                    "---",
-                    "Switch to a different application",
-                    "and then return to current window",
-                  ]
-                } else if let isLoading = companionWindow?.webView?.isLoading, isLoading {
-                    color = .yellow
-                    legend.addItem(NSMenuItem(title: "Autocomplete is loading", action: nil, keyEquivalent: ""))
-                    legend.addItem(NSMenuItem.separator())
-                    legend.addItem(NSMenuItem(title: "Make sure you're connected to", action: nil, keyEquivalent: ""))
-                    legend.addItem(NSMenuItem(title: "the internet and try again.", action: nil, keyEquivalent: ""))
-                    legend.addItem(NSMenuItem.separator())
-                    legend.addItem(NSMenuItem(title: "Reload Autocomplete", action: #selector(restart), keyEquivalent: ""))
-                } else if (!hasWindow) {
-                    color = .red
-                    legend.addItem(NSMenuItem(title: "Window is not being tracked.", action: nil, keyEquivalent: ""))
-                    legend.addItem(NSMenuItem.separator())
-                    legend.addItem(NSMenuItem(title: "Reset Window Tracking", action: #selector(resetWindowTracking), keyEquivalent: ""))
-                    legend.addItem(NSMenuItem(title: "Restart Fig", action: #selector(restart), keyEquivalent: ""))
-                } else if (!Diagnostic.installationScriptRan) {
-                    color = .red
-                    legend.addItem(NSMenuItem(title: "~/.fig directory is misconfigured", action: nil, keyEquivalent: ""))
-                    legend.addItem(NSMenuItem.separator())
-                    legend.addItem(NSMenuItem(title: "Re-run Install Script", action: #selector(setupScript), keyEquivalent: ""))
-                } else if (SecureKeyboardInput.enabled || (SecureKeyboardInput.wasEnabled && window?.bundleId == Integrations.Terminal)) {
-                    // Also check previous value (wasEnabled) because clicking on menubar icon will disable secure keyboard input in Terminal.app
-                    color = .systemPink
-                    legend.addItem(NSMenuItem(title: "'Secure Keyboard Input' Enabled", action: nil, keyEquivalent: ""))
-                    legend.addItem(NSMenuItem.separator())
-                    legend.addItem(NSMenuItem(title: "This prevents Fig from", action: nil, keyEquivalent: ""))
-                    legend.addItem(NSMenuItem(title: "processing keypress events. ", action: nil, keyEquivalent: ""))
-                    legend.addItem(NSMenuItem.separator())
-
-                  let app = SecureKeyboardInput.responsibleApplication ?? app
-                  let pid = SecureKeyboardInput.responsibleProcessId ?? app.processIdentifier
-                  if SecureKeyboardInput.enabled(by: window?.bundleId),
-                     let name = app.localizedName {
-                        let open = NSMenuItem(title: "Disable in '\(name)' (\(pid)).", action: #selector(SecureKeyboardInput.openRelevantMenu), keyEquivalent: "")
-                        open.target = SecureKeyboardInput.self
-                        legend.addItem(open)
-
-                    } else {
-                      //Run `ioreg -l -w 0 | grep SecureInput` to determine which app is responsible.
-                        let lock = NSMenuItem(title: "Lock screen and log back in", action: #selector(SecureKeyboardInput.lockscreen), keyEquivalent: "")
-                        lock.target = SecureKeyboardInput.self
-                        legend.addItem(lock)
-                    }
-                  
-                    legend.addItem(NSMenuItem.separator())
-                    let support = NSMenuItem(title: "Learn more", action: #selector(SecureKeyboardInput.openSupportPage), keyEquivalent: "")
-                    support.target = SecureKeyboardInput.self
-                    legend.addItem(support)
-                } else if (!hasContext) {
-                    color = .orange
-                    simpleLegend = [
-                        "Fig is unsure what you typed",
-                        "---",
-                        "Go to a new line by pressing",
-                        "<enter> or ctrl+c",
-                    ]
-                } else if (!hasCommand) {
-                    color = .yellow
-                    simpleLegend = [
-                        "Not linked to TTY session.",
-                        "---",
-                        "window: \(window?.hash ?? "???")",
-                    ]
-                } else if (!isShell) {
-                    color = .cyan
-                    simpleLegend = [
-                        "Running proccess (\(cmd)) is not a shell.",
-                        "---",
-                        "Fix: exit current process",
-                        "---",
-                        "window: \(window?.hash ?? "???")",
-                    ]
-                } else {
-                    color = .green
-                  
-                    let path = Diagnostic.pseudoTerminalPathAppearsValid
-                  
-                    simpleLegend = [
-                        "Everything should be working.",
-                        "---",
-                        "window: \(window?.hash.truncate(length: 15, trailing: "...") ?? "???")",
-                        "tty: \(shellContext?.ttyDescriptor ?? "???")",
-                        "cwd: \(shellContext?.workingDirectory ?? "???")",
-                        "pid: \(shellContext?.processId ?? -1)",
-                        "keybuffer: \(bufferDescription ?? "???")",
-                        "path: \( path != nil ? (path! ? "☑" : "☒ ") : "<generated dynamically>")",
-                        "---",
-                        "Backed by \(backing ?? "???")",
-                    ]
-                }
-
-                if simpleLegend.count > 0 {
-                  simpleLegend.forEach { (str) in
-                    if str == "---" {
-                      legendContent.append(NSMenuItem.separator())
-                    } else {
-                      legendContent.append(NSMenuItem(title: String(str), action: nil, keyEquivalent: ""))
-                    }
-                  }
-                }
-                
-                let title = "Debugger \(cmd)"//"\(app.localizedName ?? "Unknown") \(cmd)"
+            if Integrations.bundleIsValidTerminal(window?.bundleId) || Integrations.frontmostApplicationIsValidTerminal() {
+              
+              let (color, menuItems) = getSubmenu(window: window, app: app)
+              
+              let legend = NSMenu(title: "legend")
+              menuItems.forEach { (item) in
+                  legend.addItem(item)
+              }
+              
                 var image: NSImage?
                 if let pid = window?.app.processIdentifier, let windowApp = NSRunningApplication(processIdentifier: pid) {
                   image = windowApp.icon
@@ -2028,12 +1717,17 @@ extension AppDelegate : NSMenuDelegate {
                   image = app.icon
                 }
 
-                let icon = image?.resized(to: NSSize(width: 16, height: 16))?.overlayBadge(color: color, text: "")
-                
-                let app = NSMenuItem(title: title, action: nil, keyEquivalent: "")
-                app.image = icon
+              
+                let cmd = window?.associatedShellContext?.executablePath
+                let app = menu.insertItem(
+                    withTitle: "Debugger (\(cmd ?? "???"))",
+                    action: nil,
+                    keyEquivalent: "",
+                    at: 0
+                )
+
+                app.image = image?.resized(to: NSSize(width: 16, height: 16))?.overlayBadge(color: color, text: "") 
                 app.submenu = legend
-                menu.insertItem(app, at: 0)
                 
                 self.frontmost = app
             } else {
@@ -2046,7 +1740,6 @@ extension AppDelegate : NSMenuDelegate {
 
                 menu.insertItem(item, at: 0)
                 self.frontmost = item
-
             }
         }
       
@@ -2070,25 +1763,18 @@ extension AppDelegate : NSMenuDelegate {
         !app.isFig,
         let provider = Integrations.providers[app.bundleIdentifier ?? ""],
         !provider.isInstalled {
-    
-        
-        
-          let name: String = provider.applicationName
+            let name: String = provider.applicationName
 
-        let item = NSMenuItem(title: "Install \(name) Integration", action: #selector(AppDelegate.installIntegrationForFrontmostApp) , keyEquivalent: "")
-        item.image = NSImage(named: NSImage.Name("carrot"))
-           menu.insertItem(item, at: 1)
-           self.integrationPrompt = item
+            let item = NSMenuItem(title: "Install \(name) Integration", action: #selector(AppDelegate.installIntegrationForFrontmostApp) , keyEquivalent: "")
+            item.image = NSImage(named: NSImage.Name("carrot"))
+            menu.insertItem(item, at: 1)
+            self.integrationPrompt = item
         }
-
-        
     }
   
   @objc func installIntegrationForFrontmostApp() {
     if let app = NSWorkspace.shared.frontmostApplication, let provider = Integrations.providers[app.bundleIdentifier ?? ""], !provider.isInstalled {
-      
         provider.promptToInstall(completion: nil)
-      
     }
   }
 }
@@ -2097,5 +1783,4 @@ extension NSApplication {
   var appDelegate: AppDelegate {
     return NSApp.delegate as! AppDelegate
   }
-    
 }

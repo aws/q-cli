@@ -258,7 +258,7 @@ class Accessibility {
           // trigger reposition if cursor has been found
           print("xterm-cursor: finished searching for cursor (throttled) \(String(describing: cachedCursor))")
           if cachedCursor != nil {
-            Autocomplete.position(makeVisibleImmediately: true, completion: nil)
+            Autocomplete.position()
           }
         }
                 
@@ -401,7 +401,7 @@ class Accessibility {
 
     guard let pid = try? focusedElement.pid(),
           let app = NSRunningApplication(processIdentifier: pid),
-          Integrations.terminalsWhereAutocompleteShouldAppear.contains(app.bundleIdentifier ?? "") else {
+          Integrations.bundleIsValidTerminal(app.bundleIdentifier) else {
       return false
     }
     

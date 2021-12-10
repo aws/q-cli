@@ -119,15 +119,7 @@ class WindowServer : WindowService {
         guard let rawWindows = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]] else {
             return []
         }
-        
-        var allWindows: [ExternalWindow] = []
-        for rawWindow in rawWindows {
-            if let window = ExternalWindow(raw: rawWindow) {
-                allWindows.append(window)
-            } 
-        }
-//        allWindows.forEach{ print($0.bundleId ?? "", $0.windowId)}
-        return allWindows
+        return rawWindows.compactMap { ExternalWindow(raw: $0) };
     }
     
     func allWhitelistedWindows(onScreen: Bool = false) -> [ExternalWindow] {
@@ -237,8 +229,28 @@ extension ExternalApplication : App {
     }
 }
 extension NSRunningApplication : App {}
-
 typealias ExternalWindowHash = String
+
+struct KeystrokeBuffer {
+  enum Backing: String {
+    case zsh = "zsh"
+    case fish = "fish"
+    case bash = "bash"
+  }
+
+  var backing: Backing?
+  var cursor: Int
+  var text: String
+
+  var representation: String {
+      get {
+        var bufferCopy = text;
+        let index = text.index(text.startIndex, offsetBy: cursor, limitedBy: text.endIndex) ?? text.endIndex
+        bufferCopy.insert("|", at: index)
+        return bufferCopy
+      }
+  }
+}
 
 class ExternalWindow {
     let frame: NSRect
@@ -252,15 +264,24 @@ class ExternalWindow {
           return windowMetadataService.getMostRecentFocusId(for: self.windowId)
         }
     }
-  
-  var associatedShellContext: ShellContext? {
-    get {
-      return windowMetadataService.getAssociatedShellContext(for: self.windowId)
+
+    var bufferInfo = KeystrokeBuffer(backing: nil, cursor: 0, text: "") {
+        didSet {
+            if Defaults.shared.loggedIn, Defaults.shared.useAutocomplete, let sessionId = session {
+              API.notifications.editbufferChanged(buffer: bufferInfo.text,
+                                                  cursor: bufferInfo.cursor,
+                                                  session: sessionId,
+                                                  context: associatedShellContext?.ipcContext)
+            }
+        }
     }
-  }
+
+    var associatedShellContext: ShellContext? {
+        get {
+        return windowMetadataService.getAssociatedShellContext(for: self.windowId)
+        }
+    }
   
-  
-    
     var session: String? {
         get {
           return windowMetadataService.getTerminalSessionId(for: windowId)
@@ -268,35 +289,18 @@ class ExternalWindow {
     }
     
     init?(raw: [String: Any], accesibilityElement: AXUIElement? = nil) {
-        guard let pid = raw["kCGWindowOwnerPID"] as? pid_t else {
+        guard let pid = raw["kCGWindowOwnerPID"] as? pid_t,
+            let rect = raw["kCGWindowBounds"] as? [String: Any],
+            let id = raw["kCGWindowNumber"] as? CGWindowID else {
           return nil
         }
-        
-        guard let rect = raw["kCGWindowBounds"] as? [String: Any] else {
+        guard let x = rect["X"] as? CGFloat,
+            let y = rect["Y"] as? CGFloat,
+            let height = rect["Height"] as? CGFloat,
+            let width = rect["Width"] as? CGFloat else {
             return nil
         }
 
-
-        guard let x = rect["X"] as? CGFloat else {
-          return nil
-        }
-
-        guard let y = rect["Y"] as? CGFloat else {
-          return nil
-        }
-
-        guard let height = rect["Height"] as? CGFloat else {
-          return nil
-        }
-
-        guard let width = rect["Width"] as? CGFloat else {
-          return nil
-        }
-
-        guard let id = raw["kCGWindowNumber"] as? CGWindowID else {
-          return nil
-        }
-        
         guard let app = NSRunningApplication(processIdentifier: pid) else {
             return nil
         }
@@ -407,17 +411,16 @@ class ExternalWindow {
         
         return provider.getCursorRect(in: self)
     }
-    
 }
 
 extension ExternalWindow: Hashable {
     func hash(into hasher: inout Hasher) {
-         hasher.combine(self.windowId)
-       }
+        hasher.combine(self.windowId)
+    }
        
-       static func ==(lhs: ExternalWindow, rhs: ExternalWindow) -> Bool {
+    static func ==(lhs: ExternalWindow, rhs: ExternalWindow) -> Bool {
         return lhs.windowId == rhs.windowId
-       }
+    }
 }
 
 import FigAPIBindings

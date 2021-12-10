@@ -206,14 +206,9 @@ class ShellBridge {
         
         let insertion = cmd + (runImmediately ? "\n" :"")
       
-        var backing: KeystrokeBuffer.Backing?
-        if let window = AXWindowServer.shared.whitelistedWindow {
-          backing = KeypressProvider.shared.keyBuffer(for: window).backing
-        }
-      
-        GenericShellIntegration.insertLock()
+        ShellInsertionProvider.insertLock()
         injectUnicodeString(insertion, delay: delay) {
-          GenericShellIntegration.insertUnlock(with: insertion)
+          ShellInsertionProvider.insertUnlock(with: insertion)
         }
     }
   
@@ -230,15 +225,13 @@ class ShellBridge {
       let version = window.associatedShellContext?.integrationVersion
       let figTermInstanceSupportsInserts = version ?? 0 >= 5
       
-      let backing = KeypressProvider.shared.keyBuffer(for: window).backing
-      let effectedShells: Set<KeystrokeBuffer.Backing> = [.fish, .bash ]
+      let backing = window.bufferInfo.backing
+      let effectedShells: Set<KeystrokeBuffer.Backing> = [.fish, .bash]
       let usingEffectedShell = backing != nil ? effectedShells.contains(backing!) : false
       let inElectronTerminal = Integrations.electronTerminals.contains(window.bundleId ?? "")
       let useFigTerm = usingEffectedShell &&
                        inElectronTerminal &&
                        figTermInstanceSupportsInserts
-      
-
 
       if let sessionId = window.session, useFigTerm {
         Logger.log(message: "Inserting '\(cmd)' using figterm (\(sessionId)")
@@ -246,12 +239,6 @@ class ShellBridge {
       } else if usingEffectedShell && inElectronTerminal {
         Logger.log(message: "Insert effected by xtermjs bug! Showing alert...")
 
-        //
-//        guard !Defaults.shared.promptedToRestartDueToXtermBug else {
-//          Logger.log(message: "Not inserting due to xterm.js bug...")
-//          return
-//        }
-        
         let title = "Restart " + (window.app.localizedName ?? "all electron terminals")
         
         let shouldRestart = Alert.show(title: title,
@@ -267,7 +254,6 @@ class ShellBridge {
         }
         
         Defaults.shared.promptedToRestartDueToXtermBug = true
-
       } else {
         Logger.log(message: "Inserting '\(cmd)' using keyboard")
 

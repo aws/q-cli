@@ -185,7 +185,7 @@ extension TelemetryProvider : LocalTelemetryService {
         // register other telemetry observers!
         NotificationCenter.default.addObserver(self,
                                                selector:#selector(lineAcceptedInKeystrokeBuffer),
-                                               name: KeystrokeBuffer.lineAcceptedInKeystrokeBufferNotification,
+                                               name: ShellInsertionProvider.lineAcceptedInKeystrokeBufferNotification,
                                                object:nil)
         NotificationCenter.default.addObserver(self,
                                                selector:#selector(insertionInTerminal),

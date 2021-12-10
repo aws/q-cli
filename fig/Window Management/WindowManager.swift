@@ -108,12 +108,6 @@ class WindowManager : NSObject {
     
         NotificationCenter.default.post(name: WindowManager.focusedWindowChangedNotification,
                                         object: notification?.object as? ExternalWindow ?? AXWindowServer.shared.topWindow)
-
-//
-//        DispatchQueue.main.async {
-//            self.autocomplete?.orderOut(nil)
-//        }
-
     }
     
     @objc func deactivateApp(){

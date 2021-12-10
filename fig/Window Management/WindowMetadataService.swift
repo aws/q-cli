@@ -13,13 +13,6 @@ protocol WindowMetadataService {
   func getAssociatedShellContext(for windowId: WindowId) -> ShellContext?
   func getTerminalSessionId(for windowId: WindowId) -> TerminalSessionId?
   func getWindowHash(for windowId: WindowId) -> ExternalWindowHash
-  
-  @available(*, deprecated, message: "TTY should be phased out in favor of ShellContext")
-  func getAssociatedTTY(for windowId: WindowId) -> TTY?
-  
-  @available(*, deprecated, message: "PaneId should be phased out in favor of FocusId")
-  func getMostRecentPaneId(for windowId: WindowId) -> String?
-
 }
 
 extension TerminalSessionLinker: WindowMetadataService {
@@ -50,14 +43,4 @@ extension TerminalSessionLinker: WindowMetadataService {
    
     return "\(session.windowId)/\(session.focusId ?? "")%"
   }
-  
-  // MARK: - Deprecated
-  func getAssociatedTTY(for windowId: WindowId) -> TTY? {
-    return nil
-  }
-  
-  func getMostRecentPaneId(for windowId: WindowId) -> String? {
-    return nil
-  }
 }
-

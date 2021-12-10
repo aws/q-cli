@@ -317,10 +317,6 @@ extension ShellHookManager {
       Fig_ShellPromptReturnedNotification.with({ notification in
         notification.sessionID = context.sessionID
       }))
-
-    // if the user has returned to the shell, their keypress buffer must be reset (for instance, if they exited by pressing 'q' rather than return)
-    // This doesn't work because of timing issues. If the user types too quickly, the first keypress will be overwritten.
-    // KeypressProvider.shared.keyBuffer(for: hash).buffer = ""
   }
 
   func startedNewShellSession(_ info: ShellMessage) {
@@ -422,16 +418,14 @@ extension ShellHookManager {
     // Set version (used for checking compatibility)
     tty.shellIntegrationVersion = Int(context.integrationVersion)
 
-    // update keybuffer backing
     DispatchQueue.main.async {
-    Autocomplete.position()
-    
-    // manually trigger edit buffer update on preexec
-    API.notifications.editbufferChanged(buffer: "",
-                                        cursor: 0,
-                                        session: context.sessionID,
-                                        context: context)
-
+        Autocomplete.position()
+        
+        // manually trigger edit buffer update on preexec
+        API.notifications.editbufferChanged(buffer: "",
+                                            cursor: 0,
+                                            session: context.sessionID,
+                                            context: context)
     }
   }
 
@@ -455,22 +449,6 @@ extension ShellHookManager {
     tty.shellIntegrationVersion = info.shellIntegrationVersion ?? 0
   }
 
-  func clearKeybufferLegacy(_ info: ShellMessage) {
-    clearKeybuffer(info)
-  }
-
-  func clearKeybuffer(_ info: ShellMessage) {
-    guard let hash = attemptToFindToAssociatedWindow(for: info.session) else {
-      Logger.log(
-        message: "Could not link to window on new shell session.", priority: .notify,
-        subsystem: .tty)
-      return
-    }
-
-    let keybuffer = KeypressProvider.shared.keyBuffer(for: hash)
-    keybuffer.buffer = ""
-  }
-
   func updateKeybufferLegacy(_ info: ShellMessage) {
     if let (buffer, cursor, histno) = info.parseKeybuffer() {
       updateKeybuffer(
@@ -487,23 +465,20 @@ extension ShellHookManager {
 
   func updateKeybuffer(context: Local_ShellContext, text: String, cursor: Int, histno: Int) {
     // invariant: frontmost whitelisted window is assumed to host shell session which sent this edit buffer event.
-    let window = AXWindowServer.shared.whitelistedWindow
-    guard let hash = window?.hash else {
+    guard let window = AXWindowServer.shared.whitelistedWindow else {
       Logger.log(
         message: "Could not link to window on new shell session.", priority: .notify,
         subsystem: .tty)
       return
     }
 
+    let hash = window.hash
     var ttyHandler: TTY? = tty[hash]
 
     if ttyHandler == nil, let trimmedDescriptor = context.ttys.split(separator: "/").last {
-
       Logger.log(message: "linking sessionId (\(context.sessionID)) to window hash: \(hash)", subsystem: .tty)
       ttyHandler = self.link(context.sessionID, hash, String(trimmedDescriptor))
-
       ttyHandler?.startedNewShellSession(for: context.pid)
-
     }
 
     guard let tty = ttyHandler else {
@@ -518,20 +493,11 @@ extension ShellHookManager {
       return
     }
 
-    let keybuffer = KeypressProvider.shared.keyBuffer(for: hash)
-
-    keybuffer.backing = KeystrokeBuffer.Backing(rawValue: String(context.processName.split(separator: "/").last ?? ""))
-    keybuffer.buffer = text
-    keybuffer.shellCursor = cursor
-
-    guard Defaults.shared.loggedIn, Defaults.shared.useAutocomplete else {
-      return
-    }
-    
-    API.notifications.editbufferChanged(buffer: text ?? "",
-                                        cursor: cursor,
-                                        session: context.sessionID,
-                                        context: window?.associatedShellContext?.ipcContext)
+    window.bufferInfo = KeystrokeBuffer(
+        backing: KeystrokeBuffer.Backing(rawValue: String(context.processName.split(separator: "/").last ?? "")),
+        cursor: cursor,
+        text: text
+    )
 
     DispatchQueue.main.async {
       Autocomplete.position()

@@ -299,11 +299,6 @@ class FigCLI {
             //run command on behalf of user
             let script =  "\(cmd.script!) \(flags.joined(separator: " "))"
             ShellBridge.shared.socketServer.send(sessionId: scope.session, command: script)
-//            Timer.delayWithSeconds(0.15) {
-//                ShellBridge.injectStringIntoTerminal(script, runImmediately: true, completion: nil)
-//            }
-//            "\(cmd.cmdToRun!) \(flags.joined(separator: " "))".runAsCommand(cwd: scope.pwd, with: scope.env.jsonStringToDict() as? Dictionary<String, String>)
-            
         } catch {
             
         }
@@ -573,11 +568,6 @@ class FigCLI {
                     }
                 }
             }
-            
-            
-            
-//            companionWindow.windowManager.close(window: companionWindow)
-            // get script for command
         } else if (scope.cmd.starts(with: "@") || scope.cmd.starts(with: "+")) {
             // fig.run/@mschrage/document
             

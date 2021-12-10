@@ -130,7 +130,7 @@ class AXWindowServer : WindowService {
     }
     var whitelistedWindow: ExternalWindow? {
         get {
-            return Integrations.terminalsWhereAutocompleteShouldAppear.contains(self.topWindow?.bundleId ?? "") ? self.topWindow : nil
+            return Integrations.bundleIsValidTerminal(self.topWindow?.bundleId) ? self.topWindow : nil
         }
        
     }
@@ -312,7 +312,7 @@ class AXWindowServer : WindowService {
               AXUIElementCopyAttributeValue(appRef.axAppRef, kAXFocusedWindowAttribute as CFString, &window)
               guard window != nil else { return }
               let topWindow = ExternalWindow(backedBy: window as! AXUIElement, in: appRef)
-              guard Integrations.terminalsWhereAutocompleteShouldAppear.contains(topWindow?.bundleId ?? "") else { return }
+              guard Integrations.bundleIsValidTerminal(topWindow?.bundleId) else { return }
               NotificationCenter.default.post(name: AXWindowServer.windowTitleUpdatedNotification, object: topWindow)
               break;
             default:

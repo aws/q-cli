@@ -12,13 +12,6 @@ class Autocomplete {
   // todo: load global actions from ~/.fig/apps/autocomplete/actions.json
   static let globalActions = ["toggleAutocomplete", "showAutocomplete"]
 
-  static func log(_ buffer: String, _ cursor: Int) {
-    var logging = buffer
-    let index = logging.index(logging.startIndex, offsetBy: cursor, limitedBy: buffer.endIndex) ?? buffer.endIndex
-    logging.insert("|", at: index)
-    Logger.log(message: logging, subsystem: .autocomplete)
-  }
-  
   static let throttler = Throttler(minimumDelay: 0.05)
   
   static func runJavascript(_ command: String) {
@@ -46,37 +39,30 @@ class Autocomplete {
     WindowManager.shared.positionAutocompletePopover(textRect: nil)
   }
   
-  static func position(makeVisibleImmediately: Bool = true, completion:(() -> Void)? = nil) {
+  static func position(makeVisibleImmediately: Bool = true) {
     guard let window = AXWindowServer.shared.whitelistedWindow else {
-      completion?()
       return
     }
     
     throttler.throttle {
       DispatchQueue.main.async {
-        let keybuffer = KeypressProvider.shared.keyBuffer(for: window)
         if let rect = window.cursor {
-          WindowManager.shared.positionAutocompletePopover(textRect: rect, makeVisibleImmediately: makeVisibleImmediately, completion: completion)
-        } else {
-          completion?()
+          WindowManager.shared.positionAutocompletePopover(textRect: rect, makeVisibleImmediately: makeVisibleImmediately, completion: nil)
         }
       }
     }
   }
 }
 
-protocol ShellIntegration {
-  static func insertLock()
-  static func insertUnlock(with insertionText: String)
-}
-
-class GenericShellIntegration: ShellIntegration {
+class ShellInsertionProvider {
   static let insertionLock = "\(NSHomeDirectory())/.fig/insertion-lock"
+
+  static let lineAcceptedInKeystrokeBufferNotification: NSNotification.Name = .init("lineAcceptedInXTermBufferNotification")
 
   static func insertLock() {
     FileManager.default.createFile(atPath: insertionLock, contents: nil, attributes: nil)
   }
-  
+
   static func insertUnlock(with insertionText: String) {
     // remove lock after keystrokes have been processes
     // requires delay proportional to number of character inserted
@@ -85,21 +71,49 @@ class GenericShellIntegration: ShellIntegration {
     let delay = min(0.01 * Double(insertionText.count), 0.15)
     Timer.delayWithSeconds(delay) {
         try? FileManager.default.removeItem(atPath: insertionLock)
-        
-        if let window = AXWindowServer.shared.whitelistedWindow,
-           KeypressProvider.shared.keyBuffer(for: window).backing != nil,
-           let context = KeypressProvider.shared.keyBuffer(for: window).insert(text: insertionText) {
-          
-            let backing = KeypressProvider.shared.keyBuffer(for: window).backing
 
-            // manually trigger edit buffer update
-            let (buffer, cursor) = context
-            if let sessionId = window.session {
-              API.notifications.editbufferChanged(buffer: buffer,
-                                                  cursor: cursor,
-                                                  session: sessionId,
-                                                  context: window.associatedShellContext?.ipcContext)
+        if let window = AXWindowServer.shared.whitelistedWindow, window.bufferInfo.backing != nil {
+            var text = window.bufferInfo.text
+            var cursor = text.index(text.startIndex, offsetBy: window.bufferInfo.cursor)
+
+            var skip = 0
+            for (idx, char) in insertionText.enumerated() {
+                guard let value = char.asciiValue else { break }
+                guard skip == 0 else { skip -= 1; break }
+                switch value {
+                case 8: //backspace literal
+                    guard cursor != text.startIndex else { break }
+                    cursor = text.index(before: cursor)
+                    text.remove(at: cursor)
+                case 27: // ESC
+                    if let direction = insertionText.index(insertionText.startIndex, offsetBy: idx + 2, limitedBy: insertionText.endIndex) {
+                    let esc = insertionText[direction]
+                        if (esc == "D") {
+                            guard cursor != text.startIndex else { break }
+                            cursor = text.index(before: cursor)
+                            skip = 2
+                        } else if (esc == "C") { // forward one
+                            guard cursor != text.endIndex else { break }
+                            cursor = text.index(after: cursor)
+                            skip = 2
+                        }
+                    }
+                    break
+                case 10: // newline literal
+                    text = ""
+                    cursor = text.startIndex
+                    NotificationCenter.default.post(name: Self.lineAcceptedInKeystrokeBufferNotification, object: nil)
+                default:
+                    guard text.endIndex >= cursor else { return }
+                    text.insert(char, at: cursor)
+                  cursor = text.index(cursor, offsetBy: 1, limitedBy: text.endIndex) ?? text.endIndex
+                }
             }
+            
+            window.bufferInfo = KeystrokeBuffer(
+              backing: window.bufferInfo.backing,
+              cursor: text.distance(from: text.startIndex, to: cursor),
+              text: text)
         }
     }
   }

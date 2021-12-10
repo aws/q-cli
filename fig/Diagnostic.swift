@@ -39,14 +39,6 @@ class Diagnostic {
     }
   }
   
-  static var keybindingsPath: String? {
-    get {
-      let path = KeyBindingsManager.keymapFilePath.path
-      
-      return FileManager.default.fileExists(atPath: path) ? path : nil
-    }
-  }
-  
   static var installedCLI: Bool {
     get {
       guard let path = Diagnostic.pathOfCLI, let symlink = try? FileManager.default.destinationOfSymbolicLink(atPath: path) else { return false }
@@ -161,7 +153,7 @@ class Diagnostic {
   
   static var processForTopmostWindow: String {
     get {
-      guard let app = NSWorkspace.shared.frontmostApplication, Integrations.terminalsWhereAutocompleteShouldAppear.contains(app.bundleIdentifier ?? ""),
+      guard Integrations.frontmostApplicationIsValidTerminal(),
             let window = AXWindowServer.shared.whitelistedWindow,
             let context = window.associatedShellContext
       else {
@@ -174,7 +166,7 @@ class Diagnostic {
   
   static var processIdForTopmostWindow: String {
     get {
-      guard let app = NSWorkspace.shared.frontmostApplication, Integrations.terminalsWhereAutocompleteShouldAppear.contains(app.bundleIdentifier ?? ""),
+      guard Integrations.frontmostApplicationIsValidTerminal(),
             let window = AXWindowServer.shared.whitelistedWindow,
             let context = window.associatedShellContext
       else {
@@ -187,7 +179,7 @@ class Diagnostic {
   
   static var workingDirectoryForTopmostWindow: String {
     get {
-      guard let app = NSWorkspace.shared.frontmostApplication, Integrations.terminalsWhereAutocompleteShouldAppear.contains(app.bundleIdentifier ?? ""),
+      guard Integrations.frontmostApplicationIsValidTerminal(),
             let window = AXWindowServer.shared.whitelistedWindow,
             let context = window.associatedShellContext
       else {
@@ -200,7 +192,7 @@ class Diagnostic {
   
   static var processIsShellInTopmostWindow: Bool {
     get {
-      guard let app = NSWorkspace.shared.frontmostApplication, Integrations.terminalsWhereAutocompleteShouldAppear.contains(app.bundleIdentifier ?? ""),
+      guard Integrations.frontmostApplicationIsValidTerminal(),
             let window = AXWindowServer.shared.whitelistedWindow,
             let context = window.associatedShellContext
       else {
@@ -213,7 +205,7 @@ class Diagnostic {
   
   static var ttyDescriptorForTopmostWindow: String {
     get {
-      guard let app = NSWorkspace.shared.frontmostApplication, Integrations.terminalsWhereAutocompleteShouldAppear.contains(app.bundleIdentifier ?? ""),
+      guard Integrations.frontmostApplicationIsValidTerminal(),
             let window = AXWindowServer.shared.whitelistedWindow,
             let context = window.associatedShellContext
       else {
@@ -226,7 +218,7 @@ class Diagnostic {
   
   static var descriptionOfTopmostWindow: String {
     get {
-      guard let app = NSWorkspace.shared.frontmostApplication, Integrations.terminalsWhereAutocompleteShouldAppear.contains(app.bundleIdentifier ?? ""),
+      guard Integrations.frontmostApplicationIsValidTerminal(),
             let window = AXWindowServer.shared.whitelistedWindow
       else {
         return "???"
@@ -238,27 +230,11 @@ class Diagnostic {
   
   static var keybufferHasContextForTopmostWindow: Bool {
     get {
-      guard let app = NSWorkspace.shared.frontmostApplication, Integrations.terminalsWhereAutocompleteShouldAppear.contains(app.bundleIdentifier ?? ""),
-            let window = AXWindowServer.shared.whitelistedWindow
-      else {
+      guard Integrations.frontmostApplicationIsValidTerminal() else {
         return false
       }
       
-      let keybuffer = KeypressProvider.shared.keyBuffer(for: window)
-      return keybuffer.buffer != nil
-    }
-  }
-  
-  static var keybufferRepresentationForTopmostWindow: String {
-    get {
-      guard let app = NSWorkspace.shared.frontmostApplication, Integrations.terminalsWhereAutocompleteShouldAppear.contains(app.bundleIdentifier ?? ""),
-            let window = AXWindowServer.shared.whitelistedWindow
-      else {
-        return "<no context>"
-      }
-      
-      let keybuffer = KeypressProvider.shared.keyBuffer(for: window)
-      return keybuffer.representation
+      return AXWindowServer.shared.whitelistedWindow != nil
     }
   }
   
@@ -339,7 +315,6 @@ class Diagnostic {
       Number of specs: \(Diagnostic.numberOfCompletionSpecs)
       SSH Integration: \(Defaults.shared.SSHIntegrationEnabled)
       Tmux Integration: \(TmuxIntegration.isInstalled)
-      Keybindings path: \(Diagnostic.keybindingsPath ?? "<none>")
       iTerm Integration: \(iTermIntegration.default.isInstalled) \(iTermIntegration.default.isConnectedToAPI ? "[Authenticated]": "")
       Hyper Integration: \(HyperIntegration.default.isInstalled)
       VSCode Integration: \(VSCodeIntegration.default.isInstalled)

@@ -72,7 +72,6 @@ extension CommandHandlers {
       response.diagnostics.isRunningOnReadOnlyVolume = Diagnostic.isRunningOnReadOnlyVolume
       response.diagnostics.pathToBundle = Diagnostic.pathToBundle
       response.diagnostics.accessibility = String(Accessibility.enabled)
-      response.diagnostics.keypath = Diagnostic.keybindingsPath ?? "<none>"
       response.diagnostics.docker = String(DockerEventStream.shared.socket.isConnected)
       response.diagnostics.symlinked = String(Diagnostic.dotfilesAreSymlinked)
       response.diagnostics.installscript = String(Diagnostic.installationScriptRan)
