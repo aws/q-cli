@@ -15,6 +15,3 @@ export const setKeystrokeIntercept = ({
     interceptBoundKeystrokes,
     interceptGlobalKeystrokes,
   });
-
-export const registerActions = (actions: Array<Action>) =>
-  sendUpdateApplicationPropertiesRequest({ actions: actions });
