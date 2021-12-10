@@ -387,7 +387,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+c", "q":
 			return m, tea.Quit
 		case "enter", " ":
-			m.page++
+			m.page += 1
+		default:
+			if m.page >= 1 {
+				m.page += 1
+			}
 		}
 	}
 
@@ -468,7 +472,7 @@ func (m model) View() string {
 		logoBox := lipgloss.NewStyle().
 			Border(m.borders[0]).
 			BorderForeground(lipgloss.Color(m.asciiColors[0])).
-			Padding(1, 2).
+			Padding(1, 3).
 			Bold(true).
 			Render(figAscii)
 
@@ -499,7 +503,7 @@ func (m model) View() string {
 			Render(lipgloss.JoinHorizontal(lipgloss.Top, countsStr, " ", dirsStr))
 
 		workingDirPanel := lipgloss.NewStyle().
-			Padding(1, 2).
+			Padding(0, 2).
 			Border(m.borders[1]).
 			BorderForeground(lipgloss.Color(m.asciiColors[1])).
 			Width(lipgloss.Width(logoBox) - 2).
@@ -553,10 +557,10 @@ func (m model) View() string {
 			Render(lipgloss.JoinHorizontal(lipgloss.Top, countsStr, " ", commandsStr))
 
 		commandPanel := lipgloss.NewStyle().
-			Padding(1, 2).
+			Padding(0, 2, 0, 1).
 			Border(m.borders[2]).
 			BorderForeground(lipgloss.Color(m.asciiColors[2])).
-			Width(25).
+			Width(23).
 			Render(lipgloss.JoinVertical(lipgloss.Left, commandPageTitle, commmandsStr))
 
 		dayOfWeekHistogramTitle := lipgloss.NewStyle().Bold(true).PaddingBottom(1).Render("Weekly Activity")
@@ -581,7 +585,7 @@ func (m model) View() string {
 			Render(lipgloss.JoinHorizontal(lipgloss.Top, daysOfWeekStr, " ", countsStr))
 
 		dayOfWeekHistogramPanel := lipgloss.NewStyle().
-			Padding(1, 2).
+			Padding(0, 2).
 			Border(m.borders[3]).
 			BorderForeground(lipgloss.Color(m.asciiColors[3])).
 			Render(dayOfWeekHistogramTitle + "\n" + daysOfWeekHistogramStr)
@@ -650,17 +654,19 @@ func (m model) View() string {
 		timeOfDayHistogramPage := lipgloss.NewStyle().
 			Border(m.borders[4]).
 			BorderForeground(lipgloss.Color(m.asciiColors[4])).
-			Padding(1, 2).
+			Padding(0, 2).
 			Render(lipgloss.JoinVertical(lipgloss.Left, timeOfDayHistogramPageTitle, timeOfDayStr))
 
 		commitMsgSummary := ""
 
+		fakeLongMsg := "This is a long message to test the len of commits"
+
 		if m.metrics.ShortedCommitTime != 0 {
-			commitTime := time.Unix(int64(m.metrics.ShortedCommitTime), 0).Local()
-			commitTimeStr := commitTime.Format("Jan 2")
+			// commitTime := time.Unix(int64(m.metrics.ShortedCommitTime), 0).Local()
+			// commitTimeStr := lipgloss.NewStyle().Italic(true).Render(commitTime.Format("January 2 at 3:04pm"))
 			commitMsgSummary = lipgloss.JoinVertical(lipgloss.Left,
 				lipgloss.NewStyle().Bold(true).Render("Shortest Commit Message"),
-				"'"+truncate(m.metrics.ShortesGitCommit, 12)+"' on "+commitTimeStr)
+				truncate(fakeLongMsg, 24))
 		} else {
 			commitMsgSummary = lipgloss.JoinVertical(lipgloss.Left,
 				lipgloss.NewStyle().Bold(true).Render("Shortest Commit Message"),
