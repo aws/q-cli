@@ -33,7 +33,7 @@ function fig_zsh_redraw() {
   fi
 
   # Redirect to /dev/null to avoid printing escape sequences
-  fig hook editbuffer "${TERM_SESSION_ID}" "${FIG_INTEGRATION_VERSION}" "${TTY}" "$$" "${HISTNO}" "${CURSOR}" "$BUFFER" 2>&1 >/dev/null
+  fig hook editbuffer "${TERM_SESSION_ID}" "${FIG_INTEGRATION_VERSION}" "${TTY}" "$$" "${HISTNO}" "${CURSOR}" "$BUFFER" 2>&1 >/dev/null &!
 }
 
 function fig_hide() { 

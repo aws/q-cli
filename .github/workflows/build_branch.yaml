@@ -373,3 +373,8 @@ jobs:
           git add fig.xcodeproj/project.pbxproj
           git commit -m "Bump build to $BUILD [skip ci]"
           git push origin ${GITHUB_REF##*/}
+      - name: Notify \#macos channel on Discord
+        run: |
+          curl -H "Content-Type: application/json" \
+            -d '{"username": "macOS build ($VERSION $BUILD) deployed!", "content": "${{ github.event.inputs.buildName }} | From branch: ${{ github.ref }}\n" }' \
+            ${{secrets.DISCORD_MACOS_WEBHOOK}}

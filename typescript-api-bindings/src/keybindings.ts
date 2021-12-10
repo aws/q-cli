@@ -1,4 +1,5 @@
-import { KeybindingPressedNotification, NotificationType } from './fig';
+import { Action, KeybindingPressedNotification, NotificationType } from './fig';
+import { sendUpdateApplicationPropertiesRequest } from './requests';
 import { _subscribe } from './notifications';
 
 export function pressed(
@@ -17,4 +18,16 @@ export function pressed(
       return false;
     }
   );
+}
+
+export function setInterceptKeystrokes(
+  actions: Action[],
+  intercept: boolean,
+  globalIntercept?: boolean
+) {
+  sendUpdateApplicationPropertiesRequest({
+    interceptBoundKeystrokes: intercept,
+    interceptGlobalKeystrokes: globalIntercept,
+    actionList: { actions },
+  });
 }
