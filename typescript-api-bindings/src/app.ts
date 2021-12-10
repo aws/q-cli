@@ -16,3 +16,4 @@ export function setKeystrokeIntercept({
     interceptBoundKeystrokes,
     interceptGlobalKeystrokes,
   });
+}

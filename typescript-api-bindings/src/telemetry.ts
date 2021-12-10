@@ -14,10 +14,10 @@ export async function track(event: string, properties: Record<string, string>) {
   }, ([] as unknown) as [TelemetryProperty]);
 
   return await sendTelemetryTrackRequest({ event, properties: props });
-};
+}
 
 export async function alias(userId: string) {
-  return sendTelemetryAliasRequest({ userId })
+  return sendTelemetryAliasRequest({ userId });
 }
 
 export async function identify(traits: Record<string, string>) {
@@ -29,4 +29,4 @@ export async function identify(traits: Record<string, string>) {
   }, ([] as unknown) as [TelemetryProperty]);
 
   return await sendTelemetryIdentifyRequest({ traits: props });
-};
+}
