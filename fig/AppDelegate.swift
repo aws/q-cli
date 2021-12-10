@@ -1058,93 +1058,26 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     }
 
     @objc func  getSelectedText() {
-        
-
-//        ShellBridge.registerKeyInterceptor()
-//        return
-            
-
         NSEvent.addGlobalMonitorForEvents(matching: .keyUp) { (event) in
             print("keylogger:", event.characters ?? "", event.keyCode)
-//        let touple = KeystrokeBuffer.shared.handleKeystroke(event: event)
-//            guard touple != nil else {
-//                WindowManager.shared.requestWindowUpdate()
-//                return
-//
-//            }
-        let systemWideElement = AXUIElementCreateSystemWide()
-        var focusedElement : AnyObject?
+            let systemWideElement = AXUIElementCreateSystemWide()
+            var focusedElement : AnyObject?
 
-        let error = AXUIElementCopyAttributeValue(systemWideElement, kAXFocusedUIElementAttribute as CFString, &focusedElement)
-        if (error != .success){
-            print("Couldn't get the focused element. Probably a webkit application")
-        } else {
-//            AXUIElement
-          var names: CFArray?
-          _ = AXUIElementCopyAttributeNames(focusedElement as! AXUIElement, &names)
-          print(names as Any)
+            let error = AXUIElementCopyAttributeValue(systemWideElement, kAXFocusedUIElementAttribute as CFString, &focusedElement)
+            if (error != .success){
+                print("Couldn't get the focused element. Probably a webkit application")
+            } else {
+                var names: CFArray?
+                _ = AXUIElementCopyAttributeNames(focusedElement as! AXUIElement, &names)
+                print(names as Any)
 
-          var parametrizedNames: CFArray?
-          _ = AXUIElementCopyParameterizedAttributeNames(focusedElement as! AXUIElement, &parametrizedNames)
-          print(parametrizedNames as Any)
-          //KeypressProvider.shared.getTextRect()
-//          var markerRange : AnyObject?
-//          let markerError = AXUIElementCopyAttributeValue(focusedElement as! AXUIElement, "AXSelectedTextMarkerRange" as CFString, &markerRange)
-////          var markerRangeValue : AnyObject?
-////          AXValueGetValue(markerRange as! AXValue, .cfRange, &markerRangeValue)
-////          print(markerRangeValue)
-//          guard markerRange != nil else {
-//            print("selectedRect: markerRange is nil")
-//            return
-//          }
-//          var selectBoundsForTextMarkerRange : AnyObject?
-//          let err = AXUIElementCopyParameterizedAttributeValue(focusedElement as! AXUIElement, "AXBoundsForTextMarkerRange" as CFString, markerRange!, &selectBoundsForTextMarkerRange)
-//          var selectRect = CGRect()
-//          AXValueGetValue(selectBoundsForTextMarkerRange as! AXValue, .cgRect, &selectRect)
-//          print("selectedRect: ", selectRect)
-          
-          //AXBoundsForTextMarkerRange
-          
-//            var selectedRangeValue : AnyObject?
-//            let selectedRangeError = AXUIElementCopyAttributeValue(focusedElement as! AXUIElement, kAXSelectedTextRangeAttribute as CFString, &selectedRangeValue)
-//
-//            if (selectedRangeError == .success){
-//                var selectedRange = CFRange()
-//                AXValueGetValue(selectedRangeValue as! AXValue, .cfRange, &selectedRange)
-//                var selectRect = CGRect()
-//                var selectBounds : AnyObject?
-////                print("selected", selectedRange)
-////                print("selected", selectedRange.location, selectedRange.length)
-//                var updatedRange = CFRangeMake(selectedRange.location, 1)
-//                print("selected", selectedRange, updatedRange)
-//
-//                withUnsafeMutablePointer(to: &updatedRange) { (ptr) in
-//                    let updatedRangeValue = AXValueCreate(AXValueType(rawValue: kAXValueCFRangeType)!, ptr)
-//                    let selectedBoundsError = AXUIElementCopyParameterizedAttributeValue(focusedElement as! AXUIElement, kAXBoundsForRangeParameterizedAttribute as CFString, updatedRangeValue!, &selectBounds)
-//                    if (selectedBoundsError == .success){
-//                        AXValueGetValue(selectBounds as! AXValue, .cgRect, &selectRect)
-//                        //do whatever you want with your selectRect
-//                        print("selected", selectRect)
-//                        WindowManager.shared.sidebar?.setOverlayFrame(selectRect)
-//
-//                    }
-//                }
-//
-//                //kAXInsertionPointLineNumberAttribute
-//                //kAXRangeForLineParameterizedAttribute
-//
-//
-//            }
-        }
+                var parametrizedNames: CFArray?
+                _ = AXUIElementCopyParameterizedAttributeNames(focusedElement as! AXUIElement, &parametrizedNames)
+                print(parametrizedNames as Any)
+            }
         }
     }
-    @objc func newAccesibilityAPI() {
-//        Onboarding.installation()
-//        "whoami".runWithElevatedPrivileges()
-//        ShellBridge.promptForAccesibilityAccess { (enabled) in
-//            print("AXCallback:", enabled)
-//        }
-    }
+    @objc func newAccesibilityAPI() {}
     var observer: AXObserver?
 
     @objc func addAccesbilityObserver() {
@@ -1952,22 +1885,18 @@ extension AppDelegate : NSMenuDelegate {
           if Integrations.terminalsWhereAutocompleteShouldAppear.contains(window?.bundleId ?? "") ||  Integrations.terminalsWhereAutocompleteShouldAppear.contains(app.bundleIdentifier ?? "") {
                 let shellContext = window?.associatedShellContext
                 var hasContext = false
-                var isHidden = false
                 var bufferDescription: String? = nil
-                var backedByShell = false
                 var backing: String?
 
 
                 if let window = window {
                     let keybuffer = KeypressProvider.shared.keyBuffer(for: window)
-                    hasContext = keybuffer.buffer != nil && !keybuffer.writeOnly
-                    isHidden = keybuffer.buffer != nil && keybuffer.writeOnly
+                    hasContext = keybuffer.buffer != nil
                     bufferDescription = keybuffer.representation
-                    backedByShell = keybuffer.backedByShell
                    
                   switch keybuffer.backing {
-                  case .zle:
-                    backing = "ZSH Line Editor"
+                  case .zsh:
+                    backing = "ZSH Command Line"
                     break;
                   case .fish:
                     backing = "Fish Command Line"
@@ -2059,23 +1988,6 @@ extension AppDelegate : NSMenuDelegate {
                     let support = NSMenuItem(title: "Learn more", action: #selector(SecureKeyboardInput.openSupportPage), keyEquivalent: "")
                     support.target = SecureKeyboardInput.self
                     legend.addItem(support)
-
-                } else if (isHidden) {
-                    color = .orange
-                    legend.addItem(NSMenuItem(title: "Autocomplete is hidden.", action: nil, keyEquivalent: ""))
-                    legend.addItem(NSMenuItem.separator())
-
-                    if let onlyShowOnTab = Settings.shared.getValue(forKey: Settings.onlyShowOnTabKey) as? Bool, onlyShowOnTab {
-                      legend.addItem(NSMenuItem(title: "Press <tab> to show suggestions", action: nil, keyEquivalent: ""))
-                      legend.addItem(NSMenuItem.separator())
-                      legend.addItem(NSMenuItem(title: "Or update '\(Settings.onlyShowOnTabKey)' setting", action: nil, keyEquivalent: ""))
-
-                    } else {
-                      legend.addItem(NSMenuItem(title: "Press control + <escape>", action: nil, keyEquivalent: ""))
-                      legend.addItem(NSMenuItem(title: "to toggle it back on", action: nil, keyEquivalent: ""))
-
-                    }
-                  
                 } else if (!hasContext) {
                     color = .orange
                     legend.addItem(NSMenuItem(title: "Fig is unsure what you typed", action: nil, keyEquivalent: ""))
@@ -2115,10 +2027,8 @@ extension AppDelegate : NSMenuDelegate {
 //                      legend.addItem(NSMenuItem(title: "In SSH session or Docker container", action: nil, keyEquivalent: ""))
 //                    }
                   
-                    if backedByShell {
-                      legend.addItem(NSMenuItem.separator())
-                      legend.addItem(NSMenuItem(title: "Backed by \(backing ?? "???")", action: nil, keyEquivalent: ""))
-                    }
+                    legend.addItem(NSMenuItem.separator())
+                    legend.addItem(NSMenuItem(title: "Backed by \(backing ?? "???")", action: nil, keyEquivalent: ""))
                 }
                 
                 

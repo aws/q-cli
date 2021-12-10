@@ -114,7 +114,6 @@ class Diagnostic {
       "shell/post.zsh",
       "shell/pre.fish",
       "shell/pre.sh",
-      "shell/zle.zsh"
     ]
     
     let onboarding = [

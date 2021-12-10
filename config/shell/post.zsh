@@ -54,6 +54,7 @@ fig_precmd() {
   fig_osc "ExitCode=%s" "${LAST_STATUS}"
   fig_osc "TTY=%s" "${TTY}"
   fig_osc "Log=%s" "${FIG_LOG_LEVEL}"
+  fig_osc "ZshAutosuggestionColor=%s" "${ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE}"
 
   if [[ -n "${SSH_TTY}" ]]; then
     fig_osc "SSH=1"
@@ -136,11 +137,6 @@ fig_precmd() {
   fi
   
   FIG_HAS_SET_PROMPT=1
-
-  # Temporary workaround for bug where istrip is activated when running brew install.
-  # When istrip is turned on, input characters are strippped to seven bits.
-  # This causes zle insertion to stop due to our reliance on `fig_insert` being bound to a unicode character
-  [[ -t 1 ]] && command stty -istrip
 }
 
 fig_reset_hooks() {

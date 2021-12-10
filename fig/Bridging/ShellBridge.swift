@@ -201,12 +201,6 @@ class ShellBridge {
             self.simulate(keypress: .ctrlU)
         }
         
-        // If user has onlyShowOnTab setting enabled, hid Fig window by setting writeOnly = true after insert
-        if let window = AXWindowServer.shared.whitelistedWindow {
-          KeypressProvider.shared.keyBuffer(for: window).writeOnly = KeystrokeBuffer.initialWritingMode
-        }
-
-      
         // Add delay for Electron terminals
         let delay: TimeInterval? = Integrations.electronTerminals.contains(app) ? 0.05 : nil
         
@@ -217,28 +211,9 @@ class ShellBridge {
           backing = KeypressProvider.shared.keyBuffer(for: window).backing
         }
       
-      
-        let integration: ShellIntegration.Type
-        switch backing {
-        case .zle:
-          integration = ZLEIntegration.self
-        default:
-          integration = GenericShellIntegration.self
-        }
-      
-      
-
-        // Use shell specific insertion method
-        if let window = AXWindowServer.shared.whitelistedWindow,
-          KeypressProvider.shared.keyBuffer(for: window).backing == .zle {
-          ZLEIntegration.insert(with: insertion,
-                                version: String(window.associatedShellContext?.integrationVersion ?? 0))
-          return
-        }
-        
-        integration.insertLock()
+        GenericShellIntegration.insertLock()
         injectUnicodeString(insertion, delay: delay) {
-          integration.insertUnlock(with: insertion)
+          GenericShellIntegration.insertUnlock(with: insertion)
         }
     }
   

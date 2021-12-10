@@ -105,12 +105,6 @@ class KeypressProvider {
       
       switch event.type {
         case .keyDown:
-          // Watch for Cmd+V and manually update ZLE buffer (because we don't recieve an event until the following keystroke)
-          if AXWindowServer.shared.whitelistedWindow != nil, event.keyCode == Keycode.v && event.modifierFlags.contains(.command) {
-              print("ZLE: Command+V")
-              ZLEIntegration.paste()
-          }
-          
           // Handle Control+R searching -- this is needed for ZLE + fzf, normal history search is handled by integration.
           if AXWindowServer.shared.whitelistedWindow != nil, event.keyCode == Keycode.r && event.modifierFlags.contains(.control) {
             Autocomplete.hide()
@@ -384,21 +378,13 @@ class KeypressProvider {
     
 
     let keyBuffer = self.keyBuffer(for: window)
-    guard !keyBuffer.backedByShell else {
-      
-      
-      // trigger positioning updates for hotkeys, like cmd+w, cmd+t, cmd+n, or Spectacle
-      if let event = event {
-        
-        if event.keyCode == KeyboardLayout.shared.keyCode(for: "W") && event.modifierFlags.contains(.command) {
-          Autocomplete.hide()
-        } else if event.modifierFlags.contains(.command) || event.modifierFlags.contains(.option) {
-          Autocomplete.position()
-
-        }
+    // trigger positioning updates for hotkeys, like cmd+w, cmd+t, cmd+n, or Spectacle
+    if let event = event {
+      if event.keyCode == KeyboardLayout.shared.keyCode(for: "W") && event.modifierFlags.contains(.command) {
+        Autocomplete.hide()
+      } else if event.modifierFlags.contains(.command) || event.modifierFlags.contains(.option) {
+        Autocomplete.position()
       }
-      
-      return
     }
   }
 }

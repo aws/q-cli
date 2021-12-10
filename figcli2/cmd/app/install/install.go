@@ -188,7 +188,6 @@ func NewCmdInstall() *cobra.Command {
 
 			// // Make files and folders that the user can edit (that aren't overridden by above)
 			// os.MkdirAll(usr.HomeDir+"/.fig/bin", 0755)
-			// os.MkdirAll(usr.HomeDir+"/.fig/zle", 0755)
 			// os.MkdirAll(usr.HomeDir+"/.fig/autocomplete", 0755)
 
 			// os.MkdirAll(usr.HomeDir+"/.fig/user/aliases", 0755)

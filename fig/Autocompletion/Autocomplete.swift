@@ -42,20 +42,6 @@ class Autocomplete {
       """, completionHandler: nil)
   }
   
-  static func toggle(for window: ExternalWindow) {
-    let buffer = KeypressProvider.shared.keyBuffer(for: window)
-
-    buffer.writeOnly = !buffer.writeOnly
-
-    if buffer.writeOnly {
-        Autocomplete.hide()
-        WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try{ fig.keypress(\"\(Keycode.escape)\", \"\(window.hash)\") } catch(e) {}", completionHandler: nil)
-    } else {
-//        Autocomplete.update(with: buffer.currentState, for: window.session)
-        Autocomplete.position()
-    }
-  }
-  
   static func hide() {  
     WindowManager.shared.positionAutocompletePopover(textRect: nil)
   }
@@ -69,7 +55,7 @@ class Autocomplete {
     throttler.throttle {
       DispatchQueue.main.async {
         let keybuffer = KeypressProvider.shared.keyBuffer(for: window)
-        if let rect = window.cursor, !keybuffer.writeOnly {//, keybuffer.buffer?.count != 0 {
+        if let rect = window.cursor {
           WindowManager.shared.positionAutocompletePopover(textRect: rect, makeVisibleImmediately: makeVisibleImmediately, completion: completion)
         } else {
           completion?()
@@ -107,10 +93,8 @@ class GenericShellIntegration: ShellIntegration {
             let backing = KeypressProvider.shared.keyBuffer(for: window).backing
 
             // manually trigger edit buffer update
-            // Only manually trigger edit buffer when not using ZLE widgets.
-            // todo(mschrage): Once we consolidate on figterm to get edit buffer, remove the zle specific logic
             let (buffer, cursor) = context
-            if let sessionId = window.session, backing != .zle {
+            if let sessionId = window.session {
               API.notifications.editbufferChanged(buffer: buffer,
                                                   cursor: cursor,
                                                   session: sessionId,
