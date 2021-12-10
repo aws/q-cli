@@ -143,7 +143,6 @@
 		75A4A29A25C8D855002EFD6B /* commit@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 75A4A29725C8D855002EFD6B /* commit@2x.png */; };
 		75A4A29E25C91471002EFD6B /* debugger-2-trimmed.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 75A4A29D25C91471002EFD6B /* debugger-2-trimmed.mp4 */; };
 		75A4A2A025CA0D46002EFD6B /* Autocomplete.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A4A29F25CA0D46002EFD6B /* Autocomplete.swift */; };
-		75A4A2A225CA2190002EFD6B /* ZLEIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A4A2A125CA218F002EFD6B /* ZLEIntegration.swift */; };
 		75A4A2A725CBBDE7002EFD6B /* AXSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 75A4A2A625CBBDE7002EFD6B /* AXSwift */; };
 		75AA24DA25A7E8B000A51E9D /* lsof.m in Sources */ = {isa = PBXBuildFile; fileRef = 75AA24D925A7E8B000A51E9D /* lsof.m */; };
 		75ACFE7A274442C7003C22EE /* PTYProcess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75ACFE79274442C7003C22EE /* PTYProcess.swift */; };
@@ -433,7 +432,6 @@
 		75A4A29725C8D855002EFD6B /* commit@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "commit@2x.png"; sourceTree = "<group>"; };
 		75A4A29D25C91471002EFD6B /* debugger-2-trimmed.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "debugger-2-trimmed.mp4"; sourceTree = "<group>"; };
 		75A4A29F25CA0D46002EFD6B /* Autocomplete.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Autocomplete.swift; sourceTree = "<group>"; };
-		75A4A2A125CA218F002EFD6B /* ZLEIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZLEIntegration.swift; sourceTree = "<group>"; };
 		75AA24D825A7E8B000A51E9D /* lsof.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = lsof.h; sourceTree = "<group>"; };
 		75AA24D925A7E8B000A51E9D /* lsof.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = lsof.m; sourceTree = "<group>"; };
 		75AC55322522C8EB0069635E /* 1.0.20.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = 1.0.20.sh; sourceTree = "<group>"; };
@@ -981,7 +979,6 @@
 				1A1F15FF25A7A93E0074D541 /* KeyBindingsManager.swift */,
 				75B1993725100E4D00F38EA8 /* KeypressService.swift */,
 				75A4A29F25CA0D46002EFD6B /* Autocomplete.swift */,
-				75A4A2A125CA218F002EFD6B /* ZLEIntegration.swift */,
 			);
 			path = Autocompletion;
 			sourceTree = "<group>";
@@ -1448,7 +1445,6 @@
 				7546F5B3271660BA0077359F /* Constants.swift in Sources */,
 				75D1ECBE26F15F4500BC8A04 /* TerminalIntegrationProvider.swift in Sources */,
 				75809B0E24BFA64D00BFFB3E /* TelemetryService.swift in Sources */,
-				75A4A2A225CA2190002EFD6B /* ZLEIntegration.swift in Sources */,
 				75AA24DA25A7E8B000A51E9D /* lsof.m in Sources */,
 				75EB592B258D98A7002915E7 /* BiMap.swift in Sources */,
 				751F7589246D090100E083C8 /* WebBridge.swift in Sources */,
