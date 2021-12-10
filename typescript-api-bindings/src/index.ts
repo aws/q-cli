@@ -38,6 +38,5 @@ export {
   Telemetry,
   fs,
   Config,
-  Internal,
   Fig,
 };
