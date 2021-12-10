@@ -72,7 +72,7 @@ class KeypressProvider {
       switch event.type {
         case .keyDown:
           // Handle Control+R searching -- this is needed for ZLE + fzf, normal history search is handled by integration.
-          if AXWindowServer.shared.whitelistedWindow != nil, event.keyCode == Keycode.r && event.modifierFlags.contains(.control) {
+        if AXWindowServer.shared.whitelistedWindow != nil, event.keyCode == Keycode.r.rawValue && event.modifierFlags.contains(.control) {
             Autocomplete.hide()
           }
         case .keyUp:
@@ -311,7 +311,7 @@ class KeypressProvider {
 
     // trigger positioning updates for hotkeys, like cmd+w, cmd+t, cmd+n, or Spectacle
     if let event = event {
-      if event.keyCode == KeyboardLayout.shared.keyCode(for: "W") && event.modifierFlags.contains(.command) {
+      if event.keyCode == KeyboardLayout.shared.keyCode(for: "w") && event.modifierFlags.contains(.command) {
         Autocomplete.hide()
       } else if event.modifierFlags.contains(.command) || event.modifierFlags.contains(.option) {
         Autocomplete.position()

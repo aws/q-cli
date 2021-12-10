@@ -1141,12 +1141,6 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
              }
         }
         
-//        Timer.delayWithSeconds(15) {
-//                DispatchQueue.main.async {
-//                 NSApp.terminate(self)
-//             }
-//        }
-
     }
   
     @objc func toggleDeveloperMode() {
@@ -1335,11 +1329,11 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         if let activeTerminal = terminals.first {
             activeTerminal.activate(options: NSApplication.ActivationOptions.init())
             print("Simulate paste for process: \(activeTerminal.processIdentifier)")
-            simulate(keypress: .cmdV, pid: activeTerminal.processIdentifier)
+            ShellBridge.simulate(keypress: .v, pid: activeTerminal.processIdentifier, maskCommand: true)
         }
     }
     
-    func injectStringIntoTerminal(_ cmd: String, runImmediately: Bool = false) {
+    func injectStringIntoTerminal(_ cmd: String) {
          if let currentApp = NSWorkspace.shared.frontmostApplication {
             if (currentApp.bundleIdentifier == "com.googlecode.iterm2") {
                 // save current pasteboard
@@ -1350,9 +1344,9 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString(cmd, forType: .string)
                 print(pasteboard.string(forType: .string) ?? "")
-                self.simulate(keypress: .cmdV, mask: true)
-                self.simulate(keypress: .rightArrow)
-                self.simulate(keypress: .enter)
+                ShellBridge.simulate(keypress: .v, maskCommand: true)
+                ShellBridge.simulate(keypress: .rightArrow)
+                ShellBridge.simulate(keypress: .enter)
  
                 // need delay so that terminal responds
                 Timer.delayWithSeconds(1) {
@@ -1365,60 +1359,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
     }
     
     @objc func sendStringIfTerminalActive() {
-        let input = "echo \"hello world\""
-        if let currentApp = NSWorkspace.shared.frontmostApplication {
-        
-            if (currentApp.bundleIdentifier == "com.googlecode.iterm2") {
-                // save current pasteboard
-                let pasteboard = NSPasteboard.general
-                let copiedString = pasteboard.string(forType: .string) ?? ""
-                
-                // add our script to pasteboard
-                NSPasteboard.general.clearContents()
-                NSPasteboard.general.setString(input, forType: .string)
-                print(pasteboard.string(forType: .string) ?? "")
-                self.simulate(keypress: .cmdV, mask: true)
-                self.simulate(keypress: .rightArrow)
-                self.simulate(keypress: .enter)
- 
-                // need delay so that terminal responds
-                Timer.delayWithSeconds(1) {
-                    // restore pasteboard
-                    NSPasteboard.general.clearContents()
-                    pasteboard.setString(copiedString, forType: .string)
-                }
-            }
-        }
-    }
-    
-    // /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/Carbon.framework/Versions/A/Frameworks/HIToolbox.framework/Versions/A/Headers/Events.h
-    //https://gist.github.com/eegrok/949034
-    enum Keypress: UInt16 {
-        case cmdV = 9
-        case enter = 36
-        case rightArrow = 124
-    }
-    
-    func simulate(keypress: Keypress, pid: pid_t? = nil, mask: Bool = false) {
-        let keyCode = keypress.rawValue as CGKeyCode
-        let src = CGEventSource(stateID: CGEventSourceStateID.hidSystemState)
-
-        let keydown = CGEvent(keyboardEventSource: src, virtualKey: keyCode, keyDown: true)
-        let keyup = CGEvent(keyboardEventSource: src, virtualKey: keyCode, keyDown: false)
-        
-        if mask {
-            keydown?.flags = CGEventFlags.maskCommand;
-        }
-        
-      guard let pidSafe = pid else {
-        let loc = CGEventTapLocation.cghidEventTap
-        keydown?.post(tap: loc)
-        keyup?.post(tap: loc)
-        return
-      }
-      
-      keydown?.postToPid(pidSafe)
-      keyup?.postToPid(pidSafe)
+        injectStringIntoTerminal("echo \"hello world\"")
     }
 }
 

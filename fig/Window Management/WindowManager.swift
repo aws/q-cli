@@ -227,7 +227,7 @@ class WindowManager : NSObject {
         // if the topmost application is a terminal, create new session
         guard !Integrations.nativeTerminals.contains(NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "") else {
             Logger.log(message: "New terminal session!")
-            ShellBridge.simulate(keypress: .cmdN)
+            ShellBridge.simulate(keypress: .n, maskCommand: true)
             if let completion = completion {
                 completion()
             }
@@ -265,7 +265,7 @@ class WindowManager : NSObject {
             kvo = NSWorkspace.shared.observe(\.frontmostApplication, options: [.new]) { (workspace, delta) in
                 if let app = delta.newValue, let bundleId = app?.bundleIdentifier, Integrations.nativeTerminals.contains(bundleId) {
                     Logger.log(message: "term: Openning new window in \(target.bundleIdentifier ?? "<none>")")
-                    ShellBridge.simulate(keypress: .cmdN)
+                    ShellBridge.simulate(keypress: .n, maskCommand: true)
                     kvo?.invalidate()
                     if let completion = completion {
                         completion()

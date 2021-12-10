@@ -562,10 +562,6 @@ class FigCLI {
                 if popup {
                     FigCLI.form(with: scope, format: rawCommand)
                     companionWindow.positioning = .popover
-                } else {
-                    Timer.delayWithSeconds(0.15) {
-                        ShellBridge.injectStringIntoTerminal(rawCommand, runImmediately: true)
-                    }
                 }
             }
         } else if (scope.cmd.starts(with: "@") || scope.cmd.starts(with: "+")) {
