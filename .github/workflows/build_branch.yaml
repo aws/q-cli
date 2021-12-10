@@ -57,7 +57,7 @@ jobs:
           fi
           echo $VERSIONS_BRANCH
           echo $APPCAST_PREFIX
-          echo ${GITHUB_REF##*/}
+          echo BRANCH_NAME=${GITHUB_REF##*/} >> $GITHUB_ENV
 
 
       - name: "Checkout Project"
@@ -376,5 +376,5 @@ jobs:
       - name: Notify \#macos channel on Discord
         run: |
           curl -H "Content-Type: application/json" \
-            -d '{"username": "macOS build ($VERSION $BUILD) deployed!", "content": "${{ github.event.inputs.buildName }} | From branch: ${{ github.ref }}\n" }' \
+            -d '{"username": "macOS build deployed!", "content": "${{ github.event.inputs.buildName }} | ${{env.VERSION}} (B${{env.BUILD}}) from branch '${{env.BRANCH_NAME}}'\n" }' \
             ${{secrets.DISCORD_MACOS_WEBHOOK}}
