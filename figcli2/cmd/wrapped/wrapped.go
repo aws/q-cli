@@ -481,7 +481,7 @@ func (m model) View() string {
 			maxWorkingDirs = len(m.metrics.TopWorkingDirs)
 		}
 
-		workingDirTitle := lipgloss.NewStyle().MarginBottom(1).Bold(true).Render("Most Used Directories")
+		workingDirTitle := lipgloss.NewStyle().MarginBottom(1).Bold(true).Render("📁  Most Used Directories")
 
 		counts := []string{}
 		dirs := []string{}
@@ -541,13 +541,13 @@ func (m model) View() string {
 			maxCommands = len(m.metrics.TopCommandsUsage)
 		}
 
-		commandPageTitle := lipgloss.NewStyle().Bold(true).PaddingBottom(1).Render("Top Commands")
+		commandPageTitle := lipgloss.NewStyle().Bold(true).PaddingBottom(1).Render("🏆  Top Commands")
 
 		counts = []string{}
 		commands := []string{}
 		for _, command := range m.metrics.TopCommandsUsage[0:maxCommands] {
 			counts = append(counts, fmt.Sprintf("%v", command.Count))
-			commands = append(commands, truncate(command.Command, 15))
+			commands = append(commands, truncate(command.Command, 13))
 		}
 
 		countsStr = lipgloss.JoinVertical(lipgloss.Right, counts...)
@@ -557,13 +557,13 @@ func (m model) View() string {
 			Render(lipgloss.JoinHorizontal(lipgloss.Top, countsStr, " ", commandsStr))
 
 		commandPanel := lipgloss.NewStyle().
-			Padding(0, 2, 0, 1).
+			Padding(0, 2).
 			Border(m.borders[2]).
 			BorderForeground(lipgloss.Color(m.asciiColors[2])).
 			Width(23).
 			Render(lipgloss.JoinVertical(lipgloss.Left, commandPageTitle, commmandsStr))
 
-		dayOfWeekHistogramTitle := lipgloss.NewStyle().Bold(true).PaddingBottom(1).Render("Weekly Activity")
+		dayOfWeekHistogramTitle := lipgloss.NewStyle().Bold(true).PaddingBottom(1).Render("📆  Weekly Activity")
 
 		maxCount := 0
 		for _, count := range m.metrics.DayOfWeek {
@@ -590,7 +590,7 @@ func (m model) View() string {
 			BorderForeground(lipgloss.Color(m.asciiColors[3])).
 			Render(dayOfWeekHistogramTitle + "\n" + daysOfWeekHistogramStr)
 
-		timeOfDayHistogramPageTitle := lipgloss.NewStyle().Bold(true).PaddingBottom(1).Render("Daily Activity")
+		timeOfDayHistogramPageTitle := lipgloss.NewStyle().Bold(true).PaddingBottom(1).Render("🕑  Daily Activity")
 
 		maxCount = 0
 		for _, count := range m.metrics.TimeOfDay {
@@ -657,19 +657,18 @@ func (m model) View() string {
 			Padding(0, 2).
 			Render(lipgloss.JoinVertical(lipgloss.Left, timeOfDayHistogramPageTitle, timeOfDayStr))
 
+		commitTitle := "😬  Shortest Commit Msg"
 		commitMsgSummary := ""
 
-		fakeLongMsg := "This is a long message to test the len of commits"
-
 		if m.metrics.ShortedCommitTime != 0 {
-			// commitTime := time.Unix(int64(m.metrics.ShortedCommitTime), 0).Local()
-			// commitTimeStr := lipgloss.NewStyle().Italic(true).Render(commitTime.Format("January 2 at 3:04pm"))
+			commitTime := time.Unix(int64(m.metrics.ShortedCommitTime), 0).Local()
+			commitTimeStr := lipgloss.NewStyle().Italic(true).Render(commitTime.Format("Jan 2"))
 			commitMsgSummary = lipgloss.JoinVertical(lipgloss.Left,
-				lipgloss.NewStyle().Bold(true).Render("Shortest Commit Message"),
-				truncate(fakeLongMsg, 24))
+				lipgloss.NewStyle().Bold(true).Render(commitTitle),
+				"'"+truncate(m.metrics.ShortesGitCommit, 12)+"' on "+commitTimeStr)
 		} else {
 			commitMsgSummary = lipgloss.JoinVertical(lipgloss.Left,
-				lipgloss.NewStyle().Bold(true).Render("Shortest Commit Message"),
+				lipgloss.NewStyle().Bold(true).Render(commitTitle),
 				"No commits found")
 		}
 
