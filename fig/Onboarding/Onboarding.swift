@@ -10,9 +10,8 @@ import Foundation
 import Sentry
 
 class Onboarding {
-    
-    // check current hash with ...
-    static let commitHashForVersion = ""//["1.0.24" : "hi"]
+  
+    static let loginURL: URL = Remote.baseURL.appendingPathComponent("login", isDirectory: true)
     
     static func setUpEnviroment(completion:( () -> Void)? = nil) {
       

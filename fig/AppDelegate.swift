@@ -114,7 +114,7 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
         let hasLaunched = UserDefaults.standard.bool(forKey: "hasLaunched")
         let email = UserDefaults.standard.string(forKey: "userEmail")
 
-        if (!hasLaunched || email == nil) {
+        if (true || !hasLaunched || email == nil) {
             Defaults.shared.loggedIn = false
             Defaults.shared.build = .production
             Defaults.shared.clearExistingLineOnTerminalInsert = true
@@ -133,6 +133,8 @@ class AppDelegate: NSObject, NSApplicationDelegate,NSWindowDelegate {
             onboardingWindow.makeKeyAndOrderFront(nil)
             onboardingWindow.setFrame(NSRect(x: 0, y: 0, width: 590, height: 480), display: true, animate: false)
             onboardingWindow.center()
+            onboardingWindow.appearance = NSAppearance(named:NSAppearance.Name.vibrantLight)
+
             onboardingWindow.makeKeyAndOrderFront(self)
             
             UserDefaults.standard.set(true, forKey: "hasLaunched")
