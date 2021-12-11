@@ -182,6 +182,9 @@ class Settings {
     settings.center()
     settings.makeKeyAndOrderFront(self)
     
+    // Set color to match background of settings app to avoid flicker while loading
+    settings.backgroundColor = NSColor(hex: "#282a36")
+    
     settings.delegate = settings
     settings.isReleasedWhenClosed = false
     settings.level = .normal
@@ -219,7 +222,7 @@ class Settings {
   }
   
   func getKeybindings(forKey key: String) -> [String : String]? {
-    return keybindings[key]
+    return keybindings[key] 
   }
   
   fileprivate func serialize() {

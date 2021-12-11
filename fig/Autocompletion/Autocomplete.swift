@@ -20,25 +20,6 @@ class Autocomplete {
   }
   
   static let throttler = Throttler(minimumDelay: 0.05)
-  static func update(with context: (String, Int)?, for windowHash: ExternalWindowHash) {
-    let tty = ShellHookManager.shared.tty(for: windowHash)
-    let ttyDescriptor = tty?.descriptor == nil ? "null" : "'\(tty!.descriptor)'"
-    let cmd = tty?.cmd == nil ? "null" : "'\(tty!.cmd!)'"
-    let cwd = tty?.cwd == nil ? "null" : "`\(tty!.cwd!.trimmingCharacters(in: .whitespacesAndNewlines))`"
-    let prefix = tty?.runUsingPrefix == nil ? "null" : "`\(tty!.runUsingPrefix!)`"
-    if let (buffer, index) = context, let b64 = buffer.data(using: .utf8)?.base64EncodedString() {
-      // We aren't setting the tetheredWindow!
-      
-      Autocomplete.log(buffer, index)
-      
-      print("fig.autocomplete = \(buffer)")
-      print("fig.autocomplete(b64DecodeUnicode(`\(b64)`), \(index), '\(windowHash)', \(ttyDescriptor), \(cwd), \(cmd), \(prefix))")
-      WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try{ fig.autocomplete(b64DecodeUnicode(`\(b64)`), \(index), '\(windowHash)', \(ttyDescriptor), \(cwd), \(cmd), \(prefix)) } catch(e){} ", completionHandler: nil)
-    } else {
-      WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try{ fig.nocontext('\(windowHash)') } catch(e){} ", completionHandler: nil)
-    }
-    
-  }
   
   static func runJavascript(_ command: String) {
     WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try{ \(command) } catch(e) { console.log(e) }", completionHandler: nil)
@@ -70,7 +51,7 @@ class Autocomplete {
         Autocomplete.hide()
         WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try{ fig.keypress(\"\(Keycode.escape)\", \"\(window.hash)\") } catch(e) {}", completionHandler: nil)
     } else {
-        Autocomplete.update(with: buffer.currentState, for: window.hash)
+//        Autocomplete.update(with: buffer.currentState, for: window.session)
         Autocomplete.position()
     }
   }
@@ -95,40 +76,6 @@ class Autocomplete {
         }
       }
     }
-  }
-
-  static func handleShowOnTab(event:CGEvent, in window: ExternalWindow) -> EventTapAction {
-    let keycode = UInt16(event.getIntegerValueField(.keyboardEventKeycode))
-    guard Keycode.tab == keycode else {
-      return .ignore
-    }
-    
-    guard event.type == .keyDown else {
-      return .ignore
-    }
-    
-    // no modifier keys are pressed!
-    guard !event.flags.containsKeyboardModifier else {
-        return .ignore
-    }
-        
-    let autocompleteIsNotVisible = WindowManager.shared.autocomplete?.isHidden ?? true
-
-    let onlyShowOnTab = (Settings.shared.getValue(forKey: Settings.onlyShowOnTabKey) as? Bool) ?? false
-    
-    // if not enabled or if autocomplete is already visible, handle normally
-    if !onlyShowOnTab || !autocompleteIsNotVisible {
-      return .ignore
-    }
-    
-    // Don't intercept tab when in VSCode editor
-    guard window.isFocusedTerminal else {
-      return .forward
-    }
-    
-    // toggle autocomplete on and consume tab keypress
-    Autocomplete.toggle(for: window)
-    return .consume
   }
 }
 
@@ -156,18 +103,18 @@ class GenericShellIntegration: ShellIntegration {
         if let window = AXWindowServer.shared.whitelistedWindow,
            KeypressProvider.shared.keyBuffer(for: window).backing != nil,
            let context = KeypressProvider.shared.keyBuffer(for: window).insert(text: insertionText) {
-            Autocomplete.update(with: context, for: window.hash)
           
             let backing = KeypressProvider.shared.keyBuffer(for: window).backing
 
-            // manually trigger edit buffer update since `Autocomplete.update` is deprecated
+            // manually trigger edit buffer update
             // Only manually trigger edit buffer when not using ZLE widgets.
             // todo(mschrage): Once we consolidate on figterm to get edit buffer, remove the zle specific logic
             let (buffer, cursor) = context
             if let sessionId = window.session, backing != .zle {
               API.notifications.editbufferChanged(buffer: buffer,
                                                   cursor: cursor,
-                                                  session: sessionId)
+                                                  session: sessionId,
+                                                  context: window.associatedShellContext?.ipcContext)
             }
         }
     }

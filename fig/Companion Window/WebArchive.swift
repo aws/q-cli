@@ -11,6 +11,7 @@ import Foundation
 import WebArchiver
 
 extension WebView {
+    static let doNotArchive: Set<URL> = [ Onboarding.loginURL ]
     
     fileprivate var cacheDirectory: URL {
         guard let cachesDirectory = FileManager.default.urls(for: .cachesDirectory, in: .allDomainsMask).first else {
@@ -34,7 +35,7 @@ extension WebView {
     
     func archive() {
         
-        guard let url = self.url, !url.isFileURL, url.host != "localhost" else {
+        guard let url = self.url, !url.isFileURL, url.host != "localhost", !WebView.doNotArchive.contains(url) else {
             return
         }
         self.archive(to: archivePath(for: url).path)
@@ -45,6 +46,12 @@ extension WebView {
         guard let url = self.url else {
             return
         }
+      
+        guard !WebView.doNotArchive.contains(url) else {
+            Logger.log(message: "NOT archiving \(url)...")
+            return
+        }
+      
         Logger.log(message: "Archiving \(url)...")
 
         WebArchiver.archive(url: url,
@@ -68,10 +75,10 @@ extension WebView {
             
         }
     }
-    
+      
     func loadArchivedURL() {
         // ensure the requestedURL is not a fileURL to avoid infinite loop
-        guard let url = self.requestedURL, !url.isFileURL else { return }
+      guard let url = self.requestedURL, !url.isFileURL, !WebView.doNotArchive.contains(url) else { return }
         let archived = archivePath(for: url)
         Logger.log(message: "Attempting to load archived version of \(url) (\(archived))")
         self.loadFileURL(archived, allowingReadAccessTo: cacheDirectory)

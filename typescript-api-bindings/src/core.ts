@@ -18,14 +18,14 @@ export type APIResponseHandler = (
 let messageId = 0;
 const handlers: Record<number, APIResponseHandler> = {};
 
-export const setHandlerForId = (handler: APIResponseHandler, id: number) => {
+export function setHandlerForId(handler: APIResponseHandler, id: number) {
   handlers[id] = handler;
-};
+}
 
-export const sendMessage = (
+export function sendMessage(
   message: ClientOriginatedMessage['submessage'],
   handler?: APIResponseHandler
-): void => {
+) {
   const request: ClientOriginatedMessage = {
     id: messageId += 1,
     submessage: message,
@@ -49,7 +49,7 @@ export const sendMessage = (
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
   window.webkit.messageHandlers.proto.postMessage(b64);
-};
+}
 
 const recievedMessage = (response: ServerOriginatedMessage): void => {
   if (response.id === undefined) {

@@ -1,17 +1,26 @@
 import { sendPositionWindowRequest } from './requests';
 
 // Developer Facing API
-const isValidFrame = async (frame: {
+export async function isValidFrame(frame: {
   width: number;
   height: number;
   anchorX: number;
-}) =>
-  sendPositionWindowRequest({
+}) {
+  return sendPositionWindowRequest({
     size: { width: frame.width, height: frame.height },
     anchor: { x: frame.anchorX, y: 0 },
     dryrun: true,
   });
+}
 
-const WindowPosition = { isValidFrame };
-
-export default WindowPosition;
+export async function setFrame(frame: {
+  width: number;
+  height: number;
+  anchorX: number;
+  offsetFromBaseline: number | undefined;
+}) {
+  return sendPositionWindowRequest({
+    size: { width: frame.width, height: frame.height },
+    anchor: { x: frame.anchorX, y: frame.offsetFromBaseline ?? 0 },
+  });
+}

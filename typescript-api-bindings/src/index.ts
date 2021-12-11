@@ -1,13 +1,13 @@
-import WindowPosition from './position';
-import Settings from './settings';
-import EditBufferNotifications from './editbuffer';
-import PTY from './pty';
-import Shell from './shell';
-import Keybindings from './keybindings';
-import Defaults from './defaults';
-import Telemetry from './telemetry';
-import fs from './filesystem';
-import Config from './config';
+import * as WindowPosition from './position';
+import * as Settings from './settings';
+import * as EditBufferNotifications from './editbuffer';
+import * as PTY from './pty';
+import * as Shell from './shell';
+import * as Keybindings from './keybindings';
+import * as Defaults from './defaults';
+import * as Telemetry from './telemetry';
+import * as fs from './filesystem';
+import * as Config from './config';
 
 import * as Fig from './fig';
 import * as Internal from './requests';
@@ -38,6 +38,5 @@ export {
   Telemetry,
   fs,
   Config,
-  Internal,
   Fig,
 };

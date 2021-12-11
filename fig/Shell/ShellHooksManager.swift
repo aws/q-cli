@@ -435,14 +435,14 @@ extension ShellHookManager {
       // ZLE doesn't handle signals sent to shell, like control+c
       // So we need to manually force an update when the line changes
       DispatchQueue.main.async {
-        Autocomplete.update(with: ("", 0), for: hash)
         Autocomplete.position()
         
-        // manually trigger edit buffer update since `Autocomplete.update` is deprecated
-        API.notifications.post(Fig_EditBufferChangedNotification.with({ notification in
-          notification.buffer = ""
-          notification.cursor = 0
-        }))
+        // manually trigger edit buffer update
+        API.notifications.editbufferChanged(buffer: "",
+                                            cursor: 0,
+                                            session: context.sessionID,
+                                            context: context)
+
       }
       KeypressProvider.shared.keyBuffer(for: hash).backedByShell = false
     }
@@ -504,7 +504,8 @@ extension ShellHookManager {
   func updateKeybuffer(context: Local_ShellContext, text: String, cursor: Int, histno: Int) {
     
     // invariant: frontmost whitelisted window is assumed to host shell session which sent this edit buffer event.
-    guard let hash = AXWindowServer.shared.whitelistedWindow?.hash else {
+    let window = AXWindowServer.shared.whitelistedWindow
+    guard let hash = window?.hash else {
       Logger.log(
         message: "Could not link to window on new shell session.", priority: .notify,
         subsystem: .tty)
@@ -568,17 +569,15 @@ extension ShellHookManager {
     guard Defaults.shared.loggedIn, Defaults.shared.useAutocomplete else {
       return
     }
-    API.notifications.post(
-      Fig_EditBufferChangedNotification.with({ notification in
-        if let (buffer, cursor) = keybuffer.currentState {
-          notification.buffer = buffer
-          notification.cursor = Int32(cursor)
-        }
+    
+    if let (buffer, cursor) = keybuffer.currentState {
+      API.notifications.editbufferChanged(buffer: buffer,
+                                          cursor: cursor,
+                                          session: context.sessionID,
+                                          context: window?.associatedShellContext?.ipcContext)
+    }
 
-        notification.sessionID = context.sessionID
-      }))
     DispatchQueue.main.async {
-      Autocomplete.update(with: (text, cursor), for: hash)
       Autocomplete.position()
 
     }
@@ -657,14 +656,16 @@ extension ShellHookManager {
     for sessionId: SessionId, currentTopmostWindow: ExternalWindow? = nil
   ) -> ExternalWindowHash? {
     
-    guard let hash = TerminalSessionLinker.shared.associatedWindowHash(for: sessionId) else {
+    guard let session = TerminalSessionLinker.shared.getTerminalSession(for: sessionId) else {
       Logger.log(message: "Could not find hash for sessionId '\(sessionId)'", subsystem: .tty)
 
       return nil
     }
     
+    
+    let hash = session.generateLegacyWindowHash()
+    
     Logger.log(message: "Found WindowHash '\(hash)' for sessionId '\(sessionId)'", subsystem: .tty)
-
 
     return hash
   }

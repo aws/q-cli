@@ -37,11 +37,11 @@ class KeypressProvider {
   var tap: CFMachPort? = nil
   var mouseHandler: Any? = nil
   var redirectsEnabled: Bool = true
+  var globalKeystrokeInterceptsEnabled: Bool = false
   let throttler = Throttler(minimumDelay: 0.05)
   var buffers: [ExternalWindowHash: KeystrokeBuffer] = [:]
   fileprivate let handlers: [EventTapHandler] =
     [ InputMethod.keypressTrigger
-    , Autocomplete.handleShowOnTab
     , KeypressProvider.processRegisteredHandlers
     , KeypressProvider.handleRedirect
     ]
@@ -116,14 +116,7 @@ class KeypressProvider {
             Autocomplete.hide()
           }
         case .keyUp:
-          guard event.keyCode == Keycode.returnKey || event.modifierFlags.contains(.control) else { return }
-          if let window = AXWindowServer.shared.whitelistedWindow, let tty = window.tty {
-            Timer.delayWithSeconds(0.2) {
-              DispatchQueue.global(qos: .userInteractive).async {
-                tty.update()
-              }
-            }
-          }
+          break
         default:
           print("Unknown keypress event")
       }
@@ -213,13 +206,7 @@ class KeypressProvider {
       
       let keyName = KeyboardLayout.humanReadableKeyName(event) ?? "?"
       
-      Logger.log(message: "\(action) '\(keyName)' in \(window.bundleId ?? "<unknown>") [\(window.hash)], \(window.tty?.descriptor ?? "???") (\(window.tty?.name ?? "???")) \(window.tty?.pid ?? 0)", subsystem: .keypress)
-
-      
-      guard window.tty?.isShell ?? true else {
-        print("tty: Is not in a shell")
-        return Unmanaged.passUnretained(event)
-      }
+      Logger.log(message: "\(action) '\(keyName)' in \(window.bundleId ?? "<unknown>") [\(window.hash)], \(window.associatedShellContext?.ttyDescriptor ?? "???") (\(window.associatedShellContext?.executablePath ?? "???")) \(window.associatedShellContext?.processId ?? 0)", subsystem: .keypress)
       
       // process handlers (order is important)
       for handler in KeypressProvider.shared.handlers {
@@ -283,13 +270,7 @@ class KeypressProvider {
   }
   
   @objc func lineAcceptedInKeystrokeBuffer() {
-    if let window = AXWindowServer.shared.whitelistedWindow, let tty = window.tty {
-      Timer.delayWithSeconds(0.2) {
-        DispatchQueue.global(qos: .userInteractive).async {
-          tty.update()
-        }
-      }
-    }
+
   }
   
   @objc func accesibilityPermissionsUpdated(_ notification: Notification) {
@@ -308,19 +289,33 @@ class KeypressProvider {
     KeypressProvider.shared.redirectsEnabled = value
   }
   
+  func setGlobalKeystrokeInterceptsEnabled(value: Bool) {
+    KeypressProvider.shared.globalKeystrokeInterceptsEnabled = value
+  }
+  
   static func handleRedirect(event:CGEvent, in window: ExternalWindow) -> EventTapAction {
     // prevent redirects when typing in VSCode editor
     guard window.isFocusedTerminal else {
       return .forward
     }
-        
+    
+    guard let context = window.associatedShellContext, context.isShell() else {
+      return .forward
+    }
+    
     if let keybindingString = KeyboardLayout.humanReadableKeyName(event) {
       if let bindings = Settings.shared.getKeybindings(forKey: keybindingString) {
         // Right now only handle autocomplete.keybindings
         if let autocompleteBinding = bindings["autocomplete"] {
           let autocompleteIsHidden = WindowManager.shared.autocomplete?.isHidden ?? true
           let action = autocompleteBinding.split(separator: " ").first
-          let isGlobalAction = Autocomplete.globalActions.contains(String(action ?? "")) || autocompleteBinding.contains("--global")
+          let onlyShowOnTab = Settings.shared.getValue(forKey: Settings.onlyShowOnTabKey) as? Bool ?? false;
+
+          let isGlobalAction = KeypressProvider.shared.globalKeystrokeInterceptsEnabled && (
+            keybindingString == "tab" && onlyShowOnTab ||
+            autocompleteBinding.contains("--global") ||
+            Autocomplete.globalActions.contains(String(action ?? ""))
+          )
           
           guard isGlobalAction || !autocompleteIsHidden else {
             return .ignore

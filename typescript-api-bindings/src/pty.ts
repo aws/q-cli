@@ -3,7 +3,7 @@ import {
   sendPseudoterminalWriteRequest,
 } from './requests';
 
-const execute = async (
+export async function execute(
   command: string,
   options:
     | {
@@ -13,23 +13,21 @@ const execute = async (
         backgroundJob: boolean | undefined;
       }
     | undefined
-) =>
-  sendPseudoterminalExecuteRequest({
+) {
+  return sendPseudoterminalExecuteRequest({
     command: command,
     isPipelined: options?.isPipelined ?? false,
     backgroundJob: options?.backgroundJob ?? true,
     workingDirectory: options?.directory,
     env: [],
   });
+}
 
-const write = async (text: string): Promise<void> =>
-  sendPseudoterminalWriteRequest({
+export async function write(text: string): Promise<void> {
+  return sendPseudoterminalWriteRequest({
     input: {
       $case: 'text',
       text: text,
     },
   });
-
-const PTY = { execute, write };
-
-export default PTY;
+}

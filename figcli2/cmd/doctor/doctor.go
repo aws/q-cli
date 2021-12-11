@@ -198,7 +198,7 @@ func NewCmdDoctor() *cobra.Command {
 					}
 				}
 
-				fmt.Println(lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Render("\nLet's check your if your system is compatible...\n"))
+				fmt.Println(lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Render("\nLet's check if your system is compatible...\n"))
 
 				// Check if darwin
 				if runtime.GOOS == "darwin" {
@@ -408,7 +408,7 @@ func NewCmdDoctor() *cobra.Command {
 				}
 
 				// Integrations
-				fmt.Println(lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Render("\nLet's check your your integration statuses...\n"))
+				fmt.Println(lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Render("\nLet's check your integration statuses...\n"))
 
 				// SSH Integration
 				// TODO

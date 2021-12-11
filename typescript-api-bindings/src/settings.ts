@@ -5,45 +5,47 @@ import {
   sendGetSettingsPropertyRequest,
   sendUpdateSettingsPropertyRequest,
 } from './requests';
-const subscribe = (
-  handler: (notification: SettingsChangedNotification) => boolean | undefined
-) => {
-  return _subscribe(
-    { type: NotificationType.NOTIFY_ON_SETTINGS_CHANGE },
-    notification => {
-      switch (notification?.type?.$case) {
-        case 'settingsChangedNotification':
-          return handler(notification.type.settingsChangedNotification);
-        default:
-          break;
-      }
 
-      return false;
-    }
-  );
+export const didChange = {
+  subscribe: (
+    handler: (notification: SettingsChangedNotification) => boolean | undefined
+  ) => {
+    return _subscribe(
+      { type: NotificationType.NOTIFY_ON_SETTINGS_CHANGE },
+      notification => {
+        switch (notification?.type?.$case) {
+          case 'settingsChangedNotification':
+            return handler(notification.type.settingsChangedNotification);
+          default:
+            break;
+        }
+
+        return false;
+      }
+    );
+  },
 };
 
-const get = async (key: string) =>
-  sendGetSettingsPropertyRequest({
+export async function get(key: string) {
+  return sendGetSettingsPropertyRequest({
     key: key,
   });
+}
 
-const set = async (key: string, value: any): Promise<void> =>
-  sendUpdateSettingsPropertyRequest({
+export async function set(key: string, value: any): Promise<void> {
+  return sendUpdateSettingsPropertyRequest({
     key: key,
     value: JSON.stringify(value),
   });
+}
 
-const remove = async (key: string): Promise<void> =>
-  sendUpdateSettingsPropertyRequest({
+export async function remove(key: string): Promise<void> {
+  return sendUpdateSettingsPropertyRequest({
     key: key,
   });
+}
 
-const current = async () => {
+export async function current() {
   let all = await sendGetSettingsPropertyRequest({});
   return JSON.parse(all.jsonBlob ?? '{}');
-};
-const didChange = { subscribe };
-const Settings = { didChange, get, set, remove, current };
-
-export default Settings;
+}

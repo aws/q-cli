@@ -3,17 +3,15 @@ import {
   sendUpdateConfigPropertyRequest,
 } from './requests';
 
-const get = async (key: string) => {
+export async function get(key: string) {
   let response = await sendGetConfigPropertyRequest({ key: key });
   return response.value;
-};
+}
 
-const set = (key: string, value: string) =>
-  sendUpdateConfigPropertyRequest({ key: key, value: value });
+export function set(key: string, value: string) {
+  return sendUpdateConfigPropertyRequest({ key: key, value: value });
+}
 
-const remove = (key: string) =>
-  sendUpdateConfigPropertyRequest({ key: key, value: undefined });
-
-const Config = { get, set, remove };
-
-export default Config;
+export function remove(key: string) {
+  return sendUpdateConfigPropertyRequest({ key: key, value: undefined });
+}

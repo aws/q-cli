@@ -97,6 +97,15 @@ static int unix_socket_connect(char *path) {
   remote.sun_family = AF_UNIX;
   strcpy(remote.sun_path, path);
 
+  // https://rigtorp.se/sockets/
+#if defined(__APPLE__)
+  int opt = 1;
+  if (setsockopt(sock, SOL_SOCKET, SO_NOSIGPIPE, &opt, sizeof(opt)) == -1) {
+      log_err("Failed to set SO_NOSIGPIPE");
+      return -1;
+  }
+#endif
+
   size_t len = SUN_LEN(&remote);
   if (connect(sock, (struct sockaddr *)&remote, len) == -1) {
     log_err("Failed to connect to socket");
@@ -165,7 +174,6 @@ int fig_socket_send(char* buf) {
   // Base64 encode buf and send to fig socket.
   int st;
   size_t out_len;
-  SigHandler* old_handler;
 
   unsigned char *encoded =
       base64_encode((unsigned char *) buf, strlen(buf), &out_len);
@@ -176,18 +184,19 @@ int fig_socket_send(char* buf) {
     CHECK_SYS(set_blocking(fig_sock, false), "Couldn't set fig sock to nonblocking");
   }
   
-  // Handle sigpipe if socket is closed, reset afterwards.
-  if ((old_handler = set_sigaction(SIGPIPE, fig_sigpipe_handler)) == SIG_ERR)
-    err_sys("sigpipe error");
-  st = send(fig_sock, encoded, out_len, MSG_NOSIGNAL);
 
-  if (st < 0 && errno == EPIPE) {
-    fig_sigpipe_handler(SIGPIPE);
+  int flags = 0;
+#if !defined(__APPLE__)
+  flags = MSG_NOSIGNAL;
+#endif
+  st = send(fig_sock, encoded, out_len, flags);
+
+  if (st < 0) {
+    if (errno == EPIPE) {
+      fig_sigpipe_handler(SIGPIPE);
+    }
     log_err("Error sending buffer to socket");
   }
-
-  if (set_sigaction(SIGPIPE, old_handler) == SIG_ERR)
-    err_sys("sigpipe error");
 
   return st;
 }
@@ -195,7 +204,6 @@ int fig_socket_send(char* buf) {
 int ipc_socket_send(char* buf, int len) {
   // send to ipc socket. No base64 encoding.
   int st;
-  SigHandler* old_handler;
 
   if (ipc_sock < 0) {
     char* path = printf_alloc("%sfig.socket", getenv("TMPDIR"));
@@ -205,16 +213,17 @@ int ipc_socket_send(char* buf, int len) {
     free(path);
   }
 
-  // Handle sigpipe if socket is closed, reset afterwards.
-  if ((old_handler = set_sigaction(SIGPIPE, ipc_sigpipe_handler)) == SIG_ERR)
-    err_sys("sigpipe error");
-  st = send(ipc_sock, buf, len, MSG_NOSIGNAL);
-  if (st < 0 && errno == EPIPE) {
-    ipc_sigpipe_handler(SIGPIPE);
+  int flags = 0;
+#if !defined(__APPLE__)
+  flags = MSG_NOSIGNAL;
+#endif
+  st = send(ipc_sock, buf, len, flags);
+  if (st < 0) {
+    if (errno == EPIPE) {
+      ipc_sigpipe_handler(SIGPIPE);
+    }
     log_err("Error sending buffer to socket");
   }
-  if (set_sigaction(SIGPIPE, old_handler) == SIG_ERR)
-    err_sys("sigpipe error");
 
   return st;
 }
