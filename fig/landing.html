@@ -227,50 +227,13 @@
 <!--              color: #5e5e5e; width: 275px; margin-left: auto; margin-right: auto;">Fig will append to your .profile, .zshrc, .bashrc and others.</span>-->
         </header>
     </div>
+    <script src="./API.js"> </script>
+
     <script>
-      //document.querySelector('video').playbackRate = 1.4;
-
-        fig.init = () => {
-            fig.focus()
-        }
-        let ws = function () {
-            //fig.onboarding("ws")
-            window.location.href = "./cli.html"
-            
-        }
-
-        let cli = function () {
-            fig.onboarding("cli", () => {
-               fig.focus()
-               window.location.href = './permissions.html'
-            })
-        }
-
-        let permissions = function () {
-            fig.onboarding("permissions", () => {
-
-            })
-        }
-        // const progressbar = document.querySelector('progress')
-        // const article = document.querySelector('body')
-
-        // let isScrolling = false
-
-        // document.addEventListener('scroll', (e) => isScrolling = true)
-
-        // render()
-
-        // function render() {
-
-        //     requestAnimationFrame(render)
-
-        //     if (!isScrolling) return
-
-        //     progressbar.value = window.scrollY / (article.offsetHeight - window.innerHeight) * 100
-
-        //     isScrolling = false
-
-        // }
+      let cli = () => {
+          window.location.href = './permissions.html'
+      }
+      
     </script>
 </body>
 

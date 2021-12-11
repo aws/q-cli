@@ -559,7 +559,7 @@
   <body>
     <div class="wrapper">
       <section>
-        <div class="section">
+        <div class="section" id="no-internet">
           <span class="title" href="javascript:appearance()" id="appearance"
             >Customize Theme</span
           >
@@ -587,9 +587,6 @@
           </p>
 
           <div class="button" onclick="handleContinue()"><a>Continue</a></div>
-          <a href="javascript:next()" id="skip" style="display: none"
-            >Continue to next step manually</a
-          >
         </div>
       </section>
     </div>
@@ -1025,6 +1022,15 @@
         sendMessage({ updateSettingsPropertyRequest: { key: "autocomplete.theme", value: JSON.stringify(settings["autocomplete.theme"]) }})
 
         window.location.href = `${fig.constants.remote}/login`;
+        
+        
+        setTimeout(() => {
+           document.querySelector("#no-internet").innerHTML =
+           `
+           <strong>Fig cannot connect to app.withfig.com/login/</strong><br><p>Please check that you have access to the public internet and are not using a VPN that interferes with Fig's backend.<br><br>Report any bugs at https://github.com/withfig/fig</p>
+           `
+            
+        },1000 * 5)
       }
         
         // Load themes dynamically!
