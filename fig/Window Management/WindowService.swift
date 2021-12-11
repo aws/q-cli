@@ -231,27 +231,6 @@ extension ExternalApplication : App {
 extension NSRunningApplication : App {}
 typealias ExternalWindowHash = String
 
-struct KeystrokeBuffer {
-  enum Backing: String {
-    case zsh = "zsh"
-    case fish = "fish"
-    case bash = "bash"
-  }
-
-  var backing: Backing?
-  var cursor: Int
-  var text: String
-
-  var representation: String {
-      get {
-        var bufferCopy = text;
-        let index = text.index(text.startIndex, offsetBy: cursor, limitedBy: text.endIndex) ?? text.endIndex
-        bufferCopy.insert("|", at: index)
-        return bufferCopy
-      }
-  }
-}
-
 class ExternalWindow {
     let frame: NSRect
     let windowId: CGWindowID
@@ -265,20 +244,15 @@ class ExternalWindow {
         }
     }
 
-    var bufferInfo = KeystrokeBuffer(backing: nil, cursor: 0, text: "") {
-        didSet {
-            if Defaults.shared.loggedIn, Defaults.shared.useAutocomplete, let sessionId = session {
-              API.notifications.editbufferChanged(buffer: bufferInfo.text,
-                                                  cursor: bufferInfo.cursor,
-                                                  session: sessionId,
-                                                  context: associatedShellContext?.ipcContext)
-            }
-        }
-    }
-
     var associatedShellContext: ShellContext? {
         get {
         return windowMetadataService.getAssociatedShellContext(for: self.windowId)
+        }
+    }
+  
+    var associatedEditBuffer: EditBuffer? {
+        get {
+          return windowMetadataService.getAssociatedEditBuffer(for: self.windowId)
         }
     }
   

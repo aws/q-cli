@@ -12,7 +12,7 @@ class Autocomplete {
   // todo: load global actions from ~/.fig/apps/autocomplete/actions.json
   static let globalActions = ["toggleAutocomplete", "showAutocomplete"]
 
-  static let throttler = Throttler(minimumDelay: 0.05)
+  static let throttler = Throttler(minimumDelay: 0.001)
   
   static func runJavascript(_ command: String) {
     WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try{ \(command) } catch(e) { console.log(e) }", completionHandler: nil)
@@ -68,13 +68,16 @@ class ShellInsertionProvider {
     // requires delay proportional to number of character inserted
     // unfortunately, we don't really know how long this will take - it varies significantly between native and Electron terminals.
     // We can probably be smarter about this and modulate delay based on terminal.
-    let delay = min(0.01 * Double(insertionText.count), 0.15)
-    Timer.delayWithSeconds(delay) {
+//    let delay = 0.05// min(0.01 * Double(insertionText.count), 0.15)
+//    Timer.delayWithSeconds(delay) {
         try? FileManager.default.removeItem(atPath: insertionLock)
 
-        if let window = AXWindowServer.shared.whitelistedWindow, window.bufferInfo.backing != nil {
-            var text = window.bufferInfo.text
-            var cursor = text.index(text.startIndex, offsetBy: window.bufferInfo.cursor)
+      if let window = AXWindowServer.shared.whitelistedWindow,
+         let sessionId = window.session,
+         let editBuffer = window.associatedEditBuffer {
+            
+            var text = editBuffer.text
+            var index = text.index(text.startIndex, offsetBy: editBuffer.cursor)
 
             var skip = 0
             for (idx, char) in insertionText.enumerated() {
@@ -82,39 +85,46 @@ class ShellInsertionProvider {
                 guard skip == 0 else { skip -= 1; break }
                 switch value {
                 case 8: //backspace literal
-                    guard cursor != text.startIndex else { break }
-                    cursor = text.index(before: cursor)
-                    text.remove(at: cursor)
+                    guard index != text.startIndex else { break }
+                    index = text.index(before: index)
+                    text.remove(at: index)
                 case 27: // ESC
                     if let direction = insertionText.index(insertionText.startIndex, offsetBy: idx + 2, limitedBy: insertionText.endIndex) {
                     let esc = insertionText[direction]
                         if (esc == "D") {
-                            guard cursor != text.startIndex else { break }
-                            cursor = text.index(before: cursor)
+                            guard index != text.startIndex else { break }
+                            index = text.index(before: index)
                             skip = 2
                         } else if (esc == "C") { // forward one
-                            guard cursor != text.endIndex else { break }
-                            cursor = text.index(after: cursor)
+                            guard index != text.endIndex else { break }
+                            index = text.index(after: index)
                             skip = 2
                         }
                     }
                     break
                 case 10: // newline literal
                     text = ""
-                    cursor = text.startIndex
+                    index = text.startIndex
                     NotificationCenter.default.post(name: Self.lineAcceptedInKeystrokeBufferNotification, object: nil)
                 default:
-                    guard text.endIndex >= cursor else { return }
-                    text.insert(char, at: cursor)
-                  cursor = text.index(cursor, offsetBy: 1, limitedBy: text.endIndex) ?? text.endIndex
+                    guard text.endIndex >= index else { return }
+                    text.insert(char, at: index)
+                  index = text.index(index, offsetBy: 1, limitedBy: text.endIndex) ?? text.endIndex
                 }
             }
-            
-            window.bufferInfo = KeystrokeBuffer(
-              backing: window.bufferInfo.backing,
-              cursor: text.distance(from: text.startIndex, to: cursor),
-              text: text)
-        }
+          
+            let cursor = text.distance(from: text.startIndex, to: index)
+          TerminalSessionLinker.shared.setEditBuffer(for: sessionId,
+                                                      text: text,
+                                                      cursor: cursor)
+        
+          API.notifications.editbufferChanged(buffer: text,
+                                              cursor: cursor,
+                                              session: sessionId,
+                                              context: window.associatedShellContext?.ipcContext)
+        
+          Autocomplete.position()
+//      }
     }
   }
 }

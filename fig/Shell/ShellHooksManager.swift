@@ -417,15 +417,13 @@ extension ShellHookManager {
 
     // Set version (used for checking compatibility)
     tty.shellIntegrationVersion = Int(context.integrationVersion)
-
+    API.notifications.editbufferChanged(buffer: "",
+                                        cursor: 0,
+                                        session: context.sessionID,
+                                        context: context)
+  
     DispatchQueue.main.async {
-        Autocomplete.position()
-        
-        // manually trigger edit buffer update on preexec
-        API.notifications.editbufferChanged(buffer: "",
-                                            cursor: 0,
-                                            session: context.sessionID,
-                                            context: context)
+      Autocomplete.position()
     }
   }
 
@@ -492,16 +490,25 @@ extension ShellHookManager {
     guard !SecureKeyboardInput.enabled else {
       return
     }
-
-    window.bufferInfo = KeystrokeBuffer(
-        backing: KeystrokeBuffer.Backing(rawValue: String(context.processName.split(separator: "/").last ?? "")),
-        cursor: cursor,
-        text: text
-    )
-
+    
+    
+    // What need to be true for us to send notification!
+    guard let session = TerminalSessionLinker.shared.getTerminalSession(for: context.sessionID),
+          let editBuffer = session.editBuffer,
+          Defaults.shared.loggedIn,
+          Defaults.shared.useAutocomplete else {
+      return
+    }
+    
+    API.notifications.editbufferChanged(buffer: editBuffer.text,
+                                        cursor: editBuffer.cursor,
+                                        session: session.terminalSessionId,
+                                        context: session.shellContext?.ipcContext)
+  
     DispatchQueue.main.async {
       Autocomplete.position()
     }
+    
   }
 
   func tmuxPaneChangedLegacy(_ info: ShellMessage) {

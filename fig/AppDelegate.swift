@@ -1596,18 +1596,6 @@ extension AppDelegate : NSMenuDelegate {
             
         let path = Diagnostic.pseudoTerminalPathAppearsValid
 
-        var backing: String?
-        switch windowSafe.bufferInfo.backing {
-        case .zsh:
-            backing = "ZSH Command Line"
-        case .fish:
-            backing = "Fish Command Line"
-        case .bash:
-            backing = "Bash Command Line"
-        default:
-            backing = nil
-        }
-        
         let items = stringArrayToMenu(items: [
             "Everything should be working.",
             "---",
@@ -1615,10 +1603,8 @@ extension AppDelegate : NSMenuDelegate {
             "tty: \(shellContext.ttyDescriptor)",
             "cwd: \(shellContext.workingDirectory)",
             "pid: \(shellContext.processId)",
-            "keybuffer: \(windowSafe.bufferInfo.representation)",
+            "keybuffer: \(windowSafe.associatedEditBuffer?.representation ?? "???")",
             "path: \( path != nil ? (path! ? "☑" : "☒ ") : "<generated dynamically>")",
-            "---",
-            "Backed by \(backing ?? "???")",
         ])
         return (NSColor.green, items)
     }

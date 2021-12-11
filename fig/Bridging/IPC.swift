@@ -242,6 +242,7 @@ class IPC: UnixSocketServerDelegate {
     
     switch message.hook {
     case .editBuffer(let hook):
+      // NOTE: IPC notifications update TerminalSessionLinker and MUST occur before everything else!
       IPC.post(notification: .editBuffer, object: hook)
 
       ShellHookManager.shared.updateKeybuffer(
