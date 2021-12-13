@@ -205,9 +205,11 @@ func Metrics(history []History) HistoryMetrics {
 	for _, h := range history {
 		command := strings.TrimSpace(h.Command)
 
-		if command == "" || strings.Contains(command, `\n`) {
+		if command == "" || strings.Contains(command, `\n`) || strings.Contains(command, ";") {
 			continue
 		}
+
+		command = strings.ReplaceAll(command, `\/`, `/`)
 
 		workingDirMap[h.Cwd]++
 
