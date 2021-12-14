@@ -11,6 +11,9 @@ on:
     branches:
     - figterm2
 
+env:
+  CARGO_TERM_COLOR: always
+
 jobs:
   rust_build_test:
     name: Rust Build Test
@@ -45,24 +48,3 @@ jobs:
 
     - name: Test
       run: cargo test -- --nocapture --quiet
-
-  clippy_check:
-    name: Clippy Checks
-    runs-on: ubuntu-latest
-
-    defaults:
-      run:
-        working-directory: figterm
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Add clippy
-        run: rustup component add clippy
-
-      - name: Clippy checks
-        uses: actions-rs/clippy-check@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          args: --all-features

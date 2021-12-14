@@ -26,7 +26,6 @@ ioctl_write_ptr_bad!(tiocswinsz, libc::TIOCSWINSZ, Winsize);
 
 const BUFFER_SIZE: usize = 1024;
 
-//
 fn main() -> Result<(), Box<dyn Error>> {
     let stdin = io::stdin();
 
