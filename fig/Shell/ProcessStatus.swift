@@ -13,12 +13,12 @@ typealias TTYDescriptor = String
 class ProcessStatus {
   // C -> Swift Bridging
   static func getProcesses(for tty: TTYDescriptor? = nil) -> [proc] {
-    
+
     // Checks that tty is descriptor name and not full path
     guard let tty = tty?.split(separator: "/").last else {
       return []
     }
-    
+
     var size: Int32 = 0
     if let ptr = getProcessInfo(String(tty), &size) {
       let buffer = UnsafeMutableBufferPointer<fig_proc_info>(start: ptr, count: Int(size))
@@ -36,7 +36,7 @@ class ProcessStatus {
           let ptr = rawPtr.baseAddress!.assumingMemoryBound(to: CChar.self)
           return String(cString: ptr)
         }
-        print("proc: ",  process.pid, cwd, cmd, tty)
+        print("proc: ", process.pid, cwd, cmd, tty)
         return proc(pid: process.pid, cmd: cmd, cwd: cwd, tty: tty)
       }
       free(ptr)
@@ -44,25 +44,25 @@ class ProcessStatus {
     }
     return []
   }
-  
+
   static func workingDirectory(for pid: Int32) -> String {
     var pathinfo = proc_vnodepathinfo()
 
     let st = proc_pidinfo(pid,
-                PROC_PIDVNODEPATHINFO,
-                0,
-                &pathinfo,
-                Int32(MemoryLayout<proc_vnodepathinfo>.size))
-    
+                          PROC_PIDVNODEPATHINFO,
+                          0,
+                          &pathinfo,
+                          Int32(MemoryLayout<proc_vnodepathinfo>.size))
+
     guard st > 0 else {
       Logger.log(message: "Error \(st): could not retrieve working directory for pid (\(pid)")
       return "/"
     }
 
     return withUnsafePointer(to: pathinfo.pvi_cdir.vip_path) {
-        $0.withMemoryRebound(to: CChar.self, capacity: MemoryLayout.size(ofValue: $0)) {
-            String(cString: $0)
-        }
+      $0.withMemoryRebound(to: CChar.self, capacity: MemoryLayout.size(ofValue: $0)) {
+        String(cString: $0)
+      }
     }
   }
 }

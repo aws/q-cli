@@ -50,17 +50,17 @@ extension CommandHandlers {
   }
 
   static func updateCommand(_ force: Bool = false) {
-      DispatchQueue.main.async {
-        if force {
-          if UpdateService.provider.updateIsAvailable {
-            UpdateService.provider.installUpdateIfAvailible()
-          }
-        } else {
-          UpdateService.provider.checkForUpdates(nil)
+    DispatchQueue.main.async {
+      if force {
+        if UpdateService.provider.updateIsAvailable {
+          UpdateService.provider.installUpdateIfAvailible()
         }
+      } else {
+        UpdateService.provider.checkForUpdates(nil)
       }
+    }
   }
-  
+
   static func diagnosticsCommand() -> CommandResponse {
     var response = CommandResponse.init()
     DispatchQueue.main.sync {
@@ -85,25 +85,25 @@ extension CommandHandlers {
     }
     return response
   }
-  
+
   static func displayReportWindow(message: String, path: String?, figEnvVar: String?, terminal: String?) {
     let placeholder =
-    """
+      """
     \(message)
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     ---------------------------------------
     DIAGNOSTIC
     \(Diagnostic.summary)
@@ -120,41 +120,41 @@ extension CommandHandlers {
       Feedback.getFeedback(source: "fig_report_cli", placeholder: placeholder)
     }
   }
-  
+
   static func buildCommand(build: String?) -> CommandResponse {
     if let buildMode = Build(rawValue: build ?? "") {
       DispatchQueue.main.async {
         Defaults.shared.build = buildMode
       }
-      
+
       return CommandResponse.with { response in
-        response.success.message = buildMode.rawValue;
+        response.success.message = buildMode.rawValue
       }
     } else {
       return CommandResponse.with { response in
-        response.success.message = Defaults.shared.build.rawValue;
+        response.success.message = Defaults.shared.build.rawValue
       }
     }
   }
-  
+
   static func restartSettingsListenerCommand() -> CommandResponse {
     DispatchQueue.main.async {
       Settings.shared.restartListener()
     }
-    
+
     return CommandResponse.with { response in
       response.success.message = "restarting ~/.fig/settings.json file watcher"
     }
   }
-  
+
   static func runInstallScriptCommand() -> CommandResponse {
     Onboarding.setUpEnviroment()
-    
+
     return CommandResponse.with { response in
       response.success.message = "running installation script"
     }
   }
-  
+
   static func openUiElement(uiElement: Local_UiElement) -> CommandResponse {
     switch uiElement {
     case .menuBar:
@@ -163,7 +163,7 @@ extension CommandHandlers {
           response.error.message = "Looks like you might be using Bartender?\n\n→ Fig can't automatically open the menu, but you can click it manually."
         }
       }
-      
+
       DispatchQueue.main.async {
         if let delegate = NSApp.delegate as? AppDelegate {
           delegate.openMenu()
@@ -177,7 +177,7 @@ extension CommandHandlers {
       DispatchQueue.main.async {
         Settings.openUI()
       }
-      
+
       return CommandResponse.with { response in
         response.success.message = ""
       }
@@ -187,7 +187,7 @@ extension CommandHandlers {
       }
     }
   }
-  
+
   static func resetCache() -> CommandResponse {
     DispatchQueue.main.async {
       WebView.deleteCache()
@@ -197,7 +197,7 @@ extension CommandHandlers {
       response.success.message = "reset cache"
     }
   }
-  
+
   static func autocompleteDebugMode(setVal: Bool?, toggleVal: Bool?) -> CommandResponse {
     DispatchQueue.main.sync {
       if let val = setVal {
@@ -206,12 +206,12 @@ extension CommandHandlers {
         Defaults.shared.debugAutocomplete = !Defaults.shared.debugAutocomplete
       }
     }
-    
+
     return CommandResponse.with { response in
       response.success.message = Defaults.shared.debugAutocomplete ? "on" : "off"
     }
   }
-  
+
   static func promptAccessibility() {
     DispatchQueue.main.async {
       Accessibility.promptForPermission()

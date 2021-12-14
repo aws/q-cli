@@ -16,13 +16,13 @@ extension ExternalWindowHash {
     let tokens = self.components(separatedBy: CharacterSet(charactersIn: "/%"))
     guard let windowId = CGWindowID(tokens[0]) else { return nil }
     let tabString = tokens[safe: 1]
-    var tab: String? = nil
+    var tab: String?
     if tabString != nil && tabString!.count > 0 {
       tab = String(tabString!)
     }
 
     let paneString = tokens[safe: 2]
-    var pane: String? = nil
+    var pane: String?
     if paneString != nil && paneString!.count > 0 {
       pane = String(paneString!)
     }
@@ -147,14 +147,13 @@ extension ShellHookManager {
 
     // refresh cache! Why don't we us Accessibility.resetCache()?
     if Integrations.electronTerminals.contains(window.bundleId ?? "") {
-      let _ = Accessibility.findXTermCursorInElectronWindow(window, skipCache: true)
+      _ = Accessibility.findXTermCursorInElectronWindow(window, skipCache: true)
       print("xterm-cursor: updating due to tab changed?")
 
     }
 
     if Integrations.providers.keys.contains(window.bundleId ?? ""),
-      let provider = Integrations.providers[window.bundleId ?? ""]
-    {
+       let provider = Integrations.providers[window.bundleId ?? ""] {
       provider.runtimeValidationOccured()
     }
 
@@ -171,9 +170,9 @@ extension ShellHookManager {
   func currentTabDidChangeLegacy(_ info: ShellMessage, includesBundleId: Bool = false) {
     Logger.log(message: "currentTabDidChange")
 
-    // Need time for whitelisted window to change
+    // Need time for allowlisted window to change
     Timer.delayWithSeconds(0.1) {
-      if let window = AXWindowServer.shared.whitelistedWindow {
+      if let window = AXWindowServer.shared.allowlistedWindow {
         if let id = info.options?.last {
 
           if includesBundleId {
@@ -207,20 +206,20 @@ extension ShellHookManager {
   func currentTabDidChange(applicationIdentifier: String, sessionId: String) {
     Logger.log(message: "currentTabDidChange")
 
-    // Need time for whitelisted window to change
+    // Need time for allowlisted window to change
     Timer.delayWithSeconds(0.1) {
-      if let window = AXWindowServer.shared.whitelistedWindow {
+      if let window = AXWindowServer.shared.allowlistedWindow {
         let CodeTerminal =
           [Integrations.VSCode, Integrations.VSCodeInsiders, Integrations.VSCodium]
-            .contains(window.bundleId)
+          .contains(window.bundleId)
           && applicationIdentifier == "code"
-        
+
         let VSCodeTerminal = window.bundleId == Integrations.VSCode
           && applicationIdentifier == "vscode"
-        
+
         let VSCodeInsidersTerminal = window.bundleId == Integrations.VSCodeInsiders
           && applicationIdentifier == "vscode-insiders"
-        
+
         let VSCodeiumTerminal = window.bundleId == Integrations.VSCodium
           && applicationIdentifier == "vscodium"
 
@@ -229,7 +228,7 @@ extension ShellHookManager {
 
         let iTermTab = window.bundleId == Integrations.iTerm
           && applicationIdentifier == "iterm"
-        
+
         let KittyTerm = window.bundleId == Integrations.Kitty
           && applicationIdentifier == "kitty"
 
@@ -245,7 +244,7 @@ extension ShellHookManager {
 
   func updateHashMetadata(oldHash: ExternalWindowHash, hash: ExternalWindowHash) {
 
-    //queue.async(flags: [.barrier]) {
+    // queue.async(flags: [.barrier]) {
     guard oldHash != hash else { return }
     guard let device = self.tty[oldHash] else { return }
     guard let sessionId = self.sessions[oldHash] else { return }
@@ -257,7 +256,7 @@ extension ShellHookManager {
     // reassign tty to new hash
     self.sessions[hash] = sessionId
     self.tty[hash] = device
-    //}
+    // }
     Logger.log(
       message: "Transfering \(oldHash) metadata to \(hash).", priority: .info, subsystem: .tty)
 
@@ -290,11 +289,12 @@ extension ShellHookManager {
   }
 
   func shellPromptWillReturn(context: Local_ShellContext) {
-    // try to find associated window, but don't necessarily link with the topmost window! (prompt can return when window is in background)
+    // try to find associated window, but don't necessarily link with the topmost window! (prompt can return when window
+    // is in background)
     guard
       let hash = attemptToFindToAssociatedWindow(
         for: context.sessionID,
-        currentTopmostWindow: AXWindowServer.shared.whitelistedWindow)
+        currentTopmostWindow: AXWindowServer.shared.allowlistedWindow)
     else {
       Logger.log(
         message: "Could not link to window on shell prompt return.", priority: .notify,
@@ -373,13 +373,12 @@ extension ShellHookManager {
                                  bundle: String?,
                                  env: [String: String]) {
 
-
-        DispatchQueue.main.async {
-          NotificationCenter.default.post(
-            Notification(
-              name: PseudoTerminal.recievedEnvironmentVariablesFromShellNotification,
-              object: env))
-        }
+    DispatchQueue.main.async {
+      NotificationCenter.default.post(
+        Notification(
+          name: PseudoTerminal.recievedEnvironmentVariablesFromShellNotification,
+          object: env))
+    }
 
   }
 
@@ -403,7 +402,7 @@ extension ShellHookManager {
     guard
       let hash = attemptToFindToAssociatedWindow(
         for: context.sessionID,
-        currentTopmostWindow: AXWindowServer.shared.whitelistedWindow)
+        currentTopmostWindow: AXWindowServer.shared.allowlistedWindow)
     else {
 
       Logger.log(
@@ -421,7 +420,7 @@ extension ShellHookManager {
                                         cursor: 0,
                                         session: context.sessionID,
                                         context: context)
-  
+
     DispatchQueue.main.async {
       Autocomplete.position()
     }
@@ -462,8 +461,8 @@ extension ShellHookManager {
   }
 
   func updateKeybuffer(context: Local_ShellContext, text: String, cursor: Int, histno: Int) {
-    // invariant: frontmost whitelisted window is assumed to host shell session which sent this edit buffer event.
-    guard let window = AXWindowServer.shared.whitelistedWindow else {
+    // invariant: frontmost allowlisted window is assumed to host shell session which sent this edit buffer event.
+    guard let window = AXWindowServer.shared.allowlistedWindow else {
       Logger.log(
         message: "Could not link to window on new shell session.", priority: .notify,
         subsystem: .tty)
@@ -490,8 +489,7 @@ extension ShellHookManager {
     guard !SecureKeyboardInput.enabled else {
       return
     }
-    
-    
+
     // What need to be true for us to send notification!
     guard let session = TerminalSessionLinker.shared.getTerminalSession(for: context.sessionID),
           let editBuffer = session.editBuffer,
@@ -499,25 +497,24 @@ extension ShellHookManager {
           Defaults.shared.useAutocomplete else {
       return
     }
-    
+
     API.notifications.editbufferChanged(buffer: editBuffer.text,
                                         cursor: editBuffer.cursor,
                                         session: session.terminalSessionId,
                                         context: session.shellContext?.ipcContext)
-  
+
     DispatchQueue.main.async {
       Autocomplete.position()
     }
-    
+
   }
 
   func tmuxPaneChangedLegacy(_ info: ShellMessage) {
-    guard let window = AXWindowServer.shared.whitelistedWindow else { return }
+    guard let window = AXWindowServer.shared.allowlistedWindow else { return }
     let oldHash = window.hash
 
     if let newPane = info.arguments[safe: 0],
-      let (windowId, sessionHash, oldPane) = oldHash.components()
-    {
+       let (windowId, sessionHash, oldPane) = oldHash.components() {
 
       if oldPane != nil {
         // user is switching between panes in tmux
@@ -583,16 +580,15 @@ extension ShellHookManager {
   fileprivate func attemptToFindToAssociatedWindow(
     for sessionId: SessionId, currentTopmostWindow: ExternalWindow? = nil
   ) -> ExternalWindowHash? {
-    
+
     guard let session = TerminalSessionLinker.shared.getTerminalSession(for: sessionId) else {
       Logger.log(message: "Could not find hash for sessionId '\(sessionId)'", subsystem: .tty)
 
       return nil
     }
-    
-    
+
     let hash = session.generateLegacyWindowHash()
-    
+
     Logger.log(message: "Found WindowHash '\(hash)' for sessionId '\(sessionId)'", subsystem: .tty)
 
     return hash
@@ -604,30 +600,30 @@ extension ShellHookManager {
     let device = TTY(fd: ttyDescriptor)
 
     // tie tty & sessionId to windowHash
-    //queue.async(flags: [.barrier]) {
+    // queue.async(flags: [.barrier]) {
     semaphore.wait()
     self.tty[hash] = device
     self.sessions[sessionId] = nil  // unlink sessionId from any previous windowHash
     self.sessions[hash] = sessionId  // sessions is bidirectional between sessionId and windowHash
     semaphore.signal()
-    //}
+    // }
     return device
   }
 
   func getSessionId(for windowHash: ExternalWindowHash) -> SessionId? {
     var id: SessionId?
-    //queue.sync {
+    // queue.sync {
     id = self.sessions[windowHash]
-    //}
+    // }
 
     return id
   }
 
   fileprivate func getWindowHash(for sessionId: SessionId) -> ExternalWindowHash? {
     var hash: ExternalWindowHash?
-    //queue.sync {
+    // queue.sync {
     hash = self.sessions[sessionId]
-    //}
+    // }
 
     return hash
   }

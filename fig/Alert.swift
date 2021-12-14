@@ -13,24 +13,24 @@ class Alert {
   static let lockWithAppIcon = NSImage(imageLiteralResourceName: "NSSecurity").overlayAppIcon()
   static func lockWith3rdPartyIcon(for bundleId: String) -> NSImage? {
     guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleId) else {
-         return nil
-       }
-       
-       let icon = NSImage(imageLiteralResourceName: "NSSecurity")
+      return nil
+    }
 
-       let app = NSWorkspace.shared.icon(forFile: url.path)
-       
-       return icon.overlayImage(app)
-    
+    let icon = NSImage(imageLiteralResourceName: "NSSecurity")
+
+    let app = NSWorkspace.shared.icon(forFile: url.path)
+
+    return icon.overlayImage(app)
+
   }
-  
+
   @discardableResult static func show(title: String,
-                   message: String,
-                   okText: String = "OK",
-                   icon: NSImage = lockWithAppIcon,
-                   hasSecondaryOption: Bool = false,
-                   secondaryOptionTitle: String? = nil) -> Bool {
-    
+                                      message: String,
+                                      okText: String = "OK",
+                                      icon: NSImage = lockWithAppIcon,
+                                      hasSecondaryOption: Bool = false,
+                                      secondaryOptionTitle: String? = nil) -> Bool {
+
     let alert = NSAlert()
     alert.icon = icon
     alert.icon.size = NSSize(width: 32, height: 32)
@@ -39,11 +39,10 @@ class Alert {
     alert.alertStyle = .warning
     let button = alert.addButton(withTitle: okText)
     button.highlight(true)
-    if (hasSecondaryOption) {
-        alert.addButton(withTitle: secondaryOptionTitle ?? "Not now")
+    if hasSecondaryOption {
+      alert.addButton(withTitle: secondaryOptionTitle ?? "Not now")
     }
     return alert.runModal() == .alertFirstButtonReturn
   }
-  
-  
+
 }

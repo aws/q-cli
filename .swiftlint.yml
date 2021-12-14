@@ -1,17 +1,17 @@
-excluded: # paths to ignore during linting. Takes precedence over `included`.
+excluded:
+  - fig/Local IPC/local.pb.swift
   - fig/iTerm/iterm.pb.swift
-  - swift-api-bindings/Sources/FigAPIBindings/fig.pb.swift
+  - swift-api-bindings/Sources/FigAPIBindings/*.pb.swift
+
+ # To see which rules are most prominent in the repo:
+ # swiftlint lint --enable-all-rules 2>/dev/null | sed -r 's/.*\((.*)\).*/\1/' | sort | uniq -c | sort
 disabled_rules:
-  - identifier_name
-  - force_cast
-  - type_name
-  - implicit_getter
-  - operator_whitespace
   - cyclomatic_complexity
   - function_body_length
-  - inclusive_language
-  - nesting
-  - orphaned_doc_comment
-  - large_tuple
-indentation_width:
-  indentation_width: 2
+  - file_length
+
+indentation: 2
+
+type_name:
+  min_length: 4
+  allowed_symbols: ["_"]

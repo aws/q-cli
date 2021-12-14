@@ -11,41 +11,40 @@ import Cocoa
 struct Keystroke: Hashable {
   var modifierFlags: NSEvent.ModifierFlags = []
   var keyCode: UInt16
-  
-  
+
   func hash(into hasher: inout Hasher) {
     hasher.combine(keyCode)
     hasher.combine(modifierFlags)
   }
-  
+
   static func == (lhs: Keystroke, rhs: Keystroke) -> Bool {
     return lhs.keyCode == rhs.keyCode && lhs.modifierFlags == rhs.modifierFlags
   }
-  
+
   static func from(event: CGEvent) -> Keystroke {
     let keyCode = UInt16(event.getIntegerValueField(.keyboardEventKeycode))
     var modifierFlags: NSEvent.ModifierFlags = []
-    
-    if (event.flags.contains(.maskCommand)) {
+
+    if event.flags.contains(.maskCommand) {
       modifierFlags.insert(.command)
 
     }
-    
-    if (event.flags.contains(.maskControl)) {
+
+    if event.flags.contains(.maskControl) {
       modifierFlags.insert(.control)
     }
-    
-    if (event.flags.contains(.maskShift)) {
-        modifierFlags.insert(.shift)
+
+    if event.flags.contains(.maskShift) {
+      modifierFlags.insert(.shift)
     }
-    
-    if (event.flags.contains(.maskAlternate)) {
-        modifierFlags.insert(.option)
+
+    if event.flags.contains(.maskAlternate) {
+      modifierFlags.insert(.option)
     }
-    
+
     return Keystroke(modifierFlags: modifierFlags, keyCode: keyCode)
   }
-  
+
 }
 
 extension NSEvent.ModifierFlags: Hashable {
