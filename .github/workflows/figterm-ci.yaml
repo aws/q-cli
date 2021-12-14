@@ -1,4 +1,4 @@
-name: CI
+name: Figterm CI
 on:
   pull_request:
     paths:
@@ -15,7 +15,7 @@ jobs:
   rust:
     name: Rust
     runs-on: ${{ matrix.os }}
-    
+
     defaults:
       run:
         working-directory: figterm
