@@ -5,7 +5,7 @@ import Settings from '../src/settings';
 
 export const makeTestsForShell = (ptyOptions: PTYOptions) => {
   // Each invocation creates one shell, that can be used across multiple tests.
-  let shell = new Shell();
+  const shell = new Shell();
 
   beforeEach(async () => {
     Settings.reset();
@@ -15,7 +15,7 @@ export const makeTestsForShell = (ptyOptions: PTYOptions) => {
 
   afterEach(async () => {
     await shell.kill();
-  })
+  });
 
   test('shell environment setup', async () => {
     const env = await shell.getEnv();
@@ -28,7 +28,6 @@ export const makeTestsForShell = (ptyOptions: PTYOptions) => {
     expect(await shell.execute('tty')).toBe(env.TTY);
   });
 
-
   describe('figterm', () => {
     beforeEach(async () => {
       shell.resize({ rows: 30, cols: 80 });
@@ -37,8 +36,11 @@ export const makeTestsForShell = (ptyOptions: PTYOptions) => {
     });
 
     test('Type "echo hello world"', async () => {
-      await shell.type('echo hello world!');
-      expect(shell.buffer).toBe('echo hello world!');
+      await shell.execute('echo hello world!');
+
+      // Type a prefix to make sure autosuggestions don't interfere
+      await shell.type('echo hello');
+      expect(shell.buffer).toBe('echo hello');
     });
 
     test('buffer should reset after typing a character', async () => {
@@ -58,7 +60,7 @@ export const makeTestsForShell = (ptyOptions: PTYOptions) => {
 
     test('Resize window (horizontal)', async () => {
       await shell.type('echo testing');
-      shell.resize({ rows: 30, cols: 30 });
+      shell.resize({ rows: 30, cols: 40 });
       await shell.type('11');
       expect(shell.buffer).toBe('echo testing11');
     });
@@ -80,6 +82,5 @@ export const makeTestsForShell = (ptyOptions: PTYOptions) => {
       await shell.type('abc');
       expect(shell.buffer).toBe('abc');
     });
-  })
-
+  });
 };

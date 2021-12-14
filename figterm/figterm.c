@@ -85,6 +85,8 @@ static void handle_osc(FigTerm* ft) {
     strcpy(ft->shell_state.shell, ft->osc + 6);
   } else if (strneq(ft->osc, "FishSuggestionColor=", 20)) {
     figterm_update_fish_suggestion_color(ft, ft->osc + 20);
+  } else if (strneq(ft->osc, "ZshAutosuggestionColor=", 23)) {
+    figterm_update_zsh_autosuggestion_color(ft, ft->osc + 23);
   } else if (strneq(ft->osc, "TTY=", 4)) {
     strcpy(ft->shell_state.tty, ft->osc + 4);
   } else if (strneq(ft->osc, "PID=", 4)) {
@@ -153,21 +155,68 @@ static int movecursor_cb(VTermPos pos, VTermPos oldpos, int visible, void *user)
   return 0;
 }
 
+static void log_color(const char* prefix, VTermColor* color) {
+  if (color == NULL) {
+    log_debug("Tried to print null color");
+    return;
+  }
+  if (VTERM_COLOR_IS_RGB(color)) {
+    log_debug("%s: rgb %d, %d, %d", prefix, color->rgb.red, color->rgb.green, color->rgb.blue);
+  }
+  if (VTERM_COLOR_IS_INDEXED(color)) {
+    log_debug("%s: indexed %d", prefix, color->indexed.idx);
+  }
+}
+
 static int setpenattr_cb(VTermAttr attr, VTermValue *val, void *user) {
   FigTerm *ft = user;
   bool in_suggestion = false;
 
-  switch(attr) {
-    case VTERM_ATTR_FOREGROUND:
-      if (ft->shell_state.fish_suggestion_color != NULL &&
-          vterm_color_is_equal(&val->color, ft->shell_state.fish_suggestion_color)) {
-        in_suggestion = true;
-      }
-      figterm_screen_set_attr(ft->screen, FIGTERM_ATTR_IN_SUGGESTION, &in_suggestion);
-      return 1;
+  bool is_fg = attr == VTERM_ATTR_FOREGROUND;
+  bool is_bg = attr == VTERM_ATTR_BACKGROUND;
+  if (is_fg || is_bg) {
+    figterm_screen_set_attr(ft->screen, is_fg ? FIGTERM_ATTR_FOREGROUND : FIGTERM_ATTR_BACKGROUND, val);
 
-    default:
+    SuggestionColor* sc = NULL;
+    if (!strcmp(ft->shell_state.shell, "fish")) {
+      sc = ft->shell_state.fish_suggestion_color;
+    } else if (!strcmp(ft->shell_state.shell, "zsh")) {
+      sc = ft->shell_state.zsh_autosuggestion_color;
+    }
+
+    if (sc == NULL) {
       return 0;
+    }
+
+    VTermValue* fg;
+    VTermValue* bg;
+    VTermValue* other;
+
+    if (is_fg) {
+      fg = val;
+      other = bg = malloc(sizeof(VTermValue));
+      figterm_screen_get_attr(ft->screen, FIGTERM_ATTR_BACKGROUND, bg);
+    } else {
+      bg = val;
+      other = fg = malloc(sizeof(VTermValue));
+      figterm_screen_get_attr(ft->screen, FIGTERM_ATTR_FOREGROUND, fg);
+    }
+
+    bool matches_fg = sc->fg == NULL || vterm_color_is_equal(&fg->color, sc->fg);
+    bool matches_bg = sc->bg == NULL || vterm_color_is_equal(&bg->color, sc->bg);
+    if (!matches_bg) {
+      log_color("Current bg:", &bg->color);
+      log_color("Suggestion bg:", sc->bg);
+    }
+    if (!matches_fg) {
+      log_color("Current fg:", &fg->color);
+      log_color("Suggestion fg:", sc->fg);
+    }
+    in_suggestion = matches_fg && matches_bg;
+
+    figterm_screen_set_attr(ft->screen, FIGTERM_ATTR_IN_SUGGESTION, &in_suggestion);
+    free(other);
+    return 1;
   }
 
   return 0;
@@ -223,7 +272,10 @@ FigTerm *figterm_new(int shell_pid, int ptyp_fd) {
   ft->shell_state.color_support = get_color_support();
   ft->shell_state.fish_suggestion_color_text = NULL;
   ft->shell_state.fish_suggestion_color = NULL;
+  ft->shell_state.zsh_autosuggestion_color_text = NULL;
+  ft->shell_state.zsh_autosuggestion_color = NULL;
   figterm_update_fish_suggestion_color(ft, getenv("fish_color_autosuggestion"));
+  figterm_update_zsh_autosuggestion_color(ft, getenv("ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE"));
 
   ft->shell_state.in_ssh = false;
   ft->shell_state.in_docker = false;
@@ -271,7 +323,7 @@ bool figterm_can_send_buffer(FigTerm* ft) {
   bool in_ssh_or_docker = ft->shell_state.in_ssh || ft->shell_state.in_docker;
   bool shell_enabled = strcmp(ft->shell_state.shell, "bash") == 0 ||
     strcmp(ft->shell_state.shell, "fish") == 0 ||
-    (in_ssh_or_docker && strcmp(ft->shell_state.shell, "zsh") == 0);
+    strcmp(ft->shell_state.shell, "zsh") == 0;
   bool insertion_locked = access(ft->insertion_lock_path, F_OK) == 0;
   return shell_enabled && !insertion_locked && !ft->shell_state.preexec;
 }
@@ -354,9 +406,29 @@ void figterm_update_fish_suggestion_color(FigTerm* ft, const char* new_color) {
     free(ft->shell_state.fish_suggestion_color);
     free(ft->shell_state.fish_suggestion_color_text);
 
+    log_info("Updating fish suggestions color... %s", new_color);
     ft->shell_state.fish_suggestion_color_text = strdup(new_color);
 
-    ft->shell_state.fish_suggestion_color = parse_vterm_color_from_string(
+    ft->shell_state.fish_suggestion_color = parse_suggestion_color_fish(
+      new_color,
+      ft->shell_state.color_support
+    );
+  }
+}
+
+void figterm_update_zsh_autosuggestion_color(FigTerm* ft, const char* new_color) {
+  if (new_color == NULL) {
+    return;
+  }
+  char* current_color = ft->shell_state.zsh_autosuggestion_color_text;
+  if (current_color == NULL || strcmp(current_color, new_color) != 0) {
+    free_suggestion_color(ft->shell_state.zsh_autosuggestion_color);
+    free(ft->shell_state.zsh_autosuggestion_color_text);
+
+    log_info("Updating zsh autosuggestions color... %s", new_color);
+    ft->shell_state.zsh_autosuggestion_color_text = strdup(new_color);
+
+    ft->shell_state.zsh_autosuggestion_color = parse_suggestion_color_zsh_autosuggest(
       new_color,
       ft->shell_state.color_support
     );

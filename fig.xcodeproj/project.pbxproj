@@ -7,11 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		1A1F160025A7A93E0074D541 /* KeyBindingsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1F15FF25A7A93E0074D541 /* KeyBindingsManager.swift */; };
-		1A63312125A4BE6D00CEA06A /* Keystroke.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A63312025A4BE6D00CEA06A /* Keystroke.swift */; };
 		750BA10C2733590A00705E63 /* API+IPC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750BA10B2733590A00705E63 /* API+IPC.swift */; };
 		750CF21826A1055F0094D76A /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750CF21726A1055F0094D76A /* Config.swift */; };
-		7510F8B824A6910500E86F7C /* Pty.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F89724A6910500E86F7C /* Pty.swift */; };
 		7510F8BD24A9861E00E86F7C /* PrivateWindow.m in Sources */ = {isa = PBXBuildFile; fileRef = 7510F8BC24A9861E00E86F7C /* PrivateWindow.m */; };
 		7510F8BF24A99A4B00E86F7C /* WindowService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F8BE24A99A4B00E86F7C /* WindowService.swift */; };
 		7510F8C124A9B32D00E86F7C /* WindowManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7510F8C024A9B32D00E86F7C /* WindowManager.swift */; };
@@ -36,7 +33,6 @@
 		75290ACC2671AD1E000F4255 /* WebSocketFramer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75290ACB2671AD1D000F4255 /* WebSocketFramer.swift */; };
 		752A398325CD024C00B1AC40 /* VSCodeIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 752A398225CD024C00B1AC40 /* VSCodeIntegration.swift */; };
 		752A398625CD0FE800B1AC40 /* fig-0.0.1.vsix in Resources */ = {isa = PBXBuildFile; fileRef = 752A398525CD0FE800B1AC40 /* fig-0.0.1.vsix */; };
-		752C0BD82479EEDB0077E415 /* File.swift in Sources */ = {isa = PBXBuildFile; fileRef = 752C0BD72479EEDA0077E415 /* File.swift */; };
 		752C0BE0247A27790077E415 /* editor.html in Resources */ = {isa = PBXBuildFile; fileRef = 752C0BDF247A27790077E415 /* editor.html */; };
 		752C0BE2247A33F20077E415 /* viewer.html in Resources */ = {isa = PBXBuildFile; fileRef = 752C0BE1247A33F10077E415 /* viewer.html */; };
 		752C0BE4247B44C60077E415 /* finder.html in Resources */ = {isa = PBXBuildFile; fileRef = 752C0BE3247B44C50077E415 /* finder.html */; };
@@ -143,7 +139,6 @@
 		75A4A29A25C8D855002EFD6B /* commit@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 75A4A29725C8D855002EFD6B /* commit@2x.png */; };
 		75A4A29E25C91471002EFD6B /* debugger-2-trimmed.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 75A4A29D25C91471002EFD6B /* debugger-2-trimmed.mp4 */; };
 		75A4A2A025CA0D46002EFD6B /* Autocomplete.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A4A29F25CA0D46002EFD6B /* Autocomplete.swift */; };
-		75A4A2A225CA2190002EFD6B /* ZLEIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A4A2A125CA218F002EFD6B /* ZLEIntegration.swift */; };
 		75A4A2A725CBBDE7002EFD6B /* AXSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 75A4A2A625CBBDE7002EFD6B /* AXSwift */; };
 		75AA24DA25A7E8B000A51E9D /* lsof.m in Sources */ = {isa = PBXBuildFile; fileRef = 75AA24D925A7E8B000A51E9D /* lsof.m */; };
 		75ACFE7A274442C7003C22EE /* PTYProcess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75ACFE79274442C7003C22EE /* PTYProcess.swift */; };
@@ -166,12 +161,10 @@
 		75B199322501A3DA00F38EA8 /* KeyboardLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B199312501A3DA00F38EA8 /* KeyboardLayout.swift */; };
 		75B199342504190900F38EA8 /* Keycode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B199332504190900F38EA8 /* Keycode.swift */; };
 		75B1993625042B2C00F38EA8 /* autocomplete.html in Resources */ = {isa = PBXBuildFile; fileRef = 75B1993525042B2C00F38EA8 /* autocomplete.html */; };
-		75B1993825100E4E00F38EA8 /* KeypressService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B1993725100E4D00F38EA8 /* KeypressService.swift */; };
 		75B4283626FABAAC003C9DE5 /* FileSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B4283526FABAAC003C9DE5 /* FileSystem.swift */; };
 		75B7931A24BB897F0073AAC6 /* PseudoTerminalService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B7931924BB897F0073AAC6 /* PseudoTerminalService.swift */; };
 		75B850E52703D8FF00891A78 /* API+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B850E42703D8FF00891A78 /* API+Extensions.swift */; };
 		75BF28A8270E9B9200E7C914 /* API+Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75BF28A7270E9B9200E7C914 /* API+Constants.swift */; };
-		75C05C6C24FDEA2B001F0A52 /* KeystrokeBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75C05C6B24FDEA2B001F0A52 /* KeystrokeBuffer.swift */; };
 		75C0711D244AC3B2002DF69F /* index.html in Resources */ = {isa = PBXBuildFile; fileRef = 75C0711C244AC3B2002DF69F /* index.html */; };
 		75C07120244BB441002DF69F /* CompanionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75C0711F244BB441002DF69F /* CompanionViewController.swift */; };
 		75C07122244BB65D002DF69F /* ShellBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75C07121244BB65D002DF69F /* ShellBridge.swift */; };
@@ -208,6 +201,8 @@
 		7A9DB5662741A3E6008BD2AA /* DefaultsTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A9DB5652741A3E6008BD2AA /* DefaultsTest.swift */; };
 		7AB6B6872740301500428F47 /* NSWorkspaceExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AB6B6862740301500428F47 /* NSWorkspaceExtensionTests.swift */; };
 		7AF96D3F273DB3E30006A41B /* ConfigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF96D3E273DB3E30006A41B /* ConfigTests.swift */; };
+		AB3FB17B27636BF3009EFD9E /* KeypressProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB3FB17A27636BF3009EFD9E /* KeypressProvider.swift */; };
+		AB3FB17C27636C64009EFD9E /* Keystroke.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A63312025A4BE6D00CEA06A /* Keystroke.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -433,7 +428,6 @@
 		75A4A29725C8D855002EFD6B /* commit@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "commit@2x.png"; sourceTree = "<group>"; };
 		75A4A29D25C91471002EFD6B /* debugger-2-trimmed.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "debugger-2-trimmed.mp4"; sourceTree = "<group>"; };
 		75A4A29F25CA0D46002EFD6B /* Autocomplete.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Autocomplete.swift; sourceTree = "<group>"; };
-		75A4A2A125CA218F002EFD6B /* ZLEIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZLEIntegration.swift; sourceTree = "<group>"; };
 		75AA24D825A7E8B000A51E9D /* lsof.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = lsof.h; sourceTree = "<group>"; };
 		75AA24D925A7E8B000A51E9D /* lsof.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = lsof.m; sourceTree = "<group>"; };
 		75AC55322522C8EB0069635E /* 1.0.20.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = 1.0.20.sh; sourceTree = "<group>"; };
@@ -497,6 +491,7 @@
 		7A9DB5652741A3E6008BD2AA /* DefaultsTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultsTest.swift; sourceTree = "<group>"; };
 		7AB6B6862740301500428F47 /* NSWorkspaceExtensionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSWorkspaceExtensionTests.swift; sourceTree = "<group>"; };
 		7AF96D3E273DB3E30006A41B /* ConfigTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigTests.swift; sourceTree = "<group>"; };
+		AB3FB17A27636BF3009EFD9E /* KeypressProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = KeypressProvider.swift; path = fig/Autocompletion/KeypressProvider.swift; sourceTree = "<group>"; };
 		"fig_callback-00000000000" /* fig_callback */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = fig_callback; sourceTree = BUILT_PRODUCTS_DIR; };
 		"fig_get_shell-0000000000" /* fig_get_shell */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = fig_get_shell; sourceTree = BUILT_PRODUCTS_DIR; };
 		"figcli-00000000000000000" /* figcli */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = figcli; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -664,6 +659,7 @@
 		75675948244634AD006AA988 = {
 			isa = PBXGroup;
 			children = (
+				AB3FB17A27636BF3009EFD9E /* KeypressProvider.swift */,
 				75675953244634AD006AA988 /* fig */,
 				75675969244634B2006AA988 /* figTests */,
 				75675974244634B2006AA988 /* figUITests */,
@@ -981,7 +977,6 @@
 				1A1F15FF25A7A93E0074D541 /* KeyBindingsManager.swift */,
 				75B1993725100E4D00F38EA8 /* KeypressService.swift */,
 				75A4A29F25CA0D46002EFD6B /* Autocomplete.swift */,
-				75A4A2A125CA218F002EFD6B /* ZLEIntegration.swift */,
 			);
 			path = Autocompletion;
 			sourceTree = "<group>";
@@ -1413,6 +1408,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AB3FB17C27636C64009EFD9E /* Keystroke.swift in Sources */,
+				AB3FB17B27636BF3009EFD9E /* KeypressProvider.swift in Sources */,
 				75288EF924CCE72F002DF12A /* WebViewWindow.swift in Sources */,
 				75BF28A8270E9B9200E7C914 /* API+Constants.swift in Sources */,
 				75AEF2E825C3DEC600D78431 /* SSHIntegration.swift in Sources */,
@@ -1427,7 +1424,6 @@
 				75738F1E26DDAB760086D972 /* InputMethod.swift in Sources */,
 				752A398325CD024C00B1AC40 /* VSCodeIntegration.swift in Sources */,
 				7583A12E273CF261001DF86B /* PathHelper.swift in Sources */,
-				75C05C6C24FDEA2B001F0A52 /* KeystrokeBuffer.swift in Sources */,
 				7571778326F91BF50071AE10 /* AppleTerminalIntegration.swift in Sources */,
 				756968012718FF600029F063 /* WebArchive.swift in Sources */,
 				755D0DE2247EFAE10074AB5C /* Logging.swift in Sources */,
@@ -1440,7 +1436,6 @@
 				75E993F52517E226000BE6BE /* AXWindowServer.swift in Sources */,
 				75C07124244BE45A002DF69F /* CompanionWindow.swift in Sources */,
 				75C07122244BB65D002DF69F /* ShellBridge.swift in Sources */,
-				1A63312125A4BE6D00CEA06A /* Keystroke.swift in Sources */,
 				7510F8C124A9B32D00E86F7C /* WindowManager.swift in Sources */,
 				7575D44F26D5D35000D0C8D7 /* API.swift in Sources */,
 				755FC554268D09DE00966027 /* UpdateService.swift in Sources */,
@@ -1448,7 +1443,6 @@
 				7546F5B3271660BA0077359F /* Constants.swift in Sources */,
 				75D1ECBE26F15F4500BC8A04 /* TerminalIntegrationProvider.swift in Sources */,
 				75809B0E24BFA64D00BFFB3E /* TelemetryService.swift in Sources */,
-				75A4A2A225CA2190002EFD6B /* ZLEIntegration.swift in Sources */,
 				75AA24DA25A7E8B000A51E9D /* lsof.m in Sources */,
 				75EB592B258D98A7002915E7 /* BiMap.swift in Sources */,
 				751F7589246D090100E083C8 /* WebBridge.swift in Sources */,
@@ -1471,13 +1465,11 @@
 				752D71CD25B8A6B300263527 /* Restarter.swift in Sources */,
 				756127C3274380BF007F26EA /* pty.c in Sources */,
 				75ACFE7C274C3424003C22EE /* Utilities.swift in Sources */,
-				7510F8B824A6910500E86F7C /* Pty.swift in Sources */,
 				7520D8122682AEB00034FE2B /* Throttler.swift in Sources */,
 				75DA86A925EF145E00722F1D /* TmuxIntegration.swift in Sources */,
 				7577124725648DFB0011FF48 /* ps.c in Sources */,
 				757AF4C826BC73FA00349764 /* WindowPositioning.swift in Sources */,
 				75290ABD26719090000F4255 /* iterm.pb.swift in Sources */,
-				75B1993825100E4E00F38EA8 /* KeypressService.swift in Sources */,
 				75C57C142581C0700065741E /* ioreg.c in Sources */,
 				75290AB4267126EB000F4255 /* iTermIntegration.swift in Sources */,
 				75FE40002626A4BD00AC8414 /* Github.swift in Sources */,
@@ -1488,14 +1480,12 @@
 				750CF21826A1055F0094D76A /* Config.swift in Sources */,
 				75AEF2EA25C4C34D00D78431 /* SecureKeyboardInput.swift in Sources */,
 				75B199342504190900F38EA8 /* Keycode.swift in Sources */,
-				752C0BD82479EEDB0077E415 /* File.swift in Sources */,
 				75D1ECC026F1658300BC8A04 /* InstallationStatus.swift in Sources */,
 				75A0A71926F1A79A008FAD70 /* KittyIntegration.swift in Sources */,
 				75EB592D258DD771002915E7 /* TTY.swift in Sources */,
 				75ACFE8027556D7A003C22EE /* TerminalSessionLinkingService.swift in Sources */,
 				7510F8BF24A99A4B00E86F7C /* WindowService.swift in Sources */,
 				75A4521A25AE2E6B00107D2C /* CommandIntegration.swift in Sources */,
-				1A1F160025A7A93E0074D541 /* KeyBindingsManager.swift in Sources */,
 				754569FC272A05C200C7588F /* CommandHandlers.swift in Sources */,
 				75ACFE7A274442C7003C22EE /* PTYProcess.swift in Sources */,
 				7587B4D824F97F9E00E355E4 /* ShellHooksManager.swift in Sources */,
@@ -1584,11 +1574,11 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CODE_SIGN_ENTITLEMENTS = InputMethod/InputMethod.entitlements;
-				CODE_SIGN_IDENTITY = "Developer ID Application";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"InputMethod/Preview Content\"";
-				DEVELOPMENT_TEAM = D93PPD94WK;
+				DEVELOPMENT_TEAM = B8PC799ZGU;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = InputMethod/Info.plist;
@@ -1785,13 +1775,13 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = fig/fig.entitlements;
-				CODE_SIGN_IDENTITY = "Developer ID Application";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = YES;
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 339;
+				CURRENT_PROJECT_VERSION = 341;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
-				DEVELOPMENT_TEAM = D93PPD94WK;
+				DEVELOPMENT_TEAM = B8PC799ZGU;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -1825,7 +1815,7 @@
 				CODE_SIGN_IDENTITY = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 339;
+				CURRENT_PROJECT_VERSION = 341;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				DEVELOPMENT_TEAM = D93PPD94WK;
 				ENABLE_HARDENED_RUNTIME = YES;

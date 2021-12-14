@@ -11,6 +11,7 @@
  */
 #include "fig.h"
 #include "utf8.h"
+#include "vterm.h"
 
 #define UNICODE_SPACE 0x20
 #define UNICODE_LINEFEED 0x0a
@@ -21,6 +22,8 @@
 typedef struct {
   bool in_prompt;
   bool in_suggestion;
+  VTermColor fg;
+  VTermColor bg;
 } ScreenAttrs;
 
 typedef struct {
@@ -351,6 +354,8 @@ FigTermScreen *figterm_screen_new(VTerm *vt) {
 
   screen->attrs.in_prompt = false;
   screen->attrs.in_suggestion = false;
+  vterm_color_indexed(&screen->attrs.fg, 7);
+  vterm_color_indexed(&screen->attrs.bg, 0);
 
   screen->callbacks = NULL;
   screen->cbdata = NULL;
@@ -393,6 +398,22 @@ void figterm_screen_set_attr(FigTermScreen* screen, FigTermAttr attr, void* val)
     screen->attrs.in_prompt = *((bool*) val);
   } else if (attr == FIGTERM_ATTR_IN_SUGGESTION) {
     screen->attrs.in_suggestion = *((bool*) val);
+  } else if (attr == FIGTERM_ATTR_FOREGROUND) {
+    screen->attrs.fg = *((VTermColor*) val);
+  } else if (attr == FIGTERM_ATTR_BACKGROUND) {
+    screen->attrs.bg = *((VTermColor*) val);
+  }
+}
+
+void figterm_screen_get_attr(FigTermScreen* screen, FigTermAttr attr, VTermValue* val) {
+  if (attr == FIGTERM_ATTR_IN_PROMPT) {
+    val->boolean = screen->attrs.in_prompt;
+  } else if (attr == FIGTERM_ATTR_IN_SUGGESTION) {
+    val->boolean = screen->attrs.in_suggestion;
+  } else if (attr == FIGTERM_ATTR_FOREGROUND) {
+    val->color = screen->attrs.fg;
+  } else if (attr == FIGTERM_ATTR_BACKGROUND) {
+    val->color = screen->attrs.bg;
   }
 }
 

@@ -9,8 +9,8 @@
 import Foundation
 
 extension Bundle {
-    var configURL: URL {
-        return Bundle.main.resourceURL!.appendingPathComponent("config", isDirectory: true)
-    }
+  var configURL: URL {
+    return Bundle.main.resourceURL!.appendingPathComponent("config", isDirectory: true)
+  }
 
 }

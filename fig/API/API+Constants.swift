@@ -10,74 +10,72 @@ import Foundation
 import WebKit
 
 extension API {
-    static let constants: Dictionary<String, String?> = [
-             "version" : Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String,
-               "build" : Bundle.main.infoDictionary?["CFBundleVersion"] as? String,
-                 "cli" : Bundle.main.path(forAuxiliaryExecutable: "figcli"),
-          "bundlePath" : Bundle.main.bundlePath,
-              "remote" : Remote.baseURL.absoluteString,
-                "home" : NSHomeDirectory(),
-                "user" : NSUserName(),
-         "defaultPath" : PathHelper.defaultPath,
- "jsonMessageRecieved" : API.Encoding.json.eventName,
-  "jsonMessageHandler" : API.Encoding.json.webkitMessageHandler,
-"protoMessageRecieved" : API.Encoding.binary.eventName,
- "protoMessageHandler" : API.Encoding.binary.webkitMessageHandler,
-              "themes" : {
-                 let themesFolder = Bundle.main.configURL.appendingPathComponent("themes", isDirectory: true)
-                 let files = (try? FileManager.default.contentsOfDirectory(atPath: themesFolder.path)) ?? []
-                 let themes = [ "dark", "light"] + files.map { String($0.split(separator: ".")[0]) }.sorted()
-                 return themes.joined(separator: "\n")
-             }(),
-    ]
-    
-    
-    // Must be included at top level and may have been renamed (eg. fig.KEY rather than fig.constants.KEY)
-    fileprivate static let legacyConstants = [
-        "version": "appversion",
-        "cli": "clipath",
-        "remote" : "remoteURL",
-        "build" : "build",
-        "home" : "home"
-    ]
-    
-    static func declareConstants() -> String {
-        
-        let payload = constants.map { (key, value) -> String in
-            var script = ""
-            
-            if let value = value {
+  static let constants: [String: String?] = [
+    "version": Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String,
+    "build": Bundle.main.infoDictionary?["CFBundleVersion"] as? String,
+    "cli": Bundle.main.path(forAuxiliaryExecutable: "figcli"),
+    "bundlePath": Bundle.main.bundlePath,
+    "remote": Remote.baseURL.absoluteString,
+    "home": NSHomeDirectory(),
+    "user": NSUserName(),
+    "defaultPath": PathHelper.defaultPath,
+    "jsonMessageRecieved": API.Encoding.json.eventName,
+    "jsonMessageHandler": API.Encoding.json.webkitMessageHandler,
+    "protoMessageRecieved": API.Encoding.binary.eventName,
+    "protoMessageHandler": API.Encoding.binary.webkitMessageHandler,
+    "themes": {
+      let themesFolder = Bundle.main.configURL.appendingPathComponent("themes", isDirectory: true)
+      let files = (try? FileManager.default.contentsOfDirectory(atPath: themesFolder.path)) ?? []
+      let themes = [ "dark", "light"] + files.map { String($0.split(separator: ".")[0]) }.sorted()
+      return themes.joined(separator: "\n")
+    }()
+  ]
 
-                script += "fig.constants.\(key) = `\(value)`;"
+  // Must be included at top level and may have been renamed (eg. fig.KEY rather than fig.constants.KEY)
+  fileprivate static let legacyConstants = [
+    "version": "appversion",
+    "cli": "clipath",
+    "remote": "remoteURL",
+    "build": "build",
+    "home": "home"
+  ]
 
-                if let legacy = legacyConstants[key] {
-                    script += "\n"
-                    script += "fig.\(legacy) = `\(value)`;"
-                }
-            }
-            
-            return script
+  static func declareConstants() -> String {
 
-        }.joined(separator: "\n")
-        
-        let script =
-        """
+    let payload = constants.map { (key, value) -> String in
+      var script = ""
+
+      if let value = value {
+
+        script += "fig.constants.\(key) = `\(value)`;"
+
+        if let legacy = legacyConstants[key] {
+          script += "\n"
+          script += "fig.\(legacy) = `\(value)`;"
+        }
+      }
+
+      return script
+
+    }.joined(separator: "\n")
+
+    let script =
+      """
 
         if (!window.fig) {
             window.fig = {}
         }
-        
+
         if (!window.fig.constants) {
             fig.constants = {}
         }
-        
+
         \(payload)
-        
+
         console.log("[fig] declaring constants...")
         """
-        
-        return script
-    }
-    
-    
+
+    return script
+  }
+
 }
