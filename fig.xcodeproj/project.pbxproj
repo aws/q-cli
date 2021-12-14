@@ -185,6 +185,7 @@
 		75D1ECB426EFE55A00BC8A04 /* AlacrittyIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75D1ECB326EFE55A00BC8A04 /* AlacrittyIntegration.swift */; };
 		75D1ECBE26F15F4500BC8A04 /* TerminalIntegrationProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75D1ECBD26F15F4500BC8A04 /* TerminalIntegrationProvider.swift */; };
 		75D1ECC026F1658300BC8A04 /* InstallationStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75D1ECBF26F1658300BC8A04 /* InstallationStatus.swift */; };
+		75D9225427686B5C00208A0C /* fig-0.0.6.vsix in Resources */ = {isa = PBXBuildFile; fileRef = 75D9225327686B5C00208A0C /* fig-0.0.6.vsix */; };
 		75DA86A325EDB05100722F1D /* Integrations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DA86A225EDB05100722F1D /* Integrations.swift */; };
 		75DA86A525EEBD7500722F1D /* Alert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DA86A425EEBD7400722F1D /* Alert.swift */; };
 		75DA86A925EF145E00722F1D /* TmuxIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DA86A825EF145E00722F1D /* TmuxIntegration.swift */; };
@@ -476,6 +477,7 @@
 		75D1ECB326EFE55A00BC8A04 /* AlacrittyIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlacrittyIntegration.swift; sourceTree = "<group>"; };
 		75D1ECBD26F15F4500BC8A04 /* TerminalIntegrationProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalIntegrationProvider.swift; sourceTree = "<group>"; };
 		75D1ECBF26F1658300BC8A04 /* InstallationStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstallationStatus.swift; sourceTree = "<group>"; };
+		75D9225327686B5C00208A0C /* fig-0.0.6.vsix */ = {isa = PBXFileReference; lastKnownFileType = file; name = "fig-0.0.6.vsix"; path = "vscode-extension/fig-0.0.6.vsix"; sourceTree = SOURCE_ROOT; };
 		75DA86A225EDB05100722F1D /* Integrations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Integrations.swift; sourceTree = "<group>"; };
 		75DA86A425EEBD7400722F1D /* Alert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Alert.swift; sourceTree = "<group>"; };
 		75DA86A825EF145E00722F1D /* TmuxIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TmuxIntegration.swift; sourceTree = "<group>"; };
@@ -612,6 +614,7 @@
 		752A398725CD0FFB00B1AC40 /* VSCode */ = {
 			isa = PBXGroup;
 			children = (
+				75D9225327686B5C00208A0C /* fig-0.0.6.vsix */,
 				755D27C1272772280080B4B8 /* fig-0.0.5.vsix */,
 				75543FCF268AC6E5003221DF /* fig-0.0.4.vsix */,
 				75C8A15F2649E712001B69DA /* fig-0.0.2.vsix */,
@@ -1297,6 +1300,7 @@
 				759F988C25BFF8B000EC3407 /* docker@2x.png in Resources */,
 				757CA891248B2799002A64A8 /* cli.html in Resources */,
 				7567595C244634B2006AA988 /* Preview Assets.xcassets in Resources */,
+				75D9225427686B5C00208A0C /* fig-0.0.6.vsix in Resources */,
 				75675959244634B2006AA988 /* Assets.xcassets in Resources */,
 				757CA89F248D628F002A64A8 /* sidebar.html in Resources */,
 				759F988E25BFFAE500EC3407 /* heroku@2x.png in Resources */,

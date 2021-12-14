@@ -2,7 +2,7 @@ const vscode = require('vscode');
 const cp = require('child_process')
 
 let runCommand = function (command) {
-	cp.exec(command, (err, stdout, stderr) => {
+	cp.exec(command, (err) => {
 		if (err) {
 			logError(err);
 		}
@@ -40,25 +40,26 @@ function updateActiveTerminal(terminal) {
 	}
 	activeTerminal.processId.then((processId) => {
 		if (processId) {
-			runCommand(`fig keyboard-focus-changed code ${processId}`)
+			runCommand(`fig hook keyboard-focus-changed ${vscode.env.uriScheme} ${processId}`)
 		}
 	})
 }
 
 function noActiveTerminals() {
-	runCommand('fig bg:vscode-no-active-terminals')
+	log("no active terminals")
 }
 
+console.log(vscode.env.uriScheme)
 
 function activate(context) {
 	try {
 		updateActiveTerminal()
 
-		vscode.window.onDidOpenTerminal(terminal => {
+		vscode.window.onDidOpenTerminal(() => {
 			log("Terminal opened. Total count: " + vscode.window.terminals.length);
 		});
 
-		vscode.window.onDidCloseTerminal(terminal => {
+		vscode.window.onDidCloseTerminal(() => {
 			log("Terminal closed. Total count: " + vscode.window.terminals.length);
 
 			if (vscode.window.terminals.length == 0) {
