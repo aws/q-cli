@@ -1,9 +1,3 @@
-compile_commands.json
-.cache/
-*.o
-lib/*.a
-figterm*
-!figterm.c
-.DS_Store
-libvterm
-fig_*
+/target
+
+.vscode

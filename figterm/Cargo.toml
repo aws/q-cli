@@ -1,0 +1,27 @@
+[package]
+name = "figterm"
+version = "0.1.0"
+authors = ["grant0417"]
+edition = "2021"
+description = ""
+homepage = "https://fig.io"
+repository = "https://github.com/withfig/macos"
+publish = false
+
+[dependencies]
+# System libs
+nix = "0.23"
+signal-hook = "0.3"
+tokio = { version = "1", features = ["full"] }
+
+# Logging
+log = "0.4"
+dirs = "4.0.0"
+
+# Protocal buffers
+prost = "0.9"
+
+anyhow = "1.0"
+
+[build-dependencies]
+prost-build = "0.9"
