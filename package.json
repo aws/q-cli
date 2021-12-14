@@ -5,7 +5,8 @@
   "author": "Fig Team",
   "license": "MIT",
   "dependencies": {
-    "husky": "^7.0.4"
+    "husky": "^7.0.4",
+    "lint-staged": "^12.1.2"
   },
   "workspaces": [
     "typescript-api-bindings",
@@ -16,6 +17,10 @@
     "**/@typescript-eslint/parser": "^4.1.1"
   },
   "scripts": {
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "precommit": "lint-staged"
+  },
+  "lint-staged": {
+    "**/*.swift": ["swiftlint lint --fix --quiet 2>/dev/null", "swiftlint lint"]
   }
 }

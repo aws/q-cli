@@ -1,17 +1,43 @@
-excluded: # paths to ignore during linting. Takes precedence over `included`.
-  - fig/iTerm/iterm.pb.swift
-  - swift-api-bindings/Sources/FigAPIBindings/fig.pb.swift
+# To see which rules are most prominent in the repo:
+# swiftlint lint --enable-all-rules 2>/dev/null | sed -r 's/.*\((.*)\).*/\1/' | sort | uniq -c | sort
 disabled_rules:
   - identifier_name
+  - line_length
+  - switch_case_alignment
   - force_cast
-  - type_name
   - implicit_getter
   - operator_whitespace
   - cyclomatic_complexity
   - function_body_length
   - inclusive_language
+  - redundant_string_enum_value
   - nesting
+  - file_length
+  - type_name
   - orphaned_doc_comment
+  - type_body_length
+  - vertical_parameter_alignment
+  - unneeded_break_in_switch
   - large_tuple
+  - reduce_boolean
+  - legacy_nsgeometry_functions
+  - unused_optional_binding
+  - closure_parameter_position
+  - force_try
+  - shorthand_operator
+  - notification_center_detachment
+  - function_parameter_count
+  - compiler_protocol_init
+  - class_delegate_protocol
+  - unused_setter_value
+  - todo
+  - private_over_fileprivate
+  - for_where
+  - computed_accessors_order
+
 indentation_width:
   indentation_width: 2
+
+type_name:
+  min_length: 4
+  allowed_symbols: ["_"]
