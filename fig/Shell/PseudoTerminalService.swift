@@ -111,6 +111,7 @@ class PseudoTerminal {
         let updatedEnv = environment.merging(["FIG_ENV_VAR" : "1",
                                               "FIG_SHELL_VAR" : "1",
                                               "FIG_TERM": "1",
+                                              "FIG_SOCKET": FileManager.default.temporaryDirectory.path,
                                               "TERM" : "xterm-256color",
                                               "INPUTRC" : "~/.fig/nop",
                                               "FIG_PTY" : "1",
@@ -183,7 +184,7 @@ extension PseudoTerminal {
         static let pipelined = ExecutionOptions(rawValue: 1 << 1)
     }
     
-    static let callbackExecutable = Bundle.main.path(forAuxiliaryExecutable: "fig_callback")!
+    static let cliExecutable = Bundle.main.path(forAuxiliaryExecutable: "figcli")!
     func execute(_ command: String,
                  handlerId: HandlerId = UUID().uuidString,
                  options: ExecutionOptions = [.backgroundJob],
@@ -200,10 +201,10 @@ extension PseudoTerminal {
         
         // note: pipelined commands currently do not provide stderr or exit code!
         if options.contains(.pipelined) {
-            commandToRun = "\(command) | \(PseudoTerminal.callbackExecutable) \(cappedHandlerId)"
+            commandToRun = "\(command) | \(PseudoTerminal.cliExecutable) hook callback \(cappedHandlerId)"
         } else {
             let tmpFilepath = "/tmp/\(cappedHandlerId)"
-            commandToRun = "{ ( \(command) ) 1> \(tmpFilepath).stdout 2> \(tmpFilepath).stderr; \(PseudoTerminal.callbackExecutable) \(handlerId) \(tmpFilepath) $? ; }"
+            commandToRun = "{ ( \(command) ) 1> \(tmpFilepath).stdout 2> \(tmpFilepath).stderr; \(PseudoTerminal.cliExecutable) hook callback \(handlerId) \(tmpFilepath) $?; }"
         }
       
         if options.contains(.backgroundJob) {

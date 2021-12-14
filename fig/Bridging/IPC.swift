@@ -277,8 +277,15 @@ class IPC: UnixSocketServerDelegate {
       break
     case .openedSshConnection(_):
       break
-    case .callback(_):
-      break
+    case .callback(let hook):
+      Logger.log(message: "Callback hook")
+      NotificationCenter.default.post(
+        name: PseudoTerminal.recievedCallbackNotification,
+        object: [
+          "handlerId": hook.handlerID,
+          "filepath": hook.filepath,
+          "exitCode": hook.exitCode,
+        ])
     case .integrationReady(let hook):
       ShellHookManager.shared.integrationReadyHook(identifier: hook.identifier)
     case .hide(_):
