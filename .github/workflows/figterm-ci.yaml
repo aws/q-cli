@@ -55,9 +55,14 @@ jobs:
         working-directory: figterm
 
     steps:
-      - uses: actions/checkout@v1
-      - run: rustup component add clippy
-      - uses: actions-rs/clippy-check@v1
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Add clippy
+        run: rustup component add clippy
+
+      - name: Clippy checks
+        uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           args: --all-features
