@@ -10,7 +10,7 @@ import Foundation
 
 class FigTerm {
   static let defaultPath = URL(fileURLWithPath: "/tmp/figterm-input.socket")
-  
+
   static func path(for sessionId: SessionId) -> String {
     // We aren't using NSTemporaryDirectory because length of socket path is capped at 104 characters
     return "/tmp/figterm-\(sessionId).socket"
@@ -18,14 +18,14 @@ class FigTerm {
   static func insert(_ text: String, into session: SessionId) throws {
     let socket = UnixSocketClient(path: path(for: session))
     guard socket.connect() else {
-      return //throw
+      return // throw
     }
     ShellInsertionProvider.insertLock()
     socket.send(message: text)
     ShellInsertionProvider.insertUnlock(with: text)
     socket.disconnect()
   }
-  
+
 }
 
 import FigAPIBindings
@@ -41,12 +41,12 @@ extension FigTerm {
       }
       NotificationCenter.default.post(name: FigTerm.insertedTextNotification, object: nil)
       try FigTerm.insert(text, into: session)
-    case .update(_):
+    case .update:
       throw APIError.generic(message: "Not supported yet.")
     default:
       break
     }
-    
+
     return false
   }
 }

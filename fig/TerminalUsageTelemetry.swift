@@ -9,23 +9,23 @@
 import Cocoa
 
 class TerminalUsageObserver {
-    static let terminalApplicationLostFocusNotification: NSNotification.Name = Notification.Name("terminalApplicationLostKeyNotification")
+  static let terminalApplicationLostFocusNotification: NSNotification.Name = Notification.Name("terminalApplicationLostKeyNotification")
 
-    var observer: NSKeyValueObservation? = nil
-    var start: Date = Date(timeIntervalSinceNow: 0)
-    init() {
-        
-        self.observer = NSWorkspace.shared.observe(\.frontmostApplication, options: [.old]) { (workspace, delta) in
-            print("old: ", delta.oldValue as Any)
-            if let app = delta.oldValue {
-                let now = Date(timeIntervalSinceNow: 0)
-                let delta = now.timeIntervalSince(self.start)
-                Logger.log(message: "Application changed from \(app?.bundleIdentifier ?? "<none>") after \(delta) seconds")
-                if Integrations.bundleIsValidTerminal(app?.bundleIdentifier) {
-                    NotificationCenter.default.post(name: TerminalUsageObserver.terminalApplicationLostFocusNotification, object: delta)
-                }
-                self.start = now
-            }
+  var observer: NSKeyValueObservation?
+  var start: Date = Date(timeIntervalSinceNow: 0)
+  init() {
+
+    self.observer = NSWorkspace.shared.observe(\.frontmostApplication, options: [.old]) { (_, delta) in
+      print("old: ", delta.oldValue as Any)
+      if let app = delta.oldValue {
+        let now = Date(timeIntervalSinceNow: 0)
+        let delta = now.timeIntervalSince(self.start)
+        Logger.log(message: "Application changed from \(app?.bundleIdentifier ?? "<none>") after \(delta) seconds")
+        if Integrations.bundleIsValidTerminal(app?.bundleIdentifier) {
+          NotificationCenter.default.post(name: TerminalUsageObserver.terminalApplicationLostFocusNotification, object: delta)
         }
+        self.start = now
+      }
     }
+  }
 }

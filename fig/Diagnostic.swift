@@ -14,13 +14,13 @@ class Diagnostic {
       return Accessibility.enabled
     }
   }
-  
+
   static var secureKeyboardInput: Bool {
     get {
       return SecureKeyboardInput.enabled
     }
   }
-  
+
   static var blockingProcess: String? {
     get {
       guard SecureKeyboardInput.enabled else { return nil }
@@ -32,33 +32,33 @@ class Diagnostic {
       }
     }
   }
-  
+
   static var userConfig: String? {
     get {
       return try? String(contentsOfFile: "\(NSHomeDirectory())/.fig/user/config", encoding: String.Encoding.utf8)
     }
   }
-  
+
   static var installedCLI: Bool {
     get {
       guard let path = Diagnostic.pathOfCLI, let symlink = try? FileManager.default.destinationOfSymbolicLink(atPath: path) else { return false }
-      
+
       return FileManager.default.fileExists(atPath: path) && FileManager.default.fileExists(atPath: symlink)
     }
   }
-  
+
   static var pathOfCLI: String? {
-    var location: String? = nil
-    
-    if (FileManager.default.fileExists(atPath: "\(NSHomeDirectory())/.fig/bin/fig")) {
+    var location: String?
+
+    if FileManager.default.fileExists(atPath: "\(NSHomeDirectory())/.fig/bin/fig") {
       location = "\(NSHomeDirectory())/.fig/bin/fig"
-    } else if (FileManager.default.fileExists(atPath: "/usr/local/bin/fig")) {
+    } else if FileManager.default.fileExists(atPath: "/usr/local/bin/fig") {
       location = "/usr/local/bin/fig"
     }
-    
+
     return location
   }
-  
+
   static var shellIntegrationAddedToDotfiles: Bool {
     let dotfiles = [
       ".bashrc",
@@ -67,9 +67,9 @@ class Diagnostic {
       ".zprofile",
       ".profile"
     ]
-    
+
     let target = "source ~/.fig/fig.sh"
-    
+
     return dotfiles.reduce(true) { (result, file) -> Bool in
       guard result else {
         return false
@@ -78,24 +78,23 @@ class Diagnostic {
       guard FileManager.default.fileExists(atPath: filepath) else {
         return true
       }
-      
+
       guard let contents = try? String(contentsOfFile: filepath) else {
         return true
       }
-      
+
       return contents.contains(target)
     }
   }
-  
+
   static var dotfigFolderIsSetupCorrectly: Bool {
     let dotfig = "\(NSHomeDirectory())/.fig"
-    
+
     // Integration setup files
     let integrations = ["tmux", "ssh"]
-    
-    
+
     let settings = [ "settings.json" ]
-    
+
     // Shell Hooks
     let shellHooks = [
       "fig.sh",
@@ -105,52 +104,51 @@ class Diagnostic {
       "shell/post.sh",
       "shell/post.zsh",
       "shell/pre.fish",
-      "shell/pre.sh",
+      "shell/pre.sh"
     ]
-    
+
     let onboarding = [
       "tools",
       "tools/drip",
       "tools/drip/fig_onboarding.sh",
       "user/config"
     ]
-    
+
     let filesAndFolders = integrations +
-                              settings +
-                            shellHooks +
-                            onboarding
-      
-    
+      settings +
+      shellHooks +
+      onboarding
+
     return filesAndFolders.reduce(true) { (exists, path) -> Bool in
-      var isDir : ObjCBool = false
-      return exists && FileManager.default.fileExists(atPath: "\(dotfig)/\(path)", isDirectory:&isDir)
+      var isDir: ObjCBool = false
+      return exists && FileManager.default.fileExists(atPath: "\(dotfig)/\(path)", isDirectory: &isDir)
 
     }
   }
-  
+
   static var installationScriptRan: Bool {
-    
+
     let folderContainsExpectedFiles = Diagnostic.dotfigFolderIsSetupCorrectly
-    
+
     let shellIntegrationIsManagedByUser = Settings.shared.getValue(forKey: Settings.shellIntegrationIsManagedByUser) as? Bool ?? false
-    
+
     if shellIntegrationIsManagedByUser {
       return folderContainsExpectedFiles
     }
-    
+
     return folderContainsExpectedFiles && shellIntegrationAddedToDotfiles
   }
-    
+
   static var pathToBundle: String {
-      return Bundle.main.bundlePath
+    return Bundle.main.bundlePath
   }
-  
+
   static var numberOfCompletionSpecs: Int {
     get {
       return (try? FileManager.default.contentsOfDirectory(atPath: "\(NSHomeDirectory())/.fig/autocomplete").count) ?? 0
     }
   }
-  
+
   static var processForTopmostWindow: String {
     get {
       guard Integrations.frontmostApplicationIsValidTerminal(),
@@ -163,7 +161,7 @@ class Diagnostic {
       return context.executablePath
     }
   }
-  
+
   static var processIdForTopmostWindow: String {
     get {
       guard Integrations.frontmostApplicationIsValidTerminal(),
@@ -176,7 +174,7 @@ class Diagnostic {
       return "\(context.processId)"
     }
   }
-  
+
   static var workingDirectoryForTopmostWindow: String {
     get {
       guard Integrations.frontmostApplicationIsValidTerminal(),
@@ -189,7 +187,7 @@ class Diagnostic {
       return context.workingDirectory
     }
   }
-  
+
   static var processIsShellInTopmostWindow: Bool {
     get {
       guard Integrations.frontmostApplicationIsValidTerminal(),
@@ -202,7 +200,7 @@ class Diagnostic {
       return context.isShell()
     }
   }
-  
+
   static var ttyDescriptorForTopmostWindow: String {
     get {
       guard Integrations.frontmostApplicationIsValidTerminal(),
@@ -215,7 +213,7 @@ class Diagnostic {
       return context.ttyDescriptor
     }
   }
-  
+
   static var descriptionOfTopmostWindow: String {
     get {
       guard Integrations.frontmostApplicationIsValidTerminal(),
@@ -227,59 +225,59 @@ class Diagnostic {
       return "\(window.hash) (\(window.bundleId ?? "???"))"
     }
   }
-  
+
   static var keybufferHasContextForTopmostWindow: Bool {
     get {
       guard Integrations.frontmostApplicationIsValidTerminal() else {
         return false
       }
-      
+
       return AXWindowServer.shared.whitelistedWindow != nil
     }
   }
-  
+
   static var version: String {
     return Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "-1"
   }
-  
+
   static var build: String {
     return Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? ""
   }
-  
+
   static var distribution: String {
     return "Version \(Diagnostic.version) (B\(Diagnostic.build))\(Defaults.shared.isProduction ? "" : " [\(Defaults.shared.build.rawValue)]")"
   }
-  
+
   static var pseudoTerminalPath: String? {
     return Settings.shared.getValue(forKey: Settings.ptyPathKey) as? String
   }
-  
+
   static var pseudoTerminalPathAppearsValid: Bool? {
     guard let path = Diagnostic.pseudoTerminalPath else {
       return nil
     }
-    
+
     return path.contains("/usr/bin")
   }
-  
+
   static var settingsExistAndHaveValidFormat: Bool {
     return Settings.haveValidFormat
   }
-  
+
   static var dotfilesAreSymlinked: Bool {
     let dotfiles = [".profile", ".bashrc", ".bash_profile", ".zshrc", ".zprofile", ".config/fish/config.fish", ".tmux.conf", ".ssh/config"]
-    
+
     return dotfiles.reduce(false) { (existingSymlink, path) -> Bool in
       guard !existingSymlink else {
         return existingSymlink
       }
-      
+
       return (try? FileManager.default.destinationOfSymbolicLink(atPath: "\(NSHomeDirectory())/\(path)")) != nil
     }
   }
-  
+
   //https://github.com/sparkle-project/Sparkle/blob/3a5c620b60f483b71f8c28573ac29bf85fda6193/Sparkle/SUHost.m#L178-L183
-  
+
   // Check if app is translocated
   static var isRunningOnReadOnlyVolume: Bool {
     get {
@@ -291,7 +289,7 @@ class Diagnostic {
       } catch {
         return false
       }
-      
+
       if let isReadOnly = resourceValue as? NSNumber {
         return isReadOnly.boolValue
       } else {
@@ -303,7 +301,7 @@ class Diagnostic {
   static var summary: String {
     get {
       """
-      
+
       \(Diagnostic.distribution) \(Defaults.shared.beta ? "[Beta] " : "")\(Defaults.shared.debugAutocomplete ? "[Debug] " : "")\(Defaults.shared.developerModeEnabled ? "[Dev] " : "")[\(KeyboardLayout.shared.currentLayoutName() ?? "?")] \(Diagnostic.isRunningOnReadOnlyVolume ? "TRANSLOCATED!!!" : "")
       UserShell: \(Defaults.shared.userShell)
       Bundle path: \(Diagnostic.pathToBundle)
@@ -332,14 +330,14 @@ class Diagnostic {
       """
     }
   }
-  
+
   static func summaryWithEnvironment(_ env: [String: Any]) -> String {
     let relevantEnvironmentVariables =
-    """
+      """
     PATH: \(env["PATH"] as? String ?? "???")
     FIG_INTEGRATION_VERSION: \(env["FIG_INTEGRATION_VERSION"] as? String ?? "???")
     """
     return Diagnostic.summary + relevantEnvironmentVariables
-    
+
   }
 }

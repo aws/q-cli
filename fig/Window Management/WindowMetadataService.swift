@@ -21,7 +21,7 @@ extension TerminalSessionLinker: WindowMetadataService {
     guard let session = self.focusedTerminalSession(for: windowId) else {
       return nil
     }
-    
+
     return session.shellContext
   }
 
@@ -29,27 +29,27 @@ extension TerminalSessionLinker: WindowMetadataService {
     guard let session = self.focusedTerminalSession(for: windowId) else {
       return nil
     }
-    
+
     return session.editBuffer
   }
-  
+
   func getMostRecentFocusId(for windowId: WindowId) -> FocusId? {
     guard let session = self.focusedTerminalSession(for: windowId) else {
       return nil
     }
-    
+
     return session.focusId
   }
-  
+
   func getTerminalSessionId(for windowId: WindowId) -> TerminalSessionId? {
     return self.focusedTerminalSession(for: windowId)?.terminalSessionId
   }
-  
+
   func getWindowHash(for windowId: WindowId) -> ExternalWindowHash {
     guard let session = self.focusedTerminalSession(for: windowId) else {
       return "\(windowId)/%"
     }
-   
+
     return "\(session.windowId)/\(session.focusId ?? "")%"
   }
 }

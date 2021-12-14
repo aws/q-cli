@@ -33,7 +33,7 @@ class IPC: UnixSocketServerDelegate {
     static var headerPrefix: Data {
       return "\u{1B}@fig-".data(using: .utf8)!
     }
-    //\efig-(pbuf|json)
+    // \efig-(pbuf|json)
     static var headerSize: Int {
       return headerPrefix.count + typeSize + 8
     }
@@ -55,7 +55,7 @@ class IPC: UnixSocketServerDelegate {
 
   func recieved(data: Data, on socket: Socket?) {
     guard let socket = socket,
-      let (message, encoding) = try? retriveMessage(rawBytes: data)
+          let (message, encoding) = try? retriveMessage(rawBytes: data)
     else { return }
 
     do {
@@ -115,7 +115,7 @@ class IPC: UnixSocketServerDelegate {
     }
 
     let packetSize = Int64(bigEndian: packetSizeLittleEndian)
-    
+
     guard packetSize <= rawBytes.count - IPC.Encoding.headerSize && packetSize >= 0 else {
       return nil
     }
@@ -184,50 +184,49 @@ class IPC: UnixSocketServerDelegate {
   }
 
   func handleCommand(_ message: Local_Command, from socket: Socket, using encoding: IPC.Encoding)
-    throws
-  {
+  throws {
     let id = message.id
     var response: CommandResponse?
 
     switch message.command {
     case .terminalIntegration(let request):
       response = try Integrations.providers[request.identifier]?.handleIntegrationRequest(request)
-    case .listTerminalIntegrations(_):
+    case .listTerminalIntegrations:
       response = Integrations.handleListIntegrationsRequest()
-    case .logout(_):
+    case .logout:
       response = CommandHandlers.logoutCommand()
-    case .restart(_):
+    case .restart:
       CommandHandlers.restartCommand()
-    case .quit(_):
+    case .quit:
       CommandHandlers.quitCommand()
     case .update(let request):
       CommandHandlers.updateCommand(request.force)
-    case .diagnostics(_):
+    case .diagnostics:
       response = CommandHandlers.diagnosticsCommand()
     case .reportWindow(let request):
       CommandHandlers.displayReportWindow(message: request.report, path: request.path, figEnvVar: request.figEnvVar, terminal: request.terminal)
-    case .restartSettingsListener(_):
+    case .restartSettingsListener:
       response = CommandHandlers.restartSettingsListenerCommand()
-    case .runInstallScript(_):
+    case .runInstallScript:
       response = CommandHandlers.runInstallScriptCommand()
     case .build(let request):
       response = CommandHandlers.buildCommand(build: request.branch)
     case .openUiElement(let request):
       response = CommandHandlers.openUiElement(uiElement: request.element)
-    case .resetCache(_):
+    case .resetCache:
       response = CommandHandlers.resetCache()
     case .debugMode(let request):
       response = CommandHandlers.autocompleteDebugMode(
         setVal: request.hasSetDebugMode ? request.setDebugMode : nil,
         toggleVal: request.hasToggleDebugMode ? request.toggleDebugMode : nil)
-    case .promptAccessibility(_):
+    case .promptAccessibility:
       CommandHandlers.promptAccessibility()
     case .none:
       break
     }
 
     guard !message.noResponse else { return }
-    
+
     if var resp = response {
       resp.id = id
       try self.send(resp, to: socket, encoding: encoding)
@@ -236,10 +235,10 @@ class IPC: UnixSocketServerDelegate {
 
   func handleHook(_ message: Local_Hook) {
     Logger.log(message: "Recieved hook message!", subsystem: .unix)
-    
+
     let json = try? message.jsonString()
     Logger.log(message: json ?? "Could not decode message", subsystem: .unix)
-    
+
     switch message.hook {
     case .editBuffer(let hook):
       // NOTE: IPC notifications update TerminalSessionLinker and MUST occur before everything else!
@@ -272,17 +271,17 @@ class IPC: UnixSocketServerDelegate {
       API.notifications.post(hook.historyNotification)
     case .keyboardFocusChanged(let hook):
       IPC.post(notification: .keyboardFocusChanged, object: hook)
-      
+
       ShellHookManager.shared.currentTabDidChange(applicationIdentifier: hook.appIdentifier, sessionId: hook.focusedSessionID)
-    case .tmuxPaneChanged(_):
+    case .tmuxPaneChanged:
       break
-    case .openedSshConnection(_):
+    case .openedSshConnection:
       break
-    case .callback(_):
+    case .callback:
       break
     case .integrationReady(let hook):
       ShellHookManager.shared.integrationReadyHook(identifier: hook.identifier)
-    case .hide(_):
+    case .hide:
       Autocomplete.hide()
     case .event(let hook):
       ShellHookManager.shared.eventHook(event: hook.eventName)
@@ -372,7 +371,7 @@ extension IPC {
           object: [
             "handlerId": shellMessage.options?[0] ?? nil,
             "filepath": shellMessage.options?[1] ?? nil,
-            "exitCode": shellMessage.options?[safe: 2] ?? nil,
+            "exitCode": shellMessage.options?[safe: 2] ?? nil
           ])
       case .tmux:
         ShellHookManager.shared.tmuxPaneChangedLegacy(shellMessage)
@@ -430,7 +429,7 @@ extension ShellMessage {
 
   static func callback(raw: String) -> [String: String]? {
     guard let decodedData = Data(base64Encoded: raw, options: .ignoreUnknownCharacters),
-      let decodedString = String(data: decodedData, encoding: .utf8)
+          let decodedString = String(data: decodedData, encoding: .utf8)
     else { return nil }
     let tokens: [String] = decodedString.split(
       separator: " ", maxSplits: Int.max, omittingEmptySubsequences: false
@@ -441,8 +440,8 @@ extension ShellMessage {
 
   static func from(raw: String) -> ShellMessage? {
     guard let decodedData = Data(base64Encoded: raw, options: .ignoreUnknownCharacters),
-      let decodedString = String(data: decodedData, encoding: .utf8)?.trimmingCharacters(
-        in: .whitespacesAndNewlines)
+          let decodedString = String(data: decodedData, encoding: .utf8)?.trimmingCharacters(
+            in: .whitespacesAndNewlines)
     else { return nil }
     print("unix: '\(decodedString)'")
     let tokens: [String] = decodedString.split(
@@ -450,7 +449,7 @@ extension ShellMessage {
     ).map(String.init)
 
     guard let subcommand = tokens[safe: 1], let session = tokens[safe: 2],
-      let integration = tokens[safe: 3]
+          let integration = tokens[safe: 3]
     else { return nil }
 
     let integrationNumber = Int(integration) ?? 0
@@ -468,9 +467,9 @@ extension ShellMessage {
         hook: subcommand)
     case .keypress:
       guard let tty = tokens[safe: 4],
-        let pid = tokens[safe: 5],
-        let histno = tokens[safe: 6],
-        let cursor = tokens[safe: 7]
+            let pid = tokens[safe: 5],
+            let histno = tokens[safe: 6],
+            let cursor = tokens[safe: 7]
       else { return nil }
       // "this is the buffer"\n -- drop quotes and newline
       var buffer = tokens.suffix(from: 8).joined(separator: " ")
@@ -498,7 +497,7 @@ extension ShellMessage {
         hook: subcommand)
     case .legacyKeypress:
       guard let histno = tokens[safe: 4],
-        let cursor = tokens[safe: 5]
+            let cursor = tokens[safe: 5]
       else { return nil }
       // "this is the buffer"\n -- drop quotes and newline
       var buffer = tokens.suffix(from: 6).joined(separator: " ")

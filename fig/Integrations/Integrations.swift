@@ -24,22 +24,22 @@ class Integrations {
     "com.apple.Terminal",
     "io.alacritty",
     "co.zeit.hyper",
-    "net.kovidgoyal.kitty",
+    "net.kovidgoyal.kitty"
   ]
   static let browsers: Set = ["com.google.Chrome"]
   static let editors: Set = [
     "com.apple.dt.Xcode",
     "com.sublimetext.3",
-    "com.microsoft.VSCode",
+    "com.microsoft.VSCode"
   ]
   static let nativeTerminals: Set = [
     "com.googlecode.iterm2",
-    "com.apple.Terminal",
+    "com.apple.Terminal"
   ]
   static let searchBarApps: Set = [
     "com.apple.Spotlight",
     "com.runningwithcrayons.Alfred",
-    "com.raycast.macos",
+    "com.raycast.macos"
   ]
 
   static let inputMethodDependentTerminals = [Alacritty]
@@ -63,7 +63,7 @@ class Integrations {
   }
 
   static func bundleIsValidTerminal(_ bundle: String?) -> Bool {
-      return Integrations.terminalsWhereAutocompleteShouldAppear.contains(bundle ?? "")
+    return Integrations.terminalsWhereAutocompleteShouldAppear.contains(bundle ?? "")
   }
 
   static func frontmostApplicationIsValidTerminal() -> Bool {
@@ -73,27 +73,23 @@ class Integrations {
   static var autocompleteBlocklist: Set<String> {
     var blocklist: Set<String> = []
     if let hyperDisabled = Settings.shared.getValue(forKey: Settings.hyperDisabledKey) as? Bool,
-      hyperDisabled
-    {
+       hyperDisabled {
       blocklist.insert(Integrations.Hyper)
     }
 
     if let vscodeDisabled = Settings.shared.getValue(forKey: Settings.vscodeDisabledKey) as? Bool,
-      vscodeDisabled
-    {
+       vscodeDisabled {
       blocklist.insert(Integrations.VSCode)
       blocklist.insert(Integrations.VSCodeInsiders)
     }
 
     if let itermDisabled = Settings.shared.getValue(forKey: Settings.iTermDisabledKey) as? Bool,
-      itermDisabled
-    {
+       itermDisabled {
       blocklist.insert(Integrations.iTerm)
     }
 
     if let terminalDisabled = Settings.shared.getValue(forKey: Settings.terminalDisabledKey)
-      as? Bool, terminalDisabled
-    {
+        as? Bool, terminalDisabled {
       blocklist.insert(Integrations.Terminal)
     }
     return blocklist
@@ -130,9 +126,9 @@ class Integrations {
       Integrations.VSCodium: VSCodeIntegration.vscodium,
       // Integrations.Alacritty: AlacrittyIntegration.default,
       // Integrations.Kitty : KittyIntegration.default,
-      Integrations.Terminal: AppleTerminalIntegration.default,
+      Integrations.Terminal: AppleTerminalIntegration.default
     ]
-  
+
   static func handleListIntegrationsRequest() -> CommandResponse {
     CommandResponse.with { response in
       response.integrationList = Local_TerminalIntegrationsListResponse.with({ list in
