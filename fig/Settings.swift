@@ -393,8 +393,8 @@ class Settings {
       guard FileManager.default.fileExists(atPath: Settings.filePath) else { return }
       DispatchQueue.main.async {
         _ = Alert.show(title: "Fig's settings can not be parsed.",
-                           message: "An error occured while reading the Fig settings file stored at ~/.fig/settings.json\n\nPlease make sure this file is valid JSON.",
-                           icon: Alert.appIcon)
+                       message: "An error occured while reading the Fig settings file stored at ~/.fig/settings.json\n\nPlease make sure this file is valid JSON.",
+                       icon: Alert.appIcon)
 
       }
     }
@@ -416,8 +416,7 @@ class Settings {
     self.eventSource = DispatchSource.makeFileSystemObjectSource(fileDescriptor: descriptor,
                                                                  eventMask: [.all],
                                                                  queue: DispatchQueue.main)
-    self.eventSource?.setEventHandler {
-      [weak self] in
+    self.eventSource?.setEventHandler { [weak self] in
       Settings.log(String(describing: self?.eventSource?.dataStrings ?? []))
       if  [.write, .attrib].contains(self?.eventSource?.data) {
         self?.settingsUpdated()

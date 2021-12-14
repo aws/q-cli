@@ -14,10 +14,12 @@ class iTermIntegration: TerminalIntegrationProvider {
   // MARK: - Installation
   fileprivate static let scriptName = "fig-iterm-integration"
 
-  fileprivate static let iTermAutoLaunchDirectory = "\(NSHomeDirectory())/Library/Application Support/iTerm2/Scripts/AutoLaunch/"
+  fileprivate static let iTermAutoLaunchDirectory =
+    "\(NSHomeDirectory())/Library/Application Support/iTerm2/Scripts/AutoLaunch/"
   fileprivate static let autoLaunchScriptTarget = iTermAutoLaunchDirectory + scriptName + ".scpt"
   static let bundleAppleScriptFilePath = Bundle.main.path(forResource: scriptName, ofType: "scpt")!
-  // Do we want to store the Applescript in the bundle or in withfig/fig? eg. "\(NSHomeDirectory())/.fig/tools/\(scriptName).scpt"
+  // Do we want to store the Applescript in the bundle or in withfig/fig? eg.
+  // "\(NSHomeDirectory())/.fig/tools/\(scriptName).scpt"
   fileprivate static let plistVersionKey = "iTerm Version"
   fileprivate static let plistAPIEnabledKey = "EnableAPIServer"
   fileprivate static let minimumSupportedVersion = SemanticVersion(version: "3.4.0")!
@@ -50,7 +52,8 @@ class iTermIntegration: TerminalIntegrationProvider {
     }
 
     guard semver >= iTermIntegration.minimumSupportedVersion else {
-      return .failed(error: "iTerm version \(version) is not supported. Must be \(iTermIntegration.minimumSupportedVersion.string) or above.")
+      return .failed(error: "iTerm version \(version) is not supported. Must be " +
+                      "\(iTermIntegration.minimumSupportedVersion.string) or above.")
     }
 
     // Update API preferences
@@ -66,7 +69,9 @@ class iTermIntegration: TerminalIntegrationProvider {
     try? FileManager.default.createSymbolicLink(atPath: iTermIntegration.autoLaunchScriptTarget,
                                                 withDestinationPath: iTermIntegration.bundleAppleScriptFilePath)
 
-    let destination = try? FileManager.default.destinationOfSymbolicLink(atPath: iTermIntegration.autoLaunchScriptTarget)
+    let destination = try? FileManager.default.destinationOfSymbolicLink(
+      atPath: iTermIntegration.autoLaunchScriptTarget
+    )
 
     // Check if symlink exists and is pointing to the correct location
     guard destination == iTermIntegration.bundleAppleScriptFilePath else {
@@ -82,7 +87,9 @@ class iTermIntegration: TerminalIntegrationProvider {
       return .applicationNotInstalled
     }
 
-    guard let symlinkDestination = try? FileManager.default.destinationOfSymbolicLink(atPath: iTermIntegration.autoLaunchScriptTarget) else {
+    guard let symlinkDestination = try? FileManager.default.destinationOfSymbolicLink(
+      atPath: iTermIntegration.autoLaunchScriptTarget
+    ) else {
       return .failed(error: "AutoLaunch script does not exist at \(iTermIntegration.autoLaunchScriptTarget).")
     }
 
@@ -141,7 +148,7 @@ class iTermIntegration: TerminalIntegrationProvider {
 
       Logger.log(message: "sessionId did changed to \(sessionId)", subsystem: .iterm)
 
-      if let window = AXWindowServer.shared.whitelistedWindow, window.bundleId ?? "" == self.bundleIdentifier {
+      if let window = AXWindowServer.shared.allowlistedWindow, window.bundleId ?? "" == self.bundleIdentifier {
         ShellHookManager.shared.keyboardFocusDidChange(to: sessionId, in: window)
 
       }
@@ -150,18 +157,19 @@ class iTermIntegration: TerminalIntegrationProvider {
   }
 
   var currentSessionId: String? {
-    get {
-      guard appIsInstalled, self.socket.isConnected else {
-        return nil
-      }
-
-      return self.sessionId
+    guard appIsInstalled, self.socket.isConnected else {
+      return nil
     }
+
+    return self.sessionId
   }
 
   // MARK: - iTerm API
   static let apiCredentialsPath = "\(NSHomeDirectory())/.fig/tools/iterm-api-credentials"
-  let socket = UnixSocketClient(path: "\(NSHomeDirectory())/Library/Application Support/iTerm2/private/socket", waitForNewline: false)
+  let socket = UnixSocketClient(
+    path: "\(NSHomeDirectory())/Library/Application Support/iTerm2/private/socket",
+    waitForNewline: false
+  )
   let ws = WSFramer(isServer: false)
 
   // API
@@ -220,7 +228,11 @@ extension iTermIntegration {
 
   func credentials() -> (String, String)? {
     guard FileManager.default.fileExists(atPath: iTermIntegration.apiCredentialsPath) else {
-      Logger.log(message: "credentials file does not exist - this is likely because Fig is newly installed and iTerm has not restarted yet!", subsystem: .iterm)
+      Logger.log(
+        message: "credentials file does not exist - this is likely because " +
+          "Fig is newly installed and iTerm has not restarted yet!",
+        subsystem: .iterm
+      )
       return nil
     }
 
@@ -236,7 +248,9 @@ extension iTermIntegration {
     }
 
     let currentCredentials = allCredentials.removeFirst()
-    let tokens = currentCredentials.split(separator: " ").map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }
+    let tokens = currentCredentials.split(separator: " ").map {
+      String($0).trimmingCharacters(in: .whitespacesAndNewlines)
+    }
     guard tokens.count == 2 else {
       return nil
     }
@@ -247,7 +261,10 @@ extension iTermIntegration {
                                        atomically: true,
                                        encoding: .utf8)
     } catch {
-      Logger.log(message: "error writing updated credential list to \(iTermIntegration.apiCredentialsPath)", subsystem: .iterm)
+      Logger.log(
+        message: "error writing updated credential list to \(iTermIntegration.apiCredentialsPath)",
+        subsystem: .iterm
+      )
     }
 
     return (tokens[0], tokens[1])

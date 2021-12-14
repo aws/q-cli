@@ -51,7 +51,9 @@ class Accessibility {
   }
 
   static func openAccessibilityPermissionsInSystemPreferences() {
-    NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!)
+    NSWorkspace.shared.open(URL(
+      string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
+    )!)
   }
 
   fileprivate static var pendingPermission: Bool = false
@@ -144,17 +146,19 @@ class Accessibility {
   }
 
   // THANKFULLY WE DON'T DO THIS!
-  // This is an unfortunate hack that is necessary because there is no VSCode API to determe when the terminal has focus.
-  // Currently, we use whether the cursor AXElement exists and has focus as a proxy. This is cached to avoid performance penalty.
-  // However, when the bottom panel is closed, the cache always misses and typing can become noticably slow.
-  // We're going to fight fire with fire and use the AXAPI to check if the panel is open.
-  // This is completely an implementation detail of VSCode and if (when) it changes in the future, this method will not work...
+  // This is an unfortunate hack that is necessary because there is no VSCode API to determe when the terminal has
+  // focus.  Currently, we use whether the cursor AXElement exists and has focus as a proxy. This is cached to avoid
+  // performance penalty.  However, when the bottom panel is closed, the cache always misses and typing can become
+  // noticably slow.  We're going to fight fire with fire and use the AXAPI to check if the panel is open.  This is
+  // completely an implementation detail of VSCode and if (when) it changes in the future, this method will not work...
 
   // Approach:
-  // The editor pane is contained in a <main> tag which WebKit maps to the subrole "AXLandmarkMain". (https://bugs.webkit.org/show_bug.cgi?id=103172)
+  // The editor pane is contained in a <main> tag which WebKit maps to the subrole "AXLandmarkMain".
+  // (https://bugs.webkit.org/show_bug.cgi?id=103172)
   // This <main> tag is the direct child of a group that contains the bottom pane as well.
-  // Identify <main> tag and than check the child of the parent. This should be more performant since the search is shallower and terminates early.
-  //  static func findPanel(_ parent: UIElement, siblings: [UIElement]) -> UIElement? {
+  // Identify <main> tag and than check the child of the parent. This should be more performant since the search is
+  // shallower and terminates early.
+  // static func findPanel(_ parent: UIElement, siblings: [UIElement]) -> UIElement? {
   //    let AXLandmarkMain = "AXLandmarkMain"
   //    let children: [UIElement] = (try? parent.arrayAttribute(.children)) ?? []
   //
@@ -211,13 +215,15 @@ class Accessibility {
     // remove invalid entries; this fixes the issue with VSCode where upon changing tabs, some cached cursors go stale
     cursorCache[window.hash] = cursorCache[window.hash]?.filter { isValidUIElement($0) }
 
-    var cursor: UIElement? = cursorCache[window.hash]?.filter { cursorIsActive($0) }.reduce(nil, { (existing, cache) -> UIElement? in
-      guard existing == nil else {
-        return existing
-      }
+    var cursor: UIElement? = cursorCache[window.hash]?
+      .filter { cursorIsActive($0) }
+      .reduce(nil, { (existing, cache) -> UIElement? in
+        guard existing == nil else {
+          return existing
+        }
 
-      return cache
-    })
+        return cache
+      })
 
     let root = UIElement(axElement)
 
@@ -465,7 +471,7 @@ class Accessibility {
       return nil
     }
 
-    guard let window = AXWindowServer.shared.whitelistedWindow else {
+    guard let window = AXWindowServer.shared.allowlistedWindow else {
       return nil
     }
 

@@ -15,10 +15,16 @@ enum APIError: Error, Equatable {
 
 class WindowPositioning {
 
-  static func positionWindow(_ request: Fig_PositionWindowRequest, companionWindow: CompanionWindow) throws -> Fig_PositionWindowResponse {
+  static func positionWindow(
+    _ request: Fig_PositionWindowRequest,
+    companionWindow: CompanionWindow
+  ) throws -> Fig_PositionWindowResponse {
     let info = try frameRelativeToCursor(width: CGFloat(request.size.width),
                                          height: CGFloat(request.size.height),
-                                         anchorOffset: CGPoint(x: CGFloat(request.anchor.x), y: CGFloat(request.anchor.y)))
+                                         anchorOffset: CGPoint(
+                                          x: CGFloat(request.anchor.x),
+                                          y: CGFloat(request.anchor.y)
+                                         ))
 
     if !request.dryrun {
 
@@ -55,8 +61,8 @@ class WindowPositioning {
   static func frameRelativeToCursor(width: CGFloat,
                                     height: CGFloat,
                                     anchorOffset: CGPoint) throws -> (frame: CGRect, isAbove: Bool, isClipped: Bool) {
-    guard let window = AXWindowServer.shared.whitelistedWindow else {
-      throw APIError.generic(message: "Could not find whitelisted window")
+    guard let window = AXWindowServer.shared.allowlistedWindow else {
+      throw APIError.generic(message: "Could not find allowlisted window")
     }
 
     guard let cursorRect = window.cursor else {

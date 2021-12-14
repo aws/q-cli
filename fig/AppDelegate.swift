@@ -15,7 +15,7 @@ import Sentry
 // swiftlint:disable:next type_body_length
 class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
-    var window: NSWindow!
+  var window: NSWindow!
   var onboardingWindow: WebViewWindow!
   var statusBarItem: NSStatusItem!
   var frontmost: NSMenuItem?
@@ -1194,7 +1194,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
   }
 
   @objc func pid() {
-    if let window = WindowServer.shared.topmostWhitelistedWindow() {
+    if let window = WindowServer.shared.topmostAllowlistedWindow() {
       print("\(window.bundleId ?? "") -  pid:\(window.app.processIdentifier) - \(window.windowId)")
     }
   }
@@ -1760,7 +1760,7 @@ extension AppDelegate: NSMenuDelegate {
     }
 
     if let app = NSWorkspace.shared.frontmostApplication, !app.isFig {
-      let window = AXWindowServer.shared.whitelistedWindow
+      let window = AXWindowServer.shared.allowlistedWindow
       if Integrations.bundleIsValidTerminal(window?.bundleId) ||
           Integrations.frontmostApplicationIsValidTerminal() {
 

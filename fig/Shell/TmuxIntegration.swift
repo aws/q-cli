@@ -14,7 +14,9 @@ class TmuxIntegration {
   //
   //    tty.pty!.execute("tmux list-panes -a -F \"#{pane_pid} #{pane_id}\"") { panes in
   //      print("tmux: \(panes)")
-  //      let mapping: [String: pid_t] = panes.split(separator: "\r\n").map { $0.split(separator: " ") }.reduce([:]) { (out, tokens) -> [String: pid_t] in
+  //      let mapping: [String: pid_t] = panes.split(separator: "\r\n")
+  //                                          .map { $0.split(separator: " ") }
+  //                                          .reduce([:]) { (out, tokens) -> [String: pid_t] in
   //        guard let pidString = tokens.first, let pid = pid_t(pidString), let paneId = tokens.last else { return out }
   //        print("tmux: \(paneId), \(pid)")
   //        var new = out
@@ -22,11 +24,11 @@ class TmuxIntegration {
   //        return new
   //      }
   //
-  ////      guard let (_, _, p) = AXWindowServer.shared.whitelistedWindow?.hash.components(), let pane = p else {
-  ////        print("tmux: could not get windowHash components")
-  ////        return
-  ////      }
-  ////
+  //      guard let (_, _, p) = AXWindowServer.shared.allowlistedWindow?.hash.components(), let pane = p else {
+  //        print("tmux: could not get windowHash components")
+  //        return
+  //      }
+  //
   //      guard let pane = self.activePane else {
   //        print("tmux: no active pane")
   //        return
@@ -38,8 +40,8 @@ class TmuxIntegration {
   //        return
   //      }
   //
-  //      guard let activeTmuxProcess = (ProcessStatus.getProcesses(for: "").filter {  $0.pid == tmux_pid }).first else {
-  //        print("tmux: could not find process for pid")
+  //      guard let activeTmuxProcess = (ProcessStatus.getProcesses(for: "").filter {  $0.pid == tmux_pid }).first else
+  //      { print("tmux: could not find process for pid")
   //        return
   //      }
   //

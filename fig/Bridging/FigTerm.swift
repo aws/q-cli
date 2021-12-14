@@ -35,7 +35,7 @@ extension FigTerm {
   static func handleInsertRequest(_ request: Fig_InsertTextRequest) throws -> Bool {
     switch request.type {
     case .text(let text):
-      guard let window = AXWindowServer.shared.whitelistedWindow,
+      guard let window = AXWindowServer.shared.allowlistedWindow,
             let session = window.session else {
         return false
       }

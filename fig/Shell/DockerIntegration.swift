@@ -46,7 +46,7 @@ class DockerIntegration: CommandIntegration {
       // cmd is better for comparison that pid
       guard tty.cmd?.contains("docker") ?? false else {
         print("Docker: Process out of sync, abort update - \(tty.cmd ?? "") != \(process.cmd)")
-        ////                semaphore.signal()
+        //                semaphore.signal()
         return
       }
 
@@ -73,7 +73,9 @@ class DockerIntegration: CommandIntegration {
 
   func initialize(tty: TTY) {
 
-    DockerEventStream.shared.onNextEvent(matching: ["create", "start", "exec_create", "exec_start", "resize"]) { (event) in
+    DockerEventStream.shared.onNextEvent(
+      matching: ["create", "start", "exec_create", "exec_start", "resize"]
+    ) { (event) in
       guard let id = event.id else {
         print("Docker: event did not have an associated container id")
         return
@@ -84,7 +86,8 @@ class DockerIntegration: CommandIntegration {
     }
   }
 
-  // --context is included because when a new docker container is created, it can sometimes appear as the subcommand temporarily
+  // --context is included because when a new docker container is created, it can sometimes appear as the subcommand
+  // temporarily
   let supportedDockerSubcommands = ["run", "attach", "exec", "start", "--context"]
   func shouldHandleProcess(_ process: proc) -> Bool {
     guard process.name == DockerIntegration.command || process.name == "docker" else {
@@ -167,8 +170,9 @@ class DockerEventStream {
   // because it is a daemon application
   // https://developer.apple.com/documentation/appkit/nsworkspace/1534081-didterminateapplicationnotificat
   //  func waitForDockerToTerminate(completion: @escaping (() -> Void)) {
-  //    if let app = NSWorkspace.shared.runningApplications.filter ({ return $0.bundleIdentifier == DockerEventStream.dockerBundleId }).first {
-  //      self.observer = app.observe(\.isTerminated, options: .new) { (app, terminated) in
+  //    if let app = NSWorkspace.shared.runningApplications.filter ({ return $0.bundleIdentifier ==
+  //    DockerEventStream.dockerBundleId }).first { self.observer = app.observe(\.isTerminated, options: .new) { (app,
+  //    terminated) in
   //        if terminated.newValue == true {
   //          self.observer?.invalidate()
   //          completion()
@@ -287,9 +291,9 @@ extension DockerEventStream {
 
     enum CodingKeys: String, CodingKey {
 
-      case exitCode = "exitCode"
-      case image = "image"
-      case name = "name"
+      case exitCode
+      case image
+      case name
     }
 
     init(from decoder: Decoder) throws {

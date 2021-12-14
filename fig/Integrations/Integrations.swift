@@ -111,7 +111,7 @@ class Integrations {
     }
   }
 
-  static var whitelist: Set<String> {
+  static var allowlist: Set<String> {
     return Integrations.terminals
       .union(Integrations.allowed)
       .subtracting(Integrations.blocked)

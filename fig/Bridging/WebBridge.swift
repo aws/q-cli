@@ -8,7 +8,7 @@
 
 import WebKit
 
-protocol WebBridgeEventDelegate {
+protocol WebBridgeEventDelegate: class {
   func requestExecuteCLICommand(script: String)
   func requestInsertCLICommand(script: String)
 }

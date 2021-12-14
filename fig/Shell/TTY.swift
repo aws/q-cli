@@ -31,7 +31,9 @@ struct proc {
 
   var cwd: String? {
     guard let cwd = self._cwd else {
-      return "/usr/sbin/lsof -an -p \(self.pid) -d cwd -F n | tail -1 | cut -c2-".runAsCommand().trimmingCharacters(in: .whitespaces)
+      return "/usr/sbin/lsof -an -p \(self.pid) -d cwd -F n | tail -1 | cut -c2-"
+        .runAsCommand()
+        .trimmingCharacters(in: .whitespaces)
     }
     return cwd
   }
@@ -39,7 +41,18 @@ struct proc {
   // Run cat /etc/shells
   var isShell: Bool {
 
-    return (Defaults.shared.processWhitelist + ["zsh", "fish", "bash", "csh", "dash", "ksh", "tcsh", "ssh", "docker", "tmux"]).reduce(into: false) { (res, shell) in
+    return (Defaults.shared.processWhitelist + [
+      "zsh",
+      "fish",
+      "bash",
+      "csh",
+      "dash",
+      "ksh",
+      "tcsh",
+      "ssh",
+      "docker",
+      "tmux"
+    ]).reduce(into: false) { (res, shell) in
       res = res || cmd.contains(shell)
     }
   }
@@ -63,7 +76,8 @@ class TTY {
   var pty: PseudoTerminal?
   var processes: [proc] {
     return ProcessStatus.getProcesses(for: self.descriptor).filter({ (process) -> Bool in
-      return !(Defaults.shared.ignoreProcessList.contains(process.cmd) || Defaults.shared.ignoreProcessList.contains(process.name))
+      return !(Defaults.shared.ignoreProcessList.contains(process.cmd) ||
+                Defaults.shared.ignoreProcessList.contains(process.name))
     }).reversed()
   }
 

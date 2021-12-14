@@ -83,23 +83,21 @@ class FileSystem {
 
 extension Fig_FilePath {
   var normalizedPath: String {
-    get {
-      let filePath = self
+    let filePath = self
 
-      var normalizedPath = filePath.path
+    var normalizedPath = filePath.path
 
-      if filePath.hasExpandTildeInPath,
-         filePath.expandTildeInPath {
+    if filePath.hasExpandTildeInPath,
+       filePath.expandTildeInPath {
 
-        normalizedPath = NSString(string: normalizedPath).expandingTildeInPath
-      }
-
-      if filePath.hasRelativeTo {
-        normalizedPath = URL(fileURLWithPath: path, relativeTo: URL(fileURLWithPath: filePath.relativeTo)).path
-      }
-
-      return normalizedPath
+      normalizedPath = NSString(string: normalizedPath).expandingTildeInPath
     }
+
+    if filePath.hasRelativeTo {
+      normalizedPath = URL(fileURLWithPath: path, relativeTo: URL(fileURLWithPath: filePath.relativeTo)).path
+    }
+
+    return normalizedPath
   }
 
   var normalizedFileURL: URL {

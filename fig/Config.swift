@@ -9,7 +9,9 @@
 import Foundation
 
 class Config {
-  static let shared = Config(configPath: URL(fileURLWithPath: "\(FileManager.default.homeDirectoryForCurrentUser)/.fig/user/config"))
+  static let shared = Config(
+    configPath: URL(fileURLWithPath: "\(FileManager.default.homeDirectoryForCurrentUser)/.fig/user/config")
+  )
 
   static let userExplictlyQuitApp = "APP_TERMINATED_BY_USER"
   static let userLoggedIn = "FIG_LOGGED_IN"

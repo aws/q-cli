@@ -82,7 +82,11 @@ extension String {
     var dataObserver: NSObjectProtocol!
     let notificationCenter = NotificationCenter.default
     let dataNotificationName = NSNotification.Name.NSFileHandleDataAvailable
-    dataObserver = notificationCenter.addObserver(forName: dataNotificationName, object: outputHandler, queue: nil) { [weak dataObserver]  _ in
+    dataObserver = notificationCenter.addObserver(
+      forName: dataNotificationName,
+      object: outputHandler,
+      queue: nil
+    ) { [weak dataObserver]  _ in
       guard let dataObserver = dataObserver else { return }
       let data = outputHandler.availableData
       guard data.count > 0 else {
@@ -94,7 +98,7 @@ extension String {
         if isVerbose {
           print(line)
         }
-        output = output + line + "\n"
+        output += line + "\n"
       }
       outputHandler.waitForDataInBackgroundAndNotify()
     }
@@ -102,7 +106,11 @@ extension String {
     let errorHandler = stderr.fileHandleForReading
     errorHandler.waitForDataInBackgroundAndNotify()
     var errorObserver: NSObjectProtocol!
-    errorObserver = notificationCenter.addObserver(forName: dataNotificationName, object: errorHandler, queue: nil) { [weak errorObserver] _ in
+    errorObserver = notificationCenter.addObserver(
+      forName: dataNotificationName,
+      object: errorHandler,
+      queue: nil
+    ) { [weak errorObserver] _ in
       guard let errorObserver = errorObserver else { return }
       let data = errorHandler.availableData
       guard data.count > 0 else {
@@ -114,7 +122,7 @@ extension String {
         if isVerbose {
           print(line)
         }
-        output = output + line + "\n"
+        output += line + "\n"
       }
       errorHandler.waitForDataInBackgroundAndNotify()
     }
@@ -144,7 +152,11 @@ extension String {
     let handler = pipe.fileHandleForReading
     handler.waitForDataInBackgroundAndNotify()
     var observer: NSObjectProtocol!
-    observer = NotificationCenter.default.addObserver(forName: .NSFileHandleDataAvailable, object: handler, queue: nil) { [weak handler] _ in
+    observer = NotificationCenter.default.addObserver(
+      forName: .NSFileHandleDataAvailable,
+      object: handler,
+      queue: nil
+    ) { [weak handler] _ in
       guard let handler = handler else { return }
       let data = handler.availableData
       guard data.count > 0 else {
@@ -160,7 +172,12 @@ extension String {
     return observer
   }
 
-  @discardableResult func runInBackground(cwd: String? = nil, with env: [String: String]? = nil, updateHandler: ((String, Process) -> Void)? = nil, completion: ((String) -> Void)? = nil) -> Process {
+  @discardableResult func runInBackground(
+    cwd: String? = nil,
+    with env: [String: String]? = nil,
+    updateHandler: ((String, Process) -> Void)? = nil,
+    completion: ((String) -> Void)? = nil
+  ) -> Process {
 
     let stdin = Pipe()
     let stderr = Pipe()

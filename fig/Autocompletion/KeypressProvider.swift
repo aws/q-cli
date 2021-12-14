@@ -34,10 +34,8 @@ class KeypressProvider {
     self.registeredHandlers.append(handler)
   }
 
-  static var whitelist: Set<String> {
-    get {
-      return Integrations.terminalsWhereAutocompleteShouldAppear
-    }
+  static var allowlist: Set<String> {
+    return Integrations.terminalsWhereAutocompleteShouldAppear
   }
   static let shared = KeypressProvider()
 
@@ -72,7 +70,9 @@ class KeypressProvider {
       switch event.type {
       case .keyDown:
         // Handle Control+R searching -- this is needed for ZLE + fzf, normal history search is handled by integration.
-        if AXWindowServer.shared.whitelistedWindow != nil, event.keyCode == Keycode.r.rawValue && event.modifierFlags.contains(.control) {
+        if AXWindowServer.shared.allowlistedWindow != nil,
+           event.keyCode == Keycode.r.rawValue,
+           event.modifierFlags.contains(.control) {
           Autocomplete.hide()
         }
       case .keyUp:
@@ -105,7 +105,10 @@ class KeypressProvider {
       return nil
     }
 
-    let eventMask = (1 << CGEventType.keyDown.rawValue) | (1 << CGEventType.keyUp.rawValue) | (1 << CGEventType.tapDisabledByTimeout.rawValue)// | (1 << CGEventType.tapDisabledByUserInput.rawValue)
+    let eventMask = (1 << CGEventType.keyDown.rawValue)
+      | (1 << CGEventType.keyUp.rawValue)
+      | (1 << CGEventType.tapDisabledByTimeout.rawValue)
+    // | (1 << CGEventType.tapDisabledByUserInput.rawValue)
 
     let eventCallBack: CGEventTapCallBack = { (_, type, event, _) -> Unmanaged<CGEvent>? in
 
@@ -137,8 +140,8 @@ class KeypressProvider {
         return Unmanaged.passUnretained(event)
       }
 
-      guard let window = AXWindowServer.shared.whitelistedWindow else {
-        print("eventTap window of \(AXWindowServer.shared.whitelistedWindow?.bundleId ?? "<none>") is not whitelisted")
+      guard let window = AXWindowServer.shared.allowlistedWindow else {
+        print("eventTap window of \(AXWindowServer.shared.allowlistedWindow?.bundleId ?? "<none>") is not allowlisted")
         return Unmanaged.passUnretained(event)
       }
 
@@ -176,7 +179,9 @@ class KeypressProvider {
 
     // Switching to CGEventTapLocation.cgAnnotatedSessionEventTap allows virtual keystrokes to be detected
     // But prevents us from seeing keypresses handled by other apps (like Spectacle)
-    let tapLocation = Settings.shared.getValue(forKey: Settings.eventTapLocation) as? String == "session" ? CGEventTapLocation.cgAnnotatedSessionEventTap : CGEventTapLocation.cghidEventTap
+    let tapLocation = Settings.shared.getValue(forKey: Settings.eventTapLocation) as? String == "session"
+      ? CGEventTapLocation.cgAnnotatedSessionEventTap
+      : CGEventTapLocation.cghidEventTap
     guard let eventTap: CFMachPort = CGEvent.tapCreate(tap: tapLocation,
                                                        place: CGEventTapPlacement.tailAppendEventTap,
                                                        options: CGEventTapOptions.defaultTap,

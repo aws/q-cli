@@ -30,7 +30,9 @@ class InputMethod {
     return NSRect(x: x, y: y, width: 10, height: 10).offsetBy(dx: 0, dy: 10)
   }
 
-  static let `default` = InputMethod(bundlePath: Bundle.main.bundleURL.appendingPathComponent("Contents/Helpers/FigInputMethod.app").path)
+  static let `default` = InputMethod(
+    bundlePath: Bundle.main.bundleURL.appendingPathComponent("Contents/Helpers/FigInputMethod.app").path
+  )
 
   let bundle: Bundle
   let originalBundlePath: String
@@ -82,38 +84,41 @@ class InputMethod {
   // defaults read ~/Library/Preferences/com.apple.HIToolbox.plist
   //https://developer.apple.com/library/archive/qa/qa1810/_index.html
   var source: TISInputSource? {
-    get {
-      let properties = [
-        kTISPropertyInputSourceID as String: self.bundle.bundleIdentifier,
-        kTISPropertyInputSourceType as String: kTISTypeCharacterPalette as String
-      ] as CFDictionary
+    let properties = [
+      kTISPropertyInputSourceID as String: self.bundle.bundleIdentifier,
+      kTISPropertyInputSourceType as String: kTISTypeCharacterPalette as String
+    ] as CFDictionary
 
-      guard let sources = TISCreateInputSourceList(properties, true)?.takeUnretainedValue() as? [TISInputSource] else {
-        return nil
-      }
-
-      guard let inputMethod = sources[safe: 0] else {
-        return nil
-      }
-
-      return inputMethod
-
+    guard let sources = TISCreateInputSourceList(properties, true)?.takeUnretainedValue() as? [TISInputSource] else {
+      return nil
     }
+
+    guard let inputMethod = sources[safe: 0] else {
+      return nil
+    }
+
+    return inputMethod
   }
 
   init(bundlePath: String) {
     self.bundle = Bundle(path: bundlePath)!
     self.originalBundlePath = bundlePath
-    self.status = InstallationStatus(data: UserDefaults.standard.data(forKey: self.bundle.bundleIdentifier! + ".integration")) ?? .unattempted
+    self.status = InstallationStatus(
+      data: UserDefaults.standard.data(forKey: self.bundle.bundleIdentifier! + ".integration")
+    ) ?? .unattempted
 
     let center = DistributedNotificationCenter.default()
-    let enabledInputSourcesChangedNotification = NSNotification.Name(kTISNotifyEnabledKeyboardInputSourcesChanged as String)
+    let enabledInputSourcesChangedNotification = NSNotification.Name(
+      kTISNotifyEnabledKeyboardInputSourcesChanged as String
+    )
     center.addObserver(forName: enabledInputSourcesChangedNotification, object: nil, queue: nil) { _ in
       InputMethod.log("enabled Input Sources changed")
       self.verifyAndUpdateInstallationStatus()
     }
 
-    let selectedInputSourcesChangedNotification = NSNotification.Name(kTISNotifySelectedKeyboardInputSourceChanged as String)
+    let selectedInputSourcesChangedNotification = NSNotification.Name(
+      kTISNotifySelectedKeyboardInputSourceChanged as String
+    )
     center.addObserver(forName: selectedInputSourcesChangedNotification, object: nil, queue: nil) { _ in
       InputMethod.log("selected Input Sources changed")
       self.verifyAndUpdateInstallationStatus()
@@ -196,9 +201,7 @@ class InputMethod {
   }
 
   var isInstalled: Bool {
-    get {
-      return self.verifyInstallation() == .installed
-    }
+    return self.verifyInstallation() == .installed
   }
 
   static func keypressTrigger(_ event: CGEvent, _ window: ExternalWindow) -> EventTapAction {
@@ -214,13 +217,23 @@ class InputMethod {
       return
     }
     let center: DistributedNotificationCenter = DistributedNotificationCenter.default()
-    center.postNotificationName(NSNotification.Name("io.fig.keypress"), object: nil, userInfo: ["bundleIdentifier": bundleIdentifier], deliverImmediately: true)
+    center.postNotificationName(
+      NSNotification.Name("io.fig.keypress"),
+      object: nil,
+      userInfo: ["bundleIdentifier": bundleIdentifier],
+      deliverImmediately: true
+    )
     print("Sending distributed notification!")
   }
 
   static func requestVersion() {
     let center: DistributedNotificationCenter = DistributedNotificationCenter.default()
-    center.postNotificationName(NSNotification.Name("io.fig.report-ime-version"), object: nil, userInfo: nil, deliverImmediately: true)
+    center.postNotificationName(
+      NSNotification.Name("io.fig.report-ime-version"),
+      object: nil,
+      userInfo: nil,
+      deliverImmediately: true
+    )
   }
 }
 
@@ -317,7 +330,8 @@ extension InputMethod: IntegrationProvider {
     }
   }
 
-  // Note: apps that rely on the input method to locate the cursor position must be restarted before the input method will work
+  // Note: apps that rely on the input method to locate the cursor position must be restarted before the input method
+  // will work
   func install() -> InstallationStatus {
     self.status = self._install()
     return self.status

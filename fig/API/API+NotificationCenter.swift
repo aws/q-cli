@@ -31,7 +31,7 @@ class APINotificationCenter {
   }
 
   var subscribers: [NotificationType: SubscriberList] = [:]
-  fileprivate var channels: [WKWebView: Dictionary[NotificationType: Int64]> = [:]
+  fileprivate var channels: [WKWebView: [NotificationType: Int64]] = [:]
   func handleRequest(id: Int64, request: NotificationRequest, for webview: WKWebView) throws -> Bool {
     if request.subscribe {
       try self.subscribe(webview: webview, to: request.type, on: id)

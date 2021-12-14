@@ -19,7 +19,11 @@ class Onboarding {
       SentrySDK.capture(message: "Currently running on read only volume! App is translocated!")
     }
 
-    guard let path = Bundle.main.path(forResource: "install_and_upgrade", ofType: "sh", inDirectory: "config/tools") else {
+    guard let path = Bundle.main.path(
+      forResource: "install_and_upgrade",
+      ofType: "sh",
+      inDirectory: "config/tools"
+    ) else {
       return Logger.log(message: "Could not locate install script!")
     }
 
@@ -44,7 +48,11 @@ class Onboarding {
       do {
         try? FileManager.default.removeItem(atPath: fullPath)
         let fullURL = URL(fileURLWithPath: fullPath)
-        try? FileManager.default.createDirectory(at: fullURL.deletingLastPathComponent(), withIntermediateDirectories: true, attributes: [:])
+        try? FileManager.default.createDirectory(
+          at: fullURL.deletingLastPathComponent(),
+          withIntermediateDirectories: true,
+          attributes: [:]
+        )
         try FileManager.default.createSymbolicLink(at: fullURL, withDestinationURL: URL(fileURLWithPath: cliPath))
       } catch {
         Logger.log(message: "Could not symlink executable '\(executable)' to '\(path)'")
@@ -66,7 +74,11 @@ class Onboarding {
 import FigAPIBindings
 import WebKit
 extension Onboarding {
-  static func handleRequest(_ request: Fig_OnboardingRequest, in webView: WKWebView, callback: @escaping ((Bool) -> Void)) {
+  static func handleRequest(
+    _ request: Fig_OnboardingRequest,
+    in webView: WKWebView,
+    callback: @escaping ((Bool) -> Void)
+  ) {
 
     switch request.action {
     case .installationScript:

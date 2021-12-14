@@ -4,7 +4,10 @@ class Throttler {
   private let queue: DispatchQueue
   private let minimumDelay: TimeInterval
 
-  init(minimumDelay: TimeInterval, queue: DispatchQueue = DispatchQueue(label: "com.withfig.keyhandler", qos: .userInitiated)) {
+  init(
+    minimumDelay: TimeInterval,
+    queue: DispatchQueue = DispatchQueue(label: "com.withfig.keyhandler", qos: .userInitiated)
+  ) {
     self.minimumDelay = minimumDelay
     self.queue = queue
   }
@@ -13,8 +16,7 @@ class Throttler {
     // Cancel any existing work item if it has not yet executed
     workItem.cancel()
     // Re-assign workItem with the new block task, resetting the previousRun time when it executes
-    workItem = DispatchWorkItem {
-      [weak self] in
+    workItem = DispatchWorkItem { [weak self] in
       self?.previousRun = Date()
       block()
     }
@@ -33,15 +35,17 @@ class RateLimiter {
   private let queue: DispatchQueue
   private let minimumDelay: TimeInterval
 
-  init(minimumDelay: TimeInterval, queue: DispatchQueue = DispatchQueue(label: "com.withfig.keyhandler", qos: .userInitiated)) {
+  init(
+    minimumDelay: TimeInterval,
+    queue: DispatchQueue = DispatchQueue(label: "com.withfig.keyhandler", qos: .userInitiated)
+  ) {
     self.minimumDelay = minimumDelay
     self.queue = queue
   }
 
   func limit(_ block: @escaping () -> Void) {
 
-    let workItem = DispatchWorkItem {
-      [weak self] in
+    let workItem = DispatchWorkItem { [weak self] in
       guard self?.workItems.count ?? 0 > 0  else {
         return
       }

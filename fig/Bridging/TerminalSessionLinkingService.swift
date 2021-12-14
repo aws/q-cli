@@ -53,12 +53,10 @@ struct EditBuffer {
   var text: String
 
   var representation: String {
-    get {
-      var bufferCopy = text
-      let index = text.index(text.startIndex, offsetBy: cursor, limitedBy: text.endIndex) ?? text.endIndex
-      bufferCopy.insert("|", at: index)
-      return bufferCopy
-    }
+    var bufferCopy = text
+    let index = text.index(text.startIndex, offsetBy: cursor, limitedBy: text.endIndex) ?? text.endIndex
+    bufferCopy.insert("|", at: index)
+    return bufferCopy
   }
 }
 
@@ -152,7 +150,7 @@ class TerminalSessionLinker: TerminalSessionLinkingService {
       return
     }
 
-    guard let window = windowService.topmostWhitelistedWindow() else {
+    guard let window = windowService.topmostAllowlistedWindow() else {
       return
     }
 
@@ -208,7 +206,7 @@ class TerminalSessionLinker: TerminalSessionLinkingService {
     guard let sessionId = sessionId else {
       throw LinkingError.noTerminalSessionId
     }
-    guard let window = windowService.topmostWhitelistedWindow(), let bundleId = window.bundleId else {
+    guard let window = windowService.topmostAllowlistedWindow(), let bundleId = window.bundleId else {
       throw LinkingError.noWindowCandidateAvailable
     }
 
@@ -248,11 +246,9 @@ class TerminalSessionLinker: TerminalSessionLinkingService {
     guard let sessions = self.sessions[windowId]?.values else { return nil }
 
     var focusedSession: TerminalSession?
-    for session in sessions {
-      if session.isFocused {
-        assert(focusedSession == nil, "There should only be one focused session per window.")
-        focusedSession = session
-      }
+    for session in sessions where session.isFocused {
+      assert(focusedSession == nil, "There should only be one focused session per window.")
+      focusedSession = session
     }
 
     return focusedSession
@@ -312,25 +308,22 @@ class TerminalSessionLinker: TerminalSessionLinkingService {
 
 extension Local_ShellContext {
   var internalContext: ShellContext? {
-    get {
-
-      guard self.hasSessionID,
-            self.hasPid else {
-        return nil
-      }
-
-      let workingDirectory = self.hasCurrentWorkingDirectory
-        ? self.currentWorkingDirectory
-        : ProcessStatus.workingDirectory(for: self.pid)
-
-      let context = ShellContext(processId: self.pid,
-                                 executablePath: self.processName,
-                                 ttyDescriptor: self.ttys,
-                                 workingDirectory: workingDirectory,
-                                 integrationVersion: Int(self.integrationVersion))
-
-      return context
+    guard self.hasSessionID,
+          self.hasPid else {
+      return nil
     }
+
+    let workingDirectory = self.hasCurrentWorkingDirectory
+      ? self.currentWorkingDirectory
+      : ProcessStatus.workingDirectory(for: self.pid)
+
+    let context = ShellContext(processId: self.pid,
+                               executablePath: self.processName,
+                               ttyDescriptor: self.ttys,
+                               workingDirectory: workingDirectory,
+                               integrationVersion: Int(self.integrationVersion))
+
+    return context
   }
 }
 

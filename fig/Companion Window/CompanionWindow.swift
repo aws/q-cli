@@ -37,9 +37,7 @@ class CompanionWindow: NSWindow, NSWindowDelegate {
 
   var isDocked = true
   var isHidden: Bool {
-    get {
-      return self.frame.height == 1 || self.frame.height == 0 || !self.isVisible
-    }
+    return self.frame.height == 1 || self.frame.height == 0 || !self.isVisible
   }
 
   var oneTimeUse = false
@@ -49,9 +47,7 @@ class CompanionWindow: NSWindow, NSWindowDelegate {
   var untetherBtn: NSTextField?
 
   var tetheredWindowId: CGWindowID? {
-    get {
-      return tetheredWindow?.windowId
-    }
+    return tetheredWindow?.windowId
   }
   var tetheredWindow: ExternalWindow? {
     didSet {
@@ -108,7 +104,7 @@ class CompanionWindow: NSWindow, NSWindowDelegate {
   var initialUntetheredFrame: NSRect?
 
   override public var canBecomeKey: Bool {
-    get { return true }
+    return true
   }
 
   var timer: Timer?
@@ -122,10 +118,7 @@ class CompanionWindow: NSWindow, NSWindowDelegate {
       timer.invalidate()
     }
 
-    print("WindowWillClose") // NSWorkspace.shared.notificationCenter.removeObserver(self)
-    //         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(spaceChanged), name: NSWorkspace.activeSpaceDidChangeNotification, object: nil)
-    //         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(activateApp), name: NSWorkspace.didActivateApplicationNotification, object: nil)
-    //         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(deactivateApp), name: NSWorkspace.didDeactivateApplicationNotification, object: nil)
+    print("WindowWillClose")
   }
 
   init(viewController: NSViewController, windowManager: WindowManagementService = WindowManager.shared) {
@@ -149,26 +142,17 @@ class CompanionWindow: NSWindow, NSWindowDelegate {
 
     self.delegate = self
 
-    if let disableTransparency = Settings.shared.getValue(forKey: Settings.disableWebviewTransparency) as? Bool, disableTransparency {
+    if let disableTransparency = Settings.shared.getValue(forKey: Settings.disableWebviewTransparency) as? Bool,
+       disableTransparency {
       self.backgroundColor = .red
     }
 
-    //        self.backgroundColor = NSColor(red: 47/255, green: 47/255, blue: 47/255, alpha: 1)
-
-    NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(spaceChanged), name: NSWorkspace.activeSpaceDidChangeNotification, object: nil)
-    //        NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(activateApp), name: NSWorkspace.didActivateApplicationNotification, object: nil)
-    //        NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(deactivateApp), name: NSWorkspace.didDeactivateApplicationNotification, object: nil)
-    //
-    //
-    //        let interval = Double(UserDefaults.standard.string(forKey: "windowUpdateInterval") ?? "") ?? 0.15
-    //        timer = Timer.scheduledTimer(timeInterval: interval, target: self, selector: #selector(positionWindow), userInfo: nil, repeats: true)
-
-    //        let trackingArea = NSTrackingArea(rect: self.contentViewController!.view.frame,
-    //                                                options: [NSTrackingArea.Options.activeAlways ,NSTrackingArea.Options.mouseEnteredAndExited],
-    //                      owner: self, userInfo: nil)
-    //
-    //        self.contentViewController!.view.addTrackingArea(trackingArea)
-
+    NSWorkspace.shared.notificationCenter.addObserver(
+      self,
+      selector: #selector(spaceChanged),
+      name: NSWorkspace.activeSpaceDidChangeNotification,
+      object: nil
+    )
   }
 
   override func mouseEntered(with event: NSEvent) {
@@ -180,11 +164,10 @@ class CompanionWindow: NSWindow, NSWindowDelegate {
     print("mouse exited...")
   }
 
-  // this was done to prevent untethered windows from jumping to the front when the application is activate (eg. when the user mouses over the sidebar)
+  // this was done to prevent untethered windows from jumping to the front when the application is activate (eg. when
+  // the user mouses over the sidebar)
   override var canBecomeMain: Bool {
-    get {
-      return self.isDocked
-    }
+    return self.isDocked
   }
 
   @objc func activateApp() {
@@ -241,7 +224,8 @@ class CompanionWindow: NSWindow, NSWindowDelegate {
       case .insideRightFull:
         return targetWindowFrame.divided(atDistance: 300, from: .maxXEdge).slice
       case .insideRightPartial:
-        return targetWindowFrame.divided(atDistance: 300, from: .maxXEdge).slice.divided(atDistance: t_size.height * ( 2 / 3 ), from: .maxYEdge).slice.offsetBy(dx: 0, dy: -t_size.height / 3)
+        return targetWindowFrame.divided(atDistance: 300, from: .maxXEdge).slice
+          .divided(atDistance: t_size.height * ( 2 / 3 ), from: .maxYEdge).slice.offsetBy(dx: 0, dy: -t_size.height / 3)
       case .atPrompt:
 
         let inner = targetWindowFrame.insetBy(dx: 30, dy: 45)
@@ -286,7 +270,10 @@ class CompanionWindow: NSWindow, NSWindowDelegate {
         let offset = max((t_size.width - width) / 2, 0)
 
         // let quarter = max(t_size.width * 0.25 - minWidth / 2.0, 0)
-        return NSRect(origin: NSPoint(x: targetWindowFrame.origin.x + offset, y: targetWindowFrame.origin.y - 23), size: CGSize.init(width: width, height: height))
+        return NSRect(
+          origin: NSPoint(x: targetWindowFrame.origin.x + offset, y: targetWindowFrame.origin.y - 23),
+          size: CGSize.init(width: width, height: height)
+        )
       case .fullscreenInset:
         let inset: CGFloat = 23
         return targetWindowFrame.insetBy(dx: 0, dy: inset/2).offsetBy(dx: 0, dy: -1 * inset * 1.5)
@@ -316,9 +303,12 @@ class CompanionWindow: NSWindow, NSWindowDelegate {
         let height = min(max(minHeight, t_size.height / 3), t_size.height)
         let offset = t_size.height - height
 
-        return NSRect(x: targetWindowFrame.origin.x, y: targetWindowFrame.origin.y - offset, width: targetWindowFrame.width, height: height)
-
-      //                return targetWindowFrame.divided(atDistance: t_size.height / 3, from: .minYEdge).slice.offsetBy(dx: 0, dy: -2/3 * t_size.height)
+        return NSRect(
+          x: targetWindowFrame.origin.x,
+          y: targetWindowFrame.origin.y - offset,
+          width: targetWindowFrame.width,
+          height: height
+        )
 
       case .popoverCentered:
         let minWidth: CGFloat = 300.0
@@ -332,7 +322,12 @@ class CompanionWindow: NSWindow, NSWindowDelegate {
         return NSRect(x: x, y: y, width: width, height: height)
 
       case .powerbar:
-        let bar = NSRect(x: targetWindowFrame.origin.x, y: targetWindowFrame.origin.y - targetWindowFrame.height, width: targetWindowFrame.width, height: 50)
+        let bar = NSRect(
+          x: targetWindowFrame.origin.x,
+          y: targetWindowFrame.origin.y - targetWindowFrame.height,
+          width: targetWindowFrame.width,
+          height: 50
+        )
         // let intersection = screen.intersection(bar)
         var y = bar.origin.y
         if y - bar.height < 0 {
@@ -345,10 +340,14 @@ class CompanionWindow: NSWindow, NSWindowDelegate {
     }
 
     var hasTitleBar: Bool {
-      get {
-        let titlebarStates: Set<OverlayPositioning> = [.outsideRight, .untethered, .fullscreenInset, .fullwindow, .popoverCentered]
-        return titlebarStates.contains(self)
-      }
+      let titlebarStates: Set<OverlayPositioning> = [
+        .outsideRight,
+        .untethered,
+        .fullscreenInset,
+        .fullwindow,
+        .popoverCentered
+      ]
+      return titlebarStates.contains(self)
     }
 
   }
@@ -516,15 +515,11 @@ class CompanionWindow: NSWindow, NSWindowDelegate {
   }
 
   var isSidebar: Bool {
-    get {
-      return self.windowManager.isSidebar(window: self)
-    }
+    return self.windowManager.isSidebar(window: self)
   }
 
   var isAutocompletePopup: Bool {
-    get {
-      return WindowManager.shared.autocomplete == self
-    }
+    return WindowManager.shared.autocomplete == self
   }
 
   @objc func toSidebar() {
@@ -550,14 +545,11 @@ class CompanionWindow: NSWindow, NSWindowDelegate {
   }
 
   var webView: WebView? {
-    get {
-
-      if let content = self.contentViewController as? WebViewController, let webView = content.webView {
-        return webView
-      }
-
-      return nil
+    if let content = self.contentViewController as? WebViewController, let webView = content.webView {
+      return webView
     }
+
+    return nil
   }
 
   func repositionWindow( forceUpdate: Bool = true, explicit: Bool = false) {
@@ -572,13 +564,13 @@ class CompanionWindow: NSWindow, NSWindowDelegate {
       return
     }
 
-    let whitelistedBundleIds = Integrations.whitelist
+    let allowlistedBundleIds = Integrations.allowlist
     guard let app = NSWorkspace.shared.frontmostApplication,
           let bundleId = app.bundleIdentifier else {
       return
     }
 
-    if whitelistedBundleIds.contains(bundleId) {
+    if allowlistedBundleIds.contains(bundleId) {
       let targetFrame = topmostWindowFrameFor(app)
       let mouseDown = (NSEvent.pressedMouseButtons & (1 << 0)) != 0
       print("mouseDown \(mouseDown)")
@@ -593,9 +585,10 @@ class CompanionWindow: NSWindow, NSWindowDelegate {
             // prevent memory access error
             self.shouldTrackWindow = true
             self.repositionWindow(forceUpdate: true)
-            //                        if (self.positioning == .fullscreenInset && self.windowManager.shouldAppear(window: self, explicitlyRepositioned: false)) {
-            //                            self.windowServiceProvider.takeFocus()
-            //                        }
+            //  if (self.positioning == .fullscreenInset &&
+            //      self.windowManager.shouldAppear(window: self, explicitlyRepositioned: false)) {
+            //    self.windowServiceProvider.takeFocus()
+            //  }
           }
           return
         }
@@ -613,7 +606,6 @@ class CompanionWindow: NSWindow, NSWindowDelegate {
                                            screen: candidates.first!.frame)
 
         setOverlayFrame(frame.offsetBy(dx: 0, dy: frame.height * -1))
-
       }
 
     } else if app.isFig {
@@ -681,22 +673,6 @@ class CompanionWindow: NSWindow, NSWindowDelegate {
 
   }
 
-  //    override func animationResizeTime(_ newFrame: NSRect) -> TimeInterval {
-  //        return Double(rectIntersectionInPerc(r1: self.frame, r2: newFrame)) * 0.001//super.animationResizeTime(newFrame)
-  //    }
-  //
-  //    //https://stackoverflow.com/a/31671990/926887
-  //    func rectIntersectionInPerc(r1:CGRect, r2:CGRect) -> CGFloat {
-  //        if (r1.intersects(r2)) {
-  //
-  //           //let interRect:CGRect = r1.rectByIntersecting(r2); //OLD
-  //           let interRect:CGRect = r1.intersection(r2);
-  //
-  //           return ((interRect.width * interRect.height) / (((r1.width * r1.height) + (r2.width * r2.height))/2.0) * 100.0)
-  //        }
-  //        return 0;
-  //    }
-
   func topmostWindowFrameFor(_ app: NSRunningApplication, includingTitleBar: Bool = false) -> NSRect {
     let appRef = AXUIElementCreateApplication(app.processIdentifier)
 
@@ -730,14 +706,6 @@ class CompanionWindow: NSWindow, NSWindowDelegate {
 
       let titleBarHeight: CGFloat = 0// 23.0;
 
-      //            print("TopmostFrame for \(app.bundleIdentifier ?? "")", NSScreen.main!.frame, NSScreen.main!.visibleFrame, point, bounds)
-
-      // subtract screen.frame.origin.y to handle display edge case
-      //            let pointOnScreen = yellowView.window?.convertToScreen(NSRect(origin: point, size: .zero)).origin ?? .zero
-      //            let p2 = self.convertPoint(toScreen: point)
-      //            let p3 = self.convertPoint(fromScreen: point)
-      //            self
-
       //https://stackoverflow.com/a/19887161/926887
       return NSRect.init(x: point.x,
                          y: NSMaxY(NSScreen.screens[0].frame) - point.y - ((includingTitleBar) ? 0 : titleBarHeight),
@@ -758,7 +726,8 @@ class CompanionWindow: NSWindow, NSWindowDelegate {
     case .insideRightFull:
       return terminalFrame.divided(atDistance: 300, from: .maxXEdge).slice
     case .insideRightPartial:
-      return terminalFrame.divided(atDistance: 300, from: .maxXEdge).slice.divided(atDistance: t_size.height * ( 2 / 3 ), from: .maxYEdge).slice.offsetBy(dx: 0, dy: -t_size.height / 3)
+      return terminalFrame.divided(atDistance: 300, from: .maxXEdge).slice
+        .divided(atDistance: t_size.height * ( 2 / 3 ), from: .maxYEdge).slice.offsetBy(dx: 0, dy: -t_size.height / 3)
     case .atPrompt:
 
       let inner = terminalFrame.insetBy(dx: 30, dy: 45)
@@ -810,7 +779,12 @@ class CompanionWindow: NSWindow, NSWindowDelegate {
 
 extension CompanionWindow {
   func addViewToTitleBar(_ view: NSView, at x: CGFloat, offset: CGFloat) {
-    view.frame = NSRect(x: x, y: (self.contentView?.frame.height)! - offset, width: view.frame.width, height: self.heightOfTitleBar)
+    view.frame = NSRect(
+      x: x,
+      y: (self.contentView?.frame.height)! - offset,
+      width: view.frame.width,
+      height: self.heightOfTitleBar
+    )
     var mask: UInt = 0
     if  x > self.frame.size.width / 2.0 {
       mask |= UInt(NSView.AutoresizingMask.minXMargin.rawValue)
@@ -824,13 +798,10 @@ extension CompanionWindow {
   }
 
   var heightOfTitleBar: CGFloat {
-    get {
-      let outerFrame = self.contentView?.superview?.frame
-      let innerFrame = self.contentView?.frame
+    let outerFrame = self.contentView?.superview?.frame
+    let innerFrame = self.contentView?.frame
 
-      return outerFrame!.size.height - innerFrame!.size.height
-    }
-
+    return outerFrame!.size.height - innerFrame!.size.height
   }
 
 }

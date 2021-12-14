@@ -11,7 +11,7 @@ import Foundation
 import Socket
 import Dispatch
 
-protocol UnixSocketServerDelegate {
+protocol UnixSocketServerDelegate: class {
   func recieved(string: String, on socket: Socket?)
   func recieved(data: Data, on socket: Socket?)
 }
@@ -26,14 +26,14 @@ class UnixSocketServer {
   let socketLockQueue = DispatchQueue(label: "com.fig.socketLockQueue")
   let bidirectional: Bool
   var continueRunning: Bool {
-    set(newValue) {
-      socketLockQueue.sync {
-        self.continueRunningValue = newValue
-      }
-    }
     get {
       return socketLockQueue.sync {
         self.continueRunningValue
+      }
+    }
+    set(newValue) {
+      socketLockQueue.sync {
+        self.continueRunningValue = newValue
       }
     }
   }

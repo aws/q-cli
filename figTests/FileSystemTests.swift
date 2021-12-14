@@ -150,9 +150,9 @@ class FileSystemTests: XCTestCase {
   func testDestinationOfSymbolicLinkMissingDestination() throws {
     // learn how to preserve symlinks after the build step
 
-    //        let request = destinationOfSymbolicLinkRequest(path: url!.path)
-    //        XCTAssertThrowsError(try FileSystem.destinationOfSymbolicLink(request)) { error in
-    //            XCTAssertEqual(error as! APIError, APIError.generic(message: "No destination found for symbolic link"))
-    //        }
+    // let request = destinationOfSymbolicLinkRequest(path: url!.path)
+    // XCTAssertThrowsError(try FileSystem.destinationOfSymbolicLink(request)) { error in
+    //   XCTAssertEqual(error as! APIError, APIError.generic(message: "No destination found for symbolic link"))
+    // }
   }
 }

@@ -97,7 +97,7 @@ extension ExternalApplication: Hashable {
     hasher.combine(self.pid)
   }
 
-  static func ==(lhs: ExternalApplication, rhs: ExternalApplication) -> Bool {
+  static func == (lhs: ExternalApplication, rhs: ExternalApplication) -> Bool {
     return lhs.bundleId == rhs.bundleId && lhs.pid == rhs.pid
   }
 }
@@ -111,7 +111,7 @@ class AXWindowServer: WindowService {
   static let shared = AXWindowServer()
   private let queue = DispatchQueue(label: "com.withfig.windowserver", attributes: .concurrent)
   var tracked: Set<ExternalApplication> = []
-  var topApplication: ExternalApplication?
+  var topApplication: ExternalApplication? {
     didSet {
 
       // Trigger screenreader mode in electron apps. This is probably overkill, but doing it once at launch was brittle.
@@ -121,16 +121,14 @@ class AXWindowServer: WindowService {
     }
   }
 
-  var topWindow: ExternalWindow?
+  var topWindow: ExternalWindow? {
     didSet {
       NotificationCenter.default.post(name: AXWindowServer.windowDidChangeNotification, object: self.topWindow)
       AXWindowServer.log("Window = \(self.topWindow?.windowId ?? 0); App = \(self.topWindow?.bundleId ?? "<none>"); pid = \(self.topWindow?.app.processIdentifier ?? 0)")
     }
   }
-  var whitelistedWindow: ExternalWindow? {
-    get {
-      return Integrations.bundleIsValidTerminal(self.topWindow?.bundleId) ? self.topWindow : nil
-    }
+  var allowlistedWindow: ExternalWindow? {
+    return Integrations.bundleIsValidTerminal(self.topWindow?.bundleId) ? self.topWindow : nil
 
   }
 
@@ -251,7 +249,7 @@ class AXWindowServer: WindowService {
         self.topWindow = ExternalWindow(backedBy: window as! AXUIElement, in: appRef)
 
       case kAXApplicationDeactivatedNotification:
-        // self.whitelistedWindow = nil
+        // self.allowlistedWindow = nil
         print("AXWindowServer: \(appRef.bundleId!) \(element) kAXApplicationDeactivatedNotification")
       case kAXWindowMovedNotification:
         print("AXWindowServer: \(appRef.bundleId!) \(element) kAXWindowMovedNotification")
@@ -301,7 +299,6 @@ class AXWindowServer: WindowService {
           self.topWindow = ExternalWindow(backedBy: window as! AXUIElement, in: ExternalApplication(from: frontmost))
         }
 
-        break
       case kAXTitleChangedNotification:
         var window: AnyObject?
         AXUIElementCopyAttributeValue(appRef.axAppRef, kAXFocusedWindowAttribute as CFString, &window)
@@ -309,7 +306,7 @@ class AXWindowServer: WindowService {
         let topWindow = ExternalWindow(backedBy: window as! AXUIElement, in: appRef)
         guard Integrations.bundleIsValidTerminal(topWindow?.bundleId) else { return }
         NotificationCenter.default.post(name: AXWindowServer.windowTitleUpdatedNotification, object: topWindow)
-        break
+
       default:
         print("AXWindowServer: unknown case")
       }
@@ -398,7 +395,7 @@ class AXWindowServer: WindowService {
       register(app, fromActivation: true)
     }
 
-    for app in NSWorkspace.shared.runningApplications {// where Integrations.whitelist.contains(app.bundleIdentifier ?? "")  {
+    for app in NSWorkspace.shared.runningApplications {// where Integrations.allowlist.contains(app.bundleIdentifier ?? "")  {
       register(app)
     }
 
@@ -440,7 +437,7 @@ class AXWindowServer: WindowService {
   }
 
   @objc func didDeactivateApplication(notification: NSNotification!) {
-    if let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication, Integrations.whitelist.contains(app.bundleIdentifier ?? "") {
+    if let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication, Integrations.allowlist.contains(app.bundleIdentifier ?? "") {
       Logger.log(message: "didDeactivateApplication - \(app.bundleIdentifier ?? "<none>")", subsystem: .windowEvents)
 
     }
@@ -488,8 +485,8 @@ class AXWindowServer: WindowService {
     return nil
   }
 
-  func topmostWhitelistedWindow() -> ExternalWindow? {
-    return self.whitelistedWindow
+  func topmostAllowlistedWindow() -> ExternalWindow? {
+    return self.allowlistedWindow
   }
 
   func topmostWindow(for app: NSRunningApplication) -> ExternalWindow? {
@@ -500,7 +497,7 @@ class AXWindowServer: WindowService {
     return nil
   }
 
-  func currentApplicationIsWhitelisted() -> Bool {
+  func currentApplicationIsAllowlisted() -> Bool {
     return false
   }
 
@@ -508,11 +505,11 @@ class AXWindowServer: WindowService {
     return []
   }
 
-  func allWhitelistedWindows(onScreen: Bool) -> [ExternalWindow] {
+  func allAllowlistedWindows(onScreen: Bool) -> [ExternalWindow] {
     return []
   }
 
-  func previousWhitelistedWindow() -> ExternalWindow? {
+  func previousAllowlistedWindow() -> ExternalWindow? {
     return nil
   }
 

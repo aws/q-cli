@@ -23,7 +23,9 @@ class HyperIntegration: TerminalIntegrationProvider {
   }
 
   // If the extension path changes make sure to update the uninstall script!
-  static let pluginPath: URL = URL(fileURLWithPath: "\(NSHomeDirectory())/.hyper_plugins/local/fig-hyper-integration/index.js")
+  static let pluginPath: URL = URL(
+    fileURLWithPath: "\(NSHomeDirectory())/.hyper_plugins/local/fig-hyper-integration/index.js"
+  )
   static let pluginPathInBundle = Bundle.main.url(forResource: "hyper-integration", withExtension: "js")!
 
   func install() -> InstallationStatus {
@@ -32,9 +34,15 @@ class HyperIntegration: TerminalIntegrationProvider {
     }
 
     do {
-      try FileManager.default.createDirectory(atPath: HyperIntegration.pluginPath.deletingLastPathComponent().path, withIntermediateDirectories: true)
+      try FileManager.default.createDirectory(
+        atPath: HyperIntegration.pluginPath.deletingLastPathComponent().path,
+        withIntermediateDirectories: true
+      )
       try? FileManager.default.removeItem(at: HyperIntegration.pluginPath)
-      try FileManager.default.createSymbolicLink(at: HyperIntegration.pluginPath, withDestinationURL: HyperIntegration.pluginPathInBundle)
+      try FileManager.default.createSymbolicLink(
+        at: HyperIntegration.pluginPath,
+        withDestinationURL: HyperIntegration.pluginPathInBundle
+      )
     } catch {
 
       guard let destination = try? FileManager.default.destinationOfSymbolicLink(atPath: HyperIntegration.pluginPath.path),

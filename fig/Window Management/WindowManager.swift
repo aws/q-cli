@@ -36,11 +36,31 @@ class WindowManager: NSObject {
     self.windowServiceProvider = windowService
     super.init()
 
-    NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(spaceChanged), name: NSWorkspace.activeSpaceDidChangeNotification, object: nil)
-    NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(activateApp), name: NSWorkspace.didActivateApplicationNotification, object: nil)
-    NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(deactivateApp), name: NSWorkspace.didDeactivateApplicationNotification, object: nil)
+    NSWorkspace.shared.notificationCenter.addObserver(
+      self,
+      selector: #selector(spaceChanged),
+      name: NSWorkspace.activeSpaceDidChangeNotification,
+      object: nil
+    )
+    NSWorkspace.shared.notificationCenter.addObserver(
+      self,
+      selector: #selector(activateApp),
+      name: NSWorkspace.didActivateApplicationNotification,
+      object: nil
+    )
+    NSWorkspace.shared.notificationCenter.addObserver(
+      self,
+      selector: #selector(deactivateApp),
+      name: NSWorkspace.didDeactivateApplicationNotification,
+      object: nil
+    )
 
-    NotificationCenter.default.addObserver(self, selector: #selector(windowChanged(_:)), name: WindowServer.whitelistedWindowDidChangeNotification, object: nil)
+    NotificationCenter.default.addObserver(
+      self,
+      selector: #selector(windowChanged(_:)),
+      name: WindowServer.allowlistedWindowDidChangeNotification,
+      object: nil
+    )
 
     NSEvent.addGlobalMonitorForEvents(matching: .leftMouseDown) { (_) in
       self.updatePosition(for: .mouseDown)
@@ -63,7 +83,7 @@ class WindowManager: NSObject {
   }
 
   @objc func cleanup() {
-    let existingWindows = Set(self.windowServiceProvider.allWhitelistedWindows(onScreen: false).map { $0.windowId })
+    let existingWindows = Set(self.windowServiceProvider.allAllowlistedWindows(onScreen: false).map { $0.windowId })
 
     print("Existing Windows:\(existingWindows.count), Tracked Windows: \(self.windows.count)")
 
@@ -130,19 +150,15 @@ class WindowManager: NSObject {
     case resignKeyWindow
 
     var repositionParameters: (Bool, Bool) {
-      get {
-        switch self {
-        case .timer, .mouseDown, .flagsChanged, .becomeKeyWindow, .resignKeyWindow:
-          return (false, false)
-        case .applicationActivated, .applicationDeactivated, .mouseUp:
-          return (true, false)
-        case .windowChanged:
-          return (true, false)
-        case .explictlyTriggered, .figWindowClosed, .spaceChanged, .figWindowUntethered, .figWindowTethered:
-          return (true, true)
-
-        }
-
+      switch self {
+      case .timer, .mouseDown, .flagsChanged, .becomeKeyWindow, .resignKeyWindow:
+        return (false, false)
+      case .applicationActivated, .applicationDeactivated, .mouseUp:
+        return (true, false)
+      case .windowChanged:
+        return (true, false)
+      case .explictlyTriggered, .figWindowClosed, .spaceChanged, .figWindowUntethered, .figWindowTethered:
+        return (true, true)
       }
     }
   }
@@ -177,7 +193,8 @@ class WindowManager: NSObject {
 
     //        print(NSApp.keyWindow as? CompanionWindow)
 
-    // this is needed to fix a bug when the the mouse is inside the sidebar when a fig window is closed (yes, I know this is also in the close() logic. -- Needs to be in both places to prevent flickering!)
+    // this is needed to fix a bug when the the mouse is inside the sidebar when a fig window is closed (yes, I know
+    // this is also in the close() logic. -- Needs to be in both places to prevent flickering!)
     if reason == .figWindowClosed {
       if self.sidebar?.frame.contains(NSEvent.mouseLocation) ?? false {
         print("sidebar contains mouse on Window close")
@@ -230,7 +247,9 @@ class WindowManager: NSObject {
       return
     }
 
-    let running = NSWorkspace.shared.runningApplications.filter { Integrations.nativeTerminals.contains($0.bundleIdentifier ?? "")}
+    let running = NSWorkspace.shared.runningApplications.filter {
+      Integrations.nativeTerminals.contains($0.bundleIdentifier ?? "")
+    }
 
     // launch terminal (detect if iTerm is installed?)
     if running.count == 0 {
@@ -259,7 +278,9 @@ class WindowManager: NSObject {
 
       var kvo: NSKeyValueObservation?
       kvo = NSWorkspace.shared.observe(\.frontmostApplication, options: [.new]) { (_, delta) in
-        if let app = delta.newValue, let bundleId = app?.bundleIdentifier, Integrations.nativeTerminals.contains(bundleId) {
+        if let app = delta.newValue,
+           let bundleId = app?.bundleIdentifier,
+           Integrations.nativeTerminals.contains(bundleId) {
           Logger.log(message: "term: Openning new window in \(target.bundleIdentifier ?? "<none>")")
           ShellBridge.simulate(keypress: .n, maskCommand: true)
           kvo?.invalidate()
@@ -272,13 +293,16 @@ class WindowManager: NSObject {
   }
 
   func bringTerminalWindowToFront() {
-    let terminalWindows = self.windowServiceProvider.allWhitelistedWindows(onScreen: true).filter { Integrations.terminals.contains($0.bundleId ?? "") }
+    let terminalWindows = self.windowServiceProvider.allAllowlistedWindows(onScreen: true).filter {
+      Integrations.terminals.contains($0.bundleId ?? "")
+    }
 
     if terminalWindows.count == 0 {
       NSWorkspace.shared.launchApplication("Terminal")
     } else {
       let target = terminalWindows.first!
-      NSRunningApplication(processIdentifier: target.app.processIdentifier)?.activate(options: .activateIgnoringOtherApps)
+      NSRunningApplication(processIdentifier: target.app.processIdentifier)?
+        .activate(options: .activateIgnoringOtherApps)
     }
   }
 
@@ -335,15 +359,15 @@ extension WindowManager: WindowManagementService {
 
     }
 
-    let whitelistedBundleIds = Integrations.whitelist
+    let allowlistedBundleIds = Integrations.allowlist
     guard let app = NSWorkspace.shared.frontmostApplication,
           let bundleId = app.bundleIdentifier else {
       print("shouldAppear: app or bundle ??")
       return false
     }
 
-    if whitelistedBundleIds.contains(bundleId) {
-      guard let targetWindow = WindowServer.shared.topmostWhitelistedWindow() else {
+    if allowlistedBundleIds.contains(bundleId) {
+      guard let targetWindow = WindowServer.shared.topmostAllowlistedWindow() else {
         print("shouldAppear: [\(bundleId)] targetWindow ??")
         return false
       }
@@ -361,7 +385,7 @@ extension WindowManager: WindowManagementService {
 
     } else if app.isFig {
       //            if (explicitlyRepositioned) {
-      guard let targetWindow = self.windowServiceProvider.previousWhitelistedWindow() else {
+      guard let targetWindow = self.windowServiceProvider.previousAllowlistedWindow() else {
         print("shouldAppear: [\(bundleId)] previousTargetWindow ??")
         // prevents sidebar from appearing in addition to other views
         //                    guard let key = NSApplication.shared.keyWindow as? CompanionWindow else {
@@ -390,11 +414,11 @@ extension WindowManager: WindowManagementService {
 
       // this keeps Fig windows open by default when Fig is the active apps,
       // which makes sense most of the time
-      // but there are some issues here. Probably need a condition tying the current parentWindow id to previous whitelisted window.
+      // but there are some issues here. Probably need a condition tying the current parentWindow id to previous allowlisted window.
       // print("shouldAppear: [\(bundleId)] Fig active & not explicitly positioned")
       // return false
     } else {
-      print("shouldAppear: [\(bundleId)] Not on whitelist")
+      print("shouldAppear: [\(bundleId)] Not on allowlist")
       return false
     }
   }
@@ -413,7 +437,7 @@ extension WindowManager: WindowManagementService {
   //            return true
   //        }
   //
-  //        if let external = WindowServer.shared.topmostWhitelistedWindow() {
+  //        if let external = WindowServer.shared.topmostAllowlistedWindow() {
   //
   //            // Only show the fig window associated with the current external window
   //            if let tetheredWindow = window.tetheredWindow,
@@ -431,7 +455,7 @@ extension WindowManager: WindowManagementService {
   //
   //        if (NSWorkspace.shared.frontmostApplication?.isFig ?? false), explicitlyRepositioned {
   //            // check if window corresponds to previous application
-  //            if let external = self.windowServiceProvider.previousWhitelistedWindow() {
+  //            if let external = self.windowServiceProvider.previousAllowlistedWindow() {
   //                print("previousWindow = \(external.bundleId ?? "") \(external.title ?? "")")
   //                if let tetheredWindow = window.tetheredWindow,
   //                    tetheredWindow.windowId != external.windowId {
@@ -503,7 +527,7 @@ extension WindowManager: WindowManagementService {
   }
 
   func positionAutocompletePopover(textRect: CGRect?, makeVisibleImmediately: Bool = true, completion: (() -> Void)? = nil) {
-    if let rect = textRect, let window = AXWindowServer.shared.whitelistedWindow {
+    if let rect = textRect, let window = AXWindowServer.shared.allowlistedWindow {
 
       // get 'true' main screen (accounting for the fact that fullScreen workspaces default to laptop screen)
       let currentScreen = NSScreen.screens.filter { (screen) -> Bool in

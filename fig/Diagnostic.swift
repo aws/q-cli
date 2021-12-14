@@ -10,41 +10,34 @@ import Cocoa
 
 class Diagnostic {
   static var accessibility: Bool {
-    get {
-      return Accessibility.enabled
-    }
+    return Accessibility.enabled
   }
 
   static var secureKeyboardInput: Bool {
-    get {
-      return SecureKeyboardInput.enabled
-    }
+    return SecureKeyboardInput.enabled
   }
 
   static var blockingProcess: String? {
-    get {
-      guard SecureKeyboardInput.enabled else { return nil }
+    guard SecureKeyboardInput.enabled else { return nil }
 
-      if let app = SecureKeyboardInput.responsibleApplication {
-        return "\(app.localizedName ?? "") - \(app.bundleIdentifier ?? "") \(SecureKeyboardInput.enabled(by: app.bundleIdentifier) ? "(via Settings)" : "")"
-      } else {
-        return "no app for pid '\(SecureKeyboardInput.responsibleProcessId ?? -1)'"
-      }
+    if let app = SecureKeyboardInput.responsibleApplication {
+      return "\(app.localizedName ?? "") - \(app.bundleIdentifier ?? "") \(SecureKeyboardInput.enabled(by: app.bundleIdentifier) ? "(via Settings)" : "")"
+    } else {
+      return "no app for pid '\(SecureKeyboardInput.responsibleProcessId ?? -1)'"
     }
   }
 
   static var userConfig: String? {
-    get {
-      return try? String(contentsOfFile: "\(NSHomeDirectory())/.fig/user/config", encoding: String.Encoding.utf8)
-    }
+    return try? String(contentsOfFile: "\(NSHomeDirectory())/.fig/user/config", encoding: String.Encoding.utf8)
   }
 
   static var installedCLI: Bool {
-    get {
-      guard let path = Diagnostic.pathOfCLI, let symlink = try? FileManager.default.destinationOfSymbolicLink(atPath: path) else { return false }
-
-      return FileManager.default.fileExists(atPath: path) && FileManager.default.fileExists(atPath: symlink)
+    guard let path = Diagnostic.pathOfCLI,
+          let symlink = try? FileManager.default.destinationOfSymbolicLink(atPath: path) else {
+      return false
     }
+
+    return FileManager.default.fileExists(atPath: path) && FileManager.default.fileExists(atPath: symlink)
   }
 
   static var pathOfCLI: String? {
@@ -70,10 +63,7 @@ class Diagnostic {
 
     let target = "source ~/.fig/fig.sh"
 
-    return dotfiles.reduce(true) { (result, file) -> Bool in
-      guard result else {
-        return false
-      }
+    return dotfiles.allSatisfy { (file) -> Bool in
       let filepath = "\(NSHomeDirectory())/\(file)"
       guard FileManager.default.fileExists(atPath: filepath) else {
         return true
@@ -119,9 +109,9 @@ class Diagnostic {
       shellHooks +
       onboarding
 
-    return filesAndFolders.reduce(true) { (exists, path) -> Bool in
+    return filesAndFolders.allSatisfy { (path) -> Bool in
       var isDir: ObjCBool = false
-      return exists && FileManager.default.fileExists(atPath: "\(dotfig)/\(path)", isDirectory: &isDir)
+      return FileManager.default.fileExists(atPath: "\(dotfig)/\(path)", isDirectory: &isDir)
 
     }
   }
@@ -144,96 +134,80 @@ class Diagnostic {
   }
 
   static var numberOfCompletionSpecs: Int {
-    get {
-      return (try? FileManager.default.contentsOfDirectory(atPath: "\(NSHomeDirectory())/.fig/autocomplete").count) ?? 0
-    }
+    return (try? FileManager.default.contentsOfDirectory(atPath: "\(NSHomeDirectory())/.fig/autocomplete").count) ?? 0
   }
 
   static var processForTopmostWindow: String {
-    get {
-      guard Integrations.frontmostApplicationIsValidTerminal(),
-            let window = AXWindowServer.shared.whitelistedWindow,
-            let context = window.associatedShellContext
-      else {
-        return "???"
-      }
-
-      return context.executablePath
+    guard Integrations.frontmostApplicationIsValidTerminal(),
+          let window = AXWindowServer.shared.allowlistedWindow,
+          let context = window.associatedShellContext
+    else {
+      return "???"
     }
+
+    return context.executablePath
   }
 
   static var processIdForTopmostWindow: String {
-    get {
-      guard Integrations.frontmostApplicationIsValidTerminal(),
-            let window = AXWindowServer.shared.whitelistedWindow,
-            let context = window.associatedShellContext
-      else {
-        return "???"
-      }
-
-      return "\(context.processId)"
+    guard Integrations.frontmostApplicationIsValidTerminal(),
+          let window = AXWindowServer.shared.allowlistedWindow,
+          let context = window.associatedShellContext
+    else {
+      return "???"
     }
+
+    return "\(context.processId)"
   }
 
   static var workingDirectoryForTopmostWindow: String {
-    get {
-      guard Integrations.frontmostApplicationIsValidTerminal(),
-            let window = AXWindowServer.shared.whitelistedWindow,
-            let context = window.associatedShellContext
-      else {
-        return "???"
-      }
-
-      return context.workingDirectory
+    guard Integrations.frontmostApplicationIsValidTerminal(),
+          let window = AXWindowServer.shared.allowlistedWindow,
+          let context = window.associatedShellContext
+    else {
+      return "???"
     }
+
+    return context.workingDirectory
   }
 
   static var processIsShellInTopmostWindow: Bool {
-    get {
-      guard Integrations.frontmostApplicationIsValidTerminal(),
-            let window = AXWindowServer.shared.whitelistedWindow,
-            let context = window.associatedShellContext
-      else {
-        return false
-      }
-
-      return context.isShell()
+    guard Integrations.frontmostApplicationIsValidTerminal(),
+          let window = AXWindowServer.shared.allowlistedWindow,
+          let context = window.associatedShellContext
+    else {
+      return false
     }
+
+    return context.isShell()
   }
 
   static var ttyDescriptorForTopmostWindow: String {
-    get {
-      guard Integrations.frontmostApplicationIsValidTerminal(),
-            let window = AXWindowServer.shared.whitelistedWindow,
-            let context = window.associatedShellContext
-      else {
-        return "???"
-      }
-
-      return context.ttyDescriptor
+    guard Integrations.frontmostApplicationIsValidTerminal(),
+          let window = AXWindowServer.shared.allowlistedWindow,
+          let context = window.associatedShellContext
+    else {
+      return "???"
     }
+
+    return context.ttyDescriptor
   }
 
   static var descriptionOfTopmostWindow: String {
-    get {
-      guard Integrations.frontmostApplicationIsValidTerminal(),
-            let window = AXWindowServer.shared.whitelistedWindow
-      else {
-        return "???"
-      }
-
-      return "\(window.hash) (\(window.bundleId ?? "???"))"
+    guard Integrations.frontmostApplicationIsValidTerminal(),
+          let window = AXWindowServer.shared.allowlistedWindow
+    else {
+      return "???"
     }
+
+    return "\(window.hash) (\(window.bundleId ?? "???"))"
   }
 
   static var keybufferHasContextForTopmostWindow: Bool {
-    get {
-      guard Integrations.frontmostApplicationIsValidTerminal() else {
-        return false
-      }
-
-      return AXWindowServer.shared.whitelistedWindow != nil
+    guard Integrations.frontmostApplicationIsValidTerminal() else {
+      return false
     }
+
+    return AXWindowServer.shared.allowlistedWindow != nil
   }
 
   static var version: String {
@@ -265,13 +239,18 @@ class Diagnostic {
   }
 
   static var dotfilesAreSymlinked: Bool {
-    let dotfiles = [".profile", ".bashrc", ".bash_profile", ".zshrc", ".zprofile", ".config/fish/config.fish", ".tmux.conf", ".ssh/config"]
+    let dotfiles = [
+      ".profile",
+      ".bashrc",
+      ".bash_profile",
+      ".zshrc",
+      ".zprofile",
+      ".config/fish/config.fish",
+      ".tmux.conf",
+      ".ssh/config"
+    ]
 
-    return dotfiles.reduce(false) { (existingSymlink, path) -> Bool in
-      guard !existingSymlink else {
-        return existingSymlink
-      }
-
+    return dotfiles.contains { (path) -> Bool in
       return (try? FileManager.default.destinationOfSymbolicLink(atPath: "\(NSHomeDirectory())/\(path)")) != nil
     }
   }
@@ -280,55 +259,51 @@ class Diagnostic {
 
   // Check if app is translocated
   static var isRunningOnReadOnlyVolume: Bool {
-    get {
-      let url = Bundle.main.bundleURL as NSURL
-      var resourceValue: AnyObject?
+    let url = Bundle.main.bundleURL as NSURL
+    var resourceValue: AnyObject?
 
-      do {
-        try url.getResourceValue(&resourceValue, forKey: URLResourceKey.volumeIsReadOnlyKey)
-      } catch {
-        return false
-      }
+    do {
+      try url.getResourceValue(&resourceValue, forKey: URLResourceKey.volumeIsReadOnlyKey)
+    } catch {
+      return false
+    }
 
-      if let isReadOnly = resourceValue as? NSNumber {
-        return isReadOnly.boolValue
-      } else {
-        return false
-      }
+    if let isReadOnly = resourceValue as? NSNumber {
+      return isReadOnly.boolValue
+    } else {
+      return false
     }
   }
 
   static var summary: String {
-    get {
-      """
+    """
 
-      \(Diagnostic.distribution) \(Defaults.shared.beta ? "[Beta] " : "")\(Defaults.shared.debugAutocomplete ? "[Debug] " : "")\(Defaults.shared.developerModeEnabled ? "[Dev] " : "")[\(KeyboardLayout.shared.currentLayoutName() ?? "?")] \(Diagnostic.isRunningOnReadOnlyVolume ? "TRANSLOCATED!!!" : "")
-      UserShell: \(Defaults.shared.userShell)
-      Bundle path: \(Diagnostic.pathToBundle)
-      Autocomplete: \(Defaults.shared.useAutocomplete)
-      Settings.json: \(Diagnostic.settingsExistAndHaveValidFormat)
-      CLI installed: \(Diagnostic.installedCLI)
-      CLI tool path: \(Diagnostic.pathOfCLI ?? "<none>")
-      Accessibility: \(Accessibility.enabled)
-      Number of specs: \(Diagnostic.numberOfCompletionSpecs)
-      SSH Integration: \(Defaults.shared.SSHIntegrationEnabled)
-      Tmux Integration: \(TmuxIntegration.isInstalled)
-      iTerm Integration: \(iTermIntegration.default.isInstalled) \(iTermIntegration.default.isConnectedToAPI ? "[Authenticated]": "")
-      Hyper Integration: \(HyperIntegration.default.isInstalled)
-      VSCode Integration: \(VSCodeIntegration.default.isInstalled)
-      Docker Integration: \(DockerEventStream.shared.socket.isConnected)
-      Symlinked dotfiles: \(Diagnostic.dotfilesAreSymlinked)
-      Only insert on tab: \(Defaults.shared.onlyInsertOnTab)
-      Installation Script: \(Diagnostic.installationScriptRan)
-      PseudoTerminal Path: \(Diagnostic.pseudoTerminalPath ?? "<generated dynamically>")
-      SecureKeyboardInput: \(Diagnostic.secureKeyboardInput)
-      SecureKeyboardProcess: \(Diagnostic.blockingProcess ?? "<none>")
-      Current active process: \(Diagnostic.processForTopmostWindow) (\(Diagnostic.processIdForTopmostWindow)) - \(Diagnostic.ttyDescriptorForTopmostWindow)
-      Current working directory: \(Diagnostic.workingDirectoryForTopmostWindow)
-      Current window identifier: \(Diagnostic.descriptionOfTopmostWindow)
+    \(Diagnostic.distribution) \(Defaults.shared.beta ? "[Beta] " : "")\(Defaults.shared.debugAutocomplete ? "[Debug] " : "")\(Defaults.shared.developerModeEnabled ? "[Dev] " : "")[\(KeyboardLayout.shared.currentLayoutName() ?? "?")] \(Diagnostic.isRunningOnReadOnlyVolume ? "TRANSLOCATED!!!" : "")
+    UserShell: \(Defaults.shared.userShell)
+    Bundle path: \(Diagnostic.pathToBundle)
+    Autocomplete: \(Defaults.shared.useAutocomplete)
+    Settings.json: \(Diagnostic.settingsExistAndHaveValidFormat)
+    CLI installed: \(Diagnostic.installedCLI)
+    CLI tool path: \(Diagnostic.pathOfCLI ?? "<none>")
+    Accessibility: \(Accessibility.enabled)
+    Number of specs: \(Diagnostic.numberOfCompletionSpecs)
+    SSH Integration: \(Defaults.shared.SSHIntegrationEnabled)
+    Tmux Integration: \(TmuxIntegration.isInstalled)
+    iTerm Integration: \(iTermIntegration.default.isInstalled) \(iTermIntegration.default.isConnectedToAPI ? "[Authenticated]": "")
+    Hyper Integration: \(HyperIntegration.default.isInstalled)
+    VSCode Integration: \(VSCodeIntegration.default.isInstalled)
+    Docker Integration: \(DockerEventStream.shared.socket.isConnected)
+    Symlinked dotfiles: \(Diagnostic.dotfilesAreSymlinked)
+    Only insert on tab: \(Defaults.shared.onlyInsertOnTab)
+    Installation Script: \(Diagnostic.installationScriptRan)
+    PseudoTerminal Path: \(Diagnostic.pseudoTerminalPath ?? "<generated dynamically>")
+    SecureKeyboardInput: \(Diagnostic.secureKeyboardInput)
+    SecureKeyboardProcess: \(Diagnostic.blockingProcess ?? "<none>")
+    Current active process: \(Diagnostic.processForTopmostWindow) (\(Diagnostic.processIdForTopmostWindow)) - \(Diagnostic.ttyDescriptorForTopmostWindow)
+    Current working directory: \(Diagnostic.workingDirectoryForTopmostWindow)
+    Current window identifier: \(Diagnostic.descriptionOfTopmostWindow)
 
-      """
-    }
+    """
   }
 
   static func summaryWithEnvironment(_ env: [String: Any]) -> String {

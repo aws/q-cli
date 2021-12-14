@@ -58,7 +58,8 @@ class SSHIntegration: CommandIntegration {
       return
     }
 
-    let scriptPath = Settings.shared.getValue(forKey: Settings.sshRemoteDirectoryScript) as? String ?? SSHIntegration.pathToRemoteWorkingDirectoryScript()
+    let scriptPath = Settings.shared.getValue(forKey: Settings.sshRemoteDirectoryScript) as? String
+      ?? SSHIntegration.pathToRemoteWorkingDirectoryScript()
 
     let sshEnvKeys = Settings.shared.keys().filter { $0.hasPrefix("ssh.env.") }
 
@@ -68,7 +69,10 @@ class SSHIntegration: CommandIntegration {
     do {
       let script = try String(contentsOf: URL(fileURLWithPath: scriptPath))
       let scriptWithEnv = script.replacingOccurrences(of: "# FIG_SETTINGS", with: env)
-      let path = NSURL.fileURL(withPath: NSTemporaryDirectory(), isDirectory: true).appendingPathComponent("remote_cwd.sh")
+      let path = NSURL.fileURL(
+        withPath: NSTemporaryDirectory(),
+        isDirectory: true
+      ).appendingPathComponent("remote_cwd.sh")
 
       try scriptWithEnv.write(to: path, atomically: true, encoding: String.Encoding.utf8)
       modifiedScriptPath = path.path

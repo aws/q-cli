@@ -10,7 +10,7 @@ import Foundation
 
 // import Foundation
 // import ServerAddress
-//https://github.com/MasterBel2/UberserverClientCore/blob/b2f3dcad2810e311fd923a6b336ba976db661287/Sources/UberserverClientCore/Server/Socket.swift
+// https://github.com/MasterBel2/UberserverClientCore/blob/b2f3dcad2810e311fd923a6b336ba976db661287/Sources/UberserverClientCore/Server/Socket.swift
 protocol UnixSocketDelegate: AnyObject {
   func socket(_ socket: UnixSocketClient, didReceive data: Data)
   func socket(_ socket: UnixSocketClient, didReceive message: String)
@@ -171,7 +171,6 @@ final class UnixSocketClient: NSObject, StreamDelegate {
 
     case Stream.Event.openCompleted:
       UnixSocketClient.log("openCompleted")
-      break
 
     case Stream.Event.hasBytesAvailable:
       print("Socket: hasBytesAvailable")
@@ -198,7 +197,7 @@ final class UnixSocketClient: NSObject, StreamDelegate {
 
     case Stream.Event.hasSpaceAvailable:
       UnixSocketClient.log("hasSpaceAvailable ")
-      break
+
     case Stream.Event.endEncountered:
       UnixSocketClient.log("endEncountered ")
 

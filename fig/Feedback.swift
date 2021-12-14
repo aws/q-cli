@@ -41,7 +41,11 @@ class Feedback {
     }
   }
 
-  fileprivate static func upload(to endpoint: String, with body: [String: String], completion: ((Data?, URLResponse?, Error?) -> Void)? = nil) {
+  fileprivate static func upload(
+    to endpoint: String,
+    with body: [String: String],
+    completion: ((Data?, URLResponse?, Error?) -> Void)? = nil
+  ) {
     guard let json = try? JSONSerialization.data(withJSONObject: body, options: .sortedKeys) else { return }
     print(json)
     var request = URLRequest(url: Remote.API.appendingPathComponent(endpoint))

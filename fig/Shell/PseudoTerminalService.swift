@@ -37,7 +37,8 @@ class PseudoTerminal {
 
   fileprivate static let CRLF = "\r\n"
 
-  static let recievedEnvironmentVariablesFromShellNotification = NSNotification.Name("recievedEnvironmentVariablesFromShellNotification")
+  static let recievedEnvironmentVariablesFromShellNotification =
+    NSNotification.Name("recievedEnvironmentVariablesFromShellNotification")
   static let recievedCallbackNotification = NSNotification.Name("recievedCallbackNotification")
 
   static let defaultPath = PathHelper.defaultPath
@@ -151,8 +152,8 @@ extension PseudoTerminal {
         return false
       }
 
-      return environmentVariablesToMirror.reduce(false) { (result, prefix) -> Bool in
-        return result || element.key.starts(with: prefix)
+      return environmentVariablesToMirror.contains { (prefix) -> Bool in
+        return element.key.starts(with: prefix)
       }
     })
 
@@ -202,7 +203,8 @@ extension PseudoTerminal {
       commandToRun = "\(command) | \(PseudoTerminal.callbackExecutable) \(cappedHandlerId)"
     } else {
       let tmpFilepath = "/tmp/\(cappedHandlerId)"
-      commandToRun = "{ ( \(command) ) 1> \(tmpFilepath).stdout 2> \(tmpFilepath).stderr; \(PseudoTerminal.callbackExecutable) \(handlerId) \(tmpFilepath) $? ; }"
+      commandToRun = "{ ( \(command) ) 1> \(tmpFilepath).stdout 2> \(tmpFilepath).stderr; " +
+        "\(PseudoTerminal.callbackExecutable) \(handlerId) \(tmpFilepath) $? ; }"
     }
 
     if options.contains(.backgroundJob) {
@@ -213,7 +215,8 @@ extension PseudoTerminal {
 
     self.write(commandToRun, handlerId: cappedHandlerId)
 
-    PseudoTerminal.log("Running '\(command)' \(options.contains(.pipelined) ? "as pipeline" : "")\(options.contains(.backgroundJob) ? " in background" : "") with id \(cappedHandlerId)")
+    PseudoTerminal.log("Running '\(command)' \(options.contains(.pipelined) ? "as pipeline" : "")" +
+                        "\(options.contains(.backgroundJob) ? " in background" : "") with id \(cappedHandlerId)")
   }
 
   @objc func recievedCallbackNotification(_ notification: Notification) {
@@ -278,7 +281,11 @@ extension PseudoTerminal {
     return true
   }
 
-  func handleExecuteRequest(_ request: Fig_PseudoterminalExecuteRequest, with id: Int64, callback: @escaping ((Fig_PseudoterminalExecuteResponse) -> Void)) {
+  func handleExecuteRequest(
+    _ request: Fig_PseudoterminalExecuteRequest,
+    with id: Int64,
+    callback: @escaping ((Fig_PseudoterminalExecuteResponse) -> Void)
+  ) {
 
     var options: ExecutionOptions = [ .backgroundJob ]
 

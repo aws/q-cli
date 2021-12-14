@@ -100,7 +100,9 @@ class GenericTerminalIntegrationProvider {
     }
 
     NSWorkspace.shared.notificationCenter.addObserver(self,
-                                                      selector: #selector(didLaunchApplicationNotification(notification:)),
+                                                      selector: #selector(didLaunchApplicationNotification(
+                                                        notification:
+                                                        )),
                                                       name: NSWorkspace.didLaunchApplicationNotification,
                                                       object: nil)
   }
@@ -156,9 +158,7 @@ class GenericTerminalIntegrationProvider {
   }
 
   var shouldAttemptToInstall: Bool {
-    get {
-      return Defaults.shared.loggedIn && status == .unattempted
-    }
+    return Defaults.shared.loggedIn && status == .unattempted
   }
 
   func install(withRestart: Bool, inBackground: Bool, completion: ((InstallationStatus) -> Void)? = nil) {

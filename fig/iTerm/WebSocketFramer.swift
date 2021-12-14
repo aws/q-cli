@@ -242,7 +242,15 @@ public class WSFramer: Framer {
     }
     offset += readDataLength
 
-    let frame = Frame(isFin: isFin > 0, needsDecompression: needsDecompression, isMasked: isMasked > 0, opcode: opcode, payloadLength: dataLength, payload: payload, closeCode: closeCode)
+    let frame = Frame(
+      isFin: isFin > 0,
+      needsDecompression: needsDecompression,
+      isMasked: isMasked > 0,
+      opcode: opcode,
+      payloadLength: dataLength,
+      payload: payload,
+      closeCode: closeCode
+    )
     return .processedFrame(frame, offset)
   }
 

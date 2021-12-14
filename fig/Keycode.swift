@@ -6,6 +6,7 @@
 //  Copyright © 2020 Matt Schrage. All rights reserved.
 //
 
+// swiftlint:disable identifier_name
 //https://gist.github.com/swillits/df648e87016772c7f7e5dbed2b345066
 enum Keycode: UInt16, CaseIterable {
   // Layout-independent Keys

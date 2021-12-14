@@ -90,7 +90,10 @@ class DefaultsTest: XCTestCase {
     }
   }
 
-  func createSetDefaultsPropertyRequest(key: String?, type: Fig_DefaultsValue.OneOf_Type?) -> Fig_UpdateDefaultsPropertyRequest {
+  func createSetDefaultsPropertyRequest(
+    key: String?,
+    type: Fig_DefaultsValue.OneOf_Type?
+  ) -> Fig_UpdateDefaultsPropertyRequest {
     var request = Fig_UpdateDefaultsPropertyRequest()
     if let key = key {
       request.key = key

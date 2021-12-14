@@ -136,7 +136,12 @@ class Logger {
     }
   }
 
-  static func format(_ message: String, _ priority: Priority, _ subsystem: Subsystem, colorful: Bool = false) -> String {
+  static func format(
+    _ message: String,
+    _ priority: Priority,
+    _ subsystem: Subsystem,
+    colorful: Bool = false
+  ) -> String {
     var prefix = "\(subsystem.rawValue): "
 
     if colorful {

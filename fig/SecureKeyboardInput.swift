@@ -12,7 +12,13 @@ class SecureKeyboardInput {
   static let statusChangedNotification = Notification.Name("SecureKeyboardInputStatusChangedNotification")
   fileprivate static let interval = 10.0
   static func listen() {
-    Timer.scheduledTimer(timeInterval: interval, target: self, selector: #selector(checkStatus), userInfo: nil, repeats: true)
+    Timer.scheduledTimer(
+      timeInterval: interval,
+      target: self,
+      selector: #selector(checkStatus),
+      userInfo: nil,
+      repeats: true
+    )
     NSWorkspace.shared.notificationCenter.addObserver(self,
                                                       selector: #selector(checkStatus),
                                                       name: NSWorkspace.didActivateApplicationNotification,
@@ -51,8 +57,8 @@ class SecureKeyboardInput {
   @objc static func lockscreen() {
     let libHandle = dlopen("/System/Library/PrivateFrameworks/login.framework/Versions/Current/login", RTLD_LAZY)
     let sym = dlsym(libHandle, "SACLockScreenImmediate")
-    typealias myFunction = @convention(c) () -> Void
-    let SACLockScreenImmediate = unsafeBitCast(sym, to: myFunction.self)
+    typealias MyFunction = @convention(c) () -> Void
+    let SACLockScreenImmediate = unsafeBitCast(sym, to: MyFunction.self)
     SACLockScreenImmediate()
   }
 
@@ -81,7 +87,9 @@ class SecureKeyboardInput {
   }
 
   @objc static func openRelevantMenu(for app: NSRunningApplication? = nil) {
-    guard let bundleId = app?.bundleIdentifier ?? AXWindowServer.shared.topmostWhitelistedWindow()?.bundleId else { return }
+    guard let bundleId = app?.bundleIdentifier ?? AXWindowServer.shared.topmostAllowlistedWindow()?.bundleId else {
+      return
+    }
 
     if NSWorkspace.shared.menuBarOwningApplication?.bundleIdentifier == bundleId {
       Accessibility.openMenu(bundleId)
@@ -91,7 +99,9 @@ class SecureKeyboardInput {
 
       var kvo: NSKeyValueObservation?
       kvo = NSWorkspace.shared.observe(\.menuBarOwningApplication, options: [.new]) { (_, delta) in
-        if let app = delta.newValue, let bundleId = app?.bundleIdentifier, Integrations.nativeTerminals.contains(bundleId) {
+        if let app = delta.newValue,
+           let bundleId = app?.bundleIdentifier,
+           Integrations.nativeTerminals.contains(bundleId) {
           Accessibility.openMenu(bundleId)
           kvo?.invalidate()
         }

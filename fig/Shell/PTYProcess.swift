@@ -15,7 +15,8 @@ class PTYProcess {
   var pid: pid_t = -1
   var fd: Int32 = -1
 
-  /* Taken from Swift's StdLib: https://github.com/apple/swift/blob/master/stdlib/private/SwiftPrivate/SwiftPrivate.swift */
+  // Taken from Swift's StdLib:
+  // https://github.com/apple/swift/blob/master/stdlib/private/SwiftPrivate/SwiftPrivate.swift
   public static func withArrayOfCStrings<R>(
     _ args: [String], _ body: ([UnsafeMutablePointer<CChar>?]) -> R
   ) -> R {
@@ -30,8 +31,7 @@ class PTYProcess {
       argsBuffer.append(0)
     }
 
-    return argsBuffer.withUnsafeMutableBufferPointer {
-      (argsBuffer) in
+    return argsBuffer.withUnsafeMutableBufferPointer { (argsBuffer) in
       let ptr = UnsafeMutableRawPointer(argsBuffer.baseAddress!).bindMemory(
         to: CChar.self, capacity: argsBuffer.count)
       var cStrings: [UnsafeMutablePointer<CChar>?] = argsOffsets.map { ptr + $0 }

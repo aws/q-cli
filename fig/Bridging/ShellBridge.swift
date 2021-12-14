@@ -262,11 +262,11 @@ struct ShellMessage: Codable {
 
   var terminal: String? {
     if let dict = self.env?.jsonStringToDict() {
-      if let _ = dict["KITTY_WINDOW_ID"] {
+      if dict["KITTY_WINDOW_ID"] != nil {
         return "kitty"
       }
 
-      if let _ = dict["ALACRITTY_LOG"] {
+      if dict["ALACRITTY_LOG"] != nil {
         return "Alacritty"
       }
 
@@ -307,19 +307,15 @@ struct ShellMessage: Codable {
   }
 
   var subcommand: String? {
-    get {
-      return self.options?.first
-    }
+    return self.options?.first
   }
 
   var arguments: [String] {
-    get {
-      guard let options = self.options, options.count > 1 else {
-        return []
-      }
-
-      return Array(options.suffix(from: 1))
+    guard let options = self.options, options.count > 1 else {
+      return []
     }
+
+    return Array(options.suffix(from: 1))
   }
 
   var shellIntegrationVersion: Int? {
@@ -355,26 +351,18 @@ extension Timer {
 
 extension NSRunningApplication {
   var isTerminal: Bool {
-    get {
-      return  Integrations.terminals.contains(self.bundleIdentifier ?? "")
-    }
+    return  Integrations.terminals.contains(self.bundleIdentifier ?? "")
   }
 
   var isBrowser: Bool {
-    get {
-      return  Integrations.browsers.contains(self.bundleIdentifier ?? "")
-    }
+    return  Integrations.browsers.contains(self.bundleIdentifier ?? "")
   }
 
   var isEditor: Bool {
-    get {
-      return  Integrations.editors.contains(self.bundleIdentifier ?? "")
-    }
+    return  Integrations.editors.contains(self.bundleIdentifier ?? "")
   }
   var isFig: Bool {
-    get {
-      return  self.bundleIdentifier ?? "" == "com.mschrage.fig"
-    }
+    return  self.bundleIdentifier ?? "" == "com.mschrage.fig"
   }
 }
 

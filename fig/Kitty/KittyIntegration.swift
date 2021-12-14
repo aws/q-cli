@@ -15,7 +15,7 @@ class KittyIntegration: InputMethodDependentTerminalIntegrationProvider {
   // https://sw.kovidgoyal.net/kitty/faq/#how-do-i-specify-command-line-options-for-kitty-on-macos
   static let cmdlineFilename = "macos-launch-services-cmdline"
   static let cmdlineFilepath = configDirectory.appendingPathComponent(cmdlineFilename)
-  static let pythonScriptPathInBundle = Bundle.main.path(forResource: "kitty-integration", ofType: "py")!// "~/.fig/tools/kitty-integration.py"
+  static let pythonScriptPathInBundle = Bundle.main.path(forResource: "kitty-integration", ofType: "py")!
   static let pythonScriptPath = NSHomeDirectory() + "/.fig/tools/kitty-integration.py"
 
   static let commandLineArguments = "--watcher \(pythonScriptPath)"
@@ -66,9 +66,14 @@ extension KittyIntegration: IntegrationProvider {
     try? FileManager.default.removeItem(atPath: KittyIntegration.pythonScriptPath)
 
     do {
-      try FileManager.default.createSymbolicLink(atPath: KittyIntegration.pythonScriptPath, withDestinationPath: KittyIntegration.pythonScriptPathInBundle)
+      try FileManager.default.createSymbolicLink(
+        atPath: KittyIntegration.pythonScriptPath,
+        withDestinationPath: KittyIntegration.pythonScriptPathInBundle
+      )
     } catch {
-      return .failed(error: "Could not create symlink at \(KittyIntegration.pythonScriptPath): \(error.localizedDescription)")
+      return .failed(
+        error: "Could not create symlink at \(KittyIntegration.pythonScriptPath): \(error.localizedDescription)"
+      )
     }
 
     if FileManager.default.fileExists(atPath: KittyIntegration.cmdlineFilepath.path) {

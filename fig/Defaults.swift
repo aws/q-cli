@@ -120,7 +120,10 @@ class Defaults {
   var defaultActivePosition: CompanionWindow.OverlayPositioning {
     get {
 
-      return  defaults.bool(forKey: "updatedDefaultActivePosition") ? CompanionWindow.OverlayPositioning(rawValue: defaults.integer(forKey: "defaultActivePosition")) ?? .outsideRight :  .outsideRight
+      return  defaults.bool(forKey: "updatedDefaultActivePosition")
+        ? CompanionWindow.OverlayPositioning(rawValue: defaults.integer(forKey: "defaultActivePosition"))
+        ?? .outsideRight
+        : .outsideRight
     }
 
     set(id) {

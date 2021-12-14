@@ -51,7 +51,8 @@ class PathHelper {
 
 // https://developer.apple.com/forums/thread/652667
 extension ProcessInfo {
-  /// Returns a `String` representing the machine hardware name or nil if there was an error invoking `uname(_:)` or decoding the response.
+  /// Returns a `String` representing the machine hardware name or nil if there was an error invoking `uname(_:)` or
+  /// decoding the response.
   ///
   /// Return value is the equivalent to running `$ uname -m` in shell.
   var machineHardwareName: String? {

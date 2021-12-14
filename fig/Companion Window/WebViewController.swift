@@ -129,22 +129,9 @@ class WebViewController: NSViewController, NSWindowDelegate {
   //
   //   }
   override func viewDidAppear() {
-    //        blur(view:self.view)
-
-    //        webView?.autoresizingMask = self.view.autoresizingMask
-    //        webView?.autoresizingMask = NSView.AutoresizingMask(rawValue: NSView.AutoresizingMask.width.rawValue | NSView.AutoresizingMask.height.rawValue);
-
-    //        webView?.setValue(false, forKey: "drawsBackground")
-
     // add alpha when using NSVisualEffectView
     // ADD ALPHA TO WINDOW
     // self.view.window?.alphaValue = 0.9
-
-    //        self.view.wantsLayer = true
-    //        self.view.layer?.cornerRadius = 15
-    //        self.view.layer?.masksToBounds = true
-    //        self.webView.alphaValue = 0.75
-    //        self.view.alphaValue = 0.5;
 
     print("ViewDidAppear -- \( webView?.url?.absoluteString ?? "no url")")
 
@@ -268,7 +255,12 @@ extension WebViewController {
 }
 
 extension WebViewController: WKUIDelegate {
-  func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
+  func webView(
+    _ webView: WKWebView,
+    createWebViewWith configuration: WKWebViewConfiguration,
+    for navigationAction: WKNavigationAction,
+    windowFeatures: WKWindowFeatures
+  ) -> WKWebView? {
     print("hello")
     if navigationAction.targetFrame == nil {
       return self.webView
@@ -288,7 +280,11 @@ extension WebViewController: WKNavigationDelegate {
     webView.onNavigate = []
   }
 
-  func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+  func webView(
+    _ webView: WKWebView,
+    decidePolicyFor navigationAction: WKNavigationAction,
+    decisionHandler: @escaping (WKNavigationActionPolicy) -> Void
+  ) {
 
     // decisionHandler(.cancel)
     // print(navigationAction.navigationType)
@@ -364,9 +360,7 @@ class WebView: WKWebView {
   }
 
   override var canGoBack: Bool {
-    get {
-      return !(super.backForwardList.backItem?.initialURL.absoluteString == Remote.baseURL.appendingPathComponent("sidebar").absoluteString) && super.canGoBack
-    }
+    return !(super.backForwardList.backItem?.initialURL.absoluteString == Remote.baseURL.appendingPathComponent("sidebar").absoluteString) && super.canGoBack
   }
   var requestedURL: URL?
 
@@ -378,15 +372,18 @@ class WebView: WKWebView {
     super.init(frame: frame, configuration: configuration)
     //        self.setValue(false, forKey: "drawsBackground")
 
-    // Mozilla/5.0 (iPhone; CPU iPhone OS 13_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/83.0.4103.88 Mobile/15E148 Safari/604.1 FigBrowser/\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0")"
-    NotificationCenter.default.addObserver(self, selector: #selector(requestStopMonitoringMouseEvents(_:)), name: .requestStopMonitoringMouseEvents, object: nil)
-    NotificationCenter.default.addObserver(self, selector: #selector(requestStartMonitoringMouseEvents(_:)), name: .requestStartMonitoringMouseEvents, object: nil)
-    //        self.unregisterDraggedTypes()
-    //        self.autoresizingMask = NSView.AutoresizingMask.init(arrayLiteral: [.height, .width])
-    //        NSEvent.addLocalMonitorForEvents(matching: NSEvent.EventTypeMask.mouseEntered) { event -> NSEvent? in
-    //            print(event)
-    //            return event
-    //        }
+    NotificationCenter.default.addObserver(
+      self,
+      selector: #selector(requestStopMonitoringMouseEvents(_:)),
+      name: .requestStopMonitoringMouseEvents,
+      object: nil
+    )
+    NotificationCenter.default.addObserver(
+      self,
+      selector: #selector(requestStartMonitoringMouseEvents(_:)),
+      name: .requestStartMonitoringMouseEvents,
+      object: nil
+    )
   }
 
   required init?(coder: NSCoder) {
@@ -435,7 +432,9 @@ class WebView: WKWebView {
     guard let w = self.window, let window = w as? CompanionWindow else {
       return
     }
-    if trackMouse && !NSWorkspace.shared.frontmostApplication!.isFig && window.positioning == CompanionWindow.defaultPassivePosition {
+    if trackMouse &&
+        !NSWorkspace.shared.frontmostApplication!.isFig &&
+        window.positioning == CompanionWindow.defaultPassivePosition {
       print("current frontmost application \(NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "")")
 
       self.evaluateJavaScript("fig.mouseEntered()", completionHandler: nil)
@@ -543,7 +542,12 @@ class WebView: WKWebView {
   //    }
 
   static func deleteCache() {
-    let websiteDataTypes = NSSet(array: [WKWebsiteDataTypeDiskCache, WKWebsiteDataTypeMemoryCache, WKWebsiteDataTypeCookies, WKWebsiteDataTypeLocalStorage])
+    let websiteDataTypes = NSSet(array: [
+      WKWebsiteDataTypeDiskCache,
+      WKWebsiteDataTypeMemoryCache,
+      WKWebsiteDataTypeCookies,
+      WKWebsiteDataTypeLocalStorage
+    ])
     let date = Date(timeIntervalSince1970: 0)
     WKWebsiteDataStore.default().removeData(ofTypes: websiteDataTypes as! Set<String>, modifiedSince: date, completionHandler: { })
   }

@@ -32,11 +32,11 @@ class Scope {
 
   var term: String? {
     if let dict = self.env.jsonStringToDict() {
-      if let _ = dict["KITTY_WINDOW_ID"] {
+      if dict["KITTY_WINDOW_ID"] != nil {
         return "kitty"
       }
 
-      if let _ = dict["ALACRITTY_LOG"] {
+      if dict["ALACRITTY_LOG"] != nil {
         return "Alacritty"
       }
 
@@ -65,25 +65,23 @@ class Scope {
 }
 
 enum NativeCLICommand: String {
-  case web = "web"
-  case local = "local"
-  case bundle = "bundle"
-  case callback = "callback"
-  case hide = "hide"
-  case position = "position"
-  case apps = "apps"
-  case store = "store"
-  case appstore = "appstore"
-  case blocks = "blocks"
-  case home = "home"
-  case close = "close"
-  case sidebar = "sidebar"
+  case web
+  case local
+  case bundle
+  case callback
+  case hide
+  case position
+  case apps
+  case store
+  case appstore
+  case blocks
+  case home
+  case close
+  case sidebar
 
   var openInNewWindow: Bool {
-    get {
-      let popups: Set<NativeCLICommand> = [ .web, .local, .bundle, .apps, .appstore, .home, .appstore, .blocks]
-      return popups.contains(self)
-    }
+    let popups: Set<NativeCLICommand> = [ .web, .local, .bundle, .apps, .appstore, .home, .appstore, .blocks]
+    return popups.contains(self)
   }
 }
 

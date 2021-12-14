@@ -9,10 +9,10 @@
 import Cocoa
 
 enum LocalTelemetryEvent: String {
-  case terminalUsage = "terminalUsage"
-  case keybufferEntered = "keybufferEntered"
-  case showAutocompletePopup = "showAutocompletePopup"
-  case insertViaAutocomplete = "insertViaAutocomplete"
+  case terminalUsage
+  case keybufferEntered
+  case showAutocompletePopup
+  case insertViaAutocomplete
 }
 
 // Persists, aggregates and posts local telemetry events
@@ -25,7 +25,11 @@ protocol LocalTelemetryService {
 
 protocol TelemetryService {
   static func obscure(_ input: String) -> String
-  static func track(event: TelemetryEvent, with payload: [String: String], completion: ((Data?, URLResponse?, Error?) -> Void)?)
+  static func track(
+    event: TelemetryEvent,
+    with payload: [String: String],
+    completion: ((Data?, URLResponse?, Error?) -> Void)?
+  )
 }
 
 enum TelemetryEvent: String {
@@ -67,13 +71,22 @@ class TelemetryProvider: TelemetryService {
     return String(input.map { $0.isLetter ? "x" : $0 }.map { $0.isNumber ? "0" : $0 })
   }
 
-  static func track(event: TelemetryEvent, with properties: [String: String], completion: ((Data?, URLResponse?, Error?) -> Void)? = nil) {
+  static func track(
+    event: TelemetryEvent,
+    with properties: [String: String],
+    completion: ((Data?, URLResponse?, Error?) -> Void)? = nil
+  ) {
 
     TelemetryProvider.track(event: event.rawValue, with: properties, completion: completion)
 
   }
 
-  static func track(event: String, with properties: [String: String], needsPrefix prefix: String? = "prop_", completion: ((Data?, URLResponse?, Error?) -> Void)? = nil) {
+  static func track(
+    event: String,
+    with properties: [String: String],
+    needsPrefix prefix: String? = "prop_",
+    completion: ((Data?, URLResponse?, Error?) -> Void)? = nil
+  ) {
     var body: [String: String] = [:]
 
     if let prefix = prefix {
@@ -88,9 +101,9 @@ class TelemetryProvider: TelemetryService {
 
     if Defaults.shared.telemetryDisabled {
       let eventsToSendEvenWhenDisabled: [TelemetryEvent] = [.telemetryToggled]
-      let sendEvent = eventsToSendEvenWhenDisabled.reduce(false, { (ignore, whitelistedEvent) -> Bool in
-        return ignore || whitelistedEvent.rawValue == event
-      })
+      let sendEvent = eventsToSendEvenWhenDisabled.contains { (allowlistedEvent) -> Bool in
+        return allowlistedEvent.rawValue == event
+      }
 
       guard sendEvent else {
         print("telemetry: not sending event because telemetry is diabled")
@@ -103,7 +116,11 @@ class TelemetryProvider: TelemetryService {
     upload(to: "track", with: body, completion: completion)
   }
 
-  static func identify(with traits: [String: String], needsPrefix prefix: String? = "trait_", shouldIgnoreTelemetryPreferences: Bool = false) {
+  static func identify(
+    with traits: [String: String],
+    needsPrefix prefix: String? = "trait_",
+    shouldIgnoreTelemetryPreferences: Bool = false
+  ) {
     var body: [String: String] = [:]
     if let prefix = prefix {
       body = TelemetryProvider.addPrefixToKeys(prefix: prefix, dict: traits)
@@ -131,7 +148,11 @@ class TelemetryProvider: TelemetryService {
     upload(to: "alias", with: ["previousId": Defaults.shared.uuid, "userId": userId ?? ""])
   }
 
-  fileprivate static func upload(to endpoint: String, with body: [String: String], completion: ((Data?, URLResponse?, Error?) -> Void)? = nil) {
+  fileprivate static func upload(
+    to endpoint: String,
+    with body: [String: String],
+    completion: ((Data?, URLResponse?, Error?) -> Void)? = nil
+  ) {
     guard let json = try? JSONSerialization.data(withJSONObject: body, options: .sortedKeys) else { return }
     print(json)
     var request = URLRequest(url: Remote.telemetryURL.appendingPathComponent(endpoint))
@@ -158,7 +179,10 @@ class TelemetryProvider: TelemetryService {
     }
   }
 
-  fileprivate static func addDefaultProperties(to properties: [String: String], prefixedWith prefix: String = "prop_") -> [String: String] {
+  fileprivate static func addDefaultProperties(
+    to properties: [String: String],
+    prefixedWith prefix: String = "prop_"
+  ) -> [String: String] {
     let email = Defaults.shared.email ?? ""
     let domain = String(email.split(separator: "@").last ?? "unregistered")
     let os = ProcessInfo.processInfo.operatingSystemVersion
@@ -177,7 +201,12 @@ extension TelemetryProvider: LocalTelemetryService {
   static func register() {
     self.terminalObserver = TerminalUsageObserver()
 
-    NotificationCenter.default.addObserver(self, selector: #selector(calendarDayDidChange), name: .NSCalendarDayChanged, object: nil)
+    NotificationCenter.default.addObserver(
+      self,
+      selector: #selector(calendarDayDidChange),
+      name: .NSCalendarDayChanged,
+      object: nil
+    )
     // flush previous events
     flushAll()
 
@@ -265,7 +294,12 @@ extension TelemetryProvider: LocalTelemetryService {
 
   // send logged & aggregated events to server
   fileprivate static func flush (eventsFor dateIdentifier: TelemetryUTCDate) {
-    let aggregatableEvents: Set<LocalTelemetryEvent> = [.insertViaAutocomplete, .keybufferEntered, .showAutocompletePopup, .terminalUsage]
+    let aggregatableEvents: Set<LocalTelemetryEvent> = [
+      .insertViaAutocomplete,
+      .keybufferEntered,
+      .showAutocompletePopup,
+      .terminalUsage
+    ]
     var keys: Set<String> = []
     let countsForDate = aggregatableEvents.map { (event) -> (LocalTelemetryEvent, Int) in
       let key = "\(dateIdentifier)#\(event.rawValue)"
@@ -278,7 +312,9 @@ extension TelemetryProvider: LocalTelemetryService {
       dict[event.rawValue] = "\(count)"
     })
     payload["date"] = dateIdentifier
-    payload["telemetryDisabled"] = UserDefaults.standard.bool(forKey: "\(dateIdentifier)#telemetryDisabled") ? "true" : "false"
+    payload["telemetryDisabled"] = UserDefaults.standard.bool(forKey: "\(dateIdentifier)#telemetryDisabled")
+      ? "true"
+      : "false"
     print("aggregate:", countsForDate)
     // todo: add completion handler for success and failure
     // clean cache on success

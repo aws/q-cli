@@ -11,13 +11,13 @@ import Cocoa
 
 protocol WindowService {
 
-  func topmostWhitelistedWindow() -> ExternalWindow?
+  func topmostAllowlistedWindow() -> ExternalWindow?
   func topmostWindow(for app: NSRunningApplication) -> ExternalWindow?
   func previousFrontmostApplication() -> NSRunningApplication?
-  func currentApplicationIsWhitelisted() -> Bool
+  func currentApplicationIsAllowlisted() -> Bool
   func allWindows(onScreen: Bool) -> [ExternalWindow]
-  func allWhitelistedWindows(onScreen: Bool) -> [ExternalWindow]
-  func previousWhitelistedWindow() -> ExternalWindow?
+  func allAllowlistedWindows(onScreen: Bool) -> [ExternalWindow]
+  func previousAllowlistedWindow() -> ExternalWindow?
   func bringToFront(window: ExternalWindow)
   func takeFocus()
   func returnFocus()
@@ -84,30 +84,30 @@ class WindowServer: WindowService {
 
   }
 
-  static let whitelistedWindowDidChangeNotification: NSNotification.Name = Notification.Name("whitelistedWindowDidChangeNotification")
+  static let allowlistedWindowDidChangeNotification: NSNotification.Name = Notification.Name("allowlistedWindowDidChangeNotification")
 
-  func previousWhitelistedWindow() -> ExternalWindow? {
+  func previousAllowlistedWindow() -> ExternalWindow? {
     return self.previousWindow
   }
 
-  func topmostWhitelistedWindow() -> ExternalWindow? {
-    //        return AXWindowServer.shared.whitelistedWindow
-    //        return self.allWhitelistedWindows(onScreen: true).first
+  func topmostAllowlistedWindow() -> ExternalWindow? {
+    //        return AXWindowServer.shared.allowlistedWindow
+    //        return self.allAllowlistedWindows(onScreen: true).first
     // fixed the workspace bug! -- unfortunately it introduced a new bug when window becomes fullscreen + other weirdness
-    guard self.currentApplicationIsWhitelisted() else { return nil }
-    guard self.allWhitelistedWindows(onScreen: true).first != nil else { return nil }
-    //        print("topmostWhitelistedWindow", self.allWhitelistedWindows(onScreen: true).first?.frame)
+    guard self.currentApplicationIsAllowlisted() else { return nil }
+    guard self.allAllowlistedWindows(onScreen: true).first != nil else { return nil }
+    //        print("topmostAllowlistedWindow", self.allAllowlistedWindows(onScreen: true).first?.frame)
     //        print("topmostWindow", topmostWindow(for: NSWorkspace.shared.frontmostApplication!)?.frame)
     //        print("screen", NSScreen.main?.frame)
     return topmostWindow(for: NSWorkspace.shared.frontmostApplication!)
   }
 
-  func currentApplicationIsWhitelisted() -> Bool {
-    let whitelistedBundleIds = Integrations.whitelist
+  func currentApplicationIsAllowlisted() -> Bool {
+    let allowlistedBundleIds = Integrations.allowlist
     if let app = NSWorkspace.shared.frontmostApplication,
        let bundleId = app.bundleIdentifier {
       //            print("currentAppBundleId = \(bundleId)")
-      return whitelistedBundleIds.contains(bundleId)
+      return allowlistedBundleIds.contains(bundleId)
     }
 
     return false
@@ -121,8 +121,8 @@ class WindowServer: WindowService {
     return rawWindows.compactMap { ExternalWindow(raw: $0) }
   }
 
-  func allWhitelistedWindows(onScreen: Bool = false) -> [ExternalWindow] {
-    return self.allWindows(onScreen: onScreen).filter { Integrations.whitelist.contains($0.bundleId ?? "") }
+  func allAllowlistedWindows(onScreen: Bool = false) -> [ExternalWindow] {
+    return self.allWindows(onScreen: onScreen).filter { Integrations.allowlist.contains($0.bundleId ?? "") }
   }
 
   static let shared = WindowServer()
@@ -138,7 +138,7 @@ class WindowServer: WindowService {
         print("app: \(value?.bundleId ?? "<none>")")
         print("Old window \(self.previousWindow?.windowId ?? 0)")
         print("New window \(value?.windowId ?? 0)")
-        NotificationCenter.default.post(name: WindowServer.whitelistedWindowDidChangeNotification, object: value)
+        NotificationCenter.default.post(name: WindowServer.allowlistedWindowDidChangeNotification, object: value)
       }
     }
   }
@@ -153,7 +153,7 @@ class WindowServer: WindowService {
   //https://stackoverflow.com/questions/853833/how-can-my-app-detect-a-change-to-another-apps-window
   @objc func setPreviousWindow() {
     // don't set null when null
-    if let window = AXWindowServer.shared.whitelistedWindow {// self.topmostWhitelistedWindow() {
+    if let window = AXWindowServer.shared.allowlistedWindow {// self.topmostAllowlistedWindow() {
       self.previousWindow = window
     }
   }
@@ -236,27 +236,19 @@ class ExternalWindow {
   let accesibilityElement: AXUIElement?
   var windowMetadataService: WindowMetadataService = TerminalSessionLinker.shared// ShellHookManager.shared
   var lastTabId: String? {
-    get {
-      return windowMetadataService.getMostRecentFocusId(for: self.windowId)
-    }
+    return windowMetadataService.getMostRecentFocusId(for: self.windowId)
   }
 
   var associatedShellContext: ShellContext? {
-    get {
-      return windowMetadataService.getAssociatedShellContext(for: self.windowId)
-    }
+    return windowMetadataService.getAssociatedShellContext(for: self.windowId)
   }
 
   var associatedEditBuffer: EditBuffer? {
-    get {
-      return windowMetadataService.getAssociatedEditBuffer(for: self.windowId)
-    }
+    return windowMetadataService.getAssociatedEditBuffer(for: self.windowId)
   }
 
   var session: String? {
-    get {
-      return windowMetadataService.getTerminalSessionId(for: windowId)
-    }
+    return windowMetadataService.getTerminalSessionId(for: windowId)
   }
 
   init?(raw: [String: Any], accesibilityElement: AXUIElement? = nil) {
@@ -331,26 +323,20 @@ class ExternalWindow {
   }
 
   var frameWithoutTitleBar: NSRect {
-    get {
-      let titleBarHeight: CGFloat = 23.0
+    let titleBarHeight: CGFloat = 23.0
 
-      return NSRect.init(x: frame.origin.x,
-                         y: frame.origin.y - titleBarHeight,
-                         width: frame.width,
-                         height: frame.height - titleBarHeight)
-    }
+    return NSRect.init(x: frame.origin.x,
+                       y: frame.origin.y - titleBarHeight,
+                       width: frame.width,
+                       height: frame.height - titleBarHeight)
   }
 
   var title: String? {
-    get {
-      return self.app.localizedName
-    }
+    return self.app.localizedName
   }
 
   var bundleId: String? {
-    get {
-      return self.app.bundleIdentifier
-    }
+    return self.app.bundleIdentifier
   }
 
   var hash: ExternalWindowHash {
@@ -389,7 +375,7 @@ extension ExternalWindow: Hashable {
     hasher.combine(self.windowId)
   }
 
-  static func ==(lhs: ExternalWindow, rhs: ExternalWindow) -> Bool {
+  static func == (lhs: ExternalWindow, rhs: ExternalWindow) -> Bool {
     return lhs.windowId == rhs.windowId
   }
 }

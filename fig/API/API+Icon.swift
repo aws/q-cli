@@ -92,7 +92,11 @@ class Icon {
 
 extension NSImage {
   func resized(to newSize: NSSize) -> NSImage? {
-    if let rep = self.bestRepresentation(for: NSRect(origin: .zero, size: newSize), context: NSGraphicsContext.current, hints: nil) {
+    if let rep = self.bestRepresentation(
+      for: NSRect(origin: .zero, size: newSize),
+      context: NSGraphicsContext.current,
+      hints: nil
+    ) {
 
       let resizedImage = NSImage(size: newSize)
       resizedImage.addRepresentation(rep)
@@ -106,7 +110,7 @@ extension NSImage {
     let background = self
     // let side:CGFloat = 32
 
-    let overlay = NSImage(imageLiteralResourceName: NSImage.applicationIconName)// .resized(to: NSSize(width:  background.size.width/2, height:  background.size.height/2))!
+    let overlay = NSImage(imageLiteralResourceName: NSImage.applicationIconName)
 
     let newImage = NSImage(size: background.size)
     newImage.lockFocus()
@@ -115,7 +119,12 @@ extension NSImage {
     newImageRect.size = newImage.size
 
     background.draw(in: newImageRect)
-    overlay.draw(in: NSRect(x: background.size.width/2, y: 0, width: background.size.width/2 - 4, height: background.size.height/2 - 4))
+    overlay.draw(in: NSRect(
+      x: background.size.width/2,
+      y: 0,
+      width: background.size.width/2 - 4,
+      height: background.size.height/2 - 4
+    ))
 
     newImage.unlockFocus()
     return newImage// .resized(to: NSSize(width: background.size.width * 1.5, height: background.size.height * 1.5))!
@@ -134,7 +143,12 @@ extension NSImage {
     newImageRect.size = newImage.size
 
     background.draw(in: newImageRect)
-    overlay.draw(in: NSRect(x: background.size.width/2, y: 0, width: background.size.width/2 - 4, height: background.size.height/2 - 4))
+    overlay.draw(in: NSRect(
+      x: background.size.width/2,
+      y: 0,
+      width: background.size.width/2 - 4,
+      height: background.size.height/2 - 4
+    ))
 
     newImage.unlockFocus()
     return newImage// .resized(to: NSSize(width: background.size.width * 1.5, height: background.size.height * 1.5))!
@@ -154,7 +168,12 @@ extension NSImage {
     bitmapRep.size = self.size
     NSGraphicsContext.saveGraphicsState()
     NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: bitmapRep)
-    draw(in: NSRect(x: 0, y: 0, width: self.size.width, height: self.size.height), from: .zero, operation: .copy, fraction: 1.0)
+    draw(
+      in: NSRect(x: 0, y: 0, width: self.size.width, height: self.size.height),
+      from: .zero,
+      operation: .copy,
+      fraction: 1.0
+    )
     NSGraphicsContext.restoreGraphicsState()
 
     self.addRepresentation(bitmapRep)
@@ -188,7 +207,12 @@ extension NSImage {
     bitmapRep.size = self.size
     NSGraphicsContext.saveGraphicsState()
     NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: bitmapRep)
-    draw(in: NSRect(x: 0, y: 0, width: self.size.width, height: self.size.height), from: .zero, operation: .copy, fraction: 1.0)
+    draw(
+      in: NSRect(x: 0, y: 0, width: self.size.width, height: self.size.height),
+      from: .zero,
+      operation: .copy,
+      fraction: 1.0
+    )
     NSGraphicsContext.restoreGraphicsState()
 
     self.addRepresentation(bitmapRep)
@@ -200,9 +224,13 @@ extension NSImage {
     paragraphStyle.alignment = NSTextAlignment.center
 
     let string = NSAttributedString(string: text,
-                                    attributes: [ NSAttributedString.Key.font: NSFont.systemFont(ofSize: floor(imageRect.height * 0.65)),
-                                                  NSAttributedString.Key.foregroundColor: NSColor.white,
-                                                  NSAttributedString.Key.paragraphStyle: paragraphStyle])
+                                    attributes: [
+                                      NSAttributedString.Key.font: NSFont.systemFont(
+                                        ofSize: floor(imageRect.height * 0.65)
+                                      ),
+                                      NSAttributedString.Key.foregroundColor: NSColor.white,
+                                      NSAttributedString.Key.paragraphStyle: paragraphStyle
+                                    ])
 
     string.draw(in: imageRect.insetBy(dx: 0, dy: imageRect.height * 0.1))
     self.unlockFocus()
@@ -222,7 +250,12 @@ extension NSImage {
       bitmapRep.size = self.size
       NSGraphicsContext.saveGraphicsState()
       NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: bitmapRep)
-      draw(in: NSRect(x: 0, y: 0, width: self.size.width, height: self.size.height), from: .zero, operation: .copy, fraction: 1.0)
+      draw(
+        in: NSRect(x: 0, y: 0, width: self.size.width, height: self.size.height),
+        from: .zero,
+        operation: .copy,
+        fraction: 1.0
+      )
       NSGraphicsContext.restoreGraphicsState()
 
       self.addRepresentation(bitmapRep)
@@ -239,9 +272,11 @@ extension NSImage {
         paragraphStyle.alignment = NSTextAlignment.center
 
         let string = NSAttributedString(string: text,
-                                        attributes: [ NSAttributedString.Key.font: NSFont.systemFont(ofSize: rect.height * 0.9),
-                                                      NSAttributedString.Key.foregroundColor: NSColor.white,
-                                                      NSAttributedString.Key.paragraphStyle: paragraphStyle])
+                                        attributes: [
+                                          NSAttributedString.Key.font: NSFont.systemFont(ofSize: rect.height * 0.9),
+                                          NSAttributedString.Key.foregroundColor: NSColor.white,
+                                          NSAttributedString.Key.paragraphStyle: paragraphStyle
+                                        ])
 
         string.draw(in: rect)
       }

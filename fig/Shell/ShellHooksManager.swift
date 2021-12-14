@@ -170,9 +170,9 @@ extension ShellHookManager {
   func currentTabDidChangeLegacy(_ info: ShellMessage, includesBundleId: Bool = false) {
     Logger.log(message: "currentTabDidChange")
 
-    // Need time for whitelisted window to change
+    // Need time for allowlisted window to change
     Timer.delayWithSeconds(0.1) {
-      if let window = AXWindowServer.shared.whitelistedWindow {
+      if let window = AXWindowServer.shared.allowlistedWindow {
         if let id = info.options?.last {
 
           if includesBundleId {
@@ -206,9 +206,9 @@ extension ShellHookManager {
   func currentTabDidChange(applicationIdentifier: String, sessionId: String) {
     Logger.log(message: "currentTabDidChange")
 
-    // Need time for whitelisted window to change
+    // Need time for allowlisted window to change
     Timer.delayWithSeconds(0.1) {
-      if let window = AXWindowServer.shared.whitelistedWindow {
+      if let window = AXWindowServer.shared.allowlistedWindow {
         let CodeTerminal =
           [Integrations.VSCode, Integrations.VSCodeInsiders, Integrations.VSCodium]
           .contains(window.bundleId)
@@ -289,11 +289,12 @@ extension ShellHookManager {
   }
 
   func shellPromptWillReturn(context: Local_ShellContext) {
-    // try to find associated window, but don't necessarily link with the topmost window! (prompt can return when window is in background)
+    // try to find associated window, but don't necessarily link with the topmost window! (prompt can return when window
+    // is in background)
     guard
       let hash = attemptToFindToAssociatedWindow(
         for: context.sessionID,
-        currentTopmostWindow: AXWindowServer.shared.whitelistedWindow)
+        currentTopmostWindow: AXWindowServer.shared.allowlistedWindow)
     else {
       Logger.log(
         message: "Could not link to window on shell prompt return.", priority: .notify,
@@ -401,7 +402,7 @@ extension ShellHookManager {
     guard
       let hash = attemptToFindToAssociatedWindow(
         for: context.sessionID,
-        currentTopmostWindow: AXWindowServer.shared.whitelistedWindow)
+        currentTopmostWindow: AXWindowServer.shared.allowlistedWindow)
     else {
 
       Logger.log(
@@ -460,8 +461,8 @@ extension ShellHookManager {
   }
 
   func updateKeybuffer(context: Local_ShellContext, text: String, cursor: Int, histno: Int) {
-    // invariant: frontmost whitelisted window is assumed to host shell session which sent this edit buffer event.
-    guard let window = AXWindowServer.shared.whitelistedWindow else {
+    // invariant: frontmost allowlisted window is assumed to host shell session which sent this edit buffer event.
+    guard let window = AXWindowServer.shared.allowlistedWindow else {
       Logger.log(
         message: "Could not link to window on new shell session.", priority: .notify,
         subsystem: .tty)
@@ -509,7 +510,7 @@ extension ShellHookManager {
   }
 
   func tmuxPaneChangedLegacy(_ info: ShellMessage) {
-    guard let window = AXWindowServer.shared.whitelistedWindow else { return }
+    guard let window = AXWindowServer.shared.allowlistedWindow else { return }
     let oldHash = window.hash
 
     if let newPane = info.arguments[safe: 0],

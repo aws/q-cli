@@ -15,7 +15,10 @@ class Autocomplete {
   static let throttler = Throttler(minimumDelay: 0.001)
 
   static func runJavascript(_ command: String) {
-    WindowManager.shared.autocomplete?.webView?.evaluateJavaScript("try{ \(command) } catch(e) { console.log(e) }", completionHandler: nil)
+    WindowManager.shared.autocomplete?.webView?.evaluateJavaScript(
+      "try{ \(command) } catch(e) { console.log(e) }",
+      completionHandler: nil
+    )
   }
   static func redirect(keyCode: UInt16, event: CGEvent, for windowHash: ExternalWindowHash) {
 
@@ -40,14 +43,18 @@ class Autocomplete {
   }
 
   static func position(makeVisibleImmediately: Bool = true) {
-    guard let window = AXWindowServer.shared.whitelistedWindow else {
+    guard let window = AXWindowServer.shared.allowlistedWindow else {
       return
     }
 
     throttler.throttle {
       DispatchQueue.main.async {
         if let rect = window.cursor {
-          WindowManager.shared.positionAutocompletePopover(textRect: rect, makeVisibleImmediately: makeVisibleImmediately, completion: nil)
+          WindowManager.shared.positionAutocompletePopover(
+            textRect: rect,
+            makeVisibleImmediately: makeVisibleImmediately,
+            completion: nil
+          )
         }
       }
     }
@@ -57,7 +64,8 @@ class Autocomplete {
 class ShellInsertionProvider {
   static let insertionLock = "\(NSHomeDirectory())/.fig/insertion-lock"
 
-  static let lineAcceptedInKeystrokeBufferNotification: NSNotification.Name = .init("lineAcceptedInXTermBufferNotification")
+  static let lineAcceptedInKeystrokeBufferNotification: NSNotification.Name =
+    .init("lineAcceptedInXTermBufferNotification")
 
   static func insertLock() {
     FileManager.default.createFile(atPath: insertionLock, contents: nil, attributes: nil)
@@ -65,14 +73,9 @@ class ShellInsertionProvider {
 
   static func insertUnlock(with insertionText: String) {
     // remove lock after keystrokes have been processes
-    // requires delay proportional to number of character inserted
-    // unfortunately, we don't really know how long this will take - it varies significantly between native and Electron terminals.
-    // We can probably be smarter about this and modulate delay based on terminal.
-    //    let delay = 0.05// min(0.01 * Double(insertionText.count), 0.15)
-    //    Timer.delayWithSeconds(delay) {
     try? FileManager.default.removeItem(atPath: insertionLock)
 
-    if let window = AXWindowServer.shared.whitelistedWindow,
+    if let window = AXWindowServer.shared.allowlistedWindow,
        let sessionId = window.session,
        let editBuffer = window.associatedEditBuffer {
 
@@ -89,7 +92,11 @@ class ShellInsertionProvider {
           index = text.index(before: index)
           text.remove(at: index)
         case 27: // ESC
-          if let direction = insertionText.index(insertionText.startIndex, offsetBy: idx + 2, limitedBy: insertionText.endIndex) {
+          if let direction = insertionText.index(
+            insertionText.startIndex,
+            offsetBy: idx + 2,
+            limitedBy: insertionText.endIndex
+          ) {
             let esc = insertionText[direction]
             if esc == "D" {
               guard index != text.startIndex else { break }
@@ -101,7 +108,7 @@ class ShellInsertionProvider {
               skip = 2
             }
           }
-          break
+
         case 10: // newline literal
           text = ""
           index = text.startIndex
@@ -124,7 +131,6 @@ class ShellInsertionProvider {
                                           context: window.associatedShellContext?.ipcContext)
 
       Autocomplete.position()
-      //      }
     }
   }
 }

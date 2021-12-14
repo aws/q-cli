@@ -71,7 +71,7 @@ class TestableWindowServer {
 
 extension TestableWindowServer: WindowService {
 
-  func topmostWhitelistedWindow() -> ExternalWindow? {
+  func topmostAllowlistedWindow() -> ExternalWindow? {
     return self.windows.first
   }
 
@@ -79,13 +79,13 @@ extension TestableWindowServer: WindowService {
 
   func previousFrontmostApplication() -> NSRunningApplication? { return nil }
 
-  func currentApplicationIsWhitelisted() -> Bool { return true }
+  func currentApplicationIsAllowlisted() -> Bool { return true }
 
   func allWindows(onScreen: Bool) -> [ExternalWindow] { return [] }
 
-  func allWhitelistedWindows(onScreen: Bool) -> [ExternalWindow] { return [] }
+  func allAllowlistedWindows(onScreen: Bool) -> [ExternalWindow] { return [] }
 
-  func previousWhitelistedWindow() -> ExternalWindow? { return nil }
+  func previousAllowlistedWindow() -> ExternalWindow? { return nil }
 
   func bringToFront(window: ExternalWindow) {}
 
@@ -144,7 +144,7 @@ class TerminalSessionLinkingTests: XCTestCase {
 
     let a = windowObserver.createNewWindow(for: "iterm")
     let b = windowObserver.createNewWindow(for: "iterm")
-    XCTAssertEqual(windowObserver.topmostWhitelistedWindow()?.windowId, 2)
+    XCTAssertEqual(windowObserver.topmostAllowlistedWindow()?.windowId, 2)
 
     try linker.linkWithFrontmostWindow(sessionId: "2", isFocused: true)
 

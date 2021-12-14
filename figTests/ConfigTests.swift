@@ -25,7 +25,13 @@ class ConfigTests: XCTestCase {
 
   override func setUpWithError() throws {
     try super.setUpWithError()
-    guard FileManager.default.createFile(atPath: configPath.path, contents: defaultConfigContent.data(using: .utf8), attributes: nil) else { throw ConfigTestsError.configFileCreation }
+    guard FileManager.default.createFile(
+      atPath: configPath.path,
+      contents: defaultConfigContent.data(using: .utf8),
+      attributes: nil
+    ) else {
+      throw ConfigTestsError.configFileCreation
+    }
   }
 
   func createGetRequest(key: String? = nil) -> Fig_GetConfigPropertyRequest {

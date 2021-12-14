@@ -29,7 +29,8 @@ public enum AppMover {
 
     let alert = NSAlert()
     alert.messageText = "Move to Applications folder"
-    alert.informativeText = "\(Bundle.main.localizedName) needs to move to your Applications folder in order to work properly."
+    alert.informativeText =
+      "\(Bundle.main.localizedName) needs to move to your Applications folder in order to work properly."
     if needAuth {
       alert.informativeText.append(" You need to authenticate with your administrator password to complete this step.")
     }
@@ -83,7 +84,9 @@ public enum AppMover {
         guard let sourcePath = sourcePath, let destinationPath = destinationPath else { return (false, false) }
         let deleteCommand = "rm -rf '\(String(cString: destinationPath))'"
         let copyCommand = "cp -pR '\(String(cString: sourcePath))' '\(String(cString: destinationPath))'"
-        guard let script = NSAppleScript(source: "do shell script \"\(deleteCommand) && \(copyCommand)\" with administrator privileges") else {
+        guard let script = NSAppleScript(
+          source: "do shell script \"\(deleteCommand) && \(copyCommand)\" with administrator privileges"
+        ) else {
           return (false, false)
         }
         var error: NSDictionary?
@@ -147,8 +150,8 @@ fileprivate extension Bundle {
   }
 
   var isInstalled: Bool {
-    NSSearchPathForDirectoriesInDomains(.applicationDirectory, .allDomainsMask, true).contains(where: { $0.hasPrefix(bundlePath)
-    }) || bundlePath.split(separator: "/").contains("Applications")
+    NSSearchPathForDirectoriesInDomains(.applicationDirectory, .allDomainsMask, true)
+      .contains(where: { $0.hasPrefix(bundlePath) }) || bundlePath.split(separator: "/").contains("Applications")
   }
 
   func copy(to url: URL) throws {

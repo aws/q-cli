@@ -1,4 +1,5 @@
 excluded:
+  - fig/Local IPC/local.pb.swift
   - fig/iTerm/iterm.pb.swift
   - swift-api-bindings/Sources/FigAPIBindings/*.pb.swift
 
