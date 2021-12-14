@@ -12,8 +12,8 @@ on:
     - figterm2
 
 jobs:
-  rust:
-    name: Rust
+  rust_build_test:
+    name: Rust Build Test
     runs-on: ${{ matrix.os }}
 
     defaults:
@@ -45,3 +45,19 @@ jobs:
 
     - name: Test
       run: cargo test -- --nocapture --quiet
+
+  clippy_check:
+    name: Clippy Checks
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: figterm
+
+    steps:
+      - uses: actions/checkout@v1
+      - run: rustup component add clippy
+      - uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --all-features
