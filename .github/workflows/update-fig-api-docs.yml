@@ -13,6 +13,6 @@ jobs:
     - name: Repository Dispatch
       uses: peter-evans/repository-dispatch@v1
       with:
-        token: ${{ secrets.UPDATE_SITE_TOKEN }}
+        token: ${{ secrets.FIG_BOT_TOKEN }}
         repository: withfig/public-site-nextjs
         event-type: fig-api-docs
