@@ -9,398 +9,387 @@
 import Cocoa
 
 class Scope {
-    let session: String
-    let cmd: String
-    let env: String
-    let stdin: String
-    var options: [String]
-    let webView: WebView
-    let companionWindow: CompanionWindow
-    var pwd: String? {
-        if let dict = self.env.jsonStringToDict() {
-            return dict["PWD"] as? String
-        }
-        return nil
+  let session: String
+  let cmd: String
+  let env: String
+  let stdin: String
+  var options: [String]
+  let webView: WebView
+  let companionWindow: CompanionWindow
+  var pwd: String? {
+    if let dict = self.env.jsonStringToDict() {
+      return dict["PWD"] as? String
     }
-    
-    var shell: String? {
-        if let dict = self.env.jsonStringToDict() {
-            return dict["SHELL"] as? String
-        }
-        return nil
-    }
-    
-    var term: String? {
-        if let dict = self.env.jsonStringToDict() {
-            if let _ = dict["KITTY_WINDOW_ID"] {
-                return "kitty"
-            }
-            
-            if let _ = dict["ALACRITTY_LOG"] {
-                return "Alacritty"
-            }
-            
-            return dict["TERM_PROGRAM"] as? String
-        }
-        return nil
-    }
+    return nil
+  }
 
-    
-    init(cmd: String,
-         stdin: String,
-         options: [String],
-         env: String,
-         webView: WebView,
-         companionWindow: CompanionWindow,
-         session: String) {
-        self.cmd = cmd
-        self.stdin = stdin
-        self.options = options
-        self.env = env
-        self.webView = webView
-        self.companionWindow = companionWindow
-        self.session = session
-        
+  var shell: String? {
+    if let dict = self.env.jsonStringToDict() {
+      return dict["SHELL"] as? String
     }
-    
+    return nil
+  }
+
+  var term: String? {
+    if let dict = self.env.jsonStringToDict() {
+      if dict["KITTY_WINDOW_ID"] != nil {
+        return "kitty"
+      }
+
+      if dict["ALACRITTY_LOG"] != nil {
+        return "Alacritty"
+      }
+
+      return dict["TERM_PROGRAM"] as? String
+    }
+    return nil
+  }
+
+  init(cmd: String,
+       stdin: String,
+       options: [String],
+       env: String,
+       webView: WebView,
+       companionWindow: CompanionWindow,
+       session: String) {
+    self.cmd = cmd
+    self.stdin = stdin
+    self.options = options
+    self.env = env
+    self.webView = webView
+    self.companionWindow = companionWindow
+    self.session = session
+
+  }
+
 }
 
-enum NativeCLICommand : String {
-    case web = "web"
-    case local = "local"
-    case bundle = "bundle"
-    case callback = "callback"
-    case hide = "hide"
-    case position = "position"
-    case apps = "apps"
-    case store = "store"
-    case appstore = "appstore"
-    case blocks = "blocks"
-    case home = "home"
-    case close = "close"
-    case sidebar = "sidebar"
+enum NativeCLICommand: String {
+  case web
+  case local
+  case bundle
+  case callback
+  case hide
+  case position
+  case apps
+  case store
+  case appstore
+  case blocks
+  case home
+  case close
+  case sidebar
 
-    var openInNewWindow: Bool {
-        get {
-            let popups: Set<NativeCLICommand> = [ .web, .local, .bundle, .apps, .appstore, .home, .appstore, .blocks]
-            return popups.contains(self)
-        }
-    }
+  var openInNewWindow: Bool {
+    let popups: Set<NativeCLICommand> = [ .web, .local, .bundle, .apps, .appstore, .home, .appstore, .blocks]
+    return popups.contains(self)
+  }
 }
 
 class FigCLI {
-    static let baseURL = Remote.baseURL
+  static let baseURL = Remote.baseURL
 
-    static func index(with scope: Scope ) {
-        scope.webView.loadRemoteApp(at: Remote.baseURL)
-        FigCLI.env(with: scope)
-        FigCLI.options(with: scope)
-        FigCLI.stdin(with: scope)
-        FigCLI.initialPosition(with: scope)
-//        FigCLI.stdin(with: scope)
-    }
-    
-    
-    static func form(with scope: Scope, format: String) {
-        let url = ShellBridge.aliasToRawURL(format, options: scope.options)
-        scope.webView.loadRemoteApp(at: url)
-        FigCLI.prepareWebView(with: scope)
-    }
-    
-    static func prepareWebView(with scope: Scope) {
-        FigCLI.env(with: scope)
-        FigCLI.options(with: scope)
-        FigCLI.stdin(with: scope)
-        FigCLI.initialPosition(with: scope)
-    }
-    
-    static func callback(with scope: Scope) {
-        scope.webView.evaluateJavaScript("fig.\(scope.options[0])(`\(scope.stdin)`)", completionHandler: nil)
-    }
-    
-    static func initialPosition(with scope: Scope) {
-        // this causes crashes!
-        return;
-//            
-//        scope.webView.onLoad.append {
-//              WebBridge.appInitialPosition(webview: scope.webView) { (position) in
-//                // there is a crash that occurs here and I don't know why...
-//                if (scope.companionWindow != nil) {
-//                    scope.companionWindow.positioning = CompanionWindow.OverlayPositioning(rawValue:                     Int(position ?? "-1")! ) ?? scope.companionWindow.positioning
-//                }
-//              }
-//          }
-        
-    }
-    
-    static func local(with scope: Scope) {
-        if let path = scope.options[safe: 0], let pwd = scope.pwd  {
-            let url = URL(fileURLWithPath: path, relativeTo: URL(fileURLWithPath: pwd))
-            scope.webView.loadLocalApp(url)
-            FigCLI.env(with: scope)
-            FigCLI.options(with: scope, removeFirstOption: true)
-            FigCLI.stdin(with: scope)
-            FigCLI.initialPosition(with: scope)
+  static func index(with scope: Scope ) {
+    scope.webView.loadRemoteApp(at: Remote.baseURL)
+    FigCLI.env(with: scope)
+    FigCLI.options(with: scope)
+    FigCLI.stdin(with: scope)
+    FigCLI.initialPosition(with: scope)
+    //        FigCLI.stdin(with: scope)
+  }
 
-        } else {
-            let modified = Scope(cmd: "local", stdin: scope.stdin, options: scope.options, env: scope.env, webView: scope.webView, companionWindow: scope.companionWindow, session: scope.session)
-            FigCLI.url(with: modified)
-        }
-        FigCLI.env(with: scope)
+  static func form(with scope: Scope, format: String) {
+    let url = ShellBridge.aliasToRawURL(format, options: scope.options)
+    scope.webView.loadRemoteApp(at: url)
+    FigCLI.prepareWebView(with: scope)
+  }
 
-    }
-    
-    static func bundle(with scope: Scope) {
-        scope.webView.loadBundleApp(scope.options[0])
-        FigCLI.env(with: scope)
-        FigCLI.options(with: scope)
-        FigCLI.stdin(with: scope)
-        FigCLI.initialPosition(with: scope)
+  static func prepareWebView(with scope: Scope) {
+    FigCLI.env(with: scope)
+    FigCLI.options(with: scope)
+    FigCLI.stdin(with: scope)
+    FigCLI.initialPosition(with: scope)
+  }
 
-    }
-    
-    static func web(with scope: Scope) {
-        guard let url =  URL(string: scope.options[safe: 0] ?? "") else {
-            let modified = Scope(cmd: "web", stdin: scope.stdin, options: scope.options, env: scope.env, webView: scope.webView, companionWindow: scope.companionWindow, session: scope.session)
-            FigCLI.url(with: modified)
-            return
-        }
-        scope.webView.loadRemoteApp(at: url)
-        FigCLI.env(with: scope)
-        FigCLI.options(with: scope, removeFirstOption: true)
-        FigCLI.stdin(with: scope)
-//        FigCLI.initialPosition(with: scope)
-        
-        if (Defaults.automaticallyLaunchWebAppsInDetachedWindow) {
-            scope.companionWindow.untether()
-            scope.companionWindow.makeKey()
-        }
-    }
-    
-    static func position(with scope: Scope) {
-        let positionValue = Int(scope.options[0]) ?? -1
-        scope.companionWindow.positioning = CompanionWindow.OverlayPositioning(rawValue: positionValue) ?? .insideRightPartial
-        scope.companionWindow.repositionWindow(forceUpdate: true)
-        FigCLI.env(with: scope)
+  static func callback(with scope: Scope) {
+    scope.webView.evaluateJavaScript("fig.\(scope.options[0])(`\(scope.stdin)`)", completionHandler: nil)
+  }
 
-    }
+  static func initialPosition(with scope: Scope) {
+    // this causes crashes!
+    return
+    //
+    //        scope.webView.onLoad.append {
+    //              WebBridge.appInitialPosition(webview: scope.webView) { (position) in
+    //                // there is a crash that occurs here and I don't know why...
+    //                if (scope.companionWindow != nil) {
+    //                    scope.companionWindow.positioning = CompanionWindow.OverlayPositioning(rawValue:                     Int(position ?? "-1")! ) ?? scope.companionWindow.positioning
+    //                }
+    //              }
+    //          }
 
-    static func hide(with scope: Scope) {
-        scope.companionWindow.positioning = CompanionWindow.defaultPassivePosition
-    }
-    
-    static func options(with scope: Scope, removeFirstOption: Bool = false) {
-        if (removeFirstOption && scope.options.count > 0) {
-            scope.options.removeFirst()
-        }
-        scope.webView.onLoad.append {
-            let opts = scope.options
-            if let json = try? JSONSerialization.data(withJSONObject: opts, options: .fragmentsAllowed) {
-                scope.webView.evaluateJavaScript("fig.options = JSON.parse(b64DecodeUnicode(`\(json.base64EncodedString())`))", completionHandler: nil)
-                  
-            }
-        }
-    }
-    
-    static func env(with scope: Scope) {
-        scope.webView.configureEnvOnLoad = {
-            
-            let env = scope.env.jsonStringToDict() ?? FigCLI.extract(keys: ["PWD","USER","HOME","SHELL", "OLDPWD", "TERM_PROGRAM", "TERM_SESSION_ID", "HISTFILE","FIG","FIGPATH"], from: scope.env)
-            if let json = try? JSONSerialization.data(withJSONObject: env, options: .fragmentsAllowed) {
-                scope.webView.evaluateJavaScript("fig.env = JSON.parse(b64DecodeUnicode(`\(json.base64EncodedString())`))", completionHandler: nil)
-                  
-            }
-        }
-    }
-    
-    static func extract(keys:[String], from env: String) -> [String: String] {
-        var out: [String: String]  = [:]
-        for key in keys {
-            if let group = env.groups(for: "\"\(key)\": \"(.*?)\",").first, let value = group.last {
-                  out[key] = value
-              }
-        }
-        
-        return out
-    }
-    
-    static func entry(with scope: Scope) {
-        scope.webView.onLoad.append {
-            scope.webView.evaluateJavaScript("fig.callinit()", completionHandler: nil)
-        }
-    }
-    static func stdin(with scope: Scope) {
-        scope.webView.onLoad.append {
-            print(scope.stdin.applyingTransform(StringTransform.toXMLHex, reverse: false)!)
-            print(scope.stdin.applyingTransform(StringTransform.toUnicodeName, reverse: false)!)
-            print(scope.stdin.applyingTransform(StringTransform.toLatin, reverse: false)!)
-            print(scope.stdin.data(using: .utf8)!)
-            let encoded = scope.stdin.data(using: .utf8)!
-            scope.webView.evaluateJavaScript("fig.stdinb64(`\(encoded.base64EncodedString())`)", completionHandler: nil)
-        }
-    }
-    
-//    static func run() {}
+  }
 
-    static func run(scope: Scope, path: String? = nil) {
-        let modified = Scope(cmd: "run",
-                             stdin: scope.stdin,
-                             options: path != nil ? [path!] + scope.options : scope.options,
-                             env: scope.env,
-                             webView: scope.webView,
-                             companionWindow: scope.companionWindow,
-                             session: scope.session)
-        FigCLI.url(with: modified)
-    }
-    static func openHelp(schema: CLICommandSchema, scope: Scope) {
- 
-    }
-    
-    static func dotfig(filePath: String, scope: Scope) {
-        let url = URL(fileURLWithPath: filePath)
-        do {
-//            let out = try String(contentsOf: url, encoding: String.Encoding.utf8)
-            let data = try Data(contentsOf:url)
-            // parse as JSON
-            let decoder = JSONDecoder()
+  static func local(with scope: Scope) {
+    if let path = scope.options[safe: 0], let pwd = scope.pwd {
+      let url = URL(fileURLWithPath: path, relativeTo: URL(fileURLWithPath: pwd))
+      scope.webView.loadLocalApp(url)
+      FigCLI.env(with: scope)
+      FigCLI.options(with: scope, removeFirstOption: true)
+      FigCLI.stdin(with: scope)
+      FigCLI.initialPosition(with: scope)
 
-            guard let schema = try? decoder.decode(CLICommandSchema.self, from: data) else {
-                return
-            }
-            
-            let (flags, seq, mismatch) = try! FigCLI.traverseCLI(options: scope.options, subcommands: schema.children)
-            
-            guard let cmd = seq.last else {
-                // open schema --help
-                return openHelp(schema: schema, scope: scope)
-            }
-            
-            guard !mismatch else {
-                //open cmd --help
-                return openHelp(schema: cmd, scope: scope)
-
-            }
-            
-            if (flags.count == 0 && !(cmd.runWithNoInput ?? false)) {
-                // open cmd --help
-                return openHelp(schema: cmd, scope: scope)
-            }
-            
-            
-            if (flags.contains("--help") || flags.contains("-h") || flags.contains("--runbook")) {
-                // open cmd --help
-                return openHelp(schema: cmd, scope: scope)
-            }
-            
-            // i have no idea why but if this isn't called, there is a memory leak that causes a crash when the window is closed
-            FigCLI.env(with: scope)
-
-            scope.companionWindow.windowManager.close(window:  scope.companionWindow)
-            //run command on behalf of user
-            let script =  "\(cmd.script!) \(flags.joined(separator: " "))"
-            ShellBridge.shared.socketServer.send(sessionId: scope.session, command: script)
-//            Timer.delayWithSeconds(0.15) {
-//                ShellBridge.injectStringIntoTerminal(script, runImmediately: true, completion: nil)
-//            }
-//            "\(cmd.cmdToRun!) \(flags.joined(separator: " "))".runAsCommand(cwd: scope.pwd, with: scope.env.jsonStringToDict() as? Dictionary<String, String>)
-            
-        } catch {
-            
-        }
+    } else {
+      let modified = Scope(cmd: "local", stdin: scope.stdin, options: scope.options, env: scope.env, webView: scope.webView, companionWindow: scope.companionWindow, session: scope.session)
+      FigCLI.url(with: modified)
     }
-    
-    static func runInTerminal(script: String, scope: Scope) {
-        // i have no idea why but if this isn't called, there is a memory leak that causes a crash when the window is closed
-        FigCLI.env(with: scope)
-        
-        scope.companionWindow.windowManager.close(window:  scope.companionWindow)
+    FigCLI.env(with: scope)
 
-        ShellBridge.shared.socketServer.send(sessionId: scope.session, command: "\(script) \(scope.options.map { $0.contains(" ") ? "\"\($0)\"" : $0 } .joined(separator: " "))")
+  }
+
+  static func bundle(with scope: Scope) {
+    scope.webView.loadBundleApp(scope.options[0])
+    FigCLI.env(with: scope)
+    FigCLI.options(with: scope)
+    FigCLI.stdin(with: scope)
+    FigCLI.initialPosition(with: scope)
+
+  }
+
+  static func web(with scope: Scope) {
+    guard let url =  URL(string: scope.options[safe: 0] ?? "") else {
+      let modified = Scope(cmd: "web", stdin: scope.stdin, options: scope.options, env: scope.env, webView: scope.webView, companionWindow: scope.companionWindow, session: scope.session)
+      FigCLI.url(with: modified)
+      return
     }
-    
-    static func printInTerminal(text: String, scope: Scope) {
-        let modified = Scope(cmd: scope.cmd,
-                             stdin: scope.stdin,
-                             options: [],
-                             env: scope.env,
-                             webView: scope.webView,
-                             companionWindow: scope.companionWindow,
-                             session: scope.session)
-        FigCLI.runInTerminal(script: "echo \"\(text)\"", scope: modified)
+    scope.webView.loadRemoteApp(at: url)
+    FigCLI.env(with: scope)
+    FigCLI.options(with: scope, removeFirstOption: true)
+    FigCLI.stdin(with: scope)
+    //        FigCLI.initialPosition(with: scope)
+
+    if Defaults.automaticallyLaunchWebAppsInDetachedWindow {
+      scope.companionWindow.untether()
+      scope.companionWindow.makeKey()
     }
-    
-    struct CLICommandSchema: Codable {
-        var title: String
-        var command: String
-        var text: String
-        var children: [CLICommandSchema]
-        var script: String?
-        var runWithNoInput: Bool?
+  }
+
+  static func position(with scope: Scope) {
+    let positionValue = Int(scope.options[0]) ?? -1
+    scope.companionWindow.positioning = CompanionWindow.OverlayPositioning(rawValue: positionValue) ?? .insideRightPartial
+    scope.companionWindow.repositionWindow(forceUpdate: true)
+    FigCLI.env(with: scope)
+
+  }
+
+  static func hide(with scope: Scope) {
+    scope.companionWindow.positioning = CompanionWindow.defaultPassivePosition
+  }
+
+  static func options(with scope: Scope, removeFirstOption: Bool = false) {
+    if removeFirstOption && scope.options.count > 0 {
+      scope.options.removeFirst()
+    }
+    scope.webView.onLoad.append {
+      let opts = scope.options
+      if let json = try? JSONSerialization.data(withJSONObject: opts, options: .fragmentsAllowed) {
+        scope.webView.evaluateJavaScript("fig.options = JSON.parse(b64DecodeUnicode(`\(json.base64EncodedString())`))", completionHandler: nil)
+
+      }
+    }
+  }
+
+  static func env(with scope: Scope) {
+    scope.webView.configureEnvOnLoad = {
+
+      let env = scope.env.jsonStringToDict() ?? FigCLI.extract(keys: ["PWD", "USER", "HOME", "SHELL", "OLDPWD", "TERM_PROGRAM", "TERM_SESSION_ID", "HISTFILE", "FIG", "FIGPATH"], from: scope.env)
+      if let json = try? JSONSerialization.data(withJSONObject: env, options: .fragmentsAllowed) {
+        scope.webView.evaluateJavaScript("fig.env = JSON.parse(b64DecodeUnicode(`\(json.base64EncodedString())`))", completionHandler: nil)
+
+      }
+    }
+  }
+
+  static func extract(keys: [String], from env: String) -> [String: String] {
+    var out: [String: String]  = [:]
+    for key in keys {
+      if let group = env.groups(for: "\"\(key)\": \"(.*?)\",").first, let value = group.last {
+        out[key] = value
+      }
     }
 
+    return out
+  }
 
-    enum CLICommandSchemaError: Error {
-        case duplicatedSubcommand
+  static func entry(with scope: Scope) {
+    scope.webView.onLoad.append {
+      scope.webView.evaluateJavaScript("fig.callinit()", completionHandler: nil)
     }
-    
-    static func traverseCLI(options: [String], subcommands: [CLICommandSchema]) throws -> ([String], [CLICommandSchema], Bool){
-        guard let cmd = options.first else {
-            return ([], [], false)
-        }
-        
-        guard subcommands.count > 0 else {
-            return (options, [], false)
-        }
-        
-        let match = subcommands.filter { $0.command == cmd }
-        
-        guard match.count <= 1 else {
-            print("CLI parsing error: Subcommands must be unique")
-            throw CLICommandSchemaError.duplicatedSubcommand
-        }
-        
-        if match.count == 1, let next = match.first {
-            let (opts, cmds, mismatch) = try! traverseCLI(options: Array(options.dropFirst()), subcommands: next.children)
-            return (opts, [next] + cmds, mismatch)
-        }
-        
-        return (options, [], true)
-        
+  }
+  static func stdin(with scope: Scope) {
+    scope.webView.onLoad.append {
+      print(scope.stdin.applyingTransform(StringTransform.toXMLHex, reverse: false)!)
+      print(scope.stdin.applyingTransform(StringTransform.toUnicodeName, reverse: false)!)
+      print(scope.stdin.applyingTransform(StringTransform.toLatin, reverse: false)!)
+      print(scope.stdin.data(using: .utf8)!)
+      let encoded = scope.stdin.data(using: .utf8)!
+      scope.webView.evaluateJavaScript("fig.stdinb64(`\(encoded.base64EncodedString())`)", completionHandler: nil)
     }
-    
-    static func url(with scope: Scope) {
-        var all = scope.options
-        all.insert(scope.cmd, at: 0)
-        let url = ShellBridge.commandLineOptionsToRawURL(all)
-        scope.webView.loadRemoteApp(at: url)
-        FigCLI.env(with: scope)
-        FigCLI.options(with: scope)
-        FigCLI.stdin(with: scope)
+  }
+
+  //    static func run() {}
+
+  static func run(scope: Scope, path: String? = nil) {
+    let modified = Scope(cmd: "run",
+                         stdin: scope.stdin,
+                         options: path != nil ? [path!] + scope.options : scope.options,
+                         env: scope.env,
+                         webView: scope.webView,
+                         companionWindow: scope.companionWindow,
+                         session: scope.session)
+    FigCLI.url(with: modified)
+  }
+  static func openHelp(schema: CLICommandSchema, scope: Scope) {
+
+  }
+
+  static func dotfig(filePath: String, scope: Scope) {
+    let url = URL(fileURLWithPath: filePath)
+    do {
+      //            let out = try String(contentsOf: url, encoding: String.Encoding.utf8)
+      let data = try Data(contentsOf: url)
+      // parse as JSON
+      let decoder = JSONDecoder()
+
+      guard let schema = try? decoder.decode(CLICommandSchema.self, from: data) else {
+        return
+      }
+
+      let (flags, seq, mismatch) = try! FigCLI.traverseCLI(options: scope.options, subcommands: schema.children)
+
+      guard let cmd = seq.last else {
+        // open schema --help
+        return openHelp(schema: schema, scope: scope)
+      }
+
+      guard !mismatch else {
+        // open cmd --help
+        return openHelp(schema: cmd, scope: scope)
+
+      }
+
+      if flags.count == 0 && !(cmd.runWithNoInput ?? false) {
+        // open cmd --help
+        return openHelp(schema: cmd, scope: scope)
+      }
+
+      if flags.contains("--help") || flags.contains("-h") || flags.contains("--runbook") {
+        // open cmd --help
+        return openHelp(schema: cmd, scope: scope)
+      }
+
+      // i have no idea why but if this isn't called, there is a memory leak that causes a crash when the window is closed
+      FigCLI.env(with: scope)
+
+      scope.companionWindow.windowManager.close(window: scope.companionWindow)
+      // run command on behalf of user
+      let script =  "\(cmd.script!) \(flags.joined(separator: " "))"
+      ShellBridge.shared.socketServer.send(sessionId: scope.session, command: script)
+    } catch {
+
     }
-    
-    static func storedInitialPosition(for command: String) -> CompanionWindow.OverlayPositioning? {
-        guard let initial = UserDefaults.standard.string(forKey: "\(command):position") else {
-            return nil
-        }
-        
-        guard let raw = Int(initial) else {
-            return nil
-        }
-        
-        return CompanionWindow.OverlayPositioning(rawValue: raw)
+  }
+
+  static func runInTerminal(script: String, scope: Scope) {
+    // i have no idea why but if this isn't called, there is a memory leak that causes a crash when the window is closed
+    FigCLI.env(with: scope)
+
+    scope.companionWindow.windowManager.close(window: scope.companionWindow)
+
+    ShellBridge.shared.socketServer.send(sessionId: scope.session, command: "\(script) \(scope.options.map { $0.contains(" ") ? "\"\($0)\"" : $0 } .joined(separator: " "))")
+  }
+
+  static func printInTerminal(text: String, scope: Scope) {
+    let modified = Scope(cmd: scope.cmd,
+                         stdin: scope.stdin,
+                         options: [],
+                         env: scope.env,
+                         webView: scope.webView,
+                         companionWindow: scope.companionWindow,
+                         session: scope.session)
+    FigCLI.runInTerminal(script: "echo \"\(text)\"", scope: modified)
+  }
+
+  struct CLICommandSchema: Codable {
+    var title: String
+    var command: String
+    var text: String
+    var children: [CLICommandSchema]
+    var script: String?
+    var runWithNoInput: Bool?
+  }
+
+  enum CLICommandSchemaError: Error {
+    case duplicatedSubcommand
+  }
+
+  static func traverseCLI(options: [String], subcommands: [CLICommandSchema]) throws -> ([String], [CLICommandSchema], Bool) {
+    guard let cmd = options.first else {
+      return ([], [], false)
     }
-    
-    static func notifyAccessibilityError(_ message: ShellMessage) {
-        let checkOptPrompt = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as NSString
-               //set the options: false means it wont ask
-               //true means it will popup and ask
-               let opt = [checkOptPrompt: false]
-               //translate into boolean value
-               let accessEnabled = AXIsProcessTrustedWithOptions(opt as CFDictionary?)
-               guard accessEnabled else {
-                   
-                   let error =
-                   """
+
+    guard subcommands.count > 0 else {
+      return (options, [], false)
+    }
+
+    let match = subcommands.filter { $0.command == cmd }
+
+    guard match.count <= 1 else {
+      print("CLI parsing error: Subcommands must be unique")
+      throw CLICommandSchemaError.duplicatedSubcommand
+    }
+
+    if match.count == 1, let next = match.first {
+      let (opts, cmds, mismatch) = try! traverseCLI(options: Array(options.dropFirst()), subcommands: next.children)
+      return (opts, [next] + cmds, mismatch)
+    }
+
+    return (options, [], true)
+
+  }
+
+  static func url(with scope: Scope) {
+    var all = scope.options
+    all.insert(scope.cmd, at: 0)
+    let url = ShellBridge.commandLineOptionsToRawURL(all)
+    scope.webView.loadRemoteApp(at: url)
+    FigCLI.env(with: scope)
+    FigCLI.options(with: scope)
+    FigCLI.stdin(with: scope)
+  }
+
+  static func storedInitialPosition(for command: String) -> CompanionWindow.OverlayPositioning? {
+    guard let initial = UserDefaults.standard.string(forKey: "\(command):position") else {
+      return nil
+    }
+
+    guard let raw = Int(initial) else {
+      return nil
+    }
+
+    return CompanionWindow.OverlayPositioning(rawValue: raw)
+  }
+
+  static func notifyAccessibilityError(_ message: ShellMessage) {
+    let checkOptPrompt = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as NSString
+    // set the options: false means it wont ask
+    // true means it will popup and ask
+    let opt = [checkOptPrompt: false]
+    // translate into boolean value
+    let accessEnabled = AXIsProcessTrustedWithOptions(opt as CFDictionary?)
+    guard accessEnabled else {
+
+      let error =
+        """
 
                    › \u{001b}[31mCould not open fig.app.\u{001b}[0m
 
@@ -412,290 +401,281 @@ class FigCLI {
                      Please email \u{001b}[1mhello@fig.io\u{001b}[0m if this problem persists.
 
                    """
-                   //            → Run \u{001b}[1mopen -b com.mschrage.fig\u{001b}[0m to prompt for access.
+      //            → Run \u{001b}[1mopen -b com.mschrage.fig\u{001b}[0m to prompt for access.
 
-                   ShellBridge.shared.socketServer.send(sessionId: message.session, command: "echo \"\(error)\"")
-                   ShellBridge.shared.socketServer.send(sessionId: message.session, command: "disconnect")
-                   
-                   return
-               }
+      ShellBridge.shared.socketServer.send(sessionId: message.session, command: "echo \"\(error)\"")
+      ShellBridge.shared.socketServer.send(sessionId: message.session, command: "disconnect")
+
+      return
     }
-    
-    static func route(_ message: ShellMessage, webView: WebView, companionWindow: CompanionWindow) {
-        
-        let stdin = message.data.replacingOccurrences(of: "`", with: "\\`")
-        let env = message.env ?? ""
-        //webView.clearHistory()
-        webView.window?.representedURL = nil        
-      
-        guard let options = message.options, options.count > 0 else {
-            let scope = Scope(cmd: "", stdin: stdin, options: [], env: env, webView: webView, companionWindow: companionWindow, session: message.session)
-            FigCLI.env(with: scope)
+  }
 
-            ShellBridge.shared.socketServer.send(sessionId: scope.session, command: "disconnect")
-            scope.companionWindow.windowManager.close(window:  scope.companionWindow)
+  static func route(_ message: ShellMessage, webView: WebView, companionWindow: CompanionWindow) {
 
-            if let delegate = NSApp.delegate as? AppDelegate {
-                delegate.openMenu()
-            }
-            
-//            companionWindow.positioning =  .spotlight
-//            FigCLI.index(with: scope)
-            TelemetryProvider.track(event: .ranCommand, with:
-                                    ["command" : scope.cmd,
-                                    "arguments" : scope.options.map { TelemetryProvider.obscure($0)}.joined(separator: " "),
-                                    "shell" : scope.shell ?? "<unknown>",
-                                    "terminal" : scope.term ?? "<unknown>"])
-            return
-        }
-        let command = options.first!
-        let flags = Array(options.suffix(from: 1))
-        let scope = Scope(cmd: command,
-                          stdin: stdin,
-                          options: flags,
-                          env: env,
-                          webView: webView,
-                          companionWindow: companionWindow,
-                          session: message.session)
-        print("ROUTING \(command)")
-        
-        TelemetryProvider.track(event: .ranCommand, with:
-                                ["command" : scope.cmd,
-                                 "arguments" : scope.options.map { TelemetryProvider.obscure($0) }.joined(separator: " "),
-                                 "shell" : scope.shell ?? "<unknown>",
-                                 "terminal" : scope.term ?? "<unknown>"])
-        
-        // get aliases from sidebar
-        let aliases = UserDefaults.standard.string(forKey: "aliases_dict")?.jsonStringToDict() ?? [:]
-        
-        // get
-        var figPath = (scope.env.jsonStringToDict()?["FIGPATH"] as? String)?.split(separator: ":").map { String($0) } ?? []
-        
-        if (!figPath.contains("~/run")) {
-            figPath.insert("~/run", at: 0)
-        }
-        
-        if (!figPath.contains("~/.fig/bin")) {
-            figPath.insert("~/.fig/bin", at: 0)
-        }
-        
-        figPath = figPath.map { NSString(string: String($0)).standardizingPath }
-        
-        var isRundown = false
-        var isCLI = false
-        var isExecutable = false
+    let stdin = message.data.replacingOccurrences(of: "`", with: "\\`")
+    let env = message.env ?? ""
+    // webView.clearHistory()
+    webView.window?.representedURL = nil
 
-        var appPath: String? = nil
-        for prefix in figPath {
-            isCLI = FileManager.default.fileExists(atPath: "\(prefix)/\(command).fig")
-            if (isCLI) {
-                appPath = "\(prefix)/\(command).fig"
-                break
-            }
-    
-            let withPathExtension = FileManager.default.fileExists(atPath: "\(prefix)/\(command).html")
-            if (withPathExtension) {
-                appPath = "\(prefix)/\(command).html"
-                break
-            }
-            
-            var isDir : ObjCBool = false
-            let isDirectory = FileManager.default.fileExists(atPath: "\(prefix)/\(command)", isDirectory: &isDir)
-            if (isDirectory) {
-                appPath = "\(prefix)/\(command)/index.html"
-                break
-            }
-            
-            let isRaw = FileManager.default.fileExists(atPath: "\(prefix)/\(command)")
-            if (isRaw) {
-                appPath = "\(prefix)/\(command)"
-                break
-            }
-            
-            isRundown = FileManager.default.fileExists(atPath: "\(prefix)/\(command).run")
-            if (isRundown) {
-                appPath = "\(prefix)/\(command)"
-                break
-            }
-            isExecutable = FileManager.default.fileExists(atPath: "\(prefix)/\(command).sh")
-            if (isExecutable) {
-                appPath = "\(prefix)/\(command).sh"
-                break
-            }
-            
-            isExecutable = FileManager.default.fileExists(atPath: "\(prefix)/\(command).py")
-            if (isExecutable) {
-                 appPath = "\(prefix)/\(command).py"
-                 break
-            }
-        }
-        
-        //companionWindow.positioning = storedInitialPosition(for: command) ?? CompanionWindow.defaultActivePosition
-        companionWindow.positioning = CompanionWindow.defaultActivePosition
+    guard let options = message.options, options.count > 0 else {
+      let scope = Scope(cmd: "", stdin: stdin, options: [], env: env, webView: webView, companionWindow: companionWindow, session: message.session)
+      FigCLI.env(with: scope)
 
-        if let nativeCommand = NativeCLICommand(rawValue: command) {
-            switch nativeCommand {
-            case .callback:
-                FigCLI.callback(with: scope)
-            case .bundle:
-                FigCLI.bundle(with: scope)
-            case .local:
-                FigCLI.local(with: scope)
-            case .web:
-                companionWindow.positioning = .fullscreenInset
-                scope.webView.customUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36"
-                FigCLI.web(with: scope)
-            case .position:
-                FigCLI.position(with: scope)
-            case .hide:
-                companionWindow.positioning = .icon
-                FigCLI.url(with: scope)
-            case .apps, .store, .appstore, .blocks, .home, .sidebar:
-                companionWindow.positioning = .fullwindow
-                FigCLI.url(with: scope)
+      ShellBridge.shared.socketServer.send(sessionId: scope.session, command: "disconnect")
+      scope.companionWindow.windowManager.close(window: scope.companionWindow)
 
-            case .close:
-                scope.companionWindow.windowManager.close(window:  scope.companionWindow)
-            }
+      if let delegate = NSApp.delegate as? AppDelegate {
+        delegate.openMenu()
+      }
 
-            } else if (aliases.keys.contains(command)) { // user defined shortcuts
-            
-            if let meta = aliases[command] as? [String: Any],
-                let rawCommand = meta["raw"] as? String,
-                let popup = meta["popup"] as? Bool {
-                
-                if popup {
-                    FigCLI.form(with: scope, format: rawCommand)
-                    companionWindow.positioning = .popover
-                } else {
-                    Timer.delayWithSeconds(0.15) {
-                        ShellBridge.injectStringIntoTerminal(rawCommand, runImmediately: true)
-                    }
-                }
-            }
-            
-            
-            
-//            companionWindow.windowManager.close(window: companionWindow)
-            // get script for command
-        } else if (scope.cmd.starts(with: "@") || scope.cmd.starts(with: "+")) {
-            // fig.run/@mschrage/document
-            
-            scope.webView.loadRemoteApp(at: URL(string: "https://fig.run/\(scope.cmd)/\(scope.options.first ?? "")?token=\(Defaults.domainToken ?? "")") ?? FigCLI.baseURL)
-            FigCLI.env(with: scope)
-            FigCLI.options(with: scope, removeFirstOption: true)
-            FigCLI.stdin(with: scope)
-        } else if (isCLI) {
-            FigCLI.dotfig(filePath: appPath!, scope: scope)
-        } else if (isRundown) {
-            FigCLI.run(scope: scope, path: appPath!)
-        } else if (isExecutable) {
-            FigCLI.runInTerminal(script: appPath!, scope: scope)
-        } else if let path = appPath { //fig path
-            let modified = Scope(cmd: "local",
-                              stdin: stdin,
-                              options: [path] + scope.options,
-                              env: env,
-                              webView: webView,
-                              companionWindow: companionWindow,
-                              session: message.session)
-            FigCLI.local(with: modified)
-        } else {
-            FigCLI.url(with: scope)
-        }
-        
-        ShellBridge.shared.socketServer.send(sessionId: scope.session, command: "disconnect")
+      //            companionWindow.positioning =  .spotlight
+      //            FigCLI.index(with: scope)
+      TelemetryProvider.track(event: .ranCommand, with:
+                                ["command": scope.cmd,
+                                 "arguments": scope.options.map { TelemetryProvider.obscure($0)}.joined(separator: " "),
+                                 "shell": scope.shell ?? "<unknown>",
+                                 "terminal": scope.term ?? "<unknown>"])
+      return
     }
+    let command = options.first!
+    let flags = Array(options.suffix(from: 1))
+    let scope = Scope(cmd: command,
+                      stdin: stdin,
+                      options: flags,
+                      env: env,
+                      webView: webView,
+                      companionWindow: companionWindow,
+                      session: message.session)
+    print("ROUTING \(command)")
+
+    TelemetryProvider.track(event: .ranCommand, with:
+                              ["command": scope.cmd,
+                               "arguments": scope.options.map { TelemetryProvider.obscure($0) }.joined(separator: " "),
+                               "shell": scope.shell ?? "<unknown>",
+                               "terminal": scope.term ?? "<unknown>"])
+
+    // get aliases from sidebar
+    let aliases = UserDefaults.standard.string(forKey: "aliases_dict")?.jsonStringToDict() ?? [:]
+
+    // get
+    var figPath = (scope.env.jsonStringToDict()?["FIGPATH"] as? String)?.split(separator: ":").map { String($0) } ?? []
+
+    if !figPath.contains("~/run") {
+      figPath.insert("~/run", at: 0)
+    }
+
+    if !figPath.contains("~/.fig/bin") {
+      figPath.insert("~/.fig/bin", at: 0)
+    }
+
+    figPath = figPath.map { NSString(string: String($0)).standardizingPath }
+
+    var isRundown = false
+    var isCLI = false
+    var isExecutable = false
+
+    var appPath: String?
+    for prefix in figPath {
+      isCLI = FileManager.default.fileExists(atPath: "\(prefix)/\(command).fig")
+      if isCLI {
+        appPath = "\(prefix)/\(command).fig"
+        break
+      }
+
+      let withPathExtension = FileManager.default.fileExists(atPath: "\(prefix)/\(command).html")
+      if withPathExtension {
+        appPath = "\(prefix)/\(command).html"
+        break
+      }
+
+      var isDir: ObjCBool = false
+      let isDirectory = FileManager.default.fileExists(atPath: "\(prefix)/\(command)", isDirectory: &isDir)
+      if isDirectory {
+        appPath = "\(prefix)/\(command)/index.html"
+        break
+      }
+
+      let isRaw = FileManager.default.fileExists(atPath: "\(prefix)/\(command)")
+      if isRaw {
+        appPath = "\(prefix)/\(command)"
+        break
+      }
+
+      isRundown = FileManager.default.fileExists(atPath: "\(prefix)/\(command).run")
+      if isRundown {
+        appPath = "\(prefix)/\(command)"
+        break
+      }
+      isExecutable = FileManager.default.fileExists(atPath: "\(prefix)/\(command).sh")
+      if isExecutable {
+        appPath = "\(prefix)/\(command).sh"
+        break
+      }
+
+      isExecutable = FileManager.default.fileExists(atPath: "\(prefix)/\(command).py")
+      if isExecutable {
+        appPath = "\(prefix)/\(command).py"
+        break
+      }
+    }
+
+    // companionWindow.positioning = storedInitialPosition(for: command) ?? CompanionWindow.defaultActivePosition
+    companionWindow.positioning = CompanionWindow.defaultActivePosition
+
+    if let nativeCommand = NativeCLICommand(rawValue: command) {
+      switch nativeCommand {
+      case .callback:
+        FigCLI.callback(with: scope)
+      case .bundle:
+        FigCLI.bundle(with: scope)
+      case .local:
+        FigCLI.local(with: scope)
+      case .web:
+        companionWindow.positioning = .fullscreenInset
+        scope.webView.customUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36"
+        FigCLI.web(with: scope)
+      case .position:
+        FigCLI.position(with: scope)
+      case .hide:
+        companionWindow.positioning = .icon
+        FigCLI.url(with: scope)
+      case .apps, .store, .appstore, .blocks, .home, .sidebar:
+        companionWindow.positioning = .fullwindow
+        FigCLI.url(with: scope)
+
+      case .close:
+        scope.companionWindow.windowManager.close(window: scope.companionWindow)
+      }
+
+    } else if aliases.keys.contains(command) { // user defined shortcuts
+
+      if let meta = aliases[command] as? [String: Any],
+         let rawCommand = meta["raw"] as? String,
+         let popup = meta["popup"] as? Bool {
+
+        if popup {
+          FigCLI.form(with: scope, format: rawCommand)
+          companionWindow.positioning = .popover
+        }
+      }
+    } else if scope.cmd.starts(with: "@") || scope.cmd.starts(with: "+") {
+      // fig.run/@mschrage/document
+
+      scope.webView.loadRemoteApp(at: URL(string: "https://fig.run/\(scope.cmd)/\(scope.options.first ?? "")?token=\(Defaults.domainToken ?? "")") ?? FigCLI.baseURL)
+      FigCLI.env(with: scope)
+      FigCLI.options(with: scope, removeFirstOption: true)
+      FigCLI.stdin(with: scope)
+    } else if isCLI {
+      FigCLI.dotfig(filePath: appPath!, scope: scope)
+    } else if isRundown {
+      FigCLI.run(scope: scope, path: appPath!)
+    } else if isExecutable {
+      FigCLI.runInTerminal(script: appPath!, scope: scope)
+    } else if let path = appPath { // fig path
+      let modified = Scope(cmd: "local",
+                           stdin: stdin,
+                           options: [path] + scope.options,
+                           env: env,
+                           webView: webView,
+                           companionWindow: companionWindow,
+                           session: message.session)
+      FigCLI.local(with: modified)
+    } else {
+      FigCLI.url(with: scope)
+    }
+
+    ShellBridge.shared.socketServer.send(sessionId: scope.session, command: "disconnect")
+  }
 }
 
 extension String {
-    func jsonStringToDict() -> [String: Any]? {
-        if let data = self.data(using: .utf8) {
-            do {
-                return try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
-            } catch {
-                print(error.localizedDescription)
-            }
-        }
-        return nil
+  func jsonStringToDict() -> [String: Any]? {
+    if let data = self.data(using: .utf8) {
+      do {
+        return try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
+      } catch {
+        print(error.localizedDescription)
+      }
     }
+    return nil
+  }
 }
 
 extension Collection {
 
-    /// Returns the element at the specified index if it is within bounds, otherwise nil.
-    subscript (safe index: Index) -> Element? {
-        return indices.contains(index) ? self[index] : nil
-    }
+  /// Returns the element at the specified index if it is within bounds, otherwise nil.
+  subscript (safe index: Index) -> Element? {
+    return indices.contains(index) ? self[index] : nil
+  }
 }
 
 //https://stackoverflow.com/a/48360631
 extension URL {
-    func relativePath(from base: URL) -> String? {
-        // Ensure that both URLs represent files:
-        guard self.isFileURL && base.isFileURL else {
-            return nil
-        }
+  func relativePath(from base: URL) -> String? {
+    // Ensure that both URLs represent files:
+    guard self.isFileURL && base.isFileURL else {
+      return nil
+    }
 
-        // Remove/replace "." and "..", make paths absolute:
-        let destComponents = self.standardized.pathComponents
-        let baseComponents = base.standardized.pathComponents
+    // Remove/replace "." and "..", make paths absolute:
+    let destComponents = self.standardized.pathComponents
+    let baseComponents = base.standardized.pathComponents
 
-        // Find number of common path components:
-        var i = 0
-        while i < destComponents.count && i < baseComponents.count
+    // Find number of common path components:
+    var i = 0
+    while i < destComponents.count && i < baseComponents.count
             && destComponents[i] == baseComponents[i] {
-                i += 1
-        }
-
-        // Build relative path:
-        var relComponents = Array(repeating: "..", count: baseComponents.count - i)
-        relComponents.append(contentsOf: destComponents[i...])
-        return relComponents.joined(separator: "/")
+      i += 1
     }
+
+    // Build relative path:
+    var relComponents = Array(repeating: "..", count: baseComponents.count - i)
+    relComponents.append(contentsOf: destComponents[i...])
+    return relComponents.joined(separator: "/")
+  }
 }
 
 extension String {
-    func groups(for regexPattern: String) -> [[String]] {
+  func groups(for regexPattern: String) -> [[String]] {
     do {
-        let text = self
-        let regex = try NSRegularExpression(pattern: regexPattern)
-        let matches = regex.matches(in: text,
-                                    range: NSRange(text.startIndex..., in: text))
-        return matches.map { match in
-            return (0..<match.numberOfRanges).map {
-                let rangeBounds = match.range(at: $0)
-                guard let range = Range(rangeBounds, in: text) else {
-                    return ""
-                }
-                return String(text[range])
-            }
+      let text = self
+      let regex = try NSRegularExpression(pattern: regexPattern)
+      let matches = regex.matches(in: text,
+                                  range: NSRange(text.startIndex..., in: text))
+      return matches.map { match in
+        return (0..<match.numberOfRanges).map {
+          let rangeBounds = match.range(at: $0)
+          guard let range = Range(rangeBounds, in: text) else {
+            return ""
+          }
+          return String(text[range])
         }
+      }
     } catch let error {
-        print("invalid regex: \(error.localizedDescription)")
-        return []
+      print("invalid regex: \(error.localizedDescription)")
+      return []
     }
-}
-}
-
-extension String {
-    var unescapingUnicodeCharacters: String {
-        let mutableString = NSMutableString(string: self)
-        CFStringTransform(mutableString, nil, "Any-Hex/Java" as NSString, true)
-
-        return mutableString as String
-    }
+  }
 }
 
 extension String {
-    var unescaped: String {
-        let entities = ["\0", "\t", "\n", "\r", "\"", "\'", "\\"]
-        var current = self.replacingOccurrences(of: "\\/", with: "/")
-        for entity in entities {
-            let descriptionCharacters = entity.debugDescription.dropFirst().dropFirst().dropLast().dropLast()
-            let description = String(descriptionCharacters)
-            current = current.replacingOccurrences(of: description, with: entity)
-        }
-        return current
+  var unescapingUnicodeCharacters: String {
+    let mutableString = NSMutableString(string: self)
+    CFStringTransform(mutableString, nil, "Any-Hex/Java" as NSString, true)
+
+    return mutableString as String
+  }
+}
+
+extension String {
+  var unescaped: String {
+    let entities = ["\0", "\t", "\n", "\r", "\"", "\'", "\\"]
+    var current = self.replacingOccurrences(of: "\\/", with: "/")
+    for entity in entities {
+      let descriptionCharacters = entity.debugDescription.dropFirst().dropFirst().dropLast().dropLast()
+      let description = String(descriptionCharacters)
+      current = current.replacingOccurrences(of: description, with: entity)
     }
+    return current
+  }
 }

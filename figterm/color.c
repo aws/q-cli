@@ -350,7 +350,7 @@ bool color_idx_matches_vterm_color(unsigned char idx, VTermColor* vc) {
 }
 
 // See fish's output.cpp:parse_color
-Color* parse_color_from_string(const char* str, color_support_t color_support) {
+Color* parse_fish_color_from_string(const char* str, color_support_t color_support) {
   const char* delims = " \t";
   Color* first_rgb = NULL;
   Color* first_named = NULL;
@@ -405,9 +405,75 @@ VTermColor* color_to_vterm_color(Color* c, color_support_t color_support) {
   return vc;
 }
 
-VTermColor* parse_vterm_color_from_string(const char* str, color_support_t color_support) {
-  Color* c = parse_color_from_string(str, color_support);
+SuggestionColor* parse_suggestion_color_fish(const char* str, color_support_t color_support) {
+  Color* c = parse_fish_color_from_string(str, color_support);
   VTermColor* vc = color_to_vterm_color(c, color_support);
   free(c);
-  return vc;
+  SuggestionColor* sc = malloc(sizeof(SuggestionColor));
+  sc->fg = vc;
+  sc->bg = NULL;
+  return sc;
+}
+
+SuggestionColor* parse_suggestion_color_zsh_autosuggest(const char* str, color_support_t color_support) {
+  const char* delims = ",";
+  SuggestionColor* sc = malloc(sizeof(SuggestionColor));
+  sc->fg = NULL;
+  sc->bg = NULL;
+
+  char* tmp = strdup(str);
+  char* color_name = strtok(tmp, delims);
+  while (color_name != NULL) {
+    bool is_fg = !strncmp(color_name, "fg=", 3);
+    bool is_bg = !strncmp(color_name, "bg=", 3);
+    if (is_fg || is_bg) {
+      color_name = color_name + 3;
+      // TODO(sean): currently using fish's parsing logic for named colors.
+      // This can fail in two cases:
+      // 1. false positives from fish colors that aren't supported in zsh (e.g. brblack)
+      // 2. false negatives that aren't supported in fish (e.g. abbreviations like bl for black)
+      Color* color = try_parse_named(color_name);
+      if (color == NULL && !strncmp(color_name, "#", 1)) {
+        color = try_parse_rgb(color_name);
+      }
+      if (color == NULL) {
+        // custom zsh logic - try 256 indexed colors first.
+        char* end;
+        errno = 0;
+        long index = strtoul(color_name, &end, 10);
+        bool index_supported = color_support == 0 ? index < 16 : index < 256;
+        if (color_name != end && errno == 0 && index_supported) {
+          VTermColor* vc = malloc(sizeof(VTermColor));
+          vterm_color_indexed(vc, index);
+          if (is_fg) {
+            sc->fg = vc;
+          } else {
+            sc->bg = vc;
+          }
+        }
+      } else {
+        if (is_fg) {
+          sc->fg = color_to_vterm_color(color, color_support);
+        } else {
+          sc->bg = color_to_vterm_color(color, color_support);
+        }
+      }
+      free(color);
+    }
+    color_name = strtok(NULL, delims);
+  }
+  free(tmp);
+  if (sc->bg == NULL && sc->fg == NULL) {
+    free(sc);
+    return NULL;
+  }
+  return sc;
+}
+
+void free_suggestion_color(SuggestionColor* sc) {
+  if (sc != NULL) {
+    free(sc->fg);
+    free(sc->bg);
+  }
+  free(sc);
 }

@@ -1,17 +1,22 @@
 name: Run dotenv test suite
 on:
   pull_request:
+    paths:
+      - config/**
+      - figterm/**
+      - figcli2/**
   workflow_dispatch:
   push:
-    branches:
-      - "develop"
-    # paths:
-    #   - config/**
+    paths:
+      - config/**
+      - figterm/**
+      - figcli2/**
 defaults:
   run:
     working-directory: ./dotenv
 jobs:
   build:
+    if: github.ref == 'refs/heads/develop'
     runs-on: ubuntu-latest
     env:
       DOCKER_BUILDKIT: 1
