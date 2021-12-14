@@ -11,7 +11,7 @@ import Carbon
 import Cocoa
 class KeyboardLayout : NSObject {
     static let shared = KeyboardLayout()
-    
+
     //https://stackoverflow.com/questions/1918841/how-to-convert-ascii-character-to-cgkeycode
     //https://stackoverflow.com/a/35138823
     static func keyName(scanCode: UInt16) -> String? {
@@ -39,7 +39,7 @@ class KeyboardLayout : NSObject {
            return nil
        }
 
-       return  String(utf16CodeUnits: nameBuffer, count: nameLength)
+      return String(utf16CodeUnits: nameBuffer, count: nameLength).lowercased()
    }
   
     static func humanReadableKeyName(_ event: CGEvent) -> String? {
@@ -63,7 +63,7 @@ class KeyboardLayout : NSObject {
       }
       
       let characters : String = {
-        switch(event.keyCode) {
+        switch(Keycode(rawValue: event.keyCode) ?? Keycode.zero) {
           case Keycode.upArrow:
             return "up"
           case Keycode.downArrow:

@@ -20,9 +20,9 @@ class FigTerm {
     guard socket.connect() else {
       return //throw
     }
-    GenericShellIntegration.insertLock()
+    ShellInsertionProvider.insertLock()
     socket.send(message: text)
-    GenericShellIntegration.insertUnlock(with: text)
+    ShellInsertionProvider.insertUnlock(with: text)
     socket.disconnect()
   }
   

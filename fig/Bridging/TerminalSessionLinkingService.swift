@@ -48,12 +48,27 @@ extension ShellContext {
   }
 }
 
+struct EditBuffer {
+  var cursor: Int
+  var text: String
+
+  var representation: String {
+      get {
+        var bufferCopy = text;
+        let index = text.index(text.startIndex, offsetBy: cursor, limitedBy: text.endIndex) ?? text.endIndex
+        bufferCopy.insert("|", at: index)
+        return bufferCopy
+      }
+  }
+}
+
 struct TerminalSession {
   let windowId: WindowId
   let bundleId: String
   let terminalSessionId: TerminalSessionId
 
   var shellContext: ShellContext? = nil
+  var editBuffer: EditBuffer? = nil
   let focusId: FocusId?
   var isFocused: Bool = false
 }
@@ -125,6 +140,7 @@ class TerminalSessionLinker: TerminalSessionLinkingService {
       if let sessionId = terminalSessionId,
          let shellContext = event.context.internalContext {
         self.setShellContext(for: sessionId, context: shellContext)
+        self.setEditBuffer(for: sessionId, text: event.text, cursor: Int(event.cursor))
       }
       
 
@@ -279,6 +295,20 @@ class TerminalSessionLinker: TerminalSessionLinkingService {
     updatedSession.shellContext = context
     
     self.updateTerminalSessionForWindow(session.windowId, session: updatedSession)
+  }
+  
+  func setEditBuffer(for sessionId: TerminalSessionId, text: String, cursor: Int) {
+    guard let session = self.getTerminalSession(for: sessionId) else {
+      return
+    }
+    
+    var updatedSession = session
+    updatedSession.editBuffer = EditBuffer(cursor: cursor, text: text)
+    
+    Logger.log(message: "SET EDITBUFFER: \(updatedSession.editBuffer?.representation ?? "none")",
+               subsystem: .autocomplete)
+    self.updateTerminalSessionForWindow(updatedSession.windowId, session: updatedSession)
+
   }
 }
 

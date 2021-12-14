@@ -101,20 +101,12 @@ extension TestableWindowServer: WindowMetadataService {
     return self.tabs[windowId]
   }
   
-  func getAssociatedTTY(for windowId: WindowId) -> TTY? {
-    return nil
-  }
-  
   func getTerminalSessionId(for windowId: WindowId) -> TerminalSessionId? {
     return nil
   }
   
   func getWindowHash(for windowId: WindowId) -> ExternalWindowHash {
     return String(windowId) + "/" + (self.tabs[windowId] ?? "") + "%"
-  }
-  
-  func getMostRecentPaneId(for windowId: WindowId) -> String? {
-    return nil
   }
 }
 

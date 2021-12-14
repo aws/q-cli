@@ -242,7 +242,7 @@ extension APINotificationCenter {
 
 extension APINotificationCenter {
   func editbufferChanged(buffer: String, cursor: Int, session: SessionId, context: Local_ShellContext? = nil) {
-    
+    Logger.log(message: "Buffer: \(buffer), Cursor: \(cursor)", subsystem: .autocomplete)
     API.notifications.post(
       Fig_EditBufferChangedNotification.with({ notification in
         notification.buffer = buffer

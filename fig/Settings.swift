@@ -464,12 +464,7 @@ extension DispatchSourceFileSystemObject {
 
 extension Settings {
     func handleGetRequest(_ request: Fig_GetSettingsPropertyRequest) throws -> Fig_GetSettingsPropertyResponse {
-        guard request.hasKey else {
-            throw APIError.generic(message: "No key provided with request")
-        }
-      
         let value: Any = try {
-          
           if request.hasKey {
             if let value = Settings.shared.getValue(forKey: request.key) {
               return value

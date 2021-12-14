@@ -40,6 +40,8 @@
 typedef enum {
   FIGTERM_ATTR_IN_PROMPT = 0,
   FIGTERM_ATTR_IN_SUGGESTION = 1,
+  FIGTERM_ATTR_FOREGROUND = 2,
+  FIGTERM_ATTR_BACKGROUND = 3,
 } FigTermAttr;
 
 typedef struct {
@@ -60,6 +62,7 @@ void figterm_screen_set_callbacks(FigTermScreen*, const FigTermScreenCallbacks*,
 // Methods.
 void figterm_screen_get_cursorpos(FigTermScreen*, VTermPos*);
 void figterm_screen_set_attr(FigTermScreen*, FigTermAttr, void*);
+void figterm_screen_get_attr(FigTermScreen* screen, FigTermAttr attr, VTermValue* val);
 size_t figterm_screen_get_text(FigTermScreen*, char*, size_t, const VTermRect, int, char, bool, int*);
 
 // color.c
@@ -67,7 +70,14 @@ enum { color_support_term256 = 1 << 0, color_support_term24bit = 1 << 1 };
 typedef unsigned int color_support_t;
 color_support_t get_color_support();
 
-VTermColor* parse_vterm_color_from_string(const char*, color_support_t);
+typedef struct {
+  VTermColor* fg;
+  VTermColor* bg;
+} SuggestionColor;
+
+SuggestionColor* parse_suggestion_color_fish(const char*, color_support_t);
+SuggestionColor* parse_suggestion_color_zsh_autosuggest(const char*, color_support_t);
+void free_suggestion_color(SuggestionColor*);
 
 // history.c
 typedef struct HistoryEntry HistoryEntry;
@@ -101,7 +111,9 @@ typedef struct {
   char shell[10];
 
   char* fish_suggestion_color_text;
-  VTermColor* fish_suggestion_color;
+  char* zsh_autosuggestion_color_text;
+  SuggestionColor* fish_suggestion_color;
+  SuggestionColor* zsh_autosuggestion_color;
 
   color_support_t color_support;
 
@@ -127,6 +139,7 @@ bool figterm_is_disabled(FigTerm*);
 bool figterm_has_seen_prompt(FigTerm*);
 bool figterm_can_send_buffer(FigTerm*);
 void figterm_update_fish_suggestion_color(FigTerm*, const char*);
+void figterm_update_zsh_autosuggestion_color(FigTerm* ft, const char*);
 pid_t figterm_get_shell_pid(FigTerm*);
 char* figterm_get_shell_context(FigTerm*);
 

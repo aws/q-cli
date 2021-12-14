@@ -187,202 +187,34 @@ class ShellBridge {
         completion?()
     }
     
-    fileprivate static func inject(_ cmd: String,
-                            runImmediately: Bool = false,
-                            clearLine: Bool = Defaults.shared.clearExistingLineOnTerminalInsert,
-                            completion: (() -> Void)? = nil) {
-        // Frontmost application will recieve the keystrokes, make sure it's the appropriate app!
-      
-        // There used to be a check here to determine if Spotlight was active. It seems like this is no longer needed.
-        let app = NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "<none>"
-        Logger.log(message: "Insert '\(cmd)' into \(app)", subsystem: .autocomplete)
-        if (clearLine) {
-            self.simulate(keypress: .ctrlE)
-            self.simulate(keypress: .ctrlU)
-        }
-        
-        // If user has onlyShowOnTab setting enabled, hid Fig window by setting writeOnly = true after insert
-        if let window = AXWindowServer.shared.whitelistedWindow {
-          KeypressProvider.shared.keyBuffer(for: window).writeOnly = KeystrokeBuffer.initialWritingMode
-        }
-
-      
-        // Add delay for Electron terminals
-        let delay: TimeInterval? = Integrations.electronTerminals.contains(app) ? 0.05 : nil
-        
-        let insertion = cmd + (runImmediately ? "\n" :"")
-      
-        var backing: KeystrokeBuffer.Backing?
-        if let window = AXWindowServer.shared.whitelistedWindow {
-          backing = KeypressProvider.shared.keyBuffer(for: window).backing
-        }
-      
-      
-        let integration: ShellIntegration.Type
-        switch backing {
-        case .zle:
-          integration = ZLEIntegration.self
-        default:
-          integration = GenericShellIntegration.self
-        }
-      
-      
-
-        // Use shell specific insertion method
-        if let window = AXWindowServer.shared.whitelistedWindow,
-          KeypressProvider.shared.keyBuffer(for: window).backing == .zle {
-          ZLEIntegration.insert(with: insertion,
-                                version: String(window.associatedShellContext?.integrationVersion ?? 0))
-          return
-        }
-        
-        integration.insertLock()
-        injectUnicodeString(insertion, delay: delay) {
-          integration.insertUnlock(with: insertion)
-        }
-    }
-  
-    static func injectStringIntoTerminal(_ cmd: String,
-                                         runImmediately: Bool = false,
-                                         clearLine: Bool = Defaults.shared.clearExistingLineOnTerminalInsert,
-                                         completion: (() -> Void)? = nil) {
-        
-      guard let window = AXWindowServer.shared.whitelistedWindow else {
-        return
-      }
-      
-      
-      let version = window.associatedShellContext?.integrationVersion
-      let figTermInstanceSupportsInserts = version ?? 0 >= 5
-      
-      let backing = KeypressProvider.shared.keyBuffer(for: window).backing
-      let effectedShells: Set<KeystrokeBuffer.Backing> = [.fish, .bash ]
-      let usingEffectedShell = backing != nil ? effectedShells.contains(backing!) : false
-      let inElectronTerminal = Integrations.electronTerminals.contains(window.bundleId ?? "")
-      let useFigTerm = usingEffectedShell &&
-                       inElectronTerminal &&
-                       figTermInstanceSupportsInserts
-      
-
-
-      if let sessionId = window.session, useFigTerm {
-        Logger.log(message: "Inserting '\(cmd)' using figterm (\(sessionId)")
-        try? FigTerm.insert(cmd, into: sessionId)
-      } else if usingEffectedShell && inElectronTerminal {
-        Logger.log(message: "Insert effected by xtermjs bug! Showing alert...")
-
-        //
-//        guard !Defaults.shared.promptedToRestartDueToXtermBug else {
-//          Logger.log(message: "Not inserting due to xterm.js bug...")
-//          return
-//        }
-        
-        let title = "Restart " + (window.app.localizedName ?? "all electron terminals")
-        
-        let shouldRestart = Alert.show(title: title,
-                                       message: "Due to a regressions in xterm.js, Fig cannot insert text into electron terminals using the accessibility API.\n\nRestarting your terminal will resolve the issue.",
-                                       okText: "Restart",
-                                       icon: NSImage(named: NSImage.cautionName) ?? Alert.appIcon,
-                                       hasSecondaryOption: true,
-                                       secondaryOptionTitle: "Not now")
-        
-        if let app = window.app.bundleIdentifier, shouldRestart {
-          let restarter = Restarter(with: app)
-          restarter.restart()
-        }
-        
-        Defaults.shared.promptedToRestartDueToXtermBug = true
-
-      } else {
-        Logger.log(message: "Inserting '\(cmd)' using keyboard")
-
-        // use legacy insertion
-        if (NSWorkspace.shared.frontmostApplication?.isFig ?? false) {
-            print("Fig is the active window. Sending focus back to previous applications.")
-            WindowServer.shared.returnFocus()
-            Timer.delayWithSeconds(0.15) {
-              inject(cmd, runImmediately: runImmediately, clearLine: clearLine, completion: completion)
-            }
-        } else {
-            inject(cmd, runImmediately: runImmediately, clearLine: clearLine, completion: completion)
-        }
-      }
-    }
-
-    //https://gist.github.com/eegrok/949034
-    enum Keypress: UInt16 {
-        case cmdV = 9
-        case cmdN = 45
-        case enter = 36
-        case leftArrow = 123
-        case rightArrow = 124
-        case downArrow = 125
-        case upArrow = 126
-        case delete = 51
-        case ctrlE = 14
-        case ctrlU = 32
-        case ctrlPipe = 42
-        case fn13 = 105
-        case fn19 = 80
-        case fn20 = 90
-
-        var code: CGKeyCode {
-            switch self {
-            case .cmdV:
-                return KeyboardLayout.shared.keyCode(for: "V") ?? self.rawValue
-            case .ctrlE:
-                return KeyboardLayout.shared.keyCode(for: "E") ?? self.rawValue
-            case .ctrlU:
-                return KeyboardLayout.shared.keyCode(for: "U") ?? self.rawValue
-            case .cmdN:
-                return KeyboardLayout.shared.keyCode(for: "N") ?? self.rawValue
-            case .ctrlPipe:
-                return KeyboardLayout.shared.keyCode(for: "|") ?? self.rawValue
-            default:
-                return self.rawValue as CGKeyCode
-            }
-        }
-
-    }
-    
-  static func simulate(keystroke: Keystroke) {
-      let keyCode = keystroke.keyCode
-      let src = CGEventSource(stateID: CGEventSourceStateID.hidSystemState)
-
-      let keydown = CGEvent(keyboardEventSource: src, virtualKey: keyCode, keyDown: true)
-      let keyup = CGEvent(keyboardEventSource: src, virtualKey: keyCode, keyDown: false)
-      
-      if (keystroke.modifierFlags.contains(.command)){
-          keydown?.flags = CGEventFlags.maskCommand;
-      }
-      
-      if (keystroke.modifierFlags.contains(.control)) {
-          keydown?.flags = CGEventFlags.maskControl;
-      }
-      
-      let loc = CGEventTapLocation.cghidEventTap
-      keydown?.post(tap: loc)
-      keyup?.post(tap: loc)
-  }
-  
-    static func simulate(keypress: Keypress) {
-        let keyCode = keypress.code
+    static func simulate(keypress: Keycode, pid: pid_t? = nil, maskCommand: Bool = false, maskControl: Bool = false) {
+        let keyCode = KeyboardLayout.shared.keyCode(for: keypress.keyname) ?? keypress.rawValue;
         let src = CGEventSource(stateID: CGEventSourceStateID.hidSystemState)
 
         let keydown = CGEvent(keyboardEventSource: src, virtualKey: keyCode, keyDown: true)
         let keyup = CGEvent(keyboardEventSource: src, virtualKey: keyCode, keyDown: false)
-        
-        if (keypress == .cmdV || keypress == .cmdN){
+
+        if maskCommand {
             keydown?.flags = CGEventFlags.maskCommand;
         }
-        
-      if (keypress == .ctrlE || keypress == .ctrlU || keypress == .ctrlPipe) {
+
+        if maskCommand {
             keydown?.flags = CGEventFlags.maskControl;
         }
         
         let loc = CGEventTapLocation.cghidEventTap
         keydown?.post(tap: loc)
         keyup?.post(tap: loc)
+
+        guard let pidSafe = pid else {
+            let loc = CGEventTapLocation.cghidEventTap
+            keydown?.post(tap: loc)
+            keyup?.post(tap: loc)
+            return
+        }
+        
+        keydown?.postToPid(pidSafe)
+        keyup?.postToPid(pidSafe)
     }
 }
 

@@ -119,15 +119,7 @@ class WindowServer : WindowService {
         guard let rawWindows = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]] else {
             return []
         }
-        
-        var allWindows: [ExternalWindow] = []
-        for rawWindow in rawWindows {
-            if let window = ExternalWindow(raw: rawWindow) {
-                allWindows.append(window)
-            } 
-        }
-//        allWindows.forEach{ print($0.bundleId ?? "", $0.windowId)}
-        return allWindows
+        return rawWindows.compactMap { ExternalWindow(raw: $0) };
     }
     
     func allWhitelistedWindows(onScreen: Bool = false) -> [ExternalWindow] {
@@ -237,7 +229,6 @@ extension ExternalApplication : App {
     }
 }
 extension NSRunningApplication : App {}
-
 typealias ExternalWindowHash = String
 
 class ExternalWindow {
@@ -252,15 +243,19 @@ class ExternalWindow {
           return windowMetadataService.getMostRecentFocusId(for: self.windowId)
         }
     }
-  
-  var associatedShellContext: ShellContext? {
-    get {
-      return windowMetadataService.getAssociatedShellContext(for: self.windowId)
+
+    var associatedShellContext: ShellContext? {
+        get {
+        return windowMetadataService.getAssociatedShellContext(for: self.windowId)
+        }
     }
-  }
   
+    var associatedEditBuffer: EditBuffer? {
+        get {
+          return windowMetadataService.getAssociatedEditBuffer(for: self.windowId)
+        }
+    }
   
-    
     var session: String? {
         get {
           return windowMetadataService.getTerminalSessionId(for: windowId)
@@ -268,35 +263,18 @@ class ExternalWindow {
     }
     
     init?(raw: [String: Any], accesibilityElement: AXUIElement? = nil) {
-        guard let pid = raw["kCGWindowOwnerPID"] as? pid_t else {
+        guard let pid = raw["kCGWindowOwnerPID"] as? pid_t,
+            let rect = raw["kCGWindowBounds"] as? [String: Any],
+            let id = raw["kCGWindowNumber"] as? CGWindowID else {
           return nil
         }
-        
-        guard let rect = raw["kCGWindowBounds"] as? [String: Any] else {
+        guard let x = rect["X"] as? CGFloat,
+            let y = rect["Y"] as? CGFloat,
+            let height = rect["Height"] as? CGFloat,
+            let width = rect["Width"] as? CGFloat else {
             return nil
         }
 
-
-        guard let x = rect["X"] as? CGFloat else {
-          return nil
-        }
-
-        guard let y = rect["Y"] as? CGFloat else {
-          return nil
-        }
-
-        guard let height = rect["Height"] as? CGFloat else {
-          return nil
-        }
-
-        guard let width = rect["Width"] as? CGFloat else {
-          return nil
-        }
-
-        guard let id = raw["kCGWindowNumber"] as? CGWindowID else {
-          return nil
-        }
-        
         guard let app = NSRunningApplication(processIdentifier: pid) else {
             return nil
         }
@@ -407,17 +385,16 @@ class ExternalWindow {
         
         return provider.getCursorRect(in: self)
     }
-    
 }
 
 extension ExternalWindow: Hashable {
     func hash(into hasher: inout Hasher) {
-         hasher.combine(self.windowId)
-       }
+        hasher.combine(self.windowId)
+    }
        
-       static func ==(lhs: ExternalWindow, rhs: ExternalWindow) -> Bool {
+    static func ==(lhs: ExternalWindow, rhs: ExternalWindow) -> Bool {
         return lhs.windowId == rhs.windowId
-       }
+    }
 }
 
 import FigAPIBindings

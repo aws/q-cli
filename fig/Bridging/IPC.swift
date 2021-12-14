@@ -242,6 +242,7 @@ class IPC: UnixSocketServerDelegate {
     
     switch message.hook {
     case .editBuffer(let hook):
+      // NOTE: IPC notifications update TerminalSessionLinker and MUST occur before everything else!
       IPC.post(notification: .editBuffer, object: hook)
 
       ShellHookManager.shared.updateKeybuffer(
@@ -378,7 +379,7 @@ extension IPC {
       case .hide:
         Autocomplete.hide()
       case .clearKeybuffer:
-        ShellHookManager.shared.clearKeybufferLegacy(shellMessage)
+        print("Clear keybuffer command is deprecated, not doing anything.")
       default:
         print("Unknown background Unix socket")
       }

@@ -1,5 +1,5 @@
 //
-//  KeypressService.swift
+//  KeypressProvider.swift
 //  fig
 //
 //  Created by Matt Schrage on 9/14/20.
@@ -20,33 +20,19 @@ enum EventTapAction {
 }
 
 typealias EventTapHandler = (_ event: CGEvent, _ in: ExternalWindow) -> EventTapAction
-protocol KeypressService {
-  func register(handler: @escaping EventTapHandler )
-}
-
-protocol EditBufferService {
-  func keyBuffer(for window: ExternalWindow) -> KeystrokeBuffer
-  func keyBuffer(for windowHash: ExternalWindowHash) -> KeystrokeBuffer
-  func clean()
-}
 
 class KeypressProvider {
   // MARK: - Properties
   var enabled = true
   var keyHandler: Any? = nil
   var tap: CFMachPort? = nil
-  var mouseHandler: Any? = nil
   var redirectsEnabled: Bool = true
   var globalKeystrokeInterceptsEnabled: Bool = false
-  let throttler = Throttler(minimumDelay: 0.05)
-  var buffers: [ExternalWindowHash: KeystrokeBuffer] = [:]
-  fileprivate let handlers: [EventTapHandler] =
-    [ InputMethod.keypressTrigger
-    , KeypressProvider.processRegisteredHandlers
-    , KeypressProvider.handleRedirect
-    ]
-  
-  var registeredHandlers: [EventTapHandler] = []
+  var registeredHandlers: [EventTapHandler] = [ InputMethod.keypressTrigger ]
+
+  func register(handler: @escaping EventTapHandler) {
+    self.registeredHandlers.append(handler)
+  }
   
   static var whitelist: Set<String> {
     get {
@@ -59,10 +45,6 @@ class KeypressProvider {
 
   init() {
     registerKeystrokeHandler()
-    NotificationCenter.default.addObserver(self,
-                                           selector:#selector(lineAcceptedInKeystrokeBuffer),
-                                           name: KeystrokeBuffer.lineResetInKeyStrokeBufferNotification,
-                                           object:nil)
     
     NotificationCenter.default.addObserver(self,
                                            selector:#selector(accesibilityPermissionsUpdated),
@@ -81,23 +63,7 @@ class KeypressProvider {
   }
   
   func registerKeystrokeHandler() {
-    if let handler = self.mouseHandler {
-      NSEvent.removeMonitor(handler)
-    }
-    
-    self.mouseHandler = NSEvent.addGlobalMonitorForEvents(matching: .leftMouseUp) { (event) in
-      if let window = AXWindowServer.shared.whitelistedWindow {
-        // option click, moves cursor to unknown location
-        if (event.modifierFlags.contains(.option)) {
-          let keyBuffer = self.keyBuffer(for: window)
-          keyBuffer.buffer = nil
-        }
-      }
-    }
-    
-    if let handler = self.keyHandler {
-      NSEvent.removeMonitor(handler)
-    }
+    deregisterKeystrokeHandler()
     
     // todo: it bothers me that this is here since wi. Should we consolidate
     self.keyHandler = NSEvent.addGlobalMonitorForEvents(matching: [ .keyDown, .keyUp], handler: { (event) in
@@ -105,14 +71,8 @@ class KeypressProvider {
       
       switch event.type {
         case .keyDown:
-          // Watch for Cmd+V and manually update ZLE buffer (because we don't recieve an event until the following keystroke)
-          if AXWindowServer.shared.whitelistedWindow != nil, event.keyCode == Keycode.v && event.modifierFlags.contains(.command) {
-              print("ZLE: Command+V")
-              ZLEIntegration.paste()
-          }
-          
           // Handle Control+R searching -- this is needed for ZLE + fzf, normal history search is handled by integration.
-          if AXWindowServer.shared.whitelistedWindow != nil, event.keyCode == Keycode.r && event.modifierFlags.contains(.control) {
+        if AXWindowServer.shared.whitelistedWindow != nil, event.keyCode == Keycode.r.rawValue && event.modifierFlags.contains(.control) {
             Autocomplete.hide()
           }
         case .keyUp:
@@ -122,30 +82,16 @@ class KeypressProvider {
       }
     })
     
-    self.clean()
-    
-    if let tap = self.tap {
-      CFMachPortInvalidate(tap)
-      self.tap = nil
-    }
-    
     if let tap = registerKeyInterceptor() {
       self.tap = tap
     }
   }
   
   func deregisterKeystrokeHandler() {
-    if let handler = self.mouseHandler {
-      NSEvent.removeMonitor(handler)
-      self.mouseHandler = nil
-    }
-    
     if let handler = self.keyHandler {
       NSEvent.removeMonitor(handler)
       self.keyHandler = nil
     }
-    
-    self.clean()
     
     if let tap = self.tap {
       CFMachPortInvalidate(tap)
@@ -155,7 +101,7 @@ class KeypressProvider {
   
   func registerKeyInterceptor() -> CFMachPort? {
     guard AXIsProcessTrustedWithOptions(nil) else {
-      print("KeypressService: Could not register without accesibility permissions")
+      print("KeypressProvider: Could not register without accesibility permissions")
       return nil
     }
     
@@ -203,13 +149,13 @@ class KeypressProvider {
         action = "released"
       }
       
-      
       let keyName = KeyboardLayout.humanReadableKeyName(event) ?? "?"
       
       Logger.log(message: "\(action) '\(keyName)' in \(window.bundleId ?? "<unknown>") [\(window.hash)], \(window.associatedShellContext?.ttyDescriptor ?? "???") (\(window.associatedShellContext?.executablePath ?? "???")) \(window.associatedShellContext?.processId ?? 0)", subsystem: .keypress)
       
+      let handlers = KeypressProvider.shared.registeredHandlers + [ KeypressProvider.fallbackHandler ]
       // process handlers (order is important)
-      for handler in KeypressProvider.shared.handlers {
+      for handler in handlers {
         let action = handler(event, window)
         switch action {
           case .forward:
@@ -249,13 +195,11 @@ class KeypressProvider {
     return eventTap
   }
   
-    
-  
   // MARK: - Notifications
   @objc func windowDidChange(_ notification: Notification) {
     guard let window = notification.object as? ExternalWindow else { return }
     
-    let enabled = Integrations.terminalsWhereAutocompleteShouldAppear.contains(window.bundleId ?? "")
+    let enabled = Integrations.bundleIsValidTerminal(window.bundleId)
     print("eventTap: \(enabled)")
     if let tap = self.tap {
       // turn off event tap for windows that belong to applications
@@ -266,11 +210,7 @@ class KeypressProvider {
   }
   
   @objc func inputSourceChanged() {
-    Autocomplete.position(makeVisibleImmediately: false, completion: nil)
-  }
-  
-  @objc func lineAcceptedInKeystrokeBuffer() {
-
+    Autocomplete.position(makeVisibleImmediately: false)
   }
   
   @objc func accesibilityPermissionsUpdated(_ notification: Notification) {
@@ -293,7 +233,7 @@ class KeypressProvider {
     KeypressProvider.shared.globalKeystrokeInterceptsEnabled = value
   }
   
-  static func handleRedirect(event:CGEvent, in window: ExternalWindow) -> EventTapAction {
+  static func fallbackHandler(event:CGEvent, in window: ExternalWindow) -> EventTapAction {
     // prevent redirects when typing in VSCode editor
     guard window.isFocusedTerminal else {
       return .forward
@@ -302,132 +242,80 @@ class KeypressProvider {
     guard let context = window.associatedShellContext, context.isShell() else {
       return .forward
     }
+
+    // Ensure we have a valid keybinding string that has a bound keybindings.
+    guard let keybindingString = KeyboardLayout.humanReadableKeyName(event),
+        let bindings = Settings.shared.getKeybindings(forKey: keybindingString) else {
+        return .ignore
+    }
     
-    if let keybindingString = KeyboardLayout.humanReadableKeyName(event) {
-      if let bindings = Settings.shared.getKeybindings(forKey: keybindingString) {
-        // Right now only handle autocomplete.keybindings
-        if let autocompleteBinding = bindings["autocomplete"] {
-          let autocompleteIsHidden = WindowManager.shared.autocomplete?.isHidden ?? true
-          let action = autocompleteBinding.split(separator: " ").first
-          let onlyShowOnTab = Settings.shared.getValue(forKey: Settings.onlyShowOnTabKey) as? Bool ?? false;
+    // Right now only handle autocomplete.keybindings
+    guard let autocompleteBinding = bindings["autocomplete"] else {
+        return .ignore
+    }
 
-          let isGlobalAction = KeypressProvider.shared.globalKeystrokeInterceptsEnabled && (
-            keybindingString == "tab" && onlyShowOnTab ||
-            autocompleteBinding.contains("--global") ||
-            Autocomplete.globalActions.contains(String(action ?? ""))
-          )
-          
-          guard isGlobalAction || !autocompleteIsHidden else {
-            return .ignore
-          }
-          
-          guard isGlobalAction || KeypressProvider.shared.redirectsEnabled else {
-            return .ignore
-          }
+    let autocompleteIsHidden = WindowManager.shared.autocomplete?.isHidden ?? true
+    let action = autocompleteBinding.split(separator: " ").first
+    let onlyShowOnTab = Settings.shared.getValue(forKey: Settings.onlyShowOnTabKey) as? Bool ?? false;
 
-          
-          guard autocompleteBinding != "ignore" else {
-            return .ignore
-          }
-          
-          // fig.keypress only recieves keyDown events
-          guard event.type == .keyDown else {
-            Autocomplete.position(makeVisibleImmediately: false)
-            return .consume
-          }
-          
-          Logger.log(message: "Redirecting keypress '\(keybindingString)' to autocomplete", subsystem: .keypress)
-          let keyCode = UInt16(event.getIntegerValueField(.keyboardEventKeycode))
-            
-          // Legacy fig.keypress implementation
-          Autocomplete.redirect(keyCode: keyCode, event: event, for: window.hash)
-          
-          // Protobuf API implementation
-          API.notifications.post(Fig_KeybindingPressedNotification.with {
-              if let action = action  {
-                  $0.action = String(action)
-              }
-              
-              if let event = NSEvent(cgEvent: event) {
-                  $0.keypress = event.fig_keyEvent
-              }
-          })
-            
-          return .consume
+    let isGlobalAction = KeypressProvider.shared.globalKeystrokeInterceptsEnabled && (
+        keybindingString == "tab" && onlyShowOnTab ||
+        autocompleteBinding.contains("--global") ||
+        Autocomplete.globalActions.contains(String(action ?? ""))
+    )
+    
+    guard isGlobalAction || !autocompleteIsHidden else {
+        return .ignore
+    }
+    
+    guard isGlobalAction || KeypressProvider.shared.redirectsEnabled else {
+        return .ignore
+    }
+
+    
+    guard autocompleteBinding != "ignore" else {
+        return .ignore
+    }
+    
+    // fig.keypress only recieves keyDown events
+    guard event.type == .keyDown else {
+        Autocomplete.position(makeVisibleImmediately: false)
+        return .consume
+    }
+    
+    Logger.log(message: "Redirecting keypress '\(keybindingString)' to autocomplete", subsystem: .keypress)
+    let keyCode = UInt16(event.getIntegerValueField(.keyboardEventKeycode))
+    
+    // Legacy fig.keypress implementation
+    Autocomplete.redirect(keyCode: keyCode, event: event, for: window.hash)
+    
+    // Protobuf API implementation
+    API.notifications.post(Fig_KeybindingPressedNotification.with {
+        if let action = action  {
+            $0.action = String(action)
         }
-      }
-    }
+        
+        if let event = NSEvent(cgEvent: event) {
+            $0.keypress = event.fig_keyEvent
+        }
+    })
     
-    return .ignore
-  }
-  
-  static func processRegisteredHandlers(event:CGEvent, in window: ExternalWindow) -> EventTapAction {
-    for handler in KeypressProvider.shared.registeredHandlers {
-      let action = handler(event, window)
-      switch action {
-        case .forward, .consume:
-          return action
-        case .ignore:
-          continue
-      }
-    }
-    
-    return .ignore
+    return .consume
   }
   
   func handleKeystroke(event: NSEvent?, in window: ExternalWindow) {
-    
     // handle keystrokes in VSCode editor
     guard window.isFocusedTerminal else {
         return
     }
-    
 
-    let keyBuffer = self.keyBuffer(for: window)
-    guard !keyBuffer.backedByShell else {
-      
-      
-      // trigger positioning updates for hotkeys, like cmd+w, cmd+t, cmd+n, or Spectacle
-      if let event = event {
-        
-        if event.keyCode == KeyboardLayout.shared.keyCode(for: "W") && event.modifierFlags.contains(.command) {
-          Autocomplete.hide()
-        } else if event.modifierFlags.contains(.command) || event.modifierFlags.contains(.option) {
-          Autocomplete.position()
-
-        }
+    // trigger positioning updates for hotkeys, like cmd+w, cmd+t, cmd+n, or Spectacle
+    if let event = event {
+      if event.keyCode == KeyboardLayout.shared.keyCode(for: "w") && event.modifierFlags.contains(.command) {
+        Autocomplete.hide()
+      } else if event.modifierFlags.contains(.command) || event.modifierFlags.contains(.option) {
+        Autocomplete.position()
       }
-      
-      return
     }
-  }
-}
-
-// MARK: - Extensions -
-
-extension KeypressProvider: KeypressService {
-  
-  func register(handler: @escaping EventTapHandler) {
-    self.registeredHandlers.append(handler)
-  }
-}
-
-extension KeypressProvider: EditBufferService {
-  func keyBuffer(for window: ExternalWindow) -> KeystrokeBuffer {
-    return self.keyBuffer(for: window.hash)
-  }
-  
-  func keyBuffer(for windowHash: ExternalWindowHash) -> KeystrokeBuffer {
-    if let buffer = self.buffers[windowHash] {
-      return buffer
-    } else {
-      let buffer = KeystrokeBuffer()
-      self.buffers[windowHash] = buffer
-      return buffer
-    }
-  }
-  
-  func clean() {
-    buffers = [:]
   }
 }

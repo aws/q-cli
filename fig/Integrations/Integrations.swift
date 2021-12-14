@@ -62,6 +62,14 @@ class Integrations {
       .subtracting(Integrations.autocompleteBlocklist)
   }
 
+  static func bundleIsValidTerminal(_ bundle: String?) -> Bool {
+      return Integrations.terminalsWhereAutocompleteShouldAppear.contains(bundle ?? "")
+  }
+
+  static func frontmostApplicationIsValidTerminal() -> Bool {
+    return bundleIsValidTerminal(NSWorkspace.shared.frontmostApplication?.bundleIdentifier)
+  }
+
   static var autocompleteBlocklist: Set<String> {
     var blocklist: Set<String> = []
     if let hyperDisabled = Settings.shared.getValue(forKey: Settings.hyperDisabledKey) as? Bool,

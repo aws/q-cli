@@ -317,14 +317,6 @@ extension ShellHookManager {
       Fig_ShellPromptReturnedNotification.with({ notification in
         notification.sessionID = context.sessionID
       }))
-
-    // if the user has returned to the shell, their keypress buffer must be reset (for instance, if they exited by pressing 'q' rather than return)
-    // This doesn't work because of timing issues. If the user types too quickly, the first keypress will be overwritten.
-    // KeypressProvider.shared.keyBuffer(for: hash).buffer = ""
-
-    // if Fig should emulate shell autocomplete behavior and only appear when tab is pressed, set keybuffer to writeOnly
-    KeypressProvider.shared.keyBuffer(for: hash).writeOnly =
-      (Settings.shared.getValue(forKey: Settings.onlyShowOnTabKey) as? Bool) ?? false
   }
 
   func startedNewShellSession(_ info: ShellMessage) {
@@ -347,9 +339,6 @@ extension ShellHookManager {
 
     // Set version (used for checking compatibility)
     tty.shellIntegrationVersion = info.shellIntegrationVersion ?? 0
-
-    KeypressProvider.shared.keyBuffer(for: hash).backedByShell = false
-
   }
 
   func startedNewTerminalSessionLegacy(_ info: ShellMessage) {
@@ -428,23 +417,13 @@ extension ShellHookManager {
 
     // Set version (used for checking compatibility)
     tty.shellIntegrationVersion = Int(context.integrationVersion)
-
-    // update keybuffer backing
-    if KeypressProvider.shared.keyBuffer(for: hash).backedByShell {
-
-      // ZLE doesn't handle signals sent to shell, like control+c
-      // So we need to manually force an update when the line changes
-      DispatchQueue.main.async {
-        Autocomplete.position()
-        
-        // manually trigger edit buffer update
-        API.notifications.editbufferChanged(buffer: "",
-                                            cursor: 0,
-                                            session: context.sessionID,
-                                            context: context)
-
-      }
-      KeypressProvider.shared.keyBuffer(for: hash).backedByShell = false
+    API.notifications.editbufferChanged(buffer: "",
+                                        cursor: 0,
+                                        session: context.sessionID,
+                                        context: context)
+  
+    DispatchQueue.main.async {
+      Autocomplete.position()
     }
   }
 
@@ -466,25 +445,6 @@ extension ShellHookManager {
 
     // Set version (used for checking compatibility)
     tty.shellIntegrationVersion = info.shellIntegrationVersion ?? 0
-
-    KeypressProvider.shared.keyBuffer(for: hash).backedByShell = false
-
-  }
-
-  func clearKeybufferLegacy(_ info: ShellMessage) {
-    clearKeybuffer(info)
-  }
-
-  func clearKeybuffer(_ info: ShellMessage) {
-    guard let hash = attemptToFindToAssociatedWindow(for: info.session) else {
-      Logger.log(
-        message: "Could not link to window on new shell session.", priority: .notify,
-        subsystem: .tty)
-      return
-    }
-
-    let keybuffer = KeypressProvider.shared.keyBuffer(for: hash)
-    keybuffer.buffer = ""
   }
 
   func updateKeybufferLegacy(_ info: ShellMessage) {
@@ -502,25 +462,21 @@ extension ShellHookManager {
   }
 
   func updateKeybuffer(context: Local_ShellContext, text: String, cursor: Int, histno: Int) {
-    
     // invariant: frontmost whitelisted window is assumed to host shell session which sent this edit buffer event.
-    let window = AXWindowServer.shared.whitelistedWindow
-    guard let hash = window?.hash else {
+    guard let window = AXWindowServer.shared.whitelistedWindow else {
       Logger.log(
         message: "Could not link to window on new shell session.", priority: .notify,
         subsystem: .tty)
       return
     }
 
+    let hash = window.hash
     var ttyHandler: TTY? = tty[hash]
 
     if ttyHandler == nil, let trimmedDescriptor = context.ttys.split(separator: "/").last {
-
       Logger.log(message: "linking sessionId (\(context.sessionID)) to window hash: \(hash)", subsystem: .tty)
       ttyHandler = self.link(context.sessionID, hash, String(trimmedDescriptor))
-
       ttyHandler?.startedNewShellSession(for: context.pid)
-
     }
 
     guard let tty = ttyHandler else {
@@ -534,53 +490,25 @@ extension ShellHookManager {
     guard !SecureKeyboardInput.enabled else {
       return
     }
-
-    let keybuffer = KeypressProvider.shared.keyBuffer(for: hash)
-
-    let previousHistoryNumber = keybuffer.shellHistoryNumber
-
-    keybuffer.backedByShell = true
-    keybuffer.backing = KeystrokeBuffer.Backing(rawValue: String(context.processName.split(separator: "/").last ?? ""))
-    keybuffer.buffer = text
-    keybuffer.shellCursor = cursor
-    keybuffer.shellHistoryNumber = histno
-
-    // Prevent Fig from immediately when the user navigates through history
-    // Note that Fig is hidden in response to the "history-line-set" zle hook
-
-    let isFirstCharacterOfNewLine = previousHistoryNumber != histno && text.count == 1
-
-    // If buffer is empty, line is being reset (eg. ctrl+c) and event should be processed :/
-    guard text == "" || previousHistoryNumber == histno || isFirstCharacterOfNewLine else {
-      print("ZLE: history numbers do not match")
-      return
-    }
-
-    // write only prevents autocomplete from recieving keypresses
-    // if buffer is empty, make sure autocomplete window is hidden
-    // when writeOnly is the default starting state (eg. fig.settings.autocomplete.onlyShowOnTab)
-    guard text == "" || !keybuffer.writeOnly else {
-      print("ZLE: keybuffer is write only")
-      return
-    }
-
-    print("ZLE: \(text) \(cursor) \(histno)")
-
-    guard Defaults.shared.loggedIn, Defaults.shared.useAutocomplete else {
+    
+    
+    // What need to be true for us to send notification!
+    guard let session = TerminalSessionLinker.shared.getTerminalSession(for: context.sessionID),
+          let editBuffer = session.editBuffer,
+          Defaults.shared.loggedIn,
+          Defaults.shared.useAutocomplete else {
       return
     }
     
-    if let (buffer, cursor) = keybuffer.currentState {
-      API.notifications.editbufferChanged(buffer: buffer,
-                                          cursor: cursor,
-                                          session: context.sessionID,
-                                          context: window?.associatedShellContext?.ipcContext)
-    }
-
+    API.notifications.editbufferChanged(buffer: editBuffer.text,
+                                        cursor: editBuffer.cursor,
+                                        session: session.terminalSessionId,
+                                        context: session.shellContext?.ipcContext)
+  
     DispatchQueue.main.async {
       Autocomplete.position()
-
     }
+    
   }
 
   func tmuxPaneChangedLegacy(_ info: ShellMessage) {

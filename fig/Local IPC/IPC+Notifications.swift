@@ -23,9 +23,6 @@ extension IPC {
     }
   }
   static func post(notification: IPC.Notifications, object: Any?) {
-    DispatchQueue.main.async {
-      NotificationCenter.default.post(name: notification.notification, object: object)
-    }
+    NotificationCenter.default.post(name: notification.notification, object: object)
   }
-
 }

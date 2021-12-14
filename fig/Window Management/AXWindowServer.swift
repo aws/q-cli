@@ -7,12 +7,7 @@
 //
 
 import Cocoa
-//NSAccessibility.Notification
-//NSAccessibility.Notification.window
 typealias AXCallbackHandler = (AXUIElement, CFString) -> Void
-fileprivate extension String {
-    
-}
 
 class ExternalApplication {
     let pid: pid_t
@@ -108,9 +103,6 @@ extension ExternalApplication: Hashable {
     }
 }
 
-
-
-
 class AXWindowServer : WindowService {
     static func log(_ message: String) {
         Logger.log(message: message, subsystem: .windowServer)
@@ -138,7 +130,7 @@ class AXWindowServer : WindowService {
     }
     var whitelistedWindow: ExternalWindow? {
         get {
-            return Integrations.terminalsWhereAutocompleteShouldAppear.contains(self.topWindow?.bundleId ?? "") ? self.topWindow : nil
+            return Integrations.bundleIsValidTerminal(self.topWindow?.bundleId) ? self.topWindow : nil
         }
        
     }
@@ -193,12 +185,6 @@ class AXWindowServer : WindowService {
             return
         }
         
-//        if appRef.observer == nil || appRef.handler == nil {
-//            self.tracked = tracked.filter { $0 != appRef}
-//        }
-        
-        
-//        self.tracked.contains { return $0.bundleId == app.bundleIdentifier && $0.pid == app.processIdentifier}
         // Check if application is already tracked
         if self.trackedApplications().contains(appRef)  {
             AXWindowServer.log("app '\(appRef.bundleId ?? "<none>") is already registered")
@@ -235,21 +221,6 @@ class AXWindowServer : WindowService {
                 print("AXWindowServer: \(appRef.bundleId!) kAXMainWindowChangedNotification")
             case kAXWindowCreatedNotification:
                 if (appRef.bundleId == "com.apple.Spotlight") {
-//                    Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { (timer) in
-//                        let spotlight = WindowServer.shared.allWindows().filter { $0.bundleId == "com.apple.Spotlight" }
-//                        print("spotlight: \(spotlight.count) count")
-//                        spotlight.forEach {
-//                            print("spotlight: \($0.frame)")
-//                        }
-//                        if (spotlight.count == 1) {
-//                            print("spotlight: dismissed")
-//                            timer.invalidate()
-//
-//                            if let app = NSWorkspace.shared.frontmostApplication {
-//                                self.register(app, fromActivation: true)
-//                            }
-//                        }
-//                    }
                     var window: AnyObject?
                     AXUIElementCopyAttributeValue(appRef.axAppRef, kAXFocusedWindowAttribute as CFString, &window)
                     guard window != nil else { return }
@@ -318,9 +289,7 @@ class AXWindowServer : WindowService {
                 let _ = AXUIElementGetPid(element, &pid)
                 
                 // determine if AXUIElement is window???
-              
                 let app = NSRunningApplication(processIdentifier: pid)
-//                print("AXWindowServer: \(app?.bundleIdentifier)! \(element) kAXUIElementDestroyedNotification")
                 
                 // spotlight style app
                 if (Integrations.searchBarApps.contains(app?.bundleIdentifier ?? "") ) {
@@ -343,13 +312,9 @@ class AXWindowServer : WindowService {
               AXUIElementCopyAttributeValue(appRef.axAppRef, kAXFocusedWindowAttribute as CFString, &window)
               guard window != nil else { return }
               let topWindow = ExternalWindow(backedBy: window as! AXUIElement, in: appRef)
-              guard Integrations.terminalsWhereAutocompleteShouldAppear.contains(topWindow?.bundleId ?? "") else { return }
+              guard Integrations.bundleIsValidTerminal(topWindow?.bundleId) else { return }
               NotificationCenter.default.post(name: AXWindowServer.windowTitleUpdatedNotification, object: topWindow)
               break;
-
-//                print("AXWindowServer: \(appRef.bundleId!) \(element) kAXUIElementDestroyedNotification")
-//            case kAXFocusedUIElementChangedNotification:
-//                print("AXWindowServer: \(appRef.bundleId!) \(element) kAXFocusedUIElementChangedNotification")
             default:
                 print("AXWindowServer: unknown case")
             }
@@ -418,18 +383,6 @@ class AXWindowServer : WindowService {
                                                  name: Accessibility.permissionDidUpdate,
                                                  object:nil)
       
-        
-//        NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged) { (event) in
-//            if let window = WindowServer.shared.allWindows(onScreen: false).first {
-//                print("AXWindowServer: flags changed; top window: \(window.bundleId ?? "<none>")")
-//
-//            }
-//            if let app = NSWorkspace.shared.frontmostApplication {
-//                print("AXWindowServer: flags changed; frontmost app \(app.bundleIdentifier ?? "<none>")")
-//                //self.register(app, fromActivation: true)
-//            }
-//        }
-     
     }
   
     @objc func accesibilityPermissionsUpdated(_ notification: Notification) {
@@ -482,7 +435,6 @@ class AXWindowServer : WindowService {
 
     }
     
-    
     @objc func activeSpaceDidChange() {
         // this is used to reset previous application when space is changed. Maybe should be nil.
         //self.previousApplication =
@@ -533,7 +485,6 @@ class AXWindowServer : WindowService {
         }
     }
     
-    
     @objc func top() -> AXUIElement? {
         let systemWideElement: AXUIElement = AXUIElementCreateSystemWide()
 
@@ -571,17 +522,11 @@ class AXWindowServer : WindowService {
         return nil
     }
     
-    func bringToFront(window: ExternalWindow) {
-        
-    }
+    func bringToFront(window: ExternalWindow) {}
     
-    func takeFocus() {
-        
-    }
+    func takeFocus() {}
     
-    func returnFocus() {
-        
-    }
+    func returnFocus() {}
     
     var isActivating: Bool = false
     
