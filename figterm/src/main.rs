@@ -1,17 +1,16 @@
+pub mod ipc;
 pub mod local;
 pub mod logger;
 pub mod pty;
 
-use std::{error::Error, ffi::CString, future::Future, io::Write, os::unix::prelude::*};
+use std::{error::Error, ffi::CString, os::unix::prelude::*};
 
 use anyhow::Result;
 use nix::{
     ioctl_read_bad, ioctl_write_ptr_bad, libc,
-    pty::{forkpty, ptsname, Winsize},
-    sys::termios::{
-        cfmakeraw, tcgetattr, tcsetattr, InputFlags, LocalFlags, OutputFlags, SetArg, Termios,
-    },
-    unistd::{execv, ForkResult},
+    pty::Winsize,
+    sys::termios::{cfmakeraw, tcgetattr, tcsetattr, SetArg},
+    unistd::execv,
 };
 
 use pty::{fork_pt, PtForkResult};
@@ -21,12 +20,24 @@ use tokio::{
     runtime, select,
 };
 
+use clap::Parser;
+
 ioctl_read_bad!(read_winsize, libc::TIOCGWINSZ, Winsize);
 ioctl_write_ptr_bad!(tiocswinsz, libc::TIOCSWINSZ, Winsize);
 
 const BUFFER_SIZE: usize = 1024;
+const FIGTERM_VERSION: &'static str = "4";
+
+#[derive(Parser, Debug)]
+#[clap(about, version, author)]
+struct Args {
+    #[clap(short, long)]
+    version: bool,
+}
 
 fn main() -> Result<(), Box<dyn Error>> {
+    Args::parse();
+
     let stdin = io::stdin();
 
     // Get term data
@@ -39,7 +50,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     };
     unsafe { read_winsize(stdin.as_raw_fd(), &mut winsize) }?;
 
-    let shell = CString::new(std::env::var("SHELL").unwrap_or("/bin/sh".into()))?;
+    let shell = CString::new(std::env::var("SHELL").unwrap_or_else(|_| "/bin/sh".into()))?;
 
     // Fork pseudoterminal
     // SAFETY: forkpty is safe to call, but the child must not call any functions

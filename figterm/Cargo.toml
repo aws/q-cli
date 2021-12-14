@@ -20,8 +20,11 @@ dirs = "4.0.0"
 
 # Protocal buffers
 prost = "0.9"
+bytes = "1.1"
 
 anyhow = "1.0"
+
+clap = { version = "3.0.0-rc.4", features = ["derive"] }
 
 [build-dependencies]
 prost-build = "0.9"

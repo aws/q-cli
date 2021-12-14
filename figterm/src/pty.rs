@@ -3,10 +3,10 @@ use nix::fcntl::{open, OFlag};
 use nix::libc::TIOCSCTTY;
 use nix::pty::{grantpt, posix_openpt, ptsname, unlockpt, PtyMaster};
 use nix::sys::stat::Mode;
-use nix::unistd::{dup2, fork, setsid, ForkResult, Pid, close};
+use nix::unistd::{close, dup2, fork, setsid, ForkResult, Pid};
 use std::path::Path;
 
-nix::ioctl_write_int_bad!(ioctlTiocsctty, TIOCSCTTY);
+nix::ioctl_write_int_bad!(ioctl_tiocsctty, TIOCSCTTY);
 
 pub struct PtDetails {
     pub master_fd: PtyMaster,
@@ -49,7 +49,7 @@ pub fn fork_pt() -> Result<PtForkResult> {
                 Mode::empty(),
             )?;
 
-            unsafe { ioctlTiocsctty(slave_fd, 0) }?;
+            unsafe { ioctl_tiocsctty(slave_fd, 0) }?;
 
             dup2(slave_fd, 0)?;
             dup2(slave_fd, 1)?;
