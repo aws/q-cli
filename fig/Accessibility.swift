@@ -113,6 +113,49 @@ class Accessibility {
     }
   }
 
+  fileprivate static var promptWindow: WebViewWindow?
+
+  static func showPromptUI() {
+
+    if let promptWindow = Accessibility.promptWindow {
+
+      if promptWindow.contentViewController != nil {
+        promptWindow.makeKeyAndOrderFront(nil)
+        promptWindow.orderFrontRegardless()
+        NSApp.activate(ignoringOtherApps: true)
+
+        return
+      } else {
+        Accessibility.promptWindow?.contentViewController = nil
+        Accessibility.promptWindow = nil
+      }
+    }
+
+    let accessibilityViewController = WebViewController()
+    accessibilityViewController.webView?.defaultURL = nil
+    accessibilityViewController.webView?.loadBundleApp("accessibility")
+    accessibilityViewController.webView?.dragShouldRepositionWindow = true
+
+    let prompt = WebViewWindow(viewController: accessibilityViewController, shouldQuitAppOnClose: false)
+    prompt.setFrame(NSRect(x: 0, y: 0, width: 590, height: 480), display: true, animate: false)
+    prompt.center()
+    prompt.makeKeyAndOrderFront(self)
+
+    // Set color to match background of app to avoid flicker while loading
+    prompt.backgroundColor = NSColor.white
+
+    prompt.delegate = prompt
+    prompt.isReleasedWhenClosed = false
+    prompt.level = .normal
+
+    Accessibility.promptWindow = prompt
+  }
+
+  static func closeUI() {
+    Accessibility.promptWindow?.close()
+    Accessibility.promptWindow = nil
+  }
+
   static func listAttributes(for element: AXUIElement) {
     var names: CFArray?
     AXUIElementCopyAttributeNames(element, &names)
@@ -123,6 +166,7 @@ class Accessibility {
     print(parametrizedNames as Any)
   }
 
+  // swiftlint:disable line_length
   // https://github.com/chromium/chromium/blob/99314be8152e688bafbbf9a615536bdbb289ea87/chrome/browser/chrome_browser_application_mac.mm
   // https://github.com/electron/electron/blob/462de5f97a302987dc5fa5c222781ceed040f390/docs/tutorial/accessibility.md
   static let kAXManualAccessibility = "AXManualAccessibility" as CFString
@@ -145,62 +189,133 @@ class Accessibility {
     }
   }
 
-  // THANKFULLY WE DON'T DO THIS!
-  // This is an unfortunate hack that is necessary because there is no VSCode API to determe when the terminal has
-  // focus.  Currently, we use whether the cursor AXElement exists and has focus as a proxy. This is cached to avoid
-  // performance penalty.  However, when the bottom panel is closed, the cache always misses and typing can become
-  // noticably slow.  We're going to fight fire with fire and use the AXAPI to check if the panel is open.  This is
-  // completely an implementation detail of VSCode and if (when) it changes in the future, this method will not work...
+  static func openMenu(_ bundleId: String) {
+    guard let elm = Application.allForBundleID(bundleId).first else { return }
+    guard let menuBar = try? elm.attribute(.menuBar) as UIElement? else {
+      return
+    }
 
-  // Approach:
-  // The editor pane is contained in a <main> tag which WebKit maps to the subrole "AXLandmarkMain".
-  // (https://bugs.webkit.org/show_bug.cgi?id=103172)
-  // This <main> tag is the direct child of a group that contains the bottom pane as well.
-  // Identify <main> tag and than check the child of the parent. This should be more performant since the search is
-  // shallower and terminates early.
-  // static func findPanel(_ parent: UIElement, siblings: [UIElement]) -> UIElement? {
-  //    let AXLandmarkMain = "AXLandmarkMain"
-  //    let children: [UIElement] = (try? parent.arrayAttribute(.children)) ?? []
-  //
-  //
-  //    var containsMainAsChild = false
-  //    for element in children {
-  //      if let subrole: String = try? element.attribute(.subrole),
-  //         subrole == AXLandmarkMain {
-  //        containsMainAsChild = true
-  //        break;
-  //      }
-  //    }
-  //
-  //    guard !containsMainAsChild  else {
-  //
-  //      // if the parent has 1 sibling, then it must be the panel!
-  //      if (siblings.count == 1) {
-  //        return siblings.first!
-  //      }
-  //
-  //      return nil
-  //    }
-  //
-  //    // continue searching...
-  //    let roles: Set<Role> = [.scrollArea, .group, .application, .browser]
-  //
-  //    for index in 0..<children.count {
-  //      let element = children[index]
-  //
-  //      if let role = try? element.role(), !roles.contains(role) {
-  //        continue
-  //      }
-  //
-  //      let siblings: [UIElement] =  Array(children[0..<index] + children[index+1..<children.count])
-  //      if let panel = findPanel(element, siblings:siblings) {
-  //        return panel
-  //      }
-  //    }
-  //
-  //    return nil
-  //  }
+    let children: [UIElement] = (try? menuBar.arrayAttribute(.children)) ?? []
 
+    // ignore first menuIterm which is Apple
+    let main = children[safe: 1]
+
+    try? main?.performAction(.press)
+  }
+
+  static func setGlobalTimeout(seconds: Float) {
+    let result = AXUIElementSetMessagingTimeout(AXUIElementCreateSystemWide(), seconds)
+
+    if result != .success {
+      SentrySDK.capture(message: "Error setting AX global timeout")
+    }
+  }
+}
+
+extension Accessibility {
+  static func focusedApplicationIsSupportedTerminal() -> Bool {
+    let systemWideElement: UIElement = UIElement(AXUIElementCreateSystemWide())
+
+    guard let focusedElement: UIElement = try? systemWideElement.attribute(.focusedUIElement) else {
+      return false
+    }
+
+    guard let pid = try? focusedElement.pid(),
+          let app = NSRunningApplication(processIdentifier: pid),
+          Integrations.bundleIsValidTerminal(app.bundleIdentifier) else {
+      return false
+    }
+
+    return true
+
+  }
+
+  static func getCursorRect(extendRange: Bool = true) -> NSRect? {
+    let systemWideElement = AXUIElementCreateSystemWide()
+    var focusedElement: AnyObject?
+    let error = AXUIElementCopyAttributeValue(systemWideElement,
+                                              kAXFocusedUIElementAttribute as CFString,
+                                              &focusedElement)
+    guard error == .success else {
+      Logger.log(message: "Couldn't get the focused element.", subsystem: .cursor)
+      return nil
+    }
+
+    var selectedRangeValue: AnyObject?
+    // swiftlint:disable force_cast
+    let selectedRangeError = AXUIElementCopyAttributeValue(focusedElement as! AXUIElement,
+                                                           kAXSelectedTextRangeAttribute as CFString,
+                                                           &selectedRangeValue)
+
+    guard selectedRangeError == .success else {
+      Logger.log(message: "couldn't get selected range", subsystem: .cursor)
+      return nil
+    }
+
+    var selectedRange = CFRange()
+    // swiftlint:disable force_cast
+    AXValueGetValue(selectedRangeValue as! AXValue, .cfRange, &selectedRange)
+    var selectRect = CGRect()
+    var selectBounds: AnyObject?
+
+    // ensure selected text range is at least 1 - in order to find rect.
+    if extendRange {
+      var updatedRange = CFRangeMake(selectedRange.location, 1)
+      withUnsafeMutablePointer(to: &updatedRange) { (ptr) in
+        selectedRangeValue = AXValueCreate(.cfRange, ptr)
+      }
+    }
+
+    // https://linear.app/fig/issue/ENG-109/ - autocomplete-popup-shows-when-copying-and-pasting-in-terminal
+    if selectedRange.length > 1 {
+      Logger.log(message: "selectedRange length > 1", subsystem: .cursor)
+      return nil
+    }
+
+    // swiftlint:disable force_cast
+    let selectedBoundsError = AXUIElementCopyParameterizedAttributeValue(focusedElement as! AXUIElement,
+                                                                         kAXBoundsForRangeParameterizedAttribute as CFString,
+                                                                         selectedRangeValue!,
+                                                                         &selectBounds)
+
+    guard selectedBoundsError == .success else {
+      Logger.log(message: "selectedBoundsError", subsystem: .cursor)
+      return nil
+    }
+
+    AXValueGetValue(selectBounds as! AXValue, .cgRect, &selectRect)
+    Logger.log(message: "\(selectRect)", subsystem: .cursor)
+
+    // Sanity check: prevents flashing autocomplete in bottom corner
+    guard selectRect.size != .zero else {
+      Logger.log(message: "prevents flashing autocomplete in bottom corner", subsystem: .cursor)
+      return nil
+    }
+
+    // convert Quartz coordinate system to Cocoa!
+    return NSRect(x: selectRect.origin.x,
+                  y: NSScreen.screens[0].frame.maxY - selectRect.origin.y,
+                  width: selectRect.width,
+                  height: selectRect.height)
+  }
+
+  static func getTextRect() -> CGRect? {
+
+    // prevent cursor position for being returned when apps like spotlight & alfred are active
+
+    guard Accessibility.focusedApplicationIsSupportedTerminal() else {
+      return nil
+    }
+
+    guard let window = AXWindowServer.shared.allowlistedWindow else {
+      return nil
+    }
+
+    return window.cursor
+  }
+}
+
+extension Accessibility {
   static let throttler = Throttler(minimumDelay: 0.1, queue: DispatchQueue(label: "io.fig.electron-cursor"))
 
   fileprivate static var cachedCursor: UIElement?
@@ -240,7 +355,8 @@ class Accessibility {
       //       let windowTitle: String = try? root.attribute(.title),
       //       let elementTitle: String = try? toplevelElement.attribute(.title),
       //       windowTitle != elementTitle {
-      print("xterm-cursor: window for cached cursor (\(String(describing: toplevelElement)) is not equal to current window (\(String(describing: root))")
+      print("xterm-cursor: window for cached cursor (\(String(describing: toplevelElement)))" +
+            "is not equal to current window (\(String(describing: root))")
       //        print("xterm-cursor: window for cached cursor (\(elementTitle)) is not equal to current window (\(windowTitle)")
       cursor = nil
       cursorCache[window.hash] = []
@@ -301,7 +417,7 @@ class Accessibility {
 
     print("xterm-cursor: \(frame)")
     return  NSRect(x: frame.origin.x,
-                   y: NSMaxY(NSScreen.screens[0].frame) - frame.origin.y,
+                   y: NSScreen.screens[0].frame.maxY - frame.origin.y,
                    width: frame.width,
                    height: frame.height)
   }
@@ -332,7 +448,8 @@ class Accessibility {
 
   fileprivate static func findXTermCursor(_ root: UIElement, inVSCodeIDE: Bool = false, depth: Int = 0) -> UIElement? {
 
-    if let role = try? root.role(), role == .textField, let hasKeyboardFocus: Bool = try? root.attribute(.focused), hasKeyboardFocus == true {
+    if let role = try? root.role(), role == .textField,
+       let hasKeyboardFocus: Bool = try? root.attribute(.focused), hasKeyboardFocus == true {
 
       print("xterm-cursor: success \(depth)")
       // VSCode-specific cursor sanity checking to ensure Fig window doesn't appear in other textfields
@@ -376,117 +493,7 @@ class Accessibility {
 
   }
 
-  static func openMenu(_ bundleId: String) {
-    guard let elm = Application.allForBundleID(bundleId).first else { return }
-    guard let menuBar = try? elm.attribute(.menuBar) as UIElement? else {
-      return
-    }
-
-    let children: [UIElement] = (try? menuBar.arrayAttribute(.children)) ?? []
-
-    // ignore first menuIterm which is Apple
-    let main = children[safe: 1]
-
-    try? main?.performAction(.press)
-  }
-
-  static func focusedApplicationIsSupportedTerminal() -> Bool {
-    let systemWideElement: UIElement = UIElement(AXUIElementCreateSystemWide())
-
-    guard let focusedElement: UIElement = try? systemWideElement.attribute(.focusedUIElement) else {
-      return false
-    }
-
-    guard let pid = try? focusedElement.pid(),
-          let app = NSRunningApplication(processIdentifier: pid),
-          Integrations.bundleIsValidTerminal(app.bundleIdentifier) else {
-      return false
-    }
-
-    return true
-
-  }
-
-  static func getCursorRect(extendRange: Bool = true) -> NSRect? {
-    let systemWideElement = AXUIElementCreateSystemWide()
-    var focusedElement: AnyObject?
-    let error = AXUIElementCopyAttributeValue(systemWideElement, kAXFocusedUIElementAttribute as CFString, &focusedElement)
-    guard error == .success else {
-      Logger.log(message: "Couldn't get the focused element.", subsystem: .cursor)
-      return nil
-    }
-
-    var selectedRangeValue: AnyObject?
-    let selectedRangeError = AXUIElementCopyAttributeValue(focusedElement as! AXUIElement, kAXSelectedTextRangeAttribute as CFString, &selectedRangeValue)
-
-    guard selectedRangeError == .success else {
-      Logger.log(message: "couldn't get selected range", subsystem: .cursor)
-      return nil
-    }
-
-    var selectedRange = CFRange()
-    AXValueGetValue(selectedRangeValue as! AXValue, .cfRange, &selectedRange)
-    var selectRect = CGRect()
-    var selectBounds: AnyObject?
-
-    // ensure selected text range is at least 1 - in order to find rect.
-    if extendRange {
-      var updatedRange = CFRangeMake(selectedRange.location, 1)
-      withUnsafeMutablePointer(to: &updatedRange) { (ptr) in
-        selectedRangeValue = AXValueCreate(.cfRange, ptr)
-      }
-    }
-
-    // https://linear.app/fig/issue/ENG-109/ - autocomplete-popup-shows-when-copying-and-pasting-in-terminal
-    if selectedRange.length > 1 {
-      Logger.log(message: "selectedRange length > 1", subsystem: .cursor)
-      return nil
-    }
-
-    let selectedBoundsError = AXUIElementCopyParameterizedAttributeValue(focusedElement as! AXUIElement, kAXBoundsForRangeParameterizedAttribute as CFString, selectedRangeValue!, &selectBounds)
-
-    guard selectedBoundsError == .success else {
-      Logger.log(message: "selectedBoundsError", subsystem: .cursor)
-      return nil
-    }
-
-    AXValueGetValue(selectBounds as! AXValue, .cgRect, &selectRect)
-    Logger.log(message: "\(selectRect)", subsystem: .cursor)
-
-    // Sanity check: prevents flashing autocomplete in bottom corner
-    guard selectRect.size != .zero else {
-      Logger.log(message: "prevents flashing autocomplete in bottom corner", subsystem: .cursor)
-      return nil
-    }
-
-    // convert Quartz coordinate system to Cocoa!
-    return NSRect(x: selectRect.origin.x, y: NSMaxY(NSScreen.screens[0].frame) - selectRect.origin.y, width: selectRect.width, height: selectRect.height)
-  }
-
-  static func getTextRect() -> CGRect? {
-
-    // prevent cursor position for being returned when apps like spotlight & alfred are active
-
-    guard Accessibility.focusedApplicationIsSupportedTerminal() else {
-      return nil
-    }
-
-    guard let window = AXWindowServer.shared.allowlistedWindow else {
-      return nil
-    }
-
-    return window.cursor
-  }
-
   fileprivate static func xtermLog(_ message: String) {
     Logger.log(message: message, subsystem: .xtermCursor)
-  }
-
-  static func setGlobalTimeout(seconds: Float) {
-    let result = AXUIElementSetMessagingTimeout(AXUIElementCreateSystemWide(), seconds)
-
-    if result != .success {
-      SentrySDK.capture(message: "Error setting AX global timeout")
-    }
   }
 }

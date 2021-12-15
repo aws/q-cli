@@ -30,12 +30,17 @@ class Onboarding {
     let configDirectory = Bundle.main.resourceURL?.appendingPathComponent("config", isDirectory: true).path
 
     "/bin/bash '\(path)' local".runInBackground(cwd: configDirectory,
-                                                with: [ "FIG_BUNDLE_EXECUTABLES": Bundle.main.url(forAuxiliaryExecutable: "")!.path ],
+                                                with: [ "FIG_BUNDLE_EXECUTABLES":
+                                                    Bundle.main.url(forAuxiliaryExecutable: "")!.path ],
                                                 completion: { _ in
-                                                  Onboarding.symlinkBundleExecutable("figcli", to: "~/.fig/bin/fig")
-                                                  Onboarding.symlinkBundleExecutable("figterm", to: "~/.fig/bin/figterm")
-                                                  Onboarding.symlinkBundleExecutable("fig_get_shell", to: "~/.fig/bin/fig_get_shell")
-                                                  Onboarding.symlinkBundleExecutable("fig_callback", to: "~/.fig/bin/fig_callback")
+                                                  Onboarding.symlinkBundleExecutable("figcli",
+                                                                                     to: "~/.fig/bin/fig")
+                                                  Onboarding.symlinkBundleExecutable("figterm",
+                                                                                     to: "~/.fig/bin/figterm")
+                                                  Onboarding.symlinkBundleExecutable("fig_get_shell",
+                                                                                     to: "~/.fig/bin/fig_get_shell")
+                                                  Onboarding.symlinkBundleExecutable("fig_callback",
+                                                                                     to: "~/.fig/bin/fig_callback")
                                                   completion?()
                                                 })
   }
@@ -89,6 +94,8 @@ extension Onboarding {
       Accessibility.promptForPermission { _ in
         callback(true)
       }
+    case .closeAccessibilityPromptWindow:
+      Accessibility.closeUI()
     case .launchShellOnboarding:
       callback(true)
       webView.window?.close()
