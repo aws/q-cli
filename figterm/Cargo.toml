@@ -9,21 +9,26 @@ repository = "https://github.com/withfig/macos"
 publish = false
 
 [dependencies]
-# System libs
+
+# System Libs
 nix = "0.23"
 signal-hook = "0.3"
 tokio = { version = "1", features = ["full"] }
 
 # Logging
-log = "0.4"
+log = { version = "0.4", features = ["std"] }
+
+# User dirs
 dirs = "4.0.0"
 
 # Protocal buffers
 prost = "0.9"
 bytes = "1.1"
 
+# Error Handling
 anyhow = "1.0"
 
+# Cmd arg parsing
 clap = { version = "3.0.0-rc.4", features = ["derive"] }
 
 [build-dependencies]

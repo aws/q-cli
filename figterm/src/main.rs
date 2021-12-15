@@ -1,19 +1,25 @@
+pub mod fig;
 pub mod ipc;
 pub mod local;
 pub mod logger;
 pub mod pty;
+pub mod term;
+pub mod utils;
 
-use std::{error::Error, ffi::CString, os::unix::prelude::*};
+use std::{error::Error, ffi::CString, os::unix::prelude::*, time::Duration};
 
 use anyhow::Result;
+use fig::FigInfo;
 use nix::{
-    ioctl_read_bad, ioctl_write_ptr_bad, libc,
+    ioctl_write_ptr_bad,
+    libc::{self, STDIN_FILENO},
     pty::Winsize,
     sys::termios::{cfmakeraw, tcgetattr, tcsetattr, SetArg},
-    unistd::execv,
+    unistd::{self, execv, getpid, isatty},
 };
 
 use pty::{fork_pt, PtForkResult};
+use term::get_winsize;
 use tokio::{
     fs::File,
     io::{self, AsyncReadExt, AsyncWriteExt},
@@ -22,11 +28,15 @@ use tokio::{
 
 use clap::Parser;
 
-ioctl_read_bad!(read_winsize, libc::TIOCGWINSZ, Winsize);
+use crate::{
+    ipc::{connect_timeout, get_socket_path},
+    logger::init_logger,
+    pty::async_pty::AsyncPtyMaster,
+};
+
 ioctl_write_ptr_bad!(tiocswinsz, libc::TIOCSWINSZ, Winsize);
 
 const BUFFER_SIZE: usize = 1024;
-const FIGTERM_VERSION: &'static str = "4";
 
 #[derive(Parser, Debug)]
 #[clap(about, version, author)]
@@ -38,43 +48,56 @@ struct Args {
 fn main() -> Result<(), Box<dyn Error>> {
     Args::parse();
 
-    let stdin = io::stdin();
+    let fig_info = FigInfo::new();
+    let inital_command = std::env::var("FIG_START_TEXT").ok();
 
     // Get term data
-    let termios = tcgetattr(stdin.as_raw_fd())?;
-    let mut winsize = Winsize {
-        ws_row: 0,
-        ws_col: 0,
-        ws_xpixel: 0,
-        ws_ypixel: 0,
-    };
-    unsafe { read_winsize(stdin.as_raw_fd(), &mut winsize) }?;
+    let termios = tcgetattr(STDIN_FILENO)?;
+    let winsize = get_winsize(STDIN_FILENO)?;
 
     let shell = CString::new(std::env::var("SHELL").unwrap_or_else(|_| "/bin/sh".into()))?;
+
+    if !isatty(STDIN_FILENO)?
+        || fig_info.fig_integration_version.is_none()
+        || fig_info.term_session_id.is_none()
+    {
+        // Fallback
+    }
 
     // Fork pseudoterminal
     // SAFETY: forkpty is safe to call, but the child must not call any functions
     // that are not async-signal-safe.
-    let fork = fork_pt()?;
-
-    match fork {
-        PtForkResult::Parent(pt_details, _) => {
-            let runtime = runtime::Builder::new_current_thread().build()?;
-
+    match fork_pt()? {
+        PtForkResult::Parent(pt_details, pid) => {
+            let runtime = runtime::Builder::new_multi_thread().enable_all().build()?;
             runtime.block_on(async {
+                init_logger(&pt_details.slave_name).await?;
+
+                log::info!("Shell: {}", pid);
+                log::info!("Figterm: {}", getpid());
+
+                // Spawn async green thread to handle sending data to Mac app
+                let (tx, mut rx) = tokio::sync::mpsc::channel::<Vec<u8>>(128);
+                tokio::spawn(async move {
+                    let socket = get_socket_path();
+                    let mut socket_conn = connect_timeout(socket, Duration::from_secs(10))
+                        .await
+                        .unwrap();
+
+                    while let Some(message) = rx.recv().await {
+                        socket_conn.write_all(&message).await.unwrap();
+                        socket_conn.flush().await.unwrap();
+                    }
+                });
+
                 // let old_termios = tty_set_raw(stdin.as_raw_fd()).unwrap();
                 let mut old_termios = termios.clone();
                 cfmakeraw(&mut old_termios);
-                tcsetattr(stdin.as_raw_fd(), SetArg::TCSAFLUSH, &old_termios)?;
-
-                // SAFETY: We are provided the file discriptor of the pseudoterminal from the fork
-                // which we know will provide a valid file descriptor.
-                let mut master = io::BufReader::new(unsafe {
-                    File::from_raw_fd(pt_details.master_fd.as_raw_fd())
-                });
+                tcsetattr(STDIN_FILENO, SetArg::TCSAFLUSH, &old_termios)?;
 
                 let mut stdin = io::stdin();
                 let mut stdout = io::stdout();
+                let mut master = AsyncPtyMaster::new(pt_details.pty_master)?;
 
                 // let mut signals = Signals::new(&[SIGWINCH]).unwrap();
                 // let stdin_fd = stdin.as_raw_fd();
@@ -98,21 +121,23 @@ fn main() -> Result<(), Box<dyn Error>> {
                     let mut read_buffer = [0u8; BUFFER_SIZE];
                     let mut write_buffer = [0u8; BUFFER_SIZE];
 
-
                     select! {
+                        biased;
                         res = stdin.read(&mut read_buffer) => {
                             if let Ok(size) = res {
-                                nix::unistd::write(pt_details.master_fd.as_raw_fd(), &read_buffer[..size])?;
+                                println!("1");
+                                master.write(&read_buffer[..size]);
+                                println!("2");
                             }
                         }
                         res = master.read(&mut write_buffer) => {
-                            if let Ok(size) = res {
-                                stdout.write_all(&write_buffer[..size]).await?;
-                                stdout.flush().await?;
-
-                                if size == 0 {
-                                    break 'select_loop;
+                            match res {
+                                Ok(0) => break 'select_loop,
+                                Ok(size) => {
+                                    stdout.write_all(&write_buffer[..size]).await?;
+                                    stdout.flush().await?;
                                 }
+                                _ => {}
                             }
                         }
                     }

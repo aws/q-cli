@@ -1,3 +1,5 @@
+pub mod async_pty;
+
 use anyhow::Result;
 use nix::fcntl::{open, OFlag};
 use nix::libc::TIOCSCTTY;
@@ -9,27 +11,26 @@ use std::path::Path;
 nix::ioctl_write_int_bad!(ioctl_tiocsctty, TIOCSCTTY);
 
 pub struct PtDetails {
-    pub master_fd: PtyMaster,
+    pub pty_master: PtyMaster,
     pub slave_name: String,
 }
 
 fn open_pt() -> Result<PtDetails> {
     // Open a new PTY master
-    let master_fd = posix_openpt(OFlag::O_RDWR)?;
+    let pty_master = posix_openpt(OFlag::O_RDWR)?;
 
     // Allow a slave to be generated for it
-    grantpt(&master_fd)?;
-    unlockpt(&master_fd)?;
+    grantpt(&pty_master)?;
+    unlockpt(&pty_master)?;
 
     // Get the name of the slave
-    let slave_name = unsafe { ptsname(&master_fd) }?;
+    let slave_name = unsafe { ptsname(&pty_master) }?;
 
     Ok(PtDetails {
-        master_fd,
+        pty_master,
         slave_name,
     })
 }
-
 pub enum PtForkResult {
     Parent(PtDetails, Pid),
     Child,
