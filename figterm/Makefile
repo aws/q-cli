@@ -4,7 +4,7 @@ include $(ROOT)/Makefile.shared
 LIBFIG=$(ROOT)/lib/libfig.a
 LIBVTERM=$(ROOT)/lib/libvterm.a
 
-PROGS =	figterm fig_get_shell fig_callback
+PROGS =	figterm fig_get_shell
 
 # Add brew executables to PATH
 export PATH := /opt/homebrew/bin:/opt/homebrew/sbin:$(PATH)
@@ -28,12 +28,6 @@ fig_get_shell-arm: get_shell.c
 fig_get_shell-x86: get_shell.c
 	$(CC) get_shell.c $(CFLAGS) -o fig_get_shell-x86 -target x86_64-apple-macos10.12
 
-fig_callback-arm: callback.c util.c $(LIBFIG)
-	$(CC) callback.c util.c $(CFLAGS) -o fig_callback-arm $(LDFLAGS) $(LDLIBS) -target arm64-apple-macos11
-
-fig_callback-x86: callback.c util.c $(LIBFIG)
-	$(CC) callback.c util.c $(CFLAGS) -o fig_callback-x86 $(LDFLAGS) $(LDLIBS) -target x86_64-apple-macos10.12
-
 $(LIBFIG):
 	(cd $(ROOT)/lib && $(MAKE))
 
@@ -43,9 +37,6 @@ figterm: figterm-x86 figterm-arm
 
 fig_get_shell: fig_get_shell-x86 fig_get_shell-arm
 	lipo -create -output $(BUILT_PRODUCTS_DIR)/fig_get_shell fig_get_shell-x86 fig_get_shell-arm
-
-fig_callback: fig_callback-x86 fig_callback-arm
-	lipo -create -output $(BUILT_PRODUCTS_DIR)/fig_callback fig_callback-x86 fig_callback-arm
 
 ifndef GLIBTOOL
     $(error "glibtool is not in PATH")
@@ -61,9 +52,6 @@ figterm: main.c figterm.c screen.c util.c color.c history.c $(LIBVTERM) $(LIBFIG
 
 fig_get_shell: get_shell.c
 	$(CC) get_shell.c $(CFLAGS) -o $(BUILT_PRODUCTS_DIR)/fig_get_shell
-
-fig_callback: callback.c util.c $(LIBFIG)
-	$(CC) callback.c util.c $(CFLAGS) -o $(BUILT_PRODUCTS_DIR)/fig_callback $(LDFLAGS) $(LDLIBS)
 
 $(LIBVTERM):
 	(cd $(ROOT)/libvterm && $(MAKE) clean && $(MAKE) LIBRARY="libvterm.la" PREFIX=$(ROOT)/libvterm install-lib);

@@ -126,7 +126,7 @@ class PseudoTerminal {
       return acc + ["\(key)=\(value)"]
     }
   }
-  
+
   func sourceFile(at path: String) {
     let expandedFilePath = NSString(string: path).expandingTildeInPath
 
@@ -185,7 +185,7 @@ extension PseudoTerminal {
     static let pipelined = ExecutionOptions(rawValue: 1 << 1)
   }
 
-  static let callbackExecutable = Bundle.main.path(forAuxiliaryExecutable: "fig_callback")! + " hook callback"
+  static let callbackExecutable = Bundle.main.path(forAuxiliaryExecutable: "fig_callback")! + " callback"
   func execute(_ command: String,
                handlerId: HandlerId = UUID().uuidString,
                options: ExecutionOptions = [.backgroundJob],
@@ -204,7 +204,7 @@ extension PseudoTerminal {
     if options.contains(.pipelined) {
       commandToRun = "\(command) | \(PseudoTerminal.callbackExecutable) \(cappedHandlerId)"
     } else {
-      let tmpFilepath = "/tmp/\(cappedHandlerId)"
+      let tmpFilepath = FileManager.default.temporaryDirectory.appendingPathComponent(cappedHandlerId).path
       commandToRun = "{ ( \(command) ) 1> \(tmpFilepath).stdout 2> \(tmpFilepath).stderr; " +
         "\(PseudoTerminal.callbackExecutable) \(handlerId) \(tmpFilepath) $? ; }"
     }

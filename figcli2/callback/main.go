@@ -26,14 +26,12 @@ func main() {
 		os.Exit(1)
 	}
 
-
 	args := os.Args[2:]
 
 	if debug {
 		logging.Log("Fig callback version", versionNumber)
 		// fmt.Fprintln(output, "Fig CLI version:", versionNumber)
 	}
-
 
 	// Check if data is on stdin
 	stdin := os.Stdin
@@ -122,7 +120,7 @@ func main() {
 		logging.Log("Done reading from stdin!")
 	}
 
-	callback := fmt.Sprintf("fig pty:callback %s %s %s", handlerId, filename, exitcode)
+	callback := fmt.Sprintf("handledId: %s, filename: %s, exitcode: %s", handlerId, filename, exitcode)
 
 	if debug {
 		fmt.Fprintf(output, "Sending '%s' over unix socket!\n", callback)
