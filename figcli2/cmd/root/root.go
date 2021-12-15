@@ -3,7 +3,6 @@ package root
 import (
 	"fig-cli/cmd/app"
 	"fig-cli/cmd/app/onboarding"
-	"fig-cli/cmd/callback"
 	"fig-cli/cmd/careers"
 	"fig-cli/cmd/community"
 	contrib "fig-cli/cmd/contributors"
@@ -287,7 +286,6 @@ func Execute() {
 	})
 
 	rootCmd.AddCommand(app.NewCmdApp())
-	rootCmd.AddCommand(callback.NewCmdCallback())
 	rootCmd.AddCommand(careers.NewCmdCareers())
 	rootCmd.AddCommand(community.NewCmdCommunity())
 	rootCmd.AddCommand(contrib.NewCmdContrib())
@@ -319,7 +317,7 @@ func Execute() {
 
 	rootCmd.AddCommand(genFigSpec.NewCmdGenFigSpec())
 
-	// DO NOT REMOVE UNTIL HYPER & VSCODE EXTENSIONS USE `fig hook keyboard-focus-changed` format
+	// DO NOT REMOVE UNTIL HYPER EXTENSION USES `fig hook keyboard-focus-changed` format
 	rootCmd.AddCommand(legacy_focus_changed.NewCmdKeyboardFocusChanged(true))
 
 	if err := rootCmd.Execute(); err != nil {

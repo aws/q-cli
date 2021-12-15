@@ -283,11 +283,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		1A1F15FF25A7A93E0074D541 /* KeyBindingsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyBindingsManager.swift; sourceTree = "<group>"; };
 		1A63312025A4BE6D00CEA06A /* Keystroke.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Keystroke.swift; sourceTree = "<group>"; };
 		750BA10B2733590A00705E63 /* API+IPC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API+IPC.swift"; sourceTree = "<group>"; };
 		750CF21726A1055F0094D76A /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
-		7510F89724A6910500E86F7C /* Pty.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Pty.swift; sourceTree = "<group>"; };
 		7510F8B924A9701000E86F7C /* Private.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Private.h; sourceTree = "<group>"; };
 		7510F8BA24A9861E00E86F7C /* fig-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "fig-Bridging-Header.h"; sourceTree = "<group>"; };
 		7510F8BB24A9861E00E86F7C /* PrivateWindow.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PrivateWindow.h; sourceTree = "<group>"; };
@@ -314,7 +312,6 @@
 		75290ACB2671AD1D000F4255 /* WebSocketFramer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebSocketFramer.swift; sourceTree = "<group>"; };
 		752A398225CD024C00B1AC40 /* VSCodeIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VSCodeIntegration.swift; sourceTree = "<group>"; };
 		752A398525CD0FE800B1AC40 /* fig-0.0.1.vsix */ = {isa = PBXFileReference; lastKnownFileType = file; path = "fig-0.0.1.vsix"; sourceTree = "<group>"; };
-		752C0BD72479EEDA0077E415 /* File.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = File.swift; sourceTree = "<group>"; };
 		752C0BDF247A27790077E415 /* editor.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = editor.html; sourceTree = "<group>"; };
 		752C0BE1247A33F10077E415 /* viewer.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = viewer.html; sourceTree = "<group>"; };
 		752C0BE3247B44C50077E415 /* finder.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = finder.html; sourceTree = "<group>"; };
@@ -452,12 +449,10 @@
 		75B199312501A3DA00F38EA8 /* KeyboardLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardLayout.swift; sourceTree = "<group>"; };
 		75B199332504190900F38EA8 /* Keycode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Keycode.swift; sourceTree = "<group>"; };
 		75B1993525042B2C00F38EA8 /* autocomplete.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = autocomplete.html; sourceTree = "<group>"; };
-		75B1993725100E4D00F38EA8 /* KeypressService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeypressService.swift; sourceTree = "<group>"; };
 		75B4283526FABAAC003C9DE5 /* FileSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileSystem.swift; sourceTree = "<group>"; };
 		75B7931924BB897F0073AAC6 /* PseudoTerminalService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PseudoTerminalService.swift; sourceTree = "<group>"; };
 		75B850E42703D8FF00891A78 /* API+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API+Extensions.swift"; sourceTree = "<group>"; };
 		75BF28A7270E9B9200E7C914 /* API+Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API+Constants.swift"; sourceTree = "<group>"; };
-		75C05C6B24FDEA2B001F0A52 /* KeystrokeBuffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeystrokeBuffer.swift; sourceTree = "<group>"; };
 		75C0711C244AC3B2002DF69F /* index.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = index.html; sourceTree = "<group>"; };
 		75C0711F244BB441002DF69F /* CompanionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionViewController.swift; sourceTree = "<group>"; };
 		75C07121244BB65D002DF69F /* ShellBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellBridge.swift; sourceTree = "<group>"; };
@@ -540,14 +535,6 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		7510F87324A6910500E86F7C /* SwiftTerm */ = {
-			isa = PBXGroup;
-			children = (
-				7510F89724A6910500E86F7C /* Pty.swift */,
-			);
-			path = SwiftTerm;
-			sourceTree = "<group>";
-		};
 		7518608F255CE49B0000A7C7 /* Icons */ = {
 			isa = PBXGroup;
 			children = (
@@ -690,7 +677,6 @@
 		75675953244634AD006AA988 /* fig */ = {
 			isa = PBXGroup;
 			children = (
-				7510F87324A6910500E86F7C /* SwiftTerm */,
 				75675954244634AD006AA988 /* AppDelegate.swift */,
 				75E993F32515C8D3000BE6BE /* Autocompletion */,
 				75B199332504190900F38EA8 /* Keycode.swift */,
@@ -705,7 +691,6 @@
 				755D0DE1247EFAE10074AB5C /* Logging.swift */,
 				75809B0D24BFA64D00BFFB3E /* TelemetryService.swift */,
 				75C0EBD2253E336E001964DE /* TerminalUsageTelemetry.swift */,
-				752C0BD72479EEDA0077E415 /* File.swift */,
 				75A4521325AD367E00107D2C /* Feedback.swift */,
 				75AEF2E325C3C34A00D78431 /* Diagnostic.swift */,
 				75AEF2E925C4C34D00D78431 /* SecureKeyboardInput.swift */,
@@ -976,9 +961,6 @@
 			isa = PBXGroup;
 			children = (
 				1A63312025A4BE6D00CEA06A /* Keystroke.swift */,
-				75C05C6B24FDEA2B001F0A52 /* KeystrokeBuffer.swift */,
-				1A1F15FF25A7A93E0074D541 /* KeyBindingsManager.swift */,
-				75B1993725100E4D00F38EA8 /* KeypressService.swift */,
 				75A4A29F25CA0D46002EFD6B /* Autocomplete.swift */,
 			);
 			path = Autocompletion;

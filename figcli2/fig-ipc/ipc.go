@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"path/filepath"
 	"time"
 
 	"google.golang.org/protobuf/proto"
@@ -19,7 +20,12 @@ type FigIpc struct {
 
 // Connect to the server
 func Connect() (*FigIpc, error) {
-	socket := os.Getenv("TMPDIR") + "fig.socket"
+	tmpDir := os.Getenv("TMPDIR")
+	if tmpDir == "" {
+		tmpDir = os.Getenv("FIG_SOCKET")
+	}
+
+	socket := filepath.Join(tmpDir, "fig.socket")
 
 	var d net.Dialer
 
@@ -30,7 +36,7 @@ func Connect() (*FigIpc, error) {
 	conn, err := d.DialContext(ctx, "unix", raddr.String())
 
 	if err != nil {
-		return nil, fmt.Errorf("unable to connect to socket: %s", err)
+		return nil, fmt.Errorf("unable to connect to socket %s: %s", filepath.Join(os.TempDir(), "fig.socket"), err)
 	}
 
 	return &FigIpc{conn: conn.(*net.UnixConn)}, nil
