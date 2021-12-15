@@ -1,3 +1,5 @@
+//! Misc utilities used throughout
+
 use std::path::PathBuf;
 
 /// Get the path to `~/.fig`

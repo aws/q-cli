@@ -1,3 +1,5 @@
+//! 🦀
+
 use std::env;
 
 pub struct FigInfo {
@@ -16,5 +18,11 @@ impl FigInfo {
             fig_integration_version,
             pt_name: None,
         }
+    }
+}
+
+impl Default for FigInfo {
+    fn default() -> Self {
+        Self::new()
     }
 }

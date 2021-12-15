@@ -1,13 +1,12 @@
 pub mod async_pty;
 
 use anyhow::Result;
-use nix::fcntl::{self, open, FcntlArg, OFlag};
+use nix::fcntl::{open, OFlag};
 use nix::libc::{self, TIOCSCTTY};
 use nix::pty::{grantpt, posix_openpt, ptsname, unlockpt, PtyMaster, Winsize};
 use nix::sys::stat::Mode;
 use nix::sys::termios::{tcsetattr, SetArg, Termios};
 use nix::unistd::{close, dup2, fork, setsid, ForkResult, Pid};
-use std::os::unix::prelude::{AsRawFd, RawFd};
 use std::path::Path;
 
 nix::ioctl_write_int_bad!(ioctl_tiocsctty, TIOCSCTTY);
@@ -54,7 +53,8 @@ pub fn fork_pt(termios: &Termios, winsize: &Winsize) -> Result<PtForkResult> {
                 Path::new(&pt_details.slave_name),
                 OFlag::O_RDWR,
                 Mode::empty(),
-            ).unwrap();
+            )
+            .unwrap();
 
             #[cfg(any(target_os = "macos"))]
             unsafe { ioctl_tiocsctty(slave_fd, 0) }.unwrap();

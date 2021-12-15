@@ -3,29 +3,26 @@ pub mod history;
 pub mod ipc;
 pub mod local;
 pub mod logger;
+pub mod proto;
 pub mod pty;
 pub mod term;
 pub mod utils;
 
-use std::{error::Error, ffi::CString, os::unix::prelude::*, process::exit, time::Duration};
+use std::{error::Error, ffi::CString, os::unix::prelude::AsRawFd, process::exit, time::Duration};
 
 use anyhow::{Context, Result};
 use fig::FigInfo;
 use nix::{
-    ioctl_write_ptr_bad,
-    libc::{self, STDIN_FILENO},
-    pty::Winsize,
+    libc::STDIN_FILENO,
     sys::termios::{
-        cfmakeraw, tcgetattr, tcsetattr, ControlFlags, InputFlags, LocalFlags, OutputFlags, SetArg,
-        Termios,
+        tcgetattr, tcsetattr, SetArg,
     },
-    unistd::{self, execv, getpid, isatty},
+    unistd::{execv, getpid, isatty},
 };
 
 use pty::{fork_pt, PtForkResult};
 use term::get_winsize;
 use tokio::{
-    fs::File,
     io::{self, AsyncReadExt, AsyncWriteExt},
     runtime, select,
 };
@@ -35,7 +32,8 @@ use clap::Parser;
 use crate::{
     ipc::{connect_timeout, get_socket_path},
     logger::init_logger,
-    pty::async_pty::AsyncPtyMaster,
+    pty::{async_pty::AsyncPtyMaster, ioctl_tiocswinsz},
+    term::{read_winsize, termios_to_raw},
 };
 
 const BUFFER_SIZE: usize = 1024;
@@ -51,7 +49,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     Args::parse();
 
     let fig_info = FigInfo::new();
-    let inital_command = std::env::var("FIG_START_TEXT").ok();
+    let _inital_command = std::env::var("FIG_START_TEXT").ok();
 
     // Get term data
     let termios = tcgetattr(STDIN_FILENO)?;
@@ -81,11 +79,11 @@ fn main() -> Result<(), Box<dyn Error>> {
                     log::info!("Shell: {}", pid);
                     log::info!("Figterm: {}", getpid());
 
-                    let raw_termios = to_raw(termios);
+                    let raw_termios = termios_to_raw(termios);
                     tcsetattr(STDIN_FILENO, SetArg::TCSAFLUSH, &raw_termios)?;
 
                     // Spawn async green thread to handle sending data to Mac app
-                    let (tx, mut rx) = tokio::sync::mpsc::channel::<Vec<u8>>(128);
+                    let (_tx, mut rx) = tokio::sync::mpsc::channel::<Vec<u8>>(128);
                     tokio::spawn(async move {
                         let socket = get_socket_path();
                         let mut socket_conn = connect_timeout(socket, Duration::from_secs(10))
@@ -102,23 +100,22 @@ fn main() -> Result<(), Box<dyn Error>> {
                     let mut stdout = io::stdout();
                     let mut master = AsyncPtyMaster::new(pt_details.master_pty)?;
 
-                    // let mut signals = Signals::new(&[SIGWINCH]).unwrap();
-                    // let stdin_fd = stdin.as_raw_fd();
+                    // TODO: make this more safe!
+                    let master_fd = master.as_raw_fd();
 
-                    // TODO: Move signal check into main loop via async
-                    // std::thread::spawn(move || {
-                    //     let mut winsize = winsize.clone();
+                    let mut window_change_signal = tokio::signal::unix::signal(
+                        tokio::signal::unix::SignalKind::window_change(),
+                    )?;
 
-                    //     for signal in signals.forever() {
-                    //         match signal {
-                    //             SIGWINCH => {
-                    //                 unsafe { read_winsize(stdin_fd, &mut winsize) }.unwrap();
-                    //                 unsafe { tiocswinsz(fork.master, &winsize) }.unwrap();
-                    //             }
-                    //             _ => {}
-                    //         }
-                    //     }
-                    // });
+                    tokio::spawn(async move {
+                        let mut winsize = winsize;
+
+                        loop {
+                            window_change_signal.recv().await;
+                            unsafe { read_winsize(STDIN_FILENO, &mut winsize) }.unwrap();
+                            unsafe { ioctl_tiocswinsz(master_fd, &winsize) }.unwrap();
+                        }
+                    });
 
                     let mut read_buffer = [0u8; BUFFER_SIZE];
                     let mut write_buffer = [0u8; BUFFER_SIZE];
@@ -159,39 +156,4 @@ fn main() -> Result<(), Box<dyn Error>> {
             unreachable!();
         }
     }
-}
-
-fn to_raw(mut termios: Termios) -> Termios {
-    // Turn off echo, canonical mode extended input processing & signal chars.
-    termios
-        .local_flags
-        .remove(LocalFlags::ECHO | LocalFlags::ICANON | LocalFlags::IEXTEN | LocalFlags::ISIG);
-
-    // Turn off SIGINT on BREAK, CR-to-NL, input parity check, strip 8th bit on input,
-    // and output control flow.
-    termios.input_flags.remove(
-        InputFlags::BRKINT
-            | InputFlags::ICRNL
-            | InputFlags::IGNBRK
-            | InputFlags::INPCK
-            | InputFlags::ISTRIP
-            | InputFlags::IXON,
-    );
-
-    // Clear size bits, parity checking off.
-    termios
-        .control_flags
-        .remove(ControlFlags::CSIZE | ControlFlags::PARENB);
-
-    // 8 bits/char
-    termios.control_flags.insert(ControlFlags::CS8);
-
-    // Output processing off.
-    termios.output_flags.remove(OutputFlags::OPOST);
-
-    // Set case b, 1 byte at a time, no timer.
-    termios.control_chars[libc::VMIN] = 1;
-    termios.control_chars[libc::VTIME] = 0;
-
-    termios
 }

@@ -1,3 +1,5 @@
+//! Fig history logging
+
 use std::{
     fs::{File, OpenOptions},
     io::Write,

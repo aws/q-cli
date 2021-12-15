@@ -1,3 +1,5 @@
+//! [log] logger
+
 use anyhow::Result;
 use nix::unistd::getpid;
 use std::{
@@ -49,7 +51,6 @@ impl log::Log for Logger {
     }
 
     fn log(&self, record: &log::Record) {
-        
         if self.enabled(record.metadata()) {
             let mut file = self.file.lock().unwrap();
             writeln!(
@@ -57,7 +58,10 @@ impl log::Log for Logger {
                 "\x1B[38;5;168mfigterm ({}):\x1B[0m [{}:{}] {}",
                 getpid(),
                 record.file_static().unwrap_or("?"),
-                record.line().map(|i| i.to_string()).unwrap_or("?".into()),
+                record
+                    .line()
+                    .map(|i| i.to_string())
+                    .unwrap_or_else(|| "?".into()),
                 record.args()
             )
             .unwrap();

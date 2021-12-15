@@ -1,3 +1,5 @@
+//! Utiities for IPC with Mac App
+
 pub mod hooks;
 
 use std::{
@@ -5,7 +7,7 @@ use std::{
     time::Duration,
 };
 
-use crate::local;
+use crate::proto;
 
 use anyhow::Result;
 use tokio::{io::AsyncWriteExt, net::UnixStream};
@@ -23,9 +25,9 @@ pub async fn connect_timeout(socket: impl AsRef<Path>, timeout: Duration) -> Res
 }
 
 /// Send a hook using a Unix socket
-pub async fn send_hook(connection: &mut UnixStream, hook: local::hook::Hook) -> Result<()> {
-    let message = local::LocalMessage {
-        r#type: Some(local::local_message::Type::Hook(local::Hook {
+pub async fn send_hook(connection: &mut UnixStream, hook: proto::hook::Hook) -> Result<()> {
+    let message = proto::LocalMessage {
+        r#type: Some(proto::local_message::Type::Hook(proto::Hook {
             hook: Some(hook),
         })),
     };

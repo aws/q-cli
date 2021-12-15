@@ -1,12 +1,12 @@
-use crate::local;
+use crate::proto;
 
 pub fn new_context(
     session_id: Option<String>,
     pid: Option<i32>,
     ttys: Option<String>,
-    integration_version: Option<i32>
-) -> local::ShellContext {
-    local::ShellContext {
+    integration_version: Option<i32>,
+) -> proto::ShellContext {
+    proto::ShellContext {
         pid,
         ttys,
         process_name: None,
@@ -21,12 +21,12 @@ pub fn new_context(
 
 /// Construct a edit buffer hook
 pub fn new_edit_buffer_hook(
-    context: Option<local::ShellContext>,
+    context: Option<proto::ShellContext>,
     text: String,
     cursor: i64,
     histno: i64,
-) -> local::hook::Hook {
-    local::hook::Hook::EditBuffer(local::EditBufferHook {
+) -> proto::hook::Hook {
+    proto::hook::Hook::EditBuffer(proto::EditBufferHook {
         context,
         text,
         cursor,
