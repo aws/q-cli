@@ -7,6 +7,7 @@ pub mod proto;
 pub mod pty;
 pub mod term;
 pub mod utils;
+pub mod new_history;
 
 use std::{error::Error, ffi::CString, os::unix::prelude::AsRawFd, process::exit, time::Duration};
 
@@ -116,6 +117,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                             unsafe { ioctl_tiocswinsz(master_fd, &winsize) }.unwrap();
                         }
                     });
+
+                    let _history = new_history::History::load()?;
 
                     let mut read_buffer = [0u8; BUFFER_SIZE];
                     let mut write_buffer = [0u8; BUFFER_SIZE];

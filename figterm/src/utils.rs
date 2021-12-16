@@ -3,10 +3,11 @@
 use std::path::PathBuf;
 
 /// Get the path to `~/.fig`
-pub fn fig_path() -> PathBuf {
-    let mut dir = dirs::home_dir().unwrap();
-    dir.push(".fig");
-    dir
+pub fn fig_path() -> Option<PathBuf> {
+    dirs::home_dir().map(|mut dir| {
+        dir.push(".fig");
+        dir
+    })
 }
 
 pub fn get_term_bundle() -> Option<String> {

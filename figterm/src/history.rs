@@ -17,7 +17,7 @@ pub struct HistoryFile {
 
 impl HistoryFile {
     pub fn new() -> Result<HistoryFile> {
-        let mut path = fig_path();
+        let mut path = fig_path().unwrap();
         path.push("history");
 
         let file = OpenOptions::new().append(true).create(true).open(path)?;

@@ -32,7 +32,7 @@ struct Logger {
 fn log_path(ptc_name: impl AsRef<str>) -> Result<PathBuf> {
     let log_file_name = format!("figterm{}.log", ptc_name.as_ref().replace('/', "_"));
 
-    let mut dir = fig_path();
+    let mut dir = fig_path().unwrap();
     dir.push("logs");
     dir.push(log_file_name);
     Ok(dir)
