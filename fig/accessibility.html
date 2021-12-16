@@ -1,4 +1,3 @@
-
 <html>
 
 <head>
@@ -50,7 +49,7 @@
 
             width: 275px;
             margin-top: 20px;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
 
             margin-left: auto;
             margin-right: auto;
@@ -97,7 +96,7 @@
             }
 
         .section {
-            margin-top:30px;
+            margin-top:15px;
 
             /* margin-left: 50px; */
         }
@@ -115,6 +114,8 @@
 
         .section p {
             font-size: 0.85em;
+            margin-top: 11px;
+            margin-bottom: 11px;
         }
 
         .video-mask {
@@ -124,7 +125,7 @@
 
             overflow: hidden;
             box-shadow: 0px 8px 18px #888888;
-            margin-bottom: 30px;
+            margin-bottom: 22px;
 
         }
 
@@ -210,9 +211,8 @@
     <div class="wrapper">
         <section>
             <div class="section">
-                <span class="title" href="javascript:requestPermission()" id="permissions">Enable Accessibility
-                    Permission</span>
-                <p style = " color: #5e5e5e">Fig uses this permission to insert text on your behalf and read the current keybuffer.</p>
+                <span class="title" href="javascript:requestPermission()" id="permissions">Enable accessibility</span>
+                <p style = " color: #5e5e5e">Fig requires this permission to insert text on your behalf.</p>
                 <div class="video-mask">
                     <video autoplay playsinline muted loop defaultPlaybackRate=1.5>
                         <source src="./permissions.mp4" type="video/mp4" />
@@ -222,8 +222,7 @@
                 <div class = "button">
                     <a id = "enable" href="javascript:requestPermission()">Enable</a>
                 </div>
-                <a id = "skip" style="display:none;" href="javascript:next()">Continue to next step manually</a>
-
+                <p style = "color: #5e5e5e; text-align:center">If the checkbox is <em>already selected</em>,<br> toggle it off and then back on.</p>
             </div>
         </section>
 
@@ -236,16 +235,12 @@
         window.requestPermission = function () {
             document.querySelector("#enable").innerText = "Waiting..."
             sendMessage({ onboardingRequest: { action: "PROMPT_FOR_ACCESSIBILITY_PERMISSION" } }, (response) => {
-              console.log(response)
-              sendMessage({ windowFocusRequest: { type: "TAKE_FOCUS" } }, (response) => {
-                window.location.href = './debugger.html'
+              sendMessage({ onboardingRequest: { action: "CLOSE_ACCESSIBILITY_PROMPT_WINDOW" } }, (response) => {
+                console.log(response)
               })
+
+              console.log(response)
             })
-            
-            setTimeout(() => {
-               document.querySelector("#skip").style.display = "block";
-                
-            },1000 * 10)
 
         }
     

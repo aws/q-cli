@@ -158,15 +158,15 @@ extension CommandHandlers {
   static func openUiElement(uiElement: Local_UiElement) -> CommandResponse {
     switch uiElement {
     case .menuBar:
-      if NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.surteesstudios.Bartender") != nil {
-        return CommandResponse.with { response in
-          response.error.message = "Looks like you might be using Bartender?\n\n→ Fig can't automatically open the menu, but you can click it manually."
-        }
-      }
-
       DispatchQueue.main.async {
         if let delegate = NSApp.delegate as? AppDelegate {
           delegate.openMenu()
+        }
+      }
+
+      if NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.surteesstudios.Bartender") != nil {
+        return CommandResponse.with { response in
+          response.error.message = "Usually running fig opens the Fig menu in your status bar.\n\nHowever, because you are using bartender, this may not work!"
         }
       }
 
