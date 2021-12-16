@@ -10,6 +10,8 @@ pub fn fig_path() -> Option<PathBuf> {
     })
 }
 
+/// Gets the term_bundle 
+#[cfg(target_os = "macos")]
 pub fn get_term_bundle() -> Option<String> {
     match std::env::var("TERM_PROGRAM").ok().as_deref() {
         Some("iTerm.app") => Some("com.googlecode.iterm2".into()),
@@ -35,7 +37,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature="desktop-tests")]
+    #[cfg(all(target="macos", feature="desktop-tests"))]
     fn term_bundle_test() {
         get_term_bundle().unwrap();
     }

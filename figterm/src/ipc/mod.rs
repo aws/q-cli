@@ -1,6 +1,7 @@
 //! Utiities for IPC with Mac App
 
 use std::{
+    env::temp_dir,
     path::{Path, PathBuf},
     time::Duration,
 };
@@ -8,7 +9,10 @@ use std::{
 use crate::proto;
 
 use anyhow::Result;
-use tokio::{io::AsyncWriteExt, net::UnixStream};
+use tokio::{
+    io::AsyncWriteExt,
+    net::{UnixListener, UnixStream},
+};
 
 /// Get path to "$TMPDIR/fig.socket"
 pub fn get_socket_path() -> PathBuf {
@@ -34,6 +38,17 @@ pub async fn send_hook(connection: &mut UnixStream, hook: proto::hook::Hook) -> 
 
     connection.write_all(&encoded_message).await?;
     Ok(())
+}
+
+pub async fn create_socket_listen(session_id: impl AsRef<str>) -> Result<UnixListener> {
+    let path: PathBuf = [
+        temp_dir().as_path(),
+        Path::new(&format!("figterm-{}.socket", session_id.as_ref())),
+    ]
+    .into_iter()
+    .collect();
+
+    Ok(UnixListener::bind(path)?)
 }
 
 #[cfg(test)]

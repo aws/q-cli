@@ -2,10 +2,14 @@ use crate::proto;
 
 /// Construct a new Shell Context
 pub fn new_context(
-    session_id: Option<String>,
     pid: Option<i32>,
     ttys: Option<String>,
+    process_name: Option<String>,
+    current_working_directory: Option<String>,
+    session_id: Option<String>,
     integration_version: Option<i32>,
+    terminal: Option<String>,
+    hostname: Option<String>,
 ) -> proto::ShellContext {
     proto::ShellContext {
         pid,
@@ -49,7 +53,7 @@ mod tests {
 
     #[test]
     fn new_contest_test() {
-        new_context(None, None, None, None);
+        new_context(None, None, None, None, None, None, None, None);
     }
 
     #[test]

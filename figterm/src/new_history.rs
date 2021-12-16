@@ -63,9 +63,7 @@ fn make_migrations_table(conn: &mut Connection) -> Result<()> {
 }
 
 fn migrate_history(conn: &mut Connection) -> Result<()> {
-    conn.query_row("SELECT max(version) from migrations;", [], |row| {
-        Ok(())
-    });
+    // conn.query_row("SELECT max(version) from migrations;", [], |row| row.get(0));
 
     Ok(())
 }

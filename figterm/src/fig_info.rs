@@ -2,6 +2,7 @@
 
 use std::env;
 
+#[derive(Debug, Clone)]
 pub struct FigInfo {
     pub term_session_id: Option<String>,
     pub fig_integration_version: Option<String>,
