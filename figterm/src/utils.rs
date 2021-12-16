@@ -35,6 +35,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature="desktop-tests")]
     fn term_bundle_test() {
         get_term_bundle().unwrap();
     }

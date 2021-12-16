@@ -8,6 +8,9 @@ homepage = "https://fig.io"
 repository = "https://github.com/withfig/macos"
 publish = false
 
+[features]
+desktop-tests = []
+
 [dependencies]
 
 # System Libs
