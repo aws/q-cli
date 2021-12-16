@@ -655,13 +655,9 @@ export const Command = {
     const message = { ...baseCommand } as Command;
     if (object.id !== undefined && object.id !== null) {
       message.id = Number(object.id);
-    } else {
-      message.id = undefined;
     }
     if (object.noResponse !== undefined && object.noResponse !== null) {
       message.noResponse = Boolean(object.noResponse);
-    } else {
-      message.noResponse = undefined;
     }
     if (
       object.terminalIntegration !== undefined &&
@@ -1521,13 +1517,9 @@ export const TerminalIntegrationCommand = {
     } as TerminalIntegrationCommand;
     if (object.identifier !== undefined && object.identifier !== null) {
       message.identifier = String(object.identifier);
-    } else {
-      message.identifier = "";
     }
     if (object.action !== undefined && object.action !== null) {
       message.action = integrationActionFromJSON(object.action);
-    } else {
-      message.action = 0;
     }
     return message;
   },
@@ -1759,8 +1751,6 @@ export const UpdateCommand = {
     const message = { ...baseUpdateCommand } as UpdateCommand;
     if (object.force !== undefined && object.force !== null) {
       message.force = Boolean(object.force);
-    } else {
-      message.force = false;
     }
     return message;
   },
@@ -1877,23 +1867,15 @@ export const ReportWindowCommand = {
     const message = { ...baseReportWindowCommand } as ReportWindowCommand;
     if (object.report !== undefined && object.report !== null) {
       message.report = String(object.report);
-    } else {
-      message.report = "";
     }
     if (object.path !== undefined && object.path !== null) {
       message.path = String(object.path);
-    } else {
-      message.path = "";
     }
     if (object.figEnvVar !== undefined && object.figEnvVar !== null) {
       message.figEnvVar = String(object.figEnvVar);
-    } else {
-      message.figEnvVar = "";
     }
     if (object.terminal !== undefined && object.terminal !== null) {
       message.terminal = String(object.terminal);
-    } else {
-      message.terminal = "";
     }
     return message;
   },
@@ -2056,8 +2038,6 @@ export const BuildCommand = {
     const message = { ...baseBuildCommand } as BuildCommand;
     if (object.branch !== undefined && object.branch !== null) {
       message.branch = String(object.branch);
-    } else {
-      message.branch = undefined;
     }
     return message;
   },
@@ -2113,8 +2093,6 @@ export const OpenUiElementCommand = {
     const message = { ...baseOpenUiElementCommand } as OpenUiElementCommand;
     if (object.element !== undefined && object.element !== null) {
       message.element = uiElementFromJSON(object.element);
-    } else {
-      message.element = 0;
     }
     return message;
   },
@@ -2215,16 +2193,12 @@ export const DebugModeCommand = {
     const message = { ...baseDebugModeCommand } as DebugModeCommand;
     if (object.setDebugMode !== undefined && object.setDebugMode !== null) {
       message.setDebugMode = Boolean(object.setDebugMode);
-    } else {
-      message.setDebugMode = undefined;
     }
     if (
       object.toggleDebugMode !== undefined &&
       object.toggleDebugMode !== null
     ) {
       message.toggleDebugMode = Boolean(object.toggleDebugMode);
-    } else {
-      message.toggleDebugMode = undefined;
     }
     return message;
   },
@@ -2384,54 +2358,36 @@ export const ShellContext = {
     const message = { ...baseShellContext } as ShellContext;
     if (object.pid !== undefined && object.pid !== null) {
       message.pid = Number(object.pid);
-    } else {
-      message.pid = undefined;
     }
     if (object.ttys !== undefined && object.ttys !== null) {
       message.ttys = String(object.ttys);
-    } else {
-      message.ttys = undefined;
     }
     if (object.processName !== undefined && object.processName !== null) {
       message.processName = String(object.processName);
-    } else {
-      message.processName = undefined;
     }
     if (
       object.currentWorkingDirectory !== undefined &&
       object.currentWorkingDirectory !== null
     ) {
       message.currentWorkingDirectory = String(object.currentWorkingDirectory);
-    } else {
-      message.currentWorkingDirectory = undefined;
     }
     if (object.sessionId !== undefined && object.sessionId !== null) {
       message.sessionId = String(object.sessionId);
-    } else {
-      message.sessionId = undefined;
     }
     if (
       object.integrationVersion !== undefined &&
       object.integrationVersion !== null
     ) {
       message.integrationVersion = Number(object.integrationVersion);
-    } else {
-      message.integrationVersion = undefined;
     }
     if (object.terminal !== undefined && object.terminal !== null) {
       message.terminal = String(object.terminal);
-    } else {
-      message.terminal = undefined;
     }
     if (object.hostname !== undefined && object.hostname !== null) {
       message.hostname = String(object.hostname);
-    } else {
-      message.hostname = undefined;
     }
     if (object.remoteContext !== undefined && object.remoteContext !== null) {
       message.remoteContext = ShellContext.fromJSON(object.remoteContext);
-    } else {
-      message.remoteContext = undefined;
     }
     return message;
   },
@@ -2529,23 +2485,15 @@ export const EditBufferHook = {
     const message = { ...baseEditBufferHook } as EditBufferHook;
     if (object.context !== undefined && object.context !== null) {
       message.context = ShellContext.fromJSON(object.context);
-    } else {
-      message.context = undefined;
     }
     if (object.text !== undefined && object.text !== null) {
       message.text = String(object.text);
-    } else {
-      message.text = "";
     }
     if (object.cursor !== undefined && object.cursor !== null) {
       message.cursor = Number(object.cursor);
-    } else {
-      message.cursor = 0;
     }
     if (object.histno !== undefined && object.histno !== null) {
       message.histno = Number(object.histno);
-    } else {
-      message.histno = 0;
     }
     return message;
   },
@@ -2634,22 +2582,16 @@ export const InitHook = {
 
   fromJSON(object: any): InitHook {
     const message = { ...baseInitHook } as InitHook;
+    message.env = {};
     if (object.context !== undefined && object.context !== null) {
       message.context = ShellContext.fromJSON(object.context);
-    } else {
-      message.context = undefined;
     }
     if (object.calledDirect !== undefined && object.calledDirect !== null) {
       message.calledDirect = Boolean(object.calledDirect);
-    } else {
-      message.calledDirect = false;
     }
     if (object.bundle !== undefined && object.bundle !== null) {
       message.bundle = String(object.bundle);
-    } else {
-      message.bundle = "";
     }
-    message.env = {};
     if (object.env !== undefined && object.env !== null) {
       Object.entries(object.env).forEach(([key, value]) => {
         message.env[key] = String(value);
@@ -2738,13 +2680,9 @@ export const InitHook_EnvEntry = {
     const message = { ...baseInitHook_EnvEntry } as InitHook_EnvEntry;
     if (object.key !== undefined && object.key !== null) {
       message.key = String(object.key);
-    } else {
-      message.key = "";
     }
     if (object.value !== undefined && object.value !== null) {
       message.value = String(object.value);
-    } else {
-      message.value = "";
     }
     return message;
   },
@@ -2799,8 +2737,6 @@ export const PromptHook = {
     const message = { ...basePromptHook } as PromptHook;
     if (object.context !== undefined && object.context !== null) {
       message.context = ShellContext.fromJSON(object.context);
-    } else {
-      message.context = undefined;
     }
     return message;
   },
@@ -2866,13 +2802,9 @@ export const PreExecHook = {
     const message = { ...basePreExecHook } as PreExecHook;
     if (object.context !== undefined && object.context !== null) {
       message.context = ShellContext.fromJSON(object.context);
-    } else {
-      message.context = undefined;
     }
     if (object.command !== undefined && object.command !== null) {
       message.command = String(object.command);
-    } else {
-      message.command = undefined;
     }
     return message;
   },
@@ -2946,18 +2878,12 @@ export const PostExecHook = {
     const message = { ...basePostExecHook } as PostExecHook;
     if (object.context !== undefined && object.context !== null) {
       message.context = ShellContext.fromJSON(object.context);
-    } else {
-      message.context = undefined;
     }
     if (object.command !== undefined && object.command !== null) {
       message.command = String(object.command);
-    } else {
-      message.command = "";
     }
     if (object.exitCode !== undefined && object.exitCode !== null) {
       message.exitCode = Number(object.exitCode);
-    } else {
-      message.exitCode = 0;
     }
     return message;
   },
@@ -3037,16 +2963,12 @@ export const KeyboardFocusChangedHook = {
     } as KeyboardFocusChangedHook;
     if (object.appIdentifier !== undefined && object.appIdentifier !== null) {
       message.appIdentifier = String(object.appIdentifier);
-    } else {
-      message.appIdentifier = "";
     }
     if (
       object.focusedSessionId !== undefined &&
       object.focusedSessionId !== null
     ) {
       message.focusedSessionId = String(object.focusedSessionId);
-    } else {
-      message.focusedSessionId = "";
     }
     return message;
   },
@@ -3107,8 +3029,6 @@ export const TmuxPaneChangedHook = {
     const message = { ...baseTmuxPaneChangedHook } as TmuxPaneChangedHook;
     if (object.paneIdentifier !== undefined && object.paneIdentifier !== null) {
       message.paneIdentifier = Number(object.paneIdentifier);
-    } else {
-      message.paneIdentifier = 0;
     }
     return message;
   },
@@ -3175,13 +3095,9 @@ export const OpenedSSHConnectionHook = {
     } as OpenedSSHConnectionHook;
     if (object.context !== undefined && object.context !== null) {
       message.context = ShellContext.fromJSON(object.context);
-    } else {
-      message.context = undefined;
     }
     if (object.controlPath !== undefined && object.controlPath !== null) {
       message.controlPath = String(object.controlPath);
-    } else {
-      message.controlPath = "";
     }
     return message;
   },
@@ -3260,18 +3176,12 @@ export const CallbackHook = {
     const message = { ...baseCallbackHook } as CallbackHook;
     if (object.handlerId !== undefined && object.handlerId !== null) {
       message.handlerId = String(object.handlerId);
-    } else {
-      message.handlerId = "";
     }
     if (object.filepath !== undefined && object.filepath !== null) {
       message.filepath = String(object.filepath);
-    } else {
-      message.filepath = "";
     }
     if (object.exitCode !== undefined && object.exitCode !== null) {
       message.exitCode = String(object.exitCode);
-    } else {
-      message.exitCode = "";
     }
     return message;
   },
@@ -3331,8 +3241,6 @@ export const IntegrationReadyHook = {
     const message = { ...baseIntegrationReadyHook } as IntegrationReadyHook;
     if (object.identifier !== undefined && object.identifier !== null) {
       message.identifier = String(object.identifier);
-    } else {
-      message.identifier = "";
     }
     return message;
   },
@@ -3423,8 +3331,6 @@ export const EventHook = {
     const message = { ...baseEventHook } as EventHook;
     if (object.eventName !== undefined && object.eventName !== null) {
       message.eventName = String(object.eventName);
-    } else {
-      message.eventName = "";
     }
     return message;
   },
@@ -3483,13 +3389,9 @@ export const ErrorResponse = {
     const message = { ...baseErrorResponse } as ErrorResponse;
     if (object.exitCode !== undefined && object.exitCode !== null) {
       message.exitCode = Number(object.exitCode);
-    } else {
-      message.exitCode = undefined;
     }
     if (object.message !== undefined && object.message !== null) {
       message.message = String(object.message);
-    } else {
-      message.message = undefined;
     }
     return message;
   },
@@ -3544,8 +3446,6 @@ export const SuccessResponse = {
     const message = { ...baseSuccessResponse } as SuccessResponse;
     if (object.message !== undefined && object.message !== null) {
       message.message = String(object.message);
-    } else {
-      message.message = undefined;
     }
     return message;
   },
@@ -3613,18 +3513,12 @@ export const TerminalIntegration = {
       object.bundleIdentifier !== null
     ) {
       message.bundleIdentifier = String(object.bundleIdentifier);
-    } else {
-      message.bundleIdentifier = "";
     }
     if (object.name !== undefined && object.name !== null) {
       message.name = String(object.name);
-    } else {
-      message.name = "";
     }
     if (object.status !== undefined && object.status !== null) {
       message.status = String(object.status);
-    } else {
-      message.status = undefined;
     }
     return message;
   },
@@ -3690,9 +3584,12 @@ export const TerminalIntegrationsListResponse = {
     const message = {
       ...baseTerminalIntegrationsListResponse,
     } as TerminalIntegrationsListResponse;
-    message.integrations = (object.integrations ?? []).map((e: any) =>
-      TerminalIntegration.fromJSON(e)
-    );
+    message.integrations = [];
+    if (object.integrations !== undefined && object.integrations !== null) {
+      for (const e of object.integrations) {
+        message.integrations.push(TerminalIntegration.fromJSON(e));
+      }
+    }
     return message;
   },
 
@@ -3714,9 +3611,12 @@ export const TerminalIntegrationsListResponse = {
     const message = {
       ...baseTerminalIntegrationsListResponse,
     } as TerminalIntegrationsListResponse;
-    message.integrations = (object.integrations ?? []).map((e) =>
-      TerminalIntegration.fromPartial(e)
-    );
+    message.integrations = [];
+    if (object.integrations !== undefined && object.integrations !== null) {
+      for (const e of object.integrations) {
+        message.integrations.push(TerminalIntegration.fromPartial(e));
+      }
+    }
     return message;
   },
 };
@@ -3884,37 +3784,27 @@ export const DiagnosticsResponse = {
     const message = { ...baseDiagnosticsResponse } as DiagnosticsResponse;
     if (object.distribution !== undefined && object.distribution !== null) {
       message.distribution = String(object.distribution);
-    } else {
-      message.distribution = "";
     }
     if (object.beta !== undefined && object.beta !== null) {
       message.beta = Boolean(object.beta);
-    } else {
-      message.beta = false;
     }
     if (
       object.debugAutocomplete !== undefined &&
       object.debugAutocomplete !== null
     ) {
       message.debugAutocomplete = Boolean(object.debugAutocomplete);
-    } else {
-      message.debugAutocomplete = false;
     }
     if (
       object.developerModeEnabled !== undefined &&
       object.developerModeEnabled !== null
     ) {
       message.developerModeEnabled = Boolean(object.developerModeEnabled);
-    } else {
-      message.developerModeEnabled = false;
     }
     if (
       object.currentLayoutName !== undefined &&
       object.currentLayoutName !== null
     ) {
       message.currentLayoutName = String(object.currentLayoutName);
-    } else {
-      message.currentLayoutName = "";
     }
     if (
       object.isRunningOnReadOnlyVolume !== undefined &&
@@ -3923,82 +3813,54 @@ export const DiagnosticsResponse = {
       message.isRunningOnReadOnlyVolume = Boolean(
         object.isRunningOnReadOnlyVolume
       );
-    } else {
-      message.isRunningOnReadOnlyVolume = false;
     }
     if (object.pathToBundle !== undefined && object.pathToBundle !== null) {
       message.pathToBundle = String(object.pathToBundle);
-    } else {
-      message.pathToBundle = "";
     }
     if (object.accessibility !== undefined && object.accessibility !== null) {
       message.accessibility = String(object.accessibility);
-    } else {
-      message.accessibility = "";
     }
     if (object.keypath !== undefined && object.keypath !== null) {
       message.keypath = String(object.keypath);
-    } else {
-      message.keypath = "";
     }
     if (object.docker !== undefined && object.docker !== null) {
       message.docker = String(object.docker);
-    } else {
-      message.docker = "";
     }
     if (object.symlinked !== undefined && object.symlinked !== null) {
       message.symlinked = String(object.symlinked);
-    } else {
-      message.symlinked = "";
     }
     if (object.onlytab !== undefined && object.onlytab !== null) {
       message.onlytab = String(object.onlytab);
-    } else {
-      message.onlytab = "";
     }
     if (object.installscript !== undefined && object.installscript !== null) {
       message.installscript = String(object.installscript);
-    } else {
-      message.installscript = "";
     }
     if (
       object.psudoterminalPath !== undefined &&
       object.psudoterminalPath !== null
     ) {
       message.psudoterminalPath = String(object.psudoterminalPath);
-    } else {
-      message.psudoterminalPath = "";
     }
     if (object.securekeyboard !== undefined && object.securekeyboard !== null) {
       message.securekeyboard = String(object.securekeyboard);
-    } else {
-      message.securekeyboard = "";
     }
     if (
       object.securekeyboardPath !== undefined &&
       object.securekeyboardPath !== null
     ) {
       message.securekeyboardPath = String(object.securekeyboardPath);
-    } else {
-      message.securekeyboardPath = "";
     }
     if (object.currentProcess !== undefined && object.currentProcess !== null) {
       message.currentProcess = String(object.currentProcess);
-    } else {
-      message.currentProcess = "";
     }
     if (
       object.currentWindowIdentifier !== undefined &&
       object.currentWindowIdentifier !== null
     ) {
       message.currentWindowIdentifier = String(object.currentWindowIdentifier);
-    } else {
-      message.currentWindowIdentifier = "";
     }
     if (object.autocomplete !== undefined && object.autocomplete !== null) {
       message.autocomplete = Boolean(object.autocomplete);
-    } else {
-      message.autocomplete = false;
     }
     return message;
   },
@@ -4153,8 +4015,6 @@ export const CommandResponse = {
     const message = { ...baseCommandResponse } as CommandResponse;
     if (object.id !== undefined && object.id !== null) {
       message.id = Number(object.id);
-    } else {
-      message.id = undefined;
     }
     if (object.error !== undefined && object.error !== null) {
       message.response = {

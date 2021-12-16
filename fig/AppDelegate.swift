@@ -150,34 +150,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
       Config.shared.set(value: "1", forKey: Config.userLoggedIn)
 
       if !Accessibility.enabled {
-
-        SentrySDK.capture(message: "Accesibility Not Enabled on Subsequent Launch")
-        let enable = self.dialogOKCancel(
-          question: "Turn on accessibility",
-          text: "To add Fig to your terminal, select the Fig checkbox in Security & Privacy > Accessibility.",
-          prompt: "Turn On Accessibility"
-        )
-
-        if enable {
-          self.promptForAccesibilityAccess()
-        }
+        Accessibility.showPromptUI()
       }
-      let installed = "fig cli:installed".runAsCommand().trimmingCharacters(in: .whitespacesAndNewlines)
-      let hasLegacyInstallation = FileManager.default.fileExists(atPath: "/usr/local/bin/fig") &&
-        installed != "true"
-      let hasNewInstallation = FileManager.default.fileExists(atPath: "\(NSHomeDirectory())/.fig/bin/fig")
-      if !hasLegacyInstallation && !hasNewInstallation {
-        SentrySDK.capture(message: "CLI Tool Not Installed on Subsequent Launch")
 
-        let enable = self.dialogOKCancel(
-          question: "Install Fig CLI Tool?",
-          text: "It looks like you haven't installed the Fig CLI tool. Fig doesn't work without it."
-        )
-
-        if enable {
-          ShellBridge.symlinkCLI()
-        }
-      }
       self.setupCompanionWindow()
     }
 

@@ -66,6 +66,7 @@ export enum OnboardingAction {
   PROMPT_FOR_ACCESSIBILITY_PERMISSION = 1,
   LAUNCH_SHELL_ONBOARDING = 3,
   UNINSTALL = 4,
+  CLOSE_ACCESSIBILITY_PROMPT_WINDOW = 5,
   UNRECOGNIZED = -1,
 }
 
@@ -83,6 +84,9 @@ export function onboardingActionFromJSON(object: any): OnboardingAction {
     case 4:
     case "UNINSTALL":
       return OnboardingAction.UNINSTALL;
+    case 5:
+    case "CLOSE_ACCESSIBILITY_PROMPT_WINDOW":
+      return OnboardingAction.CLOSE_ACCESSIBILITY_PROMPT_WINDOW;
     case -1:
     case "UNRECOGNIZED":
     default:
@@ -100,6 +104,8 @@ export function onboardingActionToJSON(object: OnboardingAction): string {
       return "LAUNCH_SHELL_ONBOARDING";
     case OnboardingAction.UNINSTALL:
       return "UNINSTALL";
+    case OnboardingAction.CLOSE_ACCESSIBILITY_PROMPT_WINDOW:
+      return "CLOSE_ACCESSIBILITY_PROMPT_WINDOW";
     default:
       return "UNKNOWN";
   }
@@ -1148,8 +1154,6 @@ export const ClientOriginatedMessage = {
     } as ClientOriginatedMessage;
     if (object.id !== undefined && object.id !== null) {
       message.id = Number(object.id);
-    } else {
-      message.id = undefined;
     }
     if (
       object.positionWindowRequest !== undefined &&
@@ -2066,8 +2070,6 @@ export const ServerOriginatedMessage = {
     } as ServerOriginatedMessage;
     if (object.id !== undefined && object.id !== null) {
       message.id = Number(object.id);
-    } else {
-      message.id = undefined;
     }
     if (object.error !== undefined && object.error !== null) {
       message.submessage = { $case: "error", error: String(object.error) };
@@ -2444,13 +2446,9 @@ export const Point = {
     const message = { ...basePoint } as Point;
     if (object.x !== undefined && object.x !== null) {
       message.x = Number(object.x);
-    } else {
-      message.x = 0;
     }
     if (object.y !== undefined && object.y !== null) {
       message.y = Number(object.y);
-    } else {
-      message.y = 0;
     }
     return message;
   },
@@ -2508,13 +2506,9 @@ export const Size = {
     const message = { ...baseSize } as Size;
     if (object.width !== undefined && object.width !== null) {
       message.width = Number(object.width);
-    } else {
-      message.width = 0;
     }
     if (object.height !== undefined && object.height !== null) {
       message.height = Number(object.height);
-    } else {
-      message.height = 0;
     }
     return message;
   },
@@ -2572,13 +2566,9 @@ export const Frame = {
     const message = { ...baseFrame } as Frame;
     if (object.origin !== undefined && object.origin !== null) {
       message.origin = Point.fromJSON(object.origin);
-    } else {
-      message.origin = undefined;
     }
     if (object.size !== undefined && object.size !== null) {
       message.size = Size.fromJSON(object.size);
-    } else {
-      message.size = undefined;
     }
     return message;
   },
@@ -2649,13 +2639,9 @@ export const EnvironmentVariable = {
     const message = { ...baseEnvironmentVariable } as EnvironmentVariable;
     if (object.key !== undefined && object.key !== null) {
       message.key = String(object.key);
-    } else {
-      message.key = "";
     }
     if (object.value !== undefined && object.value !== null) {
       message.value = String(object.value);
-    } else {
-      message.value = undefined;
     }
     return message;
   },
@@ -2727,24 +2713,21 @@ export const Process = {
 
   fromJSON(object: any): Process {
     const message = { ...baseProcess } as Process;
+    message.env = [];
     if (object.pid !== undefined && object.pid !== null) {
       message.pid = Number(object.pid);
-    } else {
-      message.pid = undefined;
     }
     if (object.executable !== undefined && object.executable !== null) {
       message.executable = String(object.executable);
-    } else {
-      message.executable = undefined;
     }
     if (object.directory !== undefined && object.directory !== null) {
       message.directory = String(object.directory);
-    } else {
-      message.directory = undefined;
     }
-    message.env = (object.env ?? []).map((e: any) =>
-      EnvironmentVariable.fromJSON(e)
-    );
+    if (object.env !== undefined && object.env !== null) {
+      for (const e of object.env) {
+        message.env.push(EnvironmentVariable.fromJSON(e));
+      }
+    }
     return message;
   },
 
@@ -2768,9 +2751,12 @@ export const Process = {
     message.pid = object.pid ?? undefined;
     message.executable = object.executable ?? undefined;
     message.directory = object.directory ?? undefined;
-    message.env = (object.env ?? []).map((e) =>
-      EnvironmentVariable.fromPartial(e)
-    );
+    message.env = [];
+    if (object.env !== undefined && object.env !== null) {
+      for (const e of object.env) {
+        message.env.push(EnvironmentVariable.fromPartial(e));
+      }
+    }
     return message;
   },
 };
@@ -2822,21 +2808,15 @@ export const FilePath = {
     const message = { ...baseFilePath } as FilePath;
     if (object.path !== undefined && object.path !== null) {
       message.path = String(object.path);
-    } else {
-      message.path = undefined;
     }
     if (object.relativeTo !== undefined && object.relativeTo !== null) {
       message.relativeTo = String(object.relativeTo);
-    } else {
-      message.relativeTo = undefined;
     }
     if (
       object.expandTildeInPath !== undefined &&
       object.expandTildeInPath !== null
     ) {
       message.expandTildeInPath = Boolean(object.expandTildeInPath);
-    } else {
-      message.expandTildeInPath = undefined;
     }
     return message;
   },
@@ -2926,15 +2906,12 @@ export const KeyEvent = {
 
   fromJSON(object: any): KeyEvent {
     const message = { ...baseKeyEvent } as KeyEvent;
+    message.modifiers = [];
     if (object.appleKeyCode !== undefined && object.appleKeyCode !== null) {
       message.appleKeyCode = Number(object.appleKeyCode);
-    } else {
-      message.appleKeyCode = undefined;
     }
     if (object.characters !== undefined && object.characters !== null) {
       message.characters = String(object.characters);
-    } else {
-      message.characters = undefined;
     }
     if (
       object.charactersIgnoringModifiers !== undefined &&
@@ -2943,16 +2920,14 @@ export const KeyEvent = {
       message.charactersIgnoringModifiers = String(
         object.charactersIgnoringModifiers
       );
-    } else {
-      message.charactersIgnoringModifiers = undefined;
     }
-    message.modifiers = (object.modifiers ?? []).map((e: any) =>
-      modifiersFromJSON(e)
-    );
+    if (object.modifiers !== undefined && object.modifiers !== null) {
+      for (const e of object.modifiers) {
+        message.modifiers.push(modifiersFromJSON(e));
+      }
+    }
     if (object.isRepeat !== undefined && object.isRepeat !== null) {
       message.isRepeat = Boolean(object.isRepeat);
-    } else {
-      message.isRepeat = undefined;
     }
     return message;
   },
@@ -2979,7 +2954,12 @@ export const KeyEvent = {
     message.characters = object.characters ?? undefined;
     message.charactersIgnoringModifiers =
       object.charactersIgnoringModifiers ?? undefined;
-    message.modifiers = (object.modifiers ?? []).map((e) => e);
+    message.modifiers = [];
+    if (object.modifiers !== undefined && object.modifiers !== null) {
+      for (const e of object.modifiers) {
+        message.modifiers.push(e);
+      }
+    }
     message.isRepeat = object.isRepeat ?? undefined;
     return message;
   },
@@ -3020,8 +3000,6 @@ export const Screen = {
     const message = { ...baseScreen } as Screen;
     if (object.frame !== undefined && object.frame !== null) {
       message.frame = Frame.fromJSON(object.frame);
-    } else {
-      message.frame = undefined;
     }
     return message;
   },
@@ -3093,22 +3071,21 @@ export const Session = {
 
   fromJSON(object: any): Session {
     const message = { ...baseSession } as Session;
+    message.env = [];
     if (object.sessionId !== undefined && object.sessionId !== null) {
       message.sessionId = String(object.sessionId);
-    } else {
-      message.sessionId = undefined;
     }
     if (
       object.frontmostProcess !== undefined &&
       object.frontmostProcess !== null
     ) {
       message.frontmostProcess = Process.fromJSON(object.frontmostProcess);
-    } else {
-      message.frontmostProcess = undefined;
     }
-    message.env = (object.env ?? []).map((e: any) =>
-      EnvironmentVariable.fromJSON(e)
-    );
+    if (object.env !== undefined && object.env !== null) {
+      for (const e of object.env) {
+        message.env.push(EnvironmentVariable.fromJSON(e));
+      }
+    }
     return message;
   },
 
@@ -3140,9 +3117,12 @@ export const Session = {
     } else {
       message.frontmostProcess = undefined;
     }
-    message.env = (object.env ?? []).map((e) =>
-      EnvironmentVariable.fromPartial(e)
-    );
+    message.env = [];
+    if (object.env !== undefined && object.env !== null) {
+      for (const e of object.env) {
+        message.env.push(EnvironmentVariable.fromPartial(e));
+      }
+    }
     return message;
   },
 };
@@ -3191,13 +3171,9 @@ export const Application = {
       object.bundleIdentifier !== null
     ) {
       message.bundleIdentifier = String(object.bundleIdentifier);
-    } else {
-      message.bundleIdentifier = undefined;
     }
     if (object.name !== undefined && object.name !== null) {
       message.name = String(object.name);
-    } else {
-      message.name = undefined;
     }
     return message;
   },
@@ -3277,28 +3253,18 @@ export const Window = {
     const message = { ...baseWindow } as Window;
     if (object.windowId !== undefined && object.windowId !== null) {
       message.windowId = String(object.windowId);
-    } else {
-      message.windowId = undefined;
     }
     if (object.frame !== undefined && object.frame !== null) {
       message.frame = Frame.fromJSON(object.frame);
-    } else {
-      message.frame = undefined;
     }
     if (object.currentSession !== undefined && object.currentSession !== null) {
       message.currentSession = Session.fromJSON(object.currentSession);
-    } else {
-      message.currentSession = undefined;
     }
     if (object.app !== undefined && object.app !== null) {
       message.app = Application.fromJSON(object.app);
-    } else {
-      message.app = undefined;
     }
     if (object.currentScreen !== undefined && object.currentScreen !== null) {
       message.currentScreen = Screen.fromJSON(object.currentScreen);
-    } else {
-      message.currentScreen = undefined;
     }
     return message;
   },
@@ -3401,23 +3367,15 @@ export const TextUpdate = {
     const message = { ...baseTextUpdate } as TextUpdate;
     if (object.insertion !== undefined && object.insertion !== null) {
       message.insertion = String(object.insertion);
-    } else {
-      message.insertion = undefined;
     }
     if (object.deletion !== undefined && object.deletion !== null) {
       message.deletion = Number(object.deletion);
-    } else {
-      message.deletion = undefined;
     }
     if (object.offset !== undefined && object.offset !== null) {
       message.offset = Number(object.offset);
-    } else {
-      message.offset = undefined;
     }
     if (object.immediate !== undefined && object.immediate !== null) {
       message.immediate = Boolean(object.immediate);
-    } else {
-      message.immediate = undefined;
     }
     return message;
   },
@@ -3683,32 +3641,27 @@ export const PseudoterminalExecuteRequest = {
     const message = {
       ...basePseudoterminalExecuteRequest,
     } as PseudoterminalExecuteRequest;
+    message.env = [];
     if (object.command !== undefined && object.command !== null) {
       message.command = String(object.command);
-    } else {
-      message.command = "";
     }
     if (
       object.workingDirectory !== undefined &&
       object.workingDirectory !== null
     ) {
       message.workingDirectory = String(object.workingDirectory);
-    } else {
-      message.workingDirectory = undefined;
     }
     if (object.backgroundJob !== undefined && object.backgroundJob !== null) {
       message.backgroundJob = Boolean(object.backgroundJob);
-    } else {
-      message.backgroundJob = undefined;
     }
     if (object.isPipelined !== undefined && object.isPipelined !== null) {
       message.isPipelined = Boolean(object.isPipelined);
-    } else {
-      message.isPipelined = undefined;
     }
-    message.env = (object.env ?? []).map((e: any) =>
-      EnvironmentVariable.fromJSON(e)
-    );
+    if (object.env !== undefined && object.env !== null) {
+      for (const e of object.env) {
+        message.env.push(EnvironmentVariable.fromJSON(e));
+      }
+    }
     return message;
   },
 
@@ -3741,9 +3694,12 @@ export const PseudoterminalExecuteRequest = {
     message.workingDirectory = object.workingDirectory ?? undefined;
     message.backgroundJob = object.backgroundJob ?? undefined;
     message.isPipelined = object.isPipelined ?? undefined;
-    message.env = (object.env ?? []).map((e) =>
-      EnvironmentVariable.fromPartial(e)
-    );
+    message.env = [];
+    if (object.env !== undefined && object.env !== null) {
+      for (const e of object.env) {
+        message.env.push(EnvironmentVariable.fromPartial(e));
+      }
+    }
     return message;
   },
 };
@@ -3802,18 +3758,12 @@ export const PseudoterminalExecuteResponse = {
     } as PseudoterminalExecuteResponse;
     if (object.stdout !== undefined && object.stdout !== null) {
       message.stdout = String(object.stdout);
-    } else {
-      message.stdout = "";
     }
     if (object.stderr !== undefined && object.stderr !== null) {
       message.stderr = String(object.stderr);
-    } else {
-      message.stderr = undefined;
     }
     if (object.exitCode !== undefined && object.exitCode !== null) {
       message.exitCode = Number(object.exitCode);
-    } else {
-      message.exitCode = undefined;
     }
     return message;
   },
@@ -3941,18 +3891,12 @@ export const PositionWindowRequest = {
     const message = { ...basePositionWindowRequest } as PositionWindowRequest;
     if (object.anchor !== undefined && object.anchor !== null) {
       message.anchor = Point.fromJSON(object.anchor);
-    } else {
-      message.anchor = undefined;
     }
     if (object.size !== undefined && object.size !== null) {
       message.size = Size.fromJSON(object.size);
-    } else {
-      message.size = undefined;
     }
     if (object.dryrun !== undefined && object.dryrun !== null) {
       message.dryrun = Boolean(object.dryrun);
-    } else {
-      message.dryrun = undefined;
     }
     return message;
   },
@@ -4030,13 +3974,9 @@ export const PositionWindowResponse = {
     const message = { ...basePositionWindowResponse } as PositionWindowResponse;
     if (object.isAbove !== undefined && object.isAbove !== null) {
       message.isAbove = Boolean(object.isAbove);
-    } else {
-      message.isAbove = undefined;
     }
     if (object.isClipped !== undefined && object.isClipped !== null) {
       message.isClipped = Boolean(object.isClipped);
-    } else {
-      message.isClipped = undefined;
     }
     return message;
   },
@@ -4099,13 +4039,9 @@ export const ReadFileRequest = {
     const message = { ...baseReadFileRequest } as ReadFileRequest;
     if (object.path !== undefined && object.path !== null) {
       message.path = FilePath.fromJSON(object.path);
-    } else {
-      message.path = undefined;
     }
     if (object.isBinaryFile !== undefined && object.isBinaryFile !== null) {
       message.isBinaryFile = Boolean(object.isBinaryFile);
-    } else {
-      message.isBinaryFile = undefined;
     }
     return message;
   },
@@ -4257,8 +4193,6 @@ export const WriteFileRequest = {
     const message = { ...baseWriteFileRequest } as WriteFileRequest;
     if (object.path !== undefined && object.path !== null) {
       message.path = FilePath.fromJSON(object.path);
-    } else {
-      message.path = undefined;
     }
     if (object.text !== undefined && object.text !== null) {
       message.data = { $case: "text", text: String(object.text) };
@@ -4352,8 +4286,6 @@ export const ContentsOfDirectoryRequest = {
     } as ContentsOfDirectoryRequest;
     if (object.directory !== undefined && object.directory !== null) {
       message.directory = FilePath.fromJSON(object.directory);
-    } else {
-      message.directory = undefined;
     }
     return message;
   },
@@ -4423,7 +4355,12 @@ export const ContentsOfDirectoryResponse = {
     const message = {
       ...baseContentsOfDirectoryResponse,
     } as ContentsOfDirectoryResponse;
-    message.fileNames = (object.fileNames ?? []).map((e: any) => String(e));
+    message.fileNames = [];
+    if (object.fileNames !== undefined && object.fileNames !== null) {
+      for (const e of object.fileNames) {
+        message.fileNames.push(String(e));
+      }
+    }
     return message;
   },
 
@@ -4443,7 +4380,12 @@ export const ContentsOfDirectoryResponse = {
     const message = {
       ...baseContentsOfDirectoryResponse,
     } as ContentsOfDirectoryResponse;
-    message.fileNames = (object.fileNames ?? []).map((e) => e);
+    message.fileNames = [];
+    if (object.fileNames !== undefined && object.fileNames !== null) {
+      for (const e of object.fileNames) {
+        message.fileNames.push(e);
+      }
+    }
     return message;
   },
 };
@@ -4490,8 +4432,6 @@ export const DestinationOfSymbolicLinkRequest = {
     } as DestinationOfSymbolicLinkRequest;
     if (object.path !== undefined && object.path !== null) {
       message.path = FilePath.fromJSON(object.path);
-    } else {
-      message.path = undefined;
     }
     return message;
   },
@@ -4560,8 +4500,6 @@ export const DestinationOfSymbolicLinkResponse = {
     } as DestinationOfSymbolicLinkResponse;
     if (object.destination !== undefined && object.destination !== null) {
       message.destination = FilePath.fromJSON(object.destination);
-    } else {
-      message.destination = undefined;
     }
     return message;
   },
@@ -4744,8 +4682,6 @@ export const GetDefaultsPropertyRequest = {
     } as GetDefaultsPropertyRequest;
     if (object.key !== undefined && object.key !== null) {
       message.key = String(object.key);
-    } else {
-      message.key = undefined;
     }
     return message;
   },
@@ -4815,13 +4751,9 @@ export const GetDefaultsPropertyResponse = {
     } as GetDefaultsPropertyResponse;
     if (object.key !== undefined && object.key !== null) {
       message.key = String(object.key);
-    } else {
-      message.key = undefined;
     }
     if (object.value !== undefined && object.value !== null) {
       message.value = DefaultsValue.fromJSON(object.value);
-    } else {
-      message.value = undefined;
     }
     return message;
   },
@@ -4900,13 +4832,9 @@ export const UpdateDefaultsPropertyRequest = {
     } as UpdateDefaultsPropertyRequest;
     if (object.key !== undefined && object.key !== null) {
       message.key = String(object.key);
-    } else {
-      message.key = undefined;
     }
     if (object.value !== undefined && object.value !== null) {
       message.value = DefaultsValue.fromJSON(object.value);
-    } else {
-      message.value = undefined;
     }
     return message;
   },
@@ -4979,8 +4907,6 @@ export const GetConfigPropertyRequest = {
     } as GetConfigPropertyRequest;
     if (object.key !== undefined && object.key !== null) {
       message.key = String(object.key);
-    } else {
-      message.key = undefined;
     }
     return message;
   },
@@ -5044,8 +4970,6 @@ export const GetConfigPropertyResponse = {
     } as GetConfigPropertyResponse;
     if (object.value !== undefined && object.value !== null) {
       message.value = String(object.value);
-    } else {
-      message.value = undefined;
     }
     return message;
   },
@@ -5115,13 +5039,9 @@ export const UpdateConfigPropertyRequest = {
     } as UpdateConfigPropertyRequest;
     if (object.key !== undefined && object.key !== null) {
       message.key = String(object.key);
-    } else {
-      message.key = undefined;
     }
     if (object.value !== undefined && object.value !== null) {
       message.value = String(object.value);
-    } else {
-      message.value = undefined;
     }
     return message;
   },
@@ -5187,8 +5107,6 @@ export const GetSettingsPropertyRequest = {
     } as GetSettingsPropertyRequest;
     if (object.key !== undefined && object.key !== null) {
       message.key = String(object.key);
-    } else {
-      message.key = undefined;
     }
     return message;
   },
@@ -5258,13 +5176,9 @@ export const GetSettingsPropertyResponse = {
     } as GetSettingsPropertyResponse;
     if (object.jsonBlob !== undefined && object.jsonBlob !== null) {
       message.jsonBlob = String(object.jsonBlob);
-    } else {
-      message.jsonBlob = undefined;
     }
     if (object.isDefault !== undefined && object.isDefault !== null) {
       message.isDefault = Boolean(object.isDefault);
-    } else {
-      message.isDefault = undefined;
     }
     return message;
   },
@@ -5336,13 +5250,9 @@ export const UpdateSettingsPropertyRequest = {
     } as UpdateSettingsPropertyRequest;
     if (object.key !== undefined && object.key !== null) {
       message.key = String(object.key);
-    } else {
-      message.key = undefined;
     }
     if (object.value !== undefined && object.value !== null) {
       message.value = String(object.value);
-    } else {
-      message.value = undefined;
     }
     return message;
   },
@@ -5407,13 +5317,9 @@ export const TelemetryProperty = {
     const message = { ...baseTelemetryProperty } as TelemetryProperty;
     if (object.key !== undefined && object.key !== null) {
       message.key = String(object.key);
-    } else {
-      message.key = "";
     }
     if (object.value !== undefined && object.value !== null) {
       message.value = String(object.value);
-    } else {
-      message.value = "";
     }
     return message;
   },
@@ -5471,8 +5377,6 @@ export const TelemetryAliasRequest = {
     const message = { ...baseTelemetryAliasRequest } as TelemetryAliasRequest;
     if (object.userId !== undefined && object.userId !== null) {
       message.userId = String(object.userId);
-    } else {
-      message.userId = undefined;
     }
     return message;
   },
@@ -5537,14 +5441,15 @@ export const TelemetryTrackRequest = {
 
   fromJSON(object: any): TelemetryTrackRequest {
     const message = { ...baseTelemetryTrackRequest } as TelemetryTrackRequest;
+    message.properties = [];
     if (object.event !== undefined && object.event !== null) {
       message.event = String(object.event);
-    } else {
-      message.event = undefined;
     }
-    message.properties = (object.properties ?? []).map((e: any) =>
-      TelemetryProperty.fromJSON(e)
-    );
+    if (object.properties !== undefined && object.properties !== null) {
+      for (const e of object.properties) {
+        message.properties.push(TelemetryProperty.fromJSON(e));
+      }
+    }
     return message;
   },
 
@@ -5566,9 +5471,12 @@ export const TelemetryTrackRequest = {
   ): TelemetryTrackRequest {
     const message = { ...baseTelemetryTrackRequest } as TelemetryTrackRequest;
     message.event = object.event ?? undefined;
-    message.properties = (object.properties ?? []).map((e) =>
-      TelemetryProperty.fromPartial(e)
-    );
+    message.properties = [];
+    if (object.properties !== undefined && object.properties !== null) {
+      for (const e of object.properties) {
+        message.properties.push(TelemetryProperty.fromPartial(e));
+      }
+    }
     return message;
   },
 };
@@ -5616,9 +5524,12 @@ export const TelemetryIdentifyRequest = {
     const message = {
       ...baseTelemetryIdentifyRequest,
     } as TelemetryIdentifyRequest;
-    message.traits = (object.traits ?? []).map((e: any) =>
-      TelemetryProperty.fromJSON(e)
-    );
+    message.traits = [];
+    if (object.traits !== undefined && object.traits !== null) {
+      for (const e of object.traits) {
+        message.traits.push(TelemetryProperty.fromJSON(e));
+      }
+    }
     return message;
   },
 
@@ -5640,9 +5551,12 @@ export const TelemetryIdentifyRequest = {
     const message = {
       ...baseTelemetryIdentifyRequest,
     } as TelemetryIdentifyRequest;
-    message.traits = (object.traits ?? []).map((e) =>
-      TelemetryProperty.fromPartial(e)
-    );
+    message.traits = [];
+    if (object.traits !== undefined && object.traits !== null) {
+      for (const e of object.traits) {
+        message.traits.push(TelemetryProperty.fromPartial(e));
+      }
+    }
     return message;
   },
 };
@@ -5682,8 +5596,6 @@ export const OnboardingRequest = {
     const message = { ...baseOnboardingRequest } as OnboardingRequest;
     if (object.action !== undefined && object.action !== null) {
       message.action = onboardingActionFromJSON(object.action);
-    } else {
-      message.action = 0;
     }
     return message;
   },
@@ -5737,8 +5649,6 @@ export const WindowFocusRequest = {
     const message = { ...baseWindowFocusRequest } as WindowFocusRequest;
     if (object.type !== undefined && object.type !== null) {
       message.type = focusActionFromJSON(object.type);
-    } else {
-      message.type = undefined;
     }
     return message;
   },
@@ -5802,8 +5712,6 @@ export const OpenInExternalApplicationRequest = {
     } as OpenInExternalApplicationRequest;
     if (object.url !== undefined && object.url !== null) {
       message.url = String(object.url);
-    } else {
-      message.url = undefined;
     }
     return message;
   },
@@ -5884,28 +5792,18 @@ export const Action = {
     const message = { ...baseAction } as Action;
     if (object.identifier !== undefined && object.identifier !== null) {
       message.identifier = String(object.identifier);
-    } else {
-      message.identifier = undefined;
     }
     if (object.name !== undefined && object.name !== null) {
       message.name = String(object.name);
-    } else {
-      message.name = undefined;
     }
     if (object.description !== undefined && object.description !== null) {
       message.description = String(object.description);
-    } else {
-      message.description = undefined;
     }
     if (object.category !== undefined && object.category !== null) {
       message.category = String(object.category);
-    } else {
-      message.category = undefined;
     }
     if (object.availability !== undefined && object.availability !== null) {
       message.availability = actionAvailabilityFromJSON(object.availability);
-    } else {
-      message.availability = undefined;
     }
     return message;
   },
@@ -6062,8 +5960,6 @@ export const UpdateApplicationPropertiesRequest = {
       message.interceptBoundKeystrokes = Boolean(
         object.interceptBoundKeystrokes
       );
-    } else {
-      message.interceptBoundKeystrokes = undefined;
     }
     if (
       object.interceptGlobalKeystrokes !== undefined &&
@@ -6156,8 +6052,6 @@ export const TerminalSessionInfoRequest = {
       object.terminalSessionId !== null
     ) {
       message.terminalSessionId = String(object.terminalSessionId);
-    } else {
-      message.terminalSessionId = "";
     }
     return message;
   },
@@ -6234,18 +6128,12 @@ export const TerminalSessionInfoResponse = {
     } as TerminalSessionInfoResponse;
     if (object.context !== undefined && object.context !== null) {
       message.context = ShellContext.fromJSON(object.context);
-    } else {
-      message.context = undefined;
     }
     if (object.buffer !== undefined && object.buffer !== null) {
       message.buffer = String(object.buffer);
-    } else {
-      message.buffer = undefined;
     }
     if (object.cursor !== undefined && object.cursor !== null) {
       message.cursor = Number(object.cursor);
-    } else {
-      message.cursor = undefined;
     }
     return message;
   },
@@ -6319,13 +6207,9 @@ export const NotificationRequest = {
     const message = { ...baseNotificationRequest } as NotificationRequest;
     if (object.subscribe !== undefined && object.subscribe !== null) {
       message.subscribe = Boolean(object.subscribe);
-    } else {
-      message.subscribe = undefined;
     }
     if (object.type !== undefined && object.type !== null) {
       message.type = notificationTypeFromJSON(object.type);
-    } else {
-      message.type = undefined;
     }
     return message;
   },
@@ -6807,23 +6691,15 @@ export const EditBufferChangedNotification = {
     } as EditBufferChangedNotification;
     if (object.sessionId !== undefined && object.sessionId !== null) {
       message.sessionId = String(object.sessionId);
-    } else {
-      message.sessionId = undefined;
     }
     if (object.cursor !== undefined && object.cursor !== null) {
       message.cursor = Number(object.cursor);
-    } else {
-      message.cursor = undefined;
     }
     if (object.buffer !== undefined && object.buffer !== null) {
       message.buffer = String(object.buffer);
-    } else {
-      message.buffer = undefined;
     }
     if (object.context !== undefined && object.context !== null) {
       message.context = ShellContext.fromJSON(object.context);
-    } else {
-      message.context = undefined;
     }
     return message;
   },
@@ -6900,8 +6776,6 @@ export const SettingsChangedNotification = {
     } as SettingsChangedNotification;
     if (object.jsonBlob !== undefined && object.jsonBlob !== null) {
       message.jsonBlob = String(object.jsonBlob);
-    } else {
-      message.jsonBlob = undefined;
     }
     return message;
   },
@@ -6971,13 +6845,9 @@ export const ShellPromptReturnedNotification = {
     } as ShellPromptReturnedNotification;
     if (object.sessionId !== undefined && object.sessionId !== null) {
       message.sessionId = String(object.sessionId);
-    } else {
-      message.sessionId = undefined;
     }
     if (object.shell !== undefined && object.shell !== null) {
       message.shell = Process.fromJSON(object.shell);
-    } else {
-      message.shell = undefined;
     }
     return message;
   },
@@ -7066,23 +6936,15 @@ export const LocationChangedNotification = {
     } as LocationChangedNotification;
     if (object.sessionId !== undefined && object.sessionId !== null) {
       message.sessionId = String(object.sessionId);
-    } else {
-      message.sessionId = undefined;
     }
     if (object.hostName !== undefined && object.hostName !== null) {
       message.hostName = String(object.hostName);
-    } else {
-      message.hostName = undefined;
     }
     if (object.userName !== undefined && object.userName !== null) {
       message.userName = String(object.userName);
-    } else {
-      message.userName = undefined;
     }
     if (object.directory !== undefined && object.directory !== null) {
       message.directory = String(object.directory);
-    } else {
-      message.directory = undefined;
     }
     return message;
   },
@@ -7158,13 +7020,9 @@ export const ProcessChangedNotification = {
     } as ProcessChangedNotification;
     if (object.sessionId !== undefined && object.sessionId !== null) {
       message.sessionId = String(object.sessionId);
-    } else {
-      message.sessionId = undefined;
     }
     if (object.newProcess !== undefined && object.newProcess !== null) {
       message.newProcess = Process.fromJSON(object.newProcess);
-    } else {
-      message.newProcess = undefined;
     }
     return message;
   },
@@ -7243,13 +7101,9 @@ export const KeybindingPressedNotification = {
     } as KeybindingPressedNotification;
     if (object.keypress !== undefined && object.keypress !== null) {
       message.keypress = KeyEvent.fromJSON(object.keypress);
-    } else {
-      message.keypress = undefined;
     }
     if (object.action !== undefined && object.action !== null) {
       message.action = String(object.action);
-    } else {
-      message.action = undefined;
     }
     return message;
   },
@@ -7322,8 +7176,6 @@ export const WindowFocusChangedNotification = {
     } as WindowFocusChangedNotification;
     if (object.window !== undefined && object.window !== null) {
       message.window = Window.fromJSON(object.window);
-    } else {
-      message.window = undefined;
     }
     return message;
   },
@@ -7422,36 +7274,24 @@ export const HistoryUpdatedNotification = {
     } as HistoryUpdatedNotification;
     if (object.command !== undefined && object.command !== null) {
       message.command = String(object.command);
-    } else {
-      message.command = undefined;
     }
     if (object.processName !== undefined && object.processName !== null) {
       message.processName = String(object.processName);
-    } else {
-      message.processName = undefined;
     }
     if (
       object.currentWorkingDirectory !== undefined &&
       object.currentWorkingDirectory !== null
     ) {
       message.currentWorkingDirectory = String(object.currentWorkingDirectory);
-    } else {
-      message.currentWorkingDirectory = undefined;
     }
     if (object.sessionId !== undefined && object.sessionId !== null) {
       message.sessionId = String(object.sessionId);
-    } else {
-      message.sessionId = undefined;
     }
     if (object.hostname !== undefined && object.hostname !== null) {
       message.hostname = String(object.hostname);
-    } else {
-      message.hostname = undefined;
     }
     if (object.exitCode !== undefined && object.exitCode !== null) {
       message.exitCode = Number(object.exitCode);
-    } else {
-      message.exitCode = undefined;
     }
     return message;
   },
@@ -7593,80 +7433,54 @@ export const Constants = {
     const message = { ...baseConstants } as Constants;
     if (object.version !== undefined && object.version !== null) {
       message.version = String(object.version);
-    } else {
-      message.version = undefined;
     }
     if (object.build !== undefined && object.build !== null) {
       message.build = String(object.build);
-    } else {
-      message.build = undefined;
     }
     if (object.cli !== undefined && object.cli !== null) {
       message.cli = String(object.cli);
-    } else {
-      message.cli = undefined;
     }
     if (object.bundlePath !== undefined && object.bundlePath !== null) {
       message.bundlePath = String(object.bundlePath);
-    } else {
-      message.bundlePath = undefined;
     }
     if (object.remote !== undefined && object.remote !== null) {
       message.remote = String(object.remote);
-    } else {
-      message.remote = undefined;
     }
     if (object.home !== undefined && object.home !== null) {
       message.home = String(object.home);
-    } else {
-      message.home = undefined;
     }
     if (object.user !== undefined && object.user !== null) {
       message.user = String(object.user);
-    } else {
-      message.user = undefined;
     }
     if (object.defaultPath !== undefined && object.defaultPath !== null) {
       message.defaultPath = String(object.defaultPath);
-    } else {
-      message.defaultPath = undefined;
     }
     if (
       object.jsonMessageRecieved !== undefined &&
       object.jsonMessageRecieved !== null
     ) {
       message.jsonMessageRecieved = String(object.jsonMessageRecieved);
-    } else {
-      message.jsonMessageRecieved = undefined;
     }
     if (
       object.jsonMessageHandler !== undefined &&
       object.jsonMessageHandler !== null
     ) {
       message.jsonMessageHandler = String(object.jsonMessageHandler);
-    } else {
-      message.jsonMessageHandler = undefined;
     }
     if (
       object.protoMessageRecieved !== undefined &&
       object.protoMessageRecieved !== null
     ) {
       message.protoMessageRecieved = String(object.protoMessageRecieved);
-    } else {
-      message.protoMessageRecieved = undefined;
     }
     if (
       object.protoMessageHandler !== undefined &&
       object.protoMessageHandler !== null
     ) {
       message.protoMessageHandler = String(object.protoMessageHandler);
-    } else {
-      message.protoMessageHandler = undefined;
     }
     if (object.themes !== undefined && object.themes !== null) {
       message.themes = String(object.themes);
-    } else {
-      message.themes = undefined;
     }
     return message;
   },

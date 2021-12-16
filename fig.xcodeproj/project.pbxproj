@@ -104,7 +104,6 @@
 		757CA86724859461002A64A8 /* AppMover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757CA86624859461002A64A8 /* AppMover.swift */; };
 		757CA88624876043002A64A8 /* error.html in Resources */ = {isa = PBXBuildFile; fileRef = 757CA88524876042002A64A8 /* error.html */; };
 		757CA88A248AD58C002A64A8 /* onboarding.html in Resources */ = {isa = PBXBuildFile; fileRef = 757CA889248AD58C002A64A8 /* onboarding.html */; };
-		757CA88D248B091D002A64A8 /* permissions.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 757CA88C248B091D002A64A8 /* permissions.mp4 */; };
 		757CA88F248B0D31002A64A8 /* cli.png in Resources */ = {isa = PBXBuildFile; fileRef = 757CA88E248B0D31002A64A8 /* cli.png */; };
 		757CA891248B2799002A64A8 /* cli.html in Resources */ = {isa = PBXBuildFile; fileRef = 757CA890248B2798002A64A8 /* cli.html */; };
 		757CA893248B28E3002A64A8 /* landing.html in Resources */ = {isa = PBXBuildFile; fileRef = 757CA892248B28E3002A64A8 /* landing.html */; };
@@ -115,6 +114,7 @@
 		757CA89D248C1F50002A64A8 /* demo4onboarding.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 757CA89C248C1F50002A64A8 /* demo4onboarding.mp4 */; };
 		757CA89F248D628F002A64A8 /* sidebar.html in Resources */ = {isa = PBXBuildFile; fileRef = 757CA89E248D628E002A64A8 /* sidebar.html */; };
 		75809B0E24BFA64D00BFFB3E /* TelemetryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75809B0D24BFA64D00BFFB3E /* TelemetryService.swift */; };
+		7581E60727698A6F00CFD39A /* permissions.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 7581E60627698A6F00CFD39A /* permissions.mp4 */; };
 		7583A12E273CF261001DF86B /* PathHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7583A12D273CF261001DF86B /* PathHelper.swift */; };
 		7587B4D824F97F9E00E355E4 /* ShellHooksManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7587B4D724F97F9E00E355E4 /* ShellHooksManager.swift */; };
 		75915DFE27210A4C005A9909 /* FigAPIBindings in Frameworks */ = {isa = PBXBuildFile; productRef = 75915DFD27210A4C005A9909 /* FigAPIBindings */; };
@@ -179,6 +179,7 @@
 		75D1ECBE26F15F4500BC8A04 /* TerminalIntegrationProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75D1ECBD26F15F4500BC8A04 /* TerminalIntegrationProvider.swift */; };
 		75D1ECC026F1658300BC8A04 /* InstallationStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75D1ECBF26F1658300BC8A04 /* InstallationStatus.swift */; };
 		75D9225427686B5C00208A0C /* fig-0.0.6.vsix in Resources */ = {isa = PBXBuildFile; fileRef = 75D9225327686B5C00208A0C /* fig-0.0.6.vsix */; };
+		75D9225627697A4600208A0C /* accessibility.html in Resources */ = {isa = PBXBuildFile; fileRef = 75D9225527697A4600208A0C /* accessibility.html */; };
 		75DA86A325EDB05100722F1D /* Integrations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DA86A225EDB05100722F1D /* Integrations.swift */; };
 		75DA86A525EEBD7500722F1D /* Alert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DA86A425EEBD7400722F1D /* Alert.swift */; };
 		75DA86A925EF145E00722F1D /* TmuxIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DA86A825EF145E00722F1D /* TmuxIntegration.swift */; };
@@ -391,7 +392,6 @@
 		757CA88524876042002A64A8 /* error.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = error.html; sourceTree = "<group>"; };
 		757CA887248AD067002A64A8 /* WebViewWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewWindow.swift; sourceTree = "<group>"; };
 		757CA889248AD58C002A64A8 /* onboarding.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = onboarding.html; sourceTree = "<group>"; };
-		757CA88C248B091D002A64A8 /* permissions.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = permissions.mp4; sourceTree = "<group>"; };
 		757CA88E248B0D31002A64A8 /* cli.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = cli.png; sourceTree = "<group>"; };
 		757CA890248B2798002A64A8 /* cli.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = cli.html; sourceTree = "<group>"; };
 		757CA892248B28E3002A64A8 /* landing.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = landing.html; sourceTree = "<group>"; };
@@ -403,6 +403,7 @@
 		757CA89E248D628E002A64A8 /* sidebar.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = sidebar.html; sourceTree = "<group>"; };
 		75809B0D24BFA64D00BFFB3E /* TelemetryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetryService.swift; sourceTree = "<group>"; };
 		75809B0F24C2C66100BFFB3E /* WebView+Private.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "WebView+Private.h"; sourceTree = "<group>"; };
+		7581E60627698A6F00CFD39A /* permissions.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; name = permissions.mp4; path = ../../../Desktop/permissions.mp4; sourceTree = "<group>"; };
 		7583A12D273CF261001DF86B /* PathHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PathHelper.swift; sourceTree = "<group>"; };
 		7587B4D724F97F9E00E355E4 /* ShellHooksManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellHooksManager.swift; sourceTree = "<group>"; };
 		75915DFF2722044D005A9909 /* API.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = API.js; sourceTree = "<group>"; };
@@ -467,6 +468,7 @@
 		75D1ECBD26F15F4500BC8A04 /* TerminalIntegrationProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalIntegrationProvider.swift; sourceTree = "<group>"; };
 		75D1ECBF26F1658300BC8A04 /* InstallationStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstallationStatus.swift; sourceTree = "<group>"; };
 		75D9225327686B5C00208A0C /* fig-0.0.6.vsix */ = {isa = PBXFileReference; lastKnownFileType = file; name = "fig-0.0.6.vsix"; path = "vscode-extension/fig-0.0.6.vsix"; sourceTree = SOURCE_ROOT; };
+		75D9225527697A4600208A0C /* accessibility.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = accessibility.html; sourceTree = "<group>"; };
 		75DA86A225EDB05100722F1D /* Integrations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Integrations.swift; sourceTree = "<group>"; };
 		75DA86A425EEBD7400722F1D /* Alert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Alert.swift; sourceTree = "<group>"; };
 		75DA86A825EF145E00722F1D /* TmuxIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TmuxIntegration.swift; sourceTree = "<group>"; };
@@ -804,6 +806,7 @@
 				757CA892248B28E3002A64A8 /* landing.html */,
 				7571775826F3E4CA0071AE10 /* settings.html */,
 				757CA894248B291E002A64A8 /* permissions.html */,
+				75D9225527697A4600208A0C /* accessibility.html */,
 				752D71C425AE9B7200263527 /* ssh.html */,
 				75B0A07D25BB746600FCD89A /* debugger.html */,
 				75B0A08D25BBC9B800FCD89A /* privacy.html */,
@@ -813,7 +816,7 @@
 				75A4A29D25C91471002EFD6B /* debugger-2-trimmed.mp4 */,
 				757CA89A248C18F0002A64A8 /* done.html */,
 				757CA88E248B0D31002A64A8 /* cli.png */,
-				757CA88C248B091D002A64A8 /* permissions.mp4 */,
+				7581E60627698A6F00CFD39A /* permissions.mp4 */,
 				752D71C625AECB4B00263527 /* ssh.mp4 */,
 				75B0A08B25BBC7A300FCD89A /* autoc.mp4 */,
 				757CA88524876042002A64A8 /* error.html */,
@@ -1057,6 +1060,7 @@
 				7571775626F3B8910071AE10 /* Embed Input Method */,
 				75FD16E727150DC400056A39 /* Package config folder */,
 				757A85C0270E37A90017996A /* Embed figterm & helpers */,
+				7581E6082769C4AE00CFD39A /* Lint Swift files */,
 			);
 			buildRules = (
 			);
@@ -1199,6 +1203,7 @@
 				75DF864A26F31756003F32A5 /* cpu@2x.png in Resources */,
 				75290A7D266B09CB000F4255 /* gear@2x.png in Resources */,
 				752E68DF2620F868009E9A7E /* yarn@2x.png in Resources */,
+				75D9225627697A4600208A0C /* accessibility.html in Resources */,
 				75A4521025A83E5600107D2C /* remote_cwd.sh in Resources */,
 				75543FD0268AC6E5003221DF /* fig-0.0.4.vsix in Resources */,
 				759F988225BFF0FF00EC3407 /* commandkey@2x.png in Resources */,
@@ -1231,7 +1236,6 @@
 				759F988425BFF0FF00EC3407 /* package@2x.png in Resources */,
 				755D27C2272772280080B4B8 /* fig-0.0.5.vsix in Resources */,
 				75A4A29925C8D855002EFD6B /* git@2x.png in Resources */,
-				757CA88D248B091D002A64A8 /* permissions.mp4 in Resources */,
 				757CA897248C108E002A64A8 /* css in Resources */,
 				75C0711D244AC3B2002DF69F /* index.html in Resources */,
 				757CA895248B291E002A64A8 /* permissions.html in Resources */,
@@ -1270,6 +1274,7 @@
 				75B0A08E25BBC9B800FCD89A /* privacy.html in Resources */,
 				75B0A08425BB759E00FCD89A /* trimmed-debugger.mp4 in Resources */,
 				75186072255B2A0A0000A7C7 /* carrot@2x.png in Resources */,
+				7581E60727698A6F00CFD39A /* permissions.mp4 in Resources */,
 				752E68ED2620F885009E9A7E /* azure@2x.png in Resources */,
 				75186074255B2A0A0000A7C7 /* command@2x.png in Resources */,
 				75186071255B2A0A0000A7C7 /* option@2x.png in Resources */,
@@ -1320,6 +1325,24 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "echo \"Moving Input Method Kit app to Input Methods directory.\"\n# killall $EXECUTABLE_NAME\n# cp -R \"$BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME\" \"$HOME/Library/Input Methods\"\n";
+		};
+		7581E6082769C4AE00CFD39A /* Lint Swift files */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Lint Swift files";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "export PATH=/opt/homebrew/bin:$PATH\nif which swiftlint >/dev/null; then\n  # only lint swift files that are staged (excluding generated protobufs)\n  git diff --cached --name-only | grep \"\\.swift\" | grep -v \".pb\" | while read filename; do\n      swiftlint lint --config .swiftlint.yml --path \"$filename\";\n  done\nelse\n  echo \"warning: SwiftLint not installed, download from https://github.com/realm/SwiftLint\"\nfi\n";
 		};
 		759E4BFD268F9BCC00CC1565 /* Change permissions to make Applescript read-only */ = {
 			isa = PBXShellScriptBuildPhase;
