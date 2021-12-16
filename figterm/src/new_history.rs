@@ -1,11 +1,12 @@
 use std::path::PathBuf;
 
 use anyhow::Result;
-use rusqlite::{Connection, Statement};
+use rusqlite::Connection;
 
 use crate::utils::fig_path;
 
-struct HistoryEntry {
+#[derive(Debug, Clone)]
+pub struct HistoryEntry {
     /// Id of Entry
     pub id: i64,
 

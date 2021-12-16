@@ -22,3 +22,20 @@ pub fn get_term_bundle() -> Option<String> {
         _ => std::env::var("TERM_BUNDLE_IDENTIFIER").ok(),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::utils::fig_path;
+
+    use super::get_term_bundle;
+
+    #[test]
+    fn fig_path_test() {
+        assert!(fig_path().unwrap().ends_with(".fig"));
+    }
+
+    #[test]
+    fn term_bundle_test() {
+        get_term_bundle().unwrap();
+    }
+}

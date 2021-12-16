@@ -1,7 +1,5 @@
 //! Utiities for IPC with Mac App
 
-pub mod hooks;
-
 use std::{
     path::{Path, PathBuf},
     time::Duration,
@@ -36,4 +34,14 @@ pub async fn send_hook(connection: &mut UnixStream, hook: proto::hook::Hook) -> 
 
     connection.write_all(&encoded_message).await?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn socket_path_test() {
+        assert!(get_socket_path().ends_with("fig.socket"))
+    }
 }

@@ -58,3 +58,16 @@ pub fn termios_to_raw(mut termios: Termios) -> Termios {
 
     termios
 }
+
+#[cfg(test)]
+mod tests {
+    use nix::{libc::STDIN_FILENO, sys::termios::tcgetattr};
+
+    use super::termios_to_raw;
+
+    #[test]
+    fn to_raw_test() {
+        let termios = tcgetattr(STDIN_FILENO).unwrap();
+        termios_to_raw(termios);
+    }
+}

@@ -1,5 +1,6 @@
 use crate::proto;
 
+/// Construct a new Shell Context
 pub fn new_context(
     session_id: Option<String>,
     pid: Option<i32>,
@@ -32,4 +33,27 @@ pub fn new_edit_buffer_hook(
         cursor,
         histno,
     })
+}
+
+pub fn hook_to_message(hook: proto::hook::Hook) -> proto::LocalMessage {
+    proto::LocalMessage {
+        r#type: Some(proto::local_message::Type::Hook(proto::local::Hook {
+            hook: Some(hook),
+        })),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn new_contest_test() {
+        new_context(None, None, None, None);
+    }
+
+    #[test]
+    fn new_edit_buffer_hook_test() {
+        new_edit_buffer_hook(None, "test".into(), 0, 0);
+    }
 }
