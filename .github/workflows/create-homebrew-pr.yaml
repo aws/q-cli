@@ -16,7 +16,6 @@ jobs:
     runs-on: macos-11
     steps:
       - name: "Bump Brew Cask Version"
-        # --fork-org=withfig
         run: brew bump-cask-pr fig --version=${{github.event.inputs.VERSION}},${{github.event.inputs.BUILD}}  --no-browse --verbose --debug
         env:
           HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.HOMEBREW_FORK_GITHUB_TOKEN }}

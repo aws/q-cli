@@ -37,7 +37,7 @@ jobs:
 # Declare ENVIRONMENT variables
 ############################################
 
-      - name: "SET: VERSIONS_BRANCH and APPCAST_PREFIX"
+      - name: "SET: VERSIONS_BRANCH, APPCAST_PREFIX and BUMP_CASK_PR"
         env:
           REF: ${{ github.ref }}
           ACTIONS_ALLOW_UNSECURE_COMMANDS: true
@@ -45,6 +45,7 @@ jobs:
           if [[ $REF == 'refs/heads/master' ]]; then
               echo "::set-env name=VERSIONS_BRANCH::main"
               echo "::set-env name=APPCAST_PREFIX::versions"
+              echo "::set-env name=BUMP_CASK_PR::1" 
 
           elif [[ $REF == 'refs/heads/staging' ]]; then
               echo "::set-env name=VERSIONS_BRANCH::beta"
@@ -331,6 +332,17 @@ jobs:
           cd versions
           git push origin $VERSIONS_BRANCH
           cd ..
+
+############################################
+# Publish Homebrew Cask
+############################################
+
+      - name: "Bump Brew Cask Version"
+        if: env.BUMP_CASK_PR == 1
+        run: brew bump-cask-pr fig --version=${{env.VERSION}},${{env.BUILD}}  --no-browse --verbose --debug
+        env:
+          HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.HOMEBREW_FORK_GITHUB_TOKEN }}
+
 ############################################
 # Create Github Release [Internal]
 ############################################
