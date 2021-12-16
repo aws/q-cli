@@ -11,11 +11,14 @@ import (
 )
 
 func NewCmdUpdate() *cobra.Command {
+	var force bool
+
 	cmd := &cobra.Command{
 		Use:   "update",
 		Short: "Update Fig",
 		Run: func(cmd *cobra.Command, arg []string) {
-			if err := fig_ipc.UpdateCommand(false); err != nil {
+			fmt.Println(force)
+			if err := fig_ipc.UpdateCommand(force); err != nil {
 				logging.Log("fig update:", err.Error())
 				fmt.Printf("\n" +
 					lipgloss.NewStyle().Bold(true).Render("Unable to Connect to Fig") +
@@ -28,6 +31,8 @@ func NewCmdUpdate() *cobra.Command {
 			}
 		},
 	}
+
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force update")
 
 	return cmd
 }
