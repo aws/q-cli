@@ -56,6 +56,10 @@ jobs:
     name: Rust Clippy Lint
     runs-on: [ ubuntu-latest ]
 
+    defaults:
+      run:
+        working-directory: figterm
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
@@ -74,6 +78,10 @@ jobs:
   rust-fmt-lint:
     name: Rust Fmt Lint
     runs-on: [ ubuntu-latest ]
+
+    defaults:
+      run:
+        working-directory: figterm
 
     steps:
     - name: Checkout repository
