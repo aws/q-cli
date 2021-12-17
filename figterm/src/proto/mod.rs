@@ -1,7 +1,7 @@
 //! Protocal buffer definitions
 
-pub mod local;
 pub mod hooks;
+pub mod local;
 
 pub use local::*;
 

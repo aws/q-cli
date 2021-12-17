@@ -1,15 +1,16 @@
 use crate::proto;
 
 /// Construct a new Shell Context
+#[allow(clippy::too_many_arguments)]
 pub fn new_context(
     pid: Option<i32>,
     ttys: Option<String>,
-    process_name: Option<String>,
-    current_working_directory: Option<String>,
+    _process_name: Option<String>,
+    _current_working_directory: Option<String>,
     session_id: Option<String>,
     integration_version: Option<i32>,
-    terminal: Option<String>,
-    hostname: Option<String>,
+    _terminal: Option<String>,
+    _hostname: Option<String>,
 ) -> proto::ShellContext {
     proto::ShellContext {
         pid,

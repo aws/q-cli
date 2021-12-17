@@ -11,9 +11,7 @@ pub mod screen;
 pub mod term;
 pub mod utils;
 
-use std::{
-    error::Error, ffi::CString, os::unix::prelude::AsRawFd, process::exit, time::Duration, vec,
-};
+use std::{error::Error, ffi::CString, os::unix::prelude::AsRawFd, process::exit, time::Duration};
 
 use alacritty_terminal::ansi::Processor;
 use anyhow::{Context, Result};
@@ -112,7 +110,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                                 let incomming_tx = incomming_tx.clone();
                                 tokio::spawn(async move {
                                     let mut buf = Vec::new();
-                                    while let Ok(_) = stream.read_to_end(&mut buf).await {
+                                    while stream.read_to_end(&mut buf).await.is_ok() {
                                         incomming_tx.clone().send(buf.clone()).await.unwrap();
                                     }
                                 });

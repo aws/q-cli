@@ -48,6 +48,7 @@ pub struct HistoryEntry {
 }
 
 impl HistoryEntry {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         command: String,
         shell: String,

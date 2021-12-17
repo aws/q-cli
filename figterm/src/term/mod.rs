@@ -66,7 +66,7 @@ mod tests {
     use super::termios_to_raw;
 
     #[test]
-    #[cfg(feature="desktop-tests")]
+    #[cfg(feature = "desktop-tests")]
     fn to_raw_test() {
         let termios = tcgetattr(STDIN_FILENO).unwrap();
         termios_to_raw(termios);

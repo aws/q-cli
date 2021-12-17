@@ -1,8 +1,10 @@
 use alacritty_terminal::ansi::{HandledStatus, Handler};
 use tokio::sync::mpsc::Sender;
-use vte::{Params, Perform};
 
-use crate::{proto::{hooks::new_context, ShellContext}, fig_info::FigInfo};
+use crate::{
+    fig_info::FigInfo,
+    proto::{hooks::new_context, ShellContext},
+};
 
 struct ShellState {
     tty: Option<String>,
@@ -57,7 +59,7 @@ impl Figterm {
     }
 
     pub fn get_context(&self) -> ShellContext {
-        let context = new_context(
+        new_context(
             self.shell_state.pid,
             self.shell_state.tty.clone(),
             self.shell_state.shell.clone(),
@@ -66,17 +68,14 @@ impl Figterm {
             None,
             None,
             None,
-        );
-        return context;
-        
+        )
     }
 }
-
 
 impl Handler for Figterm {
     fn unhandled_osc_dispatch(&mut self, params: &[&[u8]], bell_terminated: bool) -> HandledStatus {
         let params_print = params
-            .into_iter()
+            .iter()
             .map(|p| std::str::from_utf8(*p).unwrap_or("invalid utf-8"))
             .collect::<Vec<_>>();
 
@@ -98,7 +97,7 @@ impl Handler for Figterm {
                     let eq_pos = param.iter().position(|b| *b == b'=');
                     if let Some(eq_index) = eq_pos {
                         let (key, val) = param.split_at(eq_index);
-                        let val = &val[1..];
+                        let _val = &val[1..];
 
                         match key {
                             b"Dir" => {}
@@ -119,19 +118,13 @@ impl Handler for Figterm {
                     }
                 }
             },
-            _ => {
-                return HandledStatus::Unhandled
-            }
+            _ => return HandledStatus::Unhandled,
         }
 
         HandledStatus::Handled
     }
 
-    fn scroll_down(&mut self, _: usize) {
-        
-    }
+    fn scroll_down(&mut self, _: usize) {}
 
-    fn scroll_up(&mut self, _: usize) {
-        
-    }
+    fn scroll_up(&mut self, _: usize) {}
 }

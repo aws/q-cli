@@ -9,6 +9,8 @@ repository = "https://github.com/withfig/macos"
 publish = false
 
 [features]
+default = ["desktop-tests"]
+# Tests that do not work on CI
 desktop-tests = []
 
 [dependencies]
@@ -45,3 +47,6 @@ features = ["bundled"]
 
 [build-dependencies]
 prost-build = "0.9"
+
+[profile.release]
+lto = true
