@@ -115,6 +115,25 @@ jobs:
         with:
           go-version: '1.17'
 
+      - name: Setup Node Environment
+        uses: actions/setup-node@v1
+
+############################################
+# Generate Protobuf Artifacts
+############################################
+      - name: Install Protobuf tooling
+        run:  |
+          brew install protobuf swift-protobuf
+          npm install -g ts-proto
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: 1
+
+      - name: Generate Protobuf Artifacts
+        run: make
+        with:
+          working-directory: ./proto
+          
 ############################################
 # Build, Archive & Export 
 ############################################
@@ -209,8 +228,6 @@ jobs:
 ############################################
       # - name: Install fileicon
       #   run: HOMEBREW_NO_AUTO_UPDATE=1 brew install fileicon
-      - name: Setup Node Environment
-        uses: actions/setup-node@v1
       - name: Install appdmg
         run: npm install -g appdmg
       - name: "Create dmg-spec.json"
