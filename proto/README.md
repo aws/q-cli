@@ -19,7 +19,7 @@ brew install swift-protobuf
 ##### Install TS compiler
 
 ```
-cd ../typescript-api-bindings && npm install
+npm install -g ts-proto
 ```
 
 ##### Install go compiler
