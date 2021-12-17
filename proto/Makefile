@@ -11,6 +11,7 @@ export PATH := $(shell go env GOPATH)/bin:$(PATH)
 
 SHELL := env PATH=$(PATH) /bin/bash
 
+
 # check if protoc and language-specific plugins are installed
 PROTOC := $(shell command -v protoc 2> /dev/null)
 TS     := $(shell command -v protoc-gen-ts_proto 2> /dev/null)
@@ -39,6 +40,9 @@ DESTINATIONS       = $(ARTIFACTS) \
 					 $(SWIFT_API_BINDINGS) \
 					 $(GO_CLI) \
 					 $(DOTENV)
+
+# Ensure $ARTIFACTS directory exists
+$(shell mkdir -p $(ARTIFACTS))
 
 all: api local
 ifndef PROTOC
