@@ -6,7 +6,7 @@
   "scripts": {
     "test": "jest --runInBand --detectOpenHandles",
     "lint": "eslint src",
-    "proto-gen": "cd ../proto/ && ./proto.sh",
+    "proto-gen": "cd ../proto/ && make local",
     "precommit": "lint-staged",
     "lint:fix": "npm run lint -- --fix"
   },
