@@ -2,6 +2,14 @@ package diagnostics
 
 import "testing"
 
+func TestInstalledViaBrew(t *testing.T) {
+	viaBrew, err := InstalledViaBrew()
+	if err != nil {
+		t.Errorf("Error getting mac os version: %s", err.Error())
+	}
+
+	t.Logf("Mac os version: %t", viaBrew)
+}
 func TestGetMacOsVersion(t *testing.T) {
 	macosVersion, err := GetMacOsVersion()
 	if err != nil {

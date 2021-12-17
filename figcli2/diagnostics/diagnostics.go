@@ -15,6 +15,17 @@ import (
 	"strings"
 )
 
+func InstalledViaBrew() (bool, error) {
+	casks, err := exec.Command("brew", "list", "--cask").Output()
+	if err != nil {
+		return false, err
+	}
+
+	regexpBuild := regexp.MustCompile(`(?m:^fig$)`)
+
+	return regexpBuild.Match(casks), nil
+}
+
 func GetMacOsVersion() (string, error) {
 	execSwVers, err := exec.Command("sw_vers").Output()
 	if err != nil {
@@ -359,6 +370,13 @@ func Summary() string {
 	summary.WriteString("Only insert on tab: ")
 	summary.WriteString(resp.GetDiagnostics().GetOnlytab())
 	summary.WriteString("\n")
+
+	viaBrew, err := InstalledViaBrew()
+	if err == nil && viaBrew {
+		summary.WriteString("Installed via Brew: ")
+		summary.WriteString("true")
+		summary.WriteString("\n")
+	}
 
 	//  Installation Script: \(Diagnostic.installationScriptRan)
 	summary.WriteString("Installation Script: ")

@@ -144,8 +144,8 @@ jobs:
       - name: "Import Certificate"
         uses: devbotsxyz/import-signing-certificate@main
         with:
-          certificate-data: ${{ secrets.SIGNING_CERTIFICATE_P12_DATA }}
-          certificate-passphrase: ${{ secrets.SIGNING_CERTIFICATE_PASSWORD }}
+          certificate-data: ${{ secrets.FIG__SIGNING_CERTIFICATE_P12_DATA }}
+          certificate-passphrase: ${{ secrets.FIG__SIGNING_CERTIFICATE_PASSWORD }}
           keychain-password: ${{ secrets.KEYCHAIN_PASSWORD }}
 
       - name: "Create exportOptions.plist"
@@ -161,14 +161,14 @@ jobs:
                 <key>method</key>
                 <string>developer-id</string>
                 <key>teamID</key>
-                <string>${{secrets.NOTARIZE_TEAM_ID}}</string>
+                <string>${{secrets.FIG__NOTARIZE_TEAM_ID}}</string>
             </dict>
             </plist>
      
       - name: "SET: CODESIGNING_IDENTITY"
         run: |
           security find-identity -v -p codesigning
-          echo CODESIGNING_IDENTITY=$(security find-identity -v -p codesigning | grep "Developer ID Application" | grep ${{ secrets.NOTARIZE_TEAM_ID }} | cut -d' ' -f5- | cut -d "\"" -f2) >> $GITHUB_ENV
+          echo CODESIGNING_IDENTITY=$(security find-identity -v -p codesigning | grep "Developer ID Application" | grep ${{ secrets.FIG__NOTARIZE_TEAM_ID }} | cut -d' ' -f5- | cut -d "\"" -f2) >> $GITHUB_ENV
       - name: "Increase keychain access interval"
         run: security set-keychain-settings -lut 1200
 
@@ -212,9 +212,9 @@ jobs:
           xcrun stapler staple Export/Fig.app
           # xcrun altool --notarize-app --primary-bundle-id "com.mschrage.fig" -u "$NOTARIZE_USERNAME" -p "$NOTARIZE_PASSWORD" --file Fig.zip
         env:
-          NOTARIZE_USERNAME: ${{ secrets.NOTARIZE_USERNAME }}
-          NOTARIZE_PASSWORD: ${{ secrets.NOTARIZE_PASSWORD }}
-          NOTARIZE_TEAM_ID: ${{ secrets.NOTARIZE_TEAM_ID }}
+          NOTARIZE_USERNAME: ${{ secrets.FIG__NOTARIZE_USERNAME }}
+          NOTARIZE_PASSWORD: ${{ secrets.FIG__NOTARIZE_PASSWORD }}
+          NOTARIZE_TEAM_ID: ${{ secrets.FIG__NOTARIZE_TEAM_ID }}
       - name: "VERIFY: App is codesigned properly"
         if: github.event.inputs.notarizeApp != 'false'
         run: codesign --verify --deep --strict --verbose=2 Export/Fig.app
@@ -276,9 +276,9 @@ jobs:
           xcrun notarytool submit "fig $BUILD.dmg" --apple-id "$NOTARIZE_USERNAME" --password "$NOTARIZE_PASSWORD" --team-id "$NOTARIZE_TEAM_ID" --wait
           # xcrun stapler staple Export/Fig.app
         env:
-          NOTARIZE_USERNAME: ${{ secrets.NOTARIZE_USERNAME }}
-          NOTARIZE_PASSWORD: ${{ secrets.NOTARIZE_PASSWORD }}
-          NOTARIZE_TEAM_ID: ${{ secrets.NOTARIZE_TEAM_ID }}
+          NOTARIZE_USERNAME: ${{ secrets.FIG__NOTARIZE_USERNAME }}
+          NOTARIZE_PASSWORD: ${{ secrets.FIG__NOTARIZE_PASSWORD }}
+          NOTARIZE_TEAM_ID: ${{ secrets.FIG__NOTARIZE_TEAM_ID }}
       - name: "VERIFY: DMG notarization status"
         if: github.event.inputs.notarizeDMG != 'false'
         run: spctl -a -t open --context context:primary-signature -v  "fig $BUILD.dmg" 
