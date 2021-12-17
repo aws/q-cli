@@ -131,8 +131,7 @@ jobs:
 
       - name: Generate Protobuf Artifacts
         run: make
-        with:
-          working-directory: ./proto
+        working-directory: ./proto
           
 ############################################
 # Build, Archive & Export 
