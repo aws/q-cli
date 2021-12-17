@@ -9,7 +9,7 @@ import * as Telemetry from './telemetry';
 import * as fs from './filesystem';
 import * as Config from './config';
 
-import * as Fig from './fig';
+import * as Fig from './fig.pb';
 import * as Internal from './requests';
 
 // @ts-ignore

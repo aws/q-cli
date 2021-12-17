@@ -1,4 +1,4 @@
-import { EditBufferChangedNotification, NotificationType } from './fig';
+import { EditBufferChangedNotification, NotificationType } from './fig.pb';
 import { _subscribe } from './notifications';
 
 export function subscribe(
