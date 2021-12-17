@@ -15,6 +15,7 @@ use std::{
     error::Error, ffi::CString, os::unix::prelude::AsRawFd, process::exit, time::Duration, vec,
 };
 
+use alacritty_terminal::ansi::Processor;
 use anyhow::{Context, Result};
 use fig_info::FigInfo;
 use nix::{
@@ -142,7 +143,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
                     let _history = new_history::History::load()?;
 
-                    let mut parser = vte::Parser::new();
+                    let mut parser = Processor::new();
                     let mut figterm = figterm::Figterm::new(outgoing_tx.clone(), fig_info.clone());
 
                     let mut read_buffer = [0u8; BUFFER_SIZE];

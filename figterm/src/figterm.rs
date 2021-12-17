@@ -1,3 +1,4 @@
+use alacritty_terminal::ansi::{HandledStatus, Handler};
 use tokio::sync::mpsc::Sender;
 use vte::{Params, Perform};
 
@@ -67,37 +68,13 @@ impl Figterm {
             None,
         );
         return context;
+        
     }
 }
 
-impl Perform for Figterm {
-    fn print(&mut self, c: char) {
-        log::info!("[print] {:?}", c);
-    }
 
-    fn execute(&mut self, byte: u8) {
-        log::info!("[execute] {:02x}", byte);
-    }
-
-    fn hook(&mut self, params: &Params, intermediates: &[u8], ignore: bool, c: char) {
-        log::info!(
-            "[hook] params={:?}, intermediates={:?}, ignore={:?}, char={:?}",
-            params,
-            intermediates,
-            ignore,
-            c
-        );
-    }
-
-    fn put(&mut self, byte: u8) {
-        log::info!("[put] {:02x}", byte);
-    }
-
-    fn unhook(&mut self) {
-        log::info!("[unhook]");
-    }
-
-    fn osc_dispatch(&mut self, params: &[&[u8]], bell_terminated: bool) {
+impl Handler for Figterm {
+    fn unhandled_osc_dispatch(&mut self, params: &[&[u8]], bell_terminated: bool) -> HandledStatus {
         let params_print = params
             .into_iter()
             .map(|p| std::str::from_utf8(*p).unwrap_or("invalid utf-8"))
@@ -135,31 +112,26 @@ impl Perform for Figterm {
                             b"Hostname" => {}
                             b"Log" => {}
                             b"SSH" => {}
-                            _ => {}
+                            _ => {
+                                return HandledStatus::Unhandled;
+                            }
                         }
                     }
                 }
             },
-            _ => {}
+            _ => {
+                return HandledStatus::Unhandled
+            }
         }
+
+        HandledStatus::Handled
     }
 
-    fn csi_dispatch(&mut self, params: &Params, intermediates: &[u8], ignore: bool, c: char) {
-        log::info!(
-            "[csi_dispatch] params={:#?}, intermediates={:?}, ignore={:?}, char={:?}",
-            params,
-            intermediates,
-            ignore,
-            c
-        );
+    fn scroll_down(&mut self, _: usize) {
+        
     }
 
-    fn esc_dispatch(&mut self, intermediates: &[u8], ignore: bool, byte: u8) {
-        log::info!(
-            "[esc_dispatch] intermediates={:?}, ignore={:?}, byte={:02x}",
-            intermediates,
-            ignore,
-            byte
-        );
+    fn scroll_up(&mut self, _: usize) {
+        
     }
 }

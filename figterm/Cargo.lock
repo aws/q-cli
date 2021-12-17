@@ -25,8 +25,7 @@ dependencies = [
 [[package]]
 name = "alacritty_config_derive"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "77044c45bdb871e501b5789ad16293ecb619e5733b60f4bb01d1cb31c463c336"
+source = "git+https://github.com/grant0417/alacritty.git#4a4fef1264667efb8179729b28d3e5a893f929b4"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -35,9 +34,8 @@ dependencies = [
 
 [[package]]
 name = "alacritty_terminal"
-version = "0.15.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6cb242564a92a164043841b07b195570b7e691b926858af601c43e0cc4fe68e3"
+version = "0.15.1-dev"
+source = "git+https://github.com/grant0417/alacritty.git#4a4fef1264667efb8179729b28d3e5a893f929b4"
 dependencies = [
  "alacritty_config_derive",
  "base64",
@@ -54,7 +52,8 @@ dependencies = [
  "regex-automata",
  "serde",
  "serde_yaml",
- "signal-hook 0.1.17",
+ "signal-hook",
+ "signal-hook-mio",
  "unicode-width",
  "vte",
  "winapi 0.3.9",
@@ -216,7 +215,7 @@ dependencies = [
  "prost",
  "prost-build",
  "rusqlite",
- "signal-hook 0.3.10",
+ "signal-hook",
  "tokio",
  "vte",
 ]
@@ -460,6 +459,17 @@ dependencies = [
  "log",
  "mio 0.6.23",
  "slab",
+]
+
+[[package]]
+name = "mio-uds"
+version = "0.6.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "afcb699eb26d4332647cc848492bbc15eafb26f08d0304550d5aa1f612e066f0"
+dependencies = [
+ "iovec",
+ "libc",
+ "mio 0.6.23",
 ]
 
 [[package]]
@@ -863,23 +873,24 @@ dependencies = [
 
 [[package]]
 name = "signal-hook"
-version = "0.1.17"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7e31d442c16f047a671b5a71e2161d6e68814012b7f5379d269ebd915fac2729"
-dependencies = [
- "libc",
- "mio 0.6.23",
- "signal-hook-registry",
-]
-
-[[package]]
-name = "signal-hook"
 version = "0.3.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9c98891d737e271a2954825ef19e46bd16bdb98e2746f2eec4f7a4ef7946efd1"
 dependencies = [
  "libc",
  "signal-hook-registry",
+]
+
+[[package]]
+name = "signal-hook-mio"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "29fd5867f1c4f2c5be079aee7a2adf1152ebb04a4bc4d341f504b7dece607ed4"
+dependencies = [
+ "libc",
+ "mio 0.6.23",
+ "mio-uds",
+ "signal-hook",
 ]
 
 [[package]]
