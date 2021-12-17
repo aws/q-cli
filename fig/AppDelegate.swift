@@ -780,7 +780,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
       }
 
       if let general = uninstallScriptFile {
-        NSWorkspace.shared.open(URL(string: "https://fig.io/uninstall?email=\(Defaults.shared.email ?? "")")!)
+        NSWorkspace.shared.open(
+          URL(string: "https://fig.io/uninstall?email=\(Defaults.shared.email ?? "")&" +
+            "version=\(Diagnostic.distribution.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")")!)
         LoginItems.shared.removeAllItemsMatchingBundleURL()
 
         let domain = Bundle.main.bundleIdentifier!
