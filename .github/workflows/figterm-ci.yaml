@@ -54,7 +54,7 @@ jobs:
 
   rust-clippy-lint:
     name: Rust Clippy Lint
-    run-on: ubuntu-latest
+    run-on: [ ubuntu-latest ]
 
     steps:
     - name: Checkout repository
@@ -73,7 +73,7 @@ jobs:
   
   rust-fmt-lint:
     name: Rust Fmt Lint
-    run-on: ubuntu-latest
+    run-on: [ ubuntu-latest ]
 
     steps:
     - name: Checkout repository
