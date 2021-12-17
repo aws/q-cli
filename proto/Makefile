@@ -11,7 +11,7 @@ export PATH := $(shell go env GOPATH)/bin:$(PATH)
 
 SHELL := env PATH=$(PATH) /bin/bash
 
-# check if protoc and lmaguage-specific plugins are installed
+# check if protoc and language-specific plugins are installed
 PROTOC := $(shell command -v protoc 2> /dev/null)
 TS     := $(shell command -v protoc-gen-ts_proto 2> /dev/null)
 SWIFT  := $(shell command -v protoc-gen-swift 2> /dev/null)
@@ -23,20 +23,22 @@ FLAGS       = --experimental_allow_proto3_optional
 TS_FLAGS    = --ts_proto_opt=esModuleInterop=true --ts_proto_opt=oneof=unions --ts_proto_opt=fileSuffix=.pb
 SWIFT_FLAGS = --swift_opt=Visibility=Public
 
-# Flags
-ARTIFACTS   = "./bin"
-
 # Proto files
 LOCAL = "./local.proto"
 API   = "./fig.proto" "./local.proto"
 
 # Destinations
+ARTIFACTS          = "./bin"
 TS_API_BINDINGS    = $(ROOT)/../typescript-api-bindings/src
 SWIFT_API_BINDINGS = $(ROOT)/../swift-api-bindings/Sources/FigAPIBindings
 GO_CLI             = $(ROOT)/../figcli2/fig-proto
 DOTENV             = $(ROOT)/../dotenv/src
 
-DESTINATIONS       = $(TS_API_BINDINGS) $(SWIFT_API_BINDINGS) $(GO_CLI) $(DOTENV)
+DESTINATIONS       = $(ARTIFACTS) \
+					 $(TS_API_BINDINGS) \
+					 $(SWIFT_API_BINDINGS) \
+					 $(GO_CLI) \
+					 $(DOTENV)
 
 all: api local
 ifndef PROTOC
@@ -65,7 +67,7 @@ local-go:
 	protoc $(FLAGS) \
 		--go_opt=paths=source_relative \
 	   	--go_opt=Mlocal.proto="." \
-	   	--go_out="./bin/" $(LOCAL)
+	   	--go_out=$(ARTIFACTS) $(LOCAL)
 
 local-ts:
 	protoc $(FLAGS) $(TS_FLAGS) --ts_proto_out=$(ARTIFACTS) $(LOCAL)
@@ -80,7 +82,5 @@ local: local-go local-ts
 	cp $(ARTIFACTS)/local.pb.go $(GO_CLI)
 
 clean: 
-	rm -f $(ROOT)/bin/*
-
-	# Remove protos from all destinations
+	# Remove compiled protos from all destinations, including $ARTIFACTS
 	$(foreach destination,$(DESTINATIONS),rm $(destination)/*.pb.* ;)
