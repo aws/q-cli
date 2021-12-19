@@ -8,9 +8,9 @@ import { sendInsertTextRequest } from './requests';
 import { _subscribe } from './notifications';
 
 export const processDidChange = {
-  subscribe: (
+  subscribe(
     handler: (notification: ProcessChangedNotification) => boolean | undefined
-  ) => {
+  ) {
     return _subscribe(
       { type: NotificationType.NOTIFY_ON_PROCESS_CHANGED },
       notification => {
@@ -28,11 +28,11 @@ export const processDidChange = {
 };
 
 export const promptDidReturn = {
-  subscribe: (
+  subscribe(
     handler: (
       notification: ShellPromptReturnedNotification
     ) => boolean | undefined
-  ) => {
+  ) {
     return _subscribe(
       { type: NotificationType.NOTIFY_ON_PROMPT },
       notification => {
@@ -50,9 +50,9 @@ export const promptDidReturn = {
 };
 
 export const historyUpdated = {
-  subscribe: (
+  subscribe(
     handler: (notification: HistoryUpdatedNotification) => boolean | undefined
-  ) => {
+  ) {
     return _subscribe(
       { type: NotificationType.NOTIFY_ON_HISTORY_UPDATED },
       notification => {

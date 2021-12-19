@@ -7,9 +7,9 @@ import {
 } from './requests';
 
 export const didChange = {
-  subscribe: (
+  subscribe(
     handler: (notification: SettingsChangedNotification) => boolean | undefined
-  ) => {
+  ) {
     return _subscribe(
       { type: NotificationType.NOTIFY_ON_SETTINGS_CHANGE },
       notification => {
