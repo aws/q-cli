@@ -48,7 +48,14 @@ pub async fn create_socket_listen(session_id: impl AsRef<str>) -> Result<UnixLis
     .into_iter()
     .collect();
 
-    Ok(UnixListener::bind(path)?)
+    // Remove the socket
+    match tokio::fs::remove_file(&path).await {
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(e) => Err(e),
+        _ => Ok(()),
+    }?;
+
+    Ok(UnixListener::bind(&path)?)
 }
 
 #[cfg(test)]

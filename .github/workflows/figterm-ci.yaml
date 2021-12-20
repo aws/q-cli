@@ -72,6 +72,9 @@ jobs:
         override: true
         components: clippy
 
+    - name: Cache Dependencies
+      uses: Swatinem/rust-cache@ce325b60658c1b38465c06cc965b79baf32c1e72
+
     - name: Clippy Lint
       run: cargo clippy --all-targets --all-features -- -D warnings
   

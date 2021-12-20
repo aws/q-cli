@@ -40,6 +40,18 @@ pub fn new_edit_buffer_hook(
     })
 }
 
+/// Construct a new prompt hook
+pub fn new_prompt_hook(context: Option<proto::ShellContext>) -> proto::hook::Hook {
+    proto::hook::Hook::Prompt(proto::PromptHook { context })
+}
+
+pub fn new_preexec_hook(context: Option<proto::ShellContext>) -> proto::hook::Hook {
+    proto::hook::Hook::PreExec(proto::PreExecHook {
+        context,
+        command: None,
+    })
+}
+
 pub fn hook_to_message(hook: proto::hook::Hook) -> proto::LocalMessage {
     proto::LocalMessage {
         r#type: Some(proto::local_message::Type::Hook(proto::local::Hook {

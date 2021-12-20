@@ -13,7 +13,6 @@ pub mod utils;
 
 use std::{error::Error, ffi::CString, os::unix::prelude::AsRawFd, process::exit, time::Duration};
 
-use alacritty_terminal::ansi::Processor;
 use anyhow::{Context, Result};
 use fig_info::FigInfo;
 use nix::{
@@ -85,7 +84,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     tcsetattr(STDIN_FILENO, SetArg::TCSAFLUSH, &raw_termios)?;
 
                     // Spawn thread to handle outgoing data to main Fig app
-                    let (outgoing_tx, mut outgoing_rx) = tokio::sync::mpsc::channel::<Vec<u8>>(128);
+                    let (outgoing_tx, mut outgoing_rx) = tokio::sync::mpsc::unbounded_channel::<Vec<u8>>();
                     tokio::spawn(async move {
                         let socket = get_socket_path();
 
@@ -141,7 +140,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
                     let _history = new_history::History::load()?;
 
-                    let mut parser = Processor::new();
+                    let mut parser = vte::Parser::new();
                     let mut figterm = figterm::Figterm::new(outgoing_tx.clone(), fig_info.clone());
 
                     let mut read_buffer = [0u8; BUFFER_SIZE];

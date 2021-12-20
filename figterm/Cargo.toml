@@ -19,7 +19,6 @@ desktop-tests = []
 nix = "0.23"
 signal-hook = "0.3"
 tokio = { version = "1", features = ["full"] }
-#alacritty_terminal = "0.15"
 
 # Logging
 log = { version = "0.4", features = ["std"] }
@@ -39,7 +38,6 @@ clap = { version = "3.0.0-rc", features = ["derive"] }
 
 # Term utils
 vte = "0.10"
-alacritty_terminal = { git = "https://github.com/grant0417/alacritty.git", package = "alacritty_terminal" }
 
 [dependencies.rusqlite]
 version = "0.26"
