@@ -11,6 +11,7 @@ import FigAPIBindings
 import Foundation
 
 extension ExternalWindowHash {
+  // swiftlint:disable large_tuple
   func components() -> (windowId: CGWindowID, tab: String?, pane: String?)? {
 
     let tokens = self.components(separatedBy: CharacterSet(charactersIn: "/%"))
@@ -190,11 +191,11 @@ extension ShellHookManager {
           let VSCodeTerminal =
             [Integrations.VSCode, Integrations.VSCodeInsiders, Integrations.VSCodium].contains(
               window.bundleId) && id.hasPrefix("code:")
-          let HyperTab = window.bundleId == Integrations.Hyper && id.hasPrefix("hyper:")
+          let hyperTab = window.bundleId == Integrations.Hyper && id.hasPrefix("hyper:")
           let iTermTab =
             window.bundleId == Integrations.iTerm && !id.hasPrefix("code:")
             && !id.hasPrefix("hyper:") && !includesBundleId
-          guard VSCodeTerminal || iTermTab || HyperTab || includesBundleId else { return }
+          guard VSCodeTerminal || iTermTab || hyperTab || includesBundleId else { return }
           Logger.log(message: "tab: \(window.windowId)/\(id)")
           self.keyboardFocusDidChange(to: id, in: window)
         }
@@ -209,31 +210,21 @@ extension ShellHookManager {
     // Need time for allowlisted window to change
     Timer.delayWithSeconds(0.1) {
       if let window = AXWindowServer.shared.allowlistedWindow {
-        let CodeTerminal =
+        // todo(mschrage): remove codepath for handling legacy VSCode extension
+        // that does not distinguish which type of VSCode instance is running
+        let codeTerminal =
           [Integrations.VSCode, Integrations.VSCodeInsiders, Integrations.VSCodium]
           .contains(window.bundleId)
           && applicationIdentifier == "code"
 
-        let VSCodeTerminal = window.bundleId == Integrations.VSCode
-          && applicationIdentifier == "vscode"
+        guard let provider = Integrations.providers[window.bundleId ?? ""],
+                  provider.id == applicationIdentifier || codeTerminal else {
+          Logger.log(message: "Terminal Integration Provider not found for '\(applicationIdentifier)'." +
+                              "(\(window.bundleId ?? "<unknown bundle>")," +
+                              "\(Integrations.providers[window.bundleId ?? ""]?.id ?? "<unknown id>"))")
 
-        let VSCodeInsidersTerminal = window.bundleId == Integrations.VSCodeInsiders
-          && applicationIdentifier == "vscode-insiders"
-
-        let VSCodeiumTerminal = window.bundleId == Integrations.VSCodium
-          && applicationIdentifier == "vscodium"
-
-        let HyperTab = window.bundleId == Integrations.Hyper
-          && applicationIdentifier == "hyper"
-
-        let iTermTab = window.bundleId == Integrations.iTerm
-          && applicationIdentifier == "iterm"
-
-        let KittyTerm = window.bundleId == Integrations.Kitty
-          && applicationIdentifier == "kitty"
-
-        guard CodeTerminal || VSCodeTerminal || VSCodeInsidersTerminal ||
-                VSCodeiumTerminal || iTermTab || HyperTab || KittyTerm else { return }
+          return
+        }
 
         Logger.log(message: "tab: \(window.windowId)/\(applicationIdentifier):\(sessionId)")
 
@@ -359,6 +350,7 @@ extension ShellHookManager {
     let envMap = env.mapValues { val in
       val as? String
     }
+    // swiftlint:disable force_cast
     let envFilter =
       envMap.filter { (_, val) in
         val != nil

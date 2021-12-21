@@ -362,6 +362,10 @@ char *get_term_bundle() {
     return "co.zeit.hyper";
   }
 
+  if (strcmp(term_program, "Tabby") == 0) {
+    return "org.tabby";
+  } 
+
   char *term_bundle = getenv("TERM_BUNDLE_IDENTIFIER");
 
   if (term_bundle == NULL) {
