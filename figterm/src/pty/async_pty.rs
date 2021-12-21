@@ -51,9 +51,10 @@ impl AsRawFd for AsyncPtyMaster {
 
 /// Set `fd` into non-blocking mode using O_NONBLOCKING
 fn set_nonblocking(fd: RawFd) -> Result<()> {
-    let old_flag = OFlag::from_bits(fcntl::fcntl(fd, FcntlArg::F_GETFL).unwrap()).unwrap();
+    let old_flag = OFlag::from_bits(fcntl::fcntl(fd, FcntlArg::F_GETFL)?)
+        .ok_or(anyhow::anyhow!("Failed to convert: OFlag::from_bits"))?;
 
-    fcntl::fcntl(fd, FcntlArg::F_SETFL(old_flag | OFlag::O_NONBLOCK)).unwrap();
+    fcntl::fcntl(fd, FcntlArg::F_SETFL(old_flag | OFlag::O_NONBLOCK))?;
 
     Ok(())
 }

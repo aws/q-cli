@@ -1,3 +1,4 @@
+pub mod command_info;
 pub mod fig_info;
 pub mod figterm;
 pub mod history;
@@ -84,7 +85,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                     tcsetattr(STDIN_FILENO, SetArg::TCSAFLUSH, &raw_termios)?;
 
                     // Spawn thread to handle outgoing data to main Fig app
-                    let (outgoing_tx, mut outgoing_rx) = tokio::sync::mpsc::unbounded_channel::<Vec<u8>>();
+                    let (outgoing_tx, mut outgoing_rx) =
+                        tokio::sync::mpsc::unbounded_channel::<Vec<u8>>();
                     tokio::spawn(async move {
                         let socket = get_socket_path();
 
@@ -137,8 +139,6 @@ fn main() -> Result<(), Box<dyn Error>> {
                             unsafe { ioctl_tiocswinsz(master_fd, &winsize) }.unwrap();
                         }
                     });
-
-                    let _history = new_history::History::load()?;
 
                     let mut parser = vte::Parser::new();
                     let mut figterm = figterm::Figterm::new(outgoing_tx.clone(), fig_info.clone());

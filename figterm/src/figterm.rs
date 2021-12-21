@@ -1,15 +1,23 @@
-use std::{env::set_current_dir, str::FromStr};
+use std::{
+    env::{current_dir, set_current_dir},
+    path::PathBuf,
+    str::FromStr,
+};
 
 use log::LevelFilter;
 use tokio::sync::mpsc::{Sender, UnboundedSender};
 use vte::{Params, Perform};
 
 use crate::{
+    command_info::CommandInfo,
     fig_info::FigInfo,
+    history::HistoryFile,
+    new_history::History,
     proto::{
-        hooks::{hook_to_message, new_context, new_prompt_hook, new_preexec_hook},
+        hooks::{hook_to_message, new_context, new_preexec_hook, new_prompt_hook},
         ShellContext,
     },
+    screen::FigtermScreen,
 };
 
 struct ShellState {
@@ -44,29 +52,31 @@ impl ShellState {
 }
 
 pub struct Figterm {
-    sender: UnboundedSender<Vec<u8>>,
-
     fig_info: FigInfo,
-
     shell_state: ShellState,
+    pub screen: FigtermScreen,
+
+    history: Option<History>,
+
+    last_command: Option<CommandInfo>,
     has_seen_prompt: bool,
 
-    line: usize,
-    col: usize,
+    unix_socket_sender: UnboundedSender<Vec<u8>>,
 }
 
 impl Figterm {
     pub fn new(sender: UnboundedSender<Vec<u8>>, fig_info: FigInfo) -> Figterm {
         Figterm {
-            sender,
+            unix_socket_sender: sender,
 
             fig_info,
-
-            has_seen_prompt: false,
+            screen: FigtermScreen::new(),
             shell_state: ShellState::new(),
 
-            line: 1,
-            col: 1,
+            history: History::load().ok(),
+
+            has_seen_prompt: false,
+            last_command: None,
         }
     }
 
@@ -76,8 +86,8 @@ impl Figterm {
             self.shell_state.tty.clone(),
             self.shell_state.shell.clone(),
             None,
-            None,
-            None,
+            self.fig_info.term_session_id.clone(),
+            self.fig_info.fig_integration_version.clone(),
             None,
             None,
         )
@@ -85,6 +95,10 @@ impl Figterm {
 }
 
 impl Perform for Figterm {
+    fn print(&mut self, c: char) {
+        self.screen.write(c);
+    }
+
     fn osc_dispatch(&mut self, params: &[&[u8]], bell_terminated: bool) {
         let params_print = params
             .iter()
@@ -103,17 +117,58 @@ impl Perform for Figterm {
                     let context = self.get_context();
                     let hook = new_prompt_hook(Some(context));
                     let message = hook_to_message(hook).to_fig_pbuf();
-                    self.sender.send(message).unwrap();
+                    match self.unix_socket_sender.send(message) {
+                        Ok(_) => (),
+                        Err(e) => log::error!("Failed to queue `Prompt` hook: {}", e),
+                    }
+
+                    log::info!("Prompt at position: {:?}", self.screen.cursor);
+
+                    if let Some(command) = &self.last_command {
+                        if let Some(history) = &mut self.history {
+                            match history.insert_command_history(command.clone()) {
+                                Ok(_) => {}
+                                Err(e) => log::error!("Failed to insert command history: {}", e),
+                            }
+                        }
+                        log::info!("{:?}", command);
+                    }
                 }
                 b"StartPrompt" => {
                     self.has_seen_prompt = true;
+
+                    self.shell_state.in_prompt = true;
                 }
-                b"EndPrompt" => {}
+                b"EndPrompt" => {
+                    self.shell_state.in_prompt = false;
+                }
                 b"PreExec" => {
+                    // Send PreExec hook
                     let context = self.get_context();
                     let hook = new_preexec_hook(Some(context));
                     let message = hook_to_message(hook).to_fig_pbuf();
-                    self.sender.send(message).unwrap();
+                    match self.unix_socket_sender.send(message) {
+                        Ok(_) => {}
+                        Err(e) => log::error!("Failed to queue `PreExec` hook: {}", e),
+                    }
+
+                    self.last_command = Some(CommandInfo {
+                        command: String::new(),
+                        shell: self.shell_state.shell.clone(),
+                        pid: self.shell_state.pid.clone(),
+                        session_id: self.fig_info.term_session_id.clone(),
+                        cwd: current_dir().ok(),
+                        time: std::time::SystemTime::now()
+                            .duration_since(std::time::SystemTime::UNIX_EPOCH)
+                            .unwrap_or_default()
+                            .as_secs(),
+                        in_ssh: self.shell_state.in_ssh,
+                        in_docker: self.shell_state.in_docker,
+                        hostname: self.shell_state.shell.clone(),
+                        exit_code: None,
+                    });
+
+                    self.shell_state.preexec = true;
                 }
                 param => {
                     let eq_pos = param.iter().position(|b| *b == b'=');
@@ -124,9 +179,16 @@ impl Perform for Figterm {
                         match key {
                             b"Dir" => {
                                 log::info!("In dir {}", val);
-                                set_current_dir(val).unwrap();
+                                match set_current_dir(val) {
+                                    Ok(_) => {}
+                                    Err(e) => log::error!("Failed to set current dir: {}", e),
+                                }
                             }
-                            b"ExitCode" => {}
+                            b"ExitCode" => {
+                                if let Some(command) = self.last_command.as_mut() {
+                                    command.exit_code = val.parse().ok();
+                                }
+                            }
                             b"Shell" => {
                                 self.shell_state.shell = Some(val);
                             }
@@ -158,39 +220,28 @@ impl Perform for Figterm {
         }
 
         match action {
-            'A' => {
-                // Cursor up
-            }
-            'B' => {
-                // Cursor down
-            }
-            'C' => {
-                // cursor forward
-            }
-            'D' => {
-                // Cursor back
-            }
-            'd' => {
-                // Go to line
-            }
-            'G' | '`' => {
-                // Go to col
-            }
-            'H' | 'f' => {
-                // Goto
-            }
-            'S' => {
-                // Scroll up
-            }
-            'T' => {
-                // Scroll down
-            }
-            's' => {
-                // Save cursor pos
-            }
-            'u' => {
-                // Restore cursor pos
-            }
+            // Cursor up
+            'A' => {}
+            // Cursor down
+            'B' => {}
+            // cursor forward
+            'C' => {}
+            // Cursor back
+            'D' => {}
+            // Go to line
+            'd' => {}
+            // Go to col
+            'G' | '`' => {}
+            // Goto
+            'H' | 'f' => {}
+            // Scroll up
+            'S' => {}
+            // Scroll down
+            'T' => {}
+            // Save cursor pos
+            's' => {}
+            // Restore cursor pos
+            'u' => {}
             _ => {}
         }
     }
