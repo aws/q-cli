@@ -7,6 +7,7 @@
 //
 
 import Cocoa
+import FigAPIBindings
 
 enum LocalTelemetryEvent: String {
   case terminalUsage
@@ -17,15 +18,15 @@ enum LocalTelemetryEvent: String {
 
 // Persists, aggregates and posts local telemetry events
 protocol LocalTelemetryService {
-  static func store(event: LocalTelemetryEvent, with increment: Int, date: Date)
-  static func flush(eventsFor date: Date)
-  static func flushAll(includingCurrentDay: Bool)
-  static func register()
+  func store(event: LocalTelemetryEvent, with increment: Int, date: Date)
+  func flush(eventsFor date: Date)
+  func flushAll(includingCurrentDay: Bool)
+  func register()
 }
 
 protocol TelemetryService {
-  static func obscure(_ input: String) -> String
-  static func track(
+  func obscure(_ input: String) -> String
+  func track(
     event: TelemetryEvent,
     with payload: [String: String],
     completion: ((Data?, URLResponse?, Error?) -> Void)?
@@ -67,21 +68,29 @@ enum TelemetryEvent: String {
 }
 
 class TelemetryProvider: TelemetryService {
-  static func obscure(_ input: String) -> String {
+    static let shared = TelemetryProvider(defaults: Defaults.shared)
+
+  private var defaults: Defaults
+
+  private var terminalObserver: TerminalUsageObserver?
+
+  init(defaults: Defaults) {
+    self.defaults = defaults
+  }
+
+  func obscure(_ input: String) -> String {
     return String(input.map { $0.isLetter ? "x" : $0 }.map { $0.isNumber ? "0" : $0 })
   }
 
-  static func track(
+  func track(
     event: TelemetryEvent,
     with properties: [String: String],
     completion: ((Data?, URLResponse?, Error?) -> Void)? = nil
   ) {
-
-    TelemetryProvider.track(event: event.rawValue, with: properties, completion: completion)
-
+    track(event: event.rawValue, with: properties, completion: completion)
   }
 
-  static func track(
+  func track(
     event: String,
     with properties: [String: String],
     needsPrefix prefix: String? = "prop_",
@@ -90,16 +99,16 @@ class TelemetryProvider: TelemetryService {
     var body: [String: String] = [:]
 
     if let prefix = prefix {
-      body = TelemetryProvider.addPrefixToKeys(prefix: prefix, dict: properties)
+      body = addPrefixToKeys(prefix: prefix, dict: properties)
     } else {
       body = properties
     }
 
-    body = TelemetryProvider.addDefaultProperties(to: body)
+    body = addDefaultProperties(to: body)
     body["event"] = event
-    body["userId"] = Defaults.shared.uuid
+    body["userId"] = defaults.uuid
 
-    if Defaults.shared.telemetryDisabled {
+    if defaults.telemetryDisabled {
       let eventsToSendEvenWhenDisabled: [TelemetryEvent] = [.telemetryToggled]
       let sendEvent = eventsToSendEvenWhenDisabled.contains { (allowlistedEvent) -> Bool in
         return allowlistedEvent.rawValue == event
@@ -116,21 +125,21 @@ class TelemetryProvider: TelemetryService {
     upload(to: "track", with: body, completion: completion)
   }
 
-  static func identify(
+  func identify(
     with traits: [String: String],
     needsPrefix prefix: String? = "trait_",
     shouldIgnoreTelemetryPreferences: Bool = false
   ) {
     var body: [String: String] = [:]
     if let prefix = prefix {
-      body = TelemetryProvider.addPrefixToKeys(prefix: prefix, dict: traits)
+      body = addPrefixToKeys(prefix: prefix, dict: traits)
     } else {
       body = traits
     }
 
-    body["userId"] = Defaults.shared.uuid
+    body["userId"] = defaults.uuid
 
-    if Defaults.shared.telemetryDisabled && !shouldIgnoreTelemetryPreferences {
+    if defaults.telemetryDisabled && !shouldIgnoreTelemetryPreferences {
       print("telemetry: not sending identification event because telemetry is diabled")
       return
     }
@@ -138,17 +147,17 @@ class TelemetryProvider: TelemetryService {
     upload(to: "identify", with: body)
   }
 
-  static func alias(userId: String?) {
+  func alias(userId: String?) {
 
-    if Defaults.shared.telemetryDisabled {
+    if defaults.telemetryDisabled {
       print("telemetry: not sending identification event because telemetry is diabled")
       return
     }
 
-    upload(to: "alias", with: ["previousId": Defaults.shared.uuid, "userId": userId ?? ""])
+    upload(to: "alias", with: ["previousId": defaults.uuid, "userId": userId ?? ""])
   }
 
-  fileprivate static func upload(
+  func upload(
     to endpoint: String,
     with body: [String: String],
     completion: ((Data?, URLResponse?, Error?) -> Void)? = nil
@@ -169,7 +178,7 @@ class TelemetryProvider: TelemetryService {
     task.resume()
   }
 
-  fileprivate static func addPrefixToKeys(prefix: String, dict: [String: String]) -> [String: String] {
+  fileprivate func addPrefixToKeys(prefix: String, dict: [String: String]) -> [String: String] {
 
     return dict.reduce([:]) { (out, pair) -> [String: String] in
       var new = out
@@ -179,26 +188,25 @@ class TelemetryProvider: TelemetryService {
     }
   }
 
-  fileprivate static func addDefaultProperties(
+  fileprivate func addDefaultProperties(
     to properties: [String: String],
     prefixedWith prefix: String = "prop_"
   ) -> [String: String] {
-    let email = Defaults.shared.email ?? ""
+    let email = defaults.email ?? ""
     let domain = String(email.split(separator: "@").last ?? "unregistered")
     let os = ProcessInfo.processInfo.operatingSystemVersion
 
     return properties.merging([
       "\(prefix)domain": domain,
       "\(prefix)email": email,
-      "\(prefix)version": Defaults.shared.version,
+      "\(prefix)version": defaults.version,
       "\(prefix)os": "\(os.majorVersion).\(os.minorVersion).\(os.patchVersion)"
     ]) { $1 }
   }
 }
 
 extension TelemetryProvider: LocalTelemetryService {
-  static var terminalObserver: TerminalUsageObserver?
-  static func register() {
+  func register() {
     self.terminalObserver = TerminalUsageObserver()
 
     NotificationCenter.default.addObserver(
@@ -229,40 +237,40 @@ extension TelemetryProvider: LocalTelemetryService {
                                            object: nil)
   }
 
-  @objc fileprivate static func calendarDayDidChange() {
+  @objc fileprivate func calendarDayDidChange() {
     Logger.log(message: "Calendar Day changed")
     self.flushAll()
   }
 
   // Local Telemetry Observers
-  @objc fileprivate static func lineAcceptedInKeystrokeBuffer() {
+  @objc fileprivate func lineAcceptedInKeystrokeBuffer() {
     Logger.log(message: "lineAcceptedInKeystrokeBuffer")
     self.store(event: .keybufferEntered)
   }
 
-  @objc fileprivate static func insertionInTerminal() {
+  @objc fileprivate func insertionInTerminal() {
     Logger.log(message: "insertionInTerminal")
     self.store(event: .insertViaAutocomplete)
   }
 
-  @objc fileprivate static func showAutocompletePopup() {
+  @objc fileprivate func showAutocompletePopup() {
     Logger.log(message: "showAutocompletePopup")
     self.store(event: .showAutocompletePopup)
 
-    if !Defaults.shared.hasShownAutocompletePopover {
-      Defaults.shared.hasShownAutocompletePopover = true
-      TelemetryProvider.track(event: .firstAutocompletePopup, with: [:])
+    if !defaults.hasShownAutocompletePopover {
+      defaults.hasShownAutocompletePopover = true
+      track(event: .firstAutocompletePopup, with: [:])
     }
   }
 
-  @objc fileprivate static func logTerminalUsage(_ notification: Notification) {
+  @objc fileprivate func logTerminalUsage(_ notification: Notification) {
     Logger.log(message: "logTerminalUsage")
     if let time = notification.object as? TimeInterval {
       self.store(event: .terminalUsage, with: Int(time))
     }
   }
 
-  static func flushAll(includingCurrentDay: Bool = false) {
+  func flushAll(includingCurrentDay: Bool = false) {
     let today = Date(timeIntervalSinceNow: 0).telemetryDayIdentifier
     self.pending.forEach {
       // exclude current day unless explictly pushing all events
@@ -272,11 +280,11 @@ extension TelemetryProvider: LocalTelemetryService {
     }
   }
 
-  static var pending: Set<TelemetryUTCDate> {
+  var pending: Set<TelemetryUTCDate> {
     return  Set(UserDefaults.standard.stringArray(forKey: "pendingTelemetryUpload") ?? [])
   }
 
-  static func store(event: LocalTelemetryEvent, with increment: Int = 1, date: Date = Date(timeIntervalSinceNow: 0)) {
+  func store(event: LocalTelemetryEvent, with increment: Int = 1, date: Date = Date(timeIntervalSinceNow: 0)) {
     DispatchQueue.global(qos: .utility).async {
       let dateIdentifier = date.telemetryDayIdentifier
       let key = "\(dateIdentifier)#\(event.rawValue)"
@@ -293,7 +301,7 @@ extension TelemetryProvider: LocalTelemetryService {
   }
 
   // send logged & aggregated events to server
-  fileprivate static func flush (eventsFor dateIdentifier: TelemetryUTCDate) {
+  fileprivate func flush (eventsFor dateIdentifier: TelemetryUTCDate) {
     let aggregatableEvents: Set<LocalTelemetryEvent> = [
       .insertViaAutocomplete,
       .keybufferEntered,
@@ -341,7 +349,7 @@ extension TelemetryProvider: LocalTelemetryService {
     }
   }
 
-  static func flush(eventsFor date: Date) {
+  func flush(eventsFor date: Date) {
     let dateIdentifier = date.telemetryDayIdentifier
     self.flush(eventsFor: dateIdentifier)
   }
@@ -357,19 +365,20 @@ extension Date {
   }
 }
 
-import FigAPIBindings
 extension TelemetryProvider {
-  static func handleAliasRequest(_ request: Fig_TelemetryAliasRequest) throws -> Bool {
+  @discardableResult
+  func handleAliasRequest(_ request: Fig_TelemetryAliasRequest) throws -> Bool {
     guard request.hasUserID else {
       throw APIError.generic(message: "No user id specified.")
     }
 
-    TelemetryProvider.alias(userId: request.userID)
+    alias(userId: request.userID)
 
     return true
   }
 
-  static func handleTrackRequest(_ request: Fig_TelemetryTrackRequest) throws -> Bool {
+  @discardableResult
+  func handleTrackRequest(_ request: Fig_TelemetryTrackRequest) throws -> Bool {
     guard request.hasEvent else {
       throw APIError.generic(message: "No event specified.")
     }
@@ -378,17 +387,18 @@ extension TelemetryProvider {
     let values = request.properties.map { $0.value }
     let payload = Dictionary(uniqueKeysWithValues: zip(keys, values))
 
-    TelemetryProvider.track(event: request.event, with: payload)
+    track(event: request.event, with: payload)
 
     return true
   }
 
-  static func handleIdentifyRequest(_ request: Fig_TelemetryIdentifyRequest) throws -> Bool {
+  @discardableResult
+  func handleIdentifyRequest(_ request: Fig_TelemetryIdentifyRequest) throws -> Bool {
     let keys = request.traits.map { $0.key }
     let values = request.traits.map { $0.value }
     let payload = Dictionary(uniqueKeysWithValues: zip(keys, values))
 
-    TelemetryProvider.identify(with: payload)
+    identify(with: payload)
 
     return true
   }

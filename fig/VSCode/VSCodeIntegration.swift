@@ -28,7 +28,7 @@ class VSCodeIntegration: TerminalIntegrationProvider {
 
   static let inheritEnvKey = "terminal.integrated.inheritEnv"
   static let accessibilitySupportKey = "editor.accessibilitySupport"
-    
+
   static let extensionVersion = "0.0.6"
 
   fileprivate let configFolderName: String

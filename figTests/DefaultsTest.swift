@@ -79,14 +79,14 @@ class DefaultsTest: XCTestCase {
     userDefaults.set(Date(), forKey: key)
     let request = createGetDefaultsPropertyRequest(key: key)
     XCTAssertThrowsError(try defaults.handleGetRequest(request)) { error in
-      XCTAssertEqual(error as! APIError, APIError.generic(message: "Value is an unsupport type."))
+      XCTAssertEqual(error as? APIError, APIError.generic(message: "Value is an unsupport type."))
     }
   }
 
   func testGetDefaultsPropertyMissingKey() {
     let request = createGetDefaultsPropertyRequest()
     XCTAssertThrowsError(try Defaults.shared.handleGetRequest(request)) { error in
-      XCTAssertEqual(error as! APIError, APIError.generic(message: "No key provided."))
+      XCTAssertEqual(error as? APIError, APIError.generic(message: "No key provided."))
     }
   }
 
@@ -150,14 +150,14 @@ class DefaultsTest: XCTestCase {
   func testSetDefaultsPropertyWrongType() {
     let request = createSetDefaultsPropertyRequest(key: key, type: .null(false))
     XCTAssertThrowsError(try defaults.handleSetRequest(request)) { error in
-      XCTAssertEqual(error as! APIError, APIError.generic(message: "Value is an unsupport type."))
+      XCTAssertEqual(error as? APIError, APIError.generic(message: "Value is an unsupport type."))
     }
   }
 
   func testSetDefaultsPropertyMissingKey() {
     let request = createSetDefaultsPropertyRequest(key: nil, type: nil)
     XCTAssertThrowsError(try Defaults.shared.handleSetRequest(request)) { error in
-      XCTAssertEqual(error as! APIError, APIError.generic(message: "No key provided."))
+      XCTAssertEqual(error as? APIError, APIError.generic(message: "No key provided."))
     }
   }
 }

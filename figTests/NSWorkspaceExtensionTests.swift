@@ -47,14 +47,14 @@ class NSWorkspaceExtensionTests: XCTestCase {
   func testOpenInExternalApplicationMissingURL() {
     let request = createOpenInExternalApplicationRequest()
     XCTAssertThrowsError(try NSWorkspace.shared.handleOpenURLRequest(request)) { error in
-      XCTAssertEqual(error as! APIError, APIError.generic(message: "Missing 'url' parameter"))
+      XCTAssertEqual(error as? APIError, APIError.generic(message: "Missing 'url' parameter"))
     }
   }
 
   func testOpenInExternalApplicationWrongURL() {
     let request = createOpenInExternalApplicationRequest(path: "some wrong url")
     XCTAssertThrowsError(try NSWorkspace.shared.handleOpenURLRequest(request)) { error in
-      XCTAssertEqual(error as! APIError, APIError.generic(message: "Could not parse '\(request.url)' as a URL"))
+      XCTAssertEqual(error as? APIError, APIError.generic(message: "Could not parse '\(request.url)' as a URL"))
     }
   }
 }

@@ -46,7 +46,7 @@ class UpdateService: NSObject {
 
       if current != update {
         self.sparkle.feedURL = update
-        TelemetryProvider.identify(with: ["beta": (beta ? "true" : "false")])
+        TelemetryProvider.shared.identify(with: ["beta": (beta ? "true" : "false")])
         self.sparkle.checkForUpdates(nil)
       }
     }

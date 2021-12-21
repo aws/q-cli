@@ -44,7 +44,7 @@ class FileSystemTests: XCTestCase {
     let path = testBundle.bundleURL.appendingPathComponent("some-missing-file.txt").path
     let request = createReadFileRequest(path: path)
     XCTAssertThrowsError(try FileSystem.readFile(request).text) { error in
-      XCTAssertEqual(error as! APIError, APIError.generic(message: "File does not exist."))
+      XCTAssertEqual(error as? APIError, APIError.generic(message: "File does not exist."))
     }
   }
 
@@ -90,7 +90,7 @@ class FileSystemTests: XCTestCase {
 
     let request = createWriteFileRequest(path: fileURL.path, content: .none)
     XCTAssertThrowsError(try FileSystem.writeFile(request)) { error in
-      XCTAssertEqual(error as! APIError, APIError.generic(message: "No data to write"))
+      XCTAssertEqual(error as? APIError, APIError.generic(message: "No data to write"))
     }
 
     try FileManager.default.removeItem(at: fileURL)
@@ -135,7 +135,7 @@ class FileSystemTests: XCTestCase {
   func testDestinationOfSymbolicLinkMissingPath() throws {
     let request = createDestinationOfSymbolicLinkRequest(path: nil)
     XCTAssertThrowsError(try FileSystem.destinationOfSymbolicLink(request)) { error in
-      XCTAssertEqual(error as! APIError, APIError.generic(message: "Must specify a filepath"))
+      XCTAssertEqual(error as? APIError, APIError.generic(message: "Must specify a filepath"))
     }
   }
 
@@ -143,7 +143,7 @@ class FileSystemTests: XCTestCase {
     let path = testBundle.path(forResource: "testable-file-to-read", ofType: "txt")
     let request = createDestinationOfSymbolicLinkRequest(path: path!)
     XCTAssertThrowsError(try FileSystem.destinationOfSymbolicLink(request)) { error in
-      XCTAssertEqual(error as! APIError, APIError.generic(message: "File at path is not a symbolic link"))
+      XCTAssertEqual(error as? APIError, APIError.generic(message: "File at path is not a symbolic link"))
     }
   }
 
@@ -152,7 +152,7 @@ class FileSystemTests: XCTestCase {
 
     // let request = destinationOfSymbolicLinkRequest(path: url!.path)
     // XCTAssertThrowsError(try FileSystem.destinationOfSymbolicLink(request)) { error in
-    //   XCTAssertEqual(error as! APIError, APIError.generic(message: "No destination found for symbolic link"))
+    //   XCTAssertEqual(error as? APIError, APIError.generic(message: "No destination found for symbolic link"))
     // }
   }
 }

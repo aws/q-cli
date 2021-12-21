@@ -72,7 +72,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         }
     }
 
-    TelemetryProvider.track(
+    TelemetryProvider.shared.track(
       event: .launchedApp,
       with: ["crashed": Defaults.shared.launchedFollowingCrash ? "true" : "false"]
     )
@@ -96,7 +96,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     _ = iTermIntegration.default
     _ = InputMethod.default
 
-    TelemetryProvider.register()
+    TelemetryProvider.shared.register()
     Accessibility.listen()
 
     handleUpdateIfNeeded()
@@ -747,7 +747,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
   }
 
   @objc func flushLogs() {
-    TelemetryProvider.flushAll(includingCurrentDay: true)
+    TelemetryProvider.shared.flushAll(includingCurrentDay: true)
   }
 
   @objc func newTerminalWindow() {
@@ -767,7 +767,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     )
 
     if confirmed {
-      TelemetryProvider.track(event: .uninstallApp, with: [:])
+      TelemetryProvider.shared.track(event: .uninstallApp, with: [:])
 
       ShellHookManager.shared.ttys().forEach { (pair) in
         let (_, tty) = pair
@@ -808,11 +808,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     //        NSWorkspace.shared.open(URL(string:"mailto:hello@withfig.com")!)
 
     Github.openIssue()
-    TelemetryProvider.track(event: .sendFeedback, with: [:])
+    TelemetryProvider.shared.track(event: .sendFeedback, with: [:])
   }
 
   @objc func setupScript() {
-    TelemetryProvider.track(event: .runInstallationScript, with: [:])
+    TelemetryProvider.shared.track(event: .runInstallationScript, with: [:])
     Onboarding.setUpEnviroment()
   }
 
@@ -851,7 +851,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
       Defaults.shared.versionAtPreviousLaunch = updatedVersionString as? String
       print("Update: First launch!")
       Logger.log(message: "First launch!")
-      TelemetryProvider.track(event: .firstTimeUser, with: [:])
+      TelemetryProvider.shared.track(event: .firstTimeUser, with: [:])
       Onboarding.setUpEnviroment()
       return
     }
@@ -869,7 +869,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
       Onboarding.setUpEnviroment()
 
-      TelemetryProvider.track(event: .updatedApp, with: [:])
+      TelemetryProvider.shared.track(event: .updatedApp, with: [:])
 
       // resolves a bug where Fig was added to login items multiple times
       // if the appropriate setting is enabled, a single entry will be readded
@@ -906,7 +906,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
   @objc func inviteToSlack() {
     NSWorkspace.shared.open(URL(string: "https://fig-core-backend.herokuapp.com/community")!)
-    TelemetryProvider.track(event: .joinSlack, with: [:])
+    TelemetryProvider.shared.track(event: .joinSlack, with: [:])
 
   }
 
@@ -920,7 +920,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
       return
     }
 
-    TelemetryProvider.track(event: .inviteAFriend, with: [:])
+    TelemetryProvider.shared.track(event: .inviteAFriend, with: [:])
 
     let request = URLRequest(
       url: Remote.API.appendingPathComponent("/waitlist/get-referral-link-from-email/\(email)")
@@ -957,12 +957,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
   @objc func viewDocs() {
     NSWorkspace.shared.open(URL(string: "https://fig.io/docs")!)
-    TelemetryProvider.track(event: .viewDocs, with: [:])
+    TelemetryProvider.shared.track(event: .viewDocs, with: [:])
   }
 
   @objc func viewSupportForum() {
     NSWorkspace.shared.open(URL(string: "https://fig.io/support")!)
-    TelemetryProvider.track(event: .viewSupportForum, with: [:])
+    TelemetryProvider.shared.track(event: .viewSupportForum, with: [:])
   }
 
   @objc func getKeyboardLayout() {
@@ -977,7 +977,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
   @objc func toggleAutocomplete(_ sender: NSMenuItem) {
     Defaults.shared.useAutocomplete = !Defaults.shared.useAutocomplete
     sender.state = Defaults.shared.useAutocomplete ? .on : .off
-    TelemetryProvider.track(
+    TelemetryProvider.shared.track(
       event: .toggledAutocomplete,
       with: ["status": Defaults.shared.useAutocomplete ? "on" : "off"]
     )
@@ -1106,7 +1106,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     sender.state = Defaults.shared.showSidebar ? .on : .off
     WindowManager.shared.requestWindowUpdate()
 
-    TelemetryProvider.track(
+    TelemetryProvider.shared.track(
       event: .toggledSidebar,
       with: ["status": Defaults.shared.useAutocomplete ? "on" : "off"]
     )
@@ -1212,7 +1212,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     Config.shared.set(value: "1", forKey: Config.userExplictlyQuitApp)
 
-    TelemetryProvider.track(event: .quitApp, with: [:]) { (_, _, _) in
+    TelemetryProvider.shared.track(event: .quitApp, with: [:]) { (_, _, _) in
       DispatchQueue.main.async {
         NSApp.terminate(self)
       }
@@ -1722,7 +1722,7 @@ extension AppDelegate: NSMenuDelegate {
   func menuWillOpen(_ menu: NSMenu) {
     print("menuWillOpen")
     DispatchQueue.global(qos: .background).async {
-      TelemetryProvider.track(event: .openedFigMenuIcon, with: [:])
+      TelemetryProvider.shared.track(event: .openedFigMenuIcon, with: [:])
     }
     guard Defaults.shared.loggedIn, Accessibility.enabled else {
       return

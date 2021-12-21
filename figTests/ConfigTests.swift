@@ -52,14 +52,14 @@ class ConfigTests: XCTestCase {
   func testGetRequestMissingKey() {
     let request = createGetRequest()
     XCTAssertThrowsError(try config.handleGetRequest(request)) { error in
-      XCTAssertEqual(error as! APIError, APIError.generic(message: "Must include key parameter"))
+      XCTAssertEqual(error as? APIError, APIError.generic(message: "Must include key parameter"))
     }
   }
 
   func testGetRequestMissingValue() {
     let request = createGetRequest(key: "MISSING_KEY")
     XCTAssertThrowsError(try config.handleGetRequest(request)) { error in
-      XCTAssertEqual(error as! APIError, APIError.generic(message: "No value for key"))
+      XCTAssertEqual(error as? APIError, APIError.generic(message: "No value for key"))
     }
   }
 
@@ -79,7 +79,7 @@ class ConfigTests: XCTestCase {
     // check that the key we want to update is missing
     let getRequest = createGetRequest(key: key)
     XCTAssertThrowsError(try config.handleGetRequest(getRequest)) { error in
-      XCTAssertEqual(error as! APIError, APIError.generic(message: "No value for key"))
+      XCTAssertEqual(error as? APIError, APIError.generic(message: "No value for key"))
     }
 
     let setRequest = createSetRequest(key: key, value: "value")
@@ -106,7 +106,7 @@ class ConfigTests: XCTestCase {
   func testSetRequestMissingKey() {
     let request = createSetRequest(key: nil, value: nil)
     XCTAssertThrowsError(try config.handleSetRequest(request)) { error in
-      XCTAssertEqual(error as! APIError, APIError.generic(message: "Must include key parameter"))
+      XCTAssertEqual(error as? APIError, APIError.generic(message: "Must include key parameter"))
     }
   }
 }
