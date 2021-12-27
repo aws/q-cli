@@ -3,7 +3,7 @@ import * as uuid from 'uuid';
 import * as pty from 'node-pty';
 
 import { socketListen, removeListener } from './unix-server';
-import { LocalMessage, ShellContext } from './local';
+import { LocalMessage, ShellContext } from './local.pb';
 
 export type PTYOptions = {
   shell: string;

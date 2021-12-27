@@ -3,7 +3,7 @@ import {
   ProcessChangedNotification,
   ShellPromptReturnedNotification,
   HistoryUpdatedNotification,
-} from './fig';
+} from './fig.pb';
 import { sendInsertTextRequest } from './requests';
 import { _subscribe } from './notifications';
 

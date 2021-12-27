@@ -35,7 +35,7 @@ import {
   UpdateSettingsPropertyRequest,
   WindowFocusRequest,
   WriteFileRequest,
-} from './fig';
+} from './fig.pb';
 import { sendMessage } from './core';
 
 export async function sendPositionWindowRequest(

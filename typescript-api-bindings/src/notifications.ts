@@ -3,7 +3,7 @@ import {
   ServerOriginatedMessage,
   NotificationRequest,
   NotificationType,
-} from './fig';
+} from './fig.pb';
 
 import { sendMessage } from './core';
 

@@ -1,4 +1,4 @@
-import { SettingsChangedNotification, NotificationType } from './fig';
+import { SettingsChangedNotification, NotificationType } from './fig.pb';
 import { _subscribe } from './notifications';
 
 import {
