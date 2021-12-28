@@ -1,23 +1,26 @@
 //! Protocal buffer definitions
 
+pub mod figterm;
 pub mod hooks;
 pub mod local;
 
+use bytes::{Bytes, BytesMut};
 pub use local::*;
 
 use prost::Message;
 
 impl LocalMessage {
-    pub fn to_fig_pbuf(&self) -> Vec<u8> {
-        let mut packet: Vec<u8> = Vec::with_capacity(1024);
+    pub fn to_fig_pbuf(&self) -> Bytes {
+        let mut fig_pbuf = BytesMut::new();
 
-        let encoded_message = self.encode_to_vec();
+        let mut encoded_message = BytesMut::new();
+        self.encode(&mut encoded_message);
 
-        packet.extend(b"\x1b@fig-pbuf");
-        packet.extend(encoded_message.len().to_be_bytes());
-        packet.extend(encoded_message);
+        fig_pbuf.extend(b"\x1b@fig-pbuf");
+        fig_pbuf.extend(encoded_message.len().to_be_bytes());
+        fig_pbuf.extend(encoded_message);
 
-        packet
+        fig_pbuf.freeze()
     }
 }
 

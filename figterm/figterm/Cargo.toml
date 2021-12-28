@@ -1,0 +1,53 @@
+[package]
+name = "figterm"
+version = "0.1.0"
+authors = ["grant0417"]
+edition = "2021"
+description = ""
+homepage = "https://fig.io"
+repository = "https://github.com/withfig/macos"
+publish = false
+
+[features]
+default = ["desktop-tests"]
+# Tests that do not work on CI
+desktop-tests = []
+
+[dependencies]
+
+# System Libs
+nix = "0.23"
+signal-hook = "0.3"
+tokio = { version = "1", features = ["full"] }
+
+# Logging
+log = { version = "0.4", features = ["std"] }
+
+# User dirs
+dirs = "4.0"
+
+# Protocal buffers
+prost = "0.9"
+bytes = "1.1"
+
+# Error Handling
+anyhow = "1.0"
+
+# Cmd arg parsing
+clap = { version = "3.0.0-rc", features = ["derive"] }
+
+# Term utils
+vte = "0.10"
+
+# Terminal emulator
+alacritty_terminal = { path = "../alacritty_terminal" }
+
+[dependencies.rusqlite]
+version = "0.26"
+features = ["bundled"]
+
+[build-dependencies]
+prost-build = "0.9"
+
+[profile.release]
+lto = true

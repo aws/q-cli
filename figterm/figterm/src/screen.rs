@@ -1,14 +1,18 @@
+use std::fmt;
+
+use crate::ansi::{Column, Line};
+
 const MAX_CHARS_PER_CELL: usize = 6;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct TerminalPosition {
-    row: usize,
-    col: usize,
+    line: Line,
+    column: Column,
 }
 
 impl TerminalPosition {
     fn to_index(&self, row_width: usize) -> usize {
-        self.row * row_width + self.col
+        self.column * row_width + self.line as usize
     }
 }
 
@@ -20,8 +24,8 @@ enum TermColor {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TermAttribs {
-    in_prompt: bool,
-    in_suggestion: bool,
+    pub in_prompt: bool,
+    pub in_suggestion: bool,
     fg: TermColor,
     bg: TermColor,
 }
@@ -65,8 +69,14 @@ impl ScreenCell {
 pub struct Cursor(TerminalPosition);
 
 impl Cursor {
-    fn new(row: usize, col: usize) -> Cursor {
-        Cursor(TerminalPosition { row, col })
+    fn new(column: Column, line: Line) -> Cursor {
+        Cursor(TerminalPosition { column, line })
+    }
+}
+
+impl fmt::Display for Cursor {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}, {}", self.0.column, self.0.line)
     }
 }
 
@@ -90,17 +100,17 @@ impl ScreenBuffer {
         }
     }
 
-    fn resize(&mut self, new_rows: usize, new_cols: usize) {}
+    fn resize(&mut self, _new_rows: usize, _new_cols: usize) {}
 
     fn get(&self, position: TerminalPosition) -> Option<&ScreenCell> {
-        if position.row >= self.width || position.col >= self.height {
+        if position.column >= self.width || position.line >= self.height as i32 {
             return None;
         }
         self.buffer.get(position.to_index(self.width))
     }
 
     fn get_mut(&mut self, position: TerminalPosition) -> Option<&mut ScreenCell> {
-        if position.row >= self.width || position.col >= self.height {
+        if position.column >= self.width || position.line >= self.height as i32 {
             return None;
         }
         self.buffer.get_mut(position.to_index(self.width))
@@ -114,7 +124,7 @@ pub struct FigtermScreen {
     primary_buffer: ScreenBuffer,
     seconday_buffer: ScreenBuffer,
 
-    screen_attribs: TermAttribs,
+    pub screen_attribs: TermAttribs,
 }
 
 impl FigtermScreen {
@@ -166,7 +176,85 @@ impl FigtermScreen {
                 },
             },
         );
+
+        // self.cursor.0.column += 1;
+        // if self.cursor.0.column >= self.get_current_buffer().width {
+        //     self.cursor.0.column = 0;
+        //     self.cursor.0.line += 1;
+        // }
+
+        let mut screen = String::new();
+
+        for y in 0..self.primary_buffer.height {
+            for x in 0..self.primary_buffer.width {
+                let cell = self.get_cell(TerminalPosition {
+                    column: x,
+                    line: y as i32,
+                });
+                if let Some(cell) = cell {
+                    let mut chars = cell.chars;
+                    if chars[0] == '\0' {
+                        chars[0] = ' ';
+                    }
+                    let mut fg = cell.attribs.fg;
+                    let mut bg = cell.attribs.bg;
+                    if cell.attribs.in_prompt {
+                        fg = TermColor::Idx(1);
+                    }
+                    if cell.attribs.in_suggestion {
+                        bg = TermColor::Idx(1);
+                    }
+                    let fg_str = match fg {
+                        TermColor::Idx(idx) => format!("\x1b[38;5;{}m", idx),
+                        TermColor::Rgb(r, g, b) => format!("\x1b[38;2;{};{};{}m", r, g, b),
+                    };
+                    let bg_str = match bg {
+                        TermColor::Idx(idx) => format!("\x1b[48;5;{}m", idx),
+                        TermColor::Rgb(r, g, b) => format!("\x1b[48;2;{};{};{}m", r, g, b),
+                    };
+                    let reset_str = "\x1b[0m";
+                    let mut line = String::new();
+                    for c in chars.iter() {
+                        line.push_str(&format!("{}{}{}", fg_str, c, reset_str));
+                    }
+                    line.push_str(&format!("{}{}", bg_str, reset_str));
+                    screen.push_str(&line);
+                }
+            }
+            screen.push_str("\n");
+        }
+
+        log::info!("{}", screen);
     }
 
-    fn resize(&mut self, new_rows: usize, new_cols: usize) {}
+    pub fn resize(&mut self, _new_rows: usize, _new_cols: usize) {}
+
+    pub fn goto(&mut self, line: Line, column: Column) {
+        self.cursor.0.line = line;
+        self.cursor.0.column = column;
+    }
+
+    pub fn goto_line(&mut self, line: Line) {
+        self.cursor.0.line = line;
+    }
+
+    pub fn goto_column(&mut self, column: Column) {
+        self.cursor.0.column = column;
+    }
+
+    pub fn move_up(&mut self, n: usize) {
+        self.cursor.0.line -= n as i32;
+    }
+
+    pub fn move_down(&mut self, n: usize) {
+        self.cursor.0.line += n as i32;
+    }
+
+    pub fn move_forward(&mut self, columns: Column) {
+        self.cursor.0.column += columns;
+    }
+
+    pub fn move_backward(&mut self, columns: Column) {
+        let _ = self.cursor.0.column.saturating_sub(columns);
+    }
 }

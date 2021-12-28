@@ -1,7 +1,6 @@
 //! Utiities for IPC with Mac App
 
 use std::{
-    env::temp_dir,
     path::{Path, PathBuf},
     time::Duration,
 };
@@ -42,7 +41,7 @@ pub async fn send_hook(connection: &mut UnixStream, hook: proto::hook::Hook) -> 
 
 pub async fn create_socket_listen(session_id: impl AsRef<str>) -> Result<UnixListener> {
     let path: PathBuf = [
-        temp_dir().as_path(),
+        Path::new("/tmp"),
         Path::new(&format!("figterm-{}.socket", session_id.as_ref())),
     ]
     .into_iter()

@@ -1,0 +1,62 @@
+syntax = "proto3";
+package figterm;
+
+// 
+// Commands
+//
+
+// Message type used to send a command to figterm
+message CommandMessage {
+    oneof command {
+        InterceptCommand intercept_command = 1;
+        InsertTextCommand insert_text_command = 2;
+        SetBufferCommand set_buffer_command = 3;
+    }
+}
+
+// Intercept command
+// Used to set which input is intercepted by figterm
+message InterceptCommand {
+    // Set the utf8 characters to intercept
+    message SetIntercept {
+        repeated int32 chars = 1;
+    }
+
+    // Clear the utf8 characters to intercept
+    message ClearIntercept {}
+
+    // Add utf8 characters to intercept
+    message AddIntercept {
+        repeated int32 chars = 1;
+    }
+
+    // Remove utf8 characters to intercept
+    message RemoveIntercept {
+        repeated int32 chars = 1;
+    }
+
+    // The intercept command to execute
+    oneof intercept_command {
+        SetIntercept set_intercept = 1;
+        ClearIntercept clear_intercept = 2;
+        AddIntercept add_intercept = 3;
+        RemoveIntercept remove_intercept = 4;
+    }
+}
+
+// Insert text command
+// Used to insert text directly into the terminal
+message InsertTextCommand {
+    // The text to insert
+    string text = 1;
+    // Clear the edit buffer before inserting
+    bool clear = 2;
+}
+
+// Set buffer command
+// Used to set the line of text in the edit buffer
+message SetBufferCommand {
+    // The text to set
+    string text = 1;
+}
+

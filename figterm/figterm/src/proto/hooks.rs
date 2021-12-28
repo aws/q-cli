@@ -5,22 +5,22 @@ use crate::proto;
 pub fn new_context(
     pid: Option<i32>,
     ttys: Option<String>,
-    _process_name: Option<String>,
-    _current_working_directory: Option<String>,
+    process_name: Option<String>,
+    current_working_directory: Option<String>,
     session_id: Option<String>,
     integration_version: Option<i32>,
-    _terminal: Option<String>,
-    _hostname: Option<String>,
+    terminal: Option<String>,
+    hostname: Option<String>,
 ) -> proto::ShellContext {
     proto::ShellContext {
         pid,
         ttys,
-        process_name: None,
-        current_working_directory: None,
+        process_name,
+        current_working_directory,
         session_id,
         integration_version,
-        terminal: None,
-        hostname: None,
+        terminal,
+        hostname,
         remote_context: None,
     }
 }
