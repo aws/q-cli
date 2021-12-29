@@ -1,35 +1,34 @@
 pub mod command_info;
 pub mod fig_info;
+pub mod history;
 pub mod ipc;
-pub mod local;
 pub mod logger;
-pub mod new_history;
 pub mod proto;
 pub mod pty;
 pub mod term;
 pub mod utils;
 
-use std::{
-    error::Error, ffi::CString, iter::repeat, os::unix::prelude::AsRawFd, process::exit,
-    time::Duration,
-};
+use std::{env, error::Error, ffi::CString, os::unix::prelude::AsRawFd, process::exit, vec};
 
 use anyhow::{Context, Result};
 use bytes::Bytes;
+use dashmap::DashSet;
 use fig_info::FigInfo;
 use log::trace;
 use nix::{
     libc::STDIN_FILENO,
     sys::termios::{tcgetattr, tcsetattr, SetArg},
-    unistd::{execv, getpid, isatty},
+    unistd::{execvp, getpid, isatty},
 };
 
 use alacritty_terminal::{
     event::{Event, EventListener},
     grid::Dimensions,
+    index::{Column, Point},
     term::{cell::FigFlags, ShellState, SizeInfo},
     Term,
 };
+use proto::figterm::{figterm_message, intercept_command, FigtermMessage};
 use pty::{fork_pty, PtyForkResult};
 use term::get_winsize;
 use tokio::{
@@ -41,16 +40,20 @@ use tokio::{
 use clap::Parser;
 
 use crate::{
-    ipc::{connect_timeout, create_socket_listen, get_socket_path},
+    ipc::{spawn_incoming_receiver, spawn_outgoing_sender},
     logger::init_logger,
-    proto::hooks::{
-        hook_to_message, new_context, new_edit_buffer_hook, new_preexec_hook, new_prompt_hook,
+    proto::{
+        hooks::{
+            hook_to_message, new_context, new_edit_buffer_hook, new_preexec_hook, new_prompt_hook,
+        },
+        local,
     },
     pty::{async_pty::AsyncPtyMaster, ioctl_tiocswinsz},
     term::{read_winsize, termios_to_raw},
 };
 
 const BUFFER_SIZE: usize = 1024;
+const FIGTERM_VERSION: usize = 3;
 
 #[derive(Parser, Debug)]
 #[clap(about, version, author)]
@@ -69,7 +72,12 @@ impl EventSender {
     }
 }
 
-fn shell_state_to_context(shell_state: &ShellState) -> crate::proto::ShellContext {
+fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
+    #[cfg(target_os = "macos")]
+    let terminal = utils::get_term_bundle();
+    #[cfg(not(target_os = "macos"))]
+    let term_bundle = None;
+
     new_context(
         shell_state.pid,
         shell_state.tty.clone(),
@@ -80,7 +88,7 @@ fn shell_state_to_context(shell_state: &ShellState) -> crate::proto::ShellContex
             .map(|cwd| cwd.display().to_string()),
         shell_state.session_id.clone(),
         None,
-        utils::get_term_bundle(),
+        terminal,
         shell_state.hostname.clone(),
     )
 }
@@ -94,7 +102,7 @@ impl EventListener for EventSender {
                 let context = shell_state_to_context(shell_state);
                 let hook = new_prompt_hook(Some(context));
                 let message = hook_to_message(hook);
-                let bytes = message.to_fig_pbuf();
+                let bytes = message.to_fig_pbuf().unwrap();
 
                 self.sender.send(bytes).unwrap();
             }
@@ -102,7 +110,7 @@ impl EventListener for EventSender {
                 let context = shell_state_to_context(shell_state);
                 let hook = new_preexec_hook(Some(context));
                 let message = hook_to_message(hook);
-                let bytes = message.to_fig_pbuf();
+                let bytes = message.to_fig_pbuf().unwrap();
 
                 self.sender.send(bytes).unwrap();
             }
@@ -110,46 +118,158 @@ impl EventListener for EventSender {
     }
 }
 
-fn edit_buffer<T>(term: &Term<T>, sender: &UnboundedSender<Bytes>)
+struct EditBuffer {
+    buffer: String,
+    cursor: i64,
+}
+
+fn get_current_edit_buffer<T>(term: &Term<T>) -> Result<EditBuffer>
 where
     T: EventListener,
 {
-    let mut line_start = term.grid().cursor.point;
-    line_start.column.0 = 0;
-    let mut line_end = term.grid().cursor.point;
-    line_end.column.0 = term.columns();
-    let row = term.grid().iter_from_to(line_start, line_end);
+    let start_point = Point::new(term.grid().cursor.point.line, Column(0));
+    let end_point = Point::new(
+        term.grid().cursor.point.line.min(term.bottommost_line()),
+        term.last_column(),
+    );
 
-    let mut last_cell = 100000;
+    let row = term.grid().iter_from_to(start_point, end_point);
+
+    let mut whitespace_stack = String::new();
     let mut cursor_index = term.grid().cursor.point.column;
-    let mut line = String::new();
-    for (i, cell) in row.enumerate() {
+    let mut edit_buffer = String::new();
+
+    for (_i, cell) in row.enumerate() {
         if !cell.fig_flags.contains(FigFlags::IN_PROMPT)
             && !cell.fig_flags.contains(FigFlags::IN_SUGGESTION)
         {
-            if cell.c != ' ' {
-                if last_cell + 1 < i {
-                    for _ in 0..i - last_cell - 1 {
-                        line.push(' ');
-                    }
-                }
-                line.push(cell.c);
-                last_cell = i;
+            if cell.c.is_whitespace() {
+                whitespace_stack.push(cell.c);
             } else {
+                if whitespace_stack.len() > 0 {
+                    edit_buffer.push_str(&whitespace_stack);
+                    whitespace_stack.clear();
+                }
+                edit_buffer.push(cell.c);
             }
         } else {
             cursor_index -= 1;
         }
     }
 
-    let v_len = line.chars().count() as i64;
-    // if v_len > 0 {
+    if cursor_index > edit_buffer.len() {
+        for _ in 0..(*cursor_index - edit_buffer.len()) {
+            edit_buffer.push(' ');
+        }
+    }
+
+    let cursor = (*cursor_index).try_into().unwrap_or(1) - 1;
+
+    Ok(EditBuffer {
+        buffer: edit_buffer,
+        cursor,
+    })
+}
+
+fn send_edit_buffer<T>(term: &Term<T>, sender: &UnboundedSender<Bytes>)
+where
+    T: EventListener,
+{
+    let edit_buffer = get_current_edit_buffer(term).unwrap();
+
     let context = shell_state_to_context(term.shell_state());
-    let edit_buffer_hook = new_edit_buffer_hook(Some(context), line, v_len, 0);
+    let edit_buffer_hook =
+        new_edit_buffer_hook(Some(context), edit_buffer.buffer, edit_buffer.cursor, 0);
     let message = hook_to_message(edit_buffer_hook);
-    let bytes = message.to_fig_pbuf();
+    let bytes = message.to_fig_pbuf().unwrap();
+
     sender.send(bytes).unwrap();
-    // }
+}
+
+async fn process_figterm_message(
+    figterm_message: FigtermMessage,
+    _term: &Term<EventSender>,
+    pty_master: &mut AsyncPtyMaster,
+    mut intercept_set: DashSet<char, fnv::FnvBuildHasher>,
+) -> Result<()> {
+    match figterm_message.command {
+        Some(figterm_message::Command::InsertTextCommand(command)) => {
+            pty_master.write(command.text.as_bytes()).await?;
+        }
+        Some(figterm_message::Command::InterceptCommand(command)) => {
+            match command.intercept_command {
+                Some(intercept_command::InterceptCommand::SetIntercept(set_intercept)) => {
+                    trace!("Set intercept");
+                    intercept_set.clear();
+                    intercept_set.extend(
+                        set_intercept
+                            .chars
+                            .iter()
+                            .filter_map(|c| std::char::from_u32(*c)),
+                    );
+                }
+                Some(intercept_command::InterceptCommand::ClearIntercept(_)) => {
+                    trace!("Clear intercept");
+                    intercept_set.clear();
+                }
+                Some(intercept_command::InterceptCommand::AddIntercept(set_intercept)) => {
+                    trace!("{:?}", set_intercept.chars);
+                    intercept_set.extend(
+                        set_intercept
+                            .chars
+                            .iter()
+                            .filter_map(|c| std::char::from_u32(*c)),
+                    );
+                }
+                Some(intercept_command::InterceptCommand::RemoveIntercept(set_intercept)) => {
+                    trace!("{:?}", set_intercept.chars);
+                    for c in set_intercept.chars {
+                        intercept_set.remove(&std::char::from_u32(c).unwrap());
+                    }
+                }
+                _ => {}
+            }
+        }
+        _ => {}
+    }
+
+    Ok(())
+}
+
+fn launch_shell() -> Result<()> {
+    let parent_shell = env::var("FIG_SHELL").expect("FIG_SHELL not set");
+    let parent_shell_is_login = env::var("FIG_IS_LOGIN_SHELL").ok();
+    let parent_shell_extra_args = env::var("FIG_SHELL_EXTRA_ARGS").ok();
+
+    let mut args = vec![CString::new(&*parent_shell).unwrap()];
+
+    if parent_shell_is_login.as_deref() == Some("1") {
+        args.push(CString::new("--login").unwrap());
+    }
+
+    if let Some(extra_args) = parent_shell_extra_args {
+        args.extend(
+            extra_args
+                .split_whitespace()
+                .filter(|arg| arg != &"--login")
+                .filter_map(|arg| CString::new(&*arg).ok()),
+        );
+    }
+
+    env::set_var("FIG_TERM", "1");
+    env::set_var("FIG_TERM_VERSION", format!("{}", FIGTERM_VERSION));
+    if env::var_os("TMUX").is_some() {
+        env::set_var("FIG_TERM_TMUX", "1");
+    }
+
+    // Clean up environment and launch shell.
+    env::remove_var("FIG_SHELL");
+    env::remove_var("FIG_IS_LOGIN_SHELL");
+    env::remove_var("FIG_START_TEXT");
+    env::remove_var("FIG_SHELL_EXTRA_ARGS");
+
+    execvp(&*args[0], &args).expect("Failed to exec");
+    unreachable!();
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -163,8 +283,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     let old_termios = termios.clone();
 
     let mut winsize = get_winsize(STDIN_FILENO)?;
-
-    let shell = CString::new(std::env::var("SHELL").unwrap_or_else(|_| "/bin/sh".into()))?;
 
     if !isatty(STDIN_FILENO)?
         || fig_info.fig_integration_version.is_none()
@@ -190,39 +308,11 @@ fn main() -> Result<(), Box<dyn Error>> {
                     tcsetattr(STDIN_FILENO, SetArg::TCSAFLUSH, &raw_termios)?;
 
                     // Spawn thread to handle outgoing data to main Fig app
-                    let (outgoing_tx, mut outgoing_rx) =
-                        tokio::sync::mpsc::unbounded_channel::<Bytes>();
-                    tokio::spawn(async move {
-                        let socket = get_socket_path();
-
-                        while let Some(message) = outgoing_rx.recv().await {
-                            let mut socket_conn =
-                                connect_timeout(socket.clone(), Duration::from_secs(10))
-                                    .await
-                                    .unwrap();
-
-                            socket_conn.write_all(&message).await.unwrap();
-                            socket_conn.flush().await.unwrap();
-                        }
-                    });
+                    let outgoing_tx = spawn_outgoing_sender().await?;
 
                     // Spawn thread to handle incoming data
-                    let socket_listener =
-                        create_socket_listen(&fig_info.clone().term_session_id.unwrap_or("default".into())).await?;
-                    let (incomming_tx, mut incomming_rx) = tokio::sync::mpsc::channel(128);
-                    tokio::spawn(async move {
-                        loop {
-                            if let Ok((mut stream, _)) = socket_listener.accept().await {
-                                let incomming_tx = incomming_tx.clone();
-                                tokio::spawn(async move {
-                                    let mut buf = Vec::new();
-                                    while stream.read_to_end(&mut buf).await.is_ok() {
-                                        incomming_tx.clone().send(buf.clone()).await.unwrap();
-                                    }
-                                });
-                            }
-                        }
-                    });
+                    let session_id = fig_info.term_session_id.unwrap_or("default".into());
+                    let mut incomming_rx = spawn_incoming_receiver(&session_id).await?;
 
                     let mut stdin = io::stdin();
                     let mut stdout = io::stdout();
@@ -242,52 +332,44 @@ fn main() -> Result<(), Box<dyn Error>> {
                     let mut read_buffer = [0u8; BUFFER_SIZE];
                     let mut write_buffer = [0u8; BUFFER_SIZE * 100];
 
-                    let mut line_start = term.grid().cursor.point;
-                    line_start.column.0 = 0;
-                    let mut line_end = term.grid().cursor.point;
-                    line_end.column.0 = term.columns();
-                    let row = term.grid().iter_from_to(line_start, line_end);
+                    let intercept_set: DashSet<char, fnv::FnvBuildHasher> = DashSet::with_hasher(fnv::FnvBuildHasher::default());
 
-                    let mut last_cell = 0;
-                    let mut cursor_index = term.grid().cursor.point.column;
-                    let mut line = String::new();
-                    for (i, cell) in row.enumerate() {
-                        if !cell.fig_flags.contains(FigFlags::IN_PROMPT) && !cell.fig_flags.contains(FigFlags::IN_SUGGESTION) {
-                            if cell.c != ' ' {
-                                if last_cell < i {
-                                    line.push_str(repeat(' ').take(i - last_cell).collect::<String>().as_str());
-                                }
-                                line.push(cell.c);
-                                last_cell = i;
-                            } else {
-
-                            }
-                        } else {
-                            cursor_index -= 1;
-                        }
-                    }
+                    // TODO: Write initial text to pty
 
                     'select_loop: loop {
                         select! {
                             biased;
                             res = stdin.read(&mut read_buffer) => {
                                 if let Ok(size) = res {
-                                    master.write(&read_buffer[..size]).await?;
+                                    match std::str::from_utf8(&read_buffer[..size]) {
+                                        Ok(s) => {
+                                            for c in s.chars() {
+                                                if !intercept_set.contains(&c) {
+                                                    let mut utf8_buf = [0; 4];
+                                                    master.write(c.encode_utf8(&mut utf8_buf).as_bytes()).await?;
+                                                }
+                                            }
+                                        }
+                                        Err(_) => {
+                                            master.write(&read_buffer[..size]).await?;
+                                        }
+                                    }
                                 }
                             }
                             res = master.read(&mut write_buffer) => {
                                 match res {
-                                    Ok(0) => break 'select_loop,
+                                    Ok(0) => {
+                                        trace!("EOF from master");
+                                        break 'select_loop;
+                                    }
                                     Ok(size) => {
+                                        trace!("Read {} bytes from master", size);
+
                                         for byte in &write_buffer[..size] {
                                             processor.advance(&mut term, *byte);
-
-                                                // log::info!("{}", v);
-
-                                            // log::info!("{:?}", screen.renderable_content().cursor.point);
                                         }
 
-                                        edit_buffer(&term, &outgoing_tx);
+                                        send_edit_buffer(&term, &outgoing_tx);
 
                                         stdout.write_all(&write_buffer[..size]).await?;
                                         stdout.flush().await?;
@@ -298,7 +380,9 @@ fn main() -> Result<(), Box<dyn Error>> {
                             msg = incomming_rx.recv() => {
                                 if let Some(buf) = msg {
                                     // TODO: convert this to protobufs!
-                                    master.write(&buf).await?;
+                                    trace!("Received message from socket: {:?}", buf);
+
+                                    process_figterm_message(buf, &term, &mut master, intercept_set.clone()).await?;
                                 }
                             }
                             _ = window_change_signal.recv() => {
@@ -320,7 +404,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         PtyForkResult::Child => {
             // DO NOT RUN ANY FUNCTIONS THAT ARE NOT ASYNC SIGNAL SAFE
             // https://man7.org/linux/man-pages/man7/signal-safety.7.html
-            execv(&shell, &[&shell]).unwrap();
+            launch_shell().expect("Failed to launch shell");
             unreachable!();
         }
     }

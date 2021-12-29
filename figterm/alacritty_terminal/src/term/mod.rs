@@ -627,7 +627,7 @@ impl<T: EventListener> Handler for Term<T> {
     #[inline(never)]
     fn input(&mut self, c: char) {
         trace!("Input: {}", c);
-        
+
         // Number of cells the char will occupy.
         let width = match c.width() {
             Some(width) => width,
@@ -1432,7 +1432,8 @@ impl<T: EventListener> Handler for Term<T> {
         //     Err(e) => log::error!("Failed to queue `Prompt` hook: {}", e),
         // }
 
-        self.event_proxy.send_event(Event::Prompt, &self.shell_state);
+        self.event_proxy
+            .send_event(Event::Prompt, &self.shell_state);
 
         // if let Some(command) = &self.last_command {
         //     if let Some(history) = &mut self.history {
@@ -1467,7 +1468,8 @@ impl<T: EventListener> Handler for Term<T> {
 
     fn pre_exec(&mut self) {
         trace!("Fig PreExec");
-        self.event_proxy.send_event(Event::PreExec, &self.shell_state);
+        self.event_proxy
+            .send_event(Event::PreExec, &self.shell_state);
         // Send PreExec hook
         // let context = self.get_context();
         // let hook = new_preexec_hook(Some(context));

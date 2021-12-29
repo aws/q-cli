@@ -15,7 +15,7 @@ use crate::utils::fig_path;
 pub async fn init_logger(ptc_name: impl AsRef<str>) -> Result<()> {
     let log_level = match std::env::var("FIG_LOG_LEVEL").map(|s| log::LevelFilter::from_str(&*s)) {
         Ok(Ok(level)) => level,
-        _ => log::LevelFilter::Trace,
+        _ => log::LevelFilter::Warn,
     };
 
     let logger = Logger::new(&ptc_name)?;

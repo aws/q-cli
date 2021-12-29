@@ -1,4 +1,4 @@
-use crate::term::{SizeInfo, ShellState};
+use crate::term::{ShellState, SizeInfo};
 
 /// Terminal event.
 ///

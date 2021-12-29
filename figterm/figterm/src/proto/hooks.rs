@@ -1,3 +1,5 @@
+use proto::local;
+
 use crate::proto;
 
 /// Construct a new Shell Context
@@ -11,8 +13,8 @@ pub fn new_context(
     integration_version: Option<i32>,
     terminal: Option<String>,
     hostname: Option<String>,
-) -> proto::ShellContext {
-    proto::ShellContext {
+) -> local::ShellContext {
+    local::ShellContext {
         pid,
         ttys,
         process_name,
@@ -27,12 +29,12 @@ pub fn new_context(
 
 /// Construct a edit buffer hook
 pub fn new_edit_buffer_hook(
-    context: Option<proto::ShellContext>,
+    context: Option<local::ShellContext>,
     text: String,
     cursor: i64,
     histno: i64,
-) -> proto::hook::Hook {
-    proto::hook::Hook::EditBuffer(proto::EditBufferHook {
+) -> local::hook::Hook {
+    local::hook::Hook::EditBuffer(local::EditBufferHook {
         context,
         text,
         cursor,
@@ -41,20 +43,20 @@ pub fn new_edit_buffer_hook(
 }
 
 /// Construct a new prompt hook
-pub fn new_prompt_hook(context: Option<proto::ShellContext>) -> proto::hook::Hook {
-    proto::hook::Hook::Prompt(proto::PromptHook { context })
+pub fn new_prompt_hook(context: Option<local::ShellContext>) -> local::hook::Hook {
+    local::hook::Hook::Prompt(local::PromptHook { context })
 }
 
-pub fn new_preexec_hook(context: Option<proto::ShellContext>) -> proto::hook::Hook {
-    proto::hook::Hook::PreExec(proto::PreExecHook {
+pub fn new_preexec_hook(context: Option<local::ShellContext>) -> local::hook::Hook {
+    local::hook::Hook::PreExec(local::PreExecHook {
         context,
         command: None,
     })
 }
 
-pub fn hook_to_message(hook: proto::hook::Hook) -> proto::LocalMessage {
-    proto::LocalMessage {
-        r#type: Some(proto::local_message::Type::Hook(proto::local::Hook {
+pub fn hook_to_message(hook: local::hook::Hook) -> local::LocalMessage {
+    local::LocalMessage {
+        r#type: Some(local::local_message::Type::Hook(local::Hook {
             hook: Some(hook),
         })),
     }
