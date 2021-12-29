@@ -15,6 +15,17 @@ import (
 	"strings"
 )
 
+func InstalledViaBrew() (bool, error) {
+	casks, err := exec.Command("brew", "list", "--cask").Output()
+	if err != nil {
+		return false, err
+	}
+
+	regexpBuild := regexp.MustCompile(`(?m:^fig$)`)
+
+	return regexpBuild.Match(casks), nil
+}
+
 func GetMacOsVersion() (string, error) {
 	execSwVers, err := exec.Command("sw_vers").Output()
 	if err != nil {
@@ -31,7 +42,7 @@ func GetMacOsVersion() (string, error) {
 		return "", nil
 	}
 
-	return string(version[1]) + "." + string(build[1]), nil
+	return string(version[1]) + " " + string(build[1]), nil
 }
 
 func ReadPlist(field string) (string, error) {
@@ -159,6 +170,77 @@ func FigEnvs() []string {
 	}
 
 	return fig_envs
+}
+
+type HardwareDiagnostics string
+
+func GetHardwareDiagnostics() (HardwareDiagnostics, error) {
+	systemProfilerOutput, err := exec.Command("system_profiler", "SPHardwareDataType").Output()
+	if err != nil {
+		return "", err
+	}
+
+	systemProfilerTrimmed := strings.TrimSpace(string(systemProfilerOutput))
+	if systemProfilerTrimmed == "" {
+		return "", fmt.Errorf("could not determine hardware diagnostics")
+	}
+
+	return HardwareDiagnostics(systemProfilerTrimmed), nil
+}
+
+func (h HardwareDiagnostics) Memory() string {
+	re := regexp.MustCompile(`Memory: (.+)`)
+
+	matches := re.FindStringSubmatch(string(h))
+	if len(matches) == 0 {
+		return ""
+	}
+
+	return matches[1]
+}
+
+func (h HardwareDiagnostics) Model() string {
+	re := regexp.MustCompile(`Model Name: (.+)`)
+
+	matches := re.FindStringSubmatch(string(h))
+	if len(matches) == 0 {
+		return ""
+	}
+
+	return matches[1]
+}
+
+func (h HardwareDiagnostics) ModelIdentifier() string {
+	re := regexp.MustCompile(`Model Identifier: (.+)`)
+
+	matches := re.FindStringSubmatch(string(h))
+	if len(matches) == 0 {
+		return ""
+	}
+
+	return matches[1]
+}
+
+func (h HardwareDiagnostics) Chip() string {
+	re := regexp.MustCompile(`Chip: (.+)`)
+
+	matches := re.FindStringSubmatch(string(h))
+	if len(matches) == 0 {
+		return ""
+	}
+
+	return matches[1]
+}
+
+func (h HardwareDiagnostics) Cores() string {
+	re := regexp.MustCompile(`Total Number of Cores: (.+)`)
+
+	matches := re.FindStringSubmatch(string(h))
+	if len(matches) == 0 {
+		return ""
+	}
+
+	return matches[1]
 }
 
 func Summary() string {
@@ -289,6 +371,13 @@ func Summary() string {
 	summary.WriteString(resp.GetDiagnostics().GetOnlytab())
 	summary.WriteString("\n")
 
+	viaBrew, err := InstalledViaBrew()
+	if err == nil && viaBrew {
+		summary.WriteString("Installed via Brew: ")
+		summary.WriteString("true")
+		summary.WriteString("\n")
+	}
+
 	//  Installation Script: \(Diagnostic.installationScriptRan)
 	summary.WriteString("Installation Script: ")
 	summary.WriteString(resp.GetDiagnostics().GetInstallscript())
@@ -332,12 +421,35 @@ func Summary() string {
 	summary.WriteString("\nFig environment variables:\n")
 	summary.WriteString("  - TERM_SESSION_ID=")
 	summary.WriteString(os.Getenv("TERM_SESSION_ID"))
-	summary.WriteString("\n")
 	for _, env := range fig_envs {
+		summary.WriteString("\n")
 		summary.WriteString("  - ")
 		summary.WriteString(env)
-		summary.WriteString("\n")
 	}
+
+	// MacOS Version
+	version, _ := GetMacOsVersion()
+	summary.WriteString("\nMacOS Version: ")
+	summary.WriteString(version)
+	summary.WriteString("\n")
+
+	// Hardware
+	hardwareDiagnostics, _ := GetHardwareDiagnostics()
+	summary.WriteString("Hardware:\n")
+	summary.WriteString("  - Model Name: ")
+	summary.WriteString(hardwareDiagnostics.Model())
+	summary.WriteString("\n")
+	summary.WriteString("  - Model Identifier: ")
+	summary.WriteString(hardwareDiagnostics.ModelIdentifier())
+	summary.WriteString("\n")
+	summary.WriteString("  - Chip: ")
+	summary.WriteString(hardwareDiagnostics.Chip())
+	summary.WriteString("\n")
+	summary.WriteString("  - Cores: ")
+	summary.WriteString(hardwareDiagnostics.Cores())
+	summary.WriteString("\n")
+	summary.WriteString("  - Memory: ")
+	summary.WriteString(hardwareDiagnostics.Memory())
 
 	return summary.String()
 }

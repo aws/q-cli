@@ -1,4 +1,4 @@
-import { SettingsChangedNotification, NotificationType } from './fig';
+import { SettingsChangedNotification, NotificationType } from './fig.pb';
 import { _subscribe } from './notifications';
 
 import {
@@ -7,9 +7,9 @@ import {
 } from './requests';
 
 export const didChange = {
-  subscribe: (
+  subscribe(
     handler: (notification: SettingsChangedNotification) => boolean | undefined
-  ) => {
+  ) {
     return _subscribe(
       { type: NotificationType.NOTIFY_ON_SETTINGS_CHANGE },
       notification => {

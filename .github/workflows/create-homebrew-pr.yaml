@@ -1,0 +1,21 @@
+name: Create Homebrew PR
+
+on:
+  # push:
+  #   branches: 
+  #     - "eng-2026-automatically-create-brew-cask-pr-on-new"
+  workflow_dispatch:
+    inputs:
+      VERSION:
+        description: 'Version (eg. 1.0.53)'
+      BUILD:
+        description: 'Build number (eg. 345)'     
+
+jobs:
+  release:
+    runs-on: macos-11
+    steps:
+      - name: "Bump Brew Cask Version"
+        run: brew bump-cask-pr fig --version=${{github.event.inputs.VERSION}},${{github.event.inputs.BUILD}}  --no-browse --verbose --debug
+        env:
+          HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.HOMEBREW_FORK_GITHUB_TOKEN }}

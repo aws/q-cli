@@ -16,13 +16,13 @@ extension ExternalWindowHash {
     let tokens = self.components(separatedBy: CharacterSet(charactersIn: "/%"))
     guard let windowId = CGWindowID(tokens[0]) else { return nil }
     let tabString = tokens[safe: 1]
-    var tab: String? = nil
+    var tab: String?
     if tabString != nil && tabString!.count > 0 {
       tab = String(tabString!)
     }
 
     let paneString = tokens[safe: 2]
-    var pane: String? = nil
+    var pane: String?
     if paneString != nil && paneString!.count > 0 {
       pane = String(paneString!)
     }
@@ -147,14 +147,13 @@ extension ShellHookManager {
 
     // refresh cache! Why don't we us Accessibility.resetCache()?
     if Integrations.electronTerminals.contains(window.bundleId ?? "") {
-      let _ = Accessibility.findXTermCursorInElectronWindow(window, skipCache: true)
+      _ = Accessibility.findXTermCursorInElectronWindow(window, skipCache: true)
       print("xterm-cursor: updating due to tab changed?")
 
     }
 
     if Integrations.providers.keys.contains(window.bundleId ?? ""),
-      let provider = Integrations.providers[window.bundleId ?? ""]
-    {
+       let provider = Integrations.providers[window.bundleId ?? ""] {
       provider.runtimeValidationOccured()
     }
 
@@ -171,9 +170,9 @@ extension ShellHookManager {
   func currentTabDidChangeLegacy(_ info: ShellMessage, includesBundleId: Bool = false) {
     Logger.log(message: "currentTabDidChange")
 
-    // Need time for whitelisted window to change
+    // Need time for allowlisted window to change
     Timer.delayWithSeconds(0.1) {
-      if let window = AXWindowServer.shared.whitelistedWindow {
+      if let window = AXWindowServer.shared.allowlistedWindow {
         if let id = info.options?.last {
 
           if includesBundleId {
@@ -207,20 +206,20 @@ extension ShellHookManager {
   func currentTabDidChange(applicationIdentifier: String, sessionId: String) {
     Logger.log(message: "currentTabDidChange")
 
-    // Need time for whitelisted window to change
+    // Need time for allowlisted window to change
     Timer.delayWithSeconds(0.1) {
-      if let window = AXWindowServer.shared.whitelistedWindow {
+      if let window = AXWindowServer.shared.allowlistedWindow {
         let CodeTerminal =
           [Integrations.VSCode, Integrations.VSCodeInsiders, Integrations.VSCodium]
-            .contains(window.bundleId)
+          .contains(window.bundleId)
           && applicationIdentifier == "code"
-        
+
         let VSCodeTerminal = window.bundleId == Integrations.VSCode
           && applicationIdentifier == "vscode"
-        
+
         let VSCodeInsidersTerminal = window.bundleId == Integrations.VSCodeInsiders
           && applicationIdentifier == "vscode-insiders"
-        
+
         let VSCodeiumTerminal = window.bundleId == Integrations.VSCodium
           && applicationIdentifier == "vscodium"
 
@@ -229,7 +228,7 @@ extension ShellHookManager {
 
         let iTermTab = window.bundleId == Integrations.iTerm
           && applicationIdentifier == "iterm"
-        
+
         let KittyTerm = window.bundleId == Integrations.Kitty
           && applicationIdentifier == "kitty"
 
@@ -245,7 +244,7 @@ extension ShellHookManager {
 
   func updateHashMetadata(oldHash: ExternalWindowHash, hash: ExternalWindowHash) {
 
-    //queue.async(flags: [.barrier]) {
+    // queue.async(flags: [.barrier]) {
     guard oldHash != hash else { return }
     guard let device = self.tty[oldHash] else { return }
     guard let sessionId = self.sessions[oldHash] else { return }
@@ -257,7 +256,7 @@ extension ShellHookManager {
     // reassign tty to new hash
     self.sessions[hash] = sessionId
     self.tty[hash] = device
-    //}
+    // }
     Logger.log(
       message: "Transfering \(oldHash) metadata to \(hash).", priority: .info, subsystem: .tty)
 
@@ -290,11 +289,12 @@ extension ShellHookManager {
   }
 
   func shellPromptWillReturn(context: Local_ShellContext) {
-    // try to find associated window, but don't necessarily link with the topmost window! (prompt can return when window is in background)
+    // try to find associated window, but don't necessarily link with the topmost window! (prompt can return when window
+    // is in background)
     guard
       let hash = attemptToFindToAssociatedWindow(
         for: context.sessionID,
-        currentTopmostWindow: AXWindowServer.shared.whitelistedWindow)
+        currentTopmostWindow: AXWindowServer.shared.allowlistedWindow)
     else {
       Logger.log(
         message: "Could not link to window on shell prompt return.", priority: .notify,
@@ -317,14 +317,6 @@ extension ShellHookManager {
       Fig_ShellPromptReturnedNotification.with({ notification in
         notification.sessionID = context.sessionID
       }))
-
-    // if the user has returned to the shell, their keypress buffer must be reset (for instance, if they exited by pressing 'q' rather than return)
-    // This doesn't work because of timing issues. If the user types too quickly, the first keypress will be overwritten.
-    // KeypressProvider.shared.keyBuffer(for: hash).buffer = ""
-
-    // if Fig should emulate shell autocomplete behavior and only appear when tab is pressed, set keybuffer to writeOnly
-    KeypressProvider.shared.keyBuffer(for: hash).writeOnly =
-      (Settings.shared.getValue(forKey: Settings.onlyShowOnTabKey) as? Bool) ?? false
   }
 
   func startedNewShellSession(_ info: ShellMessage) {
@@ -347,9 +339,6 @@ extension ShellHookManager {
 
     // Set version (used for checking compatibility)
     tty.shellIntegrationVersion = info.shellIntegrationVersion ?? 0
-
-    KeypressProvider.shared.keyBuffer(for: hash).backedByShell = false
-
   }
 
   func startedNewTerminalSessionLegacy(_ info: ShellMessage) {
@@ -384,13 +373,12 @@ extension ShellHookManager {
                                  bundle: String?,
                                  env: [String: String]) {
 
-
-        DispatchQueue.main.async {
-          NotificationCenter.default.post(
-            Notification(
-              name: PseudoTerminal.recievedEnvironmentVariablesFromShellNotification,
-              object: env))
-        }
+    DispatchQueue.main.async {
+      NotificationCenter.default.post(
+        Notification(
+          name: PseudoTerminal.recievedEnvironmentVariablesFromShellNotification,
+          object: env))
+    }
 
   }
 
@@ -414,7 +402,7 @@ extension ShellHookManager {
     guard
       let hash = attemptToFindToAssociatedWindow(
         for: context.sessionID,
-        currentTopmostWindow: AXWindowServer.shared.whitelistedWindow)
+        currentTopmostWindow: AXWindowServer.shared.allowlistedWindow)
     else {
 
       Logger.log(
@@ -428,23 +416,13 @@ extension ShellHookManager {
 
     // Set version (used for checking compatibility)
     tty.shellIntegrationVersion = Int(context.integrationVersion)
+    API.notifications.editbufferChanged(buffer: "",
+                                        cursor: 0,
+                                        session: context.sessionID,
+                                        context: context)
 
-    // update keybuffer backing
-    if KeypressProvider.shared.keyBuffer(for: hash).backedByShell {
-
-      // ZLE doesn't handle signals sent to shell, like control+c
-      // So we need to manually force an update when the line changes
-      DispatchQueue.main.async {
-        Autocomplete.position()
-        
-        // manually trigger edit buffer update
-        API.notifications.editbufferChanged(buffer: "",
-                                            cursor: 0,
-                                            session: context.sessionID,
-                                            context: context)
-
-      }
-      KeypressProvider.shared.keyBuffer(for: hash).backedByShell = false
+    DispatchQueue.main.async {
+      Autocomplete.position()
     }
   }
 
@@ -466,25 +444,6 @@ extension ShellHookManager {
 
     // Set version (used for checking compatibility)
     tty.shellIntegrationVersion = info.shellIntegrationVersion ?? 0
-
-    KeypressProvider.shared.keyBuffer(for: hash).backedByShell = false
-
-  }
-
-  func clearKeybufferLegacy(_ info: ShellMessage) {
-    clearKeybuffer(info)
-  }
-
-  func clearKeybuffer(_ info: ShellMessage) {
-    guard let hash = attemptToFindToAssociatedWindow(for: info.session) else {
-      Logger.log(
-        message: "Could not link to window on new shell session.", priority: .notify,
-        subsystem: .tty)
-      return
-    }
-
-    let keybuffer = KeypressProvider.shared.keyBuffer(for: hash)
-    keybuffer.buffer = ""
   }
 
   func updateKeybufferLegacy(_ info: ShellMessage) {
@@ -502,25 +461,21 @@ extension ShellHookManager {
   }
 
   func updateKeybuffer(context: Local_ShellContext, text: String, cursor: Int, histno: Int) {
-    
-    // invariant: frontmost whitelisted window is assumed to host shell session which sent this edit buffer event.
-    let window = AXWindowServer.shared.whitelistedWindow
-    guard let hash = window?.hash else {
+    // invariant: frontmost allowlisted window is assumed to host shell session which sent this edit buffer event.
+    guard let window = AXWindowServer.shared.allowlistedWindow else {
       Logger.log(
         message: "Could not link to window on new shell session.", priority: .notify,
         subsystem: .tty)
       return
     }
 
+    let hash = window.hash
     var ttyHandler: TTY? = tty[hash]
 
     if ttyHandler == nil, let trimmedDescriptor = context.ttys.split(separator: "/").last {
-
       Logger.log(message: "linking sessionId (\(context.sessionID)) to window hash: \(hash)", subsystem: .tty)
       ttyHandler = self.link(context.sessionID, hash, String(trimmedDescriptor))
-
       ttyHandler?.startedNewShellSession(for: context.pid)
-
     }
 
     guard let tty = ttyHandler else {
@@ -535,61 +490,31 @@ extension ShellHookManager {
       return
     }
 
-    let keybuffer = KeypressProvider.shared.keyBuffer(for: hash)
-
-    let previousHistoryNumber = keybuffer.shellHistoryNumber
-
-    keybuffer.backedByShell = true
-    keybuffer.backing = KeystrokeBuffer.Backing(rawValue: String(context.processName.split(separator: "/").last ?? ""))
-    keybuffer.buffer = text
-    keybuffer.shellCursor = cursor
-    keybuffer.shellHistoryNumber = histno
-
-    // Prevent Fig from immediately when the user navigates through history
-    // Note that Fig is hidden in response to the "history-line-set" zle hook
-
-    let isFirstCharacterOfNewLine = previousHistoryNumber != histno && text.count == 1
-
-    // If buffer is empty, line is being reset (eg. ctrl+c) and event should be processed :/
-    guard text == "" || previousHistoryNumber == histno || isFirstCharacterOfNewLine else {
-      print("ZLE: history numbers do not match")
+    // What need to be true for us to send notification!
+    guard let session = TerminalSessionLinker.shared.getTerminalSession(for: context.sessionID),
+          let editBuffer = session.editBuffer,
+          Defaults.shared.loggedIn,
+          Defaults.shared.useAutocomplete else {
       return
     }
 
-    // write only prevents autocomplete from recieving keypresses
-    // if buffer is empty, make sure autocomplete window is hidden
-    // when writeOnly is the default starting state (eg. fig.settings.autocomplete.onlyShowOnTab)
-    guard text == "" || !keybuffer.writeOnly else {
-      print("ZLE: keybuffer is write only")
-      return
-    }
-
-    print("ZLE: \(text) \(cursor) \(histno)")
-
-    guard Defaults.shared.loggedIn, Defaults.shared.useAutocomplete else {
-      return
-    }
-    
-    if let (buffer, cursor) = keybuffer.currentState {
-      API.notifications.editbufferChanged(buffer: buffer,
-                                          cursor: cursor,
-                                          session: context.sessionID,
-                                          context: window?.associatedShellContext?.ipcContext)
-    }
+    API.notifications.editbufferChanged(buffer: editBuffer.text,
+                                        cursor: editBuffer.cursor,
+                                        session: session.terminalSessionId,
+                                        context: session.shellContext?.ipcContext)
 
     DispatchQueue.main.async {
       Autocomplete.position()
-
     }
+
   }
 
   func tmuxPaneChangedLegacy(_ info: ShellMessage) {
-    guard let window = AXWindowServer.shared.whitelistedWindow else { return }
+    guard let window = AXWindowServer.shared.allowlistedWindow else { return }
     let oldHash = window.hash
 
     if let newPane = info.arguments[safe: 0],
-      let (windowId, sessionHash, oldPane) = oldHash.components()
-    {
+       let (windowId, sessionHash, oldPane) = oldHash.components() {
 
       if oldPane != nil {
         // user is switching between panes in tmux
@@ -642,7 +567,7 @@ extension ShellHookManager {
 
   func eventHook(event: String?) {
     if let event = event {
-      TelemetryProvider.track(event: event, with: [:])
+      TelemetryProvider.shared.track(event: event, with: [:])
     } else {
       print("No event")
     }
@@ -655,16 +580,15 @@ extension ShellHookManager {
   fileprivate func attemptToFindToAssociatedWindow(
     for sessionId: SessionId, currentTopmostWindow: ExternalWindow? = nil
   ) -> ExternalWindowHash? {
-    
+
     guard let session = TerminalSessionLinker.shared.getTerminalSession(for: sessionId) else {
       Logger.log(message: "Could not find hash for sessionId '\(sessionId)'", subsystem: .tty)
 
       return nil
     }
-    
-    
+
     let hash = session.generateLegacyWindowHash()
-    
+
     Logger.log(message: "Found WindowHash '\(hash)' for sessionId '\(sessionId)'", subsystem: .tty)
 
     return hash
@@ -676,30 +600,30 @@ extension ShellHookManager {
     let device = TTY(fd: ttyDescriptor)
 
     // tie tty & sessionId to windowHash
-    //queue.async(flags: [.barrier]) {
+    // queue.async(flags: [.barrier]) {
     semaphore.wait()
     self.tty[hash] = device
     self.sessions[sessionId] = nil  // unlink sessionId from any previous windowHash
     self.sessions[hash] = sessionId  // sessions is bidirectional between sessionId and windowHash
     semaphore.signal()
-    //}
+    // }
     return device
   }
 
   func getSessionId(for windowHash: ExternalWindowHash) -> SessionId? {
     var id: SessionId?
-    //queue.sync {
+    // queue.sync {
     id = self.sessions[windowHash]
-    //}
+    // }
 
     return id
   }
 
   fileprivate func getWindowHash(for sessionId: SessionId) -> ExternalWindowHash? {
     var hash: ExternalWindowHash?
-    //queue.sync {
+    // queue.sync {
     hash = self.sessions[sessionId]
-    //}
+    // }
 
     return hash
   }

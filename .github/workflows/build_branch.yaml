@@ -37,7 +37,7 @@ jobs:
 # Declare ENVIRONMENT variables
 ############################################
 
-      - name: "SET: VERSIONS_BRANCH and APPCAST_PREFIX"
+      - name: "SET: VERSIONS_BRANCH, APPCAST_PREFIX and BUMP_CASK_PR"
         env:
           REF: ${{ github.ref }}
           ACTIONS_ALLOW_UNSECURE_COMMANDS: true
@@ -45,6 +45,7 @@ jobs:
           if [[ $REF == 'refs/heads/master' ]]; then
               echo "::set-env name=VERSIONS_BRANCH::main"
               echo "::set-env name=APPCAST_PREFIX::versions"
+              echo "::set-env name=BUMP_CASK_PR::1" 
 
           elif [[ $REF == 'refs/heads/staging' ]]; then
               echo "::set-env name=VERSIONS_BRANCH::beta"
@@ -114,6 +115,24 @@ jobs:
         with:
           go-version: '1.17'
 
+      - name: Setup Node Environment
+        uses: actions/setup-node@v1
+
+############################################
+# Generate Protobuf Artifacts
+############################################
+      - name: Install Protobuf tooling
+        run:  |
+          brew install protobuf swift-protobuf
+          npm install -g ts-proto
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: 1
+
+      - name: Generate Protobuf Artifacts
+        run: make
+        working-directory: ./proto
+          
 ############################################
 # Build, Archive & Export 
 ############################################
@@ -125,8 +144,8 @@ jobs:
       - name: "Import Certificate"
         uses: devbotsxyz/import-signing-certificate@main
         with:
-          certificate-data: ${{ secrets.SIGNING_CERTIFICATE_P12_DATA }}
-          certificate-passphrase: ${{ secrets.SIGNING_CERTIFICATE_PASSWORD }}
+          certificate-data: ${{ secrets.FIG__SIGNING_CERTIFICATE_P12_DATA }}
+          certificate-passphrase: ${{ secrets.FIG__SIGNING_CERTIFICATE_PASSWORD }}
           keychain-password: ${{ secrets.KEYCHAIN_PASSWORD }}
 
       - name: "Create exportOptions.plist"
@@ -142,14 +161,14 @@ jobs:
                 <key>method</key>
                 <string>developer-id</string>
                 <key>teamID</key>
-                <string>${{secrets.NOTARIZE_TEAM_ID}}</string>
+                <string>${{secrets.FIG__NOTARIZE_TEAM_ID}}</string>
             </dict>
             </plist>
      
       - name: "SET: CODESIGNING_IDENTITY"
         run: |
           security find-identity -v -p codesigning
-          echo CODESIGNING_IDENTITY=$(security find-identity -v -p codesigning | grep "Developer ID Application" | grep ${{ secrets.NOTARIZE_TEAM_ID }} | cut -d' ' -f5- | cut -d "\"" -f2) >> $GITHUB_ENV
+          echo CODESIGNING_IDENTITY=$(security find-identity -v -p codesigning | grep "Developer ID Application" | grep ${{ secrets.FIG__NOTARIZE_TEAM_ID }} | cut -d' ' -f5- | cut -d "\"" -f2) >> $GITHUB_ENV
       - name: "Increase keychain access interval"
         run: security set-keychain-settings -lut 1200
 
@@ -193,9 +212,9 @@ jobs:
           xcrun stapler staple Export/Fig.app
           # xcrun altool --notarize-app --primary-bundle-id "com.mschrage.fig" -u "$NOTARIZE_USERNAME" -p "$NOTARIZE_PASSWORD" --file Fig.zip
         env:
-          NOTARIZE_USERNAME: ${{ secrets.NOTARIZE_USERNAME }}
-          NOTARIZE_PASSWORD: ${{ secrets.NOTARIZE_PASSWORD }}
-          NOTARIZE_TEAM_ID: ${{ secrets.NOTARIZE_TEAM_ID }}
+          NOTARIZE_USERNAME: ${{ secrets.FIG__NOTARIZE_USERNAME }}
+          NOTARIZE_PASSWORD: ${{ secrets.FIG__NOTARIZE_PASSWORD }}
+          NOTARIZE_TEAM_ID: ${{ secrets.FIG__NOTARIZE_TEAM_ID }}
       - name: "VERIFY: App is codesigned properly"
         if: github.event.inputs.notarizeApp != 'false'
         run: codesign --verify --deep --strict --verbose=2 Export/Fig.app
@@ -208,8 +227,6 @@ jobs:
 ############################################
       # - name: Install fileicon
       #   run: HOMEBREW_NO_AUTO_UPDATE=1 brew install fileicon
-      - name: Setup Node Environment
-        uses: actions/setup-node@v1
       - name: Install appdmg
         run: npm install -g appdmg
       - name: "Create dmg-spec.json"
@@ -259,9 +276,9 @@ jobs:
           xcrun notarytool submit "fig $BUILD.dmg" --apple-id "$NOTARIZE_USERNAME" --password "$NOTARIZE_PASSWORD" --team-id "$NOTARIZE_TEAM_ID" --wait
           # xcrun stapler staple Export/Fig.app
         env:
-          NOTARIZE_USERNAME: ${{ secrets.NOTARIZE_USERNAME }}
-          NOTARIZE_PASSWORD: ${{ secrets.NOTARIZE_PASSWORD }}
-          NOTARIZE_TEAM_ID: ${{ secrets.NOTARIZE_TEAM_ID }}
+          NOTARIZE_USERNAME: ${{ secrets.FIG__NOTARIZE_USERNAME }}
+          NOTARIZE_PASSWORD: ${{ secrets.FIG__NOTARIZE_PASSWORD }}
+          NOTARIZE_TEAM_ID: ${{ secrets.FIG__NOTARIZE_TEAM_ID }}
       - name: "VERIFY: DMG notarization status"
         if: github.event.inputs.notarizeDMG != 'false'
         run: spctl -a -t open --context context:primary-signature -v  "fig $BUILD.dmg" 
@@ -331,6 +348,17 @@ jobs:
           cd versions
           git push origin $VERSIONS_BRANCH
           cd ..
+
+############################################
+# Publish Homebrew Cask
+############################################
+
+      - name: "Bump Brew Cask Version"
+        if: env.BUMP_CASK_PR == 1
+        run: brew bump-cask-pr fig --version=${{env.VERSION}},${{env.BUILD}}  --no-browse --verbose --debug
+        env:
+          HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.HOMEBREW_FORK_GITHUB_TOKEN }}
+
 ############################################
 # Create Github Release [Internal]
 ############################################

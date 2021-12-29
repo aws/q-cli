@@ -7,7 +7,7 @@ RUN apt install -y python3 python3-pip && ln -sf python3 /usr/bin/python
 RUN pip3 install --no-cache --upgrade pip setuptools
 RUN apt install -y \
   sudo make g++ libtool libtool-bin libc-dev perl \
-  bash zsh \
+  bash zsh fish \
   uuid-runtime netcat-openbsd jq \
   protobuf-compiler \
   vim valgrind

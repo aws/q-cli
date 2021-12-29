@@ -171,7 +171,7 @@ const sourceFile = project.createSourceFile(
       .concat(otherRequests)
       .sort()
       .map(capitalizeFirstLetter);
-    writer.writeLine(`import { \n${imports.join(',\n')}\n } from "./fig";`);
+    writer.writeLine(`import { \n${imports.join(',\n')}\n } from "./fig.pb";`);
     writer.writeLine(`import { sendMessage } from "./core"`).blankLine();
 
     requestsWithMatchingResponses.forEach(request =>

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/user"
+	"path"
 )
 
 type Settings map[string]interface{}
@@ -63,7 +64,7 @@ func (s Settings) Save() error {
 		return err
 	}
 
-	err = os.WriteFile(usr.HomeDir + "/.fig/settings.json", data, 0644)
+	err = os.WriteFile(path.Join(usr.HomeDir, ".fig", "settings.json"), data, 0644)
 	if err != nil {
 		fmt.Println("Settings: error writing settings file")
 		return err
