@@ -13,7 +13,7 @@ use unicode_width::UnicodeWidthChar;
 use crate::ansi::{self, Attr, CharsetIndex, Color, Handler, NamedColor, StandardCharset};
 use crate::event::{Event, EventListener};
 use crate::grid::{Dimensions, Grid, GridIterator, Scroll};
-use crate::index::{self, Boundary, Column, Direction, Line, Point};
+use crate::index::{self, Boundary, Column, Direction, Line, Point, Rect};
 use crate::term::cell::{Cell, LineLength, ShellFlags};
 use crate::term::color::{Colors, Rgb};
 
@@ -112,8 +112,25 @@ impl Dimensions for SizeInfo {
     }
 }
 
-/// State about the current shell
+/// Information about the current command
 #[derive(Debug, Clone)]
+pub struct CommandInfo {
+    pub command: Option<String>,
+    pub shell: Option<String>,
+    pub pid: Option<i32>,
+    pub session_id: Option<String>,
+    pub cwd: Option<PathBuf>,
+    pub time: Option<u64>,
+
+    pub hostname: Option<String>,
+    pub in_ssh: bool,
+    pub in_docker: bool,
+
+    pub exit_code: Option<i32>,
+}
+
+/// State about the current shell
+#[derive(Debug, Clone, Default)]
 pub struct ShellState {
     /// The current tty
     pub tty: Option<String>,
@@ -152,35 +169,21 @@ pub struct ShellState {
 
     /// Color support
     pub color_support: Option<fig_color::ColorSupport>,
-}
 
-impl Default for ShellState {
-    fn default() -> Self {
-        Self {
-            tty: Default::default(),
-            pid: Default::default(),
-            session_id: Default::default(),
-            hostname: Default::default(),
-            shell: Default::default(),
-            current_working_directory: Default::default(),
-            in_ssh: Default::default(),
-            in_docker: Default::default(),
-            has_seen_prompt: Default::default(),
-            preexec: Default::default(),
-            cmd_cursor: Default::default(),
-            fish_suggestion_color_text: Default::default(),
-            zsh_autosuggestion_color_text: Default::default(),
-            fish_suggestion_color: Default::default(),
-            zsh_autosuggestion_color: Default::default(),
-            color_support: Default::default(),
-        }
-    }
+    /// Command info
+    pub command_info: Option<CommandInfo>,
 }
 
 impl ShellState {
     fn new() -> ShellState {
         ShellState::default()
     }
+}
+
+#[derive(Debug, Clone)]
+pub struct TextBuffer {
+    pub buffer: String,
+    pub cursor_idx: Option<usize>,
 }
 
 pub struct Term<T> {
@@ -628,6 +631,100 @@ impl<T> Term<T> {
     /// Get the current [`ShellState`]
     pub fn shell_state(&self) -> &ShellState {
         &self.shell_state
+    }
+
+    pub fn get_text_region(
+        &self,
+        rect: &Rect,
+        start_col_offset: Column,
+        mask: Option<char>,
+        wrap_lines: bool,
+    ) -> TextBuffer
+    where
+        T: EventListener,
+    {
+        let mut buffer = String::with_capacity(rect.size());
+        let mut padding = 0;
+        let cursor = self.grid().cursor.point;
+
+        let mut last_char_was_padding = true;
+
+        let mut cursor_idx = None;
+
+        let mut start = rect.start;
+        start.column += start_col_offset;
+
+        self.grid().iter_from_to(start, rect.end).for_each(|cell| {
+            if cell.point.column == rect.start.column {
+                last_char_was_padding = true;
+            }
+
+            if cell.point == cursor {
+                cursor_idx = Some(buffer.len());
+                while padding > 0 {
+                    buffer.push(' ');
+                    padding -= 1;
+                }
+            }
+
+            if cell.c == '\0'
+                || (mask == Some(' ')
+                    && (cell.fig_flags.contains(FigFlags::IN_PROMPT)
+                        || cell.fig_flags.contains(FigFlags::IN_SUGGESTION)))
+            {
+                padding += 1;
+                last_char_was_padding = true;
+            } else if cell.c as u32 == u32::MAX {
+            } else {
+                while padding > 0 {
+                    buffer.push(' ');
+                    padding -= 1;
+                }
+
+                if mask.is_some() && cell.fig_flags.contains(FigFlags::IN_PROMPT)
+                    || cell.fig_flags.contains(FigFlags::IN_SUGGESTION)
+                {
+                    buffer.push(mask.unwrap());
+                } else {
+                    buffer.push(cell.c);
+                    last_char_was_padding = false;
+                }
+            }
+
+            if cell.point.column == rect.end.column - 1 && cell.point.line < rect.end.line {
+                if last_char_was_padding || !wrap_lines {
+                    buffer.push('\n');
+                }
+                padding = 0;
+            }
+        });
+
+        TextBuffer { buffer, cursor_idx }
+    }
+
+    pub fn get_current_buffer(&self) -> Option<TextBuffer>
+    where
+        T: EventListener,
+    {
+        match self.shell_state().cmd_cursor {
+            Some(cmd_cursor) => {
+                let rect = Rect {
+                    start: Point::new(cmd_cursor.line, Column(0)),
+                    end: Point::new(self.bottommost_line(), self.last_column()),
+                };
+
+                let mut buffer = self.get_text_region(
+                    &rect,
+                    Column(cmd_cursor.column.saturating_sub(1)),
+                    Some(' '),
+                    true,
+                );
+                buffer.buffer = buffer.buffer.trim_end().to_string();
+
+                Some(buffer)
+            }
+            None => None,
+        }
     }
 }
 
@@ -1236,9 +1333,7 @@ impl<T: EventListener> Handler for Term<T> {
     /// Set a terminal attribute.
     #[inline]
     fn terminal_attribute(&mut self, attr: Attr) {
-        debug!("Setting attribute: {:?}", attr);
-        debug!("Fish attr {:?}", self.shell_state().fish_suggestion_color);
-        debug!("Zsh attr {:?}", self.shell_state().zsh_autosuggestion_color);
+        trace!("Setting attribute: {:?}", attr);
 
         let cursor = &mut self.grid.cursor;
 
@@ -1515,15 +1610,10 @@ impl<T: EventListener> Handler for Term<T> {
         self.event_proxy
             .send_event(Event::Prompt, &self.shell_state);
 
-        // if let Some(command) = &self.last_command {
-        //     if let Some(history) = &mut self.history {
-        //         match history.insert_command_history(command.clone()) {
-        //             Ok(_) => {}
-        //             Err(e) => log::error!("Failed to insert command history: {}", e),
-        //         }
-        //     }
-        //     log::info!("{:?}", command);
-        // }
+        if let Some(command) = &self.shell_state.command_info {
+            self.event_proxy
+                .send_event(Event::CommandInfo(command), &self.shell_state)
+        }
     }
 
     fn start_prompt(&mut self) {
@@ -1548,24 +1638,29 @@ impl<T: EventListener> Handler for Term<T> {
 
     fn pre_exec(&mut self) {
         trace!("Fig PreExec");
+
         self.event_proxy
             .send_event(Event::PreExec, &self.shell_state);
 
-        // self.last_command = Some(CommandInfo {
-        //     command: String::new(),
-        //     shell: self.shell_state.shell.clone(),
-        //     pid: self.shell_state.pid,
-        //     session_id: self.fig_info.term_session_id.clone(),
-        //     cwd: current_dir().ok(),
-        //     time: std::time::SystemTime::now()
-        //         .duration_since(std::time::SystemTime::UNIX_EPOCH)
-        //         .unwrap_or_default()
-        //         .as_secs(),
-        //     in_ssh: self.shell_state.in_ssh,
-        //     in_docker: self.shell_state.in_docker,
-        //     hostname: self.shell_state.shell.clone(),
-        //     exit_code: None,
-        // });
+        let buffer = self
+            .get_current_buffer()
+            .map(|b| b.buffer.trim().to_owned());
+
+        self.shell_state.command_info = Some(CommandInfo {
+            command: buffer,
+            shell: self.shell_state.shell.clone(),
+            pid: self.shell_state.pid,
+            session_id: self.shell_state.session_id.clone(),
+            cwd: env::current_dir().ok(),
+            time: std::time::SystemTime::now()
+                .duration_since(std::time::SystemTime::UNIX_EPOCH)
+                .ok()
+                .map(|d| d.as_secs()),
+            in_ssh: self.shell_state.in_ssh,
+            in_docker: self.shell_state.in_docker,
+            hostname: self.shell_state.hostname.clone(),
+            exit_code: None,
+        });
 
         self.shell_state.preexec = true;
     }
@@ -1579,19 +1674,20 @@ impl<T: EventListener> Handler for Term<T> {
         }
     }
 
-    fn exit_code(&mut self, _exit_code: i32) {
-        // if let Some(command) = self.last_command.as_mut() {
-        //     command.exit_code = Some(exit_code);
-        // }
+    fn exit_code(&mut self, exit_code: i32) {
+        trace!("Fig exit code: {}", exit_code);
+        if let Some(command) = &mut self.shell_state.command_info {
+            command.exit_code = Some(exit_code);
+        }
     }
 
     fn shell(&mut self, shell: &str) {
         trace!("Fig shell: {:?}", shell);
-        self.shell_state.shell = Some(shell.to_owned());
+        self.shell_state.shell = Some(shell.trim().to_owned());
     }
 
     fn fish_suggestion_color(&mut self, color: &str) {
-        debug!("Fig fish suggestion color: {:?}", color);
+        trace!("Fig fish suggestion color: {:?}", color);
 
         self.shell_state.fish_suggestion_color_text = Some(color.to_owned());
 
@@ -1602,7 +1698,7 @@ impl<T: EventListener> Handler for Term<T> {
     }
 
     fn zsh_suggestion_color(&mut self, color: &str) {
-        debug!("Fig zsh suggestion color: {:?}", color);
+        trace!("Fig zsh suggestion color: {:?}", color);
 
         self.shell_state.zsh_autosuggestion_color_text = Some(color.to_owned());
 
@@ -1614,7 +1710,7 @@ impl<T: EventListener> Handler for Term<T> {
 
     fn tty(&mut self, tty: &str) {
         trace!("Fig tty: {:?}", tty);
-        self.shell_state.tty = Some(tty.to_owned());
+        self.shell_state.tty = Some(tty.trim().to_owned());
     }
 
     fn pid(&mut self, pid: i32) {
@@ -1625,7 +1721,7 @@ impl<T: EventListener> Handler for Term<T> {
     fn session_id(&mut self, session_id: &str) {
         let session_id = session_id.split(':').last().unwrap_or("");
         trace!("Fig session_id: {:?}", session_id);
-        self.shell_state.session_id = Some(session_id.to_owned());
+        self.shell_state.session_id = Some(session_id.trim().to_owned());
     }
 
     fn docker(&mut self, in_docker: bool) {
@@ -1640,7 +1736,7 @@ impl<T: EventListener> Handler for Term<T> {
 
     fn hostname(&mut self, hostname: &str) {
         trace!("Fig hostname: {:?}", hostname);
-        self.shell_state.hostname = Some(hostname.to_owned());
+        self.shell_state.hostname = Some(hostname.trim().to_owned());
     }
 
     fn log(&mut self, _: &str) {}

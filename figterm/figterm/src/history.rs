@@ -1,5 +1,6 @@
 use std::{borrow::Cow, io::Read, path::PathBuf};
 
+use alacritty_terminal::term::CommandInfo;
 use anyhow::Result;
 use flume::{bounded, Sender};
 use log::error;
@@ -7,15 +8,15 @@ use once_cell::sync::Lazy;
 use regex::Regex;
 use rusqlite::{params, Connection};
 
-use crate::{command_info::CommandInfo, utils::fig_path};
+use crate::utils::fig_path;
 
 pub async fn spawn_history_task() -> Sender<CommandInfo> {
     let (sender, receiver) = bounded(64);
     tokio::task::spawn(async move {
-        let history_join = tokio::task::spawn_blocking(|| History::load());
+        let history_join = tokio::task::spawn_blocking(History::load);
 
         match history_join.await {
-            Ok(Ok(mut history)) => {
+            Ok(Ok(history)) => {
                 while let Ok(command) = receiver.recv_async().await {
                     if let Err(e) = history.insert_command_history(&command) {
                         error!("Failed to insert command into history: {}", e);
@@ -63,13 +64,18 @@ impl History {
             .into_iter()
             .collect();
 
-        let new_history_path: PathBuf = [fig_path().unwrap(), "fig.history".into()]
+        let history_path: PathBuf = [fig_path().unwrap(), "fig.history".into()]
             .into_iter()
             .collect();
 
         let mut old_history = Vec::new();
 
-        if old_history_path.exists() && !new_history_path.exists() {
+        let history_exists = history_path.exists();
+
+        let connection = Connection::open(&history_path)?;
+        let history = History { connection };
+
+        if old_history_path.exists() && !history_exists {
             let mut file = std::fs::File::open(&old_history_path)?;
             let mut file_string = String::new();
             file.read_to_string(&mut file_string)?;
@@ -79,16 +85,22 @@ impl History {
             old_history = re
                 .captures_iter(&file_string)
                 .map(|cap| {
+                    let command = if cap[1].is_empty() {
+                        None
+                    } else {
+                        Some(unescape_string(&cap[1]).trim().to_string())
+                    };
+
                     let shell = if cap[3].is_empty() {
                         None
                     } else {
-                        Some(unescape_string(&cap[3]).to_string())
+                        Some(unescape_string(&cap[3]).trim().to_string())
                     };
 
                     let session_id = if cap[4].is_empty() {
                         None
                     } else {
-                        Some(unescape_string(&cap[4]).to_string())
+                        Some(unescape_string(&cap[4]).trim().to_string())
                     };
 
                     let cwd = if cap[5].is_empty() {
@@ -98,7 +110,7 @@ impl History {
                     };
 
                     CommandInfo {
-                        command: unescape_string(&cap[1]).into(),
+                        command,
                         shell,
                         pid: None,
                         session_id,
@@ -113,13 +125,10 @@ impl History {
                 .collect();
         }
 
-        let connection = Connection::open(new_history_path)?;
-        let mut history = History { connection };
+        create_migrations_table(&history.connection)?;
+        migrate_history_db(&history.connection)?;
 
-        create_migrations_table(&mut history.connection)?;
-        migrate_history_db(&mut history.connection)?;
-
-        if old_history.len() > 0 {
+        if !old_history.is_empty() {
             for command in old_history {
                 history.insert_command_history(&command).ok();
             }
@@ -128,7 +137,7 @@ impl History {
         Ok(history)
     }
 
-    pub fn insert_command_history(&mut self, command_info: &CommandInfo) -> Result<()> {
+    pub fn insert_command_history(&self, command_info: &CommandInfo) -> Result<()> {
         self.connection.execute(
             "INSERT INTO history (\
                         command, \
@@ -163,7 +172,7 @@ impl History {
     }
 }
 
-fn create_migrations_table(conn: &mut Connection) -> Result<()> {
+fn create_migrations_table(conn: &Connection) -> Result<()> {
     conn.execute_batch(
         "CREATE TABLE IF NOT EXISTS migrations( \
                 id INTEGER PRIMARY KEY, \
@@ -174,7 +183,7 @@ fn create_migrations_table(conn: &mut Connection) -> Result<()> {
     Ok(())
 }
 
-fn migrate_history_db(conn: &mut Connection) -> Result<()> {
+fn migrate_history_db(conn: &Connection) -> Result<()> {
     let mut max_migration_version_stmt = conn.prepare("SELECT max(version) from migrations;")?;
     let max_migration_version: i64 = max_migration_version_stmt
         .query_row([], |row| row.get(0))

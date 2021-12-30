@@ -1,13 +1,14 @@
-use crate::term::{ShellState, SizeInfo};
+use crate::term::{ShellState, SizeInfo, CommandInfo};
 
 /// Terminal event.
 ///
 /// These events instruct the TODO socket over changes that can't be handled by the terminal emulation layer
 /// itself.
 #[derive(Debug, Clone)]
-pub enum Event {
+pub enum Event<'a> {
     Prompt,
     PreExec,
+    CommandInfo(&'a CommandInfo),
 }
 
 /// Types that are interested in when the display is resized.
@@ -17,7 +18,7 @@ pub trait OnResize {
 
 /// Event Loop for sending info about terminal events.
 pub trait EventListener {
-    fn send_event(&self, _event: Event, _shell_state: &ShellState) {}
+    fn send_event(&self, _event: Event<'_>, _shell_state: &ShellState) {}
 }
 
 /// Placeholder implementation for tests.

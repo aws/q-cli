@@ -15,8 +15,11 @@ RUN apt install -y -t bullseye-backports golang-1.17-go
 RUN npm install --global ts-proto
 
 ENV HOME=/usr/home
+
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --default-toolchain stable --profile minimal -y
+
 ENV FIG_BUNDLE_EXECUTABLES=/usr/home/.fig_bin
-ENV PATH=/usr/lib/go-1.17/bin/:$PATH
+ENV PATH="${HOME}/.cargo/bin:/usr/lib/go-1.17/bin/:${PATH}"
 ENV TMPDIR=/tmp/
 
 WORKDIR /usr/home/app/

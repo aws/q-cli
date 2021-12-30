@@ -1,5 +1,4 @@
 mod arg_parser;
-pub mod command_info;
 pub mod history;
 pub mod ipc;
 pub mod logger;
@@ -22,12 +21,11 @@ use nix::{
     unistd::{execvp, getpid, isatty},
 };
 
+use alacritty_terminal::term::CommandInfo;
 use alacritty_terminal::{
     ansi::Processor,
     event::{Event, EventListener},
-    grid::Dimensions,
-    index::{Column, Point},
-    term::{cell::FigFlags, ShellState, SizeInfo},
+    term::{ShellState, SizeInfo},
     Term,
 };
 use proto::figterm::{figterm_message, intercept_command, FigtermMessage};
@@ -57,11 +55,15 @@ const FIGTERM_VERSION: usize = 3;
 
 struct EventSender {
     sender: Sender<Bytes>,
+    history_sender: Sender<CommandInfo>,
 }
 
 impl EventSender {
-    fn new(sender: Sender<Bytes>) -> Self {
-        Self { sender }
+    fn new(sender: Sender<Bytes>, history_sender: Sender<CommandInfo>) -> Self {
+        Self {
+            sender,
+            history_sender,
+        }
     }
 }
 
@@ -107,175 +109,11 @@ impl EventListener for EventSender {
 
                 self.sender.send(bytes).unwrap();
             }
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
-struct EditBuffer {
-    buffer: String,
-    cursor: i64,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-struct Rect {
-    start: Point,
-    end: Point,
-}
-
-impl Rect {
-    pub const fn size(&self) -> usize {
-        (self.end.column.0 - self.start.column.0) as usize
-            * (self.end.line.0 - self.start.line.0) as usize
-    }
-}
-
-fn get_text_region<T>(
-    term: &Term<T>,
-    rect: &Rect,
-    start_col_offset: Column,
-    mask: Option<char>,
-    wrap_lines: bool,
-) -> EditBuffer
-where
-    T: EventListener,
-{
-    let mut buffer = String::with_capacity(rect.size());
-    let mut padding = 0;
-    let cursor = term.grid().cursor.point;
-
-    let mut last_char_was_padding = true;
-
-    let mut index = None;
-
-    let mut start = rect.start;
-    start.column += start_col_offset;
-
-    term.grid().iter_from_to(start, rect.end).for_each(|cell| {
-        if cell.point.column == rect.start.column {
-            last_char_was_padding = true;
-        }
-
-        if cell.point == cursor {
-            index = Some(buffer.len());
-            while padding > 0 {
-                buffer.push(' ');
-                padding -= 1;
+            Event::CommandInfo(command_info) => {
+                self.history_sender.send(command_info.clone()).unwrap();
             }
         }
-
-        if cell.c == '\0'
-            || (mask == Some(' ')
-                && (cell.fig_flags.contains(FigFlags::IN_PROMPT)
-                    || cell.fig_flags.contains(FigFlags::IN_SUGGESTION)))
-        {
-            padding += 1;
-            last_char_was_padding = true;
-        } else if cell.c as u32 == u32::MAX {
-        } else {
-            while padding > 0 {
-                buffer.push(' ');
-                padding -= 1;
-            }
-
-            if mask.is_some() && cell.fig_flags.contains(FigFlags::IN_PROMPT)
-                || cell.fig_flags.contains(FigFlags::IN_SUGGESTION)
-            {
-                buffer.push(mask.unwrap());
-            } else {
-                buffer.push(cell.c);
-                last_char_was_padding = false;
-            }
-        }
-
-        if cell.point.column == rect.end.column - 1 && cell.point.line < rect.end.line {
-            if last_char_was_padding || !wrap_lines {
-                buffer.push('\n');
-            }
-            padding = 0;
-        }
-    });
-
-    EditBuffer {
-        buffer,
-        cursor: index.unwrap_or(0) as i64,
     }
-}
-
-fn get_current_buffer<T>(term: &Term<T>) -> Option<EditBuffer>
-where
-    T: EventListener,
-{
-    match term.shell_state().cmd_cursor {
-        Some(cmd_cursor) => {
-            let rect = Rect {
-                start: Point::new(cmd_cursor.line, Column(0)),
-                end: Point::new(term.bottommost_line(), term.last_column()),
-            };
-
-            let mut buffer = get_text_region(
-                term,
-                &rect,
-                Column(cmd_cursor.column.saturating_sub(1)),
-                Some(' '),
-                true,
-            );
-            buffer.buffer = buffer.buffer.trim_end().to_string();
-
-            Some(buffer)
-        }
-        None => None,
-    }
-}
-
-// TODO: Remove function
-#[allow(dead_code)]
-fn get_current_edit_buffer<T>(term: &Term<T>) -> Result<EditBuffer>
-where
-    T: EventListener,
-{
-    let start_point = Point::new(term.grid().cursor.point.line, Column(0));
-    let end_point = Point::new(
-        term.grid().cursor.point.line.min(term.bottommost_line()),
-        term.last_column(),
-    );
-
-    let row = term.grid().iter_from_to(start_point, end_point);
-
-    let mut whitespace_stack = String::new();
-    let mut cursor_index = term.grid().cursor.point.column;
-    let mut edit_buffer = String::new();
-
-    for (_i, cell) in row.enumerate() {
-        if !cell.fig_flags.contains(FigFlags::IN_PROMPT)
-            && !cell.fig_flags.contains(FigFlags::IN_SUGGESTION)
-        {
-            if cell.c.is_whitespace() {
-                whitespace_stack.push(cell.c);
-            } else {
-                if whitespace_stack.len() > 0 {
-                    edit_buffer.push_str(&whitespace_stack);
-                    whitespace_stack.clear();
-                }
-                edit_buffer.push(cell.c);
-            }
-        } else {
-            cursor_index -= 1;
-        }
-    }
-
-    let cursor = ((*cursor_index).try_into().unwrap_or(1) - 1).max(0);
-
-    if cursor as usize > edit_buffer.len() {
-        for _ in 0..(*cursor_index - edit_buffer.len()) {
-            edit_buffer.push(' ');
-        }
-    }
-
-    Ok(EditBuffer {
-        buffer: edit_buffer,
-        cursor,
-    })
 }
 
 fn can_send_edit_buffer<T>(term: &Term<T>) -> bool
@@ -301,20 +139,22 @@ async fn send_edit_buffer<T>(term: &Term<T>, sender: &Sender<Bytes>) -> Result<(
 where
     T: EventListener,
 {
-    match get_current_buffer(term) {
+    match term.get_current_buffer() {
         Some(edit_buffer) => {
-            log::info!("edit_buffer: {:?}", edit_buffer);
+            if let Some(cursor_idx) = edit_buffer.cursor_idx.map(|i| i.try_into().ok()).flatten() {
+                log::info!("edit_buffer: {:?}", edit_buffer);
 
-            let context = shell_state_to_context(term.shell_state());
-            let edit_buffer_hook =
-                new_edit_buffer_hook(Some(context), edit_buffer.buffer, edit_buffer.cursor, 0);
-            let message = hook_to_message(edit_buffer_hook);
+                let context = shell_state_to_context(term.shell_state());
+                let edit_buffer_hook =
+                    new_edit_buffer_hook(Some(context), edit_buffer.buffer, cursor_idx, 0);
+                let message = hook_to_message(edit_buffer_hook);
 
-            debug!("Sending: {:?}", message);
+                debug!("Sending: {:?}", message);
 
-            let bytes = message.to_fig_pbuf()?;
+                let bytes = message.to_fig_pbuf()?;
 
-            sender.send_async(bytes).await?;
+                sender.send_async(bytes).await?;
+            }
             Ok(())
         }
         None => Err(anyhow!("No edit buffer to send")),
@@ -372,18 +212,22 @@ async fn process_figterm_message(
 }
 
 fn launch_shell() -> Result<()> {
-    let parent_shell = match env::var("FIG_SHELL") {
-        Ok(v) => v,
-        Err(_) => match env::var("SHELL") {
-            Ok(shell) => shell,
-            Err(_) => {
+    let parent_shell = match env::var("FIG_SHELL").ok().filter(|s| !s.is_empty()) {
+        Some(v) => v,
+        None => match env::var("SHELL").ok().filter(|s| !s.is_empty()) {
+            Some(shell) => shell,
+            None => {
                 anyhow::bail!("No shell found");
             }
         },
     };
 
-    let parent_shell_is_login = env::var("FIG_IS_LOGIN_SHELL").ok();
-    let parent_shell_extra_args = env::var("FIG_SHELL_EXTRA_ARGS").ok();
+    let parent_shell_is_login = env::var("FIG_IS_LOGIN_SHELL")
+        .ok()
+        .filter(|s| !s.is_empty());
+    let parent_shell_extra_args = env::var("FIG_SHELL_EXTRA_ARGS")
+        .ok()
+        .filter(|s| !s.is_empty());
 
     let mut args =
         vec![CString::new(&*parent_shell).expect("Failed to convert shell name to CString")];
@@ -461,8 +305,7 @@ fn figterm_main() -> Result<()> {
                     info!("Shell: {}", pid);
                     info!("Figterm: {}", getpid());
 
-                    // TODO - Send history
-                    // let _history_sender = history::spawn_history_task().await;
+                    let history_sender = history::spawn_history_task().await;
 
                     let raw_termios = termios_to_raw(termios);
                     tcsetattr(STDIN_FILENO, SetArg::TCSAFLUSH, &raw_termios)?;
@@ -484,7 +327,7 @@ fn figterm_main() -> Result<()> {
                     let mut processor = Processor::new();
                     let size = SizeInfo::new(winsize.ws_row as usize, winsize.ws_col as usize);
 
-                    let event_sender = EventSender::new(outgoing_sender.clone());
+                    let event_sender = EventSender::new(outgoing_sender.clone(), history_sender);
 
                     let mut term = alacritty_terminal::Term::new(size, event_sender, 1);
 
@@ -500,7 +343,7 @@ fn figterm_main() -> Result<()> {
                     'select_loop: loop {
 
                         if term.shell_state().has_seen_prompt && first_time {
-                            let initial_command = env::var("FIG_START_TEXT").ok();
+                            let initial_command = env::var("FIG_START_TEXT").ok().filter(|s| !s.is_empty());
                             if let Some(mut initial_command) = initial_command {
                                 initial_command.push('\n');
                                 if let Err(e) = master.write(initial_command.as_bytes()).await {
