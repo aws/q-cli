@@ -22,6 +22,7 @@
     "description": "Change Fig's theme",
     "type": "single_select",
     "options": [
+      "system",
       "dark",
       "light",
       "cobalt",
@@ -34,7 +35,7 @@
       "poimandres",
       "the-unnamed"
     ],
-    "default": "dark",
+    "default": "system",
     "category": "Appearance"
   },
   {
