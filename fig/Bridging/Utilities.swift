@@ -42,15 +42,15 @@ extension URL {
     let baseComponents = base.standardized.pathComponents
 
     // Find number of common path components:
-    var i = 0
-    while i < destComponents.count && i < baseComponents.count
-            && destComponents[i] == baseComponents[i] {
-      i += 1
+    var count = 0
+    while count < destComponents.count && count < baseComponents.count
+            && destComponents[count] == baseComponents[count] {
+      count += 1
     }
 
     // Build relative path:
-    var relComponents = Array(repeating: "..", count: baseComponents.count - i)
-    relComponents.append(contentsOf: destComponents[i...])
+    var relComponents = Array(repeating: "..", count: baseComponents.count - count)
+    relComponents.append(contentsOf: destComponents[count...])
     return relComponents.joined(separator: "/")
   }
 }
@@ -109,4 +109,11 @@ extension String {
     return self
   }
 
+}
+
+extension URL {
+  static let applicationSupport =
+    URL(fileURLWithPath: NSSearchPathForDirectoriesInDomains(.applicationSupportDirectory,
+                                                             .userDomainMask,
+                                                             true).first!)
 }
