@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 
+/// Information about the current command
 #[derive(Debug, Clone)]
 pub struct CommandInfo {
     pub command: String,
@@ -7,7 +8,7 @@ pub struct CommandInfo {
     pub pid: Option<i32>,
     pub session_id: Option<String>,
     pub cwd: Option<PathBuf>,
-    pub time: u64,
+    pub time: Option<u64>,
 
     pub hostname: Option<String>,
     pub in_ssh: bool,

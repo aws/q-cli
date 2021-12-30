@@ -1,5 +1,5 @@
+mod arg_parser;
 pub mod command_info;
-pub mod fig_info;
 pub mod history;
 pub mod ipc;
 pub mod logger;
@@ -10,11 +10,12 @@ pub mod utils;
 
 use std::{env, error::Error, ffi::CString, os::unix::prelude::AsRawFd, process::exit, vec};
 
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Context, Result};
+use arg_parser::ArgParser;
 use bytes::Bytes;
 use dashmap::DashSet;
-use fig_info::FigInfo;
-use log::trace;
+use flume::Sender;
+use log::{debug, error, info, trace, warn};
 use nix::{
     libc::STDIN_FILENO,
     sys::termios::{tcgetattr, tcsetattr, SetArg},
@@ -22,6 +23,7 @@ use nix::{
 };
 
 use alacritty_terminal::{
+    ansi::Processor,
     event::{Event, EventListener},
     grid::Dimensions,
     index::{Column, Point},
@@ -34,10 +36,8 @@ use term::get_winsize;
 use tokio::{
     io::{self, AsyncReadExt, AsyncWriteExt},
     runtime, select,
-    sync::mpsc::UnboundedSender,
+    signal::unix::SignalKind,
 };
-
-use clap::Parser;
 
 use crate::{
     ipc::{spawn_incoming_receiver, spawn_outgoing_sender},
@@ -55,19 +55,12 @@ use crate::{
 const BUFFER_SIZE: usize = 1024;
 const FIGTERM_VERSION: usize = 3;
 
-#[derive(Parser, Debug)]
-#[clap(about, version, author)]
-struct Args {
-    #[clap(short, long)]
-    version: bool,
-}
-
 struct EventSender {
-    sender: UnboundedSender<Bytes>,
+    sender: Sender<Bytes>,
 }
 
 impl EventSender {
-    fn new(sender: UnboundedSender<Bytes>) -> Self {
+    fn new(sender: Sender<Bytes>) -> Self {
         Self { sender }
     }
 }
@@ -76,7 +69,7 @@ fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
     #[cfg(target_os = "macos")]
     let terminal = utils::get_term_bundle();
     #[cfg(not(target_os = "macos"))]
-    let term_bundle = None;
+    let terminal = None;
 
     new_context(
         shell_state.pid,
@@ -95,8 +88,8 @@ fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
 
 impl EventListener for EventSender {
     fn send_event(&self, event: Event, shell_state: &ShellState) {
-        trace!("{:?}", event);
-        trace!("{:?}", shell_state);
+        debug!("{:?}", event);
+        debug!("{:?}", shell_state);
         match event {
             Event::Prompt => {
                 let context = shell_state_to_context(shell_state);
@@ -118,11 +111,125 @@ impl EventListener for EventSender {
     }
 }
 
+#[derive(Debug, Clone)]
 struct EditBuffer {
     buffer: String,
     cursor: i64,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct Rect {
+    start: Point,
+    end: Point,
+}
+
+impl Rect {
+    pub const fn size(&self) -> usize {
+        (self.end.column.0 - self.start.column.0) as usize
+            * (self.end.line.0 - self.start.line.0) as usize
+    }
+}
+
+fn get_text_region<T>(
+    term: &Term<T>,
+    rect: &Rect,
+    start_col_offset: Column,
+    mask: Option<char>,
+    wrap_lines: bool,
+) -> EditBuffer
+where
+    T: EventListener,
+{
+    let mut buffer = String::with_capacity(rect.size());
+    let mut padding = 0;
+    let cursor = term.grid().cursor.point;
+
+    let mut last_char_was_padding = true;
+
+    let mut index = None;
+
+    let mut start = rect.start;
+    start.column += start_col_offset;
+
+    term.grid().iter_from_to(start, rect.end).for_each(|cell| {
+        if cell.point.column == rect.start.column {
+            last_char_was_padding = true;
+        }
+
+        if cell.point == cursor {
+            index = Some(buffer.len());
+            while padding > 0 {
+                buffer.push(' ');
+                padding -= 1;
+            }
+        }
+
+        if cell.c == '\0'
+            || (mask == Some(' ')
+                && (cell.fig_flags.contains(FigFlags::IN_PROMPT)
+                    || cell.fig_flags.contains(FigFlags::IN_SUGGESTION)))
+        {
+            padding += 1;
+            last_char_was_padding = true;
+        } else if cell.c as u32 == u32::MAX {
+        } else {
+            while padding > 0 {
+                buffer.push(' ');
+                padding -= 1;
+            }
+
+            if mask.is_some() && cell.fig_flags.contains(FigFlags::IN_PROMPT)
+                || cell.fig_flags.contains(FigFlags::IN_SUGGESTION)
+            {
+                buffer.push(mask.unwrap());
+            } else {
+                buffer.push(cell.c);
+                last_char_was_padding = false;
+            }
+        }
+
+        if cell.point.column == rect.end.column - 1 && cell.point.line < rect.end.line {
+            if last_char_was_padding || !wrap_lines {
+                buffer.push('\n');
+            }
+            padding = 0;
+        }
+    });
+
+    EditBuffer {
+        buffer,
+        cursor: index.unwrap_or(0) as i64,
+    }
+}
+
+fn get_current_buffer<T>(term: &Term<T>) -> Option<EditBuffer>
+where
+    T: EventListener,
+{
+    match term.shell_state().cmd_cursor {
+        Some(cmd_cursor) => {
+            let rect = Rect {
+                start: Point::new(cmd_cursor.line, Column(0)),
+                end: Point::new(term.bottommost_line(), term.last_column()),
+            };
+
+            let mut buffer = get_text_region(
+                term,
+                &rect,
+                Column(cmd_cursor.column.saturating_sub(1)),
+                Some(' '),
+                true,
+            );
+            buffer.buffer = buffer.buffer.trim_end().to_string();
+
+            Some(buffer)
+        }
+        None => None,
+    }
+}
+
+// TODO: Remove function
+#[allow(dead_code)]
 fn get_current_edit_buffer<T>(term: &Term<T>) -> Result<EditBuffer>
 where
     T: EventListener,
@@ -157,13 +264,13 @@ where
         }
     }
 
-    if cursor_index > edit_buffer.len() {
+    let cursor = ((*cursor_index).try_into().unwrap_or(1) - 1).max(0);
+
+    if cursor as usize > edit_buffer.len() {
         for _ in 0..(*cursor_index - edit_buffer.len()) {
             edit_buffer.push(' ');
         }
     }
-
-    let cursor = (*cursor_index).try_into().unwrap_or(1) - 1;
 
     Ok(EditBuffer {
         buffer: edit_buffer,
@@ -171,19 +278,47 @@ where
     })
 }
 
-fn send_edit_buffer<T>(term: &Term<T>, sender: &UnboundedSender<Bytes>)
+fn can_send_edit_buffer<T>(term: &Term<T>) -> bool
 where
     T: EventListener,
 {
-    let edit_buffer = get_current_edit_buffer(term).unwrap();
+    let in_docker_ssh = term.shell_state().in_docker | term.shell_state().in_ssh;
+    let shell_enabled =
+        [Some("bash"), Some("zsh"), Some("fish")].contains(&term.shell_state().shell.as_deref());
+    let prexec = term.shell_state().preexec;
 
-    let context = shell_state_to_context(term.shell_state());
-    let edit_buffer_hook =
-        new_edit_buffer_hook(Some(context), edit_buffer.buffer, edit_buffer.cursor, 0);
-    let message = hook_to_message(edit_buffer_hook);
-    let bytes = message.to_fig_pbuf().unwrap();
+    trace!(
+        "in_docker_ssh: {}, shell_enabled: {}, prexec: {}",
+        in_docker_ssh,
+        shell_enabled,
+        prexec
+    );
 
-    sender.send(bytes).unwrap();
+    shell_enabled && !prexec
+}
+
+async fn send_edit_buffer<T>(term: &Term<T>, sender: &Sender<Bytes>) -> Result<()>
+where
+    T: EventListener,
+{
+    match get_current_buffer(term) {
+        Some(edit_buffer) => {
+            log::info!("edit_buffer: {:?}", edit_buffer);
+
+            let context = shell_state_to_context(term.shell_state());
+            let edit_buffer_hook =
+                new_edit_buffer_hook(Some(context), edit_buffer.buffer, edit_buffer.cursor, 0);
+            let message = hook_to_message(edit_buffer_hook);
+
+            debug!("Sending: {:?}", message);
+
+            let bytes = message.to_fig_pbuf()?;
+
+            sender.send_async(bytes).await?;
+            Ok(())
+        }
+        None => Err(anyhow!("No edit buffer to send")),
+    }
 }
 
 async fn process_figterm_message(
@@ -199,7 +334,7 @@ async fn process_figterm_message(
         Some(figterm_message::Command::InterceptCommand(command)) => {
             match command.intercept_command {
                 Some(intercept_command::InterceptCommand::SetIntercept(set_intercept)) => {
-                    trace!("Set intercept");
+                    debug!("Set intercept");
                     intercept_set.clear();
                     intercept_set.extend(
                         set_intercept
@@ -209,11 +344,11 @@ async fn process_figterm_message(
                     );
                 }
                 Some(intercept_command::InterceptCommand::ClearIntercept(_)) => {
-                    trace!("Clear intercept");
+                    debug!("Clear intercept");
                     intercept_set.clear();
                 }
                 Some(intercept_command::InterceptCommand::AddIntercept(set_intercept)) => {
-                    trace!("{:?}", set_intercept.chars);
+                    debug!("{:?}", set_intercept.chars);
                     intercept_set.extend(
                         set_intercept
                             .chars
@@ -222,7 +357,7 @@ async fn process_figterm_message(
                     );
                 }
                 Some(intercept_command::InterceptCommand::RemoveIntercept(set_intercept)) => {
-                    trace!("{:?}", set_intercept.chars);
+                    debug!("{:?}", set_intercept.chars);
                     for c in set_intercept.chars {
                         intercept_set.remove(&std::char::from_u32(c).unwrap());
                     }
@@ -237,11 +372,21 @@ async fn process_figterm_message(
 }
 
 fn launch_shell() -> Result<()> {
-    let parent_shell = env::var("FIG_SHELL").expect("FIG_SHELL not set");
+    let parent_shell = match env::var("FIG_SHELL") {
+        Ok(v) => v,
+        Err(_) => match env::var("SHELL") {
+            Ok(shell) => shell,
+            Err(_) => {
+                anyhow::bail!("No shell found");
+            }
+        },
+    };
+
     let parent_shell_is_login = env::var("FIG_IS_LOGIN_SHELL").ok();
     let parent_shell_extra_args = env::var("FIG_SHELL_EXTRA_ARGS").ok();
 
-    let mut args = vec![CString::new(&*parent_shell).unwrap()];
+    let mut args =
+        vec![CString::new(&*parent_shell).expect("Failed to convert shell name to CString")];
 
     if parent_shell_is_login.as_deref() == Some("1") {
         args.push(CString::new("--login").unwrap());
@@ -268,64 +413,78 @@ fn launch_shell() -> Result<()> {
     env::remove_var("FIG_START_TEXT");
     env::remove_var("FIG_SHELL_EXTRA_ARGS");
 
-    execvp(&*args[0], &args).expect("Failed to exec");
-    unreachable!();
+    execvp(&*args[0], &args).unwrap();
+    unreachable!()
 }
 
-fn main() -> Result<(), Box<dyn Error>> {
-    Args::parse();
+fn figterm_main() -> Result<()> {
+    let term_session_id = env::var("TERM_SESSION_ID")
+        .with_context(|| "Failed to get TERM_SESSION_ID environment variable")?;
 
-    let fig_info = FigInfo::new();
-    let _inital_command = std::env::var("FIG_START_TEXT").ok();
+    let _fig_integration_version: Option<i32> = env::var("FIG_INTEGRATION_VERSION")
+        .with_context(|| "Failed to get FIG_INTEGRATION_VERSION environment variable")?
+        .parse()
+        .ok();
+
+    logger::stdio_debug_log("Checking stdin fd is a tty");
+
+    // Check that stdin is a tty
+    if !isatty(STDIN_FILENO).with_context(|| "Failed to check if stdin is a tty")? {
+        anyhow::bail!("stdin is not a tty");
+    }
 
     // Get term data
-    let termios = tcgetattr(STDIN_FILENO)?;
+    let termios = tcgetattr(STDIN_FILENO).with_context(|| "Failed to get terminal attributes")?;
     let old_termios = termios.clone();
 
-    let mut winsize = get_winsize(STDIN_FILENO)?;
+    let mut winsize = get_winsize(STDIN_FILENO).with_context(|| "Failed to get terminal size")?;
 
-    if !isatty(STDIN_FILENO)?
-        || fig_info.fig_integration_version.is_none()
-        || fig_info.term_session_id.is_none()
-    {
-        // Fallback
-    }
+    logger::stdio_debug_log("Forking child shell process");
 
     // Fork pseudoterminal
     // SAFETY: forkpty is safe to call, but the child must not call any functions
     // that are not async-signal-safe.
-    match fork_pty(&old_termios, &winsize).context("fork_pty")? {
+    match fork_pty(&old_termios, &winsize)
+        .context("fork_pty")
+        .with_context(|| "Failed to fork pty")?
+    {
         PtyForkResult::Parent(pt_details, pid) => {
-            let runtime = runtime::Builder::new_multi_thread().enable_all().build()?;
-            runtime
+            let runtime = runtime::Builder::new_multi_thread()
+                .enable_all()
+                .thread_name("figterm-thread")
+                .build()?;
+
+            match runtime
                 .block_on(async {
                     init_logger(&pt_details.pty_name).await?;
 
-                    log::info!("Shell: {}", pid);
-                    log::info!("Figterm: {}", getpid());
+                    info!("Shell: {}", pid);
+                    info!("Figterm: {}", getpid());
+
+                    // TODO - Send history
+                    // let _history_sender = history::spawn_history_task().await;
 
                     let raw_termios = termios_to_raw(termios);
                     tcsetattr(STDIN_FILENO, SetArg::TCSAFLUSH, &raw_termios)?;
 
                     // Spawn thread to handle outgoing data to main Fig app
-                    let outgoing_tx = spawn_outgoing_sender().await?;
+                    let outgoing_sender = spawn_outgoing_sender().await?;
 
                     // Spawn thread to handle incoming data
-                    let session_id = fig_info.term_session_id.unwrap_or("default".into());
-                    let mut incomming_rx = spawn_incoming_receiver(&session_id).await?;
+                    let incomming_reciever = spawn_incoming_receiver(&term_session_id).await?;
 
                     let mut stdin = io::stdin();
                     let mut stdout = io::stdout();
                     let mut master = AsyncPtyMaster::new(pt_details.pty_master)?;
 
                     let mut window_change_signal = tokio::signal::unix::signal(
-                        tokio::signal::unix::SignalKind::window_change(),
+                        SignalKind::window_change(),
                     )?;
 
-                    let mut processor = alacritty_terminal::ansi::Processor::new();
+                    let mut processor = Processor::new();
                     let size = SizeInfo::new(winsize.ws_row as usize, winsize.ws_col as usize);
 
-                    let event_sender = EventSender::new(outgoing_tx.clone());
+                    let event_sender = EventSender::new(outgoing_sender.clone());
 
                     let mut term = alacritty_terminal::Term::new(size, event_sender, 1);
 
@@ -336,8 +495,22 @@ fn main() -> Result<(), Box<dyn Error>> {
 
                     // TODO: Write initial text to pty
 
+                    let mut first_time = true;
+
                     'select_loop: loop {
-                        select! {
+
+                        if term.shell_state().has_seen_prompt && first_time {
+                            let initial_command = env::var("FIG_START_TEXT").ok();
+                            if let Some(mut initial_command) = initial_command {
+                                initial_command.push('\n');
+                                if let Err(e) = master.write(initial_command.as_bytes()).await {
+                                    error!("Failed to write initial command: {}", e);
+                                }
+                            }
+                            first_time = false;
+                        }
+
+                        let select_result: Result<&'static str> = select! {
                             biased;
                             res = stdin.read(&mut read_buffer) => {
                                 if let Ok(size) = res {
@@ -355,6 +528,13 @@ fn main() -> Result<(), Box<dyn Error>> {
                                         }
                                     }
                                 }
+                                Ok("stdin")
+                            }
+                            _ = window_change_signal.recv() => {
+                                unsafe { read_winsize(STDIN_FILENO, &mut winsize) }?;
+                                unsafe { ioctl_tiocswinsz(master.as_raw_fd(), &winsize) }?;
+                                term.resize(SizeInfo::new(winsize.ws_row as usize, winsize.ws_col as usize));
+                                Ok("window_change")
                             }
                             res = master.read(&mut write_buffer) => {
                                 match res {
@@ -369,43 +549,67 @@ fn main() -> Result<(), Box<dyn Error>> {
                                             processor.advance(&mut term, *byte);
                                         }
 
-                                        send_edit_buffer(&term, &outgoing_tx);
-
                                         stdout.write_all(&write_buffer[..size]).await?;
                                         stdout.flush().await?;
+
+                                        if can_send_edit_buffer(&term) {
+                                            if let Err(e) = send_edit_buffer(&term, &outgoing_sender).await {
+                                                warn!("Failed to send edit buffer: {}", e);
+                                            }
+                                        }
                                     }
                                     _ => {}
                                 }
+                                Ok("master")
                             }
-                            msg = incomming_rx.recv() => {
-                                if let Some(buf) = msg {
-                                    // TODO: convert this to protobufs!
-                                    trace!("Received message from socket: {:?}", buf);
-
+                            msg = incomming_reciever.recv_async() => {
+                                if let Ok(buf) = msg {
+                                    debug!("Received message from socket: {:?}", buf);
                                     process_figterm_message(buf, &term, &mut master, intercept_set.clone()).await?;
                                 }
+                                Ok("incomming_reciever")
                             }
-                            _ = window_change_signal.recv() => {
-                                unsafe { read_winsize(STDIN_FILENO, &mut winsize) }.unwrap();
-                                unsafe { ioctl_tiocswinsz(master.as_raw_fd(), &winsize) }.unwrap();
-                                term.resize(SizeInfo::new(winsize.ws_row as usize, winsize.ws_col as usize));
-                            }
+                        };
+
+                        if let Err(e) = select_result {
+                            error!("Error in select loop: {}", e);
+                            break 'select_loop;
                         }
                     }
 
                     tcsetattr(STDIN_FILENO, SetArg::TCSAFLUSH, &old_termios)?;
 
-                    Ok::<(), Box<dyn Error>>(())
-                })
-                .unwrap();
-
-            exit(0);
+                    anyhow::Ok(())
+                }) {
+                    Ok(_) => {
+                        info!("Exiting");
+                        exit(0);
+                    },
+                    Err(e) => {
+                        error!("Error in async runtime: {}", e);
+                        exit(1);
+                    },
+                }
         }
         PtyForkResult::Child => {
             // DO NOT RUN ANY FUNCTIONS THAT ARE NOT ASYNC SIGNAL SAFE
             // https://man7.org/linux/man-pages/man7/signal-safety.7.html
-            launch_shell().expect("Failed to launch shell");
-            unreachable!();
+            launch_shell()
         }
     }
+}
+
+fn main() -> Result<(), Box<dyn Error>> {
+    ArgParser::new().parse();
+
+    logger::stdio_debug_log(format!("FIG_LOG_LEVEL={}", logger::get_fig_log_level()));
+
+    if let Err(e) = figterm_main() {
+        logger::stdio_debug_log(format!("{}", e));
+
+        // Fallback to shell if figterm fails
+        launch_shell()?;
+    }
+
+    Ok(())
 }

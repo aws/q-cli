@@ -113,7 +113,7 @@ impl Dimensions for SizeInfo {
 }
 
 /// State about the current shell
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Clone)]
 pub struct ShellState {
     /// The current tty
     pub tty: Option<String>,
@@ -135,6 +135,23 @@ pub struct ShellState {
     pub has_seen_prompt: bool,
     /// PreExec
     pub preexec: bool,
+    /// Position of start of cmd
+    pub cmd_cursor: Option<Point>,
+
+    /// Fish suggestion color text
+    pub fish_suggestion_color_text: Option<String>,
+
+    /// Zsh autosuggestion color text
+    pub zsh_autosuggestion_color_text: Option<String>,
+
+    /// Fish suggestion color
+    pub fish_suggestion_color: Option<fig_color::SuggestionColor>,
+
+    /// Zsh autosuggestion color
+    pub zsh_autosuggestion_color: Option<fig_color::SuggestionColor>,
+
+    /// Color support
+    pub color_support: Option<fig_color::ColorSupport>,
 }
 
 impl Default for ShellState {
@@ -150,6 +167,12 @@ impl Default for ShellState {
             in_docker: Default::default(),
             has_seen_prompt: Default::default(),
             preexec: Default::default(),
+            cmd_cursor: Default::default(),
+            fish_suggestion_color_text: Default::default(),
+            zsh_autosuggestion_color_text: Default::default(),
+            fish_suggestion_color: Default::default(),
+            zsh_autosuggestion_color: Default::default(),
+            color_support: Default::default(),
         }
     }
 }
@@ -225,6 +248,9 @@ impl<T> Term<T> {
 
         let scroll_region = Line(0)..Line(grid.screen_lines() as i32);
 
+        let mut shell_state = ShellState::new();
+        shell_state.color_support = Some(fig_color::get_color_support());
+
         Term {
             grid,
             inactive_grid: alt,
@@ -236,7 +262,7 @@ impl<T> Term<T> {
             event_proxy,
             title: None,
             title_stack: Vec::new(),
-            shell_state: ShellState::new(),
+            shell_state,
         }
     }
 
@@ -1210,15 +1236,73 @@ impl<T: EventListener> Handler for Term<T> {
     /// Set a terminal attribute.
     #[inline]
     fn terminal_attribute(&mut self, attr: Attr) {
-        trace!("Setting attribute: {:?}", attr);
+        debug!("Setting attribute: {:?}", attr);
+        debug!("Fish attr {:?}", self.shell_state().fish_suggestion_color);
+        debug!("Zsh attr {:?}", self.shell_state().zsh_autosuggestion_color);
+
         let cursor = &mut self.grid.cursor;
+
+        let color_match =
+            |color: Color, vtermcolor: fig_color::VTermColor| match (color, vtermcolor) {
+                (Color::Indexed(i), fig_color::VTermColor::Indexed(j)) => i == j,
+                (Color::Spec(rgb), fig_color::VTermColor::Rgb(r, g, b)) => {
+                    rgb.r == r && rgb.g == g && rgb.b == b
+                }
+                _ => false,
+            };
+
+        macro_rules! set_in_suggestion {
+            () => {
+                let fg = cursor.template.fg;
+                let bg = cursor.template.bg;
+
+                let mut in_suggestion = false;
+
+                if let Some(suggestion_color) = match self.shell_state().shell.as_deref() {
+                    Some("fish") => Some(self.shell_state().fish_suggestion_color.as_ref()),
+                    Some("zsh") => Some(self.shell_state().zsh_autosuggestion_color.as_ref()),
+                    _ => None,
+                }
+                .flatten()
+                {
+                    let fg_matches = match suggestion_color.fg() {
+                        Some(suggestion_fg) => color_match(fg, suggestion_fg),
+                        None => true,
+                    };
+
+                    let bg_matches = match suggestion_color.bg() {
+                        Some(suggestion_bg) => color_match(bg, suggestion_bg),
+                        None => true,
+                    };
+
+                    if fg_matches && bg_matches {
+                        in_suggestion = true;
+                        debug!("In suggestion");
+                    }
+                };
+
+                self.grid
+                    .cursor
+                    .template
+                    .fig_flags
+                    .set(FigFlags::IN_SUGGESTION, in_suggestion);
+            };
+        }
+
         match attr {
-            Attr::Foreground(color) => cursor.template.fg = color,
-            Attr::Background(color) => cursor.template.bg = color,
+            Attr::Foreground(color) => {
+                cursor.template.fg = color;
+                set_in_suggestion!();
+            }
+            Attr::Background(color) => {
+                cursor.template.bg = color;
+                set_in_suggestion!();
+            }
             Attr::Reset => {
                 cursor.template.fg = Color::Named(NamedColor::Foreground);
                 cursor.template.bg = Color::Named(NamedColor::Background);
                 cursor.template.shell_flags = ShellFlags::empty();
+                set_in_suggestion!();
             }
             Attr::Reverse => cursor.template.shell_flags.insert(ShellFlags::INVERSE),
             Attr::CancelReverse => cursor.template.shell_flags.remove(ShellFlags::INVERSE),
@@ -1424,13 +1508,9 @@ impl<T: EventListener> Handler for Term<T> {
 
     fn new_cmd(&mut self) {
         trace!("Fig new command");
-        // let context = self.get_context();
-        // let hook = new_prompt_hook(Some(context));
-        // let message = hook_to_message(hook).to_fig_pbuf();
-        // match self.unix_socket_sender.send(message) {
-        //     Ok(_) => (),
-        //     Err(e) => log::error!("Failed to queue `Prompt` hook: {}", e),
-        // }
+
+        self.shell_state.cmd_cursor = Some(self.grid().cursor.point);
+        self.shell_state.preexec = false;
 
         self.event_proxy
             .send_event(Event::Prompt, &self.shell_state);
@@ -1470,14 +1550,6 @@ impl<T: EventListener> Handler for Term<T> {
         trace!("Fig PreExec");
         self.event_proxy
             .send_event(Event::PreExec, &self.shell_state);
-        // Send PreExec hook
-        // let context = self.get_context();
-        // let hook = new_preexec_hook(Some(context));
-        // let message = hook_to_message(hook).to_fig_pbuf();
-        // match self.unix_socket_sender.send(message) {
-        //     Ok(_) => {}
-        //     Err(e) => log::error!("Failed to queue `PreExec` hook: {}", e),
-        // }
 
         // self.last_command = Some(CommandInfo {
         //     command: String::new(),
@@ -1518,9 +1590,27 @@ impl<T: EventListener> Handler for Term<T> {
         self.shell_state.shell = Some(shell.to_owned());
     }
 
-    fn fish_suggestion_color(&mut self, _: &str) {}
+    fn fish_suggestion_color(&mut self, color: &str) {
+        debug!("Fig fish suggestion color: {:?}", color);
 
-    fn zsh_suggestion_color(&mut self, _: &str) {}
+        self.shell_state.fish_suggestion_color_text = Some(color.to_owned());
+
+        if let Some(color_support) = self.shell_state().color_support {
+            self.shell_state.fish_suggestion_color =
+                fig_color::parse_suggestion_color_fish(color, color_support);
+        }
+    }
+
+    fn zsh_suggestion_color(&mut self, color: &str) {
+        debug!("Fig zsh suggestion color: {:?}", color);
+
+        self.shell_state.zsh_autosuggestion_color_text = Some(color.to_owned());
+
+        if let Some(color_support) = self.shell_state().color_support {
+            self.shell_state.zsh_autosuggestion_color =
+                fig_color::parse_suggestion_color_zsh_autosuggest(color, color_support);
+        }
+    }
 
     fn tty(&mut self, tty: &str) {
         trace!("Fig tty: {:?}", tty);

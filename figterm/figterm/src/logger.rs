@@ -3,6 +3,7 @@
 use anyhow::Result;
 use nix::unistd::getpid;
 use std::{
+    env,
     fs::File,
     io::Write,
     path::PathBuf,
@@ -12,12 +13,25 @@ use std::{
 
 use crate::utils::fig_path;
 
-pub async fn init_logger(ptc_name: impl AsRef<str>) -> Result<()> {
-    let log_level = match std::env::var("FIG_LOG_LEVEL").map(|s| log::LevelFilter::from_str(&*s)) {
-        Ok(Ok(level)) => level,
+pub fn get_fig_log_level() -> log::LevelFilter {
+    match env::var("FIG_LOG_LEVEL")
+        .ok()
+        .map(|s| log::LevelFilter::from_str(&*s).ok())
+        .flatten()
+    {
+        Some(level) => level,
         _ => log::LevelFilter::Warn,
-    };
+    }
+}
 
+pub fn stdio_debug_log(s: impl AsRef<str>) {
+    if get_fig_log_level() >= log::Level::Debug {
+        println!("{}", s.as_ref());
+    }
+}
+
+pub async fn init_logger(ptc_name: impl AsRef<str>) -> Result<()> {
+    let log_level = get_fig_log_level();
     let logger = Logger::new(&ptc_name)?;
     log::set_boxed_logger(Box::new(logger)).map(|_| log::set_max_level(log_level))?;
     Ok(())

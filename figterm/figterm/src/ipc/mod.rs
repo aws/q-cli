@@ -9,12 +9,12 @@ use crate::proto::local;
 
 use anyhow::Result;
 use bytes::{Bytes, BytesMut};
-use log::{error, trace};
+use flume::{bounded, Receiver, Sender};
+use log::{debug, error};
 use prost::Message;
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     net::{UnixListener, UnixStream},
-    sync::mpsc::{Receiver, UnboundedSender},
 };
 
 use crate::proto::figterm::{figterm_message, FigtermMessage, InsertTextCommand};
@@ -65,20 +65,31 @@ pub async fn create_socket_listen(session_id: impl AsRef<str>) -> Result<UnixLis
     Ok(UnixListener::bind(&path)?)
 }
 
-pub async fn spawn_outgoing_sender() -> Result<UnboundedSender<Bytes>> {
-    let (outgoing_tx, mut outgoing_rx) = tokio::sync::mpsc::unbounded_channel::<Bytes>();
+pub async fn spawn_outgoing_sender() -> Result<Sender<Bytes>> {
+    let (outgoing_tx, outgoing_rx) = bounded::<Bytes>(32);
 
     tokio::spawn(async move {
         let socket = get_socket_path();
 
-        while let Some(message) = outgoing_rx.recv().await {
-            match connect_timeout(socket.clone(), Duration::from_secs(1)).await {
-                Ok(mut unix_stream) => {
-                    unix_stream.write_all(&message).await.unwrap();
-                    unix_stream.flush().await.unwrap();
-                }
+        while let Ok(message) = outgoing_rx.recv_async().await {
+            debug!(
+                "Sending {} byte message to {}",
+                message.len(),
+                socket.display()
+            );
+            match connect_timeout(&socket, Duration::from_secs(10)).await {
+                Ok(mut unix_stream) => match unix_stream.write_all(&message).await {
+                    Ok(_) => {
+                        if let Err(e) = unix_stream.flush().await {
+                            error!("Failed to flush socket: {}", e)
+                        }
+                    }
+                    Err(e) => {
+                        error!("Failed to send message: {}", e);
+                    }
+                },
                 Err(e) => {
-                    error!("Error sending message: {}", e);
+                    error!("Error connecting to socket: {}", e);
                 }
             }
         }
@@ -91,7 +102,7 @@ pub async fn spawn_incoming_receiver(
     session_id: impl AsRef<str>,
 ) -> Result<Receiver<FigtermMessage>> {
     let socket_listener = create_socket_listen(session_id).await?;
-    let (incomming_tx, incomming_rx) = tokio::sync::mpsc::channel(128);
+    let (incomming_tx, incomming_rx) = bounded(32);
     tokio::spawn(async move {
         loop {
             if let Ok((mut stream, _)) = socket_listener.accept().await {
@@ -102,11 +113,11 @@ pub async fn spawn_incoming_receiver(
                     loop {
                         match stream.read_buf(&mut buff).await {
                             Ok(0) => {
-                                trace!("EOF from socket");
+                                debug!("EOF from socket");
                                 break;
                             }
                             Ok(n) => {
-                                trace!("Read {} bytes from socket", n);
+                                debug!("Read {} bytes from socket", n);
                             }
                             Err(e) => {
                                 error!("Error reading from socket: {}", e);
@@ -117,7 +128,7 @@ pub async fn spawn_incoming_receiver(
 
                     match FigtermMessage::decode(buff.as_ref()) {
                         Ok(message) => {
-                            incomming_tx.clone().send(message).await.unwrap();
+                            incomming_tx.clone().send_async(message).await.unwrap();
                         }
                         Err(e) => {
                             error!("Error decoding Figterm message: {}", e);
@@ -129,7 +140,7 @@ pub async fn spawn_incoming_receiver(
                                     },
                                 )),
                             };
-                            incomming_tx.clone().send(message).await.unwrap();
+                            incomming_tx.clone().send_async(message).await.unwrap();
                         }
                     }
                 });

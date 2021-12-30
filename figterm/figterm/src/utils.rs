@@ -11,6 +11,7 @@ pub fn fig_path() -> Option<PathBuf> {
 }
 
 /// Gets the term_bundle
+///
 /// Only usable on MacOs
 #[cfg(target_os = "macos")]
 pub fn get_term_bundle() -> Option<String> {
