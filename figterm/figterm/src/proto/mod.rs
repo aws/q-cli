@@ -1,7 +1,7 @@
 //! Protocal buffer definitions
 
-use bytes::Bytes;
 use anyhow::Result;
+use bytes::Bytes;
 
 pub mod figterm;
 pub mod hooks;
@@ -32,6 +32,9 @@ mod tests {
     fn test_to_fig_pbuf() {
         let hook = hooks::new_edit_buffer_hook(None, "test".into(), 0, 0);
         let message = hooks::hook_to_message(hook);
-        assert!(message.encode_fig_protobuf().unwrap().starts_with(b"\x1b@fig-pbuf"))
+        assert!(message
+            .encode_fig_protobuf()
+            .unwrap()
+            .starts_with(b"\x1b@fig-pbuf"))
     }
 }

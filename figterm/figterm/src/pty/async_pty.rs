@@ -17,7 +17,9 @@ pub struct AsyncPtyMaster(AsyncFd<PtyMaster>);
 impl AsyncPtyMaster {
     pub fn new(pty_master: PtyMaster) -> Result<Self> {
         set_nonblocking(pty_master.as_raw_fd()).with_context(|| "Failed to set nonblocking")?;
-        Ok(Self(AsyncFd::new(pty_master).with_context(|| "Failed to create AsyncFd")?))
+        Ok(Self(
+            AsyncFd::new(pty_master).with_context(|| "Failed to create AsyncFd")?,
+        ))
     }
 
     pub async fn read(&mut self, buff: &mut [u8]) -> io::Result<usize> {
@@ -55,7 +57,7 @@ fn set_nonblocking(fd: RawFd) -> Result<()> {
         .with_context(|| format!("Failed to get flags for fd {:?}", fd))?;
 
     let old_oflag = OFlag::from_bits_truncate(old_oflag_c_int);
-        // .with_context(|| format!("Failed to convert c_int {:?} to OFlag", old_oflag_c_int))?;
+    // .with_context(|| format!("Failed to convert c_int {:?} to OFlag", old_oflag_c_int))?;
 
     fcntl::fcntl(fd, FcntlArg::F_SETFL(old_oflag | OFlag::O_NONBLOCK))
         .with_context(|| format!("Failed to set O_NONBLOCK for fd {:?}", fd))?;

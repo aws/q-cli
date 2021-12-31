@@ -4,7 +4,7 @@ use anyhow::Result;
 use nix::unistd::getpid;
 use std::{
     env,
-    fs::{File, create_dir_all},
+    fs::{create_dir_all, File},
     io::Write,
     path::PathBuf,
     str::FromStr,
