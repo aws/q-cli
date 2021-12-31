@@ -1008,7 +1008,7 @@
 			buildPhases = (
 			);
 			buildToolPath = /usr/bin/make;
-			buildWorkingDirectory = ./figcli2;
+			buildWorkingDirectory = ./figcli;
 			dependencies = (
 			);
 			name = cli;
