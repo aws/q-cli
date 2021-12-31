@@ -4,13 +4,13 @@ on:
     paths:
       - config/**
       - figterm/**
-      - figcli2/**
+      - figcli/**
   workflow_dispatch:
   push:
     paths:
       - config/**
       - figterm/**
-      - figcli2/**
+      - figcli/**
 defaults:
   run:
     working-directory: ./dotenv
