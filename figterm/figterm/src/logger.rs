@@ -4,7 +4,7 @@ use anyhow::Result;
 use nix::unistd::getpid;
 use std::{
     env,
-    fs::File,
+    fs::{File, create_dir_all},
     io::Write,
     path::PathBuf,
     str::FromStr,
@@ -30,7 +30,7 @@ pub fn stdio_debug_log(s: impl AsRef<str>) {
     }
 }
 
-pub async fn init_logger(ptc_name: impl AsRef<str>) -> Result<()> {
+pub fn init_logger(ptc_name: impl AsRef<str>) -> Result<()> {
     let log_level = get_fig_log_level();
     let logger = Logger::new(&ptc_name)?;
     log::set_boxed_logger(Box::new(logger)).map(|_| log::set_max_level(log_level))?;
@@ -42,18 +42,24 @@ struct Logger {
     file: Arc<Mutex<File>>,
 }
 
+fn log_folder() -> Result<PathBuf> {
+    let mut dir = fig_path().unwrap();
+    dir.push("logs");
+    Ok(dir)
+}
+
 /// Get the path to the pt logfile
 fn log_path(ptc_name: impl AsRef<str>) -> Result<PathBuf> {
     let log_file_name = format!("figterm{}.log", ptc_name.as_ref().replace('/', "_"));
 
-    let mut dir = fig_path().unwrap();
-    dir.push("logs");
+    let mut dir = log_folder()?;
     dir.push(log_file_name);
     Ok(dir)
 }
 
 impl Logger {
     fn new(ptc_name: impl AsRef<str>) -> Result<Self> {
+        create_dir_all(log_folder()?)?;
         let file = Arc::new(Mutex::new(File::create(log_path(ptc_name)?)?));
         Ok(Self { file })
     }

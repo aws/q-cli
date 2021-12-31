@@ -1,6 +1,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
 /**
  * Tagged union storing either an RGB color or an index into a colour palette.

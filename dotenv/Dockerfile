@@ -10,7 +10,8 @@ RUN apt install -y \
   bash zsh fish \
   uuid-runtime netcat-openbsd jq \
   protobuf-compiler \
-  vim valgrind
+  vim valgrind \
+  llvm clang
 RUN apt install -y -t bullseye-backports golang-1.17-go
 RUN npm install --global ts-proto
 

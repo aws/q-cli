@@ -169,7 +169,9 @@ async fn process_figterm_message(
 ) -> Result<()> {
     match figterm_message.command {
         Some(figterm_message::Command::InsertTextCommand(command)) => {
-            pty_master.write(command.to_term_string().as_bytes()).await?;
+            pty_master
+                .write(command.to_term_string().as_bytes())
+                .await?;
         }
         Some(figterm_message::Command::InterceptCommand(command)) => {
             match command.intercept_command {
@@ -205,10 +207,10 @@ async fn process_figterm_message(
                 _ => {}
             }
         }
-        Some(figterm_message::Command::SetBufferCommand(command)) => {
+        Some(figterm_message::Command::SetBufferCommand(_command)) => {
             todo!();
         }
-        _ => {},
+        _ => {}
     }
 
     Ok(())
@@ -220,7 +222,7 @@ fn launch_shell() -> Result<()> {
         None => match env::var("SHELL").ok().filter(|s| !s.is_empty()) {
             Some(shell) => shell,
             None => {
-                anyhow::bail!("No shell found");
+                anyhow::bail!("No FIG_SHELL or SHELL found");
             }
         },
     };
@@ -301,9 +303,10 @@ fn figterm_main() -> Result<()> {
                 .thread_name("figterm-thread")
                 .build()?;
 
+            init_logger(&pt_details.pty_name).with_context(|| "Failed to init logger")?;
+
             match runtime
                 .block_on(async {
-                    init_logger(&pt_details.pty_name).await?;
 
                     info!("Shell: {}", pid);
                     info!("Figterm: {}", getpid());
@@ -440,7 +443,13 @@ fn figterm_main() -> Result<()> {
         PtyForkResult::Child => {
             // DO NOT RUN ANY FUNCTIONS THAT ARE NOT ASYNC SIGNAL SAFE
             // https://man7.org/linux/man-pages/man7/signal-safety.7.html
-            launch_shell()
+            match launch_shell() {
+                Err(e) => {
+                    logger::stdio_debug_log(format!("{:?}", e));
+                    Err(e)
+                }
+                Ok(_) => Ok(()),
+            }
         }
     }
 }
