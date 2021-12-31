@@ -5,7 +5,7 @@ use std::{
     time::Duration,
 };
 
-use crate::proto::local;
+use crate::proto::{local, FigProtobufEncodable};
 
 use anyhow::Result;
 use bytes::{Bytes, BytesMut};
@@ -39,7 +39,7 @@ pub async fn send_hook(connection: &mut UnixStream, hook: local::hook::Hook) -> 
         })),
     };
 
-    let encoded_message = message.to_fig_pbuf()?;
+    let encoded_message = message.encode_fig_protobuf()?;
 
     connection.write_all(&encoded_message).await?;
     Ok(())
@@ -132,11 +132,14 @@ pub async fn spawn_incoming_receiver(
                         }
                         Err(e) => {
                             error!("Error decoding Figterm message: {}", e);
+                            let text = String::from_utf8_lossy(buff.as_ref()).to_string();
                             let message = FigtermMessage {
                                 command: Some(figterm_message::Command::InsertTextCommand(
                                     InsertTextCommand {
-                                        text: String::from_utf8_lossy(buff.as_ref()).into(),
-                                        clear: false,
+                                        insertion: Some(text),
+                                        deletion: None,
+                                        offset: None,
+                                        immediate: None,
                                     },
                                 )),
                             };

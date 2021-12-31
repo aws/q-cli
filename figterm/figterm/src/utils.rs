@@ -14,7 +14,7 @@ pub fn fig_path() -> Option<PathBuf> {
 ///
 /// Only usable on MacOs
 #[cfg(target_os = "macos")]
-pub fn get_term_bundle() -> Option<String> {
+pub fn get_term_bundle() -> Option<std::borrow::Cow<'static, str>> {
     match std::env::var("TERM_PROGRAM").ok().as_deref() {
         Some("iTerm.app") => Some("com.googlecode.iterm2".into()),
         Some("Apple_Terminal") => Some("com.apple.Terminal".into()),
@@ -23,7 +23,10 @@ pub fn get_term_bundle() -> Option<String> {
             Some(v) if v.contains("insiders") => Some("com.microsoft.vscode-insiders".into()),
             _ => Some("com.microsoft.vscode".into()),
         },
-        _ => std::env::var("TERM_BUNDLE_IDENTIFIER").ok(),
+        Some("Tabby") => Some("org.tabby".into()),
+        _ => std::env::var("TERM_BUNDLE_IDENTIFIER")
+            .ok()
+            .map(|s| s.into()),
     }
 }
 

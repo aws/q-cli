@@ -3,13 +3,15 @@
 #![allow(clippy::all)]
 
 use anyhow::Result;
-use bytes::{Bytes, BytesMut};
+use bytes::BytesMut;
 use prost::Message;
+
+use super::{FigProtobuf, FigProtobufEncodable};
 
 include!(concat!(env!("OUT_DIR"), "/local.rs"));
 
-impl LocalMessage {
-    pub fn to_fig_pbuf(&self) -> Result<Bytes> {
+impl FigProtobufEncodable for LocalMessage {
+    fn encode_fig_protobuf(&self) -> Result<FigProtobuf> {
         let mut fig_pbuf = BytesMut::new();
 
         let mut encoded_message = BytesMut::new();
@@ -19,6 +21,8 @@ impl LocalMessage {
         fig_pbuf.extend(encoded_message.len().to_be_bytes());
         fig_pbuf.extend(encoded_message);
 
-        Ok(fig_pbuf.freeze())
+        Ok(FigProtobuf {
+            inner: fig_pbuf.freeze(),
+        })
     }
 }

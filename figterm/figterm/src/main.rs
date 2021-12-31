@@ -44,7 +44,7 @@ use crate::{
         hooks::{
             hook_to_message, new_context, new_edit_buffer_hook, new_preexec_hook, new_prompt_hook,
         },
-        local,
+        local, FigProtobufEncodable,
     },
     pty::{async_pty::AsyncPtyMaster, ioctl_tiocswinsz},
     term::{read_winsize, termios_to_raw},
@@ -54,14 +54,14 @@ const BUFFER_SIZE: usize = 1024;
 const FIGTERM_VERSION: usize = 3;
 
 struct EventSender {
-    sender: Sender<Bytes>,
+    socket_sender: Sender<Bytes>,
     history_sender: Sender<CommandInfo>,
 }
 
 impl EventSender {
-    fn new(sender: Sender<Bytes>, history_sender: Sender<CommandInfo>) -> Self {
+    fn new(socket_sender: Sender<Bytes>, history_sender: Sender<CommandInfo>) -> Self {
         Self {
-            sender,
+            socket_sender,
             history_sender,
         }
     }
@@ -69,7 +69,7 @@ impl EventSender {
 
 fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
     #[cfg(target_os = "macos")]
-    let terminal = utils::get_term_bundle();
+    let terminal = utils::get_term_bundle().map(|s| s.to_string());
     #[cfg(not(target_os = "macos"))]
     let terminal = None;
 
@@ -97,17 +97,17 @@ impl EventListener for EventSender {
                 let context = shell_state_to_context(shell_state);
                 let hook = new_prompt_hook(Some(context));
                 let message = hook_to_message(hook);
-                let bytes = message.to_fig_pbuf().unwrap();
+                let bytes = message.encode_fig_protobuf().unwrap();
 
-                self.sender.send(bytes).unwrap();
+                self.socket_sender.send((*bytes).clone()).unwrap();
             }
             Event::PreExec => {
                 let context = shell_state_to_context(shell_state);
                 let hook = new_preexec_hook(Some(context));
                 let message = hook_to_message(hook);
-                let bytes = message.to_fig_pbuf().unwrap();
+                let bytes = message.encode_fig_protobuf().unwrap();
 
-                self.sender.send(bytes).unwrap();
+                self.socket_sender.send((*bytes).clone()).unwrap();
             }
             Event::CommandInfo(command_info) => {
                 self.history_sender.send(command_info.clone()).unwrap();
@@ -151,9 +151,9 @@ where
 
                 debug!("Sending: {:?}", message);
 
-                let bytes = message.to_fig_pbuf()?;
+                let bytes = message.encode_fig_protobuf()?;
 
-                sender.send_async(bytes).await?;
+                sender.send_async((*bytes).clone()).await?;
             }
             Ok(())
         }
@@ -169,7 +169,7 @@ async fn process_figterm_message(
 ) -> Result<()> {
     match figterm_message.command {
         Some(figterm_message::Command::InsertTextCommand(command)) => {
-            pty_master.write(command.text.as_bytes()).await?;
+            pty_master.write(command.to_term_string().as_bytes()).await?;
         }
         Some(figterm_message::Command::InterceptCommand(command)) => {
             match command.intercept_command {
@@ -205,7 +205,10 @@ async fn process_figterm_message(
                 _ => {}
             }
         }
-        _ => {}
+        Some(figterm_message::Command::SetBufferCommand(command)) => {
+            todo!();
+        }
+        _ => {},
     }
 
     Ok(())

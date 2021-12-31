@@ -47,10 +47,16 @@ message InterceptCommand {
 // Insert text command
 // Used to insert text directly into the terminal
 message InsertTextCommand {
-    // The text to insert
-    string text = 1;
-    // Clear the edit buffer before inserting
-    bool clear = 2;
+    // insert str at cursor, accounting for deletions
+    optional string insertion = 1;
+    // delete `n` characters to the left of the cursor
+    optional uint64 deletion = 2;
+    // move cursor `n` characters from current position, 
+    // accounting for insertion & deletion
+    optional int64 offset = 3;
+    // execute editbuffer (if true, append \r)
+    optional bool immediate = 4;
+
 }
 
 // Set buffer command
@@ -58,5 +64,7 @@ message InsertTextCommand {
 message SetBufferCommand {
     // The text to set
     string text = 1;
+    // The cursor position to set
+    optional uint64 cursor_position = 2;
 }
 
