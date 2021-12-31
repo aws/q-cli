@@ -137,7 +137,6 @@ class CompanionWindow: NSWindow, NSWindowDelegate {
     self.setFrameAutosaveName("Main Window")
     self.contentViewController = viewController
     self.setFrame(NSRect(x: 400, y: 400, width: 300, height: 300), display: true)
-    self.appearance = NSAppearance(named: .aqua) // keeps window title text black
     //        self.makeKeyAndOrderFront(nil)
 
     self.delegate = self
