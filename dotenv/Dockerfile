@@ -58,7 +58,7 @@ RUN protoc --plugin="$(npm bin -g)/protoc-gen-ts_proto" \
 RUN cp ./bin/fig $FIG_BUNDLE_EXECUTABLES/fig
 RUN cp ./bin/fig $FIG_BUNDLE_EXECUTABLES/figcli
 
-COPY --chown=test:test ./figcli2/ /usr/home/figcli/
+COPY --chown=test:test ./figcli/ /usr/home/figcli/
 RUN ls -lah /usr/home/figcli
 RUN cd /usr/home/figcli && make clean && BUILT_PRODUCTS_DIR=$(pwd) make all
 

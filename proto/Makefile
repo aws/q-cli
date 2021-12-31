@@ -33,7 +33,7 @@ FIGTERM = "./figterm.proto"
 ARTIFACTS          = "./bin"
 TS_API_BINDINGS    = $(ROOT)/../typescript-api-bindings/src
 SWIFT_API_BINDINGS = $(ROOT)/../swift-api-bindings/Sources/FigAPIBindings
-GO_CLI             = $(ROOT)/../figcli2/fig-proto
+GO_CLI             = $(ROOT)/../figcli/fig-proto
 DOTENV             = $(ROOT)/../dotenv/src
 
 DESTINATIONS       = $(ARTIFACTS) \
