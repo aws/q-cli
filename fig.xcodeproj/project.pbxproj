@@ -61,6 +61,8 @@
 		754316FE26E08F5D00188887 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 754316FD26E08F5D00188887 /* Preview Assets.xcassets */; };
 		7543170126E08F5D00188887 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 754316FF26E08F5D00188887 /* Main.storyboard */; };
 		7543170826E0901B00188887 /* FigIMKInputController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7543170726E0901B00188887 /* FigIMKInputController.swift */; };
+		7545657527715785002A59EA /* TabbyIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7545657427715785002A59EA /* TabbyIntegration.swift */; };
+		7545657727716CAB002A59EA /* tabby-integration.js in Resources */ = {isa = PBXBuildFile; fileRef = 7545657627716CAB002A59EA /* tabby-integration.js */; };
 		754569FC272A05C200C7588F /* CommandHandlers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 754569FB272A05C200C7588F /* CommandHandlers.swift */; };
 		7546F5B3271660BA0077359F /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7546F5B2271660BA0077359F /* Constants.swift */; };
 		754D31B525759D900020CED4 /* tutorial.html in Resources */ = {isa = PBXBuildFile; fileRef = 754D31B425759D900020CED4 /* tutorial.html */; };
@@ -345,6 +347,8 @@
 		7543170226E08F5D00188887 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		7543170326E08F5D00188887 /* InputMethod.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = InputMethod.entitlements; sourceTree = "<group>"; };
 		7543170726E0901B00188887 /* FigIMKInputController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FigIMKInputController.swift; sourceTree = "<group>"; };
+		7545657427715785002A59EA /* TabbyIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabbyIntegration.swift; sourceTree = "<group>"; };
+		7545657627716CAB002A59EA /* tabby-integration.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = "tabby-integration.js"; sourceTree = "<group>"; };
 		754569FB272A05C200C7588F /* CommandHandlers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CommandHandlers.swift; sourceTree = "<group>"; };
 		7546F5B2271660BA0077359F /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		754D31B425759D900020CED4 /* tutorial.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = tutorial.html; sourceTree = "<group>"; };
@@ -650,6 +654,15 @@
 			path = "Preview Content";
 			sourceTree = "<group>";
 		};
+		7545657327715754002A59EA /* Tabby */ = {
+			isa = PBXGroup;
+			children = (
+				7545657427715785002A59EA /* TabbyIntegration.swift */,
+				7545657627716CAB002A59EA /* tabby-integration.js */,
+			);
+			path = Tabby;
+			sourceTree = "<group>";
+		};
 		75675948244634AD006AA988 = {
 			isa = PBXGroup;
 			children = (
@@ -713,6 +726,7 @@
 				75290AB92671905D000F4255 /* iTerm */,
 				75EDDC4F25D2473C003AECC6 /* Hyper */,
 				752A398725CD0FFB00B1AC40 /* VSCode */,
+				7545657327715754002A59EA /* Tabby */,
 				75B1992A25019FDE00F38EA8 /* Companion Window */,
 				75B1992B25019FFE00F38EA8 /* Window Management */,
 				75B1992E2501A12C00F38EA8 /* Shell */,
@@ -1266,6 +1280,7 @@
 				757CA89D248C1F50002A64A8 /* demo4onboarding.mp4 in Resources */,
 				75C8A1602649E712001B69DA /* fig-0.0.2.vsix in Resources */,
 				7567595F244634B2006AA988 /* Main.storyboard in Resources */,
+				7545657727716CAB002A59EA /* tabby-integration.js in Resources */,
 				752A398625CD0FE800B1AC40 /* fig-0.0.1.vsix in Resources */,
 				75B0A07E25BB746600FCD89A /* debugger.html in Resources */,
 				75186070255B2A0A0000A7C7 /* asterisk@2x.png in Resources */,
@@ -1495,6 +1510,7 @@
 				75D1ECC026F1658300BC8A04 /* InstallationStatus.swift in Sources */,
 				75A0A71926F1A79A008FAD70 /* KittyIntegration.swift in Sources */,
 				75EB592D258DD771002915E7 /* TTY.swift in Sources */,
+				7545657527715785002A59EA /* TabbyIntegration.swift in Sources */,
 				75ACFE8027556D7A003C22EE /* TerminalSessionLinkingService.swift in Sources */,
 				7510F8BF24A99A4B00E86F7C /* WindowService.swift in Sources */,
 				75A4521A25AE2E6B00107D2C /* CommandIntegration.swift in Sources */,
