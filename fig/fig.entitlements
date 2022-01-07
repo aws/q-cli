@@ -4,5 +4,9 @@
 <dict>
 	<key>com.apple.security.cs.disable-library-validation</key>
 	<true/>
+	<key>com.apple.security.temporary-exception.shared-preference.read-write</key>
+	<true/>
+	<key>com.apple.security.temporary-exception.files.home-relative-path.read-write</key>
+	<true/>
 </dict>
 </plist>

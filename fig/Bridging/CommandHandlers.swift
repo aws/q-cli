@@ -242,8 +242,8 @@ extension CommandHandlers {
       case .registerInputMethod:
         response.success.message = InputMethod.default.register()
       case .statusOfInputMethod:
-        let status = InputMethod.default.verifyInstallation()
-        response.success.message = status.description
+        InputMethod.default.verifyAndUpdateInstallationStatus()
+        response.success.message = InputMethod.default.status.description
       case .UNRECOGNIZED:
         response.error.message = "Unrecognized command"
       }

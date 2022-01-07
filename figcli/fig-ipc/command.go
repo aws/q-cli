@@ -336,6 +336,8 @@ func InputMethodCommand(command string) (string, error) {
 		cmd = CreateInputMethodRequest(fig_proto.InputMethodAction_SELECT_INPUT_METHOD)
 	case "deselect":
 		cmd = CreateInputMethodRequest(fig_proto.InputMethodAction_DESELECT_INPUT_METHOD)
+	case "register":
+		cmd = CreateInputMethodRequest(fig_proto.InputMethodAction_REGISTER_INPUT_METHOD)
 	default:
 		break
 	}
