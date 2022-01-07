@@ -11,6 +11,8 @@ import Cocoa
 // defaults read ~/Library/Preferences/com.apple.HIToolbox.plist AppleSelectedInputSources
 // plutil -remove 'AppleEnabledInputSources.5'  ~/Library/Preferences/com.apple.HIToolbox.plist
 // https://apple.stackexchange.com/questions/127246/mavericks-how-to-add-input-source-via-plists-defaults
+
+// killall cfprefsd
 /*
  defaults write com.apple.HIToolbox AppleEnabledInputSources
  -array-add '<dict><key>Bundle ID</key><string>io.fig.inputmethod.cursor</string>
@@ -109,11 +111,18 @@ class InputMethod {
   //https://developer.apple.com/library/archive/qa/qa1810/_index.html
   var source: TISInputSource? {
     let properties = [
-      kTISPropertyInputSourceID as String: self.bundle.bundleIdentifier,
-      kTISPropertyInputSourceType as String: kTISTypeCharacterPalette as String
+      kTISPropertyInputSourceID as String: self.bundle.bundleIdentifier
     ] as CFDictionary
 
-    guard let sources = TISCreateInputSourceList(properties, true)?.takeUnretainedValue() as? [TISInputSource] else {
+    // https://stackoverflow.com/questions/34120142/swift-cfarray-get-values-as-utf-strings/34121525
+    // Use takeRetainedValue rather than takeUnretainedValue
+    guard let rawSourceList = TISCreateInputSourceList(properties, true)?.takeRetainedValue() else {
+      InputMethod.log("TISCreateInputSourceList failed.")
+      return nil
+    }
+
+    let sourcesArray = rawSourceList as NSArray
+    guard let sources = sourcesArray as? [TISInputSource] else {
       InputMethod.log("Could not list Input Sources matching properties")
       return nil
     }
@@ -200,13 +209,34 @@ class InputMethod {
 
   }
 
+  func terminate() {
+    if let runningInputMethod = NSRunningApplication.forBundleId(bundle.bundleIdentifier ?? "") {
+      InputMethod.log(
+        "Terminating input method \(bundle.bundleIdentifier ?? "") (\(runningInputMethod.processIdentifier))...")
+      runningInputMethod.terminate()
+    }
+
+  }
+
   @discardableResult func register() -> String {
-    let targetURL = InputMethod.inputMethodDirectory.appendingPathComponent(self.name)
+    let url = URL(fileURLWithPath: self.originalBundlePath)
+
+    let targetURL = InputMethod.inputMethodDirectory.appendingPathComponent(name)
+
+    // Remove previous symlink
+    try? FileManager.default.removeItem(at: targetURL)
+
+    try? FileManager.default.createSymbolicLink(at: targetURL, withDestinationURL: url)
 
     let err = TISRegisterInputSource(targetURL as CFURL)
     guard err != paramErr else {
       let error = NSError(domain: NSOSStatusErrorDomain, code: Int(err), userInfo: nil)
       return error.localizedDescription
+    }
+
+    if let bundleId = self.bundle.bundleIdentifier {
+      let inputSource = Restarter(with: bundleId)
+      inputSource.restart(launchingIfInactive: true)
     }
 
     return "Registered input method!"
@@ -215,6 +245,12 @@ class InputMethod {
   @discardableResult func select() -> String {
     guard let inputMethod = self.source else {
       return "Could not load input source"
+    }
+
+    guard !inputMethod.isSelected else {
+      let message = "Input method is already selected!"
+      InputMethod.log(message)
+      return message
     }
 
     let status = TISSelectInputSource(inputMethod)
@@ -302,11 +338,7 @@ class InputMethod {
     try? FileManager.default.removeItem(at: targetURL)
     try? FileManager.default.removeItem(atPath: NSHomeDirectory()+"/.fig/tools/cursor")
 
-    if let runningInputMethod = NSRunningApplication.forBundleId(bundle.bundleIdentifier ?? "") {
-      InputMethod.log(
-        "Terminating input method \(bundle.bundleIdentifier ?? "") (\(runningInputMethod.processIdentifier))...")
-      runningInputMethod.terminate()
-    }
+    self.terminate()
 
     self.updateStatus()
 
@@ -368,6 +400,18 @@ extension InputMethod: IntegrationProvider {
     }
 
     let inputMethodDefaults = UserDefaults(suiteName: "com.apple.HIToolbox")
+    let enabledSources = inputMethodDefaults?.array(forKey: "AppleEnabledInputSources") ?? []
+
+    guard enabledSources.contains(where: { item in
+      let object = item as AnyObject
+      if let bundleId = object["Bundle ID"] as? String {
+        return bundleId == self.bundle.bundleIdentifier
+      }
+      return false
+    }) else {
+      return .failed(error: "Input source is not enabled ")
+    }
+
     guard let selectedSources = inputMethodDefaults?.array(forKey: "AppleSelectedInputSources") else {
       return .failed(error: "Could not read the list of selected input sources")
     }
@@ -380,18 +424,6 @@ extension InputMethod: IntegrationProvider {
       return false
     }) else {
       return .failed(error: "Input source is not selected ")
-    }
-
-    let enabledSources = inputMethodDefaults?.array(forKey: "AppleEnabledInputSources") ?? []
-
-    guard enabledSources.contains(where: { item in
-      let object = item as AnyObject
-      if let bundleId = object["Bundle ID"] as? String {
-        return bundleId == self.bundle.bundleIdentifier
-      }
-      return false
-    }) else {
-      return .failed(error: "Input source is not enabled ")
     }
 
     return .installed
