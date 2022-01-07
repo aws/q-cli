@@ -11,15 +11,14 @@ import Foundation
 class KittyIntegration: InputMethodDependentTerminalIntegrationProvider {
   static let `default` = KittyIntegration(bundleIdentifier: Integrations.Kitty)
 
-  static let configDirectory: URL = URL(fileURLWithPath: NSHomeDirectory() + "/.config/kitty")
+  // https://github.com/kovidgoyal/kitty/blob/04807453ecf4a15ef2d49485d619410b2c25151c/kitty/constants.py#L57
+  static let configLocation: URL = URL(fileURLWithPath: NSHomeDirectory() + "/.config/kitty/kitty.conf")
   // https://sw.kovidgoyal.net/kitty/faq/#how-do-i-specify-command-line-options-for-kitty-on-macos
-  static let cmdlineFilename = "macos-launch-services-cmdline"
-  static let cmdlineFilepath = configDirectory.appendingPathComponent(cmdlineFilename)
   static let pythonScriptPathInBundle = Bundle.main.path(forResource: "kitty-integration", ofType: "py")!
   static let pythonScriptPath = NSHomeDirectory() + "/.fig/tools/kitty-integration.py"
 
-  static let commandLineArguments = "--watcher \(pythonScriptPath)"
-  fileprivate static let minimumSupportedVersion = SemanticVersion(version: "0.20.0")!
+  static let configKey = "\nwatcher \(pythonScriptPath)\n"
+  fileprivate static let minimumSupportedVersion = SemanticVersion(version: "0.24.0")!
 
 }
 
@@ -34,21 +33,15 @@ extension KittyIntegration: IntegrationProvider {
       return failed
     }
 
-    guard FileManager.default.fileExists(atPath: KittyIntegration.cmdlineFilepath.path) else {
-      return .failed(error: "'\(KittyIntegration.cmdlineFilepath.path)' file does not exist")
-    }
-
-    guard let kittyCommandLine = try? String(contentsOf: KittyIntegration.cmdlineFilepath) else {
-      return .failed(error: "Could not read '\(KittyIntegration.cmdlineFilepath.path)'")
-    }
-
-    guard kittyCommandLine.contains(KittyIntegration.commandLineArguments) else {
-      return .failed(error: "\(KittyIntegration.cmdlineFilename) does not contains --watcher")
-    }
-
     let inputMethodStatus = InputMethod.default.verifyInstallation()
     guard inputMethodStatus == .installed else {
       return .pending(event: .inputMethodActivation)
+    }
+
+    // If the application is already running,
+    // it must be restarted for the new input method to work
+    if self.status == .pending(event: .inputMethodActivation) {
+      return .pending(event: .applicationRestart)
     }
 
     return .installed
@@ -76,24 +69,31 @@ extension KittyIntegration: IntegrationProvider {
       )
     }
 
-    if FileManager.default.fileExists(atPath: KittyIntegration.cmdlineFilepath.path) {
+    if FileManager.default.fileExists(atPath: KittyIntegration.configLocation.path) {
 
-      guard let kittyCommandLine = try? String(contentsOf: KittyIntegration.cmdlineFilepath) else {
-        return .failed(error: "Could not read '\(KittyIntegration.cmdlineFilepath.path)'")
+      guard let kittyConfig = try? String(contentsOf: KittyIntegration.configLocation) else {
+        return .failed(error: "Could not read '\(KittyIntegration.configLocation.path)'")
       }
 
-      guard kittyCommandLine.contains(KittyIntegration.commandLineArguments) else {
-        return .failed(error: "\(KittyIntegration.cmdlineFilename) already exists and contains user-specified configuration.",
-                       supportURL: URL(string: "https://fig.io/support/terminals/kitty"))
+      if !kittyConfig.contains(KittyIntegration.configKey) {
+        if let file = try? FileHandle(forUpdating: KittyIntegration.configLocation) {
+          file.seekToEndOfFile()
+
+          file.write(KittyIntegration.configKey.data(using: .utf8)!)
+          file.closeFile()
+        } else {
+          let config = KittyIntegration.configKey.trimmingCharacters(in: .whitespacesAndNewlines)
+          return .failed(error: "Could not append '\(config)' to \(KittyIntegration.configLocation.path)")
+        }
       }
 
     } else {
       do {
-        try KittyIntegration.commandLineArguments.write(toFile: KittyIntegration.cmdlineFilepath.path,
+        try KittyIntegration.configLocation.path.write(toFile: KittyIntegration.configKey,
                                                         atomically: true,
                                                         encoding: .utf8)
       } catch {
-        return .failed(error: "Could not write to \(KittyIntegration.cmdlineFilename)")
+        return .failed(error: "Could not write to \(KittyIntegration.configLocation.path)")
       }
     }
 

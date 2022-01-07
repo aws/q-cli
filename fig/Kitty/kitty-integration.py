@@ -21,7 +21,7 @@ def on_focus_change(boss: Boss, window: Window, data) -> None:
         f.close()
 
     # add watcher payload to all windows
-    watchers = window.watchers
-    for w in boss.all_windows:
-        if w.id != window.id:
-            w.watchers.add(watchers)
+    # watchers = window.watchers
+    # for w in boss.all_windows:
+    #     if w.id != window.id:
+    #         w.watchers.add(watchers)
