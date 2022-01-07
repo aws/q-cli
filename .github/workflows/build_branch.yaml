@@ -392,12 +392,11 @@ jobs:
 ############################################
 # Bump Build number
 ############################################
-      - name: "Bump Build number"
-        run: agvtool bump
-      - name: "Commit Build number"
+      - name: "Bump Build number and commit"
         if: env.BUMP_BUILD_NUMBER == 1
         run: |
           git pull
+          agvtool bump
           git add fig.xcodeproj/project.pbxproj
           git commit -m "Bump build to $BUILD [skip ci]"
           git push origin ${GITHUB_REF##*/}
