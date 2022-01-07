@@ -78,7 +78,9 @@ extension CommandHandlers {
       response.diagnostics.securekeyboard = String(Diagnostic.secureKeyboardInput)
       response.diagnostics.securekeyboardPath = Diagnostic.blockingProcess ?? "<none>"
       response.diagnostics.currentWindowIdentifier = Diagnostic.descriptionOfTopmostWindow
-      response.diagnostics.currentProcess = "\(Diagnostic.processForTopmostWindow) (\(Diagnostic.processIdForTopmostWindow)) - \(Diagnostic.ttyDescriptorForTopmostWindow)"
+      response.diagnostics.currentProcess =
+        "\(Diagnostic.processForTopmostWindow) (\(Diagnostic.processIdForTopmostWindow))" +
+        " - \(Diagnostic.ttyDescriptorForTopmostWindow)"
       response.diagnostics.onlytab = String(Defaults.shared.onlyInsertOnTab)
       response.diagnostics.psudoterminalPath = Diagnostic.pseudoTerminalPath ?? "<generated dynamically>"
       response.diagnostics.autocomplete = Defaults.shared.useAutocomplete
@@ -166,7 +168,8 @@ extension CommandHandlers {
 
       if NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.surteesstudios.Bartender") != nil {
         return CommandResponse.with { response in
-          response.error.message = "Usually running fig opens the Fig menu in your status bar.\n\nHowever, because you are using bartender, this may not work!"
+          response.error.message = "Usually running fig opens the Fig menu in your status bar.\n\n" +
+                                   "However, because you are using bartender, this may not work!"
         }
       }
 
@@ -216,5 +219,36 @@ extension CommandHandlers {
     DispatchQueue.main.async {
       Accessibility.promptForPermission()
     }
+  }
+
+  static func inputMethod(_ request: Local_InputMethodCommand) -> CommandResponse {
+    var response = CommandResponse.init()
+    DispatchQueue.main.sync {
+      switch request.actions {
+      case .installInputMethod:
+        let status = InputMethod.default.install()
+        response.success.message = status.description
+      case .uninstallInputMethod:
+        InputMethod.default.uninstall()
+        response.success.message = "Input method uninstalled!"
+      case .selectInputMethod:
+        response.success.message = InputMethod.default.select()
+      case .deselectInputMethod:
+        response.success.message = InputMethod.default.deselect()
+      case .enableInputMethod:
+        response.success.message = InputMethod.default.enable()
+      case .disableInputMethod:
+        response.success.message = InputMethod.default.disable()
+      case .registerInputMethod:
+        response.success.message = InputMethod.default.register()
+      case .statusOfInputMethod:
+        let status = InputMethod.default.verifyInstallation()
+        response.success.message = status.description
+      case .UNRECOGNIZED:
+        response.error.message = "Unrecognized command"
+      }
+    }
+
+    return response
   }
 }

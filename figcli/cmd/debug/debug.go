@@ -6,6 +6,7 @@ import (
 	debugmode "fig-cli/cmd/debug/debug-mode"
 	"fig-cli/cmd/debug/diagnostic"
 	"fig-cli/cmd/debug/dotfiles"
+	"fig-cli/cmd/debug/ime"
 	"fig-cli/cmd/debug/logs"
 	"fig-cli/cmd/debug/prefs"
 	promptaccessibility "fig-cli/cmd/debug/prompt-accessibility"
@@ -37,6 +38,7 @@ func NewCmdDebug() *cobra.Command {
 	cmd.AddCommand(terminal.NewCmdTerminal())
 	cmd.AddCommand(unixsocket.NewCmdUnixSocket())
 	cmd.AddCommand(verifycodesign.NewCmdVerifyCodesign())
+	cmd.AddCommand(ime.NewCmdInputMethod())
 
 	return cmd
 }

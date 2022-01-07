@@ -124,7 +124,7 @@ class Integrations {
       Integrations.VSCode: VSCodeIntegration.default,
       Integrations.VSCodeInsiders: VSCodeIntegration.insiders,
       Integrations.VSCodium: VSCodeIntegration.vscodium,
-      // Integrations.Alacritty: AlacrittyIntegration.default,
+      Integrations.Alacritty: AlacrittyIntegration.default,
       // Integrations.Kitty : KittyIntegration.default,
       Integrations.Terminal: AppleTerminalIntegration.default
     ]

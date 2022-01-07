@@ -302,3 +302,49 @@ func PromptAccessibilityCommand() error {
 
 	return nil
 }
+
+func CreateInputMethodRequest(
+	action fig_proto.InputMethodAction,
+) *fig_proto.Command {
+	id := int64(0)
+	noResponse := false
+
+	return &fig_proto.Command{
+		Id:         &id,
+		NoResponse: &noResponse,
+		Command: &fig_proto.Command_InputMethod{
+			InputMethod: &fig_proto.InputMethodCommand{
+				Actions: &action,
+			},
+		},
+	}
+}
+
+func InputMethodCommand(command string) (string, error) {
+	cmd := CreateInputMethodRequest(fig_proto.InputMethodAction_STATUS_OF_INPUT_METHOD)
+
+	switch command {
+	case "install":
+		cmd = CreateInputMethodRequest(fig_proto.InputMethodAction_INSTALL_INPUT_METHOD)
+	case "uninstall":
+		cmd = CreateInputMethodRequest(fig_proto.InputMethodAction_UNINSTALL_INPUT_METHOD)
+	case "enable":
+		cmd = CreateInputMethodRequest(fig_proto.InputMethodAction_ENABLE_INPUT_METHOD)
+	case "disable":
+		cmd = CreateInputMethodRequest(fig_proto.InputMethodAction_DISABLE_INPUT_METHOD)
+	case "select":
+		cmd = CreateInputMethodRequest(fig_proto.InputMethodAction_SELECT_INPUT_METHOD)
+	case "deselect":
+		cmd = CreateInputMethodRequest(fig_proto.InputMethodAction_DESELECT_INPUT_METHOD)
+	default:
+		break
+	}
+
+	res, err := SendRecvCommand(cmd)
+	if err != nil {
+		return "", err
+	}
+
+	return GetCommandResponseMessage(res)
+
+}
