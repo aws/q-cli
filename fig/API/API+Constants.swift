@@ -26,7 +26,7 @@ extension API {
     "themes": {
       let themesFolder = Bundle.main.configURL.appendingPathComponent("themes", isDirectory: true)
       let files = (try? FileManager.default.contentsOfDirectory(atPath: themesFolder.path)) ?? []
-      let themes = [ "dark", "light"] + files.map { String($0.split(separator: ".")[0]) }.sorted()
+      let themes = ["dark", "light", "system"] + files.map { String($0.split(separator: ".")[0]) }.sorted()
       return themes.joined(separator: "\n")
     }()
   ]
