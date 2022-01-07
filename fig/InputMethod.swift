@@ -342,6 +342,11 @@ class InputMethod {
 
     self.updateStatus()
 
+    // If we attempt to reinstall the input method before restarting,
+    // we'll recieve OSStatus -50 when trying to select the InputSource
+    InputMethod.log("After uninstalling the input method, the macOS app" +
+                    "must be restarted before it can be installed again")
+
   }
 
   var isInstalled: Bool {
