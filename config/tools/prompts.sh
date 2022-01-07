@@ -74,7 +74,9 @@ if [[ -z "$APP_TERMINATED_BY_USER" && "$FIG_IS_RUNNING" == '0' ]]; then
 fi
 
 # Show Fig tips
-# fig tips prompt 2>/dev/null
+# Prevent termenv library from attempting to read color values and outputing random ANSI codes
+# See https://github.com/muesli/termenv/blob/166cf3773788aab7e9bf5e34d8c0deb176b92bc8/termenv_unix.go#L172
+TERM=screen fig tips prompt 2>/dev/null
 
 unset FIG_IS_RUNNING
 
