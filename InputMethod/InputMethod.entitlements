@@ -3,6 +3,6 @@
 <plist version="1.0">
 <dict>
 	<key>com.apple.security.temporary-exception.mach-register.global-name</key>
-	<string>io.fig.inputmethod.cursor_Connection</string>
+	<string>io.fig.cursor_Connection</string>
 </dict>
 </plist>
