@@ -118,6 +118,7 @@
 		75809B0E24BFA64D00BFFB3E /* TelemetryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75809B0D24BFA64D00BFFB3E /* TelemetryService.swift */; };
 		7583A12E273CF261001DF86B /* PathHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7583A12D273CF261001DF86B /* PathHelper.swift */; };
 		7587B4D824F97F9E00E355E4 /* ShellHooksManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7587B4D724F97F9E00E355E4 /* ShellHooksManager.swift */; };
+		759113C12783A47900340B25 /* AXSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 759113C02783A47900340B25 /* AXSwift */; };
 		75915DFE27210A4C005A9909 /* FigAPIBindings in Frameworks */ = {isa = PBXBuildFile; productRef = 75915DFD27210A4C005A9909 /* FigAPIBindings */; };
 		75915E002722044D005A9909 /* API.js in Resources */ = {isa = PBXBuildFile; fileRef = 75915DFF2722044D005A9909 /* API.js */; };
 		759F987C25BF903900EC3407 /* Accessibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 759F987B25BF903900EC3407 /* Accessibility.swift */; };
@@ -140,7 +141,6 @@
 		75A4A29A25C8D855002EFD6B /* commit@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 75A4A29725C8D855002EFD6B /* commit@2x.png */; };
 		75A4A29E25C91471002EFD6B /* debugger-2-trimmed.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 75A4A29D25C91471002EFD6B /* debugger-2-trimmed.mp4 */; };
 		75A4A2A025CA0D46002EFD6B /* Autocomplete.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A4A29F25CA0D46002EFD6B /* Autocomplete.swift */; };
-		75A4A2A725CBBDE7002EFD6B /* AXSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 75A4A2A625CBBDE7002EFD6B /* AXSwift */; };
 		75AA24DA25A7E8B000A51E9D /* lsof.m in Sources */ = {isa = PBXBuildFile; fileRef = 75AA24D925A7E8B000A51E9D /* lsof.m */; };
 		75ACFE7A274442C7003C22EE /* PTYProcess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75ACFE79274442C7003C22EE /* PTYProcess.swift */; };
 		75ACFE7C274C3424003C22EE /* Utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75ACFE7B274C3424003C22EE /* Utilities.swift */; };
@@ -304,6 +304,7 @@
 		7518606E255B2A0A0000A7C7 /* command@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "command@2x.png"; sourceTree = "<group>"; };
 		751C3BEB24B6910800B5C7FD /* Remote.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Remote.swift; sourceTree = "<group>"; };
 		751C3BED24B6915000B5C7FD /* Defaults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Defaults.swift; sourceTree = "<group>"; };
+		751C42F72783EC1100A8E078 /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = System/Library/Frameworks/Carbon.framework; sourceTree = SDKROOT; };
 		751DC66226EBF3B500697DFB /* cpu@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "cpu@2x.png"; sourceTree = "<group>"; };
 		751F7588246D090100E083C8 /* WebBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebBridge.swift; sourceTree = "<group>"; };
 		7520D7F0267D98790034FE2B /* fig-0.0.3.vsix */ = {isa = PBXFileReference; lastKnownFileType = file; path = "fig-0.0.3.vsix"; sourceTree = "<group>"; };
@@ -519,8 +520,8 @@
 				75CFDBE224EDE31800F00CAE /* Sentry in Frameworks */,
 				75915DFE27210A4C005A9909 /* FigAPIBindings in Frameworks */,
 				755D0F512482D4920074AB5C /* HotKey in Frameworks */,
-				75A4A2A725CBBDE7002EFD6B /* AXSwift in Frameworks */,
 				75290AC626719157000F4255 /* SwiftProtobuf in Frameworks */,
+				759113C12783A47900340B25 /* AXSwift in Frameworks */,
 				756967FF2718E0300029F063 /* WebArchiver in Frameworks */,
 				755950D4275EC6CC00B9FB5C /* Socket in Frameworks */,
 			);
@@ -952,6 +953,7 @@
 		75CFF6432496B3BA00C6A6DE /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				751C42F72783EC1100A8E078 /* Carbon.framework */,
 				7569680F271E556B0029F063 /* swift-api-bindings */,
 				75AC55312522C8EB0069635E /* upgrade */,
 			);
@@ -1090,12 +1092,12 @@
 			packageProductDependencies = (
 				755D0F502482D4920074AB5C /* HotKey */,
 				75CFDBE124EDE31800F00CAE /* Sentry */,
-				75A4A2A625CBBDE7002EFD6B /* AXSwift */,
 				7512A48A263252EF00CDE824 /* Sparkle */,
 				75290AC526719157000F4255 /* SwiftProtobuf */,
 				756967FE2718E0300029F063 /* WebArchiver */,
 				75915DFD27210A4C005A9909 /* FigAPIBindings */,
 				755950D3275EC6CC00B9FB5C /* Socket */,
+				759113C02783A47900340B25 /* AXSwift */,
 			);
 			productName = fig;
 			productReference = 75675951244634AD006AA988 /* fig.app */;
@@ -1182,11 +1184,11 @@
 			packageReferences = (
 				755D0F4F2482D4910074AB5C /* XCRemoteSwiftPackageReference "HotKey" */,
 				75CFDBE024EDE31800F00CAE /* XCRemoteSwiftPackageReference "sentry-cocoa" */,
-				75A4A2A525CBBDE4002EFD6B /* XCRemoteSwiftPackageReference "AXSwift" */,
 				7512A489263252EF00CDE824 /* XCRemoteSwiftPackageReference "Sparkle" */,
 				75290AC426719156000F4255 /* XCRemoteSwiftPackageReference "swift-protobuf" */,
 				756967FD2718E0300029F063 /* XCRemoteSwiftPackageReference "WebArchiver" */,
 				755950D2275EC6CC00B9FB5C /* XCRemoteSwiftPackageReference "BlueSocket" */,
+				759113BF2783A47900340B25 /* XCRemoteSwiftPackageReference "AXSwift" */,
 			);
 			productRefGroup = 75675952244634AD006AA988 /* Products */;
 			projectDirPath = "";
@@ -2088,12 +2090,12 @@
 				minimumVersion = 1.0.1;
 			};
 		};
-		75A4A2A525CBBDE4002EFD6B /* XCRemoteSwiftPackageReference "AXSwift" */ = {
+		759113BF2783A47900340B25 /* XCRemoteSwiftPackageReference "AXSwift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/tmandry/AXSwift";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 0.3.1;
+				minimumVersion = 0.3.2;
 			};
 		};
 		75CFDBE024EDE31800F00CAE /* XCRemoteSwiftPackageReference "sentry-cocoa" */ = {
@@ -2132,14 +2134,14 @@
 			package = 756967FD2718E0300029F063 /* XCRemoteSwiftPackageReference "WebArchiver" */;
 			productName = WebArchiver;
 		};
+		759113C02783A47900340B25 /* AXSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 759113BF2783A47900340B25 /* XCRemoteSwiftPackageReference "AXSwift" */;
+			productName = AXSwift;
+		};
 		75915DFD27210A4C005A9909 /* FigAPIBindings */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = FigAPIBindings;
-		};
-		75A4A2A625CBBDE7002EFD6B /* AXSwift */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 75A4A2A525CBBDE4002EFD6B /* XCRemoteSwiftPackageReference "AXSwift" */;
-			productName = AXSwift;
 		};
 		75CFDBE124EDE31800F00CAE /* Sentry */ = {
 			isa = XCSwiftPackageProductDependency;

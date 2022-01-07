@@ -12,6 +12,7 @@ import FigAPIBindings
 
 typealias LocalMessage = Local_LocalMessage
 typealias CommandResponse = Local_CommandResponse
+// swiftlint:disable type_name
 class IPC: UnixSocketServerDelegate {
 
   enum Encoding: String {
@@ -204,7 +205,10 @@ class IPC: UnixSocketServerDelegate {
     case .diagnostics:
       response = CommandHandlers.diagnosticsCommand()
     case .reportWindow(let request):
-      CommandHandlers.displayReportWindow(message: request.report, path: request.path, figEnvVar: request.figEnvVar, terminal: request.terminal)
+      CommandHandlers.displayReportWindow(message: request.report,
+                                          path: request.path,
+                                          figEnvVar: request.figEnvVar,
+                                          terminal: request.terminal)
     case .restartSettingsListener:
       response = CommandHandlers.restartSettingsListenerCommand()
     case .runInstallScript:
@@ -221,6 +225,8 @@ class IPC: UnixSocketServerDelegate {
         toggleVal: request.hasToggleDebugMode ? request.toggleDebugMode : nil)
     case .promptAccessibility:
       CommandHandlers.promptAccessibility()
+    case .inputMethod(let request):
+      response = CommandHandlers.inputMethod(request)
     case .none:
       break
     }
@@ -272,7 +278,8 @@ class IPC: UnixSocketServerDelegate {
     case .keyboardFocusChanged(let hook):
       IPC.post(notification: .keyboardFocusChanged, object: hook)
 
-      ShellHookManager.shared.currentTabDidChange(applicationIdentifier: hook.appIdentifier, sessionId: hook.focusedSessionID)
+      ShellHookManager.shared.currentTabDidChange(applicationIdentifier: hook.appIdentifier,
+                                                  sessionId: hook.focusedSessionID)
     case .tmuxPaneChanged:
       break
     case .openedSshConnection:
@@ -301,8 +308,8 @@ class IPC: UnixSocketServerDelegate {
 extension NSTextCheckingResult {
   func groups(testedString: String) -> [String] {
     var groups = [String]()
-    for i in 0..<self.numberOfRanges {
-      let group = String(testedString[Range(self.range(at: i), in: testedString)!])
+    for idx in 0..<self.numberOfRanges {
+      let group = String(testedString[Range(self.range(at: idx), in: testedString)!])
       groups.append(group)
     }
     return groups
@@ -394,6 +401,7 @@ extension IPC {
 
   enum Hook: String {
     case event = "bg:event"
+    // swiftlint:disable identifier_name
     case cd = "bg:cd"
     case tab = "bg:tab"
     case initialize = "bg:init"

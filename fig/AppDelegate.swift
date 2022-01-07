@@ -181,7 +181,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     //        iTermTabIntegration.listenForHotKey()
     SecureKeyboardInput.listen()
-
+    InputMethod.default.uninstall()
     iTermObserver?.windowDidAppear {
       SecureKeyboardInput.notifyIfEnabled()
     }
@@ -442,6 +442,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
               action: #selector(provider.promptToInstall),
               keyEquivalent: "")
             installer.target = provider
+            actionsMenu.addItem(NSMenuItem.separator())
+            let ime = actionsMenu.addItem(
+              withTitle: "Having trouble?",
+              action: #selector(InputMethod.openSupportPage),
+              keyEquivalent: "")
+            ime.target = InputMethod.self
+
           default:
             break
           }
