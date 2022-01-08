@@ -796,6 +796,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         UserDefaults.standard.synchronize()
 
         WebView.deleteCache()
+        InputMethod.default.uninstall()
 
         let out = "bash \(general)".runAsCommand()
         Logger.log(message: out)
