@@ -18,6 +18,7 @@ import Cocoa
  -array-add '<dict><key>Bundle ID</key><string>io.fig.inputmethod.cursor</string>
  <key>InputSourceKind</key><string>Non Keyboard Input Method</string></dict>'
  */
+
 class InputMethod {
   static let inputMethodDirectory = URL(fileURLWithPath: "\(NSHomeDirectory())/Library/Input Methods/")
   static let statusDidChange = Notification.Name("inputMethodStatusDidChange")
@@ -80,6 +81,7 @@ class InputMethod {
     guard self.timer == nil else {
       return
     }
+
     self.remainingAttempts = maxAttempts
     self.timer = Timer.scheduledTimer(withTimeInterval: 3, repeats: true) { timer in
       self.remainingAttempts -= 1
@@ -93,7 +95,7 @@ class InputMethod {
         self.timer = nil
 
         let message = "This is required to locate the cursor in certain terminal emulators.\n\n" +
-                      "Restart your computer and try again."
+                      "Restart Fig and try again."
         let openSupportPage = Alert.show(title: "Could not install InputMethod",
                                          message: message,
                                          okText: "Learn more",
@@ -104,7 +106,6 @@ class InputMethod {
         }
       }
     }
-
   }
 
   // defaults read ~/Library/Preferences/com.apple.HIToolbox.plist
@@ -191,24 +192,6 @@ class InputMethod {
     NotificationCenter.default.post(name: InputMethod.statusDidChange, object: nil)
   }
 
-  @discardableResult func toggleSource(on: Bool) -> Bool {
-    //        kTISCategoryPaletteInputSource
-
-    if on {
-      self.select()
-      self.enable()
-
-      // return TISEnableInputSource(inputMethod) != noErr
-    } else {
-      self.deselect()
-      self.disable()
-      // return TISDisableInputSource(inputMethod) != noErr
-    }
-
-    return true
-
-  }
-
   func terminate() {
     if let runningInputMethod = NSRunningApplication.forBundleId(bundle.bundleIdentifier ?? "") {
       InputMethod.log(
@@ -216,114 +199,6 @@ class InputMethod {
       runningInputMethod.terminate()
     }
 
-  }
-
-  @discardableResult func register() -> String {
-    let url = URL(fileURLWithPath: self.originalBundlePath)
-
-    let targetURL = InputMethod.inputMethodDirectory.appendingPathComponent(name)
-
-    // Remove previous symlink
-    try? FileManager.default.removeItem(at: targetURL)
-
-    try? FileManager.default.createSymbolicLink(at: targetURL, withDestinationURL: url)
-
-    let err = TISRegisterInputSource(targetURL as CFURL)
-    guard err != paramErr else {
-      let error = NSError(domain: NSOSStatusErrorDomain, code: Int(err), userInfo: nil)
-      return error.localizedDescription
-    }
-
-    if let bundleId = self.bundle.bundleIdentifier {
-      let inputSource = Restarter(with: bundleId)
-      inputSource.restart(launchingIfInactive: true)
-    }
-
-    return "Registered input method!"
-  }
-
-  @discardableResult func select() -> String {
-    guard let inputMethod = self.source else {
-      return "Could not load input source"
-    }
-
-    guard !inputMethod.isSelected else {
-      let message = "Input method is already selected!"
-      InputMethod.log(message)
-      return message
-    }
-
-    let status = TISSelectInputSource(inputMethod)
-
-    if status != noErr {
-      let err = NSError(domain: NSOSStatusErrorDomain, code: Int(status), userInfo: nil)
-      let message = "An error occured when selecting input method: \(err.localizedDescription)"
-      InputMethod.log(message)
-
-      if !inputMethod.isEnabled {
-        InputMethod.log("Input method must be enabled before it can be selected!")
-      }
-
-      if !inputMethod.isSelectable {
-        InputMethod.log("Input method must be selectable in order to be selected!")
-      }
-
-      return message
-    }
-
-    return "Selected input method!"
-  }
-
-  @discardableResult func deselect() -> String {
-    guard let inputMethod = self.source else {
-      return "Could not load input source"
-    }
-
-    let status = TISDeselectInputSource(inputMethod)
-
-    if status != noErr {
-      let err = NSError(domain: NSOSStatusErrorDomain, code: Int(status), userInfo: nil)
-      let message = "An error occured when deselecting input method: \(err.localizedDescription)"
-      InputMethod.log(message)
-      return message
-    }
-
-    return "Deselected input method!"
-  }
-
-  // On macOS Monterrey, this opens System Preferences > Input Sources and prompts user!
-  @discardableResult func enable() -> String {
-    guard let inputMethod = self.source else {
-      return "Could not load input source"
-    }
-
-    let status = TISEnableInputSource(inputMethod)
-
-    if status != noErr {
-      let err = NSError(domain: NSOSStatusErrorDomain, code: Int(status), userInfo: nil)
-      let message = "An error occured when enabling input method: \(err.localizedDescription)"
-      InputMethod.log(message)
-      return message
-    }
-
-    return "Enabled input method!"
-  }
-
-  @discardableResult func disable() -> String {
-    guard let inputMethod = self.source else {
-      return "Could not load input source"
-    }
-
-    let status = TISDisableInputSource(inputMethod)
-
-    if status != noErr {
-      let err = NSError(domain: NSOSStatusErrorDomain, code: Int(status), userInfo: nil)
-      let message = "An error occured when disabling input method: \(err.localizedDescription)"
-      InputMethod.log(message)
-      return message
-    }
-
-    return "Disabled input method!"
   }
 
   func uninstall() {
@@ -482,6 +357,116 @@ extension InputMethod: IntegrationProvider {
   func install() -> InstallationStatus {
     self.status = self._install()
     return self.status
+  }
+}
+
+extension InputMethod {
+  @discardableResult func register() -> String {
+    let url = URL(fileURLWithPath: self.originalBundlePath)
+
+    let targetURL = InputMethod.inputMethodDirectory.appendingPathComponent(name)
+
+    // Remove previous symlink
+    try? FileManager.default.removeItem(at: targetURL)
+
+    try? FileManager.default.createSymbolicLink(at: targetURL, withDestinationURL: url)
+
+    let err = TISRegisterInputSource(targetURL as CFURL)
+    guard err != paramErr else {
+      let error = NSError(domain: NSOSStatusErrorDomain, code: Int(err), userInfo: nil)
+      return error.localizedDescription
+    }
+
+    if let bundleId = self.bundle.bundleIdentifier {
+      let inputSource = Restarter(with: bundleId)
+      inputSource.restart(launchingIfInactive: true)
+    }
+
+    return "Registered input method!"
+  }
+
+  @discardableResult func select() -> String {
+    guard let inputMethod = self.source else {
+      return "Could not load input source"
+    }
+
+    guard !inputMethod.isSelected else {
+      let message = "Input method is already selected!"
+      InputMethod.log(message)
+      return message
+    }
+
+    let status = TISSelectInputSource(inputMethod)
+
+    if status != noErr {
+      let err = NSError(domain: NSOSStatusErrorDomain, code: Int(status), userInfo: nil)
+      let message = "An error occured when selecting input method: \(err.localizedDescription)"
+      InputMethod.log(message)
+
+      if !inputMethod.isEnabled {
+        InputMethod.log("Input method must be enabled before it can be selected!")
+      }
+
+      if !inputMethod.isSelectable {
+        InputMethod.log("Input method must be selectable in order to be selected!")
+      }
+
+      return message
+    }
+
+    return "Selected input method!"
+  }
+
+  @discardableResult func deselect() -> String {
+    guard let inputMethod = self.source else {
+      return "Could not load input source"
+    }
+
+    let status = TISDeselectInputSource(inputMethod)
+
+    if status != noErr {
+      let err = NSError(domain: NSOSStatusErrorDomain, code: Int(status), userInfo: nil)
+      let message = "An error occured when deselecting input method: \(err.localizedDescription)"
+      InputMethod.log(message)
+      return message
+    }
+
+    return "Deselected input method!"
+  }
+
+  // On macOS Monterrey, this opens System Preferences > Input Sources and prompts user!
+  @discardableResult func enable() -> String {
+    guard let inputMethod = self.source else {
+      return "Could not load input source"
+    }
+
+    let status = TISEnableInputSource(inputMethod)
+
+    if status != noErr {
+      let err = NSError(domain: NSOSStatusErrorDomain, code: Int(status), userInfo: nil)
+      let message = "An error occured when enabling input method: \(err.localizedDescription)"
+      InputMethod.log(message)
+      return message
+    }
+
+    return "Enabled input method!"
+  }
+
+  @discardableResult func disable() -> String {
+    guard let inputMethod = self.source else {
+      return "Could not load input source"
+    }
+
+    let status = TISDisableInputSource(inputMethod)
+
+    if status != noErr {
+      let err = NSError(domain: NSOSStatusErrorDomain, code: Int(status), userInfo: nil)
+      let message = "An error occured when disabling input method: \(err.localizedDescription)"
+      InputMethod.log(message)
+      return message
+    }
+
+    return "Disabled input method!"
   }
 }
 
