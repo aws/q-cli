@@ -33,6 +33,14 @@ extension KittyIntegration: IntegrationProvider {
       return failed
     }
 
+    guard let kittyConfig = try? String(contentsOf: KittyIntegration.configLocation) else {
+      return .failed(error: "Could not read '\(KittyIntegration.configLocation.path)'")
+    }
+
+    guard kittyConfig.contains(KittyIntegration.configKey) else {
+      return .failed(error: "watcher is not included in kitty.conf")
+    }
+
     let inputMethodStatus = InputMethod.default.verifyInstallation()
     guard inputMethodStatus == .installed else {
       return .pending(event: .inputMethodActivation)
