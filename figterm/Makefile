@@ -4,6 +4,9 @@ export BUILT_PRODUCTS_DIR ?= $(ROOT)/build
 
 # Add brew executables to PATH
 export PATH := /opt/homebrew/bin:/opt/homebrew/sbin:$(PATH)
+# Add cargo executables to PATH
+export PATH := $(HOME)/.cargo/bin:$(PATH)
+
 SHELL := env PATH=$(PATH) /bin/bash
 
 # check if cargo exists
