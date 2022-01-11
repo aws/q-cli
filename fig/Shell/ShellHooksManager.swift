@@ -423,19 +423,7 @@ extension ShellHookManager {
   }
 
   func startedNewSSHConnection(_ info: ShellMessage) {
-    guard let hash = attemptToFindToAssociatedWindow(for: info.session) else {
-      Logger.log(
-        message: "Could not link to window on new shell session.", priority: .notify,
-        subsystem: .tty)
-      return
-    }
-
-    guard let tty = self.tty(for: hash) else { return }
-    guard let sshIntegration = tty.integrations["ssh"] as? SSHIntegration else { return }
-    sshIntegration.newConnection(with: info, in: tty)
-
-    // Set version (used for checking compatibility)
-    tty.shellIntegrationVersion = info.shellIntegrationVersion ?? 0
+    Logger.log(message: "starting new SSH connection...")
   }
 
   func updateKeybufferLegacy(_ info: ShellMessage) {

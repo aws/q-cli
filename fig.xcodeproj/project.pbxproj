@@ -150,7 +150,6 @@
 		75ACFE862755BEBE003C22EE /* WindowMetadataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75ACFE852755BEBE003C22EE /* WindowMetadataService.swift */; };
 		75AEF2E425C3C34A00D78431 /* Diagnostic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75AEF2E325C3C34A00D78431 /* Diagnostic.swift */; };
 		75AEF2E625C3DEAF00D78431 /* DockerIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75AEF2E525C3DEAF00D78431 /* DockerIntegration.swift */; };
-		75AEF2E825C3DEC600D78431 /* SSHIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75AEF2E725C3DEC600D78431 /* SSHIntegration.swift */; };
 		75AEF2EA25C4C34D00D78431 /* SecureKeyboardInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75AEF2E925C4C34D00D78431 /* SecureKeyboardInput.swift */; };
 		75AEF2EE25C5062E00D78431 /* WindowObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75AEF2ED25C5062E00D78431 /* WindowObserver.swift */; };
 		75B0A07E25BB746600FCD89A /* debugger.html in Resources */ = {isa = PBXBuildFile; fileRef = 75B0A07D25BB746600FCD89A /* debugger.html */; };
@@ -443,7 +442,6 @@
 		75ACFE852755BEBE003C22EE /* WindowMetadataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowMetadataService.swift; sourceTree = "<group>"; };
 		75AEF2E325C3C34A00D78431 /* Diagnostic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Diagnostic.swift; sourceTree = "<group>"; };
 		75AEF2E525C3DEAF00D78431 /* DockerIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DockerIntegration.swift; sourceTree = "<group>"; };
-		75AEF2E725C3DEC600D78431 /* SSHIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSHIntegration.swift; sourceTree = "<group>"; };
 		75AEF2E925C4C34D00D78431 /* SecureKeyboardInput.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureKeyboardInput.swift; sourceTree = "<group>"; };
 		75AEF2ED25C5062E00D78431 /* WindowObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowObserver.swift; sourceTree = "<group>"; };
 		75B0A07D25BB746600FCD89A /* debugger.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = debugger.html; sourceTree = "<group>"; };
@@ -926,7 +924,6 @@
 				75A4521925AE2E6A00107D2C /* CommandIntegration.swift */,
 				75AEF2E525C3DEAF00D78431 /* DockerIntegration.swift */,
 				75EDDC5A25D4BC53003AECC6 /* UnixSocketClient.swift */,
-				75AEF2E725C3DEC600D78431 /* SSHIntegration.swift */,
 				75DA86A825EF145E00722F1D /* TmuxIntegration.swift */,
 				75A4520F25A839F500107D2C /* remote_cwd.sh */,
 			);
@@ -1441,7 +1438,6 @@
 				AB3FB17B27636BF3009EFD9E /* KeypressProvider.swift in Sources */,
 				75288EF924CCE72F002DF12A /* WebViewWindow.swift in Sources */,
 				75BF28A8270E9B9200E7C914 /* API+Constants.swift in Sources */,
-				75AEF2E825C3DEC600D78431 /* SSHIntegration.swift in Sources */,
 				757CA86724859461002A64A8 /* AppMover.swift in Sources */,
 				75ACFE862755BEBE003C22EE /* WindowMetadataService.swift in Sources */,
 				75C0EBD3253E336E001964DE /* TerminalUsageTelemetry.swift in Sources */,

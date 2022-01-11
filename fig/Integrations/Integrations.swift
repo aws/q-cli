@@ -43,7 +43,7 @@ class Integrations {
     "com.raycast.macos"
   ]
 
-  static let inputMethodDependentTerminals = [Alacritty]
+  static let inputMethodDependentTerminals = [Alacritty, Kitty]
   static let electronIDEs: Set = [VSCode, VSCodeInsiders, VSCodium]
   static var electronTerminals: Set<String> {
     let additions = Set(
