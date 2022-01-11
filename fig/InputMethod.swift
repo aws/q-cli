@@ -240,6 +240,11 @@ class InputMethod {
     guard let bundleIdentifier = bundleIdentifier else {
       return
     }
+
+    guard Integrations.inputMethodDependentTerminals.contains(bundleIdentifier) else {
+      return
+    }
+
     let center: DistributedNotificationCenter = DistributedNotificationCenter.default()
     center.postNotificationName(
       NSNotification.Name("io.fig.keypress"),
