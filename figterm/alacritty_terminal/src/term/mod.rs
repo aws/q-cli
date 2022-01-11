@@ -6,7 +6,7 @@ use std::path::PathBuf;
 use std::{env, mem, ptr, str};
 
 use bitflags::bitflags;
-use log::{debug, trace};
+use log::{debug, info, trace};
 use serde::{Deserialize, Serialize};
 use unicode_width::UnicodeWidthChar;
 
@@ -719,7 +719,11 @@ impl<T> Term<T> {
                     Some(' '),
                     true,
                 );
-                buffer.buffer = buffer.buffer.trim_end().to_string();
+
+                if let Some(cursor_idx) = buffer.cursor_idx {
+                    let (left, _) = buffer.buffer.split_at(cursor_idx);
+                    buffer.buffer = left.to_owned();
+                }
 
                 Some(buffer)
             }

@@ -85,11 +85,11 @@ pub fn get_color_support() -> ColorSupport {
 }
 
 pub fn parse_suggestion_color_fish(
-    s: impl Into<Vec<u8>>,
+    suggestion_str: impl Into<Vec<u8>>,
     color_support: ColorSupport,
 ) -> Option<SuggestionColor> {
-    let c_str = CString::new(s).unwrap().into_raw();
-    let inner = unsafe { color::parse_suggestion_color_fish(c_str, color_support.into()) };
+    let c_str = CString::new(suggestion_str).unwrap();
+    let inner = unsafe { color::parse_suggestion_color_fish(c_str.as_ptr(), color_support.into()) };
     match inner.is_null() {
         true => None,
         false => Some(SuggestionColor {
@@ -99,12 +99,12 @@ pub fn parse_suggestion_color_fish(
 }
 
 pub fn parse_suggestion_color_zsh_autosuggest(
-    s: impl Into<Vec<u8>>,
+    suggestion_str: impl Into<Vec<u8>>,
     color_support: ColorSupport,
 ) -> Option<SuggestionColor> {
-    let c_str = CString::new(s).unwrap().into_raw();
+    let c_str = CString::new(suggestion_str).unwrap();
     let inner =
-        unsafe { color::parse_suggestion_color_zsh_autosuggest(c_str, color_support.into()) };
+        unsafe { color::parse_suggestion_color_zsh_autosuggest(c_str.as_ptr(), color_support.into()) };
     match inner.is_null() {
         true => None,
         false => Some(SuggestionColor {

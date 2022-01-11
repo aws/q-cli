@@ -77,7 +77,14 @@ pub async fn spawn_outgoing_sender() -> Result<Sender<Bytes>> {
                 message.len(),
                 socket.display()
             );
-            match connect_timeout(&socket, Duration::from_secs(10)).await {
+            let conn = connect_timeout(&socket, Duration::from_secs(10)).await;
+
+            // When on macOS after the socket connection is made a breif delay is required
+            // Not sure why, but this is a workaround
+            #[cfg(target_os = "macos")]
+            tokio::time::sleep(Duration::from_millis(2)).await;
+            
+            match conn {
                 Ok(mut unix_stream) => match unix_stream.write_all(&message).await {
                     Ok(_) => {
                         if let Err(e) = unix_stream.flush().await {
