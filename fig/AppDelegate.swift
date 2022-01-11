@@ -173,10 +173,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
                                            name: Integrations.statusDidChange,
                                            object: nil)
 
-    if let shouldLaunchOnStartup = Settings.shared.getValue(forKey: Settings.launchOnStartupKey) as? Bool {
-      LoginItems.shared.currentApplicationShouldLaunchOnStartup = shouldLaunchOnStartup
+    if let shouldLaunchOnStartup = Settings.shared.getValue(forKey: Settings.launchOnStartupKey) as? Bool,
+       !shouldLaunchOnStartup {
+      LaunchAgent.launchOnStartup.remove()
     } else {
-      LoginItems.shared.currentApplicationShouldLaunchOnStartup = true
+      LaunchAgent.launchOnStartup.addIfNotPresent()
     }
 
     //        iTermTabIntegration.listenForHotKey()
@@ -1167,7 +1168,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
   @available(macOS, deprecated: 10.11)
   @objc func applicationIsInStartUpItems() -> Bool {
-    return LoginItems.shared.includesCurrentApplication
+    return LaunchAgent.launchOnStartup.enabled()
   }
 
   @objc func quit() {
