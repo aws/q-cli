@@ -721,8 +721,13 @@ impl<T> Term<T> {
                 );
 
                 if let Some(cursor_idx) = buffer.cursor_idx {
-                    let (left, _) = buffer.buffer.split_at(cursor_idx);
-                    buffer.buffer = left.to_owned();
+                    buffer.buffer = buffer.buffer.trim_end().to_string();
+
+                    if buffer.buffer.len() < cursor_idx {
+                        buffer
+                            .buffer
+                            .push_str(&" ".repeat(cursor_idx - buffer.buffer.len()));
+                    }
                 }
 
                 Some(buffer)
@@ -1343,6 +1348,9 @@ impl<T: EventListener> Handler for Term<T> {
 
         let color_match =
             |color: Color, vtermcolor: fig_color::VTermColor| match (color, vtermcolor) {
+                (Color::Named(name), fig_color::VTermColor::Indexed(j)) => {
+                    (name as usize % 256) == j as usize
+                }
                 (Color::Indexed(i), fig_color::VTermColor::Indexed(j)) => i == j,
                 (Color::Spec(rgb), fig_color::VTermColor::Rgb(r, g, b)) => {
                     rgb.r == r && rgb.g == g && rgb.b == b
