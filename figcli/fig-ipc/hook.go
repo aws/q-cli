@@ -4,6 +4,7 @@ import (
 	fig_proto "fig-cli/fig-proto"
 	"os"
 	"strings"
+	"time"
 )
 
 const (
@@ -31,6 +32,32 @@ func SendHook(hook *fig_proto.Hook) error {
 	}
 
 	return nil
+}
+
+func SendHookDelayed(hook *fig_proto.Hook, delay time.Duration) error {
+	conn, err := Connect()
+	if err != nil {
+		return err
+	}
+
+	message := fig_proto.LocalMessage{
+		Type: &fig_proto.LocalMessage_Hook{
+			Hook: hook,
+		},
+	}
+
+	// wait delay
+	time.Sleep(delay)
+
+	if err = conn.SendFigProto(&message); err != nil {
+		return err
+	}
+
+	if err = conn.Close(); err != nil {
+		return err
+	}
+
+	return nil	
 }
 
 func GenerateShellContext(
