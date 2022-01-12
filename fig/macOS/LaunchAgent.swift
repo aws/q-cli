@@ -17,18 +17,24 @@ class LaunchAgent {
 
         return libDir?.appendingPathComponent("LaunchAgents")
     }
-  
+
   static let launchOnStartup = LaunchAgent(fileName: "io.fig.launcher.plist",
                                            plist: [
                                               "Label": "io.fig.launcher",
                                               "Program": Bundle.main.executablePath!,
                                               "RunAtLoad": true
                                            ])
-  
+
+  // https://stackoverflow.com/questions/4377015/uninstaller-for-a-cocoa-application
   static let uninstallWatcher = LaunchAgent(fileName: "io.fig.uninstall.plist",
                                             plist: [
                                               "Label": "io.fig.uninstall",
-                                              ""
+                                              "WatchPaths": [ "~/.Trash" ],
+                                              "ProgramArguments": [ "osascript",
+                                                                    "~/.fig/tools/uninstaller.scpt",
+                                                                    Bundle.main.bundlePath
+                                                                  ],
+                                              "KeepAlive": false
                                             ])
   let launchAgentFile: URL?
   let plist: NSDictionary
@@ -60,7 +66,7 @@ class LaunchAgent {
 
         self.plist.write(to: launchAgentFile, atomically: true)
     }
-  
+
     func addIfNotPresent() {
       if !self.enabled() {
         self.add()
