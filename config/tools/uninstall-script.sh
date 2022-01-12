@@ -95,8 +95,16 @@ test -f $HYPER_CONFIG && sed -i '' -e 's/"fig-hyper-integration",//g' $HYPER_CON
 test -f $HYPER_CONFIG && sed -i '' -e 's/"fig-hyper-integration"//g' $HYPER_CONFIG
 
 echo "Remove Kitty integration, if it exists"
-KITTY_COMMANDLINE_FILE="${HOME}/.config/kitty/macos-launch-services-cmdline"
-KITTY_COMMANDLINE_ARGS="--watcher ${HOME}/.fig/tools/kitty-integration.py"
+KITTY_CONFIG_PATH="${HOME}/.config/kitty/kitty.conf"
+KITTY_TMP_PATH=$KITTY_CONFIG_PATH'.tmp'
+
+KITTY_START="# Fig Kitty Integration: Enabled"
+KITTY_END="# End of Fig Kitty Integration"
+
+cat $KITTY_CONFIG_PATH | /usr/bin/sed -e '\|'"$KITTY_START"'|,\|'"$KITTY_END"'|d' >$KITTY_TMP_PATH
+mv $KITTY_TMP_PATH $KITTY_CONFIG_PATH
+
+
 test -f "$KITTY_COMMANDLINE_FILE" && [[ $(< "$KITTY_COMMANDLINE_FILE") == "$KITTY_COMMANDLINE_ARGS" ]] && rm -f "$KITTY_COMMANDLINE_FILE";
 
 echo "Remove Launch Agents"
