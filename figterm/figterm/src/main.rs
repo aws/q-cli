@@ -51,7 +51,6 @@ use crate::{
 };
 
 const BUFFER_SIZE: usize = 1024;
-const FIGTERM_VERSION: usize = 3;
 
 struct EventSender {
     socket_sender: Sender<Bytes>,
@@ -251,7 +250,7 @@ fn launch_shell() -> Result<()> {
     }
 
     env::set_var("FIG_TERM", "1");
-    env::set_var("FIG_TERM_VERSION", format!("{}", FIGTERM_VERSION));
+    env::set_var("FIG_TERM_VERSION", env!("CARGO_PKG_VERSION"));
     if env::var_os("TMUX").is_some() {
         env::set_var("FIG_TERM_TMUX", "1");
     }

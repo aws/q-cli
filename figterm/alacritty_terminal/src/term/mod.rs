@@ -6,7 +6,7 @@ use std::path::PathBuf;
 use std::{env, mem, ptr, str};
 
 use bitflags::bitflags;
-use log::{debug, info, trace};
+use log::{debug, trace};
 use serde::{Deserialize, Serialize};
 use unicode_width::UnicodeWidthChar;
 
