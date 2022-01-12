@@ -120,12 +120,10 @@ fig_precmd() {
     PS4="%{$START_PROMPT%}$PS4%{$END_PROMPT%}"
   fi
 
-  # The af-magic theme adds a final % to expand. We need to paste without the %
-  # to avoid doubling up and mangling the prompt.
+  # Previously, the af-magic theme added a final % to expand. We need to paste without the %
+  # to avoid doubling up and mangling the prompt. I've removed this workaround for now.
   if [[ -v RPROMPT ]]; then
     RPROMPT="%{$START_PROMPT%}$RPROMPT%{$END_PROMPT%}"
-  elif [[ "$ZSH_THEME" == "af-magic" ]]; then
-    RPS1="%{$START_PROMPT%}$RPS1{$END_PROMPT%}"
   else
     RPS1="%{$START_PROMPT%}$RPS1%{$END_PROMPT%}"
   fi

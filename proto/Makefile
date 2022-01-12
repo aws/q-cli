@@ -45,7 +45,7 @@ DESTINATIONS       = $(ARTIFACTS) \
 # Ensure $ARTIFACTS directory exists
 $(shell mkdir -p $(ARTIFACTS))
 
-all: api local figterm
+all: create-destinations api local figterm
 ifndef PROTOC
     $(error "protoc is not in PATH")
 endif
@@ -61,6 +61,10 @@ endif
 ifndef GO
     $(error "protoc-gen-go is not in PATH")
 endif
+
+# Ensure that all destinations exist (since folders may no longer be tracked in git)
+create-destinations:
+	$(foreach destination,$(DESTINATIONS),mkdir -p $(destination);)
 
 api-swift:
 	protoc $(FLAGS) $(SWIFT_FLAGS) --swift_out=$(ARTIFACTS) $(API)

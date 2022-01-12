@@ -12,7 +12,7 @@ class Autocomplete {
   // todo: load global actions from ~/.fig/apps/autocomplete/actions.json
   static let globalActions = ["toggleAutocomplete", "showAutocomplete"]
 
-  static let throttler = Throttler(minimumDelay: 0.001)
+  static let throttler = Throttler(minimumDelay: 0.01)
 
   static func runJavascript(_ command: String) {
     WindowManager.shared.autocomplete?.webView?.evaluateJavaScript(

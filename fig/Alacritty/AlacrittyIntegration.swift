@@ -21,6 +21,12 @@ class AlacrittyIntegration: InputMethodDependentTerminalIntegrationProvider & In
       return .pending(event: .inputMethodActivation)
     }
 
+    // If the application is already running,
+    // it must be restarted for the new input method to work
+    if self.status == .pending(event: .inputMethodActivation) {
+      return .pending(event: .applicationRestart)
+    }
+
     return .installed
   }
 

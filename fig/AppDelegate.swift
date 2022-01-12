@@ -181,7 +181,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     //        iTermTabIntegration.listenForHotKey()
     SecureKeyboardInput.listen()
-
+//    InputMethod.default.uninstall()
     iTermObserver?.windowDidAppear {
       SecureKeyboardInput.notifyIfEnabled()
     }
@@ -480,13 +480,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     integrationsMenu.addItem(NSMenuItem.separator())
-    //
-    //
-    //      let sshIntegration = integrationsMenu.addItem(
-    //      withTitle: "SSH Integration",
-    //      action: #selector(AppDelegate.toggleSSHIntegration(_:)),
-    //      keyEquivalent: "")
-    //      sshIntegration.state = Defaults.SSHIntegrationEnabled ? .on : .off
 
     let developer = integrationsMenu.addItem(
       withTitle: "Developer",
@@ -796,6 +789,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         UserDefaults.standard.synchronize()
 
         WebView.deleteCache()
+        InputMethod.default.uninstall()
 
         let out = "bash \(general)".runAsCommand()
         Logger.log(message: out)
@@ -1121,34 +1115,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
   }
 
-  @objc func toggleSSHIntegration(_ sender: NSMenuItem) {
-    let SSHConfigFile = URL(fileURLWithPath: "\(NSHomeDirectory())/.ssh/config")
-    let configuration = try? String(contentsOf: SSHConfigFile)
-
-    // config file does not exist or fig hasn't been enabled
-    if !(configuration?.contains("Fig SSH Integration: Enabled") ?? false) {
-      guard self.dialogOKCancel(
-        question: "Install SSH integration?",
-        text: "Fig will make changes to your SSH config (stored in ~/.ssh/config)."
-      ) else {
-        return
-      }
-
-      SSHIntegration.install()
-      _ = self.dialogOKCancel(
-        question: "SSH Integration Installed!",
-        // swiftlint:disable:next line_length
-        text: "When you connect to a remote machine using SSH, Fig will show relevant completions.\n\nIf you run into any issues, please email hello@fig.io.",
-        noAction: true,
-        icon: NSImage.init(imageLiteralResourceName: NSImage.applicationIconName)
-      )
-      return
-    }
-
-    Defaults.shared.SSHIntegrationEnabled = !Defaults.shared.SSHIntegrationEnabled
-    sender.state = Defaults.shared.SSHIntegrationEnabled ? .on : .off
-  }
-
   @objc func toggleVSCodeIntegration(_ sender: NSMenuItem) {
     VSCodeIntegration.default.promptToInstall { _ in
       sender.state = VSCodeIntegration.default.isInstalled ? .on : .off
@@ -1252,6 +1218,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     ShellBridge.shared.stopWebSocketServer()
     Defaults.shared.launchedFollowingCrash = false
     PseudoTerminal.shared.dispose()
+    InputMethod.default.terminate()
 
     // Ensure that fig.socket is deleted, so that if user switches acounts it can be recreated
     try? FileManager.default.removeItem(atPath: "/tmp/fig.socket")

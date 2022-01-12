@@ -18,6 +18,7 @@ class Integrations {
   static let VSCodium = "com.visualstudio.code.oss"
   static let Kitty = "net.kovidgoyal.kitty"
   static let Alacritty = "io.alacritty"
+  static let Tabby = "org.tabby"
 
   static let terminals: Set = [
     "com.googlecode.iterm2",
@@ -42,7 +43,7 @@ class Integrations {
     "com.raycast.macos"
   ]
 
-  static let inputMethodDependentTerminals = [Alacritty]
+  static let inputMethodDependentTerminals = [Alacritty, Kitty]
   static let electronIDEs: Set = [VSCode, VSCodeInsiders, VSCodium]
   static var electronTerminals: Set<String> {
     let additions = Set(
@@ -51,7 +52,7 @@ class Integrations {
     return
       additions
       .union(Integrations.electronIDEs)
-      .union([Integrations.Hyper])
+      .union([Integrations.Hyper, Integrations.Tabby])
   }
 
   static var terminalsWhereAutocompleteShouldAppear: Set<String> {
@@ -124,9 +125,10 @@ class Integrations {
       Integrations.VSCode: VSCodeIntegration.default,
       Integrations.VSCodeInsiders: VSCodeIntegration.insiders,
       Integrations.VSCodium: VSCodeIntegration.vscodium,
-      // Integrations.Alacritty: AlacrittyIntegration.default,
-      // Integrations.Kitty : KittyIntegration.default,
-      Integrations.Terminal: AppleTerminalIntegration.default
+      Integrations.Alacritty: AlacrittyIntegration.default,
+      Integrations.Kitty: KittyIntegration.default,
+      Integrations.Terminal: AppleTerminalIntegration.default,
+      Integrations.Tabby: TabbyIntegration.default
     ]
 
   static func handleListIntegrationsRequest() -> CommandResponse {

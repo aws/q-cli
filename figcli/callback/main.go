@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 const (
@@ -138,7 +139,8 @@ func main() {
 		},
 	}
 
-	err := fig_ipc.SendHook(&callbackHook)
+	err := fig_ipc.SendHookDelayed(&callbackHook, time.Millisecond*2)
+
 	if debug && err != nil {
 		fmt.Fprintln(output, "Error sending callback:", err)
 		logging.Log("Error sending callback:", err.Error())

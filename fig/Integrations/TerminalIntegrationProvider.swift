@@ -130,6 +130,7 @@ class GenericTerminalIntegrationProvider {
 
   }
 
+  // swiftlint:disable identifier_name
   func _install() -> InstallationStatus {
     guard let provider = self as? IntegrationProvider else {
       return .failed(error: "TerminalIntegrationProvider does not conform to protocol.")
@@ -138,6 +139,7 @@ class GenericTerminalIntegrationProvider {
     return provider.install()
   }
 
+  // swiftlint:disable identifier_name
   func _verifyInstallation() -> InstallationStatus {
     guard let provider = self as? IntegrationProvider else {
       return .failed(error: "TerminalIntegrationProvider does not conform to protocol.")
@@ -242,10 +244,12 @@ class GenericTerminalIntegrationProvider {
 
     let icon = NSImage(imageLiteralResourceName: "NSSecurity")
     let name = self.applicationName
+    let message = promptMessage
+                  ?? "Fig will add a plugin to \(name) that tracks which terminal session is active.\n\n"
 
     let app = NSWorkspace.shared.icon(forFile: url.path)
     let shouldInstall = Alert.show(title: "Install \(name) Integration?",
-                                   message: promptMessage ?? "Fig will add a plugin to \(name) that tracks which terminal session is active.\n\n",
+                                   message: message,
                                    okText: promptButtonText ?? "Install plugin",
                                    icon: icon.overlayImage(app),
                                    hasSecondaryOption: true)
@@ -286,7 +290,8 @@ class GenericTerminalIntegrationProvider {
     }
 
     guard version >= minimumVersion else {
-      return .failed(error: "\(self.applicationName) version \(version.string) is not supported. Must be \(minimumVersion.string) or above")
+      return .failed(error: "\(self.applicationName) version \(version.string) is not supported." +
+                     "Must be \(minimumVersion.string) or above")
     }
 
     return nil
@@ -346,6 +351,7 @@ class GenericTerminalIntegrationProvider {
 
 }
 
+// swiftlint:disable type_name
 class InputMethodDependentTerminalIntegrationProvider: GenericTerminalIntegrationProvider {
   override init(bundleIdentifier: String) {
     super.init(bundleIdentifier: bundleIdentifier)
@@ -365,8 +371,8 @@ class InputMethodDependentTerminalIntegrationProvider: GenericTerminalIntegratio
   }
 
   override func install(withRestart: Bool, inBackground: Bool, completion: ((InstallationStatus) -> Void)? = nil) {
-    // Cannot install InputMethod in background on macOS Monterey
-    if inBackground, #available(OSX 12.0, *) {
+    // Cannot install InputMethod in background
+    if inBackground {
       return
     }
 
