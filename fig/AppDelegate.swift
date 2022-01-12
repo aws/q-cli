@@ -43,8 +43,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
     warnToMoveToApplicationIfNecessary()
 
-    LaunchAgent.uninstallWatcher.addIfNotPresent()
-
     // Set timeout to avoid hanging misbehaving 3rd party apps
     Accessibility.setGlobalTimeout(seconds: 2)
 
