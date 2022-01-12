@@ -10,6 +10,7 @@ import Foundation
 import Cocoa
 import FigAPIBindings
 
+// swiftlint:disable type_body_length
 class Settings {
   static let ptyInitFile = "pty.rc"
   static let ptyPathKey = "pty.path"
@@ -56,6 +57,7 @@ class Settings {
   static let ptyTranscript = "developer.pty.transcript"
   static let autocompleteURL = "developer.autocomplete.host"
   static let settingsURL = "developer.settings.host"
+  static let missionControlURL = "developer.mission-control.host"
 
   static let keyAliases = [
     "super": "command",
@@ -261,6 +263,7 @@ class Settings {
         guard let defaultSettings = try JSONSerialization.jsonObject(with: jsonStream, options: .fragmentsAllowed) as? [[String: Any]] else {
           return nil
         }
+        // swiftlint:disable force_cast
         let keys = defaultSettings.map { $0["settingName"] as! String }
         let values = defaultSettings.map { $0["default"] as Any }
         return Dictionary(uniqueKeysWithValues: zip(keys, values))
@@ -393,7 +396,8 @@ class Settings {
       guard FileManager.default.fileExists(atPath: Settings.filePath) else { return }
       DispatchQueue.main.async {
         _ = Alert.show(title: "Fig's settings can not be parsed.",
-                       message: "An error occured while reading the Fig settings file stored at ~/.fig/settings.json\n\nPlease make sure this file is valid JSON.",
+                       message: "An error occured while reading the Fig settings file stored at"
+                              + "~/.fig/settings.json\n\nPlease make sure this file is valid JSON.",
                        icon: Alert.appIcon)
 
       }
@@ -445,6 +449,7 @@ class Settings {
 
 extension DispatchSourceFileSystemObject {
   var dataStrings: [String] {
+    // swiftlint:disable identifier_name
     var s = [String]()
     if data.contains(.all) { s.append("all") }
     if data.contains(.attrib) { s.append("attrib") }
@@ -474,7 +479,9 @@ extension Settings {
 
     }()
 
-    guard let data = try? JSONSerialization.data(withJSONObject: value, options: [ .prettyPrinted, .fragmentsAllowed]) else {
+    guard let data = try? JSONSerialization.data(withJSONObject: value,
+                                                 options: [ .prettyPrinted,
+                                                            .fragmentsAllowed]) else {
       throw APIError.generic(message: "Could not convert value for key to JSON")
     }
 
