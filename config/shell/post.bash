@@ -1,3 +1,8 @@
+# Source Mission Control Dotfiles
+if [ -f ~/.fig/user/dotfiles/managed.bash ]; then
+  source ~/.fig/user/dotfiles/managed.bash
+fi
+
 # Add preexec, but override __bp_adjust_histcontrol to preserve histcontrol.
 source ~/.fig/shell/bash-preexec.sh
 function __bp_adjust_histcontrol() { :; }
