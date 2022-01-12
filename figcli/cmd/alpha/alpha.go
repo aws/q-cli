@@ -2,8 +2,10 @@ package alpha
 
 import (
 	"fig-cli/cmd/alpha/source"
+	"fig-cli/diagnostics"
+	fig_ipc "fig-cli/fig-ipc"
+	fig_proto "fig-cli/fig-proto"
 	"fmt"
-	"os"
 	"os/exec"
 
 	"github.com/spf13/cobra"
@@ -12,15 +14,26 @@ import (
 func NewCmdAlpha() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "alpha",
-		Short: "Open mission control",
+		Short: "Open dotfiles",
 		Run: func(cmd *cobra.Command, args []string) {
-			// TODO: send protobuf to open local mission control
-			if err := exec.Command("open", "https://fig.io").Run(); err != nil {
-				fmt.Printf("Error opening mission control: %s", err)
-				os.Exit(1)
+			response, err := fig_ipc.RunOpenUiElementCommand(fig_proto.UiElement_MISSION_CONTROL)
+			if err != nil {
+				_, err := diagnostics.GetAppInfo()
+
+				if err != nil {
+					fmt.Print("\n› Launching Fig...\n\n")
+					figExec := exec.Command("open", "-b", "com.mschrage.fig")
+					figExec.Run()
+					figExec.Process.Release()
+				}
+				return
 			}
 
-			fmt.Printf("\n→ Opening mission control\n\n")
+			if response != "" {
+				fmt.Printf("\n%s\n\n", response)
+			}
+
+			fmt.Printf("\n→ Opening dotfiles...\n\n")
 		},
 	}
 
