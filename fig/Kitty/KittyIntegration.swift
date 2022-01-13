@@ -97,11 +97,11 @@ extension KittyIntegration: IntegrationProvider {
 
     } else {
       do {
-        try KittyIntegration.configLocation.path.write(toFile: KittyIntegration.configKey,
-                                                        atomically: true,
-                                                        encoding: .utf8)
+        try KittyIntegration.configKey.write(toFile: KittyIntegration.configLocation.path,
+                                             atomically: true,
+                                             encoding: .utf8)
       } catch {
-        return .failed(error: "Could not write to \(KittyIntegration.configLocation.path)")
+        return .failed(error: "Could not write to \(KittyIntegration.configLocation.path) (\(error.localizedDescription))")
       }
     }
 
