@@ -59,6 +59,8 @@ class MissionControl {
     missionControl.level = .normal
 
     MissionControl.shared.window = missionControl
+    NSApp.activate(ignoringOtherApps: true)
+
   }
 
 }
