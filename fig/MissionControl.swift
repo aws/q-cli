@@ -38,7 +38,7 @@ class MissionControl {
       }
 
       // otherwise use fallback
-      return Remote.baseURL.appendingPathComponent("mission-control")
+      return Remote.baseURL.appendingPathComponent("mission-control", isDirectory: true)
     }()
 
     let viewController = WebViewController()
