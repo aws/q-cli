@@ -19,6 +19,8 @@ ENV FIG_BUNDLE_EXECUTABLES=/usr/home/.fig_bin
 ENV PATH=/usr/lib/go-1.17/bin/:$PATH
 ENV TMPDIR=/tmp/
 
+RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+
 WORKDIR /usr/home/app/
 
 RUN mkdir -p /Applications/Fig.app/
@@ -44,12 +46,7 @@ RUN npm install
 COPY --chown=test:test ./dotenv .
 
 COPY --chown=test:test ./proto/ /usr/home/proto/
-RUN protoc --plugin="$(npm bin -g)/protoc-gen-ts_proto" \
-	   --ts_proto_opt=esModuleInterop=true \
-	   --ts_proto_opt=oneof=unions \
-	   --ts_proto_out="./src" \
-		 --experimental_allow_proto3_optional \
-	   -I/usr/home/proto "/usr/home/proto/local.proto"
+RUN cd /usr/home/proto && DOTENV=/usr/home/app/src make create-destinations local
 
 RUN cp ./bin/fig $FIG_BUNDLE_EXECUTABLES/fig
 RUN cp ./bin/fig $FIG_BUNDLE_EXECUTABLES/figcli

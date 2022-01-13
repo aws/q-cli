@@ -4,6 +4,8 @@ if [ -f ~/.fig/user/dotfiles/managed.bash ]; then
 fi
 
 # Add preexec, but override __bp_adjust_histcontrol to preserve histcontrol.
+# Should have already been sourced in pre.sh but just make sure since we depend
+# on it here
 source ~/.fig/shell/bash-preexec.sh
 function __bp_adjust_histcontrol() { :; }
 
