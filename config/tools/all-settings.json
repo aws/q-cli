@@ -47,6 +47,14 @@
     "category": "Autocomplete"
   },
   {
+    "settingName": "autocomplete.preferVerboseSuggestions",
+    "title": "Prefer verbose suggestions",
+    "description": "If true, Fig will always try to use the verbose version of the option/subcommand inserted.",
+    "type": "boolean",
+    "default": false,
+    "category": "Autocomplete"
+  },
+  {
     "settingName": "autocomplete.fontFamily",
     "title": "Font Family",
     "description": "Change the font of autocomplete",

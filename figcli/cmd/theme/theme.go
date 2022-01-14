@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var BuiltinThemes []string = []string{"dark", "light"}
+var BuiltinThemes []string = []string{"dark", "light", "system"}
 
 type Author struct {
 	Name    string `json:"name"`

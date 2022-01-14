@@ -46,6 +46,7 @@ install_fig() {
   # Make files and folders that the user can edit (that aren't overridden by above)
   mkdir -p ~/.fig/bin
   mkdir -p ~/.fig/user
+  mkdir -p ~/.fig/user/dotfiles
 
   BUNDLE="${FIG_BUNDLE_EXECUTABLES:-/Applications/Fig.app/Contents/MacOS/}"
 

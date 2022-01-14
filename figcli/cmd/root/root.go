@@ -1,6 +1,7 @@
 package root
 
 import (
+	"fig-cli/cmd/alpha"
 	"fig-cli/cmd/app"
 	"fig-cli/cmd/app/onboarding"
 	"fig-cli/cmd/careers"
@@ -285,6 +286,7 @@ func Execute() {
 		}
 	})
 
+	rootCmd.AddCommand(alpha.NewCmdAlpha())
 	rootCmd.AddCommand(app.NewCmdApp())
 	rootCmd.AddCommand(careers.NewCmdCareers())
 	rootCmd.AddCommand(community.NewCmdCommunity())

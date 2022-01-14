@@ -184,6 +184,14 @@ extension CommandHandlers {
       return CommandResponse.with { response in
         response.success.message = ""
       }
+    case .missionControl:
+      DispatchQueue.main.async {
+        MissionControl.openUI()
+      }
+
+      return CommandResponse.with { response in
+        response.success.message = ""
+      }
     case .UNRECOGNIZED(let int):
       return CommandResponse.with { response in
         response.error.message = "unknown ui element \(int)"

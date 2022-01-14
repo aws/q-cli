@@ -2,12 +2,16 @@ name: Run dotenv test suite
 on:
   pull_request:
     paths:
+      - dotenv/**
+      - proto/**
       - config/**
       - figterm/**
       - figcli/**
   workflow_dispatch:
   push:
     paths:
+      - dotenv/**
+      - proto/**
       - config/**
       - figterm/**
       - figcli/**

@@ -33,6 +33,9 @@ class Onboarding {
                                                 with: [ "FIG_BUNDLE_EXECUTABLES":
                                                     Bundle.main.url(forAuxiliaryExecutable: "")!.path ],
                                                 completion: { _ in
+                                                  // Install launch agent that watches for Fig.app being trashed
+                                                  LaunchAgent.uninstallWatcher.addIfNotPresent()
+
                                                   Onboarding.symlinkBundleExecutable("figcli",
                                                                                      to: "~/.fig/bin/fig")
                                                   Onboarding.symlinkBundleExecutable("figterm",
