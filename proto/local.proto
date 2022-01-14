@@ -98,6 +98,7 @@ message BuildCommand {
 enum UiElement {
 	MENU_BAR = 0;
 	SETTINGS = 1;
+	MISSION_CONTROL = 2;
 }
 
 message OpenUiElementCommand {

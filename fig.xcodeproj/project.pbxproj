@@ -89,6 +89,7 @@
 		756967FF2718E0300029F063 /* WebArchiver in Frameworks */ = {isa = PBXBuildFile; productRef = 756967FE2718E0300029F063 /* WebArchiver */; };
 		756968012718FF600029F063 /* WebArchive.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756968002718FF600029F063 /* WebArchive.swift */; };
 		756968032719450A0029F063 /* API+App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756968022719450A0029F063 /* API+App.swift */; };
+		756FE631278F59070017EC99 /* MissionControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756FE630278F59070017EC99 /* MissionControl.swift */; };
 		756FE62E278E0B9A0017EC99 /* LaunchAgent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756FE62D278E0B9A0017EC99 /* LaunchAgent.swift */; };
 		7571775726F3B8A80071AE10 /* FigInputMethod.app in Embed Input Method */ = {isa = PBXBuildFile; fileRef = 754316F426E08F5C00188887 /* FigInputMethod.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		7571775926F3E4CA0071AE10 /* settings.html in Resources */ = {isa = PBXBuildFile; fileRef = 7571775826F3E4CA0071AE10 /* settings.html */; };
@@ -382,6 +383,7 @@
 		756968002718FF600029F063 /* WebArchive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebArchive.swift; sourceTree = "<group>"; };
 		756968022719450A0029F063 /* API+App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API+App.swift"; sourceTree = "<group>"; };
 		7569680F271E556B0029F063 /* swift-api-bindings */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "swift-api-bindings"; sourceTree = "<group>"; };
+		756FE630278F59070017EC99 /* MissionControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MissionControl.swift; sourceTree = "<group>"; };
 		756FE62D278E0B9A0017EC99 /* LaunchAgent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAgent.swift; sourceTree = "<group>"; };
 		7571775826F3E4CA0071AE10 /* settings.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = settings.html; sourceTree = "<group>"; };
 		7571778226F91BF50071AE10 /* AppleTerminalIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleTerminalIntegration.swift; sourceTree = "<group>"; };
@@ -714,6 +716,7 @@
 				7520D8112682AEB00034FE2B /* Throttler.swift */,
 				755FC553268D09DE00966027 /* UpdateService.swift */,
 				750CF21726A1055F0094D76A /* Config.swift */,
+				756FE630278F59070017EC99 /* MissionControl.swift */,
 				756FE62A278E0B4D0017EC99 /* macOS */,
 				75696830271F70800029F063 /* Local IPC */,
 				7575D44B26D5C4DD00D0C8D7 /* API */,
@@ -1526,6 +1529,7 @@
 				75A4521A25AE2E6B00107D2C /* CommandIntegration.swift in Sources */,
 				754569FC272A05C200C7588F /* CommandHandlers.swift in Sources */,
 				75ACFE7A274442C7003C22EE /* PTYProcess.swift in Sources */,
+				756FE631278F59070017EC99 /* MissionControl.swift in Sources */,
 				7587B4D824F97F9E00E355E4 /* ShellHooksManager.swift in Sources */,
 				75D1ECB426EFE55A00BC8A04 /* AlacrittyIntegration.swift in Sources */,
 				7510F8BD24A9861E00E86F7C /* PrivateWindow.m in Sources */,
