@@ -48,6 +48,7 @@ class Logger {
     case positioning = "positioning"
     case api = "api"
     case inputMethod = "input-method"
+    case launchAgent = "launch-agent"
 
     func pathToLogFile() -> URL {
       return Logger.defaultLocation

@@ -375,7 +375,12 @@ class Settings {
     let currentLaunchAtLoginPreference = curr[Settings.launchOnStartupKey] as? Bool ?? true
 
     if priorLaunchAtLoginPreference != currentLaunchAtLoginPreference {
-      LoginItems.shared.currentApplicationShouldLaunchOnStartup = currentLaunchAtLoginPreference
+      
+      if currentLaunchAtLoginPreference {
+        LaunchAgent.launchOnStartup.addIfNotPresent()
+      } else {
+        LaunchAgent.launchOnStartup.remove()
+      }
     }
   }
 
