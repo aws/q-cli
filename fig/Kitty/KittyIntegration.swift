@@ -15,7 +15,7 @@ class KittyIntegration: InputMethodDependentTerminalIntegrationProvider {
   static let configLocation: URL = URL(fileURLWithPath: NSHomeDirectory() + "/.config/kitty/kitty.conf")
   // https://sw.kovidgoyal.net/kitty/faq/#how-do-i-specify-command-line-options-for-kitty-on-macos
   static let pythonScriptPathInBundle = Bundle.main.path(forResource: "kitty-integration", ofType: "py")!
-  static let pythonScriptPath = NSHomeDirectory() + "/.fig/tools/kitty-integration.py"
+  static let pythonScriptPath = "${HOME}/.fig/tools/kitty-integration.py"
 
   static let configKey = "\n# Fig Kitty Integration: Enabled\nwatcher \(pythonScriptPath)\n# End of Fig Kitty Integration\n"
   fileprivate static let minimumSupportedVersion = SemanticVersion(version: "0.24.0")!
