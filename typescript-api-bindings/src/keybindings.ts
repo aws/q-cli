@@ -1,4 +1,8 @@
-import { Action, KeybindingPressedNotification, NotificationType } from './fig';
+import {
+  Action,
+  KeybindingPressedNotification,
+  NotificationType,
+} from './fig.pb';
 import { sendUpdateApplicationPropertiesRequest } from './requests';
 import { _subscribe } from './notifications';
 

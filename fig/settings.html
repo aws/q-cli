@@ -573,6 +573,7 @@
                 <!-- Hard-coded in case fig.onboarding("themes") breaks. This should be overwritten. -->
                 <option value="dark">Dark</option>
                 <option value="light">Light</option>
+                <option value="light">System</option>
               </select>
             </div>
 
@@ -981,12 +982,11 @@
       function handleTheme(theme) {
         settings["autocomplete.theme"] = theme;
 
-        if (theme === "light" || theme === "dark") {
+        if (theme === "light" || theme === "dark" || theme === "system") {
           updateTheme(builtInThemes[theme]);
         } else {
           sendMessage({ readFileRequest: { path: { path: `~/.fig/themes/${theme}.json`, expandTildeInPath: true}}}, (res) => {
             updateTheme(JSON.parse(res.readFileResponse.text))
-
           })
         }
       }

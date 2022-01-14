@@ -137,6 +137,8 @@ int fig_socket_listen() {
   ));
 
   sprintf(_incoming_socket_path, "/tmp/figterm-%s.socket", fig_info->term_session_id);
+  unlink(_incoming_socket_path);
+
   _incoming_socket_fd = unix_socket_listen(_incoming_socket_path);
   set_blocking(_incoming_socket_fd, false);
   return _incoming_socket_fd;
@@ -361,6 +363,10 @@ char *get_term_bundle() {
   if (strcmp(term_program, "Hyper") == 0) {
     return "co.zeit.hyper";
   }
+
+  if (strcmp(term_program, "Tabby") == 0) {
+    return "org.tabby";
+  } 
 
   char *term_bundle = getenv("TERM_BUNDLE_IDENTIFIER");
 

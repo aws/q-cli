@@ -15,7 +15,7 @@ import SwiftProtobuf
 // incompatible with the version of SwiftProtobuf to which you are linking.
 // Please ensure that you are building against the same version of the API
 // that was used to generate this file.
-fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAPIVersionCheck {
+private struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAPIVersionCheck {
   struct _2: SwiftProtobuf.ProtobufAPIVersion_2 {}
   typealias Version = _2
 }
@@ -59,7 +59,7 @@ extension Local_IntegrationAction: CaseIterable {
   public static var allCases: [Local_IntegrationAction] = [
     .install,
     .verifyInstall,
-    .uninstall,
+    .uninstall
   ]
 }
 
@@ -99,7 +99,7 @@ extension Local_UiElement: CaseIterable {
   // The compiler won't synthesize support with the UNRECOGNIZED case.
   public static var allCases: [Local_UiElement] = [
     .menuBar,
-    .settings,
+    .settings
   ]
 }
 
@@ -110,7 +110,7 @@ public struct Local_LocalMessage {
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var type: Local_LocalMessage.OneOf_Type? = nil
+  public var type: Local_LocalMessage.OneOf_Type?
 
   /// expect a response from the host app
   public var command: Local_Command {
@@ -138,7 +138,7 @@ public struct Local_LocalMessage {
     /// one way update only, no response expected
     case hook(Local_Hook)
 
-  #if !swift(>=4.1)
+    #if !swift(>=4.1)
     public static func ==(lhs: Local_LocalMessage.OneOf_Type, rhs: Local_LocalMessage.OneOf_Type) -> Bool {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -155,7 +155,7 @@ public struct Local_LocalMessage {
       default: return false
       }
     }
-  #endif
+    #endif
   }
 
   public init() {}
@@ -185,7 +185,7 @@ public struct Local_Command {
   /// Clears the value of `noResponse`. Subsequent reads from it will return its default value.
   public mutating func clearNoResponse() {self._noResponse = nil}
 
-  public var command: Local_Command.OneOf_Command? = nil
+  public var command: Local_Command.OneOf_Command?
 
   public var terminalIntegration: Local_TerminalIntegrationCommand {
     get {
@@ -326,7 +326,7 @@ public struct Local_Command {
     case debugMode(Local_DebugModeCommand)
     case promptAccessibility(Local_PromptAccessibilityCommand)
 
-  #if !swift(>=4.1)
+    #if !swift(>=4.1)
     public static func ==(lhs: Local_Command.OneOf_Command, rhs: Local_Command.OneOf_Command) -> Bool {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -395,13 +395,13 @@ public struct Local_Command {
       default: return false
       }
     }
-  #endif
+    #endif
   }
 
   public init() {}
 
-  fileprivate var _id: Int64? = nil
-  fileprivate var _noResponse: Bool? = nil
+  fileprivate var _id: Int64?
+  fileprivate var _noResponse: Bool?
 }
 
 public struct Local_Hook {
@@ -409,7 +409,7 @@ public struct Local_Hook {
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var hook: Local_Hook.OneOf_Hook? = nil
+  public var hook: Local_Hook.OneOf_Hook?
 
   public var editBuffer: Local_EditBufferHook {
     get {
@@ -523,7 +523,7 @@ public struct Local_Hook {
     case hide(Local_HideHook)
     case event(Local_EventHook)
 
-  #if !swift(>=4.1)
+    #if !swift(>=4.1)
     public static func ==(lhs: Local_Hook.OneOf_Hook, rhs: Local_Hook.OneOf_Hook) -> Bool {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -580,7 +580,7 @@ public struct Local_Hook {
       default: return false
       }
     }
-  #endif
+    #endif
   }
 
   public init() {}
@@ -718,7 +718,7 @@ public struct Local_BuildCommand {
 
   public init() {}
 
-  fileprivate var _branch: String? = nil
+  fileprivate var _branch: String?
 }
 
 public struct Local_OpenUiElementCommand {
@@ -772,8 +772,8 @@ public struct Local_DebugModeCommand {
 
   public init() {}
 
-  fileprivate var _setDebugMode: Bool? = nil
-  fileprivate var _toggleDebugMode: Bool? = nil
+  fileprivate var _setDebugMode: Bool?
+  fileprivate var _toggleDebugMode: Bool?
 }
 
 public struct Local_PromptAccessibilityCommand {
@@ -908,7 +908,7 @@ public struct Local_EditBufferHook {
 
   public init() {}
 
-  fileprivate var _context: Local_ShellContext? = nil
+  fileprivate var _context: Local_ShellContext?
 }
 
 public struct Local_InitHook {
@@ -929,13 +929,13 @@ public struct Local_InitHook {
 
   public var bundle: String = String()
 
-  public var env: Dictionary<String,String> = [:]
+  public var env: [String: String] = [:]
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
 
-  fileprivate var _context: Local_ShellContext? = nil
+  fileprivate var _context: Local_ShellContext?
 }
 
 public struct Local_PromptHook {
@@ -956,7 +956,7 @@ public struct Local_PromptHook {
 
   public init() {}
 
-  fileprivate var _context: Local_ShellContext? = nil
+  fileprivate var _context: Local_ShellContext?
 }
 
 public struct Local_PreExecHook {
@@ -987,8 +987,8 @@ public struct Local_PreExecHook {
 
   public init() {}
 
-  fileprivate var _context: Local_ShellContext? = nil
-  fileprivate var _command: String? = nil
+  fileprivate var _context: Local_ShellContext?
+  fileprivate var _command: String?
 }
 
 public struct Local_PostExecHook {
@@ -1015,7 +1015,7 @@ public struct Local_PostExecHook {
 
   public init() {}
 
-  fileprivate var _context: Local_ShellContext? = nil
+  fileprivate var _context: Local_ShellContext?
 }
 
 public struct Local_KeyboardFocusChangedHook {
@@ -1065,7 +1065,7 @@ public struct Local_OpenedSSHConnectionHook {
 
   public init() {}
 
-  fileprivate var _context: Local_ShellContext? = nil
+  fileprivate var _context: Local_ShellContext?
 }
 
 public struct Local_CallbackHook {
@@ -1146,8 +1146,8 @@ public struct Local_ErrorResponse {
 
   public init() {}
 
-  fileprivate var _exitCode: Int32? = nil
-  fileprivate var _message: String? = nil
+  fileprivate var _exitCode: Int32?
+  fileprivate var _message: String?
 }
 
 public struct Local_SuccessResponse {
@@ -1168,7 +1168,7 @@ public struct Local_SuccessResponse {
 
   public init() {}
 
-  fileprivate var _message: String? = nil
+  fileprivate var _message: String?
 }
 
 public struct Local_TerminalIntegration {
@@ -1193,7 +1193,7 @@ public struct Local_TerminalIntegration {
 
   public init() {}
 
-  fileprivate var _status: String? = nil
+  fileprivate var _status: String?
 }
 
 public struct Local_TerminalIntegrationsListResponse {
@@ -1329,7 +1329,7 @@ public struct Local_CommandResponse {
   /// Clears the value of `id`. Subsequent reads from it will return its default value.
   public mutating func clearID() {self._id = nil}
 
-  public var response: Local_CommandResponse.OneOf_Response? = nil
+  public var response: Local_CommandResponse.OneOf_Response?
 
   public var error: Local_ErrorResponse {
     get {
@@ -1373,7 +1373,7 @@ public struct Local_CommandResponse {
     case integrationList(Local_TerminalIntegrationsListResponse)
     case diagnostics(Local_DiagnosticsResponse)
 
-  #if !swift(>=4.1)
+    #if !swift(>=4.1)
     public static func ==(lhs: Local_CommandResponse.OneOf_Response, rhs: Local_CommandResponse.OneOf_Response) -> Bool {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1398,30 +1398,30 @@ public struct Local_CommandResponse {
       default: return false
       }
     }
-  #endif
+    #endif
   }
 
   public init() {}
 
-  fileprivate var _id: Int64? = nil
+  fileprivate var _id: Int64?
 }
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
 
-fileprivate let _protobuf_package = "local"
+private let _protobuf_package = "local"
 
 extension Local_IntegrationAction: SwiftProtobuf._ProtoNameProviding {
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     0: .same(proto: "INSTALL"),
     1: .same(proto: "VERIFY_INSTALL"),
-    2: .same(proto: "UNINSTALL"),
+    2: .same(proto: "UNINSTALL")
   ]
 }
 
 extension Local_UiElement: SwiftProtobuf._ProtoNameProviding {
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     0: .same(proto: "MENU_BAR"),
-    1: .same(proto: "SETTINGS"),
+    1: .same(proto: "SETTINGS")
   ]
 }
 
@@ -1429,7 +1429,7 @@ extension Local_LocalMessage: SwiftProtobuf.Message, SwiftProtobuf._MessageImple
   public static let protoMessageName: String = _protobuf_package + ".LocalMessage"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     2: .same(proto: "command"),
-    3: .same(proto: "hook"),
+    3: .same(proto: "hook")
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -1514,7 +1514,7 @@ extension Local_Command: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementa
     111: .standard(proto: "open_ui_element"),
     112: .standard(proto: "reset_cache"),
     113: .standard(proto: "debug_mode"),
-    114: .standard(proto: "prompt_accessibility"),
+    114: .standard(proto: "prompt_accessibility")
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -1825,7 +1825,7 @@ extension Local_Hook: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementatio
     108: .same(proto: "callback"),
     109: .standard(proto: "integration_ready"),
     110: .same(proto: "hide"),
-    111: .same(proto: "event"),
+    111: .same(proto: "event")
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -2065,7 +2065,7 @@ extension Local_TerminalIntegrationCommand: SwiftProtobuf.Message, SwiftProtobuf
   public static let protoMessageName: String = _protobuf_package + ".TerminalIntegrationCommand"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "identifier"),
-    2: .same(proto: "action"),
+    2: .same(proto: "action")
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -2178,7 +2178,7 @@ extension Local_QuitCommand: SwiftProtobuf.Message, SwiftProtobuf._MessageImplem
 extension Local_UpdateCommand: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".UpdateCommand"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "force"),
+    1: .same(proto: "force")
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -2232,7 +2232,7 @@ extension Local_ReportWindowCommand: SwiftProtobuf.Message, SwiftProtobuf._Messa
     1: .same(proto: "report"),
     2: .same(proto: "path"),
     3: .standard(proto: "fig_env_var"),
-    4: .same(proto: "terminal"),
+    4: .same(proto: "terminal")
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -2317,7 +2317,7 @@ extension Local_RunInstallScriptCommand: SwiftProtobuf.Message, SwiftProtobuf._M
 extension Local_BuildCommand: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".BuildCommand"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "branch"),
+    1: .same(proto: "branch")
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -2353,7 +2353,7 @@ extension Local_BuildCommand: SwiftProtobuf.Message, SwiftProtobuf._MessageImple
 extension Local_OpenUiElementCommand: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".OpenUiElementCommand"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "element"),
+    1: .same(proto: "element")
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -2405,7 +2405,7 @@ extension Local_DebugModeCommand: SwiftProtobuf.Message, SwiftProtobuf._MessageI
   public static let protoMessageName: String = _protobuf_package + ".DebugModeCommand"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .standard(proto: "set_debug_mode"),
-    2: .standard(proto: "toggle_debug_mode"),
+    2: .standard(proto: "toggle_debug_mode")
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -2473,19 +2473,19 @@ extension Local_ShellContext: SwiftProtobuf.Message, SwiftProtobuf._MessageImple
     6: .standard(proto: "integration_version"),
     7: .same(proto: "terminal"),
     8: .same(proto: "hostname"),
-    9: .standard(proto: "remote_context"),
+    9: .standard(proto: "remote_context")
   ]
 
   fileprivate class _StorageClass {
-    var _pid: Int32? = nil
-    var _ttys: String? = nil
-    var _processName: String? = nil
-    var _currentWorkingDirectory: String? = nil
-    var _sessionID: String? = nil
-    var _integrationVersion: Int32? = nil
-    var _terminal: String? = nil
-    var _hostname: String? = nil
-    var _remoteContext: Local_ShellContext? = nil
+    var _pid: Int32?
+    var _ttys: String?
+    var _processName: String?
+    var _currentWorkingDirectory: String?
+    var _sessionID: String?
+    var _integrationVersion: Int32?
+    var _terminal: String?
+    var _hostname: String?
+    var _remoteContext: Local_ShellContext?
 
     static let defaultInstance = _StorageClass()
 
@@ -2600,7 +2600,7 @@ extension Local_EditBufferHook: SwiftProtobuf.Message, SwiftProtobuf._MessageImp
     1: .same(proto: "context"),
     2: .same(proto: "text"),
     3: .same(proto: "cursor"),
-    4: .same(proto: "histno"),
+    4: .same(proto: "histno")
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -2654,7 +2654,7 @@ extension Local_InitHook: SwiftProtobuf.Message, SwiftProtobuf._MessageImplement
     1: .same(proto: "context"),
     2: .standard(proto: "called_direct"),
     3: .same(proto: "bundle"),
-    100: .same(proto: "env"),
+    100: .same(proto: "env")
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -2666,7 +2666,7 @@ extension Local_InitHook: SwiftProtobuf.Message, SwiftProtobuf._MessageImplement
       case 1: try { try decoder.decodeSingularMessageField(value: &self._context) }()
       case 2: try { try decoder.decodeSingularBoolField(value: &self.calledDirect) }()
       case 3: try { try decoder.decodeSingularStringField(value: &self.bundle) }()
-      case 100: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString,SwiftProtobuf.ProtobufString>.self, value: &self.env) }()
+      case 100: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString, SwiftProtobuf.ProtobufString>.self, value: &self.env) }()
       default: break
       }
     }
@@ -2687,7 +2687,7 @@ extension Local_InitHook: SwiftProtobuf.Message, SwiftProtobuf._MessageImplement
       try visitor.visitSingularStringField(value: self.bundle, fieldNumber: 3)
     }
     if !self.env.isEmpty {
-      try visitor.visitMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString,SwiftProtobuf.ProtobufString>.self, value: self.env, fieldNumber: 100)
+      try visitor.visitMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString, SwiftProtobuf.ProtobufString>.self, value: self.env, fieldNumber: 100)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -2705,7 +2705,7 @@ extension Local_InitHook: SwiftProtobuf.Message, SwiftProtobuf._MessageImplement
 extension Local_PromptHook: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".PromptHook"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "context"),
+    1: .same(proto: "context")
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -2742,7 +2742,7 @@ extension Local_PreExecHook: SwiftProtobuf.Message, SwiftProtobuf._MessageImplem
   public static let protoMessageName: String = _protobuf_package + ".PreExecHook"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "context"),
-    2: .same(proto: "command"),
+    2: .same(proto: "command")
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -2785,7 +2785,7 @@ extension Local_PostExecHook: SwiftProtobuf.Message, SwiftProtobuf._MessageImple
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "context"),
     2: .same(proto: "command"),
-    3: .standard(proto: "exit_code"),
+    3: .standard(proto: "exit_code")
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -2832,7 +2832,7 @@ extension Local_KeyboardFocusChangedHook: SwiftProtobuf.Message, SwiftProtobuf._
   public static let protoMessageName: String = _protobuf_package + ".KeyboardFocusChangedHook"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .standard(proto: "app_identifier"),
-    2: .standard(proto: "focused_session_id"),
+    2: .standard(proto: "focused_session_id")
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -2869,7 +2869,7 @@ extension Local_KeyboardFocusChangedHook: SwiftProtobuf.Message, SwiftProtobuf._
 extension Local_TmuxPaneChangedHook: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".TmuxPaneChangedHook"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "pane_identifier"),
+    1: .standard(proto: "pane_identifier")
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -2902,7 +2902,7 @@ extension Local_OpenedSSHConnectionHook: SwiftProtobuf.Message, SwiftProtobuf._M
   public static let protoMessageName: String = _protobuf_package + ".OpenedSSHConnectionHook"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "context"),
-    2: .standard(proto: "control_path"),
+    2: .standard(proto: "control_path")
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -2945,7 +2945,7 @@ extension Local_CallbackHook: SwiftProtobuf.Message, SwiftProtobuf._MessageImple
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .standard(proto: "handler_id"),
     2: .same(proto: "filepath"),
-    3: .standard(proto: "exit_code"),
+    3: .standard(proto: "exit_code")
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -2987,7 +2987,7 @@ extension Local_CallbackHook: SwiftProtobuf.Message, SwiftProtobuf._MessageImple
 extension Local_IntegrationReadyHook: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".IntegrationReadyHook"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "identifier"),
+    1: .same(proto: "identifier")
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -3038,7 +3038,7 @@ extension Local_HideHook: SwiftProtobuf.Message, SwiftProtobuf._MessageImplement
 extension Local_EventHook: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".EventHook"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "event_name"),
+    1: .standard(proto: "event_name")
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -3071,7 +3071,7 @@ extension Local_ErrorResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
   public static let protoMessageName: String = _protobuf_package + ".ErrorResponse"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .standard(proto: "exit_code"),
-    2: .same(proto: "message"),
+    2: .same(proto: "message")
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -3112,7 +3112,7 @@ extension Local_ErrorResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
 extension Local_SuccessResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".SuccessResponse"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "message"),
+    1: .same(proto: "message")
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -3150,7 +3150,7 @@ extension Local_TerminalIntegration: SwiftProtobuf.Message, SwiftProtobuf._Messa
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .standard(proto: "bundle_identifier"),
     2: .same(proto: "name"),
-    3: .same(proto: "status"),
+    3: .same(proto: "status")
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -3196,7 +3196,7 @@ extension Local_TerminalIntegration: SwiftProtobuf.Message, SwiftProtobuf._Messa
 extension Local_TerminalIntegrationsListResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".TerminalIntegrationsListResponse"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "integrations"),
+    1: .same(proto: "integrations")
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -3246,7 +3246,7 @@ extension Local_DiagnosticsResponse: SwiftProtobuf.Message, SwiftProtobuf._Messa
     16: .standard(proto: "securekeyboard_path"),
     17: .standard(proto: "current_process"),
     18: .standard(proto: "current_window_identifier"),
-    19: .same(proto: "autocomplete"),
+    19: .same(proto: "autocomplete")
   ]
 
   fileprivate class _StorageClass {
@@ -3440,7 +3440,7 @@ extension Local_CommandResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageIm
     2: .same(proto: "error"),
     3: .same(proto: "success"),
     100: .standard(proto: "integration_list"),
-    101: .same(proto: "diagnostics"),
+    101: .same(proto: "diagnostics")
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {

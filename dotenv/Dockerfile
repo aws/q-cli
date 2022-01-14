@@ -7,7 +7,7 @@ RUN apt install -y python3 python3-pip && ln -sf python3 /usr/bin/python
 RUN pip3 install --no-cache --upgrade pip setuptools
 RUN apt install -y \
   sudo make g++ libtool libtool-bin libc-dev perl \
-  bash zsh \
+  bash zsh fish \
   uuid-runtime netcat-openbsd jq \
   protobuf-compiler \
   vim valgrind
@@ -18,6 +18,8 @@ ENV HOME=/usr/home
 ENV FIG_BUNDLE_EXECUTABLES=/usr/home/.fig_bin
 ENV PATH=/usr/lib/go-1.17/bin/:$PATH
 ENV TMPDIR=/tmp/
+
+RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
 
 WORKDIR /usr/home/app/
 
@@ -44,17 +46,12 @@ RUN npm install
 COPY --chown=test:test ./dotenv .
 
 COPY --chown=test:test ./proto/ /usr/home/proto/
-RUN protoc --plugin="$(npm bin -g)/protoc-gen-ts_proto" \
-	   --ts_proto_opt=esModuleInterop=true \
-	   --ts_proto_opt=oneof=unions \
-	   --ts_proto_out="./src" \
-		 --experimental_allow_proto3_optional \
-	   -I/usr/home/proto "/usr/home/proto/local.proto"
+RUN cd /usr/home/proto && DOTENV=/usr/home/app/src make create-destinations local
 
 RUN cp ./bin/fig $FIG_BUNDLE_EXECUTABLES/fig
 RUN cp ./bin/fig $FIG_BUNDLE_EXECUTABLES/figcli
 
-COPY --chown=test:test ./figcli2/ /usr/home/figcli/
+COPY --chown=test:test ./figcli/ /usr/home/figcli/
 RUN ls -lah /usr/home/figcli
 RUN cd /usr/home/figcli && make clean && BUILT_PRODUCTS_DIR=$(pwd) make all
 

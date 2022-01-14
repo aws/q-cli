@@ -9,11 +9,11 @@
 import Cocoa
 
 class Github {
-    static func openIssue(with message: String? = nil) {
-        let os = ProcessInfo.processInfo.operatingSystemVersion
+  static func openIssue(with message: String? = nil) {
+    let os = ProcessInfo.processInfo.operatingSystemVersion
 
-        let body =
-            """
+    let body =
+      """
             ### Description:
             > Please include a detailed description of the issue (and an image or screen recording, if applicable)
 
@@ -29,6 +29,6 @@ class Github {
             </p>
             </details>
             """
-        NSWorkspace.shared.open(URL(string: "https://github.com/withfig/fig/issues/new?labels=bug&assignees=mattschrage&body=\(body.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed)!)")!)
-    }
+    NSWorkspace.shared.open(URL(string: "https://github.com/withfig/fig/issues/new?labels=bug&assignees=mattschrage&body=\(body.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed)!)")!)
+  }
 }

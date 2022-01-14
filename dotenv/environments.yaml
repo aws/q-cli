@@ -1,6 +1,6 @@
 services:
   blank:
-    command: ["tests/bash", "tests/zsh", "tests/config"]
+    command: ["tests/bash", "tests/zsh", "tests/fish", "tests/config"]
   emulate:
     command: ["tests/zsh"]
   oh-my-zsh:
