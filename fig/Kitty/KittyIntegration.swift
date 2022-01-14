@@ -17,7 +17,7 @@ class KittyIntegration: InputMethodDependentTerminalIntegrationProvider {
   static let pythonScriptPathInBundle = Bundle.main.path(forResource: "kitty-integration", ofType: "py")!
   static let pythonScriptPath = NSHomeDirectory() + "/.fig/tools/kitty-integration.py"
 
-  static let configKey = "\nwatcher \(pythonScriptPath)\n"
+  static let configKey = "\n# Fig Kitty Integration: Enabled\nwatcher \(pythonScriptPath)\n# End of Fig Kitty Integration\n"
   fileprivate static let minimumSupportedVersion = SemanticVersion(version: "0.24.0")!
 
 }
@@ -97,11 +97,11 @@ extension KittyIntegration: IntegrationProvider {
 
     } else {
       do {
-        try KittyIntegration.configLocation.path.write(toFile: KittyIntegration.configKey,
-                                                        atomically: true,
-                                                        encoding: .utf8)
+        try KittyIntegration.configKey.write(toFile: KittyIntegration.configLocation.path,
+                                             atomically: true,
+                                             encoding: .utf8)
       } catch {
-        return .failed(error: "Could not write to \(KittyIntegration.configLocation.path)")
+        return .failed(error: "Could not write to \(KittyIntegration.configLocation.path) (\(error.localizedDescription))")
       }
     }
 

@@ -78,6 +78,7 @@ class LoginItems {
 
     guard items.count > 0 else { return nil }
 
+    // swiftlint:disable force_cast
     return (items.lastObject as! LSSharedFileListItem)
   }
 
@@ -100,6 +101,7 @@ class LoginItems {
     let urlPtr = UnsafeMutablePointer<Unmanaged<CFURL>?>.allocate(capacity: 1)
 
     for item in items {
+      // swiftlint:disable force_cast
       let itemRef = item as! LSSharedFileListItem
       if LSSharedFileListItemResolve(itemRef,
                                      0,
