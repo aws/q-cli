@@ -15,9 +15,12 @@ class KittyIntegration: InputMethodDependentTerminalIntegrationProvider {
   static let configLocation: URL = URL(fileURLWithPath: NSHomeDirectory() + "/.config/kitty/kitty.conf")
   // https://sw.kovidgoyal.net/kitty/faq/#how-do-i-specify-command-line-options-for-kitty-on-macos
   static let pythonScriptPathInBundle = Bundle.main.path(forResource: "kitty-integration", ofType: "py")!
-  static let pythonScriptPath = "${HOME}/.fig/tools/kitty-integration.py"
+  static func pythonScriptPath(usingKittyVariable: Bool = false) -> String {
+    return (usingKittyVariable ? "${HOME}" : NSHomeDirectory())
+          + "/.fig/tools/kitty-integration.py"
+  }
 
-  static let configKey = "\n# Fig Kitty Integration: Enabled\nwatcher \(pythonScriptPath)\n# End of Fig Kitty Integration\n"
+  static let configKey = "\n# Fig Kitty Integration: Enabled\nwatcher \(pythonScriptPath(usingKittyVariable: true))\n# End of Fig Kitty Integration\n"
   fileprivate static let minimumSupportedVersion = SemanticVersion(version: "0.24.0")!
 
 }
@@ -64,16 +67,16 @@ extension KittyIntegration: IntegrationProvider {
       return failed
     }
 
-    try? FileManager.default.removeItem(atPath: KittyIntegration.pythonScriptPath)
+    try? FileManager.default.removeItem(atPath: KittyIntegration.pythonScriptPath())
 
     do {
       try FileManager.default.createSymbolicLink(
-        atPath: KittyIntegration.pythonScriptPath,
+        atPath: KittyIntegration.pythonScriptPath(),
         withDestinationPath: KittyIntegration.pythonScriptPathInBundle
       )
     } catch {
       return .failed(
-        error: "Could not create symlink at \(KittyIntegration.pythonScriptPath): \(error.localizedDescription)"
+        error: "Could not create symlink at \(KittyIntegration.pythonScriptPath()): \(error.localizedDescription)"
       )
     }
 
@@ -106,7 +109,11 @@ extension KittyIntegration: IntegrationProvider {
     }
 
     if !InputMethod.default.isInstalled {
-      _ = InputMethod.default.install()
+      let status = InputMethod.default.install()
+      guard status == .installed else {
+        return .pending(event: .inputMethodActivation)
+      }
+
     }
 
     return .pending(event: .applicationRestart)
