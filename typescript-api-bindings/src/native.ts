@@ -1,6 +1,5 @@
-import { sendOpenInExternalApplicationRequest } from "./requests";
-
+import { sendOpenInExternalApplicationRequest } from './requests';
 
 export function open(url: string) {
-    return sendOpenInExternalApplicationRequest({ url });
+  return sendOpenInExternalApplicationRequest({ url });
 }

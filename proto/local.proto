@@ -249,6 +249,8 @@ message DiagnosticsResponse {
 	string current_process = 17;
 	string current_window_identifier = 18;
 	bool autocomplete = 19;
+	bool unix_socket_server_exists = 20;
+	string current_session = 21;
 }
 
 message CommandResponse {
