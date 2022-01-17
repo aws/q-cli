@@ -10,9 +10,9 @@ pub mod utils;
 use std::{env, error::Error, ffi::CString, os::unix::prelude::AsRawFd, process::exit, vec};
 
 use anyhow::{anyhow, Context, Result};
-use cli::Cli;
 use bytes::Bytes;
 use clap::StructOpt;
+use cli::Cli;
 use dashmap::DashSet;
 use flume::Sender;
 use log::{debug, error, info, trace, warn};

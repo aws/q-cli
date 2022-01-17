@@ -13,8 +13,9 @@ use flume::{bounded, Receiver, Sender};
 use log::{debug, error};
 use prost::Message;
 use tokio::{
+    fs::remove_file,
     io::{AsyncReadExt, AsyncWriteExt},
-    net::{UnixListener, UnixStream}, fs::remove_file,
+    net::{UnixListener, UnixStream},
 };
 
 use crate::proto::figterm::{figterm_message, FigtermMessage, InsertTextCommand};
@@ -167,6 +168,4 @@ mod tests {
     fn socket_path_test() {
         assert!(get_socket_path().ends_with("fig.socket"))
     }
-
-    
 }

@@ -200,24 +200,22 @@ impl History {
 
         let mut legacy_history_buff = BufWriter::new(legacy_history_file);
 
-        match command_info.command.as_ref().map(|s| s.as_str()) {
+        match command_info.command.as_deref() {
             Some(command) if !command.is_empty() => {
                 let exit_code = command_info.exit_code.unwrap_or(0);
                 let shell = command_info
                     .shell
-                    .as_ref()
-                    .map(|s| s.as_str())
+                    .as_deref()
                     .unwrap_or("");
                 let session_id = command_info
                     .session_id
-                    .as_ref()
-                    .map(|s| s.as_str())
+                    .as_deref()
                     .unwrap_or("");
                 let cwd = command_info
                     .cwd
                     .as_ref()
                     .map(|p| p.to_string_lossy().into_owned())
-                    .unwrap_or("".into());
+                    .unwrap_or_else(|| "".to_string());
                 let time = command_info.time.unwrap_or(0);
 
                 let entry = format!(
