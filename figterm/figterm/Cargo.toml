@@ -3,7 +3,7 @@ name = "figterm"
 version = "4.0.0"
 authors = ["Fig"]
 edition = "2021"
-# description = "A layer between the terminal and shell."
+description = "A layer between the terminal and shell."
 homepage = "https://fig.io"
 repository = "https://github.com/withfig/macos"
 publish = false
@@ -36,7 +36,7 @@ bytes = "1.1.0"
 anyhow = "1.0.52"
 
 # Cmd arg parsing
-clap = { version = "3.0.0", features = ["derive"] }
+clap = { version = "3.0.6", features = ["derive"] }
 
 # Terminal emulator
 alacritty_terminal = { path = "../alacritty_terminal" }

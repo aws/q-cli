@@ -1,4 +1,9 @@
-use std::{borrow::Cow, io::Read, path::PathBuf};
+use std::{
+    borrow::Cow,
+    fs::File,
+    io::{BufWriter, Read, Write},
+    path::PathBuf,
+};
 
 use alacritty_terminal::term::CommandInfo;
 use anyhow::Result;
@@ -54,6 +59,17 @@ fn unescape_string(s: &str) -> Cow<str> {
     })
 }
 
+fn escape_string(s: impl AsRef<str>) -> String {
+    s.as_ref()
+        .replace("\\", "\\\\")
+        .replace("\"", "\\\"")
+        .replace("\n", "\\n")
+        .replace("\t", "\\t")
+        .replace("\r", "\\r")
+        .replace("\x08", "\\b")
+        .replace("\x0c", "\\f")
+}
+
 pub struct History {
     connection: Connection,
 }
@@ -76,7 +92,7 @@ impl History {
         let history = History { connection };
 
         if old_history_path.exists() && !history_exists {
-            let mut file = std::fs::File::open(&old_history_path)?;
+            let mut file = File::open(&old_history_path)?;
             let mut file_string = String::new();
             file.read_to_string(&mut file_string)?;
 
@@ -138,8 +154,12 @@ impl History {
     }
 
     pub fn insert_command_history(&self, command_info: &CommandInfo) -> Result<()> {
-        self.connection.execute(
-            "INSERT INTO history (\
+        // Insert the command into the history table
+        // Ensure that the command is not empty
+        if let Some(command) = &command_info.command {
+            if !command.is_empty() {
+                self.connection.execute(
+                    "INSERT INTO history (\
                         command, \
                         shell, \
                         pid, \
@@ -152,22 +172,70 @@ impl History {
                         exit_code) \
                     VALUES \
                         (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            params![
-                &command_info.command,
-                &command_info.shell,
-                &command_info.pid,
-                &command_info.session_id,
-                &command_info
+                    params![
+                        &command_info.command,
+                        &command_info.shell,
+                        &command_info.pid,
+                        &command_info.session_id,
+                        &command_info
+                            .cwd
+                            .as_ref()
+                            .map(|p| p.to_string_lossy().into_owned()),
+                        &command_info.time,
+                        &command_info.in_ssh,
+                        &command_info.in_docker,
+                        &command_info.hostname,
+                        &command_info.exit_code,
+                    ],
+                )?;
+            }
+        }
+
+        // Legacy insert into old history file
+        let legacy_history_file = File::options().create(true).append(true).open(
+            &[fig_path().unwrap(), "history".into()]
+                .into_iter()
+                .collect::<PathBuf>(),
+        )?;
+
+        let mut legacy_history_buff = BufWriter::new(legacy_history_file);
+
+        match command_info.command.as_ref().map(|s| s.as_str()) {
+            Some(command) if !command.is_empty() => {
+                let exit_code = command_info.exit_code.unwrap_or(0);
+                let shell = command_info
+                    .shell
+                    .as_ref()
+                    .map(|s| s.as_str())
+                    .unwrap_or("");
+                let session_id = command_info
+                    .session_id
+                    .as_ref()
+                    .map(|s| s.as_str())
+                    .unwrap_or("");
+                let cwd = command_info
                     .cwd
                     .as_ref()
-                    .map(|p| p.to_string_lossy().into_owned()),
-                &command_info.time,
-                &command_info.in_ssh,
-                &command_info.in_docker,
-                &command_info.hostname,
-                &command_info.exit_code,
-            ],
-        )?;
+                    .map(|p| p.to_string_lossy().into_owned())
+                    .unwrap_or("".into());
+                let time = command_info.time.unwrap_or(0);
+
+                let entry = format!(
+                        "\n- command: {}\n  exit_code: {}\n  shell: {}\n  session_id: {}\n  cwd: {}\n  time: {}",
+                        escape_string(command),
+                        exit_code,
+                        escape_string(shell),
+                        escape_string(session_id),
+                        escape_string(cwd),
+                        time
+                    );
+
+                legacy_history_buff.write_all(entry.as_bytes())?;
+                legacy_history_buff.flush()?;
+            }
+            _ => {}
+        }
+
         Ok(())
     }
 }

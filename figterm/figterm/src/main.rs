@@ -1,4 +1,4 @@
-mod arg_parser;
+mod cli;
 pub mod history;
 pub mod ipc;
 pub mod logger;
@@ -10,8 +10,9 @@ pub mod utils;
 use std::{env, error::Error, ffi::CString, os::unix::prelude::AsRawFd, process::exit, vec};
 
 use anyhow::{anyhow, Context, Result};
-use arg_parser::ArgParser;
+use cli::Cli;
 use bytes::Bytes;
+use clap::StructOpt;
 use dashmap::DashSet;
 use flume::Sender;
 use log::{debug, error, info, trace, warn};
@@ -454,7 +455,7 @@ fn figterm_main() -> Result<()> {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    ArgParser::new().parse();
+    Cli::parse();
 
     logger::stdio_debug_log(format!("FIG_LOG_LEVEL={}", logger::get_fig_log_level()));
 

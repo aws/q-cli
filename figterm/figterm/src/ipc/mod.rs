@@ -14,7 +14,7 @@ use log::{debug, error};
 use prost::Message;
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
-    net::{UnixListener, UnixStream},
+    net::{UnixListener, UnixStream}, fs::remove_file,
 };
 
 use crate::proto::figterm::{figterm_message, FigtermMessage, InsertTextCommand};
@@ -46,27 +46,25 @@ pub async fn send_hook(connection: &mut UnixStream, hook: local::hook::Hook) -> 
 }
 
 pub async fn create_socket_listen(session_id: impl AsRef<str>) -> Result<UnixListener> {
-    let s = session_id.as_ref().split(':').last().unwrap();
+    let session_id_str = session_id.as_ref().split(':').last().unwrap();
 
-    let path: PathBuf = [
+    let socket_path: PathBuf = [
         Path::new("/tmp"),
-        Path::new(&format!("figterm-{}.socket", s)),
+        Path::new(&format!("figterm-{}.socket", session_id_str)),
     ]
     .into_iter()
     .collect();
 
-    // Remove the socket
-    match tokio::fs::remove_file(&path).await {
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(()),
-        Err(e) => Err(e),
-        _ => Ok(()),
-    }?;
+    // Remove the socket so we can create a new one
+    if socket_path.exists() {
+        remove_file(&socket_path).await?
+    }
 
-    Ok(UnixListener::bind(&path)?)
+    Ok(UnixListener::bind(&socket_path)?)
 }
 
 pub async fn spawn_outgoing_sender() -> Result<Sender<Bytes>> {
-    let (outgoing_tx, outgoing_rx) = bounded::<Bytes>(32);
+    let (outgoing_tx, outgoing_rx) = bounded::<Bytes>(256);
 
     tokio::spawn(async move {
         let socket = get_socket_path();
@@ -83,7 +81,7 @@ pub async fn spawn_outgoing_sender() -> Result<Sender<Bytes>> {
             // Not sure why, but this is a workaround
             #[cfg(target_os = "macos")]
             tokio::time::sleep(Duration::from_millis(2)).await;
-            
+
             match conn {
                 Ok(mut unix_stream) => match unix_stream.write_all(&message).await {
                     Ok(_) => {
@@ -109,7 +107,7 @@ pub async fn spawn_incoming_receiver(
     session_id: impl AsRef<str>,
 ) -> Result<Receiver<FigtermMessage>> {
     let socket_listener = create_socket_listen(session_id).await?;
-    let (incomming_tx, incomming_rx) = bounded(32);
+    let (incomming_tx, incomming_rx) = bounded(256);
     tokio::spawn(async move {
         loop {
             if let Ok((mut stream, _)) = socket_listener.accept().await {
@@ -169,4 +167,6 @@ mod tests {
     fn socket_path_test() {
         assert!(get_socket_path().ends_with("fig.socket"))
     }
+
+    
 }
