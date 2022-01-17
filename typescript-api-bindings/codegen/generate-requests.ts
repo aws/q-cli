@@ -119,7 +119,7 @@ const project = new Project({
 project.addSourceFilesAtPaths(process.env.PWD + '/src/*.ts');
 
 const protobufBindings = project.getSourceFileOrThrow(
-  process.env.PWD + '/src/fig.ts'
+  process.env.PWD + '/src/fig.pb.ts'
 );
 
 const requestTypes = getSubmessageTypes(

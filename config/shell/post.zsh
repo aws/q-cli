@@ -1,3 +1,8 @@
+# Source Mission Control Dotfiles
+if [ -f ~/.fig/user/dotfiles/managed.zsh ]; then
+  source ~/.fig/user/dotfiles/managed.zsh
+fi
+
 FIG_HOSTNAME=$(hostname -f 2> /dev/null || hostname)
 
 if [[ -e /proc/1/cgroup ]] && grep -q docker /proc/1/cgroup; then

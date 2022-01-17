@@ -1,3 +1,8 @@
+# Source Mission Control Dotfiles
+if test -f ~/.fig/user/dotfiles/managed.fish
+  source ~/.fig/user/dotfiles/managed.fish
+end
+
 contains $HOME/.fig/bin $fish_user_paths
 or set -Ua fish_user_paths $HOME/.fig/bin
 

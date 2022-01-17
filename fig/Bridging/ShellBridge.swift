@@ -194,23 +194,19 @@ class ShellBridge {
       keydown?.flags = CGEventFlags.maskCommand
     }
 
-    if maskCommand {
+    if maskControl {
       keydown?.flags = CGEventFlags.maskControl
     }
 
-    let loc = CGEventTapLocation.cghidEventTap
-    keydown?.post(tap: loc)
-    keyup?.post(tap: loc)
+    if let pidSafe = pid {
+      keydown?.postToPid(pidSafe)
+      keyup?.postToPid(pidSafe)
 
-    guard let pidSafe = pid else {
+    } else {
       let loc = CGEventTapLocation.cghidEventTap
       keydown?.post(tap: loc)
       keyup?.post(tap: loc)
-      return
     }
-
-    keydown?.postToPid(pidSafe)
-    keyup?.postToPid(pidSafe)
   }
 }
 

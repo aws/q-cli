@@ -32,6 +32,7 @@
       "gruvbox",
       "nightowl",
       "nord",
+      "panda",
       "poimandres",
       "the-unnamed"
     ],
@@ -42,6 +43,14 @@
     "settingName": "autocomplete.onlyShowOnTab",
     "title": "Show on Tab",
     "description": "If true, Fig will only show autocomplete when Tab is pressed instead of showing it automatically.",
+    "type": "boolean",
+    "default": false,
+    "category": "Autocomplete"
+  },
+  {
+    "settingName": "autocomplete.preferVerboseSuggestions",
+    "title": "Prefer verbose suggestions",
+    "description": "If true, Fig will always try to use the verbose version of the option/subcommand inserted.",
     "type": "boolean",
     "default": false,
     "category": "Autocomplete"

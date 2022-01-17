@@ -577,7 +577,7 @@ func (m model) View() string {
 		daysOfWeek := []string{"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"}
 		counts = []string{}
 		for i := 0; i < 7; i++ {
-			counts = append(counts, strings.Repeat("█", int(float64(m.metrics.DayOfWeek[time.Weekday(i)])/float64(maxCount)*20)))
+			counts = append(counts, strings.Repeat("█", int(math.Abs(float64(m.metrics.DayOfWeek[time.Weekday(i)])/float64(maxCount)*20))))
 		}
 
 		daysOfWeekStr := lipgloss.JoinVertical(lipgloss.Right, daysOfWeek...)
@@ -844,11 +844,21 @@ func NewCmdWrapped() *cobra.Command {
 		Short: "See your #FigWrapped",
 		Long:  "What did you do in the terminal in 2021, find out with #FigWrapped!",
 		Run: func(cmd *cobra.Command, arg []string) {
-			p := tea.NewProgram(initialModel())
-			if err := p.Start(); err != nil {
-				fmt.Printf("Alas, there's been an error: %v", err)
-				os.Exit(1)
+			if lang := os.Getenv("LANG"); lang != "en_US.UTF-8" {
+				os.Setenv("LANG", "en_US.UTF-8")
+				figWrappedCmd := exec.Command("fig", "wrapped")
+				figWrappedCmd.Stdout = os.Stdout
+				figWrappedCmd.Stderr = os.Stderr
+				figWrappedCmd.Stdin = os.Stdin
+				figWrappedCmd.Run()
+			} else {
+				p := tea.NewProgram(initialModel())
+				if err := p.Start(); err != nil {
+					fmt.Printf("Alas, there's been an error: %v", err)
+					os.Exit(1)
+				}
 			}
+
 		},
 	}
 

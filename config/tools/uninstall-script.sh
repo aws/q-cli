@@ -22,6 +22,7 @@ rm ~/Library/Application\ Support/iTerm2/Scripts/AutoLaunch/fig-iterm-integratio
 echo "Remove VSCode integration (if set up)"
 rm -rf ~/.vscode/extensions/withfig.fig-*
 rm -rf ~/.vscode-insiders/extensions/withfig.fig-*
+rm -rf ~/.vscode-oss/extensions/withfig.fig-*
 
 echo "Remove fish integration..."
 rm ~/.config/fish/conf.d/fig.fish
@@ -50,7 +51,7 @@ echo "Removing fish integration"
 FISH_INSTALLATION="contains $HOME/.fig/bin $fish_user_paths; or set -Ua fish_user_paths $HOME/.fig/bin"
 
 sed -i '' -e "s|$FISH_INSTALLATION||g" ~/.config/fish/config.fish
-rm ~/.config/fish/conf.d/fig.fish
+rm ~/.config/fish/conf.d/fig.fish ~/.config/fish/conf.d/00_fig_pre.fish  ~/.config/fish/conf.d/99_fig_post.fish
 
 echo "Removing SSH integration"
 SSH_CONFIG_PATH=~/.ssh/config
@@ -94,15 +95,22 @@ test -f $HYPER_CONFIG && sed -i '' -e 's/"fig-hyper-integration",//g' $HYPER_CON
 test -f $HYPER_CONFIG && sed -i '' -e 's/"fig-hyper-integration"//g' $HYPER_CONFIG
 
 echo "Remove Kitty integration, if it exists"
-KITTY_COMMANDLINE_FILE="${HOME}/.config/kitty/macos-launch-services-cmdline"
-KITTY_COMMANDLINE_ARGS="--watcher ${HOME}/.fig/tools/kitty-integration.py"
+KITTY_CONFIG_PATH="${HOME}/.config/kitty/kitty.conf"
+KITTY_TMP_PATH=$KITTY_CONFIG_PATH'.tmp'
+
+KITTY_START="# Fig Kitty Integration: Enabled"
+KITTY_END="# End of Fig Kitty Integration"
+
+cat $KITTY_CONFIG_PATH | /usr/bin/sed -e '\|'"$KITTY_START"'|,\|'"$KITTY_END"'|d' >$KITTY_TMP_PATH
+mv $KITTY_TMP_PATH $KITTY_CONFIG_PATH
+
+
 test -f "$KITTY_COMMANDLINE_FILE" && [[ $(< "$KITTY_COMMANDLINE_FILE") == "$KITTY_COMMANDLINE_ARGS" ]] && rm -f "$KITTY_COMMANDLINE_FILE";
 
+echo "Remove Launch Agents"
+rm ~/Library/LaunchAgents/io.fig.*
 
-
-#fig bg:event "Uninstall App"
-echo "Finished removing fig resources. You may now delete the Fig app by moving it to the Trash."
-#fig bg:alert "Done removing Fig resources." "You may now delete the Fig app by moving it to the Trash."
+echo "Finished removing fig resources."
 
 rm -rf "${HOME}/Library/Input Methods/FigInputMethod.app"
 rm -rf /Applications/Fig.app
