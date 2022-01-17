@@ -203,14 +203,8 @@ impl History {
         match command_info.command.as_deref() {
             Some(command) if !command.is_empty() => {
                 let exit_code = command_info.exit_code.unwrap_or(0);
-                let shell = command_info
-                    .shell
-                    .as_deref()
-                    .unwrap_or("");
-                let session_id = command_info
-                    .session_id
-                    .as_deref()
-                    .unwrap_or("");
+                let shell = command_info.shell.as_deref().unwrap_or("");
+                let session_id = command_info.session_id.as_deref().unwrap_or("");
                 let cwd = command_info
                     .cwd
                     .as_ref()
