@@ -9,11 +9,9 @@ on:
     - 'figterm/**'
     - 'proto/**'
     branches:
-    - figterm2
-    # TODO: Enable these when merged
-    #- master
-    #- staging
-    #- develop
+    - master
+    - staging
+    - develop
 
 env:
   CARGO_TERM_COLOR: always
