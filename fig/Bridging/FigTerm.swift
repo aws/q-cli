@@ -18,12 +18,15 @@ class FigTerm {
   static func insert(_ text: String, into session: SessionId) throws {
     let socket = UnixSocketClient(path: path(for: session))
     guard socket.connect() else {
-      return // throw
+      let error = String(utf8String: strerror(errno)) ?? "Unknown error code"
+      throw APIError.generic(message: "Could connected to \(path(for: session)). Error \(errno): \(error)")
     }
     ShellInsertionProvider.insertLock()
     socket.send(message: text)
     ShellInsertionProvider.insertUnlock(with: text)
     socket.disconnect()
+
+    Defaults.shared.incrementKeystokesSaved(by: text.count)
   }
 
 }
