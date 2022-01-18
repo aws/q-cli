@@ -84,6 +84,8 @@ extension CommandHandlers {
       response.diagnostics.onlytab = String(Defaults.shared.onlyInsertOnTab)
       response.diagnostics.psudoterminalPath = Diagnostic.pseudoTerminalPath ?? "<generated dynamically>"
       response.diagnostics.autocomplete = Defaults.shared.useAutocomplete
+      response.diagnostics.unixSocketServerExists = Diagnostic.unixSocketServerExists
+      response.diagnostics.currentSession = Diagnostic.sessionForTopmostWindow
     }
     return response
   }
