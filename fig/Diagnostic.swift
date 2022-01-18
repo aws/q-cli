@@ -8,6 +8,7 @@
 
 import Cocoa
 
+// swiftlint:disable type_body_length
 class Diagnostic {
   static var accessibility: Bool {
     return Accessibility.enabled
@@ -21,6 +22,7 @@ class Diagnostic {
     guard SecureKeyboardInput.enabled else { return nil }
 
     if let app = SecureKeyboardInput.responsibleApplication {
+      // swiftlint:disable line_length
       return "\(app.localizedName ?? "") - \(app.bundleIdentifier ?? "") \(SecureKeyboardInput.enabled(by: app.bundleIdentifier) ? "(via Settings)" : "")"
     } else {
       return "no app for pid '\(SecureKeyboardInput.responsibleProcessId ?? -1)'"
@@ -120,7 +122,8 @@ class Diagnostic {
 
     let folderContainsExpectedFiles = Diagnostic.dotfigFolderIsSetupCorrectly
 
-    let shellIntegrationIsManagedByUser = Settings.shared.getValue(forKey: Settings.shellIntegrationIsManagedByUser) as? Bool ?? false
+    let shellIntegrationIsManagedByUser = Settings.shared.getValue(forKey:
+                                                                    Settings.shellIntegrationIsManagedByUser) as? Bool ?? false
 
     if shellIntegrationIsManagedByUser {
       return folderContainsExpectedFiles
@@ -202,6 +205,16 @@ class Diagnostic {
     return "\(window.hash) (\(window.bundleId ?? "???"))"
   }
 
+  static var sessionForTopmostWindow: String {
+    guard Integrations.frontmostApplicationIsValidTerminal(),
+          let window = AXWindowServer.shared.allowlistedWindow
+    else {
+      return "???"
+    }
+
+    return window.session ?? "???"
+  }
+
   static var keybufferHasContextForTopmostWindow: Bool {
     guard Integrations.frontmostApplicationIsValidTerminal() else {
       return false
@@ -219,6 +232,7 @@ class Diagnostic {
   }
 
   static var distribution: String {
+    // swiftlint:disable line_length
     return "Version \(Diagnostic.version) (B\(Diagnostic.build))\(Defaults.shared.isProduction ? "" : " [\(Defaults.shared.build.rawValue)]")"
   }
 
@@ -275,6 +289,13 @@ class Diagnostic {
     }
   }
 
+  static var unixSocketServerExists: Bool {
+    let path = FileManager.default.temporaryDirectory
+                                  .appendingPathComponent("fig.socket").path
+    return FileManager.default.fileExists(atPath: path)
+  }
+
+  // swiftlint:disable line_length
   static var summary: String {
     """
 
@@ -286,7 +307,6 @@ class Diagnostic {
     CLI installed: \(Diagnostic.installedCLI)
     CLI tool path: \(Diagnostic.pathOfCLI ?? "<none>")
     Accessibility: \(Accessibility.enabled)
-    Number of specs: \(Diagnostic.numberOfCompletionSpecs)
     SSH Integration: \(Defaults.shared.SSHIntegrationEnabled)
     Tmux Integration: \(TmuxIntegration.isInstalled)
     iTerm Integration: \(iTermIntegration.default.isInstalled) \(iTermIntegration.default.isConnectedToAPI ? "[Authenticated]": "")
@@ -295,11 +315,13 @@ class Diagnostic {
     Docker Integration: \(DockerEventStream.shared.socket.isConnected)
     Symlinked dotfiles: \(Diagnostic.dotfilesAreSymlinked)
     Only insert on tab: \(Defaults.shared.onlyInsertOnTab)
+    UNIX Socket Exists: \(Diagnostic.unixSocketServerExists)
     Installation Script: \(Diagnostic.installationScriptRan)
     PseudoTerminal Path: \(Diagnostic.pseudoTerminalPath ?? "<generated dynamically>")
     SecureKeyboardInput: \(Diagnostic.secureKeyboardInput)
     SecureKeyboardProcess: \(Diagnostic.blockingProcess ?? "<none>")
     Current active process: \(Diagnostic.processForTopmostWindow) (\(Diagnostic.processIdForTopmostWindow)) - \(Diagnostic.ttyDescriptorForTopmostWindow)
+    Current terminal session: \(Diagnostic.sessionForTopmostWindow)
     Current working directory: \(Diagnostic.workingDirectoryForTopmostWindow)
     Current window identifier: \(Diagnostic.descriptionOfTopmostWindow)
 

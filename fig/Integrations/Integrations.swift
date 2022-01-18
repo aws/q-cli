@@ -118,18 +118,33 @@ class Integrations {
       .subtracting(Integrations.blocked)
   }
 
-  static let providers: [String: TerminalIntegrationProvider] =
-    [
+  fileprivate static func allProviders() -> [String: TerminalIntegrationProvider] {
+
+    let stableIntegrations: [String: TerminalIntegrationProvider] = [
       Integrations.iTerm: iTermIntegration.default,
       Integrations.Hyper: HyperIntegration.default,
       Integrations.VSCode: VSCodeIntegration.default,
       Integrations.VSCodeInsiders: VSCodeIntegration.insiders,
       Integrations.VSCodium: VSCodeIntegration.vscodium,
-      Integrations.Alacritty: AlacrittyIntegration.default,
-      Integrations.Kitty: KittyIntegration.default,
       Integrations.Terminal: AppleTerminalIntegration.default,
       Integrations.Tabby: TabbyIntegration.default
     ]
+
+    let experimentalIntegrations: [String: TerminalIntegrationProvider] = [
+      Integrations.Alacritty: AlacrittyIntegration.default,
+      Integrations.Kitty: KittyIntegration.default
+    ]
+
+    if let enableExperimentalIntegrations = Settings.shared.getValue(forKey:
+                                            Settings.experimentalIntegrations) as? Bool,
+           enableExperimentalIntegrations {
+        return stableIntegrations.merging(experimentalIntegrations) { $1 }
+    }
+
+    return stableIntegrations
+  }
+
+  static let providers: [String: TerminalIntegrationProvider] = allProviders()
 
   static func handleListIntegrationsRequest() -> CommandResponse {
     CommandResponse.with { response in

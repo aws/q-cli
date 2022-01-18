@@ -58,6 +58,7 @@ class Settings {
   static let autocompleteURL = "developer.autocomplete.host"
   static let settingsURL = "developer.settings.host"
   static let missionControlURL = "developer.mission-control.host"
+  static let experimentalIntegrations = "integrations.experimental"
 
   static let keyAliases = [
     "super": "command",
@@ -378,7 +379,7 @@ class Settings {
     let currentLaunchAtLoginPreference = curr[Settings.launchOnStartupKey] as? Bool ?? true
 
     if priorLaunchAtLoginPreference != currentLaunchAtLoginPreference {
-      
+
       if currentLaunchAtLoginPreference {
         LaunchAgent.launchOnStartup.addIfNotPresent()
       } else {
