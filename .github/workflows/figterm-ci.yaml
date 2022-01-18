@@ -1,0 +1,100 @@
+name: Figterm CI
+on:
+  pull_request:
+    paths:
+    - 'figterm/**'
+    - 'proto/**'
+  push:
+    paths:
+    - 'figterm/**'
+    - 'proto/**'
+    branches:
+    - master
+    - staging
+    - develop
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  rust-build-and-test:
+    name: Rust Build and Test
+    runs-on: ${{ matrix.os }}
+
+    defaults:
+      run:
+        working-directory: figterm
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+        
+    - name: Install Rust toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+
+    - name: Cache Dependencies
+      uses: Swatinem/rust-cache@ce325b60658c1b38465c06cc965b79baf32c1e72
+
+    - name: Compile
+      run: cargo test --no-run --locked
+
+    - name: Test
+      run: cargo test --no-default-features -- --nocapture --quiet
+
+  rust-clippy-lint:
+    name: Rust Clippy Lint
+    runs-on: [ ubuntu-latest ]
+
+    defaults:
+      run:
+        working-directory: figterm
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+        
+    - name: Install Rust toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+        components: clippy
+
+    - name: Cache Dependencies
+      uses: Swatinem/rust-cache@ce325b60658c1b38465c06cc965b79baf32c1e72
+
+    - name: Clippy Lint
+      run: cargo clippy --all-targets --all-features -- -D warnings
+  
+  rust-fmt-lint:
+    name: Rust Fmt Lint
+    runs-on: [ ubuntu-latest ]
+
+    defaults:
+      run:
+        working-directory: figterm
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+        
+    - name: Install Rust toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+        components: rustfmt
+    
+    - name: Fmt Lint
+      run: cargo fmt -- --color always --check

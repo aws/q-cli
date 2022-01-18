@@ -42,14 +42,14 @@ export const socketListen = (
     connections,
   };
 
-  server.on('connection', s => {
+  server.on('connection', (s) => {
     connections.push(s);
     s.on('close', () => {
       const index = connections.findIndex((conn) => conn === s);
       if (index !== -1) connections.splice(index, 1);
-    })
-    s.on('data', data => {
-      Object.values(sockets[path]?.callbacks ?? {}).forEach(cb => cb(data));
+    });
+    s.on('data', (data) => {
+      Object.values(sockets[path]?.callbacks ?? {}).forEach((cb) => cb(data));
       s.end();
     });
 
@@ -65,15 +65,18 @@ export const closeSocket = async (path: string) => {
     const { server, connections } = sockets[path];
     delete sockets[path];
 
-    await Promise.all(connections.map((connection) => {
-      return new Promise<void>((resolve) => {
-        connection.end(() => {
-          connection.destroy();
-          resolve();
-        });
-      })
-      // connection.destroy();
-    }));
+    await Promise.all(
+      connections.map(
+        (connection) =>
+          new Promise<void>((resolve) => {
+            connection.end(() => {
+              connection.destroy();
+              resolve();
+            });
+          })
+        // connection.destroy();
+      )
+    );
     await new Promise<void>((resolve) => {
       server.close((err) => {
         if (err) console.log(err);

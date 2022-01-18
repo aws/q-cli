@@ -19,6 +19,7 @@ SWIFT_FLAGS = --swift_opt=Visibility=Public
 # Proto files
 LOCAL = "./local.proto"
 API   = "./fig.proto" "./local.proto"
+FIGTERM = "./figterm.proto"
 
 # Destinations
 ARTIFACTS          = "./bin"
@@ -36,7 +37,7 @@ DESTINATIONS       = $(ARTIFACTS) \
 # Ensure $ARTIFACTS directory exists
 $(shell mkdir -p $(ARTIFACTS))
 
-all: create-destinations api local
+all: create-destinations api local figterm
 
 check-protoc:
 	command -v protoc 2> /dev/null || echo "protoc is not in PATH"
@@ -69,6 +70,9 @@ local-go: check-go
 local-ts: check-ts
 	protoc $(FLAGS) $(TS_FLAGS) --ts_proto_out=$(ARTIFACTS) $(LOCAL)
 
+figterm-swift:
+	protoc $(FLAGS) $(SWIFT_FLAGS) --swift_out=$(ARTIFACTS) $(FIGTERM)
+
 api: api-swift api-ts
 	cp $(ARTIFACTS)/*.pb.ts $(TS_API_BINDINGS)
 	cp $(ARTIFACTS)/*.pb.swift $(SWIFT_API_BINDINGS)
@@ -77,6 +81,9 @@ api: api-swift api-ts
 local: local-go local-ts
 	cp $(ARTIFACTS)/local.pb.ts $(DOTENV)
 	cp $(ARTIFACTS)/local.pb.go $(GO_CLI)
+
+figterm: figterm-swift
+	cp $(ARTIFACTS)/*.pb.swift $(SWIFT_API_BINDINGS)
 
 clean: 
 	# Remove compiled protos from all destinations, including $ARTIFACTS
