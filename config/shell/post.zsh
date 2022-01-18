@@ -1,3 +1,8 @@
+# Source Mission Control Dotfiles
+if [ -f ~/.fig/user/dotfiles/managed.zsh ]; then
+  source ~/.fig/user/dotfiles/managed.zsh
+fi
+
 FIG_HOSTNAME=$(hostname -f 2> /dev/null || hostname)
 
 if [[ -e /proc/1/cgroup ]] && grep -q docker /proc/1/cgroup; then
@@ -54,6 +59,7 @@ fig_precmd() {
   fig_osc "ExitCode=%s" "${LAST_STATUS}"
   fig_osc "TTY=%s" "${TTY}"
   fig_osc "Log=%s" "${FIG_LOG_LEVEL}"
+  fig_osc "ZshAutosuggestionColor=%s" "${ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE}"
 
   if [[ -n "${SSH_TTY}" ]]; then
     fig_osc "SSH=1"
@@ -119,12 +125,10 @@ fig_precmd() {
     PS4="%{$START_PROMPT%}$PS4%{$END_PROMPT%}"
   fi
 
-  # The af-magic theme adds a final % to expand. We need to paste without the %
-  # to avoid doubling up and mangling the prompt.
+  # Previously, the af-magic theme added a final % to expand. We need to paste without the %
+  # to avoid doubling up and mangling the prompt. I've removed this workaround for now.
   if [[ -v RPROMPT ]]; then
     RPROMPT="%{$START_PROMPT%}$RPROMPT%{$END_PROMPT%}"
-  elif [[ "$ZSH_THEME" == "af-magic" ]]; then
-    RPS1="%{$START_PROMPT%}$RPS1{$END_PROMPT%}"
   else
     RPS1="%{$START_PROMPT%}$RPS1%{$END_PROMPT%}"
   fi
@@ -136,11 +140,6 @@ fig_precmd() {
   fi
   
   FIG_HAS_SET_PROMPT=1
-
-  # Temporary workaround for bug where istrip is activated when running brew install.
-  # When istrip is turned on, input characters are strippped to seven bits.
-  # This causes zle insertion to stop due to our reliance on `fig_insert` being bound to a unicode character
-  [[ -t 1 ]] && command stty -istrip
 }
 
 fig_reset_hooks() {

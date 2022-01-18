@@ -1,4 +1,4 @@
-import { TelemetryProperty } from './fig';
+import { TelemetryProperty } from './fig.pb';
 import {
   sendTelemetryAliasRequest,
   sendTelemetryIdentifyRequest,

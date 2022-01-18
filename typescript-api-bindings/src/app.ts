@@ -1,5 +1,5 @@
 import { sendUpdateApplicationPropertiesRequest } from './requests';
-import { Action } from './fig';
+import { Action } from './fig.pb';
 
 export function registerActions(actions: Array<Action>) {
   return sendUpdateApplicationPropertiesRequest({ actionList: { actions } });

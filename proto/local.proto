@@ -32,6 +32,8 @@ message Command {
 		ResetCacheCommand reset_cache = 112;
 		DebugModeCommand debug_mode = 113;
 		PromptAccessibilityCommand prompt_accessibility = 114;
+		InputMethodCommand input_method = 115;
+
 	}
 }
 
@@ -96,6 +98,7 @@ message BuildCommand {
 enum UiElement {
 	MENU_BAR = 0;
 	SETTINGS = 1;
+	MISSION_CONTROL = 2;
 }
 
 message OpenUiElementCommand {
@@ -107,6 +110,22 @@ message ResetCacheCommand {}
 message DebugModeCommand {
 	optional bool set_debug_mode = 1; // Set debug mode to true or false
 	optional bool toggle_debug_mode = 2; // Toggle debug mode
+}
+
+// Note: enum values must be unique
+enum InputMethodAction {
+	INSTALL_INPUT_METHOD = 0;
+	UNINSTALL_INPUT_METHOD = 1;
+	ENABLE_INPUT_METHOD = 2;
+	DISABLE_INPUT_METHOD = 3;
+	SELECT_INPUT_METHOD = 4;
+	DESELECT_INPUT_METHOD = 5;
+	REGISTER_INPUT_METHOD = 6;
+	STATUS_OF_INPUT_METHOD = 7;
+}
+
+message InputMethodCommand {
+	optional InputMethodAction actions = 1;
 }
 
 message PromptAccessibilityCommand {}
@@ -230,6 +249,8 @@ message DiagnosticsResponse {
 	string current_process = 17;
 	string current_window_identifier = 18;
 	bool autocomplete = 19;
+	bool unix_socket_server_exists = 20;
+	string current_session = 21;
 }
 
 message CommandResponse {

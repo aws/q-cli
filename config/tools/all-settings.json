@@ -22,6 +22,7 @@
     "description": "Change Fig's theme",
     "type": "single_select",
     "options": [
+      "system",
       "dark",
       "light",
       "cobalt",
@@ -31,16 +32,25 @@
       "gruvbox",
       "nightowl",
       "nord",
+      "panda",
       "poimandres",
       "the-unnamed"
     ],
-    "default": "dark",
+    "default": "system",
     "category": "Appearance"
   },
   {
     "settingName": "autocomplete.onlyShowOnTab",
     "title": "Show on Tab",
     "description": "If true, Fig will only show autocomplete when Tab is pressed instead of showing it automatically.",
+    "type": "boolean",
+    "default": false,
+    "category": "Autocomplete"
+  },
+  {
+    "settingName": "autocomplete.preferVerboseSuggestions",
+    "title": "Prefer verbose suggestions",
+    "description": "If true, Fig will always try to use the verbose version of the option/subcommand inserted.",
     "type": "boolean",
     "default": false,
     "category": "Autocomplete"
@@ -324,5 +334,13 @@
     "type": "boolean",
     "default": false,
     "commonlyUsed": true
+  },
+    {
+    "settingName": "integrations.experimental",
+    "title": "Enable experimental terminal integrations",
+    "description": "Enable new terminal integrations, like Kitty and Alacritty. Requires restart to take effect.",
+    "type": "boolean",
+    "category": "Integrations",
+    "default": false
   }
 ]

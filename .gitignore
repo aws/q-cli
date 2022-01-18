@@ -17,4 +17,6 @@ node_modules/
 yarn-error.log
 
 dotenv/docker-compose.yaml
-dotenv/src/local.ts
+
+# Ignore all compiled protobuf artifacts
+**/*.pb.*

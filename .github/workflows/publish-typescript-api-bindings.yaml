@@ -8,12 +8,29 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     ## We only want to publish a package if it is on develop branch
     if: github.ref == 'refs/heads/develop'
     steps:
       - name: "Checkout Project"
         uses: actions/checkout@v2
+
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '1.17'
+
+      - name: Install Protobuf tooling
+        run:  |
+          brew install protobuf swift-protobuf
+          npm install -g ts-proto
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: 1
+
+      - name: Generate Protobuf Artifacts
+        run: make
+        working-directory: ./proto
+          
       - name: Navigate to typescript-api-bindings
         run: cd typescript-api-bindings
       - name: "Install package.json dependencies"

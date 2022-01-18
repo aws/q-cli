@@ -2,7 +2,7 @@
 	"name": "fig",
 	"displayName": "Fig",
 	"description": "Companion extension for Fig to help integrate with VS Code",
-	"version": "0.0.5",
+	"version": "0.0.6",
 	"icon": "images/icon.png",
 	"engines": {
 		"vscode": "^1.51.0"

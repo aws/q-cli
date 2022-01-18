@@ -237,7 +237,9 @@
             document.querySelector("#enable").innerText = "Waiting..."
             sendMessage({ onboardingRequest: { action: "PROMPT_FOR_ACCESSIBILITY_PERMISSION" } }, (response) => {
               console.log(response)
-              window.location.href = './debugger.html'
+              sendMessage({ windowFocusRequest: { type: "TAKE_FOCUS" } }, (response) => {
+                window.location.href = './debugger.html'
+              })
             })
             
             setTimeout(() => {

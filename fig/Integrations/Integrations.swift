@@ -18,31 +18,32 @@ class Integrations {
   static let VSCodium = "com.visualstudio.code.oss"
   static let Kitty = "net.kovidgoyal.kitty"
   static let Alacritty = "io.alacritty"
+  static let Tabby = "org.tabby"
 
   static let terminals: Set = [
     "com.googlecode.iterm2",
     "com.apple.Terminal",
     "io.alacritty",
     "co.zeit.hyper",
-    "net.kovidgoyal.kitty",
+    "net.kovidgoyal.kitty"
   ]
   static let browsers: Set = ["com.google.Chrome"]
   static let editors: Set = [
     "com.apple.dt.Xcode",
     "com.sublimetext.3",
-    "com.microsoft.VSCode",
+    "com.microsoft.VSCode"
   ]
   static let nativeTerminals: Set = [
     "com.googlecode.iterm2",
-    "com.apple.Terminal",
+    "com.apple.Terminal"
   ]
   static let searchBarApps: Set = [
     "com.apple.Spotlight",
     "com.runningwithcrayons.Alfred",
-    "com.raycast.macos",
+    "com.raycast.macos"
   ]
 
-  static let inputMethodDependentTerminals = [Alacritty]
+  static let inputMethodDependentTerminals = [Alacritty, Kitty]
   static let electronIDEs: Set = [VSCode, VSCodeInsiders, VSCodium]
   static var electronTerminals: Set<String> {
     let additions = Set(
@@ -51,7 +52,7 @@ class Integrations {
     return
       additions
       .union(Integrations.electronIDEs)
-      .union([Integrations.Hyper])
+      .union([Integrations.Hyper, Integrations.Tabby])
   }
 
   static var terminalsWhereAutocompleteShouldAppear: Set<String> {
@@ -62,30 +63,34 @@ class Integrations {
       .subtracting(Integrations.autocompleteBlocklist)
   }
 
+  static func bundleIsValidTerminal(_ bundle: String?) -> Bool {
+    return Integrations.terminalsWhereAutocompleteShouldAppear.contains(bundle ?? "")
+  }
+
+  static func frontmostApplicationIsValidTerminal() -> Bool {
+    return bundleIsValidTerminal(NSWorkspace.shared.frontmostApplication?.bundleIdentifier)
+  }
+
   static var autocompleteBlocklist: Set<String> {
     var blocklist: Set<String> = []
     if let hyperDisabled = Settings.shared.getValue(forKey: Settings.hyperDisabledKey) as? Bool,
-      hyperDisabled
-    {
+       hyperDisabled {
       blocklist.insert(Integrations.Hyper)
     }
 
     if let vscodeDisabled = Settings.shared.getValue(forKey: Settings.vscodeDisabledKey) as? Bool,
-      vscodeDisabled
-    {
+       vscodeDisabled {
       blocklist.insert(Integrations.VSCode)
       blocklist.insert(Integrations.VSCodeInsiders)
     }
 
     if let itermDisabled = Settings.shared.getValue(forKey: Settings.iTermDisabledKey) as? Bool,
-      itermDisabled
-    {
+       itermDisabled {
       blocklist.insert(Integrations.iTerm)
     }
 
     if let terminalDisabled = Settings.shared.getValue(forKey: Settings.terminalDisabledKey)
-      as? Bool, terminalDisabled
-    {
+        as? Bool, terminalDisabled {
       blocklist.insert(Integrations.Terminal)
     }
     return blocklist
@@ -107,24 +112,40 @@ class Integrations {
     }
   }
 
-  static var whitelist: Set<String> {
+  static var allowlist: Set<String> {
     return Integrations.terminals
       .union(Integrations.allowed)
       .subtracting(Integrations.blocked)
   }
 
-  static let providers: [String: TerminalIntegrationProvider] =
-    [
+  fileprivate static func allProviders() -> [String: TerminalIntegrationProvider] {
+
+    let stableIntegrations: [String: TerminalIntegrationProvider] = [
       Integrations.iTerm: iTermIntegration.default,
       Integrations.Hyper: HyperIntegration.default,
       Integrations.VSCode: VSCodeIntegration.default,
       Integrations.VSCodeInsiders: VSCodeIntegration.insiders,
       Integrations.VSCodium: VSCodeIntegration.vscodium,
-      // Integrations.Alacritty: AlacrittyIntegration.default,
-      // Integrations.Kitty : KittyIntegration.default,
       Integrations.Terminal: AppleTerminalIntegration.default,
+      Integrations.Tabby: TabbyIntegration.default
     ]
-  
+
+    let experimentalIntegrations: [String: TerminalIntegrationProvider] = [
+      Integrations.Alacritty: AlacrittyIntegration.default,
+      Integrations.Kitty: KittyIntegration.default
+    ]
+
+    if let enableExperimentalIntegrations = Settings.shared.getValue(forKey:
+                                            Settings.experimentalIntegrations) as? Bool,
+           enableExperimentalIntegrations {
+        return stableIntegrations.merging(experimentalIntegrations) { $1 }
+    }
+
+    return stableIntegrations
+  }
+
+  static let providers: [String: TerminalIntegrationProvider] = allProviders()
+
   static func handleListIntegrationsRequest() -> CommandResponse {
     CommandResponse.with { response in
       response.integrationList = Local_TerminalIntegrationsListResponse.with({ list in
