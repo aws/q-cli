@@ -341,6 +341,6 @@
     "description": "Enable new terminal integrations, like Kitty and Alacritty. Requires restart to take effect.",
     "type": "boolean",
     "category": "Integrations",
-    "default": false,
+    "default": false
   }
 ]
