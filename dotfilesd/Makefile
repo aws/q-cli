@@ -32,7 +32,7 @@ build-darwin-aarch64:
 	cp $(ROOT)/target/aarch64-apple-darwin/release/$(BINARY_NAME) $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-darwin-aarch64
 
 build-darwin-universal: build-darwin-x86_64 build-darwin-aarch64
-	lipo -create -output $(BUILT_PRODUCTS_DIR)/dotfilesd-darwin-universal $(BUILT_PRODUCTS_DIR)/dotfilesd-darwin-x86_64 $(BUILT_PRODUCTS_DIR)/dotfilesd-darwin-aarch64
+	lipo -create -output $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-darwin-universal $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-darwin-x86_64 $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-darwin-aarch64
 endif
 
 ifeq "$(PLATFORM)" "linux"

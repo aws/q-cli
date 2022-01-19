@@ -147,17 +147,7 @@ impl Cli {
             // Root command
             None => {
                 // Open the default browser to the homepage
-                const URL: &str = "https://dotfiles.com/";
-                #[cfg(target_os = "macos")]
-                Command::new("open").arg(URL).output().unwrap();
-                #[cfg(target_os = "linux")]
-                Command::new("xdg-open").arg(URL).output().unwrap();
-                #[cfg(target_os = "windows")]
-                Command::new("start").arg(URL).output().unwrap();
-                #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
-                Command::new("xdg-open").arg(URL).output().unwrap();
-
-                Ok(())
+                open_url("https://dotfiles.com/")
             }
         };
 
@@ -506,29 +496,7 @@ fn login() -> Result<()> {
     let token = "abcd1234";
     let url = format!("https://dotfiles.com/login?token={}", token);
 
-    #[cfg(target_os = "macos")]
-    {
-        Command::new("open")
-            .arg(&url)
-            .output()
-            .with_context(|| "Could not open url")?;
-
-        return Ok(());
-    }
-
-    #[cfg(target_os = "linux")]
-    {
-        Command::new("xdg-open")
-            .arg(&url)
-            .output()
-            .with_context(|| "Could not open url")?;
-    }
-
-    #[cfg(target_os = "windows")]
-    todo!();
-
-    #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
-    unimplemented!();
+    open_url(&url)?;
 
     println!("Click or copy the following URL to login:");
     println!("{}", url.underlined());
@@ -587,6 +555,42 @@ fn doctor() -> Result<()> {
     println!("dotfilesd appears to be installed correctly");
     println!("If you have any issues, please report them at");
     println!("hello@fig.io or https://github.com/withfig/fig");
+    println!();
+
+    Ok(())
+}
+
+fn open_url(url: impl AsRef<str>) -> Result<()> {
+    #[cfg(target_os = "macos")]
+    {
+        Command::new("open")
+            .arg(url.as_ref())
+            .output()
+            .with_context(|| "Could not open url")?;
+
+        return Ok(());
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        Command::new("xdg-open")
+            .arg(url.as_ref())
+            .output()
+            .with_context(|| "Could not open url")?;
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        Command::new("cmd")
+            .arg("/c")
+            .arg("start")
+            .arg(url.as_ref())
+            .output()
+            .with_context(|| "Could not open url")?;
+    }
+
+    #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
+    unimplemented!();
 
     Ok(())
 }
