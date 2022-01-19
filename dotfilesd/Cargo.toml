@@ -15,3 +15,4 @@ serde = { version = "1.0.133", features = ["derive"] }
 toml = "0.5.8"
 regex = "1.5.4"
 crossterm = "0.22.1"
+nix = "0.23.1"

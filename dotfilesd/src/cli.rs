@@ -1,3 +1,4 @@
+use std::env;
 use std::fmt::Display;
 use std::fs::File;
 use std::io::{stdout, Read, Write};
@@ -9,7 +10,33 @@ use anyhow::{Context, Result};
 use clap::{ArgEnum, Parser, Subcommand};
 use crossterm::style::Stylize;
 use dirs::home_dir;
+use nix::unistd::geteuid;
 use regex::Regex;
+
+/// Ensure the command is being run with root privileges.
+/// If not, rexecute the command with sudo.
+fn permission_guard() -> Result<()> {
+    // Hack to persist the ZDOTDIR environment variable to the new process.
+    if let Some(val) = env::var_os("ZDOTDIR") {
+        if env::var_os("FIG_ZDOTDIR").is_none() {
+            env::set_var("FIG_ZDOTDIR", val);
+        }
+    }
+
+    match geteuid().is_root() {
+        true => Ok(()),
+        false => {
+            let mut child = Command::new("sudo")
+                .arg("-E")
+                .args(env::args_os())
+                .spawn()?;
+
+            let status = child.wait()?;
+
+            exit(status.code().unwrap_or(1));
+        }
+    }
+}
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, ArgEnum)]
 pub enum Shells {
@@ -32,11 +59,26 @@ impl Shells {
     pub fn get_config_path(&self) -> Result<PathBuf> {
         let home_dir = home_dir().context("Could not get home directory")?;
 
-        Ok(match self {
+        let path = match self {
             Shells::Bash => home_dir.join(".bashrc"),
-            Shells::Zsh => home_dir.join(".zshrc"),
+            Shells::Zsh => match env::var("ZDOTDIR")
+                .or_else(|_| env::var("FIG_ZDOTDIR"))
+                .map(PathBuf::from)
+            {
+                Ok(zdotdir) => {
+                    let zdot_path = zdotdir.join(".zshrc");
+                    if zdot_path.exists() {
+                        zdot_path
+                    } else {
+                        home_dir.join(".zshrc")
+                    }
+                }
+                Err(_) => home_dir.join(".zshrc"),
+            },
             Shells::Fish => home_dir.join(".config/fish/config.fish"),
-        })
+        };
+
+        Ok(path)
     }
 }
 
@@ -106,7 +148,14 @@ impl Cli {
             None => {
                 // Open the default browser to the homepage
                 const URL: &str = "https://dotfiles.com/";
+                #[cfg(target_os = "macos")]
                 Command::new("open").arg(URL).output().unwrap();
+                #[cfg(target_os = "linux")]
+                Command::new("xdg-open").arg(URL).output().unwrap();
+                #[cfg(target_os = "windows")]
+                Command::new("start").arg(URL).output().unwrap();
+                #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
+                Command::new("xdg-open").arg(URL).output().unwrap();
 
                 Ok(())
             }
@@ -120,6 +169,8 @@ impl Cli {
 }
 
 fn install() -> Result<()> {
+    permission_guard()?;
+
     // Install daemons
     #[cfg(target_os = "macos")]
     install_daemon_macos().context("Could not install macOS daemon")?;
@@ -192,13 +243,14 @@ fn install_daemon_macos() -> Result<()> {
 #[cfg(target_os = "linux")]
 fn install_daemon_linux() -> Result<()> {
     // Put the daemon service in /usr/lib/systemd/system
-    let service = include_str!("daemon_files/dotfilesd-daemon.service");
-    let service_path = "/usr/lib/systemd/system/dotfilesd-daemon.service";
+    let service = include_str!("daemon_files/dotfiles-daemon.service");
+    let service_path = "/usr/lib/systemd/system/dotfiles-daemon.service";
     std::fs::write(service_path, service)
         .with_context(|| format!("Could not write to {}", service_path))?;
 
     // Enable the daemon using systemctl
     Command::new("systemctl")
+        .arg("--now")
         .arg("enable")
         .arg(service_path)
         .output()
@@ -311,6 +363,8 @@ fn uninstall_dotfiles() -> Result<()> {
 
 /// Uninstall dotfiles
 fn uninstall() -> Result<()> {
+    permission_guard()?;
+
     // Uninstall daemons
     #[cfg(target_os = "macos")]
     uninstall_daemon_macos()?;
@@ -408,6 +462,8 @@ fn uninstall_daemon_linux() -> Result<()> {
         std::fs::remove_file(service_path)
             .with_context(|| format!("Could not delete {}", service_path.display()))?;
     }
+
+    Ok(())
 }
 
 /// Self-update the dotfiles binary
