@@ -1702,6 +1702,11 @@ extension AppDelegate: NSMenuDelegate {
 
     }
 
+    if let (color, layout) = Diagnostic.debuggerStatusFromWeb {
+      let items = stringArrayToMenu(items: layout)
+      return (color, items)
+    }
+
     let path = Diagnostic.pseudoTerminalPathAppearsValid
 
     let items = stringArrayToMenu(items: [

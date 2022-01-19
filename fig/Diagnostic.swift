@@ -7,6 +7,7 @@
 //
 
 import Cocoa
+import FigAPIBindings
 
 // swiftlint:disable type_body_length
 class Diagnostic {
@@ -294,6 +295,23 @@ class Diagnostic {
                                   .appendingPathComponent("fig.socket").path
     return FileManager.default.fileExists(atPath: path)
   }
+
+  static func setDebuggerStatus(_ request: Fig_DebuggerUpdateRequest) throws -> Bool {
+    var color = NSColor.clear
+    if request.hasColor, let hex = NSColor(hex: request.color) {
+      color = hex
+    }
+
+    if request.layout.count == 0 {
+      debuggerStatusFromWeb = nil
+    } else {
+      debuggerStatusFromWeb = (color, request.layout)
+    }
+
+    return true
+  }
+
+  static var debuggerStatusFromWeb: (NSColor, [String])?
 
   // swiftlint:disable line_length
   static var summary: String {

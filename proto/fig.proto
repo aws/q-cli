@@ -31,6 +31,7 @@ message ClientOriginatedMessage {
       UpdateConfigPropertyRequest update_config_property_request = 122;
       PseudoterminalRestartRequest pseudoterminal_restart_request = 123;
       TerminalSessionInfoRequest terminal_session_info_request = 124;
+      DebuggerUpdateRequest debugger_update_request = 125;
 
   }
 }
@@ -370,6 +371,13 @@ message TerminalSessionInfoResponse {
   optional local.ShellContext context = 1;
   optional string buffer = 2;
   optional int64 cursor = 3;
+}
+
+/// Debugger
+
+message DebuggerUpdateRequest {
+  optional string color = 1;
+  repeated string layout = 2;
 }
 
 
