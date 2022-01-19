@@ -1653,9 +1653,21 @@ extension AppDelegate: NSMenuDelegate {
       return (color, legendItems)
     }
 
+    guard Diagnostic.unixSocketServerExists else {
+
+      return (NSColor.red, [
+        NSMenuItem(title: "Unix socket does not exist", action: nil, keyEquivalent: ""),
+        NSMenuItem.separator(),
+        NSMenuItem(title: "This prevents Fig from", action: nil, keyEquivalent: ""),
+        NSMenuItem(title: "recieving data from the shell.", action: nil, keyEquivalent: ""),
+        NSMenuItem.separator(),
+        NSMenuItem(title: "Restart Fig", action: #selector(restart), keyEquivalent: "")
+      ])
+    }
+
     guard let shellContext = windowSafe.associatedShellContext else {
       let items = stringArrayToMenu(items: [
-        "Not linked to TTY session.",
+        "Not linked to terminal session.",
         "---",
         "window: \(windowSafe.hash)"
       ])
@@ -1672,17 +1684,38 @@ extension AppDelegate: NSMenuDelegate {
       return (NSColor.cyan, items)
     }
 
+    var figtermSocketExists: Bool = false
+
+    if let session = window?.session {
+      let path = FigTerm.path(for: session)
+      figtermSocketExists = FileManager.default.fileExists(atPath: path)
+
+      guard figtermSocketExists else {
+        let items = stringArrayToMenu(items: [
+          "Inserting text into the terminal will fail.",
+          "---",
+          "figterm socket does not exist for session:",
+          "\(session)"
+        ])
+        return (NSColor.yellow, items)
+      }
+
+    }
+
     let path = Diagnostic.pseudoTerminalPathAppearsValid
 
     let items = stringArrayToMenu(items: [
-      "Everything should be working.",
+      "Everything seems to be working.",
       "---",
       "window: \(windowSafe.hash.truncate(length: 15, trailing: "..."))",
       "tty: \(shellContext.ttyDescriptor)",
       "cwd: \(shellContext.workingDirectory)",
       "pid: \(shellContext.processId)",
       "keybuffer: \(windowSafe.associatedEditBuffer?.representation ?? "???")",
-      "path: \( path != nil ? (path! ? "☑" : "☒ ") : "<generated dynamically>")"
+      "path: \( path != nil ? (path! ? "☑" : "☒ ") : "<generated dynamically>")",
+      "---",
+      "Run `fig doctor` to perform",
+      "additional debugging checks."
     ])
     return (NSColor.green, items)
   }

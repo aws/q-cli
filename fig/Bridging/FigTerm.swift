@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import FigAPIBindings
 
 class FigTerm {
   static let defaultPath = URL(fileURLWithPath: "/tmp/figterm-input.socket")
@@ -15,15 +16,28 @@ class FigTerm {
     // We aren't using NSTemporaryDirectory because length of socket path is capped at 104 characters
     return "/tmp/figterm-\(sessionId).socket"
   }
+  
   static func insert(_ text: String, into session: SessionId) throws {
     let socket = UnixSocketClient(path: path(for: session))
     guard socket.connect() else {
-      return // throw
+      let error = String(utf8String: strerror(errno)) ?? "Unknown error code"
+      throw APIError.generic(message: "Could connected to \(path(for: session)). Error \(errno): \(error)")
     }
+    
     ShellInsertionProvider.insertLock()
-    socket.send(message: text)
+    
+    let proto_msg = Figterm_FigtermMessage.with { msg in
+      msg.command = Figterm_FigtermMessage.OneOf_Command.insertTextCommand(Figterm_InsertTextCommand.with({ insert_message in
+        insert_message.text = text;
+      }))
+    };
+    
+    socket.send(data: try proto_msg.serializedData())
+    
     ShellInsertionProvider.insertUnlock(with: text)
     socket.disconnect()
+
+    Defaults.shared.incrementKeystokesSaved(by: text.count)
   }
 
 }
