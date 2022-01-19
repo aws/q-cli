@@ -3,12 +3,12 @@
 <plist version="1.0">
     <dict>
         <key>Label</key>
-        <string>com.dotfiles.Daemon</string>
+        <string>io.fig.dotfiles-daemon</string>
         <key>Program</key>
-        <string>/usr/local/bin/dotfiles</string>
+        <string>/usr/local/bin/dotfilesd</string>
         <key>ProgramArguments</key>
         <array>
-            <string>dotfiles</string>
+            <string>/usr/local/bin/dotfilesd</string>
             <string>daemon</string>
         </array>
         <key>KeepAlive</key>

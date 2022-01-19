@@ -94,8 +94,8 @@ else
 fi
 
 
-if command -v dotfiles &> /dev/null; then
-    sudo dotfiles install
+if command -v dotfilesd &> /dev/null; then
+    sudo dotfilesd install
 
     if [ $? -ne 0 ]; then
         echo "Failed to install dotfiles"
@@ -105,6 +105,6 @@ if command -v dotfiles &> /dev/null; then
     echo "Successfully installed dotfiles"
     echo "Run 'dotfiles' to start using dotfiles"
 else
-    echo "Failed to install dotfiles."
+    echo "Failed to install dotfiles. Command 'dotfiles' not found"
     exit 1
 fi

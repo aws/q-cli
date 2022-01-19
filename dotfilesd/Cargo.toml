@@ -1,9 +1,16 @@
 [package]
-name = "dotfiles"
+name = "dotfilesd"
 version = "0.1.0"
+description = "A manager for dotfiles"
 edition = "2021"
 
 [dependencies]
 clap = { version = "3.0.8", features = ["derive"] }
 anyhow = "1.0.52"
 dirs = "4.0.0"
+self_update = "0.28.0"
+tokio = { version = "1.15.0", features = ["full"] }
+reqwest = "0.11.9"
+serde = { version = "1.0.133", features = ["derive"] }
+toml = "0.5.8"
+regex = "1.5.4"

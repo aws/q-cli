@@ -1,7 +1,9 @@
 use clap::StructOpt;
 
 mod cli;
+pub mod config;
 
-fn main() {
-    cli::Cli::parse().execute();
+#[tokio::main]
+async fn main() {
+    cli::Cli::parse().execute().await;
 }
