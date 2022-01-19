@@ -1,6 +1,10 @@
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use std::{fs::File, path::PathBuf, io::{Read, Write}};
+use std::{
+    fs::File,
+    io::{Read, Write},
+    path::PathBuf,
+};
 
 /// Get the path to the config folder
 fn get_config_folder() -> Result<PathBuf> {

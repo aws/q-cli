@@ -1,3 +1,4 @@
+use std::fmt::Display;
 use std::fs::File;
 use std::io::{stdout, Read, Write};
 use std::path::{Path, PathBuf};
@@ -6,6 +7,7 @@ use std::time::Duration;
 
 use anyhow::{Context, Result};
 use clap::{ArgEnum, Parser, Subcommand};
+use crossterm::style::Stylize;
 use dirs::home_dir;
 use regex::Regex;
 
@@ -14,6 +16,16 @@ pub enum Shells {
     Bash,
     Zsh,
     Fish,
+}
+
+impl Display for Shells {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Shells::Bash => write!(f, "bash"),
+            Shells::Zsh => write!(f, "zsh"),
+            Shells::Fish => write!(f, "fish"),
+        }
+    }
 }
 
 impl Shells {
@@ -61,6 +73,8 @@ pub enum CliRootCommands {
     Sync,
     /// Login to dotfiles
     Login,
+    /// Doctor
+    Doctor,
 }
 
 #[derive(Debug, Parser)]
@@ -80,11 +94,13 @@ impl Cli {
                 CliRootCommands::Daemon => daemon().await,
                 CliRootCommands::Shell { shell, when } => {
                     println!("# {:?} for {:?}", when, shell);
+                    println!("echo 'hello from the dotfiles {:?}'", when);
 
                     Ok(())
                 }
                 CliRootCommands::Sync => sync().await,
                 CliRootCommands::Login => login(),
+                CliRootCommands::Doctor => doctor(),
             },
             // Root command
             None => {
@@ -431,9 +447,92 @@ async fn sync() -> Result<()> {
 
 /// Login to the dotfiles server
 fn login() -> Result<()> {
-    println!("Click the link below to login to the dotfiles server");
-    println!("https://dotfiles.com/");
+    let token = "abcd1234";
+    let url = format!("https://dotfiles.com/login?token={}", token);
+
+    #[cfg(target_os = "macos")]
+    {
+        Command::new("open")
+            .arg(&url)
+            .output()
+            .with_context(|| "Could not open url")?;
+
+        return Ok(());
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        Command::new("xdg-open")
+            .arg(&url)
+            .output()
+            .with_context(|| "Could not open url")?;
+    }
+
+    #[cfg(target_os = "windows")]
     todo!();
+
+    #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
+    unimplemented!();
+
+    println!("Click or copy the following URL to login:");
+    println!("{}", url.underlined());
+    todo!();
+}
+
+// Doctor
+fn doctor() -> Result<()> {
+    println!("Checking dotfiles...");
+    println!();
+
+    for shell in [Shells::Bash, Shells::Zsh, Shells::Fish] {
+        println!("Checking {:?}...", shell);
+
+        if let Ok(config_path) = shell.get_config_path() {
+            if config_path.exists() {
+                println!("✅ {} dotfiles exist at {}", shell, config_path.display());
+
+                let mut config_file = File::open(config_path)?;
+                let mut config_contents = String::new();
+                config_file.read_to_string(&mut config_contents)?;
+
+                let pre_eval_regex = match shell {
+                    Shells::Bash => Regex::new(r#"eval "\$\(dotfilesd shell bash pre\)""#),
+                    Shells::Zsh => Regex::new(r#"eval "\$\(dotfilesd shell zsh pre\)""#),
+                    Shells::Fish => Regex::new(r#"eval \(dotfilesd shell fish pre\)"#),
+                }
+                .unwrap();
+
+                if pre_eval_regex.is_match(&config_contents) {
+                    println!("✅ `dotfiles shell {} pre` exists", shell);
+                } else {
+                    println!("❌ `dotfiles shell {} pre` does not exist", shell);
+                }
+
+                let post_eval_regex = match shell {
+                    Shells::Bash => Regex::new(r#"eval "\$\(dotfilesd shell bash post\)""#),
+                    Shells::Zsh => Regex::new(r#"eval "\$\(dotfilesd shell zsh post\)""#),
+                    Shells::Fish => Regex::new(r#"eval \(dotfilesd shell fish post\)"#),
+                }
+                .unwrap();
+
+                if post_eval_regex.is_match(&config_contents) {
+                    println!("✅ `dotfiles shell {} post` exists", shell);
+                } else {
+                    println!("❌ `dotfiles shell {} post` does not exist", shell);
+                }
+            } else {
+                println!("{} does not exist", config_path.display());
+            }
+        }
+        println!();
+    }
+
+    println!();
+    println!("dotfilesd appears to be installed correctly");
+    println!("If you have any issues, please report them at");
+    println!("hello@fig.io or https://github.com/withfig/fig");
+
+    Ok(())
 }
 
 #[cfg(test)]
