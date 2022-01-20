@@ -38,7 +38,7 @@ $(warning PLATFORM is $(PLATFORM))
 ifeq "$(PLATFORM)" "Darwin"
 all: macos
 endif
-ifeq "$(PLATFORM)" "linux"
+ifeq "$(PLATFORM)" "Linux"
 all: linux
 endif
 ifeq "$(PLATFORM)" "windows"
