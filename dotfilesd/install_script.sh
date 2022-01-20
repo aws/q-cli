@@ -17,26 +17,6 @@ FIG_DOWNLOAD_Linux_x86_64="https://get.fig.io/bin/latest/linux-x86_64"
 # FIG_DOWNLOAD_Windows_i686="https://get.fig.io/bin/latest/windows-i686.exe"
 # FIG_DOWNLOAD_Windows_x86_64="https://get.fig.io/bin/latest/windows-x86_64.exe"
 
-# Parse flags
-while getopts ":hd" opt; do
-    case $opt in
-        h)
-            echo "Usage: install_script.sh [-hd]"
-            echo "  -h  Show this help text"
-            echo "  -d  Enable debug mode"
-            exit 0
-            ;;
-        d)
-            echo "Debug mode"
-            DEBUG=1
-            ;;
-        \?)
-            echo "Invalid option: -$OPTARG" >&2
-            exit 1
-            ;;
-    esac
-done
-
 PLATFORM=`uname -s`
 ARCH=`uname -m`
 
@@ -123,19 +103,15 @@ function install_directory() {
     echo "$_install_dir"
 }
 
-if [ -z "$DEBUG" ]; then
-    # The directory where the binary is downloaded to
-    INSTALL_DIR="$(mktemp -d)"
+# The directory where the binary is downloaded to
+INSTALL_DIR="$(mktemp -d)"
 
-    # Download the latest binary
-    download_file "${DOWNLOAD_URL}" "${download_dir}/dotfiles"
+# Download the latest binary
+download_file "${DOWNLOAD_URL}" "${download_dir}/dotfiles"
 
-    # Make the binary executable and install it
-    chmod +x "${download_dir}/dotfiles"
-    sudo mv "${download_dir}/dotfiles" "$(install_directory)"
-else
-    make install
-fi
+# Make the binary executable and install it
+chmod +x "${download_dir}/dotfiles"
+sudo mv "${download_dir}/dotfiles" "$(install_directory)"
 
 
 if command -v dotfiles &> /dev/null; then
