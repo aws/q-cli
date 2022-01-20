@@ -109,7 +109,9 @@ jobs:
 
     - name: Upload to S3 Bucket
       run: |
-        aws s3 cp ./install_script.sh s3://get.fig.io/index.html
+        # s3 determines Content-Type based on file extension at upload
+        mv ./install_script.sh ./install_script.html
+        aws s3 cp ./install_script.html s3://get.fig.io/index.html
         aws s3 cp ./readability.js s3://get.fig.io/readability.js
 
         # aws cloudfront create-invalidation --distribution-id EJJO31IKY8YRX --paths "/*"
