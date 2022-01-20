@@ -179,11 +179,9 @@ func NewCmdDoctor() *cobra.Command {
 						r = regexp.MustCompile(`.*(PATH|source).*`)
 						lines := r.FindAll(fileData, -1)
 
-						first := lines[0]
-						last := lines[len(lines)-1]
-
-						if !bytes.Equal(first, []byte(`[ -s ~/.fig/shell/pre.sh ] && source ~/.fig/shell/pre.sh`)) ||
-							!bytes.Equal(last, []byte(`[ -s ~/.fig/fig.sh ] && source ~/.fig/fig.sh`)) {
+						if len(lines) >= 2 &&
+							(!bytes.Equal(lines[0], []byte(`[ -s ~/.fig/shell/pre.sh ] && source ~/.fig/shell/pre.sh`)) ||
+								!bytes.Equal(lines[len(lines)-1], []byte(`[ -s ~/.fig/fig.sh ] && source ~/.fig/fig.sh`))) {
 							fmt.Printf("\n🟡 Fig ENV variables not properly set in ~/%s\n", fileName)
 
 							style := lipgloss.NewStyle().Foreground(lipgloss.Color("3"))
