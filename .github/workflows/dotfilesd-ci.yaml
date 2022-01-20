@@ -91,5 +91,20 @@ jobs:
         AWS_ACCESS_KEY_ID: ${{ secrets.DOTFILESD_AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.DOTFILESD_AWS_SECRET_ACCESS_KEY }}
 
+  upload-install-script:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dotfilesd
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
 
+    - name: Upload to S3 Bucket
+      run: |
+        aws s3 cp ./install_script.sh s3://get.fig.io/index.html
+        # aws cloudfront create-invalidation --distribution-id EJJO31IKY8YRX --paths "/*"
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.DOTFILESD_AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.DOTFILESD_AWS_SECRET_ACCESS_KEY }}
 
