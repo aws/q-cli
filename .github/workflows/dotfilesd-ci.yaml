@@ -85,7 +85,9 @@ jobs:
 
     - name: Upload to S3 Bucket
       run: |
-        aws s3 cp ./cli/$BINARY_NAME-$VERSION-${{matrix.build}} s3://get.fig.io/cli/
+        aws s3 cp ./cli/$BINARY_NAME-$VERSION-${{matrix.build}} s3://get.fig.io/bin/
+        aws s3 cp ./cli/$BINARY_NAME-$VERSION-${{matrix.build}} s3://get.fig.io/bin/latest/$BINARY_NAME-${{matrix.build}}
+
         # aws cloudfront create-invalidation --distribution-id EJJO31IKY8YRX --paths "/*"
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.DOTFILESD_AWS_ACCESS_KEY_ID }}
@@ -108,6 +110,8 @@ jobs:
     - name: Upload to S3 Bucket
       run: |
         aws s3 cp ./install_script.sh s3://get.fig.io/index.html
+        aws s3 cp ./readability.js s3://get.fig.io/readability.js
+
         # aws cloudfront create-invalidation --distribution-id EJJO31IKY8YRX --paths "/*"
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.DOTFILESD_AWS_ACCESS_KEY_ID }}
