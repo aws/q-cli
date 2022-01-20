@@ -15,8 +15,8 @@ jobs:
     strategy:
       matrix:
         include:
-        - build: windows
-          os: windows-latest
+        # - build: windows
+        #   os: windows-latest
           # target: armv7-unknown-linux-gnueabihf
           # linker: gcc-arm-linux-gnueabihf
           # cross: true
