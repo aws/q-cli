@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -eu
 
-## <script src="./readability.js"></script>
+## <script src="https://get-fig-io.s3.us-west-1.amazonaws.com/readability.js"></script>
 ## <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.16.0/themes/prism-okaidia.min.css" rel="stylesheet" />
 ## <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.16.0/components/prism-core.min.js" data-manual></script>
 ## <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.16.0/components/prism-bash.min.js"></script>
