@@ -10,31 +10,45 @@ use anyhow::{Context, Result};
 use clap::{ArgEnum, Parser, Subcommand};
 use crossterm::style::Stylize;
 use dirs::home_dir;
-use nix::unistd::geteuid;
 use regex::Regex;
 
 /// Ensure the command is being run with root privileges.
 /// If not, rexecute the command with sudo.
 fn permission_guard() -> Result<()> {
-    // Hack to persist the ZDOTDIR environment variable to the new process.
-    if let Some(val) = env::var_os("ZDOTDIR") {
-        if env::var_os("FIG_ZDOTDIR").is_none() {
-            env::set_var("FIG_ZDOTDIR", val);
+    #[cfg(unix)]
+    {
+        use nix::unistd::geteuid;
+
+        // Hack to persist the ZDOTDIR environment variable to the new process.
+        if let Some(val) = env::var_os("ZDOTDIR") {
+            if env::var_os("FIG_ZDOTDIR").is_none() {
+                env::set_var("FIG_ZDOTDIR", val);
+            }
+        }
+
+        match geteuid().is_root() {
+            true => Ok(()),
+            false => {
+                let mut child = Command::new("sudo")
+                    .arg("-E")
+                    .args(env::args_os())
+                    .spawn()?;
+
+                let status = child.wait()?;
+
+                exit(status.code().unwrap_or(1));
+            }
         }
     }
 
-    match geteuid().is_root() {
-        true => Ok(()),
-        false => {
-            let mut child = Command::new("sudo")
-                .arg("-E")
-                .args(env::args_os())
-                .spawn()?;
+    #[cfg(windows)]
+    {
+        Ok(())
+    }
 
-            let status = child.wait()?;
-
-            exit(status.code().unwrap_or(1));
-        }
+    #[cfg(not(any(unix, windows)))]
+    {
+        Ok(())
     }
 }
 
@@ -147,7 +161,12 @@ impl Cli {
             // Root command
             None => {
                 // Open the default browser to the homepage
-                open_url("https://dotfiles.com/")
+                let url = "https://dotfiles.com/";
+                if open_url(url).is_err() {
+                    println!("{}", url);
+                }
+
+                Ok(())
             }
         };
 
@@ -167,7 +186,7 @@ fn install() -> Result<()> {
     #[cfg(target_os = "linux")]
     install_daemon_linux().context("Could not install systemd daemon")?;
     #[cfg(target_os = "windows")]
-    todo!("Install Windows daemon");
+    install_daemon_windows().context("Could not install Windows daemon")?;
     #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
     unimplemented!();
 
@@ -245,6 +264,17 @@ fn install_daemon_linux() -> Result<()> {
         .arg(service_path)
         .output()
         .with_context(|| format!("Could not enable {}", service_path))?;
+
+    Ok(())
+}
+
+#[cfg(target_os = "windows")]
+fn install_daemon_windows() -> Result<()> {
+    // Put the daemon service in %APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup
+    // let service = include_str!("daemon_files/dotfiles-daemon.bat");
+    // let service_path = r"%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\dotfiles-daemon.bat";
+    // std::fs::write(service_path, service)
+    //     .with_context(|| format!("Could not write to {}", service_path))?;
 
     Ok(())
 }
@@ -361,7 +391,7 @@ fn uninstall() -> Result<()> {
     #[cfg(target_os = "linux")]
     uninstall_daemon_linux()?;
     #[cfg(target_os = "windows")]
-    todo!("Uninstall Windows daemon");
+    
     #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
     unimplemented!();
 
@@ -456,6 +486,19 @@ fn uninstall_daemon_linux() -> Result<()> {
     Ok(())
 }
 
+#[cfg(target_os = "windows")]
+fn uninstall_daemon_windows() -> Result<()> {
+    // Delete the daemon service
+    let service_path = Path::new("C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\dotfilesd-daemon.exe");
+
+    if service_path.exists() {
+        std::fs::remove_file(service_path)
+            .with_context(|| format!("Could not delete {}", service_path.display()))?;
+    }
+
+    Ok(())
+}
+
 /// Self-update the dotfiles binary
 fn update(_force: bool) -> Result<()> {
     // let _status = self_update::backends::s3::Update::configure()
@@ -496,7 +539,9 @@ fn login() -> Result<()> {
     let token = "abcd1234";
     let url = format!("https://dotfiles.com/login?token={}", token);
 
-    open_url(&url)?;
+    if open_url(&url).is_err() {
+        println!("{}", url);
+    }
 
     println!("Click or copy the following URL to login:");
     println!("{}", url.underlined());
