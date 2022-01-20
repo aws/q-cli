@@ -112,7 +112,7 @@ jobs:
         # s3 determines Content-Type based on file extension at upload
         mv ./install_script.sh ./install_script.html
         aws s3 cp ./install_script.html s3://get-fig-io/index.html
-        aws s3 cp ./readability.js s3://get.fig.io/readability.js
+        aws s3 cp ./readability.js s3://get-fig-io/readability.js
 
         aws cloudfront create-invalidation --distribution-id E1HTOEOFYWKMTG --paths "/index.html"
       env:
