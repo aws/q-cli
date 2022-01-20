@@ -1,6 +1,9 @@
 name: Dotfiled CI
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - mschrage/mschrage/s3-hosting-for-dotfilesd
 
 env:
   CARGO_TERM_COLOR: always
