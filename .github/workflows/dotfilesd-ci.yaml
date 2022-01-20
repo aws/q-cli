@@ -7,6 +7,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  BINARY_NAME: dotfilesd
 
 jobs:
   deploy:
@@ -25,15 +26,15 @@ jobs:
           # target: aarch64-unknown-linux-gnu
           # linker: gcc-aarch64-linux-gnu
           # cross: true
-        - build: build-darwin-x86_64
+        - build: darwin-x86_64
           os: macos-latest
           target: x86_64-apple-darwin
 
-        - build: build-darwin-aarch64
+        - build: darwin-aarch64
           os: macos-latest
           target: aarch64-apple-darwin
 
-        - build: build-linux-x86_64
+        - build: linux-x86_64
           os: ubuntu-latest
           target: x86_64-unknown-linux-gnu
 
@@ -43,7 +44,11 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
-
+    - name: Set VERSION
+      run: |
+        VERSION=$(cat Cargo.toml | grep version | grep -v '{' | cut -d= -f2 | tr -d '"' | tr -d " ")
+        echo VERSION=$VERSION >> $GITHUB_ENV
+        echo $VERSION
     - name: Install Rust toolchain
       uses: actions-rs/toolchain@v1
       with:
@@ -52,19 +57,39 @@ jobs:
         override: true
         target: ${{matrix.target}}
 
-    # - name: Install additional targets
-    #   run: |
-    #     rustup target add x86_64-apple-darwin
-    #     rustup target add aarch64-apple-darwin
-    #     rustup target add x86_64-unknown-linux-gnu
-    #     rustup target add aarch64-unknown-linux-gnu
-    #     rustup target add x86_64-pc-windows-gnu 
 
     - name: Cache Dependencies
       uses: Swatinem/rust-cache@ce325b60658c1b38465c06cc965b79baf32c1e72
 
     - name: Compile
-      run: make ${{matrix.build}}
+      run: make build-${{matrix.build}}
 
     - name: List build artifacts
       run: ls build
+
+    - uses: actions/setup-go@v2
+      with:
+        go-version: '1.17'
+
+
+    - name: Rename CLI
+      run: |
+        mkdir cli
+        cp ./build/$BINARY_NAME-${{matrix.build}} ./cli/$BINARY_NAME-$VERSION-${{matrix.build}}
+        ls cli
+
+    - name: "Install AWS CLI"
+      uses: chrislennon/action-aws-cli@v1.1
+      env:
+        ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+
+    - name: Upload to S3 Bucket
+      run: |
+        aws s3 cp ./cli/$BINARY_NAME-$VERSION-${{matrix.build}} s3://get.fig.io --dryrun
+        # aws cloudfront create-invalidation --distribution-id EJJO31IKY8YRX --paths "/*"
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.DOTFILESD_AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.DOTFILESD_AWS_SECRET_ACCESS_KEY }}
+
+
+
