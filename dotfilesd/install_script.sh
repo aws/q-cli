@@ -7,7 +7,7 @@ set -eu
 ## <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.16.0/components/prism-bash.min.js"></script>
 ## <style>body {color: #272822; background-color: #272822; font-size: 0.8em;} </style>
 
-FIG_DOWNLOAD_Darwin_arm64="https://get.fig.io/bin/latest/darwin-arm64"
+FIG_DOWNLOAD_Darwin_aarch64="https://get.fig.io/bin/latest/darwin-aarch64"
 # FIG_DOWNLOAD_Darwin_universal="https://get.fig.io/bin/latest/darwin-universal"
 FIG_DOWNLOAD_Darwin_x86_64="https://get.fig.io/bin/latest/darwin-x86_64"
 # FIG_DOWNLOAD_Linux_aarch64="https://get.fig.io/bin/latest/linux-aarch64"
@@ -56,7 +56,7 @@ if [[ $ARCH == armv6* ]] || [[ $ARCH == armv7* ]]; then
     ARCH="armv7"
 fi
 
-DOWNLOAD_URL_LOOKUP="SENTRY_DOWNLOAD_${PLATFORM}_${ARCH}"
+DOWNLOAD_URL_LOOKUP="FIG_DOWNLOAD_${PLATFORM}_${ARCH}"
 
 # URL to download the latest version of the binary
 DOWNLOAD_URL="${!DOWNLOAD_URL_LOOKUP:-}"
