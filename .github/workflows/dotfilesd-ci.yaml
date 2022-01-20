@@ -26,15 +26,15 @@ jobs:
           # target: aarch64-unknown-linux-gnu
           # linker: gcc-aarch64-linux-gnu
           # cross: true
-        - build: darwin-x86_64
+        - build: x86_64-apple-darwin
           os: macos-latest
           target: x86_64-apple-darwin
 
-        - build: darwin-aarch64
+        - build: aarch64-apple-darwin
           os: macos-latest
           target: aarch64-apple-darwin
 
-        - build: linux-x86_64
+        - build: x86_64-unknown-linux-gnu
           os: ubuntu-latest
           target: x86_64-unknown-linux-gnu
 

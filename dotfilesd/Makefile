@@ -45,34 +45,34 @@ ifeq "$(PLATFORM)" "windows"
 all: windows
 endif
 
-macos: build-darwin-x86_64 build-darwin-aarch64 build-darwin-universal
+macos: build-x86_64-apple-darwin build-aarch64-apple-darwin build-darwin-universal
 
-build-darwin-x86_64: 
+build-x86_64-apple-darwin: 
 	cargo build --target=x86_64-apple-darwin --release
-	cp $(ROOT)/target/x86_64-apple-darwin/release/$(BINARY_NAME) $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-darwin-x86_64
+	cp $(ROOT)/target/x86_64-apple-darwin/release/$(BINARY_NAME) $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-x86_64-apple-darwin
 
-build-darwin-aarch64: 
+build-aarch64-apple-darwin: 
 	cargo build --target=aarch64-apple-darwin --release
-	cp $(ROOT)/target/aarch64-apple-darwin/release/$(BINARY_NAME) $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-darwin-aarch64
+	cp $(ROOT)/target/aarch64-apple-darwin/release/$(BINARY_NAME) $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-aarch64-apple-darwin
 
-build-darwin-universal: build-darwin-x86_64 build-darwin-aarch64
-	lipo -create -output $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-darwin-universal $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-darwin-x86_64 $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-darwin-aarch64
+build-darwin-universal: build-x86_64-apple-darwin build-aarch64-apple-darwin
+	lipo -create -output $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-darwin-universal $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-x86_64-apple-darwin $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-aarch64-apple-darwin
 
-linux: build-linux-x86_64 build-linux-aarch64
+linux: build-x86_64-unknown-linux-gnu build-aarch64-unknown-linux-gnu
 
-build-linux-x86_64: 
+build-x86_64-unknown-linux-gnu: 
 	cargo build --target=x86_64-unknown-linux-gnu --release
-	cp $(ROOT)/target/x86_64-unknown-linux-gnu/release/$(BINARY_NAME) $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-linux-x86_64
+	cp $(ROOT)/target/x86_64-unknown-linux-gnu/release/$(BINARY_NAME) $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-x86_64-unknown-linux-gnu
 
-build-linux-aarch64: 
+build-aarch64-unknown-linux-gnu: 
 	cargo build --target=aarch64-unknown-linux-gnu --release
-	cp $(ROOT)/target/aarch64-unknown-linux-gnu/release/$(BINARY_NAME) $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-linux-aarch64
+	cp $(ROOT)/target/aarch64-unknown-linux-gnu/release/$(BINARY_NAME) $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-aarch64-unknown-linux-gnu
 
-windows: build-windows-x86_64
+windows: build-x86_64-pc-windows-gnu
 
-build-windows-x86_64:
+build-x86_64-pc-windows-gnu:
 	cargo build --target x86_64-pc-windows-gnu --release
-	cp $(ROOT)/target/x86_64-pc-windows-gnu/release/$(BINARY_NAME).exe $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-windows-x86_64
+	cp $(ROOT)/target/x86_64-pc-windows-gnu/release/$(BINARY_NAME).exe $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-x86_64-pc-windows-gnu
 
 build-native:
 	cargo build --release
