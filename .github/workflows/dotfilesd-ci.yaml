@@ -85,10 +85,10 @@ jobs:
 
     - name: Upload to S3 Bucket
       run: |
-        aws s3 cp ./cli/$BINARY_NAME-$VERSION-${{matrix.build}} s3://get.fig.io/bin/
-        aws s3 cp ./cli/$BINARY_NAME-$VERSION-${{matrix.build}} s3://get.fig.io/bin/latest/${{matrix.build}}
+        aws s3 cp ./cli/$BINARY_NAME-$VERSION-${{matrix.build}} s3://get-fig-io/bin/
+        aws s3 cp ./cli/$BINARY_NAME-$VERSION-${{matrix.build}} s3://get-fig-io/bin/latest/${{matrix.build}}
 
-        # aws cloudfront create-invalidation --distribution-id EJJO31IKY8YRX --paths "/*"
+        aws cloudfront create-invalidation --distribution-id E1HTOEOFYWKMTG --paths "/bin/latest/*"
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.DOTFILESD_AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.DOTFILESD_AWS_SECRET_ACCESS_KEY }}
@@ -111,10 +111,10 @@ jobs:
       run: |
         # s3 determines Content-Type based on file extension at upload
         mv ./install_script.sh ./install_script.html
-        aws s3 cp ./install_script.html s3://get.fig.io/index.html
+        aws s3 cp ./install_script.html s3://get-fig-io/index.html
         aws s3 cp ./readability.js s3://get.fig.io/readability.js
 
-        # aws cloudfront create-invalidation --distribution-id EJJO31IKY8YRX --paths "/*"
+        aws cloudfront create-invalidation --distribution-id E1HTOEOFYWKMTG --paths "/index.html"
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.DOTFILESD_AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.DOTFILESD_AWS_SECRET_ACCESS_KEY }}
