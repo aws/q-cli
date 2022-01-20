@@ -104,7 +104,7 @@ function install_directory() {
 }
 
 # The directory where the binary is downloaded to
-INSTALL_DIR="$(mktemp -d)"
+download_dir="$(mktemp -d)"
 
 # Download the latest binary
 download_file "${DOWNLOAD_URL}" "${download_dir}/dotfiles"
