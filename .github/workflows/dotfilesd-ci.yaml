@@ -1,0 +1,34 @@
+name: Dotfiled CI
+on:
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    defaults:
+      run:
+        working-directory: dotfilesd
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Install Rust toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+
+    - name: Cache Dependencies
+      uses: Swatinem/rust-cache@ce325b60658c1b38465c06cc965b79baf32c1e72
+
+    - name: Compile
+      run: make macos linux windows
+
+    - name: List build artifacts
+      run: ls build
