@@ -1,4 +1,4 @@
-name: Dotfiled CI
+name: Dotfilesd CI
 on:
   workflow_dispatch:
   push:
@@ -26,6 +26,19 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
+        target: 
+          - x86_64-apple-darwin
+          - aarch64-apple-darwin
+          - x86_64-unknown-linux-gnu
+          - aarch64-unknown-linux-gnu
+          - x86_64-pc-windows-gnu 
+    - name: Install additional targets
+      run: |
+        rustup target add x86_64-apple-darwin
+        rustup target add aarch64-apple-darwin
+        rustup target add x86_64-unknown-linux-gnu
+        rustup target add aarch64-unknown-linux-gnu
+        rustup target add x86_64-pc-windows-gnu 
 
     - name: Cache Dependencies
       uses: Swatinem/rust-cache@ce325b60658c1b38465c06cc965b79baf32c1e72
