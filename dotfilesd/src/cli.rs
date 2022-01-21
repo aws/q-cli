@@ -688,6 +688,8 @@ async fn sync() -> Result<()> {
         sync_file(&Shells::Fish),
     )?;
 
+    println!("Dotfiles synced!");
+
     Ok(())
 }
 

@@ -1,6 +1,6 @@
 [package]
 name = "dotfiles"
-version = "0.0.1"
+version = "0.1.0"
 description = "A manager for dotfiles"
 edition = "2021"
 
@@ -28,3 +28,7 @@ windows = { version = "0.30.0", features = ["Win32_Foundation", "Win32_Security"
 
 [target.'cfg(unix)'.dependencies]
 nix = "0.23.1"
+
+[profile.release]
+lto = true
+codegen-units = 1
