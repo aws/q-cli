@@ -395,6 +395,8 @@ dependencies = [
  "reqwest",
  "self_update",
  "serde",
+ "serde_json",
+ "thiserror",
  "tokio",
  "toml",
  "uuid",

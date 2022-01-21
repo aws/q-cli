@@ -1,22 +1,21 @@
+use std::env;
 use std::fmt::Display;
 use std::fs::File;
-use std::io::{stdout, Read, Write, stdin};
+use std::io::{stdin, stdout, Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::{exit, Command};
 use std::time::Duration;
-use std::{any, env};
 
 use anyhow::{Context, Result};
-use aws_sdk_cognitoidentityprovider::{Client, Config};
 use clap::{ArgEnum, Parser, Subcommand};
-use crossterm::style::Stylize;
 use dirs::home_dir;
 use regex::Regex;
-use self_update::cargo_crate_version;
 use self_update::update::UpdateStatus;
+use tokio::select;
 
-use crate::auth::{get_client, SignInInput, SignUpInput};
-use crate::cli;
+use crate::auth::{
+    get_client, SignInConfirmError, SignInError, SignInInput, SignUpConfirmError, SignUpInput,
+};
 
 /// Ensure the command is being run with root privileges.
 /// If not, rexecute the command with sudo.
@@ -598,21 +597,22 @@ fn update(update_type: UpdateType) -> Result<UpdateStatus> {
 
 /// Spawn the daemon to listen for updates and dotfiles changes
 async fn daemon() -> Result<()> {
-    // Connect to the web socket
+    let mut update_interval = tokio::time::interval(Duration::from_secs(60 * 60));
 
     loop {
-        // Check for updates
-        match update(UpdateType::NoProgress)? {
-            UpdateStatus::UpToDate => {},
-            UpdateStatus::Updated(release) => {
-                println!("Updated to {}", release.version);
-                println!("Quitting...");
-                return Ok(());
-            },
+        select! {
+            _ = update_interval.tick() => {
+                // Check for updates
+                match update(UpdateType::NoProgress)? {
+                    UpdateStatus::UpToDate => {}
+                    UpdateStatus::Updated(release) => {
+                        println!("Updated to {}", release.version);
+                        println!("Quitting...");
+                        return Ok(());
+                    }
+                }
+            }
         }
-
-        // Sleep
-        tokio::time::sleep(Duration::from_secs(60 * 60)).await;
     }
 }
 
@@ -625,33 +625,78 @@ async fn sync() -> Result<()> {
 
 /// Login to the dotfiles server
 async fn login() -> Result<()> {
+    let client_id = "hkinciohdp1i7h0imdk63a4bv";
     let client = get_client("dotfilesd")?;
 
-    // 	fmt.Print("Client ID: ")
-	// fmt.Scanln(&clientId)
-	// fmt.Print("Username or email: ")
-	// fmt.Scanln(&usernameOrEmail)
-
-    print!("Client ID: ");
+    print!("Email: ");
     stdout().flush()?;
 
-    let mut client_id = String::new();
-    stdin().read_line(&mut client_id)?;
+    let mut email = String::new();
+    stdin().read_line(&mut email)?;
 
-    print!("Username or email: ");
-    stdout().flush()?;
+    let email = email.trim();
 
-    let mut username_or_email = String::new();
-    stdin().read_line(&mut username_or_email)?;
+    let sign_in_input = SignInInput::new(&client, client_id, email);
 
-    let client_id = client_id.trim();
-    let username_or_email = username_or_email.trim();
+    match sign_in_input.sign_in().await {
+        Ok(mut sign_in_output) => loop {
+            print!("Login Code: ");
+            stdout().flush()?;
 
-    let signup = SignUpInput::new(client, client_id, username_or_email);
+            let mut login_code = String::new();
+            stdin().read_line(&mut login_code)?;
 
-    signup.sign_up().await?;
+            match sign_in_output.confirm(login_code.trim()).await {
+                Ok(creds) => {
+                    creds.save_credentials()?;
+                    println!("Logged in!");
+                    return Ok(());
+                }
+                Err(err) => match err {
+                    SignInConfirmError::ErrorCodeMismatch => {
+                        println!("Code mismatch, try again");
+                        continue;
+                    }
+                    err => {
+                        return Err(err.into());
+                    }
+                },
+            }
+        },
+        Err(err) => match err {
+            SignInError::UserNotFound(_) => {
+                let mut sign_up_output = SignUpInput::new(&client, client_id, email)
+                    .sign_up()
+                    .await?;
 
-    Ok(())
+                loop {
+                    print!("Login Code: ");
+                    stdout().flush()?;
+
+                    let mut login_code = String::new();
+                    stdin().read_line(&mut login_code)?;
+
+                    match sign_up_output.confirm(login_code.trim()).await {
+                        Ok(creds) => {
+                            creds.save_credentials()?;
+                            println!("Logged in!");
+                            return Ok(());
+                        }
+                        Err(err) => match err {
+                            SignUpConfirmError::CodeMismatch(_) => {
+                                println!("Code mismatch, try again");
+                                continue;
+                            }
+                            err => {
+                                return Err(err.into());
+                            }
+                        },
+                    }
+                }
+            }
+            err => return Err(err.into()),
+        },
+    }
 }
 
 // Doctor
@@ -740,7 +785,7 @@ fn open_url(url: impl AsRef<str>) -> Result<()> {
             .arg(url.as_ref())
             .output()
             .with_context(|| "Could not open url")?;
-        
+
         Ok(())
     }
 
