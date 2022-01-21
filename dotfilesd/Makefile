@@ -20,40 +20,59 @@ BINARY_NAME=dotfilesd
 
 $(shell mkdir -p $(BUILT_PRODUCTS_DIR))
 
-ifeq "$(PLATFORM)" "macos"
-all: build-darwin-x86_64 build-darwin-aarch64 build-darwin-universal
+PLATFORM := $(shell uname -s)
 
-build-darwin-x86_64: 
-	cargo build --target=x86_64-apple-darwin --release
-	cp $(ROOT)/target/x86_64-apple-darwin/release/$(BINARY_NAME) $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-darwin-x86_64
-
-build-darwin-aarch64: 
-	cargo build --target=aarch64-apple-darwin --release
-	cp $(ROOT)/target/aarch64-apple-darwin/release/$(BINARY_NAME) $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-darwin-aarch64
-
-build-darwin-universal: build-darwin-x86_64 build-darwin-aarch64
-	lipo -create -output $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-darwin-universal $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-darwin-x86_64 $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-darwin-aarch64
+# Check if variable contains string https://stackoverflow.com/a/2741747
+ifneq (,$(findstring CYGWIN,$(PLATFORM)))
+	PLATFORM := "windows"
+endif
+ifneq (,$(findstring MINGW,$(PLATFORM)))
+	PLATFORM := "windows"
+endif
+ifneq (,$(findstring MSYS,$(PLATFORM)))
+	PLATFORM := "windows"
 endif
 
-ifeq "$(PLATFORM)" "linux"
-all: build-linux-x86_64 build-linux-aarch64
+$(warning PLATFORM is $(PLATFORM))
 
-build-linux-x86_64: 
-	cargo build --target=x86_64-unknown-linux-gnu --release
-	cp $(ROOT)/target/x86_64-unknown-linux-gnu/release/$(BINARY_NAME) $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-linux-x86_64
-
-build-linux-aarch64: 
-	cargo build --target=aarch64-unknown-linux-gnu --release
-	cp $(ROOT)/target/aarch64-unknown-linux-gnu/release/$(BINARY_NAME) $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-linux-aarch64
+ifeq "$(PLATFORM)" "Darwin"
+all: macos
 endif
-
+ifeq "$(PLATFORM)" "Linux"
+all: linux
+endif
 ifeq "$(PLATFORM)" "windows"
-all: build-windows-x86_64
-
-build-windows-x86_64:
-	cargo build --target x86_64-pc-windows-gnu --release
-	cp $(ROOT)/target/x86_64-pc-windows-gnu/release/$(BINARY_NAME).exe $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-windows-x86_64
+all: windows
 endif
+
+macos: build-x86_64-apple-darwin build-aarch64-apple-darwin build-darwin-universal
+
+build-x86_64-apple-darwin: 
+	cargo build --target=x86_64-apple-darwin --release
+	cp $(ROOT)/target/x86_64-apple-darwin/release/$(BINARY_NAME) $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-x86_64-apple-darwin
+
+build-aarch64-apple-darwin: 
+	cargo build --target=aarch64-apple-darwin --release
+	cp $(ROOT)/target/aarch64-apple-darwin/release/$(BINARY_NAME) $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-aarch64-apple-darwin
+
+build-darwin-universal: build-x86_64-apple-darwin build-aarch64-apple-darwin
+	lipo -create -output $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-darwin-universal $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-x86_64-apple-darwin $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-aarch64-apple-darwin
+
+linux: build-x86_64-unknown-linux-gnu build-aarch64-unknown-linux-gnu
+
+build-x86_64-unknown-linux-gnu: 
+	cargo build --target=x86_64-unknown-linux-gnu --release
+	cp $(ROOT)/target/x86_64-unknown-linux-gnu/release/$(BINARY_NAME) $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-x86_64-unknown-linux-gnu
+
+build-aarch64-unknown-linux-gnu: 
+	cargo build --target=aarch64-unknown-linux-gnu --release
+	cp $(ROOT)/target/aarch64-unknown-linux-gnu/release/$(BINARY_NAME) $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-aarch64-unknown-linux-gnu
+
+windows: build-x86_64-pc-windows-gnu
+
+build-x86_64-pc-windows-gnu:
+	cargo build --target x86_64-pc-windows-gnu --release
+	cp $(ROOT)/target/x86_64-pc-windows-gnu/release/$(BINARY_NAME).exe $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-x86_64-pc-windows-gnu
 
 build-native:
 	cargo build --release
