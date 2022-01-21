@@ -34,7 +34,9 @@
       "nord",
       "panda",
       "poimandres",
-      "the-unnamed"
+      "the-unnamed",
+      "solarized-light",
+      "solarized-dark"
     ],
     "default": "system",
     "category": "Appearance"
