@@ -8,10 +8,10 @@ use std::time::Duration;
 
 use anyhow::{Context, Result};
 use clap::{ArgEnum, Parser, Subcommand};
-use dirs::home_dir;
+use dirs::{cache_dir, home_dir};
 use regex::Regex;
 use self_update::update::UpdateStatus;
-use tokio::select;
+use tokio::{join, select, try_join};
 
 use crate::auth::{
     get_client, SignInConfirmError, SignInError, SignInInput, SignUpConfirmError, SignUpInput,
@@ -616,11 +616,43 @@ async fn daemon() -> Result<()> {
     }
 }
 
+async fn sync_file(source: &str, dest: &str) -> Result<()> {
+    let cache_dir = cache_dir().ok_or(anyhow::anyhow!("Could not get cache directory"))?;
+    let source_path = cache_dir.join("fig").join(dest);
+
+    // TODO: Add authentication
+
+    let download = reqwest::Client::new()
+        .get(source)
+        .send()
+        .await?
+        .error_for_status()?
+        .text()
+        .await?;
+
+    let mut dest_file = std::fs::File::create(source_path)?;
+    dest_file.write_all(download.as_bytes())?;
+
+    Ok(())
+}
+
 /// Download the lastest dotfiles
 async fn sync() -> Result<()> {
-    let dotfiles = reqwest::get("https://dotfiles.com/").await?.text().await?;
-    println!("{}", dotfiles);
-    todo!();
+    let bash_source = "https://api.fig.io/dotfiles/source/bash";
+    let zsh_source = "https://api.fig.io/dotfiles/source/zsh";
+    let fish_source = "https://api.fig.io/dotfiles/source/fish";
+
+    let bash_dest = "bash-rendered-dotfiles";
+    let zsh_dest = "zsh-rendered-dotfiles";
+    let fish_dest = "fish-rendered-dotfiles";
+
+    try_join!(
+        sync_file(bash_source, bash_dest),
+        sync_file(zsh_source, zsh_dest),
+        sync_file(fish_source, fish_dest)
+    )?;
+
+    Ok(())
 }
 
 /// Login to the dotfiles server
