@@ -1,5 +1,6 @@
 use clap::StructOpt;
 
+pub mod auth;
 mod cli;
 pub mod config;
 

@@ -1,16 +1,22 @@
-use std::env;
 use std::fmt::Display;
 use std::fs::File;
-use std::io::{stdout, Read, Write};
+use std::io::{stdout, Read, Write, stdin};
 use std::path::{Path, PathBuf};
 use std::process::{exit, Command};
 use std::time::Duration;
+use std::{any, env};
 
 use anyhow::{Context, Result};
+use aws_sdk_cognitoidentityprovider::{Client, Config};
 use clap::{ArgEnum, Parser, Subcommand};
 use crossterm::style::Stylize;
 use dirs::home_dir;
 use regex::Regex;
+use self_update::cargo_crate_version;
+use self_update::update::UpdateStatus;
+
+use crate::auth::{get_client, SignInInput, SignUpInput};
+use crate::cli;
 
 /// Ensure the command is being run with root privileges.
 /// If not, rexecute the command with sudo.
@@ -111,8 +117,8 @@ pub enum CliRootCommands {
     /// Update dotfiles
     Update {
         /// Force update
-        #[clap(long, short)]
-        force: bool,
+        #[clap(long, short = 'y')]
+        no_confirm: bool,
     },
     /// Run the daemon
     Daemon,
@@ -146,7 +152,12 @@ impl Cli {
             Some(subcommand) => match subcommand {
                 CliRootCommands::Install => install(),
                 CliRootCommands::Uninstall => uninstall(),
-                CliRootCommands::Update { force } => update(force),
+                CliRootCommands::Update { no_confirm } => update(if no_confirm {
+                    UpdateType::NoConfirm
+                } else {
+                    UpdateType::Confirm
+                })
+                .map(|_| ()),
                 CliRootCommands::Daemon => daemon().await,
                 CliRootCommands::Shell { shell, when } => {
                     println!("# {:?} for {:?}", when, shell);
@@ -155,7 +166,7 @@ impl Cli {
                     Ok(())
                 }
                 CliRootCommands::Sync => sync().await,
-                CliRootCommands::Login => login(),
+                CliRootCommands::Login => login().await,
                 CliRootCommands::Doctor => doctor(),
             },
             // Root command
@@ -391,7 +402,7 @@ fn uninstall() -> Result<()> {
     #[cfg(target_os = "linux")]
     uninstall_daemon_linux()?;
     #[cfg(target_os = "windows")]
-    
+    uninstall_daemon_windows()?;
     #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
     unimplemented!();
 
@@ -489,7 +500,9 @@ fn uninstall_daemon_linux() -> Result<()> {
 #[cfg(target_os = "windows")]
 fn uninstall_daemon_windows() -> Result<()> {
     // Delete the daemon service
-    let service_path = Path::new("C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\dotfilesd-daemon.exe");
+    let service_path = Path::new(
+        "C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\dotfilesd-daemon.exe",
+    );
 
     if service_path.exists() {
         std::fs::remove_file(service_path)
@@ -499,19 +512,88 @@ fn uninstall_daemon_windows() -> Result<()> {
     Ok(())
 }
 
-/// Self-update the dotfiles binary
-fn update(_force: bool) -> Result<()> {
-    // let _status = self_update::backends::s3::Update::configure()
-    //     .bucket_name("self_update_releases")
-    //     .asset_prefix("something/self_update")
-    //     .region("eu-west-2")
-    //     .bin_name("self_update_example")
-    //     .show_download_progress(true)
-    //     .current_version(cargo_crate_version!())
-    //     .build()?
-    //     .update()?;
+#[derive(Debug, Clone, Copy)]
+enum UpdateType {
+    Confirm,
+    NoConfirm,
+    NoProgress,
+}
 
-    Ok(())
+/// Self-update the dotfiles binary
+/// Update will exit the binary if the update was successful
+fn update(update_type: UpdateType) -> Result<UpdateStatus> {
+    permission_guard()?;
+
+    let confirm = match update_type {
+        UpdateType::Confirm => true,
+        UpdateType::NoConfirm => false,
+        UpdateType::NoProgress => false,
+    };
+
+    let progress_output = match update_type {
+        UpdateType::Confirm => true,
+        UpdateType::NoConfirm => true,
+        UpdateType::NoProgress => false,
+    };
+
+    tokio::task::block_in_place(move || {
+        let current_version = env!("CARGO_PKG_VERSION");
+
+        let update = self_update::backends::s3::Update::configure()
+            .bucket_name("get-fig-io")
+            .asset_prefix("bin")
+            .region("us-west-1")
+            .bin_name("dotfilesd")
+            .current_version(current_version)
+            .no_confirm(true)
+            .show_output(false)
+            .show_download_progress(progress_output)
+            .build()?;
+
+        let latest_release = update.get_latest_release()?;
+
+        if !self_update::version::bump_is_greater(current_version, &latest_release.version)? {
+            println!("You are already on the latest version");
+
+            return Ok(UpdateStatus::UpToDate);
+        }
+
+        if confirm {
+            loop {
+                print!(
+                    "Do you want to update {} from {} to {}? [Y/n] ",
+                    env!("CARGO_PKG_NAME"),
+                    update.current_version(),
+                    latest_release.version
+                );
+                stdout().flush()?;
+
+                let mut input = String::new();
+                std::io::stdin().read_line(&mut input)?;
+
+                match input.trim() {
+                    "Y" | "y" | "" => break,
+                    "N" | "n" => {
+                        println!();
+                        println!("Update cancelled");
+                        return Err(anyhow::anyhow!("Update cancelled"));
+                    }
+                    _ => {
+                        println!("Please enter y, n, or nothing");
+                    }
+                }
+            }
+        } else {
+            println!(
+                "Updating {} from {} to {}",
+                env!("CARGO_PKG_NAME"),
+                update.current_version(),
+                latest_release.version
+            );
+        }
+
+        Ok(update.update_extended()?)
+    })
 }
 
 /// Spawn the daemon to listen for updates and dotfiles changes
@@ -520,7 +602,14 @@ async fn daemon() -> Result<()> {
 
     loop {
         // Check for updates
-        println!("Checking for updates...");
+        match update(UpdateType::NoProgress)? {
+            UpdateStatus::UpToDate => {},
+            UpdateStatus::Updated(release) => {
+                println!("Updated to {}", release.version);
+                println!("Quitting...");
+                return Ok(());
+            },
+        }
 
         // Sleep
         tokio::time::sleep(Duration::from_secs(60 * 60)).await;
@@ -535,17 +624,34 @@ async fn sync() -> Result<()> {
 }
 
 /// Login to the dotfiles server
-fn login() -> Result<()> {
-    let token = "abcd1234";
-    let url = format!("https://dotfiles.com/login?token={}", token);
+async fn login() -> Result<()> {
+    let client = get_client("dotfilesd")?;
 
-    if open_url(&url).is_err() {
-        println!("{}", url);
-    }
+    // 	fmt.Print("Client ID: ")
+	// fmt.Scanln(&clientId)
+	// fmt.Print("Username or email: ")
+	// fmt.Scanln(&usernameOrEmail)
 
-    println!("Click or copy the following URL to login:");
-    println!("{}", url.underlined());
-    todo!();
+    print!("Client ID: ");
+    stdout().flush()?;
+
+    let mut client_id = String::new();
+    stdin().read_line(&mut client_id)?;
+
+    print!("Username or email: ");
+    stdout().flush()?;
+
+    let mut username_or_email = String::new();
+    stdin().read_line(&mut username_or_email)?;
+
+    let client_id = client_id.trim();
+    let username_or_email = username_or_email.trim();
+
+    let signup = SignUpInput::new(client, client_id, username_or_email);
+
+    signup.sign_up().await?;
+
+    Ok(())
 }
 
 // Doctor
@@ -613,7 +719,7 @@ fn open_url(url: impl AsRef<str>) -> Result<()> {
             .output()
             .with_context(|| "Could not open url")?;
 
-        return Ok(());
+        Ok(())
     }
 
     #[cfg(target_os = "linux")]
@@ -622,6 +728,8 @@ fn open_url(url: impl AsRef<str>) -> Result<()> {
             .arg(url.as_ref())
             .output()
             .with_context(|| "Could not open url")?;
+
+        Ok(())
     }
 
     #[cfg(target_os = "windows")]
@@ -632,12 +740,12 @@ fn open_url(url: impl AsRef<str>) -> Result<()> {
             .arg(url.as_ref())
             .output()
             .with_context(|| "Could not open url")?;
+        
+        Ok(())
     }
 
     #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
     unimplemented!();
-
-    Ok(())
 }
 
 #[cfg(test)]
