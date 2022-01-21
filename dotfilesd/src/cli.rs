@@ -11,7 +11,9 @@ use clap::{ArgEnum, Parser, Subcommand};
 use dirs::{cache_dir, home_dir};
 use regex::Regex;
 use self_update::update::UpdateStatus;
-use tokio::{join, select, try_join};
+use serde::{Deserialize, Serialize};
+use tokio::{select, try_join};
+use url::Url;
 
 use crate::auth::{
     get_client, SignInConfirmError, SignInError, SignInInput, SignUpConfirmError, SignUpInput,
@@ -99,6 +101,18 @@ impl Shells {
 
         Ok(path)
     }
+
+    pub fn get_cache_path(&self) -> Result<PathBuf> {
+        Ok(cache_dir()
+            .context("Could not get cache directory")?
+            .join("fig")
+            .join("dotfiles")
+            .join(format!("{}.json", self)))
+    }
+
+    pub fn get_remote_source(&self) -> Result<Url> {
+        Ok(format!("https://api.fig.io/dotfiles/source/{}", self).parse()?)
+    }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, ArgEnum)]
@@ -160,7 +174,10 @@ impl Cli {
                 CliRootCommands::Daemon => daemon().await,
                 CliRootCommands::Shell { shell, when } => {
                     println!("# {:?} for {:?}", when, shell);
-                    println!("echo 'hello from the dotfiles {:?}'", when);
+                    match shell_source(&shell, &when) {
+                        Ok(source) => println!("{}", source),
+                        Err(err) => println!("# Could not load source: {}", err),
+                    }
 
                     Ok(())
                 }
@@ -616,21 +633,48 @@ async fn daemon() -> Result<()> {
     }
 }
 
-async fn sync_file(source: &str, dest: &str) -> Result<()> {
-    let cache_dir = cache_dir().ok_or(anyhow::anyhow!("Could not get cache directory"))?;
-    let source_path = cache_dir.join("fig").join(dest);
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct DotfilesSourceRequest {
+    email: String,
+}
 
-    // TODO: Add authentication
+async fn sync_file(shell: &Shells) -> Result<()> {
+    // Run defaults read com.mschrage.fig access_token
+    let token = Command::new("defaults")
+        .arg("read")
+        .arg("com.mschrage.fig")
+        .arg("access_token")
+        .output()
+        .with_context(|| "Could not read access_token")?;
+
+    // Constuct the request body
+    let body = serde_json::to_string(&DotfilesSourceRequest {
+        email: "sean@fig.io".into(),
+    })?;
 
     let download = reqwest::Client::new()
-        .get(source)
+        .get(shell.get_remote_source()?)
+        .header(
+            "Authorization",
+            format!("Bearer {}", String::from_utf8_lossy(&token.stdout).trim()),
+        )
+        .body(body)
         .send()
         .await?
         .error_for_status()?
         .text()
         .await?;
 
-    let mut dest_file = std::fs::File::create(source_path)?;
+    // Create path to dotfiles
+    let cache_file = shell.get_cache_path()?;
+    let cache_folder = cache_file.parent().unwrap();
+
+    // Create cache folder if it doesn't exist
+    if !cache_folder.exists() {
+        std::fs::create_dir_all(cache_folder)?;
+    }
+
+    let mut dest_file = std::fs::File::create(cache_file)?;
     dest_file.write_all(download.as_bytes())?;
 
     Ok(())
@@ -638,18 +682,10 @@ async fn sync_file(source: &str, dest: &str) -> Result<()> {
 
 /// Download the lastest dotfiles
 async fn sync() -> Result<()> {
-    let bash_source = "https://api.fig.io/dotfiles/source/bash";
-    let zsh_source = "https://api.fig.io/dotfiles/source/zsh";
-    let fish_source = "https://api.fig.io/dotfiles/source/fish";
-
-    let bash_dest = "bash-rendered-dotfiles";
-    let zsh_dest = "zsh-rendered-dotfiles";
-    let fish_dest = "fish-rendered-dotfiles";
-
     try_join!(
-        sync_file(bash_source, bash_dest),
-        sync_file(zsh_source, zsh_dest),
-        sync_file(fish_source, fish_dest)
+        sync_file(&Shells::Bash),
+        sync_file(&Shells::Zsh),
+        sync_file(&Shells::Fish),
     )?;
 
     Ok(())
@@ -823,6 +859,21 @@ fn open_url(url: impl AsRef<str>) -> Result<()> {
 
     #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
     unimplemented!();
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct DotfileData {
+    dotfile: String,
+}
+
+fn shell_source(shell: &Shells, when: &When) -> Result<String> {
+    let raw = std::fs::read_to_string(shell.get_cache_path()?)?;
+    let source: DotfileData = serde_json::from_str(&raw)?;
+
+    match when {
+        When::Pre => Ok(String::new()),
+        When::Post => Ok(source.dotfile),
+    }
 }
 
 #[cfg(test)]

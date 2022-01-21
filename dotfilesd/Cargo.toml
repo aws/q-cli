@@ -16,6 +16,7 @@ toml = "0.5.8"
 regex = "1.5.4"
 crossterm = "0.22.1"
 rand = "0.8.4"
+url = "2.2.2"
 
 aws-sdk-cognitoidentityprovider = "0.5.0"
 uuid = { version = "0.8.2", features = ["v4"] }
