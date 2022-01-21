@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - mschrage/s3-hosting-for-dotfilesd
+      - dotfilesd
 
 env:
   CARGO_TERM_COLOR: always
