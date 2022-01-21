@@ -237,14 +237,14 @@ fn install() -> Result<()> {
                 println!(
                     "At the top of your ~/.bashrc or ~/.zshrc or ~/.config/fish/config.fish file:"
                 );
-                println!("bashrc:    eval \"$(dotfilesd shell bash pre)\"");
-                println!("zshrc:     eval \"$(dotfilesd shell zsh pre)\"");
-                println!("fish:      eval \"$(dotfilesd shell fish pre)\"");
+                println!("bashrc:    eval \"$(dotfiles shell bash pre)\"");
+                println!("zshrc:     eval \"$(dotfiles shell zsh pre)\"");
+                println!("fish:      eval \"$(dotfiles shell fish pre)\"");
                 println!();
                 println!("At the bottom of your ~/.bashrc or ~/.zshrc or ~/.config/fish/config.fish file:");
-                println!("bashrc:    eval \"$(dotfilesd shell bash post)\"");
-                println!("zshrc:     eval \"$(dotfilesd shell zsh post)\"");
-                println!("fish:      eval \"$(dotfilesd shell fish post)\"");
+                println!("bashrc:    eval \"$(dotfiles shell bash post)\"");
+                println!("zshrc:     eval \"$(dotfiles shell zsh post)\"");
+                println!("fish:      eval \"$(dotfiles shell fish post)\"");
                 println!();
 
                 break;
@@ -319,13 +319,13 @@ fn install_dotfiles() -> Result<()> {
                 let mut lines = vec![];
 
                 let pre_eval = match shell {
-                    Shells::Bash => "eval \"$(dotfilesd shell bash pre)\"",
-                    Shells::Zsh => "eval \"$(dotfilesd shell zsh pre)\"",
-                    Shells::Fish => "eval (dotfilesd shell fish pre)",
+                    Shells::Bash => "eval \"$(dotfiles shell bash pre)\"",
+                    Shells::Zsh => "eval \"$(dotfiles shell zsh pre)\"",
+                    Shells::Fish => "eval (dotfiles shell fish pre)",
                 };
 
                 if !contents.contains(pre_eval) {
-                    lines.push("# Pre dotfilesd eval");
+                    lines.push("# Pre dotfiles eval");
                     lines.push(pre_eval);
                     lines.push("");
 
@@ -335,14 +335,14 @@ fn install_dotfiles() -> Result<()> {
                 lines.extend(contents.lines());
 
                 let post_eval = match shell {
-                    Shells::Bash => "eval \"$(dotfilesd shell bash post)\"",
-                    Shells::Zsh => "eval \"$(dotfilesd shell zsh post)\"",
-                    Shells::Fish => "eval (dotfilesd shell fish post)",
+                    Shells::Bash => "eval \"$(dotfiles shell bash post)\"",
+                    Shells::Zsh => "eval \"$(dotfiles shell zsh post)\"",
+                    Shells::Fish => "eval (dotfiles shell fish post)",
                 };
 
                 if !contents.contains(post_eval) {
                     lines.push("");
-                    lines.push("# Post dotfilesd eval");
+                    lines.push("# Post dotfiles eval");
                     lines.push(post_eval);
                     lines.push("");
 
@@ -371,13 +371,13 @@ fn uninstall_dotfiles() -> Result<()> {
 
                 let pre_eval = match shell {
                     Shells::Bash => Regex::new(
-                        r#"(?:# Pre dotfilesd eval\n)?eval "\$\(dotfilesd shell bash pre\)"\n{0,2}"#,
+                        r#"(?:# Pre dotfiles eval\n)?eval "\$\(dotfiles shell bash pre\)"\n{0,2}"#,
                     ),
                     Shells::Zsh => Regex::new(
-                        r#"(?:# Pre dotfilesd eval\n)?eval "\$\(dotfilesd shell zsh pre\)"\n{0,2}"#,
+                        r#"(?:# Pre dotfiles eval\n)?eval "\$\(dotfiles shell zsh pre\)"\n{0,2}"#,
                     ),
                     Shells::Fish => Regex::new(
-                        r#"(?:# Pre dotfilesd eval\n)?eval \(dotfilesd shell fish pre\)\n{0,2}"#,
+                        r#"(?:# Pre dotfiles eval\n)?eval \(dotfiles shell fish pre\)\n{0,2}"#,
                     ),
                 }
                 .unwrap();
@@ -386,13 +386,13 @@ fn uninstall_dotfiles() -> Result<()> {
 
                 let post_eval_regex = match shell {
                     Shells::Bash => Regex::new(
-                        r#"(?:# Post dotfilesd eval\n)?eval "\$\(dotfilesd shell bash post\)"\n{0,2}"#,
+                        r#"(?:# Post dotfiles eval\n)?eval "\$\(dotfiles shell bash post\)"\n{0,2}"#,
                     ),
                     Shells::Zsh => Regex::new(
-                        r#"(?:# Post dotfilesd eval\n)?eval "\$\(dotfilesd shell zsh post\)"\n{0,2}"#,
+                        r#"(?:# Post dotfiles eval\n)?eval "\$\(dotfiles shell zsh post\)"\n{0,2}"#,
                     ),
                     Shells::Fish => Regex::new(
-                        r#"(?:# Post dotfilesd eval\n)?eval \(dotfilesd shell fish post\)\n{0,2}"#,
+                        r#"(?:# Post dotfiles eval\n)?eval \(dotfiles shell fish post\)\n{0,2}"#,
                     ),
                 }
                 .unwrap();
@@ -444,14 +444,14 @@ fn uninstall() -> Result<()> {
                 println!(
                     "At the top of your ~/.bashrc or ~/.zshrc or ~/.config/fish/config.fish file:"
                 );
-                println!("bashrc:    eval \"$(dotfilesd shell bash pre)\"");
-                println!("zshrc:     eval \"$(dotfilesd shell zsh pre)\"");
-                println!("fish:      eval \"$(dotfilesd shell fish pre)\"");
+                println!("bashrc:    eval \"$(dotfiles shell bash pre)\"");
+                println!("zshrc:     eval \"$(dotfiles shell zsh pre)\"");
+                println!("fish:      eval \"$(dotfiles shell fish pre)\"");
                 println!();
                 println!("At the bottom of your ~/.bashrc or ~/.zshrc or ~/.config/fish/config.fish file:");
-                println!("bashrc:    eval \"$(dotfilesd shell bash post)\"");
-                println!("zshrc:     eval \"$(dotfilesd shell zsh post)\"");
-                println!("fish:      eval \"$(dotfilesd shell fish post)\"");
+                println!("bashrc:    eval \"$(dotfiles shell bash post)\"");
+                println!("zshrc:     eval \"$(dotfiles shell zsh post)\"");
+                println!("fish:      eval \"$(dotfiles shell fish post)\"");
                 println!();
 
                 break;
@@ -463,7 +463,7 @@ fn uninstall() -> Result<()> {
     }
 
     // Delete the binary
-    let binary_path = Path::new("/usr/local/bin/dotfilesd");
+    let binary_path = Path::new("/usr/local/bin/dotfiles");
 
     if binary_path.exists() {
         std::fs::remove_file(binary_path)
@@ -498,9 +498,9 @@ fn uninstall_daemon_linux() -> Result<()> {
     // Disable the daemon using systemctl
     Command::new("systemctl")
         .arg("disable")
-        .arg("/usr/lib/systemd/system/dotfilesd-daemon.service")
+        .arg("/usr/lib/systemd/system/dotfiles-daemon.service")
         .output()
-        .with_context(|| "Could not disable dotfilesd-daemon.service")?;
+        .with_context(|| "Could not disable dotfiles-daemon.service")?;
 
     // Delete the daemon service
     let service_path = Path::new("/etc/systemd/system/dotfiles-daemon.service");
@@ -517,7 +517,7 @@ fn uninstall_daemon_linux() -> Result<()> {
 fn uninstall_daemon_windows() -> Result<()> {
     // Delete the daemon service
     let service_path = Path::new(
-        "C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\dotfilesd-daemon.exe",
+        "C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\dotfiles-daemon.exe",
     );
 
     if service_path.exists() {
@@ -559,7 +559,7 @@ fn update(update_type: UpdateType) -> Result<UpdateStatus> {
             .bucket_name("get-fig-io")
             .asset_prefix("bin")
             .region("us-west-1")
-            .bin_name("dotfilesd")
+            .bin_name("dotfiles")
             .current_version(current_version)
             .no_confirm(true)
             .show_output(false)
@@ -694,7 +694,7 @@ async fn sync() -> Result<()> {
 /// Login to the dotfiles server
 async fn login() -> Result<()> {
     let client_id = "hkinciohdp1i7h0imdk63a4bv";
-    let client = get_client("dotfilesd")?;
+    let client = get_client("dotfiles")?;
 
     print!("Email: ");
     stdout().flush()?;
@@ -784,9 +784,9 @@ fn doctor() -> Result<()> {
                 config_file.read_to_string(&mut config_contents)?;
 
                 let pre_eval_regex = match shell {
-                    Shells::Bash => Regex::new(r#"eval "\$\(dotfilesd shell bash pre\)""#),
-                    Shells::Zsh => Regex::new(r#"eval "\$\(dotfilesd shell zsh pre\)""#),
-                    Shells::Fish => Regex::new(r#"eval \(dotfilesd shell fish pre\)"#),
+                    Shells::Bash => Regex::new(r#"eval "\$\(dotfiles shell bash pre\)""#),
+                    Shells::Zsh => Regex::new(r#"eval "\$\(dotfiles shell zsh pre\)""#),
+                    Shells::Fish => Regex::new(r#"eval \(dotfiles shell fish pre\)"#),
                 }
                 .unwrap();
 
@@ -797,9 +797,9 @@ fn doctor() -> Result<()> {
                 }
 
                 let post_eval_regex = match shell {
-                    Shells::Bash => Regex::new(r#"eval "\$\(dotfilesd shell bash post\)""#),
-                    Shells::Zsh => Regex::new(r#"eval "\$\(dotfilesd shell zsh post\)""#),
-                    Shells::Fish => Regex::new(r#"eval \(dotfilesd shell fish post\)"#),
+                    Shells::Bash => Regex::new(r#"eval "\$\(dotfiles shell bash post\)""#),
+                    Shells::Zsh => Regex::new(r#"eval "\$\(dotfiles shell zsh post\)""#),
+                    Shells::Fish => Regex::new(r#"eval \(dotfiles shell fish post\)"#),
                 }
                 .unwrap();
 
@@ -816,7 +816,7 @@ fn doctor() -> Result<()> {
     }
 
     println!();
-    println!("dotfilesd appears to be installed correctly");
+    println!("dotfiles appears to be installed correctly");
     println!("If you have any issues, please report them at");
     println!("hello@fig.io or https://github.com/withfig/fig");
     println!();

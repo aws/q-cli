@@ -1,5 +1,5 @@
 [package]
-name = "dotfilesd"
+name = "dotfiles"
 version = "0.0.1"
 description = "A manager for dotfiles"
 edition = "2021"

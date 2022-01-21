@@ -16,7 +16,7 @@ ifndef CARGO
     $(error "cargo is not in PATH $(PATH)")
 endif
 
-BINARY_NAME=dotfilesd
+BINARY_NAME=dotfiles
 
 $(shell mkdir -p $(BUILT_PRODUCTS_DIR))
 

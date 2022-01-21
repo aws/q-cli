@@ -7,45 +7,38 @@ set -eu
 ## <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.16.0/components/prism-bash.min.js"></script>
 ## <style>body {color: #272822; background-color: #272822; font-size: 0.8em;} </style>
 
-FIG_DOWNLOAD_Darwin_aarch64="https://get.fig.io/bin/latest/darwin-aarch64"
-# FIG_DOWNLOAD_Darwin_universal="https://get.fig.io/bin/latest/darwin-universal"
-FIG_DOWNLOAD_Darwin_x86_64="https://get.fig.io/bin/latest/darwin-x86_64"
-# FIG_DOWNLOAD_Linux_aarch64="https://get.fig.io/bin/latest/linux-aarch64"
-# FIG_DOWNLOAD_Linux_armv7="https://get.fig.io/bin/latest/linux-armv7"
-# FIG_DOWNLOAD_Linux_i686="https://get.fig.io/bin/latest/linux-i686"
-FIG_DOWNLOAD_Linux_x86_64="https://get.fig.io/bin/latest/linux-x86_64"
-# FIG_DOWNLOAD_Windows_i686="https://get.fig.io/bin/latest/windows-i686.exe"
-# FIG_DOWNLOAD_Windows_x86_64="https://get.fig.io/bin/latest/windows-x86_64.exe"
+FIG_DOWNLOAD_DIR="https://get-fig-io.s3.us-west-1.amazonaws.com/bin/latest"
 
-PLATFORM=`uname -s`
 ARCH=`uname -m`
-
-if [[ $PLATFORM == CYGWIN* ]] || [[ $PLATFORM == MINGW* ]] || [[ $PLATFORM == MSYS* ]]; then
-  PLATFORM="Windows"
-fi
-
-# if [[ $PLATFORM == "Darwin" ]]; then
-#     ARCH="universal"
-# fi
+PLATFORM=`uname -s`
 
 if [[ $ARCH == armv8* ]] || [[ $ARCH == arm64* ]] || [[ $ARCH == aarch64* ]]; then
     ARCH="aarch64"
 fi
 
-if [[ $ARCH == armv6* ]] || [[ $ARCH == armv7* ]]; then
-    ARCH="armv7"
+if [[ $ARCH == x86_64* ]] || [[ $ARCH == amd64* ]]; then
+    ARCH="x86_64"
 fi
 
-DOWNLOAD_URL_LOOKUP="FIG_DOWNLOAD_${PLATFORM}_${ARCH}"
+if [[ $PLATFORM == Darwin* ]]; then
+    PLATFORM="apple-darwin"
+fi
+
+if [[ $PLATFORM == Linux* ]]; then
+    PLATFORM="unknown-linux-gnu"
+fi
+
+if [[ $PLATFORM == CYGWIN* ]] || [[ $PLATFORM == MINGW* ]] || [[ $PLATFORM == MSYS* ]]; then
+    PLATFORM="pc-windows-msvc"
+fi
 
 # URL to download the latest version of the binary
-DOWNLOAD_URL="${!DOWNLOAD_URL_LOOKUP:-}"
+DOWNLOAD_URL="$FIG_DOWNLOAD_DIR/$ARCH-$PLATFORM"
 
 if [ x$DOWNLOAD_URL == x ]; then
   echo "error: your platform and architecture (${PLATFORM}-${ARCH}) is unsupported."
   exit 1
 fi
-
 
 # Download $1 to $2
 function download_file() {
@@ -109,10 +102,17 @@ download_dir="$(mktemp -d)"
 # Download the latest binary
 download_file "${DOWNLOAD_URL}" "${download_dir}/dotfiles"
 
-# Make the binary executable and install it
-chmod +x "${download_dir}/dotfiles"
-sudo mv "${download_dir}/dotfiles" "$(install_directory)"
+# Check the files is a valid binary
+if file "${download_dir}/dotfiles" | grep -q "executable"; then
+    # Make the binary executable
+    chmod +x "${download_dir}/dotfiles"
+else
+    echo "This platform is not supported"
+    echo "If you think this is a bug, please report it at hello@fig.io"
+    exit 1
+fi
 
+sudo mv "${download_dir}/dotfiles" "$(install_directory)"
 
 if command -v dotfiles &> /dev/null; then
     sudo dotfiles install
