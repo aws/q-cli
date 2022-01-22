@@ -13,12 +13,14 @@ use futures_util::StreamExt;
 use regex::Regex;
 use self_update::update::UpdateStatus;
 use serde::{Deserialize, Serialize};
+use tokio::fs::remove_file;
+use tokio::net::UnixStream;
 use tokio::{select, try_join};
 use tokio_tungstenite::tungstenite::Message;
 use url::Url;
 
 use crate::auth::{
-    get_client, SignInConfirmError, SignInError, SignInInput, SignUpConfirmError, SignUpInput,
+    get_client, SignInConfirmError, SignInError, SignInInput, SignUpConfirmError, SignUpInput, Credentials,
 };
 
 /// Ensure the command is being run with root privileges.
@@ -149,7 +151,10 @@ pub enum CliRootCommands {
     /// Sync your latest dotfiles
     Sync,
     /// Login to dotfiles
-    Login,
+    Login {
+        #[clap(long, short)]
+        refresh: bool,
+    },
     /// Doctor
     Doctor,
 }
@@ -184,7 +189,7 @@ impl Cli {
                     Ok(())
                 }
                 CliRootCommands::Sync => sync().await,
-                CliRootCommands::Login => login().await,
+                CliRootCommands::Login { refresh } => login(refresh).await,
                 CliRootCommands::Doctor => doctor(),
             },
             // Root command
@@ -623,6 +628,14 @@ async fn daemon() -> Result<()> {
 
     let (_write, mut read) = websocket_stream.split();
 
+    let unix_socket_path = Path::new("/var/run/dotfiles-daemon.sock");
+
+    if unix_socket_path.exists() {
+        remove_file(unix_socket_path).await?;
+    }
+
+    let _unix_socket = UnixStream::connect("/var/run/dotfiles-daemon.sock").await?;
+
     loop {
         select! {
             next = read.next() => {
@@ -731,9 +744,16 @@ async fn sync() -> Result<()> {
 }
 
 /// Login to the dotfiles server
-async fn login() -> Result<()> {
+async fn login(refresh: bool) -> Result<()> {
     let client_id = "hkinciohdp1i7h0imdk63a4bv";
     let client = get_client("dotfiles")?;
+
+    if refresh {
+        let mut creds = Credentials::load_credentials()?;
+        creds.refresh_credentials(&client, client_id).await?;
+        creds.save_credentials()?;
+        return Ok(());
+    }
 
     print!("Email: ");
     stdout().flush()?;
@@ -853,6 +873,8 @@ fn doctor() -> Result<()> {
         }
         println!();
     }
+
+    // Check if daemon is running
 
     println!();
     println!("dotfiles appears to be installed correctly");

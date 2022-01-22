@@ -357,7 +357,7 @@ impl<'a> SignUpOutput<'a> {
                     SignUpConfirmError::CodeMismatch(error.message.clone())
                 }
                 ConfirmSignUpErrorKind::ExpiredCodeException(ref error) => {
-                    SignUpConfirmError::ExpiredCode(error.message.clone())
+                     SignUpConfirmError::ExpiredCode(error.message.clone())
                 }
                 ConfirmSignUpErrorKind::UserLambdaValidationException(ref error) => {
                     match parse_lambda_error(error.clone()) {
@@ -540,7 +540,6 @@ impl Credentials {
             Some(auth_result) => {
                 self.access_token = auth_result.access_token;
                 self.id_token = auth_result.id_token;
-                self.refresh_token = auth_result.refresh_token;
                 self.experation_time = time::OffsetDateTime::now_utc()
                     + time::Duration::seconds(auth_result.expires_in.into());
             }

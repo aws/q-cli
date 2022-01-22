@@ -5,10 +5,10 @@
         <key>Label</key>
         <string>io.fig.dotfiles-daemon</string>
         <key>Program</key>
-        <string>/usr/local/bin/dotfilesd</string>
+        <string>/usr/local/bin/dotfiles</string>
         <key>ProgramArguments</key>
         <array>
-            <string>/usr/local/bin/dotfilesd</string>
+            <string>/usr/local/bin/dotfiles</string>
             <string>daemon</string>
         </array>
         <key>KeepAlive</key>

@@ -81,6 +81,7 @@ build-native:
 install: build-native
 	sudo rm -f /usr/local/bin/$(BINARY_NAME)
 	sudo cp $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME) /usr/local/bin/$(BINARY_NAME)
+	sudo chmod +s /usr/local/bin/$(BINARY_NAME)
 
 clean:
 	cargo clean
