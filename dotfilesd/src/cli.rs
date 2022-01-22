@@ -9,10 +9,12 @@ use std::time::Duration;
 use anyhow::{Context, Result};
 use clap::{ArgEnum, Parser, Subcommand};
 use dirs::{cache_dir, home_dir};
+use futures_util::StreamExt;
 use regex::Regex;
 use self_update::update::UpdateStatus;
 use serde::{Deserialize, Serialize};
 use tokio::{select, try_join};
+use tokio_tungstenite::tungstenite::Message;
 use url::Url;
 
 use crate::auth::{
@@ -616,8 +618,43 @@ fn update(update_type: UpdateType) -> Result<UpdateStatus> {
 async fn daemon() -> Result<()> {
     let mut update_interval = tokio::time::interval(Duration::from_secs(60 * 60));
 
+    // Connect to websocket
+    let (websocket_stream, _) = tokio_tungstenite::connect_async("ws://127.0.0.1:1234").await?;
+
+    let (_write, mut read) = websocket_stream.split();
+
     loop {
         select! {
+            next = read.next() => {
+                match next {
+                    Some(stream_result) => match stream_result {
+                        Ok(message) => match message {
+                            Message::Text(text) => {
+                                match text.trim() {
+                                    "dotfiles" => {
+                                        sync().await?;
+                                    }
+                                    text => {
+                                        println!("Received unknown text: {}", text);
+                                    }
+                                }
+                            }
+                            message => {
+                                println!("Received unknown message: {:?}", message);
+                            }
+                        },
+                        Err(err) => {
+                            // TODO: Gracefully handle errors
+                            println!("Error: {:?}", err);
+                            continue;
+                        }
+                    },
+                    None => {
+                        // TODO: Handle disconnections
+                        return Err(anyhow::anyhow!("Websocket disconnected"));
+                    }
+                }
+            }
             _ = update_interval.tick() => {
                 // Check for updates
                 match update(UpdateType::NoProgress)? {
@@ -764,7 +801,7 @@ async fn login() -> Result<()> {
                     }
                 }
             }
-            err => return Err(err.into()),
+            err => Err(err.into()),
         },
     }
 }

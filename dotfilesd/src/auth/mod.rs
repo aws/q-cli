@@ -9,7 +9,11 @@ use aws_sdk_cognitoidentityprovider::{
 };
 use rand::Rng;
 use serde::{Deserialize, Serialize};
-use std::{borrow::Cow, collections::HashMap, fs::{File, self}};
+use std::{
+    borrow::Cow,
+    collections::HashMap,
+    fs::{self, File},
+};
 use thiserror::Error;
 
 pub fn get_client(client_name: impl Into<Cow<'static, str>>) -> anyhow::Result<Client> {
@@ -87,16 +91,16 @@ pub struct SignInInput<'a> {
 
 #[derive(Debug, Error)]
 pub enum SignInError {
-    #[error("User not found: {:?}", _0)]
+    #[error("user not found: {0:?}")]
     UserNotFound(Option<String>),
-    #[error("Missing Session")]
+    #[error("missing session")]
     MissingSession,
-    #[error("Missing Challenge Name")]
+    #[error("missing challenge name")]
     MissingChallengeName,
-    #[error("Missing Challenge Parameters")]
+    #[error("missing challenge parameters")]
     MissingChallengeParameters,
-    #[error("Sdk Error: {:?}", _0)]
-    SdkError(Box<SdkError<InitiateAuthError>>),
+    #[error("sdk error")]
+    SdkError(#[from] Box<SdkError<InitiateAuthError>>),
 }
 
 impl<'a> SignInInput<'a> {
@@ -167,14 +171,14 @@ pub struct SignInOutput<'a> {
 
 #[derive(Debug, Error)]
 pub enum SignInConfirmError {
-    #[error("Validation Error: {:?}", _0)]
-    ValidationError(ValidationError),
-    #[error("Error Code Mismatch")]
+    #[error("error code mismatch")]
     ErrorCodeMismatch,
-    #[error("Could not sign in")]
+    #[error("could not sign in")]
     CouldNotSignIn,
-    #[error("Sdk Error: {:?}", _0)]
-    SdkError(Box<SdkError<RespondToAuthChallengeError>>),
+    #[error("validation error")]
+    ValidationError(#[from] ValidationError),
+    #[error("sdk error")]
+    SdkError(#[from] Box<SdkError<RespondToAuthChallengeError>>),
 }
 
 impl<'a> SignInOutput<'a> {
@@ -209,12 +213,12 @@ impl<'a> SignInOutput<'a> {
         })?;
 
         match out.authentication_result {
-            Some(auth_result) => Ok(Credentials {
-                access_token: auth_result.access_token,
-                id_token: auth_result.id_token,
-                refresh_token: auth_result.refresh_token,
-                expires_in: auth_result.expires_in,
-            }),
+            Some(auth_result) => Ok(Credentials::new(
+                auth_result.access_token,
+                auth_result.id_token,
+                auth_result.refresh_token,
+                auth_result.expires_in,
+            )),
             None => match out.session {
                 Some(session) => {
                     self.session = session;
@@ -240,10 +244,10 @@ pub struct SignUpInput<'a> {
 
 #[derive(Debug, Error)]
 pub enum SignUpError {
-    #[error("Sdk Error: {:?}", _0)]
-    SdkError(Box<SdkError<aws_sdk_cognitoidentityprovider::error::SignUpError>>),
-    #[error("Validation Error: {:?}", _0)]
-    ValidationError(ValidationError),
+    #[error("sdk error")]
+    SdkError(#[from] Box<SdkError<aws_sdk_cognitoidentityprovider::error::SignUpError>>),
+    #[error("validation error")]
+    ValidationError(#[from] ValidationError),
 }
 
 impl<'a> SignUpInput<'a> {
@@ -312,20 +316,20 @@ pub struct SignUpOutput<'a> {
 
 #[derive(Debug, Error)]
 pub enum SignUpConfirmError {
-    #[error("Email Exists: {:?}", _0)]
+    #[error("email exists: {0:?}")]
     EmailExists(Option<String>),
-    #[error("Code Mismatch: {:?}", _0)]
+    #[error("code mismatch: {0:?}")]
     CodeMismatch(Option<String>),
-    #[error("Expired Code: {:?}", _0)]
+    #[error("expired code: {0:?}")]
     ExpiredCode(Option<String>),
-    #[error("Could not sign up")]
+    #[error("could not sign up")]
     CouldNotSignUp,
-    #[error("Validation Error: {:?}", _0)]
-    ValidationError(ValidationError),
-    #[error("Sdk Error: {:?}", _0)]
-    SdkErrorConfirmSignUp(SdkError<ConfirmSignUpError>),
-    #[error("Sdk Error: {:?}", _0)]
-    SdkErrorInitiateAuth(SdkError<InitiateAuthError>),
+    #[error("validation error")]
+    ValidationError(#[from] ValidationError),
+    #[error("sdk error: ConfirmSignUp")]
+    SdkErrorConfirmSignUp(#[from] Box<SdkError<ConfirmSignUpError>>),
+    #[error("sdk error: InitiateAuthError")]
+    SdkErrorInitiateAuth(#[from] Box<SdkError<InitiateAuthError>>),
 }
 
 impl<'a> SignUpOutput<'a> {
@@ -358,12 +362,12 @@ impl<'a> SignUpOutput<'a> {
                 ConfirmSignUpErrorKind::UserLambdaValidationException(ref error) => {
                     match parse_lambda_error(error.clone()) {
                         Ok(err) => SignUpConfirmError::ValidationError(err),
-                        _ => SignUpConfirmError::SdkErrorConfirmSignUp(err),
+                        _ => SignUpConfirmError::SdkErrorConfirmSignUp(Box::new(err)),
                     }
                 }
-                _ => SignUpConfirmError::SdkErrorConfirmSignUp(err),
+                _ => SignUpConfirmError::SdkErrorConfirmSignUp(Box::new(err)),
             },
-            err => SignUpConfirmError::SdkErrorConfirmSignUp(err),
+            err => SignUpConfirmError::SdkErrorConfirmSignUp(Box::new(err)),
         })?;
 
         self.user_confirmed = true;
@@ -385,21 +389,21 @@ impl<'a> SignUpOutput<'a> {
                 InitiateAuthErrorKind::UserLambdaValidationException(ref error) => {
                     match parse_lambda_error(error.clone()) {
                         Ok(err) => SignUpConfirmError::ValidationError(err),
-                        _ => SignUpConfirmError::SdkErrorInitiateAuth(err),
+                        _ => SignUpConfirmError::SdkErrorInitiateAuth(Box::new(err)),
                     }
                 }
-                _ => SignUpConfirmError::SdkErrorInitiateAuth(err),
+                _ => SignUpConfirmError::SdkErrorInitiateAuth(Box::new(err)),
             },
-            err => SignUpConfirmError::SdkErrorInitiateAuth(err),
+            err => SignUpConfirmError::SdkErrorInitiateAuth(Box::new(err)),
         })?;
 
         match out.authentication_result {
-            Some(auth_result) => Ok(Credentials {
-                access_token: auth_result.access_token,
-                id_token: auth_result.id_token,
-                refresh_token: auth_result.refresh_token,
-                expires_in: auth_result.expires_in,
-            }),
+            Some(auth_result) => Ok(Credentials::new(
+                auth_result.access_token,
+                auth_result.id_token,
+                auth_result.refresh_token,
+                auth_result.expires_in,
+            )),
             None => Err(SignUpConfirmError::CouldNotSignUp),
         }
     }
@@ -457,10 +461,25 @@ pub struct Credentials {
     pub access_token: Option<String>,
     pub id_token: Option<String>,
     pub refresh_token: Option<String>,
-    pub expires_in: i32,
+    pub experation_time: time::OffsetDateTime,
 }
 
 impl Credentials {
+    pub fn new(
+        access_token: Option<String>,
+        id_token: Option<String>,
+        refresh_token: Option<String>,
+        expires_in: i32,
+    ) -> Self {
+        Self {
+            access_token,
+            id_token,
+            refresh_token,
+            experation_time: time::OffsetDateTime::now_utc()
+                + time::Duration::seconds(expires_in.into()),
+        }
+    }
+
     pub fn save_credentials(&self) -> anyhow::Result<()> {
         let cache =
             dirs::cache_dir().ok_or_else(|| anyhow::anyhow!("Could not find cache directory"))?;
@@ -483,6 +502,69 @@ impl Credentials {
 
         Ok(())
     }
+
+    pub fn load_credentials() -> anyhow::Result<Credentials> {
+        let cache =
+            dirs::cache_dir().ok_or_else(|| anyhow::anyhow!("Could not find cache directory"))?;
+
+        let fig_cache = cache.join("fig");
+
+        if !fig_cache.exists() {
+            fs::create_dir_all(&fig_cache)?;
+        }
+
+        let file = File::open(fig_cache.join("credentials.json"))?;
+
+        Ok(serde_json::from_reader(file)?)
+    }
+
+    pub async fn refresh_credentials(
+        &mut self,
+        client: &Client,
+        client_id: &str,
+    ) -> anyhow::Result<()> {
+        let refresh_token = self
+            .refresh_token
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("Refresh token is not set"))?;
+
+        let out = client
+            .initiate_auth()
+            .client_id(client_id)
+            .auth_flow(AuthFlowType::RefreshTokenAuth)
+            .auth_parameters("REFRESH_TOKEN", refresh_token)
+            .send()
+            .await?;
+
+        match out.authentication_result {
+            Some(auth_result) => {
+                self.access_token = auth_result.access_token;
+                self.id_token = auth_result.id_token;
+                self.refresh_token = auth_result.refresh_token;
+                self.experation_time = time::OffsetDateTime::now_utc()
+                    + time::Duration::seconds(auth_result.expires_in.into());
+            }
+            None => return Err(anyhow::anyhow!("Could not refresh credentials")),
+        }
+
+        Ok(())
+    }
+
+    pub fn get_access_token(&self) -> Option<&String> {
+        self.access_token.as_ref()
+    }
+
+    pub fn get_id_token(&self) -> Option<&String> {
+        self.id_token.as_ref()
+    }
+
+    pub fn get_refresh_token(&self) -> Option<&String> {
+        self.refresh_token.as_ref()
+    }
+
+    pub fn get_experation_time(&self) -> &time::OffsetDateTime {
+        &self.experation_time
+    }
 }
 
 /// Generates a password of the given length
@@ -492,7 +574,7 @@ impl Credentials {
 ///
 /// Length must be greater than or equal to 4
 fn generate_password(length: usize) -> String {
-    assert!(length >= 4);    
+    assert!(length >= 4);
 
     let special = r#"^$*.[]{}()?-"!@#%&/\,><':;|_~`+="#.chars().collect::<Vec<_>>();
     let alphanum = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -500,15 +582,16 @@ fn generate_password(length: usize) -> String {
         .collect::<Vec<_>>();
     let all_characters = special.iter().chain(alphanum.iter()).collect::<Vec<_>>();
 
+    let mut rng = rand::thread_rng();
+
     loop {
-        let mut rng = rand::thread_rng();
         let mut password = String::with_capacity(length);
 
         for _ in 0..length {
             password.push(*all_characters[rng.gen_range(0..all_characters.len())]);
         }
 
-        // Check for number
+        // Check for lowercase, uppercase, digit, and special character
         if password.chars().any(|c| c.is_numeric())
             && password.chars().any(|c| special.contains(&c))
             && password.chars().any(|c| c.is_ascii_uppercase())

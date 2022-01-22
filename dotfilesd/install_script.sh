@@ -7,6 +7,16 @@ set -eu
 ## <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.16.0/components/prism-bash.min.js"></script>
 ## <style>body {color: #272822; background-color: #272822; font-size: 0.8em;} </style>
 
+MAGENTA="\033[1;35m"
+BOLD="\033[1;1m"
+RESET="\033[0m"
+
+function abort() {
+    echo $1
+    echo "If you need help, please email us at ${BOLD}hello@fig.io${RESET}."
+    exit 1
+}
+
 FIG_DOWNLOAD_DIR="https://get-fig-io.s3.us-west-1.amazonaws.com/bin/latest"
 
 ARCH=`uname -m`
@@ -35,28 +45,29 @@ fi
 # URL to download the latest version of the binary
 DOWNLOAD_URL="$FIG_DOWNLOAD_DIR/$ARCH-$PLATFORM"
 
-if [ x$DOWNLOAD_URL == x ]; then
-  echo "error: your platform and architecture (${PLATFORM}-${ARCH}) is unsupported."
-  exit 1
-fi
+# Ensure the user has the nessisary tools to install dotfiles
+function check_for_commands() {
+    if ! command -v sudo >/dev/null; then
+        abort "Please install sudo before running this script."
+    fi
 
-# Download $1 to $2
+
+}
+
+# Download url $1 to file $2
 function download_file() {
     if command -v curl &> /dev/null; then
         curl -s -L -o "$2" "$1"
         if [ $? -ne 0 ]; then
-            echo "Failed to download $1"
-            exit 1
+            abort "Failed to download $1"
         fi
     elif command -v wget &> /dev/null; then
         wget -q -O "$2" "$1"
         if [ $? -ne 0 ]; then
-            echo "Failed to download $1"
-            exit 1
+            abort "Failed to download $1"
         fi
     else
-        echo "Neither curl nor wget found. Please install one of them."
-        exit 1
+        abort "Failed to download, neither curl nor wget is available"
     fi
 }
 
@@ -88,8 +99,7 @@ function install_directory() {
 
     # Check that the directory is in the PATH
     if ! echo "$PATH" | grep -q "$_install_dir"; then
-        echo "Please add $_install_dir to your PATH."
-        exit 1
+        abort "Please add $_install_dir to your PATH."
     fi
 
     # Return the install directory
@@ -107,26 +117,27 @@ if file "${download_dir}/dotfiles" | grep -q "executable"; then
     # Make the binary executable
     chmod +x "${download_dir}/dotfiles"
 else
-    echo "This platform is not supported"
-    echo "If you think this is a bug, please report it at hello@fig.io"
-    exit 1
+    abort "Your platform and architecture (${PLATFORM}-${ARCH}) is unsupported."
 fi
 
-sudo mv "${download_dir}/dotfiles" "$(install_directory)"
+check_for_commands
+
+INSTALL_DIR="$(install_directory)"
+
+printf "Installing dotfiles to ${BOLD}${INSTALL_DIR}${RESET}\n"
+sudo mv "${download_dir}/dotfiles" "${INSTALL_DIR}"
+printf "\n"
 
 if command -v dotfiles &> /dev/null; then
     sudo dotfiles install
 
     if [ $? -ne 0 ]; then
-        echo "Failed to install dotfiles"
-        exit 1
+        abort "Failed to install dotfiles"
     fi
 
-    echo "Successfully installed dotfiles"
-    echo "Run 'dotfiles' to start using dotfiles"
+    printf "\nRun ${MAGENTA}dotfiles${RESET} to get started!\n"
 else
-    echo "Failed to install dotfiles. Command 'dotfiles' not found"
-    exit 1
+    abort "Failed to install dotfiles. Command 'dotfiles' not found."
 fi
 
 # ------------------------------------------
