@@ -1,11 +1,14 @@
 package doctor
 
 import (
+	"bufio"
 	"bytes"
+	"errors"
 	"fig-cli/diagnostics"
 	fig_ipc "fig-cli/fig-ipc"
 	fig_proto "fig-cli/fig-proto"
 	"fmt"
+	"net"
 	"os"
 	"os/exec"
 	"os/user"
@@ -108,6 +111,8 @@ func IsInstalled(application string) bool {
 }
 
 func NewCmdDoctor() *cobra.Command {
+	var verbose bool
+
 	cmd := &cobra.Command{
 		Use:   "doctor",
 		Short: "Check Fig is properly configured",
@@ -129,13 +134,17 @@ func NewCmdDoctor() *cobra.Command {
 			os.Remove(fixFile)
 
 			for {
-				fmt.Println(lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Render("\nLet's make sure Fig is running...\n"))
+				if verbose {
+					fmt.Println(lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Render("\nLet's make sure Fig is running...\n"))
+				}
 
 				// Check if file ~/.fig/bin/fig exists
 				if _, err := os.ReadFile(fmt.Sprintf("%s/.fig/bin/fig", user.HomeDir)); err != nil {
 					fmt.Println("❌ Fig bin does not exist")
 				} else {
-					fmt.Println("✅ Fig bin exists")
+					if verbose {
+						fmt.Println("✅ Fig bin exists")
+					}
 				}
 
 				// Check if fig is in PATH
@@ -143,7 +152,9 @@ func NewCmdDoctor() *cobra.Command {
 				if !strings.Contains(path, ".fig/bin") {
 					fmt.Println("❌ Fig not in PATH")
 				} else {
-					fmt.Println("✅ Fig in PATH")
+					if verbose {
+						fmt.Println("✅ Fig in PATH")
+					}
 				}
 
 				// Check if fig is running
@@ -157,14 +168,58 @@ func NewCmdDoctor() *cobra.Command {
 				running := appInfo.IsRunning()
 
 				if running {
-					fmt.Println("✅ Fig is running")
+					if verbose {
+						fmt.Println("✅ Fig is running")
+					}
 				} else {
-					fmt.Println("❌ Fig is not running")
-
+					if verbose {
+						fmt.Println("❌ Fig is not running")
+					}
 					return
 				}
 
-				fmt.Println(lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Render("\nLet's check your dotfiles...\n"))
+				// Check if $TMPDIR/fig.socket exists
+				fig_socket_path := filepath.Join(os.Getenv("TMPDIR"), "fig.socket")
+				if _, err := os.Stat(fig_socket_path); errors.Is(err, os.ErrNotExist) {
+					fmt.Println("❌ Fig socket does not exist at " + fig_socket_path)
+				} else {
+					if verbose {
+						fmt.Println("✅ Fig socket exists at " + fig_socket_path)
+					}
+				}
+
+				//Check if /tmp/figterm-$TERM_SESSION_ID.socket exists and attempt to write to it.
+				figterm_socket_path := fmt.Sprintf("/tmp/figterm-%s.socket", os.Getenv("TERM_SESSION_ID"))
+				if _, err := os.Stat(figterm_socket_path); errors.Is(err, os.ErrNotExist) {
+					fmt.Println("❌ Figterm socket does not exist at " + figterm_socket_path)
+				} else {
+					// Attempt to write to the socket
+					conn, err := net.Dial("unix", figterm_socket_path)
+					if err != nil {
+						fmt.Println("❌ Figterm socket exists but is not writable")
+					} else {
+						go func() {
+							defer conn.Close()
+							time.Sleep(time.Millisecond * 10)
+							conn.Write([]byte("Testing Figterm...\n"))
+						}()
+
+						reader := bufio.NewReader(os.Stdin)
+						val, _ := reader.ReadString('\n')
+
+						if val != "Testing Figterm...\n" {
+							fmt.Println("❌ Figterm socket exists but is not writable")
+						} else {
+							if verbose {
+								fmt.Println("✅ Figterm socket exists and is writable")
+							}
+						}
+					}
+				}
+
+				if verbose {
+					fmt.Println(lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Render("\nLet's check your dotfiles...\n"))
+				}
 
 				for _, fileName := range []string{".profile", ".zprofile", ".bash_profile", ".bashrc", ".zshrc"} {
 					// Read file if it exists
@@ -182,25 +237,37 @@ func NewCmdDoctor() *cobra.Command {
 						if len(lines) >= 2 &&
 							(!bytes.Equal(lines[0], []byte(`[ -s ~/.fig/shell/pre.sh ] && source ~/.fig/shell/pre.sh`)) ||
 								!bytes.Equal(lines[len(lines)-1], []byte(`[ -s ~/.fig/fig.sh ] && source ~/.fig/fig.sh`))) {
-							fmt.Printf("\n🟡 Fig ENV variables not properly set in ~/%s\n", fileName)
+							fmt.Printf("\n❌ Fig ENV variables not properly set in ~/%s\n\n", fileName)
 
 							style := lipgloss.NewStyle().Foreground(lipgloss.Color("3"))
 
 							fmt.Println(style.Render("   Fig ENV variables need to be at the very beginning and end of ~/" + fileName))
-							fmt.Println(style.Render("   If you see the FIG ENV VARs in ~/" + fileName + ", make sure they're at the very beginning (pre) and end (post). Open a new terminal then rerun the the doctor."))
-							fmt.Println(style.Render("   If you don't see the FIG ENV VARs in ~/" + fileName + ", run 'fig app install' to add them. Open a new terminal then rerun the doctor."))
+							fmt.Println()
+							fmt.Println(style.Render("   If you see the FIG ENV VARs in ~/" + fileName + ", make sure they're at the very"))
+							fmt.Println(style.Render("   beginning (pre) and end (post). Open a new terminal then rerun the the doctor."))
+							fmt.Println()
+							fmt.Println(style.Render("   If you don't see the FIG ENV VARs in ~/" + fileName + ", run 'fig app install'"))
+							fmt.Println(style.Render("   to add them. Open a new terminal then rerun the doctor."))
+
+							return
 						} else {
-							fmt.Printf("✅ Fig ENV variables are in ~/%s\n", fileName)
+							if verbose {
+								fmt.Printf("✅ Fig ENV variables are in ~/%s\n", fileName)
+							}
 						}
 
 					}
 				}
 
-				fmt.Println(lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Render("\nLet's check if your system is compatible...\n"))
+				if verbose {
+					fmt.Println(lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Render("\nLet's check if your system is compatible...\n"))
+				}
 
 				// Check if darwin
 				if runtime.GOOS == "darwin" {
-					fmt.Println("✅ Running macOS")
+					if verbose {
+						fmt.Println("✅ Running macOS")
+					}
 				} else {
 					fmt.Println("❌ Running " + runtime.GOOS)
 					return
@@ -208,7 +275,9 @@ func NewCmdDoctor() *cobra.Command {
 
 				macosVersion, err := exec.Command("sw_vers", "-productVersion").Output()
 				if err != nil {
-					fmt.Println("❌ Could not get macOS version")
+					if verbose {
+						fmt.Println("❌ Could not get macOS version")
+					}
 					return
 				}
 
@@ -217,18 +286,24 @@ func NewCmdDoctor() *cobra.Command {
 				minorVersion, _ := strconv.Atoi(macosVersionSplit[1])
 
 				if majorVersion >= 11 {
-					fmt.Println("✅ macOS version is 11.x or higher")
+					if verbose {
+						fmt.Println("✅ macOS version is 11.x or higher")
+					}
 				} else {
 					if majorVersion == 10 && minorVersion >= 14 {
-						fmt.Println("✅ macOS version is 10.14 or higher")
+						if verbose {
+							fmt.Println("✅ macOS version is 10.14 or higher")
+						}
 					} else {
 						fmt.Println("❌ macOS version lower than 10.14 is incompatible with Fig")
 					}
 				}
 
-				fmt.Println(lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Render("\nLet's check what ") +
-					lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Bold(true).Italic(true).Render("fig diagnostic") +
-					lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Render(" says...\n"))
+				if verbose {
+					fmt.Println(lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Render("\nLet's check what ") +
+						lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Bold(true).Italic(true).Render("fig diagnostic") +
+						lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Render(" says...\n"))
+				}
 
 				cmd := fig_proto.Command{
 					Command: &fig_proto.Command_Diagnostics{},
@@ -245,7 +320,9 @@ func NewCmdDoctor() *cobra.Command {
 
 				// Installation Script
 				if diagnosticsResp.GetDiagnostics().GetInstallscript() == "true" {
-					fmt.Println("✅ Installation script")
+					if verbose {
+						fmt.Println("✅ Installation script")
+					}
 				} else {
 					fmt.Println("❌ Installation script")
 					Fix("~/.fig/tools/install_and_upgrade.sh")
@@ -270,18 +347,24 @@ func NewCmdDoctor() *cobra.Command {
 				currentShellCompatible := compatibleShellsRegex.MatchString(currentShell)
 
 				if userShellCompatible && currentShellCompatible {
-					fmt.Println("✅ Shell " + lipgloss.NewStyle().Bold(true).Render(currentShell) + " is compatible")
+					if verbose {
+						fmt.Println("✅ Shell " + lipgloss.NewStyle().Bold(true).Render(currentShell) + " is compatible")
+					}
 				} else if !userShellCompatible && !currentShellCompatible {
 					fmt.Println()
 					fmt.Println("❌ Shell " + lipgloss.NewStyle().Bold(true).Render(currentShell) + " is incompatible")
 				} else {
 					fmt.Println()
 					if userShellCompatible {
-						fmt.Println("✅ Default shell " + lipgloss.NewStyle().Bold(true).Render(userShell) + " is compatible")
+						if verbose {
+							fmt.Println("✅ Default shell " + lipgloss.NewStyle().Bold(true).Render(userShell) + " is compatible")
+						}
 					}
 
 					if currentShellCompatible {
-						fmt.Println("✅ Current shell " + lipgloss.NewStyle().Bold(true).Render(currentShell) + " is compatible")
+						if verbose {
+							fmt.Println("✅ Current shell " + lipgloss.NewStyle().Bold(true).Render(currentShell) + " is compatible")
+						}
 					}
 
 					if !userShellCompatible {
@@ -302,7 +385,9 @@ func NewCmdDoctor() *cobra.Command {
 				// Bundle path
 				bundlePath := diagnosticsResp.GetDiagnostics().GetPathToBundle()
 				if strings.Contains(bundlePath, "/Applications/Fig.app") {
-					fmt.Println("✅ Fig is installed in " + lipgloss.NewStyle().Bold(true).Render(bundlePath))
+					if verbose {
+						fmt.Println("✅ Fig is installed in " + lipgloss.NewStyle().Bold(true).Render(bundlePath))
+					}
 				} else if strings.Contains(bundlePath, "/Build/Products/Debug/fig.app") {
 					fmt.Println("🟡 Fig is running debug build in " + lipgloss.NewStyle().Bold(true).Render(bundlePath))
 				} else {
@@ -316,7 +401,9 @@ func NewCmdDoctor() *cobra.Command {
 
 				// Autocomplete
 				if diagnosticsResp.GetDiagnostics().GetAutocomplete() {
-					fmt.Println("✅ Autocomplete is enabled")
+					if verbose {
+						fmt.Println("✅ Autocomplete is enabled")
+					}
 				} else {
 					fmt.Println()
 					fmt.Println("❌ Autocomplete is disabled")
@@ -327,12 +414,16 @@ func NewCmdDoctor() *cobra.Command {
 				// CLI Path
 				executable, err := os.Executable()
 				if err != nil {
-					fmt.Println("❌ Could not get Fig executable path")
+					if verbose {
+						fmt.Println("❌ Could not get Fig executable path")
+					}
 				} else {
 					if executable == filepath.Join(user.HomeDir, ".fig/bin/fig") ||
 						executable == "/usr/local/bin/.fig/bin/fig" ||
 						executable == "/usr/local/bin/fig" {
-						fmt.Println("✅ CLI tool path")
+						if verbose {
+							fmt.Println("✅ CLI tool path")
+						}
 					} else {
 						fmt.Println()
 						fmt.Println("❌ CLI tool path")
@@ -343,7 +434,9 @@ func NewCmdDoctor() *cobra.Command {
 
 				// Accessibility
 				if diagnosticsResp.GetDiagnostics().GetAccessibility() == "true" {
-					fmt.Println("✅ Accessibility is enabled")
+					if verbose {
+						fmt.Println("✅ Accessibility is enabled")
+					}
 				} else {
 					fmt.Println("❌ Accessibility is disabled")
 					Fix("fig debug prompt-accessibility")
@@ -352,7 +445,9 @@ func NewCmdDoctor() *cobra.Command {
 
 				// Path
 				if diagnosticsResp.GetDiagnostics().GetPsudoterminalPath() == os.Getenv("PATH") {
-					fmt.Println("✅ PATH and PseudoTerminal PATH match")
+					if verbose {
+						fmt.Println("✅ PATH and PseudoTerminal PATH match")
+					}
 				} else {
 					fmt.Println("❌ PATH and PseudoTerminal PATH do not match")
 					Fix("fig app set-path")
@@ -361,7 +456,9 @@ func NewCmdDoctor() *cobra.Command {
 
 				// SecureKeyboardProcess
 				if diagnosticsResp.GetDiagnostics().GetSecurekeyboard() == "false" {
-					fmt.Println("✅ Secure keyboard input")
+					if verbose {
+						fmt.Println("✅ Secure keyboard input")
+					}
 				} else {
 					if IsInstalled("Bitwarden.app") {
 						// Check bitwarden version
@@ -406,7 +503,9 @@ func NewCmdDoctor() *cobra.Command {
 				}
 
 				// Integrations
-				fmt.Println(lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Render("\nLet's check your integration statuses...\n"))
+				if verbose {
+					fmt.Println(lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Render("\nLet's check your integration statuses...\n"))
+				}
 
 				// SSH Integration
 				// TODO
@@ -431,7 +530,9 @@ func NewCmdDoctor() *cobra.Command {
 								itermVersionMajor, _ := strconv.Atoi(versionMatch[1])
 								itermVersionMinor, _ := strconv.Atoi(versionMatch[2])
 								if itermVersionMajor >= 3 && itermVersionMinor >= 4 {
-									fmt.Println("✅ iTerm integration is enabled")
+									if verbose {
+										fmt.Println("✅ iTerm integration is enabled")
+									}
 								} else {
 									fmt.Println("❌ iTerm integration fail")
 									fmt.Println("   Your iTerm version is incompatible with Fig. Please update iTerm to latest version")
@@ -476,7 +577,9 @@ func NewCmdDoctor() *cobra.Command {
 						major, _ := strconv.Atoi(version[1])
 						minor, _ := strconv.Atoi(version[2])
 						if major > 0 || minor > 3 {
-							fmt.Println("✅ iTerm Bash Integration is up to date.")
+							if verbose {
+								fmt.Println("✅ iTerm Bash Integration is up to date.")
+							}
 						} else {
 							fmt.Println("❌ iTerm Bash Integration is out of date. Please update in iTerm's menu by selecting \"Install Shell Integration\".")
 						}
@@ -489,7 +592,9 @@ func NewCmdDoctor() *cobra.Command {
 					fmt.Println("❌ Could not verify Hyper integration")
 				} else {
 					if hyperIntegration == "installed!" {
-						fmt.Println("✅ Hyper integration is enabled")
+						if verbose {
+							fmt.Println("✅ Hyper integration is enabled")
+						}
 					} else {
 						// Check if Hyper is installed
 						if IsInstalled("Hyper.app") {
@@ -526,7 +631,9 @@ func NewCmdDoctor() *cobra.Command {
 					fmt.Println("❌ Could not verify VSCode integration")
 				} else {
 					if vscodeIntegration == "installed!" {
-						fmt.Println("✅ VSCode integration is enabled")
+						if verbose {
+							fmt.Println("✅ VSCode integration is enabled")
+						}
 					} else {
 						if IsInstalled("Visual Studio Code.app") {
 							fmt.Println("❌ VSCode integration fail")
@@ -568,6 +675,8 @@ func NewCmdDoctor() *cobra.Command {
 			}
 		},
 	}
+
+	cmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Show verbose output")
 
 	return cmd
 }
