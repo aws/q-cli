@@ -7,6 +7,19 @@ set -eu
 ## <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.16.0/components/prism-bash.min.js"></script>
 ## <style>body {color: #272822; background-color: #272822; font-size: 0.8em;} </style>
 
+abort() {
+  printf "%s\n" "$@"
+  exit 1
+}
+
+# Fail fast with a concise message when not using bash
+# Single brackets are needed here for POSIX compatibility
+if [ -z "${BASH_VERSION:-}" ]
+then
+  abort "Bash is required to interpret this script."
+fi
+
+
 FIG_DOWNLOAD_Darwin_aarch64="https://get.fig.io/bin/latest/darwin-aarch64"
 # FIG_DOWNLOAD_Darwin_universal="https://get.fig.io/bin/latest/darwin-universal"
 FIG_DOWNLOAD_Darwin_x86_64="https://get.fig.io/bin/latest/darwin-x86_64"
@@ -42,8 +55,7 @@ DOWNLOAD_URL_LOOKUP="FIG_DOWNLOAD_${PLATFORM}_${ARCH}"
 DOWNLOAD_URL="${!DOWNLOAD_URL_LOOKUP:-}"
 
 if [ x$DOWNLOAD_URL == x ]; then
-  echo "error: your platform and architecture (${PLATFORM}-${ARCH}) is unsupported."
-  exit 1
+  abort "error: your platform and architecture (${PLATFORM}-${ARCH}) is unsupported."
 fi
 
 
@@ -58,12 +70,10 @@ function download_file() {
     elif command -v wget &> /dev/null; then
         wget -q -O "$2" "$1"
         if [ $? -ne 0 ]; then
-            echo "Failed to download $1"
-            exit 1
+            abort "Failed to download $1"
         fi
     else
-        echo "Neither curl nor wget found. Please install one of them."
-        exit 1
+        abort "Neither curl nor wget found. Please install one of them."
     fi
 }
 
@@ -79,8 +89,7 @@ function install_directory() {
             _ostype="darwin"
             ;;
         *)
-            echo "Unknown OS type: $_ostype"
-            exit 1
+            abort "Unknown OS type: $_ostype"
             ;;
     esac
 
@@ -95,8 +104,7 @@ function install_directory() {
 
     # Check that the directory is in the PATH
     if ! echo "$PATH" | grep -q "$_install_dir"; then
-        echo "Please add $_install_dir to your PATH."
-        exit 1
+        abort "Please add $_install_dir to your PATH."
     fi
 
     # Return the install directory
@@ -118,15 +126,13 @@ if command -v dotfiles &> /dev/null; then
     sudo dotfiles install
 
     if [ $? -ne 0 ]; then
-        echo "Failed to install dotfiles"
-        exit 1
+        abort "Failed to install dotfiles"
     fi
 
     echo "Successfully installed dotfiles"
     echo "Run 'dotfiles' to start using dotfiles"
 else
-    echo "Failed to install dotfiles. Command 'dotfiles' not found"
-    exit 1
+    abort "Failed to install dotfiles. Command 'dotfiles' not found"
 fi
 
 # ------------------------------------------
@@ -144,3 +150,4 @@ fi
 # when ran as a script, they're totally ignored.
 #
 # Credit goes to firebase.tools for the inspiration & much of the implementation.
+# Install scripts for Homebrew, Docker & Sentry were also used as reference.
