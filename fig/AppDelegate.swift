@@ -148,6 +148,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
       SentrySDK.setUser(user)
       ShellBridge.symlinkCLI()
       Config.shared.set(value: "1", forKey: Config.userLoggedIn)
+      UpdateService.provider.resetShellConfig()
 
       if !Accessibility.enabled {
         Accessibility.showPromptUI()
