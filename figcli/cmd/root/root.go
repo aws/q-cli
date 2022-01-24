@@ -30,7 +30,6 @@ import (
 	"fig-cli/cmd/update"
 	"fig-cli/cmd/user"
 	"fig-cli/cmd/user/logout"
-	"fig-cli/cmd/wrapped"
 	"fig-cli/diagnostics"
 	fig_ipc "fig-cli/fig-ipc"
 	fig_proto "fig-cli/fig-proto"
@@ -311,7 +310,6 @@ func Execute() {
 	rootCmd.AddCommand(tweet.NewCmdTweet())
 	rootCmd.AddCommand(update.NewCmdUpdate())
 	rootCmd.AddCommand(user.NewCmdUser())
-	rootCmd.AddCommand(wrapped.NewCmdWrapped())
 
 	rootCmd.AddCommand(diagnostic.NewCmdDiagnostic())
 	rootCmd.AddCommand(logout.NewCmdLogout())

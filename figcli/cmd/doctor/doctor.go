@@ -207,12 +207,12 @@ func NewCmdDoctor() *cobra.Command {
 						reader := bufio.NewReader(os.Stdin)
 						val, _ := reader.ReadString('\n')
 
-						if val != "Testing Figterm...\n" {
-							fmt.Println("❌ Figterm socket exists but is not writable")
-						} else {
+						if strings.Contains(val, "Testing Figterm...") {
 							if verbose {
 								fmt.Println("✅ Figterm socket exists and is writable")
 							}
+						} else {
+							fmt.Println("❌ Figterm socket exists but is not writable")
 						}
 					}
 				}
@@ -249,7 +249,11 @@ func NewCmdDoctor() *cobra.Command {
 							fmt.Println(style.Render("   If you don't see the FIG ENV VARs in ~/" + fileName + ", run 'fig app install'"))
 							fmt.Println(style.Render("   to add them. Open a new terminal then rerun the doctor."))
 
-							return
+							fmt.Println()
+							fmt.Printf("Press enter to continue...\n")
+
+							reader := bufio.NewReader(os.Stdin)
+							reader.ReadString('\n')
 						} else {
 							if verbose {
 								fmt.Printf("✅ Fig ENV variables are in ~/%s\n", fileName)
