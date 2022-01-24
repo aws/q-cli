@@ -20,6 +20,7 @@ rand = "0.8.4"
 url = "2.2.2"
 futures-util = "0.3.19"
 time = { version = "0.3.6", features = ["serde"] }
+bytes = "1.1.0"
 
 aws-sdk-cognitoidentityprovider = "0.5.2"
 uuid = { version = "0.8.2", features = ["v4"] }

@@ -50,8 +50,6 @@ function check_for_commands() {
     if ! command -v sudo >/dev/null; then
         abort "Please install sudo before running this script."
     fi
-
-
 }
 
 # Download url $1 to file $2

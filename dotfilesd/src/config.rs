@@ -52,12 +52,19 @@ impl ConfigFile {
 
         Ok(())
     }
+
+    pub fn file(&self) -> &File {
+        &self.file
+    }
+
+    pub fn file_mut(&mut self) -> &mut File {
+        &mut self.file
+    }
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct ConfigData {
-    pub user_token: Option<String>,
     pub autoupdate: Option<bool>,
     pub last_update_check: Option<u64>,
 }

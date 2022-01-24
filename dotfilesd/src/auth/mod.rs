@@ -214,6 +214,7 @@ impl<'a> SignInOutput<'a> {
 
         match out.authentication_result {
             Some(auth_result) => Ok(Credentials::new(
+                self.username_or_email.clone(),
                 auth_result.access_token,
                 auth_result.id_token,
                 auth_result.refresh_token,
@@ -357,7 +358,7 @@ impl<'a> SignUpOutput<'a> {
                     SignUpConfirmError::CodeMismatch(error.message.clone())
                 }
                 ConfirmSignUpErrorKind::ExpiredCodeException(ref error) => {
-                     SignUpConfirmError::ExpiredCode(error.message.clone())
+                    SignUpConfirmError::ExpiredCode(error.message.clone())
                 }
                 ConfirmSignUpErrorKind::UserLambdaValidationException(ref error) => {
                     match parse_lambda_error(error.clone()) {
@@ -399,6 +400,7 @@ impl<'a> SignUpOutput<'a> {
 
         match out.authentication_result {
             Some(auth_result) => Ok(Credentials::new(
+                self.username.clone(),
                 auth_result.access_token,
                 auth_result.id_token,
                 auth_result.refresh_token,
@@ -458,6 +460,7 @@ impl ChangeUsernameInput {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Credentials {
+    pub email: Option<String>,
     pub access_token: Option<String>,
     pub id_token: Option<String>,
     pub refresh_token: Option<String>,
@@ -466,12 +469,14 @@ pub struct Credentials {
 
 impl Credentials {
     pub fn new(
+        email: impl Into<String>,
         access_token: Option<String>,
         id_token: Option<String>,
         refresh_token: Option<String>,
         expires_in: i32,
     ) -> Self {
         Self {
+            email: Some(email.into()),
             access_token,
             id_token,
             refresh_token,

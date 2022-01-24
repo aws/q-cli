@@ -4,24 +4,21 @@ use std::fs::File;
 use std::io::{stdin, stdout, Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::{exit, Command};
-use std::time::Duration;
 
 use anyhow::{Context, Result};
 use clap::{ArgEnum, Parser, Subcommand};
 use dirs::{cache_dir, home_dir};
-use futures_util::StreamExt;
 use regex::Regex;
 use self_update::update::UpdateStatus;
 use serde::{Deserialize, Serialize};
-use tokio::fs::remove_file;
-use tokio::net::UnixStream;
-use tokio::{select, try_join};
-use tokio_tungstenite::tungstenite::Message;
+use tokio::try_join;
 use url::Url;
 
 use crate::auth::{
-    get_client, SignInConfirmError, SignInError, SignInInput, SignUpConfirmError, SignUpInput, Credentials,
+    get_client, Credentials, SignInConfirmError, SignInError, SignInInput, SignUpConfirmError,
+    SignUpInput,
 };
+use crate::daemon::daemon;
 
 /// Ensure the command is being run with root privileges.
 /// If not, rexecute the command with sudo.
@@ -536,7 +533,7 @@ fn uninstall_daemon_windows() -> Result<()> {
 }
 
 #[derive(Debug, Clone, Copy)]
-enum UpdateType {
+pub enum UpdateType {
     Confirm,
     NoConfirm,
     NoProgress,
@@ -544,7 +541,7 @@ enum UpdateType {
 
 /// Self-update the dotfiles binary
 /// Update will exit the binary if the update was successful
-fn update(update_type: UpdateType) -> Result<UpdateStatus> {
+pub fn update(update_type: UpdateType) -> Result<UpdateStatus> {
     permission_guard()?;
 
     let confirm = match update_type {
@@ -619,77 +616,13 @@ fn update(update_type: UpdateType) -> Result<UpdateStatus> {
     })
 }
 
-/// Spawn the daemon to listen for updates and dotfiles changes
-async fn daemon() -> Result<()> {
-    let mut update_interval = tokio::time::interval(Duration::from_secs(60 * 60));
-
-    // Connect to websocket
-    let (websocket_stream, _) = tokio_tungstenite::connect_async("ws://127.0.0.1:1234").await?;
-
-    let (_write, mut read) = websocket_stream.split();
-
-    let unix_socket_path = Path::new("/var/run/dotfiles-daemon.sock");
-
-    if unix_socket_path.exists() {
-        remove_file(unix_socket_path).await?;
-    }
-
-    let _unix_socket = UnixStream::connect("/var/run/dotfiles-daemon.sock").await?;
-
-    loop {
-        select! {
-            next = read.next() => {
-                match next {
-                    Some(stream_result) => match stream_result {
-                        Ok(message) => match message {
-                            Message::Text(text) => {
-                                match text.trim() {
-                                    "dotfiles" => {
-                                        sync().await?;
-                                    }
-                                    text => {
-                                        println!("Received unknown text: {}", text);
-                                    }
-                                }
-                            }
-                            message => {
-                                println!("Received unknown message: {:?}", message);
-                            }
-                        },
-                        Err(err) => {
-                            // TODO: Gracefully handle errors
-                            println!("Error: {:?}", err);
-                            continue;
-                        }
-                    },
-                    None => {
-                        // TODO: Handle disconnections
-                        return Err(anyhow::anyhow!("Websocket disconnected"));
-                    }
-                }
-            }
-            _ = update_interval.tick() => {
-                // Check for updates
-                match update(UpdateType::NoProgress)? {
-                    UpdateStatus::UpToDate => {}
-                    UpdateStatus::Updated(release) => {
-                        println!("Updated to {}", release.version);
-                        println!("Quitting...");
-                        return Ok(());
-                    }
-                }
-            }
-        }
-    }
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct DotfilesSourceRequest {
     email: String,
 }
 
 async fn sync_file(shell: &Shells) -> Result<()> {
-    // Run defaults read com.mschrage.fig access_token
+    // Get the access token from defaults
     let token = Command::new("defaults")
         .arg("read")
         .arg("com.mschrage.fig")
@@ -697,9 +630,23 @@ async fn sync_file(shell: &Shells) -> Result<()> {
         .output()
         .with_context(|| "Could not read access_token")?;
 
+    let email = Credentials::load_credentials()
+        .map(|creds| creds.email)
+        .or_else(|_| {
+            let out = Command::new("defaults")
+                .arg("read")
+                .arg("com.mschrage.fig")
+                .arg("userEmail")
+                .output()?;
+
+            let email = String::from_utf8(out.stdout)?;
+
+            anyhow::Ok(Some(email))
+        })?;
+
     // Constuct the request body
     let body = serde_json::to_string(&DotfilesSourceRequest {
-        email: "sean@fig.io".into(),
+        email: email.unwrap_or_else(|| "".to_string()),
     })?;
 
     let download = reqwest::Client::new()
@@ -731,7 +678,7 @@ async fn sync_file(shell: &Shells) -> Result<()> {
 }
 
 /// Download the lastest dotfiles
-async fn sync() -> Result<()> {
+pub async fn sync() -> Result<()> {
     try_join!(
         sync_file(&Shells::Bash),
         sync_file(&Shells::Zsh),
