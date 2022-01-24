@@ -50,7 +50,7 @@ RUN npm install
 COPY --chown=test:test ./dotenv .
 
 COPY --chown=test:test ./proto/ /usr/home/proto/
-RUN cd /usr/home/proto && DOTENV=/usr/home/app/src make create-destinations local
+RUN cd /usr/home/proto && DOTENV=/usr/home/app/src make local
 
 RUN cp ./bin/fig $FIG_BUNDLE_EXECUTABLES/fig
 RUN cp ./bin/fig $FIG_BUNDLE_EXECUTABLES/figcli
