@@ -498,6 +498,14 @@ public struct Fig_ClientOriginatedMessage {
     set {submessage = .terminalSessionInfoRequest(newValue)}
   }
 
+  public var debuggerUpdateRequest: Fig_DebuggerUpdateRequest {
+    get {
+      if case .debuggerUpdateRequest(let v)? = submessage {return v}
+      return Fig_DebuggerUpdateRequest()
+    }
+    set {submessage = .debuggerUpdateRequest(newValue)}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public enum OneOf_Submessage: Equatable {
@@ -525,6 +533,7 @@ public struct Fig_ClientOriginatedMessage {
     case updateConfigPropertyRequest(Fig_UpdateConfigPropertyRequest)
     case pseudoterminalRestartRequest(Fig_PseudoterminalRestartRequest)
     case terminalSessionInfoRequest(Fig_TerminalSessionInfoRequest)
+    case debuggerUpdateRequest(Fig_DebuggerUpdateRequest)
 
   #if !swift(>=4.1)
     public static func ==(lhs: Fig_ClientOriginatedMessage.OneOf_Submessage, rhs: Fig_ClientOriginatedMessage.OneOf_Submessage) -> Bool {
@@ -626,6 +635,10 @@ public struct Fig_ClientOriginatedMessage {
       }()
       case (.terminalSessionInfoRequest, .terminalSessionInfoRequest): return {
         guard case .terminalSessionInfoRequest(let l) = lhs, case .terminalSessionInfoRequest(let r) = rhs else { preconditionFailure() }
+        return l == r
+      }()
+      case (.debuggerUpdateRequest, .debuggerUpdateRequest): return {
+        guard case .debuggerUpdateRequest(let l) = lhs, case .debuggerUpdateRequest(let r) = rhs else { preconditionFailure() }
         return l == r
       }()
       default: return false
@@ -2343,6 +2356,29 @@ public struct Fig_TerminalSessionInfoResponse {
   fileprivate var _cursor: Int64? = nil
 }
 
+public struct Fig_DebuggerUpdateRequest {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var color: String {
+    get {return _color ?? String()}
+    set {_color = newValue}
+  }
+  /// Returns true if `color` has been explicitly set.
+  public var hasColor: Bool {return self._color != nil}
+  /// Clears the value of `color`. Subsequent reads from it will return its default value.
+  public mutating func clearColor() {self._color = nil}
+
+  public var layout: [String] = []
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+
+  fileprivate var _color: String? = nil
+}
+
 public struct Fig_NotificationRequest {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -3051,6 +3087,7 @@ extension Fig_ClientOriginatedMessage: SwiftProtobuf.Message, SwiftProtobuf._Mes
     122: .standard(proto: "update_config_property_request"),
     123: .standard(proto: "pseudoterminal_restart_request"),
     124: .standard(proto: "terminal_session_info_request"),
+    125: .standard(proto: "debugger_update_request"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -3372,6 +3409,19 @@ extension Fig_ClientOriginatedMessage: SwiftProtobuf.Message, SwiftProtobuf._Mes
           self.submessage = .terminalSessionInfoRequest(v)
         }
       }()
+      case 125: try {
+        var v: Fig_DebuggerUpdateRequest?
+        var hadOneofValue = false
+        if let current = self.submessage {
+          hadOneofValue = true
+          if case .debuggerUpdateRequest(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.submessage = .debuggerUpdateRequest(v)
+        }
+      }()
       default: break
       }
     }
@@ -3481,6 +3531,10 @@ extension Fig_ClientOriginatedMessage: SwiftProtobuf.Message, SwiftProtobuf._Mes
     case .terminalSessionInfoRequest?: try {
       guard case .terminalSessionInfoRequest(let v)? = self.submessage else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 124)
+    }()
+    case .debuggerUpdateRequest?: try {
+      guard case .debuggerUpdateRequest(let v)? = self.submessage else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 125)
     }()
     case nil: break
     }
@@ -5900,6 +5954,48 @@ extension Fig_TerminalSessionInfoResponse: SwiftProtobuf.Message, SwiftProtobuf.
     if lhs._context != rhs._context {return false}
     if lhs._buffer != rhs._buffer {return false}
     if lhs._cursor != rhs._cursor {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Fig_DebuggerUpdateRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".DebuggerUpdateRequest"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .same(proto: "color"),
+    2: .same(proto: "layout"),
+  ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self._color) }()
+      case 2: try { try decoder.decodeRepeatedStringField(value: &self.layout) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    try { if let v = self._color {
+      try visitor.visitSingularStringField(value: v, fieldNumber: 1)
+    } }()
+    if !self.layout.isEmpty {
+      try visitor.visitRepeatedStringField(value: self.layout, fieldNumber: 2)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Fig_DebuggerUpdateRequest, rhs: Fig_DebuggerUpdateRequest) -> Bool {
+    if lhs._color != rhs._color {return false}
+    if lhs.layout != rhs.layout {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
