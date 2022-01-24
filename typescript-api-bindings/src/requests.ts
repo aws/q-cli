@@ -35,28 +35,30 @@ import {
   UpdateDefaultsPropertyRequest,
   UpdateSettingsPropertyRequest,
   WindowFocusRequest,
-  WriteFileRequest
-} from "./fig.pb";
-import { sendMessage } from "./core"
+  WriteFileRequest,
+} from './fig.pb';
+import { sendMessage } from './core';
 
 export async function sendPositionWindowRequest(
   request: PositionWindowRequest
 ): Promise<PositionWindowResponse> {
   return new Promise((resolve, reject) => {
     sendMessage(
-      { $case: "positionWindowRequest", positionWindowRequest: request },
-      (response) => {
+      { $case: 'positionWindowRequest', positionWindowRequest: request },
+      response => {
         switch (response?.$case) {
-          case "positionWindowResponse":
+          case 'positionWindowResponse':
             resolve(response.positionWindowResponse);
             break;
-          case "error":
+          case 'error':
             reject(Error(response.error));
             break;
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'PositionWindowRequest'"
+                "Invalid response '" +
+                  response?.$case +
+                  "' for 'PositionWindowRequest'"
               )
             );
         }
@@ -70,19 +72,24 @@ export async function sendPseudoterminalExecuteRequest(
 ): Promise<PseudoterminalExecuteResponse> {
   return new Promise((resolve, reject) => {
     sendMessage(
-      { $case: "pseudoterminalExecuteRequest", pseudoterminalExecuteRequest: request },
-      (response) => {
+      {
+        $case: 'pseudoterminalExecuteRequest',
+        pseudoterminalExecuteRequest: request,
+      },
+      response => {
         switch (response?.$case) {
-          case "pseudoterminalExecuteResponse":
+          case 'pseudoterminalExecuteResponse':
             resolve(response.pseudoterminalExecuteResponse);
             break;
-          case "error":
+          case 'error':
             reject(Error(response.error));
             break;
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'PseudoterminalExecuteRequest'"
+                "Invalid response '" +
+                  response?.$case +
+                  "' for 'PseudoterminalExecuteRequest'"
               )
             );
         }
@@ -96,19 +103,21 @@ export async function sendReadFileRequest(
 ): Promise<ReadFileResponse> {
   return new Promise((resolve, reject) => {
     sendMessage(
-      { $case: "readFileRequest", readFileRequest: request },
-      (response) => {
+      { $case: 'readFileRequest', readFileRequest: request },
+      response => {
         switch (response?.$case) {
-          case "readFileResponse":
+          case 'readFileResponse':
             resolve(response.readFileResponse);
             break;
-          case "error":
+          case 'error':
             reject(Error(response.error));
             break;
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'ReadFileRequest'"
+                "Invalid response '" +
+                  response?.$case +
+                  "' for 'ReadFileRequest'"
               )
             );
         }
@@ -122,19 +131,24 @@ export async function sendContentsOfDirectoryRequest(
 ): Promise<ContentsOfDirectoryResponse> {
   return new Promise((resolve, reject) => {
     sendMessage(
-      { $case: "contentsOfDirectoryRequest", contentsOfDirectoryRequest: request },
-      (response) => {
+      {
+        $case: 'contentsOfDirectoryRequest',
+        contentsOfDirectoryRequest: request,
+      },
+      response => {
         switch (response?.$case) {
-          case "contentsOfDirectoryResponse":
+          case 'contentsOfDirectoryResponse':
             resolve(response.contentsOfDirectoryResponse);
             break;
-          case "error":
+          case 'error':
             reject(Error(response.error));
             break;
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'ContentsOfDirectoryRequest'"
+                "Invalid response '" +
+                  response?.$case +
+                  "' for 'ContentsOfDirectoryRequest'"
               )
             );
         }
@@ -148,19 +162,24 @@ export async function sendGetSettingsPropertyRequest(
 ): Promise<GetSettingsPropertyResponse> {
   return new Promise((resolve, reject) => {
     sendMessage(
-      { $case: "getSettingsPropertyRequest", getSettingsPropertyRequest: request },
-      (response) => {
+      {
+        $case: 'getSettingsPropertyRequest',
+        getSettingsPropertyRequest: request,
+      },
+      response => {
         switch (response?.$case) {
-          case "getSettingsPropertyResponse":
+          case 'getSettingsPropertyResponse':
             resolve(response.getSettingsPropertyResponse);
             break;
-          case "error":
+          case 'error':
             reject(Error(response.error));
             break;
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'GetSettingsPropertyRequest'"
+                "Invalid response '" +
+                  response?.$case +
+                  "' for 'GetSettingsPropertyRequest'"
               )
             );
         }
@@ -174,19 +193,24 @@ export async function sendDestinationOfSymbolicLinkRequest(
 ): Promise<DestinationOfSymbolicLinkResponse> {
   return new Promise((resolve, reject) => {
     sendMessage(
-      { $case: "destinationOfSymbolicLinkRequest", destinationOfSymbolicLinkRequest: request },
-      (response) => {
+      {
+        $case: 'destinationOfSymbolicLinkRequest',
+        destinationOfSymbolicLinkRequest: request,
+      },
+      response => {
         switch (response?.$case) {
-          case "destinationOfSymbolicLinkResponse":
+          case 'destinationOfSymbolicLinkResponse':
             resolve(response.destinationOfSymbolicLinkResponse);
             break;
-          case "error":
+          case 'error':
             reject(Error(response.error));
             break;
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'DestinationOfSymbolicLinkRequest'"
+                "Invalid response '" +
+                  response?.$case +
+                  "' for 'DestinationOfSymbolicLinkRequest'"
               )
             );
         }
@@ -200,19 +224,24 @@ export async function sendGetDefaultsPropertyRequest(
 ): Promise<GetDefaultsPropertyResponse> {
   return new Promise((resolve, reject) => {
     sendMessage(
-      { $case: "getDefaultsPropertyRequest", getDefaultsPropertyRequest: request },
-      (response) => {
+      {
+        $case: 'getDefaultsPropertyRequest',
+        getDefaultsPropertyRequest: request,
+      },
+      response => {
         switch (response?.$case) {
-          case "getDefaultsPropertyResponse":
+          case 'getDefaultsPropertyResponse':
             resolve(response.getDefaultsPropertyResponse);
             break;
-          case "error":
+          case 'error':
             reject(Error(response.error));
             break;
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'GetDefaultsPropertyRequest'"
+                "Invalid response '" +
+                  response?.$case +
+                  "' for 'GetDefaultsPropertyRequest'"
               )
             );
         }
@@ -226,19 +255,21 @@ export async function sendGetConfigPropertyRequest(
 ): Promise<GetConfigPropertyResponse> {
   return new Promise((resolve, reject) => {
     sendMessage(
-      { $case: "getConfigPropertyRequest", getConfigPropertyRequest: request },
-      (response) => {
+      { $case: 'getConfigPropertyRequest', getConfigPropertyRequest: request },
+      response => {
         switch (response?.$case) {
-          case "getConfigPropertyResponse":
+          case 'getConfigPropertyResponse':
             resolve(response.getConfigPropertyResponse);
             break;
-          case "error":
+          case 'error':
             reject(Error(response.error));
             break;
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'GetConfigPropertyRequest'"
+                "Invalid response '" +
+                  response?.$case +
+                  "' for 'GetConfigPropertyRequest'"
               )
             );
         }
@@ -252,19 +283,24 @@ export async function sendTerminalSessionInfoRequest(
 ): Promise<TerminalSessionInfoResponse> {
   return new Promise((resolve, reject) => {
     sendMessage(
-      { $case: "terminalSessionInfoRequest", terminalSessionInfoRequest: request },
-      (response) => {
+      {
+        $case: 'terminalSessionInfoRequest',
+        terminalSessionInfoRequest: request,
+      },
+      response => {
         switch (response?.$case) {
-          case "terminalSessionInfoResponse":
+          case 'terminalSessionInfoResponse':
             resolve(response.terminalSessionInfoResponse);
             break;
-          case "error":
+          case 'error':
             reject(Error(response.error));
             break;
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'TerminalSessionInfoRequest'"
+                "Invalid response '" +
+                  response?.$case +
+                  "' for 'TerminalSessionInfoRequest'"
               )
             );
         }
@@ -278,19 +314,24 @@ export async function sendPseudoterminalWriteRequest(
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     sendMessage(
-      { $case: "pseudoterminalWriteRequest", pseudoterminalWriteRequest: request },
-      (response) => {
+      {
+        $case: 'pseudoterminalWriteRequest',
+        pseudoterminalWriteRequest: request,
+      },
+      response => {
         switch (response?.$case) {
-          case "success":
+          case 'success':
             resolve();
             break;
-          case "error":
+          case 'error':
             reject(Error(response.error));
             break;
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'PseudoterminalWriteRequest'"
+                "Invalid response '" +
+                  response?.$case +
+                  "' for 'PseudoterminalWriteRequest'"
               )
             );
         }
@@ -304,19 +345,21 @@ export async function sendWriteFileRequest(
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     sendMessage(
-      { $case: "writeFileRequest", writeFileRequest: request },
-      (response) => {
+      { $case: 'writeFileRequest', writeFileRequest: request },
+      response => {
         switch (response?.$case) {
-          case "success":
+          case 'success':
             resolve();
             break;
-          case "error":
+          case 'error':
             reject(Error(response.error));
             break;
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'WriteFileRequest'"
+                "Invalid response '" +
+                  response?.$case +
+                  "' for 'WriteFileRequest'"
               )
             );
         }
@@ -330,19 +373,24 @@ export async function sendUpdateSettingsPropertyRequest(
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     sendMessage(
-      { $case: "updateSettingsPropertyRequest", updateSettingsPropertyRequest: request },
-      (response) => {
+      {
+        $case: 'updateSettingsPropertyRequest',
+        updateSettingsPropertyRequest: request,
+      },
+      response => {
         switch (response?.$case) {
-          case "success":
+          case 'success':
             resolve();
             break;
-          case "error":
+          case 'error':
             reject(Error(response.error));
             break;
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'UpdateSettingsPropertyRequest'"
+                "Invalid response '" +
+                  response?.$case +
+                  "' for 'UpdateSettingsPropertyRequest'"
               )
             );
         }
@@ -356,19 +404,21 @@ export async function sendInsertTextRequest(
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     sendMessage(
-      { $case: "insertTextRequest", insertTextRequest: request },
-      (response) => {
+      { $case: 'insertTextRequest', insertTextRequest: request },
+      response => {
         switch (response?.$case) {
-          case "success":
+          case 'success':
             resolve();
             break;
-          case "error":
+          case 'error':
             reject(Error(response.error));
             break;
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'InsertTextRequest'"
+                "Invalid response '" +
+                  response?.$case +
+                  "' for 'InsertTextRequest'"
               )
             );
         }
@@ -382,19 +432,24 @@ export async function sendUpdateApplicationPropertiesRequest(
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     sendMessage(
-      { $case: "updateApplicationPropertiesRequest", updateApplicationPropertiesRequest: request },
-      (response) => {
+      {
+        $case: 'updateApplicationPropertiesRequest',
+        updateApplicationPropertiesRequest: request,
+      },
+      response => {
         switch (response?.$case) {
-          case "success":
+          case 'success':
             resolve();
             break;
-          case "error":
+          case 'error':
             reject(Error(response.error));
             break;
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'UpdateApplicationPropertiesRequest'"
+                "Invalid response '" +
+                  response?.$case +
+                  "' for 'UpdateApplicationPropertiesRequest'"
               )
             );
         }
@@ -408,19 +463,24 @@ export async function sendUpdateDefaultsPropertyRequest(
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     sendMessage(
-      { $case: "updateDefaultsPropertyRequest", updateDefaultsPropertyRequest: request },
-      (response) => {
+      {
+        $case: 'updateDefaultsPropertyRequest',
+        updateDefaultsPropertyRequest: request,
+      },
+      response => {
         switch (response?.$case) {
-          case "success":
+          case 'success':
             resolve();
             break;
-          case "error":
+          case 'error':
             reject(Error(response.error));
             break;
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'UpdateDefaultsPropertyRequest'"
+                "Invalid response '" +
+                  response?.$case +
+                  "' for 'UpdateDefaultsPropertyRequest'"
               )
             );
         }
@@ -434,19 +494,21 @@ export async function sendTelemetryAliasRequest(
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     sendMessage(
-      { $case: "telemetryAliasRequest", telemetryAliasRequest: request },
-      (response) => {
+      { $case: 'telemetryAliasRequest', telemetryAliasRequest: request },
+      response => {
         switch (response?.$case) {
-          case "success":
+          case 'success':
             resolve();
             break;
-          case "error":
+          case 'error':
             reject(Error(response.error));
             break;
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'TelemetryAliasRequest'"
+                "Invalid response '" +
+                  response?.$case +
+                  "' for 'TelemetryAliasRequest'"
               )
             );
         }
@@ -460,19 +522,21 @@ export async function sendTelemetryIdentifyRequest(
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     sendMessage(
-      { $case: "telemetryIdentifyRequest", telemetryIdentifyRequest: request },
-      (response) => {
+      { $case: 'telemetryIdentifyRequest', telemetryIdentifyRequest: request },
+      response => {
         switch (response?.$case) {
-          case "success":
+          case 'success':
             resolve();
             break;
-          case "error":
+          case 'error':
             reject(Error(response.error));
             break;
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'TelemetryIdentifyRequest'"
+                "Invalid response '" +
+                  response?.$case +
+                  "' for 'TelemetryIdentifyRequest'"
               )
             );
         }
@@ -486,19 +550,21 @@ export async function sendTelemetryTrackRequest(
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     sendMessage(
-      { $case: "telemetryTrackRequest", telemetryTrackRequest: request },
-      (response) => {
+      { $case: 'telemetryTrackRequest', telemetryTrackRequest: request },
+      response => {
         switch (response?.$case) {
-          case "success":
+          case 'success':
             resolve();
             break;
-          case "error":
+          case 'error':
             reject(Error(response.error));
             break;
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'TelemetryTrackRequest'"
+                "Invalid response '" +
+                  response?.$case +
+                  "' for 'TelemetryTrackRequest'"
               )
             );
         }
@@ -512,19 +578,21 @@ export async function sendOnboardingRequest(
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     sendMessage(
-      { $case: "onboardingRequest", onboardingRequest: request },
-      (response) => {
+      { $case: 'onboardingRequest', onboardingRequest: request },
+      response => {
         switch (response?.$case) {
-          case "success":
+          case 'success':
             resolve();
             break;
-          case "error":
+          case 'error':
             reject(Error(response.error));
             break;
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'OnboardingRequest'"
+                "Invalid response '" +
+                  response?.$case +
+                  "' for 'OnboardingRequest'"
               )
             );
         }
@@ -538,19 +606,21 @@ export async function sendWindowFocusRequest(
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     sendMessage(
-      { $case: "windowFocusRequest", windowFocusRequest: request },
-      (response) => {
+      { $case: 'windowFocusRequest', windowFocusRequest: request },
+      response => {
         switch (response?.$case) {
-          case "success":
+          case 'success':
             resolve();
             break;
-          case "error":
+          case 'error':
             reject(Error(response.error));
             break;
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'WindowFocusRequest'"
+                "Invalid response '" +
+                  response?.$case +
+                  "' for 'WindowFocusRequest'"
               )
             );
         }
@@ -564,19 +634,24 @@ export async function sendOpenInExternalApplicationRequest(
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     sendMessage(
-      { $case: "openInExternalApplicationRequest", openInExternalApplicationRequest: request },
-      (response) => {
+      {
+        $case: 'openInExternalApplicationRequest',
+        openInExternalApplicationRequest: request,
+      },
+      response => {
         switch (response?.$case) {
-          case "success":
+          case 'success':
             resolve();
             break;
-          case "error":
+          case 'error':
             reject(Error(response.error));
             break;
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'OpenInExternalApplicationRequest'"
+                "Invalid response '" +
+                  response?.$case +
+                  "' for 'OpenInExternalApplicationRequest'"
               )
             );
         }
@@ -590,19 +665,24 @@ export async function sendUpdateConfigPropertyRequest(
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     sendMessage(
-      { $case: "updateConfigPropertyRequest", updateConfigPropertyRequest: request },
-      (response) => {
+      {
+        $case: 'updateConfigPropertyRequest',
+        updateConfigPropertyRequest: request,
+      },
+      response => {
         switch (response?.$case) {
-          case "success":
+          case 'success':
             resolve();
             break;
-          case "error":
+          case 'error':
             reject(Error(response.error));
             break;
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'UpdateConfigPropertyRequest'"
+                "Invalid response '" +
+                  response?.$case +
+                  "' for 'UpdateConfigPropertyRequest'"
               )
             );
         }
@@ -616,19 +696,24 @@ export async function sendPseudoterminalRestartRequest(
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     sendMessage(
-      { $case: "pseudoterminalRestartRequest", pseudoterminalRestartRequest: request },
-      (response) => {
+      {
+        $case: 'pseudoterminalRestartRequest',
+        pseudoterminalRestartRequest: request,
+      },
+      response => {
         switch (response?.$case) {
-          case "success":
+          case 'success':
             resolve();
             break;
-          case "error":
+          case 'error':
             reject(Error(response.error));
             break;
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'PseudoterminalRestartRequest'"
+                "Invalid response '" +
+                  response?.$case +
+                  "' for 'PseudoterminalRestartRequest'"
               )
             );
         }
@@ -642,19 +727,21 @@ export async function sendDebuggerUpdateRequest(
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     sendMessage(
-      { $case: "debuggerUpdateRequest", debuggerUpdateRequest: request },
-      (response) => {
+      { $case: 'debuggerUpdateRequest', debuggerUpdateRequest: request },
+      response => {
         switch (response?.$case) {
-          case "success":
+          case 'success':
             resolve();
             break;
-          case "error":
+          case 'error':
             reject(Error(response.error));
             break;
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'DebuggerUpdateRequest'"
+                "Invalid response '" +
+                  response?.$case +
+                  "' for 'DebuggerUpdateRequest'"
               )
             );
         }
@@ -662,4 +749,3 @@ export async function sendDebuggerUpdateRequest(
     );
   });
 }
-
