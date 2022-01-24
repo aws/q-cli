@@ -36,7 +36,6 @@ func NewCmdLaunch() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:    "launch",
 		Short:  "Launch Fig",
-		Hidden: true,
 		Run: func(cmd *cobra.Command, args []string) {
 			Launch()
 		},

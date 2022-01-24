@@ -21,7 +21,6 @@ func NewCmdSettings() *cobra.Command {
 		Long:  "Customize appearance & behavior",
 		Args:  cobra.RangeArgs(0, 2),
 		Annotations: map[string]string{
-			"figcli.command.categories":      "Common",
 			"figcli.command.argDescriptions": "[key] key to get or set\n[value] value to set (optional)",
 		},
 		Run: func(cmd *cobra.Command, arg []string) {

@@ -117,9 +117,6 @@ func NewCmdDoctor() *cobra.Command {
 		Use:   "doctor",
 		Short: "Check Fig is properly configured",
 		Long:  "Runs a series of checks to ensure Fig is properly configured",
-		Annotations: map[string]string{
-			"figcli.command.categories": "Common",
-		},
 		Run: func(cmd *cobra.Command, args []string) {
 			// Get user
 			user, err := user.Current()

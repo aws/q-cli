@@ -31,12 +31,9 @@ import (
 	"fig-cli/cmd/user"
 	"fig-cli/cmd/user/logout"
 	"fig-cli/diagnostics"
-	fig_ipc "fig-cli/fig-ipc"
-	fig_proto "fig-cli/fig-proto"
 	"fig-cli/logging"
 	"fmt"
 	"os"
-	"os/exec"
 	"strings"
 
 	genFigSpec "github.com/withfig/autocomplete-tools/packages/cobra"
@@ -51,40 +48,33 @@ const TextWidth = 60
 var rootCmd = &cobra.Command{
 	Use:   "fig",
 	Short: "CLI to interact with Fig",
-	Annotations: map[string]string{
-		"fig.command": "true",
-	},
-	// This is stupid, I hate golang, why can I not decompose multiple returns into a single line?
 	Version: func() string {
 		version, _ := diagnostics.GetFigVersion()
 		build, _ := diagnostics.GetFigBuild()
 		return fmt.Sprintf("%s B%s", version, build)
 	}(),
-	Run: func(cmd *cobra.Command, args []string) {
-		response, err := fig_ipc.RunOpenUiElementCommand(fig_proto.UiElement_MENU_BAR)
-		if err != nil {
-			_, err := diagnostics.GetAppInfo()
-
-			if err != nil {
-				fmt.Print("\n› Launching Fig...\n\n")
-				figExec := exec.Command("open", "-b", "com.mschrage.fig")
-				figExec.Run()
-				figExec.Process.Release()
-			}
-			return
-		}
-
-		if response != "" {
-			fmt.Printf("\n%s\n\n", response)
-		}
-	},
 }
 
 func Execute() {
 	rootCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
-		commandGroups := make(map[string][]*cobra.Command)
+		// Map from subcommand name to the cobra.Command that represents it
+		commands := make(map[string]*cobra.Command)
+		for _, cmd := range cmd.Commands() {
+			commands[cmd.Name()] = cmd
+		}
+
+		// Commands to show in help
+		commandKeys := [](string){
+			"doctor",
+			"settings",
+			"issue",
+			"tweet",
+			"update",
+		}
 
 		if !cmd.HasParent() {
+			// Help page for root command
+
 			println(lipgloss.NewStyle().
 				Bold(true).
 				PaddingTop(1).
@@ -98,16 +88,9 @@ func Execute() {
 ██║     ██║╚██████╔╝
 ╚═╝     ╚═╝ ╚═════╝ CLI`))
 
-			for _, c := range cmd.Commands() {
-				if c.Annotations["figcli.command.categories"] != "" {
-					commandGroups[c.Annotations["figcli.command.categories"]] =
-						append(commandGroups[c.Annotations["figcli.command.categories"]], c)
-				}
-			}
-
 			fmt.Println(lipgloss.
 				NewStyle().
-				Padding(1, 1).
+				Padding(1, 1, 0).
 				Width(TextWidth).
 				Foreground(lipgloss.AdaptiveColor{Light: "236", Dark: "248"}).
 				Render(
@@ -123,49 +106,60 @@ func Execute() {
 			fmt.Println(lipgloss.
 				NewStyle().
 				Padding(0, 1).
+				Width(TextWidth).
+				Render(
+					lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "236", Dark: "248"}).Render("Running ") +
+						lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "236", Dark: "248"}).Bold(true).Render("fig") +
+						lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "236", Dark: "248"}).Render(" will soon take you to mission control")))
+
+			fmt.Println(lipgloss.
+				NewStyle().
+				Padding(1, 1, 0).
 				Foreground(lipgloss.Color("5")).
 				// Border(lipgloss.RoundedBorder(), true, true).
 				Width(TextWidth).
 				Bold(true).
 				Render("Common Subcommands"))
+
 			var sb strings.Builder
 
-			for _, command := range commandGroups {
+			for _, key := range commandKeys {
+				sb.WriteString(lipgloss.NewStyle().
+					Width(14).
+					// Foreground(lipgloss.Color("#FAFAFA")).
+					// Foreground(lipgloss.Color("#995399")).
+					Bold(true).
+					Render(commands[key].Name()))
 
-				for _, c := range command {
-					sb.WriteString(lipgloss.NewStyle().
-						Width(14).
-						// Foreground(lipgloss.Color("#FAFAFA")).
-						// Foreground(lipgloss.Color("#995399")).
-						Bold(true).
-						Render(c.Name()))
-
-					sb.WriteString(lipgloss.NewStyle().
-						Align(lipgloss.Left).
-						Width(TextWidth - 16).
-						Foreground(lipgloss.AdaptiveColor{Light: "236", Dark: "248"}).
-						Italic(true).
-						Render(` ` + c.Short))
-				}
-				fmt.Print(lipgloss.NewStyle().
-					Border(lipgloss.RoundedBorder(), true, true).
-					// BorderForeground(lipgloss.Color("#995399")). //d06fcf
-					Padding(0, 1).
-					Width(TextWidth - 10).
-					// Bold(true).
-					Render(sb.String()))
-
-				fmt.Println()
-				fmt.Println()
-
-				fmt.Println(lipgloss.NewStyle().
+				sb.WriteString(lipgloss.NewStyle().
+					Align(lipgloss.Left).
+					Width(TextWidth - 16).
 					Foreground(lipgloss.AdaptiveColor{Light: "236", Dark: "248"}).
-					Render(" For more info on a specific command, use:"))
-				fmt.Println("  > " + lipgloss.NewStyle().Italic(true).Render("fig help [command]"))
-
-				fmt.Println()
+					Italic(true).
+					Render(` ` + commands[key].Short))
 			}
+
+			fmt.Print(lipgloss.NewStyle().
+				Border(lipgloss.RoundedBorder(), true, true).
+				// BorderForeground(lipgloss.Color("#995399")). //d06fcf
+				Padding(0, 1).
+				Width(TextWidth - 10).
+				// Bold(true).
+				Render(sb.String()))
+
+			fmt.Println()
+			fmt.Println()
+
+			fmt.Println(lipgloss.NewStyle().
+				Foreground(lipgloss.AdaptiveColor{Light: "236", Dark: "248"}).
+				Render(" For more info on a specific command, use:"))
+			fmt.Println("  > " + lipgloss.NewStyle().Italic(true).Render("fig help [command]"))
+
+			fmt.Println()
+
 		} else {
+			// Help page for subcommand
+
 			fmt.Println(lipgloss.
 				NewStyle().
 				Border(lipgloss.NormalBorder(), true, false).
