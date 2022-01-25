@@ -1222,9 +1222,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     PseudoTerminal.shared.dispose()
     InputMethod.default.terminate()
 
-    // Ensure that fig.socket is deleted, so that if user switches acounts it can be recreated
-    try? FileManager.default.removeItem(atPath: "/tmp/fig.socket")
-
     Logger.log(message: "app will terminate...")
   }
 
