@@ -43,18 +43,13 @@ class UnixSocketServer {
   init(path: String, bidirectional: Bool = false) {
     self.path = path
     self.bidirectional = bidirectional
-
-    let parentFolder = URL(fileURLWithPath: path).deletingLastPathComponent()
-
   }
 
   init (socketName: String, parentFolderName: String, grandparentFolderPath: String) throws {
     let grandparentFolder = URL(fileURLWithPath: grandparentFolderPath)
-//    guard FileManager.default.isDeletableFile(atPath: grandparentFolder.path) else {
-//      throw NSError(domain: "io.fig.socket", code: Int(EINVAL), userInfo: [ NSLocalizedDescriptionKey: "\(grandparentFolder.path) is deletable. (Does not have sticky bit set)" ])
-//    }
 
     // todo(mschrage): check that sticky bit is set on grandparent
+    // See `FileManager.default.isDeletableFile`
 
     let parentFolder = grandparentFolder.appendingPathComponent(parentFolderName,
                                                                 isDirectory: true)
