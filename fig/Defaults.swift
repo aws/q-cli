@@ -16,6 +16,7 @@ enum Build: String {
   case dev = "dev"
 }
 
+// swiftlint:disable type_body_length
 class Defaults {
   static let shared = Defaults(UserDefaults.standard)
 
@@ -82,6 +83,7 @@ class Defaults {
     return Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "<unknown>"
   }
 
+  // swiftlint:disable identifier_name
   var automaticallyLaunchWebAppsInDetachedWindow: Bool {
     get {
       return defaults.string(forKey: "undockWebApps") == "true"
@@ -292,19 +294,19 @@ class Defaults {
   var autocompleteWidth: CGFloat? {
     get {
       let string = defaults.string(forKey: "autocompleteWidth")
-      guard let str = string, let n = NumberFormatter().number(from: str) else { return nil }
-      return n as? CGFloat
+      guard let str = string, let number = NumberFormatter().number(from: str) else { return nil }
+      return number as? CGFloat
     }
 
     set(width) {
       guard let width = width else { return }
-      let str = NumberFormatter().string(from: NSNumber(floatLiteral: Double(width) ))
+      let str = NumberFormatter().string(from: NSNumber(value: Double(width) ))
       defaults.set(str, forKey: "autocompleteWidth")
       defaults.synchronize()
     }
   }
 
-  var processWhitelist: [String] {
+  var processAllowlist: [String] {
     get {
       let string = defaults.string(forKey: "processWhitelist")
       return string?.split(separator: ",").map { String($0) } ?? []
@@ -534,6 +536,11 @@ class Defaults {
       Settings.shared.set(value: flag ? "insert" :  "ignore", forKey: Settings.rightArrowKeyBehavior)
     }
 
+  }
+
+  func incrementKeystokesSaved(by value: Int) {
+     let prev = defaults.integer(forKey: "keystrokesSaved")
+     defaults.set(prev + value, forKey: "keystrokesSaved")
   }
 
   init(_ defaults: UserDefaults) {

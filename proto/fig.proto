@@ -31,7 +31,8 @@ message ClientOriginatedMessage {
       UpdateConfigPropertyRequest update_config_property_request = 122;
       PseudoterminalRestartRequest pseudoterminal_restart_request = 123;
       TerminalSessionInfoRequest terminal_session_info_request = 124;
-
+      DebuggerUpdateRequest debugger_update_request = 125;
+      ApplicationUpdateStatusRequest application_update_status_request = 126;
   }
 }
 
@@ -51,6 +52,7 @@ message ServerOriginatedMessage {
     GetDefaultsPropertyResponse get_defaults_property_response = 106;
     GetConfigPropertyResponse get_config_property_response = 107;
     TerminalSessionInfoResponse terminal_session_info_response = 108;
+    ApplicationUpdateStatusResponse application_update_status_response = 109;
 
     Notification notification = 1000;
   }
@@ -372,6 +374,25 @@ message TerminalSessionInfoResponse {
   optional int64 cursor = 3;
 }
 
+/// Debugger
+
+message DebuggerUpdateRequest {
+  optional string color = 1;
+  repeated string layout = 2;
+}
+
+
+/// Application Update Status
+
+message ApplicationUpdateStatusRequest { }
+
+message ApplicationUpdateStatusResponse {
+  optional bool available = 1;
+  optional string version = 2;
+  optional string build = 3;
+  optional string published = 4;
+}
+
 
 /// Notifications
 
@@ -390,6 +411,7 @@ enum NotificationType {
   NOTIFY_ON_KEYBINDING_PRESSED = 6;
   NOTIFY_ON_FOCUS_CHANGED = 7;
   NOTIFY_ON_HISTORY_UPDATED = 8;
+  NOTIFY_ON_APPLICATION_UPDATE_AVAILABLE = 9;
 
 }
 
@@ -403,6 +425,7 @@ message Notification {
     KeybindingPressedNotification keybinding_pressed_notification = 6;
     WindowFocusChangedNotification window_focus_changed_notification = 7;
     HistoryUpdatedNotification history_updated_notification = 8;
+    ApplicationUpdateAvailableNotification application_update_available_notification = 9;
 
   }
 }
@@ -452,6 +475,10 @@ message HistoryUpdatedNotification {
   optional string hostname = 5;
   optional int32 exit_code = 6; // the exit code of the command
 
+}
+
+message ApplicationUpdateAvailableNotification {
+  optional ApplicationUpdateStatusResponse status = 1;
 }
 
 /// Constants

@@ -6,6 +6,7 @@
 //  Copyright © 2020 Matt Schrage. All rights reserved.
 //
 
+// swiftlint:disable type_name
 struct proc {
   let pid: pid_t
   let cmd: String
@@ -13,6 +14,7 @@ struct proc {
   var name: String {
     return String(cmd.split(separator: "/").last ?? "")
   }
+  // swiftlint:disable identifier_name
   var _cwd: String?
 
   init(line: String) {
@@ -41,7 +43,7 @@ struct proc {
   // Run cat /etc/shells
   var isShell: Bool {
 
-    return (Defaults.shared.processWhitelist + [
+    return (Defaults.shared.processAllowlist + [
       "zsh",
       "fish",
       "bash",
@@ -65,6 +67,7 @@ struct proc {
   }
 }
 
+// swiftlint:disable type_name
 class TTY {
   static let processUpdated: NSNotification.Name = .init("processUpdated")
 
@@ -85,6 +88,7 @@ class TTY {
     return processes.last
   }
 
+  // swiftlint:disable identifier_name
   init(fd: String) {
     descriptor = fd
   }
@@ -161,10 +165,10 @@ class TTY {
   ]
 
   func integrationForProcess(_ process: proc) -> CommandIntegration? {
-    return integrations.reduce(nil) { (handler, kv) -> CommandIntegration? in
+    return integrations.reduce(nil) { (handler, keyvalue) -> CommandIntegration? in
       guard handler == nil else { return handler }
 
-      let (_, integration) = kv
+      let (_, integration) = keyvalue
 
       if integration.shouldHandleProcess(process) {
         return integration

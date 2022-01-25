@@ -24,6 +24,10 @@ class APINotificationCenter {
                                            selector: #selector(focusedWindowDidChange(notification:)),
                                            name: WindowManager.focusedWindowChangedNotification,
                                            object: nil)
+    NotificationCenter.default.addObserver(self,
+                                           selector: #selector(updateAvailable(notification:)),
+                                           name: UpdateService.updateAvailableNotification,
+                                           object: nil)
   }
 
   deinit {
@@ -160,6 +164,28 @@ extension APINotificationCenter {
       notification.window = window.fig_window
     }))
   }
+
+  @objc func updateAvailable(notification: Notification) {
+    guard let updateMetadata = notification.object as? [String: String] else { return }
+
+    self.post(Fig_ApplicationUpdateAvailableNotification.with({ notification in
+      notification.status = Fig_ApplicationUpdateStatusResponse.with({ status in
+        if let build = updateMetadata["build"] {
+          status.build = build
+        }
+
+        if let version = updateMetadata["version"] {
+          status.version = version
+        }
+
+        if let published = updateMetadata["published"] {
+          status.published = published
+        }
+
+        status.available = true
+      })
+    }))
+  }
 }
 
 // Must be updated when new notifications are added!
@@ -182,6 +208,8 @@ extension Fig_Notification {
       return .notifyOnFocusChanged
     case .historyUpdatedNotification:
       return .notifyOnHistoryUpdated
+    case .applicationUpdateAvailableNotification:
+      return .notifyOnApplicationUpdateAvailable
     case .none:
       return nil
     }
@@ -234,6 +262,12 @@ extension APINotificationCenter {
   func post(_ notification: Fig_HistoryUpdatedNotification) {
     var wrapper = Fig_Notification()
     wrapper.historyUpdatedNotification = notification
+    self.post(notification: wrapper)
+  }
+
+  func post(_ notification: Fig_ApplicationUpdateAvailableNotification) {
+    var wrapper = Fig_Notification()
+    wrapper.applicationUpdateAvailableNotification = notification
     self.post(notification: wrapper)
   }
 }

@@ -23,10 +23,7 @@ var teamsCmd = &cobra.Command{
 	Use:   "teams",
 	Short: "Collaborate with your team using Fig",
 	Long:  "Collaborate with your team using Fig",
-	Annotations: map[string]string{
-		"figcli.command.categories": "Common",
-	},
-	Run: func(cmd *cobra.Command, args []string) {
+Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("teams called")
 	},
 }

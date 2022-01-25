@@ -16,9 +16,6 @@ func NewCmdSource() *cobra.Command {
 		Use:   "source",
 		Short: "link with terminal session",
 		Long:  "(re)connect to this terminal session",
-		Annotations: map[string]string{
-			"figcli.command.categories": "Common",
-		},
 		Run: func(cmd *cobra.Command, arg []string) {
 			err := fig_ipc.RestartSettingsListenerCommand()
 			if err != nil {

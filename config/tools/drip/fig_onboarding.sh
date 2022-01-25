@@ -120,16 +120,20 @@ exit_script_nice() {
   sed -i='' "s/FIG_ONBOARDING=.*/FIG_ONBOARDING=1/g" ~/.fig/user/config 2> /dev/null
 
   clear 
-  echo
-  echo
-  print_special "${BOLD}${UNDERLINE}Fig's onboarding was quit${UNDERLINE_END}${NORMAL}"
-  echo
-  print_special "You can redo this onboarding any time. Just run ${BOLD}${MAGENTA}fig onboarding${NORMAL}"
-  echo 
-  echo
-  print_special "Have feedback? Use ${BOLD}${MAGENTA}fig report${NORMAL}"
-  echo
-  echo
+
+cat <<EOF
+
+  ${BOLD}${UNDERLINE}Fig's onboarding was quit${UNDERLINE_END}${NORMAL}"
+  
+  You can redo this onboarding any time. Just run ${BOLD}${MAGENTA}fig onboarding${NORMAL}
+   
+
+  Have an issue? Run ${BOLD}${MAGENTA}fig doctor${NORMAL}
+  Have feedback? Email ${UNDERLINE}hello@fig.io${NORMAL}
+
+
+EOF
+
 
   trap - SIGINT SIGTERM SIGQUIT # clear the trap
 
@@ -262,9 +266,9 @@ cat <<EOF
 
    ${BOLD}Autocomplete Basics${NORMAL}
 
-   * To filter: just start typing
-   * To navigate: use the ${BOLD}↓${NORMAL} & ${BOLD}↑${NORMAL} arrow keys
-   * To select: hit ${BOLD}enter${NORMAL} or ${BOLD}tab${NORMAL}
+     * To filter: just start typing
+     * To navigate: use the ${BOLD}↓${NORMAL} & ${BOLD}↑${NORMAL} arrow keys
+     * To select: hit ${BOLD}enter${NORMAL} or ${BOLD}tab${NORMAL}
 
 EOF
 
@@ -307,6 +311,8 @@ while true; do
       press_enter_to_continue
       break
       ;;
+    "continue") break ;;
+    "c") break ;;
     "") print_special "Type ${BOLD}cd .fig/${NORMAL} to continue" ;;
     help|HELP|--help|-h)
       show_help
@@ -366,7 +372,8 @@ while true; do
       reset_prompt
       break
       ;;
-    continue) break ;;
+    "continue") break ;;
+    "c") break ;;
     "")
       print_special "Try running ${BOLD}git commit -m 'hello'${NORMAL} to continue. Otherwise, just type ${BOLD}continue"
       ;;
@@ -402,17 +409,16 @@ cat <<EOF
    
    ${BOLD}Last Step: The ${MAGENTA}Fig${NORMAL} ${BOLD}CLI${NORMAL}
 
-   fig               open the fig ◧ menu in the status bar
-   fig settings      update preferences
-   fig invite        invite up to 5 friends or teammates to Fig
-   fig report        send feedback directly to the Fig founders
-   fig update        update Fig's autocomplete scripts
-   fig --help        a summary of Fig commands with examples
+   fig doctor       check if Fig is properly configured
+   fig settings     update preferences (keybindings, UI, and more)
+   fig tweet        share your terminal set up with the world!
+   fig update       check for updates
+   fig --help       a summary of Fig commands with examples
 
 
    ${BOLD}To Continue...${NORMAL} 
 
-   Run ${MAGENTA}${BOLD}fig${NORMAL} to open the menubar icon. 
+   Run ${MAGENTA}${BOLD}fig settings${NORMAL} to see how you can customize Fig
    (You can also type ${UNDERLINE}continue${NORMAL})
 
 EOF
@@ -428,59 +434,94 @@ while true; do
   read -e -p "$DEFAULT_PROMPT" input
   echo # New line after output
   case "${input}" in
-    "fig")
-      sed -i='' "s/FIG_ONBOARDING=.*/FIG_ONBOARDING=1/g" ~/.fig/user/config 2> /dev/null
-      fig > /dev/null
 
-      if [[ -d $(echo /Applications/Bartender*.app/) ]]; then
-        echo
-        print_special "${BOLD}Well this is awkward...${NORMAL} It looks like you are using ${BOLD}Bartender${NORMAL} which means the ${BOLD}${MAGENTA}Fig${NORMAL} command may not work."
-        echo
-        print_special "Instead click the Fig icon ◧ in your status bar"
-      else 
-        print_special "${BOLD}Awesome!${NORMAL}"
-      fi
+    "fig settings"*)
+      sed -i='' "s/FIG_ONBOARDING=.*/FIG_ONBOARDING=1/g" ~/.fig/user/config 2> /dev/null
+      fig settings > /dev/null
+      clear
       echo
-      print_special "If Fig ever stops working, you can ${BOLD}use the debug tool${NORMAL} at the top of this menu to see what's wrong."
+
+cat <<EOF
+   ${BOLD}Awesome!${NORMAL}
+
+   You should use the ${MAGENTA}${BOLD}fig settings${NORMAL} app to customize
+
+    * keybindings (like tab/enter behaviour)
+    * UI (like autocomplete width, height, theme)
+    * usability (like sorting, fuzzy search, and more)
+EOF
       press_enter_to_continue
       break
       ;;
-    "fig report"*)
-      eval $input
-      print_special "${BOLD}Thanks${NORMAL} so much for your feedback :)"
+    "fig")
+      sed -i='' "s/FIG_ONBOARDING=.*/FIG_ONBOARDING=1/g" ~/.fig/user/config 2> /dev/null
+      fig settings > /dev/null
+      clear
       echo
-      print_special "${BOLD}To Continue...${NORMAL}"
-      print_special "Run the ${MAGENTA}${BOLD}fig${NORMAL} command."
-      print_special "(You can also type ${UNDERLINE}continue${NORMAL})"
+
+cat <<EOF
+
+   You just typed ${MAGENTA}${BOLD}fig${NORMAL} but we opened the ${MAGENTA}${BOLD}fig settings${NORMAL} app for you anyway. 
+   
+   Use ${MAGENTA}${BOLD}fig settings${NORMAL} to customize:
+
+    * keybindings (like tab/enter behaviour)
+    * UI (like autocomplete width, height, theme)
+    * usability (like sorting, fuzzy search, and more)
+EOF
+      press_enter_to_continue
+      break
       ;;
-    "fig invite"*)
-      eval $input
-      print_special "${BOLD}Thanks${NORMAL} so much for inviting friends to Fig:)"
-      echo
-      print_special "${BOLD}To Continue...${NORMAL}"
-      print_special "Run the ${MAGENTA}${BOLD}fig${NORMAL} command."
-      print_special "(You can also type ${UNDERLINE}continue${NORMAL})"
+    "fig "*)
+      clear
+      eval $input || true
+      sed -i='' "s/FIG_ONBOARDING=.*/FIG_ONBOARDING=1/g" ~/.fig/user/config 2> /dev/null
+      fig settings > /dev/null
+cat <<EOF
+
+   You just typed ${MAGENTA}${BOLD}$input${NORMAL} but we opened the ${MAGENTA}${BOLD}fig settings${NORMAL} app for you anyway. 
+
+   You should use the ${MAGENTA}${BOLD}fig settings${NORMAL} app to customize
+
+    * keybindings (like tab/enter behaviour)
+    * UI (like autocomplete width, height, theme)
+    * usability (like sorting, fuzzy search, and more)
+EOF
+      press_enter_to_continue
+      break
       ;;
-    continue) break ;;
+    "continue"*) break ;;
+    "c") break ;;
     "")
-      echo
-      print_special "${BOLD}To Continue...${NORMAL}"
-      print_special "Run the ${MAGENTA}${BOLD}fig${NORMAL} command."
-      print_special "(You can also type ${UNDERLINE}continue${NORMAL})"
+cat <<EOF
+   ${BOLD}To Continue...${NORMAL} 
+
+   Run ${MAGENTA}${BOLD}fig settings${NORMAL}
+   (You can also type ${UNDERLINE}continue${NORMAL})
+
+EOF
       ;;
     help|HELP|--help|-h)
       show_help
       echo
-      print_special "${BOLD}To Continue...${NORMAL}"
-      print_special "Run the ${MAGENTA}${BOLD}fig${NORMAL} command."
-      print_special "(You can also type ${UNDERLINE}continue${NORMAL})"
+cat <<EOF
+   ${BOLD}To Continue...${NORMAL} 
+
+   Run ${MAGENTA}${BOLD}fig settings${NORMAL}
+   (You can also type ${UNDERLINE}continue${NORMAL})
+
+EOF
       ;;
     *)
-      print_special "${YELLOW}Whoops. Looks like you tried something unexpected. Maybe pick another command?"
+      print_special "${YELLOW}Whoops. Looks like you tried something unexpected."
       echo
-      print_special "${BOLD}To Continue...${NORMAL}"
-      print_special "Run the ${MAGENTA}${BOLD}fig${NORMAL} command."
-      print_special "(You can also type ${UNDERLINE}continue${NORMAL})"
+cat <<EOF
+   ${BOLD}To Continue...${NORMAL} 
+
+   Run ${MAGENTA}${BOLD}fig settings${NORMAL}
+   (You can also type ${UNDERLINE}continue${NORMAL})
+
+EOF
       ;;
   esac
 done
@@ -488,10 +529,19 @@ clear
 
 cat <<EOF
 
+   ${BOLD}Want to share Fig?${NORMAL}
+   
+      Run ${MAGENTA}${BOLD}fig tweet${NORMAL} or ${MAGENTA}${BOLD}fig invite${NORMAL} (you get 5 invites!)
+
+EOF
+
+
+cat <<EOF
+
    ${BOLD}Want to contribute?${NORMAL}
 
-   * Check out our docs: ${UNDERLINE}fig.io/docs/getting-started${UNDERLINE_END}
-   * Submit a pull request: ${UNDERLINE}github.com/withfig/autocomplete${UNDERLINE_END}
+      * Check out our docs: ${UNDERLINE}fig.io/docs/getting-started${UNDERLINE_END}
+      * Submit a pull request: ${UNDERLINE}github.com/withfig/autocomplete${UNDERLINE_END}
 
 EOF
 
@@ -504,19 +554,6 @@ else
 fi
 echo
 
-cat <<EOF
-
-   ${BOLD}Want to customize Fig's settings?${NORMAL}
-   e.g. tab/enter behavior, width, height, theme etc
-   
-   Run ${MAGENTA}${BOLD}fig settings${NORMAL}
-
-
-   ${BOLD}Want to invite others to Fig?${NORMAL}
-   
-   Run ${MAGENTA}${BOLD}fig invite${NORMAL} (you get 5 invites!)
-
-EOF
 
 # Make sure we are using OSX sed rather than GNU version
 sed -i='' "s/FIG_ONBOARDING=.*/FIG_ONBOARDING=1/g" ~/.fig/user/config 2> /dev/null
@@ -552,7 +589,7 @@ EOF
 cat <<EOF
    ${BOLD}Final notes${NORMAL}
 
-   1. You should run ${MAGENTA}${BOLD}fig app set-path${NORMAL} right now. This syncs your \$PATH variable with Fig. We can't do this automatically.
+   1. You should run ${MAGENTA}${BOLD}fig doctor${NORMAL} right now. This checks for common bugs and fixes them!
 
    2. Fig won't work in any terminal sessions you currently have running, only new ones. (You might want to restart your terminal emulator)
 

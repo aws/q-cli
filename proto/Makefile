@@ -19,6 +19,7 @@ SWIFT_FLAGS = --swift_opt=Visibility=Public
 # Proto files
 LOCAL = "./local.proto"
 API   = "./fig.proto" "./local.proto"
+FIGTERM = "./figterm.proto"
 
 # Destinations
 ARTIFACTS          = "./bin"
@@ -36,7 +37,7 @@ DESTINATIONS       = $(ARTIFACTS) \
 # Ensure $ARTIFACTS directory exists
 $(shell mkdir -p $(ARTIFACTS))
 
-all: create-destinations api local
+all: api local figterm
 
 check-protoc:
 	command -v protoc 2> /dev/null || echo "protoc is not in PATH"
@@ -50,33 +51,39 @@ check-go: check-protoc
 check-ts: check-protoc
 	command -v protoc-gen-ts_proto 2> /dev/null || echo "protoc-gen-ts_proto is not in PATH"
 
-# Ensure that all destinations exist (since folders may no longer be tracked in git)
-create-destinations:
-	$(foreach destination,$(DESTINATIONS),mkdir -p $(destination);)
-
 api-swift: check-swift
 	protoc $(FLAGS) $(SWIFT_FLAGS) --swift_out=$(ARTIFACTS) $(API)
+	mkdir -p $(SWIFT_API_BINDINGS)
+	cp $(ARTIFACTS)/*.pb.swift $(SWIFT_API_BINDINGS)
 
 api-ts: check-ts
 	protoc $(FLAGS) $(TS_FLAGS) --ts_proto_out=$(ARTIFACTS) $(API)
+	mkdir -p $(TS_API_BINDINGS)
+	cp $(ARTIFACTS)/*.pb.ts $(TS_API_BINDINGS)
+
+api: api-swift api-ts
 
 local-go: check-go
 	protoc $(FLAGS) \
 		--go_opt=paths=source_relative \
 	   	--go_opt=Mlocal.proto="." \
 	   	--go_out=$(ARTIFACTS) $(LOCAL)
+	mkdir -p $(GO_CLI)
+	cp $(ARTIFACTS)/local.pb.go $(GO_CLI)
 
 local-ts: check-ts
 	protoc $(FLAGS) $(TS_FLAGS) --ts_proto_out=$(ARTIFACTS) $(LOCAL)
-
-api: api-swift api-ts
-	cp $(ARTIFACTS)/*.pb.ts $(TS_API_BINDINGS)
-	cp $(ARTIFACTS)/*.pb.swift $(SWIFT_API_BINDINGS)
-
+	mkdir -p $(DOTENV)
+	cp $(ARTIFACTS)/local.pb.ts $(DOTENV)
 
 local: local-go local-ts
-	cp $(ARTIFACTS)/local.pb.ts $(DOTENV)
-	cp $(ARTIFACTS)/local.pb.go $(GO_CLI)
+
+figterm-swift:
+	protoc $(FLAGS) $(SWIFT_FLAGS) --swift_out=$(ARTIFACTS) $(FIGTERM)
+	mkdir -p $(SWIFT_API_BINDINGS)
+	cp $(ARTIFACTS)/*.pb.swift $(SWIFT_API_BINDINGS)
+
+figterm: figterm-swift
 
 clean: 
 	# Remove compiled protos from all destinations, including $ARTIFACTS
