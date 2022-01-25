@@ -260,7 +260,20 @@ func NewCmdDoctor() *cobra.Command {
 
 								fmt.Printf("\n%v\n", boldStyle.Render(fmt.Sprintf("\n❌ Shell integration must be sourced first in ~/%s", fileName)))
 								fmt.Printf("   In order for autocomplete to work correctly, Fig's shell integration must be sourced first.\n\n")
-								fmt.Printf("   Please add the following line to the top of your ~/%s file:\n", fileName)
+
+								// Print context of shell file
+								fmt.Printf("   Top of your ~/%s file:\n", fileName)
+								firstLines := bytes.Split(fileData, []byte("\n"))
+								for i, line := range firstLines {
+									if i >= 9 {
+										break
+									}
+
+									fmt.Printf("   %v %v\n", boldStyle.Render(fmt.Sprintf("%v", i+1)), string(line))
+								}
+
+								fmt.Printf("\n")
+								fmt.Printf("   Please add or move the following line to the top of your ~/%s file:\n", fileName)
 								fmt.Printf("   %v\n", codeStyle.Render("[ -s ~/.fig/shell/pre.sh ] && source ~/.fig/shell/pre.sh"))
 								fmt.Printf("\n")
 								fmt.Printf("   Once you have updated `~/%s`, press `enter` to continue: ", fileName)
@@ -279,7 +292,27 @@ func NewCmdDoctor() *cobra.Command {
 
 								fmt.Printf("\n%v\n", boldStyle.Render(fmt.Sprintf("\n❌ Fig shell integration must be sourced last in ~/%s", fileName)))
 								fmt.Printf("   In order for autocomplete to work correctly, Fig's shell integration must be sourced last.\n\n")
-								fmt.Printf("   Please add the following line to the bottom of your ~/%s file:\n", fileName)
+
+								// Print context of shell file
+								fmt.Printf("   Bottom of your ~/%s file:\n", fileName)
+
+								lastLines := bytes.Split(fileData, []byte("\n"))
+
+								lastLinesStart := len(lastLines) - 10
+								if lastLinesStart < 0 {
+									lastLinesStart = 0
+								}
+
+								for i, line := range lastLines[lastLinesStart:] {
+									if i >= 9 {
+										break
+									}
+
+									fmt.Printf("   %v %v\n", boldStyle.Render(fmt.Sprintf("%v", i+lastLinesStart+1)), string(line))
+								}
+
+								fmt.Printf("\n")
+								fmt.Printf("   Please add or move the following line to the bottom of your ~/%s file:\n", fileName)
 								fmt.Printf("   %v\n", codeStyle.Render("[ -s ~/.fig/fig.sh ] && source ~/.fig/fig.sh"))
 								fmt.Printf("\n")
 								fmt.Printf("   Once you have updated `~/%s`, press `enter` to continue: ", fileName)
