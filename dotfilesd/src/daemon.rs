@@ -60,7 +60,7 @@ pub async fn daemon() -> Result<()> {
                 }
             }
             _ = unix_socket.read_buf(&mut bytes) => {
-                
+
             }
             _ = update_interval.tick() => {
                 // Check for updates

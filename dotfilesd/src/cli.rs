@@ -1,12 +1,14 @@
 use std::env;
 use std::fmt::Display;
 use std::fs::File;
-use std::io::{stdin, stdout, Read, Write};
+use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::{exit, Command};
 
 use anyhow::{Context, Result};
 use clap::{ArgEnum, Parser, Subcommand};
+use crossterm::style::Stylize;
+use dialoguer::theme::ColorfulTheme;
 use dirs::{cache_dir, home_dir};
 use regex::Regex;
 use self_update::update::UpdateStatus;
@@ -34,11 +36,18 @@ fn permission_guard() -> Result<()> {
             }
         }
 
+        let sudo_prompt = match env::var("USER") {
+            Ok(user) => format!("Please enter your password for user {}: ", user),
+            Err(_) => "Please enter your password: ".to_string(),
+        };
+
         match geteuid().is_root() {
             true => Ok(()),
             false => {
                 let mut child = Command::new("sudo")
                     .arg("-E")
+                    .arg("-p")
+                    .arg(sudo_prompt)
                     .args(env::args_os())
                     .spawn()?;
 
@@ -58,6 +67,16 @@ fn permission_guard() -> Result<()> {
     {
         Ok(())
     }
+}
+
+fn dialoguer_theme() -> impl dialoguer::theme::Theme {
+    let mut theme = ColorfulTheme::default();
+
+    theme.prompt_prefix = dialoguer::console::style("?".to_string())
+        .for_stderr()
+        .magenta();
+
+    theme
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, ArgEnum)]
@@ -221,41 +240,31 @@ fn install() -> Result<()> {
     #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
     unimplemented!();
 
-    loop {
-        print!("Do you want dotfiles to modify your shell config (you will have to manually do this otherwise)? [Y/n] ");
-        stdout().flush().unwrap();
-
-        let mut input = String::new();
-        std::io::stdin().read_line(&mut input).unwrap();
-
-        match input.trim() {
-            "Y" | "y" | "" => {
-                // Install dotfiles
-                install_dotfiles().context("Could not install dotfiles")?;
-                break;
-            }
-            "N" | "n" => {
-                println!();
-                println!("To install dotfiles you will have to add the following to your rc files");
-                println!();
-                println!(
-                    "At the top of your ~/.bashrc or ~/.zshrc or ~/.config/fish/config.fish file:"
-                );
-                println!("bashrc:    eval \"$(dotfiles shell bash pre)\"");
-                println!("zshrc:     eval \"$(dotfiles shell zsh pre)\"");
-                println!("fish:      eval \"$(dotfiles shell fish pre)\"");
-                println!();
-                println!("At the bottom of your ~/.bashrc or ~/.zshrc or ~/.config/fish/config.fish file:");
-                println!("bashrc:    eval \"$(dotfiles shell bash post)\"");
-                println!("zshrc:     eval \"$(dotfiles shell zsh post)\"");
-                println!("fish:      eval \"$(dotfiles shell fish post)\"");
-                println!();
-
-                break;
-            }
-            _ => {
-                println!("Please enter y, n, or nothing");
-            }
+    match dialoguer::Confirm::with_theme(&dialoguer_theme())
+        .with_prompt("Do you want dotfiles to modify your shell config (you will have to manually do this otherwise)?")
+        .interact()?
+    {
+        true => {
+            install_dotfiles().context("Could not install dotfiles")?;
+        }
+        false => {
+            println!();
+            println!("To install dotfiles you will have to add the following to your rc files");
+            println!();
+            println!(
+                "At the top of your ~/.bashrc or ~/.zshrc or ~/.config/fish/config.fish file:"
+            );
+            println!("bashrc:    eval \"$(dotfiles shell bash pre)\"");
+            println!("zshrc:     eval \"$(dotfiles shell zsh pre)\"");
+            println!("fish:      eval \"$(dotfiles shell fish pre)\"");
+            println!();
+            println!(
+                "At the bottom of your ~/.bashrc or ~/.zshrc or ~/.config/fish/config.fish file:"
+            );
+            println!("bashrc:    eval \"$(dotfiles shell bash post)\"");
+            println!("zshrc:     eval \"$(dotfiles shell zsh post)\"");
+            println!("fish:      eval \"$(dotfiles shell fish post)\"");
+            println!();
         }
     }
 
@@ -427,19 +436,13 @@ fn uninstall() -> Result<()> {
     unimplemented!();
 
     // Uninstall dotfiles
-    loop {
-        print!("Do you want dotfiles to modify your shell config (you will have to manually do this otherwise)? [Y/n] ");
-        stdout().flush()?;
-
-        let mut input = String::new();
-        std::io::stdin().read_line(&mut input)?;
-
-        match input.trim() {
-            "Y" | "y" | "" => {
+    match dialoguer::Confirm::with_theme(&dialoguer_theme())
+        .with_prompt("Do you want dotfiles to modify your shell config (you will have to manually do this otherwise)?")
+        .interact()? {
+            true => {
                 uninstall_dotfiles().context("Could not uninstall dotfiles")?;
-                break;
-            }
-            "N" | "n" => {
+            },
+            false => {
                 println!();
                 println!(
                     "To uninstall dotfiles you will have to remove the following from your rc files"
@@ -457,13 +460,7 @@ fn uninstall() -> Result<()> {
                 println!("zshrc:     eval \"$(dotfiles shell zsh post)\"");
                 println!("fish:      eval \"$(dotfiles shell fish post)\"");
                 println!();
-
-                break;
-            }
-            _ => {
-                println!("Please enter y, n, or nothing");
-            }
-        }
+            },
     }
 
     // Delete the binary
@@ -473,6 +470,8 @@ fn uninstall() -> Result<()> {
         std::fs::remove_file(binary_path)
             .with_context(|| format!("Could not delete {}", binary_path.display()))?;
     }
+
+    println!("\n{}\n", "Dotfiles has been uninstalled".bold());
 
     Ok(())
 }
@@ -573,35 +572,23 @@ pub fn update(update_type: UpdateType) -> Result<UpdateStatus> {
         let latest_release = update.get_latest_release()?;
 
         if !self_update::version::bump_is_greater(current_version, &latest_release.version)? {
-            println!("You are already on the latest version");
+            println!("You are already on the latest version {}", current_version);
 
             return Ok(UpdateStatus::UpToDate);
         }
 
         if confirm {
-            loop {
-                print!(
-                    "Do you want to update {} from {} to {}? [Y/n] ",
+            if !dialoguer::Confirm::with_theme(&dialoguer_theme())
+                .with_prompt(format!(
+                    "Do you want to update {} from {} to {}?",
                     env!("CARGO_PKG_NAME"),
                     update.current_version(),
                     latest_release.version
-                );
-                stdout().flush()?;
-
-                let mut input = String::new();
-                std::io::stdin().read_line(&mut input)?;
-
-                match input.trim() {
-                    "Y" | "y" | "" => break,
-                    "N" | "n" => {
-                        println!();
-                        println!("Update cancelled");
-                        return Err(anyhow::anyhow!("Update cancelled"));
-                    }
-                    _ => {
-                        println!("Please enter y, n, or nothing");
-                    }
-                }
+                ))
+                .default(true)
+                .interact()?
+            {
+                return Err(anyhow::anyhow!("Update cancelled"));
             }
         } else {
             println!(
@@ -702,41 +689,54 @@ async fn login(refresh: bool) -> Result<()> {
         return Ok(());
     }
 
-    print!("Email: ");
-    stdout().flush()?;
+    println!("{}", "Login to Fig dotfiles".bold().magenta());
 
-    let mut email = String::new();
-    stdin().read_line(&mut email)?;
+    let theme = dialoguer_theme();
 
-    let email = email.trim();
+    let email: String = dialoguer::Input::with_theme(&theme)
+        .with_prompt("Email")
+        .validate_with(|input: &String| -> Result<(), &str> {
+            if validator::validate_email(input.trim()) {
+                Ok(())
+            } else {
+                Err("This is not a valid email")
+            }
+        })
+        .interact_text()?;
 
-    let sign_in_input = SignInInput::new(&client, client_id, email);
+    let trimmed_email = email.trim();
+
+    let sign_in_input = SignInInput::new(&client, client_id, trimmed_email);
+
+    println!("Sending login code to {}...", trimmed_email);
+    println!("Please check your email for the code");
 
     match sign_in_input.sign_in().await {
-        Ok(mut sign_in_output) => loop {
-            print!("Login Code: ");
-            stdout().flush()?;
+        Ok(mut sign_in_output) => {
+            loop {
+                let login_code: String = dialoguer::Input::with_theme(&theme)
+                    .with_prompt("Login code")
+                    .interact_text()?;
 
-            let mut login_code = String::new();
-            stdin().read_line(&mut login_code)?;
-
-            match sign_in_output.confirm(login_code.trim()).await {
-                Ok(creds) => {
-                    creds.save_credentials()?;
-                    println!("Logged in!");
-                    return Ok(());
-                }
-                Err(err) => match err {
-                    SignInConfirmError::ErrorCodeMismatch => {
-                        println!("Code mismatch, try again");
-                        continue;
+                match sign_in_output.confirm(login_code.trim()).await {
+                    Ok(creds) => {
+                        creds.save_credentials()?;
+                        println!("Login successful!");
+                        return Ok(());
                     }
-                    err => {
-                        return Err(err.into());
-                    }
-                },
+                    Err(err) => match err {
+                        SignInConfirmError::ErrorCodeMismatch => {
+                            println!("Code mismatch, try again...");
+                            continue;
+                        }
+                        SignInConfirmError::NotAuthorized => {
+                            return Err(anyhow::anyhow!("Not authorized, you may have entered the wrong code too many times."));
+                        }
+                        err => return Err(err.into()),
+                    },
+                };
             }
-        },
+        }
         Err(err) => match err {
             SignInError::UserNotFound(_) => {
                 let mut sign_up_output = SignUpInput::new(&client, client_id, email)
@@ -744,28 +744,24 @@ async fn login(refresh: bool) -> Result<()> {
                     .await?;
 
                 loop {
-                    print!("Login Code: ");
-                    stdout().flush()?;
-
-                    let mut login_code = String::new();
-                    stdin().read_line(&mut login_code)?;
+                    let login_code: String = dialoguer::Input::with_theme(&theme)
+                        .with_prompt("Login code")
+                        .interact_text()?;
 
                     match sign_up_output.confirm(login_code.trim()).await {
                         Ok(creds) => {
                             creds.save_credentials()?;
-                            println!("Logged in!");
+                            println!("Login successful!");
                             return Ok(());
                         }
                         Err(err) => match err {
                             SignUpConfirmError::CodeMismatch(_) => {
-                                println!("Code mismatch, try again");
+                                println!("Code mismatch, try again...");
                                 continue;
                             }
-                            err => {
-                                return Err(err.into());
-                            }
+                            err => return Err(err.into()),
                         },
-                    }
+                    };
                 }
             }
             err => Err(err.into()),
@@ -821,11 +817,29 @@ fn doctor() -> Result<()> {
         println!();
     }
 
+    // Check credentials to see if they are logged in
+    println!("Checking login status...");
+    if let Ok(creds) = Credentials::load_credentials() {
+        if creds.get_access_token().is_some()
+            && creds.get_id_token().is_some()
+            && creds.get_refresh_token().is_some()
+        {
+            println!("✅ You are logged in");
+        } else {
+            println!("❌ You are not logged in");
+            println!("   You can login with `dotfiles login`");
+        }
+    } else {
+        println!("❌ You are not logged in");
+        println!("   You can login with `dotfiles login`");
+    }
+
     // Check if daemon is running
+    // Send a ping to the daemon to see if it's running
 
     println!();
     println!("dotfiles appears to be installed correctly");
-    println!("If you have any issues, please report them at");
+    println!("If you have any issues, please report them to");
     println!("hello@fig.io or https://github.com/withfig/fig");
     println!();
 

@@ -173,6 +173,8 @@ pub struct SignInOutput<'a> {
 pub enum SignInConfirmError {
     #[error("error code mismatch")]
     ErrorCodeMismatch,
+    #[error("not authorized")]
+    NotAuthorized,
     #[error("could not sign in")]
     CouldNotSignIn,
     #[error("validation error")]
@@ -206,6 +208,9 @@ impl<'a> SignInOutput<'a> {
                         Ok(err) => SignInConfirmError::ValidationError(err),
                         _ => SignInConfirmError::SdkError(Box::new(err)),
                     }
+                }
+                RespondToAuthChallengeErrorKind::NotAuthorizedException(_) => {
+                    SignInConfirmError::NotAuthorized
                 }
                 _ => SignInConfirmError::SdkError(Box::new(err)),
             },

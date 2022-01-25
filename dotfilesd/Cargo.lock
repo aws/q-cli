@@ -321,7 +321,9 @@ dependencies = [
  "encode_unicode",
  "libc",
  "once_cell",
+ "regex",
  "terminal_size",
+ "unicode-width",
  "winapi",
 ]
 
@@ -385,6 +387,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "dialoguer"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "61579ada4ec0c6031cfac3f86fdba0d195a7ebeb5e36693bd53cb5999a25beeb"
+dependencies = [
+ "console",
+ "lazy_static",
+ "tempfile",
+ "zeroize",
+]
+
+[[package]]
 name = "digest"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -422,6 +436,7 @@ dependencies = [
  "bytes",
  "clap",
  "crossterm",
+ "dialoguer",
  "dirs",
  "futures-util",
  "nix",
@@ -438,6 +453,7 @@ dependencies = [
  "toml",
  "url",
  "uuid",
+ "validator",
  "windows",
 ]
 
@@ -1832,6 +1848,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "unicode-width"
+version = "0.1.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3ed742d4ea2bd1176e236172c8429aaf54486e7ac098db29ffe6529e0ce50973"
+
+[[package]]
 name = "unicode-xid"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1868,6 +1890,32 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bc5cf98d8186244414c848017f0e2676b3fcb46807f6668a97dfe67359a3c4b7"
 dependencies = [
  "getrandom",
+]
+
+[[package]]
+name = "validator"
+version = "0.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6d0f08911ab0fee2c5009580f04615fa868898ee57de10692a45da0c3bcc3e5e"
+dependencies = [
+ "idna",
+ "lazy_static",
+ "regex",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "url",
+ "validator_types",
+]
+
+[[package]]
+name = "validator_types"
+version = "0.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ded9d97e1d42327632f5f3bae6403c04886e2de3036261ef42deebd931a6a291"
+dependencies = [
+ "proc-macro2",
+ "syn",
 ]
 
 [[package]]

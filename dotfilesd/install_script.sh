@@ -123,11 +123,11 @@ check_for_commands
 INSTALL_DIR="$(install_directory)"
 
 printf "Installing dotfiles to ${BOLD}${INSTALL_DIR}${RESET}\n"
-sudo mv "${download_dir}/dotfiles" "${INSTALL_DIR}"
+sudo -p "Please enter your password for user ${USER}: " mv "${download_dir}/dotfiles" "${INSTALL_DIR}"
 printf "\n"
 
 if command -v dotfiles &> /dev/null; then
-    sudo dotfiles install
+    sudo -p "Please enter your password for user ${USER}: " sudo dotfiles install
 
     if [ $? -ne 0 ]; then
         abort "Failed to install dotfiles"
