@@ -38,9 +38,44 @@ class UnixSocketServer {
     }
   }
 
+  // See reference:
+ // https://github.com/nevali/opencflite/blob/03999700cf3b79975ae2f2e5f4100ea7096acb3a/examples/CFLocalServer/Server.c#L1145
   init(path: String, bidirectional: Bool = false) {
     self.path = path
     self.bidirectional = bidirectional
+
+    let parentFolder = URL(fileURLWithPath: path).deletingLastPathComponent()
+
+  }
+
+  init (socketName: String, parentFolderName: String, grandparentFolderPath: String) throws {
+    let grandparentFolder = URL(fileURLWithPath: grandparentFolderPath)
+//    guard FileManager.default.isDeletableFile(atPath: grandparentFolder.path) else {
+//      throw NSError(domain: "io.fig.socket", code: Int(EINVAL), userInfo: [ NSLocalizedDescriptionKey: "\(grandparentFolder.path) is deletable. (Does not have sticky bit set)" ])
+//    }
+
+    // todo(mschrage): check that sticky bit is set on grandparent
+
+    let parentFolder = grandparentFolder.appendingPathComponent(parentFolderName,
+                                                                isDirectory: true)
+
+    if !FileManager.default.fileExists(atPath: parentFolder.path) {
+      // When we create the parentPath directory within grandParentPath, we set its
+      // permissions to make it readable by everyone (so everyone can connect to our
+      // server) but writeable only by us (so that only we can create the listening
+      // socket).  Because parentPath is set this way, we know that no one else
+      // can modify it to produce a security problem.
+      // rwxr-xr-x
+      try FileManager.default.createDirectory(at: parentFolder,
+                                          withIntermediateDirectories: true,
+                                          attributes: [.posixPermissions: 0o755])
+    } else {
+      // todo(mschrage): check permissions on parentFolder
+    }
+
+    self.path = parentFolder.appendingPathComponent(socketName).path
+    self.bidirectional = true
+
   }
 
   deinit {
