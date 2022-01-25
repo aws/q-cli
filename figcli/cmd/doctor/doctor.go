@@ -194,7 +194,7 @@ func NewCmdDoctor() *cobra.Command {
 					conn, err := net.Dial("unix", figterm_socket_path)
 					if err != nil {
 						fmt.Println("❌ Figterm socket exists but is not connectable")
-						fmt.Printf("  %v\n", err.Error())
+						fmt.Printf("   %v\n", err.Error())
 					} else {
 						go func() {
 							defer conn.Close()
@@ -240,11 +240,11 @@ func NewCmdDoctor() *cobra.Command {
 								!bytes.Equal(lines[0], []byte(`[ -s ~/.fig/shell/pre.sh ] && source ~/.fig/shell/pre.sh`)) {
 
 								fmt.Printf("\n%v\n", boldStyle.Render(fmt.Sprintf("\n❌ Shell integration must be sourced first in ~/%s", fileName)))
-								fmt.Printf("In order for autocomplete to work correctly, Fig's shell integration must be sourced first.\n\n")
-								fmt.Printf("Please add the following line to the top of your ~/%s file:\n", fileName)
-								fmt.Printf("%v\n", codeStyle.Render("[ -s ~/.fig/shell/pre.sh ] && source ~/.fig/shell/pre.sh"))
+								fmt.Printf("   In order for autocomplete to work correctly, Fig's shell integration must be sourced first.\n\n")
+								fmt.Printf("   Please add the following line to the top of your ~/%s file:\n", fileName)
+								fmt.Printf("   %v\n", codeStyle.Render("[ -s ~/.fig/shell/pre.sh ] && source ~/.fig/shell/pre.sh"))
 								fmt.Printf("\n")
-								fmt.Printf("Once you have updated `~/%s`, press `enter` to continue: ", fileName)
+								fmt.Printf("   Once you have updated `~/%s`, press `enter` to continue: ", fileName)
 
 								reader := bufio.NewReader(os.Stdin)
 								reader.ReadString('\n')
@@ -259,11 +259,11 @@ func NewCmdDoctor() *cobra.Command {
 								!bytes.Equal(lines[len(lines)-1], []byte(`[ -s ~/.fig/fig.sh ] && source ~/.fig/fig.sh`)) {
 
 								fmt.Printf("\n%v\n", boldStyle.Render(fmt.Sprintf("\n❌ Fig shell integration must be sourced last in ~/%s", fileName)))
-								fmt.Printf("In order for autocomplete to work correctly, Fig's shell integration must be sourced last.\n\n")
-								fmt.Printf("Please add the following line to the bottom of your ~/%s file:\n", fileName)
-								fmt.Printf("%v\n", codeStyle.Render("[ -s ~/.fig/fig.sh ] && source ~/.fig/fig.sh"))
+								fmt.Printf("   In order for autocomplete to work correctly, Fig's shell integration must be sourced last.\n\n")
+								fmt.Printf("   Please add the following line to the bottom of your ~/%s file:\n", fileName)
+								fmt.Printf("   %v\n", codeStyle.Render("[ -s ~/.fig/fig.sh ] && source ~/.fig/fig.sh"))
 								fmt.Printf("\n")
-								fmt.Printf("Once you have updated `~/%s`, press `enter` to continue: ", fileName)
+								fmt.Printf("   Once you have updated `~/%s`, press `enter` to continue: ", fileName)
 
 								reader := bufio.NewReader(os.Stdin)
 								reader.ReadString('\n')
@@ -432,7 +432,7 @@ func NewCmdDoctor() *cobra.Command {
 				} else {
 					fmt.Println()
 					fmt.Println("❌ Autocomplete is disabled")
-					fmt.Println("  To fix run: " + lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Render("fig settings autocomplete.disable false"))
+					fmt.Println("   To fix run: " + lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Render("fig settings autocomplete.disable false"))
 					fmt.Println()
 				}
 
