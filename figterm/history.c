@@ -1,0 +1,127 @@
+#include "fig.h"
+#include <stdlib.h>
+
+#define strdup_safe(name) (name == NULL ? NULL : strdup(name))
+
+struct HistoryEntry {
+  char* command;
+  char shell[10];
+  char pid[8];
+  char session_id[SESSION_ID_MAX_LEN + 1];
+  char* cwd;
+  unsigned long time;
+
+  bool in_ssh;
+  bool in_docker;
+  char* hostname;
+
+  unsigned int exit_code;
+};
+
+HistoryEntry* history_entry_new(
+    char* command,
+    char* shell,
+    char* pid,
+    char* session_id,
+    char* cwd,
+    unsigned long time,
+    bool in_ssh,
+    bool in_docker,
+    char* hostname,
+    unsigned int exit_code) {
+  HistoryEntry* entry = malloc(sizeof(HistoryEntry));
+  entry->command = strdup_safe(command);
+  entry->cwd = strdup_safe(cwd);
+  entry->hostname = strdup_safe(hostname);
+
+  strcpy(entry->shell, shell);
+  strcpy(entry->pid, pid);
+  strcpy(entry->session_id, session_id);
+
+  entry->time = time;
+  entry->in_ssh = in_ssh;
+  entry->in_docker = in_docker;
+  entry->exit_code = exit_code;
+
+  return entry;
+}
+
+void history_entry_free(HistoryEntry* entry) {
+  if (entry != NULL) {
+    free(entry->command);
+    free(entry->cwd);
+    free(entry->hostname);
+  }
+  free(entry);
+}
+
+void history_entry_set_exit_code(HistoryEntry* entry, unsigned int exit_code) {
+  entry->exit_code = exit_code;
+}
+
+int history_fd = -1;
+
+void history_file_close() {
+  if (history_fd >= 0) {
+    close(history_fd);
+  }
+}
+
+void history_file_open() {
+  char* fname = fig_path("history");
+  history_fd = open(fname, O_WRONLY | O_APPEND | O_CREAT, 0644);
+  free(fname);
+}
+
+void write_history_entry(HistoryEntry* entry) {
+  // Don't write if we don't have a command or the command was exited with ^C
+  if (entry == NULL || entry->command == NULL || entry->exit_code == 130)
+    return;
+
+  if (history_fd < 0) {
+    history_file_open();
+  }
+
+  char* command_escaped = escaped_str(entry->command);
+  log_info("Adding to history: %s", command_escaped);
+
+  char time_str[20];
+  sprintf(time_str, "%lu", entry->time);
+
+  char* context = printf_alloc(
+    "{\"sessionId\":\"%s\",\"pid\":\"%s\",\"currentWorkingDirectory\":\"%s\",\"hostname\":\"%s\"}",
+    entry->session_id,
+    entry->pid,
+    entry->cwd,
+    entry->hostname
+  );
+
+  publish_json(
+    "{\"hook\":{\"post_exec\":{\"command\":\"%s\",\"exit_code\":\"%d\", \"context\":%s}}}",
+    command_escaped,
+    entry->exit_code,
+    context
+  );
+  free(context);
+
+  char* tmp = printf_alloc(
+    "\n- command: %s\n  exit_code: %d\n  shell: %s\n  session_id: %s\n  cwd: %s\n  time: %s%s%s%s%s",
+    command_escaped,
+    entry->exit_code,
+    entry->shell,
+    entry->session_id,
+    entry->cwd,
+    time_str,
+    entry->in_ssh ? "\n  ssh: true" : "",
+    entry->in_docker ? "\n  docker: true" : "",
+    (entry->in_ssh || entry->in_docker) ? "\n  hostname: " : "",
+    (entry->in_ssh || entry->in_docker) ? entry->hostname : ""
+  );
+
+  flock(history_fd, LOCK_EX);
+  dprintf(history_fd, "%s", tmp);
+  flock(history_fd, LOCK_UN);
+
+  free(tmp);
+  free(command_escaped);
+}

@@ -1,0 +1,32 @@
+name: Publish MacOS
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-11
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - name: Install build deps
+        run: |
+          brew update
+          brew install make gcc libtool
+      - name: Build figterm
+        run:  PROD=1 make all
+      - name: Push to config
+        run: |
+          eval "$(ssh-agent -s)"
+          ssh-add - <<< "${{ secrets.CONFIG_DEPLOY_PRIVATE_KEY }}"
+          git clone git@github.com:withfig/config config
+          cd config
+          git checkout main
+          mkdir -p bin
+          cp ../figterm ../fig_get_shell ../fig_callback bin
+          git add .
+          git diff-index --quiet HEAD || git commit -m "Automatic publish from figterm repository"
+          git push
