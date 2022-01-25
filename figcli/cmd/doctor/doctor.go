@@ -193,7 +193,8 @@ func NewCmdDoctor() *cobra.Command {
 					// Attempt to write to the socket
 					conn, err := net.Dial("unix", figterm_socket_path)
 					if err != nil {
-						fmt.Println("❌ Figterm socket exists but is not writable")
+						fmt.Println("❌ Figterm socket exists but is not connectable")
+						fmt.Printf("  %v\n", err.Error())
 					} else {
 						go func() {
 							defer conn.Close()
@@ -219,44 +220,67 @@ func NewCmdDoctor() *cobra.Command {
 				}
 
 				for _, fileName := range []string{".profile", ".zprofile", ".bash_profile", ".bashrc", ".zshrc"} {
-					// Read file if it exists
-					fileData, err := os.ReadFile(filepath.Join(user.HomeDir, fileName))
+					for {
+						// Read file if it exists
+						fileData, err := os.ReadFile(filepath.Join(user.HomeDir, fileName))
 
-					if err == nil {
-						// Strip comments lines out of file
-						r := regexp.MustCompile(`\s*#.*`)
-						fileData = r.ReplaceAll(fileData, []byte(""))
+						if err == nil {
+							// Strip comments lines out of file
+							r := regexp.MustCompile(`\s*#.*`)
+							strippedData := r.ReplaceAll(fileData, []byte(""))
 
-						// Only lines that contain 'PATH|source'
-						r = regexp.MustCompile(`.*(PATH|source).*`)
-						lines := r.FindAll(fileData, -1)
+							// Only lines that contain 'PATH|source'
+							r = regexp.MustCompile(`.*(PATH|source).*`)
+							lines := r.FindAll(strippedData, -1)
 
-						if len(lines) >= 2 &&
-							(!bytes.Equal(lines[0], []byte(`[ -s ~/.fig/shell/pre.sh ] && source ~/.fig/shell/pre.sh`)) ||
-								!bytes.Equal(lines[len(lines)-1], []byte(`[ -s ~/.fig/fig.sh ] && source ~/.fig/fig.sh`))) {
-							fmt.Printf("\n❌ Fig ENV variables not properly set in ~/%s\n\n", fileName)
+							boldStyle := lipgloss.NewStyle().Bold(true)
+							codeStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("5"))
 
-							style := lipgloss.NewStyle().Foreground(lipgloss.Color("3"))
+							if len(lines) == 0 ||
+								!bytes.Equal(lines[0], []byte(`[ -s ~/.fig/shell/pre.sh ] && source ~/.fig/shell/pre.sh`)) {
 
-							fmt.Println(style.Render("   Fig ENV variables need to be at the very beginning and end of ~/" + fileName))
-							fmt.Println()
-							fmt.Println(style.Render("   If you see the FIG ENV VARs in ~/" + fileName + ", make sure they're at the very"))
-							fmt.Println(style.Render("   beginning (pre) and end (post). Open a new terminal then rerun the the doctor."))
-							fmt.Println()
-							fmt.Println(style.Render("   If you don't see the FIG ENV VARs in ~/" + fileName + ", run 'fig app install'"))
-							fmt.Println(style.Render("   to add them. Open a new terminal then rerun the doctor."))
+								fmt.Printf("\n%v\n", boldStyle.Render(fmt.Sprintf("\n❌ Shell integration must be sourced first in ~/%s", fileName)))
+								fmt.Printf("In order for autocomplete to work correctly, Fig's shell integration must be sourced first.\n\n")
+								fmt.Printf("Please add the following line to the top of your ~/%s file:\n", fileName)
+								fmt.Printf("%v\n", codeStyle.Render("[ -s ~/.fig/shell/pre.sh ] && source ~/.fig/shell/pre.sh"))
+								fmt.Printf("\n")
+								fmt.Printf("Once you have updated `~/%s`, press `enter` to continue: ", fileName)
 
-							fmt.Println()
-							fmt.Printf("Press enter to continue...\n")
+								reader := bufio.NewReader(os.Stdin)
+								reader.ReadString('\n')
+								continue
+							} else {
+								if verbose {
+									fmt.Printf("✅ ~/.fig/shell/pre.sh sourced first in ~/%s\n", fileName)
+								}
+							}
 
-							reader := bufio.NewReader(os.Stdin)
-							reader.ReadString('\n')
+							if len(lines) >= 1 &&
+								!bytes.Equal(lines[len(lines)-1], []byte(`[ -s ~/.fig/fig.sh ] && source ~/.fig/fig.sh`)) {
+
+								fmt.Printf("\n%v\n", boldStyle.Render(fmt.Sprintf("\n❌ Fig shell integration must be sourced last in ~/%s", fileName)))
+								fmt.Printf("In order for autocomplete to work correctly, Fig's shell integration must be sourced last.\n\n")
+								fmt.Printf("Please add the following line to the bottom of your ~/%s file:\n", fileName)
+								fmt.Printf("%v\n", codeStyle.Render("[ -s ~/.fig/fig.sh ] && source ~/.fig/fig.sh"))
+								fmt.Printf("\n")
+								fmt.Printf("Once you have updated `~/%s`, press `enter` to continue: ", fileName)
+
+								reader := bufio.NewReader(os.Stdin)
+								reader.ReadString('\n')
+								continue
+							} else {
+								if verbose {
+									fmt.Println("✅ ~/.fig/fig.sh sourced last in ~/fig.sh")
+								}
+							}
+
+							break
 						} else {
 							if verbose {
-								fmt.Printf("✅ Fig ENV variables are in ~/%s\n", fileName)
+								fmt.Printf("🟡 ~/%s does not exist\n", fileName)
 							}
+							break
 						}
-
 					}
 				}
 
