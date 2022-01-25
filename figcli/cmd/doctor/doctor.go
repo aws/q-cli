@@ -21,6 +21,7 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 )
 
 func Fix(cmd string) {
@@ -196,6 +197,12 @@ func NewCmdDoctor() *cobra.Command {
 						fmt.Println("❌ Figterm socket exists but is not connectable")
 						fmt.Printf("   %v\n", err.Error())
 					} else {
+						oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
+						if err != nil {
+							fmt.Println("❌ This terminal does not support raw mode needed to check figterm socket")
+							fmt.Printf("   %v\n", err.Error())
+						}
+
 						go func() {
 							defer conn.Close()
 							time.Sleep(time.Millisecond * 10)
@@ -205,9 +212,11 @@ func NewCmdDoctor() *cobra.Command {
 						reader := bufio.NewReader(os.Stdin)
 						val, _ := reader.ReadString('\n')
 
+						term.Restore(int(os.Stdin.Fd()), oldState)
+
 						if strings.Contains(val, "Testing Figterm...") {
 							if verbose {
-								fmt.Println("✅ Figterm socket exists and is writable")
+								fmt.Printf("✅ Figterm socket exists at %v and is writable\n", figterm_socket_path)
 							}
 						} else {
 							fmt.Println("❌ Figterm socket exists but is not writable")
