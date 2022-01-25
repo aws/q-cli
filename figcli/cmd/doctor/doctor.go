@@ -182,7 +182,7 @@ func NewCmdDoctor() *cobra.Command {
 				}
 
 				// Check if $TMPDIR/fig.socket exists
-				fig_socket_path := filepath.Join(os.Getenv("TMPDIR"), "fig.socket")
+				fig_socket_path := fig_ipc.GetSocketPath()
 				if _, err := os.Stat(fig_socket_path); errors.Is(err, os.ErrNotExist) {
 					fmt.Println("❌ Fig socket does not exist at " + fig_socket_path)
 					doctorError = true

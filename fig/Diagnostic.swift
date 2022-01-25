@@ -291,8 +291,7 @@ class Diagnostic {
   }
 
   static var unixSocketServerExists: Bool {
-    let path = FileManager.default.temporaryDirectory
-                                  .appendingPathComponent("fig.socket").path
+    let path = IPC.defaultSocketPath
     return FileManager.default.fileExists(atPath: path)
   }
 

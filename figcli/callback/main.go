@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"time"
 )
 
@@ -126,7 +125,7 @@ func main() {
 	if debug {
 		fmt.Fprintf(output, "Sending '%s' over unix socket!\n", callback)
 		logging.Log(fmt.Sprintf("Sending '%s' over unix socket!", callback))
-		logging.Log(filepath.Join(os.TempDir(), "fig.socket"))
+		logging.Log(fig_ipc.GetSocketPath())
 	}
 
 	callbackHook := fig_proto.Hook{
