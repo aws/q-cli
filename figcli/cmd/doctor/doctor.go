@@ -96,19 +96,16 @@ func ContactSupport() {
 }
 
 func IsInstalled(application string) bool {
-	listInsatlledApps, err := exec.Command("mdfind", "kMDItemKind == 'Application'").Output()
+	listInsatlledApps, err := exec.Command("mdfind", "-name", application).Output()
 	if err != nil {
 		return false
 	}
 
-	installedApps := strings.Split(string(listInsatlledApps), "\n")
-	for _, app := range installedApps {
-		if strings.Contains(app, application) {
-			return true
-		}
+	if strings.TrimSpace(string(listInsatlledApps)) == "" {
+		return false
+	} else {
+		return true
 	}
-
-	return false
 }
 
 func NewCmdDoctor() *cobra.Command {
