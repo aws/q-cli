@@ -208,7 +208,7 @@ int ipc_socket_send(char* buf, int len) {
   int st;
 
   if (ipc_sock < 0) {
-    char* path = printf_alloc("/var/tmp/io.fig.%s/fig.socket", getenv("USER"));
+    char* path = printf_alloc("%sfig.socket", getenv("TMPDIR"));
     ipc_sock = unix_socket_connect(path);
     CHECK_SYS(ipc_sock, "Can't connect to ipc socket");
     CHECK_SYS(set_blocking(ipc_sock, false), "Couldn't set ipc sock to nonblocking");
