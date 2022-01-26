@@ -122,7 +122,7 @@ check_for_commands
 
 INSTALL_DIR="$(install_directory)"
 
-printf "Installing dotfiles to ${BOLD}${INSTALL_DIR}${RESET}\n"
+printf "${MAGENTA}➜${RESET} Installing dotfiles to ${BOLD}${INSTALL_DIR}/dotfiles${RESET}\n"
 sudo -p "Please enter your password for user ${USER}: " mv "${download_dir}/dotfiles" "${INSTALL_DIR}"
 printf "\n"
 
@@ -133,7 +133,9 @@ if command -v dotfiles &> /dev/null; then
         abort "Failed to install dotfiles"
     fi
 
-    printf "\nRun ${MAGENTA}dotfiles${RESET} to get started!\n"
+    printf "\n${MAGENTA}➜${RESET} ${BOLD}Next steps:${RESET}\n"
+    printf "  Run ${MAGENTA}dotfiles login${RESET} to login to your dotfiles account\n"
+    printf "  Run ${MAGENTA}dotfiles${RESET} start editing your dotfiles\n"
 else
     abort "Failed to install dotfiles. Command 'dotfiles' not found."
 fi
