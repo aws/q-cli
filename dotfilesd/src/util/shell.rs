@@ -3,20 +3,26 @@ use std::{env, fmt::Display, path::PathBuf};
 use anyhow::{Context, Result};
 use clap::ArgEnum;
 use reqwest::Url;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, ArgEnum)]
+/// Shells supported by Fig
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize, ArgEnum)]
+#[serde(rename_all = "kebab-case")]
 pub enum Shell {
+    /// Bash shell
     Bash,
+    /// Zsh shell
     Zsh,
+    /// Fish shell
     Fish,
 }
 
 impl Display for Shell {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Shell::Bash => write!(f, "bash"),
-            Shell::Zsh => write!(f, "zsh"),
-            Shell::Fish => write!(f, "fish"),
+            Shell::Bash => f.write_str("bash"),
+            Shell::Zsh => f.write_str("zsh"),
+            Shell::Fish => f.write_str("fish"),
         }
     }
 }

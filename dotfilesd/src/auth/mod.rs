@@ -284,7 +284,7 @@ impl<'a> SignUpInput<'a> {
             .send()
             .await;
 
-        let out = sign_up_result.map_err(|err| match err {
+        sign_up_result.map_err(|err| match err {
             SdkError::ServiceError {
                 err: ref sign_up_err,
                 ..

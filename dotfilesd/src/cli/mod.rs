@@ -4,6 +4,7 @@ pub mod auth;
 pub mod doctor;
 pub mod init;
 pub mod installation;
+pub mod plugins;
 pub mod sync;
 pub mod util;
 
@@ -12,6 +13,7 @@ use crate::daemon::daemon;
 use crate::util::shell::Shell;
 use anyhow::Result;
 use clap::{Parser, Subcommand};
+use crossterm::style::Stylize;
 use std::process::exit;
 
 #[derive(Debug, Subcommand)]
@@ -50,6 +52,8 @@ pub enum CliRootCommands {
     User,
     /// Doctor
     Doctor,
+    #[clap(subcommand)]
+    Plugins(plugins::PluginsSubcommand),
 }
 
 #[derive(Debug, Parser)]
@@ -73,6 +77,7 @@ impl Cli {
                 CliRootCommands::Logout => auth::logout_cli().await,
                 CliRootCommands::User => auth::user_info_cli().await,
                 CliRootCommands::Doctor => doctor::doctor_cli(),
+                CliRootCommands::Plugins(plugins_subcommand) => plugins_subcommand.execute().await,
             },
             // Root command
             None => root_command(),
@@ -89,7 +94,7 @@ fn root_command() -> Result<()> {
     // Open the default browser to the homepage
     let url = "https://dotfiles.com/";
     if open_url(url).is_err() {
-        println!("{}", url);
+        println!("{}", url.underlined());
     }
 
     Ok(())
