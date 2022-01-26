@@ -1,8 +1,8 @@
 use aws_sdk_cognitoidentityprovider::{
     error::{
-        ConfirmSignUpError, ConfirmSignUpErrorKind, InitiateAuthError, InitiateAuthErrorKind,
-        ResendConfirmationCodeError, RespondToAuthChallengeError, RespondToAuthChallengeErrorKind,
-        SignUpErrorKind, UpdateUserAttributesError, UserLambdaValidationException,
+        InitiateAuthError, InitiateAuthErrorKind, RespondToAuthChallengeError,
+        RespondToAuthChallengeErrorKind, SignUpErrorKind, UpdateUserAttributesError,
+        UserLambdaValidationException,
     },
     model::{AttributeType, AuthFlowType, ChallengeNameType},
     AppName, Client, Config, Region, SdkError,
@@ -116,7 +116,7 @@ impl<'a> SignInInput<'a> {
         }
     }
 
-    pub async fn sign_in(self) -> Result<SignInOutput<'a>, SignInError> {
+    pub async fn sign_in(&self) -> Result<SignInOutput<'a>, SignInError> {
         let auth_result = self
             .client
             .initiate_auth()
@@ -151,8 +151,8 @@ impl<'a> SignInInput<'a> {
 
         Ok(SignInOutput {
             client: self.client,
-            client_id: self.client_id,
-            username_or_email: self.username_or_email,
+            client_id: self.client_id.clone(),
+            username_or_email: self.username_or_email.clone(),
             session,
             challenge_name,
             challenge_parameters,
@@ -265,7 +265,7 @@ impl<'a> SignUpInput<'a> {
         }
     }
 
-    pub async fn sign_up(self) -> Result<SignUpOutput<'a>, SignUpError> {
+    pub async fn sign_up(self) -> Result<(), SignUpError> {
         let password = generate_password(32);
         let username = uuid::Uuid::new_v4().to_hyphenated().to_string();
 
@@ -299,129 +299,6 @@ impl<'a> SignUpInput<'a> {
             },
             err => SignUpError::SdkError(Box::new(err)),
         })?;
-
-        Ok(SignUpOutput {
-            client: self.client,
-            client_id: self.client_id,
-            username,
-            password,
-            user_sub: out.user_sub,
-            user_confirmed: out.user_confirmed,
-        })
-    }
-}
-
-pub struct SignUpOutput<'a> {
-    client: &'a Client,
-    client_id: String,
-    pub username: String,
-    pub password: String,
-    pub user_sub: Option<String>,
-    pub user_confirmed: bool,
-}
-
-#[derive(Debug, Error)]
-pub enum SignUpConfirmError {
-    #[error("email exists: {0:?}")]
-    EmailExists(Option<String>),
-    #[error("code mismatch: {0:?}")]
-    CodeMismatch(Option<String>),
-    #[error("expired code: {0:?}")]
-    ExpiredCode(Option<String>),
-    #[error("could not sign up")]
-    CouldNotSignUp,
-    #[error("validation error")]
-    ValidationError(#[from] ValidationError),
-    #[error("sdk error: ConfirmSignUp")]
-    SdkErrorConfirmSignUp(#[from] Box<SdkError<ConfirmSignUpError>>),
-    #[error("sdk error: InitiateAuthError")]
-    SdkErrorInitiateAuth(#[from] Box<SdkError<InitiateAuthError>>),
-}
-
-impl<'a> SignUpOutput<'a> {
-    pub async fn confirm(
-        &mut self,
-        code: impl Into<String>,
-    ) -> Result<Credentials, SignUpConfirmError> {
-        let confirm_sign_up_result = self
-            .client
-            .confirm_sign_up()
-            .client_id(&self.client_id)
-            .username(&self.username)
-            .confirmation_code(code)
-            .send()
-            .await;
-
-        confirm_sign_up_result.map_err(|err| match err {
-            SdkError::ServiceError {
-                err: ref auth_err, ..
-            } => match auth_err.kind {
-                ConfirmSignUpErrorKind::AliasExistsException(ref error) => {
-                    SignUpConfirmError::EmailExists(error.message.clone())
-                }
-                ConfirmSignUpErrorKind::CodeMismatchException(ref error) => {
-                    SignUpConfirmError::CodeMismatch(error.message.clone())
-                }
-                ConfirmSignUpErrorKind::ExpiredCodeException(ref error) => {
-                    SignUpConfirmError::ExpiredCode(error.message.clone())
-                }
-                ConfirmSignUpErrorKind::UserLambdaValidationException(ref error) => {
-                    match parse_lambda_error(error.clone()) {
-                        Ok(err) => SignUpConfirmError::ValidationError(err),
-                        _ => SignUpConfirmError::SdkErrorConfirmSignUp(Box::new(err)),
-                    }
-                }
-                _ => SignUpConfirmError::SdkErrorConfirmSignUp(Box::new(err)),
-            },
-            err => SignUpConfirmError::SdkErrorConfirmSignUp(Box::new(err)),
-        })?;
-
-        self.user_confirmed = true;
-
-        let initiate_auth = self
-            .client
-            .initiate_auth()
-            .client_id(&self.client_id)
-            .auth_flow(AuthFlowType::UserPasswordAuth)
-            .auth_parameters("USERNAME", &self.username)
-            .auth_parameters("PASSWORD", &self.password)
-            .send()
-            .await;
-
-        let out = initiate_auth.map_err(|err| match err {
-            SdkError::ServiceError {
-                err: ref auth_err, ..
-            } => match auth_err.kind {
-                InitiateAuthErrorKind::UserLambdaValidationException(ref error) => {
-                    match parse_lambda_error(error.clone()) {
-                        Ok(err) => SignUpConfirmError::ValidationError(err),
-                        _ => SignUpConfirmError::SdkErrorInitiateAuth(Box::new(err)),
-                    }
-                }
-                _ => SignUpConfirmError::SdkErrorInitiateAuth(Box::new(err)),
-            },
-            err => SignUpConfirmError::SdkErrorInitiateAuth(Box::new(err)),
-        })?;
-
-        match out.authentication_result {
-            Some(auth_result) => Ok(Credentials::new(
-                self.username.clone(),
-                auth_result.access_token,
-                auth_result.id_token,
-                auth_result.refresh_token,
-                auth_result.expires_in,
-            )),
-            None => Err(SignUpConfirmError::CouldNotSignUp),
-        }
-    }
-
-    pub async fn resend(&self) -> Result<(), SdkError<ResendConfirmationCodeError>> {
-        self.client
-            .resend_confirmation_code()
-            .client_id(&self.client_id)
-            .username(&self.username)
-            .send()
-            .await?;
 
         Ok(())
     }

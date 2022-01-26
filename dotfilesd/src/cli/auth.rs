@@ -1,10 +1,7 @@
 //! CLI auth
 
 use crate::{
-    auth::{
-        get_client, Credentials, SignInConfirmError, SignInError, SignInInput, SignUpConfirmError,
-        SignUpInput,
-    },
+    auth::{get_client, Credentials, SignInConfirmError, SignInError, SignInInput, SignUpInput},
     cli::util::dialoguer_theme,
 };
 use anyhow::Result;
@@ -44,61 +41,44 @@ pub async fn login_cli(refresh: bool) -> Result<()> {
     println!("Sending login code to {}...", trimmed_email);
     println!("Please check your email for the code");
 
-    match sign_in_input.sign_in().await {
-        Ok(mut sign_in_output) => {
-            loop {
-                let login_code: String = dialoguer::Input::with_theme(&theme)
-                    .with_prompt("Login code")
-                    .interact_text()?;
-
-                match sign_in_output.confirm(login_code.trim()).await {
-                    Ok(creds) => {
-                        creds.save_credentials()?;
-                        println!("Login successful!");
-                        return Ok(());
-                    }
-                    Err(err) => match err {
-                        SignInConfirmError::ErrorCodeMismatch => {
-                            println!("Code mismatch, try again...");
-                            continue;
-                        }
-                        SignInConfirmError::NotAuthorized => {
-                            return Err(anyhow::anyhow!("Not authorized, you may have entered the wrong code too many times."));
-                        }
-                        err => return Err(err.into()),
-                    },
-                };
-            }
-        }
+    let mut sign_in_output = match sign_in_input.sign_in().await {
+        Ok(out) => out,
         Err(err) => match err {
             SignInError::UserNotFound(_) => {
-                let mut sign_up_output = SignUpInput::new(&client, client_id, email)
+                SignUpInput::new(&client, client_id, email)
                     .sign_up()
                     .await?;
 
-                loop {
-                    let login_code: String = dialoguer::Input::with_theme(&theme)
-                        .with_prompt("Login code")
-                        .interact_text()?;
-
-                    match sign_up_output.confirm(login_code.trim()).await {
-                        Ok(creds) => {
-                            creds.save_credentials()?;
-                            println!("Login successful!");
-                            return Ok(());
-                        }
-                        Err(err) => match err {
-                            SignUpConfirmError::CodeMismatch(_) => {
-                                println!("Code mismatch, try again...");
-                                continue;
-                            }
-                            err => return Err(err.into()),
-                        },
-                    };
-                }
+                sign_in_input.sign_in().await?
             }
-            err => Err(err.into()),
+            err => return Err(err.into()),
         },
+    };
+
+    loop {
+        let login_code: String = dialoguer::Input::with_theme(&theme)
+            .with_prompt("Login code")
+            .interact_text()?;
+
+        match sign_in_output.confirm(login_code.trim()).await {
+            Ok(creds) => {
+                creds.save_credentials()?;
+                println!("Login successful!");
+                return Ok(());
+            }
+            Err(err) => match err {
+                SignInConfirmError::ErrorCodeMismatch => {
+                    println!("Code mismatch, try again...");
+                    continue;
+                }
+                SignInConfirmError::NotAuthorized => {
+                    return Err(anyhow::anyhow!(
+                        "Not authorized, you may have entered the wrong code too many times."
+                    ));
+                }
+                err => return Err(err.into()),
+            },
+        };
     }
 }
 

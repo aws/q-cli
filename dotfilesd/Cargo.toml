@@ -23,6 +23,7 @@ time = { version = "0.3.6", features = ["serde-human-readable"] }
 bytes = "1.1.0"
 validator = "0.14.0"
 dialoguer = "0.9.0"
+futures = "0.3.19"
 
 # Used for auth 
 # Should break out into separate crate
