@@ -10,13 +10,11 @@ import Cocoa
 import Sparkle
 
 class UpdateService: NSObject {
+  static let updateAvailableNotification = Notification.Name("updateAvailableNotification")
   static let appcastURL = URL(string: "https://versions.withfig.com/appcast.xml")!
   static let betaAppcastURL = URL(string: "https://beta.withfig.com/appcast.xml")!
 
   static let provider = UpdateService(sparkle: SUUpdater.shared())
-  static func log(_ message: String) {
-    Logger.log(message: message, subsystem: .updater)
-  }
   fileprivate let sparkle: SUUpdater
   init(sparkle: SUUpdater) {
 
@@ -92,38 +90,16 @@ class UpdateService: NSObject {
 
   fileprivate var update: SUAppcastItem? {
     didSet {
-      // Update autocomplete webview
-      self.notifyAutocompleteOfUpdateStatus()
       // update config file
       self.notifyShellOfUpdateStatus()
-    }
-  }
 
-  fileprivate func notifyAutocompleteOfUpdateStatus(withNotification: Bool = true) {
-    DispatchQueue.main.async {
-      Autocomplete.runJavascript("fig.updateAvailable = \(self.updateIsAvailable)")
-
-      if self.updateIsAvailable {
-        Autocomplete.runJavascript(
-          """
-          fig.updateMetadate =
-          {
-            version: "\(self.updateVersion ?? "")",
-            build: "\(self.updateBuild ?? "")",
-            published: "\(self.updatePublishedOn ?? "")"
-          }
-          """)
-      } else {
-        Autocomplete.runJavascript(
-          """
-          fig.updateMetadate = null
-          """)
-      }
-
-      // TODO: Replace with dispatchEvent API - mschrage
-      if withNotification {
-        Autocomplete.runJavascript("fig.updateAvailabilityChanged()")
-
+      if self.update != nil {
+        NotificationCenter.default.post(name: UpdateService.updateAvailableNotification,
+                                        object: [
+                                          "build": self.updateBuild,
+                                          "version": self.updateVersion,
+                                          "published": self.updatePublishedOn
+                                        ])
       }
     }
   }
@@ -132,6 +108,10 @@ class UpdateService: NSObject {
   fileprivate func notifyShellOfUpdateStatus() {
     let value = self.updateIsAvailable ? self.updateVersion ?? "???" : nil
     Config.shared.set(value: value, forKey: configUpdateAvailableKey)
+  }
+
+  func resetShellConfig() {
+    Config.shared.set(value: nil, forKey: configUpdateAvailableKey)
   }
 
   func installUpdateIfAvailible() {
@@ -219,5 +199,44 @@ extension SUUpdater: SparkleDeprecatedAPI {}
 class DebugVersionComparison: SUVersionComparison {
   func compareVersion(_ versionA: String, toVersion versionB: String) -> ComparisonResult {
     return .orderedSame
+  }
+}
+
+class ForceUpdateComparison: SUVersionComparison {
+  func compareVersion(_ versionA: String, toVersion versionB: String) -> ComparisonResult {
+    return .orderedAscending
+  }
+}
+
+extension UpdateService: Logging {
+  static func log(_ message: String) {
+    Logger.log(message: message, subsystem: .updater)
+  }
+}
+
+import FigAPIBindings
+extension UpdateService {
+  func applicationUpdateStatusRequest(_ request: Fig_ApplicationUpdateStatusRequest) throws -> Fig_ApplicationUpdateStatusResponse {
+    guard self.updateIsAvailable else {
+      return Fig_ApplicationUpdateStatusResponse.with { response in
+        response.available = false
+      }
+    }
+
+    return Fig_ApplicationUpdateStatusResponse.with { status in
+      status.available = true
+
+      if let build = self.updateBuild {
+        status.build = build
+      }
+
+      if let version = self.updateVersion {
+        status.version = version
+      }
+
+      if let published = self.updatePublishedOn {
+        status.published = published
+      }
+    }
   }
 }

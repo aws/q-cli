@@ -10,7 +10,7 @@ import Foundation
 
 class Config {
   static let shared = Config(
-    configPath: URL(fileURLWithPath: "\(FileManager.default.homeDirectoryForCurrentUser)/.fig/user/config")
+    configPath: URL(fileURLWithPath: "\(FileManager.default.homeDirectoryForCurrentUser.path)/.fig/user/config")
   )
 
   static let userExplictlyQuitApp = "APP_TERMINATED_BY_USER"
@@ -47,6 +47,7 @@ class Config {
         return true
       }
 
+      // swiftlint:disable identifier_name
       let (k, v) = (String(tokens.first!), String(tokens.last!))
 
       if key == k {
@@ -70,7 +71,7 @@ class Config {
       lines.append("\(key)=\(value)")
     }
 
-    let newConfig = lines.joined(separator: "\n")
+    let newConfig = lines.joined(separator: "\n") + "\n"
 
     do {
       try newConfig.write(to: userConfigPath,

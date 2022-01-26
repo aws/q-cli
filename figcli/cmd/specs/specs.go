@@ -11,9 +11,6 @@ func NewCmdSpecs() *cobra.Command {
 		Use:   "specs",
 		Short: "Manage your specs",
 		Long:  `Manage your autocomplete specs`,
-		// Annotations: map[string]string{
-		// 	"figcli.command.categories": "Common",
-		// },
 	}
 
 	cmd.AddCommand(list.NewCmdList())

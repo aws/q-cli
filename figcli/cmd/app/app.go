@@ -14,9 +14,6 @@ func NewCmdApp() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "app",
 		Short: "Interact with the macOS app",
-		Annotations: map[string]string{
-			"figcli.command.categories": "Common",
-		},
 	}
 
 	cmd.AddCommand(onboarding.NewCmdOnboarding())

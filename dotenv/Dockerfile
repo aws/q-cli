@@ -10,13 +10,17 @@ RUN apt install -y \
   bash zsh fish \
   uuid-runtime netcat-openbsd jq \
   protobuf-compiler \
-  vim valgrind
+  vim valgrind \
+  llvm clang
 RUN apt install -y -t bullseye-backports golang-1.17-go
 RUN npm install --global ts-proto
 
 ENV HOME=/usr/home
+
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --default-toolchain stable --profile minimal -y
+
 ENV FIG_BUNDLE_EXECUTABLES=/usr/home/.fig_bin
-ENV PATH=/usr/lib/go-1.17/bin/:$PATH
+ENV PATH="${HOME}/.cargo/bin:/usr/lib/go-1.17/bin/:${PATH}"
 ENV TMPDIR=/tmp/
 
 RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
@@ -46,7 +50,7 @@ RUN npm install
 COPY --chown=test:test ./dotenv .
 
 COPY --chown=test:test ./proto/ /usr/home/proto/
-RUN cd /usr/home/proto && DOTENV=/usr/home/app/src make create-destinations local
+RUN cd /usr/home/proto && DOTENV=/usr/home/app/src make local
 
 RUN cp ./bin/fig $FIG_BUNDLE_EXECUTABLES/fig
 RUN cp ./bin/fig $FIG_BUNDLE_EXECUTABLES/figcli

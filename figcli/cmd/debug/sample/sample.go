@@ -25,7 +25,7 @@ func NewCmdSample() *cobra.Command {
 
 			fmt.Printf("Sampling Fig process (%s). Writing output to %s\n", execPidStr, outfile)
 
-			if err := exec.Command("sample", "-p", execPidStr, "-o", outfile).Run(); err != nil {
+			if err := exec.Command("sample", "-f", outfile, execPidStr).Run(); err != nil {
 				fmt.Println("Could not sample Fig process")
 				return
 			}

@@ -17,7 +17,6 @@ func NewCmdUpdate() *cobra.Command {
 		Use:   "update",
 		Short: "Update Fig",
 		Run: func(cmd *cobra.Command, arg []string) {
-			fmt.Println(force)
 			if err := fig_ipc.UpdateCommand(force); err != nil {
 				logging.Log("fig update:", err.Error())
 				fmt.Printf("\n" +
