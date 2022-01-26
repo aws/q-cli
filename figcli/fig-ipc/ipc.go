@@ -10,8 +10,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"os/user"
-
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
@@ -20,34 +18,25 @@ type FigIpc struct {
 	conn *net.UnixConn
 }
 
-func GetSocketPath() string {
-	user, err := user.Current()
-
-	username := os.Getenv("USER")
-	if err == nil {
-		username = user.Username
-	}
-
-	socketFolder := "/var/tmp/io.fig." + username
-
-	return filepath.Join(socketFolder, "fig.socket")
-}
-
 // Connect to the server
 func Connect() (*FigIpc, error) {
-	socket := GetSocketPath()
+	tmpDir := os.Getenv("TMPDIR")
+	if tmpDir == "" {
+		tmpDir = os.Getenv("FIG_SOCKET")
+	}
+
+	socket := filepath.Join(tmpDir, "fig.socket")
 
 	var d net.Dialer
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
-	// What is raddr used for? (Previously it was passed in as the third param of DialContext)
-	// raddr := net.UnixAddr{Name: socket, Net: "unix"}
-	conn, err := d.DialContext(ctx, "unix", socket)
+	raddr := net.UnixAddr{Name: socket, Net: "unix"}
+	conn, err := d.DialContext(ctx, "unix", raddr.String())
 
 	if err != nil {
-		return nil, fmt.Errorf("unable to connect to socket %s: %s", socket, err)
+		return nil, fmt.Errorf("unable to connect to socket %s: %s", filepath.Join(os.TempDir(), "fig.socket"), err)
 	}
 
 	return &FigIpc{conn: conn.(*net.UnixConn)}, nil
