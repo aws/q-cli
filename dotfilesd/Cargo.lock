@@ -1617,6 +1617,7 @@ version = "0.3.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c8d54b9298e05179c335de2b9645d061255bcd5155f843b3e328d2cfe0a5b413"
 dependencies = [
+ "itoa 1.0.1",
  "libc",
  "num_threads",
  "serde",

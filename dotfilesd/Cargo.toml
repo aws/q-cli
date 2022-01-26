@@ -19,7 +19,7 @@ crossterm = "0.22.1"
 rand = "0.8.4"
 url = "2.2.2"
 futures-util = "0.3.19"
-time = { version = "0.3.6", features = ["serde"] }
+time = { version = "0.3.6", features = ["serde-human-readable"] }
 bytes = "1.1.0"
 validator = "0.14.0"
 dialoguer = "0.9.0"

@@ -559,6 +559,15 @@ impl Credentials {
         Ok(())
     }
 
+    /// Clear the values of the credentials
+    pub fn clear_cridentials(&mut self) {
+        self.email = None;
+        self.access_token = None;
+        self.id_token = None;
+        self.refresh_token = None;
+        self.experation_time = time::OffsetDateTime::UNIX_EPOCH;
+    }
+
     pub fn get_access_token(&self) -> Option<&String> {
         self.access_token.as_ref()
     }
@@ -573,6 +582,10 @@ impl Credentials {
 
     pub fn get_experation_time(&self) -> &time::OffsetDateTime {
         &self.experation_time
+    }
+
+    pub fn get_email(&self) -> Option<&String> {
+        self.email.as_ref()
     }
 }
 

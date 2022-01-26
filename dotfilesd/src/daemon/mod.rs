@@ -1,4 +1,4 @@
-use std::{path::Path, time::Duration};
+use std::{path::Path, time::Duration, io::Write};
 
 use anyhow::Result;
 use futures_util::StreamExt;
@@ -6,7 +6,39 @@ use self_update::update::UpdateStatus;
 use tokio::{fs::remove_file, io::AsyncReadExt, net::UnixStream, select};
 use tokio_tungstenite::tungstenite::Message;
 
-use crate::cli::{sync, update, UpdateType};
+use crate::cli::{
+    installation::{update, UpdateType},
+    sync,
+};
+
+pub struct DaemonService {
+    pub path: &'static Path,
+    pub data: &'static str,
+}
+
+impl DaemonService {
+    pub fn write_to_file(&self) -> Result<()> {
+        let mut file = std::fs::File::create(self.path)?;
+        file.write_all(self.data.as_bytes())?;
+        Ok(())
+    }
+}
+
+#[cfg(target_os = "linux")]
+pub fn systemd_service() -> DaemonService {
+    let path = Path::new("/etc/systemd/system/dotfiles-daemon.service");
+    let data = include_str!("daemon_files/dotfiles-daemon.service");
+
+    DaemonService { path, data }
+}
+
+#[cfg(target_os = "macos")]
+pub fn launchd_plist() -> DaemonService {
+    let path = Path::new("/Library/LaunchDaemons/io.fig.dotfiles-daemon.plist");
+    let data = include_str!("daemon_files/io.fig.dotfiles-daemon.plist");
+
+    DaemonService { path, data }
+}
 
 pub async fn daemon() -> Result<()> {
     // Spawn the daemon to listen for updates and dotfiles changes
@@ -36,7 +68,7 @@ pub async fn daemon() -> Result<()> {
                             Message::Text(text) => {
                                 match text.trim() {
                                     "dotfiles" => {
-                                        sync().await?;
+                                        sync::sync_all_files().await?;
                                     }
                                     text => {
                                         println!("Received unknown text: {}", text);
