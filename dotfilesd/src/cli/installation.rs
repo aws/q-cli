@@ -84,19 +84,27 @@ fn install_daemon_macos() -> Result<()> {
 
 #[cfg(target_os = "linux")]
 fn install_daemon_linux() -> Result<()> {
-    // Put the daemon service in /usr/lib/systemd/system
-    let service = daemon::systemd_service();
-    service
-        .write_to_file()
-        .with_context(|| format!("Could not write to {}", service.path.display()))?;
+    use std::process::Command;
 
-    // Enable the daemon using systemctl
-    Command::new("systemctl")
-        .arg("--now")
-        .arg("enable")
-        .arg(service.path)
-        .output()
-        .with_context(|| format!("Could not enable {}", service.path.display()))?;
+    use crate::daemon::{self, get_init_system, InitSystem};
+
+    match get_init_system()? {
+        InitSystem::Systemd => {
+            // Put the daemon service in /usr/lib/systemd/system
+            let service = daemon::systemd_service();
+            service
+                .write_to_file()
+                .with_context(|| format!("Could not write to {}", service.path.display()))?;
+
+            // Enable the daemon using systemctl
+            Command::new("systemctl")
+                .arg("--now")
+                .arg("enable")
+                .arg(service.path)
+                .output()
+                .with_context(|| format!("Could not enable {}", service.path.display()))?;
+        }
+    }
 
     Ok(())
 }
@@ -293,6 +301,8 @@ fn uninstall_daemon_macos() -> Result<()> {
 
 #[cfg(target_os = "linux")]
 fn uninstall_daemon_linux() -> Result<()> {
+    use std::process::Command;
+
     // Disable the daemon using systemctl
     Command::new("systemctl")
         .arg("disable")

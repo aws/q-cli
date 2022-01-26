@@ -1,4 +1,4 @@
-use std::{path::Path, time::Duration, io::Write};
+use std::{io::Write, path::Path, time::Duration};
 
 use anyhow::Result;
 use futures_util::StreamExt;
@@ -10,6 +10,30 @@ use crate::cli::{
     installation::{update, UpdateType},
     sync,
 };
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum InitSystem {
+    Systemd,
+}
+
+#[cfg(target_os = "linux")]
+pub fn get_init_system() -> Result<InitSystem> {
+    use std::process::Command;
+
+    use anyhow::Context;
+
+    let output = Command::new("ps 1")
+        .output()
+        .with_context(|| "Could not get init system")?;
+
+    let stdout = String::from_utf8(output.stdout).with_context(|| "Could not parse init system")?;
+
+    if stdout.contains("systemd") {
+        Ok(InitSystem::Systemd)
+    } else {
+        Err(anyhow::anyhow!("Could not determine init system"))
+    }
+}
 
 pub struct DaemonService {
     pub path: &'static Path,
