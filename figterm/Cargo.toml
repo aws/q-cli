@@ -1,9 +1,0 @@
-[workspace]
-members = [
-    "figterm",
-    "alacritty_terminal",
-    "fig-color"
-]
-
-[profile.release]
-lto = true
