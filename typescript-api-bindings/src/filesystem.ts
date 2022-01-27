@@ -3,10 +3,18 @@ import {
   sendReadFileRequest,
   sendDestinationOfSymbolicLinkRequest,
   sendContentsOfDirectoryRequest,
+  sendAppendToFileRequest,
 } from './requests';
 
 export async function write(path: string, contents: string) {
   return sendWriteFileRequest({
+    path: { path: path, expandTildeInPath: true },
+    data: { $case: 'text', text: contents },
+  });
+}
+
+export async function append(path: string, contents: string) {
+  return sendAppendToFileRequest({
     path: { path: path, expandTildeInPath: true },
     data: { $case: 'text', text: contents },
   });

@@ -6,6 +6,7 @@
 //  Copyright © 2021 Matt Schrage. All rights reserved.
 //
 
+import Foundation
 import FigAPIBindings
 
 class FileSystem {
@@ -47,6 +48,42 @@ class FileSystem {
     return true
   }
 
+  @discardableResult
+  static func appendToFile(_ request: Fig_AppendToFileRequest) throws -> Bool {
+    let path = request.path.normalizedPath
+    let data: Data
+
+    switch request.data {
+    case .text(let string):
+      data = string.data(using: .utf8) ?? Data()
+    case .binary(let _data):
+      data = _data
+    case .none:
+      throw APIError.generic(message: "No data to append")
+    }
+
+    if !FileManager.default.fileExists(atPath: path) {
+      if !FileManager.default.createFile(atPath: path, contents: data, attributes: nil) {
+        throw APIError.generic(message: "Could not create a new file")
+      }
+      return true
+    }
+
+    // the below will never be nil because we are eventually creating a new file above if it does not exist
+    guard let fileHandle = FileHandle(forWritingAtPath: path) else { throw APIError.generic(message: "No file exists at path") }
+    if #available(macOS 10.15.4, *) {
+      try fileHandle.seekToEnd()
+      try fileHandle.write(contentsOf: data)
+      try fileHandle.close()
+    } else {
+      fileHandle.seekToEndOfFile()
+      fileHandle.write(data)
+      fileHandle.closeFile()
+    }
+
+    return true
+  }
+
   static func contentsOfDirectory(_ request: Fig_ContentsOfDirectoryRequest) throws -> Fig_ContentsOfDirectoryResponse {
 
     let contents = try FileManager.default.contentsOfDirectory(atPath: request.directory.normalizedPath)
@@ -77,7 +114,6 @@ class FileSystem {
     return Fig_DestinationOfSymbolicLinkResponse.with { response in
       response.destination = destination
     }
-
   }
 }
 
