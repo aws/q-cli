@@ -96,19 +96,16 @@ func ContactSupport() {
 }
 
 func IsInstalled(application string) bool {
-	listInsatlledApps, err := exec.Command("mdfind", "kMDItemKind == 'Application'").Output()
+	listInsatlledApps, err := exec.Command("mdfind", "-name", application).Output()
 	if err != nil {
 		return false
 	}
 
-	installedApps := strings.Split(string(listInsatlledApps), "\n")
-	for _, app := range installedApps {
-		if strings.Contains(app, application) {
-			return true
-		}
+	if strings.TrimSpace(string(listInsatlledApps)) == "" {
+		return false
+	} else {
+		return true
 	}
-
-	return false
 }
 
 func NewCmdDoctor() *cobra.Command {
@@ -182,7 +179,7 @@ func NewCmdDoctor() *cobra.Command {
 				}
 
 				// Check if $TMPDIR/fig.socket exists
-				fig_socket_path := fig_ipc.GetSocketPath()
+				fig_socket_path := filepath.Join(os.Getenv("TMPDIR"), "fig.socket")
 				if _, err := os.Stat(fig_socket_path); errors.Is(err, os.ErrNotExist) {
 					fmt.Println("❌ Fig socket does not exist at " + fig_socket_path)
 					doctorError = true
