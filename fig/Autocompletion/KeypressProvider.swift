@@ -114,7 +114,7 @@ class KeypressProvider {
 
       switch event.type {
       case .tapDisabledByTimeout:
-        print("eventTap: disabled by timeout")
+        Logger.log(message: "disabled by timeout", subsystem: .keypress)
         if let tap = KeypressProvider.shared.tap {
           CGEvent.tapEnable(tap: tap, enable: true)
         }
@@ -122,7 +122,7 @@ class KeypressProvider {
 
       case .tapDisabledByUserInput:
         // This is triggered if we manually disable the event tap
-        print("eventTap: disabled by user input")
+        Logger.log(message: "eventTap disabled by user input", subsystem: .keypress)
         return Unmanaged.passUnretained(event)
       default:
         break
@@ -137,11 +137,20 @@ class KeypressProvider {
       guard Defaults.shared.loggedIn,
             Defaults.shared.useAutocomplete,
             Accessibility.focusedApplicationIsSupportedTerminal() else {
+
+        let conditions = "loggedIn: \(Defaults.shared.loggedIn)"
+                       + ", useAutocomplete: \(Defaults.shared.useAutocomplete)"
+                       + ", focusedApplicationIsSupportedTerminal: \(Accessibility.focusedApplicationIsSupportedTerminal())"
+        Logger.log(message: "Ignoring keypress! \(conditions)",
+                   subsystem: .keypress)
+
         return Unmanaged.passUnretained(event)
       }
 
       guard let window = AXWindowServer.shared.allowlistedWindow else {
-        print("eventTap window of \(AXWindowServer.shared.allowlistedWindow?.bundleId ?? "<none>") is not allowlisted")
+        let message = "eventTap window of \(AXWindowServer.shared.allowlistedWindow?.bundleId ?? "<none>") is not allowlisted"
+        Logger.log(message: message,
+                   subsystem: .keypress)
         return Unmanaged.passUnretained(event)
       }
 
@@ -153,7 +162,7 @@ class KeypressProvider {
       }
 
       let keyName = KeyboardLayout.humanReadableKeyName(event) ?? "?"
-
+      // swiftlint:disable line_length
       Logger.log(message: "\(action) '\(keyName)' in \(window.bundleId ?? "<unknown>") [\(window.hash)], \(window.associatedShellContext?.ttyDescriptor ?? "???") (\(window.associatedShellContext?.executablePath ?? "???")) \(window.associatedShellContext?.processId ?? 0)", subsystem: .keypress)
 
       let handlers = KeypressProvider.shared.registeredHandlers + [ KeypressProvider.fallbackHandler ]
