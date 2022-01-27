@@ -52,6 +52,11 @@ class IPC: UnixSocketServerDelegate {
 
     server.delegate = self
     server.run()
+
+    // Prevent "App Nap" from automatically killing Fig if the computer goes to sleep
+    // while the user has disabled the menubar icon
+    // See: https://stackoverflow.com/questions/19577541/disabling-timer-coalescing-in-osx-for-a-given-process
+    ProcessInfo.processInfo.disableAutomaticTermination("Running unix socket server to handle updates from active terminal sessions.")
   }
 
   func recieved(data: Data, on socket: Socket?) {
