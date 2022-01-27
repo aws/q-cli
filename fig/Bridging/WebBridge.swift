@@ -24,7 +24,6 @@ class WebBridge: NSObject {
     configuration.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
     configuration.preferences.javaScriptEnabled = true
     configuration.preferences.javaScriptCanOpenWindowsAutomatically = true
-    configuration.preferences.tabFocusesLinks = true
 
     configuration.processPool = self.processPool
     if configuration.urlSchemeHandler(forURLScheme: "fig") == nil {

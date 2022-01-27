@@ -26,7 +26,13 @@ class FigTerm {
     
     ShellInsertionProvider.insertLock()
     
-    socket.send(message: text)
+    let proto_msg = Figterm_FigtermMessage.with { msg in
+      msg.command = Figterm_FigtermMessage.OneOf_Command.insertTextCommand(Figterm_InsertTextCommand.with({ insert_message in
+        insert_message.text = text;
+      }))
+    };
+    
+    socket.send(data: try proto_msg.serializedData())
     
     ShellInsertionProvider.insertUnlock(with: text)
     socket.disconnect()

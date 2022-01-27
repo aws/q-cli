@@ -1,0 +1,15 @@
+[package]
+name = "fig-color"
+version = "0.1.0"
+edition = "2021"
+homepage = "https://fig.io"
+repository = "https://github.com/withfig/macos"
+publish = false
+
+[dependencies]
+bitflags = "1"
+
+[build-dependencies]
+bindgen = "0.59"
+cc = "1"
+
