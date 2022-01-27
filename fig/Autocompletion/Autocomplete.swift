@@ -73,64 +73,72 @@ class ShellInsertionProvider {
 
   static func insertUnlock(with insertionText: String) {
     // remove lock after keystrokes have been processes
-    try? FileManager.default.removeItem(atPath: insertionLock)
+    // requires delay proportional to number of character inserted
+    // unfortunately, we don't really know how long this will take - it varies significantly between native and Electron terminals.
+    // We can probably be smarter about this and modulate delay based on terminal.
 
-    if let window = AXWindowServer.shared.allowlistedWindow,
-       let sessionId = window.session,
-       let editBuffer = window.associatedEditBuffer {
+    let delay = 0.05
+    Timer.delayWithSeconds(delay) {
+      // remove lock after keystrokes have been processes
+      try? FileManager.default.removeItem(atPath: insertionLock)
 
-      var text = editBuffer.text
-      var index = text.index(text.startIndex, offsetBy: editBuffer.cursor)
+      if let window = AXWindowServer.shared.allowlistedWindow,
+         let sessionId = window.session,
+         let editBuffer = window.associatedEditBuffer {
 
-      var skip = 0
-      for (idx, char) in insertionText.enumerated() {
-        guard let value = char.asciiValue else { break }
-        guard skip == 0 else { skip -= 1; break }
-        switch value {
-        case 8: // backspace literal
-          guard index != text.startIndex else { break }
-          index = text.index(before: index)
-          text.remove(at: index)
-        case 27: // ESC
-          if let direction = insertionText.index(
-            insertionText.startIndex,
-            offsetBy: idx + 2,
-            limitedBy: insertionText.endIndex
-          ) {
-            let esc = insertionText[direction]
-            if esc == "D" {
-              guard index != text.startIndex else { break }
-              index = text.index(before: index)
-              skip = 2
-            } else if esc == "C" { // forward one
-              guard index != text.endIndex else { break }
-              index = text.index(after: index)
-              skip = 2
+        var text = editBuffer.text
+        var index = text.index(text.startIndex, offsetBy: editBuffer.cursor)
+
+        var skip = 0
+        for (idx, char) in insertionText.enumerated() {
+          guard let value = char.asciiValue else { break }
+          guard skip == 0 else { skip -= 1; break }
+          switch value {
+          case 8: // backspace literal
+            guard index != text.startIndex else { break }
+            index = text.index(before: index)
+            text.remove(at: index)
+          case 27: // ESC
+            if let direction = insertionText.index(
+              insertionText.startIndex,
+              offsetBy: idx + 2,
+              limitedBy: insertionText.endIndex
+            ) {
+              let esc = insertionText[direction]
+              if esc == "D" {
+                guard index != text.startIndex else { break }
+                index = text.index(before: index)
+                skip = 2
+              } else if esc == "C" { // forward one
+                guard index != text.endIndex else { break }
+                index = text.index(after: index)
+                skip = 2
+              }
             }
+
+          case 10: // newline literal
+            text = ""
+            index = text.startIndex
+            NotificationCenter.default.post(name: Self.lineAcceptedInKeystrokeBufferNotification, object: nil)
+          default:
+            guard text.endIndex >= index else { return }
+            text.insert(char, at: index)
+            index = text.index(index, offsetBy: 1, limitedBy: text.endIndex) ?? text.endIndex
           }
-
-        case 10: // newline literal
-          text = ""
-          index = text.startIndex
-          NotificationCenter.default.post(name: Self.lineAcceptedInKeystrokeBufferNotification, object: nil)
-        default:
-          guard text.endIndex >= index else { return }
-          text.insert(char, at: index)
-          index = text.index(index, offsetBy: 1, limitedBy: text.endIndex) ?? text.endIndex
         }
+
+        let cursor = text.distance(from: text.startIndex, to: index)
+        TerminalSessionLinker.shared.setEditBuffer(for: sessionId,
+                                                   text: text,
+                                                   cursor: cursor)
+
+        API.notifications.editbufferChanged(buffer: text,
+                                            cursor: cursor,
+                                            session: sessionId,
+                                            context: window.associatedShellContext?.ipcContext)
+
+        Autocomplete.position()
       }
-
-      let cursor = text.distance(from: text.startIndex, to: index)
-      TerminalSessionLinker.shared.setEditBuffer(for: sessionId,
-                                                 text: text,
-                                                 cursor: cursor)
-
-      API.notifications.editbufferChanged(buffer: text,
-                                          cursor: cursor,
-                                          session: sessionId,
-                                          context: window.associatedShellContext?.ipcContext)
-
-      Autocomplete.position()
     }
   }
 }

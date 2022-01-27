@@ -16,9 +16,6 @@ func NewCmdInvite() *cobra.Command {
 		Use:   "invite",
 		Short: "Invite friends to Fig",
 		Long:  "Invite up to 5 friends & teammates to Fig",
-		Annotations: map[string]string{
-			"figcli.command.categories": "Common",
-		},
 		Run: func(cmd *cobra.Command, arg []string) {
 			email, err := exec.Command("defaults", "read", "com.mschrage.fig", "userEmail").Output()
 
