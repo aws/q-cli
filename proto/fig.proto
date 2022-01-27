@@ -33,6 +33,7 @@ message ClientOriginatedMessage {
       TerminalSessionInfoRequest terminal_session_info_request = 124;
       DebuggerUpdateRequest debugger_update_request = 125;
       ApplicationUpdateStatusRequest application_update_status_request = 126;
+      AppendToFileRequest append_to_file_request = 127;
   }
 }
 
@@ -200,6 +201,15 @@ message ReadFileResponse {
 }
 
 message WriteFileRequest {
+  optional FilePath path = 1;
+
+  oneof data {
+    string text = 2;
+    bytes binary = 3;
+  }
+}
+
+message AppendToFileRequest {
   optional FilePath path = 1;
 
   oneof data {

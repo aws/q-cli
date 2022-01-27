@@ -15,6 +15,7 @@ class FileSystemTests: XCTestCase {
     Bundle(for: Self.self)
   }
 
+  // MARK: - readFile
   func createReadFileRequest(path: String) -> Fig_ReadFileRequest {
     var filePath = Fig_FilePath()
     filePath.path = path
@@ -48,6 +49,7 @@ class FileSystemTests: XCTestCase {
     }
   }
 
+  // MARK: - writeFile
   func createWriteFileRequest(path: String, content: Fig_WriteFileRequest.OneOf_Data?) -> Fig_WriteFileRequest {
     var filePath = Fig_FilePath()
     filePath.path = path
@@ -96,7 +98,69 @@ class FileSystemTests: XCTestCase {
     try FileManager.default.removeItem(at: fileURL)
   }
 
-  func contentsOfDirectoryRequest(path: String) -> Fig_ContentsOfDirectoryRequest {
+  // MARK: - appendToFile
+  func createAppendToFileRequest(path: String, content: Fig_AppendToFileRequest.OneOf_Data?) -> Fig_AppendToFileRequest {
+    var filePath = Fig_FilePath()
+    filePath.path = path
+    var request = Fig_AppendToFileRequest()
+    request.path = filePath
+    request.data = content
+    return request
+  }
+
+  func testAppendTextToFile() throws {
+    let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    try "Hello!".write(to: fileURL, atomically: false, encoding: .utf8)
+    XCTAssertEqual(try String(contentsOf: fileURL), "Hello!")
+
+    let request = createAppendToFileRequest(path: fileURL.path, content: .binary("\nAppended hello!".data(using: .utf8)!))
+    try FileSystem.appendToFile(request)
+
+    XCTAssertEqual(try String(contentsOf: fileURL), "Hello!\nAppended hello!")
+
+    try FileManager.default.removeItem(at: fileURL)
+  }
+
+  func testAppendDataToFile() throws {
+    let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    try "Hello!".write(to: fileURL, atomically: false, encoding: .utf8)
+    XCTAssertEqual(try String(contentsOf: fileURL), "Hello!")
+
+    let request = createAppendToFileRequest(path: fileURL.path, content: .text("\nAppended hello!"))
+    try FileSystem.appendToFile(request)
+
+    XCTAssertEqual(try String(contentsOf: fileURL), "Hello!\nAppended hello!")
+
+    try FileManager.default.removeItem(at: fileURL)
+  }
+
+  func testAppendNoneToFile() throws {
+    let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    try "Hello!".write(to: fileURL, atomically: false, encoding: .utf8)
+    XCTAssertEqual(try String(contentsOf: fileURL), "Hello!")
+
+    let request = createAppendToFileRequest(path: fileURL.path, content: .none)
+    XCTAssertThrowsError(try FileSystem.appendToFile(request)) { error in
+      XCTAssertEqual(error as? APIError, APIError.generic(message: "No data to append"))
+    }
+
+    XCTAssertEqual(try String(contentsOf: fileURL), "Hello!")
+    try FileManager.default.removeItem(at: fileURL)
+  }
+
+  func testAppendToMissingFile() throws {
+    let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    XCTAssertFalse(FileManager.default.fileExists(atPath: fileURL.path))
+
+    let request = createAppendToFileRequest(path: fileURL.path, content: .text("Hello"))
+    try FileSystem.appendToFile(request)
+
+    XCTAssertEqual(try String(contentsOf: fileURL), "Hello")
+    try FileManager.default.removeItem(at: fileURL)
+  }
+
+  // MARK: - contentsOfDirectory
+  func createContentsOfDirectoryRequest(path: String) -> Fig_ContentsOfDirectoryRequest {
     var filePath = Fig_FilePath()
     filePath.path = path
     var request = Fig_ContentsOfDirectoryRequest()
@@ -106,11 +170,12 @@ class FileSystemTests: XCTestCase {
 
   func testContentsOfDirectory() throws {
     let path = testBundle.resourceURL?.appendingPathComponent("contents-of-this-folder").path
-    let request = contentsOfDirectoryRequest(path: path!)
+    let request = createContentsOfDirectoryRequest(path: path!)
     let response = try FileSystem.contentsOfDirectory(request)
     XCTAssertEqual(response.fileNames.sorted(), ["file-1.txt", "file-2.json", "file-3.md"].sorted())
   }
 
+  // MARK: - destinationOfSymbolicLink
   func createDestinationOfSymbolicLinkRequest(path: String?) -> Fig_DestinationOfSymbolicLinkRequest {
     var request = Fig_DestinationOfSymbolicLinkRequest()
     if let path = path {
