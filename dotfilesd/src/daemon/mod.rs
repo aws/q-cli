@@ -3,12 +3,21 @@ use std::{io::Write, path::Path, time::Duration};
 use anyhow::Result;
 use futures_util::StreamExt;
 use self_update::update::UpdateStatus;
-use tokio::{fs::remove_file, io::AsyncReadExt, net::UnixStream, select};
-use tokio_tungstenite::tungstenite::Message;
+use serde::{Deserialize, Serialize};
+use tokio::{
+    fs::remove_file,
+    io::AsyncReadExt,
+    net::{TcpStream, UnixStream},
+    select,
+};
+use tokio_tungstenite::{tungstenite::Message, MaybeTlsStream, WebSocketStream};
 
-use crate::cli::{
-    installation::{update, UpdateType},
-    sync,
+use crate::{
+    auth::Credentials,
+    cli::{
+        installation::{update, UpdateType},
+        sync,
+    },
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -62,6 +71,76 @@ pub fn launchd_plist() -> DaemonService {
     let data = include_str!("daemon_files/io.fig.dotfiles-daemon.plist");
 
     DaemonService { path, data }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct WebsocketAwsToken {
+    access_token: String,
+    id_token: String,
+}
+
+pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream<TcpStream>>> {
+    let client = reqwest::Client::new();
+
+    let creds = Credentials::load_credentials()?;
+
+    let websocket_aws_token = match (creds.access_token, creds.id_token) {
+        (Some(access_token), Some(id_token)) => WebsocketAwsToken {
+            access_token,
+            id_token,
+        },
+        _ => {
+            return Err(anyhow::anyhow!("Could not get AWS credentials"));
+        }
+    };
+
+    let base64_token = base64::encode(&serde_json::to_string(&websocket_aws_token)?);
+
+    let response = client
+        .get("https://api.fig.io/authenticate/ticket")
+        .bearer_auth(&base64_token)
+        .send()
+        .await?
+        .text()
+        .await?;
+
+    println!("{:?}", response);
+
+    let url = url::Url::parse_with_params(
+        "wss://api.fig.io/",
+        &[("deviceId", "1234"), ("ticket", &response)],
+    )?;
+
+    println!("{:?}", url);
+
+    tokio::task::spawn(async move {
+        // Wait for 5 seconds
+        tokio::time::sleep(Duration::from_secs(2)).await;
+
+        let json = r#"{"block": {"type": "alias","data": { "name": "HOMEBREW_NO_AUTO_UPDATE", "command": "" },"component": "abc","include": { "shell": [] }}}"#;
+
+        let response = reqwest::Client::new()
+            .post("https://api.fig.io/dotfiles/block/create")
+            .body(json)
+            .bearer_auth(&base64_token)
+            .send()
+            .await
+            .unwrap()
+            .text()
+            .await
+            .unwrap();
+
+        println!("{:?}", response);
+    });
+
+    let (mut client, _) = tokio_tungstenite::connect_async(url).await?;
+
+    while let Some(message) = client.next().await {
+        println!("{:?}", message);
+    }
+
+    Ok(client)
 }
 
 pub async fn daemon() -> Result<()> {

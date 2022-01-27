@@ -10,7 +10,7 @@ anyhow = "1.0.53"
 dirs = "4.0.0"
 self_update = "0.28.0"
 tokio = { version = "1.15.0", features = ["full"] }
-tokio-tungstenite = "0.16.1"
+tokio-tungstenite = { version = "0.16.1", features = ["rustls-tls-native-roots"] }
 reqwest = "0.11.9"
 serde = { version = "1.0.136", features = ["derive"] }
 toml = "0.5.8"
@@ -24,6 +24,7 @@ bytes = "1.1.0"
 validator = "0.14.0"
 dialoguer = "0.9.0"
 futures = "0.3.19"
+base64 = "0.13.0"
 
 # Used for auth 
 # Should break out into separate crate
