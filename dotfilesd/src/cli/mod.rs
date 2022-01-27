@@ -54,6 +54,7 @@ pub enum CliRootCommands {
     Doctor,
     #[clap(subcommand)]
     Plugins(plugins::PluginsSubcommand),
+    Test,
 }
 
 #[derive(Debug, Parser)]
@@ -78,6 +79,12 @@ impl Cli {
                 CliRootCommands::User => auth::user_info_cli().await,
                 CliRootCommands::Doctor => doctor::doctor_cli(),
                 CliRootCommands::Plugins(plugins_subcommand) => plugins_subcommand.execute().await,
+                CliRootCommands::Test => {
+                    crate::daemon::websocket::connect_to_fig_websocket()
+                        .await
+                        .unwrap();
+                    Ok(())
+                }
             },
             // Root command
             None => root_command(),

@@ -527,7 +527,7 @@ mod test {
 
         let plugin_toml = "";
         let source: Result<ShellSource, _> = toml::from_str(plugin_toml);
-        assert_eq!(source.is_err(), true,);
+        assert!(source.is_err());
     }
 
     #[test]

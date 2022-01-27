@@ -1,23 +1,21 @@
-use std::{io::Write, path::Path, time::Duration};
+pub mod websocket;
 
-use anyhow::Result;
+use std::{io::Write, ops::ControlFlow, path::Path, time::Duration};
+
+use anyhow::{Context, Result};
 use futures_util::StreamExt;
 use self_update::update::UpdateStatus;
 use serde::{Deserialize, Serialize};
 use tokio::{
     fs::remove_file,
     io::AsyncReadExt,
-    net::{TcpStream, UnixStream},
+    net::{UnixListener, UnixStream},
     select,
 };
-use tokio_tungstenite::{tungstenite::Message, MaybeTlsStream, WebSocketStream};
 
 use crate::{
-    auth::Credentials,
-    cli::{
-        installation::{update, UpdateType},
-        sync,
-    },
+    cli::installation::{update, UpdateType},
+    daemon::websocket::process_websocket,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -80,134 +78,50 @@ struct WebsocketAwsToken {
     id_token: String,
 }
 
-pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream<TcpStream>>> {
-    let client = reqwest::Client::new();
-
-    let creds = Credentials::load_credentials()?;
-
-    let websocket_aws_token = match (creds.access_token, creds.id_token) {
-        (Some(access_token), Some(id_token)) => WebsocketAwsToken {
-            access_token,
-            id_token,
-        },
-        _ => {
-            return Err(anyhow::anyhow!("Could not get AWS credentials"));
-        }
-    };
-
-    let base64_token = base64::encode(&serde_json::to_string(&websocket_aws_token)?);
-
-    let response = client
-        .get("https://api.fig.io/authenticate/ticket")
-        .bearer_auth(&base64_token)
-        .send()
-        .await?
-        .text()
-        .await?;
-
-    println!("{:?}", response);
-
-    let url = url::Url::parse_with_params(
-        "wss://api.fig.io/",
-        &[("deviceId", "1234"), ("ticket", &response)],
-    )?;
-
-    println!("{:?}", url);
-
-    tokio::task::spawn(async move {
-        // Wait for 5 seconds
-        tokio::time::sleep(Duration::from_secs(2)).await;
-
-        let json = r#"{"block": {"type": "alias","data": { "name": "HOMEBREW_NO_AUTO_UPDATE", "command": "" },"component": "abc","include": { "shell": [] }}}"#;
-
-        let response = reqwest::Client::new()
-            .post("https://api.fig.io/dotfiles/block/create")
-            .body(json)
-            .bearer_auth(&base64_token)
-            .send()
-            .await
-            .unwrap()
-            .text()
-            .await
-            .unwrap();
-
-        println!("{:?}", response);
-    });
-
-    let (mut client, _) = tokio_tungstenite::connect_async(url).await?;
-
-    while let Some(message) = client.next().await {
-        println!("{:?}", message);
-    }
-
-    Ok(client)
-}
-
 pub async fn daemon() -> Result<()> {
     // Spawn the daemon to listen for updates and dotfiles changes
     let mut update_interval = tokio::time::interval(Duration::from_secs(60 * 60));
 
     // Connect to websocket
-    let (websocket_stream, _) = tokio_tungstenite::connect_async("ws://127.0.0.1:1234").await?;
+    let mut websocket_stream = websocket::connect_to_fig_websocket()
+        .await
+        .context("Could not connect to websocket")?;
 
-    let (_write, mut read) = websocket_stream.split();
-
-    let unix_socket_path = Path::new("/var/run/dotfiles-daemon.sock");
+    // Connect to unix socket
+    let unix_socket_path = Path::new("/tmp/dotfiles-daemon.sock");
 
     if unix_socket_path.exists() {
         remove_file(unix_socket_path).await?;
     }
 
-    let mut unix_socket = UnixStream::connect("/var/run/dotfiles-daemon.sock").await?;
+    let unix_socket = UnixListener::bind(unix_socket_path)
+        .context("Could not connect to unix socket")?;
 
-    let mut bytes = bytes::BytesMut::new();
-
+    // Select loop
     loop {
         select! {
-            next = read.next() => {
-                match next {
-                    Some(stream_result) => match stream_result {
-                        Ok(message) => match message {
-                            Message::Text(text) => {
-                                match text.trim() {
-                                    "dotfiles" => {
-                                        sync::sync_all_files().await?;
-                                    }
-                                    text => {
-                                        println!("Received unknown text: {}", text);
-                                    }
-                                }
-                            }
-                            message => {
-                                println!("Received unknown message: {:?}", message);
-                            }
-                        },
-                        Err(err) => {
-                            // TODO: Gracefully handle errors
-                            println!("Error: {:?}", err);
-                            continue;
-                        }
-                    },
-                    None => {
-                        // TODO: Handle disconnections
-                        return Err(anyhow::anyhow!("Websocket disconnected"));
-                    }
+            next = websocket_stream.next() => {
+                match process_websocket(&next).await? {
+                    ControlFlow::Continue(_) => {},
+                    ControlFlow::Break(_) => break,
                 }
             }
-            _ = unix_socket.read_buf(&mut bytes) => {
+            _ = unix_socket.accept() => {
 
             }
             _ = update_interval.tick() => {
-                // Check for updates
-                match update(UpdateType::NoProgress)? {
-                    UpdateStatus::UpToDate => {}
-                    UpdateStatus::Updated(release) => {
-                        println!("Updated to {}", release.version);
-                        println!("Quitting...");
-                        return Ok(());
-                    }
-                }
+                // // Check for updates
+                // match update(UpdateType::NoProgress)? {
+                //     UpdateStatus::UpToDate => {}
+                //     UpdateStatus::Updated(release) => {
+                //         println!("Updated to {}", release.version);
+                //         println!("Quitting...");
+                //         return Ok(());
+                //     }
+                // }
             }
         }
     }
+
+    Ok(())
 }
