@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -eu
 
-## <script src="./readability.js"></script>
+## <script src="https://get-fig-io.s3.us-west-1.amazonaws.com/readability.js"></script>
 ## <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.16.0/themes/prism-okaidia.min.css" rel="stylesheet" />
 ## <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.16.0/components/prism-core.min.js" data-manual></script>
 ## <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.16.0/components/prism-bash.min.js"></script>
@@ -16,6 +16,13 @@ function abort() {
     echo "If you need help, please email us at ${BOLD}hello@fig.io${RESET}."
     exit 1
 }
+
+# Fail fast with a concise message when not using bash
+# Single brackets are needed here for POSIX compatibility
+if [ -z "${BASH_VERSION:-}" ]
+then
+  abort "Bash is required to interpret this script."
+fi
 
 FIG_DOWNLOAD_DIR="https://get-fig-io.s3.us-west-1.amazonaws.com/bin/latest"
 
@@ -65,7 +72,7 @@ function download_file() {
             abort "Failed to download $1"
         fi
     else
-        abort "Failed to download, neither curl nor wget is available"
+        abort "Neither curl nor wget found. Please install one of them."
     fi
 }
 
@@ -81,8 +88,7 @@ function install_directory() {
             _ostype="darwin"
             ;;
         *)
-            echo "Unknown OS type: $_ostype"
-            exit 1
+            abort "Unknown OS type: $_ostype"
             ;;
     esac
 
@@ -155,3 +161,4 @@ fi
 # when ran as a script, they're totally ignored.
 #
 # Credit goes to firebase.tools for the inspiration & much of the implementation.
+# Install scripts for Homebrew, Docker & Sentry were also used as reference.
