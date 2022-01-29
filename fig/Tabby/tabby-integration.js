@@ -1,13 +1,13 @@
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
-		module.exports = factory(require("@angular/core"), require("rxjs"), require("tabby-core"), require("tabby-terminal"));
+		module.exports = factory(require("@angular/core"), require("electron"), require("rxjs"), require("tabby-core"), require("tabby-terminal"));
 	else if(typeof define === 'function' && define.amd)
-		define(["@angular/core", "rxjs", "tabby-core", "tabby-terminal"], factory);
+		define(["@angular/core", "electron", "rxjs", "tabby-core", "tabby-terminal"], factory);
 	else {
-		var a = typeof exports === 'object' ? factory(require("@angular/core"), require("rxjs"), require("tabby-core"), require("tabby-terminal")) : factory(root["@angular/core"], root["rxjs"], root["tabby-core"], root["tabby-terminal"]);
+		var a = typeof exports === 'object' ? factory(require("@angular/core"), require("electron"), require("rxjs"), require("tabby-core"), require("tabby-terminal")) : factory(root["@angular/core"], root["electron"], root["rxjs"], root["tabby-core"], root["tabby-terminal"]);
 		for(var i in a) (typeof exports === 'object' ? exports : root)[i] = a[i];
 	}
-})(global, function(__WEBPACK_EXTERNAL_MODULE__angular_core__, __WEBPACK_EXTERNAL_MODULE_rxjs__, __WEBPACK_EXTERNAL_MODULE_tabby_core__, __WEBPACK_EXTERNAL_MODULE_tabby_terminal__) {
+})(global, function(__WEBPACK_EXTERNAL_MODULE__angular_core__, __WEBPACK_EXTERNAL_MODULE_electron__, __WEBPACK_EXTERNAL_MODULE_rxjs__, __WEBPACK_EXTERNAL_MODULE_tabby_core__, __WEBPACK_EXTERNAL_MODULE_tabby_terminal__) {
 return /******/ (() => { // webpackBootstrap
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
@@ -50,16 +50,22 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core_1 = __webpack_require__(/*! @angular/core */ "@angular/core");
 const rxjs_1 = __webpack_require__(/*! rxjs */ "rxjs");
-const cp = __webpack_require__(/*! child_process */ "child_process");
 const tabby_core_1 = __importStar(__webpack_require__(/*! tabby-core */ "tabby-core"));
 const tabby_terminal_1 = __importStar(__webpack_require__(/*! tabby-terminal */ "tabby-terminal"));
+const electron_1 = __webpack_require__(/*! electron */ "electron");
 let runCommand = function (command, logger) {
     logger.info(command);
-    cp.exec(command, (err) => {
+    const tokens = command.split(" ");
+    const args = tokens.slice(1);
+    try {
+        electron_1.ipcRenderer.send('pty:spawn', process.env.HOME + '/.fig/bin/fig', args, {});
+        // pty.spawn('~/.fig/bin/fig', args, {})
+    }
+    catch (err) {
         if (err && logger) {
             logger.error(err);
         }
-    });
+    }
 };
 let FigModule = class FigModule {
     constructor(log, app) {
@@ -74,7 +80,7 @@ let FigModule = class FigModule {
             }
             else if (tab instanceof tabby_core_1.SplitTabComponent) {
                 tab.initialized$.subscribe(() => {
-                    rxjs_1.merge(tab.tabAdded$, rxjs_1.from(tab.getAllTabs()) // tabAdded$ doesn't fire for tabs restored from saved sessions
+                    (0, rxjs_1.merge)(tab.tabAdded$, (0, rxjs_1.from)(tab.getAllTabs()) // tabAdded$ doesn't fire for tabs restored from saved sessions
                     ).subscribe(pane => {
                         if (pane instanceof tabby_terminal_1.BaseTerminalTabComponent) {
                             this.logger.info('New pane opened', pane.title);
@@ -95,7 +101,7 @@ let FigModule = class FigModule {
         this.index += 1;
         let id = this.index;
         this.logger.info(`Attached to ${tab.title}`);
-        tab.frontendReady$.pipe(rxjs_1.first()).subscribe(() => {
+        tab.frontendReady$.pipe((0, rxjs_1.first)()).subscribe(() => {
             if (tab.frontend instanceof tabby_terminal_1.XTermFrontend) {
                 this.logger.info('Got an xterm');
             }
@@ -113,7 +119,7 @@ let FigModule = class FigModule {
     }
 };
 FigModule = __decorate([
-    core_1.NgModule({
+    (0, core_1.NgModule)({
         imports: [
             tabby_core_1.default,
             tabby_terminal_1.default,
@@ -122,7 +128,7 @@ FigModule = __decorate([
     __metadata("design:paramtypes", [tabby_core_1.LogService,
         tabby_core_1.AppService])
 ], FigModule);
-exports.default = FigModule;
+exports["default"] = FigModule;
 
 
 /***/ }),
@@ -137,13 +143,13 @@ module.exports = __WEBPACK_EXTERNAL_MODULE__angular_core__;
 
 /***/ }),
 
-/***/ "child_process":
-/*!********************************!*\
-  !*** external "child_process" ***!
-  \********************************/
+/***/ "electron":
+/*!***************************!*\
+  !*** external "electron" ***!
+  \***************************/
 /***/ ((module) => {
 
-module.exports = require("child_process");;
+module.exports = __WEBPACK_EXTERNAL_MODULE_electron__;
 
 /***/ }),
 
@@ -185,8 +191,9 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_tabby_terminal__;
 /******/ 	// The require function
 /******/ 	function __webpack_require__(moduleId) {
 /******/ 		// Check if module is in cache
-/******/ 		if(__webpack_module_cache__[moduleId]) {
-/******/ 			return __webpack_module_cache__[moduleId].exports;
+/******/ 		var cachedModule = __webpack_module_cache__[moduleId];
+/******/ 		if (cachedModule !== undefined) {
+/******/ 			return cachedModule.exports;
 /******/ 		}
 /******/ 		// Create a new module (and put it into the cache)
 /******/ 		var module = __webpack_module_cache__[moduleId] = {

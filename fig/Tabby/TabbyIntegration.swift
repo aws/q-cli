@@ -24,7 +24,7 @@ class TabbyIntegration: TerminalIntegrationProvider {
   static let pluginPath = TabbyIntegration.pluginFolderPath.appendingPathComponent(
                           TabbyIntegration.pluginPathInBundle.lastPathComponent)
 
-  static let pluginVersion =  "0.1.0"
+  static let pluginVersion =  "0.1.1"
   static let pluginPathInBundle = Bundle.main.url(forResource: "tabby-integration", withExtension: "js")!
 
   static let packageJSON =
