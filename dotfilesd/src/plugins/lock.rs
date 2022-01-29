@@ -6,8 +6,6 @@ use std::{
 };
 
 use anyhow::{Context, Result};
-use globset::GlobSet;
-use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
 use tokio::fs::{read_to_string, write};

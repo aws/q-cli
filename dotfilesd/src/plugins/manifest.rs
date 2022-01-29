@@ -2,6 +2,7 @@ use std::{collections::HashMap, fmt, path::PathBuf};
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
+use serde_with::{serde_as, DisplayFromStr};
 use thiserror::Error;
 use url::Url;
 
@@ -252,6 +253,8 @@ pub struct ShellInstall {
     pub pre: Option<StringOrList>,
     /// Post command to run after applying the plugin and other plugins that are sourced after this plugin
     pub post: Option<StringOrList>,
+    /// Directories to add to the shell's PATH
+    pub dir: Option<String>,
 }
 
 impl ShellInstall {
@@ -260,10 +263,16 @@ impl ShellInstall {
     }
 }
 
+#[serde_as]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ShellInstallation {
     pub source: ShellSource,
-    pub install: Option<ShellInstall>,
+    #[serde(rename = "install")]
+    #[serde(flatten)]
+    pub default_install: Option<ShellInstall>,
+    #[serde(flatten)]
+    #[serde_as(as = "HashMap<DisplayFromStr, _>")]
+    pub per_shell: HashMap<Shell, ShellInstall>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -427,7 +436,7 @@ mod test {
         
         [installation.shell]
         source = { github = true }
-        install = { use = ["async.zsh", "pure.zsh"] }
+        use = ["async.zsh", "pure.zsh"]
         "#;
 
         let plugin: Plugin = toml::from_str(plugin_toml).unwrap();
@@ -467,7 +476,7 @@ mod test {
             }
         );
         assert_eq!(
-            plugin.installation.shell.as_ref().unwrap().install,
+            plugin.installation.shell.as_ref().unwrap().default_install,
             Some(ShellInstall {
                 use_files: Some(vec!["async.zsh".to_string(), "pure.zsh".to_string()]),
                 ..Default::default()
@@ -576,6 +585,7 @@ mod test {
         apply = ["PATH"]
         pre = "echo 'hello'"
         post = ["echo 'goodbye'", "echo 'world'"]
+        dir = "pure"
         "#;
 
         let install: ShellInstall = toml::from_str(plugin_toml).unwrap();
@@ -590,6 +600,7 @@ mod test {
                     String::from("echo 'goodbye'"),
                     String::from("echo 'world'")
                 ])),
+                dir: Some(String::from("pure")),
             }
         );
 
@@ -599,10 +610,7 @@ mod test {
         assert_eq!(
             install,
             ShellInstall {
-                use_files: None,
-                apply: None,
-                pre: None,
-                post: None,
+                ..Default::default()
             }
         );
     }

@@ -44,7 +44,7 @@ pub async fn download_plugin(plugin: &Plugin) -> Result<()> {
                     .installation
                     .shell
                     .as_ref()
-                    .map(|s| s.install.as_ref().map(|i| i.lock(&plugin_dir, shell).ok()))
+                    .map(|s| s.default_install.as_ref().map(|i| i.lock(&plugin_dir, shell).ok()))
                     .flatten()
                     .flatten();
 
@@ -59,7 +59,7 @@ pub async fn download_plugin(plugin: &Plugin) -> Result<()> {
                     .installation
                     .shell
                     .as_ref()
-                    .map(|s| s.install.as_ref().map(|i| i.lock(&plugin_dir, shell).ok()))
+                    .map(|s| s.default_install.as_ref().map(|i| i.lock(&plugin_dir, shell).ok()))
                     .flatten()
                     .flatten();
 
