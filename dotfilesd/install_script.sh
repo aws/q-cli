@@ -7,9 +7,14 @@ set -eu
 ## <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.16.0/components/prism-bash.min.js"></script>
 ## <style>body {color: #272822; background-color: #272822; font-size: 0.8em;} </style>
 
-abort() {
-  printf "%s\n" "$@"
-  exit 1
+MAGENTA="\033[1;35m"
+BOLD="\033[1;1m"
+RESET="\033[0m"
+
+function abort() {
+    echo $1
+    echo "If you need help, please email us at ${BOLD}hello@fig.io${RESET}."
+    exit 1
 }
 
 # Fail fast with a concise message when not using bash
@@ -19,53 +24,47 @@ then
   abort "Bash is required to interpret this script."
 fi
 
+FIG_DOWNLOAD_DIR="https://get-fig-io.s3.us-west-1.amazonaws.com/bin/latest"
 
-FIG_DOWNLOAD_Darwin_aarch64="https://get.fig.io/bin/latest/darwin-aarch64"
-# FIG_DOWNLOAD_Darwin_universal="https://get.fig.io/bin/latest/darwin-universal"
-FIG_DOWNLOAD_Darwin_x86_64="https://get.fig.io/bin/latest/darwin-x86_64"
-# FIG_DOWNLOAD_Linux_aarch64="https://get.fig.io/bin/latest/linux-aarch64"
-# FIG_DOWNLOAD_Linux_armv7="https://get.fig.io/bin/latest/linux-armv7"
-# FIG_DOWNLOAD_Linux_i686="https://get.fig.io/bin/latest/linux-i686"
-FIG_DOWNLOAD_Linux_x86_64="https://get.fig.io/bin/latest/linux-x86_64"
-# FIG_DOWNLOAD_Windows_i686="https://get.fig.io/bin/latest/windows-i686.exe"
-# FIG_DOWNLOAD_Windows_x86_64="https://get.fig.io/bin/latest/windows-x86_64.exe"
-
-PLATFORM=`uname -s`
 ARCH=`uname -m`
-
-if [[ $PLATFORM == CYGWIN* ]] || [[ $PLATFORM == MINGW* ]] || [[ $PLATFORM == MSYS* ]]; then
-  PLATFORM="Windows"
-fi
-
-# if [[ $PLATFORM == "Darwin" ]]; then
-#     ARCH="universal"
-# fi
+PLATFORM=`uname -s`
 
 if [[ $ARCH == armv8* ]] || [[ $ARCH == arm64* ]] || [[ $ARCH == aarch64* ]]; then
     ARCH="aarch64"
 fi
 
-if [[ $ARCH == armv6* ]] || [[ $ARCH == armv7* ]]; then
-    ARCH="armv7"
+if [[ $ARCH == x86_64* ]] || [[ $ARCH == amd64* ]]; then
+    ARCH="x86_64"
 fi
 
-DOWNLOAD_URL_LOOKUP="FIG_DOWNLOAD_${PLATFORM}_${ARCH}"
+if [[ $PLATFORM == Darwin* ]]; then
+    PLATFORM="apple-darwin"
+fi
+
+if [[ $PLATFORM == Linux* ]]; then
+    PLATFORM="unknown-linux-gnu"
+fi
+
+if [[ $PLATFORM == CYGWIN* ]] || [[ $PLATFORM == MINGW* ]] || [[ $PLATFORM == MSYS* ]]; then
+    PLATFORM="pc-windows-msvc"
+fi
 
 # URL to download the latest version of the binary
-DOWNLOAD_URL="${!DOWNLOAD_URL_LOOKUP:-}"
+DOWNLOAD_URL="$FIG_DOWNLOAD_DIR/$ARCH-$PLATFORM"
 
-if [ x$DOWNLOAD_URL == x ]; then
-  abort "error: your platform and architecture (${PLATFORM}-${ARCH}) is unsupported."
-fi
+# Ensure the user has the nessisary tools to install dotfiles
+function check_for_commands() {
+    if ! command -v sudo >/dev/null; then
+        abort "Please install sudo before running this script."
+    fi
+}
 
-
-# Download $1 to $2
+# Download url $1 to file $2
 function download_file() {
     if command -v curl &> /dev/null; then
         curl -s -L -o "$2" "$1"
         if [ $? -ne 0 ]; then
-            echo "Failed to download $1"
-            exit 1
+            abort "Failed to download $1"
         fi
     elif command -v wget &> /dev/null; then
         wget -q -O "$2" "$1"
@@ -117,22 +116,34 @@ download_dir="$(mktemp -d)"
 # Download the latest binary
 download_file "${DOWNLOAD_URL}" "${download_dir}/dotfiles"
 
-# Make the binary executable and install it
-chmod +x "${download_dir}/dotfiles"
-sudo mv "${download_dir}/dotfiles" "$(install_directory)"
+# Check the files is a valid binary
+if file "${download_dir}/dotfiles" | grep -q "executable"; then
+    # Make the binary executable
+    chmod +x "${download_dir}/dotfiles"
+else
+    abort "Your platform and architecture (${PLATFORM}-${ARCH}) is unsupported."
+fi
 
+check_for_commands
+
+INSTALL_DIR="$(install_directory)"
+
+printf "${MAGENTA}➜${RESET} Installing dotfiles to ${BOLD}${INSTALL_DIR}/dotfiles${RESET}\n"
+sudo -p "Please enter your password for user ${USER}: " mv "${download_dir}/dotfiles" "${INSTALL_DIR}"
+printf "\n"
 
 if command -v dotfiles &> /dev/null; then
-    sudo dotfiles install
+    sudo -p "Please enter your password for user ${USER}: " sudo dotfiles install
 
     if [ $? -ne 0 ]; then
         abort "Failed to install dotfiles"
     fi
 
-    echo "Successfully installed dotfiles"
-    echo "Run 'dotfiles' to start using dotfiles"
+    printf "\n${MAGENTA}➜${RESET} ${BOLD}Next steps:${RESET}\n"
+    printf "  Run ${MAGENTA}dotfiles login${RESET} to login to your dotfiles account\n"
+    printf "  Run ${MAGENTA}dotfiles${RESET} start editing your dotfiles\n"
 else
-    abort "Failed to install dotfiles. Command 'dotfiles' not found"
+    abort "Failed to install dotfiles. Command 'dotfiles' not found."
 fi
 
 # ------------------------------------------

@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
 )
 
@@ -22,24 +21,19 @@ func NewCmdSettings() *cobra.Command {
 		Long:  "Customize appearance & behavior",
 		Args:  cobra.RangeArgs(0, 2),
 		Annotations: map[string]string{
-			"figcli.command.categories":      "Common",
 			"figcli.command.argDescriptions": "[key] key to get or set\n[value] value to set (optional)",
 		},
 		Run: func(cmd *cobra.Command, arg []string) {
 			if len(arg) == 0 {
-				response, err := fig_ipc.RunOpenUiElementCommand(fig_proto.UiElement_SETTINGS)
+				_, err := fig_ipc.RunOpenUiElementCommand(fig_proto.UiElement_SETTINGS)
 				if err != nil {
 					logging.Log("settings:", err.Error())
 					fmt.Printf("\n" +
-						lipgloss.NewStyle().Bold(true).Render("Unable to Connect to Fig") +
-						"\nFig might not be running, to launch Fig run: " +
-						lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Render("fig launch") +
+						"Unable to Connect to Fig\n" +
+						"Fig might not be running, to launch Fig run: " +
+						"fig launch" +
 						"\n\n")
 					os.Exit(1)
-				}
-
-				if response != "" {
-					fmt.Printf("\n%s\n\n", response)
 				}
 				return
 			}

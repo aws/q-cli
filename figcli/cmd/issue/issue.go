@@ -17,9 +17,6 @@ func NewCmdIssue() *cobra.Command {
 		Use:   "issue",
 		Short: "Create a new GitHub issue",
 		Long:  "Create a new GitHub issue in withfig/fig.",
-		Annotations: map[string]string{
-			"figcli.command.categories": "Common",
-		},
 		Args: cobra.ArbitraryArgs,
 		Run: func(cmd *cobra.Command, arg []string) {
 			text := strings.Join(arg, " ")

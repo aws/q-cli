@@ -1,7 +1,11 @@
 use clap::StructOpt;
 
-mod cli;
+pub mod auth;
+pub mod cli;
 pub mod config;
+pub mod daemon;
+pub mod plugins;
+pub mod util;
 
 #[tokio::main]
 async fn main() {

@@ -18,11 +18,7 @@ window.addEventListener("load", () => {
   rawCode = rawCode.replace(/&gt;/g, ">");
   rawCode = rawCode.replace(/&amp;/g, "&");
 
-  const code = Prism.highlight(
-    rawCode,
-    Prism.languages.bash,
-    "bash"
-  );
+  const code = Prism.highlight(rawCode, Prism.languages.bash, "bash");
 
   $body.innerHTML =
     "<pre class='language-bash'><code class='language-bash'>" +

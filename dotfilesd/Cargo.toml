@@ -1,18 +1,45 @@
 [package]
-name = "dotfilesd"
+name = "dotfiles"
 version = "0.1.0"
 description = "A manager for dotfiles"
 edition = "2021"
 
 [dependencies]
-clap = { version = "3.0.8", features = ["derive"] }
-anyhow = "1.0.52"
+clap = { version = "3.0.12", features = ["derive"] }
+anyhow = "1.0.53"
 dirs = "4.0.0"
 self_update = "0.28.0"
 tokio = { version = "1.15.0", features = ["full"] }
+tokio-tungstenite = { version = "0.16.1", features = ["rustls-tls-native-roots"] }
 reqwest = "0.11.9"
-serde = { version = "1.0.133", features = ["derive"] }
+serde = { version = "1.0.136", features = ["derive"] }
 toml = "0.5.8"
 regex = "1.5.4"
 crossterm = "0.22.1"
+rand = "0.8.4"
+url = { version = "2.2.2", features = ["serde"] }
+futures-util = "0.3.19"
+time = { version = "0.3.6", features = ["serde-human-readable"] }
+bytes = "1.1.0"
+validator = "0.14.0"
+dialoguer = "0.9.0"
+futures = "0.3.19"
+base64 = "0.13.0"
+
+# Used for auth 
+# Should break out into separate crate
+aws-sdk-cognitoidentityprovider = "0.6.0"
+uuid = { version = "0.8.2", features = ["v4"] }
+thiserror = "1.0.30"
+serde_json = "1.0.78"
+
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.30.0", features = ["Win32_Foundation", "Win32_Security", "Win32_System_Threading"] }
+
+[target.'cfg(unix)'.dependencies]
 nix = "0.23.1"
+
+[profile.release-lto]
+inherits = "release"
+lto = true
+codegen-units = 1

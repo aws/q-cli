@@ -9,6 +9,7 @@ import * as Telemetry from './telemetry';
 import * as fs from './filesystem';
 import * as Config from './config';
 import * as Native from './native';
+import * as Debugger from './debugger';
 
 import * as Fig from './fig.pb';
 import * as Internal from './requests';
@@ -27,6 +28,7 @@ window.f = {
   Config,
   Native,
   Internal,
+  Debugger,
 };
 
 export {
@@ -42,4 +44,5 @@ export {
   Config,
   Native,
   Fig,
+  Debugger,
 };
