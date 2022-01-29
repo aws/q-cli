@@ -1,9 +1,16 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use anyhow::Result;
 use clap::Subcommand;
 
-use crate::plugins::manifest::Plugin;
+use crate::plugins::{download_plugin, manifest::Plugin};
+
+fn read_plugin_from_file(path: impl AsRef<Path>) -> Result<Plugin> {
+    let raw = std::fs::read_to_string(path)?;
+    let mut plugin: Plugin = toml::from_str(&raw)?;
+    plugin.normalize();
+    Ok(plugin)
+}
 
 #[derive(Debug, Subcommand)]
 pub enum PluginsSubcommand {
@@ -14,6 +21,9 @@ pub enum PluginsSubcommand {
         /// Quiet
         #[clap(long, short, conflicts_with = "verbose")]
         quiet: bool,
+    },
+    Download {
+        plugin_file: PathBuf,
     },
 }
 
@@ -26,9 +36,7 @@ impl PluginsSubcommand {
                 quiet,
             } => {
                 // Read from the plugin
-                let toml_file = std::fs::read_to_string(plugin_file)?;
-
-                let plugin: Plugin = match toml::from_str(&toml_file) {
+                let plugin: Plugin = match read_plugin_from_file(plugin_file) {
                     Ok(v) => v,
                     Err(err) => {
                         if *quiet {
@@ -58,6 +66,10 @@ impl PluginsSubcommand {
                 if !quiet {
                     println!("{:#?}", plugin);
                 }
+            }
+            PluginsSubcommand::Download { plugin_file } => {
+                let plugin: Plugin = read_plugin_from_file(plugin_file)?;
+                download_plugin(&plugin).await?;
             }
         }
 

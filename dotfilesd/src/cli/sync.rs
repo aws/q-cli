@@ -55,7 +55,9 @@ async fn sync_file(shell: &Shell) -> Result<()> {
         .await?;
 
     // Create path to dotfiles
-    let cache_file = shell.get_cache_path()?;
+    let cache_file = shell
+        .get_data_path()
+        .context("Could not get cache file path")?;
     let cache_folder = cache_file.parent().unwrap();
 
     // Create cache folder if it doesn't exist

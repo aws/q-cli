@@ -1,5 +1,5 @@
-use crate::util::shell::Shell;
-use anyhow::Result;
+use crate::{plugins::lock::LockData, util::shell::Shell};
+use anyhow::{Context, Result};
 use clap::ArgEnum;
 use serde::{Deserialize, Serialize};
 
@@ -15,7 +15,11 @@ struct DotfileData {
 }
 
 fn shell_init(shell: &Shell, when: &When) -> Result<String> {
-    let raw = std::fs::read_to_string(shell.get_cache_path()?)?;
+    let raw = std::fs::read_to_string(
+        shell
+            .get_data_path()
+            .context("Failed to get shell data path")?,
+    )?;
     let source: DotfileData = serde_json::from_str(&raw)?;
 
     match when {
@@ -24,11 +28,15 @@ fn shell_init(shell: &Shell, when: &When) -> Result<String> {
     }
 }
 
-pub fn shell_init_cli(shell: &Shell, when: &When) -> Result<()> {
+pub async fn shell_init_cli(shell: &Shell, when: &When) -> Result<()> {
     println!("# {:?} for {:?}", when, shell);
     match shell_init(shell, when) {
         Ok(source) => println!("{}", source),
         Err(err) => println!("# Could not load source: {}", err),
+    }
+
+    if let Ok(lock_data) = LockData::load().await {
+        println!("{}", lock_data.plugin_source("autojump", shell)?);
     }
 
     Ok(())

@@ -1,3 +1,4 @@
+use anyhow::Context;
 use aws_sdk_cognitoidentityprovider::{
     error::{
         InitiateAuthError, InitiateAuthErrorKind, RespondToAuthChallengeError,
@@ -15,6 +16,8 @@ use std::{
     fs::{self, File},
 };
 use thiserror::Error;
+
+use crate::util::project_dir;
 
 pub fn get_client(client_name: impl Into<Cow<'static, str>>) -> anyhow::Result<Client> {
     let config = Config::builder()
@@ -368,41 +371,39 @@ impl Credentials {
     }
 
     pub fn save_credentials(&self) -> anyhow::Result<()> {
-        let cache =
-            dirs::cache_dir().ok_or_else(|| anyhow::anyhow!("Could not find cache directory"))?;
+        let project_dir = project_dir().context("Could not find project directory")?;
+        let data_dir = project_dir.data_local_dir();
 
-        let fig_cache = cache.join("fig");
-
-        if !fig_cache.exists() {
-            fs::create_dir_all(&fig_cache)?;
+        if !data_dir.exists() {
+            fs::create_dir_all(&data_dir)?;
         }
 
-        let mut file = File::create(fig_cache.join("credentials.json"))?;
+        let mut creds_file = File::create(data_dir.join("credentials.json"))?;
 
         #[cfg(unix)]
         {
             // Set permissions to 0600
-            file.set_permissions(std::os::unix::fs::PermissionsExt::from_mode(0o600))?;
+            creds_file.set_permissions(std::os::unix::fs::PermissionsExt::from_mode(0o600))?;
         }
 
-        serde_json::to_writer(&mut file, self)?;
+        serde_json::to_writer(&mut creds_file, self)?;
 
         Ok(())
     }
 
     pub fn load_credentials() -> anyhow::Result<Credentials> {
-        let cache =
-            dirs::cache_dir().ok_or_else(|| anyhow::anyhow!("Could not find cache directory"))?;
+        let project_dir = project_dir().context("Could not find project directory")?;
+        let data_dir = project_dir.data_local_dir();
 
-        let fig_cache = cache.join("fig");
+        let creds_path = data_dir.join("credentials.json");
 
-        if !fig_cache.exists() {
-            fs::create_dir_all(&fig_cache)?;
+        if !creds_path.exists() {
+            return Err(anyhow::anyhow!("Could not find credentials file"));
         }
 
-        let file = File::open(fig_cache.join("credentials.json"))?;
+        let creds_file = File::open(data_dir.join("credentials.json"))?;
 
-        Ok(serde_json::from_reader(file)?)
+        Ok(serde_json::from_reader(creds_file)?)
     }
 
     pub async fn refresh_credentials(

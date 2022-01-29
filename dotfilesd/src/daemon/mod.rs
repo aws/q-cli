@@ -3,20 +3,12 @@ pub mod websocket;
 use std::{io::Write, ops::ControlFlow, path::Path, time::Duration};
 
 use anyhow::{Context, Result};
-use futures_util::StreamExt;
-use self_update::update::UpdateStatus;
-use serde::{Deserialize, Serialize};
-use tokio::{
-    fs::remove_file,
-    io::AsyncReadExt,
-    net::{UnixListener, UnixStream},
-    select,
-};
+use futures::StreamExt;
 
-use crate::{
-    cli::installation::{update, UpdateType},
-    daemon::websocket::process_websocket,
-};
+use serde::{Deserialize, Serialize};
+use tokio::{fs::remove_file, net::UnixListener, select};
+
+use crate::daemon::websocket::process_websocket;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum InitSystem {
@@ -94,8 +86,8 @@ pub async fn daemon() -> Result<()> {
         remove_file(unix_socket_path).await?;
     }
 
-    let unix_socket = UnixListener::bind(unix_socket_path)
-        .context("Could not connect to unix socket")?;
+    let unix_socket =
+        UnixListener::bind(unix_socket_path).context("Could not connect to unix socket")?;
 
     // Select loop
     loop {

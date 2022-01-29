@@ -5,7 +5,14 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use url::Url;
 
-use crate::util::{shell::Shell, terminal::Terminal};
+use crate::util::{checksum::Sha256Checksum, shell::Shell, terminal::Terminal};
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum StringOrList {
+    String(String),
+    List(Vec<String>),
+}
 
 /// GitHub repo
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -69,6 +76,14 @@ impl GitHub {
 
     pub fn repository_url(&self) -> Url {
         Url::parse(&format!("https://github.com/{}/{}", self.owner, self.repo)).unwrap()
+    }
+
+    pub fn git_url(&self) -> Url {
+        Url::parse(&format!(
+            "https://github.com/{}/{}.git",
+            self.owner, self.repo
+        ))
+        .unwrap()
     }
 }
 
@@ -145,12 +160,12 @@ pub struct PluginMetadata {
     pub repository: Option<Url>,
     /// Link to the README for the plugin
     pub readme: Option<Url>,
-    /// The twitter handle of the author
+    /// The twitter handle of the plugin
     pub twitter: Option<String>,
     /// Authors of the plugin
     pub authors: Option<Vec<AuthorValue>>,
     /// License of the plugin
-    pub license: Option<Vec<String>>,
+    pub license: Option<StringOrList>,
     /// Shells supported by the plugin
     pub shells: Option<Vec<Shell>>,
     /// Terminals supported by the plugin
@@ -185,6 +200,18 @@ impl Gist {
     pub fn new(id: impl Into<String>) -> Self {
         Self(id.into())
     }
+
+    pub fn id(&self) -> &str {
+        &self.0
+    }
+
+    pub fn raw_url(&self) -> Url {
+        Url::parse(&format!(
+            "https://gist.githubusercontent.com/raw/{}",
+            self.0
+        ))
+        .unwrap()
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -205,11 +232,11 @@ pub enum ShellSource {
     },
     Gist {
         gist: Gist,
-        checksum: Option<String>,
+        checksum: Option<Sha256Checksum>,
     },
     Remote {
         remote: Url,
-        checksum: Option<String>,
+        checksum: Option<Sha256Checksum>,
     },
 }
 
@@ -218,30 +245,36 @@ pub enum ShellSource {
 pub struct ShellInstall {
     /// Files/Globs to source in the shell
     #[serde(rename = "use")]
-    source: Option<Vec<String>>,
+    pub use_files: Option<Vec<String>>,
     /// List of templates to apply to the plugin
-    apply: Option<Vec<String>>,
+    pub apply: Option<Vec<String>>,
     /// Pre command to run before applying the plugin and other plugins that are sourced after this plugin
-    pre: Option<String>,
+    pub pre: Option<StringOrList>,
     /// Post command to run after applying the plugin and other plugins that are sourced after this plugin
-    post: Option<String>,
+    pub post: Option<StringOrList>,
+}
+
+impl ShellInstall {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-struct ShellInstallation {
-    source: ShellSource,
-    install: Option<ShellInstall>,
+pub struct ShellInstallation {
+    pub source: ShellSource,
+    pub install: Option<ShellInstall>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-struct SpecialInstallation {
-    name: String,
+pub struct SpecialInstallation {
+    pub name: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ThemeInstallation {
     #[serde(flatten)]
-    terminals: HashMap<Terminal, toml::Value>,
+    pub terminals: HashMap<Terminal, toml::Value>,
 }
 
 /// Installation for a plugin
@@ -252,11 +285,11 @@ pub struct ThemeInstallation {
 #[serde(rename_all = "kebab-case")]
 pub struct Installation {
     /// Installation for a shell plugin
-    shell: Option<ShellInstallation>,
+    pub shell: Option<ShellInstallation>,
     /// Installation for a special plugin
-    special: Option<SpecialInstallation>,
+    pub special: Option<SpecialInstallation>,
     /// Installation for a theme plugin
-    theme: Option<ThemeInstallation>,
+    pub theme: Option<ThemeInstallation>,
     // /// Installation for an app plugin
     // App(AppInstallation),
 }
@@ -347,6 +380,9 @@ impl Plugin {
         Ok(())
     }
 
+    /// Normalize the plugin if it is a valid configuration
+    ///
+    /// Ensures fields that are not required are set to the default value
     pub fn normalize(&mut self) {
         if let Some(github) = &self.metadata.github {
             if self.metadata.repository == None {
@@ -385,7 +421,7 @@ mod test {
         description = "Pretty, minimal and fast ZSH prompt"
         github = "sindresorhus/pure"
         authors = [ { name = "Sindre Sorhus", twitter = "sindresorhus", github = "sindresorhus" } ]
-        license = ["MIT"]
+        license = "MIT"
         shells = ["zsh"]
         tags = ["zsh", "theme"]
         
@@ -414,7 +450,10 @@ mod test {
                 github: Some("sindresorhus".to_string()),
             }])
         );
-        assert_eq!(plugin.metadata.license, Some(vec!["MIT".to_string()]));
+        assert_eq!(
+            plugin.metadata.license,
+            Some(StringOrList::String(String::from("MIT")))
+        );
         assert_eq!(
             plugin.metadata.tags,
             Some(vec!["zsh".to_string(), "theme".to_string()])
@@ -430,7 +469,7 @@ mod test {
         assert_eq!(
             plugin.installation.shell.as_ref().unwrap().install,
             Some(ShellInstall {
-                source: Some(vec!["async.zsh".to_string(), "pure.zsh".to_string()]),
+                use_files: Some(vec!["async.zsh".to_string(), "pure.zsh".to_string()]),
                 ..Default::default()
             })
         );
@@ -507,7 +546,7 @@ mod test {
             source,
             ShellSource::Gist {
                 gist: Gist::new("12345"),
-                checksum: Some(String::from("abc123")),
+                checksum: Some(Sha256Checksum::new("abc123")),
             }
         );
 
@@ -536,7 +575,7 @@ mod test {
         use = ["async.zsh", "pure.zsh"]
         apply = ["PATH"]
         pre = "echo 'hello'"
-        post = "echo 'goodbye'"
+        post = ["echo 'goodbye'", "echo 'world'"]
         "#;
 
         let install: ShellInstall = toml::from_str(plugin_toml).unwrap();
@@ -544,10 +583,13 @@ mod test {
         assert_eq!(
             install,
             ShellInstall {
-                source: Some(vec!["async.zsh".to_string(), "pure.zsh".to_string()]),
+                use_files: Some(vec!["async.zsh".to_string(), "pure.zsh".to_string()]),
                 apply: Some(vec!["PATH".to_string()]),
-                pre: Some(String::from("echo 'hello'")),
-                post: Some(String::from("echo 'goodbye'")),
+                pre: Some(StringOrList::String(String::from("echo 'hello'"))),
+                post: Some(StringOrList::List(vec![
+                    String::from("echo 'goodbye'"),
+                    String::from("echo 'world'")
+                ])),
             }
         );
 
@@ -557,7 +599,7 @@ mod test {
         assert_eq!(
             install,
             ShellInstall {
-                source: None,
+                use_files: None,
                 apply: None,
                 pre: None,
                 post: None,

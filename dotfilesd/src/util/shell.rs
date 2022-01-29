@@ -1,12 +1,14 @@
-use std::{env, fmt::Display, path::PathBuf};
+use std::{env, fmt::Display, path::PathBuf, str::FromStr};
 
 use anyhow::{Context, Result};
 use clap::ArgEnum;
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
 
+use super::project_dir;
+
 /// Shells supported by Fig
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize, ArgEnum)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, ArgEnum)]
 #[serde(rename_all = "kebab-case")]
 pub enum Shell {
     /// Bash shell
@@ -27,9 +29,27 @@ impl Display for Shell {
     }
 }
 
+impl FromStr for Shell {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self> {
+        match s {
+            "bash" => Ok(Shell::Bash),
+            "zsh" => Ok(Shell::Zsh),
+            "fish" => Ok(Shell::Fish),
+            _ => Err(anyhow::anyhow!("Unknown shell: {}", s)),
+        }
+    }
+}
+
 impl Shell {
+    pub fn all() -> &'static [Self] {
+        &[Shell::Bash, Shell::Zsh, Shell::Fish]
+    }
+
     pub fn get_config_path(&self) -> Result<PathBuf> {
-        let home_dir = dirs::home_dir().context("Could not get home directory")?;
+        let base_dir = directories::BaseDirs::new().context("Failed to get base directories")?;
+        let home_dir = base_dir.home_dir();
 
         let path = match self {
             Shell::Bash => home_dir.join(".bashrc"),
@@ -53,12 +73,13 @@ impl Shell {
         Ok(path)
     }
 
-    pub fn get_cache_path(&self) -> Result<PathBuf> {
-        Ok(dirs::cache_dir()
-            .context("Could not get cache directory")?
-            .join("fig")
-            .join("dotfiles")
-            .join(format!("{}.json", self)))
+    pub fn get_data_path(&self) -> Option<PathBuf> {
+        Some(
+            project_dir()?
+                .data_local_dir()
+                .join("dotfiles")
+                .join(format!("{}.json", self)),
+        )
     }
 
     pub fn get_remote_source(&self) -> Result<Url> {

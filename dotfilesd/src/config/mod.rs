@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::{
     fs::File,
@@ -6,12 +6,11 @@ use std::{
     path::PathBuf,
 };
 
+use crate::util::project_dir;
+
 /// Get the path to the config folder
-fn get_config_folder() -> Result<PathBuf> {
-    let mut path =
-        dirs::config_dir().ok_or_else(|| anyhow::anyhow!("Could not get config directory"))?;
-    path.push("dotfiles");
-    Ok(path)
+fn get_config_folder() -> Option<PathBuf> {
+    Some(project_dir()?.config_dir().into())
 }
 
 #[derive(Debug)]
@@ -21,7 +20,7 @@ pub struct ConfigFile {
 
 impl ConfigFile {
     pub fn load() -> Result<Self> {
-        let config_folder_path = get_config_folder()?;
+        let config_folder_path = get_config_folder().context("Failed to get config folder path")?;
 
         // Create the config folder if it doesn't exist
         if !config_folder_path.exists() {
