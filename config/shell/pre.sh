@@ -36,7 +36,7 @@ if [[ "${TERMINAL_EMULATOR}" != JetBrains-JediTerm ]] \
   if [[ -z "${TERM_SESSION_ID}" || -n "${TMUX}" ]]; then
     export TERM_SESSION_ID="$(uuidgen)"
   fi
-  export FIG_INTEGRATION_VERSION=5
+  export FIG_INTEGRATION_VERSION=6
   # Pty module sets FIG_TERM or FIG_TERM_TMUX to avoid running twice. 
   FIG_SHELL=$(~/.fig/bin/fig_get_shell)
   FIG_IS_LOGIN_SHELL=0
