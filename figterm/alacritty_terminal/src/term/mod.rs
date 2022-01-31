@@ -461,6 +461,10 @@ impl<T> Term<T> {
         );
         lines = min(lines, (self.scroll_region.end - origin).0 as usize);
 
+        if let Some(ref mut cursor) = self.shell_state.cmd_cursor {
+            cursor.line -= lines as i32;
+        }
+
         let region = origin..self.scroll_region.end;
 
         // Scroll between origin and bottom
@@ -479,6 +483,10 @@ impl<T> Term<T> {
             lines,
             (self.scroll_region.end - self.scroll_region.start).0 as usize,
         );
+
+        if let Some(ref mut cursor) = self.shell_state.cmd_cursor {
+            cursor.line += lines as i32;
+        }
 
         let region = origin..self.scroll_region.end;
 
