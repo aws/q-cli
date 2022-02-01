@@ -4,12 +4,6 @@ version = "0.1.0"
 description = "A manager for dotfiles"
 edition = "2021"
 
-[features]
-bmp = []
-png = []
-ico = ["bmp", "png"]
-webp = []
-
 [dependencies]
 clap = { version = "3.0.12", features = ["derive"] }
 anyhow = "1.0.53"

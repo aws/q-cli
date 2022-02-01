@@ -13,15 +13,15 @@ use self_update::update::UpdateStatus;
 
 use crate::{
     cli::util::{dialoguer_theme, permission_guard},
-    util::shell::Shell,
+    util::shell::Shell, daemon,
 };
 
 pub fn install_cli() -> Result<()> {
-    permission_guard()?;
-
     // Install daemons
     #[cfg(target_os = "macos")]
-    install_daemon_macos().context("Could not install macOS daemon")?;
+    daemon::DaemonService::launchd()
+        .context("Could not get macOS daemon service")?
+        .install()?;
     #[cfg(target_os = "linux")]
     install_daemon_linux().context("Could not install systemd daemon")?;
     #[cfg(target_os = "windows")]
@@ -56,28 +56,6 @@ pub fn install_cli() -> Result<()> {
             println!();
         }
     }
-
-    Ok(())
-}
-
-#[cfg(target_os = "macos")]
-fn install_daemon_macos() -> Result<()> {
-    use std::process::Command;
-
-    use crate::daemon;
-
-    // Put the daemon plist in /Library/LaunchDaemons
-    let plist = daemon::launchd_plist();
-    plist
-        .write_to_file()
-        .with_context(|| format!("Could not write to {}", plist.path.display()))?;
-
-    // Start the daemon using launchctl
-    Command::new("launchctl")
-        .arg("load")
-        .arg(plist.path)
-        .output()
-        .with_context(|| format!("Could not load {}", plist.path.display()))?;
 
     Ok(())
 }

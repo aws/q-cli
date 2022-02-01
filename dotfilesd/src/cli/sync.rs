@@ -1,10 +1,17 @@
 //! Sync of dotfiles
 
-use std::{io::Write, process::Command};
+use std::{
+    io::Write,
+    process::{exit, Command},
+};
 
 use anyhow::{Context, Result};
+use crossterm::style::Stylize;
 use serde::{Deserialize, Serialize};
-use tokio::try_join;
+use tokio::{
+    io::{stdin, stdout, AsyncBufReadExt, AsyncWriteExt},
+    try_join,
+};
 
 use crate::{auth::Credentials, util::shell::Shell};
 
@@ -88,4 +95,52 @@ pub async fn sync_cli() -> Result<()> {
     println!("Dotfiles synced!");
 
     Ok(())
+}
+
+pub async fn prompt_cli() -> Result<()> {
+    let session_id = std::env::var("TERM_SESSION_ID").unwrap_or_else(|_| exit(1));
+    let tempdir = std::env::temp_dir();
+
+    let file = tempdir
+        .join("fig")
+        .join("dotfiles_updates")
+        .join(session_id);
+
+    let file_content = match tokio::fs::read_to_string(&file).await {
+        Ok(content) => content,
+        Err(_) => {
+            tokio::fs::create_dir_all(&file.parent().unwrap_or_else(|| exit(1)))
+                .await
+                .unwrap_or_else(|_| exit(1));
+
+            tokio::fs::write(&file, "")
+                .await
+                .unwrap_or_else(|_| exit(1));
+
+            exit(1);
+        }
+    };
+
+    if file_content.contains("true") {
+        println!("{}", "Your dotfiles have been updated!".bold());
+        print!("Would you like to update now? {}", "y/n".dim());
+
+        let mut stdout = tokio::io::BufWriter::new(stdout());
+        let mut stdin = tokio::io::BufReader::new(stdin());
+
+        stdout.flush().await.unwrap_or_else(|_| exit(1));
+
+        // Read the user input
+        let mut input = String::new();
+        stdin
+            .read_line(&mut input)
+            .await
+            .unwrap_or_else(|_| exit(1));
+    }
+
+    tokio::fs::write(&file, "")
+        .await
+        .unwrap_or_else(|_| exit(1));
+
+    exit(1);
 }

@@ -22,17 +22,13 @@ use super::{
 pub struct LockedShellInstall {
     /// Files after the glob pattern
     #[serde(rename = "use")]
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub use_files: Vec<PathBuf>,
+    pub use_files: Option<Vec<PathBuf>>,
     /// List of templates to apply to the plugin
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub apply: Vec<String>,
+    pub apply: Option<Vec<String>>,
     /// Pre command to run before applying the plugin and other plugins that are sourced after this plugin
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub pre: Vec<String>,
+    pub pre: Option<Vec<String>>,
     /// Post command to run after applying the plugin and other plugins that are sourced after this plugin
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub post: Vec<String>,
+    pub post: Option<Vec<String>>,
 }
 
 #[serde_as]
@@ -156,19 +152,32 @@ impl ShellInstall {
         if let Some(use_files) = &self.use_files {
             let glob = glob(use_files)?;
 
-            let glob_files: Vec<PathBuf> = walkdir::WalkDir::new(directory)
-                .into_iter()
-                .filter_entry(|entry| {
-                    let path = entry.path();
-                    let path_str = path.to_str().unwrap();
+            // List files in the directory
+            let dir = std::fs::read_dir(directory)?;
 
-                    glob.is_match(path_str)
-                })
-                .filter_map(|entry| entry.ok())
-                .map(|entry| entry.into_path())
-                .collect();
+            for entry in dir {
+                let entry = entry?;
+                let path = entry.path();
 
-            files.extend(glob_files);
+                // Check if the file matches the glob pattern
+                if glob.is_match(&path) {
+                    files.push(path);
+                }
+            }
+
+            // let glob_files: Vec<PathBuf> = walkdir::WalkDir::new(directory)
+            //     .into_iter()
+            //     .filter_entry(|entry| {
+            //         let path = entry.path();
+            //         let path_str = path.to_str().unwrap();
+
+            //         glob.is_match(path_str)
+            //     })
+            //     .filter_map(|entry| entry.ok())
+            //     .map(|entry| entry.into_path())
+            //     .collect();
+
+            // files.extend(glob_files);
         } else {
             let match_str = match shell {
                 Shell::Zsh => DEFAULT_ZSH_MATCH,
@@ -178,20 +187,34 @@ impl ShellInstall {
 
             let glob = glob(match_str)?;
 
-            let glob_files: Vec<PathBuf> = walkdir::WalkDir::new(directory)
-                .into_iter()
-                .filter_entry(|entry| {
-                    let path = entry.path();
-                    let path_str = path.to_str().unwrap();
+            let dir = std::fs::read_dir(directory)?;
 
-                    glob.is_match(path_str)
-                })
-                .filter_map(|entry| entry.ok())
-                .map(|entry| entry.into_path())
-                .collect();
+            for entry in dir {
+                let entry = entry?;
+                let path = entry.path();
 
-            files.extend(glob_files);
+                // Check if the file matches the glob pattern
+                if glob.is_match(&path) {
+                    files.push(path);
+                }
+            }
+
+            // let glob_files: Vec<PathBuf> = walkdir::WalkDir::new(directory)
+            //     .into_iter()
+            //     .filter_entry(|entry| {
+            //         let path = entry.path();
+            //         let path_str = path.to_str().unwrap();
+
+            //         glob.is_match(path_str)
+            //     })
+            //     .filter_map(|entry| entry.ok())
+            //     .map(|entry| entry.into_path())
+            //     .collect();
+
+            // files.extend(glob_files);
         }
+
+        println!("{:?}", files);
 
         Ok(files)
     }
@@ -199,22 +222,34 @@ impl ShellInstall {
     pub fn lock(&self, directory: impl AsRef<Path>, shell: &Shell) -> Result<LockedShellInstall> {
         let use_files = self.use_files(directory, shell)?;
 
-        // TODO Apply patterns
-        let apply = vec![];
+        let use_files = match use_files.is_empty() {
+            true => None,
+            false => Some(use_files),
+        };
 
         let pre = self.pre.as_ref().map_or(vec![], |post| match post {
             StringOrList::String(s) => vec![s.clone()],
             StringOrList::List(list) => list.clone(),
         });
 
+        let pre = match pre.is_empty() {
+            true => None,
+            false => Some(pre),
+        };
+
         let post = self.post.as_ref().map_or(vec![], |post| match post {
             StringOrList::String(s) => vec![s.clone()],
             StringOrList::List(list) => list.clone(),
         });
 
+        let post = match post.is_empty() {
+            true => None,
+            false => Some(post),
+        };
+
         Ok(LockedShellInstall {
             use_files,
-            apply,
+            apply: self.apply.clone(),
             pre,
             post,
         })

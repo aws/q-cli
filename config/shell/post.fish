@@ -106,6 +106,13 @@ if [ -z "$FIG_SHELL_VAR" ]
     function fish_prompt; fig_wrap_prompt (fig_user_prompt); fig_osc NewCmd; end
 
     set fig_has_set_prompt 1
+
+    # Check if we have a new dotfiles to load
+    if command -v dotfiles &>/dev/null
+      if dotfiles prompt
+        exec fish
+      end
+    end
   end
 
   set FIG_SHELL_VAR 1

@@ -1,6 +1,12 @@
 pub mod websocket;
 
-use std::{io::Write, ops::ControlFlow, path::Path, time::Duration};
+use std::{
+    io::Write,
+    ops::ControlFlow,
+    path::{Path, PathBuf},
+    process::Command,
+    time::Duration,
+};
 
 use anyhow::{Context, Result};
 use futures::StreamExt;
@@ -34,35 +40,88 @@ pub fn get_init_system() -> Result<InitSystem> {
     }
 }
 
-pub struct DaemonService {
-    pub path: &'static Path,
-    pub data: &'static str,
+#[non_exhaustive]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LaunchSystem {
+    Launchd,
+    Systemd,
 }
 
-impl DaemonService {
-    pub fn write_to_file(&self) -> Result<()> {
-        let mut file = std::fs::File::create(self.path)?;
-        file.write_all(self.data.as_bytes())?;
+impl LaunchSystem {
+    fn start_daemon(&self, path: impl AsRef<Path>) -> Result<()> {
+        match self {
+            LaunchSystem::Launchd => {
+                Command::new("launchctl")
+                    .arg("load")
+                    .arg(path.as_ref())
+                    .output()
+                    .with_context(|| format!("Could not load {:?}", path.as_ref()))?;
+            }
+            LaunchSystem::Systemd => {
+                Command::new("systemctl")
+                    .arg("--now")
+                    .arg("enable")
+                    .arg(path.as_ref())
+                    .output()
+                    .with_context(|| format!("Could not enable {:?}", path.as_ref()))?;
+            }
+        }
         Ok(())
     }
 }
 
-#[cfg(target_os = "linux")]
-pub fn systemd_service() -> DaemonService {
-    let path = Path::new("/etc/systemd/system/dotfiles-daemon.service");
-    let data = include_str!("daemon_files/dotfiles-daemon.service");
+pub struct DaemonService {
+    pub path: PathBuf,
+    pub data: &'static str,
+    pub launch_system: LaunchSystem,
+}
 
-    DaemonService { path, data }
+impl DaemonService {
+    pub fn launchd() -> Option<DaemonService> {
+        let basedirs = directories::BaseDirs::new()?;
+
+        let path = basedirs
+            .home_dir()
+            .join("Library/LaunchAgents/io.fig.dotfiles-daemon.plist");
+
+        let data = include_str!("daemon_files/io.fig.dotfiles-daemon.plist");
+
+        Some(DaemonService {
+            path,
+            data,
+            launch_system: LaunchSystem::Launchd,
+        })
+    }
+
+    pub fn systemd() -> Option<DaemonService> {
+        let basedirs = directories::BaseDirs::new()?;
+
+        let path = basedirs
+            .home_dir()
+            .join(".config/systemd/user/fig-dotfiles-daemon.service");
+
+        let data = include_str!("daemon_files/dotfiles-daemon.service");
+
+        Some(DaemonService {
+            path,
+            data,
+            launch_system: LaunchSystem::Systemd,
+        })
+    }
+
+    pub fn write_to_file(&self) -> Result<()> {
+        let mut file = std::fs::File::create(&self.path)?;
+        file.write_all(self.data.as_bytes())?;
+        Ok(())
+    }
+
+    pub fn install(&self) -> Result<()> {
+        self.write_to_file()?;
+        self.launch_system.start_daemon(self.path.as_path())
+    }
 }
 
 #[cfg(target_os = "macos")]
-pub fn launchd_plist() -> DaemonService {
-    let path = Path::new("/Library/LaunchDaemons/io.fig.dotfiles-daemon.plist");
-    let data = include_str!("daemon_files/io.fig.dotfiles-daemon.plist");
-
-    DaemonService { path, data }
-}
-
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct WebsocketAwsToken {

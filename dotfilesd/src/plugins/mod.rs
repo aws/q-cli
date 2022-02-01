@@ -44,8 +44,8 @@ pub async fn download_plugin(plugin: &Plugin) -> Result<()> {
                     .installation
                     .shell
                     .as_ref()
-                    .map(|s| s.default_install.as_ref().map(|i| i.lock(&plugin_dir, shell).ok()))
-                    .flatten()
+                    .map(|s| s.default_install.as_ref().map(|i| i.lock(&plugin_dir, shell).unwrap()))
+                    // .flatten()
                     .flatten();
 
                 if let Some(locked) = locked {

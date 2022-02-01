@@ -52,8 +52,11 @@ pub enum CliRootCommands {
     User,
     /// Doctor
     Doctor,
+    /// Plugins management
     #[clap(subcommand)]
     Plugins(plugins::PluginsSubcommand),
+    /// Prompt the if there is new version of dotfiles
+    Prompt,
 }
 
 #[derive(Debug, Parser)]
@@ -78,6 +81,7 @@ impl Cli {
                 CliRootCommands::User => auth::user_info_cli().await,
                 CliRootCommands::Doctor => doctor::doctor_cli(),
                 CliRootCommands::Plugins(plugins_subcommand) => plugins_subcommand.execute().await,
+                CliRootCommands::Prompt => sync::prompt_cli().await,
             },
             // Root command
             None => root_command(),
