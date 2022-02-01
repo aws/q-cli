@@ -1,6 +1,6 @@
 # Source Mission Control Dotfiles
 if command -sq dotfilesd
-  dotfilesd init fish | source
+  dotfilesd init fish post | source
 end
 
 contains $HOME/.fig/bin $fish_user_paths
