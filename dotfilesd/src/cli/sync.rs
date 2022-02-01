@@ -1,19 +1,20 @@
 //! Sync of dotfiles
 
 use std::{
-    io::Write,
+    io::{stdout, Write},
     process::{exit, Command},
 };
 
 use anyhow::{Context, Result};
 use crossterm::style::Stylize;
 use serde::{Deserialize, Serialize};
-use tokio::{
-    io::{stdin, stdout, AsyncBufReadExt, AsyncWriteExt},
-    try_join,
-};
+use serde_json::json;
+use tokio::try_join;
 
-use crate::{auth::Credentials, util::shell::Shell};
+use crate::{
+    auth::Credentials,
+    util::{shell::Shell, Settings},
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct DotfilesSourceRequest {
@@ -98,7 +99,9 @@ pub async fn sync_cli() -> Result<()> {
 }
 
 pub async fn prompt_cli() -> Result<()> {
-    let session_id = std::env::var("TERM_SESSION_ID").unwrap_or_else(|_| exit(1));
+    let mut exit_code = 1;
+
+    let session_id = std::env::var("TERM_SESSION_ID")?;
     let tempdir = std::env::temp_dir();
 
     let file = tempdir
@@ -109,38 +112,141 @@ pub async fn prompt_cli() -> Result<()> {
     let file_content = match tokio::fs::read_to_string(&file).await {
         Ok(content) => content,
         Err(_) => {
-            tokio::fs::create_dir_all(&file.parent().unwrap_or_else(|| exit(1)))
-                .await
-                .unwrap_or_else(|_| exit(1));
-
-            tokio::fs::write(&file, "")
-                .await
-                .unwrap_or_else(|_| exit(1));
-
-            exit(1);
+            tokio::fs::create_dir_all(&file.parent().context("Unable to get parent")?).await?;
+            tokio::fs::write(&file, "").await?;
+            exit(exit_code);
         }
     };
 
     if file_content.contains("true") {
-        println!("{}", "Your dotfiles have been updated!".bold());
-        print!("Would you like to update now? {}", "y/n".dim());
+        let settings = Settings::load()?;
 
-        let mut stdout = tokio::io::BufWriter::new(stdout());
-        let mut stdin = tokio::io::BufReader::new(stdin());
+        let enabled = settings
+            .get_setting()
+            .map(|map| map.get("dotfiles.prompt-update"))
+            .map(|opt| opt.map(|value| value.as_bool()))
+            .flatten()
+            .flatten();
 
-        stdout.flush().await.unwrap_or_else(|_| exit(1));
+        match enabled {
+            Some(false) => {}
+            Some(true) => exit_code = 0,
+            None => {
+                let mut stdout = stdout();
 
-        // Read the user input
-        let mut input = String::new();
-        stdin
-            .read_line(&mut input)
-            .await
-            .unwrap_or_else(|_| exit(1));
+                stdout.write_all(
+                    format!("{}", "Your dotfiles have been updated!\n".bold()).as_bytes(),
+                )?;
+
+                stdout.write_all(
+                    format!(
+                        "Would you like to update now? {} ",
+                        "(y)es/(n)o/(A)lways/(N)ever".dim()
+                    )
+                    .as_bytes(),
+                )?;
+
+                stdout.flush()?;
+
+                crossterm::terminal::enable_raw_mode()?;
+
+                while let Ok(event) = crossterm::event::read() {
+                    match event {
+                        crossterm::event::Event::Key(key_event) => {
+                            match (key_event.code, key_event.modifiers) {
+                                (crossterm::event::KeyCode::Char('y'), _) => {
+                                    crossterm::execute!(
+                                        stdout,
+                                        crossterm::cursor::MoveToNextLine(1),
+                                        crossterm::style::Print(format!(
+                                            "\n{}\n",
+                                            "Updating dotfiles...".bold()
+                                        )),
+                                        crossterm::cursor::MoveToNextLine(1),
+                                    )?;
+
+                                    exit_code = 0;
+
+                                    break;
+                                }
+                                (crossterm::event::KeyCode::Char('n' | 'q'), _)
+                                | (
+                                    crossterm::event::KeyCode::Char('c' | 'd'),
+                                    crossterm::event::KeyModifiers::CONTROL,
+                                ) => {
+                                    crossterm::execute!(
+                                        stdout,
+                                        crossterm::cursor::MoveToNextLine(1),
+                                        crossterm::style::Print(format!(
+                                            "\n{}\n",
+                                            "Skipping update...".bold()
+                                        )),
+                                        crossterm::cursor::MoveToNextLine(1),
+                                    )?;
+
+                                    break;
+                                }
+                                (crossterm::event::KeyCode::Char('A'), _) => {
+                                    crossterm::execute!(
+                                        stdout,
+                                        crossterm::cursor::MoveToNextLine(1),
+                                        crossterm::style::Print(format!(
+                                            "\n{}\n",
+                                            "Always updating dotfiles...".bold()
+                                        )),
+                                        crossterm::cursor::MoveToNextLine(1),
+                                    )?;
+
+                                    exit_code = 0;
+
+                                    let mut settings = Settings::load()?;
+                                    settings.get_mut_settings().map(|obj| {
+                                        obj.insert(
+                                            "dotfiles.prompt-update".to_string(),
+                                            json!(true),
+                                        )
+                                    });
+                                    settings.save()?;
+
+                                    break;
+                                }
+                                (crossterm::event::KeyCode::Char('N'), _) => {
+                                    crossterm::execute!(
+                                        stdout,
+                                        crossterm::cursor::MoveToNextLine(1),
+                                        crossterm::style::Print(format!(
+                                            "\n{}\n",
+                                            "Never updating dotfiles...".bold()
+                                        )),
+                                        crossterm::cursor::MoveToNextLine(1),
+                                    )?;
+
+                                    let mut settings = Settings::load()?;
+                                    settings.get_mut_settings().map(|obj| {
+                                        obj.insert(
+                                            "dotfiles.prompt-update".to_string(),
+                                            json!(false),
+                                        )
+                                    });
+                                    settings.save()?;
+
+                                    break;
+                                }
+                                _ => {}
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+
+                stdout.flush()?;
+
+                crossterm::terminal::disable_raw_mode()?;
+            }
+        };
+
+        tokio::fs::write(&file, "").await?;
     }
 
-    tokio::fs::write(&file, "")
-        .await
-        .unwrap_or_else(|_| exit(1));
-
-    exit(1);
+    exit(exit_code);
 }

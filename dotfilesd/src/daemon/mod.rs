@@ -51,11 +51,26 @@ impl LaunchSystem {
     fn start_daemon(&self, path: impl AsRef<Path>) -> Result<()> {
         match self {
             LaunchSystem::Launchd => {
-                Command::new("launchctl")
+                let output = Command::new("launchctl")
                     .arg("load")
                     .arg(path.as_ref())
-                    .output()
-                    .with_context(|| format!("Could not load {:?}", path.as_ref()))?;
+                    .output()?;
+
+                if !output.status.success() {
+                    return Err(anyhow::anyhow!(
+                        "Could not start daemon: {}",
+                        String::from_utf8_lossy(&output.stderr)
+                    ));
+                }
+
+                let stderr = String::from_utf8_lossy(&output.stderr);
+
+                if !stderr.is_empty() {
+                    return Err(anyhow::anyhow!(
+                        "Could not start daemon: {}",
+                        String::from_utf8_lossy(&output.stderr)
+                    ));
+                }
             }
             LaunchSystem::Systemd => {
                 Command::new("systemctl")
