@@ -58,3 +58,38 @@ impl Settings {
         self.inner.as_object()
     }
 }
+
+#[cfg(target_os = "macos")]
+pub fn get_machine_id() -> Option<String> {
+    use std::process::Command;
+
+    let output = Command::new("ioreg")
+        .args(&["-rd1", "-c", "IOPlatformExpertDevice"])
+        .output()
+        .ok()?;
+
+    let output = String::from_utf8_lossy(&output.stdout);
+
+    let machine_id = output
+        .lines()
+        .find(|line| line.contains("IOPlatformUUID"))?
+        .split("=")
+        .nth(1)?
+        .trim()
+        .trim_start_matches('"')
+        .trim_end_matches('"')
+        .to_string();
+
+    Some(machine_id)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_get_machine_id() {
+        let machine_id = get_machine_id();
+        assert!(machine_id.is_some());
+    }
+}

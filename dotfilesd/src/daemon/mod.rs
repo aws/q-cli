@@ -83,6 +83,42 @@ impl LaunchSystem {
         }
         Ok(())
     }
+
+    fn stop_daemon(&self, path: impl AsRef<Path>) -> Result<()> {
+        match self {
+            LaunchSystem::Launchd => {
+                let output = Command::new("launchctl")
+                    .arg("unload")
+                    .arg(path.as_ref())
+                    .output()?;
+
+                if !output.status.success() {
+                    return Err(anyhow::anyhow!(
+                        "Could not stop daemon: {}",
+                        String::from_utf8_lossy(&output.stderr)
+                    ));
+                }
+
+                let stderr = String::from_utf8_lossy(&output.stderr);
+
+                if !stderr.is_empty() {
+                    return Err(anyhow::anyhow!(
+                        "Could not stop daemon: {}",
+                        String::from_utf8_lossy(&output.stderr)
+                    ));
+                }
+            }
+            LaunchSystem::Systemd => {
+                Command::new("systemctl")
+                    .arg("--now")
+                    .arg("disable")
+                    .arg(path.as_ref())
+                    .output()
+                    .with_context(|| format!("Could not disable {:?}", path.as_ref()))?;
+            }
+        }
+        Ok(())
+    }
 }
 
 pub struct DaemonService {
@@ -132,7 +168,9 @@ impl DaemonService {
 
     pub fn install(&self) -> Result<()> {
         self.write_to_file()?;
-        self.launch_system.start_daemon(self.path.as_path())
+        self.launch_system.stop_daemon(self.path.as_path()).ok();
+        self.launch_system.start_daemon(self.path.as_path())?;
+        Ok(())
     }
 }
 

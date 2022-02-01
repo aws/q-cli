@@ -29,33 +29,33 @@ pub fn install_cli() -> Result<()> {
     #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
     unimplemented!();
 
-    match dialoguer::Confirm::with_theme(&dialoguer_theme())
-        .with_prompt("Do you want dotfiles to modify your shell config (you will have to manually do this otherwise)?")
-        .interact()?
-    {
-        true => {
-            install_dotfiles().context("Could not install dotfiles")?;
-        }
-        false => {
-            println!();
-            println!("To install dotfiles you will have to add the following to your rc files");
-            println!();
-            println!(
-                "At the top of your ~/.bashrc or ~/.zshrc or ~/.config/fish/config.fish file:"
-            );
-            println!("bashrc:    eval \"$(dotfiles shell bash pre)\"");
-            println!("zshrc:     eval \"$(dotfiles shell zsh pre)\"");
-            println!("fish:      eval \"$(dotfiles shell fish pre)\"");
-            println!();
-            println!(
-                "At the bottom of your ~/.bashrc or ~/.zshrc or ~/.config/fish/config.fish file:"
-            );
-            println!("bashrc:    eval \"$(dotfiles shell bash post)\"");
-            println!("zshrc:     eval \"$(dotfiles shell zsh post)\"");
-            println!("fish:      eval \"$(dotfiles shell fish post)\"");
-            println!();
-        }
-    }
+    // match dialoguer::Confirm::with_theme(&dialoguer_theme())
+    //     .with_prompt("Do you want dotfiles to modify your shell config (you will have to manually do this otherwise)?")
+    //     .interact()?
+    // {
+    //     true => {
+    //         install_dotfiles().context("Could not install dotfiles")?;
+    //     }
+    //     false => {
+    //         println!();
+    //         println!("To install dotfiles you will have to add the following to your rc files");
+    //         println!();
+    //         println!(
+    //             "At the top of your ~/.bashrc or ~/.zshrc or ~/.config/fish/config.fish file:"
+    //         );
+    //         println!("bashrc:    eval \"$(dotfiles shell bash pre)\"");
+    //         println!("zshrc:     eval \"$(dotfiles shell zsh pre)\"");
+    //         println!("fish:      eval \"$(dotfiles shell fish pre)\"");
+    //         println!();
+    //         println!(
+    //             "At the bottom of your ~/.bashrc or ~/.zshrc or ~/.config/fish/config.fish file:"
+    //         );
+    //         println!("bashrc:    eval \"$(dotfiles shell bash post)\"");
+    //         println!("zshrc:     eval \"$(dotfiles shell zsh post)\"");
+    //         println!("fish:      eval \"$(dotfiles shell fish post)\"");
+    //         println!();
+    //     }
+    // }
 
     Ok(())
 }
