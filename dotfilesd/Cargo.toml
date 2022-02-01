@@ -11,6 +11,7 @@ ico = ["bmp", "png"]
 webp = []
 
 [dependencies]
+openssl = { version = "0.10.29", features = ["vendored"] }
 clap = { version = "3.0.12", features = ["derive"] }
 anyhow = "1.0.53"
 directories = "4.0.1"

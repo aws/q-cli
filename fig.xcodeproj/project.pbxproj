@@ -65,6 +65,7 @@
 		7545657727716CAB002A59EA /* tabby-integration.js in Resources */ = {isa = PBXBuildFile; fileRef = 7545657627716CAB002A59EA /* tabby-integration.js */; };
 		754569FC272A05C200C7588F /* CommandHandlers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 754569FB272A05C200C7588F /* CommandHandlers.swift */; };
 		7546F5B3271660BA0077359F /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7546F5B2271660BA0077359F /* Constants.swift */; };
+		754A84E727A8D6C6008B6087 /* dotfiles-darwin-universal in Embed dotfiles */ = {isa = PBXBuildFile; fileRef = 754A84E627A8D6C6008B6087 /* dotfiles-darwin-universal */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		754D31B525759D900020CED4 /* tutorial.html in Resources */ = {isa = PBXBuildFile; fileRef = 754D31B425759D900020CED4 /* tutorial.html */; };
 		75543FD0268AC6E5003221DF /* fig-0.0.4.vsix in Resources */ = {isa = PBXBuildFile; fileRef = 75543FCF268AC6E5003221DF /* fig-0.0.4.vsix */; };
 		755950D4275EC6CC00B9FB5C /* Socket in Frameworks */ = {isa = PBXBuildFile; productRef = 755950D3275EC6CC00B9FB5C /* Socket */; };
@@ -247,6 +248,13 @@
 			remoteGlobalIDString = 757A85BA270E31160017996A;
 			remoteInfo = figterm;
 		};
+		7584EFD027A8C9ED00E17EC9 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 75675949244634AD006AA988 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 7584EFCA27A8960900E17EC9;
+			remoteInfo = dotfiles;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -272,6 +280,17 @@
 				757A85FA270E46A40017996A /* fig_get_shell in Embed figterm & helpers */,
 			);
 			name = "Embed figterm & helpers";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7584EFD227A8D10700E17EC9 /* Embed dotfiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 12;
+			dstPath = "";
+			dstSubfolderSpec = 6;
+			files = (
+				754A84E727A8D6C6008B6087 /* dotfiles in Embed dotfiles */,
+			);
+			name = "Embed dotfiles";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		758AEB6324CE8B2F00A15EAF /* Embed Command Line Tool */ = {
@@ -353,6 +372,7 @@
 		7545657627716CAB002A59EA /* tabby-integration.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = "tabby-integration.js"; sourceTree = "<group>"; };
 		754569FB272A05C200C7588F /* CommandHandlers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CommandHandlers.swift; sourceTree = "<group>"; };
 		7546F5B2271660BA0077359F /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
+		754A84E627A8D6C6008B6087 /* dotfiles */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; name = dotfiles-darwin-universal; path = "dotfiles-darwin-universal"; sourceTree = BUILT_PRODUCTS_DIR; };
 		754D31B425759D900020CED4 /* tutorial.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = tutorial.html; sourceTree = "<group>"; };
 		75543FCF268AC6E5003221DF /* fig-0.0.4.vsix */ = {isa = PBXFileReference; lastKnownFileType = file; path = "fig-0.0.4.vsix"; sourceTree = "<group>"; };
 		755D0DE1247EFAE10074AB5C /* Logging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logging.swift; sourceTree = "<group>"; };
@@ -690,6 +710,7 @@
 				"fig_get_shell-0000000000" /* fig_get_shell */,
 				"figcli-00000000000000000" /* figcli */,
 				754316F426E08F5C00188887 /* FigInputMethod.app */,
+				754A84E627A8D6C6008B6087 /* dotfiles-darwin-universal */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -1056,6 +1077,20 @@
 			passBuildSettingsInEnvironment = 1;
 			productName = figterm;
 		};
+		7584EFCA27A8960900E17EC9 /* dotfiles */ = {
+			isa = PBXLegacyTarget;
+			buildArgumentsString = "$(ACTION)";
+			buildConfigurationList = 7584EFCD27A8960900E17EC9 /* Build configuration list for PBXLegacyTarget "dotfiles" */;
+			buildPhases = (
+			);
+			buildToolPath = /usr/bin/make;
+			buildWorkingDirectory = ./dotfilesd;
+			dependencies = (
+			);
+			name = dotfiles;
+			passBuildSettingsInEnvironment = 1;
+			productName = dotfiles;
+		};
 /* End PBXLegacyTarget section */
 
 /* Begin PBXNativeTarget section */
@@ -1091,10 +1126,12 @@
 				75FD16E727150DC400056A39 /* Package config folder */,
 				757A85C0270E37A90017996A /* Embed figterm & helpers */,
 				7581E6082769C4AE00CFD39A /* Lint Swift files */,
+				7584EFD227A8D10700E17EC9 /* Embed dotfiles */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				7584EFD127A8C9ED00E17EC9 /* PBXTargetDependency */,
 				754569FA2729FFE300C7588F /* PBXTargetDependency */,
 				7546F5B127164A1B0077359F /* PBXTargetDependency */,
 				757A85BF270E37380017996A /* PBXTargetDependency */,
@@ -1181,6 +1218,9 @@
 					757A85BA270E31160017996A = {
 						CreatedOnToolsVersion = 12.5.1;
 					};
+					7584EFCA27A8960900E17EC9 = {
+						CreatedOnToolsVersion = 13.2.1;
+					};
 				};
 			};
 			buildConfigurationList = 7567594C244634AD006AA988 /* Build configuration list for PBXProject "fig" */;
@@ -1211,6 +1251,7 @@
 				754316F326E08F5C00188887 /* FigInputMethod */,
 				757A85BA270E31160017996A /* figterm */,
 				754569F52729FF2600C7588F /* cli */,
+				7584EFCA27A8960900E17EC9 /* dotfiles */,
 			);
 		};
 /* End PBXProject section */
@@ -1587,6 +1628,11 @@
 			isa = PBXTargetDependency;
 			target = 757A85BA270E31160017996A /* figterm */;
 			targetProxy = 757A85BE270E37380017996A /* PBXContainerItemProxy */;
+		};
+		7584EFD127A8C9ED00E17EC9 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 7584EFCA27A8960900E17EC9 /* dotfiles */;
+			targetProxy = 7584EFD027A8C9ED00E17EC9 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -1993,6 +2039,35 @@
 			};
 			name = Release;
 		};
+		7584EFCB27A8960900E17EC9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CODE_SIGN_STYLE = Automatic;
+				DEBUGGING_SYMBOLS = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = B8PC799ZGU;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		7584EFCC27A8960900E17EC9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CODE_SIGN_STYLE = Automatic;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = B8PC799ZGU;
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -2055,6 +2130,15 @@
 			buildConfigurations = (
 				757A85BC270E31160017996A /* Debug */,
 				757A85BD270E31160017996A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		7584EFCD27A8960900E17EC9 /* Build configuration list for PBXLegacyTarget "dotfiles" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7584EFCB27A8960900E17EC9 /* Debug */,
+				7584EFCC27A8960900E17EC9 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
