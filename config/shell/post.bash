@@ -1,6 +1,6 @@
-# Source Mission Control Dotfiles
-if [ -f ~/.fig/user/dotfiles/managed.bash ]; then
-  source ~/.fig/user/dotfiles/managed.bash
+# Source dotfiles
+if [ -x "$(command -v dotfilesd)" ]; then
+  eval "$(dotfilesd init bash post)"
 fi
 
 # Add preexec, but override __bp_adjust_histcontrol to preserve histcontrol.

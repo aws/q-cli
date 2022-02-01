@@ -1,6 +1,6 @@
-# Source Mission Control Dotfiles
-if [ -f ~/.fig/user/dotfiles/managed.zsh ]; then
-  source ~/.fig/user/dotfiles/managed.zsh
+# Source dotfiles
+if [ -x "$(command -v dotfilesd)" ]; then
+  eval "$(dotfilesd init zsh post)"
 fi
 
 FIG_HOSTNAME=$(hostname -f 2> /dev/null || hostname)
