@@ -11,7 +11,6 @@ ico = ["bmp", "png"]
 webp = []
 
 [dependencies]
-openssl = { version = "0.10.29", features = ["vendored"] }
 clap = { version = "3.0.12", features = ["derive"] }
 anyhow = "1.0.53"
 directories = "4.0.1"
@@ -32,7 +31,7 @@ validator = "0.14.0"
 dialoguer = "0.9.0"
 futures = "0.3.19"
 base64 = "0.13.0"
-git2 = "0.13.25"
+git2 = { version = "0.13.25", default-features = false, features = ["https"] }
 sha2 = "0.10.1"
 tempfile = "3.3.0"
 globset = "0.4.8"
