@@ -60,6 +60,14 @@
     "category": "Autocomplete"
   },
   {
+    "settingName": "autocomplete.scriptTimeout",
+    "title": "Script Timeout",
+    "description": "Specify the timeout in ms for scripts executed in completion spec generators.",
+    "type": "number",
+    "default": 5000,
+    "category": "Autocomplete"
+  },
+  {
     "settingName": "autocomplete.fontFamily",
     "title": "Font Family",
     "description": "Change the font of autocomplete",
