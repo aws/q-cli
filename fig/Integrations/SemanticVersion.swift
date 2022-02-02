@@ -48,11 +48,11 @@ extension SemanticVersion {
       return false
     }
 
-    guard comparison(left.major, right.major) else {
+    guard comparison(left.minor, right.minor) else {
       return false
     }
 
-    guard comparison(left.major, right.major) else {
+    guard comparison(left.patch, right.patch) else {
       return false
     }
 

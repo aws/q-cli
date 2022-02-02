@@ -30,11 +30,15 @@
       "dracula",
       "github-dark",
       "gruvbox",
+      "monokai-dark",
       "nightowl",
       "nord",
       "panda",
       "poimandres",
-      "the-unnamed"
+      "the-unnamed",
+      "synthwave-84",
+      "solarized-light",
+      "solarized-dark"
     ],
     "default": "system",
     "category": "Appearance"
