@@ -1393,7 +1393,6 @@ impl<T: EventListener> Handler for Term<T> {
 
                     if fg_matches && bg_matches {
                         in_suggestion = true;
-                        debug!("In suggestion");
                     }
                 };
 
@@ -1456,7 +1455,7 @@ impl<T: EventListener> Handler for Term<T> {
             Attr::Strike => cursor.template.shell_flags.insert(ShellFlags::STRIKEOUT),
             Attr::CancelStrike => cursor.template.shell_flags.remove(ShellFlags::STRIKEOUT),
             _ => {
-                debug!("Term got unhandled attr: {:?}", attr);
+                trace!("Term got unhandled attr: {:?}", attr);
             }
         }
     }
