@@ -151,91 +151,88 @@ pub async fn prompt_cli() -> Result<()> {
                 crossterm::terminal::enable_raw_mode()?;
 
                 while let Ok(event) = crossterm::event::read() {
-                    match event {
-                        crossterm::event::Event::Key(key_event) => {
-                            match (key_event.code, key_event.modifiers) {
-                                (crossterm::event::KeyCode::Char('y'), _) => {
-                                    crossterm::execute!(
-                                        stdout,
-                                        crossterm::cursor::MoveToNextLine(1),
-                                        crossterm::style::Print(format!(
-                                            "\n{}\n",
-                                            "Updating dotfiles...".bold()
-                                        )),
-                                        crossterm::cursor::MoveToNextLine(1),
-                                    )?;
+                    if let crossterm::event::Event::Key(key_event) = event {
+                        match (key_event.code, key_event.modifiers) {
+                            (crossterm::event::KeyCode::Char('y'), _) => {
+                                crossterm::execute!(
+                                    stdout,
+                                    crossterm::cursor::MoveToNextLine(1),
+                                    crossterm::style::Print(format!(
+                                        "\n{}\n",
+                                        "Updating dotfiles...".bold()
+                                    )),
+                                    crossterm::cursor::MoveToNextLine(1),
+                                )?;
 
-                                    exit_code = 0;
+                                exit_code = 0;
 
-                                    break;
-                                }
-                                (crossterm::event::KeyCode::Char('n' | 'q'), _)
-                                | (
-                                    crossterm::event::KeyCode::Char('c' | 'd'),
-                                    crossterm::event::KeyModifiers::CONTROL,
-                                ) => {
-                                    crossterm::execute!(
-                                        stdout,
-                                        crossterm::cursor::MoveToNextLine(1),
-                                        crossterm::style::Print(format!(
-                                            "\n{}\n",
-                                            "Skipping update...".bold()
-                                        )),
-                                        crossterm::cursor::MoveToNextLine(1),
-                                    )?;
-
-                                    break;
-                                }
-                                (crossterm::event::KeyCode::Char('A'), _) => {
-                                    crossterm::execute!(
-                                        stdout,
-                                        crossterm::cursor::MoveToNextLine(1),
-                                        crossterm::style::Print(format!(
-                                            "\n{}\n",
-                                            "Always updating dotfiles...".bold()
-                                        )),
-                                        crossterm::cursor::MoveToNextLine(1),
-                                    )?;
-
-                                    exit_code = 0;
-
-                                    let mut settings = Settings::load()?;
-                                    settings.get_mut_settings().map(|obj| {
-                                        obj.insert(
-                                            "dotfiles.prompt-update".to_string(),
-                                            json!(true),
-                                        )
-                                    });
-                                    settings.save()?;
-
-                                    break;
-                                }
-                                (crossterm::event::KeyCode::Char('N'), _) => {
-                                    crossterm::execute!(
-                                        stdout,
-                                        crossterm::cursor::MoveToNextLine(1),
-                                        crossterm::style::Print(format!(
-                                            "\n{}\n",
-                                            "Never updating dotfiles...".bold()
-                                        )),
-                                        crossterm::cursor::MoveToNextLine(1),
-                                    )?;
-
-                                    let mut settings = Settings::load()?;
-                                    settings.get_mut_settings().map(|obj| {
-                                        obj.insert(
-                                            "dotfiles.prompt-update".to_string(),
-                                            json!(false),
-                                        )
-                                    });
-                                    settings.save()?;
-
-                                    break;
-                                }
-                                _ => {}
+                                break;
                             }
+                            (crossterm::event::KeyCode::Char('n' | 'q'), _)
+                            | (
+                                crossterm::event::KeyCode::Char('c' | 'd'),
+                                crossterm::event::KeyModifiers::CONTROL,
+                            ) => {
+                                crossterm::execute!(
+                                    stdout,
+                                    crossterm::cursor::MoveToNextLine(1),
+                                    crossterm::style::Print(format!(
+                                        "\n{}\n",
+                                        "Skipping update...".bold()
+                                    )),
+                                    crossterm::cursor::MoveToNextLine(1),
+                                )?;
+
+                                break;
+                            }
+                            (crossterm::event::KeyCode::Char('A'), _) => {
+                                crossterm::execute!(
+                                    stdout,
+                                    crossterm::cursor::MoveToNextLine(1),
+                                    crossterm::style::Print(format!(
+                                        "\n{}\n",
+                                        "Always updating dotfiles...".bold()
+                                    )),
+                                    crossterm::cursor::MoveToNextLine(1),
+                                )?;
+
+                                exit_code = 0;
+
+                                let mut settings = Settings::load()?;
+                                settings.get_mut_settings().map(|obj| {
+                                    obj.insert(
+                                        "dotfiles.prompt-update".to_string(),
+                                        json!(true),
+                                    )
+                                });
+                                settings.save()?;
+
+                                break;
+                            }
+                            (crossterm::event::KeyCode::Char('N'), _) => {
+                                crossterm::execute!(
+                                    stdout,
+                                    crossterm::cursor::MoveToNextLine(1),
+                                    crossterm::style::Print(format!(
+                                        "\n{}\n",
+                                        "Never updating dotfiles...".bold()
+                                    )),
+                                    crossterm::cursor::MoveToNextLine(1),
+                                )?;
+
+                                let mut settings = Settings::load()?;
+                                settings.get_mut_settings().map(|obj| {
+                                    obj.insert(
+                                        "dotfiles.prompt-update".to_string(),
+                                        json!(false),
+                                    )
+                                });
+                                settings.save()?;
+
+                                break;
+                            }
+                            _ => {}
                         }
-                        _ => {}
                     }
                 }
 

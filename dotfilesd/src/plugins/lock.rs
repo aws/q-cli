@@ -116,7 +116,7 @@ impl LockData {
     }
 }
 
-const DEFAULT_ZSH_MATCH: &'static [&'static str] = &[
+const DEFAULT_ZSH_MATCH: &[&str] = &[
     "{{ name }}.plugin.zsh",
     "{{ name }}.zsh",
     "{{ name }}.sh",
@@ -127,7 +127,7 @@ const DEFAULT_ZSH_MATCH: &'static [&'static str] = &[
     "*.zsh-theme",
 ];
 
-const DEFAULT_BASH_MATCH: &'static [&'static str] = &[
+const DEFAULT_BASH_MATCH: &[&str] = &[
     "{{ name }}.plugin.bash",
     "{{ name }}.plugin.sh",
     "{{ name }}.bash",
@@ -138,7 +138,7 @@ const DEFAULT_BASH_MATCH: &'static [&'static str] = &[
     "*.sh",
 ];
 
-const DEFAULT_FISH_MATCH: &'static [&'static str] = &[
+const DEFAULT_FISH_MATCH: &[&str] = &[
     "{{ name }}.plugin.fish",
     "{{ name }}.fish",
     "*.plugin.fish",

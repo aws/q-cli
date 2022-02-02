@@ -73,7 +73,7 @@ pub fn get_machine_id() -> Option<String> {
     let machine_id = output
         .lines()
         .find(|line| line.contains("IOPlatformUUID"))?
-        .split("=")
+        .split('=')
         .nth(1)?
         .trim()
         .trim_start_matches('"')

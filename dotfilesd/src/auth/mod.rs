@@ -92,6 +92,8 @@ pub struct SignInInput<'a> {
     username_or_email: String,
 }
 
+// TODO: Sign in with cotter
+
 #[derive(Debug, Error)]
 pub enum SignInError {
     #[error("user not found: {0:?}")]
@@ -103,7 +105,9 @@ pub enum SignInError {
     #[error("missing challenge parameters")]
     MissingChallengeParameters,
     #[error("sdk error")]
-    SdkError(#[from] Box<SdkError<InitiateAuthError>>),
+    SdkInitiateAuthError(#[from] Box<SdkError<InitiateAuthError>>),
+    #[error("sdk error")]
+    SdkRespondToAuthChallengeError(#[from] Box<SdkError<RespondToAuthChallengeError>>),
 }
 
 impl<'a> SignInInput<'a> {
@@ -120,35 +124,59 @@ impl<'a> SignInInput<'a> {
     }
 
     pub async fn sign_in(&self) -> Result<SignInOutput<'a>, SignInError> {
-        let auth_result = self
+        let initiate_auth_result = self
             .client
             .initiate_auth()
             .client_id(&self.client_id)
             .auth_flow(AuthFlowType::CustomAuth)
             .auth_parameters("USERNAME", &self.username_or_email)
-            .client_metadata("CUSTOM_AUTH", "PASSWORDLESS_EMAIL")
             .send()
             .await;
 
-        let output = auth_result.map_err(|err| match err {
+        let initiate_auth_output = initiate_auth_result.map_err(|err| match err {
             SdkError::ServiceError {
                 err: ref auth_err, ..
             } => match auth_err.kind {
                 InitiateAuthErrorKind::UserNotFoundException(ref user_not_found) => {
                     SignInError::UserNotFound(user_not_found.message.clone())
                 }
-                _ => SignInError::SdkError(Box::new(err)),
+                _ => SignInError::SdkInitiateAuthError(Box::new(err)),
             },
-            err => SignInError::SdkError(Box::new(err)),
+            err => SignInError::SdkInitiateAuthError(Box::new(err)),
         })?;
 
-        let session = output.session.ok_or(SignInError::MissingSession)?;
+        let session = initiate_auth_output
+            .session
+            .ok_or(SignInError::MissingSession)?;
 
-        let challenge_name = output
+        let challenge_name = initiate_auth_output
             .challenge_name
             .ok_or(SignInError::MissingChallengeName)?;
 
-        let challenge_parameters = output
+        let respond_to_auth_result = self
+            .client
+            .respond_to_auth_challenge()
+            .client_id(&self.client_id)
+            .session(&session)
+            .challenge_name(challenge_name)
+            .challenge_responses("USERNAME", &self.username_or_email)
+            .challenge_responses("ANSWER", "EMAIL_PASSWORDLESS_CODE")
+            .client_metadata("CUSTOM_AUTH_FLOW", "EMAIL_PASSWORDLESS_CODE")
+            .send()
+            .await;
+
+        let respond_to_auth_output = respond_to_auth_result
+            .map_err(|err| SignInError::SdkRespondToAuthChallengeError(Box::new(err)))?;
+
+        let session = respond_to_auth_output
+            .session
+            .ok_or(SignInError::MissingSession)?;
+
+        let challenge_name = respond_to_auth_output
+            .challenge_name
+            .ok_or(SignInError::MissingChallengeName)?;
+
+        let challenge_parameters = respond_to_auth_output
             .challenge_parameters
             .ok_or(SignInError::MissingChallengeParameters)?;
 

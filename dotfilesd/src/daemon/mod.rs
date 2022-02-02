@@ -1,3 +1,5 @@
+pub mod launchd_plist;
+pub mod systemd_unit;
 pub mod websocket;
 
 use std::{
@@ -15,6 +17,8 @@ use serde::{Deserialize, Serialize};
 use tokio::{fs::remove_file, net::UnixListener, select};
 
 use crate::daemon::websocket::process_websocket;
+
+use self::{launchd_plist::LaunchdPlist, systemd_unit::SystemdUnit};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum InitSystem {
@@ -119,11 +123,31 @@ impl LaunchSystem {
         }
         Ok(())
     }
+
+    pub fn daemon_status(&self, name: impl AsRef<str>) -> Result<Option<i32>> {
+        match self {
+            LaunchSystem::Launchd => {
+                let output = Command::new("launchctl").arg("list").output()?;
+
+                let stdout = String::from_utf8_lossy(&output.stdout);
+
+                let status = stdout
+                    .lines()
+                    .map(|line| line.split_whitespace().collect::<Vec<_>>())
+                    .find(|line| line[2] == name.as_ref())
+                    .map(|data| data[1].parse::<i32>().ok())
+                    .flatten();
+
+                Ok(status)
+            }
+            LaunchSystem::Systemd => todo!(),
+        }
+    }
 }
 
 pub struct DaemonService {
     pub path: PathBuf,
-    pub data: &'static str,
+    pub data: String,
     pub launch_system: LaunchSystem,
 }
 
@@ -135,11 +159,18 @@ impl DaemonService {
             .home_dir()
             .join("Library/LaunchAgents/io.fig.dotfiles-daemon.plist");
 
-        let data = include_str!("daemon_files/io.fig.dotfiles-daemon.plist");
+        let executable_path = std::env::current_exe().ok()?;
+        let executable_path_str = executable_path.to_string_lossy().to_string();
+
+        let plist = LaunchdPlist::new("io.fig.dotfiles-daemon")
+            .program(&*executable_path_str)
+            .program_arguments([&*executable_path_str, "daemon"])
+            .keep_alive(true)
+            .plist();
 
         Some(DaemonService {
             path,
-            data,
+            data: plist,
             launch_system: LaunchSystem::Launchd,
         })
     }
@@ -151,11 +182,19 @@ impl DaemonService {
             .home_dir()
             .join(".config/systemd/user/fig-dotfiles-daemon.service");
 
-        let data = include_str!("daemon_files/dotfiles-daemon.service");
+        let executable_path = std::env::current_exe().ok()?;
+        let executable_path_str = executable_path.to_string_lossy();
+
+        let unit = SystemdUnit::new("Fig Dotfiles Daemon")
+            .exec_start(executable_path_str)
+            .restart("always")
+            .restart_sec(5)
+            .wanted_by("default.target")
+            .unit();
 
         Some(DaemonService {
             path,
-            data,
+            data: unit,
             launch_system: LaunchSystem::Systemd,
         })
     }
