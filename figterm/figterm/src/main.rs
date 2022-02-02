@@ -7,7 +7,9 @@ pub mod pty;
 pub mod term;
 pub mod utils;
 
-use std::{env, error::Error, ffi::CString, os::unix::prelude::AsRawFd, process::exit, vec};
+use std::{
+    env, error::Error, ffi::CString, os::unix::prelude::AsRawFd, path::PathBuf, process::exit, vec,
+};
 
 use anyhow::{anyhow, Context, Result};
 use bytes::Bytes;
@@ -29,6 +31,7 @@ use alacritty_terminal::{
     term::{ShellState, SizeInfo},
     Term,
 };
+use once_cell::sync::Lazy;
 use proto::figterm::{figterm_message, intercept_command, FigtermMessage};
 use pty::{fork_pty, PtyForkResult};
 use term::get_winsize;
@@ -37,6 +40,7 @@ use tokio::{
     runtime, select,
     signal::unix::SignalKind,
 };
+use utils::fig_path;
 
 use crate::{
     ipc::{spawn_incoming_receiver, spawn_outgoing_sender},
@@ -116,6 +120,9 @@ impl EventListener for EventSender {
     }
 }
 
+static INSERTION_LOCK_PATH: Lazy<Option<PathBuf>> =
+    Lazy::new(|| fig_path().map(|path| path.join("insertion-lock")));
+
 fn can_send_edit_buffer<T>(term: &Term<T>) -> bool
 where
     T: EventListener,
@@ -125,14 +132,20 @@ where
         [Some("bash"), Some("zsh"), Some("fish")].contains(&term.shell_state().shell.as_deref());
     let prexec = term.shell_state().preexec;
 
-    trace!(
-        "in_docker_ssh: {}, shell_enabled: {}, prexec: {}",
-        in_docker_ssh,
-        shell_enabled,
-        prexec
+    trace!("Insertion lock path: {:?}", INSERTION_LOCK_PATH.as_ref());
+
+    let insertion_locked = if let Some(insertion_lock_path) = INSERTION_LOCK_PATH.as_ref() {
+        nix::unistd::access(insertion_lock_path, nix::unistd::AccessFlags::F_OK).is_ok()
+    } else {
+        false
+    };
+
+    debug!(
+        "in_docker_ssh: {}, shell_enabled: {}, prexec: {}, insertion_locked: {}",
+        in_docker_ssh, shell_enabled, prexec, insertion_locked
     );
 
-    shell_enabled && !prexec
+    shell_enabled && !insertion_locked && !prexec
 }
 
 async fn send_edit_buffer<T>(term: &Term<T>, sender: &Sender<Bytes>) -> Result<()>

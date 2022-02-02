@@ -1,6 +1,6 @@
 [package]
 name = "figterm"
-version = "4.0.0"
+version = "4.0.1"
 authors = ["Fig"]
 edition = "2021"
 description = "A layer between the terminal and shell."
@@ -20,7 +20,7 @@ nix = "0.23.1"
 signal-hook = "0.3.13"
 
 # Async Libs
-tokio = { version = "1.15.0", features = ["full"] }
+tokio = { version = "1.16.1", features = ["full"] }
 
 # Logging
 log = { version = "0.4.14", features = ["std"] }
@@ -33,16 +33,16 @@ prost = "0.9.0"
 bytes = "1.1.0"
 
 # Error Handling
-anyhow = "1.0.52"
+anyhow = "1.0.53"
 
 # Cmd arg parsing
-clap = { version = "3.0.6", features = ["derive"] }
+clap = { version = "3.0.14", features = ["derive"] }
 
 # Terminal emulator
 alacritty_terminal = { path = "../alacritty_terminal" }
 
 # Fast concurrency libs
-parking_lot = "0.11.2"
+parking_lot = "0.12.0"
 crossbeam = "0.8.1"
 
 # Sqlite lib
