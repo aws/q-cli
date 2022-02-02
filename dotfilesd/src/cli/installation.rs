@@ -20,17 +20,19 @@ use crate::{
 pub fn install_cli() -> Result<()> {
     // Install daemons
     #[cfg(target_os = "macos")]
-    daemon::DaemonService::launchd()
+    daemon::LaunchService::launchd()
         .context("Could not get macOS daemon service")?
         .install()?;
     #[cfg(target_os = "linux")]
-    daemon::DaemonService::systemd()
+    daemon::LaunchService::systemd()
         .context("Could not get systemd service")?
         .install()?;
     #[cfg(target_os = "windows")]
     install_daemon_windows().context("Could not install Windows daemon")?;
     #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
     unimplemented!();
+
+    // Currently installation of the dotfiles init is not enabled
 
     // match dialoguer::Confirm::with_theme(&dialoguer_theme())
     //     .with_prompt("Do you want dotfiles to modify your shell config (you will have to manually do this otherwise)?")

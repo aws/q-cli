@@ -10,7 +10,7 @@ use std::{
     time::Duration,
 };
 
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Context, Result};
 use futures::StreamExt;
 
 use serde::{Deserialize, Serialize};
@@ -20,48 +20,56 @@ use crate::daemon::websocket::process_websocket;
 
 use self::{launchd_plist::LaunchdPlist, systemd_unit::SystemdUnit};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum InitSystem {
-    Systemd,
-}
-
-#[cfg(target_os = "linux")]
-pub fn get_init_system() -> Result<InitSystem> {
-    use std::process::Command;
-
-    use anyhow::Context;
-
-    let output = Command::new("ps 1")
-        .output()
-        .with_context(|| "Could not get init system")?;
-
-    let stdout = String::from_utf8(output.stdout).with_context(|| "Could not parse init system")?;
-
-    if stdout.contains("systemd") {
-        Ok(InitSystem::Systemd)
-    } else {
-        Err(anyhow::anyhow!("Could not determine init system"))
-    }
-}
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum LaunchSystem {
+pub enum InitSystem {
+    /// macOS init system
+    ///
+    /// https://launchd.info/
     Launchd,
+    /// Most common Linux init system
+    ///
+    /// https://systemd.io/
     Systemd,
+    /// Init system used by artix, void, etc
+    ///
+    /// http://smarden.org/runit/
+    Runit,
+    /// Init subsystem used by alpine, gentoo, etc
+    ///
+    /// https://wiki.gentoo.org/wiki/Project:OpenRC
+    OpenRc,
 }
 
-impl LaunchSystem {
+impl InitSystem {
+    pub fn get_init_system() -> Result<InitSystem> {
+        let output = Command::new("ps 1").output().context("Could not run ps")?;
+
+        let stdout = String::from_utf8_lossy(&output.stdout);
+
+        if stdout.contains("launchd") {
+            Ok(InitSystem::Launchd)
+        } else if stdout.contains("systemd") {
+            Ok(InitSystem::Systemd)
+        } else if stdout.contains("runit") {
+            Ok(InitSystem::Runit)
+        } else if stdout.contains("openrc") {
+            Ok(InitSystem::OpenRc)
+        } else {
+            Err(anyhow!("Could not determine init system"))
+        }
+    }
+
     fn start_daemon(&self, path: impl AsRef<Path>) -> Result<()> {
         match self {
-            LaunchSystem::Launchd => {
+            InitSystem::Launchd => {
                 let output = Command::new("launchctl")
                     .arg("load")
                     .arg(path.as_ref())
                     .output()?;
 
                 if !output.status.success() {
-                    return Err(anyhow::anyhow!(
+                    return Err(anyhow!(
                         "Could not start daemon: {}",
                         String::from_utf8_lossy(&output.stderr)
                     ));
@@ -70,34 +78,38 @@ impl LaunchSystem {
                 let stderr = String::from_utf8_lossy(&output.stderr);
 
                 if !stderr.is_empty() {
-                    return Err(anyhow::anyhow!(
+                    return Err(anyhow!(
                         "Could not start daemon: {}",
                         String::from_utf8_lossy(&output.stderr)
                     ));
                 }
+
+                Ok(())
             }
-            LaunchSystem::Systemd => {
+            InitSystem::Systemd => {
                 Command::new("systemctl")
                     .arg("--now")
                     .arg("enable")
                     .arg(path.as_ref())
                     .output()
                     .with_context(|| format!("Could not enable {:?}", path.as_ref()))?;
+
+                Ok(())
             }
+            _ => Err(anyhow!("Could not start daemon: unsupported init system")),
         }
-        Ok(())
     }
 
     fn stop_daemon(&self, path: impl AsRef<Path>) -> Result<()> {
         match self {
-            LaunchSystem::Launchd => {
+            InitSystem::Launchd => {
                 let output = Command::new("launchctl")
                     .arg("unload")
                     .arg(path.as_ref())
                     .output()?;
 
                 if !output.status.success() {
-                    return Err(anyhow::anyhow!(
+                    return Err(anyhow!(
                         "Could not stop daemon: {}",
                         String::from_utf8_lossy(&output.stderr)
                     ));
@@ -106,27 +118,40 @@ impl LaunchSystem {
                 let stderr = String::from_utf8_lossy(&output.stderr);
 
                 if !stderr.is_empty() {
-                    return Err(anyhow::anyhow!(
+                    return Err(anyhow!(
                         "Could not stop daemon: {}",
                         String::from_utf8_lossy(&output.stderr)
                     ));
                 }
+
+                Ok(())
             }
-            LaunchSystem::Systemd => {
+            InitSystem::Systemd => {
                 Command::new("systemctl")
                     .arg("--now")
                     .arg("disable")
                     .arg(path.as_ref())
                     .output()
                     .with_context(|| format!("Could not disable {:?}", path.as_ref()))?;
+
+                Ok(())
             }
+            _ => Err(anyhow!("Could not stop daemon: unsupported init system")),
         }
+    }
+
+    pub fn restart_daemon(&self, path: impl AsRef<Path>) -> Result<()> {
+        self.stop_daemon(path.as_ref()).ok();
+        self.start_daemon(path.as_ref())?;
+
+        // TODO: use restart functionality of init system if possible
+
         Ok(())
     }
 
     pub fn daemon_status(&self, name: impl AsRef<str>) -> Result<Option<i32>> {
         match self {
-            LaunchSystem::Launchd => {
+            InitSystem::Launchd => {
                 let output = Command::new("launchctl").arg("list").output()?;
 
                 let stdout = String::from_utf8_lossy(&output.stdout);
@@ -140,19 +165,26 @@ impl LaunchSystem {
 
                 Ok(status)
             }
-            LaunchSystem::Systemd => todo!(),
+            InitSystem::Systemd => todo!(),
+            _ => Err(anyhow!(
+                "Could not get daemon status: unsupported init system"
+            )),
         }
     }
 }
 
-pub struct DaemonService {
+/// A service that can be launched by the init system
+pub struct LaunchService {
+    /// Path to the service's definition file
     pub path: PathBuf,
+    /// The service's definition
     pub data: String,
-    pub launch_system: LaunchSystem,
+    /// The init system to use
+    pub launch_system: InitSystem,
 }
 
-impl DaemonService {
-    pub fn launchd() -> Option<DaemonService> {
+impl LaunchService {
+    pub fn launchd() -> Option<LaunchService> {
         let basedirs = directories::BaseDirs::new()?;
 
         let path = basedirs
@@ -168,14 +200,14 @@ impl DaemonService {
             .keep_alive(true)
             .plist();
 
-        Some(DaemonService {
+        Some(LaunchService {
             path,
             data: plist,
-            launch_system: LaunchSystem::Launchd,
+            launch_system: InitSystem::Launchd,
         })
     }
 
-    pub fn systemd() -> Option<DaemonService> {
+    pub fn systemd() -> Option<LaunchService> {
         let basedirs = directories::BaseDirs::new()?;
 
         let path = basedirs
@@ -192,23 +224,21 @@ impl DaemonService {
             .wanted_by("default.target")
             .unit();
 
-        Some(DaemonService {
+        Some(LaunchService {
             path,
             data: unit,
-            launch_system: LaunchSystem::Systemd,
+            launch_system: InitSystem::Systemd,
         })
     }
 
-    pub fn write_to_file(&self) -> Result<()> {
+    pub fn install(&self) -> Result<()> {
+        // Write to the definition file
         let mut file = std::fs::File::create(&self.path)?;
         file.write_all(self.data.as_bytes())?;
-        Ok(())
-    }
 
-    pub fn install(&self) -> Result<()> {
-        self.write_to_file()?;
-        self.launch_system.stop_daemon(self.path.as_path()).ok();
-        self.launch_system.start_daemon(self.path.as_path())?;
+        // Restart the daemon
+        self.launch_system.restart_daemon(self.path.as_path())?;
+
         Ok(())
     }
 }

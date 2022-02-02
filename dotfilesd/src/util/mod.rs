@@ -83,7 +83,13 @@ pub fn get_machine_id() -> Option<String> {
     Some(machine_id)
 }
 
-#[cfg(not(target_os = "macos"))]
+#[cfg(target_os = "linux")]
+pub fn get_machine_id() -> Option<String> {
+    // https://man7.org/linux/man-pages/man5/machine-id.5.html
+    std::fs::read_to_string("/var/lib/dbus/machine-id").ok()
+}
+
+#[cfg(not(any(target_os = "macos", target_os = "linux")))]
 pub fn get_machine_id() -> Option<String> {
     unimplemented!();
 }
