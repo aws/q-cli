@@ -240,6 +240,8 @@ pub async fn daemon() -> Result<()> {
     let unix_socket =
         UnixListener::bind(unix_socket_path).context("Could not connect to unix socket")?;
 
+    println!("Daemon is running...");
+
     // Select loop
     loop {
         select! {

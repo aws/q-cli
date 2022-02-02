@@ -83,6 +83,11 @@ pub fn get_machine_id() -> Option<String> {
     Some(machine_id)
 }
 
+#[cfg(not(target_os = "macos"))]
+pub fn get_machine_id() -> Option<String> {
+    unimplemented!();
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

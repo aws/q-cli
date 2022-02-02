@@ -1,6 +1,6 @@
 use std::ops::ControlFlow;
 
-use anyhow::Result;
+use anyhow::{Result, Context};
 
 use serde::{Deserialize, Serialize};
 use tokio::net::TcpStream;
@@ -55,9 +55,15 @@ pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream
         .text()
         .await?;
 
+    let mut device_id = crate::util::get_machine_id().context("Cound not get machine_id")?;
+    if let Some(email) = creds.email {
+        device_id.push(':');
+        device_id.push_str(&email);
+    }
+
     let url = url::Url::parse_with_params(
         "wss://api.fig.io/",
-        &[("deviceId", "1234"), ("ticket", &response)],
+        &[("deviceId", &device_id), ("ticket", &response)],
     )?;
 
     let (websocket_stream, _) = tokio_tungstenite::connect_async(url).await?;
