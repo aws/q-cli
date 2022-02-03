@@ -10,13 +10,13 @@ use crossterm::style::Stylize;
 
 use tokio;
 use super::diagnostics::{get_diagnostics, dscl_read, verify_integration};
-use super::util::{get_os_version};
+use super::util::get_os_version;
 use super::issue::get_shell;
 use crate::{auth::Credentials, util::{shell::Shell, fig_dir, home_dir, glob, glob_dir}};
 use crate::ipc::{get_socket_path, connect_timeout};
 use async_trait::async_trait;
 
-use crate::proto::local::{DiagnosticsResponse};
+use crate::proto::local::DiagnosticsResponse;
 
 enum DoctorStatus {
     Success,
@@ -121,7 +121,7 @@ struct FigBinCheck;
 impl DoctorCheck for FigBinCheck {
     async fn check_basic(&self, _: &()) -> Result<Option<String>> {
         let path = fig_dir().context("~/.fig/bin/fig does not exist")?;
-        check_file_exists(&path).map(|| None)
+        check_file_exists(&path).map(|_| None)
     }
     fn name(&self) -> String { "Fig bin exists".to_string() }
 }
@@ -167,7 +167,7 @@ struct FigSocketCheck;
 impl DoctorCheck for FigSocketCheck {
     fn name(&self) -> String { "Fig socket exists".to_string() }
     async fn check_basic(&self, _: &()) -> Result<Option<String>> {
-        check_file_exists(&get_socket_path()).map(|| None)
+        check_file_exists(&get_socket_path()).map(|_| None)
     }
 }
 
@@ -737,7 +737,7 @@ pub async fn doctor_cli() -> Result<()> {
     println!("Checking dotfiles...");
     println!();
 
-    async fn run_all_checks() -> Result<()> {
+    let status = async {
         run_checks(
             "Let's make sure Fig is running...".to_string(),
             vec![
@@ -793,10 +793,10 @@ pub async fn doctor_cli() -> Result<()> {
             ],
         ).await?;
 
-        Ok(())
-    }
+        anyhow::Ok(())
+    };
 
-    if run_all_checks().await.is_err() {
+    if status.await.is_err() {
         println!();
         println!("❌ Doctor found errors. Please fix them and try again.");
         println!();
