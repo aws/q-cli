@@ -1,7 +1,7 @@
-use std::fs;
+use std::{fs, path::{PathBuf, Path}};
 
-use anyhow::{Context, Result};
 use directories::{BaseDirs, ProjectDirs};
+use anyhow::{Context, Result, anyhow};
 use globset::{Glob, GlobSet, GlobSetBuilder};
 
 pub mod checksum;
@@ -10,6 +10,35 @@ pub mod terminal;
 
 pub fn project_dir() -> Option<ProjectDirs> {
     directories::ProjectDirs::from("io", "Fig", "Fig Cli")
+}
+
+pub fn home_dir() -> Result<PathBuf> {
+    directories::BaseDirs::new()
+        .map(|base| base.home_dir().to_path_buf())
+        .context(anyhow!("Could not get home directory"))
+}
+
+pub fn glob_dir(glob: &GlobSet, directory: impl AsRef<Path>) -> Result<Vec<PathBuf>> {
+    let mut files = Vec::new();
+
+    // List files in the directory
+    let dir = std::fs::read_dir(directory)?;
+
+    for entry in dir {
+        let entry = entry?;
+        let path = entry.path();
+
+        // Check if the file matches the glob pattern
+        if glob.is_match(&path) {
+            files.push(path);
+        }
+    }
+
+    Ok(files)
+}
+
+pub fn fig_dir() -> Option<PathBuf> {
+    Some(directories::BaseDirs::new()?.home_dir().join(".fig"))
 }
 
 pub fn glob(patterns: &[impl AsRef<str>]) -> Result<GlobSet> {

@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
 use tokio::fs::{read_to_string, write};
 
-use crate::util::{glob, shell::Shell};
+use crate::util::{glob, glob_dir, shell::Shell};
 
 use super::{
     download::DownloadMetadata,
@@ -151,33 +151,7 @@ impl ShellInstall {
 
         if let Some(use_files) = &self.use_files {
             let glob = glob(use_files)?;
-
-            // List files in the directory
-            let dir = std::fs::read_dir(directory)?;
-
-            for entry in dir {
-                let entry = entry?;
-                let path = entry.path();
-
-                // Check if the file matches the glob pattern
-                if glob.is_match(&path) {
-                    files.push(path);
-                }
-            }
-
-            // let glob_files: Vec<PathBuf> = walkdir::WalkDir::new(directory)
-            //     .into_iter()
-            //     .filter_entry(|entry| {
-            //         let path = entry.path();
-            //         let path_str = path.to_str().unwrap();
-
-            //         glob.is_match(path_str)
-            //     })
-            //     .filter_map(|entry| entry.ok())
-            //     .map(|entry| entry.into_path())
-            //     .collect();
-
-            // files.extend(glob_files);
+            files.extend(glob_dir(&glob, directory)?);
         } else {
             let match_str = match shell {
                 Shell::Zsh => DEFAULT_ZSH_MATCH,
@@ -186,32 +160,7 @@ impl ShellInstall {
             };
 
             let glob = glob(match_str)?;
-
-            let dir = std::fs::read_dir(directory)?;
-
-            for entry in dir {
-                let entry = entry?;
-                let path = entry.path();
-
-                // Check if the file matches the glob pattern
-                if glob.is_match(&path) {
-                    files.push(path);
-                }
-            }
-
-            // let glob_files: Vec<PathBuf> = walkdir::WalkDir::new(directory)
-            //     .into_iter()
-            //     .filter_entry(|entry| {
-            //         let path = entry.path();
-            //         let path_str = path.to_str().unwrap();
-
-            //         glob.is_match(path_str)
-            //     })
-            //     .filter_map(|entry| entry.ok())
-            //     .map(|entry| entry.into_path())
-            //     .collect();
-
-            // files.extend(glob_files);
+            files.extend(glob_dir(&glob, directory)?);
         }
 
         println!("{:?}", files);

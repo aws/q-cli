@@ -3,10 +3,14 @@
 pub mod auth;
 pub mod doctor;
 pub mod init;
+pub mod invite;
 pub mod installation;
 pub mod plugins;
 pub mod sync;
 pub mod util;
+pub mod diagnostics;
+pub mod tweet;
+pub mod issue;
 
 use self::{init::When, installation::InstallComponents, util::open_url};
 use crate::daemon::daemon;
@@ -47,6 +51,8 @@ pub enum CliRootCommands {
     },
     /// Run the daemon
     Daemon,
+    /// Run diagnostic tests
+    Diagnostic,
     /// Generate the dotfiles for the given shell
     Init {
         /// The shell to generate the dotfiles for
@@ -58,6 +64,15 @@ pub enum CliRootCommands {
     },
     /// Sync your latest dotfiles
     Sync,
+    /// Invite friends to Fig
+    Invite,
+    /// Tweet about Fig
+    Tweet,
+    /// Create a new Github issue
+    Issue {
+        /// Issue description
+        description: Vec<String>
+    },
     /// Login to dotfiles
     Login {
         #[clap(long, short)]
@@ -67,7 +82,7 @@ pub enum CliRootCommands {
     Logout,
     /// Details about the current user
     User,
-    /// Doctor
+    /// Check Fig is properly configured
     Doctor,
     /// Plugins management
     #[clap(subcommand)]
@@ -119,12 +134,16 @@ impl Cli {
                 }
                 CliRootCommands::Update { no_confirm } => installation::update_cli(no_confirm),
                 CliRootCommands::Daemon => daemon().await,
+                CliRootCommands::Diagnostic => diagnostics::diagnostics_cli().await,
                 CliRootCommands::Init { shell, when } => init::shell_init_cli(&shell, &when).await,
                 CliRootCommands::Sync => sync::sync_cli().await,
                 CliRootCommands::Login { refresh } => auth::login_cli(refresh).await,
                 CliRootCommands::Logout => auth::logout_cli().await,
                 CliRootCommands::User => auth::user_info_cli().await,
-                CliRootCommands::Doctor => doctor::doctor_cli(),
+                CliRootCommands::Doctor => doctor::doctor_cli().await,
+                CliRootCommands::Invite => invite::invite_cli().await,
+                CliRootCommands::Tweet => tweet::tweet_cli(),
+                CliRootCommands::Issue { description } => issue::issue_cli(description).await,
                 CliRootCommands::Plugins(plugins_subcommand) => plugins_subcommand.execute().await,
                 CliRootCommands::Prompt => sync::prompt_cli().await,
                 CliRootCommands::GenerateFigCompleation => {

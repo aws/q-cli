@@ -1,6 +1,9 @@
 use anyhow::{Context, Result};
+use semver::Version;
+use regex::Regex;
 use std::{
     env,
+    fmt::Display,
     process::{exit, Command},
 };
 
@@ -89,6 +92,96 @@ pub fn permission_guard() -> Result<()> {
         Ok(())
     }
 }
+
+pub enum OSVersion {
+    MacOS {
+        version: Version,
+        build: String
+    },
+    Linux {
+        flavor: String,
+    },
+    Windows {
+        version: Version,
+    }
+}
+
+impl Display for OSVersion {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            OSVersion::MacOS { build, version } => f.write_str(&format!("macOS {} {}", version.to_string(), build)),
+            OSVersion::Linux { flavor } => f.write_str(&format!("linux {}", flavor)),
+            OSVersion::Windows { version } => f.write_str(&format!("windows {}", version.to_string())),
+        }
+    }
+}
+
+impl OSVersion {
+    pub fn is_supported(&self) -> bool {
+        match self {
+            OSVersion::MacOS { version, build: _ } => {
+                version >= &Version::new(10, 14, 0)
+            },
+            _ => false
+        }
+    }
+}
+
+pub fn get_os_version() -> Result<OSVersion> {
+    #[cfg(target_os = "macos")]
+    {
+        let version_info = Command::new("sw_vers")
+            .output()
+            .with_context(|| "Could not get macOS version")?;
+
+        let version_info = String::from_utf8_lossy(&version_info.stdout).trim().to_string();
+
+        let version_regex = Regex::new(r#"ProductVersion:\s*(\S+)"#).unwrap();
+        let build_regex = Regex::new(r#"BuildVersion:\s*(\S+)"#).unwrap();
+
+        let version = version_regex
+            .captures(&version_info)
+            .map(|c| c.get(1)).flatten()
+            .map(|v| Version::parse(v.as_str()).ok()).flatten()
+            .context("Invalid version")?;
+
+        let build = build_regex
+            .captures(&version_info)
+            .map(|c| c.get(1)).flatten()
+            .context("Invalid version")?
+            .as_str();
+
+        Ok(OSVersion::MacOS { version, build: build.to_string() })
+    }
+
+    #[cfg(not(any(target_os = "macos")))]
+    unimplemented!();
+}
+
+pub fn get_fig_version() -> Result<(String, String)> {
+    #[cfg(target_os = "macos")]
+    {
+        let plist = std::fs::read_to_string("/Applications/Fig.app/Contents/Info.plist")?;
+
+        let get_plist_field = |field: &str| -> Result<String> {
+            let regex = Regex::new(&format!("<key>{}</key>\\s*<\\S+>(\\S+)</\\S+>", field)).unwrap();
+            let value = regex
+                .captures(&plist).context(format!("Could not find {} in plist", field))?
+                .get(1).context(format!("Could not find {} in plist", field))?
+                .as_str();
+
+            Ok(value.to_string())
+        };
+
+        let fig_version = get_plist_field("CFBundleShortVersionString")?;
+        let fig_build_number = get_plist_field("CFBundleVersion")?;
+        Ok((fig_version, fig_build_number))
+    }
+
+    #[cfg(not(any(target_os = "macos")))]
+    unimplemented!();
+}
+
 
 pub fn dialoguer_theme() -> impl dialoguer::theme::Theme {
     ColorfulTheme {
