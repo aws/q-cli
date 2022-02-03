@@ -47,11 +47,9 @@ pub async fn send_hook(connection: &mut UnixStream, hook: local::hook::Hook) -> 
 }
 
 pub async fn create_socket_listen(session_id: impl AsRef<str>) -> Result<UnixListener> {
-    let session_id_str = session_id.as_ref().split(':').last().unwrap();
-
     let socket_path: PathBuf = [
         Path::new("/tmp"),
-        Path::new(&format!("figterm-{}.socket", session_id_str)),
+        Path::new(&format!("figterm-{}.socket", session_id.as_ref())), 
     ]
     .into_iter()
     .collect();

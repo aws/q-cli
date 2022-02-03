@@ -1739,7 +1739,6 @@ impl<T: EventListener> Handler for Term<T> {
     }
 
     fn session_id(&mut self, session_id: &str) {
-        let session_id = session_id.split(':').last().unwrap_or("");
         trace!("Fig session_id: {:?}", session_id);
         self.shell_state.session_id = Some(session_id.trim().to_owned());
     }
