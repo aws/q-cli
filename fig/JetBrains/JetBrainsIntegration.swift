@@ -16,6 +16,7 @@ class JetBrainsIntegration: InputMethodDependentTerminalIntegrationProvider & In
   static let GoLand   = JetBrainsIntegration(bundleIdentifier: Integrations.GoLand)
   static let PhpStorm = JetBrainsIntegration(bundleIdentifier: Integrations.PhpStorm)
   static let PyCharm  = JetBrainsIntegration(bundleIdentifier: Integrations.PyCharm)
+  static let AppCode  = JetBrainsIntegration(bundleIdentifier: Integrations.AppCode)
 
   static let plugin = Plugin(name: "jetbrains-extension",
                              version: "2.0.0",
@@ -32,7 +33,7 @@ class JetBrainsIntegration: InputMethodDependentTerminalIntegrationProvider & In
 
   }
 
-  func pluginsPath() throws -> URL {
+  fileprivate func getJVMProperties() throws ->  [String: AnyObject] {
     guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: self.bundleIdentifier) else {
       throw InstallationStatus.failed(error: "Could not locate URL for application")
     }
@@ -56,11 +57,41 @@ class JetBrainsIntegration: InputMethodDependentTerminalIntegrationProvider & In
       throw InstallationStatus.failed(error: "Could not read `Properties` from JVMOptions")
     }
 
+    return properties
+  }
+  func pluginsPath() throws -> URL {
+
+    let properties = try getJVMProperties()
+
     guard let pathSelector = properties["idea.paths.selector"] as? String else {
       throw InstallationStatus.failed(error: "Could not read 'idea.paths.selector' from JVMOptions.properties")
     }
 
     return pluginsPath(for: pathSelector)
+  }
+
+  fileprivate var _id: String?
+  fileprivate func getId() -> String {
+    // See `PlatformUtils` in `com.intellij.util.PlatformUtils;`
+    let defaultId = "idea"
+
+    if let id = self._id {
+      return id
+    }
+
+    guard let properties = try? getJVMProperties() else {
+      return defaultId
+    }
+
+    if let id = properties["idea.platform.prefix"] as? String {
+      return id
+    }
+
+    return defaultId
+  }
+
+  override var id: String {
+    return _id ?? getId()
   }
 
   func verifyInstallation() -> InstallationStatus {
@@ -87,6 +118,12 @@ class JetBrainsIntegration: InputMethodDependentTerminalIntegrationProvider & In
     let inputMethodStatus = InputMethod.default.verifyInstallation()
     guard inputMethodStatus == .installed else {
       return .pending(event: .inputMethodActivation)
+    }
+
+    // If the application is already running,
+    // it must be restarted for the new input method to work
+    if self.status == .pending(event: .inputMethodActivation) {
+      return .pending(event: .applicationRestart)
     }
 
     return .installed

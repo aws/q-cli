@@ -24,6 +24,7 @@ class Integrations {
   static let GoLand = "com.jetbrains.goland"
   static let PhpStorm = "com.jetbrains.PhpStorm"
   static let PyCharm = "com.jetbrains.pycharm"
+  static let AppCode = "com.jetbrains.AppCode"
 
   static let terminals: Set = [
     "com.googlecode.iterm2",
@@ -48,7 +49,7 @@ class Integrations {
     "com.raycast.macos"
   ]
 
-  static let jetbrainIDEs: Set = [IntellijCE, WebStorm, GoLand, PhpStorm, PyCharm]
+  static let jetbrainIDEs: Set = [IntellijCE, WebStorm, GoLand, PhpStorm, PyCharm, AppCode]
   static let inputMethodDependentTerminals: Set = jetbrainIDEs.union([Alacritty, Kitty])
 
   static let electronIDEs: Set = [VSCode, VSCodeInsiders, VSCodium]
@@ -139,7 +140,8 @@ class Integrations {
       Integrations.WebStorm: JetBrainsIntegration.WebStorm,
       Integrations.PhpStorm: JetBrainsIntegration.PhpStorm,
       Integrations.GoLand: JetBrainsIntegration.GoLand,
-      Integrations.PyCharm: JetBrainsIntegration.PyCharm
+      Integrations.PyCharm: JetBrainsIntegration.PyCharm,
+      Integrations.AppCode: JetBrainsIntegration.AppCode
     ]
 
     let experimentalIntegrations: [String: TerminalIntegrationProvider] = [
@@ -157,6 +159,15 @@ class Integrations {
   }
 
   static let providers: [String: TerminalIntegrationProvider] = allProviders()
+
+  static func provider(for bundleIdentifier: String?) -> TerminalIntegrationProvider? {
+    guard let bundleIdentifier = bundleIdentifier else {
+      return nil
+    }
+
+//    bundleIdentifier.starts(with: <#T##Sequence#>)
+    return nil
+  }
 
   static func handleListIntegrationsRequest() -> CommandResponse {
     CommandResponse.with { response in
