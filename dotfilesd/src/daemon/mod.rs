@@ -6,19 +6,29 @@ use std::{
     io::Write,
     ops::ControlFlow,
     path::{Path, PathBuf},
-    process::Command,
-    time::Duration,
+    process::Command, time::Duration,
 };
 
 use anyhow::{anyhow, Context, Result};
 use futures::StreamExt;
 
 use serde::{Deserialize, Serialize};
+use time::format_description::well_known::Rfc3339;
 use tokio::{fs::remove_file, net::UnixListener, select};
 
 use crate::daemon::websocket::process_websocket;
 
 use self::{launchd_plist::LaunchdPlist, systemd_unit::SystemdUnit};
+
+fn daemon_log(message: &str) {
+    println!(
+        "[dotfiles-daemon {}] {}",
+        time::OffsetDateTime::now_utc()
+            .format(&Rfc3339)
+            .unwrap_or("xxxx-xx-xxTxx:xx:xx.xxxxxxZ".into()),
+        message
+    );
+}
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -187,21 +197,28 @@ impl LaunchService {
     pub fn launchd() -> Option<LaunchService> {
         let basedirs = directories::BaseDirs::new()?;
 
-        let path = basedirs
+        let plist_path = basedirs
             .home_dir()
             .join("Library/LaunchAgents/io.fig.dotfiles-daemon.plist");
 
         let executable_path = std::env::current_exe().ok()?;
         let executable_path_str = executable_path.to_string_lossy().to_string();
 
+        let log_path = basedirs.home_dir().join(".fig/logs/dotfiles-daemon.log");
+        let log_path_str = log_path.to_string_lossy().to_string();
+
         let plist = LaunchdPlist::new("io.fig.dotfiles-daemon")
             .program(&*executable_path_str)
             .program_arguments([&*executable_path_str, "daemon"])
             .keep_alive(true)
+            .run_at_load(true)
+            .throttle_interval(5)
+            .standard_out_path(&log_path_str)
+            .standard_error_path(&log_path_str)
             .plist();
 
         Some(LaunchService {
-            path,
+            path: plist_path,
             data: plist,
             launch_system: InitSystem::Launchd,
         })
@@ -252,6 +269,8 @@ struct WebsocketAwsToken {
 }
 
 pub async fn daemon() -> Result<()> {
+    daemon_log("Starting daemon...");
+
     // Spawn the daemon to listen for updates and dotfiles changes
     let mut update_interval = tokio::time::interval(Duration::from_secs(60 * 60));
 
@@ -270,7 +289,7 @@ pub async fn daemon() -> Result<()> {
     let unix_socket =
         UnixListener::bind(unix_socket_path).context("Could not connect to unix socket")?;
 
-    println!("Daemon is running...");
+    daemon_log("Daemon is now running");
 
     // Select loop
     loop {

@@ -21,7 +21,7 @@ struct DotfilesSourceRequest {
     email: String,
 }
 
-async fn sync_file(shell: &Shell) -> Result<()> {
+async fn sync_file(shell: &Shell, sync_when: SyncWhen) -> Result<()> {
     // Get the access token from defaults
     let token = Command::new("defaults")
         .arg("read")
@@ -63,9 +63,15 @@ async fn sync_file(shell: &Shell) -> Result<()> {
         .await?;
 
     // Create path to dotfiles
-    let cache_file = shell
+    let mut cache_file = shell
         .get_data_path()
         .context("Could not get cache file path")?;
+
+    // Append suffix to path if it should be synced later
+    if sync_when == SyncWhen::Later {
+        cache_file.set_extension("new");
+    }
+
     let cache_folder = cache_file.parent().unwrap();
 
     // Create cache folder if it doesn't exist
@@ -73,28 +79,50 @@ async fn sync_file(shell: &Shell) -> Result<()> {
         std::fs::create_dir_all(cache_folder)?;
     }
 
-    let mut dest_file = std::fs::File::create(cache_file)?;
-    dest_file.write_all(download.as_bytes())?;
+    std::fs::write(cache_file, download)?;
 
     Ok(())
 }
 
-pub async fn sync_all_files() -> Result<()> {
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SyncWhen {
+    /// Sync the dotfiles immediately
+    Immediately,
+    /// Save to a temporary file and sync later
+    Later,
+}
+
+pub async fn sync_all_files(sync_when: SyncWhen) -> Result<()> {
     try_join!(
-        sync_file(&Shell::Bash),
-        sync_file(&Shell::Zsh),
-        sync_file(&Shell::Fish),
+        sync_file(&Shell::Bash, sync_when),
+        sync_file(&Shell::Zsh, sync_when),
+        sync_file(&Shell::Fish, sync_when),
     )?;
+
+    Ok(())
+}
+    
+/// Notify dotfiles updates
+pub fn notify_terminals() -> Result<()> {
+    let tempdir = std::env::temp_dir();
+    let dotfiles_updates_folder = tempdir.join("fig").join("dotfiles_updates");
+
+    // Write true to all files in the dotfiles_updates folder
+    if dotfiles_updates_folder.exists() {
+        for file in dotfiles_updates_folder.read_dir()? {
+            let file = file?;
+
+            std::fs::write(file.path(), "true")?;
+        }
+    }
 
     Ok(())
 }
 
 /// Download the lastest dotfiles
 pub async fn sync_cli() -> Result<()> {
-    sync_all_files().await?;
-
-    println!("Dotfiles synced!");
-
+    sync_all_files(SyncWhen::Immediately).await?;
+    notify_terminals()?;
     Ok(())
 }
 
@@ -121,17 +149,17 @@ pub async fn prompt_cli() -> Result<()> {
     if file_content.contains("true") {
         let settings = Settings::load()?;
 
-        let enabled = settings
+        let source_immediately = settings
             .get_setting()
-            .map(|map| map.get("dotfiles.prompt-update"))
-            .map(|opt| opt.map(|value| value.as_bool()))
+            .map(|map| map.get("dotfiles.sourceImmediately"))
+            .map(|opt| opt.map(|value| value.as_str()))
             .flatten()
             .flatten();
 
-        match enabled {
-            Some(false) => {}
-            Some(true) => exit_code = 0,
-            None => {
+        match source_immediately {
+            Some("never") => {}
+            Some("always") => exit_code = 0,
+            _ => {
                 let mut stdout = stdout();
 
                 stdout.write_all(
@@ -200,10 +228,7 @@ pub async fn prompt_cli() -> Result<()> {
 
                                 let mut settings = Settings::load()?;
                                 settings.get_mut_settings().map(|obj| {
-                                    obj.insert(
-                                        "dotfiles.prompt-update".to_string(),
-                                        json!(true),
-                                    )
+                                    obj.insert("dotfiles.sourceImmediately".to_string(), json!("always"));
                                 });
                                 settings.save()?;
 
@@ -222,10 +247,7 @@ pub async fn prompt_cli() -> Result<()> {
 
                                 let mut settings = Settings::load()?;
                                 settings.get_mut_settings().map(|obj| {
-                                    obj.insert(
-                                        "dotfiles.prompt-update".to_string(),
-                                        json!(false),
-                                    )
+                                    obj.insert("dotfiles.sourceImmediately".to_string(), json!("never"));
                                 });
                                 settings.save()?;
 

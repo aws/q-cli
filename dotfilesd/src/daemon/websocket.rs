@@ -1,6 +1,6 @@
 use std::ops::ControlFlow;
 
-use anyhow::{Result, Context};
+use anyhow::{Context, Result};
 
 use serde::{Deserialize, Serialize};
 use tokio::net::TcpStream;
@@ -8,9 +8,12 @@ use tokio_tungstenite::{tungstenite::Message, MaybeTlsStream, WebSocketStream};
 
 use crate::{
     auth::{self, Credentials},
-    cli::sync,
+    cli::sync::{self, notify_terminals, SyncWhen},
     daemon::WebsocketAwsToken,
+    util::Settings,
 };
+
+use super::daemon_log;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -84,27 +87,53 @@ pub async fn process_websocket(
                     match websocket_message_result {
                         Ok(websocket_message) => match websocket_message.websocket_message_type {
                             FigWebsocketMessageType::DotfilesUpdated => {
-                                match sync::sync_all_files().await {
-                                    Ok(()) => {
-                                        println!("Dotfiles updated");
-                                    }
+                                let sync_when = if let Ok(settings) = Settings::load() {
+                                    settings
+                                        .get_setting()
+                                        .map(|setting| {
+                                            if setting
+                                                .get("dotfiles.syncImmediately")
+                                                .map(|val| val.as_bool())
+                                                .flatten()
+                                                == Some(true)
+                                            {
+                                                SyncWhen::Immediately
+                                            } else {
+                                                SyncWhen::Later
+                                            }
+                                        })
+                                        .unwrap_or(SyncWhen::Later)
+                                } else {
+                                    SyncWhen::Later
+                                };
+
+                                match sync::sync_all_files(sync_when).await {
+                                    Ok(()) => match sync_when {
+                                        SyncWhen::Immediately => {
+                                            notify_terminals()?;
+                                            daemon_log("Dotfiles updated");
+                                        }
+                                        SyncWhen::Later => {
+                                            daemon_log("New dotfiles available");
+                                        }
+                                    },
                                     Err(err) => {
-                                        println!("Could not update dotfiles: {:?}", err);
+                                        daemon_log(&format!("Could not sync dotfiles: {:?}", err));
                                     }
                                 }
                             }
                         },
                         Err(e) => {
-                            println!("Could not parse json message: {:?}", e);
+                            daemon_log(&format!("Could not parse json message: {:?}", e));
                         }
                     }
                 }
                 Message::Close(close_frame) => {
                     match close_frame {
                         Some(close_frame) => {
-                            println!("Websocket closed: {:?}", close_frame);
+                            daemon_log(&format!("Websocket closed: {:?}", close_frame));
                         }
-                        None => println!("Websocket closed"),
+                        None => daemon_log("Websocket closed"),
                     }
 
                     return Ok(ControlFlow::Break(()));
@@ -112,12 +141,12 @@ pub async fn process_websocket(
                 _ => {}
             },
             Err(err) => {
-                println!("{:?}", err);
+                daemon_log(&format!("{:?}", err));
                 return Ok(ControlFlow::Break(()));
             }
         },
         None => {
-            println!("Websocket closed");
+            daemon_log("Websocket closed");
             return Ok(ControlFlow::Break(()));
         }
     }
