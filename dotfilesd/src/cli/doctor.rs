@@ -11,11 +11,13 @@ use crossterm::style::Stylize;
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 use regex::Regex;
 use std::process::Command;
+use thiserror::Error;
 
 use super::diagnostics::{dscl_read, get_diagnostics, verify_integration};
 use super::issue::get_shell;
 use super::util::get_os_version;
 use crate::ipc::{connect_timeout, get_socket_path};
+
 use crate::{
     auth::Credentials,
     util::{fig_dir, glob, glob_dir, home_dir, shell::Shell},
@@ -25,14 +27,43 @@ use tokio;
 
 use crate::proto::local::DiagnosticsResponse;
 
-enum DoctorStatus {
-    Success,
+#[derive(Error)]
+enum DoctorError {
+    #[error("Warning: {0}")]
     Warning(String),
+    #[error("Error: {reason}")]
     Error {
         reason: String,
         info: Vec<String>,
         fix: Option<Box<dyn FnOnce() -> Result<()> + Send>>,
     },
+}
+
+impl std::fmt::Debug for DoctorError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        match self {
+            DoctorError::Warning(msg) => f.debug_struct("Warning").field("msg", msg).finish(),
+            DoctorError::Error {
+                reason,
+                info,
+                fix: _,
+            } => f
+                .debug_struct("Error")
+                .field("reason", reason)
+                .field("info", info)
+                .finish(),
+        }
+    }
+}
+
+impl From<anyhow::Error> for DoctorError {
+    fn from(e: anyhow::Error) -> DoctorError {
+        DoctorError::Error {
+            reason: e.to_string(),
+            info: vec![],
+            fix: None,
+        }
+    }
 }
 
 fn check_file_exists(path: &Path) -> Result<()> {
@@ -94,19 +125,19 @@ fn app_version(app: &str) -> Option<Version> {
     }
 }
 
-fn print_status_result(name: &str, status: &DoctorStatus) {
+fn print_status_result(name: &str, status: &Result<(), DoctorError>) {
     match status {
-        DoctorStatus::Success => {
+        Ok(()) => {
             println!("✅ {}", name);
         }
-        DoctorStatus::Warning(msg) => {
+        Err(DoctorError::Warning(msg)) => {
             println!("🟡 {}", msg);
         }
-        DoctorStatus::Error {
+        Err(DoctorError::Error {
             reason,
             info,
             fix: _,
-        } => {
+        }) => {
             println!("❌ {}: {}", name, reason);
             for infoline in info {
                 println!("  {}", infoline);
@@ -123,29 +154,16 @@ where
     fn should_check(&self, _: &T) -> bool {
         true
     }
-    async fn check(&self, context: &T) -> DoctorStatus {
-        match self.check_basic(context).await {
-            Ok(None) => DoctorStatus::Success,
-            Ok(Some(warning)) => DoctorStatus::Warning(warning),
-            Err(reason) => DoctorStatus::Error {
-                reason: reason.to_string(),
-                info: vec![],
-                fix: None,
-            },
-        }
-    }
-    async fn check_basic(&self, _: &T) -> Result<Option<String>> {
-        Ok(None)
-    }
+    async fn check(&self, context: &T) -> Result<(), DoctorError>;
     fn name(&self) -> String;
 }
 
 struct FigBinCheck;
 #[async_trait]
 impl DoctorCheck for FigBinCheck {
-    async fn check_basic(&self, _: &()) -> Result<Option<String>> {
+    async fn check(&self, _: &()) -> Result<(), DoctorError> {
         let path = fig_dir().context("~/.fig/bin/fig does not exist")?;
-        check_file_exists(&path).map(|_| None)
+        Ok(check_file_exists(&path)?)
     }
     fn name(&self) -> String {
         "Fig bin exists".to_string()
@@ -158,10 +176,10 @@ impl DoctorCheck for PathCheck {
     fn name(&self) -> String {
         "Fig in PATH".to_string()
     }
-    async fn check_basic(&self, _: &()) -> Result<Option<String>> {
+    async fn check(&self, _: &()) -> Result<(), DoctorError> {
         match std::env::var("PATH").map(|path| path.contains(".fig/bin")) {
-            Ok(true) => Ok(None),
-            _ => anyhow::bail!("Path does not contain ~/.fig/bin".to_string()),
+            Ok(true) => Ok(()),
+            _ => return Err(anyhow!("Path does not contain ~/.fig/bin".to_string()).into()),
         }
     }
 }
@@ -172,7 +190,7 @@ impl DoctorCheck for AppRunningCheck {
     fn name(&self) -> String {
         "Fig is running".to_string()
     }
-    async fn check(&self, _: &()) -> DoctorStatus {
+    async fn check(&self, _: &()) -> Result<(), DoctorError> {
         let result = Command::new("lsappinfo")
             .arg("info")
             .arg("-app")
@@ -180,15 +198,15 @@ impl DoctorCheck for AppRunningCheck {
             .output();
         if let Ok(output) = result {
             if !String::from_utf8_lossy(&output.stdout).trim().is_empty() {
-                return DoctorStatus::Success;
+                return Ok(());
             }
         }
 
-        DoctorStatus::Error {
+        Err(DoctorError::Error {
             reason: "Fig app is not running".to_string(),
             info: vec![],
             fix: command_fix(vec!["fig", "launch"]),
-        }
+        })
     }
 }
 
@@ -198,8 +216,8 @@ impl DoctorCheck for FigSocketCheck {
     fn name(&self) -> String {
         "Fig socket exists".to_string()
     }
-    async fn check_basic(&self, _: &()) -> Result<Option<String>> {
-        check_file_exists(&get_socket_path()).map(|_| None)
+    async fn check(&self, _: &()) -> Result<(), DoctorError> {
+        Ok(check_file_exists(&get_socket_path())?)
     }
 }
 
@@ -209,7 +227,7 @@ impl DoctorCheck for FigtermSocketCheck {
     fn name(&self) -> String {
         "Figterm socket exists".to_string()
     }
-    async fn check_basic(&self, _: &()) -> Result<Option<String>> {
+    async fn check(&self, _: &()) -> Result<(), DoctorError> {
         let term_session = std::env::var("TERM_SESSION_ID").context("No TERM_SESSION_ID")?;
 
         let session_id = term_session
@@ -223,7 +241,10 @@ impl DoctorCheck for FigtermSocketCheck {
 
         let conn = match connect_timeout(&socket_path, Duration::from_secs(2)).await {
             Ok(connection) => connection,
-            Err(e) => anyhow::bail!("Socket exists but could not connect: {}", e.to_string()),
+            Err(e) => return Err(anyhow!(
+                "Socket exists but could not connect: {}",
+                e.to_string()
+            ).into()),
         };
 
         enable_raw_mode().context("Terminal doesn't support raw mode to verify figterm socket")?;
@@ -241,13 +262,13 @@ impl DoctorCheck for FigtermSocketCheck {
             .read_line(&mut buffer)
             .context("Failed reading from terminal")?;
 
-        disable_raw_mode()?;
+        disable_raw_mode().context("Failed to disable raw mode")?;
 
         if write_handle.await.is_err() || !buffer.contains("Testing figterm...") {
-            anyhow::bail!("Socket exists but is not writable.");
+            return Err(anyhow!("Socket exists but is not writable.").into());
         }
 
-        Ok(None)
+        Ok(())
     }
 }
 
@@ -260,26 +281,26 @@ impl DoctorCheck for DotfileCheck {
     fn name(&self) -> String {
         format!("{} contains valid fig hooks", self.path.to_string_lossy())
     }
-    async fn check(&self, _: &()) -> DoctorStatus {
+    async fn check(&self, _: &()) -> Result<(), DoctorError> {
         let path = self.path.to_string_lossy().to_string();
         match self.shell {
             Shell::Fish => {
                 // Source order for fish is handled by fish itself.
                 if self.path.exists() {
-                    return DoctorStatus::Success;
+                    return Ok(());
                 } else {
-                    return DoctorStatus::Error {
+                    return Err(DoctorError::Error {
                         reason: format!("{} does not exist", path),
                         info: vec![],
                         fix: None,
-                    };
+                    });
                 }
             }
             Shell::Zsh | Shell::Bash => {
                 // Read file if it exists
                 let contents = match read_to_string(&self.path) {
                     Ok(contents) => contents,
-                    _ => return DoctorStatus::Warning(format!("{} does not exist", path)),
+                    _ => return Err(DoctorError::Warning(format!("{} does not exist", path))),
                 };
 
                 let contents = Regex::new(r"\s*#.*")
@@ -293,7 +314,10 @@ impl DoctorCheck for DotfileCheck {
 
                 let first_line = lines.first().copied().unwrap_or("");
                 if first_line.eq("[ -s ~/.fig/shell/pre.sh ] && source ~/.fig/shell/pre.sh") {
-                    return DoctorStatus::Warning(format!("{} has legacy integration", path));
+                    return Err(DoctorError::Warning(format!(
+                        "{} has legacy integration",
+                        path
+                    )));
                 }
 
                 let command = format!("dotfiles shell {} pre", self.shell);
@@ -304,7 +328,7 @@ impl DoctorCheck for DotfileCheck {
                         .enumerate()
                         .map(|(i, x)| format!("{} {}", i + 1, x));
 
-                    return DoctorStatus::Error {
+                    return Err(DoctorError::Error {
 
                         reason: format!("Command `{}` is not sourced first in {}", command, path),
                         info: vec![
@@ -312,12 +336,15 @@ impl DoctorCheck for DotfileCheck {
                             format!("Top of {}:", path)
                         ].into_iter().chain(top_line_text).collect(),
                         fix: None
-                    };
+                    });
                 }
 
                 let last_line = lines.last().copied().unwrap_or("");
                 if last_line.eq("[ -s ~/.fig/fig.sh ] && source ~/.fig/fig.sh") {
-                    return DoctorStatus::Warning(format!("{} has legacy integration", path));
+                    return Err(DoctorError::Warning(format!(
+                        "{} has legacy integration",
+                        path
+                    )));
                 }
 
                 let command = format!("dotfiles shell {} post", self.shell);
@@ -329,7 +356,7 @@ impl DoctorCheck for DotfileCheck {
                         .enumerate()
                         .map(|(i, x)| format!("{} {}", n + i + 1, x));
 
-                    return DoctorStatus::Error {
+                    return Err(DoctorError::Error {
 
                         reason: format!("Command `{}` is not sourced last in {}", command, path),
                         info: vec![
@@ -337,10 +364,10 @@ impl DoctorCheck for DotfileCheck {
                             format!("Bottom of {}:", path)
                         ].into_iter().chain(bottom_line_text).collect(),
                         fix: None
-                    };
+                    });
                 }
 
-                DoctorStatus::Success
+                Ok(())
             }
         }
     }
@@ -352,15 +379,15 @@ impl DoctorCheck<DiagnosticsResponse> for InstallationScriptCheck {
     fn name(&self) -> String {
         "Installation script".to_string()
     }
-    async fn check(&self, diagnostics: &DiagnosticsResponse) -> DoctorStatus {
+    async fn check(&self, diagnostics: &DiagnosticsResponse) -> Result<(), DoctorError> {
         if diagnostics.installscript == "true" {
-            DoctorStatus::Success
+            Ok(())
         } else {
-            DoctorStatus::Error {
+            Err(DoctorError::Error {
                 reason: "Intall script not run".to_string(),
                 info: vec![],
                 fix: command_fix(vec!["~/.fig/tools/install_and_upgrade.sh"]),
-            }
+            })
         }
     }
 }
@@ -371,32 +398,25 @@ impl DoctorCheck<DiagnosticsResponse> for ShellCompatibilityCheck {
     fn name(&self) -> String {
         "Compatible shell".to_string()
     }
-    async fn check_basic(&self, _: &DiagnosticsResponse) -> Result<Option<String>> {
+    async fn check(&self, _: &DiagnosticsResponse) -> Result<(), DoctorError> {
         let shell_regex = Regex::new(r"(bash|fish|zsh)").unwrap();
         let current_shell = get_shell();
-        let valid_current_shell = match current_shell.as_ref() {
-            Ok(shell) => {
-                if shell_regex.is_match(shell) {
-                    Ok(None)
-                } else {
-                    Err(anyhow!("Current shell {} incompatible", shell))
-                }
+        let current_shell_valid = current_shell.as_ref().map(|s| (s, shell_regex.is_match(s)));
+        let default_shell = dscl_read("UserShell");
+        let default_shell_valid = default_shell.as_ref().map(|s| (s, shell_regex.is_match(s)));
+        match (current_shell_valid, default_shell_valid) {
+            (Ok((current_shell, false)), _) => {
+                return Err(anyhow!("Current shell {} incompatible", current_shell).into())
             }
-            Err(_) => Ok(Some("Could not get current shell".to_string())),
-        }?;
-
-        let valid_default_shell = match dscl_read("UserShell").as_ref() {
-            Ok(shell) => {
-                if shell_regex.is_match(shell) {
-                    Ok(None)
-                } else {
-                    Err(anyhow!("Default shell {} incompatible", shell))
-                }
+            (_, Ok((default_shell, false))) => {
+                return Err(anyhow!("Default shell {} incompatible", default_shell).into())
             }
-            Err(_) => Ok(Some("Could not get default shell".to_string())),
-        }?;
-
-        Ok(valid_current_shell.or(valid_default_shell))
+            (Err(_), _) => return Err(anyhow!("Could not get current shell".to_string()).into()),
+            (_, Err(_)) => Err(DoctorError::Warning(
+                "Could not get default shell".to_string(),
+            )),
+            _ => Ok(()),
+        }
     }
 }
 
@@ -406,14 +426,17 @@ impl DoctorCheck<DiagnosticsResponse> for BundlePathCheck {
     fn name(&self) -> String {
         "Fig app installed in the right place".to_string()
     }
-    async fn check(&self, diagnostics: &DiagnosticsResponse) -> DoctorStatus {
+    async fn check(&self, diagnostics: &DiagnosticsResponse) -> Result<(), DoctorError> {
         let path = diagnostics.path_to_bundle.clone();
         if path.contains("/Applications/Fig.app") {
-            DoctorStatus::Success
+            Ok(())
         } else if path.contains("/Build/Products/Debug/fig.app") {
-            DoctorStatus::Warning(format!("Running debug build in {}", path.bold()))
+            Err(DoctorError::Warning(format!(
+                "Running debug build in {}",
+                path.bold()
+            )))
         } else {
-            DoctorStatus::Error {
+            Err(DoctorError::Error {
                 reason: format!("Fig app is installed in {}", path.bold()),
                 info: vec![
                     "You need to install Fig in /Applications.".to_string(),
@@ -421,7 +444,7 @@ impl DoctorCheck<DiagnosticsResponse> for BundlePathCheck {
                     "Remember to drag Fig into the Applications folder.".to_string(),
                 ],
                 fix: None,
-            }
+            })
         }
     }
 }
@@ -432,18 +455,18 @@ impl DoctorCheck<DiagnosticsResponse> for AutocompleteEnabledCheck {
     fn name(&self) -> String {
         "Autocomplete is enabled".to_string()
     }
-    async fn check(&self, diagnostics: &DiagnosticsResponse) -> DoctorStatus {
+    async fn check(&self, diagnostics: &DiagnosticsResponse) -> Result<(), DoctorError> {
         if diagnostics.autocomplete {
-            DoctorStatus::Success
+            Ok(())
         } else {
-            DoctorStatus::Error {
+            Err(DoctorError::Error {
                 reason: "Autocomplete disabled.".to_string(),
                 info: vec![format!(
                     "To fix run: {}",
                     "fig settings autocomplete.disable false".magenta()
                 )],
                 fix: None,
-            }
+            })
         }
     }
 }
@@ -454,7 +477,7 @@ impl DoctorCheck<DiagnosticsResponse> for FigCLIPathCheck {
     fn name(&self) -> String {
         "Fig CLI path".to_string()
     }
-    async fn check_basic(&self, _: &DiagnosticsResponse) -> Result<Option<String>> {
+    async fn check(&self, _: &DiagnosticsResponse) -> Result<(), DoctorError> {
         let path = std::env::current_exe()
             .context("Could not get executable path.")?
             .to_string_lossy()
@@ -467,9 +490,9 @@ impl DoctorCheck<DiagnosticsResponse> for FigCLIPathCheck {
             .to_string();
         if path != exe_path && path != "/usr/local/bin/.fig/bin/fig" && path != "/usr/local/bin/fig"
         {
-            Ok(None)
+            Ok(())
         } else {
-            anyhow::bail!("Fig CLI must be in {}", exe_path)
+            return Err(anyhow!("Fig CLI must be in {}", exe_path).into())
         }
     }
 }
@@ -480,15 +503,15 @@ impl DoctorCheck<DiagnosticsResponse> for AccessibilityCheck {
     fn name(&self) -> String {
         "Accessibility enabled".to_string()
     }
-    async fn check(&self, diagnostics: &DiagnosticsResponse) -> DoctorStatus {
+    async fn check(&self, diagnostics: &DiagnosticsResponse) -> Result<(), DoctorError> {
         if diagnostics.accessibility != "true" {
-            DoctorStatus::Error {
+            Err(DoctorError::Error {
                 reason: "Accessibility is disabled".to_string(),
                 info: vec![],
                 fix: command_fix(vec!["fig", "debug", "prompt-accessibility"]),
-            }
+            })
         } else {
-            DoctorStatus::Success
+            Ok(())
         }
     }
 }
@@ -499,16 +522,16 @@ impl DoctorCheck<DiagnosticsResponse> for PseudoTerminalPathCheck {
     fn name(&self) -> String {
         "PATH and PseudoTerminal PATH match".to_string()
     }
-    async fn check(&self, diagnostics: &DiagnosticsResponse) -> DoctorStatus {
+    async fn check(&self, diagnostics: &DiagnosticsResponse) -> Result<(), DoctorError> {
         let path = std::env::var("PATH").unwrap_or_else(|_| "".to_string());
         if diagnostics.psudoterminal_path.ne(&path) {
-            DoctorStatus::Error {
+            Err(DoctorError::Error {
                 reason: "paths do not match".to_string(),
                 info: vec![],
                 fix: command_fix(vec!["fig", "app", "set-path"]),
-            }
+            })
         } else {
-            DoctorStatus::Success
+            Ok(())
         }
     }
 }
@@ -522,8 +545,8 @@ impl DoctorCheck<DiagnosticsResponse> for DotfilesSymlinkedCheck {
     fn should_check(&self, diagnostics: &DiagnosticsResponse) -> bool {
         diagnostics.symlinked == "true"
     }
-    async fn check_basic(&self, _: &DiagnosticsResponse) -> Result<Option<String>> {
-        Ok(Some(
+    async fn check(&self, _: &DiagnosticsResponse) -> Result<(), DoctorError> {
+        Err(DoctorError::Warning(
 					"It looks like your dotfiles are symlinked. If you need to make modifications, make sure they're made in the right place.".to_string()
         ))
     }
@@ -535,9 +558,9 @@ impl DoctorCheck<DiagnosticsResponse> for SecureKeyboardCheck {
     fn name(&self) -> String {
         "Secure keyboard input disabled".to_string()
     }
-    async fn check(&self, diagnostics: &DiagnosticsResponse) -> DoctorStatus {
+    async fn check(&self, diagnostics: &DiagnosticsResponse) -> Result<(), DoctorError> {
         if diagnostics.securekeyboard == "false" {
-            return DoctorStatus::Success;
+            return Ok(());
         }
 
         let mut info = vec![format!(
@@ -550,7 +573,7 @@ impl DoctorCheck<DiagnosticsResponse> for SecureKeyboardCheck {
             match version {
                 Some(version) => {
                     if version <= Version::new(1, 27, 0) {
-                        return DoctorStatus::Error {
+                        return Err(DoctorError::Error {
                             reason: "Secure keyboard input is on".to_string(),
                             info: vec![
                                 "Bitwarden may be enabling secure keyboard entry even when not focused.".to_string(),
@@ -559,7 +582,7 @@ impl DoctorCheck<DiagnosticsResponse> for SecureKeyboardCheck {
 
                             ],
                             fix: None
-                        };
+                        });
                     }
                 }
                 None => {
@@ -568,11 +591,11 @@ impl DoctorCheck<DiagnosticsResponse> for SecureKeyboardCheck {
             }
         }
 
-        DoctorStatus::Error {
+        Err(DoctorError::Error {
             reason: "Secure keyboard input is on".to_string(),
             info,
             fix: None,
-        }
+        })
     }
 }
 
@@ -585,7 +608,7 @@ impl DoctorCheck for ItermIntegrationCheck {
     fn should_check(&self, _: &()) -> bool {
         is_installed("com.googlecode.iterm2")
     }
-    async fn check_basic(&self, _: &()) -> Result<Option<String>> {
+    async fn check(&self, _: &()) -> Result<(), DoctorError> {
         // iTerm Integration
         let integration = verify_integration("com.googlecode.iterm2")
             .await
@@ -598,30 +621,32 @@ impl DoctorCheck for ItermIntegrationCheck {
                 Ok(output) => {
                     let api_enabled = String::from_utf8_lossy(&output.stdout);
                     if api_enabled.trim() == "0" {
-                        anyhow::bail!("iTerm API server is not enabled.")
+                        return Err(anyhow!("iTerm API server is not enabled.").into());
                     }
                 }
-                Err(_) => anyhow::bail!("Could not get iTerm API status"),
+                Err(_) => {
+                    return Err(anyhow!("Could not get iTerm API status").into());
+                }
             }
 
             let integration_path = home_dir()?.join(
                 "Library/Application Support/iTerm2/Scripts/AutoLaunch/fig-iterm-integration.scpt",
             );
             if !integration_path.exists() {
-                anyhow::bail!("fig-iterm-integration.scpt is missing.")
+                return Err(anyhow!("fig-iterm-integration.scpt is missing.").into());
             }
 
-            anyhow::bail!("Unknown error with iTerm integration");
+            return Err(anyhow!("Unknown error with iTerm integration").into());
         }
 
         let version =
             app_version("com.googlecode.iterm2").ok_or(anyhow!("Could not get version"))?;
         if version < Version::new(3, 4, 0) {
-            anyhow::bail!(
+            return Err(anyhow!(
                 "iTerm version is incompatible with Fig. Please update iTerm to latest version"
-            );
+            ).into());
         }
-        Ok(None)
+        Ok(())
     }
 }
 
@@ -637,7 +662,7 @@ impl DoctorCheck for ItermBashIntegrationCheck {
             Err(_) => false,
         }
     }
-    async fn check_basic(&self, _: &()) -> Result<Option<String>> {
+    async fn check(&self, _: &()) -> Result<(), DoctorError> {
         let integration_file = home_dir()?.join(".iterm2_shell_integration.bash");
         let integration = read_to_string(integration_file)
             .context("Could not read .iterm2_shell_integration.bash")?;
@@ -646,14 +671,14 @@ impl DoctorCheck for ItermBashIntegrationCheck {
             Some(captures) => {
                 let version = captures.get(1).unwrap().as_str();
                 if Version::new(0, 4, 0) > Version::parse(version).unwrap() {
-							      anyhow::bail!(
+							      return Err(anyhow!(
                         "iTerm Bash Integration is out of date. Please update in iTerm's menu by selecting \"Install Shell Integration\"."
-							      )
+							      ).into());
                 }
-                Ok(None)
+                Ok(())
             }
             None => {
-						    Ok(Some(
+						    Err(DoctorError::Warning(
                     "iTerm's Bash Integration is installed, but we could not check the version in ~/.iterm2_shell_integration.bash. Integration may be out of date. You can try updating in iTerm's menu by selecting \"Install Shell Integration\"".to_string()
 						    ))
             }
@@ -670,7 +695,7 @@ impl DoctorCheck for HyperIntegrationCheck {
     fn should_check(&self, _: &()) -> bool {
         is_installed("co.zeit.hyper")
     }
-    async fn check_basic(&self, _: &()) -> Result<Option<String>> {
+    async fn check(&self, _: &()) -> Result<(), DoctorError> {
         let integration = verify_integration("co.zeit.hyper")
             .await
             .context("Could not verify Hyper integration")?;
@@ -680,19 +705,21 @@ impl DoctorCheck for HyperIntegrationCheck {
                 home_dir()?.join(".hyper_plugins/local/fig-hyper-integration/index.js");
 
             if !integration_path.exists() {
-                anyhow::bail!("fig-hyper-integration plugin is missing.");
+                return Err(anyhow!("fig-hyper-integration plugin is missing.").into());
             }
 
             let config = read_to_string(home_dir()?.join(".hyper.js"))
                 .context("Could not read ~/.hyper.js")?;
 
             if !config.contains("fig-hyper-integration") {
-                anyhow::bail!("fig-hyper-integration plugin needs to be added to localPlugins!")
+                return Err(anyhow!(
+                    "fig-hyper-integration plugin needs to be added to localPlugins!"
+                ).into());
             }
-            anyhow::bail!("Unknown error with integration!")
+            return Err(anyhow!("Unknown error with integration!").into());
         }
 
-        Ok(None)
+        Ok(())
     }
 }
 
@@ -702,12 +729,12 @@ impl DoctorCheck for SystemVersionCheck {
     fn name(&self) -> String {
         "OS is supported".to_string()
     }
-    async fn check_basic(&self, _: &()) -> Result<Option<String>> {
+    async fn check(&self, _: &()) -> Result<(), DoctorError> {
         let os_version = get_os_version().context("Could not get OS Version")?;
         if !os_version.is_supported() {
-            anyhow::bail!("{} is not supported", os_version.to_string())
+            return Err(anyhow!("{} is not supported", os_version.to_string()).into())
         } else {
-            Ok(None)
+            Ok(())
         }
     }
 }
@@ -721,7 +748,7 @@ impl DoctorCheck for VSCodeIntegrationCheck {
     fn should_check(&self, _: &()) -> bool {
         is_installed("com.microsoft.VSCode")
     }
-    async fn check_basic(&self, _: &()) -> Result<Option<String>> {
+    async fn check(&self, _: &()) -> Result<(), DoctorError> {
         let integration = verify_integration("com.microsoft.VSCode")
             .await
             .context("Could not verify VSCode integration")?;
@@ -737,12 +764,12 @@ impl DoctorCheck for VSCodeIntegrationCheck {
             let fig_extensions =
                 glob_dir(&glob_set, extensions).context("Could not read extensions")?;
             if fig_extensions.is_empty() {
-                anyhow::bail!("VSCode extension is missing!")
+                return Err(anyhow!("VSCode extension is missing!").into());
             }
-            anyhow::bail!("Unknown error with integration!")
+            return Err(anyhow!("Unknown error with integration!").into());
         }
 
-        Ok(None)
+        Ok(())
     }
 }
 
@@ -752,16 +779,16 @@ impl DoctorCheck for LoginStatusCheck {
     fn name(&self) -> String {
         "Logged into Fig".to_string()
     }
-    async fn check_basic(&self, _: &()) -> Result<Option<String>> {
+    async fn check(&self, _: &()) -> Result<(), DoctorError> {
         if let Ok(creds) = Credentials::load_credentials() {
             if creds.get_access_token().is_some()
                 && creds.get_id_token().is_some()
                 && creds.get_refresh_token().is_some()
             {
-                return Ok(None);
+                return Ok(());
             }
         }
-        anyhow::bail!("Not logged in. Run `dotfiles login` to login.");
+        return Err(anyhow!("Not logged in. Run `dotfiles login` to login.").into())
     }
 }
 
@@ -783,11 +810,11 @@ where
         }
         let result = check.check(&context).await;
         print_status_result(&name, &result);
-        if let DoctorStatus::Error {
+        if let Err(DoctorError::Error {
             reason,
             info: _,
             fix,
-        } = result
+        }) = result
         {
             if let Some(fixfn) = fix {
                 println!("Attempting to fix automatically...");
@@ -801,11 +828,11 @@ where
                     let fix_result = check.check(&context).await;
                     print_status_result(&name, &fix_result);
                     match fix_result {
-                        DoctorStatus::Error {
+                        Err(DoctorError::Error {
                             reason: _,
                             info: _,
                             fix: _,
-                        } => {}
+                        }) => {}
                         _ => {
                             continue;
                         }
