@@ -227,12 +227,12 @@ pub async fn prompt_cli() -> Result<()> {
                                 exit_code = 0;
 
                                 let mut settings = Settings::load()?;
-                                settings.get_mut_settings().map(|obj| {
+                                if let Some(obj) = settings.get_mut_settings() {
                                     obj.insert(
                                         "dotfiles.sourceImmediately".to_string(),
                                         json!("always"),
                                     );
-                                });
+                                }
                                 settings.save()?;
 
                                 break;
@@ -249,12 +249,12 @@ pub async fn prompt_cli() -> Result<()> {
                                 )?;
 
                                 let mut settings = Settings::load()?;
-                                settings.get_mut_settings().map(|obj| {
+                                if let Some(obj) = settings.get_mut_settings() {
                                     obj.insert(
                                         "dotfiles.sourceImmediately".to_string(),
                                         json!("never"),
                                     );
-                                });
+                                }
                                 settings.save()?;
 
                                 break;

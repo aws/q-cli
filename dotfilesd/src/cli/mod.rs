@@ -1,16 +1,16 @@
 //! CLI functionality
 
 pub mod auth;
+pub mod diagnostics;
 pub mod doctor;
 pub mod init;
-pub mod invite;
 pub mod installation;
+pub mod invite;
+pub mod issue;
 pub mod plugins;
 pub mod sync;
-pub mod util;
-pub mod diagnostics;
 pub mod tweet;
-pub mod issue;
+pub mod util;
 
 use self::{init::When, installation::InstallComponents, util::open_url};
 use crate::daemon::daemon;
@@ -71,7 +71,7 @@ pub enum CliRootCommands {
     /// Create a new Github issue
     Issue {
         /// Issue description
-        description: Vec<String>
+        description: Vec<String>,
     },
     /// Login to dotfiles
     Login {

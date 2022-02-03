@@ -1,25 +1,17 @@
-use std::{time::Duration};
-use std::path::PathBuf;
-use std::fs;
-use regex::Regex;
-use std::process::Command;
+use super::util::get_os_version;
+use crate::ipc::{command::send_recv_command, connect_timeout, get_socket_path};
+use crate::proto::local::{
+    command, command_response::Response, DiagnosticsCommand, DiagnosticsResponse,
+    IntegrationAction, TerminalIntegrationCommand,
+};
+use crate::util::{glob, glob_dir};
 use anyhow::{Context, Result};
 use directories::BaseDirs;
-use super::util::{get_os_version};
-use crate::util::glob;
-use crate::proto::local::{
-    command,
-    command_response::{Response},
-    DiagnosticsCommand,
-    DiagnosticsResponse,
-    TerminalIntegrationCommand,
-    IntegrationAction
-};
-use crate::ipc::{
-    command::send_recv_command,
-    connect_timeout,
-    get_socket_path
-};
+use regex::Regex;
+use std::fs;
+use std::path::PathBuf;
+use std::process::Command;
+use std::time::Duration;
 
 fn home_dir() -> Result<String> {
     let home = BaseDirs::new()
@@ -65,21 +57,18 @@ fn get_local_specs() -> Result<Vec<PathBuf>> {
     let patterns = [glob_pattern.to_str().unwrap()];
     let glob = glob(&patterns)?;
 
-    let mut specs: Vec<PathBuf> = vec![];
-    for entry in fs::read_dir(specs_location)? {
-        if let Ok(entry) = entry {
-            let path = entry.path();
-            if glob.is_match(&path) {
-                specs.push(path);
-            }
-        }
-    }
-
-    Ok(specs)
+    glob_dir(&glob, specs_location)
 }
 
 fn match_regex(regex: &str, input: &str) -> Option<String> {
-    Some(Regex::new(regex).unwrap().captures(input)?.get(1)?.as_str().to_string())
+    Some(
+        Regex::new(regex)
+            .unwrap()
+            .captures(input)?
+            .get(1)?
+            .as_str()
+            .to_string(),
+    )
 }
 
 struct HardwareInfo {
@@ -87,7 +76,7 @@ struct HardwareInfo {
     model_identifier: Option<String>,
     chip: Option<String>,
     total_cores: Option<String>,
-    memory: Option<String>
+    memory: Option<String>,
 }
 
 fn get_hardware_diagnostics() -> Result<HardwareInfo> {
@@ -109,15 +98,19 @@ fn get_hardware_diagnostics() -> Result<HardwareInfo> {
 pub async fn verify_integration(integration: &str) -> Result<String> {
     let path = get_socket_path();
     let mut conn = connect_timeout(&path, Duration::from_secs(3)).await?;
-    let response = send_recv_command(&mut conn, command::Command::TerminalIntegration(TerminalIntegrationCommand {
-        identifier: integration.to_string(),
-        action: IntegrationAction::VerifyInstall as i32
-    })).await?;
+    let response = send_recv_command(
+        &mut conn,
+        command::Command::TerminalIntegration(TerminalIntegrationCommand {
+            identifier: integration.to_string(),
+            action: IntegrationAction::VerifyInstall as i32,
+        }),
+    )
+    .await?;
 
     let message = match response.response {
         Some(Response::Success(success)) => success.message,
         Some(Response::Error(error)) => error.message,
-        _ => anyhow::bail!("Invalid response")
+        _ => anyhow::bail!("Invalid response"),
     };
 
     message.context("No message found")
@@ -137,11 +130,15 @@ fn installed_via_brew() -> Result<bool> {
 pub async fn get_diagnostics() -> Result<DiagnosticsResponse> {
     let path = get_socket_path();
     let mut conn = connect_timeout(&path, Duration::from_secs(3)).await?;
-    let response = send_recv_command(&mut conn, command::Command::Diagnostics(DiagnosticsCommand {})).await?;
+    let response = send_recv_command(
+        &mut conn,
+        command::Command::Diagnostics(DiagnosticsCommand {}),
+    )
+    .await?;
 
     match response.response {
         Some(Response::Diagnostics(diagnostics)) => Ok(diagnostics),
-        _ => anyhow::bail!("Invalid response")
+        _ => anyhow::bail!("Invalid response"),
     }
 }
 
@@ -151,9 +148,15 @@ pub async fn summary() -> Result<String> {
     let diagnostics = get_diagnostics().await?;
     let mut version: Vec<&str> = vec![&diagnostics.distribution];
 
-    if diagnostics.beta { version.push("[Beta]") }
-    if diagnostics.debug_autocomplete { version.push("[Debug]") }
-    if diagnostics.developer_mode_enabled { version.push("[Dev]") }
+    if diagnostics.beta {
+        version.push("[Beta]")
+    }
+    if diagnostics.debug_autocomplete {
+        version.push("[Debug]")
+    }
+    if diagnostics.developer_mode_enabled {
+        version.push("[Dev]")
+    }
 
     let layout_name = format!("[{}]", diagnostics.current_layout_name);
     if layout_name != "[]" {
@@ -165,17 +168,17 @@ pub async fn summary() -> Result<String> {
     }
 
     lines.push(format!("Fig Version: {}", version.join(" ")));
-    lines.push(format!("{}", dscl_read("UserShell").unwrap_or("Unknown UserShell".to_string())));
+    lines.push(dscl_read("UserShell").unwrap_or_else(|_| "Unknown UserShell".to_string()));
     lines.push(format!("Bundle path: {}", diagnostics.path_to_bundle));
 
-	  lines.push(format!("Autocomplete: {}", diagnostics.autocomplete));
-		lines.push(format!("Settings.json: {}", load_settings().is_ok()));
+    lines.push(format!("Autocomplete: {}", diagnostics.autocomplete));
+    lines.push(format!("Settings.json: {}", load_settings().is_ok()));
 
     lines.push("CLI installed: true".to_string());
 
     let executable = std::env::current_exe()
         .map(|path| path.to_string_lossy().into_owned())
-        .unwrap_or("<none>".to_string());
+        .unwrap_or_else(|_| "<none>".to_string());
 
     lines.push(format!("CLI tool path: {}", executable));
     lines.push(format!("Accessibility: {}", diagnostics.accessibility));
@@ -187,15 +190,18 @@ pub async fn summary() -> Result<String> {
     lines.push("Tmux Integration: false".to_string());
     lines.push(format!("Keybindings path: {}", diagnostics.keypath));
 
-    let integration_result = verify_integration("com.googlecode.iterm2").await
+    let integration_result = verify_integration("com.googlecode.iterm2")
+        .await
         .unwrap_or_else(|e| format!("Error {}", e));
     lines.push(format!("iTerm Integration: {}", integration_result));
 
-    let integration_result = verify_integration("co.zeit.hyper").await
+    let integration_result = verify_integration("co.zeit.hyper")
+        .await
         .unwrap_or_else(|e| format!("Error {}", e));
     lines.push(format!("Hyper Integration: {}", integration_result));
 
-    let integration_result = verify_integration("com.microsoft.VSCode").await
+    let integration_result = verify_integration("com.microsoft.VSCode")
+        .await
         .unwrap_or_else(|e| format!("Error {}", e));
     lines.push(format!("VSCode Integration: {}", integration_result));
 
@@ -207,18 +213,39 @@ pub async fn summary() -> Result<String> {
         lines.push("Installed via Brew: true".to_string());
     }
 
-    lines.push(format!("Installation Script: {}", diagnostics.installscript));
-    lines.push(format!("PseudoTerminal Path: {}", diagnostics.psudoterminal_path));
-    lines.push(format!("SecureKeyboardInput: {}", diagnostics.securekeyboard));
-    lines.push(format!("SecureKeyboardProcess: {}", diagnostics.securekeyboard_path));
-    lines.push(format!("Current active process: {}", diagnostics.current_process));
+    lines.push(format!(
+        "Installation Script: {}",
+        diagnostics.installscript
+    ));
+    lines.push(format!(
+        "PseudoTerminal Path: {}",
+        diagnostics.psudoterminal_path
+    ));
+    lines.push(format!(
+        "SecureKeyboardInput: {}",
+        diagnostics.securekeyboard
+    ));
+    lines.push(format!(
+        "SecureKeyboardProcess: {}",
+        diagnostics.securekeyboard_path
+    ));
+    lines.push(format!(
+        "Current active process: {}",
+        diagnostics.current_process
+    ));
 
     let cwd = std::env::current_dir()
         .map(|path| path.to_string_lossy().into_owned())
-        .unwrap_or("Could not get working directory".to_string());
+        .unwrap_or_else(|_| "Could not get working directory".to_string());
     lines.push(format!("Current working directory: {}", cwd));
-    lines.push(format!("Current window identifier: {}", diagnostics.current_window_identifier));
-    lines.push(format!("Path: {}", std::env::var("PATH").unwrap_or("Could not get path".to_string())));
+    lines.push(format!(
+        "Current window identifier: {}",
+        diagnostics.current_window_identifier
+    ));
+    lines.push(format!(
+        "Path: {}",
+        std::env::var("PATH").unwrap_or_else(|_| "Could not get path".to_string())
+    ));
 
     // Fig envs
     lines.push("Fig environment variables:".to_string());
@@ -229,22 +256,47 @@ pub async fn summary() -> Result<String> {
     }
 
     let version = get_os_version().map(|v| v.to_string());
-    lines.push(format!("OS Version: {}", version.unwrap_or("Could not get OS Version".to_string())));
+    lines.push(format!(
+        "OS Version: {}",
+        version.unwrap_or_else(|_| "Could not get OS Version".to_string())
+    ));
 
     // Hardware
     let hardware_diagnostics = get_hardware_diagnostics();
-    if let Ok(HardwareInfo { model_name, model_identifier, chip, total_cores, memory }) = hardware_diagnostics {
+    if let Ok(HardwareInfo {
+        model_name,
+        model_identifier,
+        chip,
+        total_cores,
+        memory,
+    }) = hardware_diagnostics
+    {
         lines.push("Hardware:".to_string());
-        lines.push(format!("  - Model Name: {}", model_name.unwrap_or("".to_string())));
-        lines.push(format!("  - Model Identifier: {}", model_identifier.unwrap_or("".to_string())));
-        lines.push(format!("  - Chip: {}", chip.unwrap_or("".to_string())));
-        lines.push(format!("  - Cores: {}", total_cores.unwrap_or("".to_string())));
-        lines.push(format!("  - Memory: {}", memory.unwrap_or("".to_string())));
+        lines.push(format!(
+            "  - Model Name: {}",
+            model_name.unwrap_or_else(|| "".to_string())
+        ));
+        lines.push(format!(
+            "  - Model Identifier: {}",
+            model_identifier.unwrap_or_else(|| "".to_string())
+        ));
+        lines.push(format!(
+            "  - Chip: {}",
+            chip.unwrap_or_else(|| "".to_string())
+        ));
+        lines.push(format!(
+            "  - Cores: {}",
+            total_cores.unwrap_or_else(|| "".to_string())
+        ));
+        lines.push(format!(
+            "  - Memory: {}",
+            memory.unwrap_or_else(|| "".to_string())
+        ));
     } else {
         lines.push("Could not get hardware information.".to_string());
     }
 
-	  Ok(lines.join("\n"))
+    Ok(lines.join("\n"))
 }
 
 pub async fn diagnostics_cli() -> Result<()> {

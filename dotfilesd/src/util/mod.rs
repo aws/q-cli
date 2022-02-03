@@ -1,7 +1,10 @@
-use std::{fs, path::{PathBuf, Path}};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 
+use anyhow::{anyhow, Context, Result};
 use directories::{BaseDirs, ProjectDirs};
-use anyhow::{Context, Result, anyhow};
 use globset::{Glob, GlobSet, GlobSetBuilder};
 
 pub mod checksum;

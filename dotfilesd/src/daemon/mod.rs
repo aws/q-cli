@@ -26,7 +26,7 @@ fn daemon_log(message: &str) {
         "[dotfiles-daemon {}] {}",
         time::OffsetDateTime::now_utc()
             .format(&Rfc3339)
-            .unwrap_or("xxxx-xx-xxTxx:xx:xx.xxxxxxZ".into()),
+            .unwrap_or_else(|_| "xxxx-xx-xxTxx:xx:xx.xxxxxxZ".into()),
         message
     );
 }

@@ -6,7 +6,6 @@ use std::{
     time::Duration,
 };
 
-
 use crate::proto::{local, FigProtobufEncodable};
 
 use anyhow::Result;

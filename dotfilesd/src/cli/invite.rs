@@ -1,21 +1,24 @@
-use std::process::Command;
-use crossterm::style::Stylize;
 use base64::encode;
-use clipboard::ClipboardProvider;
 use clipboard::ClipboardContext;
+use clipboard::ClipboardProvider;
+use crossterm::style::Stylize;
+use std::process::Command;
 
-use anyhow::{Context, Result, Error};
+use anyhow::{Context, Error, Result};
 use serde_json::json;
 
 use crate::auth::Credentials;
 
 fn get_token() -> Result<String, Error> {
-    return Credentials::load_credentials()
+    Credentials::load_credentials()
         .map(|creds| {
-            encode(json!({
-                "accessToken": creds.access_token,
-                "idToken": creds.id_token
-            }).to_string())
+            encode(
+                json!({
+                    "accessToken": creds.access_token,
+                    "idToken": creds.id_token
+                })
+                .to_string(),
+            )
         })
         .or_else(|_| {
             let token = Command::new("defaults")
@@ -30,7 +33,7 @@ fn get_token() -> Result<String, Error> {
 }
 
 fn get_email() -> Option<String> {
-    return Credentials::load_credentials()
+    Credentials::load_credentials()
         .map(|creds| creds.email)
         .or_else(|_| {
             let out = Command::new("defaults")
@@ -42,15 +45,18 @@ fn get_email() -> Option<String> {
             let email = String::from_utf8(out.stdout)?.trim().to_string();
 
             anyhow::Ok(Some(email))
-        }).ok()?;
+        })
+        .ok()?
 }
-
 
 pub async fn invite_cli() -> Result<()> {
     let email = get_email();
     if let Some(email) = email {
         let response = reqwest::Client::new()
-            .get(format!("https://api.fig.io/waitlist/get-referral-link-from-email/{}", email))
+            .get(format!(
+                "https://api.fig.io/waitlist/get-referral-link-from-email/{}",
+                email
+            ))
             .header("Authorization", format!("Bearer {}", get_token()?))
             .send()
             .await?
@@ -69,20 +75,35 @@ pub async fn invite_cli() -> Result<()> {
                 println!("> {}", link.bold().magenta());
                 println!("  Your referral link has been copied to the clipboard.");
                 println!();
-            },
+            }
             Err(_) => {
                 println!();
-                println!("{}{}{}", "Error".bold().red(), ": We can't find a referral code for this email address: ".bold(), email.bold());
+                println!(
+                    "{}{}{}",
+                    "Error".bold().red(),
+                    ": We can't find a referral code for this email address: ".bold(),
+                    email.bold()
+                );
                 println!();
-                println!("If you think there is a mistake, please contact {}", "hello@fig.io".underlined());
+                println!(
+                    "If you think there is a mistake, please contact {}",
+                    "hello@fig.io".underlined()
+                );
                 println!();
             }
         }
     } else {
         println!();
-        println!("{}{}", "Error".bold().red(), ": It does not seem like you are logged into Fig.".bold());
+        println!(
+            "{}{}",
+            "Error".bold().red(),
+            ": It does not seem like you are logged into Fig.".bold()
+        );
         println!();
-        println!("Run {} and follow the prompts to log back in. Then try again.", "fig user logout".bold().magenta());
+        println!(
+            "Run {} and follow the prompts to log back in. Then try again.",
+            "fig user logout".bold().magenta()
+        );
         println!();
     }
 

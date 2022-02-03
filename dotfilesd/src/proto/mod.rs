@@ -37,4 +37,3 @@ mod tests {
             .starts_with(b"\x1b@fig-pbuf"))
     }
 }
-

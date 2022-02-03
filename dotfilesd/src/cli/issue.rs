@@ -1,11 +1,11 @@
+use super::diagnostics::summary;
+use super::util::open_url;
+use super::util::{get_fig_version, get_os_version};
+use anyhow::{Context, Result};
+use crossterm::style::Stylize;
 use regex::Regex;
 use std::process::Command;
-use crossterm::style::Stylize;
 use url::form_urlencoded;
-use anyhow::{Context, Result};
-use super::util::{get_os_version, get_fig_version};
-use super::util::open_url;
-use super::diagnostics::summary;
 
 pub fn get_shell() -> Result<String> {
     let ppid = nix::unistd::getppid();
@@ -33,26 +33,28 @@ pub async fn issue_cli(description: Vec<String>) -> Result<()> {
     }
 
     let mut body = "### Description:\n> Please include a detailed description of the issue (and an image or screen recording, if applicable)\n\n".to_owned();
-    if text.len() > 0 {
+    if !text.is_empty() {
         body.push_str(&text);
     }
     body.push_str("\n\n### Details:\n|OS|Fig|Shell|\n|-|-|-|\n");
 
     let os_version = get_os_version()
         .map(|v| v.to_string())
-        .unwrap_or("".to_owned());
-    let fig_version = get_fig_version().map(|(version, _)| version).unwrap_or("".to_owned());
-    let shell = get_shell().unwrap_or("".to_owned());
+        .unwrap_or_else(|_| "".to_owned());
+    let fig_version = get_fig_version()
+        .map(|(version, _)| version)
+        .unwrap_or_else(|_| "".to_owned());
+    let shell = get_shell().unwrap_or_else(|_| "".to_owned());
     body.push_str(&format!("|{}|{}|{}|\n", &os_version, &fig_version, &shell));
     body.push_str("<details><summary><code>fig diagnostic</code></summary>\n<p>\n<pre>");
 
-	  let diagnostic = summary().await?;
+    let diagnostic = summary().await?;
     body.push_str(&diagnostic);
     body.push_str("</pre>\n</p>\n</details>");
 
     println!("{}", &body);
 
-	  println!("\n→ Opening GitHub...\n");
+    println!("\n→ Opening GitHub...\n");
 
     let params = form_urlencoded::Serializer::new(String::new())
         .append_pair("assignees", &assignees.join(","))

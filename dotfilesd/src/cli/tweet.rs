@@ -1,7 +1,7 @@
 use super::util::open_url;
 
+use anyhow::Result;
 use crossterm::style::Stylize;
-use anyhow::{Result};
 
 pub fn tweet_cli() -> Result<()> {
     println!();

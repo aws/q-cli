@@ -30,7 +30,7 @@ pub fn install_cli(install_compoenents: InstallComponents) -> Result<()> {
     if install_compoenents.contains(InstallComponents::DAEMON) {
         install_daemon()?;
     }
-    
+
     if install_compoenents.contains(InstallComponents::DOTFILES) {
         match dialoguer::Confirm::with_theme(&dialoguer_theme())
         .with_prompt("Do you want dotfiles to modify your shell config (you will have to manually do this otherwise)?")
@@ -60,7 +60,7 @@ pub fn install_cli(install_compoenents: InstallComponents) -> Result<()> {
             }
         }
     }
-    
+
     Ok(())
 }
 
@@ -73,7 +73,7 @@ fn install_daemon() -> Result<()> {
     return Err(anyhow::anyhow!("Windows is not yet supported"));
     #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
     return Err(anyhow::anyhow!("Unsupported platform"));
-    
+
     Ok(())
 }
 
@@ -85,41 +85,41 @@ fn install_dotfiles() -> Result<()> {
                 let mut file = File::open(&path)?;
                 let mut contents = String::new();
                 file.read_to_string(&mut contents)?;
-                
+
                 let mut modified = false;
                 let mut lines = vec![];
-                
+
                 let pre_eval = match shell {
                     Shell::Bash => "eval \"$(dotfiles init bash pre)\"",
                     Shell::Zsh => "eval \"$(dotfiles init zsh pre)\"",
                     Shell::Fish => "eval (dotfiles init fish pre)",
                 };
-                
+
                 if !contents.contains(pre_eval) {
                     lines.push("# Pre dotfiles eval");
                     lines.push(pre_eval);
                     lines.push("");
-                    
+
                     modified = true;
                 }
-                
+
                 lines.extend(contents.lines());
-                
+
                 let post_eval = match shell {
                     Shell::Bash => "eval \"$(dotfiles init bash post)\"",
                     Shell::Zsh => "eval \"$(dotfiles init zsh post)\"",
                     Shell::Fish => "eval (dotfiles init fish post)",
                 };
-                
+
                 if !contents.contains(post_eval) {
                     lines.push("");
                     lines.push("# Post dotfiles eval");
                     lines.push(post_eval);
                     lines.push("");
-                    
+
                     modified = true;
                 }
-                
+
                 if modified {
                     let mut file = File::create(&path)?;
                     file.write_all(lines.join("\n").as_bytes())?;
@@ -127,7 +127,7 @@ fn install_dotfiles() -> Result<()> {
             }
         }
     }
-    
+
     Ok(())
 }
 
@@ -135,12 +135,12 @@ pub fn uninstall_cli(install_compoenents: InstallComponents) -> Result<()> {
     if install_compoenents.contains(InstallComponents::DAEMON) {
         uninstall_daemon()?;
     }
-    
+
     if install_compoenents.contains(InstallComponents::DOTFILES) {
         // Uninstall dotfiles
         match dialoguer::Confirm::with_theme(&dialoguer_theme())
         .with_prompt("Do you want dotfiles to modify your shell config (you will have to manually do this otherwise)?")
-        .interact()? 
+        .interact()?
         {
             true => {
                 uninstall_dotfiles().context("Could not uninstall dotfiles")?;
@@ -166,19 +166,19 @@ pub fn uninstall_cli(install_compoenents: InstallComponents) -> Result<()> {
             },
         }
     }
-    
+
     if install_compoenents.contains(InstallComponents::BINARY) {
         // Delete the binary
         let binary_path = Path::new("/usr/local/bin/dotfiles");
-        
+
         if binary_path.exists() {
             std::fs::remove_file(binary_path)
-            .with_context(|| format!("Could not delete {}", binary_path.display()))?;
+                .with_context(|| format!("Could not delete {}", binary_path.display()))?;
         }
 
         println!("\n{}\n", "Dotfiles has been uninstalled".bold());
     }
-    
+
     Ok(())
 }
 
@@ -191,7 +191,7 @@ fn uninstall_daemon() -> Result<()> {
     return Err(anyhow::anyhow!("Windows is not yet supported"));
     #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
     return Err(anyhow::anyhow!("Unsupported platform"));
-    
+
     Ok(())
 }
 
@@ -203,7 +203,7 @@ fn uninstall_dotfiles() -> Result<()> {
                 let mut file = File::open(&path)?;
                 let mut contents = String::new();
                 file.read_to_string(&mut contents)?;
-                
+
                 let pre_eval = match shell {
                     Shell::Bash => Regex::new(
                         r#"(?:# Pre dotfiles eval\n)?eval "\$\(dotfiles init bash pre\)"\n{0,2}"#,
@@ -216,9 +216,9 @@ fn uninstall_dotfiles() -> Result<()> {
                     ),
                 }
                 .unwrap();
-                
+
                 let contents = pre_eval.replace_all(&contents, "");
-                
+
                 let post_eval_regex = match shell {
                     Shell::Bash => Regex::new(
                         r#"(?:# Post dotfiles eval\n)?eval "\$\(dotfiles init bash post\)"\n{0,2}"#,
@@ -231,15 +231,15 @@ fn uninstall_dotfiles() -> Result<()> {
                     ),
                 }
                 .unwrap();
-                
+
                 let contents = post_eval_regex.replace_all(&contents, "");
-                
+
                 let mut file = File::create(&path)?;
                 file.write_all(contents.as_bytes())?;
             }
         }
     }
-    
+
     Ok(())
 }
 
@@ -254,51 +254,51 @@ pub enum UpdateType {
 /// Update will exit the binary if the update was successful
 pub fn update(update_type: UpdateType) -> Result<UpdateStatus> {
     permission_guard()?;
-    
+
     let confirm = match update_type {
         UpdateType::Confirm => true,
         UpdateType::NoConfirm => false,
         UpdateType::NoProgress => false,
     };
-    
+
     let progress_output = match update_type {
         UpdateType::Confirm => true,
         UpdateType::NoConfirm => true,
         UpdateType::NoProgress => false,
     };
-    
+
     tokio::task::block_in_place(move || {
         let current_version = env!("CARGO_PKG_VERSION");
-        
+
         let update = self_update::backends::s3::Update::configure()
-        .bucket_name("get-fig-io")
-        .asset_prefix("bin")
-        .region("us-west-1")
-        .bin_name("dotfiles")
-        .current_version(current_version)
-        .no_confirm(true)
-        .show_output(false)
-        .show_download_progress(progress_output)
-        .build()?;
-        
+            .bucket_name("get-fig-io")
+            .asset_prefix("bin")
+            .region("us-west-1")
+            .bin_name("dotfiles")
+            .current_version(current_version)
+            .no_confirm(true)
+            .show_output(false)
+            .show_download_progress(progress_output)
+            .build()?;
+
         let latest_release = update.get_latest_release()?;
-        
+
         if !self_update::version::bump_is_greater(current_version, &latest_release.version)? {
             println!("You are already on the latest version {}", current_version);
-            
+
             return Ok(UpdateStatus::UpToDate);
         }
-        
+
         if confirm {
             if !dialoguer::Confirm::with_theme(&dialoguer_theme())
-            .with_prompt(format!(
-                "Do you want to update {} from {} to {}?",
-                env!("CARGO_PKG_NAME"),
-                update.current_version(),
-                latest_release.version
-            ))
-            .default(true)
-            .interact()?
+                .with_prompt(format!(
+                    "Do you want to update {} from {} to {}?",
+                    env!("CARGO_PKG_NAME"),
+                    update.current_version(),
+                    latest_release.version
+                ))
+                .default(true)
+                .interact()?
             {
                 return Err(anyhow::anyhow!("Update cancelled"));
             }
@@ -310,7 +310,7 @@ pub fn update(update_type: UpdateType) -> Result<UpdateStatus> {
                 latest_release.version
             );
         }
-        
+
         Ok(update.update_extended()?)
     })
 }
@@ -321,6 +321,6 @@ pub fn update_cli(no_confirm: bool) -> Result<()> {
     } else {
         UpdateType::Confirm
     })?;
-    
+
     Ok(())
 }
