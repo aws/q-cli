@@ -8,20 +8,37 @@ pub mod plugins;
 pub mod sync;
 pub mod util;
 
-use self::{init::When, util::open_url};
+use self::{init::When, installation::InstallComponents, util::open_url};
 use crate::daemon::daemon;
 use crate::util::shell::Shell;
 use anyhow::Result;
-use clap::{Parser, Subcommand};
+use clap::{IntoApp, Parser, Subcommand};
 use crossterm::style::Stylize;
 use std::process::exit;
 
 #[derive(Debug, Subcommand)]
 pub enum CliRootCommands {
     /// Install dotfiles
-    Install,
+    Install {
+        /// Install only the daemon
+        #[clap(long, conflicts_with = "dotfiles")]
+        daemon: bool,
+        /// Install only the dotfiles
+        #[clap(long)]
+        dotfiles: bool,
+    },
     /// Uninstall dotfiles
-    Uninstall,
+    Uninstall {
+        /// Uninstall only the daemon
+        #[clap(long)]
+        daemon: bool,
+        /// Uninstall only the dotfiles
+        #[clap(long)]
+        dotfiles: bool,
+        /// Uninstall only the binary
+        #[clap(long)]
+        binary: bool,
+    },
     /// Update dotfiles
     Update {
         /// Force update
@@ -57,6 +74,7 @@ pub enum CliRootCommands {
     Plugins(plugins::PluginsSubcommand),
     /// Prompt the if there is new version of dotfiles
     Prompt,
+    GenerateFigCompleation,
 }
 
 #[derive(Debug, Parser)]
@@ -70,8 +88,35 @@ impl Cli {
     pub async fn execute(self) {
         let result = match self.subcommand {
             Some(subcommand) => match subcommand {
-                CliRootCommands::Install => installation::install_cli(),
-                CliRootCommands::Uninstall => installation::uninstall_cli(),
+                CliRootCommands::Install { daemon, dotfiles } => {
+                    let install_components = if daemon || dotfiles {
+                        let mut install_components = InstallComponents::empty();
+                        install_components.set(InstallComponents::DAEMON, daemon);
+                        install_components.set(InstallComponents::DOTFILES, dotfiles);
+                        install_components
+                    } else {
+                        InstallComponents::all()
+                    };
+
+                    installation::install_cli(install_components)
+                }
+                CliRootCommands::Uninstall {
+                    daemon,
+                    dotfiles,
+                    binary,
+                } => {
+                    let uninstall_components = if daemon || dotfiles || binary {
+                        let mut uninstall_components = InstallComponents::empty();
+                        uninstall_components.set(InstallComponents::DAEMON, daemon);
+                        uninstall_components.set(InstallComponents::DOTFILES, dotfiles);
+                        uninstall_components.set(InstallComponents::BINARY, binary);
+                        uninstall_components
+                    } else {
+                        InstallComponents::all()
+                    };
+
+                    installation::uninstall_cli(uninstall_components)
+                }
                 CliRootCommands::Update { no_confirm } => installation::update_cli(no_confirm),
                 CliRootCommands::Daemon => daemon().await,
                 CliRootCommands::Init { shell, when } => init::shell_init_cli(&shell, &when).await,
@@ -82,6 +127,10 @@ impl Cli {
                 CliRootCommands::Doctor => doctor::doctor_cli(),
                 CliRootCommands::Plugins(plugins_subcommand) => plugins_subcommand.execute().await,
                 CliRootCommands::Prompt => sync::prompt_cli().await,
+                CliRootCommands::GenerateFigCompleation => {
+                    println!("{}", Cli::generation_fig_compleations());
+                    Ok(())
+                }
             },
             // Root command
             None => root_command(),
@@ -91,6 +140,21 @@ impl Cli {
             eprintln!("{:?}", e);
             exit(1);
         }
+    }
+
+    fn generation_fig_compleations() -> String {
+        let mut cli = Cli::into_app();
+
+        let mut buffer = Vec::new();
+
+        clap_complete::generate(
+            clap_complete_fig::Fig,
+            &mut cli,
+            env!("CARGO_PKG_NAME"),
+            &mut buffer,
+        );
+
+        String::from_utf8_lossy(&buffer).to_string()
     }
 }
 

@@ -6,7 +6,8 @@ use std::{
     io::Write,
     ops::ControlFlow,
     path::{Path, PathBuf},
-    process::Command, time::Duration,
+    process::Command,
+    time::Duration,
 };
 
 use anyhow::{anyhow, Context, Result};
@@ -194,14 +195,14 @@ pub struct LaunchService {
 }
 
 impl LaunchService {
-    pub fn launchd() -> Option<LaunchService> {
-        let basedirs = directories::BaseDirs::new()?;
+    pub fn launchd() -> Result<LaunchService> {
+        let basedirs = directories::BaseDirs::new().context("Could not get base directories")?;
 
         let plist_path = basedirs
             .home_dir()
             .join("Library/LaunchAgents/io.fig.dotfiles-daemon.plist");
 
-        let executable_path = std::env::current_exe().ok()?;
+        let executable_path = std::env::current_exe()?;
         let executable_path_str = executable_path.to_string_lossy().to_string();
 
         let log_path = basedirs.home_dir().join(".fig/logs/dotfiles-daemon.log");
@@ -217,21 +218,21 @@ impl LaunchService {
             .standard_error_path(&log_path_str)
             .plist();
 
-        Some(LaunchService {
+        Ok(LaunchService {
             path: plist_path,
             data: plist,
             launch_system: InitSystem::Launchd,
         })
     }
 
-    pub fn systemd() -> Option<LaunchService> {
-        let basedirs = directories::BaseDirs::new()?;
+    pub fn systemd() -> Result<LaunchService> {
+        let basedirs = directories::BaseDirs::new().context("Could not get base directories")?;
 
         let path = basedirs
             .home_dir()
             .join(".config/systemd/user/fig-dotfiles-daemon.service");
 
-        let executable_path = std::env::current_exe().ok()?;
+        let executable_path = std::env::current_exe()?;
         let executable_path_str = executable_path.to_string_lossy();
 
         let unit = SystemdUnit::new("Fig Dotfiles Daemon")
@@ -241,7 +242,7 @@ impl LaunchService {
             .wanted_by("default.target")
             .unit();
 
-        Some(LaunchService {
+        Ok(LaunchService {
             path,
             data: unit,
             launch_system: InitSystem::Systemd,
@@ -258,6 +259,16 @@ impl LaunchService {
 
         Ok(())
     }
+
+    pub fn uninstall(&self) -> Result<()> {
+        // Stop the daemon
+        self.launch_system.stop_daemon(self.path.as_path()).ok();
+
+        // Remove the definition file
+        std::fs::remove_file(&self.path)?;
+
+        Ok(())
+    }
 }
 
 #[cfg(target_os = "macos")]
@@ -268,10 +279,10 @@ struct WebsocketAwsToken {
     id_token: String,
 }
 
+/// Spawn the daemon to listen for updates and dotfiles changes
 pub async fn daemon() -> Result<()> {
     daemon_log("Starting daemon...");
 
-    // Spawn the daemon to listen for updates and dotfiles changes
     let mut update_interval = tokio::time::interval(Duration::from_secs(60 * 60));
 
     // Connect to websocket

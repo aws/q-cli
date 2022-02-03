@@ -101,7 +101,7 @@ pub async fn sync_all_files(sync_when: SyncWhen) -> Result<()> {
 
     Ok(())
 }
-    
+
 /// Notify dotfiles updates
 pub fn notify_terminals() -> Result<()> {
     let tempdir = std::env::temp_dir();
@@ -228,7 +228,10 @@ pub async fn prompt_cli() -> Result<()> {
 
                                 let mut settings = Settings::load()?;
                                 settings.get_mut_settings().map(|obj| {
-                                    obj.insert("dotfiles.sourceImmediately".to_string(), json!("always"));
+                                    obj.insert(
+                                        "dotfiles.sourceImmediately".to_string(),
+                                        json!("always"),
+                                    );
                                 });
                                 settings.save()?;
 
@@ -247,7 +250,10 @@ pub async fn prompt_cli() -> Result<()> {
 
                                 let mut settings = Settings::load()?;
                                 settings.get_mut_settings().map(|obj| {
-                                    obj.insert("dotfiles.sourceImmediately".to_string(), json!("never"));
+                                    obj.insert(
+                                        "dotfiles.sourceImmediately".to_string(),
+                                        json!("never"),
+                                    );
                                 });
                                 settings.save()?;
 
