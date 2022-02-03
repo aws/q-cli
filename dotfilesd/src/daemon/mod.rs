@@ -271,7 +271,6 @@ impl LaunchService {
     }
 }
 
-#[cfg(target_os = "macos")]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct WebsocketAwsToken {
