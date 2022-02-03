@@ -59,6 +59,7 @@ class JetBrainsIntegration: InputMethodDependentTerminalIntegrationProvider & In
 
     return properties
   }
+
   func pluginsPath() throws -> URL {
 
     let properties = try getJVMProperties()
