@@ -241,10 +241,11 @@ impl DoctorCheck for FigtermSocketCheck {
 
         let conn = match connect_timeout(&socket_path, Duration::from_secs(2)).await {
             Ok(connection) => connection,
-            Err(e) => return Err(anyhow!(
-                "Socket exists but could not connect: {}",
-                e.to_string()
-            ).into()),
+            Err(e) => {
+                return Err(
+                    anyhow!("Socket exists but could not connect: {}", e.to_string()).into(),
+                )
+            }
         };
 
         enable_raw_mode().context("Terminal doesn't support raw mode to verify figterm socket")?;
@@ -492,7 +493,7 @@ impl DoctorCheck<DiagnosticsResponse> for FigCLIPathCheck {
         {
             Ok(())
         } else {
-            return Err(anyhow!("Fig CLI must be in {}", exe_path).into())
+            return Err(anyhow!("Fig CLI must be in {}", exe_path).into());
         }
     }
 }
@@ -644,7 +645,8 @@ impl DoctorCheck for ItermIntegrationCheck {
         if version < Version::new(3, 4, 0) {
             return Err(anyhow!(
                 "iTerm version is incompatible with Fig. Please update iTerm to latest version"
-            ).into());
+            )
+            .into());
         }
         Ok(())
     }
@@ -714,7 +716,8 @@ impl DoctorCheck for HyperIntegrationCheck {
             if !config.contains("fig-hyper-integration") {
                 return Err(anyhow!(
                     "fig-hyper-integration plugin needs to be added to localPlugins!"
-                ).into());
+                )
+                .into());
             }
             return Err(anyhow!("Unknown error with integration!").into());
         }
@@ -732,7 +735,7 @@ impl DoctorCheck for SystemVersionCheck {
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
         let os_version = get_os_version().context("Could not get OS Version")?;
         if !os_version.is_supported() {
-            return Err(anyhow!("{} is not supported", os_version.to_string()).into())
+            return Err(anyhow!("{} is not supported", os_version.to_string()).into());
         } else {
             Ok(())
         }
@@ -788,7 +791,7 @@ impl DoctorCheck for LoginStatusCheck {
                 return Ok(());
             }
         }
-        return Err(anyhow!("Not logged in. Run `dotfiles login` to login.").into())
+        return Err(anyhow!("Not logged in. Run `dotfiles login` to login.").into());
     }
 }
 
