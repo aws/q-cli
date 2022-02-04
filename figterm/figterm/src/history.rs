@@ -23,7 +23,7 @@ pub async fn spawn_history_task() -> Sender<CommandInfo> {
         match history_join.await {
             Ok(Ok(history)) => {
                 while let Ok(command) = receiver.recv_async().await {
-                    if let Err(e) = history.insert_command_history(&command) {
+                    if let Err(e) = history.insert_command_history(&command, true) {
                         error!("Failed to insert command into history: {}", e);
                     }
                 }
@@ -146,32 +146,32 @@ impl History {
 
         if !old_history.is_empty() {
             for command in old_history {
-                history.insert_command_history(&command).ok();
+                history.insert_command_history(&command, false).ok();
             }
         }
 
         Ok(history)
     }
 
-    pub fn insert_command_history(&self, command_info: &CommandInfo) -> Result<()> {
+    pub fn insert_command_history(&self, command_info: &CommandInfo, legacy: bool) -> Result<()> {
         // Insert the command into the history table
         // Ensure that the command is not empty
         if let Some(command) = &command_info.command {
             if !command.is_empty() {
                 self.connection.execute(
                     "INSERT INTO history (\
-                        command, \
-                        shell, \
-                        pid, \
-                        session_id, \
-                        cwd, \
-                        time, \
-                        in_ssh, \
-                        in_docker, \
-                        hostname, \
-                        exit_code) \
-                    VALUES \
-                        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                            command, \
+                            shell, \
+                            pid, \
+                            session_id, \
+                            cwd, \
+                            time, \
+                            in_ssh, \
+                            in_docker, \
+                            hostname, \
+                            exit_code) \
+                        VALUES \
+                            (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     params![
                         &command_info.command,
                         &command_info.shell,
@@ -192,27 +192,28 @@ impl History {
         }
 
         // Legacy insert into old history file
-        let legacy_history_file = File::options().create(true).append(true).open(
-            &[fig_path().unwrap(), "history".into()]
-                .into_iter()
-                .collect::<PathBuf>(),
-        )?;
+        if legacy {
+            let legacy_history_file = File::options().create(true).append(true).open(
+                &[fig_path().unwrap(), "history".into()]
+                    .into_iter()
+                    .collect::<PathBuf>(),
+            )?;
 
-        let mut legacy_history_buff = BufWriter::new(legacy_history_file);
+            let mut legacy_history_buff = BufWriter::new(legacy_history_file);
 
-        match command_info.command.as_deref() {
-            Some(command) if !command.is_empty() => {
-                let exit_code = command_info.exit_code.unwrap_or(0);
-                let shell = command_info.shell.as_deref().unwrap_or("");
-                let session_id = command_info.session_id.as_deref().unwrap_or("");
-                let cwd = command_info
-                    .cwd
-                    .as_ref()
-                    .map(|p| p.to_string_lossy().into_owned())
-                    .unwrap_or_else(|| "".to_string());
-                let time = command_info.time.unwrap_or(0);
+            match command_info.command.as_deref() {
+                Some(command) if !command.is_empty() => {
+                    let exit_code = command_info.exit_code.unwrap_or(0);
+                    let shell = command_info.shell.as_deref().unwrap_or("");
+                    let session_id = command_info.session_id.as_deref().unwrap_or("");
+                    let cwd = command_info
+                        .cwd
+                        .as_ref()
+                        .map(|p| p.to_string_lossy().into_owned())
+                        .unwrap_or_else(|| "".to_string());
+                    let time = command_info.time.unwrap_or(0);
 
-                let entry = format!(
+                    let entry = format!(
                         "\n- command: {}\n  exit_code: {}\n  shell: {}\n  session_id: {}\n  cwd: {}\n  time: {}",
                         escape_string(command),
                         exit_code,
@@ -222,10 +223,11 @@ impl History {
                         time
                     );
 
-                legacy_history_buff.write_all(entry.as_bytes())?;
-                legacy_history_buff.flush()?;
+                    legacy_history_buff.write_all(entry.as_bytes())?;
+                    legacy_history_buff.flush()?;
+                }
+                _ => {}
             }
-            _ => {}
         }
 
         Ok(())
