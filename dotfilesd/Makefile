@@ -45,7 +45,7 @@ ifeq "$(PLATFORM)" "windows"
 all: windows
 endif
 
-macos: build-x86_64-apple-darwin build-aarch64-apple-darwin build-darwin-universal
+macos: build-darwin-universal
 
 build-x86_64-apple-darwin: 
 	cargo build --target=x86_64-apple-darwin --release

@@ -1,6 +1,6 @@
 # Source Mission Control Dotfiles
-if test -f ~/.fig/user/dotfiles/managed.fish
-  source ~/.fig/user/dotfiles/managed.fish
+if command -sq dotfilesd
+  dotfilesd init fish post | source
 end
 
 contains $HOME/.fig/bin $fish_user_paths
