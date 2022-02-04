@@ -79,8 +79,7 @@ build-native:
 	cp $(ROOT)/target/release/$(BINARY_NAME) $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)
 
 install: build-native
-	sudo rm -f /usr/local/bin/$(BINARY_NAME)
-	sudo cp $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME) /usr/local/bin/$(BINARY_NAME)
+	cargo install --path $(ROOT)
 
 clean:
 	cargo clean

@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
 use tokio::fs::{read_to_string, write};
 
-use crate::util::{glob, shell::Shell};
+use crate::util::{glob, glob_dir, shell::Shell};
 
 use super::{
     download::DownloadMetadata,
@@ -22,17 +22,13 @@ use super::{
 pub struct LockedShellInstall {
     /// Files after the glob pattern
     #[serde(rename = "use")]
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub use_files: Vec<PathBuf>,
+    pub use_files: Option<Vec<PathBuf>>,
     /// List of templates to apply to the plugin
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub apply: Vec<String>,
+    pub apply: Option<Vec<String>>,
     /// Pre command to run before applying the plugin and other plugins that are sourced after this plugin
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub pre: Vec<String>,
+    pub pre: Option<Vec<String>>,
     /// Post command to run after applying the plugin and other plugins that are sourced after this plugin
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub post: Vec<String>,
+    pub post: Option<Vec<String>>,
 }
 
 #[serde_as]
@@ -120,7 +116,7 @@ impl LockData {
     }
 }
 
-const DEFAULT_ZSH_MATCH: &'static [&'static str] = &[
+const DEFAULT_ZSH_MATCH: &[&str] = &[
     "{{ name }}.plugin.zsh",
     "{{ name }}.zsh",
     "{{ name }}.sh",
@@ -131,7 +127,7 @@ const DEFAULT_ZSH_MATCH: &'static [&'static str] = &[
     "*.zsh-theme",
 ];
 
-const DEFAULT_BASH_MATCH: &'static [&'static str] = &[
+const DEFAULT_BASH_MATCH: &[&str] = &[
     "{{ name }}.plugin.bash",
     "{{ name }}.plugin.sh",
     "{{ name }}.bash",
@@ -142,7 +138,7 @@ const DEFAULT_BASH_MATCH: &'static [&'static str] = &[
     "*.sh",
 ];
 
-const DEFAULT_FISH_MATCH: &'static [&'static str] = &[
+const DEFAULT_FISH_MATCH: &[&str] = &[
     "{{ name }}.plugin.fish",
     "{{ name }}.fish",
     "*.plugin.fish",
@@ -155,20 +151,7 @@ impl ShellInstall {
 
         if let Some(use_files) = &self.use_files {
             let glob = glob(use_files)?;
-
-            let glob_files: Vec<PathBuf> = walkdir::WalkDir::new(directory)
-                .into_iter()
-                .filter_entry(|entry| {
-                    let path = entry.path();
-                    let path_str = path.to_str().unwrap();
-
-                    glob.is_match(path_str)
-                })
-                .filter_map(|entry| entry.ok())
-                .map(|entry| entry.into_path())
-                .collect();
-
-            files.extend(glob_files);
+            files.extend(glob_dir(&glob, directory)?);
         } else {
             let match_str = match shell {
                 Shell::Zsh => DEFAULT_ZSH_MATCH,
@@ -177,21 +160,10 @@ impl ShellInstall {
             };
 
             let glob = glob(match_str)?;
-
-            let glob_files: Vec<PathBuf> = walkdir::WalkDir::new(directory)
-                .into_iter()
-                .filter_entry(|entry| {
-                    let path = entry.path();
-                    let path_str = path.to_str().unwrap();
-
-                    glob.is_match(path_str)
-                })
-                .filter_map(|entry| entry.ok())
-                .map(|entry| entry.into_path())
-                .collect();
-
-            files.extend(glob_files);
+            files.extend(glob_dir(&glob, directory)?);
         }
+
+        println!("{:?}", files);
 
         Ok(files)
     }
@@ -199,22 +171,34 @@ impl ShellInstall {
     pub fn lock(&self, directory: impl AsRef<Path>, shell: &Shell) -> Result<LockedShellInstall> {
         let use_files = self.use_files(directory, shell)?;
 
-        // TODO Apply patterns
-        let apply = vec![];
+        let use_files = match use_files.is_empty() {
+            true => None,
+            false => Some(use_files),
+        };
 
         let pre = self.pre.as_ref().map_or(vec![], |post| match post {
             StringOrList::String(s) => vec![s.clone()],
             StringOrList::List(list) => list.clone(),
         });
 
+        let pre = match pre.is_empty() {
+            true => None,
+            false => Some(pre),
+        };
+
         let post = self.post.as_ref().map_or(vec![], |post| match post {
             StringOrList::String(s) => vec![s.clone()],
             StringOrList::List(list) => list.clone(),
         });
 
+        let post = match post.is_empty() {
+            true => None,
+            false => Some(post),
+        };
+
         Ok(LockedShellInstall {
             use_files,
-            apply,
+            apply: self.apply.clone(),
             pre,
             post,
         })

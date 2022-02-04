@@ -140,6 +140,13 @@ fig_precmd() {
   fi
   
   FIG_HAS_SET_PROMPT=1
+  
+  # Check if we have a new dotfiles to load
+  if command -v dotfiles >/dev/null 2>&1; then
+    if dotfiles prompt; then
+      exec zsh
+    fi
+  fi
 }
 
 fig_reset_hooks() {

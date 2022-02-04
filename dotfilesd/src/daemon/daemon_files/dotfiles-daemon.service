@@ -1,4 +1,0 @@
-[Service]
-ExecStart=/usr/local/bin/dotfiles daemon
-Restart=always
-RestartSec=5

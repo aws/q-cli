@@ -74,12 +74,12 @@ async fn clone_git_repo(
 
     if let Some(reference) = reference {
         let refname = match reference {
-            GitReference::Branch(branch) => branch.to_string(),
-            GitReference::Tag(tag) => tag.to_string(),
-            GitReference::Commit(commit) => commit.to_string(),
+            GitReference::Branch(branch) => branch,
+            GitReference::Tag(tag) => tag,
+            GitReference::Commit(commit) => commit,
         };
 
-        let (object, reference) = repo.revparse_ext(&refname).expect("Object not found");
+        let (object, reference) = repo.revparse_ext(refname).expect("Object not found");
 
         repo.checkout_tree(&object, None)
             .expect("Failed to checkout");

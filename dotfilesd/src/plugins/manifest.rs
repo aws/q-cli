@@ -445,7 +445,7 @@ mod test {
         assert_eq!(plugin.metadata.plugin_type, PluginType::Shell);
         assert_eq!(
             plugin.metadata.description,
-            Some("Pretty, minimal and fast ZSH prompt".to_string())
+            Some("Pretty, minimal and fast ZSH prompt".into())
         );
         assert_eq!(
             plugin.metadata.github,
@@ -454,9 +454,9 @@ mod test {
         assert_eq!(
             plugin.metadata.authors,
             Some(vec![AuthorValue::Details {
-                name: "Sindre Sorhus".to_string(),
-                twitter: Some("sindresorhus".to_string()),
-                github: Some("sindresorhus".to_string()),
+                name: "Sindre Sorhus".into(),
+                twitter: Some("sindresorhus".into()),
+                github: Some("sindresorhus".into()),
             }])
         );
         assert_eq!(
@@ -465,7 +465,7 @@ mod test {
         );
         assert_eq!(
             plugin.metadata.tags,
-            Some(vec!["zsh".to_string(), "theme".to_string()])
+            Some(vec!["zsh".into(), "theme".into()])
         );
 
         assert_eq!(
@@ -478,7 +478,7 @@ mod test {
         assert_eq!(
             plugin.installation.shell.as_ref().unwrap().default_install,
             Some(ShellInstall {
-                use_files: Some(vec!["async.zsh".to_string(), "pure.zsh".to_string()]),
+                use_files: Some(vec!["async.zsh".into(), "pure.zsh".into()]),
                 ..Default::default()
             })
         );
@@ -593,8 +593,8 @@ mod test {
         assert_eq!(
             install,
             ShellInstall {
-                use_files: Some(vec!["async.zsh".to_string(), "pure.zsh".to_string()]),
-                apply: Some(vec!["PATH".to_string()]),
+                use_files: Some(vec!["async.zsh".into(), "pure.zsh".into()]),
+                apply: Some(vec!["PATH".into()]),
                 pre: Some(StringOrList::String(String::from("echo 'hello'"))),
                 post: Some(StringOrList::List(vec![
                     String::from("echo 'goodbye'"),

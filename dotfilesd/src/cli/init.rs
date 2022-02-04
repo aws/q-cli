@@ -35,8 +35,10 @@ pub async fn shell_init_cli(shell: &Shell, when: &When) -> Result<()> {
         Err(err) => println!("# Could not load source: {}", err),
     }
 
+    LockData::load().await.unwrap();
+
     if let Ok(lock_data) = LockData::load().await {
-        println!("{}", lock_data.plugin_source("autojump", shell)?);
+        println!("{}", lock_data.plugin_source("pure", shell)?);
     }
 
     Ok(())

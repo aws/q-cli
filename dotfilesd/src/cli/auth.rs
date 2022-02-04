@@ -58,6 +58,13 @@ pub async fn login_cli(refresh: bool) -> Result<()> {
     loop {
         let login_code: String = dialoguer::Input::with_theme(&theme)
             .with_prompt("Login code")
+            .validate_with(|input: &String| -> Result<(), &str> {
+                if input.len() == 6 && input.chars().all(|c| c.is_ascii_digit()) {
+                    Ok(())
+                } else {
+                    Err("Code must be 6 digits")
+                }
+            })
             .interact_text()?;
 
         match sign_in_output.confirm(login_code.trim()).await {
