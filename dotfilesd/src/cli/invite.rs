@@ -1,6 +1,5 @@
 use base64::encode;
-use clipboard::ClipboardContext;
-use clipboard::ClipboardProvider;
+use copypasta::{ClipboardContext, ClipboardProvider};
 use crossterm::style::Stylize;
 use std::process::Command;
 
@@ -66,14 +65,17 @@ pub async fn invite_cli() -> Result<()> {
             Ok(response) => {
                 let link = response.text().await?;
 
-                let mut ctx: ClipboardContext = ClipboardProvider::new().unwrap();
-                ctx.set_contents(link.to_owned()).unwrap();
-
                 println!();
                 println!("{}", "Thank you for sharing Fig.".bold());
                 println!();
                 println!("> {}", link.bold().magenta());
-                println!("  Your referral link has been copied to the clipboard.");
+
+                if let Ok(mut ctx) = ClipboardContext::new() {
+                    if ctx.set_contents("some string".to_owned()).is_ok() {
+                        println!("  Your referral link has been copied to the clipboard.");
+                    }
+                }
+
                 println!();
             }
             Err(_) => {

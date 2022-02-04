@@ -89,6 +89,7 @@ pub enum CliRootCommands {
     Plugins(plugins::PluginsSubcommand),
     /// Prompt the if there is new version of dotfiles
     Prompt,
+    /// Generate the completion spec for Fig
     GenerateFigCompleation,
 }
 
