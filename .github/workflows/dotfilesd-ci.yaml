@@ -7,12 +7,12 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  BINARY_NAME: dotfiles
+  BINARY_NAME: dotfilesd
 
 jobs:
   deploy:
     runs-on: ${{matrix.os}}
-    timeout-minutes: 15
+    timeout-minutes: 20
     strategy:
       matrix:
         include:
