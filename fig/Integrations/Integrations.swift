@@ -135,18 +135,19 @@ class Integrations {
       Integrations.VSCodeInsiders: VSCodeIntegration.insiders,
       Integrations.VSCodium: VSCodeIntegration.vscodium,
       Integrations.Terminal: AppleTerminalIntegration.default,
-      Integrations.Tabby: TabbyIntegration.default,
+      Integrations.Tabby: TabbyIntegration.default
+    ]
+
+    let experimentalIntegrations: [String: TerminalIntegrationProvider] = [
+      Integrations.Alacritty: AlacrittyIntegration.default,
+      Integrations.Kitty: KittyIntegration.default,
+      // Jetbrains IDEs
       Integrations.IntellijCE: JetBrainsIntegration.ideaCE,
       Integrations.WebStorm: JetBrainsIntegration.WebStorm,
       Integrations.PhpStorm: JetBrainsIntegration.PhpStorm,
       Integrations.GoLand: JetBrainsIntegration.GoLand,
       Integrations.PyCharm: JetBrainsIntegration.PyCharm,
       Integrations.AppCode: JetBrainsIntegration.AppCode
-    ]
-
-    let experimentalIntegrations: [String: TerminalIntegrationProvider] = [
-      Integrations.Alacritty: AlacrittyIntegration.default,
-      Integrations.Kitty: KittyIntegration.default
     ]
 
     if let enableExperimentalIntegrations = Settings.shared.getValue(forKey:
@@ -159,15 +160,6 @@ class Integrations {
   }
 
   static let providers: [String: TerminalIntegrationProvider] = allProviders()
-
-  static func provider(for bundleIdentifier: String?) -> TerminalIntegrationProvider? {
-    guard let bundleIdentifier = bundleIdentifier else {
-      return nil
-    }
-
-//    bundleIdentifier.starts(with: <#T##Sequence#>)
-    return nil
-  }
 
   static func handleListIntegrationsRequest() -> CommandResponse {
     CommandResponse.with { response in
