@@ -173,7 +173,7 @@ impl Cli {
             &mut buffer,
         );
 
-        String::from_utf8_lossy(&buffer).to_string()
+        String::from_utf8_lossy(&buffer).into()
     }
 }
 

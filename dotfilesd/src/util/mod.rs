@@ -3,7 +3,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result};
 use directories::{BaseDirs, ProjectDirs};
 use globset::{Glob, GlobSet, GlobSetBuilder};
 
@@ -17,8 +17,8 @@ pub fn project_dir() -> Option<ProjectDirs> {
 
 pub fn home_dir() -> Result<PathBuf> {
     directories::BaseDirs::new()
-        .map(|base| base.home_dir().to_path_buf())
-        .context(anyhow!("Could not get home directory"))
+        .map(|base| base.home_dir().into())
+        .ok_or_else(|| anyhow::anyhow!("Could not get home dir"))
 }
 
 pub fn glob_dir(glob: &GlobSet, directory: impl AsRef<Path>) -> Result<Vec<PathBuf>> {
@@ -110,7 +110,7 @@ pub fn get_machine_id() -> Option<String> {
         .trim()
         .trim_start_matches('"')
         .trim_end_matches('"')
-        .to_string();
+        .into();
 
     Some(machine_id)
 }

@@ -304,7 +304,7 @@ impl<'a> SignUpInput<'a> {
             .client
             .sign_up()
             .client_id(&self.client_id)
-            .username(&username)
+            .username(username)
             .password(&password)
             .user_attributes(
                 AttributeType::builder()

@@ -46,7 +46,7 @@ async fn sync_file(shell: &Shell, sync_when: SyncWhen) -> Result<()> {
 
     // Constuct the request body
     let body = serde_json::to_string(&DotfilesSourceRequest {
-        email: email.unwrap_or_else(|| "".to_string()),
+        email: email.unwrap_or_default(),
     })?;
 
     let download = reqwest::Client::new()
@@ -229,7 +229,7 @@ pub async fn prompt_cli() -> Result<()> {
                                 let mut settings = Settings::load()?;
                                 if let Some(obj) = settings.get_mut_settings() {
                                     obj.insert(
-                                        "dotfiles.sourceImmediately".to_string(),
+                                        "dotfiles.sourceImmediately".into(),
                                         json!("always"),
                                     );
                                 }
@@ -250,10 +250,7 @@ pub async fn prompt_cli() -> Result<()> {
 
                                 let mut settings = Settings::load()?;
                                 if let Some(obj) = settings.get_mut_settings() {
-                                    obj.insert(
-                                        "dotfiles.sourceImmediately".to_string(),
-                                        json!("never"),
-                                    );
+                                    obj.insert("dotfiles.sourceImmediately".into(), json!("never"));
                                 }
                                 settings.save()?;
 

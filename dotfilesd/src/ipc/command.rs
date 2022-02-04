@@ -64,7 +64,7 @@ pub async fn send_recv_command(
         }
     }
 
-    if proto_type.ne("\x1b@fig-pbuf") {
+    if proto_type != "\x1b@fig-pbuf" {
         anyhow::bail!("Unexpected message type");
     }
 

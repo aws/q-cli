@@ -9,8 +9,6 @@ use std::{
 use crate::proto::{local, FigProtobufEncodable};
 
 use anyhow::Result;
-// use bytes::{Bytes, BytesMut};
-// use prost::Message;
 use tokio::{
     fs::remove_file,
     io::AsyncWriteExt,

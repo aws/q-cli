@@ -28,7 +28,7 @@ fn get_token() -> Result<String, Error> {
                 .output()
                 .with_context(|| "Could not read access_token")?;
 
-            Ok(String::from_utf8_lossy(&token.stdout).trim().to_string())
+            Ok(String::from_utf8_lossy(&token.stdout).trim().into())
         })
 }
 
@@ -42,7 +42,7 @@ fn get_email() -> Option<String> {
                 .arg("userEmail")
                 .output()?;
 
-            let email = String::from_utf8(out.stdout)?.trim().to_string();
+            let email = String::from_utf8(out.stdout)?.trim().into();
 
             anyhow::Ok(Some(email))
         })

@@ -62,7 +62,7 @@ pub fn permission_guard() -> Result<()> {
 
         let sudo_prompt = match env::var("USER") {
             Ok(user) => format!("Please enter your password for user {}: ", user),
-            Err(_) => "Please enter your password: ".to_string(),
+            Err(_) => "Please enter your password: ".into(),
         };
 
         match geteuid().is_root() {
@@ -111,6 +111,12 @@ impl Display for OSVersion {
     }
 }
 
+impl From<OSVersion> for String {
+    fn from(os: OSVersion) -> Self {
+        format!("{}", os)
+    }
+}
+
 impl OSVersion {
     pub fn is_supported(&self) -> bool {
         match self {
@@ -127,9 +133,7 @@ pub fn get_os_version() -> Result<OSVersion> {
             .output()
             .with_context(|| "Could not get macOS version")?;
 
-        let version_info = String::from_utf8_lossy(&version_info.stdout)
-            .trim()
-            .to_string();
+        let version_info: String = String::from_utf8_lossy(&version_info.stdout).trim().into();
 
         let version_regex = Regex::new(r#"ProductVersion:\s*(\S+)"#).unwrap();
         let build_regex = Regex::new(r#"BuildVersion:\s*(\S+)"#).unwrap();
@@ -151,7 +155,7 @@ pub fn get_os_version() -> Result<OSVersion> {
 
         Ok(OSVersion::MacOS {
             version,
-            build: build.to_string(),
+            build: build.into(),
         })
     }
 
@@ -174,7 +178,7 @@ pub fn get_fig_version() -> Result<(String, String)> {
                 .context(format!("Could not find {} in plist", field))?
                 .as_str();
 
-            Ok(value.to_string())
+            Ok(value.into())
         };
 
         let fig_version = get_plist_field("CFBundleShortVersionString")?;
@@ -188,9 +192,7 @@ pub fn get_fig_version() -> Result<(String, String)> {
 
 pub fn dialoguer_theme() -> impl dialoguer::theme::Theme {
     ColorfulTheme {
-        prompt_prefix: dialoguer::console::style("?".to_string())
-            .for_stderr()
-            .magenta(),
+        prompt_prefix: dialoguer::console::style("?".into()).for_stderr().magenta(),
         ..ColorfulTheme::default()
     }
 }

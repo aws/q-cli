@@ -203,10 +203,10 @@ impl LaunchService {
             .join("Library/LaunchAgents/io.fig.dotfiles-daemon.plist");
 
         let executable_path = std::env::current_exe()?;
-        let executable_path_str = executable_path.to_string_lossy().to_string();
+        let executable_path_str = executable_path.to_string_lossy();
 
         let log_path = basedirs.home_dir().join(".fig/logs/dotfiles-daemon.log");
-        let log_path_str = log_path.to_string_lossy().to_string();
+        let log_path_str = log_path.to_string_lossy();
 
         let plist = LaunchdPlist::new("io.fig.dotfiles-daemon")
             .program(&*executable_path_str)
@@ -214,8 +214,8 @@ impl LaunchService {
             .keep_alive(true)
             .run_at_load(true)
             .throttle_interval(5)
-            .standard_out_path(&log_path_str)
-            .standard_error_path(&log_path_str)
+            .standard_out_path(&*log_path_str)
+            .standard_error_path(&*log_path_str)
             .plist();
 
         Ok(LaunchService {
