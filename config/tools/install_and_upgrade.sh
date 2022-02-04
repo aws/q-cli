@@ -37,6 +37,7 @@ install_fig() {
   rm ~/.fig/bin/*figterm*
   rm ~/.fig/bin/fig_callback
   rm ~/.fig/bin/fig_get_shell
+  rm ~/.fig/bin/dotfilesd
 
   if [[ "${FIG_TAG}" == "local" ]]; then
     cp -R "$PWD"/* ~/.fig
@@ -73,6 +74,11 @@ install_fig() {
   # runs.
   FIGCLI="${BUNDLE}/figcli" 
   "${FIGCLI}" settings userShell "${USER_SHELL_TRIMMED}"
+
+  # installs the daemon (dotfiles will be configured using this script)
+  DOTFILES="${BUNDLE}/dotfilesd"
+  "${DOTFILES}" install --daemon 
+
 }
 
 setup_onboarding() {
