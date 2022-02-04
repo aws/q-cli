@@ -20,6 +20,8 @@ $(shell mkdir -p $(BUILT_PRODUCTS_DIR))
 
 PROGS =	figterm fig_get_shell
 
+PLATFORM := $(shell uname -s)
+
 all: build-figterm fig_get_shell
 
 build-figterm-arm: 
@@ -36,7 +38,7 @@ fig_get_shell-arm: get_shell.c
 fig_get_shell-x86: get_shell.c
 	$(CC) get_shell.c $(CFLAGS) -o fig_get_shell-x86 -target x86_64-apple-macos10.12
 
-ifeq "$(PLATFORM)" "macos"
+ifeq "$(PLATFORM)" "Darwin"
 build-figterm: build-figterm-x86 build-figterm-arm
 	lipo -create -output $(BUILT_PRODUCTS_DIR)/figterm figterm-x86 figterm-arm
 
