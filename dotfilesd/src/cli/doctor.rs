@@ -17,7 +17,7 @@ use thiserror::Error;
 
 use super::diagnostics::{dscl_read, get_diagnostics, verify_integration};
 use super::issue::get_shell;
-use super::util::get_os_version;
+use super::util::OSVersion;
 use crate::ipc::{connect_timeout, get_socket_path};
 
 use crate::{
@@ -765,7 +765,7 @@ impl DoctorCheck for SystemVersionCheck {
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        let os_version = get_os_version().context("Could not get OS Version")?;
+        let os_version = OSVersion::new().context("Could not get OS Version")?;
         if !os_version.is_supported() {
             return Err(anyhow!("{} is not supported", os_version).into());
         } else {

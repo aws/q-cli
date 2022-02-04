@@ -1,6 +1,9 @@
-use super::diagnostics::summary;
+use crate::cli::diagnostics::Diagnostic;
+use crate::cli::diagnostics::Diagnostics;
+use crate::cli::util::OSVersion;
+
+use super::util::get_fig_version;
 use super::util::open_url;
-use super::util::{get_fig_version, get_os_version};
 use anyhow::{Context, Result};
 use crossterm::style::Stylize;
 use regex::Regex;
@@ -41,17 +44,17 @@ pub async fn issue_cli(description: Vec<String>) -> Result<()> {
     }
     body.push_str("\n\n### Details:\n|OS|Fig|Shell|\n|-|-|-|\n");
 
-    let os_version: String = get_os_version().map(|v| v.into()).unwrap_or_default();
+    let os_version: String = OSVersion::new().map(|v| v.into()).unwrap_or_default();
     let fig_version = get_fig_version()
         .map(|(version, _)| version)
         .unwrap_or_default();
     let shell = get_shell().unwrap_or_default();
     body.push_str(&format!("|{}|{}|{}|\n", &os_version, &fig_version, &shell));
-    body.push_str("<details><summary><code>fig diagnostic</code></summary>\n<p>\n<pre>");
+    body.push_str("<details><summary>Fig Diagnostic</summary>\n<p>\n\n");
 
-    let diagnostic = summary().await?;
+    let diagnostic = Diagnostics::new().await?.user_readable()?.join("\n\n");
     body.push_str(&diagnostic);
-    body.push_str("</pre>\n</p>\n</details>");
+    body.push_str("\n\n</p>\n</details>");
 
     println!("{}", &body);
 

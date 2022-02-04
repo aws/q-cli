@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use regex::Regex;
-use semver::Version;
+use serde::{Deserialize, Serialize};
 use std::{
     env,
     fmt::Display,
@@ -93,74 +93,123 @@ pub fn permission_guard() -> Result<()> {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum OSVersion {
-    MacOS { version: Version, build: String },
-    Linux { flavor: String },
-    Windows { version: Version },
+    MacOS {
+        major: i32,
+        minor: i32,
+        patch: Option<i32>,
+        build: String,
+    },
+    Linux {
+        flavor: String,
+        kernel_version: String,
+    },
+    Windows {
+        version: String,
+    },
 }
 
 impl Display for OSVersion {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            OSVersion::MacOS { build, version } => {
-                f.write_str(&format!("macOS {} {}", version, build))
+            OSVersion::MacOS {
+                major,
+                minor,
+                patch,
+                build,
+            } => {
+                let patch = patch.unwrap_or(0);
+                f.write_str(&format!("macOS {major}.{minor}.{patch} ({build})",))
             }
-            OSVersion::Linux { flavor } => f.write_str(&format!("linux {}", flavor)),
-            OSVersion::Windows { version } => f.write_str(&format!("windows {}", version)),
+            OSVersion::Linux {
+                flavor,
+                kernel_version,
+            } => f.write_str(&format!("Linux {flavor} {kernel_version}")),
+            OSVersion::Windows { version } => f.write_str(&format!("Windows {version}")),
         }
     }
 }
 
 impl From<OSVersion> for String {
     fn from(os: OSVersion) -> Self {
-        format!("{}", os)
+        format!("{os}")
     }
 }
 
 impl OSVersion {
+    pub fn new() -> Result<OSVersion> {
+        #[cfg(target_os = "macos")]
+        {
+            let version_info = Command::new("sw_vers")
+                .output()
+                .with_context(|| "Could not get macOS version")?;
+
+            let version_info: String = String::from_utf8_lossy(&version_info.stdout).trim().into();
+
+            let version_regex = Regex::new(r#"ProductVersion:\s*(\S+)"#).unwrap();
+            let build_regex = Regex::new(r#"BuildVersion:\s*(\S+)"#).unwrap();
+
+            let version: String = version_regex
+                .captures(&version_info)
+                .map(|c| c.get(1))
+                .flatten()
+                .map(|v| v.as_str().into())
+                .context("Invalid version")?;
+
+            let major = version
+                .split('.')
+                .next()
+                .context("Invalid version")?
+                .parse()?;
+
+            let minor = version
+                .split('.')
+                .skip(1)
+                .next()
+                .context("Invalid version")?
+                .parse()?;
+
+            let patch = version
+                .split('.')
+                .skip(2)
+                .next()
+                .map(|p| p.parse().ok())
+                .flatten();
+
+            let build = build_regex
+                .captures(&version_info)
+                .map(|c| c.get(1))
+                .flatten()
+                .context("Invalid version")?
+                .as_str();
+
+            Ok(OSVersion::MacOS {
+                major,
+                minor,
+                patch,
+                build: build.into(),
+            })
+        }
+
+        #[cfg(not(any(target_os = "macos")))]
+        unimplemented!();
+    }
+
     pub fn is_supported(&self) -> bool {
         match self {
-            OSVersion::MacOS { version, build: _ } => version >= &Version::new(10, 14, 0),
+            OSVersion::MacOS {
+                major,
+                minor,
+                patch: _,
+                build: _,
+            } => {
+                // Minimum supported macOS version is 10.14.0
+                *major > 10 || (*major == 10 && *minor >= 14)
+            }
             _ => false,
         }
     }
-}
-
-pub fn get_os_version() -> Result<OSVersion> {
-    #[cfg(target_os = "macos")]
-    {
-        let version_info = Command::new("sw_vers")
-            .output()
-            .with_context(|| "Could not get macOS version")?;
-
-        let version_info: String = String::from_utf8_lossy(&version_info.stdout).trim().into();
-
-        let version_regex = Regex::new(r#"ProductVersion:\s*(\S+)"#).unwrap();
-        let build_regex = Regex::new(r#"BuildVersion:\s*(\S+)"#).unwrap();
-
-        let version = version_regex
-            .captures(&version_info)
-            .map(|c| c.get(1))
-            .flatten()
-            .map(|v| Version::parse(v.as_str()).ok())
-            .flatten()
-            .context("Invalid version")?;
-
-        let build = build_regex
-            .captures(&version_info)
-            .map(|c| c.get(1))
-            .flatten()
-            .context("Invalid version")?
-            .as_str();
-
-        Ok(OSVersion::MacOS {
-            version,
-            build: build.into(),
-        })
-    }
-
-    #[cfg(not(any(target_os = "macos")))]
-    unimplemented!();
 }
 
 pub fn get_fig_version() -> Result<(String, String)> {

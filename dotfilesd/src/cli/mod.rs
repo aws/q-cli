@@ -18,9 +18,15 @@ use self::{init::When, installation::InstallComponents, util::open_url};
 use crate::daemon::daemon;
 use crate::util::shell::Shell;
 use anyhow::Result;
-use clap::{IntoApp, Parser, Subcommand};
+use clap::{ArgEnum, IntoApp, Parser, Subcommand};
 use crossterm::style::Stylize;
 use std::process::exit;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ArgEnum)]
+pub enum OutputFormat {
+    Plain,
+    Json,
+}
 
 #[derive(Debug, Subcommand)]
 pub enum CliRootCommands {
@@ -59,7 +65,10 @@ pub enum CliRootCommands {
     /// Run the daemon
     Daemon,
     /// Run diagnostic tests
-    Diagnostic,
+    Diagnostic {
+        #[clap(long, short, arg_enum, default_value = "plain")]
+        format: OutputFormat,
+    },
     /// Generate the dotfiles for the given shell
     Init {
         /// The shell to generate the dotfiles for
@@ -142,7 +151,9 @@ impl Cli {
                 }
                 CliRootCommands::Update { no_confirm } => installation::update_cli(no_confirm),
                 CliRootCommands::Daemon => daemon().await,
-                CliRootCommands::Diagnostic => diagnostics::diagnostics_cli().await,
+                CliRootCommands::Diagnostic { format } => {
+                    diagnostics::diagnostics_cli(format).await
+                }
                 CliRootCommands::Init { shell, when } => init::shell_init_cli(&shell, &when).await,
                 CliRootCommands::Sync => sync::sync_cli().await,
                 CliRootCommands::Login { refresh } => auth::login_cli(refresh).await,
