@@ -22,7 +22,7 @@ use crate::ipc::{connect_timeout, get_socket_path};
 
 use crate::{
     auth::Credentials,
-    util::{fig_dir, glob, glob_dir, home_dir, shell::Shell},
+    util::{app_path_from_bundle_id, fig_dir, glob, glob_dir, home_dir, shell::Shell},
 };
 use async_trait::async_trait;
 use tokio;
@@ -100,21 +100,6 @@ where
     }))
 }
 
-fn app_path_from_bundle_id(bundle_id: impl AsRef<OsStr>) -> Option<String> {
-    let installed_apps = Command::new("mdfind")
-        .arg("kMDItemCFBundleIdentifier")
-        .arg("=")
-        .arg(bundle_id)
-        .output()
-        .ok()?;
-
-    Some(
-        String::from_utf8_lossy(&installed_apps.stdout)
-            .trim()
-            .into(),
-    )
-}
-
 fn is_installed(app: impl AsRef<OsStr>) -> bool {
     match app_path_from_bundle_id(app) {
         Some(x) => !x.is_empty(),
@@ -131,14 +116,10 @@ fn app_version(app: impl AsRef<OsStr>) -> Option<Version> {
             &format!("{}/Contents/Info.plist", app_path),
             "CFBundleShortVersionString",
         ])
-        .output();
-    match output {
-        Ok(output) => {
-            let version = String::from_utf8_lossy(&output.stdout);
-            Version::parse(&version).ok()
-        }
-        Err(_) => None,
-    }
+        .output()
+        .ok()?;
+    let version = String::from_utf8_lossy(&output.stdout);
+    Version::parse(&version).ok()
 }
 
 fn print_status_result(name: impl AsRef<str>, status: &Result<(), DoctorError>) {

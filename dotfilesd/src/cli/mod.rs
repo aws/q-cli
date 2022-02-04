@@ -1,6 +1,7 @@
 //! CLI functionality
 
 pub mod auth;
+pub mod debug;
 pub mod diagnostics;
 pub mod doctor;
 pub mod init;
@@ -8,6 +9,7 @@ pub mod installation;
 pub mod invite;
 pub mod issue;
 pub mod plugins;
+pub mod settings;
 pub mod sync;
 pub mod tweet;
 pub mod util;
@@ -31,6 +33,11 @@ pub enum CliRootCommands {
         #[clap(long)]
         dotfiles: bool,
     },
+    #[clap(subcommand)]
+    /// Debug Fig
+    Debug(debug::DebugSubcommand),
+    /// Customize appearance & behavior
+    Settings(settings::SettingsArgs),
     /// Uninstall dotfiles
     Uninstall {
         /// Uninstall only the daemon
@@ -144,6 +151,8 @@ impl Cli {
                 CliRootCommands::Doctor => doctor::doctor_cli().await,
                 CliRootCommands::Invite => invite::invite_cli().await,
                 CliRootCommands::Tweet => tweet::tweet_cli(),
+                CliRootCommands::Settings(settings_args) => settings_args.execute().await,
+                CliRootCommands::Debug(debug_subcommand) => debug_subcommand.execute().await,
                 CliRootCommands::Issue { description } => issue::issue_cli(description).await,
                 CliRootCommands::Plugins(plugins_subcommand) => plugins_subcommand.execute().await,
                 CliRootCommands::Prompt => sync::prompt_cli().await,

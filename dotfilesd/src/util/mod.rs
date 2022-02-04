@@ -1,3 +1,4 @@
+use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 
 use anyhow::Result;
@@ -49,6 +50,25 @@ pub fn glob(patterns: &[impl AsRef<str>]) -> Result<GlobSet> {
         builder.add(Glob::new(pattern.as_ref())?);
     }
     Ok(builder.build()?)
+}
+
+#[cfg(target_os = "macos")]
+pub fn app_path_from_bundle_id(bundle_id: impl AsRef<OsStr>) -> Option<String> {
+    use std::process::Command;
+
+    let installed_apps = Command::new("mdfind")
+        .arg("kMDItemCFBundleIdentifier")
+        .arg("=")
+        .arg(bundle_id)
+        .output()
+        .ok()?;
+    let path = String::from_utf8_lossy(&installed_apps.stdout);
+    Some(path.trim().split('\n').next()?.into())
+}
+
+#[cfg(not(any(target_os = "macos")))]
+pub fn app_path_from_bundle_id() -> Option<String> {
+    unimplemented!();
 }
 
 #[cfg(target_os = "macos")]
