@@ -13,7 +13,7 @@ use tokio::try_join;
 
 use crate::{
     auth::Credentials,
-    util::{shell::Shell, Settings},
+    util::{settings::Settings, shell::Shell},
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

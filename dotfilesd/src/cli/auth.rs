@@ -10,7 +10,7 @@ use crossterm::style::Stylize;
 /// Login to the dotfiles server
 pub async fn login_cli(refresh: bool) -> Result<()> {
     let client_id = "hkinciohdp1i7h0imdk63a4bv";
-    let client = get_client("dotfiles")?;
+    let client = get_client("dotfiles-cli")?;
 
     if refresh {
         let mut creds = Credentials::load_credentials()?;

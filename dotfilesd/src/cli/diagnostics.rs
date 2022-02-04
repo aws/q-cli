@@ -4,7 +4,8 @@ use crate::proto::local::{
     command, command_response::Response, DiagnosticsCommand, DiagnosticsResponse,
     IntegrationAction, TerminalIntegrationCommand,
 };
-use crate::util::{glob, glob_dir, home_dir, Settings};
+use crate::util::settings::Settings;
+use crate::util::{glob, glob_dir, home_dir};
 use anyhow::{Context, Result};
 use directories::BaseDirs;
 use regex::Regex;

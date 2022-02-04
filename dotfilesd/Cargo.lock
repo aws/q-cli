@@ -573,7 +573,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "dotfiles"
+name = "dotfilesd"
 version = "0.1.0"
 dependencies = [
  "anyhow",

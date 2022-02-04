@@ -7,10 +7,11 @@ use tokio::net::TcpStream;
 use tokio_tungstenite::{tungstenite::Message, MaybeTlsStream, WebSocketStream};
 
 use crate::{
-    auth::{self, Credentials},
     cli::sync::{self, notify_terminals, SyncWhen},
-    daemon::WebsocketAwsToken,
-    util::Settings,
+    util::{
+        auth::{get_email, get_token},
+        settings::Settings,
+    },
 };
 
 use super::daemon_log;
@@ -30,36 +31,19 @@ struct FigWebsocketMessage {
 
 pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream<TcpStream>>> {
     let reqwest_client = reqwest::Client::new();
-    let aws_client = auth::get_client("")?;
 
-    let mut creds = Credentials::load_credentials()?;
-    creds
-        .refresh_credentials(&aws_client, "hkinciohdp1i7h0imdk63a4bv")
-        .await?;
-    creds.save_credentials()?;
-
-    let websocket_aws_token = match (creds.access_token, creds.id_token) {
-        (Some(access_token), Some(id_token)) => WebsocketAwsToken {
-            access_token,
-            id_token,
-        },
-        _ => {
-            return Err(anyhow::anyhow!("Could not get AWS credentials"));
-        }
-    };
-
-    let base64_token = base64::encode(&serde_json::to_string(&websocket_aws_token)?);
+    let token = get_token().await?;
 
     let response = reqwest_client
         .get("https://api.fig.io/authenticate/ticket")
-        .bearer_auth(&base64_token)
+        .bearer_auth(&token)
         .send()
         .await?
         .text()
         .await?;
 
     let mut device_id = crate::util::get_machine_id().context("Cound not get machine_id")?;
-    if let Some(email) = creds.email {
+    if let Some(email) = get_email() {
         device_id.push(':');
         device_id.push_str(&email);
     }

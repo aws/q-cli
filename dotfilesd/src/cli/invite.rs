@@ -1,62 +1,20 @@
-use base64::encode;
+use anyhow::Result;
 use copypasta::{ClipboardContext, ClipboardProvider};
 use crossterm::style::Stylize;
-use std::process::Command;
 
-use anyhow::{Context, Error, Result};
-use serde_json::json;
-
-use crate::auth::Credentials;
-
-fn get_token() -> Result<String, Error> {
-    Credentials::load_credentials()
-        .map(|creds| {
-            encode(
-                json!({
-                    "accessToken": creds.access_token,
-                    "idToken": creds.id_token
-                })
-                .to_string(),
-            )
-        })
-        .or_else(|_| {
-            let token = Command::new("defaults")
-                .arg("read")
-                .arg("com.mschrage.fig")
-                .arg("access_token")
-                .output()
-                .with_context(|| "Could not read access_token")?;
-
-            Ok(String::from_utf8_lossy(&token.stdout).trim().into())
-        })
-}
-
-fn get_email() -> Option<String> {
-    Credentials::load_credentials()
-        .map(|creds| creds.email)
-        .or_else(|_| {
-            let out = Command::new("defaults")
-                .arg("read")
-                .arg("com.mschrage.fig")
-                .arg("userEmail")
-                .output()?;
-
-            let email = String::from_utf8(out.stdout)?.trim().into();
-
-            anyhow::Ok(Some(email))
-        })
-        .ok()?
-}
+use crate::util::auth::{get_email, get_token};
 
 pub async fn invite_cli() -> Result<()> {
     let email = get_email();
     if let Some(email) = email {
+        let token = get_token().await?;
+
         let response = reqwest::Client::new()
             .get(format!(
                 "https://api.fig.io/waitlist/get-referral-link-from-email/{}",
                 email
             ))
-            .header("Authorization", format!("Bearer {}", get_token()?))
+            .header("Authorization", format!("Bearer {}", token))
             .send()
             .await?
             .error_for_status();
@@ -68,10 +26,10 @@ pub async fn invite_cli() -> Result<()> {
                 println!();
                 println!("{}", "Thank you for sharing Fig.".bold());
                 println!();
-                println!("> {}", link.bold().magenta());
+                println!("> {}", link.clone().bold().magenta());
 
                 if let Ok(mut ctx) = ClipboardContext::new() {
-                    if ctx.set_contents("some string".to_owned()).is_ok() {
+                    if ctx.set_contents(link).is_ok() {
                         println!("  Your referral link has been copied to the clipboard.");
                     }
                 }

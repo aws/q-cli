@@ -490,6 +490,14 @@ impl Credentials {
         &self.experation_time
     }
 
+    pub fn is_expired_epslion(&self, epsilon: time::Duration) -> bool {
+        self.experation_time + epsilon < time::OffsetDateTime::now_utc()
+    }
+
+    pub fn is_expired(&self) -> bool {
+        self.is_expired_epslion(time::Duration::minutes(1))
+    }
+
     pub fn get_email(&self) -> Option<&String> {
         self.email.as_ref()
     }

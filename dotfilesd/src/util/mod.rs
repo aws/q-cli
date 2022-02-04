@@ -1,13 +1,12 @@
-use std::{
-    fs,
-    path::{Path, PathBuf},
-};
+use std::path::{Path, PathBuf};
 
-use anyhow::{Context, Result};
-use directories::{BaseDirs, ProjectDirs};
+use anyhow::Result;
+use directories::ProjectDirs;
 use globset::{Glob, GlobSet, GlobSetBuilder};
 
+pub mod auth;
 pub mod checksum;
+pub mod settings;
 pub mod shell;
 pub mod terminal;
 
@@ -19,6 +18,10 @@ pub fn home_dir() -> Result<PathBuf> {
     directories::BaseDirs::new()
         .map(|base| base.home_dir().into())
         .ok_or_else(|| anyhow::anyhow!("Could not get home dir"))
+}
+
+pub fn fig_dir() -> Option<PathBuf> {
+    Some(directories::BaseDirs::new()?.home_dir().join(".fig"))
 }
 
 pub fn glob_dir(glob: &GlobSet, directory: impl AsRef<Path>) -> Result<Vec<PathBuf>> {
@@ -40,55 +43,12 @@ pub fn glob_dir(glob: &GlobSet, directory: impl AsRef<Path>) -> Result<Vec<PathB
     Ok(files)
 }
 
-pub fn fig_dir() -> Option<PathBuf> {
-    Some(directories::BaseDirs::new()?.home_dir().join(".fig"))
-}
-
 pub fn glob(patterns: &[impl AsRef<str>]) -> Result<GlobSet> {
     let mut builder = GlobSetBuilder::new();
     for pattern in patterns {
         builder.add(Glob::new(pattern.as_ref())?);
     }
     Ok(builder.build()?)
-}
-
-pub struct Settings {
-    inner: serde_json::Value,
-}
-
-impl Settings {
-    pub fn load() -> Result<Self> {
-        let settings_path = BaseDirs::new()
-            .context("Could not get home dir")?
-            .home_dir()
-            .join(".fig")
-            .join("settings.json");
-
-        let settings_file = fs::read_to_string(settings_path)?;
-
-        Ok(Self {
-            inner: serde_json::from_str(&settings_file)?,
-        })
-    }
-
-    pub fn save(&self) -> Result<()> {
-        let settings_path = BaseDirs::new()
-            .context("Could not get home dir")?
-            .home_dir()
-            .join(".fig")
-            .join("settings.json");
-
-        fs::write(settings_path, serde_json::to_string_pretty(&self.inner)?)?;
-        Ok(())
-    }
-
-    pub fn get_mut_settings(&mut self) -> Option<&mut serde_json::Map<String, serde_json::Value>> {
-        self.inner.as_object_mut()
-    }
-
-    pub fn get_setting(&self) -> Option<&serde_json::Map<String, serde_json::Value>> {
-        self.inner.as_object()
-    }
 }
 
 #[cfg(target_os = "macos")]
