@@ -22,12 +22,12 @@ impl Settings {
         })
     }
 
-    pub fn set(key: impl AsRef<str>, value: serde_json::Value) -> Result<()> {
+    pub fn set(key: impl Into<String>, value: serde_json::Value) -> Result<()> {
         let mut settings = Self::load()?;
         let settings_map = settings
             .get_mut_settings()
             .ok_or(anyhow::anyhow!("Could not load settings"))?;
-        settings_map.insert(key.as_ref().into(), value);
+        settings_map.insert(key.into(), value);
         settings.save()?;
         Ok(())
     }

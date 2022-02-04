@@ -102,9 +102,9 @@ pub async fn open_ui_element(element: UiElement) -> Result<()> {
     send_command_to_socket(command).await
 }
 
-pub async fn run_build_command(build: impl AsRef<str>) -> Result<()> {
+pub async fn run_build_command(build: impl Into<String>) -> Result<()> {
     let command = command::Command::Build(BuildCommand {
-        branch: Some(build.as_ref().into()),
+        branch: Some(build.into()),
     });
     send_command_to_socket(command).await
 }
