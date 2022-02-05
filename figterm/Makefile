@@ -33,10 +33,10 @@ build-figterm-x86:
 	cp $(ROOT)/target/x86_64-apple-darwin/release/figterm $(BUILT_PRODUCTS_DIR)/figterm-x86
 
 fig_get_shell-arm: get_shell.c
-	$(CC) get_shell.c $(CFLAGS) -o fig_get_shell-arm -target arm64-apple-macos11
+	$(CC) get_shell.c $(CFLAGS) -o $(BUILT_PRODUCTS_DIR)/fig_get_shell-arm -target arm64-apple-macos11
 
 fig_get_shell-x86: get_shell.c
-	$(CC) get_shell.c $(CFLAGS) -o fig_get_shell-x86 -target x86_64-apple-macos10.12
+	$(CC) get_shell.c $(CFLAGS) -o $(BUILT_PRODUCTS_DIR)/fig_get_shell-x86 -target x86_64-apple-macos10.12
 
 ifeq "$(PLATFORM)" "Darwin"
 build-figterm: build-figterm-x86 build-figterm-arm
