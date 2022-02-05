@@ -2,6 +2,8 @@ ROOT:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
 export BUILT_PRODUCTS_DIR ?= $(ROOT)/build
 
+# export CARGO_TARGET_DIR = $(BUILT_PRODUCTS_DIR)
+
 # Add brew executables to PATH
 export PATH := /opt/homebrew/bin:/opt/homebrew/sbin:$(PATH)
 # Add cargo executables to PATH
@@ -11,6 +13,8 @@ SHELL := env PATH=$(PATH) /bin/bash
 
 # check if cargo exists
 CARGO := $(shell command -v cargo 2> /dev/null)
+
+CARGO_FLAGS ?= --release --locked
 
 ifndef CARGO
     $(error "cargo is not in PATH $(PATH)")
@@ -25,11 +29,11 @@ PLATFORM := $(shell uname -s)
 all: build-figterm fig_get_shell
 
 build-figterm-arm: 
-	cargo build --target=aarch64-apple-darwin --release
+	cargo build --target=aarch64-apple-darwin $(CARGO_FLAGS)
 	cp $(ROOT)/target/aarch64-apple-darwin/release/figterm $(BUILT_PRODUCTS_DIR)/figterm-arm
 
 build-figterm-x86: 
-	cargo build --target=x86_64-apple-darwin --release
+	cargo build --target=x86_64-apple-darwin $(CARGO_FLAGS)
 	cp $(ROOT)/target/x86_64-apple-darwin/release/figterm $(BUILT_PRODUCTS_DIR)/figterm-x86
 
 fig_get_shell-arm: get_shell.c
@@ -46,7 +50,7 @@ fig_get_shell: fig_get_shell-x86 fig_get_shell-arm
 	lipo -create -output $(BUILT_PRODUCTS_DIR)/fig_get_shell $(BUILT_PRODUCTS_DIR)/fig_get_shell-x86 $(BUILT_PRODUCTS_DIR)/fig_get_shell-arm
 else
 build-figterm:
-	cargo build --release
+	cargo build $(CARGO_FLAGS)
 	cp $(ROOT)/target/release/figterm $(BUILT_PRODUCTS_DIR)/figterm
 
 fig_get_shell: get_shell.c
