@@ -19,7 +19,9 @@ fn generate_shell_context(
     Ok(ShellContext {
         pid: Some(pid),
         ttys: Some(tty.into()),
-        session_id: session_id.into().or_else(|| std::env::var("TERM_SESSION_ID").ok()),
+        session_id: session_id
+            .into()
+            .or_else(|| std::env::var("TERM_SESSION_ID").ok()),
         integration_version: Some(integration_version.unwrap_or(CURRENT_INTEGRATION_VERSION)),
         process_name: Some(shell),
         current_working_directory: Some(cwd.to_string_lossy().into()),

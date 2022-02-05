@@ -334,7 +334,8 @@ pub async fn update(update_type: UpdateType) -> Result<UpdateStatus> {
 
                 let latest_release = update.get_latest_release()?;
 
-                if !self_update::version::bump_is_greater(current_version, &latest_release.version)? {
+                if !self_update::version::bump_is_greater(current_version, &latest_release.version)?
+                {
                     println!("You are already on the latest version {}", current_version);
 
                     return Ok(UpdateStatus::UpToDate);
