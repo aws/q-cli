@@ -272,6 +272,7 @@ extension WebViewController: WKUIDelegate {
 extension WebViewController: WKNavigationDelegate {
   func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
     print(webView.url?.absoluteString ?? "?")
+    // swiftlint:disable force_cast
     let webView = webView as! WebView
 
     for onNavigateCallback in webView.onNavigate {
@@ -298,6 +299,7 @@ extension WebViewController: WKNavigationDelegate {
 
     decisionHandler(.allow)
 
+    // swiftlint:disable force_cast
     let webView = webView as! WebView
 
     for onNavigateCallback in webView.onNavigate {
@@ -328,6 +330,7 @@ extension WebViewController: WKNavigationDelegate {
 
     webView.evaluateJavaScript(scriptContent, completionHandler: nil)
 
+    // swiftlint:disable force_cast
     let webView = webView as! WebView
 
     if let configureEnv = webView.configureEnvOnLoad {
@@ -360,7 +363,8 @@ class WebView: WKWebView {
   }
 
   override var canGoBack: Bool {
-    return !(super.backForwardList.backItem?.initialURL.absoluteString == Remote.baseURL.appendingPathComponent("sidebar").absoluteString) && super.canGoBack
+    return !(super.backForwardList.backItem?.initialURL.absoluteString
+             == Remote.baseURL.appendingPathComponent("sidebar").absoluteString) && super.canGoBack
   }
   var requestedURL: URL?
 
@@ -429,7 +433,7 @@ class WebView: WKWebView {
 
   override func mouseEntered(with event: NSEvent) {
     print("mouse entered")
-    guard let w = self.window, let window = w as? CompanionWindow else {
+    guard let windowGeneric = self.window, let window = windowGeneric as? CompanionWindow else {
       return
     }
     if trackMouse &&
@@ -449,12 +453,15 @@ class WebView: WKWebView {
 
   override func mouseExited(with event: NSEvent) {
     print("mouse exited")
-    guard let w = self.window, let window = w as? CompanionWindow else {
+    guard let windowGeneric = self.window, let window = windowGeneric as? CompanionWindow else {
       return
     }
-    if trackMouse && (NSWorkspace.shared.frontmostApplication?.isFig ?? false || WindowManager.shared.windowServiceProvider.isActivating) && window.positioning == CompanionWindow.defaultPassivePosition {
+    if trackMouse && (NSWorkspace.shared.frontmostApplication?.isFig ?? false
+                  || WindowManager.shared.windowServiceProvider.isActivating)
+                  && window.positioning == CompanionWindow.defaultPassivePosition {
       print("current frontmost application \(NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "")")
-      print("Attempting to activate previous app \( ShellBridge.shared.previousFrontmostApplication?.bundleIdentifier ?? "<none>")")
+      let identifier = ShellBridge.shared.previousFrontmostApplication?.bundleIdentifier ?? "<none>"
+      print("Attempting to activate previous app \(identifier)")
       //            ShellBridge.shared.previousFrontmostApplication?.activate(options: .init())
       if Defaults.shared.triggerSidebarWithMouse {
         WindowManager.shared.windowServiceProvider.returnFocus()
@@ -466,7 +473,8 @@ class WebView: WKWebView {
   func loadBundleApp(_ app: String) {
 
     if let url = Bundle.main.url(forResource: app, withExtension: "html") {
-      self.loadFileURL(url, allowingReadAccessTo: URL(string: "file://")!) // needed in order to load local files from anywhere
+      // needed in order to load local files from anywhere
+      self.loadFileURL(url, allowingReadAccessTo: URL(string: "file://")!)
     } else {
       print("Bundle app '\(app)' does not exist")
     }
@@ -475,8 +483,8 @@ class WebView: WKWebView {
   func loadLocalApp(_ url: URL) {
     //        let localURL = URL(fileURLWithPath: appPath)
     self.evaluateJavaScript("document.documentElement.remove()") { (_, _) in
-
-      self.loadFileURL(url, allowingReadAccessTo: URL(string: "file://")!) // needed in order to load local files from anywhere
+      // needed in order to load local files from anywhere
+      self.loadFileURL(url, allowingReadAccessTo: URL(string: "file://")!)
     }
   }
 
@@ -497,13 +505,13 @@ class WebView: WKWebView {
 
   }
 
-  func loadAutocomplete() {
-    Logger.log(message: "Loading autocomplete...")
+  func loadAutocomplete(from urlString: String?
+                        = Settings.shared.getValue(forKey: Settings.autocompleteURL) as? String) {
 
     let url: URL = {
 
       // Use value specified by developer.autocomplete.host if it exists
-      if let urlString = Settings.shared.getValue(forKey: Settings.autocompleteURL) as? String,
+      if let urlString = urlString,
          let url = URL(string: urlString) {
         return url
       }
@@ -512,6 +520,8 @@ class WebView: WKWebView {
       return Remote.baseURL.appendingPathComponent("autocomplete")
         .appendingPathComponent(Defaults.shared.autocompleteVersion ?? "")
     }()
+
+    Logger.log(message: "Loading autocomplete (\(url.absoluteString))...")
 
     self.load(URLRequest(url: url, cachePolicy: .reloadIgnoringLocalAndRemoteCacheData))
   }
@@ -549,9 +559,14 @@ class WebView: WKWebView {
       WKWebsiteDataTypeLocalStorage
     ])
     let date = Date(timeIntervalSince1970: 0)
-    WKWebsiteDataStore.default().removeData(ofTypes: websiteDataTypes as! Set<String>, modifiedSince: date, completionHandler: { })
+
+    // swiftlint:disable force_cast
+    WKWebsiteDataStore.default().removeData(ofTypes: websiteDataTypes as! Set<String>,
+                                            modifiedSince: date,
+                                            completionHandler: { })
   }
 
+  // swiftlint:disable line_length
   // click through https://stackoverflow.com/questions/128015/make-osx-application-respond-to-first-mouse-click-when-not-focused/129148
   override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
     return true
@@ -576,10 +591,13 @@ extension WebView: MouseMonitoring {
 }
 
 extension NSView {
+  // swiftlint:disable line_length
   /// Adds constraints to this `UIView` instances `superview` object to make sure this always has the same size as the superview.
+  // swiftlint:disable line_length
   /// Please note that this has no effect if its `superview` is `nil` – add this `UIView` instance as a subview before calling this.
   func bindFrameToSuperviewBounds() {
     guard let superview = self.superview else {
+      // swiftlint:disable line_length
       print("Error! `superview` was nil – call `addSubview(view: UIView)` before calling `bindFrameToSuperviewBounds()` to fix this.")
       return
     }

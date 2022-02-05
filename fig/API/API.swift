@@ -92,6 +92,8 @@ class API {
           response.success = status
           API.send(response, to: webView, using: encoding)
         })
+      case .appendToFileRequest(let request):
+        response.success = try FileSystem.appendToFile(request)
       case .readFileRequest(let request):
         response.readFileResponse = try FileSystem.readFile(request)
       case .writeFileRequest(let request):

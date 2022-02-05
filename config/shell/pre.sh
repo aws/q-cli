@@ -22,8 +22,7 @@ if [[ -n "$BASH" ]]; then
 fi
 
 # Only launch figterm if current session is not already inside PTY and command exists
-if [[ "${TERMINAL_EMULATOR}" != JetBrains-JediTerm ]] \
-  && [[ ! "${TERM_PROGRAM}" = WarpTerminal ]] \
+if   [[ ! "${TERM_PROGRAM}" = WarpTerminal ]] \
   && [[ -t 1 ]] \
   && [[ -z "${FIG_PTY}" ]] && command -v ~/.fig/bin/figterm 2>&1 1>/dev/null \
   && [[ -z "${FIG_TERM}" || (-z "${FIG_TERM_TMUX}" && -n "${TMUX}") ]]; then
@@ -36,7 +35,7 @@ if [[ "${TERMINAL_EMULATOR}" != JetBrains-JediTerm ]] \
   if [[ -z "${TERM_SESSION_ID}" || -n "${TMUX}" ]]; then
     export TERM_SESSION_ID="$(uuidgen)"
   fi
-  export FIG_INTEGRATION_VERSION=5
+  export FIG_INTEGRATION_VERSION=6
   # Pty module sets FIG_TERM or FIG_TERM_TMUX to avoid running twice. 
   FIG_SHELL=$(~/.fig/bin/fig_get_shell)
   FIG_IS_LOGIN_SHELL=0

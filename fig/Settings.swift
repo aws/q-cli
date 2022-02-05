@@ -261,7 +261,9 @@ class Settings {
 
     if let jsonStream = fileString.data(using: .utf8) {
       do {
-        guard let defaultSettings = try JSONSerialization.jsonObject(with: jsonStream, options: .fragmentsAllowed) as? [[String: Any]] else {
+        guard let defaultSettings = try JSONSerialization.jsonObject(with: jsonStream,
+                                                                     options: .fragmentsAllowed)
+                                                                     as? [[String: Any]] else {
           return nil
         }
         // swiftlint:disable force_cast
@@ -386,6 +388,12 @@ class Settings {
         LaunchAgent.launchOnStartup.remove()
       }
     }
+
+    if prev[Settings.autocompleteURL] as? String != curr[Settings.autocompleteURL] as? String {
+      WindowManager.shared.autocomplete?.webView?.loadAutocomplete(from:
+                                                                    curr[Settings.autocompleteURL] as? String)
+    }
+
   }
 
   static let settingsUpdatedNotification = Notification.Name("settingsUpdated")

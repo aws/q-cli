@@ -7,7 +7,15 @@ pub mod pty;
 pub mod term;
 pub mod utils;
 
-use std::{env, error::Error, ffi::CString, os::unix::prelude::AsRawFd, process::exit, vec};
+use std::{
+    env,
+    error::Error,
+    ffi::CString,
+    os::unix::prelude::AsRawFd,
+    path::PathBuf,
+    process::{exit, Command},
+    vec,
+};
 
 use anyhow::{anyhow, Context, Result};
 use bytes::Bytes;
@@ -29,14 +37,17 @@ use alacritty_terminal::{
     term::{ShellState, SizeInfo},
     Term,
 };
+use once_cell::sync::Lazy;
 use proto::figterm::{figterm_message, intercept_command, FigtermMessage};
 use pty::{fork_pty, PtyForkResult};
+use sentry::integrations::anyhow::capture_anyhow;
 use term::get_winsize;
 use tokio::{
     io::{self, AsyncReadExt, AsyncWriteExt},
     runtime, select,
     signal::unix::SignalKind,
 };
+use utils::fig_path;
 
 use crate::{
     ipc::{spawn_incoming_receiver, spawn_outgoing_sender},
@@ -116,6 +127,9 @@ impl EventListener for EventSender {
     }
 }
 
+static INSERTION_LOCK_PATH: Lazy<Option<PathBuf>> =
+    Lazy::new(|| fig_path().map(|path| path.join("insertion-lock")));
+
 fn can_send_edit_buffer<T>(term: &Term<T>) -> bool
 where
     T: EventListener,
@@ -125,14 +139,20 @@ where
         [Some("bash"), Some("zsh"), Some("fish")].contains(&term.shell_state().shell.as_deref());
     let prexec = term.shell_state().preexec;
 
-    trace!(
-        "in_docker_ssh: {}, shell_enabled: {}, prexec: {}",
-        in_docker_ssh,
-        shell_enabled,
-        prexec
+    trace!("Insertion lock path: {:?}", INSERTION_LOCK_PATH.as_ref());
+
+    let insertion_locked = if let Some(insertion_lock_path) = INSERTION_LOCK_PATH.as_ref() {
+        nix::unistd::access(insertion_lock_path, nix::unistd::AccessFlags::F_OK).is_ok()
+    } else {
+        false
+    };
+
+    debug!(
+        "in_docker_ssh: {}, shell_enabled: {}, prexec: {}, insertion_locked: {}",
+        in_docker_ssh, shell_enabled, prexec, insertion_locked
     );
 
-    shell_enabled && !prexec
+    shell_enabled && !insertion_locked && !prexec
 }
 
 async fn send_edit_buffer<T>(term: &Term<T>, sender: &Sender<Bytes>) -> Result<()>
@@ -435,6 +455,7 @@ fn figterm_main() -> Result<()> {
                         exit(0);
                     },
                     Err(e) => {
+                        capture_anyhow(&e);
                         error!("Error in async runtime: {}", e);
                         exit(1);
                     },
@@ -445,6 +466,7 @@ fn figterm_main() -> Result<()> {
             // https://man7.org/linux/man-pages/man7/signal-safety.7.html
             match launch_shell() {
                 Err(e) => {
+                    capture_anyhow(&e);
                     logger::stdio_debug_log(format!("{:?}", e));
                     Err(e)
                 }
@@ -454,16 +476,44 @@ fn figterm_main() -> Result<()> {
     }
 }
 
+fn get_email() -> Option<String> {
+    // TODO: Change this to use native api
+    Command::new("defaults")
+        .args(&["read", "com.mschrage.fig", "userEmail"])
+        .output()
+        .ok()
+        .and_then(|output| String::from_utf8(output.stdout).ok())
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
+    let _guard = sentry::init((
+        "https://633267fac776481296eadbcc7093af4a@o436453.ingest.sentry.io/6187825",
+        sentry::ClientOptions {
+            release: sentry::release_name!(),
+            ..Default::default()
+        },
+    ));
+
+    sentry::configure_scope(|scope| {
+        scope.set_user(Some(sentry::User {
+            email: get_email(),
+            ..Default::default()
+        }));
+    });
+
     Cli::parse();
 
     logger::stdio_debug_log(format!("FIG_LOG_LEVEL={}", logger::get_fig_log_level()));
 
     if let Err(e) = figterm_main() {
+        capture_anyhow(&e);
         logger::stdio_debug_log(format!("{}", e));
 
-        // Fallback to shell if figterm fails
-        launch_shell()?;
+        // Fallback to normal shell
+        if let Err(e) = launch_shell() {
+            capture_anyhow(&e);
+            logger::stdio_debug_log(format!("{}", e));
+        }
     }
 
     Ok(())

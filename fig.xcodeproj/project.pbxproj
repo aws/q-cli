@@ -63,6 +63,10 @@
 		7543170826E0901B00188887 /* FigIMKInputController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7543170726E0901B00188887 /* FigIMKInputController.swift */; };
 		7545657527715785002A59EA /* TabbyIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7545657427715785002A59EA /* TabbyIntegration.swift */; };
 		7545657727716CAB002A59EA /* tabby-integration.js in Resources */ = {isa = PBXBuildFile; fileRef = 7545657627716CAB002A59EA /* tabby-integration.js */; };
+		7545657A2773CB9F002A59EA /* JetBrainsIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 754565792773CB9F002A59EA /* JetBrainsIntegration.swift */; };
+		7545657C2773EB0B002A59EA /* PropertyList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7545657B2773EB0B002A59EA /* PropertyList.swift */; };
+		7545657F2773F275002A59EA /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 7545657E2773F275002A59EA /* ZIPFoundation */; };
+		754565812773F3C9002A59EA /* jetbrains-extension-2.0.0.zip in Resources */ = {isa = PBXBuildFile; fileRef = 754565802773F3C9002A59EA /* jetbrains-extension-2.0.0.zip */; };
 		754569FC272A05C200C7588F /* CommandHandlers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 754569FB272A05C200C7588F /* CommandHandlers.swift */; };
 		7546F5B3271660BA0077359F /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7546F5B2271660BA0077359F /* Constants.swift */; };
 		754A84E727A8D6C6008B6087 /* dotfiles-darwin-universal in Embed dotfiles */ = {isa = PBXBuildFile; fileRef = 754A84E627A8D6C6008B6087 /* dotfiles-darwin-universal */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
@@ -120,6 +124,7 @@
 		757CA89F248D628F002A64A8 /* sidebar.html in Resources */ = {isa = PBXBuildFile; fileRef = 757CA89E248D628E002A64A8 /* sidebar.html */; };
 		75809B0E24BFA64D00BFFB3E /* TelemetryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75809B0D24BFA64D00BFFB3E /* TelemetryService.swift */; };
 		7583A12E273CF261001DF86B /* PathHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7583A12D273CF261001DF86B /* PathHelper.swift */; };
+		7584EFC927A4D69400E17EC9 /* tabby-integration.js in Resources */ = {isa = PBXBuildFile; fileRef = 7584EFC827A4D69400E17EC9 /* tabby-integration.js */; };
 		7587B4D824F97F9E00E355E4 /* ShellHooksManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7587B4D724F97F9E00E355E4 /* ShellHooksManager.swift */; };
 		759113C12783A47900340B25 /* AXSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 759113C02783A47900340B25 /* AXSwift */; };
 		75915DFE27210A4C005A9909 /* FigAPIBindings in Frameworks */ = {isa = PBXBuildFile; productRef = 75915DFD27210A4C005A9909 /* FigAPIBindings */; };
@@ -370,6 +375,9 @@
 		7543170726E0901B00188887 /* FigIMKInputController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FigIMKInputController.swift; sourceTree = "<group>"; };
 		7545657427715785002A59EA /* TabbyIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabbyIntegration.swift; sourceTree = "<group>"; };
 		7545657627716CAB002A59EA /* tabby-integration.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = "tabby-integration.js"; sourceTree = "<group>"; };
+		754565792773CB9F002A59EA /* JetBrainsIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JetBrainsIntegration.swift; sourceTree = "<group>"; };
+		7545657B2773EB0B002A59EA /* PropertyList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PropertyList.swift; sourceTree = "<group>"; };
+		754565802773F3C9002A59EA /* jetbrains-extension-2.0.0.zip */ = {isa = PBXFileReference; lastKnownFileType = archive.zip; path = "jetbrains-extension-2.0.0.zip"; sourceTree = "<group>"; };
 		754569FB272A05C200C7588F /* CommandHandlers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CommandHandlers.swift; sourceTree = "<group>"; };
 		7546F5B2271660BA0077359F /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		754A84E627A8D6C6008B6087 /* dotfiles */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; name = dotfiles-darwin-universal; path = "dotfiles-darwin-universal"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -433,6 +441,7 @@
 		75809B0D24BFA64D00BFFB3E /* TelemetryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetryService.swift; sourceTree = "<group>"; };
 		75809B0F24C2C66100BFFB3E /* WebView+Private.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "WebView+Private.h"; sourceTree = "<group>"; };
 		7583A12D273CF261001DF86B /* PathHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PathHelper.swift; sourceTree = "<group>"; };
+		7584EFC827A4D69400E17EC9 /* tabby-integration.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = "tabby-integration.js"; sourceTree = "<group>"; };
 		7587B4D724F97F9E00E355E4 /* ShellHooksManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellHooksManager.swift; sourceTree = "<group>"; };
 		75915DFF2722044D005A9909 /* API.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = API.js; sourceTree = "<group>"; };
 		759F987B25BF903900EC3407 /* Accessibility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Accessibility.swift; sourceTree = "<group>"; };
@@ -546,6 +555,7 @@
 				759113C12783A47900340B25 /* AXSwift in Frameworks */,
 				756967FF2718E0300029F063 /* WebArchiver in Frameworks */,
 				755950D4275EC6CC00B9FB5C /* Socket in Frameworks */,
+				7545657F2773F275002A59EA /* ZIPFoundation in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -681,9 +691,18 @@
 			isa = PBXGroup;
 			children = (
 				7545657427715785002A59EA /* TabbyIntegration.swift */,
-				7545657627716CAB002A59EA /* tabby-integration.js */,
+				7584EFC827A4D69400E17EC9 /* tabby-integration.js */,
 			);
 			path = Tabby;
+			sourceTree = "<group>";
+		};
+		754565782773CB6E002A59EA /* JetBrains */ = {
+			isa = PBXGroup;
+			children = (
+				754565792773CB9F002A59EA /* JetBrainsIntegration.swift */,
+				754565802773F3C9002A59EA /* jetbrains-extension-2.0.0.zip */,
+			);
+			path = JetBrains;
 			sourceTree = "<group>";
 		};
 		75675948244634AD006AA988 = {
@@ -739,6 +758,7 @@
 				750CF21726A1055F0094D76A /* Config.swift */,
 				756FE630278F59070017EC99 /* MissionControl.swift */,
 				756FE62A278E0B4D0017EC99 /* macOS */,
+				7545657B2773EB0B002A59EA /* PropertyList.swift */,
 				75696830271F70800029F063 /* Local IPC */,
 				7575D44B26D5C4DD00D0C8D7 /* API */,
 				75D1ECBC26F15F0E00BC8A04 /* Integrations */,
@@ -749,6 +769,7 @@
 				75EDDC4F25D2473C003AECC6 /* Hyper */,
 				752A398725CD0FFB00B1AC40 /* VSCode */,
 				7545657327715754002A59EA /* Tabby */,
+				754565782773CB6E002A59EA /* JetBrains */,
 				75B1992A25019FDE00F38EA8 /* Companion Window */,
 				75B1992B25019FFE00F38EA8 /* Window Management */,
 				75B1992E2501A12C00F38EA8 /* Shell */,
@@ -1146,6 +1167,7 @@
 				75915DFD27210A4C005A9909 /* FigAPIBindings */,
 				755950D3275EC6CC00B9FB5C /* Socket */,
 				759113C02783A47900340B25 /* AXSwift */,
+				7545657E2773F275002A59EA /* ZIPFoundation */,
 			);
 			productName = fig;
 			productReference = 75675951244634AD006AA988 /* fig.app */;
@@ -1240,6 +1262,7 @@
 				756967FD2718E0300029F063 /* XCRemoteSwiftPackageReference "WebArchiver" */,
 				755950D2275EC6CC00B9FB5C /* XCRemoteSwiftPackageReference "BlueSocket" */,
 				759113BF2783A47900340B25 /* XCRemoteSwiftPackageReference "AXSwift" */,
+				7545657D2773F275002A59EA /* XCRemoteSwiftPackageReference "ZIPFoundation" */,
 			);
 			productRefGroup = 75675952244634AD006AA988 /* Products */;
 			projectDirPath = "";
@@ -1276,6 +1299,7 @@
 				752E68DF2620F868009E9A7E /* yarn@2x.png in Resources */,
 				75D9225627697A4600208A0C /* accessibility.html in Resources */,
 				75A4521025A83E5600107D2C /* remote_cwd.sh in Resources */,
+				754565812773F3C9002A59EA /* jetbrains-extension-2.0.0.zip in Resources */,
 				75543FD0268AC6E5003221DF /* fig-0.0.4.vsix in Resources */,
 				759F988225BFF0FF00EC3407 /* commandkey@2x.png in Resources */,
 				752E68F12620F885009E9A7E /* firebase@2x.png in Resources */,
@@ -1334,7 +1358,7 @@
 				757CA89D248C1F50002A64A8 /* demo4onboarding.mp4 in Resources */,
 				75C8A1602649E712001B69DA /* fig-0.0.2.vsix in Resources */,
 				7567595F244634B2006AA988 /* Main.storyboard in Resources */,
-				7545657727716CAB002A59EA /* tabby-integration.js in Resources */,
+				7584EFC927A4D69400E17EC9 /* tabby-integration.js in Resources */,
 				752A398625CD0FE800B1AC40 /* fig-0.0.1.vsix in Resources */,
 				75B0A07E25BB746600FCD89A /* debugger.html in Resources */,
 				75186070255B2A0A0000A7C7 /* asterisk@2x.png in Resources */,
@@ -1514,6 +1538,7 @@
 				75DA86A325EDB05100722F1D /* Integrations.swift in Sources */,
 				7568203126003BDF0006FE78 /* Settings.swift in Sources */,
 				75E993F52517E226000BE6BE /* AXWindowServer.swift in Sources */,
+				7545657C2773EB0B002A59EA /* PropertyList.swift in Sources */,
 				75C07124244BE45A002DF69F /* CompanionWindow.swift in Sources */,
 				75C07122244BB65D002DF69F /* ShellBridge.swift in Sources */,
 				7510F8C124A9B32D00E86F7C /* WindowManager.swift in Sources */,
@@ -1522,6 +1547,7 @@
 				75DA86A525EEBD7500722F1D /* Alert.swift in Sources */,
 				7546F5B3271660BA0077359F /* Constants.swift in Sources */,
 				75D1ECBE26F15F4500BC8A04 /* TerminalIntegrationProvider.swift in Sources */,
+				7545657A2773CB9F002A59EA /* JetBrainsIntegration.swift in Sources */,
 				75809B0E24BFA64D00BFFB3E /* TelemetryService.swift in Sources */,
 				75AA24DA25A7E8B000A51E9D /* lsof.m in Sources */,
 				75EB592B258D98A7002915E7 /* BiMap.swift in Sources */,
@@ -1868,7 +1894,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = YES;
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 367;
+				CURRENT_PROJECT_VERSION = 372;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				DEVELOPMENT_TEAM = B8PC799ZGU;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1904,7 +1930,7 @@
 				CODE_SIGN_IDENTITY = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 367;
+				CURRENT_PROJECT_VERSION = 372;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				DEVELOPMENT_TEAM = B8PC799ZGU;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -2162,6 +2188,14 @@
 				minimumVersion = 1.17.0;
 			};
 		};
+		7545657D2773F275002A59EA /* XCRemoteSwiftPackageReference "ZIPFoundation" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/weichsel/ZIPFoundation";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.9.14;
+			};
+		};
 		755950D2275EC6CC00B9FB5C /* XCRemoteSwiftPackageReference "BlueSocket" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/Kitura/BlueSocket";
@@ -2214,6 +2248,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 75290AC426719156000F4255 /* XCRemoteSwiftPackageReference "swift-protobuf" */;
 			productName = SwiftProtobuf;
+		};
+		7545657E2773F275002A59EA /* ZIPFoundation */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7545657D2773F275002A59EA /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
+			productName = ZIPFoundation;
 		};
 		755950D3275EC6CC00B9FB5C /* Socket */ = {
 			isa = XCSwiftPackageProductDependency;

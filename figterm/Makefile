@@ -12,41 +12,43 @@ SHELL := env PATH=$(PATH) /bin/bash
 # check if cargo exists
 CARGO := $(shell command -v cargo 2> /dev/null)
 
+CARGO_FLAGS ?= --release --locked
+
 ifndef CARGO
     $(error "cargo is not in PATH $(PATH)")
 endif
-
-CARGO_OPTIONS ?= --locked --release
 
 $(shell mkdir -p $(BUILT_PRODUCTS_DIR))
 
 PROGS =	figterm fig_get_shell
 
+PLATFORM := $(shell uname -s)
+
 all: build-figterm fig_get_shell
 
 build-figterm-arm: 
-	cargo build --target=aarch64-apple-darwin $(CARGO_OPTIONS)
+	cargo build --target=aarch64-apple-darwin $(CARGO_FLAGS)
 	cp $(ROOT)/target/aarch64-apple-darwin/release/figterm $(BUILT_PRODUCTS_DIR)/figterm-arm
 
 build-figterm-x86: 
-	cargo build --target=x86_64-apple-darwin $(CARGO_OPTIONS)
+	cargo build --target=x86_64-apple-darwin $(CARGO_FLAGS)
 	cp $(ROOT)/target/x86_64-apple-darwin/release/figterm $(BUILT_PRODUCTS_DIR)/figterm-x86
 
 fig_get_shell-arm: get_shell.c
-	$(CC) get_shell.c $(CFLAGS) -o fig_get_shell-arm -target arm64-apple-macos11
+	$(CC) get_shell.c $(CFLAGS) -o $(BUILT_PRODUCTS_DIR)/fig_get_shell-arm -target arm64-apple-macos11
 
 fig_get_shell-x86: get_shell.c
-	$(CC) get_shell.c $(CFLAGS) -o fig_get_shell-x86 -target x86_64-apple-macos10.12
+	$(CC) get_shell.c $(CFLAGS) -o $(BUILT_PRODUCTS_DIR)/fig_get_shell-x86 -target x86_64-apple-macos10.12
 
-ifeq "$(PLATFORM)" "macos"
+ifeq "$(PLATFORM)" "Darwin"
 build-figterm: build-figterm-x86 build-figterm-arm
-	lipo -create -output $(BUILT_PRODUCTS_DIR)/figterm figterm-x86 figterm-arm
+	lipo -create -output $(BUILT_PRODUCTS_DIR)/figterm $(BUILT_PRODUCTS_DIR)/figterm-x86 $(BUILT_PRODUCTS_DIR)/figterm-arm
 
 fig_get_shell: fig_get_shell-x86 fig_get_shell-arm
-	lipo -create -output $(BUILT_PRODUCTS_DIR)/fig_get_shell fig_get_shell-x86 fig_get_shell-arm
+	lipo -create -output $(BUILT_PRODUCTS_DIR)/fig_get_shell $(BUILT_PRODUCTS_DIR)/fig_get_shell-x86 $(BUILT_PRODUCTS_DIR)/fig_get_shell-arm
 else
 build-figterm:
-	cargo build $(CARGO_OPTIONS)
+	cargo build $(CARGO_FLAGS)
 	cp $(ROOT)/target/release/figterm $(BUILT_PRODUCTS_DIR)/figterm
 
 fig_get_shell: get_shell.c

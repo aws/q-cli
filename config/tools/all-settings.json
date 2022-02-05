@@ -30,11 +30,15 @@
       "dracula",
       "github-dark",
       "gruvbox",
+      "monokai-dark",
       "nightowl",
       "nord",
       "panda",
       "poimandres",
-      "the-unnamed"
+      "the-unnamed",
+      "synthwave-84",
+      "solarized-light",
+      "solarized-dark"
     ],
     "default": "system",
     "category": "Appearance"
@@ -53,6 +57,14 @@
     "description": "If true, Fig will always try to use the verbose version of the option/subcommand inserted.",
     "type": "boolean",
     "default": false,
+    "category": "Autocomplete"
+  },
+  {
+    "settingName": "autocomplete.scriptTimeout",
+    "title": "Script Timeout",
+    "description": "Specify the timeout in ms for scripts executed in completion spec generators.",
+    "type": "number",
+    "default": 5000,
     "category": "Autocomplete"
   },
   {
@@ -363,5 +375,13 @@
       "ask" 
     ],
     "default": "ask"
+  },
+  {
+    "settingName": "dotfiles.beta",
+    "title": "Enable dotfiles beta",
+    "description": "Enable dotfiles beta. This is an upcoming feature that allows you to manage your dotfiles with Fig.",
+    "type": "boolean",
+    "category": "Dotfiles",
+    "default": false
   }
 ]

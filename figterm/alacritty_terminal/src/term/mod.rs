@@ -455,6 +455,10 @@ impl<T> Term<T> {
             lines
         );
 
+        if let Some(ref mut cursor) = self.shell_state.cmd_cursor {
+            cursor.line += lines as i32;
+        }
+
         lines = min(
             lines,
             (self.scroll_region.end - self.scroll_region.start).0 as usize,
@@ -474,6 +478,10 @@ impl<T> Term<T> {
     #[inline]
     fn scroll_up_relative(&mut self, origin: Line, mut lines: usize) {
         trace!("Scrolling up relative: origin={}, lines={}", origin, lines);
+
+        if let Some(ref mut cursor) = self.shell_state.cmd_cursor {
+            cursor.line -= lines as i32;
+        }
 
         lines = min(
             lines,
@@ -1095,6 +1103,7 @@ impl<T: EventListener> Handler for Term<T> {
     #[inline]
     fn scroll_down(&mut self, lines: usize) {
         let origin = self.scroll_region.start;
+
         self.scroll_down_relative(origin, lines);
     }
 
@@ -1384,7 +1393,6 @@ impl<T: EventListener> Handler for Term<T> {
 
                     if fg_matches && bg_matches {
                         in_suggestion = true;
-                        debug!("In suggestion");
                     }
                 };
 
@@ -1447,7 +1455,7 @@ impl<T: EventListener> Handler for Term<T> {
             Attr::Strike => cursor.template.shell_flags.insert(ShellFlags::STRIKEOUT),
             Attr::CancelStrike => cursor.template.shell_flags.remove(ShellFlags::STRIKEOUT),
             _ => {
-                debug!("Term got unhandled attr: {:?}", attr);
+                trace!("Term got unhandled attr: {:?}", attr);
             }
         }
     }
@@ -1731,7 +1739,6 @@ impl<T: EventListener> Handler for Term<T> {
     }
 
     fn session_id(&mut self, session_id: &str) {
-        let session_id = session_id.split(':').last().unwrap_or("");
         trace!("Fig session_id: {:?}", session_id);
         self.shell_state.session_id = Some(session_id.trim().to_owned());
     }
