@@ -11,11 +11,7 @@ use crossterm::style::Stylize;
 use regex::Regex;
 use self_update::update::UpdateStatus;
 
-use crate::{
-    cli::util::{dialoguer_theme, permission_guard},
-    daemon,
-    util::shell::Shell,
-};
+use crate::{cli::util::dialoguer_theme, daemon, util::shell::Shell};
 
 bitflags::bitflags! {
     /// The different components that can be installed.
@@ -253,8 +249,6 @@ pub enum UpdateType {
 /// Self-update the dotfiles binary
 /// Update will exit the binary if the update was successful
 pub fn update(update_type: UpdateType) -> Result<UpdateStatus> {
-    permission_guard()?;
-
     let confirm = match update_type {
         UpdateType::Confirm => true,
         UpdateType::NoConfirm => false,

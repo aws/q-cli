@@ -314,15 +314,18 @@ pub async fn daemon() -> Result<()> {
 
             }
             _ = update_interval.tick() => {
-                // // Check for updates
-                // match update(UpdateType::NoProgress)? {
-                //     UpdateStatus::UpToDate => {}
-                //     UpdateStatus::Updated(release) => {
-                //         println!("Updated to {}", release.version);
-                //         println!("Quitting...");
-                //         return Ok(());
-                //     }
-                // }
+                #[cfg(feature = "auto-update")]
+                {
+                    // Check for updates
+                    match update(UpdateType::NoProgress)? {
+                        UpdateStatus::UpToDate => {}
+                        UpdateStatus::Updated(release) => {
+                            println!("Updated to {}", release.version);
+                            println!("Quitting...");
+                            return Ok(());
+                        }
+                    }
+                }
             }
         }
     }

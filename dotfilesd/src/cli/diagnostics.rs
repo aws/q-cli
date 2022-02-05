@@ -265,13 +265,13 @@ impl Diagnostic for CurrentEnvironment {
                 "Current Window ID: {}",
                 self.current_window_id
                     .as_deref()
-                    .unwrap_or("<unknown>".into())
+                    .unwrap_or("<unknown>")
             ),
             format!(
                 "Active Process: {}",
                 self.current_process
                     .as_deref()
-                    .unwrap_or("<unknown>".into())
+                    .unwrap_or("<unknown>")
             ),
         ];
 
@@ -339,21 +339,20 @@ struct IntegrationDiagnostics {
 
 impl IntegrationDiagnostics {
     async fn new() -> IntegrationDiagnostics {
-        let mut integrations = vec![];
-
-        integrations.push((
-            Integrations::Ssh,
-            IntegrationStatus {
-                status: "false".into(),
-            },
-        ));
-
-        integrations.push((
-            Integrations::Tmux,
-            IntegrationStatus {
-                status: "false".into(),
-            },
-        ));
+        let mut integrations = vec![
+            (
+                Integrations::Ssh,
+                IntegrationStatus {
+                    status: "false".into(),
+                },
+            ),
+            (
+                Integrations::Tmux,
+                IntegrationStatus {
+                    status: "false".into(),
+                },
+            ),
+        ];
 
         let integration_result = verify_integration("com.googlecode.iterm2")
             .await
@@ -525,10 +524,7 @@ impl Diagnostic for Diagnostics {
             new_lines
         };
 
-        let mut lines = vec![];
-
-        lines.push("# Fig Diagnostics".into());
-        lines.push("## Fig details:".into());
+        let mut lines = vec!["# Fig Diagnostics".into(), "## Fig details:".into()];
         lines.extend(print_indent(&self.version.user_readable()?, "  ", 1));
         lines.extend(print_indent(&self.fig_details.user_readable()?, "  ", 1));
         lines.push("## Hardware Info:".into());

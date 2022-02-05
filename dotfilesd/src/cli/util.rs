@@ -165,15 +165,13 @@ impl OSVersion {
 
             let minor = version
                 .split('.')
-                .skip(1)
-                .next()
+                .nth(1)
                 .context("Invalid version")?
                 .parse()?;
 
             let patch = version
                 .split('.')
-                .skip(2)
-                .next()
+                .nth(2)
                 .map(|p| p.parse().ok())
                 .flatten();
 
