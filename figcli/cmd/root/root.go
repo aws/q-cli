@@ -20,7 +20,7 @@ import (
 	"fig-cli/cmd/launch"
 	"fig-cli/cmd/quit"
 	"fig-cli/cmd/restart"
-	"fig-cli/cmd/settings"
+	settings_cmd "fig-cli/cmd/settings"
 	"fig-cli/cmd/source"
 	"fig-cli/cmd/specs"
 	"fig-cli/cmd/theme"
@@ -30,9 +30,13 @@ import (
 	"fig-cli/cmd/user"
 	"fig-cli/cmd/user/logout"
 	"fig-cli/diagnostics"
+	fig_ipc "fig-cli/fig-ipc"
+	fig_proto "fig-cli/fig-proto"
 	"fig-cli/logging"
+	"fig-cli/settings"
 	"fmt"
 	"os"
+	"os/exec"
 	"strings"
 
 	genFigSpec "github.com/withfig/autocomplete-tools/packages/cobra"
@@ -52,6 +56,47 @@ var rootCmd = &cobra.Command{
 		build, _ := diagnostics.GetFigBuild()
 		return fmt.Sprintf("%s B%s", version, build)
 	}(),
+	Run: func(cmd *cobra.Command, args []string) {
+		dotfilesBeta := false
+
+		settings, err := settings.Load()
+
+		if err == nil {
+			value := settings.Get("dotfiles.beta")
+			if value != nil {
+				switch value := value.(type) {
+				case bool:
+					dotfilesBeta = value
+				default:
+					dotfilesBeta = false
+				}
+			}
+		}
+
+		if dotfilesBeta {
+			response, err := fig_ipc.RunOpenUiElementCommand(fig_proto.UiElement_MISSION_CONTROL)
+			if err != nil {
+				_, err := diagnostics.GetAppInfo()
+
+				if err != nil {
+					fmt.Print("\n› Launching Fig...\n\n")
+					figExec := exec.Command("open", "-b", "com.mschrage.fig")
+					figExec.Run()
+					figExec.Process.Release()
+				}
+				return
+			}
+
+			if response != "" {
+				fmt.Printf("\n%s\n\n", response)
+			}
+
+			fmt.Printf("\n→ Opening dotfiles...\n\n")
+		} else {
+			// Print help page
+			cmd.Help()
+		}
+	},
 }
 
 func Execute() {
@@ -294,7 +339,7 @@ func Execute() {
 	rootCmd.AddCommand(launch.NewCmdLaunch())
 	rootCmd.AddCommand(quit.NewCmdQuit())
 	rootCmd.AddCommand(restart.NewCmdRestart())
-	rootCmd.AddCommand(settings.NewCmdSettings())
+	rootCmd.AddCommand(settings_cmd.NewCmdSettings())
 	rootCmd.AddCommand(source.NewCmdSource())
 	rootCmd.AddCommand(specs.NewCmdSpecs())
 	rootCmd.AddCommand(theme.NewCmdTheme())
