@@ -2,6 +2,8 @@ name: Dotfilesd CI
 on:
   workflow_dispatch:
     inputs:
+      BLANK:
+        description: "Blank"
   pull_request:
     paths:
       - "dotfilesd/**"

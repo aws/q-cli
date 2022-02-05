@@ -2,6 +2,8 @@ name: Dotfilesd Deploy
 on:
   workflow_dispatch:
     inputs:
+      BLANK:
+        description: "Blank"
   push:
     paths:
       - "dotfilesd/**"
