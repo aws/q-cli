@@ -27,7 +27,8 @@ rand = "0.8.4"
 regex = "1.5.4"
 reqwest = "0.11.9"
 self_update = "0.28.0"
-semver = "1.0.4"
+semver = "1.0.5"
+sentry = { version = "0.24.2", features = ["anyhow"] }
 serde = { version = "1.0.136", features = ["derive"] }
 serde_with = "1.11.0"
 sha2 = "0.10.1"
@@ -56,7 +57,7 @@ windows = { version = "0.32.0", features = ["Win32_Foundation", "Win32_Security"
 [target.'cfg(unix)'.dependencies]
 nix = "0.23.1"
 
-[profile.release-lto]
-inherits = "release"
-lto = true
-codegen-units = 1
+# [profile.release-lto]
+# inherits = "release"
+# lto = true
+# codegen-units = 1
