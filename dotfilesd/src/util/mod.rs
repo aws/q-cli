@@ -80,7 +80,7 @@ pub fn get_shell() -> Result<String> {
 }
 
 #[cfg(not(any(target_os = "macos")))]
-pub fn app_path_from_bundle_id(bundle_id: impl AsRef<OsStr>) -> Option<String> {
+pub fn app_path_from_bundle_id(_bundle_id: impl AsRef<OsStr>) -> Option<String> {
     unimplemented!();
 }
 

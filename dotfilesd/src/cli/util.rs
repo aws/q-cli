@@ -1,5 +1,4 @@
 use anyhow::{Context, Result};
-use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::{
     env,
@@ -141,6 +140,8 @@ impl OSVersion {
     pub fn new() -> Result<OSVersion> {
         #[cfg(target_os = "macos")]
         {
+            use regex::Regex;
+
             let version_info = Command::new("sw_vers")
                 .output()
                 .with_context(|| "Could not get macOS version")?;
@@ -209,6 +210,8 @@ impl OSVersion {
 pub fn get_fig_version() -> Result<(String, String)> {
     #[cfg(target_os = "macos")]
     {
+        use regex::Regex;
+
         let plist = std::fs::read_to_string("/Applications/Fig.app/Contents/Info.plist")?;
 
         let get_plist_field = |field: &str| -> Result<String> {

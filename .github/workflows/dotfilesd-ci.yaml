@@ -1,9 +1,7 @@
 name: Dotfilesd CI
+
 on:
   workflow_dispatch:
-    inputs:
-      BLANK:
-        description: "Blank"
   pull_request:
     paths:
       - "dotfilesd/**"
@@ -16,7 +14,6 @@ on:
       - master
       - staging
       - develop
-      - dotfilesd
 
 env:
   CARGO_TERM_COLOR: always
@@ -37,7 +34,13 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses:
+          actions/checkout@v2
+
+      # If on Ubuntu, install dependencies
+      - name: Install Ubuntu dependencies
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: sudo apt-get install -y libxcb1-dev libxcb-shape0-dev libxcb-xfixes0-dev
 
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1

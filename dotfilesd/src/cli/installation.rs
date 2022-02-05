@@ -248,7 +248,7 @@ pub enum UpdateType {
 
 /// Self-update the dotfiles binary
 /// Update will exit the binary if the update was successful
-pub fn update(update_type: UpdateType) -> Result<UpdateStatus> {
+pub async fn update(update_type: UpdateType) -> Result<UpdateStatus> {
     // Let desktop app handle updates on macOS
     #[cfg(target_os = "macos")]
     {
