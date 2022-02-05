@@ -102,6 +102,7 @@ extension ExternalApplication: Hashable {
   }
 }
 
+// swiftlint:disable type_body_length
 class AXWindowServer: WindowService {
   static func log(_ message: String) {
     Logger.log(message: message, subsystem: .windowServer)
@@ -196,8 +197,12 @@ class AXWindowServer: WindowService {
         var window: AnyObject?
 
         AXUIElementCopyAttributeValue(appRef.axAppRef, kAXFocusedWindowAttribute as CFString, &window)
-        guard window != nil else { return }
+        guard window != nil else {
+          AXWindowServer.log("Could not find focused window at activation")
+          return
+        }
         self.topApplication = appRef
+        // swiftlint:disable force_cast
         self.topWindow = ExternalWindow(backedBy: window as! AXUIElement, in: appRef)
 
         AXWindowServer.log("Add window manually!")
@@ -237,6 +242,7 @@ class AXWindowServer: WindowService {
         AXUIElementCopyAttributeValue(appRef.axAppRef, kAXFocusedWindowAttribute as CFString, &window)
         guard window != nil else { return }
         self.topApplication = appRef
+        // swiftlint:disable force_cast
         self.topWindow = ExternalWindow(backedBy: window as! AXUIElement, in: appRef)
       case kAXApplicationHiddenNotification:
         print("AXWindowServer: \(appRef.bundleId!) \(element) kAXApplicationHiddenNotification")
@@ -246,6 +252,7 @@ class AXWindowServer: WindowService {
         AXUIElementCopyAttributeValue(appRef.axAppRef, kAXFocusedWindowAttribute as CFString, &window)
         guard window != nil else { return }
         self.topApplication = appRef
+        // swiftlint:disable force_cast
         self.topWindow = ExternalWindow(backedBy: window as! AXUIElement, in: appRef)
 
       case kAXApplicationDeactivatedNotification:
@@ -264,6 +271,7 @@ class AXWindowServer: WindowService {
         AXUIElementCopyAttributeValue(appRef.axAppRef, kAXFocusedWindowAttribute as CFString, &window)
         guard window != nil else { return }
         self.topApplication = appRef
+        // swiftlint:disable force_cast
         self.topWindow = ExternalWindow(backedBy: window as! AXUIElement, in: appRef)
       case kAXWindowResizedNotification:
         print("AXWindowServer: \(appRef.bundleId!) \(element) kAXWindowResizedNotification")
@@ -279,6 +287,7 @@ class AXWindowServer: WindowService {
         AXUIElementCopyAttributeValue(appRef.axAppRef, kAXFocusedWindowAttribute as CFString, &window)
         guard window != nil else { return }
         self.topApplication = appRef
+        // swiftlint:disable force_cast
         self.topWindow = ExternalWindow(backedBy: window as! AXUIElement, in: appRef)
       case kAXUIElementDestroyedNotification:
         var pid: pid_t = 0
@@ -296,6 +305,7 @@ class AXWindowServer: WindowService {
           AXUIElementCopyAttributeValue(axAppRef, kAXFocusedWindowAttribute as CFString, &window)
           guard window != nil else { return }
           self.topApplication = appRef
+          // swiftlint:disable force_cast
           self.topWindow = ExternalWindow(backedBy: window as! AXUIElement, in: ExternalApplication(from: frontmost))
         }
 
@@ -431,7 +441,8 @@ class AXWindowServer: WindowService {
     // this is used to reset previous application when space is changed. Maybe should be nil.
     // self.previousApplication =
     if let app = NSWorkspace.shared.frontmostApplication {
-      Logger.log(message: "activeSpaceDidChange - \(app.bundleIdentifier ?? "<none>")", subsystem: .windowEvents)
+      Logger.log(message: "activeSpaceDidChange - \(app.bundleIdentifier ?? "<none>")",
+                 subsystem: .windowEvents)
       // self.register(app, fromActivation: true)
     }
   }
