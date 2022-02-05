@@ -210,7 +210,7 @@ jobs:
         run: curl -sL https://sentry.io/get-cli/ | bash
       - name: Upload dSYM files to Sentry
         if: ${{ github.event.inputs.useCache == 'false' || steps.archive.outputs.cache-hit != 'true' }}
-        run: sentry-cli upload-dif --org withfig --project macos-app --derived-data
+        run: sentry-cli upload-dif --org withfig --project macos-app --derived-data || echo "Sentry did not upload dSYM"
         env: 
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_LOG_LEVEL: debug
