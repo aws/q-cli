@@ -1,9 +1,11 @@
 //! CLI functionality
 
+pub mod app;
 pub mod auth;
 pub mod debug;
 pub mod diagnostics;
 pub mod doctor;
+pub mod hook;
 pub mod init;
 pub mod installation;
 pub mod invite;
@@ -39,6 +41,12 @@ pub enum CliRootCommands {
         #[clap(long)]
         dotfiles: bool,
     },
+    #[clap(subcommand)]
+    /// Interact with the desktop app
+    App(app::AppSubcommand),
+    #[clap(subcommand)]
+    /// Hook commands
+    Hook(hook::HookSubcommand),
     #[clap(subcommand)]
     /// Debug Fig
     Debug(debug::DebugSubcommand),
@@ -149,7 +157,9 @@ impl Cli {
 
                     installation::uninstall_cli(uninstall_components)
                 }
-                CliRootCommands::Update { no_confirm } => installation::update_cli(no_confirm),
+                CliRootCommands::Update { no_confirm } => {
+                    installation::update_cli(no_confirm).await
+                }
                 CliRootCommands::Daemon => daemon().await,
                 CliRootCommands::Diagnostic { format } => {
                     diagnostics::diagnostics_cli(format).await
@@ -162,6 +172,8 @@ impl Cli {
                 CliRootCommands::Doctor => doctor::doctor_cli().await,
                 CliRootCommands::Invite => invite::invite_cli().await,
                 CliRootCommands::Tweet => tweet::tweet_cli(),
+                CliRootCommands::App(app_subcommand) => app_subcommand.execute().await,
+                CliRootCommands::Hook(hook_subcommand) => hook_subcommand.execute().await,
                 CliRootCommands::Settings(settings_args) => settings_args.execute().await,
                 CliRootCommands::Debug(debug_subcommand) => debug_subcommand.execute().await,
                 CliRootCommands::Issue { description } => issue::issue_cli(description).await,

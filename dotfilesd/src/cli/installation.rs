@@ -11,7 +11,7 @@ use crossterm::style::Stylize;
 use regex::Regex;
 use self_update::update::UpdateStatus;
 
-use crate::{cli::util::dialoguer_theme, daemon, util::shell::Shell};
+use crate::{cli::util::dialoguer_theme, daemon, ipc::command::update_command, util::shell::Shell};
 
 bitflags::bitflags! {
     /// The different components that can be installed.
@@ -239,7 +239,7 @@ fn uninstall_dotfiles() -> Result<()> {
     Ok(())
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum UpdateType {
     Confirm,
     NoConfirm,
@@ -249,72 +249,132 @@ pub enum UpdateType {
 /// Self-update the dotfiles binary
 /// Update will exit the binary if the update was successful
 pub fn update(update_type: UpdateType) -> Result<UpdateStatus> {
-    let confirm = match update_type {
-        UpdateType::Confirm => true,
-        UpdateType::NoConfirm => false,
-        UpdateType::NoProgress => false,
-    };
-
-    let progress_output = match update_type {
-        UpdateType::Confirm => true,
-        UpdateType::NoConfirm => true,
-        UpdateType::NoProgress => false,
-    };
-
-    tokio::task::block_in_place(move || {
-        let current_version = env!("CARGO_PKG_VERSION");
-
-        let update = self_update::backends::s3::Update::configure()
-            .bucket_name("get-fig-io")
-            .asset_prefix("bin")
-            .region("us-west-1")
-            .bin_name("dotfiles")
-            .current_version(current_version)
-            .no_confirm(true)
-            .show_output(false)
-            .show_download_progress(progress_output)
-            .build()?;
-
-        let latest_release = update.get_latest_release()?;
-
-        if !self_update::version::bump_is_greater(current_version, &latest_release.version)? {
-            println!("You are already on the latest version {}", current_version);
-
-            return Ok(UpdateStatus::UpToDate);
-        }
-
-        if confirm {
-            if !dialoguer::Confirm::with_theme(&dialoguer_theme())
-                .with_prompt(format!(
-                    "Do you want to update {} from {} to {}?",
-                    env!("CARGO_PKG_NAME"),
-                    update.current_version(),
-                    latest_release.version
-                ))
-                .default(true)
-                .interact()?
-            {
-                return Err(anyhow::anyhow!("Update cancelled"));
+    // Let desktop app handle updates on macOS
+    #[cfg(target_os = "macos")]
+    {
+        let desktop_app_update = update_command(update_type == UpdateType::Confirm).await;
+        match desktop_app_update {
+            Ok(()) => {
+                println!("\n→ Checking for updates to macOS app...\n");
+                Ok(UpdateStatus::UpToDate)
             }
-        } else {
-            println!(
-                "Updating {} from {} to {}",
-                env!("CARGO_PKG_NAME"),
-                update.current_version(),
-                latest_release.version
-            );
+            Err(_) => {
+                anyhow::bail!(
+                    "\n{}\nFig might not be running to launch Fig run: {}\n",
+                    "Unable to Connect to Fig:".bold(),
+                    "fig launch".magenta()
+                );
+            }
         }
+    }
 
-        Ok(update.update_extended()?)
-    })
+    #[cfg(not(any(target_os = "macos")))]
+    {
+        let confirm = match update_type {
+            UpdateType::Confirm => true,
+            UpdateType::NoConfirm => false,
+            UpdateType::NoProgress => false,
+        };
+
+        let progress_output = match update_type {
+            UpdateType::Confirm => true,
+            UpdateType::NoConfirm => true,
+            UpdateType::NoProgress => false,
+        };
+
+        tokio::task::block_in_place(move || {
+            let current_version = env!("CARGO_PKG_VERSION");
+
+            let update = self_update::backends::s3::Update::configure()
+                .bucket_name("get-fig-io")
+                .asset_prefix("bin")
+                .region("us-west-1")
+                .bin_name("dotfiles")
+                .current_version(current_version)
+                .no_confirm(true)
+                .show_output(false)
+                .show_download_progress(progress_output)
+                .build()?;
+
+            let latest_release = update.get_latest_release()?;
+
+            if !self_update::version::bump_is_greater(current_version, &latest_release.version)? {
+                println!("You are already on the latest version {}", current_version);
+
+                return Ok(UpdateStatus::UpToDate);
+            }
+
+            permission_guard()?;
+
+            let confirm = match update_type {
+                UpdateType::Confirm => true,
+                UpdateType::NoConfirm => false,
+                UpdateType::NoProgress => false,
+            };
+
+            let progress_output = match update_type {
+                UpdateType::Confirm => true,
+                UpdateType::NoConfirm => true,
+                UpdateType::NoProgress => false,
+            };
+
+            tokio::task::block_in_place(move || {
+                let current_version = env!("CARGO_PKG_VERSION");
+
+                let update = self_update::backends::s3::Update::configure()
+                    .bucket_name("get-fig-io")
+                    .asset_prefix("bin")
+                    .region("us-west-1")
+                    .bin_name("dotfiles")
+                    .current_version(current_version)
+                    .no_confirm(true)
+                    .show_output(false)
+                    .show_download_progress(progress_output)
+                    .build()?;
+
+                let latest_release = update.get_latest_release()?;
+
+                if !self_update::version::bump_is_greater(current_version, &latest_release.version)? {
+                    println!("You are already on the latest version {}", current_version);
+
+                    return Ok(UpdateStatus::UpToDate);
+                }
+
+                if confirm {
+                    if !dialoguer::Confirm::with_theme(&dialoguer_theme())
+                        .with_prompt(format!(
+                            "Do you want to update {} from {} to {}?",
+                            env!("CARGO_PKG_NAME"),
+                            update.current_version(),
+                            latest_release.version
+                        ))
+                        .default(true)
+                        .interact()?
+                    {
+                        return Err(anyhow::anyhow!("Update cancelled"));
+                    }
+                } else {
+                    println!(
+                        "Updating {} from {} to {}",
+                        env!("CARGO_PKG_NAME"),
+                        update.current_version(),
+                        latest_release.version
+                    );
+                }
+
+                Ok(update.update_extended()?)
+            })
+        })
+    }
 }
 
-pub fn update_cli(no_confirm: bool) -> Result<()> {
+pub async fn update_cli(no_confirm: bool) -> Result<()> {
     update(if no_confirm {
         UpdateType::NoConfirm
     } else {
         UpdateType::Confirm
-    })?;
+    })
+    .await?;
 
     Ok(())
 }

@@ -1,7 +1,8 @@
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use directories::ProjectDirs;
 use globset::{Glob, GlobSet, GlobSetBuilder};
 
@@ -54,8 +55,6 @@ pub fn glob(patterns: &[impl AsRef<str>]) -> Result<GlobSet> {
 
 #[cfg(target_os = "macos")]
 pub fn app_path_from_bundle_id(bundle_id: impl AsRef<OsStr>) -> Option<String> {
-    use std::process::Command;
-
     let installed_apps = Command::new("mdfind")
         .arg("kMDItemCFBundleIdentifier")
         .arg("=")
@@ -66,6 +65,20 @@ pub fn app_path_from_bundle_id(bundle_id: impl AsRef<OsStr>) -> Option<String> {
     Some(path.trim().split('\n').next()?.into())
 }
 
+pub fn get_shell() -> Result<String> {
+    let ppid = nix::unistd::getppid();
+
+    let result = Command::new("ps")
+        .arg("-p")
+        .arg(format!("{}", ppid))
+        .arg("-o")
+        .arg("comm=")
+        .output()
+        .context("Could not read value")?;
+
+    Ok(String::from_utf8_lossy(&result.stdout).trim().into())
+}
+
 #[cfg(not(any(target_os = "macos")))]
 pub fn app_path_from_bundle_id(bundle_id: impl AsRef<OsStr>) -> Option<String> {
     unimplemented!();
@@ -73,8 +86,6 @@ pub fn app_path_from_bundle_id(bundle_id: impl AsRef<OsStr>) -> Option<String> {
 
 #[cfg(target_os = "macos")]
 pub fn get_machine_id() -> Option<String> {
-    use std::process::Command;
-
     let output = Command::new("ioreg")
         .args(&["-rd1", "-c", "IOPlatformExpertDevice"])
         .output()

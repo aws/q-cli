@@ -16,13 +16,12 @@ use std::process::Command;
 use thiserror::Error;
 
 use super::diagnostics::{dscl_read, get_diagnostics, verify_integration};
-use super::issue::get_shell;
 use super::util::OSVersion;
 use crate::ipc::{connect_timeout, get_socket_path};
 
 use crate::{
     auth::Credentials,
-    util::{app_path_from_bundle_id, fig_dir, glob, glob_dir, home_dir, shell::Shell},
+    util::{app_path_from_bundle_id, fig_dir, get_shell, glob, glob_dir, home_dir, shell::Shell},
 };
 use async_trait::async_trait;
 use tokio;

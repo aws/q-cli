@@ -83,7 +83,7 @@ fn get_running_app_info(bundle_id: impl AsRef<str>, field: impl AsRef<str>) -> R
     Ok(value.trim().into())
 }
 
-fn get_app_info() -> Result<String> {
+pub fn get_app_info() -> Result<String> {
     let output = Command::new("lsappinfo")
         .args(["info", "-app", "com.mschrage.fig"])
         .output()?;

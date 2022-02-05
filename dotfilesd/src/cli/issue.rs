@@ -4,25 +4,12 @@ use crate::cli::util::OSVersion;
 
 use super::util::get_fig_version;
 use super::util::open_url;
-use anyhow::{Context, Result};
+use crate::util::get_shell;
+use anyhow::Result;
 use crossterm::style::Stylize;
 use regex::Regex;
-use std::process::Command;
+
 use url::form_urlencoded;
-
-pub fn get_shell() -> Result<String> {
-    let ppid = nix::unistd::getppid();
-
-    let result = Command::new("ps")
-        .arg("-p")
-        .arg(format!("{}", ppid))
-        .arg("-o")
-        .arg("comm=")
-        .output()
-        .context("Could not read value")?;
-
-    Ok(String::from_utf8_lossy(&result.stdout).trim().into())
-}
 
 pub async fn issue_cli(description: Vec<String>) -> Result<()> {
     let text = description.join(" ");

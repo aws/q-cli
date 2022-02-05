@@ -1,6 +1,6 @@
 use super::util::OSVersion;
 use super::OutputFormat;
-use crate::ipc::{command::send_recv_command, connect_timeout, get_socket_path};
+use crate::ipc::send_recv_command_to_socket;
 use crate::proto::local::{
     command, command_response::Response, DiagnosticsCommand, DiagnosticsResponse,
     IntegrationAction, TerminalIntegrationCommand,
@@ -16,7 +16,6 @@ use std::ffi::OsStr;
 use std::fmt::Display;
 use std::path::PathBuf;
 use std::process::Command;
-use std::time::Duration;
 
 pub trait Diagnostic {
     fn user_readable(&self) -> Result<Vec<String>> {
@@ -124,13 +123,8 @@ fn installed_via_brew() -> Result<bool> {
 }
 
 pub async fn get_diagnostics() -> Result<DiagnosticsResponse> {
-    let path = get_socket_path();
-    let mut conn = connect_timeout(&path, Duration::from_secs(3)).await?;
-    let response = send_recv_command(
-        &mut conn,
-        command::Command::Diagnostics(DiagnosticsCommand {}),
-    )
-    .await?;
+    let response =
+        send_recv_command_to_socket(command::Command::Diagnostics(DiagnosticsCommand {})).await?;
 
     match response.response {
         Some(Response::Diagnostics(diagnostics)) => Ok(diagnostics),
@@ -280,15 +274,12 @@ impl Diagnostic for CurrentEnvironment {
 }
 
 pub async fn verify_integration(integration: impl Into<String>) -> Result<String> {
-    let path = get_socket_path();
-    let mut conn = connect_timeout(&path, Duration::from_secs(3)).await?;
-    let response = send_recv_command(
-        &mut conn,
-        command::Command::TerminalIntegration(TerminalIntegrationCommand {
+    let response = send_recv_command_to_socket(command::Command::TerminalIntegration(
+        TerminalIntegrationCommand {
             identifier: integration.into(),
             action: IntegrationAction::VerifyInstall as i32,
-        }),
-    )
+        },
+    ))
     .await?;
 
     let message = match response.response {
