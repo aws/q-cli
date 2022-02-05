@@ -22,8 +22,7 @@ if [[ -n "$BASH" ]]; then
 fi
 
 # Only launch figterm if current session is not already inside PTY and command exists
-if [[ "${TERMINAL_EMULATOR}" != JetBrains-JediTerm ]] \
-  && [[ ! "${TERM_PROGRAM}" = WarpTerminal ]] \
+if   [[ ! "${TERM_PROGRAM}" = WarpTerminal ]] \
   && [[ -t 1 ]] \
   && [[ -z "${FIG_PTY}" ]] && command -v ~/.fig/bin/figterm 2>&1 1>/dev/null \
   && [[ -z "${FIG_TERM}" || (-z "${FIG_TERM_TMUX}" && -n "${TMUX}") ]]; then

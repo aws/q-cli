@@ -284,31 +284,16 @@ extension InputMethod: IntegrationProvider {
       return .failed(error: "input method is not running.")
     }
 
-    let inputMethodDefaults = UserDefaults(suiteName: "com.apple.HIToolbox")
-    let enabledSources = inputMethodDefaults?.array(forKey: "AppleEnabledInputSources") ?? []
-
-    guard enabledSources.contains(where: { item in
-      let object = item as AnyObject
-      if let bundleId = object["Bundle ID"] as? String {
-        return bundleId == self.bundle.bundleIdentifier
-      }
-      return false
-    }) else {
-      return .failed(error: "Input source is not enabled ")
+    guard let source = self.source else {
+      return .failed(error: "could not initialize input source")
     }
 
-    guard let selectedSources = inputMethodDefaults?.array(forKey: "AppleSelectedInputSources") else {
-      return .failed(error: "Could not read the list of selected input sources")
+    guard source.isEnabled else {
+      return .failed(error: "Input source is not enabled")
     }
 
-    guard selectedSources.contains(where: { item in
-      let object = item as AnyObject
-      if let bundleId = object["Bundle ID"] as? String {
-        return bundleId == self.bundle.bundleIdentifier
-      }
-      return false
-    }) else {
-      return .failed(error: "Input source is not selected ")
+    guard source.isSelected else {
+      return .failed(error: "Input source is not selected")
     }
 
     return .installed
@@ -335,13 +320,11 @@ extension InputMethod: IntegrationProvider {
       return .failed(error: error.localizedDescription)
     }
 
-    self.enable()
-    self.select()
-
     // should we launch the application manually?
     if let bundleId = self.bundle.bundleIdentifier {
       let inputSource = Restarter(with: bundleId)
       inputSource.restart(launchingIfInactive: true) {
+        self.enable()
         self.select()
       }
     }
