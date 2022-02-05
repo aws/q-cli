@@ -263,15 +263,11 @@ impl Diagnostic for CurrentEnvironment {
             format!("Executable Location: {}", self.executable_location),
             format!(
                 "Current Window ID: {}",
-                self.current_window_id
-                    .as_deref()
-                    .unwrap_or("<unknown>")
+                self.current_window_id.as_deref().unwrap_or("<unknown>")
             ),
             format!(
                 "Active Process: {}",
-                self.current_process
-                    .as_deref()
-                    .unwrap_or("<unknown>")
+                self.current_process.as_deref().unwrap_or("<unknown>")
             ),
         ];
 

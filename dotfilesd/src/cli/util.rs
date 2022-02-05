@@ -169,11 +169,7 @@ impl OSVersion {
                 .context("Invalid version")?
                 .parse()?;
 
-            let patch = version
-                .split('.')
-                .nth(2)
-                .map(|p| p.parse().ok())
-                .flatten();
+            let patch = version.split('.').nth(2).map(|p| p.parse().ok()).flatten();
 
             let build = build_regex
                 .captures(&version_info)

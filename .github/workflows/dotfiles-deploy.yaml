@@ -1,10 +1,20 @@
 name: Dotfilesd Deploy
 on:
   workflow_dispatch:
+    inputs:
+  push:
+    paths:
+      - "dotfilesd/**"
+    branches:
+      - dotfilesd
 
 env:
   CARGO_TERM_COLOR: always
   BINARY_NAME: dotfilesd
+
+defaults:
+  run:
+    working-directory: dotfilesd
 
 jobs:
   deploy:
@@ -33,9 +43,6 @@ jobs:
             os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
 
-    defaults:
-      run:
-        working-directory: dotfilesd
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -91,9 +98,6 @@ jobs:
 
   upload-install-script:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: dotfilesd
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
