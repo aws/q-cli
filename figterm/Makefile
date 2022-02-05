@@ -40,10 +40,10 @@ fig_get_shell-x86: get_shell.c
 
 ifeq "$(PLATFORM)" "Darwin"
 build-figterm: build-figterm-x86 build-figterm-arm
-	lipo -create -output $(BUILT_PRODUCTS_DIR)/figterm figterm-x86 figterm-arm
+	lipo -create -output $(BUILT_PRODUCTS_DIR)/figterm $(BUILT_PRODUCTS_DIR)/figterm-x86 $(BUILT_PRODUCTS_DIR)/figterm-arm
 
 fig_get_shell: fig_get_shell-x86 fig_get_shell-arm
-	lipo -create -output $(BUILT_PRODUCTS_DIR)/fig_get_shell fig_get_shell-x86 fig_get_shell-arm
+	lipo -create -output $(BUILT_PRODUCTS_DIR)/fig_get_shell $(BUILT_PRODUCTS_DIR)/fig_get_shell-x86 $(BUILT_PRODUCTS_DIR)/fig_get_shell-arm
 else
 build-figterm:
 	cargo build --release
