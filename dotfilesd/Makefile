@@ -16,6 +16,8 @@ ifndef CARGO
     $(error "cargo is not in PATH $(PATH)")
 endif
 
+CARGO_OPTIONS ?= --locked --release
+
 BINARY_NAME=dotfilesd
 
 $(shell mkdir -p $(BUILT_PRODUCTS_DIR))
@@ -48,11 +50,11 @@ endif
 macos: build-darwin-universal
 
 build-x86_64-apple-darwin: 
-	cargo build --target=x86_64-apple-darwin --release
+	cargo build --target=x86_64-apple-darwin $(CARGO_OPTIONS)
 	cp $(ROOT)/target/x86_64-apple-darwin/release/$(BINARY_NAME) $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-x86_64-apple-darwin
 
 build-aarch64-apple-darwin: 
-	cargo build --target=aarch64-apple-darwin --release
+	cargo build --target=aarch64-apple-darwin $(CARGO_OPTIONS)
 	cp $(ROOT)/target/aarch64-apple-darwin/release/$(BINARY_NAME) $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-aarch64-apple-darwin
 
 build-darwin-universal: build-x86_64-apple-darwin build-aarch64-apple-darwin
@@ -61,21 +63,21 @@ build-darwin-universal: build-x86_64-apple-darwin build-aarch64-apple-darwin
 linux: build-x86_64-unknown-linux-gnu build-aarch64-unknown-linux-gnu
 
 build-x86_64-unknown-linux-gnu: 
-	cargo build --target=x86_64-unknown-linux-gnu --release
+	cargo build --target=x86_64-unknown-linux-gnu $(CARGO_OPTIONS)
 	cp $(ROOT)/target/x86_64-unknown-linux-gnu/release/$(BINARY_NAME) $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-x86_64-unknown-linux-gnu
 
 build-aarch64-unknown-linux-gnu: 
-	cargo build --target=aarch64-unknown-linux-gnu --release
+	cargo build --target=aarch64-unknown-linux-gnu $(CARGO_OPTIONS)
 	cp $(ROOT)/target/aarch64-unknown-linux-gnu/release/$(BINARY_NAME) $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-aarch64-unknown-linux-gnu
 
 windows: build-x86_64-pc-windows-gnu
 
 build-x86_64-pc-windows-gnu:
-	cargo build --target x86_64-pc-windows-gnu --release
+	cargo build --target x86_64-pc-windows-gnu $(CARGO_OPTIONS)
 	cp $(ROOT)/target/x86_64-pc-windows-gnu/release/$(BINARY_NAME).exe $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-x86_64-pc-windows-gnu
 
 build-native:
-	cargo build --release
+	cargo build $(CARGO_OPTIONS)
 	cp $(ROOT)/target/release/$(BINARY_NAME) $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)
 
 install: build-native

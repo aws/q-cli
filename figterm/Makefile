@@ -16,6 +16,8 @@ ifndef CARGO
     $(error "cargo is not in PATH $(PATH)")
 endif
 
+CARGO_OPTIONS ?= --locked --release
+
 $(shell mkdir -p $(BUILT_PRODUCTS_DIR))
 
 PROGS =	figterm fig_get_shell
@@ -23,11 +25,11 @@ PROGS =	figterm fig_get_shell
 all: build-figterm fig_get_shell
 
 build-figterm-arm: 
-	cargo build --target=aarch64-apple-darwin --release
+	cargo build --target=aarch64-apple-darwin $(CARGO_OPTIONS)
 	cp $(ROOT)/target/aarch64-apple-darwin/release/figterm $(BUILT_PRODUCTS_DIR)/figterm-arm
 
 build-figterm-x86: 
-	cargo build --target=x86_64-apple-darwin --release
+	cargo build --target=x86_64-apple-darwin $(CARGO_OPTIONS)
 	cp $(ROOT)/target/x86_64-apple-darwin/release/figterm $(BUILT_PRODUCTS_DIR)/figterm-x86
 
 fig_get_shell-arm: get_shell.c
@@ -44,7 +46,7 @@ fig_get_shell: fig_get_shell-x86 fig_get_shell-arm
 	lipo -create -output $(BUILT_PRODUCTS_DIR)/fig_get_shell fig_get_shell-x86 fig_get_shell-arm
 else
 build-figterm:
-	cargo build --release
+	cargo build $(CARGO_OPTIONS)
 	cp $(ROOT)/target/release/figterm $(BUILT_PRODUCTS_DIR)/figterm
 
 fig_get_shell: get_shell.c
