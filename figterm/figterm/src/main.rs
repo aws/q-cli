@@ -8,7 +8,13 @@ pub mod term;
 pub mod utils;
 
 use std::{
-    env, error::Error, ffi::CString, os::unix::prelude::AsRawFd, path::PathBuf, process::exit, vec,
+    env,
+    error::Error,
+    ffi::CString,
+    os::unix::prelude::AsRawFd,
+    path::PathBuf,
+    process::{exit, Command},
+    vec,
 };
 
 use anyhow::{anyhow, Context, Result};
@@ -34,6 +40,7 @@ use alacritty_terminal::{
 use once_cell::sync::Lazy;
 use proto::figterm::{figterm_message, intercept_command, FigtermMessage};
 use pty::{fork_pty, PtyForkResult};
+use sentry::integrations::anyhow::capture_anyhow;
 use term::get_winsize;
 use tokio::{
     io::{self, AsyncReadExt, AsyncWriteExt},
@@ -448,6 +455,7 @@ fn figterm_main() -> Result<()> {
                         exit(0);
                     },
                     Err(e) => {
+                        capture_anyhow(&e);
                         error!("Error in async runtime: {}", e);
                         exit(1);
                     },
@@ -458,6 +466,7 @@ fn figterm_main() -> Result<()> {
             // https://man7.org/linux/man-pages/man7/signal-safety.7.html
             match launch_shell() {
                 Err(e) => {
+                    capture_anyhow(&e);
                     logger::stdio_debug_log(format!("{:?}", e));
                     Err(e)
                 }
@@ -467,16 +476,44 @@ fn figterm_main() -> Result<()> {
     }
 }
 
+fn get_email() -> Option<String> {
+    // TODO: Change this to use native api
+    Command::new("defaults")
+        .args(&["read", "com.mschrage.fig", "userEmail"])
+        .output()
+        .ok()
+        .and_then(|output| String::from_utf8(output.stdout).ok())
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
+    let _guard = sentry::init((
+        "https://633267fac776481296eadbcc7093af4a@o436453.ingest.sentry.io/6187825",
+        sentry::ClientOptions {
+            release: sentry::release_name!(),
+            ..Default::default()
+        },
+    ));
+
+    sentry::configure_scope(|scope| {
+        scope.set_user(Some(sentry::User {
+            email: get_email(),
+            ..Default::default()
+        }));
+    });
+
     Cli::parse();
 
     logger::stdio_debug_log(format!("FIG_LOG_LEVEL={}", logger::get_fig_log_level()));
 
     if let Err(e) = figterm_main() {
+        capture_anyhow(&e);
         logger::stdio_debug_log(format!("{}", e));
 
-        // Fallback to shell if figterm fails
-        launch_shell()?;
+        // Fallback to normal shell
+        if let Err(e) = launch_shell() {
+            capture_anyhow(&e);
+            logger::stdio_debug_log(format!("{}", e));
+        }
     }
 
     Ok(())
