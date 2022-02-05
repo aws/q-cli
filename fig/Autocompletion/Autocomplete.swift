@@ -126,7 +126,9 @@ class ShellInsertionProvider {
                                        offsetBy: -deletion,
                                        limitedBy: text.startIndex) ?? index
 
-      text.removeSubrange(startOfDeletion...index)
+      if deletion > 0 {
+        text.removeSubrange(startOfDeletion...index)
+      }
 
       text.insert(contentsOf: insertion, at: startOfDeletion)
 
