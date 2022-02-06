@@ -1,6 +1,6 @@
 [package]
 name = "figterm"
-version = "4.0.2"
+version = "4.0.3"
 authors = ["Fig"]
 edition = "2021"
 description = "A layer between the terminal and shell."
@@ -49,7 +49,7 @@ crossbeam = "0.8.1"
 rusqlite = { version = "0.26.3", features = ["bundled"] }
 
 # Fast concurrent hashmap
-dashmap = "5.0.0"
+dashmap = "4.0.2"
 fnv = "1.0.7"
 
 # Allocation free data structures
@@ -63,3 +63,6 @@ sentry = { version = "0.24.2", features = ["anyhow"] }
 
 [build-dependencies]
 prost-build = "0.9.0"
+
+[profile.release]
+debug = true
