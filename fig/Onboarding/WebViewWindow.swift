@@ -45,6 +45,8 @@ class WebViewWindow: NSWindow {
 extension WebViewWindow: NSWindowDelegate {
   func windowShouldClose(_ sender: NSWindow) -> Bool {
     self.contentViewController = nil
+    NSApp.setActivationPolicy(.accessory)
+
     return true
   }
 }

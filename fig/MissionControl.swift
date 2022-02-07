@@ -61,6 +61,10 @@ class MissionControl {
     MissionControl.shared.window = missionControl
     NSApp.activate(ignoringOtherApps: true)
 
+    if NSApp.activationPolicy() == .accessory {
+        NSApp.setActivationPolicy(.regular)
+    }
+
   }
 
 }
