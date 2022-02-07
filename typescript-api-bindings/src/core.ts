@@ -40,6 +40,15 @@ export function sendMessage(
 
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
+  if (!window.webkit) {
+    console.warn(
+      'Cannot send request. Fig.js is not supported in this browser.'
+    );
+    return;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
   if (!window.webkit.messageHandlers.proto) {
     console.error(
       'This version of Fig does not support using protocol buffers. Please update.'
