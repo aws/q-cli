@@ -261,6 +261,43 @@ impl ShellInstall {
     pub fn new() -> Self {
         Self::default()
     }
+
+    /// Merge two `ShellInstall`s together wit
+    pub fn merge(&self, other: &ShellInstall) -> ShellInstall {
+        let mut new = ShellInstall::default();
+
+        if let Some(use_files) = &other.use_files {
+            new.use_files = Some(use_files.clone());
+        } else if let Some(use_files) = &self.use_files {
+            new.use_files = Some(use_files.clone());
+        }
+
+        if let Some(apply) = &other.apply {
+            new.apply = Some(apply.clone());
+        } else if let Some(apply) = &self.apply {
+            new.apply = Some(apply.clone());
+        }
+
+        if let Some(pre) = &other.pre {
+            new.pre = Some(pre.clone());
+        } else if let Some(pre) = &self.pre {
+            new.pre = Some(pre.clone());
+        }
+
+        if let Some(post) = &other.post {
+            new.post = Some(post.clone());
+        } else if let Some(post) = &self.post {
+            new.post = Some(post.clone());
+        }
+
+        if let Some(dir) = &other.dir {
+            new.dir = Some(dir.clone());
+        } else if let Some(dir) = &self.dir {
+            new.dir = Some(dir.clone());
+        }
+
+        new
+    }
 }
 
 #[serde_as]

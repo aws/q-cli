@@ -11,16 +11,17 @@ base64 = "0.13.0"
 bitflags = "1.3.2"
 bytes = "1.1.0"
 clap = { version = "3.0.12", features = ["derive"] }
-clap_complete = "3.0.5"
+clap_complete = "3.0.6"
 clap_complete_fig = "3.0.2"
 copypasta = "0.7.1"
-crossterm = "0.22.1"
+crossterm = "0.23.0"
 ctrlc = "3.2.1"
 dialoguer = "0.9.0"
 directories = "4.0.1"
-futures = "0.3.19"
+futures = "0.3.21"
 git2 = { version = "0.13.25", features = ["vendored-openssl", "vendored-libgit2"] }
 globset = "0.4.8"
+handlebars = "4.2.1"
 once_cell = "1.9.0"
 prost = "0.9.0"
 rand = "0.8.4"
@@ -30,16 +31,15 @@ self_update = "0.28.0"
 semver = "1.0.5"
 sentry = { version = "0.24.2", features = ["anyhow"] }
 serde = { version = "1.0.136", features = ["derive"] }
-serde_with = "1.11.0"
+serde_with = "1.12.0"
 sha2 = "0.10.1"
 tempfile = "3.3.0"
 time = { version = "0.3.6", features = ["serde-human-readable", "local-offset"] }
-tokio = { version = "1.15.0", features = ["full"] }
+tokio = { version = "1.16.1", features = ["full"] }
 tokio-tungstenite = { version = "0.16.1", features = ["rustls-tls-native-roots"] }
 toml = "0.5.8"
 url = { version = "2.2.2", features = ["serde"] }
 validator = "0.14.0"
-walkdir = "2.3.2"
 
 # Used for auth 
 # Should break out into separate crate

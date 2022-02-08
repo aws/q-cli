@@ -26,6 +26,7 @@ pub fn fig_dir() -> Option<PathBuf> {
     Some(directories::BaseDirs::new()?.home_dir().join(".fig"))
 }
 
+/// Glob patterns against full paths
 pub fn glob_dir(glob: &GlobSet, directory: impl AsRef<Path>) -> Result<Vec<PathBuf>> {
     let mut files = Vec::new();
 
@@ -45,7 +46,34 @@ pub fn glob_dir(glob: &GlobSet, directory: impl AsRef<Path>) -> Result<Vec<PathB
     Ok(files)
 }
 
-pub fn glob(patterns: &[impl AsRef<str>]) -> Result<GlobSet> {
+/// Glob patterns agains the file name
+pub fn glob_files(glob: &GlobSet, directory: impl AsRef<Path>) -> Result<Vec<PathBuf>> {
+    let mut files = Vec::new();
+
+    // List files in the directory
+    let dir = std::fs::read_dir(directory)?;
+
+    for entry in dir {
+        let entry = entry?;
+        let path = entry.path();
+        let file_name = path.file_name();
+
+        // Check if the file matches the glob pattern
+        if let Some(file_name) = file_name {
+            if glob.is_match(file_name) {
+                files.push(path);
+            }
+        }
+    }
+
+    Ok(files)
+}
+
+pub fn glob<I, S>(patterns: I) -> Result<GlobSet>
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<str>,
+{
     let mut builder = GlobSetBuilder::new();
     for pattern in patterns {
         builder.add(Glob::new(pattern.as_ref())?);

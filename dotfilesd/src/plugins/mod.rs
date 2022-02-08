@@ -7,7 +7,7 @@ pub mod init;
 pub mod lock;
 pub mod manifest;
 
-use anyhow::{Context, Result};
+use anyhow::{bail, Context, Result};
 
 pub async fn download_plugin(plugin: &Plugin) -> Result<()> {
     let plugin_data_dir = download::plugin_data_dir().context("Failed to get source folder")?;
@@ -25,8 +25,8 @@ pub async fn download_plugin(plugin: &Plugin) -> Result<()> {
                 return Err(anyhow::anyhow!("No installation found for plugin"));
             }
         }
-        PluginType::Theme => todo!(),
-        PluginType::Special => todo!(),
+        PluginType::Theme => bail!("Themes are not supported yet"),
+        PluginType::Special => bail!("Special plugins are not supported yet"),
     };
 
     let mut lock_file = lock::LockData::load()
@@ -37,43 +37,43 @@ pub async fn download_plugin(plugin: &Plugin) -> Result<()> {
     entry.download_metadata = Some(metadata);
     entry.version = plugin.metadata.version.clone();
 
+    let default_install = plugin
+        .installation
+        .shell
+        .as_ref()
+        .map(|shell_install| shell_install.default_install.clone())
+        .flatten()
+        .unwrap_or_default();
+
+    let mut install_plugin = |shell: &Shell| {
+        let install = if let Some(s) = plugin
+            .installation
+            .shell
+            .as_ref()
+            .map(|shell_install| shell_install.per_shell.get(shell))
+            .flatten()
+        {
+            default_install.merge(s)
+        } else {
+            default_install.clone()
+        };
+
+        let locked = install.lock(&plugin_dir, shell, &plugin.metadata.name);
+
+        if let Ok(locked) = locked {
+            entry.shell_install.insert(*shell, locked);
+        }
+    };
+
     match &plugin.metadata.shells {
         Some(shells) => {
             for shell in shells {
-                let locked = plugin
-                    .installation
-                    .shell
-                    .as_ref()
-                    .map(|s| {
-                        s.default_install
-                            .as_ref()
-                            .map(|i| i.lock(&plugin_dir, shell).unwrap())
-                    })
-                    // .flatten()
-                    .flatten();
-
-                if let Some(locked) = locked {
-                    entry.shell_install.insert(*shell, locked);
-                }
+                install_plugin(shell);
             }
         }
         None => {
             for shell in Shell::all() {
-                let locked = plugin
-                    .installation
-                    .shell
-                    .as_ref()
-                    .map(|s| {
-                        s.default_install
-                            .as_ref()
-                            .map(|i| i.lock(&plugin_dir, shell).ok())
-                    })
-                    .flatten()
-                    .flatten();
-
-                if let Some(locked) = locked {
-                    entry.shell_install.insert(*shell, locked);
-                }
+                install_plugin(shell);
             }
         }
     }

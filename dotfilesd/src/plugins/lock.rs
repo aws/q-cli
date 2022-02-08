@@ -6,11 +6,12 @@ use std::{
 };
 
 use anyhow::{Context, Result};
+use handlebars::Handlebars;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
 use tokio::fs::{read_to_string, write};
 
-use crate::util::{glob, glob_dir, shell::Shell};
+use crate::util::{glob, glob_files, shell::Shell};
 
 use super::{
     download::DownloadMetadata,
@@ -116,6 +117,12 @@ impl LockData {
     }
 }
 
+#[derive(Serialize)]
+pub struct HandlebarsContext<'a> {
+    pub name: &'a str,
+    pub dir: &'a Path,
+}
+
 const DEFAULT_ZSH_MATCH: &[&str] = &[
     "{{ name }}.plugin.zsh",
     "{{ name }}.zsh",
@@ -146,55 +153,126 @@ const DEFAULT_FISH_MATCH: &[&str] = &[
 ];
 
 impl ShellInstall {
-    pub fn use_files(&self, directory: impl AsRef<Path>, shell: &Shell) -> Result<Vec<PathBuf>> {
+    pub fn use_files(
+        &self,
+        directory: impl AsRef<Path>,
+        shell: &Shell,
+        name: impl AsRef<str>,
+    ) -> Result<Vec<PathBuf>> {
         let mut files = Vec::new();
 
+        let handlebars = Handlebars::new();
+
         if let Some(use_files) = &self.use_files {
+            let use_files: Vec<_> = use_files
+                .iter()
+                .map(|s| {
+                    handlebars
+                        .render_template(
+                            s,
+                            &HandlebarsContext {
+                                name: name.as_ref(),
+                                dir: directory.as_ref(),
+                            },
+                        )
+                        .unwrap()
+                })
+                .collect();
+
             let glob = glob(use_files)?;
-            files.extend(glob_dir(&glob, directory)?);
+            files.extend(glob_files(&glob, directory)?);
         } else {
             let match_str = match shell {
                 Shell::Zsh => DEFAULT_ZSH_MATCH,
                 Shell::Bash => DEFAULT_BASH_MATCH,
                 Shell::Fish => DEFAULT_FISH_MATCH,
-            };
+            }
+            .into_iter()
+            .map(|s| {
+                handlebars
+                    .render_template(
+                        s,
+                        &HandlebarsContext {
+                            name: name.as_ref(),
+                            dir: directory.as_ref(),
+                        },
+                    )
+                    .unwrap()
+            });
 
             let glob = glob(match_str)?;
-            files.extend(glob_dir(&glob, directory)?);
+            files.extend(
+                glob_files(&glob, directory)?
+                    .first()
+                    .map(|path| path.to_owned()),
+            );
         }
-
-        println!("{:?}", files);
 
         Ok(files)
     }
 
-    pub fn lock(&self, directory: impl AsRef<Path>, shell: &Shell) -> Result<LockedShellInstall> {
-        let use_files = self.use_files(directory, shell)?;
+    pub fn lock(
+        &self,
+        directory: impl AsRef<Path>,
+        shell: &Shell,
+        name: impl AsRef<str>,
+    ) -> Result<LockedShellInstall> {
+        let use_files = self.use_files(directory.as_ref(), shell, name.as_ref())?;
 
         let use_files = match use_files.is_empty() {
             true => None,
             false => Some(use_files),
         };
 
-        let pre = self.pre.as_ref().map_or(vec![], |post| match post {
-            StringOrList::String(s) => vec![s.clone()],
-            StringOrList::List(list) => list.clone(),
-        });
+        let handlebars = Handlebars::new();
 
-        let pre = match pre.is_empty() {
-            true => None,
-            false => Some(pre),
-        };
+        let pre = self
+            .pre
+            .as_ref()
+            .map_or(None, |post| match post {
+                StringOrList::String(s) => Some(vec![s.clone()]),
+                StringOrList::List(list) if list.is_empty() => None,
+                StringOrList::List(list) => Some(list.clone()),
+            })
+            .map(|list| {
+                list.into_iter()
+                    .map(|s| {
+                        handlebars
+                            .render_template(
+                                &s,
+                                &HandlebarsContext {
+                                    name: name.as_ref(),
+                                    dir: directory.as_ref(),
+                                },
+                            )
+                            .unwrap()
+                    })
+                    .collect()
+            });
 
-        let post = self.post.as_ref().map_or(vec![], |post| match post {
-            StringOrList::String(s) => vec![s.clone()],
-            StringOrList::List(list) => list.clone(),
-        });
-
-        let post = match post.is_empty() {
-            true => None,
-            false => Some(post),
-        };
+        let post = self
+            .post
+            .as_ref()
+            .map_or(None, |post| match post {
+                StringOrList::String(s) => Some(vec![s.clone()]),
+                StringOrList::List(list) if list.is_empty() => None,
+                StringOrList::List(list) => Some(list.clone()),
+            })
+            .map(|list| {
+                list.into_iter()
+                    .map(|s| {
+                        handlebars
+                            .render_template(
+                                &s,
+                                &HandlebarsContext {
+                                    name: name.as_ref(),
+                                    dir: directory.as_ref(),
+                                },
+                            )
+                            .unwrap()
+                    })
+                    .collect()
+            });
 
         Ok(LockedShellInstall {
             use_files,

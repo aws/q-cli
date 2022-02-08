@@ -459,7 +459,38 @@ impl Diagnostic for FigDetails {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+struct DotfilesDiagnostics {
+    profile: Option<String>,
+    bashrc: Option<String>,
+    bash_profile: Option<String>,
+    zshrc: Option<String>,
+    zprofile: Option<String>,
+}
+
+impl DotfilesDiagnostics {
+    fn new() -> Result<DotfilesDiagnostics> {
+        let base_dir = directories::BaseDirs::new().context("Could not get base dir")?;
+        let home_dir = base_dir.home_dir();
+
+        let profile = std::fs::read_to_string(home_dir.join(".profile")).ok();
+        let bashrc = std::fs::read_to_string(home_dir.join(".bashrc")).ok();
+        let bash_profile = std::fs::read_to_string(home_dir.join(".bash_profile")).ok();
+        let zshrc = std::fs::read_to_string(home_dir.join(".zshrc")).ok();
+        let zprofile = std::fs::read_to_string(home_dir.join(".zprofile")).ok();
+
+        Ok(DotfilesDiagnostics {
+            profile,
+            bashrc,
+            bash_profile,
+            zshrc,
+            zprofile,
+        })
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Diagnostics {
+    timestamp: u64,
     version: Version,
     hardware: HardwareInfo,
     os: OSVersion,
@@ -467,6 +498,7 @@ pub struct Diagnostics {
     env_var: EnvVarDiagnostic,
     fig_details: FigDetails,
     integrations: IntegrationDiagnostics,
+    dotfiles: DotfilesDiagnostics,
 }
 
 impl Diagnostics {
@@ -482,7 +514,12 @@ impl Diagnostics {
 
         let fig_details = FigDetails::new(&diagnostics);
 
+        let timestamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)?
+            .as_secs();
+
         Ok(Diagnostics {
+            timestamp,
             version: Version {
                 distribution: diagnostics.distribution,
                 beta: diagnostics.beta,
@@ -497,6 +534,7 @@ impl Diagnostics {
             env_var: EnvVarDiagnostic::new(),
             fig_details,
             integrations,
+            dotfiles: DotfilesDiagnostics::new()?,
         })
     }
 }

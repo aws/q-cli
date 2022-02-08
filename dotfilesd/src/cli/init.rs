@@ -35,10 +35,33 @@ pub async fn shell_init_cli(shell: &Shell, when: &When) -> Result<()> {
         Err(err) => println!("# Could not load source: {}", err),
     }
 
-    LockData::load().await.unwrap();
-
     if let Ok(lock_data) = LockData::load().await {
-        println!("{}", lock_data.plugin_source("pure", shell)?);
+        for plugin in lock_data.get_entries() {
+            if let Some(shell_install) = plugin.shell_install.get(shell) {
+                match when {
+                    When::Pre => {
+                        if let Some(source) = &shell_install.pre {
+                            for line in source {
+                                println!("{}", line);
+                            }
+                        }
+                    }
+                    When::Post => {
+                        if let Some(files) = &shell_install.use_files {
+                            for file in files {
+                                println!("source '{}'", file.display());
+                            }
+                        }
+
+                        if let Some(source) = &shell_install.post {
+                            for line in source {
+                                println!("{}", line);
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     Ok(())
