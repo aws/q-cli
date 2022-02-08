@@ -13,9 +13,12 @@ protocol Logging {
 }
 
 class Logger {
-  enum Priority {
-    case info
-    case notify
+  enum LogLevel: String {
+    case error = "ERROR"
+    case warn = "WARN"
+    case info = "INFO"
+    case debug = "DEBUG"
+    case trace = "TRACE"
   }
 
   static var defaultLocation: URL = URL(fileURLWithPath: "\(NSHomeDirectory())/.fig/logs")
@@ -75,14 +78,19 @@ class Logger {
     }()
 
     static let maxLength: Int = {
+      // swiftlint:disable identifier_name
       return Subsystem.allCases.max { (a, b) -> Bool in
         return a.rawValue.count > b.rawValue.count
       }?.rawValue.count ?? 15
     }()
   }
 
-  static func log(message: String, priority: Priority = .info, subsystem: Subsystem = .global) {
-    var line = Logger.format(message, priority, subsystem)
+  static func log(message: String,
+                  priority: LogLevel = .debug,
+                  subsystem: Subsystem = .global,
+                  file: String = #file,
+                  lineno: Int = #line) {
+    var line = Logger.format(message, priority, subsystem, file, lineno)
 
     guard Settings.canLogWithoutCrash else {
       return
@@ -97,7 +105,7 @@ class Logger {
     }
 
     if Settings.shared.getValue(forKey: Settings.colorfulLogging) as? Bool ?? true {
-      line = Logger.format(message, priority, subsystem, colorful: true)
+      line = Logger.format(message, priority, subsystem, file, lineno, colorful: true)
     }
 
     appendToLog(line, subsystem: subsystem)
@@ -139,17 +147,25 @@ class Logger {
 
   static func format(
     _ message: String,
-    _ priority: Priority,
+    _ priority: LogLevel,
     _ subsystem: Subsystem,
+    _ filepath: String,
+    _ line: Int,
     colorful: Bool = false
   ) -> String {
+    let timestamp = Logger.timestamp
+    let filename = URL(fileURLWithPath: filepath).lastPathComponent
+
     var prefix = "\(subsystem.rawValue): "
 
     if colorful {
       prefix = "\u{001b}\(subsystem.ansiColor())" + prefix.trimmingCharacters(in: .whitespaces) + "\u{001b}[0m "
     }
 
-    return message.split(separator: "\n").map { return prefix + $0 }.joined(separator: "\n") + "\n"
+    return [ timestamp,
+             subsystem.rawValue + " [\(filename):\(line)]",
+             priority.rawValue,
+             message ].joined(separator: " | ") + "\n"
   }
 
   static var now: String {
@@ -160,6 +176,10 @@ class Logger {
     formatter.dateFormat = "yyyy-MM-dd HH:mm"
 
     return formatter.string(from: now)
+  }
+
+  static var timestamp: String {
+    return String(format: "%.0f", Date().timeIntervalSince1970 * 1_000)
   }
 }
 

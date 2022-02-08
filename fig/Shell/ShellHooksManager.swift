@@ -265,7 +265,7 @@ extension ShellHookManager {
   func shellPromptWillReturnLegacy(_ info: ShellMessage) {
     guard let (shellPid, ttyDescriptor, sessionId) = info.parseShellHook() else {
       Logger.log(
-        message: "Could not parse out shellHook metadata", priority: .notify, subsystem: .tty)
+        message: "Could not parse out shellHook metadata", priority: .warn, subsystem: .tty)
       return
     }
 
@@ -288,7 +288,7 @@ extension ShellHookManager {
         currentTopmostWindow: AXWindowServer.shared.allowlistedWindow)
     else {
       Logger.log(
-        message: "Could not link to window on shell prompt return.", priority: .notify,
+        message: "Could not link to window on shell prompt return.", priority: .warn,
         subsystem: .tty)
       return
     }
@@ -313,13 +313,13 @@ extension ShellHookManager {
   func startedNewShellSession(_ info: ShellMessage) {
     guard let (shellPid, ttyDescriptor, sessionId) = info.parseShellHook() else {
       Logger.log(
-        message: "Could not parse out shellHook metadata", priority: .notify, subsystem: .tty)
+        message: "Could not parse out shellHook metadata", priority: .warn, subsystem: .tty)
       return
     }
 
     guard let hash = attemptToFindToAssociatedWindow(for: sessionId) else {
       Logger.log(
-        message: "Could not link to window on new shell session.", priority: .notify,
+        message: "Could not link to window on new shell session.", priority: .warn,
         subsystem: .tty)
       return
     }
@@ -335,7 +335,7 @@ extension ShellHookManager {
   func startedNewTerminalSessionLegacy(_ info: ShellMessage) {
     guard let (shellPid, ttyDescriptor, sessionId) = info.parseShellHook() else {
       Logger.log(
-        message: "Could not parse out shellHook metadata", priority: .notify, subsystem: .tty)
+        message: "Could not parse out shellHook metadata", priority: .warn, subsystem: .tty)
       return
     }
 
@@ -377,7 +377,7 @@ extension ShellHookManager {
   func shellWillExecuteCommandLegacy(_ info: ShellMessage) {
     guard let (_, ttyDescriptor, sessionId) = info.parseShellHook() else {
       Logger.log(
-        message: "Could not parse out shellHook metadata", priority: .notify, subsystem: .tty)
+        message: "Could not parse out shellHook metadata", priority: .warn, subsystem: .tty)
       return
     }
 
@@ -398,7 +398,7 @@ extension ShellHookManager {
     else {
 
       Logger.log(
-        message: "Could not link to window on new terminal session.", priority: .notify,
+        message: "Could not link to window on new terminal session.", priority: .warn,
         subsystem: .tty)
       return
     }
@@ -444,7 +444,7 @@ extension ShellHookManager {
     // invariant: frontmost allowlisted window is assumed to host shell session which sent this edit buffer event.
     guard let window = AXWindowServer.shared.allowlistedWindow else {
       Logger.log(
-        message: "Could not link to window on new shell session.", priority: .notify,
+        message: "Could not link to window on new shell session.", priority: .warn,
         subsystem: .tty)
       return
     }
