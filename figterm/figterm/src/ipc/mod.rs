@@ -136,18 +136,6 @@ pub async fn spawn_incoming_receiver(
                         }
                         Err(e) => {
                             error!("Error decoding Figterm message: {}", e);
-                            let text = String::from_utf8_lossy(buff.as_ref()).to_string();
-                            let message = FigtermMessage {
-                                command: Some(figterm_message::Command::InsertTextCommand(
-                                    InsertTextCommand {
-                                        insertion: Some(text),
-                                        deletion: None,
-                                        offset: None,
-                                        immediate: None,
-                                    },
-                                )),
-                            };
-                            incomming_tx.clone().send_async(message).await.unwrap();
                         }
                     }
                 });
