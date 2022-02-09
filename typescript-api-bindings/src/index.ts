@@ -43,6 +43,7 @@ export {
   fs,
   Config,
   Native,
+  Internal,
   Fig,
   Debugger,
 };
