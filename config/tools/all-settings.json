@@ -69,6 +69,14 @@
     "category": "Autocomplete"
   },
   {
+    "settingName": "autocomplete.alwaysShowDescription",
+    "title": "Always Show Separated Description",
+    "description": "Set if Autocomplete should always display the extended separated description.",
+    "type": "boolean",
+    "default": "false",
+    "category": "Appearance"
+  },
+  {
     "settingName": "autocomplete.fontFamily",
     "title": "Font Family",
     "description": "Change the font of autocomplete",
