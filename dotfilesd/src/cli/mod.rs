@@ -15,10 +15,11 @@ pub mod settings;
 pub mod sync;
 pub mod tweet;
 pub mod util;
+pub mod theme;
 
-use self::{init::When, installation::InstallComponents, util::open_url};
+use self::{installation::InstallComponents, util::open_url};
 use crate::daemon::daemon;
-use crate::util::shell::Shell;
+use crate::util::shell::{When, Shell};
 use anyhow::Result;
 use clap::{ArgEnum, IntoApp, Parser, Subcommand};
 use crossterm::style::Stylize;
@@ -88,6 +89,10 @@ pub enum CliRootCommands {
     },
     /// Sync your latest dotfiles
     Sync,
+    /// Get or set theme
+    Theme {
+        theme: Option<String>
+    },
     /// Invite friends to Fig
     Invite,
     /// Tweet about Fig
@@ -174,6 +179,7 @@ impl Cli {
                 CliRootCommands::Tweet => tweet::tweet_cli(),
                 CliRootCommands::App(app_subcommand) => app_subcommand.execute().await,
                 CliRootCommands::Hook(hook_subcommand) => hook_subcommand.execute().await,
+                CliRootCommands::Theme { theme } => theme::theme_cli(theme),
                 CliRootCommands::Settings(settings_args) => settings_args.execute().await,
                 CliRootCommands::Debug(debug_subcommand) => debug_subcommand.execute().await,
                 CliRootCommands::Issue { description } => issue::issue_cli(description).await,

@@ -1,14 +1,9 @@
 //! Installation, uninstallation, and update of the CLI.
 
-use std::{
-    fs::File,
-    io::{Read, Write},
-    path::Path,
-};
+use std::path::Path;
 
 use anyhow::{Context, Result};
 use crossterm::style::Stylize;
-use regex::Regex;
 use self_update::update::UpdateStatus;
 
 use crate::{cli::util::dialoguer_theme, daemon, ipc::command::update_command, util::shell::Shell};
@@ -22,38 +17,39 @@ bitflags::bitflags! {
     }
 }
 
-pub fn install_cli(install_compoenents: InstallComponents) -> Result<()> {
-    if install_compoenents.contains(InstallComponents::DAEMON) {
+pub fn install_cli(install_components: InstallComponents) -> Result<()> {
+    if install_components.contains(InstallComponents::DAEMON) {
         install_daemon()?;
     }
 
-    if install_compoenents.contains(InstallComponents::DOTFILES) {
-        match dialoguer::Confirm::with_theme(&dialoguer_theme())
+    if install_components.contains(InstallComponents::DOTFILES) {
+        let mut manual_install = !dialoguer::Confirm::with_theme(&dialoguer_theme())
         .with_prompt("Do you want dotfiles to modify your shell config (you will have to manually do this otherwise)?")
-        .interact()?
-        {
-            true => {
-                install_dotfiles().context("Could not install dotfiles")?;
+        .interact()?;
+        if !manual_install {
+            if let Err(_) = install_dotfiles() {
+                println!("Could not automatically install.");
+                manual_install = true;
             }
-            false => {
-                println!();
-                println!("To install dotfiles you will have to add the following to your rc files");
-                println!();
-                println!(
-                    "At the top of your ~/.bashrc or ~/.zshrc or ~/.config/fish/config.fish file:"
-                );
-                println!("bashrc:    eval \"$(dotfiles shell bash pre)\"");
-                println!("zshrc:     eval \"$(dotfiles shell zsh pre)\"");
-                println!("fish:      eval \"$(dotfiles shell fish pre)\"");
-                println!();
-                println!(
-                    "At the bottom of your ~/.bashrc or ~/.zshrc or ~/.config/fish/config.fish file:"
-                );
-                println!("bashrc:    eval \"$(dotfiles shell bash post)\"");
-                println!("zshrc:     eval \"$(dotfiles shell zsh post)\"");
-                println!("fish:      eval \"$(dotfiles shell fish post)\"");
-                println!();
-            }
+        }
+        if manual_install {
+            println!();
+            println!("To install dotfiles manually you will have to add the following to your rc files");
+            println!();
+            println!(
+                "At the top of your .bashrc or .zshrc or .config/fish/conf.d/00_fig_pre.fish file:"
+            );
+            println!("bash:    eval \"$(dotfiles shell bash pre)\"");
+            println!("zsh:     eval \"$(dotfiles shell zsh pre)\"");
+            println!("fish:    eval \"$(dotfiles shell fish pre)\"");
+            println!();
+            println!(
+                "At the bottom of your .bashrc or .zshrc or .config/fish/conf.d/99_fig_post.fish file:"
+            );
+            println!("bash:    eval \"$(dotfiles shell bash post)\"");
+            println!("zsh:     eval \"$(dotfiles shell zsh post)\"");
+            println!("fish:    eval \"$(dotfiles shell fish post)\"");
+            println!();
         }
     }
 
@@ -75,95 +71,62 @@ fn install_daemon() -> Result<()> {
 
 fn install_dotfiles() -> Result<()> {
     for shell in [Shell::Bash, Shell::Zsh, Shell::Fish] {
-        if let Ok(path) = shell.get_config_path() {
-            if path.exists() {
-                // Prepend and append the dotfiles
-                let mut file = File::open(&path)?;
-                let mut contents = String::new();
-                file.read_to_string(&mut contents)?;
-
-                let mut modified = false;
-                let mut lines = vec![];
-
-                let pre_eval = match shell {
-                    Shell::Bash => "eval \"$(dotfiles init bash pre)\"",
-                    Shell::Zsh => "eval \"$(dotfiles init zsh pre)\"",
-                    Shell::Fish => "eval (dotfiles init fish pre)",
-                };
-
-                if !contents.contains(pre_eval) {
-                    lines.push("# Pre dotfiles eval");
-                    lines.push(pre_eval);
-                    lines.push("");
-
-                    modified = true;
-                }
-
-                lines.extend(contents.lines());
-
-                let post_eval = match shell {
-                    Shell::Bash => "eval \"$(dotfiles init bash post)\"",
-                    Shell::Zsh => "eval \"$(dotfiles init zsh post)\"",
-                    Shell::Fish => "eval (dotfiles init fish post)",
-                };
-
-                if !contents.contains(post_eval) {
-                    lines.push("");
-                    lines.push("# Post dotfiles eval");
-                    lines.push(post_eval);
-                    lines.push("");
-
-                    modified = true;
-                }
-
-                if modified {
-                    let mut file = File::create(&path)?;
-                    file.write_all(lines.join("\n").as_bytes())?;
-                }
-            }
-        }
+        for integration in shell.get_shell_integrations()? {
+            integration.install()?
+        };
     }
 
     Ok(())
 }
 
-pub fn uninstall_cli(install_compoenents: InstallComponents) -> Result<()> {
-    if install_compoenents.contains(InstallComponents::DAEMON) {
+pub fn uninstall_cli(install_components: InstallComponents) -> Result<()> {
+    if install_components.contains(InstallComponents::DAEMON) {
         uninstall_daemon()?;
     }
 
-    if install_compoenents.contains(InstallComponents::DOTFILES) {
+    if install_components.contains(InstallComponents::DOTFILES) {
         // Uninstall dotfiles
-        match dialoguer::Confirm::with_theme(&dialoguer_theme())
+        let mut manual_uninstall = !dialoguer::Confirm::with_theme(&dialoguer_theme())
         .with_prompt("Do you want dotfiles to modify your shell config (you will have to manually do this otherwise)?")
-        .interact()?
-        {
-            true => {
-                uninstall_dotfiles().context("Could not uninstall dotfiles")?;
-            },
-            false => {
-                println!();
-                println!(
-                    "To uninstall dotfiles you will have to remove the following from your rc files"
-                );
-                println!();
-                println!(
-                    "At the top of your ~/.bashrc or ~/.zshrc or ~/.config/fish/config.fish file:"
-                );
-                println!("bashrc:    eval \"$(dotfiles init bash pre)\"");
-                println!("zshrc:     eval \"$(dotfiles init zsh pre)\"");
-                println!("fish:      eval \"$(dotfiles init fish pre)\"");
-                println!();
-                println!("At the bottom of your ~/.bashrc or ~/.zshrc or ~/.config/fish/config.fish file:");
-                println!("bashrc:    eval \"$(dotfiles init bash post)\"");
-                println!("zshrc:     eval \"$(dotfiles init zsh post)\"");
-                println!("fish:      eval \"$(dotfiles init fish post)\"");
-                println!();
-            },
+        .interact()?;
+        if !manual_uninstall {
+            if let Err(_) = uninstall_dotfiles() {
+                println!("Could not uninstall dotfiles");
+                manual_uninstall = true;
+            }
+        }
+        if manual_uninstall {
+            println!();
+            println!(
+                "To uninstall dotfiles you should follow the instructions for your shell(s):"
+            );
+            println!();
+            println!("{}", "bash".bold().underlined());
+            println!(
+                "1. Remove {} from the top of your .bashrc, .bash_profile, .bash_login, and/or .profile files", "eval \"$(dotfiles init bash pre)\"".magenta()
+            );
+            println!(
+                "2. Remove {} from the bottom of your .bashrc, .bash_profile, .bash_login, and/or .profile files", "eval \"$(dotfiles init bash post)\"".magenta()
+            );
+            println!();
+
+            println!("{}", "zsh".bold().underlined());
+            println!(
+                "1. Remove {} from the top of your .zshrc and/or .zprofile", "eval \"$(dotfiles init zsh pre)\"".magenta()
+            );
+            println!(
+                "2. Remove {} from the bottom of your .zshrc, and/or .zprofile files", "eval \"$(dotfiles init zsh post)\"".magenta()
+            );
+            println!();
+
+            println!("{}", "fish".bold().underlined());
+            println!("Remove the 00_fig_pre.fish and 99_fig_post.fish files from your .config/fish/conf.d directory.");
+            // Print instructions for manual installation.
+            println!();
         }
     }
 
-    if install_compoenents.contains(InstallComponents::BINARY) {
+    if install_components.contains(InstallComponents::BINARY) {
         // Delete the binary
         let binary_path = Path::new("/usr/local/bin/dotfiles");
 
@@ -193,47 +156,9 @@ fn uninstall_daemon() -> Result<()> {
 
 fn uninstall_dotfiles() -> Result<()> {
     for shell in [Shell::Bash, Shell::Zsh, Shell::Fish] {
-        if let Ok(path) = shell.get_config_path() {
-            if path.exists() {
-                // Prepend and append the dotfiles
-                let mut file = File::open(&path)?;
-                let mut contents = String::new();
-                file.read_to_string(&mut contents)?;
-
-                let pre_eval = match shell {
-                    Shell::Bash => Regex::new(
-                        r#"(?:# Pre dotfiles eval\n)?eval "\$\(dotfiles init bash pre\)"\n{0,2}"#,
-                    ),
-                    Shell::Zsh => Regex::new(
-                        r#"(?:# Pre dotfiles eval\n)?eval "\$\(dotfiles init zsh pre\)"\n{0,2}"#,
-                    ),
-                    Shell::Fish => Regex::new(
-                        r#"(?:# Pre dotfiles eval\n)?eval \(dotfiles init fish pre\)\n{0,2}"#,
-                    ),
-                }
-                .unwrap();
-
-                let contents = pre_eval.replace_all(&contents, "");
-
-                let post_eval_regex = match shell {
-                    Shell::Bash => Regex::new(
-                        r#"(?:# Post dotfiles eval\n)?eval "\$\(dotfiles init bash post\)"\n{0,2}"#,
-                    ),
-                    Shell::Zsh => Regex::new(
-                        r#"(?:# Post dotfiles eval\n)?eval "\$\(dotfiles init zsh post\)"\n{0,2}"#,
-                    ),
-                    Shell::Fish => Regex::new(
-                        r#"(?:# Post dotfiles eval\n)?eval \(dotfiles init fish post\)\n{0,2}"#,
-                    ),
-                }
-                .unwrap();
-
-                let contents = post_eval_regex.replace_all(&contents, "");
-
-                let mut file = File::create(&path)?;
-                file.write_all(contents.as_bytes())?;
-            }
-        }
+        for integration in shell.get_shell_integrations()? {
+            integration.uninstall()?
+        };
     }
 
     Ok(())

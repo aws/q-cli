@@ -21,7 +21,7 @@ use crate::ipc::{connect_timeout, get_socket_path};
 
 use crate::{
     auth::Credentials,
-    util::{app_path_from_bundle_id, fig_dir, get_shell, glob, glob_dir, home_dir, shell::Shell},
+    util::{app_path_from_bundle_id, fig_dir, get_shell, glob, glob_dir, home_dir, shell::{Shell, ShellFileIntegration}},
 };
 use async_trait::async_trait;
 use tokio;
@@ -108,7 +108,6 @@ fn is_installed(app: impl AsRef<OsStr>) -> bool {
 
 fn app_version(app: impl AsRef<OsStr>) -> Option<Version> {
     let app_path = app_path_from_bundle_id(app)?;
-    println!("app_path {}", app_path);
     let output = Command::new("defaults")
         .args([
             "read",
@@ -118,7 +117,7 @@ fn app_version(app: impl AsRef<OsStr>) -> Option<Version> {
         .output()
         .ok()?;
     let version = String::from_utf8_lossy(&output.stdout);
-    Version::parse(&version).ok()
+    Version::parse(version.trim()).ok()
 }
 
 fn print_status_result(name: impl AsRef<str>, status: &Result<(), DoctorError>) {
@@ -239,13 +238,7 @@ impl DoctorCheck for FigtermSocketCheck {
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
         let term_session = std::env::var("TERM_SESSION_ID").context("No TERM_SESSION_ID")?;
 
-        let session_id = term_session
-            .as_str()
-            .split(':')
-            .last()
-            .ok_or(anyhow!("Invalid TERM_SESSION_ID"))?;
-
-        let socket_path = PathBuf::from("/tmp").join(format!("figterm-{}.socket", session_id));
+        let socket_path = PathBuf::from("/tmp").join(format!("figterm-{}.socket", term_session));
 
         check_file_exists(&socket_path)?;
 
@@ -280,25 +273,24 @@ impl DoctorCheck for FigtermSocketCheck {
 }
 
 struct DotfileCheck {
-    shell: Shell,
-    path: PathBuf,
+    integration: ShellFileIntegration
 }
 
 #[async_trait]
 impl DoctorCheck for DotfileCheck {
     fn name(&self) -> Cow<'static, str> {
-        format!("{} contains valid fig hooks", self.path.display()).into()
+        format!("{} contains valid fig hooks", self.integration.path.display()).into()
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        match self.shell {
+        match self.integration.shell {
             Shell::Fish => {
                 // Source order for fish is handled by fish itself.
-                if self.path.exists() {
+                if self.integration.path.exists() {
                     return Ok(());
                 } else {
                     return Err(DoctorError::Error {
-                        reason: format!("{} does not exist", self.path.display()).into(),
+                        reason: format!("{} does not exist", self.integration.path.display()).into(),
                         info: vec![],
                         fix: None,
                     });
@@ -306,11 +298,11 @@ impl DoctorCheck for DotfileCheck {
             }
             Shell::Zsh | Shell::Bash => {
                 // Read file if it exists
-                let contents = match read_to_string(&self.path) {
+                let contents = match read_to_string(&self.integration.path) {
                     Ok(contents) => contents,
                     _ => {
                         return Err(DoctorError::Warning(
-                            format!("{} does not exist", self.path.display()).into(),
+                            format!("{} does not exist", self.integration.path.display()).into(),
                         ))
                     }
                 };
@@ -328,53 +320,66 @@ impl DoctorCheck for DotfileCheck {
                 let first_line = lines.first().copied().unwrap_or_default();
                 if first_line.eq("[ -s ~/.fig/shell/pre.sh ] && source ~/.fig/shell/pre.sh") {
                     return Err(DoctorError::Warning(
-                        format!("{} has legacy integration", self.path.display()).into(),
+                        format!("{} has legacy integration", self.integration.path.display()).into(),
                     ));
                 }
 
-                let command = format!("dotfiles shell {} pre", self.shell);
-                if first_line.ne(&format!("eval \"$({})\"", command)) {
-                    let top_lines = lines.get(0..10).map_or(vec![], Vec::from);
-                    let top_line_text = top_lines
-                        .iter()
-                        .enumerate()
-                        .map(|(i, x)| format!("{} {}", i + 1, x).into());
+                if let Some(pre) = self.integration.pre_integration() {
+                    if !pre.get_source_regex()?.is_match(first_line) {
+                        let top_lines = lines.get(0..10).map_or(vec![], Vec::from);
+                        let top_line_text = top_lines
+                            .iter()
+                            .enumerate()
+                            .map(|(i, x)| format!("{} {}", i + 1, x).into());
 
-                    return Err(DoctorError::Error {
+                        let fix_integration = self.integration.clone();
+                        return Err(DoctorError::Error {
 
-                        reason: format!("Command `{}` is not sourced first in {}", command, self.path.display()).into(),
-                        info: vec![
-                            "In order for autocomplete to work correctly, Fig's shell integration must be sourced first.".into(),
-                            format!("Top of {}:", self.path.display()).into()
-                        ].into_iter().chain(top_line_text).collect(),
-                        fix: None
-                    });
+                            reason: format!("Pre shell integration not sourced first in {}", self.integration.path.display()).into(),
+                            info: vec![
+                                "In order for autocomplete to work correctly, Fig's shell integration must be sourced first.".into(),
+                                format!("Top of {}:", self.integration.path.display()).into()
+                            ].into_iter().chain(top_line_text).collect(),
+                            fix: Some(Box::new(move || {
+                                fix_integration.uninstall()?;
+                                fix_integration.install()?;
+                                Ok(())
+                            }))
+                        })
+                    }
+
                 }
 
                 let last_line = lines.last().copied().unwrap_or_default();
                 if last_line.eq("[ -s ~/.fig/fig.sh ] && source ~/.fig/fig.sh") {
                     return Err(DoctorError::Warning(
-                        format!("{} has legacy integration", self.path.display()).into(),
+                        format!("{} has legacy integration", self.integration.path.display()).into(),
                     ));
                 }
 
-                let command = format!("dotfiles shell {} post", self.shell);
-                if last_line.ne(&format!("eval \"$({})\"", command)) {
-                    let n = lines.len();
-                    let bottom_lines = lines.get(n - 10..n).map_or(vec![], Vec::from);
-                    let bottom_line_text = bottom_lines
-                        .iter()
-                        .enumerate()
-                        .map(|(i, x)| format!("{} {}", n + i + 1, x).into());
+                if let Some(post) = self.integration.post_integration() {
+                    if !post.get_source_regex()?.is_match(last_line) {
+                        let n = lines.len();
+                        let bottom_lines = lines.get(n - 10..n).map_or(vec![], Vec::from);
+                        let bottom_line_text = bottom_lines
+                            .iter()
+                            .enumerate()
+                            .map(|(i, x)| format!("{} {}", n + i + 1, x).into());
 
-                    return Err(DoctorError::Error {
-                        reason: format!("Command `{}` is not sourced last in {}", command, self.path.display()).into(),
-                        info: vec![
-                            "In order for autocomplete to work correctly, Fig's shell integration must be sourced last.".into(),
-                            format!("Bottom of {}:", self.path.display()).into()
-                        ].into_iter().chain(bottom_line_text).collect(),
-                        fix: None
-                    });
+                        let fix_integration = self.integration.clone();
+                        return Err(DoctorError::Error {
+                            reason: format!("Post shell integration not sourced last in {}", self.integration.path.display()).into(),
+                            info: vec![
+                                "In order for autocomplete to work correctly, Fig's shell integration must be sourced last.".into(),
+                                format!("Bottom of {}:", self.integration.path.display()).into()
+                            ].into_iter().chain(bottom_line_text).collect(),
+                            fix: Some(Box::new(move || {
+                                fix_integration.uninstall()?;
+                                fix_integration.install()?;
+                                Ok(())
+                            }))
+                        });
+                    }
                 }
 
                 Ok(())
@@ -911,21 +916,19 @@ pub async fn doctor_cli() -> Result<()> {
         )
         .await?;
 
-        run_checks(
-            "Let's check your dotfiles...".into(),
-            vec![
-                // TODO
-                &DotfileCheck {
-                    shell: Shell::Bash,
-                    path: Shell::Bash.get_config_path()?,
-                },
-                &DotfileCheck {
-                    shell: Shell::Zsh,
-                    path: Shell::Zsh.get_config_path()?,
-                },
-            ],
-        )
-        .await?;
+        let shell_integrations: Vec<_> = [Shell::Bash, Shell::Zsh, Shell::Fish]
+            .into_iter()
+            .map(|shell| shell.get_shell_integrations())
+            .collect::<Result<Vec<_>>>()?
+            .into_iter()
+            .flatten()
+            .map(|integration| DotfileCheck { integration })
+            .collect();
+        let all_dotfile_checks: Vec<_> = shell_integrations
+            .iter()
+            .map(|p| (&*p) as &dyn DoctorCheck)
+            .collect();
+        run_checks("Let's check your dotfiles...".into(), all_dotfile_checks).await?;
 
         run_checks(
             "Let's check if your system is compatible...".into(),
