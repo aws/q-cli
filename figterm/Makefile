@@ -26,26 +26,26 @@ PLATFORM := $(shell uname -s)
 
 all: build-figterm fig_get_shell
 
-build-figterm-arm: 
+build-figterm-aarch64: 
 	cargo build --target=aarch64-apple-darwin $(CARGO_FLAGS)
-	cp $(ROOT)/target/aarch64-apple-darwin/release/figterm $(BUILT_PRODUCTS_DIR)/figterm-arm
+	cp $(ROOT)/target/aarch64-apple-darwin/release/figterm $(BUILT_PRODUCTS_DIR)/figterm-aarch64
 
-build-figterm-x86: 
+build-figterm-x86_64: 
 	cargo build --target=x86_64-apple-darwin $(CARGO_FLAGS)
-	cp $(ROOT)/target/x86_64-apple-darwin/release/figterm $(BUILT_PRODUCTS_DIR)/figterm-x86
+	cp $(ROOT)/target/x86_64-apple-darwin/release/figterm $(BUILT_PRODUCTS_DIR)/figterm-x86_64
 
-fig_get_shell-arm: get_shell.c
-	$(CC) get_shell.c $(CFLAGS) -o $(BUILT_PRODUCTS_DIR)/fig_get_shell-arm -target arm64-apple-macos11
+fig_get_shell-aarch64: get_shell.c
+	$(CC) get_shell.c $(CFLAGS) -o $(BUILT_PRODUCTS_DIR)/fig_get_shell-aarch64 -target arm64-apple-macos11
 
-fig_get_shell-x86: get_shell.c
-	$(CC) get_shell.c $(CFLAGS) -o $(BUILT_PRODUCTS_DIR)/fig_get_shell-x86 -target x86_64-apple-macos10.12
+fig_get_shell-x86_64: get_shell.c
+	$(CC) get_shell.c $(CFLAGS) -o $(BUILT_PRODUCTS_DIR)/fig_get_shell-x86_64 -target x86_64-apple-macos10.12
 
 ifeq "$(PLATFORM)" "Darwin"
-build-figterm: build-figterm-x86 build-figterm-arm
-	lipo -create -output $(BUILT_PRODUCTS_DIR)/figterm $(BUILT_PRODUCTS_DIR)/figterm-x86 $(BUILT_PRODUCTS_DIR)/figterm-arm
+build-figterm: build-figterm-x86_64 build-figterm-aarch64
+	lipo -create -output $(BUILT_PRODUCTS_DIR)/figterm $(BUILT_PRODUCTS_DIR)/figterm-x86_64 $(BUILT_PRODUCTS_DIR)/figterm-aarch64
 
-fig_get_shell: fig_get_shell-x86 fig_get_shell-arm
-	lipo -create -output $(BUILT_PRODUCTS_DIR)/fig_get_shell $(BUILT_PRODUCTS_DIR)/fig_get_shell-x86 $(BUILT_PRODUCTS_DIR)/fig_get_shell-arm
+fig_get_shell: fig_get_shell-x86_64 fig_get_shell-aarch64
+	lipo -create -output $(BUILT_PRODUCTS_DIR)/fig_get_shell $(BUILT_PRODUCTS_DIR)/fig_get_shell-x86_64 $(BUILT_PRODUCTS_DIR)/fig_get_shell-aarch64
 else
 build-figterm:
 	cargo build $(CARGO_FLAGS)
