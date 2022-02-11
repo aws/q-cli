@@ -71,14 +71,14 @@ jobs:
     if: "!contains(github.event.head_commit.message, 'skip ci')"
     timeout-minutes: 45
     steps:
-      # - name: Make artifacts directory
-      #   run: mkdir -p ./artifacts
-      # - name: Download artifacts
-      # - uses: actions/download-artifact@v2
-      #   with:
-      #     path: ./artifacts
-      # - name: List artifacts
-      #   run: ls ./artifacts
+      - name: Make artifacts directory
+        run: mkdir -p ./artifacts
+      - name: Download artifacts
+        uses: actions/download-artifact@v2
+        with:
+          path: ./artifacts
+      - name: List artifacts
+        run: ls ./artifacts
 ############################################
 # Declare ENVIRONMENT variables
 ############################################
