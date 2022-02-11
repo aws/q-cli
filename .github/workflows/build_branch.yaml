@@ -32,8 +32,9 @@ jobs:
     strategy:
       matrix:
         arch: [ x86_64, aarch64 ]
-        binary: dotfilesd
     runs-on: macos-11
+    env:
+      BINARY_NAME: dotfilesd
     steps:
       - name: "Checkout Project"
         uses: actions/checkout@v2
@@ -56,17 +57,14 @@ jobs:
       - name: Compile figterm
         run: make build-${{ matrix.arch }}-apple-darwin 
         working-directory: ./dotfilesd
-        env:
-          BINARY_NAME: ${{ matrix.binary }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.binary }}-${{matrix.arch}}-apple-darwin
-          path: ./dotfilesd/build/${{ matrix.binary }}-${{matrix.arch}}-apple-darwin 
+          path: ./dotfilesd/build/$BINARY_NAME-${{matrix.arch}}-apple-darwin 
           retention-days: 1
       
-
   release:
     needs: dotfilesd
     runs-on: macos-11
