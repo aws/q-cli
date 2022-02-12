@@ -99,7 +99,7 @@ jobs:
 
 
       - name: Cache build artifacts
-          id: figterm-cache
+        id: figterm-cache
         uses: actions/cache@v2
         with:
           path: ./figterm/build
