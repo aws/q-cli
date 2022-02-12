@@ -173,6 +173,11 @@ impl<T> Row<T> {
         std::mem::swap(&mut split, &mut self.inner);
         split
     }
+
+    #[inline]
+    pub fn get(&self, column: Column) -> Option<&T> {
+        self.inner.get(column.0)
+    }
 }
 
 impl<'a, T> IntoIterator for &'a mut Row<T> {
