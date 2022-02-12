@@ -18,7 +18,7 @@ use tokio::{
     net::{UnixListener, UnixStream},
 };
 
-use crate::proto::figterm::{figterm_message, FigtermMessage, InsertTextCommand};
+use crate::proto::figterm::FigtermMessage;
 
 /// Get path to "$TMPDIR/fig.socket"
 pub fn get_socket_path() -> PathBuf {
