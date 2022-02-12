@@ -305,13 +305,13 @@ jobs:
         run: make figterm fig_get_shell
         working-directory: ./figterm
         env: 
-          - BUILT_PRODUCTS_DIR: ${{ env.FIG_BUILT_PRODUCTS_DIR}}
+          BUILT_PRODUCTS_DIR: ${{ env.FIG_BUILT_PRODUCTS_DIR}}
 
       - name: Build dotfilesd
         run: make macos
         working-directory: ./dotfilesd
         env: 
-          - BUILT_PRODUCTS_DIR: ${{ env.FIG_BUILT_PRODUCTS_DIR}}
+          BUILT_PRODUCTS_DIR: ${{ env.FIG_BUILT_PRODUCTS_DIR}}
           
 ############################################
 # Build, Archive & Export 
