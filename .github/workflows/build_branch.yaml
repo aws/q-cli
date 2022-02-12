@@ -28,42 +28,42 @@ on:
     - cron:  '0 7 * * 1-5'
 
 jobs:
-  dotfilesd:
-    strategy:
-      matrix:
-        arch: [ x86_64, aarch64 ]
-    runs-on: ubuntu-latest
-    env:
-      BINARY_NAME: dotfilesd
-    steps:
-      - name: "Checkout Project"
-        uses: actions/checkout@v2
-        with:
-          submodules: recursive
-############################################
-# Setup Rust build environment
-############################################
-      - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          profile: minimal
-          override: true
-          target: ${{ matrix.arch }}-apple-darwin
+#   dotfilesd:
+#     strategy:
+#       matrix:
+#         arch: [ x86_64, aarch64 ]
+#     runs-on: macos-11
+#     env:
+#       BINARY_NAME: dotfilesd
+#     steps:
+#       - name: "Checkout Project"
+#         uses: actions/checkout@v2
+#         with:
+#           submodules: recursive
+# ############################################
+# # Setup Rust build environment
+# ############################################
+#       - name: Install Rust toolchain
+#         uses: actions-rs/toolchain@v1
+#         with:
+#           toolchain: stable
+#           profile: minimal
+#           override: true
+#           target: ${{ matrix.arch }}-apple-darwin
     
-      - name: Cache Dependencies
-        uses: Swatinem/rust-cache@ce325b60658c1b38465c06cc965b79baf32c1e72
+#       - name: Cache Dependencies
+#         uses: Swatinem/rust-cache@ce325b60658c1b38465c06cc965b79baf32c1e72
 
-      - name: Compile figterm
-        run: make build-${{ matrix.arch }}-apple-darwin 
-        working-directory: ./dotfilesd
+#       - name: Compile figterm
+#         run: make build-${{ matrix.arch }}-apple-darwin 
+#         working-directory: ./dotfilesd
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: ${{ matrix.binary }}-${{matrix.arch}}-apple-darwin
-          path: ./dotfilesd/build/*
-          retention-days: 1
+#       - name: Upload artifact
+#         uses: actions/upload-artifact@v2
+#         with:
+#           name: ${{ matrix.binary }}-${{matrix.arch}}-apple-darwin
+#           path: ./dotfilesd/build/*
+#           retention-days: 1
 
   figterm:
     strategy:
@@ -243,8 +243,9 @@ jobs:
 ############################################
       - name: List artifacts
         run: |
-            ls ./artifacts
             pwd
+            ls
+            ls ./artifacts
       - name: Ensure BUILT_PRODUCTS_DIR exists
         run: mkdir -p $BUILT_PRODUCTS_DIR
       - name: Copy artifacts to BUILT_PRODUCTS_DIR
