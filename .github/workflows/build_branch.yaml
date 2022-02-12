@@ -29,42 +29,59 @@ on:
     - cron:  '0 7 * * 1-5'
 
 jobs:
-#   dotfilesd:
-#     strategy:
-#       matrix:
-#         arch: [ x86_64, aarch64 ]
-#     runs-on: macos-11
-#     env:
-#       BINARY_NAME: dotfilesd
-#     steps:
-#       - name: "Checkout Project"
-#         uses: actions/checkout@v2
-#         with:
-#           submodules: recursive
-# ############################################
-# # Setup Rust build environment
-# ############################################
-#       - name: Install Rust toolchain
-#         uses: actions-rs/toolchain@v1
-#         with:
-#           toolchain: stable
-#           profile: minimal
-#           override: true
-#           target: ${{ matrix.arch }}-apple-darwin
+  dotfilesd:
+    strategy:
+      matrix:
+        arch: [ x86_64, aarch64 ]
+    runs-on: macos-11
+    env:
+      BINARY_NAME: dotfilesd
+    steps:
+      - name: "Checkout Project"
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+############################################
+# Setup Rust build environment
+############################################
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+          target: ${{ matrix.arch }}-apple-darwin
     
-#       - name: Cache Dependencies
-#         uses: Swatinem/rust-cache@ce325b60658c1b38465c06cc965b79baf32c1e72
+      - name: Cache Dependencies
+        uses: Swatinem/rust-cache@ce325b60658c1b38465c06cc965b79baf32c1e72
 
-#       - name: Compile figterm
-#         run: make build-${{ matrix.arch }}-apple-darwin 
-#         working-directory: ./dotfilesd
+      - name: Get dotfilesd version
+        id: dotfilesd-version
+        run: |
+          VERSION=$(cat Cargo.toml | grep version | grep -v '{' | cut -d= -f2 | tr -d '"' | tr -d " ")
+          echo "::set-output name=version::$VERSION"
+          echo $VERSION
+        working-directory: ./dotfilesd
 
-#       - name: Upload artifact
-#         uses: actions/upload-artifact@v2
-#         with:
-#           name: ${{ matrix.binary }}-${{matrix.arch}}-apple-darwin
-#           path: ./dotfilesd/build/*
-#           retention-days: 1
+
+      - name: Cache build artifacts
+        id: dotfilesd-cache
+        uses: actions/cache@v2
+        with:
+          path: ./figterm/build
+          key: ${{ runner.os }}-${{ matrix.arch }}-${{ steps.dotfilesd-version.outputs.version }}
+
+      - name: Compile figterm
+        if: steps.dotfilesd-cache.outputs.cache-hit != 'true'
+        run: make build-${{ matrix.arch }}-apple-darwin 
+        working-directory: ./dotfilesd
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.binary }}-${{matrix.arch}}-apple-darwin
+          path: ./dotfilesd/build/*
+          retention-days: 1
 
   figterm:
     strategy:
@@ -162,7 +179,7 @@ jobs:
           submodules: recursive
       - name: "SET: BUILT_PRODUCTS_DIR"
         run: |
-            echo BUILT_PRODUCTS_DIR=$(xcodebuild -scheme fig -showBuildSettings | grep "^    BUILT_PRODUCTS_DIR" | cut -d= -f2 | xargs) >> $GITHUB_ENV
+            echo BUILT_PRODUCTS_DIR=$(xcodebuild -scheme fig -showBuildSettings | grep "^    BUILT_PRODUCTS_DIR" | cut -d= -f2 | sed 's|Products/Release|Intermediates.noindex/ArchiveIntermediates/fig/BuildProductsPath|' | xargs) >> $GITHUB_ENV
       - name: "SET: VERSION"
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: true
@@ -296,10 +313,6 @@ jobs:
         uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: "12.5.1"
-
-      - name: "Determine BUILT_PRODUCTS_DIR"
-        run: xcodebuild -scheme fig -showBuildSettings | grep "^    BUILT_PRODUCTS_DIR" | cut -d= -f2
-
       - name: "Import Certificate"
         uses: devbotsxyz/import-signing-certificate@main
         with:
