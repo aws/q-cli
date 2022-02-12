@@ -182,7 +182,7 @@ jobs:
           submodules: recursive
       - name: "SET: BUILT_PRODUCTS_DIR"
         run: |
-            echo BUILT_PRODUCTS_DIR=$(xcodebuild -scheme fig -showBuildSettings | grep "^    BUILT_PRODUCTS_DIR" | cut -d= -f2 | sed 's|Products/Release|Intermediates.noindex/ArchiveIntermediates/fig/BuildProductsPath/Release|' | xargs) >> $GITHUB_ENV
+            echo FIG_BUILT_PRODUCTS_DIR=$(xcodebuild -scheme fig -showBuildSettings | grep "^    BUILT_PRODUCTS_DIR" | cut -d= -f2 | sed 's|Products/Release|Intermediates.noindex/ArchiveIntermediates/fig/BuildProductsPath/Release|' | xargs) >> $GITHUB_ENV
       - name: "SET: VERSION"
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: true
@@ -290,24 +290,28 @@ jobs:
             ls
             ls ./artifacts
       - name: Ensure BUILT_PRODUCTS_DIR exists
-        run: mkdir -p "$BUILT_PRODUCTS_DIR"
+        run: mkdir -p "$FIG_BUILT_PRODUCTS_DIR"
       - name: Copy artifacts to BUILT_PRODUCTS_DIR
-        run: find . -maxdepth 1 -name '*.tar' -exec tar -xvf '{}' -C"$BUILT_PRODUCTS_DIR" \;
+        run: find . -maxdepth 1 -name '*.tar' -exec tar -xvf '{}' -C"$FIG_BUILT_PRODUCTS_DIR" \;
         working-directory: ./artifacts
 
       - name: List contents of BUILT_PRODUCTS_DIR
-        run: ls "$BUILT_PRODUCTS_DIR"
+        run: ls "$FIG_BUILT_PRODUCTS_DIR"
 
       - name: Touch all files in BUILT_PRODUCTS_DIR
-        run: touch -c "$BUILT_PRODUCTS_DIR"/*
+        run: touch -c "$FIG_BUILT_PRODUCTS_DIR"/*
 
       - name: Build figterm
         run: make figterm fig_get_shell
         working-directory: ./figterm
+        env: 
+          - BUILT_PRODUCTS_DIR: ${{ env.FIG_BUILT_PRODUCTS_DIR}}
 
       - name: Build dotfilesd
         run: make macos
         working-directory: ./dotfilesd
+        env: 
+          - BUILT_PRODUCTS_DIR: ${{ env.FIG_BUILT_PRODUCTS_DIR}}
           
 ############################################
 # Build, Archive & Export 
