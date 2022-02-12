@@ -451,6 +451,16 @@ impl<T> Grid<T> {
         let point = self.cursor.point;
         &mut self[point.line][point.column]
     }
+
+    #[inline]
+    pub fn get_line(&self, line: Line) -> Option<&Row<T>> {
+        self.raw.get(line)
+    }
+
+    #[inline]
+    pub fn get_point(&self, point: Point) -> Option<&T> {
+        self.get_line(point.line)?.get(point.column)
+    }
 }
 
 impl<T: PartialEq> PartialEq for Grid<T> {
@@ -619,8 +629,10 @@ impl<'a, T> Iterator for GridIterator<'a, T> {
             _ => self.point.column += Column(1),
         }
 
+        let cell = &self.grid.get_point(self.point)?;
+
         Some(Indexed {
-            cell: &self.grid[self.point],
+            cell,
             point: self.point,
         })
     }

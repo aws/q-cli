@@ -249,6 +249,12 @@ impl<T> Storage<T> {
         self.inner.rotate_left(self.zero);
         self.zero = 0;
     }
+
+    #[inline]
+    pub(crate) fn get(&self, requested: Line) -> Option<&Row<T>> {
+        let index = self.compute_index(requested);
+        self.inner.get(index)
+    }
 }
 
 impl<T> Index<Line> for Storage<T> {
