@@ -51,8 +51,9 @@ endif
 
 macos: $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-darwin-universal
 
-macos-x86_64-apple-darwin: $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-x86_64-apple-darwin
-macos-aarch64-apple-darwin: $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-aarch64-apple-darwin
+build-x86_64-apple-darwin: $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-x86_64-apple-darwin
+build-aarch64-apple-darwin: $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-aarch64-apple-darwin
+build-x86_64-unknown-linux-gnu: $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-x86_64-unknown-linux-gnu
 
 $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-x86_64-apple-darwin: $(SRC)
 	cargo build --target=x86_64-apple-darwin $(CARGO_OPTIONS)
