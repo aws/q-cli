@@ -278,6 +278,9 @@ jobs:
       - name: List contents of BUILT_PRODUCTS_DIR
         run: ls "$BUILT_PRODUCTS_DIR"
 
+      - name: Touch all files in BUILT_PRODUCTS_DIR
+        run: touch -c "$BUILT_PRODUCTS_DIR"/*
+
       - name: Build figterm
         run: make figterm fig_get_shell
         working-directory: ./figterm
