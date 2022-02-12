@@ -94,7 +94,8 @@ jobs:
         id: figterm-version
         run: |
           VERSION=$(cat Cargo.toml | grep version | grep -v '{' | cut -d= -f2 | tr -d '"' | tr -d " ")
-            echo "::set-output name=version::$VERSION"
+          echo "::set-output name=version::$VERSION"
+          echo $VERSION
         working-directory: ./figterm
 
 
@@ -258,7 +259,7 @@ jobs:
           path: ./artifacts
       - name: Unwrap all artifact folders
         run: |
-            ls ./artifacts
+            ls
             find . -mindepth 2 -type f -exec mv '{}' . ';'
         working-directory: ./artifacts
 
