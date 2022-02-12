@@ -302,9 +302,9 @@ jobs:
         run: make figterm fig_get_shell
         working-directory: ./figterm
 
-      # - name: Build dotfilesd
-      #   run: make
-      #   working-directory: ./dotfilesd
+      - name: Build dotfilesd
+        run: make macos
+        working-directory: ./dotfilesd
           
 ############################################
 # Build, Archive & Export 
