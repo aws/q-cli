@@ -76,11 +76,14 @@ jobs:
         run: make build-${{ matrix.arch }}-apple-darwin 
         working-directory: ./dotfilesd
 
+      - name: Tar artifacts
+        run: tar -cvf dotfilesd-${{matrix.arch}}.tar -C ./dotfilesd/build .
+
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ matrix.binary }}-${{matrix.arch}}-apple-darwin
-          path: ./dotfilesd/build/*
+          name: dotfilesd-${{matrix.arch}}-apple-darwin
+          path: dotfilesd-${{matrix.arch}}.tar
           retention-days: 1
 
   figterm:
