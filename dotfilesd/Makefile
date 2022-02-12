@@ -71,7 +71,7 @@ $(ARTIFACTS)/$(BINARY_NAME)-aarch64-apple-darwin: $(SRC)
 	cargo build --target=aarch64-apple-darwin $(CARGO_OPTIONS)
 	cp $(ROOT)/target/aarch64-apple-darwin/release/$(BINARY_NAME) $@
 
-$(ARTIFACTS)/$(BINARY_NAME)-darwin-universal: $(ARTIFACTS)/$(BINARY_NAME)-x86_64-apple-darwin $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-aarch64-apple-darwin
+$(ARTIFACTS)/$(BINARY_NAME)-darwin-universal: $(ARTIFACTS)/$(BINARY_NAME)-x86_64-apple-darwin $(ARTIFACTS)/$(BINARY_NAME)-aarch64-apple-darwin
 	lipo -create -output $@ $^
 linux: $(ARTIFACTS)/$(BINARY_NAME)-x86_64-unknown-linux-gnu $(ARTIFACTS)/$(BINARY_NAME)-aarch64-unknown-linux-gnu
 
