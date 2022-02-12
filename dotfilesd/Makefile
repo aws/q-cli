@@ -93,7 +93,9 @@ build-native:
 	cargo build $(CARGO_OPTIONS)
 	cp $(ROOT)/target/release/$(BINARY_NAME) $(ARTIFACTS)/$(BINARY_NAME)
 
-install: build-native
+install: all
+
+cargo-install: build-native
 	cargo install --path $(ROOT)
 
 clean:
