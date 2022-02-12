@@ -182,7 +182,7 @@ jobs:
           submodules: recursive
       - name: "SET: BUILT_PRODUCTS_DIR"
         run: |
-            echo BUILT_PRODUCTS_DIR=$(xcodebuild -scheme fig -showBuildSettings | grep "^    BUILT_PRODUCTS_DIR" | cut -d= -f2 | sed 's|Products/Release|Intermediates.noindex/ArchiveIntermediates/fig/BuildProductsPath|' | xargs) >> $GITHUB_ENV
+            echo BUILT_PRODUCTS_DIR=$(xcodebuild -scheme fig -showBuildSettings | grep "^    BUILT_PRODUCTS_DIR" | cut -d= -f2 | sed 's|Products/Release|Intermediates.noindex/ArchiveIntermediates/fig/BuildProductsPath/Release|' | xargs) >> $GITHUB_ENV
       - name: "SET: VERSION"
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: true
