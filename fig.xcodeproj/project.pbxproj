@@ -729,7 +729,7 @@
 				"fig_get_shell-0000000000" /* fig_get_shell */,
 				"figcli-00000000000000000" /* figcli */,
 				754316F426E08F5C00188887 /* FigInputMethod.app */,
-				754A84E627A8D6C6008B6087 /* dotfiles-darwin-universal */,
+				754A84E627A8D6C6008B6087 /* dotfilesd-darwin-universal */,
 			);
 			name = Products;
 			sourceTree = "<group>";
