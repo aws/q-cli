@@ -68,8 +68,8 @@ jobs:
         id: dotfilesd-cache
         uses: actions/cache@v2
         with:
-          path: ./figterm/build
-          key: ${{ runner.os }}-${{ matrix.arch }}-${{ steps.dotfilesd-version.outputs.version }}
+          path: ./dotfilesd/build
+          key: dotfilesd-${{ runner.os }}-${{ matrix.arch }}-${{ steps.dotfilesd-version.outputs.version }}
 
       - name: Compile figterm
         if: steps.dotfilesd-cache.outputs.cache-hit != 'true'
