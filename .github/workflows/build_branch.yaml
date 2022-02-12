@@ -96,7 +96,7 @@ jobs:
         working-directory: ./figterm
 
       - name: Tar artifacts
-        run: tar -cvf figterm-${{matrix.arch}}.tar ./figterm/build
+        run: tar -cvf figterm-${{matrix.arch}}.tar -C ./figterm/build .
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
@@ -247,20 +247,21 @@ jobs:
             ls
             ls ./artifacts
       - name: Ensure BUILT_PRODUCTS_DIR exists
-        run: mkdir -p $BUILT_PRODUCTS_DIR
+        run: mkdir -p "$BUILT_PRODUCTS_DIR"
       - name: Copy artifacts to BUILT_PRODUCTS_DIR
-        run: find . -maxdepth 1 -name '*.tar' -exec tar -xvf '{}' -C$BUILT_PRODUCTS_DIR \;
+        run: find . -maxdepth 1 -name '*.tar' -exec tar -xvf '{}' -C"$BUILT_PRODUCTS_DIR" \;
         working-directory: ./artifacts
+        
       - name: List contents of BUILT_PRODUCTS_DIR
-        run: ls $BUILT_PRODUCTS_DIR
+        run: ls "$BUILT_PRODUCTS_DIR"
 
       - name: Build figterm
-        run: make
+        run: make figterm fig_get_shell
         working-directory: ./figterm
 
-      - name: Build dotfilesd
-        run: make
-        working-directory: ./dotfilesd
+      # - name: Build dotfilesd
+      #   run: make
+      #   working-directory: ./dotfilesd
           
 ############################################
 # Build, Archive & Export 

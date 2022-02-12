@@ -24,34 +24,46 @@ PROGS =	figterm fig_get_shell
 
 PLATFORM := $(shell uname -s)
 
-all: build-figterm fig_get_shell
+all: figterm fig_get_shell
 
-build-figterm-aarch64: 
+$(BUILT_PRODUCTS_DIR)/figterm-aarch64: 
 	cargo build --target=aarch64-apple-darwin $(CARGO_FLAGS)
-	cp $(ROOT)/target/aarch64-apple-darwin/release/figterm $(BUILT_PRODUCTS_DIR)/figterm-aarch64
+	mkdir -p $(dir $@)
+	cp $(ROOT)/target/aarch64-apple-darwin/release/figterm $@
 
-build-figterm-x86_64: 
+$(BUILT_PRODUCTS_DIR)/figterm-x86_64: 
 	cargo build --target=x86_64-apple-darwin $(CARGO_FLAGS)
-	cp $(ROOT)/target/x86_64-apple-darwin/release/figterm $(BUILT_PRODUCTS_DIR)/figterm-x86_64
+	mkdir -p $(dir $@)
+	cp $(ROOT)/target/x86_64-apple-darwin/release/figterm $@
 
-fig_get_shell-aarch64: get_shell.c
-	$(CC) get_shell.c $(CFLAGS) -o $(BUILT_PRODUCTS_DIR)/fig_get_shell-aarch64 -target arm64-apple-macos11
+$(BUILT_PRODUCTS_DIR)/fig_get_shell-aarch64: get_shell.c
+	mkdir -p $(dir $@)
+	$(CC) get_shell.c $(CFLAGS) -o $@ -target arm64-apple-macos11
 
-fig_get_shell-x86_64: get_shell.c
-	$(CC) get_shell.c $(CFLAGS) -o $(BUILT_PRODUCTS_DIR)/fig_get_shell-x86_64 -target x86_64-apple-macos10.12
+$(BUILT_PRODUCTS_DIR)/fig_get_shell-x86_64: get_shell.c
+	mkdir -p $(dir $@)
+	$(CC) get_shell.c $(CFLAGS) -o $@ -target x86_64-apple-macos10.12
+
+figterm-x86_64: $(BUILT_PRODUCTS_DIR)/figterm-x86_64
+figterm-aarch64: $(BUILT_PRODUCTS_DIR)/figterm-aarch64
+figterm: $(BUILT_PRODUCTS_DIR)/figterm
+
+fig_get_shell-x86_64: $(BUILT_PRODUCTS_DIR)/fig_get_shell-x86_64
+fig_get_shell-aarch64: $(BUILT_PRODUCTS_DIR)/fig_get_shell-aarch64
+fig_get_shell: $(BUILT_PRODUCTS_DIR)/fig_get_shell
 
 ifeq "$(PLATFORM)" "Darwin"
-build-figterm: build-figterm-x86_64 build-figterm-aarch64
+$(BUILT_PRODUCTS_DIR)/figterm: $(BUILT_PRODUCTS_DIR)/figterm-x86_64 $(BUILT_PRODUCTS_DIR)/figterm-aarch64
 	lipo -create -output $(BUILT_PRODUCTS_DIR)/figterm $(BUILT_PRODUCTS_DIR)/figterm-x86_64 $(BUILT_PRODUCTS_DIR)/figterm-aarch64
 
-fig_get_shell: fig_get_shell-x86_64 fig_get_shell-aarch64
+$(BUILT_PRODUCTS_DIR)/fig_get_shell: $(BUILT_PRODUCTS_DIR)/fig_get_shell-x86_64 $(BUILT_PRODUCTS_DIR)/fig_get_shell-aarch64
 	lipo -create -output $(BUILT_PRODUCTS_DIR)/fig_get_shell $(BUILT_PRODUCTS_DIR)/fig_get_shell-x86_64 $(BUILT_PRODUCTS_DIR)/fig_get_shell-aarch64
 else
-build-figterm:
+$(BUILT_PRODUCTS_DIR)/figterm:
 	cargo build $(CARGO_FLAGS)
 	cp $(ROOT)/target/release/figterm $(BUILT_PRODUCTS_DIR)/figterm
 
-fig_get_shell: get_shell.c
+$(BUILT_PRODUCTS_DIR)/fig_get_shell: get_shell.c
 	$(CC) get_shell.c $(CFLAGS) -o $(BUILT_PRODUCTS_DIR)/fig_get_shell
 endif
 
