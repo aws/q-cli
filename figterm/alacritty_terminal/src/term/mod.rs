@@ -647,12 +647,12 @@ impl<T> Term<T> {
         start_col_offset: Column,
         mask: Option<char>,
         wrap_lines: bool,
-    ) -> TextBuffer
+    ) -> Option<TextBuffer>
     where
         T: EventListener,
     {
         let mut buffer = String::with_capacity(rect.size());
-        let mut padding = 0;
+        let mut padding: usize = 0;
         let cursor = self.grid().cursor.point;
 
         let mut last_char_was_padding = true;
@@ -662,7 +662,13 @@ impl<T> Term<T> {
         let mut start = rect.start;
         start.column += start_col_offset;
 
-        self.grid().iter_from_to(start, rect.end).for_each(|cell| {
+        let end = rect.end;
+
+        if start > end {
+            return None;
+        }
+
+        self.grid().iter_from_to(start, end).for_each(|cell| {
             if cell.point.column == rect.start.column {
                 last_char_was_padding = true;
             }
@@ -671,7 +677,7 @@ impl<T> Term<T> {
                 cursor_idx = Some(buffer.len());
                 while padding > 0 {
                     buffer.push(' ');
-                    padding -= 1;
+                    padding = padding.saturating_sub(1);
                 }
             }
 
@@ -680,26 +686,32 @@ impl<T> Term<T> {
                     && (cell.fig_flags.contains(FigFlags::IN_PROMPT)
                         || cell.fig_flags.contains(FigFlags::IN_SUGGESTION)))
             {
-                padding += 1;
+                padding = padding.saturating_add(1);
                 last_char_was_padding = true;
             } else if cell.c as u32 == u32::MAX {
             } else {
                 while padding > 0 {
                     buffer.push(' ');
-                    padding -= 1;
+                    padding = padding.saturating_sub(1);
                 }
 
-                if mask.is_some() && cell.fig_flags.contains(FigFlags::IN_PROMPT)
-                    || cell.fig_flags.contains(FigFlags::IN_SUGGESTION)
-                {
-                    buffer.push(mask.unwrap());
-                } else {
-                    buffer.push(cell.c);
-                    last_char_was_padding = false;
+                match mask {
+                    Some(mask)
+                        if cell.fig_flags.contains(FigFlags::IN_PROMPT)
+                            || cell.fig_flags.contains(FigFlags::IN_SUGGESTION) =>
+                    {
+                        buffer.push(mask);
+                    }
+                    _ => {
+                        buffer.push(cell.c);
+                        last_char_was_padding = false;
+                    }
                 }
             }
 
-            if cell.point.column == rect.end.column - 1 && cell.point.line < rect.end.line {
+            if cell.point.column == rect.end.column.saturating_sub(1)
+                && cell.point.line < rect.end.line
+            {
                 if last_char_was_padding || !wrap_lines {
                     buffer.push('\n');
                 }
@@ -707,7 +719,7 @@ impl<T> Term<T> {
             }
         });
 
-        TextBuffer { buffer, cursor_idx }
+        Some(TextBuffer { buffer, cursor_idx })
     }
 
     pub fn get_current_buffer(&self) -> Option<TextBuffer>
@@ -716,29 +728,33 @@ impl<T> Term<T> {
     {
         match self.shell_state().cmd_cursor {
             Some(cmd_cursor) => {
-                let rect = Rect {
-                    start: Point::new(cmd_cursor.line, Column(0)),
-                    end: Point::new(self.bottommost_line(), self.last_column()),
-                };
+                let start = Point::new(cmd_cursor.line, Column(0));
+                let end = Point::new(self.bottommost_line(), self.last_column());
 
-                let mut buffer = self.get_text_region(
-                    &rect,
-                    Column(cmd_cursor.column.saturating_sub(1)),
-                    Some(' '),
-                    true,
-                );
+                if start < end {
+                    let rect = Rect { start, end };
 
-                if let Some(cursor_idx) = buffer.cursor_idx {
-                    buffer.buffer = buffer.buffer.trim_end().to_string();
+                    let mut buffer = self.get_text_region(
+                        &rect,
+                        Column(cmd_cursor.column.saturating_sub(1)),
+                        Some(' '),
+                        true,
+                    )?;
 
-                    if buffer.buffer.len() < cursor_idx {
-                        buffer
-                            .buffer
-                            .push_str(&" ".repeat(cursor_idx - buffer.buffer.len()));
+                    if let Some(cursor_idx) = buffer.cursor_idx {
+                        buffer.buffer = buffer.buffer.trim_end().to_string();
+
+                        if buffer.buffer.len() < cursor_idx {
+                            buffer.buffer.push_str(
+                                &" ".repeat(cursor_idx.saturating_sub(buffer.buffer.len())),
+                            );
+                        }
                     }
-                }
 
-                Some(buffer)
+                    Some(buffer)
+                } else {
+                    None
+                }
             }
             None => None,
         }

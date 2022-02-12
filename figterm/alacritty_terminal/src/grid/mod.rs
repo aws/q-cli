@@ -509,7 +509,7 @@ pub trait Dimensions {
     /// Index for the last column.
     #[inline]
     fn last_column(&self) -> Column {
-        Column(self.columns() - 1)
+        Column(self.columns().saturating_sub(1))
     }
 
     /// Line farthest up in the grid history.

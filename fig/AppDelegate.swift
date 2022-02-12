@@ -1667,10 +1667,14 @@ extension AppDelegate: NSMenuDelegate {
     }
 
     guard let shellContext = windowSafe.associatedShellContext else {
+
       let items = stringArrayToMenu(items: [
         "Not linked to terminal session.",
         "---",
-        "window: \(windowSafe.hash)"
+        "window: \(windowSafe.hash)",
+        "---",
+        "Run `fig doctor` for more details."
+
       ])
       return (NSColor.yellow, items)
     }
