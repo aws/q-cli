@@ -32,7 +32,7 @@ jobs:
     strategy:
       matrix:
         arch: [ x86_64, aarch64 ]
-    runs-on: macos-11
+    runs-on: ubuntu-latest
     env:
       BINARY_NAME: dotfilesd
     steps:
@@ -62,7 +62,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.binary }}-${{matrix.arch}}-apple-darwin
-          path: ./dotfilesd/build/
+          path: ./dotfilesd/build/*
           retention-days: 1
 
   figterm:
@@ -95,15 +95,17 @@ jobs:
           make fig_get_shell-${{ matrix.arch }}
         working-directory: ./figterm
 
+      - name: Tar artifacts
+        run: tar -cvf figterm-${{matrix.arch}}.tar ./figterm/build
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
           name: figterm-${{matrix.arch}}-apple-darwin
-          path: ./figterm/build/
+          path: figterm-${{matrix.arch}}.tar
           retention-days: 1
       
   release:
-    needs: [ dotfilesd, figterm ]
+    needs: [ figterm ]
     runs-on: macos-11
     if: "!contains(github.event.head_commit.message, 'skip ci')"
     timeout-minutes: 45
@@ -239,18 +241,22 @@ jobs:
 ############################################
 # Position generated build artifacts
 ############################################
+      - name: List artifacts
+        run: |
+            ls ./artifacts
+            pwd
       - name: Ensure BUILT_PRODUCTS_DIR exists
         run: mkdir -p $BUILT_PRODUCTS_DIR
       - name: Copy artifacts to BUILT_PRODUCTS_DIR
-        run: |
-          cp ./artifacts/* $BUILT_PRODUCTS_DIR
+        run: find . -maxdepth 1 -name '*.tar' -exec tar -xvf '{}' -C$BUILT_PRODUCTS_DIR \;
+        working-directory: ./artifacts
       - name: List contents of BUILT_PRODUCTS_DIR
         run: ls $BUILT_PRODUCTS_DIR
 
       - name: Build figterm
         run: make
         working-directory: ./figterm
-        
+
       - name: Build dotfilesd
         run: make
         working-directory: ./dotfilesd
