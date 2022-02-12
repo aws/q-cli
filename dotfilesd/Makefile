@@ -19,6 +19,8 @@ endif
 CARGO_OPTIONS ?= --locked --release
 
 BINARY_NAME=dotfilesd
+SRC = Cargo.toml $(wildcard src/**/*)
+
 
 $(shell mkdir -p $(BUILT_PRODUCTS_DIR))
 
@@ -47,34 +49,36 @@ ifeq "$(PLATFORM)" "windows"
 all: windows
 endif
 
-macos: build-darwin-universal
+macos: $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-darwin-universal
 
-build-x86_64-apple-darwin: 
+macos-x86_64-apple-darwin: $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-x86_64-apple-darwin
+macos-aarch64-apple-darwin: $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-aarch64-apple-darwin
+
+$(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-x86_64-apple-darwin: $(SRC)
 	cargo build --target=x86_64-apple-darwin $(CARGO_OPTIONS)
-	cp $(ROOT)/target/x86_64-apple-darwin/release/$(BINARY_NAME) $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-x86_64-apple-darwin
+	cp $(ROOT)/target/x86_64-apple-darwin/release/$(BINARY_NAME) $@
 
-build-aarch64-apple-darwin: 
+$(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-aarch64-apple-darwin: $(SRC)
 	cargo build --target=aarch64-apple-darwin $(CARGO_OPTIONS)
-	cp $(ROOT)/target/aarch64-apple-darwin/release/$(BINARY_NAME) $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-aarch64-apple-darwin
+	cp $(ROOT)/target/aarch64-apple-darwin/release/$(BINARY_NAME) $@
 
-build-darwin-universal: build-x86_64-apple-darwin build-aarch64-apple-darwin
-	lipo -create -output $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-darwin-universal $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-x86_64-apple-darwin $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-aarch64-apple-darwin
+$(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-darwin-universal: $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-x86_64-apple-darwin $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-aarch64-apple-darwin
+	lipo -create -output $@ $^
+linux: $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-x86_64-unknown-linux-gnu $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-aarch64-unknown-linux-gnu
 
-linux: build-x86_64-unknown-linux-gnu build-aarch64-unknown-linux-gnu
-
-build-x86_64-unknown-linux-gnu: 
+$(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-x86_64-unknown-linux-gnu: $(SRC)
 	cargo build --target=x86_64-unknown-linux-gnu $(CARGO_OPTIONS)
-	cp $(ROOT)/target/x86_64-unknown-linux-gnu/release/$(BINARY_NAME) $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-x86_64-unknown-linux-gnu
+	cp $(ROOT)/target/x86_64-unknown-linux-gnu/release/$(BINARY_NAME) $@
 
-build-aarch64-unknown-linux-gnu: 
+$(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-aarch64-unknown-linux-gnu: $(SRC)
 	cargo build --target=aarch64-unknown-linux-gnu $(CARGO_OPTIONS)
-	cp $(ROOT)/target/aarch64-unknown-linux-gnu/release/$(BINARY_NAME) $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-aarch64-unknown-linux-gnu
+	cp $(ROOT)/target/aarch64-unknown-linux-gnu/release/$(BINARY_NAME) $@
 
-windows: build-x86_64-pc-windows-gnu
+windows: $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-x86_64-pc-windows-gnu
 
-build-x86_64-pc-windows-gnu:
+$(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-x86_64-pc-windows-gnu: $(SRC)
 	cargo build --target x86_64-pc-windows-gnu $(CARGO_OPTIONS)
-	cp $(ROOT)/target/x86_64-pc-windows-gnu/release/$(BINARY_NAME).exe $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-x86_64-pc-windows-gnu
+	cp $(ROOT)/target/x86_64-pc-windows-gnu/release/$(BINARY_NAME).exe $@
 
 build-native:
 	cargo build $(CARGO_OPTIONS)
@@ -85,4 +89,4 @@ install: build-native
 
 clean:
 	cargo clean
-	rm -rf build
+	rm -rf $(BUILT_PRODUCTS_DIR)
