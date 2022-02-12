@@ -21,17 +21,18 @@ endif
 $(shell mkdir -p $(BUILT_PRODUCTS_DIR))
 
 PROGS =	figterm fig_get_shell
+SRC = Cargo.toml $(wildcard figterm/**/*) $(wildcard alacritty_terminal/**/*) $(wildcard  fig-color/**/*)
 
 PLATFORM := $(shell uname -s)
 
 all: figterm fig_get_shell
 
-$(BUILT_PRODUCTS_DIR)/figterm-aarch64: 
+$(BUILT_PRODUCTS_DIR)/figterm-aarch64: $(SRC)
 	cargo build --target=aarch64-apple-darwin $(CARGO_FLAGS)
 	mkdir -p $(dir $@)
 	cp $(ROOT)/target/aarch64-apple-darwin/release/figterm $@
 
-$(BUILT_PRODUCTS_DIR)/figterm-x86_64: 
+$(BUILT_PRODUCTS_DIR)/figterm-x86_64: $(SRC)
 	cargo build --target=x86_64-apple-darwin $(CARGO_FLAGS)
 	mkdir -p $(dir $@)
 	cp $(ROOT)/target/x86_64-apple-darwin/release/figterm $@
