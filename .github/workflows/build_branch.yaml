@@ -5,6 +5,7 @@ on:
     branches:
       - master
       - staging
+      - dotfiles/ci
   workflow_dispatch:
     inputs:
       buildName:
@@ -91,7 +92,7 @@ jobs:
 
       - name: Compile figterm
         run: |
-          make build-figterm-${{ matrix.arch }}
+          make figterm-${{ matrix.arch }}
           make fig_get_shell-${{ matrix.arch }}
         working-directory: ./figterm
 
@@ -251,7 +252,7 @@ jobs:
       - name: Copy artifacts to BUILT_PRODUCTS_DIR
         run: find . -maxdepth 1 -name '*.tar' -exec tar -xvf '{}' -C"$BUILT_PRODUCTS_DIR" \;
         working-directory: ./artifacts
-        
+
       - name: List contents of BUILT_PRODUCTS_DIR
         run: ls "$BUILT_PRODUCTS_DIR"
 
