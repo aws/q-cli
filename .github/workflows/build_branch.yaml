@@ -96,7 +96,7 @@ jobs:
           VERSION=$(cat Cargo.toml | grep version | grep -v '{' | cut -d= -f2 | tr -d '"' | tr -d " ")
           echo "::set-output name=version::$VERSION"
           echo $VERSION
-        working-directory: ./figterm
+        working-directory: ./figterm/figterm
 
 
       - name: Cache build artifacts
@@ -261,6 +261,7 @@ jobs:
         run: |
             ls
             find . -mindepth 2 -type f -exec mv '{}' . ';'
+            ls
         working-directory: ./artifacts
 
       - name: List artifacts
