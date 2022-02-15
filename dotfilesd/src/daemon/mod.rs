@@ -13,11 +13,12 @@ use std::{
 use anyhow::{anyhow, Context, Result};
 use futures::StreamExt;
 
+use notify::{watcher, DebouncedEvent, RecommendedWatcher, RecursiveMode, Watcher};
 use serde::{Deserialize, Serialize};
 use time::format_description::well_known::Rfc3339;
 use tokio::{fs::remove_file, net::UnixListener, select};
 
-use crate::daemon::websocket::process_websocket;
+use crate::{daemon::websocket::process_websocket, util::settings::Settings};
 
 use self::{launchd_plist::LaunchdPlist, systemd_unit::SystemdUnit};
 
@@ -278,6 +279,36 @@ struct WebsocketAwsToken {
     id_token: String,
 }
 
+async fn spawn_settings_watcher() -> Result<()> {
+    let settings_path = Settings::path()?;
+
+    let (tx, rx) = std::sync::mpsc::channel();
+    let mut watcher = watcher(tx, Duration::from_secs(1))?;
+
+    std::thread::spawn(move || {
+        watcher
+            .watch(&settings_path, RecursiveMode::NonRecursive)
+            .unwrap();
+        loop {
+            match rx.recv() {
+                Ok(event) => {
+                    // TODO: Something here!
+                    tokio::runtime::Runtime::new()
+                        .unwrap()
+                        .block_on(async {
+                            crate::ipc::send_settings_changed().await.unwrap();
+                        });
+                }
+                Err(err) => {
+                    eprintln!("{}", err);
+                }
+            }
+        }
+    });
+
+    Ok(())
+}
+
 /// Spawn the daemon to listen for updates and dotfiles changes
 pub async fn daemon() -> Result<()> {
     daemon_log("Starting daemon...");
@@ -298,6 +329,8 @@ pub async fn daemon() -> Result<()> {
 
     let unix_socket =
         UnixListener::bind(unix_socket_path).context("Could not connect to unix socket")?;
+
+    spawn_settings_watcher().await?;
 
     daemon_log("Daemon is now running");
 

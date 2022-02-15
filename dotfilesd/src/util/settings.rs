@@ -1,4 +1,4 @@
-use std::fs;
+use std::{fs, path::PathBuf};
 
 use anyhow::{Context, Result};
 use directories::BaseDirs;
@@ -8,6 +8,22 @@ pub struct Settings {
 }
 
 impl Settings {
+    pub fn path() -> Result<PathBuf> {
+        let base_dirs = BaseDirs::new().context("Failed to get base dirs")?;
+
+        let settings_path_1 = base_dirs.config_dir().join("fig").join("settings.json");
+        if settings_path_1.exists() {
+            return Ok(settings_path_1);
+        }
+
+        let settings_path_2 = base_dirs.home_dir().join(".fig").join("settings.json");
+        if settings_path_2.exists() {
+            return Ok(settings_path_2);
+        }
+
+        Err(anyhow::anyhow!("Could not find settings file"))
+    }
+
     pub fn load() -> Result<Self> {
         let settings_path = BaseDirs::new()
             .context("Could not get home dir")?
