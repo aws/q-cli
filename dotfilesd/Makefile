@@ -54,24 +54,24 @@ all: windows
 endif
 
 macos: $(ARTIFACTS)/$(BINARY_NAME)-darwin-universal
-	cp $^ $(BUILT_PRODUCTS_DIR)
+	install $^ $(BUILT_PRODUCTS_DIR)
 
 build-x86_64-apple-darwin: $(ARTIFACTS)/$(BINARY_NAME)-x86_64-apple-darwin
-	cp $^ $(BUILT_PRODUCTS_DIR)
+	install $^ $(BUILT_PRODUCTS_DIR)
 
 build-aarch64-apple-darwin: $(ARTIFACTS)/$(BINARY_NAME)-aarch64-apple-darwin
-	cp $^ $(BUILT_PRODUCTS_DIR)
+	install $^ $(BUILT_PRODUCTS_DIR)
 
 build-x86_64-unknown-linux-gnu: $(ARTIFACTS)/$(BINARY_NAME)-x86_64-unknown-linux-gnu
-	cp $^ $(BUILT_PRODUCTS_DIR)
+	install $^ $(BUILT_PRODUCTS_DIR)
 
 $(ARTIFACTS)/$(BINARY_NAME)-x86_64-apple-darwin: $(SRC)
 	cargo build --target=x86_64-apple-darwin $(CARGO_OPTIONS)
-	cp $(TARGET_DIR)/x86_64-apple-darwin/release/$(BINARY_NAME) $@
+	install $(TARGET_DIR)/x86_64-apple-darwin/release/$(BINARY_NAME) $@
 
 $(ARTIFACTS)/$(BINARY_NAME)-aarch64-apple-darwin: $(SRC)
 	cargo build --target=aarch64-apple-darwin $(CARGO_OPTIONS)
-	cp $(TARGET_DIR)/aarch64-apple-darwin/release/$(BINARY_NAME) $@
+	install $(TARGET_DIR)/aarch64-apple-darwin/release/$(BINARY_NAME) $@
 
 $(ARTIFACTS)/$(BINARY_NAME)-darwin-universal: $(ARTIFACTS)/$(BINARY_NAME)-x86_64-apple-darwin $(ARTIFACTS)/$(BINARY_NAME)-aarch64-apple-darwin
 	lipo -create -output $@ $^
@@ -79,21 +79,21 @@ linux: $(ARTIFACTS)/$(BINARY_NAME)-x86_64-unknown-linux-gnu $(ARTIFACTS)/$(BINAR
 
 $(ARTIFACTS)/$(BINARY_NAME)-x86_64-unknown-linux-gnu: $(SRC)
 	cargo build --target=x86_64-unknown-linux-gnu $(CARGO_OPTIONS)
-	cp $(TARGET_DIR)/x86_64-unknown-linux-gnu/release/$(BINARY_NAME) $@
+	install $(TARGET_DIR)/x86_64-unknown-linux-gnu/release/$(BINARY_NAME) $@
 
 $(ARTIFACTS)/$(BINARY_NAME)-aarch64-unknown-linux-gnu: $(SRC)
 	cargo build --target=aarch64-unknown-linux-gnu $(CARGO_OPTIONS)
-	cp $(TARGET_DIR)/aarch64-unknown-linux-gnu/release/$(BINARY_NAME) $@
+	install $(TARGET_DIR)/aarch64-unknown-linux-gnu/release/$(BINARY_NAME) $@
 
 windows: $(ARTIFACTS)/$(BINARY_NAME)-x86_64-pc-windows-gnu
 
 $(ARTIFACTS)/$(BINARY_NAME)-x86_64-pc-windows-gnu: $(SRC)
 	cargo build --target x86_64-pc-windows-gnu $(CARGO_OPTIONS)
-	cp $(TARGET_DIR)/x86_64-pc-windows-gnu/release/$(BINARY_NAME).exe $@
+	install $(TARGET_DIR)/x86_64-pc-windows-gnu/release/$(BINARY_NAME).exe $@
 
 build-native:
 	cargo build $(CARGO_OPTIONS)
-	cp $(TARGET_DIR)/release/$(BINARY_NAME) $(ARTIFACTS)/$(BINARY_NAME)
+	install $(TARGET_DIR)/release/$(BINARY_NAME) $(ARTIFACTS)/$(BINARY_NAME)
 
 install: all
 
@@ -101,6 +101,7 @@ cargo-install: build-native
 	cargo install --path $(ROOT)
 
 clean:
-	cargo clean
+	command -v cargo &>/dev/null && cargo clean
+	rm -rf $(TARGET_DIR)
 	rm -rf $(ARTIFACTS)
 	rm -rf $(BUILT_PRODUCTS_DIR)
