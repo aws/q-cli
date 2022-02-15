@@ -1,13 +1,17 @@
-name: Dotfilesd CI
+name: Rust CI
 
 on:
   workflow_dispatch:
   pull_request:
     paths:
+      - "rust-lib/**"
+      - "figterm/**"
       - "dotfilesd/**"
       - "proto/**"
   push:
     paths:
+      - "rust-lib/**"
+      - "figterm/**"
       - "dotfilesd/**"
       - "proto/**"
     branches:
@@ -17,10 +21,6 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-
-defaults:
-  run:
-    working-directory: dotfilesd
 
 jobs:
   rust-build-and-test:
