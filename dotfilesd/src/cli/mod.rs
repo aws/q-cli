@@ -13,13 +13,13 @@ pub mod issue;
 pub mod plugins;
 pub mod settings;
 pub mod sync;
+pub mod theme;
 pub mod tweet;
 pub mod util;
-pub mod theme;
 
 use self::{installation::InstallComponents, util::open_url};
 use crate::daemon::daemon;
-use crate::util::shell::{When, Shell};
+use crate::util::shell::{Shell, When};
 use anyhow::Result;
 use clap::{ArgEnum, IntoApp, Parser, Subcommand};
 use crossterm::style::Stylize;
@@ -90,9 +90,7 @@ pub enum CliRootCommands {
     /// Sync your latest dotfiles
     Sync,
     /// Get or set theme
-    Theme {
-        theme: Option<String>
-    },
+    Theme { theme: Option<String> },
     /// Invite friends to Fig
     Invite,
     /// Tweet about Fig

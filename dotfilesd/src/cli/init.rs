@@ -1,4 +1,7 @@
-use crate::{plugins::lock::LockData, util::shell::{Shell, When}};
+use crate::{
+    plugins::lock::LockData,
+    util::shell::{Shell, When},
+};
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 
@@ -8,8 +11,7 @@ struct DotfileData {
 }
 
 fn shell_init(shell: &Shell, when: &When) -> Result<String> {
-    let dotfiles_sourced = std::env::var("FIG_DOTFILES_SOURCED")
-        .unwrap_or_else(|_| "0".into());
+    let dotfiles_sourced = std::env::var("FIG_DOTFILES_SOURCED").unwrap_or_else(|_| "0".into());
 
     let mut to_source = String::new();
     if dotfiles_sourced == "1" {
@@ -36,13 +38,11 @@ fn shell_init(shell: &Shell, when: &When) -> Result<String> {
 
     let shell_integration_path = shell.get_fig_integration_path(when);
     let shell_integration_source = match shell_integration_path {
-        Some(path) => {
-            std::fs::read_to_string(path).unwrap_or_else(|_| String::new())
-        }
-        None => String::new()
+        Some(path) => std::fs::read_to_string(path).unwrap_or_else(|_| String::new()),
+        None => String::new(),
     };
 
-    to_source.push_str("\n");
+    to_source.push('\n');
     to_source.push_str(&shell_integration_source);
 
     Ok(to_source)

@@ -8,8 +8,8 @@ use std::{
     time::Duration,
 };
 
-use fig_proto::{local, FigProtobufEncodable};
 use bytes::BytesMut;
+use fig_proto::{local, FigProtobufEncodable};
 
 use anyhow::Result;
 use prost::Message;
@@ -158,6 +158,7 @@ pub async fn create_socket_listen(session_id: impl AsRef<str>) -> Result<UnixLis
 pub async fn send_settings_changed() -> Result<()> {
     send_hook_to_socket(local::hook::Hook::SettingsChanged(
         local::SettingsChangedHook {},
-    )).await?;
+    ))
+    .await?;
     Ok(())
 }

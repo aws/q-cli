@@ -38,7 +38,7 @@ async fn remove_plugin(name: impl AsRef<str>) -> Result<()> {
 
     lock_data
         .get_entries_mut()
-        .retain(|entry| &entry.name != name.as_ref());
+        .retain(|entry| entry.name != name.as_ref());
 
     tokio::fs::remove_dir_all(plugin_path).await?;
 

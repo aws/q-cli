@@ -1,11 +1,11 @@
 use super::{send_command_to_socket, send_recv_command_to_socket};
+use anyhow::Result;
 use fig_proto::local;
 use fig_proto::local::{
     command, BuildCommand, DebugModeCommand, InputMethodAction, InputMethodCommand,
     OpenUiElementCommand, PromptAccessibilityCommand, QuitCommand, RestartCommand,
     RestartSettingsListenerCommand, UiElement, UpdateCommand,
 };
-use anyhow::Result;
 
 pub async fn restart_settings_listener() -> Result<()> {
     let command = command::Command::RestartSettingsListener(RestartSettingsListenerCommand {});

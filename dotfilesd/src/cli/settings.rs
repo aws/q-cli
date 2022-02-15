@@ -5,9 +5,9 @@ use crate::{
 use anyhow::{anyhow, Result};
 use clap::{AppSettings, ArgGroup, Args, Subcommand};
 use crossterm::style::Stylize;
+use fig_proto::local::UiElement;
 use serde_json::json;
 use std::process::Command;
-use fig_proto::local::UiElement;
 
 #[derive(Debug, Subcommand)]
 pub enum SettingsSubcommands {

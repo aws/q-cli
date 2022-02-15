@@ -7,8 +7,9 @@ use std::{
 
 use fig_proto::{
     figterm::{figterm_message, FigtermMessage, InsertTextCommand},
-    local, FigProtobufEncodable,
+    local,
     prost::Message,
+    FigProtobufEncodable,
 };
 
 use anyhow::Result;

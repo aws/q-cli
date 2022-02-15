@@ -1,9 +1,9 @@
-use serde::{Serialize,Deserialize};
-use std::fs;
 use crate::util::{home_dir, settings::Settings};
-use serde_json::json;
 use anyhow::Result;
 use crossterm::style::{Color, Stylize};
+use serde::{Deserialize, Serialize};
+use serde_json::json;
+use std::fs;
 
 // var BuiltinThemes []string = []string{"dark", "light", "system"}
 const BUILT_IN_THEMES: [&str; 3] = ["dark", "light", "system"];
@@ -36,14 +36,22 @@ pub fn theme_cli(theme_str: Option<String>) -> Result<()> {
 
                     let mut theme_line = format!("› Switching to theme '{}'", theme_str.bold());
                     match author {
-                        Some(Author { name, twitter, github }) => {
+                        Some(Author {
+                            name,
+                            twitter,
+                            github,
+                        }) => {
                             if !name.is_empty() {
                                 theme_line.push_str(&format!(" by {}", name.bold()));
                             }
                             println!("{}", theme_line);
 
                             if !twitter.is_empty() {
-                                let twitter = twitter.with(Color::Rgb { r: 29, g: 161, b: 242 });
+                                let twitter = twitter.with(Color::Rgb {
+                                    r: 29,
+                                    g: 161,
+                                    b: 242,
+                                });
                                 println!("  🐦 {}", twitter);
                             }
                             if !github.is_empty() {
@@ -72,7 +80,8 @@ pub fn theme_cli(theme_str: Option<String>) -> Result<()> {
         None => {
             let settings = Settings::load()?;
             let default_theme = json!("dark");
-            let theme = settings.get_setting()
+            let theme = settings
+                .get_setting()
                 .map(|s| s.get("autocomplete.theme"))
                 .flatten()
                 .unwrap_or(&default_theme);

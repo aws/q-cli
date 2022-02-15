@@ -21,7 +21,10 @@ use crate::ipc::{connect_timeout, get_socket_path};
 
 use crate::{
     auth::Credentials,
-    util::{app_path_from_bundle_id, fig_dir, get_shell, glob, glob_dir, home_dir, shell::{Shell, ShellFileIntegration}},
+    util::{
+        app_path_from_bundle_id, fig_dir, get_shell, glob, glob_dir, home_dir,
+        shell::{Shell, ShellFileIntegration},
+    },
 };
 use async_trait::async_trait;
 use tokio;
@@ -273,13 +276,17 @@ impl DoctorCheck for FigtermSocketCheck {
 }
 
 struct DotfileCheck {
-    integration: ShellFileIntegration
+    integration: ShellFileIntegration,
 }
 
 #[async_trait]
 impl DoctorCheck for DotfileCheck {
     fn name(&self) -> Cow<'static, str> {
-        format!("{} contains valid fig hooks", self.integration.path.display()).into()
+        format!(
+            "{} contains valid fig hooks",
+            self.integration.path.display()
+        )
+        .into()
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
@@ -290,7 +297,8 @@ impl DoctorCheck for DotfileCheck {
                     return Ok(());
                 } else {
                     return Err(DoctorError::Error {
-                        reason: format!("{} does not exist", self.integration.path.display()).into(),
+                        reason: format!("{} does not exist", self.integration.path.display())
+                            .into(),
                         info: vec![],
                         fix: None,
                     });
@@ -320,7 +328,8 @@ impl DoctorCheck for DotfileCheck {
                 let first_line = lines.first().copied().unwrap_or_default();
                 if first_line.eq("[ -s ~/.fig/shell/pre.sh ] && source ~/.fig/shell/pre.sh") {
                     return Err(DoctorError::Warning(
-                        format!("{} has legacy integration", self.integration.path.display()).into(),
+                        format!("{} has legacy integration", self.integration.path.display())
+                            .into(),
                     ));
                 }
 
@@ -345,15 +354,15 @@ impl DoctorCheck for DotfileCheck {
                                 fix_integration.install()?;
                                 Ok(())
                             }))
-                        })
+                        });
                     }
-
                 }
 
                 let last_line = lines.last().copied().unwrap_or_default();
                 if last_line.eq("[ -s ~/.fig/fig.sh ] && source ~/.fig/fig.sh") {
                     return Err(DoctorError::Warning(
-                        format!("{} has legacy integration", self.integration.path.display()).into(),
+                        format!("{} has legacy integration", self.integration.path.display())
+                            .into(),
                     ));
                 }
 
