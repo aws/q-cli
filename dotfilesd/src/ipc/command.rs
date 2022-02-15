@@ -1,6 +1,6 @@
 use super::{send_command_to_socket, send_recv_command_to_socket};
-use crate::proto::local;
-use crate::proto::local::{
+use fig_proto::local;
+use fig_proto::local::{
     command, BuildCommand, DebugModeCommand, InputMethodAction, InputMethodCommand,
     OpenUiElementCommand, PromptAccessibilityCommand, QuitCommand, RestartCommand,
     RestartSettingsListenerCommand, UiElement, UpdateCommand,

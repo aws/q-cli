@@ -13,7 +13,7 @@ use std::{
 use anyhow::{anyhow, Context, Result};
 use futures::StreamExt;
 
-use notify::{watcher, DebouncedEvent, RecommendedWatcher, RecursiveMode, Watcher};
+use notify::{watcher, RecursiveMode, Watcher};
 use serde::{Deserialize, Serialize};
 use time::format_description::well_known::Rfc3339;
 use tokio::{fs::remove_file, net::UnixListener, select};
@@ -291,7 +291,7 @@ async fn spawn_settings_watcher() -> Result<()> {
             .unwrap();
         loop {
             match rx.recv() {
-                Ok(event) => {
+                Ok(_event) => {
                     // TODO: Something here!
                     tokio::runtime::Runtime::new()
                         .unwrap()

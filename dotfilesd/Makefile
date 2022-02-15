@@ -2,6 +2,8 @@ ROOT:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
 export BUILT_PRODUCTS_DIR ?= $(ROOT)/build
 
+TARGET_DIR ?= $(ROOT)/../target
+
 # Add brew executables to PATH
 export PATH := /opt/homebrew/bin:/opt/homebrew/sbin:$(PATH)
 # Add cargo executables to PATH
@@ -51,11 +53,11 @@ macos: build-darwin-universal
 
 build-x86_64-apple-darwin: 
 	cargo build --target=x86_64-apple-darwin $(CARGO_OPTIONS)
-	cp $(ROOT)/target/x86_64-apple-darwin/release/$(BINARY_NAME) $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-x86_64-apple-darwin
+	cp $(TARGET_DIR)/x86_64-apple-darwin/release/$(BINARY_NAME) $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-x86_64-apple-darwin
 
 build-aarch64-apple-darwin: 
 	cargo build --target=aarch64-apple-darwin $(CARGO_OPTIONS)
-	cp $(ROOT)/target/aarch64-apple-darwin/release/$(BINARY_NAME) $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-aarch64-apple-darwin
+	cp $(TARGET_DIR)/aarch64-apple-darwin/release/$(BINARY_NAME) $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-aarch64-apple-darwin
 
 build-darwin-universal: build-x86_64-apple-darwin build-aarch64-apple-darwin
 	lipo -create -output $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-darwin-universal $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-x86_64-apple-darwin $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-aarch64-apple-darwin
@@ -64,25 +66,25 @@ linux: build-x86_64-unknown-linux-gnu build-aarch64-unknown-linux-gnu
 
 build-x86_64-unknown-linux-gnu: 
 	cargo build --target=x86_64-unknown-linux-gnu $(CARGO_OPTIONS)
-	cp $(ROOT)/target/x86_64-unknown-linux-gnu/release/$(BINARY_NAME) $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-x86_64-unknown-linux-gnu
+	cp $(TARGET_DIR)/x86_64-unknown-linux-gnu/release/$(BINARY_NAME) $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-x86_64-unknown-linux-gnu
 
 build-aarch64-unknown-linux-gnu: 
 	cargo build --target=aarch64-unknown-linux-gnu $(CARGO_OPTIONS)
-	cp $(ROOT)/target/aarch64-unknown-linux-gnu/release/$(BINARY_NAME) $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-aarch64-unknown-linux-gnu
+	cp $(TARGET_DIR)/aarch64-unknown-linux-gnu/release/$(BINARY_NAME) $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-aarch64-unknown-linux-gnu
 
 windows: build-x86_64-pc-windows-gnu
 
 build-x86_64-pc-windows-gnu:
 	cargo build --target x86_64-pc-windows-gnu $(CARGO_OPTIONS)
-	cp $(ROOT)/target/x86_64-pc-windows-gnu/release/$(BINARY_NAME).exe $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-x86_64-pc-windows-gnu
+	cp $(TARGET_DIR)/x86_64-pc-windows-gnu/release/$(BINARY_NAME).exe $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-x86_64-pc-windows-gnu
 
 build-native:
 	cargo build $(CARGO_OPTIONS)
-	cp $(ROOT)/target/release/$(BINARY_NAME) $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)
+	cp $(TARGET_DIR)/release/$(BINARY_NAME) $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)
 
 install: build-native
 	cargo install --path $(ROOT)
 
 clean:
-	cargo clean
+	command -v cargo &>/dev/null && cargo clean
 	rm -rf build

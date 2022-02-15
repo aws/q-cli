@@ -26,7 +26,7 @@ use crate::{
 use async_trait::async_trait;
 use tokio;
 
-use crate::proto::local::DiagnosticsResponse;
+use fig_proto::local::DiagnosticsResponse;
 
 type DoctorFix = Box<dyn FnOnce() -> Result<()> + Send>;
 

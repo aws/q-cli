@@ -2,7 +2,6 @@ mod cli;
 pub mod history;
 pub mod ipc;
 pub mod logger;
-pub mod proto;
 pub mod pty;
 pub mod term;
 pub mod utils;
@@ -17,11 +16,33 @@ use std::{
     vec,
 };
 
+use crate::{
+    ipc::{spawn_incoming_receiver, spawn_outgoing_sender},
+    logger::init_logger,
+    pty::{async_pty::AsyncPtyMaster, fork_pty, ioctl_tiocswinsz, PtyForkResult},
+    term::get_winsize,
+    term::{read_winsize, termios_to_raw},
+    utils::fig_path,
+};
+
+use alacritty_terminal::{
+    ansi::Processor,
+    event::{Event, EventListener},
+    term::{CommandInfo, ShellState, SizeInfo},
+    Term,
+};
 use anyhow::{anyhow, Context, Result};
 use bytes::Bytes;
 use clap::StructOpt;
 use cli::Cli;
 use dashmap::DashSet;
+use fig_proto::{
+    figterm::{figterm_message, intercept_command, FigtermMessage},
+    hooks::{
+        hook_to_message, new_context, new_edit_buffer_hook, new_preexec_hook, new_prompt_hook,
+    },
+    local, FigProtobufEncodable,
+};
 use flume::Sender;
 use log::{debug, error, info, trace, warn};
 use nix::{
@@ -29,37 +50,12 @@ use nix::{
     sys::termios::{tcgetattr, tcsetattr, SetArg},
     unistd::{execvp, getpid, isatty},
 };
-
-use alacritty_terminal::term::CommandInfo;
-use alacritty_terminal::{
-    ansi::Processor,
-    event::{Event, EventListener},
-    term::{ShellState, SizeInfo},
-    Term,
-};
 use once_cell::sync::Lazy;
-use proto::figterm::{figterm_message, intercept_command, FigtermMessage};
-use pty::{fork_pty, PtyForkResult};
 use sentry::integrations::anyhow::capture_anyhow;
-use term::get_winsize;
 use tokio::{
     io::{self, AsyncReadExt, AsyncWriteExt},
     runtime, select,
     signal::unix::SignalKind,
-};
-use utils::fig_path;
-
-use crate::{
-    ipc::{spawn_incoming_receiver, spawn_outgoing_sender},
-    logger::init_logger,
-    proto::{
-        hooks::{
-            hook_to_message, new_context, new_edit_buffer_hook, new_preexec_hook, new_prompt_hook,
-        },
-        local, FigProtobufEncodable,
-    },
-    pty::{async_pty::AsyncPtyMaster, ioctl_tiocswinsz},
-    term::{read_winsize, termios_to_raw},
 };
 
 const BUFFER_SIZE: usize = 1024;

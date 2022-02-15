@@ -8,7 +8,7 @@ use std::{
     time::Duration,
 };
 
-use crate::proto::{local, FigProtobufEncodable};
+use fig_proto::{local, FigProtobufEncodable};
 use bytes::BytesMut;
 
 use anyhow::Result;

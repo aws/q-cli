@@ -2,6 +2,8 @@ ROOT:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
 export BUILT_PRODUCTS_DIR ?= $(ROOT)/build
 
+TARGET_DIR ?= $(ROOT)/../target
+
 # Add brew executables to PATH
 export PATH := /opt/homebrew/bin:/opt/homebrew/sbin:$(PATH)
 # Add cargo executables to PATH
@@ -28,11 +30,11 @@ all: build-figterm fig_get_shell
 
 build-figterm-arm: 
 	cargo build --target=aarch64-apple-darwin $(CARGO_FLAGS)
-	cp $(ROOT)/target/aarch64-apple-darwin/release/figterm $(BUILT_PRODUCTS_DIR)/figterm-arm
+	cp $(TARGET_DIR)/aarch64-apple-darwin/release/figterm $(BUILT_PRODUCTS_DIR)/figterm-arm
 
 build-figterm-x86: 
 	cargo build --target=x86_64-apple-darwin $(CARGO_FLAGS)
-	cp $(ROOT)/target/x86_64-apple-darwin/release/figterm $(BUILT_PRODUCTS_DIR)/figterm-x86
+	cp $(TARGET_DIR)/x86_64-apple-darwin/release/figterm $(BUILT_PRODUCTS_DIR)/figterm-x86
 
 fig_get_shell-arm: get_shell.c
 	$(CC) get_shell.c $(CFLAGS) -o $(BUILT_PRODUCTS_DIR)/fig_get_shell-arm -target arm64-apple-macos11
@@ -71,5 +73,5 @@ install: all
 		chmod +x $(HOME)/.fig/bin/fig)
 
 clean:
-	rm -rf $(ROOT)/target
+	comand -v cargo > /dev/null 2>&1 && cargo clean
 	rm -rf $(BUILT_PRODUCTS_DIR)

@@ -1,6 +1,5 @@
 use crate::{
     ipc::command::{open_ui_element, restart_settings_listener},
-    proto::local::UiElement,
     util::{fig_dir, settings::Settings},
 };
 use anyhow::{anyhow, Result};
@@ -8,6 +7,7 @@ use clap::{AppSettings, ArgGroup, Args, Subcommand};
 use crossterm::style::Stylize;
 use serde_json::json;
 use std::process::Command;
+use fig_proto::local::UiElement;
 
 #[derive(Debug, Subcommand)]
 pub enum SettingsSubcommands {

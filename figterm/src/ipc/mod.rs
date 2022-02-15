@@ -5,20 +5,21 @@ use std::{
     time::Duration,
 };
 
-use crate::proto::{local, FigProtobufEncodable};
+use fig_proto::{
+    figterm::{figterm_message, FigtermMessage, InsertTextCommand},
+    local, FigProtobufEncodable,
+    prost::Message,
+};
 
 use anyhow::Result;
 use bytes::{Bytes, BytesMut};
 use flume::{bounded, Receiver, Sender};
 use log::{debug, error};
-use prost::Message;
 use tokio::{
     fs::remove_file,
     io::{AsyncReadExt, AsyncWriteExt},
     net::{UnixListener, UnixStream},
 };
-
-use crate::proto::figterm::{figterm_message, FigtermMessage, InsertTextCommand};
 
 /// Get path to "$TMPDIR/fig.socket"
 pub fn get_socket_path() -> PathBuf {

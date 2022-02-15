@@ -1,7 +1,7 @@
 use super::util::OSVersion;
 use super::OutputFormat;
 use crate::ipc::send_recv_command_to_socket;
-use crate::proto::local::{
+use fig_proto::local::{
     command, command_response::Response, DiagnosticsCommand, DiagnosticsResponse,
     IntegrationAction, TerminalIntegrationCommand,
 };

@@ -1,4 +1,4 @@
-use crate::proto::local::{
+use fig_proto::local::{
     hook::Hook, EditBufferHook, EventHook, HideHook, InitHook, IntegrationReadyHook,
     KeyboardFocusChangedHook, PreExecHook, PromptHook, ShellContext,
 };

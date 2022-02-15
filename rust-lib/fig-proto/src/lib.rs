@@ -3,8 +3,11 @@
 use anyhow::Result;
 use bytes::Bytes;
 
+pub mod figterm;
 pub mod hooks;
 pub mod local;
+
+pub use prost;
 
 #[derive(Debug, Clone)]
 pub struct FigProtobuf {

@@ -20,3 +20,5 @@ dotenv/docker-compose.yaml
 
 # Ignore all compiled protobuf artifacts
 **/*.pb.*
+
+target/
