@@ -7,7 +7,6 @@ pub mod config;
 pub mod daemon;
 pub mod ipc;
 pub mod plugins;
-pub mod proto;
 pub mod util;
 
 #[tokio::main]

@@ -1,4 +1,0 @@
-[submodule "figterm/libvterm"]
-	path = figterm/libvterm
-	url = https://github.com/neovim/libvterm
-	ignore = untracked

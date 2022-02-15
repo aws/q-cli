@@ -1,9 +1,9 @@
-use crate::proto::local::{
+use crate::util::get_shell;
+use anyhow::Result;
+use fig_proto::local::{
     hook::Hook, EditBufferHook, EventHook, HideHook, InitHook, IntegrationReadyHook,
     KeyboardFocusChangedHook, PreExecHook, PromptHook, ShellContext,
 };
-use crate::util::get_shell;
-use anyhow::Result;
 use std::collections::HashMap;
 
 const CURRENT_INTEGRATION_VERSION: i32 = 5;

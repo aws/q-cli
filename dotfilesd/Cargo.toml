@@ -43,6 +43,8 @@ toml = "0.5.8"
 url = { version = "2.2.2", features = ["serde"] }
 validator = "0.14.0"
 
+fig-proto = { path = "../rust-lib/fig-proto" }
+
 # Used for auth 
 # Should break out into separate crate
 aws-sdk-cognitoidentityprovider = "0.6.0"

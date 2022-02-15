@@ -26,15 +26,15 @@ pub fn install_cli(install_components: InstallComponents) -> Result<()> {
         let mut manual_install = !dialoguer::Confirm::with_theme(&dialoguer_theme())
         .with_prompt("Do you want dotfiles to modify your shell config (you will have to manually do this otherwise)?")
         .interact()?;
-        if !manual_install {
-            if let Err(_) = install_dotfiles() {
-                println!("Could not automatically install.");
-                manual_install = true;
-            }
+        if !manual_install && install_dotfiles().is_err() {
+            println!("Could not automatically install.");
+            manual_install = true;
         }
         if manual_install {
             println!();
-            println!("To install dotfiles manually you will have to add the following to your rc files");
+            println!(
+                "To install dotfiles manually you will have to add the following to your rc files"
+            );
             println!();
             println!(
                 "At the top of your .bashrc or .zshrc or .config/fish/conf.d/00_fig_pre.fish file:"
@@ -73,7 +73,7 @@ fn install_dotfiles() -> Result<()> {
     for shell in [Shell::Bash, Shell::Zsh, Shell::Fish] {
         for integration in shell.get_shell_integrations()? {
             integration.install()?
-        };
+        }
     }
 
     Ok(())
@@ -89,17 +89,13 @@ pub fn uninstall_cli(install_components: InstallComponents) -> Result<()> {
         let mut manual_uninstall = !dialoguer::Confirm::with_theme(&dialoguer_theme())
         .with_prompt("Do you want dotfiles to modify your shell config (you will have to manually do this otherwise)?")
         .interact()?;
-        if !manual_uninstall {
-            if let Err(_) = uninstall_dotfiles() {
-                println!("Could not uninstall dotfiles");
-                manual_uninstall = true;
-            }
+        if !manual_uninstall && uninstall_dotfiles().is_err() {
+            println!("Could not uninstall dotfiles");
+            manual_uninstall = true;
         }
         if manual_uninstall {
             println!();
-            println!(
-                "To uninstall dotfiles you should follow the instructions for your shell(s):"
-            );
+            println!("To uninstall dotfiles you should follow the instructions for your shell(s):");
             println!();
             println!("{}", "bash".bold().underlined());
             println!(
@@ -112,10 +108,12 @@ pub fn uninstall_cli(install_components: InstallComponents) -> Result<()> {
 
             println!("{}", "zsh".bold().underlined());
             println!(
-                "1. Remove {} from the top of your .zshrc and/or .zprofile", "eval \"$(dotfiles init zsh pre)\"".magenta()
+                "1. Remove {} from the top of your .zshrc and/or .zprofile",
+                "eval \"$(dotfiles init zsh pre)\"".magenta()
             );
             println!(
-                "2. Remove {} from the bottom of your .zshrc, and/or .zprofile files", "eval \"$(dotfiles init zsh post)\"".magenta()
+                "2. Remove {} from the bottom of your .zshrc, and/or .zprofile files",
+                "eval \"$(dotfiles init zsh post)\"".magenta()
             );
             println!();
 
@@ -158,7 +156,7 @@ fn uninstall_dotfiles() -> Result<()> {
     for shell in [Shell::Bash, Shell::Zsh, Shell::Fish] {
         for integration in shell.get_shell_integrations()? {
             integration.uninstall()?
-        };
+        }
     }
 
     Ok(())

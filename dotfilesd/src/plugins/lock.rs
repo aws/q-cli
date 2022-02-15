@@ -187,7 +187,7 @@ impl ShellInstall {
                 Shell::Bash => DEFAULT_BASH_MATCH,
                 Shell::Fish => DEFAULT_FISH_MATCH,
             }
-            .into_iter()
+            .iter()
             .map(|s| {
                 handlebars
                     .render_template(
@@ -229,7 +229,7 @@ impl ShellInstall {
         let pre = self
             .pre
             .as_ref()
-            .map_or(None, |post| match post {
+            .and_then(|post| match post {
                 StringOrList::String(s) => Some(vec![s.clone()]),
                 StringOrList::List(list) if list.is_empty() => None,
                 StringOrList::List(list) => Some(list.clone()),
@@ -253,7 +253,7 @@ impl ShellInstall {
         let post = self
             .post
             .as_ref()
-            .map_or(None, |post| match post {
+            .and_then(|post| match post {
                 StringOrList::String(s) => Some(vec![s.clone()]),
                 StringOrList::List(list) if list.is_empty() => None,
                 StringOrList::List(list) => Some(list.clone()),

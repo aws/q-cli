@@ -1,18 +1,18 @@
 use std::{
     fmt::Display,
+    fs::File,
     io::{Read, Write},
-    path::{PathBuf},
+    path::PathBuf,
     str::FromStr,
-    fs::File
 };
 
 use anyhow::{Context, Result};
-use regex::Regex;
 use clap::ArgEnum;
+use regex::Regex;
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
 
-use super::{project_dir, fig_dir};
+use super::{fig_dir, project_dir};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, ArgEnum, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -103,7 +103,10 @@ pub struct ShellFileIntegration {
 impl ShellFileIntegration {
     pub fn pre_integration(&self) -> Option<ShellIntegration> {
         if self.pre {
-            Some(ShellIntegration { when: When::Pre, shell: self.shell })
+            Some(ShellIntegration {
+                when: When::Pre,
+                shell: self.shell,
+            })
         } else {
             None
         }
@@ -111,7 +114,10 @@ impl ShellFileIntegration {
 
     pub fn post_integration(&self) -> Option<ShellIntegration> {
         if self.post {
-            Some(ShellIntegration { when: When::Post, shell: self.shell })
+            Some(ShellIntegration {
+                when: When::Post,
+                shell: self.shell,
+            })
         } else {
             None
         }
@@ -155,7 +161,7 @@ impl ShellFileIntegration {
         if let Some(integration) = self.pre_integration() {
             if !integration.get_source_regex()?.is_match(&contents) {
                 new_contents.push_str(&integration.text());
-                new_contents.push_str("\n");
+                new_contents.push('\n');
                 modified = true;
             }
         }
@@ -164,7 +170,7 @@ impl ShellFileIntegration {
 
         if let Some(integration) = self.post_integration() {
             if !integration.get_source_regex()?.is_match(&contents) {
-                new_contents.push_str("\n");
+                new_contents.push('\n');
                 new_contents.push_str(&integration.text());
                 modified = true;
             }
@@ -206,7 +212,7 @@ impl Shell {
                         path,
                         pre: true,
                         post: true,
-                        shell: self.clone(),
+                        shell: *self,
                         remove_on_uninstall: false,
                     })
                     .collect()
@@ -222,7 +228,7 @@ impl Shell {
                         path,
                         pre: true,
                         post: true,
-                        shell: self.clone(),
+                        shell: *self,
                         remove_on_uninstall: false,
                     })
                     .collect()
@@ -235,17 +241,17 @@ impl Shell {
                 vec![
                     ShellFileIntegration {
                         path: fish_config_dir.join("00_fig_pre.fish"),
-                        shell: self.clone(),
+                        shell: *self,
                         pre: true,
                         post: false,
-                        remove_on_uninstall: true
+                        remove_on_uninstall: true,
                     },
                     ShellFileIntegration {
                         path: fish_config_dir.join("99_fig_post.fish"),
-                        shell: self.clone(),
+                        shell: *self,
                         pre: false,
                         post: true,
-                        remove_on_uninstall: true
+                        remove_on_uninstall: true,
                     },
                 ]
             }

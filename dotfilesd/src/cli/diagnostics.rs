@@ -1,14 +1,14 @@
 use super::util::OSVersion;
 use super::OutputFormat;
 use crate::ipc::send_recv_command_to_socket;
-use crate::proto::local::{
-    command, command_response::Response, DiagnosticsCommand, DiagnosticsResponse,
-    IntegrationAction, TerminalIntegrationCommand,
-};
 use crate::util::settings::Settings;
 use crate::util::{glob, glob_dir, home_dir};
 use anyhow::{Context, Result};
 use directories::BaseDirs;
+use fig_proto::local::{
+    command, command_response::Response, DiagnosticsCommand, DiagnosticsResponse,
+    IntegrationAction, TerminalIntegrationCommand,
+};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;

@@ -1,6 +1,4 @@
-use proto::local;
-
-use crate::proto;
+use crate::local;
 
 /// Construct a new Shell Context
 #[allow(clippy::too_many_arguments)]
