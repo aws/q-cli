@@ -154,3 +154,10 @@ pub async fn create_socket_listen(session_id: impl AsRef<str>) -> Result<UnixLis
 
     Ok(UnixListener::bind(&socket_path)?)
 }
+
+pub async fn send_settings_changed() -> Result<()> {
+    send_hook_to_socket(local::hook::Hook::SettingsChanged(
+        local::SettingsChangedHook {},
+    )).await?;
+    Ok(())
+}

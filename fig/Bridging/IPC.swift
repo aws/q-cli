@@ -304,6 +304,9 @@ class IPC: UnixSocketServerDelegate {
       Autocomplete.hide()
     case .event(let hook):
       ShellHookManager.shared.eventHook(event: hook.eventName)
+    case .settingsChanged(let hook):
+      Settings.shared.settingsUpdated()
+
     case .none:
       break
     }

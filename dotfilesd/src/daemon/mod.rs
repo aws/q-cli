@@ -13,11 +13,14 @@ use std::{
 use anyhow::{anyhow, Context, Result};
 use futures::StreamExt;
 
+use notify::{watcher, RecursiveMode, Watcher};
 use serde::{Deserialize, Serialize};
 use time::format_description::well_known::Rfc3339;
 use tokio::{fs::remove_file, net::UnixListener, select};
 
-use crate::daemon::websocket::process_websocket;
+use crate::{
+    daemon::websocket::process_websocket, ipc::send_settings_changed, util::settings::Settings,
+};
 
 use self::{launchd_plist::LaunchdPlist, systemd_unit::SystemdUnit};
 
@@ -278,6 +281,51 @@ struct WebsocketAwsToken {
     id_token: String,
 }
 
+async fn spawn_settings_watcher() -> Result<()> {
+    let settings_path = Settings::path()?;
+
+    let (settings_watcher_tx, settings_watcher_rx) = std::sync::mpsc::channel();
+    let mut watcher = watcher(settings_watcher_tx, Duration::from_secs(1))?;
+
+    let (forward_tx, forward_rx) = flume::unbounded();
+
+    tokio::task::spawn(async move {
+        loop {
+            match forward_rx.recv_async().await {
+                Ok(_) => match send_settings_changed().await {
+                    Err(err) => daemon_log(&format!("Could not send settings changed: {}", err)),
+                    Ok(_) => daemon_log("Settings changed"),
+                },
+                Err(e) => {
+                    daemon_log(&format!("Error while receiving settings: {}", e));
+                }
+            }
+        }
+    });
+
+    std::thread::spawn(
+        move || match watcher.watch(&settings_path, RecursiveMode::NonRecursive) {
+            Ok(()) => loop {
+                match settings_watcher_rx.recv() {
+                    Ok(event) => {
+                        if let Err(e) = forward_tx.send(event) {
+                            daemon_log(&format!("Error forwarding settings event: {}", e));
+                        }
+                    }
+                    Err(err) => {
+                        eprintln!("{}", err);
+                    }
+                }
+            },
+            Err(err) => {
+                daemon_log(&format!("Error while watching settings: {}", err));
+            }
+        },
+    );
+
+    Ok(())
+}
+
 /// Spawn the daemon to listen for updates and dotfiles changes
 pub async fn daemon() -> Result<()> {
     daemon_log("Starting daemon...");
@@ -298,6 +346,10 @@ pub async fn daemon() -> Result<()> {
 
     let unix_socket =
         UnixListener::bind(unix_socket_path).context("Could not connect to unix socket")?;
+
+    if let Err(err) = spawn_settings_watcher().await {
+        daemon_log(&format!("Could not spawn settings watcher: {}", err));
+    }
 
     daemon_log("Daemon is now running");
 

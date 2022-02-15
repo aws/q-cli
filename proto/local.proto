@@ -51,6 +51,7 @@ message Hook {
 		IntegrationReadyHook integration_ready = 109;
 		HideHook hide = 110;
 		EventHook event = 111;
+		SettingsChangedHook settings_changed = 112;
 	}
 }
 
@@ -208,6 +209,8 @@ message HideHook { }
 message EventHook {
 	string event_name = 1;
 }
+
+message SettingsChangedHook { }
 
 // == Responses ==
 message ErrorResponse {
