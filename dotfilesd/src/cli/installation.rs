@@ -6,7 +6,7 @@ use anyhow::{Context, Result};
 use crossterm::style::Stylize;
 use self_update::update::UpdateStatus;
 
-use crate::{cli::util::dialoguer_theme, daemon, ipc::command::update_command, util::shell::Shell};
+use crate::{cli::util::dialoguer_theme, daemon, util::shell::Shell};
 
 bitflags::bitflags! {
     /// The different components that can be installed.
@@ -175,6 +175,8 @@ pub async fn update(update_type: UpdateType) -> Result<UpdateStatus> {
     // Let desktop app handle updates on macOS
     #[cfg(target_os = "macos")]
     {
+        use crate::ipc::command::update_command;
+
         let desktop_app_update = update_command(update_type == UpdateType::Confirm).await;
         match desktop_app_update {
             Ok(()) => {
@@ -226,8 +228,6 @@ pub async fn update(update_type: UpdateType) -> Result<UpdateStatus> {
 
                 return Ok(UpdateStatus::UpToDate);
             }
-
-            permission_guard()?;
 
             let confirm = match update_type {
                 UpdateType::Confirm => true,

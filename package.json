@@ -22,6 +22,6 @@
   },
   "lint-staged": {
     "**/*.swift": ["swiftlint lint --fix --quiet 2>/dev/null", "swiftlint lint"],
-    "**/*.rs": ["cargo fmt --all -- --check", "cargo check --workspace"]
+    "**/*.rs": ["cargo fmt --all -- --check"]
   }
 }
