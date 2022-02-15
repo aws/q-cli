@@ -1,6 +1,7 @@
 ROOT:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
 export BUILT_PRODUCTS_DIR ?= $(ROOT)/build
+export ARTIFACTS ?= $(ROOT)/build
 
 # Add brew executables to PATH
 export PATH := /opt/homebrew/bin:/opt/homebrew/sbin:$(PATH)
@@ -19,8 +20,11 @@ endif
 CARGO_OPTIONS ?= --locked --release
 
 BINARY_NAME=dotfilesd
+SRC = Cargo.toml $(wildcard src/**/*)
+
 
 $(shell mkdir -p $(BUILT_PRODUCTS_DIR))
+$(shell mkdir -p $(ARTIFACTS))
 
 PLATFORM := $(shell uname -s)
 
@@ -47,42 +51,54 @@ ifeq "$(PLATFORM)" "windows"
 all: windows
 endif
 
-macos: build-darwin-universal
+macos: $(ARTIFACTS)/$(BINARY_NAME)-darwin-universal
+	cp $^ $(BUILT_PRODUCTS_DIR)
 
-build-x86_64-apple-darwin: 
+build-x86_64-apple-darwin: $(ARTIFACTS)/$(BINARY_NAME)-x86_64-apple-darwin
+	cp $^ $(BUILT_PRODUCTS_DIR)
+
+build-aarch64-apple-darwin: $(ARTIFACTS)/$(BINARY_NAME)-aarch64-apple-darwin
+	cp $^ $(BUILT_PRODUCTS_DIR)
+
+build-x86_64-unknown-linux-gnu: $(ARTIFACTS)/$(BINARY_NAME)-x86_64-unknown-linux-gnu
+	cp $^ $(BUILT_PRODUCTS_DIR)
+
+$(ARTIFACTS)/$(BINARY_NAME)-x86_64-apple-darwin: $(SRC)
 	cargo build --target=x86_64-apple-darwin $(CARGO_OPTIONS)
-	cp $(ROOT)/target/x86_64-apple-darwin/release/$(BINARY_NAME) $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-x86_64-apple-darwin
+	cp $(ROOT)/target/x86_64-apple-darwin/release/$(BINARY_NAME) $@
 
-build-aarch64-apple-darwin: 
+$(ARTIFACTS)/$(BINARY_NAME)-aarch64-apple-darwin: $(SRC)
 	cargo build --target=aarch64-apple-darwin $(CARGO_OPTIONS)
-	cp $(ROOT)/target/aarch64-apple-darwin/release/$(BINARY_NAME) $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-aarch64-apple-darwin
+	cp $(ROOT)/target/aarch64-apple-darwin/release/$(BINARY_NAME) $@
 
-build-darwin-universal: build-x86_64-apple-darwin build-aarch64-apple-darwin
-	lipo -create -output $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-darwin-universal $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-x86_64-apple-darwin $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-aarch64-apple-darwin
+$(ARTIFACTS)/$(BINARY_NAME)-darwin-universal: $(ARTIFACTS)/$(BINARY_NAME)-x86_64-apple-darwin $(ARTIFACTS)/$(BINARY_NAME)-aarch64-apple-darwin
+	lipo -create -output $@ $^
+linux: $(ARTIFACTS)/$(BINARY_NAME)-x86_64-unknown-linux-gnu $(ARTIFACTS)/$(BINARY_NAME)-aarch64-unknown-linux-gnu
 
-linux: build-x86_64-unknown-linux-gnu build-aarch64-unknown-linux-gnu
-
-build-x86_64-unknown-linux-gnu: 
+$(ARTIFACTS)/$(BINARY_NAME)-x86_64-unknown-linux-gnu: $(SRC)
 	cargo build --target=x86_64-unknown-linux-gnu $(CARGO_OPTIONS)
-	cp $(ROOT)/target/x86_64-unknown-linux-gnu/release/$(BINARY_NAME) $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-x86_64-unknown-linux-gnu
+	cp $(ROOT)/target/x86_64-unknown-linux-gnu/release/$(BINARY_NAME) $@
 
-build-aarch64-unknown-linux-gnu: 
+$(ARTIFACTS)/$(BINARY_NAME)-aarch64-unknown-linux-gnu: $(SRC)
 	cargo build --target=aarch64-unknown-linux-gnu $(CARGO_OPTIONS)
-	cp $(ROOT)/target/aarch64-unknown-linux-gnu/release/$(BINARY_NAME) $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-aarch64-unknown-linux-gnu
+	cp $(ROOT)/target/aarch64-unknown-linux-gnu/release/$(BINARY_NAME) $@
 
-windows: build-x86_64-pc-windows-gnu
+windows: $(ARTIFACTS)/$(BINARY_NAME)-x86_64-pc-windows-gnu
 
-build-x86_64-pc-windows-gnu:
+$(ARTIFACTS)/$(BINARY_NAME)-x86_64-pc-windows-gnu: $(SRC)
 	cargo build --target x86_64-pc-windows-gnu $(CARGO_OPTIONS)
-	cp $(ROOT)/target/x86_64-pc-windows-gnu/release/$(BINARY_NAME).exe $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)-x86_64-pc-windows-gnu
+	cp $(ROOT)/target/x86_64-pc-windows-gnu/release/$(BINARY_NAME).exe $@
 
 build-native:
 	cargo build $(CARGO_OPTIONS)
-	cp $(ROOT)/target/release/$(BINARY_NAME) $(BUILT_PRODUCTS_DIR)/$(BINARY_NAME)
+	cp $(ROOT)/target/release/$(BINARY_NAME) $(ARTIFACTS)/$(BINARY_NAME)
 
-install: build-native
+install: all
+
+cargo-install: build-native
 	cargo install --path $(ROOT)
 
 clean:
 	cargo clean
-	rm -rf build
+	rm -rf $(ARTIFACTS)
+	rm -rf $(BUILT_PRODUCTS_DIR)

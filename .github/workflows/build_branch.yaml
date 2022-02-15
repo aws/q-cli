@@ -5,6 +5,7 @@ on:
     branches:
       - master
       - staging
+      - dotfiles/ci
   workflow_dispatch:
     inputs:
       buildName:
@@ -28,7 +29,121 @@ on:
     - cron:  '0 7 * * 1-5'
 
 jobs:
+  dotfilesd:
+    strategy:
+      matrix:
+        arch: [ x86_64, aarch64 ]
+    runs-on: macos-11
+    env:
+      BINARY_NAME: dotfilesd
+    steps:
+      - name: "Checkout Project"
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+############################################
+# Setup Rust build environment
+############################################
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+          target: ${{ matrix.arch }}-apple-darwin
+    
+      - name: Cache Dependencies
+        uses: Swatinem/rust-cache@ce325b60658c1b38465c06cc965b79baf32c1e72
+
+      - name: Get dotfilesd version
+        id: dotfilesd-version
+        run: |
+          VERSION=$(cat Cargo.toml | grep version | grep -v '{' | cut -d= -f2 | tr -d '"' | tr -d " ")
+          echo "::set-output name=version::$VERSION"
+          echo $VERSION
+        working-directory: ./dotfilesd
+
+
+      - name: Cache build artifacts
+        id: dotfilesd-cache
+        uses: actions/cache@v2
+        with:
+          path: ./dotfilesd/build
+          key: dotfilesd-${{ runner.os }}-${{ matrix.arch }}-${{ steps.dotfilesd-version.outputs.version }}
+
+      - name: Compile figterm
+        if: steps.dotfilesd-cache.outputs.cache-hit != 'true'
+        run: make build-${{ matrix.arch }}-apple-darwin 
+        working-directory: ./dotfilesd
+
+      - name: Tar artifacts
+        run: tar -cvf dotfilesd-${{matrix.arch}}.tar -C ./dotfilesd/build .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: dotfilesd-${{matrix.arch}}-apple-darwin
+          path: dotfilesd-${{matrix.arch}}.tar
+          retention-days: 1
+
+  figterm:
+    strategy:
+      matrix:
+        arch: [ x86_64, aarch64 ]
+    runs-on: macos-11
+    steps:
+      - name: "Checkout Project"
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+############################################
+# Setup Rust build environment
+############################################
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+          target: ${{ matrix.arch }}-apple-darwin
+    
+      - name: Cache Dependencies
+        uses: Swatinem/rust-cache@ce325b60658c1b38465c06cc965b79baf32c1e72
+
+      - name: Get figterm version
+        id: figterm-version
+        run: |
+          VERSION=$(cat Cargo.toml | grep version | grep -v '{' | cut -d= -f2 | tr -d '"' | tr -d " ")
+          echo "::set-output name=version::$VERSION"
+          echo $VERSION
+        working-directory: ./figterm/figterm
+
+
+      - name: Cache build artifacts
+        id: figterm-cache
+        uses: actions/cache@v2
+        with:
+          path: ./figterm/build
+          key: ${{ runner.os }}-${{ matrix.arch }}-${{ steps.figterm-version.outputs.version }}
+
+      - name: Compile figterm
+        if: steps.figterm-cache.outputs.cache-hit != 'true'
+        run: |
+          make figterm-${{ matrix.arch }}
+          make fig_get_shell-${{ matrix.arch }}
+        working-directory: ./figterm
+
+      - name: Tar artifacts
+        run: tar -cvf figterm-${{matrix.arch}}.tar -C ./figterm/build .
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: figterm-${{matrix.arch}}-apple-darwin
+          path: figterm-${{matrix.arch}}.tar
+          retention-days: 1
+      
   release:
+    needs: [ figterm, dotfilesd ]
     runs-on: macos-11
     if: "!contains(github.event.head_commit.message, 'skip ci')"
     timeout-minutes: 45
@@ -65,7 +180,10 @@ jobs:
         uses: actions/checkout@v2
         with:
           submodules: recursive
-
+      - name: "SET: BUILT_PRODUCTS_DIR"
+        run: |
+            # echo FIG_BUILT_PRODUCTS_DIR=$(xcodebuild -scheme fig -showBuildSettings | grep "^    BUILT_PRODUCTS_DIR" | cut -d= -f2 | sed 's|Products/Release|Intermediates.noindex/ArchiveIntermediates/fig/BuildProductsPath/Release|' | xargs) >> $GITHUB_ENV
+            echo FIG_BUILT_PRODUCTS_DIR=$(pwd)/build  >> $GITHUB_ENV
       - name: "SET: VERSION"
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: true
@@ -150,6 +268,54 @@ jobs:
         run: |
           rustup target add aarch64-apple-darwin
           rustup target add x86_64-apple-darwin
+
+############################################
+# Position generated build artifacts
+############################################
+      - name: Make artifacts directory
+        run: |
+          mkdir -p ./artifacts
+          ARTIFACTS=$(pwd)/build
+          mkdir -p $ARTIFACTS
+
+          echo "ARTIFACTS=$ARTIFACTS" >> $GITHUB_ENV
+
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v2
+        with:
+          path: ./artifacts
+      - name: Unwrap all artifact folders
+        run: |
+            ls
+            find . -mindepth 2 -type f -exec mv '{}' . ';'
+            ls
+        working-directory: ./artifacts
+
+      - name: List artifacts
+        run: |
+            pwd
+            ls
+            ls ./artifacts
+      - name: Ensure BUILT_PRODUCTS_DIR exists
+        run: mkdir -p "$FIG_BUILT_PRODUCTS_DIR"
+      - name: Copy artifacts to BUILT_PRODUCTS_DIR
+        run: find . -maxdepth 1 -name '*.tar' -exec tar -xvf '{}' -C"$ARTIFACTS" \;
+        working-directory: ./artifacts
+
+      - name: List contents of ARTIFACTS
+        run: ls "$ARTIFACTS"
+
+      - name: Touch all files in ARTIFACTS
+        run: touch -c "$ARTIFACTS"/*
+
+      - name: Build figterm
+        run: make figterm fig_get_shell
+        working-directory: ./figterm
+
+      - name: Build dotfilesd
+        run: make macos
+        working-directory: ./dotfilesd
           
 ############################################
 # Build, Archive & Export 
@@ -158,7 +324,6 @@ jobs:
         uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: "12.5.1"
-
       - name: "Import Certificate"
         uses: devbotsxyz/import-signing-certificate@main
         with:
