@@ -1,20 +1,17 @@
-use std::ops::ControlFlow;
-
-use anyhow::{Context, Result};
-
-use serde::{Deserialize, Serialize};
-use tokio::net::TcpStream;
-use tokio_tungstenite::{tungstenite::Message, MaybeTlsStream, WebSocketStream};
-
 use crate::{
     cli::sync::{self, notify_terminals, SyncWhen},
+    daemon::daemon_log,
     util::{
         auth::{get_email, get_token},
         settings::Settings,
     },
 };
 
-use super::daemon_log;
+use anyhow::{Context, Result};
+use serde::{Deserialize, Serialize};
+use std::ops::ControlFlow;
+use tokio::net::TcpStream;
+use tokio_tungstenite::{tungstenite::Message, MaybeTlsStream, WebSocketStream};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

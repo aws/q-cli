@@ -1,32 +1,34 @@
-use semver::Version;
-use std::borrow::Cow;
-use std::ffi::OsStr;
-use std::future::Future;
-use std::{
-    fs::read_to_string,
-    path::{Path, PathBuf},
-    time::Duration,
-};
-
-use anyhow::{anyhow, Context, Result};
-use crossterm::style::Stylize;
-use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
-use regex::Regex;
-use std::process::Command;
-use thiserror::Error;
-
-use super::diagnostics::{dscl_read, get_diagnostics, verify_integration};
-use super::util::OSVersion;
-use crate::ipc::{connect_timeout, get_socket_path};
-
 use crate::{
     auth::Credentials,
+    cli::{
+        diagnostics::{dscl_read, get_diagnostics, verify_integration},
+        util::OSVersion,
+    },
+    ipc::{connect_timeout, get_socket_path},
     util::{
         app_path_from_bundle_id, fig_dir, get_shell, glob, glob_dir, home_dir,
         shell::{Shell, ShellFileIntegration},
     },
 };
+
+use anyhow::{anyhow, Context, Result};
 use async_trait::async_trait;
+use crossterm::{
+    style::Stylize,
+    terminal::{disable_raw_mode, enable_raw_mode},
+};
+use regex::Regex;
+use semver::Version;
+use std::{
+    borrow::Cow,
+    ffi::OsStr,
+    fs::read_to_string,
+    future::Future,
+    path::{Path, PathBuf},
+    process::Command,
+    time::Duration,
+};
+use thiserror::Error;
 use tokio;
 
 use fig_proto::local::DiagnosticsResponse;

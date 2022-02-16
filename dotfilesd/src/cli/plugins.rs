@@ -1,11 +1,10 @@
-use std::path::{Path, PathBuf};
-
-use anyhow::{Context, Result};
-use clap::Subcommand;
-
 use crate::plugins::{
     download::plugin_data_dir, download_plugin, lock::LockData, manifest::Plugin,
 };
+
+use anyhow::{Context, Result};
+use clap::Subcommand;
+use std::path::{Path, PathBuf};
 
 fn read_plugin_from_file(path: impl AsRef<Path>) -> Result<Plugin> {
     let raw = std::fs::read_to_string(path)?;

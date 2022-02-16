@@ -1,3 +1,5 @@
+use crate::util::project_dir;
+
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::{
@@ -5,8 +7,6 @@ use std::{
     io::{Read, Write},
     path::PathBuf,
 };
-
-use crate::util::project_dir;
 
 /// Get the path to the config folder
 fn get_config_folder() -> Option<PathBuf> {

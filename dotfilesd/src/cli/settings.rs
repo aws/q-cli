@@ -2,6 +2,7 @@ use crate::{
     ipc::command::{open_ui_element, restart_settings_listener},
     util::{fig_dir, settings::Settings},
 };
+
 use anyhow::{anyhow, Result};
 use clap::{AppSettings, ArgGroup, Args, Subcommand};
 use crossterm::style::Stylize;

@@ -1,8 +1,7 @@
-use super::{send_command_to_socket, send_recv_command_to_socket};
+use crate::ipc::{send_command_to_socket, send_recv_command_to_socket};
 use anyhow::Result;
-use fig_proto::local;
 use fig_proto::local::{
-    command, BuildCommand, DebugModeCommand, InputMethodAction, InputMethodCommand,
+    self, command, BuildCommand, DebugModeCommand, InputMethodAction, InputMethodCommand,
     OpenUiElementCommand, PromptAccessibilityCommand, QuitCommand, RestartCommand,
     RestartSettingsListenerCommand, UiElement, UpdateCommand,
 };

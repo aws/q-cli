@@ -1,7 +1,6 @@
-use std::ops::Deref;
-
 use serde::{Deserialize, Serialize};
 use sha2::Digest;
+use std::ops::Deref;
 
 /// A checksum for a plugin
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

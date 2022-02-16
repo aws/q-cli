@@ -1,10 +1,11 @@
 //! Responsible for generating the data used in `fig init` command
 
+use crate::{
+    plugins::lock::{LockData, LockEntry},
+    util::shell::Shell,
+};
+
 use anyhow::Result;
-
-use crate::util::shell::Shell;
-
-use super::lock::{LockData, LockEntry};
 
 impl LockData {
     pub fn plugin_source(&self, name: impl AsRef<str>, shell: &Shell) -> Result<String> {

@@ -1,8 +1,9 @@
-use super::util::OSVersion;
-use super::OutputFormat;
-use crate::ipc::send_recv_command_to_socket;
-use crate::util::settings::Settings;
-use crate::util::{glob, glob_dir, home_dir};
+use crate::{
+    cli::{util::OSVersion, OutputFormat},
+    ipc::send_recv_command_to_socket,
+    util::{glob, glob_dir, home_dir, settings::Settings},
+};
+
 use anyhow::{Context, Result};
 use directories::BaseDirs;
 use fig_proto::local::{
@@ -11,11 +12,7 @@ use fig_proto::local::{
 };
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use std::borrow::Cow;
-use std::ffi::OsStr;
-use std::fmt::Display;
-use std::path::PathBuf;
-use std::process::Command;
+use std::{borrow::Cow, ffi::OsStr, fmt::Display, path::PathBuf, process::Command};
 
 pub trait Diagnostic {
     fn user_readable(&self) -> Result<Vec<String>> {

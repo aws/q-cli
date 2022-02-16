@@ -1,8 +1,7 @@
-use super::util::open_url;
+use crate::cli::util::open_url;
 
 use anyhow::Result;
 use crossterm::style::Stylize;
-
 use rand::prelude::*;
 
 const TWEET_OPTIONS: &[&str] = &[

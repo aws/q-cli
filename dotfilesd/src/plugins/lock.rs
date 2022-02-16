@@ -1,22 +1,22 @@
 //! Storage of data on the current downloaded plugins
 
-use std::{
-    collections::HashMap,
-    path::{Path, PathBuf},
+use crate::{
+    plugins::{
+        download::DownloadMetadata,
+        manifest::{ShellInstall, StringOrList},
+    },
+    util::{glob, glob_files, shell::Shell},
 };
 
 use anyhow::{Context, Result};
 use handlebars::Handlebars;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
-use tokio::fs::{read_to_string, write};
-
-use crate::util::{glob, glob_files, shell::Shell};
-
-use super::{
-    download::DownloadMetadata,
-    manifest::{ShellInstall, StringOrList},
+use std::{
+    collections::HashMap,
+    path::{Path, PathBuf},
 };
+use tokio::fs::{read_to_string, write};
 
 /// [ShellInstall] with the entries generated for the lock file
 #[derive(Debug, Clone, Serialize, Deserialize)]

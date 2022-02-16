@@ -1,12 +1,11 @@
-use std::{collections::HashMap, fmt, path::PathBuf};
+use crate::util::{checksum::Sha256Checksum, shell::Shell, terminal::Terminal};
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
+use std::{collections::HashMap, fmt, path::PathBuf};
 use thiserror::Error;
 use url::Url;
-
-use crate::util::{checksum::Sha256Checksum, shell::Shell, terminal::Terminal};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]

@@ -2,17 +2,15 @@
 pub mod command;
 pub mod hook;
 
+use anyhow::Result;
+use bytes::BytesMut;
+use fig_proto::{local, FigProtobufEncodable};
+use prost::Message;
 use std::{
     io,
     path::{Path, PathBuf},
     time::Duration,
 };
-
-use bytes::BytesMut;
-use fig_proto::{local, FigProtobufEncodable};
-
-use anyhow::Result;
-use prost::Message;
 use tokio::{
     fs::remove_file,
     io::AsyncWriteExt,

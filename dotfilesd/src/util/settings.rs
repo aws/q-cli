@@ -1,7 +1,6 @@
-use std::{fs, path::PathBuf};
-
 use anyhow::{Context, Result};
 use directories::BaseDirs;
+use std::{fs, path::PathBuf};
 
 pub struct Settings {
     inner: serde_json::Value,

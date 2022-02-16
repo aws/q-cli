@@ -1,14 +1,14 @@
-use crate::cli::diagnostics::Diagnostic;
-use crate::cli::diagnostics::Diagnostics;
-use crate::cli::util::OSVersion;
+use crate::{
+    cli::{
+        diagnostics::{Diagnostic, Diagnostics},
+        util::{get_fig_version, open_url, OSVersion},
+    },
+    util::get_shell,
+};
 
-use super::util::get_fig_version;
-use super::util::open_url;
-use crate::util::get_shell;
 use anyhow::Result;
 use crossterm::style::Stylize;
 use regex::Regex;
-
 use url::form_urlencoded;
 
 pub async fn issue_cli(description: Vec<String>) -> Result<()> {

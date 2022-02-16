@@ -1,11 +1,9 @@
-use std::process::Command;
-
-use base64::encode;
-use serde_json::json;
+use crate::auth::{self, Credentials};
 
 use anyhow::{Context, Result};
-
-use crate::auth::{self, Credentials};
+use base64::encode;
+use serde_json::json;
+use std::process::Command;
 
 pub async fn get_token() -> Result<String> {
     match Credentials::load_credentials() {

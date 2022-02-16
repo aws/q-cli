@@ -2,6 +2,18 @@ pub mod launchd_plist;
 pub mod systemd_unit;
 pub mod websocket;
 
+use crate::{
+    daemon::{
+        launchd_plist::LaunchdPlist, systemd_unit::SystemdUnit, websocket::process_websocket,
+    },
+    ipc::send_settings_changed,
+    util::settings::Settings,
+};
+
+use anyhow::{anyhow, Context, Result};
+use futures::StreamExt;
+use notify::{watcher, RecursiveMode, Watcher};
+use serde::{Deserialize, Serialize};
 use std::{
     io::Write,
     ops::ControlFlow,
@@ -9,20 +21,8 @@ use std::{
     process::Command,
     time::Duration,
 };
-
-use anyhow::{anyhow, Context, Result};
-use futures::StreamExt;
-
-use notify::{watcher, RecursiveMode, Watcher};
-use serde::{Deserialize, Serialize};
 use time::format_description::well_known::Rfc3339;
 use tokio::{fs::remove_file, net::UnixListener, select};
-
-use crate::{
-    daemon::websocket::process_websocket, ipc::send_settings_changed, util::settings::Settings,
-};
-
-use self::{launchd_plist::LaunchdPlist, systemd_unit::SystemdUnit};
 
 fn daemon_log(message: &str) {
     println!(

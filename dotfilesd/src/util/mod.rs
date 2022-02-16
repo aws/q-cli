@@ -1,10 +1,11 @@
-use std::ffi::OsStr;
-use std::path::{Path, PathBuf};
-use std::process::Command;
-
 use anyhow::{Context, Result};
 use directories::ProjectDirs;
 use globset::{Glob, GlobSet, GlobSetBuilder};
+use std::{
+    ffi::OsStr,
+    path::{Path, PathBuf},
+    process::Command,
+};
 
 pub mod auth;
 pub mod checksum;

@@ -1,11 +1,12 @@
-use crate::util::shell::Shell;
-
-use self::manifest::{Plugin, PluginType};
-
 pub mod download;
 pub mod init;
 pub mod lock;
 pub mod manifest;
+
+use crate::{
+    plugins::manifest::{Plugin, PluginType},
+    util::shell::Shell,
+};
 
 use anyhow::{bail, Context, Result};
 

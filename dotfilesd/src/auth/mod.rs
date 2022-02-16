@@ -1,3 +1,5 @@
+use crate::util::project_dir;
+
 use anyhow::Context;
 use aws_sdk_cognitoidentityprovider::{
     error::{
@@ -16,8 +18,6 @@ use std::{
     fs::{self, File},
 };
 use thiserror::Error;
-
-use crate::util::project_dir;
 
 pub fn get_client(client_name: impl Into<Cow<'static, str>>) -> anyhow::Result<Client> {
     let config = Config::builder()

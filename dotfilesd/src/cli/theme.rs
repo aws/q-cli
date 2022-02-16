@@ -1,4 +1,5 @@
 use crate::util::{home_dir, settings::Settings};
+
 use anyhow::Result;
 use crossterm::style::{Color, Stylize};
 use serde::{Deserialize, Serialize};

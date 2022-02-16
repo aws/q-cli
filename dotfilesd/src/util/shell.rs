@@ -1,3 +1,10 @@
+use crate::util::{fig_dir, project_dir};
+
+use anyhow::{Context, Result};
+use clap::ArgEnum;
+use regex::Regex;
+use reqwest::Url;
+use serde::{Deserialize, Serialize};
 use std::{
     fmt::Display,
     fs::File,
@@ -5,14 +12,6 @@ use std::{
     path::PathBuf,
     str::FromStr,
 };
-
-use anyhow::{Context, Result};
-use clap::ArgEnum;
-use regex::Regex;
-use reqwest::Url;
-use serde::{Deserialize, Serialize};
-
-use super::{fig_dir, project_dir};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, ArgEnum, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]

@@ -1,20 +1,19 @@
 //! Sync of dotfiles
 
-use std::{
-    io::{stdout, Write},
-    process::{exit, Command},
+use crate::{
+    auth::Credentials,
+    util::{settings::Settings, shell::Shell},
 };
 
 use anyhow::{Context, Result};
 use crossterm::style::Stylize;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use tokio::try_join;
-
-use crate::{
-    auth::Credentials,
-    util::{settings::Settings, shell::Shell},
+use std::{
+    io::{stdout, Write},
+    process::{exit, Command},
 };
+use tokio::try_join;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct DotfilesSourceRequest {

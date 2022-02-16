@@ -1,19 +1,19 @@
 //! Download and updating of plugins
 
-use std::path::{Path, PathBuf};
+use crate::{
+    plugins::manifest::{GitReference, GithubValue, ShellSource},
+    util::{
+        checksum::{GitChecksum, Sha256Checksum},
+        project_dir,
+    },
+};
 
 use anyhow::Result;
 use git2::Repository;
 use reqwest::IntoUrl;
 use serde::{Deserialize, Serialize};
+use std::path::{Path, PathBuf};
 use tokio::io::AsyncWriteExt;
-
-use crate::util::{
-    checksum::{GitChecksum, Sha256Checksum},
-    project_dir,
-};
-
-use super::manifest::{GitReference, GithubValue, ShellSource};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(untagged)]

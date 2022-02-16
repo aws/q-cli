@@ -5,14 +5,14 @@ use crate::{
     },
     util::{fig_dir, glob, glob_dir, settings::Settings},
 };
+
 use anyhow::{anyhow, Context, Result};
 use clap::{ArgEnum, Subcommand};
 use crossterm::style::Stylize;
 use ctrlc::set_handler;
 use fig_proto::local::InputMethodAction;
 use serde_json::json;
-use std::path::Path;
-use std::process::Command;
+use std::{path::Path, process::Command};
 
 #[derive(Debug, ArgEnum, Clone)]
 pub enum Build {

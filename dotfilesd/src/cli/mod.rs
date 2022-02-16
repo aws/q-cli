@@ -17,9 +17,12 @@ pub mod theme;
 pub mod tweet;
 pub mod util;
 
-use self::{installation::InstallComponents, util::open_url};
-use crate::daemon::daemon;
-use crate::util::shell::{Shell, When};
+use crate::{
+    cli::{installation::InstallComponents, util::open_url},
+    daemon::daemon,
+    util::shell::{Shell, When},
+};
+
 use anyhow::Result;
 use clap::{ArgEnum, IntoApp, Parser, Subcommand};
 use crossterm::style::Stylize;

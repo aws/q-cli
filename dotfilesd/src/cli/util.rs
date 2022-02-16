@@ -1,12 +1,11 @@
 use anyhow::{Context, Result};
+use dialoguer::theme::ColorfulTheme;
 use serde::{Deserialize, Serialize};
 use std::{
     env,
     fmt::Display,
     process::{exit, Command},
 };
-
-use dialoguer::theme::ColorfulTheme;
 
 pub fn open_url(url: impl AsRef<str>) -> Result<()> {
     #[cfg(target_os = "macos")]
