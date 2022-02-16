@@ -36,6 +36,7 @@
       "panda",
       "poimandres",
       "the-unnamed",
+      "tokyo-night",
       "synthwave-84",
       "solarized-light",
       "solarized-dark"
@@ -66,6 +67,14 @@
     "type": "number",
     "default": 5000,
     "category": "Autocomplete"
+  },
+  {
+    "settingName": "autocomplete.alwaysShowDescription",
+    "title": "Always Show Separated Description",
+    "description": "Set if Autocomplete should always display the extended separated description.",
+    "type": "boolean",
+    "default": "false",
+    "category": "Appearance"
   },
   {
     "settingName": "autocomplete.fontFamily",

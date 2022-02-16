@@ -80,6 +80,12 @@ fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
     #[cfg(not(target_os = "macos"))]
     let terminal = None;
 
+    let integration_version = std::env::var("FIG_INTEGRATION_VERSION")
+        .map(|s| s.parse().ok())
+        .ok()
+        .flatten()
+        .unwrap_or(6);
+
     new_context(
         shell_state.pid,
         shell_state.tty.clone(),
@@ -89,7 +95,7 @@ fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
             .clone()
             .map(|cwd| cwd.display().to_string()),
         shell_state.session_id.clone(),
-        None,
+        Some(integration_version),
         terminal,
         shell_state.hostname.clone(),
     )
@@ -143,9 +149,12 @@ where
         false
     };
 
-    debug!(
+    trace!(
         "in_docker_ssh: {}, shell_enabled: {}, prexec: {}, insertion_locked: {}",
-        in_docker_ssh, shell_enabled, prexec, insertion_locked
+        in_docker_ssh,
+        shell_enabled,
+        prexec,
+        insertion_locked
     );
 
     shell_enabled && !insertion_locked && !prexec

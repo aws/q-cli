@@ -5,12 +5,7 @@ use std::{
     time::Duration,
 };
 
-use fig_proto::{
-    figterm::{figterm_message, FigtermMessage, InsertTextCommand},
-    local,
-    prost::Message,
-    FigProtobufEncodable,
-};
+use fig_proto::{figterm::FigtermMessage, local, prost::Message, FigProtobufEncodable};
 
 use anyhow::Result;
 use bytes::{Bytes, BytesMut};
@@ -138,18 +133,6 @@ pub async fn spawn_incoming_receiver(
                         }
                         Err(e) => {
                             error!("Error decoding Figterm message: {}", e);
-                            let text = String::from_utf8_lossy(buff.as_ref()).to_string();
-                            let message = FigtermMessage {
-                                command: Some(figterm_message::Command::InsertTextCommand(
-                                    InsertTextCommand {
-                                        insertion: Some(text),
-                                        deletion: None,
-                                        offset: None,
-                                        immediate: None,
-                                    },
-                                )),
-                            };
-                            incomming_tx.clone().send_async(message).await.unwrap();
                         }
                     }
                 });
