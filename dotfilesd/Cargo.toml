@@ -1,6 +1,6 @@
 [package]
 name = "dotfilesd"
-version = "0.1.0"
+version = "0.1.1"
 description = "A manager and daemon for dotfiles"
 edition = "2021"
 
