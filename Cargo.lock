@@ -849,11 +849,10 @@ dependencies = [
 
 [[package]]
 name = "dotfilesd"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "async-trait",
- "aws-sdk-cognitoidentityprovider",
  "base64",
  "bitflags",
  "bytes",
@@ -865,6 +864,7 @@ dependencies = [
  "ctrlc",
  "dialoguer",
  "directories",
+ "fig-auth",
  "fig-proto",
  "flume",
  "futures",
@@ -875,7 +875,6 @@ dependencies = [
  "notify",
  "once_cell",
  "prost",
- "prost-build",
  "rand",
  "regex",
  "reqwest",
@@ -893,8 +892,8 @@ dependencies = [
  "tokio-tungstenite",
  "toml",
  "url",
- "uuid",
  "validator",
+ "walkdir",
  "windows",
 ]
 
@@ -963,6 +962,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c3fcf0cee53519c866c09b5de1f6c56ff9d647101f81c1964fa632e148896cdf"
 dependencies = [
  "instant",
+]
+
+[[package]]
+name = "fig-auth"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "aws-sdk-cognitoidentityprovider",
+ "directories",
+ "rand",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "time",
+ "uuid",
 ]
 
 [[package]]

@@ -1,11 +1,12 @@
 //! CLI auth
 
-use crate::{
-    auth::{get_client, Credentials, SignInConfirmError, SignInError, SignInInput, SignUpInput},
-    cli::util::dialoguer_theme,
-};
+use crate::cli::util::dialoguer_theme;
+
 use anyhow::Result;
 use crossterm::style::Stylize;
+use fig_auth::{
+    get_client, Credentials, SignInConfirmError, SignInError, SignInInput, SignUpInput,
+};
 
 /// Login to the dotfiles server
 pub async fn login_cli(refresh: bool) -> Result<()> {

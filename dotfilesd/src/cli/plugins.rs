@@ -69,6 +69,7 @@ pub enum PluginsSubcommand {
         plugin: String,
     },
     List,
+    Test,
 }
 
 impl PluginsSubcommand {
@@ -152,6 +153,9 @@ impl PluginsSubcommand {
                 for plugin in lock_file.get_entries() {
                     println!("{}", plugin.name);
                 }
+            }
+            PluginsSubcommand::Test => {
+                crate::plugins::api::test().await?;
             }
         }
 

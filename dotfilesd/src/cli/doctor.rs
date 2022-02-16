@@ -1,5 +1,4 @@
 use crate::{
-    auth::Credentials,
     cli::{
         diagnostics::{dscl_read, get_diagnostics, verify_integration},
         util::OSVersion,
@@ -17,6 +16,7 @@ use crossterm::{
     style::Stylize,
     terminal::{disable_raw_mode, enable_raw_mode},
 };
+use fig_auth::Credentials;
 use regex::Regex;
 use semver::Version;
 use std::{

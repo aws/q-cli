@@ -1,5 +1,3 @@
-use crate::util::project_dir;
-
 use anyhow::Context;
 use aws_sdk_cognitoidentityprovider::{
     error::{
@@ -10,6 +8,7 @@ use aws_sdk_cognitoidentityprovider::{
     model::{AttributeType, AuthFlowType, ChallengeNameType},
     AppName, Client, Config, Region, SdkError,
 };
+use directories::ProjectDirs;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -18,6 +17,10 @@ use std::{
     fs::{self, File},
 };
 use thiserror::Error;
+
+fn project_dir() -> Option<ProjectDirs> {
+    ProjectDirs::from("io", "fig", "fig")
+}
 
 pub fn get_client(client_name: impl Into<Cow<'static, str>>) -> anyhow::Result<Client> {
     let config = Config::builder()
@@ -377,7 +380,7 @@ pub struct Credentials {
     pub access_token: Option<String>,
     pub id_token: Option<String>,
     pub refresh_token: Option<String>,
-    pub experation_time: time::OffsetDateTime,
+    pub experation_time: Option<time::OffsetDateTime>,
 }
 
 impl Credentials {
@@ -393,8 +396,9 @@ impl Credentials {
             access_token,
             id_token,
             refresh_token,
-            experation_time: time::OffsetDateTime::now_utc()
-                + time::Duration::seconds(expires_in.into()),
+            experation_time: Some(
+                time::OffsetDateTime::now_utc() + time::Duration::seconds(expires_in.into()),
+            ),
         }
     }
 
@@ -456,8 +460,10 @@ impl Credentials {
             Some(auth_result) => {
                 self.access_token = auth_result.access_token;
                 self.id_token = auth_result.id_token;
-                self.experation_time = time::OffsetDateTime::now_utc()
-                    + time::Duration::seconds(auth_result.expires_in.into());
+                self.experation_time = Some(
+                    time::OffsetDateTime::now_utc()
+                        + time::Duration::seconds(auth_result.expires_in.into()),
+                );
             }
             None => return Err(anyhow::anyhow!("Could not refresh credentials")),
         }
@@ -471,7 +477,7 @@ impl Credentials {
         self.access_token = None;
         self.id_token = None;
         self.refresh_token = None;
-        self.experation_time = time::OffsetDateTime::UNIX_EPOCH;
+        self.experation_time = None;
     }
 
     pub fn get_access_token(&self) -> Option<&String> {
@@ -486,12 +492,15 @@ impl Credentials {
         self.refresh_token.as_ref()
     }
 
-    pub fn get_experation_time(&self) -> &time::OffsetDateTime {
-        &self.experation_time
+    pub fn get_experation_time(&self) -> Option<&time::OffsetDateTime> {
+        self.experation_time.as_ref()
     }
 
     pub fn is_expired_epslion(&self, epsilon: time::Duration) -> bool {
-        self.experation_time + epsilon < time::OffsetDateTime::now_utc()
+        match self.experation_time {
+            Some(experation_time) => experation_time + epsilon < time::OffsetDateTime::now_utc(),
+            None => false,
+        }
     }
 
     pub fn is_expired(&self) -> bool {

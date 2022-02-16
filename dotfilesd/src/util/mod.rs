@@ -14,7 +14,7 @@ pub mod shell;
 pub mod terminal;
 
 pub fn project_dir() -> Option<ProjectDirs> {
-    directories::ProjectDirs::from("io", "Fig", "Fig Cli")
+    directories::ProjectDirs::from("io", "fig", "fig")
 }
 
 pub fn home_dir() -> Result<PathBuf> {
