@@ -5,7 +5,6 @@ on:
     branches:
       - master
       - staging
-      - dotfiles/ci
   workflow_dispatch:
     inputs:
       buildName:
@@ -71,7 +70,7 @@ jobs:
           path: ./dotfilesd/build
           key: dotfilesd-${{ runner.os }}-${{ matrix.arch }}-${{ steps.dotfilesd-version.outputs.version }}
 
-      - name: Compile figterm
+      - name: Compile dotfilesd
         if: steps.dotfilesd-cache.outputs.cache-hit != 'true'
         run: make build-${{ matrix.arch }}-apple-darwin 
         working-directory: ./dotfilesd
@@ -116,7 +115,7 @@ jobs:
           VERSION=$(cat Cargo.toml | grep version | grep -v '{' | cut -d= -f2 | tr -d '"' | tr -d " ")
           echo "::set-output name=version::$VERSION"
           echo $VERSION
-        working-directory: ./figterm/figterm
+        working-directory: ./figterm
 
 
       - name: Cache build artifacts
