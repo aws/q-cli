@@ -1,15 +1,18 @@
 //! Sync of dotfiles
 
-use crate::util::{settings::Settings, shell::Shell};
+use crate::util::{
+    auth::{get_email, get_token},
+    settings::Settings,
+    shell::Shell,
+};
 
 use anyhow::{Context, Result};
 use crossterm::style::Stylize;
-use fig_auth::Credentials;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::{
     io::{stdout, Write},
-    process::{exit, Command},
+    process::exit,
 };
 use tokio::try_join;
 
@@ -19,27 +22,9 @@ struct DotfilesSourceRequest {
 }
 
 async fn sync_file(shell: &Shell, sync_when: SyncWhen) -> Result<()> {
-    // Get the access token from defaults
-    let token = Command::new("defaults")
-        .arg("read")
-        .arg("com.mschrage.fig")
-        .arg("access_token")
-        .output()
-        .with_context(|| "Could not read access_token")?;
-
-    let email = Credentials::load_credentials()
-        .map(|creds| creds.email)
-        .or_else(|_| {
-            let out = Command::new("defaults")
-                .arg("read")
-                .arg("com.mschrage.fig")
-                .arg("userEmail")
-                .output()?;
-
-            let email = String::from_utf8(out.stdout)?;
-
-            anyhow::Ok(Some(email))
-        })?;
+    // Get the token
+    let token = get_token().await?;
+    let email = get_email();
 
     // Constuct the request body
     let body = serde_json::to_string(&DotfilesSourceRequest {
@@ -48,10 +33,7 @@ async fn sync_file(shell: &Shell, sync_when: SyncWhen) -> Result<()> {
 
     let download = reqwest::Client::new()
         .get(shell.get_remote_source()?)
-        .header(
-            "Authorization",
-            format!("Bearer {}", String::from_utf8_lossy(&token.stdout).trim()),
-        )
+        .header("Authorization", format!("Bearer {}", token))
         .body(body)
         .send()
         .await?

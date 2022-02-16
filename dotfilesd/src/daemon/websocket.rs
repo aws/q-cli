@@ -52,6 +52,8 @@ pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream
 
     let (websocket_stream, _) = tokio_tungstenite::connect_async(url).await?;
 
+    daemon_log("Websocket connected");
+
     Ok(websocket_stream)
 }
 

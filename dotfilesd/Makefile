@@ -92,13 +92,14 @@ $(ARTIFACTS)/$(BINARY_NAME)-x86_64-pc-windows-gnu: $(SRC)
 	install $(TARGET_DIR)/x86_64-pc-windows-gnu/release/$(BINARY_NAME).exe $@
 
 build-native:
-	cargo build $(CARGO_OPTIONS)
-	install $(TARGET_DIR)/release/$(BINARY_NAME) $(ARTIFACTS)/$(BINARY_NAME)
+	cargo build --locked
+	install $(TARGET_DIR)/debug/$(BINARY_NAME) $(ARTIFACTS)/$(BINARY_NAME)
 
 install: all
 
-cargo-install: build-native
-	cargo install --path $(ROOT)
+install-native: build-native
+	mkdir -p ~/.fig/bin/
+	install $(ARTIFACTS)/$(BINARY_NAME) ~/.fig/bin/$(BINARY_NAME)
 
 clean:
 	command -v cargo &>/dev/null && cargo clean
