@@ -419,13 +419,21 @@ pub async fn daemon() -> Result<()> {
         .await
         .context("Could not connect to websocket")?;
 
-    // Connect to unix socket
     let unix_socket_path = get_daemon_socket_path();
 
+    // Create the unix socket directory if it doesn't exist
+    if let Some(unix_socket_dir) = unix_socket_path.parent() {
+        tokio::fs::create_dir_all(unix_socket_dir)
+            .await
+            .context("Could not create unix socket directory")?;
+    }
+
+    // Remove the unix socket if it already exists
     if unix_socket_path.exists() {
         remove_file(&unix_socket_path).await?;
     }
 
+    // Bind the unix socket
     let unix_socket =
         UnixListener::bind(&unix_socket_path).context("Could not connect to unix socket")?;
 
