@@ -1,12 +1,11 @@
 pub mod cli;
 pub mod config;
 pub mod daemon;
-pub mod ipc;
 pub mod plugins;
 pub mod util;
 
 use clap::StructOpt;
-use util::auth::get_email;
+use fig_auth::get_email;
 
 #[tokio::main]
 async fn main() {

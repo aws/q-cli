@@ -7,7 +7,6 @@ use std::{
     process::Command,
 };
 
-pub mod auth;
 pub mod checksum;
 pub mod settings;
 pub mod shell;

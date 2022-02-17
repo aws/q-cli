@@ -1,15 +1,13 @@
-use crate::{
-    ipc::command::{
-        input_method_command, prompt_accessibility_command, run_build_command, set_debug_mode,
-        toggle_debug_mode,
-    },
-    util::{fig_dir, glob, glob_dir, settings::Settings},
-};
+use crate::util::{fig_dir, glob, glob_dir, settings::Settings};
 
 use anyhow::{anyhow, Context, Result};
 use clap::{ArgEnum, Subcommand};
 use crossterm::style::Stylize;
 use ctrlc::set_handler;
+use fig_ipc::command::{
+    input_method_command, prompt_accessibility_command, run_build_command, set_debug_mode,
+    toggle_debug_mode,
+};
 use fig_proto::local::InputMethodAction;
 use serde_json::json;
 use std::{path::Path, process::Command};

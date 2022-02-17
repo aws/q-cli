@@ -6,23 +6,31 @@ use crate::{
     daemon::{
         launchd_plist::LaunchdPlist, systemd_unit::SystemdUnit, websocket::process_websocket,
     },
-    ipc::send_settings_changed,
     util::settings::Settings,
 };
 
 use anyhow::{anyhow, Context, Result};
+use fig_ipc::{
+    daemon::get_daemon_socket_path, hook::send_settings_changed, recv_message, send_message,
+};
+use fig_proto::daemon::diagnostic_response::{SettingsWatcherStatus, WebsocketStatus};
 use futures::StreamExt;
 use notify::{watcher, RecursiveMode, Watcher};
-use serde::{Deserialize, Serialize};
+use parking_lot::RwLock;
 use std::{
     io::Write,
     ops::ControlFlow,
     path::{Path, PathBuf},
     process::Command,
+    sync::Arc,
     time::Duration,
 };
 use time::format_description::well_known::Rfc3339;
-use tokio::{fs::remove_file, net::UnixListener, select};
+use tokio::{
+    fs::remove_file,
+    net::{UnixListener, UnixStream},
+    select,
+};
 
 fn daemon_log(message: &str) {
     println!(
@@ -34,30 +42,46 @@ fn daemon_log(message: &str) {
     );
 }
 
+pub fn install_daemon() -> Result<()> {
+    #[cfg(target_os = "macos")]
+    LaunchService::launchd()?.install()?;
+    #[cfg(target_os = "linux")]
+    LaunchService::systemd()?.install()?;
+    #[cfg(target_os = "windows")]
+    return Err(anyhow::anyhow!("Windows is not yet supported"));
+    #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
+    return Err(anyhow::anyhow!("Unsupported platform"));
+
+    Ok(())
+}
+
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum InitSystem {
     /// macOS init system
     ///
-    /// https://launchd.info/
+    /// <https://launchd.info/>
     Launchd,
     /// Most common Linux init system
     ///
-    /// https://systemd.io/
+    /// <https://systemd.io/>
     Systemd,
     /// Init system used by artix, void, etc
     ///
-    /// http://smarden.org/runit/
+    /// <http://smarden.org/runit/>
     Runit,
     /// Init subsystem used by alpine, gentoo, etc
     ///
-    /// https://wiki.gentoo.org/wiki/Project:OpenRC
+    /// <https://wiki.gentoo.org/wiki/Project:OpenRC>
     OpenRc,
 }
 
 impl InitSystem {
     pub fn get_init_system() -> Result<InitSystem> {
-        let output = Command::new("ps 1").output().context("Could not run ps")?;
+        let output = Command::new("ps")
+            .args(["1"])
+            .output()
+            .context("Could not run ps")?;
 
         let stdout = String::from_utf8_lossy(&output.stdout);
 
@@ -163,7 +187,15 @@ impl InitSystem {
         Ok(())
     }
 
-    pub fn daemon_status(&self, name: impl AsRef<str>) -> Result<Option<i32>> {
+    pub fn daemon_name(&self) -> &'static str {
+        match self {
+            InitSystem::Launchd => "io.fig.dotfiles-daemon",
+            InitSystem::Systemd => "fig-dotfiles-daemon",
+            _ => unimplemented!(),
+        }
+    }
+
+    pub fn daemon_status(&self) -> Result<Option<i32>> {
         match self {
             InitSystem::Launchd => {
                 let output = Command::new("launchctl").arg("list").output()?;
@@ -173,13 +205,13 @@ impl InitSystem {
                 let status = stdout
                     .lines()
                     .map(|line| line.split_whitespace().collect::<Vec<_>>())
-                    .find(|line| line[2] == name.as_ref())
+                    .find(|line| line[2] == self.daemon_name())
                     .map(|data| data[1].parse::<i32>().ok())
                     .flatten();
 
                 Ok(status)
             }
-            InitSystem::Systemd => todo!(),
+            InitSystem::Systemd => Err(anyhow!("todo")),
             _ => Err(anyhow!(
                 "Could not get daemon status: unsupported init system"
             )),
@@ -211,7 +243,7 @@ impl LaunchService {
         let log_path = basedirs.home_dir().join(".fig/logs/dotfiles-daemon.log");
         let log_path_str = log_path.to_string_lossy();
 
-        let plist = LaunchdPlist::new("io.fig.dotfiles-daemon")
+        let plist = LaunchdPlist::new(InitSystem::Launchd.daemon_name())
             .program(&*executable_path_str)
             .program_arguments([&*executable_path_str, "daemon"])
             .keep_alive(true)
@@ -274,30 +306,34 @@ impl LaunchService {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct WebsocketAwsToken {
-    access_token: String,
-    id_token: String,
+struct DaemonStatus {
+    /// The time the daemon was started as a u64 timestamp in seconds since the epoch
+    time_started: u64,
+    settings_watcher_status: Result<()>,
 }
 
-async fn spawn_settings_watcher() -> Result<()> {
+async fn spawn_settings_watcher() -> Result<flume::Receiver<Result<()>>> {
     let settings_path = Settings::path()?;
 
     let (settings_watcher_tx, settings_watcher_rx) = std::sync::mpsc::channel();
     let mut watcher = watcher(settings_watcher_tx, Duration::from_secs(1))?;
 
     let (forward_tx, forward_rx) = flume::unbounded();
+    let (status_tx, status_rx) = flume::unbounded();
 
     tokio::task::spawn(async move {
         loop {
             match forward_rx.recv_async().await {
                 Ok(_) => match send_settings_changed().await {
-                    Err(err) => daemon_log(&format!("Could not send settings changed: {}", err)),
                     Ok(_) => daemon_log("Settings changed"),
+                    Err(err) => {
+                        daemon_log(&format!("Could not send settings changed: {}", err));
+                        status_tx.send_async(Err(err)).await.ok();
+                    }
                 },
-                Err(e) => {
-                    daemon_log(&format!("Error while receiving settings: {}", e));
+                Err(err) => {
+                    daemon_log(&format!("Error while receiving settings: {}", err));
+                    status_tx.send_async(Err(err.into())).await.ok();
                 }
             }
         }
@@ -323,12 +359,58 @@ async fn spawn_settings_watcher() -> Result<()> {
         },
     );
 
+    Ok(status_rx)
+}
+
+async fn spawn_unix_handler(
+    mut stream: UnixStream,
+    daemon_status: Arc<RwLock<DaemonStatus>>,
+) -> Result<()> {
+    tokio::task::spawn(async move {
+        loop {
+            match recv_message::<fig_proto::daemon::DaemonMessage, _>(&mut stream).await {
+                Ok(msg) => {
+                    println!("Received message: {:?}", msg);
+
+                    let message = {
+                        let daemon_status = daemon_status.read();
+
+                        let settings_status = match daemon_status.settings_watcher_status {
+                            Ok(_) => SettingsWatcherStatus::SettingsWatcherOk,
+                            Err(_) => SettingsWatcherStatus::SettingsWatcherError,
+                        };
+
+                        fig_proto::daemon::new_diagnostic_response(
+                            daemon_status.time_started,
+                            settings_status,
+                            WebsocketStatus::WebsocketOk,
+                        )
+                    };
+
+                    if let Err(err) = send_message(&mut stream, message).await {
+                        eprintln!("Error sending message: {}", err);
+                    }
+                }
+                Err(err) => {
+                    eprintln!("Error while receiving message: {}", err);
+                }
+            }
+        }
+    });
+
     Ok(())
 }
 
 /// Spawn the daemon to listen for updates and dotfiles changes
 pub async fn daemon() -> Result<()> {
     daemon_log("Starting daemon...");
+
+    let daemon_status = Arc::new(RwLock::new(DaemonStatus {
+        time_started: std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)?
+            .as_secs(),
+        settings_watcher_status: Ok(()),
+    }));
 
     let mut update_interval = tokio::time::interval(Duration::from_secs(60 * 60));
 
@@ -338,16 +420,17 @@ pub async fn daemon() -> Result<()> {
         .context("Could not connect to websocket")?;
 
     // Connect to unix socket
-    let unix_socket_path = Path::new("/tmp/dotfiles-daemon.sock");
+    let unix_socket_path = get_daemon_socket_path();
 
     if unix_socket_path.exists() {
-        remove_file(unix_socket_path).await?;
+        remove_file(&unix_socket_path).await?;
     }
 
     let unix_socket =
-        UnixListener::bind(unix_socket_path).context("Could not connect to unix socket")?;
+        UnixListener::bind(&unix_socket_path).context("Could not connect to unix socket")?;
 
-    if let Err(err) = spawn_settings_watcher().await {
+    let spawn_settings_watcher_result = spawn_settings_watcher().await;
+    if let Err(err) = &spawn_settings_watcher_result {
         daemon_log(&format!("Could not spawn settings watcher: {}", err));
     }
 
@@ -362,9 +445,17 @@ pub async fn daemon() -> Result<()> {
                     ControlFlow::Break(_) => break,
                 }
             }
-            _ = unix_socket.accept() => {
-
+            conn = unix_socket.accept() => {
+                match conn {
+                    Ok((stream, _)) => {
+                        spawn_unix_handler(stream, daemon_status.clone()).await?;
+                    }
+                    Err(err) => {
+                        daemon_log(&format!("Could not accept unix socket connection: {}", err));
+                    }
+                }
             }
+
             _ = update_interval.tick() => {
                 #[cfg(feature = "auto-update")]
                 {

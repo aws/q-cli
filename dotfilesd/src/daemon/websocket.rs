@@ -1,13 +1,11 @@
 use crate::{
     cli::sync::{self, notify_terminals, SyncWhen},
     daemon::daemon_log,
-    util::{
-        auth::{get_email, get_token},
-        settings::Settings,
-    },
+    util::settings::Settings,
 };
 
 use anyhow::{Context, Result};
+use fig_auth::{get_email, get_token};
 use serde::{Deserialize, Serialize};
 use std::ops::ControlFlow;
 use tokio::net::TcpStream;

@@ -1,11 +1,11 @@
 use crate::{
     cli::{util::OSVersion, OutputFormat},
-    ipc::send_recv_command_to_socket,
     util::{glob, glob_dir, home_dir, settings::Settings},
 };
 
 use anyhow::{Context, Result};
 use directories::BaseDirs;
+use fig_ipc::command::send_recv_command_to_socket;
 use fig_proto::local::{
     command, command_response::Response, DiagnosticsCommand, DiagnosticsResponse,
     IntegrationAction, TerminalIntegrationCommand,

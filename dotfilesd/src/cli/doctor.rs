@@ -3,7 +3,6 @@ use crate::{
         diagnostics::{dscl_read, get_diagnostics, verify_integration},
         util::OSVersion,
     },
-    ipc::{connect_timeout, get_socket_path},
     util::{
         app_path_from_bundle_id, fig_dir, get_shell, glob, glob_dir, home_dir,
         shell::{Shell, ShellFileIntegration},
@@ -17,6 +16,8 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode},
 };
 use fig_auth::Credentials;
+use fig_ipc::{connect_timeout, get_fig_socket_path, send_recv_message};
+use fig_proto::local::DiagnosticsResponse;
 use regex::Regex;
 use semver::Version;
 use std::{
@@ -30,8 +31,6 @@ use std::{
 };
 use thiserror::Error;
 use tokio;
-
-use fig_proto::local::DiagnosticsResponse;
 
 type DoctorFix = Box<dyn FnOnce() -> Result<()> + Send>;
 
@@ -228,7 +227,7 @@ impl DoctorCheck for FigSocketCheck {
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        Ok(check_file_exists(&get_socket_path())?)
+        Ok(check_file_exists(&get_fig_socket_path())?)
     }
 }
 
@@ -271,6 +270,127 @@ impl DoctorCheck for FigtermSocketCheck {
 
         if write_handle.await.is_err() || !buffer.contains("Testing figterm...") {
             return Err(anyhow!("Socket exists but is not writable.").into());
+        }
+
+        Ok(())
+    }
+}
+
+struct DaemonCheck {}
+
+#[async_trait]
+impl DoctorCheck for DaemonCheck {
+    fn name(&self) -> Cow<'static, str> {
+        "Daemon is running".into()
+    }
+
+    async fn check(&self, _: &()) -> Result<(), DoctorError> {
+        // Check if the daemon is running
+        let init_system =
+            crate::daemon::InitSystem::get_init_system().context("Could not get init system")?;
+
+        macro_rules! daemon_fix {
+            () => {
+                Some(Box::new(|| {
+                    crate::daemon::install_daemon()?;
+                    // Sleep for a second to give the daemon time to install and start
+                    std::thread::sleep(std::time::Duration::from_secs(1));
+                    Ok(())
+                }))
+            };
+        }
+
+        match init_system.daemon_status()? {
+            Some(0) => Ok(()),
+            Some(n) => Err(DoctorError::Error {
+                reason: "Daemon is not running".into(),
+                info: vec![
+                    format!("Daemon status: {}", n).into(),
+                    format!("Init system: {:?}", init_system).into(),
+                ],
+                fix: daemon_fix!(),
+            }),
+            None => Err(DoctorError::Error {
+                reason: "Daemon is not running".into(),
+                info: vec![format!("Init system: {:?}", init_system).into()],
+                fix: daemon_fix!(),
+            }),
+        }?;
+
+        // Get diagnostics from the daemon
+        let socket_path = fig_ipc::daemon::get_daemon_socket_path();
+
+        if !socket_path.exists() {
+            return Err(DoctorError::Error {
+                reason: "Daemon socket does not exist".into(),
+                info: vec![],
+                fix: daemon_fix!(),
+            });
+        }
+
+        let mut conn = match connect_timeout(&socket_path, Duration::from_secs(1)).await {
+            Ok(connection) => connection,
+            Err(_) => {
+                return Err(DoctorError::Error {
+                    reason: "Daemon socket exists but could not connect".into(),
+                    info: vec![format!("Socket path: {}", socket_path.display()).into()],
+                    fix: daemon_fix!(),
+                });
+            }
+        };
+
+        let diagnostic_response_result: Result<fig_proto::daemon::DaemonResponse> =
+            send_recv_message(
+                &mut conn,
+                fig_proto::daemon::new_diagnostic_message(),
+                Duration::from_secs(1),
+            )
+            .await;
+
+        match diagnostic_response_result {
+            Ok(diagnostic_response) => match diagnostic_response.response {
+                Some(response_type) => match response_type {
+                    fig_proto::daemon::daemon_response::Response::Diagnostic(diagnostics) => {
+                        if diagnostics.settings_watcher_status != 0 {
+                            return Err(DoctorError::Error {
+                                reason: "Settings watcher is not running".into(),
+                                info: vec![],
+                                fix: daemon_fix!(),
+                            });
+                        }
+
+                        if diagnostics.websocket_status != 0 {
+                            return Err(DoctorError::Error {
+                                reason: "Websocket is not running".into(),
+                                info: vec![],
+                                fix: daemon_fix!(),
+                            });
+                        }
+                    }
+                    #[allow(unreachable_patterns)]
+                    _ => {
+                        return Err(DoctorError::Error {
+                            reason: "Daemon responded with unexpected response type".into(),
+                            info: vec![],
+                            fix: daemon_fix!(),
+                        });
+                    }
+                },
+                None => {
+                    return Err(DoctorError::Error {
+                        reason: "Daemon responded with no response type".into(),
+                        info: vec![],
+                        fix: daemon_fix!(),
+                    })
+                }
+            },
+            Err(_) => {
+                return Err(DoctorError::Error {
+                    reason: "Daemon accepted request but did not respond".into(),
+                    info: vec![format!("Socket path: {}", socket_path.display()).into()],
+                    fix: daemon_fix!(),
+                });
+            }
         }
 
         Ok(())
@@ -922,6 +1042,7 @@ pub async fn doctor_cli() -> Result<()> {
                 &PathCheck {},
                 &AppRunningCheck {},
                 &FigSocketCheck {},
+                &DaemonCheck {},
                 &FigtermSocketCheck {},
             ],
         )

@@ -1,10 +1,14 @@
-use crate::ipc::{send_command_to_socket, send_recv_command_to_socket};
+use std::time::Duration;
+
 use anyhow::Result;
 use fig_proto::local::{
     self, command, BuildCommand, DebugModeCommand, InputMethodAction, InputMethodCommand,
     OpenUiElementCommand, PromptAccessibilityCommand, QuitCommand, RestartCommand,
     RestartSettingsListenerCommand, UiElement, UpdateCommand,
 };
+use tokio::net::UnixStream;
+
+use super::{connect_timeout, get_fig_socket_path, recv_message, send_message};
 
 pub async fn restart_settings_listener() -> Result<()> {
     let command = command::Command::RestartSettingsListener(RestartSettingsListenerCommand {});
@@ -66,6 +70,43 @@ pub async fn restart_command() -> Result<()> {
 pub async fn quit_command() -> Result<()> {
     let command = command::Command::Quit(QuitCommand {});
     send_command_to_socket(command).await
+}
+
+pub async fn send_command(
+    connection: &mut UnixStream,
+    command: local::command::Command,
+) -> Result<()> {
+    let message = local::LocalMessage {
+        r#type: Some(local::local_message::Type::Command(local::Command {
+            id: None,
+            no_response: Some(false),
+            command: Some(command),
+        })),
+    };
+
+    send_message(connection, message).await
+}
+
+pub async fn send_recv_command(
+    connection: &mut UnixStream,
+    command: local::command::Command,
+) -> Result<local::CommandResponse> {
+    send_command(connection, command).await?;
+    tokio::time::timeout(Duration::from_secs(2), recv_message(connection)).await?
+}
+
+pub async fn send_command_to_socket(command: local::command::Command) -> Result<()> {
+    let path = get_fig_socket_path();
+    let mut conn = connect_timeout(&path, Duration::from_secs(3)).await?;
+    send_command(&mut conn, command).await
+}
+
+pub async fn send_recv_command_to_socket(
+    command: local::command::Command,
+) -> Result<local::CommandResponse> {
+    let path = get_fig_socket_path();
+    let mut conn = connect_timeout(&path, Duration::from_secs(3)).await?;
+    send_recv_command(&mut conn, command).await
 }
 
 /*

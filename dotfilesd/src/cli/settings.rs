@@ -1,11 +1,9 @@
-use crate::{
-    ipc::command::{open_ui_element, restart_settings_listener},
-    util::{fig_dir, settings::Settings},
-};
+use crate::util::{fig_dir, settings::Settings};
 
 use anyhow::{anyhow, Result};
-use clap::{AppSettings, ArgGroup, Args, Subcommand};
+use clap::{ArgGroup, Args, Subcommand};
 use crossterm::style::Stylize;
+use fig_ipc::command::{open_ui_element, restart_settings_listener};
 use fig_proto::local::UiElement;
 use serde_json::json;
 use std::process::Command;
@@ -21,7 +19,8 @@ pub enum SettingsSubcommands {
 }
 
 #[derive(Debug, Args)]
-#[clap(setting(AppSettings::SubcommandsNegateReqs | AppSettings::ArgsNegateSubcommands))]
+#[clap(subcommand_negates_reqs = true)]
+#[clap(args_conflicts_with_subcommands = true)]
 #[clap(group(ArgGroup::new("vals").requires("key").args(&["value", "delete"])))]
 pub struct SettingsArgs {
     #[clap(subcommand)]

@@ -11,7 +11,8 @@ struct DotfileData {
 }
 
 fn shell_init(shell: &Shell, when: &When) -> Result<String> {
-    let dotfiles_sourced = std::env::var("FIG_DOTFILES_SOURCED").unwrap_or_else(|_| "0".into());
+    // let dotfiles_sourced = std::env::var("FIG_DOTFILES_SOURCED").unwrap_or_else(|_| "0".into());
+    let dotfiles_sourced = "1";
 
     let mut to_source = String::new();
     if dotfiles_sourced == "1" {

@@ -1,10 +1,14 @@
 use crate::util::get_shell;
+
 use anyhow::Result;
 use fig_proto::local::{
-    hook::Hook, EditBufferHook, EventHook, HideHook, InitHook, IntegrationReadyHook,
+    self, hook::Hook, EditBufferHook, EventHook, HideHook, InitHook, IntegrationReadyHook,
     KeyboardFocusChangedHook, PreExecHook, PromptHook, ShellContext,
 };
-use std::collections::HashMap;
+use std::{collections::HashMap, time::Duration};
+use tokio::net::UnixStream;
+
+use super::{connect_timeout, get_fig_socket_path, send_message};
 
 const CURRENT_INTEGRATION_VERSION: i32 = 5;
 
@@ -100,4 +104,29 @@ pub fn create_preexec_hook(pid: i32, tty: impl Into<String>) -> Result<Hook> {
         context: Some(context),
         command: None,
     }))
+}
+
+/// Send a hook using a Unix socket
+pub async fn send_hook(connection: &mut UnixStream, hook: local::hook::Hook) -> Result<()> {
+    let message = local::LocalMessage {
+        r#type: Some(local::local_message::Type::Hook(local::Hook {
+            hook: Some(hook),
+        })),
+    };
+
+    send_message(connection, message).await
+}
+
+pub async fn send_hook_to_socket(hook: local::hook::Hook) -> Result<()> {
+    let path = get_fig_socket_path();
+    let mut conn = connect_timeout(&path, Duration::from_secs(3)).await?;
+    send_hook(&mut conn, hook).await
+}
+
+pub async fn send_settings_changed() -> Result<()> {
+    send_hook_to_socket(local::hook::Hook::SettingsChanged(
+        local::SettingsChangedHook {},
+    ))
+    .await?;
+    Ok(())
 }

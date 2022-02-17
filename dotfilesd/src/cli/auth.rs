@@ -4,14 +4,14 @@ use crate::cli::util::dialoguer_theme;
 
 use anyhow::Result;
 use crossterm::style::Stylize;
-use fig_auth::{
+use fig_auth::cognito::{
     get_client, Credentials, SignInConfirmError, SignInError, SignInInput, SignUpInput,
 };
 
 /// Login to the dotfiles server
 pub async fn login_cli(refresh: bool) -> Result<()> {
     let client_id = "hkinciohdp1i7h0imdk63a4bv";
-    let client = get_client("dotfiles-cli")?;
+    let client = get_client()?;
 
     if refresh {
         let mut creds = Credentials::load_credentials()?;

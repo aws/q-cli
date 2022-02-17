@@ -1,8 +1,3 @@
-# Source dotfiles
-if [ -x "$(command -v dotfilesd)" ]; then
-  eval "$(dotfilesd init bash post)"
-fi
-
 # Add preexec, but override __bp_adjust_histcontrol to preserve histcontrol.
 # Should have already been sourced in pre.sh but just make sure since we depend
 # on it here

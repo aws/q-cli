@@ -1,10 +1,13 @@
 //! Figterm Protocal Buffers
 
-#![allow(clippy::all)]
-
 use std::iter::repeat;
 
-include!(concat!(env!("OUT_DIR"), "/figterm.rs"));
+mod proto {
+    #![allow(clippy::all)]
+    include!(concat!(env!("OUT_DIR"), "/figterm.rs"));
+}
+
+pub use proto::*;
 
 impl InsertTextCommand {
     pub fn to_term_string(&self) -> String {

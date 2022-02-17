@@ -1,13 +1,10 @@
 //! Sync of dotfiles
 
-use crate::util::{
-    auth::{get_email, get_token},
-    settings::Settings,
-    shell::Shell,
-};
+use crate::util::{settings::Settings, shell::Shell};
 
 use anyhow::{Context, Result};
 use crossterm::style::Stylize;
+use fig_auth::{get_email, get_token};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::{

@@ -1,14 +1,11 @@
-use crate::ipc::{
-    hook::{
-        create_edit_buffer_hook, create_event_hook, create_hide_hook, create_init_hook,
-        create_integration_ready_hook, create_keyboard_focus_changed_hook, create_preexec_hook,
-        create_prompt_hook,
-    },
-    send_hook_to_socket,
-};
 use anyhow::{Context, Result};
 use clap::Subcommand;
 use crossterm::style::Stylize;
+use fig_ipc::hook::{
+    create_edit_buffer_hook, create_event_hook, create_hide_hook, create_init_hook,
+    create_integration_ready_hook, create_keyboard_focus_changed_hook, create_preexec_hook,
+    create_prompt_hook, send_hook_to_socket,
+};
 
 #[derive(Debug, Subcommand)]
 pub enum HookSubcommand {

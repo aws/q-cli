@@ -1,8 +1,7 @@
 use anyhow::Result;
 use copypasta::{ClipboardContext, ClipboardProvider};
 use crossterm::style::Stylize;
-
-use crate::util::auth::{get_email, get_token};
+use fig_auth::{get_email, get_token};
 
 pub async fn invite_cli() -> Result<()> {
     let email = get_email();

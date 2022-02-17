@@ -19,7 +19,7 @@ bitflags::bitflags! {
 
 pub fn install_cli(install_components: InstallComponents) -> Result<()> {
     if install_components.contains(InstallComponents::DAEMON) {
-        install_daemon()?;
+        daemon::install_daemon()?;
     }
 
     if install_components.contains(InstallComponents::DOTFILES) {
@@ -52,19 +52,6 @@ pub fn install_cli(install_components: InstallComponents) -> Result<()> {
             println!();
         }
     }
-
-    Ok(())
-}
-
-fn install_daemon() -> Result<()> {
-    #[cfg(target_os = "macos")]
-    daemon::LaunchService::launchd()?.install()?;
-    #[cfg(target_os = "linux")]
-    daemon::LaunchService::systemd()?.install()?;
-    #[cfg(target_os = "windows")]
-    return Err(anyhow::anyhow!("Windows is not yet supported"));
-    #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
-    return Err(anyhow::anyhow!("Unsupported platform"));
 
     Ok(())
 }
@@ -175,7 +162,7 @@ pub async fn update(update_type: UpdateType) -> Result<UpdateStatus> {
     // Let desktop app handle updates on macOS
     #[cfg(target_os = "macos")]
     {
-        use crate::ipc::command::update_command;
+        use fig_ipc::command::update_command;
 
         let desktop_app_update = update_command(update_type == UpdateType::Confirm).await;
         match desktop_app_update {

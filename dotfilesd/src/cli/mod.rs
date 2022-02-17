@@ -202,7 +202,7 @@ impl Cli {
     }
 
     fn generation_fig_compleations() -> String {
-        let mut cli = Cli::into_app();
+        let mut cli = Cli::command();
 
         let mut buffer = Vec::new();
 

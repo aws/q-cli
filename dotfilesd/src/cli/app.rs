@@ -1,16 +1,12 @@
-use crate::{
-    cli::debug::get_app_info,
-    ipc::{
-        command::{quit_command, restart_command},
-        hook::create_init_hook,
-        send_hook_to_socket,
-    },
-    util::settings::Settings,
-};
+use crate::{cli::debug::get_app_info, util::settings::Settings};
 
 use anyhow::{Context, Result};
 use clap::Subcommand;
 use crossterm::style::Stylize;
+use fig_ipc::{
+    command::{quit_command, restart_command},
+    hook::{create_init_hook, send_hook_to_socket},
+};
 use regex::Regex;
 use serde_json::json;
 use std::{process::Command, time::Duration};
