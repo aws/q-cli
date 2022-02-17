@@ -1,6 +1,6 @@
 //! [log] logger
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use nix::unistd::getpid;
 use std::{
     env,
@@ -43,7 +43,7 @@ struct Logger {
 }
 
 fn log_folder() -> Result<PathBuf> {
-    let mut dir = fig_path().unwrap();
+    let mut dir = fig_path().context("failed to get fig path")?;
     dir.push("logs");
     Ok(dir)
 }
@@ -84,7 +84,7 @@ impl log::Log for Logger {
                     .unwrap_or_else(|| "?".into()),
                 record.args()
             )
-            .unwrap();
+            .ok();
         }
     }
 
