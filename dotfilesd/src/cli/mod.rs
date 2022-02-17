@@ -229,12 +229,10 @@ fn root_command() -> Result<()> {
 
 #[cfg(test)]
 mod test {
-    use clap::IntoApp;
-
     use super::*;
 
     #[test]
     fn debug_assert() {
-        Cli::into_app().debug_assert();
+        Cli::command().debug_assert();
     }
 }
