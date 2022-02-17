@@ -20,12 +20,6 @@
 FIG_TAG="$1"
 
 echo "Tag is ${FIG_TAG}"
-date_string=$(date '+%Y-%m-%d_%H-%M-%S')
-
-error() {
-  echo "Error: $@" >&2
-  exit 1
-}
 
 # Install fig. Override if already exists
 install_fig() {
@@ -33,11 +27,7 @@ install_fig() {
   mkdir -p ~/.fig
 
   # delete binary artifacts to ensure ad-hoc code signature works for arm64 binaries on M1
-  rm ~/.fig/bin/figterm
-  rm ~/.fig/bin/*figterm*
-  rm ~/.fig/bin/fig_callback
-  rm ~/.fig/bin/fig_get_shell
-  rm ~/.fig/bin/dotfilesd
+  rm ~/.fig/bin/{*figterm*,fig_get_shell,fig_callback,dotfilesd}
 
   if [[ "${FIG_TAG}" == "local" ]]; then
     cp -R "$PWD"/* ~/.fig
@@ -45,9 +35,7 @@ install_fig() {
   fi
 
   # Make files and folders that the user can edit (that aren't overridden by above)
-  mkdir -p ~/.fig/bin
-  mkdir -p ~/.fig/user
-  mkdir -p ~/.fig/user/dotfiles
+  mkdir -p ~/.fig/bin ~/.fig/user/dotfiles ~/.fig/apps/
 
   BUNDLE="${FIG_BUNDLE_EXECUTABLES:-/Applications/Fig.app/Contents/MacOS/}"
 
@@ -70,43 +58,35 @@ install_fig() {
 
   USER_SHELL_TRIMMED="$(echo "${USER_SHELL}" | cut -d ' ' -f 2)"
 
-  # Hardcode figcli path because symlinking has not happened when this script
-  # runs.
-  FIGCLI="${BUNDLE}/figcli" 
-  "${FIGCLI}" settings userShell "${USER_SHELL_TRIMMED}"
-
-  # installs the daemon (dotfiles will be configured using this script)
-  DOTFILES="${BUNDLE}/dotfilesd"
-  "${DOTFILES}" install --daemon 
-
-}
-
-setup_onboarding() {
-  # Create config file if it doesn't exist.
-  if [[ ! -s ~/.fig/user/config ]]; then
-    touch ~/.fig/user/config 
-  fi
-
-  # If this is first download, mark download time as now.
-  grep -q 'DOWNLOAD_TIME' ~/.fig/user/config || echo "DOWNLOAD_TIME=$(date +'%s')" >> ~/.fig/user/config
-
-  # Create last_update if it doesn't exist and mark last update as now.
-  grep -q 'LAST_UPDATE' ~/.fig/user/config || echo "LAST_UPDATE=$(date +'%s')" >> ~/.fig/user/config
-  sed -i '' "s/LAST_UPDATE=.*/LAST_UPDATE=$(date +'%s')/g" ~/.fig/user/config 2> /dev/null
-
-  add_conf_var() { grep -q "$1" ~/.fig/user/config || echo "$1=0" >> ~/.fig/user/config ; }
-
-  add_conf_var FIG_LOGGED_IN
-  add_conf_var FIG_ONBOARDING
-  add_conf_var DONT_SHOW_DRIP
-  for num in ONE TWO THREE FOUR FIVE SIX SEVEN; do
-    add_conf_var "DRIP_${num}"
-  done
+  # Hardcode figcli path because symlinking has not happened when this script runs.
+  FIG_CLI="${BUNDLE}/fig" 
+  "${FIG_CLI}" settings userShell "${USER_SHELL_TRIMMED}"
+  "${FIG_CLI}" install
 }
 
 install_fig
-setup_onboarding
 
-~/.fig/tools/install_integrations.sh
+# Create config file if it doesn't exist.
+if [[ ! -s ~/.fig/user/config ]]; then
+  touch ~/.fig/user/config 
+fi
+
+add_conf_var() { grep -q "$1" ~/.fig/user/config || echo "$1=0" >> ~/.fig/user/config ; }
+
+add_conf_var FIG_LOGGED_IN
+add_conf_var FIG_ONBOARDING
+
+TMUX_INTEGRATION=$'\n# Fig Tmux Integration: Enabled\nsource-file ~/.fig/tmux\n# End of Fig Tmux Integration'
+
+# If ~/.tmux.conf.local exists, append integration here to workaround conflict with oh-my-tmux.
+if [[ -s "${HOME}/.tmux.conf.local" ]]; then
+  if ! grep -q 'source-file ~/.fig/tmux' ~/.tmux.conf.local; then 
+    echo "${TMUX_INTEGRATION}" >> ~/.tmux.conf.local
+  fi
+elif [[ -s "${HOME}/.tmux.conf" ]]; then
+  if ! grep -q 'source-file ~/.fig/tmux' ~/.tmux.conf; then 
+    echo "${TMUX_INTEGRATION}" >> ~/.tmux.conf
+  fi
+fi
 
 echo success

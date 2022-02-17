@@ -129,21 +129,29 @@ pub struct CommandInfo {
     pub exit_code: Option<i32>,
 }
 
-/// State about the current shell
 #[derive(Debug, Clone, Default)]
-pub struct ShellState {
-    /// The current tty
-    pub tty: Option<String>,
+pub struct ShellContext {
     /// Pid of the shell
     pub pid: Option<i32>,
-    /// The current session id
-    pub session_id: Option<String>,
-    /// Hostname of the machine where the shell is running
-    pub hostname: Option<String>,
+    /// The current tty
+    pub tty: Option<String>,
     /// The name of the current shell's executable
     pub shell: Option<String>,
     /// Current working directory
     pub current_working_directory: Option<PathBuf>,
+    /// The current session id
+    pub session_id: Option<String>,
+    /// Hostname of the machine where the shell is running
+    pub hostname: Option<String>,
+}
+
+/// State about the current shell
+#[derive(Debug, Clone, Default)]
+pub struct ShellState {
+    /// Local context for shell
+    pub local_context: ShellContext,
+    /// Remote context for shell
+    pub remote_context: ShellContext,
     /// If the shell is running in a ssh session
     pub in_ssh: bool,
     /// If the shell is running in a docker session
@@ -639,6 +647,24 @@ impl<T> Term<T> {
     /// Get the current [`ShellState`]
     pub fn shell_state(&self) -> &ShellState {
         &self.shell_state
+    }
+
+    /// Get the current [`ShellContext`]
+    pub fn get_context(&self) -> &ShellContext {
+        if self.shell_state.in_ssh || self.shell_state.in_docker {
+            &self.shell_state.remote_context
+        } else {
+            &self.shell_state.local_context
+        }
+    }
+
+    /// Get the current [`ShellContext`]
+    pub fn get_mut_context(&mut self) -> &mut ShellContext {
+        if self.shell_state.in_ssh || self.shell_state.in_docker {
+            &mut self.shell_state.remote_context
+        } else {
+            &mut self.shell_state.local_context
+        }
     }
 
     pub fn get_text_region(
@@ -1390,7 +1416,7 @@ impl<T: EventListener> Handler for Term<T> {
 
                 let mut in_suggestion = false;
 
-                if let Some(suggestion_color) = match self.shell_state().shell.as_deref() {
+                if let Some(suggestion_color) = match self.get_context().shell.as_deref() {
                     Some("fish") => Some(self.shell_state().fish_suggestion_color.as_ref()),
                     Some("zsh") => Some(self.shell_state().zsh_autosuggestion_color.as_ref()),
                     _ => None,
@@ -1682,11 +1708,12 @@ impl<T: EventListener> Handler for Term<T> {
             .get_current_buffer()
             .map(|b| b.buffer.trim().to_owned());
 
+        let context = self.get_context();
         self.shell_state.command_info = Some(CommandInfo {
             command: buffer,
-            shell: self.shell_state.shell.clone(),
-            pid: self.shell_state.pid,
-            session_id: self.shell_state.session_id.clone(),
+            shell: context.shell.clone(),
+            pid: context.pid,
+            session_id: context.session_id.clone(),
             cwd: env::current_dir().ok(),
             time: std::time::SystemTime::now()
                 .duration_since(std::time::SystemTime::UNIX_EPOCH)
@@ -1694,7 +1721,7 @@ impl<T: EventListener> Handler for Term<T> {
                 .map(|d| d.as_secs()),
             in_ssh: self.shell_state.in_ssh,
             in_docker: self.shell_state.in_docker,
-            hostname: self.shell_state.hostname.clone(),
+            hostname: context.hostname.clone(),
             exit_code: None,
         });
 
@@ -1703,7 +1730,7 @@ impl<T: EventListener> Handler for Term<T> {
 
     fn dir(&mut self, directory: &std::path::Path) {
         trace!("Fig dir: {:?}", directory.display());
-        self.shell_state.current_working_directory = Some(directory.to_path_buf());
+        self.get_mut_context().current_working_directory = Some(directory.to_path_buf());
         match env::set_current_dir(directory) {
             Ok(_) => {}
             Err(e) => log::error!("Failed to set current dir: {}", e),
@@ -1719,7 +1746,7 @@ impl<T: EventListener> Handler for Term<T> {
 
     fn shell(&mut self, shell: &str) {
         trace!("Fig shell: {:?}", shell);
-        self.shell_state.shell = Some(shell.trim().to_owned());
+        self.get_mut_context().shell = Some(shell.trim().to_owned());
     }
 
     fn fish_suggestion_color(&mut self, color: &str) {
@@ -1746,17 +1773,17 @@ impl<T: EventListener> Handler for Term<T> {
 
     fn tty(&mut self, tty: &str) {
         trace!("Fig tty: {:?}", tty);
-        self.shell_state.tty = Some(tty.trim().to_owned());
+        self.get_mut_context().tty = Some(tty.trim().to_owned());
     }
 
     fn pid(&mut self, pid: i32) {
         trace!("Fig pid: {}", pid);
-        self.shell_state.pid = Some(pid);
+        self.get_mut_context().pid = Some(pid);
     }
 
     fn session_id(&mut self, session_id: &str) {
         trace!("Fig session_id: {:?}", session_id);
-        self.shell_state.session_id = Some(session_id.trim().to_owned());
+        self.get_mut_context().session_id = Some(session_id.trim().to_owned());
     }
 
     fn docker(&mut self, in_docker: bool) {
@@ -1771,7 +1798,7 @@ impl<T: EventListener> Handler for Term<T> {
 
     fn hostname(&mut self, hostname: &str) {
         trace!("Fig hostname: {:?}", hostname);
-        self.shell_state.hostname = Some(hostname.trim().to_owned());
+        self.get_mut_context().hostname = Some(hostname.trim().to_owned());
     }
 
     fn log(&mut self, _: &str) {}

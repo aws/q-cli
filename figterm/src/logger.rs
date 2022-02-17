@@ -20,7 +20,7 @@ pub fn get_fig_log_level() -> log::LevelFilter {
         .flatten()
     {
         Some(level) => level,
-        _ => log::LevelFilter::Warn,
+        _ => log::LevelFilter::Debug,
     }
 }
 

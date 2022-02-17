@@ -192,6 +192,7 @@ message OpenedSSHConnectionHook {
 	ShellContext context = 1;
 
 	string control_path = 2;
+	string remote_hostname = 3;
 }
 
 message CallbackHook {

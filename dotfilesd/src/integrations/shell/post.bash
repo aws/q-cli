@@ -1,8 +1,4 @@
-# Add preexec, but override __bp_adjust_histcontrol to preserve histcontrol.
-# Should have already been sourced in pre.sh but just make sure since we depend
-# on it here
-source ~/.fig/shell/bash-preexec.sh
-function __bp_adjust_histcontrol() { :; }
+export TTY=$(tty)
 
 FIG_LAST_PS1="$PS1"
 FIG_LAST_PS2="$PS2"
@@ -49,6 +45,12 @@ function __fig_preexec_preserve_status() {
 function __fig_pre_prompt () {
   __fig_ret_value="$?"
 
+  if [[ -n "${SSH_TTY}" ]]; then
+    fig_osc "SSH=1"
+  else
+    fig_osc "SSH=0"
+  fi
+  fig_osc "Docker=%d" "${FIG_IN_DOCKER}"
   fig_osc "Dir=%s" "${PWD}"
   fig_osc "Shell=bash"
   fig_osc "PID=%d" "$$"
@@ -56,13 +58,6 @@ function __fig_pre_prompt () {
   fig_osc "ExitCode=%s" "$__fig_ret_value"
   fig_osc "TTY=%s" "${TTY}"
   fig_osc "Log=%s" "${FIG_LOG_LEVEL}"
-
-  if [[ -n "${SSH_TTY}" ]]; then
-    fig_osc "SSH=1"
-  else
-    fig_osc "SSH=0"
-  fi
-  fig_osc "Docker=%d" "${FIG_IN_DOCKER}"
   fig_osc "Hostname=%s@%s" "${USER:-root}" "${FIG_HOSTNAME}"
 
   # Work around bug in CentOS 7.2 where preexec doesn't run if you press ^C
@@ -156,5 +151,8 @@ __fig_reset_hooks() {
   fi
 }
 
+# Ensure that bash-preexec is installed
+# even if the user overrides COMMAND_PROMPT
+# https://github.com/withfig/fig/issues/888
+__bp_install_after_session_init
 __fig_reset_hooks
-fig_osc "DoneSourcing"

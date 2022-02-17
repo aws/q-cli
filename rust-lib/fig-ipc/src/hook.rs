@@ -3,7 +3,7 @@ use crate::util::get_shell;
 use anyhow::Result;
 use fig_proto::local::{
     self, hook::Hook, EditBufferHook, EventHook, HideHook, InitHook, IntegrationReadyHook,
-    KeyboardFocusChangedHook, PreExecHook, PromptHook, ShellContext,
+    KeyboardFocusChangedHook, OpenedSshConnectionHook, PreExecHook, PromptHook, ShellContext,
 };
 use std::{collections::HashMap, time::Duration};
 use tokio::net::UnixStream;
@@ -129,4 +129,18 @@ pub async fn send_settings_changed() -> Result<()> {
     ))
     .await?;
     Ok(())
+}
+
+pub fn create_ssh_hook(
+    pid: i32,
+    tty: impl Into<String>,
+    control_path: impl Into<String>,
+    remote_dest: impl Into<String>,
+) -> Result<Hook> {
+    let context = generate_shell_context(pid, tty, None, None)?;
+    Ok(Hook::OpenedSshConnection(OpenedSshConnectionHook {
+        context: Some(context),
+        control_path: control_path.into(),
+        remote_hostname: remote_dest.into(),
+    }))
 }

@@ -1,3 +1,5 @@
+export TTY=$(tty)
+
 FIG_HOSTNAME=$(hostname -f 2> /dev/null || hostname)
 
 if [[ -e /proc/1/cgroup ]] && grep -q docker /proc/1/cgroup; then
@@ -6,15 +8,8 @@ else
   FIG_IN_DOCKER=0
 fi
 
-__fig() {
-    if [[ -d /Applications/Fig.app || -d ~/Applications/Fig.app ]] && command -v fig 2>&1 1>/dev/null; then
-    fig "$@"
-  fi
-}
-
 function fig_osc { printf "\033]697;"; printf $@; printf "\007"; }
 
-FIG_HAS_ZSH_PTY_HOOKS=1
 FIG_HAS_SET_PROMPT=0
 
 fig_preexec() {
@@ -47,6 +42,12 @@ fig_precmd() {
 
   fig_reset_hooks
 
+  if [[ -n "${SSH_TTY}" ]]; then
+    fig_osc "SSH=1"
+  else
+    fig_osc "SSH=0"
+  fi
+  fig_osc "Docker=%d" "${FIG_IN_DOCKER}"
   fig_osc "Dir=%s" "$PWD"
   fig_osc "Shell=zsh"
   fig_osc "PID=%d" "$$"
@@ -55,14 +56,6 @@ fig_precmd() {
   fig_osc "TTY=%s" "${TTY}"
   fig_osc "Log=%s" "${FIG_LOG_LEVEL}"
   fig_osc "ZshAutosuggestionColor=%s" "${ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE}"
-
-  if [[ -n "${SSH_TTY}" ]]; then
-    fig_osc "SSH=1"
-  else
-    fig_osc "SSH=0"
-  fi
-
-  fig_osc "Docker=%d" "${FIG_IN_DOCKER}"
   fig_osc "Hostname=%s@%s" "${USER:-root}" "${FIG_HOSTNAME}"
 
   if [ $FIG_HAS_SET_PROMPT -eq 1 ]; then
@@ -154,4 +147,3 @@ fig_reset_hooks() {
 }
 
 fig_reset_hooks
-fig_osc "DoneSourcing"

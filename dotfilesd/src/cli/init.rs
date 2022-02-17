@@ -3,46 +3,65 @@ use crate::{
     util::shell::{Shell, When},
 };
 use anyhow::{Context, Result};
+use crossterm::tty::IsTty;
 use serde::{Deserialize, Serialize};
+use std::io::stdin;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct DotfileData {
     dotfile: String,
 }
 
-fn shell_init(shell: &Shell, when: &When) -> Result<String> {
-    // let dotfiles_sourced = std::env::var("FIG_DOTFILES_SOURCED").unwrap_or_else(|_| "0".into());
-    let dotfiles_sourced = "1";
+fn guard_source<F: Fn() -> Option<String>>(
+    shell: &Shell,
+    guard_var: impl AsRef<str>,
+    get_source: F,
+) -> Option<String> {
+    let already_sourced = std::env::var(guard_var.as_ref()).unwrap_or_else(|_| "0".into());
 
-    let mut to_source = String::new();
-    if dotfiles_sourced == "1" {
-        let raw = std::fs::read_to_string(
-            shell
-                .get_data_path()
-                .context("Failed to get shell data path")?,
-        )?;
-        let source: DotfileData = serde_json::from_str(&raw)?;
-
-        let dotfiles_source = match when {
-            When::Pre => "",
-            When::Post => &source.dotfile,
-        };
-
-        let source_guard = match shell {
-            Shell::Fish => "set -gx FIG_DOTFILES_SOURCED 1",
-            _ => "export FIG_DOTFILES_SOURCED=1",
-        };
-
-        to_source.push_str(source_guard);
-        to_source.push_str(dotfiles_source);
+    if already_sourced != "1" {
+        if let Some(source) = get_source() {
+            let source_guard = match shell {
+                Shell::Fish => format!("set -gx {} 1", guard_var.as_ref()),
+                _ => format!("export {}=1", guard_var.as_ref()),
+            };
+            return Some(format!("{}\n{}", source, source_guard));
+        }
     }
 
-    let shell_integration_path = shell.get_fig_integration_path(when);
-    let shell_integration_source = match shell_integration_path {
-        Some(path) => std::fs::read_to_string(path).unwrap_or_else(|_| String::new()),
-        None => String::new(),
-    };
+    None
+}
 
+fn shell_init(shell: &Shell, when: &When) -> Result<String> {
+    let mut to_source = String::new();
+    if let When::Post = when {
+        // Add dotfiles sourcing
+        let get_dotfile_source = || {
+            let raw = std::fs::read_to_string(
+                shell
+                    .get_data_path()
+                    .context("Failed to get shell data path")
+                    .ok()?,
+            )
+            .ok()?;
+            let source: DotfileData = serde_json::from_str(&raw).ok()?;
+            Some(source.dotfile)
+        };
+
+        if let Some(source) = guard_source(shell, "FIG_DOTFILES_SOURCED", get_dotfile_source) {
+            to_source.push_str(&source);
+        }
+
+        if stdin().is_tty() {
+            let get_prompts_source = || -> Option<String> { Some("fig app prompts".into()) };
+
+            if let Some(source) = guard_source(shell, "FIG_CHECKED_PROMPTS", get_prompts_source) {
+                to_source.push_str(&source);
+            }
+        }
+    }
+
+    let shell_integration_source = shell.get_fig_integration_source(when);
     to_source.push('\n');
     to_source.push_str(&shell_integration_source);
 

@@ -473,7 +473,7 @@ impl DoctorCheck for DotfileCheck {
                             ].into_iter().chain(top_line_text).collect(),
                             fix: Some(Box::new(move || {
                                 fix_integration.uninstall()?;
-                                fix_integration.install()?;
+                                fix_integration.install(None)?;
                                 Ok(())
                             }))
                         });
@@ -506,7 +506,7 @@ impl DoctorCheck for DotfileCheck {
                             ].into_iter().chain(bottom_line_text).collect(),
                             fix: Some(Box::new(move || {
                                 fix_integration.uninstall()?;
-                                fix_integration.install()?;
+                                fix_integration.install(None)?;
                                 Ok(())
                             }))
                         });
@@ -534,7 +534,7 @@ impl DoctorCheck<DiagnosticsResponse> for InstallationScriptCheck {
             Err(DoctorError::Error {
                 reason: "Intall script not run".into(),
                 info: vec![],
-                fix: command_fix(vec!["~/.fig/tools/install_and_upgrade.sh"]),
+                fix: command_fix(vec!["fig", "app", "install"]),
             })
         }
     }

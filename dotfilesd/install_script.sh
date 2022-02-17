@@ -52,10 +52,13 @@ fi
 # URL to download the latest version of the binary
 DOWNLOAD_URL="$FIG_DOWNLOAD_DIR/$ARCH-$PLATFORM"
 
-# Ensure the user has the nessisary tools to install dotfiles
-function check_for_commands() {
-    if ! command -v sudo >/dev/null; then
-        abort "Please install sudo before running this script."
+# Whether or not to install minimal remote install.
+IS_REMOTE=1
+
+# Ensure the user has the necessary tools to install fig
+function check_for_command() {
+    if ! command -v $1 >/dev/null; then
+        abort "Please install $1 before running this script."
     fi
 }
 
@@ -77,27 +80,13 @@ function download_file() {
 }
 
 # The directory where the binary will be installed
-function install_directory() {
-    _ostype="$(uname -s)"
-
-    case "$_ostype" in
-        Linux*)
-            _ostype="linux"
-            ;;
-        Darwin*)
-            _ostype="darwin"
+function global_install_directory() {
+    case "$(uname -s)" in
+        Linux*|Darwin*)
+            _install_dir="/usr/local/bin"
             ;;
         *)
             abort "Unknown OS type: $_ostype"
-            ;;
-    esac
-
-    case "$_ostype" in
-        linux)
-            _install_dir="/usr/local/bin"
-            ;;
-        darwin)
-            _install_dir="/usr/local/bin"
             ;;
     esac
 
@@ -110,40 +99,64 @@ function install_directory() {
     echo "$_install_dir"
 }
 
+# The directory where the binary will be installed
+function install_directory() {
+    case "$(uname -s)" in
+        Linux*|Darwin*)
+            echo "${HOME}/.local/bin"
+            ;;
+        *)
+            abort "Unknown OS type: $_ostype"
+            ;;
+    esac
+}
+
 # The directory where the binary is downloaded to
 download_dir="$(mktemp -d)"
 
 # Download the latest binary
-download_file "${DOWNLOAD_URL}" "${download_dir}/dotfiles"
+download_file "${DOWNLOAD_URL}" "${download_dir}/fig"
 
 # Check the files is a valid binary
-if file "${download_dir}/dotfiles" | grep -q "executable"; then
+if file "${download_dir}/fig" | grep -q "executable"; then
     # Make the binary executable
-    chmod +x "${download_dir}/dotfiles"
+    chmod +x "${download_dir}/fig"
 else
     abort "Your platform and architecture (${PLATFORM}-${ARCH}) is unsupported."
 fi
 
-check_for_commands
-
 INSTALL_DIR="$(install_directory)"
+GLOBAL_INSTALL_DIR="$(global_install_directory)"
+mkdir -p "${INSTALL_DIR}"
+mv "${download_dir}/fig" "${INSTALL_DIR}"
 
-printf "${MAGENTA}➜${RESET} Installing dotfiles to ${BOLD}${INSTALL_DIR}/dotfiles${RESET}\n"
-sudo -p "Please enter your password for user ${USER}: " mv "${download_dir}/dotfiles" "${INSTALL_DIR}"
+check_for_command sudo
+
+read -p "${MAGENTA}➜${RESET} Install fig to ${BOLD}${GLOBAL_INSTALL_DIR}/fig [Y/n]?${RESET}\n" global_isntall
+if [[ "${GLOBAL_INSTALL}" -eq "n" ]] || [[ "${GLOBAL_INSTALL}" -eq "N" ]]; then
+    echo "Installed fig to ${BOLD}${INSTALL_DIR}/fig${RESET}"
+else
+    sudo -p "Please enter your password for user ${USER}: " ln -sf "${INSTALL_DIR}/fig" "${GLOBAL_INSTALL_DIR}/fig"
+fi
 printf "\n"
 
-if command -v dotfiles &> /dev/null; then
-    sudo -p "Please enter your password for user ${USER}: " sudo dotfiles install
+# Check that the directory is in the PATH
+if ! echo "$PATH" | grep -q "${INSTALL_DIR}"; then
+    export PATH="${PATH}:${INSTALL_DIR}"
+fi
+
+if command -v fig &> /dev/null; then
+    sudo -p "Please enter your password for user ${USER}: " fig install
 
     if [ $? -ne 0 ]; then
-        abort "Failed to install dotfiles"
+        abort "Failed to install fig"
     fi
 
     printf "\n${MAGENTA}➜${RESET} ${BOLD}Next steps:${RESET}\n"
-    printf "  Run ${MAGENTA}dotfiles login${RESET} to login to your dotfiles account\n"
-    printf "  Run ${MAGENTA}dotfiles${RESET} start editing your dotfiles\n"
+    printf "  Run ${MAGENTA}fig login${RESET} to login to your fig account\n"
+    printf "  Run ${MAGENTA}fig${RESET} start editing your dotfiles\n"
 else
-    abort "Failed to install dotfiles. Command 'dotfiles' not found."
+    abort "Failed to install fig. Command 'fig' not found."
 fi
 
 # ------------------------------------------

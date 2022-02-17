@@ -21,6 +21,7 @@ pub enum AppSubcommand {
     Quit,
     SetPath,
     Uninstall,
+    Prompts,
 }
 
 fn is_app_running() -> bool {
@@ -49,7 +50,25 @@ impl AppSubcommand {
         match self {
             AppSubcommand::Install => {
                 Command::new("bash")
-                    .args(["-c", "~/.fig/tools/install_and_upgrade.sh"])
+                    .args(["-c", include_str!("install_and_upgrade.sh")])
+                    .spawn()?
+                    .wait()?;
+            }
+            AppSubcommand::Onboarding => {
+                Command::new("bash")
+                    .args(["-c", include_str!("onboarding.sh")])
+                    .spawn()?
+                    .wait()?;
+            }
+            AppSubcommand::Prompts => {
+                Command::new("bash")
+                    .args(["-c", include_str!("prompts.sh")])
+                    .spawn()?
+                    .wait()?;
+            }
+            AppSubcommand::Uninstall => {
+                Command::new("bash")
+                    .args(["-c", include_str!("uninstall-script.sh")])
                     .spawn()?
                     .wait()?;
             }
@@ -94,12 +113,6 @@ impl AppSubcommand {
                 }
             }
             AppSubcommand::Launch => launch_fig()?,
-            AppSubcommand::Onboarding => {
-                Command::new("bash")
-                    .args(["-c", "~/.fig/tools/drip/fig_onboarding.sh"])
-                    .spawn()?
-                    .wait()?;
-            }
             AppSubcommand::Running => {
                 println!("{}", if is_app_running() { "1" } else { "0" });
             }
@@ -131,12 +144,6 @@ impl AppSubcommand {
                     "Unable to Connect to Fig:".bold(),
                     "fig launch".magenta()
                 ))?;
-            }
-            AppSubcommand::Uninstall => {
-                Command::new("bash")
-                    .args(["-c", "~/.fig/tools/uninstall-script.sh"])
-                    .spawn()?
-                    .wait()?;
             }
         }
         Ok(())
