@@ -412,7 +412,7 @@ dependencies = [
 
 [[package]]
 name = "figterm"
-version = "4.0.6"
+version = "4.0.10"
 dependencies = [
  "alacritty_terminal",
  "anyhow",
