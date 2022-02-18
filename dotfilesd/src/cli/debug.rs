@@ -1,4 +1,4 @@
-use crate::util::{fig_dir, glob, glob_dir, settings::Settings};
+use crate::util::{fig_dir, glob, glob_dir, settings};
 
 use anyhow::{anyhow, Context, Result};
 use clap::{ArgEnum, Subcommand};
@@ -152,10 +152,10 @@ impl DebugSubcommand {
                 }
             }
             DebugSubcommand::Logs { files } => {
-                Settings::set("developer.logging", json!(true))?;
+                settings::set_value("developer.logging", json!(true))?;
 
                 set_handler(|| {
-                    let code = match Settings::set("developer.logging", json!(false)) {
+                    let code = match settings::set_value("developer.logging", json!(false)) {
                         Ok(_) => 0,
                         Err(_) => 1,
                     };

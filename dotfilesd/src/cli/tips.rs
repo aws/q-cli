@@ -1,3 +1,4 @@
+use crate::util::settings;
 use crate::util::{project_dir, settings::Settings};
 use anyhow::Context;
 use anyhow::{anyhow, Result};
@@ -163,11 +164,11 @@ impl TipsSubcommand {
     pub async fn execute(&self) -> Result<()> {
         match self {
             TipsSubcommand::Enable => {
-                Settings::set("cli.tips.disabled", json!(false))?;
+                settings::set_value("cli.tips.disabled", json!(false))?;
                 println!("\n→ Fig Tips enabled...\n");
             }
             TipsSubcommand::Disable => {
-                Settings::set("cli.tips.disabled", json!(true))?;
+                settings::set_value("cli.tips.disabled", json!(true))?;
                 println!("\n→ Fig Tips disabled...\n");
             }
             TipsSubcommand::Reset => {
