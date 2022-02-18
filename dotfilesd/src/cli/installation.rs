@@ -5,8 +5,13 @@ use std::path::Path;
 use anyhow::{Context, Result};
 use crossterm::style::Stylize;
 use self_update::update::UpdateStatus;
+use time::OffsetDateTime;
 
-use crate::{cli::util::dialoguer_theme, daemon, util::shell::Shell};
+use crate::{
+    cli::util::dialoguer_theme,
+    daemon,
+    util::{home_dir, shell::Shell},
+};
 
 bitflags::bitflags! {
     /// The different components that can be installed.
@@ -57,9 +62,13 @@ pub fn install_cli(install_components: InstallComponents) -> Result<()> {
 }
 
 fn install_dotfiles() -> Result<()> {
+    let now = OffsetDateTime::now_utc().format(time::macros::format_description!(
+        "[year]-[month]-[day]_[hour]-[minute]-[second]"
+    ))?;
+    let backup_dir = home_dir()?.join(".fig.dotfiles.bak").join(now);
     for shell in [Shell::Bash, Shell::Zsh, Shell::Fish] {
         for integration in shell.get_shell_integrations()? {
-            integration.install()?
+            integration.install(Some(&backup_dir))?
         }
     }
 

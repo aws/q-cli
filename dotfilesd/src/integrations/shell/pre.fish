@@ -1,6 +1,3 @@
-contains $HOME/.fig/bin $fish_user_paths
-or set -Ua fish_user_paths $HOME/.fig/bin
-
 if [ ! -z "$FIG_NEW_SESSION" ]
   set --erase TERM_SESSION_ID
   set --erase FIG_TERM
@@ -39,4 +36,3 @@ if [ -d /Applications/Fig.app -o -d ~/Applications/Fig.app ] \
   
   exec bash -c "FIG_SHELL=$FIG_SHELL FIG_IS_LOGIN_SHELL=$FIG_IS_LOGIN_SHELL exec -a \"$FIG_TERM_NAME\" \"$FIG_SHELL_PATH\""
 end
-

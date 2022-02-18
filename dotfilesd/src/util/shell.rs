@@ -1,5 +1,3 @@
-use crate::util::{fig_dir, project_dir};
-
 use anyhow::{Context, Result};
 use clap::ArgEnum;
 use regex::Regex;
@@ -9,9 +7,12 @@ use std::{
     fmt::Display,
     fs::File,
     io::{Read, Write},
-    path::PathBuf,
+    path::{Path, PathBuf},
     str::FromStr,
 };
+use time::OffsetDateTime;
+
+use crate::util::{home_dir, project_dir};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, ArgEnum, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -62,7 +63,7 @@ pub struct ShellIntegration {
 
 impl ShellIntegration {
     fn description(&self) -> String {
-        format!("# {:?} dotfiles eval", self.when)
+        format!("# {:?} fig eval", self.when)
     }
 
     fn source_text(&self) -> String {
@@ -70,9 +71,19 @@ impl ShellIntegration {
             When::Pre => "pre",
             When::Post => "post",
         };
-        match self.shell {
-            Shell::Fish => format!("eval (dotfiles init {} {})", self.shell, when_text),
-            _ => format!("eval \"$(dotfiles init {} {})\"", self.shell, when_text),
+        let eval_line = match self.shell {
+            Shell::Fish => format!("eval (fig init {} {})", self.shell, when_text),
+            _ => format!("eval \"$(fig init {} {})\"", self.shell, when_text),
+        };
+
+        match self.when {
+            When::Pre => {
+                format!(
+                    "export PATH=\"${{PATH}}:${{HOME}}/.local/bin\"\n{}",
+                    eval_line
+                )
+            }
+            When::Post => eval_line,
         }
     }
 
@@ -147,11 +158,38 @@ impl ShellFileIntegration {
         Ok(())
     }
 
-    pub fn install(&self) -> Result<()> {
+    pub fn install(&self, backup_dir: Option<&Path>) -> Result<()> {
         let mut contents = String::new();
         if self.path.exists() {
             let mut file = File::open(&self.path)?;
             file.read_to_string(&mut contents)?;
+            if let Some(name) = self.path.file_name() {
+                let backup = match backup_dir {
+                    Some(backup) => Some(backup.to_path_buf()),
+                    None => {
+                        if let Ok(now) =
+                            OffsetDateTime::now_utc().format(time::macros::format_description!(
+                                "[year]-[month]-[day]_[hour]-[minute]-[second]"
+                            ))
+                        {
+                            if let Ok(home) = home_dir() {
+                                let path = home.join(".fig.dotfiles.bak").join(now);
+                                Some(path)
+                            } else {
+                                None
+                            }
+                        } else {
+                            None
+                        }
+                    }
+                };
+
+                if let Some(backup) = backup {
+                    std::fs::create_dir_all(backup.as_path()).context("Could not back up file")?;
+                    std::fs::copy(self.path.as_path(), backup.join(name).as_path())
+                        .context("Could not back up file")?;
+                }
+            }
         }
 
         let mut modified = false;
@@ -259,22 +297,35 @@ impl Shell {
         Ok(path)
     }
 
-    pub fn get_fig_integration_path(&self, when: &When) -> Option<PathBuf> {
-        let fig = fig_dir()?;
-        let path = match (self, when) {
-            (Shell::Fish, When::Pre) => fig.join("shell").join("pre.fish"),
-            (Shell::Fish, When::Post) => fig.join("shell").join("post.fish"),
-            (_, When::Pre) => fig.join("shell").join("pre.sh"),
-            (_, When::Post) => fig.join("fig.sh"),
+    pub fn get_fig_integration_source(&self, when: &When) -> String {
+        let base_str = match (self, when) {
+            (Shell::Fish, When::Pre) => include_str!("../integrations/shell/pre.fish"),
+            (Shell::Fish, When::Post) => include_str!("../integrations/shell/post.fish"),
+            (Shell::Bash, When::Post) => include_str!("../integrations/shell/post.bash"),
+            (Shell::Zsh, When::Post) => include_str!("../integrations/shell/post.zsh"),
+            (_, When::Pre) => include_str!("../integrations/shell/pre.sh"),
         };
-        Some(path)
+
+        if let Shell::Bash = self {
+            // Source bash preexec before any bash integration, pre or post.
+            let bash_preexec = include_str!("../integrations/shell/bash-preexec.sh");
+            format!(
+                "{}\n{}\n{}",
+                bash_preexec,
+                // Override __bp_adjust_histcontrol to preserve histcontrol.
+                "function __bp_adjust_histcontrol() { :; }",
+                base_str,
+            )
+        } else {
+            base_str.into()
+        }
     }
 
     pub fn get_data_path(&self) -> Option<PathBuf> {
         Some(
             project_dir()?
                 .data_local_dir()
-                .join("dotfiles")
+                .join("fig")
                 .join(format!("{}.json", self)),
         )
     }

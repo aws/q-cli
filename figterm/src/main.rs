@@ -79,26 +79,45 @@ fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
     let terminal = utils::get_term_bundle().map(|s| s.to_string());
     #[cfg(not(target_os = "macos"))]
     let terminal = None;
-
     let integration_version = std::env::var("FIG_INTEGRATION_VERSION")
         .map(|s| s.parse().ok())
         .ok()
         .flatten()
         .unwrap_or(6);
 
-    new_context(
-        shell_state.pid,
-        shell_state.tty.clone(),
-        shell_state.shell.clone(),
+    let mut context = new_context(
+        shell_state.local_context.pid,
+        shell_state.local_context.tty.clone(),
+        shell_state.local_context.shell.clone(),
         shell_state
+            .local_context
             .current_working_directory
             .clone()
             .map(|cwd| cwd.display().to_string()),
-        shell_state.session_id.clone(),
+        shell_state.local_context.session_id.clone(),
         Some(integration_version),
-        terminal,
-        shell_state.hostname.clone(),
-    )
+        terminal.clone(),
+        shell_state.local_context.hostname.clone(),
+    );
+
+    if shell_state.in_ssh || shell_state.in_docker {
+        let remote_context = new_context(
+            shell_state.remote_context.pid,
+            shell_state.remote_context.tty.clone(),
+            shell_state.remote_context.shell.clone(),
+            shell_state
+                .remote_context
+                .current_working_directory
+                .clone()
+                .map(|cwd| cwd.display().to_string()),
+            shell_state.remote_context.session_id.clone(),
+            Some(integration_version),
+            terminal,
+            shell_state.remote_context.hostname.clone(),
+        );
+        context.remote_context = Some(Box::new(remote_context));
+    }
+    context
 }
 
 impl EventListener for EventSender {
@@ -138,7 +157,7 @@ where
 {
     let in_docker_ssh = term.shell_state().in_docker | term.shell_state().in_ssh;
     let shell_enabled =
-        [Some("bash"), Some("zsh"), Some("fish")].contains(&term.shell_state().shell.as_deref());
+        [Some("bash"), Some("zsh"), Some("fish")].contains(&term.get_context().shell.as_deref());
     let prexec = term.shell_state().preexec;
 
     trace!("Insertion lock path: {:?}", INSERTION_LOCK_PATH.as_ref());

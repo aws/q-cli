@@ -14,6 +14,7 @@ pub mod plugins;
 pub mod settings;
 pub mod sync;
 pub mod theme;
+pub mod tips;
 pub mod tweet;
 pub mod util;
 
@@ -56,6 +57,9 @@ pub enum CliRootCommands {
     Debug(debug::DebugSubcommand),
     /// Customize appearance & behavior
     Settings(settings::SettingsArgs),
+    #[clap(subcommand)]
+    /// Enable/disable fig tips
+    Tips(tips::TipsSubcommand),
     /// Uninstall dotfiles
     Uninstall {
         /// Uninstall only the daemon
@@ -166,6 +170,7 @@ impl Cli {
                 CliRootCommands::Update { no_confirm } => {
                     installation::update_cli(no_confirm).await
                 }
+                CliRootCommands::Tips(tips_subcommand) => tips_subcommand.execute().await,
                 CliRootCommands::Daemon => daemon().await,
                 CliRootCommands::Diagnostic { format } => {
                     diagnostics::diagnostics_cli(format).await

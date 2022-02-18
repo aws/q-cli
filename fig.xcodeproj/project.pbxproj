@@ -62,7 +62,6 @@
 		7543170126E08F5D00188887 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 754316FF26E08F5D00188887 /* Main.storyboard */; };
 		7543170826E0901B00188887 /* FigIMKInputController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7543170726E0901B00188887 /* FigIMKInputController.swift */; };
 		7545657527715785002A59EA /* TabbyIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7545657427715785002A59EA /* TabbyIntegration.swift */; };
-		7545657727716CAB002A59EA /* tabby-integration.js in Resources */ = {isa = PBXBuildFile; fileRef = 7545657627716CAB002A59EA /* tabby-integration.js */; };
 		7545657A2773CB9F002A59EA /* JetBrainsIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 754565792773CB9F002A59EA /* JetBrainsIntegration.swift */; };
 		7545657C2773EB0B002A59EA /* PropertyList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7545657B2773EB0B002A59EA /* PropertyList.swift */; };
 		7545657F2773F275002A59EA /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 7545657E2773F275002A59EA /* ZIPFoundation */; };
@@ -293,7 +292,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 6;
 			files = (
-				754A84E727A8D6C6008B6087 /* dotfiles in Embed dotfiles */,
+				754A84E727A8D6C6008B6087 /* dotfilesd-darwin-universal in Embed dotfiles */,
 			);
 			name = "Embed dotfiles";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -374,13 +373,12 @@
 		7543170326E08F5D00188887 /* InputMethod.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = InputMethod.entitlements; sourceTree = "<group>"; };
 		7543170726E0901B00188887 /* FigIMKInputController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FigIMKInputController.swift; sourceTree = "<group>"; };
 		7545657427715785002A59EA /* TabbyIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabbyIntegration.swift; sourceTree = "<group>"; };
-		7545657627716CAB002A59EA /* tabby-integration.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = "tabby-integration.js"; sourceTree = "<group>"; };
 		754565792773CB9F002A59EA /* JetBrainsIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JetBrainsIntegration.swift; sourceTree = "<group>"; };
 		7545657B2773EB0B002A59EA /* PropertyList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PropertyList.swift; sourceTree = "<group>"; };
 		754565802773F3C9002A59EA /* jetbrains-extension-2.0.0.zip */ = {isa = PBXFileReference; lastKnownFileType = archive.zip; path = "jetbrains-extension-2.0.0.zip"; sourceTree = "<group>"; };
 		754569FB272A05C200C7588F /* CommandHandlers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CommandHandlers.swift; sourceTree = "<group>"; };
 		7546F5B2271660BA0077359F /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
-		754A84E627A8D6C6008B6087 /* dotfiles */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; name = dotfilesd-darwin-universal; path = "dotfilesd-darwin-universal"; sourceTree = BUILT_PRODUCTS_DIR; };
+		754A84E627A8D6C6008B6087 /* dotfilesd-darwin-universal */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; path = "dotfilesd-darwin-universal"; sourceTree = BUILT_PRODUCTS_DIR; };
 		754D31B425759D900020CED4 /* tutorial.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = tutorial.html; sourceTree = "<group>"; };
 		75543FCF268AC6E5003221DF /* fig-0.0.4.vsix */ = {isa = PBXFileReference; lastKnownFileType = file; path = "fig-0.0.4.vsix"; sourceTree = "<group>"; };
 		755D0DE1247EFAE10074AB5C /* Logging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logging.swift; sourceTree = "<group>"; };
@@ -729,7 +727,7 @@
 				"fig_get_shell-0000000000" /* fig_get_shell */,
 				"figcli-00000000000000000" /* figcli */,
 				754316F426E08F5C00188887 /* FigInputMethod.app */,
-				754A84E627A8D6C6008B6087 /* dotfiles-darwin-universal */,
+				754A84E627A8D6C6008B6087 /* dotfilesd-darwin-universal */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -1495,7 +1493,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "rm -rf ${CONFIGURATION_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/config\ncp -R ./config ${CONFIGURATION_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/\n\n\ncp ./config/tools/install_and_upgrade.sh ${CONFIGURATION_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/installation.sh\n";
+			shellScript = "rm -rf ${CONFIGURATION_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/config\ncp -R ./config ${CONFIGURATION_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 

@@ -110,29 +110,6 @@ pub async fn send_recv_command_to_socket(
 }
 
 /*
-func ReportWindowCommand(message string) error {
-    path := os.Getenv("PATH")
-    figEnvVar := os.Getenv("FIG_ENV_VAR")
-    term := os.Getenv("TERM")
-
-    cmd := fig_proto.Command{
-        Command: &fig_proto.Command_ReportWindow{
-            ReportWindow: &fig_proto.ReportWindowCommand{
-                Report:    message,
-                Path:      path,
-                FigEnvVar: figEnvVar,
-                Terminal:  term,
-            },
-        },
-    }
-
-    err := SendCommand(&cmd)
-    if err != nil {
-        return err
-    }
-
-    return nil
-}
 
 func RunInstallScriptCommand() error {
     noResponse := true

@@ -1,11 +1,10 @@
+use crate::util::fig_dir;
 use anyhow::{Context, Result};
 use clap::Subcommand;
 use crossterm::style::Stylize;
-use fig_ipc::hook::{
-    create_edit_buffer_hook, create_event_hook, create_hide_hook, create_init_hook,
-    create_integration_ready_hook, create_keyboard_focus_changed_hook, create_preexec_hook,
-    create_prompt_hook, send_hook_to_socket,
-};
+use fig_ipc::hook::{self, send_hook_to_socket};
+use std::fs::OpenOptions;
+use std::io::prelude::*;
 
 #[derive(Debug, Subcommand)]
 pub enum HookSubcommand {
@@ -41,6 +40,14 @@ pub enum HookSubcommand {
         pid: i32,
         tty: String,
     },
+    Ssh {
+        pid: i32,
+        tty: String,
+        control_path: String,
+        remote_dest: String,
+        #[clap(long)]
+        prompt: bool,
+    },
 }
 
 impl HookSubcommand {
@@ -54,7 +61,7 @@ impl HookSubcommand {
                 histno,
                 cursor,
                 text,
-            } => create_edit_buffer_hook(
+            } => hook::create_edit_buffer_hook(
                 session_id,
                 *integration,
                 tty,
@@ -63,18 +70,52 @@ impl HookSubcommand {
                 i64::from(*cursor),
                 text,
             ),
-            HookSubcommand::Event { event_name } => create_event_hook(event_name),
-            HookSubcommand::Hide => create_hide_hook(),
-            HookSubcommand::Init { pid, tty } => create_init_hook(*pid, tty),
+            HookSubcommand::Event { event_name } => hook::create_event_hook(event_name),
+            HookSubcommand::Hide => hook::create_hide_hook(),
+            HookSubcommand::Init { pid, tty } => hook::create_init_hook(*pid, tty),
             HookSubcommand::IntegrationReady { integration } => {
-                create_integration_ready_hook(integration)
+                hook::create_integration_ready_hook(integration)
             }
             HookSubcommand::KeyboardFocusChanged {
                 app_identifier,
                 focused_session_id,
-            } => create_keyboard_focus_changed_hook(app_identifier, focused_session_id),
-            HookSubcommand::PreExec { pid, tty } => create_preexec_hook(*pid, tty),
-            HookSubcommand::Prompt { pid, tty } => create_prompt_hook(*pid, tty),
+            } => hook::create_keyboard_focus_changed_hook(app_identifier, focused_session_id),
+            HookSubcommand::PreExec { pid, tty } => hook::create_preexec_hook(*pid, tty),
+            HookSubcommand::Prompt { pid, tty } => hook::create_prompt_hook(*pid, tty),
+            HookSubcommand::Ssh {
+                control_path,
+                pid,
+                tty,
+                remote_dest,
+                prompt,
+            } => {
+                if *prompt {
+                    let installed_hosts_file = fig_dir()
+                        .context("Can't get fig dir")?
+                        .join("ssh_hostnames");
+                    let mut installed_hosts = OpenOptions::new()
+                        .create(true)
+                        .read(true)
+                        .append(true)
+                        .open(installed_hosts_file)?;
+
+                    let mut contents = String::new();
+                    installed_hosts.read_to_string(&mut contents)?;
+
+                    if !contents.contains(remote_dest) {
+                        println!("To install SSH support for {}, run the following on your remote machine\
+                                  \n\n  {} \n  source <(curl -Ls fig.io/ssh)\
+                                  \n\n  {} \n  curl -Ls fig.io/ssh | source\n",
+                                  "Fig".magenta(),
+                                  "For bash/zsh:".bold().underlined(),
+                                  "For Fish:".bold().underlined(),
+                        );
+                        let new_line = format!("\n{}", remote_dest);
+                        installed_hosts.write_all(&new_line.into_bytes())?;
+                    }
+                }
+                hook::create_ssh_hook(*pid, tty, control_path, remote_dest)
+            }
         };
         let hook = hook.context("Invalid input for hook")?;
         send_hook_to_socket(hook).await.context(format!(

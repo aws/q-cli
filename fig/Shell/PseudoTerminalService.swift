@@ -37,8 +37,8 @@ class PseudoTerminal {
 
   fileprivate static let CRLF = "\r\n"
 
-  static let recievedEnvironmentVariablesFromShellNotification =
-    NSNotification.Name("recievedEnvironmentVariablesFromShellNotification")
+  static let recievedEnvVarsFromShellNotification =
+    NSNotification.Name("recievedEnvVarsFromShellNotification")
   static let recievedCallbackNotification = NSNotification.Name("recievedCallbackNotification")
 
   static let defaultPath = PathHelper.defaultPath
@@ -53,7 +53,7 @@ class PseudoTerminal {
   init() {
     NotificationCenter.default.addObserver(self,
                                            selector: #selector(recievedEnvironmentVariablesFromShell(_:)),
-                                           name: PseudoTerminal.recievedEnvironmentVariablesFromShellNotification,
+                                           name: PseudoTerminal.recievedEnvVarsFromShellNotification,
                                            object: nil)
     NotificationCenter.default.addObserver(self,
                                            selector: #selector(recievedCallbackNotification(_:)),
@@ -285,9 +285,21 @@ extension PseudoTerminal {
 
   func handleExecuteRequest(
     _ request: Fig_PseudoterminalExecuteRequest,
-    with id: Int64,
+    with handlerId: Int64,
     callback: @escaping ((Fig_PseudoterminalExecuteResponse) -> Void)
   ) {
+
+    let commandContext = AXWindowServer.shared.allowlistedWindow?.associatedCommandContext
+    var command = request.command
+    switch commandContext {
+    case let .ssh(controlPath, remoteDest):
+      command = """
+ssh -o PasswordAuthentication=no -q -o 'ControlPath=\(controlPath)' '\(remoteDest)' \
+'\(request.command.replacingOccurrences(of: "'", with: "'\"'\"'"))'
+"""
+    default:
+      break
+    }
 
     var options: ExecutionOptions = [ .backgroundJob ]
 
@@ -299,8 +311,8 @@ extension PseudoTerminal {
       options.insert(.pipelined)
     }
 
-    self.execute(request.command,
-                 handlerId: String(id),
+    self.execute(command,
+                 handlerId: String(handlerId),
                  options: options) { (stdout, stderr, exitCode) in
       callback(Fig_PseudoterminalExecuteResponse.with({ response in
         response.stdout = stdout

@@ -1,4 +1,4 @@
-use crate::util::{home_dir, settings::Settings};
+use crate::util::{home_dir, settings};
 
 use anyhow::Result;
 use crossterm::style::{Color, Stylize};
@@ -30,7 +30,7 @@ pub fn theme_cli(theme_str: Option<String>) -> Result<()> {
             match fs::read_to_string(path) {
                 Ok(theme_file) => {
                     let theme: Theme = serde_json::from_str(&theme_file)?;
-                    Settings::set("autocomplete.theme", json!(theme_str))?;
+                    settings::set_value("autocomplete.theme", json!(theme_str))?;
                     let author = theme.author;
 
                     println!();
@@ -69,7 +69,7 @@ pub fn theme_cli(theme_str: Option<String>) -> Result<()> {
                 }
                 Err(_) => {
                     if BUILT_IN_THEMES.contains(&theme_str.as_ref()) {
-                        Settings::set("autocomplete.theme", json!(theme_str))?;
+                        settings::set_value("autocomplete.theme", json!(theme_str))?;
                         println!("› Switching to theme '{}'", theme_str.bold());
                         Ok(())
                     } else {
@@ -79,14 +79,8 @@ pub fn theme_cli(theme_str: Option<String>) -> Result<()> {
             }
         }
         None => {
-            let settings = Settings::load()?;
-            let default_theme = json!("dark");
-            let theme = settings
-                .get_setting()
-                .map(|s| s.get("autocomplete.theme"))
-                .flatten()
-                .unwrap_or(&default_theme);
-            println!("{}", serde_json::to_string_pretty(theme)?);
+            let theme = settings::get_value("autocomplete.theme")?.unwrap_or(json!("dark"));
+            println!("{}", serde_json::to_string_pretty(&theme)?);
             Ok(())
         }
     }

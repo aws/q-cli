@@ -390,20 +390,6 @@ done
 
 clear 
 
-# cat <<EOF
-   
-#    ${BOLD}More Cool Stuff${NORMAL}
-   
-#    You may see the ${BOLD}↪${NORMAL} suggestion when navigating files and folders.
-
-#    This runs whatever is already inserted in your Terminal and closes the autocomplete window.   
-
-# EOF
-
-# press_enter_to_continue
-
-# clear
-
 (fig hook init $$ $TTY 2>&1 1>/dev/null)
 cat <<EOF
    
@@ -559,10 +545,10 @@ echo
 sed -i='' "s/FIG_ONBOARDING=.*/FIG_ONBOARDING=1/g" ~/.fig/user/config 2> /dev/null
 fig hook event "Completed Shell Onboarding" 2>&1 1>/dev/null
 
-echo # new line
+echo
 press_enter_to_continue 'Press enter to finish'
-echo # new line
-echo # new line
+echo
+echo
 
 clear
 
@@ -596,12 +582,3 @@ cat <<EOF
    3. We've saved a backup of your dotfiles to ~/.fig.dotfiles.bak
 
 EOF
-
-
-
-
-
-
-
-
-

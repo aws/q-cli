@@ -1,24 +1,10 @@
 #!/usr/bin/env bash
 
-pathadd() {
-  if [[ -d "$1" ]] && [[ ":$PATH:" != *":$1:"* ]]; then
-    PATH="${PATH:+"$PATH:"}$1"
-  fi
-}
-
-pathadd ~/.fig/bin
-
 if [[ ! -z "${FIG_NEW_SESSION}" ]]; then
   unset TERM_SESSION_ID
   unset FIG_TERM
   unset FIG_ENV_VAR
   unset FIG_NEW_SESSION
-fi
-
-if [[ -n "$BASH" ]]; then
-  # Add preexec, but override __bp_adjust_histcontrol to preserve histcontrol.
-  source ~/.fig/shell/bash-preexec.sh
-  function __bp_adjust_histcontrol() { :; }
 fi
 
 # Only launch figterm if current session is not already inside PTY and command exists

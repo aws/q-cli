@@ -36,8 +36,6 @@ class Onboarding {
                                                   // Install launch agent that watches for Fig.app being trashed
                                                   LaunchAgent.uninstallWatcher.addIfNotPresent()
 
-                                                  Onboarding.symlinkBundleExecutable("figcli",
-                                                                                     to: "~/.fig/bin/fig")
                                                   Onboarding.symlinkBundleExecutable("figterm",
                                                                                      to: "~/.fig/bin/figterm")
                                                   Onboarding.symlinkBundleExecutable("fig_get_shell",
@@ -45,7 +43,7 @@ class Onboarding {
                                                   Onboarding.symlinkBundleExecutable("fig_callback",
                                                                                      to: "~/.fig/bin/fig_callback")
                                                   Onboarding.symlinkBundleExecutable("dotfilesd-darwin-universal",
-                                                                                     to: "~/.fig/bin/dotfilesd")
+                                                                                     to: "~/.fig/bin/fig")
                                                   completion?()
                                                 })
   }
