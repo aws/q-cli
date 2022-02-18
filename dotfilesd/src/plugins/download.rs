@@ -98,6 +98,19 @@ async fn clone_git_repo(
     Ok(GitChecksum::new(sha_id))
 }
 
+async fn _fetch_git_repo(
+    directory: impl AsRef<Path>,
+    _reference: Option<&GitReference>,
+) -> Result<GitChecksum> {
+    let repo = Repository::open(directory.as_ref())?;
+
+    // repo.find_remote("origin")?.fetch(&[], None, None)?;
+
+    let sha_id = repo.head()?.peel_to_commit()?.id().to_string();
+
+    Ok(GitChecksum::new(sha_id))
+}
+
 impl ShellSource {
     pub async fn download_source(&self, directory: impl AsRef<Path>) -> Result<DownloadMetadata> {
         tokio::fs::create_dir_all(&directory).await?;

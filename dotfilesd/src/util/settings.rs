@@ -87,5 +87,5 @@ pub fn set_value(key: impl Into<String>, value: serde_json::Value) -> Result<()>
 
 pub fn get_value(key: impl Into<String>) -> Result<Option<serde_json::Value>> {
     let settings = Settings::load()?;
-    Ok(settings.get(key).map(|v| v.clone()))
+    Ok(settings.get(key).cloned())
 }

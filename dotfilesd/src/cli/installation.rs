@@ -4,6 +4,7 @@ use std::path::Path;
 
 use anyhow::{Context, Result};
 use crossterm::style::Stylize;
+use nix::unistd::geteuid;
 use self_update::update::UpdateStatus;
 use time::OffsetDateTime;
 
@@ -22,22 +23,44 @@ bitflags::bitflags! {
     }
 }
 
-pub fn install_cli(install_components: InstallComponents) -> Result<()> {
+pub fn install_cli(
+    install_components: InstallComponents,
+    no_confirm: bool,
+    force: bool,
+) -> Result<()> {
+    #[cfg(target_family = "unix")]
+    {
+        if geteuid().is_root() {
+            eprintln!("{}", "Installing as root is not supported.".red().bold());
+            if !force {
+                eprintln!(
+                    "{}",
+                    "If you know what you're doing, run the command again with --force.".red()
+                );
+                std::process::exit(1);
+            }
+        }
+    }
+
     if install_components.contains(InstallComponents::DAEMON) {
         daemon::install_daemon()?;
     }
 
     if install_components.contains(InstallComponents::DOTFILES) {
-        let mut manual_install = !dialoguer::Confirm::with_theme(&dialoguer_theme())
-        .with_prompt("Do you want fig to modify your shell config (you will have to manually do this otherwise)?")
-        .interact()?;
+        let mut manual_install = if no_confirm {
+            false
+        } else {
+            !dialoguer::Confirm::with_theme(&dialoguer_theme())
+            .with_prompt("Do you want fig to modify your shell config (you will have to manually do this otherwise)?")
+            .interact()?
+        };
         if !manual_install {
             if let Err(e) = install_fig() {
                 println!("Could not automatically install: {}", e);
                 manual_install = true;
             }
         }
-        if manual_install {
+        if !no_confirm && manual_install {
             println!();
             println!("To install fig manually you will have to add the following to your rc files");
             println!();
@@ -75,21 +98,26 @@ fn install_fig() -> Result<()> {
     Ok(())
 }
 
-pub fn uninstall_cli(install_components: InstallComponents) -> Result<()> {
+pub fn uninstall_cli(install_components: InstallComponents, no_confirm: bool) -> Result<()> {
     if install_components.contains(InstallComponents::DAEMON) {
         uninstall_daemon()?;
     }
 
     if install_components.contains(InstallComponents::DOTFILES) {
         // Uninstall fig
-        let mut manual_uninstall = !dialoguer::Confirm::with_theme(&dialoguer_theme())
-        .with_prompt("Do you want fig to modify your shell config (you will have to manually do this otherwise)?")
-        .interact()?;
+        let mut manual_uninstall = if no_confirm {
+            false
+        } else {
+            !dialoguer::Confirm::with_theme(&dialoguer_theme())
+                .with_prompt("Do you want fig to modify your shell config (you will have to manually do this otherwise)?")
+                .interact()?
+        };
+
         if !manual_uninstall && uninstall_fig().is_err() {
             println!("Could not uninstall fig");
             manual_uninstall = true;
         }
-        if manual_uninstall {
+        if !no_confirm && manual_uninstall {
             println!();
             println!("To uninstall fig you should follow the instructions for your shell(s):");
             println!();

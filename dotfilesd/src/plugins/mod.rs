@@ -1,6 +1,7 @@
 pub mod api;
 pub mod download;
 pub mod init;
+pub mod install;
 pub mod lock;
 pub mod manifest;
 

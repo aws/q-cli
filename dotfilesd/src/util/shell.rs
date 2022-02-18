@@ -156,7 +156,6 @@ impl ShellFileIntegration {
             contents = Regex::new(&old_integration_regex)?
                 .replace_all(&contents, "")
                 .into();
-            println!("{} {}", old_integration_regex, contents);
 
             if let Some(pre) = self.pre_integration() {
                 contents = pre.get_source_regex()?.replace_all(&contents, "").into();
