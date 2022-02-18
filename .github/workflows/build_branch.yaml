@@ -54,21 +54,20 @@ jobs:
       - name: Cache Dependencies
         uses: Swatinem/rust-cache@ce325b60658c1b38465c06cc965b79baf32c1e72
 
-      - name: Get dotfilesd version
-        id: dotfilesd-version
+      - name: Get dotfilesd checksum
+        id: dotfilesd-checksum
         run: |
-          VERSION=$(cat Cargo.toml | grep version | grep -v '{' | cut -d= -f2 | tr -d '"' | tr -d " ")
-          echo "::set-output name=version::$VERSION"
-          echo $VERSION
-        working-directory: ./dotfilesd
-
+          FILES=("dotfilesd" "rust-lib" "Cargo.toml" "Cargo.lock")
+          CHECKSUM=$(find $FILES -type f -print | xargs sha256sum | sha256sum | cut -d' ' -f1)
+          echo "::set-output name=checksum::$CHECKSUM"
+          echo $CHECKSUM
 
       - name: Cache build artifacts
         id: dotfilesd-cache
         uses: actions/cache@v2
         with:
           path: ./dotfilesd/build
-          key: dotfilesd-${{ runner.os }}-${{ matrix.arch }}-${{ steps.dotfilesd-version.outputs.version }}
+          key: dotfilesd-${{ runner.os }}-${{ matrix.arch }}-${{ steps.dotfilesd-checksum.outputs.checksum }}
 
       - name: Compile dotfilesd
         if: steps.dotfilesd-cache.outputs.cache-hit != 'true'
@@ -109,21 +108,20 @@ jobs:
       - name: Cache Dependencies
         uses: Swatinem/rust-cache@ce325b60658c1b38465c06cc965b79baf32c1e72
 
-      - name: Get figterm version
-        id: figterm-version
+      - name: Get figterm checksum
+        id: figterm-checksum
         run: |
-          VERSION=$(cat Cargo.toml | grep version | grep -v '{' | cut -d= -f2 | tr -d '"' | tr -d " ")
-          echo "::set-output name=version::$VERSION"
-          echo $VERSION
-        working-directory: ./figterm
-
+          FILES=("figterm" "rust-lib" "Cargo.toml" "Cargo.lock")
+          CHECKSUM=$(find $FILES -type f -print | xargs sha256sum | sha256sum | cut -d' ' -f1)
+          echo "::set-output name=checksum::$CHECKSUM"
+          echo $CHECKSUM
 
       - name: Cache build artifacts
         id: figterm-cache
         uses: actions/cache@v2
         with:
           path: ./figterm/build
-          key: ${{ runner.os }}-${{ matrix.arch }}-${{ steps.figterm-version.outputs.version }}
+          key: ${{ runner.os }}-${{ matrix.arch }}-${{ steps.figterm-checksum.outputs.checksum }}
 
       - name: Compile figterm
         if: steps.figterm-cache.outputs.cache-hit != 'true'
