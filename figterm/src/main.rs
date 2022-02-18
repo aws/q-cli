@@ -1,4 +1,4 @@
-mod cli;
+pub mod cli;
 pub mod history;
 pub mod ipc;
 pub mod logger;

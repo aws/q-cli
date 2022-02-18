@@ -4,6 +4,7 @@ use std::path::Path;
 
 use anyhow::{Context, Result};
 use crossterm::style::Stylize;
+use nix::unistd::geteuid;
 use self_update::update::UpdateStatus;
 use time::OffsetDateTime;
 
@@ -22,7 +23,25 @@ bitflags::bitflags! {
     }
 }
 
-pub fn install_cli(install_components: InstallComponents, no_confirm: bool) -> Result<()> {
+pub fn install_cli(
+    install_components: InstallComponents,
+    no_confirm: bool,
+    force: bool,
+) -> Result<()> {
+    #[cfg(target_family = "unix")]
+    {
+        if geteuid().is_root() {
+            eprintln!("{}", "Installing as root is not supported.".red().bold());
+            if !force {
+                eprintln!(
+                    "{}",
+                    "If you know what you're doing, run the command again with --force.".red()
+                );
+                std::process::exit(1);
+            }
+        }
+    }
+
     if install_components.contains(InstallComponents::DAEMON) {
         daemon::install_daemon()?;
     }

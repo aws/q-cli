@@ -1,16 +1,10 @@
 //! Sync of dotfiles
 
-use crate::util::{settings::Settings, shell::Shell};
+use crate::util::shell::Shell;
 
 use anyhow::{Context, Result};
-use crossterm::style::Stylize;
 use fig_auth::{get_email, get_token};
 use serde::{Deserialize, Serialize};
-use serde_json::json;
-use std::{
-    io::{stdout, Write},
-    process::exit,
-};
 use tokio::try_join;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -18,10 +12,16 @@ struct DotfilesSourceRequest {
     email: String,
 }
 
+// { name: "dotfiles", lastUpdate: 123456789 }
+
 async fn sync_file(shell: &Shell, sync_when: SyncWhen) -> Result<()> {
     // Get the token
     let token = get_token().await?;
     let email = get_email();
+
+    // OS macos, linux, windows
+    // DEVICE, uniqueid
+    // PLUGIN DIR, path
 
     // Constuct the request body
     let body = serde_json::to_string(&DotfilesSourceRequest {
@@ -100,151 +100,4 @@ pub async fn sync_cli() -> Result<()> {
     sync_all_files(SyncWhen::Immediately).await?;
     notify_terminals()?;
     Ok(())
-}
-
-pub async fn prompt_cli() -> Result<()> {
-    let mut exit_code = 1;
-
-    let session_id = std::env::var("TERM_SESSION_ID")?;
-    let tempdir = std::env::temp_dir();
-
-    let file = tempdir
-        .join("fig")
-        .join("dotfiles_updates")
-        .join(session_id);
-
-    let file_content = match tokio::fs::read_to_string(&file).await {
-        Ok(content) => content,
-        Err(_) => {
-            tokio::fs::create_dir_all(&file.parent().context("Unable to get parent")?).await?;
-            tokio::fs::write(&file, "").await?;
-            exit(exit_code);
-        }
-    };
-
-    if file_content.contains("true") {
-        let settings = Settings::load()?;
-
-        let source_immediately = settings
-            .get_setting()
-            .map(|map| map.get("dotfiles.sourceImmediately"))
-            .map(|opt| opt.map(|value| value.as_str()))
-            .flatten()
-            .flatten();
-
-        match source_immediately {
-            Some("never") => {}
-            Some("always") => exit_code = 0,
-            _ => {
-                let mut stdout = stdout();
-
-                stdout.write_all(
-                    format!("{}", "Your dotfiles have been updated!\n".bold()).as_bytes(),
-                )?;
-
-                stdout.write_all(
-                    format!(
-                        "Would you like to update now? {} ",
-                        "(y)es/(n)o/(A)lways/(N)ever".dim()
-                    )
-                    .as_bytes(),
-                )?;
-
-                stdout.flush()?;
-
-                crossterm::terminal::enable_raw_mode()?;
-
-                while let Ok(event) = crossterm::event::read() {
-                    if let crossterm::event::Event::Key(key_event) = event {
-                        match (key_event.code, key_event.modifiers) {
-                            (crossterm::event::KeyCode::Char('y'), _) => {
-                                crossterm::execute!(
-                                    stdout,
-                                    crossterm::cursor::MoveToNextLine(1),
-                                    crossterm::style::Print(format!(
-                                        "\n{}\n",
-                                        "Updating dotfiles...".bold()
-                                    )),
-                                    crossterm::cursor::MoveToNextLine(1),
-                                )?;
-
-                                exit_code = 0;
-
-                                break;
-                            }
-                            (crossterm::event::KeyCode::Char('n' | 'q'), _)
-                            | (
-                                crossterm::event::KeyCode::Char('c' | 'd'),
-                                crossterm::event::KeyModifiers::CONTROL,
-                            ) => {
-                                crossterm::execute!(
-                                    stdout,
-                                    crossterm::cursor::MoveToNextLine(1),
-                                    crossterm::style::Print(format!(
-                                        "\n{}\n",
-                                        "Skipping update...".bold()
-                                    )),
-                                    crossterm::cursor::MoveToNextLine(1),
-                                )?;
-
-                                break;
-                            }
-                            (crossterm::event::KeyCode::Char('A'), _) => {
-                                crossterm::execute!(
-                                    stdout,
-                                    crossterm::cursor::MoveToNextLine(1),
-                                    crossterm::style::Print(format!(
-                                        "\n{}\n",
-                                        "Always updating dotfiles...".bold()
-                                    )),
-                                    crossterm::cursor::MoveToNextLine(1),
-                                )?;
-
-                                exit_code = 0;
-
-                                let mut settings = Settings::load()?;
-                                if let Some(obj) = settings.get_mut_settings() {
-                                    obj.insert(
-                                        "dotfiles.sourceImmediately".into(),
-                                        json!("always"),
-                                    );
-                                }
-                                settings.save()?;
-
-                                break;
-                            }
-                            (crossterm::event::KeyCode::Char('N'), _) => {
-                                crossterm::execute!(
-                                    stdout,
-                                    crossterm::cursor::MoveToNextLine(1),
-                                    crossterm::style::Print(format!(
-                                        "\n{}\n",
-                                        "Never updating dotfiles...".bold()
-                                    )),
-                                    crossterm::cursor::MoveToNextLine(1),
-                                )?;
-
-                                let mut settings = Settings::load()?;
-                                if let Some(obj) = settings.get_mut_settings() {
-                                    obj.insert("dotfiles.sourceImmediately".into(), json!("never"));
-                                }
-                                settings.save()?;
-
-                                break;
-                            }
-                            _ => {}
-                        }
-                    }
-                }
-
-                stdout.flush()?;
-
-                crossterm::terminal::disable_raw_mode()?;
-            }
-        };
-
-        tokio::fs::write(&file, "").await?;
-    }
-
-    exit(exit_code);
 }

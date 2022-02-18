@@ -79,7 +79,7 @@ pub fn theme_cli(theme_str: Option<String>) -> Result<()> {
             }
         }
         None => {
-            let theme = settings::get_value("autocomplete.theme")?.unwrap_or(json!("dark"));
+            let theme = settings::get_value("autocomplete.theme")?.unwrap_or_else(|| json!("dark"));
             println!("{}", serde_json::to_string_pretty(&theme)?);
             Ok(())
         }

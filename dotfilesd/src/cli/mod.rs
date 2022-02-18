@@ -8,6 +8,7 @@ pub mod doctor;
 pub mod hook;
 pub mod init;
 pub mod installation;
+pub mod internal;
 pub mod invite;
 pub mod issue;
 pub mod plugins;
@@ -48,6 +49,9 @@ pub enum CliRootCommands {
         /// Don't confirm automatic installation.
         #[clap(long)]
         no_confirm: bool,
+        /// Force installation of the dotfiles
+        #[clap(long)]
+        force: bool,
     },
     #[clap(subcommand)]
     /// Interact with the desktop app
@@ -127,10 +131,10 @@ pub enum CliRootCommands {
     /// Plugins management
     #[clap(subcommand)]
     Plugins(plugins::PluginsSubcommand),
-    /// Prompt the if there is new version of dotfiles
-    Prompt,
     /// Generate the completion spec for Fig
     GenerateFigCompleation,
+    #[clap(subcommand)]
+    Internal(internal::InternalSubcommand),
 }
 
 #[derive(Debug, Parser)]
@@ -148,6 +152,7 @@ impl Cli {
                     daemon,
                     dotfiles,
                     no_confirm,
+                    force,
                 } => {
                     let install_components = if daemon || dotfiles {
                         let mut install_components = InstallComponents::empty();
@@ -158,7 +163,7 @@ impl Cli {
                         InstallComponents::all()
                     };
 
-                    installation::install_cli(install_components, no_confirm)
+                    installation::install_cli(install_components, no_confirm, force)
                 }
                 CliRootCommands::Uninstall {
                     daemon,
@@ -201,14 +206,16 @@ impl Cli {
                 CliRootCommands::Debug(debug_subcommand) => debug_subcommand.execute().await,
                 CliRootCommands::Issue { description } => issue::issue_cli(description).await,
                 CliRootCommands::Plugins(plugins_subcommand) => plugins_subcommand.execute().await,
-                CliRootCommands::Prompt => sync::prompt_cli().await,
                 CliRootCommands::GenerateFigCompleation => {
                     println!("{}", Cli::generation_fig_compleations());
                     Ok(())
                 }
+                CliRootCommands::Internal(internal_subcommand) => {
+                    internal_subcommand.execute().await
+                }
             },
             // Root command
-            None => root_command(),
+            None => root_command().await,
         };
 
         if let Err(e) = result {
@@ -233,13 +240,17 @@ impl Cli {
     }
 }
 
-fn root_command() -> Result<()> {
-    // Open the default browser to the homepage
-    let url = "https://dotfiles.com/";
-    if open_url(url).is_err() {
-        println!("{}", url.underlined());
+async fn root_command() -> Result<()> {
+    // Check if Fig is running
+    match fig_ipc::command::open_ui_element(fig_proto::local::UiElement::MissionControl).await {
+        Ok(_) => {}
+        Err(_) => {
+            let url = "https://dotfiles.com/";
+            if open_url(url).is_err() {
+                println!("{}", url.underlined());
+            }
+        }
     }
-
     Ok(())
 }
 
