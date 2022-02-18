@@ -199,7 +199,12 @@ impl TipsSubcommand {
                         let now = time::OffsetDateTime::now_utc().unix_timestamp();
                         if let Some(tip) = unsent {
                             if now - tips.time_last_sent > tip.wait_time {
-                                println!("{}", tip.text);
+                                println!(
+                                    "\n{}\n\n{} fig tips disable\n{} fig issue\n",
+                                    tip.text,
+                                    "Disable Getting Started Tips:".underlined(),
+                                    "Report a bug:".underlined(),
+                                );
                                 tip.sent = true;
                                 tips.time_last_sent = now;
                             }

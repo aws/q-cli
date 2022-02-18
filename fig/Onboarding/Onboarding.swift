@@ -19,17 +19,13 @@ class Onboarding {
       SentrySDK.capture(message: "Currently running on read only volume! App is translocated!")
     }
 
-    guard let path = Bundle.main.path(
-      forResource: "install_and_upgrade",
-      ofType: "sh",
-      inDirectory: "config/tools"
-    ) else {
+    guard let path = Bundle.main.path(forAuxiliaryExecutable: "dotfilesd-darwin-universal") else {
       return Logger.log(message: "Could not locate install script!")
     }
 
     let configDirectory = Bundle.main.resourceURL?.appendingPathComponent("config", isDirectory: true).path
 
-    "/bin/bash '\(path)' local".runInBackground(cwd: configDirectory,
+    "\(path) app install".runInBackground(cwd: configDirectory,
                                                 with: [ "FIG_BUNDLE_EXECUTABLES":
                                                     Bundle.main.url(forAuxiliaryExecutable: "")!.path ],
                                                 completion: { _ in

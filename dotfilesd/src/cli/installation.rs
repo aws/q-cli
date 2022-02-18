@@ -29,31 +29,31 @@ pub fn install_cli(install_components: InstallComponents) -> Result<()> {
 
     if install_components.contains(InstallComponents::DOTFILES) {
         let mut manual_install = !dialoguer::Confirm::with_theme(&dialoguer_theme())
-        .with_prompt("Do you want dotfiles to modify your shell config (you will have to manually do this otherwise)?")
+        .with_prompt("Do you want fig to modify your shell config (you will have to manually do this otherwise)?")
         .interact()?;
-        if !manual_install && install_dotfiles().is_err() {
-            println!("Could not automatically install.");
-            manual_install = true;
+        if !manual_install {
+            if let Err(e) = install_fig() {
+                println!("Could not automatically install: {}", e);
+                manual_install = true;
+            }
         }
         if manual_install {
             println!();
-            println!(
-                "To install dotfiles manually you will have to add the following to your rc files"
-            );
+            println!("To install fig manually you will have to add the following to your rc files");
             println!();
             println!(
                 "At the top of your .bashrc or .zshrc or .config/fish/conf.d/00_fig_pre.fish file:"
             );
-            println!("bash:    eval \"$(dotfiles shell bash pre)\"");
-            println!("zsh:     eval \"$(dotfiles shell zsh pre)\"");
-            println!("fish:    eval \"$(dotfiles shell fish pre)\"");
+            println!("bash:    eval \"$(fig init bash pre)\"");
+            println!("zsh:     eval \"$(fig init zsh pre)\"");
+            println!("fish:    eval \"$(fig init fish pre)\"");
             println!();
             println!(
                 "At the bottom of your .bashrc or .zshrc or .config/fish/conf.d/99_fig_post.fish file:"
             );
-            println!("bash:    eval \"$(dotfiles shell bash post)\"");
-            println!("zsh:     eval \"$(dotfiles shell zsh post)\"");
-            println!("fish:    eval \"$(dotfiles shell fish post)\"");
+            println!("bash:    eval \"$(fig init bash post)\"");
+            println!("zsh:     eval \"$(fig init zsh post)\"");
+            println!("fish:    eval \"$(fig init fish post)\"");
             println!();
         }
     }
@@ -61,7 +61,7 @@ pub fn install_cli(install_components: InstallComponents) -> Result<()> {
     Ok(())
 }
 
-fn install_dotfiles() -> Result<()> {
+fn install_fig() -> Result<()> {
     let now = OffsetDateTime::now_utc().format(time::macros::format_description!(
         "[year]-[month]-[day]_[hour]-[minute]-[second]"
     ))?;
@@ -81,35 +81,35 @@ pub fn uninstall_cli(install_components: InstallComponents) -> Result<()> {
     }
 
     if install_components.contains(InstallComponents::DOTFILES) {
-        // Uninstall dotfiles
+        // Uninstall fig
         let mut manual_uninstall = !dialoguer::Confirm::with_theme(&dialoguer_theme())
-        .with_prompt("Do you want dotfiles to modify your shell config (you will have to manually do this otherwise)?")
+        .with_prompt("Do you want fig to modify your shell config (you will have to manually do this otherwise)?")
         .interact()?;
-        if !manual_uninstall && uninstall_dotfiles().is_err() {
-            println!("Could not uninstall dotfiles");
+        if !manual_uninstall && uninstall_fig().is_err() {
+            println!("Could not uninstall fig");
             manual_uninstall = true;
         }
         if manual_uninstall {
             println!();
-            println!("To uninstall dotfiles you should follow the instructions for your shell(s):");
+            println!("To uninstall fig you should follow the instructions for your shell(s):");
             println!();
             println!("{}", "bash".bold().underlined());
             println!(
-                "1. Remove {} from the top of your .bashrc, .bash_profile, .bash_login, and/or .profile files", "eval \"$(dotfiles init bash pre)\"".magenta()
+                "1. Remove {} from the top of your .bashrc, .bash_profile, .bash_login, and/or .profile files", "eval \"$(fig init bash pre)\"".magenta()
             );
             println!(
-                "2. Remove {} from the bottom of your .bashrc, .bash_profile, .bash_login, and/or .profile files", "eval \"$(dotfiles init bash post)\"".magenta()
+                "2. Remove {} from the bottom of your .bashrc, .bash_profile, .bash_login, and/or .profile files", "eval \"$(fig init bash post)\"".magenta()
             );
             println!();
 
             println!("{}", "zsh".bold().underlined());
             println!(
                 "1. Remove {} from the top of your .zshrc and/or .zprofile",
-                "eval \"$(dotfiles init zsh pre)\"".magenta()
+                "eval \"$(fig init zsh pre)\"".magenta()
             );
             println!(
                 "2. Remove {} from the bottom of your .zshrc, and/or .zprofile files",
-                "eval \"$(dotfiles init zsh post)\"".magenta()
+                "eval \"$(fig init zsh post)\"".magenta()
             );
             println!();
 
@@ -122,7 +122,7 @@ pub fn uninstall_cli(install_components: InstallComponents) -> Result<()> {
 
     if install_components.contains(InstallComponents::BINARY) {
         // Delete the binary
-        let binary_path = Path::new("/usr/local/bin/dotfiles");
+        let binary_path = Path::new("/usr/local/bin/fig");
 
         if binary_path.exists() {
             std::fs::remove_file(binary_path)
@@ -148,7 +148,7 @@ fn uninstall_daemon() -> Result<()> {
     Ok(())
 }
 
-fn uninstall_dotfiles() -> Result<()> {
+fn uninstall_fig() -> Result<()> {
     for shell in [Shell::Bash, Shell::Zsh, Shell::Fish] {
         for integration in shell.get_shell_integrations()? {
             integration.uninstall()?
@@ -165,7 +165,7 @@ pub enum UpdateType {
     NoProgress,
 }
 
-/// Self-update the dotfiles binary
+/// Self-update the fig binary
 /// Update will exit the binary if the update was successful
 pub async fn update(update_type: UpdateType) -> Result<UpdateStatus> {
     // Let desktop app handle updates on macOS

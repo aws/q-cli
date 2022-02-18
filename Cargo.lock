@@ -850,7 +850,7 @@ dependencies = [
 
 [[package]]
 name = "dotfilesd"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1017,7 +1017,7 @@ dependencies = [
 
 [[package]]
 name = "figterm"
-version = "4.0.8"
+version = "4.0.9"
 dependencies = [
  "alacritty_terminal",
  "anyhow",

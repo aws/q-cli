@@ -126,28 +126,29 @@ else
 fi
 
 INSTALL_DIR="$(install_directory)"
-GLOBAL_INSTALL_DIR="$(global_install_directory)"
 mkdir -p "${INSTALL_DIR}"
 mv "${download_dir}/fig" "${INSTALL_DIR}"
 
-check_for_command sudo
-
-read -p "${MAGENTA}➜${RESET} Install fig to ${BOLD}${GLOBAL_INSTALL_DIR}/fig [Y/n]?${RESET}\n" global_isntall
-if [[ "${GLOBAL_INSTALL}" -eq "n" ]] || [[ "${GLOBAL_INSTALL}" -eq "N" ]]; then
-    echo "Installed fig to ${BOLD}${INSTALL_DIR}/fig${RESET}"
+if [[ -n "${SSH_TTY}" ]]; then
+    echo "On remote machine, installing fig shell integrations only."
+    "${INSTALL_DIR}/fig" install --dotfiles
+    if [ $? -ne 0 ]; then
+        abort "Failed to install shell integrations."
+    fi
 else
-    sudo -p "Please enter your password for user ${USER}: " ln -sf "${INSTALL_DIR}/fig" "${GLOBAL_INSTALL_DIR}/fig"
-fi
-printf "\n"
+    check_for_command sudo
 
-# Check that the directory is in the PATH
-if ! echo "$PATH" | grep -q "${INSTALL_DIR}"; then
-    export PATH="${PATH}:${INSTALL_DIR}"
-fi
+    GLOBAL_INSTALL_DIR="$(global_install_directory)"
 
-if command -v fig &> /dev/null; then
-    sudo -p "Please enter your password for user ${USER}: " fig install
+    read -p "${MAGENTA}➜${RESET} Install fig to ${BOLD}${GLOBAL_INSTALL_DIR}/fig [Y/n]?${RESET}\n" global_install
+    if [[ "${global_install}" -eq "n" ]] || [[ "${global_install}" -eq "N" ]]; then
+        echo "Installed fig to ${BOLD}${INSTALL_DIR}/fig${RESET}"
+    else
+        sudo -p "Please enter your password for user ${USER}: " ln -sf "${INSTALL_DIR}/fig" "${GLOBAL_INSTALL_DIR}/fig"
+    fi
+    printf "\n"
 
+    sudo -p "Please enter your password for user ${USER}: " "${INSTALL_DIR}/fig" install
     if [ $? -ne 0 ]; then
         abort "Failed to install fig"
     fi
@@ -155,8 +156,6 @@ if command -v fig &> /dev/null; then
     printf "\n${MAGENTA}➜${RESET} ${BOLD}Next steps:${RESET}\n"
     printf "  Run ${MAGENTA}fig login${RESET} to login to your fig account\n"
     printf "  Run ${MAGENTA}fig${RESET} start editing your dotfiles\n"
-else
-    abort "Failed to install fig. Command 'fig' not found."
 fi
 
 # ------------------------------------------

@@ -63,7 +63,10 @@ pub struct ShellIntegration {
 
 impl ShellIntegration {
     fn description(&self) -> String {
-        format!("# {:?} fig eval", self.when)
+        match self.when {
+            When::Pre => "# Fig pre block. Keep at the top of this file.".into(),
+            When::Post => "# Fig post block. Keep at the bottom of this file.".into(),
+        }
     }
 
     fn source_text(&self) -> String {
@@ -93,7 +96,7 @@ impl ShellIntegration {
 
     pub fn get_source_regex(&self) -> Result<Regex> {
         let r = format!(
-            r#"(?:{}\n)?{}\n{{0,2}}"#,
+            r#"\n?(?:{}\n)?{}\n{{0,2}}"#,
             regex::escape(&self.description()),
             regex::escape(&self.source_text()),
         );
@@ -144,6 +147,16 @@ impl ShellFileIntegration {
             let mut contents = String::new();
             file.read_to_string(&mut contents)?;
 
+            let old_integration_regex = format!(
+                r#"{}(\n|.)*?{}"#,
+                regex::escape("#### FIG ENV VARIABLES ####"),
+                regex::escape("#### END FIG ENV VARIABLES ####"),
+            );
+            contents = Regex::new(&old_integration_regex)?
+                .replace_all(&contents, "")
+                .into();
+            println!("{} {}", old_integration_regex, contents);
+
             if let Some(pre) = self.pre_integration() {
                 contents = pre.get_source_regex()?.replace_all(&contents, "").into();
             }
@@ -161,8 +174,6 @@ impl ShellFileIntegration {
     pub fn install(&self, backup_dir: Option<&Path>) -> Result<()> {
         let mut contents = String::new();
         if self.path.exists() {
-            let mut file = File::open(&self.path)?;
-            file.read_to_string(&mut contents)?;
             if let Some(name) = self.path.file_name() {
                 let backup = match backup_dir {
                     Some(backup) => Some(backup.to_path_buf()),
@@ -189,6 +200,14 @@ impl ShellFileIntegration {
                     std::fs::copy(self.path.as_path(), backup.join(name).as_path())
                         .context("Could not back up file")?;
                 }
+            }
+
+            // Remove existing integration.
+            self.uninstall()?;
+
+            if self.path.exists() {
+                let mut file = File::open(&self.path)?;
+                file.read_to_string(&mut contents)?;
             }
         }
 
