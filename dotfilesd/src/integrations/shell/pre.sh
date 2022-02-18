@@ -1,5 +1,14 @@
 #!/usr/bin/env bash
 
+pathadd() {
+  if [[ -d "$1" ]] && [[ ":$PATH:" != *":$1:"* ]]; then
+    PATH="${PATH:+"$PATH:"}$1"
+  fi
+}
+
+pathadd ~/.fig/bin
+pathadd ~/.local/bin
+
 if [[ ! -z "${FIG_NEW_SESSION}" ]]; then
   unset TERM_SESSION_ID
   unset FIG_TERM

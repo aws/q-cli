@@ -1,3 +1,12 @@
+pathadd() {
+  if [[ -d "$1" ]] && [[ ":$PATH:" != *":$1:"* ]]; then
+    PATH="${PATH:+"$PATH:"}$1"
+  fi
+}
+
+pathadd ~/.fig/bin
+pathadd ~/.local/bin
+
 export TTY=$(tty)
 
 FIG_HOSTNAME=$(hostname -f 2> /dev/null || hostname)

@@ -39,7 +39,7 @@ class Onboarding {
                                                   Onboarding.symlinkBundleExecutable("fig_callback",
                                                                                      to: "~/.fig/bin/fig_callback")
                                                   Onboarding.symlinkBundleExecutable("dotfilesd-darwin-universal",
-                                                                                     to: "~/.fig/bin/fig")
+                                                                                     to: "~/.local/bin/fig")
                                                   completion?()
                                                 })
   }

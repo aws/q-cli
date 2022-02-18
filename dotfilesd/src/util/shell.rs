@@ -80,12 +80,13 @@ impl ShellIntegration {
         };
 
         match self.when {
-            When::Pre => {
-                format!(
+            When::Pre => match self.shell {
+                Shell::Fish => format!("set -Ua fish_user_paths $HOME/.local/bin\n{}", eval_line),
+                _ => format!(
                     "export PATH=\"${{PATH}}:${{HOME}}/.local/bin\"\n{}",
                     eval_line
-                )
-            }
+                ),
+            },
             When::Post => eval_line,
         }
     }

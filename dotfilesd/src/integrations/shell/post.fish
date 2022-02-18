@@ -1,3 +1,9 @@
+contains $HOME/.fig/bin $fish_user_paths
+or set -Ua fish_user_paths $HOME/.fig/bin
+
+contains $HOME/.local/bin $fish_user_paths
+or set -Ua fish_user_paths $HOME/.local/bin
+
 export TTY=(tty)
 
 set FIG_HOSTNAME (hostname -f 2> /dev/null || hostname)

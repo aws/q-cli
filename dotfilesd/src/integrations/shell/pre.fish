@@ -1,3 +1,9 @@
+contains $HOME/.fig/bin $fish_user_paths
+or set -Ua fish_user_paths $HOME/.fig/bin
+
+contains $HOME/.local/bin $fish_user_paths
+or set -Ua fish_user_paths $HOME/.local/bin
+
 if [ ! -z "$FIG_NEW_SESSION" ]
   set --erase TERM_SESSION_ID
   set --erase FIG_TERM

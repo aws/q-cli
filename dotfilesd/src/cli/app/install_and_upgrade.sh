@@ -7,6 +7,7 @@ install_fig() {
 
   # delete binary artifacts to ensure ad-hoc code signature works for arm64 binaries on M1
   rm ~/.fig/bin/{*figterm*,fig_get_shell,fig_callback,dotfilesd,fig}
+  rm ~/.local/bin/fig
 
   if [[ "$1" == "local" ]]; then
     cp -R "$PWD"/* ~/.fig
