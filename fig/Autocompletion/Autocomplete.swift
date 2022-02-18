@@ -64,75 +64,125 @@ class Autocomplete {
 class ShellInsertionProvider {
   static let insertionLock = "\(NSHomeDirectory())/.fig/insertion-lock"
 
+  // swiftlint:disable identifier_name
   static let lineAcceptedInKeystrokeBufferNotification: NSNotification.Name =
     .init("lineAcceptedInXTermBufferNotification")
 
   static func insertLock() {
+    NotificationCenter.default.post(name: FigTerm.insertedTextNotification, object: nil)
     FileManager.default.createFile(atPath: insertionLock, contents: nil, attributes: nil)
   }
 
   static func insertUnlock(with insertionText: String) {
-    // remove lock after keystrokes have been processes
-    try? FileManager.default.removeItem(atPath: insertionLock)
+    insertUnlock { text, index in
 
-    if let window = AXWindowServer.shared.allowlistedWindow,
-       let sessionId = window.session,
-       let editBuffer = window.associatedEditBuffer {
-
-      var text = editBuffer.text
-      var index = text.index(text.startIndex, offsetBy: editBuffer.cursor)
-
-      var skip = 0
-      for (idx, char) in insertionText.enumerated() {
-        guard let value = char.asciiValue else { break }
-        guard skip == 0 else { skip -= 1; break }
-        switch value {
-        case 8: // backspace literal
-          guard index != text.startIndex else { break }
-          index = text.index(before: index)
-          text.remove(at: index)
-        case 27: // ESC
-          if let direction = insertionText.index(
-            insertionText.startIndex,
-            offsetBy: idx + 2,
-            limitedBy: insertionText.endIndex
-          ) {
-            let esc = insertionText[direction]
-            if esc == "D" {
-              guard index != text.startIndex else { break }
-              index = text.index(before: index)
-              skip = 2
-            } else if esc == "C" { // forward one
-              guard index != text.endIndex else { break }
-              index = text.index(after: index)
-              skip = 2
+        var skip = 0
+        for (idx, char) in insertionText.enumerated() {
+          guard let value = char.asciiValue else { break }
+          guard skip == 0 else { skip -= 1; break }
+          switch value {
+          case 8: // backspace literal
+            guard index != text.startIndex else { break }
+            index = text.index(before: index)
+            text.remove(at: index)
+          case 27: // ESC
+            if let direction = insertionText.index(
+              insertionText.startIndex,
+              offsetBy: idx + 2,
+              limitedBy: insertionText.endIndex
+            ) {
+              let esc = insertionText[direction]
+              if esc == "D" {
+                guard index != text.startIndex else { break }
+                index = text.index(before: index)
+                skip = 2
+              } else if esc == "C" { // forward one
+                guard index != text.endIndex else { break }
+                index = text.index(after: index)
+                skip = 2
+              }
             }
-          }
 
-        case 10: // newline literal
-          text = ""
-          index = text.startIndex
-          NotificationCenter.default.post(name: Self.lineAcceptedInKeystrokeBufferNotification, object: nil)
-        default:
-          guard text.endIndex >= index else { return }
-          text.insert(char, at: index)
-          index = text.index(index, offsetBy: 1, limitedBy: text.endIndex) ?? text.endIndex
+          case 10: // newline literal
+            text = ""
+            index = text.startIndex
+            NotificationCenter.default.post(name: Self.lineAcceptedInKeystrokeBufferNotification, object: nil)
+          default:
+            guard text.endIndex >= index else { break }
+            text.insert(char, at: index)
+            index = text.index(index, offsetBy: 1, limitedBy: text.endIndex) ?? text.endIndex
+          }
         }
+    }
+
+    Defaults.shared.incrementKeystokesSaved(by: insertionText.count)
+
+  }
+
+  static func insertUnlock(deletion: Int, insertion: String, offset: Int, immediate: Bool) {
+
+    insertUnlock { text, index in
+      let startOfDeletion = text.index(index,
+                                       offsetBy: -deletion,
+                                       limitedBy: text.startIndex) ?? index
+
+      if deletion > 0 {
+        text.removeSubrange(startOfDeletion...index)
       }
 
-      let cursor = text.distance(from: text.startIndex, to: index)
-      TerminalSessionLinker.shared.setEditBuffer(for: sessionId,
-                                                 text: text,
-                                                 cursor: cursor)
+      text.insert(contentsOf: insertion, at: startOfDeletion)
 
-      API.notifications.editbufferChanged(buffer: text,
-                                          cursor: cursor,
-                                          session: sessionId,
-                                          context: window.associatedShellContext?.ipcContext)
+      let endOfInsertion = text.index(startOfDeletion, offsetBy: insertion.utf8.count)
 
-      Autocomplete.position()
+      index = text.index(endOfInsertion, offsetBy: offset)
+
+      if immediate {
+        text = ""
+        index = text.startIndex
+        NotificationCenter.default.post(name: Self.lineAcceptedInKeystrokeBufferNotification, object: nil)
+      }
+    }
+
+    Defaults.shared.incrementKeystokesSaved(by: deletion + insertion.count)
+
+  }
+
+  fileprivate static func insertUnlock(textUpdateCallback: @escaping (inout String, inout String.Index) -> Void) {
+    // remove lock after keystrokes have been processes
+    // requires delay proportional to number of character inserted
+    // unfortunately, we don't really know how long this will take
+    // - it varies significantly between native and Electron terminals.
+    // We can probably be smarter about this and modulate delay based on terminal.
+
+    let delay = 0.05
+    Timer.delayWithSeconds(delay) {
+      // remove lock after keystrokes have been processes
+      try? FileManager.default.removeItem(atPath: insertionLock)
+
+      if let window = AXWindowServer.shared.allowlistedWindow,
+         let sessionId = window.session,
+         let editBuffer = window.associatedEditBuffer {
+
+        var text = editBuffer.text
+        var index = text.index(text.startIndex, offsetBy: editBuffer.cursor)
+
+        textUpdateCallback(&text, &index)
+
+        let cursor = text.distance(from: text.startIndex, to: index)
+        TerminalSessionLinker.shared.setEditBuffer(for: sessionId,
+                                                   text: text,
+                                                   cursor: cursor)
+
+        API.notifications.editbufferChanged(buffer: text,
+                                            cursor: cursor,
+                                            session: sessionId,
+                                            context: window.associatedShellContext?.ipcContext)
+
+        Autocomplete.position()
+      }
     }
   }
+
 }
 
 extension String {

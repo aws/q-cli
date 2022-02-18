@@ -30,11 +30,16 @@
       "dracula",
       "github-dark",
       "gruvbox",
+      "monokai-dark",
       "nightowl",
       "nord",
       "panda",
       "poimandres",
-      "the-unnamed"
+      "the-unnamed",
+      "tokyo-night",
+      "synthwave-84",
+      "solarized-light",
+      "solarized-dark"
     ],
     "default": "system",
     "category": "Appearance"
@@ -54,6 +59,22 @@
     "type": "boolean",
     "default": false,
     "category": "Autocomplete"
+  },
+  {
+    "settingName": "autocomplete.scriptTimeout",
+    "title": "Script Timeout",
+    "description": "Specify the timeout in ms for scripts executed in completion spec generators.",
+    "type": "number",
+    "default": 5000,
+    "category": "Autocomplete"
+  },
+  {
+    "settingName": "autocomplete.alwaysShowDescription",
+    "title": "Always Show Separated Description",
+    "description": "Set if Autocomplete should always display the extended separated description.",
+    "type": "boolean",
+    "default": "false",
+    "category": "Appearance"
   },
   {
     "settingName": "autocomplete.fontFamily",
@@ -335,12 +356,20 @@
     "default": false,
     "commonlyUsed": true
   },
-    {
+  {
     "settingName": "integrations.experimental",
     "title": "Enable experimental terminal integrations",
     "description": "Enable new terminal integrations, like Kitty and Alacritty. Requires restart to take effect.",
     "type": "boolean",
     "category": "Integrations",
+    "default": false
+  },
+  {
+    "settingName": "dotfiles.beta",
+    "title": "Enable dotfiles beta",
+    "description": "Enable dotfiles beta. This is an upcoming feature that allows you to manage your dotfiles with Fig.",
+    "type": "boolean",
+    "category": "Dotfiles",
     "default": false
   }
 ]

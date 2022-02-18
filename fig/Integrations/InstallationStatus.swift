@@ -13,7 +13,7 @@ enum InstallationDependency: String, Codable {
   case inputMethodActivation
 }
 
-enum InstallationStatus: Equatable {
+enum InstallationStatus: Equatable, Error {
   case applicationNotInstalled  // target app not installed,
   case unattempted    // we have not tried to install the integration
   case pending(event: InstallationDependency)

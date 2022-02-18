@@ -31,7 +31,7 @@ jobs:
   release:
     runs-on: macos-11
     if: "!contains(github.event.head_commit.message, 'skip ci')"
-    timeout-minutes: 45
+    timeout-minutes: 90
     steps:
 ############################################
 # Declare ENVIRONMENT variables
@@ -132,6 +132,24 @@ jobs:
       - name: Generate Protobuf Artifacts
         run: make
         working-directory: ./proto
+
+############################################
+# Setup Rust build environment
+############################################
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+    
+      - name: Cache Dependencies
+        uses: Swatinem/rust-cache@ce325b60658c1b38465c06cc965b79baf32c1e72
+
+      - name: Install rust targets
+        run: |
+          rustup target add aarch64-apple-darwin
+          rustup target add x86_64-apple-darwin
           
 ############################################
 # Build, Archive & Export 
@@ -192,9 +210,10 @@ jobs:
         run: curl -sL https://sentry.io/get-cli/ | bash
       - name: Upload dSYM files to Sentry
         if: ${{ github.event.inputs.useCache == 'false' || steps.archive.outputs.cache-hit != 'true' }}
-        run: sentry-cli upload-dif --org withfig --project macos-app --derived-data
+        run: sentry-cli upload-dif --org withfig --project macos-app --derived-data || echo "Sentry did not upload dSYM"
         env: 
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_LOG_LEVEL: debug
 
 ############################################
 # Notarize App Bundle

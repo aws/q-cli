@@ -19,6 +19,12 @@ class Integrations {
   static let Kitty = "net.kovidgoyal.kitty"
   static let Alacritty = "io.alacritty"
   static let Tabby = "org.tabby"
+  static let IntellijCE = "com.jetbrains.intellij.ce"
+  static let WebStorm = "com.jetbrains.WebStorm"
+  static let GoLand = "com.jetbrains.goland"
+  static let PhpStorm = "com.jetbrains.PhpStorm"
+  static let PyCharm = "com.jetbrains.pycharm"
+  static let AppCode = "com.jetbrains.AppCode"
 
   static let terminals: Set = [
     "com.googlecode.iterm2",
@@ -43,7 +49,9 @@ class Integrations {
     "com.raycast.macos"
   ]
 
-  static let inputMethodDependentTerminals = [Alacritty, Kitty]
+  static let jetbrainIDEs: Set = [IntellijCE, WebStorm, GoLand, PhpStorm, PyCharm, AppCode]
+  static let inputMethodDependentTerminals: Set = jetbrainIDEs.union([Alacritty, Kitty])
+
   static let electronIDEs: Set = [VSCode, VSCodeInsiders, VSCodium]
   static var electronTerminals: Set<String> {
     let additions = Set(
@@ -132,7 +140,14 @@ class Integrations {
 
     let experimentalIntegrations: [String: TerminalIntegrationProvider] = [
       Integrations.Alacritty: AlacrittyIntegration.default,
-      Integrations.Kitty: KittyIntegration.default
+      Integrations.Kitty: KittyIntegration.default,
+      // Jetbrains IDEs
+      Integrations.IntellijCE: JetBrainsIntegration.ideaCE,
+      Integrations.WebStorm: JetBrainsIntegration.WebStorm,
+      Integrations.PhpStorm: JetBrainsIntegration.PhpStorm,
+      Integrations.GoLand: JetBrainsIntegration.GoLand,
+      Integrations.PyCharm: JetBrainsIntegration.PyCharm,
+      Integrations.AppCode: JetBrainsIntegration.AppCode
     ]
 
     if let enableExperimentalIntegrations = Settings.shared.getValue(forKey:
@@ -172,4 +187,26 @@ protocol IntegrationProvider {
   func install() -> InstallationStatus
 
   var id: String { get }
+}
+
+struct Plugin {
+  let name: String
+  let version: String
+  let resourceInBundle: URL
+
+  init(name: String, version: String, fileExtension: String) {
+    self.name = name
+    self.version = version
+
+    self.resourceInBundle = Bundle.main.url(forResource: Plugin.slug(name: name, version: version),
+                                            withExtension: fileExtension)!
+  }
+
+  var slug: String {
+    return Plugin.slug(name: self.name, version: self.version)
+  }
+
+  fileprivate static func slug(name: String, version: String) -> String {
+    return name + "-" + version
+  }
 }
