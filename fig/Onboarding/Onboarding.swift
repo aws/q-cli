@@ -67,7 +67,7 @@ class Onboarding {
   }
 
   static func copyFigCLIExecutable(to path: String) {
-    symlinkBundleExecutable("figcli", to: path)
+    symlinkBundleExecutable("dotfilesd-darwin-universal", to: path)
   }
 
   static func setupTerminalsForShellOnboarding(completion: (() -> Void)? = nil) {
