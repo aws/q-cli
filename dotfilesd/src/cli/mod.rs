@@ -45,6 +45,9 @@ pub enum CliRootCommands {
         /// Install only the dotfiles
         #[clap(long)]
         dotfiles: bool,
+        /// Don't confirm automatic installation.
+        #[clap(long)]
+        no_confirm: bool,
     },
     #[clap(subcommand)]
     /// Interact with the desktop app
@@ -68,6 +71,9 @@ pub enum CliRootCommands {
         /// Uninstall only the dotfiles
         #[clap(long)]
         dotfiles: bool,
+        /// Don't confirm automatic removal.
+        #[clap(long)]
+        no_confirm: bool,
         /// Uninstall only the binary
         #[clap(long)]
         binary: bool,
@@ -138,7 +144,11 @@ impl Cli {
     pub async fn execute(self) {
         let result = match self.subcommand {
             Some(subcommand) => match subcommand {
-                CliRootCommands::Install { daemon, dotfiles } => {
+                CliRootCommands::Install {
+                    daemon,
+                    dotfiles,
+                    no_confirm,
+                } => {
                     let install_components = if daemon || dotfiles {
                         let mut install_components = InstallComponents::empty();
                         install_components.set(InstallComponents::DAEMON, daemon);
@@ -148,11 +158,12 @@ impl Cli {
                         InstallComponents::all()
                     };
 
-                    installation::install_cli(install_components)
+                    installation::install_cli(install_components, no_confirm)
                 }
                 CliRootCommands::Uninstall {
                     daemon,
                     dotfiles,
+                    no_confirm,
                     binary,
                 } => {
                     let uninstall_components = if daemon || dotfiles || binary {
@@ -165,7 +176,7 @@ impl Cli {
                         InstallComponents::all()
                     };
 
-                    installation::uninstall_cli(uninstall_components)
+                    installation::uninstall_cli(uninstall_components, no_confirm)
                 }
                 CliRootCommands::Update { no_confirm } => {
                     installation::update_cli(no_confirm).await

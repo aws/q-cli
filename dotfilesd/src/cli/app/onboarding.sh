@@ -8,6 +8,7 @@ set -e
 
 # Force current process to be shell, rather than `env`.
 cd ~
+TTY=$(tty)
 fig hook prompt $$ $TTY 2>&1 1>/dev/null
 
 # Colors

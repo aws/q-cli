@@ -38,7 +38,7 @@ install_fig() {
   # Hardcode figcli path because symlinking has not happened when this script runs.
   FIG_CLI="${BUNDLE}/dotfilesd-darwin-universal"
   "${FIG_CLI}" settings userShell "${USER_SHELL_TRIMMED}"
-  "${FIG_CLI}" install
+  "${FIG_CLI}" install --no-confirm
 }
 
 install_fig

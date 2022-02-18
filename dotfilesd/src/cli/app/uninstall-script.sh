@@ -1,14 +1,12 @@
-echo "Removing fig shell integrations"
-fig uninstall
-
 echo "Deleting .fig folder & completion specs"
 rm -rf ~/.fig
 
 echo "Delete backup Fig CLI"
 rm /usr/local/bin/fig
 
-echo "Deleting WKWebViewCache"
-fig util:reset-cache
+echo "Removing fig shell integrations"
+fig uninstall --no-confirm
+rm ~/.local/bin/fig
 
 # delete defaults
 echo "Deleting fig defaults & preferences"

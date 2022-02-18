@@ -24,7 +24,7 @@ fi
 MAGENTA=$(tput setaf 5)
 NORMAL=$(tput sgr0)
 
-FIG_IS_RUNNING="$(fig app:running)"
+FIG_IS_RUNNING="$(fig app running)"
 
 # Ask for confirmation before updating
 if [[ "${FIG_IS_RUNNING}" -eq 1 && ! -z "${NEW_VERSION_AVAILABLE}" ]]; then
