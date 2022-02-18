@@ -64,7 +64,7 @@ class Diagnostic {
       ".profile"
     ]
 
-    let target = "source ~/.fig/fig.sh"
+    let target = "fig init"
 
     return dotfiles.allSatisfy { (file) -> Bool in
       let filepath = "\(NSHomeDirectory())/\(file)"
@@ -88,28 +88,12 @@ class Diagnostic {
 
     let settings = [ "settings.json" ]
 
-    // Shell Hooks
-    let shellHooks = [
-      "fig.sh",
-      "shell/bash-preexec.sh",
-      "shell/post.bash",
-      "shell/post.fish",
-      "shell/post.sh",
-      "shell/post.zsh",
-      "shell/pre.fish",
-      "shell/pre.sh"
-    ]
-
     let onboarding = [
-      "tools",
-      "tools/drip",
-      "tools/drip/fig_onboarding.sh",
       "user/config"
     ]
 
     let filesAndFolders = integrations +
       settings +
-      shellHooks +
       onboarding
 
     return filesAndFolders.allSatisfy { (path) -> Bool in
