@@ -78,8 +78,8 @@ function __fig_pre_prompt () {
   __bp_set_ret_value "${__fig_ret_value}" "${__bp_last_argument_prev_command}"
 
   # Check if we have a new dotfiles to load
-  if command -v dotfiles >/dev/null 2>&1; then
-    if dotfiles prompt; then
+  if command -v fig >/dev/null 2>&1; then
+    if fig _ prompt-dotfiles-changed; then
       exec bash
     fi
   fi

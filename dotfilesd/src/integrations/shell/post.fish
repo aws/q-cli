@@ -90,8 +90,8 @@ function fig_precmd --on-event fish_prompt
   set fig_has_set_prompt 1
 
   # Check if we have a new dotfiles to load
-  if command -v dotfiles &>/dev/null
-    if dotfiles prompt
+  if command -v fig &>/dev/null
+    if fig _ prompt-dotfiles-changed
       exec fish
     end
   end
