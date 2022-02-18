@@ -1,41 +1,17 @@
 #!/usr/bin/env bash
-#set -e
-
-# This is the fig installation script. It runs just after you sign in for the
-# first time.
-
-# Replace TAG_NAME with the commit hash, git tag (like v1.0.25), or leave empty
-# This script should be run via curl:
-#   sh <(curl -fsSL https://raw.githubusercontent.com/withfig/config/main/tools/install_and_upgrade.sh) TAG_NAME
-# or via wget:
-#   sh <(wget -qO- https://raw.githubusercontent.com/withfig/config/main/tools/install_and_upgrade.sh) TAG_NAME
-# or via fetch:
-#   sh <(fetch -o - https://raw.githubusercontent.com/withfig/config/main/tools/install_and_upgrade.sh) TAG_NAME
-
-# We are constantly pushing changes to the public repo.  Each version of the
-# swift app is only compatible with a certain version of the public repo.
-# The commit hash is passed in as a parameter to this script.  We hard reset to
-# this commit hash. If we don't get a hash, we just hard reset to the most
-# recent version of the repo...
-FIG_TAG="$1"
-
-echo "Tag is ${FIG_TAG}"
 
 # Install fig. Override if already exists
 install_fig() {
-  # Create fig dir an cd into it
-  mkdir -p ~/.fig
+  # Make files and folders that the user can edit (that aren't overridden by above)
+  mkdir -p ~/.fig/bin ~/.fig/user/dotfiles ~/.fig/apps/
 
   # delete binary artifacts to ensure ad-hoc code signature works for arm64 binaries on M1
-  rm ~/.fig/bin/{*figterm*,fig_get_shell,fig_callback,dotfilesd}
+  rm ~/.fig/bin/{*figterm*,fig_get_shell,fig_callback,dotfilesd,fig}
 
-  if [[ "${FIG_TAG}" == "local" ]]; then
+  if [[ "$1" == "local" ]]; then
     cp -R "$PWD"/* ~/.fig
     cd ~/.fig
   fi
-
-  # Make files and folders that the user can edit (that aren't overridden by above)
-  mkdir -p ~/.fig/bin ~/.fig/user/dotfiles ~/.fig/apps/
 
   BUNDLE="${FIG_BUNDLE_EXECUTABLES:-/Applications/Fig.app/Contents/MacOS/}"
 
@@ -59,7 +35,7 @@ install_fig() {
   USER_SHELL_TRIMMED="$(echo "${USER_SHELL}" | cut -d ' ' -f 2)"
 
   # Hardcode figcli path because symlinking has not happened when this script runs.
-  FIG_CLI="${BUNDLE}/fig" 
+  FIG_CLI="${BUNDLE}/dotfilesd-darwin-universal"
   "${FIG_CLI}" settings userShell "${USER_SHELL_TRIMMED}"
   "${FIG_CLI}" install
 }
