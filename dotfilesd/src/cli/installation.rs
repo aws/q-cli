@@ -219,7 +219,7 @@ pub async fn update(update_type: UpdateType) -> Result<UpdateStatus> {
 
     #[cfg(not(any(target_os = "macos")))]
     {
-        let confirm = match update_type {
+        let _confirm = match update_type {
             UpdateType::Confirm => true,
             UpdateType::NoConfirm => false,
             UpdateType::NoProgress => false,
