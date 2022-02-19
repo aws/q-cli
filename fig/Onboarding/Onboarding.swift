@@ -8,40 +8,6 @@
 
 import Foundation
 import Sentry
-import DirectoryService
-
-class CopyFilesAndOverwriteExisting: NSObject, FileManagerDelegate {
-  func fileManager(_ fileManager: FileManager, shouldCopyItemAt srcURL: URL, to dstURL: URL) -> Bool {
-    Logger.log(message: "Copying \(srcURL.path) to \(dstURL.path)...")
-    return true
-  }
-
-  func fileManager(fileManager: FileManager,
-                   shouldProceedAfterError error: NSError,
-                   copyingItemAtPath srcPath: String,
-                   toPath dstPath: String) -> Bool {
-
-      if error.code == NSFileWriteFileExistsError {
-          do {
-            try fileManager.removeItem(atPath: dstPath)
-              Logger.log(message: "Deleted \(dstPath)")
-          } catch {
-              Logger.log(message: "Failed to delete \(dstPath) with error: \((error as NSError).description)")
-
-          }
-          do {
-            try fileManager.copyItem(atPath: srcPath, toPath: dstPath)
-            Logger.log(message: "Copied \(srcPath)")
-          } catch {
-            Logger.log(message: "Failed to copy \(srcPath) with error: \((error as NSError).description)")
-          }
-          return true
-      } else {
-          return false
-      }
-  }
-
-}
 
 extension FileManager {
 
@@ -92,7 +58,7 @@ class Onboarding {
   fileprivate static let configDirectoryInBundle: URL = (Bundle.main.resourceURL?
                                                           .appendingPathComponent("config", isDirectory: true))!
 
-  fileprivate static let figDirectory: URL = URL(fileURLWithPath: NSHomeDirectory() + "/.fig2", isDirectory: true)
+  fileprivate static let figDirectory: URL = URL(fileURLWithPath: NSHomeDirectory() + "/.fig", isDirectory: true)
   fileprivate static let appsDirectory: URL = figDirectory.appendingPathComponent("apps", isDirectory: true)
   fileprivate static let binDirectory: URL = figDirectory.appendingPathComponent("bin", isDirectory: true)
   fileprivate static let dotfilesDirectory: URL = figDirectory
