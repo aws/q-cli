@@ -3,7 +3,6 @@ use crate::util::{fig_dir, glob, glob_dir, settings};
 use anyhow::{anyhow, Context, Result};
 use clap::{ArgEnum, Subcommand};
 use crossterm::style::Stylize;
-use ctrlc::set_handler;
 use fig_ipc::command::{
     input_method_command, prompt_accessibility_command, run_build_command, set_debug_mode,
     toggle_debug_mode,
@@ -154,7 +153,7 @@ impl DebugSubcommand {
             DebugSubcommand::Logs { files } => {
                 settings::set_value("developer.logging", json!(true))?;
 
-                set_handler(|| {
+                ctrlc::set_handler(|| {
                     let code = match settings::set_value("developer.logging", json!(false)) {
                         Ok(_) => 0,
                         Err(_) => 1,
@@ -164,21 +163,40 @@ impl DebugSubcommand {
 
                 let log_dir = fig_dir().context("Could not find fig dir")?.join("logs");
 
-                let log_files = if files.is_empty() {
+                let mut files = files.clone();
+
+                let log_paths = if files.is_empty() {
                     let pattern = log_dir.join("*.log");
                     let globset = glob(&[pattern.to_str().unwrap()])?;
-                    glob_dir(&globset, log_dir)?
+                    glob_dir(&globset, &log_dir)?
                 } else {
-                    files
-                        .iter()
-                        .map(|file| log_dir.join(format!("{}.log", file)))
-                        .collect()
+                    let mut paths = Vec::new();
+
+                    if files.iter().any(|f| f == "figterm") {
+                        // Remove figterm from the list of files to open
+                        files.retain(|f| f != "figterm");
+
+                        // Add figterm*.log to the list of files to open
+                        let pattern = log_dir.join("figterm*.log");
+                        let globset = glob(&[pattern.to_str().unwrap()])?;
+                        let figterm_logs = glob_dir(&globset, &log_dir)?;
+                        paths.extend(figterm_logs);
+                    }
+
+                    // Push any remaining files to open
+                    paths.extend(
+                        files
+                            .iter()
+                            .map(|file| log_dir.join(format!("{}.log", file))),
+                    );
+
+                    paths
                 };
 
                 Command::new("tail")
                     .arg("-n0")
                     .arg("-qf")
-                    .args(log_files)
+                    .args(log_paths)
                     .spawn()?
                     .wait()?;
             }
