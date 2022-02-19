@@ -7,6 +7,7 @@ use std::fs::OpenOptions;
 use std::io::prelude::*;
 
 #[derive(Debug, Subcommand)]
+#[clap(hide = true)]
 pub enum HookSubcommand {
     Editbuffer {
         session_id: String,

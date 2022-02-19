@@ -13,7 +13,9 @@ use anyhow::{anyhow, Context, Result};
 use fig_ipc::{
     daemon::get_daemon_socket_path, hook::send_settings_changed, recv_message, send_message,
 };
-use fig_proto::daemon::diagnostic_response::{SettingsWatcherStatus, WebsocketStatus};
+use fig_proto::daemon::diagnostic_response::{
+    settings_watcher_status, websocket_status, SettingsWatcherStatus, WebsocketStatus,
+};
 use futures::StreamExt;
 use notify::{watcher, RecursiveMode, Watcher};
 use parking_lot::RwLock;
@@ -25,22 +27,22 @@ use std::{
     sync::Arc,
     time::Duration,
 };
-use time::format_description::well_known::Rfc3339;
 use tokio::{
     fs::remove_file,
     net::{UnixListener, UnixStream},
     select,
 };
+use tracing::{error, info, trace, Level};
 
-fn daemon_log(message: &str) {
-    println!(
-        "[dotfiles-daemon {}] {}",
-        time::OffsetDateTime::now_utc()
-            .format(&Rfc3339)
-            .unwrap_or_else(|_| "xxxx-xx-xxTxx:xx:xx.xxxxxxZ".into()),
-        message
-    );
-}
+// fn daemon_log(message: &str) {
+//     println!(
+//         "[dotfiles-daemon {}] {}",
+//         time::OffsetDateTime::now_utc()
+//             .format(&Rfc3339)
+//             .unwrap_or_else(|_| "xxxx-xx-xxTxx:xx:xx.xxxxxxZ".into()),
+//         message
+//     );
+// }
 
 pub fn install_daemon() -> Result<()> {
     #[cfg(target_os = "macos")]
@@ -310,30 +312,36 @@ struct DaemonStatus {
     /// The time the daemon was started as a u64 timestamp in seconds since the epoch
     time_started: u64,
     settings_watcher_status: Result<()>,
+    websocket_status: Result<()>,
 }
 
-async fn spawn_settings_watcher() -> Result<flume::Receiver<Result<()>>> {
+async fn spawn_settings_watcher(daemon_status: Arc<RwLock<DaemonStatus>>) -> Result<()> {
+    // We need to spawn both a thread and a tokio task since the notify library does not
+    // currently support async, this should be improved in the future, but currently this works fine
+
     let settings_path = Settings::path()?;
 
     let (settings_watcher_tx, settings_watcher_rx) = std::sync::mpsc::channel();
     let mut watcher = watcher(settings_watcher_tx, Duration::from_secs(1))?;
 
     let (forward_tx, forward_rx) = flume::unbounded();
-    let (status_tx, status_rx) = flume::unbounded();
 
     tokio::task::spawn(async move {
         loop {
             match forward_rx.recv_async().await {
                 Ok(_) => match send_settings_changed().await {
-                    Ok(_) => daemon_log("Settings changed"),
+                    Ok(_) => {
+                        info!("Settings changed");
+                        daemon_status.write().settings_watcher_status = Ok(());
+                    }
                     Err(err) => {
-                        daemon_log(&format!("Could not send settings changed: {}", err));
-                        status_tx.send_async(Err(err)).await.ok();
+                        error!("Could not send settings changed: {}", err);
+                        daemon_status.write().settings_watcher_status = Err(err);
                     }
                 },
                 Err(err) => {
-                    daemon_log(&format!("Error while receiving settings: {}", err));
-                    status_tx.send_async(Err(err.into())).await.ok();
+                    error!("Error while receiving settings: {}", err);
+                    daemon_status.write().settings_watcher_status = Err(anyhow!(err));
                 }
             }
         }
@@ -345,21 +353,21 @@ async fn spawn_settings_watcher() -> Result<flume::Receiver<Result<()>>> {
                 match settings_watcher_rx.recv() {
                     Ok(event) => {
                         if let Err(e) = forward_tx.send(event) {
-                            daemon_log(&format!("Error forwarding settings event: {}", e));
+                            error!("Error forwarding settings event: {}", e);
                         }
                     }
                     Err(err) => {
-                        eprintln!("{}", err);
+                        error!("Settings watcher rx: {}", err);
                     }
                 }
             },
             Err(err) => {
-                daemon_log(&format!("Error while watching settings: {}", err));
+                error!("Error while watching settings: {}", err);
             }
         },
     );
 
-    Ok(status_rx)
+    Ok(())
 }
 
 async fn spawn_unix_handler(
@@ -369,30 +377,79 @@ async fn spawn_unix_handler(
     tokio::task::spawn(async move {
         loop {
             match recv_message::<fig_proto::daemon::DaemonMessage, _>(&mut stream).await {
-                Ok(msg) => {
-                    println!("Received message: {:?}", msg);
+                Ok(message) => {
+                    trace!("Received message: {:?}", message);
 
-                    let message = {
-                        let daemon_status = daemon_status.read();
+                    if let Some(command) = &message.command {
+                        let response = match command {
+                            fig_proto::daemon::daemon_message::Command::Diagnostic(
+                                diagnostic_command,
+                            ) => {
+                                let parts: Vec<_> = diagnostic_command.parts().collect();
 
-                        let settings_status = match daemon_status.settings_watcher_status {
-                            Ok(_) => SettingsWatcherStatus::SettingsWatcherOk,
-                            Err(_) => SettingsWatcherStatus::SettingsWatcherError,
+                                let daemon_status = daemon_status.read();
+
+                                let time_started_epoch =
+                                    (parts.is_empty() ||
+                                        parts.contains(&fig_proto::daemon::diagnostic_command::DiagnosticPart::TimeStartedEpoch))
+                                    .then(|| {
+                                        daemon_status.time_started
+                                });
+
+                                let settings_watcher_status =
+                                    (parts.is_empty() ||
+                                        parts.contains(&fig_proto::daemon::diagnostic_command::DiagnosticPart::SettingsWatcherStatus))
+                                    .then(|| {
+                                        match &daemon_status.settings_watcher_status {
+                                            Ok(_) => SettingsWatcherStatus {
+                                                status: settings_watcher_status::Status::Ok.into(),
+                                                error: None,
+                                            },
+                                            Err(err) => SettingsWatcherStatus {
+                                                status: settings_watcher_status::Status::Error.into(),
+                                                error: Some(err.to_string()),
+                                            },
+                                        }
+                                });
+
+                                let websocket_status =
+                                    (parts.is_empty() ||
+                                        parts.contains(&fig_proto::daemon::diagnostic_command::DiagnosticPart::WebsocketStatus))
+                                    .then(|| {
+                                        match &daemon_status.websocket_status {
+                                            Ok(_) => WebsocketStatus {
+                                                status: websocket_status::Status::Ok.into(),
+                                                error: None,
+                                            },
+                                            Err(err) => WebsocketStatus {
+                                                status: websocket_status::Status::Error.into(),
+                                                error: Some(err.to_string()),
+                                            },
+                                        }
+                                });
+
+                                fig_proto::daemon::new_diagnostic_response(
+                                    time_started_epoch,
+                                    settings_watcher_status,
+                                    websocket_status,
+                                )
+                            }
                         };
 
-                        fig_proto::daemon::new_diagnostic_response(
-                            daemon_status.time_started,
-                            settings_status,
-                            WebsocketStatus::WebsocketOk,
-                        )
-                    };
+                        if !message.no_response() {
+                            let response = fig_proto::daemon::DaemonResponse {
+                                id: message.id,
+                                response: Some(response),
+                            };
 
-                    if let Err(err) = send_message(&mut stream, message).await {
-                        eprintln!("Error sending message: {}", err);
+                            if let Err(err) = send_message(&mut stream, response).await {
+                                error!("Error sending message: {}", err);
+                            }
+                        }
                     }
                 }
                 Err(err) => {
-                    eprintln!("Error while receiving message: {}", err);
+                    error!("Error while receiving message: {}", err);
                 }
             }
         }
@@ -403,13 +460,19 @@ async fn spawn_unix_handler(
 
 /// Spawn the daemon to listen for updates and dotfiles changes
 pub async fn daemon() -> Result<()> {
-    daemon_log("Starting daemon...");
+    tracing_subscriber::fmt()
+        .with_max_level(Level::DEBUG)
+        .with_line_number(true)
+        .init();
+
+    info!("Starting daemon...");
 
     let daemon_status = Arc::new(RwLock::new(DaemonStatus {
         time_started: std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)?
             .as_secs(),
         settings_watcher_status: Ok(()),
+        websocket_status: Ok(()),
     }));
 
     let mut update_interval = tokio::time::interval(Duration::from_secs(60 * 60));
@@ -437,12 +500,11 @@ pub async fn daemon() -> Result<()> {
     let unix_socket =
         UnixListener::bind(&unix_socket_path).context("Could not connect to unix socket")?;
 
-    let spawn_settings_watcher_result = spawn_settings_watcher().await;
-    if let Err(err) = &spawn_settings_watcher_result {
-        daemon_log(&format!("Could not spawn settings watcher: {}", err));
+    if let Err(error) = spawn_settings_watcher(daemon_status.clone()).await {
+        error!("Could not spawn settings watcher: {}", error);
     }
 
-    daemon_log("Daemon is now running");
+    info!("Daemon is now running");
 
     // Select loop
     loop {
@@ -459,7 +521,7 @@ pub async fn daemon() -> Result<()> {
                         spawn_unix_handler(stream, daemon_status.clone()).await?;
                     }
                     Err(err) => {
-                        daemon_log(&format!("Could not accept unix socket connection: {}", err));
+                        error!("Could not accept unix socket connection: {}", err);
                     }
                 }
             }
@@ -471,8 +533,8 @@ pub async fn daemon() -> Result<()> {
                     match update(UpdateType::NoProgress)? {
                         UpdateStatus::UpToDate => {}
                         UpdateStatus::Updated(release) => {
-                            println!("Updated to {}", release.version);
-                            println!("Quitting...");
+                            infor!("Updated to {}", release.version);
+                            info!("Quitting...");
                             return Ok(());
                         }
                     }

@@ -89,6 +89,7 @@ pub enum CliRootCommands {
         no_confirm: bool,
     },
     /// Run the daemon
+    #[clap(hide = true)]
     Daemon,
     /// Run diagnostic tests
     Diagnostic {
@@ -96,6 +97,7 @@ pub enum CliRootCommands {
         format: OutputFormat,
     },
     /// Generate the dotfiles for the given shell
+    #[clap(hide = true)]
     Init {
         /// The shell to generate the dotfiles for
         #[clap(arg_enum)]
@@ -132,13 +134,35 @@ pub enum CliRootCommands {
     #[clap(subcommand)]
     Plugins(plugins::PluginsSubcommand),
     /// Generate the completion spec for Fig
-    GenerateFigCompleation,
+    GenerateFigSpec,
     #[clap(subcommand)]
     Internal(internal::InternalSubcommand),
 }
 
 #[derive(Debug, Parser)]
 #[clap(version, about)]
+#[clap(help_template = "
+  \x1B[1m███████╗██╗ ██████╗
+  ██╔════╝██║██╔════╝
+  █████╗  ██║██║  ███╗
+  ██╔══╝  ██║██║   ██║
+  ██║     ██║╚██████╔╝
+  ╚═╝     ╚═╝ ╚═════╝ CLI\x1B[0m
+
+ \x1B[1;90mUsage:\x1B[0;90m fig [command]\x1B[0m
+
+ \x1B[1;95mCommon Subcommands\x1B[0m
+╭──────────────────────────────────────────────────╮
+│ \x1B[1mdoctor\x1B[0m         \x1B[0;90mCheck Fig is properly configured\x1B[0m  │
+│ \x1B[1msettings\x1B[0m       \x1B[0;90mCustomize appearance & behavior\x1B[0m   │
+│ \x1B[1missue\x1B[0m          \x1B[0;90mCreate a new GitHub issue\x1B[0m         │
+│ \x1B[1mtweet\x1B[0m          \x1B[0;90mTweet about Fig\x1B[0m                   │
+│ \x1B[1mupdate\x1B[0m         \x1B[0;90mUpdate Fig\x1B[0m                        │
+╰──────────────────────────────────────────────────╯
+
+ \x1B[0;90mFor more info on a specific command, use:\x1B[0m
+  > fig help [command]
+")]
 pub struct Cli {
     #[clap(subcommand)]
     pub subcommand: Option<CliRootCommands>,
@@ -206,7 +230,7 @@ impl Cli {
                 CliRootCommands::Debug(debug_subcommand) => debug_subcommand.execute().await,
                 CliRootCommands::Issue { description } => issue::issue_cli(description).await,
                 CliRootCommands::Plugins(plugins_subcommand) => plugins_subcommand.execute().await,
-                CliRootCommands::GenerateFigCompleation => {
+                CliRootCommands::GenerateFigSpec => {
                     println!("{}", Cli::generation_fig_compleations());
                     Ok(())
                 }

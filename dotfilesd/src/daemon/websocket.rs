@@ -1,6 +1,5 @@
 use crate::{
     cli::sync::{self, notify_terminals, SyncWhen},
-    daemon::daemon_log,
     util::settings::Settings,
 };
 
@@ -10,6 +9,7 @@ use serde::{Deserialize, Serialize};
 use std::ops::ControlFlow;
 use tokio::net::TcpStream;
 use tokio_tungstenite::{tungstenite::Message, MaybeTlsStream, WebSocketStream};
+use tracing::{error, info};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -50,7 +50,7 @@ pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream
 
     let (websocket_stream, _) = tokio_tungstenite::connect_async(url).await?;
 
-    daemon_log("Websocket connected");
+    info!("Websocket connected");
 
     Ok(websocket_stream)
 }
@@ -92,29 +92,29 @@ pub async fn process_websocket(
                                     Ok(()) => match sync_when {
                                         SyncWhen::Immediately => {
                                             notify_terminals()?;
-                                            daemon_log("Dotfiles updated");
+                                            info!("Dotfiles updated");
                                         }
                                         SyncWhen::Later => {
-                                            daemon_log("New dotfiles available");
+                                            info!("New dotfiles available");
                                         }
                                     },
                                     Err(err) => {
-                                        daemon_log(&format!("Could not sync dotfiles: {:?}", err));
+                                        error!("Could not sync dotfiles: {:?}", err);
                                     }
                                 }
                             }
                         },
                         Err(e) => {
-                            daemon_log(&format!("Could not parse json message: {:?}", e));
+                            error!("Could not parse json message: {:?}", e);
                         }
                     }
                 }
                 Message::Close(close_frame) => {
                     match close_frame {
                         Some(close_frame) => {
-                            daemon_log(&format!("Websocket closed: {:?}", close_frame));
+                            info!("Websocket closed: {:?}", close_frame);
                         }
-                        None => daemon_log("Websocket closed"),
+                        None => info!("Websocket closed"),
                     }
 
                     return Ok(ControlFlow::Break(()));
@@ -122,12 +122,12 @@ pub async fn process_websocket(
                 _ => {}
             },
             Err(err) => {
-                daemon_log(&format!("{:?}", err));
+                error!("Websock next error: {}", err);
                 return Ok(ControlFlow::Break(()));
             }
         },
         None => {
-            daemon_log("Websocket closed");
+            info!("Websocket closed");
             return Ok(ControlFlow::Break(()));
         }
     }

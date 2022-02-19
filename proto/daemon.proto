@@ -9,6 +9,7 @@ package daemon;
 message DaemonMessage {
     optional int64 id = 1;
 	optional bool no_response = 2;
+
     oneof command {
         // A request to get diagnostic information from the daemon
         DiagnosticCommand diagnostic = 101;
@@ -18,6 +19,7 @@ message DaemonMessage {
 // Response message type used to send a response to a command
 message DaemonResponse {
 	optional int64 id = 1;
+
 	oneof response {
         // A response to a diagnostic command
         DiagnosticResponse diagnostic = 101;
@@ -25,25 +27,47 @@ message DaemonResponse {
 }
 
 // Command to get diagnostics
-message DiagnosticCommand { }
+message DiagnosticCommand {
+    // Parts of the diagnostics to get
+    enum DiagnosticPart {
+        TIME_STARTED_EPOCH = 0;
+        SETTINGS_WATCHER_STATUS = 1;
+        WEBSOCKET_STATUS = 2;
+    }
+
+    // If set only get the diagnostic part specified
+    repeated DiagnosticPart parts = 1;
+}
 
 // Response to DiagnosticCommand
 message DiagnosticResponse {
-    enum SettingsWatcherStatus {
-        SETTINGS_WATCHER_OK = 0;
-        SETTINGS_WATCHER_ERROR = 1;
+    // Status of the settings watcher
+    message SettingsWatcherStatus {
+        enum Status {
+            OK = 0;
+            ERROR = 1;
+        }
+    
+        Status status = 1;
+        optional string error = 2;
     }
     
-    enum WebsocketStatus {
-        WEBSOCKET_OK = 0;
-        WEBSOCKET_ERROR = 1;
+    // Status of the websocket
+    message WebsocketStatus {
+        enum Status {
+            OK = 0;
+            ERROR = 1;
+        }
+    
+        Status status = 1;
+        optional string error = 2;
     }    
 
     // The time that the settings debugwatcher was started in seconds since the epoch
-    uint64 time_started_epoch = 1;
+    optional uint64 time_started_epoch = 1;
     // The status of the settings watcher
-    SettingsWatcherStatus settings_watcher_status = 2;
+    optional SettingsWatcherStatus settings_watcher_status = 2;
     // The status of the websocket
-    WebsocketStatus websocket_status = 3;
+    optional WebsocketStatus websocket_status = 3;
 }
 

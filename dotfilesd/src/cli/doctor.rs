@@ -17,7 +17,10 @@ use crossterm::{
 };
 use fig_auth::Credentials;
 use fig_ipc::{connect_timeout, get_fig_socket_path, send_recv_message};
-use fig_proto::local::DiagnosticsResponse;
+use fig_proto::{
+    daemon::diagnostic_response::{settings_watcher_status, websocket_status},
+    local::DiagnosticsResponse,
+};
 use regex::Regex;
 use semver::Version;
 use std::{
@@ -351,20 +354,30 @@ impl DoctorCheck for DaemonCheck {
             Ok(diagnostic_response) => match diagnostic_response.response {
                 Some(response_type) => match response_type {
                     fig_proto::daemon::daemon_response::Response::Diagnostic(diagnostics) => {
-                        if diagnostics.settings_watcher_status != 0 {
-                            return Err(DoctorError::Error {
-                                reason: "Settings watcher is not running".into(),
-                                info: vec![],
-                                fix: daemon_fix!(),
-                            });
+                        if let Some(status) = diagnostics.settings_watcher_status {
+                            if status.status() != settings_watcher_status::Status::Ok {
+                                return Err(DoctorError::Error {
+                                    reason: status
+                                        .error
+                                        .unwrap_or_else(|| "Daemon settings watcher error".into())
+                                        .into(),
+                                    info: vec![],
+                                    fix: daemon_fix!(),
+                                });
+                            }
                         }
 
-                        if diagnostics.websocket_status != 0 {
-                            return Err(DoctorError::Error {
-                                reason: "Websocket is not running".into(),
-                                info: vec![],
-                                fix: daemon_fix!(),
-                            });
+                        if let Some(status) = diagnostics.websocket_status {
+                            if status.status() != websocket_status::Status::Ok {
+                                return Err(DoctorError::Error {
+                                    reason: status
+                                        .error
+                                        .unwrap_or_else(|| "Daemon websocket error".into())
+                                        .into(),
+                                    info: vec![],
+                                    fix: daemon_fix!(),
+                                });
+                            }
                         }
                     }
                     #[allow(unreachable_patterns)]

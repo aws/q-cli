@@ -6,8 +6,9 @@ use aws_sdk_cognitoidentityprovider::{
         UserLambdaValidationException,
     },
     model::{AttributeType, AuthFlowType, ChallengeNameType},
-    Client, Config, Region, SdkError,
+    Client, Config, Region, RetryConfig, SdkError,
 };
+use aws_smithy_async::rt::sleep::TokioSleep;
 use base64::encode;
 use directories::ProjectDirs;
 use serde::{Deserialize, Serialize};
@@ -15,6 +16,7 @@ use serde_json::json;
 use std::{
     collections::HashMap,
     fs::{self, File},
+    sync::Arc,
 };
 use thiserror::Error;
 
@@ -25,7 +27,11 @@ fn project_dir() -> Option<ProjectDirs> {
 }
 
 pub fn get_client() -> anyhow::Result<Client> {
-    let config = Config::builder().region(Region::new("us-east-1")).build();
+    let config = Config::builder()
+        .region(Region::new("us-east-1"))
+        .retry_config(RetryConfig::new().with_max_attempts(5))
+        .sleep_impl(Arc::new(TokioSleep::new()))
+        .build();
 
     Ok(Client::from_conf(config))
 }

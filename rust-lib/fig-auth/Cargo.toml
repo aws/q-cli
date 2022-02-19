@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.53"
+aws-smithy-async = "0.36.0"
 aws-sdk-cognitoidentityprovider = "0.6.0"
 base64 = "0.13.0"
 directories = "4.0.0"
