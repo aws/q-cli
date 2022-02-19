@@ -72,6 +72,11 @@ pub async fn quit_command() -> Result<()> {
     send_command_to_socket(command).await
 }
 
+pub async fn run_install_script_command() -> Result<()> {
+    let command = command::Command::RunInstallScript(local::RunInstallScriptCommand {});
+    send_command_to_socket(command).await
+}
+
 pub async fn send_command(
     connection: &mut UnixStream,
     command: local::command::Command,
