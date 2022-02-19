@@ -8,38 +8,192 @@
 
 import Foundation
 import Sentry
+import DirectoryService
+
+class CopyFilesAndOverwriteExisting: NSObject, FileManagerDelegate {
+  func fileManager(_ fileManager: FileManager, shouldCopyItemAt srcURL: URL, to dstURL: URL) -> Bool {
+    Logger.log(message: "Copying \(srcURL.path) to \(dstURL.path)...")
+    return true
+  }
+
+  func fileManager(fileManager: FileManager,
+                   shouldProceedAfterError error: NSError,
+                   copyingItemAtPath srcPath: String,
+                   toPath dstPath: String) -> Bool {
+
+      if error.code == NSFileWriteFileExistsError {
+          do {
+            try fileManager.removeItem(atPath: dstPath)
+              Logger.log(message: "Deleted \(dstPath)")
+          } catch {
+              Logger.log(message: "Failed to delete \(dstPath) with error: \((error as NSError).description)")
+
+          }
+          do {
+            try fileManager.copyItem(atPath: srcPath, toPath: dstPath)
+            Logger.log(message: "Copied \(srcPath)")
+          } catch {
+            Logger.log(message: "Failed to copy \(srcPath) with error: \((error as NSError).description)")
+          }
+          return true
+      } else {
+          return false
+      }
+  }
+
+}
+
+extension FileManager {
+
+  func isDirectory(at path: URL) -> Bool {
+    var isDir: ObjCBool = false
+    let fileExistsAtDestination = self.fileExists(atPath: path.path, isDirectory: &isDir)
+
+    return fileExistsAtDestination && isDir.boolValue
+  }
+
+  func recursivelyCopyContentsOfDirectory(at source: URL, to destination: URL) throws {
+
+    var isDir: ObjCBool = false
+    let fileExistsAtDestination = self.fileExists(atPath: destination.path, isDirectory: &isDir)
+
+    switch (fileExistsAtDestination, isDir.boolValue) {
+      case (true, true):
+        break
+      case (true, false):
+        try self.removeItem(at: destination)
+      case (false, _):
+        try self.createDirectory(at: destination, withIntermediateDirectories: true, attributes: nil)
+    }
+
+    let filepaths = try self.contentsOfDirectory(at: source,
+                                             includingPropertiesForKeys: nil,
+                                             options: [])
+    for file in filepaths {
+
+      if self.isDirectory(at: file) {
+        try recursivelyCopyContentsOfDirectory(at: file, to: destination.appendingPathComponent(file.lastPathComponent,
+                                                                                             isDirectory: true))
+      } else {
+        let fileDestination = destination.appendingPathComponent(file.lastPathComponent,
+                                                        isDirectory: false)
+
+        if self.fileExists(atPath: fileDestination.path) {
+          try self.removeItem(at: fileDestination)
+        }
+        try copyItem(at: file, to: fileDestination)
+      }
+    }
+  }
+}
 
 class Onboarding {
+
+  fileprivate static let configDirectoryInBundle: URL = (Bundle.main.resourceURL?
+                                                          .appendingPathComponent("config", isDirectory: true))!
+
+  fileprivate static let figDirectory: URL = URL(fileURLWithPath: NSHomeDirectory() + "/.fig2", isDirectory: true)
+  fileprivate static let appsDirectory: URL = figDirectory.appendingPathComponent("apps", isDirectory: true)
+  fileprivate static let binDirectory: URL = figDirectory.appendingPathComponent("bin", isDirectory: true)
+  fileprivate static let dotfilesDirectory: URL = figDirectory
+                                                .appendingPathComponent("user",
+                                                                        isDirectory: true)
+                                                .appendingPathComponent("dotfiles",
+                                                                        isDirectory: true)
 
   static let loginURL: URL = Remote.baseURL.appendingPathComponent("login", isDirectory: true)
 
   static func setUpEnviroment(completion:( () -> Void)? = nil) {
 
-    if !Diagnostic.isRunningOnReadOnlyVolume {
+    if Diagnostic.isRunningOnReadOnlyVolume {
       SentrySDK.capture(message: "Currently running on read only volume! App is translocated!")
     }
 
-    guard let path = Bundle.main.path(forAuxiliaryExecutable: "dotfilesd-darwin-universal") else {
+    guard let figcliPath = Bundle.main.path(forAuxiliaryExecutable: "dotfilesd-darwin-universal") else {
       return Logger.log(message: "Could not locate install script!")
     }
 
-    let configDirectory = Bundle.main.resourceURL?.appendingPathComponent("config", isDirectory: true).path
+    guard let figtermPath = Bundle.main.path(forAuxiliaryExecutable: "figterm") else {
+      return Logger.log(message: "Could not locate figterm binary!")
+    }
 
-    "\(path) app install".runInBackground(cwd: configDirectory,
-                                                with: [ "FIG_BUNDLE_EXECUTABLES":
-                                                    Bundle.main.url(forAuxiliaryExecutable: "")!.path ],
+    do {
+
+      let fs = FileManager.default
+
+      try? fs.createDirectory(at: appsDirectory,
+                              withIntermediateDirectories: true,
+                              attributes: nil)
+
+      try? fs.createDirectory(at: binDirectory,
+                              withIntermediateDirectories: true,
+                              attributes: nil)
+
+      try? fs.createDirectory(at: dotfilesDirectory,
+                              withIntermediateDirectories: true,
+                                              attributes: nil)
+
+      let binaries = try fs.contentsOfDirectory(at: binDirectory,
+                                                 includingPropertiesForKeys: nil,
+                                                 options: [])
+      // delete binary artifacts to ensure ad-hoc code signature works for arm64 binaries on M1
+      for binary in binaries {
+        try fs.removeItem(at: binary)
+      }
+
+      try fs.recursivelyCopyContentsOfDirectory(at: configDirectoryInBundle, to: figDirectory)
+
+      // rename figterm binaries to mirror supported shell
+      // copy binaries on install to avoid issues with file permissions at runtime
+      let supportedShells = ["zsh", "bash", "fish"]
+      for shell in supportedShells {
+        try fs.copyItem(atPath: figtermPath,
+                        toPath: binDirectory.appendingPathComponent("\(shell) (figterm)").path)
+      }
+
+      // Create settings.json file, if it doesn't already exist.
+      let settingsFile = figDirectory.appendingPathComponent("settings.json")
+      if !fs.fileExists(atPath: settingsFile.path) {
+        fs.createFile(atPath: settingsFile.path,
+                      contents: "{}".data(using: .utf8),
+                      attributes: nil)
+
+      }
+
+    } catch {
+      Logger.log(message: "An error occured when attempting to install Fig! " + error.localizedDescription)
+    }
+
+    // Determine user's login shell by explicitly reading from "/Users/$(whoami)"
+    // rather than ~ to handle rare cases where these are different.
+    let response = Process.run(command: "/usr/bin/dscl", args: ".", "-read", "/Users/\(NSUserName())", "UserShell")
+
+    if response.exitCode == 0 {
+      Defaults.shared.userShell = response.output.joined(separator: "")
+    } else {
+      Logger.log(message: "Could not determine user shell. Error \(response.exitCode):" +
+                 response.error.joined(separator: "\n"))
+    }
+
+    // Create config file and add default values if they do not exist
+    Config.shared.addIfNotPresent(key: "FIG_LOGGED_IN", value: "0")
+    Config.shared.addIfNotPresent(key: "FIG_ONBOARDING", value: "0")
+
+    // Install binaries in the appropriate location222
+    Onboarding.symlinkBundleExecutable("figterm",
+                                       to: binDirectory.appendingPathComponent("figterm").path)
+    Onboarding.symlinkBundleExecutable("fig_get_shell",
+                                       to: binDirectory.appendingPathComponent("fig_get_shell").path)
+    Onboarding.symlinkBundleExecutable("fig_callback",
+                                       to: binDirectory.appendingPathComponent("fig_callback").path)
+    Onboarding.symlinkBundleExecutable("dotfilesd-darwin-universal",
+                                       to: "~/.local/bin/fig")
+
+    // Install launch agent that watches for Fig.app being trashed
+    LaunchAgent.uninstallWatcher.addIfNotPresent()
+
+    "\(figcliPath) install --no-confirm".runInBackground(
                                                 completion: { _ in
-                                                  // Install launch agent that watches for Fig.app being trashed
-                                                  LaunchAgent.uninstallWatcher.addIfNotPresent()
-
-                                                  Onboarding.symlinkBundleExecutable("figterm",
-                                                                                     to: "~/.fig/bin/figterm")
-                                                  Onboarding.symlinkBundleExecutable("fig_get_shell",
-                                                                                     to: "~/.fig/bin/fig_get_shell")
-                                                  Onboarding.symlinkBundleExecutable("fig_callback",
-                                                                                     to: "~/.fig/bin/fig_callback")
-                                                  Onboarding.symlinkBundleExecutable("dotfilesd-darwin-universal",
-                                                                                     to: "~/.local/bin/fig")
                                                   completion?()
                                                 })
   }
