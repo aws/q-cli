@@ -194,41 +194,6 @@ func NewCmdDoctor() *cobra.Command {
 				if _, err := os.Stat(figterm_socket_path); errors.Is(err, os.ErrNotExist) {
 					fmt.Println("❌ Figterm socket does not exist at " + figterm_socket_path)
 					doctorError = true
-				} else {
-					// Attempt to write to the socket
-					conn, err := net.Dial("unix", figterm_socket_path)
-					if err != nil {
-						fmt.Println("❌ Figterm socket exists but is not connectable")
-						fmt.Printf("   %v\n", err.Error())
-						doctorError = true
-					} else {
-						oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
-						if err != nil {
-							fmt.Println("❌ This terminal does not support raw mode needed to check figterm socket")
-							fmt.Printf("   %v\n", err.Error())
-							doctorError = true
-						} else {
-							go func() {
-								defer conn.Close()
-								time.Sleep(time.Millisecond * 10)
-								conn.Write([]byte("Testing Figterm...\n"))
-							}()
-
-							reader := bufio.NewReader(os.Stdin)
-							val, _ := reader.ReadString('\n')
-
-							term.Restore(int(os.Stdin.Fd()), oldState)
-
-							if strings.Contains(val, "Testing Figterm...") {
-								if verbose {
-									fmt.Printf("✅ Figterm socket exists at %v and is writable\n", figterm_socket_path)
-								}
-							} else {
-								fmt.Println("❌ Figterm socket exists but is not writable")
-								doctorError = true
-							}
-						}
-					}
 				}
 
 				if verbose {
