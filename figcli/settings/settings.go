@@ -28,13 +28,13 @@ func New() Settings {
 
 // Load settings from a file
 func Load() (Settings, error) {
-	usr, err := user.Current()
+	settingsPath, err := GetFilepath()
 	if err != nil {
 		fmt.Println("Error: ", err)
 		return nil, err
 	}
 
-	data, err := os.ReadFile(usr.HomeDir + "/.fig/settings.json")
+	data, err := os.ReadFile(settingsPath)
 	if err != nil {
 		fmt.Println("Settings: settings file does not exist")
 		return nil, err
@@ -52,7 +52,7 @@ func Load() (Settings, error) {
 }
 
 func (s Settings) Save() error {
-	usr, err := user.Current()
+	settingsPath, err := GetFilepath()
 	if err != nil {
 		fmt.Println("Error: ", err)
 		return err
@@ -64,7 +64,7 @@ func (s Settings) Save() error {
 		return err
 	}
 
-	err = os.WriteFile(path.Join(usr.HomeDir, ".fig", "settings.json"), data, 0644)
+	err = os.WriteFile(settingsPath, data, 0644)
 	if err != nil {
 		fmt.Println("Settings: error writing settings file")
 		return err
@@ -79,5 +79,5 @@ func GetFilepath() (string, error) {
 		return "", err
 	}
 
-	return usr.HomeDir + "/.fig/settings.json", nil
+	return path.Join(usr.HomeDir, ".fig", "settings.json"), nil
 }

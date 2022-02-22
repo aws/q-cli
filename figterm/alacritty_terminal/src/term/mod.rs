@@ -252,6 +252,7 @@ impl<T> Term<T> {
         let scroll_region = Line(0)..Line(grid.screen_lines() as i32);
 
         let mut shell_state = ShellState::new();
+        shell_state.session_id = std::env::var("TERM_SESSION_ID").ok();
         shell_state.color_support = Some(fig_color::get_color_support());
 
         Term {

@@ -7,8 +7,8 @@ import (
 	"fig-cli/diagnostics"
 	fig_ipc "fig-cli/fig-ipc"
 	fig_proto "fig-cli/fig-proto"
+	"fig-cli/settings"
 	"fmt"
-	"net"
 	"os"
 	"os/exec"
 	"os/user"
@@ -21,7 +21,6 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
-	"golang.org/x/term"
 )
 
 func Fix(cmd string) {
@@ -128,6 +127,27 @@ func NewCmdDoctor() *cobra.Command {
 			fixFile := filepath.Join(user.HomeDir, ".fig", "fig_fixes")
 			os.Remove(fixFile)
 
+			// Set pty.path and trigger update
+
+			// Get the users $PATH
+			path := os.Getenv("PATH")
+
+			// Load ~/.fig/settingsData.json and set the path
+			settingsData, err := settings.Load()
+			if err == nil {
+				settingsData.Set("pty.path", path)
+				settingsData.Save()
+			}
+
+			// Trigger update of ENV in PTY
+			pty, err := diagnostics.GetTty()
+			if err == nil {
+				hook, err := fig_ipc.CreateInitHook(os.Getppid(), pty)
+				if err == nil {
+					fig_ipc.SendHook(hook)
+				}
+			}
+
 			for {
 				doctorError := false
 
@@ -194,41 +214,6 @@ func NewCmdDoctor() *cobra.Command {
 				if _, err := os.Stat(figterm_socket_path); errors.Is(err, os.ErrNotExist) {
 					fmt.Println("❌ Figterm socket does not exist at " + figterm_socket_path)
 					doctorError = true
-				} else {
-					// Attempt to write to the socket
-					conn, err := net.Dial("unix", figterm_socket_path)
-					if err != nil {
-						fmt.Println("❌ Figterm socket exists but is not connectable")
-						fmt.Printf("   %v\n", err.Error())
-						doctorError = true
-					} else {
-						oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
-						if err != nil {
-							fmt.Println("❌ This terminal does not support raw mode needed to check figterm socket")
-							fmt.Printf("   %v\n", err.Error())
-							doctorError = true
-						} else {
-							go func() {
-								defer conn.Close()
-								time.Sleep(time.Millisecond * 10)
-								conn.Write([]byte("Testing Figterm...\n"))
-							}()
-
-							reader := bufio.NewReader(os.Stdin)
-							val, _ := reader.ReadString('\n')
-
-							term.Restore(int(os.Stdin.Fd()), oldState)
-
-							if strings.Contains(val, "Testing Figterm...") {
-								if verbose {
-									fmt.Printf("✅ Figterm socket exists at %v and is writable\n", figterm_socket_path)
-								}
-							} else {
-								fmt.Println("❌ Figterm socket exists but is not writable")
-								doctorError = true
-							}
-						}
-					}
 				}
 
 				if verbose {
@@ -500,9 +485,9 @@ func NewCmdDoctor() *cobra.Command {
 						doctorError = true
 					}
 				} else {
-					if executable == filepath.Join(user.HomeDir, ".fig/bin/fig") ||
-						executable == "/usr/local/bin/.fig/bin/fig" ||
-						executable == "/usr/local/bin/fig" {
+					if executable == filepath.Join(user.HomeDir, ".fig", "bin", "fig") ||
+						executable == filepath.Join("/usr", "local", "bin", ".fig", "bin", "fig") ||
+						executable == filepath.Join("/usr", "local", "bin", "fig") {
 						if verbose {
 							fmt.Println("✅ CLI tool path")
 						}
@@ -526,15 +511,21 @@ func NewCmdDoctor() *cobra.Command {
 					continue
 				}
 
-				// Path
-				if diagnosticsResp.GetDiagnostics().GetPsudoterminalPath() == os.Getenv("PATH") {
+				// Settings and path checks
+				settingsData, err := settings.Load()
+				if err != nil {
 					if verbose {
-						fmt.Println("✅ PATH and PseudoTerminal PATH match")
+						fmt.Println("❌ Could not load settings")
+						doctorError = true
 					}
 				} else {
-					fmt.Println("❌ PATH and PseudoTerminal PATH do not match")
-					Fix("fig app set-path")
-					continue
+					if settingsData.Get("pty.path") == os.Getenv("PATH") {
+						if verbose {
+							fmt.Println("✅ PATH and PseudoTerminal PATH match")
+						}
+					} else {
+						fmt.Println("❌ PATH and PseudoTerminal PATH do not match")
+					}
 				}
 
 				// SecureKeyboardProcess

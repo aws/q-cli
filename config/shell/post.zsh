@@ -152,4 +152,3 @@ fig_reset_hooks() {
 }
 
 fig_reset_hooks
-fig_osc "DoneSourcing"

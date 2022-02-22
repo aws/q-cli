@@ -111,5 +111,3 @@ if [ -z "$FIG_SHELL_VAR" ]
   set FIG_SHELL_VAR 1
   set fig_has_set_prompt 0
 end
-
-fig_osc "DoneSourcing"
