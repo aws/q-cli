@@ -62,7 +62,6 @@
 		7543170126E08F5D00188887 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 754316FF26E08F5D00188887 /* Main.storyboard */; };
 		7543170826E0901B00188887 /* FigIMKInputController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7543170726E0901B00188887 /* FigIMKInputController.swift */; };
 		7545657527715785002A59EA /* TabbyIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7545657427715785002A59EA /* TabbyIntegration.swift */; };
-		7545657727716CAB002A59EA /* tabby-integration.js in Resources */ = {isa = PBXBuildFile; fileRef = 7545657627716CAB002A59EA /* tabby-integration.js */; };
 		7545657A2773CB9F002A59EA /* JetBrainsIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 754565792773CB9F002A59EA /* JetBrainsIntegration.swift */; };
 		7545657C2773EB0B002A59EA /* PropertyList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7545657B2773EB0B002A59EA /* PropertyList.swift */; };
 		7545657F2773F275002A59EA /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 7545657E2773F275002A59EA /* ZIPFoundation */; };
@@ -355,7 +354,6 @@
 		7543170326E08F5D00188887 /* InputMethod.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = InputMethod.entitlements; sourceTree = "<group>"; };
 		7543170726E0901B00188887 /* FigIMKInputController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FigIMKInputController.swift; sourceTree = "<group>"; };
 		7545657427715785002A59EA /* TabbyIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabbyIntegration.swift; sourceTree = "<group>"; };
-		7545657627716CAB002A59EA /* tabby-integration.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = "tabby-integration.js"; sourceTree = "<group>"; };
 		754565792773CB9F002A59EA /* JetBrainsIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JetBrainsIntegration.swift; sourceTree = "<group>"; };
 		7545657B2773EB0B002A59EA /* PropertyList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PropertyList.swift; sourceTree = "<group>"; };
 		754565802773F3C9002A59EA /* jetbrains-extension-2.0.0.zip */ = {isa = PBXFileReference; lastKnownFileType = archive.zip; path = "jetbrains-extension-2.0.0.zip"; sourceTree = "<group>"; };
