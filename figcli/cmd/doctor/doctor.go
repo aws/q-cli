@@ -8,7 +8,6 @@ import (
 	fig_ipc "fig-cli/fig-ipc"
 	fig_proto "fig-cli/fig-proto"
 	"fmt"
-	"net"
 	"os"
 	"os/exec"
 	"os/user"
@@ -21,7 +20,6 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
-	"golang.org/x/term"
 )
 
 func Fix(cmd string) {
