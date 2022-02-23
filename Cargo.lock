@@ -1012,6 +1012,7 @@ dependencies = [
  "crossbeam",
  "dashmap",
  "dirs",
+ "fig-auth",
  "fig-proto",
  "flume",
  "fnv",

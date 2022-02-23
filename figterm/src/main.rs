@@ -36,6 +36,7 @@ use bytes::Bytes;
 use clap::StructOpt;
 use cli::Cli;
 use dashmap::DashSet;
+use fig_auth::get_email;
 use fig_proto::{
     figterm::{figterm_message, intercept_command, FigtermMessage},
     hooks::{
@@ -498,15 +499,6 @@ fn figterm_main() -> Result<()> {
             }
         }
     }
-}
-
-fn get_email() -> Option<String> {
-    // TODO: Change this to use native api
-    Command::new("defaults")
-        .args(&["read", "com.mschrage.fig", "userEmail"])
-        .output()
-        .ok()
-        .and_then(|output| String::from_utf8(output.stdout).ok())
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
