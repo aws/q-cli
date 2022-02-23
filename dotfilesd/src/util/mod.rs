@@ -10,6 +10,7 @@ use std::{
 pub mod checksum;
 pub mod settings;
 pub mod shell;
+pub mod sync;
 pub mod terminal;
 
 pub fn project_dir() -> Option<ProjectDirs> {

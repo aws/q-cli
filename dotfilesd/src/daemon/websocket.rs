@@ -9,12 +9,13 @@ use serde::{Deserialize, Serialize};
 use std::ops::ControlFlow;
 use tokio::net::TcpStream;
 use tokio_tungstenite::{tungstenite::Message, MaybeTlsStream, WebSocketStream};
-use tracing::{error, info};
+use tracing::{error, info, warn};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 enum FigWebsocketMessageType {
     DotfilesUpdated,
+    SettingsUpdated,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -62,6 +63,8 @@ pub async fn process_websocket(
         Some(next) => match next {
             Ok(websocket_message) => match websocket_message {
                 Message::Text(text) => {
+                    println!("{}", text);
+
                     let websocket_message_result =
                         serde_json::from_str::<FigWebsocketMessage>(text);
 
@@ -102,6 +105,11 @@ pub async fn process_websocket(
                                         error!("Could not sync dotfiles: {:?}", err);
                                     }
                                 }
+                            }
+                            FigWebsocketMessageType::SettingsUpdated => {
+                                // crate::util::sync::sync(crate::util::sync::Settings {}).await?;
+                                info!("Settings updated");
+                                warn!("Settings syncing is currently disabled");
                             }
                         },
                         Err(e) => {

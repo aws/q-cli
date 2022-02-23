@@ -237,12 +237,18 @@ impl LaunchService {
 
         let plist_path = basedirs
             .home_dir()
-            .join("Library/LaunchAgents/io.fig.dotfiles-daemon.plist");
+            .join("Library")
+            .join("LaunchAgents")
+            .join("io.fig.dotfiles-daemon.plist");
 
         let executable_path = std::env::current_exe()?;
         let executable_path_str = executable_path.to_string_lossy();
 
-        let log_path = basedirs.home_dir().join(".fig/logs/dotfiles-daemon.log");
+        let log_path = basedirs
+            .home_dir()
+            .join(".fig")
+            .join("logs")
+            .join("dotfiles-daemon.log");
         let log_path_str = log_path.to_string_lossy();
 
         let plist = LaunchdPlist::new(InitSystem::Launchd.daemon_name())
@@ -267,7 +273,10 @@ impl LaunchService {
 
         let path = basedirs
             .home_dir()
-            .join(".config/systemd/user/fig-dotfiles-daemon.service");
+            .join(".config")
+            .join("systemd")
+            .join("user")
+            .join("fig-dotfiles-daemon.service");
 
         let executable_path = std::env::current_exe()?;
         let executable_path_str = executable_path.to_string_lossy();
@@ -525,7 +534,6 @@ pub async fn daemon() -> Result<()> {
                     }
                 }
             }
-
             _ = update_interval.tick() => {
                 #[cfg(feature = "auto-update")]
                 {
