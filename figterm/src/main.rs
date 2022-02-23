@@ -7,13 +7,7 @@ pub mod term;
 pub mod utils;
 
 use std::{
-    env,
-    error::Error,
-    ffi::CString,
-    os::unix::prelude::AsRawFd,
-    path::PathBuf,
-    process::{exit, Command},
-    vec,
+    env, error::Error, ffi::CString, os::unix::prelude::AsRawFd, path::PathBuf, process::exit, vec,
 };
 
 use crate::{
