@@ -1,8 +1,9 @@
 ROOT:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
 export BUILT_PRODUCTS_DIR ?= $(ROOT)/build
+export ARTIFACTS ?= $(ROOT)/build
 
-# export CARGO_TARGET_DIR = $(BUILT_PRODUCTS_DIR)
+TARGET_DIR ?= $(ROOT)/../target
 
 # Add brew executables to PATH
 export PATH := /opt/homebrew/bin:/opt/homebrew/sbin:$(PATH)
@@ -21,40 +22,61 @@ ifndef CARGO
 endif
 
 $(shell mkdir -p $(BUILT_PRODUCTS_DIR))
+$(shell mkdir -p $(ARTIFACTS))
 
 PROGS =	figterm fig_get_shell
+SRC = Cargo.toml $(wildcard figterm/**/*) $(wildcard alacritty_terminal/**/*) $(wildcard  fig-color/**/*)
 
 PLATFORM := $(shell uname -s)
 
-all: build-figterm fig_get_shell
+all: figterm fig_get_shell
 
-build-figterm-arm: 
+$(ARTIFACTS)/figterm-aarch64: $(SRC)
 	cargo build --target=aarch64-apple-darwin $(CARGO_FLAGS)
-	cp $(ROOT)/target/aarch64-apple-darwin/release/figterm $(BUILT_PRODUCTS_DIR)/figterm-arm
+	mkdir -p $(dir $@)
+	install $(TARGET_DIR)/aarch64-apple-darwin/release/figterm $@
 
-build-figterm-x86: 
+$(ARTIFACTS)/figterm-x86_64: $(SRC)
 	cargo build --target=x86_64-apple-darwin $(CARGO_FLAGS)
-	cp $(ROOT)/target/x86_64-apple-darwin/release/figterm $(BUILT_PRODUCTS_DIR)/figterm-x86
+	mkdir -p $(dir $@)
+	install $(TARGET_DIR)/x86_64-apple-darwin/release/figterm $@
 
-fig_get_shell-arm: get_shell.c
-	$(CC) get_shell.c $(CFLAGS) -o $(BUILT_PRODUCTS_DIR)/fig_get_shell-arm -target arm64-apple-macos11
+$(ARTIFACTS)/fig_get_shell-aarch64: get_shell.c
+	mkdir -p $(dir $@)
+	$(CC) get_shell.c $(CFLAGS) -o $@ -target arm64-apple-macos11
 
-fig_get_shell-x86: get_shell.c
-	$(CC) get_shell.c $(CFLAGS) -o $(BUILT_PRODUCTS_DIR)/fig_get_shell-x86 -target x86_64-apple-macos10.12
+$(ARTIFACTS)/fig_get_shell-x86_64: get_shell.c
+	mkdir -p $(dir $@)
+	$(CC) get_shell.c $(CFLAGS) -o $@ -target x86_64-apple-macos10.12
+
+figterm-x86_64: $(ARTIFACTS)/figterm-x86_64
+	install $^ $(BUILT_PRODUCTS_DIR)
+figterm-aarch64: $(ARTIFACTS)/figterm-aarch64
+	install $^ $(BUILT_PRODUCTS_DIR)
+figterm: $(ARTIFACTS)/figterm
+	install $^ $(BUILT_PRODUCTS_DIR)
+
+fig_get_shell-x86_64: $(ARTIFACTS)/fig_get_shell-x86_64
+	install $^ $(BUILT_PRODUCTS_DIR)
+fig_get_shell-aarch64: $(ARTIFACTS)/fig_get_shell-aarch64
+	install $^ $(BUILT_PRODUCTS_DIR)
+fig_get_shell: $(ARTIFACTS)/fig_get_shell
+	install $^ $(BUILT_PRODUCTS_DIR)
+
 
 ifeq "$(PLATFORM)" "Darwin"
-build-figterm: build-figterm-x86 build-figterm-arm
-	lipo -create -output $(BUILT_PRODUCTS_DIR)/figterm $(BUILT_PRODUCTS_DIR)/figterm-x86 $(BUILT_PRODUCTS_DIR)/figterm-arm
+$(ARTIFACTS)/figterm: $(ARTIFACTS)/figterm-x86_64 $(ARTIFACTS)/figterm-aarch64
+	lipo -create -output $(ARTIFACTS)/figterm $(ARTIFACTS)/figterm-x86_64 $(ARTIFACTS)/figterm-aarch64
 
-fig_get_shell: fig_get_shell-x86 fig_get_shell-arm
-	lipo -create -output $(BUILT_PRODUCTS_DIR)/fig_get_shell $(BUILT_PRODUCTS_DIR)/fig_get_shell-x86 $(BUILT_PRODUCTS_DIR)/fig_get_shell-arm
+$(ARTIFACTS)/fig_get_shell: $(ARTIFACTS)/fig_get_shell-x86_64 $(ARTIFACTS)/fig_get_shell-aarch64
+	lipo -create -output $(ARTIFACTS)/fig_get_shell $(ARTIFACTS)/fig_get_shell-x86_64 $(ARTIFACTS)/fig_get_shell-aarch64
 else
-build-figterm:
+$(ARTIFACTS)/figterm:
 	cargo build $(CARGO_FLAGS)
-	cp $(ROOT)/target/release/figterm $(BUILT_PRODUCTS_DIR)/figterm
+	install $(TARGET_DIR)/release/figterm $(ARTIFACTS)/figterm
 
-fig_get_shell: get_shell.c
-	$(CC) get_shell.c $(CFLAGS) -o $(BUILT_PRODUCTS_DIR)/fig_get_shell
+$(ARTIFACTS)/fig_get_shell: get_shell.c
+	$(CC) get_shell.c $(CFLAGS) -o $(ARTIFACTS)/fig_get_shell
 endif
 
 install: all
@@ -62,10 +84,10 @@ install: all
 	cd $(HOME)/.fig/bin && \
 		rm -rf $(PROGS) *figterm* && \
 		cd $(BUILT_PRODUCTS_DIR) && \
-		cp -p $(PROGS) $(HOME)/.fig/bin && \
-		cp -p $(HOME)/.fig/bin/figterm $(HOME)/.fig/bin/zsh\ \(figterm\) && \
-		cp -p $(HOME)/.fig/bin/figterm $(HOME)/.fig/bin/fish\ \(figterm\) && \
-		cp -p $(HOME)/.fig/bin/figterm $(HOME)/.fig/bin/bash\ \(figterm\); \
+		install -p $(PROGS) $(HOME)/.fig/bin && \
+		install -p $(HOME)/.fig/bin/figterm $(HOME)/.fig/bin/zsh\ \(figterm\) && \
+		install -p $(HOME)/.fig/bin/figterm $(HOME)/.fig/bin/fish\ \(figterm\) && \
+		install -p $(HOME)/.fig/bin/figterm $(HOME)/.fig/bin/bash\ \(figterm\); \
 	# Add fake fig binary on linux or if fig not installed that just logs
 	# commands to fig.
 	command -v ~/.fig/bin/fig > /dev/null 2>&1 || ( \
@@ -73,5 +95,7 @@ install: all
 		chmod +x $(HOME)/.fig/bin/fig)
 
 clean:
-	rm -rf $(ROOT)/target
+	command -v cargo &>/dev/null && cargo clean
+	rm -rf $(TARGET_DIR)
+	rm -rf $(ARTIFACTS)
 	rm -rf $(BUILT_PRODUCTS_DIR)

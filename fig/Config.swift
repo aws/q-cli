@@ -21,6 +21,11 @@ class Config {
     userConfigPath = configPath
   }
 
+  func addIfNotPresent(key: String, value: String) {
+    guard getValue(forKey: key) == nil else { return }
+    set(value: value, forKey: key)
+  }
+
   func set(value: String?, forKey key: String) {
     log("set '\(key)' := \(value ?? "nil")")
     updateConfig(key, value)

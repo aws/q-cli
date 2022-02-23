@@ -15,8 +15,11 @@ fig.xcodeproj/xcuserdata/*.xcuserdatad/xcschemes/xcschememanagement.plist
 node_modules/
 .eslintcache
 yarn-error.log
+yarn.lock
 
 dotenv/docker-compose.yaml
 
 # Ignore all compiled protobuf artifacts
 **/*.pb.*
+
+target/
