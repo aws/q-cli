@@ -350,6 +350,6 @@ impl Shell {
     }
 
     pub fn get_remote_source(&self) -> Result<Url> {
-        Ok(format!("https://api.fig.io/dotfiles/source/{}/full", self).parse()?)
+        Ok(format!("https://api.fig.io/dotfiles/source/{}", self).parse()?)
     }
 }
