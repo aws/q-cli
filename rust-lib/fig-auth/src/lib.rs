@@ -10,16 +10,17 @@ use std::{ffi::OsStr, process::Command};
 pub const CLIENT_ID: &str = "hkinciohdp1i7h0imdk63a4bv";
 
 fn get_default(key: impl AsRef<OsStr>) -> Result<String> {
-    Ok(String::from_utf8_lossy(
-        &Command::new("defaults")
-            .arg("read")
-            .arg("com.mschrage.fig")
-            .arg(key)
-            .output()?
-            .stdout,
-    )
-    .trim()
-    .into())
+    let output = Command::new("defaults")
+        .arg("read")
+        .arg("com.mschrage.fig")
+        .arg(key)
+        .output()?;
+
+    if !output.status.success() {
+        return Err(anyhow::anyhow!("defaults read failed"));
+    }
+
+    Ok(String::from_utf8_lossy(&output.stdout).trim().into())
 }
 
 pub async fn get_token() -> Result<String> {

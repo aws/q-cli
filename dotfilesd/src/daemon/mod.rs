@@ -85,6 +85,10 @@ impl InitSystem {
             .output()
             .context("Could not run ps")?;
 
+        if !output.status.success() {
+            return Err(anyhow!("ps failed: {}", output.status));
+        }
+
         let stdout = String::from_utf8_lossy(&output.stdout);
 
         if stdout.contains("launchd") {
@@ -127,12 +131,19 @@ impl InitSystem {
                 Ok(())
             }
             InitSystem::Systemd => {
-                Command::new("systemctl")
+                let output = Command::new("systemctl")
                     .arg("--now")
                     .arg("enable")
                     .arg(path.as_ref())
                     .output()
                     .with_context(|| format!("Could not enable {:?}", path.as_ref()))?;
+
+                if !output.status.success() {
+                    return Err(anyhow!(
+                        "Could not start daemon: {}",
+                        String::from_utf8_lossy(&output.stderr)
+                    ));
+                }
 
                 Ok(())
             }
