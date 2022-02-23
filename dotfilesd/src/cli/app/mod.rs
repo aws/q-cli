@@ -49,10 +49,7 @@ impl AppSubcommand {
     pub async fn execute(&self) -> Result<()> {
         match self {
             AppSubcommand::Install => {
-                Command::new("bash")
-                    .args(["-c", include_str!("install_and_upgrade.sh")])
-                    .spawn()?
-                    .wait()?;
+                fig_ipc::command::run_install_script_command().await?;
             }
             AppSubcommand::Onboarding => {
                 Command::new("bash")
