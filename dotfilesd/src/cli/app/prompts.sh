@@ -31,9 +31,9 @@ if [[ "${FIG_IS_RUNNING}" -eq 1 && ! -z "${NEW_VERSION_AVAILABLE}" ]]; then
     if [[ "$(fig settings app.disableAutoupdates)" ==  "true" ]]; then
         echo "A new version of ${MAGENTA}Fig${NORMAL} is available. (Autoupdates are disabled)"
     else 
-        (fig update:app --force > /dev/null &)
+        (fig update -y > /dev/null &)
         echo "Updating ${MAGENTA}Fig${NORMAL} to latest version..."
-        (sleep 3 && fig launch > /dev/null &)
+        (sleep 3 && fig app launch > /dev/null &)
         if [[ -z "${DISPLAYED_AUTOUPDATE_SETTINGS_HINT}" ]]; then
           echo "(To turn off automatic updates, run \`fig settings app.disableAutoupdates true\`)"
           printf "\nDISPLAYED_AUTOUPDATE_SETTINGS_HINT=1" >> ~/.fig/user/config
@@ -43,7 +43,7 @@ fi
 
 if [[ -z "$APP_TERMINATED_BY_USER" && "${FIG_IS_RUNNING}" == '0' ]]; then
   if [[ "$(fig settings app.disableAutolaunch)" != "true" ]]; then
-    (fig launch > /dev/null &)
+    (fig app launch > /dev/null &)
     echo "Launching ${MAGENTA}Fig${NORMAL}..."
     if [[ -z "${DISPLAYED_AUTOLAUNCH_SETTINGS_HINT}" ]]; then
       echo "(To turn off autolaunch, run \`fig settings app.disableAutolaunch true\`)"
