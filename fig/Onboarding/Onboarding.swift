@@ -146,14 +146,11 @@ class Onboarding {
     Config.shared.addIfNotPresent(key: "FIG_ONBOARDING", value: "0")
 
     // Install binaries in the appropriate location222
-    Onboarding.symlinkBundleExecutable("figterm",
-                                       to: binDirectory.appendingPathComponent("figterm").path)
-    Onboarding.symlinkBundleExecutable("fig_get_shell",
-                                       to: binDirectory.appendingPathComponent("fig_get_shell").path)
-    Onboarding.symlinkBundleExecutable("fig_callback",
-                                       to: binDirectory.appendingPathComponent("fig_callback").path)
-    Onboarding.symlinkBundleExecutable("dotfilesd-darwin-universal",
-                                       to: "~/.local/bin/fig")
+    symlinkBundleExecutable("figterm", to: binDirectory.appendingPathComponent("figterm").path)
+    symlinkBundleExecutable("fig_get_shell", to: binDirectory.appendingPathComponent("fig_get_shell").path)
+    symlinkBundleExecutable("fig_callback", to: binDirectory.appendingPathComponent("fig_callback").path)
+    copyFigCLIExecutable(to: "~/.local/bin/fig")
+    copyFigCLIExecutable(to: "~/.fig/bin/fig")
 
     // Install launch agent that watches for Fig.app being trashed
     LaunchAgent.uninstallWatcher.addIfNotPresent()

@@ -21,13 +21,15 @@ pub mod util;
 
 use crate::{
     cli::{installation::InstallComponents, util::open_url},
-    daemon::daemon,
+    daemon::{daemon, get_daemon, InitSystem},
     util::shell::{Shell, When},
 };
 
 use anyhow::Result;
 use clap::{ArgEnum, IntoApp, Parser, Subcommand};
 use crossterm::style::Stylize;
+use fig_ipc::command::open_ui_element;
+use fig_proto::local::UiElement;
 use std::process::exit;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ArgEnum)]
@@ -109,7 +111,9 @@ pub enum CliRootCommands {
     /// Sync your latest dotfiles
     Sync,
     /// Get or set theme
-    Theme { theme: Option<String> },
+    Theme {
+        theme: Option<String>,
+    },
     /// Invite friends to Fig
     Invite,
     /// Tweet about Fig
@@ -137,6 +141,10 @@ pub enum CliRootCommands {
     GenerateFigSpec,
     #[clap(subcommand)]
     Internal(internal::InternalSubcommand),
+    Launch,
+    Quit,
+    Restart,
+    Alpha,
 }
 
 #[derive(Debug, Parser)]
@@ -236,6 +244,46 @@ impl Cli {
                 }
                 CliRootCommands::Internal(internal_subcommand) => {
                     internal_subcommand.execute().await
+                }
+                CliRootCommands::Launch => {
+                    let app_res = app::launch_fig();
+                    let daemon_res = match get_daemon() {
+                        Ok(d) => d.start(),
+                        Err(e) => Err(anyhow::anyhow!(e)),
+                    };
+                    if daemon_res.is_err() {
+                        println!("Error starting Fig daemon");
+                    }
+                    app_res.or(daemon_res)
+                }
+                CliRootCommands::Quit => {
+                    let app_res = app::quit_fig().await;
+                    let daemon_res = match get_daemon() {
+                        Ok(d) => d.stop(),
+                        Err(e) => Err(anyhow::anyhow!(e)),
+                    };
+                    if daemon_res.is_err() {
+                        println!("Error stopping Fig daemon");
+                    }
+                    app_res.or(daemon_res)
+                }
+                CliRootCommands::Restart => {
+                    let app_res = app::restart_fig().await;
+                    let daemon_res = match get_daemon() {
+                        Ok(d) => d.restart(),
+                        Err(e) => Err(anyhow::anyhow!(e)),
+                    };
+                    if daemon_res.is_err() {
+                        println!("Error restarting Fig daemon");
+                    }
+                    app_res.or(daemon_res)
+                }
+                CliRootCommands::Alpha => {
+                    let res = open_ui_element(UiElement::MissionControl).await;
+                    if res.is_ok() {
+                        println!("\n→ Opening dotfiles...\n");
+                    };
+                    res
                 }
             },
             // Root command

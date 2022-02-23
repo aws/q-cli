@@ -43,18 +43,26 @@ use tracing::{error, info, trace, Level};
 //         message
 //     );
 // }
-
-pub fn install_daemon() -> Result<()> {
+pub fn get_daemon() -> Result<LaunchService> {
     #[cfg(target_os = "macos")]
-    LaunchService::launchd()?.install()?;
+    {
+        return LaunchService::launchd();
+    }
     #[cfg(target_os = "linux")]
-    LaunchService::systemd()?.install()?;
+    {
+        return LaunchService::systemd();
+    }
     #[cfg(target_os = "windows")]
-    return Err(anyhow::anyhow!("Windows is not yet supported"));
+    {
+        return Err(anyhow::anyhow!("Windows is not yet supported"));
+    }
+
     #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
     return Err(anyhow::anyhow!("Unsupported platform"));
+}
 
-    Ok(())
+pub fn install_daemon() -> Result<()> {
+    get_daemon()?.install()
 }
 
 #[non_exhaustive]
@@ -104,7 +112,7 @@ impl InitSystem {
         }
     }
 
-    fn start_daemon(&self, path: impl AsRef<Path>) -> Result<()> {
+    pub fn start_daemon(&self, path: impl AsRef<Path>) -> Result<()> {
         match self {
             InitSystem::Launchd => {
                 let output = Command::new("launchctl")
@@ -306,20 +314,27 @@ impl LaunchService {
         })
     }
 
+    pub fn start(&self) -> Result<()> {
+        self.launch_system.start_daemon(self.path.as_path())
+    }
+
+    pub fn stop(&self) -> Result<()> {
+        self.launch_system.stop_daemon(self.path.as_path())
+    }
+
+    pub fn restart(&self) -> Result<()> {
+        self.launch_system.restart_daemon(self.path.as_path())
+    }
+
     pub fn install(&self) -> Result<()> {
         // Write to the definition file
         let mut file = std::fs::File::create(&self.path)?;
         file.write_all(self.data.as_bytes())?;
-
-        // Restart the daemon
-        self.launch_system.restart_daemon(self.path.as_path())?;
-
-        Ok(())
+        self.restart()
     }
 
     pub fn uninstall(&self) -> Result<()> {
-        // Stop the daemon
-        self.launch_system.stop_daemon(self.path.as_path()).ok();
+        self.stop().ok();
 
         // Remove the definition file
         std::fs::remove_file(&self.path)?;

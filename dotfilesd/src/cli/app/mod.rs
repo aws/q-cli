@@ -31,7 +31,7 @@ fn is_app_running() -> bool {
     }
 }
 
-fn launch_fig() -> Result<()> {
+pub fn launch_fig() -> Result<()> {
     if is_app_running() {
         println!("\n→ Fig is already running.\n");
         return Ok(());
@@ -43,6 +43,50 @@ fn launch_fig() -> Result<()> {
         .spawn()
         .context("\n→ Fig could not be launched.\n")?;
     Ok(())
+}
+
+pub async fn quit_fig() -> Result<()> {
+    if !is_app_running() {
+        println!("\n→ Fig is not running\n");
+        return Ok(());
+    }
+
+    println!("\n→ Quitting Fig...\n");
+    if quit_command().await.is_err() {
+        tokio::time::sleep(Duration::from_millis(500)).await;
+        let second_try = quit_command().await;
+        if second_try.is_err() {
+            if let Ok(info) = get_app_info() {
+                let pid = Regex::new(r"pid = (\S+)")
+                    .unwrap()
+                    .captures(&info)
+                    .map(|c| c.get(1))
+                    .flatten();
+                if let Some(pid) = pid {
+                    let success = Command::new("kill")
+                        .arg("-KILL")
+                        .arg(pid.as_str())
+                        .status()
+                        .map(|res| res.success());
+                    if let Ok(true) = success {
+                        return Ok(());
+                    }
+                }
+            }
+            println!("\nUnable to quit Fig\n");
+            return second_try;
+        }
+    }
+    Ok(())
+}
+
+pub async fn restart_fig() -> Result<()> {
+    if restart_command().await.is_err() {
+        launch_fig()
+    } else {
+        println!("\n→ Restarting Fig...\n");
+        Ok(())
+    }
 }
 
 impl AppSubcommand {
@@ -69,46 +113,8 @@ impl AppSubcommand {
                     .spawn()?
                     .wait()?;
             }
-            AppSubcommand::Restart => {
-                if restart_command().await.is_err() {
-                    launch_fig()?
-                } else {
-                    println!("\n→ Restarting Fig...\n");
-                }
-            }
-            AppSubcommand::Quit => {
-                if !is_app_running() {
-                    println!("\n→ Fig is not running\n");
-                    return Ok(());
-                }
-
-                println!("\n→ Quitting Fig...\n");
-                if quit_command().await.is_err() {
-                    tokio::time::sleep(Duration::from_millis(500)).await;
-                    let second_try = quit_command().await;
-                    if second_try.is_err() {
-                        if let Ok(info) = get_app_info() {
-                            let pid = Regex::new(r"pid = (\S+)")
-                                .unwrap()
-                                .captures(&info)
-                                .map(|c| c.get(1))
-                                .flatten();
-                            if let Some(pid) = pid {
-                                let success = Command::new("kill")
-                                    .arg("-KILL")
-                                    .arg(pid.as_str())
-                                    .status()
-                                    .map(|res| res.success());
-                                if let Ok(true) = success {
-                                    return Ok(());
-                                }
-                            }
-                        }
-                        println!("\nUnable to quit Fig\n");
-                        return second_try;
-                    }
-                }
-            }
+            AppSubcommand::Restart => restart_fig().await?,
+            AppSubcommand::Quit => quit_fig().await?,
             AppSubcommand::Launch => launch_fig()?,
             AppSubcommand::Running => {
                 println!("{}", if is_app_running() { "1" } else { "0" });
