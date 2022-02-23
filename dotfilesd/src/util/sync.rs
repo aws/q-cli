@@ -35,7 +35,7 @@ impl Sync for Settings {
 
         let settings = settings.get("settings").context("Could not get settings")?;
 
-        return Ok(serde_json::to_vec_pretty(settings)?);
+        Ok(serde_json::to_vec_pretty(settings)?)
     }
 }
 

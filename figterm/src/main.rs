@@ -156,8 +156,8 @@ where
     T: EventListener,
 {
     let in_docker_ssh = term.shell_state().in_docker | term.shell_state().in_ssh;
-    let shell_enabled =
-        [Some("bash"), Some("zsh"), Some("fish")].contains(&term.get_context().shell.as_deref());
+    let shell_enabled = [Some("bash"), Some("zsh"), Some("fish")]
+        .contains(&term.shell_state().get_context().shell.as_deref());
     let prexec = term.shell_state().preexec;
 
     trace!("Insertion lock path: {:?}", INSERTION_LOCK_PATH.as_ref());
