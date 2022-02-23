@@ -6,7 +6,8 @@ use aws_sdk_cognitoidentityprovider::{
         UserLambdaValidationException,
     },
     model::{AttributeType, AuthFlowType, ChallengeNameType},
-    Client, Config, Region, RetryConfig, SdkError,
+    types::SdkError,
+    Client, Config, Region, RetryConfig,
 };
 use aws_smithy_async::rt::sleep::TokioSleep;
 use base64::encode;
