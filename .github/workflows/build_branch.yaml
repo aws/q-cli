@@ -49,6 +49,8 @@ jobs:
         run: |
           brew install coreutils
           FILES=("dotfilesd" "rust-lib" "proto" "Cargo.toml" "Cargo.lock")
+          echo "Finding checksum of:"
+          find $FILES -type f | LC_ALL=C sort
           CHECKSUM=$(find $FILES -type f -exec sha256sum {} + | LC_ALL=C sort | sha256sum | cut -d' ' -f1)
           echo "::set-output name=checksum::$CHECKSUM"
           echo $CHECKSUM
@@ -108,6 +110,8 @@ jobs:
         run: |
           brew install coreutils
           FILES=("figterm" "rust-lib" "proto" "Cargo.toml" "Cargo.lock")
+          echo "Finding checksum of:"
+          find $FILES -type f | LC_ALL=C sort
           CHECKSUM=$(find $FILES -type f -exec sha256sum {} + | LC_ALL=C sort | sha256sum | cut -d' ' -f1)
           echo "::set-output name=checksum::$CHECKSUM"
           echo $CHECKSUM

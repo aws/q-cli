@@ -19,6 +19,7 @@ pub trait OnResize {
 /// Event Loop for sending info about terminal events.
 pub trait EventListener {
     fn send_event(&self, _event: Event<'_>, _shell_state: &ShellState) {}
+    fn log_level_event(&self, _level: Option<String>) {}
 }
 
 /// Placeholder implementation for tests.

@@ -162,24 +162,20 @@ pub struct ShellState {
     pub preexec: bool,
     /// Position of start of cmd
     pub cmd_cursor: Option<Point>,
-
     /// Fish suggestion color text
     pub fish_suggestion_color_text: Option<String>,
-
     /// Zsh autosuggestion color text
     pub zsh_autosuggestion_color_text: Option<String>,
-
     /// Fish suggestion color
     pub fish_suggestion_color: Option<fig_color::SuggestionColor>,
-
     /// Zsh autosuggestion color
     pub zsh_autosuggestion_color: Option<fig_color::SuggestionColor>,
-
     /// Color support
     pub color_support: Option<fig_color::ColorSupport>,
-
     /// Command info
     pub command_info: Option<CommandInfo>,
+    /// Fig Log Level
+    pub fig_log_level: Option<String>,
 }
 
 impl ShellState {
@@ -1750,8 +1746,9 @@ impl<T: EventListener> Handler for Term<T> {
     }
 
     fn shell(&mut self, shell: &str) {
+        let shell = shell.trim().to_owned();
         trace!("Fig shell: {:?}", shell);
-        self.shell_state.get_mut_context().shell = Some(shell.trim().to_owned());
+        self.shell_state.get_mut_context().shell = Some(shell);
     }
 
     fn fish_suggestion_color(&mut self, color: &str) {
@@ -1777,8 +1774,9 @@ impl<T: EventListener> Handler for Term<T> {
     }
 
     fn tty(&mut self, tty: &str) {
+        let tty = tty.trim().to_owned();
         trace!("Fig tty: {:?}", tty);
-        self.shell_state.get_mut_context().tty = Some(tty.trim().to_owned());
+        self.shell_state.get_mut_context().tty = Some(tty);
     }
 
     fn pid(&mut self, pid: i32) {
@@ -1787,8 +1785,9 @@ impl<T: EventListener> Handler for Term<T> {
     }
 
     fn session_id(&mut self, session_id: &str) {
+        let session_id = session_id.trim().to_owned();
         trace!("Fig session_id: {:?}", session_id);
-        self.shell_state.get_mut_context().session_id = Some(session_id.trim().to_owned());
+        self.shell_state.get_mut_context().session_id = Some(session_id);
     }
 
     fn docker(&mut self, in_docker: bool) {
@@ -1802,11 +1801,18 @@ impl<T: EventListener> Handler for Term<T> {
     }
 
     fn hostname(&mut self, hostname: &str) {
+        let hostname = hostname.trim().to_owned();
         trace!("Fig hostname: {:?}", hostname);
-        self.shell_state.get_mut_context().hostname = Some(hostname.trim().to_owned());
+        self.shell_state.get_mut_context().hostname = Some(hostname);
     }
 
-    fn log(&mut self, _: &str) {}
+    fn log(&mut self, fig_log_level: &str) {
+        let fig_log_level = fig_log_level.trim().to_owned();
+        trace!("Fig log: {:?}", fig_log_level);
+
+        self.shell_state.fig_log_level = Some(fig_log_level.clone());
+        self.event_proxy.log_level_event(Some(fig_log_level));
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

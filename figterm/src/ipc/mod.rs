@@ -10,12 +10,12 @@ use fig_proto::{figterm::FigtermMessage, local, prost::Message, FigProtobufEncod
 use anyhow::Result;
 use bytes::{Bytes, BytesMut};
 use flume::{bounded, Receiver, Sender};
-use log::{debug, error};
 use tokio::{
     fs::remove_file,
     io::{AsyncReadExt, AsyncWriteExt},
     net::{UnixListener, UnixStream},
 };
+use tracing::{debug, error};
 
 /// Get path to "$TMPDIR/fig.socket"
 pub fn get_socket_path() -> PathBuf {
