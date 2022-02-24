@@ -45,7 +45,7 @@ pub async fn sync(sync: impl Sync) -> Result<()> {
 
     let download = reqwest::Client::new()
         .get(sync.source()?)
-        .header("Authorization", format!("Bearer {}", token))
+        .bearer_auth(token)
         .send()
         .await?
         .error_for_status()?

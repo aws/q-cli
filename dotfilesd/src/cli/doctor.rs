@@ -21,10 +21,13 @@ use fig_proto::{
     daemon::diagnostic_response::{settings_watcher_status, websocket_status},
     local::DiagnosticsResponse,
 };
+use prost::Message;
 use regex::Regex;
 use semver::Version;
+use serde::{ser::SerializeMap, Serialize};
 use std::{
     borrow::Cow,
+    collections::HashMap,
     ffi::OsStr,
     fs::read_to_string,
     future::Future,
@@ -33,7 +36,10 @@ use std::{
     time::Duration,
 };
 use thiserror::Error;
-use tokio;
+use tokio::{
+    self,
+    io::{AsyncBufReadExt, AsyncWriteExt},
+};
 
 type DoctorFix = Box<dyn FnOnce() -> Result<()> + Send>;
 
@@ -239,7 +245,7 @@ struct FigtermSocketCheck;
 #[async_trait]
 impl DoctorCheck for FigtermSocketCheck {
     fn name(&self) -> Cow<'static, str> {
-        "Figterm socket exists".into()
+        "Figterm socket".into()
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
@@ -249,7 +255,7 @@ impl DoctorCheck for FigtermSocketCheck {
 
         check_file_exists(&socket_path)?;
 
-        let conn = match connect_timeout(&socket_path, Duration::from_secs(2)).await {
+        let mut conn = match connect_timeout(&socket_path, Duration::from_secs(2)).await {
             Ok(connection) => connection,
             Err(e) => return Err(anyhow!("Socket exists but could not connect: {}", e).into()),
         };
@@ -258,28 +264,89 @@ impl DoctorCheck for FigtermSocketCheck {
 
         let write_handle = tokio::spawn(async move {
             conn.writable().await?;
-            tokio::time::sleep(Duration::from_secs(1)).await;
-            conn.try_write(b"Testing figterm...\n")
-                .map_err(|e| anyhow!(e))
+            tokio::time::sleep(Duration::from_secs_f32(0.2)).await;
+
+            let message = fig_proto::figterm::FigtermMessage {
+                command: Some(
+                    fig_proto::figterm::figterm_message::Command::InsertTextCommand(
+                        fig_proto::figterm::InsertTextCommand {
+                            insertion: Some("Testing figterm...\n".into()),
+                            deletion: None,
+                            offset: None,
+                            immediate: Some(true),
+                        },
+                    ),
+                ),
+            };
+
+            let buf = message.encode_to_vec();
+
+            conn.write(&buf).await
         });
 
         let mut buffer = String::new();
 
-        std::io::stdin()
-            .read_line(&mut buffer)
-            .context("Failed reading from terminal")?;
+        let mut stdin = tokio::io::BufReader::new(tokio::io::stdin());
+
+        let timeout =
+            tokio::time::timeout(Duration::from_secs_f32(1.2), stdin.read_line(&mut buffer));
+
+        let timeout_result: Result<()> = match timeout.await {
+            Ok(Ok(_)) => {
+                if buffer.trim() == "Testing figterm..." {
+                    Ok(())
+                } else {
+                    Err(anyhow!(
+                        "Figterm socket did not read buffer correctly: {:?}",
+                        buffer
+                    ))
+                }
+            }
+            Ok(Err(err)) => Err(anyhow!("Figterm socket err: {}", err)),
+            Err(_) => Err(anyhow!("Figterm socket write timed out after 1s")),
+        };
 
         disable_raw_mode().context("Failed to disable raw mode")?;
 
-        if write_handle.await.is_err() || !buffer.contains("Testing figterm...") {
-            return Err(anyhow!("Socket exists but is not writable.").into());
+        match write_handle.await {
+            Ok(Ok(_)) => {}
+            Ok(Err(e)) => return Err(anyhow!("Failed to write to figterm socket: {}", e).into()),
+            Err(e) => return Err(anyhow!("Failed to write to figterm socket: {}", e).into()),
+        }
+
+        timeout_result?;
+
+        Ok(())
+    }
+}
+
+/// Checks that the insertion lock doesn't exist.
+struct InsertionLockCheck;
+
+#[async_trait]
+impl DoctorCheck for InsertionLockCheck {
+    fn name(&self) -> Cow<'static, str> {
+        "Insertion lock does not exist".into()
+    }
+
+    async fn check(&self, _: &()) -> Result<(), DoctorError> {
+        let insetion_lock_path = fig_dir()
+            .context("Could not get fig dir")?
+            .join("insertion-lock");
+
+        if insetion_lock_path.exists() {
+            return Err(DoctorError::Error {
+                reason: "Insertion lock exists".into(),
+                info: vec![],
+                fix: command_fix(vec!["rm".into(), insetion_lock_path.into_os_string()]),
+            });
         }
 
         Ok(())
     }
 }
 
-struct DaemonCheck {}
+struct DaemonCheck;
 
 #[async_trait]
 impl DoctorCheck for DaemonCheck {
@@ -978,6 +1045,28 @@ impl DoctorCheck for LoginStatusCheck {
     }
 }
 
+#[derive(Debug, Clone)]
+struct SegmentEvent {
+    user_id: String,
+    event: String,
+    properties: HashMap<String, String>,
+}
+
+impl Serialize for SegmentEvent {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let mut state = serializer.serialize_map(Some(2 + self.properties.len()))?;
+        state.serialize_entry("userId", &self.user_id)?;
+        state.serialize_entry("event", &self.event)?;
+        for (key, value) in &self.properties {
+            state.serialize_entry(&format!("prop_{}", key), value)?;
+        }
+        state.end()
+    }
+}
+
 async fn run_checks_with_context<T, Fut>(
     header: impl AsRef<str>,
     checks: Vec<&dyn DoctorCheck<T>>,
@@ -990,12 +1079,45 @@ where
     println!("{}", header.as_ref().dark_grey());
     let mut context = get_context().await?;
     for check in checks {
-        let name = check.name();
+        let name: String = check.name().into();
         if !check.should_check(&context) {
             continue;
         }
+
         let result = check.check(&context).await;
+
         print_status_result(&name, &result);
+
+        if let Err(err) = &result {
+            if let Ok(uuid) = fig_auth::get_default("uuid") {
+                let mut properties = HashMap::new();
+                properties.insert("check".into(), name.clone());
+                properties.insert("cli_version".into(), env!("CARGO_PKG_VERSION").into());
+                properties.insert(
+                    "email".into(),
+                    fig_auth::get_email().unwrap_or_else(|| "<unknown>".into()),
+                );
+
+                match err {
+                    DoctorError::Warning(info) | DoctorError::Error { reason: info, .. } => {
+                        properties.insert("info".into(), info.to_string());
+                    }
+                }
+
+                reqwest::Client::new()
+                    .post("https://tel.withfig.com/track")
+                    .header("Content-Type", "application/json")
+                    .json(&SegmentEvent {
+                        user_id: uuid,
+                        event: "Doctor Error".into(),
+                        properties,
+                    })
+                    .send()
+                    .await
+                    .ok();
+            }
+        }
+
         if let Err(DoctorError::Error {
             reason,
             info: _,
@@ -1057,6 +1179,7 @@ pub async fn doctor_cli() -> Result<()> {
                 &FigSocketCheck {},
                 &DaemonCheck {},
                 &FigtermSocketCheck {},
+                &InsertionLockCheck {},
             ],
         )
         .await?;

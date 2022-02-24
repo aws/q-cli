@@ -410,6 +410,7 @@ struct FigDetails {
     psudoterminal_path: String,
     securekeyboard: String,
     securekeyboard_path: String,
+    insertion_lock: Option<String>,
 }
 
 impl FigDetails {
@@ -427,6 +428,7 @@ impl FigDetails {
             psudoterminal_path: diagnostics.psudoterminal_path.clone(),
             securekeyboard: diagnostics.securekeyboard.clone(),
             securekeyboard_path: diagnostics.securekeyboard_path.clone(),
+            insertion_lock: None,
         }
     }
 }

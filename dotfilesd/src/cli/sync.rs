@@ -1,11 +1,12 @@
 //! Sync of dotfiles
 
-use crate::util::shell::Shell;
+use crate::util::{settings, shell::Shell};
 
 use anyhow::{Context, Result};
 use fig_auth::{get_email, get_token};
 use serde::{Deserialize, Serialize};
 use tokio::try_join;
+use tracing::{error, info};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct DotfilesSourceRequest {
@@ -30,7 +31,7 @@ async fn sync_file(shell: &Shell, sync_when: SyncWhen) -> Result<()> {
 
     let download = reqwest::Client::new()
         .get(shell.get_remote_source()?)
-        .header("Authorization", format!("Bearer {}", token))
+        .bearer_auth(token)
         .body(body)
         .send()
         .await?
@@ -68,12 +69,40 @@ pub enum SyncWhen {
     Later,
 }
 
-pub async fn sync_all_files(sync_when: SyncWhen) -> Result<()> {
+pub async fn sync_all_shells(sync_when: SyncWhen) -> Result<()> {
     try_join!(
         sync_file(&Shell::Bash, sync_when),
         sync_file(&Shell::Zsh, sync_when),
         sync_file(&Shell::Fish, sync_when),
     )?;
+
+    Ok(())
+}
+
+pub async fn sync_based_on_settings() -> Result<()> {
+    let sync_when = match settings::get_value("dotfiles.syncImmediately") {
+        Ok(Some(serde_json::Value::Bool(false))) => SyncWhen::Later,
+        Ok(_) => SyncWhen::Immediately,
+        Err(err) => {
+            error!("Could not get dotfiles.syncImmediately: {}", err);
+            SyncWhen::Immediately
+        }
+    };
+
+    match sync_all_shells(sync_when).await {
+        Ok(()) => match sync_when {
+            SyncWhen::Immediately => {
+                notify_terminals()?;
+                info!("Dotfiles updated");
+            }
+            SyncWhen::Later => {
+                info!("New dotfiles available");
+            }
+        },
+        Err(err) => {
+            error!("Could not sync dotfiles: {:?}", err);
+        }
+    };
 
     Ok(())
 }
@@ -97,7 +126,7 @@ pub fn notify_terminals() -> Result<()> {
 
 /// Download the lastest dotfiles
 pub async fn sync_cli() -> Result<()> {
-    sync_all_files(SyncWhen::Immediately).await?;
+    sync_all_shells(SyncWhen::Immediately).await?;
     notify_terminals()?;
     Ok(())
 }

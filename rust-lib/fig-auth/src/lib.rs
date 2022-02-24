@@ -9,7 +9,7 @@ use std::{ffi::OsStr, process::Command};
 
 pub const CLIENT_ID: &str = "hkinciohdp1i7h0imdk63a4bv";
 
-fn get_default(key: impl AsRef<OsStr>) -> Result<String> {
+pub fn get_default(key: impl AsRef<OsStr>) -> Result<String> {
     let output = Command::new("defaults")
         .arg("read")
         .arg("com.mschrage.fig")

@@ -21,7 +21,7 @@ pub mod util;
 
 use crate::{
     cli::{installation::InstallComponents, util::open_url},
-    daemon::{daemon, get_daemon, InitSystem},
+    daemon::{daemon, get_daemon},
     util::shell::{Shell, When},
 };
 

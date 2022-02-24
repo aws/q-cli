@@ -16,7 +16,7 @@ use fig_ipc::{
 use fig_proto::daemon::diagnostic_response::{
     settings_watcher_status, websocket_status, SettingsWatcherStatus, WebsocketStatus,
 };
-use futures::StreamExt;
+use futures::{SinkExt, StreamExt};
 use notify::{watcher, RecursiveMode, Watcher};
 use parking_lot::RwLock;
 use std::{
@@ -32,7 +32,8 @@ use tokio::{
     net::{UnixListener, UnixStream},
     select,
 };
-use tracing::{error, info, trace, Level};
+use tokio_tungstenite::tungstenite;
+use tracing::{debug, error, info, trace, Level};
 
 // fn daemon_log(message: &str) {
 //     println!(
@@ -46,11 +47,11 @@ use tracing::{error, info, trace, Level};
 pub fn get_daemon() -> Result<LaunchService> {
     #[cfg(target_os = "macos")]
     {
-        return LaunchService::launchd();
+        LaunchService::launchd()
     }
     #[cfg(target_os = "linux")]
     {
-        return LaunchService::systemd();
+        LaunchService::systemd()
     }
     #[cfg(target_os = "windows")]
     {
@@ -517,6 +518,8 @@ pub async fn daemon() -> Result<()> {
         .await
         .context("Could not connect to websocket")?;
 
+    let mut ping_interval = tokio::time::interval(Duration::from_secs(60));
+
     let unix_socket_path = get_daemon_socket_path();
 
     // Create the unix socket directory if it doesn't exist
@@ -539,6 +542,8 @@ pub async fn daemon() -> Result<()> {
         error!("Could not spawn settings watcher: {}", error);
     }
 
+    crate::cli::sync::sync_based_on_settings().await?;
+
     info!("Daemon is now running");
 
     // Select loop
@@ -560,6 +565,10 @@ pub async fn daemon() -> Result<()> {
                     }
                 }
             }
+            _ = ping_interval.tick() => {
+                debug!("Sending ping to websocket");
+                websocket_stream.send(tungstenite::Message::Ping(vec![])).await?;
+            }
             _ = update_interval.tick() => {
                 #[cfg(feature = "auto-update")]
                 {
@@ -567,7 +576,7 @@ pub async fn daemon() -> Result<()> {
                     match update(UpdateType::NoProgress)? {
                         UpdateStatus::UpToDate => {}
                         UpdateStatus::Updated(release) => {
-                            infor!("Updated to {}", release.version);
+                            info!("Updated to {}", release.version);
                             info!("Quitting...");
                             return Ok(());
                         }

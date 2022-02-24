@@ -36,19 +36,22 @@ pub struct SettingsArgs {
 
 impl SettingsArgs {
     pub async fn execute(&self) -> Result<()> {
-        let print_connection_error = || {
-            println!(
-                "\n{}\nFig might not be running, to launch Fig run: {}\n",
-                "Unable to connect to Fig".bold(),
-                "fig launch".magenta()
-            )
-        };
+        macro_rules! print_connection_error {
+            () => {
+                println!(
+                    "\n{}\nFig might not be running, to launch Fig run: {}\n",
+                    "Unable to connect to Fig".bold(),
+                    "fig launch".magenta()
+                )
+            };
+        }
+
         match self.cmd {
             Some(SettingsSubcommands::Init) => {
                 let res = restart_settings_listener().await;
 
                 if res.is_err() {
-                    print_connection_error();
+                    print_connection_error!();
                     return res;
                 } else {
                     println!("\nSettings listener restarted.\n");
@@ -105,7 +108,7 @@ impl SettingsArgs {
                 None => {
                     let res = open_ui_element(UiElement::Settings).await;
                     if res.is_err() {
-                        print_connection_error();
+                        print_connection_error!();
                         return res;
                     }
                 }

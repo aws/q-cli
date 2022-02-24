@@ -2,7 +2,7 @@
 
 use crate::cli::util::dialoguer_theme;
 
-use anyhow::Result;
+use anyhow::{bail, Result};
 use crossterm::style::Stylize;
 use fig_auth::cognito::{
     get_client, Credentials, SignInConfirmError, SignInError, SignInInput, SignUpInput,
@@ -102,20 +102,9 @@ pub async fn logout_cli() -> Result<()> {
 }
 
 pub async fn user_info_cli() -> Result<()> {
-    let creds = Credentials::load_credentials()?;
-
-    match creds.get_email() {
-        Some(email) => {
-            if creds.get_access_token().is_some()
-                && creds.get_id_token().is_some()
-                && creds.get_refresh_token().is_some()
-            {
-                println!("Logged in as {}", email);
-            } else {
-                println!("Not logged in");
-            }
-        }
-        None => println!("Not logged in"),
+    match fig_auth::get_email() {
+        Some(email) => println!("Logged in as {}", email),
+        None => bail!("Not logged in"),
     }
 
     Ok(())

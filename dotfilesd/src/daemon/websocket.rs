@@ -1,15 +1,10 @@
-use crate::{
-    cli::sync::{self, notify_terminals, SyncWhen},
-    util::settings::Settings,
-};
-
 use anyhow::{Context, Result};
 use fig_auth::{get_email, get_token};
 use serde::{Deserialize, Serialize};
 use std::ops::ControlFlow;
 use tokio::net::TcpStream;
 use tokio_tungstenite::{tungstenite::Message, MaybeTlsStream, WebSocketStream};
-use tracing::{error, info, warn};
+use tracing::{debug, error, info, warn};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -63,7 +58,7 @@ pub async fn process_websocket(
         Some(next) => match next {
             Ok(websocket_message) => match websocket_message {
                 Message::Text(text) => {
-                    println!("{}", text);
+                    debug!("message: {:?}", text);
 
                     let websocket_message_result =
                         serde_json::from_str::<FigWebsocketMessage>(text);
@@ -71,40 +66,7 @@ pub async fn process_websocket(
                     match websocket_message_result {
                         Ok(websocket_message) => match websocket_message.websocket_message_type {
                             FigWebsocketMessageType::DotfilesUpdated => {
-                                let sync_when = if let Ok(settings) = Settings::load() {
-                                    settings
-                                        .get_setting()
-                                        .map(|setting| {
-                                            if setting
-                                                .get("dotfiles.syncImmediately")
-                                                .map(|val| val.as_bool())
-                                                .flatten()
-                                                == Some(true)
-                                            {
-                                                SyncWhen::Immediately
-                                            } else {
-                                                SyncWhen::Later
-                                            }
-                                        })
-                                        .unwrap_or(SyncWhen::Later)
-                                } else {
-                                    SyncWhen::Later
-                                };
-
-                                match sync::sync_all_files(sync_when).await {
-                                    Ok(()) => match sync_when {
-                                        SyncWhen::Immediately => {
-                                            notify_terminals()?;
-                                            info!("Dotfiles updated");
-                                        }
-                                        SyncWhen::Later => {
-                                            info!("New dotfiles available");
-                                        }
-                                    },
-                                    Err(err) => {
-                                        error!("Could not sync dotfiles: {:?}", err);
-                                    }
-                                }
+                                crate::cli::sync::sync_based_on_settings().await?;
                             }
                             FigWebsocketMessageType::SettingsUpdated => {
                                 // crate::util::sync::sync(crate::util::sync::Settings {}).await?;
@@ -116,6 +78,7 @@ pub async fn process_websocket(
                             error!("Could not parse json message: {:?}", e);
                         }
                     }
+                    Ok(ControlFlow::Continue(()))
                 }
                 Message::Close(close_frame) => {
                     match close_frame {
@@ -125,20 +88,29 @@ pub async fn process_websocket(
                         None => info!("Websocket closed"),
                     }
 
-                    return Ok(ControlFlow::Break(()));
+                    Ok(ControlFlow::Break(()))
                 }
-                _ => {}
+                Message::Ping(_) => {
+                    debug!("Websocket ping");
+                    Ok(ControlFlow::Continue(()))
+                }
+                Message::Pong(_) => {
+                    debug!("Websocket pong");
+                    Ok(ControlFlow::Continue(()))
+                }
+                unknown_message => {
+                    debug!("Unknown message: {:?}", unknown_message);
+                    Ok(ControlFlow::Continue(()))
+                }
             },
             Err(err) => {
                 error!("Websock next error: {}", err);
-                return Ok(ControlFlow::Break(()));
+                Ok(ControlFlow::Break(()))
             }
         },
         None => {
             info!("Websocket closed");
-            return Ok(ControlFlow::Break(()));
+            Ok(ControlFlow::Break(()))
         }
     }
-
-    Ok(ControlFlow::Continue(()))
 }

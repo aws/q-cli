@@ -13,7 +13,7 @@ pub async fn invite_cli() -> Result<()> {
                 "https://api.fig.io/waitlist/get-referral-link-from-email/{}",
                 email
             ))
-            .header("Authorization", format!("Bearer {}", token))
+            .bearer_auth(token)
             .send()
             .await?
             .error_for_status();
