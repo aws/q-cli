@@ -1,4 +1,4 @@
-use crate::util::{fig_dir, glob, glob_dir, settings};
+use crate::util::{fig_dir, glob, glob_dir};
 
 use anyhow::{anyhow, Context, Result};
 use clap::{ArgEnum, Subcommand};
@@ -151,10 +151,10 @@ impl DebugSubcommand {
                 }
             }
             DebugSubcommand::Logs { files } => {
-                settings::set_value("developer.logging", json!(true))?;
+                fig_settings::set_value("developer.logging", json!(true))?;
 
                 ctrlc::set_handler(|| {
-                    let code = match settings::set_value("developer.logging", json!(false)) {
+                    let code = match fig_settings::set_value("developer.logging", json!(false)) {
                         Ok(_) => 0,
                         Err(_) => 1,
                     };

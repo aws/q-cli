@@ -1,4 +1,4 @@
-use crate::{cli::debug::get_app_info, util::settings};
+use crate::cli::debug::get_app_info;
 
 use anyhow::{Context, Result};
 use clap::Subcommand;
@@ -122,7 +122,7 @@ impl AppSubcommand {
             AppSubcommand::SetPath => {
                 println!("\nSetting $PATH variable in Fig pseudo-terminal...\n");
                 let path = std::env::var("PATH")?;
-                let result = settings::set_value("pty.path", json!(path));
+                let result = fig_settings::set_value("pty.path", json!(path));
 
                 if result.is_err() {
                     println!("{} Unable to load settings file", "Error:".red());

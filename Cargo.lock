@@ -851,6 +851,7 @@ dependencies = [
  "fig-auth",
  "fig-ipc",
  "fig-proto",
+ "fig-settings",
  "flume",
  "futures",
  "git2",
@@ -1000,6 +1001,17 @@ dependencies = [
  "bytes",
  "prost",
  "prost-build",
+]
+
+[[package]]
+name = "fig-settings"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "directories",
+ "fig-auth",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

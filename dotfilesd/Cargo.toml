@@ -21,6 +21,7 @@ directories = "4.0.1"
 fig-auth = { path = "../rust-lib/fig-auth" }
 fig-ipc = { path = "../rust-lib/fig-ipc" }
 fig-proto = { path = "../rust-lib/fig-proto" }
+fig-settings = { path = "../rust-lib/fig-settings" }
 flume = "0.10.11"
 futures = "0.3.21"
 git2 = { version = "0.13.25", features = ["vendored-openssl", "vendored-libgit2"] }
@@ -43,7 +44,7 @@ serde_with = "1.12.0"
 sha2 = "0.10.1"
 tempfile = "3.3.0"
 thiserror = "1.0.30"
-time = { version = "0.3.6", features = ["serde-human-readable", "local-offset", "formatting", "macros"] }
+time = { version = "0.3.6", features = ["serde-human-readable", "local-offset", "formatting", "macros", "serde-well-known"] }
 tokio = { version = "1.16.1", features = ["full"] }
 tokio-tungstenite = { version = "0.17.0", features = ["rustls-tls-native-roots"] }
 toml = "0.5.8"

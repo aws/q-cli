@@ -1,0 +1,11 @@
+[package]
+name = "fig-settings"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.55"
+directories = "4.0.1"
+fig-auth = { path = "../fig-auth" }
+serde = "1.0.136"
+serde_json = "1.0.79"

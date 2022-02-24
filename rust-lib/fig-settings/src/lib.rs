@@ -2,11 +2,11 @@ use anyhow::{Context, Result};
 use directories::BaseDirs;
 use std::{fs, path::PathBuf};
 
-pub struct Settings {
+pub struct LocalSettings {
     inner: serde_json::Value,
 }
 
-impl Settings {
+impl LocalSettings {
     pub fn path() -> Result<PathBuf> {
         let base_dirs = BaseDirs::new().context("Failed to get base dirs")?;
 
@@ -48,19 +48,32 @@ impl Settings {
         Ok(())
     }
 
-    pub fn set(&mut self, key: impl Into<String>, value: serde_json::Value) -> Result<()> {
+    pub fn set(
+        &mut self,
+        key: impl Into<String>,
+        value: impl Into<serde_json::Value>,
+    ) -> Result<()> {
         self.inner
             .as_object_mut()
             .ok_or_else(|| anyhow::anyhow!("Settings is not an object"))?
-            .insert(key.into(), value);
+            .insert(key.into(), value.into());
 
         Ok(())
     }
 
-    pub fn get(&self, key: impl Into<String>) -> Option<&serde_json::Value> {
+    pub fn get(&self, key: impl AsRef<str>) -> Option<&serde_json::Value> {
         self.inner
             .get("settings")
-            .and_then(|settings| settings.get(key.into()))
+            .and_then(|settings| settings.get(key.as_ref()))
+    }
+
+    pub fn remove(&mut self, key: impl AsRef<str>) -> Result<()> {
+        self.inner
+            .as_object_mut()
+            .ok_or_else(|| anyhow::anyhow!("Settings is not an object"))?
+            .remove(key.as_ref());
+
+        Ok(())
     }
 
     pub fn get_mut(&mut self, key: impl Into<String>) -> Option<&mut serde_json::Value> {
@@ -78,14 +91,21 @@ impl Settings {
     }
 }
 
-pub fn set_value(key: impl Into<String>, value: serde_json::Value) -> Result<()> {
-    let mut settings = Settings::load()?;
+pub fn set_value(key: impl Into<String>, value: impl Into<serde_json::Value>) -> Result<()> {
+    let mut settings = LocalSettings::load()?;
     settings.set(key, value)?;
     settings.save()?;
     Ok(())
 }
 
-pub fn get_value(key: impl Into<String>) -> Result<Option<serde_json::Value>> {
-    let settings = Settings::load()?;
+pub fn get_value(key: impl AsRef<str>) -> Result<Option<serde_json::Value>> {
+    let settings = LocalSettings::load()?;
     Ok(settings.get(key).cloned())
+}
+
+pub fn remove_value(key: impl AsRef<str>) -> Result<()> {
+    let mut settings = LocalSettings::load()?;
+    settings.remove(key)?;
+    settings.save()?;
+    Ok(())
 }

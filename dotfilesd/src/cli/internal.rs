@@ -5,8 +5,6 @@ use clap::Subcommand;
 use crossterm::style::Stylize;
 use serde_json::json;
 
-use crate::util::settings;
-
 #[derive(Debug, Subcommand)]
 #[clap(hide = true, alias = "_")]
 pub enum InternalSubcommand {
@@ -43,7 +41,7 @@ pub async fn prompt_dotfiles_changed() -> Result<()> {
     };
 
     if file_content.contains("true") {
-        let source_immediately = settings::get_value("dotfiles.sourceImmediately")?
+        let source_immediately = fig_settings::get_value("dotfiles.sourceImmediately")?
             .map(|s| s.as_str().map(|s| s.to_owned()))
             .flatten();
 
@@ -117,7 +115,10 @@ pub async fn prompt_dotfiles_changed() -> Result<()> {
 
                                 exit_code = 0;
 
-                                settings::set_value("dotfiles.sourceImmediately", json!("always"))?;
+                                fig_settings::set_value(
+                                    "dotfiles.sourceImmediately",
+                                    json!("always"),
+                                )?;
 
                                 break;
                             }
@@ -132,7 +133,10 @@ pub async fn prompt_dotfiles_changed() -> Result<()> {
                                     crossterm::cursor::MoveToNextLine(1),
                                 )?;
 
-                                settings::set_value("dotfiles.sourceImmediately", json!("never"))?;
+                                fig_settings::set_value(
+                                    "dotfiles.sourceImmediately",
+                                    json!("never"),
+                                )?;
 
                                 break;
                             }

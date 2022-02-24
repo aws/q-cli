@@ -1,23 +1,19 @@
 pub mod launchd_plist;
+pub mod settings_watcher;
 pub mod systemd_unit;
 pub mod websocket;
 
-use crate::{
-    daemon::{
-        launchd_plist::LaunchdPlist, systemd_unit::SystemdUnit, websocket::process_websocket,
-    },
-    util::settings::Settings,
+use crate::daemon::{
+    launchd_plist::LaunchdPlist, settings_watcher::spawn_settings_watcher,
+    systemd_unit::SystemdUnit, websocket::process_websocket,
 };
 
 use anyhow::{anyhow, Context, Result};
-use fig_ipc::{
-    daemon::get_daemon_socket_path, hook::send_settings_changed, recv_message, send_message,
-};
+use fig_ipc::{daemon::get_daemon_socket_path, recv_message, send_message};
 use fig_proto::daemon::diagnostic_response::{
     settings_watcher_status, websocket_status, SettingsWatcherStatus, WebsocketStatus,
 };
 use futures::{SinkExt, StreamExt};
-use notify::{watcher, RecursiveMode, Watcher};
 use parking_lot::RwLock;
 use std::{
     io::Write,
@@ -344,66 +340,11 @@ impl LaunchService {
     }
 }
 
-struct DaemonStatus {
+pub struct DaemonStatus {
     /// The time the daemon was started as a u64 timestamp in seconds since the epoch
     time_started: u64,
     settings_watcher_status: Result<()>,
     websocket_status: Result<()>,
-}
-
-async fn spawn_settings_watcher(daemon_status: Arc<RwLock<DaemonStatus>>) -> Result<()> {
-    // We need to spawn both a thread and a tokio task since the notify library does not
-    // currently support async, this should be improved in the future, but currently this works fine
-
-    let settings_path = Settings::path()?;
-
-    let (settings_watcher_tx, settings_watcher_rx) = std::sync::mpsc::channel();
-    let mut watcher = watcher(settings_watcher_tx, Duration::from_secs(1))?;
-
-    let (forward_tx, forward_rx) = flume::unbounded();
-
-    tokio::task::spawn(async move {
-        loop {
-            match forward_rx.recv_async().await {
-                Ok(_) => match send_settings_changed().await {
-                    Ok(_) => {
-                        info!("Settings changed");
-                        daemon_status.write().settings_watcher_status = Ok(());
-                    }
-                    Err(err) => {
-                        error!("Could not send settings changed: {}", err);
-                        daemon_status.write().settings_watcher_status = Err(err);
-                    }
-                },
-                Err(err) => {
-                    error!("Error while receiving settings: {}", err);
-                    daemon_status.write().settings_watcher_status = Err(anyhow!(err));
-                }
-            }
-        }
-    });
-
-    std::thread::spawn(
-        move || match watcher.watch(&settings_path, RecursiveMode::NonRecursive) {
-            Ok(()) => loop {
-                match settings_watcher_rx.recv() {
-                    Ok(event) => {
-                        if let Err(e) = forward_tx.send(event) {
-                            error!("Error forwarding settings event: {}", e);
-                        }
-                    }
-                    Err(err) => {
-                        error!("Settings watcher rx: {}", err);
-                    }
-                }
-            },
-            Err(err) => {
-                error!("Error while watching settings: {}", err);
-            }
-        },
-    );
-
-    Ok(())
 }
 
 async fn spawn_unix_handler(
@@ -538,11 +479,12 @@ pub async fn daemon() -> Result<()> {
     let unix_socket =
         UnixListener::bind(&unix_socket_path).context("Could not connect to unix socket")?;
 
+    crate::cli::sync::sync_based_on_settings().await?;
+
+    // Spawn settings watcher
     if let Err(error) = spawn_settings_watcher(daemon_status.clone()).await {
         error!("Could not spawn settings watcher: {}", error);
     }
-
-    crate::cli::sync::sync_based_on_settings().await?;
 
     info!("Daemon is now running");
 

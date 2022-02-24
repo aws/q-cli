@@ -1,6 +1,6 @@
 use crate::{
     cli::{util::OSVersion, OutputFormat},
-    util::{glob, glob_dir, home_dir, settings::Settings},
+    util::{glob, glob_dir, home_dir},
 };
 
 use anyhow::{Context, Result};
@@ -418,7 +418,7 @@ impl FigDetails {
         FigDetails {
             path_to_bundle: diagnostics.path_to_bundle.clone(),
             autocomplete: diagnostics.autocomplete,
-            settings_json: Settings::load().is_ok(),
+            settings_json: fig_settings::LocalSettings::load().is_ok(),
             accessibility: diagnostics.accessibility.clone(),
             num_specs: get_local_specs().map_or(0, |v| v.len()),
             symlinked: diagnostics.symlinked.clone(),

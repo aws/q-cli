@@ -1,4 +1,4 @@
-use crate::util::{home_dir, settings};
+use crate::util::home_dir;
 
 use anyhow::Result;
 use crossterm::style::{Color, Stylize};
@@ -30,7 +30,7 @@ pub fn theme_cli(theme_str: Option<String>) -> Result<()> {
             match fs::read_to_string(path) {
                 Ok(theme_file) => {
                     let theme: Theme = serde_json::from_str(&theme_file)?;
-                    settings::set_value("autocomplete.theme", json!(theme_str))?;
+                    fig_settings::set_value("autocomplete.theme", json!(theme_str))?;
                     let author = theme.author;
 
                     println!();
@@ -69,7 +69,7 @@ pub fn theme_cli(theme_str: Option<String>) -> Result<()> {
                 }
                 Err(_) => {
                     if BUILT_IN_THEMES.contains(&theme_str.as_ref()) {
-                        settings::set_value("autocomplete.theme", json!(theme_str))?;
+                        fig_settings::set_value("autocomplete.theme", json!(theme_str))?;
                         println!("› Switching to theme '{}'", theme_str.bold());
                         Ok(())
                     } else {
@@ -79,7 +79,8 @@ pub fn theme_cli(theme_str: Option<String>) -> Result<()> {
             }
         }
         None => {
-            let theme = settings::get_value("autocomplete.theme")?.unwrap_or_else(|| json!("dark"));
+            let theme =
+                fig_settings::get_value("autocomplete.theme")?.unwrap_or_else(|| json!("dark"));
             println!("{}", serde_json::to_string_pretty(&theme)?);
             Ok(())
         }

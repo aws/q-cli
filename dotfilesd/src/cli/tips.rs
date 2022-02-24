@@ -1,7 +1,6 @@
-use crate::util::settings;
-use crate::util::{project_dir, settings::Settings};
+use crate::util::project_dir;
 use anyhow::Context;
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use clap::Subcommand;
 use crossterm::style::Stylize;
 use semver::Version;
@@ -164,11 +163,11 @@ impl TipsSubcommand {
     pub async fn execute(&self) -> Result<()> {
         match self {
             TipsSubcommand::Enable => {
-                settings::set_value("cli.tips.disabled", json!(false))?;
+                fig_settings::set_value("cli.tips.disabled", json!(false))?;
                 println!("\n→ Fig Tips enabled...\n");
             }
             TipsSubcommand::Disable => {
-                settings::set_value("cli.tips.disabled", json!(true))?;
+                fig_settings::set_value("cli.tips.disabled", json!(true))?;
                 println!("\n→ Fig Tips disabled...\n");
             }
             TipsSubcommand::Reset => {
@@ -182,47 +181,41 @@ impl TipsSubcommand {
                 }
                 tips.save()?;
             }
-            TipsSubcommand::Prompt => {
-                let mut settings = Settings::load()?;
-                let settings_map = settings
-                    .get_mut_settings()
-                    .ok_or(anyhow!("Could not load settings"))?;
-                match settings_map.get("cli.tips.disabled") {
-                    Some(json!(false)) => {}
-                    _ => {
-                        let mut tips = Tips::load()?;
-                        let unsent = tips
-                            .queue
-                            .iter_mut()
-                            .filter(|x| !x.sent)
-                            .max_by(|a, b| a.priority.cmp(&b.priority));
-                        let now = time::OffsetDateTime::now_utc().unix_timestamp();
-                        if let Some(tip) = unsent {
-                            if now - tips.time_last_sent > tip.wait_time {
-                                println!(
-                                    "\n{}\n\n{} fig tips disable\n{} fig issue\n",
-                                    tip.text,
-                                    "Disable Getting Started Tips:".underlined(),
-                                    "Report a bug:".underlined(),
-                                );
-                                tip.sent = true;
-                                tips.time_last_sent = now;
-                            }
-                        } else {
-                            let changelog: Changelog =
-                                serde_json::from_str(include_str!("../../../changelog.json"))?;
-                            if Version::parse(&tips.last_changelog)?
-                                < Version::parse(&changelog.version)?
-                            {
-                                println!("{}", changelog.notes);
-                                tips.last_changelog = changelog.version;
-                                tips.time_last_sent = now;
-                            }
+            TipsSubcommand::Prompt => match fig_settings::get_value("cli.tips.disabled")? {
+                Some(json!(false)) => {}
+                _ => {
+                    let mut tips = Tips::load()?;
+                    let unsent = tips
+                        .queue
+                        .iter_mut()
+                        .filter(|x| !x.sent)
+                        .max_by(|a, b| a.priority.cmp(&b.priority));
+                    let now = time::OffsetDateTime::now_utc().unix_timestamp();
+                    if let Some(tip) = unsent {
+                        if now - tips.time_last_sent > tip.wait_time {
+                            println!(
+                                "\n{}\n\n{} fig tips disable\n{} fig issue\n",
+                                tip.text,
+                                "Disable Getting Started Tips:".underlined(),
+                                "Report a bug:".underlined(),
+                            );
+                            tip.sent = true;
+                            tips.time_last_sent = now;
                         }
-                        tips.save()?;
+                    } else {
+                        let changelog: Changelog =
+                            serde_json::from_str(include_str!("../../../changelog.json"))?;
+                        if Version::parse(&tips.last_changelog)?
+                            < Version::parse(&changelog.version)?
+                        {
+                            println!("{}", changelog.notes);
+                            tips.last_changelog = changelog.version;
+                            tips.time_last_sent = now;
+                        }
                     }
+                    tips.save()?;
                 }
-            }
+            },
         }
         Ok(())
     }

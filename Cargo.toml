@@ -6,5 +6,6 @@ members = [
     "rust-lib/fig-auth",
     "rust-lib/fig-color",
     "rust-lib/fig-proto",
-    "rust-lib/fig-ipc"
+    "rust-lib/fig-ipc",
+    "rust-lib/fig-settings",
 ]

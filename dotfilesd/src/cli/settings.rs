@@ -1,4 +1,4 @@
-use crate::util::{fig_dir, settings::Settings};
+use crate::util::fig_dir;
 
 use anyhow::{anyhow, Result};
 use clap::{ArgGroup, Args, Subcommand};
@@ -78,33 +78,25 @@ impl SettingsArgs {
                 }
             }
             None => match &self.key {
-                Some(key) => {
-                    let mut settings = Settings::load()?;
-                    let settings_map = settings
-                        .get_mut_settings()
-                        .ok_or(anyhow!("Could not load settings"))?;
-                    match (&self.value, self.delete) {
-                        (None, false) => match settings_map.get(key) {
-                            Some(value) => {
-                                println!("{}: {}", key, serde_json::to_string_pretty(value)?);
-                            }
-                            None => {
-                                println!("No value associated with {}.", key);
-                            }
-                        },
-                        (Some(value), false) => {
-                            settings_map.insert(key.into(), json!(value));
-                            settings.save()?;
-                            println!("Successfully updated settings");
+                Some(key) => match (&self.value, self.delete) {
+                    (None, false) => match fig_settings::get_value(key)? {
+                        Some(value) => {
+                            println!("{}: {}", key, serde_json::to_string_pretty(&value)?);
                         }
-                        (None, true) => {
-                            settings_map.remove(key);
-                            settings.save()?;
-                            println!("Successfully updated settings");
+                        None => {
+                            println!("No value associated with {}.", key);
                         }
-                        _ => {}
+                    },
+                    (Some(value), false) => {
+                        fig_settings::set_value(key, json!(value))?;
+                        println!("Successfully updated settings");
                     }
-                }
+                    (None, true) => {
+                        fig_settings::remove_value(key)?;
+                        println!("Successfully updated settings");
+                    }
+                    _ => {}
+                },
                 None => {
                     let res = open_ui_element(UiElement::Settings).await;
                     if res.is_err() {
