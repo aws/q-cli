@@ -7,7 +7,8 @@ pub mod term;
 pub mod utils;
 
 use std::{
-    env, error::Error, ffi::CString, os::unix::prelude::AsRawFd, path::PathBuf, process::exit, vec,
+    env, error::Error, ffi::CString, os::unix::prelude::AsRawFd, path::PathBuf, process::exit,
+    str::FromStr, vec,
 };
 
 use crate::{
@@ -39,7 +40,6 @@ use fig_proto::{
     local, FigProtobufEncodable,
 };
 use flume::Sender;
-use log::{debug, error, info, trace, warn};
 use nix::{
     libc::STDIN_FILENO,
     sys::termios::{tcgetattr, tcsetattr, SetArg},
@@ -52,6 +52,7 @@ use tokio::{
     runtime, select,
     signal::unix::SignalKind,
 };
+use tracing::{debug, error, info, level_filters::LevelFilter, trace, warn};
 
 const BUFFER_SIZE: usize = 1024;
 
@@ -141,6 +142,15 @@ impl EventListener for EventSender {
             }
         }
     }
+
+    fn log_level_event(&self, level: Option<String>) {
+        logger::set_log_level(
+            level
+                .map(|level| LevelFilter::from_str(&level).ok())
+                .flatten()
+                .unwrap_or(LevelFilter::INFO),
+        );
+    }
 }
 
 static INSERTION_LOCK_PATH: Lazy<Option<PathBuf>> =
@@ -181,7 +191,7 @@ where
     match term.get_current_buffer() {
         Some(edit_buffer) => {
             if let Some(cursor_idx) = edit_buffer.cursor_idx.map(|i| i.try_into().ok()).flatten() {
-                log::info!("edit_buffer: {:?}", edit_buffer);
+                info!("edit_buffer: {:?}", edit_buffer);
 
                 let context = shell_state_to_context(term.shell_state());
                 let edit_buffer_hook =
@@ -339,7 +349,7 @@ fn figterm_main() -> Result<()> {
         PtyForkResult::Parent(pt_details, pid) => {
             let runtime = runtime::Builder::new_multi_thread()
                 .enable_all()
-                .thread_name("figterm-thread")
+                .thread_name("figterm-runtime-worker")
                 .build()?;
 
             init_logger(&pt_details.pty_name).with_context(|| "Failed to init logger")?;
@@ -386,7 +396,6 @@ fn figterm_main() -> Result<()> {
                     let mut first_time = true;
 
                     'select_loop: loop {
-
                         if term.shell_state().has_seen_prompt && first_time {
                             let initial_command = env::var("FIG_START_TEXT").ok().filter(|s| !s.is_empty());
                             if let Some(mut initial_command) = initial_command {
@@ -401,19 +410,23 @@ fn figterm_main() -> Result<()> {
                         let select_result: Result<&'static str> = select! {
                             biased;
                             res = stdin.read(&mut read_buffer) => {
-                                if let Ok(size) = res {
-                                    match std::str::from_utf8(&read_buffer[..size]) {
-                                        Ok(s) => {
-                                            for c in s.chars() {
-                                                if !intercept_set.contains(&c) {
-                                                    let mut utf8_buf = [0; 4];
-                                                    master.write(c.encode_utf8(&mut utf8_buf).as_bytes()).await?;
+                                match res {
+                                    Ok(size) => match std::str::from_utf8(&read_buffer[..size]) {
+                                            Ok(s) => {
+                                                for c in s.chars() {
+                                                    if !intercept_set.contains(&c) {
+                                                        let mut utf8_buf = [0; 4];
+                                                        master.write(c.encode_utf8(&mut utf8_buf).as_bytes()).await?;
+                                                    }
                                                 }
                                             }
-                                        }
-                                        Err(_) => {
-                                            master.write(&read_buffer[..size]).await?;
-                                        }
+                                            Err(err) => {
+                                                error!("Failed to convert utf8: {}", err);
+                                                master.write(&read_buffer[..size]).await?;
+                                            }
+                                    },
+                                    Err(err) => {
+                                        error!("Failed to read from stdin: {}", err);
                                     }
                                 }
                                 Ok("stdin")
@@ -421,7 +434,9 @@ fn figterm_main() -> Result<()> {
                             _ = window_change_signal.recv() => {
                                 unsafe { read_winsize(STDIN_FILENO, &mut winsize) }?;
                                 unsafe { ioctl_tiocswinsz(master.as_raw_fd(), &winsize) }?;
-                                term.resize(SizeInfo::new(winsize.ws_row as usize, winsize.ws_col as usize));
+                                let window_size = SizeInfo::new(winsize.ws_row as usize, winsize.ws_col as usize);
+                                debug!("Window size changed: {:?}", window_size);
+                                term.resize(window_size);
                                 Ok("window_change")
                             }
                             res = master.read(&mut write_buffer) => {
@@ -446,14 +461,19 @@ fn figterm_main() -> Result<()> {
                                             }
                                         }
                                     }
-                                    _ => {}
+                                    Err(err) => error!("Failed to read from master: {}", err),
                                 }
                                 Ok("master")
                             }
                             msg = incomming_reciever.recv_async() => {
-                                if let Ok(buf) = msg {
-                                    debug!("Received message from socket: {:?}", buf);
-                                    process_figterm_message(buf, &term, &mut master, intercept_set.clone()).await?;
+                                match msg {
+                                    Ok(buf) => {
+                                        debug!("Received message from socket: {:?}", buf);
+                                        process_figterm_message(buf, &term, &mut master, intercept_set.clone()).await?;
+                                    }
+                                    Err(err) => {
+                                        error!("Failed to receive message from socket: {}", err);
+                                    }
                                 }
                                 Ok("incomming_reciever")
                             }
@@ -513,7 +533,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     Cli::parse();
 
-    logger::stdio_debug_log(format!("FIG_LOG_LEVEL={}", logger::get_fig_log_level()));
+    logger::stdio_debug_log(format!("FIG_LOG_LEVEL={}", logger::get_log_level()));
 
     if let Err(e) = figterm_main() {
         capture_anyhow(&e);
