@@ -365,6 +365,27 @@
     "default": false
   },
   {
+    "settingName": "dotfiles.syncImmediately",
+    "title": "Download dotfiles immediately",
+    "description": "Download dotfiles immediately when they are updated.",
+    "type": "boolean",
+    "category": "Dotfiles",
+    "default": false
+  },
+  {
+    "settingName": "dotfiles.sourceImmediately",
+    "title": "Source dotfiles immediately",
+    "description": "Source dotfiles immediately when they are downloaded.",
+    "type": "multiselect",
+    "category": "Dotfiles",
+    "options": [
+      "always",
+      "never",
+      "ask" 
+    ],
+    "default": "ask"
+  },
+  {
     "settingName": "dotfiles.beta",
     "title": "Enable dotfiles beta",
     "description": "Enable dotfiles beta. This is an upcoming feature that allows you to manage your dotfiles with Fig.",

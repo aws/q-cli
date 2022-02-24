@@ -93,7 +93,7 @@ class WindowServer: WindowService {
   func topmostAllowlistedWindow() -> ExternalWindow? {
     //        return AXWindowServer.shared.allowlistedWindow
     //        return self.allAllowlistedWindows(onScreen: true).first
-    // fixed the workspace bug! -- unfortunately it introduced a new bug when window becomes fullscreen + other weirdness
+    // fixed the workspace bug! Unfortunately it introduced a new bug when window becomes fullscreen + other weirdness
     guard self.currentApplicationIsAllowlisted() else { return nil }
     guard self.allAllowlistedWindows(onScreen: true).first != nil else { return nil }
     //        print("topmostAllowlistedWindow", self.allAllowlistedWindows(onScreen: true).first?.frame)
@@ -144,11 +144,31 @@ class WindowServer: WindowService {
   }
 
   init() {
-    NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(didActivateApplication(notification:)), name: NSWorkspace.didActivateApplicationNotification, object: nil)
-    NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(setPreviousApplication(notification:)), name: NSWorkspace.didDeactivateApplicationNotification, object: nil)
-    NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(spaceChanged), name: NSWorkspace.activeSpaceDidChangeNotification, object: nil)
-    _ = Timer.scheduledTimer(timeInterval: 0.15, target: self, selector: #selector(setPreviousWindow), userInfo: nil, repeats: true)
-
+    NSWorkspace.shared.notificationCenter.addObserver(
+      self,
+      selector: #selector(didActivateApplication(notification:)),
+      name: NSWorkspace.didActivateApplicationNotification,
+      object: nil
+    )
+    NSWorkspace.shared.notificationCenter.addObserver(
+      self,
+      selector: #selector(setPreviousApplication(notification:)),
+      name: NSWorkspace.didDeactivateApplicationNotification,
+      object: nil
+    )
+    NSWorkspace.shared.notificationCenter.addObserver(
+      self,
+      selector: #selector(spaceChanged),
+      name: NSWorkspace.activeSpaceDidChangeNotification,
+      object: nil
+    )
+    _ = Timer.scheduledTimer(
+      timeInterval: 0.15,
+      target: self,
+      selector: #selector(setPreviousWindow),
+      userInfo: nil,
+      repeats: true
+    )
   }
   //https://stackoverflow.com/questions/853833/how-can-my-app-detect-a-change-to-another-apps-window
   @objc func setPreviousWindow() {
@@ -185,13 +205,17 @@ class WindowServer: WindowService {
       return nil
     }
 
+    // swiftlint:disable force_cast
     let windowId = PrivateWindow.getCGWindowID(fromRef: window as! AXUIElement)
-
+    // swiftlint:disable force_cast
     AXUIElementCopyAttributeValue(window as! AXUIElement, kAXPositionAttribute as CFString, &position)
+    // swiftlint:disable force_cast
     AXUIElementCopyAttributeValue(window as! AXUIElement, kAXSizeAttribute as CFString, &size)
 
     if let position = position, let size = size {
+      // swiftlint:disable force_cast
       let point = AXValueGetters.asCGPoint(value: position as! AXValue)
+      // swiftlint:disable force_cast
       let bounds = AXValueGetters.asCGSize(value: size as! AXValue)
 
       //https://stackoverflow.com/a/19887161/926887
@@ -199,7 +223,7 @@ class WindowServer: WindowService {
                                     y: NSMaxY(NSScreen.screens[0].frame) - point.y,
                                     width: bounds.width,
                                     height: bounds.height)
-
+      // swiftlint:disable force_cast
       return ExternalWindow(windowFrame, windowId, app, (window as! AXUIElement))
     }
     return nil
@@ -243,6 +267,10 @@ class ExternalWindow {
     return windowMetadataService.getAssociatedShellContext(for: self.windowId)
   }
 
+  var associatedCommandContext: CommandContext? {
+    return windowMetadataService.getAssociatedCommandContext(for: self.windowId)
+  }
+
   var associatedEditBuffer: EditBuffer? {
     return windowMetadataService.getAssociatedEditBuffer(for: self.windowId)
   }
@@ -254,10 +282,12 @@ class ExternalWindow {
   init?(raw: [String: Any], accesibilityElement: AXUIElement? = nil) {
     guard let pid = raw["kCGWindowOwnerPID"] as? pid_t,
           let rect = raw["kCGWindowBounds"] as? [String: Any],
-          let id = raw["kCGWindowNumber"] as? CGWindowID else {
+          let windowId = raw["kCGWindowNumber"] as? CGWindowID else {
       return nil
     }
+    // swiftlint:disable identifier_name
     guard let x = rect["X"] as? CGFloat,
+          // swiftlint:disable identifier_name
           let y = rect["Y"] as? CGFloat,
           let height = rect["Height"] as? CGFloat,
           let width = rect["Width"] as? CGFloat else {
@@ -271,7 +301,7 @@ class ExternalWindow {
     self.accesibilityElement = accesibilityElement
     self.windowLevel = raw["kCGWindowLayer"] as? CGWindowLevel
     self.app = app
-    self.windowId = id
+    self.windowId = windowId
     self.frame = CGRect(x: x, y: y, width: width, height: height)
   }
 
@@ -284,7 +314,9 @@ class ExternalWindow {
     AXUIElementCopyAttributeValue(axElementRef, kAXSizeAttribute as CFString, &size)
 
     if let position = position, let size = size {
+      // swiftlint:disable force_cast
       let point = AXValueGetters.asCGPoint(value: position as! AXValue)
+      // swiftlint:disable force_cast
       let bounds = AXValueGetters.asCGSize(value: size as! AXValue)
 
       //https://stackoverflow.com/a/19887161/926887

@@ -18,6 +18,43 @@ extension NSAppleScript {
   }
 }
 
+extension Process {
+
+  static func run(command: String, args: String...) -> (output: [String], error: [String], exitCode: Int32) {
+
+      var output: [String] = []
+      var error: [String] = []
+
+      let task = Process()
+      task.launchPath = command
+      task.arguments = args
+
+      let outpipe = Pipe()
+      task.standardOutput = outpipe
+      let errpipe = Pipe()
+      task.standardError = errpipe
+
+      task.launch()
+
+      let outdata = outpipe.fileHandleForReading.readDataToEndOfFile()
+      if var string = String(data: outdata, encoding: .utf8) {
+          string = string.trimmingCharacters(in: .newlines)
+          output = string.components(separatedBy: "\n")
+      }
+
+      let errdata = errpipe.fileHandleForReading.readDataToEndOfFile()
+      if var string = String(data: errdata, encoding: .utf8) {
+          string = string.trimmingCharacters(in: .newlines)
+          error = string.components(separatedBy: "\n")
+      }
+
+      task.waitUntilExit()
+      let status = task.terminationStatus
+
+      return (output, error, status)
+  }
+}
+
 extension String {
   func runWithElevatedPrivileges() -> String? {
     let myAppleScript = "do shell script \"\(self)\" with administrator privileges"

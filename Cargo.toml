@@ -1,0 +1,10 @@
+[workspace]
+members = [
+    "dotfilesd",
+    "figterm",
+    "rust-lib/alacritty_terminal",
+    "rust-lib/fig-auth",
+    "rust-lib/fig-color",
+    "rust-lib/fig-proto",
+    "rust-lib/fig-ipc"
+]

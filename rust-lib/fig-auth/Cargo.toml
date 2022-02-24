@@ -1,0 +1,17 @@
+[package]
+name = "fig-auth"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.53"
+aws-smithy-async = "0.37.0"
+aws-sdk-cognitoidentityprovider = "0.7.0"
+base64 = "0.13.0"
+directories = "4.0.0"
+rand = "0.8.4"
+serde = { version = "1.0.136", features = ["derive"] }
+serde_json = "1.0.78"
+thiserror = "1.0.30"
+time = { version = "0.3.6", features = ["serde-human-readable", "local-offset"] }
+uuid = { version = "0.8.2", features = ["v4"] }

@@ -138,7 +138,6 @@ class Settings {
 
     recomputeSettingsFromRaw()
 
-    setUpFileSystemListeners()
     Settings.canLogWithoutCrash = true
   }
 
@@ -340,8 +339,6 @@ class Settings {
   }
 
   func restartListener() {
-    self.eventSource?.cancel()
-    self.setUpFileSystemListeners()
 
     if let settings = Settings.loadDefaultSettings() {
       defaultSettings = settings
@@ -416,65 +413,6 @@ class Settings {
 
       }
     }
-  }
-
-  var eventSource: DispatchSourceFileSystemObject?
-  fileprivate func setUpFileSystemListeners() {
-    // set up file observers
-    guard FileManager.default.fileExists(atPath: Settings.filePath) else {
-      Settings.log("file does not exist. Not setting up listeners")
-      return
-    }
-
-    let descriptor = open(Settings.filePath, O_EVTONLY)
-    if descriptor == -1 {
-      return
-    }
-
-    self.eventSource = DispatchSource.makeFileSystemObjectSource(fileDescriptor: descriptor,
-                                                                 eventMask: [.all],
-                                                                 queue: DispatchQueue.main)
-    self.eventSource?.setEventHandler { [weak self] in
-      Settings.log(String(describing: self?.eventSource?.dataStrings ?? []))
-      if  [.write, .attrib].contains(self?.eventSource?.data) {
-        self?.settingsUpdated()
-      }
-
-      if self?.eventSource?.data.contains(.delete) ?? false {
-        self?.eventSource?.cancel()
-        self?.setUpFileSystemListeners()
-        self?.settingsUpdated()
-      }
-    }
-
-    self.eventSource?.setCancelHandler {
-      close(descriptor)
-    }
-
-    self.eventSource?.resume()
-
-  }
-
-  deinit {
-    self.eventSource?.cancel()
-  }
-
-}
-
-extension DispatchSourceFileSystemObject {
-  var dataStrings: [String] {
-    // swiftlint:disable identifier_name
-    var s = [String]()
-    if data.contains(.all) { s.append("all") }
-    if data.contains(.attrib) { s.append("attrib") }
-    if data.contains(.delete) { s.append("delete") }
-    if data.contains(.extend) { s.append("extend") }
-    if data.contains(.funlock) { s.append("funlock") }
-    if data.contains(.link) { s.append("link") }
-    if data.contains(.rename) { s.append("rename") }
-    if data.contains(.revoke) { s.append("revoke") }
-    if data.contains(.write) { s.append("write") }
-    return s
   }
 }
 
