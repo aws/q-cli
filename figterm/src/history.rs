@@ -8,10 +8,10 @@ use std::{
 use alacritty_terminal::term::CommandInfo;
 use anyhow::Result;
 use flume::{bounded, Sender};
-use log::error;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use rusqlite::{params, Connection};
+use tracing::error;
 
 use crate::utils::fig_path;
 

@@ -1004,7 +1004,7 @@ dependencies = [
 
 [[package]]
 name = "figterm"
-version = "4.1.1"
+version = "4.1.2"
 dependencies = [
  "alacritty_terminal",
  "anyhow",
@@ -1017,7 +1017,6 @@ dependencies = [
  "fig-proto",
  "flume",
  "fnv",
- "log",
  "nix 0.23.1",
  "once_cell",
  "parking_lot",
@@ -1026,6 +1025,8 @@ dependencies = [
  "sentry",
  "signal-hook",
  "tokio",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]

@@ -1,6 +1,6 @@
 [package]
 name = "figterm"
-version = "4.1.1"
+version = "4.1.2"
 authors = ["Fig"]
 edition = "2021"
 description = "A layer between the terminal and shell."
@@ -21,9 +21,8 @@ signal-hook = "0.3.13"
 
 # Async Libs
 tokio = { version = "1.16.1", features = ["full"] }
-
-# Logging
-log = { version = "0.4.14", features = ["std"] }
+tracing = "0.1.31"
+tracing-subscriber = { version = "0.3.9", features = ["fmt", "time", "parking_lot"] }
 
 # User dirs
 dirs = "4.0.0"

@@ -1,45 +1,25 @@
 //! [log] logger
 
 use anyhow::{Context, Result};
-use nix::unistd::getpid;
+use once_cell::sync::Lazy;
+use parking_lot::RwLock;
 use std::{
-    env,
-    fs::{create_dir_all, File},
-    io::Write,
+    fs::{self, File},
     path::PathBuf,
     str::FromStr,
-    sync::{Arc, Mutex},
 };
+use tracing::{level_filters::LevelFilter, Level};
+use tracing_subscriber::{filter::DynFilterFn, fmt, prelude::*};
 
 use crate::utils::fig_path;
 
-pub fn get_fig_log_level() -> log::LevelFilter {
-    match env::var("FIG_LOG_LEVEL")
-        .ok()
-        .map(|s| log::LevelFilter::from_str(&*s).ok())
-        .flatten()
-    {
-        Some(level) => level,
-        _ => log::LevelFilter::Info,
-    }
-}
+static FIG_LOG_LEVEL: Lazy<RwLock<LevelFilter>> = Lazy::new(|| RwLock::new(LevelFilter::INFO));
 
 pub fn stdio_debug_log(s: impl AsRef<str>) {
-    if get_fig_log_level() >= log::Level::Debug {
+    let level = FIG_LOG_LEVEL.read();
+    if *level >= Level::DEBUG {
         println!("{}", s.as_ref());
     }
-}
-
-pub fn init_logger(ptc_name: impl AsRef<str>) -> Result<()> {
-    let log_level = get_fig_log_level();
-    let logger = Logger::new(&ptc_name)?;
-    log::set_boxed_logger(Box::new(logger)).map(|_| log::set_max_level(log_level))?;
-    Ok(())
-}
-
-#[derive(Debug)]
-struct Logger {
-    file: Arc<Mutex<File>>,
 }
 
 fn log_folder() -> Result<PathBuf> {
@@ -57,36 +37,44 @@ fn log_path(ptc_name: impl AsRef<str>) -> Result<PathBuf> {
     Ok(dir)
 }
 
-impl Logger {
-    fn new(ptc_name: impl AsRef<str>) -> Result<Self> {
-        create_dir_all(log_folder()?)?;
-        let file = Arc::new(Mutex::new(File::create(log_path(ptc_name)?)?));
-        Ok(Self { file })
-    }
+pub fn set_log_level(level: LevelFilter) {
+    *FIG_LOG_LEVEL.write() = level;
 }
 
-impl log::Log for Logger {
-    fn enabled(&self, _: &log::Metadata) -> bool {
-        true
+pub fn get_log_level() -> LevelFilter {
+    *FIG_LOG_LEVEL.read()
+}
+
+pub fn init_logger(ptc_name: impl AsRef<str>) -> Result<()> {
+    let env_level = std::env::var("FIG_LOG_LEVEL")
+        .ok()
+        .map(|level| LevelFilter::from_str(&level).ok())
+        .flatten()
+        .unwrap_or(LevelFilter::INFO);
+
+    *FIG_LOG_LEVEL.write() = env_level;
+
+    let filter_layer =
+        DynFilterFn::new(|metadata, _ctx| metadata.level() <= &*FIG_LOG_LEVEL.read());
+
+    let log_path = log_path(ptc_name)?;
+
+    // Make folder if it doesn't exist
+    if !log_path.parent().unwrap().exists() {
+        stdio_debug_log(format!(
+            "Creating log folder: {:?}",
+            log_path.parent().unwrap()
+        ));
+        fs::create_dir_all(log_path.parent().unwrap())?;
     }
 
-    fn log(&self, record: &log::Record) {
-        if self.enabled(record.metadata()) {
-            let mut file = self.file.lock().unwrap();
-            writeln!(
-                file,
-                "\x1B[38;5;168mfigterm ({}):\x1B[0m [{}:{}] {}",
-                getpid(),
-                record.file_static().unwrap_or("?"),
-                record
-                    .line()
-                    .map(|i| i.to_string())
-                    .unwrap_or_else(|| "?".into()),
-                record.args()
-            )
-            .ok();
-        }
-    }
+    let file = File::create(log_path).context("failed to create log file")?;
+    let fmt_layer = fmt::layer().with_target(false).with_writer(file);
 
-    fn flush(&self) {}
+    tracing_subscriber::registry()
+        .with(filter_layer)
+        .with(fmt_layer)
+        .init();
+
+    Ok(())
 }
