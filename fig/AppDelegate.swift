@@ -769,34 +769,27 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         tty.setTitle("Restart this terminal to finish uninstalling Fig...")
       }
 
-      var uninstallScriptFile: String? = "\(NSHomeDirectory())/.fig/tools/uninstall-script.sh"
-      if !FileManager.default.fileExists(atPath: uninstallScriptFile!) {
-        uninstallScriptFile = Bundle.main.path(forResource: "uninstall", ofType: "sh")
-      }
+      NSWorkspace.shared.open(
+        URL(string: "https://fig.io/uninstall?email=\(Defaults.shared.email ?? "")&" +
+          "version=\(Diagnostic.distribution.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")")!)
+      LoginItems.shared.removeAllItemsMatchingBundleURL()
 
-      if let general = uninstallScriptFile {
-        NSWorkspace.shared.open(
-          URL(string: "https://fig.io/uninstall?email=\(Defaults.shared.email ?? "")&" +
-            "version=\(Diagnostic.distribution.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")")!)
-        LoginItems.shared.removeAllItemsMatchingBundleURL()
+      let domain = Bundle.main.bundleIdentifier!
+      let uuid = Defaults.shared.uuid
+      UserDefaults.standard.removePersistentDomain(forName: domain)
+      UserDefaults.standard.removePersistentDomain(forName: "\(domain).shared")
 
-        let domain = Bundle.main.bundleIdentifier!
-        let uuid = Defaults.shared.uuid
-        UserDefaults.standard.removePersistentDomain(forName: domain)
-        UserDefaults.standard.removePersistentDomain(forName: "\(domain).shared")
+      UserDefaults.standard.synchronize()
 
-        UserDefaults.standard.synchronize()
+      UserDefaults.standard.set(uuid, forKey: "uuid")
+      UserDefaults.standard.synchronize()
 
-        UserDefaults.standard.set(uuid, forKey: "uuid")
-        UserDefaults.standard.synchronize()
+      WebView.deleteCache()
+      InputMethod.default.uninstall()
 
-        WebView.deleteCache()
-        InputMethod.default.uninstall()
-
-        let out = "bash \(general)".runAsCommand()
-        Logger.log(message: out)
-        self.quit()
-      }
+      let out = "~/.local/bin/fig app uninstall".runAsCommand()
+      Logger.log(message: out)
+      self.quit()
     }
   }
 
