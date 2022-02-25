@@ -355,6 +355,7 @@ message Action {
   optional string description = 3; // a quick summary of what the action will do
   optional string category = 4; 
   optional ActionAvailability availability = 5; // when can this action be performed
+  repeated string default_bindings = 6; 
 
 }
 
