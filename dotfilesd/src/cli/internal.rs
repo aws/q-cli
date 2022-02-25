@@ -57,7 +57,7 @@ pub async fn prompt_dotfiles_changed() -> Result<()> {
 
                 stdout.write_all(
                     format!(
-                        "Would you like to update now? {} ",
+                        "Would you like to sync the new changes automatically? {} ",
                         "(y)es/(n)o/(A)lways/(N)ever".dim()
                     )
                     .as_bytes(),
