@@ -6,15 +6,14 @@ use notify::{watcher, RecursiveMode, Watcher};
 use parking_lot::RwLock;
 use tracing::{error, info};
 
-use fig_settings::LocalSettings;
-
 use super::DaemonStatus;
 
 pub async fn spawn_settings_watcher(daemon_status: Arc<RwLock<DaemonStatus>>) -> Result<()> {
     // We need to spawn both a thread and a tokio task since the notify library does not
     // currently support async, this should be improved in the future, but currently this works fine
 
-    let settings_path = LocalSettings::path()?;
+    let settings_path = fig_settings::settings::settings_path()?;
+    let state_path = fig_settings::state::state_path()?;
 
     let (settings_watcher_tx, settings_watcher_rx) = std::sync::mpsc::channel();
     let mut watcher = watcher(settings_watcher_tx, Duration::from_secs(1))?;
@@ -42,25 +41,27 @@ pub async fn spawn_settings_watcher(daemon_status: Arc<RwLock<DaemonStatus>>) ->
         }
     });
 
-    std::thread::spawn(
-        move || match watcher.watch(&settings_path, RecursiveMode::NonRecursive) {
-            Ok(()) => loop {
-                match settings_watcher_rx.recv() {
-                    Ok(event) => {
-                        if let Err(e) = forward_tx.send(event) {
-                            error!("Error forwarding settings event: {}", e);
-                        }
-                    }
-                    Err(err) => {
-                        error!("Settings watcher rx: {}", err);
+    std::thread::spawn(move || {
+        if let Err(err) = watcher.watch(&settings_path, RecursiveMode::NonRecursive) {
+            error!("Could not watch {:?}: {}", settings_path, err);
+        }
+        if let Err(err) = watcher.watch(&state_path, RecursiveMode::NonRecursive) {
+            error!("Could not watch {:?}: {}", state_path, err);
+        }
+
+        loop {
+            match settings_watcher_rx.recv() {
+                Ok(event) => {
+                    if let Err(e) = forward_tx.send(event) {
+                        error!("Error forwarding settings event: {}", e);
                     }
                 }
-            },
-            Err(err) => {
-                error!("Error while watching settings: {}", err);
+                Err(err) => {
+                    error!("Settings watcher rx: {}", err);
+                }
             }
-        },
-    );
+        }
+    });
 
     Ok(())
 }

@@ -80,7 +80,7 @@ pub async fn sync_all_shells(sync_when: SyncWhen) -> Result<()> {
 }
 
 pub async fn sync_based_on_settings() -> Result<()> {
-    let sync_when = match fig_settings::get_value("dotfiles.syncImmediately") {
+    let sync_when = match fig_settings::settings::get_value("dotfiles.syncImmediately") {
         Ok(Some(serde_json::Value::Bool(false))) => SyncWhen::Later,
         Ok(_) => SyncWhen::Immediately,
         Err(err) => {

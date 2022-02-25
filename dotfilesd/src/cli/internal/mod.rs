@@ -1,3 +1,5 @@
+pub mod local_state;
+
 use std::{io::Write, process::exit};
 
 use anyhow::{Context, Result};
@@ -9,12 +11,14 @@ use serde_json::json;
 #[clap(hide = true, alias = "_")]
 pub enum InternalSubcommand {
     PromptDotfilesChanged,
+    LocalState(local_state::LocalStateArgs),
 }
 
 impl InternalSubcommand {
     pub async fn execute(self) -> Result<()> {
         match self {
             InternalSubcommand::PromptDotfilesChanged => prompt_dotfiles_changed().await?,
+            InternalSubcommand::LocalState(local_state) => local_state.execute().await?,
         }
         Ok(())
     }
@@ -41,7 +45,7 @@ pub async fn prompt_dotfiles_changed() -> Result<()> {
     };
 
     if file_content.contains("true") {
-        let source_immediately = fig_settings::get_value("dotfiles.sourceImmediately")?
+        let source_immediately = fig_settings::settings::get_value("dotfiles.sourceImmediately")?
             .map(|s| s.as_str().map(|s| s.to_owned()))
             .flatten();
 
@@ -115,7 +119,7 @@ pub async fn prompt_dotfiles_changed() -> Result<()> {
 
                                 exit_code = 0;
 
-                                fig_settings::set_value(
+                                fig_settings::settings::set_value(
                                     "dotfiles.sourceImmediately",
                                     json!("always"),
                                 )?;
@@ -133,7 +137,7 @@ pub async fn prompt_dotfiles_changed() -> Result<()> {
                                     crossterm::cursor::MoveToNextLine(1),
                                 )?;
 
-                                fig_settings::set_value(
+                                fig_settings::settings::set_value(
                                     "dotfiles.sourceImmediately",
                                     json!("never"),
                                 )?;
