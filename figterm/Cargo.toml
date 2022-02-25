@@ -14,51 +14,25 @@ default = ["desktop-tests"]
 desktop-tests = []
 
 [dependencies]
-
-# System Libs
+alacritty_terminal = { path = "../rust-lib/alacritty_terminal" }
+anyhow = "1.0.53"
+bytes = "1.1.0"
+clap = { version = "3.1.0", features = ["derive"] }
+crossbeam = "0.8.1"
+dashmap = "5.1.0"
+dirs = "4.0.0"
+fig-auth = { path = "../rust-lib/fig-auth" }
+fig-ipc = { path = "../rust-lib/fig-ipc" }
+fig-proto = { path = "../rust-lib/fig-proto" }
+flume = "0.10.10"
+fnv = "1.0.7"
 nix = "0.23.1"
+once_cell = "1.9.0"
+parking_lot = "0.12.0"
+regex = "1.5.4"
+rusqlite = { version = "0.26.3", features = ["bundled"] }
+sentry = { version = "0.24.2", features = ["anyhow"] }
 signal-hook = "0.3.13"
-
-# Async Libs
 tokio = { version = "1.16.1", features = ["full"] }
 tracing = "0.1.31"
 tracing-subscriber = { version = "0.3.9", features = ["fmt", "time", "parking_lot"] }
-
-# User dirs
-dirs = "4.0.0"
-
-# Protocal buffers
-bytes = "1.1.0"
-
-# Error Handling
-anyhow = "1.0.53"
-
-# Cmd arg parsing
-clap = { version = "3.1.0", features = ["derive"] }
-
-# Terminal emulator
-alacritty_terminal = { path = "../rust-lib/alacritty_terminal" }
-
-# Fast concurrency libs
-parking_lot = "0.12.0"
-crossbeam = "0.8.1"
-
-# Sqlite lib
-rusqlite = { version = "0.26.3", features = ["bundled"] }
-
-# Fast concurrent hashmap
-dashmap = "5.1.0"
-fnv = "1.0.7"
-
-# Allocation free data structures
-flume = "0.10.10"
-
-once_cell = "1.9.0"
-
-regex = "1.5.4"
-
-sentry = { version = "0.24.2", features = ["anyhow"] }
-
-fig-proto = { path = "../rust-lib/fig-proto" }
-fig-auth = { path = "../rust-lib/fig-auth" }
-fig-ipc = { path = "../rust-lib/fig-ipc" }
