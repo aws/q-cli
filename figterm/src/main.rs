@@ -27,7 +27,6 @@ use alacritty_terminal::{
     Term,
 };
 use anyhow::{anyhow, Context, Result};
-use bytes::Bytes;
 use clap::StructOpt;
 use cli::Cli;
 use dashmap::DashSet;
@@ -37,7 +36,7 @@ use fig_proto::{
     hooks::{
         hook_to_message, new_context, new_edit_buffer_hook, new_preexec_hook, new_prompt_hook,
     },
-    local, FigProtobufEncodable,
+    local::{self, LocalMessage},
 };
 use flume::Sender;
 use nix::{
@@ -57,12 +56,12 @@ use tracing::{debug, error, info, level_filters::LevelFilter, trace, warn};
 const BUFFER_SIZE: usize = 1024;
 
 struct EventSender {
-    socket_sender: Sender<Bytes>,
+    socket_sender: Sender<LocalMessage>,
     history_sender: Sender<CommandInfo>,
 }
 
 impl EventSender {
-    fn new(socket_sender: Sender<Bytes>, history_sender: Sender<CommandInfo>) -> Self {
+    fn new(socket_sender: Sender<LocalMessage>, history_sender: Sender<CommandInfo>) -> Self {
         Self {
             socket_sender,
             history_sender,
@@ -125,20 +124,22 @@ impl EventListener for EventSender {
                 let context = shell_state_to_context(shell_state);
                 let hook = new_prompt_hook(Some(context));
                 let message = hook_to_message(hook);
-                let bytes = message.encode_fig_protobuf().unwrap();
-
-                self.socket_sender.send((*bytes).clone()).unwrap();
+                if let Err(err) = self.socket_sender.send(message) {
+                    error!("Sender error: {:?}", err);
+                }
             }
             Event::PreExec => {
                 let context = shell_state_to_context(shell_state);
                 let hook = new_preexec_hook(Some(context));
                 let message = hook_to_message(hook);
-                let bytes = message.encode_fig_protobuf().unwrap();
-
-                self.socket_sender.send((*bytes).clone()).unwrap();
+                if let Err(err) = self.socket_sender.send(message) {
+                    error!("Sender error: {:?}", err);
+                }
             }
             Event::CommandInfo(command_info) => {
-                self.history_sender.send(command_info.clone()).unwrap();
+                if let Err(err) = self.history_sender.send(command_info.clone()) {
+                    error!("Sender error: {:?}", err);
+                }
             }
         }
     }
@@ -184,7 +185,7 @@ where
     shell_enabled && !insertion_locked && !prexec
 }
 
-async fn send_edit_buffer<T>(term: &Term<T>, sender: &Sender<Bytes>) -> Result<()>
+async fn send_edit_buffer<T>(term: &Term<T>, sender: &Sender<LocalMessage>) -> Result<()>
 where
     T: EventListener,
 {
@@ -200,9 +201,7 @@ where
 
                 debug!("Sending: {:?}", message);
 
-                let bytes = message.encode_fig_protobuf()?;
-
-                sender.send_async((*bytes).clone()).await?;
+                sender.send_async(message).await?;
             }
             Ok(())
         }

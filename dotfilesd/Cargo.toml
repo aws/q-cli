@@ -1,6 +1,6 @@
 [package]
 name = "dotfilesd"
-version = "0.1.4"
+version = "0.1.5"
 description = "The CLI for Fig"
 edition = "2021"
 

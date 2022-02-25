@@ -833,7 +833,7 @@ dependencies = [
 
 [[package]]
 name = "dotfilesd"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -991,6 +991,7 @@ dependencies = [
  "prost",
  "thiserror",
  "tokio",
+ "tracing",
 ]
 
 [[package]]
@@ -1026,6 +1027,7 @@ dependencies = [
  "dashmap",
  "dirs",
  "fig-auth",
+ "fig-ipc",
  "fig-proto",
  "flume",
  "fnv",

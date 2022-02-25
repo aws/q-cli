@@ -23,7 +23,7 @@ if [ -d /Applications/Fig.app -o -d ~/Applications/Fig.app ] \
   if [ -z "$TERM_SESSION_ID" ] || [ -n "$TMUX" ]
     export TERM_SESSION_ID=(uuidgen)
   end
-  export FIG_INTEGRATION_VERSION=6
+  export FIG_INTEGRATION_VERSION=7
 
   set FIG_SHELL (~/.fig/bin/fig_get_shell)
   set FIG_IS_LOGIN_SHELL 0

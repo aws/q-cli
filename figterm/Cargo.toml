@@ -61,3 +61,4 @@ sentry = { version = "0.24.2", features = ["anyhow"] }
 
 fig-proto = { path = "../rust-lib/fig-proto" }
 fig-auth = { path = "../rust-lib/fig-auth" }
+fig-ipc = { path = "../rust-lib/fig-ipc" }

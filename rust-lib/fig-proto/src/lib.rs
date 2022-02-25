@@ -4,6 +4,8 @@ pub mod daemon;
 pub mod figterm;
 pub mod hooks;
 pub mod local;
+use std::fmt::Debug;
+
 pub use prost;
 
 use anyhow::Result;
@@ -38,9 +40,15 @@ impl std::ops::Deref for FigMessage {
 }
 
 /// A trait for types that can be converted to a FigProtobuf
-pub trait FigProtobufEncodable {
+pub trait FigProtobufEncodable: Debug + Send + Sync {
     /// Encodes a protobuf message into a fig message
     fn encode_fig_protobuf(&self) -> Result<FigMessage>;
+}
+
+impl FigProtobufEncodable for FigMessage {
+    fn encode_fig_protobuf(&self) -> Result<FigMessage> {
+        Ok(self.clone())
+    }
 }
 
 impl<T: Message> FigProtobufEncodable for T {

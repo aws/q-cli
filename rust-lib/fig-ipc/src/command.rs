@@ -97,7 +97,7 @@ pub async fn send_recv_command(
     command: local::command::Command,
 ) -> Result<local::CommandResponse> {
     send_command(connection, command).await?;
-    tokio::time::timeout(Duration::from_secs(2), recv_message(connection)).await?
+    Ok(tokio::time::timeout(Duration::from_secs(2), recv_message(connection)).await??)
 }
 
 pub async fn send_command_to_socket(command: local::command::Command) -> Result<()> {
