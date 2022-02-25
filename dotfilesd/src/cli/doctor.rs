@@ -479,6 +479,7 @@ impl DoctorCheck for DaemonCheck {
 
 struct DotfileCheck {
     integration: ShellFileIntegration,
+    soft_check: bool,
 }
 
 #[async_trait]
@@ -492,18 +493,31 @@ impl DoctorCheck for DotfileCheck {
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
+        let fix_text = format!(
+            "Run {} to reinstall shell integrations for {}",
+            "fig install --dotfiles".magenta(),
+            self.integration.shell
+        );
         match self.integration.shell {
             Shell::Fish => {
                 // Source order for fish is handled by fish itself.
                 if self.integration.path.exists() {
                     return Ok(());
                 } else {
-                    return Err(DoctorError::Error {
-                        reason: format!("{} does not exist", self.integration.path.display())
-                            .into(),
-                        info: vec![],
-                        fix: None,
-                    });
+                    let msg = format!(
+                        "{} does not exist. {}",
+                        self.integration.path.display(),
+                        fix_text
+                    );
+                    return if self.soft_check {
+                        Err(DoctorError::Warning(msg.into()))
+                    } else {
+                        Err(DoctorError::Error {
+                            reason: msg.into(),
+                            info: vec![],
+                            fix: None,
+                        })
+                    };
                 }
             }
             Shell::Zsh | Shell::Bash => {
@@ -512,7 +526,12 @@ impl DoctorCheck for DotfileCheck {
                     Ok(contents) => contents,
                     _ => {
                         return Err(DoctorError::Warning(
-                            format!("{} does not exist", self.integration.path.display()).into(),
+                            format!(
+                                "{} does not exist. {}",
+                                self.integration.path.display(),
+                                fix_text
+                            )
+                            .into(),
                         ))
                     }
                 };
@@ -526,17 +545,32 @@ impl DoctorCheck for DotfileCheck {
                     .split('\n')
                     .filter(|line| !(*line).trim().is_empty())
                     .collect();
+                let filtered_lines = lines.join("\n");
 
                 let first_line = lines.first().copied().unwrap_or_default();
                 if first_line.eq("[ -s ~/.fig/shell/pre.sh ] && source ~/.fig/shell/pre.sh") {
                     return Err(DoctorError::Warning(
-                        format!("{} has legacy integration", self.integration.path.display())
-                            .into(),
+                        format!(
+                            "{} has legacy integration. {}",
+                            self.integration.path.display(),
+                            fix_text
+                        )
+                        .into(),
                     ));
                 }
 
                 if let Some(pre) = self.integration.pre_integration() {
-                    if !pre.get_source_regex()?.is_match(first_line) {
+                    if !pre.get_source_regex(true)?.is_match(&filtered_lines) {
+                        let msg = format!(
+                            "Pre shell integration not sourced first in {}",
+                            self.integration.path.display()
+                        );
+                        if self.soft_check {
+                            return Err(DoctorError::Warning(
+                                format!("{}. {}", msg, fix_text).into(),
+                            ));
+                        }
+
                         let top_lines = lines.get(0..10).map_or(vec![], Vec::from);
                         let top_line_text = top_lines
                             .iter()
@@ -545,8 +579,7 @@ impl DoctorCheck for DotfileCheck {
 
                         let fix_integration = self.integration.clone();
                         return Err(DoctorError::Error {
-
-                            reason: format!("Pre shell integration not sourced first in {}", self.integration.path.display()).into(),
+                            reason: msg.into(),
                             info: vec![
                                 "In order for autocomplete to work correctly, Fig's shell integration must be sourced first.".into(),
                                 format!("Top of {}:", self.integration.path.display()).into()
@@ -569,7 +602,17 @@ impl DoctorCheck for DotfileCheck {
                 }
 
                 if let Some(post) = self.integration.post_integration() {
-                    if !post.get_source_regex()?.is_match(last_line) {
+                    if !post.get_source_regex(true)?.is_match(&filtered_lines) {
+                        let msg = format!(
+                            "Post shell integration not sourced last in {}",
+                            self.integration.path.display()
+                        );
+                        if self.soft_check {
+                            return Err(DoctorError::Warning(
+                                format!("{}. {}", msg, fix_text).into(),
+                            ));
+                        }
+
                         let n = lines.len();
                         let bottom_lines = lines.get(n - 10..n).map_or(vec![], Vec::from);
                         let bottom_line_text = bottom_lines
@@ -579,7 +622,7 @@ impl DoctorCheck for DotfileCheck {
 
                         let fix_integration = self.integration.clone();
                         return Err(DoctorError::Error {
-                            reason: format!("Post shell integration not sourced last in {}", self.integration.path.display()).into(),
+                            reason: msg.into(),
                             info: vec![
                                 "In order for autocomplete to work correctly, Fig's shell integration must be sourced last.".into(),
                                 format!("Bottom of {}:", self.integration.path.display()).into()
@@ -1126,8 +1169,8 @@ where
         {
             if let Some(fixfn) = fix {
                 println!("Attempting to fix automatically...");
-                if fixfn().is_err() {
-                    println!("Failed to fix...");
+                if let Err(e) = fixfn() {
+                    println!("Failed to fix: {}", e);
                 } else {
                     println!("Re-running check...");
                     if let Ok(new_context) = get_context().await {
@@ -1184,13 +1227,21 @@ pub async fn doctor_cli() -> Result<()> {
         )
         .await?;
 
+        let current_shell = Shell::current_shell();
         let shell_integrations: Vec<_> = [Shell::Bash, Shell::Zsh, Shell::Fish]
             .into_iter()
             .map(|shell| shell.get_shell_integrations())
             .collect::<Result<Vec<_>>>()?
             .into_iter()
             .flatten()
-            .map(|integration| DotfileCheck { integration })
+            .map(|integration| DotfileCheck {
+                integration: integration.clone(),
+                soft_check: if let Some(shell) = current_shell {
+                    integration.shell != shell
+                } else {
+                    false
+                },
+            })
             .collect();
         let all_dotfile_checks: Vec<_> = shell_integrations
             .iter()

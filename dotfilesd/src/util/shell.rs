@@ -12,7 +12,7 @@ use std::{
 };
 use time::OffsetDateTime;
 
-use crate::util::{home_dir, project_dir};
+use crate::util::{get_parent_process_exe, home_dir, project_dir};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, ArgEnum, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -95,11 +95,21 @@ impl ShellIntegration {
         format!("{}\n{}\n", self.description(), self.source_text())
     }
 
-    pub fn get_source_regex(&self) -> Result<Regex> {
+    pub fn get_source_regex(&self, constrain_position: bool) -> Result<Regex> {
+        let (prefix, suffix) = if constrain_position {
+            match self.when {
+                When::Pre => ("^", ""),
+                When::Post => ("", "$"),
+            }
+        } else {
+            ("", "")
+        };
         let r = format!(
-            r#"\n?(?:{}\n)?{}\n{{0,2}}"#,
+            r#"{}\n?(?:{}\n)?{}\n{{0,2}}{}"#,
+            prefix,
             regex::escape(&self.description()),
             regex::escape(&self.source_text()),
+            suffix
         );
         Regex::new(&r).context("Invalid source regex")
     }
@@ -158,10 +168,16 @@ impl ShellFileIntegration {
                 .into();
 
             if let Some(pre) = self.pre_integration() {
-                contents = pre.get_source_regex()?.replace_all(&contents, "").into();
+                contents = pre
+                    .get_source_regex(false)?
+                    .replace_all(&contents, "")
+                    .into();
             }
             if let Some(post) = self.post_integration() {
-                contents = post.get_source_regex()?.replace_all(&contents, "").into();
+                contents = post
+                    .get_source_regex(false)?
+                    .replace_all(&contents, "")
+                    .into();
             }
 
             let mut file = File::create(&self.path)?;
@@ -215,7 +231,7 @@ impl ShellFileIntegration {
         let mut new_contents = String::new();
 
         if let Some(integration) = self.pre_integration() {
-            if !integration.get_source_regex()?.is_match(&contents) {
+            if !integration.get_source_regex(false)?.is_match(&contents) {
                 new_contents.push_str(&integration.text());
                 new_contents.push('\n');
                 modified = true;
@@ -225,7 +241,7 @@ impl ShellFileIntegration {
         new_contents.push_str(&contents);
 
         if let Some(integration) = self.post_integration() {
-            if !integration.get_source_regex()?.is_match(&contents) {
+            if !integration.get_source_regex(false)?.is_match(&contents) {
                 new_contents.push('\n');
                 new_contents.push_str(&integration.text());
                 modified = true;
@@ -244,6 +260,20 @@ impl ShellFileIntegration {
 impl Shell {
     pub fn all() -> &'static [Self] {
         &[Shell::Bash, Shell::Zsh, Shell::Fish]
+    }
+
+    pub fn current_shell() -> Option<Self> {
+        let parent_exe = get_parent_process_exe().ok()?;
+        let parent_exe_name = parent_exe.to_str()?;
+        if parent_exe_name.contains("bash") {
+            Some(Shell::Bash)
+        } else if parent_exe_name.contains("zsh") {
+            Some(Shell::Zsh)
+        } else if parent_exe_name.contains("fish") {
+            Some(Shell::Fish)
+        } else {
+            None
+        }
     }
 
     pub fn get_shell_integrations(&self) -> Result<Vec<ShellFileIntegration>> {
