@@ -41,115 +41,66 @@ pub async fn prompt_dotfiles_changed() -> Result<()> {
     };
 
     if file_content.contains("true") {
+        println!("{}", "Your dotfiles have been updated!".bold());
+
         let source_immediately = fig_settings::get_value("dotfiles.sourceImmediately")?
             .map(|s| s.as_str().map(|s| s.to_owned()))
             .flatten();
 
-        match source_immediately.as_deref() {
-            Some("never") => {}
-            Some("always") => exit_code = 0,
+        let source_updates = match source_immediately.as_deref() {
+            Some("never") => false,
+            Some("always") => true,
             _ => {
-                let mut stdout = std::io::stdout();
-
-                stdout.write_all(
-                    format!("{}", "Your dotfiles have been updated!\n".bold()).as_bytes(),
-                )?;
-
-                stdout.write_all(
-                    format!(
-                        "Would you like to sync the new changes automatically? {} ",
-                        "(y)es/(n)o/(A)lways/(N)ever".dim()
-                    )
-                    .as_bytes(),
-                )?;
-
-                stdout.flush()?;
+                println!("Would you like Fig to re-source your dotfiles in open terminals on updates? (y)es,(n)o");
+                let mut result = false;
 
                 crossterm::terminal::enable_raw_mode()?;
-
                 while let Ok(event) = crossterm::event::read() {
                     if let crossterm::event::Event::Key(key_event) = event {
                         match (key_event.code, key_event.modifiers) {
-                            (crossterm::event::KeyCode::Char('y'), _) => {
-                                crossterm::execute!(
-                                    stdout,
-                                    crossterm::cursor::MoveToNextLine(1),
-                                    crossterm::style::Print(format!(
-                                        "\n{}\n",
-                                        "Updating dotfiles...".bold()
-                                    )),
-                                    crossterm::cursor::MoveToNextLine(1),
-                                )?;
-
-                                exit_code = 0;
-
-                                break;
-                            }
-                            (crossterm::event::KeyCode::Char('n' | 'q'), _)
-                            | (
-                                crossterm::event::KeyCode::Char('c' | 'd'),
-                                crossterm::event::KeyModifiers::CONTROL,
-                            ) => {
-                                crossterm::execute!(
-                                    stdout,
-                                    crossterm::cursor::MoveToNextLine(1),
-                                    crossterm::style::Print(format!(
-                                        "\n{}\n",
-                                        "Skipping update...".bold()
-                                    )),
-                                    crossterm::cursor::MoveToNextLine(1),
-                                )?;
-
-                                break;
-                            }
-                            (crossterm::event::KeyCode::Char('A'), _) => {
-                                crossterm::execute!(
-                                    stdout,
-                                    crossterm::cursor::MoveToNextLine(1),
-                                    crossterm::style::Print(format!(
-                                        "\n{}\n",
-                                        "Always updating dotfiles...".bold()
-                                    )),
-                                    crossterm::cursor::MoveToNextLine(1),
-                                )?;
-
-                                exit_code = 0;
-
+                            (crossterm::event::KeyCode::Char('y' | 'Y'), _) => {
                                 fig_settings::set_value(
                                     "dotfiles.sourceImmediately",
                                     json!("always"),
                                 )?;
-
+                                result = true;
                                 break;
                             }
-                            (crossterm::event::KeyCode::Char('N'), _) => {
-                                crossterm::execute!(
-                                    stdout,
-                                    crossterm::cursor::MoveToNextLine(1),
-                                    crossterm::style::Print(format!(
-                                        "\n{}\n",
-                                        "Never updating dotfiles...".bold()
-                                    )),
-                                    crossterm::cursor::MoveToNextLine(1),
-                                )?;
-
+                            (crossterm::event::KeyCode::Char('n' | 'q' | 'N'), _)
+                            | (
+                                crossterm::event::KeyCode::Char('c' | 'd'),
+                                crossterm::event::KeyModifiers::CONTROL,
+                            ) => {
                                 fig_settings::set_value(
                                     "dotfiles.sourceImmediately",
                                     json!("never"),
                                 )?;
-
+                                result = false;
                                 break;
                             }
                             _ => {}
                         }
                     }
                 }
-
-                stdout.flush()?;
-
                 crossterm::terminal::disable_raw_mode()?;
+                result
             }
         };
+
+        if source_updates {
+            println!(
+                "Automatically sourcing in this terminal. Run {} to disable auto-sourcing.",
+                "fig settings dotfiles.sourceImmediately never".magenta()
+            );
+            // Set exit code to source changes.
+            exit_code = 0;
+        } else {
+            println!(
+                "Run {} to manually apply changes in this terminal. Or {} to always source updates.",
+                "fig source".magenta(),
+                "fig settings dotfiles.sourceImmediately always".magenta()
+            );
+        }
 
         tokio::fs::write(&file, "").await?;
     }
