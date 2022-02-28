@@ -24,7 +24,7 @@ fig-proto = { path = "../rust-lib/fig-proto" }
 fig-settings = { path = "../rust-lib/fig-settings" }
 flume = "0.10.11"
 futures = "0.3.21"
-git2 = { version = "0.13.25", features = ["vendored-openssl", "vendored-libgit2"] }
+git2 = { version = "0.14.1", features = ["vendored-openssl", "vendored-libgit2"] }
 globset = "0.4.8"
 handlebars = "4.2.1"
 notify = "4.0.17"
@@ -55,7 +55,7 @@ validator = "0.14.0"
 walkdir = "2.3.2"
 
 [target.'cfg(windows)'.dependencies]
-windows = { version = "0.32.0", features = ["Win32_Foundation", "Win32_Security", "Win32_System_Threading"] }
+windows = { version = "0.33.0", features = ["Win32_Foundation", "Win32_Security", "Win32_System_Threading"] }
 
 [target.'cfg(unix)'.dependencies]
 nix = "0.23.1"
