@@ -75,7 +75,7 @@ class PseudoTerminal {
     self.write("unset HISTFILE")
 
     // Retrieve PATH from settings if it exists
-    if let path = Settings.shared.getValue(forKey: Settings.ptyPathKey) as? String, path.count > 0 {
+    if let path = LocalState.shared.getValue(forKey: LocalState.ptyPathKey) as? String, path.count > 0 {
       let updatedPath = PathHelper.pathByPrependingMissingWellKnownLocations(path)
       self.set(environmentVariable: "PATH", value: updatedPath)
     } else {
@@ -86,8 +86,7 @@ class PseudoTerminal {
     sourceFile(at: "~/.fig/tools/ptyrc")
 
     // Source user-specified ptyrc file (if it exists)
-    let filePath = Settings.shared.getValue(forKey: Settings.ptyInitFile) as? String ?? "~/.fig/user/ptyrc"
-    sourceFile(at: filePath)
+    sourceFile(at: "~/.fig/user/ptyrc")
   }
 
   func write(_ input: String, handlerId: String? = nil) {

@@ -81,6 +81,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     Accessibility.checkIfPermissionRevoked()
 
     //        AppMover.moveIfNecessary()
+    _ = LocalState.shared
     _ = Settings.shared
     _ = ShellBridge.shared
     _ = WindowManager.shared

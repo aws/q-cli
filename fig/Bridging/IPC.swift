@@ -311,7 +311,7 @@ class IPC: UnixSocketServerDelegate {
         Settings.shared.settingsUpdated()
       }
       if hook.fileChanged == Local_FileChangedHook.FileChanged.state {
-        // TODO: Add state changed hook
+        LocalState.shared.localStateUpdated()
       }
     case .none:
       break

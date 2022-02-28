@@ -15,7 +15,7 @@ class HyperIntegration: TerminalIntegrationProvider {
 
   static var settings: [String: Any]? {
     guard let settings = try? String(contentsOfFile: settingsPath),
-          let json = settings.jsonStringToDict() else {
+          let json = settings.parseAsJSON() else {
       return nil
     }
 
