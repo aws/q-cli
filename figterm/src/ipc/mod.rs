@@ -1,10 +1,9 @@
 //! Utiities for IPC with Mac App
 
-use std::time::Duration;
-
 use anyhow::Result;
 use fig_proto::figterm::FigtermMessage;
 use flume::{bounded, Receiver, Sender};
+use std::time::Duration;
 use tokio::{fs::remove_file, io::AsyncWriteExt, net::UnixListener};
 use tracing::{debug, error};
 

@@ -9,3 +9,6 @@ members = [
     "rust-lib/fig-proto",
     "rust-lib/fig-settings",
 ]
+
+[profile.release]
+debug = true

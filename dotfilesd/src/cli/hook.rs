@@ -2,7 +2,8 @@ use crate::util::fig_dir;
 use anyhow::{Context, Result};
 use clap::Subcommand;
 use crossterm::style::Stylize;
-use fig_ipc::hook::{self, send_hook_to_socket};
+use fig_ipc::hook::send_hook_to_socket;
+use fig_proto::hooks;
 use std::fs::OpenOptions;
 use std::io::prelude::*;
 
@@ -14,8 +15,8 @@ pub enum HookSubcommand {
         integration: i32,
         tty: String,
         pid: i32,
-        histno: i32,
-        cursor: i32,
+        histno: i64,
+        cursor: i64,
         text: String,
     },
     Event {
@@ -62,27 +63,35 @@ impl HookSubcommand {
                 histno,
                 cursor,
                 text,
-            } => hook::create_edit_buffer_hook(
-                session_id,
-                *integration,
-                tty,
-                *pid,
-                i64::from(*histno),
-                i64::from(*cursor),
-                text,
-            ),
-            HookSubcommand::Event { event_name } => hook::create_event_hook(event_name),
-            HookSubcommand::Hide => hook::create_hide_hook(),
-            HookSubcommand::Init { pid, tty } => hook::create_init_hook(*pid, tty),
+            } => {
+                let context =
+                    hooks::generate_shell_context(*pid, tty, session_id.clone(), *integration)?;
+                Ok(hooks::new_edit_buffer_hook(context, text, *histno, *cursor))
+            }
+            HookSubcommand::Event { event_name } => Ok(hooks::new_event_hook(event_name)),
+            HookSubcommand::Hide => Ok(hooks::new_hide_hook()),
+            HookSubcommand::Init { pid, tty } => {
+                let context = hooks::generate_shell_context(*pid, tty, None, None)?;
+                hooks::new_init_hook(context)
+            }
             HookSubcommand::IntegrationReady { integration } => {
-                hook::create_integration_ready_hook(integration)
+                Ok(hooks::new_integration_ready_hook(integration))
             }
             HookSubcommand::KeyboardFocusChanged {
                 app_identifier,
                 focused_session_id,
-            } => hook::create_keyboard_focus_changed_hook(app_identifier, focused_session_id),
-            HookSubcommand::PreExec { pid, tty } => hook::create_preexec_hook(*pid, tty),
-            HookSubcommand::Prompt { pid, tty } => hook::create_prompt_hook(*pid, tty),
+            } => Ok(hooks::new_keyboard_focus_changed_hook(
+                app_identifier,
+                focused_session_id,
+            )),
+            HookSubcommand::PreExec { pid, tty } => {
+                let context = hooks::generate_shell_context(*pid, tty, None, None)?;
+                Ok(hooks::new_preexec_hook(context))
+            }
+            HookSubcommand::Prompt { pid, tty } => {
+                let context = hooks::generate_shell_context(*pid, tty, None, None)?;
+                Ok(hooks::new_prompt_hook(context))
+            }
             HookSubcommand::Ssh {
                 control_path,
                 pid,
@@ -115,10 +124,13 @@ impl HookSubcommand {
                         installed_hosts.write_all(&new_line.into_bytes())?;
                     }
                 }
-                hook::create_ssh_hook(*pid, tty, control_path, remote_dest)
+                let context = hooks::generate_shell_context(*pid, tty, None, None)?;
+                hooks::new_ssh_hook(context, control_path, remote_dest)
             }
         };
+
         let hook = hook.context("Invalid input for hook")?;
+
         send_hook_to_socket(hook).await.context(format!(
             "\n{}\nFig might not be running to launch Fig run: {}\n",
             "Unable to Connect to Fig:".bold(),

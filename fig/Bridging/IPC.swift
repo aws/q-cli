@@ -306,8 +306,13 @@ class IPC: UnixSocketServerDelegate {
       Autocomplete.hide()
     case .event(let hook):
       ShellHookManager.shared.eventHook(event: hook.eventName)
-    case .settingsChanged(let hook):
-      Settings.shared.settingsUpdated()
+    case .fileChanged(let hook):
+      if hook.fileChanged == Local_FileChangedHook.FileChanged.settings {
+        Settings.shared.settingsUpdated()
+      }
+      if hook.fileChanged == Local_FileChangedHook.FileChanged.state {
+        // TODO: Add state changed hook
+      }
     case .none:
       break
     }

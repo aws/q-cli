@@ -4,13 +4,19 @@ pub mod daemon;
 pub mod figterm;
 pub mod hooks;
 pub mod local;
-use std::fmt::Debug;
+pub mod util;
 
 pub use prost;
 
 use anyhow::Result;
-use bytes::{Bytes, BytesMut};
+use bytes::{Buf, Bytes, BytesMut};
 use prost::Message;
+use std::{
+    fmt::Debug,
+    io::{Cursor, Read},
+    mem::size_of,
+};
+use thiserror::Error;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum FigMessageType {
@@ -29,6 +35,58 @@ enum FigMessageType {
 pub struct FigMessage {
     inner: Bytes,
     _message_type: FigMessageType,
+}
+
+#[derive(Debug, Error)]
+pub enum FigMessageParseError {
+    #[error("incomlete message")]
+    Incomplete,
+    #[error("invalid message header")]
+    InvalidHeader,
+    #[error("invalid message type")]
+    InvalidMessageType([u8; 8]),
+    #[error("io error: {0}")]
+    Io(#[from] std::io::Error),
+}
+
+impl FigMessage {
+    pub fn parse(src: &mut Cursor<&[u8]>) -> Result<FigMessage, FigMessageParseError> {
+        if src.remaining() < 10 {
+            return Err(FigMessageParseError::Incomplete);
+        }
+
+        let mut header = [0; 2];
+        src.read_exact(&mut header)?;
+
+        if header[0] != b'\x1b' || header[1] != b'@' {
+            return Err(FigMessageParseError::InvalidHeader);
+        }
+
+        let mut message_type = [0; 8];
+        src.read_exact(&mut message_type)?;
+
+        if &message_type != b"fig-pbuf" {
+            return Err(FigMessageParseError::InvalidMessageType(message_type));
+        }
+
+        if src.remaining() < size_of::<u64>() {
+            return Err(FigMessageParseError::Incomplete);
+        }
+
+        let len = src.get_u64();
+
+        if src.remaining() < len as usize {
+            return Err(FigMessageParseError::Incomplete);
+        }
+
+        let mut inner = vec![0; len as usize];
+        src.read_exact(&mut inner)?;
+
+        Ok(FigMessage {
+            inner: Bytes::from(inner),
+            _message_type: FigMessageType::Protobuf,
+        })
+    }
 }
 
 impl std::ops::Deref for FigMessage {
@@ -77,7 +135,7 @@ mod tests {
 
     #[test]
     fn test_to_fig_pbuf() {
-        let hook = hooks::new_edit_buffer_hook(None, "test".into(), 0, 0);
+        let hook = hooks::new_edit_buffer_hook(None, "test", 0, 0);
         let message = hooks::hook_to_message(hook);
 
         assert!(message
