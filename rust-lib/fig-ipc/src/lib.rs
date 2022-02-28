@@ -80,8 +80,6 @@ where
 
 #[derive(Debug, Error)]
 pub enum RecvError {
-    #[error("connection reset by peer")]
-    ConnectionReset,
     #[error("failed to read from stream: {0}")]
     Io(#[from] io::Error),
     #[error("failed to decode message: {0}")]
@@ -106,7 +104,7 @@ where
                     return Ok(None);
                 } else {
                     // If the buffer is not empty, the connection was reset
-                    return Err(RecvError::ConnectionReset);
+                    return Err(io::Error::from(io::ErrorKind::ConnectionReset).into());
                 }
             }
             n
