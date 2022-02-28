@@ -75,7 +75,10 @@ impl ShellIntegration {
             When::Post => "post",
         };
         let eval_line = match self.shell {
-            Shell::Fish => format!("eval (fig init {} {})", self.shell, when_text),
+            Shell::Fish => format!(
+                "eval (fig init {} {} | string split0)",
+                self.shell, when_text
+            ),
             _ => format!("eval \"$(fig init {} {})\"", self.shell, when_text),
         };
 
@@ -359,7 +362,7 @@ impl Shell {
             // Source bash preexec before any bash integration, pre or post.
             let bash_preexec = include_str!("../integrations/shell/bash-preexec.sh");
             format!(
-                "{}\n{}\n{}",
+                "function __fig_source_bash_preexec() {{\n{}\n}}\n__fig_source_bash_preexec\n{}\n{}",
                 bash_preexec,
                 // Override __bp_adjust_histcontrol to preserve histcontrol.
                 "function __bp_adjust_histcontrol() { :; }",
