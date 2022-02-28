@@ -24,9 +24,7 @@ pub fn get_term_bundle() -> Option<std::borrow::Cow<'static, str>> {
             _ => Some("com.microsoft.vscode".into()),
         },
         Some("Tabby") => Some("org.tabby".into()),
-        _ => std::env::var("TERM_BUNDLE_IDENTIFIER")
-            .ok()
-            .map(|s| s.into()),
+        _ => std::env::var("__CFBundleIdentifier").ok().map(|s| s.into()),
     }
 }
 

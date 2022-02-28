@@ -6,14 +6,16 @@ use crate::{
     util::{
         app_path_from_bundle_id, fig_dir, get_shell, glob, glob_dir, home_dir,
         shell::{Shell, ShellFileIntegration},
+        terminal::Terminal,
     },
 };
 
 use anyhow::{anyhow, Context, Result};
 use async_trait::async_trait;
 use crossterm::{
+    cursor, execute,
     style::Stylize,
-    terminal::{disable_raw_mode, enable_raw_mode},
+    terminal::{disable_raw_mode, enable_raw_mode, Clear, ClearType},
 };
 use fig_auth::Credentials;
 use fig_ipc::{connect_timeout, get_fig_socket_path, send_recv_message};
@@ -40,6 +42,8 @@ use tokio::{
     self,
     io::{AsyncBufReadExt, AsyncWriteExt},
 };
+
+use spinners::{Spinner, Spinners};
 
 type DoctorFix = Box<dyn FnOnce() -> Result<()> + Send>;
 
@@ -166,6 +170,10 @@ where
     }
 
     async fn check(&self, context: &T) -> Result<(), DoctorError>;
+
+    fn is_soft_check(&self, _: &T) -> bool {
+        false
+    }
 }
 
 struct FigBinCheck;
@@ -879,19 +887,27 @@ impl DoctorCheck<DiagnosticsResponse> for SecureKeyboardCheck {
     }
 }
 
-struct ItermIntegrationCheck;
+struct ItermIntegrationCheck {}
 
 #[async_trait]
-impl DoctorCheck for ItermIntegrationCheck {
+impl DoctorCheck<Option<Terminal>> for ItermIntegrationCheck {
     fn name(&self) -> Cow<'static, str> {
         "iTerm integration is enabled".into()
     }
 
-    fn should_check(&self, _: &()) -> bool {
-        is_installed("com.googlecode.iterm2")
+    fn should_check(&self, _: &Option<Terminal>) -> bool {
+        is_installed(Terminal::Iterm.to_bundle_id())
     }
 
-    async fn check(&self, _: &()) -> Result<(), DoctorError> {
+    fn is_soft_check(&self, current_terminal: &Option<Terminal>) -> bool {
+        if let Some(terminal) = current_terminal.to_owned() {
+            terminal != Terminal::Iterm
+        } else {
+            false
+        }
+    }
+
+    async fn check(&self, _: &Option<Terminal>) -> Result<(), DoctorError> {
         // iTerm Integration
         let integration = verify_integration("com.googlecode.iterm2")
             .await
@@ -937,19 +953,27 @@ impl DoctorCheck for ItermIntegrationCheck {
 struct ItermBashIntegrationCheck;
 
 #[async_trait]
-impl DoctorCheck for ItermBashIntegrationCheck {
+impl DoctorCheck<Option<Terminal>> for ItermBashIntegrationCheck {
     fn name(&self) -> Cow<'static, str> {
         "iTerm bash integration configured".into()
     }
 
-    fn should_check(&self, _: &()) -> bool {
+    fn should_check(&self, _: &Option<Terminal>) -> bool {
         match home_dir() {
             Ok(home) => home.join(".iterm2_shell_integration.bash").exists(),
             Err(_) => false,
         }
     }
 
-    async fn check(&self, _: &()) -> Result<(), DoctorError> {
+    fn is_soft_check(&self, current_terminal: &Option<Terminal>) -> bool {
+        if let Some(terminal) = current_terminal.to_owned() {
+            terminal != Terminal::Iterm
+        } else {
+            false
+        }
+    }
+
+    async fn check(&self, _: &Option<Terminal>) -> Result<(), DoctorError> {
         let integration_file = home_dir()?.join(".iterm2_shell_integration.bash");
         let integration = read_to_string(integration_file)
             .context("Could not read .iterm2_shell_integration.bash")?;
@@ -975,16 +999,24 @@ impl DoctorCheck for ItermBashIntegrationCheck {
 
 struct HyperIntegrationCheck;
 #[async_trait]
-impl DoctorCheck for HyperIntegrationCheck {
+impl DoctorCheck<Option<Terminal>> for HyperIntegrationCheck {
     fn name(&self) -> Cow<'static, str> {
         "Hyper integration is enabled".into()
     }
 
-    fn should_check(&self, _: &()) -> bool {
-        is_installed("co.zeit.hyper")
+    fn should_check(&self, _: &Option<Terminal>) -> bool {
+        is_installed(Terminal::Hyper.to_bundle_id())
     }
 
-    async fn check(&self, _: &()) -> Result<(), DoctorError> {
+    fn is_soft_check(&self, current_terminal: &Option<Terminal>) -> bool {
+        if let Some(terminal) = current_terminal.to_owned() {
+            terminal != Terminal::Hyper
+        } else {
+            false
+        }
+    }
+
+    async fn check(&self, _: &Option<Terminal>) -> Result<(), DoctorError> {
         let integration = verify_integration("co.zeit.hyper")
             .await
             .context("Could not verify Hyper integration")?;
@@ -1032,19 +1064,28 @@ impl DoctorCheck for SystemVersionCheck {
     }
 }
 
-struct VSCodeIntegrationCheck;
+struct VSCodeIntegrationCheck {}
 
 #[async_trait]
-impl DoctorCheck for VSCodeIntegrationCheck {
+impl DoctorCheck<Option<Terminal>> for VSCodeIntegrationCheck {
     fn name(&self) -> Cow<'static, str> {
         "VSCode integration is enabled".into()
     }
 
-    fn should_check(&self, _: &()) -> bool {
-        is_installed("com.microsoft.VSCode")
+    fn should_check(&self, _: &Option<Terminal>) -> bool {
+        is_installed(Terminal::Vscode.to_bundle_id())
+            || is_installed(Terminal::VSCodeInsiders.to_bundle_id())
     }
 
-    async fn check(&self, _: &()) -> Result<(), DoctorError> {
+    fn is_soft_check(&self, current_terminal: &Option<Terminal>) -> bool {
+        if let Some(terminal) = current_terminal.to_owned() {
+            terminal != Terminal::Vscode && terminal != Terminal::VSCodeInsiders
+        } else {
+            false
+        }
+    }
+
+    async fn check(&self, _: &Option<Terminal>) -> Result<(), DoctorError> {
         let integration = verify_integration("com.microsoft.VSCode")
             .await
             .context("Could not verify VSCode integration")?;
@@ -1114,12 +1155,15 @@ async fn run_checks_with_context<T, Fut>(
     header: impl AsRef<str>,
     checks: Vec<&dyn DoctorCheck<T>>,
     get_context: impl Fn() -> Fut,
+    config: CheckConfiguration,
 ) -> Result<()>
 where
     T: Sync + Send,
     Fut: Future<Output = Result<T>>,
 {
-    println!("{}", header.as_ref().dark_grey());
+    if config.verbose {
+        println!("{}", header.as_ref().dark_grey());
+    }
     let mut context = get_context().await?;
     for check in checks {
         let name: String = check.name().into();
@@ -1127,9 +1171,22 @@ where
             continue;
         }
 
-        let result = check.check(&context).await;
+        let mut result = check.check(&context).await;
 
-        print_status_result(&name, &result);
+        if !config.strict && check.is_soft_check(&context) {
+            match result {
+                Err(DoctorError::Error {
+                    reason,
+                    info: _,
+                    fix: _,
+                }) => result = Err(DoctorError::Warning(reason)),
+                _ => {}
+            }
+        }
+
+        if config.verbose {
+            print_status_result(&name, &result);
+        }
 
         if let Err(err) = &result {
             if let Ok(uuid) = fig_auth::get_default("uuid") {
@@ -1194,23 +1251,56 @@ where
             anyhow::bail!(reason);
         }
     }
-    println!();
+
+    if config.verbose {
+        println!();
+    }
 
     Ok(())
+}
+
+async fn get_terminal_context() -> Result<Option<Terminal>> {
+    Ok(Terminal::current_terminal())
 }
 
 async fn get_null_context() -> Result<()> {
     Ok(())
 }
 
-async fn run_checks(header: String, checks: Vec<&dyn DoctorCheck>) -> Result<()> {
-    run_checks_with_context(header, checks, get_null_context).await
+async fn run_checks(
+    header: String,
+    checks: Vec<&dyn DoctorCheck>,
+    config: CheckConfiguration,
+) -> Result<()> {
+    run_checks_with_context(header, checks, get_null_context, config).await
+}
+
+#[derive(Copy, Clone)]
+struct CheckConfiguration {
+    verbose: bool,
+    strict: bool,
 }
 
 // Doctor
-pub async fn doctor_cli() -> Result<()> {
-    println!("Checking dotfiles...");
-    println!();
+pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
+    let config = CheckConfiguration {
+        verbose: verbose,
+        strict: strict,
+    };
+
+    let mut spinner: Option<Spinner> = None;
+    if !config.verbose {
+        spinner = Some(Spinner::new(
+            Spinners::Dots,
+            "Running diagnostic checks...".into(),
+        ));
+        execute!(std::io::stdout(), cursor::Hide)?;
+
+        ctrlc::set_handler(move || {
+            execute!(std::io::stdout(), cursor::Show);
+            std::process::exit(1);
+        });
+    }
 
     let status = async {
         run_checks(
@@ -1224,6 +1314,7 @@ pub async fn doctor_cli() -> Result<()> {
                 &FigtermSocketCheck {},
                 &InsertionLockCheck {},
             ],
+            config,
         )
         .await?;
 
@@ -1247,11 +1338,17 @@ pub async fn doctor_cli() -> Result<()> {
             .iter()
             .map(|p| (&*p) as &dyn DoctorCheck)
             .collect();
-        run_checks("Let's check your dotfiles...".into(), all_dotfile_checks).await?;
+        run_checks(
+            "Let's check your dotfiles...".into(),
+            all_dotfile_checks,
+            config,
+        )
+        .await?;
 
         run_checks(
             "Let's check if your system is compatible...".into(),
             vec![&SystemVersionCheck {}],
+            config,
         )
         .await?;
 
@@ -1269,30 +1366,45 @@ pub async fn doctor_cli() -> Result<()> {
                 &DotfilesSymlinkedCheck {},
             ],
             get_diagnostics,
+            config,
         )
         .await?;
 
-        run_checks(
-            "Let's check your integrations...".into(),
+        run_checks_with_context(
+            "Let's check your terminal integrations...",
             vec![
                 &ItermIntegrationCheck {},
                 &ItermBashIntegrationCheck {},
                 &HyperIntegrationCheck {},
                 &VSCodeIntegrationCheck {},
             ],
+            get_terminal_context,
+            config,
         )
         .await?;
 
         run_checks(
             "Let's check if you're logged in...".into(),
             vec![&LoginStatusCheck {}],
+            config,
         )
         .await?;
 
         anyhow::Ok(())
     };
 
-    if status.await.is_err() {
+    let is_error = status.await.is_err();
+
+    if let Some(sp) = spinner {
+        sp.stop();
+        execute!(
+            std::io::stdout(),
+            Clear(ClearType::CurrentLine),
+            cursor::Show
+        )?;
+    }
+
+    if is_error {
         println!();
         println!("❌ Doctor found errors. Please fix them and try again.");
         println!();
