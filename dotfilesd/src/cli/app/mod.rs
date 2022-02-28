@@ -5,8 +5,9 @@ use clap::Subcommand;
 use crossterm::style::Stylize;
 use fig_ipc::{
     command::{quit_command, restart_command},
-    hook::{create_init_hook, send_hook_to_socket},
+    hook::send_hook_to_socket,
 };
+use fig_proto::hooks;
 use regex::Regex;
 use serde_json::json;
 use std::{process::Command, time::Duration};
@@ -136,12 +137,17 @@ impl AppSubcommand {
                     "{} Unable to reload. Restart terminal to apply changes.",
                     "Error:".red()
                 ))?;
+
                 let tty = String::from_utf8(output.stdout)?;
-                let hook =
-                    create_init_hook(nix::unistd::getppid().into(), tty).context(format!(
+                let pid = nix::unistd::getppid();
+
+                let hook = hooks::generate_shell_context(pid, tty, None, None)
+                    .and_then(|hook_context| hooks::new_init_hook(hook_context))
+                    .context(format!(
                         "{} Unable to reload. Restart terminal to apply changes.",
                         "Error:".red()
                     ))?;
+
                 send_hook_to_socket(hook).await.context(format!(
                     "\n{}\nFig might not be running to launch Fig run: {}\n",
                     "Unable to Connect to Fig:".bold(),

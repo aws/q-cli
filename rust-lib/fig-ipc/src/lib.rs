@@ -3,13 +3,13 @@ pub mod command;
 pub mod daemon;
 pub mod figterm;
 pub mod hook;
-pub mod util;
 
 use anyhow::{bail, Result};
-use bytes::{Bytes, BytesMut};
-use fig_proto::FigProtobufEncodable;
+use bytes::BytesMut;
+use fig_proto::{FigMessage, FigProtobufEncodable};
 use prost::Message;
 use std::fmt::Debug;
+use std::io::Cursor;
 use std::{
     path::{Path, PathBuf},
     time::Duration,
@@ -80,14 +80,16 @@ where
 
 #[derive(Debug, Error)]
 pub enum RecvError {
+    #[error("Stream is empty")]
+    Empty,
+    #[error("Connection closed")]
+    Closed,
     #[error("Failed to read from stream: {0}")]
     Io(#[from] io::Error),
     #[error("Failed to decode message: {0}")]
     Decode(#[from] prost::DecodeError),
-    #[error("Invalid message header {0}")]
-    InvalidMessageType(String),
-    #[error("Invalid message length {0:?}")]
-    InvalidMessageLength(Bytes),
+    #[error("Failed to parse message: {0}")]
+    Parse(#[from] fig_proto::FigMessageParseError),
 }
 
 pub async fn recv_message<T, S>(stream: &mut S) -> Result<T, RecvError>
@@ -95,66 +97,26 @@ where
     T: Message + Default,
     S: AsyncReadExt + Unpin,
 {
-    let mut buffer = BytesMut::new();
-    if let Err(err) = stream.read_buf(&mut buffer).await {
-        error!("Failed to read from stream: {}", err);
-        return Err(RecvError::Io(err));
-    }
+    let mut buff = BytesMut::with_capacity(1024);
 
-    while buffer.len() < 10 {
-        if let Err(err) = stream.read_buf(&mut buffer).await {
-            error!("Failed to read from stream: {}", err);
-            return Err(RecvError::Io(err));
-        }
-    }
-
-    let proto_type = match buffer.split_to(10).as_ref() {
-        b"\x1b@fig-pbuf" => Ok(()),
-        buff => Err(RecvError::InvalidMessageType(
-            String::from_utf8_lossy(buff).to_string(),
-        )),
-    };
-
-    while buffer.len() < 8 {
-        if let Err(err) = stream.read_buf(&mut buffer).await {
-            error!("Failed to read from stream: {}", err);
-            return Err(RecvError::Io(err));
-        }
-    }
-
-    let msg_size = buffer.split_to(8);
-    let msg_size = u64::from_be_bytes(match msg_size.as_ref().try_into() {
-        Ok(msg_size) => msg_size,
-        Err(_) => {
-            error!("Invalid message length: {:?}", msg_size);
-            return Err(RecvError::InvalidMessageLength(msg_size.freeze()));
-        }
-    });
-
-    while buffer.len() < msg_size as usize {
-        if let Err(err) = stream.read_buf(&mut buffer).await {
-            error!("Failed to read from stream: {}", err);
-            return Err(RecvError::Io(err));
-        }
-    }
-
-    if let Err(err) = proto_type {
-        error!("Invalid message type: {}", err);
-        return Err(err);
-    }
-
-    Ok(
-        match T::decode(buffer.split_to(msg_size as usize).as_ref()) {
-            Ok(message) => {
-                trace!("Received message: {:?}", message);
-                message
+    loop {
+        let mut cursor = Cursor::new(buff.as_ref());
+        match FigMessage::parse(&mut cursor) {
+            Ok(message) => return Ok(T::decode(message.as_ref())?),
+            Err(fig_proto::FigMessageParseError::Incomplete) => {
+                if 0 == stream.read_buf(&mut buff).await? {
+                    if buff.is_empty() {
+                        return Err(RecvError::Empty);
+                    } else {
+                        return Err(RecvError::Closed);
+                    }
+                }
             }
             Err(err) => {
-                error!("Failed to decode message: {}", err);
-                return Err(RecvError::Decode(err));
+                return Err(err.into());
             }
-        },
-    )
+        }
+    }
 }
 
 pub async fn send_recv_message<M, R, S>(stream: &mut S, message: M, timeout: Duration) -> Result<R>

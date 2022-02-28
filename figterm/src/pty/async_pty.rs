@@ -1,15 +1,13 @@
-use std::{
-    io::{Read, Write},
-    os::unix::prelude::{AsRawFd, RawFd},
-};
-
+use anyhow::{Context, Result};
 use nix::{
     fcntl::{self, FcntlArg, OFlag},
     pty::PtyMaster,
 };
+use std::{
+    io::{Read, Write},
+    os::unix::prelude::{AsRawFd, RawFd},
+};
 use tokio::io::{self, unix::AsyncFd};
-
-use anyhow::{Context, Result};
 
 /// An async wrapper over `PtyMaster`
 pub struct AsyncPtyMaster(AsyncFd<PtyMaster>);

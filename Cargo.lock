@@ -988,7 +988,6 @@ dependencies = [
  "anyhow",
  "bytes",
  "fig-proto",
- "nix 0.23.1",
  "prost",
  "thiserror",
  "tokio",
@@ -1001,8 +1000,10 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "bytes",
+ "nix 0.23.1",
  "prost",
  "prost-build",
+ "thiserror",
 ]
 
 [[package]]

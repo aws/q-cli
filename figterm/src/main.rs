@@ -6,11 +6,6 @@ pub mod pty;
 pub mod term;
 pub mod utils;
 
-use std::{
-    env, error::Error, ffi::CString, os::unix::prelude::AsRawFd, path::PathBuf, process::exit,
-    str::FromStr, vec,
-};
-
 use crate::{
     ipc::{spawn_incoming_receiver, spawn_outgoing_sender},
     logger::init_logger,
@@ -46,6 +41,10 @@ use nix::{
 };
 use once_cell::sync::Lazy;
 use sentry::integrations::anyhow::capture_anyhow;
+use std::{
+    env, error::Error, ffi::CString, os::unix::prelude::AsRawFd, path::PathBuf, process::exit,
+    str::FromStr, vec,
+};
 use tokio::{
     io::{self, AsyncReadExt, AsyncWriteExt},
     runtime, select,

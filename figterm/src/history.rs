@@ -1,16 +1,15 @@
-use std::{
-    borrow::Cow,
-    fs::File,
-    io::{BufWriter, Read, Write},
-    path::PathBuf,
-};
-
 use alacritty_terminal::term::CommandInfo;
 use anyhow::Result;
 use flume::{bounded, Sender};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use rusqlite::{params, Connection};
+use std::{
+    borrow::Cow,
+    fs::File,
+    io::{BufWriter, Read, Write},
+    path::PathBuf,
+};
 use tracing::error;
 
 use crate::utils::fig_path;
