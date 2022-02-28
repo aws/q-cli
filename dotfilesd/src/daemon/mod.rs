@@ -224,8 +224,7 @@ impl InitSystem {
                     .lines()
                     .map(|line| line.split_whitespace().collect::<Vec<_>>())
                     .find(|line| line[2] == self.daemon_name())
-                    .map(|data| data[1].parse::<i32>().ok())
-                    .flatten();
+                    .and_then(|data| data[1].parse::<i32>().ok());
 
                 Ok(status)
             }

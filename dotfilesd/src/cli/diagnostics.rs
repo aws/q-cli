@@ -215,8 +215,7 @@ impl CurrentEnvironment {
     fn new() -> CurrentEnvironment {
         let user_shell = dscl_read("UserShell")
             .ok()
-            .map(|out| out.split(':').last().map(|val| val.trim().into()))
-            .flatten()
+            .and_then(|out| out.split(':').last().map(|val| val.trim().into()))
             .unwrap_or_else(|| "Unknown UserShell".into());
 
         let current_dir = std::env::current_dir()

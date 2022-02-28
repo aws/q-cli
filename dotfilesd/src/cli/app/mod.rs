@@ -61,8 +61,7 @@ pub async fn quit_fig() -> Result<()> {
                 let pid = Regex::new(r"pid = (\S+)")
                     .unwrap()
                     .captures(&info)
-                    .map(|c| c.get(1))
-                    .flatten();
+                    .and_then(|c| c.get(1));
                 if let Some(pid) = pid {
                     let success = Command::new("kill")
                         .arg("-KILL")

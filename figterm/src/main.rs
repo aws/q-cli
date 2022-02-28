@@ -146,8 +146,7 @@ impl EventListener for EventSender {
     fn log_level_event(&self, level: Option<String>) {
         logger::set_log_level(
             level
-                .map(|level| LevelFilter::from_str(&level).ok())
-                .flatten()
+                .and_then(|level| LevelFilter::from_str(&level).ok())
                 .unwrap_or(LevelFilter::INFO),
         );
     }
@@ -190,7 +189,7 @@ where
 {
     match term.get_current_buffer() {
         Some(edit_buffer) => {
-            if let Some(cursor_idx) = edit_buffer.cursor_idx.map(|i| i.try_into().ok()).flatten() {
+            if let Some(cursor_idx) = edit_buffer.cursor_idx.and_then(|i| i.try_into().ok()) {
                 info!("edit_buffer: {:?}", edit_buffer);
 
                 let context = shell_state_to_context(term.shell_state());

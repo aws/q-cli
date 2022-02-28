@@ -46,8 +46,7 @@ pub async fn prompt_dotfiles_changed() -> Result<()> {
 
     if file_content.contains("true") {
         let source_immediately = fig_settings::settings::get_value("dotfiles.sourceImmediately")?
-            .map(|s| s.as_str().map(|s| s.to_owned()))
-            .flatten();
+            .and_then(|s| s.as_str().map(|s| s.to_owned()));
 
         match source_immediately.as_deref() {
             Some("never") => {}

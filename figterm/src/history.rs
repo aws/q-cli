@@ -62,13 +62,13 @@ fn unescape_string(s: &str) -> Cow<str> {
 
 fn escape_string(s: impl AsRef<str>) -> String {
     s.as_ref()
-        .replace("\\", "\\\\")
-        .replace("\"", "\\\"")
-        .replace("\n", "\\n")
-        .replace("\t", "\\t")
-        .replace("\r", "\\r")
-        .replace("\x08", "\\b")
-        .replace("\x0c", "\\f")
+        .replace('\\', "\\\\")
+        .replace('\"', "\\\"")
+        .replace('\n', "\\n")
+        .replace('\t', "\\t")
+        .replace('\r', "\\r")
+        .replace('\x08', "\\b")
+        .replace('\x0c', "\\f")
 }
 
 pub struct History {
