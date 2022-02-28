@@ -9,7 +9,7 @@ use tracing::{debug, error, info};
 
 use super::DaemonStatus;
 
-pub async fn spawn_settings_watcher(daemon_status: Arc<RwLock<DaemonStatus>>) -> Result<()> {
+pub async fn spawn_settings_watcher(_daemon_status: Arc<RwLock<DaemonStatus>>) -> Result<()> {
     // We need to spawn both a thread and a tokio task since the notify library does not
     // currently support async, this should be improved in the future, but currently this works fine
 

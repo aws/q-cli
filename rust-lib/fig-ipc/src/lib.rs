@@ -80,38 +80,53 @@ where
 
 #[derive(Debug, Error)]
 pub enum RecvError {
-    #[error("Stream is empty")]
-    Empty,
-    #[error("Connection closed")]
-    Closed,
-    #[error("Failed to read from stream: {0}")]
+    #[error("connection reset by peer")]
+    ConnectionReset,
+    #[error("failed to read from stream: {0}")]
     Io(#[from] io::Error),
-    #[error("Failed to decode message: {0}")]
+    #[error("failed to decode message: {0}")]
     Decode(#[from] prost::DecodeError),
-    #[error("Failed to parse message: {0}")]
+    #[error("failed to parse message: {0}")]
     Parse(#[from] fig_proto::FigMessageParseError),
 }
 
-pub async fn recv_message<T, S>(stream: &mut S) -> Result<T, RecvError>
+pub async fn recv_message<T, S>(stream: &mut S) -> Result<Option<T>, RecvError>
 where
     T: Message + Default,
     S: AsyncReadExt + Unpin,
 {
-    let mut buff = BytesMut::with_capacity(1024);
+    let mut buffer = BytesMut::with_capacity(1024);
 
-    loop {
-        let mut cursor = Cursor::new(buff.as_ref());
-        match FigMessage::parse(&mut cursor) {
-            Ok(message) => return Ok(T::decode(message.as_ref())?),
-            Err(fig_proto::FigMessageParseError::Incomplete) => {
-                if 0 == stream.read_buf(&mut buff).await? {
-                    if buff.is_empty() {
-                        return Err(RecvError::Empty);
-                    } else {
-                        return Err(RecvError::Closed);
-                    }
+    macro_rules! read_buffer {
+        () => {{
+            let n = stream.read_buf(&mut buffer).await?;
+            if n == 0 {
+                if buffer.is_empty() {
+                    // If the buffer is empty, we've reached EOF
+                    return Ok(None);
+                } else {
+                    // If the buffer is not empty, the connection was reset
+                    return Err(RecvError::ConnectionReset);
                 }
             }
+            n
+        }};
+    }
+
+    // Read into buffer the first time
+    read_buffer!();
+
+    loop {
+        // Try to parse the message until the buffer is a valid message
+        let mut cursor = Cursor::new(buffer.as_ref());
+        match FigMessage::parse(&mut cursor) {
+            // If the parsed message is valid, return it
+            Ok(message) => return Ok(Some(T::decode(message.as_ref())?)),
+            // If the message is incomplete, read more into the buffer
+            Err(fig_proto::FigMessageParseError::Incomplete) => {
+                read_buffer!();
+            }
+            // On any other error, return the error
             Err(err) => {
                 return Err(err.into());
             }
@@ -119,7 +134,11 @@ where
     }
 }
 
-pub async fn send_recv_message<M, R, S>(stream: &mut S, message: M, timeout: Duration) -> Result<R>
+pub async fn send_recv_message<M, R, S>(
+    stream: &mut S,
+    message: M,
+    timeout: Duration,
+) -> Result<Option<R>>
 where
     M: Message + FigProtobufEncodable,
     R: Message + Default,

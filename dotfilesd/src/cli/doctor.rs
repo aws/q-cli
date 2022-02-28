@@ -409,7 +409,7 @@ impl DoctorCheck for DaemonCheck {
             }
         };
 
-        let diagnostic_response_result: Result<fig_proto::daemon::DaemonResponse> =
+        let diagnostic_response_result: Result<Option<fig_proto::daemon::DaemonResponse>> =
             send_recv_message(
                 &mut conn,
                 fig_proto::daemon::new_diagnostic_message(),
@@ -418,7 +418,7 @@ impl DoctorCheck for DaemonCheck {
             .await;
 
         match diagnostic_response_result {
-            Ok(diagnostic_response) => match diagnostic_response.response {
+            Ok(Some(diagnostic_response)) => match diagnostic_response.response {
                 Some(response_type) => match response_type {
                     fig_proto::daemon::daemon_response::Response::Diagnostic(diagnostics) => {
                         if let Some(status) = diagnostics.settings_watcher_status {
@@ -464,7 +464,7 @@ impl DoctorCheck for DaemonCheck {
                     })
                 }
             },
-            Err(_) => {
+            Ok(None) | Err(_) => {
                 return Err(DoctorError::Error {
                     reason: "Daemon accepted request but did not respond".into(),
                     info: vec![format!("Socket path: {}", socket_path.display()).into()],

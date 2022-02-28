@@ -5,7 +5,7 @@ use fig_proto::figterm::FigtermMessage;
 use flume::{bounded, Receiver, Sender};
 use std::time::Duration;
 use tokio::{fs::remove_file, io::AsyncWriteExt, net::UnixListener};
-use tracing::{debug, error};
+use tracing::{debug, error, trace};
 
 pub async fn create_socket_listen(session_id: impl AsRef<str>) -> Result<UnixListener> {
     let socket_path = fig_ipc::figterm::get_figterm_socket_path(session_id);
@@ -19,6 +19,7 @@ pub async fn create_socket_listen(session_id: impl AsRef<str>) -> Result<UnixLis
 }
 
 pub async fn spawn_outgoing_sender() -> Result<Sender<fig_proto::local::LocalMessage>> {
+    trace!("Spawning outgoing sender");
     let (outgoing_tx, outgoing_rx) = bounded::<fig_proto::local::LocalMessage>(256);
 
     tokio::spawn(async move {
@@ -35,7 +36,7 @@ pub async fn spawn_outgoing_sender() -> Result<Sender<fig_proto::local::LocalMes
             match conn {
                 Ok(mut unix_stream) => {
                     match fig_ipc::send_message(&mut unix_stream, message).await {
-                        Ok(_) => {
+                        Ok(()) => {
                             if let Err(e) = unix_stream.flush().await {
                                 error!("Failed to flush socket: {}", e)
                             }
@@ -58,22 +59,30 @@ pub async fn spawn_outgoing_sender() -> Result<Sender<fig_proto::local::LocalMes
 pub async fn spawn_incoming_receiver(
     session_id: impl AsRef<str>,
 ) -> Result<Receiver<FigtermMessage>> {
+    trace!("Spawning incoming receiver");
+
     let socket_listener = create_socket_listen(session_id).await?;
     let (incomming_tx, incomming_rx) = bounded(256);
 
     tokio::spawn(async move {
         loop {
-            if let Ok((mut stream, _)) = socket_listener.accept().await {
+            if let Ok((mut stream, addr)) = socket_listener.accept().await {
+                trace!("Accepted connection from {:?}", addr);
                 let incomming_tx = incomming_tx.clone();
                 tokio::spawn(async move {
                     loop {
                         match fig_ipc::recv_message::<FigtermMessage, _>(&mut stream).await {
-                            Ok(message) => {
+                            Ok(Some(message)) => {
                                 debug!("Received message: {:?}", message);
                                 incomming_tx.clone().send_async(message).await.unwrap();
                             }
+                            Ok(None) => {
+                                debug!("Received EOF");
+                                break;
+                            }
                             Err(err) => {
                                 error!("Error receiving message: {}", err);
+                                break;
                             }
                         }
                     }

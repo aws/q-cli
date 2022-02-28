@@ -142,7 +142,7 @@ impl AppSubcommand {
                 let pid = nix::unistd::getppid();
 
                 let hook = hooks::generate_shell_context(pid, tty, None, None)
-                    .and_then(|hook_context| hooks::new_init_hook(hook_context))
+                    .and_then(hooks::new_init_hook)
                     .context(format!(
                         "{} Unable to reload. Restart terminal to apply changes.",
                         "Error:".red()

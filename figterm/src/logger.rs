@@ -69,7 +69,7 @@ pub fn init_logger(ptc_name: impl AsRef<str>) -> Result<()> {
     }
 
     let file = File::create(log_path).context("failed to create log file")?;
-    let fmt_layer = fmt::layer().with_target(false).with_writer(file);
+    let fmt_layer = fmt::layer().with_writer(file);
 
     tracing_subscriber::registry()
         .with(filter_layer)

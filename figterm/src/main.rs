@@ -354,7 +354,6 @@ fn figterm_main() -> Result<()> {
 
             match runtime
                 .block_on(async {
-
                     info!("Shell: {}", pid);
                     info!("Figterm: {}", getpid());
 
@@ -362,6 +361,7 @@ fn figterm_main() -> Result<()> {
 
                     let raw_termios = termios_to_raw(termios);
                     tcsetattr(STDIN_FILENO, SetArg::TCSAFLUSH, &raw_termios)?;
+                    trace!("Set raw termios");
 
                     // Spawn thread to handle outgoing data to main Fig app
                     let outgoing_sender = spawn_outgoing_sender().await?;
@@ -395,8 +395,10 @@ fn figterm_main() -> Result<()> {
 
                     'select_loop: loop {
                         if term.shell_state().has_seen_prompt && first_time {
+                            trace!("Has seen prompt and first time");
                             let initial_command = env::var("FIG_START_TEXT").ok().filter(|s| !s.is_empty());
                             if let Some(mut initial_command) = initial_command {
+                                debug!("Sending initial text: {}", initial_command);
                                 initial_command.push('\n');
                                 if let Err(e) = master.write(initial_command.as_bytes()).await {
                                     error!("Failed to write initial command: {}", e);
@@ -411,6 +413,7 @@ fn figterm_main() -> Result<()> {
                                 match res {
                                     Ok(size) => match std::str::from_utf8(&read_buffer[..size]) {
                                             Ok(s) => {
+                                                trace!("Read {} bytes from stdin", size);
                                                 for c in s.chars() {
                                                     if !intercept_set.contains(&c) {
                                                         let mut utf8_buf = [0; 4];
