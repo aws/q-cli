@@ -40,9 +40,7 @@ impl LocalJson {
     }
 
     pub fn get(&self, key: impl AsRef<str>) -> Option<&serde_json::Value> {
-        self.inner
-            .get("settings")
-            .and_then(|settings| settings.get(key.as_ref()))
+        self.inner.get(key.as_ref())
     }
 
     pub fn remove(&mut self, key: impl AsRef<str>) -> Result<()> {
@@ -55,9 +53,7 @@ impl LocalJson {
     }
 
     pub fn get_mut(&mut self, key: impl Into<String>) -> Option<&mut serde_json::Value> {
-        self.inner
-            .get_mut("settings")
-            .and_then(|settings| settings.get_mut(key.into()))
+        self.inner.get_mut(key.into())
     }
 
     pub fn get_mut_settings(&mut self) -> Option<&mut serde_json::Map<String, serde_json::Value>> {

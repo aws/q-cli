@@ -1013,8 +1013,11 @@ dependencies = [
  "anyhow",
  "directories",
  "fig-auth",
+ "futures",
+ "reqwest",
  "serde",
  "serde_json",
+ "tokio",
 ]
 
 [[package]]

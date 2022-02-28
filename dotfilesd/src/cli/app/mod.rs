@@ -123,12 +123,7 @@ impl AppSubcommand {
             AppSubcommand::SetPath => {
                 println!("\nSetting $PATH variable in Fig pseudo-terminal...\n");
                 let path = std::env::var("PATH")?;
-                let result = fig_settings::settings::set_value("pty.path", json!(path));
-
-                if result.is_err() {
-                    println!("{} Unable to load settings file", "Error:".red());
-                    return result;
-                }
+                fig_settings::state::set_value("pty.path", json!(path))?;
                 println!(
                     "Fig will now use the following path to locate the fig executable:\n{}\n",
                     path.magenta()
@@ -142,7 +137,7 @@ impl AppSubcommand {
                 let pid = nix::unistd::getppid();
 
                 let hook = hooks::generate_shell_context(pid, tty, None, None)
-                    .and_then(|hook_context| hooks::new_init_hook(hook_context))
+                    .and_then(hooks::new_init_hook)
                     .context(format!(
                         "{} Unable to reload. Restart terminal to apply changes.",
                         "Error:".red()

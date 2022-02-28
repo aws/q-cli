@@ -1,6 +1,7 @@
 use crate::LocalJson;
 use anyhow::{Context, Result};
 use directories::BaseDirs;
+use fig_auth::get_token;
 use std::path::PathBuf;
 
 pub fn settings_path() -> Result<PathBuf> {
@@ -20,27 +21,51 @@ pub fn settings_path() -> Result<PathBuf> {
 }
 
 pub type LocalSettings = LocalJson;
+pub type RemoteResult = Result<()>;
 
 pub fn local_settings() -> Result<LocalSettings> {
     let path = settings_path()?;
     LocalSettings::load(path)
 }
 
-pub fn set_value(key: impl Into<String>, value: impl Into<serde_json::Value>) -> Result<()> {
+pub async fn update_remote(settings: LocalSettings) -> RemoteResult {
+    if let Some(settings) = settings.get_setting() {
+        let token = get_token().await?;
+        let mut body = serde_json::Map::new();
+        body.insert("settings".into(), serde_json::json!(settings));
+
+        reqwest::Client::new()
+            .post("https://api.fig.io/settings/update")
+            .header("Content-Type", "application/json")
+            .json(&body)
+            .bearer_auth(token)
+            .send()
+            .await?
+            .error_for_status()?;
+    }
+
+    Ok(())
+}
+
+pub async fn set_value(
+    key: impl Into<String>,
+    value: impl Into<serde_json::Value>,
+) -> Result<RemoteResult> {
     let mut settings = local_settings()?;
     settings.set(key, value)?;
     settings.save()?;
-    Ok(())
+    Ok(update_remote(settings).await)
 }
 
 pub fn get_value(key: impl AsRef<str>) -> Result<Option<serde_json::Value>> {
     let settings = local_settings()?;
-    Ok(settings.get(key).cloned())
+    let value = settings.get(key);
+    Ok(value.cloned())
 }
 
-pub fn remove_value(key: impl AsRef<str>) -> Result<()> {
+pub async fn remove_value(key: impl AsRef<str>) -> Result<RemoteResult> {
     let mut settings = local_settings()?;
     settings.remove(key)?;
     settings.save()?;
-    Ok(())
+    Ok(update_remote(settings).await)
 }

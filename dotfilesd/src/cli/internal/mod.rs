@@ -1,6 +1,6 @@
 pub mod local_state;
 
-use std::{io::Write, process::exit};
+use std::process::exit;
 
 use anyhow::{Context, Result};
 use clap::Subcommand;
@@ -66,7 +66,9 @@ pub async fn prompt_dotfiles_changed() -> Result<()> {
                                 fig_settings::settings::set_value(
                                     "dotfiles.sourceImmediately",
                                     json!("always"),
-                                ).await?;
+                                )
+                                .await?
+                                .ok();
                                 result = true;
                                 break;
                             }
@@ -78,7 +80,9 @@ pub async fn prompt_dotfiles_changed() -> Result<()> {
                                 fig_settings::settings::set_value(
                                     "dotfiles.sourceImmediately",
                                     json!("never"),
-                                ).await?;
+                                )
+                                .await?
+                                .ok();
                                 result = false;
                                 break;
                             }
