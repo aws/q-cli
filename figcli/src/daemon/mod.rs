@@ -29,7 +29,7 @@ use tokio::{
     select,
 };
 use tokio_tungstenite::tungstenite;
-use tracing::{debug, error, info, trace, Level};
+use tracing::{debug, error, info, trace};
 
 pub fn get_daemon() -> Result<LaunchService> {
     #[cfg(target_os = "macos")]
@@ -432,11 +432,6 @@ async fn spawn_unix_handler(
 
 /// Spawn the daemon to listen for updates and dotfiles changes
 pub async fn daemon() -> Result<()> {
-    tracing_subscriber::fmt()
-        .with_max_level(Level::DEBUG)
-        .with_line_number(true)
-        .init();
-
     info!("Starting daemon...");
 
     let daemon_status = Arc::new(RwLock::new(DaemonStatus {

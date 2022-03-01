@@ -73,7 +73,9 @@ impl LocalStateArgs {
                         println!("Successfully updated state");
                     }
                     (Some(value), false) => {
-                        fig_settings::state::set_value(key, json!(value))?;
+                        let value: serde_json::Value =
+                            serde_json::from_str(value).unwrap_or_else(|_| json!(value));
+                        fig_settings::state::set_value(key, value)?;
                         println!("Successfully updated state");
                     }
 

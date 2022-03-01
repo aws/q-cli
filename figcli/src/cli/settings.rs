@@ -3,6 +3,7 @@ use clap::{ArgGroup, Args, Subcommand};
 use crossterm::style::Stylize;
 use fig_ipc::command::{open_ui_element, restart_settings_listener};
 use fig_proto::local::UiElement;
+use serde_json::json;
 use std::process::Command;
 
 #[derive(Debug, Subcommand)]
@@ -83,10 +84,8 @@ impl SettingsArgs {
                         }
                     },
                     (Some(value_str), false) => {
-                        let value: serde_json::Value = match serde_json::from_str(value_str) {
-                            Ok(v) => v,
-                            Err(_) => serde_json::json!(value_str),
-                        };
+                        let value =
+                            serde_json::from_str(value_str).unwrap_or_else(|_| json!(value_str));
                         let remote_result = fig_settings::settings::set_value(key, value).await?;
                         if remote_result.is_err() {
                             println!("Error syncing settings.");

@@ -22,15 +22,19 @@ pub mod util;
 use crate::{
     cli::{installation::InstallComponents, util::open_url},
     daemon::{daemon, get_daemon},
-    util::shell::{Shell, When},
+    util::{
+        fig_dir,
+        shell::{Shell, When},
+    },
 };
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use clap::{ArgEnum, IntoApp, Parser, Subcommand};
 use crossterm::style::Stylize;
 use fig_ipc::command::open_ui_element;
 use fig_proto::local::UiElement;
-use std::process::exit;
+use std::{fs::File, process::exit, str::FromStr};
+use tracing::level_filters::LevelFilter;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ArgEnum)]
 pub enum OutputFormat {
@@ -178,6 +182,42 @@ pub struct Cli {
 
 impl Cli {
     pub async fn execute(self) {
+        let env_level = std::env::var("FIG_LOG_LEVEL")
+            .ok()
+            .and_then(|level| LevelFilter::from_str(&level).ok())
+            .unwrap_or(LevelFilter::INFO);
+
+        match self.subcommand {
+            Some(CliRootCommands::Daemon) => {
+                // The daemon prints all logs to stdout
+                tracing_subscriber::fmt()
+                    .with_max_level(env_level)
+                    .with_line_number(true)
+                    .init();
+            }
+            _ => {
+                // All other cli commands print logs to ~/.fig/logs/cli.log
+                if let Some(fig_dir) = fig_dir() {
+                    let log_path = fig_dir.join("logs").join("cli.log");
+
+                    // Create the log directory if it doesn't exist
+                    if !log_path.parent().unwrap().exists() {
+                        std::fs::create_dir_all(log_path.parent().unwrap()).ok();
+                    }
+
+                    if let Ok(log_file) =
+                        File::create(log_path).context("failed to create log file")
+                    {
+                        tracing_subscriber::fmt()
+                            .with_writer(log_file)
+                            .with_max_level(env_level)
+                            .with_line_number(true)
+                            .init();
+                    }
+                }
+            }
+        }
+
         let result = match self.subcommand {
             Some(subcommand) => match subcommand {
                 CliRootCommands::Install {

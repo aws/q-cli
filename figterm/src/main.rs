@@ -52,7 +52,7 @@ use tokio::{
 };
 use tracing::{debug, error, info, level_filters::LevelFilter, trace, warn};
 
-const BUFFER_SIZE: usize = 1024;
+const BUFFER_SIZE: usize = 4096;
 
 struct EventSender {
     socket_sender: Sender<LocalMessage>,
@@ -384,7 +384,7 @@ fn figterm_main() -> Result<()> {
                     let mut term = alacritty_terminal::Term::new(size, event_sender, 1);
 
                     let mut read_buffer = [0u8; BUFFER_SIZE];
-                    let mut write_buffer = [0u8; BUFFER_SIZE * 100];
+                    let mut write_buffer = [0u8; BUFFER_SIZE];
 
                     let intercept_set: DashSet<char, fnv::FnvBuildHasher> = DashSet::with_hasher(fnv::FnvBuildHasher::default());
 
@@ -412,16 +412,19 @@ fn figterm_main() -> Result<()> {
                                 match res {
                                     Ok(size) => match std::str::from_utf8(&read_buffer[..size]) {
                                             Ok(s) => {
-                                                trace!("Read {} bytes from stdin", size);
+                                                trace!("Read {} bytes from input: {:?}", size, s);
+                                                let mut out = heapless::String::<BUFFER_SIZE>::new();
                                                 for c in s.chars() {
                                                     if !intercept_set.contains(&c) {
-                                                        let mut utf8_buf = [0; 4];
-                                                        master.write(c.encode_utf8(&mut utf8_buf).as_bytes()).await?;
+                                                        // This should always be okay since the input <= BUFFER_SIZE
+                                                        out.push(c).ok();
                                                     }
                                                 }
+                                                master.write(out.as_bytes()).await?;
                                             }
                                             Err(err) => {
                                                 error!("Failed to convert utf8: {}", err);
+                                                trace!("Read {} bytes from input: {:?}", size, &read_buffer[..size]);
                                                 master.write(&read_buffer[..size]).await?;
                                             }
                                     },

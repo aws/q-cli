@@ -2,7 +2,7 @@ pub mod remote_settings;
 pub mod settings;
 pub mod state;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use std::{fs, path::PathBuf};
 
 pub struct LocalJson {
@@ -13,15 +13,37 @@ pub struct LocalJson {
 impl LocalJson {
     pub fn load(path: impl Into<PathBuf>) -> Result<Self> {
         let path = path.into();
-        let settings_file = fs::read_to_string(&path)?;
+
+        // If the folder doesn't exist, create it.
+        if let Some(parent) = path.parent() {
+            if !parent.exists() {
+                fs::create_dir_all(parent).context("Failed to create directory")?;
+            }
+        }
+
+        // If the file doesn't exist, create it.
+        if !path.exists() {
+            fs::File::create(&path).with_context(|| format!("Failed to create at {:?}", &path))?;
+        }
+
+        let file = fs::read_to_string(&path)?;
 
         Ok(Self {
-            inner: serde_json::from_str(&settings_file)?,
+            inner: serde_json::from_str(&file)
+                .unwrap_or_else(|_| serde_json::Value::Object(serde_json::Map::new())),
             path,
         })
     }
 
     pub fn save(&self) -> Result<()> {
+        // If the folder doesn't exist, create it.
+        if let Some(parent) = self.path.parent() {
+            if !parent.exists() {
+                fs::create_dir_all(parent).context("Failed to create directory")?;
+            }
+        }
+
+        // Write the file.
         fs::write(&self.path, serde_json::to_string_pretty(&self.inner)?)?;
         Ok(())
     }
