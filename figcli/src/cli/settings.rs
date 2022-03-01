@@ -82,8 +82,11 @@ impl SettingsArgs {
                             println!("No value associated with {}.", key);
                         }
                     },
-                    (Some(value), false) => {
-                        let value: serde_json::Value = serde_json::from_str(value)?;
+                    (Some(value_str), false) => {
+                        let value: serde_json::Value = match serde_json::from_str(value_str) {
+                            Ok(v) => v,
+                            Err(_) => serde_json::json!(value_str),
+                        };
                         let remote_result = fig_settings::settings::set_value(key, value).await?;
                         if remote_result.is_err() {
                             println!("Error syncing settings.");
