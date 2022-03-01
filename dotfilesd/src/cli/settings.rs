@@ -1,11 +1,8 @@
-use crate::util::fig_dir;
-
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use clap::{ArgGroup, Args, Subcommand};
 use crossterm::style::Stylize;
 use fig_ipc::command::{open_ui_element, restart_settings_listener};
 use fig_proto::local::UiElement;
-use serde_json::json;
 use std::process::Command;
 
 #[derive(Debug, Subcommand)]
@@ -70,16 +67,14 @@ impl SettingsArgs {
                 }
             }
             Some(SettingsSubcommands::Open) => {
-                let path = fig_dir()
-                    .map(|p| p.join("settings.json"))
-                    .ok_or(anyhow!("Could not find fig directory"))?;
+                let path = fig_settings::settings::settings_path()?;
                 if !Command::new("open").arg(path).status()?.success() {
                     anyhow::bail!("Could not open settings file.");
                 }
             }
             None => match &self.key {
                 Some(key) => match (&self.value, self.delete) {
-                    (None, false) => match fig_settings::get_value(key)? {
+                    (None, false) => match fig_settings::settings::get_value(key)? {
                         Some(value) => {
                             println!("{}: {}", key, serde_json::to_string_pretty(&value)?);
                         }
@@ -88,11 +83,18 @@ impl SettingsArgs {
                         }
                     },
                     (Some(value), false) => {
-                        fig_settings::set_value(key, json!(value))?;
+                        let value: serde_json::Value = serde_json::from_str(value)?;
+                        let remote_result = fig_settings::settings::set_value(key, value).await?;
+                        if remote_result.is_err() {
+                            println!("Error syncing settings.");
+                        }
                         println!("Successfully updated settings");
                     }
                     (None, true) => {
-                        fig_settings::remove_value(key)?;
+                        let remote_result = fig_settings::settings::remove_value(key).await?;
+                        if remote_result.is_err() {
+                            println!("Error syncing settings.");
+                        }
                         println!("Successfully updated settings");
                     }
                     _ => {}

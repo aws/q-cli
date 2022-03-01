@@ -76,7 +76,7 @@ fn get_running_app_info(bundle_id: impl AsRef<str>, field: impl AsRef<str>) -> R
         .split('=')
         .nth(1)
         .context(anyhow!("Could not get field value for {}", field.as_ref()))?
-        .replace("\"", "");
+        .replace('"', "");
     Ok(value.trim().into())
 }
 
@@ -151,13 +151,14 @@ impl DebugSubcommand {
                 }
             }
             DebugSubcommand::Logs { files } => {
-                fig_settings::set_value("developer.logging", json!(true))?;
+                fig_settings::state::set_value("developer.logging", json!(true))?;
 
                 ctrlc::set_handler(|| {
-                    let code = match fig_settings::set_value("developer.logging", json!(false)) {
-                        Ok(_) => 0,
-                        Err(_) => 1,
-                    };
+                    let code =
+                        match fig_settings::state::set_value("developer.logging", json!(false)) {
+                            Ok(_) => 0,
+                            Err(_) => 1,
+                        };
                     std::process::exit(code);
                 })?;
 

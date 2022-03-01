@@ -5,8 +5,9 @@ use clap::Subcommand;
 use crossterm::style::Stylize;
 use fig_ipc::{
     command::{quit_command, restart_command},
-    hook::{create_init_hook, send_hook_to_socket},
+    hook::send_hook_to_socket,
 };
+use fig_proto::hooks;
 use regex::Regex;
 use serde_json::json;
 use std::{process::Command, time::Duration};
@@ -60,8 +61,7 @@ pub async fn quit_fig() -> Result<()> {
                 let pid = Regex::new(r"pid = (\S+)")
                     .unwrap()
                     .captures(&info)
-                    .map(|c| c.get(1))
-                    .flatten();
+                    .and_then(|c| c.get(1));
                 if let Some(pid) = pid {
                     let success = Command::new("kill")
                         .arg("-KILL")
@@ -122,12 +122,7 @@ impl AppSubcommand {
             AppSubcommand::SetPath => {
                 println!("\nSetting $PATH variable in Fig pseudo-terminal...\n");
                 let path = std::env::var("PATH")?;
-                let result = fig_settings::set_value("pty.path", json!(path));
-
-                if result.is_err() {
-                    println!("{} Unable to load settings file", "Error:".red());
-                    return result;
-                }
+                fig_settings::state::set_value("pty.path", json!(path))?;
                 println!(
                     "Fig will now use the following path to locate the fig executable:\n{}\n",
                     path.magenta()
@@ -136,12 +131,17 @@ impl AppSubcommand {
                     "{} Unable to reload. Restart terminal to apply changes.",
                     "Error:".red()
                 ))?;
+
                 let tty = String::from_utf8(output.stdout)?;
-                let hook =
-                    create_init_hook(nix::unistd::getppid().into(), tty).context(format!(
+                let pid = nix::unistd::getppid();
+
+                let hook = hooks::generate_shell_context(pid, tty, None, None)
+                    .and_then(hooks::new_init_hook)
+                    .context(format!(
                         "{} Unable to reload. Restart terminal to apply changes.",
                         "Error:".red()
                     ))?;
+
                 send_hook_to_socket(hook).await.context(format!(
                     "\n{}\nFig might not be running to launch Fig run: {}\n",
                     "Unable to Connect to Fig:".bold(),

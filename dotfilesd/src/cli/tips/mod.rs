@@ -163,11 +163,19 @@ impl TipsSubcommand {
     pub async fn execute(&self) -> Result<()> {
         match self {
             TipsSubcommand::Enable => {
-                fig_settings::set_value("cli.tips.disabled", json!(false))?;
+                let remote_result =
+                    fig_settings::settings::set_value("cli.tips.disabled", json!(false)).await?;
+                if remote_result.is_err() {
+                    println!("Error syncing settings");
+                }
                 println!("\n→ Fig Tips enabled...\n");
             }
             TipsSubcommand::Disable => {
-                fig_settings::set_value("cli.tips.disabled", json!(true))?;
+                let remote_result =
+                    fig_settings::settings::set_value("cli.tips.disabled", json!(true)).await?;
+                if remote_result.is_err() {
+                    println!("Error syncing settings");
+                }
                 println!("\n→ Fig Tips disabled...\n");
             }
             TipsSubcommand::Reset => {
@@ -181,7 +189,8 @@ impl TipsSubcommand {
                 }
                 tips.save()?;
             }
-            TipsSubcommand::Prompt => match fig_settings::get_value("cli.tips.disabled")? {
+            TipsSubcommand::Prompt => match fig_settings::settings::get_value("cli.tips.disabled")?
+            {
                 Some(json!(false)) => {}
                 _ => {
                     let mut tips = Tips::load()?;
@@ -204,7 +213,7 @@ impl TipsSubcommand {
                         }
                     } else {
                         let changelog: Changelog =
-                            serde_json::from_str(include_str!("../../../changelog.json"))?;
+                            serde_json::from_str(include_str!("../../../../changelog.json"))?;
                         if Version::parse(&tips.last_changelog)?
                             < Version::parse(&changelog.version)?
                         {

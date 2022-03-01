@@ -1,4 +1,6 @@
-use std::{io::Write, process::exit};
+pub mod local_state;
+
+use std::process::exit;
 
 use anyhow::{Context, Result};
 use clap::Subcommand;
@@ -9,12 +11,14 @@ use serde_json::json;
 #[clap(hide = true, alias = "_")]
 pub enum InternalSubcommand {
     PromptDotfilesChanged,
+    LocalState(local_state::LocalStateArgs),
 }
 
 impl InternalSubcommand {
     pub async fn execute(self) -> Result<()> {
         match self {
             InternalSubcommand::PromptDotfilesChanged => prompt_dotfiles_changed().await?,
+            InternalSubcommand::LocalState(local_state) => local_state.execute().await?,
         }
         Ok(())
     }
@@ -43,9 +47,8 @@ pub async fn prompt_dotfiles_changed() -> Result<()> {
     if file_content.contains("true") {
         println!("{}", "Your dotfiles have been updated!".bold());
 
-        let source_immediately = fig_settings::get_value("dotfiles.sourceImmediately")?
-            .map(|s| s.as_str().map(|s| s.to_owned()))
-            .flatten();
+        let source_immediately = fig_settings::settings::get_value("dotfiles.sourceImmediately")?
+            .and_then(|s| s.as_str().map(|s| s.to_owned()));
 
         let source_updates = match source_immediately.as_deref() {
             Some("never") => false,
@@ -59,10 +62,12 @@ pub async fn prompt_dotfiles_changed() -> Result<()> {
                     if let crossterm::event::Event::Key(key_event) = event {
                         match (key_event.code, key_event.modifiers) {
                             (crossterm::event::KeyCode::Char('y' | 'Y'), _) => {
-                                fig_settings::set_value(
+                                fig_settings::settings::set_value(
                                     "dotfiles.sourceImmediately",
                                     json!("always"),
-                                )?;
+                                )
+                                .await?
+                                .ok();
                                 result = true;
                                 break;
                             }
@@ -71,10 +76,12 @@ pub async fn prompt_dotfiles_changed() -> Result<()> {
                                 crossterm::event::KeyCode::Char('c' | 'd'),
                                 crossterm::event::KeyModifiers::CONTROL,
                             ) => {
-                                fig_settings::set_value(
+                                fig_settings::settings::set_value(
                                     "dotfiles.sourceImmediately",
                                     json!("never"),
-                                )?;
+                                )
+                                .await?
+                                .ok();
                                 result = false;
                                 break;
                             }

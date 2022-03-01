@@ -152,8 +152,7 @@ impl OSVersion {
 
             let version: String = version_regex
                 .captures(&version_info)
-                .map(|c| c.get(1))
-                .flatten()
+                .and_then(|c| c.get(1))
                 .map(|v| v.as_str().into())
                 .context("Invalid version")?;
 
@@ -169,12 +168,11 @@ impl OSVersion {
                 .context("Invalid version")?
                 .parse()?;
 
-            let patch = version.split('.').nth(2).map(|p| p.parse().ok()).flatten();
+            let patch = version.split('.').nth(2).and_then(|p| p.parse().ok());
 
             let build = build_regex
                 .captures(&version_info)
-                .map(|c| c.get(1))
-                .flatten()
+                .and_then(|c| c.get(1))
                 .context("Invalid version")?
                 .as_str();
 

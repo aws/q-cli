@@ -72,7 +72,7 @@ pub async fn process_websocket(
                                 updated_at,
                             } => {
                                 // Write settings to disk
-                                let path = fig_settings::LocalSettings::path()?;
+                                let path = fig_settings::settings::settings_path()?;
 
                                 info!("Settings updated: Writing settings to disk at {:?}", path);
 

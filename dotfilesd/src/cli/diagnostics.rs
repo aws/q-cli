@@ -121,7 +121,9 @@ fn installed_via_brew() -> Result<bool> {
 
 pub async fn get_diagnostics() -> Result<DiagnosticsResponse> {
     let response =
-        send_recv_command_to_socket(command::Command::Diagnostics(DiagnosticsCommand {})).await?;
+        send_recv_command_to_socket(command::Command::Diagnostics(DiagnosticsCommand {}))
+            .await?
+            .context("Recieved EOF while reading diagnostics")?;
 
     match response.response {
         Some(Response::Diagnostics(diagnostics)) => Ok(diagnostics),
@@ -213,8 +215,7 @@ impl CurrentEnvironment {
     fn new() -> CurrentEnvironment {
         let user_shell = dscl_read("UserShell")
             .ok()
-            .map(|out| out.split(':').last().map(|val| val.trim().into()))
-            .flatten()
+            .and_then(|out| out.split(':').last().map(|val| val.trim().into()))
             .unwrap_or_else(|| "Unknown UserShell".into());
 
         let current_dir = std::env::current_dir()
@@ -277,7 +278,8 @@ pub async fn verify_integration(integration: impl Into<String>) -> Result<String
             action: IntegrationAction::VerifyInstall as i32,
         },
     ))
-    .await?;
+    .await?
+    .context("Recieved EOF while getting terminal integration")?;
 
     let message = match response.response {
         Some(Response::Success(success)) => success.message,
@@ -418,7 +420,7 @@ impl FigDetails {
         FigDetails {
             path_to_bundle: diagnostics.path_to_bundle.clone(),
             autocomplete: diagnostics.autocomplete,
-            settings_json: fig_settings::LocalSettings::load().is_ok(),
+            settings_json: fig_settings::settings::local_settings().is_ok(),
             accessibility: diagnostics.accessibility.clone(),
             num_specs: get_local_specs().map_or(0, |v| v.len()),
             symlinked: diagnostics.symlinked.clone(),

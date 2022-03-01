@@ -44,8 +44,7 @@ pub async fn download_plugin(plugin: &Plugin) -> Result<()> {
         .installation
         .shell
         .as_ref()
-        .map(|shell_install| shell_install.default_install.clone())
-        .flatten()
+        .and_then(|shell_install| shell_install.default_install.clone())
         .unwrap_or_default();
 
     let mut install_plugin = |shell: &Shell| {
@@ -53,8 +52,7 @@ pub async fn download_plugin(plugin: &Plugin) -> Result<()> {
             .installation
             .shell
             .as_ref()
-            .map(|shell_install| shell_install.per_shell.get(shell))
-            .flatten()
+            .and_then(|shell_install| shell_install.per_shell.get(shell))
         {
             default_install.merge(s)
         } else {

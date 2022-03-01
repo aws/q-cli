@@ -22,7 +22,7 @@ struct Theme {
     version: String,
 }
 
-pub fn theme_cli(theme_str: Option<String>) -> Result<()> {
+pub async fn theme_cli(theme_str: Option<String>) -> Result<()> {
     match theme_str {
         Some(theme_str) => {
             // set theme
@@ -30,7 +30,9 @@ pub fn theme_cli(theme_str: Option<String>) -> Result<()> {
             match fs::read_to_string(path) {
                 Ok(theme_file) => {
                     let theme: Theme = serde_json::from_str(&theme_file)?;
-                    fig_settings::set_value("autocomplete.theme", json!(theme_str))?;
+                    let remote_result =
+                        fig_settings::settings::set_value("autocomplete.theme", json!(theme_str))
+                            .await?;
                     let author = theme.author;
 
                     println!();
@@ -65,12 +67,22 @@ pub fn theme_cli(theme_str: Option<String>) -> Result<()> {
                         }
                     }
                     println!();
+                    if remote_result.is_err() {
+                        println!("Failed to sync new settings.");
+                    }
                     Ok(())
                 }
                 Err(_) => {
                     if BUILT_IN_THEMES.contains(&theme_str.as_ref()) {
-                        fig_settings::set_value("autocomplete.theme", json!(theme_str))?;
+                        let remote_result = fig_settings::settings::set_value(
+                            "autocomplete.theme",
+                            json!(theme_str),
+                        )
+                        .await?;
                         println!("› Switching to theme '{}'", theme_str.bold());
+                        if remote_result.is_err() {
+                            println!("Failed to sync new settings.");
+                        }
                         Ok(())
                     } else {
                         anyhow::bail!("'{}' does not exist in ~/.fig/themes/\n", theme_str)
@@ -79,8 +91,8 @@ pub fn theme_cli(theme_str: Option<String>) -> Result<()> {
             }
         }
         None => {
-            let theme =
-                fig_settings::get_value("autocomplete.theme")?.unwrap_or_else(|| json!("dark"));
+            let theme = fig_settings::settings::get_value("autocomplete.theme")?
+                .unwrap_or_else(|| json!("dark"));
             println!("{}", serde_json::to_string_pretty(&theme)?);
             Ok(())
         }
