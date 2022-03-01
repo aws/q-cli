@@ -99,7 +99,7 @@ impl HookSubcommand {
                 remote_dest,
                 prompt,
             } => {
-                if *prompt {
+                if *prompt && !remote_dest.starts_with("git@") {
                     let installed_hosts_file = fig_dir()
                         .context("Can't get fig dir")?
                         .join("ssh_hostnames");
@@ -114,8 +114,8 @@ impl HookSubcommand {
 
                     if !contents.contains(remote_dest) {
                         println!("To install SSH support for {}, run the following on your remote machine\
-                                  \n\n  {} \n  source <(curl -Ls fig.io/ssh)\
-                                  \n\n  {} \n  curl -Ls fig.io/ssh | source\n",
+                                  \n\n  {} \n  source <(curl -Ls fig.io/install)\
+                                  \n\n  {} \n  curl -Ls fig.io/install | source\n",
                                   "Fig".magenta(),
                                   "For bash/zsh:".bold().underlined(),
                                   "For Fish:".bold().underlined(),

@@ -6,11 +6,37 @@ use std::{
     path::{Path, PathBuf},
     process::Command,
 };
+use sysinfo::{get_current_pid, ProcessExt, System, SystemExt};
 
 pub mod checksum;
 pub mod shell;
 pub mod sync;
 pub mod terminal;
+
+pub fn get_parent_process_exe() -> Result<PathBuf> {
+    let mut system = System::new();
+    let current_pid =
+        get_current_pid().map_err(|_| anyhow::anyhow!("Could not get current pid"))?;
+    if !system.refresh_process(current_pid) {
+        anyhow::bail!("Could not find current process info")
+    }
+    let current_process = system
+        .process(current_pid)
+        .context("Could not find current process info")?;
+
+    let parent_pid = current_process
+        .parent()
+        .context("Could not get parent pid")?;
+
+    if !system.refresh_process(parent_pid) {
+        anyhow::bail!("Could not find parent process info")
+    }
+    let parent_process = system
+        .process(parent_pid)
+        .context("Could not find parent process info")?;
+
+    Ok(parent_process.exe().to_path_buf())
+}
 
 pub fn project_dir() -> Option<ProjectDirs> {
     directories::ProjectDirs::from("io", "fig", "fig")

@@ -233,7 +233,7 @@ impl Cli {
                 CliRootCommands::Tweet => tweet::tweet_cli(),
                 CliRootCommands::App(app_subcommand) => app_subcommand.execute().await,
                 CliRootCommands::Hook(hook_subcommand) => hook_subcommand.execute().await,
-                CliRootCommands::Theme { theme } => theme::theme_cli(theme),
+                CliRootCommands::Theme { theme } => theme::theme_cli(theme).await,
                 CliRootCommands::Settings(settings_args) => settings_args.execute().await,
                 CliRootCommands::Debug(debug_subcommand) => debug_subcommand.execute().await,
                 CliRootCommands::Issue { description } => issue::issue_cli(description).await,

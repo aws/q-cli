@@ -11,10 +11,9 @@ if [ ! -z "$FIG_NEW_SESSION" ]
   set --erase FIG_NEW_SESSION
 end
 
-if [ -d /Applications/Fig.app -o -d ~/Applications/Fig.app ] \
-  && command -v fig 1>/dev/null 2>/dev/null \
+if [ "$TERM_PROGRAM" != "WarpTerminal" ] \
   && [ -t 1 ] \
-  && command -v figterm 1>/dev/null 2>/dev/null \
+  && [ -z "$FIG_PTY" ] && command -v figterm 1>/dev/null 2>/dev/null \
   && [ -z "$FIG_TERM" ] || [ -z "$FIG_TERM_TMUX" -a -n "$TMUX" ]
 
   # Generated automatically by iTerm and Terminal But needs to be

@@ -2345,6 +2345,8 @@ public struct Fig_Action {
   /// Clears the value of `availability`. Subsequent reads from it will return its default value.
   public mutating func clearAvailability() {self._availability = nil}
 
+  public var defaultBindings: [String] = []
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
@@ -6069,6 +6071,7 @@ extension Fig_Action: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementatio
     3: .same(proto: "description"),
     4: .same(proto: "category"),
     5: .same(proto: "availability"),
+    6: .standard(proto: "default_bindings"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -6082,6 +6085,7 @@ extension Fig_Action: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementatio
       case 3: try { try decoder.decodeSingularStringField(value: &self._description_p) }()
       case 4: try { try decoder.decodeSingularStringField(value: &self._category) }()
       case 5: try { try decoder.decodeSingularEnumField(value: &self._availability) }()
+      case 6: try { try decoder.decodeRepeatedStringField(value: &self.defaultBindings) }()
       default: break
       }
     }
@@ -6107,6 +6111,9 @@ extension Fig_Action: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementatio
     try { if let v = self._availability {
       try visitor.visitSingularEnumField(value: v, fieldNumber: 5)
     } }()
+    if !self.defaultBindings.isEmpty {
+      try visitor.visitRepeatedStringField(value: self.defaultBindings, fieldNumber: 6)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -6116,6 +6123,7 @@ extension Fig_Action: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementatio
     if lhs._description_p != rhs._description_p {return false}
     if lhs._category != rhs._category {return false}
     if lhs._availability != rhs._availability {return false}
+    if lhs.defaultBindings != rhs.defaultBindings {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

@@ -2,4 +2,4 @@ ControlPath ~/.ssh/%C
 ControlMaster auto
 ControlPersist 1
 PermitLocalCommand yes
-LocalCommand fig hook ssh --prompt $$ $(tty) '~/.ssh/%C' '%r@%n' 1>&2
+LocalCommand fig hook ssh --prompt "$$" "$(tty)" '~/.ssh/%C' '%r@%n' 1>&2
