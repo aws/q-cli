@@ -125,7 +125,7 @@ pub fn notify_terminals() -> Result<()> {
 }
 
 /// Download the lastest dotfiles
-pub async fn sync_cli() -> Result<()> {
+pub async fn source_cli() -> Result<()> {
     sync_all_shells(SyncWhen::Immediately).await?;
     notify_terminals()?;
     Ok(())

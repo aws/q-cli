@@ -111,7 +111,7 @@ class PseudoTerminal {
     let updatedEnv = environment.merging(["FIG_ENV_VAR": "1",
                                           "FIG_SHELL_VAR": "1",
                                           "FIG_TERM": "1",
-                                          "FIG_SOCKET": FileManager.default.temporaryDirectory.path,
+                                          "TMPDIR": FileManager.default.temporaryDirectory.path,
                                           "TERM": "xterm-256color",
                                           "INPUTRC": "~/.fig/nop",
                                           "FIG_PTY": "1",

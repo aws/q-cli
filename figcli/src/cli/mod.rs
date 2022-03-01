@@ -13,7 +13,7 @@ pub mod invite;
 pub mod issue;
 pub mod plugins;
 pub mod settings;
-pub mod sync;
+pub mod source;
 pub mod theme;
 pub mod tips;
 pub mod tweet;
@@ -113,7 +113,7 @@ pub enum CliRootCommands {
         when: When,
     },
     /// Sync your latest dotfiles
-    Sync,
+    Source,
     /// Get or set theme
     Theme {
         theme: Option<String>,
@@ -264,7 +264,7 @@ impl Cli {
                     diagnostics::diagnostics_cli(format).await
                 }
                 CliRootCommands::Init { shell, when } => init::shell_init_cli(&shell, &when).await,
-                CliRootCommands::Sync => sync::sync_cli().await,
+                CliRootCommands::Source => source::source_cli().await,
                 CliRootCommands::Login { refresh } => auth::login_cli(refresh).await,
                 CliRootCommands::Logout => auth::logout_cli().await,
                 CliRootCommands::User => auth::user_info_cli().await,

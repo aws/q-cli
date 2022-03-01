@@ -65,7 +65,7 @@ pub async fn process_websocket(
                     match websocket_message_result {
                         Ok(websocket_message) => match websocket_message {
                             FigWebsocketMessage::DotfilesUpdated => {
-                                crate::cli::sync::sync_based_on_settings().await?;
+                                crate::cli::source::sync_based_on_settings().await?;
                             }
                             FigWebsocketMessage::SettingsUpdated {
                                 settings,

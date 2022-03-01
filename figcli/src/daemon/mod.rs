@@ -469,7 +469,7 @@ pub async fn daemon() -> Result<()> {
     let unix_socket =
         UnixListener::bind(&unix_socket_path).context("Could not connect to unix socket")?;
 
-    crate::cli::sync::sync_based_on_settings().await?;
+    crate::cli::source::sync_based_on_settings().await?;
 
     // Spawn settings watcher
     if let Err(error) = spawn_settings_watcher(daemon_status.clone()).await {

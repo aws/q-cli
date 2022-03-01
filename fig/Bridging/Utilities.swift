@@ -117,6 +117,6 @@ extension URL {
                                                              .userDomainMask,
                                                              true).first!)
   static let home: URL = FileManager.default.homeDirectoryForCurrentUser
-  static let dataDirectory: URL = URL.applicationSupport.appendingPathComponent("io.fig.fig", isDirectory: true)
+  static let dataDirectory: URL = URL.applicationSupport.appendingPathComponent("fig", isDirectory: true)
 
 }

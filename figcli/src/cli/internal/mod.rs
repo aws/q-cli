@@ -1,24 +1,107 @@
 pub mod local_state;
 
+use std::io::{Read, Write};
+use std::path::PathBuf;
 use std::process::exit;
 
+use rand::distributions::{Alphanumeric, DistString};
+
 use anyhow::{Context, Result};
-use clap::Subcommand;
+use clap::{ArgGroup, Args, Subcommand};
 use crossterm::style::Stylize;
+use fig_ipc::hook::send_hook_to_socket;
+use fig_proto::hooks::new_callback_hook;
 use serde_json::json;
+
+#[derive(Debug, Args)]
+#[clap(group(
+        ArgGroup::new("output")
+            .args(&["filename", "exit-code"])
+            .multiple(true)
+            .requires_all(&["filename", "exit-code"])
+            ))]
+pub struct CallbackArgs {
+    handler_id: String,
+    #[clap(group = "output")]
+    filename: Option<String>,
+    #[clap(group = "output")]
+    exit_code: Option<i64>,
+}
 
 #[derive(Debug, Subcommand)]
 #[clap(hide = true, alias = "_")]
 pub enum InternalSubcommand {
     PromptDotfilesChanged,
     LocalState(local_state::LocalStateArgs),
+    Callback(CallbackArgs),
 }
+
+const BUFFER_SIZE: usize = 1024;
 
 impl InternalSubcommand {
     pub async fn execute(self) -> Result<()> {
         match self {
             InternalSubcommand::PromptDotfilesChanged => prompt_dotfiles_changed().await?,
             InternalSubcommand::LocalState(local_state) => local_state.execute().await?,
+            InternalSubcommand::Callback(CallbackArgs {
+                handler_id,
+                filename,
+                exit_code,
+            }) => {
+                println!("handlerId: {}", handler_id);
+
+                let (filename, exit_code) = match (filename, exit_code) {
+                    (Some(filename), Some(exit_code)) => {
+                        println!(
+                            "callback specified filepath ({}) and exitCode ({}) to output!",
+                            filename, exit_code
+                        );
+                        (filename, exit_code)
+                    }
+                    _ => {
+                        let file_id = Alphanumeric.sample_string(&mut rand::thread_rng(), 9);
+                        let tmp_filename = format!("fig-callback-{}", file_id);
+                        let tmp_path = PathBuf::from("/tmp").join(&tmp_filename);
+                        let mut tmp_file = std::fs::File::create(&tmp_path)?;
+                        let mut buffer = [0u8; BUFFER_SIZE];
+                        let mut stdin = std::io::stdin();
+                        println!("Created tmp file: {}", tmp_path.display());
+
+                        loop {
+                            let size = stdin.read(&mut buffer)?;
+                            if size == 0 {
+                                break;
+                            }
+                            tmp_file.write_all(&buffer[..size])?;
+                            println!(
+                                "Read {} bytes\n{}",
+                                size,
+                                std::str::from_utf8(&buffer[..size])?
+                            );
+                        }
+
+                        let filename: String =
+                            tmp_path.to_str().context("invalid file path")?.into();
+                        println!("Done reading from stdin!");
+                        (filename, -1)
+                    }
+                };
+                let hook = new_callback_hook(&handler_id, &filename, exit_code);
+
+                println!(
+                    "Sending 'handlerId: {}, filename: {}, exitcode: {}' over unix socket!\n",
+                    handler_id, filename, exit_code
+                );
+
+                match send_hook_to_socket(hook).await {
+                    Ok(()) => {
+                        println!("Successfully sent hook");
+                    }
+                    Err(e) => {
+                        println!("Couldn't send hook {}", e);
+                    }
+                }
+            }
         }
         Ok(())
     }

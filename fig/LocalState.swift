@@ -104,7 +104,7 @@ class LocalState: JSONStore {
   static var canLogWithoutCrash = false
 
   static let shared = LocalState(fileURL:
-                                  URL.dataDirectory.appendingPathComponent("local-state.json"))
+                                  URL.dataDirectory.appendingPathComponent("state.json"))
 
   fileprivate let backing: JSONStoreProvider
   init(filePath: String) {

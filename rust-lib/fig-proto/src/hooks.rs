@@ -158,6 +158,18 @@ pub fn new_file_changed_hook(
     }))
 }
 
+pub fn new_callback_hook(
+    handler_id: impl Into<String>,
+    filepath: impl Into<String>,
+    exit_code: i64,
+) -> Hook {
+    hook_enum_to_hook(hook::Hook::Callback(CallbackHook {
+        handler_id: handler_id.into(),
+        filepath: filepath.into(),
+        exit_code: exit_code.to_string(),
+    }))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
