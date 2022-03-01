@@ -76,7 +76,7 @@ fn get_running_app_info(bundle_id: impl AsRef<str>, field: impl AsRef<str>) -> R
         .split('=')
         .nth(1)
         .context(anyhow!("Could not get field value for {}", field.as_ref()))?
-        .replace("\"", "");
+        .replace('"', "");
     Ok(value.trim().into())
 }
 

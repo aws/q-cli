@@ -29,7 +29,7 @@ pub async fn run_build_command(build: impl Into<String>) -> Result<()> {
     send_command_to_socket(command).await
 }
 
-pub async fn toggle_debug_mode() -> Result<local::CommandResponse> {
+pub async fn toggle_debug_mode() -> Result<Option<local::CommandResponse>> {
     let command = command::Command::DebugMode(DebugModeCommand {
         set_debug_mode: None,
         toggle_debug_mode: Some(true),
@@ -37,7 +37,7 @@ pub async fn toggle_debug_mode() -> Result<local::CommandResponse> {
     send_recv_command_to_socket(command).await
 }
 
-pub async fn set_debug_mode(debug_mode: bool) -> Result<local::CommandResponse> {
+pub async fn set_debug_mode(debug_mode: bool) -> Result<Option<local::CommandResponse>> {
     let command = command::Command::DebugMode(DebugModeCommand {
         set_debug_mode: Some(debug_mode),
         toggle_debug_mode: None,
@@ -95,7 +95,7 @@ pub async fn send_command(
 pub async fn send_recv_command(
     connection: &mut UnixStream,
     command: local::command::Command,
-) -> Result<local::CommandResponse> {
+) -> Result<Option<local::CommandResponse>> {
     send_command(connection, command).await?;
     Ok(tokio::time::timeout(Duration::from_secs(2), recv_message(connection)).await??)
 }
@@ -108,7 +108,7 @@ pub async fn send_command_to_socket(command: local::command::Command) -> Result<
 
 pub async fn send_recv_command_to_socket(
     command: local::command::Command,
-) -> Result<local::CommandResponse> {
+) -> Result<Option<local::CommandResponse>> {
     let path = get_fig_socket_path();
     let mut conn = connect_timeout(&path, Duration::from_secs(3)).await?;
     send_recv_command(&mut conn, command).await

@@ -224,8 +224,7 @@ impl InitSystem {
                     .lines()
                     .map(|line| line.split_whitespace().collect::<Vec<_>>())
                     .find(|line| line[2] == self.daemon_name())
-                    .map(|data| data[1].parse::<i32>().ok())
-                    .flatten();
+                    .and_then(|data| data[1].parse::<i32>().ok());
 
                 Ok(status)
             }
@@ -354,7 +353,7 @@ async fn spawn_unix_handler(
     tokio::task::spawn(async move {
         loop {
             match recv_message::<fig_proto::daemon::DaemonMessage, _>(&mut stream).await {
-                Ok(message) => {
+                Ok(Some(message)) => {
                     trace!("Received message: {:?}", message);
 
                     if let Some(command) = &message.command {
@@ -425,8 +424,13 @@ async fn spawn_unix_handler(
                         }
                     }
                 }
+                Ok(None) => {
+                    info!("Received EOF while reading message");
+                    break;
+                }
                 Err(err) => {
                     error!("Error while receiving message: {}", err);
+                    break;
                 }
             }
         }

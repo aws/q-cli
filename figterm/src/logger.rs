@@ -48,8 +48,7 @@ pub fn get_log_level() -> LevelFilter {
 pub fn init_logger(ptc_name: impl AsRef<str>) -> Result<()> {
     let env_level = std::env::var("FIG_LOG_LEVEL")
         .ok()
-        .map(|level| LevelFilter::from_str(&level).ok())
-        .flatten()
+        .and_then(|level| LevelFilter::from_str(&level).ok())
         .unwrap_or(LevelFilter::INFO);
 
     *FIG_LOG_LEVEL.write() = env_level;
@@ -69,7 +68,7 @@ pub fn init_logger(ptc_name: impl AsRef<str>) -> Result<()> {
     }
 
     let file = File::create(log_path).context("failed to create log file")?;
-    let fmt_layer = fmt::layer().with_target(false).with_writer(file);
+    let fmt_layer = fmt::layer().with_writer(file);
 
     tracing_subscriber::registry()
         .with(filter_layer)

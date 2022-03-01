@@ -146,8 +146,7 @@ impl EventListener for EventSender {
     fn log_level_event(&self, level: Option<String>) {
         logger::set_log_level(
             level
-                .map(|level| LevelFilter::from_str(&level).ok())
-                .flatten()
+                .and_then(|level| LevelFilter::from_str(&level).ok())
                 .unwrap_or(LevelFilter::INFO),
         );
     }
@@ -190,7 +189,7 @@ where
 {
     match term.get_current_buffer() {
         Some(edit_buffer) => {
-            if let Some(cursor_idx) = edit_buffer.cursor_idx.map(|i| i.try_into().ok()).flatten() {
+            if let Some(cursor_idx) = edit_buffer.cursor_idx.and_then(|i| i.try_into().ok()) {
                 info!("edit_buffer: {:?}", edit_buffer);
 
                 let context = shell_state_to_context(term.shell_state());
@@ -354,7 +353,6 @@ fn figterm_main() -> Result<()> {
 
             match runtime
                 .block_on(async {
-
                     info!("Shell: {}", pid);
                     info!("Figterm: {}", getpid());
 
@@ -362,6 +360,7 @@ fn figterm_main() -> Result<()> {
 
                     let raw_termios = termios_to_raw(termios);
                     tcsetattr(STDIN_FILENO, SetArg::TCSAFLUSH, &raw_termios)?;
+                    trace!("Set raw termios");
 
                     // Spawn thread to handle outgoing data to main Fig app
                     let outgoing_sender = spawn_outgoing_sender().await?;
@@ -395,8 +394,10 @@ fn figterm_main() -> Result<()> {
 
                     'select_loop: loop {
                         if term.shell_state().has_seen_prompt && first_time {
+                            trace!("Has seen prompt and first time");
                             let initial_command = env::var("FIG_START_TEXT").ok().filter(|s| !s.is_empty());
                             if let Some(mut initial_command) = initial_command {
+                                debug!("Sending initial text: {}", initial_command);
                                 initial_command.push('\n');
                                 if let Err(e) = master.write(initial_command.as_bytes()).await {
                                     error!("Failed to write initial command: {}", e);
@@ -411,6 +412,7 @@ fn figterm_main() -> Result<()> {
                                 match res {
                                     Ok(size) => match std::str::from_utf8(&read_buffer[..size]) {
                                             Ok(s) => {
+                                                trace!("Read {} bytes from stdin", size);
                                                 for c in s.chars() {
                                                     if !intercept_set.contains(&c) {
                                                         let mut utf8_buf = [0; 4];
