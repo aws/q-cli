@@ -20,8 +20,8 @@ use fig_ipc::{connect_timeout, get_fig_socket_path, send_recv_message};
 use fig_proto::{
     daemon::diagnostic_response::{settings_watcher_status, websocket_status},
     local::DiagnosticsResponse,
+    FigProtobufEncodable,
 };
-use prost::Message;
 use regex::Regex;
 use semver::Version;
 use serde::{ser::SerializeMap, Serialize};
@@ -262,27 +262,32 @@ impl DoctorCheck for FigtermSocketCheck {
 
         enable_raw_mode().context("Terminal doesn't support raw mode to verify figterm socket")?;
 
-        let write_handle = tokio::spawn(async move {
-            conn.writable().await?;
-            tokio::time::sleep(Duration::from_secs_f32(0.2)).await;
+        let write_handle: tokio::task::JoinHandle<Result<(), DoctorError>> =
+            tokio::spawn(async move {
+                conn.writable().await.map_err(|e| anyhow!("{}", e))?;
+                tokio::time::sleep(Duration::from_secs_f32(0.2)).await;
 
-            let message = fig_proto::figterm::FigtermMessage {
-                command: Some(
-                    fig_proto::figterm::figterm_message::Command::InsertTextCommand(
-                        fig_proto::figterm::InsertTextCommand {
-                            insertion: Some("Testing figterm...\n".into()),
-                            deletion: None,
-                            offset: None,
-                            immediate: Some(true),
-                        },
+                let message = fig_proto::figterm::FigtermMessage {
+                    command: Some(
+                        fig_proto::figterm::figterm_message::Command::InsertTextCommand(
+                            fig_proto::figterm::InsertTextCommand {
+                                insertion: Some("Testing figterm...\n".into()),
+                                deletion: None,
+                                offset: None,
+                                immediate: Some(true),
+                            },
+                        ),
                     ),
-                ),
-            };
+                };
 
-            let buf = message.encode_to_vec();
+                let fig_message = message.encode_fig_protobuf()?;
 
-            conn.write(&buf).await
-        });
+                conn.write(&fig_message)
+                    .await
+                    .map_err(|e| anyhow!("{}", e))?;
+
+                Ok(())
+            });
 
         let mut buffer = String::new();
 
