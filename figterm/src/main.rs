@@ -7,7 +7,7 @@ pub mod term;
 pub mod utils;
 
 use crate::{
-    ipc::{spawn_incoming_receiver, spawn_outgoing_sender},
+    ipc::{remove_socket, spawn_incoming_receiver, spawn_outgoing_sender},
     logger::init_logger,
     pty::{async_pty::AsyncPtyMaster, fork_pty, ioctl_tiocswinsz, PtyForkResult},
     term::get_winsize,
@@ -489,6 +489,8 @@ fn figterm_main() -> Result<()> {
                     }
 
                     tcsetattr(STDIN_FILENO, SetArg::TCSAFLUSH, &old_termios)?;
+
+                    remove_socket(&term_session_id).await?;
 
                     anyhow::Ok(())
                 }) {

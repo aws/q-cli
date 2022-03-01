@@ -18,6 +18,16 @@ pub async fn create_socket_listen(session_id: impl AsRef<str>) -> Result<UnixLis
     Ok(UnixListener::bind(&socket_path)?)
 }
 
+pub async fn remove_socket(session_id: impl AsRef<str>) -> Result<()> {
+    let socket_path = fig_ipc::figterm::get_figterm_socket_path(session_id);
+
+    if socket_path.exists() {
+        remove_file(&socket_path).await?
+    }
+
+    Ok(())
+}
+
 pub async fn spawn_outgoing_sender() -> Result<Sender<fig_proto::local::LocalMessage>> {
     trace!("Spawning outgoing sender");
     let (outgoing_tx, outgoing_rx) = bounded::<fig_proto::local::LocalMessage>(256);
