@@ -346,7 +346,7 @@ extension ShellHookManager {
     }
     let calledDirect = info.viaFigCommand
     let bundle = info.potentialBundleId
-    let env = info.env?.jsonStringToDict() ?? [:]
+    let env = info.env?.parseAsJSON() ?? [:]
     let envMap = env.mapValues { val in
       val as? String
     }

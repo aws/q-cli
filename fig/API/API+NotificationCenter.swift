@@ -28,6 +28,10 @@ class APINotificationCenter {
                                            selector: #selector(updateAvailable(notification:)),
                                            name: UpdateService.updateAvailableNotification,
                                            object: nil)
+    NotificationCenter.default.addObserver(self,
+                                           selector: #selector(localStateDidChange(notification:)),
+                                           name: LocalState.localStateUpdatedNotification,
+                                           object: nil)
   }
 
   deinit {
@@ -186,6 +190,15 @@ extension APINotificationCenter {
       })
     }))
   }
+
+  @objc func localStateDidChange(notification: Notification) {
+    self.post(Fig_LocalStateChangedNotification.with({ notification in
+      if let blob = LocalState.shared.jsonRepresentation() {
+        notification.jsonBlob = blob
+      }
+    }))
+  }
+
 }
 
 // Must be updated when new notifications are added!
@@ -210,6 +223,8 @@ extension Fig_Notification {
       return .notifyOnHistoryUpdated
     case .applicationUpdateAvailableNotification:
       return .notifyOnApplicationUpdateAvailable
+    case .localStateChangedNotification:
+      return .notifyOnLocalStateChanged
     case .none:
       return nil
     }
@@ -268,6 +283,12 @@ extension APINotificationCenter {
   func post(_ notification: Fig_ApplicationUpdateAvailableNotification) {
     var wrapper = Fig_Notification()
     wrapper.applicationUpdateAvailableNotification = notification
+    self.post(notification: wrapper)
+  }
+
+  func post(_ notification: Fig_LocalStateChangedNotification) {
+    var wrapper = Fig_Notification()
+    wrapper.localStateChangedNotification = notification
     self.post(notification: wrapper)
   }
 }
