@@ -148,6 +148,10 @@ class API {
         response.success = try Diagnostic.setDebuggerStatus(request)
       case .applicationUpdateStatusRequest(let request):
         response.applicationUpdateStatusResponse = try UpdateService.provider.applicationUpdateStatusRequest(request)
+      case .getLocalStateRequest(let request):
+        response.getLocalStateResponse = try LocalState.shared.handleGetRequest(request)
+      case .updateLocalStateRequest(let request):
+        response.success = try LocalState.shared.handleSetRequest(request)
       case .none:
         throw APIError.generic(message: "No submessage was included in request.")
       }

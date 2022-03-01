@@ -92,19 +92,19 @@ class Logger {
                   lineno: Int = #line) {
     var line = Logger.format(message, priority, subsystem, file, lineno)
 
-    guard Settings.canLogWithoutCrash else {
+    guard LocalState.canLogWithoutCrash else {
       return
     }
 
-    if Settings.shared.getValue(forKey: Settings.loggingEnabledInternally) as? Bool ?? true {
+    if LocalState.shared.getValue(forKey: LocalState.loggingEnabledInternally) as? Bool ?? true {
       print(line)
     }
 
-    guard let loggingEnabled = Settings.shared.getValue(forKey: Settings.logging) as? Bool, loggingEnabled else {
+    guard let loggingEnabled = LocalState.shared.getValue(forKey: LocalState.logging) as? Bool, loggingEnabled else {
       return
     }
 
-    if Settings.shared.getValue(forKey: Settings.colorfulLogging) as? Bool ?? true {
+    if LocalState.shared.getValue(forKey: LocalState.colorfulLogging) as? Bool ?? true {
       line = Logger.format(message, priority, subsystem, file, lineno, colorful: true)
     }
 

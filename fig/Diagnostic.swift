@@ -222,7 +222,7 @@ class Diagnostic {
   }
 
   static var pseudoTerminalPath: String? {
-    return Settings.shared.getValue(forKey: Settings.ptyPathKey) as? String
+    return LocalState.shared.getValue(forKey: LocalState.ptyPathKey) as? String
   }
 
   static var pseudoTerminalPathAppearsValid: Bool? {
