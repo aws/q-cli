@@ -106,7 +106,6 @@
 		7577124725648DFB0011FF48 /* ps.c in Sources */ = {isa = PBXBuildFile; fileRef = 7577124625648DFB0011FF48 /* ps.c */; };
 		757712492564D94A0011FF48 /* ProcessStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757712482564D9490011FF48 /* ProcessStatus.swift */; };
 		757A85F8270E46A40017996A /* figterm in Embed figterm & helpers */ = {isa = PBXBuildFile; fileRef = "figterm-0000000000000000" /* figterm */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
-		757A85F9270E46A40017996A /* fig_callback in Embed figterm & helpers */ = {isa = PBXBuildFile; fileRef = "fig_callback-00000000000" /* fig_callback */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		757A85FA270E46A40017996A /* fig_get_shell in Embed figterm & helpers */ = {isa = PBXBuildFile; fileRef = "fig_get_shell-0000000000" /* fig_get_shell */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		757AF4C826BC73FA00349764 /* WindowPositioning.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757AF4C726BC73FA00349764 /* WindowPositioning.swift */; };
 		757B6A0427CD761400A8811E /* LocalState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757B6A0327CD761400A8811E /* LocalState.swift */; };
@@ -273,7 +272,6 @@
 			dstSubfolderSpec = 6;
 			files = (
 				757A85F8270E46A40017996A /* figterm in Embed figterm & helpers */,
-				757A85F9270E46A40017996A /* fig_callback in Embed figterm & helpers */,
 				757A85FA270E46A40017996A /* fig_get_shell in Embed figterm & helpers */,
 			);
 			name = "Embed figterm & helpers";
@@ -1852,7 +1850,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = YES;
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 390;
+				CURRENT_PROJECT_VERSION = 391;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				DEVELOPMENT_TEAM = B8PC799ZGU;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1888,7 +1886,7 @@
 				CODE_SIGN_IDENTITY = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 390;
+				CURRENT_PROJECT_VERSION = 391;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				DEVELOPMENT_TEAM = B8PC799ZGU;
 				ENABLE_HARDENED_RUNTIME = YES;
