@@ -10,11 +10,11 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  BINARY_NAME: dotfilesd
+  BINARY_NAME: fig
 
 defaults:
   run:
-    working-directory: dotfilesd
+    working-directory: figcli 
 
 jobs:
   deploy:
