@@ -25,9 +25,9 @@ class WebBridge: NSObject {
     configuration.preferences.javaScriptEnabled = true
     configuration.preferences.javaScriptCanOpenWindowsAutomatically = true
     configuration.preferences.tabFocusesLinks = true
-    if #available(macOS 11.3, *) {
-      configuration.preferences.isTextInteractionEnabled = true
-    }
+//    if #available(macOS 11.3, *) {
+//      configuration.preferences.isTextInteractionEnabled = true
+//    }
 
     configuration.processPool = self.processPool
     if configuration.urlSchemeHandler(forURLScheme: "fig") == nil {
