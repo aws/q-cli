@@ -75,7 +75,7 @@ class Onboarding {
       SentrySDK.capture(message: "Currently running on read only volume! App is translocated!")
     }
 
-    guard let figcliPath = Bundle.main.path(forAuxiliaryExecutable: "dotfilesd-darwin-universal") else {
+    guard let figcliPath = Bundle.main.path(forAuxiliaryExecutable: "fig-darwin-universal") else {
       return Logger.log(message: "Could not locate install script!")
     }
 
@@ -184,7 +184,7 @@ class Onboarding {
   }
 
   static func copyFigCLIExecutable(to path: String) {
-    symlinkBundleExecutable("dotfilesd-darwin-universal", to: path)
+    symlinkBundleExecutable("fig-darwin-universal", to: path)
   }
 
   static func setupTerminalsForShellOnboarding(completion: (() -> Void)? = nil) {

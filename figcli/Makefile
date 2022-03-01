@@ -1,56 +1,108 @@
 ROOT:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
-export BUILT_PRODUCTS_DIR ?= $(ROOT)
+export BUILT_PRODUCTS_DIR ?= $(ROOT)/build
+export ARTIFACTS ?= $(ROOT)/build
+
+TARGET_DIR ?= $(ROOT)/../target
 
 # Add brew executables to PATH
 export PATH := /opt/homebrew/bin:/opt/homebrew/sbin:$(PATH)
+# Add cargo executables to PATH
+export PATH := $(HOME)/.cargo/bin:$(PATH)
+
 SHELL := env PATH=$(PATH) /bin/bash
 
-# check if go is installed
-GO := $(shell command -v go 2> /dev/null)
+# check if cargo exists
+CARGO := $(shell command -v cargo 2> /dev/null)
 
-all: build-figcli build-callback
-ifndef GO
-    $(error "go is not in PATH")
+ifndef CARGO
+    $(error "cargo is not in PATH $(PATH)")
 endif
 
-ifeq "$(shell uname -s)" "Darwin"
-build-figcli-arm:
-	GOOS=darwin GOARCH=arm64 go build -o bin/figcli-arm .
+CARGO_OPTIONS ?= --locked --release
 
-build-figcli-x86:
-	GOOS=darwin GOARCH=amd64 go build -o bin/figcli-x86 .
+BINARY_NAME=fig
+SRC = Cargo.toml $(wildcard src/**/*)
 
-build-figcli: build-figcli-arm build-figcli-x86
-	lipo -create -output $(BUILT_PRODUCTS_DIR)/figcli bin/figcli-x86 bin/figcli-arm
-	codesign -s - -v $(BUILT_PRODUCTS_DIR)/figcli
 
-build-callback-arm:
-	GOOS=darwin GOARCH=arm64 go build -o bin/fig_callback-arm ./callback/main.go
+$(shell mkdir -p $(BUILT_PRODUCTS_DIR))
+$(shell mkdir -p $(ARTIFACTS))
 
-build-callback-x86:
-	GOOS=darwin GOARCH=amd64 go build -o bin/fig_callback-x86 ./callback/main.go
+PLATFORM := $(shell uname -s)
 
-build-callback: build-callback-arm build-callback-x86
-	lipo -create -output $(BUILT_PRODUCTS_DIR)/fig_callback bin/fig_callback-x86 bin/fig_callback-arm
-	codesign -s - -v $(BUILT_PRODUCTS_DIR)/fig_callback
-else
-build-figcli:
-	go build -o $(BUILT_PRODUCTS_DIR)/figcli .
-
-build-callback:
-	go build -o $(BUILT_PRODUCTS_DIR)/fig_callback ./callback/main.go
+# Check if variable contains string https://stackoverflow.com/a/2741747
+ifneq (,$(findstring CYGWIN,$(PLATFORM)))
+	PLATFORM := "windows"
+endif
+ifneq (,$(findstring MINGW,$(PLATFORM)))
+	PLATFORM := "windows"
+endif
+ifneq (,$(findstring MSYS,$(PLATFORM)))
+	PLATFORM := "windows"
 endif
 
-clean:
-	rm -f $(ROOT)/bin/*
-	rm -f $(BUILT_PRODUCTS_DIR)/figcli
-	rm -f $(BUILT_PRODUCTS_DIR)/fig_callback
+$(warning PLATFORM is $(PLATFORM))
+
+ifeq "$(PLATFORM)" "Darwin"
+all: macos
+endif
+ifeq "$(PLATFORM)" "Linux"
+all: linux
+endif
+ifeq "$(PLATFORM)" "windows"
+all: windows
+endif
+
+macos: $(ARTIFACTS)/$(BINARY_NAME)-darwin-universal
+	install $^ $(BUILT_PRODUCTS_DIR)
+
+build-x86_64-apple-darwin: $(ARTIFACTS)/$(BINARY_NAME)-x86_64-apple-darwin
+	install $^ $(BUILT_PRODUCTS_DIR)
+
+build-aarch64-apple-darwin: $(ARTIFACTS)/$(BINARY_NAME)-aarch64-apple-darwin
+	install $^ $(BUILT_PRODUCTS_DIR)
+
+build-x86_64-unknown-linux-gnu: $(ARTIFACTS)/$(BINARY_NAME)-x86_64-unknown-linux-gnu
+	install $^ $(BUILT_PRODUCTS_DIR)
+
+$(ARTIFACTS)/$(BINARY_NAME)-x86_64-apple-darwin: $(SRC)
+	cargo build --target=x86_64-apple-darwin $(CARGO_OPTIONS)
+	install $(TARGET_DIR)/x86_64-apple-darwin/release/$(BINARY_NAME) $@
+
+$(ARTIFACTS)/$(BINARY_NAME)-aarch64-apple-darwin: $(SRC)
+	cargo build --target=aarch64-apple-darwin $(CARGO_OPTIONS)
+	install $(TARGET_DIR)/aarch64-apple-darwin/release/$(BINARY_NAME) $@
+
+$(ARTIFACTS)/$(BINARY_NAME)-darwin-universal: $(ARTIFACTS)/$(BINARY_NAME)-x86_64-apple-darwin $(ARTIFACTS)/$(BINARY_NAME)-aarch64-apple-darwin
+	lipo -create -output $@ $^
+linux: $(ARTIFACTS)/$(BINARY_NAME)-x86_64-unknown-linux-gnu $(ARTIFACTS)/$(BINARY_NAME)-aarch64-unknown-linux-gnu
+
+$(ARTIFACTS)/$(BINARY_NAME)-x86_64-unknown-linux-gnu: $(SRC)
+	cargo build --target=x86_64-unknown-linux-gnu $(CARGO_OPTIONS)
+	install $(TARGET_DIR)/x86_64-unknown-linux-gnu/release/$(BINARY_NAME) $@
+
+$(ARTIFACTS)/$(BINARY_NAME)-aarch64-unknown-linux-gnu: $(SRC)
+	cargo build --target=aarch64-unknown-linux-gnu $(CARGO_OPTIONS)
+	install $(TARGET_DIR)/aarch64-unknown-linux-gnu/release/$(BINARY_NAME) $@
+
+windows: $(ARTIFACTS)/$(BINARY_NAME)-x86_64-pc-windows-gnu
+
+$(ARTIFACTS)/$(BINARY_NAME)-x86_64-pc-windows-gnu: $(SRC)
+	cargo build --target x86_64-pc-windows-gnu $(CARGO_OPTIONS)
+	install $(TARGET_DIR)/x86_64-pc-windows-gnu/release/$(BINARY_NAME).exe $@
+
+build-native:
+	cargo build
+	install $(TARGET_DIR)/debug/$(BINARY_NAME) $(ARTIFACTS)/$(BINARY_NAME)
 
 install: all
-	mkdir -p ~/.fig/bin
-	rm ~/.fig/bin/fig || echo "Could not remove ~/.fig/bin/fig"
-	rm ~/.fig/bin/fig_callback || echo "Could not remove ~/.fig/bin/fig_callback"
-	cp $(BUILT_PRODUCTS_DIR)/figcli ~/.fig/bin/fig
-	cp $(BUILT_PRODUCTS_DIR)/fig_callback ~/.fig/bin/fig_callback
 
+install-native: build-native
+	mkdir -p ~/.local/bin/
+	install $(ARTIFACTS)/$(BINARY_NAME) ~/.local/bin/$(BINARY_NAME)
+
+clean:
+	command -v cargo &>/dev/null && cargo clean
+	rm -rf $(TARGET_DIR)
+	rm -rf $(ARTIFACTS)
+	rm -rf $(BUILT_PRODUCTS_DIR)

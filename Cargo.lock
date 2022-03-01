@@ -832,63 +832,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "dotfilesd"
-version = "0.1.5"
-dependencies = [
- "anyhow",
- "async-trait",
- "base64",
- "bitflags",
- "bytes",
- "clap 3.1.3",
- "clap_complete",
- "clap_complete_fig",
- "copypasta",
- "crossterm",
- "ctrlc",
- "dialoguer",
- "directories",
- "fig-auth",
- "fig-ipc",
- "fig-proto",
- "fig-settings",
- "flume",
- "futures",
- "git2",
- "globset",
- "handlebars",
- "nix 0.23.1",
- "notify",
- "objc",
- "once_cell",
- "parking_lot",
- "prost",
- "rand",
- "regex",
- "reqwest",
- "self_update",
- "semver 1.0.6",
- "sentry",
- "serde",
- "serde_json",
- "serde_with",
- "sha2",
- "sysinfo",
- "tempfile",
- "thiserror",
- "time",
- "tokio",
- "tokio-tungstenite",
- "toml",
- "tracing",
- "tracing-subscriber",
- "url",
- "validator",
- "walkdir",
- "windows",
-]
-
-[[package]]
 name = "downcast-rs"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -953,6 +896,63 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c3fcf0cee53519c866c09b5de1f6c56ff9d647101f81c1964fa632e148896cdf"
 dependencies = [
  "instant",
+]
+
+[[package]]
+name = "fig"
+version = "0.1.5"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "base64",
+ "bitflags",
+ "bytes",
+ "clap 3.1.3",
+ "clap_complete",
+ "clap_complete_fig",
+ "copypasta",
+ "crossterm",
+ "ctrlc",
+ "dialoguer",
+ "directories",
+ "fig-auth",
+ "fig-ipc",
+ "fig-proto",
+ "fig-settings",
+ "flume",
+ "futures",
+ "git2",
+ "globset",
+ "handlebars",
+ "nix 0.23.1",
+ "notify",
+ "objc",
+ "once_cell",
+ "parking_lot",
+ "prost",
+ "rand",
+ "regex",
+ "reqwest",
+ "self_update",
+ "semver 1.0.6",
+ "sentry",
+ "serde",
+ "serde_json",
+ "serde_with",
+ "sha2",
+ "sysinfo",
+ "tempfile",
+ "thiserror",
+ "time",
+ "tokio",
+ "tokio-tungstenite",
+ "toml",
+ "tracing",
+ "tracing-subscriber",
+ "url",
+ "validator",
+ "walkdir",
+ "windows",
 ]
 
 [[package]]

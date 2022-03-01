@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "dotfilesd",
+    "figcli",
     "figterm",
     "rust-lib/alacritty_terminal",
     "rust-lib/fig-auth",
