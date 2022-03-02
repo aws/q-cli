@@ -22,10 +22,7 @@ pub mod util;
 use crate::{
     cli::{installation::InstallComponents, util::open_url},
     daemon::{daemon, get_daemon},
-    util::{
-        fig_dir,
-        shell::{Shell, When},
-    },
+    util::shell::{Shell, When},
 };
 
 use anyhow::{Context, Result};
@@ -34,7 +31,7 @@ use crossterm::style::Stylize;
 use fig_ipc::command::open_ui_element;
 use fig_proto::local::UiElement;
 use std::{fs::File, process::exit, str::FromStr};
-use tracing::level_filters::LevelFilter;
+use tracing::{info, level_filters::LevelFilter};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ArgEnum)]
 pub enum OutputFormat {
@@ -44,21 +41,6 @@ pub enum OutputFormat {
 
 #[derive(Debug, Subcommand)]
 pub enum CliRootCommands {
-    /// Install dotfiles
-    Install {
-        /// Install only the daemon
-        #[clap(long, conflicts_with = "dotfiles")]
-        daemon: bool,
-        /// Install only the dotfiles
-        #[clap(long)]
-        dotfiles: bool,
-        /// Don't confirm automatic installation.
-        #[clap(long)]
-        no_confirm: bool,
-        /// Force installation of the dotfiles
-        #[clap(long)]
-        force: bool,
-    },
     #[clap(subcommand)]
     /// Interact with the desktop app
     App(app::AppSubcommand),
@@ -73,21 +55,10 @@ pub enum CliRootCommands {
     #[clap(subcommand)]
     /// Enable/disable fig tips
     Tips(tips::TipsSubcommand),
-    /// Uninstall dotfiles
-    Uninstall {
-        /// Uninstall only the daemon
-        #[clap(long)]
-        daemon: bool,
-        /// Uninstall only the dotfiles
-        #[clap(long)]
-        dotfiles: bool,
-        /// Don't confirm automatic removal.
-        #[clap(long)]
-        no_confirm: bool,
-        /// Uninstall only the binary
-        #[clap(long)]
-        binary: bool,
-    },
+    /// Install fig cli comoponents
+    Install(internal::InstallArgs),
+    /// Uninstall fig
+    Uninstall,
     /// Update dotfiles
     Update {
         /// Force update
@@ -197,7 +168,7 @@ impl Cli {
             }
             _ => {
                 // All other cli commands print logs to ~/.fig/logs/cli.log
-                if let Some(fig_dir) = fig_dir() {
+                if let Some(fig_dir) = fig_directories::fig_dir() {
                     let log_path = fig_dir.join("logs").join("cli.log");
 
                     // Create the log directory if it doesn't exist
@@ -215,45 +186,20 @@ impl Cli {
                             .init();
                     }
                 }
+
+                info!("Command ran: {:?}", std::env::args());
             }
         }
 
         let result = match self.subcommand {
             Some(subcommand) => match subcommand {
-                CliRootCommands::Install {
-                    daemon,
-                    dotfiles,
-                    no_confirm,
-                    force,
-                } => {
-                    let install_components = if daemon || dotfiles {
-                        let mut install_components = InstallComponents::empty();
-                        install_components.set(InstallComponents::DAEMON, daemon);
-                        install_components.set(InstallComponents::DOTFILES, dotfiles);
-                        install_components
+                CliRootCommands::Install(args) => internal::install_cli_from_args(args),
+                CliRootCommands::Uninstall => {
+                    if fig_ipc::command::uninstall_command().await.is_err() {
+                        installation::uninstall_cli(InstallComponents::all())
                     } else {
-                        InstallComponents::all()
-                    };
-
-                    installation::install_cli(install_components, no_confirm, force)
-                }
-                CliRootCommands::Uninstall {
-                    daemon,
-                    dotfiles,
-                    no_confirm,
-                    binary,
-                } => {
-                    let uninstall_components = if daemon || dotfiles || binary {
-                        let mut uninstall_components = InstallComponents::empty();
-                        uninstall_components.set(InstallComponents::DAEMON, daemon);
-                        uninstall_components.set(InstallComponents::DOTFILES, dotfiles);
-                        uninstall_components.set(InstallComponents::BINARY, binary);
-                        uninstall_components
-                    } else {
-                        InstallComponents::all()
-                    };
-
-                    installation::uninstall_cli(uninstall_components, no_confirm)
+                        Ok(())
+                    }
                 }
                 CliRootCommands::Update { no_confirm } => {
                     installation::update_cli(no_confirm).await

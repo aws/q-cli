@@ -57,10 +57,26 @@ class VSCodeIntegration: TerminalIntegrationProvider {
       "\(NSHomeDirectory())/Library/Application Support/\(self.applicationSupportFolderName)/User/settings.json"
     return (try? FileManager.default.destinationOfSymbolicLink(atPath: defaultPath)) ?? defaultPath
   }
+  
+  // If the extension path changes make sure to update the uninstall script!
+  var extensionsDir: String {
+    return "\(NSHomeDirectory())/\(self.configFolderName)/extensions"
+  }
 
   // If the extension path changes make sure to update the uninstall script!
   var extensionPath: String {
-    return "\(NSHomeDirectory())/\(self.configFolderName)/extensions/withfig.fig-\(VSCodeIntegration.extensionVersion)/extension.js"
+    return "\(self.extensionsDir)/withfig.fig-\(VSCodeIntegration.extensionVersion)/extension.js"
+  }
+  
+  func uninstall() -> Bool {
+    if let extensions = try? FileManager.default.contentsOfDirectory(atPath: self.extensionsDir) {
+        for ext in extensions {
+            if URL(fileURLWithPath: ext).lastPathComponent.hasPrefix("withfig.fig-") {
+                try? FileManager.default.removeItem(atPath: ext)
+            }
+        }
+    }
+    return true
   }
 
   func install() -> InstallationStatus {

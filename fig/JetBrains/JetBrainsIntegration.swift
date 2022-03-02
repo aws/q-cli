@@ -129,6 +129,24 @@ class JetBrainsIntegration: InputMethodDependentTerminalIntegrationProvider & In
 
     return .installed
   }
+  
+  func uninstall() -> Bool {
+    // Remove old versions of plugin
+    do {
+      let pluginsPathURL = try self.pluginsPath()
+      let plugins = try FileManager.default.contentsOfDirectory(atPath: pluginsPathURL.path)
+
+      try plugins.forEach { plugin in
+        if plugin.starts(with: JetBrainsIntegration.plugin.name) {
+          try FileManager.default.removeItem(atPath: plugin)
+        }
+      }
+      
+      return true
+    } catch {
+      return false
+    }
+  }
 
   func install() -> InstallationStatus {
     guard self.applicationIsInstalled else {
@@ -149,23 +167,15 @@ class JetBrainsIntegration: InputMethodDependentTerminalIntegrationProvider & In
     guard FileManager.default.fileExists(atPath: applicationFolder.path) else {
       return .failed(error: "\(applicationFolder) does not exist.")
     }
+    
+    if !self.uninstall() {
+      Logger.log(message: "An error occured when removing previous version of the plugin")
+    }
 
     let destinationURL = pluginsPathURL.appendingPathComponent(JetBrainsIntegration.plugin.slug,
                                                                isDirectory: true)
 
-    // Remove old versions of plugin
-    do {
-      let plugins = try FileManager.default.contentsOfDirectory(atPath: pluginsPathURL.path)
 
-      try plugins.forEach { plugin in
-        if plugin.starts(with: JetBrainsIntegration.plugin.name) {
-          try FileManager.default.removeItem(atPath: plugin)
-        }
-      }
-
-    } catch {
-      Logger.log(message: "An error occured when removing previous version of plugin: \(error.localizedDescription)")
-    }
 
     do {
       try FileManager.default.createDirectory(at: destinationURL, withIntermediateDirectories: true, attributes: nil)

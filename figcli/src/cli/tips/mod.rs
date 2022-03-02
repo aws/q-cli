@@ -1,4 +1,3 @@
-use crate::util::project_dir;
 use anyhow::Context;
 use anyhow::Result;
 use clap::Subcommand;
@@ -129,8 +128,7 @@ fn get_all_tips() -> Vec<Tip> {
 
 impl Tips {
     fn save(&self) -> anyhow::Result<()> {
-        let project_dir = project_dir().context("Could not find project directory")?;
-        let data_dir = project_dir.data_local_dir();
+        let data_dir = fig_directories::fig_data_dir().context("Could not get fig data dir")?;
         if !data_dir.exists() {
             fs::create_dir_all(&data_dir)?;
         }
@@ -148,9 +146,10 @@ impl Tips {
     }
 
     fn load() -> anyhow::Result<Tips> {
-        let project_dir = project_dir().context("Could not find project directory")?;
+        let path = fig_directories::fig_data_dir()
+            .context("Could not get fig data dir")?
+            .join("tips.json");
 
-        let path = project_dir.data_local_dir().join("tips.json");
         if !path.exists() {
             return Err(anyhow::anyhow!("Could not find tips file"));
         }

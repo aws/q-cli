@@ -222,7 +222,7 @@ extension Onboarding {
 
       NSApp.appDelegate.setupCompanionWindow()
     case .uninstall:
-      NSApp.appDelegate.uninstall()
+      NSApp.appDelegate.uninstall(showDialog: true)
     case .UNRECOGNIZED:
       Logger.log(message: "Unrecognized Onboarding Action!", subsystem: .api)
       callback(false)

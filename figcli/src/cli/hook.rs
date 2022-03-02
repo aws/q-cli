@@ -1,4 +1,3 @@
-use crate::util::fig_dir;
 use anyhow::{Context, Result};
 use clap::Subcommand;
 use crossterm::style::Stylize;
@@ -100,7 +99,7 @@ impl HookSubcommand {
                 prompt,
             } => {
                 if *prompt && !remote_dest.starts_with("git@") {
-                    let installed_hosts_file = fig_dir()
+                    let installed_hosts_file = fig_directories::fig_dir()
                         .context("Can't get fig dir")?
                         .join("ssh_hostnames");
                     let mut installed_hosts = OpenOptions::new()

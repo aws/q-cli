@@ -1,10 +1,9 @@
 use crate::{
     cli::{util::OSVersion, OutputFormat},
-    util::{glob, glob_dir, home_dir},
+    util::{glob, glob_dir},
 };
 
 use anyhow::{Context, Result};
-use directories::BaseDirs;
 use fig_ipc::command::send_recv_command_to_socket;
 use fig_proto::local::{
     command, command_response::Response, DiagnosticsCommand, DiagnosticsResponse,
@@ -24,7 +23,7 @@ pub fn dscl_read(value: impl AsRef<OsStr>) -> Result<String> {
     let result = Command::new("dscl")
         .arg(".")
         .arg("-read")
-        .arg(home_dir().context("Could not get home dir")?)
+        .arg(fig_directories::home_dir().context("Could not get home dir")?)
         .arg(value)
         .output()
         .context("Could not read value")?;
@@ -33,9 +32,8 @@ pub fn dscl_read(value: impl AsRef<OsStr>) -> Result<String> {
 }
 
 fn get_local_specs() -> Result<Vec<PathBuf>> {
-    let specs_location = BaseDirs::new()
+    let specs_location = fig_directories::home_dir()
         .context("Could not get home dir")?
-        .home_dir()
         .join(".fig")
         .join("autocomplete");
     let glob_pattern = specs_location.join("*.js");
@@ -470,8 +468,7 @@ struct DotfilesDiagnostics {
 
 impl DotfilesDiagnostics {
     fn new() -> Result<DotfilesDiagnostics> {
-        let base_dir = directories::BaseDirs::new().context("Could not get base dir")?;
-        let home_dir = base_dir.home_dir();
+        let home_dir = fig_directories::home_dir().context("Could not get base dir")?;
 
         let profile = std::fs::read_to_string(home_dir.join(".profile")).ok();
         let bashrc = std::fs::read_to_string(home_dir.join(".bashrc")).ok();

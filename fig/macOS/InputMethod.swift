@@ -201,29 +201,6 @@ class InputMethod {
 
   }
 
-  func uninstall() {
-
-    InputMethod.log("Uninstalling...")
-
-    let targetURL = InputMethod.inputMethodDirectory.appendingPathComponent(self.name)
-
-    self.deselect()
-    self.disable()
-
-    try? FileManager.default.removeItem(at: targetURL)
-    try? FileManager.default.removeItem(atPath: NSHomeDirectory()+"/.fig/tools/cursor")
-
-    self.terminate()
-
-    self.updateStatus()
-
-    // If we attempt to reinstall the input method before restarting,
-    // we'll recieve OSStatus -50 when trying to select the InputSource
-    InputMethod.log("After uninstalling the input method, the macOS app" +
-                    "must be restarted before it can be installed again")
-
-  }
-
   var isInstalled: Bool {
     return self.verifyInstallation() == .installed
   }
@@ -299,6 +276,30 @@ extension InputMethod: IntegrationProvider {
     return .installed
   }
 
+  func uninstall() -> Bool {
+
+    InputMethod.log("Uninstalling...")
+
+    let targetURL = InputMethod.inputMethodDirectory.appendingPathComponent(self.name)
+
+    self.deselect()
+    self.disable()
+
+    try? FileManager.default.removeItem(at: targetURL)
+    try? FileManager.default.removeItem(atPath: NSHomeDirectory()+"/.fig/tools/cursor")
+
+    self.terminate()
+
+    self.updateStatus()
+
+    // If we attempt to reinstall the input method before restarting,
+    // we'll recieve OSStatus -50 when trying to select the InputSource
+    InputMethod.log("After uninstalling the input method, the macOS app" +
+                    "must be restarted before it can be installed again")
+    
+    return true
+  }
+  
   fileprivate func _install() -> InstallationStatus {
     let url = URL(fileURLWithPath: self.originalBundlePath)
     let name = url.lastPathComponent

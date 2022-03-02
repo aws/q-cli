@@ -4,7 +4,7 @@ use anyhow::Result;
 use fig_proto::local::{
     self, command, BuildCommand, DebugModeCommand, InputMethodAction, InputMethodCommand,
     OpenUiElementCommand, PromptAccessibilityCommand, QuitCommand, RestartCommand,
-    RestartSettingsListenerCommand, UiElement, UpdateCommand,
+    RestartSettingsListenerCommand, UiElement, UninstallCommand, UpdateCommand,
 };
 use tokio::net::UnixStream;
 
@@ -59,6 +59,11 @@ pub async fn prompt_accessibility_command() -> Result<()> {
 
 pub async fn update_command(force: bool) -> Result<()> {
     let command = command::Command::Update(UpdateCommand { force });
+    send_command_to_socket(command).await
+}
+
+pub async fn uninstall_command() -> Result<()> {
+    let command = command::Command::Uninstall(UninstallCommand {});
     send_command_to_socket(command).await
 }
 

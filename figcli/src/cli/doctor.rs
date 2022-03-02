@@ -4,7 +4,7 @@ use crate::{
         util::OSVersion,
     },
     util::{
-        app_path_from_bundle_id, fig_dir, get_shell, glob, glob_dir, home_dir,
+        app_path_from_bundle_id, get_shell, glob, glob_dir,
         shell::{Shell, ShellFileIntegration},
     },
 };
@@ -177,7 +177,7 @@ impl DoctorCheck for FigBinCheck {
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        let path = fig_dir().context("~/.fig/bin/fig does not exist")?;
+        let path = fig_directories::fig_dir().context("~/.fig/bin/fig does not exist")?;
         Ok(check_file_exists(&path)?)
     }
 }
@@ -335,7 +335,7 @@ impl DoctorCheck for InsertionLockCheck {
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        let insetion_lock_path = fig_dir()
+        let insetion_lock_path = fig_directories::fig_dir()
             .context("Could not get fig dir")?
             .join("insertion-lock");
 
@@ -761,7 +761,7 @@ impl DoctorCheck<DiagnosticsResponse> for FigCLIPathCheck {
 
     async fn check(&self, _: &DiagnosticsResponse) -> Result<(), DoctorError> {
         let path = std::env::current_exe().context("Could not get executable path.")?;
-        let exe_path = fig_dir().unwrap().join("bin").join("fig");
+        let exe_path = fig_directories::fig_dir().unwrap().join("bin").join("fig");
 
         if path != exe_path
             && path != Path::new("/usr/local/bin/.fig/bin/fig")
@@ -917,7 +917,7 @@ impl DoctorCheck for ItermIntegrationCheck {
                 }
             }
 
-            let integration_path = home_dir()?.join(
+            let integration_path = fig_directories::home_dir().context("Could not get home dir")?.join(
                 "Library/Application Support/iTerm2/Scripts/AutoLaunch/fig-iterm-integration.scpt",
             );
             if !integration_path.exists() {
@@ -948,14 +948,16 @@ impl DoctorCheck for ItermBashIntegrationCheck {
     }
 
     fn should_check(&self, _: &()) -> bool {
-        match home_dir() {
-            Ok(home) => home.join(".iterm2_shell_integration.bash").exists(),
-            Err(_) => false,
+        match fig_directories::home_dir() {
+            Some(home) => home.join(".iterm2_shell_integration.bash").exists(),
+            None => false,
         }
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        let integration_file = home_dir()?.join(".iterm2_shell_integration.bash");
+        let integration_file = fig_directories::home_dir()
+            .context("Could not get home dir")?
+            .join(".iterm2_shell_integration.bash");
         let integration = read_to_string(integration_file)
             .context("Could not read .iterm2_shell_integration.bash")?;
 
@@ -996,15 +998,20 @@ impl DoctorCheck for HyperIntegrationCheck {
 
         if integration != "installed!" {
             // Check ~/.hyper_plugins/local/fig-hyper-integration/index.js exists
-            let integration_path =
-                home_dir()?.join(".hyper_plugins/local/fig-hyper-integration/index.js");
+            let integration_path = fig_directories::home_dir()
+                .context("Could not get home dir")?
+                .join(".hyper_plugins/local/fig-hyper-integration/index.js");
 
             if !integration_path.exists() {
                 return Err(anyhow!("fig-hyper-integration plugin is missing.").into());
             }
 
-            let config = read_to_string(home_dir()?.join(".hyper.js"))
-                .context("Could not read ~/.hyper.js")?;
+            let config = read_to_string(
+                fig_directories::home_dir()
+                    .context("Could not get home dir")?
+                    .join(".hyper.js"),
+            )
+            .context("Could not read ~/.hyper.js")?;
 
             if !config.contains("fig-hyper-integration") {
                 return Err(anyhow!(
@@ -1056,7 +1063,10 @@ impl DoctorCheck for VSCodeIntegrationCheck {
 
         if integration != "installed!" {
             // Check if withfig.fig exists
-            let extensions = home_dir()?.join(".vscode").join("extensions");
+            let extensions = fig_directories::home_dir()
+                .context("Could not get home dir")?
+                .join(".vscode")
+                .join("extensions");
 
             let glob_set = glob(&[extensions.join("withfig.fig-").to_string_lossy()]).unwrap();
 

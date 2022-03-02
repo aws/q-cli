@@ -108,10 +108,7 @@ impl AppSubcommand {
                     .wait()?;
             }
             AppSubcommand::Uninstall => {
-                Command::new("bash")
-                    .args(["-c", include_str!("uninstall-script.sh")])
-                    .spawn()?
-                    .wait()?;
+                fig_ipc::command::uninstall_command().await?;
             }
             AppSubcommand::Restart => restart_fig().await?,
             AppSubcommand::Quit => quit_fig().await?,

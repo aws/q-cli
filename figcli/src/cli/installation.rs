@@ -8,11 +8,7 @@ use nix::unistd::geteuid;
 use self_update::update::UpdateStatus;
 use time::OffsetDateTime;
 
-use crate::{
-    cli::util::dialoguer_theme,
-    daemon,
-    util::{home_dir, shell::Shell},
-};
+use crate::{cli::util::dialoguer_theme, daemon, util::shell::Shell};
 
 bitflags::bitflags! {
     /// The different components that can be installed.
@@ -88,7 +84,10 @@ fn install_fig() -> Result<()> {
     let now = OffsetDateTime::now_utc().format(time::macros::format_description!(
         "[year]-[month]-[day]_[hour]-[minute]-[second]"
     ))?;
-    let backup_dir = home_dir()?.join(".fig.dotfiles.bak").join(now);
+    let backup_dir = fig_directories::home_dir()
+        .context("Could not find home directory")?
+        .join(".fig.dotfiles.bak")
+        .join(now);
     for shell in [Shell::Bash, Shell::Zsh, Shell::Fish] {
         for integration in shell.get_shell_integrations()? {
             integration.install(Some(&backup_dir))?
@@ -98,66 +97,31 @@ fn install_fig() -> Result<()> {
     Ok(())
 }
 
-pub fn uninstall_cli(install_components: InstallComponents, no_confirm: bool) -> Result<()> {
+pub fn uninstall_cli(install_components: InstallComponents) -> Result<()> {
     if install_components.contains(InstallComponents::DAEMON) {
         uninstall_daemon()?;
     }
 
     if install_components.contains(InstallComponents::DOTFILES) {
-        // Uninstall fig
-        let mut manual_uninstall = if no_confirm {
-            false
-        } else {
-            !dialoguer::Confirm::with_theme(&dialoguer_theme())
-                .with_prompt("Do you want fig to modify your shell config (you will have to manually do this otherwise)?")
-                .interact()?
-        };
-
-        if !manual_uninstall && uninstall_fig().is_err() {
-            println!("Could not uninstall fig");
-            manual_uninstall = true;
-        }
-        if !no_confirm && manual_uninstall {
-            println!();
-            println!("To uninstall fig you should follow the instructions for your shell(s):");
-            println!();
-            println!("{}", "bash".bold().underlined());
-            println!(
-                "1. Remove {} from the top of your .bashrc, .bash_profile, .bash_login, and/or .profile files", "eval \"$(fig init bash pre)\"".magenta()
-            );
-            println!(
-                "2. Remove {} from the bottom of your .bashrc, .bash_profile, .bash_login, and/or .profile files", "eval \"$(fig init bash post)\"".magenta()
-            );
-            println!();
-
-            println!("{}", "zsh".bold().underlined());
-            println!(
-                "1. Remove {} from the top of your .zshrc and/or .zprofile",
-                "eval \"$(fig init zsh pre)\"".magenta()
-            );
-            println!(
-                "2. Remove {} from the bottom of your .zshrc, and/or .zprofile files",
-                "eval \"$(fig init zsh post)\"".magenta()
-            );
-            println!();
-
-            println!("{}", "fish".bold().underlined());
-            println!("Remove the 00_fig_pre.fish and 99_fig_post.fish files from your .config/fish/conf.d directory.");
-            // Print instructions for manual installation.
-            println!();
-        }
+        uninstall_fig()?;
     }
 
     if install_components.contains(InstallComponents::BINARY) {
-        // Delete the binary
-        let binary_path = Path::new("/usr/local/bin/fig");
+        let local_path = fig_directories::home_dir()
+            .context("Could not find home directory")?
+            .join(".local")
+            .join("bin")
+            .join("fig");
+        let binary_paths = [Path::new("/usr/local/bin/fig"), local_path.as_path()];
 
-        if binary_path.exists() {
-            std::fs::remove_file(binary_path)
-                .with_context(|| format!("Could not delete {}", binary_path.display()))?;
+        for path in binary_paths {
+            if path.exists() {
+                std::fs::remove_file(path)
+                    .with_context(|| format!("Could not delete {}", path.display()))?;
+            }
         }
 
-        println!("\n{}\n", "Dotfiles has been uninstalled".bold());
+        println!("\n{}\n", "Fig binary has been uninstalled".bold());
     }
 
     Ok(())

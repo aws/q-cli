@@ -985,8 +985,8 @@ dependencies = [
  "crossterm",
  "ctrlc",
  "dialoguer",
- "directories",
  "fig-auth",
+ "fig-directories",
  "fig-ipc",
  "fig-proto",
  "fig-settings",
@@ -1050,6 +1050,13 @@ dependencies = [
  "bindgen",
  "bitflags",
  "cc",
+]
+
+[[package]]
+name = "fig-directories"
+version = "0.1.0"
+dependencies = [
+ "dirs",
 ]
 
 [[package]]

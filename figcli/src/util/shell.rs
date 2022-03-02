@@ -12,7 +12,7 @@ use std::{
 };
 use time::OffsetDateTime;
 
-use crate::util::{get_parent_process_exe, home_dir, project_dir};
+use crate::util::get_parent_process_exe;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, ArgEnum, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -202,12 +202,8 @@ impl ShellFileIntegration {
                                 "[year]-[month]-[day]_[hour]-[minute]-[second]"
                             ))
                         {
-                            if let Ok(home) = home_dir() {
-                                let path = home.join(".fig.dotfiles.bak").join(now);
-                                Some(path)
-                            } else {
-                                None
-                            }
+                            fig_directories::home_dir()
+                                .map(|path| path.join(".fig.dotfiles.bak").join(now))
                         } else {
                             None
                         }
@@ -280,8 +276,7 @@ impl Shell {
     }
 
     pub fn get_shell_integrations(&self) -> Result<Vec<ShellFileIntegration>> {
-        let base_dir = directories::BaseDirs::new().context("Failed to get base directories")?;
-        let home_dir = base_dir.home_dir();
+        let home_dir = fig_directories::home_dir().context("Failed to get base directories")?;
 
         let path = match self {
             Shell::Bash => {
@@ -310,7 +305,7 @@ impl Shell {
                 let zdotdir = std::env::var("ZDOTDIR")
                     .or_else(|_| std::env::var("FIG_ZDOTDIR"))
                     .map(PathBuf::from)
-                    .unwrap_or_else(|_| home_dir.into());
+                    .unwrap_or_else(|_| home_dir);
                 vec![zdotdir.join(".zshrc"), zdotdir.join(".zprofile")]
                     .into_iter()
                     .map(|path| ShellFileIntegration {
@@ -374,12 +369,7 @@ impl Shell {
     }
 
     pub fn get_data_path(&self) -> Option<PathBuf> {
-        Some(
-            project_dir()?
-                .data_local_dir()
-                .join("fig")
-                .join(format!("{}.json", self)),
-        )
+        fig_directories::fig_data_dir().map(|dir| dir.join("shell").join(format!("{}.json", self)))
     }
 
     pub fn get_remote_source(&self) -> Result<Url> {

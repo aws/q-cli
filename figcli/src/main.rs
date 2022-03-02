@@ -1,5 +1,4 @@
 pub mod cli;
-pub mod config;
 pub mod daemon;
 pub mod plugins;
 pub mod util;
