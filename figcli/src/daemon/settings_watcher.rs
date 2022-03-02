@@ -1,5 +1,6 @@
 use std::{sync::Arc, time::Duration};
 
+use crate::util::fig_bundle;
 use anyhow::Result;
 use fig_ipc::hook::send_hook_to_socket;
 use fig_proto::{hooks, local::file_changed_hook::FileChanged};
@@ -15,6 +16,7 @@ pub async fn spawn_settings_watcher(_daemon_status: Arc<RwLock<DaemonStatus>>) -
 
     let settings_path = fig_settings::settings::settings_path()?;
     let state_path = fig_settings::state::state_path()?;
+    let application_path = "/Applications/Fig.app";
 
     let (settings_watcher_tx, settings_watcher_rx) = std::sync::mpsc::channel();
     let mut watcher = watcher(settings_watcher_tx, Duration::from_secs(1))?;
@@ -23,6 +25,7 @@ pub async fn spawn_settings_watcher(_daemon_status: Arc<RwLock<DaemonStatus>>) -
 
     let settings_path_clone = settings_path.clone();
     let state_path_clone = state_path.clone();
+    let application_path_clone = std::path::PathBuf::from(application_path);
 
     tokio::task::spawn(async move {
         loop {
@@ -55,6 +58,23 @@ pub async fn spawn_settings_watcher(_daemon_status: Arc<RwLock<DaemonStatus>>) -
                                 );
                                 if let Err(err) = send_hook_to_socket(hook.clone()).await {
                                     error!("Failed to send hook: {:?}", err);
+                                }
+                            }
+                            path if path == application_path_clone.as_path() => {
+                                info!("Application path changed");
+
+                                tokio::time::sleep(Duration::from_secs(1)).await;
+
+                                let app_bundle_exists = fig_bundle().unwrap().is_dir();
+
+                                if !app_bundle_exists {
+                                    // Show a dialog telling the user to run `fig uninstall`
+                                    std::process::Command::new(std::env::current_exe().unwrap())
+                                        .args(["_", "warn-user-when-uninstalling-incorrectly"])
+                                        .output()
+                                        .expect("failed to execute process");
+
+                                    // todo: can we just run the uninstall code directly?
                                 }
                             }
                             unknown_path => {
@@ -99,6 +119,10 @@ pub async fn spawn_settings_watcher(_daemon_status: Arc<RwLock<DaemonStatus>>) -
         }
         if let Err(err) = watcher.watch(&*state_path, RecursiveMode::NonRecursive) {
             error!("Could not watch {:?}: {}", state_path, err);
+        }
+
+        if let Err(err) = watcher.watch(&*application_path, RecursiveMode::NonRecursive) {
+            error!("Could not watch {:?}: {}", application_path, err);
         }
 
         loop {

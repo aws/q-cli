@@ -52,6 +52,15 @@ pub fn fig_dir() -> Option<PathBuf> {
     Some(directories::BaseDirs::new()?.home_dir().join(".fig"))
 }
 
+pub fn fig_bundle() -> Option<PathBuf> {
+    #[cfg(target_os = "macos")]
+    {
+        Some(PathBuf::from("/Applications/Fig.app/"))
+    }
+    #[cfg(not(any(target_os = "macos")))]
+    unimplemented!();
+}
+
 /// Glob patterns against full paths
 pub fn glob_dir(glob: &GlobSet, directory: impl AsRef<Path>) -> Result<Vec<PathBuf>> {
     let mut files = Vec::new();
