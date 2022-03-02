@@ -3,6 +3,8 @@
 # Installation
 ### Prerequisites 
 - Xcode 13 or later
+- Brew
+- Yarn/Npm + Node
 
 ### 1. Clone repo
 ```
