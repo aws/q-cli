@@ -25,6 +25,7 @@ use fig_proto::{
 use regex::Regex;
 use semver::Version;
 use serde::{ser::SerializeMap, Serialize};
+use serde_json::json;
 use std::{
     borrow::Cow,
     collections::HashMap,
@@ -797,14 +798,17 @@ impl DoctorCheck<DiagnosticsResponse> for AccessibilityCheck {
 
 struct PseudoTerminalPathCheck;
 #[async_trait]
-impl DoctorCheck<DiagnosticsResponse> for PseudoTerminalPathCheck {
+impl DoctorCheck for PseudoTerminalPathCheck {
     fn name(&self) -> Cow<'static, str> {
         "PATH and PseudoTerminal PATH match".into()
     }
 
-    async fn check(&self, diagnostics: &DiagnosticsResponse) -> Result<(), DoctorError> {
+    async fn check(&self, _: &()) -> Result<(), DoctorError> {
         let path = std::env::var("PATH").unwrap_or_default();
-        if diagnostics.psudoterminal_path.ne(&path) {
+        let pty_path = fig_settings::state::get_value("pty.path")?
+            .and_then(|s| s.as_str().map(str::to_string));
+
+        if path != pty_path.unwrap_or_default() {
             Err(DoctorError::Error {
                 reason: "paths do not match".into(),
                 info: vec![],
@@ -1227,6 +1231,11 @@ pub async fn doctor_cli() -> Result<()> {
     println!("Checking dotfiles...");
     println!();
 
+    // Set psudoterminal path first so we avoid the check failing if it is not set
+    if let Ok(path) = std::env::var("PATH") {
+        fig_settings::state::set_value("pty.path", json!(path)).ok();
+    }
+
     let status = async {
         run_checks(
             "Let's make sure Fig is running...".into(),
@@ -1238,6 +1247,7 @@ pub async fn doctor_cli() -> Result<()> {
                 &DaemonCheck {},
                 &FigtermSocketCheck {},
                 &InsertionLockCheck {},
+                &PseudoTerminalPathCheck {},
             ],
         )
         .await?;
@@ -1258,6 +1268,7 @@ pub async fn doctor_cli() -> Result<()> {
                 },
             })
             .collect();
+
         let all_dotfile_checks: Vec<_> = shell_integrations
             .iter()
             .map(|p| (&*p) as &dyn DoctorCheck)
@@ -1279,7 +1290,6 @@ pub async fn doctor_cli() -> Result<()> {
                 &AutocompleteEnabledCheck {},
                 &FigCLIPathCheck {},
                 &AccessibilityCheck {},
-                &PseudoTerminalPathCheck {},
                 &SecureKeyboardCheck {},
                 &DotfilesSymlinkedCheck {},
             ],
