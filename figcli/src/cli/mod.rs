@@ -194,9 +194,7 @@ impl Cli {
 
         let result = match self.subcommand {
             Some(subcommand) => match subcommand {
-                CliRootCommands::Install(args) => {
-                    internal::install_cli_from_args(args)
-                }
+                CliRootCommands::Install(args) => internal::install_cli_from_args(args),
                 CliRootCommands::Uninstall => {
                     if fig_ipc::command::uninstall_command().await.is_err() {
                         installation::uninstall_cli(InstallComponents::all())

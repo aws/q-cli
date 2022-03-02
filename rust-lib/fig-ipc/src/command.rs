@@ -4,7 +4,7 @@ use anyhow::Result;
 use fig_proto::local::{
     self, command, BuildCommand, DebugModeCommand, InputMethodAction, InputMethodCommand,
     OpenUiElementCommand, PromptAccessibilityCommand, QuitCommand, RestartCommand,
-    RestartSettingsListenerCommand, UiElement, UpdateCommand, UninstallCommand
+    RestartSettingsListenerCommand, UiElement, UninstallCommand, UpdateCommand,
 };
 use tokio::net::UnixStream;
 
@@ -66,7 +66,6 @@ pub async fn uninstall_command() -> Result<()> {
     let command = command::Command::Uninstall(UninstallCommand {});
     send_command_to_socket(command).await
 }
-
 
 pub async fn restart_command() -> Result<()> {
     let command = command::Command::Restart(RestartCommand {});

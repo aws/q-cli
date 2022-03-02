@@ -34,53 +34,52 @@ pub async fn spawn_settings_watcher(_daemon_status: Arc<RwLock<DaemonStatus>>) -
                     debug!("Received event: {:?}", event);
 
                     match event {
-                        DebouncedEvent::NoticeWrite(path)
-                        | DebouncedEvent::NoticeRemove(path)
-                        | DebouncedEvent::Create(path)
-                        | DebouncedEvent::Write(path)
-                        | DebouncedEvent::Remove(path)
-                        | DebouncedEvent::Chmod(path) => match path {
-                            path if path == settings_path_clone.as_path() => {
-                                info!("Settings file changed");
-                                let hook = hooks::new_file_changed_hook(
-                                    FileChanged::Settings,
-                                    settings_path_clone.as_path().display().to_string(),
-                                );
-                                if let Err(err) = send_hook_to_socket(hook.clone()).await {
-                                    error!("Failed to send hook: {:?}", err);
+                        DebouncedEvent::NoticeWrite(path) | DebouncedEvent::NoticeRemove(path) => {
+                            match path {
+                                path if path == settings_path_clone.as_path() => {
+                                    info!("Settings file changed");
+                                    let hook = hooks::new_file_changed_hook(
+                                        FileChanged::Settings,
+                                        settings_path_clone.as_path().display().to_string(),
+                                    );
+                                    if let Err(err) = send_hook_to_socket(hook.clone()).await {
+                                        error!("Failed to send hook: {:?}", err);
+                                    }
                                 }
-                            }
-                            path if path == state_path_clone.as_path() => {
-                                info!("State file changed");
-                                let hook = hooks::new_file_changed_hook(
-                                    FileChanged::State,
-                                    state_path_clone.as_path().display().to_string(),
-                                );
-                                if let Err(err) = send_hook_to_socket(hook.clone()).await {
-                                    error!("Failed to send hook: {:?}", err);
+                                path if path == state_path_clone.as_path() => {
+                                    info!("State file changed");
+                                    let hook = hooks::new_file_changed_hook(
+                                        FileChanged::State,
+                                        state_path_clone.as_path().display().to_string(),
+                                    );
+                                    if let Err(err) = send_hook_to_socket(hook.clone()).await {
+                                        error!("Failed to send hook: {:?}", err);
+                                    }
                                 }
-                            }
-                            path if path == application_path_clone.as_path() => {
-                                info!("Application path changed");
+                                path if path == application_path_clone.as_path() => {
+                                    info!("Application path changed");
 
-                                tokio::time::sleep(Duration::from_secs(1)).await;
+                                    tokio::time::sleep(Duration::from_secs(1)).await;
 
-                                let app_bundle_exists = fig_bundle().unwrap().is_dir();
+                                    let app_bundle_exists = fig_bundle().unwrap().is_dir();
 
-                                if !app_bundle_exists {
-                                    // Show a dialog telling the user to run `fig uninstall`
-                                    std::process::Command::new(std::env::current_exe().unwrap())
+                                    if !app_bundle_exists {
+                                        // Show a dialog telling the user to run `fig uninstall`
+                                        std::process::Command::new(
+                                            std::env::current_exe().unwrap(),
+                                        )
                                         .args(["_", "warn-user-when-uninstalling-incorrectly"])
                                         .output()
                                         .expect("failed to execute process");
 
-                                    // todo: can we just run the uninstall code directly?
+                                        // todo: can we just run the uninstall code directly?
+                                    }
+                                }
+                                unknown_path => {
+                                    error!("Unknown path changed: {:?}", unknown_path);
                                 }
                             }
-                            unknown_path => {
-                                error!("Unknown path changed: {:?}", unknown_path);
-                            }
-                        },
+                        }
                         DebouncedEvent::Error(err, path) => {
                             error!("Error watching settings ({:?}): {:?}", path, err);
                         }
@@ -91,23 +90,6 @@ pub async fn spawn_settings_watcher(_daemon_status: Arc<RwLock<DaemonStatus>>) -
                 }
                 Err(_) => todo!(),
             }
-
-            // match forward_rx.recv_async().await {
-            //     Ok(event) => match send_file_changed().await {
-            //         Ok(_) => {
-            //             info!("Settings changed: {:?}", event);
-            //             daemon_status.write().settings_watcher_status = Ok(());
-            //         }
-            //         Err(err) => {
-            //             error!("Could not send settings changed: {}", err);
-            //             daemon_status.write().settings_watcher_status = Err(err);
-            //         }
-            //     },
-            //     Err(err) => {
-            //         error!("Error while receiving settings: {}", err);
-            //         daemon_status.write().settings_watcher_status = Err(anyhow!(err));
-            //     }
-            // }
         }
     });
 
