@@ -2,10 +2,7 @@
 
 use crate::{
     plugins::manifest::{GitReference, GithubValue, ShellSource},
-    util::{
-        checksum::{GitChecksum, Sha256Checksum},
-        project_dir,
-    },
+    util::checksum::{GitChecksum, Sha256Checksum},
 };
 
 use anyhow::Result;
@@ -32,9 +29,7 @@ pub enum DownloadMetadata {
 }
 
 pub fn plugin_data_dir() -> Option<PathBuf> {
-    let user_dirs = project_dir()?;
-    let source_folder = user_dirs.data_local_dir().join("plugin_data");
-    Some(source_folder)
+    fig_directories::fig_data_dir().map(|dir| dir.join("plugins"))
 }
 
 async fn download_remote_file(

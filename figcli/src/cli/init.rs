@@ -1,15 +1,15 @@
-use crate::{
-    plugins::lock::LockData,
-    util::shell::{Shell, When},
-};
+use crate::util::shell::{Shell, When};
 use anyhow::{Context, Result};
 use crossterm::tty::IsTty;
 use serde::{Deserialize, Serialize};
 use std::io::stdin;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-struct DotfileData {
-    dotfile: String,
+#[serde(rename_all = "camelCase")]
+pub struct DotfileData {
+    pub dotfile: String,
+    #[serde(with = "time::serde::rfc3339")]
+    pub updated_at: time::OffsetDateTime,
 }
 
 fn guard_source<F: Fn() -> Option<String>>(
@@ -25,7 +25,7 @@ fn guard_source<F: Fn() -> Option<String>>(
                 Shell::Fish => format!("set -gx {} 1", guard_var.as_ref()),
                 _ => format!("export {}=1", guard_var.as_ref()),
             };
-            return Some(format!("{}\n{}", source, source_guard));
+            return Some(format!("\n{}\n{}\n", source, source_guard));
         }
     }
 
@@ -74,35 +74,5 @@ pub async fn shell_init_cli(shell: &Shell, when: &When) -> Result<()> {
         Ok(source) => println!("{}", source),
         Err(err) => println!("# Could not load source: {}", err),
     }
-
-    if let Ok(lock_data) = LockData::load().await {
-        for plugin in lock_data.get_entries() {
-            if let Some(shell_install) = plugin.shell_install.get(shell) {
-                match when {
-                    When::Pre => {
-                        if let Some(source) = &shell_install.pre {
-                            for line in source {
-                                println!("{}", line);
-                            }
-                        }
-                    }
-                    When::Post => {
-                        if let Some(files) = &shell_install.use_files {
-                            for file in files {
-                                println!("source '{}'", file.display());
-                            }
-                        }
-
-                        if let Some(source) = &shell_install.post {
-                            for line in source {
-                                println!("{}", line);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     Ok(())
 }

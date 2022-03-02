@@ -1,5 +1,4 @@
 use anyhow::{Context, Result};
-use directories::ProjectDirs;
 use globset::{Glob, GlobSet, GlobSetBuilder};
 use std::{
     ffi::OsStr,

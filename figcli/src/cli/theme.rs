@@ -1,6 +1,4 @@
-use crate::util::home_dir;
-
-use anyhow::Result;
+use anyhow::{Context, Result};
 use crossterm::style::{Color, Stylize};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -26,7 +24,13 @@ pub async fn theme_cli(theme_str: Option<String>) -> Result<()> {
     match theme_str {
         Some(theme_str) => {
             // set theme
-            let path = format!("{}/.fig/themes/{}.json", home_dir()?.display(), theme_str);
+            let path = format!(
+                "{}/.fig/themes/{}.json",
+                fig_directories::home_dir()
+                    .context("Could not get home directory")?
+                    .display(),
+                theme_str
+            );
             match fs::read_to_string(path) {
                 Ok(theme_file) => {
                     let theme: Theme = serde_json::from_str(&theme_file)?;

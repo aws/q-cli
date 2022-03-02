@@ -22,10 +22,7 @@ pub mod util;
 use crate::{
     cli::{installation::InstallComponents, util::open_url},
     daemon::{daemon, get_daemon},
-    util::{
-        fig_dir,
-        shell::{Shell, When},
-    },
+    util::shell::{Shell, When},
 };
 
 use anyhow::{Context, Result};
@@ -34,7 +31,7 @@ use crossterm::style::Stylize;
 use fig_ipc::command::open_ui_element;
 use fig_proto::local::UiElement;
 use std::{fs::File, process::exit, str::FromStr};
-use tracing::level_filters::LevelFilter;
+use tracing::{info, level_filters::LevelFilter};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ArgEnum)]
 pub enum OutputFormat {
@@ -171,7 +168,7 @@ impl Cli {
             }
             _ => {
                 // All other cli commands print logs to ~/.fig/logs/cli.log
-                if let Some(fig_dir) = fig_dir() {
+                if let Some(fig_dir) = fig_directories::fig_dir() {
                     let log_path = fig_dir.join("logs").join("cli.log");
 
                     // Create the log directory if it doesn't exist
@@ -189,6 +186,8 @@ impl Cli {
                             .init();
                     }
                 }
+
+                info!("Command ran: {:?}", std::env::args());
             }
         }
 

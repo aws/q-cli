@@ -1,6 +1,6 @@
 [package]
 name = "fig"
-version = "1.1.0"
+version = "1.1.1"
 description = "The CLI for Fig"
 edition = "2021"
 
@@ -17,8 +17,8 @@ copypasta = "0.7.1"
 crossterm = "0.23.0"
 ctrlc = "3.2.1"
 dialoguer = "0.10.0"
-directories = "4.0.1"
 fig-auth = { path = "../rust-lib/fig-auth" }
+fig-directories = { path = "../rust-lib/fig-directories" }
 fig-ipc = { path = "../rust-lib/fig-ipc" }
 fig-proto = { path = "../rust-lib/fig-proto" }
 fig-settings = { path = "../rust-lib/fig-settings" }

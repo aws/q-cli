@@ -1,4 +1,4 @@
-use crate::util::{fig_dir, glob, glob_dir};
+use crate::util::{glob, glob_dir};
 
 use anyhow::{anyhow, Context, Result};
 use clap::{ArgEnum, Subcommand};
@@ -162,7 +162,9 @@ impl DebugSubcommand {
                     std::process::exit(code);
                 })?;
 
-                let log_dir = fig_dir().context("Could not find fig dir")?.join("logs");
+                let log_dir = fig_directories::fig_dir()
+                    .context("Could not find fig dir")?
+                    .join("logs");
 
                 let mut files = files.clone();
 
