@@ -180,7 +180,7 @@ extension CommandHandlers {
       }
     case .settings:
       DispatchQueue.main.async {
-        Settings.openUI()
+        MissionControl.openUI()
       }
 
       return CommandResponse.with { response in

@@ -581,10 +581,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     statusBarMenu.addItem(NSMenuItem.separator())
     let settings = statusBarMenu.addItem(
       withTitle: "Settings",
-      action: #selector(Settings.openUI),
+      action: #selector(MissionControl.openUI),
       keyEquivalent: "")
     settings.image = NSImage(imageLiteralResourceName: "gear")
-    settings.target = Settings.self
+    settings.target = MissionControl.self
 
     statusBarMenu.addItem(NSMenuItem.separator())
 
