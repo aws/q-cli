@@ -5,6 +5,7 @@ use std::path::PathBuf;
 use std::process::exit;
 
 use rand::distributions::{Alphanumeric, DistString};
+use crate::cli::installation::{InstallComponents, self};
 
 use anyhow::{Context, Result};
 use clap::{ArgGroup, Args, Subcommand};
@@ -12,6 +13,8 @@ use crossterm::style::Stylize;
 use fig_ipc::hook::send_hook_to_socket;
 use fig_proto::hooks::new_callback_hook;
 use serde_json::json;
+
+use tracing::{trace, info, debug};
 
 #[derive(Debug, Args)]
 #[clap(group(
@@ -28,12 +31,56 @@ pub struct CallbackArgs {
     exit_code: Option<i64>,
 }
 
+#[derive(Debug, Args)]
+pub struct InstallArgs {
+    /// Install only the daemon
+    #[clap(long, conflicts_with = "dotfiles")]
+    daemon: bool,
+    /// Install only the shell integrations
+    #[clap(long)]
+    dotfiles: bool,
+    /// Don't confirm automatic installation.
+    #[clap(long)]
+    no_confirm: bool,
+    /// Force installation of fig
+    #[clap(long)]
+    force: bool,
+}
+
 #[derive(Debug, Subcommand)]
 #[clap(hide = true, alias = "_")]
 pub enum InternalSubcommand {
     PromptDotfilesChanged,
     LocalState(local_state::LocalStateArgs),
     Callback(CallbackArgs),
+    /// Install fig cli
+    Install(InstallArgs),
+    /// Uninstall fig cli
+    Uninstall {
+        /// Uninstall only the daemon
+        #[clap(long)]
+        daemon: bool,
+        /// Uninstall only the shell integrations 
+        #[clap(long)]
+        dotfiles: bool,
+        /// Uninstall only the binary
+        #[clap(long)]
+        binary: bool,
+    },
+}
+
+pub fn install_cli_from_args(install_args: InstallArgs) -> Result<()> {
+    let InstallArgs { daemon, dotfiles, no_confirm, force } = install_args;
+    let install_components = if daemon || dotfiles {
+        let mut install_components = InstallComponents::empty();
+        install_components.set(InstallComponents::DAEMON, daemon);
+        install_components.set(InstallComponents::DOTFILES, dotfiles);
+        install_components
+    } else {
+        InstallComponents::all()
+    };
+
+    installation::install_cli(install_components, no_confirm, force)
 }
 
 const BUFFER_SIZE: usize = 1024;
@@ -41,6 +88,24 @@ const BUFFER_SIZE: usize = 1024;
 impl InternalSubcommand {
     pub async fn execute(self) -> Result<()> {
         match self {
+            InternalSubcommand::Install(args) => install_cli_from_args(args)?,
+            InternalSubcommand::Uninstall {
+                daemon,
+                dotfiles,
+                binary,
+            } => {
+                let uninstall_components = if daemon || dotfiles || binary {
+                    let mut uninstall_components = InstallComponents::empty();
+                    uninstall_components.set(InstallComponents::DAEMON, daemon);
+                    uninstall_components.set(InstallComponents::DOTFILES, dotfiles);
+                    uninstall_components.set(InstallComponents::BINARY, binary);
+                    uninstall_components
+                } else {
+                    InstallComponents::all()
+                };
+
+                installation::uninstall_cli(uninstall_components)?
+            }
             InternalSubcommand::PromptDotfilesChanged => prompt_dotfiles_changed().await?,
             InternalSubcommand::LocalState(local_state) => local_state.execute().await?,
             InternalSubcommand::Callback(CallbackArgs {
@@ -48,11 +113,11 @@ impl InternalSubcommand {
                 filename,
                 exit_code,
             }) => {
-                println!("handlerId: {}", handler_id);
+                trace!("handlerId: {}", handler_id);
 
                 let (filename, exit_code) = match (filename, exit_code) {
                     (Some(filename), Some(exit_code)) => {
-                        println!(
+                        trace!(
                             "callback specified filepath ({}) and exitCode ({}) to output!",
                             filename, exit_code
                         );
@@ -65,7 +130,7 @@ impl InternalSubcommand {
                         let mut tmp_file = std::fs::File::create(&tmp_path)?;
                         let mut buffer = [0u8; BUFFER_SIZE];
                         let mut stdin = std::io::stdin();
-                        println!("Created tmp file: {}", tmp_path.display());
+                        trace!("Created tmp file: {}", tmp_path.display());
 
                         loop {
                             let size = stdin.read(&mut buffer)?;
@@ -73,7 +138,7 @@ impl InternalSubcommand {
                                 break;
                             }
                             tmp_file.write_all(&buffer[..size])?;
-                            println!(
+                            trace!(
                                 "Read {} bytes\n{}",
                                 size,
                                 std::str::from_utf8(&buffer[..size])?
@@ -82,23 +147,23 @@ impl InternalSubcommand {
 
                         let filename: String =
                             tmp_path.to_str().context("invalid file path")?.into();
-                        println!("Done reading from stdin!");
+                        trace!("Done reading from stdin!");
                         (filename, -1)
                     }
                 };
                 let hook = new_callback_hook(&handler_id, &filename, exit_code);
 
-                println!(
+                info!(
                     "Sending 'handlerId: {}, filename: {}, exitcode: {}' over unix socket!\n",
                     handler_id, filename, exit_code
                 );
 
                 match send_hook_to_socket(hook).await {
                     Ok(()) => {
-                        println!("Successfully sent hook");
+                        debug!("Successfully sent hook");
                     }
                     Err(e) => {
-                        println!("Couldn't send hook {}", e);
+                        debug!("Couldn't send hook {}", e);
                     }
                 }
             }

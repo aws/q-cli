@@ -33,6 +33,7 @@ message Command {
 		DebugModeCommand debug_mode = 113;
 		PromptAccessibilityCommand prompt_accessibility = 114;
 		InputMethodCommand input_method = 115;
+		UninstallCommand uninstall = 116;
 
 	}
 }
@@ -74,6 +75,8 @@ message LogoutCommand { }
 message RestartCommand { }
 
 message QuitCommand { }
+
+message UninstallCommand { }
 
 message UpdateCommand {
 	bool force = 1;

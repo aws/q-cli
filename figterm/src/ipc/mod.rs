@@ -36,14 +36,7 @@ pub async fn spawn_outgoing_sender() -> Result<Sender<fig_proto::local::LocalMes
         let socket = fig_ipc::get_fig_socket_path();
 
         while let Ok(message) = outgoing_rx.recv_async().await {
-            let conn = fig_ipc::connect_timeout(&socket, Duration::from_secs(1)).await;
-
-            // When on macOS after the socket connection is made a breif delay is required
-            // Not sure why, but this is a workaround
-            #[cfg(target_os = "macos")]
-            tokio::time::sleep(Duration::from_millis(2)).await;
-
-            match conn {
+            match fig_ipc::connect_timeout(&socket, Duration::from_secs(1)).await {
                 Ok(mut unix_stream) => {
                     match fig_ipc::send_message(&mut unix_stream, message).await {
                         Ok(()) => {

@@ -55,7 +55,18 @@ class TabbyIntegration: TerminalIntegrationProvider {
 
     return .installed
   }
-
+  
+  func uninstall() -> Bool {
+    if (try? FileManager.default.removeItem(at: TabbyIntegration.pluginFolderPath)) == nil {
+      return false
+    }
+    if (try? FileManager.default.removeItem(at: TabbyIntegration.pluginPathInBundle)) == nil {
+      return false
+    }
+        
+    return true
+  }
+  
   func install() -> InstallationStatus {
     guard self.applicationIsInstalled else {
       return .applicationNotInstalled

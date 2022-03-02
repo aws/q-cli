@@ -44,21 +44,6 @@ pub enum OutputFormat {
 
 #[derive(Debug, Subcommand)]
 pub enum CliRootCommands {
-    /// Install dotfiles
-    Install {
-        /// Install only the daemon
-        #[clap(long, conflicts_with = "dotfiles")]
-        daemon: bool,
-        /// Install only the dotfiles
-        #[clap(long)]
-        dotfiles: bool,
-        /// Don't confirm automatic installation.
-        #[clap(long)]
-        no_confirm: bool,
-        /// Force installation of the dotfiles
-        #[clap(long)]
-        force: bool,
-    },
     #[clap(subcommand)]
     /// Interact with the desktop app
     App(app::AppSubcommand),
@@ -73,21 +58,10 @@ pub enum CliRootCommands {
     #[clap(subcommand)]
     /// Enable/disable fig tips
     Tips(tips::TipsSubcommand),
-    /// Uninstall dotfiles
-    Uninstall {
-        /// Uninstall only the daemon
-        #[clap(long)]
-        daemon: bool,
-        /// Uninstall only the dotfiles
-        #[clap(long)]
-        dotfiles: bool,
-        /// Don't confirm automatic removal.
-        #[clap(long)]
-        no_confirm: bool,
-        /// Uninstall only the binary
-        #[clap(long)]
-        binary: bool,
-    },
+    /// Install fig cli comoponents
+    Install(internal::InstallArgs),
+    /// Uninstall fig
+    Uninstall,
     /// Update dotfiles
     Update {
         /// Force update
@@ -220,40 +194,15 @@ impl Cli {
 
         let result = match self.subcommand {
             Some(subcommand) => match subcommand {
-                CliRootCommands::Install {
-                    daemon,
-                    dotfiles,
-                    no_confirm,
-                    force,
-                } => {
-                    let install_components = if daemon || dotfiles {
-                        let mut install_components = InstallComponents::empty();
-                        install_components.set(InstallComponents::DAEMON, daemon);
-                        install_components.set(InstallComponents::DOTFILES, dotfiles);
-                        install_components
-                    } else {
-                        InstallComponents::all()
-                    };
-
-                    installation::install_cli(install_components, no_confirm, force)
+                CliRootCommands::Install(args) => {
+                    internal::install_cli_from_args(args)
                 }
-                CliRootCommands::Uninstall {
-                    daemon,
-                    dotfiles,
-                    no_confirm,
-                    binary,
-                } => {
-                    let uninstall_components = if daemon || dotfiles || binary {
-                        let mut uninstall_components = InstallComponents::empty();
-                        uninstall_components.set(InstallComponents::DAEMON, daemon);
-                        uninstall_components.set(InstallComponents::DOTFILES, dotfiles);
-                        uninstall_components.set(InstallComponents::BINARY, binary);
-                        uninstall_components
+                CliRootCommands::Uninstall => {
+                    if fig_ipc::command::uninstall_command().await.is_err() {
+                        installation::uninstall_cli(InstallComponents::all())
                     } else {
-                        InstallComponents::all()
-                    };
-
-                    installation::uninstall_cli(uninstall_components, no_confirm)
+                        Ok(())
+                    }
                 }
                 CliRootCommands::Update { no_confirm } => {
                     installation::update_cli(no_confirm).await

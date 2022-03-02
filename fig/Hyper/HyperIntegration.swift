@@ -28,6 +28,23 @@ class HyperIntegration: TerminalIntegrationProvider {
   )
   static let pluginPathInBundle = Bundle.main.url(forResource: "hyper-integration", withExtension: "js")!
 
+  func uninstall() -> Bool {
+    guard let settings = try? String(contentsOfFile: HyperIntegration.settingsPath) else {
+      return false
+    }
+    let updatedSettings = settings
+      .replacingOccurrences(of: "\"fig-hyper-integration\"", with: "")
+      .replacingOccurrences(of: "\"fig-hyper-integration\",", with: "")
+    
+    do {
+      try updatedSettings.write(toFile: HyperIntegration.settingsPath, atomically: true, encoding: .utf8)
+    } catch {
+      return false
+    }
+    
+    return true
+  }
+  
   func install() -> InstallationStatus {
     guard NSWorkspace.shared.applicationIsInstalled(self.bundleIdentifier) else {
       return .applicationNotInstalled
