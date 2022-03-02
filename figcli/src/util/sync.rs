@@ -5,8 +5,6 @@ use tokio::{fs::File, io::AsyncWriteExt};
 
 use reqwest::Url;
 
-use super::fig_dir;
-
 /// Sync from a url to a local file
 pub trait Sync {
     /// Source to sync from
@@ -25,7 +23,7 @@ impl Sync for Settings {
     }
 
     fn location(&self) -> Result<PathBuf> {
-        let fig_dir = fig_dir().context("Could not get fig_dir")?;
+        let fig_dir = fig_directories::fig_dir().context("Could not get fig_dir")?;
         Ok(fig_dir.join("settings.json"))
     }
 

@@ -239,10 +239,9 @@ pub struct LaunchService {
 
 impl LaunchService {
     pub fn launchd() -> Result<LaunchService> {
-        let basedirs = directories::BaseDirs::new().context("Could not get base directories")?;
+        let homedir = fig_directories::home_dir().context("Could not get home directory")?;
 
-        let plist_path = basedirs
-            .home_dir()
+        let plist_path = homedir
             .join("Library")
             .join("LaunchAgents")
             .join("io.fig.dotfiles-daemon.plist");
@@ -250,8 +249,7 @@ impl LaunchService {
         let executable_path = std::env::current_exe()?;
         let executable_path_str = executable_path.to_string_lossy();
 
-        let log_path = basedirs
-            .home_dir()
+        let log_path = homedir
             .join(".fig")
             .join("logs")
             .join("dotfiles-daemon.log");
@@ -275,10 +273,9 @@ impl LaunchService {
     }
 
     pub fn systemd() -> Result<LaunchService> {
-        let basedirs = directories::BaseDirs::new().context("Could not get base directories")?;
+        let homedir = fig_directories::home_dir().context("Could not get home directory")?;
 
-        let path = basedirs
-            .home_dir()
+        let path = homedir
             .join(".config")
             .join("systemd")
             .join("user")

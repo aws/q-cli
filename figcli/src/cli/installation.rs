@@ -8,11 +8,7 @@ use nix::unistd::geteuid;
 use self_update::update::UpdateStatus;
 use time::OffsetDateTime;
 
-use crate::{
-    cli::util::dialoguer_theme,
-    daemon,
-    util::{home_dir, shell::Shell},
-};
+use crate::{cli::util::dialoguer_theme, daemon, util::shell::Shell};
 
 bitflags::bitflags! {
     /// The different components that can be installed.
@@ -88,7 +84,10 @@ fn install_fig() -> Result<()> {
     let now = OffsetDateTime::now_utc().format(time::macros::format_description!(
         "[year]-[month]-[day]_[hour]-[minute]-[second]"
     ))?;
-    let backup_dir = home_dir()?.join(".fig.dotfiles.bak").join(now);
+    let backup_dir = fig_directories::home_dir()
+        .context("Could not find home directory")?
+        .join(".fig.dotfiles.bak")
+        .join(now);
     for shell in [Shell::Bash, Shell::Zsh, Shell::Fish] {
         for integration in shell.get_shell_integrations()? {
             integration.install(Some(&backup_dir))?
@@ -108,7 +107,11 @@ pub fn uninstall_cli(install_components: InstallComponents) -> Result<()> {
     }
 
     if install_components.contains(InstallComponents::BINARY) {
-        let local_path = home_dir()?.join(".local").join("bin").join("fig");
+        let local_path = fig_directories::home_dir()
+            .context("Could not find home directory")?
+            .join(".local")
+            .join("bin")
+            .join("fig");
         let binary_paths = [Path::new("/usr/local/bin/fig"), local_path.as_path()];
 
         for path in binary_paths {
