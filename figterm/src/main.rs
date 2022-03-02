@@ -77,7 +77,7 @@ fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
         .map(|s| s.parse().ok())
         .ok()
         .flatten()
-        .unwrap_or(6);
+        .unwrap_or(7);
 
     let mut context = new_context(
         shell_state.local_context.pid,
@@ -284,7 +284,7 @@ fn launch_shell() -> Result<()> {
         vec![CString::new(&*parent_shell).expect("Failed to convert shell name to CString")];
 
     if parent_shell_is_login.as_deref() == Some("1") {
-        args.push(CString::new("--login").unwrap());
+        args.push(CString::new("--login").expect("Failed to convert arg to CString"));
     }
 
     if let Some(extra_args) = parent_shell_extra_args {
@@ -308,7 +308,7 @@ fn launch_shell() -> Result<()> {
     env::remove_var("FIG_START_TEXT");
     env::remove_var("FIG_SHELL_EXTRA_ARGS");
 
-    execvp(&*args[0], &args).unwrap();
+    execvp(&*args[0], &args).expect("Failed to execvp");
     unreachable!()
 }
 
@@ -488,20 +488,25 @@ fn figterm_main() -> Result<()> {
                         }
                     }
 
-                    tcsetattr(STDIN_FILENO, SetArg::TCSAFLUSH, &old_termios)?;
-
                     remove_socket(&term_session_id).await?;
 
                     anyhow::Ok(())
                 }) {
-                    Ok(_) => {
+                    Ok(()) => {
+                        if let Err(e) = tcsetattr(STDIN_FILENO, SetArg::TCSAFLUSH, &old_termios) {
+                            error!("Failed to restore terminal settings: {}", e);
+                        }
+
                         info!("Exiting");
                         exit(0);
                     },
                     Err(e) => {
-                        capture_anyhow(&e);
+                        if let Err(e) = tcsetattr(STDIN_FILENO, SetArg::TCSAFLUSH, &old_termios) {
+                            error!("Failed to restore terminal settings: {}", e);
+                        }
+
                         error!("Error in async runtime: {}", e);
-                        exit(1);
+                        Err(e)
                     },
                 }
         }
@@ -509,12 +514,12 @@ fn figterm_main() -> Result<()> {
             // DO NOT RUN ANY FUNCTIONS THAT ARE NOT ASYNC SIGNAL SAFE
             // https://man7.org/linux/man-pages/man7/signal-safety.7.html
             match launch_shell() {
+                Ok(()) => Ok(()),
                 Err(e) => {
+                    println!("ERROR: {:?}", e);
                     capture_anyhow(&e);
-                    logger::stdio_debug_log(format!("{:?}", e));
                     Err(e)
                 }
-                Ok(_) => Ok(()),
             }
         }
     }
@@ -541,8 +546,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     logger::stdio_debug_log(format!("FIG_LOG_LEVEL={}", logger::get_log_level()));
 
     if let Err(e) = figterm_main() {
+        println!("Fig had an Error!: {:?}", e);
         capture_anyhow(&e);
-        logger::stdio_debug_log(format!("{}", e));
 
         // Fallback to normal shell
         if let Err(e) = launch_shell() {
