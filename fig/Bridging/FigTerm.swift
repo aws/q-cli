@@ -17,13 +17,13 @@ class FigTerm {
     return "/tmp/figterm-\(sessionId).socket"
   }
 
-  static func updateBuffer(_ update: Fig_TextUpdate, into session: SessionId) throws {
+  static func updateBuffer(_ update: Fig_TextUpdate, into session: SessionId, wrapWithFigMessage: Bool) throws {
 
     try connect(to: session) { socket in
 
       ShellInsertionProvider.insertLock()
 
-      let msg = Figterm_FigtermMessage.with { msg in
+      let figtermMessage = Figterm_FigtermMessage.with { msg in
         msg.insertTextCommand = Figterm_InsertTextCommand.with({ insert in
           insert.deletion = UInt64(update.deletion)
           insert.insertion = update.insertion
@@ -32,7 +32,16 @@ class FigTerm {
         })
       }
 
-      socket.send(data: try msg.serializedData())
+      let seralizedFigtermMessage = try figtermMessage.serializedData()
+
+      var data = Data()
+      if wrapWithFigMessage {
+        data.append(contentsOf: "\u{001b}@fig-pbuf".utf8)
+        data.append(contentsOf: Data(from: Int64(seralizedFigtermMessage.count).bigEndian))
+      }
+      data.append(contentsOf: seralizedFigtermMessage)
+
+      socket.send(data: data)
 
       ShellInsertionProvider.insertUnlock(deletion: Int(update.deletion),
                                           insertion: update.insertion,
@@ -43,14 +52,14 @@ class FigTerm {
   }
 
   //
-  static func insert(_ text: String, into session: SessionId) throws {
+  static func insert(_ text: String, into session: SessionId, wrapWithFigMessage: Bool) throws {
 
     try updateBuffer(Fig_TextUpdate.with({ update in
       update.deletion = 0
       update.insertion = text
       update.offset = 0
       update.immediate = false
-    }), into: session)
+    }), into: session, wrapWithFigMessage: wrapWithFigMessage)
   }
 
   // `legacyInsert` is used to write text to the C-implementation of figterm.
@@ -89,6 +98,7 @@ extension FigTerm {
   static let insertedTextNotification: NSNotification.Name = Notification.Name("insertedTextNotification")
 
   fileprivate static let rustRewriteIncludedInVersion = 6
+  fileprivate static let rustFigtermMessageVersion = 7
 
   static func handleInsertRequest(_ request: Fig_InsertTextRequest) throws -> Bool {
 
@@ -103,15 +113,19 @@ extension FigTerm {
     case .text(let text):
 
       // if session is still using c-figterm, send raw text
-      if integrationVersion >= rustRewriteIncludedInVersion {
-        try FigTerm.insert(text, into: session)
+      if integrationVersion >= rustFigtermMessageVersion {
+        try FigTerm.insert(text, into: session, wrapWithFigMessage: true)
+      } else if integrationVersion >= rustRewriteIncludedInVersion {
+        try FigTerm.insert(text, into: session, wrapWithFigMessage: false)
       } else {
         try FigTerm.legacyInsert(text, into: session)
       }
     case .update:
 
-      if integrationVersion >= rustRewriteIncludedInVersion {
-        try FigTerm.updateBuffer(request.update, into: session)
+      if integrationVersion >= rustFigtermMessageVersion {
+        try FigTerm.updateBuffer(request.update, into: session, wrapWithFigMessage: true)
+      } else if integrationVersion >= rustRewriteIncludedInVersion {
+        try FigTerm.updateBuffer(request.update, into: session, wrapWithFigMessage: false)
       } else {
         throw APIError.generic(message: "Not supported yet.")
       }

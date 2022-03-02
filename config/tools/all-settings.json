@@ -69,6 +69,14 @@
     "category": "Autocomplete"
   },
   {
+    "settingName": "autocomplete.navigateToHistory",
+    "title": "Show history when the navigate up key is pressed",
+    "description": "Show history instead of closing autocomplete when the focused suggestion is the first one of the list.",
+    "type": "boolean",
+    "default": true,
+    "category": "Autocomplete"
+  },
+  {
     "settingName": "autocomplete.alwaysShowDescription",
     "title": "Always Show Separated Description",
     "description": "Set if Autocomplete should always display the extended separated description.",

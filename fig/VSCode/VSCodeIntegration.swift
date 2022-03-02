@@ -35,19 +35,26 @@ class VSCodeIntegration: TerminalIntegrationProvider {
   fileprivate let applicationSupportFolderName: String
   fileprivate let cliExecutableName: String
 
-  init(bundleIdentifier: String, configFolderName: String, applicationSupportFolderName: String, applicationName: String, cliExecutableName: String = "code") {
+  init(bundleIdentifier: String,
+       configFolderName: String,
+       applicationSupportFolderName: String,
+       applicationName: String,
+       cliExecutableName: String = "code") {
     self.configFolderName = configFolderName
     self.applicationSupportFolderName = applicationSupportFolderName
     self.cliExecutableName = cliExecutableName
     super.init(bundleIdentifier: bundleIdentifier)
 
     self.applicationName = applicationName
-    self.promptMessage = "Fig will add an extension to \(self.applicationName) that tracks which integrated terminal is active.\n\n\(self.applicationName) will need to restart for changes to take effect.\n"
+    self.promptMessage =
+      "Fig will add an extension to \(self.applicationName) that tracks which integrated terminal is" +
+      " active.\n\n\(self.applicationName) will need to restart for changes to take effect.\n"
     self.promptButtonText = "Install Extension"
   }
 
   var settingsPath: String {
-    let defaultPath = "\(NSHomeDirectory())/Library/Application Support/\(self.applicationSupportFolderName)/User/settings.json"
+    let defaultPath =
+      "\(NSHomeDirectory())/Library/Application Support/\(self.applicationSupportFolderName)/User/settings.json"
     return (try? FileManager.default.destinationOfSymbolicLink(atPath: defaultPath)) ?? defaultPath
   }
 
@@ -100,7 +107,9 @@ class VSCodeIntegration: TerminalIntegrationProvider {
     "\(cli.path.replacingOccurrences(of: " ", with: "\\ ")) --install-extension \(vsix)".runInBackground()
 
     guard successfullyUpdatedSettings else {
-      return .failed(error: "Fig could not parse VSCode's settings.json file.\nTo finish the installation, you will need to update a few preferences manually.", supportURL: VSCodeIntegration.supportURL)
+      return .failed(error:
+                      "Fig could not parse VSCode's settings.json file.\nTo finish the installation, you will need to update a few preferences manually.",
+                     supportURL: VSCodeIntegration.supportURL)
 
     }
 
@@ -148,7 +157,7 @@ extension VSCodeIntegration {
       return nil
     }
 
-    guard let json = settings.jsonStringToDict() else {
+    guard let json = settings.parseAsJSON() else {
       throw InstallationError.couldNotParseSettingsJSON
     }
 

@@ -236,7 +236,7 @@ class Defaults {
       defaults.set(flag, forKey: "debugAutocomplete")
       defaults.synchronize()
 
-      Settings.shared.set(value: flag, forKey: Settings.debugModeKey)
+      LocalState.shared.set(value: flag, forKey: Settings.debugModeKey)
 
       WindowManager.shared.autocomplete?.backgroundColor = .clear
 

@@ -34,6 +34,8 @@ message ClientOriginatedMessage {
       DebuggerUpdateRequest debugger_update_request = 125;
       ApplicationUpdateStatusRequest application_update_status_request = 126;
       AppendToFileRequest append_to_file_request = 127;
+      GetLocalStateRequest get_local_state_request = 128;
+      UpdateLocalStateRequest update_local_state_request = 129;
   }
 }
 
@@ -54,6 +56,7 @@ message ServerOriginatedMessage {
     GetConfigPropertyResponse get_config_property_response = 107;
     TerminalSessionInfoResponse terminal_session_info_response = 108;
     ApplicationUpdateStatusResponse application_update_status_response = 109;
+    GetLocalStateResponse get_local_state_response = 110;
 
     Notification notification = 1000;
   }
@@ -355,6 +358,7 @@ message Action {
   optional string description = 3; // a quick summary of what the action will do
   optional string category = 4; 
   optional ActionAvailability availability = 5; // when can this action be performed
+  repeated string default_bindings = 6; 
 
 }
 
@@ -403,6 +407,20 @@ message ApplicationUpdateStatusResponse {
   optional string published = 4;
 }
 
+/// Local State
+
+message GetLocalStateRequest {
+  optional string key = 1;
+}
+
+message GetLocalStateResponse {
+  optional string jsonBlob = 1;
+}
+
+message UpdateLocalStateRequest {
+  optional string key = 1;
+  optional string value = 2;
+}
 
 /// Notifications
 
@@ -422,7 +440,7 @@ enum NotificationType {
   NOTIFY_ON_FOCUS_CHANGED = 7;
   NOTIFY_ON_HISTORY_UPDATED = 8;
   NOTIFY_ON_APPLICATION_UPDATE_AVAILABLE = 9;
-
+  NOTIFY_ON_LOCAL_STATE_CHANGED = 10;
 }
 
 message Notification {
@@ -436,7 +454,7 @@ message Notification {
     WindowFocusChangedNotification window_focus_changed_notification = 7;
     HistoryUpdatedNotification history_updated_notification = 8;
     ApplicationUpdateAvailableNotification application_update_available_notification = 9;
-
+    LocalStateChangedNotification local_state_changed_notification = 10;
   }
 }
 
@@ -489,6 +507,10 @@ message HistoryUpdatedNotification {
 
 message ApplicationUpdateAvailableNotification {
   optional ApplicationUpdateStatusResponse status = 1;
+}
+
+message LocalStateChangedNotification {
+  optional string jsonBlob = 1;
 }
 
 /// Constants

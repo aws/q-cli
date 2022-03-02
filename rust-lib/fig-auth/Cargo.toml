@@ -5,8 +5,8 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.53"
-aws-smithy-async = "0.37.0"
-aws-sdk-cognitoidentityprovider = "0.7.0"
+aws-sdk-cognitoidentityprovider = "0.8.0"
+aws-smithy-async = "0.38.0"
 base64 = "0.13.0"
 directories = "4.0.0"
 rand = "0.8.4"

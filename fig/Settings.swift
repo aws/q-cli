@@ -12,8 +12,6 @@ import FigAPIBindings
 
 // swiftlint:disable type_body_length
 class Settings {
-  static let ptyInitFile = "pty.rc"
-  static let ptyPathKey = "pty.path"
   static let ptyEnvKey = "pty.env"
   static let developerModeKey = "autocomplete.developerMode"
   static let developerModeNPMKey = "autocomplete.developerModeNPM"
@@ -43,9 +41,6 @@ class Settings {
   static let onlyShowOnTabKey = "autocomplete.onlyShowOnTab"
   static let allowAlternateNavigationKeys = "autocomplete.allowAlternateNavigationKeys"
   static let disablePopoutDescriptions = "autocomplete.disablePopoutDescriptions"
-  static let logging = "developer.logging"
-  static let loggingEnabledInternally = "developer.logging.internal"
-  static let colorfulLogging = "developer.logging.color"
   static let beta = "app.beta"
   static let shellIntegrationIsManagedByUser = "integrations.shell.managedByUser"
   static let theme = "autocomplete.theme"
@@ -108,11 +103,6 @@ class Settings {
   }
 
   static func log(_ message: String) {
-    guard canLogWithoutCrash else {
-      print("Unable to log follow message since Settings.shared hasn't been inited yet.")
-      print(message)
-      return
-    }
     Logger.log(message: message, subsystem: .settings)
   }
 
@@ -137,8 +127,6 @@ class Settings {
     }
 
     recomputeSettingsFromRaw()
-
-    Settings.canLogWithoutCrash = true
   }
 
   fileprivate var settingsWindow: WebViewWindow?
@@ -310,7 +298,7 @@ class Settings {
       return nil
     }
 
-    guard let settings = fileString.jsonStringToDict() else {
+    guard let settings = fileString.parseAsJSON() else {
       return nil
     }
 

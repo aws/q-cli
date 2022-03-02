@@ -24,7 +24,7 @@ class WebViewWindow: NSWindow {
     self.contentViewController = viewController
     self.makeKeyAndOrderFront(nil)
     self.delegate = self
-    self.title = "hello there"
+    self.title = "Loading..."
 
     if let closeButton = self.standardWindowButton(.closeButton), shouldQuitAppOnClose {
       closeButton.target = self

@@ -6,13 +6,8 @@ pub mod pty;
 pub mod term;
 pub mod utils;
 
-use std::{
-    env, error::Error, ffi::CString, os::unix::prelude::AsRawFd, path::PathBuf, process::exit,
-    str::FromStr, vec,
-};
-
 use crate::{
-    ipc::{spawn_incoming_receiver, spawn_outgoing_sender},
+    ipc::{remove_socket, spawn_incoming_receiver, spawn_outgoing_sender},
     logger::init_logger,
     pty::{async_pty::AsyncPtyMaster, fork_pty, ioctl_tiocswinsz, PtyForkResult},
     term::get_winsize,
@@ -27,7 +22,6 @@ use alacritty_terminal::{
     Term,
 };
 use anyhow::{anyhow, Context, Result};
-use bytes::Bytes;
 use clap::StructOpt;
 use cli::Cli;
 use dashmap::DashSet;
@@ -37,7 +31,7 @@ use fig_proto::{
     hooks::{
         hook_to_message, new_context, new_edit_buffer_hook, new_preexec_hook, new_prompt_hook,
     },
-    local, FigProtobufEncodable,
+    local::{self, LocalMessage},
 };
 use flume::Sender;
 use nix::{
@@ -47,6 +41,10 @@ use nix::{
 };
 use once_cell::sync::Lazy;
 use sentry::integrations::anyhow::capture_anyhow;
+use std::{
+    env, error::Error, ffi::CString, os::unix::prelude::AsRawFd, path::PathBuf, process::exit,
+    str::FromStr, vec,
+};
 use tokio::{
     io::{self, AsyncReadExt, AsyncWriteExt},
     runtime, select,
@@ -54,15 +52,15 @@ use tokio::{
 };
 use tracing::{debug, error, info, level_filters::LevelFilter, trace, warn};
 
-const BUFFER_SIZE: usize = 1024;
+const BUFFER_SIZE: usize = 4096;
 
 struct EventSender {
-    socket_sender: Sender<Bytes>,
+    socket_sender: Sender<LocalMessage>,
     history_sender: Sender<CommandInfo>,
 }
 
 impl EventSender {
-    fn new(socket_sender: Sender<Bytes>, history_sender: Sender<CommandInfo>) -> Self {
+    fn new(socket_sender: Sender<LocalMessage>, history_sender: Sender<CommandInfo>) -> Self {
         Self {
             socket_sender,
             history_sender,
@@ -125,20 +123,22 @@ impl EventListener for EventSender {
                 let context = shell_state_to_context(shell_state);
                 let hook = new_prompt_hook(Some(context));
                 let message = hook_to_message(hook);
-                let bytes = message.encode_fig_protobuf().unwrap();
-
-                self.socket_sender.send((*bytes).clone()).unwrap();
+                if let Err(err) = self.socket_sender.send(message) {
+                    error!("Sender error: {:?}", err);
+                }
             }
             Event::PreExec => {
                 let context = shell_state_to_context(shell_state);
                 let hook = new_preexec_hook(Some(context));
                 let message = hook_to_message(hook);
-                let bytes = message.encode_fig_protobuf().unwrap();
-
-                self.socket_sender.send((*bytes).clone()).unwrap();
+                if let Err(err) = self.socket_sender.send(message) {
+                    error!("Sender error: {:?}", err);
+                }
             }
             Event::CommandInfo(command_info) => {
-                self.history_sender.send(command_info.clone()).unwrap();
+                if let Err(err) = self.history_sender.send(command_info.clone()) {
+                    error!("Sender error: {:?}", err);
+                }
             }
         }
     }
@@ -146,8 +146,7 @@ impl EventListener for EventSender {
     fn log_level_event(&self, level: Option<String>) {
         logger::set_log_level(
             level
-                .map(|level| LevelFilter::from_str(&level).ok())
-                .flatten()
+                .and_then(|level| LevelFilter::from_str(&level).ok())
                 .unwrap_or(LevelFilter::INFO),
         );
     }
@@ -184,13 +183,13 @@ where
     shell_enabled && !insertion_locked && !prexec
 }
 
-async fn send_edit_buffer<T>(term: &Term<T>, sender: &Sender<Bytes>) -> Result<()>
+async fn send_edit_buffer<T>(term: &Term<T>, sender: &Sender<LocalMessage>) -> Result<()>
 where
     T: EventListener,
 {
     match term.get_current_buffer() {
         Some(edit_buffer) => {
-            if let Some(cursor_idx) = edit_buffer.cursor_idx.map(|i| i.try_into().ok()).flatten() {
+            if let Some(cursor_idx) = edit_buffer.cursor_idx.and_then(|i| i.try_into().ok()) {
                 info!("edit_buffer: {:?}", edit_buffer);
 
                 let context = shell_state_to_context(term.shell_state());
@@ -200,9 +199,7 @@ where
 
                 debug!("Sending: {:?}", message);
 
-                let bytes = message.encode_fig_protobuf()?;
-
-                sender.send_async((*bytes).clone()).await?;
+                sender.send_async(message).await?;
             }
             Ok(())
         }
@@ -356,7 +353,6 @@ fn figterm_main() -> Result<()> {
 
             match runtime
                 .block_on(async {
-
                     info!("Shell: {}", pid);
                     info!("Figterm: {}", getpid());
 
@@ -364,6 +360,7 @@ fn figterm_main() -> Result<()> {
 
                     let raw_termios = termios_to_raw(termios);
                     tcsetattr(STDIN_FILENO, SetArg::TCSAFLUSH, &raw_termios)?;
+                    trace!("Set raw termios");
 
                     // Spawn thread to handle outgoing data to main Fig app
                     let outgoing_sender = spawn_outgoing_sender().await?;
@@ -387,7 +384,7 @@ fn figterm_main() -> Result<()> {
                     let mut term = alacritty_terminal::Term::new(size, event_sender, 1);
 
                     let mut read_buffer = [0u8; BUFFER_SIZE];
-                    let mut write_buffer = [0u8; BUFFER_SIZE * 100];
+                    let mut write_buffer = [0u8; BUFFER_SIZE];
 
                     let intercept_set: DashSet<char, fnv::FnvBuildHasher> = DashSet::with_hasher(fnv::FnvBuildHasher::default());
 
@@ -397,8 +394,10 @@ fn figterm_main() -> Result<()> {
 
                     'select_loop: loop {
                         if term.shell_state().has_seen_prompt && first_time {
+                            trace!("Has seen prompt and first time");
                             let initial_command = env::var("FIG_START_TEXT").ok().filter(|s| !s.is_empty());
                             if let Some(mut initial_command) = initial_command {
+                                debug!("Sending initial text: {}", initial_command);
                                 initial_command.push('\n');
                                 if let Err(e) = master.write(initial_command.as_bytes()).await {
                                     error!("Failed to write initial command: {}", e);
@@ -413,15 +412,19 @@ fn figterm_main() -> Result<()> {
                                 match res {
                                     Ok(size) => match std::str::from_utf8(&read_buffer[..size]) {
                                             Ok(s) => {
+                                                trace!("Read {} bytes from input: {:?}", size, s);
+                                                let mut out = heapless::String::<BUFFER_SIZE>::new();
                                                 for c in s.chars() {
                                                     if !intercept_set.contains(&c) {
-                                                        let mut utf8_buf = [0; 4];
-                                                        master.write(c.encode_utf8(&mut utf8_buf).as_bytes()).await?;
+                                                        // This should always be okay since the input <= BUFFER_SIZE
+                                                        out.push(c).ok();
                                                     }
                                                 }
+                                                master.write(out.as_bytes()).await?;
                                             }
                                             Err(err) => {
                                                 error!("Failed to convert utf8: {}", err);
+                                                trace!("Read {} bytes from input: {:?}", size, &read_buffer[..size]);
                                                 master.write(&read_buffer[..size]).await?;
                                             }
                                     },
@@ -486,6 +489,8 @@ fn figterm_main() -> Result<()> {
                     }
 
                     tcsetattr(STDIN_FILENO, SetArg::TCSAFLUSH, &old_termios)?;
+
+                    remove_socket(&term_session_id).await?;
 
                     anyhow::Ok(())
                 }) {
