@@ -16,13 +16,19 @@ cd proto && make`
 ```
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
-
+Ensure all supported macOS targets are installed:
 ```
 rustup target add x86_64-apple-darwin
 rustup target add arm_64-apple-darwin
 ```
+4. Setup precommit hooks
+ - Run `yarn` in root directory to add pre-commit hooks
+ - Install swiftlint
+```
+brew install swiftlint
+```
 
-6. Build project in Xcode
+5. Build project in Xcode
  - Setup Xcode signing credentials
     - You MUST be added to Fig's Apple Developer account. 
  - Install Swift Packages ( File > Packages > Refresh Package Cache)
