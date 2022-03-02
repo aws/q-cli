@@ -4,8 +4,8 @@ use std::io::{Read, Write};
 use std::path::PathBuf;
 use std::process::exit;
 
+use crate::cli::installation::{self, InstallComponents};
 use rand::distributions::{Alphanumeric, DistString};
-use crate::cli::installation::{InstallComponents, self};
 
 use anyhow::{Context, Result};
 use clap::{ArgGroup, Args, Subcommand};
@@ -14,7 +14,7 @@ use fig_ipc::hook::send_hook_to_socket;
 use fig_proto::hooks::new_callback_hook;
 use serde_json::json;
 
-use tracing::{trace, info, debug};
+use tracing::{debug, info, trace};
 
 #[derive(Debug, Args)]
 #[clap(group(
@@ -60,7 +60,7 @@ pub enum InternalSubcommand {
         /// Uninstall only the daemon
         #[clap(long)]
         daemon: bool,
-        /// Uninstall only the shell integrations 
+        /// Uninstall only the shell integrations
         #[clap(long)]
         dotfiles: bool,
         /// Uninstall only the binary
@@ -70,7 +70,12 @@ pub enum InternalSubcommand {
 }
 
 pub fn install_cli_from_args(install_args: InstallArgs) -> Result<()> {
-    let InstallArgs { daemon, dotfiles, no_confirm, force } = install_args;
+    let InstallArgs {
+        daemon,
+        dotfiles,
+        no_confirm,
+        force,
+    } = install_args;
     let install_components = if daemon || dotfiles {
         let mut install_components = InstallComponents::empty();
         install_components.set(InstallComponents::DAEMON, daemon);
@@ -119,7 +124,8 @@ impl InternalSubcommand {
                     (Some(filename), Some(exit_code)) => {
                         trace!(
                             "callback specified filepath ({}) and exitCode ({}) to output!",
-                            filename, exit_code
+                            filename,
+                            exit_code
                         );
                         (filename, exit_code)
                     }
