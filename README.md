@@ -4,7 +4,7 @@
 ### Prerequisites 
 - Xcode 13 or later
 - Brew
-- Yarn/Npm + Node
+- Yarn + Node
 
 ### 1. Clone repo
 ```
@@ -33,7 +33,7 @@ brew install swiftlint
 
 ### 5. Build project in Xcode
  - Setup Xcode signing credentials
-    - You MUST be added to Fig's Apple Developer account. 
+    - You MUST be [added](https://appstoreconnect.apple.com/access/users) to Fig's Apple Developer account. 
  - Install Swift Packages ( File > Packages > Refresh Package Cache)
  - Run Build (either from UI or terminal using the following command)
 ```
