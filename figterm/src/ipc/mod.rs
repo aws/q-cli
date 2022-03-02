@@ -2,7 +2,7 @@
 
 use anyhow::Result;
 use fig_proto::figterm::FigtermMessage;
-use flume::{bounded, Receiver, Sender};
+use flume::{unbounded, Receiver, Sender};
 use std::time::Duration;
 use tokio::{fs::remove_file, io::AsyncWriteExt, net::UnixListener};
 use tracing::{debug, error, trace};
@@ -30,7 +30,7 @@ pub async fn remove_socket(session_id: impl AsRef<str>) -> Result<()> {
 
 pub async fn spawn_outgoing_sender() -> Result<Sender<fig_proto::local::LocalMessage>> {
     trace!("Spawning outgoing sender");
-    let (outgoing_tx, outgoing_rx) = bounded::<fig_proto::local::LocalMessage>(256);
+    let (outgoing_tx, outgoing_rx) = unbounded::<fig_proto::local::LocalMessage>();
 
     tokio::spawn(async move {
         let socket = fig_ipc::get_fig_socket_path();
@@ -72,7 +72,7 @@ pub async fn spawn_incoming_receiver(
     trace!("Spawning incoming receiver");
 
     let socket_listener = create_socket_listen(session_id).await?;
-    let (incomming_tx, incomming_rx) = bounded(256);
+    let (incomming_tx, incomming_rx) = unbounded();
 
     tokio::spawn(async move {
         loop {
