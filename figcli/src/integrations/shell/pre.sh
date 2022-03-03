@@ -19,6 +19,7 @@ fi
 # Only launch figterm if current session is not already inside PTY and command exists
 if   [[ ! "${TERM_PROGRAM}" = WarpTerminal ]] \
   && [[ -z "${INSIDE_EMACS}" ]] \
+  && [[ "$__CFBundleIdentifier" != "com.vandyke.SecureCRT" ]] \
   && [[ -t 1 ]] \
   && [[ -z "${FIG_PTY}" ]] && command -v ~/.fig/bin/figterm 2>&1 1>/dev/null \
   && [[ -z "${FIG_TERM}" || (-z "${FIG_TERM_TMUX}" && -n "${TMUX}") ]]; then

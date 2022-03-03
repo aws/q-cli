@@ -11,8 +11,9 @@ if [ ! -z "$FIG_NEW_SESSION" ]
   set --erase FIG_NEW_SESSION
 end
 
-if [ "$TERM_PROGRAM" != "WarpTerminal" ] \
+if   [ "$TERM_PROGRAM" != "WarpTerminal" ] \
   && [ -z "$INSIDE_EMACS" ] \
+  && [ "$__CFBundleIdentifier" != "com.vandyke.SecureCRT" ] \
   && [ -t 1 ] \
   && [ -z "$FIG_PTY" ] && command -v figterm 1>/dev/null 2>/dev/null \
   && [ -z "$FIG_TERM" ] || [ -z "$FIG_TERM_TMUX" -a -n "$TMUX" ]
