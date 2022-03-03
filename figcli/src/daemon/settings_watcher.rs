@@ -64,15 +64,7 @@ pub async fn spawn_settings_watcher(_daemon_status: Arc<RwLock<DaemonStatus>>) -
                                     let app_bundle_exists = fig_bundle().unwrap().is_dir();
 
                                     if !app_bundle_exists {
-                                        // Show a dialog telling the user to run `fig uninstall`
-                                        std::process::Command::new(
-                                            std::env::current_exe().unwrap(),
-                                        )
-                                        .args(["_", "warn-user-when-uninstalling-incorrectly"])
-                                        .output()
-                                        .expect("failed to execute process");
-
-                                        // todo: can we just run the uninstall code directly?
+                                        crate::cli::app::uninstall::uninstall_mac_app().await;
                                     }
                                 }
                                 unknown_path => {

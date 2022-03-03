@@ -37,20 +37,6 @@ pub fn get_parent_process_exe() -> Result<PathBuf> {
     Ok(parent_process.exe().to_path_buf())
 }
 
-pub fn project_dir() -> Option<ProjectDirs> {
-    directories::ProjectDirs::from("io", "fig", "fig")
-}
-
-pub fn home_dir() -> Result<PathBuf> {
-    directories::BaseDirs::new()
-        .map(|base| base.home_dir().into())
-        .ok_or_else(|| anyhow::anyhow!("Could not get home dir"))
-}
-
-pub fn fig_dir() -> Option<PathBuf> {
-    Some(directories::BaseDirs::new()?.home_dir().join(".fig"))
-}
-
 pub fn fig_bundle() -> Option<PathBuf> {
     #[cfg(target_os = "macos")]
     {
