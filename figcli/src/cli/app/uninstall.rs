@@ -42,6 +42,19 @@ pub async fn uninstall_mac_app() {
         }
     });
 
+    // NSWorkspace.shared.open(
+    //     URL(string: "https://fig.io/uninstall?email=\(Defaults.shared.email ?? "")&" +
+    //       "version=\(Diagnostic.distribution.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")")!)
+
+    let email = fig_auth::get_email().unwrap_or_default();
+    let version = fig_auth::get_default("versionAtPreviousLaunch").unwrap_or_default();
+
+    crate::cli::util::open_url(format!(
+        "https://fig.io/uninstall?email={}&version={}",
+        email, version
+    ))
+    .ok();
+
     // Delete the .fig folder
     if let Some(fig_dir) = fig_directories::fig_dir() {
         match tokio::fs::remove_dir_all(fig_dir).await {

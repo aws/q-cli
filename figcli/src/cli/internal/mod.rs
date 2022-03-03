@@ -14,6 +14,8 @@ use fig_ipc::hook::send_hook_to_socket;
 use fig_proto::hooks::new_callback_hook;
 use serde_json::json;
 
+use native_dialog::{MessageDialog, MessageType};
+
 use tracing::{debug, error, info, trace};
 
 #[derive(Debug, Args)]
@@ -67,6 +69,7 @@ pub enum InternalSubcommand {
         #[clap(long)]
         binary: bool,
     },
+    WarnUserWhenUninstallingIncorrectly,
 }
 
 pub fn install_cli_from_args(install_args: InstallArgs) -> Result<()> {
@@ -172,6 +175,14 @@ impl InternalSubcommand {
                         debug!("Couldn't send hook {}", e);
                     }
                 }
+            }
+            InternalSubcommand::WarnUserWhenUninstallingIncorrectly => {
+                MessageDialog::new()
+                    .set_type(MessageType::Warning)
+                    .set_title("Trying to uninstall Fig?")
+                    .set_text("Please run `fig uninstall` rather than moving the app to the Trash.")
+                    .show_alert()
+                    .unwrap();
             }
         }
         Ok(())

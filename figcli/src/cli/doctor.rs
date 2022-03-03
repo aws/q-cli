@@ -123,7 +123,7 @@ fn is_installed(app: impl AsRef<OsStr>) -> bool {
     }
 }
 
-fn app_version(app: impl AsRef<OsStr>) -> Option<Version> {
+pub fn app_version(app: impl AsRef<OsStr>) -> Option<Version> {
     let app_path = app_path_from_bundle_id(app)?;
     let output = Command::new("defaults")
         .args([
