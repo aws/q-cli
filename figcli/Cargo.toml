@@ -22,10 +22,12 @@ fig-directories = { path = "../rust-lib/fig-directories" }
 fig-ipc = { path = "../rust-lib/fig-ipc" }
 fig-proto = { path = "../rust-lib/fig-proto" }
 fig-settings = { path = "../rust-lib/fig-settings" }
+fig-telemetry = { path = "../rust-lib/fig-telemetry" }
 flume = "0.10.11"
 futures = "0.3.21"
 git2 = { version = "0.14.1", features = ["vendored-openssl", "vendored-libgit2"] }
 globset = "0.4.8"
+glob = "0.3.0"
 handlebars = "4.2.1"
 notify = "4.0.17"
 objc = "0.2.7"
@@ -37,7 +39,7 @@ regex = "1.5.4"
 reqwest = "0.11.9"
 self_update = "0.28.0"
 semver = "1.0.5"
-sentry = { version = "0.24.2", features = ["anyhow"] }
+sentry = { version = "0.25.0", features = ["anyhow"] }
 serde = { version = "1.0.136", features = ["derive"] }
 serde_json = "1.0.79"
 serde_with = "1.12.0"
@@ -55,6 +57,7 @@ url = { version = "2.2.2", features = ["serde"] }
 validator = "0.14.0"
 walkdir = "2.3.2"
 native-dialog = "0.6.3"
+spinners = "3.0.1"
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.33.0", features = ["Win32_Foundation", "Win32_Security", "Win32_System_Threading"] }

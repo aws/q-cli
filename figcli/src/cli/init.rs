@@ -14,22 +14,39 @@ pub struct DotfileData {
 
 fn guard_source<F: Fn() -> Option<String>>(
     shell: &Shell,
+    export: bool,
     guard_var: impl AsRef<str>,
     get_source: F,
 ) -> Option<String> {
-    let already_sourced = std::env::var(guard_var.as_ref()).unwrap_or_else(|_| "0".into());
+    match get_source() {
+        Some(source) => {
+            let mut output = Vec::new();
 
-    if already_sourced != "1" {
-        if let Some(source) = get_source() {
-            let source_guard = match shell {
-                Shell::Fish => format!("set -gx {} 1", guard_var.as_ref()),
-                _ => format!("export {}=1", guard_var.as_ref()),
-            };
-            return Some(format!("\n{}\n{}\n", source, source_guard));
+            output.push(match shell {
+                Shell::Bash | Shell::Zsh => {
+                    format!("if [ -z \"${{{}}}\" ]; then", guard_var.as_ref())
+                }
+                Shell::Fish => format!("if test -z \"${}\"", guard_var.as_ref()),
+            });
+
+            output.push(source);
+
+            output.push(match (shell, export) {
+                (Shell::Bash | Shell::Zsh, false) => format!("{}=1", guard_var.as_ref()),
+                (Shell::Bash | Shell::Zsh, true) => format!("export {}=1", guard_var.as_ref()),
+                (Shell::Fish, false) => format!("set -g {} 1", guard_var.as_ref()),
+                (Shell::Fish, true) => format!("set -gx {} 1", guard_var.as_ref()),
+            });
+
+            output.push(match shell {
+                Shell::Bash | Shell::Zsh => "fi\n".into(),
+                Shell::Fish => "end\n".into(),
+            });
+
+            Some(output.join("\n"))
         }
+        _ => None,
     }
-
-    None
 }
 
 fn shell_init(shell: &Shell, when: &When) -> Result<String> {
@@ -48,14 +65,17 @@ fn shell_init(shell: &Shell, when: &When) -> Result<String> {
             Some(source.dotfile)
         };
 
-        if let Some(source) = guard_source(shell, "FIG_DOTFILES_SOURCED", get_dotfile_source) {
+        if let Some(source) = guard_source(shell, false, "FIG_DOTFILES_SOURCED", get_dotfile_source)
+        {
             to_source.push_str(&source);
         }
 
         if stdin().is_tty() {
             let get_prompts_source = || -> Option<String> { Some("fig app prompts".into()) };
 
-            if let Some(source) = guard_source(shell, "FIG_CHECKED_PROMPTS", get_prompts_source) {
+            if let Some(source) =
+                guard_source(shell, true, "FIG_CHECKED_PROMPTS", get_prompts_source)
+            {
                 to_source.push_str(&source);
             }
         }

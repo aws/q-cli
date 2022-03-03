@@ -16,7 +16,7 @@ use serde_json::json;
 
 use native_dialog::{MessageDialog, MessageType};
 
-use tracing::{debug, info, trace};
+use tracing::{debug, error, info, trace};
 
 #[derive(Debug, Args)]
 #[clap(group(
@@ -192,7 +192,14 @@ impl InternalSubcommand {
 pub async fn prompt_dotfiles_changed() -> Result<()> {
     let mut exit_code = 1;
 
-    let session_id = std::env::var("TERM_SESSION_ID")?;
+    let session_id = match std::env::var("TERM_SESSION_ID") {
+        Ok(session_id) => session_id,
+        Err(err) => {
+            error!("Couldn't get TERM_SESSION_ID: {}", err);
+            exit(exit_code);
+        }
+    };
+
     let tempdir = std::env::temp_dir();
 
     let file = tempdir
@@ -203,8 +210,17 @@ pub async fn prompt_dotfiles_changed() -> Result<()> {
     let file_content = match tokio::fs::read_to_string(&file).await {
         Ok(content) => content,
         Err(_) => {
-            tokio::fs::create_dir_all(&file.parent().context("Unable to get parent")?).await?;
-            tokio::fs::write(&file, "").await?;
+            if let Err(err) =
+                tokio::fs::create_dir_all(&file.parent().expect("Unable to create parent dir"))
+                    .await
+            {
+                error!("Unable to create directory: {}", err);
+            }
+
+            if let Err(err) = tokio::fs::write(&file, "").await {
+                error!("Unable to write to file: {}", err);
+            }
+
             exit(exit_code);
         }
     };
@@ -212,7 +228,9 @@ pub async fn prompt_dotfiles_changed() -> Result<()> {
     if file_content.contains("true") {
         println!("{}", "Your dotfiles have been updated!".bold());
 
-        let source_immediately = fig_settings::settings::get_value("dotfiles.sourceImmediately")?
+        let source_immediately = fig_settings::settings::get_value("dotfiles.sourceImmediately")
+            .ok()
+            .flatten()
             .and_then(|s| s.as_str().map(|s| s.to_owned()));
 
         let source_updates = match source_immediately.as_deref() {
@@ -274,7 +292,9 @@ pub async fn prompt_dotfiles_changed() -> Result<()> {
             );
         }
 
-        tokio::fs::write(&file, "").await?;
+        if let Err(err) = tokio::fs::write(&file, "").await {
+            error!("Unable to write to file: {}", err);
+        }
     }
 
     exit(exit_code);

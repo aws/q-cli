@@ -1,3 +1,5 @@
+pub mod uninstall;
+
 use crate::cli::debug::get_app_info;
 
 use anyhow::{Context, Result};
@@ -108,7 +110,7 @@ impl AppSubcommand {
                     .wait()?;
             }
             AppSubcommand::Uninstall => {
-                fig_ipc::command::uninstall_command().await?;
+                uninstall::uninstall_mac_app().await;
             }
             AppSubcommand::Restart => restart_fig().await?,
             AppSubcommand::Quit => quit_fig().await?,

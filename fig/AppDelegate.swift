@@ -581,10 +581,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     statusBarMenu.addItem(NSMenuItem.separator())
     let settings = statusBarMenu.addItem(
       withTitle: "Settings",
-      action: #selector(Settings.openUI),
+      action: #selector(MissionControl.openUI),
       keyEquivalent: "")
     settings.image = NSImage(imageLiteralResourceName: "gear")
-    settings.target = Settings.self
+    settings.target = MissionControl.self
 
     statusBarMenu.addItem(NSMenuItem.separator())
 
@@ -755,7 +755,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
   }
 
   @objc func uninstall(showDialog: Bool) {
-    var confirmed = true;
+    var confirmed = true
     if showDialog {
       confirmed = self.dialogOKCancel(
         question: "Uninstall Fig?",
@@ -791,7 +791,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
       if !InputMethod.default.uninstall() {
         Logger.log(message: "Error removing input method")
       }
-      
+
       for integration in Integrations.allProvidersIncludingExperimental.values {
         if !integration.uninstall() {
           Logger.log(message: "Error removing integration for \(integration.id)")
@@ -803,8 +803,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
       // Remove launch agents
       if let agents = try? FileManager.default.contentsOfDirectory(atPath:
-                                                                   "\(NSHomeDirectory())/Library/LaunchAgents/")
-      {
+                                                                   "\(NSHomeDirectory())/Library/LaunchAgents/") {
           for agent in agents {
               if URL(fileURLWithPath: agent).lastPathComponent.hasPrefix("io.fig.") {
                   try? FileManager.default.removeItem(atPath: agent)
