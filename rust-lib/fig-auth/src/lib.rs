@@ -23,6 +23,21 @@ pub fn get_default(key: impl AsRef<OsStr>) -> Result<String> {
     Ok(String::from_utf8_lossy(&output.stdout).trim().into())
 }
 
+pub fn set_default(key: impl AsRef<OsStr>, value: impl AsRef<OsStr>) -> Result<()> {
+    let output = Command::new("defaults")
+        .arg("write")
+        .arg("com.mschrage.fig")
+        .arg(key)
+        .arg(value)
+        .output()?;
+
+    if !output.status.success() {
+        return Err(anyhow::anyhow!("defaults write failed"));
+    }
+
+    Ok(())
+}
+
 pub async fn get_token() -> Result<String> {
     match Credentials::load_credentials() {
         Ok(mut creds) => {

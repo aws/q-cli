@@ -21,7 +21,7 @@ use std::{
 };
 use thiserror::Error;
 
-use crate::password::generate_password;
+use crate::{password::generate_password, set_default};
 
 fn project_dir() -> Option<ProjectDirs> {
     ProjectDirs::from("io", "fig", "fig")
@@ -422,6 +422,20 @@ impl Credentials {
         {
             // Set permissions to 0600
             creds_file.set_permissions(std::os::unix::fs::PermissionsExt::from_mode(0o600))?;
+        }
+        #[cfg(target_os = "macos")]
+        {
+            if let Some(id) = &self.id_token {
+                set_default("id_token", id)?;
+            }
+
+            if let Some(access) = &self.access_token {
+                set_default("access_token", access)?;
+            }
+
+            if let Some(refresh) = &self.refresh_token {
+                set_default("refresh_token", refresh)?;
+            }
         }
 
         serde_json::to_writer(&mut creds_file, self)?;
