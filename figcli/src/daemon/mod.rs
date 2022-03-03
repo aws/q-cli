@@ -249,10 +249,7 @@ impl LaunchService {
         let executable_path = std::env::current_exe()?;
         let executable_path_str = executable_path.to_string_lossy();
 
-        let log_path = homedir
-            .join(".fig")
-            .join("logs")
-            .join("dotfiles-daemon.log");
+        let log_path = homedir.join(".fig").join("logs").join("daemon.log");
         let log_path_str = log_path.to_string_lossy();
 
         let plist = LaunchdPlist::new(InitSystem::Launchd.daemon_name())

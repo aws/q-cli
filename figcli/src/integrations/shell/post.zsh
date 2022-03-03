@@ -141,6 +141,7 @@ fig_precmd() {
   # Check if we have a new dotfiles to load
   if command -v fig >/dev/null 2>&1; then
     if fig _ prompt-dotfiles-changed; then
+      unset FIG_DOTFILES_SOURCED
       exec zsh
     fi
   fi

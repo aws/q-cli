@@ -55,6 +55,7 @@ fi
 # Show Fig tips
 # Prevent termenv library from attempting to read color values and outputing random ANSI codes
 # See https://github.com/muesli/termenv/blob/166cf3773788aab7e9bf5e34d8c0deb176b92bc8/termenv_unix.go#L172
-TERM=screen fig tips prompt 2>/dev/null
+# Disabled for now since it is VERRRYYYYY SLOW
+# TERM=screen fig tips prompt 2>/dev/null
 
 unset FIG_IS_RUNNING

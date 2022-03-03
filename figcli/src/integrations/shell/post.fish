@@ -92,6 +92,7 @@ function fig_precmd --on-event fish_prompt
   # Check if we have a new dotfiles to load
   if command -v fig &>/dev/null
     if fig _ prompt-dotfiles-changed
+      set -ge FIG_DOTFILES_SOURCED
       exec fish
     end
   end
