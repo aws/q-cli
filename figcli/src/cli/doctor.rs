@@ -497,11 +497,10 @@ impl DoctorCheck for DaemonCheck {
 
 struct DotfileCheck {
     integration: ShellFileIntegration,
-    soft_check: bool,
 }
 
 #[async_trait]
-impl DoctorCheck for DotfileCheck {
+impl DoctorCheck<Option<Shell>> for DotfileCheck {
     fn name(&self) -> Cow<'static, str> {
         format!(
             "{} contains valid fig hooks",
@@ -510,7 +509,17 @@ impl DoctorCheck for DotfileCheck {
         .into()
     }
 
-    async fn check(&self, _: &()) -> Result<(), DoctorError> {
+    fn get_type(&self, current_shell: &Option<Shell>) -> DoctorCheckType {
+        if let Some(shell) = current_shell {
+            if *shell == self.integration.shell {
+                return DoctorCheckType::NormalCheck;
+            }
+        }
+
+        DoctorCheckType::SoftCheck
+    }
+
+    async fn check(&self, _: &Option<Shell>) -> Result<(), DoctorError> {
         let fix_text = format!(
             "Run {} to reinstall shell integrations for {}",
             "fig install --dotfiles".magenta(),
@@ -527,15 +536,11 @@ impl DoctorCheck for DotfileCheck {
                         self.integration.path.display(),
                         fix_text
                     );
-                    return if self.soft_check {
-                        Err(DoctorError::Warning(msg.into()))
-                    } else {
-                        Err(DoctorError::Error {
-                            reason: msg.into(),
-                            info: vec![],
-                            fix: None,
-                        })
-                    };
+                    return Err(DoctorError::Error {
+                        reason: msg.into(),
+                        info: vec![],
+                        fix: None,
+                    });
                 }
             }
             Shell::Zsh | Shell::Bash => {
@@ -583,11 +588,6 @@ impl DoctorCheck for DotfileCheck {
                             "Pre shell integration not sourced first in {}",
                             self.integration.path.display()
                         );
-                        if self.soft_check {
-                            return Err(DoctorError::Warning(
-                                format!("{}. {}", msg, fix_text).into(),
-                            ));
-                        }
 
                         let top_lines = lines.get(0..10).map_or(vec![], Vec::from);
                         let top_line_text = top_lines
@@ -625,11 +625,6 @@ impl DoctorCheck for DotfileCheck {
                             "Post shell integration not sourced last in {}",
                             self.integration.path.display()
                         );
-                        if self.soft_check {
-                            return Err(DoctorError::Warning(
-                                format!("{}. {}", msg, fix_text).into(),
-                            ));
-                        }
 
                         let n = lines.len();
                         let bottom_lines = lines.get(n - 10..n).map_or(vec![], Vec::from);
@@ -993,7 +988,9 @@ impl DoctorCheck<Option<Terminal>> for ItermBashIntegrationCheck {
     }
 
     async fn check(&self, _: &Option<Terminal>) -> Result<(), DoctorError> {
-        let integration_file = fig_directories::home_dir().unwrap().join(".iterm2_shell_integration.bash");
+        let integration_file = fig_directories::home_dir()
+            .unwrap()
+            .join(".iterm2_shell_integration.bash");
         let integration = read_to_string(integration_file)
             .context("Could not read .iterm2_shell_integration.bash")?;
 
@@ -1292,6 +1289,10 @@ where
     Ok(())
 }
 
+async fn get_shell_context() -> Result<Option<Shell>> {
+    Ok(Shell::current_shell())
+}
+
 async fn get_terminal_context() -> Result<Option<Terminal>> {
     Ok(Terminal::current_terminal())
 }
@@ -1370,30 +1371,23 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         )
         .await?;
 
-        let current_shell = Shell::current_shell();
         let shell_integrations: Vec<_> = [Shell::Bash, Shell::Zsh, Shell::Fish]
             .into_iter()
             .map(|shell| shell.get_shell_integrations())
             .collect::<Result<Vec<_>>>()?
             .into_iter()
             .flatten()
-            .map(|integration| DotfileCheck {
-                integration: integration.clone(),
-                soft_check: if let Some(shell) = current_shell {
-                    integration.shell != shell
-                } else {
-                    false
-                },
-            })
+            .map(|integration| DotfileCheck { integration })
             .collect();
 
         let all_dotfile_checks: Vec<_> = shell_integrations
             .iter()
-            .map(|p| (&*p) as &dyn DoctorCheck)
+            .map(|p| (&*p) as &dyn DoctorCheck<_>)
             .collect();
-        run_checks(
-            "Let's check your dotfiles...".into(),
+        run_checks_with_context(
+            "Let's check your dotfiles...",
             all_dotfile_checks,
+            get_shell_context,
             config,
             &mut spinner,
         )
