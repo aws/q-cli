@@ -102,7 +102,7 @@ impl SettingsArgs {
                     _ => {}
                 },
                 None => {
-                    let res = open_ui_element(UiElement::Settings).await;
+                    let res = open_ui_element(UiElement::MissionControl).await;
                     if res.is_err() {
                         print_connection_error!();
                         return res;

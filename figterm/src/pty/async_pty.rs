@@ -14,9 +14,9 @@ pub struct AsyncPtyMaster(AsyncFd<PtyMaster>);
 
 impl AsyncPtyMaster {
     pub fn new(pty_master: PtyMaster) -> Result<Self> {
-        set_nonblocking(pty_master.as_raw_fd()).with_context(|| "Failed to set nonblocking")?;
+        set_nonblocking(pty_master.as_raw_fd()).context("Failed to set nonblocking")?;
         Ok(Self(
-            AsyncFd::new(pty_master).with_context(|| "Failed to create AsyncFd")?,
+            AsyncFd::new(pty_master).context("Failed to create AsyncFd")?,
         ))
     }
 

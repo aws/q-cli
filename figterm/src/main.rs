@@ -314,47 +314,40 @@ fn launch_shell() -> Result<()> {
 
 fn figterm_main() -> Result<()> {
     let term_session_id = env::var("TERM_SESSION_ID")
-        .with_context(|| "Failed to get TERM_SESSION_ID environment variable")?;
-
-    let _fig_integration_version: Option<i32> = env::var("FIG_INTEGRATION_VERSION")
-        .with_context(|| "Failed to get FIG_INTEGRATION_VERSION environment variable")?
-        .parse()
-        .ok();
+        .context("Failed to get TERM_SESSION_ID environment variable")?;
 
     logger::stdio_debug_log("Checking stdin fd is a tty");
 
     // Check that stdin is a tty
-    if !isatty(STDIN_FILENO).with_context(|| "Failed to check if stdin is a tty")? {
+    if !isatty(STDIN_FILENO).context("Failed to check if stdin is a tty")? {
         anyhow::bail!("stdin is not a tty");
     }
 
     // Get term data
-    let termios = tcgetattr(STDIN_FILENO).with_context(|| "Failed to get terminal attributes")?;
+    let termios = tcgetattr(STDIN_FILENO).context("Failed to get terminal attributes")?;
     let old_termios = termios.clone();
 
-    let mut winsize = get_winsize(STDIN_FILENO).with_context(|| "Failed to get terminal size")?;
+    let mut winsize = get_winsize(STDIN_FILENO).context("Failed to get terminal size")?;
 
     logger::stdio_debug_log("Forking child shell process");
 
     // Fork pseudoterminal
     // SAFETY: forkpty is safe to call, but the child must not call any functions
     // that are not async-signal-safe.
-    match fork_pty(&old_termios, &winsize)
-        .context("fork_pty")
-        .with_context(|| "Failed to fork pty")?
-    {
+    match fork_pty(&old_termios, &winsize).context("Failed to fork pty")? {
         PtyForkResult::Parent(pt_details, pid) => {
             let runtime = runtime::Builder::new_multi_thread()
                 .enable_all()
                 .thread_name("figterm-runtime-worker")
                 .build()?;
 
-            init_logger(&pt_details.pty_name).with_context(|| "Failed to init logger")?;
+            init_logger(&pt_details.pty_name).context("Failed to init logger")?;
 
             match runtime
                 .block_on(async {
                     info!("Shell: {}", pid);
                     info!("Figterm: {}", getpid());
+                    info!("Pty name: {}", pt_details.pty_name);
 
                     let history_sender = history::spawn_history_task().await;
 
@@ -366,7 +359,7 @@ fn figterm_main() -> Result<()> {
                     let outgoing_sender = spawn_outgoing_sender().await?;
 
                     // Spawn thread to handle incoming data
-                    let incomming_reciever = spawn_incoming_receiver(&term_session_id).await?;
+                    let incomming_receiver = spawn_incoming_receiver(&term_session_id).await?;
 
                     let mut stdin = io::stdin();
                     let mut stdout = io::stdout();
@@ -393,7 +386,7 @@ fn figterm_main() -> Result<()> {
                     let mut first_time = true;
 
                     'select_loop: loop {
-                        if term.shell_state().has_seen_prompt && first_time {
+                        if first_time && term.shell_state().has_seen_prompt {
                             trace!("Has seen prompt and first time");
                             let initial_command = env::var("FIG_START_TEXT").ok().filter(|s| !s.is_empty());
                             if let Some(mut initial_command) = initial_command {
@@ -468,7 +461,7 @@ fn figterm_main() -> Result<()> {
                                 }
                                 Ok("master")
                             }
-                            msg = incomming_reciever.recv_async() => {
+                            msg = incomming_receiver.recv_async() => {
                                 match msg {
                                     Ok(buf) => {
                                         debug!("Received message from socket: {:?}", buf);
@@ -478,7 +471,7 @@ fn figterm_main() -> Result<()> {
                                         error!("Failed to receive message from socket: {}", err);
                                     }
                                 }
-                                Ok("incomming_reciever")
+                                Ok("incomming_receiver")
                             }
                         };
 
