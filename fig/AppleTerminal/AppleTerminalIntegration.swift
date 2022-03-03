@@ -27,6 +27,10 @@ class AppleTerminalIntegration: TerminalIntegrationProvider {
   func verifyInstallation() -> InstallationStatus {
     return .installed
   }
+  
+  func uninstall() -> Bool {
+    return true
+  }
 
   func install() -> InstallationStatus {
     return .installed

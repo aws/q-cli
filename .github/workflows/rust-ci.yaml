@@ -6,21 +6,20 @@ on:
     paths:
       - "rust-lib/**"
       - "figterm/**"
-      - "dotfilesd/**"
+      - "figcli/**"
       - "proto/**"
       - ".github/workflows/rust-ci.yaml"
   push:
     paths:
       - "rust-lib/**"
       - "figterm/**"
-      - "dotfilesd/**"
+      - "figcli/**"
       - "proto/**"
       - ".github/workflows/rust-ci.yaml"
     branches:
       - master
       - staging
       - develop
-      - dotfilesd
 
 env:
   CARGO_TERM_COLOR: always

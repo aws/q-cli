@@ -75,7 +75,7 @@ class Onboarding {
       SentrySDK.capture(message: "Currently running on read only volume! App is translocated!")
     }
 
-    guard let figcliPath = Bundle.main.path(forAuxiliaryExecutable: "dotfilesd-darwin-universal") else {
+    guard let figcliPath = Bundle.main.path(forAuxiliaryExecutable: "fig-darwin-universal") else {
       return Logger.log(message: "Could not locate install script!")
     }
 
@@ -148,7 +148,6 @@ class Onboarding {
     // Install binaries in the appropriate location222
     symlinkBundleExecutable("figterm", to: binDirectory.appendingPathComponent("figterm").path)
     symlinkBundleExecutable("fig_get_shell", to: binDirectory.appendingPathComponent("fig_get_shell").path)
-    symlinkBundleExecutable("fig_callback", to: binDirectory.appendingPathComponent("fig_callback").path)
     copyFigCLIExecutable(to: "~/.local/bin/fig")
     copyFigCLIExecutable(to: "~/.fig/bin/fig")
 
@@ -184,7 +183,7 @@ class Onboarding {
   }
 
   static func copyFigCLIExecutable(to path: String) {
-    symlinkBundleExecutable("dotfilesd-darwin-universal", to: path)
+    symlinkBundleExecutable("fig-darwin-universal", to: path)
   }
 
   static func setupTerminalsForShellOnboarding(completion: (() -> Void)? = nil) {
@@ -223,7 +222,7 @@ extension Onboarding {
 
       NSApp.appDelegate.setupCompanionWindow()
     case .uninstall:
-      NSApp.appDelegate.uninstall()
+      NSApp.appDelegate.uninstall(showDialog: true)
     case .UNRECOGNIZED:
       Logger.log(message: "Unrecognized Onboarding Action!", subsystem: .api)
       callback(false)

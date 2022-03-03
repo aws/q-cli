@@ -6,13 +6,8 @@ pub mod pty;
 pub mod term;
 pub mod utils;
 
-use std::{
-    env, error::Error, ffi::CString, os::unix::prelude::AsRawFd, path::PathBuf, process::exit,
-    str::FromStr, vec,
-};
-
 use crate::{
-    ipc::{spawn_incoming_receiver, spawn_outgoing_sender},
+    ipc::{remove_socket, spawn_incoming_receiver, spawn_outgoing_sender},
     logger::init_logger,
     pty::{async_pty::AsyncPtyMaster, fork_pty, ioctl_tiocswinsz, PtyForkResult},
     term::get_winsize,
@@ -46,6 +41,10 @@ use nix::{
 };
 use once_cell::sync::Lazy;
 use sentry::integrations::anyhow::capture_anyhow;
+use std::{
+    env, error::Error, ffi::CString, os::unix::prelude::AsRawFd, path::PathBuf, process::exit,
+    str::FromStr, vec,
+};
 use tokio::{
     io::{self, AsyncReadExt, AsyncWriteExt},
     runtime, select,
@@ -53,7 +52,7 @@ use tokio::{
 };
 use tracing::{debug, error, info, level_filters::LevelFilter, trace, warn};
 
-const BUFFER_SIZE: usize = 1024;
+const BUFFER_SIZE: usize = 4096;
 
 struct EventSender {
     socket_sender: Sender<LocalMessage>,
@@ -78,7 +77,7 @@ fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
         .map(|s| s.parse().ok())
         .ok()
         .flatten()
-        .unwrap_or(6);
+        .unwrap_or(7);
 
     let mut context = new_context(
         shell_state.local_context.pid,
@@ -147,8 +146,7 @@ impl EventListener for EventSender {
     fn log_level_event(&self, level: Option<String>) {
         logger::set_log_level(
             level
-                .map(|level| LevelFilter::from_str(&level).ok())
-                .flatten()
+                .and_then(|level| LevelFilter::from_str(&level).ok())
                 .unwrap_or(LevelFilter::INFO),
         );
     }
@@ -191,7 +189,7 @@ where
 {
     match term.get_current_buffer() {
         Some(edit_buffer) => {
-            if let Some(cursor_idx) = edit_buffer.cursor_idx.map(|i| i.try_into().ok()).flatten() {
+            if let Some(cursor_idx) = edit_buffer.cursor_idx.and_then(|i| i.try_into().ok()) {
                 info!("edit_buffer: {:?}", edit_buffer);
 
                 let context = shell_state_to_context(term.shell_state());
@@ -286,7 +284,7 @@ fn launch_shell() -> Result<()> {
         vec![CString::new(&*parent_shell).expect("Failed to convert shell name to CString")];
 
     if parent_shell_is_login.as_deref() == Some("1") {
-        args.push(CString::new("--login").unwrap());
+        args.push(CString::new("--login").expect("Failed to convert arg to CString"));
     }
 
     if let Some(extra_args) = parent_shell_extra_args {
@@ -310,7 +308,7 @@ fn launch_shell() -> Result<()> {
     env::remove_var("FIG_START_TEXT");
     env::remove_var("FIG_SHELL_EXTRA_ARGS");
 
-    execvp(&*args[0], &args).unwrap();
+    execvp(&*args[0], &args).expect("Failed to execvp");
     unreachable!()
 }
 
@@ -355,7 +353,6 @@ fn figterm_main() -> Result<()> {
 
             match runtime
                 .block_on(async {
-
                     info!("Shell: {}", pid);
                     info!("Figterm: {}", getpid());
 
@@ -363,6 +360,7 @@ fn figterm_main() -> Result<()> {
 
                     let raw_termios = termios_to_raw(termios);
                     tcsetattr(STDIN_FILENO, SetArg::TCSAFLUSH, &raw_termios)?;
+                    trace!("Set raw termios");
 
                     // Spawn thread to handle outgoing data to main Fig app
                     let outgoing_sender = spawn_outgoing_sender().await?;
@@ -386,7 +384,7 @@ fn figterm_main() -> Result<()> {
                     let mut term = alacritty_terminal::Term::new(size, event_sender, 1);
 
                     let mut read_buffer = [0u8; BUFFER_SIZE];
-                    let mut write_buffer = [0u8; BUFFER_SIZE * 100];
+                    let mut write_buffer = [0u8; BUFFER_SIZE];
 
                     let intercept_set: DashSet<char, fnv::FnvBuildHasher> = DashSet::with_hasher(fnv::FnvBuildHasher::default());
 
@@ -396,8 +394,10 @@ fn figterm_main() -> Result<()> {
 
                     'select_loop: loop {
                         if term.shell_state().has_seen_prompt && first_time {
+                            trace!("Has seen prompt and first time");
                             let initial_command = env::var("FIG_START_TEXT").ok().filter(|s| !s.is_empty());
                             if let Some(mut initial_command) = initial_command {
+                                debug!("Sending initial text: {}", initial_command);
                                 initial_command.push('\n');
                                 if let Err(e) = master.write(initial_command.as_bytes()).await {
                                     error!("Failed to write initial command: {}", e);
@@ -412,15 +412,19 @@ fn figterm_main() -> Result<()> {
                                 match res {
                                     Ok(size) => match std::str::from_utf8(&read_buffer[..size]) {
                                             Ok(s) => {
+                                                trace!("Read {} bytes from input: {:?}", size, s);
+                                                let mut out = heapless::String::<BUFFER_SIZE>::new();
                                                 for c in s.chars() {
                                                     if !intercept_set.contains(&c) {
-                                                        let mut utf8_buf = [0; 4];
-                                                        master.write(c.encode_utf8(&mut utf8_buf).as_bytes()).await?;
+                                                        // This should always be okay since the input <= BUFFER_SIZE
+                                                        out.push(c).ok();
                                                     }
                                                 }
+                                                master.write(out.as_bytes()).await?;
                                             }
                                             Err(err) => {
                                                 error!("Failed to convert utf8: {}", err);
+                                                trace!("Read {} bytes from input: {:?}", size, &read_buffer[..size]);
                                                 master.write(&read_buffer[..size]).await?;
                                             }
                                     },
@@ -484,18 +488,25 @@ fn figterm_main() -> Result<()> {
                         }
                     }
 
-                    tcsetattr(STDIN_FILENO, SetArg::TCSAFLUSH, &old_termios)?;
+                    remove_socket(&term_session_id).await?;
 
                     anyhow::Ok(())
                 }) {
-                    Ok(_) => {
+                    Ok(()) => {
+                        if let Err(e) = tcsetattr(STDIN_FILENO, SetArg::TCSAFLUSH, &old_termios) {
+                            error!("Failed to restore terminal settings: {}", e);
+                        }
+
                         info!("Exiting");
                         exit(0);
                     },
                     Err(e) => {
-                        capture_anyhow(&e);
+                        if let Err(e) = tcsetattr(STDIN_FILENO, SetArg::TCSAFLUSH, &old_termios) {
+                            error!("Failed to restore terminal settings: {}", e);
+                        }
+
                         error!("Error in async runtime: {}", e);
-                        exit(1);
+                        Err(e)
                     },
                 }
         }
@@ -503,12 +514,12 @@ fn figterm_main() -> Result<()> {
             // DO NOT RUN ANY FUNCTIONS THAT ARE NOT ASYNC SIGNAL SAFE
             // https://man7.org/linux/man-pages/man7/signal-safety.7.html
             match launch_shell() {
+                Ok(()) => Ok(()),
                 Err(e) => {
+                    println!("ERROR: {:?}", e);
                     capture_anyhow(&e);
-                    logger::stdio_debug_log(format!("{:?}", e));
                     Err(e)
                 }
-                Ok(_) => Ok(()),
             }
         }
     }
@@ -535,8 +546,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     logger::stdio_debug_log(format!("FIG_LOG_LEVEL={}", logger::get_log_level()));
 
     if let Err(e) = figterm_main() {
+        println!("Fig had an Error!: {:?}", e);
         capture_anyhow(&e);
-        logger::stdio_debug_log(format!("{}", e));
 
         // Fallback to normal shell
         if let Err(e) = launch_shell() {

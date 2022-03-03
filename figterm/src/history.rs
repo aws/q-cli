@@ -1,21 +1,22 @@
-use std::{
-    borrow::Cow,
-    fs::File,
-    io::{BufWriter, Read, Write},
-    path::PathBuf,
-};
-
 use alacritty_terminal::term::CommandInfo;
 use anyhow::Result;
 use flume::{bounded, Sender};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use rusqlite::{params, Connection};
-use tracing::error;
+use std::{
+    borrow::Cow,
+    fs::File,
+    io::{BufWriter, Read, Write},
+    path::PathBuf,
+};
+use tracing::{error, trace};
 
 use crate::utils::fig_path;
 
 pub async fn spawn_history_task() -> Sender<CommandInfo> {
+    trace!("Spawning history task");
+
     let (sender, receiver) = bounded(64);
     tokio::task::spawn(async move {
         let history_join = tokio::task::spawn_blocking(History::load);
@@ -61,13 +62,13 @@ fn unescape_string(s: &str) -> Cow<str> {
 
 fn escape_string(s: impl AsRef<str>) -> String {
     s.as_ref()
-        .replace("\\", "\\\\")
-        .replace("\"", "\\\"")
-        .replace("\n", "\\n")
-        .replace("\t", "\\t")
-        .replace("\r", "\\r")
-        .replace("\x08", "\\b")
-        .replace("\x0c", "\\f")
+        .replace('\\', "\\\\")
+        .replace('\"', "\\\"")
+        .replace('\n', "\\n")
+        .replace('\t', "\\t")
+        .replace('\r', "\\r")
+        .replace('\x08', "\\b")
+        .replace('\x0c', "\\f")
 }
 
 pub struct History {
@@ -76,6 +77,7 @@ pub struct History {
 
 impl History {
     pub fn load() -> Result<History> {
+        trace!("Loading history");
         let old_history_path: PathBuf = [fig_path().unwrap(), "history".into()]
             .into_iter()
             .collect();
@@ -154,6 +156,7 @@ impl History {
     }
 
     pub fn insert_command_history(&self, command_info: &CommandInfo, legacy: bool) -> Result<()> {
+        trace!("Inserting command into history: {:?}", command_info);
         // Insert the command into the history table
         // Ensure that the command is not empty
         if let Some(command) = &command_info.command {
@@ -235,6 +238,7 @@ impl History {
 }
 
 fn create_migrations_table(conn: &Connection) -> Result<()> {
+    trace!("Creating migrations table");
     conn.execute_batch(
         "CREATE TABLE IF NOT EXISTS migrations( \
                 id INTEGER PRIMARY KEY, \
@@ -246,6 +250,7 @@ fn create_migrations_table(conn: &Connection) -> Result<()> {
 }
 
 fn migrate_history_db(conn: &Connection) -> Result<()> {
+    trace!("Migrating history database");
     let mut max_migration_version_stmt = conn.prepare("SELECT max(version) from migrations;")?;
     let max_migration_version: i64 = max_migration_version_stmt
         .query_row([], |row| row.get(0))

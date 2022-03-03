@@ -33,6 +33,7 @@ message Command {
 		DebugModeCommand debug_mode = 113;
 		PromptAccessibilityCommand prompt_accessibility = 114;
 		InputMethodCommand input_method = 115;
+		UninstallCommand uninstall = 116;
 
 	}
 }
@@ -51,7 +52,7 @@ message Hook {
 		IntegrationReadyHook integration_ready = 109;
 		HideHook hide = 110;
 		EventHook event = 111;
-		SettingsChangedHook settings_changed = 112;
+		FileChangedHook file_changed = 112;
 	}
 }
 
@@ -74,6 +75,8 @@ message LogoutCommand { }
 message RestartCommand { }
 
 message QuitCommand { }
+
+message UninstallCommand { }
 
 message UpdateCommand {
 	bool force = 1;
@@ -211,7 +214,15 @@ message EventHook {
 	string event_name = 1;
 }
 
-message SettingsChangedHook { }
+message FileChangedHook {
+	enum FileChanged {
+		SETTINGS = 0;
+		STATE = 1;
+	}
+
+	FileChanged file_changed = 1;
+	optional string filepath = 2;
+}
 
 // == Responses ==
 message ErrorResponse {

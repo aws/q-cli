@@ -9,7 +9,7 @@
 import Foundation
 
 extension String {
-  func jsonStringToDict() -> [String: Any]? {
+  func parseAsJSON() -> [String: Any]? {
     if let data = self.data(using: .utf8) {
       do {
         return try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
@@ -116,4 +116,7 @@ extension URL {
     URL(fileURLWithPath: NSSearchPathForDirectoriesInDomains(.applicationSupportDirectory,
                                                              .userDomainMask,
                                                              true).first!)
+  static let home: URL = FileManager.default.homeDirectoryForCurrentUser
+  static let dataDirectory: URL = URL.applicationSupport.appendingPathComponent("fig", isDirectory: true)
+
 }

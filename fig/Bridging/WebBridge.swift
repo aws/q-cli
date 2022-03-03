@@ -8,7 +8,7 @@
 
 import WebKit
 
-protocol WebBridgeEventDelegate: class {
+protocol WebBridgeEventDelegate: AnyObject {
   func requestExecuteCLICommand(script: String)
   func requestInsertCLICommand(script: String)
 }
@@ -100,7 +100,7 @@ extension WebBridge {
   static func authorized(webView: WKWebView?) -> Bool {
     if let webView = webView, let url = webView.url, let scheme = url.scheme {
       print("authorized for scheme?:", scheme)
-      return scheme == "file" || url.host == Remote.baseURL.host || url.host == "fig.run" || url.host ?? "" == "localhost"
+      return scheme == "file" || url.host == Remote.baseURL.host || url.host == Remote.baseURL.host || url.host == "desktop.fig.io" || url.host ?? "" == "localhost"
     }
     return false
   }

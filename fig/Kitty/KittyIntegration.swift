@@ -57,6 +57,22 @@ extension KittyIntegration: IntegrationProvider {
 
     return .installed
   }
+  
+  func uninstall() -> Bool {
+    guard let kittyConfig = try? String(contentsOf: KittyIntegration.configLocation) else {
+      return false
+    }
+
+    let updatedConfig = kittyConfig.replacingOccurrences(of: KittyIntegration.configKey, with: "")
+    
+    do {
+      try updatedConfig.write(toFile: KittyIntegration.configLocation.absoluteString, atomically: true, encoding: .utf8)
+    } catch {
+      return false
+    }
+    
+    return true
+  }
 
   func install() -> InstallationStatus {
     guard self.applicationIsInstalled else {

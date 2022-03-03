@@ -245,7 +245,7 @@ class TerminalSessionLinker: TerminalSessionLinkingService {
     let currentSession = self.getTerminalSession(for: terminalSessionId)
     let isFocused = isFocused ?? currentSession?.isFocused ?? false
 
-   let terminalSession = TerminalSession(windowId: windowId,
+    let terminalSession = TerminalSession(windowId: windowId,
                                           bundleId: bundleId,
                                           terminalSessionId: terminalSessionId,
                                           commandContext: currentSession?.commandContext,

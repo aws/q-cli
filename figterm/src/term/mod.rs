@@ -1,11 +1,10 @@
-use std::os::unix::prelude::*;
-
 use anyhow::Result;
 use nix::{
     ioctl_read_bad, libc,
     pty::Winsize,
     sys::termios::{ControlFlags, InputFlags, LocalFlags, OutputFlags, Termios},
 };
+use std::os::unix::prelude::*;
 
 ioctl_read_bad!(read_winsize, libc::TIOCGWINSZ, Winsize);
 

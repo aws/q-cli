@@ -9,6 +9,7 @@
 import Foundation
 import Socket
 import FigAPIBindings
+import Cocoa
 
 typealias LocalMessage = Local_LocalMessage
 typealias CommandResponse = Local_CommandResponse
@@ -234,6 +235,10 @@ class IPC: UnixSocketServerDelegate {
       CommandHandlers.promptAccessibility()
     case .inputMethod(let request):
       response = CommandHandlers.inputMethod(request)
+    case .uninstall:
+      DispatchQueue.main.sync {
+        NSApp.appDelegate.uninstall(showDialog: false)
+      }
     case .none:
       break
     }
@@ -292,6 +297,8 @@ class IPC: UnixSocketServerDelegate {
     case .openedSshConnection(let hook):
       IPC.post(notification: .sshConnectionOpened, object: hook)
     case .callback(let hook):
+
+
       Logger.log(message: "Callback hook")
       NotificationCenter.default.post(
         name: PseudoTerminal.recievedCallbackNotification,
@@ -306,8 +313,13 @@ class IPC: UnixSocketServerDelegate {
       Autocomplete.hide()
     case .event(let hook):
       ShellHookManager.shared.eventHook(event: hook.eventName)
-    case .settingsChanged(let hook):
-      Settings.shared.settingsUpdated()
+    case .fileChanged(let hook):
+      if hook.fileChanged == Local_FileChangedHook.FileChanged.settings {
+        Settings.shared.settingsUpdated()
+      }
+      if hook.fileChanged == Local_FileChangedHook.FileChanged.state {
+        LocalState.shared.localStateUpdated()
+      }
     case .none:
       break
     }

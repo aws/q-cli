@@ -126,7 +126,7 @@ class Integrations {
       .subtracting(Integrations.blocked)
   }
 
-  fileprivate static func allProviders() -> [String: TerminalIntegrationProvider] {
+  fileprivate static func allProviders(forceIncludeExperimental: Bool) -> [String: TerminalIntegrationProvider] {
 
     let stableIntegrations: [String: TerminalIntegrationProvider] = [
       Integrations.iTerm: iTermIntegration.default,
@@ -149,6 +149,10 @@ class Integrations {
       Integrations.PyCharm: JetBrainsIntegration.PyCharm,
       Integrations.AppCode: JetBrainsIntegration.AppCode
     ]
+    
+    if forceIncludeExperimental {
+      return stableIntegrations.merging(experimentalIntegrations) { $1 }
+    }
 
     if let enableExperimentalIntegrations = Settings.shared.getValue(forKey:
                                             Settings.experimentalIntegrations) as? Bool,
@@ -159,8 +163,10 @@ class Integrations {
     return stableIntegrations
   }
 
-  static let providers: [String: TerminalIntegrationProvider] = allProviders()
+  static let providers: [String: TerminalIntegrationProvider] = allProviders(forceIncludeExperimental: false)
+  static let allProvidersIncludingExperimental: [String: TerminalIntegrationProvider] = allProviders(forceIncludeExperimental: true)
 
+  
   static func handleListIntegrationsRequest() -> CommandResponse {
     CommandResponse.with { response in
       response.integrationList = Local_TerminalIntegrationsListResponse.with({ list in
@@ -185,6 +191,9 @@ protocol IntegrationProvider {
 
   // update the user's environment to install the integration
   func install() -> InstallationStatus
+
+  // update the user's environment to uninstall the integration
+  func uninstall() -> Bool
 
   var id: String { get }
 }

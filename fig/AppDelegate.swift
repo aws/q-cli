@@ -81,6 +81,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     Accessibility.checkIfPermissionRevoked()
 
     //        AppMover.moveIfNecessary()
+    _ = LocalState.shared
     _ = Settings.shared
     _ = ShellBridge.shared
     _ = WindowManager.shared
@@ -753,13 +754,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     NSWorkspace.shared.open(URL(string: "https://fig.io/docs/support/settings")!)
   }
 
-  @objc func uninstall() {
-
-    let confirmed = self.dialogOKCancel(
-      question: "Uninstall Fig?",
-      text: "You will need to restart any currently running terminal sessions.",
-      icon: NSImage(imageLiteralResourceName: NSImage.applicationIconName)
-    )
+  @objc func uninstall(showDialog: Bool) {
+    var confirmed = true;
+    if showDialog {
+      confirmed = self.dialogOKCancel(
+        question: "Uninstall Fig?",
+        text: "You will need to restart any currently running terminal sessions.",
+        icon: NSImage(imageLiteralResourceName: NSImage.applicationIconName)
+      )
+    }
 
     if confirmed {
       TelemetryProvider.shared.track(event: .uninstallApp, with: [:])
@@ -785,9 +788,34 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
       UserDefaults.standard.synchronize()
 
       WebView.deleteCache()
-      InputMethod.default.uninstall()
+      if !InputMethod.default.uninstall() {
+        Logger.log(message: "Error removing input method")
+      }
+      
+      for integration in Integrations.allProvidersIncludingExperimental.values {
+        if !integration.uninstall() {
+          Logger.log(message: "Error removing integration for \(integration.id)")
+        }
+      }
 
-      let out = "~/.local/bin/fig app uninstall".runAsCommand()
+      // Remove ~/.fig
+      try? FileManager.default.removeItem(atPath: "\(NSHomeDirectory())/.fig")
+
+      // Remove launch agents
+      if let agents = try? FileManager.default.contentsOfDirectory(atPath:
+                                                                   "\(NSHomeDirectory())/Library/LaunchAgents/")
+      {
+          for agent in agents {
+              if URL(fileURLWithPath: agent).lastPathComponent.hasPrefix("io.fig.") {
+                  try? FileManager.default.removeItem(atPath: agent)
+              }
+          }
+      }
+
+      try? FileManager.default.removeItem(atPath: "/Applications/Fig.app")
+
+      // Use internal uninstall to avoid signaling the mac app.
+      let out = "~/.local/bin/fig _ uninstall".runAsCommand()
       Logger.log(message: out)
       self.quit()
     }

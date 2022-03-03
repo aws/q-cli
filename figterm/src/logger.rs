@@ -13,7 +13,14 @@ use tracing_subscriber::{filter::DynFilterFn, fmt, prelude::*};
 
 use crate::utils::fig_path;
 
-static FIG_LOG_LEVEL: Lazy<RwLock<LevelFilter>> = Lazy::new(|| RwLock::new(LevelFilter::INFO));
+static FIG_LOG_LEVEL: Lazy<RwLock<LevelFilter>> = Lazy::new(|| {
+    RwLock::new(
+        std::env::var("FIG_LOG_LEVEL")
+            .ok()
+            .and_then(|level| LevelFilter::from_str(&level).ok())
+            .unwrap_or(LevelFilter::INFO),
+    )
+});
 
 pub fn stdio_debug_log(s: impl AsRef<str>) {
     let level = FIG_LOG_LEVEL.read();
@@ -46,14 +53,6 @@ pub fn get_log_level() -> LevelFilter {
 }
 
 pub fn init_logger(ptc_name: impl AsRef<str>) -> Result<()> {
-    let env_level = std::env::var("FIG_LOG_LEVEL")
-        .ok()
-        .map(|level| LevelFilter::from_str(&level).ok())
-        .flatten()
-        .unwrap_or(LevelFilter::INFO);
-
-    *FIG_LOG_LEVEL.write() = env_level;
-
     let filter_layer =
         DynFilterFn::new(|metadata, _ctx| metadata.level() <= &*FIG_LOG_LEVEL.read());
 
@@ -69,7 +68,7 @@ pub fn init_logger(ptc_name: impl AsRef<str>) -> Result<()> {
     }
 
     let file = File::create(log_path).context("failed to create log file")?;
-    let fmt_layer = fmt::layer().with_target(false).with_writer(file);
+    let fmt_layer = fmt::layer().with_writer(file);
 
     tracing_subscriber::registry()
         .with(filter_layer)

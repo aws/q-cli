@@ -14,6 +14,7 @@ class Remote {
   static var localhost: URL = URL(string: "http://localhost:3000")!
   static var telemetryURL: URL = URL(string: "https://tel.withfig.com")!
   static var API: URL = URL(string: "https://api.fig.io")!
+  static var missionControlURL: URL = URL(string: "https://desktop.fig.io")!
 
   static var baseURL: URL {
     switch Defaults.shared.build {
