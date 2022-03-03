@@ -9,6 +9,7 @@ members = [
     "rust-lib/fig-ipc",
     "rust-lib/fig-proto",
     "rust-lib/fig-settings",
+    "rust-lib/fig-telemetry",
 ]
 
 [profile.release]

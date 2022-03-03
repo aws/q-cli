@@ -24,11 +24,9 @@ use fig_proto::{
 };
 use regex::Regex;
 use semver::Version;
-use serde::{ser::SerializeMap, Serialize};
 use serde_json::json;
 use std::{
     borrow::Cow,
-    collections::HashMap,
     ffi::OsStr,
     fs::read_to_string,
     future::Future,
@@ -41,6 +39,7 @@ use tokio::{
     self,
     io::{AsyncBufReadExt, AsyncWriteExt},
 };
+use tracing::error;
 
 type DoctorFix = Box<dyn FnOnce() -> Result<()> + Send>;
 
@@ -1107,28 +1106,6 @@ impl DoctorCheck for LoginStatusCheck {
     }
 }
 
-#[derive(Debug, Clone)]
-struct SegmentEvent {
-    user_id: String,
-    event: String,
-    properties: HashMap<String, String>,
-}
-
-impl Serialize for SegmentEvent {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        let mut state = serializer.serialize_map(Some(2 + self.properties.len()))?;
-        state.serialize_entry("userId", &self.user_id)?;
-        state.serialize_entry("event", &self.event)?;
-        for (key, value) in &self.properties {
-            state.serialize_entry(&format!("prop_{}", key), value)?;
-        }
-        state.end()
-    }
-}
-
 async fn run_checks_with_context<T, Fut>(
     header: impl AsRef<str>,
     checks: Vec<&dyn DoctorCheck<T>>,
@@ -1151,32 +1128,31 @@ where
         print_status_result(&name, &result);
 
         if let Err(err) = &result {
-            if let Ok(uuid) = fig_auth::get_default("uuid") {
-                let mut properties = HashMap::new();
-                properties.insert("check".into(), name.clone());
-                properties.insert("cli_version".into(), env!("CARGO_PKG_VERSION").into());
-                properties.insert(
-                    "email".into(),
-                    fig_auth::get_email().unwrap_or_else(|| "<unknown>".into()),
-                );
+            match fig_telemetry::SegmentEvent::new("Doctor Error") {
+                Ok(mut event) => {
+                    if let Err(err) = event.add_default_properties() {
+                        error!(
+                            "Could not add default properties to telemetry event: {}",
+                            err
+                        );
+                    }
 
-                match err {
-                    DoctorError::Warning(info) | DoctorError::Error { reason: info, .. } => {
-                        properties.insert("info".into(), info.to_string());
+                    event.add_property("check", &name);
+                    event.add_property("cli_version", env!("CARGO_PKG_VERSION"));
+
+                    match err {
+                        DoctorError::Warning(info) | DoctorError::Error { reason: info, .. } => {
+                            event.add_property("info", &**info);
+                        }
+                    }
+
+                    if let Err(err) = event.send_event().await {
+                        error!("Could not send telemetry event: {}", err);
                     }
                 }
-
-                reqwest::Client::new()
-                    .post("https://tel.withfig.com/track")
-                    .header("Content-Type", "application/json")
-                    .json(&SegmentEvent {
-                        user_id: uuid,
-                        event: "Doctor Error".into(),
-                        properties,
-                    })
-                    .send()
-                    .await
-                    .ok();
+                Err(err) => {
+                    error!("Could not send doctor error telemetry: {}", err);
+                }
             }
         }
 
