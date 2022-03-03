@@ -1,49 +1,48 @@
+# Proto
 
-## Installation
+We use [protocol buffers](https://developers.google.com/protocol-buffers/) as a message format for inter process communication.
 
-##### Install protobuf compiler:
+This folder defines three main protocols:
 
+1. `local.proto` - Protocol for communication from local processes like
+`figterm` and the `fig` CLI to the desktop app
+2. `fig.proto` - Protocol for communication between client Fig.js apps
+like autocomplete and the desktop app
+2. `figterm.proto` - Protocol for sending commands from the desktop app to `figterm` (e.g. insert text)
+
+## Setup
+
+For any client, you must install the protobuf compiler:
 ```
  brew install protobuf
 ```
 
+**Client Installations**
 
+|Client|Command|
+|---|---|
+|swift|`brew install swift-protobuf`|
+|typescript|`npm install -g ts-proto`|
+|go|`go install google.golang.org/protobuf/cmd/protoc-gen-go@latest`|
+|rust|N/A*|
 
-##### Install Swift compiler
+\* The rust build process handles the installation of the proto toolchain.
 
-```
-brew install swift-protobuf
-```
+## Installation/Usage
 
-##### Install TS compiler
-
-```
-npm install -g ts-proto
-```
-
-##### Install go compiler
-```
-go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-
-```
-
-## Usage
-
-##### Compile protos and install artifacts
-
+To compile protos and install artifacts, run:
 ```
 make
 ```
 
 ## Contributing
 
-##### Adding existing protos to a new project within the monorepo
+**Adding to protos**
+Just edit the appropriate proto file.
 
+**Adding a new client**
 Edit the Makefile:
 
 1. Define a new destination environment variable (eg. `TYPESCRIPT_API_BINDINGS=$(ROOT)/../typescript-api-bindings/src`)
-
 2. Add to DESTINATIONS list
-
 3. Go to relevant project task (eg. `api:`) and copy compiled artifact to new destination
-
