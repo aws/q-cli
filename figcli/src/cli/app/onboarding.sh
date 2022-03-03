@@ -2,8 +2,6 @@
 
 # Fig onboarding shell script.
 # Based somewhat on oh my zshell https://github.com/ohmyzsh/ohmyzsh/blob/master/tools/install.sh
-
-# needed so that ^c works when run as `fig onboarding`.
 set -e
 
 # Force current process to be shell, rather than `env`.
@@ -12,27 +10,13 @@ TTY=$(tty)
 fig hook prompt $$ $TTY 2>&1 1>/dev/null
 
 # Colors
-BLACK=$(tput setaf 0)
-RED=$(tput setaf 1)
-GREEN=$(tput setaf 2)
 YELLOW=$(tput setaf 3)
-BLUE=$(tput setaf 4)
 MAGENTA=$(tput setaf 5)
-CYAN=$(tput setaf 6)
-WHITE=$(tput setaf 7)
-
-CODE=$(tput setaf 153)
-
-# Other colors.
-LIME_YELLOW=$(tput setaf 190)
-POWDER_BLUE=$(tput setaf 153)
 
 # Weights and decoration.
 BOLD=$(tput bold)
 UNDERLINE=$(tput smul)
-UNDERLINE_END=$(tput rmul)
 HIGHLIGHT=$(tput smso)
-HIGHLIGHT_END=$(tput rmso)
 NORMAL=$(tput sgr0)
 
 # Structure.
@@ -65,21 +49,13 @@ print_special() {
   reset_prompt
 }
 
-press_any_key_to_continue() {
-  echo ${START_PROMPT} # new line
-  read -n 1 -s -r -p "${TAB}${HIGHLIGHT} Press any key to continue ${HIGHLIGHT_END}"
-  echo # new line
-  echo # new line
-  printf ${END_PROMPT}
-}
-
 press_enter_to_continue() {
   echo ${START_PROMPT} # new line
 
   if [[ "$1" != "" ]]; then
-    read -n 1 -s -r -p "${TAB}${HIGHLIGHT} $1 ${HIGHLIGHT_END}" pressed_key 
+    read -n 1 -s -r -p "${TAB}${HIGHLIGHT} $1 ${NORMAL}" pressed_key 
   else
-    read -n 1 -s -r -p "${TAB}${HIGHLIGHT} Press enter to continue ${HIGHLIGHT_END}" pressed_key 
+    read -n 1 -s -r -p "${TAB}${HIGHLIGHT} Press enter to continue ${NORMAL}" pressed_key 
   fi
   printf ${END_PROMPT}
 
@@ -96,38 +72,15 @@ press_enter_to_continue() {
 }
 
 # In case user quits script
-exit_script_annoying() {
-  echo
-  echo
-  print_special "Sorry to see you go."
-  print_special "If you have feedback, we'd appreciate you emailing hello@fig.io"
-  echo
-
-  read -n 1 -r -p "${TAB}Do you want to finish Fig's onboarding in your next Terminal session? [y/N] "  response
-
-  if [[ "${response}" =~ ^(yes|y|YES|Y)$ ]]; then
-    sed -i='' "s/FIG_ONBOARDING=.*/FIG_ONBOARDING=0/g" ~/.fig/user/config 2> /dev/null
-  else
-    sed -i='' "s/FIG_ONBOARDING=.*/FIG_ONBOARDING=1/g" ~/.fig/user/config 2> /dev/null
-  fi
-
-  echo
-
-  trap - SIGINT SIGTERM SIGQUIT # clear the trap
-  kill -- -$$ # Kill the fig onboarding process
-}
-
-# In case user quits script
 exit_script_nice() {
   sed -i='' "s/FIG_ONBOARDING=.*/FIG_ONBOARDING=1/g" ~/.fig/user/config 2> /dev/null
 
-  clear 
-
+clear 
 cat <<EOF
 
-  ${BOLD}${UNDERLINE}Fig's onboarding was quit${UNDERLINE_END}${NORMAL}"
+  ${BOLD}${UNDERLINE}Fig's onboarding was quit${NORMAL}"
   
-  You can redo this onboarding any time. Just run ${BOLD}${MAGENTA}fig onboarding${NORMAL}
+  You can redo this onboarding any time. Just run ${BOLD}${MAGENTA}fig app onboarding${NORMAL}
    
 
   Have an issue? Run ${BOLD}${MAGENTA}fig doctor${NORMAL}
@@ -136,13 +89,9 @@ cat <<EOF
 
 EOF
 
-
   trap - SIGINT SIGTERM SIGQUIT # clear the trap
-
   fig hook event "Quit Shell Onboarding" 2>&1 1>/dev/null
-
   exit 1
-  # kill -- -$$# Kill the fig onboarding process. 
 }
 
 # If the user does ctrl + c, run the exit_script function
@@ -154,7 +103,7 @@ show_help() {
 less -R <<EOF
 
 
-   ${BOLD}${MAGENTA}${UNDERLINE}Fig Onboarding Help${UNDERLINE_END}${NORMAL}
+   ${BOLD}${MAGENTA}${UNDERLINE}Fig Onboarding Help${NORMAL}
    (press q to quit)
 
 
@@ -164,7 +113,7 @@ less -R <<EOF
          * ${BOLD}esc${NORMAL}
          * the ${BOLD}↑${NORMAL} up arrow too many times (after the up arrow shows your history, Fig hides until the next line)
 
-      ${UNDERLINE}To bring it back${UNDERLINE_END}: hit the enter key on an empty line once or twice. It should reappear. 
+      ${UNDERLINE}To bring it back${NORMAL}: hit the enter key on an empty line once or twice. It should reappear. 
 
 
    ${BOLD}Where is the Fig Menu${NORMAL}
@@ -271,6 +220,7 @@ cat <<EOF
      * To filter: just start typing
      * To navigate: use the ${BOLD}↓${NORMAL} & ${BOLD}↑${NORMAL} arrow keys
      * To select: hit ${BOLD}enter${NORMAL} or ${BOLD}tab${NORMAL}
+     * To hide: press ${BOLD}esc${NORMAL}, or scroll ${BOLD}↑${NORMAL} past the top suggestion to your shell history
 
 EOF
 
@@ -289,12 +239,6 @@ cat <<EOF
 
 EOF
 
-# printf "${TAB}$ " 
-
-# osascript -e 'tell application "System Events" 
-#  keystroke "cd ~/" 
-   # end tell'
-
 prepare_prompt
 
 while true; do
@@ -308,8 +252,7 @@ while true; do
       cd ~/.fig
       print_special "${BOLD}Awesome!${NORMAL}"
       echo
-      # print_special "Looks like you cd'd into another directory. Glad you are playing around! We are going to put you in ~/.fig for the next step"
-      print_special ${UNDERLINE}Quick Tip${UNDERLINE_END}: Selecting a suggestion with a ${BOLD}🟥 red icon${NORMAL} and ${BOLD}↪${NORMAL} symbol will immediately execute a command
+      print_special "${UNDERLINE}Quick Tip${NORMAL}: Selecting a suggestion with a ${BOLD}🟥 red icon${NORMAL} and ${BOLD}↪${NORMAL} symbol will immediately execute a command"
       press_enter_to_continue
       break
       ;;
@@ -327,25 +270,8 @@ while true; do
   esac
 done
 
-clear 
-
-# Hiding Autocomplete
-
-cat <<EOF
-
-   ${BOLD}Hiding Autocomplete${NORMAL}
-
-   Make the autocomplete window disappear by:
-
-   * Hitting ${BOLD}esc${NORMAL}
-   * Hitting the ${BOLD}↑${NORMAL} up arrow until you start seeing your shell history
-      Note: You can use the ${BOLD}↓${NORMAL} down arrow to show Fig again
-
-EOF
-press_enter_to_continue
-clear 
-
 (fig hook init $$ $TTY 2>&1 1>/dev/null)
+clear 
 cat <<EOF
 
    ${BOLD}Another Example${NORMAL}
@@ -397,6 +323,7 @@ cat <<EOF
    
    ${BOLD}Last Step: The ${MAGENTA}Fig${NORMAL} ${BOLD}CLI${NORMAL}
 
+   fig              your home for everything Fig
    fig doctor       check if Fig is properly configured
    fig settings     update preferences (keybindings, UI, and more)
    fig tweet        share your terminal set up with the world!
@@ -406,15 +333,10 @@ cat <<EOF
 
    ${BOLD}To Continue...${NORMAL} 
 
-   Run ${MAGENTA}${BOLD}fig settings${NORMAL} to see how you can customize Fig
+   Run ${MAGENTA}${BOLD}fig${NORMAL} to see how you can customize Fig
    (You can also type ${UNDERLINE}continue${NORMAL})
 
 EOF
-
-#, like ${MAGENTA}${BOLD}fig invite${NORMAL} or ${MAGENTA}${BOLD}fig feedback${NORMAL}
-
-# Eventually prompt the user: do you want to invite friends to fig? type y if yes or otherwise it's a no
-# Only run the below if yes
 
 prepare_prompt
 while true; do
@@ -423,122 +345,70 @@ while true; do
   echo # New line after output
   case "${input}" in
 
-    "fig settings"*)
-      sed -i='' "s/FIG_ONBOARDING=.*/FIG_ONBOARDING=1/g" ~/.fig/user/config 2> /dev/null
-      fig settings > /dev/null
-      clear
-      echo
-
+    "fig")
+      fig > /dev/null
+clear
 cat <<EOF
+
    ${BOLD}Awesome!${NORMAL}
 
-   You should use the ${MAGENTA}${BOLD}fig settings${NORMAL} app to customize
+   You can use ${MAGENTA}${BOLD}Fig${NORMAL} to:
 
-    * keybindings (like tab/enter behaviour)
-    * UI (like autocomplete width, height, theme)
-    * usability (like sorting, fuzzy search, and more)
-EOF
-      press_enter_to_continue
-      break
-      ;;
-    "fig")
-      sed -i='' "s/FIG_ONBOARDING=.*/FIG_ONBOARDING=1/g" ~/.fig/user/config 2> /dev/null
-      fig settings > /dev/null
-      clear
-      echo
-
-cat <<EOF
-
-   You just typed ${MAGENTA}${BOLD}fig${NORMAL} but we opened the ${MAGENTA}${BOLD}fig settings${NORMAL} app for you anyway. 
-   
-   Use ${MAGENTA}${BOLD}fig settings${NORMAL} to customize:
-
-    * keybindings (like tab/enter behaviour)
-    * UI (like autocomplete width, height, theme)
-    * usability (like sorting, fuzzy search, and more)
-EOF
-      press_enter_to_continue
-      break
-      ;;
-    "fig "*)
-      clear
-      eval $input || true
-      sed -i='' "s/FIG_ONBOARDING=.*/FIG_ONBOARDING=1/g" ~/.fig/user/config 2> /dev/null
-      fig settings > /dev/null
-cat <<EOF
-
-   You just typed ${MAGENTA}${BOLD}$input${NORMAL} but we opened the ${MAGENTA}${BOLD}fig settings${NORMAL} app for you anyway. 
-
-   You should use the ${MAGENTA}${BOLD}fig settings${NORMAL} app to customize
-
-    * keybindings (like tab/enter behaviour)
-    * UI (like autocomplete width, height, theme)
-    * usability (like sorting, fuzzy search, and more)
+    * Customize autocomplete (height, width, theme, fuzzy search, keybindings, etc.)
+    * [COMING SOON] Enable 3rd party shell plugins (prompts, autosuggestions, and more)
+    * [COMING SOON] Manage and sync your dotfiles/shell configuration
 EOF
       press_enter_to_continue
       break
       ;;
     "continue"*) break ;;
     "c") break ;;
-    "")
-cat <<EOF
-   ${BOLD}To Continue...${NORMAL} 
-
-   Run ${MAGENTA}${BOLD}fig settings${NORMAL}
-   (You can also type ${UNDERLINE}continue${NORMAL})
-
-EOF
-      ;;
-    help|HELP|--help|-h)
+    ""|help|HELP|--help|-h)
       show_help
-      echo
 cat <<EOF
+
    ${BOLD}To Continue...${NORMAL} 
 
-   Run ${MAGENTA}${BOLD}fig settings${NORMAL}
+   Run ${MAGENTA}${BOLD}fig${NORMAL}
    (You can also type ${UNDERLINE}continue${NORMAL})
 
 EOF
       ;;
     *)
       print_special "${YELLOW}Whoops. Looks like you tried something unexpected."
-      echo
 cat <<EOF
+
    ${BOLD}To Continue...${NORMAL} 
 
-   Run ${MAGENTA}${BOLD}fig settings${NORMAL}
+   Run ${MAGENTA}${BOLD}fig${NORMAL}
    (You can also type ${UNDERLINE}continue${NORMAL})
 
 EOF
       ;;
   esac
 done
-clear 
 
+clear 
 cat <<EOF
 
    ${BOLD}Want to share Fig?${NORMAL}
    
       Run ${MAGENTA}${BOLD}fig tweet${NORMAL} or ${MAGENTA}${BOLD}fig invite${NORMAL} (you get 5 invites!)
 
-EOF
-
-
-cat <<EOF
 
    ${BOLD}Want to contribute?${NORMAL}
 
-      * Check out our docs: ${UNDERLINE}fig.io/docs/getting-started${UNDERLINE_END}
-      * Submit a pull request: ${UNDERLINE}github.com/withfig/autocomplete${UNDERLINE_END}
+      * Check out our docs: ${UNDERLINE}fig.io/docs/getting-started${NORMAL}
+      * Submit a pull request: ${UNDERLINE}github.com/withfig/autocomplete${NORMAL}
 
 EOF
 
 # Tell use how to open urls based on terminal type
 # https://superuser.com/questions/683962/how-to-identify-the-terminal-from-a-script
 if [[ "${TERM_PROGRAM}" == "iTerm.app" ]]; then
-  echo "   ${UNDERLINE}Hint${UNDERLINE_END}: Hold cmd + click to open URLs"
+  echo "   ${UNDERLINE}Hint${NORMAL}: Hold cmd + click to open URLs"
 else
-  echo "   ${UNDERLINE}Hint${UNDERLINE_END}: Hold cmd + double-click to open URLs"
+  echo "   ${UNDERLINE}Hint${NORMAL}: Hold cmd + double-click to open URLs"
 fi
 echo
 
@@ -552,10 +422,9 @@ press_enter_to_continue 'Press enter to finish'
 echo
 echo
 
-clear
-
 # Done using http://patorjk.com/software/taag/#p=testall&f=Graffiti&t=fig
 # Font name = Ivrit
+clear
 cat <<'EOF'
 
             We hope you enjoy
