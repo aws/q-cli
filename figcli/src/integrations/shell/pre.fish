@@ -12,6 +12,7 @@ if [ ! -z "$FIG_NEW_SESSION" ]
 end
 
 if [ "$TERM_PROGRAM" != "WarpTerminal" ] \
+  && [ -z "$INSIDE_EMACS" ] \
   && [ -t 1 ] \
   && [ -z "$FIG_PTY" ] && command -v figterm 1>/dev/null 2>/dev/null \
   && [ -z "$FIG_TERM" ] || [ -z "$FIG_TERM_TMUX" -a -n "$TMUX" ]
@@ -33,11 +34,11 @@ if [ "$TERM_PROGRAM" != "WarpTerminal" ] \
   set FIG_SHELL_PATH "$HOME/.fig/bin/$FIG_TERM_NAME"
 
   # Only copy figterm binary if it doesn't already exist
-  # WARNING: copying file if it already exists results 
-  # in crashes. See https://github.com/withfig/fig/issues/548  
+  # WARNING: copying file if it already exists results
+  # in crashes. See https://github.com/withfig/fig/issues/548
   if [ ! -f "$FIG_SHELL_PATH" ]
     cp -p ~/.fig/bin/figterm "$FIG_SHELL_PATH"
   end
-  
+
   exec bash -c "FIG_SHELL=$FIG_SHELL FIG_IS_LOGIN_SHELL=$FIG_IS_LOGIN_SHELL exec -a \"$FIG_TERM_NAME\" \"$FIG_SHELL_PATH\""
 end

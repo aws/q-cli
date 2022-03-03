@@ -18,6 +18,7 @@ fi
 
 # Only launch figterm if current session is not already inside PTY and command exists
 if   [[ ! "${TERM_PROGRAM}" = WarpTerminal ]] \
+  && [[ -z "${INSIDE_EMACS}" ]] \
   && [[ -t 1 ]] \
   && [[ -z "${FIG_PTY}" ]] && command -v ~/.fig/bin/figterm 2>&1 1>/dev/null \
   && [[ -z "${FIG_TERM}" || (-z "${FIG_TERM_TMUX}" && -n "${TMUX}") ]]; then
@@ -31,7 +32,7 @@ if   [[ ! "${TERM_PROGRAM}" = WarpTerminal ]] \
     export TERM_SESSION_ID="$(uuidgen)"
   fi
   export FIG_INTEGRATION_VERSION=7
-  # Pty module sets FIG_TERM or FIG_TERM_TMUX to avoid running twice. 
+  # Pty module sets FIG_TERM or FIG_TERM_TMUX to avoid running twice.
   FIG_SHELL=$(~/.fig/bin/fig_get_shell)
   FIG_IS_LOGIN_SHELL=0
 
@@ -43,7 +44,7 @@ if   [[ ! "${TERM_PROGRAM}" = WarpTerminal ]] \
   FIG_SHELL_PATH="${HOME}/.fig/bin/$(basename "${FIG_SHELL}") (figterm)"
 
   # Only copy figterm binary if it doesn't already exist
-  if [[ ! -f "${FIG_SHELL_PATH}" ]]; then 
+  if [[ ! -f "${FIG_SHELL_PATH}" ]]; then
     cp -p ~/.fig/bin/figterm "${FIG_SHELL_PATH}"
   fi
 
@@ -57,6 +58,6 @@ if   [[ ! "${TERM_PROGRAM}" = WarpTerminal ]] \
       INITIAL_TEXT="${INITIAL_TEXT}${REPLY}\n"
     done
   fi
-  
+
   FIG_START_TEXT="$(printf "%b" "${INITIAL_TEXT}")" FIG_SHELL="${FIG_SHELL}" FIG_IS_LOGIN_SHELL="${FIG_IS_LOGIN_SHELL}" exec -a "${FIG_TERM_NAME}" "${FIG_SHELL_PATH}"
 fi
