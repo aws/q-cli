@@ -755,7 +755,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
   }
 
   @objc func uninstall(showDialog: Bool) {
-    var confirmed = true;
+    var confirmed = true
     if showDialog {
       confirmed = self.dialogOKCancel(
         question: "Uninstall Fig?",
@@ -771,6 +771,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let (_, tty) = pair
         tty.setTitle("Restart this terminal to finish uninstalling Fig...")
       }
+
+      // Uninstall daemon first to avoid interaction with file listeners while deleting Fig.app
+      _ = "~/.local/bin/fig _ uninstall --daemon".runAsCommand()
 
       NSWorkspace.shared.open(
         URL(string: "https://fig.io/uninstall?email=\(Defaults.shared.email ?? "")&" +
@@ -791,7 +794,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
       if !InputMethod.default.uninstall() {
         Logger.log(message: "Error removing input method")
       }
-      
+
       for integration in Integrations.allProvidersIncludingExperimental.values {
         if !integration.uninstall() {
           Logger.log(message: "Error removing integration for \(integration.id)")
@@ -803,8 +806,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
       // Remove launch agents
       if let agents = try? FileManager.default.contentsOfDirectory(atPath:
-                                                                   "\(NSHomeDirectory())/Library/LaunchAgents/")
-      {
+                                                                   "\(NSHomeDirectory())/Library/LaunchAgents/") {
           for agent in agents {
               if URL(fileURLWithPath: agent).lastPathComponent.hasPrefix("io.fig.") {
                   try? FileManager.default.removeItem(atPath: agent)
