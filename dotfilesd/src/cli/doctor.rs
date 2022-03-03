@@ -158,6 +158,14 @@ fn print_status_result(name: impl AsRef<str>, status: &Result<(), DoctorError>) 
     }
 }
 
+#[derive(Copy, Clone, Debug)]
+#[allow(clippy::enum_variant_names)]
+enum DoctorCheckType {
+    NormalCheck,
+    SoftCheck,
+    NoCheck,
+}
+
 #[async_trait]
 trait DoctorCheck<T = ()>: Sync
 where
@@ -165,15 +173,11 @@ where
 {
     fn name(&self) -> Cow<'static, str>;
 
-    fn should_check(&self, _: &T) -> bool {
-        true
+    fn get_type(&self, _: &T) -> DoctorCheckType {
+        DoctorCheckType::NormalCheck
     }
 
     async fn check(&self, context: &T) -> Result<(), DoctorError>;
-
-    fn is_soft_check(&self, _: &T) -> bool {
-        false
-    }
 }
 
 struct FigBinCheck;
@@ -827,8 +831,12 @@ impl DoctorCheck<DiagnosticsResponse> for DotfilesSymlinkedCheck {
         "Dotfiles symlinked".into()
     }
 
-    fn should_check(&self, diagnostics: &DiagnosticsResponse) -> bool {
-        diagnostics.symlinked == "true"
+    fn get_type(&self, diagnostics: &DiagnosticsResponse) -> DoctorCheckType {
+        if diagnostics.symlinked == "true" {
+            DoctorCheckType::NormalCheck
+        } else {
+            DoctorCheckType::NoCheck
+        }
     }
 
     async fn check(&self, _: &DiagnosticsResponse) -> Result<(), DoctorError> {
@@ -895,15 +903,15 @@ impl DoctorCheck<Option<Terminal>> for ItermIntegrationCheck {
         "iTerm integration is enabled".into()
     }
 
-    fn should_check(&self, _: &Option<Terminal>) -> bool {
-        is_installed(Terminal::Iterm.to_bundle_id())
-    }
+    fn get_type(&self, current_terminal: &Option<Terminal>) -> DoctorCheckType {
+        if !is_installed(Terminal::Iterm.to_bundle_id()) {
+            return DoctorCheckType::NoCheck;
+        }
 
-    fn is_soft_check(&self, current_terminal: &Option<Terminal>) -> bool {
-        if let Some(terminal) = current_terminal.to_owned() {
-            terminal != Terminal::Iterm
+        if matches!(current_terminal.to_owned(), Some(Terminal::Iterm)) {
+            DoctorCheckType::NormalCheck
         } else {
-            false
+            DoctorCheckType::SoftCheck
         }
     }
 
@@ -958,18 +966,20 @@ impl DoctorCheck<Option<Terminal>> for ItermBashIntegrationCheck {
         "iTerm bash integration configured".into()
     }
 
-    fn should_check(&self, _: &Option<Terminal>) -> bool {
+    fn get_type(&self, current_terminal: &Option<Terminal>) -> DoctorCheckType {
         match home_dir() {
-            Ok(home) => home.join(".iterm2_shell_integration.bash").exists(),
-            Err(_) => false,
+            Ok(home) => {
+                if !home.join(".iterm2_shell_integration.bash").exists() {
+                    return DoctorCheckType::NoCheck;
+                }
+            }
+            Err(_) => return DoctorCheckType::NoCheck,
         }
-    }
 
-    fn is_soft_check(&self, current_terminal: &Option<Terminal>) -> bool {
-        if let Some(terminal) = current_terminal.to_owned() {
-            terminal != Terminal::Iterm
+        if matches!(current_terminal.to_owned(), Some(Terminal::Iterm)) {
+            DoctorCheckType::NormalCheck
         } else {
-            false
+            DoctorCheckType::SoftCheck
         }
     }
 
@@ -1004,15 +1014,15 @@ impl DoctorCheck<Option<Terminal>> for HyperIntegrationCheck {
         "Hyper integration is enabled".into()
     }
 
-    fn should_check(&self, _: &Option<Terminal>) -> bool {
-        is_installed(Terminal::Hyper.to_bundle_id())
-    }
+    fn get_type(&self, current_terminal: &Option<Terminal>) -> DoctorCheckType {
+        if !is_installed(Terminal::Hyper.to_bundle_id()) {
+            return DoctorCheckType::NoCheck;
+        }
 
-    fn is_soft_check(&self, current_terminal: &Option<Terminal>) -> bool {
-        if let Some(terminal) = current_terminal.to_owned() {
-            terminal != Terminal::Hyper
+        if matches!(current_terminal.to_owned(), Some(Terminal::Hyper)) {
+            DoctorCheckType::NormalCheck
         } else {
-            false
+            DoctorCheckType::SoftCheck
         }
     }
 
@@ -1072,16 +1082,19 @@ impl DoctorCheck<Option<Terminal>> for VSCodeIntegrationCheck {
         "VSCode integration is enabled".into()
     }
 
-    fn should_check(&self, _: &Option<Terminal>) -> bool {
-        is_installed(Terminal::Vscode.to_bundle_id())
-            || is_installed(Terminal::VSCodeInsiders.to_bundle_id())
-    }
+    fn get_type(&self, current_terminal: &Option<Terminal>) -> DoctorCheckType {
+        if !is_installed(Terminal::Vscode.to_bundle_id())
+            && !is_installed(Terminal::VSCodeInsiders.to_bundle_id())
+        {
+            return DoctorCheckType::NoCheck;
+        }
 
-    fn is_soft_check(&self, current_terminal: &Option<Terminal>) -> bool {
-        if let Some(terminal) = current_terminal.to_owned() {
-            terminal != Terminal::Vscode && terminal != Terminal::VSCodeInsiders
+        if matches!(current_terminal.to_owned(), Some(Terminal::Vscode))
+            || matches!(current_terminal.to_owned(), Some(Terminal::VSCodeInsiders))
+        {
+            DoctorCheckType::NormalCheck
         } else {
-            false
+            DoctorCheckType::SoftCheck
         }
     }
 
@@ -1125,7 +1138,7 @@ impl DoctorCheck for LoginStatusCheck {
                 return Ok(());
             }
         }
-        return Err(anyhow!("Not logged in. Run `dotfiles login` to login.").into());
+        return Err(anyhow!("Not logged in. Run `fig login` to login.").into());
     }
 }
 
@@ -1156,6 +1169,7 @@ async fn run_checks_with_context<T, Fut>(
     checks: Vec<&dyn DoctorCheck<T>>,
     get_context: impl Fn() -> Fut,
     config: CheckConfiguration,
+    spinner: &mut Option<Spinner>,
 ) -> Result<()>
 where
     T: Sync + Send,
@@ -1167,24 +1181,26 @@ where
     let mut context = get_context().await?;
     for check in checks {
         let name: String = check.name().into();
-        if !check.should_check(&context) {
+        let check_type: DoctorCheckType = check.get_type(&context);
+        if matches!(check_type, DoctorCheckType::NoCheck) {
             continue;
         }
 
         let mut result = check.check(&context).await;
 
-        if !config.strict && check.is_soft_check(&context) {
-            match result {
-                Err(DoctorError::Error {
-                    reason,
-                    info: _,
-                    fix: _,
-                }) => result = Err(DoctorError::Warning(reason)),
-                _ => {}
+        if !config.strict && matches!(check_type, DoctorCheckType::SoftCheck) {
+            if let Err(DoctorError::Error {
+                reason,
+                info: _,
+                fix: _,
+            }) = result
+            {
+                result = Err(DoctorError::Warning(reason))
             }
         }
 
-        if config.verbose {
+        if config.verbose || matches!(result, Err(_)) {
+            stop_spinner(spinner.take())?;
             print_status_result(&name, &result);
         }
 
@@ -1271,8 +1287,23 @@ async fn run_checks(
     header: String,
     checks: Vec<&dyn DoctorCheck>,
     config: CheckConfiguration,
+    spinner: &mut Option<Spinner>,
 ) -> Result<()> {
-    run_checks_with_context(header, checks, get_null_context, config).await
+    run_checks_with_context(header, checks, get_null_context, config, spinner).await
+}
+
+fn stop_spinner(spinner: Option<Spinner>) -> Result<()> {
+    if let Some(sp) = spinner {
+        sp.stop();
+        execute!(
+            std::io::stdout(),
+            Clear(ClearType::CurrentLine),
+            cursor::Show
+        )?;
+        println!();
+    }
+
+    Ok(())
 }
 
 #[derive(Copy, Clone)]
@@ -1283,10 +1314,7 @@ struct CheckConfiguration {
 
 // Doctor
 pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
-    let config = CheckConfiguration {
-        verbose: verbose,
-        strict: strict,
-    };
+    let config = CheckConfiguration { verbose, strict };
 
     let mut spinner: Option<Spinner> = None;
     if !config.verbose {
@@ -1297,9 +1325,9 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         execute!(std::io::stdout(), cursor::Hide)?;
 
         ctrlc::set_handler(move || {
-            execute!(std::io::stdout(), cursor::Show);
+            execute!(std::io::stdout(), cursor::Show).ok();
             std::process::exit(1);
-        });
+        })?;
     }
 
     let status = async {
@@ -1315,6 +1343,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
                 &InsertionLockCheck {},
             ],
             config,
+            &mut spinner,
         )
         .await?;
 
@@ -1342,6 +1371,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
             "Let's check your dotfiles...".into(),
             all_dotfile_checks,
             config,
+            &mut spinner,
         )
         .await?;
 
@@ -1349,6 +1379,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
             "Let's check if your system is compatible...".into(),
             vec![&SystemVersionCheck {}],
             config,
+            &mut spinner,
         )
         .await?;
 
@@ -1367,6 +1398,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
             ],
             get_diagnostics,
             config,
+            &mut spinner,
         )
         .await?;
 
@@ -1380,6 +1412,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
             ],
             get_terminal_context,
             config,
+            &mut spinner,
         )
         .await?;
 
@@ -1387,6 +1420,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
             "Let's check if you're logged in...".into(),
             vec![&LoginStatusCheck {}],
             config,
+            &mut spinner,
         )
         .await?;
 
@@ -1395,14 +1429,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
 
     let is_error = status.await.is_err();
 
-    if let Some(sp) = spinner {
-        sp.stop();
-        execute!(
-            std::io::stdout(),
-            Clear(ClearType::CurrentLine),
-            cursor::Show
-        )?;
-    }
+    stop_spinner(spinner)?;
 
     if is_error {
         println!();
@@ -1431,6 +1458,5 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         );
         println!()
     }
-
     Ok(())
 }
