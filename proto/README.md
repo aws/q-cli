@@ -38,9 +38,11 @@ make
 ## Contributing
 
 **Adding to protos**
+
 Just edit the appropriate proto file.
 
 **Adding a new client**
+
 Edit the Makefile:
 
 1. Define a new destination environment variable (eg. `TYPESCRIPT_API_BINDINGS=$(ROOT)/../typescript-api-bindings/src`)
