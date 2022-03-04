@@ -165,8 +165,7 @@ where
         .contains(&term.shell_state().get_context().shell.as_deref());
     let prexec = term.shell_state().preexec;
 
-    let lock = INSERTION_LOCKED_AT;
-    let mut handle = lock.lock();
+    let mut handle = INSERTION_LOCKED_AT.lock();
     let insertion_locked = match handle.as_ref() {
         Some(at) => {
             let should_unlock = at.elapsed().unwrap_or_else(|_| Duration::new(0, 0))
@@ -228,16 +227,28 @@ async fn process_figterm_message(
     match figterm_message.command {
         Some(figterm_message::Command::InsertTextCommand(command)) => {
             if let Some(ref text_to_insert) = command.insertion {
-                INSERTION_LOCKED_AT.lock().replace(SystemTime::now());
-                *EXPECTED_BUFFER.lock() = format!(
-                    "{}{}",
-                    term.get_current_buffer()
-                        .map(|buff| buff.buffer)
-                        .unwrap_or_else(|| "".to_string()),
-                    text_to_insert
-                );
+                if let Some((mut buffer, Some(mut position))) = term
+                    .get_current_buffer()
+                    .map(|buff| (buff.buffer, buff.cursor_idx)) {
+                    // perform deletion
+                    if let Some(deletion) = command.deletion {
+                        let deletion = deletion as usize;
+                        buffer.drain(position - deletion..deletion);
+                    }
+                    // move cursor
+                    if let Some(offset) = command.offset {
+                        position += offset as usize;
+                    }
+                    // split text by cursor
+                    let (left, right) = buffer.split_at(position);
+
+                    INSERTION_LOCKED_AT.lock().replace(SystemTime::now());
+                    *EXPECTED_BUFFER.lock() = format!("{}{}{}", left, text_to_insert, right,);
+                }
             }
-            pty_master.write(command.to_term_string().as_bytes()).await?;
+            pty_master
+                .write(command.to_term_string().as_bytes())
+                .await?;
         }
         Some(figterm_message::Command::InterceptCommand(command)) => {
             match command.intercept_command {
