@@ -172,7 +172,7 @@ where
             let lock_expired =
                 at.elapsed().unwrap_or_else(|_| Duration::new(0, 0)) > Duration::new(0, 50_000_000);
             let should_unlock = lock_expired
-                || !term
+                || term
                     .get_current_buffer()
                     .map(|buff| &buff.buffer == (&EXPECTED_BUFFER.lock() as &String))
                     .unwrap_or(true);
@@ -180,13 +180,13 @@ where
                 handle.take();
                 if lock_expired {
                     trace!("insertion lock released because lock expired");
-                    true
+                    false
                 } else {
                     trace!("insertion lock released because buffer looks like how we expect");
-                    false
+                    true
                 }
             } else {
-                false
+                true
             }
         }
         None => false,
