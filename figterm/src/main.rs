@@ -12,7 +12,6 @@ use crate::{
     pty::{async_pty::AsyncPtyMaster, fork_pty, ioctl_tiocswinsz, PtyForkResult},
     term::get_winsize,
     term::{read_winsize, termios_to_raw},
-    utils::fig_path,
 };
 
 use alacritty_terminal::{
@@ -26,6 +25,7 @@ use clap::StructOpt;
 use cli::Cli;
 use dashmap::DashSet;
 use fig_auth::get_email;
+use fig_directories::fig_dir;
 use fig_proto::{
     figterm::{figterm_message, intercept_command, FigtermMessage},
     hooks::{
@@ -153,7 +153,7 @@ impl EventListener for EventSender {
 }
 
 static INSERTION_LOCK_PATH: Lazy<Option<PathBuf>> =
-    Lazy::new(|| fig_path().map(|path| path.join("insertion-lock")));
+    Lazy::new(|| fig_dir().map(|path| path.join("insertion-lock")));
 
 fn can_send_edit_buffer<T>(term: &Term<T>) -> bool
 where

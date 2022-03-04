@@ -1,18 +1,15 @@
 use crate::LocalJson;
 use anyhow::{Context, Result};
-use directories::BaseDirs;
 use std::path::PathBuf;
 
-pub fn state_path() -> Result<PathBuf> {
-    let base_dirs = BaseDirs::new().context("Failed to get base dirs")?;
-    let path = base_dirs.data_dir().join("fig").join("state.json");
-    Ok(path)
+pub fn state_path() -> Option<PathBuf> {
+    fig_directories::fig_data_dir().map(|path| path.join("fig").join("state.json"))
 }
 
 pub type LocalState = LocalJson;
 
 pub fn local_settings() -> Result<LocalState> {
-    let path = state_path()?;
+    let path = state_path().context("Could not get state path")?;
     LocalState::load(path)
 }
 

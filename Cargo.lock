@@ -917,15 +917,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "directories"
-version = "4.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f51c5d4ddabd36886dd3e1438cb358cdcb0d7c499cb99cb4ac2e38e18b5cb210"
-dependencies = [
- "dirs-sys",
-]
-
-[[package]]
 name = "dirs"
 version = "4.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1121,7 +1112,7 @@ dependencies = [
  "aws-sdk-cognitoidentityprovider",
  "aws-smithy-async",
  "base64",
- "directories",
+ "fig-directories",
  "rand",
  "serde",
  "serde_json",
@@ -1176,8 +1167,8 @@ name = "fig-settings"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "directories",
  "fig-auth",
+ "fig-directories",
  "futures",
  "reqwest",
  "serde",
@@ -1206,8 +1197,8 @@ dependencies = [
  "clap 3.1.5",
  "crossbeam",
  "dashmap",
- "dirs",
  "fig-auth",
+ "fig-directories",
  "fig-ipc",
  "fig-proto",
  "flume",

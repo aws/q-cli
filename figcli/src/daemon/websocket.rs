@@ -74,7 +74,8 @@ pub async fn process_websocket(
                                 updated_at,
                             } => {
                                 // Write settings to disk
-                                let path = fig_settings::settings::settings_path()?;
+                                let path = fig_settings::settings::settings_path()
+                                    .context("Could not get settings path")?;
 
                                 info!("Settings updated: Writing settings to disk at {:?}", path);
 

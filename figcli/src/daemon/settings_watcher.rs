@@ -1,7 +1,7 @@
 use std::{sync::Arc, time::Duration};
 
 use crate::util::fig_bundle;
-use anyhow::Result;
+use anyhow::{Context, Result};
 use fig_ipc::hook::send_hook_to_socket;
 use fig_proto::{hooks, local::file_changed_hook::FileChanged};
 use notify::{watcher, DebouncedEvent, RecursiveMode, Watcher};
@@ -14,8 +14,9 @@ pub async fn spawn_settings_watcher(_daemon_status: Arc<RwLock<DaemonStatus>>) -
     // We need to spawn both a thread and a tokio task since the notify library does not
     // currently support async, this should be improved in the future, but currently this works fine
 
-    let settings_path = fig_settings::settings::settings_path()?;
-    let state_path = fig_settings::state::state_path()?;
+    let settings_path =
+        fig_settings::settings::settings_path().context("Could not get settings path")?;
+    let state_path = fig_settings::state::state_path().context("Could not get state path")?;
     let application_path = "/Applications/Fig.app";
 
     let (settings_watcher_tx, settings_watcher_rx) = std::sync::mpsc::channel();

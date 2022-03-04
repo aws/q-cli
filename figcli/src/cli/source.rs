@@ -47,6 +47,8 @@ async fn sync_file(shell: &Shell, sync_when: SyncWhen) -> Result<UpdateStatus> {
         .text()
         .await?;
 
+    println!("{}", download);
+
     // Parse the JSON
     let dotfiles: DotfileData = serde_json::from_str(&download).context("Failed to parse JSON")?;
 
@@ -86,7 +88,7 @@ async fn sync_file(shell: &Shell, sync_when: SyncWhen) -> Result<UpdateStatus> {
         std::fs::write(json_file, download)?;
 
         fig_settings::state::set_value(
-            format!("dotfiles.{}.{}", shell, "lastUpdate"),
+            format!("dotfiles.{}.lastUpdated", shell),
             json!(dotfiles.updated_at.format(&Rfc3339)?),
         )?;
 
@@ -225,7 +227,7 @@ pub fn notify_all_terminals(notification: TerminalNotification) -> Result<()> {
 
 /// Download the lastest dotfiles
 pub async fn source_cli() -> Result<()> {
-    // sync_all_shells(SyncWhen::Immediately).await?;
+    sync_all_shells(SyncWhen::Immediately).await?;
     if let Ok(session_id) = std::env::var("TERM_SESSION_ID") {
         notify_terminal(session_id, TerminalNotification::Source)?;
     }

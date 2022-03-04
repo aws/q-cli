@@ -20,8 +20,8 @@ bytes = "1.1.0"
 clap = { version = "3.1.0", features = ["derive"] }
 crossbeam = "0.8.1"
 dashmap = "5.1.0"
-dirs = "4.0.0"
 fig-auth = { path = "../rust-lib/fig-auth" }
+fig-directories = { path = "../rust-lib/fig-directories" }
 fig-ipc = { path = "../rust-lib/fig-ipc" }
 fig-proto = { path = "../rust-lib/fig-proto" }
 flume = "0.10.10"
