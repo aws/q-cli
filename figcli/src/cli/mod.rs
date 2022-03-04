@@ -31,7 +31,7 @@ use crossterm::style::Stylize;
 use fig_ipc::command::open_ui_element;
 use fig_proto::local::UiElement;
 use std::{fs::File, process::exit, str::FromStr};
-use tracing::{info, level_filters::LevelFilter};
+use tracing::{debug, level_filters::LevelFilter};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ArgEnum)]
 pub enum OutputFormat {
@@ -192,7 +192,7 @@ impl Cli {
                     }
                 }
 
-                info!("Command ran: {:?}", std::env::args());
+                debug!("Command ran: {:?}", std::env::args().collect::<Vec<_>>());
             }
         }
 

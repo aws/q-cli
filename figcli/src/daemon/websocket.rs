@@ -1,7 +1,9 @@
 use anyhow::{Context, Result};
 use fig_auth::{get_email, get_token};
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 use std::{io::Write, ops::ControlFlow};
+use time::format_description::well_known::Rfc3339;
 use tokio::net::TcpStream;
 use tokio_tungstenite::{tungstenite::Message, MaybeTlsStream, WebSocketStream};
 use tracing::{debug, error, info};
@@ -80,16 +82,13 @@ pub async fn process_websocket(
                                 let settings_json = serde_json::to_string_pretty(&settings)?;
                                 settings_file.write_all(settings_json.as_bytes())?;
 
-                                // Write updated_at to disk
-                                let path = path.with_extension("updated_at");
-
-                                info!("Settings updated: Writing updated_at to disk at {:?}", path);
-
-                                let mut updated_at_file = std::fs::File::create(path)?;
-                                let updated_at_json = serde_json::to_string_pretty(
-                                    &updated_at.unix_timestamp_nanos(),
-                                )?;
-                                updated_at_file.write_all(updated_at_json.as_bytes())?;
+                                if let Ok(updated_at) = updated_at.format(&Rfc3339) {
+                                    fig_settings::state::set_value(
+                                        "settings.updatedAt",
+                                        json!(updated_at),
+                                    )
+                                    .ok();
+                                }
                             }
                         },
                         Err(e) => {

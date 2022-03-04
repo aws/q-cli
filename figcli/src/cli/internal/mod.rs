@@ -1,21 +1,21 @@
 pub mod local_state;
 
-use std::io::{Read, Write};
-use std::path::PathBuf;
-use std::process::exit;
-
+use super::source::TerminalNotification;
 use crate::cli::installation::{self, InstallComponents};
-use rand::distributions::{Alphanumeric, DistString};
 
 use anyhow::{Context, Result};
 use clap::{ArgGroup, Args, Subcommand};
 use crossterm::style::Stylize;
 use fig_ipc::hook::send_hook_to_socket;
 use fig_proto::hooks::new_callback_hook;
-use serde_json::json;
-
 use native_dialog::{MessageDialog, MessageType};
-
+use rand::distributions::{Alphanumeric, DistString};
+use std::{
+    io::{Read, Write},
+    path::PathBuf,
+    process::exit,
+    str::FromStr,
+};
 use tracing::{debug, error, info, trace};
 
 #[derive(Debug, Args)]
@@ -189,23 +189,38 @@ impl InternalSubcommand {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+enum UpdatedVerbosity {
+    None,
+    Minimal,
+    Full,
+}
+
 pub async fn prompt_dotfiles_changed() -> Result<()> {
-    let mut exit_code = 1;
+    // An exit code of 0 will source the new changes
+    // An exit code of 1 will not source the new changes
 
     let session_id = match std::env::var("TERM_SESSION_ID") {
         Ok(session_id) => session_id,
         Err(err) => {
             error!("Couldn't get TERM_SESSION_ID: {}", err);
-            exit(exit_code);
+            exit(1);
         }
     };
 
-    let tempdir = std::env::temp_dir();
-
-    let file = tempdir
+    let file = std::env::temp_dir()
         .join("fig")
         .join("dotfiles_updates")
         .join(session_id);
+
+    let file_clone = file.clone();
+    ctrlc::set_handler(move || {
+        crossterm::execute!(std::io::stdout(), crossterm::cursor::Show,).ok();
+        std::fs::write(&file_clone, "").ok();
+
+        exit(1);
+    })
+    .ok();
 
     let file_content = match tokio::fs::read_to_string(&file).await {
         Ok(content) => content,
@@ -221,80 +236,103 @@ pub async fn prompt_dotfiles_changed() -> Result<()> {
                 error!("Unable to write to file: {}", err);
             }
 
-            exit(exit_code);
+            exit(1);
         }
     };
 
-    if file_content.contains("true") {
-        println!("{}", "Your dotfiles have been updated!".bold());
+    let exit_code = match TerminalNotification::from_str(&file_content) {
+        Ok(TerminalNotification::Source) => {
+            println!();
+            println!("{}", "✅ Dotfiles sourced!".bold());
+            println!();
 
-        let source_immediately = fig_settings::settings::get_value("dotfiles.sourceImmediately")
-            .ok()
-            .flatten()
-            .and_then(|s| s.as_str().map(|s| s.to_owned()));
+            0
+        }
+        Ok(TerminalNotification::NewUpdates) => {
+            let verbosity = match fig_settings::settings::get_value("dotfiles.verbosity")
+                .ok()
+                .flatten()
+                .and_then(|v| v.as_str().map(|s| s.to_string()))
+                .as_deref()
+            {
+                Some("none") => UpdatedVerbosity::None,
+                Some("minimal") => UpdatedVerbosity::Minimal,
+                Some("full") => UpdatedVerbosity::Full,
+                _ => UpdatedVerbosity::Full,
+            };
 
-        let source_updates = match source_immediately.as_deref() {
-            Some("never") => false,
-            Some("always") => true,
-            _ => {
-                println!("Would you like Fig to re-source your dotfiles in open terminals on updates? (y)es,(n)o");
-                let mut result = false;
+            let source_immediately =
+                fig_settings::settings::get_value("dotfiles.sourceImmediately")
+                    .ok()
+                    .flatten()
+                    .and_then(|s| s.as_str().map(|s| s.to_owned()));
 
-                crossterm::terminal::enable_raw_mode()?;
-                while let Ok(event) = crossterm::event::read() {
-                    if let crossterm::event::Event::Key(key_event) = event {
-                        match (key_event.code, key_event.modifiers) {
-                            (crossterm::event::KeyCode::Char('y' | 'Y'), _) => {
-                                fig_settings::settings::set_value(
-                                    "dotfiles.sourceImmediately",
-                                    json!("always"),
-                                )
-                                .await?
-                                .ok();
-                                result = true;
-                                break;
-                            }
-                            (crossterm::event::KeyCode::Char('n' | 'q' | 'N'), _)
-                            | (
-                                crossterm::event::KeyCode::Char('c' | 'd'),
-                                crossterm::event::KeyModifiers::CONTROL,
-                            ) => {
-                                fig_settings::settings::set_value(
-                                    "dotfiles.sourceImmediately",
-                                    json!("never"),
-                                )
-                                .await?
-                                .ok();
-                                result = false;
-                                break;
-                            }
-                            _ => {}
-                        }
-                    }
+            let source_updates = match source_immediately.as_deref() {
+                Some("always") => true,
+                // Ask is depercated
+                // Some("ask") => {
+                //     let dialog_result =  dialoguer::Select::with_theme(&dialoguer_theme())
+                //             .with_prompt("In the future, would you like Fig to auto-apply dotfiles changes in open terminals?")
+                //             .items(&["Yes", "No"])
+                //             .default(0)
+                //             .interact_opt();
+
+                //     match dialog_result {
+                //         Ok(Some(0)) => {
+                //             fig_settings::settings::set_value(
+                //                 "dotfiles.sourceImmediately",
+                //                 json!("always"),
+                //             )
+                //             .await
+                //             .ok();
+
+                //             true
+                //         }
+                //         Ok(Some(1)) => {
+                //             fig_settings::settings::set_value(
+                //                 "dotfiles.sourceImmediately",
+                //                 json!("never"),
+                //             )
+                //             .await
+                //             .ok();
+
+                //             false
+                //         }
+                //         _ => false,
+                //     }
+                // }
+                Some("never") => false,
+                _ => false,
+            };
+
+            if source_updates {
+                if verbosity >= UpdatedVerbosity::Minimal {
+                    println!();
+                    println!("You just updated your dotfiles in {}!", "◧ Fig".bold());
+                    println!("Automatically applying changes in this terminal.");
+                    println!();
                 }
-                crossterm::terminal::disable_raw_mode()?;
-                result
+
+                0
+            } else {
+                if verbosity == UpdatedVerbosity::Full {
+                    println!();
+                    println!("You just updated your dotfiles in {}!", "◧ Fig".bold());
+                    println!(
+                        "To apply changes run {} or open a new terminal",
+                        "fig source".magenta().bold()
+                    );
+                    println!();
+                }
+
+                1
             }
-        };
-
-        if source_updates {
-            println!(
-                "Automatically sourcing in this terminal. Run {} to disable auto-sourcing.",
-                "fig settings dotfiles.sourceImmediately never".magenta()
-            );
-            // Set exit code to source changes.
-            exit_code = 0;
-        } else {
-            println!(
-                "Run {} to manually apply changes in this terminal. Or {} to always source updates.",
-                "fig source".magenta(),
-                "fig settings dotfiles.sourceImmediately always".magenta()
-            );
         }
+        Err(_) => 1,
+    };
 
-        if let Err(err) = tokio::fs::write(&file, "").await {
-            error!("Unable to write to file: {}", err);
-        }
+    if let Err(err) = tokio::fs::write(&file, "").await {
+        error!("Unable to write to file: {}", err);
     }
 
     exit(exit_code);
