@@ -59,7 +59,7 @@ Before building you may need to:
 Cache).
 2. Make protos:
    ```
-   cd proto && make`
+   cd proto && make
    ```
 
 You can build from the XCode UI directly or from the terminal:
