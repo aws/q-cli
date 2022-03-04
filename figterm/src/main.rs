@@ -40,10 +40,12 @@ use nix::{
     unistd::{execvp, getpid, isatty},
 };
 use once_cell::sync::Lazy;
+use parking_lot::lock_api::RawMutex as RawMutexTrait;
+use parking_lot::{Mutex, RawMutex};
 use sentry::integrations::anyhow::capture_anyhow;
+use std::time::{Duration, SystemTime};
 use std::{
-    env, error::Error, ffi::CString, os::unix::prelude::AsRawFd, path::PathBuf, process::exit,
-    str::FromStr, vec,
+    env, error::Error, ffi::CString, os::unix::prelude::AsRawFd, process::exit, str::FromStr, vec,
 };
 use tokio::{
     io::{self, AsyncReadExt, AsyncWriteExt},
@@ -152,8 +154,8 @@ impl EventListener for EventSender {
     }
 }
 
-static INSERTION_LOCK_PATH: Lazy<Option<PathBuf>> =
-    Lazy::new(|| fig_dir().map(|path| path.join("insertion-lock")));
+static INSERTION_LOCKED_AT: Mutex<Option<SystemTime>> = Mutex::const_new(RawMutex::INIT, None);
+static EXPECTED_BUFFER: Lazy<Mutex<String>> = Lazy::new(|| Mutex::new("".to_string()));
 
 fn can_send_edit_buffer<T>(term: &Term<T>) -> bool
 where
@@ -164,13 +166,32 @@ where
         .contains(&term.shell_state().get_context().shell.as_deref());
     let prexec = term.shell_state().preexec;
 
-    trace!("Insertion lock path: {:?}", INSERTION_LOCK_PATH.as_ref());
-
-    let insertion_locked = if let Some(insertion_lock_path) = INSERTION_LOCK_PATH.as_ref() {
-        nix::unistd::access(insertion_lock_path, nix::unistd::AccessFlags::F_OK).is_ok()
-    } else {
-        false
+    let mut handle = INSERTION_LOCKED_AT.lock();
+    let insertion_locked = match handle.as_ref() {
+        Some(at) => {
+            let lock_expired =
+                at.elapsed().unwrap_or_else(|_| Duration::new(0, 0)) > Duration::new(0, 50_000_000);
+            let should_unlock = lock_expired
+                || term
+                    .get_current_buffer()
+                    .map(|buff| &buff.buffer == (&EXPECTED_BUFFER.lock() as &String))
+                    .unwrap_or(true);
+            if should_unlock {
+                handle.take();
+                if lock_expired {
+                    trace!("insertion lock released because lock expired");
+                    false
+                } else {
+                    trace!("insertion lock released because buffer looks like how we expect");
+                    true
+                }
+            } else {
+                true
+            }
+        }
+        None => false,
     };
+    drop(handle);
 
     trace!(
         "in_docker_ssh: {}, shell_enabled: {}, prexec: {}, insertion_locked: {}",
@@ -209,12 +230,35 @@ where
 
 async fn process_figterm_message(
     figterm_message: FigtermMessage,
-    _term: &Term<EventSender>,
+    term: &Term<EventSender>,
     pty_master: &mut AsyncPtyMaster,
     mut intercept_set: DashSet<char, fnv::FnvBuildHasher>,
 ) -> Result<()> {
     match figterm_message.command {
         Some(figterm_message::Command::InsertTextCommand(command)) => {
+            if let Some(ref text_to_insert) = command.insertion {
+                if let Some((mut buffer, Some(mut position))) = term
+                    .get_current_buffer()
+                    .map(|buff| (buff.buffer, buff.cursor_idx))
+                {
+                    // perform deletion
+                    if let Some(deletion) = command.deletion {
+                        let deletion = deletion as usize;
+                        buffer.drain(position - deletion..position);
+                    }
+                    // move cursor
+                    if let Some(offset) = command.offset {
+                        position += offset as usize;
+                    }
+                    // split text by cursor
+                    let (left, right) = buffer.split_at(position);
+
+                    INSERTION_LOCKED_AT.lock().replace(SystemTime::now());
+                    let expected = format!("{}{}{}", left, text_to_insert, right);
+                    trace!("lock set, expected buffer: {}", expected);
+                    *EXPECTED_BUFFER.lock() = expected;
+                }
+            }
             pty_master
                 .write(command.to_term_string().as_bytes())
                 .await?;
