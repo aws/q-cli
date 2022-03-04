@@ -170,7 +170,7 @@ where
     let insertion_locked = match handle.as_ref() {
         Some(at) => {
             let should_unlock = at.elapsed().unwrap_or_else(|_| Duration::new(0, 0))
-                > Duration::new(0, 10_000)
+                > Duration::new(0, 50_000_000)
                 || term
                     .get_current_buffer()
                     .map(|buff| &buff.buffer == (&EXPECTED_BUFFER.lock() as &String))
