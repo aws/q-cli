@@ -11,7 +11,7 @@ use aws_sdk_cognitoidentityprovider::{
 };
 use aws_smithy_async::rt::sleep::TokioSleep;
 use base64::encode;
-use directories::ProjectDirs;
+use fig_directories::fig_data_dir;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::{
@@ -21,11 +21,7 @@ use std::{
 };
 use thiserror::Error;
 
-use crate::password::generate_password;
-
-fn project_dir() -> Option<ProjectDirs> {
-    ProjectDirs::from("io", "fig", "fig")
-}
+use crate::{password::generate_password, set_default};
 
 pub fn get_client() -> anyhow::Result<Client> {
     let config = Config::builder()
@@ -409,8 +405,7 @@ impl Credentials {
     }
 
     pub fn save_credentials(&self) -> anyhow::Result<()> {
-        let project_dir = project_dir().context("Could not find project directory")?;
-        let data_dir = project_dir.data_local_dir();
+        let data_dir = fig_data_dir().context("Could not find fig_data_dir")?;
 
         if !data_dir.exists() {
             fs::create_dir_all(&data_dir)?;
@@ -423,6 +418,20 @@ impl Credentials {
             // Set permissions to 0600
             creds_file.set_permissions(std::os::unix::fs::PermissionsExt::from_mode(0o600))?;
         }
+        #[cfg(target_os = "macos")]
+        {
+            if let Some(id) = &self.id_token {
+                set_default("id_token", id)?;
+            }
+
+            if let Some(access) = &self.access_token {
+                set_default("access_token", access)?;
+            }
+
+            if let Some(refresh) = &self.refresh_token {
+                set_default("refresh_token", refresh)?;
+            }
+        }
 
         serde_json::to_writer(&mut creds_file, self)?;
 
@@ -430,8 +439,7 @@ impl Credentials {
     }
 
     pub fn load_credentials() -> anyhow::Result<Credentials> {
-        let project_dir = project_dir().context("Could not find project directory")?;
-        let data_dir = project_dir.data_local_dir();
+        let data_dir = fig_data_dir().context("Could not find fig_data_dir")?;
 
         let creds_path = data_dir.join("credentials.json");
 

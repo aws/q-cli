@@ -1,6 +1,7 @@
 //! [log] logger
 
 use anyhow::{Context, Result};
+use fig_directories::fig_dir;
 use once_cell::sync::Lazy;
 use parking_lot::RwLock;
 use std::{
@@ -10,8 +11,6 @@ use std::{
 };
 use tracing::{level_filters::LevelFilter, Level};
 use tracing_subscriber::{filter::DynFilterFn, fmt, prelude::*};
-
-use crate::utils::fig_path;
 
 static FIG_LOG_LEVEL: Lazy<RwLock<LevelFilter>> = Lazy::new(|| {
     RwLock::new(
@@ -30,7 +29,7 @@ pub fn stdio_debug_log(s: impl AsRef<str>) {
 }
 
 fn log_folder() -> Result<PathBuf> {
-    let mut dir = fig_path().context("failed to get fig path")?;
+    let mut dir = fig_dir().context("failed to get fig path")?;
     dir.push("logs");
     Ok(dir)
 }

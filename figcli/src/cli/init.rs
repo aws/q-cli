@@ -1,35 +1,52 @@
-use crate::{
-    plugins::lock::LockData,
-    util::shell::{Shell, When},
-};
+use crate::util::shell::{Shell, When};
 use anyhow::{Context, Result};
 use crossterm::tty::IsTty;
 use serde::{Deserialize, Serialize};
 use std::io::stdin;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-struct DotfileData {
-    dotfile: String,
+#[serde(rename_all = "camelCase")]
+pub struct DotfileData {
+    pub dotfile: String,
+    #[serde(with = "time::serde::rfc3339")]
+    pub updated_at: time::OffsetDateTime,
 }
 
 fn guard_source<F: Fn() -> Option<String>>(
     shell: &Shell,
+    export: bool,
     guard_var: impl AsRef<str>,
     get_source: F,
 ) -> Option<String> {
-    let already_sourced = std::env::var(guard_var.as_ref()).unwrap_or_else(|_| "0".into());
+    match get_source() {
+        Some(source) => {
+            let mut output = Vec::new();
 
-    if already_sourced != "1" {
-        if let Some(source) = get_source() {
-            let source_guard = match shell {
-                Shell::Fish => format!("set -gx {} 1", guard_var.as_ref()),
-                _ => format!("export {}=1", guard_var.as_ref()),
-            };
-            return Some(format!("\n{}\n{}\n", source, source_guard));
+            output.push(match shell {
+                Shell::Bash | Shell::Zsh => {
+                    format!("if [ -z \"${{{}}}\" ]; then", guard_var.as_ref())
+                }
+                Shell::Fish => format!("if test -z \"${}\"", guard_var.as_ref()),
+            });
+
+            output.push(source);
+
+            output.push(match (shell, export) {
+                (Shell::Bash | Shell::Zsh, false) => format!("{}=1", guard_var.as_ref()),
+                (Shell::Bash | Shell::Zsh, true) => format!("export {}=1", guard_var.as_ref()),
+                (Shell::Fish, false) => format!("set -g {} 1", guard_var.as_ref()),
+                (Shell::Fish, true) => format!("set -gx {} 1", guard_var.as_ref()),
+            });
+
+            output.push(match shell {
+                Shell::Bash | Shell::Zsh => "fi\n".into(),
+                Shell::Fish => "end\n".into(),
+            });
+
+            Some(output.join("\n"))
         }
+        _ => None,
     }
-
-    None
 }
 
 fn shell_init(shell: &Shell, when: &When) -> Result<String> {
@@ -48,14 +65,17 @@ fn shell_init(shell: &Shell, when: &When) -> Result<String> {
             Some(source.dotfile)
         };
 
-        if let Some(source) = guard_source(shell, "FIG_DOTFILES_SOURCED", get_dotfile_source) {
+        if let Some(source) = guard_source(shell, false, "FIG_DOTFILES_SOURCED", get_dotfile_source)
+        {
             to_source.push_str(&source);
         }
 
         if stdin().is_tty() {
             let get_prompts_source = || -> Option<String> { Some("fig app prompts".into()) };
 
-            if let Some(source) = guard_source(shell, "FIG_CHECKED_PROMPTS", get_prompts_source) {
+            if let Some(source) =
+                guard_source(shell, true, "FIG_CHECKED_PROMPTS", get_prompts_source)
+            {
                 to_source.push_str(&source);
             }
         }
@@ -74,35 +94,5 @@ pub async fn shell_init_cli(shell: &Shell, when: &When) -> Result<()> {
         Ok(source) => println!("{}", source),
         Err(err) => println!("# Could not load source: {}", err),
     }
-
-    if let Ok(lock_data) = LockData::load().await {
-        for plugin in lock_data.get_entries() {
-            if let Some(shell_install) = plugin.shell_install.get(shell) {
-                match when {
-                    When::Pre => {
-                        if let Some(source) = &shell_install.pre {
-                            for line in source {
-                                println!("{}", line);
-                            }
-                        }
-                    }
-                    When::Post => {
-                        if let Some(files) = &shell_install.use_files {
-                            for file in files {
-                                println!("source '{}'", file.display());
-                            }
-                        }
-
-                        if let Some(source) = &shell_install.post {
-                            for line in source {
-                                println!("{}", line);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     Ok(())
 }

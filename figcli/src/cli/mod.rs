@@ -31,7 +31,7 @@ use crossterm::style::Stylize;
 use fig_ipc::command::open_ui_element;
 use fig_proto::local::UiElement;
 use std::{fs::File, process::exit, str::FromStr};
-use tracing::{info, level_filters::LevelFilter};
+use tracing::{debug, level_filters::LevelFilter};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ArgEnum)]
 pub enum OutputFormat {
@@ -108,7 +108,12 @@ pub enum CliRootCommands {
     /// Details about the current user
     User,
     /// Check Fig is properly configured
-    Doctor,
+    Doctor {
+        #[clap(long)]
+        verbose: bool,
+        #[clap(long)]
+        strict: bool,
+    },
     /// Plugins management
     #[clap(subcommand)]
     Plugins(plugins::PluginsSubcommand),
@@ -187,7 +192,7 @@ impl Cli {
                     }
                 }
 
-                info!("Command ran: {:?}", std::env::args());
+                debug!("Command ran: {:?}", std::env::args().collect::<Vec<_>>());
             }
         }
 
@@ -214,7 +219,9 @@ impl Cli {
                 CliRootCommands::Login { refresh } => auth::login_cli(refresh).await,
                 CliRootCommands::Logout => auth::logout_cli().await,
                 CliRootCommands::User => auth::user_info_cli().await,
-                CliRootCommands::Doctor => doctor::doctor_cli().await,
+                CliRootCommands::Doctor { verbose, strict } => {
+                    doctor::doctor_cli(verbose, strict).await
+                }
                 CliRootCommands::Invite => invite::invite_cli().await,
                 CliRootCommands::Tweet => tweet::tweet_cli(),
                 CliRootCommands::App(app_subcommand) => app_subcommand.execute().await,
@@ -233,14 +240,12 @@ impl Cli {
                 }
                 CliRootCommands::Launch => {
                     let app_res = app::launch_fig();
-                    let daemon_res = match get_daemon() {
+                    match get_daemon() {
                         Ok(d) => d.start(),
                         Err(e) => Err(anyhow::anyhow!(e)),
-                    };
-                    if daemon_res.is_err() {
-                        println!("Error starting Fig daemon");
                     }
-                    app_res.or(daemon_res)
+                    .ok();
+                    app_res
                 }
                 CliRootCommands::Quit => {
                     let app_res = app::quit_fig().await;

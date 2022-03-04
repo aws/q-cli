@@ -129,58 +129,6 @@ class Settings {
     recomputeSettingsFromRaw()
   }
 
-  fileprivate var settingsWindow: WebViewWindow?
-  @objc class func openUI() {
-    Settings.log("Open Settings UI")
-
-    TelemetryProvider.shared.track(event: .openedSettingsPage, with: [:])
-
-    if let settingsWindow = Settings.shared.settingsWindow {
-
-      if settingsWindow.contentViewController != nil {
-        settingsWindow.makeKeyAndOrderFront(nil)
-        settingsWindow.orderFrontRegardless()
-        NSApp.activate(ignoringOtherApps: true)
-
-        return
-      } else {
-        Settings.shared.settingsWindow?.contentViewController = nil
-        Settings.shared.settingsWindow = nil
-      }
-    }
-
-    let url: URL = {
-
-      // Use value specified by developer.settings.host if it exists
-      if let urlString = Settings.shared.getValue(forKey: Settings.settingsURL) as? String,
-         let url = URL(string: urlString) {
-        return url
-      }
-
-      // otherwise use fallback
-      return Remote.baseURL.appendingPathComponent("settings")
-    }()
-
-    let settingsViewController = WebViewController()
-    settingsViewController.webView?.defaultURL = nil
-    settingsViewController.webView?.loadRemoteApp(at: url)
-    settingsViewController.webView?.dragShouldRepositionWindow = true
-
-    let settings = WebViewWindow(viewController: settingsViewController, shouldQuitAppOnClose: false)
-    settings.setFrame(NSRect(x: 0, y: 0, width: 770, height: 520), display: true, animate: false)
-    settings.center()
-    settings.makeKeyAndOrderFront(self)
-
-    // Set color to match background of settings app to avoid flicker while loading
-    settings.backgroundColor = NSColor(hex: "#282a36")
-
-    settings.delegate = settings
-    settings.isReleasedWhenClosed = false
-    settings.level = .normal
-
-    Settings.shared.settingsWindow = settings
-  }
-
   func update(_ keyValues: [String: Any]) {
     let prev = rawSettings
     rawSettings.merge(keyValues) { $1 }

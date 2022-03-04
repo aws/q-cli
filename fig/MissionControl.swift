@@ -47,7 +47,7 @@ class MissionControl {
     viewController.webView?.dragShouldRepositionWindow = true
 
     let missionControl = WebViewWindow(viewController: viewController, shouldQuitAppOnClose: false)
-    missionControl.setFrame(NSRect(x: 0, y: 0, width: 770, height: 520), display: true, animate: false)
+    missionControl.setFrame(NSRect(x: 0, y: 0, width: 830, height: 570), display: true, animate: false)
     missionControl.center()
     missionControl.makeKeyAndOrderFront(self)
 

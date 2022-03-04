@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use clap::{ArgGroup, Args, Subcommand};
 use crossterm::style::Stylize;
 use fig_ipc::command::restart_settings_listener;
@@ -53,7 +53,7 @@ impl LocalStateArgs {
                 }
             }
             Some(LocalStateSubcommand::Open) => {
-                let path = fig_settings::state::state_path()?;
+                let path = fig_settings::state::state_path().context("Could not get state path")?;
                 if !Command::new("open").arg(path).status()?.success() {
                     anyhow::bail!("Could not open state file.");
                 }
