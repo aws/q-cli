@@ -244,7 +244,7 @@ async fn process_figterm_message(
                     // perform deletion
                     if let Some(deletion) = command.deletion {
                         let deletion = deletion as usize;
-                        buffer.drain(position - deletion + 1..=position);
+                        buffer.drain(position - deletion..position);
                     }
                     // move cursor
                     if let Some(offset) = command.offset {
