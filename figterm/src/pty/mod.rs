@@ -23,7 +23,10 @@ pub struct PtyDetails {
 /// Open a psudoterminal
 fn open_pty() -> Result<PtyDetails> {
     // Open a new psudoterminal master
-    let master_pty = posix_openpt(OFlag::O_RDWR)?;
+    // The psudoterminal must be initalized with O_NONBLOCK since on macOS, the
+    // it can not be safely set with fcntl() later on.
+    // https://github.com/pkgw/stund/blob/master/tokio-pty-process/src/lib.rs#L127-L133
+    let master_pty = posix_openpt(OFlag::O_RDWR | OFlag::O_NONBLOCK)?;
 
     // Allow psudoterminal pair to be generated
     grantpt(&master_pty)?;

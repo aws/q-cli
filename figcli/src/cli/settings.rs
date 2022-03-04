@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use clap::{ArgGroup, Args, Subcommand};
 use crossterm::style::Stylize;
 use fig_ipc::command::{open_ui_element, restart_settings_listener};
@@ -68,7 +68,8 @@ impl SettingsArgs {
                 }
             }
             Some(SettingsSubcommands::Open) => {
-                let path = fig_settings::settings::settings_path()?;
+                let path = fig_settings::settings::settings_path()
+                    .context("Could not get settings path")?;
                 if !Command::new("open").arg(path).status()?.success() {
                     anyhow::bail!("Could not open settings file.");
                 }
@@ -102,7 +103,7 @@ impl SettingsArgs {
                     _ => {}
                 },
                 None => {
-                    let res = open_ui_element(UiElement::Settings).await;
+                    let res = open_ui_element(UiElement::MissionControl).await;
                     if res.is_err() {
                         print_connection_error!();
                         return res;

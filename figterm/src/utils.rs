@@ -1,15 +1,5 @@
 //! Misc utilities used throughout
 
-use std::path::PathBuf;
-
-/// Get the path to `~/.fig`
-pub fn fig_path() -> Option<PathBuf> {
-    dirs::home_dir().map(|mut dir| {
-        dir.push(".fig");
-        dir
-    })
-}
-
 /// Gets the term_bundle
 ///
 /// Only usable on MacOs
@@ -24,21 +14,12 @@ pub fn get_term_bundle() -> Option<std::borrow::Cow<'static, str>> {
             _ => Some("com.microsoft.vscode".into()),
         },
         Some("Tabby") => Some("org.tabby".into()),
-        _ => std::env::var("TERM_BUNDLE_IDENTIFIER")
-            .ok()
-            .map(|s| s.into()),
+        _ => std::env::var("__CFBundleIdentifier").ok().map(|s| s.into()),
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::utils::fig_path;
-
-    #[test]
-    fn fig_path_test() {
-        assert!(fig_path().unwrap().ends_with(".fig"));
-    }
-
     #[test]
     #[cfg(all(target = "macos", feature = "desktop-tests"))]
     fn term_bundle_test() {
