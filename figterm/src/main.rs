@@ -227,16 +227,17 @@ async fn process_figterm_message(
 ) -> Result<()> {
     match figterm_message.command {
         Some(figterm_message::Command::InsertTextCommand(command)) => {
-            INSERTION_LOCKED_AT.lock().replace(SystemTime::now());
-            let stringified = command.to_term_string();
-            *EXPECTED_BUFFER.lock() = format!(
-                "{}{}",
-                term.get_current_buffer()
-                    .map(|buff| buff.buffer)
-                    .unwrap_or_else(|| "".to_string()),
-                stringified
-            );
-            pty_master.write(stringified.as_bytes()).await?;
+            if let Some(text_to_insert) = command.insertion {
+                INSERTION_LOCKED_AT.lock().replace(SystemTime::now());
+                *EXPECTED_BUFFER.lock() = format!(
+                    "{}{}",
+                    term.get_current_buffer()
+                        .map(|buff| buff.buffer)
+                        .unwrap_or_else(|| "".to_string()),
+                    text_to_insert
+                );
+            }
+            pty_master.write(command.to_term_string().as_bytes()).await?;
         }
         Some(figterm_message::Command::InterceptCommand(command)) => {
             match command.intercept_command {
