@@ -227,7 +227,7 @@ async fn process_figterm_message(
 ) -> Result<()> {
     match figterm_message.command {
         Some(figterm_message::Command::InsertTextCommand(command)) => {
-            if let Some(text_to_insert) = command.insertion {
+            if let Some(ref text_to_insert) = command.insertion {
                 INSERTION_LOCKED_AT.lock().replace(SystemTime::now());
                 *EXPECTED_BUFFER.lock() = format!(
                     "{}{}",
