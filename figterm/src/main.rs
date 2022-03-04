@@ -39,11 +39,13 @@ use nix::{
     unistd::{execvp, getpid, isatty},
 };
 use once_cell::sync::Lazy;
-use sentry::integrations::anyhow::capture_anyhow;
-use std::{env, error::Error, ffi::CString, os::unix::prelude::AsRawFd, process::exit, str::FromStr, vec};
-use std::time::{Duration, SystemTime};
-use parking_lot::{Mutex, RawMutex};
 use parking_lot::lock_api::RawMutex as RawMutexTrait;
+use parking_lot::{Mutex, RawMutex};
+use sentry::integrations::anyhow::capture_anyhow;
+use std::time::{Duration, SystemTime};
+use std::{
+    env, error::Error, ffi::CString, os::unix::prelude::AsRawFd, process::exit, str::FromStr, vec,
+};
 use tokio::{
     io::{self, AsyncReadExt, AsyncWriteExt},
     runtime, select,
@@ -167,8 +169,12 @@ where
     let mut handle = lock.lock();
     let insertion_locked = match handle.as_ref() {
         Some(at) => {
-            let should_unlock = at.elapsed().unwrap_or_else(|_| Duration::new(0, 0)) > Duration::new(0, 10_000) ||
-                term.get_current_buffer().map(|buff| &buff.buffer == (&EXPECTED_BUFFER.lock() as &String)).unwrap_or(true);
+            let should_unlock = at.elapsed().unwrap_or_else(|_| Duration::new(0, 0))
+                > Duration::new(0, 10_000)
+                || term
+                    .get_current_buffer()
+                    .map(|buff| &buff.buffer == (&EXPECTED_BUFFER.lock() as &String))
+                    .unwrap_or(true);
             if should_unlock {
                 handle.take();
             }
@@ -223,10 +229,14 @@ async fn process_figterm_message(
         Some(figterm_message::Command::InsertTextCommand(command)) => {
             INSERTION_LOCKED_AT.lock().replace(SystemTime::now());
             let stringified = command.to_term_string();
-            *EXPECTED_BUFFER.lock() = format!("{}{}", term.get_current_buffer().map(|buff| buff.buffer).unwrap_or_else(|| "".to_string()), stringified);
-            pty_master
-                .write(stringified.as_bytes())
-                .await?;
+            *EXPECTED_BUFFER.lock() = format!(
+                "{}{}",
+                term.get_current_buffer()
+                    .map(|buff| buff.buffer)
+                    .unwrap_or_else(|| "".to_string()),
+                stringified
+            );
+            pty_master.write(stringified.as_bytes()).await?;
         }
         Some(figterm_message::Command::InterceptCommand(command)) => {
             match command.intercept_command {
