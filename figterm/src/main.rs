@@ -154,9 +154,6 @@ impl EventListener for EventSender {
 const INSERTION_LOCKED_AT: Mutex<Option<SystemTime>> = Mutex::const_new(RawMutex::INIT, None);
 const EXPECTED_BUFFER: Lazy<Mutex<String>> = Lazy::new(|| Mutex::new("".to_string()));
 
-// static INSERTION_LOCK_PATH: Lazy<Option<PathBuf>> =
-//     Lazy::new(|| fig_path().map(|path| path.join("insertion-lock")));
-
 fn can_send_edit_buffer<T>(term: &Term<T>) -> bool
 where
     T: EventListener,
@@ -180,14 +177,6 @@ where
         None => false,
     };
     drop(handle);
-
-    // trace!("Insertion lock path: {:?}", INSERTION_LOCK_PATH.as_ref());
-    //
-    // let insertion_locked = if let Some(insertion_lock_path) = INSERTION_LOCK_PATH.as_ref() {
-    //     nix::unistd::access(insertion_lock_path, nix::unistd::AccessFlags::F_OK).is_ok()
-    // } else {
-    //     false
-    // };
 
     trace!(
         "in_docker_ssh: {}, shell_enabled: {}, prexec: {}, insertion_locked: {}",
