@@ -229,7 +229,8 @@ async fn process_figterm_message(
             if let Some(ref text_to_insert) = command.insertion {
                 if let Some((mut buffer, Some(mut position))) = term
                     .get_current_buffer()
-                    .map(|buff| (buff.buffer, buff.cursor_idx)) {
+                    .map(|buff| (buff.buffer, buff.cursor_idx))
+                {
                     // perform deletion
                     if let Some(deletion) = command.deletion {
                         let deletion = deletion as usize;
