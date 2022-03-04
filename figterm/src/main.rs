@@ -12,7 +12,6 @@ use crate::{
     pty::{async_pty::AsyncPtyMaster, fork_pty, ioctl_tiocswinsz, PtyForkResult},
     term::get_winsize,
     term::{read_winsize, termios_to_raw},
-    utils::fig_path,
 };
 
 use alacritty_terminal::{
@@ -41,10 +40,10 @@ use nix::{
 };
 use once_cell::sync::Lazy;
 use sentry::integrations::anyhow::capture_anyhow;
-use std::{
-    env, error::Error, ffi::CString, os::unix::prelude::AsRawFd, path::PathBuf, process::exit,
-    str::FromStr, vec,
-};
+use std::{env, error::Error, ffi::CString, os::unix::prelude::AsRawFd, process::exit, str::FromStr, vec};
+use std::time::{Duration, SystemTime};
+use parking_lot::{Mutex, RawMutex};
+use parking_lot::lock_api::RawMutex as RawMutexTrait;
 use tokio::{
     io::{self, AsyncReadExt, AsyncWriteExt},
     runtime, select,
@@ -152,8 +151,11 @@ impl EventListener for EventSender {
     }
 }
 
-static INSERTION_LOCK_PATH: Lazy<Option<PathBuf>> =
-    Lazy::new(|| fig_path().map(|path| path.join("insertion-lock")));
+const INSERTION_LOCKED_AT: Mutex<Option<SystemTime>> = Mutex::const_new(RawMutex::INIT, None);
+const EXPECTED_BUFFER: Lazy<Mutex<String>> = Lazy::new(|| Mutex::new("".to_string()));
+
+// static INSERTION_LOCK_PATH: Lazy<Option<PathBuf>> =
+//     Lazy::new(|| fig_path().map(|path| path.join("insertion-lock")));
 
 fn can_send_edit_buffer<T>(term: &Term<T>) -> bool
 where
@@ -164,13 +166,28 @@ where
         .contains(&term.shell_state().get_context().shell.as_deref());
     let prexec = term.shell_state().preexec;
 
-    trace!("Insertion lock path: {:?}", INSERTION_LOCK_PATH.as_ref());
-
-    let insertion_locked = if let Some(insertion_lock_path) = INSERTION_LOCK_PATH.as_ref() {
-        nix::unistd::access(insertion_lock_path, nix::unistd::AccessFlags::F_OK).is_ok()
-    } else {
-        false
+    let lock = INSERTION_LOCKED_AT;
+    let mut handle = lock.lock();
+    let insertion_locked = match handle.as_ref() {
+        Some(at) => {
+            let should_unlock = at.elapsed().unwrap_or_else(|_| Duration::new(0, 0)) > Duration::new(0, 10_000) ||
+                term.get_current_buffer().map(|buff| &buff.buffer == (&EXPECTED_BUFFER.lock() as &String)).unwrap_or(true);
+            if should_unlock {
+                handle.take();
+            }
+            should_unlock
+        }
+        None => false,
     };
+    drop(handle);
+
+    // trace!("Insertion lock path: {:?}", INSERTION_LOCK_PATH.as_ref());
+    //
+    // let insertion_locked = if let Some(insertion_lock_path) = INSERTION_LOCK_PATH.as_ref() {
+    //     nix::unistd::access(insertion_lock_path, nix::unistd::AccessFlags::F_OK).is_ok()
+    // } else {
+    //     false
+    // };
 
     trace!(
         "in_docker_ssh: {}, shell_enabled: {}, prexec: {}, insertion_locked: {}",
@@ -209,14 +226,17 @@ where
 
 async fn process_figterm_message(
     figterm_message: FigtermMessage,
-    _term: &Term<EventSender>,
+    term: &Term<EventSender>,
     pty_master: &mut AsyncPtyMaster,
     mut intercept_set: DashSet<char, fnv::FnvBuildHasher>,
 ) -> Result<()> {
     match figterm_message.command {
         Some(figterm_message::Command::InsertTextCommand(command)) => {
+            INSERTION_LOCKED_AT.lock().replace(SystemTime::now());
+            let stringified = command.to_term_string();
+            *EXPECTED_BUFFER.lock() = format!("{}{}", term.get_current_buffer().map(|buff| buff.buffer).unwrap_or_else(|| "".to_string()), stringified);
             pty_master
-                .write(command.to_term_string().as_bytes())
+                .write(stringified.as_bytes())
                 .await?;
         }
         Some(figterm_message::Command::InterceptCommand(command)) => {
