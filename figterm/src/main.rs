@@ -168,13 +168,19 @@ where
     let mut handle = INSERTION_LOCKED_AT.lock();
     let insertion_locked = match handle.as_ref() {
         Some(at) => {
-            let should_unlock = at.elapsed().unwrap_or_else(|_| Duration::new(0, 0))
-                > Duration::new(0, 50_000_000)
+            let lock_expired =
+                at.elapsed().unwrap_or_else(|_| Duration::new(0, 0)) > Duration::new(0, 50_000_000);
+            let should_unlock = lock_expired
                 || term
                     .get_current_buffer()
                     .map(|buff| &buff.buffer == (&EXPECTED_BUFFER.lock() as &String))
                     .unwrap_or(true);
             if should_unlock {
+                if lock_expired {
+                    trace!("insertion lock released because lock expired");
+                } else {
+                    trace!("insertion lock released because buffer looks like how we expect");
+                }
                 handle.take();
             }
             should_unlock
@@ -244,7 +250,9 @@ async fn process_figterm_message(
                     let (left, right) = buffer.split_at(position);
 
                     INSERTION_LOCKED_AT.lock().replace(SystemTime::now());
-                    *EXPECTED_BUFFER.lock() = format!("{}{}{}", left, text_to_insert, right,);
+                    let expected = format!("{}{}{}", left, text_to_insert, right);
+                    trace!("lock set, expected buffer: {}", expected);
+                    *EXPECTED_BUFFER.lock() = expected;
                 }
             }
             pty_master
