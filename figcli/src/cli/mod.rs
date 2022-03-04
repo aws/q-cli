@@ -240,14 +240,12 @@ impl Cli {
                 }
                 CliRootCommands::Launch => {
                     let app_res = app::launch_fig();
-                    let daemon_res = match get_daemon() {
+                    match get_daemon() {
                         Ok(d) => d.start(),
                         Err(e) => Err(anyhow::anyhow!(e)),
-                    };
-                    if daemon_res.is_err() {
-                        println!("Error starting Fig daemon");
                     }
-                    app_res.or(daemon_res)
+                    .ok();
+                    app_res
                 }
                 CliRootCommands::Quit => {
                     let app_res = app::quit_fig().await;
