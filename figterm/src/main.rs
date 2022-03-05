@@ -25,7 +25,6 @@ use clap::StructOpt;
 use cli::Cli;
 use dashmap::DashSet;
 use fig_auth::get_email;
-use fig_directories::fig_dir;
 use fig_proto::{
     figterm::{figterm_message, intercept_command, FigtermMessage},
     hooks::{

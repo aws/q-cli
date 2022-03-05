@@ -33,6 +33,8 @@ use fig_proto::local::UiElement;
 use std::{fs::File, process::exit, str::FromStr};
 use tracing::{debug, level_filters::LevelFilter};
 
+use self::app::AppSubcommand;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ArgEnum)]
 pub enum OutputFormat {
     Plain,
@@ -125,6 +127,7 @@ pub enum CliRootCommands {
     Quit,
     Restart,
     Alpha,
+    Onboarding,
 }
 
 #[derive(Debug, Parser)]
@@ -274,6 +277,10 @@ impl Cli {
                     if res.is_ok() {
                         println!("\n→ Opening dotfiles...\n");
                     };
+                    res
+                }
+                CliRootCommands::Onboarding => {
+                    let res = AppSubcommand::Onboarding.execute().await;
                     res
                 }
             },
