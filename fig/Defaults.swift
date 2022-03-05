@@ -291,6 +291,17 @@ class Defaults {
     }
   }
 
+  var lastInstallationError: String? {
+    get {
+      return defaults.string(forKey: "lastInstallationError")
+    }
+
+    set(error) {
+      defaults.set(error, forKey: "lastInstallationError")
+      defaults.synchronize()
+    }
+  }
+
   var autocompleteWidth: CGFloat? {
     get {
       let string = defaults.string(forKey: "autocompleteWidth")

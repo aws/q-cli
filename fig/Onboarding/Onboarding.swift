@@ -72,7 +72,7 @@ class Onboarding {
   static func setUpEnviroment(completion:( () -> Void)? = nil) {
 
     if Diagnostic.isRunningOnReadOnlyVolume {
-      SentrySDK.capture(message: "Currently running on read only volume! App is translocated!")
+      Logger.log(message: "Currently running on read only volume! App is translocated!")
     }
 
     guard let figcliPath = Bundle.main.path(forAuxiliaryExecutable: "fig-darwin-universal") else {
@@ -128,6 +128,8 @@ class Onboarding {
 
     } catch {
       Logger.log(message: "An error occured when attempting to install Fig! " + error.localizedDescription)
+      SentrySDK.capture(message: "Installation: " + error.localizedDescription)
+      Defaults.shared.lastInstallationError = error.localizedDescription
     }
 
     // Determine user's login shell by explicitly reading from "/Users/$(whoami)"

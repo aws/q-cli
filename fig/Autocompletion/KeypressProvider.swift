@@ -12,6 +12,7 @@ import Sentry
 import Foundation
 import AXSwift
 import FigAPIBindings
+import FigInputMethod
 
 enum EventTapAction {
   case forward
@@ -197,8 +198,7 @@ class KeypressProvider {
                                                        eventsOfInterest: CGEventMask(eventMask),
                                                        callback: eventCallBack,
                                                        userInfo: nil) else {
-      print("Could not create tap")
-      SentrySDK.capture(message: "Could not create event tap")
+      Logger.log(message: "Could not create event tap")
       return nil
     }
 

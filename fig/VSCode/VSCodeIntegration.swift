@@ -57,7 +57,7 @@ class VSCodeIntegration: TerminalIntegrationProvider {
       "\(NSHomeDirectory())/Library/Application Support/\(self.applicationSupportFolderName)/User/settings.json"
     return (try? FileManager.default.destinationOfSymbolicLink(atPath: defaultPath)) ?? defaultPath
   }
-  
+
   // If the extension path changes make sure to update the uninstall script!
   var extensionsDir: String {
     return "\(NSHomeDirectory())/\(self.configFolderName)/extensions"
@@ -67,7 +67,7 @@ class VSCodeIntegration: TerminalIntegrationProvider {
   var extensionPath: String {
     return "\(self.extensionsDir)/withfig.fig-\(VSCodeIntegration.extensionVersion)/extension.js"
   }
-  
+
   func uninstall() -> Bool {
     if let extensions = try? FileManager.default.contentsOfDirectory(atPath: self.extensionsDir) {
         for ext in extensions {
@@ -113,8 +113,7 @@ class VSCodeIntegration: TerminalIntegrationProvider {
       // NSApp.appDelegate.dialogOKCancel(question: "Fig could not install the VSCode Integration",
       //                                 text: "An error occured when attempting to parse settings.json")
 
-      print("VSCode: An error occured when attempting to parse settings.json")
-      SentrySDK.capture(message: "VSCode: An error occured when attempting to parse settings.json")
+      Logger.log(message: "VSCode: An error occured when attempting to parse settings.json")
 
     }
 
@@ -156,15 +155,13 @@ extension VSCodeIntegration {
   func settings() throws -> [String: Any]? {
     guard FileManager.default.fileExists(atPath: self.settingsPath) else {
       // file does not exist
-      print("VSCode: settings file does not exist")
-      SentrySDK.capture(message: "VSCode: settings file does not exist")
+      Logger.log(message: "VSCode: settings file does not exist")
 
       return nil
     }
 
     guard let settings = try? String(contentsOfFile: self.settingsPath) else {
-      print("VSCode: settings file is empty")
-      SentrySDK.capture(message: "VSCode: settings file is empty or could not be read")
+      Logger.log(message: "VSCode: settings file is empty or could not be read")
 
       throw InstallationError.couldNotReadContentsOfSettingsFile
     }
