@@ -24,12 +24,12 @@ extension FileManager {
     let fileExistsAtDestination = self.fileExists(atPath: destination.path, isDirectory: &isDir)
 
     switch (fileExistsAtDestination, isDir.boolValue) {
-      case (true, true):
-        break
-      case (true, false):
-        try self.removeItem(at: destination)
-      case (false, _):
-        try self.createDirectory(at: destination, withIntermediateDirectories: true, attributes: nil)
+    case (true, true):
+      break
+    case (true, false):
+      try self.removeItem(at: destination)
+    case (false, _):
+      try self.createDirectory(at: destination, withIntermediateDirectories: true, attributes: nil)
     }
 
     let filepaths = try self.contentsOfDirectory(at: source,
@@ -85,6 +85,7 @@ class Onboarding {
 
     do {
 
+      // swiftlint:disable identifier_name
       let fs = FileManager.default
 
       try? fs.createDirectory(at: appsDirectory,
@@ -134,7 +135,8 @@ class Onboarding {
 
     // Determine user's login shell by explicitly reading from "/Users/$(whoami)"
     // rather than ~ to handle rare cases where these are different.
-    let response = Process.run(command: "/usr/bin/dscl", args: ".", "-read", "/Users/\(NSUserName())", "UserShell")
+    let response = Process.run(command: "/usr/bin/dscl",
+                               args: [".", "-read", "/Users/\(NSUserName())", "UserShell"])
 
     if response.exitCode == 0 {
       Defaults.shared.userShell = response.output.joined(separator: "")
