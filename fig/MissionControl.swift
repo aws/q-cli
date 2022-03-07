@@ -58,13 +58,12 @@ class MissionControl {
     missionControl.isReleasedWhenClosed = false
     missionControl.level = .normal
 
-    MissionControl.shared.window = missionControl
-    NSApp.activate(ignoringOtherApps: true)
-
     if NSApp.activationPolicy() == .accessory {
         NSApp.setActivationPolicy(.regular)
     }
 
+    MissionControl.shared.window = missionControl
+    NSApp.activate(ignoringOtherApps: true)
   }
 
 }
