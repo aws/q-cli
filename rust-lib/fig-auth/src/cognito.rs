@@ -21,7 +21,7 @@ use std::{
 };
 use thiserror::Error;
 
-use crate::{password::generate_password, set_default};
+use crate::password::generate_password;
 
 pub fn get_client() -> anyhow::Result<Client> {
     let config = Config::builder()
@@ -420,6 +420,8 @@ impl Credentials {
         }
         #[cfg(target_os = "macos")]
         {
+            use crate::set_default;
+
             if let Some(id) = &self.id_token {
                 set_default("id_token", id)?;
             }
