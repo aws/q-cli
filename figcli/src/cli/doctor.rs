@@ -93,16 +93,23 @@ fn check_file_exists(path: impl AsRef<Path>) -> Result<()> {
     Ok(())
 }
 
-fn command_fix<A, I>(args: A) -> Option<DoctorFix>
+fn command_fix<A, I, D>(args: A, sleep_duration: D) -> Option<DoctorFix>
 where
     A: IntoIterator<Item = I> + Send,
     I: AsRef<OsStr> + Send + 'static,
+    D: Into<Option<Duration>> + Send + 'static,
 {
     let args = args.into_iter().collect::<Vec<_>>();
 
     Some(Box::new(move || {
         if let (Some(exe), Some(remaining)) = (args.first(), args.get(1..)) {
             if Command::new(exe).args(remaining).status()?.success() {
+                if let Some(duration) = sleep_duration.into() {
+                    let spinner =
+                        Spinner::new(Spinners::Dots, "Waiting for command to finish...".into());
+                    std::thread::sleep(duration);
+                    stop_spinner(Some(spinner)).ok();
+                }
                 return Ok(());
             }
         }
@@ -234,7 +241,7 @@ impl DoctorCheck for AppRunningCheck {
         Err(DoctorError::Error {
             reason: "Fig app is not running".into(),
             info: vec![],
-            fix: command_fix(vec!["fig", "launch"]),
+            fix: command_fix(vec!["fig", "launch"], Duration::from_secs(3)),
         })
     }
 }
@@ -355,7 +362,10 @@ impl DoctorCheck for InsertionLockCheck {
             return Err(DoctorError::Error {
                 reason: "Insertion lock exists".into(),
                 info: vec![],
-                fix: command_fix(vec!["rm".into(), insetion_lock_path.into_os_string()]),
+                fix: Some(Box::new(move || {
+                    std::fs::remove_file(&insetion_lock_path)?;
+                    Ok(())
+                })),
             });
         }
 
@@ -669,7 +679,7 @@ impl DoctorCheck<DiagnosticsResponse> for InstallationScriptCheck {
             Err(DoctorError::Error {
                 reason: "Intall script not run".into(),
                 info: vec![],
-                fix: command_fix(vec!["fig", "app", "install"]),
+                fix: command_fix(vec!["fig", "app", "install"], None),
             })
         }
     }
@@ -794,7 +804,10 @@ impl DoctorCheck<DiagnosticsResponse> for AccessibilityCheck {
             Err(DoctorError::Error {
                 reason: "Accessibility is disabled".into(),
                 info: vec![],
-                fix: command_fix(vec!["fig", "debug", "prompt-accessibility"]),
+                fix: command_fix(
+                    vec!["fig", "debug", "prompt-accessibility"],
+                    Duration::from_secs(1),
+                ),
             })
         } else {
             Ok(())
@@ -818,7 +831,7 @@ impl DoctorCheck for PseudoTerminalPathCheck {
             Err(DoctorError::Error {
                 reason: "paths do not match".into(),
                 info: vec![],
-                fix: command_fix(vec!["fig", "app", "set-path"]),
+                fix: command_fix(vec!["fig", "app", "set-path"], None),
             })
         } else {
             Ok(())
@@ -1236,6 +1249,7 @@ where
                     println!("Failed to fix: {}", e);
                 } else {
                     println!("Re-running check...");
+                    println!();
                     if let Ok(new_context) = get_context().await {
                         context = new_context
                     }

@@ -320,12 +320,10 @@ impl LaunchService {
     pub fn uninstall(&self) -> Result<()> {
         self.stop().ok();
 
-        if !self.path.exists() {
-            return Ok(());
+        if self.path.exists() {
+            // Remove the definition file
+            std::fs::remove_file(&self.path)?;
         }
-
-        // Remove the definition file
-        std::fs::remove_file(&self.path)?;
 
         Ok(())
     }

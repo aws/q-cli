@@ -6,6 +6,8 @@ use fig_proto::local::UiElement;
 use serde_json::json;
 use std::process::Command;
 
+use crate::util::launch_fig;
+
 #[derive(Debug, Subcommand)]
 pub enum SettingsSubcommands {
     /// Reload the settings listener
@@ -103,6 +105,9 @@ impl SettingsArgs {
                     _ => {}
                 },
                 None => {
+                    #[cfg(target_os = "macos")]
+                    launch_fig()?;
+
                     let res = open_ui_element(UiElement::MissionControl).await;
                     if res.is_err() {
                         print_connection_error!();
