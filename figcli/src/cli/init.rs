@@ -8,8 +8,8 @@ use std::io::stdin;
 #[serde(rename_all = "camelCase")]
 pub struct DotfileData {
     pub dotfile: String,
-    #[serde(with = "time::serde::rfc3339")]
-    pub updated_at: time::OffsetDateTime,
+    #[serde(with = "time::serde::rfc3339::option")]
+    pub updated_at: Option<time::OffsetDateTime>,
 }
 
 fn guard_source<F: Fn() -> Option<String>>(

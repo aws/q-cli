@@ -8,6 +8,8 @@ use tokio::net::TcpStream;
 use tokio_tungstenite::{tungstenite::Message, MaybeTlsStream, WebSocketStream};
 use tracing::{debug, error, info};
 
+use crate::plugins;
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[serde(tag = "type")]
@@ -68,6 +70,12 @@ pub async fn process_websocket(
                         Ok(websocket_message) => match websocket_message {
                             FigWebsocketMessage::DotfilesUpdated => {
                                 crate::cli::source::sync_based_on_settings().await?;
+                                tokio::task::spawn(async {
+                                    if let Err(err) = plugins::api::fetch_installed_plugins().await
+                                    {
+                                        error!("Error fetching installed plugins: {}", err);
+                                    }
+                                });
                             }
                             FigWebsocketMessage::SettingsUpdated {
                                 settings,

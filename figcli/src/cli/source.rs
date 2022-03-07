@@ -47,8 +47,6 @@ async fn sync_file(shell: &Shell, sync_when: SyncWhen) -> Result<UpdateStatus> {
         .text()
         .await?;
 
-    println!("{}", download);
-
     // Parse the JSON
     let dotfiles: DotfileData = serde_json::from_str(&download).context("Failed to parse JSON")?;
 
@@ -60,7 +58,7 @@ async fn sync_file(shell: &Shell, sync_when: SyncWhen) -> Result<UpdateStatus> {
     debug!("dotfiles_json: {:?}", dotfiles.dotfile);
     debug!(
         "dotfiles_last_updated: {:?}",
-        dotfiles.updated_at.unix_timestamp_nanos()
+        dotfiles.updated_at.map(|t| t.unix_timestamp_nanos())
     );
     debug!(
         "last_updated: {:?}",
@@ -89,22 +87,22 @@ async fn sync_file(shell: &Shell, sync_when: SyncWhen) -> Result<UpdateStatus> {
 
         fig_settings::state::set_value(
             format!("dotfiles.{}.lastUpdated", shell),
-            json!(dotfiles.updated_at.format(&Rfc3339)?),
+            json!(dotfiles.updated_at.and_then(|t| t.format(&Rfc3339).ok())),
         )?;
 
         anyhow::Ok(())
     };
 
-    match last_updated {
-        Some(last_updated) if dotfiles.updated_at > last_updated => {
+    match (last_updated, dotfiles.updated_at) {
+        (Some(previous_updated), Some(current_updated)) if current_updated > previous_updated => {
             update_dotfiles()?;
             Ok(UpdateStatus::Updated)
         }
-        None => {
+        (None, Some(_)) => {
             update_dotfiles()?;
             Ok(UpdateStatus::Updated)
         }
-        Some(_) => {
+        (_, _) => {
             info!("{} dotfiles are up to date", shell);
             Ok(UpdateStatus::NotUpdated)
         }

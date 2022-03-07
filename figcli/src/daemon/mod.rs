@@ -3,9 +3,12 @@ pub mod settings_watcher;
 pub mod systemd_unit;
 pub mod websocket;
 
-use crate::daemon::{
-    launchd_plist::LaunchdPlist, settings_watcher::spawn_settings_watcher,
-    systemd_unit::SystemdUnit, websocket::process_websocket,
+use crate::{
+    daemon::{
+        launchd_plist::LaunchdPlist, settings_watcher::spawn_settings_watcher,
+        systemd_unit::SystemdUnit, websocket::process_websocket,
+    },
+    plugins,
 };
 
 use anyhow::{anyhow, Context, Result};
@@ -317,6 +320,10 @@ impl LaunchService {
     pub fn uninstall(&self) -> Result<()> {
         self.stop().ok();
 
+        if !self.path.exists() {
+            return Ok(());
+        }
+
         // Remove the definition file
         std::fs::remove_file(&self.path)?;
 
@@ -463,7 +470,17 @@ pub async fn daemon() -> Result<()> {
     let unix_socket =
         UnixListener::bind(&unix_socket_path).context("Could not connect to unix socket")?;
 
-    crate::cli::source::sync_based_on_settings().await?;
+    tokio::task::spawn(async {
+        if let Err(err) = crate::cli::source::sync_based_on_settings().await {
+            error!("Error fetching dotfile sources: {}", err);
+        }
+    });
+
+    tokio::task::spawn(async {
+        if let Err(err) = plugins::api::fetch_installed_plugins().await {
+            error!("Error fetching installed plugins: {}", err);
+        }
+    });
 
     // Spawn settings watcher
     if let Err(error) = spawn_settings_watcher(daemon_status.clone()).await {

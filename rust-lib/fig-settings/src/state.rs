@@ -3,7 +3,7 @@ use anyhow::{Context, Result};
 use std::path::PathBuf;
 
 pub fn state_path() -> Option<PathBuf> {
-    fig_directories::fig_data_dir().map(|path| path.join("fig").join("state.json"))
+    fig_directories::fig_data_dir().map(|path| path.join("state.json"))
 }
 
 pub type LocalState = LocalJson;
