@@ -598,5 +598,5 @@ jobs:
       - name: Notify \#macos channel on Discord
         run: |
           curl -H "Content-Type: application/json" \
-            -d '{"username": "macOS build deployed!", "content": "${{ github.event.inputs.buildName }} | ${{env.VERSION}} (B${{env.BUILD}}) from branch '${{env.BRANCH_NAME}}'\n" }' \
+            -d '{"username": "macOS build deployed!", "content": "${{ github.event.inputs.buildName }} | ${{env.VERSION}} (B${{env.BUILD}}) from branch '${{env.BRANCH_NAME}}' | https://github.com/withfig/macos/releases/tag/manual-build-${{ github.run_number }}\n" }' \
             ${{secrets.DISCORD_MACOS_WEBHOOK}}
