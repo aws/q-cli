@@ -6,7 +6,7 @@ use anyhow::{Context, Result};
 use std::path::PathBuf;
 
 pub fn settings_path() -> Option<PathBuf> {
-    fig_directories::fig_data_dir().map(|path| path.join("settings.json"))
+    fig_directories::fig_dir().map(|path| path.join("settings.json"))
 }
 
 pub type LocalSettings = LocalJson;
