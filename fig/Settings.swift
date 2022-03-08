@@ -129,7 +129,7 @@ class Settings {
     recomputeSettingsFromRaw()
   }
 
-  @objc func openUI() {
+  @objc static func openUI() {
     MissionControl.openUI(.settings)
   }
 
