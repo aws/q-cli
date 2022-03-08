@@ -20,10 +20,17 @@ pub trait Diagnostic {
 }
 
 pub fn dscl_read(value: impl AsRef<OsStr>) -> Result<String> {
+    let username_command = Command::new("id")
+        .arg("-un")
+        .output()
+        .context("Could not get id")?;
+
+    let username: String = String::from_utf8_lossy(&username_command.stdout).trim().into();
+
     let result = Command::new("dscl")
         .arg(".")
         .arg("-read")
-        .arg(fig_directories::home_dir().context("Could not get home dir")?)
+        .arg(format!("/Users/{}", username))
         .arg(value)
         .output()
         .context("Could not read value")?;
