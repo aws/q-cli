@@ -778,17 +778,23 @@ impl DoctorCheck<DiagnosticsResponse> for FigCLIPathCheck {
 
     async fn check(&self, _: &DiagnosticsResponse) -> Result<(), DoctorError> {
         let path = std::env::current_exe().context("Could not get executable path.")?;
-        let exe_path = fig_directories::fig_dir().unwrap().join("bin").join("fig");
-        let other_path = fig_directories::home_dir()
+        let fig_bin_path = fig_directories::fig_dir().unwrap().join("bin").join("fig");
+        let local_bin_path = fig_directories::home_dir()
             .unwrap()
             .join(".local")
             .join("bin")
             .join("fig");
 
-        if path == exe_path || path == other_path || path == Path::new("/usr/local/bin/fig") {
+        if path == fig_bin_path || path == local_bin_path || path == Path::new("/usr/local/bin/fig")
+        {
             Ok(())
         } else {
-            return Err(anyhow!("Fig CLI must be in {}", exe_path.display()).into());
+            return Err(anyhow!(
+                "Fig CLI ({}) must be in {}",
+                path.display(),
+                local_bin_path.display()
+            )
+            .into());
         }
     }
 }
