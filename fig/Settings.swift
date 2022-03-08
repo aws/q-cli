@@ -129,6 +129,10 @@ class Settings {
     recomputeSettingsFromRaw()
   }
 
+  @objc func openUI() {
+    MissionControl.openUI(.settings)
+  }
+
   func update(_ keyValues: [String: Any]) {
     let prev = rawSettings
     rawSettings.merge(keyValues) { $1 }

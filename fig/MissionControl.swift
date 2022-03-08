@@ -7,13 +7,40 @@
 //
 
 import Cocoa
+import SwiftUI
 
 class MissionControl {
   static let shared = MissionControl()
 
   fileprivate var window: WebViewWindow?
-  @objc class func openUI() {
+
+  @objc enum Tab: Int {
+    case home = 0
+    case settings = 1
+    func endpoint() -> String {
+      switch self {
+      case .settings:
+        return "settings"
+      case .home:
+        return ""
+      }
+    }
+  }
+
+  @objc class func openUI(_ tab: Tab = .home) {
     Logger.log(message: "Open MissionControl UI")
+
+    let url: URL = {
+
+      // Use value specified by developer.mission-control.host if it exists
+      if let urlString = Settings.shared.getValue(forKey: Settings.missionControlURL) as? String,
+         let url = URL(string: urlString) {
+        return url.appendingPathComponent(tab.endpoint())
+      }
+
+      // otherwise use fallback
+      return Remote.missionControlURL.appendingPathComponent(tab.endpoint())
+    }()
 
     if let window = MissionControl.shared.window {
 
@@ -22,24 +49,15 @@ class MissionControl {
         window.orderFrontRegardless()
         NSApp.activate(ignoringOtherApps: true)
 
+        if let vc = window.contentViewController as? WebViewController {
+          vc.webView?.loadRemoteApp(at: url)
+        }
         return
       } else {
         MissionControl.shared.window?.contentViewController = nil
         MissionControl.shared.window = nil
       }
     }
-
-    let url: URL = {
-
-      // Use value specified by developer.mission-control.host if it exists
-      if let urlString = Settings.shared.getValue(forKey: Settings.missionControlURL) as? String,
-         let url = URL(string: urlString) {
-        return url
-      }
-
-      // otherwise use fallback
-      return Remote.missionControlURL
-    }()
 
     let viewController = WebViewController()
     viewController.webView?.defaultURL = nil

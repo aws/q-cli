@@ -108,7 +108,7 @@ impl SettingsArgs {
                     #[cfg(target_os = "macos")]
                     launch_fig()?;
 
-                    let res = open_ui_element(UiElement::MissionControl).await;
+                    let res = open_ui_element(UiElement::Settings).await;
                     if res.is_err() {
                         print_connection_error!();
                         return res;
