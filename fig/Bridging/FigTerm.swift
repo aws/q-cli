@@ -42,12 +42,6 @@ class FigTerm {
       data.append(contentsOf: seralizedFigtermMessage)
 
       socket.send(data: data)
-
-      ShellInsertionProvider.insertUnlock(deletion: Int(update.deletion),
-                                          insertion: update.insertion,
-                                          offset: Int(update.offset),
-                                          immediate: update.immediate)
-
     }
   }
 

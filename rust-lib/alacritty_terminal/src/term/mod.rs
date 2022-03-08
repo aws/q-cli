@@ -680,8 +680,10 @@ impl<T> Term<T> {
         let mut padding: usize = 0;
         let cursor = self.grid().cursor.point;
 
+        let mut last_char_width: usize = 0;
         let mut last_char_was_padding = true;
 
+        let mut cell_idx = 0;
         let mut cursor_idx = None;
 
         let mut start = rect.start;
@@ -693,17 +695,23 @@ impl<T> Term<T> {
             return None;
         }
 
-        self.grid().iter_from_to(start, end).for_each(|cell| {
+        for cell in self.grid().iter_from_to(start, end) {
             if cell.point.column == rect.start.column {
                 last_char_was_padding = true;
             }
 
             if cell.point == cursor {
-                cursor_idx = Some(buffer.len());
+                cursor_idx = Some(cell_idx);
                 while padding > 0 {
                     buffer.push(' ');
+                    cell_idx += 1;
                     padding = padding.saturating_sub(1);
                 }
+            }
+
+            if last_char_width > 0 {
+                last_char_width = last_char_width.saturating_sub(1);
+                continue;
             }
 
             if cell.c == '\0'
@@ -717,6 +725,7 @@ impl<T> Term<T> {
             } else {
                 while padding > 0 {
                     buffer.push(' ');
+                    cell_idx += 1;
                     padding = padding.saturating_sub(1);
                 }
 
@@ -726,9 +735,25 @@ impl<T> Term<T> {
                             || cell.fig_flags.contains(FigFlags::IN_SUGGESTION) =>
                     {
                         buffer.push(mask);
+                        cell_idx += 1;
                     }
                     _ => {
-                        buffer.push(cell.c);
+                        match cell.zerowidth() {
+                            Some(zero_width) => {
+                                buffer.push(cell.c);
+                                for c in zero_width {
+                                    buffer.push(*c);
+                                }
+                            }
+                            None => {
+                                buffer.push(cell.c);
+                            }
+                        }
+
+                        last_char_width = cell.c.width().unwrap_or(1);
+                        last_char_width = last_char_width.saturating_sub(1);
+
+                        cell_idx += 1;
                         last_char_was_padding = false;
                     }
                 }
@@ -739,10 +764,11 @@ impl<T> Term<T> {
             {
                 if last_char_was_padding || !wrap_lines {
                     buffer.push('\n');
+                    cell_idx += 1;
                 }
                 padding = 0;
             }
-        });
+        }
 
         Some(TextBuffer { buffer, cursor_idx })
     }

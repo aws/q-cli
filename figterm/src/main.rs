@@ -39,8 +39,8 @@ use nix::{
     unistd::{execvp, getpid, isatty},
 };
 use once_cell::sync::Lazy;
-use parking_lot::lock_api::RawMutex as RawMutexTrait;
-use parking_lot::{Mutex, RawMutex};
+use parking_lot::Mutex;
+use parking_lot::{lock_api::RawRwLock, RwLock};
 use sentry::integrations::anyhow::capture_anyhow;
 use std::time::{Duration, SystemTime};
 use std::{
@@ -153,7 +153,7 @@ impl EventListener for EventSender {
     }
 }
 
-static INSERTION_LOCKED_AT: Mutex<Option<SystemTime>> = Mutex::const_new(RawMutex::INIT, None);
+static INSERTION_LOCKED_AT: RwLock<Option<SystemTime>> = RwLock::const_new(RawRwLock::INIT, None);
 static EXPECTED_BUFFER: Lazy<Mutex<String>> = Lazy::new(|| Mutex::new("".to_string()));
 
 fn can_send_edit_buffer<T>(term: &Term<T>) -> bool
@@ -165,7 +165,7 @@ where
         .contains(&term.shell_state().get_context().shell.as_deref());
     let prexec = term.shell_state().preexec;
 
-    let mut handle = INSERTION_LOCKED_AT.lock();
+    let mut handle = INSERTION_LOCKED_AT.write();
     let insertion_locked = match handle.as_ref() {
         Some(at) => {
             let lock_expired =
@@ -179,11 +179,10 @@ where
                 handle.take();
                 if lock_expired {
                     trace!("insertion lock released because lock expired");
-                    false
                 } else {
                     trace!("insertion lock released because buffer looks like how we expect");
-                    true
                 }
+                false
             } else {
                 true
             }
@@ -211,6 +210,11 @@ where
         Some(edit_buffer) => {
             if let Some(cursor_idx) = edit_buffer.cursor_idx.and_then(|i| i.try_into().ok()) {
                 info!("edit_buffer: {:?}", edit_buffer);
+                trace!("buffer bytes: {:02X?}", edit_buffer.buffer.as_bytes());
+                trace!(
+                    "buffer chars: {:?}",
+                    edit_buffer.buffer.chars().collect::<Vec<_>>()
+                );
 
                 let context = shell_state_to_context(term.shell_state());
                 let edit_buffer_hook =
@@ -236,25 +240,27 @@ async fn process_figterm_message(
     match figterm_message.command {
         Some(figterm_message::Command::InsertTextCommand(command)) => {
             if let Some(ref text_to_insert) = command.insertion {
-                if let Some((mut buffer, Some(mut position))) = term
+                if let Some((buffer, Some(position))) = term
                     .get_current_buffer()
                     .map(|buff| (buff.buffer, buff.cursor_idx))
                 {
-                    // perform deletion
-                    if let Some(deletion) = command.deletion {
-                        let deletion = deletion as usize;
-                        buffer.drain(position - deletion..position);
-                    }
-                    // move cursor
-                    if let Some(offset) = command.offset {
-                        position += offset as usize;
-                    }
-                    // split text by cursor
-                    let (left, right) = buffer.split_at(position);
+                    trace!("buffer: {:?}, cursor_position: {:?}", buffer, position);
 
-                    INSERTION_LOCKED_AT.lock().replace(SystemTime::now());
-                    let expected = format!("{}{}{}", left, text_to_insert, right);
-                    trace!("lock set, expected buffer: {}", expected);
+                    // perform deletion
+                    // if let Some(deletion) = command.deletion {
+                    //     let deletion = deletion as usize;
+                    //     buffer.drain(position - deletion..position);
+                    // }
+                    // // move cursor
+                    // if let Some(offset) = command.offset {
+                    //     position += offset as usize;
+                    // }
+                    // // split text by cursor
+                    // let (left, right) = buffer.split_at(position);
+
+                    INSERTION_LOCKED_AT.write().replace(SystemTime::now());
+                    let expected = format!("{}{}", buffer, text_to_insert);
+                    trace!("lock set, expected buffer: {:?}", expected);
                     *EXPECTED_BUFFER.lock() = expected;
                 }
             }
@@ -428,6 +434,8 @@ fn figterm_main() -> Result<()> {
 
                     let mut first_time = true;
 
+                    let mut edit_buffer_interval = tokio::time::interval(Duration::from_millis(16));
+
                     'select_loop: loop {
                         if first_time && term.shell_state().has_seen_prompt {
                             trace!("Has seen prompt and first time");
@@ -515,6 +523,16 @@ fn figterm_main() -> Result<()> {
                                     }
                                 }
                                 Ok("incomming_receiver")
+                            }
+                            // Check if to send the edit buffer because of timeout
+                            _ = edit_buffer_interval.tick() => {
+                                let send_eb = INSERTION_LOCKED_AT.read().is_some();
+                                if send_eb && can_send_edit_buffer(&term) {
+                                    if let Err(e) = send_edit_buffer(&term, &outgoing_sender).await {
+                                        warn!("Failed to send edit buffer: {}", e);
+                                    }
+                                }
+                                Ok("timeout_edit_buffer")
                             }
                         };
 

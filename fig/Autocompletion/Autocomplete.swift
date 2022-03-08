@@ -132,7 +132,7 @@ class ShellInsertionProvider {
 
       text.insert(contentsOf: insertion, at: startOfDeletion)
 
-      let endOfInsertion = text.index(startOfDeletion, offsetBy: insertion.utf8.count)
+      let endOfInsertion = text.index(startOfDeletion, offsetBy: insertion.count)
 
       index = text.index(endOfInsertion, offsetBy: offset)
 
@@ -154,10 +154,7 @@ class ShellInsertionProvider {
     // - it varies significantly between native and Electron terminals.
     // We can probably be smarter about this and modulate delay based on terminal.
 
-    let delay = 0.05
-    Timer.delayWithSeconds(delay) {
       // remove lock after keystrokes have been processes
-      try? FileManager.default.removeItem(atPath: insertionLock)
 
       if let window = AXWindowServer.shared.allowlistedWindow,
          let sessionId = window.session,
@@ -179,7 +176,7 @@ class ShellInsertionProvider {
                                             context: window.associatedShellContext?.ipcContext)
 
         Autocomplete.position()
-      }
+
     }
   }
 

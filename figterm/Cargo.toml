@@ -1,6 +1,6 @@
 [package]
 name = "figterm"
-version = "4.1.2"
+version = "4.1.3"
 authors = ["Fig"]
 edition = "2021"
 description = "A layer between the terminal and shell."
