@@ -143,7 +143,7 @@ pub fn app_version(app: impl AsRef<OsStr>) -> Option<Version> {
     let version = String::from_utf8_lossy(&output.stdout);
     Version::parse(version.trim()).ok()
 }
-const CHECKMARK: &str = "\x1b[0;32m✓\x1b[0m";
+const CHECKMARK: &str = "\x1b[0;32m✔\x1b[0m";
 const DOT: &str = "\x1b[0;33m●\x1b[0m";
 const CROSS: &str = "\x1b[0;31m✘\x1b[0m";
 
