@@ -32,9 +32,9 @@
                                             </connections>
                                         </menuItem>
                                         <menuItem isSeparatorItem="YES" id="DQT-zf-vSS"/>
-                                        <menuItem title="Quit Fig" keyEquivalent="q" id="4sb-4s-VLi">
+                                        <menuItem title="Quit Fig (UI)" keyEquivalent="q" id="qyR-tb-ZOy" userLabel="Close Window">
                                             <connections>
-                                                <action selector="terminate:" target="Ady-hI-5gd" id="Te7-pn-YzF"/>
+                                                <action selector="performClose:" target="Ady-hI-5gd" id="Skz-jA-Gpn"/>
                                             </connections>
                                         </menuItem>
                                     </items>
