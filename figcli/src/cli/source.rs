@@ -51,18 +51,18 @@ async fn sync_file(shell: &Shell, sync_when: SyncWhen) -> Result<UpdateStatus> {
     let dotfiles: DotfileData = serde_json::from_str(&download).context("Failed to parse JSON")?;
 
     let last_updated =
-        fig_settings::state::get_value(format!("dotfiles.{}.{}", shell, "lastUpdate"))?
+        fig_settings::state::get_value(format!("dotfiles.{}.{}", shell, "lastUpdated"))?
             .and_then(|v| v.as_str().map(String::from))
             .and_then(|s| OffsetDateTime::parse(&s, &Rfc3339).ok());
 
     debug!("dotfiles_json: {:?}", dotfiles.dotfile);
     debug!(
-        "dotfiles_last_updated: {:?}",
-        dotfiles.updated_at.map(|t| t.unix_timestamp_nanos())
+        "new lastUpdated: {:?}",
+        dotfiles.updated_at.and_then(|t| t.format(&Rfc3339).ok())
     );
     debug!(
-        "last_updated: {:?}",
-        last_updated.map(|t| t.unix_timestamp_nanos())
+        "old lastUpdated: {:?}",
+        last_updated.and_then(|t| t.format(&Rfc3339).ok())
     );
 
     let update_dotfiles = || {
