@@ -143,21 +143,24 @@ pub fn app_version(app: impl AsRef<OsStr>) -> Option<Version> {
     let version = String::from_utf8_lossy(&output.stdout);
     Version::parse(version.trim()).ok()
 }
+const CHECKMARK: &str = "\x1b[0;32m✔\x1b[0m";
+const DOT: &str = "\x1b[0;33m●\x1b[0m";
+const CROSS: &str = "\x1b[0;31m✘\x1b[0m";
 
 fn print_status_result(name: impl AsRef<str>, status: &Result<(), DoctorError>) {
     match status {
         Ok(()) => {
-            println!("✅ {}", name.as_ref());
+            println!("{} {}", CHECKMARK, name.as_ref());
         }
         Err(DoctorError::Warning(msg)) => {
-            println!("🟡 {}", msg);
+            println!("{} {}", DOT, msg);
         }
         Err(DoctorError::Error {
             reason,
             info,
             fix: _,
         }) => {
-            println!("❌ {}: {}", name.as_ref(), reason);
+            println!("{} {}: {}", CROSS, name.as_ref(), reason);
             for infoline in info {
                 println!("  {}", infoline);
             }
@@ -778,15 +781,23 @@ impl DoctorCheck<DiagnosticsResponse> for FigCLIPathCheck {
 
     async fn check(&self, _: &DiagnosticsResponse) -> Result<(), DoctorError> {
         let path = std::env::current_exe().context("Could not get executable path.")?;
-        let exe_path = fig_directories::fig_dir().unwrap().join("bin").join("fig");
+        let fig_bin_path = fig_directories::fig_dir().unwrap().join("bin").join("fig");
+        let local_bin_path = fig_directories::home_dir()
+            .unwrap()
+            .join(".local")
+            .join("bin")
+            .join("fig");
 
-        if path != exe_path
-            && path != Path::new("/usr/local/bin/.fig/bin/fig")
-            && path != Path::new("/usr/local/bin/fig")
+        if path == fig_bin_path || path == local_bin_path || path == Path::new("/usr/local/bin/fig")
         {
             Ok(())
         } else {
-            return Err(anyhow!("Fig CLI must be in {}", exe_path.display()).into());
+            return Err(anyhow!(
+                "Fig CLI ({}) must be in {}",
+                path.display(),
+                local_bin_path.display()
+            )
+            .into());
         }
     }
 }
@@ -1208,6 +1219,10 @@ where
             print_status_result(&name, &result);
         }
 
+        if config.no_early_exit {
+            continue;
+        }
+
         if let Err(err) = &result {
             match fig_telemetry::SegmentEvent::new("Doctor Error") {
                 Ok(mut event) => {
@@ -1318,11 +1333,16 @@ fn stop_spinner(spinner: Option<Spinner>) -> Result<()> {
 struct CheckConfiguration {
     verbose: bool,
     strict: bool,
+    no_early_exit: bool,
 }
 
 // Doctor
-pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
-    let config = CheckConfiguration { verbose, strict };
+pub async fn doctor_cli(verbose: bool, strict: bool, no_early_exit: bool) -> Result<()> {
+    let config = CheckConfiguration {
+        verbose,
+        strict,
+        no_early_exit,
+    };
 
     let mut spinner: Option<Spinner> = None;
     if !config.verbose {
@@ -1440,7 +1460,10 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
 
     if is_error {
         println!();
-        println!("❌ Doctor found errors. Please fix them and try again.");
+        println!(
+            "{} Doctor found errors. Please fix them and try again.",
+            CROSS
+        );
         println!();
         println!(
             "If you are not sure how to fix it, please open an issue with {} to let us know!",
@@ -1452,8 +1475,11 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         );
         println!()
     } else {
-        println!();
-        println!("✅ Everything looks good!");
+        // If early exit is disabled, no errors are thrown
+        if !config.no_early_exit {
+            println!();
+            println!("{} Everything looks good!", CHECKMARK);
+        }
         println!();
         println!(
             "Fig still not working? Run {} to let us know!",

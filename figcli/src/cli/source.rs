@@ -103,6 +103,7 @@ async fn sync_file(shell: &Shell, sync_when: SyncWhen) -> Result<UpdateStatus> {
             Ok(UpdateStatus::Updated)
         }
         (_, _) => {
+            update_dotfiles()?;
             info!("{} dotfiles are up to date", shell);
             Ok(UpdateStatus::NotUpdated)
         }

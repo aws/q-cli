@@ -203,6 +203,12 @@ pub async fn update_or_clone_git_repo(
     directory: impl AsRef<Path>,
     reference: Option<&GitReference>,
 ) -> Result<()> {
+    let parent_directory = directory.as_ref().parent().unwrap();
+
+    if !parent_directory.exists() {
+        tokio::fs::create_dir_all(parent_directory).await?;
+    }
+
     if directory.as_ref().exists() {
         tokio::task::block_in_place(|| {
             let repository = Repository::open(directory.as_ref())?;
