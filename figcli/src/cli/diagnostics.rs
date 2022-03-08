@@ -489,51 +489,67 @@ impl DotfilesDiagnostics {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Diagnostics {
     timestamp: u64,
-    version: Version,
+    fig_running: bool,
+    version: Option<Version>,
     hardware: HardwareInfo,
     os: OSVersion,
     user_env: CurrentEnvironment,
     env_var: EnvVarDiagnostic,
-    fig_details: FigDetails,
-    integrations: IntegrationDiagnostics,
+    fig_details: Option<FigDetails>,
+    integrations: Option<IntegrationDiagnostics>,
     dotfiles: DotfilesDiagnostics,
 }
 
 impl Diagnostics {
     pub async fn new() -> Result<Diagnostics> {
-        let diagnostics = get_diagnostics().await?;
-
-        let mut integrations = IntegrationDiagnostics::new().await;
-        integrations.docker(&diagnostics.docker);
-
-        let mut current_env = CurrentEnvironment::new();
-        current_env.current_window_id(&diagnostics.current_window_identifier);
-        current_env.current_process(&diagnostics.current_process);
-
-        let fig_details = FigDetails::new(&diagnostics);
-
         let timestamp = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)?
             .as_secs();
 
-        Ok(Diagnostics {
-            timestamp,
-            version: Version {
-                distribution: diagnostics.distribution,
-                beta: diagnostics.beta,
-                debug_mode: diagnostics.debug_autocomplete,
-                dev_mode: diagnostics.developer_mode_enabled,
-                layout: diagnostics.current_layout_name,
-                is_running_on_read_only_volume: diagnostics.is_running_on_read_only_volume,
-            },
-            hardware: HardwareInfo::new()?,
-            os: OSVersion::new()?,
-            user_env: current_env,
-            env_var: EnvVarDiagnostic::new(),
-            fig_details,
-            integrations,
-            dotfiles: DotfilesDiagnostics::new()?,
-        })
+        match get_diagnostics().await {
+            Ok(diagnostics) => {
+                let mut integrations = IntegrationDiagnostics::new().await;
+                integrations.docker(&diagnostics.docker);
+
+                let mut current_env = CurrentEnvironment::new();
+                current_env.current_window_id(&diagnostics.current_window_identifier);
+                current_env.current_process(&diagnostics.current_process);
+
+                let fig_details = FigDetails::new(&diagnostics);
+
+                Ok(Diagnostics {
+                    timestamp,
+                    fig_running: true,
+                    version: Some(Version {
+                        distribution: diagnostics.distribution,
+                        beta: diagnostics.beta,
+                        debug_mode: diagnostics.debug_autocomplete,
+                        dev_mode: diagnostics.developer_mode_enabled,
+                        layout: diagnostics.current_layout_name,
+                        is_running_on_read_only_volume: diagnostics.is_running_on_read_only_volume,
+                    }),
+                    hardware: HardwareInfo::new()?,
+                    os: OSVersion::new()?,
+                    user_env: current_env,
+                    env_var: EnvVarDiagnostic::new(),
+                    fig_details: Some(fig_details),
+                    integrations: Some(integrations),
+                    dotfiles: DotfilesDiagnostics::new()?,
+                })
+            }
+            Err(_) => Ok(Diagnostics {
+                timestamp,
+                fig_running: false,
+                version: None,
+                hardware: HardwareInfo::new()?,
+                os: OSVersion::new()?,
+                user_env: CurrentEnvironment::new(),
+                env_var: EnvVarDiagnostic::new(),
+                fig_details: None,
+                integrations: None,
+                dotfiles: DotfilesDiagnostics::new()?,
+            }),
+        }
     }
 }
 
@@ -547,9 +563,21 @@ impl Diagnostic for Diagnostics {
             new_lines
         };
 
-        let mut lines = vec!["# Fig Diagnostics".into(), "## Fig details:".into()];
-        lines.extend(print_indent(&self.version.user_readable()?, "  ", 1));
-        lines.extend(print_indent(&self.fig_details.user_readable()?, "  ", 1));
+        let mut lines = vec!["# Fig Diagnostics".into()];
+
+        if !self.fig_running {
+            lines.push(
+                "## NOTE: Fig is not running, run `fig launch` to get the full diagnostics".into(),
+            );
+        }
+
+        lines.push("## Fig details:".into());
+        if let Some(version) = &self.version {
+            lines.extend(print_indent(&version.user_readable()?, "  ", 1));
+        }
+        if let Some(details) = &self.fig_details {
+            lines.extend(print_indent(&details.user_readable()?, "  ", 1));
+        }
         lines.push("## Hardware Info:".into());
         lines.extend(print_indent(&self.hardware.user_readable()?, "  ", 1));
         lines.push("## OS Info:".into());
@@ -559,8 +587,9 @@ impl Diagnostic for Diagnostics {
         lines.push("  - Environment Variables:".into());
         lines.extend(print_indent(&self.env_var.user_readable()?, "  ", 2));
         lines.push("## Integrations:".into());
-        lines.extend(print_indent(&self.integrations.user_readable()?, "  ", 1));
-
+        if let Some(integrations) = &self.integrations {
+            lines.extend(print_indent(&integrations.user_readable()?, "  ", 1));
+        }
         Ok(lines)
     }
 }

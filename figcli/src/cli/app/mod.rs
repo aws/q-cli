@@ -34,7 +34,7 @@ fn is_app_running() -> bool {
     }
 }
 
-pub fn launch_fig() -> Result<()> {
+pub fn launch_fig_cli() -> Result<()> {
     if is_app_running() {
         println!("\n→ Fig is already running.\n");
         return Ok(());
@@ -84,7 +84,7 @@ pub async fn quit_fig() -> Result<()> {
 
 pub async fn restart_fig() -> Result<()> {
     if restart_command().await.is_err() {
-        launch_fig()
+        launch_fig_cli()
     } else {
         println!("\n→ Restarting Fig...\n");
         Ok(())
@@ -114,7 +114,7 @@ impl AppSubcommand {
             }
             AppSubcommand::Restart => restart_fig().await?,
             AppSubcommand::Quit => quit_fig().await?,
-            AppSubcommand::Launch => launch_fig()?,
+            AppSubcommand::Launch => launch_fig_cli()?,
             AppSubcommand::Running => {
                 println!("{}", if is_app_running() { "1" } else { "0" });
             }

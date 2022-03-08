@@ -1,24 +1,26 @@
+use std::path::{Path, PathBuf};
+
 use anyhow::Result;
+use fig_auth::get_token;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
+use tracing::{error, info};
 
-pub async fn test() -> Result<()> {
-    let plugin = fetch_plugin("oh-my-zsh").await?;
-    println!("{:#?}", plugin);
+use crate::plugins::download::update_or_clone_git_repo;
 
-    let cwd = std::env::current_dir()?;
+use super::manifest::GitHub;
 
-    let a: Vec<_> = walkdir::WalkDir::new(&cwd)
+fn _walk_dir(dir: &Path) -> Result<Vec<PathBuf>> {
+    let paths: Vec<_> = walkdir::WalkDir::new(&dir)
         .into_iter()
         .filter_map(|entry| entry.ok())
         .filter(|e| e.file_type().is_file())
-        .map(|entry| entry.path().strip_prefix(&cwd).unwrap().to_owned())
+        .map(|entry| entry.path().strip_prefix(&dir).unwrap().to_owned())
         .collect();
+    Ok(paths)
+}
 
-    let a = json!(a);
-
-    println!("{}", a);
-
+pub async fn test() -> Result<()> {
+    fetch_installed_plugins().await?;
     Ok(())
 }
 
@@ -31,14 +33,12 @@ pub struct PluginContext {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PluginInstallData {
     pub source: Option<String>,
-    #[serde(rename = "use")]
-    pub use_file: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PluginData {
     pub name: String,
-    pub github: Option<String>,
+    pub github: Option<GitHub>,
     pub installation: Option<PluginInstallData>,
 }
 
@@ -49,10 +49,61 @@ pub struct PluginResponse {
     pub message: Option<String>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct InstalledPlugin {
+    name: String,
+    last_update: u64,
+}
+
+pub async fn fetch_installed_plugins() -> Result<()> {
+    let token = get_token().await?;
+    let body = reqwest::Client::new()
+        .get("https://api.fig.io/dotfiles/plugins")
+        .bearer_auth(token)
+        .send()
+        .await?
+        .error_for_status()?
+        .text()
+        .await?;
+
+    let plugins: Vec<InstalledPlugin> = serde_json::from_str(&body)?;
+
+    let tasks = plugins
+        .into_iter()
+        .map(|plugin| tokio::spawn(async { fetch_plugin(plugin.name).await }))
+        .collect::<Vec<_>>();
+
+    for task in tasks {
+        match task.await {
+            Ok(Ok(plugin)) => {
+                if let Some(plugins_directory) = fig_directories::fig_data_dir() {
+                    let plugin_directory = plugins_directory.join("plugins").join(&plugin.name);
+
+                    info!("Cloneing or updating {}", plugin.name);
+
+                    if let Some(github) = plugin.github {
+                        if let Err(err) =
+                            update_or_clone_git_repo(github.git_url(), &plugin_directory, None)
+                                .await
+                        {
+                            error!("Error updating or cloning {}: {}", plugin.name, err);
+                        }
+                    }
+                }
+            }
+            Ok(Err(err)) => error!("Error fetching plugin: {}", err),
+            Err(err) => error!("Error fetching plugin: {}", err),
+        }
+    }
+
+    Ok(())
+}
+
 pub async fn fetch_plugin(name: impl AsRef<str>) -> Result<PluginData> {
     let url = format!("https://api.fig.io/plugins/name/{}", name.as_ref());
     let body = reqwest::get(&url).await?.error_for_status()?.text().await?;
-    println!("{:#?}", serde_json::from_str::<serde_json::Value>(&body));
+
     let data: PluginResponse = serde_json::from_str(&body)?;
 
     if data.success {

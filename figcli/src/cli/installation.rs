@@ -8,7 +8,11 @@ use nix::unistd::geteuid;
 use self_update::update::UpdateStatus;
 use time::OffsetDateTime;
 
-use crate::{cli::util::dialoguer_theme, daemon, util::shell::Shell};
+use crate::{
+    cli::util::dialoguer_theme,
+    daemon,
+    util::{launch_fig, shell::Shell},
+};
 
 bitflags::bitflags! {
     /// The different components that can be installed.
@@ -159,13 +163,15 @@ pub enum UpdateType {
 
 /// Self-update the fig binary
 /// Update will exit the binary if the update was successful
-pub async fn update(update_type: UpdateType) -> Result<UpdateStatus> {
+pub async fn update(_update_type: UpdateType) -> Result<UpdateStatus> {
     // Let desktop app handle updates on macOS
     #[cfg(target_os = "macos")]
     {
         use fig_ipc::command::update_command;
 
-        let desktop_app_update = update_command(update_type == UpdateType::Confirm).await;
+        launch_fig()?;
+
+        let desktop_app_update = update_command(true).await;
         match desktop_app_update {
             Ok(()) => {
                 println!("\n→ Checking for updates to macOS app...\n");

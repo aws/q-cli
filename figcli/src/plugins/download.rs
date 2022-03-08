@@ -1,15 +1,22 @@
 //! Download and updating of plugins
 
 use crate::{
-    plugins::manifest::{GitReference, GithubValue, ShellSource},
+    plugins::manifest::GitReference,
     util::checksum::{GitChecksum, Sha256Checksum},
 };
 
 use anyhow::Result;
-use git2::Repository;
+use flume::Receiver;
+use git2::{build::RepoBuilder, FetchOptions, RemoteCallbacks, Repository};
+use parking_lot::RwLock;
 use reqwest::IntoUrl;
 use serde::{Deserialize, Serialize};
-use std::path::{Path, PathBuf};
+use std::{
+    io::Write,
+    path::{Path, PathBuf},
+    sync::Arc,
+    time::Duration,
+};
 use tokio::io::AsyncWriteExt;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -32,7 +39,7 @@ pub fn plugin_data_dir() -> Option<PathBuf> {
     fig_directories::fig_data_dir().map(|dir| dir.join("plugins"))
 }
 
-async fn download_remote_file(
+pub async fn download_remote_file(
     url: impl IntoUrl,
     directory: impl AsRef<Path>,
     checksum: &Option<Sha256Checksum>,
@@ -59,106 +66,185 @@ async fn download_remote_file(
 
     Ok(computed_checksum)
 }
+struct GitProgress {
+    total_objects: usize,
+    received_objects: usize,
+    total_deltas: usize,
+    indexed_deltas: usize,
+    received_bytes: usize,
+}
 
-async fn clone_git_repo(
+struct GitUpdatedTips {
+    refspecs: Vec<String>,
+}
+
+struct GitFetchStatus {
+    git_progress: RwLock<GitProgress>,
+    git_updated_tips: RwLock<GitUpdatedTips>,
+}
+
+fn git_fetch_options() -> (FetchOptions<'static>, Arc<GitFetchStatus>, Receiver<String>) {
+    let (sideband_progress_tx, sideband_progress_rx) = flume::unbounded();
+
+    let mut fetch_options = FetchOptions::new();
+    let mut remote_callbacks = RemoteCallbacks::new();
+
+    let git_fetch_status = Arc::new(GitFetchStatus {
+        git_progress: RwLock::new(GitProgress {
+            total_objects: 0,
+            received_objects: 0,
+            total_deltas: 0,
+            indexed_deltas: 0,
+            received_bytes: 0,
+        }),
+        git_updated_tips: RwLock::new(GitUpdatedTips { refspecs: vec![] }),
+    });
+
+    let git_fetch_status_clone = git_fetch_status.clone();
+    remote_callbacks.transfer_progress(move |progress| {
+        let mut git_fetch_status = git_fetch_status_clone.git_progress.write();
+
+        git_fetch_status.total_objects = progress.total_objects();
+        git_fetch_status.received_objects = progress.received_objects();
+        git_fetch_status.total_deltas = progress.total_deltas();
+        git_fetch_status.indexed_deltas = progress.indexed_deltas();
+        git_fetch_status.received_bytes = progress.received_bytes();
+
+        true
+    });
+
+    let git_fetch_status_clone = git_fetch_status.clone();
+    remote_callbacks.update_tips(move |refspec, _, _| {
+        let mut git_updated_tips = git_fetch_status_clone.git_updated_tips.write();
+
+        git_updated_tips.refspecs.push(refspec.to_string());
+
+        true
+    });
+
+    remote_callbacks.sideband_progress(move |bytes| {
+        if let Ok(bytes) = std::str::from_utf8(bytes) {
+            sideband_progress_tx
+                .send_timeout(bytes.to_string(), Duration::from_millis(1))
+                .ok();
+        }
+
+        true
+    });
+
+    fetch_options.remote_callbacks(remote_callbacks);
+
+    (fetch_options, git_fetch_status, sideband_progress_rx)
+}
+
+pub fn update_git_repo(repository: &Repository) -> Result<()> {
+    for remote_name in repository.remotes()?.iter().flatten() {
+        let mut remote = repository.find_remote(remote_name)?;
+
+        let refspecs = remote.fetch_refspecs()?;
+        let refspecs_vec: Vec<_> = refspecs.iter().flatten().collect();
+
+        let (mut fetch_options, _, _) = git_fetch_options();
+
+        remote.fetch(&refspecs_vec, Some(&mut fetch_options), None)?;
+    }
+
+    Ok(())
+}
+
+pub async fn clone_git_repo(url: impl IntoUrl, directory: impl AsRef<Path>) -> Result<GitChecksum> {
+    let temp_directory = tempfile::tempdir_in(plugin_data_dir().unwrap())?;
+
+    let sha_id = {
+        let (fetch_options, _, _) = git_fetch_options();
+
+        let repo = tokio::task::block_in_place(|| {
+            RepoBuilder::new()
+                .fetch_options(fetch_options)
+                .clone(url.as_str(), temp_directory.path())
+        })?;
+
+        let sha_id = repo.head()?.peel_to_commit()?.id().to_string();
+
+        sha_id
+    };
+
+    tokio::fs::rename(temp_directory.path(), directory.as_ref()).await?;
+
+    Ok(GitChecksum::new(sha_id))
+}
+
+pub fn set_reference(repository: &Repository, reference: &GitReference) -> Result<()> {
+    let refname = match reference {
+        GitReference::Branch(branch) => branch,
+        GitReference::Tag(tag) => tag,
+        GitReference::Commit(commit) => commit,
+    };
+
+    let (object, reference) = repository.revparse_ext(refname).expect("Object not found");
+
+    repository
+        .checkout_tree(&object, None)
+        .expect("Failed to checkout");
+
+    match reference {
+        // gref is an actual reference like branches or tags
+        Some(gref) => repository.set_head(gref.name().unwrap()),
+        // this is a commit, not a reference
+        None => repository.set_head_detached(object.id()),
+    }
+    .expect("Failed to set HEAD");
+
+    Ok(())
+}
+
+pub async fn update_or_clone_git_repo(
     url: impl IntoUrl,
     directory: impl AsRef<Path>,
     reference: Option<&GitReference>,
-) -> Result<GitChecksum> {
-    let repo = Repository::clone(url.as_str(), &directory)?;
+) -> Result<()> {
+    if directory.as_ref().exists() {
+        tokio::task::block_in_place(|| {
+            let repository = Repository::open(directory.as_ref())?;
+            update_git_repo(&repository)?;
+            anyhow::Ok(())
+        })?;
+    } else {
+        clone_git_repo(url, &directory).await?;
+    }
 
     if let Some(reference) = reference {
-        let refname = match reference {
-            GitReference::Branch(branch) => branch,
-            GitReference::Tag(tag) => tag,
-            GitReference::Commit(commit) => commit,
-        };
-
-        let (object, reference) = repo.revparse_ext(refname).expect("Object not found");
-
-        repo.checkout_tree(&object, None)
-            .expect("Failed to checkout");
-
-        match reference {
-            // gref is an actual reference like branches or tags
-            Some(gref) => repo.set_head(gref.name().unwrap()),
-            // this is a commit, not a reference
-            None => repo.set_head_detached(object.id()),
-        }
-        .expect("Failed to set HEAD");
+        tokio::task::block_in_place(|| {
+            set_reference(&Repository::open(directory.as_ref())?, reference)?;
+            anyhow::Ok(())
+        })?;
     }
 
-    let sha_id = repo.head()?.peel_to_commit()?.id().to_string();
-
-    Ok(GitChecksum::new(sha_id))
+    Ok(())
 }
 
-async fn _fetch_git_repo(
-    directory: impl AsRef<Path>,
-    _reference: Option<&GitReference>,
-) -> Result<GitChecksum> {
-    let repo = Repository::open(directory.as_ref())?;
-
-    // repo.find_remote("origin")?.fetch(&[], None, None)?;
-
-    let sha_id = repo.head()?.peel_to_commit()?.id().to_string();
-
-    Ok(GitChecksum::new(sha_id))
-}
-
-impl ShellSource {
-    pub async fn download_source(&self, directory: impl AsRef<Path>) -> Result<DownloadMetadata> {
-        tokio::fs::create_dir_all(&directory).await?;
-
-        match self {
-            ShellSource::Git { git, reference } => {
-                let checksum = clone_git_repo(git.as_str(), directory, reference.as_ref()).await?;
-                Ok(DownloadMetadata::Git {
-                    git_repo: git.clone(),
-                    checksum,
-                })
-            }
-            ShellSource::Github { github, reference } => match github {
-                GithubValue::GithubRepo(github_repo) => {
-                    let github_url = github_repo.git_url();
-                    let checksum =
-                        clone_git_repo(github_url.as_str(), directory, reference.as_ref()).await?;
-                    Ok(DownloadMetadata::Git {
-                        git_repo: github_url,
-                        checksum,
-                    })
-                }
-                _ => {
-                    return Err(anyhow::anyhow!("Non-normalized GitHub source"));
-                }
-            },
-            ShellSource::Local { path: _ } => {
-                // TODO: Determine what to do here
-                todo!()
-            }
-            ShellSource::Gist { gist, checksum } => {
-                let checksum = download_remote_file(gist.raw_url(), directory, checksum).await?;
-                Ok(DownloadMetadata::Remote {
-                    url: gist.raw_url(),
-                    checksum,
-                })
-            }
-            ShellSource::Remote { remote, checksum } => {
-                let checksum = download_remote_file(remote.as_ref(), directory, checksum).await?;
-                Ok(DownloadMetadata::Remote {
-                    url: remote.clone(),
-                    checksum,
-                })
-            }
+pub async fn sideband_printer(sideband_rx: Receiver<String>) {
+    tokio::spawn(async move {
+        crossterm::execute!(std::io::stdout(), crossterm::cursor::Hide,).ok();
+        while let Ok(line) = sideband_rx.recv_async().await {
+            crossterm::execute!(
+                std::io::stdout(),
+                crossterm::terminal::Clear(crossterm::terminal::ClearType::CurrentLine),
+                crossterm::style::Print(line)
+            )
+            .ok();
+            std::io::stdout().flush().ok();
         }
-    }
+        crossterm::execute!(std::io::stdout(), crossterm::cursor::Show).ok();
+    });
 }
 
 #[cfg(test)]
 mod tests {
+    use reqwest::Url;
     use tokio::{io::AsyncReadExt, process::Command};
 
-    use crate::plugins::manifest::{Gist, GitHub};
+    use crate::plugins::manifest::GitHub;
 
     use super::*;
 
@@ -212,19 +298,20 @@ mod tests {
     async fn test_download_source_git() {
         let branch = "main";
 
-        let source = ShellSource::Git {
-            git: "https://github.com/withfig/fig".try_into().unwrap(),
-            reference: Some(GitReference::Branch(branch.into())),
-        };
-
         let directory = tempfile::tempdir().unwrap();
 
-        source.download_source(directory.path()).await.unwrap();
+        update_or_clone_git_repo(
+            Url::parse("https://github.com/withfig/fig.git").unwrap(),
+            directory.path().join("fig"),
+            Some(&GitReference::Branch(branch.into())),
+        )
+        .await
+        .unwrap();
 
         // Check that the branch is correct
         let branch_output = Command::new("git")
             .args(&["branch", "--show-current"])
-            .current_dir(directory.path())
+            .current_dir(directory.path().join("fig"))
             .output()
             .await
             .unwrap();
@@ -237,20 +324,22 @@ mod tests {
     #[tokio::test]
     async fn test_download_source_github() {
         let commit = "d112d75ecc1d867e7f223577c25c56f57f862c7b";
-
-        let source = ShellSource::Github {
-            github: GithubValue::GithubRepo(GitHub::new("withfig", "fig")),
-            reference: Some(GitReference::Commit(commit.into())),
-        };
+        let github = GitHub::new("withfig", "fig");
 
         let directory = tempfile::tempdir().unwrap();
 
-        source.download_source(directory.path()).await.unwrap();
+        update_or_clone_git_repo(
+            github.git_url(),
+            directory.path().join("fig"),
+            Some(&GitReference::Commit(commit.into())),
+        )
+        .await
+        .unwrap();
 
         // Check that the commit is correct
         let commit_output = Command::new("git")
             .args(&["rev-parse", "HEAD"])
-            .current_dir(directory.path())
+            .current_dir(directory.path().join("fig"))
             .output()
             .await
             .unwrap();
@@ -258,42 +347,5 @@ mod tests {
         let commit_stdout = String::from_utf8(commit_output.stdout).unwrap();
 
         assert_eq!(commit_stdout.trim(), commit);
-    }
-
-    #[tokio::test]
-    async fn test_download_source_local() {
-        let _source = ShellSource::Local {
-            path: "./".try_into().unwrap(),
-        };
-
-        let _directory = tempfile::tempdir().unwrap();
-
-        // source.download_source(directory.path()).await.unwrap();
-    }
-
-    #[tokio::test]
-    async fn test_download_source_gist() {
-        let source = ShellSource::Gist {
-            gist: Gist::new("916e80ae32717eeec18d2c7a50a13192"),
-            checksum: None,
-        };
-
-        let directory = tempfile::tempdir().unwrap();
-
-        source.download_source(directory.path()).await.unwrap();
-    }
-
-    #[tokio::test]
-    async fn test_download_source_remote() {
-        let source = ShellSource::Remote {
-            remote: "https://gist.githubusercontent.com/raw/916e80ae32717eeec18d2c7a50a13192"
-                .try_into()
-                .unwrap(),
-            checksum: None,
-        };
-
-        let directory = tempfile::tempdir().unwrap();
-
-        source.download_source(directory.path()).await.unwrap();
     }
 }

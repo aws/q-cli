@@ -581,10 +581,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     statusBarMenu.addItem(NSMenuItem.separator())
     let settings = statusBarMenu.addItem(
       withTitle: "Settings",
-      action: #selector(MissionControl.openUI),
+      action: #selector(Settings.openUI),
       keyEquivalent: "")
     settings.image = NSImage(imageLiteralResourceName: "gear")
-    settings.target = MissionControl.self
+    settings.target = Settings.self
 
     statusBarMenu.addItem(NSMenuItem.separator())
 
@@ -771,6 +771,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let (_, tty) = pair
         tty.setTitle("Restart this terminal to finish uninstalling Fig...")
       }
+
+      // Uninstall daemon first to avoid interaction with file listeners while deleting Fig.app
+      _ = "~/.local/bin/fig _ uninstall --daemon".runAsCommand()
 
       NSWorkspace.shared.open(
         URL(string: "https://fig.io/uninstall?email=\(Defaults.shared.email ?? "")&" +

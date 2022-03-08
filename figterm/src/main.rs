@@ -12,7 +12,6 @@ use crate::{
     pty::{async_pty::AsyncPtyMaster, fork_pty, ioctl_tiocswinsz, PtyForkResult},
     term::get_winsize,
     term::{read_winsize, termios_to_raw},
-    utils::fig_path,
 };
 
 use alacritty_terminal::{
@@ -40,10 +39,12 @@ use nix::{
     unistd::{execvp, getpid, isatty},
 };
 use once_cell::sync::Lazy;
+use parking_lot::Mutex;
+use parking_lot::{lock_api::RawRwLock, RwLock};
 use sentry::integrations::anyhow::capture_anyhow;
+use std::time::{Duration, SystemTime};
 use std::{
-    env, error::Error, ffi::CString, os::unix::prelude::AsRawFd, path::PathBuf, process::exit,
-    str::FromStr, vec,
+    env, error::Error, ffi::CString, os::unix::prelude::AsRawFd, process::exit, str::FromStr, vec,
 };
 use tokio::{
     io::{self, AsyncReadExt, AsyncWriteExt},
@@ -152,8 +153,8 @@ impl EventListener for EventSender {
     }
 }
 
-static INSERTION_LOCK_PATH: Lazy<Option<PathBuf>> =
-    Lazy::new(|| fig_path().map(|path| path.join("insertion-lock")));
+static INSERTION_LOCKED_AT: RwLock<Option<SystemTime>> = RwLock::const_new(RawRwLock::INIT, None);
+static EXPECTED_BUFFER: Lazy<Mutex<String>> = Lazy::new(|| Mutex::new("".to_string()));
 
 fn can_send_edit_buffer<T>(term: &Term<T>) -> bool
 where
@@ -164,13 +165,31 @@ where
         .contains(&term.shell_state().get_context().shell.as_deref());
     let prexec = term.shell_state().preexec;
 
-    trace!("Insertion lock path: {:?}", INSERTION_LOCK_PATH.as_ref());
-
-    let insertion_locked = if let Some(insertion_lock_path) = INSERTION_LOCK_PATH.as_ref() {
-        nix::unistd::access(insertion_lock_path, nix::unistd::AccessFlags::F_OK).is_ok()
-    } else {
-        false
+    let mut handle = INSERTION_LOCKED_AT.write();
+    let insertion_locked = match handle.as_ref() {
+        Some(at) => {
+            let lock_expired =
+                at.elapsed().unwrap_or_else(|_| Duration::new(0, 0)) > Duration::new(0, 50_000_000);
+            let should_unlock = lock_expired
+                || term
+                    .get_current_buffer()
+                    .map(|buff| &buff.buffer == (&EXPECTED_BUFFER.lock() as &String))
+                    .unwrap_or(true);
+            if should_unlock {
+                handle.take();
+                if lock_expired {
+                    trace!("insertion lock released because lock expired");
+                } else {
+                    trace!("insertion lock released because buffer looks like how we expect");
+                }
+                false
+            } else {
+                true
+            }
+        }
+        None => false,
     };
+    drop(handle);
 
     trace!(
         "in_docker_ssh: {}, shell_enabled: {}, prexec: {}, insertion_locked: {}",
@@ -191,6 +210,11 @@ where
         Some(edit_buffer) => {
             if let Some(cursor_idx) = edit_buffer.cursor_idx.and_then(|i| i.try_into().ok()) {
                 info!("edit_buffer: {:?}", edit_buffer);
+                trace!("buffer bytes: {:02X?}", edit_buffer.buffer.as_bytes());
+                trace!(
+                    "buffer chars: {:?}",
+                    edit_buffer.buffer.chars().collect::<Vec<_>>()
+                );
 
                 let context = shell_state_to_context(term.shell_state());
                 let edit_buffer_hook =
@@ -209,12 +233,37 @@ where
 
 async fn process_figterm_message(
     figterm_message: FigtermMessage,
-    _term: &Term<EventSender>,
+    term: &Term<EventSender>,
     pty_master: &mut AsyncPtyMaster,
     mut intercept_set: DashSet<char, fnv::FnvBuildHasher>,
 ) -> Result<()> {
     match figterm_message.command {
         Some(figterm_message::Command::InsertTextCommand(command)) => {
+            if let Some(ref text_to_insert) = command.insertion {
+                if let Some((buffer, Some(position))) = term
+                    .get_current_buffer()
+                    .map(|buff| (buff.buffer, buff.cursor_idx))
+                {
+                    trace!("buffer: {:?}, cursor_position: {:?}", buffer, position);
+
+                    // perform deletion
+                    // if let Some(deletion) = command.deletion {
+                    //     let deletion = deletion as usize;
+                    //     buffer.drain(position - deletion..position);
+                    // }
+                    // // move cursor
+                    // if let Some(offset) = command.offset {
+                    //     position += offset as usize;
+                    // }
+                    // // split text by cursor
+                    // let (left, right) = buffer.split_at(position);
+
+                    INSERTION_LOCKED_AT.write().replace(SystemTime::now());
+                    let expected = format!("{}{}", buffer, text_to_insert);
+                    trace!("lock set, expected buffer: {:?}", expected);
+                    *EXPECTED_BUFFER.lock() = expected;
+                }
+            }
             pty_master
                 .write(command.to_term_string().as_bytes())
                 .await?;
@@ -314,47 +363,40 @@ fn launch_shell() -> Result<()> {
 
 fn figterm_main() -> Result<()> {
     let term_session_id = env::var("TERM_SESSION_ID")
-        .with_context(|| "Failed to get TERM_SESSION_ID environment variable")?;
-
-    let _fig_integration_version: Option<i32> = env::var("FIG_INTEGRATION_VERSION")
-        .with_context(|| "Failed to get FIG_INTEGRATION_VERSION environment variable")?
-        .parse()
-        .ok();
+        .context("Failed to get TERM_SESSION_ID environment variable")?;
 
     logger::stdio_debug_log("Checking stdin fd is a tty");
 
     // Check that stdin is a tty
-    if !isatty(STDIN_FILENO).with_context(|| "Failed to check if stdin is a tty")? {
+    if !isatty(STDIN_FILENO).context("Failed to check if stdin is a tty")? {
         anyhow::bail!("stdin is not a tty");
     }
 
     // Get term data
-    let termios = tcgetattr(STDIN_FILENO).with_context(|| "Failed to get terminal attributes")?;
+    let termios = tcgetattr(STDIN_FILENO).context("Failed to get terminal attributes")?;
     let old_termios = termios.clone();
 
-    let mut winsize = get_winsize(STDIN_FILENO).with_context(|| "Failed to get terminal size")?;
+    let mut winsize = get_winsize(STDIN_FILENO).context("Failed to get terminal size")?;
 
     logger::stdio_debug_log("Forking child shell process");
 
     // Fork pseudoterminal
     // SAFETY: forkpty is safe to call, but the child must not call any functions
     // that are not async-signal-safe.
-    match fork_pty(&old_termios, &winsize)
-        .context("fork_pty")
-        .with_context(|| "Failed to fork pty")?
-    {
+    match fork_pty(&old_termios, &winsize).context("Failed to fork pty")? {
         PtyForkResult::Parent(pt_details, pid) => {
             let runtime = runtime::Builder::new_multi_thread()
                 .enable_all()
                 .thread_name("figterm-runtime-worker")
                 .build()?;
 
-            init_logger(&pt_details.pty_name).with_context(|| "Failed to init logger")?;
+            init_logger(&pt_details.pty_name).context("Failed to init logger")?;
 
             match runtime
                 .block_on(async {
                     info!("Shell: {}", pid);
                     info!("Figterm: {}", getpid());
+                    info!("Pty name: {}", pt_details.pty_name);
 
                     let history_sender = history::spawn_history_task().await;
 
@@ -366,7 +408,7 @@ fn figterm_main() -> Result<()> {
                     let outgoing_sender = spawn_outgoing_sender().await?;
 
                     // Spawn thread to handle incoming data
-                    let incomming_reciever = spawn_incoming_receiver(&term_session_id).await?;
+                    let incomming_receiver = spawn_incoming_receiver(&term_session_id).await?;
 
                     let mut stdin = io::stdin();
                     let mut stdout = io::stdout();
@@ -392,8 +434,10 @@ fn figterm_main() -> Result<()> {
 
                     let mut first_time = true;
 
+                    let mut edit_buffer_interval = tokio::time::interval(Duration::from_millis(16));
+
                     'select_loop: loop {
-                        if term.shell_state().has_seen_prompt && first_time {
+                        if first_time && term.shell_state().has_seen_prompt {
                             trace!("Has seen prompt and first time");
                             let initial_command = env::var("FIG_START_TEXT").ok().filter(|s| !s.is_empty());
                             if let Some(mut initial_command) = initial_command {
@@ -468,7 +512,7 @@ fn figterm_main() -> Result<()> {
                                 }
                                 Ok("master")
                             }
-                            msg = incomming_reciever.recv_async() => {
+                            msg = incomming_receiver.recv_async() => {
                                 match msg {
                                     Ok(buf) => {
                                         debug!("Received message from socket: {:?}", buf);
@@ -478,7 +522,17 @@ fn figterm_main() -> Result<()> {
                                         error!("Failed to receive message from socket: {}", err);
                                     }
                                 }
-                                Ok("incomming_reciever")
+                                Ok("incomming_receiver")
+                            }
+                            // Check if to send the edit buffer because of timeout
+                            _ = edit_buffer_interval.tick() => {
+                                let send_eb = INSERTION_LOCKED_AT.read().is_some();
+                                if send_eb && can_send_edit_buffer(&term) {
+                                    if let Err(e) = send_edit_buffer(&term, &outgoing_sender).await {
+                                        warn!("Failed to send edit buffer: {}", e);
+                                    }
+                                }
+                                Ok("timeout_edit_buffer")
                             }
                         };
 

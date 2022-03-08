@@ -22,7 +22,10 @@ pub mod util;
 use crate::{
     cli::{installation::InstallComponents, util::open_url},
     daemon::{daemon, get_daemon},
-    util::shell::{Shell, When},
+    util::{
+        launch_fig,
+        shell::{Shell, When},
+    },
 };
 
 use anyhow::{Context, Result};
@@ -31,7 +34,9 @@ use crossterm::style::Stylize;
 use fig_ipc::command::open_ui_element;
 use fig_proto::local::UiElement;
 use std::{fs::File, process::exit, str::FromStr};
-use tracing::{info, level_filters::LevelFilter};
+use tracing::{debug, level_filters::LevelFilter};
+
+use self::app::AppSubcommand;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ArgEnum)]
 pub enum OutputFormat {
@@ -95,6 +100,9 @@ pub enum CliRootCommands {
     Tweet,
     /// Create a new Github issue
     Issue {
+        /// Force issue creation
+        #[clap(long, short = 'f')]
+        force: bool,
         /// Issue description
         description: Vec<String>,
     },
@@ -125,6 +133,7 @@ pub enum CliRootCommands {
     Quit,
     Restart,
     Alpha,
+    Onboarding,
 }
 
 #[derive(Debug, Parser)]
@@ -192,7 +201,7 @@ impl Cli {
                     }
                 }
 
-                info!("Command ran: {:?}", std::env::args());
+                debug!("Command ran: {:?}", std::env::args().collect::<Vec<_>>());
             }
         }
 
@@ -229,7 +238,9 @@ impl Cli {
                 CliRootCommands::Theme { theme } => theme::theme_cli(theme).await,
                 CliRootCommands::Settings(settings_args) => settings_args.execute().await,
                 CliRootCommands::Debug(debug_subcommand) => debug_subcommand.execute().await,
-                CliRootCommands::Issue { description } => issue::issue_cli(description).await,
+                CliRootCommands::Issue { force, description } => {
+                    issue::issue_cli(force, description).await
+                }
                 CliRootCommands::Plugins(plugins_subcommand) => plugins_subcommand.execute().await,
                 CliRootCommands::GenerateFigSpec => {
                     println!("{}", Cli::generation_fig_compleations());
@@ -239,15 +250,13 @@ impl Cli {
                     internal_subcommand.execute().await
                 }
                 CliRootCommands::Launch => {
-                    let app_res = app::launch_fig();
-                    let daemon_res = match get_daemon() {
+                    let app_res = app::launch_fig_cli();
+                    match get_daemon() {
                         Ok(d) => d.start(),
                         Err(e) => Err(anyhow::anyhow!(e)),
-                    };
-                    if daemon_res.is_err() {
-                        println!("Error starting Fig daemon");
                     }
-                    app_res.or(daemon_res)
+                    .ok();
+                    app_res
                 }
                 CliRootCommands::Quit => {
                     let app_res = app::quit_fig().await;
@@ -272,10 +281,15 @@ impl Cli {
                     app_res.or(daemon_res)
                 }
                 CliRootCommands::Alpha => {
+                    launch_fig().ok();
                     let res = open_ui_element(UiElement::MissionControl).await;
                     if res.is_ok() {
                         println!("\n→ Opening dotfiles...\n");
                     };
+                    res
+                }
+                CliRootCommands::Onboarding => {
+                    let res = AppSubcommand::Onboarding.execute().await;
                     res
                 }
             },
@@ -307,6 +321,9 @@ impl Cli {
 
 async fn root_command() -> Result<()> {
     // Check if Fig is running
+    #[cfg(target_os = "macos")]
+    launch_fig()?;
+
     match fig_ipc::command::open_ui_element(fig_proto::local::UiElement::MissionControl).await {
         Ok(_) => {}
         Err(_) => {

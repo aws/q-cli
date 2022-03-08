@@ -24,12 +24,12 @@ extension FileManager {
     let fileExistsAtDestination = self.fileExists(atPath: destination.path, isDirectory: &isDir)
 
     switch (fileExistsAtDestination, isDir.boolValue) {
-      case (true, true):
-        break
-      case (true, false):
-        try self.removeItem(at: destination)
-      case (false, _):
-        try self.createDirectory(at: destination, withIntermediateDirectories: true, attributes: nil)
+    case (true, true):
+      break
+    case (true, false):
+      try self.removeItem(at: destination)
+    case (false, _):
+      try self.createDirectory(at: destination, withIntermediateDirectories: true, attributes: nil)
     }
 
     let filepaths = try self.contentsOfDirectory(at: source,
@@ -72,7 +72,7 @@ class Onboarding {
   static func setUpEnviroment(completion:( () -> Void)? = nil) {
 
     if Diagnostic.isRunningOnReadOnlyVolume {
-      SentrySDK.capture(message: "Currently running on read only volume! App is translocated!")
+      Logger.log(message: "Currently running on read only volume! App is translocated!")
     }
 
     guard let figcliPath = Bundle.main.path(forAuxiliaryExecutable: "fig-darwin-universal") else {
@@ -85,6 +85,7 @@ class Onboarding {
 
     do {
 
+      // swiftlint:disable identifier_name
       let fs = FileManager.default
 
       try? fs.createDirectory(at: appsDirectory,
@@ -128,11 +129,14 @@ class Onboarding {
 
     } catch {
       Logger.log(message: "An error occured when attempting to install Fig! " + error.localizedDescription)
+      SentrySDK.capture(message: "Installation: " + error.localizedDescription)
+      Defaults.shared.lastInstallationError = error.localizedDescription
     }
 
     // Determine user's login shell by explicitly reading from "/Users/$(whoami)"
     // rather than ~ to handle rare cases where these are different.
-    let response = Process.run(command: "/usr/bin/dscl", args: ".", "-read", "/Users/\(NSUserName())", "UserShell")
+    let response = Process.run(command: "/usr/bin/dscl",
+                               args: [".", "-read", "/Users/\(NSUserName())", "UserShell"])
 
     if response.exitCode == 0 {
       Defaults.shared.userShell = response.output.joined(separator: "")

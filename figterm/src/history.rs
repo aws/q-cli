@@ -1,5 +1,6 @@
 use alacritty_terminal::term::CommandInfo;
 use anyhow::Result;
+use fig_directories::fig_dir;
 use flume::{bounded, Sender};
 use once_cell::sync::Lazy;
 use regex::Regex;
@@ -11,8 +12,6 @@ use std::{
     path::PathBuf,
 };
 use tracing::{error, trace};
-
-use crate::utils::fig_path;
 
 pub async fn spawn_history_task() -> Sender<CommandInfo> {
     trace!("Spawning history task");
@@ -78,11 +77,10 @@ pub struct History {
 impl History {
     pub fn load() -> Result<History> {
         trace!("Loading history");
-        let old_history_path: PathBuf = [fig_path().unwrap(), "history".into()]
-            .into_iter()
-            .collect();
+        let old_history_path: PathBuf =
+            [fig_dir().unwrap(), "history".into()].into_iter().collect();
 
-        let history_path: PathBuf = [fig_path().unwrap(), "fig.history".into()]
+        let history_path: PathBuf = [fig_dir().unwrap(), "fig.history".into()]
             .into_iter()
             .collect();
 
@@ -197,7 +195,7 @@ impl History {
         // Legacy insert into old history file
         if legacy {
             let legacy_history_file = File::options().create(true).append(true).open(
-                &[fig_path().unwrap(), "history".into()]
+                &[fig_dir().unwrap(), "history".into()]
                     .into_iter()
                     .collect::<PathBuf>(),
             )?;

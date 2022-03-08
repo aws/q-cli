@@ -51,18 +51,18 @@ async fn sync_file(shell: &Shell, sync_when: SyncWhen) -> Result<UpdateStatus> {
     let dotfiles: DotfileData = serde_json::from_str(&download).context("Failed to parse JSON")?;
 
     let last_updated =
-        fig_settings::state::get_value(format!("dotfiles.{}.{}", shell, "lastUpdate"))?
+        fig_settings::state::get_value(format!("dotfiles.{}.{}", shell, "lastUpdated"))?
             .and_then(|v| v.as_str().map(String::from))
             .and_then(|s| OffsetDateTime::parse(&s, &Rfc3339).ok());
 
     debug!("dotfiles_json: {:?}", dotfiles.dotfile);
     debug!(
-        "dotfiles_last_updated: {:?}",
-        dotfiles.updated_at.unix_timestamp_nanos()
+        "new lastUpdated: {:?}",
+        dotfiles.updated_at.and_then(|t| t.format(&Rfc3339).ok())
     );
     debug!(
-        "last_updated: {:?}",
-        last_updated.map(|t| t.unix_timestamp_nanos())
+        "old lastUpdated: {:?}",
+        last_updated.and_then(|t| t.format(&Rfc3339).ok())
     );
 
     let update_dotfiles = || {
@@ -86,23 +86,23 @@ async fn sync_file(shell: &Shell, sync_when: SyncWhen) -> Result<UpdateStatus> {
         std::fs::write(json_file, download)?;
 
         fig_settings::state::set_value(
-            format!("dotfiles.{}.{}", shell, "lastUpdate"),
-            json!(dotfiles.updated_at.format(&Rfc3339)?),
+            format!("dotfiles.{}.lastUpdated", shell),
+            json!(dotfiles.updated_at.and_then(|t| t.format(&Rfc3339).ok())),
         )?;
 
         anyhow::Ok(())
     };
 
-    match last_updated {
-        Some(last_updated) if dotfiles.updated_at > last_updated => {
+    match (last_updated, dotfiles.updated_at) {
+        (Some(previous_updated), Some(current_updated)) if current_updated > previous_updated => {
             update_dotfiles()?;
             Ok(UpdateStatus::Updated)
         }
-        None => {
+        (None, Some(_)) => {
             update_dotfiles()?;
             Ok(UpdateStatus::Updated)
         }
-        Some(_) => {
+        (_, _) => {
             info!("{} dotfiles are up to date", shell);
             Ok(UpdateStatus::NotUpdated)
         }
@@ -147,7 +147,7 @@ pub async fn sync_based_on_settings() -> Result<()> {
     match sync_all_shells(sync_when).await {
         Ok(update_status) => match (sync_when, update_status) {
             (SyncWhen::Immediately, UpdateStatus::Updated) => {
-                notify_terminals()?;
+                notify_all_terminals(TerminalNotification::NewUpdates)?;
                 info!("Dotfiles updated");
             }
             (SyncWhen::Later, UpdateStatus::Updated) => {
@@ -165,8 +165,49 @@ pub async fn sync_based_on_settings() -> Result<()> {
     Ok(())
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TerminalNotification {
+    NewUpdates,
+    Source,
+}
+
+impl std::str::FromStr for TerminalNotification {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self> {
+        match s {
+            "newUpdates" => Ok(TerminalNotification::NewUpdates),
+            "source" => Ok(TerminalNotification::Source),
+            _ => Err(anyhow::anyhow!("Invalid terminal notification: {}", s)),
+        }
+    }
+}
+
+impl std::fmt::Display for TerminalNotification {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TerminalNotification::NewUpdates => write!(f, "newUpdates"),
+            TerminalNotification::Source => write!(f, "source"),
+        }
+    }
+}
+
+pub fn notify_terminal(
+    session_id: impl AsRef<str>,
+    notification: TerminalNotification,
+) -> Result<()> {
+    let dotfiles_update_path = std::env::temp_dir()
+        .join("fig")
+        .join("dotfiles_updates")
+        .join(session_id.as_ref());
+
+    std::fs::write(dotfiles_update_path, notification.to_string())?;
+
+    Ok(())
+}
+
 /// Notify dotfiles updates
-pub fn notify_terminals() -> Result<()> {
+pub fn notify_all_terminals(notification: TerminalNotification) -> Result<()> {
     let tempdir = std::env::temp_dir();
     let dotfiles_updates_folder = tempdir.join("fig").join("dotfiles_updates");
 
@@ -175,7 +216,7 @@ pub fn notify_terminals() -> Result<()> {
         for file in dotfiles_updates_folder.read_dir()? {
             let file = file?;
 
-            std::fs::write(file.path(), "true")?;
+            std::fs::write(file.path(), notification.to_string())?;
         }
     }
 
@@ -185,6 +226,9 @@ pub fn notify_terminals() -> Result<()> {
 /// Download the lastest dotfiles
 pub async fn source_cli() -> Result<()> {
     sync_all_shells(SyncWhen::Immediately).await?;
-    notify_terminals()?;
+    if let Ok(session_id) = std::env::var("TERM_SESSION_ID") {
+        notify_terminal(session_id, TerminalNotification::Source)?;
+    }
+
     Ok(())
 }

@@ -446,6 +446,7 @@ extension Array {
 extension ShellBridge {
   static func symlinkCLI(completion: (() -> Void)? = nil) {
     Onboarding.copyFigCLIExecutable(to: "~/.fig/bin/fig")
+    Onboarding.copyFigCLIExecutable(to: "~/.local/bin/fig")
     Onboarding.copyFigCLIExecutable(to: "/usr/local/bin/fig")
     Onboarding.symlinkBundleExecutable("figterm", to: "~/.fig/bin/figterm")
     Onboarding.symlinkBundleExecutable("fig_get_shell", to: "~/.fig/bin/fig_get_shell")

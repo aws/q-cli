@@ -55,6 +55,9 @@ pub async fn uninstall_mac_app() {
     ))
     .ok();
 
+    // Uninstall dotfiles, daemon, and CLI
+    uninstall_cli(InstallComponents::DAEMON).ok();
+
     // Delete the .fig folder
     if let Some(fig_dir) = fig_directories::fig_dir() {
         match tokio::fs::remove_dir_all(fig_dir).await {

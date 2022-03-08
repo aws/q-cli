@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import SwiftUI
 
 extension NSAppleScript {
   static func run(path: String) {
@@ -20,7 +21,12 @@ extension NSAppleScript {
 
 extension Process {
 
-  static func run(command: String, args: String...) -> (output: [String], error: [String], exitCode: Int32) {
+  static func run(command: String,
+                  args: [String],
+                  workingDirectory: String? = nil,
+                  environment: [String: String]? = nil)
+                // swiftlint:disable large_tuple
+                  -> (output: [String], error: [String], exitCode: Int32) {
 
       var output: [String] = []
       var error: [String] = []
@@ -34,6 +40,11 @@ extension Process {
       let errpipe = Pipe()
       task.standardError = errpipe
 
+      if let workingDirectory = workingDirectory {
+          task.currentDirectoryURL = URL(fileURLWithPath: workingDirectory)
+      }
+
+      task.environment = environment
       task.launch()
 
       let outdata = outpipe.fileHandleForReading.readDataToEndOfFile()
@@ -52,6 +63,27 @@ extension Process {
       let status = task.terminationStatus
 
       return (output, error, status)
+  }
+
+  static func runAsync(command: String,
+                       args: [String],
+                       workingDirectory: String? = nil,
+                       environment: [String: String]? = nil,
+                       completion:
+                       (((output: [String], error: [String], exitCode: Int32)) -> Void)? = nil) {
+
+    DispatchQueue.global(qos: .background).async {
+      let response = Process.run(command: command,
+                                 args: args,
+                                 workingDirectory: workingDirectory,
+                                 environment: environment)
+
+      if let completion = completion {
+        DispatchQueue.main.async {
+          completion(response)
+        }
+      }
+    }
   }
 }
 
@@ -72,7 +104,8 @@ extension String {
   }
 
   func runWithElevatedPriviledgesFromAppleScript(completion: (() -> Void)? = nil) {
-    "cmd=\"do shell script \\\"\(self)\\\" with administrator privileges\" && osascript -e \"$cmd\"".runInBackground(completion: { (_) in
+    "cmd=\"do shell script \\\"\(self)\\\" with administrator privileges\" && osascript -e \"$cmd\""
+      .runInBackground(completion: { (_) in
       if let completion = completion {
         completion()
       }
@@ -197,7 +230,6 @@ extension String {
       guard let handler = handler else { return }
       let data = handler.availableData
       guard data.count > 0 else {
-        //                      NotificationCenter.default.removeObserver(observer!)
         handler.closeFile()
         return
       }

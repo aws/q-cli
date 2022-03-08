@@ -165,6 +165,36 @@ pub fn get_machine_id() -> Option<String> {
     unimplemented!();
 }
 
+#[cfg(target_os = "macos")]
+pub fn get_app_info() -> Result<String> {
+    let output = Command::new("lsappinfo")
+        .args(["info", "-app", "com.mschrage.fig"])
+        .output()?;
+    let result = String::from_utf8(output.stdout)?;
+    Ok(result.trim().into())
+}
+
+#[cfg(target_os = "macos")]
+pub fn is_app_running() -> bool {
+    match get_app_info() {
+        Ok(s) => !s.is_empty(),
+        _ => false,
+    }
+}
+
+#[cfg(target_os = "macos")]
+pub fn launch_fig() -> Result<()> {
+    if is_app_running() {
+        return Ok(());
+    }
+    Command::new("open")
+        .args(["-g", "-b", "com.mschrage.fig"])
+        .spawn()
+        .context("fig could not be launched")?;
+    std::thread::sleep(std::time::Duration::from_secs(3));
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

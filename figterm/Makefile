@@ -1,9 +1,10 @@
-ROOT:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+FIGTERM_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+MACOS_DIR:=$(shell dirname $(FIGTERM_DIR))
 
-export BUILT_PRODUCTS_DIR ?= $(ROOT)/build
-export ARTIFACTS ?= $(ROOT)/build
+export BUILT_PRODUCTS_DIR ?= $(FIGTERM_DIR)/build
+export ARTIFACTS ?= $(FIGTERM_DIR)/build
 
-TARGET_DIR ?= $(ROOT)/../target
+TARGET_DIR ?= $(MACOS_DIR)/target
 
 # Add brew executables to PATH
 export PATH := /opt/homebrew/bin:/opt/homebrew/sbin:$(PATH)
@@ -25,7 +26,10 @@ $(shell mkdir -p $(BUILT_PRODUCTS_DIR))
 $(shell mkdir -p $(ARTIFACTS))
 
 PROGS =	figterm fig_get_shell
-SRC = Cargo.toml $(wildcard figterm/**/*) $(wildcard alacritty_terminal/**/*) $(wildcard  fig-color/**/*)
+SRC := $(shell find $(FIGTERM_DIR)/src -name '*.rs' -o -name '*.toml')\
+	   $(shell find $(MACOS_DIR)/rust-lib -name '*.rs' -o -name '*.toml' -o -name '*.c' -o -name '*.h')\
+	   $(shell find $(MACOS_DIR)/proto -name '*.proto')\
+	   $(MACOS_DIR)/Cargo.toml $(MACOS_DIR)/Cargo.lock
 
 PLATFORM := $(shell uname -s)
 
