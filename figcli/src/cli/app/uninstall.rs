@@ -7,13 +7,11 @@ use crate::cli::installation::{uninstall_cli, InstallComponents};
 
 async fn remove_in_dir_with_prefix(dir: &Path, prefix: &str) {
     if let Ok(mut entries) = tokio::fs::read_dir(dir).await {
-        while let Ok(entry) = entries.next_entry().await {
-            if let Some(entry) = entry {
-                if let Some(name) = entry.file_name().to_str() {
-                    if name.starts_with(prefix) {
-                        tokio::fs::remove_file(entry.path()).await.ok();
-                        tokio::fs::remove_dir_all(entry.path()).await.ok();
-                    }
+        while let Ok(Some(entry)) = entries.next_entry().await {
+            if let Some(name) = entry.file_name().to_str() {
+                if name.starts_with(prefix) {
+                    tokio::fs::remove_file(entry.path()).await.ok();
+                    tokio::fs::remove_dir_all(entry.path()).await.ok();
                 }
             }
         }

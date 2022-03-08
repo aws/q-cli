@@ -772,8 +772,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         tty.setTitle("Restart this terminal to finish uninstalling Fig...")
       }
 
+      let cli = Bundle.main.path(forAuxiliaryExecutable: "fig-darwin-universal")!
       // Uninstall daemon first to avoid interaction with file listeners while deleting Fig.app
-      _ = "~/.local/bin/fig _ uninstall --daemon".runAsCommand()
+      _ = Process.run(command: cli, args: [ "_", "uninstall", "--daemon"])
+//      _ = "~/.local/bin/fig _ uninstall --daemon".runAsCommand()
 
       NSWorkspace.shared.open(
         URL(string: "https://fig.io/uninstall?email=\(Defaults.shared.email ?? "")&" +
@@ -814,11 +816,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
           }
       }
 
+      // Use internal uninstall to avoid signaling the mac app.
+      // must be called before deleting application bundle
+//      let out = "~/.local/bin/fig _ uninstall".runAsCommand()
+      let out = Process.run(command: cli, args: [ "_", "uninstall"])
+
+      Logger.log(message: out)
+
+      // must be called after using FigCLI
       try? FileManager.default.removeItem(atPath: "/Applications/Fig.app")
 
-      // Use internal uninstall to avoid signaling the mac app.
-      let out = "~/.local/bin/fig _ uninstall".runAsCommand()
-      Logger.log(message: out)
       self.quit()
     }
   }
