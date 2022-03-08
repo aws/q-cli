@@ -821,7 +821,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 //      let out = "~/.local/bin/fig _ uninstall".runAsCommand()
       let out = Process.run(command: cli, args: [ "_", "uninstall"])
 
-      Logger.log(message: out)
+      Logger.log(message: "exit: \(out.exitCode)\nstdout:\n" + out.output.joined(separator: "\n")
+                        + "\nstderr:\n" + out.error.joined(separator: "\n"))
 
       // must be called after using FigCLI
       try? FileManager.default.removeItem(atPath: "/Applications/Fig.app")
