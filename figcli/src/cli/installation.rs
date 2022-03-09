@@ -42,10 +42,6 @@ pub fn install_cli(
         }
     }
 
-    if install_components.contains(InstallComponents::DAEMON) {
-        daemon::install_daemon()?;
-    }
-
     if install_components.contains(InstallComponents::DOTFILES) {
         let mut manual_install = if no_confirm {
             false
@@ -81,6 +77,10 @@ pub fn install_cli(
         }
     }
 
+    if install_components.contains(InstallComponents::DAEMON) {
+        daemon::install_daemon()?;
+    }
+
     Ok(())
 }
 
@@ -102,13 +102,17 @@ fn install_fig() -> Result<()> {
 }
 
 pub fn uninstall_cli(install_components: InstallComponents) -> Result<()> {
-    if install_components.contains(InstallComponents::DAEMON) {
-        uninstall_daemon()?;
-    }
+    let daemon_result = if install_components.contains(InstallComponents::DAEMON) {
+        uninstall_daemon()
+    } else {
+        Ok(())
+    };
 
-    if install_components.contains(InstallComponents::DOTFILES) {
-        uninstall_fig()?;
-    }
+    let dotfiles_result = if install_components.contains(InstallComponents::DOTFILES) {
+        uninstall_fig()
+    } else {
+        Ok(())
+    };
 
     if install_components.contains(InstallComponents::BINARY) {
         let local_path = fig_directories::home_dir()
@@ -125,10 +129,10 @@ pub fn uninstall_cli(install_components: InstallComponents) -> Result<()> {
             }
         }
 
-        println!("\n{}\n", "Fig binary has been uninstalled".bold());
+        println!("\n{}\n", "Fig binary has been uninstalled".bold())
     }
 
-    Ok(())
+    daemon_result.and(dotfiles_result)
 }
 
 fn uninstall_daemon() -> Result<()> {
