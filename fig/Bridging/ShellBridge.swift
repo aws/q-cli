@@ -242,22 +242,22 @@ struct ShellMessage: Codable {
   }
 
   func getWorkingDirectory() -> String? {
-    return self.env?.jsonStringToDict()?["PWD"] as? String
+    return self.env?.parseAsJSON()?["PWD"] as? String
   }
 
   func environmentVariable(for key: String) -> String? {
-    return self.env?.jsonStringToDict()?[key] as? String
+    return self.env?.parseAsJSON()?[key] as? String
   }
 
   var shell: String? {
-    if let dict = self.env?.jsonStringToDict() {
+    if let dict = self.env?.parseAsJSON() {
       return dict["SHELL"] as? String
     }
     return nil
   }
 
   var terminal: String? {
-    if let dict = self.env?.jsonStringToDict() {
+    if let dict = self.env?.parseAsJSON() {
       if dict["KITTY_WINDOW_ID"] != nil {
         return "kitty"
       }
@@ -277,7 +277,7 @@ struct ShellMessage: Codable {
 
   // indicates whether the command was run from a fig command (eg. fig source internally uses fig bg:init)
   var viaFigCommand: Bool {
-    return self.env?.jsonStringToDict()?["VIA_FIG_COMMAND"] as? String != nil
+    return self.env?.parseAsJSON()?["VIA_FIG_COMMAND"] as? String != nil
   }
 
   var potentialBundleId: String? {
@@ -293,7 +293,7 @@ struct ShellMessage: Codable {
     case "iTerm.app":
       return Integrations.iTerm
     default:
-      if let dict = self.env?.jsonStringToDict(),
+      if let dict = self.env?.parseAsJSON(),
          let bundleId = dict["TERM_BUNDLE_IDENTIFIER"] as? String {
         return bundleId
       }
@@ -315,7 +315,7 @@ struct ShellMessage: Codable {
   }
 
   var shellIntegrationVersion: Int? {
-    guard let dict = self.env?.jsonStringToDict(),
+    guard let dict = self.env?.parseAsJSON(),
           let versionString = dict["FIG_INTEGRATION_VERSION"] as? String,
           let version = Int(versionString) else {
       return nil
@@ -446,10 +446,10 @@ extension Array {
 extension ShellBridge {
   static func symlinkCLI(completion: (() -> Void)? = nil) {
     Onboarding.copyFigCLIExecutable(to: "~/.fig/bin/fig")
+    Onboarding.copyFigCLIExecutable(to: "~/.local/bin/fig")
     Onboarding.copyFigCLIExecutable(to: "/usr/local/bin/fig")
     Onboarding.symlinkBundleExecutable("figterm", to: "~/.fig/bin/figterm")
     Onboarding.symlinkBundleExecutable("fig_get_shell", to: "~/.fig/bin/fig_get_shell")
-    Onboarding.symlinkBundleExecutable("fig_callback", to: "~/.fig/bin/fig_callback")
     completion?()
   }
 

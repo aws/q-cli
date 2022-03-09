@@ -26,6 +26,11 @@ class iTermIntegration: TerminalIntegrationProvider {
 
   fileprivate static let legacyIntegrationPath = iTermAutoLaunchDirectory + scriptName + ".py"
 
+  func uninstall() -> Bool {
+    try? FileManager.default.removeItem(atPath: iTermIntegration.autoLaunchScriptTarget)
+    return true
+  }
+
   func install() -> InstallationStatus {
     guard NSWorkspace.shared.applicationIsInstalled(self.bundleIdentifier) else {
       return .applicationNotInstalled

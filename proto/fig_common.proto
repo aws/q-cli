@@ -1,0 +1,18 @@
+syntax = "proto3";
+package fig_common;
+
+// Ok result
+message Ok { }
+
+// Error result, can take an error message
+message Error {
+  optional string message = 1;
+}
+
+// A result of some operation, can be Ok or Error
+message Result {
+    oneof result {
+        Ok ok = 1;
+        Error error = 2;
+    }
+}

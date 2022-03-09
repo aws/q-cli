@@ -29,6 +29,10 @@ class AlacrittyIntegration: InputMethodDependentTerminalIntegrationProvider & In
 
     return .installed
   }
+  
+  func uninstall() -> Bool {
+    return true
+  }
 
   func install() -> InstallationStatus {
     guard self.applicationIsInstalled else {

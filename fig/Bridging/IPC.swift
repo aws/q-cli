@@ -9,6 +9,7 @@
 import Foundation
 import Socket
 import FigAPIBindings
+import Cocoa
 
 typealias LocalMessage = Local_LocalMessage
 typealias CommandResponse = Local_CommandResponse
@@ -56,7 +57,9 @@ class IPC: UnixSocketServerDelegate {
     // Prevent "App Nap" from automatically killing Fig if the computer goes to sleep
     // while the user has disabled the menubar icon
     // See: https://stackoverflow.com/questions/19577541/disabling-timer-coalescing-in-osx-for-a-given-process
-    ProcessInfo.processInfo.disableAutomaticTermination("Running unix socket server to handle updates from active terminal sessions.")
+    ProcessInfo.processInfo.disableAutomaticTermination(
+      "Running unix socket server to handle updates from active terminal sessions."
+    )
   }
 
   func recieved(data: Data, on socket: Socket?) {
@@ -191,7 +194,7 @@ class IPC: UnixSocketServerDelegate {
 
   func handleCommand(_ message: Local_Command, from socket: Socket, using encoding: IPC.Encoding)
   throws {
-    let id = message.id
+    let messageId = message.id
     var response: CommandResponse?
 
     switch message.command {
@@ -232,6 +235,10 @@ class IPC: UnixSocketServerDelegate {
       CommandHandlers.promptAccessibility()
     case .inputMethod(let request):
       response = CommandHandlers.inputMethod(request)
+    case .uninstall:
+      DispatchQueue.main.sync {
+        NSApp.appDelegate.uninstall(showDialog: false)
+      }
     case .none:
       break
     }
@@ -239,7 +246,7 @@ class IPC: UnixSocketServerDelegate {
     guard !message.noResponse else { return }
 
     if var resp = response {
-      resp.id = id
+      resp.id = messageId
       try self.send(resp, to: socket, encoding: encoding)
     }
   }
@@ -256,7 +263,7 @@ class IPC: UnixSocketServerDelegate {
       IPC.post(notification: .editBuffer, object: hook)
 
       ShellHookManager.shared.updateKeybuffer(
-        context: hook.context,
+        context: hook.context.activeContext(),
         text: hook.text,
         cursor: Int(hook.cursor),
         histno: Int(hook.histno))
@@ -264,18 +271,18 @@ class IPC: UnixSocketServerDelegate {
       IPC.post(notification: .initialize, object: hook)
 
       ShellHookManager.shared.startedNewTerminalSession(
-        context: hook.context,
+        context: hook.context.activeContext(),
         calledDirect: hook.calledDirect,
         bundle: hook.bundle,
         env: hook.env)
     case .prompt(let hook):
       IPC.post(notification: .prompt, object: hook)
 
-      ShellHookManager.shared.shellPromptWillReturn(context: hook.context)
+      ShellHookManager.shared.shellPromptWillReturn(context: hook.context.activeContext())
     case .preExec(let hook):
       IPC.post(notification: .preExec, object: hook)
 
-      ShellHookManager.shared.shellWillExecuteCommand(context: hook.context)
+      ShellHookManager.shared.shellWillExecuteCommand(context: hook.context.activeContext())
     case .postExec(let hook):
       IPC.post(notification: .postExec, object: hook)
 
@@ -287,9 +294,11 @@ class IPC: UnixSocketServerDelegate {
                                                   sessionId: hook.focusedSessionID)
     case .tmuxPaneChanged:
       break
-    case .openedSshConnection:
-      break
+    case .openedSshConnection(let hook):
+      IPC.post(notification: .sshConnectionOpened, object: hook)
     case .callback(let hook):
+
+
       Logger.log(message: "Callback hook")
       NotificationCenter.default.post(
         name: PseudoTerminal.recievedCallbackNotification,
@@ -304,8 +313,34 @@ class IPC: UnixSocketServerDelegate {
       Autocomplete.hide()
     case .event(let hook):
       ShellHookManager.shared.eventHook(event: hook.eventName)
+    case .fileChanged(let hook):
+      if hook.fileChanged == Local_FileChangedHook.FileChanged.settings {
+        Settings.shared.settingsUpdated()
+      }
+      if hook.fileChanged == Local_FileChangedHook.FileChanged.state {
+        LocalState.shared.localStateUpdated()
+      }
     case .none:
       break
+    }
+  }
+}
+
+extension Local_ShellContext {
+  func activeContext() -> Local_ShellContext {
+    guard self.hasRemoteContext else {
+      return self
+    }
+
+    return Local_ShellContext.with { context in
+      // Do not update session id or integration version (should use local value)
+      context.integrationVersion = self.integrationVersion
+      context.sessionID = self.sessionID
+      context.hostname = self.remoteContext.hostname
+      context.pid = self.remoteContext.pid
+      context.processName = self.remoteContext.processName
+      context.currentWorkingDirectory = self.remoteContext.currentWorkingDirectory
+      context.ttys = self.remoteContext.ttys
     }
   }
 }

@@ -69,6 +69,14 @@
     "category": "Autocomplete"
   },
   {
+    "settingName": "autocomplete.navigateToHistory",
+    "title": "Show history when the navigate up key is pressed",
+    "description": "Show history instead of closing autocomplete when the focused suggestion is the first one of the list.",
+    "type": "boolean",
+    "default": true,
+    "category": "Autocomplete"
+  },
+  {
     "settingName": "autocomplete.alwaysShowDescription",
     "title": "Always Show Separated Description",
     "description": "Set if Autocomplete should always display the extended separated description.",
@@ -363,6 +371,27 @@
     "type": "boolean",
     "category": "Integrations",
     "default": false
+  },
+  {
+    "settingName": "dotfiles.syncImmediately",
+    "title": "Download dotfiles immediately",
+    "description": "Download dotfiles immediately when they are updated.",
+    "type": "boolean",
+    "category": "Dotfiles",
+    "default": false
+  },
+  {
+    "settingName": "dotfiles.sourceImmediately",
+    "title": "Source dotfiles immediately",
+    "description": "Source dotfiles immediately when they are downloaded.",
+    "type": "multiselect",
+    "category": "Dotfiles",
+    "options": [
+      "always",
+      "never",
+      "ask" 
+    ],
+    "default": "ask"
   },
   {
     "settingName": "dotfiles.beta",

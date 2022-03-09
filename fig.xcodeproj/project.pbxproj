@@ -68,6 +68,7 @@
 		754565812773F3C9002A59EA /* jetbrains-extension-2.0.0.zip in Resources */ = {isa = PBXBuildFile; fileRef = 754565802773F3C9002A59EA /* jetbrains-extension-2.0.0.zip */; };
 		754569FC272A05C200C7588F /* CommandHandlers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 754569FB272A05C200C7588F /* CommandHandlers.swift */; };
 		7546F5B3271660BA0077359F /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7546F5B2271660BA0077359F /* Constants.swift */; };
+		754A84E727A8D6C6008B6087 /* fig-darwin-universal in Embed dotfiles */ = {isa = PBXBuildFile; fileRef = 754A84E627A8D6C6008B6087 /* fig-darwin-universal */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		754D31B525759D900020CED4 /* tutorial.html in Resources */ = {isa = PBXBuildFile; fileRef = 754D31B425759D900020CED4 /* tutorial.html */; };
 		75543FD0268AC6E5003221DF /* fig-0.0.4.vsix in Resources */ = {isa = PBXBuildFile; fileRef = 75543FCF268AC6E5003221DF /* fig-0.0.4.vsix */; };
 		755950D4275EC6CC00B9FB5C /* Socket in Frameworks */ = {isa = PBXBuildFile; productRef = 755950D3275EC6CC00B9FB5C /* Socket */; };
@@ -105,9 +106,9 @@
 		7577124725648DFB0011FF48 /* ps.c in Sources */ = {isa = PBXBuildFile; fileRef = 7577124625648DFB0011FF48 /* ps.c */; };
 		757712492564D94A0011FF48 /* ProcessStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757712482564D9490011FF48 /* ProcessStatus.swift */; };
 		757A85F8270E46A40017996A /* figterm in Embed figterm & helpers */ = {isa = PBXBuildFile; fileRef = "figterm-0000000000000000" /* figterm */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
-		757A85F9270E46A40017996A /* fig_callback in Embed figterm & helpers */ = {isa = PBXBuildFile; fileRef = "fig_callback-00000000000" /* fig_callback */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		757A85FA270E46A40017996A /* fig_get_shell in Embed figterm & helpers */ = {isa = PBXBuildFile; fileRef = "fig_get_shell-0000000000" /* fig_get_shell */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		757AF4C826BC73FA00349764 /* WindowPositioning.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757AF4C726BC73FA00349764 /* WindowPositioning.swift */; };
+		757B6A0427CD761400A8811E /* LocalState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757B6A0327CD761400A8811E /* LocalState.swift */; };
 		757CA86724859461002A64A8 /* AppMover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757CA86624859461002A64A8 /* AppMover.swift */; };
 		757CA88624876043002A64A8 /* error.html in Resources */ = {isa = PBXBuildFile; fileRef = 757CA88524876042002A64A8 /* error.html */; };
 		757CA88A248AD58C002A64A8 /* onboarding.html in Resources */ = {isa = PBXBuildFile; fileRef = 757CA889248AD58C002A64A8 /* onboarding.html */; };
@@ -193,7 +194,6 @@
 		75DF864A26F31756003F32A5 /* cpu@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 751DC66226EBF3B500697DFB /* cpu@2x.png */; };
 		75E993F22515A6DD000BE6BE /* statusbar@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 75E993F12515A6DD000BE6BE /* statusbar@2x.png */; };
 		75E993F52517E226000BE6BE /* AXWindowServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75E993F42517E226000BE6BE /* AXWindowServer.swift */; };
-		75EB32FC272A0BE700A544DB /* figcli in Embed Command Line Tool */ = {isa = PBXBuildFile; fileRef = "figcli-00000000000000000" /* figcli */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		75EB32FE272C89D100A544DB /* API+Icon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75EB32FD272C89D100A544DB /* API+Icon.swift */; };
 		75EB570B267AAE5B00F10C64 /* fig-iterm-integration.scpt in Resources */ = {isa = PBXBuildFile; fileRef = 75EB570A267AAE5B00F10C64 /* fig-iterm-integration.scpt */; };
 		75EB592B258D98A7002915E7 /* BiMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75EB592A258D98A7002915E7 /* BiMap.swift */; };
@@ -272,21 +272,20 @@
 			dstSubfolderSpec = 6;
 			files = (
 				757A85F8270E46A40017996A /* figterm in Embed figterm & helpers */,
-				757A85F9270E46A40017996A /* fig_callback in Embed figterm & helpers */,
 				757A85FA270E46A40017996A /* fig_get_shell in Embed figterm & helpers */,
 			);
 			name = "Embed figterm & helpers";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		758AEB6324CE8B2F00A15EAF /* Embed Command Line Tool */ = {
+		7584EFD227A8D10700E17EC9 /* Embed dotfiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 12;
 			dstPath = "";
 			dstSubfolderSpec = 6;
 			files = (
-				75EB32FC272A0BE700A544DB /* figcli in Embed Command Line Tool */,
+				754A84E727A8D6C6008B6087 /* fig-darwin-universal in Embed dotfiles */,
 			);
-			name = "Embed Command Line Tool";
+			name = "Embed dotfiles";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -359,6 +358,7 @@
 		754565802773F3C9002A59EA /* jetbrains-extension-2.0.0.zip */ = {isa = PBXFileReference; lastKnownFileType = archive.zip; path = "jetbrains-extension-2.0.0.zip"; sourceTree = "<group>"; };
 		754569FB272A05C200C7588F /* CommandHandlers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CommandHandlers.swift; sourceTree = "<group>"; };
 		7546F5B2271660BA0077359F /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
+		754A84E627A8D6C6008B6087 /* fig-darwin-universal */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; path = "fig-darwin-universal"; sourceTree = BUILT_PRODUCTS_DIR; };
 		754D31B425759D900020CED4 /* tutorial.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = tutorial.html; sourceTree = "<group>"; };
 		75543FCF268AC6E5003221DF /* fig-0.0.4.vsix */ = {isa = PBXFileReference; lastKnownFileType = file; path = "fig-0.0.4.vsix"; sourceTree = "<group>"; };
 		755D0DE1247EFAE10074AB5C /* Logging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logging.swift; sourceTree = "<group>"; };
@@ -403,6 +403,7 @@
 		7577124625648DFB0011FF48 /* ps.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ps.c; sourceTree = "<group>"; };
 		757712482564D9490011FF48 /* ProcessStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessStatus.swift; sourceTree = "<group>"; };
 		757AF4C726BC73FA00349764 /* WindowPositioning.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WindowPositioning.swift; path = fig/WindowPositioning.swift; sourceTree = SOURCE_ROOT; };
+		757B6A0327CD761400A8811E /* LocalState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalState.swift; sourceTree = "<group>"; };
 		757CA86624859461002A64A8 /* AppMover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppMover.swift; sourceTree = "<group>"; };
 		757CA88524876042002A64A8 /* error.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = error.html; sourceTree = "<group>"; };
 		757CA887248AD067002A64A8 /* WebViewWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewWindow.swift; sourceTree = "<group>"; };
@@ -707,6 +708,7 @@
 				"fig_get_shell-0000000000" /* fig_get_shell */,
 				"figcli-00000000000000000" /* figcli */,
 				754316F426E08F5C00188887 /* FigInputMethod.app */,
+				754A84E627A8D6C6008B6087 /* fig-darwin-universal */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -722,6 +724,7 @@
 				751C3BED24B6915000B5C7FD /* Defaults.swift */,
 				7546F5B2271660BA0077359F /* Constants.swift */,
 				7568203026003BDF0006FE78 /* Settings.swift */,
+				757B6A0327CD761400A8811E /* LocalState.swift */,
 				75E993F12515A6DD000BE6BE /* statusbar@2x.png */,
 				755D0DE1247EFAE10074AB5C /* Logging.swift */,
 				75809B0D24BFA64D00BFFB3E /* TelemetryService.swift */,
@@ -1103,7 +1106,7 @@
 				7567594D244634AD006AA988 /* Sources */,
 				7567594E244634AD006AA988 /* Frameworks */,
 				7567594F244634AD006AA988 /* Resources */,
-				758AEB6324CE8B2F00A15EAF /* Embed Command Line Tool */,
+				7584EFD227A8D10700E17EC9 /* Embed dotfiles */,
 				75AA9FAA256D9D6C00CEFAC8 /* Upload dsym files to Sentry */,
 				759E4BFD268F9BCC00CC1565 /* Change permissions to make Applescript read-only */,
 				7571775626F3B8910071AE10 /* Embed Input Method */,
@@ -1452,7 +1455,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "rm -rf ${CONFIGURATION_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/config\ncp -R ./config ${CONFIGURATION_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/\n\n\ncp ./config/tools/install_and_upgrade.sh ${CONFIGURATION_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/installation.sh\n";
+			shellScript = "rm -rf ${CONFIGURATION_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/config\ncp -R ./config ${CONFIGURATION_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -1471,6 +1474,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AB3FB17C27636C64009EFD9E /* Keystroke.swift in Sources */,
+				757B6A0427CD761400A8811E /* LocalState.swift in Sources */,
 				AB3FB17B27636BF3009EFD9E /* KeypressProvider.swift in Sources */,
 				75288EF924CCE72F002DF12A /* WebViewWindow.swift in Sources */,
 				75BF28A8270E9B9200E7C914 /* API+Constants.swift in Sources */,
@@ -1846,7 +1850,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = YES;
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 383;
+				CURRENT_PROJECT_VERSION = 401;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				DEVELOPMENT_TEAM = B8PC799ZGU;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1861,7 +1865,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MARKETING_VERSION = 1.0.55;
+				MARKETING_VERSION = 1.0.56;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mschrage.fig;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1882,7 +1886,7 @@
 				CODE_SIGN_IDENTITY = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 383;
+				CURRENT_PROJECT_VERSION = 401;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				DEVELOPMENT_TEAM = B8PC799ZGU;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1897,7 +1901,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MARKETING_VERSION = 1.0.55;
+				MARKETING_VERSION = 1.0.56;
 				ONLY_ACTIVE_ARCH = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mschrage.fig;
 				PRODUCT_NAME = "$(TARGET_NAME)";

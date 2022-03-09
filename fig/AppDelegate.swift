@@ -81,6 +81,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     Accessibility.checkIfPermissionRevoked()
 
     //        AppMover.moveIfNecessary()
+    _ = LocalState.shared
     _ = Settings.shared
     _ = ShellBridge.shared
     _ = WindowManager.shared
@@ -753,13 +754,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     NSWorkspace.shared.open(URL(string: "https://fig.io/docs/support/settings")!)
   }
 
-  @objc func uninstall() {
-
-    let confirmed = self.dialogOKCancel(
-      question: "Uninstall Fig?",
-      text: "You will need to restart any currently running terminal sessions.",
-      icon: NSImage(imageLiteralResourceName: NSImage.applicationIconName)
-    )
+  @objc func uninstall(showDialog: Bool) {
+    var confirmed = true
+    if showDialog {
+      confirmed = self.dialogOKCancel(
+        question: "Uninstall Fig?",
+        text: "You will need to restart any currently running terminal sessions.",
+        icon: NSImage(imageLiteralResourceName: NSImage.applicationIconName)
+      )
+    }
 
     if confirmed {
       TelemetryProvider.shared.track(event: .uninstallApp, with: [:])
@@ -769,34 +772,62 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         tty.setTitle("Restart this terminal to finish uninstalling Fig...")
       }
 
-      var uninstallScriptFile: String? = "\(NSHomeDirectory())/.fig/tools/uninstall-script.sh"
-      if !FileManager.default.fileExists(atPath: uninstallScriptFile!) {
-        uninstallScriptFile = Bundle.main.path(forResource: "uninstall", ofType: "sh")
+      let cli = Bundle.main.path(forAuxiliaryExecutable: "fig-darwin-universal")!
+      // Uninstall daemon first to avoid interaction with file listeners while deleting Fig.app
+      _ = Process.run(command: cli, args: [ "_", "uninstall", "--daemon"])
+//      _ = "~/.local/bin/fig _ uninstall --daemon".runAsCommand()
+
+      NSWorkspace.shared.open(
+        URL(string: "https://fig.io/uninstall?email=\(Defaults.shared.email ?? "")&" +
+          "version=\(Diagnostic.distribution.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")")!)
+      LoginItems.shared.removeAllItemsMatchingBundleURL()
+
+      let domain = Bundle.main.bundleIdentifier!
+      let uuid = Defaults.shared.uuid
+      UserDefaults.standard.removePersistentDomain(forName: domain)
+      UserDefaults.standard.removePersistentDomain(forName: "\(domain).shared")
+
+      UserDefaults.standard.synchronize()
+
+      UserDefaults.standard.set(uuid, forKey: "uuid")
+      UserDefaults.standard.synchronize()
+
+      WebView.deleteCache()
+      if !InputMethod.default.uninstall() {
+        Logger.log(message: "Error removing input method")
       }
 
-      if let general = uninstallScriptFile {
-        NSWorkspace.shared.open(
-          URL(string: "https://fig.io/uninstall?email=\(Defaults.shared.email ?? "")&" +
-            "version=\(Diagnostic.distribution.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")")!)
-        LoginItems.shared.removeAllItemsMatchingBundleURL()
-
-        let domain = Bundle.main.bundleIdentifier!
-        let uuid = Defaults.shared.uuid
-        UserDefaults.standard.removePersistentDomain(forName: domain)
-        UserDefaults.standard.removePersistentDomain(forName: "\(domain).shared")
-
-        UserDefaults.standard.synchronize()
-
-        UserDefaults.standard.set(uuid, forKey: "uuid")
-        UserDefaults.standard.synchronize()
-
-        WebView.deleteCache()
-        InputMethod.default.uninstall()
-
-        let out = "bash \(general)".runAsCommand()
-        Logger.log(message: out)
-        self.quit()
+      for integration in Integrations.allProvidersIncludingExperimental.values {
+        if !integration.uninstall() {
+          Logger.log(message: "Error removing integration for \(integration.id)")
+        }
       }
+
+      // Remove ~/.fig
+      try? FileManager.default.removeItem(atPath: "\(NSHomeDirectory())/.fig")
+
+      // Remove launch agents
+      if let agents = try? FileManager.default.contentsOfDirectory(atPath:
+                                                                   "\(NSHomeDirectory())/Library/LaunchAgents/") {
+          for agent in agents {
+              if URL(fileURLWithPath: agent).lastPathComponent.hasPrefix("io.fig.") {
+                  try? FileManager.default.removeItem(atPath: agent)
+              }
+          }
+      }
+
+      // Use internal uninstall to avoid signaling the mac app.
+      // must be called before deleting application bundle
+//      let out = "~/.local/bin/fig _ uninstall".runAsCommand()
+      let out = Process.run(command: cli, args: [ "_", "uninstall"])
+
+      Logger.log(message: "exit: \(out.exitCode)\nstdout:\n" + out.output.joined(separator: "\n")
+                        + "\nstderr:\n" + out.error.joined(separator: "\n"))
+
+      // must be called after using FigCLI
+      try? FileManager.default.removeItem(atPath: "/Applications/Fig.app")
+
+      self.quit()
     }
   }
 

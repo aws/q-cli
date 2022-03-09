@@ -491,7 +491,7 @@ class WebView: WKWebView {
   func loadRemoteApp(at url: URL) {
     print(url.absoluteString)
     //        self.load(URLRequest(url: URL(string:"about:blank")!))
-    self.load(URLRequest(url: url, cachePolicy: .returnCacheDataElseLoad))
+    self.load(URLRequest(url: url, cachePolicy: .reloadIgnoringLocalAndRemoteCacheData))
 
     self.evaluateJavaScript("document.documentElement.remove()") { (_, _) in
     }

@@ -13,6 +13,7 @@ import FigAPIBindings
 typealias Request = Fig_ClientOriginatedMessage
 typealias Response = Fig_ServerOriginatedMessage
 typealias NotificationRequest = Fig_NotificationRequest
+// swiftlint:disable type_name
 class API {
   // binary is the primary transport method.
   // json is a fallback only used in environments where the API bindings are not accessible (eg. onboarding flow)
@@ -148,6 +149,19 @@ class API {
         response.success = try Diagnostic.setDebuggerStatus(request)
       case .applicationUpdateStatusRequest(let request):
         response.applicationUpdateStatusResponse = try UpdateService.provider.applicationUpdateStatusRequest(request)
+      case .getLocalStateRequest(let request):
+        response.getLocalStateResponse = try LocalState.shared.handleGetRequest(request)
+      case .updateLocalStateRequest(let request):
+        response.success = try LocalState.shared.handleSetRequest(request)
+      case .runProcessRequest(let request):
+        isAsync = true
+        Process.handleRunProcessRequest(request) { output in
+          var response = Response()
+          response.id = id
+          response.runProcessResponse = output
+          API.send(response, to: webView, using: encoding)
+        }
+
       case .none:
         throw APIError.generic(message: "No submessage was included in request.")
       }
@@ -194,6 +208,7 @@ class API {
                                 line: Int = #line) {
     API.log("reporting global error: " + message)
     let source = "\(function) in \(file):\(line)"
+    // swiftlint:disable line_length
     let payload = "document.dispatchEvent(new CustomEvent('FigGlobalErrorOccurred', {'detail': {'error' : '\(message)', 'source': `\(source)` } }));"
     webView.evaluateJavaScript(payload, completionHandler: nil)
 

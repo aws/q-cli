@@ -1,0 +1,120 @@
+name: Dotfilesd Deploy
+
+on:
+  workflow_dispatch:
+  # push:
+  #   paths:
+  #     - "dotfilesd/**"
+  #   branches:
+  #     - dotfilesd
+
+env:
+  CARGO_TERM_COLOR: always
+  BINARY_NAME: fig
+
+defaults:
+  run:
+    working-directory: figcli 
+
+jobs:
+  deploy:
+    runs-on: ${{matrix.os}}
+    timeout-minutes: 20
+    strategy:
+      matrix:
+        include:
+          - build: x86_64-apple-darwin
+            os: macos-latest
+            target: x86_64-apple-darwin
+          - build: aarch64-apple-darwin
+            os: macos-latest
+            target: aarch64-apple-darwin
+          - build: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          # - build: windows
+          #   os: windows-latest
+          # target: armv7-unknown-linux-gnueabihf
+          # linker: gcc-arm-linux-gnueabihf
+          # cross: true
+          # - build: linux
+          #   os: ubuntu-latest
+          # target: aarch64-unknown-linux-gnu
+          # linker: gcc-aarch64-linux-gnu
+          # cross: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      # If on Ubuntu, install dependencies
+      - name: Install Ubuntu dependencies
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: sudo apt-get install -y libxcb1-dev libxcb-shape0-dev libxcb-xfixes0-dev
+
+      - name: Set VERSION
+        run: |
+          VERSION=$(cat Cargo.toml | grep version | grep -v '{' | cut -d= -f2 | tr -d '"' | tr -d " ")
+          echo VERSION=$VERSION >> $GITHUB_ENV
+          echo $VERSION
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+          target: ${{matrix.target}}
+
+      - name: Cache Dependencies
+        uses: Swatinem/rust-cache@ce325b60658c1b38465c06cc965b79baf32c1e72
+
+      - name: Compile
+        run: make build-${{matrix.build}}
+
+      - name: List build artifacts
+        run: ls build
+
+      - name: Rename CLI
+        run: |
+          mkdir cli
+          cp ./build/$BINARY_NAME-${{matrix.build}} ./cli/$BINARY_NAME-$VERSION-${{matrix.build}}
+          ls cli
+
+      - name: "Install AWS CLI"
+        uses: chrislennon/action-aws-cli@v1.1
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+
+      - name: Upload to S3 Bucket
+        run: |
+          aws s3 cp ./cli/$BINARY_NAME-$VERSION-${{matrix.build}} s3://get-fig-io/bin/
+          aws s3 cp ./cli/$BINARY_NAME-$VERSION-${{matrix.build}} s3://get-fig-io/bin/latest/${{matrix.build}}
+
+          aws cloudfront create-invalidation --distribution-id E1HTOEOFYWKMTG --paths "/bin/latest/*"
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.DOTFILESD_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DOTFILESD_AWS_SECRET_ACCESS_KEY }}
+
+  upload-install-script:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: "Install AWS CLI"
+        uses: chrislennon/action-aws-cli@v1.1
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+
+      - name: Upload to S3 Bucket
+        run: |
+          # s3 determines Content-Type based on file extension at upload
+          mv ./install_script.sh ./install_script.html
+          aws s3 cp ./install_script.html s3://get-fig-io/index.html
+          aws s3 cp ./readability.js s3://get-fig-io/readability.js
+
+          aws cloudfront create-invalidation --distribution-id E1HTOEOFYWKMTG --paths "/index.html"
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.DOTFILESD_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DOTFILESD_AWS_SECRET_ACCESS_KEY }}

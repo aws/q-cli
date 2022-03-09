@@ -236,7 +236,7 @@ class Defaults {
       defaults.set(flag, forKey: "debugAutocomplete")
       defaults.synchronize()
 
-      Settings.shared.set(value: flag, forKey: Settings.debugModeKey)
+      LocalState.shared.set(value: flag, forKey: Settings.debugModeKey)
 
       WindowManager.shared.autocomplete?.backgroundColor = .clear
 
@@ -287,6 +287,17 @@ class Defaults {
 
     set(version) {
       defaults.set(version, forKey: "autocompleteVersion")
+      defaults.synchronize()
+    }
+  }
+
+  var lastInstallationError: String? {
+    get {
+      return defaults.string(forKey: "lastInstallationError")
+    }
+
+    set(error) {
+      defaults.set(error, forKey: "lastInstallationError")
       defaults.synchronize()
     }
   }

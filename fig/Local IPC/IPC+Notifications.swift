@@ -15,6 +15,7 @@ extension IPC {
     case preExec = "preExecHookNotification"
     case postExec = "postExecHookNotification"
     case initialize = "initializeHookNotification"
+    case sshConnectionOpened = "sshConnectionHookNotification"
     case editBuffer = "editbufferHookNotification"
     case keyboardFocusChanged = "keyboardFocusChangedHookNotification"
 

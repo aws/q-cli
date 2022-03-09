@@ -12,8 +12,6 @@ import FigAPIBindings
 
 // swiftlint:disable type_body_length
 class Settings {
-  static let ptyInitFile = "pty.rc"
-  static let ptyPathKey = "pty.path"
   static let ptyEnvKey = "pty.env"
   static let developerModeKey = "autocomplete.developerMode"
   static let developerModeNPMKey = "autocomplete.developerModeNPM"
@@ -43,9 +41,6 @@ class Settings {
   static let onlyShowOnTabKey = "autocomplete.onlyShowOnTab"
   static let allowAlternateNavigationKeys = "autocomplete.allowAlternateNavigationKeys"
   static let disablePopoutDescriptions = "autocomplete.disablePopoutDescriptions"
-  static let logging = "developer.logging"
-  static let loggingEnabledInternally = "developer.logging.internal"
-  static let colorfulLogging = "developer.logging.color"
   static let beta = "app.beta"
   static let shellIntegrationIsManagedByUser = "integrations.shell.managedByUser"
   static let theme = "autocomplete.theme"
@@ -108,11 +103,6 @@ class Settings {
   }
 
   static func log(_ message: String) {
-    guard canLogWithoutCrash else {
-      print("Unable to log follow message since Settings.shared hasn't been inited yet.")
-      print(message)
-      return
-    }
     Logger.log(message: message, subsystem: .settings)
   }
 
@@ -137,61 +127,10 @@ class Settings {
     }
 
     recomputeSettingsFromRaw()
-
-    setUpFileSystemListeners()
-    Settings.canLogWithoutCrash = true
   }
 
-  fileprivate var settingsWindow: WebViewWindow?
-  @objc class func openUI() {
-    Settings.log("Open Settings UI")
-
-    TelemetryProvider.shared.track(event: .openedSettingsPage, with: [:])
-
-    if let settingsWindow = Settings.shared.settingsWindow {
-
-      if settingsWindow.contentViewController != nil {
-        settingsWindow.makeKeyAndOrderFront(nil)
-        settingsWindow.orderFrontRegardless()
-        NSApp.activate(ignoringOtherApps: true)
-
-        return
-      } else {
-        Settings.shared.settingsWindow?.contentViewController = nil
-        Settings.shared.settingsWindow = nil
-      }
-    }
-
-    let url: URL = {
-
-      // Use value specified by developer.settings.host if it exists
-      if let urlString = Settings.shared.getValue(forKey: Settings.settingsURL) as? String,
-         let url = URL(string: urlString) {
-        return url
-      }
-
-      // otherwise use fallback
-      return Remote.baseURL.appendingPathComponent("settings")
-    }()
-
-    let settingsViewController = WebViewController()
-    settingsViewController.webView?.defaultURL = nil
-    settingsViewController.webView?.loadRemoteApp(at: url)
-    settingsViewController.webView?.dragShouldRepositionWindow = true
-
-    let settings = WebViewWindow(viewController: settingsViewController, shouldQuitAppOnClose: false)
-    settings.setFrame(NSRect(x: 0, y: 0, width: 770, height: 520), display: true, animate: false)
-    settings.center()
-    settings.makeKeyAndOrderFront(self)
-
-    // Set color to match background of settings app to avoid flicker while loading
-    settings.backgroundColor = NSColor(hex: "#282a36")
-
-    settings.delegate = settings
-    settings.isReleasedWhenClosed = false
-    settings.level = .normal
-
-    Settings.shared.settingsWindow = settings
+  @objc static func openUI() {
+    MissionControl.openUI(.settings)
   }
 
   func update(_ keyValues: [String: Any]) {
@@ -311,7 +250,7 @@ class Settings {
       return nil
     }
 
-    guard let settings = fileString.jsonStringToDict() else {
+    guard let settings = fileString.parseAsJSON() else {
       return nil
     }
 
@@ -340,8 +279,6 @@ class Settings {
   }
 
   func restartListener() {
-    self.eventSource?.cancel()
-    self.setUpFileSystemListeners()
 
     if let settings = Settings.loadDefaultSettings() {
       defaultSettings = settings
@@ -416,65 +353,6 @@ class Settings {
 
       }
     }
-  }
-
-  var eventSource: DispatchSourceFileSystemObject?
-  fileprivate func setUpFileSystemListeners() {
-    // set up file observers
-    guard FileManager.default.fileExists(atPath: Settings.filePath) else {
-      Settings.log("file does not exist. Not setting up listeners")
-      return
-    }
-
-    let descriptor = open(Settings.filePath, O_EVTONLY)
-    if descriptor == -1 {
-      return
-    }
-
-    self.eventSource = DispatchSource.makeFileSystemObjectSource(fileDescriptor: descriptor,
-                                                                 eventMask: [.all],
-                                                                 queue: DispatchQueue.main)
-    self.eventSource?.setEventHandler { [weak self] in
-      Settings.log(String(describing: self?.eventSource?.dataStrings ?? []))
-      if  [.write, .attrib].contains(self?.eventSource?.data) {
-        self?.settingsUpdated()
-      }
-
-      if self?.eventSource?.data.contains(.delete) ?? false {
-        self?.eventSource?.cancel()
-        self?.setUpFileSystemListeners()
-        self?.settingsUpdated()
-      }
-    }
-
-    self.eventSource?.setCancelHandler {
-      close(descriptor)
-    }
-
-    self.eventSource?.resume()
-
-  }
-
-  deinit {
-    self.eventSource?.cancel()
-  }
-
-}
-
-extension DispatchSourceFileSystemObject {
-  var dataStrings: [String] {
-    // swiftlint:disable identifier_name
-    var s = [String]()
-    if data.contains(.all) { s.append("all") }
-    if data.contains(.attrib) { s.append("attrib") }
-    if data.contains(.delete) { s.append("delete") }
-    if data.contains(.extend) { s.append("extend") }
-    if data.contains(.funlock) { s.append("funlock") }
-    if data.contains(.link) { s.append("link") }
-    if data.contains(.rename) { s.append("rename") }
-    if data.contains(.revoke) { s.append("revoke") }
-    if data.contains(.write) { s.append("write") }
-    return s
   }
 }
 

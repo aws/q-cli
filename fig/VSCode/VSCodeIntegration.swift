@@ -35,25 +35,48 @@ class VSCodeIntegration: TerminalIntegrationProvider {
   fileprivate let applicationSupportFolderName: String
   fileprivate let cliExecutableName: String
 
-  init(bundleIdentifier: String, configFolderName: String, applicationSupportFolderName: String, applicationName: String, cliExecutableName: String = "code") {
+  init(bundleIdentifier: String,
+       configFolderName: String,
+       applicationSupportFolderName: String,
+       applicationName: String,
+       cliExecutableName: String = "code") {
     self.configFolderName = configFolderName
     self.applicationSupportFolderName = applicationSupportFolderName
     self.cliExecutableName = cliExecutableName
     super.init(bundleIdentifier: bundleIdentifier)
 
     self.applicationName = applicationName
-    self.promptMessage = "Fig will add an extension to \(self.applicationName) that tracks which integrated terminal is active.\n\n\(self.applicationName) will need to restart for changes to take effect.\n"
+    self.promptMessage =
+      "Fig will add an extension to \(self.applicationName) that tracks which integrated terminal is" +
+      " active.\n\n\(self.applicationName) will need to restart for changes to take effect.\n"
     self.promptButtonText = "Install Extension"
   }
 
   var settingsPath: String {
-    let defaultPath = "\(NSHomeDirectory())/Library/Application Support/\(self.applicationSupportFolderName)/User/settings.json"
+    let defaultPath =
+      "\(NSHomeDirectory())/Library/Application Support/\(self.applicationSupportFolderName)/User/settings.json"
     return (try? FileManager.default.destinationOfSymbolicLink(atPath: defaultPath)) ?? defaultPath
   }
 
   // If the extension path changes make sure to update the uninstall script!
+  var extensionsDir: String {
+    return "\(NSHomeDirectory())/\(self.configFolderName)/extensions"
+  }
+
+  // If the extension path changes make sure to update the uninstall script!
   var extensionPath: String {
-    return "\(NSHomeDirectory())/\(self.configFolderName)/extensions/withfig.fig-\(VSCodeIntegration.extensionVersion)/extension.js"
+    return "\(self.extensionsDir)/withfig.fig-\(VSCodeIntegration.extensionVersion)/extension.js"
+  }
+
+  func uninstall() -> Bool {
+    if let extensions = try? FileManager.default.contentsOfDirectory(atPath: self.extensionsDir) {
+        for ext in extensions {
+            if URL(fileURLWithPath: ext).lastPathComponent.hasPrefix("withfig.fig-") {
+                try? FileManager.default.removeItem(atPath: ext)
+            }
+        }
+    }
+    return true
   }
 
   func install() -> InstallationStatus {
@@ -90,8 +113,7 @@ class VSCodeIntegration: TerminalIntegrationProvider {
       // NSApp.appDelegate.dialogOKCancel(question: "Fig could not install the VSCode Integration",
       //                                 text: "An error occured when attempting to parse settings.json")
 
-      print("VSCode: An error occured when attempting to parse settings.json")
-      SentrySDK.capture(message: "VSCode: An error occured when attempting to parse settings.json")
+      Logger.log(message: "VSCode: An error occured when attempting to parse settings.json")
 
     }
 
@@ -100,7 +122,9 @@ class VSCodeIntegration: TerminalIntegrationProvider {
     "\(cli.path.replacingOccurrences(of: " ", with: "\\ ")) --install-extension \(vsix)".runInBackground()
 
     guard successfullyUpdatedSettings else {
-      return .failed(error: "Fig could not parse VSCode's settings.json file.\nTo finish the installation, you will need to update a few preferences manually.", supportURL: VSCodeIntegration.supportURL)
+      return .failed(error:
+                      "Fig could not parse VSCode's settings.json file.\nTo finish the installation, you will need to update a few preferences manually.",
+                     supportURL: VSCodeIntegration.supportURL)
 
     }
 
@@ -131,15 +155,13 @@ extension VSCodeIntegration {
   func settings() throws -> [String: Any]? {
     guard FileManager.default.fileExists(atPath: self.settingsPath) else {
       // file does not exist
-      print("VSCode: settings file does not exist")
-      SentrySDK.capture(message: "VSCode: settings file does not exist")
+      Logger.log(message: "VSCode: settings file does not exist")
 
       return nil
     }
 
     guard let settings = try? String(contentsOfFile: self.settingsPath) else {
-      print("VSCode: settings file is empty")
-      SentrySDK.capture(message: "VSCode: settings file is empty or could not be read")
+      Logger.log(message: "VSCode: settings file is empty or could not be read")
 
       throw InstallationError.couldNotReadContentsOfSettingsFile
     }
@@ -148,7 +170,7 @@ extension VSCodeIntegration {
       return nil
     }
 
-    guard let json = settings.jsonStringToDict() else {
+    guard let json = settings.parseAsJSON() else {
       throw InstallationError.couldNotParseSettingsJSON
     }
 

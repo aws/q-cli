@@ -38,8 +38,7 @@ class Accessibility {
     case (previous: false, current: true):
       print("Accessibility: permission was granted during previous session.")
     case (previous: true, current: false):
-      print("Accessibility: permission was LOST since previous session.")
-      SentrySDK.capture(message: "Accessibility: permission was LOST since previous session.")
+      Logger.log(message: "Accessibility: permission was LOST since previous session.")
     case (previous: false, current: false):
       print("Accessibility: permission has not been granted.")
     case (previous: nil, current: _):

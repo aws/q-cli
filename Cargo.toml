@@ -1,0 +1,16 @@
+[workspace]
+members = [
+    "figcli",
+    "figterm",
+    "rust-lib/alacritty_terminal",
+    "rust-lib/fig-auth",
+    "rust-lib/fig-color",
+    "rust-lib/fig-directories",
+    "rust-lib/fig-ipc",
+    "rust-lib/fig-proto",
+    "rust-lib/fig-settings",
+    "rust-lib/fig-telemetry",
+]
+
+[profile.release]
+debug = true

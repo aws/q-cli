@@ -37,8 +37,8 @@ class PseudoTerminal {
 
   fileprivate static let CRLF = "\r\n"
 
-  static let recievedEnvironmentVariablesFromShellNotification =
-    NSNotification.Name("recievedEnvironmentVariablesFromShellNotification")
+  static let recievedEnvVarsFromShellNotification =
+    NSNotification.Name("recievedEnvVarsFromShellNotification")
   static let recievedCallbackNotification = NSNotification.Name("recievedCallbackNotification")
 
   static let defaultPath = PathHelper.defaultPath
@@ -53,7 +53,7 @@ class PseudoTerminal {
   init() {
     NotificationCenter.default.addObserver(self,
                                            selector: #selector(recievedEnvironmentVariablesFromShell(_:)),
-                                           name: PseudoTerminal.recievedEnvironmentVariablesFromShellNotification,
+                                           name: PseudoTerminal.recievedEnvVarsFromShellNotification,
                                            object: nil)
     NotificationCenter.default.addObserver(self,
                                            selector: #selector(recievedCallbackNotification(_:)),
@@ -75,7 +75,7 @@ class PseudoTerminal {
     self.write("unset HISTFILE")
 
     // Retrieve PATH from settings if it exists
-    if let path = Settings.shared.getValue(forKey: Settings.ptyPathKey) as? String, path.count > 0 {
+    if let path = LocalState.shared.getValue(forKey: LocalState.ptyPathKey) as? String, path.count > 0 {
       let updatedPath = PathHelper.pathByPrependingMissingWellKnownLocations(path)
       self.set(environmentVariable: "PATH", value: updatedPath)
     } else {
@@ -86,8 +86,7 @@ class PseudoTerminal {
     sourceFile(at: "~/.fig/tools/ptyrc")
 
     // Source user-specified ptyrc file (if it exists)
-    let filePath = Settings.shared.getValue(forKey: Settings.ptyInitFile) as? String ?? "~/.fig/user/ptyrc"
-    sourceFile(at: filePath)
+    sourceFile(at: "~/.fig/user/ptyrc")
   }
 
   func write(_ input: String, handlerId: String? = nil) {
@@ -112,7 +111,7 @@ class PseudoTerminal {
     let updatedEnv = environment.merging(["FIG_ENV_VAR": "1",
                                           "FIG_SHELL_VAR": "1",
                                           "FIG_TERM": "1",
-                                          "FIG_SOCKET": FileManager.default.temporaryDirectory.path,
+                                          "TMPDIR": FileManager.default.temporaryDirectory.path,
                                           "TERM": "xterm-256color",
                                           "INPUTRC": "~/.fig/nop",
                                           "FIG_PTY": "1",
@@ -185,13 +184,13 @@ extension PseudoTerminal {
     static let pipelined = ExecutionOptions(rawValue: 1 << 1)
   }
 
-  static let callbackExecutable = Bundle.main.path(forAuxiliaryExecutable: "fig_callback")! + " callback"
+  static let callbackExecutable = Bundle.main.path(forAuxiliaryExecutable: "fig-darwin-universal")! + " _ callback"
   func execute(_ command: String,
                handlerId: HandlerId = UUID().uuidString,
                options: ExecutionOptions = [.backgroundJob],
                handler: @escaping CallbackHandler) {
     var cappedHandlerId = handlerId
-    // note: magic number comes from fig_callback implementation
+    // note: magic number comes from fig callback implementation
     if handlerId.count > 5 {
       PseudoTerminal.log("handlerId must be 5 characters or less. '\(handlerId)' is too long and will be truncated.")
       let index = handlerId.index(handlerId.startIndex, offsetBy: 5)
@@ -285,9 +284,21 @@ extension PseudoTerminal {
 
   func handleExecuteRequest(
     _ request: Fig_PseudoterminalExecuteRequest,
-    with id: Int64,
+    with handlerId: Int64,
     callback: @escaping ((Fig_PseudoterminalExecuteResponse) -> Void)
   ) {
+
+    let commandContext = AXWindowServer.shared.allowlistedWindow?.associatedCommandContext
+    var command = request.command
+    switch commandContext {
+    case let .ssh(controlPath, remoteDest):
+      command = """
+ssh -o PasswordAuthentication=no -q -o 'ControlPath=\(controlPath)' '\(remoteDest)' \
+'\(request.command.replacingOccurrences(of: "'", with: "'\"'\"'"))'
+"""
+    default:
+      break
+    }
 
     var options: ExecutionOptions = [ .backgroundJob ]
 
@@ -299,8 +310,8 @@ extension PseudoTerminal {
       options.insert(.pipelined)
     }
 
-    self.execute(request.command,
-                 handlerId: String(id),
+    self.execute(command,
+                 handlerId: String(handlerId),
                  options: options) { (stdout, stderr, exitCode) in
       callback(Fig_PseudoterminalExecuteResponse.with({ response in
         response.stdout = stdout

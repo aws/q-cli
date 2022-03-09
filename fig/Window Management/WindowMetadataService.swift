@@ -11,12 +11,21 @@ import Foundation
 protocol WindowMetadataService {
   func getMostRecentFocusId(for windowId: WindowId) -> FocusId?
   func getAssociatedShellContext(for windowId: WindowId) -> ShellContext?
+  func getAssociatedCommandContext(for windowId: WindowId) -> CommandContext?
   func getAssociatedEditBuffer(for windowId: WindowId) -> EditBuffer?
   func getTerminalSessionId(for windowId: WindowId) -> TerminalSessionId?
   func getWindowHash(for windowId: WindowId) -> ExternalWindowHash
 }
 
 extension TerminalSessionLinker: WindowMetadataService {
+  func getAssociatedCommandContext(for windowId: WindowId) -> CommandContext? {
+    guard let session = self.focusedTerminalSession(for: windowId) else {
+      return nil
+    }
+
+    return session.commandContext
+  }
+
   func getAssociatedShellContext(for windowId: WindowId) -> ShellContext? {
     guard let session = self.focusedTerminalSession(for: windowId) else {
       return nil

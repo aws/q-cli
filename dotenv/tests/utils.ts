@@ -22,7 +22,7 @@ export const makeTestsForShell = (ptyOptions: PTYOptions) => {
 
     expect(env.FIG_TERM).toBe('1');
     expect(env.FIG_CHECKED_PROMPTS).toBe('1');
-    expect(env.FIG_INTEGRATION_VERSION).toBe('6');
+    expect(env.FIG_INTEGRATION_VERSION).toBe('8');
     expect(env.PATH.includes('/.fig/bin')).toBe(true);
     expect(env.TTY).not.toBeNull();
     expect(await shell.execute('tty')).toBe(env.TTY);

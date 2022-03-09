@@ -9,6 +9,7 @@
 import Cocoa
 import FigAPIBindings
 extension NSEvent {
+  // swiftlint:disable identifier_name
   var fig_keyEvent: Fig_KeyEvent {
     return Fig_KeyEvent.with {
 
@@ -54,6 +55,7 @@ extension NSEvent {
 }
 
 extension NSRect {
+  // swiftlint:disable identifier_name
   var fig_frame: Fig_Frame {
     return Fig_Frame.with { frame in
       frame.origin = Fig_Point.with { origin in
@@ -69,6 +71,7 @@ extension NSRect {
   }
 }
 extension ExternalWindow {
+  // swiftlint:disable identifier_name
   var fig_window: Fig_Window {
     return Fig_Window.with { window in
       window.app = Fig_Application.with { app in
@@ -118,5 +121,23 @@ extension NSWorkspace {
 
     return open(url)
 
+  }
+}
+
+extension Process {
+  static func handleRunProcessRequest(_ request: Fig_RunProcessRequest,
+                                      completion: @escaping ((Fig_RunProcessResponse) -> Void)) {
+
+    Process.runAsync(command: request.executable,
+                     args: request.arguments,
+                     workingDirectory: request.hasWorkingDirectory ? request.workingDirectory : nil,
+                     environment: nil) { (output, error, exitcode) in
+
+      completion(Fig_RunProcessResponse.with { response in
+        response.stdout = output.joined(separator: "\n")
+        response.stderr = error.joined(separator: "\n")
+        response.exitCode = exitcode
+      })
+    }
   }
 }

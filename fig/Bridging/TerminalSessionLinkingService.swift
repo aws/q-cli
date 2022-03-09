@@ -39,6 +39,10 @@ struct ShellContext {
   let integrationVersion: Int?
 }
 
+enum CommandContext {
+  case ssh(controlPath: String, remoteHostname: String)
+}
+
 extension ShellContext {
   // todo(mschrage): this is for backwards compatiblity and can likely be removed
   func isShell() -> Bool {
@@ -65,6 +69,7 @@ struct TerminalSession {
   let bundleId: String
   let terminalSessionId: TerminalSessionId
 
+  var commandContext: CommandContext?
   var shellContext: ShellContext?
   var editBuffer: EditBuffer?
   let focusId: FocusId?
@@ -116,6 +121,11 @@ class TerminalSessionLinker: TerminalSessionLinkingService {
                                            name: IPC.Notifications.prompt.notification,
                                            object: nil)
 
+    NotificationCenter.default.addObserver(self,
+                                           selector: #selector(processSshOpenedHook),
+                                           name: IPC.Notifications.sshConnectionOpened.notification,
+                                           object: nil)
+
   }
 
   deinit {
@@ -163,8 +173,8 @@ class TerminalSessionLinker: TerminalSessionLinkingService {
     resetFocusForAllSessions(in: window.windowId)
   }
 
-  @objc func processPromptHook(notification: Notification) {
-    guard let event = notification.object as? Local_PromptHook else {
+  @objc func processSshOpenedHook(notification: Notification) {
+    guard let event = notification.object as? Local_OpenedSSHConnectionHook else {
       return
     }
 
@@ -173,18 +183,25 @@ class TerminalSessionLinker: TerminalSessionLinkingService {
       return
     }
 
-    let workingDirectory = event.context.hasCurrentWorkingDirectory
-      ? event.context.currentWorkingDirectory
-      : ProcessStatus.workingDirectory(for: event.context.pid)
+    self.setCommandContext(
+      for: event.context.sessionID,
+      context: .ssh(controlPath: event.controlPath, remoteHostname: event.remoteHostname)
+    )
+  }
 
-    let context = ShellContext(processId: event.context.pid,
-                               executablePath: event.context.processName,
-                               ttyDescriptor: event.context.ttys,
-                               workingDirectory: workingDirectory,
-                               integrationVersion: Int(event.context.integrationVersion))
+  @objc func processPromptHook(notification: Notification) {
+    guard let event = notification.object as? Local_PromptHook else {
+      return
+    }
 
-    self.setShellContext(for: event.context.sessionID,
-                         context: context)
+    guard let shellContext = event.context.internalContext else {
+      return
+    }
+
+    if !event.context.hasRemoteContext {
+      self.setCommandContext(for: event.context.sessionID, context: nil)
+    }
+    self.setShellContext(for: event.context.sessionID, context: shellContext)
   }
 
   // MARK: - Link Session with Window
@@ -225,11 +242,13 @@ class TerminalSessionLinker: TerminalSessionLinkingService {
             isFocused: Bool?) {
 
     // if focus state is not explictly passed attempt to use current state, if it exists.
-    let isFocused = isFocused ?? self.sessions[windowId]?[terminalSessionId]?.isFocused ?? false
+    let currentSession = self.getTerminalSession(for: terminalSessionId)
+    let isFocused = isFocused ?? currentSession?.isFocused ?? false
 
     let terminalSession = TerminalSession(windowId: windowId,
                                           bundleId: bundleId,
                                           terminalSessionId: terminalSessionId,
+                                          commandContext: currentSession?.commandContext,
                                           focusId: focusId,
                                           isFocused: isFocused)
 
@@ -280,6 +299,17 @@ class TerminalSessionLinker: TerminalSessionLinkingService {
     }
   }
 
+  fileprivate func setCommandContext(for terminalSessionId: TerminalSessionId, context: CommandContext?) {
+    guard let session = self.getTerminalSession(for: terminalSessionId) else {
+      return
+    }
+
+    var updatedSession = session
+    updatedSession.commandContext = context
+
+    self.updateTerminalSessionForWindow(session.windowId, session: updatedSession)
+  }
+
   fileprivate func setShellContext(for terminalSessionId: TerminalSessionId, context: ShellContext) {
     guard let session = self.getTerminalSession(for: terminalSessionId) else {
       return
@@ -313,17 +343,17 @@ extension Local_ShellContext {
       return nil
     }
 
-    let workingDirectory = self.hasCurrentWorkingDirectory
-      ? self.currentWorkingDirectory
+    let context = self.hasRemoteContext ? self.remoteContext : self
+
+    let workingDirectory = self.hasCurrentWorkingDirectory || self.hasRemoteContext
+      ? context.currentWorkingDirectory
       : ProcessStatus.workingDirectory(for: self.pid)
 
-    let context = ShellContext(processId: self.pid,
-                               executablePath: self.processName,
-                               ttyDescriptor: self.ttys,
-                               workingDirectory: workingDirectory,
-                               integrationVersion: Int(self.integrationVersion))
-
-    return context
+    return ShellContext(processId: context.pid,
+                        executablePath: context.processName,
+                        ttyDescriptor: context.ttys,
+                        workingDirectory: workingDirectory,
+                        integrationVersion: Int(self.integrationVersion))
   }
 }
 

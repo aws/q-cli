@@ -346,7 +346,7 @@ extension ShellHookManager {
     }
     let calledDirect = info.viaFigCommand
     let bundle = info.potentialBundleId
-    let env = info.env?.jsonStringToDict() ?? [:]
+    let env = info.env?.parseAsJSON() ?? [:]
     let envMap = env.mapValues { val in
       val as? String
     }
@@ -368,7 +368,7 @@ extension ShellHookManager {
     DispatchQueue.main.async {
       NotificationCenter.default.post(
         Notification(
-          name: PseudoTerminal.recievedEnvironmentVariablesFromShellNotification,
+          name: PseudoTerminal.recievedEnvVarsFromShellNotification,
           object: env))
     }
 
@@ -591,12 +591,7 @@ extension ShellHookManager {
   }
 
   func getSessionId(for windowHash: ExternalWindowHash) -> SessionId? {
-    var id: SessionId?
-    // queue.sync {
-    id = self.sessions[windowHash]
-    // }
-
-    return id
+    return self.sessions[windowHash]
   }
 
   fileprivate func getWindowHash(for sessionId: SessionId) -> ExternalWindowHash? {
