@@ -32,12 +32,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, [self-hosted, macos, x64]]
 
     steps:
       - name: Checkout repository
-        uses:
-          actions/checkout@v2
+        uses: actions/checkout@v2
 
       # If on Ubuntu, install dependencies
       - name: Install Ubuntu dependencies
@@ -59,7 +58,7 @@ jobs:
 
   rust-clippy-lint:
     name: Rust Clippy Lint
-    runs-on: [ubuntu-latest]
+    runs-on: [self-hosted, macos, x64]
 
     steps:
       - name: Checkout repository
@@ -78,7 +77,7 @@ jobs:
 
   rust-fmt-lint:
     name: Rust Fmt Lint
-    runs-on: [ubuntu-latest]
+    runs-on: [self-hosted, macos, x64]
 
     steps:
       - name: Checkout repository
