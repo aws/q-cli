@@ -80,7 +80,7 @@ cat <<EOF
 
   ${BOLD}${UNDERLINE}Fig's onboarding was quit${NORMAL}"
   
-  You can redo this onboarding any time. Just run ${BOLD}${MAGENTA}fig app onboarding${NORMAL}
+  You can redo this onboarding any time. Just run ${BOLD}${MAGENTA}fig onboarding${NORMAL}
    
 
   Have an issue? Run ${BOLD}${MAGENTA}fig doctor${NORMAL}
@@ -220,7 +220,7 @@ cat <<EOF
      * To filter: just start typing
      * To navigate: use the ${BOLD}↓${NORMAL} & ${BOLD}↑${NORMAL} arrow keys
      * To select: hit ${BOLD}enter${NORMAL} or ${BOLD}tab${NORMAL}
-     * To hide: press ${BOLD}esc${NORMAL}, or scroll ${BOLD}↑${NORMAL} past the top suggestion to your shell history
+     * To hide: press ${BOLD}esc${NORMAL}, or scroll ${BOLD}↑${NORMAL} past the top suggestion to shell history
 
 EOF
 
@@ -231,7 +231,8 @@ clear
 cat <<EOF
 
    ${BOLD}Example${NORMAL}
-   Try typing ${BOLD}cd${NORMAL} then space. Autocomplete will suggest the folders in your home directory.
+   Try typing ${BOLD}cd${NORMAL} then space. Autocomplete will suggest the folders in your
+   home directory.
 
    
    ${BOLD}To Continue...${NORMAL}
@@ -252,7 +253,8 @@ while true; do
       cd ~/.fig
       print_special "${BOLD}Awesome!${NORMAL}"
       echo
-      print_special "${UNDERLINE}Quick Tip${NORMAL}: Selecting a suggestion with a ${BOLD}🟥 red icon${NORMAL} and ${BOLD}↪${NORMAL} symbol will immediately execute a command"
+      print_special "${UNDERLINE}Quick Tip${NORMAL}: Selecting a suggestion with a ${BOLD}🟥 red icon${NORMAL} and ${BOLD}↪${NORMAL} symbol 
+              will immediately execute a command"
       press_enter_to_continue
       break
       ;;
@@ -354,9 +356,13 @@ cat <<EOF
 
    You can use ${MAGENTA}${BOLD}Fig${NORMAL} to:
 
-    * Customize autocomplete (height, width, theme, fuzzy search, keybindings, etc.)
-    * [COMING SOON] Enable 3rd party shell plugins (prompts, autosuggestions, and more)
-    * [COMING SOON] Manage and sync your dotfiles/shell configuration
+    * ${BOLD}Customize autocomplete${NORMAL}:
+        height, width, theme, fuzzy search, keybindings, etc.
+
+    * ${BOLD}Enable 3rd party shell plugins${NORMAL}:
+        prompts, autosuggestions, themes & more
+
+    * ${BOLD}Manage and sync your dotfiles/shell configuration${NORMAL}
 EOF
       press_enter_to_continue
       break
@@ -425,31 +431,16 @@ echo
 # Done using http://patorjk.com/software/taag/#p=testall&f=Graffiti&t=fig
 # Font name = Ivrit
 clear
-cat <<'EOF'
-
-            We hope you enjoy
-      ___                       ___     
-     /\__\                     /\__\    
-    /:/ _/_       ___         /:/ _/_   
-   /:/ /\__\     /\__\       /:/ /\  \  
-  /:/ /:/  /    /:/__/      /:/ /::\  \ 
- /:/_/:/  /    /::\  \     /:/__\/\:\__\
- \:\/:/  /     \/\:\  \__  \:\  \ /:/  /
-  \::/__/       ~~\:\/\__\  \:\  /:/  / 
-   \:\  \          \::/  /   \:\/:/  /  
-    \:\__\         /:/  /     \::/  /   
-     \/__/         \/__/       \/__/                                                                       
-
-
-EOF
 
 cat <<EOF
-   ${BOLD}Final notes${NORMAL}
+   ${BOLD}Almost done!${NORMAL}
 
-   1. You should run ${MAGENTA}${BOLD}fig doctor${NORMAL} right now. This checks for common bugs and fixes them!
+   1. You should run ${MAGENTA}${BOLD}fig doctor${NORMAL} right now. 
+      This checks for common bugs and fixes them!
 
-   2. Fig won't work in any terminal sessions you currently have running, only new ones. (You might want to restart your terminal emulator)
+   2. Fig won't work in any terminal sessions you currently have running,
+      only new ones. (You might want to restart your terminal emulator)
 
-   3. We've saved a backup of your dotfiles to ~/.fig.dotfiles.bak
+   3. FYI we've saved a backup of your dotfiles to ~/.fig.dotfiles.bak
 
 EOF
