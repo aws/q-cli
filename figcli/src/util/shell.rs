@@ -14,6 +14,8 @@ use time::OffsetDateTime;
 
 use crate::util::get_parent_process_exe;
 
+use super::api::api_host;
+
 #[derive(Debug, Copy, Clone, PartialEq, Eq, ArgEnum, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum When {
@@ -373,6 +375,6 @@ impl Shell {
     }
 
     pub fn get_remote_source(&self) -> Result<Url> {
-        Ok(format!("https://api.fig.io/dotfiles/source/{}", self).parse()?)
+        Ok(format!("{}/dotfiles/source/{}", api_host(), self).parse()?)
     }
 }

@@ -53,7 +53,6 @@ tokio-tungstenite = { version = "0.17.0", features = ["rustls-tls-native-roots"]
 toml = "0.5.8"
 tracing = "0.1.31"
 tracing-subscriber = { version = "0.3.9", features = ["fmt", "time", "parking_lot"] }
-url = { version = "2.2.2", features = ["serde"] }
 validator = "0.14.0"
 walkdir = "2.3.2"
 native-dialog = "0.6.3"

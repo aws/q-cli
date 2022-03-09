@@ -1098,7 +1098,6 @@ dependencies = [
  "toml",
  "tracing",
  "tracing-subscriber",
- "url",
  "validator",
  "walkdir",
  "windows",

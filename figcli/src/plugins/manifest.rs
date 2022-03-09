@@ -1,7 +1,7 @@
 use anyhow::Result;
+use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use std::fmt;
-use url::Url;
 
 /// GitHub repo
 #[derive(Debug, Clone, PartialEq, Eq)]
