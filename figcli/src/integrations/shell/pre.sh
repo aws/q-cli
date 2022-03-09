@@ -32,7 +32,7 @@ if   [[ ! "${TERM_PROGRAM}" = WarpTerminal ]] \
   if [[ -z "${TERM_SESSION_ID}" || -n "${TMUX}" ]]; then
     export TERM_SESSION_ID="$(uuidgen)"
   fi
-  export FIG_INTEGRATION_VERSION=7
+  export FIG_INTEGRATION_VERSION=8
   # Pty module sets FIG_TERM or FIG_TERM_TMUX to avoid running twice.
   FIG_SHELL=$(~/.fig/bin/fig_get_shell)
   FIG_IS_LOGIN_SHELL=0

@@ -78,7 +78,7 @@ fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
         .map(|s| s.parse().ok())
         .ok()
         .flatten()
-        .unwrap_or(7);
+        .unwrap_or(8);
 
     let mut context = new_context(
         shell_state.local_context.pid,
