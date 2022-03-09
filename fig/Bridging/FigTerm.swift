@@ -137,7 +137,9 @@ extension FigTerm {
         // if session is still using c-figterm, send raw text
         try FigTerm.legacyInsert(text, into: session)
       case rustRewriteIncludedInVersion:
-        try FigTerm.insert(text, into: session, wrapWithFigMessage: false)
+        try FigTerm.insert(text, into: session,
+                           wrapWithFigMessage: false,
+                           figtermManagesInsertionLock: false)
       case addedFigtermMessageInVersion:
         try FigTerm.insert(text, into: session, figtermManagesInsertionLock: false)
       case figtermManagesInsertionLockInVersion, _:

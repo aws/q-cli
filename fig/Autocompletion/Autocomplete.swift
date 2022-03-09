@@ -157,6 +157,7 @@ class ShellInsertionProvider {
     // We can probably be smarter about this and modulate delay based on terminal.
 
       // remove lock after keystrokes have been processes
+      try? FileManager.default.removeItem(atPath: insertionLock)
 
       if let window = AXWindowServer.shared.allowlistedWindow,
          let sessionId = window.session,
