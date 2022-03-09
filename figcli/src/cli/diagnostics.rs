@@ -25,7 +25,9 @@ pub fn dscl_read(value: impl AsRef<OsStr>) -> Result<String> {
         .output()
         .context("Could not get id")?;
 
-    let username: String = String::from_utf8_lossy(&username_command.stdout).trim().into();
+    let username: String = String::from_utf8_lossy(&username_command.stdout)
+        .trim()
+        .into();
 
     let result = Command::new("dscl")
         .arg(".")
