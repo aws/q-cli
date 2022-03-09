@@ -77,7 +77,7 @@ pub async fn uninstall_mac_app() {
         .await
         .ok();
     tokio::process::Command::new("defaults")
-        .args(["write", "uuid", &uuid])
+        .args(["write", "com.mschrage.fig", "uuid", &uuid])
         .output()
         .await
         .ok();
