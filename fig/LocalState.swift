@@ -136,7 +136,7 @@ class LocalState: JSONStore {
 
 extension LocalState {
   static let ptyPathKey = "pty.path"
-  static let userShell = "useShell"
+  static let userShell = "userShell"
 
   static let logging = "developer.logging"
   static let loggingEnabledInternally = "developer.logging.internal"
