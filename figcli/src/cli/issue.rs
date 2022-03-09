@@ -48,7 +48,7 @@ pub async fn issue_cli(force: bool, description: Vec<String>) -> Result<()> {
     body.push_str(&format!("|{}|{}|{}|\n", &os_version, &fig_version, &shell));
     body.push_str("<details><summary>Fig Diagnostic</summary>\n<p>\n\n");
 
-    let diagnostic = Diagnostics::new().await?.user_readable()?.join("\n\n");
+    let diagnostic = Diagnostics::new().await?.user_readable()?.join("\n");
     body.push_str(&diagnostic);
     body.push_str("\n\n</p>\n</details>");
 
