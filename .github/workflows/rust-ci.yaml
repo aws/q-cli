@@ -32,7 +32,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, [self-hosted, macos, x64]]
+        os:
+          - ubuntu-latest
+          #- [self-hosted, macos, x64]
 
     steps:
       - name: Checkout repository
@@ -63,6 +65,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+        with:
+          path: rust-ci
+          clean: false
 
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
@@ -82,6 +87,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+        with:
+          path: rust-ci
+          clean: false
 
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
