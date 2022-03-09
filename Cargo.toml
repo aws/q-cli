@@ -10,6 +10,8 @@ members = [
     "rust-lib/fig-proto",
     "rust-lib/fig-settings",
     "rust-lib/fig-telemetry",
+    "rust-lib/ibus",
+    "rust-lib/ibus/ibus-sys",
 ]
 
 [profile.release]
