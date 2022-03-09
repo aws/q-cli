@@ -52,6 +52,8 @@ jobs:
           profile: minimal
           override: true
 
+      - uses: Swatinem/rust-cache@v1
+
       - name: Compile
         run: cargo test --no-run --locked
 
@@ -65,9 +67,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-        with:
-          path: rust-ci
-          clean: false
 
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
@@ -76,6 +75,8 @@ jobs:
           profile: minimal
           override: true
           components: clippy
+      
+      - uses: Swatinem/rust-cache@v1
 
       - name: Clippy Lint
         run: cargo clippy --all-targets --all-features -- -D warnings
@@ -87,9 +88,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-        with:
-          path: rust-ci
-          clean: false
 
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
@@ -98,6 +96,8 @@ jobs:
           profile: minimal
           override: true
           components: rustfmt
+          
+      - uses: Swatinem/rust-cache@v1
 
       - name: Fmt Lint
         run: cargo fmt -- --color always --check
