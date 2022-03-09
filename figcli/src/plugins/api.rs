@@ -53,7 +53,7 @@ pub struct PluginResponse {
 #[serde(rename_all = "camelCase")]
 struct InstalledPlugin {
     name: String,
-    last_update: u64,
+    last_update: Option<u64>,
 }
 
 pub async fn fetch_installed_plugins() -> Result<()> {
