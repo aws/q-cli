@@ -140,6 +140,9 @@ class Onboarding {
 
     if response.exitCode == 0 {
       Defaults.shared.userShell = response.output.joined(separator: "")
+      // read from Defaults to reuse parsing logic
+      LocalState.shared.set(value: Defaults.shared.userShell,
+                            forKey: LocalState.userShell)
     } else {
       Logger.log(message: "Could not determine user shell. Error \(response.exitCode):" +
                  response.error.joined(separator: "\n"))
