@@ -11,7 +11,7 @@ import Foundation
 import Socket
 import Dispatch
 
-protocol UnixSocketServerDelegate: class {
+protocol UnixSocketServerDelegate: AnyObject {
   func recieved(string: String, on socket: Socket?)
   func recieved(data: Data, on socket: Socket?)
 }

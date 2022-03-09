@@ -10,6 +10,10 @@ import Foundation
 import FigAPIBindings
 
 class FigTerm {
+  // swiftlint:disable identifier_name
+  static let lineAcceptedInKeystrokeBufferNotification: NSNotification.Name =
+    .init("lineAcceptedInXTermBufferNotification")
+
   static let defaultPath = URL(fileURLWithPath: "/tmp/figterm-input.socket")
 
   static func path(for sessionId: SessionId) -> String {
@@ -17,11 +21,16 @@ class FigTerm {
     return "/tmp/figterm-\(sessionId).socket"
   }
 
-  static func updateBuffer(_ update: Fig_TextUpdate, into session: SessionId, wrapWithFigMessage: Bool) throws {
+  static func updateBuffer(_ update: Fig_TextUpdate,
+                           into session: SessionId,
+                           wrapWithFigMessage: Bool = true,
+                           figtermManagesInsertionLock: Bool = true) throws {
 
     try connect(to: session) { socket in
 
-      ShellInsertionProvider.insertLock()
+      if !figtermManagesInsertionLock {
+        ShellInsertionProvider.insertLock()
+      }
 
       let figtermMessage = Figterm_FigtermMessage.with { msg in
         msg.insertTextCommand = Figterm_InsertTextCommand.with({ insert in
@@ -42,18 +51,35 @@ class FigTerm {
       data.append(contentsOf: seralizedFigtermMessage)
 
       socket.send(data: data)
+
+      if !figtermManagesInsertionLock {
+        ShellInsertionProvider.insertUnlock(deletion: Int(update.deletion),
+                                            insertion: update.insertion,
+                                            offset: Int(update.offset),
+                                            immediate: update.immediate)
+      } else {
+        Defaults.shared.incrementKeystokesSaved(by: Int(update.deletion) + update.insertion.count)
+
+        if update.immediate {
+          NotificationCenter.default.post(name: Self.lineAcceptedInKeystrokeBufferNotification, object: nil)
+        }
+      }
     }
   }
 
   //
-  static func insert(_ text: String, into session: SessionId, wrapWithFigMessage: Bool) throws {
+  static func insert(_ text: String,
+                     into session: SessionId,
+                     wrapWithFigMessage: Bool = true,
+                     figtermManagesInsertionLock: Bool = true) throws {
 
     try updateBuffer(Fig_TextUpdate.with({ update in
       update.deletion = 0
       update.insertion = text
       update.offset = 0
       update.immediate = false
-    }), into: session, wrapWithFigMessage: wrapWithFigMessage)
+    }), into: session, wrapWithFigMessage: wrapWithFigMessage,
+                     figtermManagesInsertionLock: figtermManagesInsertionLock)
   }
 
   // `legacyInsert` is used to write text to the C-implementation of figterm.
@@ -87,12 +113,12 @@ class FigTerm {
 
 }
 
-import FigAPIBindings
 extension FigTerm {
   static let insertedTextNotification: NSNotification.Name = Notification.Name("insertedTextNotification")
 
   fileprivate static let rustRewriteIncludedInVersion = 6
-  fileprivate static let rustFigtermMessageVersion = 7
+  fileprivate static let addedFigtermMessageInVersion = 7
+  fileprivate static let figtermManagesInsertionLockInVersion = 8
 
   static func handleInsertRequest(_ request: Fig_InsertTextRequest) throws -> Bool {
 
@@ -106,20 +132,22 @@ extension FigTerm {
     switch request.type {
     case .text(let text):
 
-      // if session is still using c-figterm, send raw text
-      if integrationVersion >= rustFigtermMessageVersion {
-        try FigTerm.insert(text, into: session, wrapWithFigMessage: true)
-      } else if integrationVersion >= rustRewriteIncludedInVersion {
-        try FigTerm.insert(text, into: session, wrapWithFigMessage: false)
-      } else {
+      switch integrationVersion {
+      case 0..<rustRewriteIncludedInVersion:
+        // if session is still using c-figterm, send raw text
         try FigTerm.legacyInsert(text, into: session)
+      case rustRewriteIncludedInVersion:
+        try FigTerm.insert(text, into: session, wrapWithFigMessage: false)
+      case addedFigtermMessageInVersion:
+        try FigTerm.insert(text, into: session, figtermManagesInsertionLock: false)
+      case figtermManagesInsertionLockInVersion, _:
+        try FigTerm.insert(text, into: session)
       }
+
     case .update:
 
-      if integrationVersion >= rustFigtermMessageVersion {
-        try FigTerm.updateBuffer(request.update, into: session, wrapWithFigMessage: true)
-      } else if integrationVersion >= rustRewriteIncludedInVersion {
-        try FigTerm.updateBuffer(request.update, into: session, wrapWithFigMessage: false)
+      if integrationVersion >= figtermManagesInsertionLockInVersion {
+        try FigTerm.updateBuffer(request.update, into: session)
       } else {
         throw APIError.generic(message: "Not supported yet.")
       }

@@ -221,7 +221,7 @@ extension TelemetryProvider: LocalTelemetryService {
     // register other telemetry observers!
     NotificationCenter.default.addObserver(self,
                                            selector: #selector(lineAcceptedInKeystrokeBuffer),
-                                           name: ShellInsertionProvider.lineAcceptedInKeystrokeBufferNotification,
+                                           name: FigTerm.lineAcceptedInKeystrokeBufferNotification,
                                            object: nil)
     NotificationCenter.default.addObserver(self,
                                            selector: #selector(insertionInTerminal),

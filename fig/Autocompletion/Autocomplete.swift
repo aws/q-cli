@@ -61,6 +61,8 @@ class Autocomplete {
   }
 }
 
+// This is legacy code and should be removed after the transition
+// to locks internal locks in figterm
 class ShellInsertionProvider {
   static let insertionLock = "\(NSHomeDirectory())/.fig/insertion-lock"
 
@@ -139,7 +141,7 @@ class ShellInsertionProvider {
       if immediate {
         text = ""
         index = text.startIndex
-        NotificationCenter.default.post(name: Self.lineAcceptedInKeystrokeBufferNotification, object: nil)
+        NotificationCenter.default.post(name: FigTerm.lineAcceptedInKeystrokeBufferNotification, object: nil)
       }
     }
 
