@@ -52,7 +52,12 @@ jobs:
           profile: minimal
           override: true
 
-      - uses: Swatinem/rust-cache@v1
+      - uses: actions/cache@v2
+        with:
+          path: target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
 
       - name: Compile
         run: cargo test --no-run --locked
@@ -75,8 +80,13 @@ jobs:
           profile: minimal
           override: true
           components: clippy
-      
-      - uses: Swatinem/rust-cache@v1
+
+      - uses: actions/cache@v2
+        with:
+          path: target/
+          key: rust-ci-${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            rust-ci-${{ runner.os }}-cargo-
 
       - name: Clippy Lint
         run: cargo clippy --all-targets --all-features -- -D warnings

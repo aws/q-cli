@@ -154,9 +154,9 @@ jobs:
         uses: actions/cache@v2
         with:
           path: target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: rust-release-${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-cargo-
+            rust-release-${{ runner.os }}-cargo-
 
 ############################################
 # Position generated build artifacts
