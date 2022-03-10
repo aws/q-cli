@@ -34,7 +34,7 @@ jobs:
       matrix:
         os:
           - ubuntu-latest
-          #- [self-hosted, macos, x64]
+          - [self-hosted, macos, x64]
 
     steps:
       - name: Checkout repository
@@ -55,9 +55,9 @@ jobs:
       - uses: actions/cache@v2
         with:
           path: target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: rust-ci-build-and-test-${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-cargo-
+            rust-ci-build-and-test-${{ runner.os }}-cargo-
 
       - name: Compile
         run: cargo test --no-run --locked
@@ -106,8 +106,6 @@ jobs:
           profile: minimal
           override: true
           components: rustfmt
-          
-      - uses: Swatinem/rust-cache@v1
 
       - name: Fmt Lint
         run: cargo fmt -- --color always --check
