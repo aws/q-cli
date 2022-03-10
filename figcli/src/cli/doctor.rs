@@ -215,9 +215,16 @@ impl DoctorCheck for PathCheck {
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
         match std::env::var("PATH").map(|path| path.contains(".fig/bin")) {
-            Ok(true) => Ok(()),
+            Ok(true) => {}
             _ => return Err(anyhow!("Path does not contain ~/.fig/bin").into()),
         }
+
+        match std::env::var("PATH").map(|path| path.contains(".local/bin")) {
+            Ok(true) => {}
+            _ => return Err(anyhow!("Path does not contain ~/.local/bin").into()),
+        }
+
+        Ok(())
     }
 }
 

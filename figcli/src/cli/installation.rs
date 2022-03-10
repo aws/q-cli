@@ -167,7 +167,7 @@ pub enum UpdateType {
 
 /// Self-update the fig binary
 /// Update will exit the binary if the update was successful
-pub async fn update(_update_type: UpdateType) -> Result<UpdateStatus> {
+pub async fn update(update_type: UpdateType) -> Result<UpdateStatus> {
     // Let desktop app handle updates on macOS
     #[cfg(target_os = "macos")]
     {
@@ -175,7 +175,7 @@ pub async fn update(_update_type: UpdateType) -> Result<UpdateStatus> {
 
         launch_fig()?;
 
-        let desktop_app_update = update_command(true).await;
+        let desktop_app_update = update_command(update_type == UpdateType::NoConfirm).await;
         match desktop_app_update {
             Ok(()) => {
                 println!("\n→ Checking for updates to macOS app...\n");
