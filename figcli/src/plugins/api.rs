@@ -2,10 +2,11 @@ use std::path::{Path, PathBuf};
 
 use anyhow::Result;
 use fig_auth::get_token;
+use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use tracing::{error, info};
 
-use crate::plugins::download::update_or_clone_git_repo;
+use crate::{plugins::download::update_or_clone_git_repo, util::api::api_host};
 
 use super::manifest::GitHub;
 
@@ -58,8 +59,11 @@ struct InstalledPlugin {
 
 pub async fn fetch_installed_plugins() -> Result<()> {
     let token = get_token().await?;
+
+    let url = Url::parse(&format!("{}/dotfiles/plugins", api_host()))?;
+
     let body = reqwest::Client::new()
-        .get("https://api.fig.io/dotfiles/plugins")
+        .get(url)
         .bearer_auth(token)
         .send()
         .await?
@@ -101,8 +105,12 @@ pub async fn fetch_installed_plugins() -> Result<()> {
 }
 
 pub async fn fetch_plugin(name: impl AsRef<str>) -> Result<PluginData> {
-    let url = format!("https://api.fig.io/plugins/name/{}", name.as_ref());
-    let body = reqwest::get(&url).await?.error_for_status()?.text().await?;
+    let api_host = api_host();
+    let name = name.as_ref();
+
+    let url = Url::parse(&format!("{api_host}/plugins/name/{name}"))?;
+
+    let body = reqwest::get(url).await?.error_for_status()?.text().await?;
 
     let data: PluginResponse = serde_json::from_str(&body)?;
 

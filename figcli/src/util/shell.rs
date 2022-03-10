@@ -4,6 +4,7 @@ use regex::Regex;
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use std::{
+    borrow::Cow,
     fmt::Display,
     fs::File,
     io::{Read, Write},
@@ -14,11 +15,22 @@ use time::OffsetDateTime;
 
 use crate::util::get_parent_process_exe;
 
+use super::api::api_host;
+
 #[derive(Debug, Copy, Clone, PartialEq, Eq, ArgEnum, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum When {
     Pre,
     Post,
+}
+
+impl std::fmt::Display for When {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            When::Pre => write!(f, "pre"),
+            When::Post => write!(f, "post"),
+        }
+    }
 }
 
 /// Shells supported by Fig
@@ -344,27 +356,46 @@ impl Shell {
         Ok(path)
     }
 
-    pub fn get_fig_integration_source(&self, when: &When) -> String {
-        let base_str = match (self, when) {
-            (Shell::Fish, When::Pre) => include_str!("../integrations/shell/pre.fish"),
-            (Shell::Fish, When::Post) => include_str!("../integrations/shell/post.fish"),
-            (Shell::Bash, When::Post) => include_str!("../integrations/shell/post.bash"),
-            (Shell::Zsh, When::Post) => include_str!("../integrations/shell/post.zsh"),
-            (_, When::Pre) => include_str!("../integrations/shell/pre.sh"),
-        };
-
-        if let Shell::Bash = self {
-            // Source bash preexec before any bash integration, pre or post.
-            let bash_preexec = include_str!("../integrations/shell/bash-preexec.sh");
-            format!(
-                "function __fig_source_bash_preexec() {{\n{}\n}}\n__fig_source_bash_preexec\n{}\n{}",
-                bash_preexec,
-                // Override __bp_adjust_histcontrol to preserve histcontrol.
-                "function __bp_adjust_histcontrol() { :; }",
-                base_str,
+    pub fn get_fig_integration_source(&self, when: &When) -> Cow<'static, str> {
+        match (self, when) {
+            (Shell::Fish, When::Pre) => include_str!("../integrations/shell/pre.fish").into(),
+            (Shell::Fish, When::Post) => include_str!("../integrations/shell/post.fish").into(),
+            (_, _) => format!(
+                "if [[ -n \"$BASH\" ]]; then\n\
+                    eval \"$(fig _ init bash {when})\"\n\
+                elif [[ -n \"$ZSH_NAME\" ]]; then\n\
+                    eval \"$(fig _ init zsh {when})\"\n\
+                fi\n",
             )
-        } else {
-            base_str.into()
+            .into(),
+        }
+    }
+
+    pub fn get_fig_integration_source_internal(&self, when: &When) -> &'static str {
+        match (self, when) {
+            (Shell::Fish, _) => "# Unimplemented",
+            (Shell::Bash, When::Pre) => {
+                concat!(
+                    "function __fig_source_bash_preexec() {\n",
+                    include_str!("../integrations/shell/bash-preexec.sh"),
+                    "\n}\n\
+                    __fig_source_bash_preexec\n\
+                    function __bp_adjust_histcontrol() { :; }\n",
+                    include_str!("../integrations/shell/pre.sh")
+                )
+            }
+            (Shell::Bash, When::Post) => {
+                concat!(
+                    "function __fig_source_bash_preexec() {\n",
+                    include_str!("../integrations/shell/bash-preexec.sh"),
+                    "\n}\n\
+                    __fig_source_bash_preexec\n\
+                    function __bp_adjust_histcontrol() { :; }\n",
+                    include_str!("../integrations/shell/post.bash")
+                )
+            }
+            (Shell::Zsh, When::Pre) => include_str!("../integrations/shell/pre.sh"),
+            (Shell::Zsh, When::Post) => include_str!("../integrations/shell/post.zsh"),
         }
     }
 
@@ -373,6 +404,6 @@ impl Shell {
     }
 
     pub fn get_remote_source(&self) -> Result<Url> {
-        Ok(format!("https://api.fig.io/dotfiles/source/{}", self).parse()?)
+        Ok(format!("{}/dotfiles/source/{}", api_host(), self).parse()?)
     }
 }

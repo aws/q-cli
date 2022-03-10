@@ -9,7 +9,7 @@ use anyhow::Result;
 use flume::Receiver;
 use git2::{build::RepoBuilder, FetchOptions, RemoteCallbacks, Repository};
 use parking_lot::RwLock;
-use reqwest::IntoUrl;
+use reqwest::{IntoUrl, Url};
 use serde::{Deserialize, Serialize};
 use std::{
     io::Write,
@@ -23,11 +23,11 @@ use tokio::io::AsyncWriteExt;
 #[serde(untagged)]
 pub enum DownloadMetadata {
     Git {
-        git_repo: url::Url,
+        git_repo: Url,
         checksum: GitChecksum,
     },
     Remote {
-        url: url::Url,
+        url: Url,
         checksum: Sha256Checksum,
     },
     Local {

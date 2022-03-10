@@ -2,17 +2,23 @@ use anyhow::Result;
 use copypasta::{ClipboardContext, ClipboardProvider};
 use crossterm::style::Stylize;
 use fig_auth::{get_email, get_token};
+use reqwest::Url;
+
+use crate::util::api::api_host;
 
 pub async fn invite_cli() -> Result<()> {
     let email = get_email();
     if let Some(email) = email {
         let token = get_token().await?;
 
+        let host = api_host();
+
+        let url = Url::parse(&format!(
+            "{host}/waitlist/get-referral-link-from-email/{email}",
+        ))?;
+
         let response = reqwest::Client::new()
-            .get(format!(
-                "https://api.fig.io/waitlist/get-referral-link-from-email/{}",
-                email
-            ))
+            .get(url)
             .bearer_auth(token)
             .send()
             .await?

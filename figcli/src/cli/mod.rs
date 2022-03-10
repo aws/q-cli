@@ -23,7 +23,7 @@ use crate::{
     cli::{installation::InstallComponents, util::open_url},
     daemon::{daemon, get_daemon},
     util::{
-        launch_fig,
+        is_app_running, launch_fig,
         shell::{Shell, When},
     },
 };
@@ -136,6 +136,8 @@ pub enum CliRootCommands {
     Restart,
     Alpha,
     Onboarding,
+    #[clap(name = "app:running")]
+    FigAppRunning,
 }
 
 #[derive(Debug, Parser)]
@@ -295,6 +297,10 @@ impl Cli {
                 CliRootCommands::Onboarding => {
                     let res = AppSubcommand::Onboarding.execute().await;
                     res
+                }
+                CliRootCommands::FigAppRunning => {
+                    println!("{}", if is_app_running() { "1" } else { "0" });
+                    Ok(())
                 }
             },
             // Root command
