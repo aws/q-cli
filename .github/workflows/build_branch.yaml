@@ -26,143 +26,16 @@ on:
         default: 'true'
   schedule:
     - cron:  '0 7 * * 1-5'
-
-jobs:
-  figcli:
-    strategy:
-      matrix:
-        arch: [ x86_64, aarch64 ]
-    runs-on: macos-11
-    env:
-      BINARY_NAME: figcli
-    steps:
-      - name: "Checkout Project"
-        uses: actions/checkout@v2
-        with:
-          submodules: recursive
-
-############################################
-# Cache figcli build
-############################################
-      - name: Get figcli checksum
-        id: figcli-checksum
-        run: |
-          brew install coreutils
-          FILES=("figcli" "rust-lib" "proto" "Cargo.toml" "Cargo.lock")
-          echo "Finding checksum of:"
-          find $FILES -type f | LC_ALL=C sort
-          CHECKSUM=$(find $FILES -type f -exec sha256sum {} + | LC_ALL=C sort | sha256sum | cut -d' ' -f1)
-          echo "::set-output name=checksum::$CHECKSUM"
-          echo $CHECKSUM
-
-      - name: Cache build artifacts
-        id: figcli-cache
-        uses: actions/cache@v2
-        with:
-          path: ./figcli/build
-          key: figcli-${{ runner.os }}-${{ matrix.arch }}-${{ steps.figcli-checksum.outputs.checksum }}
-
-############################################
-# Setup Rust build environment
-############################################
-      - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          profile: minimal
-          override: true
-          target: ${{ matrix.arch }}-apple-darwin
-    
-      - name: Cache Dependencies
-        uses: Swatinem/rust-cache@ce325b60658c1b38465c06cc965b79baf32c1e72
-
-      - name: Compile figcli
-        if: steps.figcli-cache.outputs.cache-hit != 'true'
-        run: make build-${{ matrix.arch }}-apple-darwin 
-        working-directory: ./figcli
-
-      - name: Tar artifacts
-        run: tar -cvf figcli-${{matrix.arch}}.tar -C ./figcli/build .
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: figcli-${{matrix.arch}}-apple-darwin
-          path: figcli-${{matrix.arch}}.tar
-          retention-days: 1
-
-  figterm:
-    strategy:
-      matrix:
-        arch: [ x86_64, aarch64 ]
-    runs-on: macos-11
-    steps:
-      - name: "Checkout Project"
-        uses: actions/checkout@v2
-        with:
-          submodules: recursive
-
-############################################
-# Cache figterm build
-############################################
-      - name: Get figterm checksum
-        id: figterm-checksum
-        run: |
-          brew install coreutils
-          FILES=("figterm" "rust-lib" "proto" "Cargo.toml" "Cargo.lock")
-          echo "Finding checksum of:"
-          find $FILES -type f | LC_ALL=C sort
-          CHECKSUM=$(find $FILES -type f -exec sha256sum {} + | LC_ALL=C sort | sha256sum | cut -d' ' -f1)
-          echo "::set-output name=checksum::$CHECKSUM"
-          echo $CHECKSUM
-
-      - name: Cache build artifacts
-        id: figterm-cache
-        uses: actions/cache@v2
-        with:
-          path: ./figterm/build
-          key: ${{ runner.os }}-${{ matrix.arch }}-${{ steps.figterm-checksum.outputs.checksum }}
-
-############################################
-# Setup Rust build environment
-############################################
-      - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          profile: minimal
-          override: true
-          target: ${{ matrix.arch }}-apple-darwin
-    
-      - name: Cache Dependencies
-        uses: Swatinem/rust-cache@ce325b60658c1b38465c06cc965b79baf32c1e72
-
-      - name: Compile figterm
-        if: steps.figterm-cache.outputs.cache-hit != 'true'
-        run: |
-          make figterm-${{ matrix.arch }}
-          make fig_get_shell-${{ matrix.arch }}
-        working-directory: ./figterm
-
-      - name: Tar artifacts
-        run: tar -cvf figterm-${{matrix.arch}}.tar -C ./figterm/build .
-      - name: Upload artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: figterm-${{matrix.arch}}-apple-darwin
-          path: figterm-${{matrix.arch}}.tar
-          retention-days: 1
       
   release:
-    needs: [ figterm, figcli ]
     runs-on: [self-hosted, macos, x64]
     if: "!contains(github.event.head_commit.message, 'skip ci')"
     timeout-minutes: 90
     steps:
+
 ############################################
 # Declare ENVIRONMENT variables
 ############################################
-
       - name: "SET: VERSIONS_BRANCH, APPCAST_PREFIX and BUMP_CASK_PR"
         env:
           REF: ${{ github.ref }}
@@ -185,7 +58,6 @@ jobs:
           echo $VERSIONS_BRANCH
           echo $APPCAST_PREFIX
           echo BRANCH_NAME=${GITHUB_REF##*/} >> $GITHUB_ENV
-
 
       - name: "Checkout Project"
         uses: actions/checkout@v2
@@ -272,13 +144,18 @@ jobs:
           profile: minimal
           override: true
     
-      - name: Cache Dependencies
-        uses: Swatinem/rust-cache@ce325b60658c1b38465c06cc965b79baf32c1e72
-
       - name: Install rust targets
         run: |
           rustup target add aarch64-apple-darwin
           rustup target add x86_64-apple-darwin
+
+      - name: Cache rust target
+        uses: actions/cache@v2
+        with:
+          path: target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
 
 ############################################
 # Position generated build artifacts
