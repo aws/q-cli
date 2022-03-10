@@ -32,6 +32,7 @@ use std::{
     ffi::OsStr,
     fs::read_to_string,
     future::Future,
+    io::Write,
     path::{Path, PathBuf},
     process::Command,
     time::Duration,
@@ -214,9 +215,16 @@ impl DoctorCheck for PathCheck {
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
         match std::env::var("PATH").map(|path| path.contains(".fig/bin")) {
-            Ok(true) => Ok(()),
+            Ok(true) => {}
             _ => return Err(anyhow!("Path does not contain ~/.fig/bin").into()),
         }
+
+        match std::env::var("PATH").map(|path| path.contains(".local/bin")) {
+            Ok(true) => {}
+            _ => return Err(anyhow!("Path does not contain ~/.local/bin").into()),
+        }
+
+        Ok(())
     }
 }
 
@@ -381,7 +389,7 @@ struct DaemonCheck;
 #[async_trait]
 impl DoctorCheck for DaemonCheck {
     fn name(&self) -> Cow<'static, str> {
-        "Daemon is running".into()
+        "Daemon".into()
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
@@ -389,15 +397,62 @@ impl DoctorCheck for DaemonCheck {
         let init_system =
             crate::daemon::InitSystem::get_init_system().context("Could not get init system")?;
 
+        let daemon_fix_sleep_sec = 3;
+
         macro_rules! daemon_fix {
             () => {
-                Some(Box::new(|| {
+                Some(Box::new(move || {
                     crate::daemon::install_daemon()?;
                     // Sleep for a second to give the daemon time to install and start
-                    std::thread::sleep(std::time::Duration::from_secs(1));
+                    std::thread::sleep(std::time::Duration::from_secs(daemon_fix_sleep_sec));
                     Ok(())
                 }))
             };
+        }
+
+        #[cfg(target_os = "macos")]
+        {
+            let launch_agents_path = fig_directories::home_dir()
+                .context("Could not get home dir")?
+                .join("Library/LaunchAgents");
+
+            if !launch_agents_path.exists() {
+                return Err(DoctorError::Error {
+                    reason: format!(
+                        "LaunchAgents directory does not exist at {:?}",
+                        launch_agents_path
+                    )
+                    .into(),
+                    info: vec![],
+                    fix: Some(Box::new(move || {
+                        std::fs::create_dir_all(&launch_agents_path)?;
+                        crate::daemon::install_daemon()?;
+                        std::thread::sleep(std::time::Duration::from_secs(daemon_fix_sleep_sec));
+                        Ok(())
+                    })),
+                });
+            }
+
+            // Check the directory is writable
+            // I wish `try` was stable :(
+            (|| {
+                let mut file = std::fs::File::create(&launch_agents_path.join("test.txt"))
+                    .context("Could not create test file")?;
+                file.write_all(b"test")
+                    .context("Could not write to test file")?;
+                file.sync_all().context("Could not sync test file")?;
+                std::fs::remove_file(&launch_agents_path.join("test.txt"))
+                    .context("Could not remove test file")?;
+                anyhow::Ok(())
+            })()
+            .map_err(|err| DoctorError::Error {
+                reason: "LaunchAgents directory is not writable".into(),
+                info: vec![
+                    "Make sure you have write permissions for the LaunchAgents directory".into(),
+                    format!("Error: {}", err).into(),
+                ],
+                fix: Some(Box::new(move || Ok(()))),
+            })?;
         }
 
         match init_system.daemon_status()? {
@@ -791,13 +846,17 @@ impl DoctorCheck<DiagnosticsResponse> for FigCLIPathCheck {
         if path == fig_bin_path || path == local_bin_path || path == Path::new("/usr/local/bin/fig")
         {
             Ok(())
+        } else if path.ends_with("target/debug/fig") || path.ends_with("target/release/fig") {
+            Err(DoctorError::Warning(
+                "Running debug build in a non-standard location".into(),
+            ))
         } else {
-            return Err(anyhow!(
+            Err(anyhow!(
                 "Fig CLI ({}) must be in {}",
                 path.display(),
                 local_bin_path.display()
             )
-            .into());
+            .into())
         }
     }
 }

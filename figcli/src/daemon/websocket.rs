@@ -1,5 +1,6 @@
 use anyhow::{Context, Result};
 use fig_auth::{get_email, get_token};
+use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::{io::Write, ops::ControlFlow};
@@ -8,7 +9,10 @@ use tokio::net::TcpStream;
 use tokio_tungstenite::{tungstenite::Message, MaybeTlsStream, WebSocketStream};
 use tracing::{debug, error, info};
 
-use crate::plugins;
+use crate::{
+    plugins,
+    util::api::{api_host, ws_host},
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -28,8 +32,12 @@ pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream
 
     let token = get_token().await?;
 
+    let api_host = api_host();
+
+    let url = Url::parse(&format!("{api_host}/authenticate/ticket"))?;
+
     let response = reqwest_client
-        .get("https://api.fig.io/authenticate/ticket")
+        .get(url)
         .bearer_auth(&token)
         .send()
         .await?
@@ -42,8 +50,8 @@ pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream
         device_id.push_str(&email);
     }
 
-    let url = url::Url::parse_with_params(
-        "wss://api.fig.io/",
+    let url = Url::parse_with_params(
+        &ws_host(),
         &[("deviceId", &device_id), ("ticket", &response)],
     )?;
 

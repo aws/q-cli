@@ -9,7 +9,6 @@ use crate::{
 use anyhow::Result;
 use crossterm::style::Stylize;
 use regex::Regex;
-use url::form_urlencoded;
 
 pub async fn issue_cli(force: bool, description: Vec<String>) -> Result<()> {
     // Check if fig is running
@@ -56,14 +55,13 @@ pub async fn issue_cli(force: bool, description: Vec<String>) -> Result<()> {
 
     println!("\n→ Opening GitHub...\n");
 
-    let params = form_urlencoded::Serializer::new(String::new())
-        .append_pair("assignees", &assignees.join(","))
-        .append_pair("body", &body)
-        .finish();
+    let url = reqwest::Url::parse_with_params(
+        "https://github.com/withfig/fig/issues/new",
+        &[("assignees", &assignees.join(",")), ("body", &body)],
+    )?;
 
-    let url = format!("https://github.com/withfig/fig/issues/new?{}", params);
     if open_url(&url).is_err() {
-        println!("{}", url.underlined());
+        println!("{}", url.as_str().underlined());
     }
 
     Ok(())
