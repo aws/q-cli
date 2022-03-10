@@ -26,7 +26,8 @@ on:
         default: 'true'
   schedule:
     - cron:  '0 7 * * 1-5'
-      
+
+jobs:
   release:
     runs-on: [self-hosted, macos, x64]
     if: "!contains(github.event.head_commit.message, 'skip ci')"
