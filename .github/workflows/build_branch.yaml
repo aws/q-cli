@@ -160,42 +160,8 @@ on:
 ############################################
 # Position generated build artifacts
 ############################################
-      - name: Make artifacts directory
-        run: |
-          mkdir -p ./artifacts
-          ARTIFACTS=$(pwd)/build
-          mkdir -p $ARTIFACTS
-
-          echo "ARTIFACTS=$ARTIFACTS" >> $GITHUB_ENV
-
-
-      - name: Download artifacts
-        uses: actions/download-artifact@v2
-        with:
-          path: ./artifacts
-      - name: Unwrap all artifact folders
-        run: |
-            ls
-            find . -mindepth 2 -type f -exec mv '{}' . ';'
-            ls
-        working-directory: ./artifacts
-
-      - name: List artifacts
-        run: |
-            pwd
-            ls
-            ls ./artifacts
       - name: Ensure BUILT_PRODUCTS_DIR exists
         run: mkdir -p "$FIG_BUILT_PRODUCTS_DIR"
-      - name: Copy artifacts to BUILT_PRODUCTS_DIR
-        run: find . -maxdepth 1 -name '*.tar' -exec tar -xvf '{}' -C"$ARTIFACTS" \;
-        working-directory: ./artifacts
-
-      - name: List contents of ARTIFACTS
-        run: ls "$ARTIFACTS"
-
-      - name: Touch all files in ARTIFACTS
-        run: touch -c "$ARTIFACTS"/*
 
       - name: Build figterm
         run: make figterm fig_get_shell
@@ -207,11 +173,7 @@ on:
           
 ############################################
 # Build, Archive & Export 
-############################################
-      - name: "Select Xcode 12.5.1"
-        uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: "12.5.1"
+############################################          
       - name: "Import Certificate"
         uses: devbotsxyz/import-signing-certificate@main
         with:
