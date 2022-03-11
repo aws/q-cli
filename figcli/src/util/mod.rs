@@ -199,16 +199,13 @@ pub fn launch_fig() -> Result<()> {
     Ok(())
 }
 
-pub fn is_executable_in_path(program: &str) -> bool {
-    if let Ok(path) = env::var("PATH") {
-        for p in path.split(':') {
-            let p_str = format!("{}/{}", p, program);
-            if fs::metadata(p_str).is_ok() {
-                return true;
-            }
-        }
+pub fn is_executable_in_path(program: impl AsRef<Path>) -> bool {
+    match env::var_os("PATH") {
+        Some(path) => env::split_paths(&path)
+            .map(|p| fs::metadata(p.join(&program)).map(|m| m.is_file()))
+            .any(|p| p.unwrap_or(false)),
+        _ => false,
     }
-    false
 }
 
 #[cfg(test)]
