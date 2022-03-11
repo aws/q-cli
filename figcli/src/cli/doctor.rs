@@ -4,7 +4,7 @@ use crate::{
         util::OSVersion,
     },
     util::{
-        app_path_from_bundle_id, get_shell, glob, glob_dir,
+        app_path_from_bundle_id, get_shell, glob, glob_dir, is_executable_in_path,
         shell::{Shell, ShellFileIntegration},
         terminal::Terminal,
     },
@@ -583,7 +583,11 @@ impl DoctorCheck<Option<Shell>> for DotfileCheck {
             }
         }
 
-        DoctorCheckType::SoftCheck
+        if is_executable_in_path(&self.integration.shell.to_string()) {
+            DoctorCheckType::SoftCheck
+        } else {
+            DoctorCheckType::NoCheck
+        }
     }
 
     async fn check(&self, _: &Option<Shell>) -> Result<(), DoctorError> {

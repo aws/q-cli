@@ -1,10 +1,13 @@
 use anyhow::{Context, Result};
 use globset::{Glob, GlobSet, GlobSetBuilder};
 use std::{
+    env,
     ffi::OsStr,
+    fs,
     path::{Path, PathBuf},
     process::Command,
 };
+
 use sysinfo::{get_current_pid, ProcessExt, System, SystemExt};
 
 pub mod api;
@@ -194,6 +197,15 @@ pub fn launch_fig() -> Result<()> {
         .context("fig could not be launched")?;
     std::thread::sleep(std::time::Duration::from_secs(3));
     Ok(())
+}
+
+pub fn is_executable_in_path(program: impl AsRef<Path>) -> bool {
+    match env::var_os("PATH") {
+        Some(path) => env::split_paths(&path)
+            .map(|p| fs::metadata(p.join(&program)).map(|m| m.is_file()))
+            .any(|p| p.unwrap_or(false)),
+        _ => false,
+    }
 }
 
 #[cfg(test)]
