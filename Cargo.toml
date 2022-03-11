@@ -12,6 +12,8 @@ members = [
     "rust-lib/fig-telemetry",
     "rust-lib/ibus",
     "rust-lib/ibus/ibus-sys",
+    "rust-lib/linux-test",
+    "fig-ibus-engine"
 ]
 
 [profile.release]

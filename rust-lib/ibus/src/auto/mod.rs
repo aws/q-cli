@@ -2,14 +2,30 @@
 // from gir-files
 // DO NOT EDIT
 
+mod bus;
+pub use self::bus::Bus;
+
+mod component;
+pub use self::component::Component;
+
 mod engine;
 pub use self::engine::Engine;
 
+mod factory;
+pub use self::factory::Factory;
+
+pub mod functions;
+
 #[doc(hidden)]
 pub mod traits {
+    pub use super::bus::BusExt;
+    pub use super::component::ComponentExt;
     pub use super::engine::EngineExt;
+    pub use super::factory::FactoryExt;
 }
 #[doc(hidden)]
 pub mod builders {
+    pub use super::bus::BusBuilder;
+    pub use super::component::ComponentBuilder;
     pub use super::engine::EngineBuilder;
 }

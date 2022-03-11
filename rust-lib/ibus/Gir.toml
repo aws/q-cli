@@ -5,11 +5,18 @@ target_path = "."
 min_cfg_version = "1.5"
 work_mode = "normal"
 girs_directories = ["gir-files"]
-generate_safety_asserts = true
 deprecate_by_min_version = true
 single_version_file = true
 generate_builder = true
+generate_safety_asserts = false
 
 generate = [
-    "IBus.Engine"
+    "IBus.Engine",
+    "IBus.Factory",
+    "IBus.Bus",
+    "IBus.Component",
+]
+
+manual = [
+    "Gio.DBusConnection",
 ]

@@ -3,10 +3,10 @@
 // DO NOT EDIT
 
 use ibus_sys::*;
-use std::mem::{align_of, size_of};
 use std::env;
 use std::error::Error;
 use std::ffi::OsString;
+use std::mem::{align_of, size_of};
 use std::path::Path;
 use std::process::Command;
 use std::str;
@@ -64,20 +64,17 @@ fn pkg_config_cflags(packages: &[&str]) -> Result<Vec<String>, Box<dyn Error>> {
     if packages.is_empty() {
         return Ok(Vec::new());
     }
-    let pkg_config = env::var_os("PKG_CONFIG")
-        .unwrap_or_else(|| OsString::from("pkg-config"));
+    let pkg_config = env::var_os("PKG_CONFIG").unwrap_or_else(|| OsString::from("pkg-config"));
     let mut cmd = Command::new(pkg_config);
     cmd.arg("--cflags");
     cmd.args(packages);
     let out = cmd.output()?;
     if !out.status.success() {
-        return Err(format!("command {:?} returned {}",
-                           &cmd, out.status).into());
+        return Err(format!("command {:?} returned {}", &cmd, out.status).into());
     }
     let stdout = str::from_utf8(&out.stdout)?;
     Ok(shell_words::split(stdout.trim())?)
 }
-
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 struct Layout {
@@ -174,8 +171,7 @@ fn cross_validate_layout_with_c() {
 
     let mut results = Results::default();
 
-    for ((rust_name, rust_layout), (c_name, c_layout)) in
-        RUST_LAYOUTS.iter().zip(c_layouts.iter())
+    for ((rust_name, rust_layout), (c_name, c_layout)) in RUST_LAYOUTS.iter().zip(c_layouts.iter())
     {
         if rust_name != c_name {
             results.record_failed();
@@ -216,83 +212,545 @@ fn get_c_output(name: &str) -> Result<String, Box<dyn Error>> {
 }
 
 const RUST_LAYOUTS: &[(&str, Layout)] = &[
-    ("IBusAttrList", Layout {size: size_of::<IBusAttrList>(), alignment: align_of::<IBusAttrList>()}),
-    ("IBusAttrListClass", Layout {size: size_of::<IBusAttrListClass>(), alignment: align_of::<IBusAttrListClass>()}),
-    ("IBusAttrType", Layout {size: size_of::<IBusAttrType>(), alignment: align_of::<IBusAttrType>()}),
-    ("IBusAttrUnderline", Layout {size: size_of::<IBusAttrUnderline>(), alignment: align_of::<IBusAttrUnderline>()}),
-    ("IBusAttribute", Layout {size: size_of::<IBusAttribute>(), alignment: align_of::<IBusAttribute>()}),
-    ("IBusAttributeClass", Layout {size: size_of::<IBusAttributeClass>(), alignment: align_of::<IBusAttributeClass>()}),
-    ("IBusBus", Layout {size: size_of::<IBusBus>(), alignment: align_of::<IBusBus>()}),
-    ("IBusBusClass", Layout {size: size_of::<IBusBusClass>(), alignment: align_of::<IBusBusClass>()}),
-    ("IBusBusNameFlag", Layout {size: size_of::<IBusBusNameFlag>(), alignment: align_of::<IBusBusNameFlag>()}),
-    ("IBusBusRequestNameReply", Layout {size: size_of::<IBusBusRequestNameReply>(), alignment: align_of::<IBusBusRequestNameReply>()}),
-    ("IBusBusStartServiceByNameReply", Layout {size: size_of::<IBusBusStartServiceByNameReply>(), alignment: align_of::<IBusBusStartServiceByNameReply>()}),
-    ("IBusCapabilite", Layout {size: size_of::<IBusCapabilite>(), alignment: align_of::<IBusCapabilite>()}),
-    ("IBusComponent", Layout {size: size_of::<IBusComponent>(), alignment: align_of::<IBusComponent>()}),
-    ("IBusComponentClass", Layout {size: size_of::<IBusComponentClass>(), alignment: align_of::<IBusComponentClass>()}),
-    ("IBusConfig", Layout {size: size_of::<IBusConfig>(), alignment: align_of::<IBusConfig>()}),
-    ("IBusConfigClass", Layout {size: size_of::<IBusConfigClass>(), alignment: align_of::<IBusConfigClass>()}),
-    ("IBusConfigService", Layout {size: size_of::<IBusConfigService>(), alignment: align_of::<IBusConfigService>()}),
-    ("IBusConfigServiceClass", Layout {size: size_of::<IBusConfigServiceClass>(), alignment: align_of::<IBusConfigServiceClass>()}),
-    ("IBusEmojiData", Layout {size: size_of::<IBusEmojiData>(), alignment: align_of::<IBusEmojiData>()}),
-    ("IBusEmojiDataClass", Layout {size: size_of::<IBusEmojiDataClass>(), alignment: align_of::<IBusEmojiDataClass>()}),
-    ("IBusEngine", Layout {size: size_of::<IBusEngine>(), alignment: align_of::<IBusEngine>()}),
-    ("IBusEngineClass", Layout {size: size_of::<IBusEngineClass>(), alignment: align_of::<IBusEngineClass>()}),
-    ("IBusEngineDesc", Layout {size: size_of::<IBusEngineDesc>(), alignment: align_of::<IBusEngineDesc>()}),
-    ("IBusEngineDescClass", Layout {size: size_of::<IBusEngineDescClass>(), alignment: align_of::<IBusEngineDescClass>()}),
-    ("IBusEngineSimple", Layout {size: size_of::<IBusEngineSimple>(), alignment: align_of::<IBusEngineSimple>()}),
-    ("IBusEngineSimpleClass", Layout {size: size_of::<IBusEngineSimpleClass>(), alignment: align_of::<IBusEngineSimpleClass>()}),
-    ("IBusError", Layout {size: size_of::<IBusError>(), alignment: align_of::<IBusError>()}),
-    ("IBusExtensionEvent", Layout {size: size_of::<IBusExtensionEvent>(), alignment: align_of::<IBusExtensionEvent>()}),
-    ("IBusExtensionEventClass", Layout {size: size_of::<IBusExtensionEventClass>(), alignment: align_of::<IBusExtensionEventClass>()}),
-    ("IBusFactory", Layout {size: size_of::<IBusFactory>(), alignment: align_of::<IBusFactory>()}),
-    ("IBusFactoryClass", Layout {size: size_of::<IBusFactoryClass>(), alignment: align_of::<IBusFactoryClass>()}),
-    ("IBusHotkeyProfile", Layout {size: size_of::<IBusHotkeyProfile>(), alignment: align_of::<IBusHotkeyProfile>()}),
-    ("IBusHotkeyProfileClass", Layout {size: size_of::<IBusHotkeyProfileClass>(), alignment: align_of::<IBusHotkeyProfileClass>()}),
-    ("IBusInputContext", Layout {size: size_of::<IBusInputContext>(), alignment: align_of::<IBusInputContext>()}),
-    ("IBusInputContextClass", Layout {size: size_of::<IBusInputContextClass>(), alignment: align_of::<IBusInputContextClass>()}),
-    ("IBusInputHints", Layout {size: size_of::<IBusInputHints>(), alignment: align_of::<IBusInputHints>()}),
-    ("IBusInputPurpose", Layout {size: size_of::<IBusInputPurpose>(), alignment: align_of::<IBusInputPurpose>()}),
-    ("IBusKeymap", Layout {size: size_of::<IBusKeymap>(), alignment: align_of::<IBusKeymap>()}),
-    ("IBusKeymapClass", Layout {size: size_of::<IBusKeymapClass>(), alignment: align_of::<IBusKeymapClass>()}),
-    ("IBusLookupTable", Layout {size: size_of::<IBusLookupTable>(), alignment: align_of::<IBusLookupTable>()}),
-    ("IBusLookupTableClass", Layout {size: size_of::<IBusLookupTableClass>(), alignment: align_of::<IBusLookupTableClass>()}),
-    ("IBusModifierType", Layout {size: size_of::<IBusModifierType>(), alignment: align_of::<IBusModifierType>()}),
-    ("IBusObject", Layout {size: size_of::<IBusObject>(), alignment: align_of::<IBusObject>()}),
-    ("IBusObjectClass", Layout {size: size_of::<IBusObjectClass>(), alignment: align_of::<IBusObjectClass>()}),
-    ("IBusObjectFlags", Layout {size: size_of::<IBusObjectFlags>(), alignment: align_of::<IBusObjectFlags>()}),
-    ("IBusObservedPath", Layout {size: size_of::<IBusObservedPath>(), alignment: align_of::<IBusObservedPath>()}),
-    ("IBusObservedPathClass", Layout {size: size_of::<IBusObservedPathClass>(), alignment: align_of::<IBusObservedPathClass>()}),
-    ("IBusOrientation", Layout {size: size_of::<IBusOrientation>(), alignment: align_of::<IBusOrientation>()}),
-    ("IBusPanelService", Layout {size: size_of::<IBusPanelService>(), alignment: align_of::<IBusPanelService>()}),
-    ("IBusPanelServiceClass", Layout {size: size_of::<IBusPanelServiceClass>(), alignment: align_of::<IBusPanelServiceClass>()}),
-    ("IBusPreeditFocusMode", Layout {size: size_of::<IBusPreeditFocusMode>(), alignment: align_of::<IBusPreeditFocusMode>()}),
-    ("IBusProcessKeyEventData", Layout {size: size_of::<IBusProcessKeyEventData>(), alignment: align_of::<IBusProcessKeyEventData>()}),
-    ("IBusPropList", Layout {size: size_of::<IBusPropList>(), alignment: align_of::<IBusPropList>()}),
-    ("IBusPropListClass", Layout {size: size_of::<IBusPropListClass>(), alignment: align_of::<IBusPropListClass>()}),
-    ("IBusPropState", Layout {size: size_of::<IBusPropState>(), alignment: align_of::<IBusPropState>()}),
-    ("IBusPropType", Layout {size: size_of::<IBusPropType>(), alignment: align_of::<IBusPropType>()}),
-    ("IBusProperty", Layout {size: size_of::<IBusProperty>(), alignment: align_of::<IBusProperty>()}),
-    ("IBusPropertyClass", Layout {size: size_of::<IBusPropertyClass>(), alignment: align_of::<IBusPropertyClass>()}),
-    ("IBusProxy", Layout {size: size_of::<IBusProxy>(), alignment: align_of::<IBusProxy>()}),
-    ("IBusProxyClass", Layout {size: size_of::<IBusProxyClass>(), alignment: align_of::<IBusProxyClass>()}),
-    ("IBusRectangle", Layout {size: size_of::<IBusRectangle>(), alignment: align_of::<IBusRectangle>()}),
-    ("IBusRegistry", Layout {size: size_of::<IBusRegistry>(), alignment: align_of::<IBusRegistry>()}),
-    ("IBusRegistryClass", Layout {size: size_of::<IBusRegistryClass>(), alignment: align_of::<IBusRegistryClass>()}),
-    ("IBusSerializable", Layout {size: size_of::<IBusSerializable>(), alignment: align_of::<IBusSerializable>()}),
-    ("IBusSerializableClass", Layout {size: size_of::<IBusSerializableClass>(), alignment: align_of::<IBusSerializableClass>()}),
-    ("IBusService", Layout {size: size_of::<IBusService>(), alignment: align_of::<IBusService>()}),
-    ("IBusServiceClass", Layout {size: size_of::<IBusServiceClass>(), alignment: align_of::<IBusServiceClass>()}),
-    ("IBusText", Layout {size: size_of::<IBusText>(), alignment: align_of::<IBusText>()}),
-    ("IBusTextClass", Layout {size: size_of::<IBusTextClass>(), alignment: align_of::<IBusTextClass>()}),
-    ("IBusUnicodeBlock", Layout {size: size_of::<IBusUnicodeBlock>(), alignment: align_of::<IBusUnicodeBlock>()}),
-    ("IBusUnicodeBlockClass", Layout {size: size_of::<IBusUnicodeBlockClass>(), alignment: align_of::<IBusUnicodeBlockClass>()}),
-    ("IBusUnicodeData", Layout {size: size_of::<IBusUnicodeData>(), alignment: align_of::<IBusUnicodeData>()}),
-    ("IBusUnicodeDataClass", Layout {size: size_of::<IBusUnicodeDataClass>(), alignment: align_of::<IBusUnicodeDataClass>()}),
-    ("IBusXEvent", Layout {size: size_of::<IBusXEvent>(), alignment: align_of::<IBusXEvent>()}),
-    ("IBusXEventClass", Layout {size: size_of::<IBusXEventClass>(), alignment: align_of::<IBusXEventClass>()}),
-    ("IBusXEventType", Layout {size: size_of::<IBusXEventType>(), alignment: align_of::<IBusXEventType>()}),
-    ("IBusXML", Layout {size: size_of::<IBusXML>(), alignment: align_of::<IBusXML>()}),
+    (
+        "IBusAttrList",
+        Layout {
+            size: size_of::<IBusAttrList>(),
+            alignment: align_of::<IBusAttrList>(),
+        },
+    ),
+    (
+        "IBusAttrListClass",
+        Layout {
+            size: size_of::<IBusAttrListClass>(),
+            alignment: align_of::<IBusAttrListClass>(),
+        },
+    ),
+    (
+        "IBusAttrType",
+        Layout {
+            size: size_of::<IBusAttrType>(),
+            alignment: align_of::<IBusAttrType>(),
+        },
+    ),
+    (
+        "IBusAttrUnderline",
+        Layout {
+            size: size_of::<IBusAttrUnderline>(),
+            alignment: align_of::<IBusAttrUnderline>(),
+        },
+    ),
+    (
+        "IBusAttribute",
+        Layout {
+            size: size_of::<IBusAttribute>(),
+            alignment: align_of::<IBusAttribute>(),
+        },
+    ),
+    (
+        "IBusAttributeClass",
+        Layout {
+            size: size_of::<IBusAttributeClass>(),
+            alignment: align_of::<IBusAttributeClass>(),
+        },
+    ),
+    (
+        "IBusBus",
+        Layout {
+            size: size_of::<IBusBus>(),
+            alignment: align_of::<IBusBus>(),
+        },
+    ),
+    (
+        "IBusBusClass",
+        Layout {
+            size: size_of::<IBusBusClass>(),
+            alignment: align_of::<IBusBusClass>(),
+        },
+    ),
+    (
+        "IBusBusNameFlag",
+        Layout {
+            size: size_of::<IBusBusNameFlag>(),
+            alignment: align_of::<IBusBusNameFlag>(),
+        },
+    ),
+    (
+        "IBusBusRequestNameReply",
+        Layout {
+            size: size_of::<IBusBusRequestNameReply>(),
+            alignment: align_of::<IBusBusRequestNameReply>(),
+        },
+    ),
+    (
+        "IBusBusStartServiceByNameReply",
+        Layout {
+            size: size_of::<IBusBusStartServiceByNameReply>(),
+            alignment: align_of::<IBusBusStartServiceByNameReply>(),
+        },
+    ),
+    (
+        "IBusCapabilite",
+        Layout {
+            size: size_of::<IBusCapabilite>(),
+            alignment: align_of::<IBusCapabilite>(),
+        },
+    ),
+    (
+        "IBusComponent",
+        Layout {
+            size: size_of::<IBusComponent>(),
+            alignment: align_of::<IBusComponent>(),
+        },
+    ),
+    (
+        "IBusComponentClass",
+        Layout {
+            size: size_of::<IBusComponentClass>(),
+            alignment: align_of::<IBusComponentClass>(),
+        },
+    ),
+    (
+        "IBusConfig",
+        Layout {
+            size: size_of::<IBusConfig>(),
+            alignment: align_of::<IBusConfig>(),
+        },
+    ),
+    (
+        "IBusConfigClass",
+        Layout {
+            size: size_of::<IBusConfigClass>(),
+            alignment: align_of::<IBusConfigClass>(),
+        },
+    ),
+    (
+        "IBusConfigService",
+        Layout {
+            size: size_of::<IBusConfigService>(),
+            alignment: align_of::<IBusConfigService>(),
+        },
+    ),
+    (
+        "IBusConfigServiceClass",
+        Layout {
+            size: size_of::<IBusConfigServiceClass>(),
+            alignment: align_of::<IBusConfigServiceClass>(),
+        },
+    ),
+    (
+        "IBusEmojiData",
+        Layout {
+            size: size_of::<IBusEmojiData>(),
+            alignment: align_of::<IBusEmojiData>(),
+        },
+    ),
+    (
+        "IBusEmojiDataClass",
+        Layout {
+            size: size_of::<IBusEmojiDataClass>(),
+            alignment: align_of::<IBusEmojiDataClass>(),
+        },
+    ),
+    (
+        "IBusEngine",
+        Layout {
+            size: size_of::<IBusEngine>(),
+            alignment: align_of::<IBusEngine>(),
+        },
+    ),
+    (
+        "IBusEngineClass",
+        Layout {
+            size: size_of::<IBusEngineClass>(),
+            alignment: align_of::<IBusEngineClass>(),
+        },
+    ),
+    (
+        "IBusEngineDesc",
+        Layout {
+            size: size_of::<IBusEngineDesc>(),
+            alignment: align_of::<IBusEngineDesc>(),
+        },
+    ),
+    (
+        "IBusEngineDescClass",
+        Layout {
+            size: size_of::<IBusEngineDescClass>(),
+            alignment: align_of::<IBusEngineDescClass>(),
+        },
+    ),
+    (
+        "IBusEngineSimple",
+        Layout {
+            size: size_of::<IBusEngineSimple>(),
+            alignment: align_of::<IBusEngineSimple>(),
+        },
+    ),
+    (
+        "IBusEngineSimpleClass",
+        Layout {
+            size: size_of::<IBusEngineSimpleClass>(),
+            alignment: align_of::<IBusEngineSimpleClass>(),
+        },
+    ),
+    (
+        "IBusError",
+        Layout {
+            size: size_of::<IBusError>(),
+            alignment: align_of::<IBusError>(),
+        },
+    ),
+    (
+        "IBusExtensionEvent",
+        Layout {
+            size: size_of::<IBusExtensionEvent>(),
+            alignment: align_of::<IBusExtensionEvent>(),
+        },
+    ),
+    (
+        "IBusExtensionEventClass",
+        Layout {
+            size: size_of::<IBusExtensionEventClass>(),
+            alignment: align_of::<IBusExtensionEventClass>(),
+        },
+    ),
+    (
+        "IBusFactory",
+        Layout {
+            size: size_of::<IBusFactory>(),
+            alignment: align_of::<IBusFactory>(),
+        },
+    ),
+    (
+        "IBusFactoryClass",
+        Layout {
+            size: size_of::<IBusFactoryClass>(),
+            alignment: align_of::<IBusFactoryClass>(),
+        },
+    ),
+    (
+        "IBusHotkeyProfile",
+        Layout {
+            size: size_of::<IBusHotkeyProfile>(),
+            alignment: align_of::<IBusHotkeyProfile>(),
+        },
+    ),
+    (
+        "IBusHotkeyProfileClass",
+        Layout {
+            size: size_of::<IBusHotkeyProfileClass>(),
+            alignment: align_of::<IBusHotkeyProfileClass>(),
+        },
+    ),
+    (
+        "IBusInputContext",
+        Layout {
+            size: size_of::<IBusInputContext>(),
+            alignment: align_of::<IBusInputContext>(),
+        },
+    ),
+    (
+        "IBusInputContextClass",
+        Layout {
+            size: size_of::<IBusInputContextClass>(),
+            alignment: align_of::<IBusInputContextClass>(),
+        },
+    ),
+    (
+        "IBusInputHints",
+        Layout {
+            size: size_of::<IBusInputHints>(),
+            alignment: align_of::<IBusInputHints>(),
+        },
+    ),
+    (
+        "IBusInputPurpose",
+        Layout {
+            size: size_of::<IBusInputPurpose>(),
+            alignment: align_of::<IBusInputPurpose>(),
+        },
+    ),
+    (
+        "IBusKeymap",
+        Layout {
+            size: size_of::<IBusKeymap>(),
+            alignment: align_of::<IBusKeymap>(),
+        },
+    ),
+    (
+        "IBusKeymapClass",
+        Layout {
+            size: size_of::<IBusKeymapClass>(),
+            alignment: align_of::<IBusKeymapClass>(),
+        },
+    ),
+    (
+        "IBusLookupTable",
+        Layout {
+            size: size_of::<IBusLookupTable>(),
+            alignment: align_of::<IBusLookupTable>(),
+        },
+    ),
+    (
+        "IBusLookupTableClass",
+        Layout {
+            size: size_of::<IBusLookupTableClass>(),
+            alignment: align_of::<IBusLookupTableClass>(),
+        },
+    ),
+    (
+        "IBusModifierType",
+        Layout {
+            size: size_of::<IBusModifierType>(),
+            alignment: align_of::<IBusModifierType>(),
+        },
+    ),
+    (
+        "IBusObject",
+        Layout {
+            size: size_of::<IBusObject>(),
+            alignment: align_of::<IBusObject>(),
+        },
+    ),
+    (
+        "IBusObjectClass",
+        Layout {
+            size: size_of::<IBusObjectClass>(),
+            alignment: align_of::<IBusObjectClass>(),
+        },
+    ),
+    (
+        "IBusObjectFlags",
+        Layout {
+            size: size_of::<IBusObjectFlags>(),
+            alignment: align_of::<IBusObjectFlags>(),
+        },
+    ),
+    (
+        "IBusObservedPath",
+        Layout {
+            size: size_of::<IBusObservedPath>(),
+            alignment: align_of::<IBusObservedPath>(),
+        },
+    ),
+    (
+        "IBusObservedPathClass",
+        Layout {
+            size: size_of::<IBusObservedPathClass>(),
+            alignment: align_of::<IBusObservedPathClass>(),
+        },
+    ),
+    (
+        "IBusOrientation",
+        Layout {
+            size: size_of::<IBusOrientation>(),
+            alignment: align_of::<IBusOrientation>(),
+        },
+    ),
+    (
+        "IBusPanelService",
+        Layout {
+            size: size_of::<IBusPanelService>(),
+            alignment: align_of::<IBusPanelService>(),
+        },
+    ),
+    (
+        "IBusPanelServiceClass",
+        Layout {
+            size: size_of::<IBusPanelServiceClass>(),
+            alignment: align_of::<IBusPanelServiceClass>(),
+        },
+    ),
+    (
+        "IBusPreeditFocusMode",
+        Layout {
+            size: size_of::<IBusPreeditFocusMode>(),
+            alignment: align_of::<IBusPreeditFocusMode>(),
+        },
+    ),
+    (
+        "IBusProcessKeyEventData",
+        Layout {
+            size: size_of::<IBusProcessKeyEventData>(),
+            alignment: align_of::<IBusProcessKeyEventData>(),
+        },
+    ),
+    (
+        "IBusPropList",
+        Layout {
+            size: size_of::<IBusPropList>(),
+            alignment: align_of::<IBusPropList>(),
+        },
+    ),
+    (
+        "IBusPropListClass",
+        Layout {
+            size: size_of::<IBusPropListClass>(),
+            alignment: align_of::<IBusPropListClass>(),
+        },
+    ),
+    (
+        "IBusPropState",
+        Layout {
+            size: size_of::<IBusPropState>(),
+            alignment: align_of::<IBusPropState>(),
+        },
+    ),
+    (
+        "IBusPropType",
+        Layout {
+            size: size_of::<IBusPropType>(),
+            alignment: align_of::<IBusPropType>(),
+        },
+    ),
+    (
+        "IBusProperty",
+        Layout {
+            size: size_of::<IBusProperty>(),
+            alignment: align_of::<IBusProperty>(),
+        },
+    ),
+    (
+        "IBusPropertyClass",
+        Layout {
+            size: size_of::<IBusPropertyClass>(),
+            alignment: align_of::<IBusPropertyClass>(),
+        },
+    ),
+    (
+        "IBusProxy",
+        Layout {
+            size: size_of::<IBusProxy>(),
+            alignment: align_of::<IBusProxy>(),
+        },
+    ),
+    (
+        "IBusProxyClass",
+        Layout {
+            size: size_of::<IBusProxyClass>(),
+            alignment: align_of::<IBusProxyClass>(),
+        },
+    ),
+    (
+        "IBusRectangle",
+        Layout {
+            size: size_of::<IBusRectangle>(),
+            alignment: align_of::<IBusRectangle>(),
+        },
+    ),
+    (
+        "IBusRegistry",
+        Layout {
+            size: size_of::<IBusRegistry>(),
+            alignment: align_of::<IBusRegistry>(),
+        },
+    ),
+    (
+        "IBusRegistryClass",
+        Layout {
+            size: size_of::<IBusRegistryClass>(),
+            alignment: align_of::<IBusRegistryClass>(),
+        },
+    ),
+    (
+        "IBusSerializable",
+        Layout {
+            size: size_of::<IBusSerializable>(),
+            alignment: align_of::<IBusSerializable>(),
+        },
+    ),
+    (
+        "IBusSerializableClass",
+        Layout {
+            size: size_of::<IBusSerializableClass>(),
+            alignment: align_of::<IBusSerializableClass>(),
+        },
+    ),
+    (
+        "IBusService",
+        Layout {
+            size: size_of::<IBusService>(),
+            alignment: align_of::<IBusService>(),
+        },
+    ),
+    (
+        "IBusServiceClass",
+        Layout {
+            size: size_of::<IBusServiceClass>(),
+            alignment: align_of::<IBusServiceClass>(),
+        },
+    ),
+    (
+        "IBusText",
+        Layout {
+            size: size_of::<IBusText>(),
+            alignment: align_of::<IBusText>(),
+        },
+    ),
+    (
+        "IBusTextClass",
+        Layout {
+            size: size_of::<IBusTextClass>(),
+            alignment: align_of::<IBusTextClass>(),
+        },
+    ),
+    (
+        "IBusUnicodeBlock",
+        Layout {
+            size: size_of::<IBusUnicodeBlock>(),
+            alignment: align_of::<IBusUnicodeBlock>(),
+        },
+    ),
+    (
+        "IBusUnicodeBlockClass",
+        Layout {
+            size: size_of::<IBusUnicodeBlockClass>(),
+            alignment: align_of::<IBusUnicodeBlockClass>(),
+        },
+    ),
+    (
+        "IBusUnicodeData",
+        Layout {
+            size: size_of::<IBusUnicodeData>(),
+            alignment: align_of::<IBusUnicodeData>(),
+        },
+    ),
+    (
+        "IBusUnicodeDataClass",
+        Layout {
+            size: size_of::<IBusUnicodeDataClass>(),
+            alignment: align_of::<IBusUnicodeDataClass>(),
+        },
+    ),
+    (
+        "IBusXEvent",
+        Layout {
+            size: size_of::<IBusXEvent>(),
+            alignment: align_of::<IBusXEvent>(),
+        },
+    ),
+    (
+        "IBusXEventClass",
+        Layout {
+            size: size_of::<IBusXEventClass>(),
+            alignment: align_of::<IBusXEventClass>(),
+        },
+    ),
+    (
+        "IBusXEventType",
+        Layout {
+            size: size_of::<IBusXEventType>(),
+            alignment: align_of::<IBusXEventType>(),
+        },
+    ),
+    (
+        "IBusXML",
+        Layout {
+            size: size_of::<IBusXML>(),
+            alignment: align_of::<IBusXML>(),
+        },
+    ),
 ];
 
 const RUST_CONSTANTS: &[(&str, &str)] = &[
@@ -1051,8 +1509,14 @@ const RUST_CONSTANTS: &[(&str, &str)] = &[
     ("IBUS_INTERFACE_ENGINE", "org.freedesktop.IBus.Engine"),
     ("IBUS_INTERFACE_FACTORY", "org.freedesktop.IBus.Factory"),
     ("IBUS_INTERFACE_IBUS", "org.freedesktop.IBus"),
-    ("IBUS_INTERFACE_INPUT_CONTEXT", "org.freedesktop.IBus.InputContext"),
-    ("IBUS_INTERFACE_NOTIFICATIONS", "org.freedesktop.IBus.Notifications"),
+    (
+        "IBUS_INTERFACE_INPUT_CONTEXT",
+        "org.freedesktop.IBus.InputContext",
+    ),
+    (
+        "IBUS_INTERFACE_NOTIFICATIONS",
+        "org.freedesktop.IBus.Notifications",
+    ),
     ("IBUS_INTERFACE_PANEL", "org.freedesktop.IBus.Panel"),
     ("IBUS_INTERFACE_PORTAL", "org.freedesktop.IBus.Portal"),
     ("(guint) IBUS_IN_DESTRUCTION", "1"),
@@ -3530,10 +3994,19 @@ const RUST_CONSTANTS: &[(&str, &str)] = &[
     ("IBUS_PATH_CONFIG", "/org/freedesktop/IBus/Config"),
     ("IBUS_PATH_FACTORY", "/org/freedesktop/IBus/Factory"),
     ("IBUS_PATH_IBUS", "/org/freedesktop/IBus"),
-    ("IBUS_PATH_INPUT_CONTEXT", "/org/freedesktop/IBus/InputContext_%d"),
-    ("IBUS_PATH_NOTIFICATIONS", "/org/freedesktop/IBus/Notifications"),
+    (
+        "IBUS_PATH_INPUT_CONTEXT",
+        "/org/freedesktop/IBus/InputContext_%d",
+    ),
+    (
+        "IBUS_PATH_NOTIFICATIONS",
+        "/org/freedesktop/IBus/Notifications",
+    ),
     ("IBUS_PATH_PANEL", "/org/freedesktop/IBus/Panel"),
-    ("IBUS_PATH_PANEL_EXTENSION_EMOJI", "/org/freedesktop/IBus/Panel/Extension/Emoji"),
+    (
+        "IBUS_PATH_PANEL_EXTENSION_EMOJI",
+        "/org/freedesktop/IBus/Panel/Extension/Emoji",
+    ),
     ("IBUS_Pabovedot", "16784982"),
     ("IBUS_Page_Down", "65366"),
     ("IBUS_Page_Up", "65365"),
@@ -3606,10 +4079,19 @@ const RUST_CONSTANTS: &[(&str, &str)] = &[
     ("IBUS_SCHWA", "16777615"),
     ("IBUS_SERVICE_CONFIG", "org.freedesktop.IBus.Config"),
     ("IBUS_SERVICE_IBUS", "org.freedesktop.IBus"),
-    ("IBUS_SERVICE_NOTIFICATIONS", "org.freedesktop.IBus.Notifications"),
+    (
+        "IBUS_SERVICE_NOTIFICATIONS",
+        "org.freedesktop.IBus.Notifications",
+    ),
     ("IBUS_SERVICE_PANEL", "org.freedesktop.IBus.Panel"),
-    ("IBUS_SERVICE_PANEL_EXTENSION", "org.freedesktop.IBus.Panel.Extension"),
-    ("IBUS_SERVICE_PANEL_EXTENSION_EMOJI", "org.freedesktop.IBus.Panel.Extension.Emoji"),
+    (
+        "IBUS_SERVICE_PANEL_EXTENSION",
+        "org.freedesktop.IBus.Panel.Extension",
+    ),
+    (
+        "IBUS_SERVICE_PANEL_EXTENSION_EMOJI",
+        "org.freedesktop.IBus.Panel.Extension.Emoji",
+    ),
     ("IBUS_SERVICE_PORTAL", "org.freedesktop.portal.IBus"),
     ("(guint) IBUS_SHIFT_MASK", "1"),
     ("(guint) IBUS_SUPER_MASK", "67108864"),
@@ -4682,5 +5164,3 @@ const RUST_CONSTANTS: &[(&str, &str)] = &[
     ("(gint) PROP_TYPE_SEPARATOR", "4"),
     ("(gint) PROP_TYPE_TOGGLE", "1"),
 ];
-
-

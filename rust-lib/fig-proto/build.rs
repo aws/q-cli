@@ -5,6 +5,7 @@ const PROTO_FILES: &[&str] = &[
     "../../proto/figterm.proto",
     "../../proto/daemon.proto",
     "../../proto/fig_common.proto",
+    "../../proto/linux.proto",
 ];
 
 fn main() -> Result<()> {
