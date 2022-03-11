@@ -1,3 +1,4 @@
+<!-- This file will eventually be installed so that it will run the engine automatically. Make sure the installer sets the exec field correctly! -->
 <?xml version="1.0" encoding="utf-8" ?>
 <component>
     <name>org.freedesktop.IBus.FigIBusEngine</name>
