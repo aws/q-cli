@@ -1278,7 +1278,7 @@ where
             print_status_result(&name, &result);
         }
 
-        if config.no_early_exit {
+        if config.verbose {
             continue;
         }
 
@@ -1392,16 +1392,11 @@ fn stop_spinner(spinner: Option<Spinner>) -> Result<()> {
 struct CheckConfiguration {
     verbose: bool,
     strict: bool,
-    no_early_exit: bool,
 }
 
 // Doctor
-pub async fn doctor_cli(verbose: bool, strict: bool, no_early_exit: bool) -> Result<()> {
-    let config = CheckConfiguration {
-        verbose,
-        strict,
-        no_early_exit,
-    };
+pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
+    let config = CheckConfiguration { verbose, strict };
 
     let mut spinner: Option<Spinner> = None;
     if !config.verbose {
@@ -1422,6 +1417,28 @@ pub async fn doctor_cli(verbose: bool, strict: bool, no_early_exit: bool) -> Res
         fig_settings::state::set_value("pty.path", json!(path)).ok();
     }
 
+    let shell_integrations: Vec<_> = [Shell::Bash, Shell::Zsh, Shell::Fish]
+        .into_iter()
+        .map(|shell| shell.get_shell_integrations())
+        .collect::<Result<Vec<_>>>()?
+        .into_iter()
+        .flatten()
+        .map(|integration| DotfileCheck { integration })
+        .collect();
+
+    let all_dotfile_checks: Vec<_> = shell_integrations
+        .iter()
+        .map(|p| (&*p) as &dyn DoctorCheck<_>)
+        .collect();
+    run_checks_with_context(
+        "Let's check your dotfiles...",
+        all_dotfile_checks,
+        get_shell_context,
+        config,
+        &mut spinner,
+    )
+    .await?;
+
     let status = async {
         run_checks(
             "Let's make sure Fig is running...".into(),
@@ -1435,28 +1452,6 @@ pub async fn doctor_cli(verbose: bool, strict: bool, no_early_exit: bool) -> Res
                 &InsertionLockCheck {},
                 &PseudoTerminalPathCheck {},
             ],
-            config,
-            &mut spinner,
-        )
-        .await?;
-
-        let shell_integrations: Vec<_> = [Shell::Bash, Shell::Zsh, Shell::Fish]
-            .into_iter()
-            .map(|shell| shell.get_shell_integrations())
-            .collect::<Result<Vec<_>>>()?
-            .into_iter()
-            .flatten()
-            .map(|integration| DotfileCheck { integration })
-            .collect();
-
-        let all_dotfile_checks: Vec<_> = shell_integrations
-            .iter()
-            .map(|p| (&*p) as &dyn DoctorCheck<_>)
-            .collect();
-        run_checks_with_context(
-            "Let's check your dotfiles...",
-            all_dotfile_checks,
-            get_shell_context,
             config,
             &mut spinner,
         )
@@ -1535,7 +1530,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool, no_early_exit: bool) -> Res
         println!()
     } else {
         // If early exit is disabled, no errors are thrown
-        if !config.no_early_exit {
+        if !config.verbose {
             println!();
             println!("{} Everything looks good!", CHECKMARK);
         }

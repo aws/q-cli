@@ -121,8 +121,6 @@ pub enum CliRootCommands {
         verbose: bool,
         #[clap(long)]
         strict: bool,
-        #[clap(long)]
-        no_early_exit: bool,
     },
     /// Plugins management
     #[clap(subcommand)]
@@ -232,11 +230,9 @@ impl Cli {
                 CliRootCommands::Login { refresh } => auth::login_cli(refresh).await,
                 CliRootCommands::Logout => auth::logout_cli().await,
                 CliRootCommands::User => auth::user_info_cli().await,
-                CliRootCommands::Doctor {
-                    verbose,
-                    strict,
-                    no_early_exit,
-                } => doctor::doctor_cli(verbose, strict, no_early_exit).await,
+                CliRootCommands::Doctor { verbose, strict } => {
+                    doctor::doctor_cli(verbose, strict).await
+                }
                 CliRootCommands::Invite => invite::invite_cli().await,
                 CliRootCommands::Tweet => tweet::tweet_cli(),
                 CliRootCommands::App(app_subcommand) => app_subcommand.execute().await,
