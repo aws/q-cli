@@ -3,7 +3,6 @@ use globset::{Glob, GlobSet, GlobSetBuilder};
 use std::{
     env,
     ffi::OsStr,
-    fs,
     path::{Path, PathBuf},
     process::Command,
 };
@@ -201,9 +200,7 @@ pub fn launch_fig() -> Result<()> {
 
 pub fn is_executable_in_path(program: impl AsRef<Path>) -> bool {
     match env::var_os("PATH") {
-        Some(path) => env::split_paths(&path)
-            .map(|p| fs::metadata(p.join(&program)).map(|m| m.is_file()))
-            .any(|p| p.unwrap_or(false)),
+        Some(path) => env::split_paths(&path).any(|p| p.join(&program).is_file()),
         _ => false,
     }
 }

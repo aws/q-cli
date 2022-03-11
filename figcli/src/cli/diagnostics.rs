@@ -220,9 +220,10 @@ struct CurrentEnvironment {
 
 impl CurrentEnvironment {
     fn new() -> CurrentEnvironment {
-        let user_shell = dscl_read("UserShell")
+        let user_shell = fig_settings::state::get_value("userShell")
             .ok()
-            .and_then(|out| out.split(':').last().map(|val| val.trim().into()))
+            .flatten()
+            .and_then(|v| v.as_str().map(String::from))
             .unwrap_or_else(|| "Unknown UserShell".into());
 
         let current_dir = std::env::current_dir()
