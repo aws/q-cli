@@ -34,7 +34,7 @@ jobs:
       matrix:
         os:
           - ubuntu-latest
-          - [self-hosted, macos, x64]
+          - macos-latest
 
     steps:
       - name: Checkout repository
@@ -67,7 +67,7 @@ jobs:
 
   rust-clippy-lint:
     name: Rust Clippy Lint
-    runs-on: [self-hosted, macos, x64]
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
@@ -93,7 +93,7 @@ jobs:
 
   rust-fmt-lint:
     name: Rust Fmt Lint
-    runs-on: [self-hosted, macos, x64]
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
