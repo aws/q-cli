@@ -328,7 +328,7 @@ jobs:
       - name: "Checkout withfig/versions"
         if: github.event.inputs.useSparkle != 'false'
         run: |
-          git clone --branch $VERSIONS_BRANCH https://mattschrage:$(echo $PERSONAL_GITHUB_ACCESS_TOKEN)@github.com/withfig/versions.git
+          git clone --branch $VERSIONS_BRANCH https://mattschrage:$(echo $PERSONAL_GITHUB_ACCESS_TOKEN)@github.com/withfig/versions.git --depth 1
         env:
           PERSONAL_GITHUB_ACCESS_TOKEN: ${{ secrets.PERSONAL_GITHUB_ACCESS_TOKEN }}
       - name: Add latest versions
