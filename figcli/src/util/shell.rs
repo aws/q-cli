@@ -35,7 +35,7 @@ impl std::fmt::Display for When {
 
 /// Shells supported by Fig
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, ArgEnum)]
-#[serde(rename_all = "kebab-case")]
+#[serde(rename_all = "camelCase")]
 pub enum Shell {
     /// Bash shell
     Bash,
