@@ -68,7 +68,7 @@
 		754565812773F3C9002A59EA /* jetbrains-extension-2.0.0.zip in Resources */ = {isa = PBXBuildFile; fileRef = 754565802773F3C9002A59EA /* jetbrains-extension-2.0.0.zip */; };
 		754569FC272A05C200C7588F /* CommandHandlers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 754569FB272A05C200C7588F /* CommandHandlers.swift */; };
 		7546F5B3271660BA0077359F /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7546F5B2271660BA0077359F /* Constants.swift */; };
-		754A84E727A8D6C6008B6087 /* fig-darwin-universal in Embed dotfiles */ = {isa = PBXBuildFile; fileRef = 754A84E627A8D6C6008B6087 /* fig-darwin-universal */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		754A84E727A8D6C6008B6087 /* fig-darwin-universal in Embed figcli */ = {isa = PBXBuildFile; fileRef = 754A84E627A8D6C6008B6087 /* fig-darwin-universal */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		754D31B525759D900020CED4 /* tutorial.html in Resources */ = {isa = PBXBuildFile; fileRef = 754D31B425759D900020CED4 /* tutorial.html */; };
 		75543FD0268AC6E5003221DF /* fig-0.0.4.vsix in Resources */ = {isa = PBXBuildFile; fileRef = 75543FCF268AC6E5003221DF /* fig-0.0.4.vsix */; };
 		755950D4275EC6CC00B9FB5C /* Socket in Frameworks */ = {isa = PBXBuildFile; productRef = 755950D3275EC6CC00B9FB5C /* Socket */; };
@@ -277,15 +277,15 @@
 			name = "Embed figterm & helpers";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		7584EFD227A8D10700E17EC9 /* Embed dotfiles */ = {
+		7584EFD227A8D10700E17EC9 /* Embed figcli */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 12;
 			dstPath = "";
 			dstSubfolderSpec = 6;
 			files = (
-				754A84E727A8D6C6008B6087 /* fig-darwin-universal in Embed dotfiles */,
+				754A84E727A8D6C6008B6087 /* fig-darwin-universal in Embed figcli */,
 			);
-			name = "Embed dotfiles";
+			name = "Embed figcli";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -1106,13 +1106,14 @@
 				7567594D244634AD006AA988 /* Sources */,
 				7567594E244634AD006AA988 /* Frameworks */,
 				7567594F244634AD006AA988 /* Resources */,
-				7584EFD227A8D10700E17EC9 /* Embed dotfiles */,
+				7584EFD227A8D10700E17EC9 /* Embed figcli */,
 				75AA9FAA256D9D6C00CEFAC8 /* Upload dsym files to Sentry */,
 				759E4BFD268F9BCC00CC1565 /* Change permissions to make Applescript read-only */,
 				7571775626F3B8910071AE10 /* Embed Input Method */,
 				75FD16E727150DC400056A39 /* Package config folder */,
 				757A85C0270E37A90017996A /* Embed figterm & helpers */,
 				7581E6082769C4AE00CFD39A /* Lint Swift files */,
+				75BD7EA427DFB49500FA5233 /* Symlink figcli */,
 			);
 			buildRules = (
 			);
@@ -1437,6 +1438,24 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "if which sentry-cli >/dev/null; then\nexport SENTRY_ORG=withfig\nexport SENTRY_PROJECT=macos-app\nexport SENTRY_AUTH_TOKEN=39d2f0e340074f82aaa662967bef1de1b17ae67f7b204bfdb61d9005f4f6bf4b\nERROR=$(sentry-cli upload-dif \"$DWARF_DSYM_FOLDER_PATH\" 2>&1 >/dev/null)\nif [ ! $? -eq 0 ]; then\necho \"warning: sentry-cli - $ERROR\"\nfi\nelse\necho \"warning: sentry-cli not installed, download from https://github.com/getsentry/sentry-cli/releases\"\nfi\n";
+		};
+		75BD7EA427DFB49500FA5233 /* Symlink figcli */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Symlink figcli";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "cd $BUILT_PRODUCTS_DIR/$EXECUTABLE_FOLDER_PATH\nln -sf fig-darwin-universal figcli\ncd - \n";
 		};
 		75FD16E727150DC400056A39 /* Package config folder */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -1850,7 +1869,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = YES;
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 403;
+				CURRENT_PROJECT_VERSION = 404;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				DEVELOPMENT_TEAM = B8PC799ZGU;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1886,7 +1905,7 @@
 				CODE_SIGN_IDENTITY = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 403;
+				CURRENT_PROJECT_VERSION = 404;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				DEVELOPMENT_TEAM = B8PC799ZGU;
 				ENABLE_HARDENED_RUNTIME = YES;

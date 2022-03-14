@@ -18,6 +18,7 @@ use fig_proto::daemon::diagnostic_response::{
 };
 use futures::{SinkExt, StreamExt};
 use parking_lot::RwLock;
+use rand::{distributions::Uniform, prelude::Distribution};
 use std::{
     io::Write,
     ops::ControlFlow,
@@ -469,12 +470,30 @@ pub async fn daemon() -> Result<()> {
         UnixListener::bind(&unix_socket_path).context("Could not connect to unix socket")?;
 
     tokio::task::spawn(async {
+        // Sleep for up to 10 minutes if we already have a dotfile
+        if fig_settings::state::get_value("dotfiles.all.lastUpdated")
+            .ok()
+            .flatten()
+            .is_some()
+        {
+            let dist = Uniform::new(0.0, 600.0);
+            let sleep_time = dist.sample(&mut rand::thread_rng());
+
+            tokio::time::sleep(Duration::from_secs(sleep_time as u64)).await;
+        }
+
         if let Err(err) = crate::cli::source::sync_based_on_settings().await {
             error!("Error fetching dotfile sources: {}", err);
         }
     });
 
     tokio::task::spawn(async {
+        // Sleep for up to 10 minutes before we fetch plugins
+        let dist = Uniform::new(0.0, 600.0);
+        let sleep_time = dist.sample(&mut rand::thread_rng());
+
+        tokio::time::sleep(Duration::from_secs(sleep_time as u64)).await;
+
         if let Err(err) = plugins::api::fetch_installed_plugins().await {
             error!("Error fetching installed plugins: {}", err);
         }

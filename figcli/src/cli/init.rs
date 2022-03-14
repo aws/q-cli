@@ -2,14 +2,25 @@ use crate::util::shell::{Shell, When};
 use anyhow::{Context, Result};
 use crossterm::tty::IsTty;
 use serde::{Deserialize, Serialize};
-use std::io::stdin;
+use std::{collections::HashMap, io::stdin};
 
+/// The data for a single shell
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DotfileData {
     pub dotfile: String,
     #[serde(with = "time::serde::rfc3339::option")]
     pub updated_at: Option<time::OffsetDateTime>,
+}
+
+/// The data for all the shells
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DotfilesData {
+    #[serde(with = "time::serde::rfc3339::option")]
+    pub updated_at: Option<time::OffsetDateTime>,
+    #[serde(flatten)]
+    pub dotfiles: HashMap<Shell, String>,
 }
 
 fn guard_source<F: Fn() -> Option<String>>(
