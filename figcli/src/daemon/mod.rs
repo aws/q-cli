@@ -1,5 +1,4 @@
 pub mod launchd_plist;
-pub mod scheduler;
 pub mod settings_watcher;
 pub mod systemd_unit;
 pub mod websocket;
