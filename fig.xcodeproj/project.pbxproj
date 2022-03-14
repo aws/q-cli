@@ -1455,7 +1455,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "ln -sf $BUILT_PRODUCTS_DIR/$EXECUTABLE_FOLDER_PATH/fig-darwin-universal $BUILT_PRODUCTS_DIR/$EXECUTABLE_FOLDER_PATH/figcli \n";
+			shellScript = "cd $BUILT_PRODUCTS_DIR/$EXECUTABLE_FOLDER_PATH\nln -sf fig-darwin-universal figcli\ncd - \n";
 		};
 		75FD16E727150DC400056A39 /* Package config folder */ = {
 			isa = PBXShellScriptBuildPhase;
