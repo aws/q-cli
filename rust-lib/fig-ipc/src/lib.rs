@@ -21,11 +21,17 @@ use tokio::{
 };
 use tracing::{error, trace};
 
-/// Get path to "$TMPDIR/fig.socket"
+use whoami::username;
+
+/// Get path to "/var/tmp/fig/$USERNAME/fig.socket"
 pub fn get_fig_socket_path() -> PathBuf {
-    [std::env::temp_dir().as_path(), Path::new("fig.socket")]
-        .into_iter()
-        .collect()
+    [
+        Path::new("/var/tmp/fig"),
+        Path::new(&username()),
+        Path::new("fig.socket"),
+    ]
+    .into_iter()
+    .collect()
 }
 
 /// Connect to `socket` with a timeout
