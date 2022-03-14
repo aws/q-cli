@@ -214,14 +214,14 @@ impl DoctorCheck for PathCheck {
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        match std::env::var("PATH").map(|path| path.contains(".fig/bin")) {
-            Ok(true) => {}
-            _ => return Err(anyhow!("Path does not contain ~/.fig/bin").into()),
-        }
-
         match std::env::var("PATH").map(|path| path.contains(".local/bin")) {
             Ok(true) => {}
             _ => return Err(anyhow!("Path does not contain ~/.local/bin").into()),
+        }
+
+        match std::env::var("PATH").map(|path| path.contains(".fig/bin")) {
+            Ok(true) => {}
+            _ => return Err(anyhow!("Path does not contain ~/.fig/bin").into()),
         }
 
         Ok(())
@@ -660,7 +660,7 @@ impl DoctorCheck<Option<Shell>> for DotfileCheck {
                             self.integration.path.display()
                         );
 
-                        let top_lines = lines.get(0..10).map_or(vec![], Vec::from);
+                        let top_lines = lines.get(0..lines.len().min(10)).map_or(vec![], Vec::from);
                         let top_line_text = top_lines
                             .iter()
                             .enumerate()
@@ -698,7 +698,9 @@ impl DoctorCheck<Option<Shell>> for DotfileCheck {
                         );
 
                         let n = lines.len();
-                        let bottom_lines = lines.get(n - 10..n).map_or(vec![], Vec::from);
+
+                        let bottom_lines =
+                            lines.get(n.saturating_sub(10)..n).map_or(vec![], Vec::from);
                         let bottom_line_text = bottom_lines
                             .iter()
                             .enumerate()
@@ -1036,13 +1038,13 @@ impl DoctorCheck<Option<Terminal>> for ItermIntegrationCheck {
             return Err(anyhow!("Unknown error with iTerm integration").into());
         }
 
-        let version =
-            app_version("com.googlecode.iterm2").ok_or(anyhow!("Could not get version"))?;
-        if version < Version::new(3, 4, 0) {
-            return Err(anyhow!(
-                "iTerm version is incompatible with Fig. Please update iTerm to latest version"
-            )
-            .into());
+        if let Some(version) = app_version("com.googlecode.iterm2") {
+            if version < Version::new(3, 4, 0) {
+                return Err(anyhow!(
+                    "iTerm version is incompatible with Fig. Please update iTerm to latest version"
+                )
+                .into());
+            }
         }
         Ok(())
     }
