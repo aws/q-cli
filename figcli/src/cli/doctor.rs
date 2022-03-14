@@ -210,7 +210,7 @@ struct PathCheck;
 #[async_trait]
 impl DoctorCheck for PathCheck {
     fn name(&self) -> Cow<'static, str> {
-        "Fig in PATH".into()
+        "PATH contains ~/.local/bin and ~/.fig/bin".into()
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
@@ -1211,8 +1211,11 @@ impl DoctorCheck<Option<Terminal>> for VSCodeIntegrationCheck {
 
             let glob_set = glob(&[extensions.join("withfig.fig-").to_string_lossy()]).unwrap();
 
-            let fig_extensions =
-                glob_dir(&glob_set, extensions).context("Could not read extensions")?;
+            let extensions = extensions.as_path();
+            let fig_extensions = glob_dir(&glob_set, &extensions).context(format!(
+                "Could not read VSCode extensions in dir {}",
+                extensions.display()
+            ))?;
 
             if fig_extensions.is_empty() {
                 return Err(anyhow!("VSCode extension is missing!").into());

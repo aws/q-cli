@@ -92,13 +92,28 @@ fn install_fig() -> Result<()> {
         .context("Could not find home directory")?
         .join(".fig.dotfiles.bak")
         .join(now);
+
+    let mut errs: Vec<String> = vec![];
     for shell in [Shell::Bash, Shell::Zsh, Shell::Fish] {
-        for integration in shell.get_shell_integrations()? {
-            integration.install(Some(&backup_dir))?
+        match shell.get_shell_integrations() {
+            Ok(integrations) => {
+                for integration in integrations {
+                    if let Err(e) = integration.install(Some(&backup_dir)) {
+                        errs.push(e.to_string());
+                    }
+                }
+            }
+            Err(e) => {
+                errs.push(e.to_string());
+            }
         }
     }
 
-    Ok(())
+    if errs.is_empty() {
+        Ok(())
+    } else {
+        Err(anyhow::anyhow!(errs.join("\n")))
+    }
 }
 
 pub fn uninstall_cli(install_components: InstallComponents) -> Result<()> {
