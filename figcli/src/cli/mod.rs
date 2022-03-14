@@ -127,6 +127,7 @@ pub enum CliRootCommands {
     Plugins(plugins::PluginsSubcommand),
     /// Generate the completion spec for Fig
     GenerateFigSpec,
+    Compleation,
     #[clap(subcommand)]
     Internal(internal::InternalSubcommand),
     Launch,
@@ -248,6 +249,7 @@ impl Cli {
                     println!("{}", Cli::generation_fig_compleations());
                     Ok(())
                 }
+                CliRootCommands::Compleation => Ok(()),
                 CliRootCommands::Internal(internal_subcommand) => {
                     internal_subcommand.execute().await
                 }
