@@ -1,13 +1,15 @@
 //! Sync of dotfiles
 
-use crate::util::shell::Shell;
+use crate::{
+    cli::init::DotfilesData,
+    util::{api::api_host, shell::Shell},
+};
 
 use anyhow::{Context, Result};
 use fig_auth::get_token;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
-use tokio::try_join;
 use tracing::{debug, error, info};
 
 use super::init::DotfileData;
@@ -25,7 +27,7 @@ pub enum UpdateStatus {
     NotUpdated,
 }
 
-async fn sync_file(shell: &Shell, sync_when: SyncWhen) -> Result<UpdateStatus> {
+async fn _sync_file(shell: &Shell, sync_when: SyncWhen) -> Result<UpdateStatus> {
     // Get the token
     let token = get_token().await?;
 
@@ -118,49 +120,112 @@ pub enum SyncWhen {
     Later,
 }
 
-pub async fn sync_all_shells(sync_when: SyncWhen) -> Result<UpdateStatus> {
-    let (bash_updated, zsh_updated, fish_updated) = try_join!(
-        sync_file(&Shell::Bash, sync_when),
-        sync_file(&Shell::Zsh, sync_when),
-        sync_file(&Shell::Fish, sync_when),
+pub async fn sync_all_shells() -> Result<UpdateStatus> {
+    // Get the token
+    let token = get_token().await?;
+
+    let device_uniqueid = crate::util::get_machine_id();
+    let plugins_directry =
+        crate::plugins::download::plugin_data_dir().map(|p| p.to_string_lossy().to_string());
+
+    let url: reqwest::Url = format!("{}/dotfiles/source/all", api_host()).parse()?;
+
+    let download = reqwest::Client::new()
+        .get(url)
+        .bearer_auth(token)
+        .query(&[
+            ("os", Some(std::env::consts::OS)),
+            ("device", device_uniqueid.as_deref()),
+            ("pluginsDirectory", plugins_directry.as_deref()),
+        ])
+        .send()
+        .await?
+        .error_for_status()?
+        .text()
+        .await?;
+
+    // Parse the JSON
+    let dotfiles: DotfilesData = serde_json::from_str(&download).context("Failed to parse JSON")?;
+    debug!("dotfiles: {:?}", dotfiles.dotfiles);
+
+    // Create path to dotfiles
+    let json_file = fig_directories::fig_data_dir()
+        .map(|dir| dir.join("shell").join("all.json"))
+        .context("Could not get cache file path")?;
+
+    // Create dotfiles folder if it doesn't exist
+    let dotfiles_folder = json_file.parent().unwrap();
+    if !dotfiles_folder.exists() {
+        std::fs::create_dir_all(dotfiles_folder)?;
+    }
+
+    // Write to all.json
+    std::fs::write(json_file, download)?;
+
+    // Write to the individual shell files
+    for (shell, dotfile) in dotfiles.dotfiles.into_iter() {
+        let json_file = shell
+            .get_data_path()
+            .context("Could not get cache file path")?;
+
+        let dotfiles = DotfileData {
+            dotfile,
+            updated_at: dotfiles.updated_at,
+        };
+
+        std::fs::write(json_file, &serde_json::to_vec(&dotfiles)?)?;
+    }
+
+    // Set the last updated time
+    let last_updated = fig_settings::state::get_value("dotfiles.all.lastUpdated")?
+        .and_then(|v| v.as_str().map(String::from))
+        .and_then(|s| OffsetDateTime::parse(&s, &Rfc3339).ok());
+
+    debug!(
+        "new lastUpdated: {:?}",
+        dotfiles.updated_at.and_then(|t| t.format(&Rfc3339).ok())
+    );
+    debug!(
+        "old lastUpdated: {:?}",
+        last_updated.and_then(|t| t.format(&Rfc3339).ok())
+    );
+
+    fig_settings::state::set_value(
+        "dotfiles.all.lastUpdated",
+        json!(dotfiles.updated_at.and_then(|t| t.format(&Rfc3339).ok())),
     )?;
 
-    if bash_updated == UpdateStatus::Updated
-        || zsh_updated == UpdateStatus::Updated
-        || fish_updated == UpdateStatus::Updated
-    {
-        Ok(UpdateStatus::Updated)
-    } else {
-        Ok(UpdateStatus::NotUpdated)
+    // Return the status of if the update is newer than the last update
+    match (last_updated, dotfiles.updated_at) {
+        (Some(previous_updated), Some(current_updated)) if current_updated > previous_updated => {
+            Ok(UpdateStatus::Updated)
+        }
+        (_, _) => {
+            info!("All dotfiles are up to date");
+            Ok(UpdateStatus::NotUpdated)
+        }
     }
 }
 
 pub async fn sync_based_on_settings() -> Result<()> {
-    let sync_when = match fig_settings::settings::get_value("dotfiles.syncImmediately") {
-        Ok(Some(serde_json::Value::Bool(false))) => SyncWhen::Later,
-        Ok(_) => SyncWhen::Immediately,
+    // Guard if the user has disabled immediate syncing
+    match fig_settings::settings::get_value("dotfiles.syncImmediately") {
+        Ok(Some(serde_json::Value::Bool(false))) => {
+            return Ok(());
+        }
+        Ok(_) => {}
         Err(err) => {
             error!("Could not get dotfiles.syncImmediately: {}", err);
-            SyncWhen::Immediately
         }
     };
 
-    match sync_all_shells(sync_when).await {
-        Ok(update_status) => match (sync_when, update_status) {
-            (SyncWhen::Immediately, UpdateStatus::Updated) => {
-                notify_all_terminals(TerminalNotification::NewUpdates)?;
-                info!("Dotfiles updated");
-            }
-            (SyncWhen::Later, UpdateStatus::Updated) => {
-                info!("New dotfiles available");
-            }
-            (_, UpdateStatus::NotUpdated) => {
-                info!("Dotfiles are up to date");
-            }
-        },
-        Err(err) => {
-            error!("Could not sync dotfiles: {:?}", err);
+    match sync_all_shells().await {
+        Ok(UpdateStatus::Updated) => {
+            notify_all_terminals(TerminalNotification::NewUpdates)?;
+            info!("Dotfiles updated");
         }
+        Ok(UpdateStatus::NotUpdated) => info!("Dotfiles are up to date"),
+        Err(err) => error!("Could not sync dotfiles: {:?}", err),
     };
 
     Ok(())
@@ -226,7 +291,7 @@ pub fn notify_all_terminals(notification: TerminalNotification) -> Result<()> {
 
 /// Download the lastest dotfiles
 pub async fn source_cli() -> Result<()> {
-    sync_all_shells(SyncWhen::Immediately).await?;
+    sync_all_shells().await?;
     if let Ok(session_id) = std::env::var("TERM_SESSION_ID") {
         notify_terminal(session_id, TerminalNotification::Source)?;
     }
