@@ -185,10 +185,15 @@ pub fn is_app_running() -> bool {
 }
 
 #[cfg(target_os = "macos")]
-pub fn launch_fig() -> Result<()> {
+pub fn launch_fig(print: bool) -> Result<()> {
     if is_app_running() {
         return Ok(());
     }
+
+    if print {
+        println!("→ Launching Fig...");
+    }
+
     Command::new("open")
         .args(["-g", "-b", "com.mschrage.fig"])
         .spawn()

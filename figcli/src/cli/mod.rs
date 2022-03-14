@@ -255,47 +255,33 @@ impl Cli {
                 }
                 CliRootCommands::Launch => {
                     let app_res = app::launch_fig_cli();
-                    match get_daemon() {
-                        Ok(d) => d.start(),
-                        Err(e) => Err(anyhow::anyhow!(e)),
+                    if let Ok(daemon) = get_daemon() {
+                        daemon.start().ok();
                     }
-                    .ok();
                     app_res
                 }
                 CliRootCommands::Quit => {
                     let app_res = app::quit_fig().await;
-                    let daemon_res = match get_daemon() {
-                        Ok(d) => d.stop(),
-                        Err(e) => Err(anyhow::anyhow!(e)),
-                    };
-                    if daemon_res.is_err() {
-                        println!("Error stopping Fig daemon");
+                    if let Ok(daemon) = get_daemon() {
+                        daemon.stop().ok();
                     }
-                    app_res.or(daemon_res)
+                    app_res
                 }
                 CliRootCommands::Restart => {
                     let app_res = app::restart_fig().await;
-                    let daemon_res = match get_daemon() {
-                        Ok(d) => d.restart(),
-                        Err(e) => Err(anyhow::anyhow!(e)),
-                    };
-                    if daemon_res.is_err() {
-                        println!("Error restarting Fig daemon");
+                    if let Ok(daemon) = get_daemon() {
+                        daemon.restart().ok();
                     }
-                    app_res.or(daemon_res)
+                    app_res
                 }
                 CliRootCommands::Alpha => {
-                    launch_fig().ok();
-                    let res = open_ui_element(UiElement::MissionControl).await;
-                    if res.is_ok() {
-                        println!("\n→ Opening dotfiles...\n");
-                    };
-                    res
+                    println!();
+                    launch_fig(true).ok();
+                    println!("→ Launching dotfiles!");
+                    println!();
+                    open_ui_element(UiElement::MissionControl).await
                 }
-                CliRootCommands::Onboarding => {
-                    let res = AppSubcommand::Onboarding.execute().await;
-                    res
-                }
+                CliRootCommands::Onboarding => AppSubcommand::Onboarding.execute().await,
                 CliRootCommands::FigAppRunning => {
                     println!("{}", if is_app_running() { "1" } else { "0" });
                     Ok(())
@@ -313,7 +299,6 @@ impl Cli {
 
     fn generation_fig_compleations() -> String {
         let mut cli = Cli::command();
-
         let mut buffer = Vec::new();
 
         clap_complete::generate(
@@ -328,19 +313,46 @@ impl Cli {
 }
 
 async fn root_command() -> Result<()> {
-    // Check if Fig is running
-    #[cfg(target_os = "macos")]
-    launch_fig()?;
+    println!();
 
-    match fig_ipc::command::open_ui_element(fig_proto::local::UiElement::MissionControl).await {
-        Ok(_) => {}
-        Err(_) => {
-            println!();
-            println!("→ Looks like we had an error launching the Fig desktop app");
-            println!("  To fix please run {}", "fig doctor".magenta());
-            println!();
+    // Launch fig if it is not running
+    #[cfg(target_os = "macos")]
+    {
+        launch_fig(true).ok();
+
+        for i in 0.. {
+            // Loop for 5 seconds to wait for the socket to exist
+            match fig_ipc::command::open_ui_element(fig_proto::local::UiElement::MissionControl)
+                .await
+            {
+                Ok(_) => break,
+                Err(_) => {
+                    if i == 9 {
+                        println!(
+                            "→ Looks like we had an {} launching the Fig desktop app",
+                            "error".red()
+                        );
+                        println!("  To fix please run {}", "fig doctor".magenta());
+                        break;
+                    }
+                }
+            }
+
+            // Sleep for a bit
+            std::thread::sleep(std::time::Duration::from_millis(500));
         }
     }
+
+    #[cfg(not(target_os = "macos"))]
+    {
+        println!(
+            "→ Opening {}...",
+            "https://app.fig.io".magenta().underlined()
+        );
+        open_url("https://app.fig.io").ok();
+    }
+
+    println!();
     Ok(())
 }
 

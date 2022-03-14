@@ -188,7 +188,7 @@ pub async fn update(update_type: UpdateType) -> Result<UpdateStatus> {
     {
         use fig_ipc::command::update_command;
 
-        launch_fig()?;
+        launch_fig(false)?;
 
         let desktop_app_update = update_command(update_type == UpdateType::NoConfirm).await;
         match desktop_app_update {
