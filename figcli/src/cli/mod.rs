@@ -20,7 +20,7 @@ pub mod tweet;
 pub mod util;
 
 use crate::{
-    cli::{installation::InstallComponents, util::open_url},
+    cli::installation::InstallComponents,
     daemon::{daemon, get_daemon},
     util::{
         is_app_running, launch_fig,
@@ -335,10 +335,10 @@ async fn root_command() -> Result<()> {
     match fig_ipc::command::open_ui_element(fig_proto::local::UiElement::MissionControl).await {
         Ok(_) => {}
         Err(_) => {
-            let url = "https://dotfiles.com/";
-            if open_url(url).is_err() {
-                println!("{}", url.underlined());
-            }
+            println!();
+            println!("→ Looks like we had an error launching the Fig desktop app");
+            println!("  To fix please run {}", "fig doctor".magenta());
+            println!();
         }
     }
     Ok(())
