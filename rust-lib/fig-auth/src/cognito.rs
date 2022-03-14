@@ -418,8 +418,17 @@ impl Credentials {
             // Set permissions to 0600
             creds_file.set_permissions(std::os::unix::fs::PermissionsExt::from_mode(0o600))?;
         }
+
+        #[cfg(windows)]
+        {
+            // TODO: Set permissions to 0600 equivalent
+        }
+
+        serde_json::to_writer(&mut creds_file, self)?;
+
         #[cfg(target_os = "macos")]
         {
+            // Set the values in macos defaults
             use crate::set_default;
 
             if let Some(id) = &self.id_token {
@@ -434,8 +443,6 @@ impl Credentials {
                 set_default("refresh_token", refresh)?;
             }
         }
-
-        serde_json::to_writer(&mut creds_file, self)?;
 
         Ok(())
     }

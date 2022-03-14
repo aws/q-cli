@@ -2,6 +2,7 @@ import * as WindowPosition from './position';
 import * as Settings from './settings';
 import * as EditBufferNotifications from './editbuffer';
 import * as PTY from './pty';
+import * as Process from './process';
 import * as Shell from './shell';
 import * as Keybindings from './keybindings';
 import * as Defaults from './defaults';
@@ -29,6 +30,7 @@ window.f = {
   Native,
   Internal,
   Debugger,
+  Process
 };
 
 export {
@@ -46,4 +48,5 @@ export {
   Internal,
   Fig,
   Debugger,
+  Process
 };

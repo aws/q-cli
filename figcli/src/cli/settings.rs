@@ -105,14 +105,18 @@ impl SettingsArgs {
                     _ => {}
                 },
                 None => {
+                    println!();
+
                     #[cfg(target_os = "macos")]
-                    launch_fig()?;
+                    launch_fig(true)?;
 
                     let res = open_ui_element(UiElement::Settings).await;
                     if res.is_err() {
                         print_connection_error!();
                         return res;
                     }
+
+                    println!();
                 }
             },
         }

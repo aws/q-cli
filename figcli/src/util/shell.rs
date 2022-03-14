@@ -169,16 +169,27 @@ impl ShellFileIntegration {
                 return Ok(());
             }
 
-            let mut file = File::open(&self.path)?;
-            let mut contents = String::new();
-            file.read_to_string(&mut contents)?;
+            let mut contents = std::fs::read_to_string(&self.path)?;
 
-            let old_integration_regex = format!(
-                r#"{}(\n|.)*?{}"#,
-                regex::escape("#### FIG ENV VARIABLES ####"),
-                regex::escape("#### END FIG ENV VARIABLES ####"),
-            );
-            contents = Regex::new(&old_integration_regex)?
+            // Remove comment lines
+            contents = Regex::new(r"(?mi)^#.*fig.*var.*$\n?")?
+                .replace_all(&contents, "")
+                .into();
+
+            contents = Regex::new(
+                r"(?mi)^#.*Please make sure this block is at the .* of this file.*$\n?",
+            )?
+            .replace_all(&contents, "")
+            .into();
+
+            // Remove old integration pre
+            contents =
+                Regex::new(r"\[ -s ~/\.fig/shell/pre\.sh \] && source ~/\.fig/shell/pre\.sh\n?")?
+                    .replace_all(&contents, "")
+                    .into();
+
+            // Remove old integration post
+            contents = Regex::new(r"\[ -s ~/\.fig/fig\.sh \] && source ~/\.fig/fig\.sh\n?")?
                 .replace_all(&contents, "")
                 .into();
 
@@ -188,6 +199,7 @@ impl ShellFileIntegration {
                     .replace_all(&contents, "")
                     .into();
             }
+
             if let Some(post) = self.post_integration() {
                 contents = post
                     .get_source_regex(false)?
@@ -195,8 +207,10 @@ impl ShellFileIntegration {
                     .into();
             }
 
-            let mut file = File::create(&self.path)?;
-            file.write_all(contents.as_bytes())?;
+            contents = contents.trim().to_string();
+            contents.push('\n');
+
+            std::fs::write(&self.path, contents.as_bytes())?;
         }
 
         Ok(())
@@ -255,6 +269,7 @@ impl ShellFileIntegration {
             if !integration.get_source_regex(false)?.is_match(&contents) {
                 new_contents.push('\n');
                 new_contents.push_str(&integration.text());
+                new_contents.push('\n');
                 modified = true;
             }
         }

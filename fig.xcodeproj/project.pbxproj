@@ -208,6 +208,7 @@
 		7A2C8636273949BE00AE5EB6 /* testable-file-to-read.txt in Resources */ = {isa = PBXBuildFile; fileRef = 7A0A41E22738749200080BCE /* testable-file-to-read.txt */; };
 		7A2C8640273951FE00AE5EB6 /* contents-of-this-folder in Resources */ = {isa = PBXBuildFile; fileRef = 7A2C863F273951FE00AE5EB6 /* contents-of-this-folder */; };
 		7A9DB5662741A3E6008BD2AA /* DefaultsTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A9DB5652741A3E6008BD2AA /* DefaultsTest.swift */; };
+		7AA36CD227DFEA020095C03C /* okteto@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7AA36CD127DFEA020095C03C /* okteto@2x.png */; };
 		7AB6B6872740301500428F47 /* NSWorkspaceExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AB6B6862740301500428F47 /* NSWorkspaceExtensionTests.swift */; };
 		7AC30EF8274573F700A4F7AB /* TelemetryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AC30EF7274573F700A4F7AB /* TelemetryTests.swift */; };
 		7AF96D3F273DB3E30006A41B /* ConfigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF96D3E273DB3E30006A41B /* ConfigTests.swift */; };
@@ -504,6 +505,7 @@
 		7A0A41E22738749200080BCE /* testable-file-to-read.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "testable-file-to-read.txt"; sourceTree = "<group>"; };
 		7A2C863F273951FE00AE5EB6 /* contents-of-this-folder */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "contents-of-this-folder"; sourceTree = "<group>"; };
 		7A9DB5652741A3E6008BD2AA /* DefaultsTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultsTest.swift; sourceTree = "<group>"; };
+		7AA36CD127DFEA020095C03C /* okteto@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "okteto@2x.png"; sourceTree = "<group>"; };
 		7AB6B6862740301500428F47 /* NSWorkspaceExtensionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSWorkspaceExtensionTests.swift; sourceTree = "<group>"; };
 		7AC30EF7274573F700A4F7AB /* TelemetryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetryTests.swift; sourceTree = "<group>"; };
 		7AF96D3E273DB3E30006A41B /* ConfigTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigTests.swift; sourceTree = "<group>"; };
@@ -559,6 +561,7 @@
 			isa = PBXGroup;
 			children = (
 				751DC66226EBF3B500697DFB /* cpu@2x.png */,
+				7AA36CD127DFEA020095C03C /* okteto@2x.png */,
 				752E68E52620F884009E9A7E /* android@2x.png */,
 				75290A7C266B09CB000F4255 /* gear@2x.png */,
 				7564AE6E265C9DCD0040BD4C /* discord@2x.png */,
@@ -1326,6 +1329,7 @@
 				75B1993625042B2C00F38EA8 /* autocomplete.html in Resources */,
 				7518606F255B2A0A0000A7C7 /* flag@2x.png in Resources */,
 				75E993F22515A6DD000BE6BE /* statusbar@2x.png in Resources */,
+				7AA36CD227DFEA020095C03C /* okteto@2x.png in Resources */,
 				752C0BE2247A33F20077E415 /* viewer.html in Resources */,
 				75915E002722044D005A9909 /* API.js in Resources */,
 				752C0BE6247C25290077E415 /* display.html in Resources */,
