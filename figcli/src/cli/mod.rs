@@ -349,7 +349,7 @@ async fn root_command() -> Result<()> {
             "→ Opening {}...",
             "https://app.fig.io".magenta().underlined()
         );
-        open_url("https://app.fig.io").ok();
+        util::open_url("https://app.fig.io").ok();
     }
 
     println!();
