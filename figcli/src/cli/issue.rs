@@ -12,12 +12,9 @@ use regex::Regex;
 
 pub async fn issue_cli(force: bool, description: Vec<String>) -> Result<()> {
     // Check if fig is running
-    #[cfg(target_os = "macos")]
-    {
-        if !force && !crate::util::is_app_running() {
-            println!("\n→ Fig is not running.\n  Please launch Fig with {} or run {} to create the issue anyways", "fig launch".magenta(), "fig issue --force".magenta());
-            return Ok(());
-        }
+    if !force && !crate::util::is_app_running() {
+        println!("\n→ Fig is not running.\n  Please launch Fig with {} or run {} to create the issue anyways", "fig launch".magenta(), "fig issue --force".magenta());
+        return Ok(());
     }
 
     let text = description.join(" ");
