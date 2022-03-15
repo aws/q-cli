@@ -4,12 +4,9 @@ pub mod settings_watcher;
 pub mod systemd_unit;
 pub mod websocket;
 
-use crate::{
-    daemon::{
-        launchd_plist::LaunchdPlist, settings_watcher::spawn_settings_watcher,
-        systemd_unit::SystemdUnit, websocket::process_websocket,
-    },
-    plugins,
+use crate::daemon::{
+    launchd_plist::LaunchdPlist, settings_watcher::spawn_settings_watcher,
+    systemd_unit::SystemdUnit, websocket::process_websocket,
 };
 
 use anyhow::{anyhow, Context, Result};
@@ -19,7 +16,6 @@ use fig_proto::daemon::diagnostic_response::{
 };
 use futures::{SinkExt, StreamExt};
 use parking_lot::RwLock;
-use rand::{distributions::Uniform, prelude::Distribution};
 use std::{
     io::Write,
     ops::ControlFlow,
@@ -470,35 +466,17 @@ pub async fn daemon() -> Result<()> {
     let unix_socket =
         UnixListener::bind(&unix_socket_path).context("Could not connect to unix socket")?;
 
-    tokio::task::spawn(async {
-        // Sleep for up to 10 minutes if we already have a dotfile
-        if fig_settings::state::get_value("dotfiles.all.lastUpdated")
-            .ok()
-            .flatten()
-            .is_some()
-        {
-            let dist = Uniform::new(0.0, 600.0);
-            let sleep_time = dist.sample(&mut rand::thread_rng());
+    let mut scheduler = scheduler::Scheduler::new();
 
-            tokio::time::sleep(Duration::from_secs(sleep_time as u64)).await;
-        }
+    match fig_settings::state::get_value("dotfiles.all.lastUpdated")
+        .ok()
+        .flatten()
+    {
+        Some(_) => scheduler.schedule_random_delay(scheduler::SyncDotfiles, 0., 1200.),
+        None => scheduler.schedule_random_delay(scheduler::SyncDotfiles, 0., 60.),
+    }
 
-        if let Err(err) = crate::cli::source::sync_based_on_settings().await {
-            error!("Error fetching dotfile sources: {}", err);
-        }
-    });
-
-    tokio::task::spawn(async {
-        // Sleep for up to 10 minutes before we fetch plugins
-        let dist = Uniform::new(0.0, 600.0);
-        let sleep_time = dist.sample(&mut rand::thread_rng());
-
-        tokio::time::sleep(Duration::from_secs(sleep_time as u64)).await;
-
-        if let Err(err) = plugins::api::fetch_installed_plugins().await {
-            error!("Error fetching installed plugins: {}", err);
-        }
-    });
+    scheduler.schedule_random_delay(scheduler::SyncPlugins, 0., 60.);
 
     // Spawn settings watcher
     if let Err(error) = spawn_settings_watcher(daemon_status.clone()).await {
@@ -523,6 +501,13 @@ pub async fn daemon() -> Result<()> {
                     }
                     Err(err) => {
                         error!("Could not accept unix socket connection: {}", err);
+                    }
+                }
+            }
+            next = scheduler.next() => {
+                if let Some((tag, task)) = next {
+                    if let Err(err) = task.run().await {
+                        error!("Error running task {:?}: {:?}", tag, err);
                     }
                 }
             }
