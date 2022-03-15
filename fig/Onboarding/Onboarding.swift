@@ -27,9 +27,9 @@ extension FileManager {
     case (true, true):
       break
     case (true, false):
-      try self.removeItem(at: destination)
+      try? self.removeItem(at: destination)
     case (false, _):
-      try self.createDirectory(at: destination, withIntermediateDirectories: true, attributes: nil)
+      try? self.createDirectory(at: destination, withIntermediateDirectories: true, attributes: nil)
     }
 
     let filepaths = try self.contentsOfDirectory(at: source,
@@ -38,16 +38,16 @@ extension FileManager {
     for file in filepaths {
 
       if self.isDirectory(at: file) {
-        try recursivelyCopyContentsOfDirectory(at: file, to: destination.appendingPathComponent(file.lastPathComponent,
+        try? recursivelyCopyContentsOfDirectory(at: file, to: destination.appendingPathComponent(file.lastPathComponent,
                                                                                              isDirectory: true))
       } else {
         let fileDestination = destination.appendingPathComponent(file.lastPathComponent,
                                                         isDirectory: false)
 
         if self.fileExists(atPath: fileDestination.path) {
-          try self.removeItem(at: fileDestination)
+          try? self.removeItem(at: fileDestination)
         }
-        try copyItem(at: file, to: fileDestination)
+        try? copyItem(at: file, to: fileDestination)
       }
     }
   }
@@ -100,15 +100,15 @@ class Onboarding {
                               withIntermediateDirectories: true,
                                               attributes: nil)
 
-      let binaries = try fs.contentsOfDirectory(at: binDirectory,
+      let binaries = try? fs.contentsOfDirectory(at: binDirectory,
                                                  includingPropertiesForKeys: nil,
                                                  options: [])
       // delete binary artifacts to ensure ad-hoc code signature works for arm64 binaries on M1
-      for binary in binaries {
-        try fs.removeItem(at: binary)
+      for binary in binaries ?? [] {
+        try? fs.removeItem(at: binary)
       }
 
-      try fs.recursivelyCopyContentsOfDirectory(at: configDirectoryInBundle, to: figDirectory)
+      try? fs.recursivelyCopyContentsOfDirectory(at: configDirectoryInBundle, to: figDirectory)
 
       // rename figterm binaries to mirror supported shell
       // copy binaries on install to avoid issues with file permissions at runtime
