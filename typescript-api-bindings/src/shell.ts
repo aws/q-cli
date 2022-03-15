@@ -2,7 +2,7 @@ import {
   NotificationType,
   ProcessChangedNotification,
   ShellPromptReturnedNotification,
-  HistoryUpdatedNotification,
+  HistoryUpdatedNotification
 } from './fig.pb';
 import { sendInsertTextRequest } from './requests';
 import { _subscribe } from './notifications';
@@ -24,7 +24,7 @@ export const processDidChange = {
         return false;
       }
     );
-  },
+  }
 };
 
 export const promptDidReturn = {
@@ -46,7 +46,7 @@ export const promptDidReturn = {
         return false;
       }
     );
-  },
+  }
 };
 
 export const historyUpdated = {
@@ -66,11 +66,11 @@ export const historyUpdated = {
         return false;
       }
     );
-  },
+  }
 };
 
 export async function insert(text: string) {
   return sendInsertTextRequest({
-    type: { $case: 'text', text: text },
+    type: { $case: 'text', text }
   });
 }
