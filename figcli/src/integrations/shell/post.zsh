@@ -157,3 +157,6 @@ fig_reset_hooks() {
 }
 
 fig_reset_hooks
+if [[ -n "${PROCESS_LAUNCHED_BY_FIG}" ]]; then
+  fig_osc DoneSourcing
+fi
