@@ -184,6 +184,11 @@ pub fn is_app_running() -> bool {
     }
 }
 
+#[cfg(not(target_os = "macos"))]
+pub fn is_app_running() -> bool {
+    false
+}
+
 #[cfg(target_os = "macos")]
 pub fn launch_fig(print: bool) -> Result<()> {
     if is_app_running() {
@@ -200,6 +205,11 @@ pub fn launch_fig(print: bool) -> Result<()> {
         .context("fig could not be launched")?;
     std::thread::sleep(std::time::Duration::from_secs(3));
     Ok(())
+}
+
+#[cfg(not(any(target_os = "macos")))]
+pub fn launch_fig(_print: bool) -> Result<()> {
+    unimplemented!();
 }
 
 pub fn is_executable_in_path(program: impl AsRef<Path>) -> bool {

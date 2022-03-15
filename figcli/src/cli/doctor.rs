@@ -32,7 +32,6 @@ use std::{
     ffi::OsStr,
     fs::read_to_string,
     future::Future,
-    io::Write,
     path::{Path, PathBuf},
     process::Command,
     time::Duration,
@@ -412,6 +411,8 @@ impl DoctorCheck for DaemonCheck {
 
         #[cfg(target_os = "macos")]
         {
+            use std::io::Write;
+
             let launch_agents_path = fig_directories::home_dir()
                 .context("Could not get home dir")?
                 .join("Library/LaunchAgents");

@@ -44,7 +44,9 @@ extension Process {
           task.currentDirectoryURL = URL(fileURLWithPath: workingDirectory)
       }
 
-      task.environment = environment
+      task.environment = (environment ?? [:]).merging([
+        "PROCESS_LAUNCHED_BY_FIG": "1"
+      ]) { $1 }
       task.launch()
 
       let outdata = outpipe.fileHandleForReading.readDataToEndOfFile()
