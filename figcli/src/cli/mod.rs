@@ -127,7 +127,7 @@ pub enum CliRootCommands {
     Plugins(plugins::PluginsSubcommand),
     /// Generate the completion spec for Fig
     GenerateFigSpec,
-    Compleation,
+    Completion,
     #[clap(subcommand)]
     Internal(internal::InternalSubcommand),
     Launch,
@@ -246,10 +246,10 @@ impl Cli {
                 }
                 CliRootCommands::Plugins(plugins_subcommand) => plugins_subcommand.execute().await,
                 CliRootCommands::GenerateFigSpec => {
-                    println!("{}", Cli::generation_fig_compleations());
+                    println!("{}", Cli::generation_fig_completions());
                     Ok(())
                 }
-                CliRootCommands::Compleation => Ok(()),
+                CliRootCommands::Completion => Ok(()),
                 CliRootCommands::Internal(internal_subcommand) => {
                     internal_subcommand.execute().await
                 }
@@ -297,7 +297,7 @@ impl Cli {
         }
     }
 
-    fn generation_fig_compleations() -> String {
+    fn generation_fig_completions() -> String {
         let mut cli = Cli::command();
         let mut buffer = Vec::new();
 
