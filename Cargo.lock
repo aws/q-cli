@@ -1110,8 +1110,10 @@ dependencies = [
  "anyhow",
  "aws-sdk-cognitoidentityprovider",
  "aws-smithy-async",
+ "aws-smithy-client",
  "base64",
  "fig-directories",
+ "hyper-rustls 0.23.0",
  "rand",
  "serde",
  "serde_json",
@@ -1676,9 +1678,12 @@ checksum = "d87c48c02e0dc5e3b849a2041db3029fd066650f8f717c07bf8ed78ccb895cac"
 dependencies = [
  "http",
  "hyper",
+ "log",
  "rustls 0.20.4",
+ "rustls-native-certs 0.6.1",
  "tokio",
  "tokio-rustls 0.23.2",
+ "webpki-roots",
 ]
 
 [[package]]
