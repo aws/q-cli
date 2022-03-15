@@ -87,3 +87,11 @@ pub fn get_email() -> Option<String> {
         .ok()
         .or_else(|| Some(get_default("userEmail").ok()))?
 }
+
+pub fn is_logged_in() -> bool {
+    Credentials::load_credentials()
+        .map(|creds| creds.email)
+        .ok()
+        .or_else(|| Some(get_default("userEmail").ok()))
+        != None
+}

@@ -1,6 +1,10 @@
-use crate::util::shell::{Shell, When};
+use crate::util::{
+    shell::{Shell, When},
+    terminal::Terminal,
+};
 use anyhow::{Context, Result};
 use crossterm::tty::IsTty;
+use fig_auth::is_logged_in;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, io::stdin};
 
@@ -82,12 +86,20 @@ fn shell_init(shell: &Shell, when: &When) -> Result<String> {
         }
 
         if stdin().is_tty() {
-            let get_prompts_source = || -> Option<String> { Some("fig app prompts".into()) };
+            // if no value, assume that we have seen onboarding already.
+            // this is explictly set in onboarding in macOS app.
+            let has_see_onboarding: bool = fig_settings::state::get_value("user.onboarding")?
+                .and_then(|v| v.as_str().map(String::from))
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(true);
 
-            if let Some(source) =
-                guard_source(shell, true, "FIG_CHECKED_PROMPTS", get_prompts_source)
+            let terminal = Terminal::current_terminal();
+
+            if is_logged_in()
+                && !has_see_onboarding
+                && [Some(Terminal::Iterm), Some(Terminal::TerminalApp)].contains(&terminal)
             {
-                to_source.push_str(&source);
+                to_source.push_str("fig app onboarding")
             }
         }
     }

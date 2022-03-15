@@ -98,6 +98,8 @@ impl AppSubcommand {
                 fig_ipc::command::run_install_script_command().await?;
             }
             AppSubcommand::Onboarding => {
+                fig_settings::state::set_value("user.onboarding", true)?;
+
                 Command::new("bash")
                     .args(["-c", include_str!("onboarding.sh")])
                     .spawn()?

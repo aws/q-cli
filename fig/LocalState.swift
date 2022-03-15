@@ -122,6 +122,11 @@ class LocalState: JSONStore {
     return self.backing.getValue(forKey: key)
   }
 
+  func addIfNotPresent(key: String, value: Any?) {
+    guard getValue(forKey: key) == nil else { return }
+    set(value: value, forKey: key)
+  }
+
   func jsonRepresentation() -> String? {
     return self.backing.jsonRepresentation()
   }
@@ -137,6 +142,7 @@ class LocalState: JSONStore {
 extension LocalState {
   static let ptyPathKey = "pty.path"
   static let userShell = "userShell"
+  static let hasSeenOnboarding = "user.onboarding"
 
   static let logging = "developer.logging"
   static let loggingEnabledInternally = "developer.logging.internal"

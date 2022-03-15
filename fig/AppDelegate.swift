@@ -898,9 +898,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
       TelemetryProvider.shared.track(event: .updatedApp, with: [:])
 
-      // resolves a bug where Fig was added to login items multiple times
-      // if the appropriate setting is enabled, a single entry will be readded
-      LoginItems.shared.removeAllItemsMatchingBundleURL()
+      // assume that we have seen onboarding if we're upgrading!
+      LocalState.shared.set(value: true, forKey: LocalState.hasSeenOnboarding)
     }
 
     Defaults.shared.versionAtPreviousLaunch = current

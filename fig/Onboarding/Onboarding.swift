@@ -151,6 +151,7 @@ class Onboarding {
     // Create config file and add default values if they do not exist
     Config.shared.addIfNotPresent(key: "FIG_LOGGED_IN", value: "0")
     Config.shared.addIfNotPresent(key: "FIG_ONBOARDING", value: "0")
+    LocalState.shared.addIfNotPresent(key: LocalState.hasSeenOnboarding, value: false)
 
     // Install binaries in the appropriate location222
     symlinkBundleExecutable("figterm", to: binDirectory.appendingPathComponent("figterm").path)
