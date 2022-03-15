@@ -127,11 +127,19 @@ extension NSWorkspace {
 extension Process {
   static func handleRunProcessRequest(_ request: Fig_RunProcessRequest,
                                       completion: @escaping ((Fig_RunProcessResponse) -> Void)) {
-
+    let lang = NSLocale.current.languageCode ?? "en"
+    let region = NSLocale.current.regionCode ?? "US"
+    let LANG = lang + "_" + region
     Process.runAsync(command: request.executable,
                      args: request.arguments,
                      workingDirectory: request.hasWorkingDirectory ? request.workingDirectory : nil,
-                     environment: nil) { (output, error, exitcode) in
+                     environment: ["TMPDIR": FileManager.default.temporaryDirectory.path,
+                                   "TERM": "xterm-256color",
+                                   "PROCESS_LAUNCHED_BY_FIG": "1",
+                                   "HISTFILE": "",
+                                   "HISTCONTROL": "ignoreboth",
+                                   "HOME": NSHomeDirectory(),
+                                   "LANG": "\(LANG).UTF-8"]) { (output, error, exitcode) in
 
       completion(Fig_RunProcessResponse.with { response in
         response.stdout = output.joined(separator: "\n")
