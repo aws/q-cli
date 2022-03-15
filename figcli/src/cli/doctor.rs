@@ -849,7 +849,10 @@ impl DoctorCheck<DiagnosticsResponse> for FigCLIPathCheck {
             .join("bin")
             .join("fig");
 
-        if path == fig_bin_path || path == local_bin_path || path == Path::new("/usr/local/bin/fig")
+        if path == fig_bin_path
+            || path == local_bin_path
+            || path == Path::new("/usr/local/bin/fig")
+            || path == Path::new("/opt/homebrew/bin/fig")
         {
             Ok(())
         } else if path.ends_with("target/debug/fig") || path.ends_with("target/release/fig") {
