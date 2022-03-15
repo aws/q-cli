@@ -20,6 +20,7 @@ class Integrations {
   static let Alacritty = "io.alacritty"
   static let Tabby = "org.tabby"
   static let IntellijCE = "com.jetbrains.intellij.ce"
+  static let Intellij = "com.jetbrains.intellij"
   static let WebStorm = "com.jetbrains.WebStorm"
   static let GoLand = "com.jetbrains.goland"
   static let PhpStorm = "com.jetbrains.PhpStorm"
@@ -49,7 +50,7 @@ class Integrations {
     "com.raycast.macos"
   ]
 
-  static let jetbrainIDEs: Set = [IntellijCE, WebStorm, GoLand, PhpStorm, PyCharm, AppCode]
+  static let jetbrainIDEs: Set = [IntellijCE, Intellij, WebStorm, GoLand, PhpStorm, PyCharm, AppCode]
   static let inputMethodDependentTerminals: Set = jetbrainIDEs.union([Alacritty, Kitty])
 
   static let electronIDEs: Set = [VSCode, VSCodeInsiders, VSCodium]
@@ -142,6 +143,7 @@ class Integrations {
       Integrations.Alacritty: AlacrittyIntegration.default,
       Integrations.Kitty: KittyIntegration.default,
       // Jetbrains IDEs
+      Integrations.Intellij: JetBrainsIntegration.idea,
       Integrations.IntellijCE: JetBrainsIntegration.ideaCE,
       Integrations.WebStorm: JetBrainsIntegration.WebStorm,
       Integrations.PhpStorm: JetBrainsIntegration.PhpStorm,
@@ -149,7 +151,7 @@ class Integrations {
       Integrations.PyCharm: JetBrainsIntegration.PyCharm,
       Integrations.AppCode: JetBrainsIntegration.AppCode
     ]
-    
+
     if forceIncludeExperimental {
       return stableIntegrations.merging(experimentalIntegrations) { $1 }
     }
@@ -166,7 +168,6 @@ class Integrations {
   static let providers: [String: TerminalIntegrationProvider] = allProviders(forceIncludeExperimental: false)
   static let allProvidersIncludingExperimental: [String: TerminalIntegrationProvider] = allProviders(forceIncludeExperimental: true)
 
-  
   static func handleListIntegrationsRequest() -> CommandResponse {
     CommandResponse.with { response in
       response.integrationList = Local_TerminalIntegrationsListResponse.with({ list in

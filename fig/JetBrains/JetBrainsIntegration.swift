@@ -10,7 +10,8 @@ import Cocoa
 import ZIPFoundation
 
 class JetBrainsIntegration: InputMethodDependentTerminalIntegrationProvider & IntegrationProvider {
-  // com.jetbrains.intellij.ce
+
+  static let idea   = JetBrainsIntegration(bundleIdentifier: Integrations.Intellij)
   static let ideaCE   = JetBrainsIntegration(bundleIdentifier: Integrations.IntellijCE)
   static let WebStorm = JetBrainsIntegration(bundleIdentifier: Integrations.WebStorm)
   static let GoLand   = JetBrainsIntegration(bundleIdentifier: Integrations.GoLand)
