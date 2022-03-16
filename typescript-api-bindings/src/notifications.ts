@@ -2,7 +2,7 @@ import {
   Notification,
   ServerOriginatedMessage,
   NotificationRequest,
-  NotificationType,
+  NotificationType
 } from './fig.pb';
 
 import { sendMessage } from './core';
@@ -16,6 +16,7 @@ export interface Subscription {
 
 const handlers: Partial<Record<NotificationType, NotificationHandler[]>> = {};
 
+// eslint-disable-next-line no-underscore-dangle
 export function _unsubscribe(
   type: NotificationType,
   handler?: NotificationHandler
@@ -25,64 +26,65 @@ export function _unsubscribe(
   }
 }
 
+// eslint-disable-next-line no-underscore-dangle
 export function _subscribe(
   request: NotificationRequest,
   handler: NotificationHandler
 ): Promise<Subscription> | undefined {
   return new Promise<Subscription>((resolve, reject) => {
-    const type = request.type;
+    const {type} = request;
 
-    if (!type) {
-      return reject('NotificationRequest type must be defined.');
-    }
+    if (type) {
+      const addHandler = () => {
+        handlers[type] = [...(handlers[type] ?? []), handler];
+        resolve({ unsubscribe: () => _unsubscribe(type, handler) });
+      };
 
-    const addHandler = () => {
-      handlers[type] = [...(handlers[type] ?? []), handler];
-      resolve({ unsubscribe: () => _unsubscribe(type, handler) });
-    };
+      // primary subscription already exists
+      if (handlers[type] === undefined) {
+        handlers[type] = [];
 
-    // primary subscription already exists
-    if (handlers[type] !== undefined) {
-      return addHandler();
-    }
+        request.subscribe = true;
 
-    handlers[type] = [];
+        let handlersToRemove: NotificationHandler[] | undefined;
+        sendMessage(
+          { $case: 'notificationRequest', notificationRequest: request },
+          (response: ServerOriginatedMessage['submessage']) => {
+            switch (response?.$case) {
+              case 'notification':
+                if (!handlers[type]) {
+                  return false;
+                }
 
-    request.subscribe = true;
+                // call handlers and remove any that have unsubscribed (by returning false)
+                handlersToRemove = handlers[type]?.filter(
+                  existingHandler => existingHandler(response.notification) === false
+                );
 
-    sendMessage(
-      { $case: 'notificationRequest', notificationRequest: request },
-      (response: ServerOriginatedMessage['submessage']) => {
-        switch (response?.$case) {
-          case 'notification':
-            if (!handlers[type]) {
-              return false;
+                handlers[type] = handlers[type]?.filter(
+                  existingHandler => !handlersToRemove?.includes(existingHandler)
+                );
+
+                return true;
+              case 'success':
+                addHandler();
+                return true;
+              case 'error':
+                reject(new Error(response.error));
+                break;
+              default:
+                reject(new Error('Not a notification'));
+                break;
             }
 
-            // call handlers and remove any that have unsubscribed (by returning false)
-            const handlersToRemove = handlers[type]?.filter(
-              handler => handler(response.notification) === false
-            );
-
-            handlers[type] = handlers[type]?.filter(
-              handler => !handlersToRemove?.includes(handler)
-            );
-
-            return true;
-          case 'success':
-            addHandler();
-            return true;
-          case 'error':
-            reject(response.error);
-            break;
-          default:
-            reject('Not a notification');
-            break;
-        }
-
-        return false;
+            return false;
+          });
+      } else {
+        addHandler();
       }
-    );
+    } else {
+      reject(new Error('NotificationRequest type must be defined.'));
+    }
   });
 }
 
@@ -91,8 +93,8 @@ const unsubscribeFromAll = () => {
     $case: 'notificationRequest',
     notificationRequest: {
       subscribe: false,
-      type: NotificationType.ALL,
-    },
+      type: NotificationType.ALL
+    }
   });
 };
 

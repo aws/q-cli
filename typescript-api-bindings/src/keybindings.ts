@@ -1,7 +1,7 @@
 import {
   Action,
   KeybindingPressedNotification,
-  NotificationType,
+  NotificationType
 } from './fig.pb';
 import { sendUpdateApplicationPropertiesRequest } from './requests';
 import { _subscribe } from './notifications';
@@ -32,6 +32,6 @@ export function setInterceptKeystrokes(
   sendUpdateApplicationPropertiesRequest({
     interceptBoundKeystrokes: intercept,
     interceptGlobalKeystrokes: globalIntercept,
-    actionList: { actions },
+    actionList: { actions }
   });
 }

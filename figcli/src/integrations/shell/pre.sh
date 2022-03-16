@@ -21,6 +21,7 @@ if   [[ ! "${TERM_PROGRAM}" = WarpTerminal ]] \
   && [[ -z "${INSIDE_EMACS}" ]] \
   && [[ "$__CFBundleIdentifier" != "com.vandyke.SecureCRT" ]] \
   && [[ -t 1 ]] \
+  && [[ -z "${PROCESS_LAUNCHED_BY_FIG}" ]] \
   && [[ -z "${FIG_PTY}" ]] && command -v ~/.fig/bin/figterm 2>&1 1>/dev/null \
   && [[ -z "${FIG_TERM}" || (-z "${FIG_TERM_TMUX}" && -n "${TMUX}") ]]; then
 

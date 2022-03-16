@@ -4,7 +4,7 @@ export async function run({
   executable,
   args,
   environment,
-  workingDirectory,
+  workingDirectory
 }: {
   executable: string;
   args: string[];
@@ -15,9 +15,7 @@ export async function run({
   return sendRunProcessRequest({
     executable,
     arguments: args,
-    env: Object.keys(env).map(key => {
-      return { key, value: env[key] };
-    }),
-    workingDirectory: workingDirectory ?? '/',
+    env: Object.keys(env).map(key => ({ key, value: env[key] })),
+    workingDirectory: workingDirectory ?? '/'
   });
 }

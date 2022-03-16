@@ -2,10 +2,10 @@ import { TelemetryProperty } from './fig.pb';
 import {
   sendTelemetryAliasRequest,
   sendTelemetryIdentifyRequest,
-  sendTelemetryTrackRequest,
+  sendTelemetryTrackRequest
 } from './requests';
 
-export async function track(event: string, properties: Record<string, string>) {
+export function track(event: string, properties: Record<string, string>) {
   // convert to internal type 'TelemetryProperty'
   const props = Object.keys(properties).reduce((array, key) => {
     const entry: TelemetryProperty = { key, value: properties[key] };
@@ -13,14 +13,14 @@ export async function track(event: string, properties: Record<string, string>) {
     return array;
   }, ([] as unknown) as [TelemetryProperty]);
 
-  return await sendTelemetryTrackRequest({ event, properties: props });
+  return sendTelemetryTrackRequest({ event, properties: props });
 }
 
-export async function alias(userId: string) {
+export function alias(userId: string) {
   return sendTelemetryAliasRequest({ userId });
 }
 
-export async function identify(traits: Record<string, string>) {
+export function identify(traits: Record<string, string>) {
   // convert to internal type 'TelemetryProperty'
   const props = Object.keys(traits).reduce((array, key) => {
     const entry: TelemetryProperty = { key, value: traits[key] };
@@ -28,5 +28,5 @@ export async function identify(traits: Record<string, string>) {
     return array;
   }, ([] as unknown) as [TelemetryProperty]);
 
-  return await sendTelemetryIdentifyRequest({ traits: props });
+  return sendTelemetryIdentifyRequest({ traits: props });
 }

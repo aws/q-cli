@@ -1,3 +1,5 @@
+if [[ -n "$BASH" ]]; then
+
 pathadd() {
   if [[ -d "$1" ]] && [[ ":$PATH:" != *":$1:"* ]]; then
     PATH="${PATH:+"$PATH:"}$1"
@@ -168,4 +170,6 @@ __bp_install_after_session_init
 __fig_reset_hooks
 if [[ -n "${PROCESS_LAUNCHED_BY_FIG}" ]]; then
   fig_osc DoneSourcing
+fi
+
 fi

@@ -32,7 +32,6 @@ use std::{
     ffi::OsStr,
     fs::read_to_string,
     future::Future,
-    io::Write,
     path::{Path, PathBuf},
     process::Command,
     time::Duration,
@@ -412,6 +411,8 @@ impl DoctorCheck for DaemonCheck {
 
         #[cfg(target_os = "macos")]
         {
+            use std::io::Write;
+
             let launch_agents_path = fig_directories::home_dir()
                 .context("Could not get home dir")?
                 .join("Library/LaunchAgents");
@@ -1429,6 +1430,14 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         fig_settings::state::set_value("pty.path", json!(path)).ok();
     }
 
+    run_checks(
+        "Let's check if you're logged in...".into(),
+        vec![&LoginStatusCheck {}],
+        config,
+        &mut spinner,
+    )
+    .await?;
+
     let shell_integrations: Vec<_> = [Shell::Bash, Shell::Zsh, Shell::Fish]
         .into_iter()
         .map(|shell| shell.get_shell_integrations())
@@ -1504,14 +1513,6 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
                 &VSCodeIntegrationCheck {},
             ],
             get_terminal_context,
-            config,
-            &mut spinner,
-        )
-        .await?;
-
-        run_checks(
-            "Let's check if you're logged in...".into(),
-            vec![&LoginStatusCheck {}],
             config,
             &mut spinner,
         )

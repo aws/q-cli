@@ -107,7 +107,6 @@ impl SettingsArgs {
                 None => {
                     println!();
 
-                    #[cfg(target_os = "macos")]
                     launch_fig(true)?;
 
                     let res = open_ui_element(UiElement::Settings).await;
