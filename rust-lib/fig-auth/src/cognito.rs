@@ -25,7 +25,7 @@ use std::{
 };
 use thiserror::Error;
 
-use crate::password::generate_password;
+use crate::{password::generate_password, CLIENT_ID};
 
 pub fn get_client() -> anyhow::Result<aws_sdk_cognitoidentityprovider::Client> {
     let https = hyper_rustls::HttpsConnectorBuilder::new()
@@ -508,9 +508,15 @@ impl Credentials {
         Ok(())
     }
 
+    // Refresh credentials with the default `client` and `client_id`
+    pub async fn refresh_credentials_default(&mut self) -> anyhow::Result<()> {
+        let client = get_client()?;
+        self.refresh_credentials(&client, CLIENT_ID).await?;
+        Ok(())
+    }
+
     /// Clear the values of the credentials
     pub fn clear_cridentials(&mut self) {
-        self.email = None;
         self.access_token = None;
         self.id_token = None;
         self.refresh_token = None;

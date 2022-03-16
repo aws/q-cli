@@ -6,7 +6,8 @@ pub mod websocket;
 
 use crate::{
     daemon::{
-        launchd_plist::LaunchdPlist, systemd_unit::SystemdUnit, websocket::process_websocket,
+        launchd_plist::LaunchdPlist, settings_watcher::spawn_settings_watcher,
+        systemd_unit::SystemdUnit, websocket::process_websocket,
     },
     util::backoff::Backoff,
 };
@@ -21,7 +22,6 @@ use parking_lot::RwLock;
 use rand::{distributions::Uniform, prelude::Distribution};
 use std::{
     io::Write,
-    ops::ControlFlow,
     path::{Path, PathBuf},
     process::Command,
     sync::Arc,
@@ -337,6 +337,7 @@ pub struct DaemonStatus {
     time_started: u64,
     settings_watcher_status: Result<()>,
     websocket_status: Result<()>,
+    unix_socket_status: Result<()>,
 }
 
 async fn spawn_unix_handler(
@@ -475,6 +476,7 @@ pub async fn daemon() -> Result<()> {
             .as_secs(),
         settings_watcher_status: Ok(()),
         websocket_status: Ok(()),
+        unix_socket_status: Ok(()),
     }));
 
     // Add small random element to the delay to avoid all clients from sending the messages at the same time
@@ -499,15 +501,19 @@ pub async fn daemon() -> Result<()> {
         let mut backoff =
             Backoff::new(Duration::from_secs_f64(0.25), Duration::from_secs_f64(120.));
         loop {
-            if let Ok(handle) = spawn_incomming_unix_handler(daemon_status.clone()).await {
-                backoff.reset();
-                if let Err(err) = handle.await {
-                    error!(
-                        "Error while waiting for incoming unix socket connection: {}",
-                        err
-                    );
+            match spawn_incomming_unix_handler(daemon_status.clone()).await {
+                Ok(handle) => {
+                    backoff.reset();
+                    if let Err(err) = handle.await {
+                        error!("Error on unix handler join: {:?}", err);
+                        daemon_status.write().unix_socket_status = Err(err.into());
+                    }
+                    return;
                 }
-                return;
+                Err(err) => {
+                    error!("Error spawning unix handler: {:?}", err);
+                    daemon_status.write().unix_socket_status = Err(err);
+                }
             }
             backoff.sleep().await;
         }
@@ -515,35 +521,65 @@ pub async fn daemon() -> Result<()> {
 
     // Spawn websocket handler
     let daemon_status_clone = daemon_status.clone();
-    let websocket_handle = tokio::spawn(async move {
+    let websocket_join = tokio::spawn(async move {
         let daemon_status = daemon_status_clone;
         let mut backoff =
             Backoff::new(Duration::from_secs_f64(0.25), Duration::from_secs_f64(120.));
         loop {
-            if let Ok(mut websocket_stream) = websocket::connect_to_fig_websocket().await {
-                backoff.reset();
-                loop {
-                    select! {
-                        next = websocket_stream.next() => {
-                            match process_websocket(&next, &mut scheduler).await {
-                                Ok(ControlFlow::Continue(_)) => {},
-                                Ok(ControlFlow::Break(_)) => break,
-                                Err(err) => {
-                                    error!("Error while processing websocket message: {}", err);
-                                    daemon_status.write().websocket_status = Err(err);
-                                    break;
+            match websocket::connect_to_fig_websocket().await {
+                Ok(mut websocket_stream) => {
+                    backoff.reset();
+                    loop {
+                        select! {
+                            next = websocket_stream.next() => {
+                                match process_websocket(&next, &mut scheduler).await {
+                                    Ok(()) => {}
+                                    Err(err) => {
+                                        error!("Error while processing websocket message: {}", err);
+                                        daemon_status.write().websocket_status = Err(err);
+                                        break;
+                                    }
                                 }
                             }
-                        }
-                        _ = ping_interval.tick() => {
-                            debug!("Sending ping to websocket");
-                            if let Err(err) = websocket_stream.send(tungstenite::Message::Ping(vec![])).await {
-                                error!("Error while sending ping to websocket: {}", err);
-                                daemon_status.write().websocket_status = Err(err.into());
-                                break;
-                            };
+                            _ = ping_interval.tick() => {
+                                debug!("Sending ping to websocket");
+                                if let Err(err) = websocket_stream.send(tungstenite::Message::Ping(vec![])).await {
+                                    error!("Error while sending ping to websocket: {}", err);
+                                    daemon_status.write().websocket_status = Err(err.into());
+                                    break;
+                                };
+                            }
                         }
                     }
+                }
+                Err(err) => {
+                    error!("Error while connecting to websocket: {}", err);
+                    daemon_status.write().websocket_status = Err(err);
+                }
+            }
+            backoff.sleep().await;
+        }
+    });
+
+    // Spawn settings watcher
+    let daemon_status_clone = daemon_status.clone();
+    let settings_watcher_join = tokio::spawn(async move {
+        let daemon_status = daemon_status_clone;
+        let mut backoff =
+            Backoff::new(Duration::from_secs_f64(0.25), Duration::from_secs_f64(120.));
+        loop {
+            match spawn_settings_watcher(daemon_status.clone()).await {
+                Ok(join_handle) => {
+                    backoff.reset();
+                    if let Err(err) = join_handle.await {
+                        error!("Error on settings watcher join: {:?}", err);
+                        daemon_status.write().settings_watcher_status = Err(err.into());
+                    }
+                    return;
+                }
+                Err(err) => {
+                    error!("Error spawning settings watcher: {:?}", err);
+                    daemon_status.write().settings_watcher_status = Err(err);
                 }
             }
             backoff.sleep().await;
@@ -552,7 +588,12 @@ pub async fn daemon() -> Result<()> {
 
     info!("Daemon is now running");
 
-    match tokio::try_join!(scheduler_join, unix_join, websocket_handle,) {
+    match tokio::try_join!(
+        scheduler_join,
+        unix_join,
+        websocket_join,
+        settings_watcher_join,
+    ) {
         Ok(_) => Ok(()),
         Err(err) => Err(err.into()),
     }

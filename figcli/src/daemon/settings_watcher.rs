@@ -6,11 +6,14 @@ use fig_ipc::hook::send_hook_to_socket;
 use fig_proto::{hooks, local::file_changed_hook::FileChanged};
 use notify::{watcher, DebouncedEvent, RecursiveMode, Watcher};
 use parking_lot::RwLock;
+use tokio::task::JoinHandle;
 use tracing::{debug, error, info};
 
 use super::DaemonStatus;
 
-pub async fn spawn_settings_watcher(daemon_status: Arc<RwLock<DaemonStatus>>) -> Result<()> {
+pub async fn spawn_settings_watcher(
+    daemon_status: Arc<RwLock<DaemonStatus>>,
+) -> Result<JoinHandle<()>> {
     // We need to spawn both a thread and a tokio task since the notify library does not
     // currently support async, this should be improved in the future, but currently this works fine
 
@@ -29,7 +32,7 @@ pub async fn spawn_settings_watcher(daemon_status: Arc<RwLock<DaemonStatus>>) ->
     let application_path_clone = std::path::PathBuf::from(application_path);
 
     let daemon_status_clone = daemon_status.clone();
-    tokio::task::spawn(async move {
+    let tokio_join = tokio::task::spawn(async move {
         let daemon_status = daemon_status_clone;
         loop {
             match forward_rx.recv_async().await {
@@ -125,5 +128,5 @@ pub async fn spawn_settings_watcher(daemon_status: Arc<RwLock<DaemonStatus>>) ->
         }
     });
 
-    Ok(())
+    Ok(tokio_join)
 }

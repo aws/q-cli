@@ -1252,15 +1252,13 @@ impl DoctorCheck for LoginStatusCheck {
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        if let Ok(creds) = Credentials::load_credentials() {
-            if creds.get_access_token().is_some()
-                && creds.get_id_token().is_some()
-                && creds.get_refresh_token().is_some()
-            {
-                return Ok(());
-            }
+        match Credentials::load_credentials() {
+            Ok(mut creds) => match creds.refresh_credentials_default().await {
+                Ok(()) => Ok(()),
+                Err(_) => Err(anyhow!("Not logged in. Run `fig login` to login.").into()),
+            },
+            Err(_) => Err(anyhow!("Not logged in. Run `fig login` to login.").into()),
         }
-        return Err(anyhow!("Not logged in. Run `fig login` to login.").into());
     }
 }
 
