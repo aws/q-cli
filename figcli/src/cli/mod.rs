@@ -11,7 +11,6 @@ pub mod installation;
 pub mod internal;
 pub mod invite;
 pub mod issue;
-pub mod plugins;
 pub mod settings;
 pub mod source;
 pub mod theme;
@@ -124,9 +123,6 @@ pub enum CliRootCommands {
         #[clap(long)]
         strict: bool,
     },
-    /// Plugins management
-    #[clap(subcommand)]
-    Plugins(plugins::PluginsSubcommand),
     /// Generate the completion spec for Fig
     GenerateFigSpec,
     Completion,
@@ -224,7 +220,20 @@ impl Cli {
                     installation::update_cli(no_confirm).await
                 }
                 CliRootCommands::Tips(tips_subcommand) => tips_subcommand.execute().await,
-                CliRootCommands::Daemon => daemon().await,
+                CliRootCommands::Daemon => {
+                    let res = daemon().await;
+                    if let Err(err) = &res {
+                        std::fs::write(
+                            fig_directories::fig_dir()
+                                .unwrap()
+                                .join("logs")
+                                .join("daemon-exit.log"),
+                            format!("{:?}", err),
+                        )
+                        .ok();
+                    }
+                    res
+                }
                 CliRootCommands::Diagnostic { format, force } => {
                     diagnostics::diagnostics_cli(format, force).await
                 }
@@ -252,7 +261,6 @@ impl Cli {
                 CliRootCommands::Issue { force, description } => {
                     issue::issue_cli(force, description).await
                 }
-                CliRootCommands::Plugins(plugins_subcommand) => plugins_subcommand.execute().await,
                 CliRootCommands::GenerateFigSpec => {
                     println!("{}", Cli::generation_fig_completions());
                     Ok(())

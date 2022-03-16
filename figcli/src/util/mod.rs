@@ -11,6 +11,7 @@ use fig_ipc::get_fig_socket_path;
 use sysinfo::{get_current_pid, ProcessExt, System, SystemExt};
 
 pub mod api;
+pub mod backoff;
 pub mod checksum;
 pub mod shell;
 pub mod sync;
