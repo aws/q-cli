@@ -17,7 +17,6 @@ use crossterm::{
     style::Stylize,
     terminal::{disable_raw_mode, enable_raw_mode, Clear, ClearType},
 };
-use fig_auth::Credentials;
 use fig_ipc::{connect_timeout, get_fig_socket_path, send_recv_message};
 use fig_proto::{
     daemon::diagnostic_response::{settings_watcher_status, websocket_status},
@@ -1252,11 +1251,9 @@ impl DoctorCheck for LoginStatusCheck {
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        match Credentials::load_credentials() {
-            Ok(mut creds) => match creds.refresh_credentials_default().await {
-                Ok(()) => Ok(()),
-                Err(_) => Err(anyhow!("Not logged in. Run `fig login` to login.").into()),
-            },
+        // We reload the credentials here because we want to check if the user is logged in
+        match fig_auth::refresh_credentals().await {
+            Ok(_) => Ok(()),
             Err(_) => Err(anyhow!("Not logged in. Run `fig login` to login.").into()),
         }
     }
