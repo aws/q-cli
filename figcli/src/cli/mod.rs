@@ -254,7 +254,7 @@ impl Cli {
                     internal_subcommand.execute().await
                 }
                 CliRootCommands::Launch => {
-                    let app_res = app::launch_fig_cli();
+                    let app_res = app::launch_fig_cli(true);
                     if let Ok(daemon) = get_daemon() {
                         daemon.start().ok();
                     }

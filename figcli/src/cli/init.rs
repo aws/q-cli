@@ -1,12 +1,12 @@
 use crate::util::{
     shell::{Shell, When},
-    terminal::Terminal, is_app_running,
+    terminal::Terminal,
 };
 use anyhow::{Context, Result};
 use crossterm::tty::IsTty;
 use fig_auth::is_logged_in;
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, io::stdin};
+use std::{collections::HashMap, env, io::stdin};
 
 /// The data for a single shell
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -80,33 +80,12 @@ fn shell_init(shell: &Shell, when: &When) -> Result<String> {
             Some(source.dotfile)
         };
 
-        let get_autoupdate_source = || {
-            let no_autoupdates: bool = fig_settings::settings::get_value("app.disableAutoupdates")?
-                    .and_then(|v| v.as_str().map(String::from))
-                    .and_then(|s| s.parse().ok())
-                    .unwrap_or(false);
-
-            if no_autoupdates {
-               Some("echo \"A new version of Fig is available. (Autoupdates are disabled)\"")
-            } else {
-                let already_seen_hint: bool = fig_settings::state::get_value("DISPLAYED_AUTOUPDATE_SETTINGS_HINT")?
-                .and_then(|v| v.as_str().map(String::from))
-                .and_then(|s| s.parse().ok())
-                .unwrap_or(false);
-
-                if already_seen_hint {
-                    
-                }
-
-            }
-        };
-
         if let Some(source) = guard_source(shell, false, "FIG_DOTFILES_SOURCED", get_dotfile_source)
         {
             to_source.push_str(&source);
         }
 
-        if stdin().is_tty() {
+        if stdin().is_tty() && env::var("PROCESS_LAUNCHED_BY_FIG").is_err() {
             // if no value, assume that we have seen onboarding already.
             // this is explictly set in onboarding in macOS app.
             let has_see_onboarding: bool = fig_settings::state::get_value("user.onboarding")?
@@ -122,16 +101,10 @@ fn shell_init(shell: &Shell, when: &When) -> Result<String> {
             {
                 to_source.push_str("fig app onboarding")
             } else {
-
-                if is_app_running() {
-                   
-
-                } else {
-
-                }
                 // not showing onboarding
-                if let Some(source) = guard_source(shell, false, "FIG_DOTFILES_SOURCED", get_dotfile_source)
-                {
+                if let Some(source) = guard_source(shell, false, "FIG_CHECKED_PROMPTS", || {
+                    Some("fig app prompts &".to_string())
+                }) {
                     to_source.push_str(&source);
                 }
             }

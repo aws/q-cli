@@ -6,13 +6,15 @@ use anyhow::{Context, Result};
 use clap::Subcommand;
 use crossterm::style::Stylize;
 use fig_ipc::{
-    command::{quit_command, restart_command},
+    command::{quit_command, restart_command, update_command},
     hook::send_hook_to_socket,
 };
 use fig_proto::hooks;
 use regex::Regex;
 use serde_json::json;
 use std::{process::Command, time::Duration};
+
+use fig_settings::{settings, state};
 
 #[derive(Debug, Subcommand)]
 pub enum AppSubcommand {
@@ -34,13 +36,17 @@ fn is_app_running() -> bool {
     }
 }
 
-pub fn launch_fig_cli() -> Result<()> {
+pub fn launch_fig_cli(verbose: bool) -> Result<()> {
     if is_app_running() {
-        println!("\n→ Fig is already running.\n");
+        if verbose {
+            println!("\n→ Fig is already running.\n");
+        }
         return Ok(());
     }
 
-    println!("\n→ Launching Fig...\n");
+    if verbose {
+        println!("\n→ Launching Fig...\n");
+    }
     Command::new("open")
         .args(["-g", "-b", "com.mschrage.fig"])
         .spawn()
@@ -84,7 +90,7 @@ pub async fn quit_fig() -> Result<()> {
 
 pub async fn restart_fig() -> Result<()> {
     if restart_command().await.is_err() {
-        launch_fig_cli()
+        launch_fig_cli(true)
     } else {
         println!("\n→ Restarting Fig...\n");
         Ok(())
@@ -106,17 +112,64 @@ impl AppSubcommand {
                     .wait()?;
             }
             AppSubcommand::Prompts => {
-                Command::new("bash")
-                    .args(["-c", include_str!("prompts.sh")])
-                    .spawn()?
-                    .wait()?;
+                if is_app_running() {
+                    let new_version = state::get_string("NEW_VERSION_AVAILABLE")?;
+                    println!("{}", new_version.is_some());
+                    if new_version.is_some() {
+                        let no_autoupdates =
+                            settings::get_bool("app.disableAutoupdates")?.unwrap_or(false);
+
+                        if no_autoupdates {
+                            println!(
+                                "A new version of Fig is available. (Autoupdates are disabled)"
+                            );
+                        } else {
+                            println!("Updating Fig to latest version...");
+                            let already_seen_hint: bool =
+                                state::get_bool("DISPLAYED_AUTOUPDATE_SETTINGS_HINT")?
+                                    .unwrap_or(false);
+
+                            if !already_seen_hint {
+                                println!("(To turn off automatic updates, run `fig settings app.disableAutoupdates true`)");
+                                state::set_value("DISPLAYED_AUTOUPDATE_SETTINGS_HINT", true)?
+                            }
+
+                            // trigger forced update. This will quick the macOS app.
+                            update_command(true).await?;
+
+                            // Sleep for a bit
+                            tokio::time::sleep(std::time::Duration::from_millis(3000)).await;
+
+                            launch_fig_cli(false)?;
+                        }
+                    }
+                } else {
+                    let no_autolaunch =
+                        settings::get_bool("app.disableAutolaunch")?.unwrap_or(false);
+
+                    if !no_autolaunch {
+                        let already_seen_hint: bool =
+                            fig_settings::state::get_bool("DISPLAYED_AUTOLAUNCH_SETTINGS_HINT")?
+                                .unwrap_or(false);
+                        println!("Launching {}...", "Fig".magenta());
+                        if !already_seen_hint {
+                            println!("(To turn off autolaunch, run `fig settings app.disableAutolaunch true`)");
+                            fig_settings::state::set_value(
+                                "DISPLAYED_AUTOLAUNCH_SETTINGS_HINT",
+                                true,
+                            )?
+                        }
+
+                        launch_fig_cli(false)?;
+                    }
+                }
             }
             AppSubcommand::Uninstall => {
                 uninstall::uninstall_mac_app().await;
             }
             AppSubcommand::Restart => restart_fig().await?,
             AppSubcommand::Quit => quit_fig().await?,
-            AppSubcommand::Launch => launch_fig_cli()?,
+            AppSubcommand::Launch => launch_fig_cli(true)?,
             AppSubcommand::Running => {
                 println!("{}", if is_app_running() { "1" } else { "0" });
             }
