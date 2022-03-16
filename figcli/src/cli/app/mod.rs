@@ -1,6 +1,6 @@
 pub mod uninstall;
 
-use crate::cli::debug::get_app_info;
+use crate::{cli::debug::get_app_info, util::launch_fig};
 
 use anyhow::{Context, Result};
 use clap::Subcommand;
@@ -40,11 +40,7 @@ pub fn launch_fig_cli() -> Result<()> {
         return Ok(());
     }
 
-    println!("\n→ Launching Fig...\n");
-    Command::new("open")
-        .args(["-g", "-b", "com.mschrage.fig"])
-        .spawn()
-        .context("\n→ Fig could not be launched.\n")?;
+    launch_fig()?;
     Ok(())
 }
 
@@ -83,10 +79,15 @@ pub async fn quit_fig() -> Result<()> {
 }
 
 pub async fn restart_fig() -> Result<()> {
-    if restart_command().await.is_err() {
+    if !is_app_running() {
         launch_fig_cli()
     } else {
         println!("\n→ Restarting Fig...\n");
+        if restart_command().await.is_err() {
+            println!("\nUnable to restart Fig\n");
+        } else {
+            tokio::time::sleep(Duration::from_millis(1000)).await;
+        }
         Ok(())
     }
 }
@@ -98,6 +99,7 @@ impl AppSubcommand {
                 fig_ipc::command::run_install_script_command().await?;
             }
             AppSubcommand::Onboarding => {
+                launch_fig()?;
                 Command::new("bash")
                     .args(["-c", include_str!("onboarding.sh")])
                     .spawn()?

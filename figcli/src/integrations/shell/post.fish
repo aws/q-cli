@@ -100,6 +100,6 @@ end
 
 set fig_has_set_prompt 0
 
-if [ -n "$PROCESS_LAUNCHED_BY_FIG" ]; then
+if [ -n "$PROCESS_LAUNCHED_BY_FIG" ]
   fig_osc DoneSourcing
-fi
+end

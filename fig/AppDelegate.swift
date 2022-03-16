@@ -1255,6 +1255,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     // Ensure that fig.socket is deleted, so that if user switches acounts it can be recreated
     try? FileManager.default.removeItem(atPath: "/tmp/fig.socket")
+    try? FileManager.default.removeItem(at: IPC.unixSocket)
 
     Logger.log(message: "app will terminate...")
   }

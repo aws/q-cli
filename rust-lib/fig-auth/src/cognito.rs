@@ -441,18 +441,24 @@ impl Credentials {
         }
         #[cfg(target_os = "macos")]
         {
-            use crate::set_default;
+            use crate::{remove_default, set_default};
 
             if let Some(id) = &self.id_token {
                 set_default("id_token", id)?;
+            } else {
+                remove_default("id_token")?;
             }
 
             if let Some(access) = &self.access_token {
                 set_default("access_token", access)?;
+            } else {
+                remove_default("access_token")?;
             }
 
             if let Some(refresh) = &self.refresh_token {
                 set_default("refresh_token", refresh)?;
+            } else {
+                remove_default("refresh_token")?;
             }
         }
 

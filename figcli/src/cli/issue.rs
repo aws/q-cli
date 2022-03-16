@@ -3,7 +3,7 @@ use crate::{
         diagnostics::{Diagnostic, Diagnostics},
         util::{get_fig_version, open_url, OSVersion},
     },
-    util::get_shell,
+    util::{get_shell, is_app_running},
 };
 
 use anyhow::Result;
@@ -12,8 +12,12 @@ use regex::Regex;
 
 pub async fn issue_cli(force: bool, description: Vec<String>) -> Result<()> {
     // Check if fig is running
-    if !force && !crate::util::is_app_running() {
-        println!("\n→ Fig is not running.\n  Please launch Fig with {} or run {} to create the issue anyways", "fig launch".magenta(), "fig issue --force".magenta());
+    if !force && !is_app_running() {
+        println!(
+            "\n→ Fig is not running.\n  Please launch Fig with {} or run {} to create the issue anyways",
+            "fig launch".magenta(),
+            "fig issue --force".magenta()
+        );
         return Ok(());
     }
 

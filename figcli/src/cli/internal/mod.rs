@@ -1,10 +1,7 @@
 pub mod local_state;
 
-use crate::{
-    cli::installation::{self, InstallComponents},
-    dotfiles::notify::TerminalNotification,
-    util::shell::{Shell, When},
-};
+use crate::cli::installation::{self, InstallComponents};
+use crate::dotfiles::notify::TerminalNotification;
 
 use anyhow::{Context, Result};
 use clap::{ArgGroup, Args, Subcommand};
@@ -73,14 +70,6 @@ pub enum InternalSubcommand {
         binary: bool,
     },
     WarnUserWhenUninstallingIncorrectly,
-    Init {
-        /// The shell to generate the dotfiles for
-        #[clap(arg_enum)]
-        shell: Shell,
-        /// When to generate the dotfiles for
-        #[clap(arg_enum)]
-        when: When,
-    },
 }
 
 pub fn install_cli_from_args(install_args: InstallArgs) -> Result<()> {
@@ -194,9 +183,6 @@ impl InternalSubcommand {
                     .set_text("Please run `fig uninstall` rather than moving the app to the Trash.")
                     .show_alert()
                     .unwrap();
-            }
-            InternalSubcommand::Init { shell, when } => {
-                println!("{}", shell.get_fig_integration_source_internal(&when));
             }
         }
         Ok(())

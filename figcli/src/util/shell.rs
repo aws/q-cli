@@ -4,7 +4,6 @@ use regex::Regex;
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use std::{
-    borrow::Cow,
     fmt::Display,
     fs::File,
     io::{Read, Write},
@@ -371,24 +370,12 @@ impl Shell {
         Ok(path)
     }
 
-    pub fn get_fig_integration_source(&self, when: &When) -> Cow<'static, str> {
+    pub fn get_fig_integration_source(&self, when: &When) -> &'static str {
         match (self, when) {
-            (Shell::Fish, When::Pre) => include_str!("../integrations/shell/pre.fish").into(),
-            (Shell::Fish, When::Post) => include_str!("../integrations/shell/post.fish").into(),
-            (_, _) => format!(
-                "if [[ -n \"$BASH\" ]]; then\n\
-                    eval \"$(fig _ init bash {when})\"\n\
-                elif [[ -n \"$ZSH_NAME\" ]]; then\n\
-                    eval \"$(fig _ init zsh {when})\"\n\
-                fi\n",
-            )
-            .into(),
-        }
-    }
-
-    pub fn get_fig_integration_source_internal(&self, when: &When) -> &'static str {
-        match (self, when) {
-            (Shell::Fish, _) => "# Unimplemented",
+            (Shell::Fish, When::Pre) => include_str!("../integrations/shell/pre.fish"),
+            (Shell::Fish, When::Post) => include_str!("../integrations/shell/post.fish"),
+            (Shell::Zsh, When::Pre) => include_str!("../integrations/shell/pre.sh"),
+            (Shell::Zsh, When::Post) => include_str!("../integrations/shell/post.zsh"),
             (Shell::Bash, When::Pre) => {
                 concat!(
                     "function __fig_source_bash_preexec() {\n",
@@ -409,8 +396,6 @@ impl Shell {
                     include_str!("../integrations/shell/post.bash")
                 )
             }
-            (Shell::Zsh, When::Pre) => include_str!("../integrations/shell/pre.sh"),
-            (Shell::Zsh, When::Post) => include_str!("../integrations/shell/post.zsh"),
         }
     }
 

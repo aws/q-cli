@@ -77,7 +77,7 @@ fn shell_init(shell: &Shell, when: &When) -> Result<String> {
 
     let shell_integration_source = shell.get_fig_integration_source(when);
     to_source.push('\n');
-    to_source.push_str(&shell_integration_source);
+    to_source.push_str(shell_integration_source);
 
     Ok(to_source)
 }

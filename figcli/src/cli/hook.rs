@@ -129,11 +129,6 @@ impl HookSubcommand {
         };
 
         let hook = hook.context("Invalid input for hook")?;
-
-        send_hook_to_socket(hook).await.context(format!(
-            "\n{}\nFig might not be running to launch Fig run: {}\n",
-            "Unable to Connect to Fig:".bold(),
-            "fig launch".magenta()
-        ))
+        send_hook_to_socket(hook).await
     }
 }
