@@ -1,6 +1,6 @@
 use crate::util::{
     shell::{Shell, When},
-    terminal::Terminal,
+    terminal::Terminal, is_app_running,
 };
 use anyhow::{Context, Result};
 use crossterm::tty::IsTty;
@@ -80,6 +80,27 @@ fn shell_init(shell: &Shell, when: &When) -> Result<String> {
             Some(source.dotfile)
         };
 
+        let get_autoupdate_source = || {
+            let no_autoupdates: bool = fig_settings::settings::get_value("app.disableAutoupdates")?
+                    .and_then(|v| v.as_str().map(String::from))
+                    .and_then(|s| s.parse().ok())
+                    .unwrap_or(false);
+
+            if no_autoupdates {
+               Some("echo \"A new version of Fig is available. (Autoupdates are disabled)\"")
+            } else {
+                let already_seen_hint: bool = fig_settings::state::get_value("DISPLAYED_AUTOUPDATE_SETTINGS_HINT")?
+                .and_then(|v| v.as_str().map(String::from))
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(false);
+
+                if already_seen_hint {
+                    
+                }
+
+            }
+        };
+
         if let Some(source) = guard_source(shell, false, "FIG_DOTFILES_SOURCED", get_dotfile_source)
         {
             to_source.push_str(&source);
@@ -100,6 +121,19 @@ fn shell_init(shell: &Shell, when: &When) -> Result<String> {
                 && [Some(Terminal::Iterm), Some(Terminal::TerminalApp)].contains(&terminal)
             {
                 to_source.push_str("fig app onboarding")
+            } else {
+
+                if is_app_running() {
+                   
+
+                } else {
+
+                }
+                // not showing onboarding
+                if let Some(source) = guard_source(shell, false, "FIG_DOTFILES_SOURCED", get_dotfile_source)
+                {
+                    to_source.push_str(&source);
+                }
             }
         }
     }
