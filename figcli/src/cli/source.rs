@@ -2,7 +2,7 @@
 
 use crate::{
     cli::init::DotfilesData,
-    util::{api::api_host, shell::Shell},
+    util::{api::api_host, is_logged_in, shell::Shell},
 };
 
 use anyhow::{Context, Result};
@@ -291,7 +291,12 @@ pub fn notify_all_terminals(notification: TerminalNotification) -> Result<()> {
 
 /// Download the lastest dotfiles
 pub async fn source_cli() -> Result<()> {
-    sync_all_shells().await?;
+    if !is_logged_in() {
+        anyhow::bail!("Must be logged in to sync dotfiles");
+    }
+    sync_all_shells()
+        .await
+        .context("Could not sync remote dotfiles")?;
     if let Ok(session_id) = std::env::var("TERM_SESSION_ID") {
         notify_terminal(session_id, TerminalNotification::Source)?;
     }

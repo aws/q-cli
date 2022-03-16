@@ -4,7 +4,7 @@ use crate::{
         util::OSVersion,
     },
     util::{
-        app_path_from_bundle_id, get_shell, glob, glob_dir, is_executable_in_path,
+        app_path_from_bundle_id, get_shell, glob, glob_dir, is_executable_in_path, launch_fig,
         shell::{Shell, ShellFileIntegration},
         terminal::Terminal,
     },
@@ -1265,7 +1265,13 @@ where
     if config.verbose {
         println!("{}", header.as_ref().dark_grey());
     }
-    let mut context = get_context().await?;
+    let mut context = match get_context().await {
+        Ok(c) => c,
+        Err(e) => {
+            println!("Failed to get context: {:?}", e);
+            anyhow::bail!(e);
+        }
+    };
     for check in checks {
         let name: String = check.name().into();
         let check_type: DoctorCheckType = check.get_type(&context);
@@ -1438,6 +1444,9 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
     )
     .await?;
 
+    // If user is logged in, launch fig.
+    launch_fig().ok();
+
     let shell_integrations: Vec<_> = [Shell::Bash, Shell::Zsh, Shell::Fish]
         .into_iter()
         .map(|shell| shell.get_shell_integrations())
@@ -1451,16 +1460,17 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         .iter()
         .map(|p| (&*p) as &dyn DoctorCheck<_>)
         .collect();
-    run_checks_with_context(
-        "Let's check your dotfiles...",
-        all_dotfile_checks,
-        get_shell_context,
-        config,
-        &mut spinner,
-    )
-    .await?;
 
     let status = async {
+        run_checks_with_context(
+            "Let's check your dotfiles...",
+            all_dotfile_checks,
+            get_shell_context,
+            config,
+            &mut spinner,
+        )
+        .await?;
+
         run_checks(
             "Let's make sure Fig is running...".into(),
             vec![

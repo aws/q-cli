@@ -185,7 +185,7 @@ pub async fn update(update_type: UpdateType) -> Result<UpdateStatus> {
         use crate::util::launch_fig;
         use fig_ipc::command::update_command;
 
-        launch_fig(false)?;
+        launch_fig()?;
 
         let desktop_app_update = update_command(update_type == UpdateType::NoConfirm).await;
         match desktop_app_update {
