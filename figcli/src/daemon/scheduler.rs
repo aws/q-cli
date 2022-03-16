@@ -2,11 +2,16 @@ use std::{borrow::Cow, collections::BinaryHeap, time::Duration};
 
 use anyhow::Result;
 use async_trait::async_trait;
+use flume::Sender;
 use rand::{distributions::Uniform, prelude::Distribution};
 use std::fmt::Debug;
-use tokio::time::{sleep_until, Instant};
+use tokio::{
+    task::JoinHandle,
+    time::{sleep_until, Instant},
+};
+use tracing::{error, info};
 
-use crate::{cli::source::sync_all_shells, plugins::api::fetch_installed_plugins};
+use crate::{dotfiles::download_and_notify, plugins::fetch_installed_plugins};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Tag<'a>(Cow<'a, str>);
@@ -17,6 +22,12 @@ where
 {
     fn from(s: S) -> Self {
         Tag(s.into())
+    }
+}
+
+impl std::fmt::Display for Tag<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 
@@ -53,29 +64,111 @@ impl std::cmp::PartialEq for ScheduledTask {
     }
 }
 
-pub struct Scheduler {
-    scheduled_tasks: BinaryHeap<ScheduledTask>,
+pub struct ScheduleHeap {
+    heap: BinaryHeap<ScheduledTask>,
 }
 
-impl Default for Scheduler {
+impl Default for ScheduleHeap {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl Scheduler {
-    pub fn new() -> Self {
-        // A task that is scheduled that will never be executed
-        // but will not overflow the time primitive
+impl ScheduleHeap {
+    pub fn new() -> ScheduleHeap {
         let final_task = ScheduledTask::new(
             Instant::now() + Duration::from_secs(86400 * 365 * 30),
             Tag::from("final"),
             Box::new(NoopTask),
         );
 
-        Self {
-            scheduled_tasks: [final_task].into_iter().collect(),
+        ScheduleHeap {
+            heap: [final_task].into_iter().collect(),
         }
+    }
+
+    pub fn schedule(&mut self, scheduled_task: ScheduledTask) {
+        self.heap.push(scheduled_task);
+    }
+
+    pub fn cancel_tag(&mut self, tag: &Tag) {
+        self.heap = self.heap.drain().filter(|task| task.tag != *tag).collect();
+    }
+
+    fn pop(&mut self) -> Option<(Tag<'static>, Box<dyn Task>)> {
+        self.heap
+            .pop()
+            .map(|ScheduledTask { tag, task, .. }| (tag, task))
+    }
+
+    pub async fn next(&mut self) -> Option<(Tag<'static>, Box<dyn Task>)> {
+        if let Some(task) = self.heap.peek() {
+            sleep_until(task.time).await;
+            self.pop()
+        } else {
+            None
+        }
+    }
+}
+
+pub struct Scheduler {
+    incomming_tasks: Sender<SchedulerMessages>,
+}
+
+pub enum SchedulerMessages {
+    ScheduleTask(ScheduledTask),
+    CancelTask(Tag<'static>),
+}
+
+impl Scheduler {
+    pub async fn spawn() -> (Self, JoinHandle<()>) {
+        // A task that is scheduled that will never be executed
+        // but will not overflow the time primitive
+        let (sender, receiver) = flume::unbounded::<SchedulerMessages>();
+
+        let sender_clone = sender.clone();
+
+        let join_handle = tokio::spawn(async move {
+            let mut tasks = ScheduleHeap::new();
+
+            let sender = sender_clone;
+
+            loop {
+                tokio::select! {
+                    task = tasks.next() => {
+                        if let Some((tag, task)) = task {
+                            let sender_clone = sender.clone();
+                            tokio::spawn(async move {
+                                if let Err(err) = task.run(sender_clone).await {
+                                    error!("Error running task {}: {}", tag, err);
+                                }
+                            });
+                        }
+                    }
+                    recv = receiver.recv_async() => {
+                        match recv {
+                            Ok(SchedulerMessages::ScheduleTask(task)) => {
+                                tasks.schedule(task);
+                            }
+                            Ok(SchedulerMessages::CancelTask(tag)) => {
+                                tasks.cancel_tag(&tag);
+                            }
+                            // This only happens if all channels are closed
+                            Err(_) => {
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        (
+            Self {
+                incomming_tasks: sender,
+            },
+            join_handle,
+        )
     }
 
     pub fn schedule<T, B>(&mut self, task: T, when: Instant)
@@ -83,8 +176,18 @@ impl Scheduler {
         T: TaggedTask + Into<Box<B>>,
         B: Task + 'static,
     {
-        self.scheduled_tasks
-            .push(ScheduledTask::new(when, task.tag(), task.into()));
+        info!(
+            "Scheduling task {} in {:?}",
+            task.tag(),
+            when.duration_since(Instant::now())
+        );
+        self.incomming_tasks
+            .send(SchedulerMessages::ScheduleTask(ScheduledTask::new(
+                when,
+                task.tag(),
+                task.into(),
+            )))
+            .unwrap();
     }
 
     pub fn schedule_delayed<T, B>(&mut self, task: T, delay: Duration)
@@ -95,13 +198,31 @@ impl Scheduler {
         self.schedule(task, Instant::now() + delay);
     }
 
+    pub fn schedule_now<T, B>(&mut self, task: T)
+    where
+        T: TaggedTask + Into<Box<B>>,
+        B: Task + 'static,
+    {
+        self.schedule(task, Instant::now());
+    }
+
     pub fn schedule_with_tag<T, B>(&mut self, task: T, when: Instant, tag: Tag<'static>)
     where
         T: Into<Box<B>>,
         B: Task + 'static,
     {
-        self.scheduled_tasks
-            .push(ScheduledTask::new(when, tag, task.into()));
+        info!(
+            "Scheduling task with tag {} at {:?}",
+            tag,
+            when.duration_since(Instant::now())
+        );
+        self.incomming_tasks
+            .send(SchedulerMessages::ScheduleTask(ScheduledTask::new(
+                when,
+                tag,
+                task.into(),
+            )))
+            .unwrap();
     }
 
     pub fn schedule_delayed_with_tag<T, B>(&mut self, task: T, delay: Duration, tag: Tag<'static>)
@@ -121,34 +242,11 @@ impl Scheduler {
         let delay: f64 = dist.sample(&mut rand::thread_rng());
         self.schedule_delayed(task, Duration::from_secs_f64(delay));
     }
-
-    pub fn cancel_tag(&mut self, tag: &Tag) {
-        self.scheduled_tasks = self
-            .scheduled_tasks
-            .drain()
-            .filter(|task| task.tag != *tag)
-            .collect();
-    }
-
-    fn pop(&mut self) -> Option<(Tag<'static>, Box<dyn Task>)> {
-        self.scheduled_tasks
-            .pop()
-            .map(|ScheduledTask { tag, task, .. }| (tag, task))
-    }
-
-    pub async fn next(&mut self) -> Option<(Tag<'static>, Box<dyn Task>)> {
-        if let Some(task) = self.scheduled_tasks.peek() {
-            sleep_until(task.time).await;
-            self.pop()
-        } else {
-            None
-        }
-    }
 }
 
 #[async_trait]
 pub trait Task: Send + Sync + Debug {
-    async fn run(&self) -> Result<()>;
+    async fn run(&self, _sender: Sender<SchedulerMessages>) -> Result<()>;
 }
 
 pub trait TaggedTask: Task {
@@ -162,8 +260,15 @@ pub struct SyncDotfiles;
 
 #[async_trait]
 impl Task for SyncDotfiles {
-    async fn run(&self) -> Result<()> {
-        sync_all_shells().await?;
+    async fn run(&self, sender: Sender<SchedulerMessages>) -> Result<()> {
+        download_and_notify().await?;
+        sender
+            .send_async(SchedulerMessages::ScheduleTask(ScheduledTask {
+                time: Instant::now() + Duration::from_secs_f64(0.5),
+                tag: SyncPlugins.tag(),
+                task: Box::new(SyncPlugins),
+            }))
+            .await?;
         Ok(())
     }
 }
@@ -175,7 +280,7 @@ pub struct SyncPlugins;
 
 #[async_trait]
 impl Task for SyncPlugins {
-    async fn run(&self) -> Result<()> {
+    async fn run(&self, _sender: Sender<SchedulerMessages>) -> Result<()> {
         fetch_installed_plugins().await?;
         Ok(())
     }
@@ -188,77 +293,77 @@ pub struct NoopTask;
 
 #[async_trait]
 impl Task for NoopTask {
-    async fn run(&self) -> Result<()> {
+    async fn run(&self, _sender: Sender<SchedulerMessages>) -> Result<()> {
         Ok(())
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+// #[cfg(test)]
+// mod tests {
+//     use super::*;
 
-    #[derive(Debug, Clone, PartialEq, Eq)]
-    struct TestTask;
+//     #[derive(Debug, Clone, PartialEq, Eq)]
+//     struct TestTask;
 
-    #[async_trait]
-    impl Task for TestTask {
-        async fn run(&self) -> Result<()> {
-            Ok(())
-        }
-    }
+//     #[async_trait]
+//     impl Task for TestTask {
+//         async fn run(&self, _sender: Sender<SchedulerMessages>) -> Result<()> {
+//             Ok(())
+//         }
+//     }
 
-    impl TaggedTask for TestTask {}
+//     impl TaggedTask for TestTask {}
 
-    #[tokio::test]
-    async fn test_tasks() {
-        let mut scheduler = Scheduler::new();
+//     #[tokio::test]
+//     async fn test_tasks() {
+//         let mut scheduler = Scheduler::new();
 
-        scheduler.schedule(TestTask, Instant::now());
+//         scheduler.schedule(TestTask, Instant::now());
 
-        scheduler.schedule_delayed(TestTask, Duration::from_secs(1));
+//         scheduler.schedule_delayed(TestTask, Duration::from_secs(1));
 
-        scheduler.schedule_with_tag(
-            TestTask,
-            Instant::now() + Duration::from_secs(2),
-            "test1".into(),
-        );
+//         scheduler.schedule_with_tag(
+//             TestTask,
+//             Instant::now() + Duration::from_secs(2),
+//             "test1".into(),
+//         );
 
-        scheduler.schedule_delayed_with_tag(TestTask, Duration::from_secs(3), "test2".into());
+//         scheduler.schedule_delayed_with_tag(TestTask, Duration::from_secs(3), "test2".into());
 
-        assert_eq!(scheduler.scheduled_tasks.len(), 4);
-    }
+//         assert_eq!(scheduler.scheduled_tasks.len(), 4);
+//     }
 
-    #[tokio::test]
-    async fn test_scheduler_cancel() {
-        let mut scheduler = Scheduler::new();
+//     #[tokio::test]
+//     async fn test_scheduler_cancel() {
+//         let mut scheduler = Scheduler::new();
 
-        scheduler.schedule_with_tag(TestTask, Instant::now(), "test1".into());
-        scheduler.schedule_with_tag(TestTask, Instant::now(), "test2".into());
-        scheduler.schedule_with_tag(TestTask, Instant::now(), "test2".into());
-        scheduler.schedule_with_tag(TestTask, Instant::now(), "test3".into());
-        assert_eq!(scheduler.scheduled_tasks.len(), 4);
-        scheduler.cancel_tag(&"test2".into());
-        assert_eq!(scheduler.scheduled_tasks.len(), 2);
-        scheduler.cancel_tag(&"test3".into());
-        assert_eq!(scheduler.scheduled_tasks.len(), 1);
-        scheduler.cancel_tag(&"test1".into());
-        assert_eq!(scheduler.scheduled_tasks.len(), 0);
-    }
+//         scheduler.schedule_with_tag(TestTask, Instant::now(), "test1".into());
+//         scheduler.schedule_with_tag(TestTask, Instant::now(), "test2".into());
+//         scheduler.schedule_with_tag(TestTask, Instant::now(), "test2".into());
+//         scheduler.schedule_with_tag(TestTask, Instant::now(), "test3".into());
+//         assert_eq!(scheduler.scheduled_tasks.len(), 4);
+//         scheduler.cancel_tag(&"test2".into());
+//         assert_eq!(scheduler.scheduled_tasks.len(), 2);
+//         scheduler.cancel_tag(&"test3".into());
+//         assert_eq!(scheduler.scheduled_tasks.len(), 1);
+//         scheduler.cancel_tag(&"test1".into());
+//         assert_eq!(scheduler.scheduled_tasks.len(), 0);
+//     }
 
-    #[tokio::test]
-    async fn test_next_task() {
-        let mut scheduler = Scheduler::new();
+//     #[tokio::test]
+//     async fn test_next_task() {
+//         let mut scheduler = Scheduler::new();
 
-        scheduler.schedule_delayed_with_tag(TestTask, Duration::from_secs(0), "test1".into());
-        scheduler.schedule_delayed_with_tag(TestTask, Duration::from_secs(1), "test2".into());
-        scheduler.schedule_delayed_with_tag(TestTask, Duration::from_secs(2), "test3".into());
+//         scheduler.schedule_delayed_with_tag(TestTask, Duration::from_secs(0), "test1".into());
+//         scheduler.schedule_delayed_with_tag(TestTask, Duration::from_secs(1), "test2".into());
+//         scheduler.schedule_delayed_with_tag(TestTask, Duration::from_secs(2), "test3".into());
 
-        assert_eq!(scheduler.scheduled_tasks.len(), 3);
-        assert_eq!(scheduler.pop().unwrap().0, "test1".into());
-        assert_eq!(scheduler.scheduled_tasks.len(), 2);
-        assert_eq!(scheduler.pop().unwrap().0, "test2".into());
-        assert_eq!(scheduler.scheduled_tasks.len(), 1);
-        assert_eq!(scheduler.pop().unwrap().0, "test3".into());
-        assert_eq!(scheduler.scheduled_tasks.len(), 0);
-    }
-}
+//         assert_eq!(scheduler.scheduled_tasks.len(), 3);
+//         assert_eq!(scheduler.pop().unwrap().0, "test1".into());
+//         assert_eq!(scheduler.scheduled_tasks.len(), 2);
+//         assert_eq!(scheduler.pop().unwrap().0, "test2".into());
+//         assert_eq!(scheduler.scheduled_tasks.len(), 1);
+//         assert_eq!(scheduler.pop().unwrap().0, "test3".into());
+//         assert_eq!(scheduler.scheduled_tasks.len(), 0);
+//     }
+// }

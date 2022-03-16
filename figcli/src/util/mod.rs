@@ -10,6 +10,7 @@ use std::{
 use sysinfo::{get_current_pid, ProcessExt, System, SystemExt};
 
 pub mod api;
+pub mod backoff;
 pub mod checksum;
 pub mod shell;
 pub mod sync;

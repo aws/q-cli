@@ -541,7 +541,7 @@ impl Credentials {
     }
 
     pub fn is_expired(&self) -> bool {
-        self.is_expired_epslion(time::Duration::minutes(1))
+        self.is_expired_epslion(time::Duration::minutes(60))
     }
 
     pub fn get_email(&self) -> Option<&String> {

@@ -1,11 +1,14 @@
 pub mod launchd_plist;
+pub mod scheduler;
 pub mod settings_watcher;
 pub mod systemd_unit;
 pub mod websocket;
 
-use crate::daemon::{
-    launchd_plist::LaunchdPlist, settings_watcher::spawn_settings_watcher,
-    systemd_unit::SystemdUnit, websocket::process_websocket,
+use crate::{
+    daemon::{
+        launchd_plist::LaunchdPlist, systemd_unit::SystemdUnit, websocket::process_websocket,
+    },
+    util::backoff::Backoff,
 };
 
 use anyhow::{anyhow, Context, Result};
@@ -15,6 +18,7 @@ use fig_proto::daemon::diagnostic_response::{
 };
 use futures::{SinkExt, StreamExt};
 use parking_lot::RwLock;
+use rand::{distributions::Uniform, prelude::Distribution};
 use std::{
     io::Write,
     ops::ControlFlow,
@@ -27,6 +31,7 @@ use tokio::{
     fs::remove_file,
     net::{UnixListener, UnixStream},
     select,
+    task::JoinHandle,
 };
 use tokio_tungstenite::tungstenite;
 use tracing::{debug, error, info, trace};
@@ -257,9 +262,10 @@ impl LaunchService {
             .program_arguments([&*executable_path_str, "daemon"])
             .keep_alive(true)
             .run_at_load(true)
-            .throttle_interval(5)
+            .throttle_interval(20)
             .standard_out_path(&*log_path_str)
             .standard_error_path(&*log_path_str)
+            .environment_variable("FIG_LOG_LEVEL", "debug")
             .plist();
 
         Ok(LaunchService {
@@ -426,27 +432,9 @@ async fn spawn_unix_handler(
     Ok(())
 }
 
-/// Spawn the daemon to listen for updates and dotfiles changes
-pub async fn daemon() -> Result<()> {
-    info!("Starting daemon...");
-
-    let daemon_status = Arc::new(RwLock::new(DaemonStatus {
-        time_started: std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)?
-            .as_secs(),
-        settings_watcher_status: Ok(()),
-        websocket_status: Ok(()),
-    }));
-
-    let mut update_interval = tokio::time::interval(Duration::from_secs(60 * 60));
-
-    // Connect to websocket
-    let mut websocket_stream = websocket::connect_to_fig_websocket()
-        .await
-        .context("Could not connect to websocket")?;
-
-    let mut ping_interval = tokio::time::interval(Duration::from_secs(60));
-
+pub async fn spawn_incomming_unix_handler(
+    daemon_status: Arc<RwLock<DaemonStatus>>,
+) -> Result<JoinHandle<()>> {
     let unix_socket_path = get_daemon_socket_path();
 
     // Create the unix socket directory if it doesn't exist
@@ -465,8 +453,37 @@ pub async fn daemon() -> Result<()> {
     let unix_socket =
         UnixListener::bind(&unix_socket_path).context("Could not connect to unix socket")?;
 
-    let mut scheduler = scheduler::Scheduler::new();
+    Ok(tokio::spawn(async move {
+        while let Ok((stream, _addr)) = unix_socket.accept().await {
+            if let Err(err) = spawn_unix_handler(stream, daemon_status.clone()).await {
+                error!(
+                    "Error while spawining unix socket connection handler: {}",
+                    err
+                );
+            }
+        }
+    }))
+}
 
+/// Spawn the daemon to listen for updates and dotfiles changes
+pub async fn daemon() -> Result<()> {
+    info!("Starting daemon...");
+
+    let daemon_status = Arc::new(RwLock::new(DaemonStatus {
+        time_started: std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)?
+            .as_secs(),
+        settings_watcher_status: Ok(()),
+        websocket_status: Ok(()),
+    }));
+
+    // Add small random element to the delay to avoid all clients from sending the messages at the same time
+    let dist = Uniform::new(59., 60.);
+    let delay = dist.sample(&mut rand::thread_rng());
+    let mut ping_interval = tokio::time::interval(Duration::from_secs_f64(delay));
+
+    // Spawn task scheduler
+    let (mut scheduler, scheduler_join) = scheduler::Scheduler::spawn().await;
     match fig_settings::state::get_value("dotfiles.all.lastUpdated")
         .ok()
         .flatten()
@@ -475,61 +492,68 @@ pub async fn daemon() -> Result<()> {
         None => scheduler.schedule_random_delay(scheduler::SyncDotfiles, 0., 60.),
     }
 
-    scheduler.schedule_random_delay(scheduler::SyncPlugins, 0., 60.);
-
-    // Spawn settings watcher
-    if let Err(error) = spawn_settings_watcher(daemon_status.clone()).await {
-        error!("Could not spawn settings watcher: {}", error);
-    }
-
-    info!("Daemon is now running");
-
-    // Select loop
-    loop {
-        select! {
-            next = websocket_stream.next() => {
-                match process_websocket(&next).await? {
-                    ControlFlow::Continue(_) => {},
-                    ControlFlow::Break(_) => break,
+    // Spawn the incoming handler
+    let daemon_status_clone = daemon_status.clone();
+    let unix_join = tokio::spawn(async move {
+        let daemon_status = daemon_status_clone;
+        let mut backoff =
+            Backoff::new(Duration::from_secs_f64(0.25), Duration::from_secs_f64(120.));
+        loop {
+            if let Ok(handle) = spawn_incomming_unix_handler(daemon_status.clone()).await {
+                backoff.reset();
+                if let Err(err) = handle.await {
+                    error!(
+                        "Error while waiting for incoming unix socket connection: {}",
+                        err
+                    );
                 }
+                return;
             }
-            conn = unix_socket.accept() => {
-                match conn {
-                    Ok((stream, _)) => {
-                        spawn_unix_handler(stream, daemon_status.clone()).await?;
-                    }
-                    Err(err) => {
-                        error!("Could not accept unix socket connection: {}", err);
-                    }
-                }
-            }
-            next = scheduler.next() => {
-                if let Some((tag, task)) = next {
-                    if let Err(err) = task.run().await {
-                        error!("Error running task {:?}: {:?}", tag, err);
-                    }
-                }
-            }
-            _ = ping_interval.tick() => {
-                debug!("Sending ping to websocket");
-                websocket_stream.send(tungstenite::Message::Ping(vec![])).await?;
-            }
-            _ = update_interval.tick() => {
-                #[cfg(feature = "auto-update")]
-                {
-                    // Check for updates
-                    match update(UpdateType::NoProgress)? {
-                        UpdateStatus::UpToDate => {}
-                        UpdateStatus::Updated(release) => {
-                            info!("Updated to {}", release.version);
-                            info!("Quitting...");
-                            return Ok(());
+            backoff.sleep().await;
+        }
+    });
+
+    // Spawn websocket handler
+    let daemon_status_clone = daemon_status.clone();
+    let websocket_handle = tokio::spawn(async move {
+        let daemon_status = daemon_status_clone;
+        let mut backoff =
+            Backoff::new(Duration::from_secs_f64(0.25), Duration::from_secs_f64(120.));
+        loop {
+            if let Ok(mut websocket_stream) = websocket::connect_to_fig_websocket().await {
+                backoff.reset();
+                loop {
+                    select! {
+                        next = websocket_stream.next() => {
+                            match process_websocket(&next, &mut scheduler).await {
+                                Ok(ControlFlow::Continue(_)) => {},
+                                Ok(ControlFlow::Break(_)) => break,
+                                Err(err) => {
+                                    error!("Error while processing websocket message: {}", err);
+                                    daemon_status.write().websocket_status = Err(err);
+                                    break;
+                                }
+                            }
+                        }
+                        _ = ping_interval.tick() => {
+                            debug!("Sending ping to websocket");
+                            if let Err(err) = websocket_stream.send(tungstenite::Message::Ping(vec![])).await {
+                                error!("Error while sending ping to websocket: {}", err);
+                                daemon_status.write().websocket_status = Err(err.into());
+                                break;
+                            };
                         }
                     }
                 }
             }
+            backoff.sleep().await;
         }
-    }
+    });
 
-    Ok(())
+    info!("Daemon is now running");
+
+    match tokio::try_join!(scheduler_join, unix_join, websocket_handle,) {
+        Ok(_) => Ok(()),
+        Err(err) => Err(err.into()),
+    }
 }

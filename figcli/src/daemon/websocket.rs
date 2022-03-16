@@ -10,7 +10,7 @@ use tokio_tungstenite::{tungstenite::Message, MaybeTlsStream, WebSocketStream};
 use tracing::{debug, error, info};
 
 use crate::{
-    plugins,
+    daemon::scheduler::{Scheduler, SyncDotfiles},
     util::api::{api_host, ws_host},
 };
 
@@ -64,6 +64,7 @@ pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream
 
 pub async fn process_websocket(
     websocket_next: &Option<Result<Message, tokio_tungstenite::tungstenite::Error>>,
+    scheduler: &mut Scheduler,
 ) -> Result<ControlFlow<()>> {
     match websocket_next {
         Some(next) => match next {
@@ -77,13 +78,7 @@ pub async fn process_websocket(
                     match websocket_message_result {
                         Ok(websocket_message) => match websocket_message {
                             FigWebsocketMessage::DotfilesUpdated => {
-                                crate::cli::source::sync_based_on_settings().await?;
-                                tokio::task::spawn(async {
-                                    if let Err(err) = plugins::api::fetch_installed_plugins().await
-                                    {
-                                        error!("Error fetching installed plugins: {}", err);
-                                    }
-                                });
+                                scheduler.schedule_now(SyncDotfiles);
                             }
                             FigWebsocketMessage::SettingsUpdated {
                                 settings,

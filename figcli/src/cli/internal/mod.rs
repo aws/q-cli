@@ -1,8 +1,8 @@
 pub mod local_state;
 
-use super::source::TerminalNotification;
 use crate::{
     cli::installation::{self, InstallComponents},
+    dotfiles::notify::TerminalNotification,
     util::shell::{Shell, When},
 };
 

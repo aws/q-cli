@@ -38,6 +38,14 @@ pub fn set_default(key: impl AsRef<OsStr>, value: impl AsRef<OsStr>) -> Result<(
     Ok(())
 }
 
+pub async fn refresh_credentials() -> Result<Credentials> {
+    let mut creds = Credentials::load_credentials()?;
+    let aws_client = get_client()?;
+    creds.refresh_credentials(&aws_client, CLIENT_ID).await?;
+    creds.save_credentials()?;
+    Ok(creds)
+}
+
 pub async fn get_token() -> Result<String> {
     match Credentials::load_credentials() {
         Ok(mut creds) => {

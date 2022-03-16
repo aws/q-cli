@@ -1,5 +1,6 @@
 pub mod cli;
 pub mod daemon;
+pub mod dotfiles;
 pub mod plugins;
 pub mod util;
 

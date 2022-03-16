@@ -396,7 +396,7 @@ impl DoctorCheck for DaemonCheck {
         let init_system =
             crate::daemon::InitSystem::get_init_system().context("Could not get init system")?;
 
-        let daemon_fix_sleep_sec = 3;
+        let daemon_fix_sleep_sec = 5;
 
         macro_rules! daemon_fix {
             () => {
@@ -450,6 +450,7 @@ impl DoctorCheck for DaemonCheck {
                 reason: "LaunchAgents directory is not writable".into(),
                 info: vec![
                     "Make sure you have write permissions for the LaunchAgents directory".into(),
+                    format!("Path: {:?}", launch_agents_path).into(),
                     format!("Error: {}", err).into(),
                 ],
                 fix: Some(Box::new(move || Ok(()))),
@@ -458,14 +459,26 @@ impl DoctorCheck for DaemonCheck {
 
         match init_system.daemon_status()? {
             Some(0) => Ok(()),
-            Some(n) => Err(DoctorError::Error {
-                reason: "Daemon is not running".into(),
-                info: vec![
-                    format!("Daemon status: {}", n).into(),
-                    format!("Init system: {:?}", init_system).into(),
-                ],
-                fix: daemon_fix!(),
-            }),
+            Some(n) => {
+                let error_message = tokio::fs::read_to_string(
+                    &fig_directories::fig_dir()
+                        .context("Could not get fig dir")?
+                        .join("logs")
+                        .join("daemon-exit.log"),
+                )
+                .await
+                .ok();
+
+                Err(DoctorError::Error {
+                    reason: "Daemon is not running".into(),
+                    info: vec![
+                        format!("Daemon status: {}", n).into(),
+                        format!("Init system: {:?}", init_system).into(),
+                        format!("Error message: {}", error_message.unwrap_or_default()).into(),
+                    ],
+                    fix: daemon_fix!(),
+                })
+            }
             None => Err(DoctorError::Error {
                 reason: "Daemon is not running".into(),
                 info: vec![format!("Init system: {:?}", init_system).into()],
