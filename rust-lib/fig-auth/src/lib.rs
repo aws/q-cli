@@ -38,6 +38,20 @@ pub fn set_default(key: impl AsRef<OsStr>, value: impl AsRef<OsStr>) -> Result<(
     Ok(())
 }
 
+pub fn remove_default(key: impl AsRef<OsStr>) -> Result<()> {
+    let output = Command::new("defaults")
+        .arg("delete")
+        .arg("com.mschrage.fig")
+        .arg(key)
+        .output()?;
+
+    if !output.status.success() {
+        return Err(anyhow::anyhow!("defaults write failed"));
+    }
+
+    Ok(())
+}
+
 pub async fn get_token() -> Result<String> {
     match Credentials::load_credentials() {
         Ok(mut creds) => {
