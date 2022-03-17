@@ -85,7 +85,7 @@ pub async fn get_token() -> Result<String> {
                         id_token: Some(id_token),
                         access_token: Some(access_token),
                         refresh_token: Some(refresh_token),
-                        experation_time: None,
+                        expiration_time: None,
                     };
 
                     let client = get_client()?;

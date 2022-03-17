@@ -403,7 +403,7 @@ pub struct Credentials {
     pub access_token: Option<String>,
     pub id_token: Option<String>,
     pub refresh_token: Option<String>,
-    pub experation_time: Option<time::OffsetDateTime>,
+    pub expiration_time: Option<time::OffsetDateTime>,
 }
 
 impl Credentials {
@@ -419,7 +419,7 @@ impl Credentials {
             access_token,
             id_token,
             refresh_token,
-            experation_time: Some(
+            expiration_time: Some(
                 time::OffsetDateTime::now_utc() + time::Duration::seconds(expires_in.into()),
             ),
         }
@@ -503,7 +503,7 @@ impl Credentials {
             Some(auth_result) => {
                 self.access_token = auth_result.access_token;
                 self.id_token = auth_result.id_token;
-                self.experation_time = Some(
+                self.expiration_time = Some(
                     time::OffsetDateTime::now_utc()
                         + time::Duration::seconds(auth_result.expires_in.into()),
                 );
@@ -526,7 +526,7 @@ impl Credentials {
         self.access_token = None;
         self.id_token = None;
         self.refresh_token = None;
-        self.experation_time = None;
+        self.expiration_time = None;
     }
 
     pub fn get_access_token(&self) -> Option<&String> {
@@ -541,13 +541,13 @@ impl Credentials {
         self.refresh_token.as_ref()
     }
 
-    pub fn get_experation_time(&self) -> Option<&time::OffsetDateTime> {
-        self.experation_time.as_ref()
+    pub fn get_expiration_time(&self) -> Option<&time::OffsetDateTime> {
+        self.expiration_time.as_ref()
     }
 
     pub fn is_expired_epslion(&self, epsilon: time::Duration) -> bool {
-        match self.experation_time {
-            Some(experation_time) => experation_time + epsilon < time::OffsetDateTime::now_utc(),
+        match self.expiration_time {
+            Some(expiration_time) => expiration_time + epsilon < time::OffsetDateTime::now_utc(),
             None => false,
         }
     }
