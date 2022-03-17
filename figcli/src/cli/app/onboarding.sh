@@ -73,7 +73,6 @@ press_enter_to_continue() {
 
 # In case user quits script
 exit_script_nice() {
-  sed -i='' "s/FIG_ONBOARDING=.*/FIG_ONBOARDING=1/g" ~/.fig/user/config 2> /dev/null
 
 clear 
 cat <<EOF
@@ -420,7 +419,6 @@ echo
 
 
 # Make sure we are using OSX sed rather than GNU version
-sed -i='' "s/FIG_ONBOARDING=.*/FIG_ONBOARDING=1/g" ~/.fig/user/config 2> /dev/null
 fig hook event "Completed Shell Onboarding" 2>&1 1>/dev/null
 
 echo

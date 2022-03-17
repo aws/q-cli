@@ -112,10 +112,12 @@ impl AppSubcommand {
                     wait_for_activation: true,
                     verbose: true,
                 })?;
-                Command::new("bash")
-                    .args(["-c", include_str!("onboarding.sh")])
-                    .spawn()?
-                    .wait()?;
+                if state::set_value("user.onboarding", true).is_ok() {
+                    Command::new("bash")
+                        .args(["-c", include_str!("onboarding.sh")])
+                        .spawn()?
+                        .wait()?;
+                }
             }
             AppSubcommand::Prompts => {
                 if is_app_running() {

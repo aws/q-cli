@@ -14,10 +14,10 @@ class Credentials {
 
   fileprivate let backing: JSONStoreProvider
   fileprivate init(filePath: String) {
-    self.backing = JSONStoreProvider(backingFilePath: filePath, createIfNotExists: true)
+    self.backing = JSONStoreProvider(backingFilePath: filePath)
   }
   fileprivate init(fileURL: URL) {
-    self.backing = JSONStoreProvider(backingFilePath: fileURL.path, createIfNotExists: true)
+    self.backing = JSONStoreProvider(backingFilePath: fileURL.path)
   }
 
   func migrate() {
