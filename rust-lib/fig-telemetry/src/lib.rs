@@ -39,8 +39,19 @@ impl SegmentEvent {
     ///
     /// This includes email
     pub fn add_default_properties(&mut self) -> Result<&mut Self> {
-        self.properties
-            .insert("email".to_string(), fig_auth::get_default("email")?);
+        if let Some(email) = fig_auth::get_email() {
+            self.properties.insert("email".to_string(), email);
+        }
+
+        if let Ok(defaults_version) = fig_auth::get_default("versionAtPreviousLaunch") {
+            if let Some((version, build)) = defaults_version.split_once(',') {
+                self.properties
+                    .insert("version".to_string(), version.to_string());
+
+                self.properties
+                    .insert("build".to_string(), build.to_string());
+            }
+        }
 
         Ok(self)
     }
