@@ -258,7 +258,7 @@ pub async fn prompt_dotfiles_changed() -> Result<()> {
                 Some("none") => UpdatedVerbosity::None,
                 Some("minimal") => UpdatedVerbosity::Minimal,
                 Some("full") => UpdatedVerbosity::Full,
-                _ => UpdatedVerbosity::Full,
+                _ => UpdatedVerbosity::Minimal,
             };
 
             let source_immediately =

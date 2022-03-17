@@ -302,7 +302,11 @@ impl Cli {
         };
 
         if let Err(e) = result {
-            eprintln!("{:?}", e);
+            if env_level > LevelFilter::INFO {
+                eprintln!("{:?}", e);
+            } else {
+                eprintln!("{}", e);
+            }
             exit(1);
         }
     }
