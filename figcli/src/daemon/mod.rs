@@ -15,7 +15,8 @@ use crate::{
 use anyhow::{anyhow, Context, Result};
 use fig_ipc::{daemon::get_daemon_socket_path, recv_message, send_message};
 use fig_proto::daemon::diagnostic_response::{
-    settings_watcher_status, websocket_status, SettingsWatcherStatus, WebsocketStatus,
+    settings_watcher_status, unix_socket_status, websocket_status, SettingsWatcherStatus,
+    UnixSocketStatus, WebsocketStatus,
 };
 use futures::{SinkExt, StreamExt};
 use parking_lot::RwLock;
@@ -398,10 +399,27 @@ async fn spawn_unix_handler(
                                         }
                                 });
 
+                                let unix_socket_status =
+                                    (parts.is_empty() ||
+                                        parts.contains(&fig_proto::daemon::diagnostic_command::DiagnosticPart::UnixSocketStatus))
+                                    .then(|| {
+                                        match &daemon_status.unix_socket_status {
+                                            Ok(_) => UnixSocketStatus {
+                                                status: unix_socket_status::Status::Ok.into(),
+                                                error: None,
+                                            },
+                                            Err(err) => UnixSocketStatus {
+                                                status: unix_socket_status::Status::Error.into(),
+                                                error: Some(err.to_string()),
+                                            },
+                                        }
+                                });
+
                                 fig_proto::daemon::new_diagnostic_response(
                                     time_started_epoch,
                                     settings_watcher_status,
                                     websocket_status,
+                                    unix_socket_status,
                                 )
                             }
                         };
@@ -490,7 +508,7 @@ pub async fn daemon() -> Result<()> {
         .ok()
         .flatten()
     {
-        Some(_) => scheduler.schedule_random_delay(scheduler::SyncDotfiles, 0., 1200.),
+        Some(_) => scheduler.schedule_random_delay(scheduler::SyncDotfiles, 60., 1260.),
         None => scheduler.schedule_random_delay(scheduler::SyncDotfiles, 0., 60.),
     }
 
@@ -503,6 +521,7 @@ pub async fn daemon() -> Result<()> {
         loop {
             match spawn_incomming_unix_handler(daemon_status.clone()).await {
                 Ok(handle) => {
+                    daemon_status.write().unix_socket_status = Ok(());
                     backoff.reset();
                     if let Err(err) = handle.await {
                         error!("Error on unix handler join: {:?}", err);
@@ -528,6 +547,7 @@ pub async fn daemon() -> Result<()> {
         loop {
             match websocket::connect_to_fig_websocket().await {
                 Ok(mut websocket_stream) => {
+                    daemon_status.write().websocket_status = Ok(());
                     backoff.reset();
                     loop {
                         select! {
@@ -570,6 +590,7 @@ pub async fn daemon() -> Result<()> {
         loop {
             match spawn_settings_watcher(daemon_status.clone()).await {
                 Ok(join_handle) => {
+                    daemon_status.write().settings_watcher_status = Ok(());
                     backoff.reset();
                     if let Err(err) = join_handle.await {
                         error!("Error on settings watcher join: {:?}", err);

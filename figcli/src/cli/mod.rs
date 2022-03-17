@@ -22,10 +22,13 @@ use crate::{
     cli::installation::InstallComponents,
     daemon::{daemon, get_daemon},
     util::{
-        is_app_running, is_logged_in, launch_fig,
+        is_app_running, launch_fig,
         shell::{Shell, When},
+        LaunchOptions,
     },
 };
+
+use fig_auth::is_logged_in;
 
 use anyhow::{Context, Result};
 use clap::{ArgEnum, IntoApp, Parser, Subcommand};
@@ -302,7 +305,11 @@ impl Cli {
         };
 
         if let Err(e) = result {
-            eprintln!("{:?}", e);
+            if env_level > LevelFilter::INFO {
+                eprintln!("{:?}", e);
+            } else {
+                eprintln!("{}", e);
+            }
             exit(1);
         }
     }
@@ -336,7 +343,10 @@ async fn root_command() -> Result<()> {
             tokio::time::sleep(Duration::from_millis(1000)).await;
         }
 
-        launch_fig()?;
+        launch_fig(LaunchOptions {
+            wait_for_activation: true,
+            verbose: true,
+        })?;
 
         if is_logged_in() {
             open_ui_element(UiElement::MissionControl)
