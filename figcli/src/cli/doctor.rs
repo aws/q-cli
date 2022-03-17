@@ -748,7 +748,7 @@ impl DoctorCheck<DiagnosticsResponse> for InstallationScriptCheck {
             Ok(())
         } else {
             Err(DoctorError::Error {
-                reason: "Intall script not run".into(),
+                reason: "Install script not run".into(),
                 info: vec![],
                 fix: command_fix(vec!["fig", "app", "install"], None),
             })
