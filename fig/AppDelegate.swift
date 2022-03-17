@@ -116,7 +116,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     ]
 
     let hasLaunched = UserDefaults.standard.bool(forKey: "hasLaunched")
-    let email = UserDefaults.standard.string(forKey: "userEmail")
+    let email = Credentials.shared.getEmail() ??
+                  UserDefaults.standard.string(forKey: "userEmail")
 
     if !hasLaunched || email == nil {
       Defaults.shared.loggedIn = false
@@ -893,7 +894,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     // upgrade path!
     if previous != current {
-
+      Credentials.shared.migrate()
       Onboarding.setUpEnviroment()
 
       TelemetryProvider.shared.track(event: .updatedApp, with: [:])
