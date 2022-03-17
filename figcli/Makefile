@@ -101,6 +101,9 @@ install-native: build-native
 	mkdir -p ~/.local/bin/
 	install $(ARTIFACTS)/$(BINARY_NAME) ~/.local/bin/$(BINARY_NAME)
 
+generate-spec: install-native
+	~/.local/bin/$(BINARY_NAME) generate-fig-spec > spec.ts
+
 clean:
 	command -v cargo &>/dev/null && cargo clean
 	rm -rf $(TARGET_DIR)
