@@ -2,13 +2,12 @@
 
 use anyhow::{Context, Result};
 
-use crate::{
-    dotfiles::{
-        download_and_notify,
-        notify::{notify_terminal, TerminalNotification},
-    },
-    util::is_logged_in,
+use crate::dotfiles::{
+    download_and_notify,
+    notify::{notify_terminal, TerminalNotification},
 };
+
+use fig_auth::is_logged_in;
 
 /// Download the lastest dotfiles
 pub async fn source_cli() -> Result<()> {

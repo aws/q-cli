@@ -168,6 +168,12 @@ class IPC: UnixSocketServerDelegate {
 
   func handleCommand(_ message: Local_Command, from socket: Socket, using encoding: IPC.Encoding)
   throws {
+
+    Logger.log(message: "Recieved command message!", subsystem: .unix)
+
+    let json = try? message.jsonString()
+    Logger.log(message: json ?? "Could not decode message", subsystem: .unix)
+
     let messageId = message.id
     var response: CommandResponse?
 

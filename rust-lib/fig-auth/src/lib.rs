@@ -109,3 +109,7 @@ pub fn get_email() -> Option<String> {
         .ok()
         .or_else(|| Some(get_default("userEmail").ok()))?
 }
+
+pub fn is_logged_in() -> bool {
+    get_email().is_some()
+}

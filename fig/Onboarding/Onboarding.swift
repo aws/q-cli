@@ -148,9 +148,8 @@ class Onboarding {
                  response.error.joined(separator: "\n"))
     }
 
-    // Create config file and add default values if they do not exist
-    Config.shared.addIfNotPresent(key: "FIG_LOGGED_IN", value: "0")
-    Config.shared.addIfNotPresent(key: "FIG_ONBOARDING", value: "0")
+    // Create local state file and add default values if they do not exist
+    LocalState.shared.addIfNotPresent(key: LocalState.hasSeenOnboarding, value: false)
 
     // Install binaries in the appropriate location222
     symlinkBundleExecutable("figterm", to: binDirectory.appendingPathComponent("figterm").path)
@@ -161,10 +160,10 @@ class Onboarding {
     // Install launch agent that watches for Fig.app being trashed
     LaunchAgent.uninstallWatcher.addIfNotPresent()
 
-    "\(figcliPath) install --no-confirm".runInBackground(
-                                                completion: { _ in
-                                                  completion?()
-                                                })
+    Process.runAsync(command: figcliPath,
+                     args: ["install", "--no-confirm"]) { _ in
+      completion?()
+    }
   }
 
   static func symlinkBundleExecutable(_ executable: String, to path: String) {

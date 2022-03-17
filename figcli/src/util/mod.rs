@@ -191,22 +191,29 @@ pub fn is_app_running() -> bool {
     false
 }
 
-pub fn is_logged_in() -> bool {
-    fig_auth::get_email().is_some()
+pub struct LaunchOptions {
+    pub wait_for_activation: bool,
+    pub verbose: bool,
 }
 
 #[cfg(target_os = "macos")]
-pub fn launch_fig() -> Result<()> {
+pub fn launch_fig(opts: LaunchOptions) -> Result<()> {
     if is_app_running() {
         return Ok(());
     }
 
-    println!("\n→ Launching Fig...\n");
-    let mut child = Command::new("open")
+    if opts.verbose {
+        println!("\n→ Launching Fig...\n");
+    }
+
+    Command::new("open")
         .args(["-g", "-b", "com.mschrage.fig"])
-        .spawn()
+        .output()
         .context("\nUnable to launch Fig\n")?;
-    child.wait().ok();
+
+    if !opts.wait_for_activation {
+        return Ok(());
+    }
 
     if !is_app_running() {
         anyhow::bail!("\nUnable to launch Fig\n");
