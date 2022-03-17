@@ -15,7 +15,7 @@ use fig_ipc::{
 use fig_proto::hooks;
 use regex::Regex;
 use serde_json::json;
-use std::{process::Command, time::Duration};
+use std::{os::unix::prelude::CommandExt, process::Command, time::Duration};
 use tracing::{info, trace};
 
 use fig_settings::{settings, state};
@@ -115,8 +115,7 @@ impl AppSubcommand {
                 if state::set_value("user.onboarding", true).is_ok() {
                     Command::new("bash")
                         .args(["-c", include_str!("onboarding.sh")])
-                        .spawn()?
-                        .wait()?;
+                        .exec();
                 }
             }
             AppSubcommand::Prompts => {
