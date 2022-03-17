@@ -45,6 +45,14 @@ pub enum OutputFormat {
     Json,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ArgEnum)]
+pub enum Shells {
+    Bash,
+    Fish,
+    Zsh,
+    Fig,
+}
+
 #[derive(Debug, Subcommand)]
 pub enum CliRootCommands {
     #[clap(subcommand)]
@@ -128,7 +136,10 @@ pub enum CliRootCommands {
     },
     /// Generate the completion spec for Fig
     GenerateFigSpec,
-    Completion,
+    Completion {
+        #[clap(arg_enum, default_value = "zsh")]
+        shell: Shells,
+    },
     #[clap(subcommand)]
     Internal(internal::InternalSubcommand),
     Launch,
@@ -265,10 +276,23 @@ impl Cli {
                     issue::issue_cli(force, description).await
                 }
                 CliRootCommands::GenerateFigSpec => {
-                    println!("{}", Cli::generation_fig_completions());
+                    println!("{}", Cli::generation_completions(clap_complete_fig::Fig));
                     Ok(())
                 }
-                CliRootCommands::Completion => Ok(()),
+                CliRootCommands::Completion { shell } => {
+                    println!(
+                        "{}",
+                        match shell {
+                            Shells::Bash =>
+                                Cli::generation_completions(clap_complete::shells::Bash),
+                            Shells::Fish =>
+                                Cli::generation_completions(clap_complete::shells::Fish),
+                            Shells::Zsh => Cli::generation_completions(clap_complete::shells::Zsh),
+                            Shells::Fig => Cli::generation_completions(clap_complete_fig::Fig),
+                        }
+                    );
+                    Ok(())
+                }
                 CliRootCommands::Internal(internal_subcommand) => {
                     internal_subcommand.execute().await
                 }
@@ -314,16 +338,11 @@ impl Cli {
         }
     }
 
-    fn generation_fig_completions() -> String {
+    fn generation_completions(gen: impl clap_complete::Generator) -> String {
         let mut cli = Cli::command();
         let mut buffer = Vec::new();
 
-        clap_complete::generate(
-            clap_complete_fig::Fig,
-            &mut cli,
-            env!("CARGO_PKG_NAME"),
-            &mut buffer,
-        );
+        clap_complete::generate(gen, &mut cli, env!("CARGO_PKG_NAME"), &mut buffer);
 
         String::from_utf8_lossy(&buffer).into()
     }

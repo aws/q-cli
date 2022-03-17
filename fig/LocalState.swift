@@ -107,8 +107,7 @@ class LocalState: JSONStore {
 
   fileprivate let backing: JSONStoreProvider
   init(filePath: String) {
-    self.backing = JSONStoreProvider(backingFilePath: filePath,
-                                     createIfNotExists: true)
+    self.backing = JSONStoreProvider(backingFilePath: filePath)
   }
   init(fileURL: URL) {
     self.backing = JSONStoreProvider(backingFilePath: fileURL.path)
