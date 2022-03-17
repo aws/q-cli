@@ -71,9 +71,9 @@ fn shell_init(shell: &Shell, when: &When) -> Result<String> {
         if stdin().is_tty() && env::var("PROCESS_LAUNCHED_BY_FIG").is_err() {
             // if no value, assume that we have seen onboarding already.
             // this is explictly set in onboarding in macOS app.
-            let has_see_onboarding: bool = fig_settings::state::get_value("user.onboarding")?
-                .and_then(|v| v.as_str().map(String::from))
-                .and_then(|s| s.parse().ok())
+            let has_see_onboarding: bool = fig_settings::state::get_bool("user.onboarding")
+                .ok()
+                .flatten()
                 .unwrap_or(true);
 
             let terminal = Terminal::current_terminal();
