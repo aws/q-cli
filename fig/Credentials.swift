@@ -14,10 +14,20 @@ class Credentials {
 
   fileprivate let backing: JSONStoreProvider
   fileprivate init(filePath: String) {
-    self.backing = JSONStoreProvider(backingFilePath: filePath)
+    self.backing = JSONStoreProvider(backingFilePath: filePath, createIfNotExists: true)
   }
   fileprivate init(fileURL: URL) {
-    self.backing = JSONStoreProvider(backingFilePath: fileURL.path)
+    self.backing = JSONStoreProvider(backingFilePath: fileURL.path, createIfNotExists: true)
+  }
+
+  func migrate() {
+    guard let defaultsCredentials = Defaults.shared.credentialsToMigrate else {
+      return
+    }
+
+    for (key, value) in defaultsCredentials where value != nil {
+      self.backing.set(value: value, forKey: key)
+    }
   }
 
   func getEmail() -> String? {

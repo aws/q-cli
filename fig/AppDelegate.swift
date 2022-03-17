@@ -891,7 +891,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     // upgrade path!
     if previous != current {
-
+      Credentials.shared.migrate()
       Onboarding.setUpEnviroment()
 
       TelemetryProvider.shared.track(event: .updatedApp, with: [:])

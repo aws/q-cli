@@ -79,6 +79,19 @@ class Defaults {
     }
   }
 
+  var credentialsToMigrate: [String: String?]? {
+    guard !defaults.bool(forKey: "has_migrated_credentials") else {
+      return nil
+    }
+    return [
+      "email": defaults.string(forKey: "email"),
+      "access_token": defaults.string(forKey: "access_token"),
+      "id_token": defaults.string(forKey: "id_token"),
+      "refresh_token": defaults.string(forKey: "refresh_token"),
+      "expiration_time": defaults.string(forKey: "expiration_time")
+    ]
+  }
+
   var version: String {
     return Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "<unknown>"
   }

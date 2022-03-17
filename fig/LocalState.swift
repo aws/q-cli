@@ -25,9 +25,12 @@ class JSONStoreProvider: JSONStore {
   weak var delegate: JSONStoreDelegate?
   fileprivate var raw: [String: Any] = [:]
 
-  init(backingFilePath: String) {
+  init(backingFilePath: String, createIfNotExists: Bool = false) {
     self.backingFile = URL(fileURLWithPath: backingFilePath)
-    self.raw = self.load() ?? [:]
+    self.raw = self.load()
+    if createIfNotExists && !FileManager.default.fileExists(atPath: backingFilePath) {
+      self.serialize()
+    }
   }
 
   func set(value: Any?, forKey key: String) {
@@ -50,7 +53,7 @@ class JSONStoreProvider: JSONStore {
 
   func reload() {
     let previous = self.raw
-    self.raw = load() ?? [:]
+    self.raw = load()
     self.delegate?.storeDidReload(previousStore: previous)
   }
 
@@ -63,23 +66,19 @@ class JSONStoreProvider: JSONStore {
     }
   }
 
-  fileprivate func load() -> [String: Any]? {
+  fileprivate func load() -> [String: Any] {
     let path = self.backingFile.path
     guard FileManager.default.fileExists(atPath: path) else {
       Logger.log(message: "file \(path) does not exist", priority: .trace)
-      return nil
+      return [:]
     }
 
-    guard let json = try? String(contentsOfFile: path) else {
+    guard let json = try? String(contentsOfFile: path), json.count > 0 else {
       Logger.log(message: "file \(path) is empty", priority: .trace)
-      return nil
+      return [:]
     }
 
-    guard json.count > 0 else {
-      return nil
-    }
-
-    return json.parseAsJSON()
+    return json.parseAsJSON() ?? [:]
 
   }
 
