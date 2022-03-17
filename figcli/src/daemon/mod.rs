@@ -9,7 +9,7 @@ use crate::{
         launchd_plist::LaunchdPlist, settings_watcher::spawn_settings_watcher,
         systemd_unit::SystemdUnit, websocket::process_websocket,
     },
-    util::backoff::Backoff,
+    util::{backoff::Backoff, launch_fig, LaunchOptions},
 };
 
 use anyhow::{anyhow, Context, Result};
@@ -421,6 +421,31 @@ async fn spawn_unix_handler(
                                     websocket_status,
                                     unix_socket_status,
                                 )
+                            }
+                            fig_proto::daemon::daemon_message::Command::SelfUpdate(_) => {
+                                let success = match fig_ipc::command::update_command(true).await {
+                                    Ok(()) => {
+                                        tokio::task::spawn(async {
+                                            tokio::time::sleep(std::time::Duration::from_secs(5))
+                                                .await;
+
+                                            tokio::task::block_in_place(|| {
+                                                launch_fig(LaunchOptions {
+                                                    wait_for_activation: true,
+                                                    verbose: false,
+                                                })
+                                                .ok();
+                                            });
+                                        });
+                                        true
+                                    }
+                                    Err(err) => {
+                                        error!("Failed to update: {}", err);
+                                        false
+                                    }
+                                };
+
+                                fig_proto::daemon::new_self_update_response(success)
                             }
                         };
 

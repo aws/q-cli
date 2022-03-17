@@ -28,3 +28,22 @@ pub fn new_diagnostic_response(
         unix_socket_status,
     })
 }
+
+pub fn new_self_update_message() -> DaemonMessage {
+    DaemonMessage {
+        id: None,
+        no_response: None,
+        command: Some(daemon_message::Command::SelfUpdate(SelfUpdateCommand {})),
+    }
+}
+
+pub fn new_self_update_response(success: bool) -> daemon_response::Response {
+    daemon_response::Response::SelfUpdate(SelfUpdateResponse {
+        status: if success {
+            self_update_response::Status::Ok.into()
+        } else {
+            self_update_response::Status::Error.into()
+        },
+        error: None,
+    })
+}
