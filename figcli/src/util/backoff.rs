@@ -3,25 +3,27 @@ use std::{cmp, time::Duration};
 use std::future::Future;
 
 pub struct Backoff {
-    duration: Duration,
+    current_duration: Duration,
+    min_duration: Duration,
     max_duration: Duration,
 }
 
 impl Backoff {
-    pub fn new(duration: Duration, max_duration: Duration) -> Self {
+    pub fn new(min_duration: Duration, max_duration: Duration) -> Self {
         Self {
-            duration,
+            current_duration: min_duration,
+            min_duration,
             max_duration,
         }
     }
 
     pub fn reset(&mut self) {
-        self.duration = self.max_duration;
+        self.current_duration = self.min_duration;
     }
 
     pub async fn sleep(&mut self) {
-        let duration = self.duration;
-        self.duration = cmp::min(self.duration * 2, self.max_duration);
+        let duration = self.current_duration;
+        self.current_duration = cmp::min(self.current_duration * 2, self.max_duration);
         tokio::time::sleep(duration).await;
     }
 
