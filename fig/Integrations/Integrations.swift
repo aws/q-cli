@@ -26,6 +26,8 @@ class Integrations {
   static let PhpStorm = "com.jetbrains.PhpStorm"
   static let PyCharm = "com.jetbrains.pycharm"
   static let AppCode = "com.jetbrains.AppCode"
+  static let Rider = "com.jetbrains.rider"
+  static let CLion = "com.jetbrains.CLion"
 
   static let terminals: Set = [
     "com.googlecode.iterm2",
@@ -149,7 +151,10 @@ class Integrations {
       Integrations.PhpStorm: JetBrainsIntegration.PhpStorm,
       Integrations.GoLand: JetBrainsIntegration.GoLand,
       Integrations.PyCharm: JetBrainsIntegration.PyCharm,
-      Integrations.AppCode: JetBrainsIntegration.AppCode
+      Integrations.AppCode: JetBrainsIntegration.AppCode,
+      Integrations.CLion: JetBrainsIntegration.CLion,
+      Integrations.Rider: JetBrainsIntegration.Rider
+
     ]
 
     if forceIncludeExperimental {

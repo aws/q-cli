@@ -24,6 +24,7 @@ use std::{
     sync::Arc,
 };
 use thiserror::Error;
+use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 
 use crate::{password::generate_password, CLIENT_ID};
 
@@ -403,7 +404,8 @@ pub struct Credentials {
     pub access_token: Option<String>,
     pub id_token: Option<String>,
     pub refresh_token: Option<String>,
-    pub experation_time: Option<time::OffsetDateTime>,
+    #[serde(with = "time::serde::rfc3339::option")]
+    pub expiration_time: Option<time::OffsetDateTime>,
 }
 
 impl Credentials {
@@ -419,7 +421,7 @@ impl Credentials {
             access_token,
             id_token,
             refresh_token,
-            experation_time: Some(
+            expiration_time: Some(
                 time::OffsetDateTime::now_utc() + time::Duration::seconds(expires_in.into()),
             ),
         }
@@ -478,7 +480,43 @@ impl Credentials {
 
         let creds_file = File::open(data_dir.join("credentials.json"))?;
 
-        Ok(serde_json::from_reader(creds_file)?)
+        // Load the values in one by one from the json
+        let json: serde_json::Value = serde_json::from_reader(creds_file)?;
+
+        let email = json
+            .get("email")
+            .and_then(|email| email.as_str())
+            .map(String::from);
+
+        let access_token = json
+            .get("access_token")
+            .and_then(|access_token| access_token.as_str())
+            .map(String::from);
+
+        let id_token = json
+            .get("id_token")
+            .and_then(|id_token| id_token.as_str())
+            .map(String::from);
+
+        let refresh_token = json
+            .get("refresh_token")
+            .and_then(|refresh_token| refresh_token.as_str())
+            .map(String::from);
+
+        let expiration_time = json
+            .get("expiration_time")
+            .and_then(|expiration_time| expiration_time.as_str())
+            .and_then(|expiration_time| OffsetDateTime::parse(expiration_time, &Rfc3339).ok());
+
+        let creds = Credentials {
+            email,
+            access_token,
+            id_token,
+            refresh_token,
+            expiration_time,
+        };
+
+        Ok(creds)
     }
 
     pub async fn refresh_credentials(
@@ -503,7 +541,7 @@ impl Credentials {
             Some(auth_result) => {
                 self.access_token = auth_result.access_token;
                 self.id_token = auth_result.id_token;
-                self.experation_time = Some(
+                self.expiration_time = Some(
                     time::OffsetDateTime::now_utc()
                         + time::Duration::seconds(auth_result.expires_in.into()),
                 );
@@ -526,7 +564,7 @@ impl Credentials {
         self.access_token = None;
         self.id_token = None;
         self.refresh_token = None;
-        self.experation_time = None;
+        self.expiration_time = None;
     }
 
     pub fn get_access_token(&self) -> Option<&String> {
@@ -541,13 +579,13 @@ impl Credentials {
         self.refresh_token.as_ref()
     }
 
-    pub fn get_experation_time(&self) -> Option<&time::OffsetDateTime> {
-        self.experation_time.as_ref()
+    pub fn get_expiration_time(&self) -> Option<&time::OffsetDateTime> {
+        self.expiration_time.as_ref()
     }
 
     pub fn is_expired_epslion(&self, epsilon: time::Duration) -> bool {
-        match self.experation_time {
-            Some(experation_time) => experation_time + epsilon < time::OffsetDateTime::now_utc(),
+        match self.expiration_time {
+            Some(expiration_time) => expiration_time + epsilon < time::OffsetDateTime::now_utc(),
             None => false,
         }
     }
