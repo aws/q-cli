@@ -174,6 +174,14 @@ pub async fn uninstall_mac_app() {
         tokio::fs::remove_dir_all(&app_path).await.ok();
     }
 
+    // Delete data dir
+    if let Some(fig_data_dir) = fig_directories::fig_data_dir() {
+        match tokio::fs::remove_dir_all(&fig_data_dir).await {
+            Ok(_) => info!("Removed {}", fig_data_dir.display()),
+            Err(err) => error!("Could not remove {}: {}", fig_data_dir.display(), err),
+        }
+    }
+
     info!("Deleted app");
 
     // Uninstall dotfiles, daemon, and CLI

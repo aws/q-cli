@@ -803,6 +803,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
       // Remove ~/.fig
       try? FileManager.default.removeItem(atPath: "\(NSHomeDirectory())/.fig")
 
+      // Remove ~/Library/Application Support/fig
+      try? FileManager.default.removeItem(at: URL.dataDirectory)
+
       // Remove launch agents
       if let agents = try? FileManager.default.contentsOfDirectory(atPath:
                                                                    "\(NSHomeDirectory())/Library/LaunchAgents/") {
