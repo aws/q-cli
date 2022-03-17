@@ -11,13 +11,15 @@ import ZIPFoundation
 
 class JetBrainsIntegration: InputMethodDependentTerminalIntegrationProvider & IntegrationProvider {
 
-  static let idea   = JetBrainsIntegration(bundleIdentifier: Integrations.Intellij)
+  static let idea     = JetBrainsIntegration(bundleIdentifier: Integrations.Intellij)
   static let ideaCE   = JetBrainsIntegration(bundleIdentifier: Integrations.IntellijCE)
   static let WebStorm = JetBrainsIntegration(bundleIdentifier: Integrations.WebStorm)
   static let GoLand   = JetBrainsIntegration(bundleIdentifier: Integrations.GoLand)
   static let PhpStorm = JetBrainsIntegration(bundleIdentifier: Integrations.PhpStorm)
   static let PyCharm  = JetBrainsIntegration(bundleIdentifier: Integrations.PyCharm)
   static let AppCode  = JetBrainsIntegration(bundleIdentifier: Integrations.AppCode)
+  static let CLion    = JetBrainsIntegration(bundleIdentifier: Integrations.CLion)
+  static let Rider    = JetBrainsIntegration(bundleIdentifier: Integrations.Rider)
 
   static let plugin = Plugin(name: "jetbrains-extension",
                              version: "2.0.0",
