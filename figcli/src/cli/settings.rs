@@ -6,7 +6,7 @@ use serde_json::json;
 use std::process::Command;
 
 use super::util::app_not_running_message;
-use crate::util::launch_fig;
+use crate::util::{launch_fig, LaunchOptions};
 
 #[derive(Debug, Subcommand)]
 pub enum SettingsSubcommands {
@@ -103,7 +103,10 @@ impl SettingsArgs {
                 None => {
                     println!();
 
-                    launch_fig()?;
+                    launch_fig(LaunchOptions {
+                        wait_for_activation: true,
+                        verbose: true,
+                    })?;
 
                     let res = open_ui_element(UiElement::Settings).await;
                     if res.is_err() {

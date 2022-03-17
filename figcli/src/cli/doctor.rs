@@ -7,6 +7,7 @@ use crate::{
         app_path_from_bundle_id, get_shell, glob, glob_dir, is_executable_in_path, launch_fig,
         shell::{Shell, ShellFileIntegration},
         terminal::Terminal,
+        LaunchOptions,
     },
 };
 
@@ -1453,7 +1454,11 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
     .await?;
 
     // If user is logged in, launch fig.
-    launch_fig().ok();
+    launch_fig(LaunchOptions {
+        wait_for_activation: true,
+        verbose: true,
+    })
+    .ok();
 
     let shell_integrations: Vec<_> = [Shell::Bash, Shell::Zsh, Shell::Fish]
         .into_iter()

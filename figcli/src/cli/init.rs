@@ -1,10 +1,14 @@
 use crate::{
     dotfiles::api::DotfileData,
-    util::shell::{Shell, When},
+    util::{
+        shell::{Shell, When},
+        terminal::Terminal,
+    },
 };
 use anyhow::{Context, Result};
 use crossterm::tty::IsTty;
-use std::io::stdin;
+use fig_auth::is_logged_in;
+use std::{env, io::stdin};
 
 fn guard_source<F: Fn() -> Option<String>>(
     shell: &Shell,
@@ -64,13 +68,28 @@ fn shell_init(shell: &Shell, when: &When) -> Result<String> {
             to_source.push_str(&source);
         }
 
-        if stdin().is_tty() {
-            let get_prompts_source = || -> Option<String> { Some("fig app prompts".into()) };
+        if stdin().is_tty() && env::var("PROCESS_LAUNCHED_BY_FIG").is_err() {
+            // if no value, assume that we have seen onboarding already.
+            // this is explictly set in onboarding in macOS app.
+            let has_see_onboarding: bool = fig_settings::state::get_value("user.onboarding")?
+                .and_then(|v| v.as_str().map(String::from))
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(true);
 
-            if let Some(source) =
-                guard_source(shell, true, "FIG_CHECKED_PROMPTS", get_prompts_source)
+            let terminal = Terminal::current_terminal();
+
+            if is_logged_in()
+                && !has_see_onboarding
+                && [Some(Terminal::Iterm), Some(Terminal::TerminalApp)].contains(&terminal)
             {
-                to_source.push_str(&source);
+                to_source.push_str("fig app onboarding")
+            } else {
+                // not showing onboarding
+                if let Some(source) = guard_source(shell, false, "FIG_CHECKED_PROMPTS", || {
+                    Some("(fig app prompts &)".to_string())
+                }) {
+                    to_source.push_str(&source);
+                }
             }
         }
     }
