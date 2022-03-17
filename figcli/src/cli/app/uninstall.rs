@@ -65,7 +65,6 @@ pub async fn uninstall_mac_app() {
     }
 
     // Delete fig defaults
-    let uuid = fig_auth::get_default("uuid").unwrap_or_default();
     tokio::process::Command::new("defaults")
         .args(["delete", "com.mschrage.fig"])
         .output()
@@ -73,11 +72,6 @@ pub async fn uninstall_mac_app() {
         .ok();
     tokio::process::Command::new("defaults")
         .args(["delete", "com.mschrage.fig.shared"])
-        .output()
-        .await
-        .ok();
-    tokio::process::Command::new("defaults")
-        .args(["write", "com.mschrage.fig", "uuid", &uuid])
         .output()
         .await
         .ok();
