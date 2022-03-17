@@ -144,6 +144,9 @@ extension LocalState {
   static let userShell = "userShell"
   static let hasSeenOnboarding = "user.onboarding"
 
+  static let userExplictlyQuitApp = "APP_TERMINATED_BY_USER"
+  static let userLoggedIn = "FIG_LOGGED_IN"
+
   static let logging = "developer.logging"
   static let loggingEnabledInternally = "developer.logging.internal"
   static let colorfulLogging = "developer.logging.color"
