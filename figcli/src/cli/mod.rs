@@ -11,7 +11,6 @@ pub mod installation;
 pub mod internal;
 pub mod invite;
 pub mod issue;
-pub mod plugins;
 pub mod settings;
 pub mod source;
 pub mod theme;
@@ -25,15 +24,17 @@ use crate::{
     util::{
         is_app_running, launch_fig,
         shell::{Shell, When},
+        LaunchOptions,
     },
 };
 
+use fig_auth::is_logged_in;
+
 use anyhow::{Context, Result};
 use clap::{ArgEnum, IntoApp, Parser, Subcommand};
-use crossterm::style::Stylize;
-use fig_ipc::command::open_ui_element;
+use fig_ipc::command::{open_ui_element, quit_command};
 use fig_proto::local::UiElement;
-use std::{fs::File, process::exit, str::FromStr};
+use std::{fs::File, process::exit, str::FromStr, time::Duration};
 use tracing::{debug, level_filters::LevelFilter};
 
 use self::app::AppSubcommand;
@@ -77,6 +78,9 @@ pub enum CliRootCommands {
     Diagnostic {
         #[clap(long, short, arg_enum, default_value = "plain")]
         format: OutputFormat,
+        /// Force limited diagnostic output
+        #[clap(long)]
+        force: bool,
     },
     /// Generate the dotfiles for the given shell
     #[clap(hide = true)]
@@ -122,9 +126,6 @@ pub enum CliRootCommands {
         #[clap(long)]
         strict: bool,
     },
-    /// Plugins management
-    #[clap(subcommand)]
-    Plugins(plugins::PluginsSubcommand),
     /// Generate the completion spec for Fig
     GenerateFigSpec,
     Completion,
@@ -222,9 +223,22 @@ impl Cli {
                     installation::update_cli(no_confirm).await
                 }
                 CliRootCommands::Tips(tips_subcommand) => tips_subcommand.execute().await,
-                CliRootCommands::Daemon => daemon().await,
-                CliRootCommands::Diagnostic { format } => {
-                    diagnostics::diagnostics_cli(format).await
+                CliRootCommands::Daemon => {
+                    let res = daemon().await;
+                    if let Err(err) = &res {
+                        std::fs::write(
+                            fig_directories::fig_dir()
+                                .unwrap()
+                                .join("logs")
+                                .join("daemon-exit.log"),
+                            format!("{:?}", err),
+                        )
+                        .ok();
+                    }
+                    res
+                }
+                CliRootCommands::Diagnostic { format, force } => {
+                    diagnostics::diagnostics_cli(format, force).await
                 }
                 CliRootCommands::Init { shell, when } => init::shell_init_cli(&shell, &when).await,
                 CliRootCommands::Source => source::source_cli().await,
@@ -237,14 +251,19 @@ impl Cli {
                 CliRootCommands::Invite => invite::invite_cli().await,
                 CliRootCommands::Tweet => tweet::tweet_cli(),
                 CliRootCommands::App(app_subcommand) => app_subcommand.execute().await,
-                CliRootCommands::Hook(hook_subcommand) => hook_subcommand.execute().await,
+                CliRootCommands::Hook(hook_subcommand) => {
+                    // Hooks should exit silently on failure.
+                    if hook_subcommand.execute().await.is_err() {
+                        exit(1);
+                    }
+                    Ok(())
+                }
                 CliRootCommands::Theme { theme } => theme::theme_cli(theme).await,
                 CliRootCommands::Settings(settings_args) => settings_args.execute().await,
                 CliRootCommands::Debug(debug_subcommand) => debug_subcommand.execute().await,
                 CliRootCommands::Issue { force, description } => {
                     issue::issue_cli(force, description).await
                 }
-                CliRootCommands::Plugins(plugins_subcommand) => plugins_subcommand.execute().await,
                 CliRootCommands::GenerateFigSpec => {
                     println!("{}", Cli::generation_fig_completions());
                     Ok(())
@@ -254,7 +273,7 @@ impl Cli {
                     internal_subcommand.execute().await
                 }
                 CliRootCommands::Launch => {
-                    let app_res = app::launch_fig_cli(true);
+                    let app_res = app::launch_fig_cli();
                     if let Ok(daemon) = get_daemon() {
                         daemon.start().ok();
                     }
@@ -274,13 +293,7 @@ impl Cli {
                     }
                     app_res
                 }
-                CliRootCommands::Alpha => {
-                    println!();
-                    launch_fig(true).ok();
-                    println!("→ Launching dotfiles!");
-                    println!();
-                    open_ui_element(UiElement::MissionControl).await
-                }
+                CliRootCommands::Alpha => root_command().await,
                 CliRootCommands::Onboarding => AppSubcommand::Onboarding.execute().await,
                 CliRootCommands::FigAppRunning => {
                     println!("{}", if is_app_running() { "1" } else { "0" });
@@ -313,46 +326,40 @@ impl Cli {
 }
 
 async fn root_command() -> Result<()> {
-    println!();
-
     // Launch fig if it is not running
     #[cfg(target_os = "macos")]
     {
-        launch_fig(true).ok();
-
-        for i in 0.. {
-            // Loop for 5 seconds to wait for the socket to exist
-            match fig_ipc::command::open_ui_element(fig_proto::local::UiElement::MissionControl)
-                .await
-            {
-                Ok(_) => break,
-                Err(_) => {
-                    if i == 9 {
-                        println!(
-                            "→ Looks like we had an {} launching the Fig desktop app",
-                            "error".red()
-                        );
-                        println!("  To fix please run {}", "fig doctor".magenta());
-                        break;
-                    }
-                }
+        if !is_logged_in() && is_app_running() {
+            if quit_command().await.is_err() {
+                anyhow::bail!(
+                    "\nFig is running but you are not logged in. Please quit Fig from the menu\
+                    bar and try again\n"
+                );
             }
+            tokio::time::sleep(Duration::from_millis(1000)).await;
+        }
 
-            // Sleep for a bit
-            std::thread::sleep(std::time::Duration::from_millis(500));
+        launch_fig(LaunchOptions {
+            wait_for_activation: true,
+            verbose: true,
+        })?;
+
+        if is_logged_in() {
+            open_ui_element(UiElement::MissionControl)
+                .await
+                .context("\nCould not launch fig\n")?;
         }
     }
 
     #[cfg(not(target_os = "macos"))]
     {
         println!(
-            "→ Opening {}...",
+            "\n→ Opening {}...\n",
             "https://app.fig.io".magenta().underlined()
         );
         util::open_url("https://app.fig.io").ok();
     }
 
-    println!();
     Ok(())
 }
 

@@ -1,12 +1,12 @@
 use anyhow::{Context, Result};
 use clap::{ArgGroup, Args, Subcommand};
-use crossterm::style::Stylize;
 use fig_ipc::command::{open_ui_element, restart_settings_listener};
 use fig_proto::local::UiElement;
 use serde_json::json;
 use std::process::Command;
 
-use crate::util::launch_fig;
+use super::util::app_not_running_message;
+use crate::util::{launch_fig, LaunchOptions};
 
 #[derive(Debug, Subcommand)]
 pub enum SettingsSubcommands {
@@ -38,11 +38,7 @@ impl SettingsArgs {
     pub async fn execute(&self) -> Result<()> {
         macro_rules! print_connection_error {
             () => {
-                println!(
-                    "\n{}\nFig might not be running, to launch Fig run: {}\n",
-                    "Unable to connect to Fig".bold(),
-                    "fig launch".magenta()
-                )
+                println!("{}", app_not_running_message());
             };
         }
 
@@ -107,7 +103,10 @@ impl SettingsArgs {
                 None => {
                     println!();
 
-                    launch_fig(true)?;
+                    launch_fig(LaunchOptions {
+                        wait_for_activation: true,
+                        verbose: true,
+                    })?;
 
                     let res = open_ui_element(UiElement::Settings).await;
                     if res.is_err() {

@@ -1,4 +1,5 @@
 use anyhow::{Context, Result};
+use crossterm::style::Stylize;
 use dialoguer::theme::ColorfulTheme;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -202,6 +203,22 @@ impl OSVersion {
             _ => false,
         }
     }
+}
+
+pub fn app_not_running_message() -> String {
+    format!(
+        "\n{}\nFig might not be running, to launch Fig run: {}\n",
+        "Unable to connect to Fig".bold(),
+        "fig launch".magenta()
+    )
+}
+
+pub fn login_message() -> String {
+    format!(
+        "\n{}\nLooks like you aren't logged in to fig, to login run: {}\n",
+        "Not logged in".bold(),
+        "fig login".magenta()
+    )
 }
 
 pub fn get_fig_version() -> Result<(String, String)> {

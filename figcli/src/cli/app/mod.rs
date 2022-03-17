@@ -1,6 +1,9 @@
 pub mod uninstall;
 
-use crate::cli::debug::get_app_info;
+use crate::{
+    cli::debug::get_app_info,
+    util::{launch_fig, LaunchOptions},
+};
 
 use anyhow::{Context, Result};
 use clap::Subcommand;
@@ -36,21 +39,16 @@ fn is_app_running() -> bool {
     }
 }
 
-pub fn launch_fig_cli(verbose: bool) -> Result<()> {
+pub fn launch_fig_cli() -> Result<()> {
     if is_app_running() {
-        if verbose {
-            println!("\n→ Fig is already running.\n");
-        }
+        println!("\n→ Fig is already running.\n");
         return Ok(());
     }
 
-    if verbose {
-        println!("\n→ Launching Fig...\n");
-    }
-    Command::new("open")
-        .args(["-g", "-b", "com.mschrage.fig"])
-        .spawn()
-        .context("\n→ Fig could not be launched.\n")?;
+    launch_fig(LaunchOptions {
+        wait_for_activation: true,
+        verbose: true,
+    })?;
     Ok(())
 }
 
@@ -89,10 +87,15 @@ pub async fn quit_fig() -> Result<()> {
 }
 
 pub async fn restart_fig() -> Result<()> {
-    if restart_command().await.is_err() {
-        launch_fig_cli(true)
+    if !is_app_running() {
+        launch_fig_cli()
     } else {
         println!("\n→ Restarting Fig...\n");
+        if restart_command().await.is_err() {
+            println!("\nUnable to restart Fig\n");
+        } else {
+            tokio::time::sleep(Duration::from_millis(1000)).await;
+        }
         Ok(())
     }
 }
@@ -104,8 +107,10 @@ impl AppSubcommand {
                 fig_ipc::command::run_install_script_command().await?;
             }
             AppSubcommand::Onboarding => {
-                fig_settings::state::set_value("user.onboarding", true)?;
-
+                launch_fig(LaunchOptions {
+                    wait_for_activation: true,
+                    verbose: true,
+                })?;
                 Command::new("bash")
                     .args(["-c", include_str!("onboarding.sh")])
                     .spawn()?
@@ -114,7 +119,6 @@ impl AppSubcommand {
             AppSubcommand::Prompts => {
                 if is_app_running() {
                     let new_version = state::get_string("NEW_VERSION_AVAILABLE")?;
-                    println!("{}", new_version.is_some());
                     if new_version.is_some() {
                         let no_autoupdates =
                             settings::get_bool("app.disableAutoupdates")?.unwrap_or(false);
@@ -124,7 +128,7 @@ impl AppSubcommand {
                                 "A new version of Fig is available. (Autoupdates are disabled)"
                             );
                         } else {
-                            println!("Updating Fig to latest version...");
+                            println!("Updating {} to latest version...", "Fig".magenta());
                             let already_seen_hint: bool =
                                 state::get_bool("DISPLAYED_AUTOUPDATE_SETTINGS_HINT")?
                                     .unwrap_or(false);
@@ -140,14 +144,18 @@ impl AppSubcommand {
                             // Sleep for a bit
                             tokio::time::sleep(std::time::Duration::from_millis(3000)).await;
 
-                            launch_fig_cli(false)?;
+                            launch_fig(LaunchOptions {
+                                wait_for_activation: true,
+                                verbose: false,
+                            })
+                            .ok();
                         }
                     }
                 } else {
                     let no_autolaunch =
                         settings::get_bool("app.disableAutolaunch")?.unwrap_or(false);
-
-                    if !no_autolaunch {
+                    let user_quit_app = state::get_bool("APP_TERMINATED_BY_USER")?.unwrap_or(false);
+                    if !no_autolaunch && !user_quit_app {
                         let already_seen_hint: bool =
                             fig_settings::state::get_bool("DISPLAYED_AUTOLAUNCH_SETTINGS_HINT")?
                                 .unwrap_or(false);
@@ -160,7 +168,10 @@ impl AppSubcommand {
                             )?
                         }
 
-                        launch_fig_cli(false)?;
+                        launch_fig(LaunchOptions {
+                            wait_for_activation: false,
+                            verbose: false,
+                        })?;
                     }
                 }
             }
@@ -169,7 +180,7 @@ impl AppSubcommand {
             }
             AppSubcommand::Restart => restart_fig().await?,
             AppSubcommand::Quit => quit_fig().await?,
-            AppSubcommand::Launch => launch_fig_cli(true)?,
+            AppSubcommand::Launch => launch_fig_cli()?,
             AppSubcommand::Running => {
                 println!("{}", if is_app_running() { "1" } else { "0" });
             }

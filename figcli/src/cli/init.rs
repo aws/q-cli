@@ -1,31 +1,14 @@
-use crate::util::{
-    shell::{Shell, When},
-    terminal::Terminal,
+use crate::{
+    dotfiles::api::DotfileData,
+    util::{
+        shell::{Shell, When},
+        terminal::Terminal,
+    },
 };
 use anyhow::{Context, Result};
 use crossterm::tty::IsTty;
 use fig_auth::is_logged_in;
-use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, env, io::stdin};
-
-/// The data for a single shell
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct DotfileData {
-    pub dotfile: String,
-    #[serde(with = "time::serde::rfc3339::option")]
-    pub updated_at: Option<time::OffsetDateTime>,
-}
-
-/// The data for all the shells
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct DotfilesData {
-    #[serde(with = "time::serde::rfc3339::option")]
-    pub updated_at: Option<time::OffsetDateTime>,
-    #[serde(flatten)]
-    pub dotfiles: HashMap<Shell, String>,
-}
+use std::{env, io::stdin};
 
 fn guard_source<F: Fn() -> Option<String>>(
     shell: &Shell,
@@ -103,7 +86,7 @@ fn shell_init(shell: &Shell, when: &When) -> Result<String> {
             } else {
                 // not showing onboarding
                 if let Some(source) = guard_source(shell, false, "FIG_CHECKED_PROMPTS", || {
-                    Some("fig app prompts &".to_string())
+                    Some("(fig app prompts &)".to_string())
                 }) {
                     to_source.push_str(&source);
                 }

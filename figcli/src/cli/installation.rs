@@ -182,10 +182,13 @@ pub async fn update(update_type: UpdateType) -> Result<UpdateStatus> {
     // Let desktop app handle updates on macOS
     #[cfg(target_os = "macos")]
     {
-        use crate::util::launch_fig;
+        use crate::util::{launch_fig, LaunchOptions};
         use fig_ipc::command::update_command;
 
-        launch_fig(false)?;
+        launch_fig(LaunchOptions {
+            wait_for_activation: true,
+            verbose: true,
+        })?;
 
         let desktop_app_update = update_command(update_type == UpdateType::NoConfirm).await;
         match desktop_app_update {

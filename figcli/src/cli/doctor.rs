@@ -4,9 +4,10 @@ use crate::{
         util::OSVersion,
     },
     util::{
-        app_path_from_bundle_id, get_shell, glob, glob_dir, is_executable_in_path,
+        app_path_from_bundle_id, get_shell, glob, glob_dir, is_executable_in_path, launch_fig,
         shell::{Shell, ShellFileIntegration},
         terminal::Terminal,
+        LaunchOptions,
     },
 };
 
@@ -17,7 +18,6 @@ use crossterm::{
     style::Stylize,
     terminal::{disable_raw_mode, enable_raw_mode, Clear, ClearType},
 };
-use fig_auth::Credentials;
 use fig_ipc::{connect_timeout, get_fig_socket_path, send_recv_message};
 use fig_proto::{
     daemon::diagnostic_response::{settings_watcher_status, websocket_status},
@@ -396,7 +396,7 @@ impl DoctorCheck for DaemonCheck {
         let init_system =
             crate::daemon::InitSystem::get_init_system().context("Could not get init system")?;
 
-        let daemon_fix_sleep_sec = 3;
+        let daemon_fix_sleep_sec = 5;
 
         macro_rules! daemon_fix {
             () => {
@@ -450,6 +450,7 @@ impl DoctorCheck for DaemonCheck {
                 reason: "LaunchAgents directory is not writable".into(),
                 info: vec![
                     "Make sure you have write permissions for the LaunchAgents directory".into(),
+                    format!("Path: {:?}", launch_agents_path).into(),
                     format!("Error: {}", err).into(),
                 ],
                 fix: Some(Box::new(move || Ok(()))),
@@ -458,14 +459,26 @@ impl DoctorCheck for DaemonCheck {
 
         match init_system.daemon_status()? {
             Some(0) => Ok(()),
-            Some(n) => Err(DoctorError::Error {
-                reason: "Daemon is not running".into(),
-                info: vec![
-                    format!("Daemon status: {}", n).into(),
-                    format!("Init system: {:?}", init_system).into(),
-                ],
-                fix: daemon_fix!(),
-            }),
+            Some(n) => {
+                let error_message = tokio::fs::read_to_string(
+                    &fig_directories::fig_dir()
+                        .context("Could not get fig dir")?
+                        .join("logs")
+                        .join("daemon-exit.log"),
+                )
+                .await
+                .ok();
+
+                Err(DoctorError::Error {
+                    reason: "Daemon is not running".into(),
+                    info: vec![
+                        format!("Daemon status: {}", n).into(),
+                        format!("Init system: {:?}", init_system).into(),
+                        format!("Error message: {}", error_message.unwrap_or_default()).into(),
+                    ],
+                    fix: daemon_fix!(),
+                })
+            }
             None => Err(DoctorError::Error {
                 reason: "Daemon is not running".into(),
                 info: vec![format!("Init system: {:?}", init_system).into()],
@@ -1239,15 +1252,11 @@ impl DoctorCheck for LoginStatusCheck {
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        if let Ok(creds) = Credentials::load_credentials() {
-            if creds.get_access_token().is_some()
-                && creds.get_id_token().is_some()
-                && creds.get_refresh_token().is_some()
-            {
-                return Ok(());
-            }
+        // We reload the credentials here because we want to check if the user is logged in
+        match fig_auth::refresh_credentals().await {
+            Ok(_) => Ok(()),
+            Err(_) => Err(anyhow!("Not logged in. Run `fig login` to login.").into()),
         }
-        return Err(anyhow!("Not logged in. Run `fig login` to login.").into());
     }
 }
 
@@ -1265,7 +1274,13 @@ where
     if config.verbose {
         println!("{}", header.as_ref().dark_grey());
     }
-    let mut context = get_context().await?;
+    let mut context = match get_context().await {
+        Ok(c) => c,
+        Err(e) => {
+            println!("Failed to get context: {:?}", e);
+            anyhow::bail!(e);
+        }
+    };
     for check in checks {
         let name: String = check.name().into();
         let check_type: DoctorCheckType = check.get_type(&context);
@@ -1438,6 +1453,13 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
     )
     .await?;
 
+    // If user is logged in, launch fig.
+    launch_fig(LaunchOptions {
+        wait_for_activation: true,
+        verbose: true,
+    })
+    .ok();
+
     let shell_integrations: Vec<_> = [Shell::Bash, Shell::Zsh, Shell::Fish]
         .into_iter()
         .map(|shell| shell.get_shell_integrations())
@@ -1451,16 +1473,17 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         .iter()
         .map(|p| (&*p) as &dyn DoctorCheck<_>)
         .collect();
-    run_checks_with_context(
-        "Let's check your dotfiles...",
-        all_dotfile_checks,
-        get_shell_context,
-        config,
-        &mut spinner,
-    )
-    .await?;
 
     let status = async {
+        run_checks_with_context(
+            "Let's check your dotfiles...",
+            all_dotfile_checks,
+            get_shell_context,
+            config,
+            &mut spinner,
+        )
+        .await?;
+
         run_checks(
             "Let's make sure Fig is running...".into(),
             vec![

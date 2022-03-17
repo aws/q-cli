@@ -38,6 +38,14 @@ pub fn set_default(key: impl AsRef<OsStr>, value: impl AsRef<OsStr>) -> Result<(
     Ok(())
 }
 
+pub async fn refresh_credentals() -> Result<Credentials> {
+    let mut creds = Credentials::load_credentials()?;
+    let aws_client = get_client()?;
+    creds.refresh_credentials(&aws_client, CLIENT_ID).await?;
+    creds.save_credentials()?;
+    Ok(creds)
+}
+
 pub fn remove_default(key: impl AsRef<OsStr>) -> Result<()> {
     let output = Command::new("defaults")
         .arg("delete")
@@ -103,9 +111,5 @@ pub fn get_email() -> Option<String> {
 }
 
 pub fn is_logged_in() -> bool {
-    Credentials::load_credentials()
-        .map(|creds| creds.email)
-        .ok()
-        .or_else(|| Some(get_default("userEmail").ok()))
-        != None
+    get_email().is_some()
 }

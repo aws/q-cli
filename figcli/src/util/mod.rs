@@ -7,9 +7,11 @@ use std::{
     process::Command,
 };
 
+use fig_ipc::get_fig_socket_path;
 use sysinfo::{get_current_pid, ProcessExt, System, SystemExt};
 
 pub mod api;
+pub mod backoff;
 pub mod checksum;
 pub mod shell;
 pub mod sync;
@@ -189,26 +191,48 @@ pub fn is_app_running() -> bool {
     false
 }
 
+pub struct LaunchOptions {
+    pub wait_for_activation: bool,
+    pub verbose: bool,
+}
+
 #[cfg(target_os = "macos")]
-pub fn launch_fig(print: bool) -> Result<()> {
+pub fn launch_fig(opts: LaunchOptions) -> Result<()> {
     if is_app_running() {
         return Ok(());
     }
 
-    if print {
-        println!("→ Launching Fig...");
+    if opts.verbose {
+        println!("\n→ Launching Fig...\n");
     }
 
     Command::new("open")
         .args(["-g", "-b", "com.mschrage.fig"])
-        .spawn()
-        .context("fig could not be launched")?;
-    std::thread::sleep(std::time::Duration::from_secs(3));
-    Ok(())
+        .output()
+        .context("\nUnable to launch Fig\n")?;
+
+    if !opts.wait_for_activation {
+        return Ok(());
+    }
+
+    if !is_app_running() {
+        anyhow::bail!("\nUnable to launch Fig\n");
+    }
+
+    // Wait for socket to exist
+    let path = get_fig_socket_path();
+    for _ in 0..9 {
+        if path.exists() {
+            return Ok(());
+        }
+        // Sleep for a bit
+        std::thread::sleep(std::time::Duration::from_millis(500));
+    }
+    anyhow::bail!("\nUnable to finish launching Fig properly\n")
 }
 
 #[cfg(not(any(target_os = "macos")))]
-pub fn launch_fig(_print: bool) -> Result<()> {
+pub fn launch_fig() -> Result<()> {
     unimplemented!();
 }
 
