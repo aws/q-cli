@@ -13,6 +13,8 @@ message DaemonMessage {
     oneof command {
         // A request to get diagnostic information from the daemon
         DiagnosticCommand diagnostic = 101;
+        // A request to tigger a self-update if possible
+        SelfUpdateCommand self_update = 102;
     }
 }
 
@@ -23,6 +25,8 @@ message DaemonResponse {
 	oneof response {
         // A response to a diagnostic command
         DiagnosticResponse diagnostic = 101;
+        // A response to a self-update command
+        SelfUpdateResponse self_update = 102;
 	}
 }
 
@@ -85,3 +89,17 @@ message DiagnosticResponse {
     optional UnixSocketStatus unix_socket_status = 4;
 }
 
+// Command to tigger the daemon to attempt to self-update Fig if possible
+message SelfUpdateCommand { }
+
+// Response to SelfUpdateCommand
+message SelfUpdateResponse {
+    // Status of the update
+    enum Status {
+        ERROR = 0;
+        OK = 1;
+    }
+
+    Status status = 1;
+    optional string error = 2;
+}

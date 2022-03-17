@@ -30,6 +30,8 @@ pub async fn uninstall_mac_app() {
                     );
                 }
 
+                event.add_property("source", "fig app uninstall");
+
                 if let Err(err) = event.send_event().await {
                     error!("Could not send telemetry event: {}", err);
                 }

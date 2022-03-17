@@ -16,6 +16,7 @@ use fig_proto::hooks;
 use regex::Regex;
 use serde_json::json;
 use std::{process::Command, time::Duration};
+use tracing::{info, trace};
 
 use fig_settings::{settings, state};
 
@@ -120,14 +121,19 @@ impl AppSubcommand {
                 if is_app_running() {
                     let new_version = state::get_string("NEW_VERSION_AVAILABLE")?;
                     if new_version.is_some() {
+                        info!("New version {} is available", new_version.unwrap());
                         let no_autoupdates =
                             settings::get_bool("app.disableAutoupdates")?.unwrap_or(false);
 
                         if no_autoupdates {
+                            trace!("autoupdates are disabled.");
+
                             println!(
                                 "A new version of Fig is available. (Autoupdates are disabled)"
                             );
                         } else {
+                            trace!("starting autoupdate");
+
                             println!("Updating {} to latest version...", "Fig".magenta());
                             let already_seen_hint: bool =
                                 state::get_bool("DISPLAYED_AUTOUPDATE_SETTINGS_HINT")?
@@ -138,12 +144,14 @@ impl AppSubcommand {
                                 state::set_value("DISPLAYED_AUTOUPDATE_SETTINGS_HINT", true)?
                             }
 
-                            // trigger forced update. This will quick the macOS app.
+                            // trigger forced update. This will QUIT the macOS app, it must be relaunched...
+                            trace!("sending update commands to macOS app");
                             update_command(true).await?;
 
                             // Sleep for a bit
                             tokio::time::sleep(std::time::Duration::from_millis(3000)).await;
 
+                            trace!("launching updated version of Fig");
                             launch_fig(LaunchOptions {
                                 wait_for_activation: true,
                                 verbose: false,

@@ -85,9 +85,12 @@ fn shell_init(shell: &Shell, when: &When) -> Result<String> {
                 to_source.push_str("fig app onboarding")
             } else {
                 // not showing onboarding
-                if let Some(source) = guard_source(shell, false, "FIG_CHECKED_PROMPTS", || {
-                    Some("(fig app prompts &)".to_string())
-                }) {
+                if let Some(source) =
+                    guard_source(shell, false, "FIG_CHECKED_PROMPTS", || match shell {
+                        Shell::Bash | Shell::Zsh => Some("(fig app prompts &)".to_string()),
+                        Shell::Fish => Some("begin; fig app prompts &; end".to_string()),
+                    })
+                {
                     to_source.push_str(&source);
                 }
             }

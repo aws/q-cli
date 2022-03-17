@@ -132,7 +132,8 @@ impl ShellIntegration {
 #[derive(Debug, Clone)]
 pub struct ShellFileIntegration {
     pub shell: Shell,
-    pub path: PathBuf,
+    pub directory: PathBuf,
+    pub filename: &'static str,
     pub pre: bool,
     pub post: bool,
     pub remove_on_uninstall: bool,
@@ -150,6 +151,10 @@ impl ShellFileIntegration {
         }
     }
 
+    pub fn path(&self) -> PathBuf {
+        self.directory.join(self.filename)
+    }
+
     pub fn post_integration(&self) -> Option<ShellIntegration> {
         if self.post {
             Some(ShellIntegration {
@@ -162,13 +167,14 @@ impl ShellFileIntegration {
     }
 
     pub fn uninstall(&self) -> Result<()> {
-        if self.path.exists() {
+        let path = self.path();
+        if path.exists() {
             if self.remove_on_uninstall {
-                std::fs::remove_file(self.path.as_path())?;
+                std::fs::remove_file(path.as_path())?;
                 return Ok(());
             }
 
-            let mut contents = std::fs::read_to_string(&self.path)?;
+            let mut contents = std::fs::read_to_string(&path)?;
 
             // Remove comment lines
             contents = Regex::new(r"(?mi)^#.*fig.*var.*$\n?")?
@@ -209,16 +215,17 @@ impl ShellFileIntegration {
             contents = contents.trim().to_string();
             contents.push('\n');
 
-            std::fs::write(&self.path, contents.as_bytes())?;
+            std::fs::write(&path, contents.as_bytes())?;
         }
 
         Ok(())
     }
 
     pub fn install(&self, backup_dir: Option<&Path>) -> Result<()> {
+        let path = self.path();
         let mut contents = String::new();
-        if self.path.exists() {
-            if let Some(name) = self.path.file_name() {
+        if path.exists() {
+            if let Some(name) = path.file_name() {
                 let backup = match backup_dir {
                     Some(backup) => Some(backup.to_path_buf()),
                     None => {
@@ -237,7 +244,7 @@ impl ShellFileIntegration {
 
                 if let Some(backup) = backup {
                     std::fs::create_dir_all(backup.as_path()).context("Could not back up file")?;
-                    std::fs::copy(self.path.as_path(), backup.join(name).as_path())
+                    std::fs::copy(path.as_path(), backup.join(name).as_path())
                         .context("Could not back up file")?;
                 }
             }
@@ -245,8 +252,8 @@ impl ShellFileIntegration {
             // Remove existing integration.
             self.uninstall()?;
 
-            if self.path.exists() {
-                let mut file = File::open(&self.path)?;
+            if path.exists() {
+                let mut file = File::open(&path)?;
                 file.read_to_string(&mut contents)?;
             }
         }
@@ -274,7 +281,7 @@ impl ShellFileIntegration {
         }
 
         if modified {
-            let mut file = File::create(&self.path)?;
+            let mut file = File::create(&path)?;
             file.write_all(new_contents.as_bytes())?;
         }
 
@@ -306,20 +313,23 @@ impl Shell {
 
         let path = match self {
             Shell::Bash => {
-                let mut configs = vec![home_dir.join(".bashrc")];
-                let other_configs: Vec<_> = [".profile", ".bash_login", ".bash_profile"]
-                    .into_iter()
-                    .map(|f| home_dir.join(f))
-                    .collect();
-                configs.extend(other_configs.clone().into_iter().filter(|f| f.exists()));
+                let mut configs = vec![".bashrc"];
+                let other_configs: Vec<_> = vec![".profile", ".bash_login", ".bash_profile"];
+                configs.extend(
+                    other_configs
+                        .clone()
+                        .into_iter()
+                        .filter(|f| home_dir.join(f).exists()),
+                );
                 // Include .profile if none of [.profile, .bash_login, .bash_profile] exist.
                 if configs.len() == 1 {
-                    configs.push(other_configs.first().unwrap().into());
+                    configs.push(other_configs.first().unwrap());
                 }
                 configs
                     .into_iter()
-                    .map(|path| ShellFileIntegration {
-                        path,
+                    .map(|filename| ShellFileIntegration {
+                        directory: home_dir.clone(),
+                        filename,
                         pre: true,
                         post: true,
                         shell: *self,
@@ -332,10 +342,11 @@ impl Shell {
                     .or_else(|_| std::env::var("FIG_ZDOTDIR"))
                     .map(PathBuf::from)
                     .unwrap_or_else(|_| home_dir);
-                vec![zdotdir.join(".zshrc"), zdotdir.join(".zprofile")]
+                vec![".zshrc", ".zprofile"]
                     .into_iter()
-                    .map(|path| ShellFileIntegration {
-                        path,
+                    .map(|filename| ShellFileIntegration {
+                        directory: zdotdir.clone(),
+                        filename,
                         pre: true,
                         post: true,
                         shell: *self,
@@ -350,14 +361,16 @@ impl Shell {
                     .join("conf.d");
                 vec![
                     ShellFileIntegration {
-                        path: fish_config_dir.join("00_fig_pre.fish"),
+                        directory: fish_config_dir.clone(),
+                        filename: "00_fig_pre.fish",
                         shell: *self,
                         pre: true,
                         post: false,
                         remove_on_uninstall: true,
                     },
                     ShellFileIntegration {
-                        path: fish_config_dir.join("99_fig_post.fish"),
+                        directory: fish_config_dir,
+                        filename: "99_fig_post.fish",
                         shell: *self,
                         pre: false,
                         post: true,

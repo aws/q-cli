@@ -44,7 +44,7 @@ impl LocalStateArgs {
         match self.cmd {
             Some(LocalStateSubcommand::Init) => match restart_settings_listener().await {
                 Ok(()) => {
-                    println!("\nState listener restarted.\n");
+                    println!("\nState listener restarted\n");
                     Ok(())
                 }
                 Err(err) => {
@@ -56,7 +56,7 @@ impl LocalStateArgs {
                 let path = fig_settings::state::state_path().context("Could not get state path")?;
                 match Command::new("open").arg(path).status()?.success() {
                     true => Ok(()),
-                    false => Err(anyhow!("Could not open state file.")),
+                    false => Err(anyhow!("Could not open state file")),
                 }
             }
             None => match &self.key {
@@ -66,7 +66,7 @@ impl LocalStateArgs {
                             println!("{}", serde_json::to_string_pretty(&value)?);
                             Ok(())
                         }
-                        None => Err(anyhow!("No value associated with {}.", key)),
+                        None => Err(anyhow!("No value associated with {}", key)),
                     },
                     (None, true) => {
                         fig_settings::state::remove_value(key)?;
@@ -80,9 +80,9 @@ impl LocalStateArgs {
                         println!("Successfully updated state");
                         Ok(())
                     }
-                    (Some(_), true) => Err(anyhow!("Cannot delete a value with a value.")),
+                    (Some(_), true) => Err(anyhow!("Cannot delete a value with a value")),
                 },
-                None => Err(anyhow!("{}", "No key specified.")),
+                None => Err(anyhow!("{}", "No key specified")),
             },
         }
     }

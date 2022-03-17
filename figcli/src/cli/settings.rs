@@ -48,7 +48,7 @@ impl SettingsArgs {
 
                 match res {
                     Ok(()) => {
-                        println!("\nSettings listener restarted.\n");
+                        println!("\nSettings listener restarted\n");
                         Ok(())
                     }
                     Err(err) => {
@@ -67,7 +67,7 @@ impl SettingsArgs {
 
                 match success {
                     true => Ok(()),
-                    false => Err(anyhow!("Could not open settings file.")),
+                    false => Err(anyhow!("Could not open settings file")),
                 }
             }
             Some(SettingsSubcommands::Open) => {
@@ -75,7 +75,7 @@ impl SettingsArgs {
                     .context("Could not get settings path")?;
                 match Command::new("open").arg(path).status()?.success() {
                     true => Ok(()),
-                    false => Err(anyhow!("Could not open settings file.")),
+                    false => Err(anyhow!("Could not open settings file")),
                 }
             }
             None => match &self.key {
@@ -85,7 +85,7 @@ impl SettingsArgs {
                             println!("{}", serde_json::to_string_pretty(&value)?);
                             Ok(())
                         }
-                        None => Err(anyhow::anyhow!("No value associated with {}.", key)),
+                        None => Err(anyhow::anyhow!("No value associated with {}", key)),
                     },
                     (Some(value_str), false) => {
                         let value =
@@ -93,10 +93,10 @@ impl SettingsArgs {
                         let remote_result = fig_settings::settings::set_value(key, value).await?;
                         match remote_result {
                             Ok(()) => {
-                                println!("Error syncing settings.");
+                                println!("Successfully updated settings");
                                 Ok(())
                             }
-                            Err(_) => Err(anyhow!("Successfully updated settings")),
+                            Err(_) => Err(anyhow!("Error syncing settings")),
                         }
                     }
                     (None, true) => {
@@ -106,7 +106,7 @@ impl SettingsArgs {
                                 println!("Successfully updated settings");
                                 Ok(())
                             }
-                            Err(_) => Err(anyhow!("Error syncing settings.")),
+                            Err(_) => Err(anyhow!("Error syncing settings")),
                         }
                     }
                     _ => Ok(()),
