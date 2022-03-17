@@ -102,7 +102,7 @@ install-native: build-native
 	install $(ARTIFACTS)/$(BINARY_NAME) ~/.local/bin/$(BINARY_NAME)
 
 generate-spec: install-native
-	~/.local/bin/$(BINARY_NAME) generate-fig-spec > spec.ts
+	~/.local/bin/$(BINARY_NAME) compleation fig > spec.ts
 
 clean:
 	command -v cargo &>/dev/null && cargo clean
