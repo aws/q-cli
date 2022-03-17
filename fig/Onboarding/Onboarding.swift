@@ -161,10 +161,12 @@ class Onboarding {
     // Install launch agent that watches for Fig.app being trashed
     LaunchAgent.uninstallWatcher.addIfNotPresent()
 
-    "\(figcliPath) install --no-confirm".runInBackground(
-                                                completion: { _ in
-                                                  completion?()
-                                                })
+    Process.runAsync(command: figcliPath,
+                     args: ["install", "--no-confirm"]) { _ in
+      completion?()
+      TelemetryProvider.shared.identify(with: [ "version": Diagnostic.version,
+                                                "build": Diagnostic.build ])
+    }
   }
 
   static func symlinkBundleExecutable(_ executable: String, to path: String) {
