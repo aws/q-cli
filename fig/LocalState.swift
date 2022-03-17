@@ -25,10 +25,10 @@ class JSONStoreProvider: JSONStore {
   weak var delegate: JSONStoreDelegate?
   fileprivate var raw: [String: Any] = [:]
 
-  init(backingFilePath: String, createIfNotExists: Bool = false) {
+  init(backingFilePath: String) {
     self.backingFile = URL(fileURLWithPath: backingFilePath)
     self.raw = self.load()
-    if createIfNotExists && !FileManager.default.fileExists(atPath: backingFilePath) {
+    if !FileManager.default.fileExists(atPath: backingFilePath) {
       self.serialize()
     }
   }
@@ -107,7 +107,8 @@ class LocalState: JSONStore {
 
   fileprivate let backing: JSONStoreProvider
   init(filePath: String) {
-    self.backing = JSONStoreProvider(backingFilePath: filePath)
+    self.backing = JSONStoreProvider(backingFilePath: filePath,
+                                     createIfNotExists: true)
   }
   init(fileURL: URL) {
     self.backing = JSONStoreProvider(backingFilePath: fileURL.path)
