@@ -441,30 +441,60 @@ impl Credentials {
             // Set permissions to 0600
             creds_file.set_permissions(std::os::unix::fs::PermissionsExt::from_mode(0o600))?;
         }
+
+        serde_json::to_writer(&mut creds_file, self)?;
+
         #[cfg(target_os = "macos")]
         {
             use crate::{remove_default, set_default};
 
-            if let Some(id) = &self.id_token {
-                set_default("id_token", id)?;
-            } else {
-                remove_default("id_token")?;
+            match &self.id_token {
+                Some(id) => {
+                    set_default("id_token", id)?;
+                }
+                None => {
+                    remove_default("id_token").ok();
+                }
             }
 
-            if let Some(access) = &self.access_token {
-                set_default("access_token", access)?;
-            } else {
-                remove_default("access_token")?;
+            match &self.access_token {
+                Some(access) => {
+                    set_default("access_token", access)?;
+                }
+                None => {
+                    remove_default("access_token").ok();
+                }
             }
 
-            if let Some(refresh) = &self.refresh_token {
-                set_default("refresh_token", refresh)?;
-            } else {
-                remove_default("refresh_token")?;
+            match &self.refresh_token {
+                Some(refresh) => {
+                    set_default("refresh_token", refresh)?;
+                }
+                None => {
+                    remove_default("refresh_token").ok();
+                }
+            }
+
+            match &self.email {
+                Some(email) => {
+                    set_default("userEmail", email)?;
+                }
+                None => {
+                    remove_default("userEmail").ok();
+                }
+            }
+
+            match &self.expiration_time {
+                Some(time) => {
+                    if let Ok(formatted_time) = time.format(&Rfc3339) {
+                        set_default("expiration_time", formatted_time)?;
+                    }
+                }
+                None => {
+                    remove_default("expiration_time").ok();
+                }
             }
         }
-
-        serde_json::to_writer(&mut creds_file, self)?;
 
         Ok(())
     }
@@ -481,7 +511,8 @@ impl Credentials {
         let creds_file = File::open(data_dir.join("credentials.json"))?;
 
         // Load the values in one by one from the json
-        let json: serde_json::Value = serde_json::from_reader(creds_file)?;
+        let json: serde_json::Value = serde_json::from_reader(creds_file)
+            .unwrap_or_else(|_| serde_json::Value::Object(serde_json::Map::new()));
 
         let email = json
             .get("email")
@@ -561,6 +592,7 @@ impl Credentials {
 
     /// Clear the values of the credentials
     pub fn clear_cridentials(&mut self) {
+        self.email = None;
         self.access_token = None;
         self.id_token = None;
         self.refresh_token = None;
