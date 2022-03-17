@@ -28,6 +28,8 @@ class Credentials {
     for (key, value) in defaultsCredentials where value != nil {
       self.backing.set(value: value, forKey: key)
     }
+
+    Defaults.shared.credentialsHaveMigrated = true
   }
 
   func getEmail() -> String? {

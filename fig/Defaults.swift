@@ -79,8 +79,17 @@ class Defaults {
     }
   }
 
+  var credentialsHaveMigrated: Bool {
+    get {
+      return defaults.bool(forKey: "has_migrated_credentials")
+    }
+
+    set(flag) {
+      defaults.set(flag, forKey: "has_migrated_credentials")
+    }
+  }
   var credentialsToMigrate: [String: String?]? {
-    guard !defaults.bool(forKey: "has_migrated_credentials") else {
+    guard !credentialsHaveMigrated else {
       return nil
     }
     return [
