@@ -10,6 +10,10 @@ use aws_sdk_cognitoidentityprovider::{
     Client, Config, Region, RetryConfig,
 };
 use aws_smithy_async::rt::sleep::TokioSleep;
+use aws_smithy_client::{
+    erase::{DynConnector, DynMiddleware},
+    hyper_ext,
+};
 use base64::encode;
 use fig_directories::fig_data_dir;
 use serde::{Deserialize, Serialize};
@@ -21,16 +25,33 @@ use std::{
 };
 use thiserror::Error;
 
-use crate::password::generate_password;
+use crate::{password::generate_password, CLIENT_ID};
 
-pub fn get_client() -> anyhow::Result<Client> {
-    let config = Config::builder()
-        .region(Region::new("us-east-1"))
-        .retry_config(RetryConfig::new().with_max_attempts(5))
-        .sleep_impl(Arc::new(TokioSleep::new()))
+pub fn get_client() -> anyhow::Result<aws_sdk_cognitoidentityprovider::Client> {
+    let https = hyper_rustls::HttpsConnectorBuilder::new()
+        .with_webpki_roots()
+        .https_or_http()
+        .enable_http1()
         .build();
 
-    Ok(Client::from_conf(config))
+    let hyper_connector = hyper_ext::Adapter::builder().build(https);
+
+    let mut client: aws_smithy_client::Client<DynConnector, DynMiddleware<DynConnector>> =
+        aws_smithy_client::Builder::new()
+            .connector(DynConnector::new(hyper_connector))
+            .middleware(DynMiddleware::new(
+                aws_sdk_cognitoidentityprovider::middleware::DefaultMiddleware::new(),
+            ))
+            .sleep_impl(Some(Arc::new(TokioSleep::new())))
+            .build();
+
+    client.set_retry_config(RetryConfig::new().with_max_attempts(5).into());
+
+    let config = Config::builder().region(Region::new("us-east-1")).build();
+
+    Ok(aws_sdk_cognitoidentityprovider::Client::with_config(
+        client, config,
+    ))
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -418,31 +439,30 @@ impl Credentials {
             // Set permissions to 0600
             creds_file.set_permissions(std::os::unix::fs::PermissionsExt::from_mode(0o600))?;
         }
-
-        #[cfg(windows)]
-        {
-            // TODO: Set permissions to 0600 equivalent
-        }
-
-        serde_json::to_writer(&mut creds_file, self)?;
-
         #[cfg(target_os = "macos")]
         {
-            // Set the values in macos defaults
-            use crate::set_default;
+            use crate::{remove_default, set_default};
 
             if let Some(id) = &self.id_token {
                 set_default("id_token", id)?;
+            } else {
+                remove_default("id_token")?;
             }
 
             if let Some(access) = &self.access_token {
                 set_default("access_token", access)?;
+            } else {
+                remove_default("access_token")?;
             }
 
             if let Some(refresh) = &self.refresh_token {
                 set_default("refresh_token", refresh)?;
+            } else {
+                remove_default("refresh_token")?;
             }
         }
+
+        serde_json::to_writer(&mut creds_file, self)?;
 
         Ok(())
     }
@@ -494,9 +514,15 @@ impl Credentials {
         Ok(())
     }
 
+    // Refresh credentials with the default `client` and `client_id`
+    pub async fn refresh_credentials_default(&mut self) -> anyhow::Result<()> {
+        let client = get_client()?;
+        self.refresh_credentials(&client, CLIENT_ID).await?;
+        Ok(())
+    }
+
     /// Clear the values of the credentials
     pub fn clear_cridentials(&mut self) {
-        self.email = None;
         self.access_token = None;
         self.id_token = None;
         self.refresh_token = None;
@@ -527,7 +553,7 @@ impl Credentials {
     }
 
     pub fn is_expired(&self) -> bool {
-        self.is_expired_epslion(time::Duration::minutes(1))
+        self.is_expired_epslion(time::Duration::minutes(60))
     }
 
     pub fn get_email(&self) -> Option<&String> {

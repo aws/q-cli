@@ -38,6 +38,28 @@ pub fn set_default(key: impl AsRef<OsStr>, value: impl AsRef<OsStr>) -> Result<(
     Ok(())
 }
 
+pub async fn refresh_credentals() -> Result<Credentials> {
+    let mut creds = Credentials::load_credentials()?;
+    let aws_client = get_client()?;
+    creds.refresh_credentials(&aws_client, CLIENT_ID).await?;
+    creds.save_credentials()?;
+    Ok(creds)
+}
+
+pub fn remove_default(key: impl AsRef<OsStr>) -> Result<()> {
+    let output = Command::new("defaults")
+        .arg("delete")
+        .arg("com.mschrage.fig")
+        .arg(key)
+        .output()?;
+
+    if !output.status.success() {
+        return Err(anyhow::anyhow!("defaults write failed"));
+    }
+
+    Ok(())
+}
+
 pub async fn get_token() -> Result<String> {
     match Credentials::load_credentials() {
         Ok(mut creds) => {
@@ -86,4 +108,8 @@ pub fn get_email() -> Option<String> {
         .map(|creds| creds.email)
         .ok()
         .or_else(|| Some(get_default("userEmail").ok()))?
+}
+
+pub fn is_logged_in() -> bool {
+    get_email().is_some()
 }

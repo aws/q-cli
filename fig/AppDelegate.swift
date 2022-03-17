@@ -77,7 +77,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
       with: ["crashed": Defaults.shared.launchedFollowingCrash ? "true" : "false"]
     )
     Defaults.shared.launchedFollowingCrash = true
-    Config.shared.set(value: nil, forKey: Config.userExplictlyQuitApp)
+    LocalState.shared.set(value: false, forKey: LocalState.userExplictlyQuitApp)
     Accessibility.checkIfPermissionRevoked()
 
     //        AppMover.moveIfNecessary()
@@ -124,9 +124,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
       Defaults.shared.clearExistingLineOnTerminalInsert = true
       Defaults.shared.showSidebar = false
 
-      Config.shared.set(value: "0", forKey: Config.userLoggedIn)
-      //            Defaults.shared.defaultActivePosition = .outsideRight
-
       let onboardingViewController = WebViewController()
       onboardingViewController.webView?.defaultURL = nil
       onboardingViewController.webView?.loadBundleApp("landing")
@@ -148,7 +145,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
       user.email = email
       SentrySDK.setUser(user)
       ShellBridge.symlinkCLI()
-      Config.shared.set(value: "1", forKey: Config.userLoggedIn)
+
       UpdateService.provider.resetShellConfig()
 
       if !Accessibility.enabled {
@@ -898,9 +895,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
       TelemetryProvider.shared.track(event: .updatedApp, with: [:])
 
-      // resolves a bug where Fig was added to login items multiple times
-      // if the appropriate setting is enabled, a single entry will be readded
-      LoginItems.shared.removeAllItemsMatchingBundleURL()
+      // assume that we have seen onboarding if we're upgrading!
+      LocalState.shared.set(value: true, forKey: LocalState.hasSeenOnboarding)
     }
 
     Defaults.shared.versionAtPreviousLaunch = current
@@ -1209,7 +1205,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
       NSStatusBar.system.removeStatusItem(statusbar)
     }
 
-    Config.shared.set(value: "1", forKey: Config.userExplictlyQuitApp)
+    LocalState.shared.set(value: true, forKey: LocalState.userExplictlyQuitApp)
 
     TelemetryProvider.shared.track(event: .quitApp, with: [:]) { (_, _, _) in
       DispatchQueue.main.async {
@@ -1255,6 +1251,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     // Ensure that fig.socket is deleted, so that if user switches acounts it can be recreated
     try? FileManager.default.removeItem(atPath: "/tmp/fig.socket")
+    try? FileManager.default.removeItem(at: IPC.unixSocket)
 
     Logger.log(message: "app will terminate...")
   }

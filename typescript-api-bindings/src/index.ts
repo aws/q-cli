@@ -15,8 +15,7 @@ import * as Debugger from './debugger';
 import * as Fig from './fig.pb';
 import * as Internal from './requests';
 
-// @ts-ignore
-window.f = {
+const lib = {
   WindowPosition,
   Settings,
   EditBufferNotifications,
@@ -50,3 +49,11 @@ export {
   Debugger,
   Process
 };
+
+declare global {
+    interface Window {
+      f: typeof lib;
+    }
+}
+
+window.f = lib;

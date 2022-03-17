@@ -78,7 +78,7 @@ exit_script_nice() {
 clear 
 cat <<EOF
 
-  ${BOLD}${UNDERLINE}Fig's onboarding was quit${NORMAL}"
+  ${BOLD}${UNDERLINE}Fig's onboarding was quit${NORMAL}
   
   You can redo this onboarding any time. Just run ${BOLD}${MAGENTA}fig onboarding${NORMAL}
    

@@ -1,16 +1,19 @@
 use std::{sync::Arc, time::Duration};
 
 use crate::util::fig_bundle;
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Context, Result};
 use fig_ipc::hook::send_hook_to_socket;
 use fig_proto::{hooks, local::file_changed_hook::FileChanged};
 use notify::{watcher, DebouncedEvent, RecursiveMode, Watcher};
 use parking_lot::RwLock;
+use tokio::task::JoinHandle;
 use tracing::{debug, error, info};
 
 use super::DaemonStatus;
 
-pub async fn spawn_settings_watcher(_daemon_status: Arc<RwLock<DaemonStatus>>) -> Result<()> {
+pub async fn spawn_settings_watcher(
+    daemon_status: Arc<RwLock<DaemonStatus>>,
+) -> Result<JoinHandle<()>> {
     // We need to spawn both a thread and a tokio task since the notify library does not
     // currently support async, this should be improved in the future, but currently this works fine
 
@@ -28,7 +31,9 @@ pub async fn spawn_settings_watcher(_daemon_status: Arc<RwLock<DaemonStatus>>) -
     let state_path_clone = state_path.clone();
     let application_path_clone = std::path::PathBuf::from(application_path);
 
-    tokio::task::spawn(async move {
+    let daemon_status_clone = daemon_status.clone();
+    let tokio_join = tokio::task::spawn(async move {
+        let daemon_status = daemon_status_clone;
         loop {
             match forward_rx.recv_async().await {
                 Ok(event) => {
@@ -75,13 +80,17 @@ pub async fn spawn_settings_watcher(_daemon_status: Arc<RwLock<DaemonStatus>>) -
                         }
                         DebouncedEvent::Error(err, path) => {
                             error!("Error watching settings ({:?}): {:?}", path, err);
+                            daemon_status.write().settings_watcher_status = Err(anyhow!(err));
                         }
                         event => {
                             debug!("Ignoring event: {:?}", event);
                         }
                     }
                 }
-                Err(_) => todo!(),
+                Err(err) => {
+                    daemon_status.write().settings_watcher_status = Err(anyhow!(err));
+                    break;
+                }
             }
         }
     });
@@ -91,28 +100,33 @@ pub async fn spawn_settings_watcher(_daemon_status: Arc<RwLock<DaemonStatus>>) -
 
         if let Err(err) = watcher.watch(&*settings_path, RecursiveMode::NonRecursive) {
             error!("Could not watch {:?}: {}", settings_path, err);
+            daemon_status.write().settings_watcher_status = Err(anyhow!(err));
         }
         if let Err(err) = watcher.watch(&*state_path, RecursiveMode::NonRecursive) {
             error!("Could not watch {:?}: {}", state_path, err);
+            daemon_status.write().settings_watcher_status = Err(anyhow!(err));
         }
 
         if let Err(err) = watcher.watch(&*application_path, RecursiveMode::NonRecursive) {
             error!("Could not watch {:?}: {}", application_path, err);
+            daemon_status.write().settings_watcher_status = Err(anyhow!(err));
         }
 
         loop {
             match settings_watcher_rx.recv() {
                 Ok(event) => {
-                    if let Err(e) = forward_tx.send(event) {
-                        error!("Error forwarding settings event: {}", e);
+                    if let Err(err) = forward_tx.send(event) {
+                        error!("Error forwarding settings event: {}", err);
+                        daemon_status.write().settings_watcher_status = Err(anyhow!(err));
                     }
                 }
                 Err(err) => {
                     error!("Settings watcher rx: {}", err);
+                    daemon_status.write().settings_watcher_status = Err(anyhow!(err));
                 }
             }
         }
     });
 
-    Ok(())
+    Ok(tokio_join)
 }

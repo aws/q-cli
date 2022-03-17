@@ -384,7 +384,7 @@ jobs:
 ############################################
 # Publish Homebrew Cask
 ############################################
-
+      # s3 bucket hasn't been updated yet, so this fails
       - name: "Bump Brew Cask Version"
         if: env.BUMP_CASK_PR == 1
         run: brew bump-cask-pr fig --version=${{env.VERSION}},${{env.BUILD}}  --no-browse --verbose --debug

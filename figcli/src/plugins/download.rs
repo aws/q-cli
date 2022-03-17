@@ -300,6 +300,7 @@ mod tests {
         assert!(result.is_ok());
     }
 
+    #[ignore]
     #[tokio::test]
     async fn test_download_source_git() {
         let branch = "main";
@@ -327,6 +328,7 @@ mod tests {
         assert_eq!(branch_stdout.trim(), "main");
     }
 
+    #[ignore]
     #[tokio::test]
     async fn test_download_source_github() {
         let commit = "d112d75ecc1d867e7f223577c25c56f57f862c7b";

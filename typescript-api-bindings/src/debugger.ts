@@ -8,12 +8,12 @@ import { sendDebuggerUpdateRequest } from './requests';
  */
 export function reportError({
   message,
-  color,
+  color
 }: {
   message: string[];
   color?: string;
 }) {
-  return sendDebuggerUpdateRequest({ color: color, layout: message });
+  return sendDebuggerUpdateRequest({ color, layout: message });
 }
 
 /**
