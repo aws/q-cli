@@ -13,7 +13,8 @@ members = [
     "rust-lib/ibus",
     "rust-lib/ibus/ibus-sys",
     "rust-lib/linux-test",
-    "fig-ibus-engine"
+    "fig-ibus-engine",
+    "linux-app/src-tauri"
 ]
 
 [profile.release]

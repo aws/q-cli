@@ -87,43 +87,38 @@ async fn demo() {
         loop {
             if let Ok((mut stream, _)) = app_listener.accept().await {
                 let app_state = app_state.clone();
-                tokio::spawn(async move {
-                    loop {
-                        use fig_proto::local::*;
-                        match fig_ipc::recv_message::<fig_proto::local::LocalMessage, _>(
-                            &mut stream,
-                        )
+                loop {
+                    use fig_proto::local::*;
+                    match fig_ipc::recv_message::<fig_proto::local::LocalMessage, _>(&mut stream)
                         .await
-                        {
-                            // i love protobuf
-                            // i originally had this formatted. it turned out to be too long. like, 20 lines
-                            Ok(Some(LocalMessage {
-                                r#type:
-                                    Some(local_message::Type::Hook(Hook {
-                                        hook:
-                                            Some(hook::Hook::EditBuffer(EditBufferHook {
-                                                text,
-                                                cursor,
-                                                ..
-                                            })),
-                                    })),
-                            })) => {
-                                let mut handle = app_state.lock().await;
-                                handle.text = text;
-                                handle.idx = cursor;
-                                drop(handle);
-                                print_updated_info(&app_state).await;
-                            }
-                            Ok(None) => break,
-                            Err(err) => {
-                                println!("error receiving message: {:?}", err);
-                                break;
-                            }
-                            _ => {}
+                    {
+                        // i love protobuf
+                        Ok(Some(LocalMessage {
+                            r#type:
+                                Some(local_message::Type::Hook(Hook {
+                                    hook:
+                                        Some(hook::Hook::EditBuffer(EditBufferHook {
+                                            text,
+                                            cursor,
+                                            ..
+                                        })),
+                                })),
+                        })) => {
+                            let mut handle = app_state.lock().await;
+                            handle.text = text;
+                            handle.idx = cursor;
+                            drop(handle);
+                            print_updated_info(&app_state).await;
                         }
+                        Ok(None) => break,
+                        Err(err) => {
+                            println!("error receiving message: {:?}", err);
+                            break;
+                        }
+                        _ => {}
                     }
-                });
-            }
+                }
+            };
         }
     });
 
@@ -270,8 +265,9 @@ async fn listen_for_linux_messages() {
                         Ok(Some(command)) => {
                             use fig_proto::linux::*;
                             if let Some(app_command::Command::SetCursorPosition(
-                                    set_cursor_position,
-                                )) = command.command {
+                                set_cursor_position,
+                            )) = command.command
+                            {
                                 println!(
                                     "set cursor position to {} {} {} {}",
                                     set_cursor_position.x,
