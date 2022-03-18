@@ -1,12 +1,13 @@
 name: 'Publish fig-cli spec version'
 on:
   push:
-    paths: figcli/src/**
+    paths: figcli/**
+    branches:
+      - master
   workflow_dispatch:
 
 jobs:
   push-to-fig-autocomplete:
-    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
