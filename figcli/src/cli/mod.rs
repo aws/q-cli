@@ -19,6 +19,7 @@ pub mod tweet;
 pub mod util;
 
 use crate::{
+    cli::util::dialoguer_theme,
     daemon::{daemon, get_daemon},
     util::{
         is_app_running, launch_fig,
@@ -222,24 +223,7 @@ impl Cli {
         let result = match self.subcommand {
             Some(subcommand) => match subcommand {
                 CliRootCommands::Install(args) => internal::install_cli_from_args(args),
-                CliRootCommands::Uninstall => {
-                    let success = if launch_fig(LaunchOptions {
-                        wait_for_activation: true,
-                        verbose: true,
-                    })
-                    .is_ok()
-                    {
-                        fig_ipc::command::uninstall_command().await.is_ok()
-                    } else {
-                        false
-                    };
-
-                    if !success {
-                        println!("\nFig is not running. Please launch Fig and try again to complete uninstall.\n");
-                    }
-
-                    Ok(())
-                }
+                CliRootCommands::Uninstall => uninstall_command().await,
                 CliRootCommands::Update { no_confirm } => {
                     installation::update_cli(no_confirm).await
                 }
@@ -356,6 +340,34 @@ impl Cli {
 
         String::from_utf8_lossy(&buffer).into()
     }
+}
+
+async fn uninstall_command() -> Result<()> {
+    let should_uninstall = dialoguer::Confirm::with_theme(&dialoguer_theme())
+        .with_prompt("Are you sure you want to uninstall Fig?")
+        .interact()?;
+
+    if !should_uninstall {
+        println!("Phew...");
+        return Ok(());
+    }
+
+    let success = if launch_fig(LaunchOptions {
+        wait_for_activation: true,
+        verbose: true,
+    })
+    .is_ok()
+    {
+        fig_ipc::command::uninstall_command().await.is_ok()
+    } else {
+        false
+    };
+
+    if !success {
+        println!("\nFig is not running. Please launch Fig and try again to complete uninstall.\n");
+    }
+
+    Ok(())
 }
 
 async fn root_command() -> Result<()> {
