@@ -185,10 +185,7 @@ pub async fn update(update_type: UpdateType) -> Result<UpdateStatus> {
         use crate::util::{launch_fig, LaunchOptions};
         use fig_ipc::command::update_command;
 
-        launch_fig(LaunchOptions {
-            wait_for_activation: true,
-            verbose: true,
-        })?;
+        launch_fig(LaunchOptions::new().wait_for_activation().verbose())?;
 
         let desktop_app_update = update_command(update_type == UpdateType::NoConfirm).await;
         match desktop_app_update {

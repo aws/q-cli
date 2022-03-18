@@ -1,13 +1,11 @@
-use anyhow::{Context, Result};
-use globset::{Glob, GlobSet, GlobSetBuilder};
 use std::{
     env,
-    ffi::OsStr,
     path::{Path, PathBuf},
     process::Command,
 };
 
-use fig_ipc::get_fig_socket_path;
+use anyhow::{Context, Result};
+use globset::{Glob, GlobSet, GlobSetBuilder};
 use sysinfo::{get_current_pid, ProcessExt, System, SystemExt};
 
 pub mod api;
@@ -106,7 +104,7 @@ where
 }
 
 #[cfg(target_os = "macos")]
-pub fn app_path_from_bundle_id(bundle_id: impl AsRef<OsStr>) -> Option<String> {
+pub fn app_path_from_bundle_id(bundle_id: impl AsRef<std::ffi::OsStr>) -> Option<String> {
     let installed_apps = Command::new("mdfind")
         .arg("kMDItemCFBundleIdentifier")
         .arg("=")
@@ -191,13 +189,37 @@ pub fn is_app_running() -> bool {
     false
 }
 
+#[derive(Debug, Clone, Copy, Default)]
+#[must_use]
 pub struct LaunchOptions {
     pub wait_for_activation: bool,
     pub verbose: bool,
 }
 
+impl LaunchOptions {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn wait_for_activation(self) -> Self {
+        Self {
+            wait_for_activation: true,
+            ..self
+        }
+    }
+
+    pub fn verbose(self) -> Self {
+        Self {
+            verbose: true,
+            ..self
+        }
+    }
+}
+
 #[cfg(target_os = "macos")]
 pub fn launch_fig(opts: LaunchOptions) -> Result<()> {
+    use fig_ipc::get_fig_socket_path;
+
     if is_app_running() {
         return Ok(());
     }
@@ -232,7 +254,7 @@ pub fn launch_fig(opts: LaunchOptions) -> Result<()> {
 }
 
 #[cfg(not(any(target_os = "macos")))]
-pub fn launch_fig() -> Result<()> {
+pub fn launch_fig(_opts: LaunchOptions) -> Result<()> {
     unimplemented!();
 }
 

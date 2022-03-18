@@ -352,12 +352,7 @@ async fn uninstall_command() -> Result<()> {
         return Ok(());
     }
 
-    let success = if launch_fig(LaunchOptions {
-        wait_for_activation: true,
-        verbose: true,
-    })
-    .is_ok()
-    {
+    let success = if launch_fig(LaunchOptions::new().wait_for_activation().verbose()).is_ok() {
         fig_ipc::command::uninstall_command().await.is_ok()
     } else {
         false
@@ -384,10 +379,7 @@ async fn root_command() -> Result<()> {
             tokio::time::sleep(Duration::from_millis(1000)).await;
         }
 
-        launch_fig(LaunchOptions {
-            wait_for_activation: true,
-            verbose: true,
-        })?;
+        launch_fig(LaunchOptions::new().wait_for_activation().verbose())?;
 
         if is_logged_in() {
             open_ui_element(UiElement::MissionControl)

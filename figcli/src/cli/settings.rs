@@ -129,10 +129,7 @@ impl SettingsArgs {
                 },
                 None => {
                     println!();
-                    launch_fig(LaunchOptions {
-                        wait_for_activation: true,
-                        verbose: true,
-                    })?;
+                    launch_fig(LaunchOptions::new().wait_for_activation().verbose())?;
                     println!();
 
                     if is_logged_in() {

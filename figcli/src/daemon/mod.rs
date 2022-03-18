@@ -430,10 +430,9 @@ async fn spawn_unix_handler(
                                                 .await;
 
                                             tokio::task::block_in_place(|| {
-                                                launch_fig(LaunchOptions {
-                                                    wait_for_activation: true,
-                                                    verbose: false,
-                                                })
+                                                launch_fig(
+                                                    LaunchOptions::new().wait_for_activation(),
+                                                )
                                                 .ok();
                                             });
                                         });

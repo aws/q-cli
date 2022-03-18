@@ -1444,11 +1444,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
     .await?;
 
     // If user is logged in, launch fig.
-    launch_fig(LaunchOptions {
-        wait_for_activation: true,
-        verbose: true,
-    })
-    .ok();
+    launch_fig(LaunchOptions::new().wait_for_activation().verbose()).ok();
 
     let shell_integrations: Vec<_> = [Shell::Bash, Shell::Zsh, Shell::Fish]
         .into_iter()

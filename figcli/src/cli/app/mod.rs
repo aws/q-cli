@@ -46,10 +46,7 @@ pub fn launch_fig_cli() -> Result<()> {
         return Ok(());
     }
 
-    launch_fig(LaunchOptions {
-        wait_for_activation: true,
-        verbose: true,
-    })?;
+    launch_fig(LaunchOptions::new().wait_for_activation().verbose())?;
     Ok(())
 }
 
@@ -108,10 +105,7 @@ impl AppSubcommand {
                 fig_ipc::command::run_install_script_command().await?;
             }
             AppSubcommand::Onboarding => {
-                launch_fig(LaunchOptions {
-                    wait_for_activation: true,
-                    verbose: true,
-                })?;
+                launch_fig(LaunchOptions::new().wait_for_activation().verbose())?;
                 if state::set_value("user.onboarding", true).is_ok() {
                     Command::new("bash")
                         .args(["-c", include_str!("onboarding.sh")])
@@ -153,11 +147,7 @@ impl AppSubcommand {
                             tokio::time::sleep(std::time::Duration::from_millis(3000)).await;
 
                             trace!("launching updated version of Fig");
-                            launch_fig(LaunchOptions {
-                                wait_for_activation: true,
-                                verbose: false,
-                            })
-                            .ok();
+                            launch_fig(LaunchOptions::new().wait_for_activation()).ok();
                         }
                     }
                 } else {
@@ -177,10 +167,7 @@ impl AppSubcommand {
                             )?
                         }
 
-                        launch_fig(LaunchOptions {
-                            wait_for_activation: false,
-                            verbose: false,
-                        })?;
+                        launch_fig(LaunchOptions::new())?;
                     }
                 }
             }
