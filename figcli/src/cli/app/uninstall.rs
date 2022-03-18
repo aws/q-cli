@@ -19,6 +19,7 @@ async fn remove_in_dir_with_prefix(dir: &Path, prefix: &str) {
 }
 
 pub async fn uninstall_mac_app() {
+    // TODO: mirror mac app logic and use this as source of truth.
     // Send uninstall telemetry event
     let tel_join = tokio::task::spawn(async {
         match fig_telemetry::SegmentEvent::new("Uninstall App") {

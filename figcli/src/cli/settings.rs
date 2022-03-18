@@ -1,5 +1,6 @@
 use anyhow::{anyhow, Context, Result};
 use clap::{ArgGroup, Args, Subcommand};
+use fig_auth::is_logged_in;
 use fig_ipc::command::{open_ui_element, restart_settings_listener};
 use fig_proto::local::UiElement;
 use serde_json::json;
@@ -119,12 +120,16 @@ impl SettingsArgs {
                     })?;
                     println!();
 
-                    match open_ui_element(UiElement::Settings).await {
-                        Ok(()) => Ok(()),
-                        Err(err) => {
-                            print_connection_error!();
-                            Err(err.context("Could not open settings"))
+                    if is_logged_in() {
+                        match open_ui_element(UiElement::Settings).await {
+                            Ok(()) => Ok(()),
+                            Err(err) => {
+                                print_connection_error!();
+                                Err(err.context("Could not open settings"))
+                            }
                         }
+                    } else {
+                        Ok(())
                     }
                 }
             },
