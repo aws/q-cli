@@ -619,6 +619,7 @@
 				751C3BEB24B6910800B5C7FD /* Remote.swift */,
 				755D0DE1247EFAE10074AB5C /* Logging.swift */,
 				75AEF2E325C3C34A00D78431 /* Diagnostic.swift */,
+				7520D8112682AEB00034FE2B /* Throttler.swift */,
 			);
 			path = Application;
 			sourceTree = "<group>";
@@ -788,7 +789,6 @@
 			children = (
 				75675954244634AD006AA988 /* AppDelegate.swift */,
 				75E993F32515C8D3000BE6BE /* Autocompletion */,
-				7520D8112682AEB00034FE2B /* Throttler.swift */,
 				751E4FD727E410260065E7E5 /* Application */,
 				756FE62A278E0B4D0017EC99 /* macOS */,
 				75696830271F70800029F063 /* Local IPC */,
