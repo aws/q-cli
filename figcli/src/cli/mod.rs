@@ -19,7 +19,6 @@ pub mod tweet;
 pub mod util;
 
 use crate::{
-    cli::installation::InstallComponents,
     daemon::{daemon, get_daemon},
     util::{
         is_app_running, launch_fig,
@@ -224,11 +223,22 @@ impl Cli {
             Some(subcommand) => match subcommand {
                 CliRootCommands::Install(args) => internal::install_cli_from_args(args),
                 CliRootCommands::Uninstall => {
-                    if fig_ipc::command::uninstall_command().await.is_err() {
-                        installation::uninstall_cli(InstallComponents::all())
+                    let success = if launch_fig(LaunchOptions {
+                        wait_for_activation: true,
+                        verbose: true,
+                    })
+                    .is_ok()
+                    {
+                        fig_ipc::command::uninstall_command().await.is_ok()
                     } else {
-                        Ok(())
+                        false
+                    };
+
+                    if !success {
+                        println!("\nFig is not running. Please launch Fig and try again to complete uninstall.\n");
                     }
+
+                    Ok(())
                 }
                 CliRootCommands::Update { no_confirm } => {
                     installation::update_cli(no_confirm).await

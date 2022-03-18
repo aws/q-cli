@@ -19,6 +19,7 @@ async fn remove_in_dir_with_prefix(dir: &Path, prefix: &str) {
 }
 
 pub async fn uninstall_mac_app() {
+    // TODO: mirror mac app logic and use this as source of truth.
     // Send uninstall telemetry event
     let tel_join = tokio::task::spawn(async {
         match fig_telemetry::SegmentEvent::new("Uninstall App") {
@@ -64,7 +65,6 @@ pub async fn uninstall_mac_app() {
     }
 
     // Delete fig defaults
-    let uuid = fig_auth::get_default("uuid").unwrap_or_default();
     tokio::process::Command::new("defaults")
         .args(["delete", "com.mschrage.fig"])
         .output()
@@ -72,11 +72,6 @@ pub async fn uninstall_mac_app() {
         .ok();
     tokio::process::Command::new("defaults")
         .args(["delete", "com.mschrage.fig.shared"])
-        .output()
-        .await
-        .ok();
-    tokio::process::Command::new("defaults")
-        .args(["write", "com.mschrage.fig", "uuid", &uuid])
         .output()
         .await
         .ok();
