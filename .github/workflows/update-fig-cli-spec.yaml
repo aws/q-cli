@@ -8,7 +8,7 @@ on:
 
 jobs:    
   push-to-fig-autocomplete:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     defaults:
       run:
         working-directory: figcli 
