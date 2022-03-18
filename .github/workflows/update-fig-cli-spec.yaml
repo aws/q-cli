@@ -6,19 +6,27 @@ on:
       - master
   workflow_dispatch:
 
-jobs:
+jobs:    
   push-to-fig-autocomplete:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: figcli 
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v2
-      - name: Lint the generated spec
+      - name: Setup Rust stable
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+      - name: Generate the spec
         run: |
-          make generate-spec
+          fig completion fig > spec.ts
       - name: Create Autocomplete PR
         uses: withfig/push-to-fig-autocomplete-action@v1
         with:
           token: ${{ secrets.FIG_BOT_TOKEN }}
           autocomplete-spec-name: 'fig/fig@latest'
-          spec-path: figcli/spec.ts
+          spec-path: spec.ts
           integration: clap
