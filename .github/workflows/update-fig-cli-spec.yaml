@@ -1,0 +1,23 @@
+name: 'Publish fig-cli spec version'
+on:
+  push:
+    paths: figcli/src/**
+  workflow_dispatch:
+
+jobs:
+  push-to-fig-autocomplete:
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v2
+      - name: Lint the generated spec
+        run: |
+          make generate-spec
+      - name: Create Autocomplete PR
+        uses: withfig/publish-to-fig-autocomplete@v1
+        with:
+          token: ${{ secrets.FIG_BOT_TOKEN }}
+          autocomplete-spec-name: 'fig/fig@latest'
+          spec-path: figcli/spec.ts
+          integration: clap

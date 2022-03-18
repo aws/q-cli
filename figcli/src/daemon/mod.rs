@@ -1,4 +1,5 @@
 pub mod launchd_plist;
+pub mod scheduler;
 pub mod settings_watcher;
 pub mod systemd_unit;
 pub mod websocket;
@@ -8,20 +9,20 @@ use crate::{
         launchd_plist::LaunchdPlist, settings_watcher::spawn_settings_watcher,
         systemd_unit::SystemdUnit, websocket::process_websocket,
     },
-    plugins,
+    util::{backoff::Backoff, launch_fig, LaunchOptions},
 };
 
 use anyhow::{anyhow, Context, Result};
 use fig_ipc::{daemon::get_daemon_socket_path, recv_message, send_message};
 use fig_proto::daemon::diagnostic_response::{
-    settings_watcher_status, websocket_status, SettingsWatcherStatus, WebsocketStatus,
+    settings_watcher_status, unix_socket_status, websocket_status, SettingsWatcherStatus,
+    UnixSocketStatus, WebsocketStatus,
 };
 use futures::{SinkExt, StreamExt};
 use parking_lot::RwLock;
 use rand::{distributions::Uniform, prelude::Distribution};
 use std::{
     io::Write,
-    ops::ControlFlow,
     path::{Path, PathBuf},
     process::Command,
     sync::Arc,
@@ -31,6 +32,7 @@ use tokio::{
     fs::remove_file,
     net::{UnixListener, UnixStream},
     select,
+    task::JoinHandle,
 };
 use tokio_tungstenite::tungstenite;
 use tracing::{debug, error, info, trace};
@@ -261,9 +263,10 @@ impl LaunchService {
             .program_arguments([&*executable_path_str, "daemon"])
             .keep_alive(true)
             .run_at_load(true)
-            .throttle_interval(5)
+            .throttle_interval(20)
             .standard_out_path(&*log_path_str)
             .standard_error_path(&*log_path_str)
+            .environment_variable("FIG_LOG_LEVEL", "debug")
             .plist();
 
         Ok(LaunchService {
@@ -335,6 +338,7 @@ pub struct DaemonStatus {
     time_started: u64,
     settings_watcher_status: Result<()>,
     websocket_status: Result<()>,
+    unix_socket_status: Result<()>,
 }
 
 async fn spawn_unix_handler(
@@ -395,11 +399,53 @@ async fn spawn_unix_handler(
                                         }
                                 });
 
+                                let unix_socket_status =
+                                    (parts.is_empty() ||
+                                        parts.contains(&fig_proto::daemon::diagnostic_command::DiagnosticPart::UnixSocketStatus))
+                                    .then(|| {
+                                        match &daemon_status.unix_socket_status {
+                                            Ok(_) => UnixSocketStatus {
+                                                status: unix_socket_status::Status::Ok.into(),
+                                                error: None,
+                                            },
+                                            Err(err) => UnixSocketStatus {
+                                                status: unix_socket_status::Status::Error.into(),
+                                                error: Some(err.to_string()),
+                                            },
+                                        }
+                                });
+
                                 fig_proto::daemon::new_diagnostic_response(
                                     time_started_epoch,
                                     settings_watcher_status,
                                     websocket_status,
+                                    unix_socket_status,
                                 )
+                            }
+                            fig_proto::daemon::daemon_message::Command::SelfUpdate(_) => {
+                                let success = match fig_ipc::command::update_command(true).await {
+                                    Ok(()) => {
+                                        tokio::task::spawn(async {
+                                            tokio::time::sleep(std::time::Duration::from_secs(5))
+                                                .await;
+
+                                            tokio::task::block_in_place(|| {
+                                                launch_fig(LaunchOptions {
+                                                    wait_for_activation: true,
+                                                    verbose: false,
+                                                })
+                                                .ok();
+                                            });
+                                        });
+                                        true
+                                    }
+                                    Err(err) => {
+                                        error!("Failed to update: {}", err);
+                                        false
+                                    }
+                                };
+
+                                fig_proto::daemon::new_self_update_response(success)
                             }
                         };
 
@@ -430,27 +476,9 @@ async fn spawn_unix_handler(
     Ok(())
 }
 
-/// Spawn the daemon to listen for updates and dotfiles changes
-pub async fn daemon() -> Result<()> {
-    info!("Starting daemon...");
-
-    let daemon_status = Arc::new(RwLock::new(DaemonStatus {
-        time_started: std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)?
-            .as_secs(),
-        settings_watcher_status: Ok(()),
-        websocket_status: Ok(()),
-    }));
-
-    let mut update_interval = tokio::time::interval(Duration::from_secs(60 * 60));
-
-    // Connect to websocket
-    let mut websocket_stream = websocket::connect_to_fig_websocket()
-        .await
-        .context("Could not connect to websocket")?;
-
-    let mut ping_interval = tokio::time::interval(Duration::from_secs(60));
-
+pub async fn spawn_incomming_unix_handler(
+    daemon_status: Arc<RwLock<DaemonStatus>>,
+) -> Result<JoinHandle<()>> {
     let unix_socket_path = get_daemon_socket_path();
 
     // Create the unix socket directory if it doesn't exist
@@ -469,82 +497,150 @@ pub async fn daemon() -> Result<()> {
     let unix_socket =
         UnixListener::bind(&unix_socket_path).context("Could not connect to unix socket")?;
 
-    tokio::task::spawn(async {
-        // Sleep for up to 10 minutes if we already have a dotfile
-        if fig_settings::state::get_value("dotfiles.all.lastUpdated")
-            .ok()
-            .flatten()
-            .is_some()
-        {
-            let dist = Uniform::new(0.0, 600.0);
-            let sleep_time = dist.sample(&mut rand::thread_rng());
-
-            tokio::time::sleep(Duration::from_secs(sleep_time as u64)).await;
+    Ok(tokio::spawn(async move {
+        while let Ok((stream, _addr)) = unix_socket.accept().await {
+            if let Err(err) = spawn_unix_handler(stream, daemon_status.clone()).await {
+                error!(
+                    "Error while spawining unix socket connection handler: {}",
+                    err
+                );
+            }
         }
+    }))
+}
 
-        if let Err(err) = crate::cli::source::sync_based_on_settings().await {
-            error!("Error fetching dotfile sources: {}", err);
+/// Spawn the daemon to listen for updates and dotfiles changes
+pub async fn daemon() -> Result<()> {
+    info!("Starting daemon...");
+
+    let daemon_status = Arc::new(RwLock::new(DaemonStatus {
+        time_started: std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)?
+            .as_secs(),
+        settings_watcher_status: Ok(()),
+        websocket_status: Ok(()),
+        unix_socket_status: Ok(()),
+    }));
+
+    // Add small random element to the delay to avoid all clients from sending the messages at the same time
+    let dist = Uniform::new(59., 60.);
+    let delay = dist.sample(&mut rand::thread_rng());
+    let mut ping_interval = tokio::time::interval(Duration::from_secs_f64(delay));
+
+    // Spawn task scheduler
+    let (mut scheduler, scheduler_join) = scheduler::Scheduler::spawn().await;
+    match fig_settings::state::get_value("dotfiles.all.lastUpdated")
+        .ok()
+        .flatten()
+    {
+        Some(_) => scheduler.schedule_random_delay(scheduler::SyncDotfiles, 60., 1260.),
+        None => scheduler.schedule_random_delay(scheduler::SyncDotfiles, 0., 60.),
+    }
+
+    // Spawn the incoming handler
+    let daemon_status_clone = daemon_status.clone();
+    let unix_join = tokio::spawn(async move {
+        let daemon_status = daemon_status_clone;
+        let mut backoff =
+            Backoff::new(Duration::from_secs_f64(0.25), Duration::from_secs_f64(120.));
+        loop {
+            match spawn_incomming_unix_handler(daemon_status.clone()).await {
+                Ok(handle) => {
+                    daemon_status.write().unix_socket_status = Ok(());
+                    backoff.reset();
+                    if let Err(err) = handle.await {
+                        error!("Error on unix handler join: {:?}", err);
+                        daemon_status.write().unix_socket_status = Err(err.into());
+                    }
+                    return;
+                }
+                Err(err) => {
+                    error!("Error spawning unix handler: {:?}", err);
+                    daemon_status.write().unix_socket_status = Err(err);
+                }
+            }
+            backoff.sleep().await;
         }
     });
 
-    tokio::task::spawn(async {
-        // Sleep for up to 10 minutes before we fetch plugins
-        let dist = Uniform::new(0.0, 600.0);
-        let sleep_time = dist.sample(&mut rand::thread_rng());
-
-        tokio::time::sleep(Duration::from_secs(sleep_time as u64)).await;
-
-        if let Err(err) = plugins::api::fetch_installed_plugins().await {
-            error!("Error fetching installed plugins: {}", err);
+    // Spawn websocket handler
+    let daemon_status_clone = daemon_status.clone();
+    let websocket_join = tokio::spawn(async move {
+        let daemon_status = daemon_status_clone;
+        let mut backoff =
+            Backoff::new(Duration::from_secs_f64(0.25), Duration::from_secs_f64(120.));
+        loop {
+            match websocket::connect_to_fig_websocket().await {
+                Ok(mut websocket_stream) => {
+                    daemon_status.write().websocket_status = Ok(());
+                    backoff.reset();
+                    loop {
+                        select! {
+                            next = websocket_stream.next() => {
+                                match process_websocket(&next, &mut scheduler).await {
+                                    Ok(()) => {}
+                                    Err(err) => {
+                                        error!("Error while processing websocket message: {}", err);
+                                        daemon_status.write().websocket_status = Err(err);
+                                        break;
+                                    }
+                                }
+                            }
+                            _ = ping_interval.tick() => {
+                                debug!("Sending ping to websocket");
+                                if let Err(err) = websocket_stream.send(tungstenite::Message::Ping(vec![])).await {
+                                    error!("Error while sending ping to websocket: {}", err);
+                                    daemon_status.write().websocket_status = Err(err.into());
+                                    break;
+                                };
+                            }
+                        }
+                    }
+                }
+                Err(err) => {
+                    error!("Error while connecting to websocket: {}", err);
+                    daemon_status.write().websocket_status = Err(err);
+                }
+            }
+            backoff.sleep().await;
         }
     });
 
     // Spawn settings watcher
-    if let Err(error) = spawn_settings_watcher(daemon_status.clone()).await {
-        error!("Could not spawn settings watcher: {}", error);
-    }
+    let daemon_status_clone = daemon_status.clone();
+    let settings_watcher_join = tokio::spawn(async move {
+        let daemon_status = daemon_status_clone;
+        let mut backoff =
+            Backoff::new(Duration::from_secs_f64(0.25), Duration::from_secs_f64(120.));
+        loop {
+            match spawn_settings_watcher(daemon_status.clone()).await {
+                Ok(join_handle) => {
+                    daemon_status.write().settings_watcher_status = Ok(());
+                    backoff.reset();
+                    if let Err(err) = join_handle.await {
+                        error!("Error on settings watcher join: {:?}", err);
+                        daemon_status.write().settings_watcher_status = Err(err.into());
+                    }
+                    return;
+                }
+                Err(err) => {
+                    error!("Error spawning settings watcher: {:?}", err);
+                    daemon_status.write().settings_watcher_status = Err(err);
+                }
+            }
+            backoff.sleep().await;
+        }
+    });
 
     info!("Daemon is now running");
 
-    // Select loop
-    loop {
-        select! {
-            next = websocket_stream.next() => {
-                match process_websocket(&next).await? {
-                    ControlFlow::Continue(_) => {},
-                    ControlFlow::Break(_) => break,
-                }
-            }
-            conn = unix_socket.accept() => {
-                match conn {
-                    Ok((stream, _)) => {
-                        spawn_unix_handler(stream, daemon_status.clone()).await?;
-                    }
-                    Err(err) => {
-                        error!("Could not accept unix socket connection: {}", err);
-                    }
-                }
-            }
-            _ = ping_interval.tick() => {
-                debug!("Sending ping to websocket");
-                websocket_stream.send(tungstenite::Message::Ping(vec![])).await?;
-            }
-            _ = update_interval.tick() => {
-                #[cfg(feature = "auto-update")]
-                {
-                    // Check for updates
-                    match update(UpdateType::NoProgress)? {
-                        UpdateStatus::UpToDate => {}
-                        UpdateStatus::Updated(release) => {
-                            info!("Updated to {}", release.version);
-                            info!("Quitting...");
-                            return Ok(());
-                        }
-                    }
-                }
-            }
-        }
+    match tokio::try_join!(
+        scheduler_join,
+        unix_join,
+        websocket_join,
+        settings_watcher_join,
+    ) {
+        Ok(_) => Ok(()),
+        Err(err) => Err(err.into()),
     }
-
-    Ok(())
 }

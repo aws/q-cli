@@ -1,16 +1,16 @@
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Context, Result};
 use fig_auth::{get_email, get_token};
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use std::{io::Write, ops::ControlFlow};
+use std::io::Write;
 use time::format_description::well_known::Rfc3339;
 use tokio::net::TcpStream;
 use tokio_tungstenite::{tungstenite::Message, MaybeTlsStream, WebSocketStream};
 use tracing::{debug, error, info};
 
 use crate::{
-    plugins,
+    daemon::scheduler::{Scheduler, SyncDotfiles},
     util::api::{api_host, ws_host},
 };
 
@@ -28,6 +28,8 @@ enum FigWebsocketMessage {
 }
 
 pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream<TcpStream>>> {
+    info!("Connecting to websocket");
+
     let reqwest_client = reqwest::Client::new();
 
     let token = get_token().await?;
@@ -64,7 +66,8 @@ pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream
 
 pub async fn process_websocket(
     websocket_next: &Option<Result<Message, tokio_tungstenite::tungstenite::Error>>,
-) -> Result<ControlFlow<()>> {
+    scheduler: &mut Scheduler,
+) -> Result<()> {
     match websocket_next {
         Some(next) => match next {
             Ok(websocket_message) => match websocket_message {
@@ -77,13 +80,7 @@ pub async fn process_websocket(
                     match websocket_message_result {
                         Ok(websocket_message) => match websocket_message {
                             FigWebsocketMessage::DotfilesUpdated => {
-                                crate::cli::source::sync_based_on_settings().await?;
-                                tokio::task::spawn(async {
-                                    if let Err(err) = plugins::api::fetch_installed_plugins().await
-                                    {
-                                        error!("Error fetching installed plugins: {}", err);
-                                    }
-                                });
+                                scheduler.schedule_now(SyncDotfiles);
                             }
                             FigWebsocketMessage::SettingsUpdated {
                                 settings,
@@ -112,39 +109,39 @@ pub async fn process_websocket(
                             error!("Could not parse json message: {:?}", e);
                         }
                     }
-                    Ok(ControlFlow::Continue(()))
+                    Ok(())
                 }
-                Message::Close(close_frame) => {
-                    match close_frame {
-                        Some(close_frame) => {
-                            info!("Websocket closed: {:?}", close_frame);
-                        }
-                        None => info!("Websocket closed"),
+                Message::Close(close_frame) => match close_frame {
+                    Some(close_frame) => {
+                        info!("Websocket close frame: {:?}", close_frame);
+                        Err(anyhow!("Websocket close frame: {:?}", close_frame))
                     }
-
-                    Ok(ControlFlow::Break(()))
-                }
+                    None => {
+                        info!("Websocket close frame");
+                        Err(anyhow!("Websocket close frame"))
+                    }
+                },
                 Message::Ping(_) => {
                     debug!("Websocket ping");
-                    Ok(ControlFlow::Continue(()))
+                    Ok(())
                 }
                 Message::Pong(_) => {
                     debug!("Websocket pong");
-                    Ok(ControlFlow::Continue(()))
+                    Ok(())
                 }
                 unknown_message => {
                     debug!("Unknown message: {:?}", unknown_message);
-                    Ok(ControlFlow::Continue(()))
+                    Ok(())
                 }
             },
             Err(err) => {
-                error!("Websock next error: {}", err);
-                Ok(ControlFlow::Break(()))
+                error!("Websock next error: {:?}", err);
+                Err(anyhow!("Websock next error: {:?}", err))
             }
         },
         None => {
             info!("Websocket closed");
-            Ok(ControlFlow::Break(()))
+            Err(anyhow!("Websocket closed"))
         }
     }
 }

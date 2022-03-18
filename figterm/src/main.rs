@@ -580,20 +580,27 @@ fn figterm_main() -> Result<()> {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let _guard = sentry::init((
-        "https://633267fac776481296eadbcc7093af4a@o436453.ingest.sentry.io/6187825",
-        sentry::ClientOptions {
-            release: sentry::release_name!(),
-            ..Default::default()
-        },
-    ));
+    let _guard = match std::env::var_os("FIG_DISABLE_SENTRY") {
+        Some(_) => None,
+        None => {
+            let guard = sentry::init((
+                "https://633267fac776481296eadbcc7093af4a@o436453.ingest.sentry.io/6187825",
+                sentry::ClientOptions {
+                    release: sentry::release_name!(),
+                    ..Default::default()
+                },
+            ));
 
-    sentry::configure_scope(|scope| {
-        scope.set_user(Some(sentry::User {
-            email: get_email(),
-            ..Default::default()
-        }));
-    });
+            sentry::configure_scope(|scope| {
+                scope.set_user(Some(sentry::User {
+                    email: get_email(),
+                    ..Default::default()
+                }));
+            });
+
+            Some(guard)
+        }
+    };
 
     Cli::parse();
 

@@ -200,6 +200,7 @@ class TelemetryProvider: TelemetryService {
       "\(prefix)domain": domain,
       "\(prefix)email": email,
       "\(prefix)version": defaults.version,
+      "\(prefix)build": Diagnostic.build,
       "\(prefix)os": "\(os.majorVersion).\(os.minorVersion).\(os.patchVersion)"
     ]) { $1 }
   }

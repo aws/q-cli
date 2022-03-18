@@ -115,6 +115,7 @@ class PseudoTerminal {
                                           "TERM": "xterm-256color",
                                           "INPUTRC": "~/.fig/nop",
                                           "FIG_PTY": "1",
+                                          "PROCESS_LAUNCHED_BY_FIG": "1",
                                           "HISTFILE": "",
                                           "HISTCONTROL": "ignoreboth",
                                           "HOME": NSHomeDirectory(),

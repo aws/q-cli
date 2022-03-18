@@ -11,7 +11,6 @@ pub mod installation;
 pub mod internal;
 pub mod invite;
 pub mod issue;
-pub mod plugins;
 pub mod settings;
 pub mod source;
 pub mod theme;
@@ -20,20 +19,22 @@ pub mod tweet;
 pub mod util;
 
 use crate::{
-    cli::{installation::InstallComponents, util::open_url},
+    cli::util::dialoguer_theme,
     daemon::{daemon, get_daemon},
     util::{
         is_app_running, launch_fig,
         shell::{Shell, When},
+        LaunchOptions,
     },
 };
 
+use fig_auth::is_logged_in;
+
 use anyhow::{Context, Result};
 use clap::{ArgEnum, IntoApp, Parser, Subcommand};
-use crossterm::style::Stylize;
-use fig_ipc::command::open_ui_element;
+use fig_ipc::command::{open_ui_element, quit_command};
 use fig_proto::local::UiElement;
-use std::{fs::File, process::exit, str::FromStr};
+use std::{fs::File, process::exit, str::FromStr, time::Duration};
 use tracing::{debug, level_filters::LevelFilter};
 
 use self::app::AppSubcommand;
@@ -42,6 +43,14 @@ use self::app::AppSubcommand;
 pub enum OutputFormat {
     Plain,
     Json,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ArgEnum)]
+pub enum Shells {
+    Bash,
+    Fish,
+    Zsh,
+    Fig,
 }
 
 #[derive(Debug, Subcommand)]
@@ -77,6 +86,9 @@ pub enum CliRootCommands {
     Diagnostic {
         #[clap(long, short, arg_enum, default_value = "plain")]
         format: OutputFormat,
+        /// Force limited diagnostic output
+        #[clap(long)]
+        force: bool,
     },
     /// Generate the dotfiles for the given shell
     #[clap(hide = true)]
@@ -122,12 +134,12 @@ pub enum CliRootCommands {
         #[clap(long)]
         strict: bool,
     },
-    /// Plugins management
-    #[clap(subcommand)]
-    Plugins(plugins::PluginsSubcommand),
     /// Generate the completion spec for Fig
     GenerateFigSpec,
-    Compleation,
+    Completion {
+        #[clap(arg_enum, default_value = "zsh")]
+        shell: Shells,
+    },
     #[clap(subcommand)]
     Internal(internal::InternalSubcommand),
     Launch,
@@ -211,20 +223,27 @@ impl Cli {
         let result = match self.subcommand {
             Some(subcommand) => match subcommand {
                 CliRootCommands::Install(args) => internal::install_cli_from_args(args),
-                CliRootCommands::Uninstall => {
-                    if fig_ipc::command::uninstall_command().await.is_err() {
-                        installation::uninstall_cli(InstallComponents::all())
-                    } else {
-                        Ok(())
-                    }
-                }
+                CliRootCommands::Uninstall => uninstall_command().await,
                 CliRootCommands::Update { no_confirm } => {
                     installation::update_cli(no_confirm).await
                 }
                 CliRootCommands::Tips(tips_subcommand) => tips_subcommand.execute().await,
-                CliRootCommands::Daemon => daemon().await,
-                CliRootCommands::Diagnostic { format } => {
-                    diagnostics::diagnostics_cli(format).await
+                CliRootCommands::Daemon => {
+                    let res = daemon().await;
+                    if let Err(err) = &res {
+                        std::fs::write(
+                            fig_directories::fig_dir()
+                                .unwrap()
+                                .join("logs")
+                                .join("daemon-exit.log"),
+                            format!("{:?}", err),
+                        )
+                        .ok();
+                    }
+                    res
+                }
+                CliRootCommands::Diagnostic { format, force } => {
+                    diagnostics::diagnostics_cli(format, force).await
                 }
                 CliRootCommands::Init { shell, when } => init::shell_init_cli(&shell, &when).await,
                 CliRootCommands::Source => source::source_cli().await,
@@ -237,65 +256,63 @@ impl Cli {
                 CliRootCommands::Invite => invite::invite_cli().await,
                 CliRootCommands::Tweet => tweet::tweet_cli(),
                 CliRootCommands::App(app_subcommand) => app_subcommand.execute().await,
-                CliRootCommands::Hook(hook_subcommand) => hook_subcommand.execute().await,
+                CliRootCommands::Hook(hook_subcommand) => {
+                    // Hooks should exit silently on failure.
+                    if hook_subcommand.execute().await.is_err() {
+                        exit(1);
+                    }
+                    Ok(())
+                }
                 CliRootCommands::Theme { theme } => theme::theme_cli(theme).await,
                 CliRootCommands::Settings(settings_args) => settings_args.execute().await,
                 CliRootCommands::Debug(debug_subcommand) => debug_subcommand.execute().await,
                 CliRootCommands::Issue { force, description } => {
                     issue::issue_cli(force, description).await
                 }
-                CliRootCommands::Plugins(plugins_subcommand) => plugins_subcommand.execute().await,
                 CliRootCommands::GenerateFigSpec => {
-                    println!("{}", Cli::generation_fig_compleations());
+                    println!("{}", Cli::generation_completions(clap_complete_fig::Fig));
                     Ok(())
                 }
-                CliRootCommands::Compleation => Ok(()),
+                CliRootCommands::Completion { shell } => {
+                    println!(
+                        "{}",
+                        match shell {
+                            Shells::Bash =>
+                                Cli::generation_completions(clap_complete::shells::Bash),
+                            Shells::Fish =>
+                                Cli::generation_completions(clap_complete::shells::Fish),
+                            Shells::Zsh => Cli::generation_completions(clap_complete::shells::Zsh),
+                            Shells::Fig => Cli::generation_completions(clap_complete_fig::Fig),
+                        }
+                    );
+                    Ok(())
+                }
                 CliRootCommands::Internal(internal_subcommand) => {
                     internal_subcommand.execute().await
                 }
                 CliRootCommands::Launch => {
                     let app_res = app::launch_fig_cli();
-                    match get_daemon() {
-                        Ok(d) => d.start(),
-                        Err(e) => Err(anyhow::anyhow!(e)),
+                    if let Ok(daemon) = get_daemon() {
+                        daemon.start().ok();
                     }
-                    .ok();
                     app_res
                 }
                 CliRootCommands::Quit => {
                     let app_res = app::quit_fig().await;
-                    let daemon_res = match get_daemon() {
-                        Ok(d) => d.stop(),
-                        Err(e) => Err(anyhow::anyhow!(e)),
-                    };
-                    if daemon_res.is_err() {
-                        println!("Error stopping Fig daemon");
+                    if let Ok(daemon) = get_daemon() {
+                        daemon.stop().ok();
                     }
-                    app_res.or(daemon_res)
+                    app_res
                 }
                 CliRootCommands::Restart => {
                     let app_res = app::restart_fig().await;
-                    let daemon_res = match get_daemon() {
-                        Ok(d) => d.restart(),
-                        Err(e) => Err(anyhow::anyhow!(e)),
-                    };
-                    if daemon_res.is_err() {
-                        println!("Error restarting Fig daemon");
+                    if let Ok(daemon) = get_daemon() {
+                        daemon.restart().ok();
                     }
-                    app_res.or(daemon_res)
+                    app_res
                 }
-                CliRootCommands::Alpha => {
-                    launch_fig().ok();
-                    let res = open_ui_element(UiElement::MissionControl).await;
-                    if res.is_ok() {
-                        println!("\n→ Opening dotfiles...\n");
-                    };
-                    res
-                }
-                CliRootCommands::Onboarding => {
-                    let res = AppSubcommand::Onboarding.execute().await;
-                    res
-                }
+                CliRootCommands::Alpha => root_command().await,
+                CliRootCommands::Onboarding => AppSubcommand::Onboarding.execute().await,
                 CliRootCommands::FigAppRunning => {
                     println!("{}", if is_app_running() { "1" } else { "0" });
                     Ok(())
@@ -306,41 +323,88 @@ impl Cli {
         };
 
         if let Err(e) = result {
-            eprintln!("{:?}", e);
+            if env_level > LevelFilter::INFO {
+                eprintln!("{:?}", e);
+            } else {
+                eprintln!("{}", e);
+            }
             exit(1);
         }
     }
 
-    fn generation_fig_compleations() -> String {
+    fn generation_completions(gen: impl clap_complete::Generator) -> String {
         let mut cli = Cli::command();
-
         let mut buffer = Vec::new();
 
-        clap_complete::generate(
-            clap_complete_fig::Fig,
-            &mut cli,
-            env!("CARGO_PKG_NAME"),
-            &mut buffer,
-        );
+        clap_complete::generate(gen, &mut cli, env!("CARGO_PKG_NAME"), &mut buffer);
 
         String::from_utf8_lossy(&buffer).into()
     }
 }
 
-async fn root_command() -> Result<()> {
-    // Check if Fig is running
-    #[cfg(target_os = "macos")]
-    launch_fig()?;
+async fn uninstall_command() -> Result<()> {
+    let should_uninstall = dialoguer::Confirm::with_theme(&dialoguer_theme())
+        .with_prompt("Are you sure you want to uninstall Fig?")
+        .interact()?;
 
-    match fig_ipc::command::open_ui_element(fig_proto::local::UiElement::MissionControl).await {
-        Ok(_) => {}
-        Err(_) => {
-            let url = "https://dotfiles.com/";
-            if open_url(url).is_err() {
-                println!("{}", url.underlined());
+    if !should_uninstall {
+        println!("Phew...");
+        return Ok(());
+    }
+
+    let success = if launch_fig(LaunchOptions {
+        wait_for_activation: true,
+        verbose: true,
+    })
+    .is_ok()
+    {
+        fig_ipc::command::uninstall_command().await.is_ok()
+    } else {
+        false
+    };
+
+    if !success {
+        println!("\nFig is not running. Please launch Fig and try again to complete uninstall.\n");
+    }
+
+    Ok(())
+}
+
+async fn root_command() -> Result<()> {
+    // Launch fig if it is not running
+    #[cfg(target_os = "macos")]
+    {
+        if !is_logged_in() && is_app_running() {
+            if quit_command().await.is_err() {
+                anyhow::bail!(
+                    "\nFig is running but you are not logged in. Please quit Fig from the menu\
+                    bar and try again\n"
+                );
             }
+            tokio::time::sleep(Duration::from_millis(1000)).await;
+        }
+
+        launch_fig(LaunchOptions {
+            wait_for_activation: true,
+            verbose: true,
+        })?;
+
+        if is_logged_in() {
+            open_ui_element(UiElement::MissionControl)
+                .await
+                .context("\nCould not launch fig\n")?;
         }
     }
+
+    #[cfg(not(target_os = "macos"))]
+    {
+        println!(
+            "\n→ Opening {}...\n",
+            "https://app.fig.io".magenta().underlined()
+        );
+        util::open_url("https://app.fig.io").ok();
+    }
+
     Ok(())
 }
 

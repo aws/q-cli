@@ -10,13 +10,16 @@ import Cocoa
 import ZIPFoundation
 
 class JetBrainsIntegration: InputMethodDependentTerminalIntegrationProvider & IntegrationProvider {
-  // com.jetbrains.intellij.ce
+
+  static let idea     = JetBrainsIntegration(bundleIdentifier: Integrations.Intellij)
   static let ideaCE   = JetBrainsIntegration(bundleIdentifier: Integrations.IntellijCE)
   static let WebStorm = JetBrainsIntegration(bundleIdentifier: Integrations.WebStorm)
   static let GoLand   = JetBrainsIntegration(bundleIdentifier: Integrations.GoLand)
   static let PhpStorm = JetBrainsIntegration(bundleIdentifier: Integrations.PhpStorm)
   static let PyCharm  = JetBrainsIntegration(bundleIdentifier: Integrations.PyCharm)
   static let AppCode  = JetBrainsIntegration(bundleIdentifier: Integrations.AppCode)
+  static let CLion    = JetBrainsIntegration(bundleIdentifier: Integrations.CLion)
+  static let Rider    = JetBrainsIntegration(bundleIdentifier: Integrations.Rider)
 
   static let plugin = Plugin(name: "jetbrains-extension",
                              version: "2.0.0",
@@ -129,7 +132,7 @@ class JetBrainsIntegration: InputMethodDependentTerminalIntegrationProvider & In
 
     return .installed
   }
-  
+
   func uninstall() -> Bool {
     // Remove old versions of plugin
     do {
@@ -141,7 +144,7 @@ class JetBrainsIntegration: InputMethodDependentTerminalIntegrationProvider & In
           try FileManager.default.removeItem(atPath: plugin)
         }
       }
-      
+
       return true
     } catch {
       return false
@@ -167,7 +170,7 @@ class JetBrainsIntegration: InputMethodDependentTerminalIntegrationProvider & In
     guard FileManager.default.fileExists(atPath: applicationFolder.path) else {
       return .failed(error: "\(applicationFolder) does not exist.")
     }
-    
+
     if !self.uninstall() {
       Logger.log(message: "An error occured when removing previous version of the plugin")
     }
@@ -175,9 +178,8 @@ class JetBrainsIntegration: InputMethodDependentTerminalIntegrationProvider & In
     let destinationURL = pluginsPathURL.appendingPathComponent(JetBrainsIntegration.plugin.slug,
                                                                isDirectory: true)
 
-
-
     do {
+      try? FileManager.default.removeItem(at: destinationURL)
       try FileManager.default.createDirectory(at: destinationURL, withIntermediateDirectories: true, attributes: nil)
       try FileManager.default.unzipItem(at: JetBrainsIntegration.plugin.resourceInBundle, to: destinationURL)
     } catch {

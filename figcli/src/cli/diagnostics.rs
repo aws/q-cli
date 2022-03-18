@@ -1,9 +1,10 @@
 use crate::{
     cli::{util::OSVersion, OutputFormat},
-    util::{glob, glob_dir},
+    util::{glob, glob_dir, is_app_running},
 };
 
 use anyhow::{Context, Result};
+use crossterm::style::Stylize;
 use fig_ipc::command::send_recv_command_to_socket;
 use fig_proto::local::{
     command, command_response::Response, DiagnosticsCommand, DiagnosticsResponse,
@@ -547,7 +548,7 @@ impl Diagnostics {
                     dotfiles: DotfilesDiagnostics::new()?,
                 })
             }
-            Err(_) => Ok(Diagnostics {
+            _ => Ok(Diagnostics {
                 timestamp,
                 fig_running: false,
                 version: None,
@@ -604,7 +605,16 @@ impl Diagnostic for Diagnostics {
     }
 }
 
-pub async fn diagnostics_cli(format: OutputFormat) -> Result<()> {
+pub async fn diagnostics_cli(format: OutputFormat, force: bool) -> Result<()> {
+    if !force && !is_app_running() {
+        println!(
+            "\n→ Fig is not running.\n  Please launch Fig with {} or run {} to get limited diagnostics.",
+            "fig launch".magenta(),
+            "fig diagnostic --force".magenta()
+        );
+        return Ok(());
+    }
+
     let diagnostics = Diagnostics::new().await?;
 
     match format {

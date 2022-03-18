@@ -96,6 +96,23 @@ pub async fn logout_cli() -> Result<()> {
     creds.clear_cridentials();
     creds.save_credentials()?;
 
+    let uuid = fig_auth::get_default("uuid").unwrap_or_default();
+    tokio::process::Command::new("defaults")
+        .args(["delete", "com.mschrage.fig"])
+        .output()
+        .await
+        .ok();
+    tokio::process::Command::new("defaults")
+        .args(["delete", "com.mschrage.fig.shared"])
+        .output()
+        .await
+        .ok();
+    tokio::process::Command::new("defaults")
+        .args(["write", "com.mschrage.fig", "uuid", &uuid])
+        .output()
+        .await
+        .ok();
+
     println!("Logged out");
 
     Ok(())

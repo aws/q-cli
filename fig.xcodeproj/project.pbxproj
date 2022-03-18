@@ -21,6 +21,7 @@
 		75186074255B2A0A0000A7C7 /* command@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7518606E255B2A0A0000A7C7 /* command@2x.png */; };
 		751C3BEC24B6910800B5C7FD /* Remote.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751C3BEB24B6910800B5C7FD /* Remote.swift */; };
 		751C3BEE24B6915000B5C7FD /* Defaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751C3BED24B6915000B5C7FD /* Defaults.swift */; };
+		751E4FD627E2F2BC0065E7E5 /* Credentials.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751E4FD527E2F2BC0065E7E5 /* Credentials.swift */; };
 		751F7589246D090100E083C8 /* WebBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751F7588246D090100E083C8 /* WebBridge.swift */; };
 		7520D7F1267D98790034FE2B /* fig-0.0.3.vsix in Resources */ = {isa = PBXBuildFile; fileRef = 7520D7F0267D98790034FE2B /* fig-0.0.3.vsix */; };
 		7520D8122682AEB00034FE2B /* Throttler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7520D8112682AEB00034FE2B /* Throttler.swift */; };
@@ -208,6 +209,7 @@
 		7A2C8636273949BE00AE5EB6 /* testable-file-to-read.txt in Resources */ = {isa = PBXBuildFile; fileRef = 7A0A41E22738749200080BCE /* testable-file-to-read.txt */; };
 		7A2C8640273951FE00AE5EB6 /* contents-of-this-folder in Resources */ = {isa = PBXBuildFile; fileRef = 7A2C863F273951FE00AE5EB6 /* contents-of-this-folder */; };
 		7A9DB5662741A3E6008BD2AA /* DefaultsTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A9DB5652741A3E6008BD2AA /* DefaultsTest.swift */; };
+		7AA36CD227DFEA020095C03C /* okteto@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7AA36CD127DFEA020095C03C /* okteto@2x.png */; };
 		7AB6B6872740301500428F47 /* NSWorkspaceExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AB6B6862740301500428F47 /* NSWorkspaceExtensionTests.swift */; };
 		7AC30EF8274573F700A4F7AB /* TelemetryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AC30EF7274573F700A4F7AB /* TelemetryTests.swift */; };
 		7AF96D3F273DB3E30006A41B /* ConfigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF96D3E273DB3E30006A41B /* ConfigTests.swift */; };
@@ -310,6 +312,7 @@
 		751C3BED24B6915000B5C7FD /* Defaults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Defaults.swift; sourceTree = "<group>"; };
 		751C42F72783EC1100A8E078 /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = System/Library/Frameworks/Carbon.framework; sourceTree = SDKROOT; };
 		751DC66226EBF3B500697DFB /* cpu@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "cpu@2x.png"; sourceTree = "<group>"; };
+		751E4FD527E2F2BC0065E7E5 /* Credentials.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Credentials.swift; sourceTree = "<group>"; };
 		751F7588246D090100E083C8 /* WebBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebBridge.swift; sourceTree = "<group>"; };
 		7520D7F0267D98790034FE2B /* fig-0.0.3.vsix */ = {isa = PBXFileReference; lastKnownFileType = file; path = "fig-0.0.3.vsix"; sourceTree = "<group>"; };
 		7520D8112682AEB00034FE2B /* Throttler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Throttler.swift; sourceTree = "<group>"; };
@@ -504,6 +507,7 @@
 		7A0A41E22738749200080BCE /* testable-file-to-read.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "testable-file-to-read.txt"; sourceTree = "<group>"; };
 		7A2C863F273951FE00AE5EB6 /* contents-of-this-folder */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "contents-of-this-folder"; sourceTree = "<group>"; };
 		7A9DB5652741A3E6008BD2AA /* DefaultsTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultsTest.swift; sourceTree = "<group>"; };
+		7AA36CD127DFEA020095C03C /* okteto@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "okteto@2x.png"; sourceTree = "<group>"; };
 		7AB6B6862740301500428F47 /* NSWorkspaceExtensionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSWorkspaceExtensionTests.swift; sourceTree = "<group>"; };
 		7AC30EF7274573F700A4F7AB /* TelemetryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetryTests.swift; sourceTree = "<group>"; };
 		7AF96D3E273DB3E30006A41B /* ConfigTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigTests.swift; sourceTree = "<group>"; };
@@ -559,6 +563,7 @@
 			isa = PBXGroup;
 			children = (
 				751DC66226EBF3B500697DFB /* cpu@2x.png */,
+				7AA36CD127DFEA020095C03C /* okteto@2x.png */,
 				752E68E52620F884009E9A7E /* android@2x.png */,
 				75290A7C266B09CB000F4255 /* gear@2x.png */,
 				7564AE6E265C9DCD0040BD4C /* discord@2x.png */,
@@ -725,6 +730,7 @@
 				7546F5B2271660BA0077359F /* Constants.swift */,
 				7568203026003BDF0006FE78 /* Settings.swift */,
 				757B6A0327CD761400A8811E /* LocalState.swift */,
+				751E4FD527E2F2BC0065E7E5 /* Credentials.swift */,
 				75E993F12515A6DD000BE6BE /* statusbar@2x.png */,
 				755D0DE1247EFAE10074AB5C /* Logging.swift */,
 				75809B0D24BFA64D00BFFB3E /* TelemetryService.swift */,
@@ -1326,6 +1332,7 @@
 				75B1993625042B2C00F38EA8 /* autocomplete.html in Resources */,
 				7518606F255B2A0A0000A7C7 /* flag@2x.png in Resources */,
 				75E993F22515A6DD000BE6BE /* statusbar@2x.png in Resources */,
+				7AA36CD227DFEA020095C03C /* okteto@2x.png in Resources */,
 				752C0BE2247A33F20077E415 /* viewer.html in Resources */,
 				75915E002722044D005A9909 /* API.js in Resources */,
 				752C0BE6247C25290077E415 /* display.html in Resources */,
@@ -1509,6 +1516,7 @@
 				752A398325CD024C00B1AC40 /* VSCodeIntegration.swift in Sources */,
 				7583A12E273CF261001DF86B /* PathHelper.swift in Sources */,
 				7571778326F91BF50071AE10 /* AppleTerminalIntegration.swift in Sources */,
+				751E4FD627E2F2BC0065E7E5 /* Credentials.swift in Sources */,
 				756968012718FF600029F063 /* WebArchive.swift in Sources */,
 				755D0DE2247EFAE10074AB5C /* Logging.swift in Sources */,
 				75ACFE842755B958003C22EE /* IPC+Notifications.swift in Sources */,
@@ -1869,7 +1877,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = YES;
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 405;
+				CURRENT_PROJECT_VERSION = 414;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				DEVELOPMENT_TEAM = B8PC799ZGU;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1905,7 +1913,7 @@
 				CODE_SIGN_IDENTITY = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 405;
+				CURRENT_PROJECT_VERSION = 414;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				DEVELOPMENT_TEAM = B8PC799ZGU;
 				ENABLE_HARDENED_RUNTIME = YES;

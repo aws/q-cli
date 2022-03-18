@@ -1,5 +1,5 @@
 pub fn api_host() -> String {
-    fig_settings::settings::get_value("developer.figcli.apiHost")
+    fig_settings::state::get_value("developer.figcli.apiHost")
         .ok()
         .flatten()
         .and_then(|s| s.as_str().map(String::from))
@@ -7,7 +7,7 @@ pub fn api_host() -> String {
 }
 
 pub fn ws_host() -> String {
-    fig_settings::settings::get_value("developer.figcli.wsHost")
+    fig_settings::state::get_value("developer.figcli.wsHost")
         .ok()
         .flatten()
         .and_then(|s| s.as_str().map(String::from))

@@ -40,6 +40,10 @@ class UnixSocketServer {
 
   init(path: String, bidirectional: Bool = false) {
     self.path = path
+    let url = URL(fileURLWithPath: self.path)
+    try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(),
+                                            withIntermediateDirectories: true,
+                                            attributes: nil)
     self.bidirectional = bidirectional
   }
 

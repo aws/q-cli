@@ -4,9 +4,10 @@ use crate::{
         util::OSVersion,
     },
     util::{
-        app_path_from_bundle_id, get_shell, glob, glob_dir, is_executable_in_path,
+        app_path_from_bundle_id, get_shell, glob, glob_dir, is_executable_in_path, launch_fig,
         shell::{Shell, ShellFileIntegration},
         terminal::Terminal,
+        LaunchOptions,
     },
 };
 
@@ -17,7 +18,6 @@ use crossterm::{
     style::Stylize,
     terminal::{disable_raw_mode, enable_raw_mode, Clear, ClearType},
 };
-use fig_auth::Credentials;
 use fig_ipc::{connect_timeout, get_fig_socket_path, send_recv_message};
 use fig_proto::{
     daemon::diagnostic_response::{settings_watcher_status, websocket_status},
@@ -32,7 +32,6 @@ use std::{
     ffi::OsStr,
     fs::read_to_string,
     future::Future,
-    io::Write,
     path::{Path, PathBuf},
     process::Command,
     time::Duration,
@@ -182,7 +181,18 @@ trait DoctorCheck<T = ()>: Sync
 where
     T: Sync + Send + Sized,
 {
+    // Name should be _static_ across different user's devices. It is used to generate
+    // a unique id for the check used in analytics. If name cannot be unique for some reason, you
+    // should override analytics_event_name with the unique name to be sent for analytics.
     fn name(&self) -> Cow<'static, str>;
+
+    fn analytics_event_name(&self) -> String {
+        let name = self.name().to_ascii_lowercase();
+        Regex::new(r"[^a-zA-Z0-9]+")
+            .unwrap()
+            .replace_all(&name, "_")
+            .into()
+    }
 
     fn get_type(&self, _: &T) -> DoctorCheckType {
         DoctorCheckType::NormalCheck
@@ -210,7 +220,7 @@ struct PathCheck;
 #[async_trait]
 impl DoctorCheck for PathCheck {
     fn name(&self) -> Cow<'static, str> {
-        "Fig in PATH".into()
+        "PATH contains ~/.local/bin and ~/.fig/bin".into()
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
@@ -397,7 +407,7 @@ impl DoctorCheck for DaemonCheck {
         let init_system =
             crate::daemon::InitSystem::get_init_system().context("Could not get init system")?;
 
-        let daemon_fix_sleep_sec = 3;
+        let daemon_fix_sleep_sec = 5;
 
         macro_rules! daemon_fix {
             () => {
@@ -412,6 +422,8 @@ impl DoctorCheck for DaemonCheck {
 
         #[cfg(target_os = "macos")]
         {
+            use std::io::Write;
+
             let launch_agents_path = fig_directories::home_dir()
                 .context("Could not get home dir")?
                 .join("Library/LaunchAgents");
@@ -449,6 +461,7 @@ impl DoctorCheck for DaemonCheck {
                 reason: "LaunchAgents directory is not writable".into(),
                 info: vec![
                     "Make sure you have write permissions for the LaunchAgents directory".into(),
+                    format!("Path: {:?}", launch_agents_path).into(),
                     format!("Error: {}", err).into(),
                 ],
                 fix: Some(Box::new(move || Ok(()))),
@@ -457,14 +470,26 @@ impl DoctorCheck for DaemonCheck {
 
         match init_system.daemon_status()? {
             Some(0) => Ok(()),
-            Some(n) => Err(DoctorError::Error {
-                reason: "Daemon is not running".into(),
-                info: vec![
-                    format!("Daemon status: {}", n).into(),
-                    format!("Init system: {:?}", init_system).into(),
-                ],
-                fix: daemon_fix!(),
-            }),
+            Some(n) => {
+                let error_message = tokio::fs::read_to_string(
+                    &fig_directories::fig_dir()
+                        .context("Could not get fig dir")?
+                        .join("logs")
+                        .join("daemon-exit.log"),
+                )
+                .await
+                .ok();
+
+                Err(DoctorError::Error {
+                    reason: "Daemon is not running".into(),
+                    info: vec![
+                        format!("Daemon status: {}", n).into(),
+                        format!("Init system: {:?}", init_system).into(),
+                        format!("Error message: {}", error_message.unwrap_or_default()).into(),
+                    ],
+                    fix: daemon_fix!(),
+                })
+            }
             None => Err(DoctorError::Error {
                 reason: "Daemon is not running".into(),
                 info: vec![format!("Init system: {:?}", init_system).into()],
@@ -569,11 +594,7 @@ struct DotfileCheck {
 #[async_trait]
 impl DoctorCheck<Option<Shell>> for DotfileCheck {
     fn name(&self) -> Cow<'static, str> {
-        format!(
-            "{} contains valid fig hooks",
-            self.integration.path.display()
-        )
-        .into()
+        format!("{} contains valid fig hooks", self.integration.filename).into()
     }
 
     fn get_type(&self, current_shell: &Option<Shell>) -> DoctorCheckType {
@@ -596,17 +617,14 @@ impl DoctorCheck<Option<Shell>> for DotfileCheck {
             "fig install --dotfiles".magenta(),
             self.integration.shell
         );
+        let path = self.integration.path();
         match self.integration.shell {
             Shell::Fish => {
                 // Source order for fish is handled by fish itself.
-                if self.integration.path.exists() {
+                if path.exists() {
                     return Ok(());
                 } else {
-                    let msg = format!(
-                        "{} does not exist. {}",
-                        self.integration.path.display(),
-                        fix_text
-                    );
+                    let msg = format!("{} does not exist. {}", path.display(), fix_text);
                     return Err(DoctorError::Error {
                         reason: msg.into(),
                         info: vec![],
@@ -616,16 +634,11 @@ impl DoctorCheck<Option<Shell>> for DotfileCheck {
             }
             Shell::Zsh | Shell::Bash => {
                 // Read file if it exists
-                let contents = match read_to_string(&self.integration.path) {
+                let contents = match read_to_string(&path) {
                     Ok(contents) => contents,
                     _ => {
                         return Err(DoctorError::Warning(
-                            format!(
-                                "{} does not exist. {}",
-                                self.integration.path.display(),
-                                fix_text
-                            )
-                            .into(),
+                            format!("{} does not exist. {}", path.display(), fix_text).into(),
                         ))
                     }
                 };
@@ -644,12 +657,7 @@ impl DoctorCheck<Option<Shell>> for DotfileCheck {
                 let first_line = lines.first().copied().unwrap_or_default();
                 if first_line.eq("[ -s ~/.fig/shell/pre.sh ] && source ~/.fig/shell/pre.sh") {
                     return Err(DoctorError::Warning(
-                        format!(
-                            "{} has legacy integration. {}",
-                            self.integration.path.display(),
-                            fix_text
-                        )
-                        .into(),
+                        format!("{} has legacy integration. {}", path.display(), fix_text).into(),
                     ));
                 }
 
@@ -657,7 +665,7 @@ impl DoctorCheck<Option<Shell>> for DotfileCheck {
                     if !pre.get_source_regex(true)?.is_match(&filtered_lines) {
                         let msg = format!(
                             "Pre shell integration not sourced first in {}",
-                            self.integration.path.display()
+                            path.display()
                         );
 
                         let top_lines = lines.get(0..lines.len().min(10)).map_or(vec![], Vec::from);
@@ -671,7 +679,7 @@ impl DoctorCheck<Option<Shell>> for DotfileCheck {
                             reason: msg.into(),
                             info: vec![
                                 "In order for autocomplete to work correctly, Fig's shell integration must be sourced first.".into(),
-                                format!("Top of {}:", self.integration.path.display()).into()
+                                format!("Top of {}:", path.display()).into()
                             ].into_iter().chain(top_line_text).collect(),
                             fix: Some(Box::new(move || {
                                 fix_integration.uninstall()?;
@@ -685,8 +693,7 @@ impl DoctorCheck<Option<Shell>> for DotfileCheck {
                 let last_line = lines.last().copied().unwrap_or_default();
                 if last_line.eq("[ -s ~/.fig/fig.sh ] && source ~/.fig/fig.sh") {
                     return Err(DoctorError::Warning(
-                        format!("{} has legacy integration", self.integration.path.display())
-                            .into(),
+                        format!("{} has legacy integration", path.display()).into(),
                     ));
                 }
 
@@ -694,7 +701,7 @@ impl DoctorCheck<Option<Shell>> for DotfileCheck {
                     if !post.get_source_regex(true)?.is_match(&filtered_lines) {
                         let msg = format!(
                             "Post shell integration not sourced last in {}",
-                            self.integration.path.display()
+                            path.display()
                         );
 
                         let n = lines.len();
@@ -711,7 +718,7 @@ impl DoctorCheck<Option<Shell>> for DotfileCheck {
                             reason: msg.into(),
                             info: vec![
                                 "In order for autocomplete to work correctly, Fig's shell integration must be sourced last.".into(),
-                                format!("Bottom of {}:", self.integration.path.display()).into()
+                                format!("Bottom of {}:", path.display()).into()
                             ].into_iter().chain(bottom_line_text).collect(),
                             fix: Some(Box::new(move || {
                                 fix_integration.uninstall()?;
@@ -741,7 +748,7 @@ impl DoctorCheck<DiagnosticsResponse> for InstallationScriptCheck {
             Ok(())
         } else {
             Err(DoctorError::Error {
-                reason: "Intall script not run".into(),
+                reason: "Install script not run".into(),
                 info: vec![],
                 fix: command_fix(vec!["fig", "app", "install"], None),
             })
@@ -849,7 +856,10 @@ impl DoctorCheck<DiagnosticsResponse> for FigCLIPathCheck {
             .join("bin")
             .join("fig");
 
-        if path == fig_bin_path || path == local_bin_path || path == Path::new("/usr/local/bin/fig")
+        if path == fig_bin_path
+            || path == local_bin_path
+            || path == Path::new("/usr/local/bin/fig")
+            || path == Path::new("/opt/homebrew/bin/fig")
         {
             Ok(())
         } else if path.ends_with("target/debug/fig") || path.ends_with("target/release/fig") {
@@ -1211,8 +1221,11 @@ impl DoctorCheck<Option<Terminal>> for VSCodeIntegrationCheck {
 
             let glob_set = glob(&[extensions.join("withfig.fig-").to_string_lossy()]).unwrap();
 
-            let fig_extensions =
-                glob_dir(&glob_set, extensions).context("Could not read extensions")?;
+            let extensions = extensions.as_path();
+            let fig_extensions = glob_dir(&glob_set, &extensions).context(format!(
+                "Could not read VSCode extensions in dir {}",
+                extensions.display()
+            ))?;
 
             if fig_extensions.is_empty() {
                 return Err(anyhow!("VSCode extension is missing!").into());
@@ -1232,15 +1245,11 @@ impl DoctorCheck for LoginStatusCheck {
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        if let Ok(creds) = Credentials::load_credentials() {
-            if creds.get_access_token().is_some()
-                && creds.get_id_token().is_some()
-                && creds.get_refresh_token().is_some()
-            {
-                return Ok(());
-            }
+        // We reload the credentials here because we want to check if the user is logged in
+        match fig_auth::refresh_credentals().await {
+            Ok(_) => Ok(()),
+            Err(_) => Err(anyhow!("Not logged in. Run `fig login` to login.").into()),
         }
-        return Err(anyhow!("Not logged in. Run `fig login` to login.").into());
     }
 }
 
@@ -1258,7 +1267,13 @@ where
     if config.verbose {
         println!("{}", header.as_ref().dark_grey());
     }
-    let mut context = get_context().await?;
+    let mut context = match get_context().await {
+        Ok(c) => c,
+        Err(e) => {
+            println!("Failed to get context: {:?}", e);
+            anyhow::bail!(e);
+        }
+    };
     for check in checks {
         let name: String = check.name().into();
         let check_type: DoctorCheckType = check.get_type(&context);
@@ -1298,7 +1313,7 @@ where
                         );
                     }
 
-                    event.add_property("check", &name);
+                    event.add_property("check", check.analytics_event_name());
                     event.add_property("cli_version", env!("CARGO_PKG_VERSION"));
 
                     match err {
@@ -1406,10 +1421,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
 
     let mut spinner: Option<Spinner> = None;
     if !config.verbose {
-        spinner = Some(Spinner::new(
-            Spinners::Dots,
-            "Running diagnostic checks...".into(),
-        ));
+        spinner = Some(Spinner::new(Spinners::Dots, "Running checks...".into()));
         execute!(std::io::stdout(), cursor::Hide)?;
 
         ctrlc::set_handler(move || {
@@ -1422,6 +1434,21 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
     if let Ok(path) = std::env::var("PATH") {
         fig_settings::state::set_value("pty.path", json!(path)).ok();
     }
+
+    run_checks(
+        "Let's check if you're logged in...".into(),
+        vec![&LoginStatusCheck {}],
+        config,
+        &mut spinner,
+    )
+    .await?;
+
+    // If user is logged in, launch fig.
+    launch_fig(LaunchOptions {
+        wait_for_activation: true,
+        verbose: true,
+    })
+    .ok();
 
     let shell_integrations: Vec<_> = [Shell::Bash, Shell::Zsh, Shell::Fish]
         .into_iter()
@@ -1436,16 +1463,17 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         .iter()
         .map(|p| (&*p) as &dyn DoctorCheck<_>)
         .collect();
-    run_checks_with_context(
-        "Let's check your dotfiles...",
-        all_dotfile_checks,
-        get_shell_context,
-        config,
-        &mut spinner,
-    )
-    .await?;
 
     let status = async {
+        run_checks_with_context(
+            "Let's check your dotfiles...",
+            all_dotfile_checks,
+            get_shell_context,
+            config,
+            &mut spinner,
+        )
+        .await?;
+
         run_checks(
             "Let's make sure Fig is running...".into(),
             vec![
@@ -1498,14 +1526,6 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
                 &VSCodeIntegrationCheck {},
             ],
             get_terminal_context,
-            config,
-            &mut spinner,
-        )
-        .await?;
-
-        run_checks(
-            "Let's check if you're logged in...".into(),
-            vec![&LoginStatusCheck {}],
             config,
             &mut spinner,
         )

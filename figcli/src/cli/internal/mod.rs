@@ -1,10 +1,7 @@
 pub mod local_state;
 
-use super::source::TerminalNotification;
-use crate::{
-    cli::installation::{self, InstallComponents},
-    util::shell::{Shell, When},
-};
+use crate::cli::installation::{self, InstallComponents};
+use crate::dotfiles::notify::TerminalNotification;
 
 use anyhow::{Context, Result};
 use clap::{ArgGroup, Args, Subcommand};
@@ -73,14 +70,6 @@ pub enum InternalSubcommand {
         binary: bool,
     },
     WarnUserWhenUninstallingIncorrectly,
-    Init {
-        /// The shell to generate the dotfiles for
-        #[clap(arg_enum)]
-        shell: Shell,
-        /// When to generate the dotfiles for
-        #[clap(arg_enum)]
-        when: When,
-    },
 }
 
 pub fn install_cli_from_args(install_args: InstallArgs) -> Result<()> {
@@ -195,9 +184,6 @@ impl InternalSubcommand {
                     .show_alert()
                     .unwrap();
             }
-            InternalSubcommand::Init { shell, when } => {
-                println!("{}", shell.get_fig_integration_source_internal(&when));
-            }
         }
         Ok(())
     }
@@ -272,7 +258,7 @@ pub async fn prompt_dotfiles_changed() -> Result<()> {
                 Some("none") => UpdatedVerbosity::None,
                 Some("minimal") => UpdatedVerbosity::Minimal,
                 Some("full") => UpdatedVerbosity::Full,
-                _ => UpdatedVerbosity::Full,
+                _ => UpdatedVerbosity::Minimal,
             };
 
             let source_immediately =

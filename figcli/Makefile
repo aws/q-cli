@@ -78,7 +78,7 @@ $(ARTIFACTS)/$(BINARY_NAME)-darwin-universal: $(ARTIFACTS)/$(BINARY_NAME)-x86_64
 linux: $(ARTIFACTS)/$(BINARY_NAME)-x86_64-unknown-linux-gnu $(ARTIFACTS)/$(BINARY_NAME)-aarch64-unknown-linux-gnu
 
 $(ARTIFACTS)/$(BINARY_NAME)-x86_64-unknown-linux-gnu: $(SRC)
-	cargo build --target=x86_64-unknown-linux-gnu $(CARGO_OPTIONS)
+	RUSTFLAGS='-C target-feature=+crt-static' cargo build --target=x86_64-unknown-linux-gnu $(CARGO_OPTIONS)
 	install $(TARGET_DIR)/x86_64-unknown-linux-gnu/release/$(BINARY_NAME) $@
 
 $(ARTIFACTS)/$(BINARY_NAME)-aarch64-unknown-linux-gnu: $(SRC)
@@ -100,6 +100,9 @@ install: all
 install-native: build-native
 	mkdir -p ~/.local/bin/
 	install $(ARTIFACTS)/$(BINARY_NAME) ~/.local/bin/$(BINARY_NAME)
+
+generate-spec: install-native
+	~/.local/bin/$(BINARY_NAME) compleation fig > spec.ts
 
 clean:
 	command -v cargo &>/dev/null && cargo clean

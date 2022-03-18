@@ -84,17 +84,12 @@ class Diagnostic {
     let dotfig = "\(NSHomeDirectory())/.fig"
 
     // Integration setup files
-    let integrations = ["tmux", "ssh"]
+    let integrations = [ "ssh" ]
 
     let settings = [ "settings.json" ]
 
-    let onboarding = [
-      "user/config"
-    ]
-
     let filesAndFolders = integrations +
-      settings +
-      onboarding
+      settings
 
     return filesAndFolders.allSatisfy { (path) -> Bool in
       var isDir: ObjCBool = false
@@ -275,8 +270,7 @@ class Diagnostic {
   }
 
   static var unixSocketServerExists: Bool {
-    let path = FileManager.default.temporaryDirectory
-                                  .appendingPathComponent("fig.socket").path
+    let path = IPC.unixSocket.path
     return FileManager.default.fileExists(atPath: path)
   }
 

@@ -19,6 +19,7 @@ async fn remove_in_dir_with_prefix(dir: &Path, prefix: &str) {
 }
 
 pub async fn uninstall_mac_app() {
+    // TODO: mirror mac app logic and use this as source of truth.
     // Send uninstall telemetry event
     let tel_join = tokio::task::spawn(async {
         match fig_telemetry::SegmentEvent::new("Uninstall App") {
@@ -29,6 +30,8 @@ pub async fn uninstall_mac_app() {
                         err
                     );
                 }
+
+                event.add_property("source", "fig app uninstall");
 
                 if let Err(err) = event.send_event().await {
                     error!("Could not send telemetry event: {}", err);
@@ -52,9 +55,6 @@ pub async fn uninstall_mac_app() {
         email, version
     ))
     .ok();
-
-    // Uninstall dotfiles, daemon, and CLI
-    uninstall_cli(InstallComponents::DAEMON).ok();
 
     // Delete the .fig folder
     if let Some(fig_dir) = fig_directories::fig_dir() {
@@ -170,6 +170,14 @@ pub async fn uninstall_mac_app() {
     let app_path = PathBuf::from("Applications").join("Fig.app");
     if app_path.exists() {
         tokio::fs::remove_dir_all(&app_path).await.ok();
+    }
+
+    // Delete data dir
+    if let Some(fig_data_dir) = fig_directories::fig_data_dir() {
+        match tokio::fs::remove_dir_all(&fig_data_dir).await {
+            Ok(_) => info!("Removed {}", fig_data_dir.display()),
+            Err(err) => error!("Could not remove {}: {}", fig_data_dir.display(), err),
+        }
     }
 
     info!("Deleted app");

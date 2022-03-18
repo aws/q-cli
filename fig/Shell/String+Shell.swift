@@ -44,8 +44,15 @@ extension Process {
           task.currentDirectoryURL = URL(fileURLWithPath: workingDirectory)
       }
 
-      task.environment = environment
-      task.launch()
+      task.environment = (environment ?? [:]).merging([
+        "PROCESS_LAUNCHED_BY_FIG": "1"
+      ]) { $1 }
+
+      do {
+        try task.run()
+      } catch {
+        return ([""], ["Failed to launch process \(command) \(args)"], 1)
+      }
 
       let outdata = outpipe.fileHandleForReading.readDataToEndOfFile()
       if var string = String(data: outdata, encoding: .utf8) {

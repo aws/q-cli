@@ -8,11 +8,7 @@ use nix::unistd::geteuid;
 use self_update::update::UpdateStatus;
 use time::OffsetDateTime;
 
-use crate::{
-    cli::util::dialoguer_theme,
-    daemon,
-    util::{launch_fig, shell::Shell},
-};
+use crate::{cli::util::dialoguer_theme, daemon, util::shell::Shell};
 
 bitflags::bitflags! {
     /// The different components that can be installed.
@@ -92,13 +88,28 @@ fn install_fig() -> Result<()> {
         .context("Could not find home directory")?
         .join(".fig.dotfiles.bak")
         .join(now);
+
+    let mut errs: Vec<String> = vec![];
     for shell in [Shell::Bash, Shell::Zsh, Shell::Fish] {
-        for integration in shell.get_shell_integrations()? {
-            integration.install(Some(&backup_dir))?
+        match shell.get_shell_integrations() {
+            Ok(integrations) => {
+                for integration in integrations {
+                    if let Err(e) = integration.install(Some(&backup_dir)) {
+                        errs.push(e.to_string());
+                    }
+                }
+            }
+            Err(e) => {
+                errs.push(e.to_string());
+            }
         }
     }
 
-    Ok(())
+    if errs.is_empty() {
+        Ok(())
+    } else {
+        Err(anyhow::anyhow!(errs.join("\n")))
+    }
 }
 
 pub fn uninstall_cli(install_components: InstallComponents) -> Result<()> {
@@ -171,9 +182,13 @@ pub async fn update(update_type: UpdateType) -> Result<UpdateStatus> {
     // Let desktop app handle updates on macOS
     #[cfg(target_os = "macos")]
     {
+        use crate::util::{launch_fig, LaunchOptions};
         use fig_ipc::command::update_command;
 
-        launch_fig()?;
+        launch_fig(LaunchOptions {
+            wait_for_activation: true,
+            verbose: true,
+        })?;
 
         let desktop_app_update = update_command(update_type == UpdateType::NoConfirm).await;
         match desktop_app_update {

@@ -27,7 +27,10 @@ class JSONStoreProvider: JSONStore {
 
   init(backingFilePath: String) {
     self.backingFile = URL(fileURLWithPath: backingFilePath)
-    self.raw = self.load() ?? [:]
+    self.raw = self.load()
+    if !FileManager.default.fileExists(atPath: backingFilePath) {
+      self.serialize()
+    }
   }
 
   func set(value: Any?, forKey key: String) {
@@ -50,7 +53,7 @@ class JSONStoreProvider: JSONStore {
 
   func reload() {
     let previous = self.raw
-    self.raw = load() ?? [:]
+    self.raw = load()
     self.delegate?.storeDidReload(previousStore: previous)
   }
 
@@ -63,23 +66,19 @@ class JSONStoreProvider: JSONStore {
     }
   }
 
-  fileprivate func load() -> [String: Any]? {
+  fileprivate func load() -> [String: Any] {
     let path = self.backingFile.path
     guard FileManager.default.fileExists(atPath: path) else {
       Logger.log(message: "file \(path) does not exist", priority: .trace)
-      return nil
+      return [:]
     }
 
-    guard let json = try? String(contentsOfFile: path) else {
+    guard let json = try? String(contentsOfFile: path), json.count > 0 else {
       Logger.log(message: "file \(path) is empty", priority: .trace)
-      return nil
+      return [:]
     }
 
-    guard json.count > 0 else {
-      return nil
-    }
-
-    return json.parseAsJSON()
+    return json.parseAsJSON() ?? [:]
 
   }
 
@@ -122,6 +121,11 @@ class LocalState: JSONStore {
     return self.backing.getValue(forKey: key)
   }
 
+  func addIfNotPresent(key: String, value: Any?) {
+    guard getValue(forKey: key) == nil else { return }
+    set(value: value, forKey: key)
+  }
+
   func jsonRepresentation() -> String? {
     return self.backing.jsonRepresentation()
   }
@@ -137,6 +141,10 @@ class LocalState: JSONStore {
 extension LocalState {
   static let ptyPathKey = "pty.path"
   static let userShell = "userShell"
+  static let hasSeenOnboarding = "user.onboarding"
+
+  static let userExplictlyQuitApp = "APP_TERMINATED_BY_USER"
+  static let userLoggedIn = "FIG_LOGGED_IN"
 
   static let logging = "developer.logging"
   static let loggingEnabledInternally = "developer.logging.internal"
