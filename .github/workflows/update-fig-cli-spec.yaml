@@ -15,7 +15,7 @@ jobs:
         run: |
           make generate-spec
       - name: Create Autocomplete PR
-        uses: withfig/publish-to-fig-autocomplete@v1
+        uses: withfig/push-to-fig-autocomplete-action@v1
         with:
           token: ${{ secrets.FIG_BOT_TOKEN }}
           autocomplete-spec-name: 'fig/fig@latest'
