@@ -5,6 +5,7 @@ use fig_ipc::command::{open_ui_element, restart_settings_listener};
 use fig_proto::local::UiElement;
 use serde_json::json;
 use std::process::Command;
+use tracing::error;
 
 use super::util::app_not_running_message;
 use crate::util::{launch_fig, LaunchOptions};
@@ -91,23 +92,37 @@ impl SettingsArgs {
                     (Some(value_str), false) => {
                         let value =
                             serde_json::from_str(value_str).unwrap_or_else(|_| json!(value_str));
-                        let remote_result = fig_settings::settings::set_value(key, value).await?;
+                        let remote_result = fig_settings::settings::set_value(key, value).await;
                         match remote_result {
-                            Ok(()) => {
-                                println!("Successfully updated settings");
+                            Ok(Ok(())) => {
+                                println!("Successfully set setting");
                                 Ok(())
                             }
-                            Err(_) => Err(anyhow!("Error syncing settings")),
+                            Ok(Err(err)) => {
+                                error!("Error settting setting: {:?}", err);
+                                Err(anyhow!("Error setting setting"))
+                            }
+                            Err(err) => {
+                                error!("Error settting setting: {:?}", err);
+                                Err(anyhow!("Error syncing setting"))
+                            }
                         }
                     }
                     (None, true) => {
-                        let remote_result = fig_settings::settings::remove_value(key).await?;
+                        let remote_result = fig_settings::settings::remove_value(key).await;
                         match remote_result {
-                            Ok(()) => {
-                                println!("Successfully updated settings");
+                            Ok(Ok(())) => {
+                                println!("Successfully removed settings");
                                 Ok(())
                             }
-                            Err(_) => Err(anyhow!("Error syncing settings")),
+                            Ok(Err(err)) => {
+                                error!("Error removing settings: {:?}", err);
+                                Err(anyhow!("Error removing setting, it may already be removed"))
+                            }
+                            Err(err) => {
+                                error!("Error syncing setting: {:?}", err);
+                                Err(anyhow!("Error syncing setting"))
+                            }
                         }
                     }
                     _ => Ok(()),
