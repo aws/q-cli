@@ -1,5 +1,6 @@
 use std::{
     env,
+    ffi::OsStr,
     path::{Path, PathBuf},
     process::Command,
 };
@@ -46,7 +47,9 @@ pub fn fig_bundle() -> Option<PathBuf> {
         Some(PathBuf::from("/Applications/Fig.app/"))
     }
     #[cfg(not(any(target_os = "macos")))]
-    unimplemented!();
+    {
+        None
+    }
 }
 
 /// Glob patterns against full paths
@@ -104,7 +107,7 @@ where
 }
 
 #[cfg(target_os = "macos")]
-pub fn app_path_from_bundle_id(bundle_id: impl AsRef<std::ffi::OsStr>) -> Option<String> {
+pub fn app_path_from_bundle_id(bundle_id: impl AsRef<OsStr>) -> Option<String> {
     let installed_apps = Command::new("mdfind")
         .arg("kMDItemCFBundleIdentifier")
         .arg("=")
@@ -113,6 +116,11 @@ pub fn app_path_from_bundle_id(bundle_id: impl AsRef<std::ffi::OsStr>) -> Option
         .ok()?;
     let path = String::from_utf8_lossy(&installed_apps.stdout);
     Some(path.trim().split('\n').next()?.into())
+}
+
+#[cfg(not(any(target_os = "macos")))]
+pub fn app_path_from_bundle_id(_bundle_id: impl AsRef<OsStr>) -> Option<String> {
+    None
 }
 
 pub fn get_shell() -> Result<String> {
@@ -127,11 +135,6 @@ pub fn get_shell() -> Result<String> {
         .context("Could not read value")?;
 
     Ok(String::from_utf8_lossy(&result.stdout).trim().into())
-}
-
-#[cfg(not(any(target_os = "macos")))]
-pub fn app_path_from_bundle_id(_bundle_id: impl AsRef<OsStr>) -> Option<String> {
-    unimplemented!();
 }
 
 #[cfg(target_os = "macos")]
@@ -168,19 +171,18 @@ pub fn get_machine_id() -> Option<String> {
 }
 
 #[cfg(target_os = "macos")]
-pub fn get_app_info() -> Result<String> {
-    let output = Command::new("lsappinfo")
-        .args(["info", "-app", "com.mschrage.fig"])
-        .output()?;
-    let result = String::from_utf8(output.stdout)?;
-    Ok(result.trim().into())
-}
-
-#[cfg(target_os = "macos")]
 pub fn is_app_running() -> bool {
-    match get_app_info() {
-        Ok(s) => !s.is_empty(),
-        _ => false,
+    let output = match Command::new("lsappinfo")
+        .args(["info", "-app", "com.mschrage.fig"])
+        .output()
+    {
+        Ok(output) => output,
+        Err(_) => return false,
+    };
+
+    match std::str::from_utf8(&output.stdout) {
+        Ok(result) => !result.trim().is_empty(),
+        Err(_) => false,
     }
 }
 

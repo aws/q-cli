@@ -28,13 +28,9 @@ use crate::{
     },
 };
 
-use fig_auth::is_logged_in;
-
 use anyhow::{Context, Result};
 use clap::{ArgEnum, IntoApp, Parser, Subcommand};
-use fig_ipc::command::{open_ui_element, quit_command};
-use fig_proto::local::UiElement;
-use std::{fs::File, process::exit, str::FromStr, time::Duration};
+use std::{fs::File, process::exit, str::FromStr};
 use tracing::{debug, level_filters::LevelFilter};
 
 use self::app::AppSubcommand;
@@ -382,6 +378,11 @@ async fn root_command() -> Result<()> {
     // Launch fig if it is not running
     #[cfg(target_os = "macos")]
     {
+        use fig_auth::is_logged_in;
+        use fig_ipc::command::{open_ui_element, quit_command};
+        use fig_proto::local::UiElement;
+        use std::time::Duration;
+
         if !is_logged_in() && is_app_running() {
             if quit_command().await.is_err() {
                 anyhow::bail!(
@@ -403,6 +404,8 @@ async fn root_command() -> Result<()> {
 
     #[cfg(not(target_os = "macos"))]
     {
+        use crossterm::style::Stylize;
+
         println!(
             "\n→ Opening {}...\n",
             "https://app.fig.io".magenta().underlined()
