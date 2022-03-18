@@ -20,6 +20,7 @@ jobs:
         with:
           profile: minimal
           toolchain: stable
+      - uses: Swatinem/rust-cache@v1
       - name: Generate the spec
         run: |
           cargo run -- completion fig > spec.ts
