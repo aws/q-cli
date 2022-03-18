@@ -24,6 +24,7 @@ use fig_proto::{
     local::DiagnosticsResponse,
     FigProtobufEncodable,
 };
+use nix::unistd::geteuid;
 use regex::Regex;
 use semver::Version;
 use serde_json::json;
@@ -1417,6 +1418,23 @@ struct CheckConfiguration {
 
 // Doctor
 pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
+    #[cfg(target_family = "unix")]
+    {
+        if geteuid().is_root() {
+            eprintln!(
+                "{}",
+                "Running doctor as root is not supported.".red().bold()
+            );
+            if !verbose {
+                eprintln!(
+                    "{}",
+                    "If you know what you're doing, run the command again with --verbose.".red()
+                );
+                std::process::exit(1);
+            }
+        }
+    }
+
     let config = CheckConfiguration { verbose, strict };
 
     let mut spinner: Option<Spinner> = None;
