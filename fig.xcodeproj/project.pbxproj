@@ -110,7 +110,6 @@
 		757A85FA270E46A40017996A /* fig_get_shell in Embed figterm & helpers */ = {isa = PBXBuildFile; fileRef = "fig_get_shell-0000000000" /* fig_get_shell */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		757AF4C826BC73FA00349764 /* WindowPositioning.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757AF4C726BC73FA00349764 /* WindowPositioning.swift */; };
 		757B6A0427CD761400A8811E /* LocalState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757B6A0327CD761400A8811E /* LocalState.swift */; };
-		757CA86724859461002A64A8 /* AppMover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757CA86624859461002A64A8 /* AppMover.swift */; };
 		757CA88624876043002A64A8 /* error.html in Resources */ = {isa = PBXBuildFile; fileRef = 757CA88524876042002A64A8 /* error.html */; };
 		757CA88A248AD58C002A64A8 /* onboarding.html in Resources */ = {isa = PBXBuildFile; fileRef = 757CA889248AD58C002A64A8 /* onboarding.html */; };
 		757CA88F248B0D31002A64A8 /* cli.png in Resources */ = {isa = PBXBuildFile; fileRef = 757CA88E248B0D31002A64A8 /* cli.png */; };
@@ -407,7 +406,6 @@
 		757712482564D9490011FF48 /* ProcessStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessStatus.swift; sourceTree = "<group>"; };
 		757AF4C726BC73FA00349764 /* WindowPositioning.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WindowPositioning.swift; path = fig/WindowPositioning.swift; sourceTree = SOURCE_ROOT; };
 		757B6A0327CD761400A8811E /* LocalState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalState.swift; sourceTree = "<group>"; };
-		757CA86624859461002A64A8 /* AppMover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppMover.swift; sourceTree = "<group>"; };
 		757CA88524876042002A64A8 /* error.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = error.html; sourceTree = "<group>"; };
 		757CA887248AD067002A64A8 /* WebViewWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewWindow.swift; sourceTree = "<group>"; };
 		757CA889248AD58C002A64A8 /* onboarding.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = onboarding.html; sourceTree = "<group>"; };
@@ -511,7 +509,7 @@
 		7AB6B6862740301500428F47 /* NSWorkspaceExtensionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSWorkspaceExtensionTests.swift; sourceTree = "<group>"; };
 		7AC30EF7274573F700A4F7AB /* TelemetryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetryTests.swift; sourceTree = "<group>"; };
 		7AF96D3E273DB3E30006A41B /* ConfigTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigTests.swift; sourceTree = "<group>"; };
-		AB3FB17A27636BF3009EFD9E /* KeypressProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = KeypressProvider.swift; path = fig/Autocompletion/KeypressProvider.swift; sourceTree = "<group>"; };
+		AB3FB17A27636BF3009EFD9E /* KeypressProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeypressProvider.swift; sourceTree = "<group>"; };
 		"fig_callback-00000000000" /* fig_callback */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = fig_callback; sourceTree = BUILT_PRODUCTS_DIR; };
 		"fig_get_shell-0000000000" /* fig_get_shell */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = fig_get_shell; sourceTree = BUILT_PRODUCTS_DIR; };
 		"figcli-00000000000000000" /* figcli */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = figcli; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -605,6 +603,75 @@
 			name = Icons;
 			sourceTree = "<group>";
 		};
+		751E4FD727E410260065E7E5 /* Application */ = {
+			isa = PBXGroup;
+			children = (
+				7546F5B2271660BA0077359F /* Constants.swift */,
+				756FE630278F59070017EC99 /* MissionControl.swift */,
+				755FC553268D09DE00966027 /* UpdateService.swift */,
+				75ACFE7B274C3424003C22EE /* Utilities.swift */,
+				751E4FD927E436D00065E7E5 /* Persistence */,
+				751E4FD827E436AD0065E7E5 /* Telemetry */,
+				75B1992F2501A17100F38EA8 /* Onboarding */,
+				75A4521325AD367E00107D2C /* Feedback.swift */,
+				75FE3FFF2626A4BD00AC8414 /* Github.swift */,
+				75DA86A425EEBD7400722F1D /* Alert.swift */,
+				751C3BEB24B6910800B5C7FD /* Remote.swift */,
+				755D0DE1247EFAE10074AB5C /* Logging.swift */,
+				75AEF2E325C3C34A00D78431 /* Diagnostic.swift */,
+				7520D8112682AEB00034FE2B /* Throttler.swift */,
+			);
+			path = Application;
+			sourceTree = "<group>";
+		};
+		751E4FD827E436AD0065E7E5 /* Telemetry */ = {
+			isa = PBXGroup;
+			children = (
+				75809B0D24BFA64D00BFFB3E /* TelemetryService.swift */,
+				75C0EBD2253E336E001964DE /* TerminalUsageTelemetry.swift */,
+			);
+			path = Telemetry;
+			sourceTree = "<group>";
+		};
+		751E4FD927E436D00065E7E5 /* Persistence */ = {
+			isa = PBXGroup;
+			children = (
+				751C3BED24B6915000B5C7FD /* Defaults.swift */,
+				7568203026003BDF0006FE78 /* Settings.swift */,
+				751E4FD527E2F2BC0065E7E5 /* Credentials.swift */,
+				757B6A0327CD761400A8811E /* LocalState.swift */,
+				750CF21726A1055F0094D76A /* Config.swift */,
+			);
+			path = Persistence;
+			sourceTree = "<group>";
+		};
+		751E4FDA27E4371A0065E7E5 /* Unix Sockets */ = {
+			isa = PBXGroup;
+			children = (
+				75F7F951261FBDC30005E215 /* UnixSocketServer.swift */,
+				75EDDC5A25D4BC53003AECC6 /* UnixSocketClient.swift */,
+			);
+			path = "Unix Sockets";
+			sourceTree = "<group>";
+		};
+		751E4FDB27E4387E0065E7E5 /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				752D71CC25B8A6B200263527 /* Restarter.swift */,
+				75AEF2ED25C5062E00D78431 /* WindowObserver.swift */,
+			);
+			path = Utilities;
+			sourceTree = "<group>";
+		};
+		751E4FDD27E439E40065E7E5 /* Pseudoterminal */ = {
+			isa = PBXGroup;
+			children = (
+				75B7931924BB897F0073AAC6 /* PseudoTerminalService.swift */,
+				75ACFE79274442C7003C22EE /* PTYProcess.swift */,
+			);
+			path = Pseudoterminal;
+			sourceTree = "<group>";
+		};
 		75290AB92671905D000F4255 /* iTerm */ = {
 			isa = PBXGroup;
 			children = (
@@ -692,7 +759,6 @@
 		75675948244634AD006AA988 = {
 			isa = PBXGroup;
 			children = (
-				AB3FB17A27636BF3009EFD9E /* KeypressProvider.swift */,
 				75675953244634AD006AA988 /* fig */,
 				75675969244634B2006AA988 /* figTests */,
 				75675974244634B2006AA988 /* figUITests */,
@@ -723,46 +789,17 @@
 			children = (
 				75675954244634AD006AA988 /* AppDelegate.swift */,
 				75E993F32515C8D3000BE6BE /* Autocompletion */,
-				75B199332504190900F38EA8 /* Keycode.swift */,
-				752D71CC25B8A6B200263527 /* Restarter.swift */,
-				751C3BEB24B6910800B5C7FD /* Remote.swift */,
-				751C3BED24B6915000B5C7FD /* Defaults.swift */,
-				7546F5B2271660BA0077359F /* Constants.swift */,
-				7568203026003BDF0006FE78 /* Settings.swift */,
-				757B6A0327CD761400A8811E /* LocalState.swift */,
-				751E4FD527E2F2BC0065E7E5 /* Credentials.swift */,
-				75E993F12515A6DD000BE6BE /* statusbar@2x.png */,
-				755D0DE1247EFAE10074AB5C /* Logging.swift */,
-				75809B0D24BFA64D00BFFB3E /* TelemetryService.swift */,
-				75C0EBD2253E336E001964DE /* TerminalUsageTelemetry.swift */,
-				75A4521325AD367E00107D2C /* Feedback.swift */,
-				75AEF2E325C3C34A00D78431 /* Diagnostic.swift */,
-				75DA86A425EEBD7400722F1D /* Alert.swift */,
-				75FE3FFF2626A4BD00AC8414 /* Github.swift */,
-				7520D8112682AEB00034FE2B /* Throttler.swift */,
-				755FC553268D09DE00966027 /* UpdateService.swift */,
-				750CF21726A1055F0094D76A /* Config.swift */,
-				756FE630278F59070017EC99 /* MissionControl.swift */,
+				751E4FD727E410260065E7E5 /* Application */,
 				756FE62A278E0B4D0017EC99 /* macOS */,
-				7545657B2773EB0B002A59EA /* PropertyList.swift */,
 				75696830271F70800029F063 /* Local IPC */,
-				7575D44B26D5C4DD00D0C8D7 /* API */,
-				75D1ECBC26F15F0E00BC8A04 /* Integrations */,
-				7571778126F91BD60071AE10 /* AppleTerminal */,
-				75A0A71726F1A786008FAD70 /* Kitty */,
-				75D1ECB226EFE53F00BC8A04 /* Alacritty */,
-				75290AB92671905D000F4255 /* iTerm */,
-				75EDDC4F25D2473C003AECC6 /* Hyper */,
-				752A398725CD0FFB00B1AC40 /* VSCode */,
-				7545657327715754002A59EA /* Tabby */,
-				754565782773CB6E002A59EA /* JetBrains */,
+				7575D44B26D5C4DD00D0C8D7 /* JS API */,
+				75D1ECBC26F15F0E00BC8A04 /* Terminal Integrations */,
 				75B1992A25019FDE00F38EA8 /* Companion Window */,
+				751E4FDD27E439E40065E7E5 /* Pseudoterminal */,
 				75B1992B25019FFE00F38EA8 /* Window Management */,
 				75B1992E2501A12C00F38EA8 /* Shell */,
-				75B1992F2501A17100F38EA8 /* Onboarding */,
-				75B1992C2501A02B00F38EA8 /* Bridging */,
-				757CA88B248B08D7002A64A8 /* local */,
-				75B199302501A1A200F38EA8 /* Legacy */,
+				75B1992C2501A02B00F38EA8 /* Legacy */,
+				757CA88B248B08D7002A64A8 /* Static Assets */,
 				75675958244634B2006AA988 /* Assets.xcassets */,
 				7518608F255CE49B0000A7C7 /* Icons */,
 				7567595D244634B2006AA988 /* Main.storyboard */,
@@ -811,7 +848,11 @@
 		75696830271F70800029F063 /* Local IPC */ = {
 			isa = PBXGroup;
 			children = (
+				75F7F953262007170005E215 /* IPC.swift */,
 				75ACFE832755B958003C22EE /* IPC+Notifications.swift */,
+				754569FB272A05C200C7588F /* CommandHandlers.swift */,
+				755D27B9272242690080B4B8 /* FigTerm.swift */,
+				751E4FDA27E4371A0065E7E5 /* Unix Sockets */,
 			);
 			path = "Local IPC";
 			sourceTree = "<group>";
@@ -819,6 +860,9 @@
 		756FE62A278E0B4D0017EC99 /* macOS */ = {
 			isa = PBXGroup;
 			children = (
+				75B199332504190900F38EA8 /* Keycode.swift */,
+				75B199312501A3DA00F38EA8 /* KeyboardLayout.swift */,
+				7545657B2773EB0B002A59EA /* PropertyList.swift */,
 				7573F15F260BC70F00C833FA /* LoginItems.swift */,
 				75AEF2E925C4C34D00D78431 /* SecureKeyboardInput.swift */,
 				759F987B25BF903900EC3407 /* Accessibility.swift */,
@@ -836,9 +880,10 @@
 			path = AppleTerminal;
 			sourceTree = "<group>";
 		};
-		7575D44B26D5C4DD00D0C8D7 /* API */ = {
+		7575D44B26D5C4DD00D0C8D7 /* JS API */ = {
 			isa = PBXGroup;
 			children = (
+				751F7588246D090100E083C8 /* WebBridge.swift */,
 				7575D44E26D5D35000D0C8D7 /* API.swift */,
 				75915DFF2722044D005A9909 /* API.js */,
 				75B850E42703D8FF00891A78 /* API+Extensions.swift */,
@@ -849,12 +894,13 @@
 				75EB32FD272C89D100A544DB /* API+Icon.swift */,
 				750BA10B2733590A00705E63 /* API+IPC.swift */,
 			);
-			path = API;
+			path = "JS API";
 			sourceTree = "<group>";
 		};
-		757CA88B248B08D7002A64A8 /* local */ = {
+		757CA88B248B08D7002A64A8 /* Static Assets */ = {
 			isa = PBXGroup;
 			children = (
+				75E993F12515A6DD000BE6BE /* statusbar@2x.png */,
 				755EC8CE266997A600CBEF57 /* settings */,
 				757CA89E248D628E002A64A8 /* sidebar.html */,
 				757CA89C248C1F50002A64A8 /* demo4onboarding.mp4 */,
@@ -888,7 +934,7 @@
 				75B1993525042B2C00F38EA8 /* autocomplete.html */,
 				754D31B425759D900020CED4 /* tutorial.html */,
 			);
-			name = local;
+			name = "Static Assets";
 			sourceTree = "<group>";
 		};
 		75A0A71726F1A786008FAD70 /* Kitty */ = {
@@ -912,6 +958,7 @@
 		75B1992A25019FDE00F38EA8 /* Companion Window */ = {
 			isa = PBXGroup;
 			children = (
+				757CA887248AD067002A64A8 /* WebViewWindow.swift */,
 				756759D324498CA0006AA988 /* WebViewController.swift */,
 				75C0711F244BB441002DF69F /* CompanionViewController.swift */,
 				75C07123244BE45A002DF69F /* CompanionWindow.swift */,
@@ -923,12 +970,13 @@
 		75B1992B25019FFE00F38EA8 /* Window Management */ = {
 			isa = PBXGroup;
 			children = (
+				751E4FDB27E4387E0065E7E5 /* Utilities */,
 				757AF4C726BC73FA00349764 /* WindowPositioning.swift */,
 				7510F8BE24A99A4B00E86F7C /* WindowService.swift */,
 				75ACFE852755BEBE003C22EE /* WindowMetadataService.swift */,
 				75E993F42517E226000BE6BE /* AXWindowServer.swift */,
-				75AEF2ED25C5062E00D78431 /* WindowObserver.swift */,
 				7510F8C024A9B32D00E86F7C /* WindowManager.swift */,
+				75ACFE7F27556D7A003C22EE /* TerminalSessionLinkingService.swift */,
 				7510F8B924A9701000E86F7C /* Private.h */,
 				7510F8BB24A9861E00E86F7C /* PrivateWindow.h */,
 				7510F8BC24A9861E00E86F7C /* PrivateWindow.m */,
@@ -936,36 +984,25 @@
 			path = "Window Management";
 			sourceTree = "<group>";
 		};
-		75B1992C2501A02B00F38EA8 /* Bridging */ = {
+		75B1992C2501A02B00F38EA8 /* Legacy */ = {
 			isa = PBXGroup;
 			children = (
+				75EB592A258D98A7002915E7 /* BiMap.swift */,
+				7587B4D724F97F9E00E355E4 /* ShellHooksManager.swift */,
 				75C07121244BB65D002DF69F /* ShellBridge.swift */,
-				754569FB272A05C200C7588F /* CommandHandlers.swift */,
-				755D27B9272242690080B4B8 /* FigTerm.swift */,
-				75B199312501A3DA00F38EA8 /* KeyboardLayout.swift */,
-				751F7588246D090100E083C8 /* WebBridge.swift */,
-				75F7F953262007170005E215 /* IPC.swift */,
-				75F7F951261FBDC30005E215 /* UnixSocketServer.swift */,
-				75ACFE7B274C3424003C22EE /* Utilities.swift */,
-				75ACFE7F27556D7A003C22EE /* TerminalSessionLinkingService.swift */,
 			);
-			path = Bridging;
+			path = Legacy;
 			sourceTree = "<group>";
 		};
 		75B1992E2501A12C00F38EA8 /* Shell */ = {
 			isa = PBXGroup;
 			children = (
 				757712482564D9490011FF48 /* ProcessStatus.swift */,
-				75ACFE79274442C7003C22EE /* PTYProcess.swift */,
 				7583A12D273CF261001DF86B /* PathHelper.swift */,
-				7587B4D724F97F9E00E355E4 /* ShellHooksManager.swift */,
-				75B7931924BB897F0073AAC6 /* PseudoTerminalService.swift */,
 				756759962446C44C006AA988 /* String+Shell.swift */,
-				75EB592A258D98A7002915E7 /* BiMap.swift */,
 				75EB592C258DD771002915E7 /* TTY.swift */,
 				75A4521925AE2E6A00107D2C /* CommandIntegration.swift */,
 				75AEF2E525C3DEAF00D78431 /* DockerIntegration.swift */,
-				75EDDC5A25D4BC53003AECC6 /* UnixSocketClient.swift */,
 				75DA86A825EF145E00722F1D /* TmuxIntegration.swift */,
 				75A4520F25A839F500107D2C /* remote_cwd.sh */,
 			);
@@ -975,18 +1012,9 @@
 		75B1992F2501A17100F38EA8 /* Onboarding */ = {
 			isa = PBXGroup;
 			children = (
-				757CA887248AD067002A64A8 /* WebViewWindow.swift */,
 				75CFDBDE24EDB2E900F00CAE /* Onboarding.swift */,
 			);
 			path = Onboarding;
-			sourceTree = "<group>";
-		};
-		75B199302501A1A200F38EA8 /* Legacy */ = {
-			isa = PBXGroup;
-			children = (
-				757CA86624859461002A64A8 /* AppMover.swift */,
-			);
-			path = Legacy;
 			sourceTree = "<group>";
 		};
 		75CFF6432496B3BA00C6A6DE /* Frameworks */ = {
@@ -1007,20 +1035,29 @@
 			path = Alacritty;
 			sourceTree = "<group>";
 		};
-		75D1ECBC26F15F0E00BC8A04 /* Integrations */ = {
+		75D1ECBC26F15F0E00BC8A04 /* Terminal Integrations */ = {
 			isa = PBXGroup;
 			children = (
+				754565782773CB6E002A59EA /* JetBrains */,
+				7545657327715754002A59EA /* Tabby */,
+				752A398725CD0FFB00B1AC40 /* VSCode */,
+				75EDDC4F25D2473C003AECC6 /* Hyper */,
+				75290AB92671905D000F4255 /* iTerm */,
+				75D1ECB226EFE53F00BC8A04 /* Alacritty */,
+				75A0A71726F1A786008FAD70 /* Kitty */,
+				7571778126F91BD60071AE10 /* AppleTerminal */,
 				75DA86A225EDB05100722F1D /* Integrations.swift */,
 				75D1ECBF26F1658300BC8A04 /* InstallationStatus.swift */,
 				75D1ECBD26F15F4500BC8A04 /* TerminalIntegrationProvider.swift */,
 				75A0A71C26F27E3D008FAD70 /* SemanticVersion.swift */,
 			);
-			path = Integrations;
+			path = "Terminal Integrations";
 			sourceTree = "<group>";
 		};
 		75E993F32515C8D3000BE6BE /* Autocompletion */ = {
 			isa = PBXGroup;
 			children = (
+				AB3FB17A27636BF3009EFD9E /* KeypressProvider.swift */,
 				1A63312025A4BE6D00CEA06A /* Keystroke.swift */,
 				75A4A29F25CA0D46002EFD6B /* Autocomplete.swift */,
 			);
@@ -1504,7 +1541,6 @@
 				AB3FB17B27636BF3009EFD9E /* KeypressProvider.swift in Sources */,
 				75288EF924CCE72F002DF12A /* WebViewWindow.swift in Sources */,
 				75BF28A8270E9B9200E7C914 /* API+Constants.swift in Sources */,
-				757CA86724859461002A64A8 /* AppMover.swift in Sources */,
 				75ACFE862755BEBE003C22EE /* WindowMetadataService.swift in Sources */,
 				75C0EBD3253E336E001964DE /* TerminalUsageTelemetry.swift in Sources */,
 				75B199322501A3DA00F38EA8 /* KeyboardLayout.swift in Sources */,
