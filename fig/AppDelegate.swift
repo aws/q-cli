@@ -781,8 +781,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
       LoginItems.shared.removeAllItemsMatchingBundleURL()
 
       let domain = Bundle.main.bundleIdentifier!
+      let uuid = Defaults.shared.uuid
       UserDefaults.standard.removePersistentDomain(forName: domain)
       UserDefaults.standard.removePersistentDomain(forName: "\(domain).shared")
+
+      UserDefaults.standard.synchronize()
+
+      UserDefaults.standard.set(uuid, forKey: "uuid")
       UserDefaults.standard.synchronize()
 
       WebView.deleteCache()
