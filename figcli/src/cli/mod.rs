@@ -41,15 +41,21 @@ use self::app::AppSubcommand;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ArgEnum)]
 pub enum OutputFormat {
+    /// Outputs the results as markdown
     Plain,
+    /// Outputs the results as JSON
     Json,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ArgEnum)]
 pub enum Shells {
+    /// Bash shell compleations
     Bash,
+    /// Fish shell completions
     Fish,
+    /// Zsh shell completions
     Zsh,
+    /// Fig completion spec
     Fig,
 }
 
@@ -58,7 +64,7 @@ pub enum CliRootCommands {
     #[clap(subcommand)]
     /// Interact with the desktop app
     App(app::AppSubcommand),
-    #[clap(subcommand)]
+    #[clap(subcommand, hide = true)]
     /// Hook commands
     Hook(hook::HookSubcommand),
     #[clap(subcommand)]
@@ -72,6 +78,7 @@ pub enum CliRootCommands {
     /// Install fig cli comoponents
     Install(internal::InstallArgs),
     /// Uninstall fig
+    #[clap(hide = true)]
     Uninstall,
     /// Update dotfiles
     Update {
@@ -84,6 +91,7 @@ pub enum CliRootCommands {
     Daemon,
     /// Run diagnostic tests
     Diagnostic {
+        /// The format of the output
         #[clap(long, short, arg_enum, default_value = "plain")]
         format: OutputFormat,
         /// Force limited diagnostic output
@@ -91,7 +99,6 @@ pub enum CliRootCommands {
         force: bool,
     },
     /// Generate the dotfiles for the given shell
-    #[clap(hide = true)]
     Init {
         /// The shell to generate the dotfiles for
         #[clap(arg_enum)]
@@ -103,9 +110,7 @@ pub enum CliRootCommands {
     /// Sync your latest dotfiles
     Source,
     /// Get or set theme
-    Theme {
-        theme: Option<String>,
-    },
+    Theme { theme: Option<String> },
     /// Invite friends to Fig
     Invite,
     /// Tweet about Fig
@@ -118,36 +123,48 @@ pub enum CliRootCommands {
         /// Issue description
         description: Vec<String>,
     },
-    /// Login to dotfiles
+    /// Login to Fig
     Login {
+        /// Manually refresh the auth token
         #[clap(long, short)]
         refresh: bool,
     },
-    /// Logout of dotfiles
+    /// Logout of Fig
     Logout,
     /// Details about the current user
     User,
     /// Check Fig is properly configured
     Doctor {
+        /// Run all doctor tests, with no fixes
         #[clap(long)]
         verbose: bool,
+        /// Error on warnings
         #[clap(long)]
         strict: bool,
     },
     /// Generate the completion spec for Fig
-    GenerateFigSpec,
+    #[clap(hide = true)]
     Completion {
+        /// Shell to generate the completion spec for
         #[clap(arg_enum, default_value = "zsh")]
         shell: Shells,
     },
-    #[clap(subcommand)]
+    /// Internal subcommands used for Fig
+    #[clap(subcommand, hide = true)]
     Internal(internal::InternalSubcommand),
+    /// Launch the Fig desktop app
     Launch,
+    /// Quit the Fig desktop app
     Quit,
+    /// Restart the Fig desktop app
     Restart,
+    #[clap(hide = true)]
+    /// (LEGACY) Old way to launch mission control
     Alpha,
+    /// Run the Fig tutorial
     Onboarding,
-    #[clap(name = "app:running")]
+    /// (LEGACY) Old hook that was being used somewhere
+    #[clap(name = "app:running", hide = true)]
     FigAppRunning,
 }
 
@@ -268,10 +285,6 @@ impl Cli {
                 CliRootCommands::Debug(debug_subcommand) => debug_subcommand.execute().await,
                 CliRootCommands::Issue { force, description } => {
                     issue::issue_cli(force, description).await
-                }
-                CliRootCommands::GenerateFigSpec => {
-                    println!("{}", Cli::generation_completions(clap_complete_fig::Fig));
-                    Ok(())
                 }
                 CliRootCommands::Completion { shell } => {
                     println!(

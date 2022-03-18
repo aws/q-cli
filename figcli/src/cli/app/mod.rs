@@ -22,14 +22,23 @@ use fig_settings::{settings, state};
 
 #[derive(Debug, Subcommand)]
 pub enum AppSubcommand {
+    /// Install the Fig app
     Install,
+    /// Run the Fig tutorial again
     Onboarding,
+    /// Check if Fig is running
     Running,
+    /// Launch th Fig desktop app
     Launch,
+    /// Restart the Fig desktop app
     Restart,
+    /// Quit the Fig desktop app
     Quit,
+    /// Set the internal psudo-terminal path
     SetPath,
+    /// Uninstall the Fig app
     Uninstall,
+    /// Prompts shown on terminal startup
     Prompts,
 }
 

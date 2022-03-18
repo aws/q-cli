@@ -52,8 +52,12 @@ pub struct InstallArgs {
 #[derive(Debug, Subcommand)]
 #[clap(hide = true, alias = "_")]
 pub enum InternalSubcommand {
+    /// Prompt the user that the dotfiles have changes
+    /// Also use for `fig source` internals
     PromptDotfilesChanged,
+    /// Change the local-state file
     LocalState(local_state::LocalStateArgs),
+    /// Callback used for the internal psudoterminal
     Callback(CallbackArgs),
     /// Install fig cli
     Install(InstallArgs),
@@ -69,6 +73,7 @@ pub enum InternalSubcommand {
         #[clap(long)]
         binary: bool,
     },
+    /// Notify the user that they are uninstalling incorrectly
     WarnUserWhenUninstallingIncorrectly,
 }
 

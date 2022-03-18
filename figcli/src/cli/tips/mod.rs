@@ -13,7 +13,11 @@ pub enum TipsSubcommand {
     Enable,
     /// Disable fig tips
     Disable,
+    /// Reset the tips to the default
+    #[clap(hide = true)]
     Reset,
+    /// Show the tips
+    #[clap(hide = true)]
     Prompt,
 }
 
