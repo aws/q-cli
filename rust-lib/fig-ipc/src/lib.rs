@@ -25,12 +25,12 @@ use whoami::username;
 
 /// Get path to "/var/tmp/fig/$USERNAME/fig.socket"
 pub fn get_fig_socket_path() -> PathBuf {
-    [
+/*    [
         Path::new("/var/tmp/fig"),
         Path::new(&username()),
         Path::new("fig.socket"),
-    ]
-    .into_iter()
+    ]*/
+    [Path::new("/mnt/c/fig/winsock")].into_iter()
     .collect()
 }
 
