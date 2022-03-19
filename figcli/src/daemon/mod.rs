@@ -222,8 +222,8 @@ impl InitSystem {
                 let status = stdout
                     .lines()
                     .map(|line| line.split_whitespace().collect::<Vec<_>>())
-                    .find(|line| line[2] == self.daemon_name())
-                    .and_then(|data| data[1].parse::<i32>().ok());
+                    .find(|line| line.get(2) == Some(&self.daemon_name()))
+                    .and_then(|data| data.get(1).and_then(|v| v.parse::<i32>().ok()));
 
                 Ok(status)
             }
