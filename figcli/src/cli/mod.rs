@@ -11,6 +11,7 @@ pub mod installation;
 pub mod internal;
 pub mod invite;
 pub mod issue;
+pub mod plugins;
 pub mod settings;
 pub mod source;
 pub mod theme;
@@ -33,7 +34,7 @@ use clap::{ArgEnum, IntoApp, Parser, Subcommand};
 use std::{fs::File, process::exit, str::FromStr};
 use tracing::{debug, level_filters::LevelFilter};
 
-use self::app::AppSubcommand;
+use self::{app::AppSubcommand, plugins::PluginsSubcommands};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ArgEnum)]
 pub enum OutputFormat {
@@ -162,6 +163,8 @@ pub enum CliRootCommands {
     /// (LEGACY) Old hook that was being used somewhere
     #[clap(name = "app:running", hide = true)]
     FigAppRunning,
+    #[clap(subcommand)]
+    Plugins(PluginsSubcommands),
 }
 
 #[derive(Debug, Parser)]
@@ -326,6 +329,7 @@ impl Cli {
                     println!("{}", if is_app_running() { "1" } else { "0" });
                     Ok(())
                 }
+                CliRootCommands::Plugins(plugins_subcommand) => plugins_subcommand.execute().await,
             },
             // Root command
             None => root_command().await,

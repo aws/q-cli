@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Context, Result};
-use fig_auth::{get_email, get_token};
+use fig_auth::{get_email, get_token, refresh_credentals};
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -39,12 +39,29 @@ pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream
     let url = Url::parse(&format!("{api_host}/authenticate/ticket"))?;
 
     let response = reqwest_client
-        .get(url)
+        .get(url.clone())
         .bearer_auth(&token)
         .send()
         .await?
-        .text()
-        .await?;
+        .error_for_status();
+
+    let text = match response {
+        Ok(response) => response.text().await?,
+        Err(_) => {
+            // Retry after manually refreshing the credentals
+            refresh_credentals().await?;
+            let token = get_token().await?;
+
+            reqwest_client
+                .get(url.clone())
+                .bearer_auth(&token)
+                .send()
+                .await?
+                .error_for_status()?
+                .text()
+                .await?
+        }
+    };
 
     let mut device_id = crate::util::get_machine_id().context("Cound not get machine_id")?;
     if let Some(email) = get_email() {
@@ -52,10 +69,7 @@ pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream
         device_id.push_str(&email);
     }
 
-    let url = Url::parse_with_params(
-        &ws_host(),
-        &[("deviceId", &device_id), ("ticket", &response)],
-    )?;
+    let url = Url::parse_with_params(&ws_host(), &[("deviceId", &device_id), ("ticket", &text)])?;
 
     let (websocket_stream, _) = tokio_tungstenite::connect_async(url).await?;
 

@@ -9,6 +9,8 @@ use crate::{
         launchd_plist::LaunchdPlist, settings_watcher::spawn_settings_watcher,
         systemd_unit::SystemdUnit, websocket::process_websocket,
     },
+    dotfiles::download_and_notify,
+    plugins::fetch_installed_plugins,
     util::{backoff::Backoff, launch_fig, LaunchOptions},
 };
 
@@ -443,8 +445,40 @@ async fn spawn_unix_handler(
                                         false
                                     }
                                 };
-
                                 fig_proto::daemon::new_self_update_response(success)
+                            }
+                            fig_proto::daemon::daemon_message::Command::Sync(sync_command) => {
+                                match sync_command.r#type() {
+                                    fig_proto::daemon::sync_command::SyncType::Plugins => {
+                                        match download_and_notify().await {
+                                            Ok(_) => match fetch_installed_plugins().await {
+                                                Ok(()) => {
+                                                    fig_proto::daemon::new_sync_response(Ok(()))
+                                                }
+                                                Err(err) => {
+                                                    error!(
+                                                        "Failed to fetch installed plugins: {}",
+                                                        err
+                                                    );
+
+                                                    fig_proto::daemon::new_sync_response(Err(
+                                                        err.to_string()
+                                                    ))
+                                                }
+                                            },
+                                            Err(err) => {
+                                                error!(
+                                                    "Failed to fetch installed plugins: {}",
+                                                    err
+                                                );
+
+                                                fig_proto::daemon::new_sync_response(Err(
+                                                    err.to_string()
+                                                ))
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         };
 

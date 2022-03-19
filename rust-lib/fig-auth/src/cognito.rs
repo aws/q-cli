@@ -16,6 +16,7 @@ use aws_smithy_client::{
 };
 use base64::encode;
 use fig_directories::fig_data_dir;
+use jwt::{Header, RegisteredClaims, Token};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::{
@@ -611,19 +612,22 @@ impl Credentials {
         self.refresh_token.as_ref()
     }
 
-    pub fn get_expiration_time(&self) -> Option<&time::OffsetDateTime> {
-        self.expiration_time.as_ref()
+    pub fn get_expiration_time(&self) -> Option<time::OffsetDateTime> {
+        let access_token = self.access_token.as_ref()?;
+        let token: Token<Header, RegisteredClaims, _> =
+            Token::parse_unverified(access_token).ok()?;
+        time::OffsetDateTime::from_unix_timestamp(token.claims().expiration?.try_into().ok()?).ok()
     }
 
     pub fn is_expired_epslion(&self, epsilon: time::Duration) -> bool {
-        match self.expiration_time {
+        match self.get_expiration_time() {
             Some(expiration_time) => expiration_time + epsilon < time::OffsetDateTime::now_utc(),
-            None => false,
+            None => true,
         }
     }
 
     pub fn is_expired(&self) -> bool {
-        self.is_expired_epslion(time::Duration::minutes(60))
+        self.is_expired_epslion(time::Duration::seconds(20))
     }
 
     pub fn get_email(&self) -> Option<&String> {

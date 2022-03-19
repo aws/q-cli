@@ -2,6 +2,7 @@ use crate::settings::LocalSettings;
 
 use anyhow::Result;
 use fig_auth::get_token;
+use serde::{Deserialize, Serialize};
 
 pub type RemoteResult = Result<()>;
 
@@ -67,4 +68,27 @@ pub async fn delete_remote_setting(key: impl AsRef<str>) -> RemoteResult {
         .error_for_status()?;
 
     Ok(())
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RemoteSettings {
+    pub settings: serde_json::Value,
+    #[serde(with = "time::serde::rfc3339")]
+    pub updated_at: time::OffsetDateTime,
+}
+
+pub async fn get_settings() -> Result<RemoteSettings> {
+    let token = get_token().await?;
+
+    let res = reqwest::Client::new()
+        .get("https://api.fig.io/settings/")
+        .bearer_auth(token)
+        .send()
+        .await?
+        .error_for_status()?;
+
+    let body: RemoteSettings = res.json().await?;
+
+    Ok(body)
 }
