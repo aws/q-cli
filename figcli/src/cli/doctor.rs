@@ -24,6 +24,7 @@ use fig_proto::{
     local::DiagnosticsResponse,
     FigProtobufEncodable,
 };
+use fig_telemetry::Source;
 use nix::unistd::geteuid;
 use regex::Regex;
 use semver::Version;
@@ -1307,7 +1308,7 @@ where
         if let Err(err) = &result {
             match fig_telemetry::SegmentEvent::new("Doctor Error") {
                 Ok(mut event) => {
-                    if let Err(err) = event.add_default_properties() {
+                    if let Err(err) = event.add_default_properties(Source::Cli) {
                         error!(
                             "Could not add default properties to telemetry event: {}",
                             err

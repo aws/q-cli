@@ -21,7 +21,7 @@ use fig_proto::daemon::diagnostic_response::{
     UnixSocketStatus, WebsocketStatus,
 };
 use futures::{SinkExt, StreamExt};
-use parking_lot::RwLock;
+use parking_lot::{lock_api::RawMutex, Mutex, RwLock};
 use rand::{distributions::Uniform, prelude::Distribution};
 use std::{
     io::Write,
@@ -542,8 +542,12 @@ pub async fn spawn_incomming_unix_handler(
     }))
 }
 
+pub static IS_RUNNING_DAEMON: Mutex<bool> = Mutex::const_new(RawMutex::INIT, false);
+
 /// Spawn the daemon to listen for updates and dotfiles changes
 pub async fn daemon() -> Result<()> {
+    *IS_RUNNING_DAEMON.lock() = true;
+
     info!("Starting daemon...");
 
     let daemon_status = Arc::new(RwLock::new(DaemonStatus {
