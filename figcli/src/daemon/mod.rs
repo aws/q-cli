@@ -83,7 +83,7 @@ pub enum InitSystem {
 impl InitSystem {
     pub fn get_init_system() -> Result<InitSystem> {
         let output = Command::new("ps")
-            .args(["1"])
+            .args(["-p1"])
             .output()
             .context("Could not run ps")?;
 
@@ -91,15 +91,15 @@ impl InitSystem {
             return Err(anyhow!("ps failed: {}", output.status));
         }
 
-        let stdout = String::from_utf8_lossy(&output.stdout);
+        let output_str = String::from_utf8_lossy(&output.stdout);
 
-        if stdout.contains("launchd") {
+        if output_str.contains("launchd") {
             Ok(InitSystem::Launchd)
-        } else if stdout.contains("systemd") {
+        } else if output_str.contains("systemd") {
             Ok(InitSystem::Systemd)
-        } else if stdout.contains("runit") {
+        } else if output_str.contains("runit") {
             Ok(InitSystem::Runit)
-        } else if stdout.contains("openrc") {
+        } else if output_str.contains("openrc") {
             Ok(InitSystem::OpenRc)
         } else {
             Err(anyhow!("Could not determine init system"))
@@ -134,6 +134,7 @@ impl InitSystem {
             }
             InitSystem::Systemd => {
                 let output = Command::new("systemctl")
+                    .arg("--user")
                     .arg("--now")
                     .arg("enable")
                     .arg(path.as_ref())
@@ -205,7 +206,7 @@ impl InitSystem {
     pub fn daemon_name(&self) -> &'static str {
         match self {
             InitSystem::Launchd => "io.fig.dotfiles-daemon",
-            InitSystem::Systemd => "fig-dotfiles-daemon",
+            InitSystem::Systemd => "fig-daemon",
             _ => unimplemented!(),
         }
     }
@@ -225,7 +226,23 @@ impl InitSystem {
 
                 Ok(status)
             }
-            InitSystem::Systemd => Err(anyhow!("todo")),
+            InitSystem::Systemd => {
+                let output = Command::new("systemctl")
+                    .arg("--user")
+                    .arg("show")
+                    .arg("-pExecMainStatus")
+                    .arg(format!("{}.service", self.daemon_name()))
+                    .output
+
+                let stdout = String::from_utf8_lossy(&output.stdout);
+
+                let status = stdout
+                    .split('=')
+                    .last()
+                    .and_then(|s| s.trim().parse::<i32>().ok());
+
+                Ok(status)
+            }
             _ => Err(anyhow!(
                 "Could not get daemon status: unsupported init system"
             )),
@@ -288,11 +305,16 @@ impl LaunchService {
         let executable_path = std::env::current_exe()?;
         let executable_path_str = executable_path.to_string_lossy();
 
+        let log_path = homedir.join(".fig").join("logs").join("daemon.log");
+        let log_path_str = format!("file:{}", log_path.to_string_lossy());
+
         let unit = SystemdUnit::new("Fig Dotfiles Daemon")
-            .exec_start(executable_path_str)
+            .exec_start(format!("{} daemon", executable_path_str))
             .restart("always")
             .restart_sec(5)
             .wanted_by("default.target")
+            .standard_output(&*log_path_str)
+            .standard_error(&*log_path_str)
             .unit();
 
         Ok(LaunchService {

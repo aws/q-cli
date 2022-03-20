@@ -1227,7 +1227,10 @@ impl DoctorCheck for SystemVersionCheck {
         let os_version = OSVersion::new().context("Could not get OS Version")?;
         match os_version.support_level() {
             SupportLevel::Supported => Ok(()),
-            SupportLevel::InDevelopment => Err(anyhow!("OS is in development").into()),
+            SupportLevel::InDevelopment => Err(DoctorError::Warning(
+                format!("Fig's support for {os_version} is in development. It may not work properly on your system.")
+                    .into(),
+            )),
             SupportLevel::Unsupported => Err(anyhow!("{os_version} is not supported").into()),
         }
     }
