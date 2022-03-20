@@ -46,6 +46,8 @@ use tracing::error;
 
 use spinners::{Spinner, Spinners};
 
+use super::util::SupportLevel;
+
 type DoctorFix = Box<dyn FnOnce() -> Result<()> + Send>;
 
 #[derive(Error)]
@@ -169,12 +171,39 @@ fn print_status_result(name: impl AsRef<str>, status: &Result<(), DoctorError>) 
     }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[allow(clippy::enum_variant_names)]
 enum DoctorCheckType {
     NormalCheck,
     SoftCheck,
     NoCheck,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Platform {
+    MacOs,
+    Linux,
+    Windows,
+    Other,
+}
+
+fn get_platform() -> Platform {
+    #[cfg(target_os = "macos")]
+    {
+        return Platform::MacOs;
+    }
+    #[cfg(target_os = "linux")]
+    {
+        return Platform::Linux;
+    }
+    #[cfg(target_os = "windows")]
+    {
+        return Platform::Windows;
+    }
+    #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
+    {
+        return Platform::Other;
+    }
 }
 
 #[async_trait]
@@ -197,6 +226,10 @@ where
 
     fn get_type(&self, _: &T) -> DoctorCheckType {
         DoctorCheckType::NormalCheck
+    }
+
+    fn should_run(&self, platform: Platform) -> bool {
+        true
     }
 
     async fn check(&self, context: &T) -> Result<(), DoctorError>;
@@ -266,6 +299,10 @@ impl DoctorCheck for AppRunningCheck {
             fix: command_fix(vec!["fig", "launch"], Duration::from_secs(3)),
         })
     }
+
+    fn should_run(&self, platform: Platform) -> bool {
+        platform == Platform::MacOs
+    }
 }
 
 struct FigSocketCheck;
@@ -278,6 +315,10 @@ impl DoctorCheck for FigSocketCheck {
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
         Ok(check_file_exists(&get_fig_socket_path())?)
+    }
+
+    fn should_run(&self, platform: Platform) -> bool {
+        platform == Platform::MacOs
     }
 }
 
@@ -1059,6 +1100,10 @@ impl DoctorCheck<Option<Terminal>> for ItermIntegrationCheck {
         }
         Ok(())
     }
+
+    fn should_run(&self, platform: Platform) -> bool {
+        platform == Platform::MacOs
+    }
 }
 
 struct ItermBashIntegrationCheck;
@@ -1109,6 +1154,10 @@ impl DoctorCheck<Option<Terminal>> for ItermBashIntegrationCheck {
 				))
             }
         }
+    }
+
+    fn should_run(&self, platform: Platform) -> bool {
+        platform == Platform::MacOs
     }
 }
 
@@ -1176,10 +1225,10 @@ impl DoctorCheck for SystemVersionCheck {
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
         let os_version = OSVersion::new().context("Could not get OS Version")?;
-        if !os_version.is_supported() {
-            return Err(anyhow!("{} is not supported", os_version).into());
-        } else {
-            Ok(())
+        match os_version.support_level() {
+            SupportLevel::Supported => Ok(()),
+            SupportLevel::InDevelopment => Err(anyhow!("OS is in development").into()),
+            SupportLevel::Unsupported => Err(anyhow!("{os_version} is not supported").into()),
         }
     }
 }
@@ -1278,13 +1327,18 @@ where
     for check in checks {
         let name: String = check.name().into();
         let check_type: DoctorCheckType = check.get_type(&context);
-        if matches!(check_type, DoctorCheckType::NoCheck) {
+
+        if !check.should_run(get_platform()) {
+            continue;
+        }
+
+        if check_type == DoctorCheckType::NoCheck {
             continue;
         }
 
         let mut result = check.check(&context).await;
 
-        if !config.strict && matches!(check_type, DoctorCheckType::SoftCheck) {
+        if !config.strict && check_type == DoctorCheckType::SoftCheck {
             if let Err(DoctorError::Error {
                 reason,
                 info: _,
@@ -1513,6 +1567,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         )
         .await?;
 
+        #[cfg(target_os = "macos")]
         run_checks_with_context(
             format!("Let's check {}...", "fig diagnostic".bold()),
             vec![
