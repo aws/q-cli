@@ -12,10 +12,10 @@ pub enum GetShellError {
 }
 
 pub fn get_shell() -> Result<String, GetShellError> {
-    #[cfg(target_os = "windows")]
+    #[cfg(windows)]
     return Err(GetShellError::WindowsError);
 
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(unix)]
     {
         let ppid = nix::unistd::getppid();
 

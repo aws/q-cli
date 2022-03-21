@@ -72,9 +72,9 @@ fn main() {
 }
 
 /// convert string path to array accepted by sockaddr_un struct
-unsafe fn socket_path_to_arr(socket_path: &str) -> [CHAR; 108] {
+fn socket_path_to_arr(socket_path: &str) -> [CHAR; 108] {
     let path_char_vec: Vec<char> = String::from(socket_path).chars().collect();
-    let mut path_char_arr: [CHAR; 108] = std::mem::zeroed();
+    let mut path_char_arr: [CHAR; 108] = [CHAR(0); 108];
     for i in 0..path_char_vec.len() {
         path_char_arr[i] = CHAR(path_char_vec[i] as u8);
     }
@@ -94,7 +94,7 @@ fn socket_listener(window: Window) {
             FileSystem::DeleteFileA(PCSTR(format!("{}\0", fig_socket_path).as_ptr()));
 
             // Windows socket startup
-            let mut wsa_data: WinSock::WSAData = std::mem::zeroed();
+            let mut wsa_data: WinSock::WSAData = Default::default();
             let mut ret: i32 =
                 WinSock::WSAStartup(WINSOCK_VERSION, &mut wsa_data as *mut WinSock::WSAData);
             if ret != 0 {
@@ -150,7 +150,7 @@ fn socket_listener(window: Window) {
                 println!("Accepting connections on {}", fig_socket_path);
 
                 // accept connections
-                let mut addr: WinSock::SOCKADDR = std::mem::zeroed();
+                let mut addr: WinSock::SOCKADDR = Default::default();
                 let mut addrlen: i32 = std::mem::size_of::<WinSock::SOCKADDR>().try_into().unwrap();
                 let client_socket = WinSock::accept(
                     listen_socket,
@@ -169,7 +169,7 @@ fn socket_listener(window: Window) {
 
                     loop {
                         // read from socket
-                        let mut rec_buffer: [u8; 1024] = std::mem::zeroed();
+                        let mut rec_buffer: [u8; 1024] = [0; 1024];
                         let res_result =
                             WinSock::recv(client_socket, PSTR(&mut rec_buffer as *mut u8), 1024, 0);
                         if res_result == WinSock::SOCKET_ERROR {
@@ -237,7 +237,7 @@ fn insert_text(session_id: String, text: String) {
         FileSystem::DeleteFileA(PCSTR(format!("{}\0", fig_socket_path).as_ptr()));
 
         // Windows socket startup
-        let mut wsa_data: WinSock::WSAData = std::mem::zeroed();
+        let mut wsa_data: WinSock::WSAData = Default::default();
         let mut ret: i32 =
             WinSock::WSAStartup(WINSOCK_VERSION, &mut wsa_data as *mut WinSock::WSAData);
         if ret != 0 {
@@ -370,21 +370,20 @@ fn window_stream(window: Window) {
                     let _res = window.emit("wininfo", new_window_info);
                 }
             }
-            Com::CoUninitialize();
         }
     });
 }
 
 /// get pid of window process
 unsafe fn get_process_id(hwnd: HWND) -> u32 {
-    let mut pid: u32 = std::mem::zeroed();
+    let mut pid: u32 = 0;
     let _parent_pid = GetWindowThreadProcessId(hwnd, &mut pid as *mut u32);
     pid
 }
 
 /// get position of window
 unsafe fn get_window_pos(hwnd: HWND) -> Option<RECT> {
-    let mut win_pos: RECT = std::mem::zeroed();
+    let mut win_pos: RECT = Default::default();
     if GetWindowRect(hwnd, &mut win_pos as *mut RECT) == BOOL(0) {
         return None;
     }
