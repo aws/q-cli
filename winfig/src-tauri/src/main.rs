@@ -342,10 +342,10 @@ fn window_stream(window: Window) {
     std::thread::spawn(move || {
         // cache to avoid spamming frontend with events
         let mut window_info_cache: WindowInfo = Default::default();
-        loop {
-            unsafe {
-                // initialize Com library
-                Com::CoInitialize(std::ptr::null()).unwrap();
+        unsafe {
+            // initialize Com library
+            Com::CoInitialize(std::ptr::null()).unwrap();
+            loop {
                 let hwnd: HWND = GetForegroundWindow();
 
                 let window_id: u32 = hwnd.0 as u32;
@@ -369,9 +369,8 @@ fn window_stream(window: Window) {
                     window_info_cache = new_window_info.clone();
                     let _res = window.emit("wininfo", new_window_info);
                 }
-
-                Com::CoUninitialize();
             }
+            Com::CoUninitialize();
         }
     });
 }
