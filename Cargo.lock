@@ -1205,6 +1205,7 @@ dependencies = [
  "fig-directories",
  "fig-ipc",
  "fig-proto",
+ "fig-settings",
  "flume",
  "fnv",
  "heapless",
