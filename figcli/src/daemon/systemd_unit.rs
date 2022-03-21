@@ -28,7 +28,7 @@ impl SystemdUnit {
         if let Some(exec_start) = &self.service.exec_start {
             unit.push_str(&format!("ExecStart={}\n", exec_start));
         }
-        
+
         if let Some(standard_output) = &self.service.standard_output {
             unit.push_str(&format!("StandardOutput={}\n", standard_output));
         }

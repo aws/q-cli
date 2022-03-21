@@ -1,7 +1,6 @@
 use anyhow::{Context, Result};
 use crossterm::style::Stylize;
 use dialoguer::theme::ColorfulTheme;
-use nix::sys::utsname::uname;
 use serde::{Deserialize, Serialize};
 use std::{
     env,
@@ -134,11 +133,9 @@ impl Display for OSVersion {
                 let patch = patch.unwrap_or(0);
                 f.write_str(&format!("macOS {major}.{minor}.{patch} ({build})",))
             }
-            OSVersion::Linux {
-                kernel_version,
-                distribution,
-                release,
-            } => f.write_str(&format!("Linux {kernel_version}")),
+            OSVersion::Linux { kernel_version, .. } => {
+                f.write_str(&format!("Linux {kernel_version}"))
+            }
             OSVersion::Windows { version } => f.write_str(&format!("Windows {version}")),
         }
     }
@@ -202,6 +199,7 @@ impl OSVersion {
 
         #[cfg(target_os = "linux")]
         {
+            use nix::sys::utsname::uname;
             use regex::Regex;
 
             let uname = uname();

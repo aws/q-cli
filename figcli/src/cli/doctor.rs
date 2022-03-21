@@ -173,6 +173,7 @@ enum DoctorCheckType {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(unused)]
 enum Platform {
     MacOs,
     Linux,
@@ -183,19 +184,19 @@ enum Platform {
 fn get_platform() -> Platform {
     #[cfg(target_os = "macos")]
     {
-        return Platform::MacOs;
+        Platform::MacOs
     }
     #[cfg(target_os = "linux")]
     {
-        return Platform::Linux;
+        Platform::Linux
     }
     #[cfg(target_os = "windows")]
     {
-        return Platform::Windows;
+        Platform::Windows
     }
     #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
     {
-        return Platform::Other;
+        Platform::Other
     }
 }
 
@@ -221,7 +222,7 @@ where
         DoctorCheckType::NormalCheck
     }
 
-    fn should_run(&self, platform: Platform) -> bool {
+    fn should_run(&self, _platform: Platform) -> bool {
         true
     }
 
@@ -1334,7 +1335,7 @@ where
 
         let mut result = check.check(&context).await;
 
-        if !config.strict && check_type == DoctorCheckType::SoftCheck{
+        if !config.strict && check_type == DoctorCheckType::SoftCheck {
             if let Err(DoctorError::Error { reason, .. }) = result {
                 result = Err(DoctorError::Warning(reason))
             }

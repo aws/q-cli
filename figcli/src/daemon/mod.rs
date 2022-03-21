@@ -234,7 +234,7 @@ impl InitSystem {
                     .arg("show")
                     .arg("-pExecMainStatus")
                     .arg(format!("{}.service", self.daemon_name()))
-                    .output
+                    .output()?;
 
                 let stdout = String::from_utf8_lossy(&output.stdout);
 
