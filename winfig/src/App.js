@@ -6,7 +6,9 @@ import { appWindow, LogicalPosition } from "@tauri-apps/api/window";
 class App extends React.Component {
   async componentDidMount() {
     await appWindow.setAlwaysOnTop(true);
+    // listen for window info updates
     await listen("wininfo", (event) => {
+      // only set position if caret exists
       if (event.payload.caret_pos.w !== 0) {
         appWindow.setPosition(
           new LogicalPosition(
@@ -34,12 +36,14 @@ class App extends React.Component {
       });
     });
 
+    // listen for messages from figterm
     await listen("figterm", (event) => {
       this.setState({
         figterm_ipc_msg: event.payload,
       });
     });
 
+    // listen for session_id chagnes
     await listen("session_id", (event) => {
       this.setState({
         session_id: event.payload,
@@ -49,6 +53,7 @@ class App extends React.Component {
 
   constructor() {
     super();
+    // spawn window observer and socket listener
     invoke("window_stream");
     invoke("socket_listener");
     this.state = {
