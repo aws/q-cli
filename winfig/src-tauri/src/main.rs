@@ -415,11 +415,11 @@ where
 
 /// get object for searching for caret UI element by name
 fn get_variant_caret_name() -> VARIANT {
-    let shorts: &[u8] = "Terminal input".as_bytes();
+    let byte_arr: &[u8] = "Terminal input".as_bytes();
 
-    let mut longer: Vec<u16> = Vec::new();
-    for &i in shorts {
-        longer.push(i as u16);
+    let mut short_vec: Vec<u16> = Vec::new();
+    for &i in byte_arr {
+        short_vec.push(i as u16);
     }
 
     VARIANT {
@@ -430,7 +430,7 @@ fn get_variant_caret_name() -> VARIANT {
                 wReserved2: 0,
                 wReserved3: 0,
                 Anonymous: VARIANT_0_0_0 {
-                    bstrVal: std::mem::ManuallyDrop::new(BSTR::from_wide(&longer[..])),
+                    bstrVal: std::mem::ManuallyDrop::new(BSTR::from_wide(&short_vec[..])),
                 },
             }),
         },
