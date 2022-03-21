@@ -78,10 +78,9 @@ fn socket_listener(window: Window) {
 
     std::thread::spawn(move || loop {
         unsafe {
-            let SERVER_SOCKET = "C:\\fig\\winsock";
-            let SERVER_SOCKET_C = "C:\\fig\\winsock\0";
+            let FIG_SOCKET_PATH = r"C:\fig\fig.socket";
 
-            FileSystem::DeleteFileA(PCSTR(SERVER_SOCKET_C.as_ptr()));
+            FileSystem::DeleteFileA(PCSTR(format!("{}\0", FIG_SOCKET_PATH).as_ptr()));
 
             let mut ListenSocket: WinSock::SOCKET = WinSock::INVALID_SOCKET;
             let mut ClientSocket: WinSock::SOCKET = WinSock::INVALID_SOCKET;
@@ -100,19 +99,25 @@ fn socket_listener(window: Window) {
             }
 
             // TODO: Clean up
-            let mut ServerSocket: WinSock::SOCKADDR = std::mem::zeroed();
-            ServerSocket.sa_family = WinSock::AF_UNIX;
-            let char_vec: Vec<char> = String::from(SERVER_SOCKET).chars().collect();
-            let mut byte_arr: [CHAR; 14] = std::mem::zeroed();
+            let mut ServerSocket: WinSock::sockaddr_un = std::mem::zeroed();
+            ServerSocket.sun_family = WinSock::AF_UNIX;
+            let char_vec: Vec<char> = String::from(FIG_SOCKET_PATH).chars().collect();
+            let mut byte_arr: [CHAR; 108] = std::mem::zeroed();
             for i in 0..char_vec.len() {
                 byte_arr[i] = CHAR(char_vec[i] as u8);
             }
-            ServerSocket.sa_data = byte_arr;
+            ServerSocket.sun_path = byte_arr;
 
             ret = WinSock::bind(
                 ListenSocket,
-                &ServerSocket,
-                std::mem::size_of::<WinSock::SOCKADDR>().try_into().unwrap(),
+                unsafe {
+                    std::mem::transmute::<*const WinSock::sockaddr_un, *const WinSock::SOCKADDR>(
+                        &ServerSocket,
+                    )
+                },
+                std::mem::size_of::<WinSock::sockaddr_un>()
+                    .try_into()
+                    .unwrap(),
             );
 
             if ret == WinSock::SOCKET_ERROR {
@@ -128,7 +133,7 @@ fn socket_listener(window: Window) {
                     println!("error 4: {:?}", WinSock::WSAGetLastError());
                     return;
                 }
-                println!("Accepting connections on {}", SERVER_SOCKET);
+                println!("Accepting connections on {}", FIG_SOCKET_PATH);
 
                 let mut addr: WinSock::SOCKADDR = std::mem::zeroed();
                 let mut addrlen: i32 = std::mem::size_of::<WinSock::SOCKADDR>().try_into().unwrap();
@@ -200,11 +205,10 @@ fn insert_text(session_id: String, text: String) {
     println!("{} {}", session_id, text);
 
     unsafe {
-        let SERVER_SOCKET = format!("C:\\fig\\figterm-{}.socket", session_id);
-        let CLIENT_SOCKET = "C:\\fig\\test";
-        let CLIENT_SOCKET_C = "C:\\fig\\test\0";
+        let FIGTERM_SOCKET_PATH = format!(r"C:\fig\figterm-{}.socket", session_id);
+        let FIG_SOCKET_PATH = r"C:\fig\fig.socket";
 
-        FileSystem::DeleteFileA(PCSTR(CLIENT_SOCKET_C.as_ptr()));
+        FileSystem::DeleteFileA(PCSTR(format!("{}\0", FIG_SOCKET_PATH).as_ptr()));
 
         let mut ListenSocket: WinSock::SOCKET = WinSock::INVALID_SOCKET;
         let mut ClientSocket: WinSock::SOCKET = WinSock::INVALID_SOCKET;
@@ -224,7 +228,7 @@ fn insert_text(session_id: String, text: String) {
 
         let mut ClientAddr: WinSock::sockaddr_un = std::mem::zeroed();
         ClientAddr.sun_family = WinSock::AF_UNIX;
-        let char_vec: Vec<char> = String::from(CLIENT_SOCKET).chars().collect();
+        let char_vec: Vec<char> = String::from(FIG_SOCKET_PATH).chars().collect();
         let mut byte_arr: [CHAR; 108] = std::mem::zeroed();
         for i in 0..char_vec.len() {
             byte_arr[i] = CHAR(char_vec[i] as u8);
@@ -250,7 +254,7 @@ fn insert_text(session_id: String, text: String) {
 
         let mut ServerAddr: WinSock::sockaddr_un = std::mem::zeroed();
         ServerAddr.sun_family = WinSock::AF_UNIX;
-        let char_vec: Vec<char> = String::from(SERVER_SOCKET).chars().collect();
+        let char_vec: Vec<char> = String::from(FIGTERM_SOCKET_PATH).chars().collect();
         let mut byte_arr: [CHAR; 108] = std::mem::zeroed();
         for i in 0..char_vec.len() {
             byte_arr[i] = CHAR(char_vec[i] as u8);
