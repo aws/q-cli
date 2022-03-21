@@ -2695,6 +2695,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "ipc-client"
+version = "0.1.0"
+dependencies = [
+ "fig-proto",
+ "prost",
+ "windows 0.33.0",
+]
+
+[[package]]
 name = "ipc-server"
 version = "0.1.0"
 dependencies = [

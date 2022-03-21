@@ -7,12 +7,14 @@ class App extends React.Component {
   async componentDidMount() {
     await appWindow.setAlwaysOnTop(true);
     await listen("wininfo", (event) => {
-      appWindow.setPosition(
-        new LogicalPosition(
-          event.payload.caret_pos.x,
-          event.payload.caret_pos.y
-        )
-      );
+      if (event.payload.caret_pos.w !== 0) {
+        appWindow.setPosition(
+          new LogicalPosition(
+            event.payload.caret_pos.x,
+            event.payload.caret_pos.y + event.payload.caret_pos.h
+          )
+        );
+      }
 
       this.setState({
         window_id: event.payload.window_id,
@@ -81,10 +83,13 @@ class App extends React.Component {
         <div style={{ fontSize: 16 }}>{`${figterm_ipc_msg}`}</div>
         <button
           onClick={() => {
-            invoke("insert_text", { sessionId: session_id, text: "hello" });
+            invoke("insert_text", {
+              sessionId: session_id,
+              text: "Hello World!",
+            });
           }}
         >
-          Insert Hello
+          Insert Hello World
         </button>
       </div>
     );

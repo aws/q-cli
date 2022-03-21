@@ -4,11 +4,13 @@
 )]
 
 use fig_proto::{
+    figterm::*,
     local::{hook::Hook, local_message::Type, LocalMessage},
     FigMessage, FigProtobufEncodable,
 };
 use prost::Message;
 use std::io::Cursor;
+use std::ops::Deref;
 use std::sync::{Arc, Mutex};
 use std::vec::Vec;
 use tauri::{State, Window};
@@ -197,7 +199,113 @@ fn socket_listener(window: Window) {
 fn insert_text(session_id: String, text: String) {
     println!("{} {}", session_id, text);
 
-    // TODO: convert to an encoded insert command protobuf, connect to socket, send
+    unsafe {
+        let SERVER_SOCKET = format!("C:\\fig\\figterm-{}.socket", session_id);
+        let CLIENT_SOCKET = "C:\\fig\\test";
+        let CLIENT_SOCKET_C = "C:\\fig\\test\0";
+
+        FileSystem::DeleteFileA(PCSTR(CLIENT_SOCKET_C.as_ptr()));
+
+        let mut ListenSocket: WinSock::SOCKET = WinSock::INVALID_SOCKET;
+        let mut ClientSocket: WinSock::SOCKET = WinSock::INVALID_SOCKET;
+        let mut wsa_data: WinSock::WSAData = std::mem::zeroed();
+
+        let mut ret: i32 = WinSock::WSAStartup(514u16, &mut wsa_data as *mut WinSock::WSAData);
+        if ret != 0 {
+            println!("error 1: {}", ret);
+            return;
+        }
+
+        ClientSocket = WinSock::socket(WinSock::AF_UNIX.into(), WinSock::SOCK_STREAM.into(), 0);
+        if ClientSocket == WinSock::INVALID_SOCKET {
+            println!("error 2: {:?}", WinSock::WSAGetLastError());
+            return;
+        }
+
+        let mut ClientAddr: WinSock::sockaddr_un = std::mem::zeroed();
+        ClientAddr.sun_family = WinSock::AF_UNIX;
+        let char_vec: Vec<char> = String::from(CLIENT_SOCKET).chars().collect();
+        let mut byte_arr: [CHAR; 108] = std::mem::zeroed();
+        for i in 0..char_vec.len() {
+            byte_arr[i] = CHAR(char_vec[i] as u8);
+        }
+        ClientAddr.sun_path = byte_arr;
+
+        ret = WinSock::bind(
+            ClientSocket,
+            unsafe {
+                std::mem::transmute::<*const WinSock::sockaddr_un, *const WinSock::SOCKADDR>(
+                    &ClientAddr,
+                )
+            },
+            std::mem::size_of::<WinSock::sockaddr_un>()
+                .try_into()
+                .unwrap(),
+        );
+
+        if ret == WinSock::SOCKET_ERROR {
+            println!("error 3: {:?}", WinSock::WSAGetLastError());
+            return;
+        }
+
+        let mut ServerAddr: WinSock::sockaddr_un = std::mem::zeroed();
+        ServerAddr.sun_family = WinSock::AF_UNIX;
+        let char_vec: Vec<char> = String::from(SERVER_SOCKET).chars().collect();
+        let mut byte_arr: [CHAR; 108] = std::mem::zeroed();
+        for i in 0..char_vec.len() {
+            byte_arr[i] = CHAR(char_vec[i] as u8);
+        }
+        ServerAddr.sun_path = byte_arr;
+
+        ret = WinSock::connect(
+            ClientSocket,
+            unsafe {
+                std::mem::transmute::<*const WinSock::sockaddr_un, *const WinSock::SOCKADDR>(
+                    &ServerAddr,
+                )
+            },
+            std::mem::size_of::<WinSock::sockaddr_un>()
+                .try_into()
+                .unwrap(),
+        );
+
+        if ret == WinSock::SOCKET_ERROR {
+            println!("error 4: {:?}", WinSock::WSAGetLastError());
+            return;
+        }
+
+        println!("Successfully connected");
+
+        let cmd: InsertTextCommand = InsertTextCommand {
+            insertion: Some(text),
+            deletion: None,
+            offset: None,
+            immediate: None,
+        };
+        let fterm_msg: FigtermMessage = FigtermMessage {
+            r#command: Some(figterm_message::Command::InsertTextCommand(cmd)),
+        };
+
+        let ResResult = WinSock::send(
+            ClientSocket,
+            PCSTR(fterm_msg.encode_fig_protobuf().unwrap().deref().as_ptr()),
+            1024,
+            WinSock::SEND_FLAGS(0),
+        );
+        if ResResult == WinSock::SOCKET_ERROR {
+            println!("error 5: {:?}", WinSock::WSAGetLastError());
+            return;
+        }
+        println!("{} bytes sent", ResResult);
+
+        println!("Shutting down.");
+
+        ret = WinSock::shutdown(ClientSocket, 0);
+        if ret == WinSock::SOCKET_ERROR {
+            println!("error 6: {:?}", WinSock::WSAGetLastError());
+            return;
+        }
+    }
 }
 
 #[tauri::command]
