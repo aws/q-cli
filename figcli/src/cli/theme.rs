@@ -6,6 +6,7 @@ use std::fs;
 
 // var BuiltinThemes []string = []string{"dark", "light", "system"}
 const BUILT_IN_THEMES: [&str; 3] = ["dark", "light", "system"];
+const DEFAULT_THEME: &str = "dark";
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct Author {
@@ -96,8 +97,13 @@ pub async fn theme_cli(theme_str: Option<String>) -> Result<()> {
         }
         None => {
             let theme = fig_settings::settings::get_value("autocomplete.theme")?
-                .unwrap_or_else(|| json!("dark"));
-            println!("{}", serde_json::to_string_pretty(&theme)?);
+                .unwrap_or_else(|| json!(DEFAULT_THEME));
+
+            let theme_str = theme.as_str().map(String::from).unwrap_or_else(|| {
+                serde_json::to_string_pretty(&theme).unwrap_or_else(|_| DEFAULT_THEME.to_string())
+            });
+
+            println!("{}", theme_str);
             Ok(())
         }
     }

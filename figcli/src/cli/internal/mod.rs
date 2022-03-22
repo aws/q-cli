@@ -195,17 +195,16 @@ impl InternalSubcommand {
                 #[cfg(unix)]
                 {
                     let pid = nix::unistd::getppid();
-
                     let mut buff = vec![0; 1024];
 
                     #[cfg(target_os = "macos")]
-                    {
+                    let out_buf = {
                         // TODO: Make sure pid exists or that access is allowed?
                         let ret = unsafe {
                             proc_pidpath(
                                 pid.as_raw(),
                                 buff.as_mut_ptr() as *mut std::ffi::c_void,
-                                buff.len().try_into().unwrap(),
+                                buff.len() as u32,
                             )
                         };
 
@@ -213,17 +212,17 @@ impl InternalSubcommand {
                             exit(1);
                         }
 
-                        buff = buff[..ret.try_into().unwrap()].to_vec();
-                    }
+                        &buff[..ret as usize]
+                    };
 
                     #[cfg(target_os = "linux")]
-                    {
+                    let out_buf = {
                         loop {
                             let ret = unsafe {
                                 libc::readlink(
                                     format!("/proc/{}/exe", pid).as_str().as_ptr(),
                                     procfile.as_mut_ptr() as *mut std::ffi::c_void,
-                                    procfile.len().try_into().unwrap(),
+                                    procfile.len() as u32,
                                 )
                             };
 
@@ -236,12 +235,16 @@ impl InternalSubcommand {
                                 continue;
                             }
 
-                            buff = buff[..ret as usize].to_vec();
-                            break;
+                            break &buff[..ret as usize];
                         }
+                    };
+
+                    #[cfg(not(any(target_os = "macos", target_os = "linux")))]
+                    {
+                        exit(1);
                     }
 
-                    match std::str::from_utf8(&buff) {
+                    match std::str::from_utf8(out_buf) {
                         Ok(path) => print!("{}", path),
                         Err(_) => exit(1),
                     }
