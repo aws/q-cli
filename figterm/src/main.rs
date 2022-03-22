@@ -509,10 +509,14 @@ fn figterm_main() -> Result<()> {
                                                 warn!("Failed to send edit buffer: {}", e);
                                             }
                                         }
+
+                                        Ok(())
                                     }
-                                    Err(err) => error!("Failed to read from master: {}", err),
+                                    Err(err) => {
+                                        error!("Failed to read from master: {}", err);
+                                        Err(err.into())
+                                    }
                                 }
-                                Ok(())
                             }
                             msg = incomming_receiver.recv_async() => {
                                 match msg {
