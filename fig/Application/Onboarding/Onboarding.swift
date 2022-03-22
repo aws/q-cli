@@ -153,7 +153,6 @@ class Onboarding {
 
     // Install binaries in the appropriate location222
     symlinkBundleExecutable("figterm", to: binDirectory.appendingPathComponent("figterm").path)
-    symlinkBundleExecutable("fig_get_shell", to: binDirectory.appendingPathComponent("fig_get_shell").path)
     copyFigCLIExecutable(to: "~/.local/bin/fig")
     copyFigCLIExecutable(to: "~/.fig/bin/fig")
 
