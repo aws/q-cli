@@ -65,11 +65,7 @@ impl std::fmt::Debug for DoctorError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
         match self {
             DoctorError::Warning(msg) => f.debug_struct("Warning").field("msg", msg).finish(),
-            DoctorError::Error {
-                reason,
-                info,
-                fix: _,
-            } => f
+            DoctorError::Error { reason, info, .. } => f
                 .debug_struct("Error")
                 .field("reason", reason)
                 .field("info", info)
@@ -157,11 +153,7 @@ fn print_status_result(name: impl AsRef<str>, status: &Result<(), DoctorError>) 
         Err(DoctorError::Warning(msg)) => {
             println!("{} {}", DOT, msg);
         }
-        Err(DoctorError::Error {
-            reason,
-            info,
-            fix: _,
-        }) => {
+        Err(DoctorError::Error { reason, info, .. }) => {
             println!("{} {}: {}", CROSS, name.as_ref(), reason);
             for infoline in info {
                 println!("  {}", infoline);
@@ -1343,11 +1335,7 @@ where
                     let fix_result = check.check(&context).await;
                     print_status_result(&name, &fix_result);
                     match fix_result {
-                        Err(DoctorError::Error {
-                            reason: _,
-                            info: _,
-                            fix: _,
-                        }) => {}
+                        Err(DoctorError::Error { .. }) => {}
                         _ => {
                             continue;
                         }
