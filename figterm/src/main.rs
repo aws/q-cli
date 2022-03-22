@@ -32,6 +32,8 @@ use fig_proto::{
     },
     local::{self, LocalMessage},
 };
+use fig_settings::state;
+
 use flume::Sender;
 use nix::{
     libc::STDIN_FILENO,
@@ -611,6 +613,17 @@ fn main() -> Result<(), Box<dyn Error>> {
     Cli::parse();
 
     logger::stdio_debug_log(format!("FIG_LOG_LEVEL={}", logger::get_log_level()));
+
+    let should_launch_figterm = state::get_bool("figterm.enabled")
+        .ok()
+        .flatten()
+        .unwrap_or(true);
+
+    if !should_launch_figterm {
+        println!("[NOTE] figterm is disabled. Autocomplete will not work.");
+        logger::stdio_debug_log("figterm is disabled. `figterm.enabled` == false");
+        return Ok(());
+    }
 
     if let Err(e) = figterm_main() {
         println!("Fig had an Error!: {:?}", e);
