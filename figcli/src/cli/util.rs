@@ -191,12 +191,7 @@ impl OSVersion {
 
     pub fn is_supported(&self) -> bool {
         match self {
-            OSVersion::MacOS {
-                major,
-                minor,
-                patch: _,
-                build: _,
-            } => {
+            OSVersion::MacOS { major, minor, .. } => {
                 // Minimum supported macOS version is 10.14.0
                 *major > 10 || (*major == 10 && *minor >= 14)
             }
