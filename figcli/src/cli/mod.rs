@@ -213,26 +213,28 @@ impl Cli {
             }
             _ => {
                 // All other cli commands print logs to ~/.fig/logs/cli.log
-                if let Some(fig_dir) = fig_directories::fig_dir() {
-                    let log_path = fig_dir.join("logs").join("cli.log");
+                if env_level >= LevelFilter::DEBUG {
+                    if let Some(fig_dir) = fig_directories::fig_dir() {
+                        let log_path = fig_dir.join("logs").join("cli.log");
 
-                    // Create the log directory if it doesn't exist
-                    if !log_path.parent().unwrap().exists() {
-                        std::fs::create_dir_all(log_path.parent().unwrap()).ok();
+                        // Create the log directory if it doesn't exist
+                        if !log_path.parent().unwrap().exists() {
+                            std::fs::create_dir_all(log_path.parent().unwrap()).ok();
+                        }
+
+                        if let Ok(log_file) =
+                            File::create(log_path).context("failed to create log file")
+                        {
+                            tracing_subscriber::fmt()
+                                .with_writer(log_file)
+                                .with_max_level(env_level)
+                                .with_line_number(true)
+                                .init();
+                        }
                     }
 
-                    if let Ok(log_file) =
-                        File::create(log_path).context("failed to create log file")
-                    {
-                        tracing_subscriber::fmt()
-                            .with_writer(log_file)
-                            .with_max_level(env_level)
-                            .with_line_number(true)
-                            .init();
-                    }
+                    debug!("Command ran: {:?}", std::env::args().collect::<Vec<_>>());
                 }
-
-                debug!("Command ran: {:?}", std::env::args().collect::<Vec<_>>());
             }
         }
 

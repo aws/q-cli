@@ -9,6 +9,7 @@ use crossterm::style::Stylize;
 use fig_ipc::hook::send_hook_to_socket;
 use fig_proto::hooks::new_callback_hook;
 use native_dialog::{MessageDialog, MessageType};
+use nix::libc::proc_pidpath;
 use rand::distributions::{Alphanumeric, DistString};
 use std::{
     io::{Read, Write},
@@ -75,6 +76,7 @@ pub enum InternalSubcommand {
     },
     /// Notify the user that they are uninstalling incorrectly
     WarnUserWhenUninstallingIncorrectly,
+    GetShell,
 }
 
 pub fn install_cli_from_args(install_args: InstallArgs) -> Result<()> {
@@ -188,6 +190,67 @@ impl InternalSubcommand {
                     .set_text("Please run `fig uninstall` rather than moving the app to the Trash.")
                     .show_alert()
                     .unwrap();
+            }
+            InternalSubcommand::GetShell => {
+                #[cfg(unix)]
+                {
+                    let pid = nix::unistd::getppid();
+
+                    let mut buff = vec![0; 1024];
+
+                    #[cfg(target_os = "macos")]
+                    {
+                        // TODO: Make sure pid exists or that access is allowed?
+                        let ret = unsafe {
+                            proc_pidpath(
+                                pid.as_raw(),
+                                buff.as_mut_ptr() as *mut std::ffi::c_void,
+                                buff.len().try_into().unwrap(),
+                            )
+                        };
+
+                        if ret == 0 {
+                            exit(1);
+                        }
+
+                        buff = buff[..ret.try_into().unwrap()].to_vec();
+                    }
+
+                    #[cfg(target_os = "linux")]
+                    {
+                        loop {
+                            let ret = unsafe {
+                                libc::readlink(
+                                    format!("/proc/{}/exe", pid).as_str().as_ptr(),
+                                    procfile.as_mut_ptr() as *mut std::ffi::c_void,
+                                    procfile.len().try_into().unwrap(),
+                                )
+                            };
+
+                            if ret == -1 {
+                                exit(1);
+                            }
+
+                            if ret == buff.len() as i32 {
+                                buff.resize(buff.len() * 2, 0);
+                                continue;
+                            }
+
+                            buff = buff[..ret as usize].to_vec();
+                            break;
+                        }
+                    }
+
+                    match std::str::from_utf8(&buff) {
+                        Ok(path) => print!("{}", path),
+                        Err(_) => exit(1),
+                    }
+                }
+
+                #[cfg(windows)]
+                {
+                    return Err(anyhow!("This is unimplemented on Windows"));
+                }
             }
         }
         Ok(())
