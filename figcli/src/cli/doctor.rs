@@ -1286,12 +1286,7 @@ where
         let mut result = check.check(&context).await;
 
         if !config.strict && matches!(check_type, DoctorCheckType::SoftCheck) {
-            if let Err(DoctorError::Error {
-                reason,
-                info: _,
-                fix: _,
-            }) = result
-            {
+            if let Err(DoctorError::Error { reason, .. }) = result {
                 result = Err(DoctorError::Warning(reason))
             }
         }
@@ -1334,12 +1329,7 @@ where
             }
         }
 
-        if let Err(DoctorError::Error {
-            reason,
-            info: _,
-            fix,
-        }) = result
-        {
+        if let Err(DoctorError::Error { reason, fix, .. }) = result {
             if let Some(fixfn) = fix {
                 println!("Attempting to fix automatically...");
                 if let Err(e) = fixfn() {
