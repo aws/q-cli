@@ -19,7 +19,7 @@ else
   FIG_IN_DOCKER=0
 fi
 
-function fig_osc { printf "\033]697;$@"; printf "\007"; }
+function fig_osc { printf "\033]697;$1\007" "${@:2}" }
 
 FIG_HAS_SET_PROMPT=0
 
