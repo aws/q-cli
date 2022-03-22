@@ -165,7 +165,7 @@ jobs:
         run: mkdir -p "$FIG_BUILT_PRODUCTS_DIR"
 
       - name: Build figterm
-        run: make figterm fig_get_shell
+        run: make figterm
         working-directory: ./figterm
 
       - name: Build figcli

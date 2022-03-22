@@ -464,7 +464,6 @@ extension ShellBridge {
     Onboarding.copyFigCLIExecutable(to: "~/.local/bin/fig")
     Onboarding.copyFigCLIExecutable(to: "/usr/local/bin/fig")
     Onboarding.symlinkBundleExecutable("figterm", to: "~/.fig/bin/figterm")
-    Onboarding.symlinkBundleExecutable("fig_get_shell", to: "~/.fig/bin/fig_get_shell")
     completion?()
   }
 

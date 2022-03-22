@@ -47,7 +47,7 @@ sha2 = "0.10.1"
 sysinfo = "0.23.4"
 tempfile = "3.3.0"
 thiserror = "1.0.30"
-time = { version = "=0.3.7", features = ["serde-human-readable", "local-offset", "formatting", "macros", "serde-well-known"] }
+time = { version = "0.3.7", features = ["serde-human-readable", "local-offset", "formatting", "macros", "serde-well-known"] }
 tokio = { version = "1.16.1", features = ["full"] }
 tokio-tungstenite = { version = "0.17.0", features = ["rustls-tls-native-roots"] }
 toml = "0.5.8"
@@ -57,6 +57,7 @@ validator = "0.14.0"
 walkdir = "2.3.2"
 native-dialog = "0.6.3"
 spinners = "~3.0.1"
+
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.34.0", features = ["Win32_Foundation", "Win32_Security", "Win32_System_Threading"] }
