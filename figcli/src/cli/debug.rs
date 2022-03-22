@@ -8,9 +8,9 @@ use fig_ipc::command::{
     toggle_debug_mode,
 };
 use fig_proto::local::InputMethodAction;
+use fig_settings::state;
 use serde_json::json;
 use std::{path::Path, process::Command};
-
 #[derive(Debug, ArgEnum, Clone)]
 pub enum Build {
     Dev,
@@ -32,6 +32,12 @@ pub enum ImeCommand {
 
 #[derive(Debug, ArgEnum, Clone)]
 pub enum AutocompleteWindowDebug {
+    On,
+    Off,
+}
+
+#[derive(Debug, ArgEnum, Clone)]
+pub enum ShellIntegrationsDebug {
     On,
     Off,
 }
@@ -65,6 +71,11 @@ pub enum DebugSubcommand {
     UnixSocket,
     /// Debug fig codesign verification
     VerifyCodesign,
+    /// Toggle shell integrations
+    ShellIntegrations {
+        #[clap(arg_enum)]
+        mode: Option<ShellIntegrationsDebug>,
+    },
 }
 
 fn get_running_app_info(bundle_id: impl AsRef<str>, field: impl AsRef<str>) -> Result<String> {
@@ -276,6 +287,28 @@ impl DebugSubcommand {
                     .args(["-vvvv", "/Applications/Fig.app"])
                     .spawn()?
                     .wait()?;
+            }
+            DebugSubcommand::ShellIntegrations { mode } => {
+                let result = match mode {
+                    Some(ShellIntegrationsDebug::On) => {
+                        state::set_value("shell-integrations.enabled", true)
+                    }
+                    Some(ShellIntegrationsDebug::Off) => {
+                        state::set_value("shell-integrations.enabled", false)
+                    }
+                    None => {
+                        let flag = state::get_bool("shell-integrations.enabled")
+                            .ok()
+                            .flatten()
+                            .unwrap_or(true);
+                        state::set_value("shell-integrations.enabled", !flag)?;
+                        return Ok(());
+                    }
+                };
+                if result.is_err() {
+                    println!("Could not update shell integrations");
+                    return result.map(|_| ());
+                }
             }
         }
         Ok(())

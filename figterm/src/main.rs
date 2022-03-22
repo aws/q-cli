@@ -32,6 +32,8 @@ use fig_proto::{
     },
     local::{self, LocalMessage},
 };
+use fig_settings::state;
+
 use flume::Sender;
 use nix::{
     libc::STDIN_FILENO,
@@ -209,7 +211,7 @@ where
     match term.get_current_buffer() {
         Some(edit_buffer) => {
             if let Some(cursor_idx) = edit_buffer.cursor_idx.and_then(|i| i.try_into().ok()) {
-                info!("edit_buffer: {:?}", edit_buffer);
+                debug!("edit_buffer: {:?}", edit_buffer);
                 trace!("buffer bytes: {:02X?}", edit_buffer.buffer.as_bytes());
                 trace!(
                     "buffer chars: {:?}",
@@ -450,7 +452,7 @@ fn figterm_main() -> Result<()> {
                             first_time = false;
                         }
 
-                        let select_result: Result<&'static str> = select! {
+                        let select_result: Result<()> = select! {
                             biased;
                             res = stdin.read(&mut read_buffer) => {
                                 match res {
@@ -465,18 +467,20 @@ fn figterm_main() -> Result<()> {
                                                     }
                                                 }
                                                 master.write(out.as_bytes()).await?;
+                                                Ok(())
                                             }
                                             Err(err) => {
                                                 error!("Failed to convert utf8: {}", err);
                                                 trace!("Read {} bytes from input: {:?}", size, &read_buffer[..size]);
                                                 master.write(&read_buffer[..size]).await?;
+                                                Ok(())
                                             }
                                     },
                                     Err(err) => {
                                         error!("Failed to read from stdin: {}", err);
+                                        Err(err.into())
                                     }
                                 }
-                                Ok("stdin")
                             }
                             _ = window_change_signal.recv() => {
                                 unsafe { read_winsize(STDIN_FILENO, &mut winsize) }?;
@@ -484,7 +488,7 @@ fn figterm_main() -> Result<()> {
                                 let window_size = SizeInfo::new(winsize.ws_row as usize, winsize.ws_col as usize);
                                 debug!("Window size changed: {:?}", window_size);
                                 term.resize(window_size);
-                                Ok("window_change")
+                                Ok(())
                             }
                             res = master.read(&mut write_buffer) => {
                                 match res {
@@ -507,10 +511,14 @@ fn figterm_main() -> Result<()> {
                                                 warn!("Failed to send edit buffer: {}", e);
                                             }
                                         }
+
+                                        Ok(())
                                     }
-                                    Err(err) => error!("Failed to read from master: {}", err),
+                                    Err(err) => {
+                                        error!("Failed to read from master: {}", err);
+                                        Err(err.into())
+                                    }
                                 }
-                                Ok("master")
                             }
                             msg = incomming_receiver.recv_async() => {
                                 match msg {
@@ -522,7 +530,7 @@ fn figterm_main() -> Result<()> {
                                         error!("Failed to receive message from socket: {}", err);
                                     }
                                 }
-                                Ok("incomming_receiver")
+                                Ok(())
                             }
                             // Check if to send the edit buffer because of timeout
                             _ = edit_buffer_interval.tick() => {
@@ -532,7 +540,7 @@ fn figterm_main() -> Result<()> {
                                         warn!("Failed to send edit buffer: {}", e);
                                     }
                                 }
-                                Ok("timeout_edit_buffer")
+                                Ok(())
                             }
                         };
 
@@ -605,6 +613,17 @@ fn main() -> Result<(), Box<dyn Error>> {
     Cli::parse();
 
     logger::stdio_debug_log(format!("FIG_LOG_LEVEL={}", logger::get_log_level()));
+
+    let should_launch_figterm = state::get_bool("figterm.enabled")
+        .ok()
+        .flatten()
+        .unwrap_or(true);
+
+    if !should_launch_figterm {
+        println!("[NOTE] figterm is disabled. Autocomplete will not work.");
+        logger::stdio_debug_log("figterm is disabled. `figterm.enabled` == false");
+        return Ok(());
+    }
 
     if let Err(e) = figterm_main() {
         println!("Fig had an Error!: {:?}", e);

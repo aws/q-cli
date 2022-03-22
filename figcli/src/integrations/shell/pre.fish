@@ -27,7 +27,7 @@ if   [ "$TERM_PROGRAM" != "WarpTerminal" ] \
   end
   export FIG_INTEGRATION_VERSION=8
 
-  set FIG_SHELL (~/.fig/bin/fig_get_shell)
+  set FIG_SHELL (fig _ get-shell)
   set FIG_IS_LOGIN_SHELL 0
   if status --is-login
     set FIG_IS_LOGIN_SHELL 1

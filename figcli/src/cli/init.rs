@@ -48,6 +48,19 @@ fn guard_source<F: Fn() -> Option<String>>(
 }
 
 fn shell_init(shell: &Shell, when: &When) -> Result<String> {
+    let should_source = fig_settings::state::get_bool("shell-integrations.enabled")
+        .ok()
+        .flatten()
+        .unwrap_or(true);
+
+    if !should_source {
+        if let Some(source) = guard_source(shell, false, "FIG_SHELL_INTEGRATION_DISABLED", || {
+            Some("echo '[Debug]: fig shell integration is disabled.'".to_string())
+        }) {
+            return Ok(source);
+        }
+    }
+
     let mut to_source = String::new();
     if let When::Post = when {
         // Add dotfiles sourcing

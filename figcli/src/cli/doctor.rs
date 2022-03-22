@@ -24,6 +24,8 @@ use fig_proto::{
     local::DiagnosticsResponse,
     FigProtobufEncodable,
 };
+use fig_telemetry::Source;
+use nix::unistd::geteuid;
 use regex::Regex;
 use semver::Version;
 use serde_json::json;
@@ -1284,12 +1286,7 @@ where
         let mut result = check.check(&context).await;
 
         if !config.strict && matches!(check_type, DoctorCheckType::SoftCheck) {
-            if let Err(DoctorError::Error {
-                reason,
-                info: _,
-                fix: _,
-            }) = result
-            {
+            if let Err(DoctorError::Error { reason, .. }) = result {
                 result = Err(DoctorError::Warning(reason))
             }
         }
@@ -1306,7 +1303,7 @@ where
         if let Err(err) = &result {
             match fig_telemetry::SegmentEvent::new("Doctor Error") {
                 Ok(mut event) => {
-                    if let Err(err) = event.add_default_properties() {
+                    if let Err(err) = event.add_default_properties(Source::Cli) {
                         error!(
                             "Could not add default properties to telemetry event: {}",
                             err
@@ -1332,12 +1329,7 @@ where
             }
         }
 
-        if let Err(DoctorError::Error {
-            reason,
-            info: _,
-            fix,
-        }) = result
-        {
+        if let Err(DoctorError::Error { reason, fix, .. }) = result {
             if let Some(fixfn) = fix {
                 println!("Attempting to fix automatically...");
                 if let Err(e) = fixfn() {
@@ -1417,6 +1409,23 @@ struct CheckConfiguration {
 
 // Doctor
 pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
+    #[cfg(target_family = "unix")]
+    {
+        if geteuid().is_root() {
+            eprintln!(
+                "{}",
+                "Running doctor as root is not supported.".red().bold()
+            );
+            if !verbose {
+                eprintln!(
+                    "{}",
+                    "If you know what you're doing, run the command again with --verbose.".red()
+                );
+                std::process::exit(1);
+            }
+        }
+    }
+
     let config = CheckConfiguration { verbose, strict };
 
     let mut spinner: Option<Spinner> = None;
@@ -1444,11 +1453,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
     .await?;
 
     // If user is logged in, launch fig.
-    launch_fig(LaunchOptions {
-        wait_for_activation: true,
-        verbose: true,
-    })
-    .ok();
+    launch_fig(LaunchOptions::new().wait_for_activation().verbose()).ok();
 
     let shell_integrations: Vec<_> = [Shell::Bash, Shell::Zsh, Shell::Fish]
         .into_iter()

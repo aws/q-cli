@@ -119,7 +119,7 @@ impl ShellIntegration {
             ("", "")
         };
         let r = format!(
-            r#"{}\n?(?:{}\n)?{}\n{{0,2}}{}"#,
+            r#"(?:{}\n)?(?:{}\n)?{}\n{{0,2}}{}"#,
             prefix,
             regex::escape(&self.description()),
             regex::escape(&self.source_text()),
@@ -137,6 +137,12 @@ pub struct ShellFileIntegration {
     pub pre: bool,
     pub post: bool,
     pub remove_on_uninstall: bool,
+}
+
+impl std::fmt::Display for ShellFileIntegration {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.filename)
+    }
 }
 
 impl ShellFileIntegration {
