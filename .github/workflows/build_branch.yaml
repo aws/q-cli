@@ -113,10 +113,6 @@ jobs:
 ############################################
 # Install Build Tools
 ############################################
-      - uses: actions/setup-go@v2
-        with:
-          go-version: '1.17'
-
       - name: Setup Node Environment
         uses: actions/setup-node@v1
 
@@ -157,6 +153,14 @@ jobs:
           key: rust-release-${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             rust-release-${{ runner.os }}-cargo-
+
+      - name: Cargo sweep stamp
+        run: |
+          # Install `cargo sweep` if it is not installed
+          if ! cargo sweep --help &> /dev/null; then
+            cargo install --locked --git https://github.com/holmgr/cargo-sweep.git --rev e3b67bd051910f57df8ab044512a13a980d88c06
+          fi
+          cargo sweep -s
 
 ############################################
 # Position generated build artifacts
@@ -437,3 +441,7 @@ jobs:
           curl -H "Content-Type: application/json" \
             -d '{"username": "macOS build deployed!", "content": "${{ github.event.inputs.buildName }} | ${{env.VERSION}} (B${{env.BUILD}}) from branch '${{env.BRANCH_NAME}}' | https://github.com/withfig/macos/releases/tag/manual-build-${{ github.run_number }}\n" }' \
             ${{secrets.DISCORD_MACOS_WEBHOOK}}
+
+      - name: Cargo sweep clean
+        run: |
+          cargo sweep -f
