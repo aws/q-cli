@@ -99,13 +99,6 @@ jobs:
           echo $BUILD
 
 ############################################
-# Write Homebrew Cask Version
-############################################
-      - name: "Write Brew Cask Version to File"
-        if: env.BUMP_CASK_PR == 1
-        run: echo "${{env.VERSION}},${{env.BUILD}}" > brew-cask-version
-
-############################################
 # Enable Caching
 ############################################
       - name: Cache Build archive
@@ -346,6 +339,10 @@ jobs:
         run: |
           cp "fig $BUILD.dmg" ./versions
           rm ./versions/fig@latest.dmg
+      - name: "Write Brew Cask Version to File"
+        if: env.BUMP_CASK_PR == 1
+        run: |
+          echo "${{env.VERSION}},${{env.BUILD}}" > ./version/brew-cask-version 
       - name: "Generate Appcast"
         if: github.event.inputs.useSparkle != 'false'
         run: ./Sparkle/bin/generate_appcast -s $SPARKLE_KEY --download-url-prefix https://$APPCAST_PREFIX.withfig.com versions
