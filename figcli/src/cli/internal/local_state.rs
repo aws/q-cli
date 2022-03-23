@@ -20,12 +20,12 @@ pub enum LocalStateSubcommand {
 pub struct LocalStateArgs {
     #[clap(subcommand)]
     cmd: Option<LocalStateSubcommand>,
-    /// key
+    /// Key of the state
     key: Option<String>,
-    /// value
+    /// Value of the state
     value: Option<String>,
     #[clap(long, short)]
-    /// delete
+    /// Delete the state
     delete: bool,
 }
 

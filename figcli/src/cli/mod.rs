@@ -11,6 +11,7 @@ pub mod installation;
 pub mod internal;
 pub mod invite;
 pub mod issue;
+pub mod plugins;
 pub mod settings;
 pub mod source;
 pub mod theme;
@@ -28,28 +29,30 @@ use crate::{
     },
 };
 
-use fig_auth::is_logged_in;
-
 use anyhow::{Context, Result};
 use clap::{ArgEnum, IntoApp, Parser, Subcommand};
-use fig_ipc::command::{open_ui_element, quit_command};
-use fig_proto::local::UiElement;
-use std::{fs::File, process::exit, str::FromStr, time::Duration};
+use std::{fs::File, process::exit, str::FromStr};
 use tracing::{debug, level_filters::LevelFilter};
 
-use self::app::AppSubcommand;
+use self::{app::AppSubcommand, plugins::PluginsSubcommands};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ArgEnum)]
 pub enum OutputFormat {
+    /// Outputs the results as markdown
     Plain,
+    /// Outputs the results as JSON
     Json,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ArgEnum)]
 pub enum Shells {
+    /// Bash shell compleations
     Bash,
+    /// Fish shell completions
     Fish,
+    /// Zsh shell completions
     Zsh,
+    /// Fig completion spec
     Fig,
 }
 
@@ -58,7 +61,7 @@ pub enum CliRootCommands {
     #[clap(subcommand)]
     /// Interact with the desktop app
     App(app::AppSubcommand),
-    #[clap(subcommand)]
+    #[clap(subcommand, hide = true)]
     /// Hook commands
     Hook(hook::HookSubcommand),
     #[clap(subcommand)]
@@ -72,6 +75,7 @@ pub enum CliRootCommands {
     /// Install fig cli comoponents
     Install(internal::InstallArgs),
     /// Uninstall fig
+    #[clap(hide = true)]
     Uninstall,
     /// Update dotfiles
     Update {
@@ -84,6 +88,7 @@ pub enum CliRootCommands {
     Daemon,
     /// Run diagnostic tests
     Diagnostic {
+        /// The format of the output
         #[clap(long, short, arg_enum, default_value = "plain")]
         format: OutputFormat,
         /// Force limited diagnostic output
@@ -91,7 +96,6 @@ pub enum CliRootCommands {
         force: bool,
     },
     /// Generate the dotfiles for the given shell
-    #[clap(hide = true)]
     Init {
         /// The shell to generate the dotfiles for
         #[clap(arg_enum)]
@@ -103,9 +107,7 @@ pub enum CliRootCommands {
     /// Sync your latest dotfiles
     Source,
     /// Get or set theme
-    Theme {
-        theme: Option<String>,
-    },
+    Theme { theme: Option<String> },
     /// Invite friends to Fig
     Invite,
     /// Tweet about Fig
@@ -118,37 +120,51 @@ pub enum CliRootCommands {
         /// Issue description
         description: Vec<String>,
     },
-    /// Login to dotfiles
+    /// Login to Fig
     Login {
+        /// Manually refresh the auth token
         #[clap(long, short)]
         refresh: bool,
     },
-    /// Logout of dotfiles
+    /// Logout of Fig
     Logout,
     /// Details about the current user
     User,
     /// Check Fig is properly configured
     Doctor {
+        /// Run all doctor tests, with no fixes
         #[clap(long)]
         verbose: bool,
+        /// Error on warnings
         #[clap(long)]
         strict: bool,
     },
     /// Generate the completion spec for Fig
-    GenerateFigSpec,
+    #[clap(hide = true)]
     Completion {
+        /// Shell to generate the completion spec for
         #[clap(arg_enum, default_value = "zsh")]
         shell: Shells,
     },
-    #[clap(subcommand)]
+    /// Internal subcommands used for Fig
+    #[clap(subcommand, hide = true)]
     Internal(internal::InternalSubcommand),
+    /// Launch the Fig desktop app
     Launch,
+    /// Quit the Fig desktop app
     Quit,
+    /// Restart the Fig desktop app
     Restart,
+    #[clap(hide = true)]
+    /// (LEGACY) Old way to launch mission control
     Alpha,
+    /// Run the Fig tutorial
     Onboarding,
-    #[clap(name = "app:running")]
+    /// (LEGACY) Old hook that was being used somewhere
+    #[clap(name = "app:running", hide = true)]
     FigAppRunning,
+    #[clap(subcommand)]
+    Plugins(PluginsSubcommands),
 }
 
 #[derive(Debug, Parser)]
@@ -197,26 +213,28 @@ impl Cli {
             }
             _ => {
                 // All other cli commands print logs to ~/.fig/logs/cli.log
-                if let Some(fig_dir) = fig_directories::fig_dir() {
-                    let log_path = fig_dir.join("logs").join("cli.log");
+                if env_level >= LevelFilter::DEBUG {
+                    if let Some(fig_dir) = fig_directories::fig_dir() {
+                        let log_path = fig_dir.join("logs").join("cli.log");
 
-                    // Create the log directory if it doesn't exist
-                    if !log_path.parent().unwrap().exists() {
-                        std::fs::create_dir_all(log_path.parent().unwrap()).ok();
+                        // Create the log directory if it doesn't exist
+                        if !log_path.parent().unwrap().exists() {
+                            std::fs::create_dir_all(log_path.parent().unwrap()).ok();
+                        }
+
+                        if let Ok(log_file) =
+                            File::create(log_path).context("failed to create log file")
+                        {
+                            tracing_subscriber::fmt()
+                                .with_writer(log_file)
+                                .with_max_level(env_level)
+                                .with_line_number(true)
+                                .init();
+                        }
                     }
 
-                    if let Ok(log_file) =
-                        File::create(log_path).context("failed to create log file")
-                    {
-                        tracing_subscriber::fmt()
-                            .with_writer(log_file)
-                            .with_max_level(env_level)
-                            .with_line_number(true)
-                            .init();
-                    }
+                    debug!("Command ran: {:?}", std::env::args().collect::<Vec<_>>());
                 }
-
-                debug!("Command ran: {:?}", std::env::args().collect::<Vec<_>>());
             }
         }
 
@@ -269,10 +287,6 @@ impl Cli {
                 CliRootCommands::Issue { force, description } => {
                     issue::issue_cli(force, description).await
                 }
-                CliRootCommands::GenerateFigSpec => {
-                    println!("{}", Cli::generation_completions(clap_complete_fig::Fig));
-                    Ok(())
-                }
                 CliRootCommands::Completion { shell } => {
                     println!(
                         "{}",
@@ -317,6 +331,7 @@ impl Cli {
                     println!("{}", if is_app_running() { "1" } else { "0" });
                     Ok(())
                 }
+                CliRootCommands::Plugins(plugins_subcommand) => plugins_subcommand.execute().await,
             },
             // Root command
             None => root_command().await,
@@ -352,12 +367,7 @@ async fn uninstall_command() -> Result<()> {
         return Ok(());
     }
 
-    let success = if launch_fig(LaunchOptions {
-        wait_for_activation: true,
-        verbose: true,
-    })
-    .is_ok()
-    {
+    let success = if launch_fig(LaunchOptions::new().wait_for_activation().verbose()).is_ok() {
         fig_ipc::command::uninstall_command().await.is_ok()
     } else {
         false
@@ -374,6 +384,11 @@ async fn root_command() -> Result<()> {
     // Launch fig if it is not running
     #[cfg(target_os = "macos")]
     {
+        use fig_auth::is_logged_in;
+        use fig_ipc::command::{open_ui_element, quit_command};
+        use fig_proto::local::UiElement;
+        use std::time::Duration;
+
         if !is_logged_in() && is_app_running() {
             if quit_command().await.is_err() {
                 anyhow::bail!(
@@ -384,10 +399,7 @@ async fn root_command() -> Result<()> {
             tokio::time::sleep(Duration::from_millis(1000)).await;
         }
 
-        launch_fig(LaunchOptions {
-            wait_for_activation: true,
-            verbose: true,
-        })?;
+        launch_fig(LaunchOptions::new().wait_for_activation().verbose())?;
 
         if is_logged_in() {
             open_ui_element(UiElement::MissionControl)
@@ -398,6 +410,8 @@ async fn root_command() -> Result<()> {
 
     #[cfg(not(target_os = "macos"))]
     {
+        use crossterm::style::Stylize;
+
         println!(
             "\n→ Opening {}...\n",
             "https://app.fig.io".magenta().underlined()

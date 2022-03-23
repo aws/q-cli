@@ -1,5 +1,3 @@
-use anyhow::{Context, Result};
-use globset::{Glob, GlobSet, GlobSetBuilder};
 use std::{
     env,
     ffi::OsStr,
@@ -7,7 +5,8 @@ use std::{
     process::Command,
 };
 
-use fig_ipc::get_fig_socket_path;
+use anyhow::{Context, Result};
+use globset::{Glob, GlobSet, GlobSetBuilder};
 use sysinfo::{get_current_pid, ProcessExt, System, SystemExt};
 
 pub mod api;
@@ -48,7 +47,9 @@ pub fn fig_bundle() -> Option<PathBuf> {
         Some(PathBuf::from("/Applications/Fig.app/"))
     }
     #[cfg(not(any(target_os = "macos")))]
-    unimplemented!();
+    {
+        None
+    }
 }
 
 /// Glob patterns against full paths
@@ -117,6 +118,11 @@ pub fn app_path_from_bundle_id(bundle_id: impl AsRef<OsStr>) -> Option<String> {
     Some(path.trim().split('\n').next()?.into())
 }
 
+#[cfg(not(any(target_os = "macos")))]
+pub fn app_path_from_bundle_id(_bundle_id: impl AsRef<OsStr>) -> Option<String> {
+    None
+}
+
 pub fn get_shell() -> Result<String> {
     let ppid = nix::unistd::getppid();
 
@@ -129,11 +135,6 @@ pub fn get_shell() -> Result<String> {
         .context("Could not read value")?;
 
     Ok(String::from_utf8_lossy(&result.stdout).trim().into())
-}
-
-#[cfg(not(any(target_os = "macos")))]
-pub fn app_path_from_bundle_id(_bundle_id: impl AsRef<OsStr>) -> Option<String> {
-    unimplemented!();
 }
 
 #[cfg(target_os = "macos")]
@@ -170,19 +171,18 @@ pub fn get_machine_id() -> Option<String> {
 }
 
 #[cfg(target_os = "macos")]
-pub fn get_app_info() -> Result<String> {
-    let output = Command::new("lsappinfo")
-        .args(["info", "-app", "com.mschrage.fig"])
-        .output()?;
-    let result = String::from_utf8(output.stdout)?;
-    Ok(result.trim().into())
-}
-
-#[cfg(target_os = "macos")]
 pub fn is_app_running() -> bool {
-    match get_app_info() {
-        Ok(s) => !s.is_empty(),
-        _ => false,
+    let output = match Command::new("lsappinfo")
+        .args(["info", "-app", "com.mschrage.fig"])
+        .output()
+    {
+        Ok(output) => output,
+        Err(_) => return false,
+    };
+
+    match std::str::from_utf8(&output.stdout) {
+        Ok(result) => !result.trim().is_empty(),
+        Err(_) => false,
     }
 }
 
@@ -191,13 +191,37 @@ pub fn is_app_running() -> bool {
     false
 }
 
+#[derive(Debug, Clone, Copy, Default)]
+#[must_use]
 pub struct LaunchOptions {
     pub wait_for_activation: bool,
     pub verbose: bool,
 }
 
+impl LaunchOptions {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn wait_for_activation(self) -> Self {
+        Self {
+            wait_for_activation: true,
+            ..self
+        }
+    }
+
+    pub fn verbose(self) -> Self {
+        Self {
+            verbose: true,
+            ..self
+        }
+    }
+}
+
 #[cfg(target_os = "macos")]
 pub fn launch_fig(opts: LaunchOptions) -> Result<()> {
+    use fig_ipc::get_fig_socket_path;
+
     if is_app_running() {
         return Ok(());
     }
@@ -232,7 +256,7 @@ pub fn launch_fig(opts: LaunchOptions) -> Result<()> {
 }
 
 #[cfg(not(any(target_os = "macos")))]
-pub fn launch_fig() -> Result<()> {
+pub fn launch_fig(_opts: LaunchOptions) -> Result<()> {
     unimplemented!();
 }
 

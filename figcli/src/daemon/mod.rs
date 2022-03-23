@@ -9,6 +9,8 @@ use crate::{
         launchd_plist::LaunchdPlist, settings_watcher::spawn_settings_watcher,
         systemd_unit::SystemdUnit, websocket::process_websocket,
     },
+    dotfiles::download_and_notify,
+    plugins::fetch_installed_plugins,
     util::{backoff::Backoff, launch_fig, LaunchOptions},
 };
 
@@ -19,7 +21,7 @@ use fig_proto::daemon::diagnostic_response::{
     UnixSocketStatus, WebsocketStatus,
 };
 use futures::{SinkExt, StreamExt};
-use parking_lot::RwLock;
+use parking_lot::{lock_api::RawMutex, Mutex, RwLock};
 use rand::{distributions::Uniform, prelude::Distribution};
 use std::{
     io::Write,
@@ -220,8 +222,8 @@ impl InitSystem {
                 let status = stdout
                     .lines()
                     .map(|line| line.split_whitespace().collect::<Vec<_>>())
-                    .find(|line| line[2] == self.daemon_name())
-                    .and_then(|data| data[1].parse::<i32>().ok());
+                    .find(|line| line.get(2) == Some(&self.daemon_name()))
+                    .and_then(|data| data.get(1).and_then(|v| v.parse::<i32>().ok()));
 
                 Ok(status)
             }
@@ -430,10 +432,9 @@ async fn spawn_unix_handler(
                                                 .await;
 
                                             tokio::task::block_in_place(|| {
-                                                launch_fig(LaunchOptions {
-                                                    wait_for_activation: true,
-                                                    verbose: false,
-                                                })
+                                                launch_fig(
+                                                    LaunchOptions::new().wait_for_activation(),
+                                                )
                                                 .ok();
                                             });
                                         });
@@ -444,8 +445,40 @@ async fn spawn_unix_handler(
                                         false
                                     }
                                 };
-
                                 fig_proto::daemon::new_self_update_response(success)
+                            }
+                            fig_proto::daemon::daemon_message::Command::Sync(sync_command) => {
+                                match sync_command.r#type() {
+                                    fig_proto::daemon::sync_command::SyncType::Plugins => {
+                                        match download_and_notify().await {
+                                            Ok(_) => match fetch_installed_plugins().await {
+                                                Ok(()) => {
+                                                    fig_proto::daemon::new_sync_response(Ok(()))
+                                                }
+                                                Err(err) => {
+                                                    error!(
+                                                        "Failed to fetch installed plugins: {}",
+                                                        err
+                                                    );
+
+                                                    fig_proto::daemon::new_sync_response(Err(
+                                                        err.to_string()
+                                                    ))
+                                                }
+                                            },
+                                            Err(err) => {
+                                                error!(
+                                                    "Failed to fetch installed plugins: {}",
+                                                    err
+                                                );
+
+                                                fig_proto::daemon::new_sync_response(Err(
+                                                    err.to_string()
+                                                ))
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         };
 
@@ -509,8 +542,12 @@ pub async fn spawn_incomming_unix_handler(
     }))
 }
 
+pub static IS_RUNNING_DAEMON: Mutex<bool> = Mutex::const_new(RawMutex::INIT, false);
+
 /// Spawn the daemon to listen for updates and dotfiles changes
 pub async fn daemon() -> Result<()> {
+    *IS_RUNNING_DAEMON.lock() = true;
+
     info!("Starting daemon...");
 
     let daemon_status = Arc::new(RwLock::new(DaemonStatus {

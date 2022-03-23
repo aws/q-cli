@@ -1,9 +1,13 @@
 use fig_directories::home_dir;
+use fig_telemetry::Source;
 use std::path::{Path, PathBuf};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tracing::{error, info};
 
-use crate::cli::installation::{uninstall_cli, InstallComponents};
+use crate::{
+    cli::installation::{uninstall_cli, InstallComponents},
+    daemon::IS_RUNNING_DAEMON,
+};
 
 async fn remove_in_dir_with_prefix(dir: &Path, prefix: &str) {
     if let Ok(mut entries) = tokio::fs::read_dir(dir).await {
@@ -24,7 +28,11 @@ pub async fn uninstall_mac_app() {
     let tel_join = tokio::task::spawn(async {
         match fig_telemetry::SegmentEvent::new("Uninstall App") {
             Ok(mut event) => {
-                if let Err(err) = event.add_default_properties() {
+                if let Err(err) = event.add_default_properties(if *IS_RUNNING_DAEMON.lock() {
+                    Source::Daemon
+                } else {
+                    Source::Cli
+                }) {
                     error!(
                         "Could not add default properties to telemetry event: {}",
                         err
