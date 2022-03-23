@@ -65,7 +65,7 @@ install: all
 	cd $(HOME)/.fig/bin && \
 		rm -rf $(PROGS) *figterm* && \
 		cd $(BUILT_PRODUCTS_DIR) && \
-		install -p $(PROGS) $(HOME)/.fig/bin && \
+		install -p figterm $(HOME)/.fig/bin && \
 		install -p $(HOME)/.fig/bin/figterm $(HOME)/.fig/bin/zsh\ \(figterm\) && \
 		install -p $(HOME)/.fig/bin/figterm $(HOME)/.fig/bin/fish\ \(figterm\) && \
 		install -p $(HOME)/.fig/bin/figterm $(HOME)/.fig/bin/bash\ \(figterm\); \
