@@ -8,7 +8,7 @@
 
 import Foundation
 
-class NovaIntegration: InputMethodDependentTerminalIntegrationProvider {
+class NovaIntegration: InputMethodDependentTerminalIntegrationProvider & IntegrationProvider {
   static let `default` = NovaIntegration(bundleIdentifier: Integrations.Nova)
 
   func verifyInstallation() -> InstallationStatus {
@@ -48,7 +48,9 @@ class NovaIntegration: InputMethodDependentTerminalIntegrationProvider {
 
     return .installed
   }
+}
 
+extension NovaIntegration: TerminalIntegration {
   func getCursorRect(in window: ExternalWindow) -> NSRect? {
     return InputMethod.getCursorRect()
   }
