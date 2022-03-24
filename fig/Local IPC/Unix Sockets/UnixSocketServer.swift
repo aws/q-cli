@@ -43,7 +43,10 @@ class UnixSocketServer {
     let url = URL(fileURLWithPath: self.path)
     try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(),
                                             withIntermediateDirectories: true,
-                                            attributes: nil)
+                                             // Create with drwxrwxrwt permissions so folder
+                                             // can be reused from separate accounts
+                                             // https://github.com/withfig/fig/issues/1140
+                                             attributes: [ .posixPermissions: 0o1777 ])
     self.bidirectional = bidirectional
   }
 
