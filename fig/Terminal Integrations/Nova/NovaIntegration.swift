@@ -8,7 +8,7 @@
 
 import Foundation
 
-class NovaIntegration: TerminalIntegrationProvider {
+class NovaIntegration: InputMethodDependentTerminalIntegrationProvider {
   static let `default` = NovaIntegration(bundleIdentifier: Integrations.Nova)
 
   func verifyInstallation() -> InstallationStatus {
