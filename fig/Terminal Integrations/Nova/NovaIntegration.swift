@@ -48,7 +48,9 @@ class NovaIntegration: InputMethodDependentTerminalIntegrationProvider & Integra
 
     return .installed
   }
+}
 
+extension NovaIntegration: TerminalIntegration {
   func getCursorRect(in window: ExternalWindow) -> NSRect? {
     return InputMethod.getCursorRect()
   }
