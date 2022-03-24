@@ -120,6 +120,7 @@
 		757CA89B248C18F1002A64A8 /* done.html in Resources */ = {isa = PBXBuildFile; fileRef = 757CA89A248C18F0002A64A8 /* done.html */; };
 		757CA89D248C1F50002A64A8 /* demo4onboarding.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 757CA89C248C1F50002A64A8 /* demo4onboarding.mp4 */; };
 		757CA89F248D628F002A64A8 /* sidebar.html in Resources */ = {isa = PBXBuildFile; fileRef = 757CA89E248D628E002A64A8 /* sidebar.html */; };
+		757D115D27EBDCF10066BC43 /* NovaIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757D115C27EBDCF10066BC43 /* NovaIntegration.swift */; };
 		75809B0E24BFA64D00BFFB3E /* TelemetryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75809B0D24BFA64D00BFFB3E /* TelemetryService.swift */; };
 		7583A12E273CF261001DF86B /* PathHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7583A12D273CF261001DF86B /* PathHelper.swift */; };
 		7584EFC927A4D69400E17EC9 /* tabby-integration.js in Resources */ = {isa = PBXBuildFile; fileRef = 7584EFC827A4D69400E17EC9 /* tabby-integration.js */; };
@@ -416,6 +417,7 @@
 		757CA89A248C18F0002A64A8 /* done.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = done.html; sourceTree = "<group>"; };
 		757CA89C248C1F50002A64A8 /* demo4onboarding.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = demo4onboarding.mp4; sourceTree = "<group>"; };
 		757CA89E248D628E002A64A8 /* sidebar.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = sidebar.html; sourceTree = "<group>"; };
+		757D115C27EBDCF10066BC43 /* NovaIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NovaIntegration.swift; sourceTree = "<group>"; };
 		75809B0D24BFA64D00BFFB3E /* TelemetryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetryService.swift; sourceTree = "<group>"; };
 		75809B0F24C2C66100BFFB3E /* WebView+Private.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "WebView+Private.h"; sourceTree = "<group>"; };
 		7583A12D273CF261001DF86B /* PathHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PathHelper.swift; sourceTree = "<group>"; };
@@ -935,6 +937,14 @@
 			name = "Static Assets";
 			sourceTree = "<group>";
 		};
+		757D115B27EBDCD50066BC43 /* Nova */ = {
+			isa = PBXGroup;
+			children = (
+				757D115C27EBDCF10066BC43 /* NovaIntegration.swift */,
+			);
+			path = Nova;
+			sourceTree = "<group>";
+		};
 		75A0A71726F1A786008FAD70 /* Kitty */ = {
 			isa = PBXGroup;
 			children = (
@@ -1036,6 +1046,7 @@
 		75D1ECBC26F15F0E00BC8A04 /* Terminal Integrations */ = {
 			isa = PBXGroup;
 			children = (
+				757D115B27EBDCD50066BC43 /* Nova */,
 				754565782773CB6E002A59EA /* JetBrains */,
 				7545657327715754002A59EA /* Tabby */,
 				752A398725CD0FFB00B1AC40 /* VSCode */,
@@ -1586,6 +1597,7 @@
 				75C16D4826FD1EB400C83296 /* API+NotificationCenter.swift in Sources */,
 				750BA10C2733590A00705E63 /* API+IPC.swift in Sources */,
 				759F987C25BF903900EC3407 /* Accessibility.swift in Sources */,
+				757D115D27EBDCF10066BC43 /* NovaIntegration.swift in Sources */,
 				751C3BEE24B6915000B5C7FD /* Defaults.swift in Sources */,
 				755D27BA272242690080B4B8 /* FigTerm.swift in Sources */,
 				757712492564D94A0011FF48 /* ProcessStatus.swift in Sources */,
