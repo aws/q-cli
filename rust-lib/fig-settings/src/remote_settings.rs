@@ -1,7 +1,8 @@
-use crate::settings::LocalSettings;
+use crate::{api_host, settings::LocalSettings};
 
 use anyhow::Result;
 use fig_auth::get_token;
+use reqwest::Url;
 use serde::{Deserialize, Serialize};
 
 pub type RemoteResult = Result<()>;
@@ -12,8 +13,11 @@ pub async fn update_remote_all_settings(settings: LocalSettings) -> RemoteResult
         let mut body = serde_json::Map::new();
         body.insert("settings".into(), serde_json::json!(settings));
 
+        let api_host = api_host();
+        let url = Url::parse(&format!("{api_host}/settings/update"))?;
+
         reqwest::Client::new()
-            .post("https://api.fig.io/settings/update")
+            .post(url)
             .header("Content-Type", "application/json")
             .json(&body)
             .bearer_auth(token)
@@ -34,10 +38,8 @@ pub async fn update_remote_setting(
     let mut body = serde_json::Map::new();
     body.insert("value".into(), value.into());
 
-    let url = reqwest::Url::parse(&format!(
-        "https://api.fig.io/settings/update/{}",
-        key.as_ref()
-    ))?;
+    let api_host = api_host();
+    let url = Url::parse(&format!("{api_host}/settings/update/{}", key.as_ref()))?;
 
     reqwest::Client::new()
         .post(url)
@@ -54,10 +56,8 @@ pub async fn update_remote_setting(
 pub async fn delete_remote_setting(key: impl AsRef<str>) -> RemoteResult {
     let token = get_token().await?;
 
-    let url = reqwest::Url::parse(&format!(
-        "https://api.fig.io/settings/update/{}",
-        key.as_ref()
-    ))?;
+    let api_host = api_host();
+    let url = Url::parse(&format!("{api_host}/settings/update/{}", key.as_ref()))?;
 
     reqwest::Client::new()
         .delete(url)
@@ -81,8 +81,11 @@ pub struct RemoteSettings {
 pub async fn get_settings() -> Result<RemoteSettings> {
     let token = get_token().await?;
 
+    let api_host = api_host();
+    let url = Url::parse(&format!("{api_host}/settings/settings"))?;
+
     let res = reqwest::Client::new()
-        .get("https://api.fig.io/settings/")
+        .get(url)
         .bearer_auth(token)
         .send()
         .await?

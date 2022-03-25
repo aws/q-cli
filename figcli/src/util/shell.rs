@@ -1,5 +1,6 @@
 use anyhow::{Context, Result};
 use clap::ArgEnum;
+use fig_settings::api_host;
 use regex::Regex;
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
@@ -13,8 +14,6 @@ use std::{
 use time::OffsetDateTime;
 
 use crate::util::get_parent_process_exe;
-
-use super::api::api_host;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, ArgEnum, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]

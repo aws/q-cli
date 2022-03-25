@@ -1,6 +1,6 @@
 use super::manifest::GitHub;
-use crate::util::api::api_host;
 use anyhow::Result;
+use fig_settings::api_host;
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
 
