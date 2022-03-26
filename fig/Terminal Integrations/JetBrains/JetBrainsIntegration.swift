@@ -22,6 +22,17 @@ class JetBrainsIntegration: InputMethodDependentTerminalIntegrationProvider & In
   static let CLion      = JetBrainsIntegration(bundleIdentifier: Integrations.CLion)
   static let Rider      = JetBrainsIntegration(bundleIdentifier: Integrations.Rider)
 
+  static let AndroidStudio =
+    JetBrainsIntegration(bundleIdentifier: Integrations.AndroidStudio,
+                         organization: "Google")
+
+  fileprivate let organization: String
+
+  init(bundleIdentifier: String, organization: String = "JetBrains") {
+    self.organization = organization
+    super.init(bundleIdentifier: bundleIdentifier)
+  }
+
   static let plugin = Plugin(name: "jetbrains-extension",
                              version: "2.0.0",
                              fileExtension: "zip")
@@ -31,7 +42,7 @@ class JetBrainsIntegration: InputMethodDependentTerminalIntegrationProvider & In
     // https://www.jetbrains.com/help/idea/directories-used-by-the-ide-to-store-settings-caches-plugins-and-logs.html#plugins-directory
     // ~/Library/Application Support/JetBrains/<product><version>/plugins
     return URL.applicationSupport
-              .appendingPathComponent("JetBrains", isDirectory: true)
+              .appendingPathComponent(organization, isDirectory: true)
               .appendingPathComponent(productVersion, isDirectory: true)
               .appendingPathComponent("plugins", isDirectory: true)
 
