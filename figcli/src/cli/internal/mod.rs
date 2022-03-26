@@ -9,7 +9,6 @@ use crossterm::style::Stylize;
 use fig_ipc::hook::send_hook_to_socket;
 use fig_proto::hooks::new_callback_hook;
 use native_dialog::{MessageDialog, MessageType};
-use nix::libc::proc_pidpath;
 use rand::distributions::{Alphanumeric, DistString};
 use std::{
     io::{Read, Write},
@@ -199,6 +198,8 @@ impl InternalSubcommand {
 
                     #[cfg(target_os = "macos")]
                     let out_buf = {
+                        use nix::libc::proc_pidpath;
+
                         // TODO: Make sure pid exists or that access is allowed?
                         let ret = unsafe {
                             proc_pidpath(
@@ -221,8 +222,8 @@ impl InternalSubcommand {
                             let ret = unsafe {
                                 libc::readlink(
                                     format!("/proc/{}/exe", pid).as_str().as_ptr(),
-                                    procfile.as_mut_ptr() as *mut std::ffi::c_void,
-                                    procfile.len() as u32,
+                                    buff.as_mut_ptr() as *mut std::ffi::c_void,
+                                    buff.len() as u32,
                                 )
                             };
 
