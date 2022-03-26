@@ -242,7 +242,7 @@ pub fn launch_fig(opts: LaunchOptions) -> Result<()> {
     }
 
     if !is_app_running() {
-        anyhow::bail!("\nUnable to launch Fig\n");
+        anyhow::bail!("Unable to launch Fig");
     }
 
     // Wait for socket to exist
@@ -259,7 +259,7 @@ pub fn launch_fig(opts: LaunchOptions) -> Result<()> {
 
 #[cfg(not(any(target_os = "macos")))]
 pub fn launch_fig(_opts: LaunchOptions) -> Result<()> {
-    unimplemented!();
+    anyhow::bail!("Fig desktop can not be launched on this platform")
 }
 
 pub fn is_executable_in_path(program: impl AsRef<Path>) -> bool {
