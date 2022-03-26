@@ -66,6 +66,7 @@ jobs:
 
   rust-clippy-lint:
     name: Rust Clippy Lint
+    runs-on: ${{ matrix.os }}
 
     strategy:
       matrix:
