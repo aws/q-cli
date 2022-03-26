@@ -25,6 +25,7 @@ class Integrations {
   static let GoLand = "com.jetbrains.goland"
   static let PhpStorm = "com.jetbrains.PhpStorm"
   static let PyCharm = "com.jetbrains.pycharm"
+  static let PyCharmCE = "com.jetbrains.pycharm.ce"
   static let AppCode = "com.jetbrains.AppCode"
   static let Rider = "com.jetbrains.rider"
   static let CLion = "com.jetbrains.CLion"
@@ -53,7 +54,18 @@ class Integrations {
     "com.raycast.macos"
   ]
 
-  static let jetbrainIDEs: Set = [IntellijCE, Intellij, WebStorm, GoLand, PhpStorm, PyCharm, AppCode]
+  static let jetbrainIDEs: Set = [
+    IntellijCE,
+    Intellij,
+    WebStorm,
+    GoLand,
+    PhpStorm,
+    PyCharm,
+    PyCharmCE,
+    AppCode,
+    Rider,
+    CLion
+  ]
   static let inputMethodDependentTerminals: Set = jetbrainIDEs.union([Alacritty, Kitty, Nova])
 
   static let electronIDEs: Set = [VSCode, VSCodeInsiders, VSCodium]
@@ -153,6 +165,7 @@ class Integrations {
       Integrations.PhpStorm: JetBrainsIntegration.PhpStorm,
       Integrations.GoLand: JetBrainsIntegration.GoLand,
       Integrations.PyCharm: JetBrainsIntegration.PyCharm,
+      Integrations.PyCharmCE: JetBrainsIntegration.PyCharmCE,
       Integrations.AppCode: JetBrainsIntegration.AppCode,
       Integrations.CLion: JetBrainsIntegration.CLion,
       Integrations.Rider: JetBrainsIntegration.Rider
