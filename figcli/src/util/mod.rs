@@ -9,7 +9,6 @@ use anyhow::{Context, Result};
 use globset::{Glob, GlobSet, GlobSetBuilder};
 use sysinfo::{get_current_pid, ProcessExt, System, SystemExt};
 
-pub mod api;
 pub mod backoff;
 pub mod checksum;
 pub mod shell;

@@ -11,6 +11,7 @@ pub mod installation;
 pub mod internal;
 pub mod invite;
 pub mod issue;
+pub mod plugins;
 pub mod settings;
 pub mod source;
 pub mod theme;
@@ -33,7 +34,7 @@ use clap::{ArgEnum, IntoApp, Parser, Subcommand};
 use std::{fs::File, process::exit, str::FromStr};
 use tracing::{debug, level_filters::LevelFilter};
 
-use self::app::AppSubcommand;
+use self::{app::AppSubcommand, plugins::PluginsSubcommands};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ArgEnum)]
 pub enum OutputFormat {
@@ -162,6 +163,8 @@ pub enum CliRootCommands {
     /// (LEGACY) Old hook that was being used somewhere
     #[clap(name = "app:running", hide = true)]
     FigAppRunning,
+    #[clap(subcommand)]
+    Plugins(PluginsSubcommands),
 }
 
 #[derive(Debug, Parser)]
@@ -210,26 +213,28 @@ impl Cli {
             }
             _ => {
                 // All other cli commands print logs to ~/.fig/logs/cli.log
-                if let Some(fig_dir) = fig_directories::fig_dir() {
-                    let log_path = fig_dir.join("logs").join("cli.log");
+                if env_level >= LevelFilter::DEBUG {
+                    if let Some(fig_dir) = fig_directories::fig_dir() {
+                        let log_path = fig_dir.join("logs").join("cli.log");
 
-                    // Create the log directory if it doesn't exist
-                    if !log_path.parent().unwrap().exists() {
-                        std::fs::create_dir_all(log_path.parent().unwrap()).ok();
+                        // Create the log directory if it doesn't exist
+                        if !log_path.parent().unwrap().exists() {
+                            std::fs::create_dir_all(log_path.parent().unwrap()).ok();
+                        }
+
+                        if let Ok(log_file) =
+                            File::create(log_path).context("failed to create log file")
+                        {
+                            tracing_subscriber::fmt()
+                                .with_writer(log_file)
+                                .with_max_level(env_level)
+                                .with_line_number(true)
+                                .init();
+                        }
                     }
 
-                    if let Ok(log_file) =
-                        File::create(log_path).context("failed to create log file")
-                    {
-                        tracing_subscriber::fmt()
-                            .with_writer(log_file)
-                            .with_max_level(env_level)
-                            .with_line_number(true)
-                            .init();
-                    }
+                    debug!("Command ran: {:?}", std::env::args().collect::<Vec<_>>());
                 }
-
-                debug!("Command ran: {:?}", std::env::args().collect::<Vec<_>>());
             }
         }
 
@@ -326,6 +331,7 @@ impl Cli {
                     println!("{}", if is_app_running() { "1" } else { "0" });
                     Ok(())
                 }
+                CliRootCommands::Plugins(plugins_subcommand) => plugins_subcommand.execute().await,
             },
             // Root command
             None => root_command().await,

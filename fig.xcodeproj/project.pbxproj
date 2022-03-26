@@ -106,8 +106,7 @@
 		7575D44F26D5D35000D0C8D7 /* API.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7575D44E26D5D35000D0C8D7 /* API.swift */; };
 		7577124725648DFB0011FF48 /* ps.c in Sources */ = {isa = PBXBuildFile; fileRef = 7577124625648DFB0011FF48 /* ps.c */; };
 		757712492564D94A0011FF48 /* ProcessStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757712482564D9490011FF48 /* ProcessStatus.swift */; };
-		757A85F8270E46A40017996A /* figterm in Embed figterm & helpers */ = {isa = PBXBuildFile; fileRef = "figterm-0000000000000000" /* figterm */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
-		757A85FA270E46A40017996A /* fig_get_shell in Embed figterm & helpers */ = {isa = PBXBuildFile; fileRef = "fig_get_shell-0000000000" /* fig_get_shell */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		757A85F8270E46A40017996A /* figterm in Embed figterm */ = {isa = PBXBuildFile; fileRef = "figterm-0000000000000000" /* figterm */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		757AF4C826BC73FA00349764 /* WindowPositioning.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757AF4C726BC73FA00349764 /* WindowPositioning.swift */; };
 		757B6A0427CD761400A8811E /* LocalState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757B6A0327CD761400A8811E /* LocalState.swift */; };
 		757CA88624876043002A64A8 /* error.html in Resources */ = {isa = PBXBuildFile; fileRef = 757CA88524876042002A64A8 /* error.html */; };
@@ -121,6 +120,7 @@
 		757CA89B248C18F1002A64A8 /* done.html in Resources */ = {isa = PBXBuildFile; fileRef = 757CA89A248C18F0002A64A8 /* done.html */; };
 		757CA89D248C1F50002A64A8 /* demo4onboarding.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 757CA89C248C1F50002A64A8 /* demo4onboarding.mp4 */; };
 		757CA89F248D628F002A64A8 /* sidebar.html in Resources */ = {isa = PBXBuildFile; fileRef = 757CA89E248D628E002A64A8 /* sidebar.html */; };
+		757D115D27EBDCF10066BC43 /* NovaIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757D115C27EBDCF10066BC43 /* NovaIntegration.swift */; };
 		75809B0E24BFA64D00BFFB3E /* TelemetryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75809B0D24BFA64D00BFFB3E /* TelemetryService.swift */; };
 		7583A12E273CF261001DF86B /* PathHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7583A12D273CF261001DF86B /* PathHelper.swift */; };
 		7584EFC927A4D69400E17EC9 /* tabby-integration.js in Resources */ = {isa = PBXBuildFile; fileRef = 7584EFC827A4D69400E17EC9 /* tabby-integration.js */; };
@@ -266,16 +266,15 @@
 			name = "Embed Input Method";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		757A85C0270E37A90017996A /* Embed figterm & helpers */ = {
+		757A85C0270E37A90017996A /* Embed figterm */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 12;
 			dstPath = "";
 			dstSubfolderSpec = 6;
 			files = (
-				757A85F8270E46A40017996A /* figterm in Embed figterm & helpers */,
-				757A85FA270E46A40017996A /* fig_get_shell in Embed figterm & helpers */,
+				757A85F8270E46A40017996A /* figterm in Embed figterm */,
 			);
-			name = "Embed figterm & helpers";
+			name = "Embed figterm";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		7584EFD227A8D10700E17EC9 /* Embed figcli */ = {
@@ -418,6 +417,7 @@
 		757CA89A248C18F0002A64A8 /* done.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = done.html; sourceTree = "<group>"; };
 		757CA89C248C1F50002A64A8 /* demo4onboarding.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = demo4onboarding.mp4; sourceTree = "<group>"; };
 		757CA89E248D628E002A64A8 /* sidebar.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = sidebar.html; sourceTree = "<group>"; };
+		757D115C27EBDCF10066BC43 /* NovaIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NovaIntegration.swift; sourceTree = "<group>"; };
 		75809B0D24BFA64D00BFFB3E /* TelemetryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetryService.swift; sourceTree = "<group>"; };
 		75809B0F24C2C66100BFFB3E /* WebView+Private.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "WebView+Private.h"; sourceTree = "<group>"; };
 		7583A12D273CF261001DF86B /* PathHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PathHelper.swift; sourceTree = "<group>"; };
@@ -937,6 +937,14 @@
 			name = "Static Assets";
 			sourceTree = "<group>";
 		};
+		757D115B27EBDCD50066BC43 /* Nova */ = {
+			isa = PBXGroup;
+			children = (
+				757D115C27EBDCF10066BC43 /* NovaIntegration.swift */,
+			);
+			path = Nova;
+			sourceTree = "<group>";
+		};
 		75A0A71726F1A786008FAD70 /* Kitty */ = {
 			isa = PBXGroup;
 			children = (
@@ -1038,6 +1046,7 @@
 		75D1ECBC26F15F0E00BC8A04 /* Terminal Integrations */ = {
 			isa = PBXGroup;
 			children = (
+				757D115B27EBDCD50066BC43 /* Nova */,
 				754565782773CB6E002A59EA /* JetBrains */,
 				7545657327715754002A59EA /* Tabby */,
 				752A398725CD0FFB00B1AC40 /* VSCode */,
@@ -1154,7 +1163,7 @@
 				759E4BFD268F9BCC00CC1565 /* Change permissions to make Applescript read-only */,
 				7571775626F3B8910071AE10 /* Embed Input Method */,
 				75FD16E727150DC400056A39 /* Package config folder */,
-				757A85C0270E37A90017996A /* Embed figterm & helpers */,
+				757A85C0270E37A90017996A /* Embed figterm */,
 				7581E6082769C4AE00CFD39A /* Lint Swift files */,
 				75BD7EA427DFB49500FA5233 /* Symlink figcli */,
 			);
@@ -1588,6 +1597,7 @@
 				75C16D4826FD1EB400C83296 /* API+NotificationCenter.swift in Sources */,
 				750BA10C2733590A00705E63 /* API+IPC.swift in Sources */,
 				759F987C25BF903900EC3407 /* Accessibility.swift in Sources */,
+				757D115D27EBDCF10066BC43 /* NovaIntegration.swift in Sources */,
 				751C3BEE24B6915000B5C7FD /* Defaults.swift in Sources */,
 				755D27BA272242690080B4B8 /* FigTerm.swift in Sources */,
 				757712492564D94A0011FF48 /* ProcessStatus.swift in Sources */,
@@ -1913,7 +1923,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = YES;
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 409;
+				CURRENT_PROJECT_VERSION = 418;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				DEVELOPMENT_TEAM = B8PC799ZGU;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1949,7 +1959,7 @@
 				CODE_SIGN_IDENTITY = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 409;
+				CURRENT_PROJECT_VERSION = 418;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				DEVELOPMENT_TEAM = B8PC799ZGU;
 				ENABLE_HARDENED_RUNTIME = YES;

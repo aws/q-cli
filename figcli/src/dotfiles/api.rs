@@ -2,12 +2,13 @@ use std::{collections::HashMap, path::PathBuf};
 
 use anyhow::{Context, Result};
 use fig_auth::get_token;
+use fig_settings::api_host;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 use tracing::{debug, info};
 
-use crate::util::{api::api_host, shell::Shell};
+use crate::util::shell::Shell;
 
 /// The list of installed plugins
 #[derive(Debug, Clone, Serialize, Deserialize)]

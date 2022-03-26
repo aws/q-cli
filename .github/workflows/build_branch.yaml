@@ -113,10 +113,6 @@ jobs:
 ############################################
 # Install Build Tools
 ############################################
-      - uses: actions/setup-go@v2
-        with:
-          go-version: '1.17'
-
       - name: Setup Node Environment
         uses: actions/setup-node@v1
 
@@ -127,7 +123,6 @@ jobs:
         run:  |
           brew install protobuf swift-protobuf
           npm install -g ts-proto
-          go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
         env:
           HOMEBREW_NO_AUTO_UPDATE: 1
 
@@ -158,6 +153,14 @@ jobs:
           restore-keys: |
             rust-release-${{ runner.os }}-cargo-
 
+      - name: Cargo sweep stamp
+        run: |
+          # Install `cargo sweep` if it is not installed
+          if ! cargo sweep --help &> /dev/null; then
+            cargo install --locked --git https://github.com/holmgr/cargo-sweep.git --rev e3b67bd051910f57df8ab044512a13a980d88c06
+          fi
+          cargo sweep -s
+
 ############################################
 # Position generated build artifacts
 ############################################
@@ -165,7 +168,7 @@ jobs:
         run: mkdir -p "$FIG_BUILT_PRODUCTS_DIR"
 
       - name: Build figterm
-        run: make figterm fig_get_shell
+        run: make figterm
         working-directory: ./figterm
 
       - name: Build figcli
@@ -336,6 +339,10 @@ jobs:
         run: |
           cp "fig $BUILD.dmg" ./versions
           rm ./versions/fig@latest.dmg
+      - name: "Write Brew Cask Version to File"
+        if: env.BUMP_CASK_PR == 1
+        run: |
+          echo "${{env.VERSION}},${{env.BUILD}}" > ./versions/brew-cask-version 
       - name: "Generate Appcast"
         if: github.event.inputs.useSparkle != 'false'
         run: ./Sparkle/bin/generate_appcast -s $SPARKLE_KEY --download-url-prefix https://$APPCAST_PREFIX.withfig.com versions
@@ -380,16 +387,6 @@ jobs:
           cd versions
           git push origin $VERSIONS_BRANCH
           cd ..
-
-############################################
-# Publish Homebrew Cask
-############################################
-      # s3 bucket hasn't been updated yet, so this fails
-      - name: "Bump Brew Cask Version"
-        if: env.BUMP_CASK_PR == 1
-        run: brew bump-cask-pr fig --version=${{env.VERSION}},${{env.BUILD}}  --no-browse --verbose --debug
-        env:
-          HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.HOMEBREW_FORK_GITHUB_TOKEN }}
 
 ############################################
 # Create Github Release [Internal]
@@ -437,3 +434,7 @@ jobs:
           curl -H "Content-Type: application/json" \
             -d '{"username": "macOS build deployed!", "content": "${{ github.event.inputs.buildName }} | ${{env.VERSION}} (B${{env.BUILD}}) from branch '${{env.BRANCH_NAME}}' | https://github.com/withfig/macos/releases/tag/manual-build-${{ github.run_number }}\n" }' \
             ${{secrets.DISCORD_MACOS_WEBHOOK}}
+
+      - name: Cargo sweep clean
+        run: |
+          cargo sweep -f

@@ -29,5 +29,5 @@ jobs:
         with:
           token: ${{ secrets.FIG_BOT_TOKEN }}
           autocomplete-spec-name: 'fig/fig@latest'
-          spec-path: spec.ts
+          spec-path: figcli/spec.ts
           integration: clap

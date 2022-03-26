@@ -1,5 +1,6 @@
 use anyhow::{Context, Result};
 use clap::ArgEnum;
+use fig_settings::api_host;
 use regex::Regex;
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
@@ -13,8 +14,6 @@ use std::{
 use time::OffsetDateTime;
 
 use crate::util::get_parent_process_exe;
-
-use super::api::api_host;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, ArgEnum, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -119,7 +118,7 @@ impl ShellIntegration {
             ("", "")
         };
         let r = format!(
-            r#"{}\n?(?:{}\n)?{}\n{{0,2}}{}"#,
+            r#"(?:{}\n)?(?:{}\n)?{}\n{{0,2}}{}"#,
             prefix,
             regex::escape(&self.description()),
             regex::escape(&self.source_text()),
@@ -137,6 +136,12 @@ pub struct ShellFileIntegration {
     pub pre: bool,
     pub post: bool,
     pub remove_on_uninstall: bool,
+}
+
+impl std::fmt::Display for ShellFileIntegration {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.filename)
+    }
 }
 
 impl ShellFileIntegration {

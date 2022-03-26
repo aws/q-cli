@@ -48,7 +48,7 @@ pub fn install_cli(
         };
         if !manual_install {
             if let Err(e) = install_fig() {
-                println!("Could not automatically install: {}", e);
+                println!("{}\n {}", "Could not automatically install:".bold(), e);
                 manual_install = true;
             }
         }
@@ -95,12 +95,12 @@ fn install_fig() -> Result<()> {
             Ok(integrations) => {
                 for integration in integrations {
                     if let Err(e) = integration.install(Some(&backup_dir)) {
-                        errs.push(e.to_string());
+                        errs.push(format!("{}: {}", integration, e));
                     }
                 }
             }
             Err(e) => {
-                errs.push(e.to_string());
+                errs.push(format!("{}: {}", shell, e));
             }
         }
     }

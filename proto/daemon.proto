@@ -15,6 +15,8 @@ message DaemonMessage {
         DiagnosticCommand diagnostic = 101;
         // A request to tigger a self-update if possible
         SelfUpdateCommand self_update = 102;
+        // A request for the daemon to sync data
+        SyncCommand sync = 103;
     }
 }
 
@@ -27,6 +29,8 @@ message DaemonResponse {
         DiagnosticResponse diagnostic = 101;
         // A response to a self-update command
         SelfUpdateResponse self_update = 102;
+        // A response to a sync command
+        SyncResponse sync = 103;
 	}
 }
 
@@ -95,11 +99,31 @@ message SelfUpdateCommand { }
 // Response to SelfUpdateCommand
 message SelfUpdateResponse {
     // Status of the update
+    // This is out of order as Ok may be changed to a diffrent type of
+    // status such as Updated or NotUpdated
     enum Status {
         ERROR = 0;
         OK = 1;
     }
 
     Status status = 1;
+    optional string error = 2;
+}
+
+message SyncCommand {
+    enum SyncType {
+        PLUGINS = 0;
+    }
+
+    SyncType type = 1;
+}
+
+message SyncResponse {
+    enum SyncStatus {
+        OK = 0;
+        ERROR = 1;
+    }
+
+    SyncStatus status = 1;
     optional string error = 2;
 }
