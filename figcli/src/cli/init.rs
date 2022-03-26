@@ -180,7 +180,6 @@ fn shell_init(shell: &Shell, when: &When) -> Result<String> {
                 }
             }
 
-            //#[allow(clippy::needless_return, warnings)]
             None
         };
 
