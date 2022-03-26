@@ -30,6 +30,7 @@ class Integrations {
   static let Rider = "com.jetbrains.rider"
   static let CLion = "com.jetbrains.CLion"
   static let Nova = "com.panic.Nova"
+  static let AndroidStudio = "com.google.android.studio"
 
   static let terminals: Set = [
     "com.googlecode.iterm2",
@@ -64,7 +65,8 @@ class Integrations {
     PyCharmCE,
     AppCode,
     Rider,
-    CLion
+    CLion,
+    AndroidStudio
   ]
   static let inputMethodDependentTerminals: Set = jetbrainIDEs.union([Alacritty, Kitty, Nova])
 
@@ -168,7 +170,8 @@ class Integrations {
       Integrations.PyCharmCE: JetBrainsIntegration.PyCharmCE,
       Integrations.AppCode: JetBrainsIntegration.AppCode,
       Integrations.CLion: JetBrainsIntegration.CLion,
-      Integrations.Rider: JetBrainsIntegration.Rider
+      Integrations.Rider: JetBrainsIntegration.Rider,
+      Integrations.AndroidStudio: JetBrainsIntegration.AndroidStudio
 
     ]
 
