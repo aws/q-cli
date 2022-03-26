@@ -1,4 +1,4 @@
-name: Dotfilesd Deploy
+name: Binary S3 Deploy
 
 on:
   workflow_dispatch:
