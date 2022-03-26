@@ -55,4 +55,8 @@ impl Terminal {
             },
         }
     }
+
+    pub fn is_jetbrains_terminal() -> bool {
+        matches!(std::env::var("__CFBundleIdentifier").ok(), Some(v) if v.contains("com.jetbrains."))
+    }
 }
