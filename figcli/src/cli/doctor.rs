@@ -330,19 +330,19 @@ impl DoctorCheck for FigtermSocketCheck {
         let timeout =
             tokio::time::timeout(Duration::from_secs_f32(1.2), stdin.read_line(&mut buffer));
 
-        let timeout_result: Result<()> = match timeout.await {
+        let timeout_result: Result<(), DoctorError> = match timeout.await {
             Ok(Ok(_)) => {
                 if buffer.trim() == "Testing figterm..." {
                     Ok(())
                 } else {
-                    Err(anyhow!(
-                        "Figterm socket did not read buffer correctly: {:?}",
-                        buffer
+                    Err(DoctorError::Warning(
+                        format!("Figterm socket did not read buffer correctly, make sure not to do any input while doctor is running: {:?}", buffer)
+                            .into(),
                     ))
                 }
             }
-            Ok(Err(err)) => Err(anyhow!("Figterm socket err: {}", err)),
-            Err(_) => Err(anyhow!("Figterm socket write timed out after 1s")),
+            Ok(Err(err)) => Err(anyhow!("Figterm socket err: {}", err).into()),
+            Err(_) => Err(anyhow!("Figterm socket write timed out after 1s").into()),
         };
 
         disable_raw_mode().context("Failed to disable raw mode")?;
@@ -1216,10 +1216,16 @@ impl DoctorCheck<Option<Terminal>> for VSCodeIntegrationCheck {
             let glob_set = glob(&[extensions.join("withfig.fig-").to_string_lossy()]).unwrap();
 
             let extensions = extensions.as_path();
-            let fig_extensions = glob_dir(&glob_set, &extensions).context(format!(
-                "Could not read VSCode extensions in dir {}",
-                extensions.display()
-            ))?;
+            let fig_extensions = glob_dir(&glob_set, &extensions).map_err(|err| {
+                DoctorError::Warning(
+                    format!(
+                        "Could not read VSCode extensions in dir {}: {}",
+                        extensions.to_string_lossy(),
+                        err
+                    )
+                    .into(),
+                )
+            })?;
 
             if fig_extensions.is_empty() {
                 return Err(anyhow!("VSCode extension is missing!").into());

@@ -40,6 +40,7 @@ pub fn get_parent_process_exe() -> Result<PathBuf> {
     Ok(parent_process.exe().to_path_buf())
 }
 
+#[must_use]
 pub fn fig_bundle() -> Option<PathBuf> {
     #[cfg(target_os = "macos")]
     {
@@ -137,6 +138,7 @@ pub fn get_shell() -> Result<String> {
 }
 
 #[cfg(target_os = "macos")]
+#[must_use]
 pub fn get_machine_id() -> Option<String> {
     let output = Command::new("ioreg")
         .args(&["-rd1", "-c", "IOPlatformExpertDevice"])
@@ -170,6 +172,7 @@ pub fn get_machine_id() -> Option<String> {
 }
 
 #[cfg(target_os = "macos")]
+#[must_use]
 pub fn is_app_running() -> bool {
     let output = match Command::new("lsappinfo")
         .args(["info", "-app", "com.mschrage.fig"])

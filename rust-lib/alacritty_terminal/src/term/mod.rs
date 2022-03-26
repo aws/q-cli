@@ -937,6 +937,8 @@ impl<T: EventListener> Handler for Term<T> {
         } else {
             self.grid.cursor.input_needs_wrap = true;
         }
+
+        trace!("Current cursor position: {:?}", self.grid.cursor.point);
     }
 
     #[inline]

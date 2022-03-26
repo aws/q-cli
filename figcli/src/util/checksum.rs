@@ -11,6 +11,7 @@ impl Checksum {
         Checksum(value.into())
     }
 
+    #[must_use]
     pub fn as_str(&self) -> &str {
         self.0.as_str()
     }

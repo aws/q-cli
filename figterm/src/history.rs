@@ -1,5 +1,5 @@
 use alacritty_terminal::term::CommandInfo;
-use anyhow::Result;
+use anyhow::{Context, Result};
 use fig_directories::fig_dir;
 use flume::{bounded, Sender};
 use once_cell::sync::Lazy;
@@ -77,8 +77,8 @@ pub struct History {
 impl History {
     pub fn load() -> Result<History> {
         trace!("Loading history");
-        let old_history_path: PathBuf =
-            [fig_dir().unwrap(), "history".into()].into_iter().collect();
+
+        let old_history_path = fig_dir().context("Failed to get fig_dir")?.join("history");
 
         let history_path: PathBuf = [fig_dir().unwrap(), "fig.history".into()]
             .into_iter()

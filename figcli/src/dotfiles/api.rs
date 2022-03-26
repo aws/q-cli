@@ -84,7 +84,7 @@ pub async fn download_dotfiles() -> Result<UpdateStatus> {
     std::fs::write(all_json_path, download)?;
 
     // Write to the individual shell files
-    for (shell, dotfile) in dotfiles.dotfiles.into_iter() {
+    for (shell, dotfile) in dotfiles.dotfiles {
         let shell_json_path = shell
             .get_data_path()
             .context("Could not get cache file path")?;
@@ -129,6 +129,7 @@ pub async fn download_dotfiles() -> Result<UpdateStatus> {
     }
 }
 
+#[must_use]
 pub fn all_file_path() -> Option<PathBuf> {
     fig_directories::fig_data_dir().map(|dir| dir.join("shell").join("all.json"))
 }

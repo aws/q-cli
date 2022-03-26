@@ -8,43 +8,36 @@ use crate::{
 use anyhow::{Context, Result};
 use crossterm::tty::IsTty;
 use fig_auth::is_logged_in;
-use std::{env, io::stdin};
+use std::{borrow::Cow, env, fmt::Display, io::stdin};
 
-fn guard_source<F: Fn() -> Option<String>>(
-    shell: &Shell,
-    export: bool,
-    guard_var: impl AsRef<str>,
-    get_source: F,
-) -> Option<String> {
-    match get_source() {
-        Some(source) => {
-            let mut output = Vec::new();
+#[must_use]
+fn guard_source<G, S>(shell: &Shell, export: bool, guard_var: G, source: S) -> String
+where
+    G: Display,
+    S: Into<Cow<'static, str>>,
+{
+    let mut output: Vec<Cow<'static, str>> = Vec::new();
 
-            output.push(match shell {
-                Shell::Bash | Shell::Zsh => {
-                    format!("if [ -z \"${{{}}}\" ]; then", guard_var.as_ref())
-                }
-                Shell::Fish => format!("if test -z \"${}\"", guard_var.as_ref()),
-            });
+    output.push(match shell {
+        Shell::Bash | Shell::Zsh => format!("if [ -z \"${{{guard_var}}}\" ]; then").into(),
+        Shell::Fish => format!("if test -z \"${guard_var}\"").into(),
+    });
 
-            output.push(source);
+    output.push(source.into());
 
-            output.push(match (shell, export) {
-                (Shell::Bash | Shell::Zsh, false) => format!("{}=1", guard_var.as_ref()),
-                (Shell::Bash | Shell::Zsh, true) => format!("export {}=1", guard_var.as_ref()),
-                (Shell::Fish, false) => format!("set -g {} 1", guard_var.as_ref()),
-                (Shell::Fish, true) => format!("set -gx {} 1", guard_var.as_ref()),
-            });
+    output.push(match (shell, export) {
+        (Shell::Bash | Shell::Zsh, false) => format!("{guard_var}=1").into(),
+        (Shell::Bash | Shell::Zsh, true) => format!("export {guard_var}=1").into(),
+        (Shell::Fish, false) => format!("set -g {guard_var} 1").into(),
+        (Shell::Fish, true) => format!("set -gx {guard_var} 1").into(),
+    });
 
-            output.push(match shell {
-                Shell::Bash | Shell::Zsh => "fi\n".into(),
-                Shell::Fish => "end\n".into(),
-            });
+    output.push(match shell {
+        Shell::Bash | Shell::Zsh => "fi\n".into(),
+        Shell::Fish => "end\n".into(),
+    });
 
-            Some(output.join("\n"))
-        }
-        _ => None,
-    }
+    output.join("\n")
 }
 
 fn shell_init(shell: &Shell, when: &When) -> Result<String> {
@@ -54,11 +47,12 @@ fn shell_init(shell: &Shell, when: &When) -> Result<String> {
         .unwrap_or(true);
 
     if !should_source {
-        if let Some(source) = guard_source(shell, false, "FIG_SHELL_INTEGRATION_DISABLED", || {
-            Some("echo '[Debug]: fig shell integration is disabled.'".to_string())
-        }) {
-            return Ok(source);
-        }
+        return Ok(guard_source(
+            shell,
+            false,
+            "FIG_SHELL_INTEGRATION_DISABLED",
+            "echo '[Debug]: fig shell integration is disabled.'",
+        ));
     }
 
     let mut to_source = String::new();
@@ -76,9 +70,8 @@ fn shell_init(shell: &Shell, when: &When) -> Result<String> {
             Some(source.dotfile)
         };
 
-        if let Some(source) = guard_source(shell, false, "FIG_DOTFILES_SOURCED", get_dotfile_source)
-        {
-            to_source.push_str(&source);
+        if let Some(source) = get_dotfile_source() {
+            to_source.push_str(&guard_source(shell, false, "FIG_DOTFILES_SOURCED", source));
         }
 
         if stdin().is_tty() && env::var("PROCESS_LAUNCHED_BY_FIG").is_err() {
@@ -95,17 +88,23 @@ fn shell_init(shell: &Shell, when: &When) -> Result<String> {
                 && !has_see_onboarding
                 && [Some(Terminal::Iterm), Some(Terminal::TerminalApp)].contains(&terminal)
             {
-                to_source.push_str("fig app onboarding")
+                to_source.push_str(match shell {
+                    Shell::Bash | Shell::Zsh => "(fig restart daemon &> /dev/null &)\n",
+                    Shell::Fish => "begin; fig restart daemon &> /dev/null &; end\n",
+                });
+
+                to_source.push_str("fig app onboarding\n")
             } else {
                 // not showing onboarding
-                if let Some(source) =
-                    guard_source(shell, false, "FIG_CHECKED_PROMPTS", || match shell {
-                        Shell::Bash | Shell::Zsh => Some("(fig app prompts &)".to_string()),
-                        Shell::Fish => Some("begin; fig app prompts &; end".to_string()),
-                    })
-                {
-                    to_source.push_str(&source);
-                }
+                to_source.push_str(&guard_source(
+                    shell,
+                    false,
+                    "FIG_CHECKED_PROMPTS",
+                    match shell {
+                        Shell::Bash | Shell::Zsh => "(fig app prompts &)",
+                        Shell::Fish => "begin; fig app prompts &; end",
+                    },
+                ));
             }
         }
     }
