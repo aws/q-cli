@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -eu
+set -e
 
 ## <script src="https://get-fig-io.s3.us-west-1.amazonaws.com/readability.js"></script>
 ## <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.16.0/themes/prism-okaidia.min.css" rel="stylesheet" />
@@ -130,25 +130,13 @@ mkdir -p "${INSTALL_DIR}"
 mv "${download_dir}/fig" "${INSTALL_DIR}"
 
 if [[ -n "${SSH_TTY}" ]]; then
-    echo "On remote machine, installing fig shell integrations only."
+    printf "On remote machine, installing fig shell integrations only.\n"
     "${INSTALL_DIR}/fig" install --dotfiles
     if [ $? -ne 0 ]; then
         abort "Failed to install shell integrations."
     fi
 else
-    check_for_command sudo
-
-    GLOBAL_INSTALL_DIR="$(global_install_directory)"
-
-    read -p "${MAGENTA}➜${RESET} Install fig to ${BOLD}${GLOBAL_INSTALL_DIR}/fig [Y/n]?${RESET}\n" global_install
-    if [[ "${global_install}" -eq "n" ]] || [[ "${global_install}" -eq "N" ]]; then
-        echo "Installed fig to ${BOLD}${INSTALL_DIR}/fig${RESET}"
-    else
-        sudo -p "Please enter your password for user ${USER}: " ln -sf "${INSTALL_DIR}/fig" "${GLOBAL_INSTALL_DIR}/fig"
-    fi
-    printf "\n"
-
-    sudo -p "Please enter your password for user ${USER}: " "${INSTALL_DIR}/fig" install
+    "${INSTALL_DIR}/fig" install
     if [ $? -ne 0 ]; then
         abort "Failed to install fig"
     fi
