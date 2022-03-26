@@ -202,7 +202,7 @@ impl InternalSubcommand {
 
                         // TODO: Make sure pid exists or that access is allowed?
                         let ret = unsafe {
-                            proc_pidpath(
+                            nix::libc::proc_pidpath(
                                 pid.as_raw(),
                                 buff.as_mut_ptr() as *mut std::ffi::c_void,
                                 buff.len() as u32,
@@ -220,7 +220,7 @@ impl InternalSubcommand {
                     let out_buf = {
                         loop {
                             let ret = unsafe {
-                                libc::readlink(
+                                nix::libc::readlink(
                                     format!("/proc/{}/exe", pid).as_str().as_ptr(),
                                     buff.as_mut_ptr() as *mut std::ffi::c_void,
                                     buff.len() as u32,

@@ -1,6 +1,6 @@
 use crate::{
     cli::{
-        diagnostics::{dscl_read, get_diagnostics, verify_integration},
+        diagnostics::{dscl_read, verify_integration},
         util::OSVersion,
     },
     util::{
@@ -1551,23 +1551,27 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         .await?;
 
         #[cfg(target_os = "macos")]
-        run_checks_with_context(
-            format!("Let's check {}...", "fig diagnostic".bold()),
-            vec![
-                &InstallationScriptCheck {},
-                &ShellCompatibilityCheck {},
-                &BundlePathCheck {},
-                &AutocompleteEnabledCheck {},
-                &FigCLIPathCheck {},
-                &AccessibilityCheck {},
-                &SecureKeyboardCheck {},
-                &DotfilesSymlinkedCheck {},
-            ],
-            get_diagnostics,
-            config,
-            &mut spinner,
-        )
-        .await?;
+        {
+            use super::diagnostics::get_diagnostics;
+
+            run_checks_with_context(
+                format!("Let's check {}...", "fig diagnostic".bold()),
+                vec![
+                    &InstallationScriptCheck {},
+                    &ShellCompatibilityCheck {},
+                    &BundlePathCheck {},
+                    &AutocompleteEnabledCheck {},
+                    &FigCLIPathCheck {},
+                    &AccessibilityCheck {},
+                    &SecureKeyboardCheck {},
+                    &DotfilesSymlinkedCheck {},
+                ],
+                get_diagnostics,
+                config,
+                &mut spinner,
+            )
+            .await?;
+        }
 
         run_checks_with_context(
             "Let's check your terminal integrations...",

@@ -200,7 +200,7 @@ impl OSVersion {
         #[cfg(target_os = "linux")]
         {
             use nix::sys::utsname::uname;
-            use regex::Regex;
+            // use regex::Regex;
 
             let uname = uname();
             let kernel_version = uname.release().to_owned();
