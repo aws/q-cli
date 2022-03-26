@@ -92,6 +92,17 @@ pub fn permission_guard() -> Result<()> {
     }
 }
 
+/// The support level for different platforms
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SupportLevel {
+    /// A fully supported platform
+    Supported,
+    /// A platform that is currently in development
+    InDevelopment,
+    /// A platform that is not supported
+    Unsupported,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum OSVersion {
     MacOS {
@@ -101,8 +112,9 @@ pub enum OSVersion {
         build: String,
     },
     Linux {
-        flavor: String,
         kernel_version: String,
+        distribution: Option<String>,
+        release: Option<String>,
     },
     Windows {
         version: String,
@@ -121,10 +133,9 @@ impl Display for OSVersion {
                 let patch = patch.unwrap_or(0);
                 f.write_str(&format!("macOS {major}.{minor}.{patch} ({build})",))
             }
-            OSVersion::Linux {
-                flavor,
-                kernel_version,
-            } => f.write_str(&format!("Linux {flavor} {kernel_version}")),
+            OSVersion::Linux { kernel_version, .. } => {
+                f.write_str(&format!("Linux {kernel_version}"))
+            }
             OSVersion::Windows { version } => f.write_str(&format!("Windows {version}")),
         }
     }
@@ -175,27 +186,67 @@ impl OSVersion {
                 .captures(&version_info)
                 .and_then(|c| c.get(1))
                 .context("Invalid version")?
-                .as_str();
+                .as_str()
+                .into();
 
             Ok(OSVersion::MacOS {
                 major,
                 minor,
                 patch,
-                build: build.into(),
+                build,
             })
         }
 
-        #[cfg(not(any(target_os = "macos")))]
-        unimplemented!();
+        #[cfg(target_os = "linux")]
+        {
+            use nix::sys::utsname::uname;
+            // use regex::Regex;
+
+            let uname = uname();
+            let kernel_version = uname.release().to_owned();
+
+            // let version_info = Command::new("lsb_release")
+            //     .arg("-a")
+            //     .output()
+            //     .with_context(|| "Could not get Linux version")?;
+
+            // let version_info: String = String::from_utf8_lossy(&version_info.stdout).trim().into();
+
+            // let distribution_regex = Regex::new(r#"Distributor ID:\s*(\S+)"#).unwrap();
+            // let kernel_regex = Regex::new(r#"Description:\s*(\S+)"#).unwrap();
+
+            // let flavor = distribution_regex
+            //     .captures(&version_info)
+            //     .and_then(|c| c.get(1))
+            //     .map(|v| v.as_str().into())
+            //     .context("Invalid version")?;
+
+            // let kernel_version = kernel_regex
+            //     .captures(&version_info)
+            //     .and_then(|c| c.get(1))
+            //     .map(|v| v.as_str().into())
+            //     .context("Invalid version")?;
+
+            Ok(OSVersion::Linux {
+                kernel_version,
+                distribution: None,
+                release: None,
+            })
+        }
     }
 
-    pub fn is_supported(&self) -> bool {
+    pub fn support_level(&self) -> SupportLevel {
         match self {
             OSVersion::MacOS { major, minor, .. } => {
                 // Minimum supported macOS version is 10.14.0
-                *major > 10 || (*major == 10 && *minor >= 14)
+                if *major > 10 || (*major == 10 && *minor >= 14) {
+                    SupportLevel::Supported
+                } else {
+                    SupportLevel::Unsupported
+                }
             }
-            _ => false,
+            OSVersion::Linux { .. } => SupportLevel::InDevelopment,
+            _ => SupportLevel::Unsupported,
         }
     }
 }

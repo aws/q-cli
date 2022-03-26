@@ -56,6 +56,14 @@ pub enum Shells {
     Fig,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ArgEnum)]
+pub enum Processes {
+    /// Daemon process
+    Daemon,
+    /// Fig process
+    App,
+}
+
 #[derive(Debug, Subcommand)]
 pub enum CliRootCommands {
     #[clap(subcommand)]
@@ -154,7 +162,11 @@ pub enum CliRootCommands {
     /// Quit the Fig desktop app
     Quit,
     /// Restart the Fig desktop app
-    Restart,
+    Restart {
+        /// The process to restart
+        #[clap(arg_enum, default_value = "app", hide = true)]
+        process: Processes,
+    },
     #[clap(hide = true)]
     /// (LEGACY) Old way to launch mission control
     Alpha,
@@ -318,13 +330,13 @@ impl Cli {
                     }
                     app_res
                 }
-                CliRootCommands::Restart => {
-                    let app_res = app::restart_fig().await;
-                    if let Ok(daemon) = get_daemon() {
-                        daemon.restart().ok();
+                CliRootCommands::Restart { process } => match process {
+                    Processes::App => {
+                        get_daemon().and_then(|d| d.restart()).ok();
+                        app::restart_fig().await
                     }
-                    app_res
-                }
+                    Processes::Daemon => get_daemon().and_then(|d| d.restart()),
+                },
                 CliRootCommands::Alpha => root_command().await,
                 CliRootCommands::Onboarding => AppSubcommand::Onboarding.execute().await,
                 CliRootCommands::FigAppRunning => {

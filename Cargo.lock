@@ -1076,7 +1076,6 @@ dependencies = [
  "native-dialog",
  "nix 0.23.1",
  "notify",
- "objc",
  "once_cell",
  "parking_lot",
  "prost",

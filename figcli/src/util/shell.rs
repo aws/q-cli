@@ -345,8 +345,7 @@ impl Shell {
             Shell::Zsh => {
                 let zdotdir = std::env::var("ZDOTDIR")
                     .or_else(|_| std::env::var("FIG_ZDOTDIR"))
-                    .map(PathBuf::from)
-                    .unwrap_or_else(|_| home_dir);
+                    .map_or_else(|_| home_dir, PathBuf::from);
                 vec![".zshrc", ".zprofile"]
                     .into_iter()
                     .map(|filename| ShellFileIntegration {
@@ -361,8 +360,7 @@ impl Shell {
             }
             Shell::Fish => {
                 let fish_config_dir = std::env::var("__fish_config_dir")
-                    .map(PathBuf::from)
-                    .unwrap_or_else(|_| home_dir.join(".config").join("fish"))
+                    .map_or_else(|_| home_dir.join(".config").join("fish"), PathBuf::from)
                     .join("conf.d");
                 vec![
                     ShellFileIntegration {
@@ -417,6 +415,7 @@ impl Shell {
         }
     }
 
+    #[must_use]
     pub fn get_data_path(&self) -> Option<PathBuf> {
         fig_directories::fig_data_dir().map(|dir| dir.join("shell").join(format!("{}.json", self)))
     }

@@ -1,7 +1,7 @@
 ROOT:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
 export BUILT_PRODUCTS_DIR ?= $(ROOT)/build
-export ARTIFACTS ?= $(ROOT)/build
+export ARTIFACTS ?= $(ROOT)/build/artifacts
 
 TARGET_DIR ?= $(ROOT)/../target
 
@@ -75,10 +75,12 @@ $(ARTIFACTS)/$(BINARY_NAME)-aarch64-apple-darwin: $(SRC)
 
 $(ARTIFACTS)/$(BINARY_NAME)-darwin-universal: $(ARTIFACTS)/$(BINARY_NAME)-x86_64-apple-darwin $(ARTIFACTS)/$(BINARY_NAME)-aarch64-apple-darwin
 	lipo -create -output $@ $^
+
 linux: $(ARTIFACTS)/$(BINARY_NAME)-x86_64-unknown-linux-gnu $(ARTIFACTS)/$(BINARY_NAME)-aarch64-unknown-linux-gnu
 
 $(ARTIFACTS)/$(BINARY_NAME)-x86_64-unknown-linux-gnu: $(SRC)
-	RUSTFLAGS='-C target-feature=+crt-static' cargo build --target=x86_64-unknown-linux-gnu $(CARGO_OPTIONS)
+	# RUSTFLAGS='-C target-feature=+crt-static' cargo build --target=x86_64-unknown-linux-gnu $(CARGO_OPTIONS)
+	cargo build --target=x86_64-unknown-linux-gnu $(CARGO_OPTIONS)
 	install $(TARGET_DIR)/x86_64-unknown-linux-gnu/release/$(BINARY_NAME) $@
 
 $(ARTIFACTS)/$(BINARY_NAME)-aarch64-unknown-linux-gnu: $(SRC)

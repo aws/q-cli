@@ -45,9 +45,7 @@ use parking_lot::Mutex;
 use parking_lot::{lock_api::RawRwLock, RwLock};
 use sentry::integrations::anyhow::capture_anyhow;
 use std::time::{Duration, SystemTime};
-use std::{
-    env, error::Error, ffi::CString, os::unix::prelude::AsRawFd, process::exit, str::FromStr, vec,
-};
+use std::{env, ffi::CString, os::unix::prelude::AsRawFd, process::exit, str::FromStr, vec};
 use tokio::{
     io::{self, AsyncReadExt, AsyncWriteExt},
     runtime, select,
@@ -173,10 +171,9 @@ where
             let lock_expired =
                 at.elapsed().unwrap_or_else(|_| Duration::new(0, 0)) > Duration::new(0, 50_000_000);
             let should_unlock = lock_expired
-                || term
-                    .get_current_buffer()
-                    .map(|buff| &buff.buffer == (&EXPECTED_BUFFER.lock() as &String))
-                    .unwrap_or(true);
+                || term.get_current_buffer().map_or(true, |buff| {
+                    &buff.buffer == (&EXPECTED_BUFFER.lock() as &String)
+                });
             if should_unlock {
                 handle.take();
                 if lock_expired {
@@ -438,7 +435,7 @@ fn figterm_main() -> Result<()> {
 
                     let mut edit_buffer_interval = tokio::time::interval(Duration::from_millis(16));
 
-                    'select_loop: loop {
+                    let result: Result<()> = 'select_loop: loop {
                         if first_time && term.shell_state().has_seen_prompt {
                             trace!("Has seen prompt and first time");
                             let initial_command = env::var("FIG_START_TEXT").ok().filter(|s| !s.is_empty());
@@ -494,7 +491,7 @@ fn figterm_main() -> Result<()> {
                                 match res {
                                     Ok(0) => {
                                         trace!("EOF from master");
-                                        break 'select_loop;
+                                        break 'select_loop Ok(());
                                     }
                                     Ok(size) => {
                                         trace!("Read {} bytes from master", size);
@@ -546,13 +543,13 @@ fn figterm_main() -> Result<()> {
 
                         if let Err(e) = select_result {
                             error!("Error in select loop: {}", e);
-                            break 'select_loop;
+                            break 'select_loop Err(e);
                         }
-                    }
+                    };
 
                     remove_socket(&term_session_id).await?;
 
-                    anyhow::Ok(())
+                    result
                 }) {
                     Ok(()) => {
                         if let Err(e) = tcsetattr(STDIN_FILENO, SetArg::TCSAFLUSH, &old_termios) {
@@ -587,27 +584,26 @@ fn figterm_main() -> Result<()> {
     }
 }
 
-fn main() -> Result<(), Box<dyn Error>> {
-    let _guard = match std::env::var_os("FIG_DISABLE_SENTRY") {
-        Some(_) => None,
-        None => {
-            let guard = sentry::init((
-                "https://633267fac776481296eadbcc7093af4a@o436453.ingest.sentry.io/6187825",
-                sentry::ClientOptions {
-                    release: sentry::release_name!(),
-                    ..Default::default()
-                },
-            ));
+fn main() {
+    let _guard = if std::env::var_os("FIG_DISABLE_SENTRY").is_some() {
+        None
+    } else {
+        let guard = sentry::init((
+            "https://633267fac776481296eadbcc7093af4a@o436453.ingest.sentry.io/6187825",
+            sentry::ClientOptions {
+                release: sentry::release_name!(),
+                ..sentry::ClientOptions::default()
+            },
+        ));
 
-            sentry::configure_scope(|scope| {
-                scope.set_user(Some(sentry::User {
-                    email: get_email(),
-                    ..Default::default()
-                }));
-            });
+        sentry::configure_scope(|scope| {
+            scope.set_user(Some(sentry::User {
+                email: get_email(),
+                ..sentry::User::default()
+            }));
+        });
 
-            Some(guard)
-        }
+        Some(guard)
     };
 
     Cli::parse();
@@ -622,7 +618,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     if !should_launch_figterm {
         println!("[NOTE] figterm is disabled. Autocomplete will not work.");
         logger::stdio_debug_log("figterm is disabled. `figterm.enabled` == false");
-        return Ok(());
+        return;
     }
 
     if let Err(e) = figterm_main() {
@@ -635,6 +631,4 @@ fn main() -> Result<(), Box<dyn Error>> {
             logger::stdio_debug_log(format!("{}", e));
         }
     }
-
-    Ok(())
 }

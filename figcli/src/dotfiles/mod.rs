@@ -36,7 +36,7 @@ pub async fn download_and_notify() -> Result<Option<api::UpdateStatus>> {
             notify::notify_all_terminals(notify::TerminalNotification::NewUpdates)?;
         }
         Ok(api::UpdateStatus::NotUpdated) => {
-            info!("Dotfiles are up to date")
+            info!("Dotfiles are up to date");
         }
         Err(err) => error!("Could not sync dotfiles: {:?}", err),
     }

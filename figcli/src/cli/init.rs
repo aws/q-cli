@@ -9,7 +9,8 @@ use crate::{
 use anyhow::{Context, Result};
 use crossterm::tty::IsTty;
 use fig_auth::is_logged_in;
-use std::{env, io::stdin};
+
+use std::{borrow::Cow, env, fmt::Display, io::stdin};
 
 #[derive(PartialEq)]
 enum GuardAssignment {
@@ -25,45 +26,43 @@ fn assign_shell_variable(shell: &Shell, name: impl AsRef<str>, exported: bool) -
     }
 }
 
-fn guard_source<F: Fn() -> Option<String>>(
+#[must_use]
+fn guard_source<G, S>(
     shell: &Shell,
     export: bool,
-    guard_var: impl AsRef<str>,
+    guard_var: G,
     assignment: GuardAssignment,
-    get_source: F,
-) -> Option<String> {
-    match get_source() {
-        Some(source) => {
-            let mut output = Vec::new();
+    source: S,
+) -> String
+where
+    G: Display,
+    S: Into<Cow<'static, str>>,
+{
+    let mut output: Vec<Cow<'static, str>> = Vec::new();
 
-            output.push(match shell {
-                Shell::Bash | Shell::Zsh => {
-                    format!("if [ -z \"${{{}}}\" ]; then", guard_var.as_ref())
-                }
-                Shell::Fish => format!("if test -z \"${}\"", guard_var.as_ref()),
-            });
+    output.push(match shell {
+        Shell::Bash | Shell::Zsh => format!("if [ -z \"${{{guard_var}}}\" ]; then").into(),
+        Shell::Fish => format!("if test -z \"${guard_var}\"").into(),
+    });
 
-            match assignment {
-                GuardAssignment::BeforeSourcing => {
-                    // If script may trigger rc file to be rerun, guard assignment must happen first to avoid recursion
-                    output.push(assign_shell_variable(shell, guard_var, export));
-                    output.push(source);
-                }
-                GuardAssignment::AfterSourcing => {
-                    output.push(source);
-                    output.push(assign_shell_variable(shell, guard_var, export));
-                }
-            }
-
-            output.push(match shell {
-                Shell::Bash | Shell::Zsh => "fi\n".into(),
-                Shell::Fish => "end\n".into(),
-            });
-
-            Some(output.join("\n"))
+    match assignment {
+        GuardAssignment::BeforeSourcing => {
+            // If script may trigger rc file to be rerun, guard assignment must happen first to avoid recursion
+            output.push(assign_shell_variable(shell, guard_var.to_string(), export).into());
+            output.push(source.into());
         }
-        _ => None,
+        GuardAssignment::AfterSourcing => {
+            output.push(source.into());
+            output.push(assign_shell_variable(shell, guard_var.to_string(), export).into());
+        }
     }
+
+    output.push(match shell {
+        Shell::Bash | Shell::Zsh => "fi\n".into(),
+        Shell::Fish => "end\n".into(),
+    });
+
+    output.join("\n")
 }
 
 fn shell_init(shell: &Shell, when: &When) -> Result<String> {
@@ -73,15 +72,13 @@ fn shell_init(shell: &Shell, when: &When) -> Result<String> {
         .unwrap_or(true);
 
     if !should_source {
-        if let Some(source) = guard_source(
+        return Ok(guard_source(
             shell,
             false,
             "FIG_SHELL_INTEGRATION_DISABLED",
             GuardAssignment::AfterSourcing,
-            || Some("echo '[Debug]: fig shell integration is disabled.'".to_string()),
-        ) {
-            return Ok(source);
-        }
+            "echo '[Debug]: fig shell integration is disabled.'",
+        ));
     }
 
     let mut to_source = String::new();
@@ -99,14 +96,14 @@ fn shell_init(shell: &Shell, when: &When) -> Result<String> {
             Some(source.dotfile)
         };
 
-        if let Some(source) = guard_source(
-            shell,
-            false,
-            "FIG_DOTFILES_SOURCED",
-            GuardAssignment::AfterSourcing,
-            get_dotfile_source,
-        ) {
-            to_source.push_str(&source);
+        if let Some(source) = get_dotfile_source() {
+            to_source.push_str(&guard_source(
+                shell,
+                false,
+                "FIG_DOTFILES_SOURCED",
+                GuardAssignment::AfterSourcing,
+                source,
+            ));
         }
 
         if stdin().is_tty() && env::var("PROCESS_LAUNCHED_BY_FIG").is_err() {
@@ -123,21 +120,24 @@ fn shell_init(shell: &Shell, when: &When) -> Result<String> {
                 && !has_see_onboarding
                 && [Some(Terminal::Iterm), Some(Terminal::TerminalApp)].contains(&terminal)
             {
-                to_source.push_str("fig app onboarding")
+                to_source.push_str(match shell {
+                    Shell::Bash | Shell::Zsh => "(fig restart daemon &> /dev/null &)\n",
+                    Shell::Fish => "begin; fig restart daemon &> /dev/null &; end\n",
+                });
+
+                to_source.push_str("fig app onboarding\n")
             } else {
                 // not showing onboarding
-                if let Some(source) = guard_source(
+                to_source.push_str(&guard_source(
                     shell,
                     false,
                     "FIG_CHECKED_PROMPTS",
                     GuardAssignment::AfterSourcing,
-                    || match shell {
-                        Shell::Bash | Shell::Zsh => Some("(fig app prompts &)".to_string()),
-                        Shell::Fish => Some("begin; fig app prompts &; end".to_string()),
+                    match shell {
+                        Shell::Bash | Shell::Zsh => "(fig app prompts &)",
+                        Shell::Fish => "begin; fig app prompts &; end",
                     },
-                ) {
-                    to_source.push_str(&source);
-                }
+                ));
             }
         }
     }
@@ -186,14 +186,14 @@ fn shell_init(shell: &Shell, when: &When) -> Result<String> {
         // Manually call JetBrains shell integration after exec-ing to figterm.
         // This may recursively call out to bashrc/zshrc so make sure to assign guard variable first.
         if is_jetbrains_terminal {
-            if let Some(source) = guard_source(
-                shell,
-                false,
-                "FIG_JETBRAINS_SHELL_INTEGRATION",
-                GuardAssignment::BeforeSourcing,
-                get_jetbrains_source,
-            ) {
-                to_source.push_str(&source);
+            if let Some(source) = get_jetbrains_source() {
+                to_source.push_str(&guard_source(
+                    shell,
+                    false,
+                    "FIG_JETBRAINS_SHELL_INTEGRATION",
+                    GuardAssignment::BeforeSourcing,
+                    source,
+                ));
             }
         }
     }

@@ -25,7 +25,7 @@ pub fn generate_password(length: usize) -> String {
         }
 
         // Check for lowercase, uppercase, digit, and special character
-        if password.chars().any(|c| c.is_numeric())
+        if password.chars().any(char::is_numeric)
             && password.chars().any(|c| special.contains(&c))
             && password.chars().any(|c| c.is_ascii_uppercase())
             && password.chars().any(|c| c.is_ascii_lowercase())

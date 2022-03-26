@@ -35,6 +35,7 @@ pub enum DownloadMetadata {
     },
 }
 
+#[must_use]
 pub fn plugin_data_dir() -> Option<PathBuf> {
     fig_directories::fig_data_dir().map(|dir| dir.join("plugins"))
 }
