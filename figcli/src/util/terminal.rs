@@ -55,4 +55,9 @@ impl Terminal {
             },
         }
     }
+
+    pub fn is_jetbrains_terminal() -> bool {
+        // Handles all official JetBrain IDEs + Android Studio
+        matches!(std::env::var("TERMINAL_EMULATOR").ok(), Some(v) if v == "JetBrains-JediTerm")
+    }
 }
