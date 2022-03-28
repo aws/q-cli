@@ -1054,6 +1054,7 @@ dependencies = [
  "base64",
  "bitflags",
  "bytes",
+ "cfg-if 1.0.0",
  "clap 3.1.6",
  "clap_complete",
  "clap_complete_fig",

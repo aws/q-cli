@@ -1,9 +1,10 @@
-ROOT:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+FIGCLI_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+MACOS_DIR:=$(shell dirname $(FIGCLI_DIR))
 
-export BUILT_PRODUCTS_DIR ?= $(ROOT)/build
-export ARTIFACTS ?= $(ROOT)/build/artifacts
+export BUILT_PRODUCTS_DIR ?= $(FIGCLI_DIR)/build
+export ARTIFACTS ?= $(FIGCLI_DIR)/build/artifacts
 
-TARGET_DIR ?= $(ROOT)/../target
+TARGET_DIR ?= $(MACOS_DIR)/target
 
 # Add brew executables to PATH
 export PATH := /opt/homebrew/bin:/opt/homebrew/sbin:$(PATH)
@@ -23,7 +24,6 @@ CARGO_OPTIONS ?= --locked --release
 
 BINARY_NAME=fig
 SRC = Cargo.toml $(wildcard src/**/*)
-
 
 $(shell mkdir -p $(BUILT_PRODUCTS_DIR))
 $(shell mkdir -p $(ARTIFACTS))
