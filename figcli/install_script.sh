@@ -17,10 +17,9 @@ function abort() {
     exit 1
 }
 
-# Fail fast with a concise message when not using bash
+# Fail fast with a concise message when not using bash or zsh
 # Single brackets are needed here for POSIX compatibility
-if [ -z "${BASH_VERSION:-}" ]
-then
+if [ -z "${BASH_VERSION:-}" ] && [ -z "${ZSH_VERSION:-}" ]; then
   abort "Bash is required to interpret this script."
 fi
 
