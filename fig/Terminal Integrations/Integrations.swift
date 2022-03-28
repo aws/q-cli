@@ -31,6 +31,7 @@ class Integrations {
   static let CLion = "com.jetbrains.CLion"
   static let Nova = "com.panic.Nova"
   static let AndroidStudio = "com.google.android.studio"
+  static let WezTerm = "com.github.wez.wezterm"
 
   static let terminals: Set = [
     "com.googlecode.iterm2",
@@ -68,7 +69,7 @@ class Integrations {
     CLion,
     AndroidStudio
   ]
-  static let inputMethodDependentTerminals: Set = jetbrainIDEs.union([Alacritty, Kitty, Nova])
+  static let inputMethodDependentTerminals: Set = jetbrainIDEs.union([Alacritty, Kitty, Nova, WezTerm])
 
   static let electronIDEs: Set = [VSCode, VSCodeInsiders, VSCodium]
   static var electronTerminals: Set<String> {
@@ -160,6 +161,7 @@ class Integrations {
     let experimentalIntegrations: [String: TerminalIntegrationProvider] = [
       Integrations.Alacritty: AlacrittyIntegration.default,
       Integrations.Kitty: KittyIntegration.default,
+      Integrations.WezTerm: WezTermIntegration.default,
       // Jetbrains IDEs
       Integrations.Intellij: JetBrainsIntegration.idea,
       Integrations.IntellijCE: JetBrainsIntegration.ideaCE,
