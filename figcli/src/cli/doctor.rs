@@ -13,6 +13,7 @@ use crate::{
 
 use anyhow::{anyhow, Context, Result};
 use async_trait::async_trait;
+use cfg_if::cfg_if;
 use crossterm::{
     cursor, execute,
     style::Stylize,
@@ -182,21 +183,16 @@ enum Platform {
 }
 
 fn get_platform() -> Platform {
-    #[cfg(target_os = "macos")]
-    {
-        Platform::MacOs
-    }
-    #[cfg(target_os = "linux")]
-    {
-        Platform::Linux
-    }
-    #[cfg(target_os = "windows")]
-    {
-        Platform::Windows
-    }
-    #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
-    {
-        Platform::Other
+    cfg_if! {
+        if #[cfg(target_os = "macos")] {
+            Platform::MacOs
+        } else if #[cfg(target_os = "linux")] {
+            Platform::Linux
+        } else if #[cfg(target_os = "windows")] {
+            Platform::Windows
+        } else {
+            Platform::Other
+        }
     }
 }
 

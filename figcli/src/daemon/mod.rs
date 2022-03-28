@@ -15,6 +15,7 @@ use crate::{
 };
 
 use anyhow::{anyhow, Context, Result};
+use cfg_if::cfg_if;
 use fig_ipc::{daemon::get_daemon_socket_path, recv_message, send_message};
 use fig_proto::daemon::diagnostic_response::{
     settings_watcher_status, unix_socket_status, websocket_status, SettingsWatcherStatus,
@@ -40,21 +41,17 @@ use tokio_tungstenite::tungstenite;
 use tracing::{debug, error, info, trace};
 
 pub fn get_daemon() -> Result<LaunchService> {
-    #[cfg(target_os = "macos")]
-    {
-        LaunchService::launchd()
+    cfg_if! {
+        if #[cfg(target_os = "macos")] {
+            LaunchService::launchd()
+        } else if #[cfg(target_os = "linux")] {
+            LaunchService::systemd()
+        } else if #[cfg(target_os = "windows")] {
+            Err(anyhow::anyhow!("Windows is not yet supported"));
+        } else {
+            Err(anyhow::anyhow!("Unsupported platform"));
+        }
     }
-    #[cfg(target_os = "linux")]
-    {
-        LaunchService::systemd()
-    }
-    #[cfg(target_os = "windows")]
-    {
-        return Err(anyhow::anyhow!("Windows is not yet supported"));
-    }
-
-    #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
-    return Err(anyhow::anyhow!("Unsupported platform"));
 }
 
 pub fn install_daemon() -> Result<()> {

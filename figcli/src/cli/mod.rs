@@ -30,6 +30,7 @@ use crate::{
 };
 
 use anyhow::{Context, Result};
+use cfg_if::cfg_if;
 use clap::{ArgEnum, IntoApp, Parser, Subcommand};
 use std::{fs::File, process::exit, str::FromStr};
 use tracing::{debug, level_filters::LevelFilter};
@@ -394,41 +395,40 @@ async fn uninstall_command() -> Result<()> {
 
 async fn root_command() -> Result<()> {
     // Launch fig if it is not running
-    #[cfg(target_os = "macos")]
-    {
-        use fig_auth::is_logged_in;
-        use fig_ipc::command::{open_ui_element, quit_command};
-        use fig_proto::local::UiElement;
-        use std::time::Duration;
 
-        if !is_logged_in() && is_app_running() {
-            if quit_command().await.is_err() {
-                anyhow::bail!(
-                    "\nFig is running but you are not logged in. Please quit Fig from the menu\
-                    bar and try again\n"
-                );
+    cfg_if! {
+        if #[cfg(target_os = "macos")] {
+            use fig_auth::is_logged_in;
+            use fig_ipc::command::{open_ui_element, quit_command};
+            use fig_proto::local::UiElement;
+            use std::time::Duration;
+
+            if !is_logged_in() && is_app_running() {
+                if quit_command().await.is_err() {
+                    anyhow::bail!(
+                        "\nFig is running but you are not logged in. Please quit Fig from the menu\
+                        bar and try again\n"
+                    );
+                }
+                tokio::time::sleep(Duration::from_millis(1000)).await;
             }
-            tokio::time::sleep(Duration::from_millis(1000)).await;
+
+            launch_fig(LaunchOptions::new().wait_for_activation().verbose())?;
+
+            if is_logged_in() {
+                open_ui_element(UiElement::MissionControl)
+                    .await
+                    .context("\nCould not launch fig\n")?;
+            }
+        } else {
+            use crossterm::style::Stylize;
+
+            println!(
+                "\n→ Opening {}...\n",
+                "https://app.fig.io".magenta().underlined()
+            );
+            util::open_url("https://app.fig.io").ok();
         }
-
-        launch_fig(LaunchOptions::new().wait_for_activation().verbose())?;
-
-        if is_logged_in() {
-            open_ui_element(UiElement::MissionControl)
-                .await
-                .context("\nCould not launch fig\n")?;
-        }
-    }
-
-    #[cfg(not(target_os = "macos"))]
-    {
-        use crossterm::style::Stylize;
-
-        println!(
-            "\n→ Opening {}...\n",
-            "https://app.fig.io".magenta().underlined()
-        );
-        util::open_url("https://app.fig.io").ok();
     }
 
     Ok(())

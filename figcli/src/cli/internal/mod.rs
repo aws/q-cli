@@ -191,10 +191,8 @@ impl InternalSubcommand {
                     .unwrap();
             }
             InternalSubcommand::GetShell => {
-                #[cfg(unix)]
-                {
-                    #[cfg(target_os = "macos")]
-                    {
+                cfg_if::cfg_if! {
+                    if #[cfg(target_os = "macos")]  {
                         let pid = nix::unistd::getppid();
                         let mut buff = vec![0; 1024];
 
@@ -219,13 +217,9 @@ impl InternalSubcommand {
                             Ok(path) => print!("{}", path),
                             Err(_) => exit(1),
                         }
-                    }
-
-                    #[cfg(target_os = "linux")]
-                    {
-                        exit(1);
-
-                        // TODO(grant): Fix this logic for linux
+                    } else if #[cfg(target_os = "linux")] {
+                        // let pid = nix::unistd::getppid();
+                        // let mut buff = vec![0; 1024];
 
                         // let out_buf = {
                         //     loop {
@@ -249,20 +243,19 @@ impl InternalSubcommand {
                         //         break &buff[..ret as usize];
                         //     }
                         // };
-                    }
 
-                    #[cfg(not(any(target_os = "macos", target_os = "linux")))]
-                    {
+                        // match std::str::from_utf8(out_buf) {
+                        //     Ok(path) => print!("{}", path),
+                        //     Err(_) => exit(1),
+                        // }
+                        exit(1);
+                    } else {
                         exit(1);
                     }
                 }
-
-                #[cfg(windows)]
-                {
-                    return Err(anyhow!("This is unimplemented on Windows"));
-                }
             }
         }
+
         Ok(())
     }
 }
