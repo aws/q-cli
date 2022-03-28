@@ -14,7 +14,8 @@ members = [
     "rust-lib/ibus/ibus-sys",
     "rust-lib/linux-test",
     "fig-ibus-engine",
-    "linux-app/src-tauri"
+    "linux-app/src-tauri",
+    "daemon"
 ]
 
 [profile.release]

@@ -18,6 +18,23 @@ enum Action {
     Listen,
     InputMethod,
     Demo,
+    FigJS(FigJSCommand),
+}
+
+#[derive(Parser)]
+struct FigJSCommand {
+    #[clap(subcommand)]
+    message: FigJSMessage,
+}
+
+#[derive(Subcommand)]
+enum FigJSMessage {
+    ReadFileRequest {
+        #[clap(short = 'p')]
+        path: String,
+        #[clap(short = 'b')]
+        is_binary_file: bool,
+    },
 }
 
 #[derive(Parser)]
@@ -47,6 +64,56 @@ async fn main() {
         Action::Listen => listen_for_messages().await,
         Action::InputMethod => listen_for_linux_messages().await,
         Action::Demo => demo().await,
+        Action::FigJS(command) => fig_js(command).await,
+    }
+}
+
+async fn fig_js(command: FigJSCommand) {
+    let socket_path = fig_ipc::get_fig_socket_path();
+    println!("socket to connect to: {}", socket_path.to_string_lossy());
+
+    use fig_proto::fig::*;
+
+    let require_response = matches!(command.message, FigJSMessage::ReadFileRequest { .. });
+
+    let message = ClientOriginatedMessage {
+        id: Some(0),
+        submessage: Some(match command.message {
+            FigJSMessage::ReadFileRequest {
+                path,
+                is_binary_file,
+            } => client_originated_message::Submessage::ReadFileRequest(ReadFileRequest {
+                path: Some(FilePath {
+                    path,
+                    relative_to:
+                        Some(std::env::current_dir()
+                            .unwrap()
+                            .to_string_lossy()
+                            .into_owned()),
+                    expand_tilde_in_path: true,
+                }),
+                is_binary_file
+            }),
+        }),
+    };
+
+    match fig_ipc::connect_timeout(socket_path, Duration::from_secs(1)).await {
+        Ok(mut stream) => {
+            if require_response {
+                match fig_ipc::send_recv_message::<_, ServerOriginatedMessage, _>(&mut stream, message, Duration::from_secs(1)).await {
+                    Ok(Some(response)) => println!("response {:?}", response),
+                    Ok(None) => println!("no response"),
+                    Err(err) => println!("error sending ipc message: {}", err),
+                }
+            } else {
+                if let Err(err) = fig_ipc::send_message(&mut stream, message).await {
+                    println!("error sending ipc message: {}", err);
+                }
+            }
+        }
+        Err(err) => {
+            println!("error connecting to socket: {}", err);
+        }
     }
 }
 
