@@ -235,7 +235,7 @@ pub fn get_fig_version() -> Result<(String, String)> {
             let fig_build_number = get_plist_field("CFBundleVersion")?;
             Ok((fig_version, fig_build_number))
         } else {
-            Err(anyhow!("Unsupported platform"))
+            Err(anyhow::anyhow!("Unsupported platform"))
         }
     }
 }
