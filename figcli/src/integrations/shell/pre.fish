@@ -32,6 +32,12 @@ if   [ "$TERM_PROGRAM" != "WarpTerminal" ] \
   if status --is-login
     set FIG_IS_LOGIN_SHELL 1
   end
+
+  # Do not launch figterm in non-interactive shells (like VSCode Tasks)
+  if not status --is-interactive
+    exit
+  end
+
   set FIG_TERM_NAME (basename "$FIG_SHELL")" (figterm)"
   set FIG_SHELL_PATH "$HOME/.fig/bin/$FIG_TERM_NAME"
 

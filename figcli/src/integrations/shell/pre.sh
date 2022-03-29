@@ -50,6 +50,8 @@ if   [[ ! "${TERM_PROGRAM}" = WarpTerminal ]] \
     cp -p ~/.fig/bin/figterm "${FIG_SHELL_PATH}"
   fi
 
+  FIG_EXECUTION_STRING="${BASH_EXECUTION_STRING:=$ZSH_EXECUTION_STRING}"
+
   # Get initial text.
   INITIAL_TEXT=""
   if [[ -z "${BASH}" || "${BASH_VERSINFO[0]}" -gt "3" ]]; then
@@ -60,6 +62,5 @@ if   [[ ! "${TERM_PROGRAM}" = WarpTerminal ]] \
       INITIAL_TEXT="${INITIAL_TEXT}${REPLY}\n"
     done
   fi
-
-  FIG_START_TEXT="$(printf "%b" "${INITIAL_TEXT}")" FIG_SHELL="${FIG_SHELL}" FIG_IS_LOGIN_SHELL="${FIG_IS_LOGIN_SHELL}" exec -a "${FIG_TERM_NAME}" "${FIG_SHELL_PATH}"
+  FIG_EXECUTION_STRING="${FIG_EXECUTION_STRING}" FIG_START_TEXT="$(printf "%b" "${INITIAL_TEXT}")" FIG_SHELL="${FIG_SHELL}" FIG_IS_LOGIN_SHELL="${FIG_IS_LOGIN_SHELL}" exec -a "${FIG_TERM_NAME}" "${FIG_SHELL_PATH}"
 fi
