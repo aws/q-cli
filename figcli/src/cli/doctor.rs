@@ -33,6 +33,7 @@ use serde_json::json;
 use std::{
     borrow::Cow,
     ffi::OsStr,
+    fmt::Display,
     fs::read_to_string,
     future::Future,
     path::{Path, PathBuf},
@@ -80,7 +81,7 @@ impl std::fmt::Debug for DoctorError {
 impl From<anyhow::Error> for DoctorError {
     fn from(e: anyhow::Error) -> DoctorError {
         DoctorError::Error {
-            reason: format!("{}", e).into(),
+            reason: format!("{e}").into(),
             info: vec![],
             fix: None,
         }
@@ -144,22 +145,22 @@ pub fn app_version(app: impl AsRef<OsStr>) -> Option<Version> {
     let version = String::from_utf8_lossy(&output.stdout);
     Version::parse(version.trim()).ok()
 }
-const CHECKMARK: &str = "\x1b[0;32m✔\x1b[0m";
-const DOT: &str = "\x1b[0;33m●\x1b[0m";
-const CROSS: &str = "\x1b[0;31m✘\x1b[0m";
+const CHECKMARK: &str = "✔";
+const DOT: &str = "●";
+const CROSS: &str = "✘";
 
-fn print_status_result(name: impl AsRef<str>, status: &Result<(), DoctorError>) {
+fn print_status_result(name: impl Display, status: &Result<(), DoctorError>) {
     match status {
         Ok(()) => {
-            println!("{} {}", CHECKMARK, name.as_ref());
+            println!("{} {name}", CHECKMARK.green());
         }
         Err(DoctorError::Warning(msg)) => {
-            println!("{} {}", DOT, msg);
+            println!("{} {msg}", DOT.yellow());
         }
         Err(DoctorError::Error { reason, info, .. }) => {
-            println!("{} {}: {}", CROSS, name.as_ref(), reason);
+            println!("{} {name}: {reason}", CROSS.red());
             for infoline in info {
-                println!("  {}", infoline);
+                println!("  {infoline}");
             }
         }
     }
@@ -494,7 +495,7 @@ impl DoctorCheck for DaemonCheck {
                 info: vec![
                     "Make sure you have write permissions for the LaunchAgents directory".into(),
                     format!("Path: {:?}", launch_agents_path).into(),
-                    format!("Error: {}", err).into(),
+                    format!("Error: {err}").into(),
                 ],
                 fix: Some(Box::new(move || Ok(()))),
             })?;
@@ -515,7 +516,7 @@ impl DoctorCheck for DaemonCheck {
                 Err(DoctorError::Error {
                     reason: "Daemon is not running".into(),
                     info: vec![
-                        format!("Daemon status: {}", n).into(),
+                        format!("Daemon status: {n}").into(),
                         format!("Init system: {:?}", init_system).into(),
                         format!("Error message: {}", error_message.unwrap_or_default()).into(),
                     ],
@@ -656,7 +657,7 @@ impl DoctorCheck<Option<Shell>> for DotfileCheck {
                 if path.exists() {
                     return Ok(());
                 } else {
-                    let msg = format!("{} does not exist. {}", path.display(), fix_text);
+                    let msg = format!("{} does not exist. {fix_text}", path.display());
                     return Err(DoctorError::Error {
                         reason: msg.into(),
                         info: vec![],
@@ -670,7 +671,7 @@ impl DoctorCheck<Option<Shell>> for DotfileCheck {
                     Ok(contents) => contents,
                     _ => {
                         return Err(DoctorError::Warning(
-                            format!("{} does not exist. {}", path.display(), fix_text).into(),
+                            format!("{} does not exist. {fix_text}", path.display()).into(),
                         ))
                     }
                 };
@@ -689,7 +690,7 @@ impl DoctorCheck<Option<Shell>> for DotfileCheck {
                 let first_line = lines.first().copied().unwrap_or_default();
                 if first_line.eq("[ -s ~/.fig/shell/pre.sh ] && source ~/.fig/shell/pre.sh") {
                     return Err(DoctorError::Warning(
-                        format!("{} has legacy integration. {}", path.display(), fix_text).into(),
+                        format!("{} has legacy integration. {fix_text}", path.display()).into(),
                     ));
                 }
 
@@ -1385,7 +1386,7 @@ where
             if let Some(fixfn) = fix {
                 println!("Attempting to fix automatically...");
                 if let Err(e) = fixfn() {
-                    println!("Failed to fix: {}", e);
+                    println!("Failed to fix: {e}");
                 } else {
                     println!("Re-running check...");
                     println!();
@@ -1600,7 +1601,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         println!();
         println!(
             "{} Doctor found errors. Please fix them and try again.",
-            CROSS
+            CROSS.red()
         );
         println!();
         println!(
@@ -1616,7 +1617,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         // If early exit is disabled, no errors are thrown
         if !config.verbose {
             println!();
-            println!("{} Everything looks good!", CHECKMARK);
+            println!("{} Everything looks good!", CHECKMARK.green());
         }
         println!();
         println!(
