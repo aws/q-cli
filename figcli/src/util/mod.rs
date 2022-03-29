@@ -119,6 +119,7 @@ pub fn app_path_from_bundle_id(bundle_id: impl AsRef<OsStr>) -> Option<String> {
             let path = String::from_utf8_lossy(&installed_apps.stdout);
             Some(path.trim().split('\n').next()?.into())
         } else {
+            let _bundle_id = bundle_id;
             None
         }
     }
@@ -255,6 +256,7 @@ pub fn launch_fig(opts: LaunchOptions) -> Result<()> {
             }
             anyhow::bail!("\nUnable to finish launching Fig properly\n")
         } else {
+            let _opts = opts;
             anyhow::bail!("Fig desktop can not be launched on this platform")
         }
     }
