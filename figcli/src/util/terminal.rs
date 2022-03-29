@@ -21,6 +21,10 @@ pub enum Terminal {
     VSCodeInsiders,
     /// Tabby
     Tabby,
+    /// Nova
+    Nova,
+    /// Wezterm
+    WezTerm,
 }
 
 impl Terminal {
@@ -35,6 +39,8 @@ impl Terminal {
             Terminal::Vscode => String::from("com.microsoft.VSCode"),
             Terminal::VSCodeInsiders => String::from("com.microsoft.VSCodeInsiders"),
             Terminal::Tabby => String::from("org.tabby"),
+            Terminal::Nova => String::from("com.panic.Nova"),
+            Terminal::WezTerm => String::from("com.github.wez.wezterm"),
         }
     }
 
@@ -48,6 +54,8 @@ impl Terminal {
                 _ => Some(Terminal::Vscode),
             },
             Some("Tabby") => Some(Terminal::Tabby),
+            Some("Nova") => Some(Terminal::Nova),
+            Some("WezTerm") => Some(Terminal::WezTerm),
             _ => match std::env::var("__CFBundleIdentifier").ok().as_deref() {
                 // Add support for Jetbrain Terminals
                 // Some(v) if v.contains("com.jetbrains.") => Some(Terminal::JediTerm),

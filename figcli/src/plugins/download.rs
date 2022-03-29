@@ -217,7 +217,7 @@ pub async fn update_or_clone_git_repo(
             anyhow::Ok(())
         })?;
     } else {
-        clone_git_repo(url, &directory).await?;
+        let _hash = clone_git_repo(url, &directory).await?;
     }
 
     if let Some(reference) = reference {

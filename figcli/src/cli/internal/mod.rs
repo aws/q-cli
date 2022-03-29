@@ -271,12 +271,9 @@ pub async fn prompt_dotfiles_changed() -> Result<()> {
     // An exit code of 0 will source the new changes
     // An exit code of 1 will not source the new changes
 
-    let session_id = match std::env::var("TERM_SESSION_ID") {
-        Ok(session_id) => session_id,
-        Err(err) => {
-            error!("Couldn't get TERM_SESSION_ID: {}", err);
-            exit(1);
-        }
+    let session_id = match std::env::var_os("TERM_SESSION_ID") {
+        Some(session_id) => session_id,
+        None => exit(1),
     };
 
     let file = std::env::temp_dir()
@@ -286,7 +283,7 @@ pub async fn prompt_dotfiles_changed() -> Result<()> {
 
     let file_clone = file.clone();
     ctrlc::set_handler(move || {
-        crossterm::execute!(std::io::stdout(), crossterm::cursor::Show,).ok();
+        crossterm::execute!(std::io::stdout(), crossterm::cursor::Show).ok();
         std::fs::write(&file_clone, "").ok();
 
         exit(1);

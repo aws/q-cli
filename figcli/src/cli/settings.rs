@@ -7,7 +7,6 @@ use fig_settings::remote_settings::RemoteSettings;
 use serde_json::json;
 use std::{io::Write, process::Command};
 use time::format_description::well_known::Rfc3339;
-use tracing::error;
 
 use super::util::app_not_running_message;
 use crate::util::{launch_fig, LaunchOptions};
@@ -122,12 +121,12 @@ impl SettingsArgs {
                                 Ok(())
                             }
                             Ok(Err(err)) => {
-                                error!("Error settting setting: {:?}", err);
-                                Err(anyhow!("Error setting setting"))
+                                eprintln!("Error setting setting:");
+                                Err(err)
                             }
                             Err(err) => {
-                                error!("Error settting setting: {:?}", err);
-                                Err(anyhow!("Error syncing setting"))
+                                eprintln!("Error setting setting:");
+                                Err(err)
                             }
                         }
                     }
@@ -139,12 +138,12 @@ impl SettingsArgs {
                                 Ok(())
                             }
                             Ok(Err(err)) => {
-                                error!("Error removing settings: {:?}", err);
-                                Err(anyhow!("Error removing setting, it may already be removed"))
+                                eprintln!("Error removing setting, it may already be removed");
+                                Err(err)
                             }
                             Err(err) => {
-                                error!("Error syncing setting: {:?}", err);
-                                Err(anyhow!("Error syncing setting"))
+                                eprintln!("Error syncing setting");
+                                Err(err)
                             }
                         }
                     }
