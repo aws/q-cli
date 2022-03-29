@@ -78,7 +78,8 @@ class KeyboardLayout: NSObject {
         return "tab"
       case Keycode.escape:
         return "esc"
-      case Keycode.returnKey:
+      case Keycode.returnKey,
+           Keycode.enter:
         return "enter"
       default:
         return event.charactersIgnoringModifiers ?? ""

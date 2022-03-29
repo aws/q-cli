@@ -37,7 +37,13 @@ pub enum DownloadMetadata {
 
 #[must_use]
 pub fn plugin_data_dir() -> Option<PathBuf> {
-    fig_directories::fig_data_dir().map(|dir| dir.join("plugins"))
+    cfg_if::cfg_if! {
+        if #[cfg(target_os = "macos")] {
+            fig_directories::home_dir().map(|dir| dir.join(".local").join("share").join("fig").join("plugins"))
+        } else {
+            fig_directories::fig_data_dir().map(|dir| dir.join("plugins"))
+        }
+    }
 }
 
 pub async fn download_remote_file(
@@ -199,25 +205,45 @@ pub fn set_reference(repository: &Repository, reference: &GitReference) -> Resul
     Ok(())
 }
 
-pub async fn update_or_clone_git_repo(
+pub async fn clone_git_repo_with_reference(
     url: impl IntoUrl,
     directory: impl AsRef<Path>,
     reference: Option<&GitReference>,
 ) -> Result<()> {
-    let parent_directory = directory.as_ref().parent().unwrap();
+    let url = url.into_url()?;
 
-    if !parent_directory.exists() {
-        tokio::fs::create_dir_all(parent_directory).await?;
+    if let Some(parent_directory) = directory.as_ref().parent() {
+        if !parent_directory.exists() {
+            tokio::fs::create_dir_all(parent_directory).await?;
+        }
     }
 
+    if !directory.as_ref().exists() {
+        let _hash = clone_git_repo(url, &directory).await?;
+    } else {
+        anyhow::bail!("{} already exists", directory.as_ref().display());
+    }
+
+    if let Some(reference) = reference {
+        tokio::task::block_in_place(|| {
+            set_reference(&Repository::open(directory.as_ref())?, reference)?;
+            anyhow::Ok(())
+        })?;
+    }
+
+    Ok(())
+}
+
+pub async fn update_git_repo_with_reference(
+    directory: impl AsRef<Path>,
+    reference: Option<&GitReference>,
+) -> Result<()> {
     if directory.as_ref().exists() {
         tokio::task::block_in_place(|| {
             let repository = Repository::open(directory.as_ref())?;
             update_git_repo(&repository)?;
             anyhow::Ok(())
         })?;
-    } else {
-        clone_git_repo(url, &directory).await?;
     }
 
     if let Some(reference) = reference {
@@ -308,7 +334,7 @@ mod tests {
 
         let directory = tempfile::tempdir().unwrap();
 
-        update_or_clone_git_repo(
+        clone_git_repo_with_reference(
             Url::parse("https://github.com/withfig/fig.git").unwrap(),
             directory.path().join("fig"),
             Some(&GitReference::Branch(branch.into())),
@@ -337,7 +363,7 @@ mod tests {
 
         let directory = tempfile::tempdir().unwrap();
 
-        update_or_clone_git_repo(
+        clone_git_repo_with_reference(
             github.git_url(),
             directory.path().join("fig"),
             Some(&GitReference::Commit(commit.into())),

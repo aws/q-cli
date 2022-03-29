@@ -191,10 +191,8 @@ impl InternalSubcommand {
                     .unwrap();
             }
             InternalSubcommand::GetShell => {
-                #[cfg(unix)]
-                {
-                    #[cfg(target_os = "macos")]
-                    {
+                cfg_if::cfg_if! {
+                    if #[cfg(target_os = "macos")]  {
                         let pid = nix::unistd::getppid();
                         let mut buff = vec![0; 1024];
 
@@ -219,13 +217,9 @@ impl InternalSubcommand {
                             Ok(path) => print!("{}", path),
                             Err(_) => exit(1),
                         }
-                    }
-
-                    #[cfg(target_os = "linux")]
-                    {
-                        exit(1);
-
-                        // TODO(grant): Fix this logic for linux
+                    } else if #[cfg(target_os = "linux")] {
+                        // let pid = nix::unistd::getppid();
+                        // let mut buff = vec![0; 1024];
 
                         // let out_buf = {
                         //     loop {
@@ -249,20 +243,19 @@ impl InternalSubcommand {
                         //         break &buff[..ret as usize];
                         //     }
                         // };
-                    }
 
-                    #[cfg(not(any(target_os = "macos", target_os = "linux")))]
-                    {
+                        // match std::str::from_utf8(out_buf) {
+                        //     Ok(path) => print!("{}", path),
+                        //     Err(_) => exit(1),
+                        // }
+                        exit(1);
+                    } else {
                         exit(1);
                     }
                 }
-
-                #[cfg(windows)]
-                {
-                    return Err(anyhow!("This is unimplemented on Windows"));
-                }
             }
         }
+
         Ok(())
     }
 }
@@ -278,12 +271,9 @@ pub async fn prompt_dotfiles_changed() -> Result<()> {
     // An exit code of 0 will source the new changes
     // An exit code of 1 will not source the new changes
 
-    let session_id = match std::env::var("TERM_SESSION_ID") {
-        Ok(session_id) => session_id,
-        Err(err) => {
-            error!("Couldn't get TERM_SESSION_ID: {}", err);
-            exit(1);
-        }
+    let session_id = match std::env::var_os("TERM_SESSION_ID") {
+        Some(session_id) => session_id,
+        None => exit(1),
     };
 
     let file = std::env::temp_dir()
@@ -293,7 +283,7 @@ pub async fn prompt_dotfiles_changed() -> Result<()> {
 
     let file_clone = file.clone();
     ctrlc::set_handler(move || {
-        crossterm::execute!(std::io::stdout(), crossterm::cursor::Show,).ok();
+        crossterm::execute!(std::io::stdout(), crossterm::cursor::Show).ok();
         std::fs::write(&file_clone, "").ok();
 
         exit(1);

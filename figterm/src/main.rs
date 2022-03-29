@@ -328,11 +328,22 @@ fn launch_shell() -> Result<()> {
         .ok()
         .filter(|s| !s.is_empty());
 
+    let parent_shell_execution_string = env::var("FIG_EXECUTION_STRING")
+        .ok()
+        .filter(|s| !s.is_empty());
+
     let mut args =
         vec![CString::new(&*parent_shell).expect("Failed to convert shell name to CString")];
 
     if parent_shell_is_login.as_deref() == Some("1") {
         args.push(CString::new("--login").expect("Failed to convert arg to CString"));
+    }
+
+    if let Some(execution_string) = parent_shell_execution_string {
+        args.push(CString::new("-c").expect("Failed to convert -c flag to CString"));
+        args.push(
+            CString::new(execution_string).expect("Failed to convert execution string to CString"),
+        );
     }
 
     if let Some(extra_args) = parent_shell_extra_args {
@@ -355,6 +366,7 @@ fn launch_shell() -> Result<()> {
     env::remove_var("FIG_IS_LOGIN_SHELL");
     env::remove_var("FIG_START_TEXT");
     env::remove_var("FIG_SHELL_EXTRA_ARGS");
+    env::remove_var("FIG_EXECUTION_STRING");
 
     execvp(&*args[0], &args).expect("Failed to execvp");
     unreachable!()

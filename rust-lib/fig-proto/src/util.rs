@@ -7,17 +7,25 @@ pub enum GetShellError {
     Io(#[from] std::io::Error),
     #[error("failed to parse shell")]
     Utf8Error(#[from] std::str::Utf8Error),
+    #[error("not yet implemented for windows")]
+    WindowsError,
 }
 
 pub fn get_shell() -> Result<String, GetShellError> {
-    let ppid = nix::unistd::getppid();
+    #[cfg(windows)]
+    return Err(GetShellError::WindowsError);
 
-    let result = Command::new("ps")
-        .arg("-p")
-        .arg(format!("{}", ppid))
-        .arg("-o")
-        .arg("comm=")
-        .output()?;
+    #[cfg(unix)]
+    {
+        let ppid = nix::unistd::getppid();
 
-    Ok(std::str::from_utf8(&result.stdout)?.trim().into())
+        let result = Command::new("ps")
+            .arg("-p")
+            .arg(format!("{}", ppid))
+            .arg("-o")
+            .arg("comm=")
+            .output()?;
+
+        Ok(std::str::from_utf8(&result.stdout)?.trim().into())
+    }
 }

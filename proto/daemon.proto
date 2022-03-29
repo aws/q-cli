@@ -112,7 +112,10 @@ message SelfUpdateResponse {
 
 message SyncCommand {
     enum SyncType {
-        PLUGINS = 0;
+        // This will only clone new repositories
+        PLUGIN_CLONE = 0;
+        // This will clone and update all repositories
+        PLUGIN_UPDATE = 1;
     }
 
     SyncType type = 1;

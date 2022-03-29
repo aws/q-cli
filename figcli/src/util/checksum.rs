@@ -4,6 +4,7 @@ use std::ops::Deref;
 
 /// A checksum for a plugin
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[must_use]
 pub struct Checksum(String);
 
 impl Checksum {
@@ -11,13 +12,13 @@ impl Checksum {
         Checksum(value.into())
     }
 
-    #[must_use]
     pub fn as_str(&self) -> &str {
         self.0.as_str()
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[must_use]
 pub struct GitChecksum(Checksum);
 
 impl GitChecksum {
@@ -35,6 +36,7 @@ impl Deref for GitChecksum {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[must_use]
 pub struct Sha256Checksum(Checksum);
 
 impl Sha256Checksum {

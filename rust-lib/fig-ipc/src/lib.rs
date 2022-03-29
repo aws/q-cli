@@ -20,11 +20,17 @@ use tokio::{
     net::UnixStream,
 };
 use tracing::{error, trace};
+use wsl::is_wsl;
 
 use whoami::username;
 
 /// Get path to "/var/tmp/fig/$USERNAME/fig.socket"
 pub fn get_fig_socket_path() -> PathBuf {
+    // TODO: Good WSL socket path? 
+    if is_wsl() {
+        return PathBuf::from("/mnt/c/fig/fig.socket");
+    }
+
     [
         Path::new("/var/tmp/fig"),
         Path::new(&username()),
