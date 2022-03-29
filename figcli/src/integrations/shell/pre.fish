@@ -32,6 +32,11 @@ if   [ "$TERM_PROGRAM" != "WarpTerminal" ] \
   if status --is-login
     set FIG_IS_LOGIN_SHELL 1
   end
+
+  if not status --is-interactive
+    return
+  end
+
   set FIG_TERM_NAME (basename "$FIG_SHELL")" (figterm)"
   set FIG_SHELL_PATH "$HOME/.fig/bin/$FIG_TERM_NAME"
 
