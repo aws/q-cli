@@ -35,7 +35,7 @@ if   [[ ! "${TERM_PROGRAM}" = WarpTerminal ]] \
   fi
   export FIG_INTEGRATION_VERSION=8
   # Pty module sets FIG_TERM or FIG_TERM_TMUX to avoid running twice.
-  FIG_SHELL=/bin/bash #$(fig _ get-shell)
+  FIG_SHELL=$(fig _ get-shell)
   FIG_IS_LOGIN_SHELL="${FIG_IS_LOGIN_SHELL:='0'}"
 
   if ([[ -n "$BASH" ]] && shopt -q login_shell) \
