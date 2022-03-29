@@ -1,3 +1,5 @@
+if [[ -n "$BASH" ]]; then
+
 pathadd() {
   if [[ -d "$1" ]] && [[ ":$PATH:" != *":$1:"* ]]; then
     PATH="${PATH:+"$PATH:"}$1"
@@ -22,7 +24,7 @@ else
 fi
 
 # Construct Operating System Command.
-function fig_osc { printf "\033]697;"; printf $@; printf "\007"; }
+function fig_osc { printf "\033]697;$1\007" "${@:2}" }
 
 function __fig_preexec() {
   fig_osc PreExec
@@ -166,3 +168,8 @@ __fig_reset_hooks() {
 # https://github.com/withfig/fig/issues/888
 __bp_install_after_session_init
 __fig_reset_hooks
+if [[ -n "${PROCESS_LAUNCHED_BY_FIG}" ]]; then
+  fig_osc DoneSourcing
+fi
+
+fi

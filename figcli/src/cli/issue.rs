@@ -3,15 +3,24 @@ use crate::{
         diagnostics::{Diagnostic, Diagnostics},
         util::{get_fig_version, open_url, OSVersion},
     },
-    util::get_shell,
+    util::{get_shell, is_app_running},
 };
 
 use anyhow::Result;
 use crossterm::style::Stylize;
 use regex::Regex;
-use url::form_urlencoded;
 
-pub async fn issue_cli(description: Vec<String>) -> Result<()> {
+pub async fn issue_cli(force: bool, description: Vec<String>) -> Result<()> {
+    // Check if fig is running
+    if !force && !is_app_running() {
+        println!(
+            "\n→ Fig is not running.\n  Please launch Fig with {} or run {} to create the issue anyways",
+            "fig launch".magenta(),
+            "fig issue --force".magenta()
+        );
+        return Ok(());
+    }
+
     let text = description.join(" ");
     let mut assignees = vec!["mschrage"];
 
@@ -37,9 +46,9 @@ pub async fn issue_cli(description: Vec<String>) -> Result<()> {
         .unwrap_or_default();
     let shell = get_shell().unwrap_or_default();
     body.push_str(&format!("|{}|{}|{}|\n", &os_version, &fig_version, &shell));
-    body.push_str("<details><summary>Fig Diagnostic</summary>\n<p>\n\n");
+    body.push_str("<details><summary><code>fig diagnostic</code></summary>\n<p>\n\n");
 
-    let diagnostic = Diagnostics::new().await?.user_readable()?.join("\n\n");
+    let diagnostic = Diagnostics::new().await?.user_readable()?.join("\n");
     body.push_str(&diagnostic);
     body.push_str("\n\n</p>\n</details>");
 
@@ -47,14 +56,13 @@ pub async fn issue_cli(description: Vec<String>) -> Result<()> {
 
     println!("\n→ Opening GitHub...\n");
 
-    let params = form_urlencoded::Serializer::new(String::new())
-        .append_pair("assignees", &assignees.join(","))
-        .append_pair("body", &body)
-        .finish();
+    let url = reqwest::Url::parse_with_params(
+        "https://github.com/withfig/fig/issues/new",
+        &[("assignees", &assignees.join(",")), ("body", &body)],
+    )?;
 
-    let url = format!("https://github.com/withfig/fig/issues/new?{}", params);
     if open_url(&url).is_err() {
-        println!("{}", url.underlined());
+        println!("{}", url.as_str().underlined());
     }
 
     Ok(())

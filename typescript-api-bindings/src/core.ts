@@ -28,7 +28,7 @@ export function sendMessage(
 ) {
   const request: ClientOriginatedMessage = {
     id: messageId += 1,
-    submessage: message,
+    submessage: message
   };
 
   if (handler && request.id) {
@@ -65,7 +65,7 @@ const recievedMessage = (response: ServerOriginatedMessage): void => {
     return;
   }
 
-  let handler = handlers[response.id];
+  const handler = handlers[response.id];
 
   if (!handler) {
     return;

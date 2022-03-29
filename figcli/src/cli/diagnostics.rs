@@ -1,9 +1,10 @@
 use crate::{
     cli::{util::OSVersion, OutputFormat},
-    util::{glob, glob_dir},
+    util::{glob, glob_dir, is_app_running},
 };
 
 use anyhow::{Context, Result};
+use crossterm::style::Stylize;
 use fig_ipc::command::send_recv_command_to_socket;
 use fig_proto::local::{
     command, command_response::Response, DiagnosticsCommand, DiagnosticsResponse,
@@ -20,10 +21,19 @@ pub trait Diagnostic {
 }
 
 pub fn dscl_read(value: impl AsRef<OsStr>) -> Result<String> {
+    let username_command = Command::new("id")
+        .arg("-un")
+        .output()
+        .context("Could not get id")?;
+
+    let username: String = String::from_utf8_lossy(&username_command.stdout)
+        .trim()
+        .into();
+
     let result = Command::new("dscl")
         .arg(".")
         .arg("-read")
-        .arg(fig_directories::home_dir().context("Could not get home dir")?)
+        .arg(format!("/Users/{}", username))
         .arg(value)
         .output()
         .context("Could not read value")?;
@@ -211,9 +221,10 @@ struct CurrentEnvironment {
 
 impl CurrentEnvironment {
     fn new() -> CurrentEnvironment {
-        let user_shell = dscl_read("UserShell")
+        let user_shell = fig_settings::state::get_value("userShell")
             .ok()
-            .and_then(|out| out.split(':').last().map(|val| val.trim().into()))
+            .flatten()
+            .and_then(|v| v.as_str().map(String::from))
             .unwrap_or_else(|| "Unknown UserShell".into());
 
         let current_dir = std::env::current_dir()
@@ -489,51 +500,67 @@ impl DotfilesDiagnostics {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Diagnostics {
     timestamp: u64,
-    version: Version,
+    fig_running: bool,
+    version: Option<Version>,
     hardware: HardwareInfo,
     os: OSVersion,
     user_env: CurrentEnvironment,
     env_var: EnvVarDiagnostic,
-    fig_details: FigDetails,
-    integrations: IntegrationDiagnostics,
+    fig_details: Option<FigDetails>,
+    integrations: Option<IntegrationDiagnostics>,
     dotfiles: DotfilesDiagnostics,
 }
 
 impl Diagnostics {
     pub async fn new() -> Result<Diagnostics> {
-        let diagnostics = get_diagnostics().await?;
-
-        let mut integrations = IntegrationDiagnostics::new().await;
-        integrations.docker(&diagnostics.docker);
-
-        let mut current_env = CurrentEnvironment::new();
-        current_env.current_window_id(&diagnostics.current_window_identifier);
-        current_env.current_process(&diagnostics.current_process);
-
-        let fig_details = FigDetails::new(&diagnostics);
-
         let timestamp = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)?
             .as_secs();
 
-        Ok(Diagnostics {
-            timestamp,
-            version: Version {
-                distribution: diagnostics.distribution,
-                beta: diagnostics.beta,
-                debug_mode: diagnostics.debug_autocomplete,
-                dev_mode: diagnostics.developer_mode_enabled,
-                layout: diagnostics.current_layout_name,
-                is_running_on_read_only_volume: diagnostics.is_running_on_read_only_volume,
-            },
-            hardware: HardwareInfo::new()?,
-            os: OSVersion::new()?,
-            user_env: current_env,
-            env_var: EnvVarDiagnostic::new(),
-            fig_details,
-            integrations,
-            dotfiles: DotfilesDiagnostics::new()?,
-        })
+        match get_diagnostics().await {
+            Ok(diagnostics) => {
+                let mut integrations = IntegrationDiagnostics::new().await;
+                integrations.docker(&diagnostics.docker);
+
+                let mut current_env = CurrentEnvironment::new();
+                current_env.current_window_id(&diagnostics.current_window_identifier);
+                current_env.current_process(&diagnostics.current_process);
+
+                let fig_details = FigDetails::new(&diagnostics);
+
+                Ok(Diagnostics {
+                    timestamp,
+                    fig_running: true,
+                    version: Some(Version {
+                        distribution: diagnostics.distribution,
+                        beta: diagnostics.beta,
+                        debug_mode: diagnostics.debug_autocomplete,
+                        dev_mode: diagnostics.developer_mode_enabled,
+                        layout: diagnostics.current_layout_name,
+                        is_running_on_read_only_volume: diagnostics.is_running_on_read_only_volume,
+                    }),
+                    hardware: HardwareInfo::new()?,
+                    os: OSVersion::new()?,
+                    user_env: current_env,
+                    env_var: EnvVarDiagnostic::new(),
+                    fig_details: Some(fig_details),
+                    integrations: Some(integrations),
+                    dotfiles: DotfilesDiagnostics::new()?,
+                })
+            }
+            _ => Ok(Diagnostics {
+                timestamp,
+                fig_running: false,
+                version: None,
+                hardware: HardwareInfo::new()?,
+                os: OSVersion::new()?,
+                user_env: CurrentEnvironment::new(),
+                env_var: EnvVarDiagnostic::new(),
+                fig_details: None,
+                integrations: None,
+                dotfiles: DotfilesDiagnostics::new()?,
+            }),
+        }
     }
 }
 
@@ -547,9 +574,21 @@ impl Diagnostic for Diagnostics {
             new_lines
         };
 
-        let mut lines = vec!["# Fig Diagnostics".into(), "## Fig details:".into()];
-        lines.extend(print_indent(&self.version.user_readable()?, "  ", 1));
-        lines.extend(print_indent(&self.fig_details.user_readable()?, "  ", 1));
+        let mut lines = vec!["# Fig Diagnostics".into()];
+
+        if !self.fig_running {
+            lines.push(
+                "## NOTE: Fig is not running, run `fig launch` to get the full diagnostics".into(),
+            );
+        }
+
+        lines.push("## Fig details:".into());
+        if let Some(version) = &self.version {
+            lines.extend(print_indent(&version.user_readable()?, "  ", 1));
+        }
+        if let Some(details) = &self.fig_details {
+            lines.extend(print_indent(&details.user_readable()?, "  ", 1));
+        }
         lines.push("## Hardware Info:".into());
         lines.extend(print_indent(&self.hardware.user_readable()?, "  ", 1));
         lines.push("## OS Info:".into());
@@ -559,13 +598,23 @@ impl Diagnostic for Diagnostics {
         lines.push("  - Environment Variables:".into());
         lines.extend(print_indent(&self.env_var.user_readable()?, "  ", 2));
         lines.push("## Integrations:".into());
-        lines.extend(print_indent(&self.integrations.user_readable()?, "  ", 1));
-
+        if let Some(integrations) = &self.integrations {
+            lines.extend(print_indent(&integrations.user_readable()?, "  ", 1));
+        }
         Ok(lines)
     }
 }
 
-pub async fn diagnostics_cli(format: OutputFormat) -> Result<()> {
+pub async fn diagnostics_cli(format: OutputFormat, force: bool) -> Result<()> {
+    if !force && !is_app_running() {
+        println!(
+            "\n→ Fig is not running.\n  Please launch Fig with {} or run {} to get limited diagnostics.",
+            "fig launch".magenta(),
+            "fig diagnostic --force".magenta()
+        );
+        return Ok(());
+    }
+
     let diagnostics = Diagnostics::new().await?;
 
     match format {

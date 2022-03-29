@@ -13,6 +13,10 @@ message DaemonMessage {
     oneof command {
         // A request to get diagnostic information from the daemon
         DiagnosticCommand diagnostic = 101;
+        // A request to tigger a self-update if possible
+        SelfUpdateCommand self_update = 102;
+        // A request for the daemon to sync data
+        SyncCommand sync = 103;
     }
 }
 
@@ -23,6 +27,10 @@ message DaemonResponse {
 	oneof response {
         // A response to a diagnostic command
         DiagnosticResponse diagnostic = 101;
+        // A response to a self-update command
+        SelfUpdateResponse self_update = 102;
+        // A response to a sync command
+        SyncResponse sync = 103;
 	}
 }
 
@@ -33,6 +41,7 @@ message DiagnosticCommand {
         TIME_STARTED_EPOCH = 0;
         SETTINGS_WATCHER_STATUS = 1;
         WEBSOCKET_STATUS = 2;
+        UNIX_SOCKET_STATUS = 3;
     }
 
     // If set only get the diagnostic part specified
@@ -63,11 +72,61 @@ message DiagnosticResponse {
         optional string error = 2;
     }    
 
+    // Status of the unix socket
+    message UnixSocketStatus {
+        enum Status {
+            OK = 0;
+            ERROR = 1;
+        }
+    
+        Status status = 1;
+        optional string error = 2;
+    }
+
     // The time that the settings debugwatcher was started in seconds since the epoch
     optional uint64 time_started_epoch = 1;
     // The status of the settings watcher
     optional SettingsWatcherStatus settings_watcher_status = 2;
     // The status of the websocket
     optional WebsocketStatus websocket_status = 3;
+    // The status of the unix socket
+    optional UnixSocketStatus unix_socket_status = 4;
 }
 
+// Command to tigger the daemon to attempt to self-update Fig if possible
+message SelfUpdateCommand { }
+
+// Response to SelfUpdateCommand
+message SelfUpdateResponse {
+    // Status of the update
+    // This is out of order as Ok may be changed to a diffrent type of
+    // status such as Updated or NotUpdated
+    enum Status {
+        ERROR = 0;
+        OK = 1;
+    }
+
+    Status status = 1;
+    optional string error = 2;
+}
+
+message SyncCommand {
+    enum SyncType {
+        // This will only clone new repositories
+        PLUGIN_CLONE = 0;
+        // This will clone and update all repositories
+        PLUGIN_UPDATE = 1;
+    }
+
+    SyncType type = 1;
+}
+
+message SyncResponse {
+    enum SyncStatus {
+        OK = 0;
+        ERROR = 1;
+    }
+
+    SyncStatus status = 1;
+    optional string error = 2;
+}

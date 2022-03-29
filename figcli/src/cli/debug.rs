@@ -1,5 +1,6 @@
-use crate::util::{glob, glob_dir};
+use crate::util::{glob, glob_dir, LaunchOptions};
 
+use crate::cli::{app::quit_fig, diagnostics::get_diagnostics, launch_fig};
 use anyhow::{anyhow, Context, Result};
 use clap::{ArgEnum, Subcommand};
 use crossterm::style::Stylize;
@@ -36,6 +37,15 @@ pub enum AutocompleteWindowDebug {
     Off,
 }
 
+#[derive(Debug, ArgEnum, Clone)]
+pub enum AccessibilityAction {
+    Refresh,
+    Reset,
+    Prompt,
+    Open,
+    Status,
+}
+
 #[derive(Debug, Subcommand)]
 pub enum DebugSubcommand {
     /// Debug fig app
@@ -65,6 +75,12 @@ pub enum DebugSubcommand {
     UnixSocket,
     /// Debug fig codesign verification
     VerifyCodesign,
+
+    ///
+    Accessibility {
+        #[clap(arg_enum)]
+        action: Option<AccessibilityAction>,
+    },
 }
 
 fn get_running_app_info(bundle_id: impl AsRef<str>, field: impl AsRef<str>) -> Result<String> {
@@ -277,6 +293,50 @@ impl DebugSubcommand {
                     .spawn()?
                     .wait()?;
             }
+            DebugSubcommand::Accessibility { action } => match action {
+                Some(AccessibilityAction::Refresh) => {
+                    quit_fig().await?;
+
+                    Command::new("tccutil")
+                        .args(["reset", "Accessibility", "com.mschrage.fig"])
+                        .spawn()?
+                        .wait()?;
+
+                    launch_fig(LaunchOptions::new().wait_for_activation().verbose())?;
+                    let result = prompt_accessibility_command().await;
+                    if result.is_err() {
+                        println!("Could not prompt for accessibility permissions.");
+                        return result;
+                    }
+                }
+                Some(AccessibilityAction::Reset) => {
+                    quit_fig().await?;
+
+                    Command::new("tccutil")
+                        .args(["reset", "Accessibility", "com.mschrage.fig"])
+                        .spawn()?
+                        .wait()?;
+                }
+                Some(AccessibilityAction::Prompt) => {
+                    launch_fig(LaunchOptions::new().wait_for_activation().verbose())?;
+                    let result = prompt_accessibility_command().await;
+                    if result.is_err() {
+                        println!("Could not prompt for accessibility permissions.");
+                        return result;
+                    }
+                }
+                Some(AccessibilityAction::Open) => {
+                    Command::new("open")
+                        .args(["x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"])
+                        .spawn()?
+                        .wait()?;
+                }
+                Some(AccessibilityAction::Status) | None => {
+                    let diagnostic = get_diagnostics().await?;
+
+                    println!("Accessibility Enabled: {}", diagnostic.accessibility)
+                }
+            },
         }
         Ok(())
     }

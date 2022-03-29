@@ -77,7 +77,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
       with: ["crashed": Defaults.shared.launchedFollowingCrash ? "true" : "false"]
     )
     Defaults.shared.launchedFollowingCrash = true
-    Config.shared.set(value: nil, forKey: Config.userExplictlyQuitApp)
+    LocalState.shared.set(value: false, forKey: LocalState.userExplictlyQuitApp)
     Accessibility.checkIfPermissionRevoked()
 
     //        AppMover.moveIfNecessary()
@@ -116,16 +116,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     ]
 
     let hasLaunched = UserDefaults.standard.bool(forKey: "hasLaunched")
-    let email = UserDefaults.standard.string(forKey: "userEmail")
+    let email = Credentials.shared.getEmail() ??
+                  UserDefaults.standard.string(forKey: "userEmail")
 
     if !hasLaunched || email == nil {
       Defaults.shared.loggedIn = false
       Defaults.shared.build = .production
       Defaults.shared.clearExistingLineOnTerminalInsert = true
       Defaults.shared.showSidebar = false
-
-      Config.shared.set(value: "0", forKey: Config.userLoggedIn)
-      //            Defaults.shared.defaultActivePosition = .outsideRight
 
       let onboardingViewController = WebViewController()
       onboardingViewController.webView?.defaultURL = nil
@@ -148,7 +146,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
       user.email = email
       SentrySDK.setUser(user)
       ShellBridge.symlinkCLI()
-      Config.shared.set(value: "1", forKey: Config.userLoggedIn)
+
       UpdateService.provider.resetShellConfig()
 
       if !Accessibility.enabled {
@@ -581,10 +579,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     statusBarMenu.addItem(NSMenuItem.separator())
     let settings = statusBarMenu.addItem(
       withTitle: "Settings",
-      action: #selector(MissionControl.openUI),
+      action: #selector(Settings.openUI),
       keyEquivalent: "")
     settings.image = NSImage(imageLiteralResourceName: "gear")
-    settings.target = MissionControl.self
+    settings.target = Settings.self
 
     statusBarMenu.addItem(NSMenuItem.separator())
 
@@ -772,8 +770,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         tty.setTitle("Restart this terminal to finish uninstalling Fig...")
       }
 
+      let cli = Bundle.main.path(forAuxiliaryExecutable: "fig-darwin-universal")!
       // Uninstall daemon first to avoid interaction with file listeners while deleting Fig.app
-      _ = "~/.local/bin/fig _ uninstall --daemon".runAsCommand()
+      _ = Process.run(command: cli, args: [ "_", "uninstall", "--daemon"])
+//      _ = "~/.local/bin/fig _ uninstall --daemon".runAsCommand()
 
       NSWorkspace.shared.open(
         URL(string: "https://fig.io/uninstall?email=\(Defaults.shared.email ?? "")&" +
@@ -804,6 +804,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
       // Remove ~/.fig
       try? FileManager.default.removeItem(atPath: "\(NSHomeDirectory())/.fig")
 
+      // Remove ~/Library/Application Support/fig
+      try? FileManager.default.removeItem(at: URL.dataDirectory)
+
       // Remove launch agents
       if let agents = try? FileManager.default.contentsOfDirectory(atPath:
                                                                    "\(NSHomeDirectory())/Library/LaunchAgents/") {
@@ -814,11 +817,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
           }
       }
 
+      // Use internal uninstall to avoid signaling the mac app.
+      // must be called before deleting application bundle
+//      let out = "~/.local/bin/fig _ uninstall".runAsCommand()
+      let out = Process.run(command: cli, args: [ "_", "uninstall"])
+
+      Logger.log(message: "exit: \(out.exitCode)\nstdout:\n" + out.output.joined(separator: "\n")
+                        + "\nstderr:\n" + out.error.joined(separator: "\n"))
+
+      // must be called after using FigCLI
       try? FileManager.default.removeItem(atPath: "/Applications/Fig.app")
 
-      // Use internal uninstall to avoid signaling the mac app.
-      let out = "~/.local/bin/fig _ uninstall".runAsCommand()
-      Logger.log(message: out)
       self.quit()
     }
   }
@@ -885,14 +894,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     // upgrade path!
     if previous != current {
-
+      Credentials.shared.migrate()
       Onboarding.setUpEnviroment()
 
       TelemetryProvider.shared.track(event: .updatedApp, with: [:])
 
-      // resolves a bug where Fig was added to login items multiple times
-      // if the appropriate setting is enabled, a single entry will be readded
-      LoginItems.shared.removeAllItemsMatchingBundleURL()
+      // assume that we have seen onboarding if we're upgrading!
+      LocalState.shared.set(value: true, forKey: LocalState.hasSeenOnboarding)
     }
 
     Defaults.shared.versionAtPreviousLaunch = current
@@ -1201,7 +1209,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
       NSStatusBar.system.removeStatusItem(statusbar)
     }
 
-    Config.shared.set(value: "1", forKey: Config.userExplictlyQuitApp)
+    LocalState.shared.set(value: true, forKey: LocalState.userExplictlyQuitApp)
 
     TelemetryProvider.shared.track(event: .quitApp, with: [:]) { (_, _, _) in
       DispatchQueue.main.async {
@@ -1247,6 +1255,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     // Ensure that fig.socket is deleted, so that if user switches acounts it can be recreated
     try? FileManager.default.removeItem(atPath: "/tmp/fig.socket")
+    try? FileManager.default.removeItem(at: IPC.unixSocket)
 
     Logger.log(message: "app will terminate...")
   }

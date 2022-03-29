@@ -1,164 +1,309 @@
-use crate::plugins::{
-    download::plugin_data_dir, download_plugin, lock::LockData, manifest::Plugin,
-};
+use std::time::Duration;
 
-use anyhow::{Context, Result};
+use anyhow::{bail, Context, Result};
 use clap::Subcommand;
-use std::path::{Path, PathBuf};
+use crossterm::style::Stylize;
+use fig_ipc::{connect_timeout, send_recv_message};
+use fig_proto::daemon::{
+    daemon_response::Response, sync_command::SyncType, sync_response::SyncStatus, DaemonResponse,
+};
+use fig_settings::api_host;
+use reqwest::{Client, Url};
 
-fn read_plugin_from_file(path: impl AsRef<Path>) -> Result<Plugin> {
-    let raw = std::fs::read_to_string(path)?;
-    let mut plugin: Plugin = toml::from_str(&raw)?;
-    plugin.normalize();
-    Ok(plugin)
-}
-
-async fn get_plugin_from_repo(name: impl AsRef<str>) -> Result<Plugin> {
-    let raw = reqwest::get(&format!(
-        "https://raw.githubusercontent.com/withfig/plugins/main/plugins/{}.toml",
-        name.as_ref()
-    ))
-    .await?
-    .error_for_status()
-    .context("Failed to get plugin from repo")?
-    .text()
-    .await?;
-
-    let mut plugin: Plugin = toml::from_str(&raw)?;
-    plugin.normalize();
-    Ok(plugin)
-}
-
-async fn remove_plugin(name: impl AsRef<str>) -> Result<()> {
-    let plugin_dir = plugin_data_dir().context("Failed to get plugin data dir")?;
-    let plugin_path = plugin_dir.join(name.as_ref());
-
-    let mut lock_data = LockData::load().await?;
-
-    lock_data
-        .get_entries_mut()
-        .retain(|entry| entry.name != name.as_ref());
-
-    tokio::fs::remove_dir_all(plugin_path).await?;
-
-    lock_data.save().await?;
-
-    Ok(())
-}
+use super::OutputFormat;
 
 #[derive(Debug, Subcommand)]
-pub enum PluginsSubcommand {
-    Info {
-        plugin_file: PathBuf,
-        #[clap(long, short, conflicts_with = "quiet")]
-        verbose: bool,
-        /// Quiet
-        #[clap(long, short, conflicts_with = "verbose")]
-        quiet: bool,
-    },
+pub enum PluginsSubcommands {
+    /// Sync the current plugins (this will not update plugins that are already installed)
+    Sync,
+    /// Update the installed plugins
+    Update,
+    /// Install a specific plugin from the plugin store
     Add {
-        /// Name of the plugin to download
+        /// The plugin to install
         plugin: String,
-        #[clap(long, short)]
-        local: bool,
-        #[clap(long, short)]
-        force: bool,
     },
+    /// Uninstall a specific plugin
     Remove {
-        /// Name of the plugin to remove
+        /// The plugin to uninstall
         plugin: String,
     },
-    List,
-    Test,
+    /// List all plugins available in the plugin store
+    List {
+        /// The output format
+        #[clap(long, short, arg_enum, default_value = "plain")]
+        format: OutputFormat,
+        /// Only list plugins that are installed
+        #[clap(long, short)]
+        installed: bool,
+    },
 }
 
-impl PluginsSubcommand {
+impl PluginsSubcommands {
     pub async fn execute(&self) -> Result<()> {
         match self {
-            PluginsSubcommand::Info {
-                plugin_file,
-                verbose,
-                quiet,
-            } => {
-                // Read from the plugin
-                let plugin: Plugin = match read_plugin_from_file(plugin_file) {
-                    Ok(v) => v,
+            PluginsSubcommands::Sync => {
+                let spinner =
+                    spinners::Spinner::new(spinners::Spinners::Dots, "Syncing plugins".into());
+
+                // Get diagnostics from the daemon
+                let socket_path = fig_ipc::daemon::get_daemon_socket_path();
+
+                if !socket_path.exists() {
+                    bail!("Could not find daemon socket, run `fig doctor` to diagnose");
+                }
+
+                let mut conn = match connect_timeout(&socket_path, Duration::from_secs(1)).await {
+                    Ok(connection) => connection,
+                    Err(_) => {
+                        bail!("Could not connect to daemon socket, run `fig doctor` to diagnose");
+                    }
+                };
+
+                let diagnostic_response_result: Option<fig_proto::daemon::DaemonResponse> =
+                    send_recv_message(
+                        &mut conn,
+                        fig_proto::daemon::new_sync_message(SyncType::PluginClone),
+                        Duration::from_secs(10),
+                    )
+                    .await
+                    .context("Could not get diagnostics from daemon")?;
+
+                match diagnostic_response_result {
+                    Some(DaemonResponse {
+                        response: Some(Response::Sync(sync_result)),
+                        ..
+                    }) => match sync_result.status() {
+                        SyncStatus::Ok => {
+                            spinner.stop_with_message(format!(
+                                "{} Successfully synced plugins\n",
+                                "✔️".green()
+                            ));
+                        }
+                        SyncStatus::Error => {
+                            spinner.stop_with_message(format!(
+                                "{} Failed to sync plugins\n",
+                                "✖️".red()
+                            ));
+                            bail!(sync_result.error().to_string());
+                        }
+                    },
+                    _ => {
+                        spinner
+                            .stop_with_message(format!("{} Failed to sync plugins\n", "✖️".red()));
+                        bail!("Could not get diagnostics from daemon");
+                    }
+                }
+
+                Ok(())
+            }
+            PluginsSubcommands::Update => {
+                let spinner =
+                    spinners::Spinner::new(spinners::Spinners::Dots, "Updating plugins".into());
+
+                // Get diagnostics from the daemon
+                let socket_path = fig_ipc::daemon::get_daemon_socket_path();
+
+                if !socket_path.exists() {
+                    bail!("Could not find daemon socket, run `fig doctor` to diagnose");
+                }
+
+                let mut conn = match connect_timeout(&socket_path, Duration::from_secs(1)).await {
+                    Ok(connection) => connection,
+                    Err(_) => {
+                        bail!("Could not connect to daemon socket, run `fig doctor` to diagnose");
+                    }
+                };
+
+                let diagnostic_response_result: Option<fig_proto::daemon::DaemonResponse> =
+                    send_recv_message(
+                        &mut conn,
+                        fig_proto::daemon::new_sync_message(SyncType::PluginUpdate),
+                        Duration::from_secs(10),
+                    )
+                    .await
+                    .context("Could not get diagnostics from daemon")?;
+
+                match diagnostic_response_result {
+                    Some(DaemonResponse {
+                        response: Some(Response::Sync(sync_result)),
+                        ..
+                    }) => match sync_result.status() {
+                        SyncStatus::Ok => {
+                            spinner.stop_with_message(format!(
+                                "{} Successfully updated plugins\n",
+                                "✔️".green()
+                            ));
+                        }
+                        SyncStatus::Error => {
+                            spinner.stop_with_message(format!(
+                                "{} Failed to updated plugins\n",
+                                "✖️".red()
+                            ));
+                            bail!(sync_result.error().to_string());
+                        }
+                    },
+                    _ => {
+                        spinner.stop_with_message(format!(
+                            "{} Failed to updated plugins\n",
+                            "✖️".red()
+                        ));
+                        bail!("Could not get diagnostics from daemon");
+                    }
+                }
+
+                Ok(())
+            }
+            PluginsSubcommands::Add { plugin } => {
+                let spinner = spinners::Spinner::new(
+                    spinners::Spinners::Arc,
+                    format!("Installing plugin {}", plugin),
+                );
+
+                let api_host = api_host();
+                let url = Url::parse(&format!("{api_host}/dotfiles/plugins/add/{plugin}"))?;
+
+                let token = fig_auth::get_token().await?;
+
+                let response = Client::new()
+                    .post(url)
+                    .bearer_auth(token)
+                    .header("Accept", "application/json")
+                    .send()
+                    .await?;
+
+                match handle_fig_response(response).await {
+                    Ok(_) => {
+                        spinner.stop_with_message(format!(
+                            "{} Successfully installed plugin\n",
+                            "✔️".green()
+                        ));
+                        println!(
+                            "Run {} to start useing the plugin in the current shell",
+                            "fig source".magenta()
+                        );
+                        Ok(())
+                    }
                     Err(err) => {
-                        if *quiet {
-                            return Err(anyhow::anyhow!(""));
-                        }
-
-                        if *verbose {
-                            return Err(anyhow::anyhow!("{:#?}", err));
-                        }
-
-                        return Err(anyhow::anyhow!("{}", err));
+                        spinner
+                            .stop_with_message(
+                                format!("{} Failed to install plugin\n", "✘".red(),),
+                            );
+                        Err(err)
                     }
-                };
-
-                if let Err(e) = plugin.validate() {
-                    if *quiet {
-                        return Err(anyhow::anyhow!(""));
-                    }
-
-                    if *verbose {
-                        return Err(anyhow::anyhow!("{:#?}", e));
-                    }
-
-                    return Err(anyhow::anyhow!("{}", e));
-                }
-
-                if !quiet {
-                    println!("{:#?}", plugin);
                 }
             }
-            PluginsSubcommand::Add {
-                local,
-                plugin,
-                force,
-            } => {
-                if *force {
-                    remove_plugin(plugin).await.ok();
+            PluginsSubcommands::Remove { plugin } => {
+                let spinner = spinners::Spinner::new(
+                    spinners::Spinners::Arc,
+                    format!("Removing plugin {}", plugin),
+                );
+
+                let api_host = api_host();
+                let url = Url::parse(&format!("{api_host}/dotfiles/plugins/remove/{plugin}"))?;
+
+                let token = fig_auth::get_token().await?;
+
+                let response = Client::new()
+                    .post(url)
+                    .bearer_auth(token)
+                    .header("Accept", "application/json")
+                    .send()
+                    .await?;
+
+                match handle_fig_response(response).await {
+                    Ok(_) => {
+                        spinner.stop_with_message(format!(
+                            "{} Successfully removed plugin\n",
+                            "✔️".green()
+                        ));
+                        println!(
+                            "Run {} to stop using the plugin in the current shell",
+                            "fig source".magenta()
+                        );
+                        Ok(())
+                    }
+                    Err(err) => {
+                        spinner
+                            .stop_with_message(format!("{} Failed to remove plugin\n", "✘".red(),));
+                        Err(err)
+                    }
+                }
+            }
+            PluginsSubcommands::List { format, installed } => {
+                let api_host = api_host();
+                let url = match installed {
+                    false => Url::parse(&format!("{api_host}/plugins/all"))?,
+                    true => Url::parse(&format!("{api_host}/dotfiles/plugins"))?,
+                };
+
+                let mut request = Client::new().get(url);
+
+                if *installed {
+                    let token = fig_auth::get_token().await?;
+                    request = request.bearer_auth(token)
                 }
 
-                let plugin = match local {
-                    true => {
-                        let path = Path::new(&plugin);
-                        if path.exists() {
-                            let plugin = read_plugin_from_file(path)?;
-                            if let Err(e) = plugin.validate() {
-                                return Err(anyhow::anyhow!("{}", e));
+                let response = request.send().await?;
+
+                match handle_fig_response(response).await {
+                    Ok(response) => {
+                        let json: serde_json::Value = response.json().await?;
+
+                        if let Some(object) = json.as_object() {
+                            if let Some(plugins) = object.get("plugins") {
+                                if format == &OutputFormat::Plain {
+                                    if let Some(plugins) = plugins.as_array() {
+                                        for plugin in plugins {
+                                            if let Some(name) = plugin.get("name") {
+                                                if let Some(name) = name.as_str() {
+                                                    println!("{}", name);
+                                                }
+                                            }
+                                        }
+                                        Ok(())
+                                    } else {
+                                        bail!("Plugins in response is not an array");
+                                    }
+                                } else {
+                                    println!("{}", serde_json::to_string(&plugins)?);
+                                    Ok(())
+                                }
+                            } else {
+                                bail!("Could not find plugins in response");
                             }
-                            plugin
                         } else {
-                            return Err(anyhow::anyhow!("Plugin does not exist"));
+                            println!("{}", json);
+                            bail!("Response is not an object");
                         }
                     }
-                    false => {
-                        let plugin = get_plugin_from_repo(plugin).await?;
-                        if let Err(e) = plugin.validate() {
-                            return Err(anyhow::anyhow!("{}", e));
-                        }
-                        plugin
-                    }
-                };
-
-                download_plugin(&plugin).await?;
-            }
-            PluginsSubcommand::Remove { plugin } => {
-                remove_plugin(plugin).await?;
-            }
-            PluginsSubcommand::List => {
-                let lock_file = LockData::load().await?;
-                for plugin in lock_file.get_entries() {
-                    println!("{}", plugin.name);
+                    Err(err) => Err(err),
                 }
-            }
-            PluginsSubcommand::Test => {
-                crate::plugins::api::test().await?;
             }
         }
+    }
+}
 
-        Ok(())
+async fn handle_fig_response(resp: reqwest::Response) -> Result<reqwest::Response> {
+    if resp.status().is_success() {
+        Ok(resp)
+    } else {
+        let err = resp.error_for_status_ref().err();
+
+        match resp.json::<serde_json::Value>().await {
+            Ok(json) => {
+                let error = json
+                    .get("error")
+                    .and_then(|error| error.as_str())
+                    .unwrap_or("Unknown error")
+                    .to_string();
+
+                bail!(error)
+            }
+            Err(_) => match err {
+                Some(err) => bail!(err),
+                None => bail!("Unknown error"),
+            },
+        }
     }
 }

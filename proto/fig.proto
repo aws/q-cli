@@ -36,6 +36,7 @@ message ClientOriginatedMessage {
       AppendToFileRequest append_to_file_request = 127;
       GetLocalStateRequest get_local_state_request = 128;
       UpdateLocalStateRequest update_local_state_request = 129;
+      RunProcessRequest run_process_request = 130;
   }
 }
 
@@ -57,6 +58,7 @@ message ServerOriginatedMessage {
     TerminalSessionInfoResponse terminal_session_info_response = 108;
     ApplicationUpdateStatusResponse application_update_status_response = 109;
     GetLocalStateResponse get_local_state_response = 110;
+    RunProcessResponse run_process_response = 111;
 
     Notification notification = 1000;
   }
@@ -421,6 +423,22 @@ message UpdateLocalStateRequest {
   optional string key = 1;
   optional string value = 2;
 }
+
+/// Run Process
+
+message RunProcessRequest {
+  string executable = 1;
+  repeated string arguments = 2;
+  optional string workingDirectory = 3;
+  repeated EnvironmentVariable env = 4;
+}
+
+message RunProcessResponse {
+  string stdout = 1;
+  string stderr = 2;
+  int32 exitCode = 3; 
+}
+
 
 /// Notifications
 

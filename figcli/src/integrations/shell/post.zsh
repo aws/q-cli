@@ -1,3 +1,5 @@
+if [[ -n "$ZSH_NAME" ]]; then
+
 pathadd() {
   if [[ -d "$1" ]] && [[ ":$PATH:" != *":$1:"* ]]; then
     PATH="${PATH:+"$PATH:"}$1"
@@ -17,7 +19,7 @@ else
   FIG_IN_DOCKER=0
 fi
 
-function fig_osc { printf "\033]697;"; printf $@; printf "\007"; }
+function fig_osc { printf "\033]697;$1\007" "${@:2}" }
 
 FIG_HAS_SET_PROMPT=0
 
@@ -157,3 +159,8 @@ fig_reset_hooks() {
 }
 
 fig_reset_hooks
+if [[ -n "${PROCESS_LAUNCHED_BY_FIG}" ]]; then
+  fig_osc DoneSourcing
+fi
+
+fi

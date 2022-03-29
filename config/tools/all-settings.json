@@ -166,6 +166,14 @@
     "category": "Autocomplete"
   },
   {
+    "settingName": "autocomplete.hideAutoExecuteSuggestion",
+    "title": "Hide Execute Suggestion",
+    "description": "Hide execute suggestions from the list.",
+    "type": "boolean",
+    "default": false,
+    "category": "Autocomplete"
+  },
+  {
     "settingName": "autocomplete.height",
     "title": "Window Height",
     "description": "Set the height of the autocomplete window in pixels.",

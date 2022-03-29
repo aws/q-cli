@@ -13,7 +13,11 @@ pub enum TipsSubcommand {
     Enable,
     /// Disable fig tips
     Disable,
+    /// Reset the tips to the default
+    #[clap(hide = true)]
     Reset,
+    /// Show the tips
+    #[clap(hide = true)]
     Prompt,
 }
 
@@ -134,10 +138,14 @@ impl Tips {
         }
         let mut file = File::create(data_dir.join("tips.json"))?;
 
-        #[cfg(unix)]
-        {
-            // Set permissions to 0600
-            file.set_permissions(std::os::unix::fs::PermissionsExt::from_mode(0o600))?;
+        cfg_if::cfg_if! {
+            if #[cfg(unix)] {
+                // Set permissions to 0600
+                file.set_permissions(std::os::unix::fs::PermissionsExt::from_mode(0o600))?;
+            } else {
+                // Set permissions to 0600
+                file.set_permissions(std::fs::Permissions::from_mode(0o600))?;
+            }
         }
 
         serde_json::to_writer(&mut file, self)?;

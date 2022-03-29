@@ -10,8 +10,13 @@ use aws_sdk_cognitoidentityprovider::{
     Client, Config, Region, RetryConfig,
 };
 use aws_smithy_async::rt::sleep::TokioSleep;
+use aws_smithy_client::{
+    erase::{DynConnector, DynMiddleware},
+    hyper_ext,
+};
 use base64::encode;
 use fig_directories::fig_data_dir;
+use jwt::{Header, RegisteredClaims, Token};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::{
@@ -20,17 +25,35 @@ use std::{
     sync::Arc,
 };
 use thiserror::Error;
+use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 
-use crate::{password::generate_password, set_default};
+use crate::{password::generate_password, CLIENT_ID};
 
-pub fn get_client() -> anyhow::Result<Client> {
-    let config = Config::builder()
-        .region(Region::new("us-east-1"))
-        .retry_config(RetryConfig::new().with_max_attempts(5))
-        .sleep_impl(Arc::new(TokioSleep::new()))
+pub fn get_client() -> anyhow::Result<aws_sdk_cognitoidentityprovider::Client> {
+    let https = hyper_rustls::HttpsConnectorBuilder::new()
+        .with_webpki_roots()
+        .https_or_http()
+        .enable_http1()
         .build();
 
-    Ok(Client::from_conf(config))
+    let hyper_connector = hyper_ext::Adapter::builder().build(https);
+
+    let mut client: aws_smithy_client::Client<DynConnector, DynMiddleware<DynConnector>> =
+        aws_smithy_client::Builder::new()
+            .connector(DynConnector::new(hyper_connector))
+            .middleware(DynMiddleware::new(
+                aws_sdk_cognitoidentityprovider::middleware::DefaultMiddleware::new(),
+            ))
+            .sleep_impl(Some(Arc::new(TokioSleep::new())))
+            .build();
+
+    client.set_retry_config(RetryConfig::new().with_max_attempts(5).into());
+
+    let config = Config::builder().region(Region::new("us-east-1")).build();
+
+    Ok(aws_sdk_cognitoidentityprovider::Client::with_config(
+        client, config,
+    ))
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -382,7 +405,8 @@ pub struct Credentials {
     pub access_token: Option<String>,
     pub id_token: Option<String>,
     pub refresh_token: Option<String>,
-    pub experation_time: Option<time::OffsetDateTime>,
+    #[serde(with = "time::serde::rfc3339::option")]
+    pub expiration_time: Option<time::OffsetDateTime>,
 }
 
 impl Credentials {
@@ -398,7 +422,7 @@ impl Credentials {
             access_token,
             id_token,
             refresh_token,
-            experation_time: Some(
+            expiration_time: Some(
                 time::OffsetDateTime::now_utc() + time::Duration::seconds(expires_in.into()),
             ),
         }
@@ -418,22 +442,60 @@ impl Credentials {
             // Set permissions to 0600
             creds_file.set_permissions(std::os::unix::fs::PermissionsExt::from_mode(0o600))?;
         }
-        #[cfg(target_os = "macos")]
-        {
-            if let Some(id) = &self.id_token {
-                set_default("id_token", id)?;
-            }
-
-            if let Some(access) = &self.access_token {
-                set_default("access_token", access)?;
-            }
-
-            if let Some(refresh) = &self.refresh_token {
-                set_default("refresh_token", refresh)?;
-            }
-        }
 
         serde_json::to_writer(&mut creds_file, self)?;
+
+        #[cfg(target_os = "macos")]
+        {
+            use crate::{remove_default, set_default};
+
+            match &self.id_token {
+                Some(id) => {
+                    set_default("id_token", id)?;
+                }
+                None => {
+                    remove_default("id_token").ok();
+                }
+            }
+
+            match &self.access_token {
+                Some(access) => {
+                    set_default("access_token", access)?;
+                }
+                None => {
+                    remove_default("access_token").ok();
+                }
+            }
+
+            match &self.refresh_token {
+                Some(refresh) => {
+                    set_default("refresh_token", refresh)?;
+                }
+                None => {
+                    remove_default("refresh_token").ok();
+                }
+            }
+
+            match &self.email {
+                Some(email) => {
+                    set_default("userEmail", email)?;
+                }
+                None => {
+                    remove_default("userEmail").ok();
+                }
+            }
+
+            match &self.expiration_time {
+                Some(time) => {
+                    if let Ok(formatted_time) = time.format(&Rfc3339) {
+                        set_default("expiration_time", formatted_time)?;
+                    }
+                }
+                None => {
+                    remove_default("expiration_time").ok();
+                }
+            }
+        }
 
         Ok(())
     }
@@ -449,7 +511,44 @@ impl Credentials {
 
         let creds_file = File::open(data_dir.join("credentials.json"))?;
 
-        Ok(serde_json::from_reader(creds_file)?)
+        // Load the values in one by one from the json
+        let json: serde_json::Value = serde_json::from_reader(creds_file)
+            .unwrap_or_else(|_| serde_json::Value::Object(serde_json::Map::new()));
+
+        let email = json
+            .get("email")
+            .and_then(serde_json::Value::as_str)
+            .map(String::from);
+
+        let access_token = json
+            .get("access_token")
+            .and_then(|access_token| access_token.as_str())
+            .map(String::from);
+
+        let id_token = json
+            .get("id_token")
+            .and_then(|id_token| id_token.as_str())
+            .map(String::from);
+
+        let refresh_token = json
+            .get("refresh_token")
+            .and_then(|refresh_token| refresh_token.as_str())
+            .map(String::from);
+
+        let expiration_time = json
+            .get("expiration_time")
+            .and_then(|expiration_time| expiration_time.as_str())
+            .and_then(|expiration_time| OffsetDateTime::parse(expiration_time, &Rfc3339).ok());
+
+        let creds = Credentials {
+            email,
+            access_token,
+            id_token,
+            refresh_token,
+            expiration_time,
+        };
+
+        Ok(creds)
     }
 
     pub async fn refresh_credentials(
@@ -474,7 +573,7 @@ impl Credentials {
             Some(auth_result) => {
                 self.access_token = auth_result.access_token;
                 self.id_token = auth_result.id_token;
-                self.experation_time = Some(
+                self.expiration_time = Some(
                     time::OffsetDateTime::now_utc()
                         + time::Duration::seconds(auth_result.expires_in.into()),
                 );
@@ -485,13 +584,20 @@ impl Credentials {
         Ok(())
     }
 
+    // Refresh credentials with the default `client` and `client_id`
+    pub async fn refresh_credentials_default(&mut self) -> anyhow::Result<()> {
+        let client = get_client()?;
+        self.refresh_credentials(&client, CLIENT_ID).await?;
+        Ok(())
+    }
+
     /// Clear the values of the credentials
     pub fn clear_cridentials(&mut self) {
         self.email = None;
         self.access_token = None;
         self.id_token = None;
         self.refresh_token = None;
-        self.experation_time = None;
+        self.expiration_time = None;
     }
 
     pub fn get_access_token(&self) -> Option<&String> {
@@ -506,19 +612,22 @@ impl Credentials {
         self.refresh_token.as_ref()
     }
 
-    pub fn get_experation_time(&self) -> Option<&time::OffsetDateTime> {
-        self.experation_time.as_ref()
+    pub fn get_expiration_time(&self) -> Option<time::OffsetDateTime> {
+        let access_token = self.access_token.as_ref()?;
+        let token: Token<Header, RegisteredClaims, _> =
+            Token::parse_unverified(access_token).ok()?;
+        time::OffsetDateTime::from_unix_timestamp(token.claims().expiration?.try_into().ok()?).ok()
     }
 
     pub fn is_expired_epslion(&self, epsilon: time::Duration) -> bool {
-        match self.experation_time {
-            Some(experation_time) => experation_time + epsilon < time::OffsetDateTime::now_utc(),
-            None => false,
+        match self.get_expiration_time() {
+            Some(expiration_time) => expiration_time + epsilon < time::OffsetDateTime::now_utc(),
+            None => true,
         }
     }
 
     pub fn is_expired(&self) -> bool {
-        self.is_expired_epslion(time::Duration::minutes(1))
+        self.is_expired_epslion(time::Duration::seconds(20))
     }
 
     pub fn get_email(&self) -> Option<&String> {

@@ -14,7 +14,7 @@ else
   set FIG_IN_DOCKER 0
 end
 
-function fig_osc; printf "\033]697;"; printf $argv; printf "\007"; end
+function fig_osc; printf "\033]697;$argv[1]\007" $argv[2..-1]; end
 function fig_copy_fn; functions $argv[1] | sed "s/^function $argv[1]/function $argv[2]/" | source; end
 function fig_fn_defined; test (functions $argv[1] | grep -vE '^ *(#|function |end$|$)' | wc -l | xargs) != 0; end
 
@@ -99,3 +99,7 @@ function fig_precmd --on-event fish_prompt
 end
 
 set fig_has_set_prompt 0
+
+if [ -n "$PROCESS_LAUNCHED_BY_FIG" ]
+  fig_osc DoneSourcing
+end

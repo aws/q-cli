@@ -1,5 +1,6 @@
 use anyhow::{Context, Result};
 use clap::ArgEnum;
+use fig_settings::api_host;
 use regex::Regex;
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
@@ -21,9 +22,18 @@ pub enum When {
     Post,
 }
 
+impl std::fmt::Display for When {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            When::Pre => write!(f, "pre"),
+            When::Post => write!(f, "post"),
+        }
+    }
+}
+
 /// Shells supported by Fig
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, ArgEnum)]
-#[serde(rename_all = "kebab-case")]
+#[serde(rename_all = "camelCase")]
 pub enum Shell {
     /// Bash shell
     Bash,
@@ -108,7 +118,7 @@ impl ShellIntegration {
             ("", "")
         };
         let r = format!(
-            r#"{}\n?(?:{}\n)?{}\n{{0,2}}{}"#,
+            r#"(?:{}\n)?(?:{}\n)?{}\n{{0,2}}{}"#,
             prefix,
             regex::escape(&self.description()),
             regex::escape(&self.source_text()),
@@ -121,10 +131,17 @@ impl ShellIntegration {
 #[derive(Debug, Clone)]
 pub struct ShellFileIntegration {
     pub shell: Shell,
-    pub path: PathBuf,
+    pub directory: PathBuf,
+    pub filename: &'static str,
     pub pre: bool,
     pub post: bool,
     pub remove_on_uninstall: bool,
+}
+
+impl std::fmt::Display for ShellFileIntegration {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.filename)
+    }
 }
 
 impl ShellFileIntegration {
@@ -139,6 +156,10 @@ impl ShellFileIntegration {
         }
     }
 
+    pub fn path(&self) -> PathBuf {
+        self.directory.join(self.filename)
+    }
+
     pub fn post_integration(&self) -> Option<ShellIntegration> {
         if self.post {
             Some(ShellIntegration {
@@ -151,22 +172,34 @@ impl ShellFileIntegration {
     }
 
     pub fn uninstall(&self) -> Result<()> {
-        if self.path.exists() {
+        let path = self.path();
+        if path.exists() {
             if self.remove_on_uninstall {
-                std::fs::remove_file(self.path.as_path())?;
+                std::fs::remove_file(path.as_path())?;
                 return Ok(());
             }
 
-            let mut file = File::open(&self.path)?;
-            let mut contents = String::new();
-            file.read_to_string(&mut contents)?;
+            let mut contents = std::fs::read_to_string(&path)?;
 
-            let old_integration_regex = format!(
-                r#"{}(\n|.)*?{}"#,
-                regex::escape("#### FIG ENV VARIABLES ####"),
-                regex::escape("#### END FIG ENV VARIABLES ####"),
-            );
-            contents = Regex::new(&old_integration_regex)?
+            // Remove comment lines
+            contents = Regex::new(r"(?mi)^#.*fig.*var.*$\n?")?
+                .replace_all(&contents, "")
+                .into();
+
+            contents = Regex::new(
+                r"(?mi)^#.*Please make sure this block is at the .* of this file.*$\n?",
+            )?
+            .replace_all(&contents, "")
+            .into();
+
+            // Remove old integration pre
+            contents =
+                Regex::new(r"\[ -s ~/\.fig/shell/pre\.sh \] && source ~/\.fig/shell/pre\.sh\n?")?
+                    .replace_all(&contents, "")
+                    .into();
+
+            // Remove old integration post
+            contents = Regex::new(r"\[ -s ~/\.fig/fig\.sh \] && source ~/\.fig/fig\.sh\n?")?
                 .replace_all(&contents, "")
                 .into();
 
@@ -176,6 +209,7 @@ impl ShellFileIntegration {
                     .replace_all(&contents, "")
                     .into();
             }
+
             if let Some(post) = self.post_integration() {
                 contents = post
                     .get_source_regex(false)?
@@ -183,17 +217,20 @@ impl ShellFileIntegration {
                     .into();
             }
 
-            let mut file = File::create(&self.path)?;
-            file.write_all(contents.as_bytes())?;
+            contents = contents.trim().to_string();
+            contents.push('\n');
+
+            std::fs::write(&path, contents.as_bytes())?;
         }
 
         Ok(())
     }
 
     pub fn install(&self, backup_dir: Option<&Path>) -> Result<()> {
+        let path = self.path();
         let mut contents = String::new();
-        if self.path.exists() {
-            if let Some(name) = self.path.file_name() {
+        if path.exists() {
+            if let Some(name) = path.file_name() {
                 let backup = match backup_dir {
                     Some(backup) => Some(backup.to_path_buf()),
                     None => {
@@ -212,7 +249,7 @@ impl ShellFileIntegration {
 
                 if let Some(backup) = backup {
                     std::fs::create_dir_all(backup.as_path()).context("Could not back up file")?;
-                    std::fs::copy(self.path.as_path(), backup.join(name).as_path())
+                    std::fs::copy(path.as_path(), backup.join(name).as_path())
                         .context("Could not back up file")?;
                 }
             }
@@ -220,8 +257,8 @@ impl ShellFileIntegration {
             // Remove existing integration.
             self.uninstall()?;
 
-            if self.path.exists() {
-                let mut file = File::open(&self.path)?;
+            if path.exists() {
+                let mut file = File::open(&path)?;
                 file.read_to_string(&mut contents)?;
             }
         }
@@ -243,12 +280,13 @@ impl ShellFileIntegration {
             if !integration.get_source_regex(false)?.is_match(&contents) {
                 new_contents.push('\n');
                 new_contents.push_str(&integration.text());
+                new_contents.push('\n');
                 modified = true;
             }
         }
 
         if modified {
-            let mut file = File::create(&self.path)?;
+            let mut file = File::create(&path)?;
             file.write_all(new_contents.as_bytes())?;
         }
 
@@ -280,20 +318,23 @@ impl Shell {
 
         let path = match self {
             Shell::Bash => {
-                let mut configs = vec![home_dir.join(".bashrc")];
-                let other_configs: Vec<_> = [".profile", ".bash_login", ".bash_profile"]
-                    .into_iter()
-                    .map(|f| home_dir.join(f))
-                    .collect();
-                configs.extend(other_configs.clone().into_iter().filter(|f| f.exists()));
+                let mut configs = vec![".bashrc"];
+                let other_configs: Vec<_> = vec![".profile", ".bash_login", ".bash_profile"];
+                configs.extend(
+                    other_configs
+                        .clone()
+                        .into_iter()
+                        .filter(|f| home_dir.join(f).exists()),
+                );
                 // Include .profile if none of [.profile, .bash_login, .bash_profile] exist.
                 if configs.len() == 1 {
-                    configs.push(other_configs.first().unwrap().into());
+                    configs.push(other_configs.first().unwrap());
                 }
                 configs
                     .into_iter()
-                    .map(|path| ShellFileIntegration {
-                        path,
+                    .map(|filename| ShellFileIntegration {
+                        directory: home_dir.clone(),
+                        filename,
                         pre: true,
                         post: true,
                         shell: *self,
@@ -304,12 +345,12 @@ impl Shell {
             Shell::Zsh => {
                 let zdotdir = std::env::var("ZDOTDIR")
                     .or_else(|_| std::env::var("FIG_ZDOTDIR"))
-                    .map(PathBuf::from)
-                    .unwrap_or_else(|_| home_dir);
-                vec![zdotdir.join(".zshrc"), zdotdir.join(".zprofile")]
+                    .map_or_else(|_| home_dir, PathBuf::from);
+                vec![".zshrc", ".zprofile"]
                     .into_iter()
-                    .map(|path| ShellFileIntegration {
-                        path,
+                    .map(|filename| ShellFileIntegration {
+                        directory: zdotdir.clone(),
+                        filename,
                         pre: true,
                         post: true,
                         shell: *self,
@@ -319,19 +360,20 @@ impl Shell {
             }
             Shell::Fish => {
                 let fish_config_dir = std::env::var("__fish_config_dir")
-                    .map(PathBuf::from)
-                    .unwrap_or_else(|_| home_dir.join(".config").join("fish"))
+                    .map_or_else(|_| home_dir.join(".config").join("fish"), PathBuf::from)
                     .join("conf.d");
                 vec![
                     ShellFileIntegration {
-                        path: fish_config_dir.join("00_fig_pre.fish"),
+                        directory: fish_config_dir.clone(),
+                        filename: "00_fig_pre.fish",
                         shell: *self,
                         pre: true,
                         post: false,
                         remove_on_uninstall: true,
                     },
                     ShellFileIntegration {
-                        path: fish_config_dir.join("99_fig_post.fish"),
+                        directory: fish_config_dir,
+                        filename: "99_fig_post.fish",
                         shell: *self,
                         pre: false,
                         post: true,
@@ -344,35 +386,41 @@ impl Shell {
         Ok(path)
     }
 
-    pub fn get_fig_integration_source(&self, when: &When) -> String {
-        let base_str = match (self, when) {
+    pub fn get_fig_integration_source(&self, when: &When) -> &'static str {
+        match (self, when) {
             (Shell::Fish, When::Pre) => include_str!("../integrations/shell/pre.fish"),
             (Shell::Fish, When::Post) => include_str!("../integrations/shell/post.fish"),
-            (Shell::Bash, When::Post) => include_str!("../integrations/shell/post.bash"),
+            (Shell::Zsh, When::Pre) => include_str!("../integrations/shell/pre.sh"),
             (Shell::Zsh, When::Post) => include_str!("../integrations/shell/post.zsh"),
-            (_, When::Pre) => include_str!("../integrations/shell/pre.sh"),
-        };
-
-        if let Shell::Bash = self {
-            // Source bash preexec before any bash integration, pre or post.
-            let bash_preexec = include_str!("../integrations/shell/bash-preexec.sh");
-            format!(
-                "function __fig_source_bash_preexec() {{\n{}\n}}\n__fig_source_bash_preexec\n{}\n{}",
-                bash_preexec,
-                // Override __bp_adjust_histcontrol to preserve histcontrol.
-                "function __bp_adjust_histcontrol() { :; }",
-                base_str,
-            )
-        } else {
-            base_str.into()
+            (Shell::Bash, When::Pre) => {
+                concat!(
+                    "function __fig_source_bash_preexec() {\n",
+                    include_str!("../integrations/shell/bash-preexec.sh"),
+                    "\n}\n\
+                    __fig_source_bash_preexec\n\
+                    function __bp_adjust_histcontrol() { :; }\n",
+                    include_str!("../integrations/shell/pre.sh")
+                )
+            }
+            (Shell::Bash, When::Post) => {
+                concat!(
+                    "function __fig_source_bash_preexec() {\n",
+                    include_str!("../integrations/shell/bash-preexec.sh"),
+                    "\n}\n\
+                    __fig_source_bash_preexec\n\
+                    function __bp_adjust_histcontrol() { :; }\n",
+                    include_str!("../integrations/shell/post.bash")
+                )
+            }
         }
     }
 
+    #[must_use]
     pub fn get_data_path(&self) -> Option<PathBuf> {
         fig_directories::fig_data_dir().map(|dir| dir.join("shell").join(format!("{}.json", self)))
     }
 
     pub fn get_remote_source(&self) -> Result<Url> {
-        Ok(format!("https://api.fig.io/dotfiles/source/{}", self).parse()?)
+        Ok(format!("{}/dotfiles/source/{}", api_host(), self).parse()?)
     }
 }

@@ -1,7 +1,7 @@
 pub mod local_state;
 
-use super::source::TerminalNotification;
 use crate::cli::installation::{self, InstallComponents};
+use crate::dotfiles::notify::TerminalNotification;
 
 use anyhow::{Context, Result};
 use clap::{ArgGroup, Args, Subcommand};
@@ -52,8 +52,12 @@ pub struct InstallArgs {
 #[derive(Debug, Subcommand)]
 #[clap(hide = true, alias = "_")]
 pub enum InternalSubcommand {
+    /// Prompt the user that the dotfiles have changes
+    /// Also use for `fig source` internals
     PromptDotfilesChanged,
+    /// Change the local-state file
     LocalState(local_state::LocalStateArgs),
+    /// Callback used for the internal psudoterminal
     Callback(CallbackArgs),
     /// Install fig cli
     Install(InstallArgs),
@@ -69,7 +73,9 @@ pub enum InternalSubcommand {
         #[clap(long)]
         binary: bool,
     },
+    /// Notify the user that they are uninstalling incorrectly
     WarnUserWhenUninstallingIncorrectly,
+    GetShell,
 }
 
 pub fn install_cli_from_args(install_args: InstallArgs) -> Result<()> {
@@ -184,7 +190,72 @@ impl InternalSubcommand {
                     .show_alert()
                     .unwrap();
             }
+            InternalSubcommand::GetShell => {
+                cfg_if::cfg_if! {
+                    if #[cfg(target_os = "macos")]  {
+                        let pid = nix::unistd::getppid();
+                        let mut buff = vec![0; 1024];
+
+                        let out_buf = {
+                            // TODO: Make sure pid exists or that access is allowed?
+                            let ret = unsafe {
+                                nix::libc::proc_pidpath(
+                                    pid.as_raw(),
+                                    buff.as_mut_ptr() as *mut std::ffi::c_void,
+                                    buff.len() as u32,
+                                )
+                            };
+
+                            if ret == 0 {
+                                exit(1);
+                            }
+
+                            &buff[..ret as usize]
+                        };
+
+                        match std::str::from_utf8(out_buf) {
+                            Ok(path) => print!("{}", path),
+                            Err(_) => exit(1),
+                        }
+                    } else if #[cfg(target_os = "linux")] {
+                        // let pid = nix::unistd::getppid();
+                        // let mut buff = vec![0; 1024];
+
+                        // let out_buf = {
+                        //     loop {
+                        //         let ret = unsafe {
+                        //             nix::libc::readlink(
+                        //                 format!("/proc/{}/exe", pid).as_str().as_ptr(),
+                        //                 buff.as_mut_ptr() as *mut std::ffi::c_void,
+                        //                 buff.len() as u32,
+                        //             )
+                        //         };
+
+                        //         if ret == -1 {
+                        //             exit(1);
+                        //         }
+
+                        //         if ret == buff.len() as i32 {
+                        //             buff.resize(buff.len() * 2, 0);
+                        //             continue;
+                        //         }
+
+                        //         break &buff[..ret as usize];
+                        //     }
+                        // };
+
+                        // match std::str::from_utf8(out_buf) {
+                        //     Ok(path) => print!("{}", path),
+                        //     Err(_) => exit(1),
+                        // }
+                        exit(1);
+                    } else {
+                        exit(1);
+                    }
+                }
+            }
         }
+
         Ok(())
     }
 }
@@ -200,12 +271,9 @@ pub async fn prompt_dotfiles_changed() -> Result<()> {
     // An exit code of 0 will source the new changes
     // An exit code of 1 will not source the new changes
 
-    let session_id = match std::env::var("TERM_SESSION_ID") {
-        Ok(session_id) => session_id,
-        Err(err) => {
-            error!("Couldn't get TERM_SESSION_ID: {}", err);
-            exit(1);
-        }
+    let session_id = match std::env::var_os("TERM_SESSION_ID") {
+        Some(session_id) => session_id,
+        None => exit(1),
     };
 
     let file = std::env::temp_dir()
@@ -215,7 +283,7 @@ pub async fn prompt_dotfiles_changed() -> Result<()> {
 
     let file_clone = file.clone();
     ctrlc::set_handler(move || {
-        crossterm::execute!(std::io::stdout(), crossterm::cursor::Show,).ok();
+        crossterm::execute!(std::io::stdout(), crossterm::cursor::Show).ok();
         std::fs::write(&file_clone, "").ok();
 
         exit(1);
@@ -258,7 +326,7 @@ pub async fn prompt_dotfiles_changed() -> Result<()> {
                 Some("none") => UpdatedVerbosity::None,
                 Some("minimal") => UpdatedVerbosity::Minimal,
                 Some("full") => UpdatedVerbosity::Full,
-                _ => UpdatedVerbosity::Full,
+                _ => UpdatedVerbosity::Minimal,
             };
 
             let source_immediately =

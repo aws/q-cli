@@ -1,3 +1,5 @@
+mod install_method;
+
 use anyhow::Result;
 use serde::{ser::SerializeMap, Serialize};
 use std::collections::HashMap;
@@ -10,6 +12,21 @@ pub struct SegmentEvent {
     user_id: String,
     event: String,
     properties: HashMap<String, String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Source {
+    Cli,
+    Daemon,
+}
+
+impl std::fmt::Display for Source {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Source::Cli => f.write_str("cli"),
+            Source::Daemon => f.write_str("daemon"),
+        }
+    }
 }
 
 impl SegmentEvent {
@@ -37,10 +54,25 @@ impl SegmentEvent {
 
     /// Add the default properties to the event
     ///
-    /// This includes email
-    pub fn add_default_properties(&mut self) -> Result<&mut Self> {
-        self.properties
-            .insert("email".to_string(), fig_auth::get_default("email")?);
+    /// This includes email, version, build, install method, and source
+    pub fn add_default_properties(&mut self, source: Source) -> Result<&mut Self> {
+        if let Some(email) = fig_auth::get_email() {
+            self.properties.insert("email".into(), email);
+        }
+
+        if let Ok(defaults_version) = fig_auth::get_default("versionAtPreviousLaunch") {
+            if let Some((version, build)) = defaults_version.split_once(',') {
+                self.properties.insert("version".into(), version.into());
+                self.properties.insert("build".into(), build.into());
+            }
+        }
+
+        self.properties.insert("source".into(), source.to_string());
+
+        self.properties.insert(
+            "install_method".into(),
+            install_method::get_install_method().to_string(),
+        );
 
         Ok(self)
     }

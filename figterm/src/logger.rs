@@ -17,7 +17,7 @@ static FIG_LOG_LEVEL: Lazy<RwLock<LevelFilter>> = Lazy::new(|| {
         std::env::var("FIG_LOG_LEVEL")
             .ok()
             .and_then(|level| LevelFilter::from_str(&level).ok())
-            .unwrap_or(LevelFilter::INFO),
+            .unwrap_or(LevelFilter::OFF),
     )
 });
 
@@ -47,6 +47,7 @@ pub fn set_log_level(level: LevelFilter) {
     *FIG_LOG_LEVEL.write() = level;
 }
 
+#[must_use]
 pub fn get_log_level() -> LevelFilter {
     *FIG_LOG_LEVEL.read()
 }
@@ -67,7 +68,7 @@ pub fn init_logger(ptc_name: impl AsRef<str>) -> Result<()> {
     }
 
     let file = File::create(log_path).context("failed to create log file")?;
-    let fmt_layer = fmt::layer().with_writer(file);
+    let fmt_layer = fmt::layer().with_line_number(true).with_writer(file);
 
     tracing_subscriber::registry()
         .with(filter_layer)
