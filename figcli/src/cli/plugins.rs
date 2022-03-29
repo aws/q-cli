@@ -14,8 +14,10 @@ use super::OutputFormat;
 
 #[derive(Debug, Subcommand)]
 pub enum PluginsSubcommands {
-    /// Sync the current plugins
+    /// Sync the current plugins (this will not update plugins that are already installed)
     Sync,
+    /// Update the installed plugins
+    Update,
     /// Install a specific plugin from the plugin store
     Add {
         /// The plugin to install
@@ -61,7 +63,7 @@ impl PluginsSubcommands {
                 let diagnostic_response_result: Option<fig_proto::daemon::DaemonResponse> =
                     send_recv_message(
                         &mut conn,
-                        fig_proto::daemon::new_sync_message(SyncType::Plugins),
+                        fig_proto::daemon::new_sync_message(SyncType::PluginClone),
                         Duration::from_secs(10),
                     )
                     .await
@@ -89,6 +91,63 @@ impl PluginsSubcommands {
                     _ => {
                         spinner
                             .stop_with_message(format!("{} Failed to sync plugins\n", "✖️".red()));
+                        bail!("Could not get diagnostics from daemon");
+                    }
+                }
+
+                Ok(())
+            }
+            PluginsSubcommands::Update => {
+                let spinner =
+                    spinners::Spinner::new(spinners::Spinners::Dots, "Updating plugins".into());
+
+                // Get diagnostics from the daemon
+                let socket_path = fig_ipc::daemon::get_daemon_socket_path();
+
+                if !socket_path.exists() {
+                    bail!("Could not find daemon socket, run `fig doctor` to diagnose");
+                }
+
+                let mut conn = match connect_timeout(&socket_path, Duration::from_secs(1)).await {
+                    Ok(connection) => connection,
+                    Err(_) => {
+                        bail!("Could not connect to daemon socket, run `fig doctor` to diagnose");
+                    }
+                };
+
+                let diagnostic_response_result: Option<fig_proto::daemon::DaemonResponse> =
+                    send_recv_message(
+                        &mut conn,
+                        fig_proto::daemon::new_sync_message(SyncType::PluginUpdate),
+                        Duration::from_secs(10),
+                    )
+                    .await
+                    .context("Could not get diagnostics from daemon")?;
+
+                match diagnostic_response_result {
+                    Some(DaemonResponse {
+                        response: Some(Response::Sync(sync_result)),
+                        ..
+                    }) => match sync_result.status() {
+                        SyncStatus::Ok => {
+                            spinner.stop_with_message(format!(
+                                "{} Successfully updated plugins\n",
+                                "✔️".green()
+                            ));
+                        }
+                        SyncStatus::Error => {
+                            spinner.stop_with_message(format!(
+                                "{} Failed to updated plugins\n",
+                                "✖️".red()
+                            ));
+                            bail!(sync_result.error().to_string());
+                        }
+                    },
+                    _ => {
+                        spinner.stop_with_message(format!(
+                            "{} Failed to updated plugins\n",
+                            "✖️".red()
+                        ));
                         bail!("Could not get diagnostics from daemon");
                     }
                 }
