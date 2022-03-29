@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-echo "start of fig integration"
 
 pathadd() {
   if [[ -d "$1" ]] && [[ ":$PATH:" != *":$1:"* ]]; then
