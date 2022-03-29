@@ -1,5 +1,6 @@
 use anyhow::{Context, Result};
 use clap::ArgEnum;
+use fig_settings::api_host;
 use regex::Regex;
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
@@ -13,8 +14,6 @@ use std::{
 use time::OffsetDateTime;
 
 use crate::util::get_parent_process_exe;
-
-use super::api::api_host;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, ArgEnum, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -119,7 +118,7 @@ impl ShellIntegration {
             ("", "")
         };
         let r = format!(
-            r#"{}\n?(?:{}\n)?{}\n{{0,2}}{}"#,
+            r#"(?:{}\n)?(?:{}\n)?{}\n{{0,2}}{}"#,
             prefix,
             regex::escape(&self.description()),
             regex::escape(&self.source_text()),
@@ -137,6 +136,12 @@ pub struct ShellFileIntegration {
     pub pre: bool,
     pub post: bool,
     pub remove_on_uninstall: bool,
+}
+
+impl std::fmt::Display for ShellFileIntegration {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.filename)
+    }
 }
 
 impl ShellFileIntegration {
@@ -340,8 +345,7 @@ impl Shell {
             Shell::Zsh => {
                 let zdotdir = std::env::var("ZDOTDIR")
                     .or_else(|_| std::env::var("FIG_ZDOTDIR"))
-                    .map(PathBuf::from)
-                    .unwrap_or_else(|_| home_dir);
+                    .map_or_else(|_| home_dir, PathBuf::from);
                 vec![".zshrc", ".zprofile"]
                     .into_iter()
                     .map(|filename| ShellFileIntegration {
@@ -356,8 +360,7 @@ impl Shell {
             }
             Shell::Fish => {
                 let fish_config_dir = std::env::var("__fish_config_dir")
-                    .map(PathBuf::from)
-                    .unwrap_or_else(|_| home_dir.join(".config").join("fish"))
+                    .map_or_else(|_| home_dir.join(".config").join("fish"), PathBuf::from)
                     .join("conf.d");
                 vec![
                     ShellFileIntegration {
@@ -412,6 +415,7 @@ impl Shell {
         }
     }
 
+    #[must_use]
     pub fn get_data_path(&self) -> Option<PathBuf> {
         fig_directories::fig_data_dir().map(|dir| dir.join("shell").join(format!("{}.json", self)))
     }

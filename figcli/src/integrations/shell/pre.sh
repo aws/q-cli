@@ -35,8 +35,8 @@ if   [[ ! "${TERM_PROGRAM}" = WarpTerminal ]] \
   fi
   export FIG_INTEGRATION_VERSION=8
   # Pty module sets FIG_TERM or FIG_TERM_TMUX to avoid running twice.
-  FIG_SHELL=$(~/.fig/bin/fig_get_shell)
-  FIG_IS_LOGIN_SHELL=0
+  FIG_SHELL=$(fig _ get-shell)
+  FIG_IS_LOGIN_SHELL="${FIG_IS_LOGIN_SHELL:='0'}"
 
   if ([[ -n "$BASH" ]] && shopt -q login_shell) \
     || ([[ -n "$ZSH_NAME" && -o login ]]); then
@@ -50,6 +50,8 @@ if   [[ ! "${TERM_PROGRAM}" = WarpTerminal ]] \
     cp -p ~/.fig/bin/figterm "${FIG_SHELL_PATH}"
   fi
 
+  FIG_EXECUTION_STRING="${BASH_EXECUTION_STRING:=$ZSH_EXECUTION_STRING}"
+
   # Get initial text.
   INITIAL_TEXT=""
   if [[ -z "${BASH}" || "${BASH_VERSINFO[0]}" -gt "3" ]]; then
@@ -60,6 +62,5 @@ if   [[ ! "${TERM_PROGRAM}" = WarpTerminal ]] \
       INITIAL_TEXT="${INITIAL_TEXT}${REPLY}\n"
     done
   fi
-
-  FIG_START_TEXT="$(printf "%b" "${INITIAL_TEXT}")" FIG_SHELL="${FIG_SHELL}" FIG_IS_LOGIN_SHELL="${FIG_IS_LOGIN_SHELL}" exec -a "${FIG_TERM_NAME}" "${FIG_SHELL_PATH}"
+  FIG_EXECUTION_STRING="${FIG_EXECUTION_STRING}" FIG_START_TEXT="$(printf "%b" "${INITIAL_TEXT}")" FIG_SHELL="${FIG_SHELL}" FIG_IS_LOGIN_SHELL="${FIG_IS_LOGIN_SHELL}" exec -a "${FIG_TERM_NAME}" "${FIG_SHELL_PATH}"
 fi

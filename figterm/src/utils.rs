@@ -1,9 +1,10 @@
 //! Misc utilities used throughout
 
-/// Gets the term_bundle
+/// Gets the `term_bundle`
 ///
-/// Only usable on MacOs
+/// Only usable on `MacOs`
 #[cfg(target_os = "macos")]
+#[must_use]
 pub fn get_term_bundle() -> Option<std::borrow::Cow<'static, str>> {
     match std::env::var("TERM_PROGRAM").ok().as_deref() {
         Some("iTerm.app") => Some("com.googlecode.iterm2".into()),
@@ -14,7 +15,7 @@ pub fn get_term_bundle() -> Option<std::borrow::Cow<'static, str>> {
             _ => Some("com.microsoft.vscode".into()),
         },
         Some("Tabby") => Some("org.tabby".into()),
-        _ => std::env::var("__CFBundleIdentifier").ok().map(|s| s.into()),
+        _ => std::env::var("__CFBundleIdentifier").ok().map(Into::into),
     }
 }
 

@@ -61,48 +61,46 @@ pub fn remove_default(key: impl AsRef<OsStr>) -> Result<()> {
 }
 
 pub async fn get_token() -> Result<String> {
-    match Credentials::load_credentials() {
-        Ok(mut creds) => {
-            if creds.is_expired() {
-                let aws_client = get_client()?;
-                creds.refresh_credentials(&aws_client, CLIENT_ID).await?;
-                creds.save_credentials()?;
-            }
-
-            Ok(creds.encode())
+    if let Ok(mut creds) = Credentials::load_credentials() {
+        if creds.is_expired() {
+            let aws_client = get_client()?;
+            creds.refresh_credentials(&aws_client, CLIENT_ID).await?;
+            creds.save_credentials()?;
         }
-        _ => {
-            let access_token = get_default("access_token")?;
-            let email = get_default("userEmail")?;
 
-            match get_default("refresh_token") {
-                Ok(refresh_token) => {
-                    // Aws cognito token
-                    let id_token = get_default("id_token")?;
+        Ok(creds.encode())
+    } else {
+        let access_token = get_default("access_token")?;
+        let email = get_default("userEmail")?;
 
-                    let mut creds = Credentials {
-                        email: Some(email),
-                        id_token: Some(id_token),
-                        access_token: Some(access_token),
-                        refresh_token: Some(refresh_token),
-                        experation_time: None,
-                    };
+        match get_default("refresh_token") {
+            Ok(refresh_token) => {
+                // Aws cognito token
+                let id_token = get_default("id_token")?;
 
-                    let client = get_client()?;
-                    creds.refresh_credentials(&client, CLIENT_ID).await?;
-                    creds.save_credentials()?;
+                let mut creds = Credentials {
+                    email: Some(email),
+                    id_token: Some(id_token),
+                    access_token: Some(access_token),
+                    refresh_token: Some(refresh_token),
+                    expiration_time: None,
+                };
 
-                    Ok(creds.encode())
-                }
-                Err(_) => {
-                    // Cotter token
-                    Ok(access_token)
-                }
+                let client = get_client()?;
+                creds.refresh_credentials(&client, CLIENT_ID).await?;
+                creds.save_credentials()?;
+
+                Ok(creds.encode())
+            }
+            Err(_) => {
+                // Cotter token
+                Ok(access_token)
             }
         }
     }
 }
 
+#[must_use]
 pub fn get_email() -> Option<String> {
     Credentials::load_credentials()
         .map(|creds| creds.email)
@@ -110,6 +108,7 @@ pub fn get_email() -> Option<String> {
         .or_else(|| Some(get_default("userEmail").ok()))?
 }
 
+#[must_use]
 pub fn is_logged_in() -> bool {
     get_email().is_some()
 }

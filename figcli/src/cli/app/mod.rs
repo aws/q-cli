@@ -15,21 +15,30 @@ use fig_ipc::{
 use fig_proto::hooks;
 use regex::Regex;
 use serde_json::json;
-use std::{process::Command, time::Duration};
+use std::{os::unix::prelude::CommandExt, process::Command, time::Duration};
 use tracing::{info, trace};
 
 use fig_settings::{settings, state};
 
 #[derive(Debug, Subcommand)]
 pub enum AppSubcommand {
+    /// Install the Fig app
     Install,
+    /// Run the Fig tutorial again
     Onboarding,
+    /// Check if Fig is running
     Running,
+    /// Launch th Fig desktop app
     Launch,
+    /// Restart the Fig desktop app
     Restart,
+    /// Quit the Fig desktop app
     Quit,
+    /// Set the internal psudo-terminal path
     SetPath,
+    /// Uninstall the Fig app
     Uninstall,
+    /// Prompts shown on terminal startup
     Prompts,
 }
 
@@ -46,10 +55,7 @@ pub fn launch_fig_cli() -> Result<()> {
         return Ok(());
     }
 
-    launch_fig(LaunchOptions {
-        wait_for_activation: true,
-        verbose: true,
-    })?;
+    launch_fig(LaunchOptions::new().wait_for_activation().verbose())?;
     Ok(())
 }
 
@@ -108,14 +114,12 @@ impl AppSubcommand {
                 fig_ipc::command::run_install_script_command().await?;
             }
             AppSubcommand::Onboarding => {
-                launch_fig(LaunchOptions {
-                    wait_for_activation: true,
-                    verbose: true,
-                })?;
-                Command::new("bash")
-                    .args(["-c", include_str!("onboarding.sh")])
-                    .spawn()?
-                    .wait()?;
+                launch_fig(LaunchOptions::new().wait_for_activation().verbose())?;
+                if state::set_value("user.onboarding", true).is_ok() {
+                    Command::new("bash")
+                        .args(["-c", include_str!("onboarding.sh")])
+                        .exec();
+                }
             }
             AppSubcommand::Prompts => {
                 if is_app_running() {
@@ -152,11 +156,7 @@ impl AppSubcommand {
                             tokio::time::sleep(std::time::Duration::from_millis(3000)).await;
 
                             trace!("launching updated version of Fig");
-                            launch_fig(LaunchOptions {
-                                wait_for_activation: true,
-                                verbose: false,
-                            })
-                            .ok();
+                            launch_fig(LaunchOptions::new().wait_for_activation()).ok();
                         }
                     }
                 } else {
@@ -176,10 +176,7 @@ impl AppSubcommand {
                             )?
                         }
 
-                        launch_fig(LaunchOptions {
-                            wait_for_activation: false,
-                            verbose: false,
-                        })?;
+                        launch_fig(LaunchOptions::new())?;
                     }
                 }
             }

@@ -67,10 +67,10 @@ pub async fn spawn_settings_watcher(
 
                                     tokio::time::sleep(Duration::from_secs(1)).await;
 
-                                    let app_bundle_exists = fig_bundle().unwrap().is_dir();
-
-                                    if !app_bundle_exists {
-                                        crate::cli::app::uninstall::uninstall_mac_app().await;
+                                    if let Some(app_bundle_exists) = fig_bundle() {
+                                        if !app_bundle_exists.is_dir() {
+                                            crate::cli::app::uninstall::uninstall_mac_app().await;
+                                        }
                                     }
                                 }
                                 unknown_path => {

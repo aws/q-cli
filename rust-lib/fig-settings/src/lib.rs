@@ -5,6 +5,22 @@ pub mod state;
 use anyhow::{Context, Result};
 use std::{fs, path::PathBuf};
 
+pub fn api_host() -> String {
+    state::get_value("developer.figcli.apiHost")
+        .ok()
+        .flatten()
+        .and_then(|s| s.as_str().map(String::from))
+        .unwrap_or_else(|| "https://api.fig.io".to_string())
+}
+
+pub fn ws_host() -> String {
+    state::get_value("developer.figcli.wsHost")
+        .ok()
+        .flatten()
+        .and_then(|s| s.as_str().map(String::from))
+        .unwrap_or_else(|| "wss://api.fig.io".to_string())
+}
+
 pub struct LocalJson {
     inner: serde_json::Value,
     path: PathBuf,

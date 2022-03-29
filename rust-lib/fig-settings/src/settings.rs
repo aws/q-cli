@@ -1,5 +1,5 @@
 use crate::{
-    remote_settings::{update_remote, RemoteResult},
+    remote_settings::{delete_remote_setting, update_remote_setting, RemoteResult},
     LocalJson,
 };
 use anyhow::{Context, Result};
@@ -20,10 +20,12 @@ pub async fn set_value(
     key: impl Into<String>,
     value: impl Into<serde_json::Value>,
 ) -> Result<RemoteResult> {
+    let key = key.into();
+    let value = value.into();
     let mut settings = local_settings()?;
-    settings.set(key, value)?;
+    settings.set(&key, value.clone())?;
     settings.save()?;
-    Ok(update_remote(settings).await)
+    Ok(update_remote_setting(key, value).await)
 }
 
 pub fn get_value(key: impl AsRef<str>) -> Result<Option<serde_json::Value>> {
@@ -46,7 +48,7 @@ pub fn get_string(key: impl AsRef<str>) -> Result<Option<String>> {
 
 pub async fn remove_value(key: impl AsRef<str>) -> Result<RemoteResult> {
     let mut settings = local_settings()?;
-    settings.remove(key)?;
+    settings.remove(&key)?;
     settings.save()?;
-    Ok(update_remote(settings).await)
+    Ok(delete_remote_setting(&key).await)
 }

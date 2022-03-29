@@ -32,6 +32,8 @@ use fig_proto::{
     },
     local::{self, LocalMessage},
 };
+use fig_settings::state;
+
 use flume::Sender;
 use nix::{
     libc::STDIN_FILENO,
@@ -43,9 +45,7 @@ use parking_lot::Mutex;
 use parking_lot::{lock_api::RawRwLock, RwLock};
 use sentry::integrations::anyhow::capture_anyhow;
 use std::time::{Duration, SystemTime};
-use std::{
-    env, error::Error, ffi::CString, os::unix::prelude::AsRawFd, process::exit, str::FromStr, vec,
-};
+use std::{env, ffi::CString, os::unix::prelude::AsRawFd, process::exit, str::FromStr, vec};
 use tokio::{
     io::{self, AsyncReadExt, AsyncWriteExt},
     runtime, select,
@@ -171,10 +171,9 @@ where
             let lock_expired =
                 at.elapsed().unwrap_or_else(|_| Duration::new(0, 0)) > Duration::new(0, 50_000_000);
             let should_unlock = lock_expired
-                || term
-                    .get_current_buffer()
-                    .map(|buff| &buff.buffer == (&EXPECTED_BUFFER.lock() as &String))
-                    .unwrap_or(true);
+                || term.get_current_buffer().map_or(true, |buff| {
+                    &buff.buffer == (&EXPECTED_BUFFER.lock() as &String)
+                });
             if should_unlock {
                 handle.take();
                 if lock_expired {
@@ -209,7 +208,7 @@ where
     match term.get_current_buffer() {
         Some(edit_buffer) => {
             if let Some(cursor_idx) = edit_buffer.cursor_idx.and_then(|i| i.try_into().ok()) {
-                info!("edit_buffer: {:?}", edit_buffer);
+                debug!("edit_buffer: {:?}", edit_buffer);
                 trace!("buffer bytes: {:02X?}", edit_buffer.buffer.as_bytes());
                 trace!(
                     "buffer chars: {:?}",
@@ -329,11 +328,22 @@ fn launch_shell() -> Result<()> {
         .ok()
         .filter(|s| !s.is_empty());
 
+    let parent_shell_execution_string = env::var("FIG_EXECUTION_STRING")
+        .ok()
+        .filter(|s| !s.is_empty());
+
     let mut args =
         vec![CString::new(&*parent_shell).expect("Failed to convert shell name to CString")];
 
     if parent_shell_is_login.as_deref() == Some("1") {
         args.push(CString::new("--login").expect("Failed to convert arg to CString"));
+    }
+
+    if let Some(execution_string) = parent_shell_execution_string {
+        args.push(CString::new("-c").expect("Failed to convert -c flag to CString"));
+        args.push(
+            CString::new(execution_string).expect("Failed to convert execution string to CString"),
+        );
     }
 
     if let Some(extra_args) = parent_shell_extra_args {
@@ -356,6 +366,7 @@ fn launch_shell() -> Result<()> {
     env::remove_var("FIG_IS_LOGIN_SHELL");
     env::remove_var("FIG_START_TEXT");
     env::remove_var("FIG_SHELL_EXTRA_ARGS");
+    env::remove_var("FIG_EXECUTION_STRING");
 
     execvp(&*args[0], &args).expect("Failed to execvp");
     unreachable!()
@@ -436,7 +447,7 @@ fn figterm_main() -> Result<()> {
 
                     let mut edit_buffer_interval = tokio::time::interval(Duration::from_millis(16));
 
-                    'select_loop: loop {
+                    let result: Result<()> = 'select_loop: loop {
                         if first_time && term.shell_state().has_seen_prompt {
                             trace!("Has seen prompt and first time");
                             let initial_command = env::var("FIG_START_TEXT").ok().filter(|s| !s.is_empty());
@@ -450,7 +461,7 @@ fn figterm_main() -> Result<()> {
                             first_time = false;
                         }
 
-                        let select_result: Result<&'static str> = select! {
+                        let select_result: Result<()> = select! {
                             biased;
                             res = stdin.read(&mut read_buffer) => {
                                 match res {
@@ -465,18 +476,20 @@ fn figterm_main() -> Result<()> {
                                                     }
                                                 }
                                                 master.write(out.as_bytes()).await?;
+                                                Ok(())
                                             }
                                             Err(err) => {
                                                 error!("Failed to convert utf8: {}", err);
                                                 trace!("Read {} bytes from input: {:?}", size, &read_buffer[..size]);
                                                 master.write(&read_buffer[..size]).await?;
+                                                Ok(())
                                             }
                                     },
                                     Err(err) => {
                                         error!("Failed to read from stdin: {}", err);
+                                        Err(err.into())
                                     }
                                 }
-                                Ok("stdin")
                             }
                             _ = window_change_signal.recv() => {
                                 unsafe { read_winsize(STDIN_FILENO, &mut winsize) }?;
@@ -484,13 +497,13 @@ fn figterm_main() -> Result<()> {
                                 let window_size = SizeInfo::new(winsize.ws_row as usize, winsize.ws_col as usize);
                                 debug!("Window size changed: {:?}", window_size);
                                 term.resize(window_size);
-                                Ok("window_change")
+                                Ok(())
                             }
                             res = master.read(&mut write_buffer) => {
                                 match res {
                                     Ok(0) => {
                                         trace!("EOF from master");
-                                        break 'select_loop;
+                                        break 'select_loop Ok(());
                                     }
                                     Ok(size) => {
                                         trace!("Read {} bytes from master", size);
@@ -507,10 +520,14 @@ fn figterm_main() -> Result<()> {
                                                 warn!("Failed to send edit buffer: {}", e);
                                             }
                                         }
+
+                                        Ok(())
                                     }
-                                    Err(err) => error!("Failed to read from master: {}", err),
+                                    Err(err) => {
+                                        error!("Failed to read from master: {}", err);
+                                        Err(err.into())
+                                    }
                                 }
-                                Ok("master")
                             }
                             msg = incomming_receiver.recv_async() => {
                                 match msg {
@@ -522,7 +539,7 @@ fn figterm_main() -> Result<()> {
                                         error!("Failed to receive message from socket: {}", err);
                                     }
                                 }
-                                Ok("incomming_receiver")
+                                Ok(())
                             }
                             // Check if to send the edit buffer because of timeout
                             _ = edit_buffer_interval.tick() => {
@@ -532,19 +549,19 @@ fn figterm_main() -> Result<()> {
                                         warn!("Failed to send edit buffer: {}", e);
                                     }
                                 }
-                                Ok("timeout_edit_buffer")
+                                Ok(())
                             }
                         };
 
                         if let Err(e) = select_result {
                             error!("Error in select loop: {}", e);
-                            break 'select_loop;
+                            break 'select_loop Err(e);
                         }
-                    }
+                    };
 
                     remove_socket(&term_session_id).await?;
 
-                    anyhow::Ok(())
+                    result
                 }) {
                     Ok(()) => {
                         if let Err(e) = tcsetattr(STDIN_FILENO, SetArg::TCSAFLUSH, &old_termios) {
@@ -579,32 +596,42 @@ fn figterm_main() -> Result<()> {
     }
 }
 
-fn main() -> Result<(), Box<dyn Error>> {
-    let _guard = match std::env::var_os("FIG_DISABLE_SENTRY") {
-        Some(_) => None,
-        None => {
-            let guard = sentry::init((
-                "https://633267fac776481296eadbcc7093af4a@o436453.ingest.sentry.io/6187825",
-                sentry::ClientOptions {
-                    release: sentry::release_name!(),
-                    ..Default::default()
-                },
-            ));
+fn main() {
+    let _guard = if std::env::var_os("FIG_DISABLE_SENTRY").is_some() {
+        None
+    } else {
+        let guard = sentry::init((
+            "https://633267fac776481296eadbcc7093af4a@o436453.ingest.sentry.io/6187825",
+            sentry::ClientOptions {
+                release: sentry::release_name!(),
+                ..sentry::ClientOptions::default()
+            },
+        ));
 
-            sentry::configure_scope(|scope| {
-                scope.set_user(Some(sentry::User {
-                    email: get_email(),
-                    ..Default::default()
-                }));
-            });
+        sentry::configure_scope(|scope| {
+            scope.set_user(Some(sentry::User {
+                email: get_email(),
+                ..sentry::User::default()
+            }));
+        });
 
-            Some(guard)
-        }
+        Some(guard)
     };
 
     Cli::parse();
 
     logger::stdio_debug_log(format!("FIG_LOG_LEVEL={}", logger::get_log_level()));
+
+    let should_launch_figterm = state::get_bool("figterm.enabled")
+        .ok()
+        .flatten()
+        .unwrap_or(true);
+
+    if !should_launch_figterm {
+        println!("[NOTE] figterm is disabled. Autocomplete will not work.");
+        logger::stdio_debug_log("figterm is disabled. `figterm.enabled` == false");
+        return;
+    }
 
     if let Err(e) = figterm_main() {
         println!("Fig had an Error!: {:?}", e);
@@ -616,6 +643,4 @@ fn main() -> Result<(), Box<dyn Error>> {
             logger::stdio_debug_log(format!("{}", e));
         }
     }
-
-    Ok(())
 }

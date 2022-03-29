@@ -1,9 +1,12 @@
 use anyhow::{anyhow, Context, Result};
 use clap::{ArgGroup, Args, Subcommand};
+use fig_auth::is_logged_in;
 use fig_ipc::command::{open_ui_element, restart_settings_listener};
 use fig_proto::local::UiElement;
+use fig_settings::remote_settings::RemoteSettings;
 use serde_json::json;
-use std::process::Command;
+use std::{io::Write, process::Command};
+use time::format_description::well_known::Rfc3339;
 
 use super::util::app_not_running_message;
 use crate::util::{launch_fig, LaunchOptions};
@@ -16,6 +19,8 @@ pub enum SettingsSubcommands {
     Docs,
     /// Open the settings file
     Open,
+    /// Sync the current settings
+    Sync,
 }
 
 #[derive(Debug, Args)]
@@ -78,6 +83,25 @@ impl SettingsArgs {
                     false => Err(anyhow!("Could not open settings file")),
                 }
             }
+            Some(SettingsSubcommands::Sync) => {
+                let RemoteSettings {
+                    settings,
+                    updated_at,
+                } = fig_settings::remote_settings::get_settings().await?;
+
+                let path = fig_settings::settings::settings_path()
+                    .context("Could not get settings path")?;
+
+                let mut settings_file = std::fs::File::create(&path)?;
+                let settings_json = serde_json::to_string_pretty(&settings)?;
+                settings_file.write_all(settings_json.as_bytes())?;
+
+                if let Ok(updated_at) = updated_at.format(&Rfc3339) {
+                    fig_settings::state::set_value("settings.updatedAt", json!(updated_at)).ok();
+                }
+
+                Ok(())
+            }
             None => match &self.key {
                 Some(key) => match (&self.value, self.delete) {
                     (None, false) => match fig_settings::settings::get_value(key)? {
@@ -90,41 +114,56 @@ impl SettingsArgs {
                     (Some(value_str), false) => {
                         let value =
                             serde_json::from_str(value_str).unwrap_or_else(|_| json!(value_str));
-                        let remote_result = fig_settings::settings::set_value(key, value).await?;
+                        let remote_result = fig_settings::settings::set_value(key, value).await;
                         match remote_result {
-                            Ok(()) => {
-                                println!("Successfully updated settings");
+                            Ok(Ok(())) => {
+                                println!("Successfully set setting");
                                 Ok(())
                             }
-                            Err(_) => Err(anyhow!("Error syncing settings")),
+                            Ok(Err(err)) => {
+                                eprintln!("Error setting setting:");
+                                Err(err)
+                            }
+                            Err(err) => {
+                                eprintln!("Error setting setting:");
+                                Err(err)
+                            }
                         }
                     }
                     (None, true) => {
-                        let remote_result = fig_settings::settings::remove_value(key).await?;
+                        let remote_result = fig_settings::settings::remove_value(key).await;
                         match remote_result {
-                            Ok(()) => {
-                                println!("Successfully updated settings");
+                            Ok(Ok(())) => {
+                                println!("Successfully removed settings");
                                 Ok(())
                             }
-                            Err(_) => Err(anyhow!("Error syncing settings")),
+                            Ok(Err(err)) => {
+                                eprintln!("Error removing setting, it may already be removed");
+                                Err(err)
+                            }
+                            Err(err) => {
+                                eprintln!("Error syncing setting");
+                                Err(err)
+                            }
                         }
                     }
                     _ => Ok(()),
                 },
                 None => {
                     println!();
-                    launch_fig(LaunchOptions {
-                        wait_for_activation: true,
-                        verbose: true,
-                    })?;
+                    launch_fig(LaunchOptions::new().wait_for_activation().verbose())?;
                     println!();
 
-                    match open_ui_element(UiElement::Settings).await {
-                        Ok(()) => Ok(()),
-                        Err(err) => {
-                            print_connection_error!();
-                            Err(err.context("Could not open settings"))
+                    if is_logged_in() {
+                        match open_ui_element(UiElement::Settings).await {
+                            Ok(()) => Ok(()),
+                            Err(err) => {
+                                print_connection_error!();
+                                Err(err.context("Could not open settings"))
+                            }
                         }
+                    } else {
+                        Ok(())
                     }
                 }
             },
