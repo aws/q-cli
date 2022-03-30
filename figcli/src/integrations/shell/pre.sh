@@ -16,8 +16,11 @@ if [[ ! -z "${FIG_NEW_SESSION}" ]]; then
   unset FIG_NEW_SESSION
 fi
 
-# Only launch figterm if current session is not already inside PTY and command exists
+# Only launch figterm if current session is not already inside PTY and command exists.
+# PWSH var is set when launched by `pwsg -Login`, in which case we don't want to init.
+# It is not necessary in Fish.
 if   [[ ! "${TERM_PROGRAM}" = WarpTerminal ]] \
+  && [[ -z "${__PWSH_LOGIN_CHECKED}" ]] \
   && [[ -z "${INSIDE_EMACS}" ]] \
   && [[ "$__CFBundleIdentifier" != "com.vandyke.SecureCRT" ]] \
   && [[ -t 1 ]] \
