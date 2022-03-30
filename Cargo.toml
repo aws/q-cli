@@ -17,6 +17,7 @@ members = [
     "daemon",
     "linux-app/src-tauri",
     "winfig/src-tauri"
+    "fig-tauri/src-tauri",
 ]
 
 [profile.release]
