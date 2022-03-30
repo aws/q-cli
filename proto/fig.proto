@@ -97,9 +97,9 @@ message Process {
 }
 
 message FilePath {
-  optional string path = 1;
+  string path = 1;
   optional string relative_to = 2;
-  optional bool expand_tilde_in_path = 3;
+  bool expand_tilde_in_path = 3;
 }
 
 enum Modifiers {
@@ -194,8 +194,8 @@ message PositionWindowResponse {
 }
 
 message ReadFileRequest {
-  optional FilePath path = 1;
-  optional bool isBinaryFile = 2;
+  FilePath path = 1;
+  bool isBinaryFile = 2;
 }
 
 message ReadFileResponse {

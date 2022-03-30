@@ -9,7 +9,8 @@ use bytes::BytesMut;
 use fig_proto::{FigMessage, FigProtobufEncodable};
 use prost::Message;
 use std::fmt::Debug;
-use std::io::Cursor;
+use std::io::{Cursor, Write};
+use std::os::unix::net::UnixStream as SyncUnixStream;
 use std::{
     path::{Path, PathBuf},
     time::Duration,
@@ -40,6 +41,16 @@ pub fn get_fig_socket_path() -> PathBuf {
     .collect()
 }
 
+/// Get path to "$TMPDIR/fig_linux.socket"
+pub fn get_fig_linux_socket_path() -> PathBuf {
+    [
+        std::env::temp_dir().as_path(),
+        Path::new("fig_linux.socket"),
+    ]
+    .into_iter()
+    .collect()
+}
+
 /// Connect to `socket` with a timeout
 pub async fn connect_timeout(socket: impl AsRef<Path>, timeout: Duration) -> Result<UnixStream> {
     let conn = match tokio::time::timeout(timeout, UnixStream::connect(socket.as_ref())).await {
@@ -56,10 +67,30 @@ pub async fn connect_timeout(socket: impl AsRef<Path>, timeout: Duration) -> Res
 
     trace!("Connected to {:?}", socket.as_ref());
 
-    // When on macOS after the socket connection is made a breif delay is required
+    // When on macOS after the socket connection is made a brief delay is required
     // Not sure why, but this is a workaround
     #[cfg(target_os = "macos")]
     tokio::time::sleep(Duration::from_millis(2)).await;
+
+    Ok(conn)
+}
+
+/// Connect to `socket` synchronously without a timeout
+pub fn connect_sync(socket: impl AsRef<Path>) -> Result<SyncUnixStream> {
+    let conn = match SyncUnixStream::connect(socket.as_ref()) {
+        Ok(conn) => conn,
+        Err(err) => {
+            error!("Failed to connect to {:?}: {}", socket.as_ref(), err);
+            bail!("Failed to connect to {:?}: {}", socket.as_ref(), err);
+        }
+    };
+
+    trace!("Connected to {:?}", socket.as_ref());
+
+    // When on macOS after the socket connection is made a brief delay is required
+    // Not sure why, but this is a workaround
+    #[cfg(target_os = "macos")]
+    std::thread::sleep(std::time::Duration::from_millis(2)).await;
 
     Ok(conn)
 }
@@ -78,6 +109,32 @@ where
     };
 
     match stream.write_all(&encoded_message).await {
+        Ok(()) => {
+            trace!("Sent message: {:?}", message);
+        }
+        Err(err) => {
+            error!("Failed to write message: {}", err);
+            bail!("Failed to write message: {}", err);
+        }
+    };
+
+    Ok(())
+}
+
+pub fn send_message_sync<M, S>(stream: &mut S, message: M) -> Result<()>
+where
+    M: FigProtobufEncodable,
+    S: Write,
+{
+    let encoded_message = match message.encode_fig_protobuf() {
+        Ok(encoded_message) => encoded_message,
+        Err(err) => {
+            error!("Failed to encode message: {}", err);
+            bail!("Failed to encode message: {}", err);
+        }
+    };
+
+    match stream.write_all(&encoded_message) {
         Ok(()) => {
             trace!("Sent message: {:?}", message);
         }

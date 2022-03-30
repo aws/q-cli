@@ -1,8 +1,10 @@
 //! Protocal buffer definitions
 
 pub mod daemon;
+pub mod fig;
 pub mod figterm;
 pub mod hooks;
+pub mod linux;
 pub mod local;
 pub mod util;
 

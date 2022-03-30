@@ -1,0 +1,11 @@
+[package]
+name = "daemon"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1.17.0", features = ["macros", "rt"] }
+fig-ipc = { path = "../rust-lib/fig-ipc" }
+fig-proto = { path = "../rust-lib/fig-proto" }
+libsystemd = "0.5.0"
+shellexpand = "2.1.0"

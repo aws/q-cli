@@ -1,0 +1,11 @@
+[package]
+name = "linux-test"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+clap = { version = "3.1.5", features = ["derive"] }
+fig-proto = { path = "../fig-proto" }
+fig-ipc = { path = "../fig-ipc" }
+tokio = { version = "1.17.0", features = ["full"] }
+

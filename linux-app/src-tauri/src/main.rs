@@ -3,8 +3,6 @@
     windows_subsystem = "windows"
 )]
 
-pub mod os;
-
 use serde::Serialize;
 use std::fs::remove_file;
 use std::sync::Arc;
