@@ -1,12 +1,10 @@
-name: Dotfilesd Deploy
+name: Binary S3 Deploy
 
 on:
   workflow_dispatch:
-  # push:
-  #   paths:
-  #     - "dotfilesd/**"
-  #   branches:
-  #     - dotfilesd
+  push:
+    branches:
+      - master
 
 env:
   CARGO_TERM_COLOR: always
@@ -19,7 +17,7 @@ defaults:
 jobs:
   deploy:
     runs-on: ${{matrix.os}}
-    timeout-minutes: 20
+    timeout-minutes: 30
     strategy:
       matrix:
         include:

@@ -1,5 +1,6 @@
 use anyhow::{anyhow, Context, Result};
 use fig_auth::{get_email, get_token, refresh_credentals};
+use fig_settings::{api_host, ws_host};
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -9,10 +10,7 @@ use tokio::net::TcpStream;
 use tokio_tungstenite::{tungstenite::Message, MaybeTlsStream, WebSocketStream};
 use tracing::{debug, error, info};
 
-use crate::{
-    daemon::scheduler::{Scheduler, SyncDotfiles},
-    util::api::{api_host, ws_host},
-};
+use crate::daemon::scheduler::{Scheduler, SyncDotfiles};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

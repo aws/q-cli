@@ -9,7 +9,6 @@ use crossterm::style::Stylize;
 use fig_ipc::hook::send_hook_to_socket;
 use fig_proto::hooks::new_callback_hook;
 use native_dialog::{MessageDialog, MessageType};
-use nix::libc::proc_pidpath;
 use rand::distributions::{Alphanumeric, DistString};
 use std::{
     io::{Read, Write},
@@ -192,70 +191,71 @@ impl InternalSubcommand {
                     .unwrap();
             }
             InternalSubcommand::GetShell => {
-                #[cfg(unix)]
-                {
-                    let pid = nix::unistd::getppid();
-                    let mut buff = vec![0; 1024];
+                cfg_if::cfg_if! {
+                    if #[cfg(target_os = "macos")]  {
+                        let pid = nix::unistd::getppid();
+                        let mut buff = vec![0; 1024];
 
-                    #[cfg(target_os = "macos")]
-                    let out_buf = {
-                        // TODO: Make sure pid exists or that access is allowed?
-                        let ret = unsafe {
-                            proc_pidpath(
-                                pid.as_raw(),
-                                buff.as_mut_ptr() as *mut std::ffi::c_void,
-                                buff.len() as u32,
-                            )
-                        };
-
-                        if ret == 0 {
-                            exit(1);
-                        }
-
-                        &buff[..ret as usize]
-                    };
-
-                    #[cfg(target_os = "linux")]
-                    let out_buf = {
-                        loop {
+                        let out_buf = {
+                            // TODO: Make sure pid exists or that access is allowed?
                             let ret = unsafe {
-                                libc::readlink(
-                                    format!("/proc/{}/exe", pid).as_str().as_ptr(),
-                                    procfile.as_mut_ptr() as *mut std::ffi::c_void,
-                                    procfile.len() as u32,
+                                nix::libc::proc_pidpath(
+                                    pid.as_raw(),
+                                    buff.as_mut_ptr() as *mut std::ffi::c_void,
+                                    buff.len() as u32,
                                 )
                             };
 
-                            if ret == -1 {
+                            if ret == 0 {
                                 exit(1);
                             }
 
-                            if ret == buff.len() as i32 {
-                                buff.resize(buff.len() * 2, 0);
-                                continue;
-                            }
+                            &buff[..ret as usize]
+                        };
 
-                            break &buff[..ret as usize];
+                        match std::str::from_utf8(out_buf) {
+                            Ok(path) => print!("{}", path),
+                            Err(_) => exit(1),
                         }
-                    };
+                    } else if #[cfg(target_os = "linux")] {
+                        // let pid = nix::unistd::getppid();
+                        // let mut buff = vec![0; 1024];
 
-                    #[cfg(not(any(target_os = "macos", target_os = "linux")))]
-                    {
+                        // let out_buf = {
+                        //     loop {
+                        //         let ret = unsafe {
+                        //             nix::libc::readlink(
+                        //                 format!("/proc/{}/exe", pid).as_str().as_ptr(),
+                        //                 buff.as_mut_ptr() as *mut std::ffi::c_void,
+                        //                 buff.len() as u32,
+                        //             )
+                        //         };
+
+                        //         if ret == -1 {
+                        //             exit(1);
+                        //         }
+
+                        //         if ret == buff.len() as i32 {
+                        //             buff.resize(buff.len() * 2, 0);
+                        //             continue;
+                        //         }
+
+                        //         break &buff[..ret as usize];
+                        //     }
+                        // };
+
+                        // match std::str::from_utf8(out_buf) {
+                        //     Ok(path) => print!("{}", path),
+                        //     Err(_) => exit(1),
+                        // }
+                        exit(1);
+                    } else {
                         exit(1);
                     }
-
-                    match std::str::from_utf8(out_buf) {
-                        Ok(path) => print!("{}", path),
-                        Err(_) => exit(1),
-                    }
-                }
-
-                #[cfg(windows)]
-                {
-                    return Err(anyhow!("This is unimplemented on Windows"));
                 }
             }
         }
+
         Ok(())
     }
 }
@@ -271,12 +271,9 @@ pub async fn prompt_dotfiles_changed() -> Result<()> {
     // An exit code of 0 will source the new changes
     // An exit code of 1 will not source the new changes
 
-    let session_id = match std::env::var("TERM_SESSION_ID") {
-        Ok(session_id) => session_id,
-        Err(err) => {
-            error!("Couldn't get TERM_SESSION_ID: {}", err);
-            exit(1);
-        }
+    let session_id = match std::env::var_os("TERM_SESSION_ID") {
+        Some(session_id) => session_id,
+        None => exit(1),
     };
 
     let file = std::env::temp_dir()
@@ -286,7 +283,7 @@ pub async fn prompt_dotfiles_changed() -> Result<()> {
 
     let file_clone = file.clone();
     ctrlc::set_handler(move || {
-        crossterm::execute!(std::io::stdout(), crossterm::cursor::Show,).ok();
+        crossterm::execute!(std::io::stdout(), crossterm::cursor::Show).ok();
         std::fs::write(&file_clone, "").ok();
 
         exit(1);

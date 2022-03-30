@@ -30,6 +30,7 @@ use crate::{
 };
 
 use anyhow::{Context, Result};
+use cfg_if::cfg_if;
 use clap::{ArgEnum, IntoApp, Parser, Subcommand};
 use std::{fs::File, process::exit, str::FromStr};
 use tracing::{debug, level_filters::LevelFilter};
@@ -54,6 +55,14 @@ pub enum Shells {
     Zsh,
     /// Fig completion spec
     Fig,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ArgEnum)]
+pub enum Processes {
+    /// Daemon process
+    Daemon,
+    /// Fig process
+    App,
 }
 
 #[derive(Debug, Subcommand)]
@@ -154,7 +163,11 @@ pub enum CliRootCommands {
     /// Quit the Fig desktop app
     Quit,
     /// Restart the Fig desktop app
-    Restart,
+    Restart {
+        /// The process to restart
+        #[clap(arg_enum, default_value = "app", hide = true)]
+        process: Processes,
+    },
     #[clap(hide = true)]
     /// (LEGACY) Old way to launch mission control
     Alpha,
@@ -318,13 +331,13 @@ impl Cli {
                     }
                     app_res
                 }
-                CliRootCommands::Restart => {
-                    let app_res = app::restart_fig().await;
-                    if let Ok(daemon) = get_daemon() {
-                        daemon.restart().ok();
+                CliRootCommands::Restart { process } => match process {
+                    Processes::App => {
+                        get_daemon().and_then(|d| d.restart()).ok();
+                        app::restart_fig().await
                     }
-                    app_res
-                }
+                    Processes::Daemon => get_daemon().and_then(|d| d.restart()),
+                },
                 CliRootCommands::Alpha => root_command().await,
                 CliRootCommands::Onboarding => AppSubcommand::Onboarding.execute().await,
                 CliRootCommands::FigAppRunning => {
@@ -382,41 +395,40 @@ async fn uninstall_command() -> Result<()> {
 
 async fn root_command() -> Result<()> {
     // Launch fig if it is not running
-    #[cfg(target_os = "macos")]
-    {
-        use fig_auth::is_logged_in;
-        use fig_ipc::command::{open_ui_element, quit_command};
-        use fig_proto::local::UiElement;
-        use std::time::Duration;
 
-        if !is_logged_in() && is_app_running() {
-            if quit_command().await.is_err() {
-                anyhow::bail!(
-                    "\nFig is running but you are not logged in. Please quit Fig from the menu\
-                    bar and try again\n"
-                );
+    cfg_if! {
+        if #[cfg(target_os = "macos")] {
+            use fig_auth::is_logged_in;
+            use fig_ipc::command::{open_ui_element, quit_command};
+            use fig_proto::local::UiElement;
+            use std::time::Duration;
+
+            if !is_logged_in() && is_app_running() {
+                if quit_command().await.is_err() {
+                    anyhow::bail!(
+                        "\nFig is running but you are not logged in. Please quit Fig from the menu\
+                        bar and try again\n"
+                    );
+                }
+                tokio::time::sleep(Duration::from_millis(1000)).await;
             }
-            tokio::time::sleep(Duration::from_millis(1000)).await;
+
+            launch_fig(LaunchOptions::new().wait_for_activation().verbose())?;
+
+            if is_logged_in() {
+                open_ui_element(UiElement::MissionControl)
+                    .await
+                    .context("\nCould not launch fig\n")?;
+            }
+        } else {
+            use crossterm::style::Stylize;
+
+            println!(
+                "\n→ Opening {}...\n",
+                "https://app.fig.io".magenta().underlined()
+            );
+            util::open_url("https://app.fig.io").ok();
         }
-
-        launch_fig(LaunchOptions::new().wait_for_activation().verbose())?;
-
-        if is_logged_in() {
-            open_ui_element(UiElement::MissionControl)
-                .await
-                .context("\nCould not launch fig\n")?;
-        }
-    }
-
-    #[cfg(not(target_os = "macos"))]
-    {
-        use crossterm::style::Stylize;
-
-        println!(
-            "\n→ Opening {}...\n",
-            "https://app.fig.io".magenta().underlined()
-        );
-        util::open_url("https://app.fig.io").ok();
     }
 
     Ok(())

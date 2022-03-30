@@ -2,12 +2,13 @@ use std::{collections::HashMap, path::PathBuf};
 
 use anyhow::{Context, Result};
 use fig_auth::get_token;
+use fig_settings::api_host;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 use tracing::{debug, info};
 
-use crate::util::{api::api_host, shell::Shell};
+use crate::util::shell::Shell;
 
 /// The list of installed plugins
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -83,7 +84,7 @@ pub async fn download_dotfiles() -> Result<UpdateStatus> {
     std::fs::write(all_json_path, download)?;
 
     // Write to the individual shell files
-    for (shell, dotfile) in dotfiles.dotfiles.into_iter() {
+    for (shell, dotfile) in dotfiles.dotfiles {
         let shell_json_path = shell
             .get_data_path()
             .context("Could not get cache file path")?;
@@ -128,6 +129,7 @@ pub async fn download_dotfiles() -> Result<UpdateStatus> {
     }
 }
 
+#[must_use]
 pub fn all_file_path() -> Option<PathBuf> {
     fig_directories::fig_data_dir().map(|dir| dir.join("shell").join("all.json"))
 }

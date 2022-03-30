@@ -29,6 +29,14 @@ impl SystemdUnit {
             unit.push_str(&format!("ExecStart={}\n", exec_start));
         }
 
+        if let Some(standard_output) = &self.service.standard_output {
+            unit.push_str(&format!("StandardOutput={}\n", standard_output));
+        }
+
+        if let Some(standard_error) = &self.service.standard_error {
+            unit.push_str(&format!("StandardError={}\n", standard_error));
+        }
+
         if let Some(restart) = &self.service.restart {
             unit.push_str(&format!("Restart={}\n", restart));
         }
@@ -50,6 +58,16 @@ impl SystemdUnit {
 
     pub fn exec_start(mut self, exec_start: impl Into<String>) -> SystemdUnit {
         self.service.exec_start = Some(exec_start.into());
+        self
+    }
+
+    pub fn standard_output(mut self, standard_output: impl Into<String>) -> SystemdUnit {
+        self.service.standard_output = Some(standard_output.into());
+        self
+    }
+
+    pub fn standard_error(mut self, standard_error: impl Into<String>) -> SystemdUnit {
+        self.service.standard_error = Some(standard_error.into());
         self
     }
 
@@ -79,6 +97,8 @@ struct UnitService {
     exec_start: Option<String>,
     restart: Option<String>,
     restart_sec: Option<usize>,
+    standard_output: Option<String>,
+    standard_error: Option<String>,
 }
 
 #[derive(Debug, Clone, Default)]
