@@ -1680,6 +1680,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "fig-tauri"
+version = "0.1.0"
+dependencies = [
+ "cfg-if 1.0.0",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+]
+
+[[package]]
 name = "fig-telemetry"
 version = "0.1.0"
 dependencies = [
