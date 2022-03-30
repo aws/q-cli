@@ -1695,14 +1695,34 @@ impl<T: EventListener> Handler for Term<T> {
         trace!("Fig new command");
 
         self.shell_state.cmd_cursor = Some(self.grid().cursor.point);
+        trace!("New command cursor: {:?}", self.shell_state.cmd_cursor);
+
+        // Add work around for emojis
+        if let Ok(cursor_offset) = std::env::var("FIG_PROMPT_OFFSET_WORKAROUND") {
+            if let Ok(offset) = cursor_offset.parse::<i32>() {
+                self.shell_state.cmd_cursor = self.shell_state.cmd_cursor.map(|cursor| Point {
+                    column: Column((cursor.column.0 as i32 - offset).max(0) as usize),
+                    line: cursor.line,
+                });
+
+                trace!(
+                    "Command cursor offset by '{}' to {:?}",
+                    offset,
+                    self.shell_state.cmd_cursor
+                );
+            }
+        }
+
         self.shell_state.preexec = false;
 
         self.event_proxy
             .send_event(Event::Prompt, &self.shell_state);
+        trace!("Prompt event sent");
 
         if let Some(command) = &self.shell_state.command_info {
             self.event_proxy
-                .send_event(Event::CommandInfo(command), &self.shell_state)
+                .send_event(Event::CommandInfo(command), &self.shell_state);
+            trace!("Command info event sent");
         }
     }
 
@@ -1731,6 +1751,7 @@ impl<T: EventListener> Handler for Term<T> {
 
         self.event_proxy
             .send_event(Event::PreExec, &self.shell_state);
+        trace!("PreExec event sent");
 
         let buffer = self
             .get_current_buffer()
