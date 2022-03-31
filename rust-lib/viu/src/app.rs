@@ -7,7 +7,7 @@ use std::io::{stdin, stdout, BufReader, Error, ErrorKind, Read, Seek};
 use std::sync::mpsc;
 use std::{thread, time::Duration};
 use viuer::ViuResult;
-use anes::{ClearBuffer};
+use anes::{ClearBuffer, HideCursor, ShowCursor};
 use std::io::Write;
 
 type TxRx<'a> = (&'a mpsc::Sender<bool>, &'a mpsc::Receiver<bool>);
@@ -20,6 +20,9 @@ pub fn run(mut conf: Config) -> ViuResult {
     let (tx_print, rx_ctrlc) = mpsc::channel();
 
     let cleanup_message = conf.cleanup_message.to_string();
+    
+    // Hide cursor
+    anes::execute!(&mut stdout(), HideCursor).ok();
 
     //handle Ctrl-C in order to clean up after ourselves
     ctrlc::set_handler(move || {
@@ -41,10 +44,9 @@ pub fn run(mut conf: Config) -> ViuResult {
             }
         }
         
-        // Clear the entire screen
-        let mut stdout = std::io::stdout();
+        // Clear the entire screen & bring back the cursor
+        anes::queue!(&mut stdout(), ClearBuffer::All, ShowCursor).ok();
 
-        anes::execute!(&mut stdout, ClearBuffer::All, ClearBuffer::Below)?;
         print!("{}", cleanup_message);
         std::process::exit(0);
     })
@@ -55,7 +57,7 @@ pub fn run(mut conf: Config) -> ViuResult {
     if conf.files.len() == 1 && conf.files[0] == "-" {
         let stdin = stdin();
         let mut handle = stdin.lock();
-
+        
         let mut buf: Vec<u8> = Vec::new();
         let _ = handle.read_to_end(&mut buf)?;
 

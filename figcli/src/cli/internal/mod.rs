@@ -21,6 +21,7 @@ use std::{
 };
 use tracing::{debug, error, info, trace};
 use viu::{Config, run};
+use anes::{ClearBuffer, HideCursor};
 
 #[derive(Debug, Args)]
 #[clap(group(
