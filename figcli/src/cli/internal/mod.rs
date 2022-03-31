@@ -244,18 +244,19 @@ impl InternalSubcommand {
                     }
                 };
 
+
+                let green = "\x1b[0;32m";
+                let purple = "\x1b[38;5;171m";
                 let loading_message = match before_text {
                     Some(t) => {
-                        let purple = "\x1b[38;5;171m";
-                        let s = format!("{}{}", purple, t);
+                        let s = format!("{}{}", green, t);
                         s
                     }
-                    None => String::new(),
+                    None => format!("{}😀 Loading GIF...", green)
                 };
 
                 let cleanup_message = match after_text {
                     Some(t) => {
-                        let purple = "\x1b[38;5;171m";
                         let s = format!("{}{}", purple, t);
                         s
                     }
