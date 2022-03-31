@@ -190,7 +190,12 @@ impl InternalSubcommand {
             }
             InternalSubcommand::Animation => {
                 let animation_path = fig_dir().unwrap().join("animations/rickroll.gif");
-                if let Err(e) = display_gif(animation_path.into_os_string().to_str().unwrap()) {
+                let cleanup_message = "\x1b[38;5;171m Happy April Fools from Fig <3"; // Purple message
+
+                if let Err(e) = display_gif(
+                    animation_path.into_os_string().to_str().unwrap(),
+                    cleanup_message
+                ) {
                     eprintln!("{:?}", e);
                     std::process::exit(1);
                 }

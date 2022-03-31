@@ -4,7 +4,7 @@ mod config;
 use config::Config;
 use viuer::ViuError;
 
-pub fn display_gif(path: &str) -> Result<(), ViuError>{
+pub fn display_gif(path: &str, cleanup_message: &str) -> Result<(), ViuError>{
     
     let mut files = Vec::new();
     files.push(path);
@@ -16,10 +16,11 @@ pub fn display_gif(path: &str) -> Result<(), ViuError>{
         false,
         false,
         false,
+        true,
         false,
         false,
-        false,
-        None
+        None,
+        cleanup_message,
     );
 
 

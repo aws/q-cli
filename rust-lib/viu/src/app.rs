@@ -17,6 +17,8 @@ pub fn run(mut conf: Config) -> ViuResult {
     let (tx_ctrlc, rx_print) = mpsc::channel();
     let (tx_print, rx_ctrlc) = mpsc::channel();
 
+    let cleanup_message = conf.cleanup_message.to_string();
+
     //handle Ctrl-C in order to clean up after ourselves
     ctrlc::set_handler(move || {
         //if ctrlc is received tell the infinite gif loop to stop drawing
@@ -28,7 +30,7 @@ pub fn run(mut conf: Config) -> ViuResult {
         let _ = rx_ctrlc
             .recv()
             .expect("Could not receive signal to clean up terminal.");
-
+        
         if let Err(e) = execute!(stdout(), Clear(ClearType::FromCursorDown)) {
             if e.kind() == ErrorKind::BrokenPipe {
                 //Do nothing. Output is probably piped to `head` or a similar tool
@@ -36,6 +38,7 @@ pub fn run(mut conf: Config) -> ViuResult {
                 panic!("{}", e);
             }
         }
+        print!("{}", cleanup_message);
         std::process::exit(0);
     })
     .map_err(|_| Error::new(ErrorKind::Other, "Could not setup Ctrl-C handler."))?;

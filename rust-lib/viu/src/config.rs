@@ -9,6 +9,7 @@ pub struct Config<'a> {
     pub static_gif: bool,
     pub viuer_config: ViuerConfig,
     pub frame_duration: Option<Duration>,
+    pub cleanup_message: &'a str,
 }
 
 impl<'a> Config<'a> {
@@ -21,7 +22,8 @@ impl<'a> Config<'a> {
         use_blocks: bool,
         name: bool,
         recursive: bool,
-        frames_per_second: Option<i32>
+        frames_per_second: Option<i32>,
+        cleanup_message: &'a str,
     ) -> Config<'a> {
         
         let files = match files {
@@ -57,6 +59,7 @@ impl<'a> Config<'a> {
             static_gif,
             viuer_config,
             frame_duration,
+            cleanup_message
         }
     }
 
@@ -75,6 +78,7 @@ impl<'a> Config<'a> {
                 ..Default::default()
             },
             frame_duration: None,
+            cleanup_message: ""
         }
     }
 }
