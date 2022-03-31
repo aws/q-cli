@@ -35,7 +35,7 @@ enum FigMessageType {
 ///   - The message, in this case a protobuf message
 #[derive(Debug, Clone)]
 pub struct FigMessage {
-    inner: Bytes,
+    pub inner: Bytes,
     _message_type: FigMessageType,
 }
 

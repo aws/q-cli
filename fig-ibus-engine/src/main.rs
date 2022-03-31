@@ -1,8 +1,8 @@
-use glib::{g_log, StaticType};
+use glib::{g_log, LogLevel, StaticType};
 use ibus::traits::{BusExt, FactoryExt};
 
 mod imp {
-    use glib::g_log;
+    use glib::{g_log, LogLevel};
     use glib::subclass::prelude::*;
     use ibus::traits::EngineExt;
     use parking_lot::Mutex;

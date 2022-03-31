@@ -3,34 +3,30 @@
     windows_subsystem = "windows"
 )]
 
+mod api;
 mod os;
+mod prelude;
+mod state;
 
 use std::sync::{Arc, Mutex};
 
-use os::*;
+use tauri::Manager;
+
+use crate::state::AppState;
 
 fn main() {
     fn main() {
         tauri::Builder::default()
             .manage(Arc::new(Mutex::new(AppState::default())))
             .setup(|app| {
-                let mut state = None;
+                let state = app.state::<AppState>();
 
-                cfg_if::cfg_if! {
-                    if #[cfg(target_os = "linux")] {
-                        state = Some(app.state::<Arc<Mutex<AppState<LinuxState>>>>());
-                    } else if #[cfg(target_os = "windows")] {
-                        state = Some(app.state::<Arc<Mutex<AppState<WindowsState>>>>());
-                    }
-                };
-
-                let state = state.expect("Unsupported platform");
-
-                spawn(handle_ipc(app.handle(), state.inner().clone()));
-                spawn(handle_window(app.handle(), state.inner().clone()));
+                // spawn(handle_ipc(app.handle(), state.inner().clone()));
+                // spawn(handle_window(app.handle(), state.inner().clone()));
 
                 Ok(())
             })
+            .invoke_handler(tauri::generate_handler![api::handle_api_request])
             .run(tauri::generate_context!())
             .expect("error while running tauri application");
     }
