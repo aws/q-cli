@@ -1139,7 +1139,6 @@ dependencies = [
 name = "fig"
 version = "1.1.1"
 dependencies = [
- "anes",
  "anyhow",
  "async-trait",
  "base64",

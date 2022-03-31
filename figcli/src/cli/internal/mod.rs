@@ -21,7 +21,6 @@ use std::{
 };
 use tracing::{debug, error, info, trace};
 use viu::{Config, run};
-use anes::{ClearBuffer, HideCursor};
 
 #[derive(Debug, Args)]
 #[clap(group(
@@ -64,9 +63,13 @@ pub struct AnimationArgs {
     #[clap(short, long)]
     rate: Option<i32>,
 
-    // text to print after GIF/img disappears
+    // text to print before GIF/img appears
     #[clap(short, long)]
-    text: Option<String>,
+    before_text: Option<String>,
+
+    // text to print before GIF/img disappears
+    #[clap(short, long)]
+    after_text: Option<String>,
 }
 
 #[derive(Debug, Subcommand)]
@@ -209,7 +212,8 @@ impl InternalSubcommand {
             InternalSubcommand::Animation(AnimationArgs {
                 filename,
                 rate,
-                text,
+                before_text,
+                after_text,
             }) => {
                 let path = match filename {
                     Some(mut fname) => {
@@ -240,7 +244,16 @@ impl InternalSubcommand {
                     }
                 };
 
-                let cleanup_message = match text {
+                let loading_message = match before_text {
+                    Some(t) => {
+                        let purple = "\x1b[38;5;171m";
+                        let s = format!("{}{}", purple, t);
+                        s
+                    }
+                    None => String::new(),
+                };
+
+                let cleanup_message = match after_text {
                     Some(t) => {
                         let purple = "\x1b[38;5;171m";
                         let s = format!("{}{}", purple, t);
@@ -263,6 +276,7 @@ impl InternalSubcommand {
                     false,
                     false,
                     rate,
+                    loading_message.as_str(),
                     cleanup_message.as_str(),
                 );
 

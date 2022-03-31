@@ -19,10 +19,11 @@ pub fn run(mut conf: Config) -> ViuResult {
     let (tx_ctrlc, rx_print) = mpsc::channel();
     let (tx_print, rx_ctrlc) = mpsc::channel();
 
+    let loading_message = conf.loading_message.to_string();
     let cleanup_message = conf.cleanup_message.to_string();
     
     // Hide cursor
-    anes::execute!(&mut stdout(), HideCursor).ok();
+    anes::execute!(&mut stdout(), loading_message, HideCursor).ok();
 
     //handle Ctrl-C in order to clean up after ourselves
     ctrlc::set_handler(move || {

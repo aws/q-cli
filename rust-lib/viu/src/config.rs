@@ -9,6 +9,7 @@ pub struct Config<'a> {
     pub static_gif: bool,
     pub viuer_config: ViuerConfig,
     pub frame_duration: Option<Duration>,
+    pub loading_message: &'a str,
     pub cleanup_message: &'a str,
 }
 
@@ -23,6 +24,7 @@ impl<'a> Config<'a> {
         name: bool,
         recursive: bool,
         frames_per_second: Option<i32>,
+        loading_message: &'a str,
         cleanup_message: &'a str,
     ) -> Config<'a> {
         
@@ -59,7 +61,8 @@ impl<'a> Config<'a> {
             static_gif,
             viuer_config,
             frame_duration,
-            cleanup_message
+            loading_message,
+            cleanup_message,
         }
     }
 
