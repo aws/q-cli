@@ -10,24 +10,19 @@ mod state;
 
 use std::sync::{Arc, Mutex};
 
-use tauri::Manager;
-
 use crate::state::AppState;
 
 fn main() {
-    fn main() {
-        tauri::Builder::default()
-            .manage(Arc::new(Mutex::new(AppState::default())))
-            .setup(|app| {
-                let state = app.state::<AppState>();
-
-                // spawn(handle_ipc(app.handle(), state.inner().clone()));
-                // spawn(handle_window(app.handle(), state.inner().clone()));
-
-                Ok(())
-            })
-            .invoke_handler(tauri::generate_handler![api::handle_api_request])
-            .run(tauri::generate_context!())
-            .expect("error while running tauri application");
-    }
+    tauri::Builder::default()
+        .manage(Arc::new(Mutex::new(AppState::default())))
+        // .setup(|app| {
+        //     use tauri::Manager;
+        //     let state = app.state::<AppState>();
+        //     tauri::async_runtime::spawn(handle_ipc(app.handle(), state.inner().clone()));
+        //     tauri::async_runtime::spawn(handle_window(app.handle(), state.inner().clone()));
+        //     Ok(())
+        // })
+        .invoke_handler(tauri::generate_handler![api::handle_api_request])
+        .run(tauri::generate_context!())
+        .expect("error while running tauri application");
 }
