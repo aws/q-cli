@@ -15,10 +15,12 @@ use std::{
     path::PathBuf,
     process::exit,
     str::FromStr,
+    fs,
 };
 use tracing::{debug, error, info, trace};
 use fig_directories::fig_dir;
 use viu::{display_gif};
+use rand::seq::IteratorRandom;
 
 #[derive(Debug, Args)]
 #[clap(group(
@@ -51,6 +53,14 @@ pub struct InstallArgs {
     force: bool,
 }
 
+#[derive(Debug, Args)]
+pub struct AnimationArgs {
+    #[clap(short, long)]
+    filename: Option<String>,
+    #[clap(short, long)]
+    text: Option<String>,
+}
+
 #[derive(Debug, Subcommand)]
 #[clap(hide = true, alias = "_")]
 pub enum InternalSubcommand {
@@ -73,7 +83,7 @@ pub enum InternalSubcommand {
     },
     WarnUserWhenUninstallingIncorrectly,
 
-    Animation,
+    Animation(AnimationArgs),
 }
 
 pub fn install_cli_from_args(install_args: InstallArgs) -> Result<()> {
@@ -188,13 +198,44 @@ impl InternalSubcommand {
                     .show_alert()
                     .unwrap();
             }
-            InternalSubcommand::Animation => {
-                let animation_path = fig_dir().unwrap().join("animations/rickroll.gif");
-                let cleanup_message = "\x1b[38;5;171m Happy April Fools from Fig <3"; // Purple message
+            InternalSubcommand::Animation(AnimationArgs{filename,text}) => {
+                let path = match filename {
+                    Some(mut fname) => {
+                        let animations_folder = fig_dir().unwrap().join("animations");
+                        if fname == "random" {
+                            // pick a random animation file from animations folder
+                            let paths = fs::read_dir(&animations_folder).unwrap();
+                            match paths.choose(&mut rand::thread_rng()).unwrap() {
+                                Ok(p) => {
+                                    fname = p.file_name().into_string().unwrap();
+                                }
+                                Err(e) => {
+                                    eprintln!("{}", e);
+                                    std::process::exit(1);
+                                }
+                            }
+                        }
+                        
+                        animations_folder.join(fname).into_os_string().into_string().unwrap()
+                    }
+                    None => {
+                        eprintln!("filename cannot be empty");
+                        std::process::exit(1);
+                    }
+                };
+
+                let cleanup_message = match text {
+                    Some(t) => {
+                        let purple = "\x1b[38;5;171m";
+                        let s = format!("{}{}", purple, t);
+                        s
+                    }
+                    None => String::new()
+                };
 
                 if let Err(e) = display_gif(
-                    animation_path.into_os_string().to_str().unwrap(),
-                    cleanup_message
+                    path.as_str(),
+                    cleanup_message.as_str()
                 ) {
                     eprintln!("{:?}", e);
                     std::process::exit(1);
