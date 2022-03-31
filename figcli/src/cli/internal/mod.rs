@@ -17,6 +17,8 @@ use std::{
     str::FromStr,
 };
 use tracing::{debug, error, info, trace};
+use fig_directories::fig_dir;
+use viu::{display_gif};
 
 #[derive(Debug, Args)]
 #[clap(group(
@@ -70,6 +72,8 @@ pub enum InternalSubcommand {
         binary: bool,
     },
     WarnUserWhenUninstallingIncorrectly,
+
+    Animation,
 }
 
 pub fn install_cli_from_args(install_args: InstallArgs) -> Result<()> {
@@ -183,6 +187,13 @@ impl InternalSubcommand {
                     .set_text("Please run `fig uninstall` rather than moving the app to the Trash.")
                     .show_alert()
                     .unwrap();
+            }
+            InternalSubcommand::Animation => {
+                let animation_path = fig_dir().unwrap().join("animations/rickroll.gif");
+                if let Err(e) = display_gif(animation_path.into_os_string().to_str().unwrap()) {
+                    eprintln!("{:?}", e);
+                    std::process::exit(1);
+                }
             }
         }
         Ok(())
