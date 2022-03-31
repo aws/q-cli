@@ -2,6 +2,7 @@ import * as WindowPosition from './position';
 import * as Settings from './settings';
 import * as EditBufferNotifications from './editbuffer';
 import * as PTY from './pty';
+import * as Process from './process';
 import * as Shell from './shell';
 import * as Keybindings from './keybindings';
 import * as Defaults from './defaults';
@@ -10,12 +11,12 @@ import * as fs from './filesystem';
 import * as Config from './config';
 import * as Native from './native';
 import * as Debugger from './debugger';
+import * as State from './state';
 
 import * as Fig from './fig.pb';
 import * as Internal from './requests';
 
-// @ts-ignore
-window.f = {
+const lib = {
   WindowPosition,
   Settings,
   EditBufferNotifications,
@@ -29,6 +30,8 @@ window.f = {
   Native,
   Internal,
   Debugger,
+  Process,
+  State
 };
 
 export {
@@ -46,4 +49,14 @@ export {
   Internal,
   Fig,
   Debugger,
+  Process,
+  State
 };
+
+declare global {
+  interface Window {
+    f: typeof lib;
+  }
+}
+
+window.f = lib;

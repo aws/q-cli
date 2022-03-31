@@ -1,56 +1,86 @@
-use crate::util::shell::{Shell, When};
+use crate::{
+    dotfiles::api::DotfileData,
+    util::{
+        app_path_from_bundle_id,
+        shell::{Shell, When},
+        terminal::Terminal,
+    },
+};
 use anyhow::{Context, Result};
 use crossterm::tty::IsTty;
-use serde::{Deserialize, Serialize};
-use std::io::stdin;
+use fig_auth::is_logged_in;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct DotfileData {
-    pub dotfile: String,
-    #[serde(with = "time::serde::rfc3339")]
-    pub updated_at: time::OffsetDateTime,
+use std::{borrow::Cow, env, fmt::Display, io::stdin};
+
+#[derive(PartialEq)]
+enum GuardAssignment {
+    BeforeSourcing,
+    AfterSourcing,
 }
 
-fn guard_source<F: Fn() -> Option<String>>(
-    shell: &Shell,
-    export: bool,
-    guard_var: impl AsRef<str>,
-    get_source: F,
-) -> Option<String> {
-    match get_source() {
-        Some(source) => {
-            let mut output = Vec::new();
-
-            output.push(match shell {
-                Shell::Bash | Shell::Zsh => {
-                    format!("if [ -z \"${{{}}}\" ]; then", guard_var.as_ref())
-                }
-                Shell::Fish => format!("if test -z \"${}\"", guard_var.as_ref()),
-            });
-
-            output.push(source);
-
-            output.push(match (shell, export) {
-                (Shell::Bash | Shell::Zsh, false) => format!("{}=1", guard_var.as_ref()),
-                (Shell::Bash | Shell::Zsh, true) => format!("export {}=1", guard_var.as_ref()),
-                (Shell::Fish, false) => format!("set -g {} 1", guard_var.as_ref()),
-                (Shell::Fish, true) => format!("set -gx {} 1", guard_var.as_ref()),
-            });
-
-            output.push(match shell {
-                Shell::Bash | Shell::Zsh => "fi\n".into(),
-                Shell::Fish => "end\n".into(),
-            });
-
-            Some(output.join("\n"))
-        }
-        _ => None,
+#[must_use]
+fn assign_shell_variable(shell: &Shell, name: impl Display, exported: bool) -> String {
+    match (shell, exported) {
+        (Shell::Bash | Shell::Zsh, false) => format!("{name}=1"),
+        (Shell::Bash | Shell::Zsh, true) => format!("export {name}=1"),
+        (Shell::Fish, false) => format!("set -g {name} 1"),
+        (Shell::Fish, true) => format!("set -gx {name} 1"),
     }
 }
 
+#[must_use]
+fn guard_source(
+    shell: &Shell,
+    export: bool,
+    guard_var: impl Display,
+    assignment: GuardAssignment,
+    source: impl Into<Cow<'static, str>>,
+) -> String {
+    let mut output: Vec<Cow<'static, str>> = Vec::with_capacity(4);
+
+    output.push(match shell {
+        Shell::Bash | Shell::Zsh => format!("if [ -z \"${{{guard_var}}}\" ]; then").into(),
+        Shell::Fish => format!("if test -z \"${guard_var}\"").into(),
+    });
+
+    match assignment {
+        GuardAssignment::BeforeSourcing => {
+            // If script may trigger rc file to be rerun, guard assignment must happen first to avoid recursion
+            output.push(assign_shell_variable(shell, guard_var, export).into());
+            output.push(source.into());
+        }
+        GuardAssignment::AfterSourcing => {
+            output.push(source.into());
+            output.push(assign_shell_variable(shell, guard_var, export).into());
+        }
+    }
+
+    output.push(match shell {
+        Shell::Bash | Shell::Zsh => "fi\n".into(),
+        Shell::Fish => "end\n".into(),
+    });
+
+    output.join("\n")
+}
+
 fn shell_init(shell: &Shell, when: &When) -> Result<String> {
+    let should_source = fig_settings::state::get_bool("shell-integrations.enabled")
+        .ok()
+        .flatten()
+        .unwrap_or(true);
+
+    if !should_source {
+        return Ok(guard_source(
+            shell,
+            false,
+            "FIG_SHELL_INTEGRATION_DISABLED",
+            GuardAssignment::AfterSourcing,
+            "echo '[Debug]: fig shell integration is disabled.'",
+        ));
+    }
+
     let mut to_source = String::new();
+
     if let When::Post = when {
         // Add dotfiles sourcing
         let get_dotfile_source = || {
@@ -65,34 +95,111 @@ fn shell_init(shell: &Shell, when: &When) -> Result<String> {
             Some(source.dotfile)
         };
 
-        if let Some(source) = guard_source(shell, false, "FIG_DOTFILES_SOURCED", get_dotfile_source)
-        {
-            to_source.push_str(&source);
+        if let Some(source) = get_dotfile_source() {
+            to_source.push_str(&guard_source(
+                shell,
+                false,
+                "FIG_DOTFILES_SOURCED",
+                GuardAssignment::AfterSourcing,
+                source,
+            ));
         }
 
-        if stdin().is_tty() {
-            let get_prompts_source = || -> Option<String> { Some("fig app prompts".into()) };
+        if stdin().is_tty() && env::var_os("PROCESS_LAUNCHED_BY_FIG").is_none() {
+            // if no value, assume that we have seen onboarding already.
+            // this is explictly set in onboarding in macOS app.
+            let has_see_onboarding: bool = fig_settings::state::get_bool("user.onboarding")
+                .ok()
+                .flatten()
+                .unwrap_or(true);
 
-            if let Some(source) =
-                guard_source(shell, true, "FIG_CHECKED_PROMPTS", get_prompts_source)
+            let terminal = Terminal::current_terminal();
+
+            if is_logged_in()
+                && !has_see_onboarding
+                && [Some(Terminal::Iterm), Some(Terminal::TerminalApp)].contains(&terminal)
             {
-                to_source.push_str(&source);
+                to_source.push_str(match shell {
+                    Shell::Bash | Shell::Zsh => "(fig restart daemon &> /dev/null &)\n",
+                    Shell::Fish => "begin; fig restart daemon &> /dev/null &; end\n",
+                });
+
+                to_source.push_str("fig app onboarding\n")
+            } else {
+                // not showing onboarding
+                to_source.push_str(&guard_source(
+                    shell,
+                    false,
+                    "FIG_CHECKED_PROMPTS",
+                    GuardAssignment::AfterSourcing,
+                    match shell {
+                        Shell::Bash | Shell::Zsh => "(fig app prompts &)",
+                        Shell::Fish => "begin; fig app prompts &; end",
+                    },
+                ));
             }
         }
     }
 
+    let is_jetbrains_terminal = Terminal::is_jetbrains_terminal();
+
+    if when == &When::Pre && shell == &Shell::Bash && is_jetbrains_terminal {
+        // JediTerm does not launch as a 'true' login shell, so our normal "shopt -q login_shell" check does not work.
+        // Thus, FIG_IS_LOGIN_SHELL will be incorrect. We must manually set it so the user's bash_profile is sourced.
+        // https://github.com/JetBrains/intellij-community/blob/master/plugins/terminal/resources/jediterm-bash.in
+        to_source.push_str("FIG_IS_LOGIN_SHELL=1")
+    }
+
     let shell_integration_source = shell.get_fig_integration_source(when);
     to_source.push('\n');
-    to_source.push_str(&shell_integration_source);
+    to_source.push_str(shell_integration_source);
+
+    if when == &When::Pre && is_jetbrains_terminal {
+        // Manually call JetBrains shell integration after exec-ing to figterm.
+        // This may recursively call out to bashrc/zshrc so make sure to assign guard variable first.
+
+        let get_jetbrains_source = if let Some(bundle_id) = std::env::var_os("__CFBundleIdentifier")
+        {
+            if let Some(bundle) = app_path_from_bundle_id(bundle_id) {
+                // The source for JetBrains shell integrations can be found here.
+                // https://github.com/JetBrains/intellij-community/tree/master/plugins/terminal/resources
+                match shell {
+                    Shell::Bash => Some(format!(
+                        "source '{bundle}/Contents/plugins/terminal/jediterm-bash.in'",
+                    )),
+                    Shell::Zsh => Some(format!(
+                        "source '{bundle}/Contents/plugins/terminal/.zshenv'",
+                    )),
+                    Shell::Fish => Some(format!(
+                        "source '{bundle}/Contents/plugins/terminal/fish/config.fish'",
+                    )),
+                }
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+
+        if let Some(source) = get_jetbrains_source {
+            to_source.push_str(&guard_source(
+                shell,
+                false,
+                "FIG_JETBRAINS_SHELL_INTEGRATION",
+                GuardAssignment::BeforeSourcing,
+                source,
+            ));
+        }
+    }
 
     Ok(to_source)
 }
 
 pub async fn shell_init_cli(shell: &Shell, when: &When) -> Result<()> {
-    println!("# {:?} for {:?}", when, shell);
+    println!("# {when} for {shell}");
     match shell_init(shell, when) {
-        Ok(source) => println!("{}", source),
-        Err(err) => println!("# Could not load source: {}", err),
+        Ok(source) => println!("{source}"),
+        Err(err) => println!("# Could not load source: {err}"),
     }
     Ok(())
 }

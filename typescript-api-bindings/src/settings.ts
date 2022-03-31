@@ -3,7 +3,7 @@ import { _subscribe } from './notifications';
 
 import {
   sendGetSettingsPropertyRequest,
-  sendUpdateSettingsPropertyRequest,
+  sendUpdateSettingsPropertyRequest
 } from './requests';
 
 export const didChange = {
@@ -23,29 +23,30 @@ export const didChange = {
         return false;
       }
     );
-  },
+  }
 };
 
 export async function get(key: string) {
   return sendGetSettingsPropertyRequest({
-    key: key,
+    key
   });
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function set(key: string, value: any): Promise<void> {
   return sendUpdateSettingsPropertyRequest({
-    key: key,
-    value: JSON.stringify(value),
+    key,
+    value: JSON.stringify(value)
   });
 }
 
 export async function remove(key: string): Promise<void> {
   return sendUpdateSettingsPropertyRequest({
-    key: key,
+    key
   });
 }
 
 export async function current() {
-  let all = await sendGetSettingsPropertyRequest({});
+  const all = await sendGetSettingsPropertyRequest({});
   return JSON.parse(all.jsonBlob ?? '{}');
 }

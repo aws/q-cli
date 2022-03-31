@@ -1,19 +1,21 @@
 use fig_directories::home_dir;
+use fig_telemetry::Source;
 use std::path::{Path, PathBuf};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tracing::{error, info};
 
-use crate::cli::installation::{uninstall_cli, InstallComponents};
+use crate::{
+    cli::installation::{uninstall_cli, InstallComponents},
+    daemon::IS_RUNNING_DAEMON,
+};
 
 async fn remove_in_dir_with_prefix(dir: &Path, prefix: &str) {
     if let Ok(mut entries) = tokio::fs::read_dir(dir).await {
-        while let Ok(entry) = entries.next_entry().await {
-            if let Some(entry) = entry {
-                if let Some(name) = entry.file_name().to_str() {
-                    if name.starts_with(prefix) {
-                        tokio::fs::remove_file(entry.path()).await.ok();
-                        tokio::fs::remove_dir_all(entry.path()).await.ok();
-                    }
+        while let Ok(Some(entry)) = entries.next_entry().await {
+            if let Some(name) = entry.file_name().to_str() {
+                if name.starts_with(prefix) {
+                    tokio::fs::remove_file(entry.path()).await.ok();
+                    tokio::fs::remove_dir_all(entry.path()).await.ok();
                 }
             }
         }
@@ -21,16 +23,23 @@ async fn remove_in_dir_with_prefix(dir: &Path, prefix: &str) {
 }
 
 pub async fn uninstall_mac_app() {
+    // TODO: mirror mac app logic and use this as source of truth.
     // Send uninstall telemetry event
     let tel_join = tokio::task::spawn(async {
         match fig_telemetry::SegmentEvent::new("Uninstall App") {
             Ok(mut event) => {
-                if let Err(err) = event.add_default_properties() {
+                if let Err(err) = event.add_default_properties(if *IS_RUNNING_DAEMON.lock() {
+                    Source::Daemon
+                } else {
+                    Source::Cli
+                }) {
                     error!(
                         "Could not add default properties to telemetry event: {}",
                         err
                     );
                 }
+
+                event.add_property("source", "fig app uninstall");
 
                 if let Err(err) = event.send_event().await {
                     error!("Could not send telemetry event: {}", err);
@@ -76,7 +85,7 @@ pub async fn uninstall_mac_app() {
         .await
         .ok();
     tokio::process::Command::new("defaults")
-        .args(["write", "uuid", &uuid])
+        .args(["write", "com.mschrage.fig", "uuid", &uuid])
         .output()
         .await
         .ok();
@@ -169,6 +178,14 @@ pub async fn uninstall_mac_app() {
     let app_path = PathBuf::from("Applications").join("Fig.app");
     if app_path.exists() {
         tokio::fs::remove_dir_all(&app_path).await.ok();
+    }
+
+    // Delete data dir
+    if let Some(fig_data_dir) = fig_directories::fig_data_dir() {
+        match tokio::fs::remove_dir_all(&fig_data_dir).await {
+            Ok(_) => info!("Removed {}", fig_data_dir.display()),
+            Err(err) => error!("Could not remove {}: {}", fig_data_dir.display(), err),
+        }
     }
 
     info!("Deleted app");

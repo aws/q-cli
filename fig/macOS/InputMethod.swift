@@ -276,7 +276,7 @@ extension InputMethod: IntegrationProvider {
     return .installed
   }
 
-  func uninstall() -> Bool {
+  @discardableResult func uninstall() -> Bool {
 
     InputMethod.log("Uninstalling...")
 
@@ -296,10 +296,10 @@ extension InputMethod: IntegrationProvider {
     // we'll recieve OSStatus -50 when trying to select the InputSource
     InputMethod.log("After uninstalling the input method, the macOS app" +
                     "must be restarted before it can be installed again")
-    
+
     return true
   }
-  
+
   fileprivate func _install() -> InstallationStatus {
     let url = URL(fileURLWithPath: self.originalBundlePath)
     let name = url.lastPathComponent

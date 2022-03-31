@@ -1,4 +1,4 @@
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Context, Result};
 use clap::{ArgGroup, Args, Subcommand};
 use crossterm::style::Stylize;
 use fig_ipc::command::restart_settings_listener;
@@ -20,12 +20,12 @@ pub enum LocalStateSubcommand {
 pub struct LocalStateArgs {
     #[clap(subcommand)]
     cmd: Option<LocalStateSubcommand>,
-    /// key
+    /// Key of the state
     key: Option<String>,
-    /// value
+    /// Value of the state
     value: Option<String>,
     #[clap(long, short)]
-    /// delete
+    /// Delete the state
     delete: bool,
 }
 
@@ -42,52 +42,48 @@ impl LocalStateArgs {
         }
 
         match self.cmd {
-            Some(LocalStateSubcommand::Init) => {
-                let res = restart_settings_listener().await;
-
-                if res.is_err() {
-                    print_connection_error!();
-                    return res;
-                } else {
-                    println!("\nState listener restarted.\n");
+            Some(LocalStateSubcommand::Init) => match restart_settings_listener().await {
+                Ok(()) => {
+                    println!("\nState listener restarted\n");
+                    Ok(())
                 }
-            }
+                Err(err) => {
+                    print_connection_error!();
+                    Err(err)
+                }
+            },
             Some(LocalStateSubcommand::Open) => {
                 let path = fig_settings::state::state_path().context("Could not get state path")?;
-                if !Command::new("open").arg(path).status()?.success() {
-                    anyhow::bail!("Could not open state file.");
+                match Command::new("open").arg(path).status()?.success() {
+                    true => Ok(()),
+                    false => Err(anyhow!("Could not open state file")),
                 }
             }
             None => match &self.key {
                 Some(key) => match (&self.value, self.delete) {
                     (None, false) => match fig_settings::state::get_value(key)? {
                         Some(value) => {
-                            println!("{}: {}", key, serde_json::to_string_pretty(&value)?);
+                            println!("{}", serde_json::to_string_pretty(&value)?);
+                            Ok(())
                         }
-                        None => {
-                            println!("No value associated with {}.", key);
-                        }
+                        None => Err(anyhow!("No value associated with {}", key)),
                     },
                     (None, true) => {
                         fig_settings::state::remove_value(key)?;
                         println!("Successfully updated state");
+                        Ok(())
                     }
                     (Some(value), false) => {
                         let value: serde_json::Value =
                             serde_json::from_str(value).unwrap_or_else(|_| json!(value));
                         fig_settings::state::set_value(key, value)?;
                         println!("Successfully updated state");
+                        Ok(())
                     }
-
-                    (Some(_), true) => {
-                        eprintln!("Cannot delete a value with a value.");
-                    }
+                    (Some(_), true) => Err(anyhow!("Cannot delete a value with a value")),
                 },
-                None => {
-                    eprintln!("{}", "No key specified.".red());
-                }
+                None => Err(anyhow!("{}", "No key specified")),
             },
         }
-        Ok(())
     }
 }

@@ -1,0 +1,33 @@
+name: 'Publish fig-cli spec version'
+on:
+  push:
+    paths: figcli/**
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:    
+  push-to-fig-autocomplete:
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: figcli 
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v2
+      - name: Setup Rust stable
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+      - uses: Swatinem/rust-cache@v1
+      - name: Generate the spec
+        run: |
+          cargo run -- completion fig > spec.ts
+      - name: Create Autocomplete PR
+        uses: withfig/push-to-fig-autocomplete-action@v1
+        with:
+          token: ${{ secrets.FIG_BOT_TOKEN }}
+          autocomplete-spec-name: 'fig/fig@latest'
+          spec-path: figcli/spec.ts
+          integration: clap

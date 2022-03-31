@@ -1,8 +1,8 @@
 contains $HOME/.fig/bin $fish_user_paths
-or set -Ua fish_user_paths $HOME/.fig/bin
+or set -a fish_user_paths $HOME/.fig/bin
 
 contains $HOME/.local/bin $fish_user_paths
-or set -Ua fish_user_paths $HOME/.local/bin
+or set -a fish_user_paths $HOME/.local/bin
 
 if [ ! -z "$FIG_NEW_SESSION" ]
   set --erase TERM_SESSION_ID
@@ -15,6 +15,7 @@ if   [ "$TERM_PROGRAM" != "WarpTerminal" ] \
   && [ -z "$INSIDE_EMACS" ] \
   && [ "$__CFBundleIdentifier" != "com.vandyke.SecureCRT" ] \
   && [ -t 1 ] \
+  && [ -z "$PROCESS_LAUNCHED_BY_FIG" ] \
   && [ -z "$FIG_PTY" ] && command -v figterm 1>/dev/null 2>/dev/null \
   && [ -z "$FIG_TERM" ] || [ -z "$FIG_TERM_TMUX" -a -n "$TMUX" ]
 
@@ -24,13 +25,19 @@ if   [ "$TERM_PROGRAM" != "WarpTerminal" ] \
   if [ -z "$TERM_SESSION_ID" ] || [ -n "$TMUX" ]
     export TERM_SESSION_ID=(uuidgen)
   end
-  export FIG_INTEGRATION_VERSION=7
+  export FIG_INTEGRATION_VERSION=8
 
-  set FIG_SHELL (~/.fig/bin/fig_get_shell)
+  set FIG_SHELL (fig _ get-shell)
   set FIG_IS_LOGIN_SHELL 0
   if status --is-login
     set FIG_IS_LOGIN_SHELL 1
   end
+
+  # Do not launch figterm in non-interactive shells (like VSCode Tasks)
+  if not status --is-interactive
+    exit
+  end
+
   set FIG_TERM_NAME (basename "$FIG_SHELL")" (figterm)"
   set FIG_SHELL_PATH "$HOME/.fig/bin/$FIG_TERM_NAME"
 
