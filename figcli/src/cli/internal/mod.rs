@@ -6,21 +6,21 @@ use crate::cli::installation::{self, InstallComponents};
 use anyhow::{Context, Result};
 use clap::{ArgGroup, Args, Subcommand};
 use crossterm::style::Stylize;
+use fig_directories::fig_dir;
 use fig_ipc::hook::send_hook_to_socket;
 use fig_proto::hooks::new_callback_hook;
 use native_dialog::{MessageDialog, MessageType};
 use rand::distributions::{Alphanumeric, DistString};
+use rand::seq::IteratorRandom;
 use std::{
+    fs,
     io::{Read, Write},
     path::PathBuf,
     process::exit,
     str::FromStr,
-    fs,
 };
 use tracing::{debug, error, info, trace};
-use fig_directories::fig_dir;
-use viu::{display_gif};
-use rand::seq::IteratorRandom;
+use viu::{Config, run};
 
 #[derive(Debug, Args)]
 #[clap(group(
@@ -55,8 +55,15 @@ pub struct InstallArgs {
 
 #[derive(Debug, Args)]
 pub struct AnimationArgs {
+    // resource to play
     #[clap(short, long)]
     filename: Option<String>,
+
+    // framerate to play the GIF with
+    #[clap(short, long)]
+    rate: Option<i32>,
+
+    // text to print after GIF/img disappears
     #[clap(short, long)]
     text: Option<String>,
 }
@@ -198,7 +205,11 @@ impl InternalSubcommand {
                     .show_alert()
                     .unwrap();
             }
-            InternalSubcommand::Animation(AnimationArgs{filename,text}) => {
+            InternalSubcommand::Animation(AnimationArgs {
+                filename,
+                rate,
+                text,
+            }) => {
                 let path = match filename {
                     Some(mut fname) => {
                         let animations_folder = fig_dir().unwrap().join("animations");
@@ -215,8 +226,12 @@ impl InternalSubcommand {
                                 }
                             }
                         }
-                        
-                        animations_folder.join(fname).into_os_string().into_string().unwrap()
+
+                        animations_folder
+                            .join(fname)
+                            .into_os_string()
+                            .into_string()
+                            .unwrap()
                     }
                     None => {
                         eprintln!("filename cannot be empty");
@@ -230,13 +245,28 @@ impl InternalSubcommand {
                         let s = format!("{}{}", purple, t);
                         s
                     }
-                    None => String::new()
+                    None => String::new(),
                 };
 
-                if let Err(e) = display_gif(
-                    path.as_str(),
-                    cleanup_message.as_str()
-                ) {
+                // viu stuff to initialize
+                let mut files = Vec::new();
+                files.push(path.as_str());
+                let conf = Config::new(
+                    None,
+                    None,
+                    Some(files),
+                    false,
+                    false,
+                    false,
+                    true,
+                    false,
+                    false,
+                    rate,
+                    cleanup_message.as_str(),
+                );
+
+                // run animation
+                if let Err(e) = run(conf) {
                     eprintln!("{:?}", e);
                     std::process::exit(1);
                 }
