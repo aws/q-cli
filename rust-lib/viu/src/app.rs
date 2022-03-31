@@ -7,6 +7,8 @@ use std::io::{stdin, stdout, BufReader, Error, ErrorKind, Read, Seek};
 use std::sync::mpsc;
 use std::{thread, time::Duration};
 use viuer::ViuResult;
+use anes::{ClearBuffer};
+use std::io::Write;
 
 type TxRx<'a> = (&'a mpsc::Sender<bool>, &'a mpsc::Receiver<bool>);
 
@@ -38,6 +40,11 @@ pub fn run(mut conf: Config) -> ViuResult {
                 panic!("{}", e);
             }
         }
+        
+        // Clear the entire screen
+        let mut stdout = std::io::stdout();
+
+        anes::execute!(&mut stdout, ClearBuffer::All, ClearBuffer::Below)?;
         print!("{}", cleanup_message);
         std::process::exit(0);
     })
