@@ -92,7 +92,7 @@ const base64abc = [
   '8',
   '9',
   '+',
-  '/',
+  '/'
 ];
 
 export function bytesToBase64(bytes: Uint8Array): string {

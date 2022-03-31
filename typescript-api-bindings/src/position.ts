@@ -9,7 +9,7 @@ export async function isValidFrame(frame: {
   return sendPositionWindowRequest({
     size: { width: frame.width, height: frame.height },
     anchor: { x: frame.anchorX, y: 0 },
-    dryrun: true,
+    dryrun: true
   });
 }
 
@@ -21,6 +21,6 @@ export async function setFrame(frame: {
 }) {
   return sendPositionWindowRequest({
     size: { width: frame.width, height: frame.height },
-    anchor: { x: frame.anchorX, y: frame.offsetFromBaseline ?? 0 },
+    anchor: { x: frame.anchorX, y: frame.offsetFromBaseline ?? 0 }
   });
 }

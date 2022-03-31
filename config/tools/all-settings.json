@@ -25,6 +25,8 @@
       "system",
       "dark",
       "light",
+      "atlantic-night",
+      "catppuccin",
       "cobalt",
       "cobalt2",
       "dracula",
@@ -34,6 +36,8 @@
       "nightowl",
       "nord",
       "panda",
+      "palenight",
+      "plastic",
       "poimandres",
       "the-unnamed",
       "tokyo-night",
@@ -163,6 +167,14 @@
     "type": "multiselect",
     "default": [],
     "details": "e.g. git,npm",
+    "category": "Autocomplete"
+  },
+  {
+    "settingName": "autocomplete.hideAutoExecuteSuggestion",
+    "title": "Hide Execute Suggestion",
+    "description": "Hide execute suggestions from the list.",
+    "type": "boolean",
+    "default": false,
     "category": "Autocomplete"
   },
   {
