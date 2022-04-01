@@ -1,9 +1,10 @@
-ROOT:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+FIGCLI_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+MACOS_DIR:=$(shell dirname $(FIGCLI_DIR))
 
-export BUILT_PRODUCTS_DIR ?= $(ROOT)/build
-export ARTIFACTS ?= $(ROOT)/build
+export BUILT_PRODUCTS_DIR ?= $(FIGCLI_DIR)/build
+export ARTIFACTS ?= $(FIGCLI_DIR)/build/artifacts
 
-TARGET_DIR ?= $(ROOT)/../target
+TARGET_DIR ?= $(MACOS_DIR)/target
 
 # Add brew executables to PATH
 export PATH := /opt/homebrew/bin:/opt/homebrew/sbin:$(PATH)
@@ -23,7 +24,6 @@ CARGO_OPTIONS ?= --locked --release
 
 BINARY_NAME=fig
 SRC = Cargo.toml $(wildcard src/**/*)
-
 
 $(shell mkdir -p $(BUILT_PRODUCTS_DIR))
 $(shell mkdir -p $(ARTIFACTS))
@@ -75,10 +75,12 @@ $(ARTIFACTS)/$(BINARY_NAME)-aarch64-apple-darwin: $(SRC)
 
 $(ARTIFACTS)/$(BINARY_NAME)-darwin-universal: $(ARTIFACTS)/$(BINARY_NAME)-x86_64-apple-darwin $(ARTIFACTS)/$(BINARY_NAME)-aarch64-apple-darwin
 	lipo -create -output $@ $^
+
 linux: $(ARTIFACTS)/$(BINARY_NAME)-x86_64-unknown-linux-gnu $(ARTIFACTS)/$(BINARY_NAME)-aarch64-unknown-linux-gnu
 
 $(ARTIFACTS)/$(BINARY_NAME)-x86_64-unknown-linux-gnu: $(SRC)
-	RUSTFLAGS='-C target-feature=+crt-static' cargo build --target=x86_64-unknown-linux-gnu $(CARGO_OPTIONS)
+	# RUSTFLAGS='-C target-feature=+crt-static' cargo build --target=x86_64-unknown-linux-gnu $(CARGO_OPTIONS)
+	cargo build --target=x86_64-unknown-linux-gnu $(CARGO_OPTIONS)
 	install $(TARGET_DIR)/x86_64-unknown-linux-gnu/release/$(BINARY_NAME) $@
 
 $(ARTIFACTS)/$(BINARY_NAME)-aarch64-unknown-linux-gnu: $(SRC)
@@ -95,9 +97,17 @@ build-native:
 	cargo build
 	install $(TARGET_DIR)/debug/$(BINARY_NAME) $(ARTIFACTS)/$(BINARY_NAME)
 
+build-native-release:
+	cargo build --release
+	install $(TARGET_DIR)/release/$(BINARY_NAME) $(ARTIFACTS)/$(BINARY_NAME)
+
 install: all
 
 install-native: build-native
+	mkdir -p ~/.local/bin/
+	install $(ARTIFACTS)/$(BINARY_NAME) ~/.local/bin/$(BINARY_NAME)
+
+install-native-release: build-native-release
 	mkdir -p ~/.local/bin/
 	install $(ARTIFACTS)/$(BINARY_NAME) ~/.local/bin/$(BINARY_NAME)
 

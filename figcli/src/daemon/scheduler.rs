@@ -281,7 +281,7 @@ pub struct SyncPlugins;
 #[async_trait]
 impl Task for SyncPlugins {
     async fn run(&self, _sender: Sender<SchedulerMessages>) -> Result<()> {
-        fetch_installed_plugins().await?;
+        fetch_installed_plugins(false).await?;
         Ok(())
     }
 }

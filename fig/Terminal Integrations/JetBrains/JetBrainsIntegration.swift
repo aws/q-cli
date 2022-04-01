@@ -11,15 +11,27 @@ import ZIPFoundation
 
 class JetBrainsIntegration: InputMethodDependentTerminalIntegrationProvider & IntegrationProvider {
 
-  static let idea     = JetBrainsIntegration(bundleIdentifier: Integrations.Intellij)
-  static let ideaCE   = JetBrainsIntegration(bundleIdentifier: Integrations.IntellijCE)
-  static let WebStorm = JetBrainsIntegration(bundleIdentifier: Integrations.WebStorm)
-  static let GoLand   = JetBrainsIntegration(bundleIdentifier: Integrations.GoLand)
-  static let PhpStorm = JetBrainsIntegration(bundleIdentifier: Integrations.PhpStorm)
-  static let PyCharm  = JetBrainsIntegration(bundleIdentifier: Integrations.PyCharm)
-  static let AppCode  = JetBrainsIntegration(bundleIdentifier: Integrations.AppCode)
-  static let CLion    = JetBrainsIntegration(bundleIdentifier: Integrations.CLion)
-  static let Rider    = JetBrainsIntegration(bundleIdentifier: Integrations.Rider)
+  static let idea       = JetBrainsIntegration(bundleIdentifier: Integrations.Intellij)
+  static let ideaCE     = JetBrainsIntegration(bundleIdentifier: Integrations.IntellijCE)
+  static let WebStorm   = JetBrainsIntegration(bundleIdentifier: Integrations.WebStorm)
+  static let GoLand     = JetBrainsIntegration(bundleIdentifier: Integrations.GoLand)
+  static let PhpStorm   = JetBrainsIntegration(bundleIdentifier: Integrations.PhpStorm)
+  static let PyCharm    = JetBrainsIntegration(bundleIdentifier: Integrations.PyCharm)
+  static let PyCharmCE  = JetBrainsIntegration(bundleIdentifier: Integrations.PyCharmCE)
+  static let AppCode    = JetBrainsIntegration(bundleIdentifier: Integrations.AppCode)
+  static let CLion      = JetBrainsIntegration(bundleIdentifier: Integrations.CLion)
+  static let Rider      = JetBrainsIntegration(bundleIdentifier: Integrations.Rider)
+
+  static let AndroidStudio =
+    JetBrainsIntegration(bundleIdentifier: Integrations.AndroidStudio,
+                         organization: "Google")
+
+  fileprivate let organization: String
+
+  init(bundleIdentifier: String, organization: String = "JetBrains") {
+    self.organization = organization
+    super.init(bundleIdentifier: bundleIdentifier)
+  }
 
   static let plugin = Plugin(name: "jetbrains-extension",
                              version: "2.0.0",
@@ -30,7 +42,7 @@ class JetBrainsIntegration: InputMethodDependentTerminalIntegrationProvider & In
     // https://www.jetbrains.com/help/idea/directories-used-by-the-ide-to-store-settings-caches-plugins-and-logs.html#plugins-directory
     // ~/Library/Application Support/JetBrains/<product><version>/plugins
     return URL.applicationSupport
-              .appendingPathComponent("JetBrains", isDirectory: true)
+              .appendingPathComponent(organization, isDirectory: true)
               .appendingPathComponent(productVersion, isDirectory: true)
               .appendingPathComponent("plugins", isDirectory: true)
 

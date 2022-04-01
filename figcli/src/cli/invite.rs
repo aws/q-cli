@@ -2,9 +2,8 @@ use anyhow::Result;
 use copypasta::{ClipboardContext, ClipboardProvider};
 use crossterm::style::Stylize;
 use fig_auth::{get_email, get_token};
+use fig_settings::api_host;
 use reqwest::Url;
-
-use crate::util::api::api_host;
 
 pub async fn invite_cli() -> Result<()> {
     let email = get_email();

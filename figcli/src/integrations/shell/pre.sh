@@ -16,8 +16,11 @@ if [[ ! -z "${FIG_NEW_SESSION}" ]]; then
   unset FIG_NEW_SESSION
 fi
 
-# Only launch figterm if current session is not already inside PTY and command exists
+# Only launch figterm if current session is not already inside PTY and command exists.
+# PWSH var is set when launched by `pwsh -Login`, in which case we don't want to init.
+# It is not necessary in Fish.
 if   [[ ! "${TERM_PROGRAM}" = WarpTerminal ]] \
+  && [[ -z "${__PWSH_LOGIN_CHECKED}" ]] \
   && [[ -z "${INSIDE_EMACS}" ]] \
   && [[ "$__CFBundleIdentifier" != "com.vandyke.SecureCRT" ]] \
   && [[ -t 1 ]] \
@@ -36,7 +39,7 @@ if   [[ ! "${TERM_PROGRAM}" = WarpTerminal ]] \
   export FIG_INTEGRATION_VERSION=8
   # Pty module sets FIG_TERM or FIG_TERM_TMUX to avoid running twice.
   FIG_SHELL=$(fig _ get-shell)
-  FIG_IS_LOGIN_SHELL=0
+  FIG_IS_LOGIN_SHELL="${FIG_IS_LOGIN_SHELL:='0'}"
 
   if ([[ -n "$BASH" ]] && shopt -q login_shell) \
     || ([[ -n "$ZSH_NAME" && -o login ]]); then
@@ -50,6 +53,8 @@ if   [[ ! "${TERM_PROGRAM}" = WarpTerminal ]] \
     cp -p ~/.fig/bin/figterm "${FIG_SHELL_PATH}"
   fi
 
+  FIG_EXECUTION_STRING="${BASH_EXECUTION_STRING:=$ZSH_EXECUTION_STRING}"
+
   # Get initial text.
   INITIAL_TEXT=""
   if [[ -z "${BASH}" || "${BASH_VERSINFO[0]}" -gt "3" ]]; then
@@ -60,6 +65,5 @@ if   [[ ! "${TERM_PROGRAM}" = WarpTerminal ]] \
       INITIAL_TEXT="${INITIAL_TEXT}${REPLY}\n"
     done
   fi
-
-  FIG_START_TEXT="$(printf "%b" "${INITIAL_TEXT}")" FIG_SHELL="${FIG_SHELL}" FIG_IS_LOGIN_SHELL="${FIG_IS_LOGIN_SHELL}" exec -a "${FIG_TERM_NAME}" "${FIG_SHELL_PATH}"
+  FIG_EXECUTION_STRING="${FIG_EXECUTION_STRING}" FIG_START_TEXT="$(printf "%b" "${INITIAL_TEXT}")" FIG_SHELL="${FIG_SHELL}" FIG_IS_LOGIN_SHELL="${FIG_IS_LOGIN_SHELL}" exec -a "${FIG_TERM_NAME}" "${FIG_SHELL_PATH}"
 fi

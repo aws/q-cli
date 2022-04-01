@@ -517,7 +517,7 @@ impl Credentials {
 
         let email = json
             .get("email")
-            .and_then(|email| email.as_str())
+            .and_then(serde_json::Value::as_str)
             .map(String::from);
 
         let access_token = json

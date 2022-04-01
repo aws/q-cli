@@ -1,5 +1,6 @@
-use crate::util::{glob, glob_dir};
+use crate::util::{glob, glob_dir, LaunchOptions};
 
+use crate::cli::{app::quit_fig, diagnostics::get_diagnostics, launch_fig};
 use anyhow::{anyhow, Context, Result};
 use clap::{ArgEnum, Subcommand};
 use crossterm::style::Stylize;
@@ -8,9 +9,9 @@ use fig_ipc::command::{
     toggle_debug_mode,
 };
 use fig_proto::local::InputMethodAction;
-use fig_settings::state;
 use serde_json::json;
 use std::{path::Path, process::Command};
+
 #[derive(Debug, ArgEnum, Clone)]
 pub enum Build {
     Dev,
@@ -37,9 +38,12 @@ pub enum AutocompleteWindowDebug {
 }
 
 #[derive(Debug, ArgEnum, Clone)]
-pub enum ShellIntegrationsDebug {
-    On,
-    Off,
+pub enum AccessibilityAction {
+    Refresh,
+    Reset,
+    Prompt,
+    Open,
+    Status,
 }
 
 #[derive(Debug, Subcommand)]
@@ -71,10 +75,11 @@ pub enum DebugSubcommand {
     UnixSocket,
     /// Debug fig codesign verification
     VerifyCodesign,
-    /// Toggle shell integrations
-    ShellIntegrations {
+
+    ///
+    Accessibility {
         #[clap(arg_enum)]
-        mode: Option<ShellIntegrationsDebug>,
+        action: Option<AccessibilityAction>,
     },
 }
 
@@ -288,28 +293,50 @@ impl DebugSubcommand {
                     .spawn()?
                     .wait()?;
             }
-            DebugSubcommand::ShellIntegrations { mode } => {
-                let result = match mode {
-                    Some(ShellIntegrationsDebug::On) => {
-                        state::set_value("shell-integrations.enabled", true)
-                    }
-                    Some(ShellIntegrationsDebug::Off) => {
-                        state::set_value("shell-integrations.enabled", false)
-                    }
-                    None => {
-                        let flag = state::get_bool("shell-integrations.enabled")
-                            .ok()
-                            .flatten()
-                            .unwrap_or(true);
-                        state::set_value("shell-integrations.enabled", !flag)?;
-                        return Ok(());
-                    }
-                };
-                if result.is_err() {
-                    println!("Could not update shell integrations");
-                    return result.map(|_| ());
+            DebugSubcommand::Accessibility { action } => match action {
+                Some(AccessibilityAction::Refresh) => {
+                    quit_fig().await?;
+
+                    Command::new("tccutil")
+                        .args(["reset", "Accessibility", "com.mschrage.fig"])
+                        .spawn()?
+                        .wait()?;
+
+                    launch_fig(LaunchOptions::new().wait_for_activation().verbose())?;
+                    // let result = prompt_accessibility_command().await;
+                    // if result.is_err() {
+                    //     println!("Could not prompt for accessibility permissions.");
+                    //     return result;
+                    // }
                 }
-            }
+                Some(AccessibilityAction::Reset) => {
+                    quit_fig().await?;
+
+                    Command::new("tccutil")
+                        .args(["reset", "Accessibility", "com.mschrage.fig"])
+                        .spawn()?
+                        .wait()?;
+                }
+                Some(AccessibilityAction::Prompt) => {
+                    launch_fig(LaunchOptions::new().wait_for_activation().verbose())?;
+                    let result = prompt_accessibility_command().await;
+                    if result.is_err() {
+                        println!("Could not prompt for accessibility permissions.");
+                        return result;
+                    }
+                }
+                Some(AccessibilityAction::Open) => {
+                    Command::new("open")
+                        .args(["x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"])
+                        .spawn()?
+                        .wait()?;
+                }
+                Some(AccessibilityAction::Status) | None => {
+                    let diagnostic = get_diagnostics().await?;
+
+                    println!("Accessibility Enabled: {}", diagnostic.accessibility)
+                }
+            },
         }
         Ok(())
     }

@@ -1,13 +1,15 @@
 use anyhow::{Context, Result};
 use tracing::{error, info};
 
-use crate::dotfiles;
+use crate::{dotfiles, plugins::download::update_git_repo_with_reference};
+
+use self::download::plugin_data_dir;
 
 pub mod api;
 pub mod download;
 pub mod manifest;
 
-pub async fn fetch_installed_plugins() -> Result<()> {
+pub async fn fetch_installed_plugins(update: bool) -> Result<()> {
     let dotfiles_path = dotfiles::api::all_file_path().context("Could not read all file")?;
     let dotfiles_file = std::fs::File::open(dotfiles_path)?;
 
@@ -22,20 +24,37 @@ pub async fn fetch_installed_plugins() -> Result<()> {
     for task in tasks {
         match task.await {
             Ok(Ok(plugin)) => {
-                if let Some(plugins_directory) = fig_directories::fig_data_dir() {
-                    let plugin_directory = plugins_directory.join("plugins").join(&plugin.name);
+                if let Some(plugins_directory) = plugin_data_dir() {
+                    let plugin_directory = plugins_directory.join(&plugin.name);
 
-                    info!("Cloneing or updating {}", plugin.name);
+                    let mut cloned = false;
 
                     if let Some(github) = plugin.github {
-                        if let Err(err) = download::update_or_clone_git_repo(
+                        match download::clone_git_repo_with_reference(
                             github.git_url(),
                             &plugin_directory,
                             None,
                         )
                         .await
                         {
-                            error!("Error updating or cloning {}: {}", plugin.name, err);
+                            Ok(_) => {
+                                info!("Cloned plugin {}", plugin.name);
+                                cloned = true;
+                            }
+                            Err(err) => {
+                                error!("Error cloning {}: {}", plugin.name, err)
+                            }
+                        }
+                    } else {
+                        error!("No github url found for plugin {}", plugin.name);
+                    }
+
+                    if !cloned && update {
+                        match update_git_repo_with_reference(plugin_directory, None).await {
+                            Ok(_) => info!("Updated plugin {}", plugin.name),
+                            Err(err) => {
+                                error!("Error updating plugin {}: {}", plugin.name, err);
+                            }
                         }
                     }
                 }

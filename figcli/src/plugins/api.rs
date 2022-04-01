@@ -1,6 +1,6 @@
 use super::manifest::GitHub;
-use crate::util::api::api_host;
-use anyhow::Result;
+use anyhow::{Context, Result};
+use fig_settings::api_host;
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
 
@@ -47,7 +47,7 @@ pub async fn fetch_plugin(name: impl AsRef<str>) -> Result<PluginData> {
     let data: PluginResponse = serde_json::from_str(&body)?;
 
     if data.success {
-        Ok(data.plugin.unwrap())
+        Ok(data.plugin.context("Could not get plugin")?)
     } else {
         Err(anyhow::anyhow!("{}", data.message.unwrap()))
     }

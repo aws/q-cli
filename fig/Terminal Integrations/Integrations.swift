@@ -25,9 +25,13 @@ class Integrations {
   static let GoLand = "com.jetbrains.goland"
   static let PhpStorm = "com.jetbrains.PhpStorm"
   static let PyCharm = "com.jetbrains.pycharm"
+  static let PyCharmCE = "com.jetbrains.pycharm.ce"
   static let AppCode = "com.jetbrains.AppCode"
   static let Rider = "com.jetbrains.rider"
   static let CLion = "com.jetbrains.CLion"
+  static let Nova = "com.panic.Nova"
+  static let AndroidStudio = "com.google.android.studio"
+  static let WezTerm = "com.github.wez.wezterm"
 
   static let terminals: Set = [
     "com.googlecode.iterm2",
@@ -52,8 +56,20 @@ class Integrations {
     "com.raycast.macos"
   ]
 
-  static let jetbrainIDEs: Set = [IntellijCE, Intellij, WebStorm, GoLand, PhpStorm, PyCharm, AppCode]
-  static let inputMethodDependentTerminals: Set = jetbrainIDEs.union([Alacritty, Kitty])
+  static let jetbrainIDEs: Set = [
+    IntellijCE,
+    Intellij,
+    WebStorm,
+    GoLand,
+    PhpStorm,
+    PyCharm,
+    PyCharmCE,
+    AppCode,
+    Rider,
+    CLion,
+    AndroidStudio
+  ]
+  static let inputMethodDependentTerminals: Set = jetbrainIDEs.union([Alacritty, Kitty, Nova, WezTerm])
 
   static let electronIDEs: Set = [VSCode, VSCodeInsiders, VSCodium]
   static var electronTerminals: Set<String> {
@@ -138,12 +154,14 @@ class Integrations {
       Integrations.VSCodeInsiders: VSCodeIntegration.insiders,
       Integrations.VSCodium: VSCodeIntegration.vscodium,
       Integrations.Terminal: AppleTerminalIntegration.default,
-      Integrations.Tabby: TabbyIntegration.default
+      Integrations.Tabby: TabbyIntegration.default,
+      Integrations.Nova: NovaIntegration.default
     ]
 
     let experimentalIntegrations: [String: TerminalIntegrationProvider] = [
       Integrations.Alacritty: AlacrittyIntegration.default,
       Integrations.Kitty: KittyIntegration.default,
+      Integrations.WezTerm: WezTermIntegration.default,
       // Jetbrains IDEs
       Integrations.Intellij: JetBrainsIntegration.idea,
       Integrations.IntellijCE: JetBrainsIntegration.ideaCE,
@@ -151,9 +169,11 @@ class Integrations {
       Integrations.PhpStorm: JetBrainsIntegration.PhpStorm,
       Integrations.GoLand: JetBrainsIntegration.GoLand,
       Integrations.PyCharm: JetBrainsIntegration.PyCharm,
+      Integrations.PyCharmCE: JetBrainsIntegration.PyCharmCE,
       Integrations.AppCode: JetBrainsIntegration.AppCode,
       Integrations.CLion: JetBrainsIntegration.CLion,
-      Integrations.Rider: JetBrainsIntegration.Rider
+      Integrations.Rider: JetBrainsIntegration.Rider,
+      Integrations.AndroidStudio: JetBrainsIntegration.AndroidStudio
 
     ]
 

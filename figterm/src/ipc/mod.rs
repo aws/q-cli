@@ -22,7 +22,7 @@ pub async fn remove_socket(session_id: impl AsRef<str>) -> Result<()> {
     let socket_path = fig_ipc::figterm::get_figterm_socket_path(session_id);
 
     if socket_path.exists() {
-        remove_file(&socket_path).await?
+        remove_file(&socket_path).await?;
     }
 
     Ok(())
@@ -41,7 +41,7 @@ pub async fn spawn_outgoing_sender() -> Result<Sender<fig_proto::local::LocalMes
                     match fig_ipc::send_message(&mut unix_stream, message).await {
                         Ok(()) => {
                             if let Err(e) = unix_stream.flush().await {
-                                error!("Failed to flush socket: {}", e)
+                                error!("Failed to flush socket: {}", e);
                             }
                         }
                         Err(e) => {
