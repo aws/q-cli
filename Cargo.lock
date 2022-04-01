@@ -817,8 +817,10 @@ dependencies = [
  "fig-proto",
  "serde",
  "serde_json",
+ "shellexpand",
  "tauri",
  "tauri-build",
+ "tokio",
 ]
 
 [[package]]
@@ -2847,6 +2849,15 @@ checksum = "b0d94659ad3c2137fef23ae75b03d5241d633f8acded53d672decfa0e6e0caef"
 dependencies = [
  "libc",
  "winapi",
+]
+
+[[package]]
+name = "shellexpand"
+version = "2.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "83bdb7831b2d85ddf4a7b148aa19d0587eddbe8671a436b7bd1182eaad0f2829"
+dependencies = [
+ "dirs-next",
 ]
 
 [[package]]

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="CPP_MODULE" version="4">
+  <component name="NewModuleRootManager">
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/daemon/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/fig-ibus-engine/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/fig-tauri/src-tauri/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/figcli/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/figterm/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/linux-app/src-tauri/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/rust-lib/alacritty_terminal/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/rust-lib/fig-auth/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/rust-lib/fig-color/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/rust-lib/fig-directories/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/rust-lib/fig-ipc/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/rust-lib/fig-proto/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/rust-lib/fig-settings/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/rust-lib/fig-telemetry/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/rust-lib/ibus/ibus-sys/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/rust-lib/ibus/ibus-sys/tests" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/rust-lib/ibus/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/rust-lib/linux-test/src" isTestSource="false" />
+      <excludeFolder url="file://$MODULE_DIR$/target" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+</module>
