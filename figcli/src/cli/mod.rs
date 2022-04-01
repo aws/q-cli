@@ -173,11 +173,14 @@ pub enum CliRootCommands {
     Alpha,
     /// Run the Fig tutorial
     Onboarding,
-    /// (LEGACY) Old hook that was being used somewhere
-    #[clap(name = "app:running", hide = true)]
-    FigAppRunning,
     #[clap(subcommand)]
     Plugins(PluginsSubcommands),
+    /// (LEGACY) Old hook that was being used somewhere
+    #[clap(name = "app:running", hide = true)]
+    LegacyAppRunning,
+    /// (LEGACY) Old ssh hook that might be in ~/.ssh/config
+    #[clap(name = "bg:ssh", hide = true)]
+    LegacyBgSsh,
 }
 
 #[derive(Debug, Parser)]
@@ -199,6 +202,8 @@ pub enum CliRootCommands {
 │ \x1B[1missue\x1B[0m          \x1B[0;90mCreate a new GitHub issue\x1B[0m         │
 │ \x1B[1mtweet\x1B[0m          \x1B[0;90mTweet about Fig\x1B[0m                   │
 │ \x1B[1mupdate\x1B[0m         \x1B[0;90mUpdate Fig\x1B[0m                        │
+│ \x1B[1mquit\x1B[0m           \x1B[0;90mQuit the Fig app\x1B[0m                  │
+│ \x1B[1muninstall\x1B[0m      \x1B[0;90mUninstall Fig\x1B[0m                     │
 ╰──────────────────────────────────────────────────╯
 
  \x1B[0;90mFor more info on a specific command, use:\x1B[0m
@@ -340,11 +345,12 @@ impl Cli {
                 },
                 CliRootCommands::Alpha => root_command().await,
                 CliRootCommands::Onboarding => AppSubcommand::Onboarding.execute().await,
-                CliRootCommands::FigAppRunning => {
+                CliRootCommands::Plugins(plugins_subcommand) => plugins_subcommand.execute().await,
+                CliRootCommands::LegacyAppRunning => {
                     println!("{}", if is_app_running() { "1" } else { "0" });
                     Ok(())
                 }
-                CliRootCommands::Plugins(plugins_subcommand) => plugins_subcommand.execute().await,
+                CliRootCommands::LegacyBgSsh => Ok(()),
             },
             // Root command
             None => root_command().await,

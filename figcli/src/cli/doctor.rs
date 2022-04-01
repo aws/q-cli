@@ -313,6 +313,96 @@ impl DoctorCheck for FigSocketCheck {
     }
 }
 
+struct FigIntegrationsCheck;
+
+#[async_trait]
+impl DoctorCheck for FigIntegrationsCheck {
+    fn name(&self) -> Cow<'static, str> {
+        "Fig Integration".into()
+    }
+
+    async fn check(&self, _: &()) -> Result<(), DoctorError> {
+        if let Ok("WarpTerminal") = std::env::var("TERM_PROGRAM").as_deref() {
+            return Err(DoctorError::Error {
+                reason: "WarpTerminal is not supported".into(),
+                info: vec![],
+                fix: None,
+            });
+        }
+
+        if std::env::var_os("__PWSH_LOGIN_CHECKED").is_some() {
+            return Err(DoctorError::Error {
+                reason: "Powershell is not supported".into(),
+                info: vec![],
+                fix: None,
+            });
+        }
+
+        if std::env::var_os("INSIDE_EMACS").is_some() {
+            return Err(DoctorError::Error {
+                reason: "Emacs is not supported".into(),
+                info: vec![],
+                fix: None,
+            });
+        }
+
+        if let Ok("com.vandyke.SecureCRT") = std::env::var("__CFBundleIdentifier").as_deref() {
+            return Err(DoctorError::Error {
+                reason: "SecureCRT is not supported".into(),
+                info: vec![],
+                fix: None,
+            });
+        }
+
+        if std::env::var_os("FIG_PTY").is_some() {
+            return Err(DoctorError::Error {
+                reason: "Fig can not run in the Fig Pty".into(),
+                info: vec![],
+                fix: None,
+            });
+        }
+
+        if std::env::var_os("PROCESS_LAUNCHED_BY_FIG").is_some() {
+            return Err(DoctorError::Error {
+                reason: "Fig can not run in a process launched by Fig".into(),
+                info: vec![],
+                fix: None,
+            });
+        }
+
+        // Check that ~/.fig/bin/figterm exists
+        let figterm_path = fig_directories::fig_dir()
+            .context("Could not find ~/.fig")?
+            .join("bin")
+            .join("figterm");
+
+        if !figterm_path.exists() {
+            return Err(DoctorError::Error {
+                reason: "figterm does not exist".into(),
+                info: vec![],
+                fix: None,
+            });
+        }
+
+        match std::env::var("FIG_TERM").as_deref() {
+            Ok("1") => {}
+            Ok(_) | Err(_) => {
+                return Err(DoctorError::Error {
+                    reason: "Figterm is not running".into(),
+                    info: vec![format!(
+                        "FIG_INTEGRATION_VERISON={:?}",
+                        std::env::var_os("FIG_INTEGRATION_VERISON")
+                    )
+                    .into()],
+                    fix: None,
+                })
+            }
+        };
+
+        Ok(())
+    }
+}
+
 struct FigtermSocketCheck;
 
 #[async_trait]
@@ -1533,6 +1623,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
             vec![
                 &FigBinCheck {},
                 &PathCheck {},
+                &FigIntegrationsCheck {},
                 &AppRunningCheck {},
                 &FigSocketCheck {},
                 &DaemonCheck {},
