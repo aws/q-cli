@@ -22,8 +22,8 @@ pub fn ws_host() -> String {
 }
 
 pub struct LocalJson {
-    inner: serde_json::Value,
-    path: PathBuf,
+    pub inner: serde_json::Value,
+    pub path: PathBuf,
 }
 
 impl LocalJson {
