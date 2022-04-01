@@ -1,11 +1,6 @@
 use crate::{
     dotfiles::api::DotfileData,
-    util::{
-        app_path_from_bundle_id,
-        shell::Shell,
-        shell_integration::When, 
-        terminal::Terminal,
-    },
+    util::{app_path_from_bundle_id, shell::Shell, shell_integration::When, terminal::Terminal},
 };
 use anyhow::{Context, Result};
 use crossterm::tty::IsTty;

@@ -331,8 +331,6 @@ impl ShellIntegration for DotfileShellIntegration {
             String::new()
         };
 
-        println!("CONTENTS:\n\n{}", contents);
-
         let original_contents = contents.clone();
 
         if self.pre {
