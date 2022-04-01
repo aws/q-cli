@@ -3,20 +3,20 @@ use cfg_if::cfg_if;
 use crossterm::style::Stylize;
 use dialoguer::theme::ColorfulTheme;
 use serde::{Deserialize, Serialize};
-use std::{fmt::Display, process::Command};
+use std::{ffi::OsStr, fmt::Display, process::Command};
 
-pub fn open_url(url: impl AsRef<str>) -> Result<()> {
+pub fn open_url(url: impl AsRef<OsStr>) -> Result<()> {
     cfg_if! {
         if #[cfg(target_os = "macos")] {
             Command::new("open")
-                .arg(url.as_ref())
+                .arg(url)
                 .output()
                 .with_context(|| "Could not open url")?;
 
             Ok(())
         } else if #[cfg(target_os = "linux")] {
             Command::new("xdg-open")
-                .arg(url.as_ref())
+                .arg(url)
                 .output()
                 .with_context(|| "Could not open url")?;
 
@@ -25,7 +25,7 @@ pub fn open_url(url: impl AsRef<str>) -> Result<()> {
             Command::new("cmd")
                 .arg("/c")
                 .arg("start")
-                .arg(url.as_ref())
+                .arg(url)
                 .output()
                 .with_context(|| "Could not open url")?;
 

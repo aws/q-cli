@@ -8,7 +8,7 @@ use serde_json::json;
 use std::{io::Write, process::Command};
 use time::format_description::well_known::Rfc3339;
 
-use super::util::app_not_running_message;
+use super::{util::app_not_running_message, OutputFormat};
 use crate::util::{launch_fig, LaunchOptions};
 
 #[derive(Debug, Subcommand)]
@@ -21,6 +21,13 @@ pub enum SettingsSubcommands {
     Open,
     /// Sync the current settings
     Sync,
+    /// List all the settings
+    All {
+        #[clap(short, long)]
+        remote: bool,
+        #[clap(long, short, arg_enum, default_value_t)]
+        format: OutputFormat,
+    },
 }
 
 #[derive(Debug, Args)]
@@ -98,6 +105,33 @@ impl SettingsArgs {
 
                 if let Ok(updated_at) = updated_at.format(&Rfc3339) {
                     fig_settings::state::set_value("settings.updatedAt", json!(updated_at)).ok();
+                }
+
+                Ok(())
+            }
+            Some(SettingsSubcommands::All { remote, format }) => {
+                let settings = if remote {
+                    fig_settings::remote_settings::get_settings()
+                        .await?
+                        .settings
+                } else {
+                    fig_settings::settings::local_settings()?.to_inner()
+                };
+
+                match format {
+                    OutputFormat::Plain => {
+                        if let Some(map) = settings.as_object() {
+                            for (key, value) in map {
+                                println!("{} = {}", key, value);
+                            }
+                        } else {
+                            println!("Settings is empty");
+                        }
+                    }
+                    OutputFormat::Json => println!("{}", serde_json::to_string(&settings)?),
+                    OutputFormat::JsonPretty => {
+                        println!("{}", serde_json::to_string_pretty(&settings)?)
+                    }
                 }
 
                 Ok(())
