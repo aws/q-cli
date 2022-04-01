@@ -4,24 +4,25 @@
 )]
 
 mod api;
+mod local;
 mod os;
-mod prelude;
 mod state;
 
 use std::sync::{Arc, Mutex};
 
-use crate::state::AppState;
+use tauri::Manager;
+
+use crate::state::{AppState, AppStateType};
 
 fn main() {
     tauri::Builder::default()
         .manage(Arc::new(Mutex::new(AppState::default())))
-        // .setup(|app| {
-        //     use tauri::Manager;
-        //     let state = app.state::<AppState>();
-        //     tauri::async_runtime::spawn(handle_ipc(app.handle(), state.inner().clone()));
-        //     tauri::async_runtime::spawn(handle_window(app.handle(), state.inner().clone()));
-        //     Ok(())
-        // })
+        .setup(|app| {
+            let state = app.state::<AppStateType>();
+            tauri::async_runtime::spawn(local::start_local_ipc(state.inner().clone()));
+            Ok(())
+        })
+        .on_window_event(|_| println!("window event"))
         .invoke_handler(tauri::generate_handler![api::handle_api_request])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

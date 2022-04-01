@@ -34,7 +34,6 @@ message Command {
 		PromptAccessibilityCommand prompt_accessibility = 114;
 		InputMethodCommand input_method = 115;
 		UninstallCommand uninstall = 116;
-
 	}
 }
 
@@ -53,6 +52,8 @@ message Hook {
 		HideHook hide = 110;
 		EventHook event = 111;
 		FileChangedHook file_changed = 112;
+		CursorPositionHook cursor_position_hook = 113;
+		FocusChangeHook focus_change_hook = 114;
 	}
 }
 
@@ -223,6 +224,15 @@ message FileChangedHook {
 	FileChanged file_changed = 1;
 	optional string filepath = 2;
 }
+
+message CursorPositionHook {
+	int32 x = 1;
+	int32 y = 2;
+	int32 width = 3;
+	int32 height = 4;
+}
+  
+message FocusChangeHook {}
 
 // == Responses ==
 message ErrorResponse {

@@ -19,11 +19,13 @@ serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 tauri = { version = "1.0.0-rc.5", features = ["api-all"] }
 cfg-if = "1.0"
+fig-ipc = { path = "../../rust-lib/fig-ipc" }
 fig-proto = { path = "../../rust-lib/fig-proto" }
 anyhow = "1.0"
 shellexpand = "2.1.0"
 tokio = { version = "1.16", features = [ "rt", "rt-multi-thread", "sync", "fs", "io-util" ] } # same version as tauri
 fig-settings = { path = "../../rust-lib/fig-settings" }
+async-trait = "0.1.53"
 
 [features]
 # by default Tauri runs in production mode

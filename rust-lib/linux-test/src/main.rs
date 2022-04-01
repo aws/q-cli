@@ -85,14 +85,15 @@ async fn fig_js(command: FigJSCommand) {
             } => client_originated_message::Submessage::ReadFileRequest(ReadFileRequest {
                 path: Some(FilePath {
                     path,
-                    relative_to:
-                        Some(std::env::current_dir()
+                    relative_to: Some(
+                        std::env::current_dir()
                             .unwrap()
                             .to_string_lossy()
-                            .into_owned()),
+                            .into_owned(),
+                    ),
                     expand_tilde_in_path: true,
                 }),
-                is_binary_file
+                is_binary_file,
             }),
         }),
     };
@@ -100,7 +101,13 @@ async fn fig_js(command: FigJSCommand) {
     match fig_ipc::connect_timeout(socket_path, Duration::from_secs(1)).await {
         Ok(mut stream) => {
             if require_response {
-                match fig_ipc::send_recv_message::<_, ServerOriginatedMessage, _>(&mut stream, message, Duration::from_secs(1)).await {
+                match fig_ipc::send_recv_message::<_, ServerOriginatedMessage, _>(
+                    &mut stream,
+                    message,
+                    Duration::from_secs(1),
+                )
+                .await
+                {
                     Ok(Some(response)) => println!("response {:?}", response),
                     Ok(None) => println!("no response"),
                     Err(err) => println!("error sending ipc message: {}", err),

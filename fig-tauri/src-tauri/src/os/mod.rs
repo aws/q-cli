@@ -1,22 +1,41 @@
-// contains all platform-specific code under a unified interface
+// all os-specific code under a unified interface
 
-mod linux;
-mod macos;
+use async_trait::async_trait;
+use tokio::io::AsyncRead;
+
 mod utils;
-mod windows;
 
-pub mod native {
-    cfg_if::cfg_if!(
-        if #[cfg(target_os="linux")] {
-            pub use super::linux::*;
-        } else if #[cfg(target_os="windows")] {
+cfg_if::cfg_if!(
+    if #[cfg(target_os="windows")] {
+        mod windows;
+        pub mod native {
             pub use super::windows::*;
-        } else if #[cfg(target_os="macos")] {
-            pub use super::macos::*;
-        } else {
-            compile_error!("Unsupported platform");
+            pub use super::utils::*;
         }
-    );
+    } else if #[cfg(target_os="macos")] {
+        mod macos;
+        mod unix;
+        pub mod native {
+            pub use super::macos::*;
+            pub use super::unix::*;
+            pub use super::utils::*;
+        }
+    } else if #[cfg(target_os="linux")] {
+        mod linux;
+        mod unix;
+        pub mod native {
+            pub use super::linux::*;
+            pub use super::unix::*;
+            pub use super::utils::*;
+        }
+    } else {
+        compile_error!("Unsupported platform");
+    }
+);
 
-    pub use super::utils::*;
+#[async_trait]
+pub trait GenericListener {
+    type Stream: AsyncRead + Unpin;
+
+    async fn generic_accept(&self) -> Result<Self::Stream, anyhow::Error>;
 }
