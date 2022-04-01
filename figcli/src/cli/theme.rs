@@ -10,15 +10,15 @@ const DEFAULT_THEME: &str = "dark";
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct Author {
-    name: String,
-    twitter: String,
-    github: String,
+    name: Option<String>,
+    twitter: Option<String>,
+    github: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct Theme {
     author: Option<Author>,
-    version: String,
+    version: Option<String>,
 }
 
 pub async fn theme_cli(theme_str: Option<String>) -> Result<()> {
@@ -49,22 +49,25 @@ pub async fn theme_cli(theme_str: Option<String>) -> Result<()> {
                             twitter,
                             github,
                         }) => {
-                            if !name.is_empty() {
+                            if let Some(name) = name {
                                 theme_line.push_str(&format!(" by {}", name.bold()));
                             }
+
                             println!("{}", theme_line);
 
-                            if !twitter.is_empty() {
-                                let twitter = twitter.with(Color::Rgb {
-                                    r: 29,
-                                    g: 161,
-                                    b: 242,
-                                });
-                                println!("  🐦 {}", twitter);
+                            if let Some(twitter) = twitter {
+                                println!(
+                                    "  🐦 {}",
+                                    twitter.with(Color::Rgb {
+                                        r: 29,
+                                        g: 161,
+                                        b: 242,
+                                    })
+                                );
                             }
-                            if !github.is_empty() {
-                                let github = format!("github.com/{}", github);
-                                println!("  💻 {}", github.underlined());
+
+                            if let Some(github) = github {
+                                println!("  💻 {}", format!("github.com/{}", github.underlined()));
                             }
                         }
                         None => {
