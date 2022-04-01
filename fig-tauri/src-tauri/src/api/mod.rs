@@ -10,6 +10,7 @@ use fig_proto::{
 use serde::Serialize;
 
 mod fs;
+mod settings;
 
 pub enum ResponseKind {
     Error(String),
@@ -48,11 +49,15 @@ pub async fn handle_api_request(data: Vec<u8>) -> Result<Vec<u8>, ApiRequestErro
     }
 
     let response = route! {
+        /* fs */
         ReadFileRequest => fs::read_file
         WriteFileRequest => fs::write_file
         AppendToFileRequest => fs::append_to_file
         DestinationOfSymbolicLinkRequest => fs::destination_of_symbolic_link
         ContentsOfDirectoryRequest => fs::contents_of_directory
+        /* settings */
+        GetSettingsPropertyRequest => settings::get
+        UpdateSettingsPropertyRequest => settings::update
     }
     .unwrap_or_else(|s| s);
 

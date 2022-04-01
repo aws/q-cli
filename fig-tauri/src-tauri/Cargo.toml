@@ -23,6 +23,7 @@ fig-proto = { path = "../../rust-lib/fig-proto" }
 anyhow = "1.0"
 shellexpand = "2.1.0"
 tokio = { version = "1.16", features = [ "rt", "rt-multi-thread", "sync", "fs", "io-util" ] } # same version as tauri
+fig-settings = { path = "../../rust-lib/fig-settings" }
 
 [features]
 # by default Tauri runs in production mode
