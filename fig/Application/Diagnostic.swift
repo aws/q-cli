@@ -63,7 +63,7 @@ class Diagnostic {
       ".profile"
     ]
 
-    let target = "fig init"
+    let target = ".fig/shell"
 
     return dotfiles.allSatisfy { (file) -> Bool in
       let filepath = "\(NSHomeDirectory())/\(file)"

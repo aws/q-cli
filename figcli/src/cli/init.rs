@@ -2,7 +2,8 @@ use crate::{
     dotfiles::api::DotfileData,
     util::{
         app_path_from_bundle_id,
-        shell::{Shell, When},
+        shell::Shell,
+        shell_integration::When, 
         terminal::Terminal,
     },
 };

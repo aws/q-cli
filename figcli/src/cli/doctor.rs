@@ -5,7 +5,8 @@ use crate::{
     },
     util::{
         app_path_from_bundle_id, get_shell, glob, glob_dir, is_executable_in_path, launch_fig,
-        shell::{Shell, ShellFileIntegration},
+        shell::Shell,
+        shell_integration::{InstallationError, ShellIntegration},
         terminal::Terminal,
         LaunchOptions,
     },
@@ -711,23 +712,23 @@ impl DoctorCheck for DaemonCheck {
 }
 
 struct DotfileCheck {
-    integration: ShellFileIntegration,
+    integration: Box<dyn ShellIntegration>,
 }
 
 #[async_trait]
 impl DoctorCheck<Option<Shell>> for DotfileCheck {
     fn name(&self) -> Cow<'static, str> {
-        format!("{} contains valid fig hooks", self.integration.filename).into()
+        format!("{} contains valid fig hooks", self.integration.filename()).into()
     }
 
     fn get_type(&self, current_shell: &Option<Shell>) -> DoctorCheckType {
         if let Some(shell) = current_shell {
-            if *shell == self.integration.shell {
+            if *shell == self.integration.get_shell() {
                 return DoctorCheckType::NormalCheck;
             }
         }
 
-        if is_executable_in_path(&self.integration.shell.to_string()) {
+        if is_executable_in_path(&self.integration.get_shell().to_string()) {
             DoctorCheckType::SoftCheck
         } else {
             DoctorCheckType::NoCheck
@@ -738,121 +739,24 @@ impl DoctorCheck<Option<Shell>> for DotfileCheck {
         let fix_text = format!(
             "Run {} to reinstall shell integrations for {}",
             "fig install --dotfiles".magenta(),
-            self.integration.shell
+            self.integration.get_shell()
         );
-        let path = self.integration.path();
-        match self.integration.shell {
-            Shell::Fish => {
-                // Source order for fish is handled by fish itself.
-                if path.exists() {
-                    return Ok(());
-                } else {
-                    let msg = format!("{} does not exist. {fix_text}", path.display());
-                    return Err(DoctorError::Error {
-                        reason: msg.into(),
-                        info: vec![],
-                        fix: None,
-                    });
-                }
+        match self.integration.is_installed() {
+            Ok(()) => Ok(()),
+            Err(InstallationError::LegacyInstallation(msg)) => {
+                Err(DoctorError::Warning(format!("{} {fix_text}", msg).into()))
             }
-            Shell::Zsh | Shell::Bash => {
-                // Read file if it exists
-                let contents = match read_to_string(&path) {
-                    Ok(contents) => contents,
-                    _ => {
-                        return Err(DoctorError::Warning(
-                            format!("{} does not exist. {fix_text}", path.display()).into(),
-                        ))
-                    }
-                };
-
-                let contents: String = Regex::new(r"\s*#.*")
-                    .unwrap()
-                    .replace_all(&contents, "")
-                    .into();
-
-                let lines: Vec<&str> = contents
-                    .split('\n')
-                    .filter(|line| !(*line).trim().is_empty())
-                    .collect();
-                let filtered_lines = lines.join("\n");
-
-                let first_line = lines.first().copied().unwrap_or_default();
-                if first_line.eq("[ -s ~/.fig/shell/pre.sh ] && source ~/.fig/shell/pre.sh") {
-                    return Err(DoctorError::Warning(
-                        format!("{} has legacy integration. {fix_text}", path.display()).into(),
-                    ));
-                }
-
-                if let Some(pre) = self.integration.pre_integration() {
-                    if !pre.get_source_regex(true)?.is_match(&filtered_lines) {
-                        let msg = format!(
-                            "Pre shell integration not sourced first in {}",
-                            path.display()
-                        );
-
-                        let top_lines = lines.get(0..lines.len().min(10)).map_or(vec![], Vec::from);
-                        let top_line_text = top_lines
-                            .iter()
-                            .enumerate()
-                            .map(|(i, x)| format!("{} {}", i + 1, x).into());
-
-                        let fix_integration = self.integration.clone();
-                        return Err(DoctorError::Error {
-                            reason: msg.into(),
-                            info: vec![
-                                "In order for autocomplete to work correctly, Fig's shell integration must be sourced first.".into(),
-                                format!("Top of {}:", path.display()).into()
-                            ].into_iter().chain(top_line_text).collect(),
-                            fix: Some(Box::new(move || {
-                                fix_integration.uninstall()?;
-                                fix_integration.install(None)?;
-                                Ok(())
-                            }))
-                        });
-                    }
-                }
-
-                let last_line = lines.last().copied().unwrap_or_default();
-                if last_line.eq("[ -s ~/.fig/fig.sh ] && source ~/.fig/fig.sh") {
-                    return Err(DoctorError::Warning(
-                        format!("{} has legacy integration", path.display()).into(),
-                    ));
-                }
-
-                if let Some(post) = self.integration.post_integration() {
-                    if !post.get_source_regex(true)?.is_match(&filtered_lines) {
-                        let msg = format!(
-                            "Post shell integration not sourced last in {}",
-                            path.display()
-                        );
-
-                        let n = lines.len();
-
-                        let bottom_lines =
-                            lines.get(n.saturating_sub(10)..n).map_or(vec![], Vec::from);
-                        let bottom_line_text = bottom_lines
-                            .iter()
-                            .enumerate()
-                            .map(|(i, x)| format!("{} {}", n + i + 1, x).into());
-
-                        let fix_integration = self.integration.clone();
-                        return Err(DoctorError::Error {
-                            reason: msg.into(),
-                            info: vec![
-                                "In order for autocomplete to work correctly, Fig's shell integration must be sourced last.".into(),
-                                format!("Bottom of {}:", path.display()).into()
-                            ].into_iter().chain(bottom_line_text).collect(),
-                            fix: Some(Box::new(move || {
-                                fix_integration.uninstall()?;
-                                fix_integration.install(None)?;
-                                Ok(())
-                            }))
-                        });
-                    }
-                }
-
-                Ok(())
+            Err(InstallationError::NotInstalled(msg))
+            | Err(InstallationError::ImproperInstallation(msg)) => {
+                let fix_integration = self.integration.clone();
+                Err(DoctorError::Error {
+                    reason: msg,
+                    info: vec![fix_text.into()],
+                    fix: Some(Box::new(move || {
+                        fix_integration.install(None)?;
+                        Ok(())
+                    })),
+                })
             }
         }
     }

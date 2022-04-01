@@ -13,6 +13,7 @@ use sysinfo::{get_current_pid, ProcessExt, System, SystemExt};
 pub mod backoff;
 pub mod checksum;
 pub mod shell;
+pub mod shell_integration;
 pub mod sync;
 pub mod terminal;
 
