@@ -33,6 +33,11 @@ export async function get(key: string) {
     : null;
 }
 
+export async function current() {
+  const all = await sendGetLocalStateRequest({});
+  return JSON.parse(all.jsonBlob ?? '{}');
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function set(key: string, value: any): Promise<void> {
   return sendUpdateLocalStateRequest({
