@@ -71,7 +71,7 @@ where
     }
 
     #[cfg(test)]
-    pub fn test_config() -> Config<'a, D> {
+    pub fn test_config() -> Config<'a, &'static str> {
         Config {
             files: vec![],
             loop_gif: true,
@@ -84,8 +84,8 @@ where
                 ..Default::default()
             },
             frame_duration: None,
-            loading_message: "",
-            cleanup_message: "",
+            loading_message: &"",
+            cleanup_message: &"",
         }
     }
 }

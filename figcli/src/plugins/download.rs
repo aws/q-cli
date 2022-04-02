@@ -259,7 +259,7 @@ pub async fn sideband_printer(sideband_rx: Receiver<String>) {
 #[cfg(test)]
 mod tests {
     use reqwest::Url;
-    use tokio::{io::AsyncReadExt, process::Command};
+    use tokio::process::Command;
 
     use crate::plugins::manifest::GitHub;
 
