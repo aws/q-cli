@@ -27,7 +27,7 @@ export function sendMessage(
   handler?: APIResponseHandler
 ) {
   const request: ClientOriginatedMessage = {
-    id: messageId += 1,
+    id: (messageId += 1),
     submessage: message
   };
 
@@ -37,6 +37,23 @@ export function sendMessage(
 
   const buffer = ClientOriginatedMessage.encode(request).finish();
   const b64 = bytesToBase64(buffer);
+
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  if (!window.__TAURI__ || !window.__TAURI__.invoke) {
+    console.error(
+      'Cannot send request. Fig.js is not supported in this browser.'
+    );
+    return;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  const { invoke } = window.__TAURI__;
+  invoke('handle_api_request', { clientOriginatedMessageB64: b64 });
+
+  // TODO: Make crossplatform
+  return;
 
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore

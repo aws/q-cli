@@ -51,9 +51,9 @@ export {
 };
 
 declare global {
-    interface Window {
-      f: typeof lib;
-    }
+  interface Window {
+    f: typeof lib;
+  }
 }
 
 window.f = lib;

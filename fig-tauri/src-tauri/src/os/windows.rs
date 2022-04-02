@@ -14,6 +14,6 @@ pub fn resolve_path(path: FilePath) -> Result<PathBuf> {
     todo!()
 }
 
-async fn read_file(path: &PathBuf) -> Result<Vec<u8>> {
+pub async fn read_file(path: &PathBuf) -> Result<Vec<u8>> {
     todo!()
 }

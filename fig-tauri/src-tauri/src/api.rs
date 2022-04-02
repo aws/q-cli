@@ -1,5 +1,6 @@
 use std::io::Cursor;
 
+use base64;
 use fig_proto::{FigMessage, fig::{ReadFileRequest, ReadFileResponse, ClientOriginatedMessage, ServerOriginatedMessage}, prost::Message, FigProtobufEncodable};
 use fig_proto::fig::server_originated_message::Submessage as ServerOriginatedSubMessage;
 use fig_proto::fig::client_originated_message::Submessage as ClientOriginatedSubMessage;
@@ -20,10 +21,14 @@ pub enum ApiRequestError {
 }
 
 #[tauri::command]
-pub async fn handle_api_request(data: Vec<u8>) -> Result<Vec<u8>, ApiRequestError> {
-    let mut cursor = Cursor::new(data.as_slice());
-    let message = FigMessage::parse(&mut cursor).map_err(|_| ApiRequestError::DecodeError)?;
-    let message = ClientOriginatedMessage::decode(message.as_ref()).map_err(|_| ApiRequestError::DecodeError)?;
+pub async fn handle_api_request(mut client_originated_message_b64: String) {
+    handle_request(base64::decode(client_originated_message_b64).unwrap()).await;
+}
+
+async fn handle_request(mut data: Vec<u8>) -> Result<Vec<u8>, ApiRequestError> {
+    let message = ClientOriginatedMessage::decode(data.as_slice()).map_err(|_| ApiRequestError::DecodeError)?;
+   
+    println!("{:?}", message);
 
     let response = match message.submessage {
         Some(ClientOriginatedSubMessage::ReadFileRequest(request)) => read_file(request).await,
