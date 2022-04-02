@@ -1,7 +1,10 @@
-use std::time::Duration;
+use std::{fmt::Display, time::Duration};
 use viuer::Config as ViuerConfig;
 
-pub struct Config<'a> {
+pub struct Config<'a, D>
+where
+    D: Display,
+{
     pub files: Vec<&'a str>,
     pub loop_gif: bool,
     pub name: bool,
@@ -9,12 +12,17 @@ pub struct Config<'a> {
     pub static_gif: bool,
     pub viuer_config: ViuerConfig,
     pub frame_duration: Option<Duration>,
-    pub loading_message: &'a str,
-    pub cleanup_message: &'a str,
+    pub loading_message: &'a D,
+    pub cleanup_message: &'a D,
 }
 
-impl<'a> Config<'a> {
-    pub fn new(width: Option<u32>,
+impl<'a, D> Config<'a, D>
+where
+    D: Display,
+{
+    #[allow(clippy::too_many_arguments)]
+    pub fn new(
+        width: Option<u32>,
         height: Option<u32>,
         files: Option<Vec<&'a str>>,
         once: bool,
@@ -24,10 +32,9 @@ impl<'a> Config<'a> {
         name: bool,
         recursive: bool,
         frames_per_second: Option<i32>,
-        loading_message: &'a str,
-        cleanup_message: &'a str,
-    ) -> Config<'a> {
-        
+        loading_message: &'a D,
+        cleanup_message: &'a D,
+    ) -> Config<'a, D> {
         let files = match files {
             None => Vec::new(),
             Some(values) => values,
@@ -47,11 +54,8 @@ impl<'a> Config<'a> {
             ..Default::default()
         };
 
-        let frame_duration = if !frames_per_second.is_none() {
-            Some(Duration::from_secs_f32(1.0 / frames_per_second.unwrap() as f32))
-        } else {
-            None
-        };
+        let frame_duration = frames_per_second
+            .map(|frames_per_second| Duration::from_secs_f32(1.0 / frames_per_second as f32));
 
         Config {
             files,
@@ -66,9 +70,8 @@ impl<'a> Config<'a> {
         }
     }
 
-
     #[cfg(test)]
-    pub fn test_config() -> Config<'a> {
+    pub fn test_config() -> Config<'a, D> {
         Config {
             files: vec![],
             loop_gif: true,
@@ -81,7 +84,8 @@ impl<'a> Config<'a> {
                 ..Default::default()
             },
             frame_duration: None,
-            cleanup_message: ""
+            loading_message: "",
+            cleanup_message: "",
         }
     }
 }

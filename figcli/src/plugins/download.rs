@@ -1,9 +1,6 @@
 //! Download and updating of plugins
 
-use crate::{
-    plugins::manifest::GitReference,
-    util::checksum::{GitChecksum, Sha256Checksum},
-};
+use crate::{plugins::manifest::GitReference, util::checksum::GitChecksum};
 
 use anyhow::Result;
 use flume::Receiver;
@@ -28,7 +25,6 @@ pub enum DownloadMetadata {
     },
     Remote {
         url: Url,
-        checksum: Sha256Checksum,
     },
     Local {
         path: PathBuf,
@@ -49,29 +45,17 @@ pub fn plugin_data_dir() -> Option<PathBuf> {
 pub async fn download_remote_file(
     url: impl IntoUrl,
     directory: impl AsRef<Path>,
-    checksum: &Option<Sha256Checksum>,
-) -> Result<Sha256Checksum> {
+    name: impl AsRef<Path>,
+) -> Result<()> {
     let response = reqwest::get(url).await?;
     let body = response.text().await?;
 
-    let computed_checksum = Sha256Checksum::compute(&body);
-
-    if let Some(checksum) = checksum {
-        if &computed_checksum != checksum {
-            return Err(anyhow::anyhow!(
-                "Checksum mismatch: {:?} != {:?}",
-                computed_checksum,
-                checksum
-            ));
-        }
-    }
-
-    let file_path = directory.as_ref().join(&computed_checksum.as_str());
+    let file_path = directory.as_ref().join(name);
 
     let mut file = tokio::fs::File::create(&file_path).await?;
     file.write_all(body.as_bytes()).await?;
 
-    Ok(computed_checksum)
+    Ok(())
 }
 struct GitProgress {
     total_objects: usize,
@@ -282,35 +266,11 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn test_download_remote_file() {
-        let url = "https://gist.githubusercontent.com/raw/916e80ae32717eeec18d2c7a50a13192";
-        let directory = tempfile::tempdir().unwrap();
-
-        let checksum = download_remote_file(url, directory.path(), &None)
-            .await
-            .unwrap();
-
-        assert_eq!(
-            checksum.as_str(),
-            "5b892a87c0cc8279a0469dfde36b5b80de1de4c9e9a9d8211a93aae789b26391"
-        );
-
-        // Read the file
-        let file_path = directory.path().join(checksum.as_str());
-        let mut file = tokio::fs::File::open(&file_path).await.unwrap();
-        let mut contents = String::new();
-        file.read_to_string(&mut contents).await.unwrap();
-
-        assert!(contents.contains("echo \"hello from figrc\""));
-    }
-
-    #[tokio::test]
     async fn test_download_remote_file_checksum_mismatch() {
         let url = "https://gist.githubusercontent.com/raw/916e80ae32717eeec18d2c7a50a13192";
         let directory = tempfile::tempdir().unwrap();
-        let checksum = Sha256Checksum::new("invalid_checksum");
 
-        let result = download_remote_file(url, directory.path(), &Some(checksum)).await;
+        let result = download_remote_file(url, directory.path(), "file").await;
 
         assert!(result.is_err());
     }
@@ -319,10 +279,8 @@ mod tests {
     async fn test_download_remote_file_checksum_valid() {
         let url = "https://gist.githubusercontent.com/raw/916e80ae32717eeec18d2c7a50a13192";
         let directory = tempfile::tempdir().unwrap();
-        let checksum =
-            Sha256Checksum::new("5b892a87c0cc8279a0469dfde36b5b80de1de4c9e9a9d8211a93aae789b26391");
 
-        let result = download_remote_file(url, directory.path(), &Some(checksum)).await;
+        let result = download_remote_file(url, directory.path(), "file").await;
 
         assert!(result.is_ok());
     }

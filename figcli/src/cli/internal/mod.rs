@@ -249,28 +249,19 @@ impl InternalSubcommand {
                     }
                 };
 
-
-                let green = "\x1b[0;32m";
-                let purple = "\x1b[38;5;171m";
                 let loading_message = match before_text {
-                    Some(t) => {
-                        let s = format!("{}{}", green, t);
-                        s
-                    }
-                    None => format!("{}😀 Loading GIF...", green)
+                    Some(t) => t.magenta(),
+                    None => String::new().reset(),
                 };
 
                 let cleanup_message = match after_text {
-                    Some(t) => {
-                        let s = format!("{}{}", purple, t);
-                        s
-                    }
-                    None => String::new(),
+                    Some(t) => t.magenta(),
+                    None => String::new().reset(),
                 };
 
                 // viu stuff to initialize
-                let mut files = Vec::new();
-                files.push(path.as_str());
+                let files = vec![path.as_str()];
+
                 let conf = Config::new(
                     None,
                     None,
@@ -282,12 +273,12 @@ impl InternalSubcommand {
                     false,
                     false,
                     rate,
-                    loading_message.as_str(),
-                    cleanup_message.as_str(),
+                    &loading_message,
+                    &cleanup_message,
                 );
 
                 // run animation
-                if let Err(e) = run(conf) {
+                if let Err(e) = run(conf).await {
                     eprintln!("{:?}", e);
                     std::process::exit(1);
                 }

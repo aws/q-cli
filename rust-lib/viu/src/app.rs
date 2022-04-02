@@ -1,19 +1,20 @@
 use crate::config::Config;
+use anes::{ClearBuffer, HideCursor, ShowCursor};
 use crossterm::terminal::{Clear, ClearType};
 use crossterm::{cursor, execute};
 use image::{codecs::gif::GifDecoder, AnimationDecoder, DynamicImage};
+use std::fmt::Display;
 use std::fs;
+use std::io::Write;
 use std::io::{stdin, stdout, BufReader, Error, ErrorKind, Read, Seek};
 use std::sync::mpsc;
 use std::{thread, time::Duration};
 use viuer::ViuResult;
-use anes::{ClearBuffer, HideCursor, ShowCursor};
-use std::io::Write;
 
 type TxRx<'a> = (&'a mpsc::Sender<bool>, &'a mpsc::Receiver<bool>);
 
 // TODO: Create a viu-specific result and error types, do not reuse viuer's
-pub fn run(mut conf: Config) -> ViuResult {
+pub async fn run<'a, D: Display>(mut conf: Config<'_, D>) -> ViuResult {
     //create two channels so that ctrlc-handler and the main thread can pass messages in order to
     // communicate when printing must be stopped without distorting the current frame
     let (tx_ctrlc, rx_print) = mpsc::channel();
@@ -21,7 +22,7 @@ pub fn run(mut conf: Config) -> ViuResult {
 
     let loading_message = conf.loading_message.to_string();
     let cleanup_message = conf.cleanup_message.to_string();
-    
+
     // Hide cursor
     anes::execute!(&mut stdout(), loading_message, HideCursor).ok();
 
@@ -36,7 +37,7 @@ pub fn run(mut conf: Config) -> ViuResult {
         let _ = rx_ctrlc
             .recv()
             .expect("Could not receive signal to clean up terminal.");
-        
+
         if let Err(e) = execute!(stdout(), Clear(ClearType::FromCursorDown)) {
             if e.kind() == ErrorKind::BrokenPipe {
                 //Do nothing. Output is probably piped to `head` or a similar tool
@@ -44,11 +45,11 @@ pub fn run(mut conf: Config) -> ViuResult {
                 panic!("{}", e);
             }
         }
-        
+
         // Clear the entire screen & bring back the cursor
         anes::queue!(&mut stdout(), ClearBuffer::All, ShowCursor).ok();
 
-        print!("{}", cleanup_message);
+        println!("{}", cleanup_message);
         std::process::exit(0);
     })
     .map_err(|_| Error::new(ErrorKind::Other, "Could not setup Ctrl-C handler."))?;
@@ -58,7 +59,7 @@ pub fn run(mut conf: Config) -> ViuResult {
     if conf.files.len() == 1 && conf.files[0] == "-" {
         let stdin = stdin();
         let mut handle = stdin.lock();
-        
+
         let mut buf: Vec<u8> = Vec::new();
         let _ = handle.read_to_end(&mut buf)?;
 
@@ -76,7 +77,7 @@ pub fn run(mut conf: Config) -> ViuResult {
     }
 }
 
-fn view_passed_files(conf: &mut Config, (tx, rx): TxRx) -> ViuResult {
+fn view_passed_files<D: Display>(conf: &mut Config<D>, (tx, rx): TxRx) -> ViuResult {
     //loop throught all files passed
     for filename in &conf.files {
         //check if Ctrl-C has been received. If yes, stop iterating
@@ -98,7 +99,7 @@ fn view_passed_files(conf: &mut Config, (tx, rx): TxRx) -> ViuResult {
     Ok(())
 }
 
-fn view_directory(conf: &Config, dirname: &str, (tx, rx): TxRx) -> ViuResult {
+fn view_directory<D: Display>(conf: &Config<D>, dirname: &str, (tx, rx): TxRx) -> ViuResult {
     for dir_entry_result in fs::read_dir(dirname)? {
         //check if Ctrl-C has been received. If yes, stop iterating
         if rx.try_recv().is_ok() {
@@ -127,7 +128,7 @@ fn view_directory(conf: &Config, dirname: &str, (tx, rx): TxRx) -> ViuResult {
     Ok(())
 }
 
-fn view_file(conf: &Config, filename: &str, (tx, rx): TxRx) -> ViuResult {
+fn view_file<D: Display>(conf: &Config<D>, filename: &str, (tx, rx): TxRx) -> ViuResult {
     if conf.name {
         println!("{}:", filename);
     }
@@ -156,7 +157,11 @@ fn view_file(conf: &Config, filename: &str, (tx, rx): TxRx) -> ViuResult {
     Ok(())
 }
 
-fn try_print_gif<R: Read>(conf: &Config, input_stream: R, (tx, rx): TxRx) -> ViuResult {
+fn try_print_gif<R: Read, D: Display>(
+    conf: &Config<D>,
+    input_stream: R,
+    (tx, rx): TxRx,
+) -> ViuResult {
     //read all frames of the gif and resize them all at once before starting to print them
     let resized_frames: Vec<(Duration, DynamicImage)> = GifDecoder::new(input_stream)?
         .into_frames()
