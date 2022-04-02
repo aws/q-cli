@@ -1,18 +1,36 @@
+import { LocalStateChangedNotification, NotificationType } from './fig.pb';
+import { _subscribe } from './notifications';
+
 import {
   sendGetLocalStateRequest,
   sendUpdateLocalStateRequest
 } from './requests';
 
-export async function get(key: string) {
-  const response = await sendGetLocalStateRequest({
-    key
-  });
+export const didChange = {
+  subscribe(
+    handler: (notification: LocalStateChangedNotification) => boolean | undefined
+  ) {
+    return _subscribe(
+      { type: NotificationType.NOTIFY_ON_LOCAL_STATE_CHANGED },
+      notification => {
+        switch (notification?.type?.$case) {
+          case 'localStateChangedNotification':
+            return handler(notification.type.localStateChangedNotification);
+          default:
+            break;
+        }
 
-  if (response.jsonBlob) {
-    return JSON.parse(response.jsonBlob);
-  } 
-    return null;
-  
+        return false;
+      }
+    );
+  }
+};
+
+export async function get(key: string) {
+  const response = await sendGetLocalStateRequest({ key });
+  return response.jsonBlob
+    ? JSON.parse(response.jsonBlob)
+    : null;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
