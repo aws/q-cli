@@ -1,3 +1,5 @@
+// Deprecated: use fig.proto instead
+
 syntax = "proto3";
 package linux;
 

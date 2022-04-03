@@ -548,5 +548,3 @@ message Constants {
   optional string protoMessageHandler = 12;
   optional string themes = 13; // a comma-separated list of all themes
 }
-
-

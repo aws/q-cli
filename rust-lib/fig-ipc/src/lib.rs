@@ -17,7 +17,7 @@ use std::{
 };
 use thiserror::Error;
 use tokio::{
-    io::{self, AsyncReadExt, AsyncWriteExt},
+    io::{self, AsyncRead, AsyncReadExt, AsyncWriteExt},
     net::UnixStream,
 };
 use tracing::{error, trace};
@@ -27,7 +27,7 @@ use whoami::username;
 
 /// Get path to "/var/tmp/fig/$USERNAME/fig.socket"
 pub fn get_fig_socket_path() -> PathBuf {
-    // TODO: Good WSL socket path? 
+    // TODO: Good WSL socket path?
     if is_wsl() {
         return PathBuf::from("/mnt/c/fig/fig.socket");
     }
@@ -157,10 +157,20 @@ pub enum RecvError {
     Parse(#[from] fig_proto::FigMessageParseError),
 }
 
+impl RecvError {
+    pub fn is_disconnect(&self) -> bool {
+        if let RecvError::Io(io) = self {
+            matches!(io.kind(), std::io::ErrorKind::ConnectionAborted)
+        } else {
+            false
+        }
+    }
+}
+
 pub async fn recv_message<T, S>(stream: &mut S) -> Result<Option<T>, RecvError>
 where
     T: Message + Default,
-    S: AsyncReadExt + Unpin,
+    S: AsyncRead + Unpin,
 {
     let mut buffer = BytesMut::with_capacity(1024);
 

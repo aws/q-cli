@@ -16,8 +16,9 @@ members = [
     "fig-ibus-engine",
     "daemon",
     "linux-app/src-tauri",
-    "winfig/src-tauri"
+    "winfig/src-tauri",
     "fig-tauri/src-tauri",
+    "rust-lib/fig-log",
 ]
 
 [profile.release]

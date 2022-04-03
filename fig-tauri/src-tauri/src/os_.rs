@@ -1,20 +1,8 @@
+// kept here for reference
+
 use std::sync::{Arc, Mutex};
 
 use tauri::AppHandle;
-
-#[derive(Clone, Default)]
-pub struct Rect {
-    x: i32,
-    y: i32,
-    width: i32,
-    height: i32,
-}
-
-#[derive(Clone, Default)]
-pub struct EditBuffer {
-    text: String,
-    idx: i64,
-}
 
 #[cfg(target_os = "macos")]
 pub struct MacOsState {}

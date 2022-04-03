@@ -7,7 +7,7 @@ use serde::Serialize;
 use std::fs::remove_file;
 use std::sync::Arc;
 use tauri::async_runtime::{spawn, Mutex};
-use tauri::{AppHandle, Manager, Runtime};
+use tauri::{AppHandle, Manager};
 use tokio::join;
 use tokio::net::UnixListener;
 
