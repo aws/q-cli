@@ -4,7 +4,14 @@ pub struct State {
     _process_id: u32,
 }
 
-// NOTE: whatever this returns has to implement GenericSocket
-pub fn bind_socket(_path: &PathBuf) {
-    todo!()
+pub struct Listener(());
+
+impl Listener {
+    pub fn bind(path: &Path) -> Self {
+        todo!()
+    }
+
+    async fn accept(&self) -> Result<UnixStream, anyhow::Error> {
+        todo!()
+    }
 }

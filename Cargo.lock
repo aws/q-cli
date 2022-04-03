@@ -1677,6 +1677,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "fig-log"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "fig-directories",
+ "once_cell",
+ "parking_lot 0.12.0",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "fig-proto"
 version = "0.1.0"
 dependencies = [
@@ -1708,9 +1720,9 @@ name = "fig-tauri"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "async-trait",
  "cfg-if 1.0.0",
  "fig-ipc",
+ "fig-log",
  "fig-proto",
  "fig-settings",
  "serde",
@@ -1719,6 +1731,7 @@ dependencies = [
  "tauri",
  "tauri-build",
  "tokio",
+ "tracing",
 ]
 
 [[package]]
@@ -6000,9 +6013,9 @@ dependencies = [
 
 [[package]]
 name = "tracing-subscriber"
-version = "0.3.9"
+version = "0.3.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9e0ab7bdc962035a87fba73f3acca9b8a8d0034c2e6f60b84aeaaddddc155dce"
+checksum = "b9df98b037d039d03400d9dd06b0f8ce05486b5f25e9a2d7d36196e142ebbc52"
 dependencies = [
  "ansi_term",
  "lazy_static",

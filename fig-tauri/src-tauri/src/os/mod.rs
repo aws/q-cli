@@ -1,8 +1,5 @@
 // all os-specific code under a unified interface
 
-use async_trait::async_trait;
-use tokio::io::AsyncRead;
-
 mod utils;
 
 cfg_if::cfg_if!(
@@ -32,10 +29,3 @@ cfg_if::cfg_if!(
         compile_error!("Unsupported platform");
     }
 );
-
-#[async_trait]
-pub trait GenericListener {
-    type Stream: AsyncRead + Unpin;
-
-    async fn generic_accept(&self) -> Result<Self::Stream, anyhow::Error>;
-}

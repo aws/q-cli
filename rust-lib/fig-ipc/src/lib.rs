@@ -157,6 +157,16 @@ pub enum RecvError {
     Parse(#[from] fig_proto::FigMessageParseError),
 }
 
+impl RecvError {
+    pub fn is_disconnect(&self) -> bool {
+        if let RecvError::Io(io) = self {
+            matches!(io.kind(), std::io::ErrorKind::ConnectionAborted)
+        } else {
+            false
+        }
+    }
+}
+
 pub async fn recv_message<T, S>(stream: &mut S) -> Result<Option<T>, RecvError>
 where
     T: Message + Default,

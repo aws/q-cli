@@ -52,8 +52,8 @@ message Hook {
 		HideHook hide = 110;
 		EventHook event = 111;
 		FileChangedHook file_changed = 112;
-		CursorPositionHook cursor_position_hook = 113;
-		FocusChangeHook focus_change_hook = 114;
+		CursorPositionHook cursor_position = 113;
+		FocusChangeHook focus_change = 114;
 	}
 }
 

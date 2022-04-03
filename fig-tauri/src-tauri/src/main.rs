@@ -15,6 +15,8 @@ use tauri::Manager;
 use crate::state::{AppState, AppStateType};
 
 fn main() {
+    fig_log::init_logger("fig-tauri.log").unwrap();
+
     tauri::Builder::default()
         .manage(Arc::new(Mutex::new(AppState::default())))
         .setup(|app| {
