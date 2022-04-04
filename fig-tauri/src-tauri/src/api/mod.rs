@@ -1,5 +1,6 @@
 use std::io::Cursor;
 
+use base64;
 use fig_proto::fig::client_originated_message::Submessage as ClientOriginatedSubMessage;
 use fig_proto::fig::server_originated_message::Submessage as ServerOriginatedSubMessage;
 use fig_proto::{
@@ -31,10 +32,12 @@ pub enum ApiRequestError {
 }
 
 #[tauri::command]
-pub async fn handle_api_request(data: Vec<u8>) -> Result<Vec<u8>, ApiRequestError> {
-    let mut cursor = Cursor::new(data.as_slice());
-    let message = FigMessage::parse(&mut cursor).map_err(|_| ApiRequestError::DecodeError)?;
-    let message = ClientOriginatedMessage::decode(message.as_ref())
+pub async fn handle_api_request(client_originated_message_b64: String) {
+    let _res = handle_request(base64::decode(client_originated_message_b64).unwrap()).await;
+}
+
+async fn handle_request(data: Vec<u8>) -> Result<Vec<u8>, ApiRequestError> {
+    let message = ClientOriginatedMessage::decode(data.as_slice())
         .map_err(|_| ApiRequestError::DecodeError)?;
 
     macro_rules! route {

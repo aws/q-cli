@@ -4,10 +4,11 @@
     "version": "0.1.0"
   },
   "build": {
-    "distDir": "../dist",
-    "devPath": "http://localhost:3000",
+    "distDir": "http://localhost:3124",
+    "devPath": "http://localhost:3124",
     "beforeDevCommand": "yarn dev",
-    "beforeBuildCommand": "yarn build"
+    "beforeBuildCommand": "yarn build",
+    "withGlobalTauri": true
   },
   "tauri": {
     "bundle": {
