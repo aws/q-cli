@@ -4,11 +4,11 @@
 )]
 
 mod api;
+mod local;
 mod os;
-mod prelude;
 mod state;
 
-use crate::state::AppState;
+use crate::state::{AppState, AppStateType};
 use std::sync::{Arc, Mutex};
 use tauri::{
     plugin::{Builder, TauriPlugin},
@@ -44,17 +44,18 @@ fn constants_plugin<R: Runtime>() -> TauriPlugin<R> {
 }
 
 fn main() {
+    fig_log::init_logger("fig-tauri.log").unwrap();
+
     tauri::Builder::default()
         .plugin(constants_plugin())
         .manage(Arc::new(Mutex::new(AppState::default())))
         .setup(|app| {
-            //let state = app.state::<AppState>();
-
-            // spawn(handle_ipc(app.handle(), state.inner().clone()));
-            // spawn(handle_window(app.handle(), state.inner().clone()));
+            let state = app.state::<AppStateType>();
+            tauri::async_runtime::spawn(local::start_local_ipc(state.inner().clone()));
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![api::handle_api_request,])
+        .on_window_event(|_| println!("window event"))
+        .invoke_handler(tauri::generate_handler![api::handle_api_request])
         .run(tauri::generate_context!())
-        .expect("error while running tauri application")
+        .expect("error while running tauri application");
 }

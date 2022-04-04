@@ -1,19 +1,17 @@
-use std::path::PathBuf;
-
-use fig_proto::fig::FilePath;
-
-use crate::prelude::*;
-
 #[derive(Default)]
 pub struct State {
-    window_id: u32,
-    process_id: u32,
+    _window_id: u32,
+    _process_id: u32,
 }
 
-pub fn resolve_path(path: FilePath) -> Result<PathBuf> {
-    todo!()
-}
+pub struct Listener(());
 
-pub async fn read_file(path: &PathBuf) -> Result<Vec<u8>> {
-    todo!()
+impl Listener {
+    pub fn bind(path: &Path) -> Self {
+        todo!()
+    }
+
+    async fn accept(&self) -> Result<UnixStream, anyhow::Error> {
+        todo!()
+    }
 }

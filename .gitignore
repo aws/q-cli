@@ -16,6 +16,7 @@ node_modules/
 .eslintcache
 yarn-error.log
 yarn.lock
+.idea/
 
 dotenv/docker-compose.yaml
 

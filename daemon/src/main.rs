@@ -1,13 +1,11 @@
 #![warn(clippy::pedantic)]
 #![warn(rust_2018_idioms)]
 
-use std::borrow::Cow;
 use libsystemd::activation::IsType;
 use std::fs;
 use std::os::unix::io::{FromRawFd, IntoRawFd};
 use std::os::unix::net::UnixListener as StdUnixListener;
-use std::path::{Path, PathBuf};
-use tokio::fs::File;
+use std::path::PathBuf;
 use tokio::net::{UnixListener, UnixStream};
 
 #[tokio::main(flavor = "current_thread")]
@@ -42,6 +40,7 @@ async fn main() {
 
 enum ResponseKind {
     Error(String),
+    #[allow(dead_code)] // not actually dead
     Success,
     Message(fig_proto::fig::server_originated_message::Submessage),
 }
@@ -69,10 +68,10 @@ async fn handle(mut stream: UnixStream) {
                 ResponseKind::Error(msg) => server_originated_message::Submessage::Error(msg),
                 ResponseKind::Success => server_originated_message::Submessage::Success(true),
                 ResponseKind::Message(m) => m,
-            })
+            }),
         };
 
-        fig_ipc::send_message(&mut stream, message).await;
+        fig_ipc::send_message(&mut stream, message).await.ok();
     }
 }
 
@@ -80,7 +79,7 @@ async fn read_file(req: fig_proto::fig::ReadFileRequest) -> ResponseKind {
     use fig_proto::fig::*;
     let file_path = match req.path {
         Some(s) => s,
-        None => return ResponseKind::Error("Missing path".to_string())
+        None => return ResponseKind::Error("Missing path".to_string()),
     };
     let convert = |path: String| {
         if file_path.expand_tilde_in_path {
@@ -89,18 +88,24 @@ async fn read_file(req: fig_proto::fig::ReadFileRequest) -> ResponseKind {
             path
         }
     };
-    let mut relative_to = file_path.relative_to.map(convert).map(PathBuf::from).unwrap_or_else(PathBuf::new);
+    let mut relative_to = file_path
+        .relative_to
+        .map(convert)
+        .map(PathBuf::from)
+        .unwrap_or_else(PathBuf::new);
     let path = PathBuf::from(convert(file_path.path));
     relative_to.push(path);
     let file_data = match tokio::fs::read(relative_to).await {
         Ok(s) => s,
         Err(err) => return ResponseKind::Error(format!("Failed reading file: {:?}", err)),
     };
-    ResponseKind::Message(server_originated_message::Submessage::ReadFileResponse(ReadFileResponse {
-        r#type: Some(if req.is_binary_file {
-            read_file_response::Type::Data(file_data)
-        } else {
-            read_file_response::Type::Text(String::from_utf8_lossy(&file_data).to_string())
-        })
-    }))
+    ResponseKind::Message(server_originated_message::Submessage::ReadFileResponse(
+        ReadFileResponse {
+            r#type: Some(if req.is_binary_file {
+                read_file_response::Type::Data(file_data)
+            } else {
+                read_file_response::Type::Text(String::from_utf8_lossy(&file_data).to_string())
+            }),
+        },
+    ))
 }
