@@ -1,14 +1,12 @@
 use fig_proto::fig::NotificationType;
 use hashbrown::HashMap;
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 use parking_lot::Mutex;
 use std::sync::Arc;
 
 pub type AppStateType = Arc<Mutex<AppState>>;
 
-lazy_static! {
-    pub static ref STATE: AppStateType = AppStateType::default();
-}
+pub static STATE: Lazy<AppStateType> = Lazy::new(|| <AppStateType>::default());
 
 #[derive(Default, Debug)]
 pub struct AppState {

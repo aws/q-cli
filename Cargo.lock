@@ -1728,7 +1728,7 @@ dependencies = [
  "fig-proto",
  "fig-settings",
  "hashbrown 0.12.0",
- "lazy_static",
+ "once_cell",
  "parking_lot 0.12.0",
  "serde",
  "serde_json",
