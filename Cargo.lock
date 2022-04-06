@@ -1729,6 +1729,7 @@ dependencies = [
  "fig-settings",
  "hashbrown 0.12.0",
  "lazy_static",
+ "parking_lot 0.12.0",
  "serde",
  "serde_json",
  "shellexpand",

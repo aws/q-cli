@@ -1,8 +1,8 @@
-use std::sync::{Arc, Mutex};
-
 use fig_proto::fig::NotificationType;
 use hashbrown::HashMap;
 use lazy_static::lazy_static;
+use parking_lot::Mutex;
+use std::sync::Arc;
 
 pub type AppStateType = Arc<Mutex<AppState>>;
 
