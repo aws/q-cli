@@ -13,7 +13,7 @@ use crate::response_error;
 
 use super::ResponseResult;
 
-pub async fn read_file(request: ReadFileRequest) -> ResponseResult {
+pub async fn read_file(request: ReadFileRequest, _message_id: i64) -> ResponseResult {
     use fig_proto::fig::read_file_response::Type;
     let file_path = native::resolve_filepath(request.path.unwrap());
     let kind = if request.is_binary_file {
@@ -35,7 +35,7 @@ pub async fn read_file(request: ReadFileRequest) -> ResponseResult {
     Ok(response.into())
 }
 
-pub async fn write_file(request: WriteFileRequest) -> ResponseResult {
+pub async fn write_file(request: WriteFileRequest, _message_id: i64) -> ResponseResult {
     use fig_proto::fig::write_file_request::Data;
     let file_path = native::resolve_filepath(request.path.unwrap());
     match request.data.unwrap() {
@@ -50,7 +50,7 @@ pub async fn write_file(request: WriteFileRequest) -> ResponseResult {
     Ok(ResponseKind::Success)
 }
 
-pub async fn append_to_file(request: AppendToFileRequest) -> ResponseResult {
+pub async fn append_to_file(request: AppendToFileRequest, _message_id: i64) -> ResponseResult {
     use fig_proto::fig::append_to_file_request::Data;
     let file_path = native::resolve_filepath(request.path.unwrap());
     let mut file = OpenOptions::new()
@@ -75,6 +75,7 @@ pub async fn append_to_file(request: AppendToFileRequest) -> ResponseResult {
 
 pub async fn destination_of_symbolic_link(
     request: DestinationOfSymbolicLinkRequest,
+    _message_id: i64,
 ) -> ResponseResult {
     let file_path = native::resolve_filepath(request.path.unwrap());
     let real_path = tokio::fs::canonicalize(file_path)
@@ -90,7 +91,10 @@ pub async fn destination_of_symbolic_link(
     Ok(response.into())
 }
 
-pub async fn contents_of_directory(request: ContentsOfDirectoryRequest) -> ResponseResult {
+pub async fn contents_of_directory(
+    request: ContentsOfDirectoryRequest,
+    _message_id: i64,
+) -> ResponseResult {
     let file_path = native::resolve_filepath(request.directory.unwrap());
     let mut stream = tokio::fs::read_dir(file_path)
         .await

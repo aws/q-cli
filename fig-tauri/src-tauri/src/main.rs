@@ -4,16 +4,14 @@
 )]
 
 mod api;
-#[cfg(unix)]
 mod local;
 mod os;
 mod state;
 
-use crate::state::{AppState, AppStateType};
-use std::sync::{Arc, Mutex};
+use crate::state::STATE;
 use tauri::{
     plugin::{Builder, TauriPlugin},
-    Manager, Runtime,
+    Runtime,
 };
 
 fn declare_constants() -> String {
@@ -47,12 +45,8 @@ fn main() {
 
     tauri::Builder::default()
         .plugin(constants_plugin())
-        .manage(Arc::new(Mutex::new(AppState::default())))
-        .setup(|app| {
-            //let state = app.state::<AppStateType>();
-
-            #[cfg(unix)]
-            tauri::async_runtime::spawn(local::start_local_ipc(state.inner().clone()));
+        .setup(|_| {
+            tauri::async_runtime::spawn(local::start_local_ipc(STATE.clone()));
 
             Ok(())
         })

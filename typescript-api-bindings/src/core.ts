@@ -49,8 +49,9 @@ export function sendMessage(
 
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
-  const { invoke } = window.__TAURI__;
-  invoke('handle_api_request', { clientOriginatedMessageB64: b64 });
+  window.__TAURI__.invoke('handle_api_request', {
+    clientOriginatedMessageB64: b64
+  });
 
   // TODO: Make crossplatform
   return;
@@ -112,6 +113,28 @@ const setupEventListeners = (): void => {
   });
 };
 
+async function setupTauriEventListeners() {
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  await window.__TAURI__.event.listen(FigGlobalErrorOccurred, (event: any) => {
+    const response = { error: event.payload } as GlobalAPIError;
+    console.error(response);
+  });
+
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  await window.__TAURI__.event.listen(FigProtoMessageRecieved, (event: any) => {
+    const raw = event.payload as string;
+
+    const bytes = b64ToBytes(raw);
+
+    const message = ServerOriginatedMessage.decode(bytes);
+
+    recievedMessage(message);
+  });
+}
+
 // We want this to be run automatically
 console.log('[fig] setting up event listeners...');
 setupEventListeners();
+setupTauriEventListeners();

@@ -102,7 +102,7 @@ dependencies = [
  "serde_json",
  "tauri",
  "tauri-build",
- "windows 0.33.0",
+ "windows 0.34.0",
 ]
 
 [[package]]
@@ -578,9 +578,9 @@ dependencies = [
 
 [[package]]
 name = "brotli"
-version = "3.3.3"
+version = "3.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f838e47a451d5a8fa552371f80024dd6ace9b7acdf25c4c3d0f9bc6816fb1c39"
+checksum = "a1a0b1dbcc8ae29329621f8d4f0d835787c1c38bb1401979b49d13b0b305ff68"
 dependencies = [
  "alloc-no-stdlib",
  "alloc-stdlib",
@@ -788,9 +788,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "3.1.7"
+version = "3.1.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c67e7973e74896f4bba06ca2dcfd28d54f9cb8c035e940a32b88ed48f5f5ecf2"
+checksum = "71c47df61d9e16dc010b55dba1952a57d8c215dbb533fd13cdd13369aac73b1c"
 dependencies = [
  "atty",
  "bitflags",
@@ -809,7 +809,7 @@ version = "3.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "df6f3613c0a3cddfd78b41b10203eb322cb29b600cbdf808a7d3db95691b8e25"
 dependencies = [
- "clap 3.1.7",
+ "clap 3.1.8",
 ]
 
 [[package]]
@@ -818,7 +818,7 @@ version = "3.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "690eb5abb7a98df1a64a3028beaf95af7e0ceb13da3186e6d0a86161af76309e"
 dependencies = [
- "clap 3.1.7",
+ "clap 3.1.8",
  "clap_complete",
 ]
 
@@ -1003,9 +1003,9 @@ dependencies = [
 
 [[package]]
 name = "critical-section"
-version = "0.2.5"
+version = "0.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "01e191a5a6f6edad9b679777ef6b6c0f2bdd4a333f2ecb8f61c3e28109a03d70"
+checksum = "bc1e89b93912c97878305b70ef6b011bfc74622e7b79a9d4a0676c7663496bcd"
 dependencies = [
  "bare-metal 1.0.0",
  "cfg-if 1.0.0",
@@ -1084,14 +1084,14 @@ dependencies = [
 
 [[package]]
 name = "crossterm"
-version = "0.23.1"
+version = "0.23.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f1fd7173631a4e9e2ca8b32ae2fad58aab9843ea5aaf56642661937d87e28a3e"
+checksum = "a2102ea4f781910f8a5b98dd061f4c2023f479ce7bb1236330099ceb5a93cf17"
 dependencies = [
  "bitflags",
  "crossterm_winapi",
  "libc",
- "mio 0.7.14",
+ "mio 0.8.2",
  "parking_lot 0.12.0",
  "signal-hook",
  "signal-hook-mio",
@@ -1202,12 +1202,12 @@ dependencies = [
 
 [[package]]
 name = "darling"
-version = "0.13.1"
+version = "0.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d0d720b8683f8dd83c65155f0530560cba68cd2bf395f6513a483caee57ff7f4"
+checksum = "4e92cb285610dd935f60ee8b4d62dd1988bd12b7ea50579bd6a138201525318e"
 dependencies = [
- "darling_core 0.13.1",
- "darling_macro 0.13.1",
+ "darling_core 0.13.2",
+ "darling_macro 0.13.2",
 ]
 
 [[package]]
@@ -1226,9 +1226,9 @@ dependencies = [
 
 [[package]]
 name = "darling_core"
-version = "0.13.1"
+version = "0.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7a340f241d2ceed1deb47ae36c4144b2707ec7dd0b649f894cb39bb595986324"
+checksum = "5c29e95ab498b18131ea460b2c0baa18cbf041231d122b0b7bfebef8c8e88989"
 dependencies = [
  "fnv",
  "ident_case",
@@ -1251,11 +1251,11 @@ dependencies = [
 
 [[package]]
 name = "darling_macro"
-version = "0.13.1"
+version = "0.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "72c41b3b7352feb3211a0d743dc5700a4e3b60f51bd2b368892d1e0f9a95f44b"
+checksum = "b21dd6b221dd547528bd6fb15f1a3b7ab03b9a06f76bff288a8c629bcfbe7f0e"
 dependencies = [
- "darling_core 0.13.1",
+ "darling_core 0.13.2",
  "quote",
  "syn",
 ]
@@ -1468,9 +1468,9 @@ checksum = "a357d28ed41a50f9c765dbfe56cbc04a64e53e5fc58ba79fbc34c10ef3df831f"
 
 [[package]]
 name = "encoding_rs"
-version = "0.8.30"
+version = "0.8.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7896dc8abb250ffdda33912550faa54c88ec8b998dec0b2c55ab224921ce11df"
+checksum = "9852635589dc9f9ea1b6fe9f05b50ef208c85c834a562f0c6abb1c475736ec2b"
 dependencies = [
  "cfg-if 1.0.0",
 ]
@@ -1562,7 +1562,7 @@ dependencies = [
  "bitflags",
  "bytes",
  "cfg-if 1.0.0",
- "clap 3.1.7",
+ "clap 3.1.8",
  "clap_complete",
  "clap_complete_fig",
  "copypasta",
@@ -1667,6 +1667,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "bytes",
+ "cfg-if 0.1.10",
  "fig-proto",
  "prost",
  "thiserror",
@@ -1721,11 +1722,15 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "base64",
+ "bytes",
  "cfg-if 1.0.0",
  "fig-ipc",
  "fig-log",
  "fig-proto",
  "fig-settings",
+ "hashbrown 0.12.0",
+ "once_cell",
+ "parking_lot 0.12.0",
  "serde",
  "serde_json",
  "shellexpand",
@@ -1733,6 +1738,7 @@ dependencies = [
  "tauri-build",
  "tokio",
  "tracing",
+ "windows 0.34.0",
 ]
 
 [[package]]
@@ -1753,7 +1759,7 @@ dependencies = [
  "alacritty_terminal",
  "anyhow",
  "bytes",
- "clap 3.1.7",
+ "clap 3.1.8",
  "crossbeam",
  "dashmap",
  "fig-auth",
@@ -2162,7 +2168,7 @@ dependencies = [
 [[package]]
 name = "gio"
 version = "0.16.0"
-source = "git+https://github.com/gtk-rs/gtk-rs-core#cece39f48486ed724668e431f242a9b1ab849147"
+source = "git+https://github.com/gtk-rs/gtk-rs-core#0e4dddb010859a6e630f158d38438fad3e3c2a81"
 dependencies = [
  "bitflags",
  "futures-channel",
@@ -2204,7 +2210,7 @@ dependencies = [
 [[package]]
 name = "gio-sys"
 version = "0.16.0"
-source = "git+https://github.com/gtk-rs/gtk-rs-core#cece39f48486ed724668e431f242a9b1ab849147"
+source = "git+https://github.com/gtk-rs/gtk-rs-core#0e4dddb010859a6e630f158d38438fad3e3c2a81"
 dependencies = [
  "glib-sys 0.16.0",
  "gobject-sys 0.16.0",
@@ -2251,7 +2257,7 @@ dependencies = [
 [[package]]
 name = "glib"
 version = "0.16.0"
-source = "git+https://github.com/gtk-rs/gtk-rs-core#cece39f48486ed724668e431f242a9b1ab849147"
+source = "git+https://github.com/gtk-rs/gtk-rs-core#0e4dddb010859a6e630f158d38438fad3e3c2a81"
 dependencies = [
  "bitflags",
  "futures-channel",
@@ -2286,7 +2292,7 @@ dependencies = [
 [[package]]
 name = "glib-macros"
 version = "0.16.0"
-source = "git+https://github.com/gtk-rs/gtk-rs-core#cece39f48486ed724668e431f242a9b1ab849147"
+source = "git+https://github.com/gtk-rs/gtk-rs-core#0e4dddb010859a6e630f158d38438fad3e3c2a81"
 dependencies = [
  "anyhow",
  "heck 0.4.0",
@@ -2320,7 +2326,7 @@ dependencies = [
 [[package]]
 name = "glib-sys"
 version = "0.16.0"
-source = "git+https://github.com/gtk-rs/gtk-rs-core#cece39f48486ed724668e431f242a9b1ab849147"
+source = "git+https://github.com/gtk-rs/gtk-rs-core#0e4dddb010859a6e630f158d38438fad3e3c2a81"
 dependencies = [
  "libc",
  "system-deps 6.0.2",
@@ -2370,7 +2376,7 @@ dependencies = [
 [[package]]
 name = "gobject-sys"
 version = "0.16.0"
-source = "git+https://github.com/gtk-rs/gtk-rs-core#cece39f48486ed724668e431f242a9b1ab849147"
+source = "git+https://github.com/gtk-rs/gtk-rs-core#0e4dddb010859a6e630f158d38438fad3e3c2a81"
 dependencies = [
  "glib-sys 0.16.0",
  "libc",
@@ -2490,12 +2496,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "hashbrown"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8c21d40587b92fa6a6c6e3c1bdbf87d75511db5672f9c93175574b3a00df1758"
+dependencies = [
+ "ahash",
+]
+
+[[package]]
 name = "hashlink"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7249a3129cbc1ffccd74857f81464a323a152173cdb134e0fd81bc803b29facf"
 dependencies = [
- "hashbrown",
+ "hashbrown 0.11.2",
 ]
 
 [[package]]
@@ -2766,7 +2781,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0f647032dfaa1f8b6dc29bd3edb7bbef4861b8b8007ebb118d6db284fd59f6ee"
 dependencies = [
  "autocfg",
- "hashbrown",
+ "hashbrown 0.11.2",
 ]
 
 [[package]]
@@ -3099,7 +3114,7 @@ dependencies = [
 name = "linux-test"
 version = "0.1.0"
 dependencies = [
- "clap 3.1.7",
+ "clap 3.1.8",
  "fig-ipc",
  "fig-proto",
  "tokio",
@@ -3280,19 +3295,6 @@ dependencies = [
  "net2",
  "slab",
  "winapi 0.2.8",
-]
-
-[[package]]
-name = "mio"
-version = "0.7.14"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8067b404fe97c70829f082dec8bcf4f71225d7eaea1d8645349cb76fa06205cc"
-dependencies = [
- "libc",
- "log",
- "miow 0.3.7",
- "ntapi",
- "winapi 0.3.9",
 ]
 
 [[package]]
@@ -4074,9 +4076,9 @@ checksum = "8b870d8c151b6f2fb93e84a13146138f05d02ed11c7e7c54f8826aaaf7c9f184"
 
 [[package]]
 name = "pkg-config"
-version = "0.3.24"
+version = "0.3.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "58893f751c9b0412871a09abd62ecd2a00298c6c83befa223ef98c52aef40cbe"
+checksum = "1df8c4ec4b0627e53bdf214615ad287367e482558cf84b109250b37464dc03ae"
 
 [[package]]
 name = "png"
@@ -4980,7 +4982,7 @@ version = "1.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "12e47be9471c72889ebafb5e14d5ff930d89ae7a67bbdb5f8abb564f845a927e"
 dependencies = [
- "darling 0.13.1",
+ "darling 0.13.2",
  "proc-macro2",
  "quote",
  "syn",
@@ -5136,7 +5138,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "29ad2e15f37ec9a6cc544097b78a1ec90001e9f71b81338ca39f430adaca99af"
 dependencies = [
  "libc",
- "mio 0.7.14",
+ "mio 0.8.2",
  "signal-hook",
 ]
 
@@ -5157,9 +5159,9 @@ checksum = "7bd3e3206899af3f8b12af284fafc038cc1dc2b41d1b89dd17297221c5d225de"
 
 [[package]]
 name = "slab"
-version = "0.4.5"
+version = "0.4.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9def91fd1e018fe007022791f865d0ccc9b3a0d5001e01aabb8b40e46000afb5"
+checksum = "eb703cfe953bccee95685111adeedb76fabe4e97549a58d16f03ea7b9367bb32"
 
 [[package]]
 name = "smallvec"
@@ -5390,9 +5392,9 @@ dependencies = [
 
 [[package]]
 name = "sysinfo"
-version = "0.23.6"
+version = "0.23.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5f3c0db8e08e06cfd352a043bd0143498fb7d42783a6e941da83b55464eb27d2"
+checksum = "64b1a2186a2e97a1f866b949021dfeeee053294ef370b57417b385674a8776d4"
 dependencies = [
  "cfg-if 1.0.0",
  "core-foundation-sys",
@@ -5993,9 +5995,9 @@ dependencies = [
 
 [[package]]
 name = "tracing-core"
-version = "0.1.23"
+version = "0.1.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aa31669fa42c09c34d94d8165dd2012e8ff3c66aca50f3bb226b68f216f2706c"
+checksum = "90442985ee2f57c9e1b548ee72ae842f4a9a20e3f417cc38dbc5dc684d9bb4ee"
 dependencies = [
  "lazy_static",
  "valuable",

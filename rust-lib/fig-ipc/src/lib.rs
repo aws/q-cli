@@ -1,8 +1,9 @@
 //! Utiities for IPC with Mac App
-pub mod command;
+#[macro_use]
+extern crate cfg_if;
+
 pub mod daemon;
 pub mod figterm;
-pub mod hook;
 
 use anyhow::{bail, Result};
 use bytes::BytesMut;
@@ -10,35 +11,45 @@ use fig_proto::{FigMessage, FigProtobufEncodable};
 use prost::Message;
 use std::fmt::Debug;
 use std::io::{Cursor, Write};
-use std::os::unix::net::UnixStream as SyncUnixStream;
 use std::{
     path::{Path, PathBuf},
     time::Duration,
 };
 use thiserror::Error;
-use tokio::{
-    io::{self, AsyncRead, AsyncReadExt, AsyncWriteExt},
-    net::UnixStream,
-};
+use tokio::io::{self, AsyncRead, AsyncReadExt, AsyncWriteExt};
 use tracing::{error, trace};
 use wsl::is_wsl;
 
 use whoami::username;
 
+cfg_if! {
+    if #[cfg(unix)] {
+        pub mod command;
+        pub mod hook;
+        use std::os::unix::net::UnixStream as SyncUnixStream;
+        use tokio::net::UnixStream;
+    }
+}
+
 /// Get path to "/var/tmp/fig/$USERNAME/fig.socket"
 pub fn get_fig_socket_path() -> PathBuf {
-    // TODO: Good WSL socket path?
-    if is_wsl() {
-        return PathBuf::from("/mnt/c/fig/fig.socket");
+    cfg_if! {
+        if #[cfg(windows)] {
+            return PathBuf::from(r"C:\fig\fig.socket");
+        } else {
+            if is_wsl() {
+                return PathBuf::from("/mnt/c/fig/fig.socket");
+            } else {
+                return [
+                    Path::new("/var/tmp/fig"),
+                    Path::new(&username()),
+                    Path::new("fig.socket"),
+                ]
+                .into_iter()
+                .collect();
+            }
+        }
     }
-
-    [
-        Path::new("/var/tmp/fig"),
-        Path::new(&username()),
-        Path::new("fig.socket"),
-    ]
-    .into_iter()
-    .collect()
 }
 
 /// Get path to "$TMPDIR/fig_linux.socket"
@@ -52,6 +63,7 @@ pub fn get_fig_linux_socket_path() -> PathBuf {
 }
 
 /// Connect to `socket` with a timeout
+#[cfg(unix)]
 pub async fn connect_timeout(socket: impl AsRef<Path>, timeout: Duration) -> Result<UnixStream> {
     let conn = match tokio::time::timeout(timeout, UnixStream::connect(socket.as_ref())).await {
         Ok(Ok(conn)) => conn,
@@ -76,6 +88,7 @@ pub async fn connect_timeout(socket: impl AsRef<Path>, timeout: Duration) -> Res
 }
 
 /// Connect to `socket` synchronously without a timeout
+#[cfg(unix)]
 pub fn connect_sync(socket: impl AsRef<Path>) -> Result<SyncUnixStream> {
     let conn = match SyncUnixStream::connect(socket.as_ref()) {
         Ok(conn) => conn,
