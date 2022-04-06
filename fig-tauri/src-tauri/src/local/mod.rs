@@ -57,7 +57,7 @@ pub async fn start_local_ipc(state: AppStateType) {
     }
 }
 
-async fn handle_local_ipc<S: AsyncRead + AsyncWrite + Unpin>(state: AppStateType, mut stream: S) {
+async fn handle_local_ipc<S: AsyncRead + Unpin>(state: AppStateType, mut stream: S) {
     while let Some(message) = fig_ipc::recv_message::<LocalMessage, _>(&mut stream)
         .await
         .unwrap_or_else(|err| {
@@ -100,10 +100,13 @@ async fn handle_local_ipc<S: AsyncRead + AsyncWrite + Unpin>(state: AppStateType
                     }
                 };
 
+                // TODO: implement AsyncSend trait for Windows sockets
+                /*
                 if let Err(err) = fig_ipc::send_message(&mut stream, message).await {
                     error!("Failed sending local response: {}", err);
                     break;
                 }
+                */
             }
             Some(LocalMessageType::Hook(hook)) => {
                 macro_rules! route {

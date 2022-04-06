@@ -10,7 +10,7 @@ use crate::response_error;
 
 use super::ResponseResult;
 
-pub async fn get(request: GetSettingsPropertyRequest) -> ResponseResult {
+pub async fn get(request: GetSettingsPropertyRequest, _message_id: i64) -> ResponseResult {
     let value = match request.key {
         Some(key) => settings::get_value(key)
             .map_err(response_error!("Failed getting settings value"))?
@@ -32,7 +32,7 @@ pub async fn get(request: GetSettingsPropertyRequest) -> ResponseResult {
     Ok(response.into())
 }
 
-pub async fn update(request: UpdateSettingsPropertyRequest) -> ResponseResult {
+pub async fn update(request: UpdateSettingsPropertyRequest, _message_id: i64) -> ResponseResult {
     match (request.key, request.value) {
         (Some(key), Some(value)) => {
             settings::set_value(key, value)

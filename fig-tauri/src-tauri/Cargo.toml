@@ -21,15 +21,19 @@ tauri = { version = "1.0.0-rc.6", features = ["api-all", "devtools"] }
 base64 = "0.13.0"
 cfg-if = "1.0"
 fig-proto = { path = "../../rust-lib/fig-proto" }
+fig-ipc = { path = "../../rust-lib/fig-ipc" }
 anyhow = "1.0"
 shellexpand = "2.1.0"
 tokio = { version = "1.16", features = [ "rt", "rt-multi-thread", "sync", "fs", "io-util" ] } # same version as tauri
 fig-settings = { path = "../../rust-lib/fig-settings" }
 fig-log = { path = "../../rust-lib/fig-log" }
 tracing = "0.1.32"
+lazy_static = "1.4.0"
+hashbrown = "0.12.0"
+bytes = "1.1.0"
 
-[target.'cfg(unix)'.dependencies]
-fig-ipc = { path = "../../rust-lib/fig-ipc" }
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.34.0", features = ["Win32_Foundation", "Win32_Networking_WinSock", "Win32_Storage_FileSystem"] }
 
 [features]
 # by default Tauri runs in production mode

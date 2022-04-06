@@ -1,18 +1,22 @@
-use std::io::Cursor;
-
 use base64;
+use bytes::BytesMut;
 use fig_proto::fig::client_originated_message::Submessage as ClientOriginatedSubMessage;
 use fig_proto::fig::server_originated_message::Submessage as ServerOriginatedSubMessage;
 use fig_proto::{
     fig::{ClientOriginatedMessage, ServerOriginatedMessage},
     prost::Message,
-    FigMessage, FigProtobufEncodable,
 };
 use serde::Serialize;
+use tauri::Window;
 
 mod fs;
+mod notifications;
 mod settings;
 
+const FIG_GLOBAL_ERROR_OCCURRED: &str = "FigGlobalErrorOccurred";
+const FIG_PROTO_MESSAGE_RECIEVED: &str = "FigProtoMessageRecieved";
+
+#[derive(Debug)]
 pub enum ResponseKind {
     Error(String),
     Success,
@@ -25,28 +29,40 @@ impl From<ServerOriginatedSubMessage> for ResponseKind {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 pub enum ApiRequestError {
     DecodeError,
     EncodeError,
 }
 
 #[tauri::command]
-pub async fn handle_api_request(client_originated_message_b64: String) {
-    let _res = handle_request(base64::decode(client_originated_message_b64).unwrap()).await;
+pub async fn handle_api_request(window: Window, client_originated_message_b64: String) {
+    let res = handle_request(base64::decode(client_originated_message_b64).unwrap()).await;
+    match res {
+        Ok(data) => window.emit(FIG_PROTO_MESSAGE_RECIEVED, base64::encode(data)),
+        Err(ApiRequestError::DecodeError) => window.emit(FIG_GLOBAL_ERROR_OCCURRED, "Decode error"),
+        Err(ApiRequestError::EncodeError) => window.emit(FIG_GLOBAL_ERROR_OCCURRED, "Encode error"),
+    }
+    .unwrap();
 }
 
-async fn handle_request(data: Vec<u8>) -> Result<Vec<u8>, ApiRequestError> {
+async fn handle_request(data: Vec<u8>) -> Result<BytesMut, ApiRequestError> {
     let message = ClientOriginatedMessage::decode(data.as_slice())
         .map_err(|_| ApiRequestError::DecodeError)?;
+
+    // TODO: return error
+    let message_id = message.id.unwrap();
 
     macro_rules! route {
         ($($struct: ident => $func: path)*) => {
             match message.submessage {
                 $(
-                    Some(ClientOriginatedSubMessage::$struct(request)) => $func(request).await,
+                    Some(ClientOriginatedSubMessage::$struct(request)) => $func(request, message_id).await,
                 )*
-                _ => Err(ResponseKind::Error("Unknown submessage".to_string()))
+                _ => {
+              //println!("Missing handler: {:?}", message);
+                    Err(ResponseKind::Error("Unknown submessage".to_string()))
+                }
             }
         }
     }
@@ -61,6 +77,8 @@ async fn handle_request(data: Vec<u8>) -> Result<Vec<u8>, ApiRequestError> {
         /* settings */
         GetSettingsPropertyRequest => settings::get
         UpdateSettingsPropertyRequest => settings::update
+        /* notifications */
+        NotificationRequest => notifications::handle_request
     }
     .unwrap_or_else(|s| s);
 
@@ -73,11 +91,12 @@ async fn handle_request(data: Vec<u8>) -> Result<Vec<u8>, ApiRequestError> {
         }),
     };
 
-    let encoded = message
-        .encode_fig_protobuf()
+    let mut encoded = BytesMut::new();
+    message
+        .encode(&mut encoded)
         .map_err(|_| ApiRequestError::EncodeError)?;
 
-    Ok(encoded.inner.into_iter().collect::<Vec<u8>>())
+    Ok(encoded)
 }
 
 pub type ResponseResult = Result<ResponseKind, ResponseKind>;
