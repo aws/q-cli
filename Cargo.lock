@@ -1667,6 +1667,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "bytes",
+ "cfg-if 0.1.10",
  "fig-proto",
  "prost",
  "thiserror",
