@@ -11,11 +11,20 @@ pub struct PluginContext {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PluginInstallData {
-    pub source: Option<String>,
+#[serde(untagged)]
+pub enum ElementOrList<T> {
+    Element(T),
+    List(Vec<T>),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PluginInstallData {
+    pub source_files: Option<ElementOrList<String>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PluginData {
     pub name: String,
     pub github: Option<GitHub>,
@@ -23,6 +32,7 @@ pub struct PluginData {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PluginResponse {
     pub success: bool,
     pub plugin: Option<PluginData>,
