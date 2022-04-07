@@ -118,16 +118,27 @@ pub struct IntegrationFileShellIntegration {
     pub path: PathBuf,
 }
 
+fn get_prefix(s: &str) -> &str {
+    match s.find('.') {
+        Some(i) => &s[..i],
+        None => s,
+    }
+}
+
 impl IntegrationFileShellIntegration {
     fn get_contents(&self) -> String {
+        let rcfile = match self.path.file_name().and_then(|x| x.to_str()) {
+            Some(name) => format!(" --rcfile {}", get_prefix(name)),
+            None => "".into(),
+        };
         match self.shell {
             Shell::Fish => format!(
-                "eval (~/.local/bin/fig init {} {} | string split0)",
-                self.shell, self.when
+                "eval (~/.local/bin/fig init {} {}{} | string split0)",
+                self.shell, self.when, rcfile
             ),
             _ => format!(
-                "eval \"$(~/.local/bin/fig init {} {})\"",
-                self.shell, self.when
+                "eval \"$(~/.local/bin/fig init {} {}{})\"",
+                self.shell, self.when, rcfile
             ),
         }
     }

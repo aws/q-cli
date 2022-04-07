@@ -117,6 +117,8 @@ pub enum CliRootCommands {
         /// When to generate the dotfiles for
         #[clap(arg_enum)]
         when: When,
+        #[clap(long)]
+        rcfile: Option<String>,
     },
     /// Sync your latest dotfiles
     Source,
@@ -288,7 +290,11 @@ impl Cli {
                 CliRootCommands::Diagnostic { format, force } => {
                     diagnostics::diagnostics_cli(format, force).await
                 }
-                CliRootCommands::Init { shell, when } => init::shell_init_cli(&shell, &when).await,
+                CliRootCommands::Init {
+                    shell,
+                    when,
+                    rcfile,
+                } => init::shell_init_cli(&shell, &when, rcfile).await,
                 CliRootCommands::Source => source::source_cli().await,
                 CliRootCommands::Login { refresh } => auth::login_cli(refresh).await,
                 CliRootCommands::Logout => auth::logout_cli().await,
