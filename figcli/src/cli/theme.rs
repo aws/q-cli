@@ -67,7 +67,7 @@ pub async fn theme_cli(theme_str: Option<String>) -> Result<()> {
                             }
 
                             if let Some(github) = github {
-                                println!("  💻 github.com/{}", github.underlined());
+                                println!("  💻 {}", format!("github.com/{}", github).underlined());
                             }
                         }
                         None => {

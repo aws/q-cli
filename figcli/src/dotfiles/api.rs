@@ -8,7 +8,7 @@ use serde_json::json;
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 use tracing::{debug, info};
 
-use crate::{util::shell::Shell, plugins::api::PluginData};
+use crate::{plugins::api::PluginData, util::shell::Shell};
 
 /// The data for all the shells
 #[derive(Debug, Clone, Serialize, Deserialize)]
