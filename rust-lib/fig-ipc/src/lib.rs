@@ -4,6 +4,10 @@ extern crate cfg_if;
 
 pub mod daemon;
 pub mod figterm;
+#[cfg(unix)]
+pub mod command;
+#[cfg(unix)]
+pub mod hook;
 
 use anyhow::{bail, Result};
 use bytes::BytesMut;
@@ -24,8 +28,6 @@ use whoami::username;
 
 cfg_if! {
     if #[cfg(unix)] {
-        pub mod command;
-        pub mod hook;
         use std::os::unix::net::UnixStream as SyncUnixStream;
         use tokio::net::UnixStream;
     }
