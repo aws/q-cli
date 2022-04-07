@@ -59,7 +59,7 @@ fn guard_source(
     output.join("\n")
 }
 
-fn shell_init(shell: &Shell, when: &When) -> Result<String> {
+fn shell_init(shell: &Shell, when: &When, rcfile: Option<String>) -> Result<String> {
     let should_source = fig_settings::state::get_bool("shell-integrations.enabled")
         .ok()
         .flatten()
@@ -73,6 +73,15 @@ fn shell_init(shell: &Shell, when: &When) -> Result<String> {
             GuardAssignment::AfterSourcing,
             "echo '[Debug]: fig shell integration is disabled.'",
         ));
+    }
+
+    match (shell, when, rcfile.as_deref()) {
+        (Shell::Zsh, When::Post, Some("zprofile"))
+        | (Shell::Bash, When::Post, Some("profile"))
+        | (Shell::Bash, When::Post, Some("bash_profile")) => {
+            return Ok("".to_owned());
+        }
+        _ => {}
     }
 
     let mut to_source = String::new();
@@ -220,9 +229,9 @@ fn shell_init(shell: &Shell, when: &When) -> Result<String> {
     Ok(to_source)
 }
 
-pub async fn shell_init_cli(shell: &Shell, when: &When) -> Result<()> {
+pub async fn shell_init_cli(shell: &Shell, when: &When, rcfile: Option<String>) -> Result<()> {
     println!("# {when} for {shell}");
-    match shell_init(shell, when) {
+    match shell_init(shell, when, rcfile) {
         Ok(source) => println!("{source}"),
         Err(err) => println!("# Could not load source: {err}"),
     }
