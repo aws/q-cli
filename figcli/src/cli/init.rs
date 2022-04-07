@@ -1,10 +1,6 @@
 use crate::{
     dotfiles::api::DotfileData,
-    util::{
-        app_path_from_bundle_id,
-        shell::{Shell, When},
-        terminal::Terminal,
-    },
+    util::{app_path_from_bundle_id, shell::Shell, shell_integration::When, terminal::Terminal},
 };
 use anyhow::{Context, Result};
 use crossterm::tty::IsTty;
@@ -190,6 +186,35 @@ fn shell_init(shell: &Shell, when: &When) -> Result<String> {
                 source,
             ));
         }
+    }
+
+    // April Fools
+    if fig_settings::settings::get_bool("command-not-found.beta")
+        .ok()
+        .flatten()
+        .unwrap_or(false)
+    {
+        let after_text = format!("Command not found: {}\nTo disable Terminal Reactions™️ by Fig run: fig settings command-not-found.beta false", 
+            match shell {
+                Shell::Bash | Shell::Zsh => "$0",
+                Shell::Fish => "$argv[1]"
+            }
+        );
+
+        let fools_cmd = format!(
+            "fig _ animation -f random --before-text \"Loading Terminal Reactions™️ by Fig...\" --after-text \"{after_text}\"\nreturn 127");
+
+        to_source.push_str(&guard_source(
+            shell,
+            false,
+            "FIG_APRIL_FOOLS_GUARD",
+            GuardAssignment::AfterSourcing,
+            match shell {
+                Shell::Bash => format!("command_not_found_handle() {{ {fools_cmd}; }}"),
+                Shell::Zsh => format!("command_not_found_handler() {{ {fools_cmd}; }}"),
+                Shell::Fish => format!("function fish_command_not_found\n    {fools_cmd}\nend"),
+            },
+        ));
     }
 
     Ok(to_source)

@@ -303,11 +303,11 @@ impl DebugSubcommand {
                         .wait()?;
 
                     launch_fig(LaunchOptions::new().wait_for_activation().verbose())?;
-                    let result = prompt_accessibility_command().await;
-                    if result.is_err() {
-                        println!("Could not prompt for accessibility permissions.");
-                        return result;
-                    }
+                    // let result = prompt_accessibility_command().await;
+                    // if result.is_err() {
+                    //     println!("Could not prompt for accessibility permissions.");
+                    //     return result;
+                    // }
                 }
                 Some(AccessibilityAction::Reset) => {
                     quit_fig().await?;

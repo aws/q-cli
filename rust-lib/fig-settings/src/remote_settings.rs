@@ -82,7 +82,7 @@ pub async fn get_settings() -> Result<RemoteSettings> {
     let token = get_token().await?;
 
     let api_host = api_host();
-    let url = Url::parse(&format!("{api_host}/settings/settings"))?;
+    let url = Url::parse(&format!("{api_host}/settings/"))?;
 
     let res = reqwest::Client::new()
         .get(url)

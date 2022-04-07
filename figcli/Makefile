@@ -97,9 +97,17 @@ build-native:
 	cargo build
 	install $(TARGET_DIR)/debug/$(BINARY_NAME) $(ARTIFACTS)/$(BINARY_NAME)
 
+build-native-release:
+	cargo build --release
+	install $(TARGET_DIR)/release/$(BINARY_NAME) $(ARTIFACTS)/$(BINARY_NAME)
+
 install: all
 
 install-native: build-native
+	mkdir -p ~/.local/bin/
+	install $(ARTIFACTS)/$(BINARY_NAME) ~/.local/bin/$(BINARY_NAME)
+
+install-native-release: build-native-release
 	mkdir -p ~/.local/bin/
 	install $(ARTIFACTS)/$(BINARY_NAME) ~/.local/bin/$(BINARY_NAME)
 

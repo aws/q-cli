@@ -101,4 +101,8 @@ impl LocalJson {
     pub fn get_setting(&self) -> Option<&serde_json::Map<String, serde_json::Value>> {
         self.inner.as_object()
     }
+
+    pub fn to_inner(self) -> serde_json::Value {
+        self.inner
+    }
 }

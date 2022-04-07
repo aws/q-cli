@@ -11,6 +11,7 @@ pub mod installation;
 pub mod internal;
 pub mod invite;
 pub mod issue;
+pub mod man;
 pub mod plugins;
 pub mod settings;
 pub mod source;
@@ -22,11 +23,7 @@ pub mod util;
 use crate::{
     cli::util::dialoguer_theme,
     daemon::{daemon, get_daemon},
-    util::{
-        is_app_running, launch_fig,
-        shell::{Shell, When},
-        LaunchOptions,
-    },
+    util::{is_app_running, launch_fig, shell::Shell, shell_integration::When, LaunchOptions},
 };
 
 use anyhow::{Context, Result};
@@ -43,6 +40,14 @@ pub enum OutputFormat {
     Plain,
     /// Outputs the results as JSON
     Json,
+    /// Outputs the results as JSON with a pretty print
+    JsonPretty,
+}
+
+impl Default for OutputFormat {
+    fn default() -> Self {
+        OutputFormat::Plain
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ArgEnum)]
@@ -98,7 +103,7 @@ pub enum CliRootCommands {
     /// Run diagnostic tests
     Diagnostic {
         /// The format of the output
-        #[clap(long, short, arg_enum, default_value = "plain")]
+        #[clap(long, short, arg_enum, default_value_t)]
         format: OutputFormat,
         /// Force limited diagnostic output
         #[clap(long)]
@@ -152,7 +157,7 @@ pub enum CliRootCommands {
     #[clap(hide = true)]
     Completion {
         /// Shell to generate the completion spec for
-        #[clap(arg_enum, default_value = "zsh")]
+        #[clap(arg_enum, default_value_t = Shells::Zsh)]
         shell: Shells,
     },
     /// Internal subcommands used for Fig
@@ -165,7 +170,7 @@ pub enum CliRootCommands {
     /// Restart the Fig desktop app
     Restart {
         /// The process to restart
-        #[clap(arg_enum, default_value = "app", hide = true)]
+        #[clap(arg_enum, default_value_t = Processes::App, hide = true)]
         process: Processes,
     },
     #[clap(hide = true)]
@@ -173,11 +178,16 @@ pub enum CliRootCommands {
     Alpha,
     /// Run the Fig tutorial
     Onboarding,
-    /// (LEGACY) Old hook that was being used somewhere
-    #[clap(name = "app:running", hide = true)]
-    FigAppRunning,
     #[clap(subcommand)]
     Plugins(PluginsSubcommands),
+    /// Open manual page
+    Man { command: Vec<String> },
+    /// (LEGACY) Old hook that was being used somewhere
+    #[clap(name = "app:running", hide = true)]
+    LegacyAppRunning,
+    /// (LEGACY) Old ssh hook that might be in ~/.ssh/config
+    #[clap(name = "bg:ssh", hide = true)]
+    LegacyBgSsh,
 }
 
 #[derive(Debug, Parser)]
@@ -199,6 +209,8 @@ pub enum CliRootCommands {
 │ \x1B[1missue\x1B[0m          \x1B[0;90mCreate a new GitHub issue\x1B[0m         │
 │ \x1B[1mtweet\x1B[0m          \x1B[0;90mTweet about Fig\x1B[0m                   │
 │ \x1B[1mupdate\x1B[0m         \x1B[0;90mUpdate Fig\x1B[0m                        │
+│ \x1B[1mquit\x1B[0m           \x1B[0;90mQuit the Fig app\x1B[0m                  │
+│ \x1B[1muninstall\x1B[0m      \x1B[0;90mUninstall Fig\x1B[0m                     │
 ╰──────────────────────────────────────────────────╯
 
  \x1B[0;90mFor more info on a specific command, use:\x1B[0m
@@ -340,11 +352,13 @@ impl Cli {
                 },
                 CliRootCommands::Alpha => root_command().await,
                 CliRootCommands::Onboarding => AppSubcommand::Onboarding.execute().await,
-                CliRootCommands::FigAppRunning => {
+                CliRootCommands::Plugins(plugins_subcommand) => plugins_subcommand.execute().await,
+                CliRootCommands::Man { command } => man::man(&command),
+                CliRootCommands::LegacyAppRunning => {
                     println!("{}", if is_app_running() { "1" } else { "0" });
                     Ok(())
                 }
-                CliRootCommands::Plugins(plugins_subcommand) => plugins_subcommand.execute().await,
+                CliRootCommands::LegacyBgSsh => Ok(()),
             },
             // Root command
             None => root_command().await,

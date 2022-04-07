@@ -11,6 +11,7 @@ import * as fs from './filesystem';
 import * as Config from './config';
 import * as Native from './native';
 import * as Debugger from './debugger';
+import * as State from './state';
 
 import * as Fig from './fig.pb';
 import * as Internal from './requests';
@@ -29,7 +30,8 @@ const lib = {
   Native,
   Internal,
   Debugger,
-  Process
+  Process,
+  State
 };
 
 export {
@@ -47,7 +49,8 @@ export {
   Internal,
   Fig,
   Debugger,
-  Process
+  Process,
+  State
 };
 
 declare global {

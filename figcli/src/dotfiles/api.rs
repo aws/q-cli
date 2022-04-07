@@ -8,14 +8,7 @@ use serde_json::json;
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 use tracing::{debug, info};
 
-use crate::util::shell::Shell;
-
-/// The list of installed plugins
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct InstalledPlugins {
-    pub name: String,
-}
+use crate::{plugins::api::PluginData, util::shell::Shell};
 
 /// The data for all the shells
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -23,7 +16,7 @@ pub struct InstalledPlugins {
 pub struct DotfilesData {
     #[serde(with = "time::serde::rfc3339::option")]
     pub updated_at: Option<time::OffsetDateTime>,
-    pub plugins: Vec<InstalledPlugins>,
+    pub plugins: Vec<PluginData>,
     #[serde(flatten)]
     pub dotfiles: HashMap<Shell, String>,
 }

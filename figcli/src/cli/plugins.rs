@@ -31,7 +31,7 @@ pub enum PluginsSubcommands {
     /// List all plugins available in the plugin store
     List {
         /// The output format
-        #[clap(long, short, arg_enum, default_value = "plain")]
+        #[clap(long, short, arg_enum, default_value_t)]
         format: OutputFormat,
         /// Only list plugins that are installed
         #[clap(long, short)]
@@ -252,23 +252,26 @@ impl PluginsSubcommands {
 
                         if let Some(object) = json.as_object() {
                             if let Some(plugins) = object.get("plugins") {
-                                if format == &OutputFormat::Plain {
-                                    if let Some(plugins) = plugins.as_array() {
-                                        for plugin in plugins {
-                                            if let Some(name) = plugin.get("name") {
-                                                if let Some(name) = name.as_str() {
-                                                    println!("{}", name);
+                                match format {
+                                    OutputFormat::Plain => {
+                                        if let Some(plugins) = plugins.as_array() {
+                                            for plugin in plugins {
+                                                if let Some(name) = plugin.get("name") {
+                                                    if let Some(name) = name.as_str() {
+                                                        println!("{}", name);
+                                                    }
                                                 }
                                             }
                                         }
-                                        Ok(())
-                                    } else {
-                                        bail!("Plugins in response is not an array");
                                     }
-                                } else {
-                                    println!("{}", serde_json::to_string(&plugins)?);
-                                    Ok(())
+                                    OutputFormat::Json => {
+                                        println!("{}", serde_json::to_string(&json)?);
+                                    }
+                                    OutputFormat::JsonPretty => {
+                                        println!("{}", serde_json::to_string_pretty(&json)?)
+                                    }
                                 }
+                                Ok(())
                             } else {
                                 bail!("Could not find plugins in response");
                             }
