@@ -6,9 +6,10 @@ use fig_proto::local::{
 use tokio::io::{AsyncRead, AsyncWrite};
 use tracing::{error, warn};
 
-use crate::{os::native, state::AppStateType};
+use crate::os::native;
 
 mod commands;
+pub mod figterm;
 mod hooks;
 
 #[allow(unused)]
@@ -41,7 +42,7 @@ impl ResponseKind {
     }
 }
 
-pub async fn start_local_ipc(state: AppStateType) {
+pub async fn start_local_ipc() {
     let socket_path = fig_ipc::get_fig_socket_path();
 
     if socket_path.exists() {
@@ -53,11 +54,11 @@ pub async fn start_local_ipc(state: AppStateType) {
     let listener = native::Listener::bind(&socket_path);
 
     while let Ok(stream) = listener.accept().await {
-        tokio::spawn(handle_local_ipc(state.clone(), stream));
+        tokio::spawn(handle_local_ipc(stream));
     }
 }
 
-async fn handle_local_ipc<S: AsyncRead + Unpin>(state: AppStateType, mut stream: S) {
+async fn handle_local_ipc<S: AsyncRead + AsyncWrite + Unpin>(mut stream: S) {
     while let Some(message) = fig_ipc::recv_message::<LocalMessage, _>(&mut stream)
         .await
         .unwrap_or_else(|err| {
@@ -73,7 +74,7 @@ async fn handle_local_ipc<S: AsyncRead + Unpin>(state: AppStateType, mut stream:
                     ($($struct: ident => $func: path)*) => {
                         match command.command {
                             $(
-                                Some(fig_proto::local::command::Command::$struct(request)) => $func(&state, request).await,
+                                Some(fig_proto::local::command::Command::$struct(request)) => $func(request).await,
                             )*
                             _ => Err(ResponseKind::error_message("Unknown command"))
                         }
@@ -100,32 +101,30 @@ async fn handle_local_ipc<S: AsyncRead + Unpin>(state: AppStateType, mut stream:
                     }
                 };
 
-                // TODO: implement AsyncSend trait for Windows sockets
-                /*
+                // TODO: implement AsyncWrite trait for Windows sockets
                 if let Err(err) = fig_ipc::send_message(&mut stream, message).await {
                     error!("Failed sending local response: {}", err);
                     break;
                 }
-                */
             }
             Some(LocalMessageType::Hook(hook)) => {
                 macro_rules! route {
                     ($($struct: ident => $func: path)*) => {
                         match hook.hook {
                             $(
-                                Some(fig_proto::local::hook::Hook::$struct(request)) => $func(&state, request).await,
+                                Some(fig_proto::local::hook::Hook::$struct(request)) => $func(request).await,
                             )*
-                            _ => Err(anyhow!("Unknown hook"))
+                            s => Err(anyhow!("Unknown hook {:?}", s))
                         }
                     }
                 }
 
                 if let Err(err) = route! {
-                    Init => hooks::state::init
                     EditBuffer => hooks::state::edit_buffer
                     CursorPosition => hooks::state::cursor_position
+                    Prompt => hooks::state::prompt
                 } {
-                    error!("Failed processing hooking: {}", err);
+                    error!("Failed processing hook: {}", err);
                 }
             }
             None => warn!("Received empty local message"),

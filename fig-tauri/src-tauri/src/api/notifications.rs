@@ -8,10 +8,10 @@ use super::ResponseResult;
 pub async fn handle_request(request: NotificationRequest, message_id: i64) -> ResponseResult {
     let notification_type = NotificationType::from_i32(request.r#type.unwrap()).unwrap();
 
-    if request.subscribe.unwrap_or_else(|| true) {
-        return subscribe(message_id, notification_type);
+    if request.subscribe.unwrap_or(true) {
+        subscribe(message_id, notification_type)
     } else {
-        return unsubscribe(notification_type);
+        unsubscribe(notification_type)
     }
 }
 

@@ -65,11 +65,15 @@ pub fn init_logger(log_file_name: impl AsRef<str>) -> Result<()> {
     }
 
     let file = File::create(log_path).context("failed to create log file")?;
-    let fmt_layer = fmt::layer().with_line_number(true).with_writer(file);
+    let file_layer = fmt::layer().with_line_number(true).with_writer(file);
+    let stdout_layer = fmt::layer()
+        .with_line_number(true)
+        .with_writer(std::io::stdout);
 
     tracing_subscriber::registry()
         .with(filter_layer)
-        .with(fmt_layer)
+        .with(file_layer)
+        .with(stdout_layer)
         .init();
 
     Ok(())

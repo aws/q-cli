@@ -2,8 +2,8 @@ use glib::{g_log, LogLevel, StaticType};
 use ibus::traits::{BusExt, FactoryExt};
 
 mod imp {
-    use glib::{g_log, LogLevel};
     use glib::subclass::prelude::*;
+    use glib::{g_log, LogLevel};
     use ibus::traits::EngineExt;
     use parking_lot::Mutex;
     use std::os::unix::net::UnixStream;
@@ -36,20 +36,18 @@ mod imp {
                 *engine.imp().cursor_position.lock() = (x, y, w, h);
             });
             obj.connect_process_key_event(|engine, _, _, _| {
-                use fig_proto::linux::*;
+                use fig_proto::local::*;
                 let imp = engine.imp();
                 let cursor_position = *imp.cursor_position.lock();
-                send_command(
+                send_hook(
                     imp,
-                    AppCommand {
-                        command: Some(app_command::Command::SetCursorPosition(
-                            SetCursorPositionCommand {
-                                x: cursor_position.0,
-                                y: cursor_position.1,
-                                width: cursor_position.2,
-                                height: cursor_position.3,
-                            },
-                        )),
+                    Hook {
+                        hook: Some(hook::Hook::CursorPosition(CursorPositionHook {
+                            x: cursor_position.0,
+                            y: cursor_position.1,
+                            width: cursor_position.2,
+                            height: cursor_position.3,
+                        })),
                     },
                 );
 
@@ -61,16 +59,17 @@ mod imp {
     }
 
     fn handle_focus_change(engine: &super::FigIBusEngine) {
-        use fig_proto::linux::*;
-        send_command(
+        use fig_proto::local::*;
+        send_hook(
             engine.imp(),
-            AppCommand {
-                command: Some(app_command::Command::FocusChangeCommand(Empty {})),
+            Hook {
+                hook: Some(hook::Hook::FocusChange(FocusChangeHook {})),
             },
         );
     }
 
-    fn send_command(imp: &FigIBusEngine, command: fig_proto::linux::AppCommand) {
+    fn send_hook(imp: &FigIBusEngine, hook: fig_proto::local::Hook) {
+        use fig_proto::local::*;
         if let Some(mut handle) = imp.socket_connection.try_lock() {
             if match &*handle {
                 Some(Err(time)) => {
@@ -89,18 +88,29 @@ mod imp {
             } {}
 
             if let Some(Ok(stream)) = &mut *handle {
-                if let Err(err) = fig_ipc::send_message_sync(stream, command) {
-                    g_log!("Fig", LogLevel::Error, "Failed sending message: {:?}", err);
+                if let Err(err) = fig_ipc::send_message_sync(
+                    stream,
+                    LocalMessage {
+                        r#type: Some(local_message::Type::Hook(hook)),
+                    },
+                ) {
+                    *handle = None;
+                    g_log!(
+                        "Fig",
+                        LogLevel::Warning,
+                        "Failed sending message: {:?}",
+                        err
+                    );
                 }
             }
         };
     }
 
     fn get_stream() -> Result<UnixStream, Instant> {
-        fig_ipc::connect_sync(fig_ipc::get_fig_linux_socket_path()).map_err(|err| {
+        fig_ipc::connect_sync(fig_ipc::get_fig_socket_path()).map_err(|err| {
             g_log!(
                 "Fig",
-                LogLevel::Error,
+                LogLevel::Warning,
                 "Failed connecting to socket: {:?}",
                 err
             );

@@ -8,11 +8,15 @@ mod local;
 mod os;
 mod state;
 
-use crate::state::STATE;
+use std::time::Duration;
+
 use tauri::{
     plugin::{Builder, TauriPlugin},
     Runtime,
 };
+use tracing::info;
+
+use crate::{local::figterm::FigTermCommand, state::STATE};
 
 fn declare_constants() -> String {
     let mut script: Vec<&str> = Vec::new();
@@ -46,11 +50,11 @@ fn main() {
     tauri::Builder::default()
         .plugin(constants_plugin())
         .setup(|_| {
-            tauri::async_runtime::spawn(local::start_local_ipc(STATE.clone()));
+            tauri::async_runtime::spawn(local::start_local_ipc());
+            tauri::async_runtime::spawn(local::figterm::clean_figterm_cache());
 
             Ok(())
         })
-        .on_window_event(|_| println!("window event"))
         .invoke_handler(tauri::generate_handler![api::handle_api_request])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -16,7 +16,7 @@ use std::{
     time::Duration,
 };
 use thiserror::Error;
-use tokio::io::{self, AsyncRead, AsyncReadExt, AsyncWriteExt};
+use tokio::io::{self, AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use tracing::{error, trace};
 use wsl::is_wsl;
 
@@ -111,7 +111,7 @@ pub fn connect_sync(socket: impl AsRef<Path>) -> Result<SyncUnixStream> {
 pub async fn send_message<M, S>(stream: &mut S, message: M) -> Result<()>
 where
     M: FigProtobufEncodable,
-    S: AsyncWriteExt + Unpin,
+    S: AsyncWrite + Unpin,
 {
     let encoded_message = match message.encode_fig_protobuf() {
         Ok(encoded_message) => encoded_message,
