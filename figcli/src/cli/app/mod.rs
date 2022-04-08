@@ -122,7 +122,6 @@ impl AppSubcommand {
                         println!("Onboarding isn't supported on Windows yet");
                     }
                 }
-
             }
             AppSubcommand::Prompts => {
                 if is_app_running() {
@@ -214,14 +213,14 @@ impl AppSubcommand {
 
                     let tty = String::from_utf8(output.stdout)?;
                     let pid = nix::unistd::getppid();
-    
+
                     let hook = hooks::generate_shell_context(pid, tty, None, None)
                         .and_then(hooks::new_init_hook)
                         .context(format!(
                             "{} Unable to reload. Restart terminal to apply changes.",
                             "Error:".red()
                         ))?;
-    
+
                     send_hook_to_socket(hook).await.context(format!(
                         "\n{}\nFig might not be running to launch Fig run: {}\n",
                         "Unable to Connect to Fig:".bold(),

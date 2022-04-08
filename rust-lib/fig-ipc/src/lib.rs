@@ -2,9 +2,9 @@
 #[macro_use]
 extern crate cfg_if;
 
+pub mod command;
 pub mod daemon;
 pub mod figterm;
-pub mod command;
 pub mod hook;
 
 use anyhow::{bail, Result};
@@ -88,7 +88,10 @@ pub async fn connect_timeout(socket: impl AsRef<Path>, timeout: Duration) -> Res
 }
 
 #[cfg(windows)]
-pub async fn connect_timeout(socket: impl AsRef<Path>, timeout: Duration) -> Result<NamedPipeClient> {
+pub async fn connect_timeout(
+    socket: impl AsRef<Path>,
+    timeout: Duration,
+) -> Result<NamedPipeClient> {
     // This isn't pretty but there's no way to await this otherwise
     let handle = || async {
         loop {

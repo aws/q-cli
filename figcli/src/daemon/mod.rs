@@ -8,10 +8,8 @@ pub mod websocket;
 
 use crate::{
     daemon::{
-        launchd_plist::LaunchdPlist,
-        settings_watcher::spawn_settings_watcher,
-        systemd_unit::SystemdUnit,
-        websocket::process_websocket,
+        launchd_plist::LaunchdPlist, settings_watcher::spawn_settings_watcher,
+        systemd_unit::SystemdUnit, websocket::process_websocket,
     },
     util::backoff::Backoff,
 };
@@ -229,8 +227,7 @@ impl InitSystem {
     pub fn daemon_name(&self) -> &'static str {
         match self {
             InitSystem::Launchd => "io.fig.dotfiles-daemon",
-            InitSystem::Systemd |
-            InitSystem::SCM => "fig-daemon",
+            InitSystem::Systemd | InitSystem::SCM => "fig-daemon",
             _ => unimplemented!(),
         }
     }
