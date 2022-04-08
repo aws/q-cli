@@ -51,9 +51,8 @@ native-dialog = "0.6.3"
 viu = { path = "../rust-lib/viu" }
 spinners = "~3.0.1"
 
-[target.'cfg(windows)'.dependencies]
-windows = { version = "0.34.0", features = ["Win32_Foundation", "Win32_Security", "Win32_System_Threading"] }
-
 [target.'cfg(unix)'.dependencies]
 nix = "0.23.1"
 
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.34.0", features = ["Win32_Foundation", "Win32_Security", "Win32_System_Threading"] }

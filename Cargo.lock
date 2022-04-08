@@ -1012,9 +1012,9 @@ dependencies = [
 
 [[package]]
 name = "critical-section"
-version = "0.2.6"
+version = "0.2.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bc1e89b93912c97878305b70ef6b011bfc74622e7b79a9d4a0676c7663496bcd"
+checksum = "95da181745b56d4bd339530ec393508910c909c784e8962d15d722bacf0bcbcd"
 dependencies = [
  "bare-metal 1.0.0",
  "cfg-if 1.0.0",
@@ -1692,7 +1692,7 @@ dependencies = [
  "thiserror",
  "tokio",
  "tracing",
- "whoami",
+ "winapi 0.3.9",
  "wsl",
 ]
 
@@ -2188,7 +2188,7 @@ dependencies = [
 [[package]]
 name = "gio"
 version = "0.16.0"
-source = "git+https://github.com/gtk-rs/gtk-rs-core#c3c468334bbdfec988f6fa6dfe4ec60284b9e733"
+source = "git+https://github.com/gtk-rs/gtk-rs-core#25130eb29977f2507e7ef5112180906a79215f2f"
 dependencies = [
  "bitflags",
  "futures-channel",
@@ -2230,7 +2230,7 @@ dependencies = [
 [[package]]
 name = "gio-sys"
 version = "0.16.0"
-source = "git+https://github.com/gtk-rs/gtk-rs-core#c3c468334bbdfec988f6fa6dfe4ec60284b9e733"
+source = "git+https://github.com/gtk-rs/gtk-rs-core#25130eb29977f2507e7ef5112180906a79215f2f"
 dependencies = [
  "glib-sys 0.16.0",
  "gobject-sys 0.16.0",
@@ -2277,7 +2277,7 @@ dependencies = [
 [[package]]
 name = "glib"
 version = "0.16.0"
-source = "git+https://github.com/gtk-rs/gtk-rs-core#c3c468334bbdfec988f6fa6dfe4ec60284b9e733"
+source = "git+https://github.com/gtk-rs/gtk-rs-core#25130eb29977f2507e7ef5112180906a79215f2f"
 dependencies = [
  "bitflags",
  "futures-channel",
@@ -2312,7 +2312,7 @@ dependencies = [
 [[package]]
 name = "glib-macros"
 version = "0.16.0"
-source = "git+https://github.com/gtk-rs/gtk-rs-core#c3c468334bbdfec988f6fa6dfe4ec60284b9e733"
+source = "git+https://github.com/gtk-rs/gtk-rs-core#25130eb29977f2507e7ef5112180906a79215f2f"
 dependencies = [
  "anyhow",
  "heck 0.4.0",
@@ -2346,7 +2346,7 @@ dependencies = [
 [[package]]
 name = "glib-sys"
 version = "0.16.0"
-source = "git+https://github.com/gtk-rs/gtk-rs-core#c3c468334bbdfec988f6fa6dfe4ec60284b9e733"
+source = "git+https://github.com/gtk-rs/gtk-rs-core#25130eb29977f2507e7ef5112180906a79215f2f"
 dependencies = [
  "libc",
  "system-deps 6.0.2",
@@ -2396,7 +2396,7 @@ dependencies = [
 [[package]]
 name = "gobject-sys"
 version = "0.16.0"
-source = "git+https://github.com/gtk-rs/gtk-rs-core#c3c468334bbdfec988f6fa6dfe4ec60284b9e733"
+source = "git+https://github.com/gtk-rs/gtk-rs-core#25130eb29977f2507e7ef5112180906a79215f2f"
 dependencies = [
  "glib-sys 0.16.0",
  "libc",
@@ -6797,16 +6797,6 @@ dependencies = [
  "either",
  "lazy_static 1.4.0",
  "libc",
-]
-
-[[package]]
-name = "whoami"
-version = "1.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "524b58fa5a20a2fb3014dd6358b70e6579692a56ef6fce928834e488f42f65e8"
-dependencies = [
- "wasm-bindgen",
- "web-sys",
 ]
 
 [[package]]

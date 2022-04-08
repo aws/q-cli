@@ -27,7 +27,6 @@ use fig_proto::{
     FigProtobufEncodable,
 };
 use fig_telemetry::Source;
-use nix::unistd::geteuid;
 use regex::Regex;
 use semver::Version;
 use serde_json::json;
@@ -1452,8 +1451,9 @@ struct CheckConfiguration {
 
 // Doctor
 pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
-    #[cfg(target_family = "unix")]
+    #[cfg(unix)]
     {
+        use nix::unistd::geteuid;
         if geteuid().is_root() {
             eprintln!(
                 "{}",

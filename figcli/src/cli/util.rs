@@ -1,4 +1,4 @@
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Context, Result};
 use cfg_if::cfg_if;
 use crossterm::style::Stylize;
 use dialoguer::theme::ColorfulTheme;
@@ -21,7 +21,7 @@ pub fn open_url(url: impl AsRef<OsStr>) -> Result<()> {
                 .with_context(|| "Could not open url")?;
 
             Ok(())
-        } else if #[cfg(target_os = "windows")] {
+        } else if #[cfg(windows)] {
             Command::new("cmd")
                 .arg("/c")
                 .arg("start")
@@ -31,7 +31,7 @@ pub fn open_url(url: impl AsRef<OsStr>) -> Result<()> {
 
             Ok(())
         } else {
-            Err(anyhow::anyhow!("Could not open url on this platform"))
+            Err(anyhow!("Could not open url on this platform"))
         }
     }
 }
@@ -235,7 +235,7 @@ pub fn get_fig_version() -> Result<(String, String)> {
             let fig_build_number = get_plist_field("CFBundleVersion")?;
             Ok((fig_version, fig_build_number))
         } else {
-            Err(anyhow::anyhow!("Unsupported platform"))
+            Err(anyhow!("Unsupported platform"))
         }
     }
 }

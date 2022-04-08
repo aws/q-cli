@@ -8,14 +8,10 @@ use crate::{
 use anyhow::{Context, Result};
 use clap::Subcommand;
 use crossterm::style::Stylize;
-use fig_ipc::{
-    command::{quit_command, restart_command, update_command},
-    hook::send_hook_to_socket,
-};
-use fig_proto::hooks;
+use fig_ipc::command::{quit_command, restart_command, update_command};
 use regex::Regex;
 use serde_json::json;
-use std::{os::unix::prelude::CommandExt, process::Command, time::Duration};
+use std::{process::Command, time::Duration};
 use tracing::{info, trace};
 
 use fig_settings::{settings, state};
@@ -114,11 +110,17 @@ impl AppSubcommand {
                 fig_ipc::command::run_install_script_command().await?;
             }
             AppSubcommand::Onboarding => {
-                launch_fig(LaunchOptions::new().wait_for_activation().verbose())?;
-                if state::set_value("user.onboarding", true).is_ok() {
-                    Command::new("bash")
-                        .args(["-c", include_str!("onboarding.sh")])
-                        .exec();
+                cfg_if! {
+                    if #[cfg(unix)] {
+                        launch_fig(LaunchOptions::new().wait_for_activation().verbose())?;
+                        if state::set_value("user.onboarding", true).is_ok() {
+                            Command::new("bash")
+                                .args(["-c", include_str!("onboarding.sh")])
+                                .exec();
+                        }
+                    } else if #[cfg(windows)] {
+                        println!("Onboarding isn't supported on Windows yet");
+                    }
                 }
             }
             AppSubcommand::Prompts => {
@@ -202,21 +204,29 @@ impl AppSubcommand {
                     "Error:".red()
                 ))?;
 
-                let tty = String::from_utf8(output.stdout)?;
-                let pid = nix::unistd::getppid();
+                #[cfg(unix)]
+                {
+                    use std::os::unix::prelude::CommandExt;
 
-                let hook = hooks::generate_shell_context(pid, tty, None, None)
-                    .and_then(hooks::new_init_hook)
-                    .context(format!(
-                        "{} Unable to reload. Restart terminal to apply changes.",
-                        "Error:".red()
+                    use fig_ipc::hook::send_hook_to_socket;
+                    use fig_proto::hooks;
+
+                    let tty = String::from_utf8(output.stdout)?;
+                    let pid = nix::unistd::getppid();
+
+                    let hook = hooks::generate_shell_context(pid, tty, None, None)
+                        .and_then(hooks::new_init_hook)
+                        .context(format!(
+                            "{} Unable to reload. Restart terminal to apply changes.",
+                            "Error:".red()
+                        ))?;
+
+                    send_hook_to_socket(hook).await.context(format!(
+                        "\n{}\nFig might not be running to launch Fig run: {}\n",
+                        "Unable to Connect to Fig:".bold(),
+                        "fig launch".magenta()
                     ))?;
-
-                send_hook_to_socket(hook).await.context(format!(
-                    "\n{}\nFig might not be running to launch Fig run: {}\n",
-                    "Unable to Connect to Fig:".bold(),
-                    "fig launch".magenta()
-                ))?;
+                }
             }
         }
         Ok(())

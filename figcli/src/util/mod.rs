@@ -2,7 +2,7 @@ use std::{
     env,
     ffi::OsStr,
     path::{Path, PathBuf},
-    process::Command,
+    process::{Command, Output},
 };
 
 use anyhow::{Context, Result};
@@ -127,15 +127,24 @@ pub fn app_path_from_bundle_id(bundle_id: impl AsRef<OsStr>) -> Option<String> {
 }
 
 pub fn get_shell() -> Result<String> {
-    let ppid = nix::unistd::getppid();
+    let result: Output;
+    cfg_if! {
+        if #[cfg(target_os = "macos")] {
+            let ppid = nix::unistd::getppid();
 
-    let result = Command::new("ps")
-        .arg("-p")
-        .arg(format!("{}", ppid))
-        .arg("-o")
-        .arg("comm=")
-        .output()
-        .context("Could not read value")?;
+            result = Command::new("ps")
+                .arg("-p")
+                .arg(format!("{}", ppid))
+                .arg("-o")
+                .arg("comm=")
+                .output()
+                .context("Could not read value")?;
+        } else if #[cfg(target_os = "linux")] {
+            todo!();
+        } else if #[cfg(windows)] {
+            todo!();
+        }
+    };
 
     Ok(String::from_utf8_lossy(&result.stdout).trim().into())
 }

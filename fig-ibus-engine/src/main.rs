@@ -2,8 +2,8 @@ use glib::{g_log, LogLevel, StaticType};
 use ibus::traits::{BusExt, FactoryExt};
 
 mod imp {
-    use glib::{g_log, LogLevel};
     use glib::subclass::prelude::*;
+    use glib::{g_log, LogLevel};
     use ibus::traits::EngineExt;
     use parking_lot::Mutex;
     use std::os::unix::net::UnixStream;

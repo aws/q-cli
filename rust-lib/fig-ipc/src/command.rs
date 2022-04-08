@@ -6,7 +6,14 @@ use fig_proto::local::{
     OpenUiElementCommand, PromptAccessibilityCommand, QuitCommand, RestartCommand,
     RestartSettingsListenerCommand, UiElement, UninstallCommand, UpdateCommand,
 };
-use tokio::net::UnixStream;
+
+cfg_if! {
+    if #[cfg(unix)] {
+        use tokio::net::UnixStream;
+    } else if #[cfg(windows)] {
+        use tokio::net::windows::named_pipe::NamedPipeClient;
+    }
+}
 
 use super::{connect_timeout, get_fig_socket_path, recv_message, send_message};
 
@@ -82,6 +89,7 @@ pub async fn run_install_script_command() -> Result<()> {
     send_command_to_socket(command).await
 }
 
+#[cfg(unix)]
 pub async fn send_command(
     connection: &mut UnixStream,
     command: local::command::Command,
@@ -97,8 +105,34 @@ pub async fn send_command(
     send_message(connection, message).await
 }
 
+#[cfg(windows)]
+pub async fn send_command(
+    connection: &mut NamedPipeClient,
+    command: local::command::Command,
+) -> Result<()> {
+    let message = local::LocalMessage {
+        r#type: Some(local::local_message::Type::Command(local::Command {
+            id: None,
+            no_response: Some(false),
+            command: Some(command),
+        })),
+    };
+
+    send_message(connection, message).await
+}
+
+#[cfg(unix)]
 pub async fn send_recv_command(
     connection: &mut UnixStream,
+    command: local::command::Command,
+) -> Result<Option<local::CommandResponse>> {
+    send_command(connection, command).await?;
+    Ok(tokio::time::timeout(Duration::from_secs(2), recv_message(connection)).await??)
+}
+
+#[cfg(windows)]
+pub async fn send_recv_command(
+    connection: &mut NamedPipeClient,
     command: local::command::Command,
 ) -> Result<Option<local::CommandResponse>> {
     send_command(connection, command).await?;
