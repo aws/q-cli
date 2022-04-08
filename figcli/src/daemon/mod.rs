@@ -2,13 +2,15 @@ pub mod launchd_plist;
 pub mod scheduler;
 pub mod settings_watcher;
 pub mod systemd_unit;
+#[cfg(unix)]
 pub mod unix_socket;
 pub mod websocket;
 
 use crate::{
     daemon::{
-        launchd_plist::LaunchdPlist, settings_watcher::spawn_settings_watcher,
-        systemd_unit::SystemdUnit, unix_socket::spawn_incomming_unix_handler,
+        launchd_plist::LaunchdPlist,
+        settings_watcher::spawn_settings_watcher,
+        systemd_unit::SystemdUnit,
         websocket::process_websocket,
     },
     util::backoff::Backoff,
@@ -36,10 +38,10 @@ pub fn get_daemon() -> Result<LaunchService> {
             LaunchService::launchd()
         } else if #[cfg(target_os = "linux")] {
             LaunchService::systemd()
-        } else if #[cfg(target_os = "windows")] {
-            Err(anyhow::anyhow!("Windows is not yet supported"));
+        } else if #[cfg(windows)] {
+            LaunchService::scm()
         } else {
-            Err(anyhow::anyhow!("Unsupported platform"));
+            Err(anyhow!("Unsupported platform"));
         }
     }
 }
@@ -67,6 +69,10 @@ pub enum InitSystem {
     ///
     /// <https://wiki.gentoo.org/wiki/Project:OpenRC>
     OpenRc,
+    /// Init subsystem used by Windows
+    ///
+    /// <https://docs.microsoft.com/en-us/windows/win32/services/service-control-manager>
+    SCM,
 }
 
 impl InitSystem {
@@ -90,6 +96,8 @@ impl InitSystem {
             Ok(InitSystem::Runit)
         } else if output_str.contains("openrc") {
             Ok(InitSystem::OpenRc)
+        } else if output_str.contains("sc") {
+            Ok(InitSystem::SCM)
         } else {
             Err(anyhow!("Could not determine init system"))
         }
@@ -126,6 +134,22 @@ impl InitSystem {
                     .arg("--user")
                     .arg("--now")
                     .arg("enable")
+                    .arg(path.as_ref())
+                    .output()
+                    .with_context(|| format!("Could not enable {:?}", path.as_ref()))?;
+
+                if !output.status.success() {
+                    return Err(anyhow!(
+                        "Could not start daemon: {}",
+                        String::from_utf8_lossy(&output.stderr)
+                    ));
+                }
+
+                Ok(())
+            }
+            InitSystem::SCM => {
+                let output = Command::new("sc")
+                    .arg("start")
                     .arg(path.as_ref())
                     .output()
                     .with_context(|| format!("Could not enable {:?}", path.as_ref()))?;
@@ -179,6 +203,15 @@ impl InitSystem {
 
                 Ok(())
             }
+            InitSystem::SCM => {
+                Command::new("sc")
+                    .arg("stop")
+                    .arg(path.as_ref())
+                    .output()
+                    .with_context(|| format!("Could not disable {:?}", path.as_ref()))?;
+
+                Ok(())
+            }
             _ => Err(anyhow!("Could not stop daemon: unsupported init system")),
         }
     }
@@ -188,6 +221,7 @@ impl InitSystem {
         self.start_daemon(path.as_ref())?;
 
         // TODO: use restart functionality of init system if possible
+        // note that windows doesn't appear to have this functionality
 
         Ok(())
     }
@@ -195,7 +229,8 @@ impl InitSystem {
     pub fn daemon_name(&self) -> &'static str {
         match self {
             InitSystem::Launchd => "io.fig.dotfiles-daemon",
-            InitSystem::Systemd => "fig-daemon",
+            InitSystem::Systemd |
+            InitSystem::SCM => "fig-daemon",
             _ => unimplemented!(),
         }
     }
@@ -231,6 +266,16 @@ impl InitSystem {
                     .and_then(|s| s.trim().parse::<i32>().ok());
 
                 Ok(status)
+            }
+            InitSystem::SCM => {
+                let output = Command::new("sc")
+                    .arg("query")
+                    .arg("type=")
+                    .arg("service")
+                    .output()
+                    .with_context(|| format!("Could not query SCM"))?;
+
+                todo!("Parse service status and return it (windows)");
             }
             _ => Err(anyhow!(
                 "Could not get daemon status: unsupported init system"
@@ -313,6 +358,12 @@ impl LaunchService {
         })
     }
 
+    pub fn scm() -> Result<LaunchService> {
+        let homedir = fig_directories::home_dir().context("Could not get home directory")?;
+
+        todo!("Figure out windows SCM launch call");
+    }
+
     pub fn start(&self) -> Result<()> {
         self.launch_system.start_daemon(self.path.as_path())
     }
@@ -352,22 +403,32 @@ pub struct DaemonStatus {
     unix_socket_status: Result<()>,
 }
 
+impl Default for DaemonStatus {
+    fn default() -> Self {
+        Self {
+            time_started: std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .expect("System time set before unix epoch")
+                .as_secs(),
+            settings_watcher_status: Ok(()),
+            websocket_status: Ok(()),
+            unix_socket_status: Ok(()),
+        }
+    }
+}
+
 pub static IS_RUNNING_DAEMON: Mutex<bool> = Mutex::const_new(RawMutex::INIT, false);
 
 /// Spawn the daemon to listen for updates and dotfiles changes
+#[cfg(unix)]
 pub async fn daemon() -> Result<()> {
+    use crate::daemon::unix_socket::spawn_incoming_unix_handler;
+
     *IS_RUNNING_DAEMON.lock() = true;
 
     info!("Starting daemon...");
 
-    let daemon_status = Arc::new(RwLock::new(DaemonStatus {
-        time_started: std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)?
-            .as_secs(),
-        settings_watcher_status: Ok(()),
-        websocket_status: Ok(()),
-        unix_socket_status: Ok(()),
-    }));
+    let daemon_status = Arc::new(RwLock::new(DaemonStatus::default()));
 
     // Add small random element to the delay to avoid all clients from sending the messages at the same time
     let dist = Uniform::new(59., 60.);
@@ -391,7 +452,7 @@ pub async fn daemon() -> Result<()> {
         let mut backoff =
             Backoff::new(Duration::from_secs_f64(0.25), Duration::from_secs_f64(120.));
         loop {
-            match spawn_incomming_unix_handler(daemon_status.clone()).await {
+            match spawn_incoming_unix_handler(daemon_status.clone()).await {
                 Ok(handle) => {
                     daemon_status.write().unix_socket_status = Ok(());
                     backoff.reset();
@@ -490,4 +551,10 @@ pub async fn daemon() -> Result<()> {
         Ok(_) => Ok(()),
         Err(err) => Err(err.into()),
     }
+}
+
+/// Spawn the daemon to listen for updates and dotfiles changes
+#[cfg(windows)]
+pub async fn daemon() -> Result<()> {
+    todo!();
 }

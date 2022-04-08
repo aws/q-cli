@@ -1,12 +1,10 @@
-//! Utiities for IPC with Mac App
+//! Utiities for IPC
 #[macro_use]
 extern crate cfg_if;
 
 pub mod daemon;
 pub mod figterm;
-#[cfg(unix)]
 pub mod command;
-#[cfg(unix)]
 pub mod hook;
 
 use anyhow::{bail, Result};
@@ -22,14 +20,14 @@ use std::{
 use thiserror::Error;
 use tokio::io::{self, AsyncRead, AsyncReadExt, AsyncWriteExt};
 use tracing::{error, trace};
-use wsl::is_wsl;
-
-use whoami::username;
 
 cfg_if! {
     if #[cfg(unix)] {
         use std::os::unix::net::UnixStream as SyncUnixStream;
         use tokio::net::UnixStream;
+    } else if #[cfg(windows)] {
+        use tokio::net::windows::named_pipe::{ClientOptions, NamedPipeClient};
+        use winapi::shared::winerror;
     }
 }
 
@@ -85,6 +83,41 @@ pub async fn connect_timeout(socket: impl AsRef<Path>, timeout: Duration) -> Res
     // Not sure why, but this is a workaround
     #[cfg(target_os = "macos")]
     tokio::time::sleep(Duration::from_millis(2)).await;
+
+    Ok(conn)
+}
+
+#[cfg(windows)]
+pub async fn connect_timeout(socket: impl AsRef<Path>, timeout: Duration) -> Result<NamedPipeClient> {
+    // This isn't pretty but there's no way to await this otherwise
+    let handle = || async {
+        loop {
+            match ClientOptions::new().open(socket.as_ref()) {
+                Ok(conn) => return Ok(conn),
+                Err(e) if e.raw_os_error() == Some(winerror::ERROR_PIPE_BUSY as i32) => (),
+                Err(err) => {
+                    error!("Failed to connect to {:?}: {}", socket.as_ref(), err);
+                    bail!("Failed to connect to {:?}: {}", socket.as_ref(), err);
+                }
+            };
+
+            tokio::time::sleep(Duration::from_millis(2)).await;
+        }
+    };
+
+    let conn = match tokio::time::timeout(timeout, handle()).await {
+        Ok(Ok(conn)) => conn,
+        Ok(Err(err)) => {
+            error!("Failed to connect to {:?}: {}", socket.as_ref(), err);
+            bail!("Failed to connect to {:?}: {}", socket.as_ref(), err);
+        }
+        Err(_) => {
+            error!("Timeout while connecting to {:?}", socket.as_ref());
+            bail!("Timeout while connecting to {:?}", socket.as_ref());
+        }
+    };
+
+    trace!("Connected to {:?}", socket.as_ref());
 
     Ok(conn)
 }

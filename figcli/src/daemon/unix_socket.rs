@@ -178,7 +178,7 @@ async fn spawn_unix_handler(
     Ok(())
 }
 
-pub async fn spawn_incomming_unix_handler(
+pub async fn spawn_incoming_unix_handler(
     daemon_status: Arc<RwLock<DaemonStatus>>,
 ) -> Result<JoinHandle<()>> {
     let unix_socket_path = get_daemon_socket_path();

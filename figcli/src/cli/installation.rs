@@ -4,7 +4,6 @@ use std::path::Path;
 
 use anyhow::{Context, Result};
 use crossterm::style::Stylize;
-use nix::unistd::geteuid;
 use self_update::update::UpdateStatus;
 use time::OffsetDateTime;
 
@@ -24,8 +23,9 @@ pub fn install_cli(
     no_confirm: bool,
     force: bool,
 ) -> Result<()> {
-    #[cfg(target_family = "unix")]
+    #[cfg(unix)]
     {
+        use nix::unistd::geteuid;
         if geteuid().is_root() {
             eprintln!("{}", "Installing as root is not supported.".red().bold());
             if !force {

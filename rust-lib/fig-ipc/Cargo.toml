@@ -11,6 +11,8 @@ prost = "0.9.0"
 thiserror = "1.0.30"
 tokio = { version = "1.17.0", features = ["fs", "time", "io-util", "net"] }
 tracing = "0.1.31"
-whoami = "1.2.1"
 wsl = "0.1.0"
 cfg-if = "0.1"
+
+[target.'cfg(windows)'.dependencies]
+winapi = "0.3.9"
