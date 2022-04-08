@@ -14,8 +14,6 @@ pub use self::engine::Engine;
 mod factory;
 pub use self::factory::Factory;
 
-pub mod functions;
-
 #[doc(hidden)]
 pub mod traits {
     pub use super::bus::BusExt;
