@@ -1,55 +1,40 @@
-//! Utiities for IPC
-#[macro_use]
-extern crate cfg_if;
-
 pub mod command;
 pub mod daemon;
 pub mod figterm;
 pub mod hook;
 
-use anyhow::{bail, Result};
-use bytes::BytesMut;
-use fig_proto::{FigMessage, FigProtobufEncodable};
-use prost::Message;
 use std::fmt::Debug;
 use std::io::{Cursor, Write};
 use std::{
     path::{Path, PathBuf},
     time::Duration,
 };
+
+use anyhow::{bail, Result};
+use bytes::BytesMut;
+use fig_proto::{FigMessage, FigProtobufEncodable};
+use prost::Message;
+use system_socket::SystemStream;
 use thiserror::Error;
 use tokio::io::{self, AsyncRead, AsyncReadExt, AsyncWriteExt};
 use tracing::{error, trace};
 
-cfg_if! {
-    if #[cfg(unix)] {
-        use std::os::unix::net::UnixStream as SyncUnixStream;
-        use tokio::net::UnixStream;
-    } else if #[cfg(windows)] {
-        use tokio::net::windows::named_pipe::{ClientOptions, NamedPipeClient};
-        use winapi::shared::winerror;
-    }
-}
-
 /// Get path to "/var/tmp/fig/$USERNAME/fig.socket"
 pub fn get_fig_socket_path() -> PathBuf {
-    cfg_if! {
-        if #[cfg(windows)] {
-            return PathBuf::from(r"C:\fig\fig.socket");
-        } else {
-            if is_wsl() {
-                return PathBuf::from("/mnt/c/fig/fig.socket");
-            } else {
-                return [
-                    Path::new("/var/tmp/fig"),
-                    Path::new(&username()),
-                    Path::new("fig.socket"),
-                ]
-                .into_iter()
-                .collect();
-            }
-        }
+    #[cfg(unix)]
+    if is_wsl() {
+        return PathBuf::from("/mnt/c/fig/fig.socket");
+    } else {
+        return [
+            Path::new("/var/tmp/fig"),
+            Path::new(&username()),
+            Path::new("fig.socket"),
+        ]
+        .into_iter()
+        .collect();
     }
+    #[cfg(windows)]
+    return PathBuf::from(r"C:\fig\fig.socket");
 }
 
 /// Get path to "$TMPDIR/fig_linux.socket"
@@ -62,10 +47,9 @@ pub fn get_fig_linux_socket_path() -> PathBuf {
     .collect()
 }
 
-/// Connect to `socket` with a timeout
-#[cfg(unix)]
-pub async fn connect_timeout(socket: impl AsRef<Path>, timeout: Duration) -> Result<UnixStream> {
-    let conn = match tokio::time::timeout(timeout, UnixStream::connect(socket.as_ref())).await {
+/// Connect to a system socket with a timeout
+pub async fn connect_timeout(socket: impl AsRef<Path>, timeout: Duration) -> Result<SystemStream> {
+    let conn = match tokio::time::timeout(timeout, SystemStream::connect(socket.as_ref())).await {
         Ok(Ok(conn)) => conn,
         Ok(Err(err)) => {
             error!("Failed to connect to {:?}: {}", socket.as_ref(), err);
@@ -77,48 +61,10 @@ pub async fn connect_timeout(socket: impl AsRef<Path>, timeout: Duration) -> Res
         }
     };
 
-    trace!("Connected to {:?}", socket.as_ref());
-
-    // When on macOS after the socket connection is made a brief delay is required
-    // Not sure why, but this is a workaround
     #[cfg(target_os = "macos")]
+    // When on macOS after the socket connection is made a brief delay is required
+    // Not sure why, so this is a workaround
     tokio::time::sleep(Duration::from_millis(2)).await;
-
-    Ok(conn)
-}
-
-#[cfg(windows)]
-pub async fn connect_timeout(
-    socket: impl AsRef<Path>,
-    timeout: Duration,
-) -> Result<NamedPipeClient> {
-    // This isn't pretty but there's no way to await this otherwise
-    let handle = || async {
-        loop {
-            match ClientOptions::new().open(socket.as_ref()) {
-                Ok(conn) => return Ok(conn),
-                Err(e) if e.raw_os_error() == Some(winerror::ERROR_PIPE_BUSY as i32) => (),
-                Err(err) => {
-                    error!("Failed to connect to {:?}: {}", socket.as_ref(), err);
-                    bail!("Failed to connect to {:?}: {}", socket.as_ref(), err);
-                }
-            };
-
-            tokio::time::sleep(Duration::from_millis(2)).await;
-        }
-    };
-
-    let conn = match tokio::time::timeout(timeout, handle()).await {
-        Ok(Ok(conn)) => conn,
-        Ok(Err(err)) => {
-            error!("Failed to connect to {:?}: {}", socket.as_ref(), err);
-            bail!("Failed to connect to {:?}: {}", socket.as_ref(), err);
-        }
-        Err(_) => {
-            error!("Timeout while connecting to {:?}", socket.as_ref());
-            bail!("Timeout while connecting to {:?}", socket.as_ref());
-        }
-    };
 
     trace!("Connected to {:?}", socket.as_ref());
 

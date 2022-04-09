@@ -13,6 +13,7 @@ members = [
     "rust-lib/ibus",
     "rust-lib/ibus/ibus-sys",
     "rust-lib/linux-test",
+    "rust-lib/system_socket",
     "fig-ibus-engine",
     "daemon",
     "winfig/src-tauri",

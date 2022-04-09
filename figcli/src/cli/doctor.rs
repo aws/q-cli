@@ -189,7 +189,7 @@ fn get_platform() -> Platform {
             Platform::MacOs
         } else if #[cfg(target_os = "linux")] {
             Platform::Linux
-        } else if #[cfg(target_os = "windows")] {
+        } else if #[cfg(windows)] {
             Platform::Windows
         } else {
             Platform::Other

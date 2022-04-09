@@ -1686,13 +1686,12 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "bytes",
- "cfg-if 0.1.10",
  "fig-proto",
  "prost",
+ "system_socket",
  "thiserror",
  "tokio",
  "tracing",
- "winapi 0.3.9",
  "wsl",
 ]
 
@@ -5561,6 +5560,14 @@ dependencies = [
  "pkg-config",
  "toml",
  "version-compare 0.1.0",
+]
+
+[[package]]
+name = "system_socket"
+version = "0.1.0"
+dependencies = [
+ "tokio",
+ "winapi 0.3.9",
 ]
 
 [[package]]

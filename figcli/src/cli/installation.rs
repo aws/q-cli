@@ -152,8 +152,8 @@ fn uninstall_daemon() -> Result<()> {
             daemon::LaunchService::launchd()?.uninstall()
         } else if #[cfg(target_os = "linux")] {
             daemon::LaunchService::systemd()?.uninstall()
-        } else if #[cfg(target_os = "windows")] {
-            Err(anyhow::anyhow!("Windows is not yet supported"))
+        } else if #[cfg(windows)] {
+            daemon::LaunchService::scm()?.uninstall()
         } else {
             Err(anyhow::anyhow!("Unsupported platform"))
         }
