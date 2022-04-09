@@ -3,14 +3,12 @@ use std::sync::Arc;
 use anyhow::{Context, Result};
 use fig_ipc::{daemon::get_daemon_socket_path, recv_message, send_message};
 use fig_proto::daemon::diagnostic_response::{
-    settings_watcher_status, unix_socket_status, websocket_status, SettingsWatcherStatus,
-    UnixSocketStatus, WebsocketStatus,
+    settings_watcher_status, system_socket_status, websocket_status, SettingsWatcherStatus,
+    SystemSocketStatus, WebsocketStatus,
 };
 use parking_lot::RwLock;
-use tokio::{
-    net::{UnixListener, UnixStream},
-    task::JoinHandle,
-};
+use system_socket::{SystemConnection, SystemListener};
+use tokio::task::JoinHandle;
 use tracing::{error, info, trace};
 
 use crate::{
@@ -21,11 +19,11 @@ use crate::{
 
 use super::DaemonStatus;
 
-async fn spawn_unix_handler(
-    mut stream: UnixStream,
+async fn spawn_system_handler(
+    mut stream: SystemConnection,
     daemon_status: Arc<RwLock<DaemonStatus>>,
 ) -> Result<()> {
-    tokio::task::spawn(async move {
+    tokio::spawn(async move {
         loop {
             match recv_message::<fig_proto::daemon::DaemonMessage, _>(&mut stream).await {
                 Ok(Some(message)) => {
@@ -79,17 +77,17 @@ async fn spawn_unix_handler(
                                         }
                                 });
 
-                                let unix_socket_status =
+                                let system_socket_status =
                                     (parts.is_empty() ||
-                                        parts.contains(&fig_proto::daemon::diagnostic_command::DiagnosticPart::UnixSocketStatus))
+                                        parts.contains(&fig_proto::daemon::diagnostic_command::DiagnosticPart::SystemSocketStatus))
                                     .then(|| {
-                                        match &daemon_status.unix_socket_status {
-                                            Ok(_) => UnixSocketStatus {
-                                                status: unix_socket_status::Status::Ok.into(),
+                                        match &daemon_status.system_socket_status {
+                                            Ok(_) => SystemSocketStatus {
+                                                status: system_socket_status::Status::Ok.into(),
                                                 error: None,
                                             },
-                                            Err(err) => UnixSocketStatus {
-                                                status: unix_socket_status::Status::Error.into(),
+                                            Err(err) => SystemSocketStatus {
+                                                status: system_socket_status::Status::Error.into(),
                                                 error: Some(err.to_string()),
                                             },
                                         }
@@ -99,7 +97,7 @@ async fn spawn_unix_handler(
                                     time_started_epoch,
                                     settings_watcher_status,
                                     websocket_status,
-                                    unix_socket_status,
+                                    system_socket_status,
                                 )
                             }
                             fig_proto::daemon::daemon_message::Command::SelfUpdate(_) => {
@@ -178,30 +176,30 @@ async fn spawn_unix_handler(
     Ok(())
 }
 
-pub async fn spawn_incoming_unix_handler(
+pub async fn spawn_incoming_system_handler(
     daemon_status: Arc<RwLock<DaemonStatus>>,
 ) -> Result<JoinHandle<()>> {
-    let unix_socket_path = get_daemon_socket_path();
+    let system_socket_path = get_daemon_socket_path();
 
-    // Create the unix socket directory if it doesn't exist
-    if let Some(unix_socket_dir) = unix_socket_path.parent() {
-        tokio::fs::create_dir_all(unix_socket_dir)
+    // Create the system socket directory if it doesn't exist
+    if let Some(system_socket_dir) = system_socket_path.parent() {
+        tokio::fs::create_dir_all(system_socket_dir)
             .await
-            .context("Could not create unix socket directory")?;
+            .context("Could not create system socket directory")?;
     }
 
-    // Remove the unix socket if it already exists
-    if unix_socket_path.exists() {
-        tokio::fs::remove_file(&unix_socket_path).await?;
+    // Remove the system socket if it already exists
+    if system_socket_path.exists() {
+        tokio::fs::remove_file(&system_socket_path).await?;
     }
 
-    // Bind the unix socket
-    let unix_socket =
-        UnixListener::bind(&unix_socket_path).context("Could not connect to unix socket")?;
+    // Bind the system socket
+    let mut system_socket =
+        SystemListener::bind(&system_socket_path).context("Could not connect to system socket")?;
 
     Ok(tokio::spawn(async move {
-        while let Ok((stream, _addr)) = unix_socket.accept().await {
-            if let Err(err) = spawn_unix_handler(stream, daemon_status.clone()).await {
+        while let Ok(stream) = system_socket.accept(&system_socket_path).await {
+            if let Err(err) = spawn_system_handler(stream, daemon_status.clone()).await {
                 error!(
                     "Error while spawining unix socket connection handler: {}",
                     err

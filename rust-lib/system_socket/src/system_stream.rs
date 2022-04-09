@@ -6,13 +6,17 @@ use std::pin::Pin;
 
 use tokio::io::AsyncRead;
 use tokio::io::AsyncWrite;
+#[cfg(windows)]
+use tokio::net::windows::named_pipe::NamedPipeClient;
+#[cfg(unix)]
+use tokio::net::UnixStream;
 
 #[cfg(unix)]
 #[derive(Debug)]
-pub struct SystemStream(tokio::net::UnixStream);
+pub struct SystemStream(UnixStream);
 #[cfg(windows)]
 #[derive(Debug)]
-pub struct SystemStream(tokio::net::windows::named_pipe::NamedPipeClient);
+pub struct SystemStream(NamedPipeClient);
 
 impl SystemStream {
     /// Connects to the socket named by `path`.
@@ -56,18 +60,32 @@ impl SystemStream {
 
     /// Retrieve a projection of the inner field which works in pinned contexts
     #[cfg(unix)]
-    pub fn pinned_inner(self: Pin<&mut Self>) -> Pin<&mut tokio::net::UnixStream> {
+    fn pinned_inner(self: Pin<&mut Self>) -> Pin<&mut tokio::net::UnixStream> {
         // SAFETY: This is safe because self is pinned when called
         unsafe { self.map_unchecked_mut(|s| &mut s.0) }
     }
 
     /// Retrieve a projection of the inner field which works in pinned contexts
     #[cfg(windows)]
-    pub fn pinned_inner(
+    fn pinned_inner(
         self: Pin<&mut Self>,
     ) -> Pin<&mut tokio::net::windows::named_pipe::NamedPipeClient> {
         // SAFETY: This is safe because self is pinned when called
         unsafe { self.map_unchecked_mut(|s| &mut s.0) }
+    }
+}
+
+#[cfg(unix)]
+impl From<UnixStream> for SystemStream {
+    fn from(from: NamedPipeClient) -> Self {
+        Self(from)
+    }
+}
+
+#[cfg(windows)]
+impl From<NamedPipeClient> for SystemStream {
+    fn from(from: NamedPipeClient) -> Self {
+        Self(from)
     }
 }
 

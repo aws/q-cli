@@ -1618,6 +1618,7 @@ dependencies = [
  "serde_with",
  "spinners",
  "sysinfo",
+ "system_socket",
  "tempfile",
  "thiserror",
  "time",

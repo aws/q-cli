@@ -38,6 +38,7 @@ serde = { version = "1.0.136", features = ["derive"] }
 serde_json = "1.0.79"
 serde_with = "1.12.0"
 sysinfo = "0.23.5"
+system_socket = { path = "../rust-lib/system_socket" }
 tempfile = "3.3.0"
 thiserror = "1.0.30"
 time = { version = "0.3.9", features = ["serde-human-readable", "local-offset", "formatting", "macros", "serde-well-known"] }
