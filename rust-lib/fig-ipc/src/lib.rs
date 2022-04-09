@@ -19,15 +19,18 @@ use thiserror::Error;
 use tokio::io::{self, AsyncRead, AsyncReadExt, AsyncWriteExt};
 use tracing::{error, trace};
 
+#[cfg(unix)]
+use std::os::unix::net::UnixStream as SyncUnixStream;
+
 /// Get path to "/var/tmp/fig/$USERNAME/fig.socket"
 pub fn get_fig_socket_path() -> PathBuf {
     #[cfg(unix)]
-    if is_wsl() {
+    if wsl::is_wsl() {
         return PathBuf::from("/mnt/c/fig/fig.socket");
     } else {
         return [
             Path::new("/var/tmp/fig"),
-            Path::new(&username()),
+            Path::new(&whoami::username()),
             Path::new("fig.socket"),
         ]
         .into_iter()
@@ -87,7 +90,7 @@ pub fn connect_sync(socket: impl AsRef<Path>) -> Result<SyncUnixStream> {
     // When on macOS after the socket connection is made a brief delay is required
     // Not sure why, but this is a workaround
     #[cfg(target_os = "macos")]
-    std::thread::sleep(std::time::Duration::from_millis(2)).await;
+    std::thread::sleep(std::time::Duration::from_millis(2));
 
     Ok(conn)
 }

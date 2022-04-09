@@ -3,7 +3,6 @@
 use std::io;
 use std::path::Path;
 use std::pin::Pin;
-use std::time::Duration;
 
 use tokio::io::AsyncRead;
 use tokio::io::AsyncWrite;
@@ -32,6 +31,7 @@ impl SystemStream {
     /// specified, associating the returned stream with the default event loop's
     #[cfg(windows)]
     pub async fn connect<P: AsRef<Path>>(path: P) -> io::Result<Self> {
+        use std::time::Duration;
         use tokio::net::windows::named_pipe::ClientOptions;
         use winapi::shared::winerror;
 
