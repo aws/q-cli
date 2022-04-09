@@ -112,6 +112,8 @@ impl AppSubcommand {
             AppSubcommand::Onboarding => {
                 cfg_if! {
                     if #[cfg(unix)] {
+                        use std::os::unix::process::CommandExt;
+
                         launch_fig(LaunchOptions::new().wait_for_activation().verbose())?;
                         if state::set_value("user.onboarding", true).is_ok() {
                             Command::new("bash")
@@ -206,8 +208,6 @@ impl AppSubcommand {
 
                 #[cfg(unix)]
                 {
-                    use std::os::unix::prelude::CommandExt;
-
                     use fig_ipc::hook::send_hook_to_socket;
                     use fig_proto::hooks;
 
