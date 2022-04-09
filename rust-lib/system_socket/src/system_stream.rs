@@ -1,22 +1,26 @@
-// THIS FILE CONTAINS UNSAFE CODE, EDIT ONLY IF YOU KNOW WHAT YOU'RE DOING.
-
 use std::io;
 use std::path::Path;
 use std::pin::Pin;
 
+use pin_project::pin_project;
 use tokio::io::AsyncRead;
 use tokio::io::AsyncWrite;
 #[cfg(windows)]
-use tokio::net::windows::named_pipe::NamedPipeClient;
+use tokio::net::windows::named_pipe::{NamedPipeClient, NamedPipeServer};
 #[cfg(unix)]
 use tokio::net::UnixStream;
 
 #[cfg(unix)]
 #[derive(Debug)]
-pub struct SystemStream(UnixStream);
+#[pin_project]
+pub struct SystemStream(#[pin] UnixStream);
 #[cfg(windows)]
 #[derive(Debug)]
-pub struct SystemStream(NamedPipeClient);
+#[pin_project(project = EnumProj)]
+pub enum SystemStream {
+    Client(#[pin] NamedPipeClient),
+    Server(#[pin] NamedPipeServer),
+}
 
 impl SystemStream {
     /// Connects to the socket named by `path`.
@@ -41,7 +45,7 @@ impl SystemStream {
 
         loop {
             match ClientOptions::new().open(path.as_ref()) {
-                Ok(conn) => return Ok(Self(conn)),
+                Ok(conn) => return Ok(Self::Client(conn)),
                 Err(err) if err.raw_os_error() == Some(winerror::ERROR_PIPE_BUSY as i32) => (),
                 Err(err) => return Err(err),
             }
@@ -55,23 +59,13 @@ impl SystemStream {
     /// This function is equivalent to `ready(Interest::WRITABLE)` and is usually
     /// paired with `try_write()`.
     pub async fn writable(&self) -> io::Result<()> {
-        self.0.writable().await
-    }
-
-    /// Retrieve a projection of the inner field which works in pinned contexts
-    #[cfg(unix)]
-    fn pinned_inner(self: Pin<&mut Self>) -> Pin<&mut tokio::net::UnixStream> {
-        // SAFETY: This is safe because self is pinned when called
-        unsafe { self.map_unchecked_mut(|s| &mut s.0) }
-    }
-
-    /// Retrieve a projection of the inner field which works in pinned contexts
-    #[cfg(windows)]
-    fn pinned_inner(
-        self: Pin<&mut Self>,
-    ) -> Pin<&mut tokio::net::windows::named_pipe::NamedPipeClient> {
-        // SAFETY: This is safe because self is pinned when called
-        unsafe { self.map_unchecked_mut(|s| &mut s.0) }
+        #[cfg(unix)]
+        return self.0.writable().await;
+        #[cfg(windows)]
+        match self {
+            SystemStream::Client(c) => c.writable().await,
+            SystemStream::Server(s) => s.writable().await,
+        }
     }
 }
 
@@ -85,7 +79,14 @@ impl From<UnixStream> for SystemStream {
 #[cfg(windows)]
 impl From<NamedPipeClient> for SystemStream {
     fn from(from: NamedPipeClient) -> Self {
-        Self(from)
+        Self::Client(from)
+    }
+}
+
+#[cfg(windows)]
+impl From<NamedPipeServer> for SystemStream {
+    fn from(from: NamedPipeServer) -> Self {
+        Self::Server(from)
     }
 }
 
@@ -95,7 +96,13 @@ impl AsyncRead for SystemStream {
         cx: &mut std::task::Context<'_>,
         buf: &mut tokio::io::ReadBuf<'_>,
     ) -> std::task::Poll<std::io::Result<()>> {
-        self.pinned_inner().poll_read(cx, buf)
+        #[cfg(unix)]
+        return self.project().0.poll_read(cx, buf);
+        #[cfg(windows)]
+        return match self.project() {
+            EnumProj::Client(c) => c.poll_read(cx, buf),
+            EnumProj::Server(s) => s.poll_read(cx, buf),
+        };
     }
 }
 
@@ -105,20 +112,38 @@ impl AsyncWrite for SystemStream {
         cx: &mut std::task::Context<'_>,
         buf: &[u8],
     ) -> std::task::Poll<Result<usize, std::io::Error>> {
-        self.pinned_inner().poll_write(cx, buf)
+        #[cfg(unix)]
+        return self.project().0.poll_write(cx, buf);
+        #[cfg(windows)]
+        return match self.project() {
+            EnumProj::Client(c) => c.poll_write(cx, buf),
+            EnumProj::Server(s) => s.poll_write(cx, buf),
+        };
     }
 
     fn poll_flush(
         self: std::pin::Pin<&mut Self>,
         cx: &mut std::task::Context<'_>,
     ) -> std::task::Poll<Result<(), std::io::Error>> {
-        self.pinned_inner().poll_flush(cx)
+        #[cfg(unix)]
+        return self.project().0.poll_flush(cx);
+        #[cfg(windows)]
+        return match self.project() {
+            EnumProj::Client(c) => c.poll_flush(cx),
+            EnumProj::Server(s) => s.poll_flush(cx),
+        };
     }
 
     fn poll_shutdown(
         self: std::pin::Pin<&mut Self>,
         cx: &mut std::task::Context<'_>,
     ) -> std::task::Poll<Result<(), std::io::Error>> {
-        self.pinned_inner().poll_shutdown(cx)
+        #[cfg(unix)]
+        return self.project().0.poll_shutdown(cx);
+        #[cfg(windows)]
+        return match self.project() {
+            EnumProj::Client(c) => c.poll_shutdown(cx),
+            EnumProj::Server(s) => s.poll_shutdown(cx),
+        };
     }
 }

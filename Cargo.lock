@@ -5568,6 +5568,7 @@ dependencies = [
 name = "system_socket"
 version = "0.1.0"
 dependencies = [
+ "pin-project",
  "tokio",
  "winapi 0.3.9",
 ]

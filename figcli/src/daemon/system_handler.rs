@@ -7,7 +7,7 @@ use fig_proto::daemon::diagnostic_response::{
     SystemSocketStatus, WebsocketStatus,
 };
 use parking_lot::RwLock;
-use system_socket::{SystemConnection, SystemListener};
+use system_socket::{SystemListener, SystemStream};
 use tokio::task::JoinHandle;
 use tracing::{error, info, trace};
 
@@ -20,7 +20,7 @@ use crate::{
 use super::DaemonStatus;
 
 async fn spawn_system_handler(
-    mut stream: SystemConnection,
+    mut stream: SystemStream,
     daemon_status: Arc<RwLock<DaemonStatus>>,
 ) -> Result<()> {
     tokio::spawn(async move {

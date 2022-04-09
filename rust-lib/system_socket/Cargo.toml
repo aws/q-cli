@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+pin-project = "1.0.10"
 tokio = { version = "1.17.0", features = ["fs", "time", "io-util", "net"] }
 
 [target.'cfg(windows)'.dependencies]

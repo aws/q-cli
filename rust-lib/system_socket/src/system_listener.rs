@@ -1,22 +1,24 @@
-// THIS FILE CONTAINS UNSAFE CODE, EDIT ONLY IF YOU KNOW WHAT YOU'RE DOING.
 use std::fmt::Debug;
 use std::io;
 use std::path::Path;
 use std::pin::Pin;
 
+use pin_project::pin_project;
 #[cfg(windows)]
 use tokio::net::windows::named_pipe::NamedPipeServer;
 #[cfg(unix)]
 use tokio::net::UnixListener;
 
-use crate::system_connection::SystemConnection;
+use crate::SystemStream;
 
 #[cfg(unix)]
 #[derive(Debug)]
-pub struct SystemListener(UnixListener);
+#[pin_project]
+pub struct SystemListener(#[pin] UnixListener);
 #[cfg(windows)]
 #[derive(Debug)]
-pub struct SystemListener(NamedPipeServer);
+#[pin_project]
+pub struct SystemListener(#[pin] NamedPipeServer);
 
 impl SystemListener {
     /// Creates a new `SystemListener` bound to the specified path.
@@ -42,21 +44,21 @@ impl SystemListener {
 
     /// Accepts a client and spawns a task that runs the given handler for it.
     #[cfg(unix)]
-    pub async fn accept<P>(&mut self, path: P) -> io::Result<SystemConnection>
+    pub async fn accept<P>(&mut self, path: P) -> io::Result<SystemStream>
     where
         P: AsRef<Path>,
     {
         use crate::SystemStream;
 
-        let (stream, _addr) = self.0.accept().await?;
+        let (stream, _) = self.0.accept().await?;
         tokio::spawn(handler(stream.into())).await?;
 
-        Ok(SystemStream::from(stream).into())
+        Ok(stream.into())
     }
 
     /// Accepts a client and spawns a task that runs the given handler for it.
     #[cfg(windows)]
-    pub async fn accept<P>(&mut self, path: P) -> io::Result<SystemConnection>
+    pub async fn accept<P>(&mut self, path: P) -> io::Result<SystemStream>
     where
         P: AsRef<Path>,
     {
@@ -66,7 +68,7 @@ impl SystemListener {
         let mut stream = ServerOptions::new().create(path.as_ref())?;
         std::mem::swap(&mut self.0, &mut stream);
 
-        Ok(Self(stream).into())
+        Ok(stream.into())
     }
 
     /// Waits for the listener to become writable.
@@ -77,15 +79,6 @@ impl SystemListener {
     pub async fn writable(&self) -> io::Result<()> {
         self.0.writable().await
     }
-
-    /// Retrieve a projection of the inner field which works in pinned contexts
-    #[cfg(windows)]
-    fn pinned_inner(
-        self: Pin<&mut Self>,
-    ) -> Pin<&mut tokio::net::windows::named_pipe::NamedPipeServer> {
-        // SAFETY: This is safe because self is pinned when called
-        unsafe { self.map_unchecked_mut(|s| &mut s.0) }
-    }
 }
 
 #[cfg(windows)]
@@ -95,7 +88,7 @@ impl tokio::io::AsyncRead for SystemListener {
         cx: &mut std::task::Context<'_>,
         buf: &mut tokio::io::ReadBuf<'_>,
     ) -> std::task::Poll<std::io::Result<()>> {
-        self.pinned_inner().poll_read(cx, buf)
+        self.project().0.poll_read(cx, buf)
     }
 }
 
@@ -106,20 +99,20 @@ impl tokio::io::AsyncWrite for SystemListener {
         cx: &mut std::task::Context<'_>,
         buf: &[u8],
     ) -> std::task::Poll<Result<usize, std::io::Error>> {
-        self.pinned_inner().poll_write(cx, buf)
+        self.project().0.poll_write(cx, buf)
     }
 
     fn poll_flush(
         self: std::pin::Pin<&mut Self>,
         cx: &mut std::task::Context<'_>,
     ) -> std::task::Poll<Result<(), std::io::Error>> {
-        self.pinned_inner().poll_flush(cx)
+        self.project().0.poll_flush(cx)
     }
 
     fn poll_shutdown(
         self: std::pin::Pin<&mut Self>,
         cx: &mut std::task::Context<'_>,
     ) -> std::task::Poll<Result<(), std::io::Error>> {
-        self.pinned_inner().poll_shutdown(cx)
+        self.project().0.poll_shutdown(cx)
     }
 }
