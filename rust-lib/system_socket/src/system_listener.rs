@@ -44,14 +44,11 @@ impl SystemListener {
 
     /// Accepts a client and spawns a task that runs the given handler for it.
     #[cfg(unix)]
-    pub async fn accept<P>(&mut self, path: P) -> io::Result<SystemStream>
+    pub async fn accept<P>(&mut self, _path: P) -> io::Result<SystemStream>
     where
         P: AsRef<Path>,
     {
-        use crate::SystemStream;
-
         let (stream, _) = self.0.accept().await?;
-        tokio::spawn(handler(stream.into())).await?;
 
         Ok(stream.into())
     }

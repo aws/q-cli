@@ -71,7 +71,7 @@ impl SystemStream {
 
 #[cfg(unix)]
 impl From<UnixStream> for SystemStream {
-    fn from(from: NamedPipeClient) -> Self {
+    fn from(from: UnixStream) -> Self {
         Self(from)
     }
 }
