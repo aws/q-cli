@@ -35,22 +35,28 @@ pub enum FigTermCommand {
 pub struct FigTermSession {
     pub sender: mpsc::Sender<FigTermCommand>,
     pub last_receive: Instant,
+    pub edit_buffer: EditBuffer,
 }
 
-pub fn ensure_figterm(session_id: String) -> mpsc::Sender<FigTermCommand> {
-    let mut handle = STATE.lock();
-    if let Some(session) = handle.figterm_sessions.get(&session_id) {
-        return session.sender.clone();
+#[derive(Clone, Default, Debug)]
+pub struct EditBuffer {
+    pub text: String,
+    pub cursor: i64,
+}
+
+pub fn ensure_figterm(session_id: String) {
+    if STATE.figterm_sessions.contains_key(&session_id) {
+        return;
     }
     let (tx, mut rx) = mpsc::channel(0xFF);
-    handle.figterm_sessions.insert(
+    STATE.figterm_sessions.insert(
         session_id.clone(),
         FigTermSession {
-            sender: tx.clone(),
+            sender: tx,
             last_receive: Instant::now(),
+            edit_buffer: EditBuffer::default(),
         },
     );
-    drop(handle);
     tokio::spawn(async move {
         let socket = fig_ipc::figterm::get_figterm_socket_path(&session_id);
 
@@ -142,9 +148,8 @@ pub fn ensure_figterm(session_id: String) -> mpsc::Sender<FigTermCommand> {
                 );
                 break;
             }
-            let mut handle = STATE.lock();
-            match handle.figterm_sessions.get_mut(&session_id) {
-                Some(session) => {
+            match STATE.figterm_sessions.get_mut(&session_id) {
+                Some(mut session) => {
                     session.last_receive = Instant::now();
                 }
                 None => break,
@@ -152,9 +157,8 @@ pub fn ensure_figterm(session_id: String) -> mpsc::Sender<FigTermCommand> {
         }
         // remove from cache
         trace!("figterm session {} closed", session_id);
-        STATE.lock().figterm_sessions.remove(&session_id);
+        STATE.figterm_sessions.remove(&session_id);
     });
-    tx
 }
 
 pub async fn clean_figterm_cache() {
@@ -163,16 +167,15 @@ pub async fn clean_figterm_cache() {
         let mut last_receive = Instant::now();
         {
             let mut to_remove = Vec::new();
-            let mut handle = STATE.lock();
-            for (session_id, session) in handle.figterm_sessions.iter() {
+            for session in STATE.figterm_sessions.iter() {
                 if session.last_receive.elapsed() > Duration::from_secs(600) {
-                    to_remove.push(session_id.clone());
+                    to_remove.push(session.key().clone());
                 } else if last_receive > session.last_receive {
                     last_receive = session.last_receive;
                 }
             }
             for session_id in to_remove {
-                handle.figterm_sessions.remove(&session_id);
+                STATE.figterm_sessions.remove(&session_id);
             }
         }
         sleep_until(last_receive + Duration::from_secs(600)).await;

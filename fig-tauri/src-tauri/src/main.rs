@@ -8,15 +8,10 @@ mod local;
 mod os;
 mod state;
 
-use std::time::Duration;
-
 use tauri::{
     plugin::{Builder, TauriPlugin},
     Runtime,
 };
-use tracing::info;
-
-use crate::{local::figterm::FigTermCommand, state::STATE};
 
 fn declare_constants() -> String {
     let mut script: Vec<&str> = Vec::new();

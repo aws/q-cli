@@ -22,17 +22,14 @@ fn subscribe(channel: i64, notification_type: NotificationType) -> ResponseResul
         ));
     }
 
-    if STATE.lock().subscriptions.contains_key(&notification_type) {
+    if STATE.subscriptions.contains_key(&notification_type) {
         return Err(ResponseKind::Error(format!(
             "Already subscribed to notification type {:?}",
             notification_type
         )));
     }
 
-    STATE
-        .lock()
-        .subscriptions
-        .insert(notification_type, channel);
+    STATE.subscriptions.insert(notification_type, channel);
 
     Ok(ResponseKind::Success)
 }
@@ -42,19 +39,19 @@ fn unsubscribe(notification_type: NotificationType) -> ResponseResult {
         return unsubscribe_all();
     }
 
-    if !STATE.lock().subscriptions.contains_key(&notification_type) {
+    if !STATE.subscriptions.contains_key(&notification_type) {
         return Err(ResponseKind::Error(format!(
             "Not subscribed notification type {:?}",
             notification_type
         )));
     }
 
-    STATE.lock().subscriptions.remove(&notification_type);
+    STATE.subscriptions.remove(&notification_type);
 
     Ok(ResponseKind::Success)
 }
 
 fn unsubscribe_all() -> ResponseResult {
-    STATE.lock().subscriptions.clear();
+    STATE.subscriptions.clear();
     Ok(ResponseKind::Success)
 }
