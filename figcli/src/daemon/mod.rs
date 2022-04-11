@@ -1,9 +1,8 @@
 pub mod launchd_plist;
 pub mod scheduler;
 pub mod settings_watcher;
+pub mod system_handler;
 pub mod systemd_unit;
-#[cfg(unix)]
-pub mod unix_socket;
 pub mod websocket;
 
 use crate::{
@@ -397,7 +396,7 @@ pub struct DaemonStatus {
     time_started: u64,
     settings_watcher_status: Result<()>,
     websocket_status: Result<()>,
-    unix_socket_status: Result<()>,
+    system_socket_status: Result<()>,
 }
 
 impl Default for DaemonStatus {
@@ -409,7 +408,7 @@ impl Default for DaemonStatus {
                 .as_secs(),
             settings_watcher_status: Ok(()),
             websocket_status: Ok(()),
-            unix_socket_status: Ok(()),
+            system_socket_status: Ok(()),
         }
     }
 }
@@ -419,7 +418,7 @@ pub static IS_RUNNING_DAEMON: Mutex<bool> = Mutex::const_new(RawMutex::INIT, fal
 /// Spawn the daemon to listen for updates and dotfiles changes
 #[cfg(unix)]
 pub async fn daemon() -> Result<()> {
-    use crate::daemon::unix_socket::spawn_incoming_unix_handler;
+    use crate::daemon::system_handler::spawn_incoming_system_handler;
 
     *IS_RUNNING_DAEMON.lock() = true;
 
@@ -449,19 +448,19 @@ pub async fn daemon() -> Result<()> {
         let mut backoff =
             Backoff::new(Duration::from_secs_f64(0.25), Duration::from_secs_f64(120.));
         loop {
-            match spawn_incoming_unix_handler(daemon_status.clone()).await {
+            match spawn_incoming_system_handler(daemon_status.clone()).await {
                 Ok(handle) => {
-                    daemon_status.write().unix_socket_status = Ok(());
+                    daemon_status.write().system_socket_status = Ok(());
                     backoff.reset();
                     if let Err(err) = handle.await {
-                        error!("Error on unix handler join: {:?}", err);
-                        daemon_status.write().unix_socket_status = Err(err.into());
+                        error!("Error on system handler join: {:?}", err);
+                        daemon_status.write().system_socket_status = Err(err.into());
                     }
                     return;
                 }
                 Err(err) => {
-                    error!("Error spawning unix handler: {:?}", err);
-                    daemon_status.write().unix_socket_status = Err(err);
+                    error!("Error spawning system handler: {:?}", err);
+                    daemon_status.write().system_socket_status = Err(err);
                 }
             }
             backoff.sleep().await;
