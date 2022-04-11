@@ -13,29 +13,21 @@ use tauri::{
     Runtime,
 };
 
-fn declare_constants() -> String {
-    let mut script: Vec<&str> = Vec::new();
+const JAVASCRIPT_INIT: &'static str = r#"
+console.log("[fig] declaring constants...")
 
-    script.push(
-        r#"
-    if (!window.fig) {
-        window.fig = {}
-    }
-    
-    if (!window.fig.constants) {
-        window.fig.constants = {}
-    }
-    "#,
-    );
-
-    script.push(r#"console.log("[fig] declaring constants...")"#);
-
-    script.join("\n")
+if (!window.fig) {
+    window.fig = {}
 }
+
+if (!window.fig.constants) {
+    window.fig.constants = {}
+}
+"#;
 
 fn constants_plugin<R: Runtime>() -> TauriPlugin<R> {
     Builder::new("constants")
-        .js_init_script(declare_constants())
+        .js_init_script(JAVASCRIPT_INIT.to_string())
         .build()
 }
 
