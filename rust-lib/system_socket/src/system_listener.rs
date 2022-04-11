@@ -1,6 +1,7 @@
 use std::fmt::Debug;
 use std::io;
 use std::path::Path;
+use std::path::PathBuf;
 use std::pin::Pin;
 
 use pin_project::pin_project;
@@ -18,7 +19,7 @@ pub struct SystemListener(#[pin] UnixListener);
 #[cfg(windows)]
 #[derive(Debug)]
 #[pin_project]
-pub struct SystemListener(#[pin] NamedPipeServer);
+pub struct SystemListener(#[pin] NamedPipeServer, PathBuf);
 
 impl SystemListener {
     /// Creates a new `SystemListener` bound to the specified path.
@@ -26,6 +27,7 @@ impl SystemListener {
     /// # Panics
     ///
     /// This function panics if thread-local runtime is not set.
+    #[allow(unused_variables)]
     pub fn bind<P: AsRef<Path>>(path: P) -> io::Result<Self> {
         #[cfg(unix)]
         let listener = {
@@ -39,30 +41,24 @@ impl SystemListener {
                 .first_pipe_instance(true)
                 .create(path.as_ref())?
         };
-        Ok(Self(listener))
+
+        Ok(Self(listener, path.as_ref().to_path_buf()))
     }
 
     /// Accepts a client and spawns a task that runs the given handler for it.
     #[cfg(unix)]
-    pub async fn accept<P>(&mut self, _path: P) -> io::Result<SystemStream>
-    where
-        P: AsRef<Path>,
-    {
+    pub async fn accept(&mut self) -> io::Result<SystemStream> {
         let (stream, _) = self.0.accept().await?;
-
         Ok(stream.into())
     }
 
     /// Accepts a client and spawns a task that runs the given handler for it.
     #[cfg(windows)]
-    pub async fn accept<P>(&mut self, path: P) -> io::Result<SystemStream>
-    where
-        P: AsRef<Path>,
-    {
+    pub async fn accept(&mut self) -> io::Result<SystemStream> {
         use tokio::net::windows::named_pipe::ServerOptions;
 
         self.0.connect().await?;
-        let mut stream = ServerOptions::new().create(path.as_ref())?;
+        let mut stream = ServerOptions::new().create(&self.1)?;
         std::mem::swap(&mut self.0, &mut stream);
 
         Ok(stream.into())
