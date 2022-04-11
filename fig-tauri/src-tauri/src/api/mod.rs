@@ -1,4 +1,3 @@
-use base64;
 use bytes::BytesMut;
 use fig_proto::fig::client_originated_message::Submessage as ClientOriginatedSubMessage;
 use fig_proto::fig::server_originated_message::Submessage as ServerOriginatedSubMessage;

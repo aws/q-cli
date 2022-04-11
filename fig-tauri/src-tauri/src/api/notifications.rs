@@ -8,10 +8,10 @@ use super::ResponseResult;
 pub async fn handle_request(request: NotificationRequest, message_id: i64) -> ResponseResult {
     let notification_type = NotificationType::from_i32(request.r#type.unwrap()).unwrap();
 
-    if request.subscribe.unwrap_or_else(|| true) {
-        return subscribe(message_id, notification_type);
+    if request.subscribe.unwrap_or(true) {
+        subscribe(message_id, notification_type)
     } else {
-        return unsubscribe(notification_type);
+        unsubscribe(notification_type)
     }
 }
 
@@ -22,17 +22,14 @@ fn subscribe(channel: i64, notification_type: NotificationType) -> ResponseResul
         ));
     }
 
-    if STATE.lock().subscriptions.contains_key(&notification_type) {
+    if STATE.subscriptions.contains_key(&notification_type) {
         return Err(ResponseKind::Error(format!(
             "Already subscribed to notification type {:?}",
             notification_type
         )));
     }
 
-    STATE
-        .lock()
-        .subscriptions
-        .insert(notification_type, channel);
+    STATE.subscriptions.insert(notification_type, channel);
 
     Ok(ResponseKind::Success)
 }
@@ -42,19 +39,19 @@ fn unsubscribe(notification_type: NotificationType) -> ResponseResult {
         return unsubscribe_all();
     }
 
-    if !STATE.lock().subscriptions.contains_key(&notification_type) {
+    if !STATE.subscriptions.contains_key(&notification_type) {
         return Err(ResponseKind::Error(format!(
             "Not subscribed notification type {:?}",
             notification_type
         )));
     }
 
-    STATE.lock().subscriptions.remove(&notification_type);
+    STATE.subscriptions.remove(&notification_type);
 
     Ok(ResponseKind::Success)
 }
 
 fn unsubscribe_all() -> ResponseResult {
-    STATE.lock().subscriptions.clear();
+    STATE.subscriptions.clear();
     Ok(ResponseKind::Success)
 }
