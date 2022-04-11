@@ -30,19 +30,16 @@ impl SystemListener {
     #[allow(unused_variables)]
     pub fn bind<P: AsRef<Path>>(path: P) -> io::Result<Self> {
         #[cfg(unix)]
-        let listener = {
-            use tokio::net::UnixListener;
+        return Ok(Self(
             UnixListener::bind(path.as_ref())?
-        };
+        ));
         #[cfg(windows)]
-        let listener = {
+        Ok(Self({
             use tokio::net::windows::named_pipe::ServerOptions;
             ServerOptions::new()
                 .first_pipe_instance(true)
                 .create(path.as_ref())?
-        };
-
-        Ok(Self(listener, path.as_ref().to_path_buf()))
+        }))
     }
 
     /// Accepts a client and spawns a task that runs the given handler for it.
