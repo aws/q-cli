@@ -892,6 +892,43 @@ impl DoctorCheck<DiagnosticsResponse> for AutocompleteEnabledCheck {
     }
 }
 
+macro_rules! dev_mode_check {
+    ($struct_name:ident, $check_name:expr, $settings_module:ident, $setting_name:expr) => {
+        struct $struct_name;
+
+        #[async_trait]
+        impl DoctorCheck for $struct_name {
+            fn name(&self) -> Cow<'static, str> {
+                $check_name.into()
+            }
+
+            async fn check(&self, _: &()) -> Result<(), DoctorError> {
+                if let Ok(Some(true)) = fig_settings::$settings_module::get_bool($setting_name) {
+                    Err(DoctorError::Warning(
+                        concat!($setting_name, " is enabled").into(),
+                    ))
+                } else {
+                    Ok(())
+                }
+            }
+        }
+    };
+}
+
+dev_mode_check!(
+    AutocompleteDevModeCheck,
+    "Autocomplete dev mode",
+    settings,
+    "autocomplete.developerMode"
+);
+
+dev_mode_check!(
+    PluginDevModeCheck,
+    "Plugin dev mode",
+    state,
+    "plugin.developerMode"
+);
+
 struct FigCLIPathCheck;
 
 #[async_trait]
@@ -1565,6 +1602,8 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
                 &FigtermSocketCheck {},
                 &InsertionLockCheck {},
                 &PseudoTerminalPathCheck {},
+                &AutocompleteDevModeCheck {},
+                &PluginDevModeCheck {},
             ],
             config,
             &mut spinner,
