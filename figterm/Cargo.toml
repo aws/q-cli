@@ -1,11 +1,10 @@
 [package]
 name = "figterm"
 version = "4.3.0"
-authors = ["Fig"]
+authors = ["fig developers"]
 edition = "2021"
 description = "A layer between the terminal and shell."
 homepage = "https://fig.io"
-repository = "https://github.com/withfig/macos"
 publish = false
 
 [features]
@@ -20,11 +19,11 @@ bytes = "1.1.0"
 clap = { version = "3.1.0", features = ["derive"] }
 crossbeam = "0.8.1"
 dashmap = "5.1.0"
-fig-auth = { path = "../rust-lib/fig-auth" }
-fig-directories = { path = "../rust-lib/fig-directories" }
-fig-ipc = { path = "../rust-lib/fig-ipc" }
-fig-proto = { path = "../rust-lib/fig-proto" }
-fig-settings = { path = "../rust-lib/fig-settings" }
+fig_auth = { path = "../rust-lib/fig_auth" }
+fig_directories = { path = "../rust-lib/fig_directories" }
+fig_ipc = { path = "../rust-lib/fig_ipc" }
+fig_proto = { path = "../rust-lib/fig_proto" }
+fig_settings = { path = "../rust-lib/fig_settings" }
 flume = "0.10.10"
 fnv = "1.0.7"
 heapless = "0.7.10"

@@ -8,7 +8,7 @@ and CLI. Several projects live here:
     buffer](https://developers.google.com/protocol-buffers/) message specification for inter-process communication
 - `figterm/` - figterm, our headless terminal/pseudoterminal that
     intercepts the user’s terminal edit buffer.
-- `figcli/` - the fig CLI, allows users to interface with Fig from the
+- `fig_cli/` - the fig CLI, allows users to interface with Fig from the
     command line
 - `rust-lib/` - Rust utilities, used in figterm and the fig CLI
 

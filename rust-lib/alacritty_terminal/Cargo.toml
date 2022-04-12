@@ -11,7 +11,7 @@ edition = "2021"
 [dependencies]
 base64 = "0.13.0"
 bitflags = "1"
-fig-color = { path = "../fig-color" }
+fig_color = { path = "../fig_color" }
 log = "0.4"
 regex-automata = "0.1.9"
 serde = { version = "1", features = ["derive"] }

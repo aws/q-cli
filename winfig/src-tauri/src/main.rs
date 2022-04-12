@@ -85,8 +85,8 @@ fn socket_path_to_arr(socket_path: &str) -> [CHAR; 108] {
 fn socket_listener(window: Window) {
     println!("socket listener init");
 
-    // as defined in rust-lib/fig-ipc
-    // TODO: import from fig-ipc
+    // as defined in rust-lib/fig_ipc
+    // TODO: import from fig_ipc
     let fig_socket_path = r"C:\fig\fig.socket";
 
     std::thread::spawn(move || loop {
@@ -228,8 +228,8 @@ fn socket_listener(window: Window) {
 fn insert_text(session_id: String, text: String) {
     println!("inserting {} to  {}", text, session_id);
 
-    // as defined in rust-lib/fig-ipc
-    // TODO:import from fig-ipc
+    // as defined in rust-lib/fig_ipc
+    // TODO:import from fig_ipc
     let figterm_socket_path = format!(r"C:\fig\figterm-{}.socket", session_id);
     let fig_socket_path = r"C:\fig\fig.socket";
 
