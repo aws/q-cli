@@ -40,7 +40,7 @@ pub enum OutputFormat {
     Plain,
     /// Outputs the results as JSON
     Json,
-    /// Outputs the results as JSON with a pretty print
+    /// Outputs the results as pretty print JSON
     JsonPretty,
 }
 

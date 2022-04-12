@@ -35,9 +35,9 @@ pub async fn theme_cli(theme_str: Option<String>) -> Result<()> {
             match fs::read_to_string(path) {
                 Ok(theme_file) => {
                     let theme: Theme = serde_json::from_str(&theme_file)?;
-                    let remote_result =
+                    let result =
                         fig_settings::settings::set_value("autocomplete.theme", json!(theme_str))
-                            .await?;
+                            .await;
                     let author = theme.author;
 
                     println!();
@@ -75,22 +75,18 @@ pub async fn theme_cli(theme_str: Option<String>) -> Result<()> {
                         }
                     }
                     println!();
-                    if remote_result.is_err() {
-                        println!("Failed to sync new settings.");
-                    }
+                    result?;
                     Ok(())
                 }
                 Err(_) => {
                     if BUILT_IN_THEMES.contains(&theme_str.as_ref()) {
-                        let remote_result = fig_settings::settings::set_value(
+                        let result = fig_settings::settings::set_value(
                             "autocomplete.theme",
                             json!(theme_str),
                         )
-                        .await?;
+                        .await;
                         println!("› Switching to theme '{}'", theme_str.bold());
-                        if remote_result.is_err() {
-                            println!("Failed to sync new settings.");
-                        }
+                        result?;
                         Ok(())
                     } else {
                         anyhow::bail!("'{}' does not exist in ~/.fig/themes/\n", theme_str)

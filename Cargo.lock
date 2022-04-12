@@ -1214,15 +1214,16 @@ dependencies = [
 name = "fig-settings"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "fig-auth",
  "fig-directories",
  "futures",
  "reqwest",
  "serde",
  "serde_json",
+ "thiserror",
  "time",
  "tokio",
+ "url",
 ]
 
 [[package]]

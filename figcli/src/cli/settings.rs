@@ -1,11 +1,15 @@
 use anyhow::{anyhow, Context, Result};
 use clap::{ArgGroup, Args, Subcommand};
+use crossterm::style::Stylize;
 use fig_auth::is_logged_in;
 use fig_ipc::command::{open_ui_element, restart_settings_listener};
 use fig_proto::local::UiElement;
 use fig_settings::remote_settings::RemoteSettings;
 use serde_json::json;
-use std::{io::Write, process::Command};
+use std::{
+    io::Write,
+    process::{exit, Command},
+};
 use time::format_description::well_known::Rfc3339;
 
 use super::{util::app_not_running_message, OutputFormat};
@@ -150,35 +154,39 @@ impl SettingsArgs {
                             serde_json::from_str(value_str).unwrap_or_else(|_| json!(value_str));
                         let remote_result = fig_settings::settings::set_value(key, value).await;
                         match remote_result {
-                            Ok(Ok(())) => {
+                            Ok(()) => {
                                 println!("Successfully set setting");
                                 Ok(())
                             }
-                            Ok(Err(err)) => {
-                                eprintln!("Error setting setting:");
-                                Err(err)
-                            }
-                            Err(err) => {
-                                eprintln!("Error setting setting:");
-                                Err(err)
-                            }
+                            Err(err) => match err {
+                                fig_settings::Error::RemoteSettingsError(
+                                    fig_settings::remote_settings::Error::AuthError,
+                                ) => {
+                                    eprintln!("You are not logged in to Fig");
+                                    eprintln!("Run {} to login", "fig login".magenta().bold());
+                                    exit(1);
+                                }
+                                err => Err(err.into()),
+                            },
                         }
                     }
                     (None, true) => {
                         let remote_result = fig_settings::settings::remove_value(key).await;
                         match remote_result {
-                            Ok(Ok(())) => {
+                            Ok(()) => {
                                 println!("Successfully removed settings");
                                 Ok(())
                             }
-                            Ok(Err(err)) => {
-                                eprintln!("Error removing setting, it may already be removed");
-                                Err(err)
-                            }
-                            Err(err) => {
-                                eprintln!("Error syncing setting");
-                                Err(err)
-                            }
+                            Err(err) => match err {
+                                fig_settings::Error::RemoteSettingsError(
+                                    fig_settings::remote_settings::Error::AuthError,
+                                ) => {
+                                    eprintln!("You are not logged in to Fig");
+                                    eprintln!("Run {} to login", "fig login".magenta().bold());
+                                    exit(1);
+                                }
+                                err => Err(err.into()),
+                            },
                         }
                     }
                     _ => Ok(()),
