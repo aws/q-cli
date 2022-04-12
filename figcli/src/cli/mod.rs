@@ -217,6 +217,8 @@ pub enum CliRootCommands {
 
  \x1B[0;90mFor more info on a specific command, use:\x1B[0m
   > fig help [command]
+T
+ Run \x1B[1;95mfig\x1B[0m to get started
 ")]
 pub struct Cli {
     #[clap(subcommand)]

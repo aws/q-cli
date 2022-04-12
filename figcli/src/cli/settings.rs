@@ -27,8 +27,10 @@ pub enum SettingsSubcommands {
     Sync,
     /// List all the settings
     All {
+        /// List the remote settings
         #[clap(short, long)]
         remote: bool,
+        /// Format of the output
         #[clap(long, short, arg_enum, default_value_t)]
         format: OutputFormat,
     },
@@ -37,7 +39,7 @@ pub enum SettingsSubcommands {
 #[derive(Debug, Args)]
 #[clap(subcommand_negates_reqs = true)]
 #[clap(args_conflicts_with_subcommands = true)]
-#[clap(group(ArgGroup::new("vals").requires("key").args(&["value", "delete"])))]
+#[clap(group(ArgGroup::new("vals").requires("key").args(&["value", "delete", "format"])))]
 pub struct SettingsArgs {
     #[clap(subcommand)]
     cmd: Option<SettingsSubcommands>,
@@ -46,8 +48,11 @@ pub struct SettingsArgs {
     /// value
     value: Option<String>,
     #[clap(long, short)]
-    /// delete
+    /// Delete a value
     delete: bool,
+    #[clap(long, short, arg_enum, default_value_t)]
+    /// Format of the output
+    format: OutputFormat,
 }
 
 impl SettingsArgs {
@@ -144,10 +149,29 @@ impl SettingsArgs {
                 Some(key) => match (&self.value, self.delete) {
                     (None, false) => match fig_settings::settings::get_value(key)? {
                         Some(value) => {
-                            println!("{}", serde_json::to_string_pretty(&value)?);
+                            match self.format {
+                                OutputFormat::Plain => match value.as_str() {
+                                    Some(value) => println!("{}", value),
+                                    None => println!("{:#}", value),
+                                },
+                                OutputFormat::Json => {
+                                    println!("{}", value)
+                                }
+                                OutputFormat::JsonPretty => {
+                                    println!("{:#}", value)
+                                }
+                            }
                             Ok(())
                         }
-                        None => Err(anyhow::anyhow!("No value associated with {}", key)),
+                        None => match self.format {
+                            OutputFormat::Plain => {
+                                Err(anyhow::anyhow!("No value associated with {}", key))
+                            }
+                            OutputFormat::Json | OutputFormat::JsonPretty => {
+                                println!("null");
+                                Ok(())
+                            }
+                        },
                     },
                     (Some(value_str), false) => {
                         let value =
