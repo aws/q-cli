@@ -25,6 +25,7 @@ fig_ipc = { path = "../rust-lib/fig_ipc" }
 fig_proto = { path = "../rust-lib/fig_proto" }
 fig_settings = { path = "../rust-lib/fig_settings" }
 fig_telemetry = { path = "../rust-lib/fig_telemetry" }
+fig_util = { path = "../rust-lib/fig_util" }
 flume = "0.10.12"
 futures = "0.3.21"
 git2 = { version = "0.14.2", features = ["vendored-openssl", "vendored-libgit2"] }

@@ -13,6 +13,7 @@ members = [
     "rust-lib/fig_proto",
     "rust-lib/fig_settings",
     "rust-lib/fig_telemetry",
+    "rust-lib/fig_util",
     "rust-lib/ibus",
     "rust-lib/ibus/ibus-sys",
     "rust-lib/system_socket",

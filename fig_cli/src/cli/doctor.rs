@@ -7,7 +7,6 @@ use crate::{
         app_path_from_bundle_id, get_shell, glob, glob_dir, is_executable_in_path, launch_fig,
         shell::Shell,
         shell_integration::{InstallationError, ShellIntegration},
-        terminal::Terminal,
         LaunchOptions,
     },
 };
@@ -27,6 +26,7 @@ use fig_proto::{
     FigProtobufEncodable,
 };
 use fig_telemetry::Source;
+use fig_util::Terminal;
 use regex::Regex;
 use semver::Version;
 use serde_json::json;

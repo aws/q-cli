@@ -1,3 +1,9 @@
+pub mod backoff;
+pub mod checksum;
+pub mod shell;
+pub mod shell_integration;
+pub mod sync;
+
 use std::{
     env,
     ffi::OsStr,
@@ -9,13 +15,6 @@ use anyhow::{Context, Result};
 use cfg_if::cfg_if;
 use globset::{Glob, GlobSet, GlobSetBuilder};
 use sysinfo::{get_current_pid, ProcessExt, System, SystemExt};
-
-pub mod backoff;
-pub mod checksum;
-pub mod shell;
-pub mod shell_integration;
-pub mod sync;
-pub mod terminal;
 
 pub fn get_parent_process_exe() -> Result<PathBuf> {
     let mut system = System::new();
