@@ -7,9 +7,11 @@ use fig_proto::{
 };
 use serde::Serialize;
 use tauri::Window;
+use tracing::warn;
 
 mod fs;
 mod notifications;
+mod process;
 mod settings;
 
 const FIG_GLOBAL_ERROR_OCCURRED: &str = "FigGlobalErrorOccurred";
@@ -59,8 +61,8 @@ async fn handle_request(data: Vec<u8>) -> Result<BytesMut, ApiRequestError> {
                     Some(ClientOriginatedSubMessage::$struct(request)) => $func(request, message_id).await,
                 )*
                 _ => {
-              //println!("Missing handler: {:?}", message);
-                    Err(ResponseKind::Error("Unknown submessage".to_string()))
+                    warn!("Missing handler: {:?}", message);
+                    Err(ResponseKind::Error(format!("Unknown submessage {:?}", message)))
                 }
             }
         }
@@ -78,6 +80,10 @@ async fn handle_request(data: Vec<u8>) -> Result<BytesMut, ApiRequestError> {
         UpdateSettingsPropertyRequest => settings::update
         /* notifications */
         NotificationRequest => notifications::handle_request
+        /* processes */
+        RunProcessRequest => process::run
+        PseudoterminalExecuteRequest => process::execute
+        PseudoterminalWriteRequest => process::write
     }
     .unwrap_or_else(|s| s);
 
