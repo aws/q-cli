@@ -171,9 +171,9 @@ jobs:
         run: make figterm
         working-directory: ./figterm
 
-      - name: Build figcli
+      - name: Build fig_cli
         run: make macos
-        working-directory: ./figcli
+        working-directory: ./fig_cli
           
 ############################################
 # Build, Archive & Export 

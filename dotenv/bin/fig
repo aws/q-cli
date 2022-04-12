@@ -14,9 +14,9 @@ else
     if [[ -n "${MOCKED_OUTPUT}" ]]; then
         echo $MOCKED_OUTPUT
     else
-        "$HOME/figcli/figcli" "$@"
+        "$HOME/fig_cli/fig_cli" "$@"
         EXIT_CODE=$?
     fi
 fi
 
-(echo mock "$EXIT_CODE" "$TERM_SESSION_ID" "$@" | base64 | /bin/nc -U /tmp/mock_figcli.socket &)
+(echo mock "$EXIT_CODE" "$TERM_SESSION_ID" "$@" | base64 | /bin/nc -U /tmp/mock_fig_cli.socket &)

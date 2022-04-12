@@ -32,7 +32,7 @@ RUN mkdir -p /usr/home/app/src/ \
   /usr/home/figterm/ \
   /usr/home/.fig/ \
   /usr/home/bin/ \
-  /usr/home/figcli/bin/ \
+  /usr/home/fig_cli/bin/ \
   ${FIG_BUNDLE_EXECUTABLES}
 
 # Set up test user
@@ -53,17 +53,17 @@ COPY --chown=test:test ./proto/ /usr/home/proto/
 RUN cd /usr/home/proto && DOTENV=/usr/home/app/src make local
 
 RUN cp ./bin/fig $FIG_BUNDLE_EXECUTABLES/fig
-RUN cp ./bin/fig $FIG_BUNDLE_EXECUTABLES/figcli
+RUN cp ./bin/fig $FIG_BUNDLE_EXECUTABLES/fig_cli
 
-COPY --chown=test:test ./figcli/ /usr/home/figcli/
-RUN ls -lah /usr/home/figcli
-RUN cd /usr/home/figcli && make clean && BUILT_PRODUCTS_DIR=$(pwd) make all
+COPY --chown=test:test ./fig_cli/ /usr/home/fig_cli/
+RUN ls -lah /usr/home/fig_cli
+RUN cd /usr/home/fig_cli && make clean && BUILT_PRODUCTS_DIR=$(pwd) make all
 
 # Set up figterm.
 COPY --chown=test:test ./figterm/ /usr/home/figterm/
 RUN cd /usr/home/figterm && make clean && BUILT_PRODUCTS_DIR=${FIG_BUNDLE_EXECUTABLES} make all
-RUN cp ${FIG_BUNDLE_EXECUTABLES}/figcli /usr/home/bin/figcli
-RUN cp ${FIG_BUNDLE_EXECUTABLES}/figcli /usr/home/bin/fig
+RUN cp ${FIG_BUNDLE_EXECUTABLES}/fig_cli /usr/home/bin/fig_cli
+RUN cp ${FIG_BUNDLE_EXECUTABLES}/fig_cli /usr/home/bin/fig
 
 # Set up config repo.
 COPY --chown=test:test ./config/ /usr/home/config/

@@ -1,8 +1,6 @@
 use std::fmt::Debug;
 use std::io;
 use std::path::Path;
-use std::path::PathBuf;
-use std::pin::Pin;
 
 use pin_project::pin_project;
 #[cfg(windows)]
@@ -19,7 +17,7 @@ pub struct SystemListener(#[pin] UnixListener);
 #[cfg(windows)]
 #[derive(Debug)]
 #[pin_project]
-pub struct SystemListener(#[pin] NamedPipeServer, PathBuf);
+pub struct SystemListener(#[pin] NamedPipeServer, std::path::PathBuf);
 
 impl SystemListener {
     /// Creates a new `SystemListener` bound to the specified path.
@@ -30,16 +28,17 @@ impl SystemListener {
     #[allow(unused_variables)]
     pub fn bind<P: AsRef<Path>>(path: P) -> io::Result<Self> {
         #[cfg(unix)]
-        return Ok(Self(
-            UnixListener::bind(path.as_ref())?
-        ));
+        return Ok(Self(UnixListener::bind(path.as_ref())?));
         #[cfg(windows)]
-        Ok(Self({
-            use tokio::net::windows::named_pipe::ServerOptions;
-            ServerOptions::new()
-                .first_pipe_instance(true)
-                .create(path.as_ref())?
-        }))
+        Ok(Self(
+            {
+                use tokio::net::windows::named_pipe::ServerOptions;
+                ServerOptions::new()
+                    .first_pipe_instance(true)
+                    .create(path.as_ref())?
+            },
+            path.as_ref().to_path_buf(),
+        ))
     }
 
     /// Accepts a client and spawns a task that runs the given handler for it.
@@ -74,7 +73,7 @@ impl SystemListener {
 #[cfg(windows)]
 impl tokio::io::AsyncRead for SystemListener {
     fn poll_read(
-        self: Pin<&mut Self>,
+        self: std::pin::Pin<&mut Self>,
         cx: &mut std::task::Context<'_>,
         buf: &mut tokio::io::ReadBuf<'_>,
     ) -> std::task::Poll<std::io::Result<()>> {
