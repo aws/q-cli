@@ -88,27 +88,34 @@ fn shell_init(shell: &Shell, when: &When, rcfile: Option<String>) -> Result<Stri
     let mut to_source = String::new();
 
     if let When::Post = when {
-        // Add dotfiles sourcing
-        let get_dotfile_source = || {
-            let raw = std::fs::read_to_string(
-                shell
-                    .get_data_path()
-                    .context("Failed to get shell data path")
-                    .ok()?,
-            )
-            .ok()?;
-            let source: DotfileData = serde_json::from_str(&raw).ok()?;
-            Some(source.dotfile)
-        };
+        let should_source_dotfiles = fig_settings::state::get_bool("dotfiles.enabled")
+            .ok()
+            .flatten()
+            .unwrap_or(true);
 
-        if let Some(source) = get_dotfile_source() {
-            to_source.push_str(&guard_source(
-                shell,
-                false,
-                "FIG_DOTFILES_SOURCED",
-                GuardAssignment::AfterSourcing,
-                source,
-            ));
+        if should_source_dotfiles {
+            // Add dotfiles sourcing
+            let get_dotfile_source = || {
+                let raw = std::fs::read_to_string(
+                    shell
+                        .get_data_path()
+                        .context("Failed to get shell data path")
+                        .ok()?,
+                )
+                .ok()?;
+                let source: DotfileData = serde_json::from_str(&raw).ok()?;
+                Some(source.dotfile)
+            };
+
+            if let Some(source) = get_dotfile_source() {
+                to_source.push_str(&guard_source(
+                    shell,
+                    false,
+                    "FIG_DOTFILES_SOURCED",
+                    GuardAssignment::AfterSourcing,
+                    source,
+                ));
+            }
         }
 
         if stdin().is_tty() && env::var_os("PROCESS_LAUNCHED_BY_FIG").is_none() {

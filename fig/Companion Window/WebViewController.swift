@@ -497,6 +497,11 @@ class WebView: WKWebView {
     }
   }
 
+  // Doesn't cause window to reload as dramatically
+  func navigate(to url: URL) {
+    evaluateJavaScript("window.location.href=`\(url.absoluteString)`", completionHandler: nil)
+  }
+
   func loadHomeScreen() {
     self.evaluateJavaScript("document.documentElement.remove()") { (_, _) in
 

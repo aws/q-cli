@@ -2,8 +2,9 @@ pub mod remote_settings;
 pub mod settings;
 pub mod state;
 
-use anyhow::{Context, Result};
 use std::{fs, path::PathBuf};
+
+use thiserror::Error;
 
 pub fn api_host() -> String {
     state::get_value("developer.fig_cli.apiHost")
@@ -26,20 +27,34 @@ pub struct LocalJson {
     pub path: PathBuf,
 }
 
+#[derive(Debug, Error)]
+pub enum Error {
+    #[error("Remote settings error: {0}")]
+    RemoteSettingsError(#[from] remote_settings::Error),
+    #[error("IO error: {0}")]
+    IoError(#[from] std::io::Error),
+    #[error("JSON error: {0}")]
+    JsonError(#[from] serde_json::Error),
+    #[error("Settings file is not a json object")]
+    SettingsNotObject,
+    #[error("Could not get path to settings file")]
+    SettingsPathNotFound,
+}
+
 impl LocalJson {
-    pub fn load(path: impl Into<PathBuf>) -> Result<Self> {
+    pub fn load(path: impl Into<PathBuf>) -> Result<Self, Error> {
         let path = path.into();
 
         // If the folder doesn't exist, create it.
         if let Some(parent) = path.parent() {
             if !parent.exists() {
-                fs::create_dir_all(parent).context("Failed to create directory")?;
+                fs::create_dir_all(parent)?;
             }
         }
 
         // If the file doesn't exist, create it.
         if !path.exists() {
-            fs::File::create(&path).with_context(|| format!("Failed to create at {:?}", &path))?;
+            fs::File::create(&path)?;
         }
 
         let file = fs::read_to_string(&path)?;
@@ -51,11 +66,11 @@ impl LocalJson {
         })
     }
 
-    pub fn save(&self) -> Result<()> {
+    pub fn save(&self) -> Result<(), Error> {
         // If the folder doesn't exist, create it.
         if let Some(parent) = self.path.parent() {
             if !parent.exists() {
-                fs::create_dir_all(parent).context("Failed to create directory")?;
+                fs::create_dir_all(parent)?;
             }
         }
 
@@ -68,10 +83,10 @@ impl LocalJson {
         &mut self,
         key: impl Into<String>,
         value: impl Into<serde_json::Value>,
-    ) -> Result<()> {
+    ) -> Result<(), Error> {
         self.inner
             .as_object_mut()
-            .ok_or_else(|| anyhow::anyhow!("Settings is not an object"))?
+            .ok_or(Error::SettingsNotObject)?
             .insert(key.into(), value.into());
 
         Ok(())
@@ -81,10 +96,10 @@ impl LocalJson {
         self.inner.get(key.as_ref())
     }
 
-    pub fn remove(&mut self, key: impl AsRef<str>) -> Result<()> {
+    pub fn remove(&mut self, key: impl AsRef<str>) -> Result<(), Error> {
         self.inner
             .as_object_mut()
-            .ok_or_else(|| anyhow::anyhow!("Settings is not an object"))?
+            .ok_or(Error::SettingsNotObject)?
             .remove(key.as_ref());
 
         Ok(())

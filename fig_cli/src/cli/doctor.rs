@@ -717,7 +717,11 @@ struct DotfileCheck {
 #[async_trait]
 impl DoctorCheck<Option<Shell>> for DotfileCheck {
     fn name(&self) -> Cow<'static, str> {
-        format!("{} contains valid fig hooks", self.integration.filename()).into()
+        format!(
+            "{} contains valid fig hooks",
+            self.integration.path().display()
+        )
+        .into()
     }
 
     fn get_type(&self, current_shell: &Option<Shell>) -> DoctorCheckType {
@@ -747,6 +751,28 @@ impl DoctorCheck<Option<Shell>> for DotfileCheck {
             }
             Err(InstallationError::NotInstalled(msg))
             | Err(InstallationError::ImproperInstallation(msg)) => {
+                // Check permissions of the file
+                #[cfg(unix)]
+                {
+                    use nix::unistd::access;
+                    use nix::unistd::AccessFlags;
+
+                    let path = self.integration.path();
+                    if path.exists() {
+                        access(
+                            &self.integration.path(),
+                            AccessFlags::R_OK | AccessFlags::W_OK,
+                        )
+                        .map_err(|_| DoctorError::Error {
+                            reason: format!("{} is not accessible", path.display()).into(),
+                            info: vec![
+                                format!("Run `sudo chown $USER {}` to fix", path.display()).into()
+                            ],
+                            fix: None,
+                        })?;
+                    }
+                }
+
                 let fix_integration = self.integration.clone();
                 Err(DoctorError::Error {
                     reason: msg,
@@ -936,7 +962,12 @@ impl DoctorCheck for PseudoTerminalPathCheck {
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
         let path = std::env::var("PATH").unwrap_or_default();
-        let pty_path = fig_settings::state::get_value("pty.path")?
+        let pty_path = fig_settings::state::get_value("pty.path")
+            .map_err(|e| DoctorError::Error {
+                reason: "Could not get PseudoTerminal PATH".into(),
+                info: vec![format!("{}", e).into()],
+                fix: None,
+            })?
             .and_then(|s| s.as_str().map(str::to_string));
 
         if path != pty_path.unwrap_or_default() {

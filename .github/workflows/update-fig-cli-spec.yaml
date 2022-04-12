@@ -24,10 +24,17 @@ jobs:
       - name: Generate the spec
         run: |
           cargo run -- completion fig > spec.ts
+      - name: Get CLI version
+        id: cli-version
+        run: |
+          echo "::set-output name=VERSION::$(cat Cargo.toml | sed -rn 's/^version = \"([0-9\.-]+)\"$/\1 /p')"
       - name: Create Autocomplete PR
         uses: withfig/push-to-fig-autocomplete-action@v1
         with:
           token: ${{ secrets.FIG_BOT_TOKEN }}
-          autocomplete-spec-name: 'fig/fig@latest'
-          spec-path: fig_cli/spec.ts
+          autocomplete-spec-name: 'fig'
+          spec-path: figcli/spec.ts
           integration: clap
+          diff-based-versioning: true
+          new-spec-version: ${{ steps.cli-version.outputs.VERSION }}
+

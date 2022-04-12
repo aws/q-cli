@@ -82,3 +82,7 @@ Run
 make install-native
 ```
 This will build the project and copy it to the correct place.
+
+## Publish 
+
+When publishing a new version (pushing to master) of the app, be sure to bump `figcli` if required bacause it is needed to automatically generate specs.

@@ -9,7 +9,7 @@
 import Cocoa
 
 class WebViewWindow: NSWindow {
-  init(viewController: NSViewController, shouldQuitAppOnClose: Bool = true) {
+  init(viewController: NSViewController, shouldQuitAppOnClose: Bool = true, isLongRunningWindow: Bool = false) {
     super.init(
       contentRect: NSRect(x: 0, y: 0, width: 520, height: 350),
       styleMask: [.fullSizeContentView, .resizable, .titled, .miniaturizable, .closable],
@@ -31,6 +31,16 @@ class WebViewWindow: NSWindow {
       closeButton.action = #selector(closeViaButton)
     }
 
+    if let closeButton = self.standardWindowButton(.closeButton), isLongRunningWindow {
+      closeButton.target = self
+      closeButton.action = #selector(closeLongRunningWindow)
+    }
+
+  }
+
+  @objc func closeLongRunningWindow() {
+    NSApp.setActivationPolicy(.accessory)
+    self.orderOut(nil)
   }
 
   @objc func closeViaButton() {
@@ -45,8 +55,6 @@ class WebViewWindow: NSWindow {
 extension WebViewWindow: NSWindowDelegate {
   func windowShouldClose(_ sender: NSWindow) -> Bool {
     self.contentViewController = nil
-    NSApp.setActivationPolicy(.accessory)
-
     return true
   }
 }
