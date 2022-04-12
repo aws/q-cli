@@ -1,10 +1,11 @@
 use crate::{
     dotfiles::api::DotfileData,
-    util::{app_path_from_bundle_id, shell::Shell, shell_integration::When, terminal::Terminal},
+    util::{app_path_from_bundle_id, shell::Shell, shell_integration::When},
 };
 use anyhow::{Context, Result};
 use crossterm::tty::IsTty;
 use fig_auth::is_logged_in;
+use fig_util::Terminal;
 
 use std::{borrow::Cow, env, fmt::Display, io::stdin};
 
