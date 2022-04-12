@@ -8,9 +8,10 @@ mod local;
 mod os;
 mod state;
 
+use crate::state::STATE;
 use tauri::{
     plugin::{Builder, TauriPlugin},
-    Runtime,
+    Manager, Runtime,
 };
 
 const JAVASCRIPT_INIT: &str = r#"
@@ -36,9 +37,10 @@ fn main() {
 
     tauri::Builder::default()
         .plugin(constants_plugin())
-        .setup(|_| {
+        .setup(|app| {
             tauri::async_runtime::spawn(local::start_local_ipc());
             tauri::async_runtime::spawn(local::figterm::clean_figterm_cache());
+            *(STATE.window.lock()) = Some(app.windows().get("autocomplete").unwrap().clone());
 
             Ok(())
         })

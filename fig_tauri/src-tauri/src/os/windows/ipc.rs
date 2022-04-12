@@ -14,12 +14,6 @@ use windows::{
     },
 };
 
-#[derive(Default, Debug)]
-pub struct State {
-    _window_id: u32,
-    _process_id: u32,
-}
-
 #[derive(Debug)]
 pub enum WindowsSocketError {
     StartupError,
@@ -36,7 +30,7 @@ pub struct WindowsStream {
 impl AsyncRead for WindowsStream {
     fn poll_read(
         self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
+        _cx: &mut Context<'_>,
         buf: &mut ReadBuf<'_>,
     ) -> Poll<io::Result<()>> {
         let res = unsafe {
@@ -55,20 +49,23 @@ impl AsyncRead for WindowsStream {
     }
 }
 
-/*
 impl AsyncWrite for WindowsStream {
     fn poll_write(
         self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-        buf: &[u8],
+        _cx: &mut Context<'_>,
+        _buf: &[u8],
     ) -> Poll<Result<usize, io::Error>> {
+        todo!()
     }
 
-    fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), io::Error>> {}
+    fn poll_flush(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<Result<(), io::Error>> {
+        todo!()
+    }
 
-    fn poll_shutdown(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), io::Error>> {}
+    fn poll_shutdown(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<Result<(), io::Error>> {
+        todo!()
+    }
 }
-*/
 
 pub struct WindowsListener {
     listen_socket: WinSock::SOCKET,
@@ -172,17 +169,5 @@ impl WindowsListener {
         Ok(WindowsStream {
             socket: client_socket,
         })
-    }
-}
-
-pub struct Listener(WindowsListener);
-
-impl Listener {
-    pub fn bind(path: &Path) -> Self {
-        Self(WindowsListener::bind(path).expect("Failed to bind to socket"))
-    }
-
-    pub async fn accept(&self) -> Result<WindowsStream, WindowsSocketError> {
-        self.0.accept().await
     }
 }

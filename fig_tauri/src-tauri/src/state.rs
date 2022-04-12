@@ -3,6 +3,7 @@ use fig_proto::fig::NotificationType;
 use once_cell::sync::Lazy;
 use parking_lot::Mutex;
 use std::sync::Arc;
+use tauri::Window;
 
 use crate::local::figterm::FigTermSession;
 
@@ -17,6 +18,7 @@ pub struct AppState {
     pub _should_intercept: bool,
     pub subscriptions: DashMap<NotificationType, i64>,
     pub figterm_sessions: DashMap<String, FigTermSession>,
+    pub window: Mutex<Option<Window>>,
     pub _os_state: crate::os::native::State,
 }
 
