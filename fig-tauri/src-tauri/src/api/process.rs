@@ -15,14 +15,12 @@ pub async fn execute(request: PseudoterminalExecuteRequest, _: i64) -> ResponseR
     cmd.arg("--noprofile")
         .arg("--norc")
         .arg("-c")
-        .arg(request.command)
-        .current_dir(request.working_directory.unwrap_or_else(|| {
-            std::env::current_dir()
-                .expect("Failed getting current directory")
-                .to_string_lossy()
-                .to_owned()
-                .to_string()
-        }));
+        .arg(request.command);
+    if let Some(working_directory) = request.working_directory {
+        cmd.current_dir(working_directory);
+    } else if let Ok(working_directory) = std::env::current_dir() {
+        cmd.current_dir(working_directory);
+    }
     for var in request.env {
         cmd.env(var.key.clone(), var.value());
     }
@@ -46,13 +44,11 @@ pub async fn execute(request: PseudoterminalExecuteRequest, _: i64) -> ResponseR
 
 pub async fn run(request: RunProcessRequest, _: i64) -> ResponseResult {
     let mut cmd = Command::new(request.executable);
-    cmd.current_dir(request.working_directory.unwrap_or_else(|| {
-        std::env::current_dir()
-            .expect("Failed getting current directory")
-            .to_string_lossy()
-            .to_owned()
-            .to_string()
-    }));
+    if let Some(working_directory) = request.working_directory {
+        cmd.current_dir(working_directory);
+    } else if let Ok(working_directory) = std::env::current_dir() {
+        cmd.current_dir(working_directory);
+    }
     for arg in request.arguments {
         cmd.arg(arg);
     }
