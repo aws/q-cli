@@ -1,12 +1,9 @@
-use sha2::{Sha256, Digest};
+use sha2::{Digest, Sha256};
 
 use crate::Error;
 
 #[cfg(target_os = "linux")]
-const MACHINE_ID_FILES:[&str; 2] = [
-    "/var/lib/dbus/machine-id",
-    "/etc/machine-id"
-];
+const MACHINE_ID_FILES: [&str; 2] = ["/var/lib/dbus/machine-id", "/etc/machine-id"];
 
 pub fn get_system_id() -> Result<String, Error> {
     #[allow(unused_assignments)]
@@ -21,9 +18,11 @@ pub fn get_system_id() -> Result<String, Error> {
 
         let machine_id: String = output
             .lines()
-            .find(|line| line.contains("IOPlatformUUID")).ok_or(Error::HwidNotFound)?
+            .find(|line| line.contains("IOPlatformUUID"))
+            .ok_or(Error::HwidNotFound)?
             .split('=')
-            .nth(1).ok_or(Error::HwidNotFound)?
+            .nth(1)
+            .ok_or(Error::HwidNotFound)?
             .trim()
             .trim_start_matches('"')
             .trim_end_matches('"')
@@ -35,7 +34,7 @@ pub fn get_system_id() -> Result<String, Error> {
     for path in MACHINE_ID_FILES.iter() {
         use std::io::Read;
 
-        if std::path::Path::new(path).exists(){
+        if std::path::Path::new(path).exists() {
             let content = {
                 let mut file = std::fs::File::open(path)?;
                 let mut content = String::new();
@@ -45,13 +44,13 @@ pub fn get_system_id() -> Result<String, Error> {
             hwid = Some(content);
             break;
         }
-    };
+    }
     #[cfg(windows)]
     {
         use winreg::{enums::HKEY_LOCAL_MACHINE, RegKey};
 
-        let rkey = RegKey::predef(HKEY_LOCAL_MACHINE)
-            .open_subkey("SOFTWARE\\Microsoft\\Cryptography")?;
+        let rkey =
+            RegKey::predef(HKEY_LOCAL_MACHINE).open_subkey("SOFTWARE\\Microsoft\\Cryptography")?;
         let id: String = rkey.get_value("MachineGuid")?;
 
         hwid = Some(id);
