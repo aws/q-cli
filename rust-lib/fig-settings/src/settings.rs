@@ -11,7 +11,7 @@ pub fn settings_path() -> Option<PathBuf> {
 pub type LocalSettings = LocalJson;
 
 pub fn local_settings() -> Result<LocalSettings, super::Error> {
-    let path = settings_path().ok_or(super::Error::SettingsPathError)?;
+    let path = settings_path().ok_or(super::Error::SettingsPathNotFound)?;
     LocalSettings::load(path)
 }
 

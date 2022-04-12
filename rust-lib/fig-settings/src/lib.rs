@@ -38,7 +38,7 @@ pub enum Error {
     #[error("Settings file is not a json object")]
     SettingsNotObject,
     #[error("Could not get path to settings file")]
-    SettingsPathError,
+    SettingsPathNotFound,
 }
 
 impl LocalJson {

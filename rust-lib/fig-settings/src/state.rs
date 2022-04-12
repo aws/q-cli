@@ -8,7 +8,7 @@ pub fn state_path() -> Option<PathBuf> {
 pub type LocalState = LocalJson;
 
 pub fn local_settings() -> Result<LocalState, super::Error> {
-    let path = state_path().ok_or(super::Error::SettingsPathError)?;
+    let path = state_path().ok_or(super::Error::SettingsPathNotFound)?;
     LocalState::load(path)
 }
 
