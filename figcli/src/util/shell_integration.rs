@@ -79,13 +79,13 @@ pub trait ShellIntegration: Send + Sync + ShellIntegrationClone {
     fn install(&self, backup_dir: Option<&Path>) -> Result<()>;
     fn uninstall(&self) -> Result<()>;
     fn is_installed(&self) -> Result<(), InstallationError>;
-    fn filename(&self) -> String;
+    fn path(&self) -> PathBuf;
     fn get_shell(&self) -> Shell;
 }
 
 impl std::fmt::Display for dyn ShellIntegration {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} ({})", self.get_shell(), self.filename())
+        write!(f, "{} ({})", self.get_shell(), self.path().display())
     }
 }
 
@@ -145,8 +145,8 @@ impl IntegrationFileShellIntegration {
 }
 
 impl ShellIntegration for IntegrationFileShellIntegration {
-    fn filename(&self) -> String {
-        self.path.to_string_lossy().into_owned()
+    fn path(&self) -> PathBuf {
+        self.path.clone()
     }
 
     fn get_shell(&self) -> Shell {
@@ -324,8 +324,8 @@ impl ShellIntegration for DotfileShellIntegration {
         self.shell
     }
 
-    fn filename(&self) -> String {
-        self.dotfile_path().to_string_lossy().into_owned()
+    fn path(&self) -> PathBuf {
+        self.dotfile_path()
     }
 
     fn install(&self, backup_dir: Option<&Path>) -> Result<()> {

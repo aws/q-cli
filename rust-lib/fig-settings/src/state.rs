@@ -1,5 +1,4 @@
 use crate::LocalJson;
-use anyhow::{Context, Result};
 use std::path::PathBuf;
 
 pub fn state_path() -> Option<PathBuf> {
@@ -8,36 +7,39 @@ pub fn state_path() -> Option<PathBuf> {
 
 pub type LocalState = LocalJson;
 
-pub fn local_settings() -> Result<LocalState> {
-    let path = state_path().context("Could not get state path")?;
+pub fn local_settings() -> Result<LocalState, super::Error> {
+    let path = state_path().ok_or(super::Error::SettingsPathError)?;
     LocalState::load(path)
 }
 
-pub fn set_value(key: impl Into<String>, value: impl Into<serde_json::Value>) -> Result<()> {
+pub fn set_value(
+    key: impl Into<String>,
+    value: impl Into<serde_json::Value>,
+) -> Result<(), super::Error> {
     let mut settings = local_settings()?;
     settings.set(key, value)?;
     settings.save()?;
     Ok(())
 }
 
-pub fn get_value(key: impl AsRef<str>) -> Result<Option<serde_json::Value>> {
+pub fn get_value(key: impl AsRef<str>) -> Result<Option<serde_json::Value>, super::Error> {
     let settings = local_settings()?;
     Ok(settings.get(key).cloned())
 }
 
-pub fn get_bool(key: impl AsRef<str>) -> Result<Option<bool>> {
+pub fn get_bool(key: impl AsRef<str>) -> Result<Option<bool>, super::Error> {
     let settings = local_settings()?;
     let value = settings.get(key);
     Ok(value.cloned().and_then(|v| v.as_bool()))
 }
 
-pub fn get_string(key: impl AsRef<str>) -> Result<Option<String>> {
+pub fn get_string(key: impl AsRef<str>) -> Result<Option<String>, super::Error> {
     let settings = local_settings()?;
     let value = settings.get(key);
     Ok(value.cloned().and_then(|v| v.as_str().map(String::from)))
 }
 
-pub fn remove_value(key: impl AsRef<str>) -> Result<()> {
+pub fn remove_value(key: impl AsRef<str>) -> Result<(), super::Error> {
     let mut settings = local_settings()?;
     settings.remove(key)?;
     settings.save()?;

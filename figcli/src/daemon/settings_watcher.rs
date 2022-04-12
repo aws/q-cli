@@ -23,7 +23,7 @@ pub async fn spawn_settings_watcher(
     let application_path = "/Applications/Fig.app";
 
     let (settings_watcher_tx, settings_watcher_rx) = std::sync::mpsc::channel();
-    let mut watcher = watcher(settings_watcher_tx, Duration::from_secs(1))?;
+    let mut watcher = watcher(settings_watcher_tx, Duration::from_millis(10))?;
 
     let (forward_tx, forward_rx) = flume::unbounded();
 
