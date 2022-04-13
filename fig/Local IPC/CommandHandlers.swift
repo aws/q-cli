@@ -194,6 +194,14 @@ extension CommandHandlers {
       return CommandResponse.with { response in
         response.success.message = ""
       }
+    case .inputMethodPrompt:
+      DispatchQueue.main.async {
+        InputMethod.openUI()
+      }
+
+      return CommandResponse.with { response in
+        response.success.message = ""
+      }
     case .UNRECOGNIZED(let int):
       return CommandResponse.with { response in
         response.error.message = "unknown ui element \(int)"
@@ -242,15 +250,15 @@ extension CommandHandlers {
         InputMethod.default.uninstall()
         response.success.message = "Input method uninstalled!"
       case .selectInputMethod:
-        response.success.message = InputMethod.default.select()
+        response.success.message = InputMethod.default.select().message
       case .deselectInputMethod:
-        response.success.message = InputMethod.default.deselect()
+        response.success.message = InputMethod.default.deselect().message
       case .enableInputMethod:
-        response.success.message = InputMethod.default.enable()
+        response.success.message = InputMethod.default.enable().message
       case .disableInputMethod:
-        response.success.message = InputMethod.default.disable()
+        response.success.message = InputMethod.default.disable().message
       case .registerInputMethod:
-        response.success.message = InputMethod.default.register()
+        response.success.message = InputMethod.default.register().message
       case .statusOfInputMethod:
         InputMethod.default.verifyAndUpdateInstallationStatus()
         response.success.message = InputMethod.default.status.description

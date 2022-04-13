@@ -40,11 +40,15 @@ pub struct CallbackArgs {
 #[derive(Debug, Args)]
 pub struct InstallArgs {
     /// Install only the daemon
-    #[clap(long, conflicts_with = "dotfiles")]
+    #[clap(long, conflicts_with = "dotfiles", conflicts_with = "input_method")]
     daemon: bool,
     /// Install only the shell integrations
-    #[clap(long)]
+    #[clap(long, conflicts_with = "input_method")]
     dotfiles: bool,
+
+    /// Prompt input method installation
+    #[clap(long)]
+    pub(crate) input_method: bool,
     /// Don't confirm automatic installation.
     #[clap(long)]
     no_confirm: bool,
@@ -108,6 +112,7 @@ pub fn install_cli_from_args(install_args: InstallArgs) -> Result<()> {
         dotfiles,
         no_confirm,
         force,
+        ..
     } = install_args;
     let install_components = if daemon || dotfiles {
         let mut install_components = InstallComponents::empty();

@@ -1,0 +1,354 @@
+<html>
+
+<head>
+    <meta charset="utf-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            margin-left: 0;
+            margin-right: 0;
+            margin-top: 0;
+            font-family: "Avenir";
+        }
+
+        a {
+            text-decoration: none;
+        }
+
+        .wrapper {
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            
+            -webkit-animation: fadein 1s; /* Safari, Chrome and Opera > 12.1 */
+                      -moz-animation: fadein 1s; /* Firefox < 16 */
+                       -ms-animation: fadein 1s; /* Internet Explorer */
+                        -o-animation: fadein 1s; /* Opera < 12.1 */
+                           animation: fadein 1s;
+        }
+
+        @media only screen and (min-width: 800px) {
+
+            /* tablets and desktop */
+            .wrapper {
+                width: 35%;
+            }
+        }
+
+        @media only screen and (max-width: 800px) {
+
+            /* portrait phones */
+            .wrapper {
+                width: 90%;
+
+            }
+        }
+
+        header {
+
+            width: 275px;
+            margin-top: 20px;
+            margin-bottom: 5px;
+
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        header .title {
+            font-size: 1.7em;
+            display: block;
+        }
+
+        header .subtitle {
+            font-size: 0.8em;
+            display: block;
+        }
+
+    .button {
+        width: 161px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+            .button a {
+              color: white;
+              background-color: #0984e3;/*#00b894;*/
+              padding-top: 8px;
+              padding-bottom: 8px;
+              padding-right: 60px;
+              padding-left: 60px;
+              border-radius: 10px;
+              display: inline-block;
+
+              filter: brightness(100%);
+
+            }
+
+            .button p {
+              margin: 0px;
+              margin-top: 5px;
+              font-size: 10px;
+            }
+
+        
+            .button:hover {
+                filter: brightness(110%);
+            }
+
+        .section {
+            margin-top:15px;
+
+            /* margin-left: 50px; */
+        }
+
+        .section .title {
+            display: block;
+            font-weight: 500;
+        }
+
+        .section .subtitle {
+            /* margin-left: 20px; */
+            display: inline-block;
+            color: #ccc;
+        }
+
+        .section p {
+            font-size: 0.85em;
+            margin-top: 11px;
+            margin-bottom: 11px;
+        }
+
+        .video-mask {
+            width: 300;
+            border-radius: 5px;
+            -webkit-border-radius: 5px;
+
+            overflow: hidden;
+            box-shadow: 0px 8px 18px #888888;
+            margin-bottom: 22px;
+
+        }
+
+        video {
+            width: 100%;
+        }
+
+        img {
+            width: 300;
+            /* margin-left: -20px; */
+        }
+
+        section {
+            width: 275px;
+
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .emoji {
+            padding-right: 5px;
+        }
+
+        code {
+            display: inline-block;
+            border-radius: 5px;
+            background-color: #ddd;
+            color: #606060;
+            padding: 1px;
+        }
+    
+        #skip {
+            color: #ccc;
+            margin: 5px;
+            font-size: 0.85em;
+            text-align: center;
+            width: 300px;
+            margin-left: auto;
+            margin-right: auto;
+            display:block;
+        }
+
+        /* progress {
+            -webkit-appearance: none;
+            appearance: none;
+            position: fixed;
+            top: 0;
+            left: 99%;
+            transform: translate(calc(-50% + 3px), calc(50vh - 50%)) rotate(90deg);
+            width: 100vh;
+            height: 6px;
+        }
+
+        progress::-webkit-progress-bar {
+            background-color: white;
+        }
+
+        progress[value="100"]::-webkit-progress-bar {
+            background-color: #2ecc71;
+        }
+
+        progress::-webkit-progress-value {
+            background-color: #2ecc71;
+            border-bottom-right-radius: 5px;
+            border-top-right-radius: 5px;
+        }
+
+        ::-webkit-scrollbar {
+            display: none !important;
+        } */
+    
+    ::-webkit-scrollbar {
+        display: none !important;
+    }
+    
+    @keyframes fadein {
+        from { opacity: 0; }
+        to   { opacity: 1; }
+    }
+    </style>
+</head>
+
+<body>
+    <div class="wrapper">
+        <section>
+            <div class="section">
+                <span class="title" href="javascript:requestPermission()" id="permissions">Install Input Method</span>
+                <p style = " color: #5e5e5e">Fig requires a custom input method to locate the caret in certain terminals.</p>
+                <div id = "stage">
+                  <div class="video-mask">
+                      <video autoplay playsinline muted loop defaultPlaybackRate=0.25>
+                          <source src="./input-method-install.mp4" type="video/mp4" />
+                          Your browser does not support the video tag.
+                      </video>
+                  </div>
+                  <div class = "button">
+                      <a id = "enable" href="javascript:requestPermission()">Enable</a>
+                  </div>
+                </div>
+
+                <p id ="status" style = "color: #5e5e5e; text-align:center; width: 310px"></p>
+            </div>
+        </section>
+
+    </div>
+    <script src="./API.js"> </script>
+
+    <script>
+        document.querySelector('video').playbackRate = 0.75;
+        
+        const pollUntil = async (condition, interval, timeout) => {
+          return new Promise((resolve, reject) => {
+            
+            let terminate = (outcome, handle) => {
+              clearInterval(handle)
+              if (outcome) {
+                resolve()
+              } else {
+                reject()
+              }
+            }
+            
+            let id = setInterval(async () => {
+              try {
+                let outcome = await condition()
+                if (outcome) {
+                    terminate(true, id)
+                }
+              } catch {
+                terminate(false, id)
+              }
+            }, interval || 500)
+            
+            setTimeout(() => {
+              terminate(false, id);
+            }, timeout || 10000)
+          })
+
+        }
+        window.requestRestart = async () => {
+          await sendMessageAsync({ onboardingRequest: { action: "REQUEST_RESTART" } })
+        }
+        window.requestPermission = async () => {
+            document.querySelector("#enable").innerText = "Waiting..."
+            try {
+              await sendMessageAsync({ macosInputMethodRequest: { action: "REGISTER" } });
+              let response = await sendMessageAsync({ macosInputMethodRequest: { action: "STATUS" } });
+              
+              console.log({ response })
+              let alreadyInstalled = response.macosInputMethodResponse.message === "installed!"
+              console.log({ alreadyInstalled })
+
+              if (alreadyInstalled) {
+                document.querySelector("#stage").innerHTML =
+              `
+                  <br>
+                  <p class = "title">Input method is already installed...</p>
+                  <p>✅ Enabled in System Preferences</p>
+                  <p>✅ Computer Restarted </p>
+                  <br>
+                  <p style = " color: #5e5e5e">If Fig still isn't working in input-method dependent terminals, try the following:</p>
+                  <p>1️⃣ Quit and restart the terminal application </p>
+                  <p>2️⃣ Quit and restart Fig </p>
+                  <p>3️⃣ Restart your computer </p>
+                  <br>
+              `
+              
+              document.querySelector("#status").innerHTML = "If this issue persists, please run <code>fig issue</code>."
+                return
+              }
+              
+              let alreadyEnabled = response.macosInputMethodResponse.message === "enabled!"
+              
+              if (!alreadyEnabled) {
+                await sendMessageAsync({ macosInputMethodRequest: { action: "ENABLE" } });
+                await pollUntil(async () => {
+                  let response = await sendMessageAsync({ macosInputMethodRequest: { action: "STATUS" } });
+                  console.log(response)
+
+                  switch (response.macosInputMethodResponse.message) {
+                    case "installed!":
+                    case "enabled!":
+                      return true
+                    default:
+                      return false
+                  }
+                })
+                
+                await sendMessageAsync({ windowFocusRequest: { type: "TAKE_FOCUS" } });
+              }
+              
+              await sendMessageAsync({ macosInputMethodRequest: { action: "SELECT" } });
+              await pollUntil(async () => {
+                let response = await sendMessageAsync({ macosInputMethodRequest: { action: "STATUS" } });
+                console.log(response)
+                switch (response.macosInputMethodResponse.message) {
+                  case "installed!":
+                    return true
+                  default:
+                    return false
+                }
+              })
+              document.querySelector("#stage").innerHTML =
+              `
+                  <h4>Almost done...</h4>
+                  <p>✅ Input Method Enabled in System Preferences</p>
+                  <p>❓Computer Restarted </p>
+                  <br>
+                  <br>
+                  <div class = "button">
+                      <a id = "enable" href="javascript:requestRestart()">Restart</a>
+                  </div>
+              `
+              
+            document.querySelector("#status").innerText = "Restart your computer to finish installing Fig's custom input method..."
+          } catch {
+            await sendMessageAsync({ windowFocusRequest: { type: "TAKE_FOCUS" } });
+            document.querySelector("#status").innerHTML = "⚠️ An error occured. Restart Fig and try again <code>fig install --input-method</code>."
+
+          }
+        }
+      
+    </script>
+</body>
+
+</html>
