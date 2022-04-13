@@ -32,10 +32,10 @@ pub async fn execute(request: PseudoterminalExecuteRequest, _: i64) -> ResponseR
     Ok(ResponseKind::Message(Box::new(
         ServerOriginatedSubMessage::PseudoterminalExecuteResponse(PseudoterminalExecuteResponse {
             stdout: String::from_utf8_lossy(&output.stdout).to_string(),
-            stderr: if output.stderr.len() > 0 {
-                Some(String::from_utf8_lossy(&output.stderr).to_string())
-            } else {
+            stderr: if output.stderr.is_empty() {
                 None
+            } else {
+                Some(String::from_utf8_lossy(&output.stderr).to_string())
             },
             exit_code: output.status.code(),
         }),

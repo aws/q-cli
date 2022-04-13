@@ -13,7 +13,7 @@ use tauri::{
     Runtime,
 };
 
-const JAVASCRIPT_INIT: &'static str = r#"
+const JAVASCRIPT_INIT: &str = r#"
 console.log("[fig] declaring constants...")
 
 if (!window.fig) {
