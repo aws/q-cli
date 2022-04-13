@@ -1,7 +1,6 @@
 use std::path::Path;
 
 mod ipc;
-//pub mod window;
 
 #[derive(Default, Debug)]
 pub struct State {
@@ -21,6 +20,4 @@ impl Listener {
     }
 }
 
-/*pub fn init() {
-    window::init();
-}*/
+pub fn init() {}

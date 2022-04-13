@@ -13,6 +13,7 @@ mod fs;
 mod notifications;
 mod process;
 mod settings;
+mod window;
 
 const FIG_GLOBAL_ERROR_OCCURRED: &str = "FigGlobalErrorOccurred";
 const FIG_PROTO_MESSAGE_RECIEVED: &str = "FigProtoMessageRecieved";
@@ -84,6 +85,8 @@ async fn handle_request(data: Vec<u8>) -> Result<BytesMut, ApiRequestError> {
         RunProcessRequest => process::run
         PseudoterminalExecuteRequest => process::execute
         PseudoterminalWriteRequest => process::write
+        /* window */
+        PositionWindowRequest => window::position_window
     }
     .unwrap_or_else(|s| s);
 

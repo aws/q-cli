@@ -59,7 +59,9 @@ pub async fn start_local_ipc() {
     let listener = native::Listener::bind(&socket_path);
 
     while let Ok(stream) = listener.accept().await {
-        tokio::spawn(handle_local_ipc(stream));
+        tokio::spawn(handle_local_ipc(stream))
+            .await
+            .expect("Failed to spawn ipc handler");
     }
 }
 

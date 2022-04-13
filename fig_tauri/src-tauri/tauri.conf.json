@@ -55,14 +55,14 @@
     "windows": [
       {
         "label": "autocomplete",
-        "width": 0,
-        "height": 0,
-        "resizable": false,
+        "width": 400,
+        "height": 300,
+        "resizable": true,
         "fullscreen": false,
-        "decorations": false,
-        "skipTaskbar": true,
-        "alwaysOnTop": true,
-        "transparent": true
+        "decorations": true,
+        "skipTaskbar": false,
+        "alwaysOnTop": false,
+        "transparent": false
       }
     ],
     "security": {
