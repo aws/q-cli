@@ -54,7 +54,7 @@ class WezTermIntegration: InputMethodDependentTerminalIntegrationProvider & Inte
 
 extension WezTermIntegration: TerminalIntegration {
   func getCursorRect(in window: ExternalWindow) -> NSRect? {
-    return InputMethod.getCursorRect()?.offsetBy(dx: 0, dy: -40)
+    return InputMethod.getCursorRect()
   }
 
   func terminalIsFocused(in window: ExternalWindow) -> Bool {

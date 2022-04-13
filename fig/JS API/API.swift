@@ -161,7 +161,8 @@ class API {
           response.runProcessResponse = output
           API.send(response, to: webView, using: encoding)
         }
-
+      case .macosInputMethodRequest(let request):
+        response.macosInputMethodResponse = try InputMethod.default.handleAPIRequest(request)
       case .none:
         throw APIError.generic(message: "No submessage was included in request.")
       }

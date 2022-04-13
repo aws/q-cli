@@ -620,6 +620,7 @@ pub async fn diagnostics_cli(format: OutputFormat, force: bool) -> Result<()> {
     match format {
         OutputFormat::Plain => println!("{}", diagnostics.user_readable()?.join("\n")),
         OutputFormat::Json => println!("{}", serde_json::to_string(&diagnostics)?),
+        OutputFormat::JsonPretty => println!("{}", serde_json::to_string_pretty(&diagnostics)?),
     }
 
     Ok(())

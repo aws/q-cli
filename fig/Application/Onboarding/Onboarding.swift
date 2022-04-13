@@ -230,6 +230,8 @@ extension Onboarding {
       NSApp.appDelegate.setupCompanionWindow()
     case .uninstall:
       NSApp.appDelegate.uninstall(showDialog: true)
+    case .requestRestart:
+      try? OS.sendSystemCommand(command: kAERestart)
     case .UNRECOGNIZED:
       Logger.log(message: "Unrecognized Onboarding Action!", subsystem: .api)
       callback(false)

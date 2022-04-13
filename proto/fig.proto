@@ -37,6 +37,8 @@ message ClientOriginatedMessage {
       GetLocalStateRequest get_local_state_request = 128;
       UpdateLocalStateRequest update_local_state_request = 129;
       RunProcessRequest run_process_request = 130;
+      MacOSInputMethodRequest macos_input_method_request = 131;
+
   }
 }
 
@@ -59,6 +61,7 @@ message ServerOriginatedMessage {
     ApplicationUpdateStatusResponse application_update_status_response = 109;
     GetLocalStateResponse get_local_state_response = 110;
     RunProcessResponse run_process_response = 111;
+    MacOSInputMethodResponse macos_input_method_response = 112;
 
     Notification notification = 1000;
   }
@@ -324,6 +327,7 @@ enum OnboardingAction {
   LAUNCH_SHELL_ONBOARDING = 3;
   UNINSTALL = 4;
   CLOSE_ACCESSIBILITY_PROMPT_WINDOW = 5;
+  REQUEST_RESTART = 6;
 }
 
 message OnboardingRequest {
@@ -437,6 +441,35 @@ message RunProcessResponse {
   string stdout = 1;
   string stderr = 2;
   int32 exitCode = 3; 
+}
+
+/// MacOS Input Method
+
+enum InputMethodAction {
+  REGISTER = 0;
+  ENABLE = 1; 
+  SELECT = 2; 
+  DISABLE = 3;
+  DESELECT = 4;
+  STATUS = 5;
+}
+
+enum InputMethodState {
+  REGISTERED = 0;
+  ENABLED = 1; 
+  SELECTED = 2; 
+  UNKNOWN = 3;
+}
+
+message MacOSInputMethodRequest {
+  InputMethodAction action = 1;
+}
+
+message MacOSInputMethodResponse {
+  string message = 1;
+  int32 code = 2; 
+  InputMethodState state = 3;
+
 }
 
 

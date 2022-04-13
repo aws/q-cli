@@ -1,14 +1,18 @@
 use anyhow::{anyhow, Context, Result};
 use clap::{ArgGroup, Args, Subcommand};
+use crossterm::style::Stylize;
 use fig_auth::is_logged_in;
 use fig_ipc::command::{open_ui_element, restart_settings_listener};
 use fig_proto::local::UiElement;
 use fig_settings::remote_settings::RemoteSettings;
 use serde_json::json;
-use std::{io::Write, process::Command};
+use std::{
+    io::Write,
+    process::{exit, Command},
+};
 use time::format_description::well_known::Rfc3339;
 
-use super::util::app_not_running_message;
+use super::{util::app_not_running_message, OutputFormat};
 use crate::util::{launch_fig, LaunchOptions};
 
 #[derive(Debug, Subcommand)]
@@ -21,12 +25,21 @@ pub enum SettingsSubcommands {
     Open,
     /// Sync the current settings
     Sync,
+    /// List all the settings
+    All {
+        /// List the remote settings
+        #[clap(short, long)]
+        remote: bool,
+        /// Format of the output
+        #[clap(long, short, arg_enum, default_value_t)]
+        format: OutputFormat,
+    },
 }
 
 #[derive(Debug, Args)]
 #[clap(subcommand_negates_reqs = true)]
 #[clap(args_conflicts_with_subcommands = true)]
-#[clap(group(ArgGroup::new("vals").requires("key").args(&["value", "delete"])))]
+#[clap(group(ArgGroup::new("vals").requires("key").args(&["value", "delete", "format"])))]
 pub struct SettingsArgs {
     #[clap(subcommand)]
     cmd: Option<SettingsSubcommands>,
@@ -35,8 +48,11 @@ pub struct SettingsArgs {
     /// value
     value: Option<String>,
     #[clap(long, short)]
-    /// delete
+    /// Delete a value
     delete: bool,
+    #[clap(long, short, arg_enum, default_value_t)]
+    /// Format of the output
+    format: OutputFormat,
 }
 
 impl SettingsArgs {
@@ -102,49 +118,99 @@ impl SettingsArgs {
 
                 Ok(())
             }
+            Some(SettingsSubcommands::All { remote, format }) => {
+                let settings = if remote {
+                    fig_settings::remote_settings::get_settings()
+                        .await?
+                        .settings
+                } else {
+                    fig_settings::settings::local_settings()?.to_inner()
+                };
+
+                match format {
+                    OutputFormat::Plain => {
+                        if let Some(map) = settings.as_object() {
+                            for (key, value) in map {
+                                println!("{} = {}", key, value);
+                            }
+                        } else {
+                            println!("Settings is empty");
+                        }
+                    }
+                    OutputFormat::Json => println!("{}", serde_json::to_string(&settings)?),
+                    OutputFormat::JsonPretty => {
+                        println!("{}", serde_json::to_string_pretty(&settings)?)
+                    }
+                }
+
+                Ok(())
+            }
             None => match &self.key {
                 Some(key) => match (&self.value, self.delete) {
                     (None, false) => match fig_settings::settings::get_value(key)? {
                         Some(value) => {
-                            println!("{}", serde_json::to_string_pretty(&value)?);
+                            match self.format {
+                                OutputFormat::Plain => match value.as_str() {
+                                    Some(value) => println!("{}", value),
+                                    None => println!("{:#}", value),
+                                },
+                                OutputFormat::Json => {
+                                    println!("{}", value)
+                                }
+                                OutputFormat::JsonPretty => {
+                                    println!("{:#}", value)
+                                }
+                            }
                             Ok(())
                         }
-                        None => Err(anyhow::anyhow!("No value associated with {}", key)),
+                        None => match self.format {
+                            OutputFormat::Plain => {
+                                Err(anyhow::anyhow!("No value associated with {}", key))
+                            }
+                            OutputFormat::Json | OutputFormat::JsonPretty => {
+                                println!("null");
+                                Ok(())
+                            }
+                        },
                     },
                     (Some(value_str), false) => {
                         let value =
                             serde_json::from_str(value_str).unwrap_or_else(|_| json!(value_str));
                         let remote_result = fig_settings::settings::set_value(key, value).await;
                         match remote_result {
-                            Ok(Ok(())) => {
+                            Ok(()) => {
                                 println!("Successfully set setting");
                                 Ok(())
                             }
-                            Ok(Err(err)) => {
-                                eprintln!("Error setting setting:");
-                                Err(err)
-                            }
-                            Err(err) => {
-                                eprintln!("Error setting setting:");
-                                Err(err)
-                            }
+                            Err(err) => match err {
+                                fig_settings::Error::RemoteSettingsError(
+                                    fig_settings::remote_settings::Error::AuthError,
+                                ) => {
+                                    eprintln!("You are not logged in to Fig");
+                                    eprintln!("Run {} to login", "fig login".magenta().bold());
+                                    exit(1);
+                                }
+                                err => Err(err.into()),
+                            },
                         }
                     }
                     (None, true) => {
                         let remote_result = fig_settings::settings::remove_value(key).await;
                         match remote_result {
-                            Ok(Ok(())) => {
+                            Ok(()) => {
                                 println!("Successfully removed settings");
                                 Ok(())
                             }
-                            Ok(Err(err)) => {
-                                eprintln!("Error removing setting, it may already be removed");
-                                Err(err)
-                            }
-                            Err(err) => {
-                                eprintln!("Error syncing setting");
-                                Err(err)
-                            }
+                            Err(err) => match err {
+                                fig_settings::Error::RemoteSettingsError(
+                                    fig_settings::remote_settings::Error::AuthError,
+                                ) => {
+                                    eprintln!("You are not logged in to Fig");
+                                    eprintln!("Run {} to login", "fig login".magenta().bold());
+                                    exit(1);
+                                }
+                                err => Err(err.into()),
+                            },
                         }
                     }
                     _ => Ok(()),

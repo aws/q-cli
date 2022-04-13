@@ -11,6 +11,7 @@ pub mod installation;
 pub mod internal;
 pub mod invite;
 pub mod issue;
+pub mod man;
 pub mod plugins;
 pub mod settings;
 pub mod source;
@@ -22,16 +23,14 @@ pub mod util;
 use crate::{
     cli::util::dialoguer_theme,
     daemon::{daemon, get_daemon},
-    util::{
-        is_app_running, launch_fig,
-        shell::{Shell, When},
-        LaunchOptions,
-    },
+    util::{is_app_running, launch_fig, shell::Shell, shell_integration::When, LaunchOptions},
 };
 
 use anyhow::{Context, Result};
 use cfg_if::cfg_if;
 use clap::{ArgEnum, IntoApp, Parser, Subcommand};
+use fig_ipc::command::open_ui_element;
+use fig_proto::local::UiElement;
 use std::{fs::File, process::exit, str::FromStr};
 use tracing::{debug, level_filters::LevelFilter};
 
@@ -43,6 +42,14 @@ pub enum OutputFormat {
     Plain,
     /// Outputs the results as JSON
     Json,
+    /// Outputs the results as pretty print JSON
+    JsonPretty,
+}
+
+impl Default for OutputFormat {
+    fn default() -> Self {
+        OutputFormat::Plain
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ArgEnum)]
@@ -98,7 +105,7 @@ pub enum CliRootCommands {
     /// Run diagnostic tests
     Diagnostic {
         /// The format of the output
-        #[clap(long, short, arg_enum, default_value = "plain")]
+        #[clap(long, short, arg_enum, default_value_t)]
         format: OutputFormat,
         /// Force limited diagnostic output
         #[clap(long)]
@@ -112,6 +119,8 @@ pub enum CliRootCommands {
         /// When to generate the dotfiles for
         #[clap(arg_enum)]
         when: When,
+        #[clap(long)]
+        rcfile: Option<String>,
     },
     /// Sync your latest dotfiles
     Source,
@@ -152,7 +161,7 @@ pub enum CliRootCommands {
     #[clap(hide = true)]
     Completion {
         /// Shell to generate the completion spec for
-        #[clap(arg_enum, default_value = "zsh")]
+        #[clap(arg_enum, default_value_t = Shells::Zsh)]
         shell: Shells,
     },
     /// Internal subcommands used for Fig
@@ -165,7 +174,7 @@ pub enum CliRootCommands {
     /// Restart the Fig desktop app
     Restart {
         /// The process to restart
-        #[clap(arg_enum, default_value = "app", hide = true)]
+        #[clap(arg_enum, default_value_t = Processes::App, hide = true)]
         process: Processes,
     },
     #[clap(hide = true)]
@@ -175,6 +184,8 @@ pub enum CliRootCommands {
     Onboarding,
     #[clap(subcommand)]
     Plugins(PluginsSubcommands),
+    /// Open manual page
+    Man { command: Vec<String> },
     /// (LEGACY) Old hook that was being used somewhere
     #[clap(name = "app:running", hide = true)]
     LegacyAppRunning,
@@ -208,6 +219,8 @@ pub enum CliRootCommands {
 
  \x1B[0;90mFor more info on a specific command, use:\x1B[0m
   > fig help [command]
+T
+ Run \x1B[1;95mfig\x1B[0m to get started
 ")]
 pub struct Cli {
     #[clap(subcommand)]
@@ -258,7 +271,22 @@ impl Cli {
 
         let result = match self.subcommand {
             Some(subcommand) => match subcommand {
-                CliRootCommands::Install(args) => internal::install_cli_from_args(args),
+                CliRootCommands::Install(args) => {
+                    let internal::InstallArgs { input_method, .. } = args;
+                    if input_method {
+                        cfg_if::cfg_if! {
+                            if #[cfg(target_os = "macos")] {
+                                open_ui_element(UiElement::InputMethodPrompt)
+                                    .await
+                                    .context("\nCould not launch fig\n")
+                            } else {
+                                Err(anyhow::anyhow!("input method is only implemented on macOS"))
+                            }
+                        }
+                    } else {
+                        internal::install_cli_from_args(args)
+                    }
+                }
                 CliRootCommands::Uninstall => uninstall_command().await,
                 CliRootCommands::Update { no_confirm } => {
                     installation::update_cli(no_confirm).await
@@ -281,7 +309,11 @@ impl Cli {
                 CliRootCommands::Diagnostic { format, force } => {
                     diagnostics::diagnostics_cli(format, force).await
                 }
-                CliRootCommands::Init { shell, when } => init::shell_init_cli(&shell, &when).await,
+                CliRootCommands::Init {
+                    shell,
+                    when,
+                    rcfile,
+                } => init::shell_init_cli(&shell, &when, rcfile).await,
                 CliRootCommands::Source => source::source_cli().await,
                 CliRootCommands::Login { refresh } => auth::login_cli(refresh).await,
                 CliRootCommands::Logout => auth::logout_cli().await,
@@ -346,6 +378,7 @@ impl Cli {
                 CliRootCommands::Alpha => root_command().await,
                 CliRootCommands::Onboarding => AppSubcommand::Onboarding.execute().await,
                 CliRootCommands::Plugins(plugins_subcommand) => plugins_subcommand.execute().await,
+                CliRootCommands::Man { command } => man::man(&command),
                 CliRootCommands::LegacyAppRunning => {
                     println!("{}", if is_app_running() { "1" } else { "0" });
                     Ok(())

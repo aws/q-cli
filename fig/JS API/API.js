@@ -5,6 +5,14 @@
 let id = 0;
 const handlers = {};
 
+const sendMessageAsync = async (request) =>
+    new Promise((resolve, reject) => {
+      sendMessage(request, (response) => {
+        resolve(response)
+      })
+     }
+   );
+
 const sendMessage = (request, handler) => {
   request.id = id++;
   

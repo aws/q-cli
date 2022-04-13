@@ -123,25 +123,17 @@ impl AppSubcommand {
             }
             AppSubcommand::Prompts => {
                 if is_app_running() {
-                    let new_version = state::get_string("NEW_VERSION_AVAILABLE")?;
-                    if new_version.is_some() {
-                        info!("New version {} is available", new_version.unwrap());
-                        let no_autoupdates =
-                            settings::get_bool("app.disableAutoupdates")?.unwrap_or(false);
+                    let new_version = state::get_string("NEW_VERSION_AVAILABLE").ok().flatten();
+                    if let Some(version) = new_version {
+                        info!("New version {} is available", version);
+                        let autoupdates = !settings::get_bool_or("app.disableAutoupdates", false);
 
-                        if no_autoupdates {
-                            trace!("autoupdates are disabled.");
-
-                            println!(
-                                "A new version of Fig is available. (Autoupdates are disabled)"
-                            );
-                        } else {
+                        if autoupdates {
                             trace!("starting autoupdate");
 
                             println!("Updating {} to latest version...", "Fig".magenta());
-                            let already_seen_hint: bool =
-                                state::get_bool("DISPLAYED_AUTOUPDATE_SETTINGS_HINT")?
-                                    .unwrap_or(false);
+                            let already_seen_hint =
+                                state::get_bool_or("DISPLAYED_AUTOUPDATE_SETTINGS_HINT", false);
 
                             if !already_seen_hint {
                                 println!("(To turn off automatic updates, run `fig settings app.disableAutoupdates true`)");
@@ -157,16 +149,22 @@ impl AppSubcommand {
 
                             trace!("launching updated version of Fig");
                             launch_fig(LaunchOptions::new().wait_for_activation()).ok();
+                        } else {
+                            trace!("autoupdates are disabled.");
+
+                            println!(
+                                "A new version of Fig is available. (Autoupdates are disabled)"
+                            );
                         }
                     }
                 } else {
-                    let no_autolaunch =
-                        settings::get_bool("app.disableAutolaunch")?.unwrap_or(false);
-                    let user_quit_app = state::get_bool("APP_TERMINATED_BY_USER")?.unwrap_or(false);
+                    let no_autolaunch = settings::get_bool_or("app.disableAutolaunch", false);
+                    let user_quit_app = state::get_bool_or("APP_TERMINATED_BY_USER", false);
                     if !no_autolaunch && !user_quit_app {
-                        let already_seen_hint: bool =
-                            fig_settings::state::get_bool("DISPLAYED_AUTOLAUNCH_SETTINGS_HINT")?
-                                .unwrap_or(false);
+                        let already_seen_hint: bool = fig_settings::state::get_bool_or(
+                            "DISPLAYED_AUTOLAUNCH_SETTINGS_HINT",
+                            false,
+                        );
                         println!("Launching {}...", "Fig".magenta());
                         if !already_seen_hint {
                             println!("(To turn off autolaunch, run `fig settings app.disableAutolaunch true`)");

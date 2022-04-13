@@ -170,19 +170,11 @@ impl TipsSubcommand {
     pub async fn execute(&self) -> Result<()> {
         match self {
             TipsSubcommand::Enable => {
-                let remote_result =
-                    fig_settings::settings::set_value("cli.tips.disabled", json!(false)).await?;
-                if remote_result.is_err() {
-                    println!("Error syncing settings");
-                }
+                fig_settings::settings::set_value("cli.tips.disabled", json!(false)).await?;
                 println!("\n→ Fig Tips enabled...\n");
             }
             TipsSubcommand::Disable => {
-                let remote_result =
-                    fig_settings::settings::set_value("cli.tips.disabled", json!(true)).await?;
-                if remote_result.is_err() {
-                    println!("Error syncing settings");
-                }
+                fig_settings::settings::set_value("cli.tips.disabled", json!(true)).await?;
                 println!("\n→ Fig Tips disabled...\n");
             }
             TipsSubcommand::Reset => {
