@@ -40,14 +40,13 @@ pub struct CallbackArgs {
 #[derive(Debug, Args)]
 pub struct InstallArgs {
     /// Install only the daemon
-    #[clap(long, conflicts_with = "dotfiles", conflicts_with = "input_method")]
+    #[clap(long, conflicts_with_all = &["input-method"])]
     daemon: bool,
     /// Install only the shell integrations
-    #[clap(long, conflicts_with = "input_method")]
+    #[clap(long, conflicts_with_all = &["input-method"])]
     dotfiles: bool,
-
     /// Prompt input method installation
-    #[clap(long)]
+    #[clap(long, conflicts_with_all = &["daemon", "dotfiles"])]
     pub(crate) input_method: bool,
     /// Don't confirm automatic installation.
     #[clap(long)]
