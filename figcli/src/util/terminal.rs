@@ -47,7 +47,7 @@ impl std::fmt::Display for Terminal {
 }
 
 impl Terminal {
-    pub fn current_terminal() -> Option<Self> {
+    pub fn get_current_terminal() -> Option<Self> {
         match std::env::var("TERM_PROGRAM").ok().as_deref() {
             Some("iTerm.app") => Some(Terminal::Iterm),
             Some("Apple_Terminal") => Some(Terminal::TerminalApp),
@@ -105,7 +105,7 @@ impl Terminal {
         }
     }
 
-    pub fn is_input_dependant_terminal(&self) -> bool {
+    pub fn is_input_dependant(&self) -> bool {
         matches!(
             self,
             Terminal::WezTerm

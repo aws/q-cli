@@ -116,7 +116,7 @@ fn shell_init(shell: &Shell, when: &When, rcfile: Option<String>) -> Result<Stri
             let has_see_onboarding: bool =
                 fig_settings::state::get_bool_or("user.onboarding", true);
 
-            let terminal = Terminal::current_terminal();
+            let terminal = Terminal::get_current_terminal();
 
             if is_logged_in()
                 && !has_see_onboarding
@@ -199,10 +199,10 @@ fn shell_init(shell: &Shell, when: &When, rcfile: Option<String>) -> Result<Stri
         && !fig_settings::state::get_bool_or("input-method.enabled", false)
         && !fig_settings::settings::get_bool_or("integrations.experimental", false)
     {
-        if let Some(terminal) = Terminal::current_terminal() {
+        if let Some(terminal) = Terminal::get_current_terminal() {
             let prompt_state_key = format!("prompt.input-method.{}.shown", terminal.internal_id());
 
-            if terminal.is_input_dependant_terminal()
+            if terminal.is_input_dependant()
                 && !fig_settings::state::get_bool_or(&prompt_state_key, false)
             {
                 fig_settings::state::set_value(&prompt_state_key, true)?;

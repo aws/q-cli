@@ -1348,6 +1348,32 @@ impl DoctorCheck<Option<Terminal>> for VSCodeIntegrationCheck {
     }
 }
 
+struct ImeStatusCheck;
+
+#[async_trait]
+impl DoctorCheck for ImeStatusCheck {
+    fn name(&self) -> Cow<'static, str> {
+        "Input Method".into()
+    }
+
+    async fn check(&self, _: &()) -> Result<(), DoctorError> {
+        match (
+            Terminal::get_current_terminal(),
+            fig_settings::state::get_bool_or("input-method.enabled", false),
+        ) {
+            (Some(terminal), false) if terminal.is_input_dependant() => Err(DoctorError::Error {
+                reason: "Input Method is not enabled".into(),
+                info: vec!["Run `fig install --input-method` to enable it".into()],
+                fix: None,
+            }),
+            (_, false) => Err(DoctorError::Warning(
+                "Input Method is not enabled. Run `fig install --input-method` to enable it".into(),
+            )),
+            (_, true) => Ok(()),
+        }
+    }
+}
+
 struct LoginStatusCheck;
 
 #[async_trait]
@@ -1482,7 +1508,7 @@ async fn get_shell_context() -> Result<Option<Shell>> {
 }
 
 async fn get_terminal_context() -> Result<Option<Terminal>> {
-    Ok(Terminal::current_terminal())
+    Ok(Terminal::get_current_terminal())
 }
 
 async fn get_null_context() -> Result<()> {
