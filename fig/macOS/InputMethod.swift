@@ -364,6 +364,7 @@ extension InputMethod {
   enum InputMethodError: Int {
     case SourceNotFound  = 1
     case AlreadySelected = 2
+
     var description: String {
       switch self {
         case .SourceNotFound:
