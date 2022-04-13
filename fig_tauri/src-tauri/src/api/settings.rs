@@ -34,18 +34,12 @@ pub async fn get(request: GetSettingsPropertyRequest, _message_id: i64) -> Respo
 
 pub async fn update(request: UpdateSettingsPropertyRequest, _message_id: i64) -> ResponseResult {
     match (request.key, request.value) {
-        (Some(key), Some(value)) => {
-            settings::set_value(key, value)
-                .await
-                .map_err(response_error!("Failed setting settings value"))?
-                .map_err(response_error!("Failed setting settings value"))?;
-        }
-        (Some(key), None) => {
-            settings::remove_value(key)
-                .await
-                .map_err(response_error!("Failed removing settings value"))?
-                .map_err(response_error!("Failed removing settings value"))?;
-        }
+        (Some(key), Some(value)) => settings::set_value(key, value)
+            .await
+            .map_err(response_error!("Failed setting settings value"))?,
+        (Some(key), None) => settings::remove_value(key)
+            .await
+            .map_err(response_error!("Failed removing settings value"))?,
         (None, _) => {
             return Err(ResponseKind::Error(String::from(
                 "No key provided with request",
