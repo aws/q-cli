@@ -15,6 +15,7 @@ pub mod man;
 pub mod plugins;
 pub mod settings;
 pub mod source;
+pub mod ssh;
 pub mod theme;
 pub mod tips;
 pub mod tweet;
@@ -23,7 +24,8 @@ pub mod util;
 use crate::{
     cli::util::dialoguer_theme,
     daemon::{daemon, get_daemon},
-    util::{is_app_running, launch_fig, shell::Shell, shell_integration::When, LaunchOptions},
+    integrations::shell::When,
+    util::{is_app_running, launch_fig, shell::Shell, LaunchOptions},
 };
 
 use anyhow::{Context, Result};
@@ -90,6 +92,9 @@ pub enum CliRootCommands {
     Tips(tips::TipsSubcommand),
     /// Install fig cli comoponents
     Install(internal::InstallArgs),
+    #[clap(subcommand)]
+    /// Enable/disable fig SSH integration
+    Ssh(ssh::SshSubcommand),
     /// Uninstall fig
     #[clap(hide = true)]
     Uninstall,
@@ -291,6 +296,7 @@ impl Cli {
                 CliRootCommands::Update { no_confirm } => {
                     installation::update_cli(no_confirm).await
                 }
+                CliRootCommands::Ssh(ssh_subcommand) => ssh_subcommand.execute().await,
                 CliRootCommands::Tips(tips_subcommand) => tips_subcommand.execute().await,
                 CliRootCommands::Daemon => {
                     let res = daemon().await;

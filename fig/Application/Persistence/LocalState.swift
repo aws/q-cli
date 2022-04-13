@@ -149,7 +149,9 @@ extension LocalState {
   static let logging = "developer.logging"
   static let loggingEnabledInternally = "developer.logging.internal"
   static let colorfulLogging = "developer.logging.color"
+
   static let inputMethodInstalled = "input-method.enabled"
+  static let showIconInDock = "mission-control.showIconInDock"
 }
 
 import FigAPIBindings

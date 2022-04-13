@@ -10,6 +10,7 @@ pathadd ~/.fig/bin
 pathadd ~/.local/bin
 
 export TTY=$(tty)
+export FIG_PID="$$"
 
 FIG_HOSTNAME=$(hostname -f 2> /dev/null || hostname)
 

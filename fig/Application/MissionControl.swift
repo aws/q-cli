@@ -46,8 +46,10 @@ class MissionControl {
     if let window = MissionControl.shared.window {
 
       if window.contentViewController != nil {
-        if NSApp.activationPolicy() == .accessory {
-            NSApp.setActivationPolicy(.regular)
+        if self.shouldShowIconInDock {
+          if NSApp.activationPolicy() == .accessory {
+              NSApp.setActivationPolicy(.regular)
+          }
         }
 
         window.makeKeyAndOrderFront(nil)
@@ -72,7 +74,9 @@ class MissionControl {
 
     let missionControl = WebViewWindow(viewController: viewController,
                                        shouldQuitAppOnClose: false,
-                                       isLongRunningWindow: true)
+                                       isLongRunningWindow: true,
+                                       restoreAccessoryPolicyOnClose:
+                                        self.shouldShowIconInDock)
     missionControl.setFrame(NSRect(x: 0, y: 0, width: 830, height: 570), display: true, animate: false)
     missionControl.center()
     missionControl.makeKeyAndOrderFront(self)
@@ -84,12 +88,17 @@ class MissionControl {
     missionControl.isReleasedWhenClosed = false
     missionControl.level = .normal
 
-    if NSApp.activationPolicy() == .accessory {
-        NSApp.setActivationPolicy(.regular)
+    if self.shouldShowIconInDock {
+      if NSApp.activationPolicy() == .accessory {
+          NSApp.setActivationPolicy(.regular)
+      }
     }
 
     MissionControl.shared.window = missionControl
     NSApp.activate(ignoringOtherApps: true)
   }
 
+  static var shouldShowIconInDock: Bool {
+    return LocalState.shared.getValue(forKey: LocalState.showIconInDock) as? Bool ??  false
+  }
 }

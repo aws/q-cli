@@ -55,6 +55,9 @@ pub struct InstallArgs {
     /// Force installation of fig
     #[clap(long)]
     force: bool,
+    /// Install only the ssh integration.
+    #[clap(long)]
+    ssh: bool,
 }
 
 #[derive(Debug, Args)]
@@ -99,6 +102,9 @@ pub enum InternalSubcommand {
         /// Uninstall only the binary
         #[clap(long)]
         binary: bool,
+        /// Uninstall only the ssh integration
+        #[clap(long)]
+        ssh: bool,
     },
     /// Notify the user that they are uninstalling incorrectly
     WarnUserWhenUninstallingIncorrectly,
@@ -112,12 +118,14 @@ pub fn install_cli_from_args(install_args: InstallArgs) -> Result<()> {
         dotfiles,
         no_confirm,
         force,
+        ssh,
         ..
     } = install_args;
-    let install_components = if daemon || dotfiles {
+    let install_components = if daemon || dotfiles || ssh {
         let mut install_components = InstallComponents::empty();
         install_components.set(InstallComponents::DAEMON, daemon);
         install_components.set(InstallComponents::DOTFILES, dotfiles);
+        install_components.set(InstallComponents::SSH, ssh);
         install_components
     } else {
         InstallComponents::all()
@@ -136,12 +144,14 @@ impl InternalSubcommand {
                 daemon,
                 dotfiles,
                 binary,
+                ssh,
             } => {
-                let uninstall_components = if daemon || dotfiles || binary {
+                let uninstall_components = if daemon || dotfiles || binary || ssh {
                     let mut uninstall_components = InstallComponents::empty();
                     uninstall_components.set(InstallComponents::DAEMON, daemon);
                     uninstall_components.set(InstallComponents::DOTFILES, dotfiles);
                     uninstall_components.set(InstallComponents::BINARY, binary);
+                    uninstall_components.set(InstallComponents::SSH, ssh);
                     uninstall_components
                 } else {
                     InstallComponents::all()
