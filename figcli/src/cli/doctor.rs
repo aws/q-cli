@@ -3,12 +3,10 @@ use crate::{
         diagnostics::{dscl_read, verify_integration},
         util::OSVersion,
     },
+    integrations::{shell::ShellIntegration, InstallationError},
     util::{
         app_path_from_bundle_id, get_shell, glob, glob_dir, is_executable_in_path, launch_fig,
-        shell::Shell,
-        shell_integration::{InstallationError, ShellIntegration},
-        terminal::Terminal,
-        LaunchOptions,
+        shell::Shell, terminal::Terminal, LaunchOptions,
     },
 };
 
