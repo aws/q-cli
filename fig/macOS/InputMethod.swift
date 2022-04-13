@@ -363,10 +363,14 @@ extension InputMethod {
   static let noError = 0
   enum InputMethodError: Int {
     case SourceNotFound  = 1
+    case AlreadySelected = 2
+
     var description: String {
       switch self {
         case .SourceNotFound:
           return "Could not load input source"
+        case .AlreadySelected:
+          return "Input source is already selected"
       }
     }
 
