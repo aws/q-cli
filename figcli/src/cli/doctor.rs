@@ -1351,25 +1351,29 @@ impl DoctorCheck<Option<Terminal>> for VSCodeIntegrationCheck {
 struct ImeStatusCheck;
 
 #[async_trait]
-impl DoctorCheck for ImeStatusCheck {
+impl DoctorCheck<Option<Terminal>> for ImeStatusCheck {
     fn name(&self) -> Cow<'static, str> {
         "Input Method".into()
     }
 
-    async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        match (
-            Terminal::get_current_terminal(),
-            fig_settings::state::get_bool_or("input-method.enabled", false),
-        ) {
-            (Some(terminal), false) if terminal.is_input_dependant() => Err(DoctorError::Error {
+    fn get_type(&self, current_terminal: &Option<Terminal>) -> DoctorCheckType {
+        match current_terminal {
+            Some(current_terminal) if current_terminal.is_input_dependant() => {
+                DoctorCheckType::NormalCheck
+            }
+            _ => DoctorCheckType::NoCheck,
+        }
+    }
+
+    async fn check(&self, _: &Option<Terminal>) -> Result<(), DoctorError> {
+        if fig_settings::state::get_bool_or("input-method.enabled", false) {
+            Err(DoctorError::Error {
                 reason: "Input Method is not enabled".into(),
                 info: vec!["Run `fig install --input-method` to enable it".into()],
                 fix: None,
-            }),
-            (_, false) => Err(DoctorError::Warning(
-                "Input Method is not enabled. Run `fig install --input-method` to enable it".into(),
-            )),
-            (_, true) => Ok(()),
+            })
+        } else {
+            Ok(())
         }
     }
 }
@@ -1674,6 +1678,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
                 &ItermBashIntegrationCheck {},
                 &HyperIntegrationCheck {},
                 &VSCodeIntegrationCheck {},
+                &ImeStatusCheck {},
             ],
             get_terminal_context,
             config,
