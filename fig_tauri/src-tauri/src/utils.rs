@@ -31,8 +31,24 @@ pub fn build_filepath(path: PathBuf) -> FilePath {
 
 pub fn truncate_string(mut from: String, len: usize) -> String {
     if from.len() > len {
-        from.drain(len..);
-        from.insert(len, '…');
+        let idx = floor_char_boundary(&from, len);
+        from.drain(idx - 1..);
+        from.insert(idx, '…');
     }
     from
+}
+
+// shamelessly stolen from the unstable `String::floor_char_boundary` function
+pub fn floor_char_boundary(string: &String, index: usize) -> usize {
+    if index >= string.len() {
+        string.len()
+    } else {
+        let lower_bound = index.saturating_sub(3);
+        let new_index = string.as_bytes()[lower_bound..=index]
+            .iter()
+            .rposition(|b| (*b as i8) >= -0x40);
+
+        // SAFETY: we know that the character boundary will be within four bytes
+        unsafe { lower_bound + new_index.unwrap_unchecked() }
+    }
 }
