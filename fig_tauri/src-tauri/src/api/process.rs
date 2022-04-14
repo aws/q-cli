@@ -1,5 +1,6 @@
 use tokio::process::Command;
 
+use crate::os::native::{SHELL, SHELL_ARGS};
 use fig_proto::fig::server_originated_message::Submessage as ServerOriginatedSubMessage;
 use fig_proto::fig::{
     PseudoterminalExecuteRequest, PseudoterminalExecuteResponse, PseudoterminalWriteRequest,
@@ -11,16 +12,17 @@ use crate::response_error;
 
 // TODO(mia): implement actual pseudoterminal stuff
 pub async fn execute(request: PseudoterminalExecuteRequest, _: i64) -> ResponseResult {
-    let mut cmd = Command::new("/bin/bash");
-    cmd.arg("--noprofile")
-        .arg("--norc")
-        .arg("-c")
-        .arg(request.command);
+    let mut cmd = Command::new(SHELL);
+    for shell_arg in SHELL_ARGS {
+        cmd.arg(shell_arg);
+    }
+    cmd.args(request.command.split(" ").collect::<Vec<&str>>());
     if let Some(working_directory) = request.working_directory {
         cmd.current_dir(working_directory);
     } else if let Ok(working_directory) = std::env::current_dir() {
         cmd.current_dir(working_directory);
     }
+
     for var in request.env {
         cmd.env(var.key.clone(), var.value());
     }

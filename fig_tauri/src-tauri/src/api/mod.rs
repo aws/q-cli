@@ -14,7 +14,7 @@ mod fs;
 mod notifications;
 mod process;
 mod settings;
-mod window;
+pub mod window;
 
 const FIG_GLOBAL_ERROR_OCCURRED: &str = "FigGlobalErrorOccurred";
 pub const FIG_PROTO_MESSAGE_RECIEVED: &str = "FigProtoMessageRecieved";

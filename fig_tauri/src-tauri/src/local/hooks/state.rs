@@ -52,7 +52,7 @@ pub async fn edit_buffer(hook: EditBufferHook) -> Result<()> {
         .as_ref()
         .unwrap()
         .emit(FIG_PROTO_MESSAGE_RECIEVED, base64::encode(encoded))
-        .unwrap();
+        .expect("Failed to emit edit buffer notification");
 
     Ok(())
 }

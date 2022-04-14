@@ -1,6 +1,10 @@
 use std::path::Path;
 
 mod ipc;
+mod uiautomation;
+
+pub const SHELL: &str = "wsl";
+pub const SHELL_ARGS: [&str; 0] = [];
 
 #[derive(Default, Debug)]
 pub struct State {
@@ -20,4 +24,6 @@ impl Listener {
     }
 }
 
-pub fn init() {}
+pub fn init() {
+    std::thread::spawn(uiautomation::ui_listener_event_loop);
+}
