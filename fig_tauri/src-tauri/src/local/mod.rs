@@ -130,6 +130,7 @@ async fn handle_local_ipc<S: AsyncRead + AsyncWrite + Unpin>(mut stream: S) {
                     EditBuffer => hooks::state::edit_buffer
                     CursorPosition => hooks::state::cursor_position
                     Prompt => hooks::state::prompt
+                    FocusChange => hooks::state::focus_change
                 } {
                     error!("Failed processing hook: {}", err);
                 }

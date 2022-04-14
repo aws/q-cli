@@ -1,3 +1,4 @@
+use crate::utils::truncate_string;
 use bytes::BytesMut;
 use fig_proto::fig::client_originated_message::Submessage as ClientOriginatedSubMessage;
 use fig_proto::fig::server_originated_message::Submessage as ServerOriginatedSubMessage;
@@ -16,7 +17,7 @@ mod settings;
 mod window;
 
 const FIG_GLOBAL_ERROR_OCCURRED: &str = "FigGlobalErrorOccurred";
-const FIG_PROTO_MESSAGE_RECIEVED: &str = "FigProtoMessageRecieved";
+pub const FIG_PROTO_MESSAGE_RECIEVED: &str = "FigProtoMessageRecieved";
 
 #[derive(Debug)]
 pub enum ResponseKind {
@@ -62,8 +63,9 @@ async fn handle_request(data: Vec<u8>) -> Result<BytesMut, ApiRequestError> {
                     Some(ClientOriginatedSubMessage::$struct(request)) => $func(request, message_id).await,
                 )*
                 _ => {
-                    warn!("Missing handler: {:?}", message);
-                    Err(ResponseKind::Error(format!("Unknown submessage {:?}", message)))
+                    let truncated = truncate_string(format!("{:?}", message), 150);
+                    warn!("Missing handler: {}", truncated);
+                    Err(ResponseKind::Error(format!("Unknown submessage {}", truncated)))
                 }
             }
         }
@@ -93,7 +95,10 @@ async fn handle_request(data: Vec<u8>) -> Result<BytesMut, ApiRequestError> {
     let message = ServerOriginatedMessage {
         id: message.id,
         submessage: Some(match response {
-            ResponseKind::Error(msg) => ServerOriginatedSubMessage::Error(msg),
+            ResponseKind::Error(msg) => {
+                warn!("Send error response {}", msg);
+                ServerOriginatedSubMessage::Error(msg)
+            }
             ResponseKind::Success => ServerOriginatedSubMessage::Success(true),
             ResponseKind::Message(m) => *m,
         }),

@@ -7,6 +7,7 @@ mod api;
 mod local;
 mod os;
 mod state;
+mod utils;
 
 use crate::{os::native, state::STATE};
 use tauri::{

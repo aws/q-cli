@@ -1,25 +1,29 @@
+use crate::api::FIG_PROTO_MESSAGE_RECIEVED;
 use crate::{local::figterm::ensure_figterm, state::STATE};
 use anyhow::Result;
 use bytes::BytesMut;
 use fig_proto::fig::server_originated_message::Submessage as ServerOriginatedSubMessage;
+use fig_proto::local::FocusChangeHook;
 use fig_proto::{
     fig::{EditBufferChangedNotification, Notification, NotificationType, ServerOriginatedMessage},
     local::{CursorPositionHook, EditBufferHook, PromptHook},
     prost::Message,
 };
+use tracing::info;
 
 pub async fn edit_buffer(hook: EditBufferHook) -> Result<()> {
+    info!("WE'RE GETTING EDIT BUFFERS");
     let session_id = hook.context.clone().unwrap().session_id.unwrap();
     ensure_figterm(session_id.clone());
     let mut session = STATE.figterm_sessions.get_mut(&session_id).unwrap();
     session.edit_buffer.text = hook.text.clone();
-    session.edit_buffer.cursor = hook.cursor.clone();
+    session.edit_buffer.cursor = hook.cursor;
 
     let message_id = match STATE
         .subscriptions
         .get(&NotificationType::NotifyOnEditbuffferChange)
     {
-        Some(id) => id.clone(),
+        Some(id) => *id,
         None => {
             return Ok(());
         }
@@ -47,7 +51,7 @@ pub async fn edit_buffer(hook: EditBufferHook) -> Result<()> {
         .lock()
         .as_ref()
         .unwrap()
-        .emit("FigProtoMessageRecieved", base64::encode(encoded))
+        .emit(FIG_PROTO_MESSAGE_RECIEVED, base64::encode(encoded))
         .unwrap();
 
     Ok(())
@@ -63,5 +67,9 @@ pub async fn cursor_position(hook: CursorPositionHook) -> Result<()> {
 }
 
 pub async fn prompt(_: PromptHook) -> Result<()> {
+    Ok(())
+}
+
+pub async fn focus_change(_: FocusChangeHook) -> Result<()> {
     Ok(())
 }

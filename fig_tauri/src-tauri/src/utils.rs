@@ -1,5 +1,3 @@
-// os-level utilities
-
 use std::path::PathBuf;
 
 use fig_proto::fig::FilePath;
@@ -29,4 +27,12 @@ pub fn build_filepath(path: PathBuf) -> FilePath {
         relative_to: None,
         expand_tilde_in_path: false,
     }
+}
+
+pub fn truncate_string(mut from: String, len: usize) -> String {
+    if from.len() > len {
+        from.drain(len..);
+        from.insert(len, '…');
+    }
+    from
 }
