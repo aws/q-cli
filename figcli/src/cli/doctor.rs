@@ -1365,13 +1365,13 @@ impl DoctorCheck<Option<Terminal>> for ImeStatusCheck {
 
     async fn check(&self, _: &Option<Terminal>) -> Result<(), DoctorError> {
         if fig_settings::state::get_bool_or("input-method.enabled", false) {
+            Ok(())
+        } else {
             Err(DoctorError::Error {
                 reason: "Input Method is not enabled".into(),
                 info: vec!["Run `fig install --input-method` to enable it".into()],
                 fix: None,
             })
-        } else {
-            Ok(())
         }
     }
 }
