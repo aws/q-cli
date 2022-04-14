@@ -31,8 +31,8 @@ pub fn build_filepath(path: PathBuf) -> FilePath {
 
 pub fn truncate_string(mut from: String, len: usize) -> String {
     if from.len() > len {
-        let idx = floor_char_boundary(&from, len);
-        from.drain(idx - 1..);
+        let idx = floor_char_boundary(&from, len - 1);
+        from.drain(idx..);
         from.insert(idx, '…');
     }
     from
