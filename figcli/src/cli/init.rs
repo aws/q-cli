@@ -204,7 +204,7 @@ fn shell_init(shell: &Shell, when: &When, rcfile: Option<String>) -> Result<Stri
             let prompt_state_key = format!("prompt.input-method.{}.count", terminal.internal_id());
             let prompt_count = fig_settings::state::get_int_or(&prompt_state_key, 0);
 
-            if terminal.is_input_dependant() && prompt_count < 3 {
+            if terminal.is_input_dependant() && prompt_count < 2 {
                 fig_settings::state::set_value(&prompt_state_key, prompt_count + 1)?;
 
                 to_source.push_str(&guard_source(
