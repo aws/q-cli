@@ -328,6 +328,8 @@ enum OnboardingAction {
   UNINSTALL = 4;
   CLOSE_ACCESSIBILITY_PROMPT_WINDOW = 5;
   REQUEST_RESTART = 6;
+  CLOSE_INPUT_METHOD_PROMPT_WINDOW = 7;
+
 }
 
 message OnboardingRequest {
