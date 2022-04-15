@@ -1,7 +1,7 @@
 use std::path::Path;
 
 mod ipc;
-mod uiautomation;
+pub mod uiautomation;
 
 pub const SHELL: &str = "wsl";
 pub const SHELL_ARGS: [&str; 0] = [];
@@ -25,5 +25,5 @@ impl Listener {
 }
 
 pub fn init() {
-    std::thread::spawn(uiautomation::ui_listener_event_loop);
+    uiautomation::init();
 }

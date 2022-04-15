@@ -42,7 +42,8 @@ fn main() {
         .setup(|app| {
             tauri::async_runtime::spawn(local::start_local_ipc());
             tauri::async_runtime::spawn(local::figterm::clean_figterm_cache());
-            *(STATE.window.lock()) = Some(app.windows().get("autocomplete").unwrap().clone());
+            *(STATE.window.write().unwrap()) =
+                Some(app.windows().get("autocomplete").unwrap().clone());
             native::init();
             Ok(())
         })

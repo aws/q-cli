@@ -1,4 +1,3 @@
-use crate::api::window::handle_ui_state;
 use crate::state::{Rect, UIState};
 use std::convert::TryInto;
 use windows::Win32::{
@@ -27,20 +26,22 @@ impl TryInto<Rect> for RECT {
     }
 }
 
-pub fn ui_listener_event_loop() {
-    unsafe { Com::CoInitialize(std::ptr::null()).unwrap() };
-    let automation: IUIAutomation =
-        unsafe { Com::CoCreateInstance(&Accessibility::CUIAutomation, None, CLSCTX_INPROC_SERVER) }
-            .unwrap();
+pub fn init() {
+    unsafe { Com::CoInitialize(std::ptr::null()).expect("Failed to initialize Com") };
+}
 
-    loop {
+pub fn get_ui_state() -> UIState {
+    unsafe {
+        let automation: IUIAutomation =
+            Com::CoCreateInstance(&Accessibility::CUIAutomation, None, CLSCTX_INPROC_SERVER)
+                .expect("Failed to create automation");
+
         macro_rules! skip_fail {
             ($res:expr) => {
                 match $res {
                     Ok(val) => val,
                     Err(_) => {
-                        handle_ui_state(UIState::Unfocused);
-                        continue;
+                        return UIState::Unfocused;
                     }
                 }
             };
@@ -51,49 +52,41 @@ pub fn ui_listener_event_loop() {
                 match $opt {
                     Some(val) => val,
                     None => {
-                        handle_ui_state(UIState::Unfocused);
-                        continue;
+                        return UIState::Unfocused;
                     }
                 }
             };
         }
 
-        let hwnd: HWND = unsafe { WindowsAndMessaging::GetForegroundWindow() };
-        let hwnd_elt: IUIAutomationElement =
-            skip_fail!(unsafe { automation.clone().ElementFromHandle(hwnd) });
+        let hwnd: HWND = WindowsAndMessaging::GetForegroundWindow();
+        let hwnd_elt: IUIAutomationElement = skip_fail!(automation.clone().ElementFromHandle(hwnd));
 
-        let document_rect = skip_none!(unsafe {
-            get_automation_elt_rect(
-                hwnd_elt.clone(),
-                automation.clone(),
-                "Hyper",
-                Accessibility::UIA_NamePropertyId,
-                Accessibility::TreeScope_Children,
-            )
-        });
+        let document_rect = skip_none!(get_automation_elt_rect(
+            hwnd_elt.clone(),
+            automation.clone(),
+            "Hyper",
+            Accessibility::UIA_NamePropertyId,
+            Accessibility::TreeScope_Children,
+        ));
 
-        let caret_rect = skip_none!(unsafe {
-            get_automation_elt_rect(
-                hwnd_elt.clone(),
-                automation.clone(),
-                "edit",
-                Accessibility::UIA_LocalizedControlTypePropertyId,
-                Accessibility::TreeScope_Descendants,
-            )
-        });
+        let caret_rect = skip_none!(get_automation_elt_rect(
+            hwnd_elt.clone(),
+            automation.clone(),
+            "edit",
+            Accessibility::UIA_LocalizedControlTypePropertyId,
+            Accessibility::TreeScope_Descendants,
+        ));
 
-        let banner_rect = skip_none!(unsafe {
-            get_automation_elt_rect(
-                hwnd_elt.clone(),
-                automation.clone(),
-                "banner",
-                Accessibility::UIA_LocalizedControlTypePropertyId,
-                Accessibility::TreeScope_Descendants,
-            )
-        });
+        let banner_rect = skip_none!(get_automation_elt_rect(
+            hwnd_elt.clone(),
+            automation.clone(),
+            "banner",
+            Accessibility::UIA_LocalizedControlTypePropertyId,
+            Accessibility::TreeScope_Descendants,
+        ));
 
-        let win_rect = skip_none!(unsafe { get_hwnd_rect(hwnd) });
-        let screen_rect = skip_none!(unsafe { get_screen_rect(&caret_rect) });
+        let win_rect = skip_none!(get_hwnd_rect(hwnd));
+        let screen_rect = skip_none!(get_screen_rect(&caret_rect));
 
         let document_rect: Rect = document_rect.try_into().unwrap();
         let mut caret_rect: Rect = caret_rect.try_into().unwrap();
@@ -103,11 +96,11 @@ pub fn ui_listener_event_loop() {
 
         caret_rect.x -= banner_rect.x - document_rect.x;
 
-        handle_ui_state(UIState::Focused {
+        UIState::Focused {
             caret: caret_rect,
             window: win_rect,
             screen: screen_rect,
-        });
+        }
     }
 }
 

@@ -13,9 +13,7 @@ use crate::response_error;
 // TODO(mia): implement actual pseudoterminal stuff
 pub async fn execute(request: PseudoterminalExecuteRequest, _: i64) -> ResponseResult {
     let mut cmd = Command::new(SHELL);
-    for shell_arg in SHELL_ARGS {
-        cmd.arg(shell_arg);
-    }
+    cmd.args(SHELL_ARGS);
     cmd.args(request.command.split(" ").collect::<Vec<&str>>());
     if let Some(working_directory) = request.working_directory {
         cmd.current_dir(working_directory);

@@ -2,7 +2,7 @@ use dashmap::DashMap;
 use fig_proto::fig::NotificationType;
 use once_cell::sync::Lazy;
 use parking_lot::Mutex;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 use tauri::Window;
 
 use crate::local::figterm::FigTermSession;
@@ -18,9 +18,8 @@ pub struct AppState {
     pub _should_intercept: bool,
     pub subscriptions: DashMap<NotificationType, i64>,
     pub figterm_sessions: DashMap<String, FigTermSession>,
-    pub window: Mutex<Option<Window>>,
-    pub ui_state: Mutex<UIState>,
-    pub anchor: Mutex<Point>,
+    pub window: RwLock<Option<Window>>,
+    pub anchor: RwLock<Point>,
     pub _os_state: crate::os::native::State,
 }
 
@@ -46,10 +45,4 @@ pub enum UIState {
         screen: Rect,
     },
     Unfocused,
-}
-
-impl Default for UIState {
-    fn default() -> Self {
-        Self::Unfocused
-    }
 }

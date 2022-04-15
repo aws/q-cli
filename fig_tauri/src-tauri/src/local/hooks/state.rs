@@ -1,5 +1,5 @@
 use crate::api::FIG_PROTO_MESSAGE_RECIEVED;
-use crate::{local::figterm::ensure_figterm, state::STATE};
+use crate::{api::window::update_app_positioning, local::figterm::ensure_figterm, state::STATE};
 use anyhow::Result;
 use bytes::BytesMut;
 use fig_proto::fig::server_originated_message::Submessage as ServerOriginatedSubMessage;
@@ -46,13 +46,14 @@ pub async fn edit_buffer(hook: EditBufferHook) -> Result<()> {
     let mut encoded = BytesMut::new();
     message.encode(&mut encoded).unwrap();
 
-    STATE
-        .window
-        .lock()
-        .as_ref()
-        .unwrap()
+    let window = (*STATE.window.read().unwrap())
+        .clone()
+        .expect("Failed to access Tauri window");
+    window
         .emit(FIG_PROTO_MESSAGE_RECIEVED, base64::encode(encoded))
         .expect("Failed to emit edit buffer notification");
+
+    update_app_positioning((*STATE.anchor.read().unwrap()).clone());
 
     Ok(())
 }
