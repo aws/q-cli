@@ -34,7 +34,7 @@ pub struct FigtermState {
     /// The most recent `[FigtermSessionId]` to be used.
     pub most_recent: RwLock<Option<FigtermSessionId>>,
     /// The list of `[FigtermSession]`s.
-    pub sessions: DashMap<FigtermSessionId, FigTermSession>,
+    pub sessions: DashMap<FigtermSessionId, FigTermSession, fnv::FnvBuildHasher>,
 }
 
 impl FigtermState {

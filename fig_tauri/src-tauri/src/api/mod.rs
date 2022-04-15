@@ -14,8 +14,10 @@ pub mod debugger;
 mod fs;
 mod notifications;
 mod process;
+pub mod properties;
 mod settings;
 pub mod window;
+pub mod figterm;
 
 const FIG_GLOBAL_ERROR_OCCURRED: &str = "FigGlobalErrorOccurred";
 pub const FIG_PROTO_MESSAGE_RECIEVED: &str = "FigProtoMessageRecieved";
@@ -92,6 +94,10 @@ async fn handle_request(data: Vec<u8>) -> Result<BytesMut, ApiRequestError> {
         PositionWindowRequest => window::position_window
         /* debugger */
         DebuggerUpdateRequest => debugger::update
+        /* properties */
+        UpdateApplicationPropertiesRequest => properties::update
+        /* figterm */
+        InsertTextRequest => figterm::insert_text
     }
     .unwrap_or_else(|s| s);
 

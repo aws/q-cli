@@ -1728,6 +1728,7 @@ dependencies = [
  "fig_log",
  "fig_proto",
  "fig_settings",
+ "fnv",
  "hashbrown 0.12.0",
  "once_cell",
  "parking_lot 0.12.0",

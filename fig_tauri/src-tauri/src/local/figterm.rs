@@ -18,13 +18,14 @@ use crate::state::{figterm::FigtermSessionId, STATE};
 #[allow(unused)]
 #[derive(Debug)]
 pub enum FigTermCommand {
+    SetInterceptAll,
     SetIntercept(Vec<char>),
     ClearIntercept,
     AddIntercept(Vec<char>),
     RemoveIntercept(Vec<char>),
     InsertText {
         insertion: Option<String>,
-        deletion: Option<u64>,
+        deletion: Option<i64>,
         offset: Option<i64>,
         immediate: Option<bool>,
     },
@@ -82,6 +83,11 @@ pub fn ensure_figterm(session_id: FigtermSessionId) {
         while let Some(command) = rx.recv().await {
             use figterm_message::Command;
             let message = match command {
+                FigTermCommand::SetInterceptAll => Command::InterceptCommand(InterceptCommand {
+                    intercept_command: Some(intercept_command::InterceptCommand::SetInterceptAll(
+                        intercept_command::SetInterceptAll {},
+                    )),
+                }),
                 FigTermCommand::SetIntercept(chars) => {
                     Command::InterceptCommand(InterceptCommand {
                         intercept_command: Some(intercept_command::InterceptCommand::SetIntercept(
@@ -126,7 +132,7 @@ pub fn ensure_figterm(session_id: FigtermSessionId) {
                     immediate,
                 } => Command::InsertTextCommand(InsertTextCommand {
                     insertion,
-                    deletion,
+                    deletion: deletion.map(|x| x as u64),
                     offset,
                     immediate,
                 }),

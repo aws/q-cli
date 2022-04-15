@@ -11,7 +11,8 @@ use super::ResponseResult;
 #[allow(unused_variables)]
 pub fn update_app_positioning(anchor: Point) {
     #[cfg(windows)]
-    let state = os::native::uiautomation::get_ui_state();
+    let state = crate::os::native::uiautomation::get_ui_state();
+
     // TODO: Add non windows implementation here
     #[cfg(not(windows))]
     let state = UIState::Unfocused;

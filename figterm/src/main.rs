@@ -74,6 +74,7 @@ fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
     let terminal = utils::get_term_bundle().map(|s| s.to_string());
     #[cfg(not(target_os = "macos"))]
     let terminal = None;
+
     let integration_version = std::env::var("FIG_INTEGRATION_VERSION")
         .map(|s| s.parse().ok())
         .ok()
@@ -235,6 +236,7 @@ async fn process_figterm_message(
     term: &Term<EventSender>,
     pty_master: &mut AsyncPtyMaster,
     mut intercept_set: DashSet<char, fnv::FnvBuildHasher>,
+    intercept_all: &mut bool,
 ) -> Result<()> {
     match figterm_message.command {
         Some(figterm_message::Command::InsertTextCommand(command)) => {
@@ -269,6 +271,10 @@ async fn process_figterm_message(
         }
         Some(figterm_message::Command::InterceptCommand(command)) => {
             match command.intercept_command {
+                Some(intercept_command::InterceptCommand::SetInterceptAll(_)) => {
+                    debug!("Set intercept all");
+                    *intercept_all = true;
+                }
                 Some(intercept_command::InterceptCommand::SetIntercept(set_intercept)) => {
                     debug!("Set intercept");
                     intercept_set.clear();
@@ -282,6 +288,7 @@ async fn process_figterm_message(
                 Some(intercept_command::InterceptCommand::ClearIntercept(_)) => {
                     debug!("Clear intercept");
                     intercept_set.clear();
+                    *intercept_all = false;
                 }
                 Some(intercept_command::InterceptCommand::AddIntercept(set_intercept)) => {
                     debug!("{:?}", set_intercept.chars);
@@ -440,6 +447,7 @@ fn figterm_main() -> Result<()> {
                     let mut write_buffer = [0u8; BUFFER_SIZE];
 
                     let intercept_set: DashSet<char, fnv::FnvBuildHasher> = DashSet::with_hasher(fnv::FnvBuildHasher::default());
+                    let mut intercept_all: bool = false;
 
                     // TODO: Write initial text to pty
 
@@ -469,11 +477,19 @@ fn figterm_main() -> Result<()> {
                                             Ok(s) => {
                                                 trace!("Read {} bytes from input: {:?}", size, s);
                                                 let mut out = heapless::String::<BUFFER_SIZE>::new();
+                                                let mut intercepted = heapless::String::<BUFFER_SIZE>::new();
                                                 for c in s.chars() {
-                                                    if !intercept_set.contains(&c) {
-                                                        // This should always be okay since the input <= BUFFER_SIZE
+                                                    // This should always be okay since the input <= BUFFER_SIZE
+                                                    if intercept_all || intercept_set.contains(&c) {
+                                                        intercepted.push(c).ok();
+                                                    } else {
                                                         out.push(c).ok();
                                                     }
+                                                }
+                                                if !intercepted.is_empty() {
+                                                    debug!("Intercepted character: {:?}", intercepted);
+                                                    let hook = fig_proto::hooks::new_intercepted_key_hook(None, intercepted.to_string());
+                                                    outgoing_sender.send(hook_to_message(hook)).unwrap();
                                                 }
                                                 master.write(out.as_bytes()).await?;
                                                 Ok(())
@@ -533,7 +549,7 @@ fn figterm_main() -> Result<()> {
                                 match msg {
                                     Ok(buf) => {
                                         debug!("Received message from socket: {:?}", buf);
-                                        process_figterm_message(buf, &term, &mut master, intercept_set.clone()).await?;
+                                        process_figterm_message(buf, &term, &mut master, intercept_set.clone(), &mut intercept_all).await?;
                                     }
                                     Err(err) => {
                                         error!("Failed to receive message from socket: {}", err);

@@ -54,6 +54,7 @@ message Hook {
 		FileChangedHook file_changed = 112;
 		CursorPositionHook cursor_position = 113;
 		FocusChangeHook focus_change = 114;
+		InterceptedKeyHook intercepted_key = 115;
 	}
 }
 
@@ -233,6 +234,11 @@ message CursorPositionHook {
 }
   
 message FocusChangeHook {}
+
+message InterceptedKeyHook {
+	ShellContext context = 1;
+	string key = 2;
+}
 
 // == Responses ==
 message ErrorResponse {
