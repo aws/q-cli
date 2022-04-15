@@ -28,6 +28,9 @@ fn create_tray_menu() -> SystemTrayMenu {
                 .add_item(CustomMenuItem::new("debugger-hostname", "hostname: None").disabled())
                 .add_item(CustomMenuItem::new("debugger-terminal", "terminal: None").disabled())
                 .add_item(CustomMenuItem::new("debugger-process", "process: None").disabled())
+                .add_item(
+                    CustomMenuItem::new("debugger-api-message", "api-message: None").disabled(),
+                )
                 .add_native_item(SystemTrayMenuItem::Separator)
                 .add_item(CustomMenuItem::new(
                     "debugger-refresh",
@@ -95,6 +98,18 @@ fn update_tray_menu(app: &AppHandle) -> Result<(), tauri::Error> {
     app.tray_handle()
         .get_item("debugger-keybuffer")
         .set_title(keybuffer_text)?;
+
+    let api_message = format!(
+        "api-message: {}",
+        match &*STATE.debug_state.debug_lines.read() {
+            v if !v.is_empty() => v.join(" | "),
+            _ => "None".to_string(),
+        }
+    );
+
+    app.tray_handle()
+        .get_item("debugger-api-message")
+        .set_title(api_message)?;
 
     trace!("Updating tray menu");
 

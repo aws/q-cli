@@ -1,3 +1,4 @@
+pub mod debug;
 pub mod figterm;
 
 use dashmap::DashMap;
@@ -7,7 +8,7 @@ use parking_lot::Mutex;
 use std::sync::{Arc, RwLock};
 use tauri::Window;
 
-use self::figterm::FigtermState;
+use self::{debug::DebugState, figterm::FigtermState};
 
 pub type AppStateType = Arc<AppState>;
 
@@ -20,6 +21,7 @@ pub struct AppState {
     pub _should_intercept: bool,
     pub subscriptions: DashMap<NotificationType, i64>,
     pub figterm_state: FigtermState,
+    pub debug_state: DebugState,
     pub window: RwLock<Option<Window>>,
     pub anchor: RwLock<Point>,
     pub _os_state: crate::os::native::State,
