@@ -221,9 +221,12 @@
                           Your browser does not support the video tag.
                       </video>
                   </div>
+                  <p id ="" style = "color: #5e5e5e; text-align:center; width: 310px">You will need to restart your computer.</p>
+
                   <div class = "button">
                       <a id = "enable" href="javascript:requestPermission()">Enable</a>
                   </div>
+                  <a id ="not-now" style = "display: block; color: #5e5e5e; text-align:center; width: 300px; font-size: 0.9em" href="javascript:closeWindow()">Not Now</a>
                 </div>
 
                 <p id ="status" style = "color: #5e5e5e; text-align:center; width: 310px"></p>
@@ -268,8 +271,19 @@
         window.requestRestart = async () => {
           await sendMessageAsync({ onboardingRequest: { action: "REQUEST_RESTART" } })
         }
+      
+        window.closeWindow = async () => {
+          await sendMessageAsync({ onboardingRequest: { action: "CLOSE_INPUT_METHOD_PROMPT_WINDOW" } })
+        }
+        
+        // register right away? Not sure if there is any downside.
+        sendMessageAsync({ macosInputMethodRequest: { action: "REGISTER" } });
+        
+        // ensure Fig window is frontmost
+        sendMessageAsync({ windowFocusRequest: { type: "TAKE_FOCUS" } });
+
+
         window.requestPermission = async () => {
-            document.querySelector("#enable").innerText = "Waiting..."
             try {
               await sendMessageAsync({ macosInputMethodRequest: { action: "REGISTER" } });
               let response = await sendMessageAsync({ macosInputMethodRequest: { action: "STATUS" } });
@@ -332,18 +346,36 @@
               `
                   <h4>Almost done...</h4>
                   <p>✅ Input Method Enabled in System Preferences</p>
-                  <p>❓Computer Restarted </p>
+                  <p>❓Restarted macOS </p>
+                  <br>
+                  <br>
                   <br>
                   <br>
                   <div class = "button">
                       <a id = "enable" href="javascript:requestRestart()">Restart</a>
                   </div>
+                  <a id ="not-now" style = "display: block; color: #5e5e5e; text-align:center; width: 300px; font-size: 0.9em" href="javascript:closeWindow()">Not Now</a>
+                  <br>
+
               `
               
-            document.querySelector("#status").innerText = "Restart your computer to finish installing Fig's custom input method..."
+            document.querySelector("#status").innerHTML = "Tip: Fig's custom input method will <em>not work</em> until you restart your machine..."
           } catch {
             await sendMessageAsync({ windowFocusRequest: { type: "TAKE_FOCUS" } });
-            document.querySelector("#status").innerHTML = "⚠️ An error occured. Restart Fig and try again <code>fig install --input-method</code>."
+            document.querySelector("#stage").innerHTML =
+            `
+                <br>
+                <br>
+                <h4>⚠️ Something went wrong...</h4>
+                <p>Timeout waiting for Input Method status.</p>
+                <p style = " color: #5e5e5e"><b>Restart the Fig app</b> and then try again by running: </p>
+                <p><pre>fig install --input-method</pre></p>
+                <br>
+                <br>
+                <br>
+                <br>
+            `
+            document.querySelector("#status").innerHTML = "There is a known issue with <br> Apple's <code>Text Input Source</code> APIs."
 
           }
         }
