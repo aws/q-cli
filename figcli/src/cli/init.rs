@@ -201,12 +201,11 @@ fn shell_init(shell: &Shell, when: &When, rcfile: Option<String>) -> Result<Stri
         && !fig_settings::settings::get_bool_or("integrations.experimental", false)
     {
         if let Some(terminal) = Terminal::get_current_terminal() {
-            let prompt_state_key = format!("prompt.input-method.{}.shown", terminal.internal_id());
+            let prompt_state_key = format!("prompt.input-method.{}.count", terminal.internal_id());
+            let prompt_count = fig_settings::state::get_int_or(&prompt_state_key, 0);
 
-            if terminal.is_input_dependant()
-                && !fig_settings::state::get_bool_or(&prompt_state_key, false)
-            {
-                fig_settings::state::set_value(&prompt_state_key, true)?;
+            if terminal.is_input_dependant() && prompt_count < 3 {
+                fig_settings::state::set_value(&prompt_state_key, prompt_count + 1)?;
 
                 to_source.push_str(&guard_source(
                     shell,
