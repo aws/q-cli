@@ -3064,6 +3064,29 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7efd1d698db0759e6ef11a7cd44407407399a910c774dd804c64c032da7826ff"
 
 [[package]]
+name = "libappindicator"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "97b29fab3280d59f3d06725f75da9ef9a1b001b2c748b1abfebd1c966c61d7de"
+dependencies = [
+ "glib 0.15.10",
+ "gtk",
+ "gtk-sys",
+ "libappindicator-sys",
+ "log",
+]
+
+[[package]]
+name = "libappindicator-sys"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "90bdcb8c5cfc11febe2ff3f18386d6cb7d29f464cbaf6b286985c3f1a501d74f"
+dependencies = [
+ "gtk-sys",
+ "pkg-config",
+]
+
+[[package]]
 name = "libc"
 version = "0.2.122"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5544,6 +5567,7 @@ dependencies = [
  "gtk",
  "instant",
  "lazy_static 1.4.0",
+ "libappindicator",
  "libc",
  "log",
  "ndk",

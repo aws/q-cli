@@ -15,7 +15,7 @@ tauri-build = { version = "1.0.0-rc.5", features = [] }
 [dependencies]
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
-tauri = { version = "1.0.0-rc.6", features = ["api-all", "devtools"] }
+tauri = { version = "1.0.0-rc.6", features = ["api-all", "devtools", "macos-private-api", "system-tray"] }
 base64 = "0.13.0"
 cfg-if = "1.0"
 fig_proto = { path = "../../rust-lib/fig_proto" }

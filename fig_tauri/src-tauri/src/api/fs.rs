@@ -20,13 +20,13 @@ pub async fn read_file(request: ReadFileRequest, _message_id: i64) -> ResponseRe
         Type::Data(
             tokio::fs::read(&file_path)
                 .await
-                .map_err(response_error!("Failed reading file"))?,
+                .map_err(response_error!("Failed reading file: {:?}", file_path))?,
         )
     } else {
         Type::Text(
             tokio::fs::read_to_string(&file_path)
                 .await
-                .map_err(response_error!("Failed reading file"))?,
+                .map_err(response_error!("Failed reading file: {:?}", file_path))?,
         )
     };
     let response =
@@ -39,12 +39,12 @@ pub async fn write_file(request: WriteFileRequest, _message_id: i64) -> Response
     use fig_proto::fig::write_file_request::Data;
     let file_path = resolve_filepath(request.path.unwrap());
     match request.data.unwrap() {
-        Data::Binary(data) => tokio::fs::write(file_path, data)
+        Data::Binary(data) => tokio::fs::write(&file_path, data)
             .await
-            .map_err(response_error!("Failed writing to file"))?,
-        Data::Text(data) => tokio::fs::write(file_path, data.as_bytes())
+            .map_err(response_error!("Failed writing to file: {:?}", file_path))?,
+        Data::Text(data) => tokio::fs::write(&file_path, data.as_bytes())
             .await
-            .map_err(response_error!("Failed writing to file"))?,
+            .map_err(response_error!("Failed writing to file: {:?}", file_path))?,
     }
 
     Ok(ResponseKind::Success)
@@ -55,19 +55,19 @@ pub async fn append_to_file(request: AppendToFileRequest, _message_id: i64) -> R
     let file_path = resolve_filepath(request.path.unwrap());
     let mut file = OpenOptions::new()
         .append(true)
-        .open(file_path)
+        .open(&file_path)
         .await
-        .map_err(response_error!("Failed opening file"))?;
+        .map_err(response_error!("Failed opening file: {:?}", file_path))?;
 
     match request.data.unwrap() {
         Data::Binary(data) => file
             .write(&data)
             .await
-            .map_err(response_error!("Failed writing to file"))?,
+            .map_err(response_error!("Failed writing to file: {:?}", file_path))?,
         Data::Text(data) => file
             .write(data.as_bytes())
             .await
-            .map_err(response_error!("Failed writing to file"))?,
+            .map_err(response_error!("Failed writing to file: {:?}", file_path))?,
     };
 
     Ok(ResponseKind::Success)
@@ -78,9 +78,9 @@ pub async fn destination_of_symbolic_link(
     _message_id: i64,
 ) -> ResponseResult {
     let file_path = resolve_filepath(request.path.unwrap());
-    let real_path = tokio::fs::canonicalize(file_path)
+    let real_path = tokio::fs::canonicalize(&file_path)
         .await
-        .map_err(response_error!("Failed resolving symlink"))?;
+        .map_err(response_error!("Failed resolving symlink: {:?}", file_path))?;
 
     let response = ServerOriginatedSubMessage::DestinationOfSymbolicLinkResponse(
         DestinationOfSymbolicLinkResponse {
@@ -96,16 +96,15 @@ pub async fn contents_of_directory(
     _message_id: i64,
 ) -> ResponseResult {
     let file_path = resolve_filepath(request.directory.unwrap());
-    let mut stream = tokio::fs::read_dir(file_path)
+    let mut stream = tokio::fs::read_dir(&file_path)
         .await
-        .map_err(response_error!("Failed listing directory"))?;
+        .map_err(response_error!("Failed listing directory: {:?}", file_path))?;
 
     let mut contents = Vec::new();
-    while let Some(item) = stream
-        .next_entry()
-        .await
-        .map_err(response_error!("Failed listing directory entries"))?
-    {
+    while let Some(item) = stream.next_entry().await.map_err(response_error!(
+        "Failed listing directory entries {:?}",
+        file_path
+    ))? {
         contents.push(item.file_name().to_string_lossy().to_string());
     }
 

@@ -7,6 +7,7 @@ mod api;
 mod local;
 mod os;
 mod state;
+pub mod tray;
 mod utils;
 
 use crate::{os::native, state::STATE};
@@ -38,6 +39,8 @@ fn main() {
     fig_log::init_logger("fig_tauri.log").unwrap();
 
     tauri::Builder::default()
+        .system_tray(tray::create_tray())
+        .on_system_tray_event(tray::handle_tray_event)
         .plugin(constants_plugin())
         .setup(|app| {
             tauri::async_runtime::spawn(local::start_local_ipc());

@@ -4,7 +4,7 @@ use fig_proto::local::{
     CommandResponse, ErrorResponse, LocalMessage, SuccessResponse,
 };
 use tokio::io::{AsyncRead, AsyncWrite};
-use tracing::{error, warn};
+use tracing::{error, trace, warn};
 
 use crate::os::native;
 
@@ -75,6 +75,7 @@ async fn handle_local_ipc<S: AsyncRead + AsyncWrite + Unpin>(mut stream: S) {
             None
         })
     {
+        trace!("Received local message: {:?}", message);
         match message.r#type {
             Some(LocalMessageType::Command(command)) => {
                 macro_rules! route {

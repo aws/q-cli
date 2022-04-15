@@ -12,8 +12,8 @@ use super::ResponseResult;
 
 pub async fn get(request: GetSettingsPropertyRequest, _message_id: i64) -> ResponseResult {
     let value = match request.key {
-        Some(key) => settings::get_value(key)
-            .map_err(response_error!("Failed getting settings value"))?
+        Some(key) => settings::get_value(&key)
+            .map_err(response_error!("Failed getting settings value for {}", key))?
             .ok_or_else(|| ResponseKind::Error(String::from("No value for key")))?,
         None => settings::local_settings()
             .map(|s| s.inner)
@@ -33,13 +33,13 @@ pub async fn get(request: GetSettingsPropertyRequest, _message_id: i64) -> Respo
 }
 
 pub async fn update(request: UpdateSettingsPropertyRequest, _message_id: i64) -> ResponseResult {
-    match (request.key, request.value) {
+    match (&request.key, request.value) {
         (Some(key), Some(value)) => settings::set_value(key, value)
             .await
-            .map_err(response_error!("Failed setting settings value"))?,
+            .map_err(response_error!("Failed setting {}", key))?,
         (Some(key), None) => settings::remove_value(key)
             .await
-            .map_err(response_error!("Failed removing settings value"))?,
+            .map_err(response_error!("Failed removing {}", key))?,
         (None, _) => {
             return Err(ResponseKind::Error(String::from(
                 "No key provided with request",

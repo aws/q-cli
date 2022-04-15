@@ -1,3 +1,5 @@
+pub mod figterm;
+
 use dashmap::DashMap;
 use fig_proto::fig::NotificationType;
 use once_cell::sync::Lazy;
@@ -5,7 +7,7 @@ use parking_lot::Mutex;
 use std::sync::{Arc, RwLock};
 use tauri::Window;
 
-use crate::local::figterm::FigTermSession;
+use self::figterm::{FigtermSessionId, FigtermState};
 
 pub type AppStateType = Arc<AppState>;
 
@@ -17,7 +19,7 @@ pub struct AppState {
     pub _window_position: Rect,
     pub _should_intercept: bool,
     pub subscriptions: DashMap<NotificationType, i64>,
-    pub figterm_sessions: DashMap<String, FigTermSession>,
+    pub figterm_state: FigtermState,
     pub window: RwLock<Option<Window>>,
     pub anchor: RwLock<Point>,
     pub _os_state: crate::os::native::State,
