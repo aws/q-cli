@@ -1,4 +1,5 @@
 use crate::api::FIG_PROTO_MESSAGE_RECIEVED;
+use crate::state::figterm::FigtermSessionId;
 use crate::{api::window::update_app_positioning, local::figterm::ensure_figterm, state::STATE};
 use anyhow::Result;
 use bytes::BytesMut;
@@ -9,15 +10,16 @@ use fig_proto::{
     local::{CursorPositionHook, EditBufferHook, PromptHook},
     prost::Message,
 };
-use tracing::info;
 
 pub async fn edit_buffer(hook: EditBufferHook) -> Result<()> {
-    info!("WE'RE GETTING EDIT BUFFERS");
-    let session_id = hook.context.clone().unwrap().session_id.unwrap();
+    let session_id = FigtermSessionId(hook.context.clone().unwrap().session_id.unwrap());
     ensure_figterm(session_id.clone());
-    let mut session = STATE.figterm_sessions.get_mut(&session_id).unwrap();
-    session.edit_buffer.text = hook.text.clone();
-    session.edit_buffer.cursor = hook.cursor;
+
+    STATE.figterm_state.with_mut(session_id.clone(), |session| {
+        session.edit_buffer.text = hook.text.clone();
+        session.edit_buffer.cursor = hook.cursor;
+        session.context = hook.context.clone();
+    });
 
     let message_id = match STATE
         .subscriptions
@@ -37,7 +39,7 @@ pub async fn edit_buffer(hook: EditBufferHook) -> Result<()> {
                     context: hook.context,
                     buffer: Some(hook.text),
                     cursor: Some(hook.cursor.try_into().unwrap()),
-                    session_id: Some(session_id),
+                    session_id: Some(session_id.0),
                 },
             )),
         })),

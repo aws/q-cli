@@ -20,23 +20,22 @@ pub async fn execute(request: PseudoterminalExecuteRequest, _: i64) -> ResponseR
             // account for weird behavior passing in commands containing && to WSL
             cmd.args(request.command.split(" ").collect::<Vec<&str>>());
         } else {
-            cmd.arg(request.command);
+            cmd.arg(&request.command);
         }
     );
 
     if let Some(working_directory) = request.working_directory {
-        cmd.current_dir(working_directory);
-    } else if let Ok(working_directory) = std::env::current_dir() {
         cmd.current_dir(working_directory);
     }
 
     for var in request.env {
         cmd.env(var.key.clone(), var.value());
     }
-    let output = cmd
-        .output()
-        .await
-        .map_err(response_error!("Failed running command"))?;
+
+    let output = cmd.output().await.map_err(response_error!(
+        "Failed running command: {:?}",
+        request.command
+    ))?;
 
     Ok(ResponseKind::Message(Box::new(
         ServerOriginatedSubMessage::PseudoterminalExecuteResponse(PseudoterminalExecuteResponse {
@@ -52,7 +51,7 @@ pub async fn execute(request: PseudoterminalExecuteRequest, _: i64) -> ResponseR
 }
 
 pub async fn run(request: RunProcessRequest, _: i64) -> ResponseResult {
-    let mut cmd = Command::new(request.executable);
+    let mut cmd = Command::new(&request.executable);
     if let Some(working_directory) = request.working_directory {
         cmd.current_dir(working_directory);
     } else if let Ok(working_directory) = std::env::current_dir() {
@@ -65,10 +64,10 @@ pub async fn run(request: RunProcessRequest, _: i64) -> ResponseResult {
         cmd.env(var.key.clone(), var.value());
     }
 
-    let output = cmd
-        .output()
-        .await
-        .map_err(response_error!("Failed running command"))?;
+    let output = cmd.output().await.map_err(response_error!(
+        "Failed running command: {:?}",
+        request.executable
+    ))?;
 
     Ok(ResponseKind::Message(Box::new(
         ServerOriginatedSubMessage::RunProcessResponse(RunProcessResponse {

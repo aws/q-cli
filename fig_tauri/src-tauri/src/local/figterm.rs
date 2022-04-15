@@ -1,8 +1,11 @@
 use std::time::Duration;
 
-use fig_proto::figterm::{
-    figterm_message, intercept_command, FigtermMessage, InsertTextCommand, InterceptCommand,
-    SetBufferCommand,
+use fig_proto::{
+    figterm::{
+        figterm_message, intercept_command, FigtermMessage, InsertTextCommand, InterceptCommand,
+        SetBufferCommand,
+    },
+    local::ShellContext,
 };
 use tokio::{
     sync::mpsc,
@@ -10,7 +13,7 @@ use tokio::{
 };
 use tracing::{error, trace};
 
-use crate::state::STATE;
+use crate::state::{figterm::FigtermSessionId, STATE};
 
 #[allow(unused)]
 #[derive(Debug)]
@@ -31,11 +34,12 @@ pub enum FigTermCommand {
     },
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct FigTermSession {
     pub sender: mpsc::Sender<FigTermCommand>,
     pub last_receive: Instant,
     pub edit_buffer: EditBuffer,
+    pub context: Option<ShellContext>,
 }
 
 #[derive(Clone, Default, Debug)]
@@ -44,21 +48,22 @@ pub struct EditBuffer {
     pub cursor: i64,
 }
 
-pub fn ensure_figterm(session_id: String) {
-    if STATE.figterm_sessions.contains_key(&session_id) {
+pub fn ensure_figterm(session_id: FigtermSessionId) {
+    if STATE.figterm_state.contains_key(&session_id) {
         return;
     }
     let (tx, mut rx) = mpsc::channel(0xFF);
-    STATE.figterm_sessions.insert(
+    STATE.figterm_state.insert(
         session_id.clone(),
         FigTermSession {
             sender: tx,
             last_receive: Instant::now(),
             edit_buffer: EditBuffer::default(),
+            context: None,
         },
     );
     tokio::spawn(async move {
-        let socket = fig_ipc::figterm::get_figterm_socket_path(&session_id);
+        let socket = fig_ipc::figterm::get_figterm_socket_path(&*session_id);
 
         let mut stream =
             match fig_ipc::connect_timeout(socket.clone(), Duration::from_secs(1)).await {
@@ -148,16 +153,16 @@ pub fn ensure_figterm(session_id: String) {
                 );
                 break;
             }
-            match STATE.figterm_sessions.get_mut(&session_id) {
-                Some(mut session) => {
-                    session.last_receive = Instant::now();
-                }
-                None => break,
+
+            if !STATE.figterm_state.with_mut(session_id.clone(), |session| {
+                session.last_receive = Instant::now()
+            }) {
+                break;
             }
         }
         // remove from cache
         trace!("figterm session {} closed", session_id);
-        STATE.figterm_sessions.remove(&session_id);
+        STATE.figterm_state.remove(&session_id);
     });
 }
 
@@ -167,7 +172,7 @@ pub async fn clean_figterm_cache() {
         let mut last_receive = Instant::now();
         {
             let mut to_remove = Vec::new();
-            for session in STATE.figterm_sessions.iter() {
+            for session in STATE.figterm_state.sessions.iter() {
                 if session.last_receive.elapsed() > Duration::from_secs(600) {
                     to_remove.push(session.key().clone());
                 } else if last_receive > session.last_receive {
@@ -175,7 +180,7 @@ pub async fn clean_figterm_cache() {
                 }
             }
             for session_id in to_remove {
-                STATE.figterm_sessions.remove(&session_id);
+                STATE.figterm_state.remove(&session_id);
             }
         }
         sleep_until(last_receive + Duration::from_secs(600)).await;

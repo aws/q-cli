@@ -3,14 +3,19 @@ use tauri::{LogicalSize, PhysicalPosition, Position, Size};
 use fig_proto::fig::server_originated_message::Submessage as ServerOriginatedSubMessage;
 use fig_proto::fig::{PositionWindowRequest, PositionWindowResponse};
 
+use crate::api::ResponseKind;
 use crate::state::{Point, UIState, STATE};
-use crate::{api::ResponseKind, os::native};
 
 use super::ResponseResult;
 
 #[allow(unused_variables)]
 pub fn update_app_positioning(anchor: Point) {
-    let state = native::uiautomation::get_ui_state();
+    #[cfg(windows)]
+    let state = crate::os::native::uiautomation::get_ui_state();
+
+    // TODO: Add non windows implementation here
+    #[cfg(not(windows))]
+    let state = UIState::Unfocused;
 
     match state {
         UIState::Focused {

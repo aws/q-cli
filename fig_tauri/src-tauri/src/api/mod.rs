@@ -10,6 +10,7 @@ use serde::Serialize;
 use tauri::Window;
 use tracing::warn;
 
+pub mod debugger;
 mod fs;
 mod notifications;
 mod process;
@@ -89,6 +90,8 @@ async fn handle_request(data: Vec<u8>) -> Result<BytesMut, ApiRequestError> {
         PseudoterminalWriteRequest => process::write
         /* window */
         PositionWindowRequest => window::position_window
+        /* debugger */
+        DebuggerUpdateRequest => debugger::update
     }
     .unwrap_or_else(|s| s);
 
@@ -96,7 +99,7 @@ async fn handle_request(data: Vec<u8>) -> Result<BytesMut, ApiRequestError> {
         id: message.id,
         submessage: Some(match response {
             ResponseKind::Error(msg) => {
-                warn!("Send error response {}", msg);
+                warn!("Send error response: {}", msg);
                 ServerOriginatedSubMessage::Error(msg)
             }
             ResponseKind::Success => ServerOriginatedSubMessage::Success(true),
@@ -116,7 +119,7 @@ pub type ResponseResult = Result<ResponseKind, ResponseKind>;
 
 #[macro_export]
 macro_rules! response_error {
-    ($text: expr) => {
-        |_| ResponseKind::Error($text.to_string())
-    };
+    ($($arg:tt)*) => {{
+        |_| ResponseKind::Error(format!($($arg)*))
+    }};
 }
