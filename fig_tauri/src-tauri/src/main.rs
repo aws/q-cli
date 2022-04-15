@@ -7,12 +7,15 @@ mod api;
 mod local;
 mod os;
 mod state;
+mod utils;
 
+use crate::{os::native, state::STATE};
 use tauri::{
     plugin::{Builder, TauriPlugin},
-    Runtime,
+    Manager, Runtime,
 };
 
+// TODO: Add constants
 const JAVASCRIPT_INIT: &str = r#"
 console.log("[fig] declaring constants...")
 
@@ -36,10 +39,12 @@ fn main() {
 
     tauri::Builder::default()
         .plugin(constants_plugin())
-        .setup(|_| {
+        .setup(|app| {
             tauri::async_runtime::spawn(local::start_local_ipc());
             tauri::async_runtime::spawn(local::figterm::clean_figterm_cache());
-
+            *(STATE.window.write().unwrap()) =
+                Some(app.windows().get("autocomplete").unwrap().clone());
+            native::init();
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![api::handle_api_request])

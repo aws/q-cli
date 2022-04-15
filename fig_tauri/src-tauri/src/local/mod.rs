@@ -59,7 +59,9 @@ pub async fn start_local_ipc() {
     let listener = native::Listener::bind(&socket_path);
 
     while let Ok(stream) = listener.accept().await {
-        tokio::spawn(handle_local_ipc(stream));
+        tokio::spawn(handle_local_ipc(stream))
+            .await
+            .expect("Failed to spawn ipc handler");
     }
 }
 
@@ -128,6 +130,7 @@ async fn handle_local_ipc<S: AsyncRead + AsyncWrite + Unpin>(mut stream: S) {
                     EditBuffer => hooks::state::edit_buffer
                     CursorPosition => hooks::state::cursor_position
                     Prompt => hooks::state::prompt
+                    FocusChange => hooks::state::focus_change
                 } {
                     error!("Failed processing hook: {}", err);
                 }
