@@ -14,7 +14,16 @@ use crate::response_error;
 pub async fn execute(request: PseudoterminalExecuteRequest, _: i64) -> ResponseResult {
     let mut cmd = Command::new(SHELL);
     cmd.args(SHELL_ARGS);
-    cmd.args(request.command.split(" ").collect::<Vec<&str>>());
+
+    cfg_if::cfg_if!(
+        if #[cfg(target_os="windows")] {
+            // account for weird behavior passing in commands containing && to WSL
+            cmd.args(request.command.split(" ").collect::<Vec<&str>>());
+        } else {
+            cmd.arg(request.command);
+        }
+    );
+
     if let Some(working_directory) = request.working_directory {
         cmd.current_dir(working_directory);
     } else if let Ok(working_directory) = std::env::current_dir() {
