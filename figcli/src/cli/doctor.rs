@@ -3,11 +3,10 @@ use crate::{
         diagnostics::{dscl_read, verify_integration},
         util::OSVersion,
     },
+    integrations::{shell::ShellIntegration, InstallationError},
     util::{
         app_path_from_bundle_id, get_shell, glob, glob_dir, is_executable_in_path, launch_fig,
-        shell::{Shell, ShellFileIntegration},
-        terminal::Terminal,
-        LaunchOptions,
+        shell::Shell, terminal::Terminal, LaunchOptions,
     },
 };
 
@@ -711,23 +710,27 @@ impl DoctorCheck for DaemonCheck {
 }
 
 struct DotfileCheck {
-    integration: ShellFileIntegration,
+    integration: Box<dyn ShellIntegration>,
 }
 
 #[async_trait]
 impl DoctorCheck<Option<Shell>> for DotfileCheck {
     fn name(&self) -> Cow<'static, str> {
-        format!("{} contains valid fig hooks", self.integration.filename).into()
+        format!(
+            "{} contains valid fig hooks",
+            self.integration.path().display()
+        )
+        .into()
     }
 
     fn get_type(&self, current_shell: &Option<Shell>) -> DoctorCheckType {
         if let Some(shell) = current_shell {
-            if *shell == self.integration.shell {
+            if *shell == self.integration.get_shell() {
                 return DoctorCheckType::NormalCheck;
             }
         }
 
-        if is_executable_in_path(&self.integration.shell.to_string()) {
+        if is_executable_in_path(&self.integration.get_shell().to_string()) {
             DoctorCheckType::SoftCheck
         } else {
             DoctorCheckType::NoCheck
@@ -738,121 +741,46 @@ impl DoctorCheck<Option<Shell>> for DotfileCheck {
         let fix_text = format!(
             "Run {} to reinstall shell integrations for {}",
             "fig install --dotfiles".magenta(),
-            self.integration.shell
+            self.integration.get_shell()
         );
-        let path = self.integration.path();
-        match self.integration.shell {
-            Shell::Fish => {
-                // Source order for fish is handled by fish itself.
-                if path.exists() {
-                    return Ok(());
-                } else {
-                    let msg = format!("{} does not exist. {fix_text}", path.display());
-                    return Err(DoctorError::Error {
-                        reason: msg.into(),
-                        info: vec![],
-                        fix: None,
-                    });
-                }
+        match self.integration.is_installed() {
+            Ok(()) => Ok(()),
+            Err(InstallationError::LegacyInstallation(msg)) => {
+                Err(DoctorError::Warning(format!("{} {fix_text}", msg).into()))
             }
-            Shell::Zsh | Shell::Bash => {
-                // Read file if it exists
-                let contents = match read_to_string(&path) {
-                    Ok(contents) => contents,
-                    _ => {
-                        return Err(DoctorError::Warning(
-                            format!("{} does not exist. {fix_text}", path.display()).into(),
-                        ))
-                    }
-                };
+            Err(InstallationError::NotInstalled(msg))
+            | Err(InstallationError::ImproperInstallation(msg)) => {
+                // Check permissions of the file
+                #[cfg(unix)]
+                {
+                    use nix::unistd::access;
+                    use nix::unistd::AccessFlags;
 
-                let contents: String = Regex::new(r"\s*#.*")
-                    .unwrap()
-                    .replace_all(&contents, "")
-                    .into();
-
-                let lines: Vec<&str> = contents
-                    .split('\n')
-                    .filter(|line| !(*line).trim().is_empty())
-                    .collect();
-                let filtered_lines = lines.join("\n");
-
-                let first_line = lines.first().copied().unwrap_or_default();
-                if first_line.eq("[ -s ~/.fig/shell/pre.sh ] && source ~/.fig/shell/pre.sh") {
-                    return Err(DoctorError::Warning(
-                        format!("{} has legacy integration. {fix_text}", path.display()).into(),
-                    ));
-                }
-
-                if let Some(pre) = self.integration.pre_integration() {
-                    if !pre.get_source_regex(true)?.is_match(&filtered_lines) {
-                        let msg = format!(
-                            "Pre shell integration not sourced first in {}",
-                            path.display()
-                        );
-
-                        let top_lines = lines.get(0..lines.len().min(10)).map_or(vec![], Vec::from);
-                        let top_line_text = top_lines
-                            .iter()
-                            .enumerate()
-                            .map(|(i, x)| format!("{} {}", i + 1, x).into());
-
-                        let fix_integration = self.integration.clone();
-                        return Err(DoctorError::Error {
-                            reason: msg.into(),
+                    let path = self.integration.path();
+                    if path.exists() {
+                        access(
+                            &self.integration.path(),
+                            AccessFlags::R_OK | AccessFlags::W_OK,
+                        )
+                        .map_err(|_| DoctorError::Error {
+                            reason: format!("{} is not accessible", path.display()).into(),
                             info: vec![
-                                "In order for autocomplete to work correctly, Fig's shell integration must be sourced first.".into(),
-                                format!("Top of {}:", path.display()).into()
-                            ].into_iter().chain(top_line_text).collect(),
-                            fix: Some(Box::new(move || {
-                                fix_integration.uninstall()?;
-                                fix_integration.install(None)?;
-                                Ok(())
-                            }))
-                        });
+                                format!("Run `sudo chown $USER {}` to fix", path.display()).into()
+                            ],
+                            fix: None,
+                        })?;
                     }
                 }
 
-                let last_line = lines.last().copied().unwrap_or_default();
-                if last_line.eq("[ -s ~/.fig/fig.sh ] && source ~/.fig/fig.sh") {
-                    return Err(DoctorError::Warning(
-                        format!("{} has legacy integration", path.display()).into(),
-                    ));
-                }
-
-                if let Some(post) = self.integration.post_integration() {
-                    if !post.get_source_regex(true)?.is_match(&filtered_lines) {
-                        let msg = format!(
-                            "Post shell integration not sourced last in {}",
-                            path.display()
-                        );
-
-                        let n = lines.len();
-
-                        let bottom_lines =
-                            lines.get(n.saturating_sub(10)..n).map_or(vec![], Vec::from);
-                        let bottom_line_text = bottom_lines
-                            .iter()
-                            .enumerate()
-                            .map(|(i, x)| format!("{} {}", n + i + 1, x).into());
-
-                        let fix_integration = self.integration.clone();
-                        return Err(DoctorError::Error {
-                            reason: msg.into(),
-                            info: vec![
-                                "In order for autocomplete to work correctly, Fig's shell integration must be sourced last.".into(),
-                                format!("Bottom of {}:", path.display()).into()
-                            ].into_iter().chain(bottom_line_text).collect(),
-                            fix: Some(Box::new(move || {
-                                fix_integration.uninstall()?;
-                                fix_integration.install(None)?;
-                                Ok(())
-                            }))
-                        });
-                    }
-                }
-
-                Ok(())
+                let fix_integration = self.integration.clone();
+                Err(DoctorError::Error {
+                    reason: msg,
+                    info: vec![fix_text.into()],
+                    fix: Some(Box::new(move || {
+                        fix_integration.install(None)?;
+                        Ok(())
+                    })),
+                })
             }
         }
     }
@@ -962,6 +890,43 @@ impl DoctorCheck<DiagnosticsResponse> for AutocompleteEnabledCheck {
     }
 }
 
+macro_rules! dev_mode_check {
+    ($struct_name:ident, $check_name:expr, $settings_module:ident, $setting_name:expr) => {
+        struct $struct_name;
+
+        #[async_trait]
+        impl DoctorCheck for $struct_name {
+            fn name(&self) -> Cow<'static, str> {
+                $check_name.into()
+            }
+
+            async fn check(&self, _: &()) -> Result<(), DoctorError> {
+                if let Ok(Some(true)) = fig_settings::$settings_module::get_bool($setting_name) {
+                    Err(DoctorError::Warning(
+                        concat!($setting_name, " is enabled").into(),
+                    ))
+                } else {
+                    Ok(())
+                }
+            }
+        }
+    };
+}
+
+dev_mode_check!(
+    AutocompleteDevModeCheck,
+    "Autocomplete dev mode",
+    settings,
+    "autocomplete.developerMode"
+);
+
+dev_mode_check!(
+    PluginDevModeCheck,
+    "Plugin dev mode",
+    state,
+    "plugin.developerMode"
+);
+
 struct FigCLIPathCheck;
 
 #[async_trait]
@@ -1033,7 +998,12 @@ impl DoctorCheck for PseudoTerminalPathCheck {
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
         let path = std::env::var("PATH").unwrap_or_default();
-        let pty_path = fig_settings::state::get_value("pty.path")?
+        let pty_path = fig_settings::state::get_value("pty.path")
+            .map_err(|e| DoctorError::Error {
+                reason: "Could not get PseudoTerminal PATH".into(),
+                info: vec![format!("{}", e).into()],
+                fix: None,
+            })?
             .and_then(|s| s.as_str().map(str::to_string));
 
         if path != pty_path.unwrap_or_default() {
@@ -1376,6 +1346,36 @@ impl DoctorCheck<Option<Terminal>> for VSCodeIntegrationCheck {
     }
 }
 
+struct ImeStatusCheck;
+
+#[async_trait]
+impl DoctorCheck<Option<Terminal>> for ImeStatusCheck {
+    fn name(&self) -> Cow<'static, str> {
+        "Input Method".into()
+    }
+
+    fn get_type(&self, current_terminal: &Option<Terminal>) -> DoctorCheckType {
+        match current_terminal {
+            Some(current_terminal) if current_terminal.is_input_dependant() => {
+                DoctorCheckType::NormalCheck
+            }
+            _ => DoctorCheckType::NoCheck,
+        }
+    }
+
+    async fn check(&self, _: &Option<Terminal>) -> Result<(), DoctorError> {
+        if fig_settings::state::get_bool_or("input-method.enabled", false) {
+            Ok(())
+        } else {
+            Err(DoctorError::Error {
+                reason: "Input Method is not enabled".into(),
+                info: vec!["Run `fig install --input-method` to enable it".into()],
+                fix: None,
+            })
+        }
+    }
+}
+
 struct LoginStatusCheck;
 
 #[async_trait]
@@ -1510,7 +1510,7 @@ async fn get_shell_context() -> Result<Option<Shell>> {
 }
 
 async fn get_terminal_context() -> Result<Option<Terminal>> {
-    Ok(Terminal::current_terminal())
+    Ok(Terminal::get_current_terminal())
 }
 
 async fn get_null_context() -> Result<()> {
@@ -1630,6 +1630,8 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
                 &FigtermSocketCheck {},
                 &InsertionLockCheck {},
                 &PseudoTerminalPathCheck {},
+                &AutocompleteDevModeCheck {},
+                &PluginDevModeCheck {},
             ],
             config,
             &mut spinner,
@@ -1674,6 +1676,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
                 &ItermBashIntegrationCheck {},
                 &HyperIntegrationCheck {},
                 &VSCodeIntegrationCheck {},
+                &ImeStatusCheck {},
             ],
             get_terminal_context,
             config,

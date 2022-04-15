@@ -16,7 +16,8 @@ if   [ "$TERM_PROGRAM" != "WarpTerminal" ] \
   && [ "$__CFBundleIdentifier" != "com.vandyke.SecureCRT" ] \
   && [ -t 1 ] \
   && [ -z "$PROCESS_LAUNCHED_BY_FIG" ] \
-  && [ -z "$FIG_PTY" ] && command -v figterm 1>/dev/null 2>/dev/null \
+  && [ -z "$FIG_PTY" ] \
+  && command -v ~/.fig/bin/figterm 1>/dev/null 2>/dev/null \
   && [ -z "$FIG_TERM" ] || [ -z "$FIG_TERM_TMUX" -a -n "$TMUX" ]
 
   # Generated automatically by iTerm and Terminal But needs to be
@@ -34,19 +35,17 @@ if   [ "$TERM_PROGRAM" != "WarpTerminal" ] \
   end
 
   # Do not launch figterm in non-interactive shells (like VSCode Tasks)
-  if not status --is-interactive
-    exit
+  if status --is-interactive
+    set FIG_TERM_NAME (basename "$FIG_SHELL")" (figterm)"
+    set FIG_SHELL_PATH "$HOME/.fig/bin/$FIG_TERM_NAME"
+
+    # Only copy figterm binary if it doesn't already exist
+    # WARNING: copying file if it already exists results
+    # in crashes. See https://github.com/withfig/fig/issues/548
+    if [ ! -f "$FIG_SHELL_PATH" ]
+      cp -p ~/.fig/bin/figterm "$FIG_SHELL_PATH"
+    end
+
+    exec bash -c "FIG_SHELL=$FIG_SHELL FIG_IS_LOGIN_SHELL=$FIG_IS_LOGIN_SHELL exec -a \"$FIG_TERM_NAME\" \"$FIG_SHELL_PATH\""
   end
-
-  set FIG_TERM_NAME (basename "$FIG_SHELL")" (figterm)"
-  set FIG_SHELL_PATH "$HOME/.fig/bin/$FIG_TERM_NAME"
-
-  # Only copy figterm binary if it doesn't already exist
-  # WARNING: copying file if it already exists results
-  # in crashes. See https://github.com/withfig/fig/issues/548
-  if [ ! -f "$FIG_SHELL_PATH" ]
-    cp -p ~/.fig/bin/figterm "$FIG_SHELL_PATH"
-  end
-
-  exec bash -c "FIG_SHELL=$FIG_SHELL FIG_IS_LOGIN_SHELL=$FIG_IS_LOGIN_SHELL exec -a \"$FIG_TERM_NAME\" \"$FIG_SHELL_PATH\""
 end

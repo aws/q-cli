@@ -388,95 +388,49 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
       action: nil,
       keyEquivalent: "")
 
-    Integrations.providers.values.sorted(by: { lhs, rhs in
-      return lhs.applicationName.lowercased() >= rhs.applicationName.lowercased()
-    }).forEach { provider in
-      guard provider.applicationIsInstalled else { return }
+    let imeInstalled = InputMethod.default.verifyInstallation() == .installed
 
-      let name = provider.applicationName
-      let item = integrationsMenu.addItem(
-        withTitle: name, // + " Integration",
-        action: #selector(provider.promptToInstall),
+    let requiresIME = Integrations.inputMethodDependentIntegrations.values.filter { $0.applicationIsInstalled }.count > 0
+
+    if imeInstalled || !requiresIME {
+      Integrations.providers.values.sorted(by: { lhs, rhs in
+        return lhs.applicationName.lowercased() <= rhs.applicationName.lowercased()
+      }).forEach { provider in
+        if let item = provider.menuItem() {
+          integrationsMenu.addItem(item)
+        }
+      }
+    } else {
+      Integrations.accessibilityDependentIntegrations.values.sorted(by: { lhs, rhs in
+        return lhs.applicationName.lowercased() <= rhs.applicationName.lowercased()
+      }).forEach { provider in
+        if let item = provider.menuItem() {
+          integrationsMenu.addItem(item)
+        }
+      }
+
+      integrationsMenu.addItem(NSMenuItem.separator())
+
+      let inputMethodItem = integrationsMenu.addItem(
+        withTitle: "Enable Input Method",
+        action: #selector(InputMethod.openUI),
         keyEquivalent: "")
 
-      item.target = provider
+      inputMethodItem.target = InputMethod.self
 
-      switch provider.status {
-      case .applicationNotInstalled:
-        break
-      case .unattempted:
-        item.image = Icon.fileIcon(for: "fig://template?color=808080&badge=?&w=16&h=16")
-      case .installed:
-        item.action = nil // disable selection
-        item.image = Icon.fileIcon(for: "fig://template?color=2ecc71&badge=✓&w=16&h=16")
-      case .pending(let dependency):
-        let actionsMenu = NSMenu(title: "actions")
-
-        item.action = nil // disable selection
-
-        switch dependency {
-        case .applicationRestart:
-          item.image = Icon.fileIcon(for: "fig://template?color=FFA500&badge=⟳&w=16&h=16")
-
-          let restart = actionsMenu.addItem(
-            withTitle: "Restart \(provider.applicationName)",
-            action: #selector(provider.restart),
-            keyEquivalent: "")
-          restart.target = provider
-        case .inputMethodActivation:
-          item.image = Icon.fileIcon(for: "fig://template?color=FFA500&badge=⌨&w=16&h=16")
-          actionsMenu.addItem(
-            withTitle: "Requires Input Method",
-            action: nil,
-            keyEquivalent: "")
-
-          switch InputMethod.default.status {
-          case .failed(let error, _):
-            actionsMenu.addItem(NSMenuItem.separator())
-            actionsMenu.addItem(
-              withTitle: error,
-              action: nil,
-              keyEquivalent: "")
-            actionsMenu.addItem(NSMenuItem.separator())
-            let installer = actionsMenu.addItem(
-              withTitle: "Attempt to Install",
-              action: #selector(provider.promptToInstall),
-              keyEquivalent: "")
-            installer.target = provider
-          default:
-            break
+      Integrations.inputMethodDependentIntegrations.values.sorted(by: { lhs, rhs in
+        return lhs.applicationName.lowercased() <= rhs.applicationName.lowercased()
+      }).forEach { provider in
+        if let item = provider.menuItem() {
+          let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: provider.bundleIdentifier)
+          if InputMethod.default.status != .installed {
+            item.image = Icon.fileIcon(for: "fig://\(url?.path ?? "")?w=16&h=16")
+            // "fig://template?color=808080&badge=🔒&w=16&h=16"
+            item.action = nil
+            item.submenu = nil
           }
-
+          integrationsMenu.addItem(item)
         }
-
-        item.submenu = actionsMenu
-      case .failed(let error, let supportURL):
-        item.image = Icon.fileIcon(for: "fig://template?color=e74c3c&badge=╳&w=16&h=16")
-        let actionsMenu = NSMenu(title: "actions")
-
-        actionsMenu.addItem(
-          withTitle: error,
-          action: nil,
-          keyEquivalent: "")
-
-        actionsMenu.addItem(NSMenuItem.separator())
-        let install = actionsMenu.addItem(withTitle: "Attempt to install",
-                                          action: #selector(provider.promptToInstall),
-                                          keyEquivalent: "")
-        install.target = provider
-
-        if supportURL != nil {
-          actionsMenu.addItem(NSMenuItem.separator())
-
-          let button = actionsMenu.addItem(
-            withTitle: "Learn more",
-            action: #selector(provider.openSupportPage),
-            keyEquivalent: "")
-
-          button.target = provider
-        }
-
-        item.submenu = actionsMenu
       }
     }
 
@@ -795,7 +749,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         Logger.log(message: "Error removing input method")
       }
 
-      for integration in Integrations.allProvidersIncludingExperimental.values {
+      for integration in Integrations.providers.values {
         if !integration.uninstall() {
           Logger.log(message: "Error removing integration for \(integration.id)")
         }

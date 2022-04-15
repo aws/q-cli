@@ -25,7 +25,8 @@ if   [[ ! "${TERM_PROGRAM}" = WarpTerminal ]] \
   && [[ "$__CFBundleIdentifier" != "com.vandyke.SecureCRT" ]] \
   && [[ -t 1 ]] \
   && [[ -z "${PROCESS_LAUNCHED_BY_FIG}" ]] \
-  && [[ -z "${FIG_PTY}" ]] && command -v ~/.fig/bin/figterm 2>&1 1>/dev/null \
+  && [[ -z "${FIG_PTY}" ]] \
+  && command -v ~/.fig/bin/figterm 2>&1 1>/dev/null \
   && [[ -z "${FIG_TERM}" || (-z "${FIG_TERM_TMUX}" && -n "${TMUX}") ]]; then
 
   # Generated automatically by iTerm and Terminal, but needs to be
@@ -45,25 +46,29 @@ if   [[ ! "${TERM_PROGRAM}" = WarpTerminal ]] \
     || ([[ -n "$ZSH_NAME" && -o login ]]); then
     FIG_IS_LOGIN_SHELL=1
   fi
-  FIG_TERM_NAME="${FIG_SHELL} (figterm)"
-  FIG_SHELL_PATH="${HOME}/.fig/bin/$(basename "${FIG_SHELL}") (figterm)"
 
-  # Only copy figterm binary if it doesn't already exist
-  if [[ ! -f "${FIG_SHELL_PATH}" ]]; then
-    cp -p ~/.fig/bin/figterm "${FIG_SHELL_PATH}"
+  # Do not launch figterm in non-interactive shells (like VSCode Tasks)
+  if [[ $- == *i* ]]; then
+    FIG_TERM_NAME="${FIG_SHELL} (figterm)"
+    FIG_SHELL_PATH="${HOME}/.fig/bin/$(basename "${FIG_SHELL}") (figterm)"
+
+    # Only copy figterm binary if it doesn't already exist
+    if [[ ! -f "${FIG_SHELL_PATH}" ]]; then
+      cp -p ~/.fig/bin/figterm "${FIG_SHELL_PATH}"
+    fi
+
+    FIG_EXECUTION_STRING="${BASH_EXECUTION_STRING:=$ZSH_EXECUTION_STRING}"
+
+    # Get initial text.
+    INITIAL_TEXT=""
+    if [[ -z "${BASH}" || "${BASH_VERSINFO[0]}" -gt "3" ]]; then
+      while read -t 0; do
+        if [[ -n "${BASH}" ]]; then
+          read
+        fi
+        INITIAL_TEXT="${INITIAL_TEXT}${REPLY}\n"
+      done
+    fi
+    FIG_EXECUTION_STRING="${FIG_EXECUTION_STRING}" FIG_START_TEXT="$(printf "%b" "${INITIAL_TEXT}")" FIG_SHELL="${FIG_SHELL}" FIG_IS_LOGIN_SHELL="${FIG_IS_LOGIN_SHELL}" exec -a "${FIG_TERM_NAME}" "${FIG_SHELL_PATH}"
   fi
-
-  FIG_EXECUTION_STRING="${BASH_EXECUTION_STRING:=$ZSH_EXECUTION_STRING}"
-
-  # Get initial text.
-  INITIAL_TEXT=""
-  if [[ -z "${BASH}" || "${BASH_VERSINFO[0]}" -gt "3" ]]; then
-    while read -t 0; do
-      if [[ -n "${BASH}" ]]; then
-        read
-      fi
-      INITIAL_TEXT="${INITIAL_TEXT}${REPLY}\n"
-    done
-  fi
-  FIG_EXECUTION_STRING="${FIG_EXECUTION_STRING}" FIG_START_TEXT="$(printf "%b" "${INITIAL_TEXT}")" FIG_SHELL="${FIG_SHELL}" FIG_IS_LOGIN_SHELL="${FIG_IS_LOGIN_SHELL}" exec -a "${FIG_TERM_NAME}" "${FIG_SHELL_PATH}"
 fi

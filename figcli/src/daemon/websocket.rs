@@ -4,13 +4,16 @@ use fig_settings::{api_host, ws_host};
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use std::io::Write;
+use std::{fmt, io::Write, time::Duration};
 use time::format_description::well_known::Rfc3339;
 use tokio::net::TcpStream;
 use tokio_tungstenite::{tungstenite::Message, MaybeTlsStream, WebSocketStream};
 use tracing::{debug, error, info};
 
-use crate::daemon::scheduler::{Scheduler, SyncDotfiles};
+use crate::{
+    daemon::scheduler::{Scheduler, SyncDotfiles},
+    util::get_machine_id,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -25,51 +28,53 @@ enum FigWebsocketMessage {
     },
 }
 
+async fn get_ticket(
+    reqwest_client: &reqwest::Client,
+    url: Url,
+    token: impl fmt::Display,
+) -> Result<reqwest::Response> {
+    Ok(tokio::time::timeout(
+        Duration::from_secs(30),
+        reqwest_client.get(url.clone()).bearer_auth(&token).send(),
+    )
+    .await??
+    .error_for_status()?)
+}
+
 pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream<TcpStream>>> {
     info!("Connecting to websocket");
 
-    let reqwest_client = reqwest::Client::new();
-
-    let token = get_token().await?;
-
     let api_host = api_host();
-
     let url = Url::parse(&format!("{api_host}/authenticate/ticket"))?;
 
-    let response = reqwest_client
-        .get(url.clone())
-        .bearer_auth(&token)
-        .send()
-        .await?
-        .error_for_status();
-
-    let text = match response {
-        Ok(response) => response.text().await?,
+    let reqwest_client = reqwest::Client::new();
+    let ticket = match get_ticket(&reqwest_client, url.clone(), get_token().await?).await {
+        Ok(response) => response,
         Err(_) => {
             // Retry after manually refreshing the credentals
             refresh_credentals().await?;
-            let token = get_token().await?;
-
-            reqwest_client
-                .get(url.clone())
-                .bearer_auth(&token)
-                .send()
-                .await?
-                .error_for_status()?
-                .text()
-                .await?
+            get_ticket(&reqwest_client, url.clone(), get_token().await?)
+                .await
+                .context("Failed to get ticket")?
         }
-    };
+    }
+    .text()
+    .await?;
 
-    let mut device_id = crate::util::get_machine_id().context("Cound not get machine_id")?;
+    let mut device_id = get_machine_id().context("Cound not get machine_id")?;
     if let Some(email) = get_email() {
         device_id.push(':');
         device_id.push_str(&email);
     }
 
-    let url = Url::parse_with_params(&ws_host(), &[("deviceId", &device_id), ("ticket", &text)])?;
+    let url = Url::parse_with_params(&ws_host(), &[("deviceId", &device_id), ("ticket", &ticket)])?;
 
-    let (websocket_stream, _) = tokio_tungstenite::connect_async(url).await?;
+    let (websocket_stream, _) = tokio::time::timeout(
+        Duration::from_secs(30),
+        tokio_tungstenite::connect_async(url),
+    )
+    .await
+    .context("Failed to connect to websocket")??;
 
     info!("Websocket connected");
 

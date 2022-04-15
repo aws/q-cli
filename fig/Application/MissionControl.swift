@@ -46,12 +46,19 @@ class MissionControl {
     if let window = MissionControl.shared.window {
 
       if window.contentViewController != nil {
+        if self.shouldShowIconInDock {
+          if NSApp.activationPolicy() == .accessory {
+              NSApp.setActivationPolicy(.regular)
+          }
+        }
+
         window.makeKeyAndOrderFront(nil)
         window.orderFrontRegardless()
         NSApp.activate(ignoringOtherApps: true)
 
-        if let controller = window.contentViewController as? WebViewController {
-          controller.webView?.loadRemoteApp(at: url)
+        if let controller = window.contentViewController as? WebViewController,
+           controller.webView?.url != url {
+          controller.webView?.navigate(to: url)
         }
         return
       } else {
@@ -65,7 +72,11 @@ class MissionControl {
     viewController.webView?.loadRemoteApp(at: url)
     viewController.webView?.dragShouldRepositionWindow = true
 
-    let missionControl = WebViewWindow(viewController: viewController, shouldQuitAppOnClose: false)
+    let missionControl = WebViewWindow(viewController: viewController,
+                                       shouldQuitAppOnClose: false,
+                                       isLongRunningWindow: true,
+                                       restoreAccessoryPolicyOnClose:
+                                        self.shouldShowIconInDock)
     missionControl.setFrame(NSRect(x: 0, y: 0, width: 830, height: 570), display: true, animate: false)
     missionControl.center()
     missionControl.makeKeyAndOrderFront(self)
@@ -77,12 +88,17 @@ class MissionControl {
     missionControl.isReleasedWhenClosed = false
     missionControl.level = .normal
 
-    if NSApp.activationPolicy() == .accessory {
-        NSApp.setActivationPolicy(.regular)
+    if self.shouldShowIconInDock {
+      if NSApp.activationPolicy() == .accessory {
+          NSApp.setActivationPolicy(.regular)
+      }
     }
 
     MissionControl.shared.window = missionControl
     NSApp.activate(ignoringOtherApps: true)
   }
 
+  static var shouldShowIconInDock: Bool {
+    return LocalState.shared.getValue(forKey: LocalState.showIconInDock) as? Bool ??  false
+  }
 }

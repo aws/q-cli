@@ -61,7 +61,7 @@ pub async fn issue_cli(force: bool, description: Vec<String>) -> Result<()> {
         &[("assignees", &assignees.join(",")), ("body", &body)],
     )?;
 
-    if open_url(&url).is_err() {
+    if open_url(url.as_str()).is_err() {
         println!("{}", url.as_str().underlined());
     }
 
