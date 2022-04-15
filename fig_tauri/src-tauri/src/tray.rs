@@ -84,7 +84,7 @@ fn update_tray_menu(app: &AppHandle) -> Result<(), tauri::Error> {
             Some(session) => {
                 let mut edit_buffer = session.edit_buffer.text.clone();
                 if let Ok(cursor) = session.edit_buffer.cursor.try_into() {
-                    edit_buffer.insert_str(cursor, "|");
+                    edit_buffer.insert(cursor, '|');
                 }
                 edit_buffer
             }

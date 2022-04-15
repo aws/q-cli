@@ -7,7 +7,7 @@ use parking_lot::Mutex;
 use std::sync::{Arc, RwLock};
 use tauri::Window;
 
-use self::figterm::{FigtermSessionId, FigtermState};
+use self::figterm::FigtermState;
 
 pub type AppStateType = Arc<AppState>;
 

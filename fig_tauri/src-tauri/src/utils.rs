@@ -39,7 +39,7 @@ pub fn truncate_string(mut from: String, len: usize) -> String {
 }
 
 // shamelessly stolen from the unstable `String::floor_char_boundary` function
-pub fn floor_char_boundary(string: &String, index: usize) -> usize {
+pub fn floor_char_boundary(string: &str, index: usize) -> usize {
     if index >= string.len() {
         string.len()
     } else {

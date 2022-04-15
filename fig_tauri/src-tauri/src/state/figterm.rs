@@ -17,9 +17,9 @@ impl Deref for FigtermSessionId {
     }
 }
 
-impl Into<FigtermSessionId> for String {
-    fn into(self) -> FigtermSessionId {
-        FigtermSessionId(self)
+impl From<String> for FigtermSessionId {
+    fn from(from: String) -> Self {
+        FigtermSessionId(from)
     }
 }
 
