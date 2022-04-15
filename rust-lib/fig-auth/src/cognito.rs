@@ -120,8 +120,6 @@ pub struct SignInInput<'a> {
     username_or_email: String,
 }
 
-// TODO: Sign in with cotter
-
 #[derive(Debug, Error)]
 pub enum SignInError {
     #[error("user not found: {0:?}")]
