@@ -1,5 +1,6 @@
 pub mod cli;
 pub mod history;
+pub mod interceptor;
 pub mod ipc;
 pub mod logger;
 pub mod pty;
@@ -7,6 +8,7 @@ pub mod term;
 pub mod utils;
 
 use crate::{
+    interceptor::KeyInterceptor,
     ipc::{remove_socket, spawn_incoming_receiver, spawn_outgoing_sender},
     logger::init_logger,
     pty::{async_pty::AsyncPtyMaster, fork_pty, ioctl_tiocswinsz, PtyForkResult},
@@ -23,7 +25,6 @@ use alacritty_terminal::{
 use anyhow::{anyhow, Context, Result};
 use clap::StructOpt;
 use cli::Cli;
-use dashmap::DashSet;
 use fig_auth::get_email;
 use fig_proto::{
     figterm::{figterm_message, intercept_command, FigtermMessage},
@@ -235,8 +236,7 @@ async fn process_figterm_message(
     figterm_message: FigtermMessage,
     term: &Term<EventSender>,
     pty_master: &mut AsyncPtyMaster,
-    mut intercept_set: DashSet<char, fnv::FnvBuildHasher>,
-    intercept_all: &mut bool,
+    key_interceptor: &mut KeyInterceptor,
 ) -> Result<()> {
     match figterm_message.command {
         Some(figterm_message::Command::InsertTextCommand(command)) => {
@@ -273,37 +273,23 @@ async fn process_figterm_message(
             match command.intercept_command {
                 Some(intercept_command::InterceptCommand::SetInterceptAll(_)) => {
                     debug!("Set intercept all");
-                    *intercept_all = true;
-                }
-                Some(intercept_command::InterceptCommand::SetIntercept(set_intercept)) => {
-                    debug!("Set intercept");
-                    intercept_set.clear();
-                    intercept_set.extend(
-                        set_intercept
-                            .chars
-                            .iter()
-                            .filter_map(|c| std::char::from_u32(*c)),
-                    );
+                    key_interceptor.set_intercept_all(true);
                 }
                 Some(intercept_command::InterceptCommand::ClearIntercept(_)) => {
                     debug!("Clear intercept");
-                    intercept_set.clear();
-                    *intercept_all = false;
+                    key_interceptor.set_intercept_all(false);
+                }
+                Some(intercept_command::InterceptCommand::SetIntercept(_set_intercept)) => {
+                    debug!("Set intercept");
+                    // TODO: Rework this
                 }
                 Some(intercept_command::InterceptCommand::AddIntercept(set_intercept)) => {
                     debug!("{:?}", set_intercept.chars);
-                    intercept_set.extend(
-                        set_intercept
-                            .chars
-                            .iter()
-                            .filter_map(|c| std::char::from_u32(*c)),
-                    );
+                    // TODO: Rework this
                 }
                 Some(intercept_command::InterceptCommand::RemoveIntercept(set_intercept)) => {
                     debug!("{:?}", set_intercept.chars);
-                    for c in set_intercept.chars {
-                        intercept_set.remove(&std::char::from_u32(c).unwrap());
-                    }
+                    // TODO: Rework this
                 }
                 _ => {}
             }
@@ -446,8 +432,8 @@ fn figterm_main() -> Result<()> {
                     let mut read_buffer = [0u8; BUFFER_SIZE];
                     let mut write_buffer = [0u8; BUFFER_SIZE];
 
-                    let intercept_set: DashSet<char, fnv::FnvBuildHasher> = DashSet::with_hasher(fnv::FnvBuildHasher::default());
-                    let mut intercept_all: bool = false;
+                    let mut key_interceptor = KeyInterceptor::new();
+                    key_interceptor.load_key_intercepts()?;
 
                     // TODO: Write initial text to pty
 
@@ -476,22 +462,23 @@ fn figterm_main() -> Result<()> {
                                     Ok(size) => match std::str::from_utf8(&read_buffer[..size]) {
                                             Ok(s) => {
                                                 trace!("Read {} bytes from input: {:?}", size, s);
-                                                let mut out = heapless::String::<BUFFER_SIZE>::new();
-                                                let mut intercepted = heapless::String::<BUFFER_SIZE>::new();
-                                                for c in s.chars() {
-                                                    // This should always be okay since the input <= BUFFER_SIZE
-                                                    if intercept_all || intercept_set.contains(&c) {
-                                                        intercepted.push(c).ok();
-                                                    } else {
-                                                        out.push(c).ok();
+                                                match interceptor::parse_code(&s.as_bytes()) {
+                                                    Some((key_code, modifier)) => {
+                                                        match key_interceptor.intercept_key(key_code, &modifier) {
+                                                            Some(action) => {
+                                                                debug!("Action: {:?}", action);
+                                                                let hook =
+                                                                    fig_proto::hooks::new_intercepted_key_hook(None, action.to_string(), s);
+                                                                outgoing_sender.send(hook_to_message(hook)).unwrap();
+                                                                continue 'select_loop;
+                                                            }
+                                                            None => {}
+                                                        }
                                                     }
+                                                    None => {}
                                                 }
-                                                if !intercepted.is_empty() {
-                                                    debug!("Intercepted character: {:?}", intercepted);
-                                                    let hook = fig_proto::hooks::new_intercepted_key_hook(None, intercepted.to_string());
-                                                    outgoing_sender.send(hook_to_message(hook)).unwrap();
-                                                }
-                                                master.write(out.as_bytes()).await?;
+
+                                                master.write(s.as_bytes()).await?;
                                                 Ok(())
                                             }
                                             Err(err) => {
@@ -549,7 +536,7 @@ fn figterm_main() -> Result<()> {
                                 match msg {
                                     Ok(buf) => {
                                         debug!("Received message from socket: {:?}", buf);
-                                        process_figterm_message(buf, &term, &mut master, intercept_set.clone(), &mut intercept_all).await?;
+                                        process_figterm_message(buf, &term, &mut master, &mut key_interceptor).await?;
                                     }
                                     Err(err) => {
                                         error!("Failed to receive message from socket: {}", err);

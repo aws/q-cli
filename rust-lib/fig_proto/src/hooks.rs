@@ -172,10 +172,12 @@ pub fn new_callback_hook(
 
 pub fn new_intercepted_key_hook(
     context: impl Into<Option<ShellContext>>,
+    action: impl Into<String>,
     key: impl Into<String>,
 ) -> Hook {
     hook_enum_to_hook(hook::Hook::InterceptedKey(InterceptedKeyHook {
         context: context.into(),
+        action: action.into(),
         key: key.into(),
     }))
 }

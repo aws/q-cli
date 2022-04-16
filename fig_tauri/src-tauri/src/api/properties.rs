@@ -24,21 +24,21 @@ pub async fn update(
             intercept_global_keystrokes
         );
 
-        for session in STATE.figterm_state.sessions.iter() {
-            if let Err(err) = session
-                .sender
-                .send(if intercept_global_keystrokes {
-                    FigTermCommand::SetInterceptAll
-                } else {
-                    FigTermCommand::ClearIntercept
-                })
-                .await
-            {
-                error!(
-                    "Failed sending command to figterm session {}: {}",
-                    session.key(),
-                    err
-                );
+        if intercept_global_keystrokes {
+            if let Some(session) = STATE.figterm_state.most_recent_session() {
+                if let Err(err) = session.sender.send(FigTermCommand::SetInterceptAll).await {
+                    error!("Failed sending command to figterm session: {}", err);
+                }
+            }
+        } else {
+            for session in STATE.figterm_state.sessions.iter() {
+                if let Err(err) = session.sender.send(FigTermCommand::ClearIntercept).await {
+                    error!(
+                        "Failed sending command to figterm session {}: {}",
+                        session.key(),
+                        err
+                    );
+                }
             }
         }
     }

@@ -68,8 +68,8 @@ impl FigtermState {
     pub fn with_mut(&self, key: FigtermSessionId, f: impl FnOnce(&mut FigTermSession)) -> bool {
         match self.sessions.get_mut(&key) {
             Some(mut session) => {
-                f(&mut *session);
                 self.set_most_recent_session(key);
+                f(&mut *session);
                 true
             }
             None => false,

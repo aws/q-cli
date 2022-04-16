@@ -118,18 +118,7 @@ pub async fn pre_exec(_: PreExecHook) -> Result<()> {
 }
 
 pub async fn intercepted_key(intercepted_key_hook: InterceptedKeyHook) -> Result<()> {
-    debug!(
-        "intercepted_key: {:?}, {:x?}",
-        intercepted_key_hook, intercepted_key_hook.key
-    );
-
-    let action = match intercepted_key_hook.key.as_str() {
-        "\u{1b}OA" => "navigateUp",
-        "\u{1b}OB" => "navigateDown",
-        "\r" => "insertSelected",
-        "\t" => "insertCommonPrefix",
-        _ => "",
-    };
+    debug!("Intercepted Key Action: {:?}", intercepted_key_hook.action);
 
     send_notification(
         &NotificationType::NotifyOnKeybindingPressed,
@@ -141,7 +130,7 @@ pub async fn intercepted_key(intercepted_key_hook: InterceptedKeyHook) -> Result
                             characters: Some(intercepted_key_hook.key),
                             ..Default::default()
                         }),
-                        action: Some(action.to_string()),
+                        action: Some(intercepted_key_hook.action),
                     },
                 ),
             ),
@@ -149,5 +138,6 @@ pub async fn intercepted_key(intercepted_key_hook: InterceptedKeyHook) -> Result
     )
     .await
     .unwrap();
+
     Ok(())
 }

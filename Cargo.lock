@@ -1703,6 +1703,7 @@ dependencies = [
 name = "fig_settings"
 version = "0.1.0"
 dependencies = [
+ "bitflags",
  "fig_auth",
  "fig_directories",
  "futures",
@@ -1773,6 +1774,7 @@ version = "4.3.0"
 dependencies = [
  "alacritty_terminal",
  "anyhow",
+ "bitflags",
  "bytes",
  "clap 3.1.8",
  "crossbeam",

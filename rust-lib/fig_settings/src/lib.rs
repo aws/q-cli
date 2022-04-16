@@ -1,3 +1,4 @@
+pub mod keybindings;
 pub mod remote_settings;
 pub mod settings;
 pub mod state;

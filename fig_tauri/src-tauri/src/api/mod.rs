@@ -11,13 +11,13 @@ use tauri::Window;
 use tracing::warn;
 
 pub mod debugger;
+pub mod figterm;
 mod fs;
 mod notifications;
 mod process;
 pub mod properties;
 mod settings;
 pub mod window;
-pub mod figterm;
 
 const FIG_GLOBAL_ERROR_OCCURRED: &str = "FigGlobalErrorOccurred";
 pub const FIG_PROTO_MESSAGE_RECIEVED: &str = "FigProtoMessageRecieved";
