@@ -3,11 +3,12 @@ use crate::{
         diagnostics::{dscl_read, verify_integration},
         util::OSVersion,
     },
+    integrations::{shell::ShellIntegration, InstallationError},
     util::{
         app_path_from_bundle_id, get_shell, glob, glob_dir, is_executable_in_path, launch_fig,
         shell::Shell,
         shell_integration::{InstallationError, ShellIntegration},
-        LaunchOptions,
+        terminal::Terminal, LaunchOptions,
     },
 };
 
@@ -891,7 +892,44 @@ impl DoctorCheck<DiagnosticsResponse> for AutocompleteEnabledCheck {
     }
 }
 
-struct FigCliPathCheck;
+macro_rules! dev_mode_check {
+    ($struct_name:ident, $check_name:expr, $settings_module:ident, $setting_name:expr) => {
+        struct $struct_name;
+
+        #[async_trait]
+        impl DoctorCheck for $struct_name {
+            fn name(&self) -> Cow<'static, str> {
+                $check_name.into()
+            }
+
+            async fn check(&self, _: &()) -> Result<(), DoctorError> {
+                if let Ok(Some(true)) = fig_settings::$settings_module::get_bool($setting_name) {
+                    Err(DoctorError::Warning(
+                        concat!($setting_name, " is enabled").into(),
+                    ))
+                } else {
+                    Ok(())
+                }
+            }
+        }
+    };
+}
+
+dev_mode_check!(
+    AutocompleteDevModeCheck,
+    "Autocomplete dev mode",
+    settings,
+    "autocomplete.developerMode"
+);
+
+dev_mode_check!(
+    PluginDevModeCheck,
+    "Plugin dev mode",
+    state,
+    "plugin.developerMode"
+);
+
+struct FigCLIPathCheck;
 
 #[async_trait]
 impl DoctorCheck<DiagnosticsResponse> for FigCliPathCheck {
@@ -1310,6 +1348,36 @@ impl DoctorCheck<Option<Terminal>> for VSCodeIntegrationCheck {
     }
 }
 
+struct ImeStatusCheck;
+
+#[async_trait]
+impl DoctorCheck<Option<Terminal>> for ImeStatusCheck {
+    fn name(&self) -> Cow<'static, str> {
+        "Input Method".into()
+    }
+
+    fn get_type(&self, current_terminal: &Option<Terminal>) -> DoctorCheckType {
+        match current_terminal {
+            Some(current_terminal) if current_terminal.is_input_dependant() => {
+                DoctorCheckType::NormalCheck
+            }
+            _ => DoctorCheckType::NoCheck,
+        }
+    }
+
+    async fn check(&self, _: &Option<Terminal>) -> Result<(), DoctorError> {
+        if fig_settings::state::get_bool_or("input-method.enabled", false) {
+            Ok(())
+        } else {
+            Err(DoctorError::Error {
+                reason: "Input Method is not enabled".into(),
+                info: vec!["Run `fig install --input-method` to enable it".into()],
+                fix: None,
+            })
+        }
+    }
+}
+
 struct LoginStatusCheck;
 
 #[async_trait]
@@ -1444,7 +1512,7 @@ async fn get_shell_context() -> Result<Option<Shell>> {
 }
 
 async fn get_terminal_context() -> Result<Option<Terminal>> {
-    Ok(Terminal::current_terminal())
+    Ok(Terminal::get_current_terminal())
 }
 
 async fn get_null_context() -> Result<()> {
@@ -1565,6 +1633,8 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
                 &FigtermSocketCheck {},
                 &InsertionLockCheck {},
                 &PseudoTerminalPathCheck {},
+                &AutocompleteDevModeCheck {},
+                &PluginDevModeCheck {},
             ],
             config,
             &mut spinner,
@@ -1609,6 +1679,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
                 &ItermBashIntegrationCheck {},
                 &HyperIntegrationCheck {},
                 &VSCodeIntegrationCheck {},
+                &ImeStatusCheck {},
             ],
             get_terminal_context,
             config,

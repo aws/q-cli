@@ -5,9 +5,10 @@ pub use cognito::Credentials;
 
 use anyhow::Result;
 use cognito::get_client;
-use std::{ffi::OsStr, process::Command};
+use std::{ffi::OsStr, process::Command, time::Duration};
 
 pub const CLIENT_ID: &str = "hkinciohdp1i7h0imdk63a4bv";
+const TIMEOUT_DURATION: Duration = Duration::from_secs(10);
 
 pub fn get_default(key: impl AsRef<OsStr>) -> Result<String> {
     let output = Command::new("defaults")
@@ -64,7 +65,11 @@ pub async fn get_token() -> Result<String> {
     if let Ok(mut creds) = Credentials::load_credentials() {
         if creds.is_expired() {
             let aws_client = get_client()?;
-            creds.refresh_credentials(&aws_client, CLIENT_ID).await?;
+            tokio::time::timeout(
+                TIMEOUT_DURATION,
+                creds.refresh_credentials(&aws_client, CLIENT_ID),
+            )
+            .await??;
             creds.save_credentials()?;
         }
 
@@ -86,8 +91,12 @@ pub async fn get_token() -> Result<String> {
                     expiration_time: None,
                 };
 
-                let client = get_client()?;
-                creds.refresh_credentials(&client, CLIENT_ID).await?;
+                let aws_client = get_client()?;
+                tokio::time::timeout(
+                    TIMEOUT_DURATION,
+                    creds.refresh_credentials(&aws_client, CLIENT_ID),
+                )
+                .await??;
                 creds.save_credentials()?;
 
                 Ok(creds.encode())

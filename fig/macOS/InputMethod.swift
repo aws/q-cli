@@ -8,6 +8,7 @@
 
 import Foundation
 import Cocoa
+import FigAPIBindings
 // defaults read ~/Library/Preferences/com.apple.HIToolbox.plist AppleSelectedInputSources
 // plutil -remove 'AppleEnabledInputSources.5'  ~/Library/Preferences/com.apple.HIToolbox.plist
 // https://apple.stackexchange.com/questions/127246/mavericks-how-to-add-input-source-via-plists-defaults
@@ -69,6 +70,10 @@ class InputMethod {
         timer?.invalidate()
         timer = nil
       }
+
+      LocalState.shared.set(value: status == .installed,
+                            forKey: LocalState.inputMethodInstalled)
+
     }
   }
 
@@ -118,7 +123,7 @@ class InputMethod {
     // https://stackoverflow.com/questions/34120142/swift-cfarray-get-values-as-utf-strings/34121525
     // Use takeRetainedValue rather than takeUnretainedValue
     guard let rawSourceList = TISCreateInputSourceList(properties, true)?.takeRetainedValue() else {
-      InputMethod.log("TISCreateInputSourceList failed.")
+      InputMethod.log("TISCreateInputSourceList failed. \(errno)")
       return nil
     }
 
@@ -321,6 +326,9 @@ extension InputMethod: IntegrationProvider {
       return .failed(error: error.localizedDescription)
     }
 
+//    guard self.source != nil else {
+//      return .failed(error: "Could not find input source")
+//    }
     // should we launch the application manually?
     if let bundleId = self.bundle.bundleIdentifier {
       let inputSource = Restarter(with: bundleId)
@@ -350,7 +358,28 @@ extension InputMethod: IntegrationProvider {
 }
 
 extension InputMethod {
-  @discardableResult func register() -> String {
+
+  typealias InputMethodStatus = (message: String, code: Int)
+  static let noError = 0
+  enum InputMethodError: Int {
+    case SourceNotFound  = 1
+    case AlreadySelected = 2
+
+    var description: String {
+      switch self {
+        case .SourceNotFound:
+          return "Could not load input source"
+        case .AlreadySelected:
+          return "Input source is already selected"
+      }
+    }
+
+    var status: InputMethodStatus {
+      return (self.description, self.rawValue)
+    }
+  }
+
+  @discardableResult func register() -> InputMethodStatus {
     let url = URL(fileURLWithPath: self.originalBundlePath)
 
     let targetURL = InputMethod.inputMethodDirectory.appendingPathComponent(name)
@@ -363,7 +392,7 @@ extension InputMethod {
     let err = TISRegisterInputSource(targetURL as CFURL)
     guard err != paramErr else {
       let error = NSError(domain: NSOSStatusErrorDomain, code: Int(err), userInfo: nil)
-      return error.localizedDescription
+      return (error.localizedDescription, Int(err))
     }
 
     if let bundleId = self.bundle.bundleIdentifier {
@@ -371,18 +400,18 @@ extension InputMethod {
       inputSource.restart(launchingIfInactive: true)
     }
 
-    return "Registered input method!"
+    return ("Registered input method!", InputMethod.noError)
   }
 
-  @discardableResult func select() -> String {
+  @discardableResult func select() -> InputMethodStatus {
     guard let inputMethod = self.source else {
-      return "Could not load input source"
+      return InputMethodError.SourceNotFound.status
     }
 
     guard !inputMethod.isSelected else {
       let message = "Input method is already selected!"
       InputMethod.log(message)
-      return message
+      return InputMethodError.AlreadySelected.status
     }
 
     let status = TISSelectInputSource(inputMethod)
@@ -400,15 +429,15 @@ extension InputMethod {
         InputMethod.log("Input method must be selectable in order to be selected!")
       }
 
-      return message
+      return (err.localizedDescription, Int(status))
     }
 
-    return "Selected input method!"
+    return ("Selected input method!", InputMethod.noError)
   }
 
-  @discardableResult func deselect() -> String {
+  @discardableResult func deselect() -> InputMethodStatus {
     guard let inputMethod = self.source else {
-      return "Could not load input source"
+      return InputMethodError.SourceNotFound.status
     }
 
     let status = TISDeselectInputSource(inputMethod)
@@ -417,16 +446,16 @@ extension InputMethod {
       let err = NSError(domain: NSOSStatusErrorDomain, code: Int(status), userInfo: nil)
       let message = "An error occured when deselecting input method: \(err.localizedDescription)"
       InputMethod.log(message)
-      return message
+      return (err.localizedDescription, Int(status))
     }
 
-    return "Deselected input method!"
+    return ("Deselected input method!", InputMethod.noError)
   }
 
   // On macOS Monterrey, this opens System Preferences > Input Sources and prompts user!
-  @discardableResult func enable() -> String {
+  @discardableResult func enable() -> (message: String, code: Int) {
     guard let inputMethod = self.source else {
-      return "Could not load input source"
+      return InputMethodError.SourceNotFound.status
     }
 
     let status = TISEnableInputSource(inputMethod)
@@ -435,15 +464,15 @@ extension InputMethod {
       let err = NSError(domain: NSOSStatusErrorDomain, code: Int(status), userInfo: nil)
       let message = "An error occured when enabling input method: \(err.localizedDescription)"
       InputMethod.log(message)
-      return message
+      return (err.localizedDescription, Int(status))
     }
 
-    return "Enabled input method!"
+    return ("Enabled input method!", InputMethod.noError)
   }
 
-  @discardableResult func disable() -> String {
+  @discardableResult func disable() -> (message: String, code: Int) {
     guard let inputMethod = self.source else {
-      return "Could not load input source"
+      return InputMethodError.SourceNotFound.status
     }
 
     let status = TISDisableInputSource(inputMethod)
@@ -452,10 +481,10 @@ extension InputMethod {
       let err = NSError(domain: NSOSStatusErrorDomain, code: Int(status), userInfo: nil)
       let message = "An error occured when disabling input method: \(err.localizedDescription)"
       InputMethod.log(message)
-      return message
+      return (err.localizedDescription, Int(status))
     }
 
-    return "Disabled input method!"
+    return ("Disabled input method!", InputMethod.noError)
   }
 }
 
@@ -487,4 +516,92 @@ extension TISInputSource {
     return getProperty(kTISPropertyInputSourceIsSelected) as? Bool ?? false
   }
 
+}
+
+extension InputMethod {
+  func handleAPIRequest(_ request: Fig_MacOSInputMethodRequest) throws -> Fig_MacOSInputMethodResponse {
+
+    var status: (message: String, code: Int)?
+    switch request.action {
+    case .status:
+      if self.isInstalled {
+        status = ("installed!", 0)
+      } else if self.source?.isEnabled ?? false {
+        status = ("enabled!", 0)
+      } else if self.source?.isSelected ?? false {
+        status = ("selected!", 0)
+      } else if self.source == nil {
+        status = ("uninstalled!", 0)
+      } else {
+        status = ("unknown!", 0)
+      }
+    case .register:
+      status = self.register()
+    case .enable:
+      status = self.enable()
+    case .select:
+      status = self.select()
+    case .disable:
+      status = self.disable()
+    case .deselect:
+      status = self.deselect()
+    case .UNRECOGNIZED:
+      throw APIError.generic(message: "Unimplemented action")
+    }
+
+    guard let unwrappedStatus = status else {
+      throw APIError.generic(message: "No status found")
+    }
+
+    return Fig_MacOSInputMethodResponse.with { response in
+      response.message = unwrappedStatus.message
+      response.code = Int32(unwrappedStatus.code)
+
+    }
+  }
+}
+
+extension InputMethod {
+  fileprivate static var window: WebViewWindow?
+
+  @objc static func openUI() {
+
+    if let promptWindow = InputMethod.window {
+
+      if promptWindow.contentViewController != nil {
+        promptWindow.makeKeyAndOrderFront(nil)
+        promptWindow.orderFrontRegardless()
+        NSApp.activate(ignoringOtherApps: true)
+
+        return
+      } else {
+        InputMethod.window?.contentViewController = nil
+        InputMethod.window = nil
+      }
+    }
+
+    let inputMethodViewController = WebViewController()
+    inputMethodViewController.webView?.defaultURL = nil
+    inputMethodViewController.webView?.loadBundleApp("input-method")
+    inputMethodViewController.webView?.dragShouldRepositionWindow = true
+
+    let prompt = WebViewWindow(viewController: inputMethodViewController, shouldQuitAppOnClose: false)
+    prompt.setFrame(NSRect(x: 0, y: 0, width: 590, height: 480), display: true, animate: false)
+    prompt.center()
+    prompt.makeKeyAndOrderFront(self)
+
+    // Set color to match background of app to avoid flicker while loading
+    prompt.backgroundColor = NSColor.white
+
+    prompt.delegate = prompt
+    prompt.isReleasedWhenClosed = false
+    prompt.level = .normal
+
+    InputMethod.window = prompt
+  }
+
+  static func closeUI() {
+    InputMethod.window?.close()
+    InputMethod.window = nil
+  }
 }

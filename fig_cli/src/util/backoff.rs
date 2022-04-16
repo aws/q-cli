@@ -27,12 +27,15 @@ impl Backoff {
         tokio::time::sleep(duration).await;
     }
 
-    // This will execute the future with the backoff and will never return
-    pub async fn execute<F, Fut, T, E>(&mut self, mut _f: F) -> !
+    // This will execute the future with the backoff and should never return
+    pub async fn execute<F, Fut>(&mut self, mut f: F) -> !
     where
-        F: FnMut() -> Fut,
-        Fut: Future<Output = Result<T, E>>,
+        F: FnMut(&mut Backoff) -> Fut,
+        Fut: Future<Output = ()>,
     {
-        todo!();
+        loop {
+            f(self).await;
+            self.sleep().await;
+        }
     }
 }

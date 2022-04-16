@@ -15,6 +15,7 @@ pub mod man;
 pub mod plugins;
 pub mod settings;
 pub mod source;
+pub mod ssh;
 pub mod theme;
 pub mod tips;
 pub mod tweet;
@@ -23,12 +24,15 @@ pub mod util;
 use crate::{
     cli::util::dialoguer_theme,
     daemon::{daemon, get_daemon},
-    util::{is_app_running, launch_fig, shell::Shell, shell_integration::When, LaunchOptions},
+    integrations::shell::When,
+    util::{is_app_running, launch_fig, shell::Shell, LaunchOptions},
 };
 
 use anyhow::{Context, Result};
 use cfg_if::cfg_if;
 use clap::{ArgEnum, IntoApp, Parser, Subcommand};
+use fig_ipc::command::open_ui_element;
+use fig_proto::local::UiElement;
 use std::{fs::File, process::exit, str::FromStr};
 use tracing::{debug, level_filters::LevelFilter};
 
@@ -88,6 +92,9 @@ pub enum CliRootCommands {
     Tips(tips::TipsSubcommand),
     /// Install fig cli comoponents
     Install(internal::InstallArgs),
+    #[clap(subcommand)]
+    /// Enable/disable fig SSH integration
+    Ssh(ssh::SshSubcommand),
     /// Uninstall fig
     #[clap(hide = true)]
     Uninstall,
@@ -217,6 +224,8 @@ pub enum CliRootCommands {
 
  \x1B[0;90mFor more info on a specific command, use:\x1B[0m
   > fig help [command]
+T
+ Run \x1B[1;95mfig\x1B[0m to get started
 ")]
 pub struct Cli {
     #[clap(subcommand)]
@@ -267,11 +276,27 @@ impl Cli {
 
         let result = match self.subcommand {
             Some(subcommand) => match subcommand {
-                CliRootCommands::Install(args) => internal::install_cli_from_args(args),
+                CliRootCommands::Install(args) => {
+                    let internal::InstallArgs { input_method, .. } = args;
+                    if input_method {
+                        cfg_if::cfg_if! {
+                            if #[cfg(target_os = "macos")] {
+                                open_ui_element(UiElement::InputMethodPrompt)
+                                    .await
+                                    .context("\nCould not launch fig\n")
+                            } else {
+                                Err(anyhow::anyhow!("input method is only implemented on macOS"))
+                            }
+                        }
+                    } else {
+                        internal::install_cli_from_args(args)
+                    }
+                }
                 CliRootCommands::Uninstall => uninstall_command().await,
                 CliRootCommands::Update { no_confirm } => {
                     installation::update_cli(no_confirm).await
                 }
+                CliRootCommands::Ssh(ssh_subcommand) => ssh_subcommand.execute().await,
                 CliRootCommands::Tips(tips_subcommand) => tips_subcommand.execute().await,
                 CliRootCommands::Daemon => {
                     let res = daemon().await;

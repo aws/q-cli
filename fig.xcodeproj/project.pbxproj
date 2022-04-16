@@ -149,6 +149,7 @@
 		75A4A29A25C8D855002EFD6B /* commit@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 75A4A29725C8D855002EFD6B /* commit@2x.png */; };
 		75A4A29E25C91471002EFD6B /* debugger-2-trimmed.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 75A4A29D25C91471002EFD6B /* debugger-2-trimmed.mp4 */; };
 		75A4A2A025CA0D46002EFD6B /* Autocomplete.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A4A29F25CA0D46002EFD6B /* Autocomplete.swift */; };
+		75A6FA7A2806A15F0093E683 /* input-method-install.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 75A6FA792806A15F0093E683 /* input-method-install.mp4 */; };
 		75AA24DA25A7E8B000A51E9D /* lsof.m in Sources */ = {isa = PBXBuildFile; fileRef = 75AA24D925A7E8B000A51E9D /* lsof.m */; };
 		75ACFE7A274442C7003C22EE /* PTYProcess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75ACFE79274442C7003C22EE /* PTYProcess.swift */; };
 		75ACFE7C274C3424003C22EE /* Utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75ACFE7B274C3424003C22EE /* Utilities.swift */; };
@@ -192,6 +193,7 @@
 		75DA86A525EEBD7500722F1D /* Alert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DA86A425EEBD7400722F1D /* Alert.swift */; };
 		75DA86A925EF145E00722F1D /* TmuxIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DA86A825EF145E00722F1D /* TmuxIntegration.swift */; };
 		75DAA5F2276D2BAD00F6CE37 /* permissions.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 75DAA5F1276D2BAD00F6CE37 /* permissions.mp4 */; };
+		75DD0156280545F50032AD51 /* input-method.html in Resources */ = {isa = PBXBuildFile; fileRef = 75DD0155280545F50032AD51 /* input-method.html */; };
 		75DF864A26F31756003F32A5 /* cpu@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 751DC66226EBF3B500697DFB /* cpu@2x.png */; };
 		75E993F22515A6DD000BE6BE /* statusbar@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 75E993F12515A6DD000BE6BE /* statusbar@2x.png */; };
 		75E993F52517E226000BE6BE /* AXWindowServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75E993F42517E226000BE6BE /* AXWindowServer.swift */; };
@@ -446,6 +448,7 @@
 		75A4A29725C8D855002EFD6B /* commit@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "commit@2x.png"; sourceTree = "<group>"; };
 		75A4A29D25C91471002EFD6B /* debugger-2-trimmed.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "debugger-2-trimmed.mp4"; sourceTree = "<group>"; };
 		75A4A29F25CA0D46002EFD6B /* Autocomplete.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Autocomplete.swift; sourceTree = "<group>"; };
+		75A6FA792806A15F0093E683 /* input-method-install.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "input-method-install.mp4"; sourceTree = "<group>"; };
 		75AA24D825A7E8B000A51E9D /* lsof.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = lsof.h; sourceTree = "<group>"; };
 		75AA24D925A7E8B000A51E9D /* lsof.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = lsof.m; sourceTree = "<group>"; };
 		75AC55322522C8EB0069635E /* 1.0.20.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = 1.0.20.sh; sourceTree = "<group>"; };
@@ -491,6 +494,7 @@
 		75DA86A425EEBD7400722F1D /* Alert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Alert.swift; sourceTree = "<group>"; };
 		75DA86A825EF145E00722F1D /* TmuxIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TmuxIntegration.swift; sourceTree = "<group>"; };
 		75DAA5F1276D2BAD00F6CE37 /* permissions.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = permissions.mp4; sourceTree = "<group>"; };
+		75DD0155280545F50032AD51 /* input-method.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = "input-method.html"; sourceTree = "<group>"; };
 		75E993F12515A6DD000BE6BE /* statusbar@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "statusbar@2x.png"; sourceTree = "<group>"; };
 		75E993F42517E226000BE6BE /* AXWindowServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AXWindowServer.swift; sourceTree = "<group>"; };
 		75EB32FD272C89D100A544DB /* API+Icon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API+Icon.swift"; sourceTree = "<group>"; };
@@ -911,6 +915,8 @@
 				757CA890248B2798002A64A8 /* cli.html */,
 				757CA892248B28E3002A64A8 /* landing.html */,
 				7571775826F3E4CA0071AE10 /* settings.html */,
+				75DD0155280545F50032AD51 /* input-method.html */,
+				75A6FA792806A15F0093E683 /* input-method-install.mp4 */,
 				757CA894248B291E002A64A8 /* permissions.html */,
 				75DAA5F1276D2BAD00F6CE37 /* permissions.mp4 */,
 				75D9225527697A4600208A0C /* accessibility.html */,
@@ -1386,6 +1392,7 @@
 				752A398625CD0FE800B1AC40 /* fig-0.0.1.vsix in Resources */,
 				75B0A07E25BB746600FCD89A /* debugger.html in Resources */,
 				75186070255B2A0A0000A7C7 /* asterisk@2x.png in Resources */,
+				75DD0156280545F50032AD51 /* input-method.html in Resources */,
 				75B1993625042B2C00F38EA8 /* autocomplete.html in Resources */,
 				7518606F255B2A0A0000A7C7 /* flag@2x.png in Resources */,
 				75E993F22515A6DD000BE6BE /* statusbar@2x.png in Resources */,
@@ -1396,6 +1403,7 @@
 				75B0A08E25BBC9B800FCD89A /* privacy.html in Resources */,
 				75B0A08425BB759E00FCD89A /* trimmed-debugger.mp4 in Resources */,
 				75186072255B2A0A0000A7C7 /* carrot@2x.png in Resources */,
+				75A6FA7A2806A15F0093E683 /* input-method-install.mp4 in Resources */,
 				752E68ED2620F885009E9A7E /* azure@2x.png in Resources */,
 				75186074255B2A0A0000A7C7 /* command@2x.png in Resources */,
 				75D53AA4276D2095006A52C1 /* fig-0.0.6.vsix in Resources */,
@@ -1935,7 +1943,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = YES;
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 428;
+				CURRENT_PROJECT_VERSION = 432;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				DEVELOPMENT_TEAM = B8PC799ZGU;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1971,7 +1979,7 @@
 				CODE_SIGN_IDENTITY = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 428;
+				CURRENT_PROJECT_VERSION = 432;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				DEVELOPMENT_TEAM = B8PC799ZGU;
 				ENABLE_HARDENED_RUNTIME = YES;

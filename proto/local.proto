@@ -104,6 +104,7 @@ enum UiElement {
 	MENU_BAR = 0;
 	SETTINGS = 1;
 	MISSION_CONTROL = 2;
+	INPUT_METHOD_PROMPT = 3;
 }
 
 message OpenUiElementCommand {

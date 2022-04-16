@@ -120,3 +120,18 @@ extension URL {
   static let dataDirectory: URL = URL.applicationSupport.appendingPathComponent("fig", isDirectory: true)
 
 }
+
+class OS {
+  static func sendSystemCommand(command: AEEventID) throws {
+      var psn = ProcessSerialNumber(highLongOfPSN: UInt32(0), lowLongOfPSN: UInt32(kSystemProcess))
+      let target = NSAppleEventDescriptor(descriptorType: typeProcessSerialNumber, bytes: &psn, length: MemoryLayout.size(ofValue: psn))
+      let event = NSAppleEventDescriptor(
+          eventClass: kCoreEventClass,
+          eventID: command,
+          targetDescriptor: target,
+          returnID: AEReturnID(kAutoGenerateReturnID),
+          transactionID: AETransactionID(kAnyTransactionID)
+      )
+      _ = try event.sendEvent(options: [.defaultOptions], timeout: TimeInterval(kAEDefaultTimeout))
+  }
+}

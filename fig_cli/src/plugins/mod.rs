@@ -62,11 +62,7 @@ pub async fn fetch_installed_plugins(update: bool) -> Result<()> {
                         }
 
                         // Run zcompile
-                        if fig_settings::settings::get_bool("plugins.zcompile")
-                            .ok()
-                            .flatten()
-                            .unwrap_or(false)
-                        {
+                        if fig_settings::settings::get_bool_or("plugins.zcompile", false) {
                             if let Some(installation) = plugin.installation {
                                 if let Some(source_files) = installation.source_files {
                                     let source_files = match source_files {

@@ -39,10 +39,28 @@ pub fn get_bool(key: impl AsRef<str>) -> Result<Option<bool>, Error> {
     Ok(value.cloned().and_then(|v| v.as_bool()))
 }
 
+pub fn get_bool_or(key: impl AsRef<str>, default: bool) -> bool {
+    get_bool(key).ok().flatten().unwrap_or(default)
+}
+
 pub fn get_string(key: impl AsRef<str>) -> Result<Option<String>, Error> {
     let settings = local_settings()?;
     let value = settings.get(key);
     Ok(value.cloned().and_then(|v| v.as_str().map(String::from)))
+}
+
+pub fn get_string_or(key: impl AsRef<str>, default: String) -> String {
+    get_string(key).ok().flatten().unwrap_or(default)
+}
+
+pub fn get_int(key: impl AsRef<str>) -> Result<Option<i64>, super::Error> {
+    let settings = local_settings()?;
+    let value = settings.get(key);
+    Ok(value.cloned().and_then(|v| v.as_i64()))
+}
+
+pub fn get_int_or(key: impl AsRef<str>, default: i64) -> i64 {
+    get_int(key).ok().flatten().unwrap_or(default)
 }
 
 pub async fn remove_value(key: impl AsRef<str>) -> Result<(), Error> {

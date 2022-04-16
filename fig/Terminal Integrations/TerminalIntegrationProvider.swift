@@ -351,6 +351,100 @@ class GenericTerminalIntegrationProvider {
 
 }
 
+extension GenericTerminalIntegrationProvider {
+  func menuItem() -> NSMenuItem? {
+
+    guard self.applicationIsInstalled else { return nil }
+
+    let name = self.applicationName
+
+    let item = NSMenuItem(title: name,
+                          action: #selector(self.promptToInstall),
+                          keyEquivalent: "")
+    item.target = self
+
+    switch self.status {
+    case .applicationNotInstalled:
+      break
+    case .unattempted:
+      item.image = Icon.fileIcon(for: "fig://template?color=808080&badge=?&w=16&h=16")
+    case .installed:
+      item.action = nil // disable selection
+      item.image = Icon.fileIcon(for: "fig://template?color=2ecc71&badge=✓&w=16&h=16")
+    case .pending(let dependency):
+      let actionsMenu = NSMenu(title: "actions")
+
+      item.action = nil // disable selection
+
+      switch dependency {
+      case .applicationRestart:
+        item.image = Icon.fileIcon(for: "fig://template?color=FFA500&badge=⟳&w=16&h=16")
+
+        let restart = actionsMenu.addItem(
+          withTitle: "Restart \(self.applicationName)",
+          action: #selector(self.restart),
+          keyEquivalent: "")
+        restart.target = self
+      case .inputMethodActivation:
+        item.image = Icon.fileIcon(for: "fig://template?color=FFA500&badge=⌨&w=16&h=16")
+        actionsMenu.addItem(
+          withTitle: "Requires Input Method",
+          action: nil,
+          keyEquivalent: "")
+
+        switch InputMethod.default.status {
+        case .failed(let error, _):
+          actionsMenu.addItem(NSMenuItem.separator())
+          actionsMenu.addItem(
+            withTitle: error,
+            action: nil,
+            keyEquivalent: "")
+          actionsMenu.addItem(NSMenuItem.separator())
+          let installer = actionsMenu.addItem(
+            withTitle: "Attempt to Install",
+            action: #selector(self.promptToInstall),
+            keyEquivalent: "")
+          installer.target = self
+        default:
+          break
+        }
+
+      }
+
+      item.submenu = actionsMenu
+    case .failed(let error, let supportURL):
+      item.image = Icon.fileIcon(for: "fig://template?color=e74c3c&badge=╳&w=16&h=16")
+      let actionsMenu = NSMenu(title: "actions")
+
+      actionsMenu.addItem(
+        withTitle: error,
+        action: nil,
+        keyEquivalent: "")
+
+      actionsMenu.addItem(NSMenuItem.separator())
+      let install = actionsMenu.addItem(withTitle: "Attempt to install",
+                                        action: #selector(self.promptToInstall),
+                                        keyEquivalent: "")
+      install.target = self
+
+      if supportURL != nil {
+        actionsMenu.addItem(NSMenuItem.separator())
+
+        let button = actionsMenu.addItem(
+          withTitle: "Learn more",
+          action: #selector(self.openSupportPage),
+          keyEquivalent: "")
+
+        button.target = self
+      }
+
+      item.submenu = actionsMenu
+    }
+
+    return item
+  }
+}
+
 // swiftlint:disable type_name
 class InputMethodDependentTerminalIntegrationProvider: GenericTerminalIntegrationProvider {
   override init(bundleIdentifier: String) {
