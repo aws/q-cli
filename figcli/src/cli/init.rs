@@ -60,10 +60,8 @@ fn guard_source(
     output.join("\n")
 }
 
-fn shell_init(shell: &Shell, when: &When, _rcfile: Option<String>) -> Result<String> {
-    let should_source = fig_settings::state::get_bool_or("shell-integrations.enabled", true);
-
-    if !should_source {
+fn shell_init(shell: &Shell, when: &When, rcfile: Option<String>) -> Result<String> {
+    if !fig_settings::state::get_bool_or("shell-integrations.enabled", true) {
         return Ok(guard_source(
             shell,
             false,
@@ -71,6 +69,30 @@ fn shell_init(shell: &Shell, when: &When, _rcfile: Option<String>) -> Result<Str
             GuardAssignment::AfterSourcing,
             "echo '[Debug]: fig shell integration is disabled.'",
         ));
+    }
+
+    match (shell, when, rcfile.as_deref()) {
+        (Shell::Zsh, When::Post, Some("zprofile")) => {
+            let zshrc_exists = Shell::Zsh
+                .get_config_directory()
+                .map(|dir| dir.join(".zshrc").exists())
+                .unwrap_or(false);
+
+            if zshrc_exists {
+                return Ok(String::new());
+            }
+        }
+        (Shell::Bash, When::Post, Some("profile") | Some("bash_profile")) => {
+            let bashrc_exists = Shell::Bash
+                .get_config_directory()
+                .map(|dir| dir.join(".bashrc").exists())
+                .unwrap_or(false);
+
+            if bashrc_exists {
+                return Ok(String::new());
+            }
+        }
+        _ => {}
     }
 
     let mut to_source = Vec::new();

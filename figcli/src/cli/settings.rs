@@ -5,6 +5,7 @@ use fig_auth::is_logged_in;
 use fig_ipc::command::{open_ui_element, restart_settings_listener};
 use fig_proto::local::UiElement;
 use fig_settings::remote_settings::RemoteSettings;
+use globset::Glob;
 use serde_json::json;
 use std::{
     io::Write,
@@ -195,23 +196,56 @@ impl SettingsArgs {
                         }
                     }
                     (None, true) => {
-                        let remote_result = fig_settings::settings::remove_value(key).await;
-                        match remote_result {
-                            Ok(()) => {
-                                println!("Successfully removed settings");
-                                Ok(())
+                        let glob = Glob::new(key)
+                            .context("Could not create glob")?
+                            .compile_matcher();
+
+                        let map = fig_settings::settings::get_map()?
+                            .context("Could not get settings map")?;
+
+                        let keys_to_remove = map
+                            .keys()
+                            .filter(|key| glob.is_match(key))
+                            .collect::<Vec<_>>();
+
+                        match keys_to_remove.len() {
+                            0 => {
+                                return Err(anyhow::anyhow!("No settings found matching {}", key));
                             }
-                            Err(err) => match err {
-                                fig_settings::Error::RemoteSettingsError(
-                                    fig_settings::remote_settings::Error::AuthError,
-                                ) => {
-                                    eprintln!("You are not logged in to Fig");
-                                    eprintln!("Run {} to login", "fig login".magenta().bold());
-                                    exit(1);
+                            1 => {
+                                println!("Removing: {:?}", keys_to_remove[0]);
+                            }
+                            _ => {
+                                println!("Removing:");
+                                for key in &keys_to_remove {
+                                    println!("  - {key}");
                                 }
-                                err => Err(err.into()),
-                            },
+                            }
                         }
+
+                        let futures = keys_to_remove
+                            .into_iter()
+                            .map(fig_settings::settings::remove_value)
+                            .collect::<Vec<_>>();
+
+                        let join = futures::future::join_all(futures).await;
+
+                        for result in join {
+                            if let Err(err) = result {
+                                match err {
+                                    fig_settings::Error::RemoteSettingsError(
+                                        fig_settings::remote_settings::Error::AuthError,
+                                    ) => {
+                                        eprintln!("You are not logged in to Fig");
+                                        eprintln!("Run {} to login", "fig login".magenta().bold());
+                                        exit(1);
+                                    }
+                                    err => return Err(err.into()),
+                                }
+                            }
+                        }
+
+                        Ok(())
                     }
                     _ => Ok(()),
                 },

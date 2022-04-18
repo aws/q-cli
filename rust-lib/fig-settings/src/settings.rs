@@ -15,6 +15,10 @@ pub fn local_settings() -> Result<LocalSettings, super::Error> {
     LocalSettings::load(path)
 }
 
+pub fn get_map() -> Result<Option<serde_json::Map<String, serde_json::Value>>, super::Error> {
+    Ok(local_settings()?.to_inner().as_object().cloned())
+}
+
 pub async fn set_value(
     key: impl Into<String>,
     value: impl Into<serde_json::Value>,
