@@ -60,7 +60,7 @@ fn guard_source(
     output.join("\n")
 }
 
-fn shell_init(shell: &Shell, when: &When, rcfile: Option<String>) -> Result<String> {
+fn shell_init(shell: &Shell, when: &When, _rcfile: Option<String>) -> Result<String> {
     let should_source = fig_settings::state::get_bool_or("shell-integrations.enabled", true);
 
     if !should_source {
@@ -73,16 +73,7 @@ fn shell_init(shell: &Shell, when: &When, rcfile: Option<String>) -> Result<Stri
         ));
     }
 
-    match (shell, when, rcfile.as_deref()) {
-        (Shell::Zsh, When::Post, Some("zprofile"))
-        | (Shell::Bash, When::Post, Some("profile"))
-        | (Shell::Bash, When::Post, Some("bash_profile")) => {
-            return Ok("".to_owned());
-        }
-        _ => {}
-    }
-
-    let mut to_source = String::new();
+    let mut to_source = Vec::new();
 
     if let When::Post = when {
         let should_source_dotfiles = fig_settings::state::get_bool_or("dotfiles.enabled", true);
@@ -101,7 +92,7 @@ fn shell_init(shell: &Shell, when: &When, rcfile: Option<String>) -> Result<Stri
             };
 
             if let Some(source) = get_dotfile_source() {
-                to_source.push_str(&guard_source(
+                to_source.push(guard_source(
                     shell,
                     false,
                     "FIG_DOTFILES_SOURCED",
@@ -123,15 +114,15 @@ fn shell_init(shell: &Shell, when: &When, rcfile: Option<String>) -> Result<Stri
                 && !has_see_onboarding
                 && [Some(Terminal::Iterm), Some(Terminal::TerminalApp)].contains(&terminal)
             {
-                to_source.push_str(match shell {
-                    Shell::Bash | Shell::Zsh => "(fig restart daemon &> /dev/null &)\n",
-                    Shell::Fish => "begin; fig restart daemon &> /dev/null &; end\n",
+                to_source.push(match shell {
+                    Shell::Bash | Shell::Zsh => "(fig restart daemon &> /dev/null &)".into(),
+                    Shell::Fish => "begin; fig restart daemon &> /dev/null &; end".into(),
                 });
 
-                to_source.push_str("fig app onboarding\n")
+                to_source.push("fig app onboarding".into())
             } else {
                 // not showing onboarding
-                to_source.push_str(&guard_source(
+                to_source.push(guard_source(
                     shell,
                     false,
                     "FIG_CHECKED_PROMPTS",
@@ -151,12 +142,11 @@ fn shell_init(shell: &Shell, when: &When, rcfile: Option<String>) -> Result<Stri
         // JediTerm does not launch as a 'true' login shell, so our normal "shopt -q login_shell" check does not work.
         // Thus, FIG_IS_LOGIN_SHELL will be incorrect. We must manually set it so the user's bash_profile is sourced.
         // https://github.com/JetBrains/intellij-community/blob/master/plugins/terminal/resources/jediterm-bash.in
-        to_source.push_str("FIG_IS_LOGIN_SHELL=1")
+        to_source.push("FIG_IS_LOGIN_SHELL=1".into())
     }
 
     let shell_integration_source = shell.get_fig_integration_source(when);
-    to_source.push('\n');
-    to_source.push_str(shell_integration_source);
+    to_source.push(shell_integration_source.into());
 
     if when == &When::Pre && is_jetbrains_terminal {
         // Manually call JetBrains shell integration after exec-ing to figterm.
@@ -186,7 +176,7 @@ fn shell_init(shell: &Shell, when: &When, rcfile: Option<String>) -> Result<Stri
         };
 
         if let Some(source) = get_jetbrains_source {
-            to_source.push_str(&guard_source(
+            to_source.push(guard_source(
                 shell,
                 false,
                 "FIG_JETBRAINS_SHELL_INTEGRATION",
@@ -207,7 +197,7 @@ fn shell_init(shell: &Shell, when: &When, rcfile: Option<String>) -> Result<Stri
             if terminal.is_input_dependant() && prompt_count < 2 {
                 fig_settings::state::set_value(&prompt_state_key, prompt_count + 1)?;
 
-                to_source.push_str(&guard_source(
+                to_source.push(guard_source(
                     shell,
                     false,
                     "FIG_INPUT_METHOD_PROMPT",
@@ -230,7 +220,7 @@ fn shell_init(shell: &Shell, when: &When, rcfile: Option<String>) -> Result<Stri
         let fools_cmd = format!(
             "fig _ animation -f random --before-text \"Loading Terminal Reactions™️ by Fig...\" --after-text \"{after_text}\"\nreturn 127");
 
-        to_source.push_str(&guard_source(
+        to_source.push(guard_source(
             shell,
             false,
             "FIG_APRIL_FOOLS_GUARD",
@@ -243,7 +233,7 @@ fn shell_init(shell: &Shell, when: &When, rcfile: Option<String>) -> Result<Stri
         ));
     }
 
-    Ok(to_source)
+    Ok(to_source.join("\n"))
 }
 
 pub async fn shell_init_cli(shell: &Shell, when: &When, rcfile: Option<String>) -> Result<()> {
