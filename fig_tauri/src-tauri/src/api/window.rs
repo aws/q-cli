@@ -61,7 +61,7 @@ pub async fn position_window(request: PositionWindowRequest, _message_id: i64) -
             .unwrap();
 
         if size.height == 1.0 {
-            window.hide().expect("Failed to hide Tauri window");
+            // window.hide().expect("Failed to hide Tauri window");
         } else {
             window.show().expect("Failed to show Tauri window");
         }

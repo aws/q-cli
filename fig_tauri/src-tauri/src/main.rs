@@ -4,6 +4,7 @@
 )]
 
 mod api;
+mod icons;
 mod local;
 mod os;
 mod state;
@@ -51,6 +52,7 @@ fn main() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![api::handle_api_request])
+        .register_uri_scheme_protocol("fig", icons::handle)
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
