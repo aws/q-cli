@@ -1,3 +1,11 @@
+pub mod debugger;
+mod fs;
+mod notifications;
+mod process;
+mod settings;
+mod telemetry;
+pub mod window;
+
 use crate::utils::truncate_string;
 use bytes::BytesMut;
 use fig_proto::fig::client_originated_message::Submessage as ClientOriginatedSubMessage;
@@ -9,13 +17,6 @@ use fig_proto::{
 use serde::Serialize;
 use tauri::Window;
 use tracing::warn;
-
-pub mod debugger;
-mod fs;
-mod notifications;
-mod process;
-mod settings;
-pub mod window;
 
 const FIG_GLOBAL_ERROR_OCCURRED: &str = "FigGlobalErrorOccurred";
 pub const FIG_PROTO_MESSAGE_RECIEVED: &str = "FigProtoMessageRecieved";
@@ -90,6 +91,10 @@ async fn handle_request(data: Vec<u8>) -> Result<BytesMut, ApiRequestError> {
         PseudoterminalWriteRequest => process::write
         /* window */
         PositionWindowRequest => window::position_window
+        /* telemetry */
+        TelemetryAliasRequest => telemetry::handle_alias_request
+        TelemetryIdentifyRequest => telemetry::handle_identify_request
+        TelemetryTrackRequest => telemetry::handle_track_request
         /* debugger */
         DebuggerUpdateRequest => debugger::update
     }

@@ -1,5 +1,5 @@
 use fig_directories::home_dir;
-use fig_telemetry::Source;
+use fig_telemetry::{TrackEvent, TrackSource};
 use std::path::{Path, PathBuf};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tracing::{error, info};
@@ -25,30 +25,19 @@ async fn remove_in_dir_with_prefix(dir: &Path, prefix: &str) {
 pub async fn uninstall_mac_app() {
     // TODO: mirror mac app logic and use this as source of truth.
     // Send uninstall telemetry event
-    let tel_join = tokio::task::spawn(async {
-        match fig_telemetry::SegmentEvent::new("Uninstall App") {
-            Ok(mut event) => {
-                if let Err(err) = event.add_default_properties(if *IS_RUNNING_DAEMON.lock() {
-                    Source::Daemon
-                } else {
-                    Source::Cli
-                }) {
-                    error!(
-                        "Could not add default properties to telemetry event: {}",
-                        err
-                    );
-                }
+    let track_source = match *IS_RUNNING_DAEMON.lock() {
+        true => TrackSource::Daemon,
+        false => TrackSource::Cli,
+    };
 
-                event.add_property("source", "fig app uninstall");
-
-                if let Err(err) = event.send_event().await {
-                    error!("Could not send telemetry event: {}", err);
-                }
-            }
-            Err(err) => {
-                error!("Could not send uninstall app telemetry: {}", err);
-            }
-        }
+    let tel_join = tokio::task::spawn(async move {
+        fig_telemetry::emit_track(
+            TrackEvent::UninstallApp,
+            track_source,
+            [("source", "fig app uninstall")],
+        )
+        .await
+        .ok();
     });
 
     // NSWorkspace.shared.open(
