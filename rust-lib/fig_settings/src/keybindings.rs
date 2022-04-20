@@ -12,7 +12,7 @@ pub enum Error {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum Avaiability {
+pub enum Availability {
     WhenFocused,
     Always,
 }
@@ -24,7 +24,7 @@ pub struct KeyBinding {
     pub name: Option<String>,
     pub description: Option<String>,
     pub category: Option<String>,
-    pub availability: Option<Avaiability>,
+    pub availability: Option<Availability>,
     pub default_bindings: Option<Vec<String>>,
 }
 
@@ -64,7 +64,7 @@ mod test {
             Some("Insert selected suggestion".to_string())
         );
         assert_eq!(json.0[0].category, Some("Insertion".to_string()));
-        assert_eq!(json.0[0].availability, Some(Avaiability::WhenFocused));
+        assert_eq!(json.0[0].availability, Some(Availability::WhenFocused));
         assert_eq!(json.0[0].default_bindings, Some(vec!["enter".to_string()]));
     }
 }
