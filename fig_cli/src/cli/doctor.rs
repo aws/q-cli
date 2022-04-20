@@ -3,12 +3,10 @@ use crate::{
         diagnostics::{dscl_read, verify_integration},
         util::OSVersion,
     },
-    integrations::{shell::ShellIntegration, InstallationError},
+    integrations::InstallationError,
     util::{
         app_path_from_bundle_id, get_shell, glob, glob_dir, is_executable_in_path, launch_fig,
-        shell::Shell,
-        shell_integration::{InstallationError, ShellIntegration},
-        terminal::Terminal, LaunchOptions,
+        shell::Shell, shell_integration::ShellIntegration, LaunchOptions,
     },
 };
 
@@ -26,7 +24,7 @@ use fig_proto::{
     local::DiagnosticsResponse,
     FigProtobufEncodable,
 };
-use fig_telemetry::Source;
+use fig_telemetry::{TrackEvent, TrackSource};
 use fig_util::Terminal;
 use regex::Regex;
 use semver::Version;
@@ -932,7 +930,7 @@ dev_mode_check!(
 struct FigCLIPathCheck;
 
 #[async_trait]
-impl DoctorCheck<DiagnosticsResponse> for FigCliPathCheck {
+impl DoctorCheck<DiagnosticsResponse> for FigCLIPathCheck {
     fn name(&self) -> Cow<'static, str> {
         "Fig CLI path".into()
     }
@@ -1446,32 +1444,20 @@ where
         }
 
         if let Err(err) = &result {
-            match fig_telemetry::SegmentEvent::new("Doctor Error") {
-                Ok(mut event) => {
-                    if let Err(err) = event.add_default_properties(Source::Cli) {
-                        error!(
-                            "Could not add default properties to telemetry event: {}",
-                            err
-                        );
-                    }
+            let mut properties: Vec<(&str, &str)> = vec![];
+            let analytics_event_name = check.analytics_event_name();
+            properties.push(("check", &analytics_event_name));
+            properties.push(("cli_version", env!("CARGO_PKG_VERSION")));
 
-                    event.add_property("check", check.analytics_event_name());
-                    event.add_property("cli_version", env!("CARGO_PKG_VERSION"));
-
-                    match err {
-                        DoctorError::Warning(info) | DoctorError::Error { reason: info, .. } => {
-                            event.add_property("info", &**info);
-                        }
-                    }
-
-                    if let Err(err) = event.send_event().await {
-                        error!("Could not send telemetry event: {}", err);
-                    }
-                }
-                Err(err) => {
-                    error!("Could not send doctor error telemetry: {}", err);
+            match err {
+                DoctorError::Warning(info) | DoctorError::Error { reason: info, .. } => {
+                    properties.push(("info", &**info));
                 }
             }
+
+            fig_telemetry::emit_track(TrackEvent::DoctorError, TrackSource::Cli, properties)
+                .await
+                .context(format!("Could not send doctor error telemetry: {}", err))?;
         }
 
         if let Err(DoctorError::Error { reason, fix, .. }) = result {
@@ -1512,7 +1498,7 @@ async fn get_shell_context() -> Result<Option<Shell>> {
 }
 
 async fn get_terminal_context() -> Result<Option<Terminal>> {
-    Ok(Terminal::get_current_terminal())
+    Ok(Terminal::parent_terminal())
 }
 
 async fn get_null_context() -> Result<()> {
@@ -1660,7 +1646,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
                     &ShellCompatibilityCheck {},
                     &BundlePathCheck {},
                     &AutocompleteEnabledCheck {},
-                    &FigCliPathCheck {},
+                    &FigCLIPathCheck {},
                     &AccessibilityCheck {},
                     &SecureKeyboardCheck {},
                     &DotfilesSymlinkedCheck {},

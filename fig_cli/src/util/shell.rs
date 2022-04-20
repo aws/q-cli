@@ -5,10 +5,11 @@ use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use std::{fmt::Display, path::PathBuf, str::FromStr};
 
-use crate::integrations::shell::{
+use crate::util::get_parent_process_exe;
+
+use super::shell_integration::{
     DotfileShellIntegration, ShellIntegration, ShellScriptShellIntegration, When,
 };
-use crate::util::get_parent_process_exe;
 
 /// Shells supported by Fig
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, ArgEnum)]

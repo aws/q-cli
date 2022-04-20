@@ -1,4 +1,3 @@
-pub mod shell;
 pub mod ssh;
 
 use anyhow::{Context, Result};

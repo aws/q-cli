@@ -1,8 +1,7 @@
-use clap::ArgEnum;
 use serde::{Deserialize, Serialize};
 
 /// Terminals supported by Fig
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, ArgEnum)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Terminal {
     /// iTerm 2
@@ -48,7 +47,7 @@ impl std::fmt::Display for Terminal {
 }
 
 impl Terminal {
-    pub fn current_terminal() -> Option<Self> {
+    pub fn parent_terminal() -> Option<Self> {
         match std::env::var("TERM_PROGRAM").ok().as_deref() {
             Some("iTerm.app") => Some(Terminal::Iterm),
             Some("Apple_Terminal") => Some(Terminal::TerminalApp),

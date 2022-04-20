@@ -1,6 +1,6 @@
 use crate::{
     dotfiles::api::DotfileData,
-    util::{app_path_from_bundle_id, shell::Shell, shell_integration::When, terminal::Terminal},
+    util::{app_path_from_bundle_id, shell::Shell, shell_integration::When},
 };
 use anyhow::{Context, Result};
 use crossterm::{style::Stylize, tty::IsTty};
@@ -117,7 +117,7 @@ fn shell_init(shell: &Shell, when: &When, rcfile: Option<String>) -> Result<Stri
             let has_see_onboarding: bool =
                 fig_settings::state::get_bool_or("user.onboarding", true);
 
-            let terminal = Terminal::get_current_terminal();
+            let terminal = Terminal::parent_terminal();
 
             if is_logged_in()
                 && !has_see_onboarding
@@ -200,7 +200,7 @@ fn shell_init(shell: &Shell, when: &When, rcfile: Option<String>) -> Result<Stri
         && !fig_settings::state::get_bool_or("input-method.enabled", false)
         && !fig_settings::settings::get_bool_or("integrations.experimental", false)
     {
-        if let Some(terminal) = Terminal::get_current_terminal() {
+        if let Some(terminal) = Terminal::parent_terminal() {
             let prompt_state_key = format!("prompt.input-method.{}.count", terminal.internal_id());
             let prompt_count = fig_settings::state::get_int_or(&prompt_state_key, 0);
 
