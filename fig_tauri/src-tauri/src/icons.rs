@@ -81,7 +81,7 @@ pub fn handle<R: Runtime>(
 
     if domain == Some("template") {
         // TODO(mia): implement
-    } else if domain == Some("icon") {
+    } else if domain == Some("icon") || domain == Some("asset") {
         if let Some(name) = pairs.get("asset").or_else(|| pairs.get("type")) {
             response.replace(build_asset(name));
         }
