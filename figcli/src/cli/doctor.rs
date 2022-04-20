@@ -18,6 +18,7 @@ use crossterm::{
     style::Stylize,
     terminal::{disable_raw_mode, enable_raw_mode, Clear, ClearType},
 };
+use fig_directories::home_dir;
 use fig_ipc::{connect_timeout, get_fig_socket_path, send_recv_message};
 use fig_proto::{
     daemon::diagnostic_response::{settings_watcher_status, websocket_status},
@@ -716,11 +717,22 @@ struct DotfileCheck {
 #[async_trait]
 impl DoctorCheck<Option<Shell>> for DotfileCheck {
     fn name(&self) -> Cow<'static, str> {
-        format!(
-            "{} contains valid fig hooks",
-            self.integration.path().display()
-        )
-        .into()
+        let path = home_dir()
+            .and_then(|home_dir| {
+                self.integration
+                    .path()
+                    .strip_prefix(&home_dir)
+                    .ok()
+                    .map(PathBuf::from)
+            })
+            .map(|path| format!("~/{}", path.display()))
+            .unwrap_or_else(|| self.integration.path().display().to_string());
+
+        format!("{} contains valid fig hooks", path).into()
+    }
+
+    fn analytics_event_name(&self) -> String {
+        format!("dotfile_check_{}", self.integration.file_name())
     }
 
     fn get_type(&self, current_shell: &Option<Shell>) -> DoctorCheckType {
