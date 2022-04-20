@@ -78,6 +78,7 @@ impl ToString for TrackEvent {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TrackSource {
+    App,
     Cli,
     Daemon,
 }
@@ -85,14 +86,15 @@ pub enum TrackSource {
 impl std::fmt::Display for TrackSource {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Cli => f.write_str("cli"),
-            Self::Daemon => f.write_str("daemon"),
+            Self::App => write!(f, "app"),
+            Self::Cli => write!(f, "cli"),
+            Self::Daemon => write!(f, "daemon"),
         }
     }
 }
 
 pub async fn emit_track<'a, I, T>(
-    event: TrackEvent,
+    event: String,
     source: TrackSource,
     properties: I,
 ) -> Result<(), Error>
