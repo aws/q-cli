@@ -778,9 +778,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "3.1.9"
+version = "3.1.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6aad2534fad53df1cc12519c5cda696dd3e20e6118a027e24054aea14a0bdcbe"
+checksum = "3124f3f75ce09e22d1410043e1e24f2ecc44fad3afe4f08408f1f7663d68da2b"
 dependencies = [
  "atty",
  "bitflags",
@@ -795,20 +795,20 @@ dependencies = [
 
 [[package]]
 name = "clap_complete"
-version = "3.1.1"
+version = "3.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "df6f3613c0a3cddfd78b41b10203eb322cb29b600cbdf808a7d3db95691b8e25"
+checksum = "1506b87ee866f7a53a5131f7b31fba656170d797e873d0609884cfd56b8bbda8"
 dependencies = [
- "clap 3.1.9",
+ "clap 3.1.10",
 ]
 
 [[package]]
 name = "clap_complete_fig"
-version = "3.1.4"
+version = "3.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "690eb5abb7a98df1a64a3028beaf95af7e0ceb13da3186e6d0a86161af76309e"
+checksum = "3918ed0e233c37ab6055a2dc4b2bad2e113d44f56675e0140936b9bd253e4505"
 dependencies = [
- "clap 3.1.9",
+ "clap 3.1.10",
  "clap_complete",
 ]
 
@@ -1592,7 +1592,7 @@ dependencies = [
  "async-trait",
  "bitflags",
  "cfg-if 1.0.0",
- "clap 3.1.9",
+ "clap 3.1.10",
  "clap_complete",
  "clap_complete_fig",
  "copypasta",
@@ -1713,6 +1713,7 @@ dependencies = [
 name = "fig_settings"
 version = "0.1.0"
 dependencies = [
+ "bitflags",
  "fig_auth",
  "fig_directories",
  "futures",
@@ -1739,7 +1740,9 @@ dependencies = [
  "fig_proto",
  "fig_settings",
  "fig_telemetry",
+ "fnv",
  "hashbrown 0.12.0",
+ "image",
  "once_cell",
  "parking_lot 0.12.0",
  "serde",
@@ -1749,6 +1752,7 @@ dependencies = [
  "tauri-build",
  "tokio",
  "tracing",
+ "url",
  "windows 0.35.0",
 ]
 
@@ -1768,7 +1772,7 @@ dependencies = [
 name = "fig_util"
 version = "0.1.0"
 dependencies = [
- "clap 3.1.9",
+ "clap 3.1.10",
  "fig_directories",
  "fig_settings",
  "serde",
@@ -1784,8 +1788,9 @@ version = "4.3.0"
 dependencies = [
  "alacritty_terminal",
  "anyhow",
+ "bitflags",
  "bytes",
- "clap 3.1.9",
+ "clap 3.1.10",
  "crossbeam",
  "dashmap",
  "fig_auth",
@@ -3496,15 +3501,15 @@ dependencies = [
 
 [[package]]
 name = "ndk-context"
-version = "0.1.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4e3c5cc68637e21fe8f077f6a1c9e0b9ca495bb74895226b476310f613325884"
+checksum = "27b02d87554356db9e9a873add8782d4ea6e3e58ea071a9adb9a2e8ddb884a8b"
 
 [[package]]
 name = "ndk-glue"
-version = "0.4.1"
+version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9b1454575120e3265d2442222299c711ace58ba417532ee4f0fc71b860016b93"
+checksum = "3648f3609716eb7dbf5f5b5d4b84fcd67dd4c34efcdb12e4a6c0929c2ac48349"
 dependencies = [
  "lazy_static 1.4.0",
  "libc",
@@ -6376,7 +6381,7 @@ name = "viu"
 version = "1.4.0"
 dependencies = [
  "anes",
- "clap 3.1.9",
+ "clap 3.1.10",
  "crossterm 0.22.1",
  "ctrlc",
  "image",

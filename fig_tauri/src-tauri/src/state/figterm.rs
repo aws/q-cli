@@ -34,7 +34,7 @@ pub struct FigtermState {
     /// The most recent `[FigtermSessionId]` to be used.
     pub most_recent: RwLock<Option<FigtermSessionId>>,
     /// The list of `[FigtermSession]`s.
-    pub sessions: DashMap<FigtermSessionId, FigTermSession>,
+    pub sessions: DashMap<FigtermSessionId, FigTermSession, fnv::FnvBuildHasher>,
 }
 
 impl FigtermState {
@@ -68,8 +68,8 @@ impl FigtermState {
     pub fn with_mut(&self, key: FigtermSessionId, f: impl FnOnce(&mut FigTermSession)) -> bool {
         match self.sessions.get_mut(&key) {
             Some(mut session) => {
-                f(&mut *session);
                 self.set_most_recent_session(key);
+                f(&mut *session);
                 true
             }
             None => false,

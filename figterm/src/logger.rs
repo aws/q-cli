@@ -1,5 +1,3 @@
-//! [log] logger
-
 use anyhow::{Context, Result};
 use fig_directories::fig_dir;
 use once_cell::sync::Lazy;

@@ -4,12 +4,48 @@ use crate::{api::window::update_app_positioning, local::figterm::ensure_figterm,
 use anyhow::Result;
 use bytes::BytesMut;
 use fig_proto::fig::server_originated_message::Submessage as ServerOriginatedSubMessage;
-use fig_proto::local::FocusChangeHook;
+use fig_proto::fig::KeyEvent;
+use fig_proto::local::{FocusChangeHook, PreExecHook};
 use fig_proto::{
-    fig::{EditBufferChangedNotification, Notification, NotificationType, ServerOriginatedMessage},
-    local::{CursorPositionHook, EditBufferHook, PromptHook},
+    fig::{
+        EditBufferChangedNotification, KeybindingPressedNotification, Notification,
+        NotificationType, ServerOriginatedMessage,
+    },
+    local::{CursorPositionHook, EditBufferHook, InterceptedKeyHook, PromptHook},
     prost::Message,
 };
+use tracing::debug;
+
+pub async fn send_notification(
+    notification_type: &NotificationType,
+    notification: Notification,
+) -> Result<()> {
+    let message_id = match STATE.subscriptions.get(notification_type) {
+        Some(id) => *id,
+        None => {
+            return Ok(());
+        }
+    };
+
+    let message = ServerOriginatedMessage {
+        id: Some(message_id),
+        submessage: Some(ServerOriginatedSubMessage::Notification(notification)),
+    };
+
+    let mut encoded = BytesMut::new();
+    message.encode(&mut encoded).unwrap();
+
+    let window = (*STATE.window.read().unwrap())
+        .clone()
+        .expect("Failed to access Tauri window");
+    window
+        .emit(FIG_PROTO_MESSAGE_RECIEVED, base64::encode(encoded))
+        .expect("Failed to emit edit buffer notification");
+
+    update_app_positioning((*STATE.anchor.read().unwrap()).clone());
+
+    Ok(())
+}
 
 pub async fn edit_buffer(hook: EditBufferHook) -> Result<()> {
     let session_id = FigtermSessionId(hook.context.clone().unwrap().session_id.unwrap());
@@ -74,5 +110,34 @@ pub async fn prompt(_: PromptHook) -> Result<()> {
 }
 
 pub async fn focus_change(_: FocusChangeHook) -> Result<()> {
+    Ok(())
+}
+
+pub async fn pre_exec(_: PreExecHook) -> Result<()> {
+    Ok(())
+}
+
+pub async fn intercepted_key(intercepted_key_hook: InterceptedKeyHook) -> Result<()> {
+    debug!("Intercepted Key Action: {:?}", intercepted_key_hook.action);
+
+    send_notification(
+        &NotificationType::NotifyOnKeybindingPressed,
+        Notification {
+            r#type: Some(
+                fig_proto::fig::notification::Type::KeybindingPressedNotification(
+                    KeybindingPressedNotification {
+                        keypress: Some(KeyEvent {
+                            characters: Some(intercepted_key_hook.key),
+                            ..Default::default()
+                        }),
+                        action: Some(intercepted_key_hook.action),
+                    },
+                ),
+            ),
+        },
+    )
+    .await
+    .unwrap();
+
     Ok(())
 }

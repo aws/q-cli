@@ -1,0 +1,136 @@
+[
+  {
+    "identifier": "insertSelected",
+    "name": "Insert selected",
+    "description": "Insert selected suggestion",
+    "category": "Insertion",
+    "availability": "WHEN_FOCUSED",
+    "defaultBindings": ["enter"]
+  },
+  {
+    "identifier": "insertCommonPrefix",
+    "name": "Insert common prefix",
+    "description": "Insert shared prefix of available suggestions. Shake if there's no common prefix.",
+    "category": "Insertion",
+    "availability": "WHEN_FOCUSED",
+    "defaultBindings": ["tab"]
+  },
+  {
+    "identifier": "insertCommonPrefixOrNavigateDown",
+    "name": "Insert common prefix or navigate",
+    "description": "Insert shared prefix of available suggestions. Navigate if there's no common prefix.",
+    "category": "Insertion",
+    "availability": "WHEN_FOCUSED"
+  },
+  {
+    "identifier": "insertCommonPrefixOrInsertSelected",
+    "name": "Insert common prefix or insert selected",
+    "description": "Insert shared prefix of available suggestions. Insert currently selected suggestion if there's not common prefix.",
+    "category": "Insertion",
+    "availability": "WHEN_FOCUSED"
+  },
+  {
+    "identifier": "insertSelectedAndExecute",
+    "name": "Insert selected and execute",
+    "description": "Insert selected suggestion and then execute the current command.",
+    "category": "Insertion",
+    "availability": "WHEN_FOCUSED"
+  },
+  {
+    "identifier": "execute",
+    "name": "Execute",
+    "description": "Execute the current command.",
+    "category": "Insertion",
+    "availability": "WHEN_FOCUSED"
+  },
+  {
+    "identifier": "hideAutocomplete",
+    "name": "Hide autocomplete",
+    "description": "Hide the autocomplete window",
+    "category": "General",
+    "availability": "ALWAYS",
+    "defaultBindings": ["esc"]
+  },
+  {
+    "identifier": "showAutocomplete",
+    "name": "Show autocomplete",
+    "description": "Show the autocomplete window",
+    "category": "General",
+    "availability": "ALWAYS"
+  },
+  {
+    "identifier": "toggleAutocomplete",
+    "name": "Toggle autocomplete",
+    "description": "Toggle the visibility of the autocomplete window",
+    "availability": "ALWAYS"
+  },
+  {
+    "identifier": "navigateUp",
+    "name": "Navigate up",
+    "description": "Scroll up one entry in the list of suggestions",
+    "category": "Navigation",
+    "availability": "WHEN_FOCUSED",
+    "defaultBindings": ["shift+tab", "up", "control+k", "control+p"]
+  },
+  {
+    "identifier": "navigateDown",
+    "name": "Navigate down",
+    "description": "Scroll down one entry in the list of suggestions",
+    "category": "Navigation",
+    "availability": "WHEN_FOCUSED",
+    "defaultBindings": ["down", "control+j", "control+n"]
+  },
+  {
+    "identifier": "hideDescription",
+    "name": "Hide description popout",
+    "description": "Hide autocomplete description popout",
+    "category": "Appearance",
+    "availability": "WHEN_FOCUSED"
+  },
+  {
+    "identifier": "showDescription",
+    "name": "Show description popout",
+    "description": "Show autocomplete description popout",
+    "category": "Appearance",
+    "availability": "WHEN_FOCUSED"
+  },
+  {
+    "identifier": "toggleDescription",
+    "name": "Toggle description popout",
+    "description": "Toggle visibility of autocomplete description popout",
+    "category": "Appearance",
+    "availability": "WHEN_FOCUSED",
+    "defaultBindings": ["command+i"]
+  },
+  {
+    "identifier": "toggleHistoryMode",
+    "name": "Toggle history mode",
+    "description": "Toggle between history suggestions and Fig spec suggestions",
+    "category": "General",
+    "availability": "WHEN_FOCUSED",
+    "defaultBindings": ["control+r"]
+  },
+  {
+    "identifier": "toggleFuzzySearch",
+    "name": "Toggle fuzzy search",
+    "description": "Toggle between normal prefix search and fuzzy search",
+    "category": "General",
+    "availability": "WHEN_FOCUSED"
+  },
+  {
+    "identifier": "increaseSize",
+    "name": "Increase window size",
+    "description": "Increase the size of the autocomplete window",
+    "category": "Appearance",
+    "availability": "WHEN_FOCUSED",
+    "defaultBindings": ["command+="]
+  },
+  {
+    "identifier": "decreaseSize",
+    "name": "Decrease window size",
+    "description": "Decrease the size of the autocomplete window",
+    "category": "Appearance",
+    "availability": "WHEN_FOCUSED",
+    "defaultBindings": ["command+-"]
+  }
+]

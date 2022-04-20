@@ -19,6 +19,7 @@ base64 = "0.13.0"
 bytes = "1.1.0"
 cfg-if = "1.0.0"
 dashmap = "5.2.0"
+fnv = "1.0.7"
 fig_ipc = { path = "../../rust-lib/fig_ipc" }
 fig_log = { path = "../../rust-lib/fig_log" }
 fig_proto = { path = "../../rust-lib/fig_proto" }

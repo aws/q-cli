@@ -1,10 +1,12 @@
 pub mod debugger;
+pub mod figterm;
 mod fs;
 mod notifications;
 mod process;
+pub mod properties;
 mod settings;
-mod telemetry;
 pub mod window;
+mod telemetry;
 
 use crate::utils::truncate_string;
 use bytes::BytesMut;
@@ -97,6 +99,10 @@ async fn handle_request(data: Vec<u8>) -> Result<BytesMut, ApiRequestError> {
         TelemetryTrackRequest => telemetry::handle_track_request
         /* debugger */
         DebuggerUpdateRequest => debugger::update
+        /* properties */
+        UpdateApplicationPropertiesRequest => properties::update
+        /* figterm */
+        InsertTextRequest => figterm::insert_text
     }
     .unwrap_or_else(|s| s);
 
