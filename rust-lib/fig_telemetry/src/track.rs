@@ -34,6 +34,7 @@ pub enum TrackEvent {
     RunInstallationScript,
     TelemetryToggled,
     OpenedSettingsPage,
+    DoctorError,
 }
 
 impl ToString for TrackEvent {
@@ -69,6 +70,7 @@ impl ToString for TrackEvent {
             Self::RunInstallationScript => "Running Installation Script",
             Self::TelemetryToggled => "Toggled Telemetry",
             Self::OpenedSettingsPage => "Opened Settings Page",
+            Self::DoctorError => "Doctor Error",
         }
         .to_string()
     }
@@ -89,11 +91,15 @@ impl std::fmt::Display for TrackSource {
     }
 }
 
-pub async fn emit_track(
+pub async fn emit_track<'a, I, T>(
     event: TrackEvent,
     source: TrackSource,
-    properties: &HashMap<String, String>,
-) -> Result<(), Error> {
+    properties: I,
+) -> Result<(), Error>
+where
+    I: IntoIterator<Item = T>,
+    T: Into<(&'a str, &'a str)>,
+{
     if fig_settings::settings::get_bool("telemetry.disabled")
         .ok()
         .flatten()
@@ -131,7 +137,8 @@ pub async fn emit_track(
     );
 
     // Given properties
-    for (key, value) in properties {
+    for kv in properties.into_iter() {
+        let (key, value) = kv.into();
         track.insert(format!("prop_{key}"), value.into());
     }
 

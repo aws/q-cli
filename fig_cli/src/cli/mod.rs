@@ -24,8 +24,7 @@ pub mod util;
 use crate::{
     cli::util::dialoguer_theme,
     daemon::{daemon, get_daemon},
-    integrations::shell::When,
-    util::{is_app_running, launch_fig, shell::Shell, LaunchOptions},
+    util::{is_app_running, launch_fig, shell::Shell, shell_integration::When, LaunchOptions},
 };
 
 use anyhow::{Context, Result};
