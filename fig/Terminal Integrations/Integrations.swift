@@ -29,6 +29,8 @@ class Integrations {
   static let AppCode = "com.jetbrains.AppCode"
   static let Rider = "com.jetbrains.rider"
   static let CLion = "com.jetbrains.CLion"
+  static let RubyMine = "com.jetbrains.rubymine"
+  static let DataSpell = "com.jetbrains.dataspell"
   static let Nova = "com.panic.Nova"
   static let AndroidStudio = "com.google.android.studio"
   static let WezTerm = "com.github.wez.wezterm"
@@ -67,7 +69,8 @@ class Integrations {
     AppCode,
     Rider,
     CLion,
-    AndroidStudio
+    AndroidStudio,
+    RubyMine
   ]
   static let inputMethodDependentTerminals: Set = jetbrainIDEs.union([Alacritty, Kitty, Nova, WezTerm])
 
@@ -174,7 +177,8 @@ class Integrations {
     Integrations.CLion: JetBrainsIntegration.CLion,
     Integrations.Rider: JetBrainsIntegration.Rider,
     Integrations.AndroidStudio: JetBrainsIntegration.AndroidStudio
-
+    Integrations.RubyMine: JetBrainsIntegration.RubyMine,
+    Integrations.DataSpell: JetBrainsIntegration.DataSpell
   ]
 
   static let providers: [String: TerminalIntegrationProvider] = accessibilityDependentIntegrations.merging(inputMethodDependentIntegrations) { $1 }

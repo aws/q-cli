@@ -21,7 +21,8 @@ class JetBrainsIntegration: InputMethodDependentTerminalIntegrationProvider & In
   static let AppCode    = JetBrainsIntegration(bundleIdentifier: Integrations.AppCode)
   static let CLion      = JetBrainsIntegration(bundleIdentifier: Integrations.CLion)
   static let Rider      = JetBrainsIntegration(bundleIdentifier: Integrations.Rider)
-
+  static let RubyMine   = JetBrainsIntegration(bundleIdentifier: Integrations.RubyMine)
+  static let DataSpell  = JetBrainsIntegration(bundleIdentifier: Integrations.DataSpell)
   static let AndroidStudio =
     JetBrainsIntegration(bundleIdentifier: Integrations.AndroidStudio,
                          organization: "Google")
