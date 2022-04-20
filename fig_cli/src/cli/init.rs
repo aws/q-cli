@@ -3,7 +3,7 @@ use crate::{
     util::{app_path_from_bundle_id, shell::Shell, shell_integration::When},
 };
 use anyhow::{Context, Result};
-use crossterm::tty::IsTty;
+use crossterm::{style::Stylize, tty::IsTty};
 use fig_auth::is_logged_in;
 use fig_util::Terminal;
 
@@ -61,10 +61,7 @@ fn guard_source(
 }
 
 fn shell_init(shell: &Shell, when: &When, rcfile: Option<String>) -> Result<String> {
-    let should_source = fig_settings::state::get_bool("shell-integrations.enabled")
-        .ok()
-        .flatten()
-        .unwrap_or(true);
+    let should_source = fig_settings::state::get_bool_or("shell-integrations.enabled", true);
 
     if !should_source {
         return Ok(guard_source(
@@ -88,11 +85,7 @@ fn shell_init(shell: &Shell, when: &When, rcfile: Option<String>) -> Result<Stri
     let mut to_source = String::new();
 
     if let When::Post = when {
-        let should_source_dotfiles = fig_settings::state::get_bool("dotfiles.enabled")
-            .ok()
-            .flatten()
-            .unwrap_or(true);
-
+        let should_source_dotfiles = fig_settings::state::get_bool_or("dotfiles.enabled", true);
         if should_source_dotfiles {
             // Add dotfiles sourcing
             let get_dotfile_source = || {
@@ -121,12 +114,10 @@ fn shell_init(shell: &Shell, when: &When, rcfile: Option<String>) -> Result<Stri
         if stdin().is_tty() && env::var_os("PROCESS_LAUNCHED_BY_FIG").is_none() {
             // if no value, assume that we have seen onboarding already.
             // this is explictly set in onboarding in macOS app.
-            let has_see_onboarding: bool = fig_settings::state::get_bool("user.onboarding")
-                .ok()
-                .flatten()
-                .unwrap_or(true);
+            let has_see_onboarding: bool =
+                fig_settings::state::get_bool_or("user.onboarding", true);
 
-            let terminal = Terminal::current_terminal();
+            let terminal = Terminal::parent_terminal();
 
             if is_logged_in()
                 && !has_see_onboarding
@@ -205,12 +196,30 @@ fn shell_init(shell: &Shell, when: &When, rcfile: Option<String>) -> Result<Stri
         }
     }
 
-    // April Fools
-    if fig_settings::settings::get_bool("command-not-found.beta")
-        .ok()
-        .flatten()
-        .unwrap_or(false)
+    if when == &When::Post
+        && !fig_settings::state::get_bool_or("input-method.enabled", false)
+        && !fig_settings::settings::get_bool_or("integrations.experimental", false)
     {
+        if let Some(terminal) = Terminal::parent_terminal() {
+            let prompt_state_key = format!("prompt.input-method.{}.count", terminal.internal_id());
+            let prompt_count = fig_settings::state::get_int_or(&prompt_state_key, 0);
+
+            if terminal.is_input_dependant() && prompt_count < 2 {
+                fig_settings::state::set_value(&prompt_state_key, prompt_count + 1)?;
+
+                to_source.push_str(&guard_source(
+                    shell,
+                    false,
+                    "FIG_INPUT_METHOD_PROMPT",
+                    GuardAssignment::AfterSourcing,
+                    format!("printf '\\n🚀 Fig now supports {terminal} Terminal!\\nEnable integrations with {terminal} by running:\\n  {}\\n\\n'\n", "fig install --input-method".magenta()),
+                ));
+            }
+        }
+    }
+
+    // April Fools
+    if fig_settings::settings::get_bool_or("command-not-found.beta", false) {
         let after_text = format!("Command not found: {}\nTo disable Terminal Reactions™️ by Fig run: fig settings command-not-found.beta false", 
             match shell {
                 Shell::Bash | Shell::Zsh => "$0",

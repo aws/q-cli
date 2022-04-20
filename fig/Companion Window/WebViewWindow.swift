@@ -9,7 +9,12 @@
 import Cocoa
 
 class WebViewWindow: NSWindow {
-  init(viewController: NSViewController, shouldQuitAppOnClose: Bool = true, isLongRunningWindow: Bool = false) {
+  let restoreAccessoryPolicyOnClose: Bool
+  init(viewController: NSViewController,
+       shouldQuitAppOnClose: Bool = true,
+       isLongRunningWindow: Bool = false,
+       restoreAccessoryPolicyOnClose: Bool = false) {
+    self.restoreAccessoryPolicyOnClose = restoreAccessoryPolicyOnClose
     super.init(
       contentRect: NSRect(x: 0, y: 0, width: 520, height: 350),
       styleMask: [.fullSizeContentView, .resizable, .titled, .miniaturizable, .closable],
@@ -39,7 +44,9 @@ class WebViewWindow: NSWindow {
   }
 
   @objc func closeLongRunningWindow() {
-    NSApp.setActivationPolicy(.accessory)
+    if self.restoreAccessoryPolicyOnClose {
+      NSApp.setActivationPolicy(.accessory)
+    }
     self.orderOut(nil)
   }
 

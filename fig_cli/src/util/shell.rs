@@ -6,8 +6,9 @@ use serde::{Deserialize, Serialize};
 use std::{fmt::Display, path::PathBuf, str::FromStr};
 
 use crate::util::get_parent_process_exe;
-use crate::util::shell_integration::{
-    DotfileShellIntegration, IntegrationFileShellIntegration, ShellIntegration, When,
+
+use super::shell_integration::{
+    DotfileShellIntegration, ShellIntegration, ShellScriptShellIntegration, When,
 };
 
 /// Shells supported by Fig
@@ -116,12 +117,12 @@ impl Shell {
                     .map_or_else(|_| home_dir.join(".config").join("fish"), PathBuf::from)
                     .join("conf.d");
                 vec![
-                    Box::new(IntegrationFileShellIntegration {
+                    Box::new(ShellScriptShellIntegration {
                         when: When::Pre,
                         shell: *self,
                         path: fish_config_dir.join("00_fig_pre.fish"),
                     }),
-                    Box::new(IntegrationFileShellIntegration {
+                    Box::new(ShellScriptShellIntegration {
                         when: When::Post,
                         shell: *self,
                         path: fish_config_dir.join("99_fig_post.fish"),
@@ -135,28 +136,28 @@ impl Shell {
 
     pub fn get_fig_integration_source(&self, when: &When) -> &'static str {
         match (self, when) {
-            (Shell::Fish, When::Pre) => include_str!("../integrations/shell/pre.fish"),
-            (Shell::Fish, When::Post) => include_str!("../integrations/shell/post.fish"),
-            (Shell::Zsh, When::Pre) => include_str!("../integrations/shell/pre.sh"),
-            (Shell::Zsh, When::Post) => include_str!("../integrations/shell/post.zsh"),
+            (Shell::Fish, When::Pre) => include_str!("../integrations/shell/scripts/pre.fish"),
+            (Shell::Fish, When::Post) => include_str!("../integrations/shell/scripts/post.fish"),
+            (Shell::Zsh, When::Pre) => include_str!("../integrations/shell/scripts/pre.sh"),
+            (Shell::Zsh, When::Post) => include_str!("../integrations/shell/scripts/post.zsh"),
             (Shell::Bash, When::Pre) => {
                 concat!(
                     "function __fig_source_bash_preexec() {\n",
-                    include_str!("../integrations/shell/bash-preexec.sh"),
+                    include_str!("../integrations/shell/scripts/bash-preexec.sh"),
                     "\n}\n\
                     __fig_source_bash_preexec\n\
                     function __bp_adjust_histcontrol() { :; }\n",
-                    include_str!("../integrations/shell/pre.sh")
+                    include_str!("../integrations/shell/scripts/pre.sh")
                 )
             }
             (Shell::Bash, When::Post) => {
                 concat!(
                     "function __fig_source_bash_preexec() {\n",
-                    include_str!("../integrations/shell/bash-preexec.sh"),
+                    include_str!("../integrations/shell/scripts/bash-preexec.sh"),
                     "\n}\n\
                     __fig_source_bash_preexec\n\
                     function __bp_adjust_histcontrol() { :; }\n",
-                    include_str!("../integrations/shell/post.bash")
+                    include_str!("../integrations/shell/scripts/post.bash")
                 )
             }
         }

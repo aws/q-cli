@@ -2,6 +2,8 @@
 
 use std::path::Path;
 
+use crate::cli::ssh::get_ssh_config_path;
+use crate::integrations::{ssh::SshIntegration, Integration};
 use anyhow::{Context, Result};
 use crossterm::style::Stylize;
 use self_update::update::UpdateStatus;
@@ -15,6 +17,7 @@ bitflags::bitflags! {
         const DAEMON   = 0b00000001;
         const DOTFILES = 0b00000010;
         const BINARY   = 0b00000100;
+        const SSH      = 0b00001000;
     }
 }
 
@@ -73,6 +76,16 @@ pub fn install_cli(
         }
     }
 
+    /*
+     * Disable ssh by default for now.
+    if install_components.contains(InstallComponents::SSH) {
+        let ssh_integration = SshIntegration { path: get_ssh_config_path()? };
+        if let Err(e) = ssh_integration.install(None) {
+            println!("{}\n {}", "Failed to install SSH integration.".bold(), e);
+        }
+    }
+    */
+
     if install_components.contains(InstallComponents::DAEMON) {
         daemon::install_daemon()?;
     }
@@ -125,6 +138,15 @@ pub fn uninstall_cli(install_components: InstallComponents) -> Result<()> {
         Ok(())
     };
 
+    let ssh_result = if install_components.contains(InstallComponents::SSH) {
+        let ssh_integration = SshIntegration {
+            path: get_ssh_config_path()?,
+        };
+        ssh_integration.uninstall()
+    } else {
+        Ok(())
+    };
+
     if install_components.contains(InstallComponents::BINARY) {
         let local_path = fig_directories::home_dir()
             .context("Could not find home directory")?
@@ -143,7 +165,7 @@ pub fn uninstall_cli(install_components: InstallComponents) -> Result<()> {
         println!("\n{}\n", "Fig binary has been uninstalled".bold())
     }
 
-    daemon_result.and(dotfiles_result)
+    daemon_result.and(dotfiles_result).and(ssh_result)
 }
 
 fn uninstall_daemon() -> Result<()> {

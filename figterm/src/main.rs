@@ -528,7 +528,10 @@ fn figterm_main() -> Result<()> {
                                     }
                                     Err(err) => {
                                         error!("Failed to read from master: {}", err);
-                                        Err(err.into())
+                                        if let Err(e) = tcsetattr(STDIN_FILENO, SetArg::TCSAFLUSH, &old_termios) {
+                                            error!("Failed to restore terminal settings: {}", e);
+                                        }
+                                        std::process::exit(0);
                                     }
                                 }
                             }

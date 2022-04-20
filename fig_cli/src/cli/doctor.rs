@@ -3,11 +3,10 @@ use crate::{
         diagnostics::{dscl_read, verify_integration},
         util::OSVersion,
     },
+    integrations::InstallationError,
     util::{
         app_path_from_bundle_id, get_shell, glob, glob_dir, is_executable_in_path, launch_fig,
-        shell::Shell,
-        shell_integration::{InstallationError, ShellIntegration},
-        LaunchOptions,
+        shell::Shell, shell_integration::ShellIntegration, LaunchOptions,
     },
 };
 
@@ -25,7 +24,7 @@ use fig_proto::{
     local::DiagnosticsResponse,
     FigProtobufEncodable,
 };
-use fig_telemetry::Source;
+use fig_telemetry::{TrackEvent, TrackSource};
 use fig_util::Terminal;
 use regex::Regex;
 use semver::Version;
@@ -891,10 +890,47 @@ impl DoctorCheck<DiagnosticsResponse> for AutocompleteEnabledCheck {
     }
 }
 
-struct FigCliPathCheck;
+macro_rules! dev_mode_check {
+    ($struct_name:ident, $check_name:expr, $settings_module:ident, $setting_name:expr) => {
+        struct $struct_name;
+
+        #[async_trait]
+        impl DoctorCheck for $struct_name {
+            fn name(&self) -> Cow<'static, str> {
+                $check_name.into()
+            }
+
+            async fn check(&self, _: &()) -> Result<(), DoctorError> {
+                if let Ok(Some(true)) = fig_settings::$settings_module::get_bool($setting_name) {
+                    Err(DoctorError::Warning(
+                        concat!($setting_name, " is enabled").into(),
+                    ))
+                } else {
+                    Ok(())
+                }
+            }
+        }
+    };
+}
+
+dev_mode_check!(
+    AutocompleteDevModeCheck,
+    "Autocomplete dev mode",
+    settings,
+    "autocomplete.developerMode"
+);
+
+dev_mode_check!(
+    PluginDevModeCheck,
+    "Plugin dev mode",
+    state,
+    "plugin.developerMode"
+);
+
+struct FigCLIPathCheck;
 
 #[async_trait]
-impl DoctorCheck<DiagnosticsResponse> for FigCliPathCheck {
+impl DoctorCheck<DiagnosticsResponse> for FigCLIPathCheck {
     fn name(&self) -> Cow<'static, str> {
         "Fig CLI path".into()
     }
@@ -1310,6 +1346,36 @@ impl DoctorCheck<Option<Terminal>> for VSCodeIntegrationCheck {
     }
 }
 
+struct ImeStatusCheck;
+
+#[async_trait]
+impl DoctorCheck<Option<Terminal>> for ImeStatusCheck {
+    fn name(&self) -> Cow<'static, str> {
+        "Input Method".into()
+    }
+
+    fn get_type(&self, current_terminal: &Option<Terminal>) -> DoctorCheckType {
+        match current_terminal {
+            Some(current_terminal) if current_terminal.is_input_dependant() => {
+                DoctorCheckType::NormalCheck
+            }
+            _ => DoctorCheckType::NoCheck,
+        }
+    }
+
+    async fn check(&self, _: &Option<Terminal>) -> Result<(), DoctorError> {
+        if fig_settings::state::get_bool_or("input-method.enabled", false) {
+            Ok(())
+        } else {
+            Err(DoctorError::Error {
+                reason: "Input Method is not enabled".into(),
+                info: vec!["Run `fig install --input-method` to enable it".into()],
+                fix: None,
+            })
+        }
+    }
+}
+
 struct LoginStatusCheck;
 
 #[async_trait]
@@ -1378,32 +1444,20 @@ where
         }
 
         if let Err(err) = &result {
-            match fig_telemetry::SegmentEvent::new("Doctor Error") {
-                Ok(mut event) => {
-                    if let Err(err) = event.add_default_properties(Source::Cli) {
-                        error!(
-                            "Could not add default properties to telemetry event: {}",
-                            err
-                        );
-                    }
+            let mut properties: Vec<(&str, &str)> = vec![];
+            let analytics_event_name = check.analytics_event_name();
+            properties.push(("check", &analytics_event_name));
+            properties.push(("cli_version", env!("CARGO_PKG_VERSION")));
 
-                    event.add_property("check", check.analytics_event_name());
-                    event.add_property("cli_version", env!("CARGO_PKG_VERSION"));
-
-                    match err {
-                        DoctorError::Warning(info) | DoctorError::Error { reason: info, .. } => {
-                            event.add_property("info", &**info);
-                        }
-                    }
-
-                    if let Err(err) = event.send_event().await {
-                        error!("Could not send telemetry event: {}", err);
-                    }
-                }
-                Err(err) => {
-                    error!("Could not send doctor error telemetry: {}", err);
+            match err {
+                DoctorError::Warning(info) | DoctorError::Error { reason: info, .. } => {
+                    properties.push(("info", &**info));
                 }
             }
+
+            fig_telemetry::emit_track(TrackEvent::DoctorError, TrackSource::Cli, properties)
+                .await
+                .context(format!("Could not send doctor error telemetry: {}", err))?;
         }
 
         if let Err(DoctorError::Error { reason, fix, .. }) = result {
@@ -1444,7 +1498,7 @@ async fn get_shell_context() -> Result<Option<Shell>> {
 }
 
 async fn get_terminal_context() -> Result<Option<Terminal>> {
-    Ok(Terminal::current_terminal())
+    Ok(Terminal::parent_terminal())
 }
 
 async fn get_null_context() -> Result<()> {
@@ -1565,6 +1619,8 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
                 &FigtermSocketCheck {},
                 &InsertionLockCheck {},
                 &PseudoTerminalPathCheck {},
+                &AutocompleteDevModeCheck {},
+                &PluginDevModeCheck {},
             ],
             config,
             &mut spinner,
@@ -1590,7 +1646,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
                     &ShellCompatibilityCheck {},
                     &BundlePathCheck {},
                     &AutocompleteEnabledCheck {},
-                    &FigCliPathCheck {},
+                    &FigCLIPathCheck {},
                     &AccessibilityCheck {},
                     &SecureKeyboardCheck {},
                     &DotfilesSymlinkedCheck {},
@@ -1609,6 +1665,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
                 &ItermBashIntegrationCheck {},
                 &HyperIntegrationCheck {},
                 &VSCodeIntegrationCheck {},
+                &ImeStatusCheck {},
             ],
             get_terminal_context,
             config,

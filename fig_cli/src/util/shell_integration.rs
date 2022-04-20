@@ -1,38 +1,20 @@
+use crate::integrations::{backup_file, FileIntegration, InstallationError, Integration};
 use crate::util::shell::Shell;
 use anyhow::{Context, Result};
 use clap::ArgEnum;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::{
-    borrow::Cow,
     fs::File,
     io::Write,
     path::{Path, PathBuf},
 };
-use thiserror::Error;
-use time::OffsetDateTime;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, ArgEnum, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum When {
     Pre,
     Post,
-}
-
-#[derive(Error, Debug)]
-pub enum InstallationError {
-    #[error("Warning: Legacy integration. {0}")]
-    LegacyInstallation(Cow<'static, str>),
-    #[error("Error: Improper integration installation. {0}")]
-    ImproperInstallation(Cow<'static, str>),
-    #[error("Error: Integration not installed. {0}")]
-    NotInstalled(Cow<'static, str>),
-}
-
-impl From<anyhow::Error> for InstallationError {
-    fn from(e: anyhow::Error) -> InstallationError {
-        InstallationError::NotInstalled(format!("{}", e).into())
-    }
 }
 
 impl std::fmt::Display for When {
@@ -44,43 +26,10 @@ impl std::fmt::Display for When {
     }
 }
 
-fn get_default_backup_dir() -> Result<PathBuf> {
-    let now = OffsetDateTime::now_utc().format(time::macros::format_description!(
-        "[year]-[month]-[day]_[hour]-[minute]-[second]"
-    ))?;
-    fig_directories::home_dir()
-        .map(|path| path.join(".fig.dotfiles.bak").join(now))
-        .context("Could not get home dir")
-}
-
-fn backup_file<P>(path: P, backup_dir: Option<&Path>) -> Result<()>
-where
-    P: AsRef<Path>,
-{
-    let pathref = path.as_ref();
-    if pathref.exists() {
-        let name: String = pathref
-            .file_name()
-            .context(format!("Could not get filename for {}", pathref.display()))?
-            .to_string_lossy()
-            .into_owned();
-        let dir = backup_dir
-            .map(|dir| dir.to_path_buf())
-            .or_else(|| get_default_backup_dir().ok())
-            .context("Could not get backup directory")?;
-        std::fs::create_dir_all(&dir).context("Could not back up file")?;
-        std::fs::copy(path, dir.join(name).as_path()).context("Could not back up file")?;
-    }
-
-    Ok(())
-}
-
-pub trait ShellIntegration: Send + Sync + ShellIntegrationClone {
-    fn install(&self, backup_dir: Option<&Path>) -> Result<()>;
-    fn uninstall(&self) -> Result<()>;
-    fn is_installed(&self) -> Result<(), InstallationError>;
-    fn path(&self) -> PathBuf;
+pub trait ShellIntegration: Send + Sync + Integration + ShellIntegrationClone {
+    fn filename(&self) -> String;
     fn get_shell(&self) -> Shell;
+    fn path(&self) -> PathBuf;
 }
 
 impl std::fmt::Display for dyn ShellIntegration {
@@ -109,10 +58,8 @@ impl Clone for Box<dyn ShellIntegration> {
     }
 }
 
-// Fish-like integration where there is a single "integration file"
-// that sits in a location picked up by the shell.
 #[derive(Debug, Clone)]
-pub struct IntegrationFileShellIntegration {
+pub struct ShellScriptShellIntegration {
     pub shell: Shell,
     pub when: When,
     pub path: PathBuf,
@@ -125,7 +72,14 @@ fn get_prefix(s: &str) -> &str {
     }
 }
 
-impl IntegrationFileShellIntegration {
+impl ShellScriptShellIntegration {
+    fn get_file_integration(&self) -> FileIntegration {
+        FileIntegration {
+            path: self.path.clone(),
+            contents: self.get_contents(),
+        }
+    }
+
     fn get_contents(&self) -> String {
         let rcfile = match self.path.file_name().and_then(|x| x.to_str()) {
             Some(name) => format!(" --rcfile {}", get_prefix(name)),
@@ -144,49 +98,36 @@ impl IntegrationFileShellIntegration {
     }
 }
 
-impl ShellIntegration for IntegrationFileShellIntegration {
-    fn path(&self) -> PathBuf {
-        self.path.clone()
+impl Integration for ShellScriptShellIntegration {
+    fn is_installed(&self) -> Result<(), InstallationError> {
+        self.get_file_integration().is_installed()
+    }
+
+    fn install(&self, backup_dir: Option<&Path>) -> Result<()> {
+        self.get_file_integration().install(backup_dir)
+    }
+
+    fn uninstall(&self) -> Result<()> {
+        self.get_file_integration().uninstall()
+    }
+}
+
+impl ShellIntegration for ShellScriptShellIntegration {
+    fn filename(&self) -> String {
+        self.path.to_string_lossy().into_owned()
     }
 
     fn get_shell(&self) -> Shell {
         self.shell
     }
 
-    fn is_installed(&self) -> Result<(), InstallationError> {
-        let current_contents = std::fs::read_to_string(&self.path)
-            .context(format!("{} does not exist.", self.path.display()))?;
-        let contents = self.get_contents();
-        if current_contents.ne(&contents) {
-            let message = format!("{} should contain:\n{}", self.path.display(), contents);
-            return Err(InstallationError::ImproperInstallation(message.into()));
-        }
-        Ok(())
-    }
-
-    fn install(&self, _: Option<&Path>) -> Result<()> {
-        if self.is_installed().is_ok() {
-            return Ok(());
-        }
-        let parent_dir = self
-            .path
-            .parent()
-            .context("Could not get integration file directory")?;
-        std::fs::create_dir_all(parent_dir)?;
-        std::fs::write(&self.path, self.get_contents())?;
-        Ok(())
-    }
-
-    fn uninstall(&self) -> Result<()> {
-        if self.path.exists() {
-            std::fs::remove_file(&self.path)?;
-        }
-        Ok(())
+    fn path(&self) -> PathBuf {
+        self.path.clone()
     }
 }
 
-// zsh and bash integration where we modify a dotfile with pre/post hooks
-// that reference integration files.
+// zsh and bash integration where we modify a dotfile with pre/post hooks that reference
+// script files.
 #[derive(Debug, Clone)]
 pub struct DotfileShellIntegration {
     pub shell: Shell,
@@ -201,7 +142,7 @@ impl DotfileShellIntegration {
         self.dotfile_directory.join(self.dotfile_name)
     }
 
-    fn file_integration(&self, when: When) -> Result<IntegrationFileShellIntegration> {
+    fn script_integration(&self, when: When) -> Result<ShellScriptShellIntegration> {
         let integration_file_name = format!(
             "{}.{}.{}",
             Regex::new(r"^\.")
@@ -210,7 +151,7 @@ impl DotfileShellIntegration {
             when,
             self.shell
         );
-        Ok(IntegrationFileShellIntegration {
+        Ok(ShellScriptShellIntegration {
             shell: self.shell,
             when,
             path: fig_directories::fig_dir()
@@ -260,7 +201,7 @@ impl DotfileShellIntegration {
 
     fn source_text(&self, when: When) -> Result<String> {
         let home = fig_directories::home_dir().context("Could not get home dir")?;
-        let integration_path = self.file_integration(when)?.path;
+        let integration_path = self.script_integration(when)?.path;
         let path = integration_path.strip_prefix(home)?;
         Ok(format!(". \"$HOME/{}\"", path.display()))
     }
@@ -319,15 +260,7 @@ impl DotfileShellIntegration {
     }
 }
 
-impl ShellIntegration for DotfileShellIntegration {
-    fn get_shell(&self) -> Shell {
-        self.shell
-    }
-
-    fn path(&self) -> PathBuf {
-        self.dotfile_path()
-    }
-
+impl Integration for DotfileShellIntegration {
     fn install(&self, backup_dir: Option<&Path>) -> Result<()> {
         if self.is_installed().is_ok() {
             return Ok(());
@@ -345,7 +278,7 @@ impl ShellIntegration for DotfileShellIntegration {
         let original_contents = contents.clone();
 
         if self.pre {
-            self.file_integration(When::Pre)?.install(backup_dir)?;
+            self.script_integration(When::Pre)?.install(backup_dir)?;
             contents = format!(
                 "{}\n{}\n{}",
                 self.description(When::Pre),
@@ -355,7 +288,7 @@ impl ShellIntegration for DotfileShellIntegration {
         }
 
         if self.post {
-            self.file_integration(When::Post)?.install(backup_dir)?;
+            self.script_integration(When::Post)?.install(backup_dir)?;
             contents = format!(
                 "{}\n{}\n{}\n",
                 contents,
@@ -388,12 +321,12 @@ impl ShellIntegration for DotfileShellIntegration {
 
         if self.pre {
             self.matches_text(&filtered_contents, When::Pre)?;
-            self.file_integration(When::Pre)?.is_installed()?;
+            self.script_integration(When::Pre)?.is_installed()?;
         }
 
         if self.post {
             self.matches_text(&filtered_contents, When::Post)?;
-            self.file_integration(When::Post)?.is_installed()?;
+            self.script_integration(When::Post)?.is_installed()?;
         }
 
         Ok(())
@@ -430,13 +363,27 @@ impl ShellIntegration for DotfileShellIntegration {
         }
 
         if self.pre {
-            self.file_integration(When::Pre)?.uninstall()?;
+            self.script_integration(When::Pre)?.uninstall()?;
         }
 
         if self.post {
-            self.file_integration(When::Post)?.uninstall()?;
+            self.script_integration(When::Post)?.uninstall()?;
         }
 
         Ok(())
+    }
+}
+
+impl ShellIntegration for DotfileShellIntegration {
+    fn get_shell(&self) -> Shell {
+        self.shell
+    }
+
+    fn filename(&self) -> String {
+        self.dotfile_path().to_string_lossy().into_owned()
+    }
+
+    fn path(&self) -> PathBuf {
+        self.dotfile_path()
     }
 }

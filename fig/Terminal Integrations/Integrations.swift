@@ -145,54 +145,39 @@ class Integrations {
       .subtracting(Integrations.blocked)
   }
 
-  fileprivate static func allProviders(forceIncludeExperimental: Bool) -> [String: TerminalIntegrationProvider] {
+  static let accessibilityDependentIntegrations: [String: TerminalIntegrationProvider] =
+  [
+    Integrations.iTerm: iTermIntegration.default,
+    Integrations.Hyper: HyperIntegration.default,
+    Integrations.VSCode: VSCodeIntegration.default,
+    Integrations.VSCodeInsiders: VSCodeIntegration.insiders,
+    Integrations.VSCodium: VSCodeIntegration.vscodium,
+    Integrations.Terminal: AppleTerminalIntegration.default,
+    Integrations.Tabby: TabbyIntegration.default
+  ]
 
-    let stableIntegrations: [String: TerminalIntegrationProvider] = [
-      Integrations.iTerm: iTermIntegration.default,
-      Integrations.Hyper: HyperIntegration.default,
-      Integrations.VSCode: VSCodeIntegration.default,
-      Integrations.VSCodeInsiders: VSCodeIntegration.insiders,
-      Integrations.VSCodium: VSCodeIntegration.vscodium,
-      Integrations.Terminal: AppleTerminalIntegration.default,
-      Integrations.Tabby: TabbyIntegration.default,
-      Integrations.Nova: NovaIntegration.default
-    ]
+  static let inputMethodDependentIntegrations: [String: TerminalIntegrationProvider] =
+  [
+    Integrations.Alacritty: AlacrittyIntegration.default,
+    Integrations.Kitty: KittyIntegration.default,
+    Integrations.WezTerm: WezTermIntegration.default,
+    Integrations.Nova: NovaIntegration.default,
+    // Jetbrains IDEs
+    Integrations.Intellij: JetBrainsIntegration.idea,
+    Integrations.IntellijCE: JetBrainsIntegration.ideaCE,
+    Integrations.WebStorm: JetBrainsIntegration.WebStorm,
+    Integrations.PhpStorm: JetBrainsIntegration.PhpStorm,
+    Integrations.GoLand: JetBrainsIntegration.GoLand,
+    Integrations.PyCharm: JetBrainsIntegration.PyCharm,
+    Integrations.PyCharmCE: JetBrainsIntegration.PyCharmCE,
+    Integrations.AppCode: JetBrainsIntegration.AppCode,
+    Integrations.CLion: JetBrainsIntegration.CLion,
+    Integrations.Rider: JetBrainsIntegration.Rider,
+    Integrations.AndroidStudio: JetBrainsIntegration.AndroidStudio
 
-    let experimentalIntegrations: [String: TerminalIntegrationProvider] = [
-      Integrations.Alacritty: AlacrittyIntegration.default,
-      Integrations.Kitty: KittyIntegration.default,
-      Integrations.WezTerm: WezTermIntegration.default,
-      // Jetbrains IDEs
-      Integrations.Intellij: JetBrainsIntegration.idea,
-      Integrations.IntellijCE: JetBrainsIntegration.ideaCE,
-      Integrations.WebStorm: JetBrainsIntegration.WebStorm,
-      Integrations.PhpStorm: JetBrainsIntegration.PhpStorm,
-      Integrations.GoLand: JetBrainsIntegration.GoLand,
-      Integrations.PyCharm: JetBrainsIntegration.PyCharm,
-      Integrations.PyCharmCE: JetBrainsIntegration.PyCharmCE,
-      Integrations.AppCode: JetBrainsIntegration.AppCode,
-      Integrations.CLion: JetBrainsIntegration.CLion,
-      Integrations.Rider: JetBrainsIntegration.Rider,
-      Integrations.AndroidStudio: JetBrainsIntegration.AndroidStudio
+  ]
 
-    ]
-
-    if forceIncludeExperimental {
-      return stableIntegrations.merging(experimentalIntegrations) { $1 }
-    }
-
-    if let enableExperimentalIntegrations = Settings.shared.getValue(forKey:
-                                            Settings.experimentalIntegrations) as? Bool,
-           enableExperimentalIntegrations {
-        return stableIntegrations.merging(experimentalIntegrations) { $1 }
-    }
-
-    return stableIntegrations
-  }
-
-  static let providers: [String: TerminalIntegrationProvider] = allProviders(forceIncludeExperimental: false)
-  static let allProvidersIncludingExperimental: [String: TerminalIntegrationProvider]
-    = allProviders(forceIncludeExperimental: true)
+  static let providers: [String: TerminalIntegrationProvider] = accessibilityDependentIntegrations.merging(inputMethodDependentIntegrations) { $1 }
 
   static func handleListIntegrationsRequest() -> CommandResponse {
     CommandResponse.with { response in
