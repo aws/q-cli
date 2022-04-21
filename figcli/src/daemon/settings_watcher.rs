@@ -37,7 +37,7 @@ pub async fn spawn_settings_watcher(
         loop {
             match forward_rx.recv_async().await {
                 Ok(event) => {
-                    debug!("Received event: {:?}", event);
+                    debug!("Received event: {event:?}");
 
                     match event {
                         DebouncedEvent::NoticeWrite(path) | DebouncedEvent::NoticeRemove(path) => {
@@ -49,7 +49,7 @@ pub async fn spawn_settings_watcher(
                                         settings_path_clone.as_path().display().to_string(),
                                     );
                                     if let Err(err) = send_hook_to_socket(hook.clone()).await {
-                                        error!("Failed to send hook: {:?}", err);
+                                        error!("Failed to send hook: {err}");
                                     }
                                 }
                                 path if path == state_path_clone.as_path() => {
@@ -59,7 +59,7 @@ pub async fn spawn_settings_watcher(
                                         state_path_clone.as_path().display().to_string(),
                                     );
                                     if let Err(err) = send_hook_to_socket(hook.clone()).await {
-                                        error!("Failed to send hook: {:?}", err);
+                                        error!("Failed to send hook: {err}");
                                     }
                                 }
                                 path if path == application_path_clone.as_path() => {
@@ -74,16 +74,17 @@ pub async fn spawn_settings_watcher(
                                     }
                                 }
                                 unknown_path => {
-                                    error!("Unknown path changed: {:?}", unknown_path);
+                                    error!("Unknown path changed: {unknown_path:?}");
                                 }
                             }
                         }
                         DebouncedEvent::Error(err, path) => {
-                            error!("Error watching settings ({:?}): {:?}", path, err);
-                            daemon_status.write().settings_watcher_status = Err(anyhow!(err));
+                            let error_msg = format!("Error watching settings ({path:?}): {err}");
+                            error!("{error_msg}");
+                            daemon_status.write().settings_watcher_status = Err(anyhow!(error_msg));
                         }
                         event => {
-                            debug!("Ignoring event: {:?}", event);
+                            debug!("Ignoring event: {event:?}");
                         }
                     }
                 }
@@ -99,30 +100,33 @@ pub async fn spawn_settings_watcher(
         let settings_watcher_rx = settings_watcher_rx;
 
         if let Err(err) = watcher.watch(&*settings_path, RecursiveMode::NonRecursive) {
-            error!("Could not watch {:?}: {}", settings_path, err);
-            daemon_status.write().settings_watcher_status = Err(anyhow!(err));
+            let error_msg = format!("Could not watch {settings_path:?}: {err}");
+            error!("{error_msg}");
+            daemon_status.write().settings_watcher_status = Err(anyhow!(error_msg));
         }
         if let Err(err) = watcher.watch(&*state_path, RecursiveMode::NonRecursive) {
-            error!("Could not watch {:?}: {}", state_path, err);
-            daemon_status.write().settings_watcher_status = Err(anyhow!(err));
+            let error_msg = format!("Could not watch {state_path:?}: {err}");
+            error!("{error_msg}");
+            daemon_status.write().settings_watcher_status = Err(anyhow!(error_msg));
         }
 
         if let Err(err) = watcher.watch(&*application_path, RecursiveMode::NonRecursive) {
-            error!("Could not watch {:?}: {}", application_path, err);
-            daemon_status.write().settings_watcher_status = Err(anyhow!(err));
+            error!("Could not watch {:?}: {err}", application_path);
         }
 
         loop {
             match settings_watcher_rx.recv() {
                 Ok(event) => {
                     if let Err(err) = forward_tx.send(event) {
-                        error!("Error forwarding settings event: {}", err);
-                        daemon_status.write().settings_watcher_status = Err(anyhow!(err));
+                        let error_msg = format!("Error forwarding settings event: {err}");
+                        error!("{error_msg}");
+                        daemon_status.write().settings_watcher_status = Err(anyhow!(error_msg));
                     }
                 }
                 Err(err) => {
-                    error!("Settings watcher rx: {}", err);
-                    daemon_status.write().settings_watcher_status = Err(anyhow!(err));
+                    let error_msg = format!("Settings watcher rx: {err}");
+                    error!("{error_msg}");
+                    daemon_status.write().settings_watcher_status = Err(anyhow!(error_msg));
                 }
             }
         }
