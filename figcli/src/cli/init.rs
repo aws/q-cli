@@ -76,7 +76,7 @@ fn shell_init(shell: &Shell, when: &When, rcfile: Option<String>) -> Result<Stri
             let zshrc_exists = Shell::Zsh
                 .get_config_directory()
                 .map(|dir| dir.join(".zshrc").exists())
-                .unwrap_or(false);
+                .unwrap_or(true);
 
             if zshrc_exists {
                 return Ok(String::new());
@@ -86,7 +86,7 @@ fn shell_init(shell: &Shell, when: &When, rcfile: Option<String>) -> Result<Stri
             let bashrc_exists = Shell::Bash
                 .get_config_directory()
                 .map(|dir| dir.join(".bashrc").exists())
-                .unwrap_or(false);
+                .unwrap_or(true);
 
             if bashrc_exists {
                 return Ok(String::new());

@@ -27,7 +27,8 @@ impl std::fmt::Display for When {
 }
 
 pub trait ShellIntegration: Send + Sync + Integration + ShellIntegrationClone {
-    fn filename(&self) -> String;
+    // The unique name of the integration file
+    fn file_name(&self) -> &str;
     fn get_shell(&self) -> Shell;
     fn path(&self) -> PathBuf;
 }
@@ -80,6 +81,10 @@ impl ShellScriptShellIntegration {
         }
     }
 
+    fn get_name(&self) -> Option<&str> {
+        self.path.file_name().and_then(|s| s.to_str())
+    }
+
     fn get_contents(&self) -> String {
         let rcfile = match self.path.file_name().and_then(|x| x.to_str()) {
             Some(name) => format!(" --rcfile {}", get_prefix(name)),
@@ -113,8 +118,8 @@ impl Integration for ShellScriptShellIntegration {
 }
 
 impl ShellIntegration for ShellScriptShellIntegration {
-    fn filename(&self) -> String {
-        self.path.to_string_lossy().into_owned()
+    fn file_name(&self) -> &str {
+        self.get_name().unwrap_or("unknown_script")
     }
 
     fn get_shell(&self) -> Shell {
@@ -379,11 +384,11 @@ impl ShellIntegration for DotfileShellIntegration {
         self.shell
     }
 
-    fn filename(&self) -> String {
-        self.dotfile_path().to_string_lossy().into_owned()
-    }
-
     fn path(&self) -> PathBuf {
         self.dotfile_path()
+    }
+
+    fn file_name(&self) -> &str {
+        self.dotfile_name
     }
 }
