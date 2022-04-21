@@ -176,7 +176,7 @@ class Integrations {
     Integrations.AppCode: JetBrainsIntegration.AppCode,
     Integrations.CLion: JetBrainsIntegration.CLion,
     Integrations.Rider: JetBrainsIntegration.Rider,
-    Integrations.AndroidStudio: JetBrainsIntegration.AndroidStudio
+    Integrations.AndroidStudio: JetBrainsIntegration.AndroidStudio,
     Integrations.RubyMine: JetBrainsIntegration.RubyMine,
     Integrations.DataSpell: JetBrainsIntegration.DataSpell
   ]
