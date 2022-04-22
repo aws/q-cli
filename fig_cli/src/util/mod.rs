@@ -8,7 +8,7 @@ use std::{
     env,
     ffi::OsStr,
     path::{Path, PathBuf},
-    process::{Command, Output},
+    process::Command,
 };
 
 use anyhow::{Context, Result};
@@ -126,12 +126,11 @@ pub fn app_path_from_bundle_id(bundle_id: impl AsRef<OsStr>) -> Option<String> {
 }
 
 pub fn get_shell() -> Result<String> {
-    let result: Output;
     cfg_if! {
         if #[cfg(target_os = "macos")] {
             let ppid = nix::unistd::getppid();
 
-            result = Command::new("ps")
+            let result = Command::new("ps")
                 .arg("-p")
                 .arg(format!("{}", ppid))
                 .arg("-o")

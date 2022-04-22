@@ -269,7 +269,7 @@ impl InitSystem {
                     .arg("type=")
                     .arg("service")
                     .output()
-                    .with_context(|| format!("Could not query SCM"))?;
+                    .context("Could not query SCM")?;
 
                 todo!("Parse service status and return it (windows)");
             }

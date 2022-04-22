@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::{Error, API_DOMAIN, TRACK_SUBDOMAIN};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TrackEvent {
     RanCommand,
     SelectedShortcut,
@@ -35,6 +35,7 @@ pub enum TrackEvent {
     TelemetryToggled,
     OpenedSettingsPage,
     DoctorError,
+    Other(String),
 }
 
 impl ToString for TrackEvent {
@@ -71,6 +72,7 @@ impl ToString for TrackEvent {
             Self::TelemetryToggled => "Toggled Telemetry",
             Self::OpenedSettingsPage => "Opened Settings Page",
             Self::DoctorError => "Doctor Error",
+            Self::Other(s) => s,
         }
         .to_string()
     }
@@ -94,7 +96,7 @@ impl std::fmt::Display for TrackSource {
 }
 
 pub async fn emit_track<'a, I, T>(
-    event: String,
+    event: impl Into<TrackEvent>,
     source: TrackSource,
     properties: I,
 ) -> Result<(), Error>
@@ -113,12 +115,12 @@ where
     // Initial properties
     let mut track = HashMap::from([
         ("userId".into(), fig_auth::get_default("uuid")?),
-        ("event".into(), event.to_string()),
+        ("event".into(), (event.into().to_string())),
     ]);
 
     // Default properties
     if let Some(email) = fig_auth::get_email() {
-        if let Some(domain) = email.split("@").last() {
+        if let Some(domain) = email.split('@').last() {
             track.insert("prop_domain".into(), domain.into());
         }
         track.insert("prop_email".into(), email);
