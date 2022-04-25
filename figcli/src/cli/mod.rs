@@ -90,7 +90,7 @@ pub enum CliRootCommands {
     #[clap(subcommand)]
     /// Enable/disable fig tips
     Tips(tips::TipsSubcommand),
-    /// Install fig cli comoponents
+    /// Install fig cli components
     Install(internal::InstallArgs),
     #[clap(subcommand)]
     /// Enable/disable fig SSH integration
