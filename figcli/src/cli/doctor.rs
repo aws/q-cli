@@ -305,6 +305,22 @@ impl DoctorCheck for FigSocketCheck {
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
+        let fig_socket_path = get_fig_socket_path();
+        let parent = fig_socket_path.parent().map(PathBuf::from);
+
+        if let Some(parent) = parent {
+            if !parent.exists() {
+                return Err(DoctorError::Error {
+                    reason: "Fig socket parent directory does not exist".into(),
+                    info: vec![format!("Path: {}", fig_socket_path.display()).into()],
+                    fix: Some(Box::new(|| {
+                        std::fs::create_dir_all(parent)?;
+                        Ok(())
+                    })),
+                });
+            }
+        }
+
         Ok(check_file_exists(&get_fig_socket_path())?)
     }
 
