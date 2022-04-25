@@ -71,35 +71,14 @@ fn shell_init(shell: &Shell, when: &When, rcfile: Option<String>) -> Result<Stri
         ));
     }
 
-    match (shell, when, rcfile.as_deref()) {
-        (Shell::Zsh, When::Post, Some("zprofile")) => {
-            let zshrc_exists = Shell::Zsh
-                .get_config_directory()
-                .map(|dir| dir.join(".zshrc").exists())
-                .unwrap_or(true);
-
-            if zshrc_exists {
-                return Ok(String::new());
-            }
-        }
-        (Shell::Bash, When::Post, Some("profile") | Some("bash_profile")) => {
-            let bashrc_exists = Shell::Bash
-                .get_config_directory()
-                .map(|dir| dir.join(".bashrc").exists())
-                .unwrap_or(true);
-
-            if bashrc_exists {
-                return Ok(String::new());
-            }
-        }
-        _ => {}
-    }
-
     let mut to_source = Vec::new();
 
     if let When::Post = when {
-        let should_source_dotfiles = fig_settings::state::get_bool_or("dotfiles.enabled", true);
-        if should_source_dotfiles {
+        if !matches!(
+            (shell, rcfile.as_deref()),
+            (Shell::Zsh, Some("zprofile")) | (Shell::Bash, Some("profile") | Some("bash_profile"))
+        ) && fig_settings::state::get_bool_or("dotfiles.enabled", true)
+        {
             // Add dotfiles sourcing
             let get_dotfile_source = || {
                 let raw = std::fs::read_to_string(

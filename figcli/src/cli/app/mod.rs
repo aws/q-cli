@@ -28,7 +28,7 @@ pub enum AppSubcommand {
     Onboarding,
     /// Check if Fig is running
     Running,
-    /// Launch th Fig desktop app
+    /// Launch the Fig desktop app
     Launch,
     /// Restart the Fig desktop app
     Restart,
