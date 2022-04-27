@@ -18,6 +18,7 @@ use crossterm::{
     style::Stylize,
     terminal::{disable_raw_mode, enable_raw_mode, Clear, ClearType},
 };
+use fig_directories::home_dir;
 use fig_ipc::{connect_timeout, get_fig_socket_path, send_recv_message};
 use fig_proto::{
     daemon::diagnostic_response::{settings_watcher_status, websocket_status},
@@ -214,12 +215,8 @@ where
             .into()
     }
 
-    fn get_type(&self, _: &T) -> DoctorCheckType {
+    fn get_type(&self, _: &T, _platform: Platform) -> DoctorCheckType {
         DoctorCheckType::NormalCheck
-    }
-
-    fn should_run(&self, _platform: Platform) -> bool {
-        true
     }
 
     async fn check(&self, context: &T) -> Result<(), DoctorError>;
@@ -290,8 +287,12 @@ impl DoctorCheck for AppRunningCheck {
         })
     }
 
-    fn should_run(&self, platform: Platform) -> bool {
-        platform == Platform::MacOs
+    fn get_type(&self, _: &(), platform: Platform) -> DoctorCheckType {
+        if platform == Platform::MacOs {
+            DoctorCheckType::NormalCheck
+        } else {
+            DoctorCheckType::NoCheck
+        }
     }
 }
 
@@ -304,13 +305,79 @@ impl DoctorCheck for FigSocketCheck {
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
+        let fig_socket_path = get_fig_socket_path();
+        let parent = fig_socket_path.parent().map(PathBuf::from);
+
+        if let Some(parent) = parent {
+            if !parent.exists() {
+                return Err(DoctorError::Error {
+                    reason: "Fig socket parent directory does not exist".into(),
+                    info: vec![format!("Path: {}", fig_socket_path.display()).into()],
+                    fix: Some(Box::new(|| {
+                        std::fs::create_dir_all(parent)?;
+                        Ok(())
+                    })),
+                });
+            }
+        }
+
         Ok(check_file_exists(&get_fig_socket_path())?)
     }
 
-    fn should_run(&self, platform: Platform) -> bool {
-        platform == Platform::MacOs
+    fn get_type(&self, _: &(), platform: Platform) -> DoctorCheckType {
+        if platform == Platform::MacOs {
+            DoctorCheckType::NormalCheck
+        } else {
+            DoctorCheckType::NoCheck
+        }
     }
 }
+
+macro_rules! shell_config_exists_check {
+    ($check_name:ident, $file:expr, $shell:expr) => {
+        struct $check_name;
+
+        #[async_trait]
+        impl DoctorCheck<Option<Shell>> for $check_name {
+            fn name(&self) -> Cow<'static, str> {
+                format!("{} exists", $file).into()
+            }
+
+            async fn check(&self, _: &Option<Shell>) -> Result<(), DoctorError> {
+                match $shell.get_config_directory() {
+                    Some(home_dir) => {
+                        let path = home_dir.join($file);
+                        if path.exists() {
+                            Ok(())
+                        } else {
+                            Err(DoctorError::Error {
+                                reason: format!("{} does not exist", $file).into(),
+                                info: vec![],
+                                fix: Some(Box::new(|| {
+                                    std::fs::write(path, "")?;
+                                    Ok(())
+                                })),
+                            })
+                        }
+                    }
+                    None => Err(DoctorError::Warning(
+                        format!("Could not determine {} config directory", $shell).into(),
+                    )),
+                }
+            }
+
+            fn get_type(&self, shell: &Option<Shell>, _platform: Platform) -> DoctorCheckType {
+                match shell {
+                    Some(shell) if shell == &$shell => DoctorCheckType::NormalCheck,
+                    _ => DoctorCheckType::SoftCheck,
+                }
+            }
+        }
+    };
+}
+
+shell_config_exists_check!(BashrcExistsCheck, ".bashrc", Shell::Bash);
+shell_config_exists_check!(ZshrcExistsCheck, ".zshrc", Shell::Zsh);
 
 struct FigIntegrationsCheck;
 
@@ -716,14 +783,25 @@ struct DotfileCheck {
 #[async_trait]
 impl DoctorCheck<Option<Shell>> for DotfileCheck {
     fn name(&self) -> Cow<'static, str> {
-        format!(
-            "{} contains valid fig hooks",
-            self.integration.path().display()
-        )
-        .into()
+        let path = home_dir()
+            .and_then(|home_dir| {
+                self.integration
+                    .path()
+                    .strip_prefix(&home_dir)
+                    .ok()
+                    .map(PathBuf::from)
+            })
+            .map(|path| format!("~/{}", path.display()))
+            .unwrap_or_else(|| self.integration.path().display().to_string());
+
+        format!("{} contains valid fig hooks", path).into()
     }
 
-    fn get_type(&self, current_shell: &Option<Shell>) -> DoctorCheckType {
+    fn analytics_event_name(&self) -> String {
+        format!("dotfile_check_{}", self.integration.file_name())
+    }
+
+    fn get_type(&self, current_shell: &Option<Shell>, _platform: Platform) -> DoctorCheckType {
         if let Some(shell) = current_shell {
             if *shell == self.integration.get_shell() {
                 return DoctorCheckType::NormalCheck;
@@ -1026,7 +1104,7 @@ impl DoctorCheck<DiagnosticsResponse> for DotfilesSymlinkedCheck {
         "Dotfiles symlinked".into()
     }
 
-    fn get_type(&self, diagnostics: &DiagnosticsResponse) -> DoctorCheckType {
+    fn get_type(&self, diagnostics: &DiagnosticsResponse, _platform: Platform) -> DoctorCheckType {
         if diagnostics.symlinked == "true" {
             DoctorCheckType::NormalCheck
         } else {
@@ -1098,15 +1176,17 @@ impl DoctorCheck<Option<Terminal>> for ItermIntegrationCheck {
         "iTerm integration is enabled".into()
     }
 
-    fn get_type(&self, current_terminal: &Option<Terminal>) -> DoctorCheckType {
-        if !is_installed(Terminal::Iterm.to_bundle_id()) {
-            return DoctorCheckType::NoCheck;
-        }
-
-        if matches!(current_terminal.to_owned(), Some(Terminal::Iterm)) {
-            DoctorCheckType::NormalCheck
+    fn get_type(&self, current_terminal: &Option<Terminal>, platform: Platform) -> DoctorCheckType {
+        if platform == Platform::MacOs {
+            if !is_installed(Terminal::Iterm.to_bundle_id()) {
+                DoctorCheckType::NoCheck
+            } else if matches!(current_terminal.to_owned(), Some(Terminal::Iterm)) {
+                DoctorCheckType::NormalCheck
+            } else {
+                DoctorCheckType::SoftCheck
+            }
         } else {
-            DoctorCheckType::SoftCheck
+            DoctorCheckType::NoCheck
         }
     }
 
@@ -1151,10 +1231,6 @@ impl DoctorCheck<Option<Terminal>> for ItermIntegrationCheck {
         }
         Ok(())
     }
-
-    fn should_run(&self, platform: Platform) -> bool {
-        platform == Platform::MacOs
-    }
 }
 
 struct ItermBashIntegrationCheck;
@@ -1165,20 +1241,22 @@ impl DoctorCheck<Option<Terminal>> for ItermBashIntegrationCheck {
         "iTerm bash integration configured".into()
     }
 
-    fn get_type(&self, current_terminal: &Option<Terminal>) -> DoctorCheckType {
-        match fig_directories::home_dir() {
-            Some(home) => {
-                if !home.join(".iterm2_shell_integration.bash").exists() {
-                    return DoctorCheckType::NoCheck;
+    fn get_type(&self, current_terminal: &Option<Terminal>, platform: Platform) -> DoctorCheckType {
+        if platform == Platform::MacOs {
+            match fig_directories::home_dir() {
+                Some(home) => {
+                    if !home.join(".iterm2_shell_integration.bash").exists() {
+                        DoctorCheckType::NoCheck
+                    } else if matches!(current_terminal.to_owned(), Some(Terminal::Iterm)) {
+                        DoctorCheckType::NormalCheck
+                    } else {
+                        DoctorCheckType::SoftCheck
+                    }
                 }
+                None => DoctorCheckType::NoCheck,
             }
-            None => return DoctorCheckType::NoCheck,
-        }
-
-        if matches!(current_terminal.to_owned(), Some(Terminal::Iterm)) {
-            DoctorCheckType::NormalCheck
         } else {
-            DoctorCheckType::SoftCheck
+            DoctorCheckType::NoCheck
         }
     }
 
@@ -1206,10 +1284,6 @@ impl DoctorCheck<Option<Terminal>> for ItermBashIntegrationCheck {
             }
         }
     }
-
-    fn should_run(&self, platform: Platform) -> bool {
-        platform == Platform::MacOs
-    }
 }
 
 struct HyperIntegrationCheck;
@@ -1219,7 +1293,11 @@ impl DoctorCheck<Option<Terminal>> for HyperIntegrationCheck {
         "Hyper integration is enabled".into()
     }
 
-    fn get_type(&self, current_terminal: &Option<Terminal>) -> DoctorCheckType {
+    fn get_type(
+        &self,
+        current_terminal: &Option<Terminal>,
+        _platform: Platform,
+    ) -> DoctorCheckType {
         if !is_installed(Terminal::Hyper.to_bundle_id()) {
             return DoctorCheckType::NoCheck;
         }
@@ -1295,7 +1373,11 @@ impl DoctorCheck<Option<Terminal>> for VSCodeIntegrationCheck {
         "VSCode integration is enabled".into()
     }
 
-    fn get_type(&self, current_terminal: &Option<Terminal>) -> DoctorCheckType {
+    fn get_type(
+        &self,
+        current_terminal: &Option<Terminal>,
+        _platform: Platform,
+    ) -> DoctorCheckType {
         if !is_installed(Terminal::Vscode.to_bundle_id())
             && !is_installed(Terminal::VSCodeInsiders.to_bundle_id())
         {
@@ -1354,7 +1436,11 @@ impl DoctorCheck<Option<Terminal>> for ImeStatusCheck {
         "Input Method".into()
     }
 
-    fn get_type(&self, current_terminal: &Option<Terminal>) -> DoctorCheckType {
+    fn get_type(
+        &self,
+        current_terminal: &Option<Terminal>,
+        _platform: Platform,
+    ) -> DoctorCheckType {
         match current_terminal {
             Some(current_terminal) if current_terminal.is_input_dependant() => {
                 DoctorCheckType::NormalCheck
@@ -1416,11 +1502,7 @@ where
     };
     for check in checks {
         let name: String = check.name().into();
-        let check_type: DoctorCheckType = check.get_type(&context);
-
-        if !check.should_run(get_platform()) {
-            continue;
-        }
+        let check_type: DoctorCheckType = check.get_type(&context, get_platform());
 
         if check_type == DoctorCheckType::NoCheck {
             continue;
@@ -1592,10 +1674,14 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         .map(|integration| DotfileCheck { integration })
         .collect();
 
-    let all_dotfile_checks: Vec<_> = shell_integrations
-        .iter()
-        .map(|p| (&*p) as &dyn DoctorCheck<_>)
-        .collect();
+    let mut all_dotfile_checks: Vec<&dyn DoctorCheck<_>> =
+        vec![&BashrcExistsCheck {}, &ZshrcExistsCheck {}];
+
+    all_dotfile_checks.extend(
+        shell_integrations
+            .iter()
+            .map(|p| (&*p) as &dyn DoctorCheck<_>),
+    );
 
     let status = async {
         run_checks_with_context(

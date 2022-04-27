@@ -65,23 +65,43 @@ impl Shell {
         }
     }
 
+    /// Get the directory for the shell that contains the dotfiles
+    pub fn get_config_directory(&self) -> Option<PathBuf> {
+        match self {
+            Shell::Bash => fig_directories::home_dir(),
+            Shell::Zsh => std::env::var_os("ZDOTDIR")
+                .or_else(|| std::env::var_os("FIG_ZDOTDIR"))
+                .map(PathBuf::from)
+                .or_else(fig_directories::home_dir),
+            Shell::Fish => std::env::var_os("__fish_config_dir")
+                .map(PathBuf::from)
+                .or_else(|| {
+                    fig_directories::home_dir().map(|home| home.join(".config").join("fish"))
+                }),
+        }
+    }
+
     pub fn get_shell_integrations(&self) -> Result<Vec<Box<dyn ShellIntegration>>> {
-        let home_dir = fig_directories::home_dir().context("Failed to get base directories")?;
+        let config_dir = self
+            .get_config_directory()
+            .context("Failed to get base directories")?;
 
         let integrations: Vec<Box<dyn ShellIntegration>> = match self {
             Shell::Bash => {
                 let mut configs = vec![".bashrc"];
-                let other_configs: Vec<_> = vec![".profile", ".bash_login", ".bash_profile"];
+                let other_configs = [".profile", ".bash_login", ".bash_profile"];
+
                 configs.extend(
                     other_configs
-                        .clone()
                         .into_iter()
-                        .filter(|f| home_dir.join(f).exists()),
+                        .filter(|f| config_dir.join(f).exists()),
                 );
+
                 // Include .profile if none of [.profile, .bash_login, .bash_profile] exist.
                 if configs.len() == 1 {
-                    configs.push(other_configs.first().unwrap());
+                    configs.push(other_configs[0]);
                 }
+
                 configs
                     .into_iter()
                     .map(|filename| {
@@ -89,33 +109,26 @@ impl Shell {
                             pre: true,
                             post: true,
                             shell: *self,
-                            dotfile_directory: home_dir.clone(),
+                            dotfile_directory: config_dir.clone(),
                             dotfile_name: filename,
                         }) as Box<dyn ShellIntegration>
                     })
                     .collect()
             }
-            Shell::Zsh => {
-                let zdotdir = std::env::var("ZDOTDIR")
-                    .or_else(|_| std::env::var("FIG_ZDOTDIR"))
-                    .map_or_else(|_| home_dir, PathBuf::from);
-                vec![".zshrc", ".zprofile"]
-                    .into_iter()
-                    .map(|filename| {
-                        Box::new(DotfileShellIntegration {
-                            pre: true,
-                            post: true,
-                            shell: *self,
-                            dotfile_directory: zdotdir.clone(),
-                            dotfile_name: filename,
-                        }) as Box<dyn ShellIntegration>
-                    })
-                    .collect()
-            }
+            Shell::Zsh => vec![".zshrc", ".zprofile"]
+                .into_iter()
+                .map(|filename| {
+                    Box::new(DotfileShellIntegration {
+                        pre: true,
+                        post: true,
+                        shell: *self,
+                        dotfile_directory: config_dir.clone(),
+                        dotfile_name: filename,
+                    }) as Box<dyn ShellIntegration>
+                })
+                .collect(),
             Shell::Fish => {
-                let fish_config_dir = std::env::var("__fish_config_dir")
-                    .map_or_else(|_| home_dir.join(".config").join("fish"), PathBuf::from)
-                    .join("conf.d");
+                let fish_config_dir = config_dir.join("conf.d");
                 vec![
                     Box::new(ShellScriptShellIntegration {
                         when: When::Pre,
