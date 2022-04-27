@@ -9,12 +9,12 @@
     "tauri": "tauri"
   },
   "dependencies": {
-    "@tauri-apps/api": "^1.0.0-rc.3",
+    "@tauri-apps/api": "^1.0.0-rc.4",
     "react": "^17.0.2",
     "react-dom": "^17.0.2"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^1.0.0-rc.8",
+    "@tauri-apps/cli": "^1.0.0-rc.9",
     "@tauri-apps/tauricon": "github:tauri-apps/tauricon",
     "@types/react": "^17.0.33",
     "@types/react-dom": "^17.0.10",

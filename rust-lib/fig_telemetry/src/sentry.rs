@@ -26,7 +26,7 @@ pub fn init_sentry(project: &str) -> Option<sentry::ClientInitGuard> {
         #[cfg(target_os = "macos")]
         let terminal = Terminal::parent_terminal().map(|s| s.to_string());
         #[cfg(not(target_os = "macos"))]
-        let terminal = None;
+        let terminal: Option<Terminal> = None;
 
         sentry::configure_scope(|scope| {
             scope.set_user(Some(sentry::User {
