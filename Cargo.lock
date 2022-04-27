@@ -3163,6 +3163,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7fb9b38af92608140b86b693604b9ffcc5824240a484d1ecd4795bacb2fe88f3"
 
 [[package]]
+name = "linux_test"
+version = "0.1.0"
+dependencies = [
+ "clap 3.1.12",
+ "fig_ipc",
+ "fig_proto",
+ "tokio",
+]
+
+[[package]]
 name = "lock_api"
 version = "0.4.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
