@@ -35,7 +35,7 @@ parking_lot = "0.12.0"
 rand = "0.8.5"
 regex = "1.5.5"
 reqwest = { version = "0.11.10", features = ["json", "rustls-tls-webpki-roots", "socks"] }
-self_update = "0.29.0"
+self_update = "0.30.0"
 semver = "1.0.6"
 sentry = { version = "0.25.0", features = ["anyhow"] }
 serde = { version = "1.0.136", features = ["derive"] }
@@ -46,7 +46,7 @@ system_socket = { path = "../rust-lib/system_socket" }
 tempfile = "3.3.0"
 thiserror = "1.0.30"
 time = { version = "0.3.9", features = ["serde-human-readable", "local-offset", "formatting", "macros", "serde-well-known"] }
-tokio = { version = "1.17.0", features = ["full"] }
+tokio = { version = "1.18.0", features = ["full"] }
 tokio-tungstenite = { version = "0.17.1", features = ["rustls-tls-webpki-roots"] }
 toml = "0.5.8"
 tracing = "0.1.32"
@@ -54,10 +54,10 @@ tracing-subscriber = { version = "0.3.9", features = ["fmt", "time", "parking_lo
 validator = "0.14.0"
 native-dialog = "0.6.3"
 viu = { path = "../rust-lib/viu" }
-spinners = "~3.0.1"
+spinners = "4.0.0"
 
 [target.'cfg(unix)'.dependencies]
-nix = "0.23.1"
+nix = "0.24.1"
 
 [target.'cfg(windows)'.dependencies]
-windows = { version = "0.34.0", features = ["Win32_Foundation", "Win32_Security", "Win32_System_Threading"] }
+windows = { version = "0.36.0", features = ["Win32_Foundation", "Win32_Security", "Win32_System_Threading"] }

@@ -1,4 +1,4 @@
-//! [log] logger
+//! logger
 
 use anyhow::{Context, Result};
 use fig_directories::fig_dir;

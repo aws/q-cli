@@ -324,7 +324,7 @@ impl<'a> SignUpInput<'a> {
 
     pub async fn sign_up(self) -> Result<(), SignUpError> {
         let password = generate_password(32);
-        let username = uuid::Uuid::new_v4().to_hyphenated().to_string();
+        let username = uuid::Uuid::new_v4().as_hyphenated().to_string();
 
         let sign_up_result = self
             .client

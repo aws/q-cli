@@ -1028,7 +1028,11 @@ impl DoctorCheck<DiagnosticsResponse> for FigCLIPathCheck {
             || path == Path::new("/opt/homebrew/bin/fig")
         {
             Ok(())
-        } else if path.ends_with("target/debug/fig") || path.ends_with("target/release/fig") {
+        } else if path.ends_with("target/debug/fig")
+            || path.ends_with("target/release/fig")
+            || path.ends_with("target/debug/fig_cli")
+            || path.ends_with("target/release/fig_cli")
+        {
             Err(DoctorError::Warning(
                 "Running debug build in a non-standard location".into(),
             ))
@@ -1597,7 +1601,7 @@ async fn run_checks(
 }
 
 fn stop_spinner(spinner: Option<Spinner>) -> Result<()> {
-    if let Some(sp) = spinner {
+    if let Some(mut sp) = spinner {
         sp.stop();
         execute!(
             std::io::stdout(),

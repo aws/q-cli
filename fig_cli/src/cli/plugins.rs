@@ -43,7 +43,7 @@ impl PluginsSubcommands {
     pub async fn execute(&self) -> Result<()> {
         match self {
             PluginsSubcommands::Sync => {
-                let spinner =
+                let mut spinner =
                     spinners::Spinner::new(spinners::Spinners::Dots, "Syncing plugins".into());
 
                 // Get diagnostics from the daemon
@@ -98,7 +98,7 @@ impl PluginsSubcommands {
                 Ok(())
             }
             PluginsSubcommands::Update => {
-                let spinner =
+                let mut spinner =
                     spinners::Spinner::new(spinners::Spinners::Dots, "Updating plugins".into());
 
                 // Get diagnostics from the daemon
@@ -155,7 +155,7 @@ impl PluginsSubcommands {
                 Ok(())
             }
             PluginsSubcommands::Add { plugin } => {
-                let spinner = spinners::Spinner::new(
+                let mut spinner = spinners::Spinner::new(
                     spinners::Spinners::Arc,
                     format!("Installing plugin {}", plugin),
                 );
@@ -194,7 +194,7 @@ impl PluginsSubcommands {
                 }
             }
             PluginsSubcommands::Remove { plugin } => {
-                let spinner = spinners::Spinner::new(
+                let mut spinner = spinners::Spinner::new(
                     spinners::Spinners::Arc,
                     format!("Removing plugin {}", plugin),
                 );

@@ -288,6 +288,7 @@ message DiagnosticsResponse {
 
 message CommandResponse {
 	optional int64 id = 1;
+	
 	oneof response {
 		ErrorResponse error = 2;
 		SuccessResponse success = 3;
