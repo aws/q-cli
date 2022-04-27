@@ -9,7 +9,9 @@ publish = false
 [dependencies]
 fig_auth = { path = "../fig_auth" }
 fig_settings = { path = "../fig_settings" }
+fig_util = { path = "../fig_util" }
 serde = "1.0.136"
+sentry = { version = "0.25.0", features = ["anyhow"] }
 reqwest = { version = "0.11.9", features = ["json"] }
 thiserror = "1.0.30"
 anyhow = "1.0.56"

@@ -2,8 +2,11 @@ mod alias;
 mod error;
 mod identify;
 mod install_method;
+mod sentry;
 mod track;
+mod util;
 
+pub use crate::sentry::init_sentry;
 pub use alias::emit_alias;
 pub use error::Error;
 pub use identify::emit_identify;

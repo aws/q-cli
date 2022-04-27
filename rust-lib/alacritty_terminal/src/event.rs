@@ -8,6 +8,7 @@ use crate::term::{CommandInfo, ShellState, SizeInfo};
 pub enum Event<'a> {
     Prompt,
     PreExec,
+    ShellChanged,
     CommandInfo(&'a CommandInfo),
 }
 

@@ -1744,7 +1744,9 @@ dependencies = [
  "anyhow",
  "fig_auth",
  "fig_settings",
+ "fig_util",
  "reqwest",
+ "sentry",
  "serde",
  "thiserror",
 ]
@@ -1779,10 +1781,12 @@ dependencies = [
  "fig_ipc",
  "fig_proto",
  "fig_settings",
+ "fig_telemetry",
+ "fig_util",
  "flume",
  "fnv",
  "heapless",
- "nix 0.23.1",
+ "nix 0.24.1",
  "once_cell",
  "parking_lot 0.12.0",
  "regex 1.5.5",
@@ -3438,6 +3442,7 @@ dependencies = [
  "bitflags",
  "cfg-if 1.0.0",
  "libc",
+ "memoffset",
 ]
 
 [[package]]

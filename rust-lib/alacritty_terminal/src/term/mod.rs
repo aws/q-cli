@@ -162,10 +162,6 @@ pub struct ShellState {
     pub preexec: bool,
     /// Position of start of cmd
     pub cmd_cursor: Option<Point>,
-    /// Fish suggestion color text
-    pub fish_suggestion_color_text: Option<String>,
-    /// Zsh autosuggestion color text
-    pub zsh_autosuggestion_color_text: Option<String>,
     /// Fish suggestion color
     pub fish_suggestion_color: Option<fig_color::SuggestionColor>,
     /// Zsh autosuggestion color
@@ -1797,13 +1793,19 @@ impl<T: EventListener> Handler for Term<T> {
     fn shell(&mut self, shell: &str) {
         let shell = shell.trim().to_owned();
         trace!("Fig shell: {:?}", shell);
+        let shell_changed = match &self.shell_state.get_context().shell {
+            Some(old_shell) => old_shell.ne(&shell),
+            None => true,
+        };
         self.shell_state.get_mut_context().shell = Some(shell);
+        if shell_changed {
+            self.event_proxy
+                .send_event(Event::ShellChanged, &self.shell_state);
+        }
     }
 
     fn fish_suggestion_color(&mut self, color: &str) {
         trace!("Fig fish suggestion color: {:?}", color);
-
-        self.shell_state.fish_suggestion_color_text = Some(color.to_owned());
 
         if let Some(color_support) = self.shell_state().color_support {
             self.shell_state.fish_suggestion_color =
@@ -1813,8 +1815,6 @@ impl<T: EventListener> Handler for Term<T> {
 
     fn zsh_suggestion_color(&mut self, color: &str) {
         trace!("Fig zsh suggestion color: {:?}", color);
-
-        self.shell_state.zsh_autosuggestion_color_text = Some(color.to_owned());
 
         if let Some(color_support) = self.shell_state().color_support {
             self.shell_state.zsh_autosuggestion_color =

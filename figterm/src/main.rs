@@ -5,7 +5,6 @@ pub mod ipc;
 pub mod logger;
 pub mod pty;
 pub mod term;
-pub mod utils;
 
 use crate::{
     interceptor::KeyInterceptor,
@@ -25,7 +24,6 @@ use alacritty_terminal::{
 use anyhow::{anyhow, Context, Result};
 use clap::StructOpt;
 use cli::Cli;
-use fig_auth::get_email;
 use fig_proto::{
     figterm::{figterm_message, intercept_command, FigtermMessage},
     hooks::{
@@ -34,7 +32,7 @@ use fig_proto::{
     local::{self, LocalMessage},
 };
 use fig_settings::state;
-
+use fig_util::Terminal;
 use flume::Sender;
 use nix::{
     libc::STDIN_FILENO,
@@ -72,7 +70,7 @@ impl EventSender {
 
 fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
     #[cfg(target_os = "macos")]
-    let terminal = utils::get_term_bundle().map(|s| s.to_string());
+    let terminal = Terminal::parent_terminal().map(|s| s.to_string());
     #[cfg(not(target_os = "macos"))]
     let terminal = None;
 
@@ -142,6 +140,18 @@ impl EventListener for EventSender {
                 if let Err(err) = self.history_sender.send(command_info.clone()) {
                     error!("Sender error: {:?}", err);
                 }
+            }
+            Event::ShellChanged => {
+                let shell = if shell_state.in_ssh || shell_state.in_docker {
+                    shell_state.remote_context.shell.as_ref()
+                } else {
+                    shell_state.local_context.shell.as_ref()
+                };
+                sentry::configure_scope(|scope| {
+                    if let Some(shell) = shell {
+                        scope.set_tag("shell", shell);
+                    }
+                });
             }
         }
     }
@@ -603,26 +613,9 @@ fn figterm_main() -> Result<()> {
 }
 
 fn main() {
-    let _guard = if std::env::var_os("FIG_DISABLE_SENTRY").is_some() {
-        None
-    } else {
-        let guard = sentry::init((
-            "https://633267fac776481296eadbcc7093af4a@o436453.ingest.sentry.io/6187825",
-            sentry::ClientOptions {
-                release: sentry::release_name!(),
-                ..sentry::ClientOptions::default()
-            },
-        ));
-
-        sentry::configure_scope(|scope| {
-            scope.set_user(Some(sentry::User {
-                email: get_email(),
-                ..sentry::User::default()
-            }));
-        });
-
-        Some(guard)
-    };
+    fig_telemetry::init_sentry(
+        "https://633267fac776481296eadbcc7093af4a@o436453.ingest.sentry.io/6187825",
+    );
 
     Cli::parse();
 
