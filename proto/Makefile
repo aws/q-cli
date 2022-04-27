@@ -15,7 +15,7 @@ SWIFT_FLAGS = --swift_opt=Visibility=Public
 
 # Proto files
 LOCAL = "./local.proto"
-API   = "./fig.proto" "./local.proto" "linux.proto"
+API   = "./fig.proto" "./local.proto"
 FIGTERM = "./figterm.proto"
 
 # Destinations
