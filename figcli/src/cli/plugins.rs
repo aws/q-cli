@@ -132,7 +132,7 @@ impl PluginsSubcommands {
                         SyncStatus::Ok => {
                             spinner.stop_with_message(format!(
                                 "{} Successfully updated plugins\n",
-                                "✔️".green()
+                                "✔".green()
                             ));
                         }
                         SyncStatus::Error => {
@@ -179,7 +179,7 @@ impl PluginsSubcommands {
                             "✔️".green()
                         ));
                         println!(
-                            "Run {} to start useing the plugin in the current shell",
+                            "Run {} to start using the plugin in the current shell",
                             "fig source".magenta()
                         );
                         Ok(())
