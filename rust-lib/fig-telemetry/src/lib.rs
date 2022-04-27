@@ -3,6 +3,7 @@ mod install_method;
 use anyhow::Result;
 use serde::{ser::SerializeMap, Serialize};
 use std::collections::HashMap;
+use std::sync::Arc;
 
 const TELEMETRY_URL: &str = "https://tel.withfig.com/track";
 
@@ -29,17 +30,18 @@ impl std::fmt::Display for Source {
     }
 }
 
+fn telemetry_is_disabled() -> bool {
+    fig_settings::settings::get_value("telemetry.disabled")
+        .ok()
+        .flatten()
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false)
+}
+
 impl SegmentEvent {
     /// Create a new SegmentEvent
     pub fn new(event: impl Into<String>) -> Result<Self> {
-        // Check that telemetry is not disabled
-        let telemetry_disabled = fig_settings::settings::get_value("telemetry.disabled")
-            .ok()
-            .flatten()
-            .and_then(|v| v.as_bool())
-            .unwrap_or(false);
-
-        if telemetry_disabled {
+        if telemetry_is_disabled() {
             return Err(anyhow::anyhow!("Telemetry is disabled"));
         }
 
@@ -105,5 +107,44 @@ impl Serialize for SegmentEvent {
             state.serialize_entry(&format!("prop_{}", key), value)?;
         }
         state.end()
+    }
+}
+
+pub fn init_sentry(project: &str) -> Option<sentry::ClientInitGuard> {
+    if std::env::var_os("FIG_DISABLE_SENTRY").is_some() {
+        None
+    } else {
+        let guard = sentry::init((
+            project,
+            sentry::ClientOptions {
+                release: sentry::release_name!(),
+                before_send: Some(Arc::new(|event| {
+                    if telemetry_is_disabled() {
+                        None
+                    } else {
+                        Some(event)
+                    }
+                })),
+                ..sentry::ClientOptions::default()
+            },
+        ));
+
+        #[cfg(target_os = "macos")]
+        let terminal = fig_utils::get_term_bundle().map(|s| s.to_string());
+        #[cfg(not(target_os = "macos"))]
+        let terminal = None;
+
+        sentry::configure_scope(|scope| {
+            scope.set_user(Some(sentry::User {
+                email: fig_auth::get_email(),
+                ..sentry::User::default()
+            }));
+
+            if let Some(terminal) = terminal {
+                scope.set_tag("terminal", terminal);
+            }
+        });
+
+        Some(guard)
     }
 }

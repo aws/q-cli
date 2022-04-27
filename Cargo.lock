@@ -1234,9 +1234,15 @@ dependencies = [
  "anyhow",
  "fig-auth",
  "fig-settings",
+ "fig-utils",
  "reqwest",
+ "sentry",
  "serde",
 ]
+
+[[package]]
+name = "fig-utils"
+version = "0.1.0"
 
 [[package]]
 name = "figterm"
@@ -1253,6 +1259,8 @@ dependencies = [
  "fig-ipc",
  "fig-proto",
  "fig-settings",
+ "fig-telemetry",
+ "fig-utils",
  "flume",
  "fnv",
  "heapless",
