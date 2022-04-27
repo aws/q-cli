@@ -5,8 +5,8 @@ mod notifications;
 mod process;
 pub mod properties;
 mod settings;
-pub mod window;
 mod telemetry;
+pub mod window;
 
 use crate::utils::truncate_string;
 use bytes::BytesMut;

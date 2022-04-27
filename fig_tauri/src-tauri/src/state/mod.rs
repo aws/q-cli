@@ -45,6 +45,7 @@ pub struct Point {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum UIState {
+    #[allow(dead_code)]
     Focused {
         caret: Rect,
         window: Rect,

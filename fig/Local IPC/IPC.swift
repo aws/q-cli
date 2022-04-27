@@ -300,6 +300,15 @@ class IPC: UnixSocketServerDelegate {
       if hook.fileChanged == Local_FileChangedHook.FileChanged.state {
         LocalState.shared.localStateUpdated()
       }
+    case .cursorPosition:
+      // Used in Fig Tauri
+      break
+    case .focusChange:
+      // Used in Fig Tauri
+      break
+    case .interceptedKey:
+      // Used in Fig Tauri
+      break
     case .none:
       break
     }

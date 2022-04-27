@@ -16,7 +16,7 @@ use super::ResponseResult;
 pub async fn read_file(request: ReadFileRequest, _message_id: i64) -> ResponseResult {
     use fig_proto::fig::read_file_response::Type;
     let file_path = resolve_filepath(request.path.unwrap());
-    let kind = if request.is_binary_file {
+    let kind = if request.is_binary_file.unwrap_or(false) {
         Type::Data(
             tokio::fs::read(&file_path)
                 .await

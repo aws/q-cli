@@ -462,7 +462,7 @@ fn figterm_main() -> Result<()> {
                                     Ok(size) => match std::str::from_utf8(&read_buffer[..size]) {
                                             Ok(s) => {
                                                 trace!("Read {} bytes from input: {:?}", size, s);
-                                                match interceptor::parse_code(&s.as_bytes()) {
+                                                match interceptor::parse_code(s.as_bytes()) {
                                                     Some((key_code, modifier)) => {
                                                         match key_interceptor.intercept_key(key_code, &modifier) {
                                                             Some(action) => {

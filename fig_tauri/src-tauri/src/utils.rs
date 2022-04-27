@@ -4,7 +4,7 @@ use fig_proto::fig::FilePath;
 
 pub fn resolve_filepath(file_path: FilePath) -> PathBuf {
     let convert = |path: String| {
-        if file_path.expand_tilde_in_path {
+        if file_path.expand_tilde_in_path.unwrap_or(false) {
             shellexpand::tilde(&path).into_owned()
         } else {
             path
@@ -25,7 +25,7 @@ pub fn build_filepath(path: PathBuf) -> FilePath {
     FilePath {
         path: path.to_string_lossy().to_string(),
         relative_to: None,
-        expand_tilde_in_path: false,
+        expand_tilde_in_path: Some(false),
     }
 }
 

@@ -88,8 +88,8 @@ pub fn key_from_text(text: impl AsRef<str>) -> Option<(KeyCode<'static>, KeyModi
         "delete" => KeyCode::Delete,
         "insert" => KeyCode::Insert,
         "esc" => KeyCode::Esc,
-        f_key if f_key.starts_with("f") => {
-            let f_key = f_key.trim_start_matches("f");
+        f_key if f_key.starts_with('f') => {
+            let f_key = f_key.trim_start_matches('f');
             let f_key = f_key.parse::<u8>().ok()?;
             KeyCode::F(f_key)
         }
@@ -288,9 +288,13 @@ pub fn parse_code(code: &[u8]) -> Option<(KeyCode, KeyModifiers)> {
         Some(idx_0) => match idx_0 {
             &b'\x1b' => match next!() {
                 Some(idx_1) => match idx_1 {
-                    &b'\x1b' => Some((KeyCode::Esc, KeyModifiers::NONE)),
-                    &b'O' => match_ss3!(next!(), next!()).map(|code| (code, KeyModifiers::NONE)),
-                    &b'[' => {
+                    b'\x1b' => Some((KeyCode::Esc, KeyModifiers::NONE)),
+                    b'O' => {
+                        let char1 = next!();
+                        let char2 = next!();
+                        match_ss3!(char1, char2).map(|code| (code, KeyModifiers::NONE))
+                    }
+                    b'[' => {
                         next!();
                         let number = consume_modifier!();
                         match (peek!(), number) {

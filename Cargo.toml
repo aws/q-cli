@@ -1,7 +1,7 @@
 [workspace]
 members = [
     "fig_cli",
-    "fig_ibus_engine",
+    # "fig_ibus_engine",
     "fig_tauri/src-tauri",
     "figterm",
     "rust-lib/alacritty_terminal",
@@ -14,8 +14,8 @@ members = [
     "rust-lib/fig_settings",
     "rust-lib/fig_telemetry",
     "rust-lib/fig_util",
-    "rust-lib/ibus",
-    "rust-lib/ibus/ibus-sys",
+    # "rust-lib/ibus",
+    # "rust-lib/ibus/ibus-sys",
     "rust-lib/system_socket",
 ]
 
