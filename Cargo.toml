@@ -1,8 +1,10 @@
 [workspace]
+resolver = "2"
+
 members = [
     "fig_cli",
     "fig_ibus_engine",
-    "fig_tauri/src-tauri",
+    "fig_tauri",
     "figterm",
     "rust-lib/*",
     "rust-lib/ibus/ibus-sys",
@@ -10,7 +12,7 @@ members = [
 
 default-members = [
     "fig_cli",
-    "fig_tauri/src-tauri",
+    "fig_tauri",
     "figterm",
     "rust-lib/alacritty_terminal",
     "rust-lib/fig_auth",
