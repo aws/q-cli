@@ -7,7 +7,7 @@ use std::{fmt::Display, path::PathBuf, str::FromStr};
 
 use crate::util::get_parent_process_exe;
 
-use super::shell_integration::{
+use crate::integrations::shell::{
     DotfileShellIntegration, ShellIntegration, ShellScriptShellIntegration, When,
 };
 

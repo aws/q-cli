@@ -1,7 +1,6 @@
 pub mod backoff;
 pub mod checksum;
 pub mod shell;
-pub mod shell_integration;
 pub mod sync;
 
 use std::{

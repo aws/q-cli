@@ -1,4 +1,5 @@
 pub mod ssh;
+pub mod shell;
 
 use anyhow::{Context, Result};
 use std::{
