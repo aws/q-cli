@@ -13,6 +13,7 @@ use fig_proto::local::{
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, ffi::OsStr, fmt::Display, path::PathBuf, process::Command};
+use sysinfo::{System, SystemExt, ProcessorExt};
 
 pub trait Diagnostic {
     fn user_readable(&self) -> Result<Vec<String>> {
@@ -53,7 +54,7 @@ fn get_local_specs() -> Result<Vec<PathBuf>> {
     glob_dir(&glob, specs_location)
 }
 
-fn match_regex(regex: impl AsRef<str>, input: impl AsRef<str>) -> Option<String> {
+pub fn match_regex(regex: impl AsRef<str>, input: impl AsRef<str>) -> Option<String> {
     Some(
         Regex::new(regex.as_ref())
             .unwrap()
@@ -75,20 +76,47 @@ struct HardwareInfo {
 
 impl HardwareInfo {
     fn new() -> Result<HardwareInfo> {
-        let result = Command::new("system_profiler")
-            .arg("SPHardwareDataType")
-            .output()
-            .with_context(|| "Could not read hardware")?;
+        cfg_if! {
+            if #[cfg(target_os = "macos")] {
+                let result = Command::new("system_profiler")
+                    .arg("SPHardwareDataType")
+                    .output()
+                    .with_context(|| "Could not read hardware")?;
 
-        let text: String = String::from_utf8_lossy(&result.stdout).trim().into();
+                let text: String = String::from_utf8_lossy(&result.stdout).trim().into();
 
-        Ok(HardwareInfo {
-            model_name: match_regex(r"Model Name: (.+)", &text),
-            model_identifier: match_regex(r"Model Identifier: (.+)", &text),
-            chip: match_regex(r"Chip: (.+)", &text),
-            total_cores: match_regex(r"Total Number of Cores: (.+)", &text),
-            memory: match_regex(r"Memory: (.+)", &text),
-        })
+                Ok(HardwareInfo {
+                    model_name: match_regex(r"Model Name: (.+)", &text),
+                    model_identifier: match_regex(r"Model Identifier: (.+)", &text),
+                    chip: match_regex(r"Chip: (.+)", &text),
+                    total_cores: match_regex(r"Total Number of Cores: (.+)", &text),
+                    memory: match_regex(r"Memory: (.+)", &text),
+                })
+            } else {
+                let mut sys = System::new();
+                sys.refresh_cpu();
+                sys.refresh_memory();
+        
+                let mut hardware_info = HardwareInfo {
+                    model_name: None,
+                    model_identifier: None,
+                    chip: None,
+                    total_cores: Some(
+                        sys.physical_core_count()
+                            .map_or_else(|| "Unknown".into(), |cores| format!("{cores}")),
+                    ),
+                    memory: Some(format!("{} KB", sys.total_memory())),
+                };
+        
+                if let Some(processor) = sys.processors().first() {
+                    hardware_info.model_name = Some(processor.name().into());
+                    hardware_info.model_identifier = Some(processor.vendor_id().into());
+                    hardware_info.chip = Some(processor.brand().into());
+                }
+                
+                Ok(hardware_info)
+            }
+        }
     }
 }
 

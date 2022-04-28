@@ -3,7 +3,7 @@ use crate::{
         diagnostics::{Diagnostic, Diagnostics},
         util::{get_fig_version, open_url, OSVersion},
     },
-    util::{get_shell, is_app_running},
+    util::{get_parent_process_exe, is_app_running},
 };
 
 use anyhow::Result;
@@ -44,8 +44,8 @@ pub async fn issue_cli(force: bool, description: Vec<String>) -> Result<()> {
     let fig_version = get_fig_version()
         .map(|(version, _)| version)
         .unwrap_or_default();
-    let shell = get_shell().unwrap_or_default();
-    body.push_str(&format!("|{}|{}|{}|\n", &os_version, &fig_version, &shell));
+    let shell = get_parent_process_exe().unwrap_or_default();
+    body.push_str(&format!("|{}|{}|{}|\n", &os_version, &fig_version, &shell.display()));
     body.push_str("<details><summary><code>fig diagnostic</code></summary>\n<p>\n\n");
 
     let diagnostic = Diagnostics::new().await?.user_readable()?.join("\n");

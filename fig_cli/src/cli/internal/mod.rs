@@ -2,6 +2,7 @@ pub mod local_state;
 
 use crate::cli::installation::{self, InstallComponents};
 use crate::dotfiles::notify::TerminalNotification;
+use crate::util::get_parent_process_exe;
 
 use anyhow::{Context, Result};
 use clap::{ArgGroup, Args, Subcommand};
@@ -298,67 +299,10 @@ impl InternalSubcommand {
                 }
             }
             InternalSubcommand::GetShell => {
-                cfg_if::cfg_if! {
-                    if #[cfg(target_os = "macos")]  {
-                        let pid = nix::unistd::getppid();
-                        let mut buff = vec![0; 1024];
-
-                        let out_buf = {
-                            // TODO: Make sure pid exists or that access is allowed?
-                            let ret = unsafe {
-                                nix::libc::proc_pidpath(
-                                    pid.as_raw(),
-                                    buff.as_mut_ptr() as *mut std::ffi::c_void,
-                                    buff.len() as u32,
-                                )
-                            };
-
-                            if ret == 0 {
-                                exit(1);
-                            }
-
-                            &buff[..ret as usize]
-                        };
-
-                        match std::str::from_utf8(out_buf) {
-                            Ok(path) => print!("{}", path),
-                            Err(_) => exit(1),
-                        }
-                    } else if #[cfg(target_os = "linux")] {
-                        // let pid = nix::unistd::getppid();
-                        // let mut buff = vec![0; 1024];
-
-                        // let out_buf = {
-                        //     loop {
-                        //         let ret = unsafe {
-                        //             nix::libc::readlink(
-                        //                 format!("/proc/{}/exe", pid).as_str().as_ptr(),
-                        //                 buff.as_mut_ptr() as *mut std::ffi::c_void,
-                        //                 buff.len() as u32,
-                        //             )
-                        //         };
-
-                        //         if ret == -1 {
-                        //             exit(1);
-                        //         }
-
-                        //         if ret == buff.len() as i32 {
-                        //             buff.resize(buff.len() * 2, 0);
-                        //             continue;
-                        //         }
-
-                        //         break &buff[..ret as usize];
-                        //     }
-                        // };
-
-                        // match std::str::from_utf8(out_buf) {
-                        //     Ok(path) => print!("{}", path),
-                        //     Err(_) => exit(1),
-                        // }
-                        exit(1);
-                    } else {
-                        exit(1);
-                    }
+                if let Ok(exe) = get_parent_process_exe() {
+                    print!("{}", exe.display())
+                } else {
+                    exit(1);
                 }
             }
         }

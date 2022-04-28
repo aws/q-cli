@@ -143,8 +143,8 @@ impl OSVersion {
                 use nix::sys::utsname::uname;
                 // use regex::Regex;
 
-                let uname = uname();
-                let kernel_version = uname.release().to_owned();
+                let uname = uname()?;
+                let kernel_version = uname.release().to_string_lossy().into();
 
                 // let version_info = Command::new("lsb_release")
                 //     .arg("-a")

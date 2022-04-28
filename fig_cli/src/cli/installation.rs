@@ -50,29 +50,29 @@ pub fn install_cli(
             .interact()?
         };
         if !manual_install {
-            if let Err(e) = install_fig() {
-                println!("{}\n {}", "Could not automatically install:".bold(), e);
+            if let Err(err) = install_fig(true) {
+                println!("{}", "Could not automatically install:".bold());
+                println!("{err}");
                 manual_install = true;
             }
         }
         if !no_confirm && manual_install {
             println!();
-            println!("To install fig manually you will have to add the following to your rc files");
+            println!("To install Fig manually you will have to add the following to your rc files");
             println!();
-            println!(
-                "At the top of your .bashrc or .zshrc or .config/fish/conf.d/00_fig_pre.fish file:"
-            );
-            println!("bash:    eval \"$(fig init bash pre)\"");
-            println!("zsh:     eval \"$(fig init zsh pre)\"");
-            println!("fish:    eval \"$(fig init fish pre)\"");
+            println!("At the top of your .bashrc or .zshrc file:");
+            println!("bash:    . \"$HOME/.fig/shell/bashrc.pre.bash\"");
+            println!("zsh:     . \"$HOME/.fig/shell/zshrc.pre.zsh\"");
             println!();
-            println!(
-                "At the bottom of your .bashrc or .zshrc or .config/fish/conf.d/99_fig_post.fish file:"
-            );
-            println!("bash:    eval \"$(fig init bash post)\"");
-            println!("zsh:     eval \"$(fig init zsh post)\"");
-            println!("fish:    eval \"$(fig init fish post)\"");
+            println!("At the bottom of your .bashrc or .zshrc file:");
+            println!("bash:    . \"$HOME/.fig/shell/bashrc.post.bash\"");
+            println!("zsh:     . \"$HOME/.fig/shell/zshrc.post.zsh\"");
             println!();
+
+            if let Err(err) = install_fig(false) {
+                println!("Could not install files needed for Fig:");
+                println!("{err}");
+            }
         }
     }
 
@@ -93,7 +93,7 @@ pub fn install_cli(
     Ok(())
 }
 
-fn install_fig() -> Result<()> {
+fn install_fig(_modify_files: bool) -> Result<()> {
     let now = OffsetDateTime::now_utc().format(time::macros::format_description!(
         "[year]-[month]-[day]_[hour]-[minute]-[second]"
     ))?;

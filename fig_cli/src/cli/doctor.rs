@@ -5,8 +5,8 @@ use crate::{
     },
     integrations::InstallationError,
     util::{
-        app_path_from_bundle_id, get_shell, glob, glob_dir, is_executable_in_path, launch_fig,
-        shell::Shell, shell_integration::ShellIntegration, LaunchOptions,
+        app_path_from_bundle_id, get_parent_process_exe, glob, glob_dir, is_executable_in_path,
+        launch_fig, shell::Shell, shell_integration::ShellIntegration, LaunchOptions,
     },
 };
 
@@ -895,10 +895,19 @@ impl DoctorCheck<DiagnosticsResponse> for ShellCompatibilityCheck {
 
     async fn check(&self, _: &DiagnosticsResponse) -> Result<(), DoctorError> {
         let shell_regex = Regex::new(r"(bash|fish|zsh)").unwrap();
-        let current_shell = get_shell();
-        let current_shell_valid = current_shell.as_ref().map(|s| (s, shell_regex.is_match(s)));
+
+        let current_shell = get_parent_process_exe();
+        let current_shell_valid = current_shell
+            .as_ref()
+            .map(|path| path.to_string_lossy())
+            .map(|s| {
+                let is_match = shell_regex.is_match(&s);
+                (s, is_match)
+            });
+
         let default_shell = dscl_read("UserShell");
         let default_shell_valid = default_shell.as_ref().map(|s| (s, shell_regex.is_match(s)));
+
         match (current_shell_valid, default_shell_valid) {
             (Ok((current_shell, false)), _) => {
                 return Err(anyhow!("Current shell {} incompatible", current_shell).into())

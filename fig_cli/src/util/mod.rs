@@ -8,7 +8,6 @@ use std::{
     env,
     ffi::OsStr,
     path::{Path, PathBuf},
-    process::Command,
 };
 
 use anyhow::{Context, Result};
@@ -109,7 +108,7 @@ where
 pub fn app_path_from_bundle_id(bundle_id: impl AsRef<OsStr>) -> Option<String> {
     cfg_if! {
         if #[cfg(target_os = "macos")] {
-            let installed_apps = Command::new("mdfind")
+            let installed_apps = std::process::Command::new("mdfind")
                 .arg("kMDItemCFBundleIdentifier")
                 .arg("=")
                 .arg(bundle_id)
@@ -125,33 +124,11 @@ pub fn app_path_from_bundle_id(bundle_id: impl AsRef<OsStr>) -> Option<String> {
     }
 }
 
-pub fn get_shell() -> Result<String> {
-    cfg_if! {
-        if #[cfg(target_os = "macos")] {
-            let ppid = nix::unistd::getppid();
-
-            let result = Command::new("ps")
-                .arg("-p")
-                .arg(format!("{}", ppid))
-                .arg("-o")
-                .arg("comm=")
-                .output()
-                .context("Could not read value")?;
-        } else if #[cfg(target_os = "linux")] {
-            todo!();
-        } else if #[cfg(windows)] {
-            todo!();
-        }
-    };
-
-    Ok(String::from_utf8_lossy(&result.stdout).trim().into())
-}
-
 #[must_use]
 pub fn get_machine_id() -> Option<String> {
     cfg_if! {
         if #[cfg(target_os = "macos")] {
-            let output = Command::new("ioreg")
+            let output = std::process::Command::new("ioreg")
                 .args(&["-rd1", "-c", "IOPlatformExpertDevice"])
                 .output()
                 .ok()?;
@@ -182,7 +159,7 @@ pub fn get_machine_id() -> Option<String> {
 pub fn is_app_running() -> bool {
     cfg_if! {
         if #[cfg(target_os = "macos")] {
-            let output = match Command::new("lsappinfo")
+            let output = match std::process::Command::new("lsappinfo")
                 .args(["info", "-app", "com.mschrage.fig"])
                 .output()
             {
@@ -240,7 +217,7 @@ pub fn launch_fig(opts: LaunchOptions) -> Result<()> {
                 println!("\n→ Launching Fig...\n");
             }
 
-            Command::new("open")
+            std::process::Command::new("open")
                 .args(["-g", "-b", "com.mschrage.fig"])
                 .output()
                 .context("\nUnable to launch Fig\n")?;
