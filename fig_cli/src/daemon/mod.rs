@@ -19,7 +19,6 @@ use futures::{SinkExt, StreamExt};
 use parking_lot::{lock_api::RawMutex, Mutex, RwLock};
 use rand::{distributions::Uniform, prelude::Distribution};
 use std::{
-    io::Write,
     path::{Path, PathBuf},
     process::Command,
     sync::Arc,
@@ -373,9 +372,18 @@ impl LaunchService {
     }
 
     pub fn install(&self) -> Result<()> {
+        // Create parent directory
+        std::fs::create_dir_all(
+            &self
+                .path
+                .parent()
+                .context("Could not get parent directory")?,
+        )?;
+
         // Write to the definition file
-        let mut file = std::fs::File::create(&self.path)?;
-        file.write_all(self.data.as_bytes())?;
+        std::fs::write(&self.path, self.data.as_bytes())?;
+
+        // Restart the daemon
         self.restart()
     }
 

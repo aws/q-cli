@@ -13,6 +13,7 @@ use fig_proto::hooks::new_callback_hook;
 use native_dialog::{MessageDialog, MessageType};
 use rand::distributions::{Alphanumeric, DistString};
 use rand::seq::IteratorRandom;
+use sysinfo::SystemExt;
 use std::{
     fs,
     io::{Read, Write},
@@ -110,6 +111,7 @@ pub enum InternalSubcommand {
     WarnUserWhenUninstallingIncorrectly,
     Animation(AnimationArgs),
     GetShell,
+    Hostname,
 }
 
 pub fn install_cli_from_args(install_args: InstallArgs) -> Result<()> {
@@ -305,6 +307,13 @@ impl InternalSubcommand {
                     exit(1);
                 }
             }
+            InternalSubcommand::Hostname => {
+                if let Some(hostname) = sysinfo::System::new().host_name() {
+                    println!("{}", hostname);
+                } else {
+                    exit(1);
+                }
+            },
         }
 
         Ok(())

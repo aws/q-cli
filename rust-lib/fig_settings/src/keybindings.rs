@@ -39,6 +39,11 @@ impl KeyBindings {
             .unwrap();
         Ok(serde_json::from_reader(std::fs::File::open(&path)?)?)
     }
+
+    pub fn load_hardcoded() -> Self {
+        serde_json::from_str(&include_str!("test/actions.json"))
+            .expect("Unable to load hardcoded actions")
+    }
 }
 
 #[cfg(test)]

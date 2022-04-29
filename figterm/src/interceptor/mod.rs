@@ -23,7 +23,7 @@ impl KeyInterceptor {
     }
 
     pub fn load_key_intercepts(&mut self) -> Result<()> {
-        let actions = KeyBindings::load()?;
+        let actions = KeyBindings::load_hardcoded();
 
         for action in actions.0 {
             if let Some(default_bindings) = action.default_bindings {

@@ -15,7 +15,7 @@ FIG_LAST_PS1="$PS1"
 FIG_LAST_PS2="$PS2"
 FIG_LAST_PS3="$PS3"
 
-FIG_HOSTNAME=$(hostname -f 2> /dev/null || hostname)
+FIG_HOSTNAME=$(fig _ hostname || hostname -f 2> /dev/null || hostname)
 
 if [[ -e /proc/1/cgroup ]] && grep -q docker /proc/1/cgroup; then
   FIG_IN_DOCKER=1

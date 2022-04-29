@@ -7,7 +7,7 @@ or set -Ua fish_user_paths $HOME/.local/bin
 export TTY=(tty)
 export FIG_PID=$fish_pid
 
-set FIG_HOSTNAME (hostname -f 2> /dev/null || hostname)
+set FIG_HOSTNAME (fig _ hostname || hostname -f 2> /dev/null || hostname)
 
 if [ -e /proc/1/cgroup ] && grep -q docker /proc/1/cgroup
   set FIG_IN_DOCKER 1
